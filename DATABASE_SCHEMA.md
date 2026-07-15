@@ -1,13 +1,13 @@
 # Database Schema
 
-This document expands the MVP SQLite schema represented by `migrations/0001_initial.sql`. SQLite is the authoritative store for managed notes, metadata, revisions, resource relationships, link graphs, media-policy decisions, import state, and outbox jobs. sist2 remains a derived index for extraction, OCR, thumbnails, and broad filesystem search.
+This document expands the MVP SQLite schema represented by `migrations/0001_initial.sql`. SQLite is the authoritative store for managed notes, metadata, revisions, resource relationships, link graphs, media-policy decisions, import state, and outbox jobs. Recoll is the optional derived index for front-matter field search, extraction, and broad filesystem search (see `RECOLL_INTEGRATION.md`).
 
 ## Schema principles
 
-- Keep application identity stable with opaque IDs; do not expose rowids or sist2 IDs as public identities.
+- Keep application identity stable with opaque IDs; do not expose rowids or search-index IDs as public identities.
 - Keep managed note saves transactional: document row, current revision, FTS row, links, resource references, and outbox records are updated in one SQLite transaction.
 - Store binary bytes outside SQLite in a content-addressed asset directory, while SQLite tracks blob hashes, resources, references, and provenance.
-- Treat FTS5 and sist2 as derived indexes. FTS5 is updated synchronously for managed documents; sist2 is updated asynchronously through `index_outbox`.
+- Treat FTS5 and Recoll as derived indexes. FTS5 is updated synchronously for managed documents; the Recoll projection is updated asynchronously through `index_outbox`.
 - Use soft deletion for documents first. MVP Task 4 implements safe resource deletion by refusing referenced resources and removing unreferenced logical resources; richer trash/GC policy remains future work.
 - Keep import and projection paths deterministic so bulk imports can be resumed and repeated idempotently.
 
@@ -20,7 +20,7 @@ A collection is a logical namespace such as `personal-notes`, `joplin-raw-2026-0
 Important fields:
 
 - `id`: stable public collection ID.
-- `kind`: managed, external, imported, sist2, or projection.
+- `kind`: managed, external, imported, sidecar-indexed, or projection. (The stored value `sist2` is renamed in plan task R2.)
 - `capabilities_json`: declares whether the collection supports write, resources, publishing, graph, remote media, and MCP reads.
 - `settings_json`: collection-specific configuration.
 
@@ -50,11 +50,11 @@ The media-policy tables support domain stop lists, exact-hash blocks, perceptual
 
 ### index_outbox
 
-The outbox coordinates filesystem projections and sist2 indexing after the canonical SQLite transaction commits. Outbox jobs are retried and coalesced; failure does not invalidate the note save.
+The outbox coordinates filesystem projections and Recoll indexing after the canonical SQLite transaction commits. Outbox jobs are retried and coalesced; failure does not invalidate the note save.
 
 ## MVP migration file
 
-`migrations/0001_initial.sql` now represents schema version 4 for this MVP branch. It includes managed-document tables, Task 2 revision fields (`body_mime_type`, `message`), content-addressed blob/resource tables, document-resource reference tables, document link graph rows, link context/target URI fields, and supporting indexes. Bootstrap contains compatibility shims for older development databases before setting `PRAGMA user_version = 4`. Codex should not rename public tables/columns casually once tests depend on them.
+`migrations/0001_initial.sql` now represents schema version 4 for this MVP branch. It includes managed-document tables, Task 2 revision fields (`body_mime_type`, `message`), content-addressed blob/resource tables, document-resource reference tables, document link graph rows, link context/target URI fields, and supporting indexes. Bootstrap contains compatibility shims for older development databases before setting `PRAGMA user_version = 4`. Do not rename public tables/columns casually once tests depend on them.
 
 ## Required indexes
 
@@ -68,6 +68,44 @@ The migration includes indexes for common lookups:
 - resource references by document and resource;
 - outbox by completion and sequence;
 - media hashes by algorithm/hash.
+
+## Planned schema v5 — Notrios redesign (plan tasks R3/R4)
+
+The redesign adds the note-taking data model on top of the existing document tables:
+
+### notebooks
+
+- Nested notebooks via `parent_id`; stable opaque IDs.
+- Optional `icon_emoji` displayed before the name in sidebars.
+- Names are case-insensitively unique among siblings (`NOCASE` unique index); the store layer rejects duplicates that differ only by case.
+- Every managed note belongs to exactly one notebook; bootstrap creates the default "Notes" notebook.
+
+### tags and note_tags
+
+- First-class tag rows with join table; per-tag note counts are derivable for the sidebar.
+- Importers map source tags here (Joplin note-tag joins, frontmatter tags).
+
+### search_notebooks
+
+- Name, optional emoji, query string (in the `SEARCH_QUERY_LANGUAGE.md` syntax), `builtin` flag, and sort anchors.
+- Builtin rows bootstrapped: "All notes" (first, undeletable), "Trash" (last, undeletable), "Help" (undeletable, read-only notes).
+- Deleting a user search notebook deletes only the row, never notes.
+
+### source objects and threads
+
+Provenance tables sufficient for Joplin, Obsidian, Twitter/X, ChatGPT, and Claude sources:
+
+- `source_system`, external item ID, source URL;
+- `author` (display name) and `author_id` (canonical account identity, kept separate so same-named people are never conflated);
+- `thread_id` and `reply_to` so Twitter/X conversation threads and ChatGPT/Claude conversations can be recovered in order (links may point at the original posts);
+- published/created/updated timestamps (ISO 8601 stored, UTC epoch derived for range queries).
+
+Thread/link-graph traversal stays in SQLite; the Recoll index only carries searchable copies of these fields (`RECOLL_INTEGRATION.md`).
+
+### Deletion rules
+
+- Soft-deleted notes are excluded from every query and appear only through the "Trash" search notebook.
+- Permanent deletion (purge) is only permitted for notes whose source is the local database; externally-sourced notes marked deleted are merely excluded from queries/results and exports.
 
 ## Future migrations
 

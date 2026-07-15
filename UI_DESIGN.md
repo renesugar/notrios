@@ -1,58 +1,57 @@
-# Built-in UI Design
+# Built-in GUI Design
 
-The built-in UI is a basic browser client for local note taking, searching, resource management, and MCP-adjacent workflows. It is not the only future client: a native C++/Qt client can be developed later against the same REST API.
+The built-in GUI is a **Go + Wails** desktop application (https://github.com/wailsapp/wails) named `notrios`, shipped in the first released version. It is not the only client: the REST/MCP API must stay complete enough for third-party native clients (C++/Qt, Rust/Tauri, other Go/Wails apps).
 
-## UI stack decision
+## Executable modes
 
-Use **React + Vite** for the built-in UI.
+One executable contains the GUI and the service:
 
-Use **`md-editor-rt` initially** for a polished Joplin-like editor/preview experience. Wrap it behind an application-owned adapter so the editor can later migrate to `React + CodeMirror 6 + unified/remark/rehype` if deeper source-position and editor-pane behavior is required.
+- **default** — start the local service and open the GUI on it.
+- **`-no-gui`** — start the service headless, for users who prefer a different client as their GUI.
+- **`-gui-only`** — start only the GUI as a pure REST client. This tests the GUI exactly the way a third-party client would use the service, and lets the GUI attach to a service running on another machine via the REST API.
 
-## Required MVP behavior
+`notriosd` remains the standalone headless service binary.
+
+## Window layout
+
+Standard desktop menu bar at the top (File, Edit, View, Help, …), then four regions:
+
+```text
+┌────────────┬───────────────┬───────────────┬───────────────┐
+│ sidebar    │ search box    │ markdown      │ markdown      │
+│            │ + results     │ editor        │ preview       │
+│ Notebooks  │               │               │               │
+│  📥 All    │ (incremental/ │               │               │
+│   notes    │  cursor-paged │               │               │
+│  Notes     │  scrolling)   │               │               │
+│  Bookmarks │               │               │               │
+│  Twitter   │               │               │               │
+│  …         │               │               │               │
+│  🗑 Trash   │               │               │               │
+│ Tags       │               │               │               │
+│  tag (n)   │               │               │               │
+└────────────┴───────────────┴───────────────┴───────────────┘
+```
+
+- **Left sidebar:** notebooks tree above, tags (with note counts) below. Builtin "All notes" search notebook is always first; "Trash" is always last; neither is deletable. Notebooks show an optional emoji icon before their name. Notebooks nest like Joplin (e.g. `Contacts` → `Plumbers`, `Electricians`, `Carpenters`) so the experience is smooth for Joplin users. See `NOTEBOOKS_AND_SEARCH_NOTEBOOKS.md`.
+- **First panel:** search box and query results. On startup the "All notes" search runs; the search API returns incremental results as the user scrolls, so startup never retrieves hundreds of thousands of notes at once.
+- **Next two panels:** Markdown editor and Markdown preview.
+
+## Themes
+
+- A light/dark toggle sits on the main window.
+- Users can create custom themes and select them as the active light and dark themes in place of the defaults.
+
+## Frontend implementation
+
+The existing React frontend is the basis of the Wails webview UI, currently using `md-editor-rt` behind an application-owned adapter; a later migration to `CodeMirror 6 + unified/remark/rehype` is reserved for deeper source-position and editor-pane behavior (Ctrl-click in the editor pane, broken-link markers while typing, inline resource widgets, AST-safe edits, rich link autocomplete).
+
+## Required behavior (carried over from the web-UI MVP)
 
 - Create, edit, save, and search Markdown notes.
-- Display split edit/preview panes.
-- Intercept preview links:
-  - `document://...` opens the target note in the UI.
-  - `resource://...` opens or downloads the resource through REST.
-- Upload/paste images and attach PDFs/resources through the companion REST API.
+- Intercept preview links: `document://…` opens the target note; `resource://…` opens/downloads through REST (`GET /api/v1/resources/{id}/content?download=1`); never expose raw storage paths.
+- Upload/paste images and attach PDFs/resources through REST.
 - Show outgoing links, backlinks, unresolved links, and resources for the active note.
 - Show revision/conflict state using revision IDs or ETags.
 - Sanitize preview HTML.
-
-## Why `md-editor-rt` is enough for MVP
-
-The MVP only requires link handling in the preview pane, not rich link widgets inside the raw Markdown editor. A custom preview component or event delegation can intercept rendered `<a>` links and route them through application actions.
-
-Move to CodeMirror 6 + unified when requirements include:
-
-- Ctrl-click inside the editor pane.
-- Broken-link markers while typing.
-- Inline resource widgets in source editing mode.
-- AST/source-range safe edits.
-- Rich Obsidian/Joplin link autocomplete tied to source positions.
-
-## LeafWiki-inspired layout
-
-LeafWiki is a useful UI reference, but not a storage/backend reference. The companion UI should adopt the pattern:
-
-```text
-left: collections/folders/search
-center: editor + preview or viewer
-right: links/backlinks/resources/revisions/properties
-bottom/status: saved/index/projected/sist2 state
-```
-
-## Remote media in preview
-
-The preview can detect remote images and show a warning/action, but it must not silently localize remote media. Localization is a server operation using media policy, quarantine, hash checks, MIME validation, and revision-safe note rewriting.
-
-## Resource downloads
-
-Resource links should call REST endpoints such as:
-
-```text
-GET /api/v1/resources/{resource_id}/content?download=1
-```
-
-The server must set appropriate `Content-Type` and `Content-Disposition` headers. The UI should not expose raw storage paths.
+- Remote images in preview may show a warning/action but must never be silently localized; localization is a server operation under media policy.

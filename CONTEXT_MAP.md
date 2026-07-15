@@ -5,16 +5,21 @@ This file is the codebase atlas. Update it whenever major files or directories a
 ## Root documents
 
 - `README.md` — project overview and quick start.
-- `PLAN.md` — active MVP implementation plan.
+- `PLAN.md` — active implementation plan (v0.2 Notrios redesign foundation).
 - `SCAFFOLD_CREATION_PLAN.md` — process for creating/refining this scaffold.
 - `ROADMAP.md` — product roadmap and future features.
-- `AGENTS.md` — coding-agent instructions.
+- `AGENTS.md` — coding-agent instructions (`CLAUDE.md` points here).
+- `CODING_CLIENT_HANDOFF.md` — compressed project state for any coding agent (formerly `CODEX_HANDOFF.md`).
 - `SYSTEM_ARCHITECTURE.md` — architectural blueprint.
 - `API_SPEC.md` — REST/MCP contract notes.
+- `NOTEBOOKS_AND_SEARCH_NOTEBOOKS.md` — notebooks, tags, search notebooks, Trash/Help semantics.
+- `SEARCH_QUERY_LANGUAGE.md` — user query language and backend translation.
+- `RECOLL_INTEGRATION.md` — Recoll sidecar design and licensing boundary.
+- `DOCS_SITE.md` — GitHub Pages documentation site (PageFind) and Help notebook.
 - `CODING_STANDARDS.md` — coding style and guardrails.
 - `TESTING_POLICY.md` — definition of done and testing layers.
 - `ENVIRONMENT_SETUP.md` — development setup.
-- `PROMPT.md` — initial Codex prompt.
+- `PROMPT.md` — initial agent prompt.
 
 ## Code directories
 
@@ -38,7 +43,7 @@ This file is the codebase atlas. Update it whenever major files or directories a
 - `agent/LOOP_DETECTION.md` — stalled-task detection and resolution.
 - `plans/` — archived completed plans by version/milestone.
 - `skills/` — agent skills using the `SKILL.md` format.
-- `prompts/` — reusable Codex prompts.
+- `prompts/` — reusable agent prompts.
 
 ## API and configuration
 
@@ -61,7 +66,7 @@ This file is the codebase atlas. Update it whenever major files or directories a
 
 ## Step 3 additions
 
-- `DATABASE_SCHEMA.md` explains the target SQLite schema and why sist2 remains a derived index.
+- `DATABASE_SCHEMA.md` explains the target SQLite schema and why search sidecars (now Recoll) remain derived indexes.
 - `api/openapi.yaml` now contains the expanded REST scaffold for collections, documents, resources, revisions, links, remote media, graph, publishing, and jobs. Document, resource, graph, and read-only MCP MVP routes have live implementations; import/publish/remote-media execution remains staged.
 - `api/mcp-tools.md` now defines MCP tool profiles and the implemented read-only MVP tools. `internal/httpapi/mcp.go` contains the current dependency-free adapter mounted at `/mcp`.
 - `internal/api/types.go` mirrors the current REST DTO shapes.
@@ -129,3 +134,11 @@ This file is the codebase atlas. Update it whenever major files or directories a
 - `scripts/run_performance_smoke.sh` — generated-dataset smoke and benchmark wrapper.
 - `scripts/package_release.sh` — validates, builds UI, creates source ZIP, and verifies contents.
 - `scripts/check_release_zip.py` — catches missing `web/dist`, accidental `web/node_modules`, and runtime data in ZIPs.
+
+## v0.2 Notrios redesign additions (task R1)
+
+- Git repository initialized: `main` = pre-redesign baseline, `develop` = active work.
+- `CODEX_HANDOFF.md` renamed to `CODING_CLIENT_HANDOFF.md`; `CLAUDE.md` added pointing to `AGENTS.md`.
+- `skills/codex-handoff/` renamed to `skills/agent-handoff/`; `prompts/start_codex_from_handoff.md` renamed to `prompts/start_agent_from_handoff.md`.
+- New design docs: `NOTEBOOKS_AND_SEARCH_NOTEBOOKS.md`, `SEARCH_QUERY_LANGUAGE.md`, `RECOLL_INTEGRATION.md`, `DOCS_SITE.md`.
+- Living design docs rebranded to Notrios and switched from sist2 to Recoll; historical reports (`SCAFFOLD_STEP*`, `MVP_TASK*`, `plans/`) intentionally keep old names as records.

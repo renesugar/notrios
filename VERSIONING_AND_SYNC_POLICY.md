@@ -1,6 +1,6 @@
 # Versioning and Synchronization Policy
 
-The companion service must not depend on Git, Fossil, sist2, or any external projection as the authoritative note store.
+The service must not depend on Git, Fossil, Recoll, or any external projection/index as the authoritative note store.
 
 ## Canonical revision model
 

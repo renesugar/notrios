@@ -25,3 +25,10 @@
 - Has the user reviewed and approved the v0.1 MVP ZIP for first Gitea/GitHub commit?
 - Should `PLAN.md` v0.2 start with policy config, or should Codex first replace the SQLite/MCP MVP adapters in a less restricted environment?
 - Should UI bundle size be reduced before the first public release by pruning md-editor/highlight language imports or adding code splitting?
+
+## Notrios redesign questions (2026-07-15)
+
+1. **License (blocks R2):** MIT, Apache-2.0, or dual "MIT OR Apache-2.0"? All three satisfy the "compatible with MIT or Apache 2.0" requirement; Apache-2.0 adds a patent grant, MIT is simplest.
+2. Should `notesctl` become `notriosctl` (assumed yes in `PLAN.md` R2), or keep its name?
+3. When a regular notebook is deleted, its notes currently are specified to move to Trash (`NOTEBOOKS_AND_SEARCH_NOTEBOOKS.md`) — confirm, or should they move to the parent/default notebook?
+4. Should FTS5 remain the always-on baseline with Recoll optional (current design), or should Recoll become required for full query-language support?

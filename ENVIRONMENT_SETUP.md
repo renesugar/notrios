@@ -25,7 +25,7 @@ Primary target: Ubuntu Linux.
 - `ripgrep`
 - `jq`
 - `xvfb` for headless UI tests
-- `sist2` for future integration work
+- `recoll` (and `recollq`) for future search-sidecar integration work (optional; GPL, external process only)
 - `git-lfs` only if future Git workflows require large-file support outside go-git
 
 Ubuntu example:
@@ -49,7 +49,7 @@ go install github.com/go-task/task/v3/cmd/task@latest
 git init
 git checkout -b develop
 git add .
-git commit -m "Initial Notes Companion scaffold"
+git commit -m "Initial Notrios scaffold"
 ```
 
 Before pushing to Gitea/GitHub:
@@ -90,10 +90,10 @@ Run the service with the example config:
 go run ./cmd/notesd -config config/config.example.yaml
 ```
 
-The service creates the configured data, asset, projection, and sist2 index directories before opening SQLite. Use `-addr` and `-db` only as explicit overrides for quick local smoke tests:
+The service creates the configured data, asset, projection, and search-sidecar index directories before opening SQLite. Use `-addr` and `-db` only as explicit overrides for quick local smoke tests:
 
 ```bash
-go run ./cmd/notesd -addr 127.0.0.1:8081 -db /tmp/notes-companion.sqlite
+go run ./cmd/notesd -addr 127.0.0.1:8081 -db /tmp/notrios.sqlite
 ```
 
 Confirm runtime state:
@@ -155,7 +155,7 @@ curl -X POST http://127.0.0.1:8080/mcp \
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
 ```
 
-The current MCP adapter is dependency-free for this scaffold. In a normal development environment, Codex may replace it with the official MCP Go SDK after pinning the dependency and updating tests.
+The current MCP adapter is dependency-free for this scaffold. In a normal development environment, an agent may replace it with the official MCP Go SDK after pinning the dependency and updating tests.
 
 ## Joplin RAW importer MVP
 

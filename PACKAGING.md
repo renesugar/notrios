@@ -61,7 +61,7 @@ Do active work on `develop` or task branches. Merge to `main` only after the MVP
 After review, the MVP can be tagged as:
 
 ```bash
-git tag -a v0.1.0-mvp -m "Notes Companion MVP"
+git tag -a v0.1.0-mvp -m "Notrios (Notes Companion) MVP"
 ```
 
 Do not tag until the user has reviewed the ZIP and selected a license in `LICENSE_PENDING.md`.
@@ -69,6 +69,6 @@ Do not tag until the user has reviewed the ZIP and selected a license in `LICENS
 ## Current package limitations
 
 - No platform-specific installer is produced.
-- The service currently uses a local cgo SQLite wrapper; Codex should consider replacing it with a maintained SQLite driver in a less constrained environment.
+- The service currently uses a local cgo SQLite wrapper; consider replacing it with a maintained SQLite driver in a less constrained environment.
 - The MCP endpoint is a dependency-free MVP JSON-RPC adapter, not the official Go SDK transport.
-- `sist2`, Quartz, and remote-media localization are documented but not implemented in v0.1.
+- The search sidecar (now Recoll, formerly sist2), Quartz, and remote-media localization are documented but not implemented in v0.1.

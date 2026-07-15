@@ -1,18 +1,18 @@
-# Initial Codex Prompt
+# Initial Agent Prompt
 
-You are working in the Notes Companion repository. Continue from the repository files only; do not rely on prior chat history.
+You are working in the Notrios repository (formerly Notes Companion). Continue from the repository files only; do not rely on prior chat history. This prompt applies to any coding agent (Codex, Claude, aider, etc.).
 
 Read these files first:
 
 1. `AGENTS.md`
-2. `CODEX_HANDOFF.md`
+2. `CODING_CLIENT_HANDOFF.md`
 3. `README.md`
 4. `PLAN.md`
 5. `ROADMAP.md`
-6. `SCAFFOLD_STEP6_REPORT.md`
-7. `SYSTEM_ARCHITECTURE.md`
-8. `API_SPEC.md`
-9. `DATABASE_SCHEMA.md`
+6. `SYSTEM_ARCHITECTURE.md`
+7. `API_SPEC.md`
+8. `DATABASE_SCHEMA.md`
+9. `NOTEBOOKS_AND_SEARCH_NOTEBOOKS.md`, `SEARCH_QUERY_LANGUAGE.md`, `RECOLL_INTEGRATION.md`
 10. `TESTING_POLICY.md`
 11. `CONTEXT_MAP.md`
 12. `agent/PLAN_STATUS.md`
@@ -30,21 +30,14 @@ Then:
 6. Run validation.
 7. Update `agent/PLAN_STATUS.md`.
 8. Append a `completed` or `blocked` entry to `agent/ATTEMPT_LOG.jsonl`.
-9. If the plan step is complete, archive it under `plans/v0.1/` and ask before starting the next task.
-
-Recommended first implementation slice after this scaffold:
-
-```text
-Complete PLAN.md task 1: Service persistence foundation.
-```
-
-Start with configuration loading, data/resource directory creation, and richer status reporting. Preserve the existing document create/read/search REST behavior and the Step 5 UI workflow.
+9. Commit the working-state slice with git; if the plan step is complete, archive it under `plans/v0.2/` and ask before starting the next task.
 
 Important constraints:
 
 - Leave the repository in a working state.
-- Do not use sist2 as canonical storage.
+- SQLite is canonical storage; Recoll is an optional derived sidecar, never canonical.
+- Keep code and dependencies MIT/Apache-2.0 compatible; GPL tools are external processes only.
 - Do not expose raw SQL or arbitrary filesystem operations to MCP.
 - Treat imported Markdown/resources as untrusted.
 - Keep code changes small and reviewable.
-- Review `CODEX_HANDOFF.md` before replacing the temporary SQLite adapter or adding external dependencies.
+- Review `CODING_CLIENT_HANDOFF.md` before replacing the temporary SQLite adapter or adding external dependencies.

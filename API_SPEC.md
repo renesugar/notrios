@@ -1,6 +1,6 @@
 # API Specification
 
-This document defines the REST and MCP contract for the companion service. `api/openapi.yaml` is the machine-readable REST skeleton that Codex should keep aligned with this document.
+This document defines the REST and MCP contract for the companion service. `api/openapi.yaml` is the machine-readable REST skeleton that agents should keep aligned with this document.
 
 
 ## Implementation status after MVP Task 5
@@ -35,7 +35,7 @@ The API must support many hundreds of thousands of notes/resources while remaini
 
 - Versioned under `/api/v1` except `/healthz` and `/mcp`.
 - JSON request/response bodies except resource content streams.
-- Stable opaque IDs and URI fields; do not expose sist2 row IDs as public identity.
+- Stable opaque IDs and URI fields; do not expose search-index row IDs (Recoll/Xapian docids) as public identity.
 - Optimistic concurrency for mutations through `If-Match` or request-body `base_revision_id`.
 - Cursor pagination for deep navigation; offset is allowed only for shallow UI pages.
 - Errors use a stable envelope.
@@ -77,7 +77,7 @@ GET    /api/v1/collections/{collection_id}
 PATCH  /api/v1/collections/{collection_id}
 ```
 
-Collections are logical namespaces. Capabilities declare whether a collection is writable, searchable, publishable, has resources, has graph data, or is backed by sist2.
+Collections are logical namespaces. Capabilities declare whether a collection is writable, searchable, publishable, has resources, has graph data, or is backed by a derived search sidecar (Recoll).
 
 ### Search
 
@@ -165,6 +165,29 @@ GET  /api/v1/jobs/{job_id}
 
 Quartz publish planning must be privacy-aware: it selects a subset, rewrites links, copies only reachable public resources, applies media policy, strips private metadata, and reports warnings before building.
 
+### Notebooks, tags, and search notebooks (planned — plan tasks R3/R5)
+
+```text
+GET    /api/v1/notebooks                      # nested tree; emoji icons; "All notes" first, "Trash" last
+POST   /api/v1/notebooks
+GET    /api/v1/notebooks/{notebook_id}
+PATCH  /api/v1/notebooks/{notebook_id}        # rename (case-insensitive uniqueness), move, emoji
+DELETE /api/v1/notebooks/{notebook_id}        # refuses builtin search notebooks
+GET    /api/v1/notebooks/{notebook_id}/notes  # cursor-paged
+GET    /api/v1/tags                           # with note counts
+POST   /api/v1/documents/{document_id}/tags/{tag}
+DELETE /api/v1/documents/{document_id}/tags/{tag}
+POST   /api/v1/documents/{document_id}/notebook   # move note to notebook
+POST   /api/v1/trash/{document_id}/restore        # undelete
+DELETE /api/v1/trash/{document_id}                # permanent delete, local-source notes only
+```
+
+Search notebooks are notebook rows with a `query` (see `NOTEBOOKS_AND_SEARCH_NOTEBOOKS.md`); deleting one never deletes notes. `notebook:` and other query operators are defined in `SEARCH_QUERY_LANGUAGE.md`; search endpoints accept the user query language and must support cursor-based incremental results so clients can lazily populate large views like "All notes".
+
+### Full-client goal
+
+The REST + MCP surface must be sufficient to build a full-featured third-party note-taking client (native C++/Qt, Go/Wails, Rust/Tauri). Reference surfaces reviewed for parity: joplin-mcp (note read/edit/append/prepend/string-replace/line-range/sections tools, notebook trees), obsidian-mcp-connector, and obsidian-local-rest-api. Gaps are closed in plan task R8.
+
 ## MCP MVP endpoint
 
 The current MVP mounts a dependency-free JSON-RPC MCP adapter at `/mcp`. It supports `initialize`, `tools/list`, and `tools/call`. This adapter should be treated as the working contract slice and may be replaced by the official MCP Go SDK later without changing tool semantics.
@@ -181,8 +204,22 @@ Implemented read-only tools:
 
 ## MCP tools planned later
 
+Read tools (plan tasks R5/R8):
+
+- `list_notebooks` / `get_notebook_tree` / `get_all_notebooks_tree`
+- `list_tags`
+- `get_note_line_range`
+- `search_in_note`
+- `get_note_sections`
+
+Write tools (scope-gated, revision preconditions):
+
 - `create_document`
 - `update_document`
+- `append_to_note` / `prepend_to_note`
+- `edit_note` (server-side string replacement; fails if not found or ambiguous without replace-all)
+- `move_note_to_notebook`
+- `delete_note` (moves to Trash)
 - `upload_resource`
 - `localize_remote_media`
 - `get_document_graph`
@@ -210,7 +247,7 @@ For large collections, do not list every document through `resources/list`; retu
 
 - No raw SQL MCP tool in normal profiles.
 - No arbitrary filesystem path tool.
-- No direct sist2 database mutation through public API.
+- No direct search-index (Recoll/Xapian) mutation through the public API.
 - Full document retrieval requires explicit IDs.
 - Write tools require scope and revision preconditions.
 - Remote media tools require media policy checks and SSRF protections.
@@ -229,6 +266,8 @@ Preview-rendered links must be routed by the web UI and backed by REST:
 Breaking changes require a new API version or a compatibility shim. Additive fields are allowed. Clients must ignore unknown fields. The OpenAPI file should be updated in the same change as any REST contract modification.
 
 ## CLI import surface
+
+The CLI is renamed `notesctl` → `notriosctl` in plan task R2; commands below reflect the current code. Twitter/X, ChatGPT, and Claude importers are added in plan tasks R9–R11.
 
 `notesctl import joplin-raw [--config path] [--db path] [--asset-store path] [--collection id] [--dry-run] <raw-export-dir>` imports a Joplin RAW Export Directory into the canonical SQLite/resource store and prints a JSON report.
 

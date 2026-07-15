@@ -6,7 +6,7 @@
 2. Use React/Vite for the built-in web UI.
 3. Use `md-editor-rt` initially for polished Markdown edit/preview, with a wrapper to allow migration to CodeMirror 6 later.
 4. Use SQLite + FTS5 as canonical managed-note storage/search.
-5. Use sist2 as a derived sidecar for OCR, thumbnails, archive traversal, and broad filesystem search.
+5. Use a derived search sidecar for extraction and broad filesystem search. (Originally sist2; superseded by Recoll in the v0.2 Notrios redesign — see `RECOLL_INTEGRATION.md`.)
 6. Use Joplin RAW Export Directory as the preferred Joplin bulk import source.
 7. Treat Obsidian vault export as the best default human-readable export format.
 8. Support Quartz publishing profiles for public subsets.

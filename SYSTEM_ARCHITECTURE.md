@@ -7,25 +7,26 @@ Build a local-first companion service for very large note and document collectio
 ## Core boundary
 
 ```text
-GUI / Web UI / CLI / MCP client
+Built-in Wails GUI / Web UI / CLI / MCP client / third-party clients (C++/Qt, Rust/Tauri, …)
         │
         ▼
-Companion service
+Notrios service (notriosd)
 ├── REST API
 ├── MCP adapter
 ├── Document service
+├── Notebook/tag service
 ├── Resource service
-├── Search service
+├── Search service (query-language adapter)
 ├── Link graph service
 ├── Import service
 ├── Publish service
 ├── Media policy service
-└── sist2 adapter
+└── Recoll adapter (optional sidecar)
         │
         ├── SQLite + FTS5 canonical store
         ├── content-addressed asset store
         ├── managed filesystem projection
-        └── derived sist2 indexes
+        └── derived Recoll/Xapian indexes
 ```
 
 ## Canonical storage
@@ -33,18 +34,19 @@ Companion service
 SQLite is the canonical application database. It stores:
 
 - collections;
+- notebooks (nested, emoji icons), tags, and search-notebook queries;
 - documents;
 - current document state;
 - saved revisions;
 - resources and blobs;
 - document-resource references;
 - document links and backlinks;
+- source provenance and conversation threads (author, author ID, thread ID, reply-to, source URL);
 - block anchors;
-- import provenance;
 - media policy decisions;
 - indexing outbox state.
 
-SQLite FTS5 provides immediate search over managed documents. sist2 is a derived sidecar for expensive extraction over arbitrary files, OCR, thumbnails, archive traversal, and broad filesystem search.
+SQLite FTS5 provides immediate search over managed documents. Recoll is an optional derived sidecar for front-matter field search, expensive extraction over arbitrary files, and broad filesystem search (see `RECOLL_INTEGRATION.md`); the service degrades gracefully to FTS5 when Recoll is absent.
 
 ## Document identity
 
@@ -65,21 +67,21 @@ Remote resources must pass through media policy, quarantine, hash checks, and pr
 
 ## Import model
 
-Importers should be separate commands but shared code. They should write through the companion document service, not directly into sist2. Joplin RAW Export Directory is the preferred Joplin bulk-import format. Obsidian vaults, Twitter/X archives, ChatGPT exports, and Claude exports are normalized into collections.
+Importers should be separate commands but shared code. They should write through the document service, not directly into any search index. Joplin RAW Export Directory is the preferred Joplin bulk-import format. Obsidian vaults, Twitter/X archives, ChatGPT exports, and Claude exports are normalized into notebooks/collections with source provenance rows (including thread recovery for Twitter/X and conversation exports).
 
-## Built-in UI
+## Built-in GUI
 
-The built-in UI is a React/Vite app. Initial editor choice is `md-editor-rt` for a polished split edit/preview experience. The UI must own link interception, resource upload/download, preview sanitization, and routing to document/resource URIs.
+The built-in GUI is a Go/Wails application (`notrios`) embedding the service; the React frontend hosts inside the Wails window. Modes: default (GUI + local service), `-no-gui` (headless service, for users running a different client), `-gui-only` (pure REST client, usable against a remote service and for testing the API the way a third-party client would). Layout, themes, and notebook sidebar behavior are specified in `UI_DESIGN.md`.
 
-A later migration to CodeMirror 6 + unified/remark/rehype is reserved for deeper editor-pane behavior and AST-aware features.
+The GUI owns link interception, resource upload/download, preview sanitization, and routing to document/resource URIs. A later migration to CodeMirror 6 + unified/remark/rehype is reserved for deeper editor-pane behavior and AST-aware features.
 
 ## REST and MCP
 
-REST and MCP are adapters over the same service layer. MCP must not expose raw SQL, arbitrary filesystem operations, or unrestricted writes. MCP tools should return snippets and resource links first, requiring explicit document/resource retrieval for larger content.
+REST and MCP are adapters over the same service layer, and together must be complete enough that a full-featured third-party note client can be built on them alone. MCP must not expose raw SQL, arbitrary filesystem operations, or unrestricted writes. MCP tools should return snippets and resource links first, requiring explicit document/resource retrieval for larger content.
 
-## sist2 integration
+## Recoll integration
 
-The companion service owns canonical notes and resources. It writes a managed filesystem projection for sist2 and queues changes through a durable indexing outbox. sist2 scans/indexes the projection in batches and provides derived metadata, OCR, thumbnails, and arbitrary-file search.
+The service owns canonical notes and resources. It writes a managed filesystem projection and queues changes through a durable indexing outbox. Recoll (user-installed, optional, external process — GPL licensing boundary in `RECOLL_INTEGRATION.md`) indexes the projection through a generated config and an enhanced from-scratch front-matter handler, providing field search, derived metadata, and arbitrary-file search. The query-language adapter (`SEARCH_QUERY_LANGUAGE.md`) translates user queries for FTS5 and Recoll.
 
 ## Publishing
 

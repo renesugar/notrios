@@ -1,19 +1,18 @@
-# Prompt: Start Codex From Handoff
+# Prompt: Start a Coding Agent From Handoff
 
-You are continuing the Notes Companion project from a repository snapshot.
+You are continuing the Notrios project from a repository snapshot. This prompt applies to any coding agent (Codex, Claude, aider, etc.).
 
 Read these files first:
 
 1. `AGENTS.md`
-2. `CODEX_HANDOFF.md`
+2. `CODING_CLIENT_HANDOFF.md`
 3. `README.md`
 4. `PLAN.md`
 5. `ROADMAP.md`
-6. `SCAFFOLD_STEP6_REPORT.md`
-7. `agent/PLAN_STATUS.md`
-8. `agent/ATTEMPT_LOG.jsonl`
-9. `agent/MODEL_LOG.jsonl`
-10. `agent/OPEN_QUESTIONS.md`
+6. `agent/PLAN_STATUS.md`
+7. `agent/ATTEMPT_LOG.jsonl`
+8. `agent/MODEL_LOG.jsonl`
+9. `agent/OPEN_QUESTIONS.md`
 
 Then do the following:
 
@@ -22,13 +21,14 @@ Then do the following:
 3. Append a `started` entry to `agent/ATTEMPT_LOG.jsonl`.
 4. Implement one narrow working-state slice only.
 5. Run validation.
-6. Update status files and archive the completed plan slice.
+6. Update status files, commit with git, and archive the completed plan slice.
 7. Stop and ask before starting the next task.
 
 Preserve these constraints:
 
 - SQLite is canonical managed-note storage.
-- sist2 is a derived sidecar.
+- Recoll is a derived, optional, external-process sidecar (GPL — never linked or vendored).
+- Project code stays MIT/Apache-2.0 compatible.
 - MCP must not expose raw SQL or arbitrary filesystem operations.
 - Imported Markdown/resources are untrusted.
 - Remote media must go through policy and quarantine.

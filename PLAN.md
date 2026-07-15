@@ -1,106 +1,158 @@
-# Plan: v0.2 Import, Resource, and Media Hardening
+# Plan: v0.2 — Notrios redesign foundation
 
-Status: draft, not started. The v0.1 MVP plan is complete and archived under `plans/v0.1/`. Ask the user before starting this plan.
+Status: active. Task R1 is in progress; later tasks require user confirmation between steps.
 
-This plan was generated from the `ROADMAP.md` v0.2 milestone after MVP Task 10 completed.
+This plan supersedes the earlier v0.2 draft ("Import, Resource, and Media Hardening", archived at `plans/v0.2/001-import-resource-media-hardening.md`). The media-hardening items remain on the roadmap; they are re-sequenced behind the redesign items below.
 
-## v0.1 completed baseline
+## Why the redesign
 
-The completed MVP provides:
+The project direction changed after the v0.1 MVP:
 
-- local `notesd` service with REST API and built-in UI serving;
-- SQLite canonical storage for collections, documents, revisions, resources, links, and FTS5 search;
-- content-addressed resource storage and safe local download endpoint;
-- Markdown editor/preview UI using `md-editor-rt`;
-- preview routing for `document://` and `resource://` links;
-- outgoing-link/backlink parsing and graph slice API;
-- read-only MCP MVP adapter;
-- Joplin RAW importer MVP;
-- Obsidian importer MVP;
-- release smoke, generated-dataset, and package verification scripts.
-
-See `MVP_RELEASE_REPORT.md`, `RELEASE_CHECKLIST.md`, and `plans/v0.1/MVP_COMPLETION_SUMMARY.md`.
-
-## v0.2 goal
-
-Harden imports, resources, and remote-media handling so imported/clipped notes can become durable local archives without turning the companion service into an uncontrolled downloader.
+1. The project is now named **Notrios** and will live at `https://github.com/renesugar/notrios`.
+2. The service is renamed `notesd` → `notriosd` (and `notesctl` → `notriosctl`).
+3. **Recoll replaces sist2** as the derived search/extraction sidecar (see `RECOLL_INTEGRATION.md`).
+4. The **built-in GUI is Go/Wails** and is part of the first released version, with `-no-gui` and `-gui-only` modes (see `UI_DESIGN.md`).
+5. The product model gains **notebooks (nested), tags, search notebooks** ("All notes", "Trash", "Help", user-defined query notebooks) — see `NOTEBOOKS_AND_SEARCH_NOTEBOOKS.md`.
+6. The schema must support **Joplin, Obsidian, Twitter/X, ChatGPT, and Claude** sources, including conversation threads (author, thread ID, reply-to, post URL).
+7. The MCP/REST API must be complete enough to build a **full third-party client** (C++/Qt, Go/Wails, Rust/Tauri) — reference surfaces: joplin-mcp, obsidian-mcp-connector, obsidian-local-rest-api.
+8. A **query-language adapter** (`notebook:`, `tag:`, `author:`, `since:`, `until:`, …) fronts both FTS5 and Recoll (see `SEARCH_QUERY_LANGUAGE.md`).
+9. Project code must be releasable under **MIT or Apache 2.0**; GPL components (Recoll/Xapian) stay external sidecar processes and are never linked or vendored.
+10. Documentation becomes a **GitHub Pages site with PageFind search**, and the same content seeds the built-in read-only "Help" notebook (see `DOCS_SITE.md`).
 
 ## Working-state rule
 
-Every task must leave the project in a working state. Update `agent/PLAN_STATUS.md`, append to `agent/ATTEMPT_LOG.jsonl`, append to `agent/MODEL_LOG.jsonl`, and archive completed task slices under `plans/v0.2/`.
+Every task must leave the project in a working state. Update `agent/PLAN_STATUS.md`, append to `agent/ATTEMPT_LOG.jsonl` and `agent/MODEL_LOG.jsonl`, commit with git, and archive completed slices under `plans/v0.2/`. Ask the user before starting the next task.
 
-## Incremental tasks
+## Tasks
 
-### 1. Configuration and policy schema
+### R1. Documentation redesign and rebrand pass (docs only)
 
-- Add typed remote-media/resource policy config.
-- Parse domain allow/block/review lists.
-- Add policy status to `/api/v1/status`.
-- Add unit tests for policy parsing.
+- Rename the project to Notrios in all living design docs; historical reports (`SCAFFOLD_STEP*`, `MVP_TASK*`, `plans/`) are left as records.
+- Rename `CODEX_HANDOFF.md` → `CODING_CLIENT_HANDOFF.md`; generalize it to all coding agents (codex, claude, aider, etc.).
+- Add `CLAUDE.md` pointing to `AGENTS.md`; generalize `AGENTS.md`.
+- Replace sist2 with Recoll in living design docs; add `RECOLL_INTEGRATION.md`.
+- Add `NOTEBOOKS_AND_SEARCH_NOTEBOOKS.md`, `SEARCH_QUERY_LANGUAGE.md`, `DOCS_SITE.md`.
+- Update `ROADMAP.md` (Wails GUI moves into the first released version; Recoll milestone replaces sist2 milestone).
+- Update `README.md`, `SYSTEM_ARCHITECTURE.md`, `API_SPEC.md`, `DATABASE_SCHEMA.md`, `UI_DESIGN.md`, `FEATURE_MATRIX.md`, `IMPORT_EXPORT_POLICY.md`, `CONTEXT_MAP.md`, `PROMPT.md`, prompts/skills, and `scripts/check_required_files.py`.
+- Record license direction in `LICENSE_PENDING.md` (MIT vs Apache-2.0 is a user decision; both are acceptable targets and all dependencies must be compatible).
 
-Working state: service starts with policy config and reports policy state.
+Working state: all validation scripts pass; docs consistently describe the Notrios design; code still uses old names (renamed in R2).
 
-### 2. Remote-media scan endpoint
+### R2. Code rename and license
 
-- Implement Markdown scan for remote image/media URLs.
-- Return per-URL policy decisions without downloading bytes.
-- Surface remote-media warnings in the UI.
+- Go module path `example.com/notes-companion` → `github.com/renesugar/notrios`.
+- `cmd/notesd` → `cmd/notriosd`; `cmd/notesctl` → `cmd/notriosctl`.
+- Rename `sist2`-derived config keys/fields (`sist2_index_dir` → `search_index_dir`, capability flags, status output, `web/src/api.ts` types) to search-sidecar-neutral names.
+- Replace `LICENSE_PENDING.md` with the license the user selects (MIT or Apache-2.0) and add license headers policy to `CODING_STANDARDS.md`.
+- Update scripts, Makefile/Taskfile, CI, packaging, and web references.
 
-Working state: users can inspect remote media in a note before localization.
+Working state: `go test ./...`, scaffold checks, web typecheck/build, and smoke scripts pass under the new names.
 
-### 3. Quarantine download pipeline
+### R3. Schema v5 — notebooks, tags, and search notebooks
 
-- Download allowed/review media into temporary quarantine.
-- Enforce timeout, redirect, scheme, domain, private-network, MIME, and size policies.
-- Compute exact hashes before admission.
+- `notebooks` table: nested (parent ID), stable IDs, optional emoji icon, position/sort metadata.
+- Notebook names case-insensitively unique among siblings; enforce at store layer (`NOCASE` unique index).
+- `tags` and `note_tags` tables (with counts derivable per tag).
+- Document→notebook membership (every managed note lives in exactly one notebook; default "Notes" notebook bootstrap).
+- `search_notebooks` table: name, emoji, query string, `builtin` flag, fixed sort anchors. Bootstrap builtin rows: "All notes" (first, undeletable), "Trash" (last, undeletable), "Help" (undeletable, read-only content).
+- Trash semantics: soft-deleted notes appear only via the Trash search notebook and are excluded from all other queries; undelete restores visibility; permanent delete allowed only for locally-stored notes.
+- Migration + store/API tests.
 
-Working state: remote media can be fetched safely without entering the final asset store until checks pass.
+Working state: schema migrates from v4; existing CRUD/search/import tests pass with default notebook membership.
 
-### 4. Localize remote images
+### R4. Schema v5 — source provenance and threads
 
-- Store accepted media as content-addressed resources.
-- Rewrite Markdown image links to `resource://` URIs.
-- Preserve original URL/provenance metadata.
-- Support dry-run and optimistic concurrency.
+- Source-object tables recording `source_system` (joplin, obsidian, twitter, chatgpt, claude, local), external IDs, author display name, canonical author ID, `thread_id`, `reply_to`, source URL, and timestamps — sufficient to recover Twitter/X conversation threads and ChatGPT/Claude conversations.
+- Notes from external sources marked deleted are excluded from queries but never permanently deleted (only local notes can be purged from Trash).
+- Backfill provenance from the frontmatter the Joplin/Obsidian importers already write.
 
-Working state: a note with remote images can be converted to local resources.
+Working state: importers record provenance rows; thread queries work in store tests.
 
-### 5. Resource deduplication and retention
+### R5. Notebooks/tags/trash REST + MCP API
 
-- Add resource/blob reference reports.
-- Add safe garbage-collection dry run.
-- Add retention policy for deleted/unreferenced resources.
+- REST: notebook CRUD (create/rename/move/delete, emoji, nested tree), tag list with counts, note↔notebook move, note↔tag assignment, trash list/undelete/purge, search-notebook CRUD with builtin protection.
+- MCP: read tools (`list_notebooks`, `get_notebook_tree`, `list_tags`), then scope-gated write tools.
+- `notebook:"name"` and `tag:"name"` filters in search (case-insensitive notebook match).
+- OpenAPI + `api/mcp-tools.md` updates.
 
-Working state: users can inspect duplicate/unreferenced resources without deleting data unexpectedly.
+Working state: a client can reproduce the sidebar (notebooks tree + tag counts) and trash flows purely via REST.
 
-### 6. Joplin RAW importer hardening
+### R6. Query-language adapter
 
-- Improve notebook/tag preservation.
-- Add larger fixture coverage.
-- Add import resume/checkpoint report.
-- Add dry-run diff summary.
+- Parser for `notebook:`, `tag:`, `author:`, `authorid:`, `title:`, `since:`, `until:`, quoted phrases, implicit AND.
+- ISO 8601 timestamps normalized to UTC; date-only `until:` means end-of-day; document time-only semantics.
+- Compile to FTS5 + SQL filters now; keep a Recoll compilation target for R7 (`publishedts:lower..upper` ranges).
+- Incremental/cursor search results for scrolling UIs (extend existing cursor rules in `API_SPEC.md`).
 
-Working state: importer remains idempotent and gives useful large-import status.
+Working state: search notebooks (including "All notes" and user query notebooks like `tag:todo`) execute through the adapter.
 
-### 7. Obsidian importer hardening
+### R7. Recoll integration (replaces sist2)
 
-- Improve aliases, frontmatter, embeds, block references, and path handling.
-- Add import resume/checkpoint report.
-- Add dry-run diff summary.
+- Managed filesystem projection + outbox reuse (as designed for sist2).
+- Generate Recoll config (`fields` file with `tag`, `authorid`, `publishedts`, `noteid`, etc.; `underscoreasletter` guidance).
+- Write a **from-scratch** Markdown front-matter input handler (full YAML/TOML) emitting the field mapping in `RECOLL_INTEGRATION.md`; do not derive from Recoll's GPL `rclmd.py`.
+- Adapter invokes `recollindex`/`recollq` (or the Recoll Python API in a helper subprocess) — external process only, keeping MIT/Apache licensing clean.
+- Merge Recoll hits with FTS5 hits behind the existing search API; Recoll absence degrades gracefully to FTS5.
 
-Working state: importer remains idempotent and graph-preserving for richer vaults.
+Working state: with Recoll installed, field queries (`tag:`, `author:`, `publishedts` ranges) work over the projection; without it, FTS5 search still works.
 
-### 8. Additional importers planning slice
+### R8. Full-client MCP/REST surface
 
-- Create implementation plans for Twitter/X, ChatGPT, and Claude importers.
-- Add fixture format descriptions.
-- Do not implement all three unless explicitly approved.
+- Note ops: append/prepend, server-side string replace (extend existing PATCH), line-range read, in-note search, sections/outline (parity with joplin-mcp tool list).
+- Notebook trees with notes, scoped trees, all-notes tree.
+- MCP write tools gated by scopes and revision preconditions.
+- Verify a third-party client (native C++/Qt, Go/Wails, Rust/Tauri) could implement the full GUI feature list from `UI_DESIGN.md` using only this API; document gaps and close them.
 
-Working state: next importers are specified enough for small implementation tasks.
+### R9. Twitter/X archive importer
+
+- Parse Twitter/X archive exports (reference: doggy8088/x-archive-parser); recover conversation threads (author, author ID, thread ID, reply-to, post URLs), media resources, and a "Twitter" notebook.
+- Derive JSON schemas from sample data with genson (`uvx genson`) into `testdata/schemas/`; synthetic fixtures only — no private data in the repo.
+
+### R10. ChatGPT conversations importer
+
+- Parse ChatGPT exports (references: temnoon/openai_export_parser, slyubarskiy/chatgpt-conversation-extractor); one note per conversation or per message with thread provenance; synthetic fixtures.
+
+### R11. Claude conversations importer
+
+- Parse Claude export JSON with the same provenance model; synthetic fixtures.
+
+### R12. Query-scoped export and import-with-dry-run
+
+- Export query results (or whole notebooks) preserving notebook structure; exported external-source notes become plain notes on re-import.
+- Import dry run reports notebook-name conflicts and writes an import configuration file for rename-on-import; import validates that config against existing source-bound notebooks before writing.
+- Support Joplin RAW, Obsidian vault, and the native archive format as import sources for notebook creation/population.
+
+### R13. Wails GUI shell
+
+- New `notrios` executable: Go/Wails GUI embedding the service. Modes: default (GUI + local service), `-no-gui` (headless service, same behavior as `notriosd`), `-gui-only` (GUI as pure REST client, optionally against a remote service URL).
+- Layout per `UI_DESIGN.md`: menu bar (File/Edit/View/Help); left sidebar with notebooks tree ("All notes" first, "Trash" last, emoji icons, nested notebooks) and tag list with counts below; search box + incremental result list; Markdown editor pane; Markdown preview pane.
+- Startup view: "All notes" search notebook with cursor-based incremental loading.
+
+### R14. GUI themes
+
+- Light/dark toggle on the main window.
+- User-defined custom themes, selectable as the active light and dark theme.
+
+### R15. Help notebook and documentation site
+
+- Markdown user/reference docs for the service and built-in client under `docs/`.
+- GitHub Pages site built from `docs/` with PageFind search.
+- Seed the protected read-only "Help" notebook from the same content for offline use; `notebook:help` searches work.
+
+### R16. GitHub release preparation
+
+- Verify licenses of all dependencies are MIT/Apache-2.0 compatible.
+- CI, branch protection notes, and the push sequence:
+
+```bash
+git remote add origin https://github.com/renesugar/notrios.git
+git branch -M main
+git push -u origin main
+```
 
 ## Validation
 
-Use the v0.1 release-hardening validation set until a task adds more specific checks:
+Until a task adds more specific checks:
 
 ```bash
 go test ./...
@@ -113,4 +165,4 @@ bash scripts/run_performance_smoke.sh
 
 ## Scope control
 
-Remote-media localization, content-hash policy, and importer hardening are in scope for v0.2. sist2, Quartz publishing, sync, advanced graph UX, and CodeMirror 6 migration remain later roadmap items unless the user explicitly changes priorities.
+Remote-media localization, quarantine, perceptual hashes, resource GC (the superseded v0.2 draft), Quartz publishing, sync, and CodeMirror 6 migration remain roadmap items after this plan unless the user changes priorities.

@@ -19,7 +19,9 @@ This matrix keeps the long conversation compressed into implementation-sized fea
 | Resource reference counting | MVP | companion service | Never delete shared resources accidentally. |
 | Document revisions and trash | MVP | companion service | App-level undo/restore; Fossil/Git are optional checkpoint layers. |
 | Cursor-ready search API | MVP | companion service | Cursor pagination required for large result sets; shallow offset may exist for UI. |
-| sist2 sidecar | Soon | adapter | Derived OCR, thumbnails, archive traversal, arbitrary-file search. |
+| Recoll sidecar (replaces sist2) | Soon | adapter | Optional external process; front-matter field search, extraction, arbitrary-file search. See `RECOLL_INTEGRATION.md`. |
+| Notebooks/tags/search notebooks | Soon | companion service | Nested notebooks, emoji icons, tag counts, "All notes"/"Trash"/"Help" query notebooks. See `NOTEBOOKS_AND_SEARCH_NOTEBOOKS.md`. |
+| Query-language adapter | Soon | search service | `notebook:`/`tag:`/`author:`/`since:`/`until:`; compiles to FTS5 and Recoll. |
 | Bleve | Optional | adapter | Add only for fuzzy/faceted/advanced search needs not met by FTS5. |
 | LadybugDB | Optional | derived graph backend | Consider for advanced traversal/analytics; not primary storage. |
 
@@ -27,7 +29,7 @@ This matrix keeps the long conversation compressed into implementation-sized fea
 
 | Feature | Status | Primary owner | Notes |
 |---|---:|---|---|
-| Stable document/resource URIs | MVP | companion service | `document://...` and `resource://...`; do not expose sist2 IDs. |
+| Stable document/resource URIs | MVP | companion service | `document://...` and `resource://...`; do not expose search-index IDs. |
 | Markdown link parsing | MVP | link parser | Standard Markdown links, app URIs, Joplin IDs, Obsidian Wikilinks, embeds. |
 | Backlinks/outgoing links | MVP | graph service | Store source positions and link context when possible. |
 | Resource manifest | MVP | resource service | List embedded/attached resources for a note. |
@@ -42,9 +44,9 @@ This matrix keeps the long conversation compressed into implementation-sized fea
 |---|---:|---|---|
 | Joplin RAW import | MVP | importer | Preferred over JEX for large imports; preserve original IDs. |
 | Obsidian vault import | MVP | importer | Markdown + frontmatter + assets + Wikilinks/embeds. |
-| Twitter/X import | Soon | importer | Preserve tweet IDs, media, replies, quote/repost relationships. |
-| ChatGPT export import | Soon | importer | Preserve conversation/message roles and attachments. |
-| Claude JSON import | Soon | importer | Preserve conversation/message roles and attachments. |
+| Twitter/X import | Soon (active plan) | importer | Preserve tweet IDs, media, replies, quote/repost relationships. |
+| ChatGPT export import | Soon (active plan) | importer | Preserve conversation/message roles and attachments. |
+| Claude JSON import | Soon (active plan) | importer | Preserve conversation/message roles and attachments. |
 | Portable Markdown vault export | Soon | exporter | User-facing default export with stable frontmatter IDs. |
 | Lossless application archive | Soon | exporter | Backup/restore with metadata, revisions, resources, checksums. |
 | Joplin RAW export | Later | exporter | Only if exact Joplin round-trip becomes a requirement. |
@@ -53,14 +55,15 @@ This matrix keeps the long conversation compressed into implementation-sized fea
 
 | Feature | Status | Primary owner | Notes |
 |---|---:|---|---|
-| React + Vite built-in UI | MVP | web UI | Basic browser client embedded in the service. |
+| React + Vite built-in UI | MVP | web UI | Basic browser client embedded in the service; becomes the Wails webview frontend. |
+| Go/Wails built-in GUI (`-no-gui`/`-gui-only`, themes) | Soon (active plan) | GUI | Part of the first released version. See `UI_DESIGN.md`. |
 | `md-editor-rt` editor/preview | MVP | web UI | Initial polished editor; wrap behind an adapter. |
 | Preview link interception | MVP | web UI | `document://` opens note; `resource://` opens/downloads resource. |
 | Resource upload/paste | MVP | web UI + REST | Images/PDFs become local resources, not inline base64. |
 | Preview sanitization | MVP | web UI | Sanitized Markdown/HTML; allow app routes/URIs carefully. |
 | LeafWiki-style layout | Soon | web UI | Folder/tree, editor/preview, search, backlinks, resources, revisions. |
 | CodeMirror 6 + unified migration | Later | web UI | Needed for deep editor-pane link widgets and AST/source-position behavior. |
-| Native C++/Qt client | Later | separate client | Uses stable REST API; not in companion-service MVP. |
+| Third-party native clients (C++/Qt, Rust/Tauri, …) | Later | separate client | Use the stable REST/MCP API; the API must be sufficient for a full client. |
 
 ## Remote media, safety, and dedupe
 

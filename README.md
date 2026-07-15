@@ -1,18 +1,20 @@
-# Notes Companion
+# Notrios
 
-Notes Companion is a planned local-first note-taking, search, import, and publishing system for very large Markdown and document collections.
-It combines a Go REST/MCP companion service, a built-in React web UI, SQLite/FTS5-backed canonical storage, content-addressed resources, optional sist2-derived extraction, and future native clients.
+Notrios (formerly "Notes Companion") is a local-first note-taking, search, import, and publishing system for very large Markdown and document collections.
+It combines a Go REST/MCP service (`notriosd`), a built-in GUI, SQLite/FTS5-backed canonical storage, content-addressed resources, optional Recoll-derived search/extraction, and support for third-party native clients (C++/Qt, Go/Wails, Rust/Tauri) over the same API.
 
-This repository is an initial Codex-ready scaffold. It is intentionally small but coherent: the service and CLI compile, the baseline documentation exists, and the work plan is structured so an agent can resume safely after usage limits or model changes.
+The v0.1 MVP is complete; the project is now in the **Notrios redesign** phase — see [`PLAN.md`](PLAN.md). The repository is structured so a coding agent can resume safely after usage limits or model changes.
 
-## Initial technology choices
+## Technology choices
 
-- **Service:** Go, standard library first, SQLite/FTS5 planned for canonical storage.
-- **MCP:** read-only JSON-RPC MCP MVP adapter is mounted at `/mcp`; replace with the official Go SDK once dependency policy/tooling is settled.
-- **Built-in UI:** React + Vite, initially using `md-editor-rt` for Markdown edit/preview.
-- **Search:** SQLite FTS5 for managed notes; sist2 as a derived sidecar for OCR, thumbnails, broad filesystem extraction, and arbitrary files.
+- **Service:** Go, standard library first, SQLite/FTS5 canonical storage. Binary target `notriosd` (current code still builds `notesd` until plan task R2 lands).
+- **MCP:** read-only JSON-RPC MCP MVP adapter is mounted at `/mcp`; replace with the official Go SDK once dependency policy/tooling is settled. The MCP/REST surface is being expanded so a full note-taking client can be built on it alone.
+- **Built-in GUI:** Go + Wails (planned, part of the first released version) with `-no-gui` and `-gui-only` modes; the current React + Vite web UI (`md-editor-rt`) is the interim client and frontend basis. See `UI_DESIGN.md`.
+- **Search:** SQLite FTS5 for managed notes; Recoll as an optional derived sidecar for field/front-matter search, OCR-style extraction, and arbitrary files (see `RECOLL_INTEGRATION.md` and `SEARCH_QUERY_LANGUAGE.md`).
+- **Data model:** nested notebooks with emoji icons, tags, and query-backed "search notebooks" ("All notes", "Trash", "Help") — see `NOTEBOOKS_AND_SEARCH_NOTEBOOKS.md`.
+- **Import sources:** Joplin RAW, Obsidian vaults, Twitter/X archives (thread-preserving), ChatGPT exports, Claude exports.
 - **Resource store:** content-addressed assets with exact hashes and later perceptual hashes.
-- **Publishing:** Quartz-compatible curated subset publishing planned.
+- **Publishing/docs:** Quartz-compatible curated subset publishing planned; project documentation ships as a GitHub Pages site with PageFind search (`DOCS_SITE.md`).
 
 ## Quick start
 
@@ -69,31 +71,38 @@ npm run dev
 
 `notesd` now loads runtime configuration from `-config <path>`. When no path is supplied, it loads `config/config.example.yaml` from a source checkout if that file exists; otherwise it uses compiled local-development defaults. The `-addr` and `-db` flags remain available as explicit overrides.
 
-On startup, the service creates the configured data directory, SQLite database parent directory, asset store, projection directory, and sist2 index directory. `/api/v1/status` reports the active storage roots, database state, schema version, capability flags, and search limits. The current schema version is 4 after the Markdown link parser and graph task; the Joplin RAW and Obsidian importers reuse this schema.
+On startup, the service creates the configured data directory, SQLite database parent directory, asset store, projection directory, and search-sidecar index directory (named `sist2_index_dir` in the current config; renamed in plan task R2 as part of the Recoll switch). `/api/v1/status` reports the active storage roots, database state, schema version, capability flags, and search limits. The current schema version is 4 after the Markdown link parser and graph task; the Joplin RAW and Obsidian importers reuse this schema.
 
 ## Project status
 
-- Current implementation step: **MVP Task 9 — Obsidian importer MVP completed**.
-- Active implementation plan: [`PLAN.md`](PLAN.md).
+- v0.1 MVP: complete (see `MVP_RELEASE_REPORT.md`).
+- Current phase: **v0.2 Notrios redesign foundation** — active plan in [`PLAN.md`](PLAN.md); task R1 (documentation redesign) done.
 - Scaffold creation plan: [`SCAFFOLD_CREATION_PLAN.md`](SCAFFOLD_CREATION_PLAN.md).
 - Agent progress/attempt tracking: [`agent/PLAN_STATUS.md`](agent/PLAN_STATUS.md), [`agent/ATTEMPT_LOG.jsonl`](agent/ATTEMPT_LOG.jsonl), and [`agent/MODEL_LOG.jsonl`](agent/MODEL_LOG.jsonl).
 
-## Repository setup expectation
+## Repository setup
 
-Development should happen on a development branch until the MVP is ready:
+The repository is a local git repo: `main` holds the pre-redesign baseline; development happens on `develop`. The eventual public home is `https://github.com/renesugar/notrios`:
 
 ```bash
-git init
-git checkout -b develop
-git add .
-git commit -m "Initial Notes Companion scaffold"
+git remote add origin https://github.com/renesugar/notrios.git
+git branch -M main
+git push -u origin main
 ```
 
-When pushed to Gitea/GitHub, configure branch protection so `main` accepts only reviewed merges from `develop` or release branches.
+Configure branch protection so `main` accepts only reviewed merges from `develop` or release branches.
 
 ## License
 
-No license has been selected yet. See [`LICENSE_PENDING.md`](LICENSE_PENDING.md).
+The final license will be MIT or Apache 2.0 (user decision pending — see [`LICENSE_PENDING.md`](LICENSE_PENDING.md)). All code and dependencies must remain compatible with both candidates; GPL tools (Recoll, Xapian) are only ever invoked as external user-installed processes.
+
+## Notrios redesign design documents
+
+- `NOTEBOOKS_AND_SEARCH_NOTEBOOKS.md` — notebooks, tags, search notebooks, Trash/Help semantics.
+- `SEARCH_QUERY_LANGUAGE.md` — user query language and backend translation rules.
+- `RECOLL_INTEGRATION.md` — Recoll sidecar design (replaces sist2) and licensing boundary.
+- `DOCS_SITE.md` — GitHub Pages documentation site with PageFind and the Help notebook.
+- `CODING_CLIENT_HANDOFF.md` — agent handoff (formerly `CODEX_HANDOFF.md`).
 
 ## Design documents added during scaffold review
 

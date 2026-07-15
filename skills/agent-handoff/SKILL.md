@@ -1,6 +1,6 @@
-# Codex Handoff Skill
+# Agent Handoff Skill
 
-Use this skill when preparing the repository for Codex or another coding agent to continue work from files alone.
+Use this skill when preparing the repository for any coding agent (Codex, Claude, aider, etc.) to continue work from files alone.
 
 ## Inputs
 
@@ -14,14 +14,14 @@ Use this skill when preparing the repository for Codex or another coding agent t
 
 ## Steps
 
-1. Summarize the current working state in a root handoff document.
+1. Summarize the current working state in `CODING_CLIENT_HANDOFF.md`.
 2. Identify the next incomplete task and a narrow first implementation slice.
 3. Record validation commands and the last known passing validation state.
 4. List environment limitations that may have affected implementation choices.
 5. List early cleanup tasks for a less restricted environment.
 6. Update `PROMPT.md`, `AGENTS.md`, and `agent/PLAN_STATUS.md`.
 7. Archive the completed plan slice under `plans/v<major>.<minor>/`.
-8. Produce a ZIP snapshot.
+8. Commit with git (and produce a ZIP snapshot if the user asks for one).
 
 ## Working-state rules
 

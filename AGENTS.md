@@ -1,6 +1,6 @@
 # AGENTS.md
 
-This file provides project instructions for Codex and other coding agents. AGENTS.md is intended as a predictable place for agent guidance, similar to a README for agents.
+This file provides project instructions for all coding agents (Codex, Claude, aider, swival.dev, etc.). AGENTS.md is intended as a predictable place for agent guidance, similar to a README for agents. `CLAUDE.md` points here.
 
 ## Prime directive
 
@@ -8,10 +8,10 @@ Leave the repository in a working state after every task. If interrupted, the ne
 
 ## Before coding
 
-Start with the handoff: `CODEX_HANDOFF.md` is the current compressed state of the scaffold and the recommended next task.
+Start with the handoff: `CODING_CLIENT_HANDOFF.md` is the current compressed state of the project and the recommended next task.
 
 
-1. Read `CODEX_HANDOFF.md`, `README.md`, `PLAN.md`, `ROADMAP.md`, `SYSTEM_ARCHITECTURE.md`, `API_SPEC.md`, `DATABASE_SCHEMA.md`, `CODING_STANDARDS.md`, `TESTING_POLICY.md`, `ENVIRONMENT_SETUP.md`, and `CONTEXT_MAP.md`.
+1. Read `CODING_CLIENT_HANDOFF.md`, `README.md`, `PLAN.md`, `ROADMAP.md`, `SYSTEM_ARCHITECTURE.md`, `API_SPEC.md`, `DATABASE_SCHEMA.md`, `NOTEBOOKS_AND_SEARCH_NOTEBOOKS.md`, `SEARCH_QUERY_LANGUAGE.md`, `RECOLL_INTEGRATION.md`, `CODING_STANDARDS.md`, `TESTING_POLICY.md`, `ENVIRONMENT_SETUP.md`, and `CONTEXT_MAP.md`.
 2. Read `agent/PLAN_STATUS.md`, `agent/ATTEMPT_LOG.jsonl`, and `agent/MODEL_LOG.jsonl`.
 3. Identify the next incomplete task in `PLAN.md`.
 4. If the task is ambiguous, write the question into `agent/OPEN_QUESTIONS.md` and ask the user before implementing.
@@ -23,18 +23,19 @@ Start with the handoff: `CODEX_HANDOFF.md` is the current compressed state of th
 - Run the relevant validation commands.
 - Do not rewrite large areas without preserving working behavior.
 - Do not introduce raw SQL or unrestricted filesystem access in MCP tools.
-- Do not make sist2 the canonical document store; sist2 is a derived extraction/search sidecar.
+- Do not make Recoll (or any search sidecar) the canonical document store; Recoll is a derived, optional extraction/search sidecar (see `RECOLL_INTEGRATION.md`).
+- Keep all project code and dependencies compatible with an MIT or Apache-2.0 license. GPL tools such as Recoll/Xapian may only be invoked as external processes — never linked, vendored, or redistributed, and never used as a source to derive code from.
 - Do not put secrets, medical data, private user exports, or proprietary datasets in the repository.
 
 
 ## Handoff and environment limitations
 
-The scaffold was created in a restricted container. Before large implementation work, read `CODEX_HANDOFF.md` and review the documented limitations. In particular:
+The scaffold was created in a restricted container. Before large implementation work, read `CODING_CLIENT_HANDOFF.md` and review the documented limitations. In particular:
 
 - the current SQLite adapter is a small local cgo wrapper chosen to avoid external Go module downloads during scaffold creation;
-- the Go module path is still `example.com/notes-companion`;
-- no final license has been selected;
-- sist2, Quartz, MCP SDK, and browser automation were documented but not fully integrated;
+- the Go module path is still `example.com/notes-companion` (target: `github.com/renesugar/notrios`, plan task R2);
+- no final license has been selected (MIT or Apache-2.0; user decision);
+- Recoll, Quartz, MCP SDK, and browser automation are documented but not integrated;
 - real private import datasets were intentionally not included;
 - UI validation has been build/typecheck level only, not Playwright-level browser testing.
 

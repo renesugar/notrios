@@ -23,3 +23,7 @@ coverage.out
 # Private imports
 private-testdata/
 exports/
+
+# Claude Code local session settings
+.claude/settings.local.json
+.claude/*.tmp.*

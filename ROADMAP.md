@@ -19,30 +19,34 @@ Goal: usable local note-taking/search app with REST/MCP and a built-in UI.
 - Preview links open internal notes and downloadable resources.
 - Test fixtures and CI.
 
-## v0.2 — Import, resource, and media hardening
+## v0.2 — Notrios redesign foundation (active; see `PLAN.md`)
 
-- Robust Joplin RAW importer with tags, notebooks, note-tag joins, resources, and original IDs.
-- Obsidian importer with frontmatter, Wikilinks, embeds, headings, aliases, and block references.
-- Twitter/X archive importer.
-- ChatGPT conversations importer.
-- Claude conversations importer.
-- Remote media localization.
-- Import-time and UI-triggered remote-media localization use the same policy engine.
+The built-in Go/Wails GUI is part of the first released version, so it lives here rather than in a later milestone.
+
+- Rebrand to Notrios: `notesd` → `notriosd`, `notesctl` → `notriosctl`, module path `github.com/renesugar/notrios`, MIT/Apache-2.0 license selection.
+- Schema: nested notebooks with emoji icons, tags with counts, query-backed search notebooks ("All notes" first / "Trash" last / read-only "Help", user query notebooks), case-insensitive notebook names, trash/undelete/purge semantics.
+- Schema: source provenance for Joplin, Obsidian, Twitter/X, ChatGPT, and Claude, including conversation threads (author, author ID, thread ID, reply-to, post URL).
+- Query-language adapter: `notebook:`, `tag:`, `author:`, `authorid:`, `title:`, `since:`, `until:`, phrases (see `SEARCH_QUERY_LANGUAGE.md`).
+- Recoll integration replacing sist2: projection + outbox, generated Recoll config, from-scratch front-matter handler, external-process adapter (see `RECOLL_INTEGRATION.md`).
+- MCP/REST expansion sufficient for full third-party clients (C++/Qt, Go/Wails, Rust/Tauri).
+- Twitter/X, ChatGPT, and Claude importers.
+- Query-scoped export preserving notebook structure; import dry run with rename-on-import configuration file.
+- Go/Wails built-in GUI: menu bar, notebooks/tags sidebar, incremental search results, Markdown editor + preview, nested notebooks, light/dark toggle with user-defined custom themes, `-no-gui` and `-gui-only` modes.
+- Documentation site: `docs/` published to GitHub Pages with PageFind search; Help notebook seeded from the same content.
+- GitHub release preparation for `github.com/renesugar/notrios`.
+
+## v0.3 — Import, resource, and media hardening
+
+(Deferred former v0.2 draft; see `plans/v0.2/001-import-resource-media-hardening.md`.)
+
+- Joplin RAW and Obsidian importer hardening (larger fixtures, resume/checkpoint, dry-run diffs).
+- Remote media localization; import-time and UI-triggered localization use the same policy engine.
 - Domain stop list and redirect-domain checks.
 - Quarantine store.
 - Exact-hash deduplication.
 - Local perceptual-hash database hooks for moderation and near-duplicate review.
 - Resource garbage collection and retention policy.
-
-## v0.3 — sist2 integration
-
-- Managed filesystem projection.
-- Durable indexing outbox.
-- sist2 CLI or admin adapter.
-- Batched incremental scans using list files.
-- Periodic reconciliation.
-- Search result merging between managed-note FTS5 and sist2-derived arbitrary-file search.
-- OCR/thumbnail/extracted-metadata status in UI.
+- Recoll hardening: batched incremental scans, periodic reconciliation, FTS5/Recoll search result merging, extraction status in UI.
 
 ## v0.4 — Publishing and export
 
@@ -98,7 +102,7 @@ Goal: usable local note-taking/search app with REST/MCP and a built-in UI.
 
 ## Future candidates
 
-- Native C++/Qt client.
+- Native third-party clients over the public REST/MCP API (C++/Qt, Rust/Tauri, additional Go/Wails clients).
 - LadybugDB derived graph backend for advanced graph traversal and analytics.
 - Semantic/vector search.
 - More importers.
@@ -106,11 +110,11 @@ Goal: usable local note-taking/search app with REST/MCP and a built-in UI.
 - Enterprise policy administration.
 
 
-## Codex handoff status
+## Agent handoff status
 
-The scaffold handoff is complete as of `SCAFFOLD_STEP6_REPORT.md`. Future roadmap planning should be driven from `ROADMAP.md`, but each active implementation cycle should create a small `PLAN.md` slice and archive it under `plans/` when complete.
+The scaffold handoff is complete; see `CODING_CLIENT_HANDOFF.md`. Future roadmap planning should be driven from `ROADMAP.md`, but each active implementation cycle should create a small `PLAN.md` slice and archive it under `plans/` when complete.
 
 
 ## v0.1 completion note
 
-The v0.1 MVP milestone has been implemented and release-hardened. Future active work should start from the v0.2 draft in `PLAN.md` only after user approval.
+The v0.1 MVP milestone has been implemented and release-hardened. Active work follows the v0.2 Notrios redesign plan in `PLAN.md`; the former v0.2 media-hardening draft moved to the v0.3 milestone above.
