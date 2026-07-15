@@ -293,7 +293,9 @@ The CLI binary is `notriosctl` (renamed from `notesctl` in plan task R2). Twitte
 
 `notriosctl import joplin-raw [--config path] [--db path] [--asset-store path] [--collection id] [--dry-run] <raw-export-dir>` imports a Joplin RAW Export Directory into the canonical SQLite/resource store and prints a JSON report.
 
-`notriosctl import obsidian [--config path] [--db path] [--asset-store path] [--collection id] [--dry-run] <vault-dir>` imports an Obsidian-style Markdown vault. It preserves Markdown/frontmatter, records source paths in frontmatter, imports local assets as content-addressed resources, attaches referenced assets, and refreshes graph links after the batch.
+`notriosctl import obsidian [--config path] [--db path] [--asset-store path] [--collection id] [--dry-run] <vault-dir>` imports an Obsidian-style Markdown vault.
+
+`notriosctl import twitter [--config path] [--db path] [--asset-store path] [--collection id] [--notebook Twitter] [--dry-run] <extracted-archive-dir>` imports an extracted Twitter/X archive: tweets become Markdown notes in a "Twitter" notebook with expanded URLs and embedded media resources; hashtags become tags; provenance rows record author/@handle/thread/reply-to/post URL so conversation threads are recoverable; trashed tweets are never resurrected by re-imports. It preserves Markdown/frontmatter, records source paths in frontmatter, imports local assets as content-addressed resources, attaches referenced assets, and refreshes graph links after the batch.
 
 The commands are intentionally separate from REST/MCP in the MVP; later import jobs may expose an HTTP job API.
 

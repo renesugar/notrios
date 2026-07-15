@@ -1,0 +1,124 @@
+{
+    "$schema": "http://json-schema.org/schema#",
+    "type": "array",
+    "items": {
+        "type": "object",
+        "properties": {
+            "tweet": {
+                "type": "object",
+                "properties": {
+                    "id_str": {
+                        "type": "string"
+                    },
+                    "full_text": {
+                        "type": "string"
+                    },
+                    "created_at": {
+                        "type": "string"
+                    },
+                    "in_reply_to_status_id_str": {
+                        "type": "string"
+                    },
+                    "entities": {
+                        "type": "object",
+                        "properties": {
+                            "hashtags": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "text": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "text"
+                                    ]
+                                }
+                            },
+                            "urls": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "url": {
+                                            "type": "string"
+                                        },
+                                        "expanded_url": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "expanded_url",
+                                        "url"
+                                    ]
+                                }
+                            },
+                            "user_mentions": {
+                                "type": "array"
+                            }
+                        },
+                        "required": [
+                            "hashtags",
+                            "urls",
+                            "user_mentions"
+                        ]
+                    },
+                    "extended_entities": {
+                        "type": "object",
+                        "properties": {
+                            "media": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "id_str": {
+                                            "type": "string"
+                                        },
+                                        "url": {
+                                            "type": "string"
+                                        },
+                                        "media_url_https": {
+                                            "type": "string"
+                                        },
+                                        "type": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "id_str",
+                                        "media_url_https",
+                                        "type",
+                                        "url"
+                                    ]
+                                }
+                            }
+                        },
+                        "required": [
+                            "media"
+                        ]
+                    },
+                    "favorite_count": {
+                        "type": "string"
+                    },
+                    "retweet_count": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "created_at",
+                    "entities",
+                    "extended_entities",
+                    "favorite_count",
+                    "full_text",
+                    "id_str",
+                    "in_reply_to_status_id_str",
+                    "retweet_count"
+                ]
+            }
+        },
+        "required": [
+            "tweet"
+        ]
+    }
+}

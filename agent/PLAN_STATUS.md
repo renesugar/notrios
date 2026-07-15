@@ -2,7 +2,7 @@
 
 ## Current phase
 
-v0.2 Notrios redesign foundation (`PLAN.md`). Tasks **R1 (documentation redesign)**, **R2 (code rename + Apache-2.0 license)**, **R3 (schema v5 — notebooks/tags/search notebooks)**, and **R4 (schema v6 — source provenance and threads)** are completed, as are **R5 (notebooks/tags/trash REST + MCP read tools)**, **R6 (query-language adapter)**, **R7 (Recoll integration)**, and **R8 (full-client MCP/REST surface)**; next task is **R9 (Twitter/X archive importer)** — ask the user before starting it.
+v0.2 Notrios redesign foundation (`PLAN.md`). Tasks **R1 (documentation redesign)**, **R2 (code rename + Apache-2.0 license)**, **R3 (schema v5 — notebooks/tags/search notebooks)**, and **R4 (schema v6 — source provenance and threads)** are completed, as are **R5 (notebooks/tags/trash REST + MCP read tools)**, **R6 (query-language adapter)**, **R7 (Recoll integration)**, **R8 (full-client MCP/REST surface)**, and **R9 (Twitter/X archive importer)**; next task is **R10 (ChatGPT conversations importer)** — ask the user before starting it.
 
 ## Current working state
 
@@ -37,9 +37,11 @@ v0.2 Notrios redesign foundation (`PLAN.md`). Tasks **R1 (documentation redesign
 
 - R8 changes (full-client surface): REST append/prepend/lines/search-in routes; the REST outline endpoint now returns real headings; PATCH edits enforce joplin-mcp editNote semantics (ambiguous match fails without `replace_all`); MCP read tools `get_note_line_range`/`search_in_note`/`get_notebook_notes`; MCP write tools (`create_note`, `update_note`, `append_to_note`, `prepend_to_note`, `edit_note`, `delete_note`, `move_note_to_notebook`) gated behind the `editor` MCP profile with revision preconditions on destructive ops; gap-check table added to `API_SPEC.md`. Also hardened `scripts/mvp_smoke.sh`: it now refuses a busy port and runs a built binary instead of `go run` (whose wrapper-kill leaked servers across runs). See `plans/v0.2/009-full-client-surface.md`.
 
+- R9 changes (Twitter/X importer): `internal/importers/twitter` + `notriosctl import twitter` — parses `window.YTD` account/tweets files, recovers threads by walking in-reply-to chains among archived tweets, expands t.co URLs, imports `tweets_media` files as embedded resources, hashtags → tags, notes land in a 🐦 "Twitter" notebook, provenance rows (author, @handle, thread_id, reply_to, post URL, published) power `ListThreadDocuments` and purge protection; trashed tweets are never resurrected on re-import; dry run supported. genson-derived schemas in `testdata/schemas/`. See `plans/v0.2/010-twitter-importer.md`.
+
 ## Next suggested step
 
-Task R9: Twitter/X archive importer — parse archive exports (reference doggy8088/x-archive-parser), recover conversation threads (author/author_id/thread_id/reply_to/URLs), import media resources, create a "Twitter" notebook; synthetic fixtures + genson-derived schemas only.
+Task R10: ChatGPT conversations importer (references temnoon/openai_export_parser, slyubarskiy/chatgpt-conversation-extractor) — conversations.json parsing, one note per conversation with message thread provenance, synthetic fixtures.
 
 ## Validation
 

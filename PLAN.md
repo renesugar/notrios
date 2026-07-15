@@ -1,6 +1,6 @@
 # Plan: v0.2 — Notrios redesign foundation
 
-Status: active. Tasks R1–R8 are complete; next task is R9 (Twitter/X archive importer). Ask the user before starting each task.
+Status: active. Tasks R1–R9 are complete; next task is R10 (ChatGPT conversations importer). Ask the user before starting each task.
 
 This plan supersedes the earlier v0.2 draft ("Import, Resource, and Media Hardening", archived at `plans/v0.2/001-import-resource-media-hardening.md`). The media-hardening items remain on the roadmap; they are re-sequenced behind the redesign items below.
 
@@ -103,7 +103,7 @@ Working state: with Recoll installed, field queries (`tag:`, `author:`, `publish
 - MCP write tools gated by scopes and revision preconditions.
 - Verify a third-party client (native C++/Qt, Go/Wails, Rust/Tauri) could implement the full GUI feature list from `UI_DESIGN.md` using only this API; document gaps and close them.
 
-### R9. Twitter/X archive importer
+### R9. Twitter/X archive importer — COMPLETED
 
 - Parse Twitter/X archive exports (reference: doggy8088/x-archive-parser); recover conversation threads (author, author ID, thread ID, reply-to, post URLs), media resources, and a "Twitter" notebook.
 - Derive JSON schemas from sample data with genson (`uvx genson`) into `testdata/schemas/`; synthetic fixtures only — no private data in the repo.

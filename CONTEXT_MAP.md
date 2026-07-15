@@ -167,3 +167,9 @@ This file is the codebase atlas. Update it whenever major files or directories a
 - `internal/recoll/` — external-process Recoll sidecar: generated config (fields prefixes, `publishedts` range slot, `underscoreasletter`), the embedded from-scratch `notrios_md_handler.py` front-matter handler, `recollindex`/`recollq` invocation, query compilation, and result parsing. GPL boundary: binaries are user-installed and never linked or vendored.
 - `internal/httpapi/sidecar_search.go` — merges sidecar-only hits into search results behind the existing API; FTS5 stays authoritative and sidecar failures degrade gracefully.
 - `cmd/notriosd` — activates the sidecar when `search_sidecar.enabled` is true: startup full sync + index, 30s outbox drain loop, merged search.
+
+## v0.2 task R9 additions (Twitter/X importer)
+
+- `internal/importers/twitter/` — extracted-archive parser (`window.YTD` wrappers, tweets.js/tweet.js, account.js, tweets_media), in-reply-to thread recovery, t.co URL expansion, media-as-resources, hashtag tags, "Twitter" notebook, provenance rows, trashed-note non-resurrection, dry run.
+- `cmd/notriosctl` — `import twitter` subcommand.
+- `testdata/schemas/` — genson-derived JSON Schemas for the Twitter archive formats (synthetic samples only).

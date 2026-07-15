@@ -10,6 +10,7 @@ import (
 	"github.com/renesugar/notrios/internal/config"
 	"github.com/renesugar/notrios/internal/importers/joplinraw"
 	"github.com/renesugar/notrios/internal/importers/obsidian"
+	"github.com/renesugar/notrios/internal/importers/twitter"
 	"github.com/renesugar/notrios/internal/store"
 	"github.com/renesugar/notrios/internal/version"
 )
@@ -47,6 +48,8 @@ func runImport(args []string) {
 		runImportJoplinRaw(args[1:])
 	case "obsidian":
 		runImportObsidian(args[1:])
+	case "twitter":
+		runImportTwitter(args[1:])
 	default:
 		fmt.Fprintf(os.Stderr, "unknown import source type %q\n", args[0])
 		printHelp()
@@ -176,8 +179,67 @@ Usage:
   notriosctl version
   notriosctl import joplin-raw [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--dry-run] <raw-export-dir>
   notriosctl import obsidian [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--dry-run] <vault-dir>
+  notriosctl import twitter [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--notebook Twitter] [--dry-run] <extracted-archive-dir>
 
 Future commands:
   notriosctl publish quartz --profile <name>
 `)
+}
+
+func runImportTwitter(args []string) {
+	fs := flag.NewFlagSet("notriosctl import twitter", flag.ExitOnError)
+	configPath := fs.String("config", "", "optional config file")
+	dbPath := fs.String("db", "", "SQLite database path override")
+	assetStore := fs.String("asset-store", "", "asset store directory override")
+	collectionID := fs.String("collection", "default", "collection ID")
+	notebookName := fs.String("notebook", "Twitter", "notebook name for imported tweets")
+	dryRun := fs.Bool("dry-run", false, "scan and report without writing")
+	if err := fs.Parse(args); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(2)
+	}
+	if fs.NArg() != 1 {
+		fmt.Fprintln(os.Stderr, "usage: notriosctl import twitter [options] <extracted-archive-dir>")
+		fs.PrintDefaults()
+		os.Exit(2)
+	}
+
+	cfg, err := config.Load(*configPath)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	if *dbPath != "" {
+		cfg.Data.DatabasePath = *dbPath
+	}
+	if *assetStore != "" {
+		cfg.Data.AssetStore = *assetStore
+	}
+	if err := config.EnsureDirectories(cfg); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+
+	st, err := store.OpenSQLiteWithAssetStore(cfg.Data.DatabasePath, cfg.Data.AssetStore)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	defer st.Close()
+	ctx := context.Background()
+	if err := st.Bootstrap(ctx); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	report, err := twitter.Import(ctx, st, fs.Arg(0), twitter.Options{CollectionID: *collectionID, NotebookName: *notebookName, DryRun: *dryRun})
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	encoder := json.NewEncoder(os.Stdout)
+	encoder.SetIndent("", "  ")
+	if err := encoder.Encode(report); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
 }

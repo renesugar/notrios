@@ -1,0 +1,43 @@
+{
+    "$schema": "http://json-schema.org/schema#",
+    "type": "array",
+    "items": {
+        "type": "object",
+        "properties": {
+            "account": {
+                "type": "object",
+                "properties": {
+                    "email": {
+                        "type": "string"
+                    },
+                    "createdVia": {
+                        "type": "string"
+                    },
+                    "username": {
+                        "type": "string"
+                    },
+                    "accountId": {
+                        "type": "string"
+                    },
+                    "createdAt": {
+                        "type": "string"
+                    },
+                    "accountDisplayName": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "accountDisplayName",
+                    "accountId",
+                    "createdAt",
+                    "createdVia",
+                    "email",
+                    "username"
+                ]
+            }
+        },
+        "required": [
+            "account"
+        ]
+    }
+}
