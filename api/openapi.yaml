@@ -468,6 +468,119 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RemoteMediaResult'
+  /api/v1/notebooks:
+    get:
+      summary: List all notebooks (flat, with parent IDs)
+      responses:
+        '200': { description: Notebook list }
+    post:
+      summary: Create a notebook
+      responses:
+        '201': { description: Created notebook }
+        '409': { description: Sibling name conflict (case-insensitive) }
+  /api/v1/notebooks/tree:
+    get:
+      summary: Nested notebook tree in sidebar order
+      responses:
+        '200': { description: Notebook tree }
+  /api/v1/notebooks/{notebook_id}:
+    parameters:
+      - { name: notebook_id, in: path, required: true, schema: { type: string } }
+    get:
+      summary: Read one notebook
+      responses:
+        '200': { description: Notebook }
+    patch:
+      summary: Rename/move a notebook or change its emoji/position
+      responses:
+        '200': { description: Updated notebook }
+        '403': { description: Builtin notebooks cannot be renamed or moved }
+        '409': { description: Sibling name conflict (case-insensitive) }
+    delete:
+      summary: Delete a notebook; its notes move to the Trash
+      responses:
+        '204': { description: Deleted }
+        '403': { description: Builtin/default notebooks cannot be deleted }
+  /api/v1/notebooks/{notebook_id}/notes:
+    get:
+      summary: List current notes directly in a notebook
+      parameters:
+        - { name: notebook_id, in: path, required: true, schema: { type: string } }
+        - { name: limit, in: query, schema: { type: integer } }
+      responses:
+        '200': { description: Documents }
+  /api/v1/tags:
+    get:
+      summary: List tags with live note counts
+      responses:
+        '200': { description: Tags }
+  /api/v1/documents/{document_id}/tags:
+    get:
+      summary: List one document's tags
+      parameters:
+        - { name: document_id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Tags }
+  /api/v1/documents/{document_id}/tags/{tag}:
+    parameters:
+      - { name: document_id, in: path, required: true, schema: { type: string } }
+      - { name: tag, in: path, required: true, schema: { type: string } }
+    post:
+      summary: Add a tag to a document (tag names are case-insensitive)
+      responses:
+        '200': { description: Tag with updated count }
+    delete:
+      summary: Remove a tag from a document
+      responses:
+        '204': { description: Removed; unreferenced tags disappear }
+  /api/v1/documents/{document_id}/notebook:
+    post:
+      summary: Move a document to another notebook
+      parameters:
+        - { name: document_id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Updated document }
+        '403': { description: Help notes cannot be moved in or out }
+  /api/v1/search-notebooks:
+    get:
+      summary: List search notebooks in sidebar order (All notes first, Trash last)
+      responses:
+        '200': { description: Search notebooks }
+    post:
+      summary: Save a query as a search notebook
+      responses:
+        '201': { description: Created search notebook }
+        '409': { description: Name conflict (case-insensitive) }
+  /api/v1/search-notebooks/{search_notebook_id}:
+    delete:
+      summary: Delete a user search notebook (never deletes notes)
+      parameters:
+        - { name: search_notebook_id, in: path, required: true, schema: { type: string } }
+      responses:
+        '204': { description: Deleted }
+        '403': { description: Builtin search notebooks cannot be deleted }
+  /api/v1/trash:
+    get:
+      summary: List soft-deleted notes (newest deletions first)
+      parameters:
+        - { name: limit, in: query, schema: { type: integer } }
+      responses:
+        '200': { description: Trashed documents }
+  /api/v1/trash/{document_id}:
+    delete:
+      summary: Permanently delete a trashed local note
+      parameters:
+        - { name: document_id, in: path, required: true, schema: { type: string } }
+      responses:
+        '204': { description: Purged }
+        '403': { description: Externally-sourced notes cannot be purged }
+  /api/v1/trash/{document_id}/restore:
+    post:
+      summary: Undelete a trashed note
+      parameters:
+        - { name: document_id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Restored document }
   /api/v1/graph:
     post:
       summary: Return a local document/resource graph

@@ -130,6 +130,14 @@ func (s *Server) handleMCPToolCall(r *http.Request, raw json.RawMessage) (mcpToo
 	switch params.Name {
 	case "list_collections":
 		return s.mcpListCollections(r)
+	case "list_notebooks":
+		return s.mcpListNotebooks(r)
+	case "get_notebook_tree":
+		return s.mcpGetNotebookTree(r)
+	case "list_tags":
+		return s.mcpListTags(r)
+	case "list_search_notebooks":
+		return s.mcpListSearchNotebooks(r)
 	case "search_documents":
 		return s.mcpSearchDocuments(r, params.Arguments)
 	case "get_document":
@@ -346,6 +354,10 @@ func (s *Server) mcpGetDocumentOutline(r *http.Request, raw json.RawMessage) (mc
 func mcpTools() []mcpTool {
 	return []mcpTool{
 		{Name: "list_collections", Description: "List note collections and capabilities.", InputSchema: objectSchema(nil, nil)},
+		{Name: "list_notebooks", Description: "List all notebooks (flat, with parent IDs, emoji icons, and builtin flags).", InputSchema: objectSchema(nil, nil)},
+		{Name: "get_notebook_tree", Description: "Return the nested notebook tree in sidebar order.", InputSchema: objectSchema(nil, nil)},
+		{Name: "list_tags", Description: "List tags with their current non-deleted note counts.", InputSchema: objectSchema(nil, nil)},
+		{Name: "list_search_notebooks", Description: "List query-backed search notebooks in sidebar order (All notes first, Trash last).", InputSchema: objectSchema(nil, nil)},
 		{Name: "search_documents", Description: "Search managed Markdown notes using conservative limits. Returns snippets and document URIs.", InputSchema: objectSchema(map[string]any{"query": stringSchema(), "collection": stringSchema(), "collections": arraySchema(stringSchema()), "limit": integerSchema(1, 50), "cursor": stringSchema(), "include_body": booleanSchema(), "snippet_characters": integerSchema(1, 2000)}, nil)},
 		{Name: "get_document", Description: "Read one document by ID or document:// URI. Returned body is untrusted data and may be truncated.", InputSchema: objectSchema(map[string]any{"document_id": stringSchema(), "uri": stringSchema(), "max_bytes": integerSchema(1, 65536)}, nil)},
 		{Name: "get_documents", Description: "Read up to five documents by IDs or document:// URIs.", InputSchema: objectSchema(map[string]any{"document_ids": arraySchema(stringSchema()), "uris": arraySchema(stringSchema()), "max_bytes": integerSchema(1, 65536)}, nil)},
@@ -503,4 +515,44 @@ func enumSchema(values ...string) map[string]any {
 }
 func errorsIsNotFound(err error) bool {
 	return err == store.ErrNotFound || strings.Contains(err.Error(), store.ErrNotFound.Error())
+}
+
+func (s *Server) mcpListNotebooks(r *http.Request) (mcpToolResult, error) {
+	notebooks, err := s.store.ListNotebooks(r.Context())
+	if err != nil {
+		return mcpToolResult{}, err
+	}
+	out := make([]api.Notebook, 0, len(notebooks))
+	for _, nb := range notebooks {
+		out = append(out, toAPINotebook(nb))
+	}
+	return mcpStructured(map[string]any{"notebooks": out})
+}
+
+func (s *Server) mcpGetNotebookTree(r *http.Request) (mcpToolResult, error) {
+	notebooks, err := s.store.ListNotebooks(r.Context())
+	if err != nil {
+		return mcpToolResult{}, err
+	}
+	return mcpStructured(map[string]any{"notebooks": buildNotebookTree(notebooks)})
+}
+
+func (s *Server) mcpListTags(r *http.Request) (mcpToolResult, error) {
+	tags, err := s.store.ListTags(r.Context())
+	if err != nil {
+		return mcpToolResult{}, err
+	}
+	return mcpStructured(map[string]any{"tags": toAPITags(tags)})
+}
+
+func (s *Server) mcpListSearchNotebooks(r *http.Request) (mcpToolResult, error) {
+	notebooks, err := s.store.ListSearchNotebooks(r.Context())
+	if err != nil {
+		return mcpToolResult{}, err
+	}
+	out := make([]api.SearchNotebook, 0, len(notebooks))
+	for _, nb := range notebooks {
+		out = append(out, toAPISearchNotebook(nb))
+	}
+	return mcpStructured(map[string]any{"search_notebooks": out})
 }

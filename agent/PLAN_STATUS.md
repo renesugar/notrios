@@ -2,7 +2,7 @@
 
 ## Current phase
 
-v0.2 Notrios redesign foundation (`PLAN.md`). Tasks **R1 (documentation redesign)**, **R2 (code rename + Apache-2.0 license)**, **R3 (schema v5 — notebooks/tags/search notebooks)**, and **R4 (schema v6 — source provenance and threads)** are completed; next task is **R5 (notebooks/tags/trash REST + MCP API)** — ask the user before starting it.
+v0.2 Notrios redesign foundation (`PLAN.md`). Tasks **R1 (documentation redesign)**, **R2 (code rename + Apache-2.0 license)**, **R3 (schema v5 — notebooks/tags/search notebooks)**, and **R4 (schema v6 — source provenance and threads)** are completed, as is **R5 (notebooks/tags/trash REST + MCP read tools)**; next task is **R6 (query-language adapter)** — ask the user before starting it.
 
 ## Current working state
 
@@ -28,9 +28,11 @@ v0.2 Notrios redesign foundation (`PLAN.md`). Tasks **R1 (documentation redesign
 
 - R4 changes (schema v6, store layer): `document_sources` provenance table (source_system, external_id, author/author_id, thread_id/reply_to, source_url, published_at/published_ts), `SetDocumentSource`/`GetDocumentSource`/`FindDocumentBySource`/`ListThreadDocuments` store APIs, purge guard refusing externally-sourced notes, Joplin/Obsidian importers write provenance on every run (re-import backfills). See `plans/v0.2/005-schema-v6-source-provenance.md`.
 
+- R5 changes (REST + MCP): notebook CRUD/tree routes, notebook notes listing, tags with counts, document tag add/remove, note↔notebook move, search-notebook CRUD, trash list/restore/purge; `POST /api/v1/documents` accepts `notebook_id` and documents return it; 409 `name_conflict` and 403 `forbidden` error mapping; MCP read tools `list_notebooks`/`get_notebook_tree`/`list_tags`/`list_search_notebooks`; OpenAPI + `api/mcp-tools.md` updated. See `plans/v0.2/006-notebooks-rest-mcp.md`.
+
 ## Next suggested step
 
-Task R5: notebooks/tags/trash REST + MCP API — notebook CRUD routes and tree, tag list with counts, note↔notebook move, tag assignment, trash list/undelete/purge, search-notebook CRUD with builtin protection, MCP read tools (list_notebooks, get_notebook_tree, list_tags), OpenAPI + api/mcp-tools.md updates.
+Task R6: query-language adapter — parser for `notebook:`, `tag:`, `author:`, `authorid:`, `title:`, `since:`, `until:`, quoted phrases, implicit AND; ISO 8601 normalization; FTS5+SQL compilation; cursor-based incremental search; search notebooks execute through the adapter.
 
 ## Validation
 

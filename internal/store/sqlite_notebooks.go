@@ -350,6 +350,65 @@ func (s *SQLiteStore) MoveDocumentToNotebook(ctx context.Context, documentID, no
 	return s.getDocumentLocked(documentID)
 }
 
+// ListNotebookDocuments returns the current non-deleted notes directly in a
+// notebook (no descendant notebooks), most recently updated first.
+func (s *SQLiteStore) ListNotebookDocuments(ctx context.Context, notebookID string, limit int) ([]Document, error) {
+	ctx = contextOrBackground(ctx)
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	notebookID = strings.TrimSpace(notebookID)
+	if limit <= 0 || limit > 500 {
+		limit = 100
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if exists, err := s.notebookExistsLocked(notebookID); err != nil {
+		return nil, err
+	} else if !exists {
+		return nil, fmt.Errorf("%w: notebook %q", ErrNotFound, notebookID)
+	}
+	stmt, err := s.prepareLocked(`SELECT d.id, d.collection_id, d.title, substr(r.body, 1, 240), COALESCE(r.body_mime_type, d.body_mime_type), d.current_revision_id, d.created_at, d.updated_at, COALESCE(d.notebook_id, '')
+		FROM documents d
+		JOIN document_revisions r ON r.id = d.current_revision_id
+		WHERE d.notebook_id = ? AND d.deleted_at IS NULL
+		ORDER BY d.updated_at DESC, d.id
+		LIMIT ` + itoa(limit))
+	if err != nil {
+		return nil, err
+	}
+	defer C.sqlite3_finalize(stmt)
+	if err := bindAll(stmt, []string{notebookID}); err != nil {
+		return nil, err
+	}
+	docs := []Document{}
+	for {
+		rc := C.sqlite3_step(stmt)
+		switch rc {
+		case C.SQLITE_ROW:
+			createdAt, _ := time.Parse(time.RFC3339Nano, sqliteTimeToRFC3339(columnText(stmt, 6)))
+			updatedAt, _ := time.Parse(time.RFC3339Nano, sqliteTimeToRFC3339(columnText(stmt, 7)))
+			doc := Document{
+				ID:                columnText(stmt, 0),
+				CollectionID:      columnText(stmt, 1),
+				Title:             columnText(stmt, 2),
+				Body:              columnText(stmt, 3),
+				BodyMIMEType:      columnText(stmt, 4),
+				CurrentRevisionID: columnText(stmt, 5),
+				CreatedAt:         createdAt,
+				UpdatedAt:         updatedAt,
+				NotebookID:        columnText(stmt, 8),
+			}
+			doc.URI = DocumentURI(doc.CollectionID, doc.ID)
+			docs = append(docs, doc)
+		case C.SQLITE_DONE:
+			return docs, nil
+		default:
+			return nil, s.stepErrLocked(rc)
+		}
+	}
+}
+
 func (s *SQLiteStore) AddDocumentTag(ctx context.Context, documentID, tagName string) (Tag, error) {
 	ctx = contextOrBackground(ctx)
 	if err := ctx.Err(); err != nil {

@@ -165,7 +165,7 @@ GET  /api/v1/jobs/{job_id}
 
 Quartz publish planning must be privacy-aware: it selects a subset, rewrites links, copies only reachable public resources, applies media policy, strips private metadata, and reports warnings before building.
 
-### Notebooks, tags, and search notebooks (planned — plan tasks R3/R5)
+### Notebooks, tags, and search notebooks (implemented — plan tasks R3/R5)
 
 ```text
 GET    /api/v1/notebooks                      # nested tree; emoji icons; "All notes" first, "Trash" last
@@ -178,9 +178,16 @@ GET    /api/v1/tags                           # with note counts
 POST   /api/v1/documents/{document_id}/tags/{tag}
 DELETE /api/v1/documents/{document_id}/tags/{tag}
 POST   /api/v1/documents/{document_id}/notebook   # move note to notebook
+GET    /api/v1/trash                              # list soft-deleted notes
 POST   /api/v1/trash/{document_id}/restore        # undelete
 DELETE /api/v1/trash/{document_id}                # permanent delete, local-source notes only
+GET    /api/v1/notebooks/tree                     # nested tree in sidebar order
+GET    /api/v1/search-notebooks
+POST   /api/v1/search-notebooks
+DELETE /api/v1/search-notebooks/{id}              # refuses builtin rows
 ```
+
+Name conflicts return `409 name_conflict`; builtin protection (Help/default notebooks, "All notes"/"Trash" search notebooks, Help note moves, purging externally-sourced notes) returns `403 forbidden`. `POST /api/v1/documents` accepts `notebook_id` (defaults to the "Notes" notebook), and document responses include `notebook_id`.
 
 Search notebooks are notebook rows with a `query` (see `NOTEBOOKS_AND_SEARCH_NOTEBOOKS.md`); deleting one never deletes notes. `notebook:` and other query operators are defined in `SEARCH_QUERY_LANGUAGE.md`; search endpoints accept the user query language and must support cursor-based incremental results so clients can lazily populate large views like "All notes".
 
@@ -201,13 +208,15 @@ Implemented read-only tools:
 - `list_document_links`
 - `list_document_resources`
 - `get_document_outline`
+- `list_notebooks`
+- `get_notebook_tree`
+- `list_tags`
+- `list_search_notebooks`
 
 ## MCP tools planned later
 
-Read tools (plan tasks R5/R8):
+Read tools (plan task R8):
 
-- `list_notebooks` / `get_notebook_tree` / `get_all_notebooks_tree`
-- `list_tags`
 - `get_note_line_range`
 - `search_in_note`
 - `get_note_sections`

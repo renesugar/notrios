@@ -79,6 +79,22 @@ Lists embedded/attached resources for one document, without returning binary byt
 
 Returns headings/blocks so an LLM can request relevant sections instead of whole long documents.
 
+### list_notebooks
+
+List all notebooks (flat, with parent IDs, emoji icons, builtin flags). No arguments.
+
+### get_notebook_tree
+
+Return the nested notebook tree in sidebar order. No arguments.
+
+### list_tags
+
+List tags with their current non-deleted note counts. No arguments.
+
+### list_search_notebooks
+
+List query-backed search notebooks in sidebar order ("All notes" first, "Trash" last, builtin rows flagged). No arguments.
+
 ## Later write tools
 
 Write tools require explicit scopes and revision preconditions:

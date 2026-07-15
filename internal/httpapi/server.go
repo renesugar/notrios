@@ -87,6 +87,25 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("DELETE /api/v1/resources/{resource_id}", s.handleResource)
 	s.mux.HandleFunc("GET /api/v1/resources/{resource_id}/content", s.handleResourceContent)
 
+	s.mux.HandleFunc("GET /api/v1/notebooks", s.handleListNotebooks)
+	s.mux.HandleFunc("GET /api/v1/notebooks/tree", s.handleNotebookTree)
+	s.mux.HandleFunc("POST /api/v1/notebooks", s.handleCreateNotebook)
+	s.mux.HandleFunc("GET /api/v1/notebooks/{notebook_id}", s.handleNotebook)
+	s.mux.HandleFunc("PATCH /api/v1/notebooks/{notebook_id}", s.handleNotebook)
+	s.mux.HandleFunc("DELETE /api/v1/notebooks/{notebook_id}", s.handleNotebook)
+	s.mux.HandleFunc("GET /api/v1/notebooks/{notebook_id}/notes", s.handleNotebookNotes)
+	s.mux.HandleFunc("GET /api/v1/tags", s.handleListTags)
+	s.mux.HandleFunc("GET /api/v1/documents/{document_id}/tags", s.handleDocumentTags)
+	s.mux.HandleFunc("POST /api/v1/documents/{document_id}/tags/{tag}", s.handleDocumentTag)
+	s.mux.HandleFunc("DELETE /api/v1/documents/{document_id}/tags/{tag}", s.handleDocumentTag)
+	s.mux.HandleFunc("POST /api/v1/documents/{document_id}/notebook", s.handleMoveDocumentNotebook)
+	s.mux.HandleFunc("GET /api/v1/search-notebooks", s.handleListSearchNotebooks)
+	s.mux.HandleFunc("POST /api/v1/search-notebooks", s.handleCreateSearchNotebook)
+	s.mux.HandleFunc("DELETE /api/v1/search-notebooks/{search_notebook_id}", s.handleDeleteSearchNotebook)
+	s.mux.HandleFunc("GET /api/v1/trash", s.handleListTrash)
+	s.mux.HandleFunc("POST /api/v1/trash/{document_id}/restore", s.handleRestoreTrashedDocument)
+	s.mux.HandleFunc("DELETE /api/v1/trash/{document_id}", s.handlePurgeDocument)
+
 	s.mux.HandleFunc("POST /api/v1/graph", s.handleGraph)
 	s.mux.HandleFunc("POST /api/v1/publish/quartz/plan", s.handlePublishQuartzPlan)
 	s.mux.HandleFunc("GET /api/v1/jobs/{job_id}", s.handleJob)
@@ -297,6 +316,7 @@ func (s *Server) handleCreateDocument(w http.ResponseWriter, r *http.Request) {
 	}
 	doc, err := s.store.CreateDocument(r.Context(), store.CreateDocumentRequest{
 		CollectionID: req.CollectionID,
+		NotebookID:   req.NotebookID,
 		Title:        req.Title,
 		Body:         req.Body,
 		BodyMIMEType: req.BodyMIMEType,
@@ -778,16 +798,22 @@ func firstCollection(req api.SearchRequest) string {
 }
 
 func toAPIDocument(doc store.Document) api.Document {
+	deletedAt := ""
+	if !doc.DeletedAt.IsZero() {
+		deletedAt = doc.DeletedAt.Format("2006-01-02T15:04:05Z07:00")
+	}
 	return api.Document{
 		ID:                doc.ID,
 		URI:               doc.URI,
 		CollectionID:      doc.CollectionID,
+		NotebookID:        doc.NotebookID,
 		Title:             doc.Title,
 		BodyMIMEType:      doc.BodyMIMEType,
 		Body:              doc.Body,
 		CurrentRevisionID: doc.CurrentRevisionID,
 		CreatedAt:         doc.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
 		UpdatedAt:         doc.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		DeletedAt:         deletedAt,
 	}
 }
 
@@ -978,6 +1004,10 @@ func writeStoreError(w http.ResponseWriter, err error, fallbackCode string) bool
 		writeError(w, http.StatusConflict, "conflict", "operation conflicts with the current resource state")
 	case errors.Is(err, store.ErrInvalidInput):
 		writeError(w, http.StatusBadRequest, "validation_failed", err.Error())
+	case errors.Is(err, store.ErrNameConflict):
+		writeError(w, http.StatusConflict, "name_conflict", err.Error())
+	case errors.Is(err, store.ErrProtected):
+		writeError(w, http.StatusForbidden, "forbidden", err.Error())
 	default:
 		writeError(w, http.StatusInternalServerError, fallbackCode, err.Error())
 	}

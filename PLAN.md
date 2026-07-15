@@ -1,6 +1,6 @@
 # Plan: v0.2 — Notrios redesign foundation
 
-Status: active. Tasks R1–R4 are complete; next task is R5 (notebooks/tags/trash REST + MCP API). Ask the user before starting each task.
+Status: active. Tasks R1–R5 are complete; next task is R6 (query-language adapter). Ask the user before starting each task.
 
 This plan supersedes the earlier v0.2 draft ("Import, Resource, and Media Hardening", archived at `plans/v0.2/001-import-resource-media-hardening.md`). The media-hardening items remain on the roadmap; they are re-sequenced behind the redesign items below.
 
@@ -68,7 +68,7 @@ Working state: schema migrates from v4; existing CRUD/search/import tests pass w
 
 Working state: importers record provenance rows; thread queries work in store tests.
 
-### R5. Notebooks/tags/trash REST + MCP API
+### R5. Notebooks/tags/trash REST + MCP API — COMPLETED (write MCP tools deferred to R8)
 
 - REST: notebook CRUD (create/rename/move/delete, emoji, nested tree), tag list with counts, note↔notebook move, note↔tag assignment, trash list/undelete/purge, search-notebook CRUD with builtin protection.
 - MCP: read tools (`list_notebooks`, `get_notebook_tree`, `list_tags`), then scope-gated write tools.

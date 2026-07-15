@@ -373,6 +373,7 @@ type Store interface {
 	ListNotebooks(ctx context.Context) ([]Notebook, error)
 	UpdateNotebook(ctx context.Context, req UpdateNotebookRequest) (Notebook, error)
 	DeleteNotebook(ctx context.Context, id string) error
+	ListNotebookDocuments(ctx context.Context, notebookID string, limit int) ([]Document, error)
 	MoveDocumentToNotebook(ctx context.Context, documentID, notebookID string) (Document, error)
 
 	AddDocumentTag(ctx context.Context, documentID, tagName string) (Tag, error)

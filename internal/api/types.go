@@ -100,10 +100,71 @@ type SearchResponse struct {
 	Total      *int64      `json:"total,omitempty"`
 }
 
+// Notebook is a nested note container. Builtin notebooks (Help) cannot be
+// deleted or renamed; the default "Notes" notebook cannot be deleted.
+type Notebook struct {
+	ID        string `json:"id"`
+	ParentID  string `json:"parent_id,omitempty"`
+	Name      string `json:"name"`
+	IconEmoji string `json:"icon_emoji,omitempty"`
+	Builtin   bool   `json:"builtin"`
+	Position  int    `json:"position"`
+	CreatedAt string `json:"created_at,omitempty"`
+	UpdatedAt string `json:"updated_at,omitempty"`
+}
+
+// NotebookTreeNode is a notebook with its child notebooks.
+type NotebookTreeNode struct {
+	Notebook
+	Children []NotebookTreeNode `json:"children,omitempty"`
+}
+
+// NotebookMutationRequest creates or updates a notebook. For PATCH, nil
+// pointers leave fields unchanged; an empty-string parent_id moves the
+// notebook to the top level.
+type NotebookMutationRequest struct {
+	Name      *string `json:"name,omitempty"`
+	ParentID  *string `json:"parent_id,omitempty"`
+	IconEmoji *string `json:"icon_emoji,omitempty"`
+	Position  *int    `json:"position,omitempty"`
+}
+
+// Tag is a note label with its live non-deleted note count.
+type Tag struct {
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	NoteCount int64  `json:"note_count"`
+}
+
+// SearchNotebook is a query-backed virtual notebook. "All notes" sorts first
+// and "Trash" last; builtin rows cannot be deleted.
+type SearchNotebook struct {
+	ID         string `json:"id"`
+	Name       string `json:"name"`
+	IconEmoji  string `json:"icon_emoji,omitempty"`
+	Query      string `json:"query"`
+	Builtin    bool   `json:"builtin"`
+	SortAnchor string `json:"sort_anchor"`
+	CreatedAt  string `json:"created_at,omitempty"`
+}
+
+// SearchNotebookMutationRequest saves a user query as a search notebook.
+type SearchNotebookMutationRequest struct {
+	Name      string `json:"name"`
+	IconEmoji string `json:"icon_emoji,omitempty"`
+	Query     string `json:"query"`
+}
+
+// MoveDocumentRequest moves a note to another notebook.
+type MoveDocumentRequest struct {
+	NotebookID string `json:"notebook_id"`
+}
+
 type Document struct {
 	ID                string         `json:"id"`
 	URI               string         `json:"uri"`
 	CollectionID      string         `json:"collection_id"`
+	NotebookID        string         `json:"notebook_id,omitempty"`
 	Title             string         `json:"title"`
 	BodyMIMEType      string         `json:"body_mime_type"`
 	Body              string         `json:"body,omitempty"`
@@ -117,6 +178,7 @@ type Document struct {
 
 type DocumentMutationRequest struct {
 	CollectionID   string         `json:"collection_id"`
+	NotebookID     string         `json:"notebook_id,omitempty"`
 	Title          string         `json:"title"`
 	Body           string         `json:"body"`
 	BodyMIMEType   string         `json:"body_mime_type,omitempty"`
