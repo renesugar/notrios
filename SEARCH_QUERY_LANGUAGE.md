@@ -1,6 +1,6 @@
 # Search Query Language
 
-Notrios exposes one user-facing query language across the GUI search box, REST search, MCP search tools, and search-notebook queries. A **query adapter** in the service translates it to the active backends: SQLite FTS5 (always available) and Recoll/Xapian (optional sidecar, see `RECOLL_INTEGRATION.md`). The adapter lives in the application — not in the Markdown parser and not as a Recoll core modification.
+Notrios exposes one user-facing query language across the GUI search box, REST search, MCP search tools, and search-notebook queries. A **query adapter** in the service translates it to the active backends: SQLite FTS5 (always available; implemented in `internal/query` + the store compiler, task R6) and Recoll/Xapian (optional sidecar, see `RECOLL_INTEGRATION.md`; compilation target for task R7). The adapter lives in the application — not in the Markdown parser and not as a Recoll core modification.
 
 ## Operators
 
@@ -12,7 +12,7 @@ Notrios exposes one user-facing query language across the GUI search box, REST s
 | `author:alice`, `author:"Alice Smith"` | author display name | metadata filter | native `author` |
 | `authorid:alice@example.social` | canonical account identity | metadata filter | custom field |
 | `tag:toys`, `tag:"shopping mall"` | tag match | `note_tags` join | custom `tag` field |
-| `notebook:"name"` | limit to a notebook (case-insensitive) | notebook join | adapter-side filter |
+| `notebook:"name"` | limit to a notebook and its sub-notebooks (case-insensitive; same-named notebooks all match) | notebook join | adapter-side filter |
 | `since:2026-07-01` | on/after start of that date | timestamp filter | `publishedts:<epoch>..` |
 | `until:2026-07-31` | through end of that date (23:59:59) | timestamp filter | `publishedts:..<epoch>` |
 
@@ -28,6 +28,16 @@ Notrios exposes one user-facing query language across the GUI search box, REST s
 - Tags are emitted twice: as the dedicated `tag` field (phrase-searchable: `tag:"note taking"`) and into `keywords`/general terms so unqualified searches match tag-only notes. Aliases get the same dual treatment (`alias:` + general terms).
 - Multiword tags use the quoted form as canonical syntax. A canonical `tagid` (`shopping_mall`) may be indexed alongside the display value; if underscores become identifier characters, enable Recoll's `underscoreasletter`. Hyphenated canonicalization is avoided because Recoll's dehyphenation makes hyphenated tags unreliable as identifiers.
 - `author` (display name) and `authorid` (canonical account) are separate fields so two people with the same display name are never conflated, and so `@`/domain punctuation tokenization never matters — the adapter canonicalizes account IDs before indexing and querying.
+
+## Parsing rules (implemented)
+
+- Unqualified terms are ANDed and search title and body; quoted spans are phrase matches.
+- Repeated field filters AND together (`tag:a tag:b` requires both).
+- Unknown `word:value` tokens are kept as literal search terms (so `re:invoice` or a pasted URL is never silently dropped).
+- `author:` matches the display name case-insensitively (substring/phrase); `authorid:` matches the canonical identity exactly (case-insensitive).
+- `since:`/`until:` compare the source `published_ts` when provenance exists, falling back to the note's local creation time.
+- `is:trashed` queries search trashed notes with LIKE-based text matching (trashed notes have no FTS rows).
+- Cursors are opaque, bound to the query + collection, and reject replay against a different search.
 
 ## Reserved internal operators
 

@@ -1591,57 +1591,6 @@ func MIMETypeFromFilename(filename string) string {
 	return mime.TypeByExtension(filepath.Ext(filename))
 }
 
-func (s *SQLiteStore) Search(ctx context.Context, req SearchRequest) (SearchResponse, error) {
-	ctx = contextOrBackground(ctx)
-	if err := ctx.Err(); err != nil {
-		return SearchResponse{}, err
-	}
-	req = NormalizeSearchRequest(req)
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	if strings.TrimSpace(req.Query) == "" {
-		return s.searchLatestLocked(req)
-	}
-	return s.searchFTSLocked(req)
-}
-
-func (s *SQLiteStore) searchLatestLocked(req SearchRequest) (SearchResponse, error) {
-	stmt, err := s.prepareLocked(`SELECT d.id, d.collection_id, d.title, substr(r.body, 1, 240), 0.0
-		FROM documents d
-		JOIN document_revisions r ON r.id = d.current_revision_id
-		WHERE d.collection_id = ? AND d.deleted_at IS NULL
-		ORDER BY d.updated_at DESC, d.id DESC
-		LIMIT ?`)
-	if err != nil {
-		return SearchResponse{}, err
-	}
-	defer C.sqlite3_finalize(stmt)
-	if err := bindAll(stmt, []string{req.CollectionID, strconv.Itoa(req.Limit)}); err != nil {
-		return SearchResponse{}, err
-	}
-	return s.readHitsLocked(stmt)
-}
-
-func (s *SQLiteStore) searchFTSLocked(req SearchRequest) (SearchResponse, error) {
-	stmt, err := s.prepareLocked(`SELECT d.id, d.collection_id, d.title,
-		snippet(documents_fts, 3, '<mark>', '</mark>', '…', 32) AS snippet,
-		bm25(documents_fts, 5.0, 1.0) AS score
-		FROM documents_fts
-		JOIN documents d ON d.id = documents_fts.document_id
-		WHERE documents_fts.collection_id = ? AND documents_fts MATCH ? AND d.deleted_at IS NULL
-		ORDER BY score, d.id
-		LIMIT ?`)
-	if err != nil {
-		return SearchResponse{}, err
-	}
-	defer C.sqlite3_finalize(stmt)
-	if err := bindAll(stmt, []string{req.CollectionID, escapeFTSQuery(req.Query), strconv.Itoa(req.Limit)}); err != nil {
-		return SearchResponse{}, err
-	}
-	return s.readHitsLocked(stmt)
-}
-
 func (s *SQLiteStore) readHitsLocked(stmt *C.sqlite3_stmt) (SearchResponse, error) {
 	resp := SearchResponse{Hits: []SearchHit{}}
 	for {
@@ -1663,19 +1612,6 @@ func (s *SQLiteStore) readHitsLocked(stmt *C.sqlite3_stmt) (SearchResponse, erro
 			return SearchResponse{}, s.stepErrLocked(rc)
 		}
 	}
-}
-
-func escapeFTSQuery(query string) string {
-	terms := strings.Fields(query)
-	quoted := make([]string, 0, len(terms))
-	for _, term := range terms {
-		term = strings.ReplaceAll(term, `"`, `""`)
-		quoted = append(quoted, `"`+term+`"`)
-	}
-	if len(quoted) == 0 {
-		return `""`
-	}
-	return strings.Join(quoted, " AND ")
 }
 
 func (s *SQLiteStore) execPreparedLocked(sql string, values ...string) error {

@@ -2,7 +2,7 @@
 
 ## Current phase
 
-v0.2 Notrios redesign foundation (`PLAN.md`). Tasks **R1 (documentation redesign)**, **R2 (code rename + Apache-2.0 license)**, **R3 (schema v5 — notebooks/tags/search notebooks)**, and **R4 (schema v6 — source provenance and threads)** are completed, as is **R5 (notebooks/tags/trash REST + MCP read tools)**; next task is **R6 (query-language adapter)** — ask the user before starting it.
+v0.2 Notrios redesign foundation (`PLAN.md`). Tasks **R1 (documentation redesign)**, **R2 (code rename + Apache-2.0 license)**, **R3 (schema v5 — notebooks/tags/search notebooks)**, and **R4 (schema v6 — source provenance and threads)** are completed, as are **R5 (notebooks/tags/trash REST + MCP read tools)** and **R6 (query-language adapter)**; next task is **R7 (Recoll integration)** — ask the user before starting it.
 
 ## Current working state
 
@@ -30,9 +30,11 @@ v0.2 Notrios redesign foundation (`PLAN.md`). Tasks **R1 (documentation redesign
 
 - R5 changes (REST + MCP): notebook CRUD/tree routes, notebook notes listing, tags with counts, document tag add/remove, note↔notebook move, search-notebook CRUD, trash list/restore/purge; `POST /api/v1/documents` accepts `notebook_id` and documents return it; 409 `name_conflict` and 403 `forbidden` error mapping; MCP read tools `list_notebooks`/`get_notebook_tree`/`list_tags`/`list_search_notebooks`; OpenAPI + `api/mcp-tools.md` updated. See `plans/v0.2/006-notebooks-rest-mcp.md`.
 
+- R6 changes (query language): `internal/query` parser + `internal/store/sqlite_query.go` compiler; `notebook:` (subtree, case-insensitive), `tag:`, `title:`, `author:`/`authorid:` (provenance joins), `since:`/`until:` (published_ts fallback to created_at), `is:trashed`, phrases, implicit AND; opaque query-bound cursors for incremental scrolling; `store.Search` fully routed through the adapter. See `plans/v0.2/007-query-language-adapter.md`.
+
 ## Next suggested step
 
-Task R6: query-language adapter — parser for `notebook:`, `tag:`, `author:`, `authorid:`, `title:`, `since:`, `until:`, quoted phrases, implicit AND; ISO 8601 normalization; FTS5+SQL compilation; cursor-based incremental search; search notebooks execute through the adapter.
+Task R7: Recoll integration — managed filesystem projection + outbox, generated Recoll config (fields, underscoreasletter), from-scratch YAML/TOML front-matter input handler, external-process recollindex/recollq adapter, graceful FTS5 fallback.
 
 ## Validation
 

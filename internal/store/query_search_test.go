@@ -1,0 +1,146 @@
+package store
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"testing"
+)
+
+func TestQueryLanguageSearch(t *testing.T) {
+	st := newNotebookTestStore(t)
+	ctx := context.Background()
+
+	work, _ := st.CreateNotebook(ctx, CreateNotebookRequest{Name: "Work"})
+	sub, _ := st.CreateNotebook(ctx, CreateNotebookRequest{Name: "Reports", ParentID: work.ID})
+
+	inWork, _ := st.CreateDocument(ctx, CreateDocumentRequest{Title: "Quarterly planning", Body: "meeting agenda apples", NotebookID: work.ID})
+	inSub, _ := st.CreateDocument(ctx, CreateDocumentRequest{Title: "July report", Body: "quarterly numbers oranges", NotebookID: sub.ID})
+	elsewhere, _ := st.CreateDocument(ctx, CreateDocumentRequest{Title: "Groceries", Body: "apples oranges"})
+
+	if _, err := st.AddDocumentTag(ctx, elsewhere.ID, "todo"); err != nil {
+		t.Fatalf("AddDocumentTag: %v", err)
+	}
+
+	// notebook: includes descendants and is case-insensitive.
+	res, err := st.Search(ctx, SearchRequest{Query: `notebook:work`, Limit: 10})
+	if err != nil || len(res.Hits) != 2 {
+		t.Fatalf("notebook filter: %+v err=%v", res, err)
+	}
+	// notebook: + text term combine.
+	res, _ = st.Search(ctx, SearchRequest{Query: `notebook:work apples`, Limit: 10})
+	if len(res.Hits) != 1 || res.Hits[0].ID != inWork.ID {
+		t.Fatalf("notebook+term filter: %+v", res)
+	}
+	// title: uses the FTS title column only.
+	res, _ = st.Search(ctx, SearchRequest{Query: `title:quarterly`, Limit: 10})
+	if len(res.Hits) != 1 || res.Hits[0].ID != inWork.ID {
+		t.Fatalf("title filter must not match body text: %+v", res)
+	}
+	// tag: matches case-insensitively.
+	res, _ = st.Search(ctx, SearchRequest{Query: `tag:TODO`, Limit: 10})
+	if len(res.Hits) != 1 || res.Hits[0].ID != elsewhere.ID {
+		t.Fatalf("tag filter: %+v", res)
+	}
+	// Phrases must match exactly.
+	res, _ = st.Search(ctx, SearchRequest{Query: `"meeting agenda"`, Limit: 10})
+	if len(res.Hits) != 1 || res.Hits[0].ID != inWork.ID {
+		t.Fatalf("phrase search: %+v", res)
+	}
+	res, _ = st.Search(ctx, SearchRequest{Query: `"agenda meeting"`, Limit: 10})
+	if len(res.Hits) != 0 {
+		t.Fatalf("reversed phrase must not match: %+v", res)
+	}
+	// Unknown notebook name yields empty results, not an error.
+	res, err = st.Search(ctx, SearchRequest{Query: `notebook:nope`, Limit: 10})
+	if err != nil || len(res.Hits) != 0 {
+		t.Fatalf("unknown notebook: %+v err=%v", res, err)
+	}
+	_ = inSub
+}
+
+func TestQueryAuthorAndTimeFilters(t *testing.T) {
+	st := newNotebookTestStore(t)
+	ctx := context.Background()
+
+	post1, _ := st.CreateDocument(ctx, CreateDocumentRequest{Title: "post one", Body: "thread content"})
+	post2, _ := st.CreateDocument(ctx, CreateDocumentRequest{Title: "post two", Body: "thread content"})
+	_, _ = st.SetDocumentSource(ctx, SetDocumentSourceRequest{
+		DocumentID: post1.ID, SourceSystem: "twitter", ExternalID: "p1",
+		Author: "Alice Smith", AuthorID: "alice@example.social", PublishedAt: "2026-07-01T12:00:00Z",
+	})
+	_, _ = st.SetDocumentSource(ctx, SetDocumentSourceRequest{
+		DocumentID: post2.ID, SourceSystem: "twitter", ExternalID: "p2",
+		Author: "Bob Jones", AuthorID: "bob@example.social", PublishedAt: "2026-07-20T12:00:00Z",
+	})
+
+	res, _ := st.Search(ctx, SearchRequest{Query: `author:"Alice Smith"`, Limit: 10})
+	if len(res.Hits) != 1 || res.Hits[0].ID != post1.ID {
+		t.Fatalf("author filter: %+v", res)
+	}
+	res, _ = st.Search(ctx, SearchRequest{Query: `authorid:ALICE@example.social`, Limit: 10})
+	if len(res.Hits) != 1 || res.Hits[0].ID != post1.ID {
+		t.Fatalf("authorid filter: %+v", res)
+	}
+	res, _ = st.Search(ctx, SearchRequest{Query: `since:2026-07-10 until:2026-07-31`, Limit: 10})
+	if len(res.Hits) != 1 || res.Hits[0].ID != post2.ID {
+		t.Fatalf("since/until on published_ts: %+v", res)
+	}
+	res, _ = st.Search(ctx, SearchRequest{Query: `authorid:bob@example.social thread`, Limit: 10})
+	if len(res.Hits) != 1 || res.Hits[0].ID != post2.ID {
+		t.Fatalf("metadata+text combination: %+v", res)
+	}
+}
+
+func TestTrashQueryAndCursorPagination(t *testing.T) {
+	st := newNotebookTestStore(t)
+	ctx := context.Background()
+
+	doc, _ := st.CreateDocument(ctx, CreateDocumentRequest{Title: "deleted note", Body: "shredded lettuce"})
+	_ = st.DeleteDocument(ctx, DeleteDocumentRequest{ID: doc.ID, BaseRevisionID: doc.CurrentRevisionID})
+
+	// The Trash search notebook query finds only trashed notes, with text terms.
+	res, err := st.Search(ctx, SearchRequest{Query: `is:trashed`, Limit: 10})
+	if err != nil || len(res.Hits) != 1 || res.Hits[0].ID != doc.ID {
+		t.Fatalf("is:trashed: %+v err=%v", res, err)
+	}
+	res, _ = st.Search(ctx, SearchRequest{Query: `is:trashed lettuce`, Limit: 10})
+	if len(res.Hits) != 1 {
+		t.Fatalf("is:trashed with term: %+v", res)
+	}
+	// Trashed notes never appear in normal queries.
+	res, _ = st.Search(ctx, SearchRequest{Query: `lettuce`, Limit: 10})
+	if len(res.Hits) != 0 {
+		t.Fatalf("trashed note leaked into normal search: %+v", res)
+	}
+
+	// Cursor pagination over the "All notes" (empty) query.
+	for i := 0; i < 5; i++ {
+		if _, err := st.CreateDocument(ctx, CreateDocumentRequest{Title: fmt.Sprintf("note %d", i), Body: "filler"}); err != nil {
+			t.Fatalf("CreateDocument: %v", err)
+		}
+	}
+	page1, err := st.Search(ctx, SearchRequest{Query: "", Limit: 2})
+	if err != nil || len(page1.Hits) != 2 || page1.NextCursor == "" {
+		t.Fatalf("page1: %+v err=%v", page1, err)
+	}
+	page2, err := st.Search(ctx, SearchRequest{Query: "", Limit: 2, Cursor: page1.NextCursor})
+	if err != nil || len(page2.Hits) != 2 || page2.NextCursor == "" {
+		t.Fatalf("page2: %+v err=%v", page2, err)
+	}
+	if page1.Hits[0].ID == page2.Hits[0].ID {
+		t.Fatalf("pages overlap: %+v %+v", page1.Hits, page2.Hits)
+	}
+	page3, err := st.Search(ctx, SearchRequest{Query: "", Limit: 2, Cursor: page2.NextCursor})
+	if err != nil || len(page3.Hits) != 1 || page3.NextCursor != "" {
+		t.Fatalf("page3 must be the last page: %+v err=%v", page3, err)
+	}
+
+	// A cursor is bound to its query.
+	if _, err := st.Search(ctx, SearchRequest{Query: "different", Limit: 2, Cursor: page1.NextCursor}); !errors.Is(err, ErrInvalidInput) {
+		t.Fatalf("cursor replay against another query must fail: %v", err)
+	}
+	if _, err := st.Search(ctx, SearchRequest{Query: "", Limit: 2, Cursor: "garbage!"}); !errors.Is(err, ErrInvalidInput) {
+		t.Fatalf("garbage cursor must fail cleanly: %v", err)
+	}
+}

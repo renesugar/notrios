@@ -155,3 +155,8 @@ This file is the codebase atlas. Update it whenever major files or directories a
 - `internal/store/sqlite_sources.go` — `SetDocumentSource` upsert (works for trashed notes so importers can backfill), `GetDocumentSource`, `FindDocumentBySource` (importer idempotency), `ListThreadDocuments` (chronological thread recovery, trashed notes excluded); `PurgeDocument` now refuses externally-sourced notes.
 - `internal/importers/joplinraw` and `internal/importers/obsidian` record provenance rows on every import run (re-running an import backfills existing notes).
 - `internal/store/sources_test.go` plus importer-test assertions cover upsert/lookup, thread ordering, purge protection, and importer provenance.
+
+## v0.2 task R6 additions (query language)
+
+- `internal/query/` — backend-agnostic parser for the user search language (`notebook:`, `tag:`, `title:`, `author:`, `authorid:`, `since:`, `until:`, `is:trashed`, quoted phrases, implicit AND; date-only/time-only timestamp semantics per `SEARCH_QUERY_LANGUAGE.md`).
+- `internal/store/sqlite_query.go` — compiles parsed queries to FTS5 + SQL (notebook subtree expansion, tag EXISTS filters, provenance joins for author/time, LIKE fallback for trash queries) and implements opaque query-bound cursors for incremental scrolling. `store.Search` now routes every query through the adapter.

@@ -1,6 +1,6 @@
 # Plan: v0.2 — Notrios redesign foundation
 
-Status: active. Tasks R1–R5 are complete; next task is R6 (query-language adapter). Ask the user before starting each task.
+Status: active. Tasks R1–R6 are complete; next task is R7 (Recoll integration). Ask the user before starting each task.
 
 This plan supersedes the earlier v0.2 draft ("Import, Resource, and Media Hardening", archived at `plans/v0.2/001-import-resource-media-hardening.md`). The media-hardening items remain on the roadmap; they are re-sequenced behind the redesign items below.
 
@@ -77,7 +77,7 @@ Working state: importers record provenance rows; thread queries work in store te
 
 Working state: a client can reproduce the sidebar (notebooks tree + tag counts) and trash flows purely via REST.
 
-### R6. Query-language adapter
+### R6. Query-language adapter — COMPLETED
 
 - Parser for `notebook:`, `tag:`, `author:`, `authorid:`, `title:`, `since:`, `until:`, quoted phrases, implicit AND.
 - ISO 8601 timestamps normalized to UTC; date-only `until:` means end-of-day; document time-only semantics.
