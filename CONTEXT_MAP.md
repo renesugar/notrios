@@ -1,0 +1,131 @@
+# Context Map
+
+This file is the codebase atlas. Update it whenever major files or directories are added.
+
+## Root documents
+
+- `README.md` — project overview and quick start.
+- `PLAN.md` — active MVP implementation plan.
+- `SCAFFOLD_CREATION_PLAN.md` — process for creating/refining this scaffold.
+- `ROADMAP.md` — product roadmap and future features.
+- `AGENTS.md` — coding-agent instructions.
+- `SYSTEM_ARCHITECTURE.md` — architectural blueprint.
+- `API_SPEC.md` — REST/MCP contract notes.
+- `CODING_STANDARDS.md` — coding style and guardrails.
+- `TESTING_POLICY.md` — definition of done and testing layers.
+- `ENVIRONMENT_SETUP.md` — development setup.
+- `PROMPT.md` — initial Codex prompt.
+
+## Code directories
+
+- `cmd/notesd/` — service daemon entry point.
+- `cmd/notesctl/` — CLI/admin/import command entry point.
+- `internal/importers/joplinraw/` — MVP Joplin RAW Export Directory parser/importer.
+- `internal/importers/obsidian/` — MVP Obsidian vault Markdown/assets parser/importer.
+- `internal/api/` — shared API request/response models.
+- `internal/httpapi/` — REST HTTP adapter for status, documents, revisions, resources, links, graph slices, and staged future routes.
+- `internal/store/` — SQLite-backed persistence, document CRUD, revision history, soft delete, restore, FTS5 search, resource storage, and link graph persistence.
+- `internal/markdownlinks/` — conservative MVP Markdown/Obsidian/app-URI link extractor.
+- `internal/version/` — version constants.
+- `migrations/` — SQLite schema migrations.
+- `web/` — React/Vite built-in UI scaffold.
+
+## Agent support
+
+- `agent/PLAN_STATUS.md` — current task and working-state notes.
+- `agent/ATTEMPT_LOG.jsonl` — append-only attempt history.
+- `agent/MODEL_LOG.jsonl` — model/session tracking.
+- `agent/LOOP_DETECTION.md` — stalled-task detection and resolution.
+- `plans/` — archived completed plans by version/milestone.
+- `skills/` — agent skills using the `SKILL.md` format.
+- `prompts/` — reusable Codex prompts.
+
+## API and configuration
+
+- `api/openapi.yaml` — initial REST OpenAPI skeleton.
+- `config/config.example.yaml` — example service configuration and media policy.
+
+## Scripts
+
+- `scripts/check_required_files.py` — verifies required scaffold files exist.
+- `scripts/validate-scaffold.sh` — runs current scaffold validation checks.
+
+## Added design docs
+
+- `FEATURE_MATRIX.md` — milestone and ownership map.
+- `UI_DESIGN.md` — web UI/editor decisions.
+- `PUBLISHING_POLICY.md` — Quartz/static publishing rules.
+- `VERSIONING_AND_SYNC_POLICY.md` — revisions/checkpoint/sync decisions.
+- `WORKSPACE_MAINTENANCE.md` — query/lint/outline/block features.
+- `SCAFFOLD_REVIEW_REPORT.md` — Step 2 repair summary.
+
+## Step 3 additions
+
+- `DATABASE_SCHEMA.md` explains the target SQLite schema and why sist2 remains a derived index.
+- `api/openapi.yaml` now contains the expanded REST scaffold for collections, documents, resources, revisions, links, remote media, graph, publishing, and jobs. Document, resource, graph, and read-only MCP MVP routes have live implementations; import/publish/remote-media execution remains staged.
+- `api/mcp-tools.md` now defines MCP tool profiles and the implemented read-only MVP tools. `internal/httpapi/mcp.go` contains the current dependency-free adapter mounted at `/mcp`.
+- `internal/api/types.go` mirrors the current REST DTO shapes.
+- `internal/httpapi/server.go` has placeholder route handlers for future routes and live SQLite-backed handlers for the Step 4 document create/read/body/search slice.
+
+## MVP Task 1 additions
+
+- `internal/config/` — small dependency-free config loader for the documented YAML subset and directory bootstrap helper.
+- `internal/store.StoreStatus` — database driver/path/state/schema-version reporting for status output.
+- `MVP_TASK1_REPORT.md` — service persistence foundation completion report.
+
+## MVP Task 2 additions
+
+- `internal/store` now exposes update, soft-delete, revision list/read, and revision restore operations with optimistic concurrency.
+- `internal/httpapi` implements `PUT`/`PATCH`/`DELETE` document routes plus revision list/read/restore.
+- `web/src/api.ts` and `web/src/App.tsx` can save a new revision for the currently opened note.
+- `MVP_TASK2_REPORT.md` records this task.
+
+## MVP Task 4 additions
+
+- `internal/store` now streams resource bytes into the configured asset store and deduplicates exact blobs by SHA-256.
+- REST implements resource metadata/content and document-resource attach/list/detach routes.
+- `web/src/App.tsx` can upload/list/download attached resources.
+- `MVP_TASK4_REPORT.md` records this task.
+
+## MVP Task 5 additions
+
+- `internal/markdownlinks` extracts common Markdown links/images, Obsidian wikilinks/embeds, app URIs, external URLs, heading anchors, and block anchors.
+- `internal/store` rebuilds `document_links` rows transactionally on document create/update/restore and clears outgoing links on soft delete.
+- `internal/httpapi` implements `GET /api/v1/documents/{document_id}/links` and `POST /api/v1/graph`.
+- `web/src/api.ts` and `web/src/App.tsx` can list and display outgoing links/backlinks for the opened note.
+- `MVP_TASK5_REPORT.md` records this task.
+
+
+## MVP Task 6 UI files
+
+- `web/src/App.tsx`: REST-backed Markdown UI with `md-editor-rt`, preview normalization, app URI routing, resource upload, link/backlink/resource sidebars.
+- `web/src/styles.css`: app layout plus editor, link-list, resource-list, and text-button styling.
+- `internal/httpapi/server.go`: now serves `web/dist` for the built-in UI when the production build exists.
+- `MVP_TASK6_REPORT.md`: implementation notes and deliberate limitations for the UI MVP.
+
+## MVP Task 8 importer files
+
+- `internal/importers/joplinraw/joplinraw.go` parses Joplin RAW item files, imports notes/resources, rewrites `:/<id>` links, and returns a JSON-serializable report.
+- `internal/importers/joplinraw/joplinraw_test.go` builds a small RAW fixture and verifies import, resource attachment, link rewriting, searchability, and re-run behavior.
+- `cmd/notesctl/main.go` now includes `notesctl import joplin-raw`.
+- Store create requests support optional preferred IDs so importers can create deterministic source-derived document/resource IDs.
+
+
+## MVP Task 9 importer files
+
+- `internal/importers/obsidian/obsidian.go` scans an Obsidian-style vault, imports Markdown notes and non-Markdown assets with deterministic source-path IDs, preserves/augments frontmatter, attaches referenced local assets, and refreshes link indexes after the batch.
+- `internal/importers/obsidian/obsidian_test.go` builds a small vault fixture and verifies import, resource attachment, Wikilink/embed/backlink resolution, unresolved-link preservation, searchability, and idempotent re-run behavior.
+- `cmd/notesctl/main.go` now includes `notesctl import obsidian`.
+- `store.RebuildDocumentLinks` lets batch importers refresh link resolution after all target documents/resources exist without creating extra revisions.
+
+
+## Release hardening files
+
+- `PACKAGING.md` — release ZIP contents, exclusions, and package commands.
+- `SECURITY_REVIEW.md` — v0.1 security review for resource downloads, preview sanitization, MCP, and importers.
+- `RELEASE_CHECKLIST.md` — pre-tag checklist for `v0.1.0-mvp`.
+- `MVP_RELEASE_REPORT.md` — completed MVP capability summary and deferred features.
+- `scripts/mvp_smoke.sh` — end-to-end local REST/MCP/resource smoke test.
+- `scripts/run_performance_smoke.sh` — generated-dataset smoke and benchmark wrapper.
+- `scripts/package_release.sh` — validates, builds UI, creates source ZIP, and verifies contents.
+- `scripts/check_release_zip.py` — catches missing `web/dist`, accidental `web/node_modules`, and runtime data in ZIPs.

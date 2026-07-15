@@ -1,0 +1,15 @@
+{"timestamp": "2026-07-08T00:00:00Z", "task_id": "scaffold-001", "model": "GPT-5.5 Thinking", "observed_by": "assistant", "notes": "Initial scaffold generated in ChatGPT before Codex handoff."}
+{"timestamp": "2026-07-08T00:25:00Z", "task_id": "scaffold-002", "model": "GPT-5.5 Thinking", "observed_by": "assistant", "notes": "Step 2 scaffold repair performed in ChatGPT before Codex handoff."}
+{"step": "scaffold-step-3", "model": "GPT-5.5 Thinking", "role": "scaffold generation and repair"}
+{"timestamp":"2026-07-08T00:45:00Z","task_id":"scaffold-004","model":"GPT-5.5 Thinking","observed_by":"assistant","notes":"Step 4 runnable persistence slice performed in ChatGPT before Codex handoff."}
+{"timestamp":"2026-07-08T01:00:00Z","task_id":"scaffold-005","model":"GPT-5.5 Thinking","observed_by":"assistant","notes":"Step 5 browser UI integration performed before Codex handoff."}
+{"timestamp":"2026-07-08T00:50:00Z","task_id":"scaffold-006","model":"ChatGPT scaffold session","notes":"Restricted container; documented limitations for Codex handoff."}
+{"timestamp":"2026-07-08T01:05:00Z","task_id":"mvp-001","model":"GPT-5.5 Thinking","notes":"MVP Task 1 performed in ChatGPT scaffold session; same restricted-container caveats as handoff."}
+{"timestamp":"2026-07-08T01:25:00Z","task_id":"mvp-002","model":"GPT-5.5 Thinking","notes":"Task implemented within ChatGPT scaffold continuation; no model switch detected."}
+{"timestamp":"2026-07-08T02:05:00Z","task_id":"mvp-004","model":"GPT-5.5 Thinking","notes":"Task implemented within ChatGPT scaffold continuation; no model switch detected."}
+{"timestamp":"2026-07-08T02:25:00Z","task_id":"mvp-005","model":"GPT-5.5 Thinking","notes":"Task implemented within ChatGPT scaffold continuation; no model switch detected."}
+{"timestamp":"2026-07-08T02:45:00Z","task_id":"mvp-006","model":"GPT-5.5 Thinking","notes":"Task implemented within ChatGPT scaffold continuation; no model switch detected."}
+{"timestamp":"2026-07-08T03:05:00Z","task_id":"mvp-007","model":"GPT-5.5 Thinking","notes":"Task implemented within ChatGPT scaffold continuation; no model switch detected. Official MCP SDK not added due restricted container/dependency policy."}
+{"timestamp":"2026-07-08T03:45:00Z","task_id":"mvp-008","model":"GPT-5.5 Thinking","notes":"Task implemented within ChatGPT scaffold continuation; no model switch detected. Parser should be verified against real Joplin RAW exports by Codex/human."}
+{"timestamp":"2026-07-08T04:25:00Z","task_id":"mvp-009","model":"GPT-5.5 Thinking","notes":"Task implemented within ChatGPT scaffold continuation; no model switch detected. Obsidian importer should be verified against real vaults by Codex/human."}
+{"timestamp":"2026-07-08T05:05:00Z","task_id":"mvp-010","model":"GPT-5.5 Thinking","notes":"Task implemented within ChatGPT scaffold continuation; no model switch detected. Release packaging remains source-ZIP based and should be reviewed in real Gitea/GitHub CI."}

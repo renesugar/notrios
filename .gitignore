@@ -1,0 +1,25 @@
+# Local data and generated stores
+data/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+*.db
+
+# Build outputs
+bin/
+dist/
+web/dist/
+web/node_modules/
+
+# Go
+coverage.out
+
+# OS/editor
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Private imports
+private-testdata/
+exports/

@@ -1,0 +1,1682 @@
+package store
+
+/*
+#cgo pkg-config: sqlite3
+#include <sqlite3.h>
+#include <stdlib.h>
+
+static int notes_sqlite_bind_text(sqlite3_stmt *stmt, int idx, char *value) {
+	return sqlite3_bind_text(stmt, idx, value, -1, SQLITE_TRANSIENT);
+}
+*/
+import "C"
+
+import (
+	"context"
+	"crypto/sha256"
+	"embed"
+	"encoding/hex"
+	"fmt"
+	"io"
+	"mime"
+	"net/http"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
+	"unsafe"
+
+	"example.com/notes-companion/internal/markdownlinks"
+)
+
+//go:embed migrations/0001_initial.sql
+var migrationFS embed.FS
+
+// SQLiteStore is a small cgo-backed SQLite adapter. It is intentionally narrow
+// until the project can decide whether to use mattn/go-sqlite3, modernc.org/sqlite,
+// or this local wrapper long term.
+type SQLiteStore struct {
+	mu        sync.Mutex
+	db        *C.sqlite3
+	path      string
+	assetRoot string
+}
+
+func OpenSQLite(path string) (*SQLiteStore, error) {
+	return OpenSQLiteWithAssetStore(path, defaultAssetRoot(path))
+}
+
+func OpenSQLiteWithAssetStore(path, assetRoot string) (*SQLiteStore, error) {
+	if strings.TrimSpace(assetRoot) == "" {
+		assetRoot = defaultAssetRoot(path)
+	}
+	if path != ":memory:" {
+		if err := os.MkdirAll(parentDir(path), 0o755); err != nil {
+			return nil, err
+		}
+	}
+	if err := os.MkdirAll(assetRoot, 0o755); err != nil {
+		return nil, err
+	}
+	cpath := C.CString(path)
+	defer C.free(unsafe.Pointer(cpath))
+	var db *C.sqlite3
+	flags := C.int(C.SQLITE_OPEN_READWRITE | C.SQLITE_OPEN_CREATE | C.SQLITE_OPEN_FULLMUTEX)
+	if rc := C.sqlite3_open_v2(cpath, &db, flags, nil); rc != C.SQLITE_OK {
+		msg := C.GoString(C.sqlite3_errmsg(db))
+		if db != nil {
+			C.sqlite3_close(db)
+		}
+		return nil, fmt.Errorf("open sqlite: %s", msg)
+	}
+	s := &SQLiteStore{db: db, path: path, assetRoot: assetRoot}
+	if err := s.exec("PRAGMA foreign_keys = ON; PRAGMA journal_mode = WAL;"); err != nil {
+		_ = s.Close()
+		return nil, err
+	}
+	return s, nil
+}
+
+func contextOrBackground(ctx context.Context) context.Context {
+	if ctx == nil {
+		return context.Background()
+	}
+	return ctx
+}
+
+func defaultAssetRoot(path string) string {
+	if path == ":memory:" || strings.TrimSpace(path) == "" {
+		return filepath.Join(os.TempDir(), "notes-companion-assets")
+	}
+	return filepath.Join(parentDir(path), "assets")
+}
+
+func parentDir(path string) string {
+	idx := strings.LastIndex(path, "/")
+	if idx < 0 {
+		return "."
+	}
+	if idx == 0 {
+		return "/"
+	}
+	return path[:idx]
+}
+
+func (s *SQLiteStore) Close() error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.db == nil {
+		return nil
+	}
+	if rc := C.sqlite3_close(s.db); rc != C.SQLITE_OK {
+		return fmt.Errorf("close sqlite: %s", C.GoString(C.sqlite3_errmsg(s.db)))
+	}
+	s.db = nil
+	return nil
+}
+
+func (s *SQLiteStore) Bootstrap(ctx context.Context) error {
+	ctx = contextOrBackground(ctx)
+	migration, err := migrationFS.ReadFile("migrations/0001_initial.sql")
+	if err != nil {
+		return fmt.Errorf("read migration: %w", err)
+	}
+	if err := s.Exec(ctx, string(migration)); err != nil {
+		return err
+	}
+	if err := s.ensureSchemaV4(ctx); err != nil {
+		return err
+	}
+	return s.Exec(ctx, `INSERT OR IGNORE INTO collections(id, name, description) VALUES('default', 'Default', 'Managed notes created by the companion service.');`)
+}
+
+func (s *SQLiteStore) Exec(ctx context.Context, sql string) error {
+	ctx = contextOrBackground(ctx)
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	return s.exec(sql)
+}
+
+func (s *SQLiteStore) ensureSchemaV4(ctx context.Context) error {
+	statements := []string{
+		`ALTER TABLE document_revisions ADD COLUMN body_mime_type TEXT NOT NULL DEFAULT 'text/markdown';`,
+		`ALTER TABLE document_revisions ADD COLUMN message TEXT;`,
+		`CREATE INDEX IF NOT EXISTS resources_collection_idx ON resources(collection_id);`,
+		`CREATE INDEX IF NOT EXISTS resources_blob_idx ON resources(blob_sha256);`,
+		`CREATE INDEX IF NOT EXISTS document_resource_refs_document_idx ON document_resource_refs(document_id);`,
+		`CREATE INDEX IF NOT EXISTS document_resource_refs_resource_idx ON document_resource_refs(resource_id);`,
+		`ALTER TABLE document_links ADD COLUMN target_uri TEXT;`,
+		`ALTER TABLE document_links ADD COLUMN context TEXT;`,
+		`PRAGMA user_version = 4;`,
+	}
+	for _, statement := range statements {
+		if err := s.Exec(ctx, statement); err != nil {
+			if strings.Contains(err.Error(), "duplicate column name") {
+				continue
+			}
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *SQLiteStore) exec(sql string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.execLocked(sql)
+}
+
+func (s *SQLiteStore) execLocked(sql string) error {
+	if s.db == nil {
+		return fmt.Errorf("sqlite store is closed")
+	}
+	csql := C.CString(sql)
+	defer C.free(unsafe.Pointer(csql))
+	var errmsg *C.char
+	if rc := C.sqlite3_exec(s.db, csql, nil, nil, &errmsg); rc != C.SQLITE_OK {
+		msg := C.GoString(errmsg)
+		C.sqlite3_free(unsafe.Pointer(errmsg))
+		return fmt.Errorf("sqlite exec: %s", msg)
+	}
+	return nil
+}
+
+func (s *SQLiteStore) Status(ctx context.Context) (StoreStatus, error) {
+	ctx = contextOrBackground(ctx)
+	if err := ctx.Err(); err != nil {
+		return StoreStatus{}, err
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.db == nil {
+		return StoreStatus{Driver: "sqlite", Path: s.path, State: "closed"}, nil
+	}
+	version, err := s.pragmaUserVersionLocked()
+	if err != nil {
+		return StoreStatus{}, err
+	}
+	return StoreStatus{
+		Driver:        "sqlite",
+		Path:          s.path,
+		State:         "open",
+		SchemaVersion: version,
+	}, nil
+}
+
+func (s *SQLiteStore) pragmaUserVersionLocked() (int, error) {
+	stmt, err := s.prepareLocked(`PRAGMA user_version`)
+	if err != nil {
+		return 0, err
+	}
+	defer C.sqlite3_finalize(stmt)
+	rc := C.sqlite3_step(stmt)
+	if rc == C.SQLITE_DONE {
+		return 0, nil
+	}
+	if rc != C.SQLITE_ROW {
+		return 0, s.stepErrLocked(rc)
+	}
+	return int(C.sqlite3_column_int(stmt, 0)), nil
+}
+
+func (s *SQLiteStore) ListCollections(ctx context.Context) ([]Collection, error) {
+	ctx = contextOrBackground(ctx)
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	stmt, err := s.prepareLocked(`SELECT id, name, COALESCE(description, '') FROM collections ORDER BY name, id`)
+	if err != nil {
+		return nil, err
+	}
+	defer C.sqlite3_finalize(stmt)
+
+	collections := []Collection{}
+	for {
+		rc := C.sqlite3_step(stmt)
+		switch rc {
+		case C.SQLITE_ROW:
+			collections = append(collections, Collection{
+				ID:           columnText(stmt, 0),
+				Name:         columnText(stmt, 1),
+				Description:  columnText(stmt, 2),
+				Capabilities: []string{"documents", "search", "resources", "links", "graph"},
+			})
+		case C.SQLITE_DONE:
+			return collections, nil
+		default:
+			return nil, s.stepErrLocked(rc)
+		}
+	}
+}
+
+func (s *SQLiteStore) CreateDocument(ctx context.Context, req CreateDocumentRequest) (Document, error) {
+	ctx = contextOrBackground(ctx)
+	if err := ctx.Err(); err != nil {
+		return Document{}, err
+	}
+	req = NormalizeCreateRequest(req)
+	docID := req.PreferredID
+	if docID == "" {
+		var err error
+		docID, err = NewID("doc")
+		if err != nil {
+			return Document{}, err
+		}
+	}
+	revID, err := NewID("rev")
+	if err != nil {
+		return Document{}, err
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if err := s.execLocked("BEGIN IMMEDIATE"); err != nil {
+		return Document{}, err
+	}
+	committed := false
+	defer func() {
+		if !committed {
+			_ = s.execLocked("ROLLBACK")
+		}
+	}()
+
+	if err := s.execPreparedLocked(`INSERT INTO documents(id, collection_id, title, body_mime_type, current_revision_id)
+		VALUES(?, ?, ?, ?, ?)`, docID, req.CollectionID, req.Title, req.BodyMIMEType, revID); err != nil {
+		return Document{}, err
+	}
+	if err := s.execPreparedLocked(`INSERT INTO document_revisions(id, document_id, title, body, body_mime_type, message) VALUES(?, ?, ?, ?, ?, ?)`, revID, docID, req.Title, req.Body, req.BodyMIMEType, req.Message); err != nil {
+		return Document{}, err
+	}
+	if err := s.execPreparedLocked(`INSERT INTO documents_fts(document_id, collection_id, title, body) VALUES(?, ?, ?, ?)`, docID, req.CollectionID, req.Title, req.Body); err != nil {
+		return Document{}, err
+	}
+	if err := s.rebuildDocumentLinksLocked(docID, req.CollectionID, req.Body); err != nil {
+		return Document{}, err
+	}
+	if err := s.execLocked("COMMIT"); err != nil {
+		return Document{}, err
+	}
+	committed = true
+
+	return s.getDocumentLocked(docID)
+}
+
+func (s *SQLiteStore) GetDocument(ctx context.Context, id string) (Document, error) {
+	ctx = contextOrBackground(ctx)
+	if err := ctx.Err(); err != nil {
+		return Document{}, err
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.getDocumentLocked(id)
+}
+
+func (s *SQLiteStore) getDocumentLocked(id string) (Document, error) {
+	stmt, err := s.prepareLocked(`SELECT d.id, d.collection_id, d.title, r.body, COALESCE(r.body_mime_type, d.body_mime_type), d.current_revision_id, d.created_at, d.updated_at, COALESCE(d.deleted_at, '')
+		FROM documents d
+		JOIN document_revisions r ON r.id = d.current_revision_id
+		WHERE d.id = ? AND d.deleted_at IS NULL`)
+	if err != nil {
+		return Document{}, err
+	}
+	defer C.sqlite3_finalize(stmt)
+	if err := bindAll(stmt, []string{id}); err != nil {
+		return Document{}, err
+	}
+	rc := C.sqlite3_step(stmt)
+	if rc == C.SQLITE_DONE {
+		return Document{}, ErrNotFound
+	}
+	if rc != C.SQLITE_ROW {
+		return Document{}, s.stepErrLocked(rc)
+	}
+	createdAt, _ := time.Parse(time.RFC3339Nano, sqliteTimeToRFC3339(columnText(stmt, 6)))
+	updatedAt, _ := time.Parse(time.RFC3339Nano, sqliteTimeToRFC3339(columnText(stmt, 7)))
+	doc := Document{
+		ID:                columnText(stmt, 0),
+		CollectionID:      columnText(stmt, 1),
+		Title:             columnText(stmt, 2),
+		Body:              columnText(stmt, 3),
+		BodyMIMEType:      columnText(stmt, 4),
+		CurrentRevisionID: columnText(stmt, 5),
+		CreatedAt:         createdAt,
+		UpdatedAt:         updatedAt,
+	}
+	doc.URI = DocumentURI(doc.CollectionID, doc.ID)
+	return doc, nil
+}
+
+func sqliteTimeToRFC3339(value string) string {
+	if strings.Contains(value, "T") {
+		return value
+	}
+	return strings.Replace(value, " ", "T", 1) + "Z"
+}
+
+func (s *SQLiteStore) UpdateDocument(ctx context.Context, req UpdateDocumentRequest) (Document, error) {
+	ctx = contextOrBackground(ctx)
+	if err := ctx.Err(); err != nil {
+		return Document{}, err
+	}
+	req = NormalizeUpdateRequest(req)
+	if req.ID == "" {
+		return Document{}, ErrNotFound
+	}
+	if strings.TrimSpace(req.BaseRevisionID) == "" {
+		return Document{}, ErrPreconditionRequired
+	}
+	revID, err := NewID("rev")
+	if err != nil {
+		return Document{}, err
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if err := s.execLocked("BEGIN IMMEDIATE"); err != nil {
+		return Document{}, err
+	}
+	committed := false
+	defer func() {
+		if !committed {
+			_ = s.execLocked("ROLLBACK")
+		}
+	}()
+
+	current, err := s.getDocumentLocked(req.ID)
+	if err != nil {
+		return Document{}, err
+	}
+	if current.CurrentRevisionID != req.BaseRevisionID {
+		return Document{}, ErrConflict
+	}
+	if err := s.execPreparedLocked(`INSERT INTO document_revisions(id, document_id, title, body, body_mime_type, message) VALUES(?, ?, ?, ?, ?, ?)`, revID, req.ID, req.Title, req.Body, req.BodyMIMEType, req.Message); err != nil {
+		return Document{}, err
+	}
+	if err := s.execPreparedLocked(`UPDATE documents SET title = ?, body_mime_type = ?, current_revision_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND deleted_at IS NULL`, req.Title, req.BodyMIMEType, revID, req.ID); err != nil {
+		return Document{}, err
+	}
+	if err := s.execPreparedLocked(`DELETE FROM documents_fts WHERE document_id = ?`, req.ID); err != nil {
+		return Document{}, err
+	}
+	if err := s.execPreparedLocked(`INSERT INTO documents_fts(document_id, collection_id, title, body) VALUES(?, ?, ?, ?)`, req.ID, current.CollectionID, req.Title, req.Body); err != nil {
+		return Document{}, err
+	}
+	if err := s.rebuildDocumentLinksLocked(req.ID, current.CollectionID, req.Body); err != nil {
+		return Document{}, err
+	}
+	if err := s.execLocked("COMMIT"); err != nil {
+		return Document{}, err
+	}
+	committed = true
+	return s.getDocumentLocked(req.ID)
+}
+
+func (s *SQLiteStore) DeleteDocument(ctx context.Context, req DeleteDocumentRequest) error {
+	ctx = contextOrBackground(ctx)
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	req = NormalizeDeleteRequest(req)
+	if req.ID == "" {
+		return ErrNotFound
+	}
+	if strings.TrimSpace(req.BaseRevisionID) == "" {
+		return ErrPreconditionRequired
+	}
+	revID, err := NewID("rev")
+	if err != nil {
+		return err
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if err := s.execLocked("BEGIN IMMEDIATE"); err != nil {
+		return err
+	}
+	committed := false
+	defer func() {
+		if !committed {
+			_ = s.execLocked("ROLLBACK")
+		}
+	}()
+
+	current, err := s.getDocumentLocked(req.ID)
+	if err != nil {
+		return err
+	}
+	if current.CurrentRevisionID != req.BaseRevisionID {
+		return ErrConflict
+	}
+	if err := s.execPreparedLocked(`INSERT INTO document_revisions(id, document_id, title, body, body_mime_type, message) VALUES(?, ?, ?, ?, ?, ?)`, revID, req.ID, current.Title, current.Body, current.BodyMIMEType, req.Message); err != nil {
+		return err
+	}
+	if err := s.execPreparedLocked(`UPDATE documents SET current_revision_id = ?, deleted_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND deleted_at IS NULL`, revID, req.ID); err != nil {
+		return err
+	}
+	if err := s.execPreparedLocked(`DELETE FROM documents_fts WHERE document_id = ?`, req.ID); err != nil {
+		return err
+	}
+	if err := s.execLocked("COMMIT"); err != nil {
+		return err
+	}
+	committed = true
+	return nil
+}
+
+func (s *SQLiteStore) ListDocumentRevisions(ctx context.Context, documentID string) ([]DocumentRevision, error) {
+	ctx = contextOrBackground(ctx)
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if exists, err := s.documentExistsLocked(documentID); err != nil {
+		return nil, err
+	} else if !exists {
+		return nil, ErrNotFound
+	}
+	stmt, err := s.prepareLocked(`SELECT id, document_id, title, body, body_mime_type, COALESCE(message, ''), created_at FROM document_revisions WHERE document_id = ? ORDER BY created_at DESC, id DESC`)
+	if err != nil {
+		return nil, err
+	}
+	defer C.sqlite3_finalize(stmt)
+	if err := bindAll(stmt, []string{documentID}); err != nil {
+		return nil, err
+	}
+	revisions := []DocumentRevision{}
+	for {
+		rc := C.sqlite3_step(stmt)
+		switch rc {
+		case C.SQLITE_ROW:
+			revisions = append(revisions, revisionFromStmt(stmt))
+		case C.SQLITE_DONE:
+			return revisions, nil
+		default:
+			return nil, s.stepErrLocked(rc)
+		}
+	}
+}
+
+func (s *SQLiteStore) GetDocumentRevision(ctx context.Context, documentID, revisionID string) (DocumentRevision, error) {
+	ctx = contextOrBackground(ctx)
+	if err := ctx.Err(); err != nil {
+		return DocumentRevision{}, err
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.getDocumentRevisionLocked(documentID, revisionID)
+}
+
+func (s *SQLiteStore) RestoreDocumentRevision(ctx context.Context, req RestoreRevisionRequest) (Document, error) {
+	ctx = contextOrBackground(ctx)
+	if err := ctx.Err(); err != nil {
+		return Document{}, err
+	}
+	req = NormalizeRestoreRevisionRequest(req)
+	if req.DocumentID == "" || req.RevisionID == "" {
+		return Document{}, ErrNotFound
+	}
+	if strings.TrimSpace(req.BaseRevisionID) == "" {
+		return Document{}, ErrPreconditionRequired
+	}
+	newRevID, err := NewID("rev")
+	if err != nil {
+		return Document{}, err
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if err := s.execLocked("BEGIN IMMEDIATE"); err != nil {
+		return Document{}, err
+	}
+	committed := false
+	defer func() {
+		if !committed {
+			_ = s.execLocked("ROLLBACK")
+		}
+	}()
+
+	collectionID, currentRevisionID, err := s.documentCurrentStateLocked(req.DocumentID)
+	if err != nil {
+		return Document{}, err
+	}
+	if currentRevisionID != req.BaseRevisionID {
+		return Document{}, ErrConflict
+	}
+	target, err := s.getDocumentRevisionLocked(req.DocumentID, req.RevisionID)
+	if err != nil {
+		return Document{}, err
+	}
+	if err := s.execPreparedLocked(`INSERT INTO document_revisions(id, document_id, title, body, body_mime_type, message) VALUES(?, ?, ?, ?, ?, ?)`, newRevID, req.DocumentID, target.Title, target.Body, target.BodyMIMEType, req.Message); err != nil {
+		return Document{}, err
+	}
+	if err := s.execPreparedLocked(`UPDATE documents SET title = ?, body_mime_type = ?, current_revision_id = ?, deleted_at = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?`, target.Title, target.BodyMIMEType, newRevID, req.DocumentID); err != nil {
+		return Document{}, err
+	}
+	if err := s.execPreparedLocked(`DELETE FROM documents_fts WHERE document_id = ?`, req.DocumentID); err != nil {
+		return Document{}, err
+	}
+	if err := s.execPreparedLocked(`INSERT INTO documents_fts(document_id, collection_id, title, body) VALUES(?, ?, ?, ?)`, req.DocumentID, collectionID, target.Title, target.Body); err != nil {
+		return Document{}, err
+	}
+	if err := s.rebuildDocumentLinksLocked(req.DocumentID, collectionID, target.Body); err != nil {
+		return Document{}, err
+	}
+	if err := s.execLocked("COMMIT"); err != nil {
+		return Document{}, err
+	}
+	committed = true
+	return s.getDocumentLocked(req.DocumentID)
+}
+
+func (s *SQLiteStore) documentExistsLocked(documentID string) (bool, error) {
+	stmt, err := s.prepareLocked(`SELECT 1 FROM documents WHERE id = ?`)
+	if err != nil {
+		return false, err
+	}
+	defer C.sqlite3_finalize(stmt)
+	if err := bindAll(stmt, []string{documentID}); err != nil {
+		return false, err
+	}
+	rc := C.sqlite3_step(stmt)
+	if rc == C.SQLITE_ROW {
+		return true, nil
+	}
+	if rc == C.SQLITE_DONE {
+		return false, nil
+	}
+	return false, s.stepErrLocked(rc)
+}
+
+func (s *SQLiteStore) documentCurrentStateLocked(documentID string) (collectionID string, currentRevisionID string, err error) {
+	stmt, err := s.prepareLocked(`SELECT collection_id, current_revision_id FROM documents WHERE id = ?`)
+	if err != nil {
+		return "", "", err
+	}
+	defer C.sqlite3_finalize(stmt)
+	if err := bindAll(stmt, []string{documentID}); err != nil {
+		return "", "", err
+	}
+	rc := C.sqlite3_step(stmt)
+	if rc == C.SQLITE_DONE {
+		return "", "", ErrNotFound
+	}
+	if rc != C.SQLITE_ROW {
+		return "", "", s.stepErrLocked(rc)
+	}
+	return columnText(stmt, 0), columnText(stmt, 1), nil
+}
+
+func (s *SQLiteStore) getDocumentRevisionLocked(documentID, revisionID string) (DocumentRevision, error) {
+	stmt, err := s.prepareLocked(`SELECT id, document_id, title, body, body_mime_type, COALESCE(message, ''), created_at FROM document_revisions WHERE document_id = ? AND id = ?`)
+	if err != nil {
+		return DocumentRevision{}, err
+	}
+	defer C.sqlite3_finalize(stmt)
+	if err := bindAll(stmt, []string{documentID, revisionID}); err != nil {
+		return DocumentRevision{}, err
+	}
+	rc := C.sqlite3_step(stmt)
+	if rc == C.SQLITE_DONE {
+		return DocumentRevision{}, ErrNotFound
+	}
+	if rc != C.SQLITE_ROW {
+		return DocumentRevision{}, s.stepErrLocked(rc)
+	}
+	return revisionFromStmt(stmt), nil
+}
+
+func revisionFromStmt(stmt *C.sqlite3_stmt) DocumentRevision {
+	createdAt, _ := time.Parse(time.RFC3339Nano, sqliteTimeToRFC3339(columnText(stmt, 6)))
+	return DocumentRevision{
+		ID:           columnText(stmt, 0),
+		DocumentID:   columnText(stmt, 1),
+		Title:        columnText(stmt, 2),
+		Body:         columnText(stmt, 3),
+		BodyMIMEType: columnText(stmt, 4),
+		Message:      columnText(stmt, 5),
+		CreatedAt:    createdAt,
+	}
+}
+
+func (s *SQLiteStore) CreateResource(ctx context.Context, req CreateResourceRequest) (Resource, error) {
+	ctx = contextOrBackground(ctx)
+	if err := ctx.Err(); err != nil {
+		return Resource{}, err
+	}
+	req = NormalizeCreateResourceRequest(req)
+	if req.Content == nil {
+		return Resource{}, fmt.Errorf("%w: resource content is required", ErrInvalidInput)
+	}
+	resourceID := req.PreferredID
+	if resourceID == "" {
+		var err error
+		resourceID, err = NewID("res")
+		if err != nil {
+			return Resource{}, err
+		}
+	}
+
+	blob, cleanup, err := s.writeBlob(ctx, req.Content, req.MIMEType)
+	if err != nil {
+		return Resource{}, err
+	}
+	if cleanup != nil {
+		defer cleanup()
+	}
+	mimeType := firstNonEmptyString(req.MIMEType, blob.MIMEType, "application/octet-stream")
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if err := s.execLocked("BEGIN IMMEDIATE"); err != nil {
+		return Resource{}, err
+	}
+	committed := false
+	defer func() {
+		if !committed {
+			_ = s.execLocked("ROLLBACK")
+		}
+	}()
+
+	if err := s.execPreparedLocked(`INSERT OR IGNORE INTO blobs(sha256, storage_path, size_bytes, mime_type) VALUES(?, ?, ?, ?)`, blob.SHA256, blob.StoragePath, strconv.FormatInt(blob.SizeBytes, 10), mimeType); err != nil {
+		return Resource{}, err
+	}
+	if err := s.execPreparedLocked(`INSERT INTO resources(id, collection_id, blob_sha256, filename, mime_type) VALUES(?, ?, ?, ?, ?)`, resourceID, req.CollectionID, blob.SHA256, req.Filename, mimeType); err != nil {
+		return Resource{}, err
+	}
+	if err := s.execLocked("COMMIT"); err != nil {
+		return Resource{}, err
+	}
+	committed = true
+	if cleanup != nil {
+		cleanup()
+		cleanup = nil
+	}
+	return s.getResourceLocked(resourceID)
+}
+
+type storedBlob struct {
+	SHA256      string
+	StoragePath string
+	SizeBytes   int64
+	MIMEType    string
+}
+
+func (s *SQLiteStore) writeBlob(ctx context.Context, content io.Reader, mimeType string) (storedBlob, func(), error) {
+	if err := os.MkdirAll(s.assetRoot, 0o755); err != nil {
+		return storedBlob{}, nil, err
+	}
+	tmp, err := os.CreateTemp(s.assetRoot, "incoming-*")
+	if err != nil {
+		return storedBlob{}, nil, err
+	}
+	tmpName := tmp.Name()
+	cleanup := func() { _ = os.Remove(tmpName) }
+	h := sha256.New()
+	written, copyErr := copyWithContext(ctx, io.MultiWriter(tmp, h), content)
+	closeErr := tmp.Close()
+	if copyErr != nil {
+		cleanup()
+		return storedBlob{}, nil, copyErr
+	}
+	if closeErr != nil {
+		cleanup()
+		return storedBlob{}, nil, closeErr
+	}
+	shaHex := hex.EncodeToString(h.Sum(nil))
+	if strings.TrimSpace(mimeType) == "" || strings.EqualFold(mimeType, "application/octet-stream") {
+		detected, err := sniffFileMIME(tmpName)
+		if err != nil {
+			cleanup()
+			return storedBlob{}, nil, err
+		}
+		mimeType = detected
+	}
+	rel := filepath.Join("sha256", shaHex[0:2], shaHex[2:4], shaHex)
+	finalPath := filepath.Join(s.assetRoot, rel)
+	if err := os.MkdirAll(filepath.Dir(finalPath), 0o755); err != nil {
+		cleanup()
+		return storedBlob{}, nil, err
+	}
+	if _, err := os.Stat(finalPath); err == nil {
+		cleanup()
+		return storedBlob{SHA256: shaHex, StoragePath: rel, SizeBytes: written, MIMEType: mimeType}, nil, nil
+	} else if err != nil && !os.IsNotExist(err) {
+		cleanup()
+		return storedBlob{}, nil, err
+	}
+	if err := os.Rename(tmpName, finalPath); err != nil {
+		cleanup()
+		return storedBlob{}, nil, err
+	}
+	return storedBlob{SHA256: shaHex, StoragePath: rel, SizeBytes: written, MIMEType: mimeType}, nil, nil
+}
+
+func copyWithContext(ctx context.Context, dst io.Writer, src io.Reader) (int64, error) {
+	buf := make([]byte, 32*1024)
+	var written int64
+	for {
+		if err := ctx.Err(); err != nil {
+			return written, err
+		}
+		n, readErr := src.Read(buf)
+		if n > 0 {
+			m, writeErr := dst.Write(buf[:n])
+			written += int64(m)
+			if writeErr != nil {
+				return written, writeErr
+			}
+			if m != n {
+				return written, io.ErrShortWrite
+			}
+		}
+		if readErr == io.EOF {
+			return written, nil
+		}
+		if readErr != nil {
+			return written, readErr
+		}
+	}
+}
+
+func sniffFileMIME(path string) (string, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return "", err
+	}
+	defer file.Close()
+	var buf [512]byte
+	n, err := file.Read(buf[:])
+	if err != nil && err != io.EOF {
+		return "", err
+	}
+	return http.DetectContentType(buf[:n]), nil
+}
+
+func (s *SQLiteStore) GetResource(ctx context.Context, id string) (Resource, error) {
+	ctx = contextOrBackground(ctx)
+	if err := ctx.Err(); err != nil {
+		return Resource{}, err
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.getResourceLocked(id)
+}
+
+func (s *SQLiteStore) getResourceLocked(id string) (Resource, error) {
+	stmt, err := s.prepareLocked(`SELECT r.id, r.collection_id, COALESCE(r.filename, ''), r.mime_type, b.size_bytes, b.sha256, r.created_at
+		FROM resources r
+		JOIN blobs b ON b.sha256 = r.blob_sha256
+		WHERE r.id = ?`)
+	if err != nil {
+		return Resource{}, err
+	}
+	defer C.sqlite3_finalize(stmt)
+	if err := bindAll(stmt, []string{id}); err != nil {
+		return Resource{}, err
+	}
+	rc := C.sqlite3_step(stmt)
+	if rc == C.SQLITE_DONE {
+		return Resource{}, ErrNotFound
+	}
+	if rc != C.SQLITE_ROW {
+		return Resource{}, s.stepErrLocked(rc)
+	}
+	createdAt, _ := time.Parse(time.RFC3339Nano, sqliteTimeToRFC3339(columnText(stmt, 6)))
+	res := Resource{
+		ID:           columnText(stmt, 0),
+		CollectionID: columnText(stmt, 1),
+		Filename:     columnText(stmt, 2),
+		MIMEType:     columnText(stmt, 3),
+		SizeBytes:    columnInt64(stmt, 4),
+		SHA256:       columnText(stmt, 5),
+		CreatedAt:    createdAt,
+	}
+	res.URI = ResourceURI(res.CollectionID, res.ID)
+	return res, nil
+}
+
+func (s *SQLiteStore) OpenResourceContent(ctx context.Context, id string) (Resource, io.ReadCloser, error) {
+	ctx = contextOrBackground(ctx)
+	if err := ctx.Err(); err != nil {
+		return Resource{}, nil, err
+	}
+	s.mu.Lock()
+	res, storagePath, err := s.getResourceWithStoragePathLocked(id)
+	s.mu.Unlock()
+	if err != nil {
+		return Resource{}, nil, err
+	}
+	file, err := os.Open(filepath.Join(s.assetRoot, storagePath))
+	if err != nil {
+		if os.IsNotExist(err) {
+			return Resource{}, nil, ErrNotFound
+		}
+		return Resource{}, nil, err
+	}
+	return res, file, nil
+}
+
+func (s *SQLiteStore) getResourceWithStoragePathLocked(id string) (Resource, string, error) {
+	stmt, err := s.prepareLocked(`SELECT r.id, r.collection_id, COALESCE(r.filename, ''), r.mime_type, b.size_bytes, b.sha256, r.created_at, b.storage_path
+		FROM resources r
+		JOIN blobs b ON b.sha256 = r.blob_sha256
+		WHERE r.id = ?`)
+	if err != nil {
+		return Resource{}, "", err
+	}
+	defer C.sqlite3_finalize(stmt)
+	if err := bindAll(stmt, []string{id}); err != nil {
+		return Resource{}, "", err
+	}
+	rc := C.sqlite3_step(stmt)
+	if rc == C.SQLITE_DONE {
+		return Resource{}, "", ErrNotFound
+	}
+	if rc != C.SQLITE_ROW {
+		return Resource{}, "", s.stepErrLocked(rc)
+	}
+	createdAt, _ := time.Parse(time.RFC3339Nano, sqliteTimeToRFC3339(columnText(stmt, 6)))
+	res := Resource{
+		ID:           columnText(stmt, 0),
+		CollectionID: columnText(stmt, 1),
+		Filename:     columnText(stmt, 2),
+		MIMEType:     columnText(stmt, 3),
+		SizeBytes:    columnInt64(stmt, 4),
+		SHA256:       columnText(stmt, 5),
+		CreatedAt:    createdAt,
+	}
+	res.URI = ResourceURI(res.CollectionID, res.ID)
+	return res, columnText(stmt, 7), nil
+}
+
+func (s *SQLiteStore) DeleteResource(ctx context.Context, id string) error {
+	ctx = contextOrBackground(ctx)
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if err := s.execLocked("BEGIN IMMEDIATE"); err != nil {
+		return err
+	}
+	committed := false
+	defer func() {
+		if !committed {
+			_ = s.execLocked("ROLLBACK")
+		}
+	}()
+	blobSHA, storagePath, err := s.resourceBlobLocked(id)
+	if err != nil {
+		return err
+	}
+	refCount, err := s.countLocked(`SELECT COUNT(*) FROM document_resource_refs WHERE resource_id = ?`, id)
+	if err != nil {
+		return err
+	}
+	if refCount > 0 {
+		return ErrConflict
+	}
+	if err := s.execPreparedLocked(`DELETE FROM resources WHERE id = ?`, id); err != nil {
+		return err
+	}
+	resourceCount, err := s.countLocked(`SELECT COUNT(*) FROM resources WHERE blob_sha256 = ?`, blobSHA)
+	if err != nil {
+		return err
+	}
+	deleteBlob := resourceCount == 0
+	if deleteBlob {
+		if err := s.execPreparedLocked(`DELETE FROM blobs WHERE sha256 = ?`, blobSHA); err != nil {
+			return err
+		}
+	}
+	if err := s.execLocked("COMMIT"); err != nil {
+		return err
+	}
+	committed = true
+	if deleteBlob {
+		_ = os.Remove(filepath.Join(s.assetRoot, storagePath))
+	}
+	return nil
+}
+
+func (s *SQLiteStore) resourceBlobLocked(id string) (sha256Hex, storagePath string, err error) {
+	stmt, err := s.prepareLocked(`SELECT b.sha256, b.storage_path FROM resources r JOIN blobs b ON b.sha256 = r.blob_sha256 WHERE r.id = ?`)
+	if err != nil {
+		return "", "", err
+	}
+	defer C.sqlite3_finalize(stmt)
+	if err := bindAll(stmt, []string{id}); err != nil {
+		return "", "", err
+	}
+	rc := C.sqlite3_step(stmt)
+	if rc == C.SQLITE_DONE {
+		return "", "", ErrNotFound
+	}
+	if rc != C.SQLITE_ROW {
+		return "", "", s.stepErrLocked(rc)
+	}
+	return columnText(stmt, 0), columnText(stmt, 1), nil
+}
+
+func (s *SQLiteStore) ListDocumentResources(ctx context.Context, documentID string) ([]ResourceReference, error) {
+	ctx = contextOrBackground(ctx)
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if exists, err := s.documentExistsLocked(documentID); err != nil {
+		return nil, err
+	} else if !exists {
+		return nil, ErrNotFound
+	}
+	stmt, err := s.prepareLocked(`SELECT rr.document_id, rr.resource_id, rr.relation_type, rr.ordinal, rr.anchor_json,
+		r.id, r.collection_id, COALESCE(r.filename, ''), r.mime_type, b.size_bytes, b.sha256, r.created_at
+		FROM document_resource_refs rr
+		JOIN resources r ON r.id = rr.resource_id
+		JOIN blobs b ON b.sha256 = r.blob_sha256
+		WHERE rr.document_id = ?
+		ORDER BY rr.ordinal, rr.relation_type, rr.resource_id`)
+	if err != nil {
+		return nil, err
+	}
+	defer C.sqlite3_finalize(stmt)
+	if err := bindAll(stmt, []string{documentID}); err != nil {
+		return nil, err
+	}
+	refs := []ResourceReference{}
+	for {
+		rc := C.sqlite3_step(stmt)
+		switch rc {
+		case C.SQLITE_ROW:
+			createdAt, _ := time.Parse(time.RFC3339Nano, sqliteTimeToRFC3339(columnText(stmt, 11)))
+			res := Resource{
+				ID:           columnText(stmt, 5),
+				CollectionID: columnText(stmt, 6),
+				Filename:     columnText(stmt, 7),
+				MIMEType:     columnText(stmt, 8),
+				SizeBytes:    columnInt64(stmt, 9),
+				SHA256:       columnText(stmt, 10),
+				CreatedAt:    createdAt,
+			}
+			res.URI = ResourceURI(res.CollectionID, res.ID)
+			refs = append(refs, ResourceReference{
+				DocumentID:   columnText(stmt, 0),
+				ResourceID:   columnText(stmt, 1),
+				RelationType: columnText(stmt, 2),
+				Ordinal:      int(columnInt64(stmt, 3)),
+				AnchorJSON:   columnText(stmt, 4),
+				Resource:     res,
+			})
+		case C.SQLITE_DONE:
+			return refs, nil
+		default:
+			return nil, s.stepErrLocked(rc)
+		}
+	}
+}
+
+func (s *SQLiteStore) AttachDocumentResource(ctx context.Context, req AttachResourceRequest) (ResourceReference, error) {
+	ctx = contextOrBackground(ctx)
+	if err := ctx.Err(); err != nil {
+		return ResourceReference{}, err
+	}
+	req = NormalizeAttachResourceRequest(req)
+	if req.DocumentID == "" || req.ResourceID == "" {
+		return ResourceReference{}, ErrNotFound
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if _, err := s.getDocumentLocked(req.DocumentID); err != nil {
+		return ResourceReference{}, err
+	}
+	res, err := s.getResourceLocked(req.ResourceID)
+	if err != nil {
+		return ResourceReference{}, err
+	}
+	if err := s.execPreparedLocked(`INSERT OR REPLACE INTO document_resource_refs(document_id, resource_id, relation_type, ordinal, anchor_json) VALUES(?, ?, ?, ?, ?)`, req.DocumentID, req.ResourceID, req.RelationType, strconv.Itoa(req.Ordinal), req.AnchorJSON); err != nil {
+		return ResourceReference{}, err
+	}
+	return ResourceReference{DocumentID: req.DocumentID, ResourceID: req.ResourceID, Resource: res, RelationType: req.RelationType, Ordinal: req.Ordinal, AnchorJSON: req.AnchorJSON}, nil
+}
+
+func (s *SQLiteStore) DetachDocumentResource(ctx context.Context, documentID, resourceID string) error {
+	ctx = contextOrBackground(ctx)
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if exists, err := s.documentExistsLocked(documentID); err != nil {
+		return err
+	} else if !exists {
+		return ErrNotFound
+	}
+	if _, err := s.getResourceLocked(resourceID); err != nil {
+		return err
+	}
+	if err := s.execPreparedLocked(`DELETE FROM document_resource_refs WHERE document_id = ? AND resource_id = ?`, documentID, resourceID); err != nil {
+		return err
+	}
+	return nil
+}
+
+// RebuildDocumentLinks reparses the current document body and refreshes link rows
+// without creating a new document revision. Importers use this after a batch
+// creates multiple notes so links to later-created notes can resolve.
+func (s *SQLiteStore) RebuildDocumentLinks(ctx context.Context, documentID string) error {
+	ctx = contextOrBackground(ctx)
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	documentID = strings.TrimSpace(documentID)
+	if documentID == "" {
+		return ErrNotFound
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if err := s.execLocked("BEGIN IMMEDIATE"); err != nil {
+		return err
+	}
+	committed := false
+	defer func() {
+		if !committed {
+			_ = s.execLocked("ROLLBACK")
+		}
+	}()
+	doc, err := s.getDocumentLocked(documentID)
+	if err != nil {
+		return err
+	}
+	if err := s.rebuildDocumentLinksLocked(doc.ID, doc.CollectionID, doc.Body); err != nil {
+		return err
+	}
+	if err := s.execLocked("COMMIT"); err != nil {
+		return err
+	}
+	committed = true
+	return nil
+}
+
+func (s *SQLiteStore) rebuildDocumentLinksLocked(documentID, collectionID, body string) error {
+	if err := s.execPreparedLocked(`DELETE FROM document_links WHERE source_document_id = ?`, documentID); err != nil {
+		return err
+	}
+	for _, candidate := range markdownlinks.Extract(body) {
+		link := s.resolveLinkCandidateLocked(documentID, collectionID, candidate)
+		if err := s.execPreparedLocked(`INSERT INTO document_links(
+			source_document_id, target_document_id, target_resource_id, target_uri,
+			relation_type, source_format, raw_target, display_text, anchor_type, anchor_value,
+			context, source_start_byte, source_end_byte, source_line, source_column, resolution_status
+		) VALUES(?, NULLIF(?, ''), NULLIF(?, ''), NULLIF(?, ''), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			documentID, link.TargetDocumentID, link.TargetResourceID, link.TargetURI,
+			link.RelationType, link.SourceFormat, link.RawTarget, link.DisplayText, link.AnchorType, link.AnchorValue,
+			link.Context, strconv.Itoa(link.SourceStartByte), strconv.Itoa(link.SourceEndByte), strconv.Itoa(link.SourceLine), strconv.Itoa(link.SourceColumn), link.ResolutionStatus); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *SQLiteStore) resolveLinkCandidateLocked(sourceDocumentID, collectionID string, candidate markdownlinks.Candidate) DocumentLink {
+	link := DocumentLink{
+		SourceDocumentID: sourceDocumentID,
+		RelationType:     candidate.RelationType,
+		SourceFormat:     candidate.SourceFormat,
+		RawTarget:        candidate.RawTarget,
+		DisplayText:      candidate.DisplayText,
+		AnchorType:       candidate.AnchorType,
+		AnchorValue:      candidate.AnchorValue,
+		Context:          candidate.Context,
+		SourceStartByte:  candidate.StartByte,
+		SourceEndByte:    candidate.EndByte,
+		SourceLine:       candidate.Line,
+		SourceColumn:     candidate.Column,
+		ResolutionStatus: "unresolved",
+	}
+	raw := strings.TrimSpace(candidate.RawTarget)
+	if raw == "" && candidate.AnchorValue != "" {
+		link.TargetDocumentID = sourceDocumentID
+		link.TargetURI = DocumentURI(collectionID, sourceDocumentID)
+		link.ResolutionStatus = "resolved"
+		return link
+	}
+	if isExternalTarget(raw) {
+		link.TargetURI = raw
+		link.ResolutionStatus = "external"
+		return link
+	}
+	if docID := documentIDFromURI(raw); docID != "" {
+		link.TargetURI = raw
+		if ok, err := s.documentExistsLocked(docID); err == nil && ok {
+			link.TargetDocumentID = docID
+			link.ResolutionStatus = "resolved"
+		}
+		return link
+	}
+	if resourceID := resourceIDFromURI(raw); resourceID != "" {
+		link.TargetURI = raw
+		if _, err := s.getResourceLocked(resourceID); err == nil {
+			link.TargetResourceID = resourceID
+			link.ResolutionStatus = "resolved"
+		}
+		return link
+	}
+	if raw == "" {
+		return link
+	}
+	if docID, ambiguous, err := s.findDocumentByTitleLocked(collectionID, raw); err == nil {
+		if ambiguous {
+			link.ResolutionStatus = "ambiguous"
+			return link
+		}
+		if docID != "" {
+			link.TargetDocumentID = docID
+			link.TargetURI = DocumentURI(collectionID, docID)
+			link.ResolutionStatus = "resolved"
+			return link
+		}
+	}
+	if resourceID, ambiguous, err := s.findResourceByFilenameLocked(collectionID, raw); err == nil {
+		if ambiguous {
+			link.ResolutionStatus = "ambiguous"
+			return link
+		}
+		if resourceID != "" {
+			link.TargetResourceID = resourceID
+			link.TargetURI = ResourceURI(collectionID, resourceID)
+			link.ResolutionStatus = "resolved"
+			return link
+		}
+	}
+	link.TargetURI = raw
+	return link
+}
+
+func isExternalTarget(target string) bool {
+	lower := strings.ToLower(strings.TrimSpace(target))
+	return strings.HasPrefix(lower, "http://") || strings.HasPrefix(lower, "https://") || strings.HasPrefix(lower, "mailto:")
+}
+
+func documentIDFromURI(uri string) string {
+	const marker = "/documents/"
+	if !strings.HasPrefix(uri, "document://") {
+		return ""
+	}
+	idx := strings.Index(uri, marker)
+	if idx < 0 {
+		return ""
+	}
+	id := uri[idx+len(marker):]
+	if cut := strings.IndexAny(id, "#?"); cut >= 0 {
+		id = id[:cut]
+	}
+	return strings.TrimSpace(id)
+}
+
+func resourceIDFromURI(uri string) string {
+	const marker = "/resources/"
+	if !strings.HasPrefix(uri, "resource://") {
+		return ""
+	}
+	idx := strings.Index(uri, marker)
+	if idx < 0 {
+		return ""
+	}
+	id := uri[idx+len(marker):]
+	if cut := strings.IndexAny(id, "#?"); cut >= 0 {
+		id = id[:cut]
+	}
+	return strings.TrimSpace(id)
+}
+
+func (s *SQLiteStore) findDocumentByTitleLocked(collectionID, target string) (string, bool, error) {
+	name := normalizeLinkName(target)
+	if name == "" {
+		return "", false, nil
+	}
+	stmt, err := s.prepareLocked(`SELECT id FROM documents WHERE collection_id = ? AND deleted_at IS NULL AND lower(title) = lower(?) ORDER BY id LIMIT 2`)
+	if err != nil {
+		return "", false, err
+	}
+	defer C.sqlite3_finalize(stmt)
+	if err := bindAll(stmt, []string{collectionID, name}); err != nil {
+		return "", false, err
+	}
+	ids := []string{}
+	for {
+		rc := C.sqlite3_step(stmt)
+		switch rc {
+		case C.SQLITE_ROW:
+			ids = append(ids, columnText(stmt, 0))
+		case C.SQLITE_DONE:
+			if len(ids) == 0 {
+				return "", false, nil
+			}
+			return ids[0], len(ids) > 1, nil
+		default:
+			return "", false, s.stepErrLocked(rc)
+		}
+	}
+}
+
+func (s *SQLiteStore) findResourceByFilenameLocked(collectionID, target string) (string, bool, error) {
+	name := strings.TrimSpace(target)
+	if name == "" {
+		return "", false, nil
+	}
+	name = strings.TrimPrefix(filepath.Base(name), "/")
+	stmt, err := s.prepareLocked(`SELECT id FROM resources WHERE collection_id = ? AND lower(filename) = lower(?) ORDER BY id LIMIT 2`)
+	if err != nil {
+		return "", false, err
+	}
+	defer C.sqlite3_finalize(stmt)
+	if err := bindAll(stmt, []string{collectionID, name}); err != nil {
+		return "", false, err
+	}
+	ids := []string{}
+	for {
+		rc := C.sqlite3_step(stmt)
+		switch rc {
+		case C.SQLITE_ROW:
+			ids = append(ids, columnText(stmt, 0))
+		case C.SQLITE_DONE:
+			if len(ids) == 0 {
+				return "", false, nil
+			}
+			return ids[0], len(ids) > 1, nil
+		default:
+			return "", false, s.stepErrLocked(rc)
+		}
+	}
+}
+
+func normalizeLinkName(target string) string {
+	name := strings.TrimSpace(target)
+	name = strings.TrimSuffix(name, ".md")
+	name = filepath.Base(name)
+	name = strings.ReplaceAll(name, "%20", " ")
+	return strings.TrimSpace(name)
+}
+
+func (s *SQLiteStore) ListDocumentLinks(ctx context.Context, documentID, direction string) (DocumentLinkPage, error) {
+	ctx = contextOrBackground(ctx)
+	if err := ctx.Err(); err != nil {
+		return DocumentLinkPage{}, err
+	}
+	documentID = strings.TrimSpace(documentID)
+	if documentID == "" {
+		return DocumentLinkPage{}, ErrNotFound
+	}
+	direction = strings.ToLower(strings.TrimSpace(direction))
+	if direction == "" {
+		direction = "both"
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if ok, err := s.documentExistsLocked(documentID); err != nil {
+		return DocumentLinkPage{}, err
+	} else if !ok {
+		return DocumentLinkPage{}, ErrNotFound
+	}
+	page := DocumentLinkPage{Outgoing: []DocumentLink{}, Incoming: []DocumentLink{}}
+	if direction == "outgoing" || direction == "both" {
+		links, err := s.listLinksLocked(`WHERE source_document_id = ?`, documentID)
+		if err != nil {
+			return DocumentLinkPage{}, err
+		}
+		page.Outgoing = links
+	}
+	if direction == "incoming" || direction == "both" {
+		links, err := s.listLinksLocked(`WHERE target_document_id = ?`, documentID)
+		if err != nil {
+			return DocumentLinkPage{}, err
+		}
+		page.Incoming = links
+	}
+	return page, nil
+}
+
+func (s *SQLiteStore) listLinksLocked(whereClause string, values ...string) ([]DocumentLink, error) {
+	stmt, err := s.prepareLocked(`SELECT id, source_document_id, COALESCE(target_document_id, ''), COALESCE(target_resource_id, ''), COALESCE(target_uri, ''), relation_type, source_format, raw_target, COALESCE(display_text, ''), COALESCE(anchor_type, ''), COALESCE(anchor_value, ''), COALESCE(context, ''), COALESCE(source_start_byte, 0), COALESCE(source_end_byte, 0), COALESCE(source_line, 0), COALESCE(source_column, 0), resolution_status FROM document_links ` + whereClause + ` ORDER BY source_line, source_column, id`)
+	if err != nil {
+		return nil, err
+	}
+	defer C.sqlite3_finalize(stmt)
+	if err := bindAll(stmt, values); err != nil {
+		return nil, err
+	}
+	links := []DocumentLink{}
+	for {
+		rc := C.sqlite3_step(stmt)
+		switch rc {
+		case C.SQLITE_ROW:
+			links = append(links, linkFromStmt(stmt))
+		case C.SQLITE_DONE:
+			return links, nil
+		default:
+			return nil, s.stepErrLocked(rc)
+		}
+	}
+}
+
+func linkFromStmt(stmt *C.sqlite3_stmt) DocumentLink {
+	return DocumentLink{
+		ID:               columnInt64(stmt, 0),
+		SourceDocumentID: columnText(stmt, 1),
+		TargetDocumentID: columnText(stmt, 2),
+		TargetResourceID: columnText(stmt, 3),
+		TargetURI:        columnText(stmt, 4),
+		RelationType:     columnText(stmt, 5),
+		SourceFormat:     columnText(stmt, 6),
+		RawTarget:        columnText(stmt, 7),
+		DisplayText:      columnText(stmt, 8),
+		AnchorType:       columnText(stmt, 9),
+		AnchorValue:      columnText(stmt, 10),
+		Context:          columnText(stmt, 11),
+		SourceStartByte:  int(columnInt64(stmt, 12)),
+		SourceEndByte:    int(columnInt64(stmt, 13)),
+		SourceLine:       int(columnInt64(stmt, 14)),
+		SourceColumn:     int(columnInt64(stmt, 15)),
+		ResolutionStatus: columnText(stmt, 16),
+	}
+}
+
+func (s *SQLiteStore) Graph(ctx context.Context, req GraphRequest) (GraphResponse, error) {
+	ctx = contextOrBackground(ctx)
+	if err := ctx.Err(); err != nil {
+		return GraphResponse{}, err
+	}
+	direction := strings.ToLower(strings.TrimSpace(req.Direction))
+	if direction == "" {
+		direction = "both"
+	}
+	if req.MaxNodes <= 0 {
+		req.MaxNodes = 100
+	}
+	if req.MaxEdges <= 0 {
+		req.MaxEdges = 200
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	resp := GraphResponse{Nodes: []GraphNode{}, Edges: []GraphEdge{}}
+	nodeSeen := map[string]bool{}
+	for _, root := range req.Roots {
+		docID := documentIDFromURI(root)
+		if docID == "" {
+			docID = strings.TrimSpace(root)
+		}
+		if docID == "" {
+			continue
+		}
+		doc, err := s.getDocumentLocked(docID)
+		if err != nil {
+			continue
+		}
+		addGraphNode(&resp, nodeSeen, GraphNode{ID: doc.ID, URI: doc.URI, Kind: "document", Label: doc.Title}, req.MaxNodes)
+		if direction == "outgoing" || direction == "both" {
+			links, err := s.listLinksLocked(`WHERE source_document_id = ?`, doc.ID)
+			if err != nil {
+				return GraphResponse{}, err
+			}
+			for _, link := range links {
+				if len(resp.Edges) >= req.MaxEdges {
+					resp.Truncated = true
+					break
+				}
+				s.addLinkToGraphLocked(&resp, nodeSeen, link, req.IncludeResources, req.MaxNodes)
+			}
+		}
+		if direction == "incoming" || direction == "both" {
+			links, err := s.listLinksLocked(`WHERE target_document_id = ?`, doc.ID)
+			if err != nil {
+				return GraphResponse{}, err
+			}
+			for _, link := range links {
+				if len(resp.Edges) >= req.MaxEdges {
+					resp.Truncated = true
+					break
+				}
+				s.addLinkToGraphLocked(&resp, nodeSeen, link, req.IncludeResources, req.MaxNodes)
+			}
+		}
+	}
+	return resp, nil
+}
+
+func (s *SQLiteStore) addLinkToGraphLocked(resp *GraphResponse, nodeSeen map[string]bool, link DocumentLink, includeResources bool, maxNodes int) {
+	if link.TargetResourceID != "" && !includeResources {
+		return
+	}
+	sourceNode := GraphNode{ID: link.SourceDocumentID, URI: DocumentURI("default", link.SourceDocumentID), Kind: "document", Label: link.SourceDocumentID}
+	if doc, err := s.getDocumentLocked(link.SourceDocumentID); err == nil {
+		sourceNode.URI = doc.URI
+		sourceNode.Label = doc.Title
+	}
+	addGraphNode(resp, nodeSeen, sourceNode, maxNodes)
+	targetID := ""
+	if link.TargetDocumentID != "" {
+		targetID = link.TargetDocumentID
+		node := GraphNode{ID: link.TargetDocumentID, URI: link.TargetURI, Kind: "document", Label: link.TargetDocumentID}
+		if doc, err := s.getDocumentLocked(link.TargetDocumentID); err == nil {
+			node.URI = doc.URI
+			node.Label = doc.Title
+		}
+		addGraphNode(resp, nodeSeen, node, maxNodes)
+	} else if link.TargetResourceID != "" {
+		targetID = link.TargetResourceID
+		node := GraphNode{ID: link.TargetResourceID, URI: link.TargetURI, Kind: "resource", Label: link.TargetResourceID}
+		if resource, err := s.getResourceLocked(link.TargetResourceID); err == nil {
+			node.URI = resource.URI
+			node.Label = firstNonEmptyString(resource.Filename, resource.ID)
+		}
+		addGraphNode(resp, nodeSeen, node, maxNodes)
+	} else {
+		targetID = firstNonEmptyString(link.TargetURI, link.RawTarget, "unresolved")
+		addGraphNode(resp, nodeSeen, GraphNode{ID: targetID, URI: link.TargetURI, Kind: link.ResolutionStatus, Label: targetID}, maxNodes)
+	}
+	resp.Edges = append(resp.Edges, GraphEdge{ID: strconv.FormatInt(link.ID, 10), SourceID: link.SourceDocumentID, TargetID: targetID, Kind: link.RelationType, Status: link.ResolutionStatus, RawTarget: link.RawTarget})
+}
+
+func addGraphNode(resp *GraphResponse, seen map[string]bool, node GraphNode, maxNodes int) {
+	if node.ID == "" || seen[node.ID] {
+		return
+	}
+	if len(resp.Nodes) >= maxNodes {
+		resp.Truncated = true
+		return
+	}
+	seen[node.ID] = true
+	resp.Nodes = append(resp.Nodes, node)
+}
+
+func (s *SQLiteStore) countLocked(sql string, values ...string) (int64, error) {
+	stmt, err := s.prepareLocked(sql)
+	if err != nil {
+		return 0, err
+	}
+	defer C.sqlite3_finalize(stmt)
+	if err := bindAll(stmt, values); err != nil {
+		return 0, err
+	}
+	rc := C.sqlite3_step(stmt)
+	if rc == C.SQLITE_DONE {
+		return 0, nil
+	}
+	if rc != C.SQLITE_ROW {
+		return 0, s.stepErrLocked(rc)
+	}
+	return columnInt64(stmt, 0), nil
+}
+
+func firstNonEmptyString(values ...string) string {
+	for _, value := range values {
+		if strings.TrimSpace(value) != "" {
+			return strings.TrimSpace(value)
+		}
+	}
+	return ""
+}
+
+func MIMETypeFromFilename(filename string) string {
+	if strings.TrimSpace(filename) == "" {
+		return ""
+	}
+	return mime.TypeByExtension(filepath.Ext(filename))
+}
+
+func (s *SQLiteStore) Search(ctx context.Context, req SearchRequest) (SearchResponse, error) {
+	ctx = contextOrBackground(ctx)
+	if err := ctx.Err(); err != nil {
+		return SearchResponse{}, err
+	}
+	req = NormalizeSearchRequest(req)
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if strings.TrimSpace(req.Query) == "" {
+		return s.searchLatestLocked(req)
+	}
+	return s.searchFTSLocked(req)
+}
+
+func (s *SQLiteStore) searchLatestLocked(req SearchRequest) (SearchResponse, error) {
+	stmt, err := s.prepareLocked(`SELECT d.id, d.collection_id, d.title, substr(r.body, 1, 240), 0.0
+		FROM documents d
+		JOIN document_revisions r ON r.id = d.current_revision_id
+		WHERE d.collection_id = ? AND d.deleted_at IS NULL
+		ORDER BY d.updated_at DESC, d.id DESC
+		LIMIT ?`)
+	if err != nil {
+		return SearchResponse{}, err
+	}
+	defer C.sqlite3_finalize(stmt)
+	if err := bindAll(stmt, []string{req.CollectionID, strconv.Itoa(req.Limit)}); err != nil {
+		return SearchResponse{}, err
+	}
+	return s.readHitsLocked(stmt)
+}
+
+func (s *SQLiteStore) searchFTSLocked(req SearchRequest) (SearchResponse, error) {
+	stmt, err := s.prepareLocked(`SELECT d.id, d.collection_id, d.title,
+		snippet(documents_fts, 3, '<mark>', '</mark>', '…', 32) AS snippet,
+		bm25(documents_fts, 5.0, 1.0) AS score
+		FROM documents_fts
+		JOIN documents d ON d.id = documents_fts.document_id
+		WHERE documents_fts.collection_id = ? AND documents_fts MATCH ? AND d.deleted_at IS NULL
+		ORDER BY score, d.id
+		LIMIT ?`)
+	if err != nil {
+		return SearchResponse{}, err
+	}
+	defer C.sqlite3_finalize(stmt)
+	if err := bindAll(stmt, []string{req.CollectionID, escapeFTSQuery(req.Query), strconv.Itoa(req.Limit)}); err != nil {
+		return SearchResponse{}, err
+	}
+	return s.readHitsLocked(stmt)
+}
+
+func (s *SQLiteStore) readHitsLocked(stmt *C.sqlite3_stmt) (SearchResponse, error) {
+	resp := SearchResponse{Hits: []SearchHit{}}
+	for {
+		rc := C.sqlite3_step(stmt)
+		switch rc {
+		case C.SQLITE_ROW:
+			collectionID := columnText(stmt, 1)
+			id := columnText(stmt, 0)
+			resp.Hits = append(resp.Hits, SearchHit{
+				ID:      id,
+				URI:     DocumentURI(collectionID, id),
+				Title:   columnText(stmt, 2),
+				Snippet: columnText(stmt, 3),
+				Score:   columnFloat(stmt, 4),
+			})
+		case C.SQLITE_DONE:
+			return resp, nil
+		default:
+			return SearchResponse{}, s.stepErrLocked(rc)
+		}
+	}
+}
+
+func escapeFTSQuery(query string) string {
+	terms := strings.Fields(query)
+	quoted := make([]string, 0, len(terms))
+	for _, term := range terms {
+		term = strings.ReplaceAll(term, `"`, `""`)
+		quoted = append(quoted, `"`+term+`"`)
+	}
+	if len(quoted) == 0 {
+		return `""`
+	}
+	return strings.Join(quoted, " AND ")
+}
+
+func (s *SQLiteStore) execPreparedLocked(sql string, values ...string) error {
+	stmt, err := s.prepareLocked(sql)
+	if err != nil {
+		return err
+	}
+	defer C.sqlite3_finalize(stmt)
+	if err := bindAll(stmt, values); err != nil {
+		return err
+	}
+	rc := C.sqlite3_step(stmt)
+	if rc != C.SQLITE_DONE {
+		return s.stepErrLocked(rc)
+	}
+	return nil
+}
+
+func (s *SQLiteStore) prepareLocked(sql string) (*C.sqlite3_stmt, error) {
+	if s.db == nil {
+		return nil, fmt.Errorf("sqlite store is closed")
+	}
+	csql := C.CString(sql)
+	defer C.free(unsafe.Pointer(csql))
+	var stmt *C.sqlite3_stmt
+	if rc := C.sqlite3_prepare_v2(s.db, csql, -1, &stmt, nil); rc != C.SQLITE_OK {
+		return nil, fmt.Errorf("sqlite prepare: %s", C.GoString(C.sqlite3_errmsg(s.db)))
+	}
+	return stmt, nil
+}
+
+func bindAll(stmt *C.sqlite3_stmt, values []string) error {
+	for i, value := range values {
+		idx := C.int(i + 1)
+		cvalue := C.CString(value)
+		rc := C.notes_sqlite_bind_text(stmt, idx, cvalue)
+		C.free(unsafe.Pointer(cvalue))
+		if rc != C.SQLITE_OK {
+			return fmt.Errorf("sqlite bind parameter %d failed", i+1)
+		}
+	}
+	return nil
+}
+
+func (s *SQLiteStore) stepErrLocked(rc C.int) error {
+	return fmt.Errorf("sqlite step rc=%d: %s", int(rc), C.GoString(C.sqlite3_errmsg(s.db)))
+}
+
+func columnText(stmt *C.sqlite3_stmt, index int) string {
+	text := C.sqlite3_column_text(stmt, C.int(index))
+	if text == nil {
+		return ""
+	}
+	return C.GoString((*C.char)(unsafe.Pointer(text)))
+}
+
+func columnFloat(stmt *C.sqlite3_stmt, index int) float64 {
+	return float64(C.sqlite3_column_double(stmt, C.int(index)))
+}
+
+func columnInt64(stmt *C.sqlite3_stmt, index int) int64 {
+	return int64(C.sqlite3_column_int64(stmt, C.int(index)))
+}

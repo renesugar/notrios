@@ -1,0 +1,42 @@
+server:
+  listen_addr: "127.0.0.1:8080"
+  public_base_url: "http://127.0.0.1:8080"
+
+data:
+  directory: "./data"
+  database_path: "./data/notes.sqlite"
+  asset_store: "./data/assets"
+  projection_dir: "./data/projections"
+
+search:
+  default_limit: 20
+  max_limit: 100
+  max_offset: 10000
+
+mcp:
+  enabled: true
+  default_profile: "read-only"
+  max_results: 10
+  max_document_bytes: 65536
+
+remote_media:
+  default_action: "review"
+  allow_private_networks: false
+  max_redirects: 5
+  blocked_schemes: ["file", "ftp", "data"]
+  blocked_domains:
+    - "*.example-blocked.invalid"
+  allowed_domains:
+    - "wikipedia.org"
+    - "*.wikimedia.org"
+    - "github.com"
+    - "raw.githubusercontent.com"
+  max_bytes:
+    image: "20MB"
+    video: "200MB"
+    pdf: "100MB"
+
+sist2:
+  enabled: false
+  binary: "sist2"
+  index_dir: "./data/sist2"
