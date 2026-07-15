@@ -693,8 +693,8 @@ func (s *SQLiteStore) RestoreDocument(ctx context.Context, id string) (Document,
 }
 
 // PurgeDocument permanently deletes a trashed document and its revisions.
-// Only notes stored purely in the local database may be purged; once task R4
-// adds source provenance, externally-sourced notes must be refused here.
+// Only notes stored purely in the local database may be purged;
+// externally-sourced notes (document_sources row) are refused.
 func (s *SQLiteStore) PurgeDocument(ctx context.Context, id string) error {
 	ctx = contextOrBackground(ctx)
 	if err := ctx.Err(); err != nil {
@@ -706,6 +706,13 @@ func (s *SQLiteStore) PurgeDocument(ctx context.Context, id string) error {
 
 	if _, _, _, err := s.trashedDocumentStateLocked(id); err != nil {
 		return err
+	}
+	// Only notes stored purely in the local database may be purged;
+	// externally-sourced notes stay excluded from queries instead.
+	if sourced, err := s.documentHasSourceLocked(id); err != nil {
+		return err
+	} else if sourced {
+		return fmt.Errorf("%w: externally-sourced notes cannot be permanently deleted", ErrProtected)
 	}
 
 	if err := s.execLocked("BEGIN IMMEDIATE"); err != nil {

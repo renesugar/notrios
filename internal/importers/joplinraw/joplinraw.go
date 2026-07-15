@@ -144,10 +144,24 @@ func Import(ctx context.Context, st store.Store, sourceDir string, options Optio
 			report.NotesImported++
 			continue
 		}
+		setSource := func() error {
+			_, err := st.SetDocumentSource(ctx, store.SetDocumentSourceRequest{
+				DocumentID:   logicalID,
+				SourceSystem: "joplin",
+				ExternalID:   note.ID,
+				Author:       strings.TrimSpace(note.Fields["author"]),
+				SourceURL:    strings.TrimSpace(note.Fields["source_url"]),
+				PublishedAt:  firstNonEmpty(note.Fields["user_created_time"], note.Fields["created_time"]),
+			})
+			return err
+		}
 		existing, err := st.GetDocument(ctx, logicalID)
 		if err == nil {
 			if existing.Title == noteTitle(note) && existing.Body == body {
 				report.NotesUnchanged++
+				if err := setSource(); err != nil {
+					return report, err
+				}
 				continue
 			}
 			_, err = st.UpdateDocument(ctx, store.UpdateDocumentRequest{ID: logicalID, Title: noteTitle(note), Body: body, BodyMIMEType: "text/markdown", BaseRevisionID: existing.CurrentRevisionID, Message: "import update from Joplin RAW"})
@@ -162,6 +176,9 @@ func Import(ctx context.Context, st store.Store, sourceDir string, options Optio
 			}
 			report.NotesImported++
 		} else {
+			return report, err
+		}
+		if err := setSource(); err != nil {
 			return report, err
 		}
 		for originalResourceID, newResourceID := range resourceIDMap {

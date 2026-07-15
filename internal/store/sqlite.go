@@ -132,6 +132,9 @@ func (s *SQLiteStore) Bootstrap(ctx context.Context) error {
 	if err := s.ensureSchemaV5(ctx); err != nil {
 		return err
 	}
+	if err := s.ensureSchemaV6(ctx); err != nil {
+		return err
+	}
 	if err := s.Exec(ctx, `INSERT OR IGNORE INTO collections(id, name, description) VALUES('default', 'Default', 'Managed notes created by the companion service.');`); err != nil {
 		return err
 	}
@@ -203,6 +206,14 @@ func (s *SQLiteStore) ensureSchemaV5(ctx context.Context) error {
 		}
 	}
 	return nil
+}
+
+// ensureSchemaV6 records the provenance-table schema version. The
+// document_sources table itself is created by the migration file (IF NOT
+// EXISTS covers pre-v6 databases); the shim only has to bump the version
+// because the earlier shims reset it during bootstrap.
+func (s *SQLiteStore) ensureSchemaV6(ctx context.Context) error {
+	return s.Exec(ctx, `PRAGMA user_version = 6;`)
 }
 
 func (s *SQLiteStore) exec(sql string) error {

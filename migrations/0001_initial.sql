@@ -168,3 +168,29 @@ CREATE UNIQUE INDEX IF NOT EXISTS search_notebooks_name_idx
     ON search_notebooks(name COLLATE NOCASE);
 
 PRAGMA user_version = 5;
+
+-- Schema v6: source provenance and conversation threads (Notrios redesign task R4).
+-- One row per externally-sourced document (Joplin, Obsidian, Twitter/X, ChatGPT,
+-- Claude, ...). Local notes have no row; only local notes may be purged from Trash.
+CREATE TABLE IF NOT EXISTS document_sources (
+    document_id TEXT PRIMARY KEY REFERENCES documents(id),
+    source_system TEXT NOT NULL,
+    external_id TEXT NOT NULL DEFAULT '',
+    author TEXT NOT NULL DEFAULT '',
+    author_id TEXT NOT NULL DEFAULT '',
+    thread_id TEXT NOT NULL DEFAULT '',
+    reply_to TEXT NOT NULL DEFAULT '',
+    source_url TEXT NOT NULL DEFAULT '',
+    published_at TEXT NOT NULL DEFAULT '',
+    published_ts INTEGER,
+    metadata_json TEXT NOT NULL DEFAULT '{}',
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS document_sources_system_external_idx
+    ON document_sources(source_system, external_id);
+CREATE INDEX IF NOT EXISTS document_sources_thread_idx ON document_sources(thread_id);
+CREATE INDEX IF NOT EXISTS document_sources_author_idx ON document_sources(author_id);
+
+PRAGMA user_version = 6;

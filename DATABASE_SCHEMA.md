@@ -69,9 +69,9 @@ The migration includes indexes for common lookups:
 - outbox by completion and sequence;
 - media hashes by algorithm/hash.
 
-## Schema v5 — Notrios redesign (task R3 implemented; R4 planned)
+## Schema v5/v6 — Notrios redesign (tasks R3 and R4 implemented)
 
-Schema v5 is live in `migrations/0001_initial.sql` (with an `ensureSchemaV5` upgrade shim for v4 databases that adds `documents.notebook_id` and backfills existing rows into the default notebook). It adds the note-taking data model on top of the existing document tables:
+Schema v5 (notebooks) and v6 (source provenance) are live in `migrations/0001_initial.sql` (with an `ensureSchemaV5` upgrade shim for v4 databases that adds `documents.notebook_id` and backfills existing rows into the default notebook). It adds the note-taking data model on top of the existing document tables:
 
 ### notebooks
 
@@ -92,21 +92,24 @@ Schema v5 is live in `migrations/0001_initial.sql` (with an `ensureSchemaV5` upg
 - Builtin rows bootstrapped: "All notes" (`snb_all_notes`, first, undeletable, empty query) and "Trash" (`snb_trash`, last, undeletable, reserved query `is:trashed`).
 - Deleting a user search notebook deletes only the row, never notes.
 
-### source objects and threads
+### document_sources (schema v6)
 
-Provenance tables sufficient for Joplin, Obsidian, Twitter/X, ChatGPT, and Claude sources:
+One provenance row per externally-sourced document (Joplin, Obsidian, Twitter/X, ChatGPT, Claude); purely local notes have no row:
 
-- `source_system`, external item ID, source URL;
+- `source_system` (normalized lowercase), `external_id`, `source_url`; indexed by `(source_system, external_id)` for idempotent importer lookups (`FindDocumentBySource`);
 - `author` (display name) and `author_id` (canonical account identity, kept separate so same-named people are never conflated);
-- `thread_id` and `reply_to` so Twitter/X conversation threads and ChatGPT/Claude conversations can be recovered in order (links may point at the original posts);
-- published/created/updated timestamps (ISO 8601 stored, UTC epoch derived for range queries).
+- `thread_id` and `reply_to` (source-native external IDs) so Twitter/X conversation threads and ChatGPT/Claude conversations can be recovered in chronological order (`ListThreadDocuments`; trashed notes are excluded); links may point at the original posts;
+- `published_at` (ISO 8601 as provided; digit-only epoch seconds/milliseconds also accepted) with derived `published_ts` UTC Unix seconds for range queries;
+- `metadata_json` for source-specific extras.
+
+The Joplin and Obsidian importers write these rows on every run (create, update, or unchanged), so re-running an import backfills provenance for previously-imported notes.
 
 Thread/link-graph traversal stays in SQLite; the Recoll index only carries searchable copies of these fields (`RECOLL_INTEGRATION.md`).
 
 ### Deletion rules
 
 - Soft-deleted notes are excluded from every query and appear only through the "Trash" search notebook (`ListTrash`); restore makes them visible and searchable again.
-- Permanent deletion (purge) requires the note to be in the trash, removes its revisions/tags/links/FTS rows, and marks inbound links `target_deleted`. It is only permitted for notes whose source is the local database; once R4 adds provenance, externally-sourced trashed notes must be refused (they are merely excluded from queries/results and exports).
+- Permanent deletion (purge) requires the note to be in the trash, removes its revisions/tags/links/FTS rows, and marks inbound links `target_deleted`. It is only permitted for notes whose source is the local database; externally-sourced trashed notes (any `document_sources` row) are refused and stay merely excluded from queries/results and exports.
 
 ## Future migrations
 

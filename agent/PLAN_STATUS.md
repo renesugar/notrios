@@ -2,7 +2,7 @@
 
 ## Current phase
 
-v0.2 Notrios redesign foundation (`PLAN.md`). Tasks **R1 (documentation redesign)**, **R2 (code rename + Apache-2.0 license)**, and **R3 (schema v5 — notebooks, tags, search notebooks)** are completed; next task is **R4 (schema v5 — source provenance and threads)** — ask the user before starting it.
+v0.2 Notrios redesign foundation (`PLAN.md`). Tasks **R1 (documentation redesign)**, **R2 (code rename + Apache-2.0 license)**, **R3 (schema v5 — notebooks/tags/search notebooks)**, and **R4 (schema v6 — source provenance and threads)** are completed; next task is **R5 (notebooks/tags/trash REST + MCP API)** — ask the user before starting it.
 
 ## Current working state
 
@@ -26,9 +26,11 @@ v0.2 Notrios redesign foundation (`PLAN.md`). Tasks **R1 (documentation redesign
 
 - R3 changes (schema v5, store layer): notebooks/tags/note_tags/search_notebooks tables, `documents.notebook_id` (backfilled, defaults to `nb_notes`), builtin rows ("Notes", read-only "Help", "All notes" first, "Trash" last with reserved query `is:trashed`), notebook CRUD with case-insensitive sibling-unique names and recursive delete-to-trash, tag counts, search-notebook lifecycle, trash list/restore/purge, v4→v5 upgrade shim, 9 new store tests. See `plans/v0.2/004-schema-v5-notebooks.md`. REST/MCP exposure is task R5.
 
+- R4 changes (schema v6, store layer): `document_sources` provenance table (source_system, external_id, author/author_id, thread_id/reply_to, source_url, published_at/published_ts), `SetDocumentSource`/`GetDocumentSource`/`FindDocumentBySource`/`ListThreadDocuments` store APIs, purge guard refusing externally-sourced notes, Joplin/Obsidian importers write provenance on every run (re-import backfills). See `plans/v0.2/005-schema-v6-source-provenance.md`.
+
 ## Next suggested step
 
-Task R4: schema v5 source provenance and threads — source-object tables (source_system, external IDs, author/author_id, thread_id/reply_to, URL, timestamps), purge guard for externally-sourced notes, provenance backfill from importer frontmatter, thread-order store queries + tests.
+Task R5: notebooks/tags/trash REST + MCP API — notebook CRUD routes and tree, tag list with counts, note↔notebook move, tag assignment, trash list/undelete/purge, search-notebook CRUD with builtin protection, MCP read tools (list_notebooks, get_notebook_tree, list_tags), OpenAPI + api/mcp-tools.md updates.
 
 ## Validation
 

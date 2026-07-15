@@ -163,6 +163,13 @@ func Import(ctx context.Context, st store.Store, sourceDir string, options Optio
 		} else {
 			return report, err
 		}
+		if _, err := st.SetDocumentSource(ctx, store.SetDocumentSourceRequest{
+			DocumentID:   logicalID,
+			SourceSystem: "obsidian",
+			ExternalID:   filepath.ToSlash(note.RelPath),
+		}); err != nil {
+			return report, err
+		}
 		importedDocIDs = append(importedDocIDs, logicalID)
 		attachments, warnings := referencedAssetIDs(note, assetIDByRel, assetIDByBase)
 		report.Warnings = append(report.Warnings, warnings...)

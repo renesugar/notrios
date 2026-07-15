@@ -119,6 +119,45 @@ type CreateSearchNotebookRequest struct {
 	Query       string
 }
 
+// DocumentSource records where an imported note came from. One row per
+// externally-sourced document (Joplin, Obsidian, Twitter/X, ChatGPT, Claude);
+// purely local notes have no row. Author (display name) and AuthorID
+// (canonical account identity) are kept separate so two people with the same
+// display name are never conflated. ThreadID/ReplyTo use source-native
+// external IDs so conversation threads can be recovered in order and links
+// can point back at the original posts.
+type DocumentSource struct {
+	DocumentID   string
+	SourceSystem string
+	ExternalID   string
+	Author       string
+	AuthorID     string
+	ThreadID     string
+	ReplyTo      string
+	SourceURL    string
+	PublishedAt  string
+	PublishedTS  int64
+	MetadataJSON string
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+}
+
+// SetDocumentSourceRequest upserts provenance for a document. PublishedAt
+// accepts ISO 8601 (or epoch seconds/milliseconds as digits); the UTC Unix
+// seconds used for range queries are derived from it.
+type SetDocumentSourceRequest struct {
+	DocumentID   string
+	SourceSystem string
+	ExternalID   string
+	Author       string
+	AuthorID     string
+	ThreadID     string
+	ReplyTo      string
+	SourceURL    string
+	PublishedAt  string
+	MetadataJSON string
+}
+
 // DocumentRevision is one durable saved state for a managed document.
 type DocumentRevision struct {
 	ID           string
@@ -348,6 +387,11 @@ type Store interface {
 	ListTrash(ctx context.Context, limit int) ([]Document, error)
 	RestoreDocument(ctx context.Context, id string) (Document, error)
 	PurgeDocument(ctx context.Context, id string) error
+
+	SetDocumentSource(ctx context.Context, req SetDocumentSourceRequest) (DocumentSource, error)
+	GetDocumentSource(ctx context.Context, documentID string) (DocumentSource, error)
+	FindDocumentBySource(ctx context.Context, sourceSystem, externalID string) (string, error)
+	ListThreadDocuments(ctx context.Context, threadID string) ([]DocumentSource, error)
 }
 
 func NormalizeCreateRequest(req CreateDocumentRequest) CreateDocumentRequest {

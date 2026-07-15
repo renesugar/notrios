@@ -81,7 +81,7 @@ func TestSQLiteStoreStatus(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Status: %v", err)
 	}
-	if status.Driver != "sqlite" || status.State != "open" || status.Path != ":memory:" || status.SchemaVersion != 5 {
+	if status.Driver != "sqlite" || status.State != "open" || status.Path != ":memory:" || status.SchemaVersion != 6 {
 		t.Fatalf("unexpected status: %+v", status)
 	}
 }

@@ -1,6 +1,6 @@
 # Plan: v0.2 — Notrios redesign foundation
 
-Status: active. Tasks R1–R3 are complete; next task is R4 (schema v5 — source provenance and threads). Ask the user before starting each task.
+Status: active. Tasks R1–R4 are complete; next task is R5 (notebooks/tags/trash REST + MCP API). Ask the user before starting each task.
 
 This plan supersedes the earlier v0.2 draft ("Import, Resource, and Media Hardening", archived at `plans/v0.2/001-import-resource-media-hardening.md`). The media-hardening items remain on the roadmap; they are re-sequenced behind the redesign items below.
 
@@ -60,7 +60,7 @@ Working state: `go test ./...`, scaffold checks, web typecheck/build, and smoke 
 
 Working state: schema migrates from v4; existing CRUD/search/import tests pass with default notebook membership.
 
-### R4. Schema v5 — source provenance and threads
+### R4. Schema v5 — source provenance and threads — COMPLETED (as schema v6)
 
 - Source-object tables recording `source_system` (joplin, obsidian, twitter, chatgpt, claude, local), external IDs, author display name, canonical author ID, `thread_id`, `reply_to`, source URL, and timestamps — sufficient to recover Twitter/X conversation threads and ChatGPT/Claude conversations.
 - Notes from external sources marked deleted are excluded from queries but never permanently deleted (only local notes can be purged from Trash).

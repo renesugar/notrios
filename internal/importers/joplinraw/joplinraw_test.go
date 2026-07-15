@@ -72,6 +72,13 @@ func TestImportJoplinRawFixture(t *testing.T) {
 	if len(refs) != 1 || refs[0].ResourceID != "res_joplin_res1" {
 		t.Fatalf("unexpected refs: %#v", refs)
 	}
+	src, err := st.GetDocumentSource(ctx, doc.ID)
+	if err != nil || src.SourceSystem != "joplin" || src.ExternalID != "note1" {
+		t.Fatalf("provenance row missing: %+v err=%v", src, err)
+	}
+	if found, err := st.FindDocumentBySource(ctx, "joplin", "note2"); err != nil || found != "doc_joplin_note2" {
+		t.Fatalf("FindDocumentBySource: %q err=%v", found, err)
+	}
 	search, err := st.Search(ctx, store.SearchRequest{Query: "Hello", Limit: 5})
 	if err != nil {
 		t.Fatalf("search imported docs: %v", err)

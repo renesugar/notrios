@@ -59,6 +59,9 @@ Referenced block. ^block-a
 	if !strings.Contains(doc.Body, "source_system: obsidian") || !strings.Contains(doc.Body, "obsidian_path: \"Projects/Source Note.md\"") {
 		t.Fatalf("frontmatter missing source metadata: %s", doc.Body)
 	}
+	if src, err := st.GetDocumentSource(ctx, sourceID); err != nil || src.SourceSystem != "obsidian" || src.ExternalID != "Projects/Source Note.md" {
+		t.Fatalf("provenance row missing: %+v err=%v", src, err)
+	}
 	if !strings.Contains(doc.Body, "aliases:") || !strings.Contains(doc.Body, "tags: [project, imported]") {
 		t.Fatalf("original frontmatter was not preserved: %s", doc.Body)
 	}
