@@ -13,7 +13,7 @@ import (
 	"sort"
 	"strings"
 
-	"example.com/notes-companion/internal/store"
+	"github.com/renesugar/notrios/internal/store"
 )
 
 const sourceSystem = "joplin_raw"

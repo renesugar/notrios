@@ -9,7 +9,7 @@ tasks:
       - bash scripts/validate-scaffold.sh
   serve:
     cmds:
-      - go run ./cmd/notesd -addr 127.0.0.1:8080
+      - go run ./cmd/notriosd -addr 127.0.0.1:8080
   doctor:
     cmds:
-      - go run ./cmd/notesctl doctor
+      - go run ./cmd/notriosctl doctor

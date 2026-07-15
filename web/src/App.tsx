@@ -251,7 +251,7 @@ export function App() {
           <div className="body-field">
             <span className="field-label">Markdown body</span>
             <MdEditor
-              id="notes-companion-editor"
+              id="notrios-editor"
               value={body}
               onChange={setBody}
               onUploadImg={(files, callback) => {

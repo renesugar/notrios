@@ -267,11 +267,11 @@ Breaking changes require a new API version or a compatibility shim. Additive fie
 
 ## CLI import surface
 
-The CLI is renamed `notesctl` → `notriosctl` in plan task R2; commands below reflect the current code. Twitter/X, ChatGPT, and Claude importers are added in plan tasks R9–R11.
+The CLI binary is `notriosctl` (renamed from `notesctl` in plan task R2). Twitter/X, ChatGPT, and Claude importers are added in plan tasks R9–R11.
 
-`notesctl import joplin-raw [--config path] [--db path] [--asset-store path] [--collection id] [--dry-run] <raw-export-dir>` imports a Joplin RAW Export Directory into the canonical SQLite/resource store and prints a JSON report.
+`notriosctl import joplin-raw [--config path] [--db path] [--asset-store path] [--collection id] [--dry-run] <raw-export-dir>` imports a Joplin RAW Export Directory into the canonical SQLite/resource store and prints a JSON report.
 
-`notesctl import obsidian [--config path] [--db path] [--asset-store path] [--collection id] [--dry-run] <vault-dir>` imports an Obsidian-style Markdown vault. It preserves Markdown/frontmatter, records source paths in frontmatter, imports local assets as content-addressed resources, attaches referenced assets, and refreshes graph links after the batch.
+`notriosctl import obsidian [--config path] [--db path] [--asset-store path] [--collection id] [--dry-run] <vault-dir>` imports an Obsidian-style Markdown vault. It preserves Markdown/frontmatter, records source paths in frontmatter, imports local assets as content-addressed resources, attaches referenced assets, and refreshes graph links after the batch.
 
 The commands are intentionally separate from REST/MCP in the MVP; later import jobs may expose an HTTP job API.
 

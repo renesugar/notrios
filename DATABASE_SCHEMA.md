@@ -20,7 +20,7 @@ A collection is a logical namespace such as `personal-notes`, `joplin-raw-2026-0
 Important fields:
 
 - `id`: stable public collection ID.
-- `kind`: managed, external, imported, sidecar-indexed, or projection. (The stored value `sist2` is renamed in plan task R2.)
+- `kind`: `managed`, `external`, `imported`, `sidecar_indexed`, or `projection`.
 - `capabilities_json`: declares whether the collection supports write, resources, publishing, graph, remote media, and MCP reads.
 - `settings_json`: collection-specific configuration.
 
@@ -69,16 +69,17 @@ The migration includes indexes for common lookups:
 - outbox by completion and sequence;
 - media hashes by algorithm/hash.
 
-## Planned schema v5 — Notrios redesign (plan tasks R3/R4)
+## Schema v5 — Notrios redesign (task R3 implemented; R4 planned)
 
-The redesign adds the note-taking data model on top of the existing document tables:
+Schema v5 is live in `migrations/0001_initial.sql` (with an `ensureSchemaV5` upgrade shim for v4 databases that adds `documents.notebook_id` and backfills existing rows into the default notebook). It adds the note-taking data model on top of the existing document tables:
 
 ### notebooks
 
-- Nested notebooks via `parent_id`; stable opaque IDs.
+- Nested notebooks via `parent_id`; stable opaque IDs; `builtin` flag; `position` for manual ordering.
 - Optional `icon_emoji` displayed before the name in sidebars.
-- Names are case-insensitively unique among siblings (`NOCASE` unique index); the store layer rejects duplicates that differ only by case.
-- Every managed note belongs to exactly one notebook; bootstrap creates the default "Notes" notebook.
+- Names are case-insensitively unique among siblings (`NOCASE` unique expression index); violations surface as name-conflict errors.
+- Every managed note belongs to exactly one notebook (`documents.notebook_id`); bootstrap creates the default "Notes" notebook (`nb_notes`, undeletable) and the builtin read-only "Help" notebook (`nb_help`).
+- Deleting a notebook trashes its notes recursively and re-homes them to the default notebook; the notebook rows are removed.
 
 ### tags and note_tags
 
@@ -87,8 +88,8 @@ The redesign adds the note-taking data model on top of the existing document tab
 
 ### search_notebooks
 
-- Name, optional emoji, query string (in the `SEARCH_QUERY_LANGUAGE.md` syntax), `builtin` flag, and sort anchors.
-- Builtin rows bootstrapped: "All notes" (first, undeletable), "Trash" (last, undeletable), "Help" (undeletable, read-only notes).
+- Name (case-insensitively unique), optional emoji, query string (in the `SEARCH_QUERY_LANGUAGE.md` syntax), `builtin` flag, and `sort_anchor` (`first`/`normal`/`last`).
+- Builtin rows bootstrapped: "All notes" (`snb_all_notes`, first, undeletable, empty query) and "Trash" (`snb_trash`, last, undeletable, reserved query `is:trashed`).
 - Deleting a user search notebook deletes only the row, never notes.
 
 ### source objects and threads
@@ -104,8 +105,8 @@ Thread/link-graph traversal stays in SQLite; the Recoll index only carries searc
 
 ### Deletion rules
 
-- Soft-deleted notes are excluded from every query and appear only through the "Trash" search notebook.
-- Permanent deletion (purge) is only permitted for notes whose source is the local database; externally-sourced notes marked deleted are merely excluded from queries/results and exports.
+- Soft-deleted notes are excluded from every query and appear only through the "Trash" search notebook (`ListTrash`); restore makes them visible and searchable again.
+- Permanent deletion (purge) requires the note to be in the trash, removes its revisions/tags/links/FTS rows, and marks inbound links `target_deleted`. It is only permitted for notes whose source is the local database; once R4 adds provenance, externally-sourced trashed notes must be refused (they are merely excluded from queries/results and exports).
 
 ## Future migrations
 

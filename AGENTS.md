@@ -33,13 +33,12 @@ Start with the handoff: `CODING_CLIENT_HANDOFF.md` is the current compressed sta
 The scaffold was created in a restricted container. Before large implementation work, read `CODING_CLIENT_HANDOFF.md` and review the documented limitations. In particular:
 
 - the current SQLite adapter is a small local cgo wrapper chosen to avoid external Go module downloads during scaffold creation;
-- the Go module path is still `example.com/notes-companion` (target: `github.com/renesugar/notrios`, plan task R2);
-- no final license has been selected (MIT or Apache-2.0; user decision);
+- the Go module path is `github.com/renesugar/notrios` and the license is Apache-2.0 (both set in plan task R2);
 - Recoll, Quartz, MCP SDK, and browser automation are documented but not integrated;
 - real private import datasets were intentionally not included;
 - UI validation has been build/typecheck level only, not Playwright-level browser testing.
 
-In a less restricted environment, consider resolving the license, module path, SQLite driver, npm dependency audit, MCP SDK pin, and browser test stack before deep feature work. Do not make these changes all at once unless the active plan calls for a cleanup slice.
+In a less restricted environment, consider resolving the SQLite driver, npm dependency audit, MCP SDK pin, and browser test stack before deep feature work. Do not make these changes all at once unless the active plan calls for a cleanup slice.
 
 ## Progress and loop detection
 

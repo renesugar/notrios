@@ -29,6 +29,11 @@ Notrios exposes one user-facing query language across the GUI search box, REST s
 - Multiword tags use the quoted form as canonical syntax. A canonical `tagid` (`shopping_mall`) may be indexed alongside the display value; if underscores become identifier characters, enable Recoll's `underscoreasletter`. Hyphenated canonicalization is avoided because Recoll's dehyphenation makes hyphenated tags unreliable as identifiers.
 - `author` (display name) and `authorid` (canonical account) are separate fields so two people with the same display name are never conflated, and so `@`/domain punctuation tokenization never matters — the adapter canonicalizes account IDs before indexing and querying.
 
+## Reserved internal operators
+
+- The empty query means "all non-deleted notes" (backs the "All notes" search notebook).
+- `is:trashed` is reserved for the builtin Trash search notebook; deleted notes never appear in any other query.
+
 ## Result behavior
 
 - Implicit AND, phrases, stemming, wildcards, and boolean expressions follow the backend's native behavior.

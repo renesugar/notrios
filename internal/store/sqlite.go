@@ -28,7 +28,7 @@ import (
 	"time"
 	"unsafe"
 
-	"example.com/notes-companion/internal/markdownlinks"
+	"github.com/renesugar/notrios/internal/markdownlinks"
 )
 
 //go:embed migrations/0001_initial.sql
@@ -88,7 +88,7 @@ func contextOrBackground(ctx context.Context) context.Context {
 
 func defaultAssetRoot(path string) string {
 	if path == ":memory:" || strings.TrimSpace(path) == "" {
-		return filepath.Join(os.TempDir(), "notes-companion-assets")
+		return filepath.Join(os.TempDir(), "notrios-assets")
 	}
 	return filepath.Join(parentDir(path), "assets")
 }
@@ -129,7 +129,29 @@ func (s *SQLiteStore) Bootstrap(ctx context.Context) error {
 	if err := s.ensureSchemaV4(ctx); err != nil {
 		return err
 	}
-	return s.Exec(ctx, `INSERT OR IGNORE INTO collections(id, name, description) VALUES('default', 'Default', 'Managed notes created by the companion service.');`)
+	if err := s.ensureSchemaV5(ctx); err != nil {
+		return err
+	}
+	if err := s.Exec(ctx, `INSERT OR IGNORE INTO collections(id, name, description) VALUES('default', 'Default', 'Managed notes created by the companion service.');`); err != nil {
+		return err
+	}
+	return s.seedNotebooks(ctx)
+}
+
+func (s *SQLiteStore) seedNotebooks(ctx context.Context) error {
+	statements := []string{
+		`INSERT OR IGNORE INTO notebooks(id, parent_id, name, icon_emoji, builtin) VALUES('` + DefaultNotebookID + `', NULL, 'Notes', '', 0);`,
+		`INSERT OR IGNORE INTO notebooks(id, parent_id, name, icon_emoji, builtin) VALUES('` + HelpNotebookID + `', NULL, 'Help', '', 1);`,
+		`INSERT OR IGNORE INTO search_notebooks(id, name, icon_emoji, query, builtin, sort_anchor) VALUES('` + AllNotesSearchNotebookID + `', 'All notes', '', '', 1, 'first');`,
+		`INSERT OR IGNORE INTO search_notebooks(id, name, icon_emoji, query, builtin, sort_anchor) VALUES('` + TrashSearchNotebookID + `', 'Trash', '', 'is:trashed', 1, 'last');`,
+		`UPDATE documents SET notebook_id = '` + DefaultNotebookID + `' WHERE notebook_id IS NULL;`,
+	}
+	for _, statement := range statements {
+		if err := s.Exec(ctx, statement); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (s *SQLiteStore) Exec(ctx context.Context, sql string) error {
@@ -151,6 +173,26 @@ func (s *SQLiteStore) ensureSchemaV4(ctx context.Context) error {
 		`ALTER TABLE document_links ADD COLUMN target_uri TEXT;`,
 		`ALTER TABLE document_links ADD COLUMN context TEXT;`,
 		`PRAGMA user_version = 4;`,
+	}
+	for _, statement := range statements {
+		if err := s.Exec(ctx, statement); err != nil {
+			if strings.Contains(err.Error(), "duplicate column name") {
+				continue
+			}
+			return err
+		}
+	}
+	return nil
+}
+
+// ensureSchemaV5 upgrades pre-notebook databases: the migration file creates
+// the v5 tables with IF NOT EXISTS, but the documents.notebook_id column and
+// its index only exist on fresh databases.
+func (s *SQLiteStore) ensureSchemaV5(ctx context.Context) error {
+	statements := []string{
+		`ALTER TABLE documents ADD COLUMN notebook_id TEXT REFERENCES notebooks(id);`,
+		`CREATE INDEX IF NOT EXISTS documents_notebook_idx ON documents(notebook_id);`,
+		`PRAGMA user_version = 5;`,
 	}
 	for _, statement := range statements {
 		if err := s.Exec(ctx, statement); err != nil {
@@ -286,8 +328,13 @@ func (s *SQLiteStore) CreateDocument(ctx context.Context, req CreateDocumentRequ
 		}
 	}()
 
-	if err := s.execPreparedLocked(`INSERT INTO documents(id, collection_id, title, body_mime_type, current_revision_id)
-		VALUES(?, ?, ?, ?, ?)`, docID, req.CollectionID, req.Title, req.BodyMIMEType, revID); err != nil {
+	if exists, err := s.notebookExistsLocked(req.NotebookID); err != nil {
+		return Document{}, err
+	} else if !exists {
+		return Document{}, fmt.Errorf("%w: notebook %q", ErrNotFound, req.NotebookID)
+	}
+	if err := s.execPreparedLocked(`INSERT INTO documents(id, collection_id, notebook_id, title, body_mime_type, current_revision_id)
+		VALUES(?, ?, ?, ?, ?, ?)`, docID, req.CollectionID, req.NotebookID, req.Title, req.BodyMIMEType, revID); err != nil {
 		return Document{}, err
 	}
 	if err := s.execPreparedLocked(`INSERT INTO document_revisions(id, document_id, title, body, body_mime_type, message) VALUES(?, ?, ?, ?, ?, ?)`, revID, docID, req.Title, req.Body, req.BodyMIMEType, req.Message); err != nil {
@@ -318,7 +365,7 @@ func (s *SQLiteStore) GetDocument(ctx context.Context, id string) (Document, err
 }
 
 func (s *SQLiteStore) getDocumentLocked(id string) (Document, error) {
-	stmt, err := s.prepareLocked(`SELECT d.id, d.collection_id, d.title, r.body, COALESCE(r.body_mime_type, d.body_mime_type), d.current_revision_id, d.created_at, d.updated_at, COALESCE(d.deleted_at, '')
+	stmt, err := s.prepareLocked(`SELECT d.id, d.collection_id, d.title, r.body, COALESCE(r.body_mime_type, d.body_mime_type), d.current_revision_id, d.created_at, d.updated_at, COALESCE(d.deleted_at, ''), COALESCE(d.notebook_id, '')
 		FROM documents d
 		JOIN document_revisions r ON r.id = d.current_revision_id
 		WHERE d.id = ? AND d.deleted_at IS NULL`)
@@ -347,6 +394,7 @@ func (s *SQLiteStore) getDocumentLocked(id string) (Document, error) {
 		CurrentRevisionID: columnText(stmt, 5),
 		CreatedAt:         createdAt,
 		UpdatedAt:         updatedAt,
+		NotebookID:        columnText(stmt, 9),
 	}
 	doc.URI = DocumentURI(doc.CollectionID, doc.ID)
 	return doc, nil

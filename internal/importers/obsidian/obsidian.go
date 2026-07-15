@@ -20,8 +20,8 @@ import (
 	"sort"
 	"strings"
 
-	"example.com/notes-companion/internal/markdownlinks"
-	"example.com/notes-companion/internal/store"
+	"github.com/renesugar/notrios/internal/markdownlinks"
+	"github.com/renesugar/notrios/internal/store"
 )
 
 const sourceSystem = "obsidian"

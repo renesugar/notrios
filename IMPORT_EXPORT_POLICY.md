@@ -45,4 +45,4 @@ Use an Obsidian-like portable Markdown vault as the default user-facing export b
 
 ## Joplin RAW importer MVP behavior
 
-The MVP importer is implemented as `notesctl import joplin-raw`. It imports notes and resources into the canonical store, not into sist2. It preserves selected Joplin metadata in Markdown frontmatter and rewrites internal `:/<id>` links to companion app URIs. Production hardening should add a dedicated import-job/source-object table before large migrations.
+The MVP importer is implemented as `notriosctl import joplin-raw`. It imports notes and resources into the canonical store, never into any search index. It preserves selected Joplin metadata in Markdown frontmatter and rewrites internal `:/<id>` links to companion app URIs. Production hardening should add a dedicated import-job/source-object table before large migrations.

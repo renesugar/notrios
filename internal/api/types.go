@@ -22,11 +22,11 @@ type DatabaseStatus struct {
 }
 
 type StorageStatus struct {
-	DataDirectory string `json:"data_directory"`
-	DatabasePath  string `json:"database_path"`
-	AssetStore    string `json:"asset_store"`
-	ProjectionDir string `json:"projection_dir"`
-	Sist2IndexDir string `json:"sist2_index_dir"`
+	DataDirectory         string `json:"data_directory"`
+	DatabasePath          string `json:"database_path"`
+	AssetStore            string `json:"asset_store"`
+	ProjectionDir         string `json:"projection_dir"`
+	SearchSidecarIndexDir string `json:"search_sidecar_index_dir"`
 }
 
 // ErrorEnvelope is the stable REST error shape.

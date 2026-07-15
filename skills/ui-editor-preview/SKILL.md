@@ -17,7 +17,7 @@ Use this skill when working on the React built-in UI.
 4. Upload pasted images and attachments through REST resource endpoints.
 5. Sanitize Markdown preview HTML.
 6. Detect remote images and offer localization, but never make preview image loading perform the server-side download implicitly.
-7. Show save/index/projection/sist2 state clearly.
+7. Show save/index/projection/search-sidecar state clearly.
 
 ## Checks
 

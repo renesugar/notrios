@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS collections (
 CREATE TABLE IF NOT EXISTS documents (
     id TEXT PRIMARY KEY,
     collection_id TEXT NOT NULL REFERENCES collections(id),
+    notebook_id TEXT REFERENCES notebooks(id),
     title TEXT NOT NULL,
     body_mime_type TEXT NOT NULL DEFAULT 'text/markdown',
     current_revision_id TEXT,
@@ -119,4 +120,51 @@ CREATE TABLE IF NOT EXISTS index_outbox (
     error_text TEXT
 );
 
-PRAGMA user_version = 4;
+-- Schema v5: notebooks, tags, and search notebooks (Notrios redesign task R3).
+CREATE TABLE IF NOT EXISTS notebooks (
+    id TEXT PRIMARY KEY,
+    parent_id TEXT REFERENCES notebooks(id),
+    name TEXT NOT NULL,
+    icon_emoji TEXT NOT NULL DEFAULT '',
+    builtin INTEGER NOT NULL DEFAULT 0,
+    position INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Notebook names are case-insensitively unique among siblings.
+CREATE UNIQUE INDEX IF NOT EXISTS notebooks_sibling_name_idx
+    ON notebooks(COALESCE(parent_id, ''), name COLLATE NOCASE);
+
+CREATE TABLE IF NOT EXISTS tags (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS tags_name_idx ON tags(name COLLATE NOCASE);
+
+CREATE TABLE IF NOT EXISTS note_tags (
+    document_id TEXT NOT NULL REFERENCES documents(id),
+    tag_id TEXT NOT NULL REFERENCES tags(id),
+    PRIMARY KEY(document_id, tag_id)
+);
+
+CREATE INDEX IF NOT EXISTS note_tags_tag_idx ON note_tags(tag_id);
+
+-- Search notebooks are query-backed virtual notebooks; deleting one never
+-- deletes notes. sort_anchor is 'first' (All notes), 'normal', or 'last' (Trash).
+CREATE TABLE IF NOT EXISTS search_notebooks (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    icon_emoji TEXT NOT NULL DEFAULT '',
+    query TEXT NOT NULL DEFAULT '',
+    builtin INTEGER NOT NULL DEFAULT 0,
+    sort_anchor TEXT NOT NULL DEFAULT 'normal',
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS search_notebooks_name_idx
+    ON search_notebooks(name COLLATE NOCASE);
+
+PRAGMA user_version = 5;

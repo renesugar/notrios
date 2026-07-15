@@ -9,16 +9,16 @@ import (
 	"strings"
 )
 
-// Config contains the runtime settings used by notesd and notesctl.
+// Config contains the runtime settings used by notriosd and notriosctl.
 // It intentionally avoids third-party YAML dependencies until the project
 // chooses and pins the long-term configuration library.
 type Config struct {
-	ConfigPath string       `json:"config_path,omitempty"`
-	Server     ServerConfig `json:"server"`
-	Data       DataConfig   `json:"data"`
-	Search     SearchConfig `json:"search"`
-	MCP        MCPConfig    `json:"mcp"`
-	Sist2      Sist2Config  `json:"sist2"`
+	ConfigPath    string              `json:"config_path,omitempty"`
+	Server        ServerConfig        `json:"server"`
+	Data          DataConfig          `json:"data"`
+	Search        SearchConfig        `json:"search"`
+	MCP           MCPConfig           `json:"mcp"`
+	SearchSidecar SearchSidecarConfig `json:"search_sidecar"`
 }
 
 type ServerConfig struct {
@@ -46,7 +46,10 @@ type MCPConfig struct {
 	MaxDocumentBytes int    `json:"max_document_bytes"`
 }
 
-type Sist2Config struct {
+// SearchSidecarConfig configures the optional derived search sidecar
+// (Recoll; formerly sist2). The sidecar is an external user-installed
+// process and is never linked into the service.
+type SearchSidecarConfig struct {
 	Enabled  bool   `json:"enabled"`
 	Binary   string `json:"binary"`
 	IndexDir string `json:"index_dir"`
@@ -76,10 +79,10 @@ func Default() Config {
 			MaxResults:       10,
 			MaxDocumentBytes: 65536,
 		},
-		Sist2: Sist2Config{
+		SearchSidecar: SearchSidecarConfig{
 			Enabled:  false,
-			Binary:   "sist2",
-			IndexDir: "./data/sist2",
+			Binary:   "recollindex",
+			IndexDir: "./data/search-index",
 		},
 	}
 }
@@ -163,7 +166,7 @@ func EnsureDirectories(cfg Config) error {
 		filepath.Dir(cfg.Data.DatabasePath),
 		cfg.Data.AssetStore,
 		cfg.Data.ProjectionDir,
-		cfg.Sist2.IndexDir,
+		cfg.SearchSidecar.IndexDir,
 	}
 	seen := map[string]bool{}
 	for _, path := range paths {
@@ -226,8 +229,8 @@ func applyScalar(cfg *Config, section, subsection, key, value string) {
 		applySearch(&cfg.Search, key, value)
 	case "mcp":
 		applyMCP(&cfg.MCP, key, value)
-	case "sist2":
-		applySist2(&cfg.Sist2, key, value)
+	case "search_sidecar":
+		applySearchSidecar(&cfg.SearchSidecar, key, value)
 	case "remote_media":
 		_ = subsection
 		// Documented for later implementation. Keep parsing permissive now.
@@ -280,7 +283,7 @@ func applyMCP(cfg *MCPConfig, key, value string) {
 	}
 }
 
-func applySist2(cfg *Sist2Config, key, value string) {
+func applySearchSidecar(cfg *SearchSidecarConfig, key, value string) {
 	switch key {
 	case "enabled":
 		cfg.Enabled = parseBool(value, cfg.Enabled)

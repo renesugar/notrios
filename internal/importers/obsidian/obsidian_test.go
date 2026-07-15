@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"example.com/notes-companion/internal/store"
+	"github.com/renesugar/notrios/internal/store"
 )
 
 func TestImportObsidianVaultFixture(t *testing.T) {

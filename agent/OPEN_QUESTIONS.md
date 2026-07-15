@@ -28,7 +28,7 @@
 
 ## Notrios redesign questions (2026-07-15)
 
-1. **License (blocks R2):** MIT, Apache-2.0, or dual "MIT OR Apache-2.0"? All three satisfy the "compatible with MIT or Apache 2.0" requirement; Apache-2.0 adds a patent grant, MIT is simplest.
-2. Should `notesctl` become `notriosctl` (assumed yes in `PLAN.md` R2), or keep its name?
+1. ~~License~~ **Resolved 2026-07-15: Apache-2.0** (user decision; `LICENSE` added in R2).
+2. ~~notesctl rename~~ **Resolved 2026-07-15: renamed to `notriosctl`** with user approval of R2.
 3. When a regular notebook is deleted, its notes currently are specified to move to Trash (`NOTEBOOKS_AND_SEARCH_NOTEBOOKS.md`) — confirm, or should they move to the parent/default notebook?
 4. Should FTS5 remain the always-on baseline with Recoll optional (current design), or should Recoll become required for full query-language support?

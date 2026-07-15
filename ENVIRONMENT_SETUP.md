@@ -87,13 +87,13 @@ The scaffold currently uses a small local cgo adapter over system `libsqlite3` b
 Run the service with the example config:
 
 ```bash
-go run ./cmd/notesd -config config/config.example.yaml
+go run ./cmd/notriosd -config config/config.example.yaml
 ```
 
 The service creates the configured data, asset, projection, and search-sidecar index directories before opening SQLite. Use `-addr` and `-db` only as explicit overrides for quick local smoke tests:
 
 ```bash
-go run ./cmd/notesd -addr 127.0.0.1:8081 -db /tmp/notrios.sqlite
+go run ./cmd/notriosd -addr 127.0.0.1:8081 -db /tmp/notrios.sqlite
 ```
 
 Confirm runtime state:
@@ -106,7 +106,7 @@ Expected fields include `database_info.schema_version`, `storage.asset_store`, `
 
 ## MVP Task 2 development notes
 
-The service now reports SQLite schema version 4 after bootstrap. Existing local development databases from MVP Tasks 1–2 can be opened; bootstrap applies narrow compatibility shims for revision columns, resource indexes, and link graph columns. For clean testing, delete `data/notes.sqlite` and restart `notesd`.
+The service now reports SQLite schema version 4 after bootstrap. Existing local development databases from MVP Tasks 1–2 can be opened; bootstrap applies narrow compatibility shims for revision columns, resource indexes, and link graph columns. For clean testing, delete `data/notes.sqlite` and restart `notriosd`.
 
 ### Resource upload smoke test
 
@@ -133,21 +133,21 @@ curl -X POST http://127.0.0.1:8080/api/v1/graph \
 
 ## Built-in UI production smoke test
 
-After building the web UI, `notesd` can serve it from `web/dist`:
+After building the web UI, `notriosd` can serve it from `web/dist`:
 
 ```bash
 cd web && npm ci && npm run build
 cd ..
-go run ./cmd/notesd -addr 127.0.0.1:8080
+go run ./cmd/notriosd -addr 127.0.0.1:8080
 # open http://127.0.0.1:8080/
 ```
 
-For iterative frontend development, continue using `cd web && npm run dev`; Vite proxies `/api` and `/healthz` to `notesd`.
+For iterative frontend development, continue using `cd web && npm run dev`; Vite proxies `/api` and `/healthz` to `notriosd`.
 
 
 ## MCP smoke test
 
-After starting `notesd`, list MCP tools with:
+After starting `notriosd`, list MCP tools with:
 
 ```bash
 curl -X POST http://127.0.0.1:8080/mcp \
@@ -162,13 +162,13 @@ The current MCP adapter is dependency-free for this scaffold. In a normal develo
 Run a dry-run scan:
 
 ```bash
-go run ./cmd/notesctl import joplin-raw --dry-run /path/to/joplin-raw-export
+go run ./cmd/notriosctl import joplin-raw --dry-run /path/to/joplin-raw-export
 ```
 
 Import into the default local database:
 
 ```bash
-go run ./cmd/notesctl import joplin-raw \
+go run ./cmd/notriosctl import joplin-raw \
   --db ./data/notes.sqlite \
   --asset-store ./data/assets \
   --collection default \
@@ -183,13 +183,13 @@ The importer expects a Joplin RAW Export Directory, not a JEX archive. Keep priv
 Run a dry-run scan:
 
 ```bash
-go run ./cmd/notesctl import obsidian --dry-run /path/to/obsidian-vault
+go run ./cmd/notriosctl import obsidian --dry-run /path/to/obsidian-vault
 ```
 
 Import into the default local database:
 
 ```bash
-go run ./cmd/notesctl import obsidian \
+go run ./cmd/notriosctl import obsidian \
   --db ./data/notes.sqlite \
   --asset-store ./data/assets \
   --collection default \
@@ -210,7 +210,7 @@ bash scripts/validate-scaffold.sh
 cd web && npm ci && npm run typecheck && npm run build
 bash scripts/mvp_smoke.sh
 bash scripts/run_performance_smoke.sh
-bash scripts/package_release.sh /tmp/notes-companion-v0.1.0-mvp.zip
+bash scripts/package_release.sh /tmp/notrios-v0.1.0-mvp.zip
 ```
 
-`mvp_smoke.sh` starts `notesd` on a loopback test port, creates and updates a note, searches it, uploads/downloads a resource, and verifies MCP tool listing. `run_performance_smoke.sh` runs the generated-dataset store smoke test and benchmark.
+`mvp_smoke.sh` starts `notriosd` on a loopback test port, creates and updates a note, searches it, uploads/downloads a resource, and verifies MCP tool listing. `run_performance_smoke.sh` runs the generated-dataset store smoke test and benchmark.

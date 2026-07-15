@@ -25,9 +25,10 @@ Built-in search notebooks (cannot be deleted in the UI or via the API):
 
 | Name | Position | Query semantics | Notes |
 |---|---|---|---|
-| **All notes** | first in the sidebar | all non-deleted notes across all notebooks | default view on startup; uses incremental (cursor) search so startup never loads hundreds of thousands of notes at once |
-| **Trash** | last in the sidebar | all notes marked deleted | see Trash semantics below |
-| **Help** | normal position | `notebook:help` documentation notes | read-only; its notes cannot be edited or deleted by the user; content is seeded from `docs/` (see `DOCS_SITE.md`) |
+| **All notes** | first in the sidebar | all non-deleted notes across all notebooks (empty query) | default view on startup; uses incremental (cursor) search so startup never loads hundreds of thousands of notes at once |
+| **Trash** | last in the sidebar | all notes marked deleted (reserved internal query `is:trashed`) | see Trash semantics below |
+
+**Help** is implemented as a built-in *regular* notebook (not a search notebook): it holds the read-only documentation notes seeded from `docs/` (see `DOCS_SITE.md`), cannot be deleted, its notes cannot be edited, deleted, or moved, and `notebook:help` searches it like any notebook.
 
 User-created search notebooks:
 
@@ -52,6 +53,7 @@ User-created search notebooks:
 ## Protection rules summary
 
 - "All notes" and "Trash": cannot be deleted, fixed first/last sidebar positions.
-- "Help": cannot be deleted; notes inside are read-only.
+- "Help": builtin regular notebook; cannot be deleted, renamed, or moved; notes inside are read-only and cannot be moved in or out.
+- The default "Notes" notebook cannot be deleted (it is the fallback home for restored notes) but is otherwise a normal notebook.
 - User search notebooks: deletable (notebook + query only).
-- Regular notebooks: deletable per normal rules (future task defines whether their notes move to a parent, default notebook, or Trash — current decision: notes move to Trash).
+- Regular notebooks: deleting one (including its sub-notebooks) moves its notes to the Trash; nothing is lost. Trashed notes whose notebook was deleted are re-homed to the default "Notes" notebook so restore always has a valid destination.

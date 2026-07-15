@@ -4,6 +4,7 @@ import sys
 
 required = [
     'README.md',
+    'LICENSE',
     'PLAN.md',
     'AGENTS.md',
     'ROADMAP.md',
@@ -57,8 +58,8 @@ required = [
     'agent/MODEL_LOG.jsonl',
     'api/openapi.yaml',
     'config/config.example.yaml',
-    'cmd/notesd/main.go',
-    'cmd/notesctl/main.go',
+    'cmd/notriosd/main.go',
+    'cmd/notriosctl/main.go',
     'web/package.json',
     'web/package-lock.json',
     'web/README.md',

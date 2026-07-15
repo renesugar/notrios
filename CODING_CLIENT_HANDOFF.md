@@ -23,7 +23,7 @@ Current phase: the v0.1 MVP is complete and the project is being redesigned as *
 
 The completed v0.1 MVP supports:
 
-- `notesd` local HTTP service (rename to `notriosd` is plan task R2);
+- `notriosd` local HTTP service;
 - SQLite database creation, migration bootstrap, and default managed collection bootstrap;
 - document create/read/update/patch/soft-delete;
 - revision list/read/restore;
@@ -32,7 +32,7 @@ The completed v0.1 MVP supports:
 - Markdown link/backlink parsing and graph slices;
 - React/Vite UI using `md-editor-rt` with document/resource link routing;
 - read-only MCP MVP endpoint at `/mcp`;
-- `notesctl import joplin-raw` and `notesctl import obsidian`;
+- `notriosctl import joplin-raw` and `notriosctl import obsidian`;
 - generated-dataset smoke/performance tests;
 - release packaging and ZIP verification scripts.
 
@@ -61,7 +61,7 @@ git branch -M main
 git push -u origin main
 ```
 
-Before pushing: finish plan task R2 (module path `github.com/renesugar/notrios`, binary renames), select the license (MIT or Apache-2.0), and confirm CI installs Go, Node, npm dependencies, and SQLite development headers.
+Before pushing: confirm CI installs Go, Node, npm dependencies, and SQLite development headers. Task R2 is done: module path is `github.com/renesugar/notrios`, binaries are `notriosd`/`notriosctl`, and the license is Apache-2.0.
 
 ## Important constraints to preserve
 
@@ -78,8 +78,6 @@ Before pushing: finish plan task R2 (module path `github.com/renesugar/notrios`,
 The scaffold was created in a restricted container. Still-open consequences:
 
 1. The SQLite store uses a small local cgo adapter over system `libsqlite3`; the long-term driver choice is open.
-2. The Go module path is still `example.com/notes-companion` (fixed in task R2).
-3. No final license file yet (`LICENSE_PENDING.md`; user decision between MIT and Apache-2.0).
-4. The MCP adapter is dependency-free; the official MCP Go SDK can replace it later without changing tool semantics.
-5. The UI was typechecked/built but not browser-tested (no Playwright yet).
-6. Importers were tested on synthetic fixtures only — verify against real Joplin RAW exports and Obsidian vaults before large migrations; never commit private datasets.
+2. The MCP adapter is dependency-free; the official MCP Go SDK can replace it later without changing tool semantics.
+3. The UI was typechecked/built but not browser-tested (no Playwright yet).
+4. Importers were tested on synthetic fixtures only — verify against real Joplin RAW exports and Obsidian vaults before large migrations; never commit private datasets.

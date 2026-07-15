@@ -26,7 +26,7 @@ The ZIP should exclude:
 Run from the repository root:
 
 ```bash
-bash scripts/package_release.sh /tmp/notes-companion-v0.1.0-mvp.zip
+bash scripts/package_release.sh /tmp/notrios-v0.1.0-mvp.zip
 ```
 
 That script runs the Go tests, scaffold validation, UI dependency install, UI production build, ZIP creation, and ZIP-content verification.

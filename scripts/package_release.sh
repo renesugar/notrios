@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
-OUT=${1:-"$ROOT/notes-companion-mvp.zip"}
+OUT=${1:-"$ROOT/notrios-mvp.zip"}
 cd "$ROOT"
 
 go test ./...

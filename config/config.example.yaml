@@ -36,7 +36,7 @@ remote_media:
     video: "200MB"
     pdf: "100MB"
 
-sist2:
+search_sidecar:
   enabled: false
-  binary: "sist2"
-  index_dir: "./data/sist2"
+  binary: "recollindex"
+  index_dir: "./data/search-index"

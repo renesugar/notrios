@@ -23,13 +23,13 @@ This file is the codebase atlas. Update it whenever major files or directories a
 
 ## Code directories
 
-- `cmd/notesd/` — service daemon entry point.
-- `cmd/notesctl/` — CLI/admin/import command entry point.
+- `cmd/notriosd/` — service daemon entry point.
+- `cmd/notriosctl/` — CLI/admin/import command entry point.
 - `internal/importers/joplinraw/` — MVP Joplin RAW Export Directory parser/importer.
 - `internal/importers/obsidian/` — MVP Obsidian vault Markdown/assets parser/importer.
 - `internal/api/` — shared API request/response models.
 - `internal/httpapi/` — REST HTTP adapter for status, documents, revisions, resources, links, graph slices, and staged future routes.
-- `internal/store/` — SQLite-backed persistence, document CRUD, revision history, soft delete, restore, FTS5 search, resource storage, and link graph persistence.
+- `internal/store/` — SQLite-backed persistence, document CRUD, revision history, soft delete, restore, FTS5 search, resource storage, link graph persistence, and (schema v5) notebooks/tags/search-notebooks/trash operations (`sqlite_notebooks.go`).
 - `internal/markdownlinks/` — conservative MVP Markdown/Obsidian/app-URI link extractor.
 - `internal/version/` — version constants.
 - `migrations/` — SQLite schema migrations.
@@ -112,7 +112,7 @@ This file is the codebase atlas. Update it whenever major files or directories a
 
 - `internal/importers/joplinraw/joplinraw.go` parses Joplin RAW item files, imports notes/resources, rewrites `:/<id>` links, and returns a JSON-serializable report.
 - `internal/importers/joplinraw/joplinraw_test.go` builds a small RAW fixture and verifies import, resource attachment, link rewriting, searchability, and re-run behavior.
-- `cmd/notesctl/main.go` now includes `notesctl import joplin-raw`.
+- `cmd/notriosctl/main.go` now includes `notriosctl import joplin-raw`.
 - Store create requests support optional preferred IDs so importers can create deterministic source-derived document/resource IDs.
 
 
@@ -120,7 +120,7 @@ This file is the codebase atlas. Update it whenever major files or directories a
 
 - `internal/importers/obsidian/obsidian.go` scans an Obsidian-style vault, imports Markdown notes and non-Markdown assets with deterministic source-path IDs, preserves/augments frontmatter, attaches referenced local assets, and refreshes link indexes after the batch.
 - `internal/importers/obsidian/obsidian_test.go` builds a small vault fixture and verifies import, resource attachment, Wikilink/embed/backlink resolution, unresolved-link preservation, searchability, and idempotent re-run behavior.
-- `cmd/notesctl/main.go` now includes `notesctl import obsidian`.
+- `cmd/notriosctl/main.go` now includes `notriosctl import obsidian`.
 - `store.RebuildDocumentLinks` lets batch importers refresh link resolution after all target documents/resources exist without creating extra revisions.
 
 
@@ -142,3 +142,9 @@ This file is the codebase atlas. Update it whenever major files or directories a
 - `skills/codex-handoff/` renamed to `skills/agent-handoff/`; `prompts/start_codex_from_handoff.md` renamed to `prompts/start_agent_from_handoff.md`.
 - New design docs: `NOTEBOOKS_AND_SEARCH_NOTEBOOKS.md`, `SEARCH_QUERY_LANGUAGE.md`, `RECOLL_INTEGRATION.md`, `DOCS_SITE.md`.
 - Living design docs rebranded to Notrios and switched from sist2 to Recoll; historical reports (`SCAFFOLD_STEP*`, `MVP_TASK*`, `plans/`) intentionally keep old names as records.
+
+## v0.2 task R3 additions (schema v5)
+
+- `migrations/0001_initial.sql` (and the embedded copy under `internal/store/migrations/`) now creates `notebooks`, `tags`, `note_tags`, and `search_notebooks`, adds `documents.notebook_id`, and sets `PRAGMA user_version = 5`; `ensureSchemaV5` upgrades v4 databases and bootstrap backfills existing notes into the default notebook.
+- `internal/store/sqlite_notebooks.go` — notebook CRUD (nested, emoji, case-insensitive sibling-unique names, cycle-safe moves, recursive delete-to-trash), tag add/remove/list with live note counts, search-notebook lifecycle with builtin protection, and trash list/restore/purge.
+- `internal/store/notebooks_test.go` — coverage for bootstrap builtins, naming rules, nesting, membership/move, recursive delete, trash/restore/purge, tag counts, sidebar ordering, and the v4→v5 upgrade path.

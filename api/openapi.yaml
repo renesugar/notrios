@@ -583,7 +583,7 @@ components:
             database_path: { type: string }
             asset_store: { type: string }
             projection_dir: { type: string }
-            sist2_index_dir: { type: string }
+            search_sidecar_index_dir: { type: string }
         capabilities:
           type: object
           additionalProperties: { type: boolean }
@@ -607,7 +607,7 @@ components:
       properties:
         id: { type: string }
         name: { type: string }
-        kind: { type: string, enum: [managed, external, imported, sist2, projection] }
+        kind: { type: string, enum: [managed, external, imported, sidecar_indexed, projection] }
         description: { type: string }
         capabilities:
           type: array

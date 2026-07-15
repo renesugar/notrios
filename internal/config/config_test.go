@@ -11,7 +11,7 @@ func TestDefaultConfig(t *testing.T) {
 	if cfg.Server.ListenAddr != "127.0.0.1:8080" {
 		t.Fatalf("unexpected listen addr %q", cfg.Server.ListenAddr)
 	}
-	if cfg.Data.DatabasePath == "" || cfg.Data.AssetStore == "" || cfg.Sist2.IndexDir == "" {
+	if cfg.Data.DatabasePath == "" || cfg.Data.AssetStore == "" || cfg.SearchSidecar.IndexDir == "" {
 		t.Fatalf("default storage paths were not populated: %+v", cfg)
 	}
 	if !cfg.MCP.Enabled {
@@ -43,10 +43,10 @@ mcp:
   max_results: 3
   max_document_bytes: 2048
 
-sist2:
+search_sidecar:
   enabled: true
-  binary: "sist2-dev"
-  index_dir: "` + filepath.ToSlash(filepath.Join(dir, "state", "sist2")) + `"
+  binary: "recollindex-dev"
+  index_dir: "` + filepath.ToSlash(filepath.Join(dir, "state", "search-index")) + `"
 `
 	if err := os.WriteFile(path, []byte(contents), 0o644); err != nil {
 		t.Fatalf("write config: %v", err)
@@ -67,8 +67,8 @@ sist2:
 	if cfg.MCP.Enabled || cfg.MCP.MaxResults != 3 || cfg.MCP.MaxDocumentBytes != 2048 {
 		t.Fatalf("mcp config not loaded: %+v", cfg.MCP)
 	}
-	if !cfg.Sist2.Enabled || cfg.Sist2.Binary != "sist2-dev" {
-		t.Fatalf("sist2 config not loaded: %+v", cfg.Sist2)
+	if !cfg.SearchSidecar.Enabled || cfg.SearchSidecar.Binary != "recollindex-dev" {
+		t.Fatalf("search sidecar config not loaded: %+v", cfg.SearchSidecar)
 	}
 }
 
@@ -79,11 +79,11 @@ func TestEnsureDirectories(t *testing.T) {
 	cfg.Data.DatabasePath = filepath.Join(dir, "data", "notes.sqlite")
 	cfg.Data.AssetStore = filepath.Join(dir, "data", "assets")
 	cfg.Data.ProjectionDir = filepath.Join(dir, "data", "projections")
-	cfg.Sist2.IndexDir = filepath.Join(dir, "data", "sist2")
+	cfg.SearchSidecar.IndexDir = filepath.Join(dir, "data", "search-index")
 	if err := EnsureDirectories(cfg); err != nil {
 		t.Fatalf("EnsureDirectories: %v", err)
 	}
-	for _, path := range []string{cfg.Data.Directory, cfg.Data.AssetStore, cfg.Data.ProjectionDir, cfg.Sist2.IndexDir} {
+	for _, path := range []string{cfg.Data.Directory, cfg.Data.AssetStore, cfg.Data.ProjectionDir, cfg.SearchSidecar.IndexDir} {
 		info, err := os.Stat(path)
 		if err != nil {
 			t.Fatalf("expected directory %s: %v", path, err)

@@ -7,11 +7,11 @@ import (
 	"fmt"
 	"os"
 
-	"example.com/notes-companion/internal/config"
-	"example.com/notes-companion/internal/importers/joplinraw"
-	"example.com/notes-companion/internal/importers/obsidian"
-	"example.com/notes-companion/internal/store"
-	"example.com/notes-companion/internal/version"
+	"github.com/renesugar/notrios/internal/config"
+	"github.com/renesugar/notrios/internal/importers/joplinraw"
+	"github.com/renesugar/notrios/internal/importers/obsidian"
+	"github.com/renesugar/notrios/internal/store"
+	"github.com/renesugar/notrios/internal/version"
 )
 
 func main() {
@@ -24,7 +24,7 @@ func main() {
 	case "version":
 		fmt.Println(version.Version)
 	case "doctor":
-		fmt.Println("notesctl doctor: scaffold checks passed")
+		fmt.Println("notriosctl doctor: scaffold checks passed")
 	case "import":
 		runImport(os.Args[2:])
 	case "help", "-h", "--help":
@@ -55,7 +55,7 @@ func runImport(args []string) {
 }
 
 func runImportJoplinRaw(args []string) {
-	fs := flag.NewFlagSet("notesctl import joplin-raw", flag.ExitOnError)
+	fs := flag.NewFlagSet("notriosctl import joplin-raw", flag.ExitOnError)
 	configPath := fs.String("config", "", "optional config file")
 	dbPath := fs.String("db", "", "SQLite database path override")
 	assetStore := fs.String("asset-store", "", "asset store directory override")
@@ -66,7 +66,7 @@ func runImportJoplinRaw(args []string) {
 		os.Exit(2)
 	}
 	if fs.NArg() != 1 {
-		fmt.Fprintln(os.Stderr, "usage: notesctl import joplin-raw [options] <raw-export-dir>")
+		fmt.Fprintln(os.Stderr, "usage: notriosctl import joplin-raw [options] <raw-export-dir>")
 		fs.PrintDefaults()
 		os.Exit(2)
 	}
@@ -112,7 +112,7 @@ func runImportJoplinRaw(args []string) {
 }
 
 func runImportObsidian(args []string) {
-	fs := flag.NewFlagSet("notesctl import obsidian", flag.ExitOnError)
+	fs := flag.NewFlagSet("notriosctl import obsidian", flag.ExitOnError)
 	configPath := fs.String("config", "", "optional config file")
 	dbPath := fs.String("db", "", "SQLite database path override")
 	assetStore := fs.String("asset-store", "", "asset store directory override")
@@ -123,7 +123,7 @@ func runImportObsidian(args []string) {
 		os.Exit(2)
 	}
 	if fs.NArg() != 1 {
-		fmt.Fprintln(os.Stderr, "usage: notesctl import obsidian [options] <vault-dir>")
+		fmt.Fprintln(os.Stderr, "usage: notriosctl import obsidian [options] <vault-dir>")
 		fs.PrintDefaults()
 		os.Exit(2)
 	}
@@ -169,15 +169,15 @@ func runImportObsidian(args []string) {
 }
 
 func printHelp() {
-	fmt.Print(`notesctl - admin/import CLI scaffold
+	fmt.Print(`notriosctl - admin/import CLI scaffold
 
 Usage:
-  notesctl doctor
-  notesctl version
-  notesctl import joplin-raw [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--dry-run] <raw-export-dir>
-  notesctl import obsidian [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--dry-run] <vault-dir>
+  notriosctl doctor
+  notriosctl version
+  notriosctl import joplin-raw [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--dry-run] <raw-export-dir>
+  notriosctl import obsidian [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--dry-run] <vault-dir>
 
 Future commands:
-  notesctl publish quartz --profile <name>
+  notriosctl publish quartz --profile <name>
 `)
 }

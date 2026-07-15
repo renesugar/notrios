@@ -11,10 +11,10 @@ import (
 	"strconv"
 	"strings"
 
-	"example.com/notes-companion/internal/api"
-	"example.com/notes-companion/internal/config"
-	"example.com/notes-companion/internal/store"
-	"example.com/notes-companion/internal/version"
+	"github.com/renesugar/notrios/internal/api"
+	"github.com/renesugar/notrios/internal/config"
+	"github.com/renesugar/notrios/internal/store"
+	"github.com/renesugar/notrios/internal/version"
 )
 
 type Server struct {
@@ -144,7 +144,7 @@ func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	writeJSON(w, http.StatusOK, api.StatusResponse{
-		Service:      "notes-companion",
+		Service:      "notrios",
 		Version:      version.Version,
 		Status:       status,
 		Database:     database,
@@ -155,7 +155,7 @@ func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
 			DatabasePath:  s.config.Data.DatabasePath,
 			AssetStore:    s.config.Data.AssetStore,
 			ProjectionDir: s.config.Data.ProjectionDir,
-			Sist2IndexDir: s.config.Sist2.IndexDir,
+			SearchSidecarIndexDir: s.config.SearchSidecar.IndexDir,
 		},
 		Capabilities: map[string]bool{
 			"documents.create": true,
@@ -166,7 +166,7 @@ func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
 			"resources":        s.store != nil,
 			"links":            s.store != nil,
 			"mcp":              s.store != nil && s.config.MCP.Enabled,
-			"sist2":            s.config.Sist2.Enabled,
+			"search_sidecar":   s.config.SearchSidecar.Enabled,
 		},
 		Limits: map[string]int{
 			"search_default_limit": s.config.Search.DefaultLimit,

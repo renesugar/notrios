@@ -9,9 +9,9 @@ import (
 	"strings"
 	"testing"
 
-	"example.com/notes-companion/internal/api"
-	"example.com/notes-companion/internal/config"
-	"example.com/notes-companion/internal/store"
+	"github.com/renesugar/notrios/internal/api"
+	"github.com/renesugar/notrios/internal/config"
+	"github.com/renesugar/notrios/internal/store"
 )
 
 func TestHealth(t *testing.T) {
@@ -42,7 +42,7 @@ func TestStatusReportsConfigurationAndSchema(t *testing.T) {
 	cfg.ConfigPath = "config/test.yaml"
 	cfg.Data.DatabasePath = ":memory:"
 	cfg.Data.AssetStore = "/tmp/notes-test-assets"
-	cfg.Sist2.Enabled = true
+	cfg.SearchSidecar.Enabled = true
 	s := NewServerWithOptions(ServerOptions{Store: st, Config: cfg})
 
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/status", nil)
@@ -56,13 +56,13 @@ func TestStatusReportsConfigurationAndSchema(t *testing.T) {
 	if err := json.NewDecoder(rr.Body).Decode(&got); err != nil {
 		t.Fatalf("decode status: %v", err)
 	}
-	if got.Status != "running" || got.DatabaseInfo.Driver != "sqlite" || got.DatabaseInfo.SchemaVersion != 4 {
+	if got.Status != "running" || got.DatabaseInfo.Driver != "sqlite" || got.DatabaseInfo.SchemaVersion != 5 {
 		t.Fatalf("unexpected database status: %+v", got)
 	}
 	if got.ConfigPath != "config/test.yaml" || got.Storage.AssetStore != "/tmp/notes-test-assets" {
 		t.Fatalf("unexpected config/storage status: %+v", got)
 	}
-	if !got.Capabilities["documents.create"] || !got.Capabilities["search.fts5"] || !got.Capabilities["sist2"] {
+	if !got.Capabilities["documents.create"] || !got.Capabilities["search.fts5"] || !got.Capabilities["search_sidecar"] {
 		t.Fatalf("expected capability flags to be reported: %+v", got.Capabilities)
 	}
 }
@@ -511,7 +511,7 @@ func TestMCPInitializeAndToolsList(t *testing.T) {
 	if initRR.Code != http.StatusOK {
 		t.Fatalf("initialize status=%d body=%s", initRR.Code, initRR.Body.String())
 	}
-	if !strings.Contains(initRR.Body.String(), "notes-companion") || !strings.Contains(initRR.Body.String(), "tools") {
+	if !strings.Contains(initRR.Body.String(), "notrios") || !strings.Contains(initRR.Body.String(), "tools") {
 		t.Fatalf("initialize response missing server info/tools: %s", initRR.Body.String())
 	}
 

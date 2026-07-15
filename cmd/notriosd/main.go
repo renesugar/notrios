@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"example.com/notes-companion/internal/config"
-	"example.com/notes-companion/internal/httpapi"
-	"example.com/notes-companion/internal/store"
+	"github.com/renesugar/notrios/internal/config"
+	"github.com/renesugar/notrios/internal/httpapi"
+	"github.com/renesugar/notrios/internal/store"
 )
 
 func main() {
@@ -54,7 +54,7 @@ func main() {
 		IdleTimeout:       120 * time.Second,
 	}
 
-	log.Printf("notesd listening on http://%s using db %s", cfg.Server.ListenAddr, cfg.Data.DatabasePath)
+	log.Printf("notriosd listening on http://%s using db %s", cfg.Server.ListenAddr, cfg.Data.DatabasePath)
 	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		log.Fatal(err)
 	}

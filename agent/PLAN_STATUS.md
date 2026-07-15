@@ -2,11 +2,11 @@
 
 ## Current phase
 
-v0.2 Notrios redesign foundation (`PLAN.md`). Task **R1 (documentation redesign and rebrand pass) completed**; next task is **R2 (code rename and license)** — ask the user before starting it.
+v0.2 Notrios redesign foundation (`PLAN.md`). Tasks **R1 (documentation redesign)**, **R2 (code rename + Apache-2.0 license)**, and **R3 (schema v5 — notebooks, tags, search notebooks)** are completed; next task is **R4 (schema v5 — source provenance and threads)** — ask the user before starting it.
 
 ## Current working state
 
-- The v0.1 MVP implementation is unchanged and passing: `notesd` service, SQLite schema v4, document CRUD/revisions/FTS5 search, content-addressed resources, links/graph, React UI, read-only MCP at `/mcp`, Joplin RAW and Obsidian importers, release scripts. See `CODING_CLIENT_HANDOFF.md` for the full capability list.
+- The v0.1 MVP implementation is functionally unchanged and passing: `notriosd` service (renamed from `notesd` in R2), SQLite schema v4, document CRUD/revisions/FTS5 search, content-addressed resources, links/graph, React UI, read-only MCP at `/mcp`, Joplin RAW and Obsidian importers, release scripts. See `CODING_CLIENT_HANDOFF.md` for the full capability list.
 - The repository is now a git repo: `main` holds the pre-redesign baseline commit; active work is on `develop`.
 - R1 changes (docs only):
   - Project renamed to **Notrios** in all living design docs; target repo `github.com/renesugar/notrios`; binaries to be renamed `notriosd`/`notriosctl` in R2.
@@ -18,15 +18,21 @@ v0.2 Notrios redesign foundation (`PLAN.md`). Task **R1 (documentation redesign 
   - `LICENSE_PENDING.md` narrowed to MIT or Apache-2.0 (user decision pending).
   - `scripts/check_required_files.py` updated for renamed/new docs.
 - Historical reports (`SCAFFOLD_STEP*`, `MVP_TASK*`, `plans/`, log files) intentionally keep old names as records.
-- Code still uses old names (`notesd`, `notesctl`, `example.com/notes-companion`, `sist2_*` config keys) until R2.
+- R2 changes (code rename + license):
+  - Go module path is `github.com/renesugar/notrios`; binaries are `cmd/notriosd` and `cmd/notriosctl`.
+  - Config section `sist2` → `search_sidecar` (keys `enabled`, `binary` [default `recollindex`], `index_dir` [default `./data/search-index`]); Go types `Sist2Config` → `SearchSidecarConfig`; status JSON `sist2_index_dir` → `search_sidecar_index_dir`; capability flag `sist2` → `search_sidecar`; OpenAPI collection kind `sist2` → `sidecar_indexed`.
+  - `LICENSE` is Apache-2.0 (user decision); `LICENSE_PENDING.md` removed; `LICENSE` added to required files.
+  - Makefile, Taskfile, smoke/packaging scripts, web package name (`notrios-web`), and MCP server name (`notrios`) updated.
+
+- R3 changes (schema v5, store layer): notebooks/tags/note_tags/search_notebooks tables, `documents.notebook_id` (backfilled, defaults to `nb_notes`), builtin rows ("Notes", read-only "Help", "All notes" first, "Trash" last with reserved query `is:trashed`), notebook CRUD with case-insensitive sibling-unique names and recursive delete-to-trash, tag counts, search-notebook lifecycle, trash list/restore/purge, v4→v5 upgrade shim, 9 new store tests. See `plans/v0.2/004-schema-v5-notebooks.md`. REST/MCP exposure is task R5.
 
 ## Next suggested step
 
-Task R2: rename Go module path to `github.com/renesugar/notrios`, `cmd/notesd` → `cmd/notriosd`, `cmd/notesctl` → `cmd/notriosctl`, neutralize `sist2` config/status naming, and add the chosen license (user must pick MIT or Apache-2.0).
+Task R4: schema v5 source provenance and threads — source-object tables (source_system, external IDs, author/author_id, thread_id/reply_to, URL, timestamps), purge guard for externally-sourced notes, provenance backfill from importer frontmatter, thread-order store queries + tests.
 
 ## Validation
 
-Validation set for R1 (docs-only change):
+Validation set used for R1/R2:
 
 ```bash
 go test ./...
@@ -44,7 +50,6 @@ bash scripts/run_performance_smoke.sh
 
 ## Open blockers
 
-- License choice: MIT or Apache-2.0 (user decision; blocks R2 completion and public push).
 - Long-term SQLite driver choice remains open (current: local cgo/libsqlite3 adapter).
 - Config parser supports only the documented example-config subset.
 - The MCP MVP adapter is dependency-free; official MCP Go SDK adoption is future work.

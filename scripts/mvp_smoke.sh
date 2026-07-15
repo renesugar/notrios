@@ -5,7 +5,7 @@ ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 TMP=$(mktemp -d)
 PORT=${NOTES_COMPANION_SMOKE_PORT:-18080}
 BASE="http://127.0.0.1:${PORT}"
-LOG="$TMP/notesd.log"
+LOG="$TMP/notriosd.log"
 PID=""
 
 cleanup() {
@@ -39,14 +39,14 @@ mcp:
   max_results: 10
   max_document_bytes: 65536
 
-sist2:
+search_sidecar:
   enabled: false
-  binary: "sist2"
-  index_dir: "${TMP}/data/sist2"
+  binary: "recollindex"
+  index_dir: "${TMP}/data/search-index"
 YAML
 
 cd "$ROOT"
-go run ./cmd/notesd -config "$TMP/config.yaml" >"$LOG" 2>&1 &
+go run ./cmd/notriosd -config "$TMP/config.yaml" >"$LOG" 2>&1 &
 PID=$!
 
 for _ in $(seq 1 60); do
@@ -55,7 +55,7 @@ for _ in $(seq 1 60); do
   fi
   if ! kill -0 "$PID" 2>/dev/null; then
     cat "$LOG" >&2 || true
-    echo "notesd exited before becoming healthy" >&2
+    echo "notriosd exited before becoming healthy" >&2
     exit 1
   fi
   sleep 0.25

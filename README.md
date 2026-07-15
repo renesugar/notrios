@@ -7,7 +7,7 @@ The v0.1 MVP is complete; the project is now in the **Notrios redesign** phase â
 
 ## Technology choices
 
-- **Service:** Go, standard library first, SQLite/FTS5 canonical storage. Binary target `notriosd` (current code still builds `notesd` until plan task R2 lands).
+- **Service:** Go, standard library first, SQLite/FTS5 canonical storage. Binaries: `notriosd` (service) and `notriosctl` (CLI); Go module `github.com/renesugar/notrios`.
 - **MCP:** read-only JSON-RPC MCP MVP adapter is mounted at `/mcp`; replace with the official Go SDK once dependency policy/tooling is settled. The MCP/REST surface is being expanded so a full note-taking client can be built on it alone.
 - **Built-in GUI:** Go + Wails (planned, part of the first released version) with `-no-gui` and `-gui-only` modes; the current React + Vite web UI (`md-editor-rt`) is the interim client and frontend basis. See `UI_DESIGN.md`.
 - **Search:** SQLite FTS5 for managed notes; Recoll as an optional derived sidecar for field/front-matter search, OCR-style extraction, and arbitrary files (see `RECOLL_INTEGRATION.md` and `SEARCH_QUERY_LANGUAGE.md`).
@@ -21,9 +21,9 @@ The v0.1 MVP is complete; the project is now in the **Notrios redesign** phase â
 ```bash
 # Go service and CLI stubs
 go test ./...
-go run ./cmd/notesd -config config/config.example.yaml
+go run ./cmd/notriosd -config config/config.example.yaml
 # Optional overrides still work:
-# go run ./cmd/notesd -addr 127.0.0.1:8080 -db data/notes.sqlite
+# go run ./cmd/notriosd -addr 127.0.0.1:8080 -db data/notes.sqlite
 
 # In another terminal
 curl http://127.0.0.1:8080/healthz
@@ -55,7 +55,7 @@ curl -X POST http://127.0.0.1:8080/api/v1/search \
 #   -H "Content-Type: application/json" \
 #   -d '{"title":"Hello v2","body":"Updated body","base_revision_id":"<current_revision_id>"}'
 
-go run ./cmd/notesctl doctor
+go run ./cmd/notriosctl doctor
 ```
 
 Frontend dependencies are declared and can be installed with npm:
@@ -69,14 +69,14 @@ npm run dev
 
 ## Configuration
 
-`notesd` now loads runtime configuration from `-config <path>`. When no path is supplied, it loads `config/config.example.yaml` from a source checkout if that file exists; otherwise it uses compiled local-development defaults. The `-addr` and `-db` flags remain available as explicit overrides.
+`notriosd` now loads runtime configuration from `-config <path>`. When no path is supplied, it loads `config/config.example.yaml` from a source checkout if that file exists; otherwise it uses compiled local-development defaults. The `-addr` and `-db` flags remain available as explicit overrides.
 
-On startup, the service creates the configured data directory, SQLite database parent directory, asset store, projection directory, and search-sidecar index directory (named `sist2_index_dir` in the current config; renamed in plan task R2 as part of the Recoll switch). `/api/v1/status` reports the active storage roots, database state, schema version, capability flags, and search limits. The current schema version is 4 after the Markdown link parser and graph task; the Joplin RAW and Obsidian importers reuse this schema.
+On startup, the service creates the configured data directory, SQLite database parent directory, asset store, projection directory, and search-sidecar index directory (`search_sidecar.index_dir`). `/api/v1/status` reports the active storage roots, database state, schema version, capability flags, and search limits. The current schema version is 4 after the Markdown link parser and graph task; the Joplin RAW and Obsidian importers reuse this schema.
 
 ## Project status
 
 - v0.1 MVP: complete (see `MVP_RELEASE_REPORT.md`).
-- Current phase: **v0.2 Notrios redesign foundation** â€” active plan in [`PLAN.md`](PLAN.md); task R1 (documentation redesign) done.
+- Current phase: **v0.2 Notrios redesign foundation** â€” active plan in [`PLAN.md`](PLAN.md); tasks R1 (documentation redesign) and R2 (code rename + Apache-2.0 license) done.
 - Scaffold creation plan: [`SCAFFOLD_CREATION_PLAN.md`](SCAFFOLD_CREATION_PLAN.md).
 - Agent progress/attempt tracking: [`agent/PLAN_STATUS.md`](agent/PLAN_STATUS.md), [`agent/ATTEMPT_LOG.jsonl`](agent/ATTEMPT_LOG.jsonl), and [`agent/MODEL_LOG.jsonl`](agent/MODEL_LOG.jsonl).
 
@@ -94,7 +94,7 @@ Configure branch protection so `main` accepts only reviewed merges from `develop
 
 ## License
 
-The final license will be MIT or Apache 2.0 (user decision pending â€” see [`LICENSE_PENDING.md`](LICENSE_PENDING.md)). All code and dependencies must remain compatible with both candidates; GPL tools (Recoll, Xapian) are only ever invoked as external user-installed processes.
+Notrios is licensed under the [Apache License 2.0](LICENSE). All code and dependencies must remain Apache-2.0 compatible; GPL tools (Recoll, Xapian) are only ever invoked as external user-installed processes.
 
 ## Notrios redesign design documents
 
@@ -133,10 +133,10 @@ The browser UI now uses `md-editor-rt` for Markdown editing and preview. Rendere
 
 ## MVP Task 8 Joplin RAW import status
 
-`notesctl` now supports a first Joplin RAW importer:
+`notriosctl` now supports a first Joplin RAW importer:
 
 ```bash
-go run ./cmd/notesctl import joplin-raw \
+go run ./cmd/notriosctl import joplin-raw \
   --db ./data/notes.sqlite \
   --asset-store ./data/assets \
   --collection default \
@@ -147,10 +147,10 @@ The importer parses Joplin notes, notebooks, tags, note-tag joins, and resources
 
 ## MVP Task 9 Obsidian import status
 
-`notesctl` now supports a first Obsidian vault importer:
+`notriosctl` now supports a first Obsidian vault importer:
 
 ```bash
-go run ./cmd/notesctl import obsidian \
+go run ./cmd/notriosctl import obsidian \
   --db ./data/notes.sqlite \
   --asset-store ./data/assets \
   --collection default \
@@ -171,8 +171,8 @@ bash scripts/validate-scaffold.sh
 cd web && npm ci && npm run typecheck && npm run build
 bash scripts/mvp_smoke.sh
 bash scripts/run_performance_smoke.sh
-bash scripts/package_release.sh /tmp/notes-companion-v0.1.0-mvp.zip
-python3 scripts/check_release_zip.py /tmp/notes-companion-v0.1.0-mvp.zip
+bash scripts/package_release.sh /tmp/notrios-v0.1.0-mvp.zip
+python3 scripts/check_release_zip.py /tmp/notrios-v0.1.0-mvp.zip
 ```
 
 See `PACKAGING.md`, `SECURITY_REVIEW.md`, `RELEASE_CHECKLIST.md`, and `MVP_RELEASE_REPORT.md` before tagging a repository release. `PLAN.md` now contains the draft v0.2 plan and should not be started until the user approves.

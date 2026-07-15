@@ -15,7 +15,7 @@ export interface StatusResponse {
     database_path?: string;
     asset_store?: string;
     projection_dir?: string;
-    sist2_index_dir?: string;
+    search_sidecar_index_dir?: string;
   };
   capabilities?: Record<string, boolean>;
   limits?: Record<string, number>;

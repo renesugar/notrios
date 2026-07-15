@@ -86,8 +86,8 @@ Task 10 adds release-candidate checks beyond ordinary unit tests:
 ```bash
 bash scripts/mvp_smoke.sh
 bash scripts/run_performance_smoke.sh
-bash scripts/package_release.sh /tmp/notes-companion-v0.1.0-mvp.zip
-python3 scripts/check_release_zip.py /tmp/notes-companion-v0.1.0-mvp.zip
+bash scripts/package_release.sh /tmp/notrios-v0.1.0-mvp.zip
+python3 scripts/check_release_zip.py /tmp/notrios-v0.1.0-mvp.zip
 ```
 
 The generated-dataset smoke test exercises document creation, FTS5 search, link graph resolution, graph slices, resource creation, and resource attachment on a synthetic dataset. The benchmark is intentionally small enough to run on developer machines; it is not a replacement for future hundreds-of-thousands-of-notes performance testing.

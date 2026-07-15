@@ -110,6 +110,6 @@ For large repositories, `resources/list` should not enumerate every document. Se
 
 - raw SQL execution;
 - arbitrary filesystem path reads/writes;
-- direct sist2 database mutation;
+- direct search-index (Recoll/Xapian) mutation;
 - bypass media policy;
 - bulk download of remote media without a policy and explicit scope.

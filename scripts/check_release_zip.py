@@ -21,8 +21,8 @@ required_exact = {
     "PACKAGING.md",
     "SECURITY_REVIEW.md",
     "MVP_RELEASE_REPORT.md",
-    "cmd/notesd/main.go",
-    "cmd/notesctl/main.go",
+    "cmd/notriosd/main.go",
+    "cmd/notriosctl/main.go",
     "web/dist/index.html",
 }
 forbidden_prefixes = (

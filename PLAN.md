@@ -1,6 +1,6 @@
 # Plan: v0.2 — Notrios redesign foundation
 
-Status: active. Task R1 is in progress; later tasks require user confirmation between steps.
+Status: active. Tasks R1–R3 are complete; next task is R4 (schema v5 — source provenance and threads). Ask the user before starting each task.
 
 This plan supersedes the earlier v0.2 draft ("Import, Resource, and Media Hardening", archived at `plans/v0.2/001-import-resource-media-hardening.md`). The media-hardening items remain on the roadmap; they are re-sequenced behind the redesign items below.
 
@@ -25,7 +25,7 @@ Every task must leave the project in a working state. Update `agent/PLAN_STATUS.
 
 ## Tasks
 
-### R1. Documentation redesign and rebrand pass (docs only)
+### R1. Documentation redesign and rebrand pass (docs only) — COMPLETED
 
 - Rename the project to Notrios in all living design docs; historical reports (`SCAFFOLD_STEP*`, `MVP_TASK*`, `plans/`) are left as records.
 - Rename `CODEX_HANDOFF.md` → `CODING_CLIENT_HANDOFF.md`; generalize it to all coding agents (codex, claude, aider, etc.).
@@ -34,21 +34,21 @@ Every task must leave the project in a working state. Update `agent/PLAN_STATUS.
 - Add `NOTEBOOKS_AND_SEARCH_NOTEBOOKS.md`, `SEARCH_QUERY_LANGUAGE.md`, `DOCS_SITE.md`.
 - Update `ROADMAP.md` (Wails GUI moves into the first released version; Recoll milestone replaces sist2 milestone).
 - Update `README.md`, `SYSTEM_ARCHITECTURE.md`, `API_SPEC.md`, `DATABASE_SCHEMA.md`, `UI_DESIGN.md`, `FEATURE_MATRIX.md`, `IMPORT_EXPORT_POLICY.md`, `CONTEXT_MAP.md`, `PROMPT.md`, prompts/skills, and `scripts/check_required_files.py`.
-- Record license direction in `LICENSE_PENDING.md` (MIT vs Apache-2.0 is a user decision; both are acceptable targets and all dependencies must be compatible).
+- Record license direction in `LICENSE_PENDING.md` (resolved in R2: Apache-2.0).
 
 Working state: all validation scripts pass; docs consistently describe the Notrios design; code still uses old names (renamed in R2).
 
-### R2. Code rename and license
+### R2. Code rename and license — COMPLETED (license: Apache-2.0)
 
 - Go module path `example.com/notes-companion` → `github.com/renesugar/notrios`.
 - `cmd/notesd` → `cmd/notriosd`; `cmd/notesctl` → `cmd/notriosctl`.
 - Rename `sist2`-derived config keys/fields (`sist2_index_dir` → `search_index_dir`, capability flags, status output, `web/src/api.ts` types) to search-sidecar-neutral names.
-- Replace `LICENSE_PENDING.md` with the license the user selects (MIT or Apache-2.0) and add license headers policy to `CODING_STANDARDS.md`.
+- Replace `LICENSE_PENDING.md` with the chosen license (user selected **Apache-2.0**).
 - Update scripts, Makefile/Taskfile, CI, packaging, and web references.
 
 Working state: `go test ./...`, scaffold checks, web typecheck/build, and smoke scripts pass under the new names.
 
-### R3. Schema v5 — notebooks, tags, and search notebooks
+### R3. Schema v5 — notebooks, tags, and search notebooks — COMPLETED
 
 - `notebooks` table: nested (parent ID), stable IDs, optional emoji icon, position/sort metadata.
 - Notebook names case-insensitively unique among siblings; enforce at store layer (`NOCASE` unique index).
