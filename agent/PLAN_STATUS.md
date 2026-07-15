@@ -2,7 +2,7 @@
 
 ## Current phase
 
-v0.2 Notrios redesign foundation (`PLAN.md`). Tasks **R1 (documentation redesign)**, **R2 (code rename + Apache-2.0 license)**, **R3 (schema v5 — notebooks/tags/search notebooks)**, and **R4 (schema v6 — source provenance and threads)** are completed, as are **R5 (notebooks/tags/trash REST + MCP read tools)**, **R6 (query-language adapter)**, and **R7 (Recoll integration)**; next task is **R8 (full-client MCP/REST surface)** — ask the user before starting it.
+v0.2 Notrios redesign foundation (`PLAN.md`). Tasks **R1 (documentation redesign)**, **R2 (code rename + Apache-2.0 license)**, **R3 (schema v5 — notebooks/tags/search notebooks)**, and **R4 (schema v6 — source provenance and threads)** are completed, as are **R5 (notebooks/tags/trash REST + MCP read tools)**, **R6 (query-language adapter)**, **R7 (Recoll integration)**, and **R8 (full-client MCP/REST surface)**; next task is **R9 (Twitter/X archive importer)** — ask the user before starting it.
 
 ## Current working state
 
@@ -35,9 +35,11 @@ v0.2 Notrios redesign foundation (`PLAN.md`). Tasks **R1 (documentation redesign
 - R7 changes (Recoll sidecar): transactional `index_outbox` enqueues on all document mutations; `internal/projection` (outbox drain + full sync to Markdown/front-matter files); `internal/recoll` (generated config, embedded from-scratch Apache-licensed front-matter handler, recollindex/recollq external processes, query compilation, base64 result parsing); merged sidecar search behind the existing API with FTS5 authoritative and graceful fallback; notriosd 30s sync loop when `search_sidecar.enabled`. Live pipeline verified against installed Recoll. See `plans/v0.2/008-recoll-integration.md`.
 - The Recoll sidecar remains **optional**: everything (including all tests) passes without Recoll installed; `TestLiveRecollPipeline` self-skips.
 
+- R8 changes (full-client surface): REST append/prepend/lines/search-in routes; the REST outline endpoint now returns real headings; PATCH edits enforce joplin-mcp editNote semantics (ambiguous match fails without `replace_all`); MCP read tools `get_note_line_range`/`search_in_note`/`get_notebook_notes`; MCP write tools (`create_note`, `update_note`, `append_to_note`, `prepend_to_note`, `edit_note`, `delete_note`, `move_note_to_notebook`) gated behind the `editor` MCP profile with revision preconditions on destructive ops; gap-check table added to `API_SPEC.md`. Also hardened `scripts/mvp_smoke.sh`: it now refuses a busy port and runs a built binary instead of `go run` (whose wrapper-kill leaked servers across runs). See `plans/v0.2/009-full-client-surface.md`.
+
 ## Next suggested step
 
-Task R8: full-client MCP/REST surface — append/prepend, line-range read, in-note search, sections/outline parity with joplin-mcp; notebook trees with notes; scope-gated MCP write tools; verify a third-party client could implement the full GUI feature list.
+Task R9: Twitter/X archive importer — parse archive exports (reference doggy8088/x-archive-parser), recover conversation threads (author/author_id/thread_id/reply_to/URLs), import media resources, create a "Twitter" notebook; synthetic fixtures + genson-derived schemas only.
 
 ## Validation
 

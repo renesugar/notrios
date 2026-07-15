@@ -95,6 +95,29 @@ List tags with their current non-deleted note counts. No arguments.
 
 List query-backed search notebooks in sidebar order ("All notes" first, "Trash" last, builtin rows flagged). No arguments.
 
+### get_note_line_range
+
+Read a 1-indexed inclusive slice of a note body by line numbers.
+
+### search_in_note
+
+Case-insensitive search within one note; returns matches with line numbers and context.
+
+### get_notebook_notes
+
+List current notes directly in one notebook.
+
+## Editor-profile write tools — implemented (task R8)
+
+Exposed by `tools/list` and callable only when `mcp.default_profile` is `editor`; the default read-only profile hides and rejects them.
+
+- `create_note(title, body?, notebook_id?)`
+- `update_note(document_id, base_revision_id, title?, body?)` — optimistic concurrency required.
+- `append_to_note(document_id, text)` / `prepend_to_note(document_id, text)`
+- `edit_note(document_id, search, replace?, replace_all?, dry_run?)` — server-side string replacement; fails if the search text is missing or matches multiple locations without `replace_all`.
+- `delete_note(document_id, base_revision_id)` — moves the note to the Trash.
+- `move_note_to_notebook(document_id, notebook_id)` — Help-notebook moves are refused.
+
 ## Later write tools
 
 Write tools require explicit scopes and revision preconditions:

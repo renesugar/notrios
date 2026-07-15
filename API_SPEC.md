@@ -109,9 +109,15 @@ GET    /api/v1/documents/{document_id}/body
 GET    /api/v1/documents/{document_id}/revisions
 GET    /api/v1/documents/{document_id}/revisions/{revision_id}
 POST   /api/v1/documents/{document_id}/revisions/{revision_id}/restore
-GET    /api/v1/documents/{document_id}/outline
+GET    /api/v1/documents/{document_id}/outline      # Markdown headings with lines/anchors
 GET    /api/v1/documents/{document_id}/blocks
+POST   /api/v1/documents/{document_id}/append        # {text}; If-Match optional (retries once)
+POST   /api/v1/documents/{document_id}/prepend       # {text}
+GET    /api/v1/documents/{document_id}/lines?start=&end=    # 1-indexed inclusive slice
+GET    /api/v1/documents/{document_id}/search-in?pattern=   # case-insensitive, line numbers + context
 ```
+
+`PATCH` edits follow joplin-mcp `editNote` semantics: a search string that matches multiple locations fails unless `replace_all` is set; dry runs preview the result.
 
 `PUT`, `PATCH`, `DELETE`, and revision restore require optimistic concurrency through `base_revision_id` or `If-Match`. `DELETE` means trash/soft-delete in MVP: the current row is hidden from normal reads/search, FTS is refreshed, and revisions remain available. Permanent deletion is a later maintenance operation.
 
@@ -191,9 +197,23 @@ Name conflicts return `409 name_conflict`; builtin protection (Help/default note
 
 Search notebooks are notebook rows with a `query` (see `NOTEBOOKS_AND_SEARCH_NOTEBOOKS.md`); deleting one never deletes notes. `notebook:` and other query operators are defined in `SEARCH_QUERY_LANGUAGE.md`; search endpoints accept the user query language and must support cursor-based incremental results so clients can lazily populate large views like "All notes".
 
-### Full-client goal
+### Full-client goal (gap check after task R8)
 
-The REST + MCP surface must be sufficient to build a full-featured third-party note-taking client (native C++/Qt, Go/Wails, Rust/Tauri). Reference surfaces reviewed for parity: joplin-mcp (note read/edit/append/prepend/string-replace/line-range/sections tools, notebook trees), obsidian-mcp-connector, and obsidian-local-rest-api. Gaps are closed in plan task R8.
+The REST + MCP surface must be sufficient to build a full-featured third-party note-taking client (native C++/Qt, Go/Wails, Rust/Tauri). Parity check against the joplin-mcp tool list and the `UI_DESIGN.md` GUI features:
+
+| Client capability | Covered by |
+|---|---|
+| sidebar notebooks tree with emoji, "All notes" first / "Trash" last | `/notebooks/tree`, `/search-notebooks` |
+| tag list with counts | `/tags` |
+| incremental search & search notebooks | `/search` with query language + cursors |
+| open/edit/save with conflict detection | documents CRUD + revisions + ETags |
+| read note slices, in-note find, table of contents | `/lines`, `/search-in`, `/outline` |
+| append/prepend/string-replace edits | `/append`, `/prepend`, PATCH edits |
+| move note, tag/untag, trash/restore/purge | `/documents/{id}/notebook`, tags routes, trash routes |
+| resources/attachments | resources routes |
+| links/backlinks/graph | links + graph routes |
+
+Remaining known gaps (deferred): HTTP range requests for resource content, `links/resolve`, block-level addressability (`/blocks`), import/export job APIs (R12).
 
 ## MCP MVP endpoint
 
@@ -212,23 +232,16 @@ Implemented read-only tools:
 - `get_notebook_tree`
 - `list_tags`
 - `list_search_notebooks`
+- `get_note_line_range`
+- `search_in_note`
+- `get_notebook_notes`
+
+Write tools implemented in task R8, exposed only when the MCP profile is `editor` (default profile is read-only): `create_note`, `update_note` (requires `base_revision_id`), `append_to_note`, `prepend_to_note`, `edit_note` (fails on ambiguous matches without `replace_all`; supports `dry_run`), `delete_note` (requires `base_revision_id`; moves to Trash), `move_note_to_notebook`.
 
 ## MCP tools planned later
 
-Read tools (plan task R8):
+Write tools still planned later (beyond the R8 set):
 
-- `get_note_line_range`
-- `search_in_note`
-- `get_note_sections`
-
-Write tools (scope-gated, revision preconditions):
-
-- `create_document`
-- `update_document`
-- `append_to_note` / `prepend_to_note`
-- `edit_note` (server-side string replacement; fails if not found or ambiguous without replace-all)
-- `move_note_to_notebook`
-- `delete_note` (moves to Trash)
 - `upload_resource`
 - `localize_remote_media`
 - `get_document_graph`

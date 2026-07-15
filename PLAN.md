@@ -1,6 +1,6 @@
 # Plan: v0.2 — Notrios redesign foundation
 
-Status: active. Tasks R1–R7 are complete; next task is R8 (full-client MCP/REST surface). Ask the user before starting each task.
+Status: active. Tasks R1–R8 are complete; next task is R9 (Twitter/X archive importer). Ask the user before starting each task.
 
 This plan supersedes the earlier v0.2 draft ("Import, Resource, and Media Hardening", archived at `plans/v0.2/001-import-resource-media-hardening.md`). The media-hardening items remain on the roadmap; they are re-sequenced behind the redesign items below.
 
@@ -96,7 +96,7 @@ Working state: search notebooks (including "All notes" and user query notebooks 
 
 Working state: with Recoll installed, field queries (`tag:`, `author:`, `publishedts` ranges) work over the projection; without it, FTS5 search still works.
 
-### R8. Full-client MCP/REST surface
+### R8. Full-client MCP/REST surface — COMPLETED
 
 - Note ops: append/prepend, server-side string replace (extend existing PATCH), line-range read, in-note search, sections/outline (parity with joplin-mcp tool list).
 - Notebook trees with notes, scoped trees, all-notes tree.

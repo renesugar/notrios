@@ -198,9 +198,41 @@ type DocumentPatchRequest struct {
 }
 
 type SurgicalEdit struct {
-	Search  string `json:"search"`
-	Replace string `json:"replace"`
-	Fuzzy   bool   `json:"fuzzy,omitempty"`
+	Search     string `json:"search"`
+	Replace    string `json:"replace"`
+	ReplaceAll bool   `json:"replace_all,omitempty"`
+	Fuzzy      bool   `json:"fuzzy,omitempty"`
+}
+
+// AppendTextRequest appends or prepends text to a note body. When
+// base_revision_id (or If-Match) is omitted the server applies the change to
+// the current revision, retrying once on a concurrent write.
+type AppendTextRequest struct {
+	Text           string `json:"text"`
+	BaseRevisionID string `json:"base_revision_id,omitempty"`
+}
+
+// DocumentLines is a 1-indexed slice of a note body.
+type DocumentLines struct {
+	DocumentID string   `json:"document_id"`
+	StartLine  int      `json:"start_line"`
+	EndLine    int      `json:"end_line"`
+	TotalLines int      `json:"total_lines"`
+	Lines      []string `json:"lines"`
+}
+
+// NoteSearchMatch is one case-insensitive in-note match with context.
+type NoteSearchMatch struct {
+	Line    int      `json:"line"`
+	Text    string   `json:"text"`
+	Context []string `json:"context,omitempty"`
+}
+
+// NoteSearchResponse lists in-note matches for a pattern.
+type NoteSearchResponse struct {
+	DocumentID string            `json:"document_id"`
+	Pattern    string            `json:"pattern"`
+	Matches    []NoteSearchMatch `json:"matches"`
 }
 
 type DocumentRevision struct {

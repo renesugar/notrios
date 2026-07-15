@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"mime"
 	"net/http"
@@ -93,6 +94,10 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("DELETE /api/v1/documents/{document_id}/resources/{resource_id}", s.handleDocumentResource)
 	s.mux.HandleFunc("GET /api/v1/documents/{document_id}/links", s.handleDocumentLinks)
 	s.mux.HandleFunc("GET /api/v1/documents/{document_id}/outline", s.handleDocumentOutline)
+	s.mux.HandleFunc("POST /api/v1/documents/{document_id}/append", s.handleAppendDocument)
+	s.mux.HandleFunc("POST /api/v1/documents/{document_id}/prepend", s.handlePrependDocument)
+	s.mux.HandleFunc("GET /api/v1/documents/{document_id}/lines", s.handleDocumentLines)
+	s.mux.HandleFunc("GET /api/v1/documents/{document_id}/search-in", s.handleDocumentSearchIn)
 	s.mux.HandleFunc("POST /api/v1/documents/{document_id}/remote-media/scan", s.handleRemoteMediaScan)
 	s.mux.HandleFunc("POST /api/v1/documents/{document_id}/remote-media/localize", s.handleRemoteMediaLocalize)
 
@@ -615,7 +620,16 @@ func (s *Server) handleDocumentLinks(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleDocumentOutline(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, http.StatusOK, api.DocumentOutline{DocumentID: r.PathValue("document_id"), Headings: []api.DocumentHeading{}})
+	docID := r.PathValue("document_id")
+	if s.store == nil {
+		writeJSON(w, http.StatusOK, api.DocumentOutline{DocumentID: docID, Headings: []api.DocumentHeading{}})
+		return
+	}
+	doc, err := s.store.GetDocument(r.Context(), docID)
+	if writeStoreError(w, err, "document_read_failed") {
+		return
+	}
+	writeJSON(w, http.StatusOK, extractDocumentOutline(doc.ID, doc.Body))
 }
 
 func (s *Server) handleRemoteMediaScan(w http.ResponseWriter, r *http.Request) {
@@ -1061,8 +1075,18 @@ func applySurgicalEdits(body string, edits []api.SurgicalEdit) (string, error) {
 		if edit.Search == "" {
 			return "", errors.New("patch edits require a non-empty search string")
 		}
-		if !strings.Contains(out, edit.Search) {
+		count := strings.Count(out, edit.Search)
+		if count == 0 {
 			return "", errors.New("patch search text was not found")
+		}
+		if edit.ReplaceAll {
+			out = strings.ReplaceAll(out, edit.Search, edit.Replace)
+			continue
+		}
+		// Match joplin-mcp editNote semantics: an ambiguous match must be
+		// disambiguated with more context or replace_all.
+		if count > 1 {
+			return "", fmt.Errorf("patch search text matches %d locations; add context or set replace_all", count)
 		}
 		out = strings.Replace(out, edit.Search, edit.Replace, 1)
 	}

@@ -63,7 +63,7 @@ func (s *Server) handleMCPInfo(w http.ResponseWriter, r *http.Request) {
 		"version":     version.Version,
 		"endpoint":    "/mcp",
 		"transport":   "http-jsonrpc-mvp",
-		"tools":       toolNames(mcpTools()),
+		"tools":       toolNames(s.mcpTools()),
 		"read_only":   true,
 		"profile":     defaultString(s.config.MCP.DefaultProfile, "read-only"),
 		"max_results": effectiveMCPMaxResults(s.config.MCP.MaxResults),
@@ -90,7 +90,7 @@ func (s *Server) handleMCP(w http.ResponseWriter, r *http.Request) {
 	case "initialize":
 		result = s.mcpInitializeResult()
 	case "tools/list":
-		result = map[string]any{"tools": mcpTools()}
+		result = map[string]any{"tools": s.mcpTools()}
 	case "tools/call":
 		result, err = s.handleMCPToolCall(r, req.Params)
 	default:
@@ -150,9 +150,26 @@ func (s *Server) handleMCPToolCall(r *http.Request, raw json.RawMessage) (mcpToo
 		return s.mcpListDocumentResources(r, params.Arguments)
 	case "get_document_outline":
 		return s.mcpGetDocumentOutline(r, params.Arguments)
+	case "get_note_line_range":
+		return s.mcpGetNoteLineRange(r, params.Arguments)
+	case "search_in_note":
+		return s.mcpSearchInNote(r, params.Arguments)
+	case "get_notebook_notes":
+		return s.mcpGetNotebookNotes(r, params.Arguments)
+	case "create_note", "update_note", "append_to_note", "prepend_to_note", "edit_note", "delete_note", "move_note_to_notebook":
+		if !s.mcpWritesEnabled() {
+			return mcpToolResult{}, fmt.Errorf("tool %q requires the %q MCP profile; the active profile is read-only", params.Name, "editor")
+		}
+		return s.mcpWriteTool(r, params.Name, params.Arguments)
 	default:
 		return mcpToolResult{}, fmt.Errorf("unknown MCP tool %q", params.Name)
 	}
+}
+
+// mcpWritesEnabled reports whether the configured MCP profile permits write
+// tools. The default profile is read-only; writes require "editor".
+func (s *Server) mcpWritesEnabled() bool {
+	return strings.EqualFold(strings.TrimSpace(s.config.MCP.DefaultProfile), "editor")
 }
 
 func (s *Server) mcpListCollections(r *http.Request) (mcpToolResult, error) {
@@ -351,8 +368,8 @@ func (s *Server) mcpGetDocumentOutline(r *http.Request, raw json.RawMessage) (mc
 	return mcpStructured(extractDocumentOutline(doc.ID, doc.Body))
 }
 
-func mcpTools() []mcpTool {
-	return []mcpTool{
+func (s *Server) mcpTools() []mcpTool {
+	tools := []mcpTool{
 		{Name: "list_collections", Description: "List note collections and capabilities.", InputSchema: objectSchema(nil, nil)},
 		{Name: "list_notebooks", Description: "List all notebooks (flat, with parent IDs, emoji icons, and builtin flags).", InputSchema: objectSchema(nil, nil)},
 		{Name: "get_notebook_tree", Description: "Return the nested notebook tree in sidebar order.", InputSchema: objectSchema(nil, nil)},
@@ -364,7 +381,22 @@ func mcpTools() []mcpTool {
 		{Name: "list_document_links", Description: "List outgoing and/or incoming links for one document.", InputSchema: objectSchema(map[string]any{"document_id": stringSchema(), "uri": stringSchema(), "direction": enumSchema("outgoing", "incoming", "both")}, nil)},
 		{Name: "list_document_resources", Description: "List resources attached to one document without returning binary bytes.", InputSchema: objectSchema(map[string]any{"document_id": stringSchema(), "uri": stringSchema()}, nil)},
 		{Name: "get_document_outline", Description: "Return headings extracted from one Markdown document.", InputSchema: objectSchema(map[string]any{"document_id": stringSchema(), "uri": stringSchema()}, nil)},
+		{Name: "get_note_line_range", Description: "Read a 1-indexed inclusive slice of a note body by line numbers.", InputSchema: objectSchema(map[string]any{"document_id": stringSchema(), "uri": stringSchema(), "start_line": integerSchema(1, 1000000), "end_line": integerSchema(1, 1000000)}, nil)},
+		{Name: "search_in_note", Description: "Case-insensitive search within one note. Returns matches with line numbers and context.", InputSchema: objectSchema(map[string]any{"document_id": stringSchema(), "uri": stringSchema(), "pattern": stringSchema()}, nil)},
+		{Name: "get_notebook_notes", Description: "List current notes directly in one notebook.", InputSchema: objectSchema(map[string]any{"notebook_id": stringSchema(), "limit": integerSchema(1, 200)}, nil)},
 	}
+	if s.mcpWritesEnabled() {
+		tools = append(tools,
+			mcpTool{Name: "create_note", Description: "Create a Markdown note. Optional notebook_id defaults to the Notes notebook.", InputSchema: objectSchema(map[string]any{"title": stringSchema(), "body": stringSchema(), "notebook_id": stringSchema()}, []string{"title"})},
+			mcpTool{Name: "update_note", Description: "Replace a note's title/body. Requires base_revision_id.", InputSchema: objectSchema(map[string]any{"document_id": stringSchema(), "title": stringSchema(), "body": stringSchema(), "base_revision_id": stringSchema()}, []string{"document_id", "base_revision_id"})},
+			mcpTool{Name: "append_to_note", Description: "Append text to the end of a note.", InputSchema: objectSchema(map[string]any{"document_id": stringSchema(), "text": stringSchema()}, []string{"document_id", "text"})},
+			mcpTool{Name: "prepend_to_note", Description: "Insert text at the beginning of a note.", InputSchema: objectSchema(map[string]any{"document_id": stringSchema(), "text": stringSchema()}, []string{"document_id", "text"})},
+			mcpTool{Name: "edit_note", Description: "Server-side string replacement. Fails if the search text is missing or ambiguous without replace_all. Supports dry_run.", InputSchema: objectSchema(map[string]any{"document_id": stringSchema(), "search": stringSchema(), "replace": stringSchema(), "replace_all": booleanSchema(), "dry_run": booleanSchema()}, []string{"document_id", "search"})},
+			mcpTool{Name: "delete_note", Description: "Move a note to the Trash. Requires base_revision_id.", InputSchema: objectSchema(map[string]any{"document_id": stringSchema(), "base_revision_id": stringSchema()}, []string{"document_id", "base_revision_id"})},
+			mcpTool{Name: "move_note_to_notebook", Description: "Move a note to a different notebook.", InputSchema: objectSchema(map[string]any{"document_id": stringSchema(), "notebook_id": stringSchema()}, []string{"document_id", "notebook_id"})},
+		)
+	}
+	return tools
 }
 
 func mcpStructured(v any) (mcpToolResult, error) {

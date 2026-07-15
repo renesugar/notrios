@@ -468,6 +468,37 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RemoteMediaResult'
+  /api/v1/documents/{document_id}/append:
+    post:
+      summary: Append text to a note (If-Match optional; retries once without it)
+      parameters:
+        - { name: document_id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Updated document }
+  /api/v1/documents/{document_id}/prepend:
+    post:
+      summary: Insert text at the beginning of a note
+      parameters:
+        - { name: document_id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Updated document }
+  /api/v1/documents/{document_id}/lines:
+    get:
+      summary: Read a 1-indexed inclusive line range of a note body
+      parameters:
+        - { name: document_id, in: path, required: true, schema: { type: string } }
+        - { name: start, in: query, schema: { type: integer } }
+        - { name: end, in: query, schema: { type: integer } }
+      responses:
+        '200': { description: Line slice }
+  /api/v1/documents/{document_id}/search-in:
+    get:
+      summary: Case-insensitive in-note search with line numbers and context
+      parameters:
+        - { name: document_id, in: path, required: true, schema: { type: string } }
+        - { name: pattern, in: query, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Matches }
   /api/v1/notebooks:
     get:
       summary: List all notebooks (flat, with parent IDs)

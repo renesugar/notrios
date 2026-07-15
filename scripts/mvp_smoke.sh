@@ -46,7 +46,17 @@ search_sidecar:
 YAML
 
 cd "$ROOT"
-go run ./cmd/notriosd -config "$TMP/config.yaml" >"$LOG" 2>&1 &
+
+# A stale server on the port would silently serve this test its old data.
+if curl -fsS "$BASE/healthz" >/dev/null 2>&1; then
+  echo "port ${PORT} is already in use (stale notriosd from an earlier run?); refusing to run" >&2
+  exit 1
+fi
+
+# Build and run the binary directly: killing a `go run` wrapper can orphan
+# the real server process and leak it across smoke runs.
+go build -o "$TMP/notriosd" ./cmd/notriosd
+"$TMP/notriosd" -config "$TMP/config.yaml" >"$LOG" 2>&1 &
 PID=$!
 
 for _ in $(seq 1 60); do
