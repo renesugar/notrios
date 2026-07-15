@@ -1,6 +1,6 @@
 # Plan: v0.2 — Notrios redesign foundation
 
-Status: active. Tasks R1–R6 are complete; next task is R7 (Recoll integration). Ask the user before starting each task.
+Status: active. Tasks R1–R7 are complete; next task is R8 (full-client MCP/REST surface). Ask the user before starting each task.
 
 This plan supersedes the earlier v0.2 draft ("Import, Resource, and Media Hardening", archived at `plans/v0.2/001-import-resource-media-hardening.md`). The media-hardening items remain on the roadmap; they are re-sequenced behind the redesign items below.
 
@@ -86,7 +86,7 @@ Working state: a client can reproduce the sidebar (notebooks tree + tag counts) 
 
 Working state: search notebooks (including "All notes" and user query notebooks like `tag:todo`) execute through the adapter.
 
-### R7. Recoll integration (replaces sist2)
+### R7. Recoll integration (replaces sist2) — COMPLETED
 
 - Managed filesystem projection + outbox reuse (as designed for sist2).
 - Generate Recoll config (`fields` file with `tag`, `authorid`, `publishedts`, `noteid`, etc.; `underscoreasletter` guidance).

@@ -393,6 +393,18 @@ type Store interface {
 	GetDocumentSource(ctx context.Context, documentID string) (DocumentSource, error)
 	FindDocumentBySource(ctx context.Context, sourceSystem, externalID string) (string, error)
 	ListThreadDocuments(ctx context.Context, threadID string) ([]DocumentSource, error)
+
+	PendingProjectionJobs(ctx context.Context, limit int) ([]OutboxJob, error)
+	CompleteProjectionJob(ctx context.Context, sequence int64, jobErr error) error
+}
+
+// OutboxJob is one pending projection/indexing job. Document mutations enqueue
+// jobs transactionally; the projection worker drains them after commit.
+type OutboxJob struct {
+	Sequence   int64
+	ObjectType string // "document"
+	ObjectID   string
+	Operation  string // "upsert" or "delete"
 }
 
 func NormalizeCreateRequest(req CreateDocumentRequest) CreateDocumentRequest {

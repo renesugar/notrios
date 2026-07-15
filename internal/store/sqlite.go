@@ -357,6 +357,9 @@ func (s *SQLiteStore) CreateDocument(ctx context.Context, req CreateDocumentRequ
 	if err := s.rebuildDocumentLinksLocked(docID, req.CollectionID, req.Body); err != nil {
 		return Document{}, err
 	}
+	if err := s.enqueueProjectionLocked(docID, "upsert"); err != nil {
+		return Document{}, err
+	}
 	if err := s.execLocked("COMMIT"); err != nil {
 		return Document{}, err
 	}
@@ -469,6 +472,9 @@ func (s *SQLiteStore) UpdateDocument(ctx context.Context, req UpdateDocumentRequ
 	if err := s.rebuildDocumentLinksLocked(req.ID, current.CollectionID, req.Body); err != nil {
 		return Document{}, err
 	}
+	if err := s.enqueueProjectionLocked(req.ID, "upsert"); err != nil {
+		return Document{}, err
+	}
 	if err := s.execLocked("COMMIT"); err != nil {
 		return Document{}, err
 	}
@@ -519,6 +525,9 @@ func (s *SQLiteStore) DeleteDocument(ctx context.Context, req DeleteDocumentRequ
 		return err
 	}
 	if err := s.execPreparedLocked(`DELETE FROM documents_fts WHERE document_id = ?`, req.ID); err != nil {
+		return err
+	}
+	if err := s.enqueueProjectionLocked(req.ID, "delete"); err != nil {
 		return err
 	}
 	if err := s.execLocked("COMMIT"); err != nil {
@@ -625,6 +634,9 @@ func (s *SQLiteStore) RestoreDocumentRevision(ctx context.Context, req RestoreRe
 		return Document{}, err
 	}
 	if err := s.rebuildDocumentLinksLocked(req.DocumentID, collectionID, target.Body); err != nil {
+		return Document{}, err
+	}
+	if err := s.enqueueProjectionLocked(req.DocumentID, "upsert"); err != nil {
 		return Document{}, err
 	}
 	if err := s.execLocked("COMMIT"); err != nil {

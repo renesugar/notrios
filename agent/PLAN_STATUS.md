@@ -2,7 +2,7 @@
 
 ## Current phase
 
-v0.2 Notrios redesign foundation (`PLAN.md`). Tasks **R1 (documentation redesign)**, **R2 (code rename + Apache-2.0 license)**, **R3 (schema v5 — notebooks/tags/search notebooks)**, and **R4 (schema v6 — source provenance and threads)** are completed, as are **R5 (notebooks/tags/trash REST + MCP read tools)** and **R6 (query-language adapter)**; next task is **R7 (Recoll integration)** — ask the user before starting it.
+v0.2 Notrios redesign foundation (`PLAN.md`). Tasks **R1 (documentation redesign)**, **R2 (code rename + Apache-2.0 license)**, **R3 (schema v5 — notebooks/tags/search notebooks)**, and **R4 (schema v6 — source provenance and threads)** are completed, as are **R5 (notebooks/tags/trash REST + MCP read tools)**, **R6 (query-language adapter)**, and **R7 (Recoll integration)**; next task is **R8 (full-client MCP/REST surface)** — ask the user before starting it.
 
 ## Current working state
 
@@ -32,9 +32,12 @@ v0.2 Notrios redesign foundation (`PLAN.md`). Tasks **R1 (documentation redesign
 
 - R6 changes (query language): `internal/query` parser + `internal/store/sqlite_query.go` compiler; `notebook:` (subtree, case-insensitive), `tag:`, `title:`, `author:`/`authorid:` (provenance joins), `since:`/`until:` (published_ts fallback to created_at), `is:trashed`, phrases, implicit AND; opaque query-bound cursors for incremental scrolling; `store.Search` fully routed through the adapter. See `plans/v0.2/007-query-language-adapter.md`.
 
+- R7 changes (Recoll sidecar): transactional `index_outbox` enqueues on all document mutations; `internal/projection` (outbox drain + full sync to Markdown/front-matter files); `internal/recoll` (generated config, embedded from-scratch Apache-licensed front-matter handler, recollindex/recollq external processes, query compilation, base64 result parsing); merged sidecar search behind the existing API with FTS5 authoritative and graceful fallback; notriosd 30s sync loop when `search_sidecar.enabled`. Live pipeline verified against installed Recoll. See `plans/v0.2/008-recoll-integration.md`.
+- The Recoll sidecar remains **optional**: everything (including all tests) passes without Recoll installed; `TestLiveRecollPipeline` self-skips.
+
 ## Next suggested step
 
-Task R7: Recoll integration — managed filesystem projection + outbox, generated Recoll config (fields, underscoreasletter), from-scratch YAML/TOML front-matter input handler, external-process recollindex/recollq adapter, graceful FTS5 fallback.
+Task R8: full-client MCP/REST surface — append/prepend, line-range read, in-note search, sections/outline parity with joplin-mcp; notebook trees with notes; scope-gated MCP write tools; verify a third-party client could implement the full GUI feature list.
 
 ## Validation
 
@@ -60,4 +63,4 @@ bash scripts/run_performance_smoke.sh
 - Config parser supports only the documented example-config subset.
 - The MCP MVP adapter is dependency-free; official MCP Go SDK adoption is future work.
 - Importers verified on synthetic fixtures only; verify against real Joplin RAW exports and Obsidian vaults before large migrations.
-- Recoll integration is design-only (R7); Wails GUI is design-only (R13/R14); docs site is design-only (R15).
+- Wails GUI is design-only (R13/R14); docs site is design-only (R15). Recoll integration is implemented (R7) but reconciliation/batched-scan hardening remains a v0.3 roadmap item.

@@ -265,6 +265,10 @@ func (s *SQLiteStore) DeleteNotebook(ctx context.Context, id string) error {
 	if err := s.execPreparedLocked(`DELETE FROM documents_fts WHERE document_id IN (SELECT id FROM documents WHERE notebook_id IN `+in+` AND deleted_at IS NULL)`, ids...); err != nil {
 		return err
 	}
+	if err := s.execPreparedLocked(`INSERT INTO index_outbox(object_type, object_id, operation)
+		SELECT 'document', id, 'delete' FROM documents WHERE notebook_id IN `+in+` AND deleted_at IS NULL`, ids...); err != nil {
+		return err
+	}
 	if err := s.execPreparedLocked(`UPDATE documents SET deleted_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE notebook_id IN `+in+` AND deleted_at IS NULL`, ids...); err != nil {
 		return err
 	}
@@ -744,6 +748,9 @@ func (s *SQLiteStore) RestoreDocument(ctx context.Context, id string) (Document,
 	if err := s.rebuildDocumentLinksLocked(id, collectionID, body); err != nil {
 		return Document{}, err
 	}
+	if err := s.enqueueProjectionLocked(id, "upsert"); err != nil {
+		return Document{}, err
+	}
 	if err := s.execLocked("COMMIT"); err != nil {
 		return Document{}, err
 	}
@@ -801,6 +808,9 @@ func (s *SQLiteStore) PurgeDocument(ctx context.Context, id string) error {
 		return err
 	}
 	if err := s.execPreparedLocked(`DELETE FROM documents WHERE id = ?`, id); err != nil {
+		return err
+	}
+	if err := s.enqueueProjectionLocked(id, "delete"); err != nil {
 		return err
 	}
 	if err := s.execLocked("COMMIT"); err != nil {

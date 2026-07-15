@@ -34,12 +34,12 @@ Link-graph operations (direct replies, backlinks, thread ordering, orphan detect
 - Real-time incremental indexing and proven behavior beyond 100k documents.
 - No separate server process to operate (vs. Meilisearch).
 
-## Components to build
+## Components to build (implemented in task R7)
 
-1. **Enhanced Markdown/front-matter handler** — a Python input handler with full YAML/TOML front-matter extraction, configured in Recoll's handler table for Markdown. It must be written **from scratch** (Recoll's shipped `rclmd.py` is GPL; see Licensing below) and emits fields as handler metadata/`<meta>` elements.
-2. **Query adapter** — translates the Notrios query language to Recoll query syntax (see `SEARCH_QUERY_LANGUAGE.md`), including `since:`/`until:` → `publishedts:lower..upper` integer ranges.
-3. **SQLite changes** — the projection/outbox tables designed for sist2 are reused; sist2-specific naming (config keys, capability flags, collection kinds) is renamed to sidecar-neutral or Recoll naming in plan task R2/R7.
-4. **Adapter process management** — generate a dedicated Recoll config directory (fields declarations, `underscoreasletter`, watched projection dir), then drive `recollindex` and query via `recollq` or the Recoll Python API **in a separate process**.
+1. **Enhanced Markdown/front-matter handler** — `internal/recoll/notrios_md_handler.py`, a from-scratch (Apache-licensed, not derived from Recoll's GPL `rclmd.py`) Python `exec` filter with YAML/TOML front-matter extraction that emits `<meta>` fields; PyYAML is used when installed with a built-in fallback for the flat subset, TOML via stdlib `tomllib`. The generated config installs it for `text/markdown`.
+2. **Query adapter** — `internal/recoll.CompileQuery` translates the parsed Notrios query to Recoll syntax, including `since:`/`until:` → `publishedts:lower..upper` integer ranges; `recollq -F` output is parsed back to document IDs via projection filenames.
+3. **SQLite changes** — document mutations enqueue `index_outbox` jobs transactionally; `internal/projection` drains them into a Markdown+front-matter filesystem projection (plus a startup full sync for pre-outbox databases).
+4. **Adapter process management** — `internal/recoll.Sidecar` generates the config directory (recoll.conf with `underscoreasletter`, `fields` with the Notrios prefixes and the `publishedts` integer value slot, `mimeconf`), runs `recollindex -c`, and queries via `recollq -c -F` — external processes only. `notriosd` activates it when `search_sidecar.enabled` is true, runs a startup full sync + index, drains the outbox every 30 seconds, and merges sidecar-only hits into search results (FTS5 first and authoritative; sidecar failures degrade gracefully).
 
 ## Front-matter field mapping
 

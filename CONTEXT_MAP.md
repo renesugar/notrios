@@ -160,3 +160,10 @@ This file is the codebase atlas. Update it whenever major files or directories a
 
 - `internal/query/` — backend-agnostic parser for the user search language (`notebook:`, `tag:`, `title:`, `author:`, `authorid:`, `since:`, `until:`, `is:trashed`, quoted phrases, implicit AND; date-only/time-only timestamp semantics per `SEARCH_QUERY_LANGUAGE.md`).
 - `internal/store/sqlite_query.go` — compiles parsed queries to FTS5 + SQL (notebook subtree expansion, tag EXISTS filters, provenance joins for author/time, LIKE fallback for trash queries) and implements opaque query-bound cursors for incremental scrolling. `store.Search` now routes every query through the adapter.
+
+## v0.2 task R7 additions (Recoll sidecar)
+
+- `internal/projection/` — outbox-driven Markdown+front-matter filesystem projection of managed notes (plus `FullSync` for pre-outbox databases); document mutations now enqueue `index_outbox` jobs transactionally (`internal/store/sqlite_outbox.go`).
+- `internal/recoll/` — external-process Recoll sidecar: generated config (fields prefixes, `publishedts` range slot, `underscoreasletter`), the embedded from-scratch `notrios_md_handler.py` front-matter handler, `recollindex`/`recollq` invocation, query compilation, and result parsing. GPL boundary: binaries are user-installed and never linked or vendored.
+- `internal/httpapi/sidecar_search.go` — merges sidecar-only hits into search results behind the existing API; FTS5 stays authoritative and sidecar failures degrade gracefully.
+- `cmd/notriosd` — activates the sidecar when `search_sidecar.enabled` is true: startup full sync + index, 30s outbox drain loop, merged search.

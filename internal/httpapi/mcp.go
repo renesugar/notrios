@@ -184,7 +184,7 @@ func (s *Server) mcpSearchDocuments(r *http.Request, raw json.RawMessage) (mcpTo
 	if collectionID == "" && len(args.Collections) > 0 {
 		collectionID = args.Collections[0]
 	}
-	result, err := s.store.Search(r.Context(), store.SearchRequest{CollectionID: collectionID, Query: args.Query, Limit: clampMCPLimit(args.Limit, s.config.MCP.MaxResults), Cursor: args.Cursor})
+	result, err := s.searchMerged(r.Context(), store.SearchRequest{CollectionID: collectionID, Query: args.Query, Limit: clampMCPLimit(args.Limit, s.config.MCP.MaxResults), Cursor: args.Cursor})
 	if err != nil {
 		return mcpToolResult{}, err
 	}

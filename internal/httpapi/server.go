@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"io"
@@ -13,14 +14,28 @@ import (
 
 	"github.com/renesugar/notrios/internal/api"
 	"github.com/renesugar/notrios/internal/config"
+	"github.com/renesugar/notrios/internal/query"
+	"github.com/renesugar/notrios/internal/recoll"
 	"github.com/renesugar/notrios/internal/store"
 	"github.com/renesugar/notrios/internal/version"
 )
 
 type Server struct {
-	mux    *http.ServeMux
-	store  store.Store
-	config config.Config
+	mux     *http.ServeMux
+	store   store.Store
+	config  config.Config
+	sidecar SidecarSearcher
+}
+
+// SidecarSearcher is the optional derived search backend (Recoll). Implemented
+// by *recoll.Sidecar; nil means FTS5-only search.
+type SidecarSearcher interface {
+	Search(ctx context.Context, q query.Query, limit int) ([]recoll.Hit, error)
+}
+
+// AttachSidecar enables merged sidecar search results.
+func (s *Server) AttachSidecar(sidecar SidecarSearcher) {
+	s.sidecar = sidecar
 }
 
 // ServerOptions configures the HTTP API adapter.
@@ -274,7 +289,7 @@ func (s *Server) handleSearchPOST(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	collectionID := firstCollection(req)
-	result, err := s.store.Search(r.Context(), store.SearchRequest{
+	result, err := s.searchMerged(r.Context(), store.SearchRequest{
 		CollectionID: collectionID,
 		Query:        req.Query,
 		Limit:        req.Limit,
