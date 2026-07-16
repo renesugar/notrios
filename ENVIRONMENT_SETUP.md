@@ -1,216 +1,107 @@
-# Environment Setup
+# Environment Setup (contributors)
 
-## Target development OS
+This guide sets up a development environment for working on the existing Notrios repository. End users should start with the friendlier [docs/installation.md](docs/installation.md); this file adds contributor-specific workflow, validation, and cleanup detail.
 
-Primary target: Ubuntu Linux.
+## Platform
 
-## Required tools for the current scaffold
+Development and CI target **Ubuntu Linux**. Other platforms are untested.
+
+## Required tools
+
+Versions match `go.mod` and `.github/workflows/ci.yml`:
 
 - Git
-- Go 1.22 or newer
-- Python 3.10 or newer
-- Bash
+- **Go 1.25 or newer** (`go.mod` declares `go 1.25.0`)
+- A C toolchain and `pkg-config` (the SQLite store is a cgo wrapper over system `libsqlite3`; keep `CGO_ENABLED=1`)
+- `libsqlite3-dev`
+- **Node.js 22** and npm (web UI and docs-site builds; Node ≥ 20.19 may work but 22 is what CI tests)
+- **Python 3** — used only by the repository validation scripts (`scripts/check_required_files.py`, `scripts/check_release_zip.py`, `scripts/check_plan_loops.py`); not needed at runtime
+- Bash, `make`
 
-## Required tools for the web UI
+For GUI work additionally: `libgtk-3-dev`, `libwebkit2gtk-4.1-dev` (the exact packages CI installs for the GUI compile check).
 
-- Node.js 20 or newer
-- npm 10 or newer
-
-## Recommended tools
-
-- `go-task` for `Taskfile.yml`
-- `make`
-- `sqlite3` command-line shell
-- `libsqlite3-dev` / SQLite development headers for the Step 4 cgo-backed store
-- `ripgrep`
-- `jq`
-- `xvfb` for headless UI tests
-- `recoll` (and `recollq`) for future search-sidecar integration work (optional; GPL, external process only)
-- `git-lfs` only if future Git workflows require large-file support outside go-git
-
-Ubuntu example:
+Optional: `go-task` (the `Taskfile.yml` mirrors the main Make targets), `sqlite3` CLI, `jq`, `zip` (release archives), `xvfb` (running the GUI headless), `recoll` (the optional search sidecar — GPL, always an external process).
 
 ```bash
 sudo apt update
-sudo apt install -y git golang-go python3 python3-venv make sqlite3 libsqlite3-dev pkg-config ripgrep jq xvfb nodejs npm
+sudo apt install -y git build-essential pkg-config libsqlite3-dev python3 make zip jq sqlite3
+sudo apt install -y nodejs npm            # or Node 22 from nodesource/a version manager
+sudo apt install -y libgtk-3-dev libwebkit2gtk-4.1-dev   # GUI work only
 ```
 
-If Ubuntu packages are too old, install Go and Node from upstream sources or a tool manager.
-
-## Optional Task runner
+## Getting the repository
 
 ```bash
-go install github.com/go-task/task/v3/cmd/task@latest
+git clone https://github.com/renesugar/notrios.git
+cd notrios
 ```
 
-## Repository setup
+Active development happens on `develop`; `main` takes reviewed merges. Never commit private note exports, local databases, or asset stores — `data/`, `private-testdata/`, and `exports/` are git-ignored for that reason.
+
+## Everyday commands
+
+`make help` lists everything. The common loop:
 
 ```bash
-git init
-git checkout -b develop
-git add .
-git commit -m "Initial Notrios scaffold"
+make test          # go test ./...
+make validate      # tests + required-files + script syntax checks
+make build         # bin/notriosd + bin/notriosctl
+make web           # web/dist/ (npm ci runs automatically on first build)
+make gui           # bin/notrios desktop binary
+make docs          # _site/ documentation site (uses npx marked + pagefind)
+make smoke         # end-to-end REST/MCP smoke test on a loopback port
+bash scripts/run_performance_smoke.sh   # generated-dataset store benchmark
 ```
 
-Before pushing to Gitea/GitHub:
+For iterative frontend work use `cd web && npm run dev`; Vite proxies `/api` and `/healthz` to a locally running `notriosd`.
 
-1. Create the remote repository.
-2. Push `develop` first.
-3. Create `main` only when ready, or protect `main` immediately.
-4. Configure branch protection for `main`.
-5. Require CI before merging to `main`.
-
-## Test data needed later
-
-Do not commit private test data. Store local fixtures outside the repo or under ignored paths.
-
-Needed datasets:
-
-- Small synthetic Markdown vault.
-- Small Obsidian vault with Wikilinks, embeds, aliases, headings, block refs.
-- Joplin RAW Export Directory fixture.
-- Twitter/X archive fixture.
-- ChatGPT conversations export fixture.
-- Claude conversations JSON fixture.
-- Image/PDF sample resources.
-- Remote-image localization fixture with local test HTTP server.
-- Large generated datasets for performance tests.
-
-See `testdata/README.md`.
-
-## Step 4 SQLite note
-
-The scaffold currently uses a small local cgo adapter over system `libsqlite3` because external Go module downloads were unavailable during scaffold creation. A later implementation step may replace this adapter with a pinned Go SQLite driver if project policy prefers it. Until then, keep `CGO_ENABLED=1`, `pkg-config`, and SQLite development headers available.
-
-## Runtime configuration check
-
-Run the service with the example config:
+## Runtime sanity checks
 
 ```bash
 go run ./cmd/notriosd -config config/config.example.yaml
-```
-
-The service creates the configured data, asset, projection, and search-sidecar index directories before opening SQLite. Use `-addr` and `-db` only as explicit overrides for quick local smoke tests:
-
-```bash
-go run ./cmd/notriosd -addr 127.0.0.1:8081 -db /tmp/notrios.sqlite
-```
-
-Confirm runtime state:
-
-```bash
-curl http://127.0.0.1:8080/api/v1/status | jq
-```
-
-Expected fields include `database_info.schema_version`, `storage.asset_store`, `storage.projection_dir`, and `capabilities.search.fts5`.
-
-## MVP Task 2 development notes
-
-The service now reports SQLite schema version 4 after bootstrap. Existing local development databases from MVP Tasks 1–2 can be opened; bootstrap applies narrow compatibility shims for revision columns, resource indexes, and link graph columns. For clean testing, delete `data/notes.sqlite` and restart `notriosd`.
-
-### Resource upload smoke test
-
-```bash
-printf 'hello resource' | curl -s -X POST \
-  'http://127.0.0.1:8080/api/v1/resources?filename=hello.txt' \
-  -H 'Content-Type: text/plain' --data-binary @-
-```
-
-The response contains a logical resource ID, `resource://` URI, byte count, and SHA-256 hash. Use `GET /api/v1/resources/{id}/content?download=1` to download the bytes.
-
-### Link/backlink smoke test
-
-Create two notes, then create a source note that links to the target by title or `document://` URI. Inspect outgoing links and backlinks:
-
-```bash
-curl 'http://127.0.0.1:8080/api/v1/documents/<source_doc_id>/links?direction=both' | jq
-curl 'http://127.0.0.1:8080/api/v1/documents/<target_doc_id>/links?direction=incoming' | jq
-curl -X POST http://127.0.0.1:8080/api/v1/graph \
-  -H 'Content-Type: application/json' \
-  -d '{"roots":["<source_doc_id>"],"direction":"both","max_nodes":20,"max_edges":40}' | jq
-```
-
-
-## Built-in UI production smoke test
-
-After building the web UI, `notriosd` can serve it from `web/dist`:
-
-```bash
-cd web && npm ci && npm run build
-cd ..
-go run ./cmd/notriosd -addr 127.0.0.1:8080
-# open http://127.0.0.1:8080/
-```
-
-For iterative frontend development, continue using `cd web && npm run dev`; Vite proxies `/api` and `/healthz` to `notriosd`.
-
-
-## MCP smoke test
-
-After starting `notriosd`, list MCP tools with:
-
-```bash
+curl http://127.0.0.1:8080/api/v1/status | jq          # schema version, storage roots, capabilities
 curl -X POST http://127.0.0.1:8080/mcp \
   -H "Content-Type: application/json" \
-  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'   # MCP tool listing
+go run ./cmd/notriosctl doctor                           # environment/config/database diagnostics
 ```
 
-The current MCP adapter is dependency-free for this scaffold. In a normal development environment, an agent may replace it with the official MCP Go SDK after pinning the dependency and updating tests.
+Relative config paths (the example uses `./data/...`) resolve against the working directory. For clean testing, delete `data/notes.sqlite` (plus its `-wal`/`-shm` sidecars) and restart.
 
-## Joplin RAW importer MVP
+## Cleanup and pre-checkin
 
-Run a dry-run scan:
+`make clean` removes disposable outputs and nothing else:
+
+- `bin/` (Go binaries), `dist/` (release archives), `_site/` (docs site), `web/dist/` (web assets), `.playwright-mcp/` (browser-automation output);
+- `coverage.out`/`coverage.*`, `*.test`, `*.prof`, stray root binaries, `notrios-*.zip`;
+- `__pycache__/` directories, `*.pyc`, editor `*~` backups.
+
+Deliberately preserved: `data/` and any databases/asset stores (user data), `config/`, `testdata/` fixtures, `web/node_modules/` (use `make clobber` to remove dependencies too), and all sources.
+
+Before committing:
 
 ```bash
-go run ./cmd/notriosctl import joplin-raw --dry-run /path/to/joplin-raw-export
+make clean
+make precheck        # shows git status and fails if any tracked file matches .gitignore
+git status --short --untracked-files=all
 ```
 
-Import into the default local database:
+`git ls-files -ci --exclude-standard` is the underlying check for tracked-but-ignored files; if it ever lists generated artifacts that were committed by mistake, remove them from tracking with `git rm --cached <path>` (or `git rm` to also delete them) in a dedicated commit.
+
+## Test data
+
+Do not commit private exports. Synthetic fixtures live in importer tests and `testdata/`; derived JSON Schemas for import formats are under `testdata/schemas/`. Local private datasets belong outside the repository or under the ignored `private-testdata/` path.
+
+## Validation before merging
 
 ```bash
-go run ./cmd/notriosctl import joplin-raw \
-  --db ./data/notes.sqlite \
-  --asset-store ./data/assets \
-  --collection default \
-  /path/to/joplin-raw-export
-```
-
-The importer expects a Joplin RAW Export Directory, not a JEX archive. Keep private exports out of Git.
-
-
-## Obsidian importer MVP
-
-Run a dry-run scan:
-
-```bash
-go run ./cmd/notriosctl import obsidian --dry-run /path/to/obsidian-vault
-```
-
-Import into the default local database:
-
-```bash
-go run ./cmd/notriosctl import obsidian \
-  --db ./data/notes.sqlite \
-  --asset-store ./data/assets \
-  --collection default \
-  /path/to/obsidian-vault
-```
-
-The importer expects a directory containing Markdown files and local assets. It skips `.obsidian`, VCS directories, and dependency folders. Keep private vaults and imported asset stores out of Git.
-
-
-## MVP smoke and packaging commands
-
-After installing Go, Node, npm, and SQLite development headers, the release-candidate validation flow is:
-
-```bash
+go vet ./...
 go test ./...
 python3 scripts/check_required_files.py
 bash scripts/validate-scaffold.sh
 cd web && npm ci && npm run typecheck && npm run build
 bash scripts/mvp_smoke.sh
 bash scripts/run_performance_smoke.sh
-bash scripts/package_release.sh /tmp/notrios-v0.1.0-mvp.zip
 ```
 
-`mvp_smoke.sh` starts `notriosd` on a loopback test port, creates and updates a note, searches it, uploads/downloads a resource, and verifies MCP tool listing. `run_performance_smoke.sh` runs the generated-dataset store smoke test and benchmark.
+These are the same checks CI runs (plus CI's GUI compile check with `-tags "gui desktop production webkit2_41"`).

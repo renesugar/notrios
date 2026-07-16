@@ -6,6 +6,9 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"os/exec"
+	"path/filepath"
+	"runtime"
 
 	"github.com/renesugar/notrios/internal/archive"
 	"github.com/renesugar/notrios/internal/config"
@@ -29,7 +32,7 @@ func main() {
 	case "version":
 		fmt.Println(version.Version)
 	case "doctor":
-		fmt.Println("notriosctl doctor: scaffold checks passed")
+		runDoctor(os.Args[2:])
 	case "import":
 		runImport(os.Args[2:])
 	case "export":
@@ -186,10 +189,10 @@ func runImportObsidian(args []string) {
 }
 
 func printHelp() {
-	fmt.Print(`notriosctl - admin/import CLI scaffold
+	fmt.Print(`notriosctl - Notrios import/export/maintenance CLI
 
 Usage:
-  notriosctl doctor
+  notriosctl doctor [--config config.yaml] [--db path] [--asset-store path]
   notriosctl version
   notriosctl import joplin-raw [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--dry-run] <raw-export-dir>
   notriosctl import obsidian [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--dry-run] <vault-dir>
@@ -475,4 +478,116 @@ func runSeedHelp(args []string) {
 		os.Exit(1)
 	}
 	printJSON(report)
+}
+
+// runDoctor performs real environment/configuration diagnostics: config
+// loading, database open + schema version, asset-store writability, web UI
+// asset presence, and optional Recoll sidecar availability. It exits 1 when a
+// required check fails; optional checks only inform.
+func runDoctor(args []string) {
+	fs := flag.NewFlagSet("notriosctl doctor", flag.ExitOnError)
+	configPath := fs.String("config", "", "optional config file")
+	dbPath := fs.String("db", "", "SQLite database path override")
+	assetStore := fs.String("asset-store", "", "asset store directory override")
+	if err := fs.Parse(args); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(2)
+	}
+
+	failed := false
+	report := func(ok bool, required bool, label, detail string) {
+		mark := "ok  "
+		if !ok {
+			if required {
+				mark = "FAIL"
+				failed = true
+			} else {
+				mark = "info"
+			}
+		}
+		fmt.Printf("%s  %-16s %s\n", mark, label, detail)
+	}
+
+	report(true, true, "go runtime", runtime.Version())
+
+	var cfg config.Config
+	var err error
+	if *configPath != "" {
+		cfg, err = config.Load(*configPath)
+	} else {
+		cfg, err = config.LoadDefaultOrExample()
+	}
+	if err != nil {
+		report(false, true, "config", err.Error())
+		os.Exit(1)
+	}
+	source := cfg.ConfigPath
+	if source == "" {
+		source = "built-in defaults"
+	}
+	report(true, true, "config", source)
+	if *dbPath != "" {
+		cfg.Data.DatabasePath = *dbPath
+	}
+	if *assetStore != "" {
+		cfg.Data.AssetStore = *assetStore
+	}
+
+	if err := config.EnsureDirectories(cfg); err != nil {
+		report(false, true, "directories", err.Error())
+	} else {
+		report(true, true, "directories", "storage directories exist or were created")
+	}
+
+	st, err := store.OpenSQLiteWithAssetStore(cfg.Data.DatabasePath, cfg.Data.AssetStore)
+	if err != nil {
+		report(false, true, "database", err.Error())
+	} else {
+		defer st.Close()
+		if err := st.Bootstrap(context.Background()); err != nil {
+			report(false, true, "database", "bootstrap: "+err.Error())
+		} else if status, err := st.Status(context.Background()); err != nil {
+			report(false, true, "database", err.Error())
+		} else {
+			report(true, true, "database", fmt.Sprintf("%s (schema version %d)", cfg.Data.DatabasePath, status.SchemaVersion))
+		}
+	}
+
+	probe := filepath.Join(cfg.Data.AssetStore, ".doctor-probe")
+	if err := os.WriteFile(probe, []byte("ok"), 0o644); err != nil {
+		report(false, true, "asset store", err.Error())
+	} else {
+		_ = os.Remove(probe)
+		report(true, true, "asset store", cfg.Data.AssetStore+" is writable")
+	}
+
+	if _, err := os.Stat(filepath.Join("web", "dist", "index.html")); err == nil {
+		report(true, false, "web ui", "web/dist present (browser UI will be served)")
+	} else {
+		report(false, false, "web ui", "web/dist missing here; run `make web` or serve API-only")
+	}
+
+	if _, err := exec.LookPath(firstNonEmptyString(cfg.SearchSidecar.Binary, "recollindex")); err == nil {
+		report(true, false, "recoll", "recollindex found (optional search sidecar available)")
+	} else {
+		report(false, false, "recoll", "recollindex not found (optional; FTS5 search works without it)")
+	}
+	if cfg.SearchSidecar.Enabled {
+		report(true, false, "recoll", "search_sidecar.enabled is true in this config")
+	}
+
+	if failed {
+		fmt.Println("doctor: one or more required checks FAILED")
+		os.Exit(1)
+	}
+	fmt.Println("doctor: required checks passed")
+}
+
+func firstNonEmptyString(values ...string) string {
+	for _, v := range values {
+		if v != "" {
+			return v
+		}
+	}
+	return ""
 }

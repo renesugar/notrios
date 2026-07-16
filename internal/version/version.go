@@ -1,3 +1,3 @@
 package version
 
-const Version = "0.1.0-scaffold"
+const Version = "0.2.0"

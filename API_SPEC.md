@@ -3,7 +3,7 @@
 This document defines the REST and MCP contract for the companion service. `api/openapi.yaml` is the machine-readable REST skeleton that agents should keep aligned with this document.
 
 
-## Implementation status after MVP Task 5
+## Implementation status (historical: as of MVP Task 5; see route list in `internal/httpapi/server.go` and the user guides in `docs/api/` for current state)
 
 The REST persistence slice is implemented for managed Markdown documents:
 
@@ -83,7 +83,7 @@ Collections are logical namespaces. Capabilities declare whether a collection is
 
 ```text
 POST /api/v1/search
-GET  /api/v1/search?q=...&collection=...&limit=...
+GET  /api/v1/search?q=...&collection=...&limit=...   # placeholder: returns empty results today; use POST
 ```
 
 Search response hits must include `source`, `id`, `uri`, `title`, `snippet`, `score`, `metadata`, and optional `resource_links`.
@@ -146,7 +146,7 @@ POST /api/v1/links/resolve
 
 Link records preserve source syntax, raw target, normalized target URI, source position, context, anchor, relation type, and resolution status. MVP Task 5 extracts common Markdown links/images, Obsidian wikilinks/embeds, app URIs, external URLs, heading anchors, and block anchors with a conservative parser. `POST /api/v1/links/resolve` remains a future endpoint.
 
-### Remote media
+### Remote media (staged contract — handlers return stub responses today)
 
 ```text
 POST /api/v1/documents/{document_id}/remote-media/scan
@@ -157,7 +157,7 @@ POST /api/v1/media-policy/check-url
 
 Remote media localization must never be implemented by reading browser preview caches. The server downloads into quarantine, applies URL/domain policy, size/MIME checks, exact/perceptual hash checks, deduplicates by content hash, stores approved resources, and rewrites Markdown in a new revision.
 
-### Import/export/publish
+### Import/export/publish (staged contract — import/export run through `notriosctl` today; the publish/jobs routes return stubs)
 
 ```text
 POST /api/v1/import-jobs

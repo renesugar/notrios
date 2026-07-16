@@ -2,6 +2,7 @@ package joplinraw
 
 import (
 	"context"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -78,6 +79,23 @@ func TestImportJoplinRawFixture(t *testing.T) {
 	}
 	if found, err := st.FindDocumentBySource(ctx, "joplin", "note2"); err != nil || found != "doc_joplin_note2" {
 		t.Fatalf("FindDocumentBySource: %q err=%v", found, err)
+	}
+
+	// Trashing an imported note and re-running the import must not
+	// resurrect it (or crash on the reserved document ID).
+	trashed, _ := st.GetDocument(ctx, "doc_joplin_note2")
+	if err := st.DeleteDocument(ctx, store.DeleteDocumentRequest{ID: trashed.ID, BaseRevisionID: trashed.CurrentRevisionID}); err != nil {
+		t.Fatalf("trash imported note: %v", err)
+	}
+	rerun, err := Import(ctx, st, dir, Options{CollectionID: "default"})
+	if err != nil {
+		t.Fatalf("re-import with trashed note: %v", err)
+	}
+	if rerun.NotesImported != 0 {
+		t.Fatalf("trashed note resurrected: %#v", rerun)
+	}
+	if _, err := st.GetDocument(ctx, "doc_joplin_note2"); !errors.Is(err, store.ErrNotFound) {
+		t.Fatalf("trashed note must stay trashed: %v", err)
 	}
 	search, err := st.Search(ctx, store.SearchRequest{Query: "Hello", Limit: 5})
 	if err != nil {

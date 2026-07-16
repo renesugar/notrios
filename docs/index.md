@@ -13,15 +13,18 @@ Notrios is a local-first note-taking, search, import, and publishing system for 
 
 ## Getting started
 
-```bash
-# Headless service
-go run ./cmd/notriosd -config config/config.example.yaml
+Notrios is built from source on Ubuntu Linux (the only tested platform); there are no prebuilt binaries yet. The [installation guide](installation.md) covers prerequisites, every build target, output paths, and optional local installation. The short version:
 
-# Desktop GUI (one binary containing the GUI and the service)
-make gui && ./bin/notrios
+```bash
+git clone https://github.com/renesugar/notrios.git
+cd notrios
+make build web
+./bin/notriosd -config config/config.example.yaml   # http://127.0.0.1:8080
+
+make gui && ./bin/notrios                           # desktop GUI
 ```
 
-Then open http://127.0.0.1:8080 in a browser (headless mode) or use the GUI window. The [service guide](service.md) covers configuration; the [CLI guide](cli.md) covers imports and exports.
+The [service guide](service.md) covers configuration; the [CLI guide](cli.md) covers imports and exports; [troubleshooting](troubleshooting.md) covers common build and startup errors.
 
 ## License
 

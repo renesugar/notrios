@@ -17,15 +17,19 @@ The Pages site uses **PageFind** (https://github.com/pagefind/pagefind): a post-
 
 ```text
 docs/
-  index.md              # overview + install
-  service.md            # notriosd configuration, flags (-no-gui, -gui-only on the GUI binary)
-  cli.md                # notriosctl commands, importers
-  api/rest.md           # REST usage guide (OpenAPI remains api/openapi.yaml)
-  api/mcp.md            # MCP tools guide
+  index.md              # overview + quick start
+  installation.md       # prerequisites, building, output paths, local install
+  service.md            # configuration reference, security, sidecar, backup/restore
+  cli.md                # notriosctl subcommand reference
+  api/rest.md           # REST usage guide with curl examples (OpenAPI remains api/openapi.yaml)
+  api/mcp.md            # MCP tools, profiles, client configuration
   query-language.md     # user-facing form of SEARCH_QUERY_LANGUAGE.md
-  gui.md                # built-in GUI: layout, notebooks, tags, themes
-  import-export.md      # importers, export, dry-run import configuration
+  gui.md                # built-in GUI: building, modes, layout, themes, errors
+  import-export.md      # per-source import workflows, archive export/import
+  troubleshooting.md    # verified symptoms and fixes
 ```
+
+The site nav in `scripts/build_docs_site.sh` must list every page (it currently does); the same script prefixes the GitHub Pages project base path (`/notrios/`).
 
 ## Rules
 

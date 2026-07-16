@@ -72,7 +72,9 @@ func OpenSQLiteWithAssetStore(path, assetRoot string) (*SQLiteStore, error) {
 		return nil, fmt.Errorf("open sqlite: %s", msg)
 	}
 	s := &SQLiteStore{db: db, path: path, assetRoot: assetRoot}
-	if err := s.exec("PRAGMA foreign_keys = ON; PRAGMA journal_mode = WAL;"); err != nil {
+	// busy_timeout lets a CLI import and the running service share the file
+	// without immediate "database is locked" failures on write overlap.
+	if err := s.exec("PRAGMA foreign_keys = ON; PRAGMA journal_mode = WAL; PRAGMA busy_timeout = 5000;"); err != nil {
 		_ = s.Close()
 		return nil, err
 	}

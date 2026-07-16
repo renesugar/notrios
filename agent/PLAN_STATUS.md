@@ -51,6 +51,8 @@ v0.2 Notrios redesign foundation (`PLAN.md`). Tasks **R1 (documentation redesign
 
 - R16 changes (release prep): Go dependency licenses audited under the GUI build tags (MIT/BSD/Apache only) and npm production licenses audited (permissive + build-time MPL from lightningcss; our web package now declares Apache-2.0); CI expanded (vet/tests/scaffold with libsqlite3-dev, web typecheck/build, smoke + performance smoke, GUI compile check with Wails/WebKit tags); `RELEASE_CHECKLIST.md` rewritten with the audited state and the exact first-push sequence; README final pass. See `plans/v0.2/016-release-preparation.md`.
 
+- 2026-07-16 documentation completeness pass: installation + troubleshooting guides, contributor-setup/packaging rewrites, accurate CLI reference, per-source import docs (Joplin RAW detailed), config/backup/API guides with live-verified examples; build hygiene (full Makefile with clean/clobber/precheck, gitignore fixes, tracked artifacts removed, release-zip exclusions); small truthfulness fixes: real `notriosctl doctor`, trashed-note re-import guards for Joplin/Obsidian, SQLite busy_timeout, version 0.2.0, web title.
+
 ## Next suggested step
 
 Draft the v0.3 plan ("Import, resource, and media hardening") from `ROADMAP.md` and ask the user before starting it. The GitHub push itself is the user's step.

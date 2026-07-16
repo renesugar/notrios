@@ -22,80 +22,40 @@ User documentation lives under [`docs/`](docs/index.md) and is published as a Gi
 
 ## Quick start
 
-```bash
-# Go service and CLI stubs
-go test ./...
-go run ./cmd/notriosd -config config/config.example.yaml
-# Optional overrides still work:
-# go run ./cmd/notriosd -addr 127.0.0.1:8080 -db data/notes.sqlite
-
-# In another terminal
-curl http://127.0.0.1:8080/healthz
-curl http://127.0.0.1:8080/api/v1/status
-
-# MCP MVP metadata and tool listing
-curl http://127.0.0.1:8080/mcp
-curl -X POST http://127.0.0.1:8080/mcp \
-  -H "Content-Type: application/json" \
-  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
-
-# Create, update, and search a persisted Markdown note
-curl -X POST http://127.0.0.1:8080/api/v1/documents \
-  -H "Content-Type: application/json" \
-  -d '{"title":"Hello","body":"SQLite FTS5 is wired."}'
-
-curl -X POST http://127.0.0.1:8080/api/v1/search \
-  -H "Content-Type: application/json" \
-  -d '{"query":"SQLite FTS5","limit":10}'
-
-# After creating notes with Markdown links, inspect outgoing links/backlinks:
-# curl http://127.0.0.1:8080/api/v1/documents/<doc_id>/links?direction=both
-# curl -X POST http://127.0.0.1:8080/api/v1/graph \
-#   -H "Content-Type: application/json" \
-#   -d '{"roots":["<doc_id>"],"direction":"both","max_nodes":20,"max_edges":40}'
-
-# To update a note, send the current revision from the create/read response:
-# curl -X PUT http://127.0.0.1:8080/api/v1/documents/<doc_id> \
-#   -H "Content-Type: application/json" \
-#   -d '{"title":"Hello v2","body":"Updated body","base_revision_id":"<current_revision_id>"}'
-
-go run ./cmd/notriosctl doctor
-```
-
-Frontend dependencies are declared and can be installed with npm:
+Requirements (Ubuntu-tested): Go 1.25+, `build-essential pkg-config libsqlite3-dev`, and Node 22 for the web UI. Full details, GUI prerequisites, and local installation: [docs/installation.md](docs/installation.md).
 
 ```bash
-cd web
-npm install
-npm run dev
+git clone https://github.com/renesugar/notrios.git
+cd notrios
+make build web              # bin/notriosd, bin/notriosctl, web/dist/
+./bin/notriosd -config config/config.example.yaml
+# open http://127.0.0.1:8080  (REST: /api/v1, MCP: /mcp)
 ```
 
+Desktop GUI (needs `libgtk-3-dev libwebkit2gtk-4.1-dev`):
+
+```bash
+make gui && ./bin/notrios
+```
+
+Everything also runs from source: `go run ./cmd/notriosd -config config/config.example.yaml` and `go run ./cmd/notriosctl <command>`. `make help` lists all build, test, docs, and cleanup targets. There are no official prebuilt binaries yet; Notrios is built from source on Ubuntu Linux (the only tested platform).
 
 ## Configuration
 
 `notriosd` now loads runtime configuration from `-config <path>`. When no path is supplied, it loads `config/config.example.yaml` from a source checkout if that file exists; otherwise it uses compiled local-development defaults. The `-addr` and `-db` flags remain available as explicit overrides.
 
-On startup, the service creates the configured data directory, SQLite database parent directory, asset store, projection directory, and search-sidecar index directory (`search_sidecar.index_dir`). `/api/v1/status` reports the active storage roots, database state, schema version, capability flags, and search limits. The current schema version is 4 after the Markdown link parser and graph task; the Joplin RAW and Obsidian importers reuse this schema.
+On startup, the service creates the configured data directory, SQLite database parent directory, asset store, projection directory, and search-sidecar index directory (`search_sidecar.index_dir`). `/api/v1/status` reports the active storage roots, database state, schema version, capability flags, and search limits. The current schema version is reported by `/api/v1/status` (`database_info.schema_version`).
 
 ## Project status
 
 - v0.1 MVP: complete (see `MVP_RELEASE_REPORT.md`).
 - v0.2 Notrios redesign: **complete** (all 16 tasks; see [`PLAN.md`](PLAN.md) and `plans/v0.2/`) — notebooks/tags/search notebooks, source provenance with conversation threads, the query language, the optional Recoll sidecar, five importers, query-scoped export/import, the Wails GUI with themes, and the documentation site.
 - Next milestone: v0.3 import/resource/media hardening (see [`ROADMAP.md`](ROADMAP.md)); a new `PLAN.md` should be drafted from the roadmap with user approval.
-- Scaffold creation plan: [`SCAFFOLD_CREATION_PLAN.md`](SCAFFOLD_CREATION_PLAN.md).
 - Agent progress/attempt tracking: [`agent/PLAN_STATUS.md`](agent/PLAN_STATUS.md), [`agent/ATTEMPT_LOG.jsonl`](agent/ATTEMPT_LOG.jsonl), and [`agent/MODEL_LOG.jsonl`](agent/MODEL_LOG.jsonl).
 
-## Repository setup
+## Contributing
 
-The repository is a local git repo: `main` holds the pre-redesign baseline; development happens on `develop`. The eventual public home is `https://github.com/renesugar/notrios`:
-
-```bash
-git remote add origin https://github.com/renesugar/notrios.git
-git branch -M main
-git push -u origin main
-```
-
-Configure branch protection so `main` accepts only reviewed merges from `develop` or release branches.
+Development happens on `develop`; `main` takes reviewed merges. [`ENVIRONMENT_SETUP.md`](ENVIRONMENT_SETUP.md) covers the contributor environment, everyday `make` targets, validation, and the cleanup/pre-checkin workflow (`make clean`, `make precheck`).
 
 ## License
 
@@ -109,75 +69,21 @@ Notrios is licensed under the [Apache License 2.0](LICENSE). All code and depend
 - `DOCS_SITE.md` — GitHub Pages documentation site with PageFind and the Help notebook.
 - `CODING_CLIENT_HANDOFF.md` — agent handoff (formerly `CODEX_HANDOFF.md`).
 
-## Design documents added during scaffold review
+## Historical design and report documents
 
-- `FEATURE_MATRIX.md` — feature inventory, milestone placement, and ownership.
-- `UI_DESIGN.md` — built-in React UI, `md-editor-rt`, preview links, resources, and future editor migration.
-- `PUBLISHING_POLICY.md` — Quartz publishing profiles and privacy-safe subset export.
-- `VERSIONING_AND_SYNC_POLICY.md` — SQLite revisions first, optional go-git/Fossil checkpoint adapters.
-- `WORKSPACE_MAINTENANCE.md` — Foam-style query blocks, lint/fix, outlines, block anchors, and tag maintenance.
-- `SCAFFOLD_REVIEW_REPORT.md` — Step 2 review summary.
+The scaffold-era and v0.1-MVP reports (`SCAFFOLD_*`, `MVP_TASK*_REPORT.md`, `MVP_RELEASE_REPORT.md`, `SCAFFOLD_CREATION_PLAN.md`) are retained as historical records of how the project was built; they intentionally keep the old "Notes Companion" naming and superseded design decisions. Living design documents: `FEATURE_MATRIX.md`, `UI_DESIGN.md`, `PUBLISHING_POLICY.md`, `VERSIONING_AND_SYNC_POLICY.md`, `WORKSPACE_MAINTENANCE.md`, plus the redesign documents listed above.
 
-- `SCAFFOLD_STEP4_REPORT.md` — Step 4 runnable persistence slice summary.
-- `SCAFFOLD_STEP5_REPORT.md` — Step 5 UI integration summary.
-- `SCAFFOLD_STEP6_REPORT.md` — Step 6 Codex handoff summary.
-- `MVP_TASK1_REPORT.md` — configuration, directory creation, and enriched status endpoint summary.
-- `MVP_TASK2_REPORT.md` — document update/delete/revision/restore implementation summary.
+## Importing your notes
 
-- `MVP_TASK4_REPORT.md` — content-addressed resource store implementation summary.
-- `MVP_TASK5_REPORT.md` — Markdown link parser, backlinks, graph endpoint, and UI link display summary.
-- `MVP_TASK6_REPORT.md` — `md-editor-rt` editor/preview and preview app-link routing summary.
-- `MVP_TASK7_REPORT.md` — read-only MCP MVP adapter summary.
-- `MVP_TASK8_REPORT.md` — Joplin RAW importer MVP summary.
-- `MVP_TASK9_REPORT.md` — Obsidian vault importer MVP summary.
+`notriosctl` imports Joplin RAW exports, Obsidian vaults, Twitter/X archives, ChatGPT exports, and Claude exports, and round-trips a native archive format — each with a `--dry-run` mode and an idempotent re-run story. See [docs/import-export.md](docs/import-export.md) and [docs/cli.md](docs/cli.md).
 
-
-## MVP Task 6 UI status
-
-The browser UI now uses `md-editor-rt` for Markdown editing and preview. Rendered preview links using `document://.../documents/{id}` open the target note inside the UI; rendered `resource://.../resources/{id}` links download through the REST resource endpoint. Local resource images are rewritten to REST content URLs in preview.
-
-## MVP Task 8 Joplin RAW import status
-
-`notriosctl` now supports a first Joplin RAW importer:
+## Validation
 
 ```bash
-go run ./cmd/notriosctl import joplin-raw \
-  --db ./data/notes.sqlite \
-  --asset-store ./data/assets \
-  --collection default \
-  /path/to/joplin-raw-export
-```
-
-The importer parses Joplin notes, notebooks, tags, note-tag joins, and resources; stores imported notes/resources with deterministic source-derived IDs; rewrites `:/<id>` links to `document://` and `resource://` URIs; adds selected Joplin metadata to Markdown frontmatter; attaches referenced resources; and prints a JSON import report. Use `--dry-run` to inspect a source directory without writing.
-
-## MVP Task 9 Obsidian import status
-
-`notriosctl` now supports a first Obsidian vault importer:
-
-```bash
-go run ./cmd/notriosctl import obsidian \
-  --db ./data/notes.sqlite \
-  --asset-store ./data/assets \
-  --collection default \
-  /path/to/obsidian-vault
-```
-
-The importer scans Markdown files and non-Markdown assets, skips `.obsidian` and common VCS/dependency folders, imports notes/resources with deterministic vault-path-derived IDs, augments/preserves frontmatter with `source_system: obsidian` and `obsidian_path`, attaches referenced local assets, preserves Wikilinks/embeds/unresolved links in Markdown, and refreshes link rows after the batch so graph/backlinks work for notes imported in any order. Use `--dry-run` to inspect a vault without writing.
-
-
-## v0.1 MVP release hardening
-
-The MVP release-hardening task added repeatable checks and packaging helpers:
-
-```bash
-go test ./...
-python3 scripts/check_required_files.py
-bash scripts/validate-scaffold.sh
-cd web && npm ci && npm run typecheck && npm run build
-bash scripts/mvp_smoke.sh
+make validate                 # tests + repository checks
+make smoke                    # end-to-end REST/MCP smoke test
 bash scripts/run_performance_smoke.sh
-bash scripts/package_release.sh /tmp/notrios-v0.1.0-mvp.zip
-python3 scripts/check_release_zip.py /tmp/notrios-v0.1.0-mvp.zip
+bash scripts/package_release.sh    # validated source ZIP into dist/
 ```
 
-See `PACKAGING.md`, `SECURITY_REVIEW.md`, `RELEASE_CHECKLIST.md`, and `MVP_RELEASE_REPORT.md` before tagging a repository release. `RELEASE_CHECKLIST.md` also documents the first-push sequence for `github.com/renesugar/notrios`.
+See `PACKAGING.md`, `SECURITY_REVIEW.md`, and `RELEASE_CHECKLIST.md` before tagging a release.

@@ -148,6 +148,21 @@ func Import(ctx context.Context, st store.Store, sourceDir string, options Optio
 				report.NotesUpdated++
 			}
 		} else if errors.Is(err, store.ErrNotFound) {
+			// The note may exist but sit in the user's Trash; never resurrect
+			// a note the user deleted — refresh its provenance below only.
+			if _, srcErr := st.FindDocumentBySource(ctx, "obsidian", filepath.ToSlash(note.RelPath)); srcErr == nil {
+				report.NotesUnchanged++
+				if _, err := st.SetDocumentSource(ctx, store.SetDocumentSourceRequest{
+					DocumentID:   logicalID,
+					SourceSystem: "obsidian",
+					ExternalID:   filepath.ToSlash(note.RelPath),
+				}); err != nil {
+					return report, err
+				}
+				continue
+			} else if !errors.Is(srcErr, store.ErrNotFound) {
+				return report, srcErr
+			}
 			_, err = st.CreateDocument(ctx, store.CreateDocumentRequest{
 				PreferredID:  logicalID,
 				CollectionID: collectionID,

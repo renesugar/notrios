@@ -2,6 +2,7 @@ package obsidian
 
 import (
 	"context"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -118,6 +119,24 @@ Referenced block. ^block-a
 	}
 	if report2.NotesUnchanged != 2 || report2.ResourcesExisting != 1 {
 		t.Fatalf("second import was not idempotent enough: %#v", report2)
+	}
+
+
+	// Trashing an imported note and re-running the import must not
+	// resurrect it (or crash on the reserved document ID).
+	trashed, _ := st.GetDocument(ctx, targetID)
+	if err := st.DeleteDocument(ctx, store.DeleteDocumentRequest{ID: trashed.ID, BaseRevisionID: trashed.CurrentRevisionID}); err != nil {
+		t.Fatalf("trash imported note: %v", err)
+	}
+	rerun, err := Import(ctx, st, dir, Options{CollectionID: "default"})
+	if err != nil {
+		t.Fatalf("re-import with trashed note: %v", err)
+	}
+	if rerun.NotesImported != 0 {
+		t.Fatalf("trashed note resurrected: %#v", rerun)
+	}
+	if _, err := st.GetDocument(ctx, targetID); !errors.Is(err, store.ErrNotFound) {
+		t.Fatalf("trashed note must stay trashed: %v", err)
 	}
 }
 

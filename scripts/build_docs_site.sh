@@ -11,6 +11,7 @@ mkdir -p "$OUT"
 
 nav='<nav class="site-nav">
   <a href="/notrios/index.html"><strong>Notrios</strong></a>
+  <a href="/notrios/installation.html">Install</a>
   <a href="/notrios/service.html">Service</a>
   <a href="/notrios/cli.html">CLI</a>
   <a href="/notrios/query-language.html">Query language</a>
@@ -18,6 +19,7 @@ nav='<nav class="site-nav">
   <a href="/notrios/import-export.html">Import &amp; export</a>
   <a href="/notrios/api/rest.html">REST API</a>
   <a href="/notrios/api/mcp.html">MCP</a>
+  <a href="/notrios/troubleshooting.html">Troubleshooting</a>
 </nav>
 <div id="search"></div>'
 

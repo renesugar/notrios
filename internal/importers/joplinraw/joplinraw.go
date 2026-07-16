@@ -170,6 +170,17 @@ func Import(ctx context.Context, st store.Store, sourceDir string, options Optio
 			}
 			report.NotesUpdated++
 		} else if errors.Is(err, store.ErrNotFound) {
+			// The note may exist but sit in the user's Trash; never resurrect
+			// a note the user deleted — refresh its provenance below only.
+			if _, srcErr := st.FindDocumentBySource(ctx, "joplin", note.ID); srcErr == nil {
+				report.NotesUnchanged++
+				if err := setSource(); err != nil {
+					return report, err
+				}
+				continue
+			} else if !errors.Is(srcErr, store.ErrNotFound) {
+				return report, srcErr
+			}
 			_, err = st.CreateDocument(ctx, store.CreateDocumentRequest{PreferredID: logicalID, CollectionID: collectionID, Title: noteTitle(note), Body: body, BodyMIMEType: "text/markdown", Message: "import from Joplin RAW"})
 			if err != nil {
 				return report, err
