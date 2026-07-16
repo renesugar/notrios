@@ -1,6 +1,6 @@
 # Plan: v0.2 — Notrios redesign foundation
 
-Status: active. Tasks R1–R15 are complete; the final task is R16 (GitHub release preparation). Ask the user before starting it.
+Status: **complete** (2026-07-15). All 16 tasks are done and archived under `plans/v0.2/`. Per `AGENTS.md`, the next `PLAN.md` should be drafted from `ROADMAP.md` (v0.3 import/resource/media hardening) with user approval before work starts.
 
 This plan supersedes the earlier v0.2 draft ("Import, Resource, and Media Hardening", archived at `plans/v0.2/001-import-resource-media-hardening.md`). The media-hardening items remain on the roadmap; they are re-sequenced behind the redesign items below.
 
@@ -139,7 +139,7 @@ Working state: with Recoll installed, field queries (`tag:`, `author:`, `publish
 - GitHub Pages site built from `docs/` with PageFind search.
 - Seed the protected read-only "Help" notebook from the same content for offline use; `notebook:help` searches work.
 
-### R16. GitHub release preparation
+### R16. GitHub release preparation — COMPLETED (push itself is the user's step; see `RELEASE_CHECKLIST.md`)
 
 - Verify licenses of all dependencies are MIT/Apache-2.0 compatible.
 - CI, branch protection notes, and the push sequence:

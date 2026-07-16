@@ -2,7 +2,7 @@
 
 ## Current phase
 
-v0.2 Notrios redesign foundation (`PLAN.md`). Tasks **R1 (documentation redesign)**, **R2 (code rename + Apache-2.0 license)**, **R3 (schema v5 — notebooks/tags/search notebooks)**, and **R4 (schema v6 — source provenance and threads)** are completed, as are **R5 (notebooks/tags/trash REST + MCP read tools)**, **R6 (query-language adapter)**, **R7 (Recoll integration)**, **R8 (full-client MCP/REST surface)**, **R9 (Twitter/X archive importer)**, **R10 (ChatGPT importer)**, and **R11 (Claude importer)**; as is **R12 (query-scoped export/import with dry-run)**; **R13 (Wails GUI shell)**, **R14 (GUI themes)**, and **R15 (Help notebook + documentation site)**; the final task is **R16 (GitHub release preparation)** — ask the user before starting it.
+v0.2 Notrios redesign foundation (`PLAN.md`). Tasks **R1 (documentation redesign)**, **R2 (code rename + Apache-2.0 license)**, **R3 (schema v5 — notebooks/tags/search notebooks)**, and **R4 (schema v6 — source provenance and threads)** are completed, as are **R5 (notebooks/tags/trash REST + MCP read tools)**, **R6 (query-language adapter)**, **R7 (Recoll integration)**, **R8 (full-client MCP/REST surface)**, **R9 (Twitter/X archive importer)**, **R10 (ChatGPT importer)**, and **R11 (Claude importer)**; as is **R12 (query-scoped export/import with dry-run)**; **R13 (Wails GUI shell)**, **R14 (GUI themes)**, and **R15 (Help notebook + documentation site)**; and **R16 (GitHub release preparation)** — **the v0.2 plan is complete**. Next: draft a v0.3 plan from `ROADMAP.md` with user approval; the first GitHub push is the user's step (`RELEASE_CHECKLIST.md`).
 
 ## Current working state
 
@@ -49,9 +49,11 @@ v0.2 Notrios redesign foundation (`PLAN.md`). Tasks **R1 (documentation redesign
 
 - R15 changes (docs + Help notebook): user documentation under `docs/`; `scripts/build_docs_site.sh` builds the static site with a PageFind search index (verified live in a browser); `.github/workflows/docs.yml` deploys to GitHub Pages; `internal/helpdocs` + `notriosctl seed-help` mirror docs into the read-only Help notebook deterministically; Help notes now enforced read-only at REST/MCP layers (403). See `plans/v0.2/015-docs-site-help-notebook.md`.
 
+- R16 changes (release prep): Go dependency licenses audited under the GUI build tags (MIT/BSD/Apache only) and npm production licenses audited (permissive + build-time MPL from lightningcss; our web package now declares Apache-2.0); CI expanded (vet/tests/scaffold with libsqlite3-dev, web typecheck/build, smoke + performance smoke, GUI compile check with Wails/WebKit tags); `RELEASE_CHECKLIST.md` rewritten with the audited state and the exact first-push sequence; README final pass. See `plans/v0.2/016-release-preparation.md`.
+
 ## Next suggested step
 
-Task R16: GitHub release preparation — dependency license compatibility check, CI review, README final pass, push sequence for github.com/renesugar/notrios.
+Draft the v0.3 plan ("Import, resource, and media hardening") from `ROADMAP.md` and ask the user before starting it. The GitHub push itself is the user's step.
 
 ## Validation
 

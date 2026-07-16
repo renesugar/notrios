@@ -3,7 +3,7 @@
 Notrios (formerly "Notes Companion") is a local-first note-taking, search, import, and publishing system for very large Markdown and document collections.
 It combines a Go REST/MCP service (`notriosd`), a built-in GUI, SQLite/FTS5-backed canonical storage, content-addressed resources, optional Recoll-derived search/extraction, and support for third-party native clients (C++/Qt, Go/Wails, Rust/Tauri) over the same API.
 
-The v0.1 MVP is complete; the project is now in the **Notrios redesign** phase — see [`PLAN.md`](PLAN.md). The repository is structured so a coding agent can resume safely after usage limits or model changes.
+The v0.1 MVP and the v0.2 Notrios redesign are complete — see [`PLAN.md`](PLAN.md) and [`ROADMAP.md`](ROADMAP.md). The repository is structured so a coding agent can resume safely after usage limits or model changes.
 
 ## Technology choices
 
@@ -15,6 +15,10 @@ The v0.1 MVP is complete; the project is now in the **Notrios redesign** phase �
 - **Import sources:** Joplin RAW, Obsidian vaults, Twitter/X archives (thread-preserving), ChatGPT exports, Claude exports.
 - **Resource store:** content-addressed assets with exact hashes and later perceptual hashes.
 - **Publishing/docs:** Quartz-compatible curated subset publishing planned; project documentation ships as a GitHub Pages site with PageFind search (`DOCS_SITE.md`).
+
+## Documentation
+
+User documentation lives under [`docs/`](docs/index.md) and is published as a GitHub Pages site with PageFind search (`bash scripts/build_docs_site.sh` builds it locally). `notriosctl seed-help` mirrors the same content into the app's built-in read-only Help notebook for offline use.
 
 ## Quick start
 
@@ -76,7 +80,8 @@ On startup, the service creates the configured data directory, SQLite database p
 ## Project status
 
 - v0.1 MVP: complete (see `MVP_RELEASE_REPORT.md`).
-- Current phase: **v0.2 Notrios redesign foundation** — active plan in [`PLAN.md`](PLAN.md); tasks R1 (documentation redesign) and R2 (code rename + Apache-2.0 license) done.
+- v0.2 Notrios redesign: **complete** (all 16 tasks; see [`PLAN.md`](PLAN.md) and `plans/v0.2/`) — notebooks/tags/search notebooks, source provenance with conversation threads, the query language, the optional Recoll sidecar, five importers, query-scoped export/import, the Wails GUI with themes, and the documentation site.
+- Next milestone: v0.3 import/resource/media hardening (see [`ROADMAP.md`](ROADMAP.md)); a new `PLAN.md` should be drafted from the roadmap with user approval.
 - Scaffold creation plan: [`SCAFFOLD_CREATION_PLAN.md`](SCAFFOLD_CREATION_PLAN.md).
 - Agent progress/attempt tracking: [`agent/PLAN_STATUS.md`](agent/PLAN_STATUS.md), [`agent/ATTEMPT_LOG.jsonl`](agent/ATTEMPT_LOG.jsonl), and [`agent/MODEL_LOG.jsonl`](agent/MODEL_LOG.jsonl).
 
@@ -175,4 +180,4 @@ bash scripts/package_release.sh /tmp/notrios-v0.1.0-mvp.zip
 python3 scripts/check_release_zip.py /tmp/notrios-v0.1.0-mvp.zip
 ```
 
-See `PACKAGING.md`, `SECURITY_REVIEW.md`, `RELEASE_CHECKLIST.md`, and `MVP_RELEASE_REPORT.md` before tagging a repository release. `PLAN.md` now contains the draft v0.2 plan and should not be started until the user approves.
+See `PACKAGING.md`, `SECURITY_REVIEW.md`, `RELEASE_CHECKLIST.md`, and `MVP_RELEASE_REPORT.md` before tagging a repository release. `RELEASE_CHECKLIST.md` also documents the first-push sequence for `github.com/renesugar/notrios`.
