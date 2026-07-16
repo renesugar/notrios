@@ -29,6 +29,11 @@ forbidden_prefixes = (
     "web/node_modules/",
     "data/",
     ".git/",
+    ".claude/",
+    ".playwright-mcp/",
+    "_site/",
+    "bin/",
+    "dist/",
 )
 
 with zipfile.ZipFile(zip_path) as zf:
@@ -42,7 +47,13 @@ with zipfile.ZipFile(zip_path) as zf:
     if not any(name.startswith("web/dist/assets/") for name in names):
         print("missing web/dist/assets/ entries")
         sys.exit(1)
-    forbidden = sorted(name for name in names if name.startswith(forbidden_prefixes))
+    forbidden = sorted(
+        name
+        for name in names
+        if name.startswith(forbidden_prefixes)
+        or "__pycache__/" in name
+        or name.endswith((".pyc", ".sqlite", ".zip", "~"))
+    )
     if forbidden:
         print("forbidden zip entries present:")
         for name in forbidden[:50]:

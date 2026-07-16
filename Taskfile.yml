@@ -1,5 +1,7 @@
 version: '3'
 
+# Mirrors the primary Makefile targets for go-task users. `make help` lists
+# the full set; the Makefile remains the reference build entry point.
 tasks:
   test:
     cmds:
@@ -7,9 +9,24 @@ tasks:
   validate:
     cmds:
       - bash scripts/validate-scaffold.sh
+  build:
+    cmds:
+      - make build
+  web:
+    cmds:
+      - make web
+  gui:
+    cmds:
+      - make gui
+  docs:
+    cmds:
+      - make docs
   serve:
     cmds:
       - go run ./cmd/notriosd -addr 127.0.0.1:8080
   doctor:
     cmds:
       - go run ./cmd/notriosctl doctor
+  clean:
+    cmds:
+      - make clean

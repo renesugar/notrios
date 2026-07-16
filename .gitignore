@@ -11,14 +11,31 @@ dist/
 web/dist/
 web/node_modules/
 
-# Go
+# Go build/test artifacts (go build in the repo root writes binaries here)
 coverage.out
+coverage.*
+*.test
+*.prof
+/notrios
+/notriosd
+/notriosctl
+
+# Python bytecode caches (scripts/ helpers)
+__pycache__/
+*.py[cod]
+
+# Browser-automation output (Playwright MCP)
+.playwright-mcp/
+
+# Release archives (scripts/package_release.sh)
+/notrios-*.zip
 
 # OS/editor
 .DS_Store
 .idea/
 .vscode/
 *.swp
+*~
 
 # Private imports
 private-testdata/
