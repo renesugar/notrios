@@ -194,3 +194,54 @@ func TestHelpNotesAreReadOnly(t *testing.T) {
 		t.Fatalf("move out of Help must be forbidden: %d", rr.Code)
 	}
 }
+
+func TestEditableCapabilityFlag(t *testing.T) {
+	s := newNotebookServer(t)
+
+	// Normal notes are editable.
+	doc := createNote(t, s, "normal", "plain body")
+	if !getDocJSON(t, s, doc.ID).Editable {
+		t.Fatalf("normal note must be editable")
+	}
+
+	// Help notes are not, and search hits agree.
+	help, err := s.store.CreateDocument(t.Context(), store.CreateDocumentRequest{
+		PreferredID: "doc_help_flag", NotebookID: store.HelpNotebookID,
+		Title: "Help flag page", Body: "flagcheck body",
+	})
+	if err != nil {
+		t.Fatalf("seed help: %v", err)
+	}
+	if getDocJSON(t, s, help.ID).Editable {
+		t.Fatalf("Help note must report editable=false")
+	}
+	rr := doJSON(t, s, http.MethodPost, "/api/v1/search", `{"query":"flagcheck","limit":10}`)
+	if !strings.Contains(rr.Body.String(), `"editable":false`) {
+		t.Fatalf("search JSON must serialize editable=false explicitly (no omitempty): %s", rr.Body.String())
+	}
+	var res struct {
+		Hits []struct {
+			ID       string `json:"id"`
+			Editable bool   `json:"editable"`
+		} `json:"hits"`
+	}
+	if err := json.NewDecoder(rr.Body).Decode(&res); err != nil || len(res.Hits) != 1 {
+		t.Fatalf("search: %+v err=%v", res, err)
+	}
+	if res.Hits[0].Editable {
+		t.Fatalf("Help search hit must report editable=false")
+	}
+}
+
+func getDocJSON(t *testing.T, s *Server, id string) api.Document {
+	t.Helper()
+	rr := doJSON(t, s, http.MethodGet, "/api/v1/documents/"+id, "")
+	if rr.Code != http.StatusOK {
+		t.Fatalf("get %s: %d", id, rr.Code)
+	}
+	var doc api.Document
+	if err := json.NewDecoder(rr.Body).Decode(&doc); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	return doc
+}

@@ -850,6 +850,10 @@ components:
         id: { type: string }
         uri: { type: string }
         collection_id: { type: string }
+        notebook_id: { type: string }
+        editable:
+          type: boolean
+          description: Server-authoritative capability flag; false for protected (Help) and trashed notes. Clients must not infer editability from names.
         title: { type: string }
         body_mime_type: { type: string }
         body: { type: string }

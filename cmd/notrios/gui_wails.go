@@ -50,8 +50,10 @@ func runGUI(handler http.Handler) error {
 	helpMenu := appMenu.AddSubmenu("Help")
 	helpMenu.AddText("Notrios Help", nil, func(_ *menu.CallbackData) {
 		if appCtx != nil {
-			// The Help notebook holds the offline documentation.
-			runtime.WindowExecJS(appCtx, `window.dispatchEvent(new CustomEvent("notrios:open-help"));`)
+			// The Help notebook holds the offline documentation. Set a flag
+			// before dispatching so a click that lands before the React app
+			// has mounted is picked up on mount instead of being lost.
+			runtime.WindowExecJS(appCtx, `window.__notriosOpenHelp = Date.now(); window.dispatchEvent(new CustomEvent("notrios:open-help"));`)
 		}
 	})
 

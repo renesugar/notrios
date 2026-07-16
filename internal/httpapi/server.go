@@ -845,6 +845,7 @@ func toAPIDocument(doc store.Document) api.Document {
 		URI:               doc.URI,
 		CollectionID:      doc.CollectionID,
 		NotebookID:        doc.NotebookID,
+		Editable:          doc.NotebookID != store.HelpNotebookID && doc.DeletedAt.IsZero(),
 		Title:             doc.Title,
 		BodyMIMEType:      doc.BodyMIMEType,
 		Body:              doc.Body,
@@ -866,7 +867,7 @@ func toAPISearchResponse(result store.SearchResponse) api.SearchResponse {
 			Title:        hit.Title,
 			Snippet:      hit.Snippet,
 			Score:        hit.Score,
-			Editable:     true,
+			Editable:     hit.NotebookID != store.HelpNotebookID,
 		})
 	}
 	return api.SearchResponse{Hits: hits, NextCursor: result.NextCursor}

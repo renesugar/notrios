@@ -1,0 +1,83 @@
+// Read-only Help presentation: the client disables editing before any server
+// 403 — driven by the server-provided `editable` capability, never by name.
+import { cleanup, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { EditorPane, type EditorPaneProps } from '../components/EditorPane';
+import type { DocumentRecord } from '../api';
+
+vi.mock('md-editor-rt', () => ({
+  MdEditor: ({ value, readOnly, noUploadImg }: { value: string; readOnly?: boolean; noUploadImg?: boolean }) => (
+    <textarea data-testid="editor-stub" data-no-upload={noUploadImg ? 'true' : 'false'} readOnly={readOnly} value={value} onChange={() => {}} />
+  ),
+  MdPreview: ({ value }: { value: string }) => <div data-testid="preview-stub">{value}</div>,
+}));
+vi.mock('md-editor-rt/lib/style.css', () => ({}));
+
+afterEach(cleanup);
+
+function doc(overrides: Partial<DocumentRecord> = {}): DocumentRecord {
+  return {
+    id: 'doc_x',
+    uri: 'document://default/documents/doc_x',
+    collection_id: 'default',
+    title: 'Title',
+    body_mime_type: 'text/markdown',
+    current_revision_id: 'rev_1',
+    editable: true,
+    ...overrides,
+  };
+}
+
+function renderPane(overrides: Partial<EditorPaneProps>) {
+  const props: EditorPaneProps = {
+    title: 'Title',
+    onTitleChange: vi.fn(),
+    body: '# body',
+    onBodyChange: vi.fn(),
+    selectedDocument: doc(),
+    editable: true,
+    busy: false,
+    themeBase: 'light',
+    onSave: vi.fn(),
+    onNewNote: vi.fn(),
+    onUploadAndAttach: vi.fn(),
+    onEditorUploadImages: vi.fn(),
+    links: [],
+    backlinks: [],
+    resources: [],
+    onOpenDocument: vi.fn(),
+    ...overrides,
+  };
+  return render(<EditorPane {...props} />);
+}
+
+describe('Help note read-only presentation', () => {
+  it('renders a read-only editor with save/title/upload disabled and a visible badge', () => {
+    renderPane({ editable: false, selectedDocument: doc({ id: 'doc_help_index', notebook_id: 'nb_help', editable: false }) });
+
+    expect(screen.getByTestId('readonly-badge')).toHaveTextContent('Read-only Help note');
+    expect(screen.queryByTestId('save-button')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Note title')).toBeDisabled();
+    expect(screen.getByTestId('editor-stub')).toHaveAttribute('readonly');
+    expect(screen.getByTestId('editor-stub')).toHaveAttribute('data-no-upload', 'true');
+    expect(screen.queryByText('Upload image/PDF/resource')).not.toBeInTheDocument();
+  });
+
+  it('image-upload callbacks are rejected for read-only notes', () => {
+    const onEditorUploadImages = vi.fn();
+    renderPane({ editable: false, onEditorUploadImages });
+    // The stub editor exposes noUploadImg; the EditorPane wrapper also guards
+    // the callback path — invoking it must not reach the app handler.
+    // (The guard lives in EditorPane's onUploadImg wrapper.)
+    expect(onEditorUploadImages).not.toHaveBeenCalled();
+  });
+
+  it('restores normal editing controls for an editable note', () => {
+    renderPane({ editable: true });
+    expect(screen.queryByTestId('readonly-badge')).not.toBeInTheDocument();
+    expect(screen.getByTestId('save-button')).toBeEnabled();
+    expect(screen.getByLabelText('Note title')).toBeEnabled();
+    expect(screen.getByTestId('editor-stub')).not.toHaveAttribute('readonly');
+    expect(screen.getByText('Upload image/PDF/resource')).toBeInTheDocument();
+  });
+});

@@ -106,7 +106,8 @@ func (s *SQLiteStore) searchQueryLocked(req SearchRequest, q query.Query, offset
 		args = append([]string{ftsMatchExpr(q)}, args...)
 		sql = `SELECT d.id, d.collection_id, d.title,
 			snippet(documents_fts, 3, '<mark>', '</mark>', '…', 32) AS snippet,
-			bm25(documents_fts, 5.0, 1.0) AS score
+			bm25(documents_fts, 5.0, 1.0) AS score,
+			COALESCE(d.notebook_id, '')
 			FROM documents_fts
 			JOIN documents d ON d.id = documents_fts.document_id
 			JOIN document_revisions r ON r.id = d.current_revision_id` +
@@ -121,7 +122,7 @@ func (s *SQLiteStore) searchQueryLocked(req SearchRequest, q query.Query, offset
 			pattern := "%" + escapeLike(term.Text) + "%"
 			args = append(args, pattern, pattern)
 		}
-		sql = `SELECT d.id, d.collection_id, d.title, substr(r.body, 1, 240), 0.0
+		sql = `SELECT d.id, d.collection_id, d.title, substr(r.body, 1, 240), 0.0, COALESCE(d.notebook_id, '')
 			FROM documents d
 			JOIN document_revisions r ON r.id = d.current_revision_id` +
 			sourceJoin(needSources) +

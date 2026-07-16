@@ -1614,11 +1614,12 @@ func (s *SQLiteStore) readHitsLocked(stmt *C.sqlite3_stmt) (SearchResponse, erro
 			collectionID := columnText(stmt, 1)
 			id := columnText(stmt, 0)
 			resp.Hits = append(resp.Hits, SearchHit{
-				ID:      id,
-				URI:     DocumentURI(collectionID, id),
-				Title:   columnText(stmt, 2),
-				Snippet: columnText(stmt, 3),
-				Score:   columnFloat(stmt, 4),
+				ID:         id,
+				URI:        DocumentURI(collectionID, id),
+				Title:      columnText(stmt, 2),
+				Snippet:    columnText(stmt, 3),
+				Score:      columnFloat(stmt, 4),
+				NotebookID: columnText(stmt, 5),
 			})
 		case C.SQLITE_DONE:
 			return resp, nil
