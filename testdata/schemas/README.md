@@ -8,6 +8,8 @@ user exports are stored in this repository.
   `data/tweets.js` (`window.YTD.tweets.part0`), covering the field subset the
   importer reads (`internal/importers/twitter`).
 - `twitter-account.schema.json` — the `data/account.js` account entry.
+- `chatgpt-conversations.schema.json` — ChatGPT export `conversations.json` (mapping-tree conversations; field subset read by `internal/importers/chatgpt`).
+- `claude-conversations.schema.json` — Claude export `conversations.json` (flat `chat_messages`; field subset read by `internal/importers/claude`).
 
 Regenerate after extending a fixture:
 

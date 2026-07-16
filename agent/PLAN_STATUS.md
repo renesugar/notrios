@@ -2,7 +2,7 @@
 
 ## Current phase
 
-v0.2 Notrios redesign foundation (`PLAN.md`). Tasks **R1 (documentation redesign)**, **R2 (code rename + Apache-2.0 license)**, **R3 (schema v5 — notebooks/tags/search notebooks)**, and **R4 (schema v6 — source provenance and threads)** are completed, as are **R5 (notebooks/tags/trash REST + MCP read tools)**, **R6 (query-language adapter)**, **R7 (Recoll integration)**, **R8 (full-client MCP/REST surface)**, and **R9 (Twitter/X archive importer)**; next task is **R10 (ChatGPT conversations importer)** — ask the user before starting it.
+v0.2 Notrios redesign foundation (`PLAN.md`). Tasks **R1 (documentation redesign)**, **R2 (code rename + Apache-2.0 license)**, **R3 (schema v5 — notebooks/tags/search notebooks)**, and **R4 (schema v6 — source provenance and threads)** are completed, as are **R5 (notebooks/tags/trash REST + MCP read tools)**, **R6 (query-language adapter)**, **R7 (Recoll integration)**, **R8 (full-client MCP/REST surface)**, **R9 (Twitter/X archive importer)**, **R10 (ChatGPT importer)**, and **R11 (Claude importer)**; next task is **R12 (query-scoped export and import-with-dry-run)** — ask the user before starting it.
 
 ## Current working state
 
@@ -39,9 +39,11 @@ v0.2 Notrios redesign foundation (`PLAN.md`). Tasks **R1 (documentation redesign
 
 - R9 changes (Twitter/X importer): `internal/importers/twitter` + `notriosctl import twitter` — parses `window.YTD` account/tweets files, recovers threads by walking in-reply-to chains among archived tweets, expands t.co URLs, imports `tweets_media` files as embedded resources, hashtags → tags, notes land in a 🐦 "Twitter" notebook, provenance rows (author, @handle, thread_id, reply_to, post URL, published) power `ListThreadDocuments` and purge protection; trashed tweets are never resurrected on re-import; dry run supported. genson-derived schemas in `testdata/schemas/`. See `plans/v0.2/010-twitter-importer.md`.
 
+- R10/R11 changes (conversation importers): `internal/importers/chatgpt` (mapping-tree parsing, current-node main path, system/tool + abandoned-branch skipping) and `internal/importers/claude` (flat chat_messages, content-block fallback); one note per conversation with role/timestamp Markdown sections in 🤖 "ChatGPT" / ✳️ "Claude" notebooks; provenance thread = conversation ID; shared upsert semantics (unchanged detection, no resurrection of trashed notes, purge protection); `notriosctl import chatgpt|claude` with dry run; genson schemas added. See `plans/v0.2/011-conversation-importers.md`.
+
 ## Next suggested step
 
-Task R10: ChatGPT conversations importer (references temnoon/openai_export_parser, slyubarskiy/chatgpt-conversation-extractor) — conversations.json parsing, one note per conversation with message thread provenance, synthetic fixtures.
+Task R12: query-scoped export preserving notebook structure; import dry run producing an import-configuration file with rename-on-import conflict checks; Joplin RAW/Obsidian/native archive population.
 
 ## Validation
 

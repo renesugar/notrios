@@ -173,3 +173,10 @@ This file is the codebase atlas. Update it whenever major files or directories a
 - `internal/importers/twitter/` — extracted-archive parser (`window.YTD` wrappers, tweets.js/tweet.js, account.js, tweets_media), in-reply-to thread recovery, t.co URL expansion, media-as-resources, hashtag tags, "Twitter" notebook, provenance rows, trashed-note non-resurrection, dry run.
 - `cmd/notriosctl` — `import twitter` subcommand.
 - `testdata/schemas/` — genson-derived JSON Schemas for the Twitter archive formats (synthetic samples only).
+
+## v0.2 tasks R10/R11 additions (conversation importers)
+
+- `internal/importers/chatgpt/` — ChatGPT `conversations.json` importer (mapping tree, current-node main path, system/tool skip).
+- `internal/importers/claude/` — Claude `conversations.json` importer (flat chat_messages, content blocks).
+- `cmd/notriosctl` — `import chatgpt` and `import claude` subcommands.
+- `testdata/schemas/` — genson-derived schemas for both export formats.

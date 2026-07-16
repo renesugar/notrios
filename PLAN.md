@@ -1,6 +1,6 @@
 # Plan: v0.2 — Notrios redesign foundation
 
-Status: active. Tasks R1–R9 are complete; next task is R10 (ChatGPT conversations importer). Ask the user before starting each task.
+Status: active. Tasks R1–R11 are complete; next task is R12 (query-scoped export and import-with-dry-run). Ask the user before starting each task.
 
 This plan supersedes the earlier v0.2 draft ("Import, Resource, and Media Hardening", archived at `plans/v0.2/001-import-resource-media-hardening.md`). The media-hardening items remain on the roadmap; they are re-sequenced behind the redesign items below.
 
@@ -108,11 +108,11 @@ Working state: with Recoll installed, field queries (`tag:`, `author:`, `publish
 - Parse Twitter/X archive exports (reference: doggy8088/x-archive-parser); recover conversation threads (author, author ID, thread ID, reply-to, post URLs), media resources, and a "Twitter" notebook.
 - Derive JSON schemas from sample data with genson (`uvx genson`) into `testdata/schemas/`; synthetic fixtures only — no private data in the repo.
 
-### R10. ChatGPT conversations importer
+### R10. ChatGPT conversations importer — COMPLETED
 
 - Parse ChatGPT exports (references: temnoon/openai_export_parser, slyubarskiy/chatgpt-conversation-extractor); one note per conversation or per message with thread provenance; synthetic fixtures.
 
-### R11. Claude conversations importer
+### R11. Claude conversations importer — COMPLETED
 
 - Parse Claude export JSON with the same provenance model; synthetic fixtures.
 
