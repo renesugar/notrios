@@ -3,6 +3,7 @@ package httpapi
 import (
 	"encoding/json"
 	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 
@@ -150,5 +151,46 @@ func TestMCPWriteToolsProfileGating(t *testing.T) {
 	rr = doJSON(t, se, http.MethodPost, "/mcp", `{"jsonrpc":"2.0","id":8,"method":"tools/call","params":{"name":"delete_note","arguments":{"document_id":"`+docID+`"}}}`)
 	if !strings.Contains(rr.Body.String(), "base revision") {
 		t.Fatalf("delete_note must require base_revision_id: %s", rr.Body.String())
+	}
+}
+
+func TestHelpNotesAreReadOnly(t *testing.T) {
+	s := newNotebookServer(t)
+
+	// Seed a help note directly at the store level (as notriosctl seed-help does).
+	doc, err := s.store.CreateDocument(t.Context(), store.CreateDocumentRequest{
+		PreferredID: "doc_help_test", NotebookID: store.HelpNotebookID,
+		Title: "Help page", Body: "read-only body",
+	})
+	if err != nil {
+		t.Fatalf("seed: %v", err)
+	}
+
+	// Reading works; every mutation path returns 403.
+	rr := doJSON(t, s, http.MethodGet, "/api/v1/documents/"+doc.ID, "")
+	if rr.Code != http.StatusOK {
+		t.Fatalf("read: %d", rr.Code)
+	}
+	put := httptest.NewRequest(http.MethodPut, "/api/v1/documents/"+doc.ID, strings.NewReader(`{"title":"x","body":"y"}`))
+	put.Header.Set("If-Match", `"`+doc.CurrentRevisionID+`"`)
+	rec := httptest.NewRecorder()
+	s.ServeHTTP(rec, put)
+	if rec.Code != http.StatusForbidden {
+		t.Fatalf("PUT must be forbidden: %d %s", rec.Code, rec.Body.String())
+	}
+	del := httptest.NewRequest(http.MethodDelete, "/api/v1/documents/"+doc.ID, nil)
+	del.Header.Set("If-Match", `"`+doc.CurrentRevisionID+`"`)
+	rec = httptest.NewRecorder()
+	s.ServeHTTP(rec, del)
+	if rec.Code != http.StatusForbidden {
+		t.Fatalf("DELETE must be forbidden: %d", rec.Code)
+	}
+	rr = doJSON(t, s, http.MethodPost, "/api/v1/documents/"+doc.ID+"/append", `{"text":"nope"}`)
+	if rr.Code != http.StatusForbidden {
+		t.Fatalf("append must be forbidden: %d", rr.Code)
+	}
+	rr = doJSON(t, s, http.MethodPost, "/api/v1/documents/"+doc.ID+"/notebook", `{"notebook_id":"nb_notes"}`)
+	if rr.Code != http.StatusForbidden {
+		t.Fatalf("move out of Help must be forbidden: %d", rr.Code)
 	}
 }

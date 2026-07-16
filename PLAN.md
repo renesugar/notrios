@@ -1,6 +1,6 @@
 # Plan: v0.2 — Notrios redesign foundation
 
-Status: active. Tasks R1–R14 are complete; next task is R15 (Help notebook and documentation site). Ask the user before starting each task.
+Status: active. Tasks R1–R15 are complete; the final task is R16 (GitHub release preparation). Ask the user before starting it.
 
 This plan supersedes the earlier v0.2 draft ("Import, Resource, and Media Hardening", archived at `plans/v0.2/001-import-resource-media-hardening.md`). The media-hardening items remain on the roadmap; they are re-sequenced behind the redesign items below.
 
@@ -133,7 +133,7 @@ Working state: with Recoll installed, field queries (`tag:`, `author:`, `publish
 - Light/dark toggle on the main window.
 - User-defined custom themes, selectable as the active light and dark theme.
 
-### R15. Help notebook and documentation site
+### R15. Help notebook and documentation site — COMPLETED
 
 - Markdown user/reference docs for the service and built-in client under `docs/`.
 - GitHub Pages site built from `docs/` with PageFind search.

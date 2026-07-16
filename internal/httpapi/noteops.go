@@ -14,6 +14,20 @@ import (
 // R8): append/prepend, line-range reads, and in-note search — parity with the
 // joplin-mcp tool surface.
 
+// guardHelpNote refuses API mutations of the read-only Help notebook's notes
+// (seeded from docs/ by `notriosctl seed-help`; task R15).
+func (s *Server) guardHelpNote(w http.ResponseWriter, r *http.Request, docID string) bool {
+	doc, err := s.store.GetDocument(r.Context(), docID)
+	if err != nil {
+		return false // let the handler produce its own not-found/error
+	}
+	if doc.NotebookID == store.HelpNotebookID {
+		writeError(w, http.StatusForbidden, "forbidden", "Help notebook notes are read-only")
+		return true
+	}
+	return false
+}
+
 func (s *Server) handleAppendDocument(w http.ResponseWriter, r *http.Request) {
 	s.handleAppendOrPrepend(w, r, false)
 }
@@ -36,6 +50,9 @@ func (s *Server) handleAppendOrPrepend(w http.ResponseWriter, r *http.Request, p
 	}
 	baseRevisionID := firstNonEmpty(req.BaseRevisionID, revisionFromIfMatch(r.Header.Get("If-Match")))
 	docID := r.PathValue("document_id")
+	if s.guardHelpNote(w, r, docID) {
+		return
+	}
 
 	// Without an explicit precondition, apply to the current revision and
 	// retry once if another client writes in between.

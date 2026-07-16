@@ -136,6 +136,9 @@ func (s *Server) mcpWriteTool(r *http.Request, name string, raw json.RawMessage)
 		if err != nil {
 			return mcpToolResult{}, err
 		}
+		if doc.NotebookID == store.HelpNotebookID {
+			return mcpToolResult{}, fmt.Errorf("Help notebook notes are read-only")
+		}
 		title := firstNonEmpty(args.Title, doc.Title)
 		body := doc.Body
 		if args.Body != "" {
@@ -162,6 +165,9 @@ func (s *Server) mcpWriteTool(r *http.Request, name string, raw json.RawMessage)
 		if err != nil {
 			return mcpToolResult{}, err
 		}
+		if doc.NotebookID == store.HelpNotebookID {
+			return mcpToolResult{}, fmt.Errorf("Help notebook notes are read-only")
+		}
 		body := joinNoteText(doc.Body, args.Text, name == "prepend_to_note")
 		updated, err := s.store.UpdateDocument(ctx, store.UpdateDocumentRequest{
 			ID:             doc.ID,
@@ -183,6 +189,9 @@ func (s *Server) mcpWriteTool(r *http.Request, name string, raw json.RawMessage)
 		doc, err := s.mcpResolveDocument(r, args.DocumentID, args.URI)
 		if err != nil {
 			return mcpToolResult{}, err
+		}
+		if doc.NotebookID == store.HelpNotebookID {
+			return mcpToolResult{}, fmt.Errorf("Help notebook notes are read-only")
 		}
 		body, err := applySurgicalEdits(doc.Body, []api.SurgicalEdit{{Search: args.Search, Replace: args.Replace, ReplaceAll: args.ReplaceAll}})
 		if err != nil {
@@ -209,6 +218,9 @@ func (s *Server) mcpWriteTool(r *http.Request, name string, raw json.RawMessage)
 		doc, err := s.mcpResolveDocument(r, args.DocumentID, args.URI)
 		if err != nil {
 			return mcpToolResult{}, err
+		}
+		if doc.NotebookID == store.HelpNotebookID {
+			return mcpToolResult{}, fmt.Errorf("Help notebook notes are read-only")
 		}
 		if err := s.store.DeleteDocument(ctx, store.DeleteDocumentRequest{
 			ID:             doc.ID,

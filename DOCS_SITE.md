@@ -1,13 +1,13 @@
 # Documentation Site and Help Notebook
 
-Design-normative for plan task R15.
+Implemented in plan task R15.
 
 ## Content
 
 User and reference documentation for the `notriosd` service, `notriosctl` CLI, REST/MCP API, query language, and the built-in GUI lives as Markdown under `docs/`. It is authored once and consumed twice:
 
-1. **GitHub Pages site** — built from `docs/` and published via a GitHub Actions workflow.
-2. **Built-in "Help" notebook** — the same Markdown is seeded into the protected, read-only "Help" search notebook so documentation is available offline inside the app (`notebook:help` searches it; see `NOTEBOOKS_AND_SEARCH_NOTEBOOKS.md`).
+1. **GitHub Pages site** — built from `docs/` by `scripts/build_docs_site.sh` (marked → HTML with a shared template, then a PageFind index) and published by `.github/workflows/docs.yml` on pushes to `main`.
+2. **Built-in "Help" notebook** — `notriosctl seed-help [docs-dir]` mirrors the same Markdown into the protected, read-only Help notebook (deterministic note IDs; updates in place; removes notes whose file disappeared), so documentation is available offline inside the app (`notebook:help` searches it; see `NOTEBOOKS_AND_SEARCH_NOTEBOOKS.md`). REST and MCP mutations of Help notes return 403/errors.
 
 ## Site search
 

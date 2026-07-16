@@ -378,6 +378,9 @@ func (s *Server) handleGetDocument(w http.ResponseWriter, r *http.Request, docID
 }
 
 func (s *Server) handlePutDocument(w http.ResponseWriter, r *http.Request, docID string) {
+	if s.store != nil && s.guardHelpNote(w, r, docID) {
+		return
+	}
 	var req api.DocumentMutationRequest
 	if !decodeJSON(w, r, &req) {
 		return
@@ -410,6 +413,9 @@ func (s *Server) handlePutDocument(w http.ResponseWriter, r *http.Request, docID
 }
 
 func (s *Server) handlePatchDocument(w http.ResponseWriter, r *http.Request, docID string) {
+	if s.store != nil && s.guardHelpNote(w, r, docID) {
+		return
+	}
 	var req api.DocumentPatchRequest
 	if !decodeJSON(w, r, &req) {
 		return
@@ -458,6 +464,9 @@ func (s *Server) handlePatchDocument(w http.ResponseWriter, r *http.Request, doc
 }
 
 func (s *Server) handleDeleteDocument(w http.ResponseWriter, r *http.Request, docID string) {
+	if s.store != nil && s.guardHelpNote(w, r, docID) {
+		return
+	}
 	baseRevisionID := firstNonEmpty(r.URL.Query().Get("base_revision_id"), revisionFromIfMatch(r.Header.Get("If-Match")))
 	if strings.TrimSpace(baseRevisionID) == "" {
 		writeError(w, http.StatusPreconditionRequired, "precondition_required", "base_revision_id query parameter or If-Match is required")

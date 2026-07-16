@@ -9,6 +9,7 @@ import (
 
 	"github.com/renesugar/notrios/internal/archive"
 	"github.com/renesugar/notrios/internal/config"
+	"github.com/renesugar/notrios/internal/helpdocs"
 	"github.com/renesugar/notrios/internal/importers/chatgpt"
 	claudeimport "github.com/renesugar/notrios/internal/importers/claude"
 	"github.com/renesugar/notrios/internal/importers/joplinraw"
@@ -33,6 +34,8 @@ func main() {
 		runImport(os.Args[2:])
 	case "export":
 		runExport(os.Args[2:])
+	case "seed-help":
+		runSeedHelp(os.Args[2:])
 	case "help", "-h", "--help":
 		printHelp()
 	default:
@@ -195,6 +198,7 @@ Usage:
   notriosctl import claude  [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--notebook Claude] [--dry-run] <conversations.json|export-dir>
   notriosctl import archive [--db ...] [--dry-run] [--write-config path] [--import-config path] <archive-dir>
   notriosctl export archive [--db ...] [--query "tag:todo"] <out-dir>
+  notriosctl seed-help [--db ...] [docs-dir]     # mirror docs/ into the read-only Help notebook
 
 Future commands:
   notriosctl publish quartz --profile <name>
@@ -443,6 +447,29 @@ func runImportArchive(args []string) {
 		options.Config = cfg
 	}
 	report, err := archive.Import(ctx, st, archiveDir, options)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	printJSON(report)
+}
+
+func runSeedHelp(args []string) {
+	fs := flag.NewFlagSet("notriosctl seed-help", flag.ExitOnError)
+	configPath := fs.String("config", "", "optional config file")
+	dbPath := fs.String("db", "", "SQLite database path override")
+	assetStore := fs.String("asset-store", "", "asset store directory override")
+	if err := fs.Parse(args); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(2)
+	}
+	docsDir := "docs"
+	if fs.NArg() == 1 {
+		docsDir = fs.Arg(0)
+	}
+	st := openStoreFromFlags(*configPath, *dbPath, *assetStore)
+	defer st.Close()
+	report, err := helpdocs.Seed(context.Background(), st, docsDir)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
