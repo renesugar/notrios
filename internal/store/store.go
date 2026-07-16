@@ -324,6 +324,7 @@ type SearchHit struct {
 	ID           string
 	URI          string
 	CollectionID string
+	NotebookID   string
 	Title        string
 	Snippet      string
 	Score        float64

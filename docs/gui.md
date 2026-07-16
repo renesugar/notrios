@@ -52,9 +52,20 @@ If the window opens but shows a JSON `web_ui_not_built` error, the binary can't 
 
 ## Layout
 
-- **Left sidebar** — notebooks first: the builtin **All notes** view is always at the top and **Trash** is always at the bottom; between them are your notebooks (nested, with optional emoji icons) and your saved search notebooks. Below the notebooks is the tag list with live note counts. Click anything to search it.
-- **Search panel** — the search box plus results. On startup the "All notes" view loads incrementally ("Load more" pages through cursors), so even huge databases start instantly.
-- **Editor and preview** — a split Markdown editor/preview. `document://` links in the preview open the target note; `resource://` links download attachments; images can be pasted/uploaded and become local resources.
+Below the menu bar the window is four side-by-side panes, always in this order:
+
+1. **Sidebar** — notebooks and tags. The builtin **All notes** view is always at the top and **Trash** is always at the bottom, with **Help** immediately above Trash; between them are your notebooks (nested, with optional emoji icons) and your saved search notebooks. Below the notebooks is the tag list with live note counts. Click anything to search it.
+2. **Search panel** — the search box plus results. On startup the "All notes" view loads, and results page in incrementally as you scroll (a keyboard-accessible "Load more" button covers the same path), so even huge databases start instantly. Read-only notes show a 🔒 marker.
+3. **Markdown editor** — title, toolbar, and source editor. Note details (metadata, uploads, links, backlinks, resources) live in a collapsible **Note info** inspector at the bottom of this pane, not in a pane of their own.
+4. **Markdown preview** — rendered Markdown. `document://` links open the target note; `resource://` links download attachments; images can be pasted/uploaded in the editor and become local resources.
+
+Each pane scrolls on its own; the window itself never scrolls.
+
+### Resizing panes
+
+Three splitters separate the panes. Drag one with the mouse, or focus it with **Tab** and press **←/→** (16 px), **Shift+←/→** (64 px), or **Home/End**; double-click restores the default layout. Pane sizes persist across restarts.
+
+Panes always fill the window. When you resize the window, the sidebar and search panel keep their widths and the editor and preview re-split the remaining space **equally**; drag a splitter afterwards to make them unequal again. The layout is designed down to a window about 970 px wide — narrower than that, every pane sits at its minimum width and the workspace scrolls horizontally.
 
 The menu bar offers File (Reload/Quit), Edit, View (fullscreen), and Help — Help searches the built-in **Help notebook**, which holds this documentation offline (`notebook:help` finds it too).
 

@@ -62,6 +62,7 @@ func (s *Server) searchMerged(ctx context.Context, req store.SearchRequest) (sto
 			ID:           doc.ID,
 			URI:          doc.URI,
 			CollectionID: doc.CollectionID,
+			NotebookID:   doc.NotebookID,
 			Title:        doc.Title,
 			Snippet:      snippet,
 		})

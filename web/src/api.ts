@@ -43,6 +43,9 @@ export interface DocumentRecord {
   id: string;
   uri: string;
   collection_id: string;
+  notebook_id?: string;
+  /** Server-authoritative capability: false for protected (Help) and trashed notes. */
+  editable?: boolean;
   title: string;
   body_mime_type: string;
   body?: string;

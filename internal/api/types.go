@@ -90,7 +90,7 @@ type SearchHit struct {
 	Title        string         `json:"title,omitempty"`
 	Snippet      string         `json:"snippet,omitempty"`
 	Score        float64        `json:"score,omitempty"`
-	Editable     bool           `json:"editable,omitempty"`
+	Editable     bool           `json:"editable"`
 	Metadata     map[string]any `json:"metadata,omitempty"`
 }
 
@@ -165,6 +165,10 @@ type Document struct {
 	URI               string         `json:"uri"`
 	CollectionID      string         `json:"collection_id"`
 	NotebookID        string         `json:"notebook_id,omitempty"`
+	// Editable is the server-authoritative capability flag: false for notes
+	// in protected notebooks (Help) and for trashed notes. Clients must not
+	// infer editability from notebook names.
+	Editable          bool           `json:"editable"`
 	Title             string         `json:"title"`
 	BodyMIMEType      string         `json:"body_mime_type"`
 	Body              string         `json:"body,omitempty"`

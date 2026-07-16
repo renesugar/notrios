@@ -29,15 +29,22 @@ Standard desktop menu bar at the top (File, Edit, View, Help, …), then four re
 │  Bookmarks │               │               │               │
 │  Twitter   │               │               │               │
 │  …         │               │               │               │
+│  Help      │               │               │               │
 │  🗑 Trash   │               │               │               │
 │ Tags       │               │               │               │
 │  tag (n)   │               │               │               │
 └────────────┴───────────────┴───────────────┴───────────────┘
 ```
 
-- **Left sidebar:** notebooks tree above, tags (with note counts) below. Builtin "All notes" search notebook is always first; "Trash" is always last; neither is deletable. Notebooks show an optional emoji icon before their name. Notebooks nest like Joplin (e.g. `Contacts` → `Plumbers`, `Electricians`, `Carpenters`) so the experience is smooth for Joplin users. See `NOTEBOOKS_AND_SEARCH_NOTEBOOKS.md`.
-- **First panel:** search box and query results. On startup the "All notes" search runs; the search API returns incremental results as the user scrolls, so startup never retrieves hundreds of thousands of notes at once.
-- **Next two panels:** Markdown editor and Markdown preview.
+- **Left sidebar:** notebooks tree above, tags (with note counts) below. Builtin "All notes" search notebook is always first; "Trash" is always last, with the builtin "Help" notebook immediately above it; none of these is deletable. Ordering keys off the stable builtin IDs (`snb_all_notes`, `nb_help`, `snb_trash`), never off display names. Notebooks show an optional emoji icon before their name. Notebooks nest like Joplin (e.g. `Contacts` → `Plumbers`, `Electricians`, `Carpenters`) so the experience is smooth for Joplin users. See `NOTEBOOKS_AND_SEARCH_NOTEBOOKS.md`.
+- **First panel:** search box and query results. On startup the "All notes" search runs; the search API returns incremental results as the user scrolls (cursor paging via an IntersectionObserver sentinel, with a keyboard-accessible "Load more" fallback), so startup never retrieves hundreds of thousands of notes at once.
+- **Next two panels:** Markdown editor and Markdown preview. Note details (metadata, uploads, links/backlinks, resources) are a collapsible inspector inside the editor pane, not a fifth region.
+
+Implementation notes (task R13 GUI-fix pass):
+
+- The three pane boundaries are draggable splitters (Pointer Events) that are also keyboard-operable (`role="separator"`, Arrow / Shift+Arrow steps, Home/End, double-click resets). Widths persist in `localStorage` under a versioned key; invalid stored values fall back to defaults.
+- The four panes fill the window and scroll individually; the document body never scrolls. On a **window resize** the sidebar and search widths are kept and the space after them is re-split **equally** between the editor and the preview (they always come out the same width and height after a resize); splitter drags may then set individual sizes. Minimum pane widths give a minimum workspace width of ~966 px, below which every pane holds its minimum and the workspace scrolls horizontally.
+- Whether a note is editable is a **server-provided capability** (`editable` on documents and search hits — false for Help-notebook and trashed notes), never inferred from names in the client. Read-only notes render a visible badge, a read-only editor, and no save/title/upload affordances, while the preview still works.
 
 ## Themes (implemented, task R14)
 
