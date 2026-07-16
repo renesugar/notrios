@@ -185,3 +185,9 @@ This file is the codebase atlas. Update it whenever major files or directories a
 
 - `internal/archive/` — query-scoped export (notebook paths + emoji preserved, tags, resource bytes), dry-run conflict analysis with rename-suggestion `import-config.json`, validated rename-on-import (refuses names colliding with source-bound notebooks before writing), idempotent plain-note import.
 - `cmd/notriosctl` — `export archive` and `import archive` subcommands.
+
+## v0.2 task R13 additions (Wails GUI shell)
+
+- `internal/service/` — shared startup (directories, store, HTTP handler, Recoll sidecar loop) used by `notriosd` and `notrios`.
+- `cmd/notrios/` — GUI executable: default (GUI + local service), `-no-gui`, `-gui-only -remote <url>`; `gui_wails.go` (build-tagged Wails app whose asset server routes all webview requests through the service handler or a remote reverse proxy) and `gui_stub.go` (helpful error without the tags). Build with `make gui`.
+- `web/src/App.tsx` + `api.ts` + `styles.css` — Notrios sidebar layout: search notebooks first/last anchoring, nested notebook tree with emoji, tags with counts, startup "All notes" with cursor-based Load more, Help-menu event hook.

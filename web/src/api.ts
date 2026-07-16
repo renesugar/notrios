@@ -191,13 +191,59 @@ export async function getDocumentBody(documentID: string): Promise<string> {
   return response.text();
 }
 
-export async function search(query: string, limit = 20): Promise<SearchResponse> {
+export async function search(query: string, limit = 20, cursor = ''): Promise<SearchResponse> {
   const response = await fetch('/api/v1/search', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ query, limit }),
+    body: JSON.stringify({ query, limit, cursor: cursor || undefined }),
   });
   return parseJSON<SearchResponse>(response);
+}
+
+export interface Notebook {
+  id: string;
+  parent_id?: string;
+  name: string;
+  icon_emoji?: string;
+  builtin: boolean;
+  position: number;
+}
+
+export interface NotebookTreeNode extends Notebook {
+  children?: NotebookTreeNode[];
+}
+
+export interface SearchNotebook {
+  id: string;
+  name: string;
+  icon_emoji?: string;
+  query: string;
+  builtin: boolean;
+  sort_anchor: string;
+}
+
+export interface TagRecord {
+  id: string;
+  name: string;
+  note_count: number;
+}
+
+export async function getNotebookTree(): Promise<NotebookTreeNode[]> {
+  const response = await fetch('/api/v1/notebooks/tree');
+  const payload = await parseJSON<{ notebooks: NotebookTreeNode[] }>(response);
+  return payload.notebooks ?? [];
+}
+
+export async function listSearchNotebooks(): Promise<SearchNotebook[]> {
+  const response = await fetch('/api/v1/search-notebooks');
+  const payload = await parseJSON<{ search_notebooks: SearchNotebook[] }>(response);
+  return payload.search_notebooks ?? [];
+}
+
+export async function listTags(): Promise<TagRecord[]> {
+  const response = await fetch('/api/v1/tags');
+  const payload = await parseJSON<{ tags: TagRecord[] }>(response);
+  return payload.tags ?? [];
 }
 
 export async function uploadResource(file: File, collectionID = 'default'): Promise<ResourceRecord> {

@@ -2,7 +2,7 @@
 
 ## Current phase
 
-v0.2 Notrios redesign foundation (`PLAN.md`). Tasks **R1 (documentation redesign)**, **R2 (code rename + Apache-2.0 license)**, **R3 (schema v5 — notebooks/tags/search notebooks)**, and **R4 (schema v6 — source provenance and threads)** are completed, as are **R5 (notebooks/tags/trash REST + MCP read tools)**, **R6 (query-language adapter)**, **R7 (Recoll integration)**, **R8 (full-client MCP/REST surface)**, **R9 (Twitter/X archive importer)**, **R10 (ChatGPT importer)**, and **R11 (Claude importer)**; as is **R12 (query-scoped export/import with dry-run)**; next task is **R13 (Wails GUI shell)** — ask the user before starting it.
+v0.2 Notrios redesign foundation (`PLAN.md`). Tasks **R1 (documentation redesign)**, **R2 (code rename + Apache-2.0 license)**, **R3 (schema v5 — notebooks/tags/search notebooks)**, and **R4 (schema v6 — source provenance and threads)** are completed, as are **R5 (notebooks/tags/trash REST + MCP read tools)**, **R6 (query-language adapter)**, **R7 (Recoll integration)**, **R8 (full-client MCP/REST surface)**, **R9 (Twitter/X archive importer)**, **R10 (ChatGPT importer)**, and **R11 (Claude importer)**; as is **R12 (query-scoped export/import with dry-run)**; as is **R13 (Wails GUI shell)**; next task is **R14 (GUI themes)** — ask the user before starting it.
 
 ## Current working state
 
@@ -43,9 +43,11 @@ v0.2 Notrios redesign foundation (`PLAN.md`). Tasks **R1 (documentation redesign
 
 - R12 changes (native archive): `internal/archive` — query-scoped export (manifest, notebooks.json with paths+emoji, notes as Markdown+front matter, resource bytes), dry-run conflict analysis against source-bound notebooks with a prefilled rename `import-config.json`, validated rename-on-import that refuses conflicts before writing, notebook-path creation with nesting/emoji, idempotent plain-note imports (no provenance; purgeable); `notriosctl export archive` / `import archive`; store gains `NotebookHasSourcedDocuments`. Joplin/Obsidian notebook-hierarchy population deferred to v0.3. See `plans/v0.2/012-archive-export-import.md`.
 
+- R13 changes (Wails GUI shell): `internal/service` extracted (shared by notriosd + notrios); `cmd/notrios` with default GUI+service, `-no-gui`, and `-gui-only -remote <url>` (reverse proxy) modes; Wails v2 asset server routes all webview requests through the service handler so the React frontend runs unmodified; menu bar (File/Edit/View/Help; Help triggers a `notebook:help` search); webview gated behind `gui desktop production webkit2_41` build tags with a helpful stub otherwise (`make gui` builds the real thing); React UI gained the sidebar layout — search notebooks ("All notes" first, "Trash" last), nested notebook tree with emoji, tag list with counts, startup "All notes" view with cursor-based "Load more". Verified live under xvfb (window + embedded service). See `plans/v0.2/013-wails-gui-shell.md`.
+
 ## Next suggested step
 
-Task R13: Wails GUI shell — `notrios` executable (default GUI+service, -no-gui, -gui-only w/ remote URL), sidebar/search/editor/preview layout per UI_DESIGN.md, React frontend in the Wails webview.
+Task R14: GUI themes — light/dark toggle on the main window; user-defined custom themes selectable as the active light and dark themes.
 
 ## Validation
 
@@ -71,4 +73,4 @@ bash scripts/run_performance_smoke.sh
 - Config parser supports only the documented example-config subset.
 - The MCP MVP adapter is dependency-free; official MCP Go SDK adoption is future work.
 - Importers verified on synthetic fixtures only; verify against real Joplin RAW exports and Obsidian vaults before large migrations.
-- Wails GUI is design-only (R13/R14); docs site is design-only (R15). Recoll integration is implemented (R7) but reconciliation/batched-scan hardening remains a v0.3 roadmap item.
+- GUI themes are design-only (R14); docs site is design-only (R15). Recoll integration is implemented (R7) but reconciliation/batched-scan hardening remains a v0.3 roadmap item.

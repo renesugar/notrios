@@ -1,6 +1,6 @@
 # Built-in GUI Design
 
-The built-in GUI is a **Go + Wails** desktop application (https://github.com/wailsapp/wails) named `notrios`, shipped in the first released version. It is not the only client: the REST/MCP API must stay complete enough for third-party native clients (C++/Qt, Rust/Tauri, other Go/Wails apps).
+The built-in GUI is a **Go + Wails** desktop application (https://github.com/wailsapp/wails) named `notrios` (implemented in task R13; built with `make gui`, i.e. `-tags "gui desktop production webkit2_41"`; plain builds include a stub so headless/CI builds need no GUI system libraries), shipped in the first released version. It is not the only client: the REST/MCP API must stay complete enough for third-party native clients (C++/Qt, Rust/Tauri, other Go/Wails apps).
 
 ## Executable modes
 
@@ -10,7 +10,9 @@ One executable contains the GUI and the service:
 - **`-no-gui`** — start the service headless, for users who prefer a different client as their GUI.
 - **`-gui-only`** — start only the GUI as a pure REST client. This tests the GUI exactly the way a third-party client would use the service, and lets the GUI attach to a service running on another machine via the REST API.
 
-`notriosd` remains the standalone headless service binary.
+`notriosd` remains the standalone headless service binary. Both binaries share `internal/service`.
+
+Implementation note: the Wails asset server routes **every** webview request through an `http.Handler` — the in-process service handler in the default mode, or a reverse proxy to the remote service in `-gui-only` mode — so the React frontend runs unmodified with relative `/api/v1` fetches, identical to a browser pointed at `notriosd`. In the default mode the service also listens on its TCP address so MCP clients and third-party GUIs can connect while the built-in GUI is open.
 
 ## Window layout
 

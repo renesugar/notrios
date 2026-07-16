@@ -5,18 +5,24 @@ import {
   attachResource,
   createDocument,
   getDocument,
+  getNotebookTree,
   getStatus,
   listDocumentLinks,
   listDocumentResources,
+  listSearchNotebooks,
+  listTags,
   resourceContentURL,
   search,
   updateDocument,
   uploadResource,
   type DocumentLink,
   type DocumentRecord,
+  type NotebookTreeNode,
   type ResourceReference,
   type SearchHit,
+  type SearchNotebook,
   type StatusResponse,
+  type TagRecord,
 } from './api';
 
 const defaultBody = `# New note\n\nThis Markdown note will be saved through the REST API and indexed by SQLite FTS5.\n\nTry linking another note with:\n\n[Related note](document://default/documents/<document-id>)\n`;
@@ -34,11 +40,35 @@ export function App() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [notebooks, setNotebooks] = useState<NotebookTreeNode[]>([]);
+  const [searchNotebooks, setSearchNotebooks] = useState<SearchNotebook[]>([]);
+  const [tags, setTags] = useState<TagRecord[]>([]);
+  const [nextCursor, setNextCursor] = useState('');
+  const [activeQuery, setActiveQuery] = useState('');
+
+  async function refreshSidebar() {
+    try {
+      const [tree, savedSearches, tagList] = await Promise.all([getNotebookTree(), listSearchNotebooks(), listTags()]);
+      setNotebooks(tree);
+      setSearchNotebooks(savedSearches);
+      setTags(tagList);
+    } catch (err) {
+      setError(errorMessage(err));
+    }
+  }
 
   useEffect(() => {
     getStatus()
       .then(setStatus)
       .catch((err: unknown) => setError(errorMessage(err)));
+    void refreshSidebar();
+    // Startup view: the "All notes" search notebook (empty query) with
+    // incremental cursor loading.
+    void onSearch('');
+    const openHelp = () => void onSearch('notebook:help');
+    window.addEventListener('notrios:open-help', openHelp);
+    return () => window.removeEventListener('notrios:open-help', openHelp);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const statusText = useMemo(() => {
@@ -61,12 +91,29 @@ export function App() {
     setBusy(true);
     setError(null);
     setMessage(null);
+    setQuery(nextQuery);
+    setActiveQuery(nextQuery);
     try {
-      const result = await search(nextQuery);
+      const result = await search(nextQuery, 25);
       setHits(result.hits);
+      setNextCursor(result.next_cursor ?? '');
       if (result.hits.length === 0) {
         setMessage(nextQuery.trim() ? 'No matching notes found.' : 'No notes found yet.');
       }
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onLoadMore() {
+    if (!nextCursor) return;
+    setBusy(true);
+    try {
+      const result = await search(activeQuery, 25, nextCursor);
+      setHits((previous) => [...previous, ...result.hits]);
+      setNextCursor(result.next_cursor ?? '');
     } catch (err) {
       setError(errorMessage(err));
     } finally {
@@ -95,6 +142,8 @@ export function App() {
       setMessage(`Saved “${saved.title}”.`);
       const result = await search(title);
       setHits(result.hits);
+      setNextCursor(result.next_cursor ?? '');
+      void refreshSidebar();
     } catch (err) {
       setError(errorMessage(err));
     } finally {
@@ -226,19 +275,54 @@ export function App() {
 
   return (
     <main className="app-shell">
-      <section className="hero">
-        <div>
-          <p className="eyebrow">Notes Companion</p>
-          <h1>Built-in Markdown UI MVP</h1>
-          <p>
-            Create, edit, preview, search, and open Markdown notes through the live REST API. Preview links using
-            <code> document://</code> navigate inside the UI, while <code>resource://</code> links download local resources.
-          </p>
-        </div>
-        <p className="status">Service: {statusText}</p>
-      </section>
+      <header className="app-header">
+        <h1>Notrios</h1>
+        <p className="status">{statusText}</p>
+      </header>
 
-      <section className="grid">
+      <section className="workspace">
+        <aside className="sidebar">
+          <h3>Notebooks</h3>
+          <ul className="sidebar-list">
+            {searchNotebooks
+              .filter((sn) => sn.sort_anchor === 'first')
+              .map((sn) => (
+                <SearchNotebookRow key={sn.id} notebook={sn} active={activeQuery === sn.query} onSelect={() => void onSearch(sn.query)} />
+              ))}
+            <NotebookTree nodes={notebooks} activeQuery={activeQuery} onSelect={(name) => void onSearch(`notebook:"${name}"`)} />
+            {searchNotebooks
+              .filter((sn) => sn.sort_anchor === 'normal')
+              .map((sn) => (
+                <SearchNotebookRow key={sn.id} notebook={sn} active={activeQuery === sn.query} onSelect={() => void onSearch(sn.query)} />
+              ))}
+            {searchNotebooks
+              .filter((sn) => sn.sort_anchor === 'last')
+              .map((sn) => (
+                <SearchNotebookRow key={sn.id} notebook={sn} active={activeQuery === sn.query} onSelect={() => void onSearch(sn.query)} />
+              ))}
+          </ul>
+          {tags.length > 0 && (
+            <>
+              <h3>Tags</h3>
+              <ul className="sidebar-list">
+                {tags.map((tag) => (
+                  <li key={tag.id}>
+                    <button
+                      type="button"
+                      className={activeQuery === `tag:"${tag.name}"` ? 'sidebar-item active' : 'sidebar-item'}
+                      onClick={() => void onSearch(`tag:"${tag.name}"`)}
+                    >
+                      <span className="sidebar-label">{tag.name}</span>
+                      <span className="tag-count">{tag.note_count}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </aside>
+
+        <section className="grid">
         <article className="panel editor-panel">
           <div className="panel-heading">
             <h2>{selectedDocument ? 'Edit note' : 'Create note'}</h2>
@@ -309,8 +393,14 @@ export function App() {
                 <small>{hit.uri}</small>
               </button>
             ))}
+            {nextCursor && (
+              <button type="button" className="load-more" onClick={() => void onLoadMore()} disabled={busy}>
+                Load more
+              </button>
+            )}
           </div>
         </article>
+      </section>
       </section>
 
       {(error || message) && (
@@ -384,6 +474,46 @@ export function App() {
         )}
       </section>
     </main>
+  );
+}
+
+function SearchNotebookRow({ notebook, active, onSelect }: { notebook: SearchNotebook; active: boolean; onSelect: () => void }) {
+  return (
+    <li>
+      <button type="button" className={active ? 'sidebar-item active' : 'sidebar-item'} onClick={onSelect}>
+        <span className="sidebar-label">
+          {notebook.icon_emoji ? `${notebook.icon_emoji} ` : ''}
+          {notebook.name}
+        </span>
+      </button>
+    </li>
+  );
+}
+
+function NotebookTree({ nodes, activeQuery, onSelect, depth = 0 }: { nodes: NotebookTreeNode[]; activeQuery: string; onSelect: (name: string) => void; depth?: number }) {
+  return (
+    <>
+      {nodes.map((node) => (
+        <li key={node.id}>
+          <button
+            type="button"
+            className={activeQuery === `notebook:"${node.name}"` ? 'sidebar-item active' : 'sidebar-item'}
+            style={{ paddingLeft: `${12 + depth * 16}px` }}
+            onClick={() => onSelect(node.name)}
+          >
+            <span className="sidebar-label">
+              {node.icon_emoji ? `${node.icon_emoji} ` : ''}
+              {node.name}
+            </span>
+          </button>
+          {node.children && node.children.length > 0 && (
+            <ul className="sidebar-list nested">
+              <NotebookTree nodes={node.children} activeQuery={activeQuery} onSelect={onSelect} depth={depth + 1} />
+            </ul>
+          )}
+        </li>
+      ))}
+    </>
   );
 }
 

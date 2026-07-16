@@ -9,7 +9,7 @@ The v0.1 MVP is complete; the project is now in the **Notrios redesign** phase â
 
 - **Service:** Go, standard library first, SQLite/FTS5 canonical storage. Binaries: `notriosd` (service) and `notriosctl` (CLI); Go module `github.com/renesugar/notrios`.
 - **MCP:** read-only JSON-RPC MCP MVP adapter is mounted at `/mcp`; replace with the official Go SDK once dependency policy/tooling is settled. The MCP/REST surface is being expanded so a full note-taking client can be built on it alone.
-- **Built-in GUI:** Go + Wails (planned, part of the first released version) with `-no-gui` and `-gui-only` modes; the current React + Vite web UI (`md-editor-rt`) is the interim client and frontend basis. See `UI_DESIGN.md`.
+- **Built-in GUI:** Go + Wails (`cmd/notrios`, built with `make gui`) with `-no-gui` (headless service) and `-gui-only` (pure REST client, optionally against a remote service via `-remote`) modes; the React + Vite frontend (`md-editor-rt`, notebooks/tags sidebar, incremental "All notes") runs inside the webview and in the browser. See `UI_DESIGN.md`.
 - **Search:** SQLite FTS5 for managed notes; Recoll as an optional derived sidecar for field/front-matter search, OCR-style extraction, and arbitrary files (see `RECOLL_INTEGRATION.md` and `SEARCH_QUERY_LANGUAGE.md`).
 - **Data model:** nested notebooks with emoji icons, tags, and query-backed "search notebooks" ("All notes", "Trash", "Help") â€” see `NOTEBOOKS_AND_SEARCH_NOTEBOOKS.md`.
 - **Import sources:** Joplin RAW, Obsidian vaults, Twitter/X archives (thread-preserving), ChatGPT exports, Claude exports.

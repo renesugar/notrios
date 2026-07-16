@@ -1,6 +1,6 @@
 # Plan: v0.2 — Notrios redesign foundation
 
-Status: active. Tasks R1–R12 are complete; next task is R13 (Wails GUI shell). Ask the user before starting each task.
+Status: active. Tasks R1–R13 are complete; next task is R14 (GUI themes). Ask the user before starting each task.
 
 This plan supersedes the earlier v0.2 draft ("Import, Resource, and Media Hardening", archived at `plans/v0.2/001-import-resource-media-hardening.md`). The media-hardening items remain on the roadmap; they are re-sequenced behind the redesign items below.
 
@@ -122,7 +122,7 @@ Working state: with Recoll installed, field queries (`tag:`, `author:`, `publish
 - Import dry run reports notebook-name conflicts and writes an import configuration file for rename-on-import; import validates that config against existing source-bound notebooks before writing.
 - Support Joplin RAW, Obsidian vault, and the native archive format as import sources for notebook creation/population.
 
-### R13. Wails GUI shell
+### R13. Wails GUI shell — COMPLETED
 
 - New `notrios` executable: Go/Wails GUI embedding the service. Modes: default (GUI + local service), `-no-gui` (headless service, same behavior as `notriosd`), `-gui-only` (GUI as pure REST client, optionally against a remote service URL).
 - Layout per `UI_DESIGN.md`: menu bar (File/Edit/View/Help); left sidebar with notebooks tree ("All notes" first, "Trash" last, emoji icons, nested notebooks) and tag list with counts below; search box + incremental result list; Markdown editor pane; Markdown preview pane.
