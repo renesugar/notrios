@@ -45,8 +45,8 @@ find "$ROOT/docs" -name '*.md' | while read -r src; do
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${title:-Notrios} — Notrios</title>
-<link href="/pagefind/pagefind-ui.css" rel="stylesheet">
-<script src="/pagefind/pagefind-ui.js"></script>
+<link href="/notrios/pagefind/pagefind-ui.css" rel="stylesheet">
+<script src="/notrios/pagefind/pagefind-ui.js"></script>
 <style>${style}</style>
 </head>
 <body>
@@ -57,7 +57,11 @@ ${body}
 <script>
 window.addEventListener('DOMContentLoaded', () => {
   if (window.PagefindUI) {
-    new PagefindUI({ element: '#search', showSubResults: true });
+    new PagefindUI({
+        element: '#search',
+        showSubResults: true,
+        bundlePath: "/notrios/pagefind/"
+    });
   }
 });
 </script>
