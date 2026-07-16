@@ -26,14 +26,19 @@ Two export classes are required:
 
 Exports may be scoped to query results (e.g. a search notebook) instead of the entire database; notes from external sources that are marked deleted are excluded. The export preserves the notebook structure.
 
-## Import dry run and import configuration
+## Native archive format (implemented, task R12)
 
-Re-importing an exported archive (Joplin RAW directory, Obsidian vault, or the native archive format) imports notes as plain notes, not references to the original data source. The import command supports:
+`notriosctl export archive [--query "tag:todo"] <out-dir>` writes a directory: `manifest.json`, `notebooks.json` (paths + emoji), `notes/<id>.md` (Markdown with front matter carrying title/notebook path/tags/resources), and `resources/<id>__<filename>` bytes. Exports may be query-scoped (e.g. a search notebook's contents) and preserve the notebook structure; trashed and externally-deleted notes are excluded by the query layer.
 
-- a **dry run** that reports which notebook names conflict with notebooks bound to other data sources;
-- the dry run can emit an **import configuration file** allowing notebooks to be renamed on import;
-- the real import validates that configuration, checking the chosen names don't conflict with notebooks used for other data sources (case-insensitively);
-- notebooks that don't exist are created and populated from the archive.
+## Import dry run and import configuration (implemented, task R12)
+
+Re-importing an archive imports notes as **plain local notes**, not references to the original data source (no provenance rows; they are purgeable). `notriosctl import archive`:
+
+- `--dry-run` reports which top-level notebook names conflict with notebooks bound to other data sources (builtin notebooks, or notebooks holding externally-sourced notes) and writes an **import configuration file** (`import-config.json`) with prefilled rename suggestions; merges into plain user notebooks are listed separately;
+- the real import (`--import-config path`) validates the chosen names case-insensitively against source-bound notebooks **before writing anything** and refuses on conflict;
+- missing notebook paths are created (nesting and emoji preserved) and populated from the archive; imports are idempotent.
+
+Joplin RAW and Obsidian imports currently place notes in the default notebook; populating notebook hierarchies from those sources is deferred to the v0.3 importer-hardening milestone.
 
 ## Publishing
 

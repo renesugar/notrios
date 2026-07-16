@@ -2,7 +2,7 @@
 
 ## Current phase
 
-v0.2 Notrios redesign foundation (`PLAN.md`). Tasks **R1 (documentation redesign)**, **R2 (code rename + Apache-2.0 license)**, **R3 (schema v5 — notebooks/tags/search notebooks)**, and **R4 (schema v6 — source provenance and threads)** are completed, as are **R5 (notebooks/tags/trash REST + MCP read tools)**, **R6 (query-language adapter)**, **R7 (Recoll integration)**, **R8 (full-client MCP/REST surface)**, **R9 (Twitter/X archive importer)**, **R10 (ChatGPT importer)**, and **R11 (Claude importer)**; next task is **R12 (query-scoped export and import-with-dry-run)** — ask the user before starting it.
+v0.2 Notrios redesign foundation (`PLAN.md`). Tasks **R1 (documentation redesign)**, **R2 (code rename + Apache-2.0 license)**, **R3 (schema v5 — notebooks/tags/search notebooks)**, and **R4 (schema v6 — source provenance and threads)** are completed, as are **R5 (notebooks/tags/trash REST + MCP read tools)**, **R6 (query-language adapter)**, **R7 (Recoll integration)**, **R8 (full-client MCP/REST surface)**, **R9 (Twitter/X archive importer)**, **R10 (ChatGPT importer)**, and **R11 (Claude importer)**; as is **R12 (query-scoped export/import with dry-run)**; next task is **R13 (Wails GUI shell)** — ask the user before starting it.
 
 ## Current working state
 
@@ -41,9 +41,11 @@ v0.2 Notrios redesign foundation (`PLAN.md`). Tasks **R1 (documentation redesign
 
 - R10/R11 changes (conversation importers): `internal/importers/chatgpt` (mapping-tree parsing, current-node main path, system/tool + abandoned-branch skipping) and `internal/importers/claude` (flat chat_messages, content-block fallback); one note per conversation with role/timestamp Markdown sections in 🤖 "ChatGPT" / ✳️ "Claude" notebooks; provenance thread = conversation ID; shared upsert semantics (unchanged detection, no resurrection of trashed notes, purge protection); `notriosctl import chatgpt|claude` with dry run; genson schemas added. See `plans/v0.2/011-conversation-importers.md`.
 
+- R12 changes (native archive): `internal/archive` — query-scoped export (manifest, notebooks.json with paths+emoji, notes as Markdown+front matter, resource bytes), dry-run conflict analysis against source-bound notebooks with a prefilled rename `import-config.json`, validated rename-on-import that refuses conflicts before writing, notebook-path creation with nesting/emoji, idempotent plain-note imports (no provenance; purgeable); `notriosctl export archive` / `import archive`; store gains `NotebookHasSourcedDocuments`. Joplin/Obsidian notebook-hierarchy population deferred to v0.3. See `plans/v0.2/012-archive-export-import.md`.
+
 ## Next suggested step
 
-Task R12: query-scoped export preserving notebook structure; import dry run producing an import-configuration file with rename-on-import conflict checks; Joplin RAW/Obsidian/native archive population.
+Task R13: Wails GUI shell — `notrios` executable (default GUI+service, -no-gui, -gui-only w/ remote URL), sidebar/search/editor/preview layout per UI_DESIGN.md, React frontend in the Wails webview.
 
 ## Validation
 

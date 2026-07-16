@@ -1,6 +1,6 @@
 # Plan: v0.2 — Notrios redesign foundation
 
-Status: active. Tasks R1–R11 are complete; next task is R12 (query-scoped export and import-with-dry-run). Ask the user before starting each task.
+Status: active. Tasks R1–R12 are complete; next task is R13 (Wails GUI shell). Ask the user before starting each task.
 
 This plan supersedes the earlier v0.2 draft ("Import, Resource, and Media Hardening", archived at `plans/v0.2/001-import-resource-media-hardening.md`). The media-hardening items remain on the roadmap; they are re-sequenced behind the redesign items below.
 
@@ -116,7 +116,7 @@ Working state: with Recoll installed, field queries (`tag:`, `author:`, `publish
 
 - Parse Claude export JSON with the same provenance model; synthetic fixtures.
 
-### R12. Query-scoped export and import-with-dry-run
+### R12. Query-scoped export and import-with-dry-run — COMPLETED (native archive; Joplin/Obsidian notebook-hierarchy population deferred to v0.3 importer hardening)
 
 - Export query results (or whole notebooks) preserving notebook structure; exported external-source notes become plain notes on re-import.
 - Import dry run reports notebook-name conflicts and writes an import configuration file for rename-on-import; import validates that config against existing source-bound notebooks before writing.

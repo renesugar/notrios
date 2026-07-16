@@ -180,3 +180,8 @@ This file is the codebase atlas. Update it whenever major files or directories a
 - `internal/importers/claude/` — Claude `conversations.json` importer (flat chat_messages, content blocks).
 - `cmd/notriosctl` — `import chatgpt` and `import claude` subcommands.
 - `testdata/schemas/` — genson-derived schemas for both export formats.
+
+## v0.2 task R12 additions (native archive)
+
+- `internal/archive/` — query-scoped export (notebook paths + emoji preserved, tags, resource bytes), dry-run conflict analysis with rename-suggestion `import-config.json`, validated rename-on-import (refuses names colliding with source-bound notebooks before writing), idempotent plain-note import.
+- `cmd/notriosctl` — `export archive` and `import archive` subcommands.

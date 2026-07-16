@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/renesugar/notrios/internal/archive"
 	"github.com/renesugar/notrios/internal/config"
 	"github.com/renesugar/notrios/internal/importers/chatgpt"
 	claudeimport "github.com/renesugar/notrios/internal/importers/claude"
@@ -30,6 +31,8 @@ func main() {
 		fmt.Println("notriosctl doctor: scaffold checks passed")
 	case "import":
 		runImport(os.Args[2:])
+	case "export":
+		runExport(os.Args[2:])
 	case "help", "-h", "--help":
 		printHelp()
 	default:
@@ -56,6 +59,8 @@ func runImport(args []string) {
 		runImportConversations(args[1:], "chatgpt")
 	case "claude":
 		runImportConversations(args[1:], "claude")
+	case "archive":
+		runImportArchive(args[1:])
 	default:
 		fmt.Fprintf(os.Stderr, "unknown import source type %q\n", args[0])
 		printHelp()
@@ -188,6 +193,8 @@ Usage:
   notriosctl import twitter [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--notebook Twitter] [--dry-run] <extracted-archive-dir>
   notriosctl import chatgpt [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--notebook ChatGPT] [--dry-run] <conversations.json|export-dir>
   notriosctl import claude  [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--notebook Claude] [--dry-run] <conversations.json|export-dir>
+  notriosctl import archive [--db ...] [--dry-run] [--write-config path] [--import-config path] <archive-dir>
+  notriosctl export archive [--db ...] [--query "tag:todo"] <out-dir>
 
 Future commands:
   notriosctl publish quartz --profile <name>
@@ -315,4 +322,130 @@ func runImportConversations(args []string, kind string) {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
+}
+
+func openStoreFromFlags(configPath, dbPath, assetStore string) *store.SQLiteStore {
+	cfg, err := config.Load(configPath)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	if dbPath != "" {
+		cfg.Data.DatabasePath = dbPath
+	}
+	if assetStore != "" {
+		cfg.Data.AssetStore = assetStore
+	}
+	if err := config.EnsureDirectories(cfg); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	st, err := store.OpenSQLiteWithAssetStore(cfg.Data.DatabasePath, cfg.Data.AssetStore)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	if err := st.Bootstrap(context.Background()); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	return st
+}
+
+func printJSON(v any) {
+	encoder := json.NewEncoder(os.Stdout)
+	encoder.SetIndent("", "  ")
+	if err := encoder.Encode(v); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+}
+
+func runExport(args []string) {
+	if len(args) == 0 || args[0] != "archive" {
+		fmt.Fprintln(os.Stderr, "usage: notriosctl export archive [options] <out-dir>")
+		os.Exit(2)
+	}
+	fs := flag.NewFlagSet("notriosctl export archive", flag.ExitOnError)
+	configPath := fs.String("config", "", "optional config file")
+	dbPath := fs.String("db", "", "SQLite database path override")
+	assetStore := fs.String("asset-store", "", "asset store directory override")
+	collectionID := fs.String("collection", "default", "collection ID")
+	query := fs.String("query", "", "query-language scope (empty = all notes)")
+	if err := fs.Parse(args[1:]); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(2)
+	}
+	if fs.NArg() != 1 {
+		fmt.Fprintln(os.Stderr, "usage: notriosctl export archive [options] <out-dir>")
+		fs.PrintDefaults()
+		os.Exit(2)
+	}
+	st := openStoreFromFlags(*configPath, *dbPath, *assetStore)
+	defer st.Close()
+	report, err := archive.Export(context.Background(), st, fs.Arg(0), archive.ExportOptions{Query: *query, CollectionID: *collectionID})
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	printJSON(report)
+}
+
+func runImportArchive(args []string) {
+	fs := flag.NewFlagSet("notriosctl import archive", flag.ExitOnError)
+	configPath := fs.String("config", "", "optional config file")
+	dbPath := fs.String("db", "", "SQLite database path override")
+	assetStore := fs.String("asset-store", "", "asset store directory override")
+	collectionID := fs.String("collection", "default", "collection ID")
+	dryRun := fs.Bool("dry-run", false, "analyze conflicts and write an import configuration without importing")
+	writeConfig := fs.String("write-config", "", "dry run: where to write the import configuration (default <archive>/import-config.json)")
+	importConfig := fs.String("import-config", "", "import configuration file with notebook renames")
+	if err := fs.Parse(args); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(2)
+	}
+	if fs.NArg() != 1 {
+		fmt.Fprintln(os.Stderr, "usage: notriosctl import archive [options] <archive-dir>")
+		fs.PrintDefaults()
+		os.Exit(2)
+	}
+	archiveDir := fs.Arg(0)
+	st := openStoreFromFlags(*configPath, *dbPath, *assetStore)
+	defer st.Close()
+	ctx := context.Background()
+
+	if *dryRun {
+		cfg, report, err := archive.DryRun(ctx, st, archiveDir)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		target := *writeConfig
+		if target == "" {
+			target = archiveDir + "/import-config.json"
+		}
+		if err := archive.WriteConfig(cfg, target); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		fmt.Fprintf(os.Stderr, "import configuration written to %s\n", target)
+		printJSON(report)
+		return
+	}
+
+	options := archive.ImportOptions{CollectionID: *collectionID}
+	if *importConfig != "" {
+		cfg, err := archive.LoadConfig(*importConfig)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		options.Config = cfg
+	}
+	report, err := archive.Import(ctx, st, archiveDir, options)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	printJSON(report)
 }

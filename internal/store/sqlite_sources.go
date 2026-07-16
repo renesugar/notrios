@@ -218,3 +218,18 @@ func (s *SQLiteStore) documentHasSourceLocked(documentID string) (bool, error) {
 	count, err := s.countLocked(`SELECT COUNT(1) FROM document_sources WHERE document_id = ?`, documentID)
 	return count > 0, err
 }
+
+// NotebookHasSourcedDocuments reports whether a notebook holds any
+// externally-sourced notes (including trashed ones). Import tooling treats
+// such notebooks as bound to their data source: archive imports must not
+// merge plain notes into them.
+func (s *SQLiteStore) NotebookHasSourcedDocuments(ctx context.Context, notebookID string) (bool, error) {
+	ctx = contextOrBackground(ctx)
+	if err := ctx.Err(); err != nil {
+		return false, err
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	count, err := s.countLocked(`SELECT COUNT(1) FROM documents d JOIN document_sources ds ON ds.document_id = d.id WHERE d.notebook_id = ?`, strings.TrimSpace(notebookID))
+	return count > 0, err
+}

@@ -396,6 +396,8 @@ type Store interface {
 
 	PendingProjectionJobs(ctx context.Context, limit int) ([]OutboxJob, error)
 	CompleteProjectionJob(ctx context.Context, sequence int64, jobErr error) error
+
+	NotebookHasSourcedDocuments(ctx context.Context, notebookID string) (bool, error)
 }
 
 // OutboxJob is one pending projection/indexing job. Document mutations enqueue
