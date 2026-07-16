@@ -1,74 +1,51 @@
 # Packaging
 
-This document describes the MVP packaging workflow. The current package is a source-first ZIP suitable for creating or updating a Gitea/GitHub repository. It is not yet an OS installer.
+Notrios currently ships as **source only**. The packaging workflow produces a source-first ZIP for archiving or importing into another repository host — it is not a binary distribution and not an OS installer, and no prebuilt binaries are published.
 
-## Release package contents
-
-The MVP ZIP should include:
-
-- Go service and CLI source under `cmd/` and `internal/`;
-- migrations embedded under `internal/store/migrations/`;
-- React source under `web/src/`;
-- built production UI assets under `web/dist/`;
-- docs, plans, skills, prompts, test fixtures, and validation scripts;
-- `web/package-lock.json` for reproducible UI dependency installation.
-
-The ZIP should exclude:
-
-- `.git/` history;
-- `web/node_modules/`;
-- runtime `data/` directories;
-- local SQLite files and WAL/SHM sidecars;
-- temporary test output.
-
-## Build and package command
-
-Run from the repository root:
+## The source release ZIP
 
 ```bash
-bash scripts/package_release.sh /tmp/notrios-v0.1.0-mvp.zip
+bash scripts/package_release.sh                 # writes dist/notrios-src.zip
+bash scripts/package_release.sh /path/out.zip   # explicit output path
 ```
 
-That script runs the Go tests, scaffold validation, UI dependency install, UI production build, ZIP creation, and ZIP-content verification.
+The script runs, in order: `go test ./...`, the required-files check, scaffold validation, `npm ci` + the production web build, ZIP creation, and ZIP-content verification (`scripts/check_release_zip.py`). The default output lands in the git-ignored `dist/` directory so archives cannot be committed by accident.
 
-## Manual validation commands
+Included:
+
+- Go source (`cmd/`, `internal/`, embedded migrations under `internal/store/migrations/`);
+- React source (`web/src/`) **and** the freshly built `web/dist/` assets;
+- `web/package-lock.json` for reproducible dependency installation;
+- documentation (`docs/`, design documents), plans, skills, prompts, fixtures, and validation scripts.
+
+Excluded (enforced by both the zip exclusions and `check_release_zip.py`):
+
+- `.git/` history, `web/node_modules/`;
+- runtime `data/` directories, SQLite databases and their WAL/SHM sidecars;
+- build/test/dev artifacts: `bin/`, `dist/`, `_site/`, `.playwright-mcp/`, `__pycache__`/`*.pyc`, coverage output, editor backups, other ZIPs, `.claude/`.
+
+Because tests and the web build run first, a ZIP is only produced from a validated tree. The archive contents are deterministic apart from build-time asset hashes in `web/dist/`.
+
+## Binary "packaging" today
+
+`make build` and `make gui` produce local binaries under `bin/` (see [docs/installation.md](docs/installation.md)). Two runtime facts matter for anyone redistributing them informally:
+
+- the browser UI is served from `web/dist/` relative to the working directory, so a bare binary without that directory serves the API only;
+- the SQLite store links against the system `libsqlite3` (cgo), so binaries are tied to a compatible glibc/libsqlite3.
+
+A real installer/package story (self-contained assets, per-OS packages) remains future work on the roadmap (`ROADMAP.md` v1.0).
+
+## Tagging a release
+
+Validate first (`RELEASE_CHECKLIST.md` has the current checklist and push/tag sequence):
 
 ```bash
 go test ./...
-python3 scripts/check_required_files.py
 bash scripts/validate-scaffold.sh
 cd web && npm ci && npm run typecheck && npm run build
 bash scripts/mvp_smoke.sh
 bash scripts/run_performance_smoke.sh
+bash scripts/package_release.sh
 ```
 
-## Development branch workflow
-
-Recommended first repository setup:
-
-```bash
-git init
-git add .
-git commit -m "Initial notes companion MVP scaffold"
-git branch -M main
-git checkout -b develop
-```
-
-Do active work on `develop` or task branches. Merge to `main` only after the MVP smoke tests, generated-dataset smoke tests, and release ZIP checks pass.
-
-## Version tag candidate
-
-After review, the MVP can be tagged as:
-
-```bash
-git tag -a v0.1.0-mvp -m "Notrios (Notes Companion) MVP"
-```
-
-Do not tag until the user has reviewed the ZIP and selected a license in `LICENSE_PENDING.md`.
-
-## Current package limitations
-
-- No platform-specific installer is produced.
-- The service currently uses a local cgo SQLite wrapper; consider replacing it with a maintained SQLite driver in a less constrained environment.
-- The MCP endpoint is a dependency-free MVP JSON-RPC adapter, not the official Go SDK transport.
-- The search sidecar (now Recoll, formerly sist2), Quartz, and remote-media localization are documented but not implemented in v0.1.
+The project license is Apache-2.0 (`LICENSE`); dependency license audits are recorded in `RELEASE_CHECKLIST.md`.

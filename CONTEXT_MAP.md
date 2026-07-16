@@ -205,3 +205,9 @@ This file is the codebase atlas. Update it whenever major files or directories a
 - `.github/workflows/docs.yml` — GitHub Pages deployment for the docs site.
 - `internal/helpdocs/` + `notriosctl seed-help` — deterministic Help-notebook seeding (create/update/remove).
 - Help notes are read-only at the REST/MCP layers (`guardHelpNote`).
+
+## Documentation completeness pass (2026-07-16)
+
+- New user docs: `docs/installation.md` (build/install guide), `docs/troubleshooting.md`; all pages in the site nav.
+- Rewritten: `ENVIRONMENT_SETUP.md` (contributor guide incl. cleanup/precheck workflow), `PACKAGING.md`, `docs/cli.md` (full subcommand reference), `docs/service.md` (config reference + backup/restore), expanded `docs/import-export.md` (per-source workflows incl. the detailed Joplin RAW procedure) and API guides (curl examples, placeholder-endpoint labeling).
+- `notriosctl doctor` performs real diagnostics; importers gained trashed-note re-import guards (Joplin/Obsidian); SQLite opens with a 5s busy timeout; Makefile has full build/clean/precheck targets.
