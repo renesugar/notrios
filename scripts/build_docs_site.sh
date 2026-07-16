@@ -10,14 +10,14 @@ rm -rf "$OUT"
 mkdir -p "$OUT"
 
 nav='<nav class="site-nav">
-  <a href="/index.html"><strong>Notrios</strong></a>
-  <a href="/service.html">Service</a>
-  <a href="/cli.html">CLI</a>
-  <a href="/query-language.html">Query language</a>
-  <a href="/gui.html">GUI</a>
-  <a href="/import-export.html">Import &amp; export</a>
-  <a href="/api/rest.html">REST API</a>
-  <a href="/api/mcp.html">MCP</a>
+  <a href="/notrios/index.html"><strong>Notrios</strong></a>
+  <a href="/notrios/service.html">Service</a>
+  <a href="/notrios/cli.html">CLI</a>
+  <a href="/notrios/query-language.html">Query language</a>
+  <a href="/notrios/gui.html">GUI</a>
+  <a href="/notrios/import-export.html">Import &amp; export</a>
+  <a href="/notrios/api/rest.html">REST API</a>
+  <a href="/notrios/api/mcp.html">MCP</a>
 </nav>
 <div id="search"></div>'
 
