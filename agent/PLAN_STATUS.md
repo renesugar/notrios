@@ -2,7 +2,7 @@
 
 ## Current phase
 
-v0.2 Notrios redesign foundation (`PLAN.md`). Tasks **R1 (documentation redesign)**, **R2 (code rename + Apache-2.0 license)**, **R3 (schema v5 — notebooks/tags/search notebooks)**, and **R4 (schema v6 — source provenance and threads)** are completed, as are **R5 (notebooks/tags/trash REST + MCP read tools)**, **R6 (query-language adapter)**, **R7 (Recoll integration)**, **R8 (full-client MCP/REST surface)**, **R9 (Twitter/X archive importer)**, **R10 (ChatGPT importer)**, and **R11 (Claude importer)**; as is **R12 (query-scoped export/import with dry-run)**; **R13 (Wails GUI shell)**, and **R14 (GUI themes)**; next task is **R15 (Help notebook + documentation site)** — ask the user before starting it.
+v0.2 Notrios redesign foundation (`PLAN.md`). Tasks **R1 (documentation redesign)**, **R2 (code rename + Apache-2.0 license)**, **R3 (schema v5 — notebooks/tags/search notebooks)**, and **R4 (schema v6 — source provenance and threads)** are completed, as are **R5 (notebooks/tags/trash REST + MCP read tools)**, **R6 (query-language adapter)**, **R7 (Recoll integration)**, **R8 (full-client MCP/REST surface)**, **R9 (Twitter/X archive importer)**, **R10 (ChatGPT importer)**, and **R11 (Claude importer)**; as is **R12 (query-scoped export/import with dry-run)**; **R13 (Wails GUI shell)**, **R14 (GUI themes)**, and **R15 (Help notebook + documentation site)**; the final task is **R16 (GitHub release preparation)** — ask the user before starting it.
 
 ## Current working state
 
@@ -47,9 +47,11 @@ v0.2 Notrios redesign foundation (`PLAN.md`). Tasks **R1 (documentation redesign
 
 - R14 changes (GUI themes): `styles.css` colors tokenized into CSS custom properties; `web/src/themes.ts` (builtin Light/Dark token sets, localStorage persistence, custom-theme CRUD, per-mode theme selection, applyTheme); header 🌙/☀️ toggle + 🎨 theme settings panel (per-mode theme selects, create-from-current, per-token color editors, delete); editor/preview follows the theme base. Verified live in a browser via Playwright: toggle flips tokens, mode survives reload, a custom theme was created through the UI and selected for dark mode. See `plans/v0.2/014-gui-themes.md`.
 
+- R15 changes (docs + Help notebook): user documentation under `docs/`; `scripts/build_docs_site.sh` builds the static site with a PageFind search index (verified live in a browser); `.github/workflows/docs.yml` deploys to GitHub Pages; `internal/helpdocs` + `notriosctl seed-help` mirror docs into the read-only Help notebook deterministically; Help notes now enforced read-only at REST/MCP layers (403). See `plans/v0.2/015-docs-site-help-notebook.md`.
+
 ## Next suggested step
 
-Task R15: Help notebook + documentation site — `docs/` markdown for service/CLI/API/query language/GUI, GitHub Pages workflow with PageFind search, Help-notebook seeding for offline docs.
+Task R16: GitHub release preparation — dependency license compatibility check, CI review, README final pass, push sequence for github.com/renesugar/notrios.
 
 ## Validation
 
@@ -75,4 +77,4 @@ bash scripts/run_performance_smoke.sh
 - Config parser supports only the documented example-config subset.
 - The MCP MVP adapter is dependency-free; official MCP Go SDK adoption is future work.
 - Importers verified on synthetic fixtures only; verify against real Joplin RAW exports and Obsidian vaults before large migrations.
-- Docs site is design-only (R15). Recoll integration is implemented (R7) but reconciliation/batched-scan hardening remains a v0.3 roadmap item.
+- Recoll integration is implemented (R7) but reconciliation/batched-scan hardening remains a v0.3 roadmap item.

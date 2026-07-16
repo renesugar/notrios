@@ -197,3 +197,11 @@ This file is the codebase atlas. Update it whenever major files or directories a
 - `web/src/themes.ts` — theme token sets (builtin Light/Dark), custom-theme persistence, per-mode theme selection, applyTheme.
 - `web/src/styles.css` — colors tokenized into CSS custom properties; theme-panel styles.
 - `web/src/App.tsx` — header light/dark toggle and theme settings panel (create/edit/delete custom themes, assign per mode).
+
+## v0.2 task R15 additions (docs + Help notebook)
+
+- `docs/` — user documentation (published to GitHub Pages and seeded into the Help notebook).
+- `scripts/build_docs_site.sh` — Markdown → HTML with a shared template plus a PageFind static search index.
+- `.github/workflows/docs.yml` — GitHub Pages deployment for the docs site.
+- `internal/helpdocs/` + `notriosctl seed-help` — deterministic Help-notebook seeding (create/update/remove).
+- Help notes are read-only at the REST/MCP layers (`guardHelpNote`).
