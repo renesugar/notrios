@@ -2,6 +2,20 @@ import { useEffect, useMemo, useState, type MouseEvent } from 'react';
 import { MdEditor, type PreviewRendererProps, type UploadImgCallBack } from 'md-editor-rt';
 import 'md-editor-rt/lib/style.css';
 import {
+  allThemes,
+  applyTheme,
+  loadCustomThemes,
+  loadChoice,
+  loadMode,
+  resolveTheme,
+  saveChoice,
+  saveCustomThemes,
+  saveMode,
+  type Theme,
+  type ThemeMode,
+  type ThemeTokens,
+} from './themes';
+import {
   attachResource,
   createDocument,
   getDocument,
@@ -45,6 +59,58 @@ export function App() {
   const [tags, setTags] = useState<TagRecord[]>([]);
   const [nextCursor, setNextCursor] = useState('');
   const [activeQuery, setActiveQuery] = useState('');
+  const [mode, setMode] = useState<ThemeMode>(() => loadMode());
+  const [customThemes, setCustomThemes] = useState<Theme[]>(() => loadCustomThemes());
+  const [showThemes, setShowThemes] = useState(false);
+  const [newThemeName, setNewThemeName] = useState('');
+
+  const activeTheme = useMemo(() => resolveTheme(mode, customThemes), [mode, customThemes, showThemes]);
+
+  useEffect(() => {
+    applyTheme(activeTheme);
+  }, [activeTheme]);
+
+  function toggleMode() {
+    const next: ThemeMode = mode === 'light' ? 'dark' : 'light';
+    setMode(next);
+    saveMode(next);
+  }
+
+  function onSelectThemeFor(target: ThemeMode, themeName: string) {
+    saveChoice(target, themeName);
+    // Re-resolve; customThemes state is unchanged, so nudge via setMode.
+    setMode((current) => current);
+    setShowThemes((v) => v); // no-op state touch keeps the memo fresh via deps
+    setCustomThemes((themes) => [...themes]);
+  }
+
+  function onCreateTheme() {
+    const name = newThemeName.trim();
+    if (!name) return;
+    if (allThemes(customThemes).some((theme) => theme.name.toLowerCase() === name.toLowerCase())) {
+      setError(`A theme named “${name}” already exists.`);
+      return;
+    }
+    const clone: Theme = { name, base: activeTheme.base, tokens: { ...activeTheme.tokens } };
+    const next = [...customThemes, clone];
+    setCustomThemes(next);
+    saveCustomThemes(next);
+    setNewThemeName('');
+  }
+
+  function onDeleteTheme(name: string) {
+    const next = customThemes.filter((theme) => theme.name !== name);
+    setCustomThemes(next);
+    saveCustomThemes(next);
+  }
+
+  function onEditThemeToken(name: string, token: keyof ThemeTokens, value: string) {
+    const next = customThemes.map((theme) =>
+      theme.name === name ? { ...theme, tokens: { ...theme.tokens, [token]: value } } : theme,
+    );
+    setCustomThemes(next);
+    saveCustomThemes(next);
+  }
 
   async function refreshSidebar() {
     try {
@@ -277,8 +343,75 @@ export function App() {
     <main className="app-shell">
       <header className="app-header">
         <h1>Notrios</h1>
-        <p className="status">{statusText}</p>
+        <div className="header-actions">
+          <p className="status">{statusText}</p>
+          <button type="button" className="icon-button" title="Toggle light/dark theme" onClick={toggleMode}>
+            {mode === 'light' ? '🌙' : '☀️'}
+          </button>
+          <button type="button" className="icon-button" title="Theme settings" onClick={() => setShowThemes((v) => !v)}>
+            🎨
+          </button>
+        </div>
       </header>
+
+      {showThemes && (
+        <section className="panel theme-panel">
+          <div className="panel-heading">
+            <h2>Themes</h2>
+            <span className="muted">the toggle switches between your selected light and dark themes</span>
+          </div>
+          <div className="theme-selects">
+            <label>
+              Light mode uses
+              <select value={loadChoice('light')} onChange={(event) => onSelectThemeFor('light', event.target.value)}>
+                {allThemes(customThemes).map((theme) => (
+                  <option key={theme.name} value={theme.name}>{theme.name}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Dark mode uses
+              <select value={loadChoice('dark')} onChange={(event) => onSelectThemeFor('dark', event.target.value)}>
+                {allThemes(customThemes).map((theme) => (
+                  <option key={theme.name} value={theme.name}>{theme.name}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <div className="theme-create">
+            <input
+              value={newThemeName}
+              placeholder="New theme name (copies the current theme)"
+              onChange={(event) => setNewThemeName(event.target.value)}
+            />
+            <button type="button" onClick={onCreateTheme} disabled={!newThemeName.trim()}>
+              Create custom theme
+            </button>
+          </div>
+          {customThemes.map((theme) => (
+            <details key={theme.name} className="theme-editor">
+              <summary>
+                {theme.name} <span className="muted">({theme.base} base)</span>
+                <button type="button" className="text-button" onClick={() => onDeleteTheme(theme.name)}>
+                  delete
+                </button>
+              </summary>
+              <div className="theme-tokens">
+                {(Object.keys(theme.tokens) as Array<keyof ThemeTokens>).map((token) => (
+                  <label key={token}>
+                    {token}
+                    <input
+                      type="color"
+                      value={/^#[0-9a-fA-F]{6}$/.test(theme.tokens[token]) ? theme.tokens[token] : '#888888'}
+                      onChange={(event) => onEditThemeToken(theme.name, token, event.target.value)}
+                    />
+                  </label>
+                ))}
+              </div>
+            </details>
+          ))}
+        </section>
+      )}
 
       <section className="workspace">
         <aside className="sidebar">
@@ -345,7 +478,7 @@ export function App() {
               sanitize={normalizePreviewHTML}
               language="en-US"
               previewTheme="github"
-              theme="light"
+              theme={activeTheme.base}
               noMermaid
               style={{ height: '520px' }}
             />

@@ -39,10 +39,12 @@ Standard desktop menu bar at the top (File, Edit, View, Help, …), then four re
 - **First panel:** search box and query results. On startup the "All notes" search runs; the search API returns incremental results as the user scrolls, so startup never retrieves hundreds of thousands of notes at once.
 - **Next two panels:** Markdown editor and Markdown preview.
 
-## Themes
+## Themes (implemented, task R14)
 
-- A light/dark toggle sits on the main window.
-- Users can create custom themes and select them as the active light and dark themes in place of the defaults.
+- A light/dark toggle (🌙/☀️) sits on the main window header; the mode persists.
+- Themes are named sets of CSS custom properties (`web/src/themes.ts`); every color in `styles.css` reads a token, and the editor/preview follows the theme's light/dark base.
+- Users can create custom themes (cloned from the current theme, per-token color editing, deletable) and select any theme — builtin or custom — as the one used for light mode and for dark mode; the toggle then switches between those two selections.
+- Themes and selections persist in localStorage, so they behave identically in the Wails webview and a browser.
 
 ## Frontend implementation
 

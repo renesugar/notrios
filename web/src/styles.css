@@ -1,7 +1,23 @@
+/* Theme tokens (task R14). Themes — builtin light/dark and user-defined
+   custom themes — set these variables on <html> via web/src/themes.ts. */
+:root {
+  --bg: #f7f7fb;
+  --text: #172033;
+  --muted: #5b6472;
+  --panel-bg: #ffffff;
+  --border: #e5e7eb;
+  --border-strong: #d9dee7;
+  --accent: #2563eb;
+  --accent-soft: #d7e3f7;
+  --hover: #e8edf5;
+  --chip-bg: #e8edf5;
+  --shadow: rgba(15, 23, 42, 0.05);
+}
+
 :root {
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  color: #172033;
-  background: #f7f7fb;
+  color: var(--text);
+  background: var(--bg);
 }
 
 * {
@@ -23,11 +39,11 @@ button, input, textarea {
 }
 
 .hero, .panel, .notice {
-  background: white;
-  border: 1px solid #e5e7eb;
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
   border-radius: 16px;
   padding: 24px;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
+  box-shadow: 0 10px 30px var(--shadow);
   margin-bottom: 20px;
 }
 
@@ -40,7 +56,7 @@ button, input, textarea {
 
 .eyebrow {
   margin: 0 0 6px;
-  color: #2563eb;
+  color: var(--accent);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -84,10 +100,10 @@ label {
 input, textarea {
   width: 100%;
   padding: 10px 12px;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--border-strong);
   border-radius: 8px;
-  background: #fff;
-  color: #111827;
+  background: var(--panel-bg);
+  color: var(--text);
 }
 
 textarea {
@@ -101,7 +117,7 @@ button {
   padding: 10px 16px;
   border: 0;
   border-radius: 8px;
-  background: #2563eb;
+  background: var(--accent);
   color: white;
   font-weight: 700;
   cursor: pointer;
@@ -113,7 +129,7 @@ button:disabled {
 }
 
 .status, .muted {
-  color: #64748b;
+  color: var(--muted);
 }
 
 .status {
@@ -122,8 +138,8 @@ button:disabled {
 }
 
 .notice {
-  border-color: #bfdbfe;
-  background: #eff6ff;
+  border-color: var(--accent-soft);
+  background: var(--accent-soft);
 }
 
 .error {
@@ -143,10 +159,10 @@ button:disabled {
   gap: 6px;
   padding: 14px;
   text-align: left;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border);
   border-radius: 12px;
-  background: #f8fafc;
-  color: #172033;
+  background: var(--bg);
+  color: var(--text);
 }
 
 .result-card mark {
@@ -155,7 +171,7 @@ button:disabled {
 }
 
 .result-card small {
-  color: #64748b;
+  color: var(--muted);
   overflow-wrap: anywhere;
 }
 
@@ -173,7 +189,7 @@ button:disabled {
 
 .document-meta dt {
   font-weight: 700;
-  color: #334155;
+  color: var(--muted);
 }
 
 .document-meta dd {
@@ -185,7 +201,7 @@ button:disabled {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   background: #0f172a;
-  color: #e2e8f0;
+  color: var(--border);
   border-radius: 12px;
   padding: 18px;
   max-height: 420px;
@@ -210,7 +226,7 @@ button:disabled {
 }
 
 .resource-list {
-  border: 1px solid #d7dbe7;
+  border: 1px solid var(--border-strong);
   border-radius: 0.75rem;
   margin: 1rem 0;
   padding: 0.75rem 1rem;
@@ -259,7 +275,7 @@ button:disabled {
 }
 
 .link-list {
-  border: 1px solid #d7dbe7;
+  border: 1px solid var(--border-strong);
   border-radius: 0.75rem;
   margin: 1rem 0;
   padding: 0.75rem 1rem;
@@ -282,7 +298,7 @@ button:disabled {
   border: 0;
   border-radius: 0;
   background: transparent;
-  color: #2563eb;
+  color: var(--accent);
   font: inherit;
   font-weight: 600;
   cursor: pointer;
@@ -296,7 +312,7 @@ button:disabled {
   justify-content: space-between;
   gap: 16px;
   padding: 10px 20px;
-  border-bottom: 1px solid #d9dee7;
+  border-bottom: 1px solid var(--border-strong);
 }
 
 .app-header h1 {
@@ -312,7 +328,7 @@ button:disabled {
 }
 
 .sidebar {
-  border-right: 1px solid #d9dee7;
+  border-right: 1px solid var(--border-strong);
   padding: 12px 8px 12px 4px;
   position: sticky;
   top: 0;
@@ -325,7 +341,7 @@ button:disabled {
   font-size: 12px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #5b6472;
+  color: var(--muted);
 }
 
 .sidebar-list {
@@ -355,11 +371,11 @@ button:disabled {
 }
 
 .sidebar-item:hover {
-  background: #e8edf5;
+  background: var(--hover);
 }
 
 .sidebar-item.active {
-  background: #d7e3f7;
+  background: var(--accent-soft);
   font-weight: 600;
 }
 
@@ -371,8 +387,8 @@ button:disabled {
 
 .tag-count {
   font-size: 12px;
-  color: #5b6472;
-  background: #e8edf5;
+  color: var(--muted);
+  background: var(--chip-bg);
   border-radius: 10px;
   padding: 0 8px;
 }
@@ -388,8 +404,88 @@ button:disabled {
   }
   .sidebar {
     border-right: 0;
-    border-bottom: 1px solid #d9dee7;
+    border-bottom: 1px solid var(--border-strong);
     position: static;
     max-height: none;
   }
+}
+
+/* Theme controls (task R14). */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.icon-button {
+  border: 1px solid var(--border-strong);
+  background: var(--panel-bg);
+  border-radius: 8px;
+  padding: 4px 10px;
+  cursor: pointer;
+  font-size: 15px;
+}
+
+.icon-button:hover {
+  background: var(--hover);
+}
+
+.theme-panel .theme-selects {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.theme-panel select {
+  margin-left: 8px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border-strong);
+  background: var(--panel-bg);
+  color: var(--text);
+}
+
+.theme-create {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.theme-create input {
+  max-width: 340px;
+}
+
+.theme-editor summary {
+  cursor: pointer;
+  padding: 6px 0;
+}
+
+.theme-editor summary .text-button {
+  margin-left: 12px;
+}
+
+.theme-tokens {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+  padding: 10px 0;
+}
+
+.theme-tokens label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.theme-tokens input[type='color'] {
+  width: 42px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  background: transparent;
 }
