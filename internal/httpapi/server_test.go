@@ -56,7 +56,7 @@ func TestStatusReportsConfigurationAndSchema(t *testing.T) {
 	if err := json.NewDecoder(rr.Body).Decode(&got); err != nil {
 		t.Fatalf("decode status: %v", err)
 	}
-	if got.Status != "running" || got.DatabaseInfo.Driver != "sqlite" || got.DatabaseInfo.SchemaVersion != 6 {
+	if got.Status != "running" || got.DatabaseInfo.Driver != "sqlite" || got.DatabaseInfo.SchemaVersion != 7 {
 		t.Fatalf("unexpected database status: %+v", got)
 	}
 	if got.ConfigPath != "config/test.yaml" || got.Storage.AssetStore != "/tmp/notes-test-assets" {
@@ -64,6 +64,18 @@ func TestStatusReportsConfigurationAndSchema(t *testing.T) {
 	}
 	if !got.Capabilities["documents.create"] || !got.Capabilities["search.fts5"] || !got.Capabilities["search_sidecar"] {
 		t.Fatalf("expected capability flags to be reported: %+v", got.Capabilities)
+	}
+	if got.MediaPolicy == nil {
+		t.Fatalf("status must report the media policy: %+v", got)
+	}
+	if got.MediaPolicy.DefaultAction != "review" || got.MediaPolicy.AllowPrivateNetworks {
+		t.Fatalf("unexpected media policy defaults: %+v", got.MediaPolicy)
+	}
+	if got.MediaPolicy.BlockedSchemes == 0 || got.MediaPolicy.MaxRedirects == 0 || got.MediaPolicy.FetchTimeoutSeconds == 0 {
+		t.Fatalf("media policy limits missing: %+v", got.MediaPolicy)
+	}
+	if got.MediaPolicy.MaxBytes["image"] == 0 || got.MediaPolicy.QuarantineDir == "" {
+		t.Fatalf("media policy size caps/quarantine missing: %+v", got.MediaPolicy)
 	}
 }
 

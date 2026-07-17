@@ -1,6 +1,6 @@
 # Plan: v0.3 — Import, resource, and media hardening
 
-Status: **draft, approved to start** (drafted 2026-07-16 from `ROADMAP.md`; supersedes the archived draft `plans/v0.2/001-import-resource-media-hardening.md`). The completed v0.2 redesign plan is archived under `plans/v0.2/`.
+Status: **active** (drafted 2026-07-16 from `ROADMAP.md`; supersedes the archived draft `plans/v0.2/001-import-resource-media-hardening.md`). The completed v0.2 redesign plan is archived under `plans/v0.2/`. H1 is complete (`plans/v0.3/001-media-policy-config-schema.md`); H2 is next.
 
 ## Goal
 
@@ -17,7 +17,7 @@ Every task must leave the project in a working state. Update `agent/PLAN_STATUS.
 
 ## Tasks
 
-### H1. Media-policy configuration and schema
+### H1. Media-policy configuration and schema — COMPLETED (see `plans/v0.3/001-media-policy-config-schema.md`)
 
 - Typed remote-media policy config (`media_policy` section): allowed/blocked/review domain patterns, max download size, fetch timeout, max redirect hops, allowed MIME types, private-network and scheme rules (block `file:`, `data:`, link-local/private addresses by default).
 - Schema v7: media-policy tables per `DATABASE_SCHEMA.md` — domain rules, exact-hash blocks, perceptual-hash blocks (hooks only for now), remote-media attempts (original URL, final URL, decision, timestamps), quarantine state, resource hash records.

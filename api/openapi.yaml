@@ -734,6 +734,26 @@ components:
         limits:
           type: object
           additionalProperties: { type: integer }
+        media_policy:
+          type: object
+          description: >
+            Active remote-media policy (v0.3): effective default action,
+            network limits, and rule counts per configured list. Scanning and
+            localization endpoints arrive in later v0.3 tasks.
+          properties:
+            default_action: { type: string, enum: [allow, block, review] }
+            allow_private_networks: { type: boolean }
+            max_redirects: { type: integer }
+            fetch_timeout_seconds: { type: integer }
+            blocked_schemes: { type: integer, description: Count of configured blocked schemes. }
+            allowed_domains: { type: integer, description: Count of configured allowed-domain patterns. }
+            blocked_domains: { type: integer, description: Count of configured blocked-domain patterns. }
+            review_domains: { type: integer, description: Count of configured review-domain patterns. }
+            max_bytes:
+              type: object
+              additionalProperties: { type: integer, format: int64 }
+              description: Download size caps in bytes per media class (image/video/pdf).
+            quarantine_dir: { type: string }
     ErrorEnvelope:
       type: object
       required: [error]

@@ -20,10 +20,13 @@ mcp:
   max_document_bytes: 65536
 
 remote_media:
-  default_action: "review"
+  default_action: "review"       # allow | block | review (review = report, never auto-download)
   allow_private_networks: false
   max_redirects: 5
+  fetch_timeout_seconds: 30
+  quarantine_dir: "./data/quarantine"
   blocked_schemes: ["file", "ftp", "data"]
+  review_domains: []
   blocked_domains:
     - "*.example-blocked.invalid"
   allowed_domains:

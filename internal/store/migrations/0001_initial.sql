@@ -194,3 +194,41 @@ CREATE INDEX IF NOT EXISTS document_sources_thread_idx ON document_sources(threa
 CREATE INDEX IF NOT EXISTS document_sources_author_idx ON document_sources(author_id);
 
 PRAGMA user_version = 6;
+
+-- Schema v7: media-policy hardening (v0.3 task H1). User-managed domain and
+-- hash rules complement the remote_media config lists; resource_hashes holds
+-- additional (including future perceptual) hashes per stored blob. The
+-- media_policy_decisions table above gains quarantine-state columns via the
+-- v7 upgrade shim (ALTERs are not idempotent, so they cannot live here).
+CREATE TABLE IF NOT EXISTS media_domain_rules (
+    id TEXT PRIMARY KEY,
+    pattern TEXT NOT NULL,
+    action TEXT NOT NULL CHECK (action IN ('allow', 'block', 'review')),
+    note TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS media_domain_rules_pattern_idx
+    ON media_domain_rules(pattern COLLATE NOCASE);
+
+CREATE TABLE IF NOT EXISTS media_hash_rules (
+    algo TEXT NOT NULL,
+    hash TEXT NOT NULL,
+    kind TEXT NOT NULL CHECK (kind IN ('exact', 'perceptual')),
+    action TEXT NOT NULL CHECK (action IN ('block', 'review')),
+    reason TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (algo, hash)
+);
+
+CREATE TABLE IF NOT EXISTS resource_hashes (
+    blob_sha256 TEXT NOT NULL,
+    algo TEXT NOT NULL,
+    hash TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (blob_sha256, algo)
+);
+
+CREATE INDEX IF NOT EXISTS resource_hashes_hash_idx ON resource_hashes(algo, hash);
+
+PRAGMA user_version = 7;

@@ -66,7 +66,7 @@ GET /healthz
 GET /api/v1/status
 ```
 
-`/api/v1/status` reports runtime readiness plus the config path, database driver/path/state, schema version, storage roots, capability flags, and configured search limits. `database` remains as a deprecated summary string for early UI compatibility; clients should prefer `database_info`.
+`/api/v1/status` reports runtime readiness plus the config path, database driver/path/state, schema version, storage roots, capability flags, configured search limits, and the active remote-media policy (`media_policy`: default action, network limits, per-list rule counts, size caps, quarantine directory — v0.3). `database` remains as a deprecated summary string for early UI compatibility; clients should prefer `database_info`.
 
 ### Collections
 

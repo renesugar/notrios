@@ -212,6 +212,18 @@ func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
 			"search_max_limit":     s.config.Search.MaxLimit,
 			"search_max_offset":    s.config.Search.MaxOffset,
 		},
+		MediaPolicy: &api.MediaPolicyStatus{
+			DefaultAction:        s.config.RemoteMedia.DefaultAction,
+			AllowPrivateNetworks: s.config.RemoteMedia.AllowPrivateNetworks,
+			MaxRedirects:         s.config.RemoteMedia.MaxRedirects,
+			FetchTimeoutSeconds:  s.config.RemoteMedia.FetchTimeoutSeconds,
+			BlockedSchemes:       len(s.config.RemoteMedia.BlockedSchemes),
+			AllowedDomains:       len(s.config.RemoteMedia.AllowedDomains),
+			BlockedDomains:       len(s.config.RemoteMedia.BlockedDomains),
+			ReviewDomains:        len(s.config.RemoteMedia.ReviewDomains),
+			MaxBytes:             s.config.RemoteMedia.MaxBytes,
+			QuarantineDir:        s.config.RemoteMedia.QuarantineDir,
+		},
 	})
 }
 
