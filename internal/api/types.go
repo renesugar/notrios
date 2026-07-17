@@ -3,15 +3,32 @@ package api
 // StatusResponse describes service health, runtime configuration, storage roots,
 // and currently implemented capability flags.
 type StatusResponse struct {
-	Service      string          `json:"service"`
-	Version      string          `json:"version"`
-	Status       string          `json:"status"`
-	Database     string          `json:"database,omitempty"` // Deprecated summary retained for early UI compatibility.
-	ConfigPath   string          `json:"config_path,omitempty"`
-	DatabaseInfo DatabaseStatus  `json:"database_info,omitempty"`
-	Storage      StorageStatus   `json:"storage,omitempty"`
-	Capabilities map[string]bool `json:"capabilities,omitempty"`
-	Limits       map[string]int  `json:"limits,omitempty"`
+	Service      string             `json:"service"`
+	Version      string             `json:"version"`
+	Status       string             `json:"status"`
+	Database     string             `json:"database,omitempty"` // Deprecated summary retained for early UI compatibility.
+	ConfigPath   string             `json:"config_path,omitempty"`
+	DatabaseInfo DatabaseStatus     `json:"database_info,omitempty"`
+	Storage      StorageStatus      `json:"storage,omitempty"`
+	Capabilities map[string]bool    `json:"capabilities,omitempty"`
+	Limits       map[string]int     `json:"limits,omitempty"`
+	MediaPolicy  *MediaPolicyStatus `json:"media_policy,omitempty"`
+}
+
+// MediaPolicyStatus reports the active remote-media policy (v0.3 task H1):
+// the effective default action, network limits, and how many rules each
+// configured list carries. Localization itself lands in later v0.3 tasks.
+type MediaPolicyStatus struct {
+	DefaultAction        string           `json:"default_action"`
+	AllowPrivateNetworks bool             `json:"allow_private_networks"`
+	MaxRedirects         int              `json:"max_redirects"`
+	FetchTimeoutSeconds  int              `json:"fetch_timeout_seconds"`
+	BlockedSchemes       int              `json:"blocked_schemes"`
+	AllowedDomains       int              `json:"allowed_domains"`
+	BlockedDomains       int              `json:"blocked_domains"`
+	ReviewDomains        int              `json:"review_domains"`
+	MaxBytes             map[string]int64 `json:"max_bytes,omitempty"`
+	QuarantineDir        string           `json:"quarantine_dir,omitempty"`
 }
 
 type DatabaseStatus struct {
@@ -340,6 +357,11 @@ type RemoteMediaRequest struct {
 	Types  []string `json:"types,omitempty"`
 	URLs   []string `json:"urls,omitempty"`
 	DryRun bool     `json:"dry_run,omitempty"`
+	// AllowReview also localizes URLs whose policy decision is "review"
+	// (an explicit reviewer action; "block" is never fetched).
+	AllowReview bool `json:"allow_review,omitempty"`
+	// BaseRevisionID guards the localize rewrite (or use If-Match).
+	BaseRevisionID string `json:"base_revision_id,omitempty"`
 }
 
 type RemoteMediaResult struct {
@@ -348,6 +370,24 @@ type RemoteMediaResult struct {
 	Blocked    []map[string]any `json:"blocked"`
 	Review     []map[string]any `json:"review"`
 	Failed     []map[string]any `json:"failed"`
+}
+
+// RemoteMediaDecision is the static policy verdict for one remote-media URL
+// found in a note (v0.3 task H2). Nothing has been downloaded.
+type RemoteMediaDecision struct {
+	URL        string `json:"url"`
+	MediaClass string `json:"media_class"`
+	Action     string `json:"action"` // allow | block | review
+	Reason     string `json:"reason"`
+	Line       int    `json:"line,omitempty"`
+}
+
+// RemoteMediaScanResult reports every remote-media URL in a document with
+// its policy decision, without fetching any bytes.
+type RemoteMediaScanResult struct {
+	DocumentID string                `json:"document_id,omitempty"`
+	Media      []RemoteMediaDecision `json:"media"`
+	Counts     map[string]int        `json:"counts"`
 }
 
 type GraphRequest struct {

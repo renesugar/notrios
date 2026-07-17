@@ -399,6 +399,11 @@ type Store interface {
 	CompleteProjectionJob(ctx context.Context, sequence int64, jobErr error) error
 
 	NotebookHasSourcedDocuments(ctx context.Context, notebookID string) (bool, error)
+
+	RecordMediaAttempt(ctx context.Context, attempt MediaAttempt) (MediaAttempt, error)
+	ListMediaAttempts(ctx context.Context, documentID string, limit int) ([]MediaAttempt, error)
+	AddMediaHashRule(ctx context.Context, rule MediaHashRule) error
+	FindMediaHashRule(ctx context.Context, algo, hash string) (MediaHashRule, error)
 }
 
 // OutboxJob is one pending projection/indexing job. Document mutations enqueue

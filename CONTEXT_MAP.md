@@ -6,7 +6,7 @@ This file is the codebase atlas. Update it whenever major files or directories a
 
 - `README.md` — project overview and quick start.
 - `PLAN.md` — active implementation plan (v0.2 Notrios redesign foundation).
-- `SCAFFOLD_CREATION_PLAN.md` — process for creating/refining this scaffold.
+- `plans/scaffold/SCAFFOLD_CREATION_PLAN.md` — process for creating/refining this scaffold.
 - `ROADMAP.md` — product roadmap and future features.
 - `AGENTS.md` — coding-agent instructions (`CLAUDE.md` points here).
 - `CODING_CLIENT_HANDOFF.md` — compressed project state for any coding agent (formerly `CODEX_HANDOFF.md`).
@@ -62,7 +62,7 @@ This file is the codebase atlas. Update it whenever major files or directories a
 - `PUBLISHING_POLICY.md` — Quartz/static publishing rules.
 - `VERSIONING_AND_SYNC_POLICY.md` — revisions/checkpoint/sync decisions.
 - `WORKSPACE_MAINTENANCE.md` — query/lint/outline/block features.
-- `SCAFFOLD_REVIEW_REPORT.md` — Step 2 repair summary.
+- `plans/scaffold/SCAFFOLD_REVIEW_REPORT.md` — Step 2 repair summary.
 
 ## Step 3 additions
 
@@ -76,21 +76,21 @@ This file is the codebase atlas. Update it whenever major files or directories a
 
 - `internal/config/` — small dependency-free config loader for the documented YAML subset and directory bootstrap helper.
 - `internal/store.StoreStatus` — database driver/path/state/schema-version reporting for status output.
-- `MVP_TASK1_REPORT.md` — service persistence foundation completion report.
+- `plans/mvp/MVP_TASK1_REPORT.md` — service persistence foundation completion report.
 
 ## MVP Task 2 additions
 
 - `internal/store` now exposes update, soft-delete, revision list/read, and revision restore operations with optimistic concurrency.
 - `internal/httpapi` implements `PUT`/`PATCH`/`DELETE` document routes plus revision list/read/restore.
 - `web/src/api.ts` and `web/src/App.tsx` can save a new revision for the currently opened note.
-- `MVP_TASK2_REPORT.md` records this task.
+- `plans/mvp/MVP_TASK2_REPORT.md` records this task.
 
 ## MVP Task 4 additions
 
 - `internal/store` now streams resource bytes into the configured asset store and deduplicates exact blobs by SHA-256.
 - REST implements resource metadata/content and document-resource attach/list/detach routes.
 - `web/src/App.tsx` can upload/list/download attached resources.
-- `MVP_TASK4_REPORT.md` records this task.
+- `plans/mvp/MVP_TASK4_REPORT.md` records this task.
 
 ## MVP Task 5 additions
 
@@ -98,7 +98,7 @@ This file is the codebase atlas. Update it whenever major files or directories a
 - `internal/store` rebuilds `document_links` rows transactionally on document create/update/restore and clears outgoing links on soft delete.
 - `internal/httpapi` implements `GET /api/v1/documents/{document_id}/links` and `POST /api/v1/graph`.
 - `web/src/api.ts` and `web/src/App.tsx` can list and display outgoing links/backlinks for the opened note.
-- `MVP_TASK5_REPORT.md` records this task.
+- `plans/mvp/MVP_TASK5_REPORT.md` records this task.
 
 
 ## MVP Task 6 UI files
@@ -106,7 +106,7 @@ This file is the codebase atlas. Update it whenever major files or directories a
 - `web/src/App.tsx`: REST-backed Markdown UI with `md-editor-rt`, preview normalization, app URI routing, resource upload, link/backlink/resource sidebars.
 - `web/src/styles.css`: app layout plus editor, link-list, resource-list, and text-button styling.
 - `internal/httpapi/server.go`: now serves `web/dist` for the built-in UI when the production build exists.
-- `MVP_TASK6_REPORT.md`: implementation notes and deliberate limitations for the UI MVP.
+- `plans/mvp/MVP_TASK6_REPORT.md`: implementation notes and deliberate limitations for the UI MVP.
 
 ## MVP Task 8 importer files
 
@@ -129,7 +129,7 @@ This file is the codebase atlas. Update it whenever major files or directories a
 - `PACKAGING.md` — release ZIP contents, exclusions, and package commands.
 - `SECURITY_REVIEW.md` — v0.1 security review for resource downloads, preview sanitization, MCP, and importers.
 - `RELEASE_CHECKLIST.md` — pre-tag checklist for `v0.1.0-mvp`.
-- `MVP_RELEASE_REPORT.md` — completed MVP capability summary and deferred features.
+- `plans/mvp/MVP_RELEASE_REPORT.md` — completed MVP capability summary and deferred features.
 - `scripts/mvp_smoke.sh` — end-to-end local REST/MCP/resource smoke test.
 - `scripts/run_performance_smoke.sh` — generated-dataset smoke and benchmark wrapper.
 - `scripts/package_release.sh` — validates, builds UI, creates source ZIP, and verifies contents.

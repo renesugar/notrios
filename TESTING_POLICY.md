@@ -40,6 +40,15 @@ Minimum UI flows:
 - Upload/download resource.
 - Search and open result.
 
+Layout-resize testing rule: never verify window-resize behavior through
+Playwright's emulated viewport (`set_viewport_size`) or by eyeballing
+screenshots — the emulated canvas redraws cleanly while the real window
+never changes, hiding integration bugs. `scripts/verify_layout_resize.py`
+is the reference harness: it launches a headed Chromium with no viewport
+emulation under Xvfb/Openbox, resizes the actual X11 window with
+`xdotool windowsize`, and asserts the pane geometry (bounding rects fill
+the window; editor and preview split equally after a resize) from the DOM.
+
 ### Performance tests
 
 Synthetic datasets should eventually cover:

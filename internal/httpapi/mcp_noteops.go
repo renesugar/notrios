@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/renesugar/notrios/internal/api"
+	"github.com/renesugar/notrios/internal/localize"
 	"github.com/renesugar/notrios/internal/store"
 )
 
@@ -109,6 +110,7 @@ func (s *Server) mcpWriteTool(r *http.Request, name string, raw json.RawMessage)
 		Replace        string `json:"replace,omitempty"`
 		ReplaceAll     bool   `json:"replace_all,omitempty"`
 		DryRun         bool   `json:"dry_run,omitempty"`
+		AllowReview    bool   `json:"allow_review,omitempty"`
 	}
 	if err := unmarshalMCPArgs(raw, &args); err != nil {
 		return mcpToolResult{}, err
@@ -237,6 +239,23 @@ func (s *Server) mcpWriteTool(r *http.Request, name string, raw json.RawMessage)
 			return mcpToolResult{}, err
 		}
 		return mcpStructured(toAPIDocument(doc))
+	case "localize_remote_media":
+		if s.localizer == nil {
+			return mcpToolResult{}, fmt.Errorf("store is not wired")
+		}
+		if strings.TrimSpace(args.BaseRevisionID) == "" && !args.DryRun {
+			return mcpToolResult{}, fmt.Errorf("base_revision_id is required (localization rewrites the note)")
+		}
+		result, err := s.localizer.LocalizeDocument(ctx, localize.Options{
+			DocumentID:     firstNonEmpty(args.DocumentID, documentIDFromURI(args.URI)),
+			BaseRevisionID: args.BaseRevisionID,
+			DryRun:         args.DryRun,
+			AllowReview:    args.AllowReview,
+		})
+		if err != nil {
+			return mcpToolResult{}, err
+		}
+		return mcpStructured(result)
 	}
 	return mcpToolResult{}, fmt.Errorf("unknown MCP write tool %q", name)
 }

@@ -19,7 +19,7 @@ The REST persistence slice is implemented for managed Markdown documents:
 - `POST /api/v1/search` searches current, non-deleted managed documents with SQLite FTS5.
 - `GET /api/v1/documents/{document_id}/links` returns outgoing links and backlinks parsed from Markdown.
 - `POST /api/v1/graph` returns a small document/resource graph slice for selected roots.
-- import, publish, rich block indexing, links/resolve, and remote-media routes outside this slice remain placeholders until later MVP tasks; document, resource, search, link-listing, graph-slice routes, and the read-only MCP MVP adapter are live in the current slice.
+- import, publish, rich block indexing, links/resolve, and remote-media **localization** remain placeholders until later tasks; document, resource, search, link-listing, graph-slice, remote-media **scan**/policy routes, and the MCP adapter are live.
 
 ## Contract goals
 
@@ -66,7 +66,7 @@ GET /healthz
 GET /api/v1/status
 ```
 
-`/api/v1/status` reports runtime readiness plus the config path, database driver/path/state, schema version, storage roots, capability flags, and configured search limits. `database` remains as a deprecated summary string for early UI compatibility; clients should prefer `database_info`.
+`/api/v1/status` reports runtime readiness plus the config path, database driver/path/state, schema version, storage roots, capability flags, configured search limits, and the active remote-media policy (`media_policy`: default action, network limits, per-list rule counts, size caps, quarantine directory — v0.3). `database` remains as a deprecated summary string for early UI compatibility; clients should prefer `database_info`.
 
 ### Collections
 
@@ -146,16 +146,20 @@ POST /api/v1/links/resolve
 
 Link records preserve source syntax, raw target, normalized target URI, source position, context, anchor, relation type, and resolution status. MVP Task 5 extracts common Markdown links/images, Obsidian wikilinks/embeds, app URIs, external URLs, heading anchors, and block anchors with a conservative parser. `POST /api/v1/links/resolve` remains a future endpoint.
 
-### Remote media (staged contract — handlers return stub responses today)
+### Remote media (implemented, v0.3 tasks H2–H4)
 
 ```text
-POST /api/v1/documents/{document_id}/remote-media/scan
-POST /api/v1/documents/{document_id}/remote-media/localize
-GET  /api/v1/media-policy
-POST /api/v1/media-policy/check-url
+POST /api/v1/documents/{document_id}/remote-media/scan       # per-URL policy decisions, no downloads
+POST /api/v1/documents/{document_id}/remote-media/localize   # quarantine fetch → hash check → admission → rewrite
+GET  /api/v1/media-policy                                    # active policy report
+POST /api/v1/media-policy/check-url                          # evaluate explicit URLs
 ```
 
-Remote media localization must never be implemented by reading browser preview caches. The server downloads into quarantine, applies URL/domain policy, size/MIME checks, exact/perceptual hash checks, deduplicates by content hash, stores approved resources, and rewrites Markdown in a new revision.
+Localize requires `base_revision_id` (or `If-Match`) for non-dry runs and rewrites the note in a new revision; `dry_run` reports decisions without fetching a byte; `allow_review` opts review-listed URLs in; blocked URLs and exact-hash-blocked content are never admitted. Read-only notes (Help, Trash) return 403. The editor-profile MCP tool `localize_remote_media` exposes the same engine, as do `notriosctl localize` and the importers' `--localize-media` flag (Joplin RAW, Obsidian).
+
+The scan evaluates every remote image/media URL in the stored body (Markdown images/embeds, media-extension links, HTML `<img>` tags) against the `remote_media` policy and returns `{url, media_class, action, reason, line}` decisions plus counts; an optional request body with `urls` evaluates that explicit list instead (e.g. unsaved editor drafts). Scanning is purely static — no downloads and no DNS resolution; address checks cover literals, and resolved addresses are re-checked at fetch time by the quarantine pipeline (H3). The read-only MCP tool `scan_remote_media` exposes the same scan.
+
+Remote media localization must never be implemented by reading browser preview caches. The server downloads into quarantine, applies URL/domain policy, size/MIME checks, exact/perceptual hash checks, deduplicates by content hash, stores approved resources, and rewrites Markdown in a new revision. The quarantine pipeline itself is implemented (v0.3 task H3, `internal/media.Fetcher`: redirect-hop policy re-checks, connect-time private-address blocking, streaming size caps, sniffed MIME enforcement, SHA-256, attempts recorded in `media_policy_decisions`); the localize route stays a stub until H4 wires admission and Markdown rewriting on top of it.
 
 ### Import/export/publish (staged contract — import/export run through `notriosctl` today; the publish/jobs routes return stubs)
 

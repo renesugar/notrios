@@ -137,6 +137,9 @@ func (s *SQLiteStore) Bootstrap(ctx context.Context) error {
 	if err := s.ensureSchemaV6(ctx); err != nil {
 		return err
 	}
+	if err := s.ensureSchemaV7(ctx); err != nil {
+		return err
+	}
 	if err := s.Exec(ctx, `INSERT OR IGNORE INTO collections(id, name, description) VALUES('default', 'Default', 'Managed notes created by the companion service.');`); err != nil {
 		return err
 	}
@@ -216,6 +219,33 @@ func (s *SQLiteStore) ensureSchemaV5(ctx context.Context) error {
 // because the earlier shims reset it during bootstrap.
 func (s *SQLiteStore) ensureSchemaV6(ctx context.Context) error {
 	return s.Exec(ctx, `PRAGMA user_version = 6;`)
+}
+
+// ensureSchemaV7 upgrades pre-v7 databases for media-policy hardening
+// (v0.3 task H1). The rule/hash tables come from the migration file (IF NOT
+// EXISTS); this shim widens media_policy_decisions with quarantine-state
+// columns, which fresh databases receive here too since ALTERs cannot be
+// idempotent inside the migration file.
+func (s *SQLiteStore) ensureSchemaV7(ctx context.Context) error {
+	statements := []string{
+		`ALTER TABLE media_policy_decisions ADD COLUMN status TEXT NOT NULL DEFAULT 'recorded';`,
+		`ALTER TABLE media_policy_decisions ADD COLUMN content_type TEXT;`,
+		`ALTER TABLE media_policy_decisions ADD COLUMN size_bytes INTEGER;`,
+		`ALTER TABLE media_policy_decisions ADD COLUMN quarantine_path TEXT;`,
+		`ALTER TABLE media_policy_decisions ADD COLUMN updated_at TEXT;`,
+		`CREATE INDEX IF NOT EXISTS media_policy_decisions_document_idx ON media_policy_decisions(document_id);`,
+		`CREATE INDEX IF NOT EXISTS media_policy_decisions_url_idx ON media_policy_decisions(original_url);`,
+		`PRAGMA user_version = 7;`,
+	}
+	for _, statement := range statements {
+		if err := s.Exec(ctx, statement); err != nil {
+			if strings.Contains(err.Error(), "duplicate column name") {
+				continue
+			}
+			return err
+		}
+	}
+	return nil
 }
 
 func (s *SQLiteStore) exec(sql string) error {

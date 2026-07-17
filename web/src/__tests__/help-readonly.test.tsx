@@ -1,6 +1,6 @@
 // Read-only Help presentation: the client disables editing before any server
 // 403 — driven by the server-provided `editable` capability, never by name.
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { EditorPane, type EditorPaneProps } from '../components/EditorPane';
 import type { DocumentRecord } from '../api';
@@ -45,6 +45,8 @@ function renderPane(overrides: Partial<EditorPaneProps>) {
     links: [],
     backlinks: [],
     resources: [],
+    remoteMedia: [],
+    onLocalizeRemoteMedia: vi.fn(),
     onOpenDocument: vi.fn(),
     ...overrides,
   };
@@ -79,5 +81,57 @@ describe('Help note read-only presentation', () => {
     expect(screen.getByLabelText('Note title')).toBeEnabled();
     expect(screen.getByTestId('editor-stub')).not.toHaveAttribute('readonly');
     expect(screen.getByText('Upload image/PDF/resource')).toBeInTheDocument();
+  });
+});
+
+describe('remote-media policy warnings', () => {
+  it('renders per-URL decisions in the note inspector', () => {
+    renderPane({
+      remoteMedia: [
+        { url: 'https://tracker.example.com/pixel.gif', media_class: 'image', action: 'block', reason: 'domain matches blocked pattern tracker.example.com', line: 3 },
+        { url: 'https://upload.wikimedia.org/a.png', media_class: 'image', action: 'allow', reason: 'domain matches allowed pattern *.wikimedia.org' },
+      ],
+    });
+    const list = screen.getByTestId('remote-media-list');
+    expect(list).toHaveTextContent('Remote media (2)');
+    expect(list).toHaveTextContent('nothing has been downloaded');
+    expect(list).toHaveTextContent('https://tracker.example.com/pixel.gif');
+    expect(list).toHaveTextContent('block');
+    expect(list).toHaveTextContent('line 3');
+    expect(list).toHaveTextContent('allow');
+  });
+
+  it('renders no remote-media section when the scan is empty', () => {
+    renderPane({ remoteMedia: [] });
+    expect(screen.queryByTestId('remote-media-list')).not.toBeInTheDocument();
+  });
+
+  it('offers localization only for editable notes with allowed media', () => {
+    const onLocalizeRemoteMedia = vi.fn();
+    renderPane({
+      onLocalizeRemoteMedia,
+      remoteMedia: [
+        { url: 'https://upload.wikimedia.org/a.png', media_class: 'image', action: 'allow', reason: 'allowed' },
+      ],
+    });
+    const button = screen.getByTestId('localize-button');
+    fireEvent.click(button);
+    expect(onLocalizeRemoteMedia).toHaveBeenCalledTimes(1);
+  });
+
+  it('hides the localize action for read-only notes and blocked-only media', () => {
+    renderPane({
+      editable: false,
+      selectedDocument: doc({ notebook_id: 'nb_help', editable: false }),
+      remoteMedia: [
+        { url: 'https://upload.wikimedia.org/a.png', media_class: 'image', action: 'allow', reason: 'allowed' },
+      ],
+    });
+    expect(screen.queryByTestId('localize-button')).not.toBeInTheDocument();
+    cleanup();
+    renderPane({
+      remoteMedia: [{ url: 'https://tracker.example.com/x.gif', media_class: 'image', action: 'block', reason: 'blocked' }],
+    });
+    expect(screen.queryByTestId('localize-button')).not.toBeInTheDocument();
   });
 });

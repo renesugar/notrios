@@ -16,11 +16,14 @@ import {
   listDocumentResources,
   listSearchNotebooks,
   listTags,
+  localizeRemoteMedia,
+  scanRemoteMedia,
   updateDocument,
   uploadResource,
   type DocumentLink,
   type DocumentRecord,
   type NotebookTreeNode,
+  type RemoteMediaDecision,
   type ResourceReference,
   type SearchHit,
   type SearchNotebook,
@@ -81,6 +84,7 @@ export function App() {
   const [resources, setResources] = useState<ResourceReference[]>([]);
   const [links, setLinks] = useState<DocumentLink[]>([]);
   const [backlinks, setBacklinks] = useState<DocumentLink[]>([]);
+  const [remoteMedia, setRemoteMedia] = useState<RemoteMediaDecision[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -213,6 +217,14 @@ export function App() {
     setResources(resourcePage.resources);
     setLinks(linkPage.outgoing ?? []);
     setBacklinks(linkPage.incoming ?? []);
+    // Remote-media policy scan (server-side, static — nothing downloaded);
+    // best-effort: a scan failure never blocks opening the note.
+    try {
+      const scan = await scanRemoteMedia(documentID);
+      setRemoteMedia(scan.media ?? []);
+    } catch {
+      setRemoteMedia([]);
+    }
   }
 
   const openDocumentByID = useCallback(async (documentID: string) => {
@@ -314,6 +326,28 @@ export function App() {
     }
   }
 
+  async function onLocalizeRemoteMedia() {
+    if (!selectedDocument || !editable) return;
+    setBusy(true);
+    setError(null);
+    setMessage(null);
+    try {
+      const result = await localizeRemoteMedia(selectedDocument.id, selectedDocument.current_revision_id);
+      const parts = [`${result.localized.length} localized`];
+      if (result.blocked.length > 0) parts.push(`${result.blocked.length} blocked`);
+      if (result.review.length > 0) parts.push(`${result.review.length} needing review`);
+      if (result.failed.length > 0) parts.push(`${result.failed.length} failed`);
+      setMessage(`Remote media: ${parts.join(', ')}.`);
+      // The note body (and revision) changed; reload it, which also
+      // refreshes the remote-media scan.
+      await openDocumentByID(selectedDocument.id);
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   function resetEditor() {
     setSelectedDocument(null);
     setTitle('New note');
@@ -321,6 +355,7 @@ export function App() {
     setResources([]);
     setLinks([]);
     setBacklinks([]);
+    setRemoteMedia([]);
     setMessage(null);
     setError(null);
   }
@@ -483,6 +518,8 @@ export function App() {
           links={links}
           backlinks={backlinks}
           resources={resources}
+          remoteMedia={remoteMedia}
+          onLocalizeRemoteMedia={() => void onLocalizeRemoteMedia()}
           onOpenDocument={(id) => void openDocumentByID(id)}
         />
         <PaneSplitter

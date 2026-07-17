@@ -40,11 +40,20 @@ The authoritative, always-current example is `config/config.example.yaml` in the
 | `search_sidecar.enabled` | `false` | activate the optional Recoll sidecar |
 | `search_sidecar.binary` | `recollindex` | Recoll indexer binary (`recollq` is looked up next to it) |
 | `search_sidecar.index_dir` | `./data/search-index` | generated Recoll config + index location |
-| `remote_media.*` | — | **reserved for a future milestone**: the example file carries a remote-media download policy (allow/block lists, size caps), but remote-media localization is not implemented yet, so these values are parsed permissively and currently unused |
+| `remote_media.default_action` | `review` | policy for domains matched by no list: `allow`, `block`, or `review` (report only, never auto-download); invalid values fall back to `review` |
+| `remote_media.allow_private_networks` | `false` | whether downloads may reach private/link-local addresses |
+| `remote_media.max_redirects` | `5` | redirect-hop cap (policy re-checked per hop) |
+| `remote_media.fetch_timeout_seconds` | `30` | per-download timeout |
+| `remote_media.blocked_schemes` | `file, data, javascript, ftp` | URL schemes never fetched |
+| `remote_media.blocked_domains` / `allowed_domains` / `review_domains` | empty | domain patterns (e.g. `*.wikimedia.org`) forcing block/allow/review |
+| `remote_media.max_bytes.<class>` | `image: 20MB`, `video: 200MB`, `pdf: 100MB` | download size caps, human-readable sizes accepted |
+| `remote_media.quarantine_dir` | `./data/quarantine` | staging area for fetched bytes before policy admission |
+
+The `remote_media` policy is reported by `/api/v1/status` under `media_policy`. It drives the remote-media scan (`POST /api/v1/documents/{id}/remote-media/scan` — per-URL decisions, nothing downloaded) and localization (`POST …/remote-media/localize`, `notriosctl localize` — quarantine fetch with redirect-hop and connect-time address checks, size caps, MIME sniffing, exact hashes, then rewrite to `resource://` links in a new revision). Blocked domains and blocked schemes are never fetched; `review` means report-only until explicitly opted in.
 
 **Relative paths resolve against the working directory** of the process, not the config file's location. Use absolute paths for anything you run outside the repository checkout.
 
-**Automatic creation:** on startup the service creates every configured directory and, if absent, the database itself, applying schema migrations to older databases automatically. `/api/v1/status` reports the resolved paths, database state, schema version, capability flags, and search limits.
+**Automatic creation:** on startup the service creates every configured directory and, if absent, the database itself, applying schema migrations to older databases automatically. `/api/v1/status` reports the resolved paths, database state, schema version, capability flags, search limits, and the active remote-media policy.
 
 **The browser UI is loaded from `web/dist/` relative to the working directory** (build it with `make web`). Without it, `/` returns a `web_ui_not_built` error while the API and MCP endpoints work normally.
 

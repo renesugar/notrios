@@ -452,6 +452,64 @@ body.splitter-dragging {
   color: var(--muted);
 }
 
+/* ---- Remote-media policy warnings (server-side scan; no downloads) ---- */
+
+.remote-media-list ul {
+  margin: 4px 0 10px;
+  padding-left: 18px;
+}
+
+.remote-media-hint {
+  margin: 2px 0 4px;
+  font-size: 12px;
+}
+
+.localize-button {
+  margin-left: 10px;
+  font-size: 12px;
+  padding: 1px 8px;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.localize-button:hover:not(:disabled) {
+  background: var(--accent-soft);
+}
+
+.localize-button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.remote-media-url {
+  overflow-wrap: anywhere;
+}
+
+.media-action {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  border-radius: 6px;
+  padding: 0 6px;
+  border: 1px solid var(--border-strong);
+  color: var(--muted);
+  background: var(--chip-bg);
+}
+
+.media-action-block {
+  color: #b91c1c;
+  border-color: #b91c1c;
+}
+
+.media-action-review {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
 .link-list ul,
 .resource-list ul {
   margin: 4px 0 10px;

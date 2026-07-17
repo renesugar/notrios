@@ -15,6 +15,8 @@ import (
 
 	"github.com/renesugar/notrios/internal/api"
 	"github.com/renesugar/notrios/internal/config"
+	"github.com/renesugar/notrios/internal/localize"
+	"github.com/renesugar/notrios/internal/media"
 	"github.com/renesugar/notrios/internal/query"
 	"github.com/renesugar/notrios/internal/recoll"
 	"github.com/renesugar/notrios/internal/store"
@@ -22,10 +24,12 @@ import (
 )
 
 type Server struct {
-	mux     *http.ServeMux
-	store   store.Store
-	config  config.Config
-	sidecar SidecarSearcher
+	mux         *http.ServeMux
+	store       store.Store
+	config      config.Config
+	sidecar     SidecarSearcher
+	mediaPolicy *media.Policy
+	localizer   *localize.Localizer
 }
 
 // SidecarSearcher is the optional derived search backend (Recoll). Implemented
@@ -58,7 +62,11 @@ func NewServerWithOptions(options ServerOptions) *Server {
 	if cfg.Server.ListenAddr == "" {
 		cfg = config.Default()
 	}
-	s := &Server{mux: http.NewServeMux(), store: options.Store, config: cfg}
+	s := &Server{mux: http.NewServeMux(), store: options.Store, config: cfg, mediaPolicy: media.NewPolicy(cfg.RemoteMedia)}
+	if options.Store != nil {
+		// Lazy fetcher inside: no filesystem side effects until first use.
+		s.localizer = localize.New(cfg.RemoteMedia, options.Store)
+	}
 	s.routes()
 	return s
 }
@@ -100,6 +108,8 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("GET /api/v1/documents/{document_id}/search-in", s.handleDocumentSearchIn)
 	s.mux.HandleFunc("POST /api/v1/documents/{document_id}/remote-media/scan", s.handleRemoteMediaScan)
 	s.mux.HandleFunc("POST /api/v1/documents/{document_id}/remote-media/localize", s.handleRemoteMediaLocalize)
+	s.mux.HandleFunc("GET /api/v1/media-policy", s.handleMediaPolicy)
+	s.mux.HandleFunc("POST /api/v1/media-policy/check-url", s.handleMediaPolicyCheckURL)
 
 	s.mux.HandleFunc("POST /api/v1/resources", s.handleCreateResource)
 	s.mux.HandleFunc("HEAD /api/v1/resources/{resource_id}", s.handleResourceHead)
@@ -212,6 +222,7 @@ func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
 			"search_max_limit":     s.config.Search.MaxLimit,
 			"search_max_offset":    s.config.Search.MaxOffset,
 		},
+		MediaPolicy: s.mediaPolicyStatus(),
 	})
 }
 
@@ -641,12 +652,124 @@ func (s *Server) handleDocumentOutline(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, extractDocumentOutline(doc.ID, doc.Body))
 }
 
+// handleRemoteMediaScan reports the policy decision for every remote-media
+// URL in a note without downloading anything (v0.3 task H2). An optional
+// request body with "urls" evaluates an explicit URL list instead of the
+// stored document body — e.g. for unsaved editor drafts.
 func (s *Server) handleRemoteMediaScan(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, http.StatusOK, emptyRemoteMediaResult())
+	var request api.RemoteMediaRequest
+	if r.Body != nil && r.ContentLength != 0 {
+		if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+			writeError(w, http.StatusBadRequest, "invalid_json", err.Error())
+			return
+		}
+	}
+	if len(request.URLs) > 0 {
+		writeJSON(w, http.StatusOK, scanResultFromDecisions("", s.mediaPolicy.EvaluateURLs(request.URLs)))
+		return
+	}
+	if s.store == nil {
+		writeError(w, http.StatusServiceUnavailable, "store_not_wired", "persistence is not configured")
+		return
+	}
+	documentID := r.PathValue("document_id")
+	doc, err := s.store.GetDocument(r.Context(), documentID)
+	if writeStoreError(w, err, "document_read_failed") {
+		return
+	}
+	writeJSON(w, http.StatusOK, scanResultFromDecisions(doc.ID, s.mediaPolicy.ScanBody(doc.Body)))
 }
 
+// handleMediaPolicy reports the active remote-media policy (same shape as
+// the status media_policy block).
+func (s *Server) handleMediaPolicy(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, http.StatusOK, s.mediaPolicyStatus())
+}
+
+func (s *Server) mediaPolicyStatus() *api.MediaPolicyStatus {
+	return &api.MediaPolicyStatus{
+		DefaultAction:        s.config.RemoteMedia.DefaultAction,
+		AllowPrivateNetworks: s.config.RemoteMedia.AllowPrivateNetworks,
+		MaxRedirects:         s.config.RemoteMedia.MaxRedirects,
+		FetchTimeoutSeconds:  s.config.RemoteMedia.FetchTimeoutSeconds,
+		BlockedSchemes:       len(s.config.RemoteMedia.BlockedSchemes),
+		AllowedDomains:       len(s.config.RemoteMedia.AllowedDomains),
+		BlockedDomains:       len(s.config.RemoteMedia.BlockedDomains),
+		ReviewDomains:        len(s.config.RemoteMedia.ReviewDomains),
+		MaxBytes:             s.config.RemoteMedia.MaxBytes,
+		QuarantineDir:        s.config.RemoteMedia.QuarantineDir,
+	}
+}
+
+// handleMediaPolicyCheckURL evaluates explicit URLs against the policy
+// without touching any document (and without downloading anything).
+func (s *Server) handleMediaPolicyCheckURL(w http.ResponseWriter, r *http.Request) {
+	var request api.RemoteMediaRequest
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid_json", err.Error())
+		return
+	}
+	if len(request.URLs) == 0 {
+		writeError(w, http.StatusBadRequest, "missing_urls", "provide at least one URL in \"urls\"")
+		return
+	}
+	writeJSON(w, http.StatusOK, scanResultFromDecisions("", s.mediaPolicy.EvaluateURLs(request.URLs)))
+}
+
+func scanResultFromDecisions(documentID string, decisions []media.Decision) api.RemoteMediaScanResult {
+	result := api.RemoteMediaScanResult{
+		DocumentID: documentID,
+		Media:      make([]api.RemoteMediaDecision, 0, len(decisions)),
+		Counts:     map[string]int{"allow": 0, "block": 0, "review": 0},
+	}
+	for _, decision := range decisions {
+		result.Media = append(result.Media, api.RemoteMediaDecision{
+			URL:        decision.URL,
+			MediaClass: decision.MediaClass,
+			Action:     decision.Action,
+			Reason:     decision.Reason,
+			Line:       decision.Line,
+		})
+		result.Counts[decision.Action]++
+	}
+	return result
+}
+
+// handleRemoteMediaLocalize converts a note's remote media into local
+// resources through the shared localize engine (v0.3 task H4): quarantine
+// fetch → exact-hash rule check → content-addressed admission → Markdown
+// rewrite in a new revision. Dry runs never fetch or write.
 func (s *Server) handleRemoteMediaLocalize(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, http.StatusOK, emptyRemoteMediaResult())
+	if s.localizer == nil {
+		writeError(w, http.StatusServiceUnavailable, "store_not_wired", "persistence is not configured")
+		return
+	}
+	var request api.RemoteMediaRequest
+	if r.Body != nil && r.ContentLength != 0 {
+		if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+			writeError(w, http.StatusBadRequest, "invalid_json", err.Error())
+			return
+		}
+	}
+	baseRevisionID := firstNonEmpty(request.BaseRevisionID, revisionFromIfMatch(r.Header.Get("If-Match")))
+	if baseRevisionID == "" && !request.DryRun {
+		writeError(w, http.StatusPreconditionRequired, "precondition_required", "base_revision_id or If-Match is required")
+		return
+	}
+	result, err := s.localizer.LocalizeDocument(r.Context(), localize.Options{
+		DocumentID:     r.PathValue("document_id"),
+		BaseRevisionID: baseRevisionID,
+		DryRun:         request.DryRun,
+		AllowReview:    request.AllowReview,
+	})
+	if errors.Is(err, localize.ErrReadOnly) {
+		writeError(w, http.StatusForbidden, "forbidden", err.Error())
+		return
+	}
+	if writeStoreError(w, err, "localize_failed") {
+		return
+	}
+	writeJSON(w, http.StatusOK, result)
 }
 
 func (s *Server) handleCreateResource(w http.ResponseWriter, r *http.Request) {

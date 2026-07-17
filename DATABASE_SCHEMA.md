@@ -44,9 +44,16 @@ FTS5 indexes current managed documents. The Step 4 runnable slice uses a normal 
 
 `document_blocks` remains planned. Heading and block anchors are currently stored on link records, not as separately addressable block rows.
 
-### media policy
+### media policy (schema v7, v0.3 task H1)
 
-The media-policy tables support domain stop lists, exact-hash blocks, perceptual-hash blocks, remote media attempts, quarantine state, and resource hash records.
+The media-policy tables support domain stop lists, exact-hash blocks, perceptual-hash blocks, remote media attempts, quarantine state, and resource hash records. As of schema v7:
+
+- `media_domain_rules` — user-managed domain patterns with an `allow`/`block`/`review` action (unique, case-insensitive), complementing the `remote_media` config lists.
+- `media_hash_rules` — hash-keyed rules (`algo` + `hash`), `kind` distinguishing `exact` from `perceptual`, action `block` or `review`. Exact hashes may block; perceptual hashes only ever raise review signals.
+- `resource_hashes` — additional hashes per stored blob (`blob_sha256` + `algo`), the storage slot for future perceptual hashes.
+- `media_policy_decisions` — one row per remote-media attempt: original/final URL, decision, reason, hashes, plus v7 quarantine-state columns (`status`, `content_type`, `size_bytes`, `quarantine_path`, `updated_at`). Populated by the H3 quarantine pipeline (`store.RecordMediaAttempt` / `ListMediaAttempts`): every fetch attempt — quarantined or refused — is recorded.
+
+`media_hash_rules` is consulted during localization admission (H4, via `store.AddMediaHashRule`/`FindMediaHashRule`): exact-hash `block`/`review` rules stop quarantined content before it reaches the asset store. `media_domain_rules` (user-managed rules beyond the config lists) and `resource_hashes` come online with rule CRUD and the H5 hashing task.
 
 ### index_outbox
 
@@ -54,7 +61,7 @@ The outbox coordinates filesystem projections and Recoll indexing after the cano
 
 ## MVP migration file
 
-`migrations/0001_initial.sql` now represents schema version 4 for this MVP branch. It includes managed-document tables, Task 2 revision fields (`body_mime_type`, `message`), content-addressed blob/resource tables, document-resource reference tables, document link graph rows, link context/target URI fields, and supporting indexes. Bootstrap contains compatibility shims for older development databases before setting `PRAGMA user_version = 4`. Do not rename public tables/columns casually once tests depend on them.
+`migrations/0001_initial.sql` has grown with each milestone and now represents schema version 7 (v5 notebooks/tags/search notebooks, v6 source provenance, v7 media policy), applied idempotently on every startup with upgrade shims for older databases. Its original MVP portion represents schema version 4. It includes managed-document tables, Task 2 revision fields (`body_mime_type`, `message`), content-addressed blob/resource tables, document-resource reference tables, document link graph rows, link context/target URI fields, and supporting indexes. Bootstrap contains compatibility shims for older development databases before setting `PRAGMA user_version = 4`. Do not rename public tables/columns casually once tests depend on them.
 
 ## Required indexes
 

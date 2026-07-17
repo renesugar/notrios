@@ -2,6 +2,20 @@
 
 Remote-media localization must not be a blind downloader.
 
+Implementation status (v0.3): the policy configuration (H1), the static
+scan (H2), the quarantine fetch pipeline (H3, `internal/media.Fetcher`),
+and localization (H4, `internal/localize`) are implemented — URL
+validation, scheme/domain checks re-applied per redirect hop, connect-time
+private-address blocking (post-DNS, so rebinding is caught), streaming
+size caps, MIME sniffing that a lying header cannot override, exact
+SHA-256, exact-hash rule checks (`media_hash_rules`) before admission to
+the content-addressed store, Markdown rewriting to `resource://` in a new
+revision with a base-revision precondition, and per-attempt records in
+`media_policy_decisions` (quarantined → admitted/refused). One engine
+serves REST, `notriosctl localize`, the MCP editor tool, the GUI inspector
+action, and the importers' `--localize-media` flag. Perceptual-hash hooks
+are task H5.
+
 ## Required pipeline
 
 ```text
