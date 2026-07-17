@@ -57,4 +57,4 @@ python3 scripts/check_release_zip.py /tmp/notrios-v0.2.0.zip
 
 ## v0.1.0 MVP (historical)
 
-- [x] Completed and archived under `plans/v0.1/`; see `MVP_RELEASE_REPORT.md`.
+- [x] Completed and archived under `plans/v0.1/`; see `plans/mvp/MVP_RELEASE_REPORT.md`.

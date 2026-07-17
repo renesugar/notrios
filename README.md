@@ -48,7 +48,7 @@ On startup, the service creates the configured data directory, SQLite database p
 
 ## Project status
 
-- v0.1 MVP: complete (see `MVP_RELEASE_REPORT.md`).
+- v0.1 MVP: complete (see `plans/mvp/MVP_RELEASE_REPORT.md`).
 - v0.2 Notrios redesign: **complete** (all 16 tasks; see [`PLAN.md`](PLAN.md) and `plans/v0.2/`) — notebooks/tags/search notebooks, source provenance with conversation threads, the query language, the optional Recoll sidecar, five importers, query-scoped export/import, the Wails GUI with themes, and the documentation site.
 - Next milestone: v0.3 import/resource/media hardening (see [`ROADMAP.md`](ROADMAP.md)); a new `PLAN.md` should be drafted from the roadmap with user approval.
 - Agent progress/attempt tracking: [`agent/PLAN_STATUS.md`](agent/PLAN_STATUS.md), [`agent/ATTEMPT_LOG.jsonl`](agent/ATTEMPT_LOG.jsonl), and [`agent/MODEL_LOG.jsonl`](agent/MODEL_LOG.jsonl).
@@ -71,7 +71,7 @@ Notrios is licensed under the [Apache License 2.0](LICENSE). All code and depend
 
 ## Historical design and report documents
 
-The scaffold-era and v0.1-MVP reports (`SCAFFOLD_*`, `MVP_TASK*_REPORT.md`, `MVP_RELEASE_REPORT.md`, `SCAFFOLD_CREATION_PLAN.md`) are retained as historical records of how the project was built; they intentionally keep the old "Notes Companion" naming and superseded design decisions. Living design documents: `FEATURE_MATRIX.md`, `UI_DESIGN.md`, `PUBLISHING_POLICY.md`, `VERSIONING_AND_SYNC_POLICY.md`, `WORKSPACE_MAINTENANCE.md`, plus the redesign documents listed above.
+The scaffold-era and v0.1-MVP reports (`plans/scaffold/SCAFFOLD_*.md`, `plans/mvp/MVP_TASK*_REPORT.md`, `plans/mvp/MVP_RELEASE_REPORT.md`) are retained as historical records of how the project was built; they intentionally keep the old "Notes Companion" naming and superseded design decisions. Living design documents: `FEATURE_MATRIX.md`, `UI_DESIGN.md`, `PUBLISHING_POLICY.md`, `VERSIONING_AND_SYNC_POLICY.md`, `WORKSPACE_MAINTENANCE.md`, plus the redesign documents listed above.
 
 ## Importing your notes
 

@@ -20,7 +20,7 @@ required_exact = {
     "DATABASE_SCHEMA.md",
     "PACKAGING.md",
     "SECURITY_REVIEW.md",
-    "MVP_RELEASE_REPORT.md",
+    "plans/mvp/MVP_RELEASE_REPORT.md",
     "cmd/notriosd/main.go",
     "cmd/notriosctl/main.go",
     "web/dist/index.html",
