@@ -157,7 +157,7 @@ POST /api/v1/media-policy/check-url                       # implemented: evaluat
 
 The scan evaluates every remote image/media URL in the stored body (Markdown images/embeds, media-extension links, HTML `<img>` tags) against the `remote_media` policy and returns `{url, media_class, action, reason, line}` decisions plus counts; an optional request body with `urls` evaluates that explicit list instead (e.g. unsaved editor drafts). Scanning is purely static — no downloads and no DNS resolution; address checks cover literals, and resolved addresses are re-checked at fetch time by the quarantine pipeline (H3). The read-only MCP tool `scan_remote_media` exposes the same scan.
 
-Remote media localization must never be implemented by reading browser preview caches. The server downloads into quarantine, applies URL/domain policy, size/MIME checks, exact/perceptual hash checks, deduplicates by content hash, stores approved resources, and rewrites Markdown in a new revision.
+Remote media localization must never be implemented by reading browser preview caches. The server downloads into quarantine, applies URL/domain policy, size/MIME checks, exact/perceptual hash checks, deduplicates by content hash, stores approved resources, and rewrites Markdown in a new revision. The quarantine pipeline itself is implemented (v0.3 task H3, `internal/media.Fetcher`: redirect-hop policy re-checks, connect-time private-address blocking, streaming size caps, sniffed MIME enforcement, SHA-256, attempts recorded in `media_policy_decisions`); the localize route stays a stub until H4 wires admission and Markdown rewriting on top of it.
 
 ### Import/export/publish (staged contract — import/export run through `notriosctl` today; the publish/jobs routes return stubs)
 

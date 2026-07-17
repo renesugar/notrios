@@ -2,6 +2,16 @@
 
 Remote-media localization must not be a blind downloader.
 
+Implementation status (v0.3): the policy configuration (H1), the static
+scan (H2), and the quarantine fetch pipeline (H3, `internal/media.Fetcher`)
+are implemented — URL validation, scheme/domain checks re-applied per
+redirect hop, connect-time private-address blocking (post-DNS, so rebinding
+is caught), streaming size caps, MIME sniffing that a lying header cannot
+override, exact SHA-256, and per-attempt records in
+`media_policy_decisions`. Perceptual-hash hooks, local policy databases,
+admission to the content-addressed store, and note rewriting are tasks
+H4–H5.
+
 ## Required pipeline
 
 ```text

@@ -1,6 +1,6 @@
 # Plan: v0.3 — Import, resource, and media hardening
 
-Status: **active** (drafted 2026-07-16 from `ROADMAP.md`; supersedes the archived draft `plans/v0.2/001-import-resource-media-hardening.md`). The completed v0.2 redesign plan is archived under `plans/v0.2/`. H1 and H2 are complete (`plans/v0.3/`); H3 is next.
+Status: **active** (drafted 2026-07-16 from `ROADMAP.md`; supersedes the archived draft `plans/v0.2/001-import-resource-media-hardening.md`). The completed v0.2 redesign plan is archived under `plans/v0.2/`. H1–H3 are complete (`plans/v0.3/`); H4 is next.
 
 ## Goal
 
@@ -34,7 +34,7 @@ Working state: service starts with (or without) a policy config and reports poli
 
 Working state: users can inspect a note's remote media and the policy verdicts before any localization.
 
-### H3. Quarantine download pipeline
+### H3. Quarantine download pipeline — COMPLETED (see `plans/v0.3/003-quarantine-pipeline.md`)
 
 - Fetch allowed/review URLs into a quarantine directory (under the data dir, never the asset store) with: URL normalization, scheme/domain checks re-applied to **every redirect hop**, private-network/link-local blocking at connect time (SSRF protection), size cap enforced while streaming, timeout, MIME sniffing (`http.DetectContentType`) checked against policy, exact SHA-256 computed on the quarantined bytes.
 - Record every attempt (success or refusal) in the remote-media attempts table with the policy decision.

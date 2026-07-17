@@ -51,9 +51,9 @@ The media-policy tables support domain stop lists, exact-hash blocks, perceptual
 - `media_domain_rules` — user-managed domain patterns with an `allow`/`block`/`review` action (unique, case-insensitive), complementing the `remote_media` config lists.
 - `media_hash_rules` — hash-keyed rules (`algo` + `hash`), `kind` distinguishing `exact` from `perceptual`, action `block` or `review`. Exact hashes may block; perceptual hashes only ever raise review signals.
 - `resource_hashes` — additional hashes per stored blob (`blob_sha256` + `algo`), the storage slot for future perceptual hashes.
-- `media_policy_decisions` — one row per remote-media attempt: original/final URL, decision, reason, hashes, plus v7 quarantine-state columns (`status`, `content_type`, `size_bytes`, `quarantine_path`, `updated_at`).
+- `media_policy_decisions` — one row per remote-media attempt: original/final URL, decision, reason, hashes, plus v7 quarantine-state columns (`status`, `content_type`, `size_bytes`, `quarantine_path`, `updated_at`). Populated by the H3 quarantine pipeline (`store.RecordMediaAttempt` / `ListMediaAttempts`): every fetch attempt — quarantined or refused — is recorded.
 
-Population of these tables (scan, quarantine, localization) lands in the later v0.3 tasks; H1 ships the schema and the typed `remote_media` policy configuration.
+The rule tables (`media_domain_rules`, `media_hash_rules`) and `resource_hashes` are not consulted or populated yet; they come online with rule CRUD and the H4/H5 localization and hashing tasks.
 
 ### index_outbox
 
