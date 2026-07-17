@@ -16,11 +16,13 @@ import {
   listDocumentResources,
   listSearchNotebooks,
   listTags,
+  scanRemoteMedia,
   updateDocument,
   uploadResource,
   type DocumentLink,
   type DocumentRecord,
   type NotebookTreeNode,
+  type RemoteMediaDecision,
   type ResourceReference,
   type SearchHit,
   type SearchNotebook,
@@ -81,6 +83,7 @@ export function App() {
   const [resources, setResources] = useState<ResourceReference[]>([]);
   const [links, setLinks] = useState<DocumentLink[]>([]);
   const [backlinks, setBacklinks] = useState<DocumentLink[]>([]);
+  const [remoteMedia, setRemoteMedia] = useState<RemoteMediaDecision[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -213,6 +216,14 @@ export function App() {
     setResources(resourcePage.resources);
     setLinks(linkPage.outgoing ?? []);
     setBacklinks(linkPage.incoming ?? []);
+    // Remote-media policy scan (server-side, static — nothing downloaded);
+    // best-effort: a scan failure never blocks opening the note.
+    try {
+      const scan = await scanRemoteMedia(documentID);
+      setRemoteMedia(scan.media ?? []);
+    } catch {
+      setRemoteMedia([]);
+    }
   }
 
   const openDocumentByID = useCallback(async (documentID: string) => {
@@ -321,6 +332,7 @@ export function App() {
     setResources([]);
     setLinks([]);
     setBacklinks([]);
+    setRemoteMedia([]);
     setMessage(null);
     setError(null);
   }
@@ -483,6 +495,7 @@ export function App() {
           links={links}
           backlinks={backlinks}
           resources={resources}
+          remoteMedia={remoteMedia}
           onOpenDocument={(id) => void openDocumentByID(id)}
         />
         <PaneSplitter

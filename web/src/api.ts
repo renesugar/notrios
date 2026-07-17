@@ -279,6 +279,26 @@ export async function listDocumentLinks(documentID: string, direction = 'both'):
   return parseJSON<DocumentLinkPage>(response);
 }
 
+export interface RemoteMediaDecision {
+  url: string;
+  media_class: string;
+  action: 'allow' | 'block' | 'review';
+  reason: string;
+  line?: number;
+}
+
+export interface RemoteMediaScanResult {
+  document_id?: string;
+  media: RemoteMediaDecision[];
+  counts: Record<string, number>;
+}
+
+/** Static policy scan of a note's remote media — nothing is downloaded. */
+export async function scanRemoteMedia(documentID: string): Promise<RemoteMediaScanResult> {
+  const response = await fetch(`/api/v1/documents/${encodeURIComponent(documentID)}/remote-media/scan`, { method: 'POST' });
+  return parseJSON<RemoteMediaScanResult>(response);
+}
+
 export function resourceContentURL(resourceID: string, download = true): string {
   const suffix = download ? '?download=1' : '';
   return `/api/v1/resources/${encodeURIComponent(resourceID)}/content${suffix}`;

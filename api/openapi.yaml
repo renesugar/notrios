@@ -433,7 +433,12 @@ paths:
                 $ref: '#/components/schemas/DocumentOutline'
   /api/v1/documents/{document_id}/remote-media/scan:
     post:
-      summary: Scan a document for remote media URLs
+      summary: Scan a document for remote media URLs (policy decisions only; nothing is downloaded)
+      description: >
+        Evaluates every remote image/media URL in the stored document body
+        against the remote-media policy and returns per-URL decisions.
+        An optional request body with "urls" evaluates that explicit list
+        instead (e.g. an unsaved editor draft).
       parameters:
         - $ref: '#/components/parameters/DocumentID'
       requestBody:
@@ -444,11 +449,39 @@ paths:
               $ref: '#/components/schemas/RemoteMediaRequest'
       responses:
         '200':
-          description: Remote media scan
+          description: Remote media policy decisions
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RemoteMediaResult'
+                $ref: '#/components/schemas/RemoteMediaScanResult'
+        '404':
+          description: Unknown document
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+  /api/v1/media-policy:
+    get:
+      summary: Report the active remote-media policy
+      responses:
+        '200':
+          description: Active policy (same shape as the status media_policy block)
+  /api/v1/media-policy/check-url:
+    post:
+      summary: Evaluate explicit URLs against the remote-media policy (no document, no downloads)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RemoteMediaRequest'
+      responses:
+        '200':
+          description: Per-URL policy decisions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RemoteMediaScanResult'
   /api/v1/documents/{document_id}/remote-media/localize:
     post:
       summary: Download approved remote media and rewrite the document
@@ -1042,6 +1075,28 @@ components:
           type: array
           items: { type: string, format: uri }
         dry_run: { type: boolean, default: false }
+    RemoteMediaScanResult:
+      type: object
+      required: [media, counts]
+      properties:
+        document_id: { type: string }
+        media:
+          type: array
+          items:
+            $ref: '#/components/schemas/RemoteMediaDecision'
+        counts:
+          type: object
+          additionalProperties: { type: integer }
+          description: Decision totals keyed by action (allow/block/review).
+    RemoteMediaDecision:
+      type: object
+      required: [url, media_class, action, reason]
+      properties:
+        url: { type: string }
+        media_class: { type: string, enum: [image, video, pdf, other] }
+        action: { type: string, enum: [allow, block, review] }
+        reason: { type: string }
+        line: { type: integer, description: 1-indexed line of the first occurrence. }
     RemoteMediaResult:
       type: object
       required: [localized, blocked, review, failed]

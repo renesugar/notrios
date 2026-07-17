@@ -156,6 +156,8 @@ func (s *Server) handleMCPToolCall(r *http.Request, raw json.RawMessage) (mcpToo
 		return s.mcpSearchInNote(r, params.Arguments)
 	case "get_notebook_notes":
 		return s.mcpGetNotebookNotes(r, params.Arguments)
+	case "scan_remote_media":
+		return s.mcpScanRemoteMedia(r, params.Arguments)
 	case "create_note", "update_note", "append_to_note", "prepend_to_note", "edit_note", "delete_note", "move_note_to_notebook":
 		if !s.mcpWritesEnabled() {
 			return mcpToolResult{}, fmt.Errorf("tool %q requires the %q MCP profile; the active profile is read-only", params.Name, "editor")
@@ -349,6 +351,25 @@ func (s *Server) mcpListDocumentResources(r *http.Request, raw json.RawMessage) 
 	return mcpStructured(api.ResourceReferencePage{Resources: out})
 }
 
+func (s *Server) mcpScanRemoteMedia(r *http.Request, raw json.RawMessage) (mcpToolResult, error) {
+	var args struct {
+		DocumentID string `json:"document_id,omitempty"`
+		URI        string `json:"uri,omitempty"`
+	}
+	if err := unmarshalMCPArgs(raw, &args); err != nil {
+		return mcpToolResult{}, err
+	}
+	documentID := firstNonEmpty(args.DocumentID, documentIDFromURI(args.URI))
+	if documentID == "" {
+		return mcpToolResult{}, fmt.Errorf("document_id or document:// URI is required")
+	}
+	doc, err := s.store.GetDocument(r.Context(), documentID)
+	if err != nil {
+		return mcpToolResult{}, err
+	}
+	return mcpStructured(scanResultFromDecisions(doc.ID, s.mediaPolicy.ScanBody(doc.Body)))
+}
+
 func (s *Server) mcpGetDocumentOutline(r *http.Request, raw json.RawMessage) (mcpToolResult, error) {
 	var args struct {
 		DocumentID string `json:"document_id,omitempty"`
@@ -384,6 +405,7 @@ func (s *Server) mcpTools() []mcpTool {
 		{Name: "get_note_line_range", Description: "Read a 1-indexed inclusive slice of a note body by line numbers.", InputSchema: objectSchema(map[string]any{"document_id": stringSchema(), "uri": stringSchema(), "start_line": integerSchema(1, 1000000), "end_line": integerSchema(1, 1000000)}, nil)},
 		{Name: "search_in_note", Description: "Case-insensitive search within one note. Returns matches with line numbers and context.", InputSchema: objectSchema(map[string]any{"document_id": stringSchema(), "uri": stringSchema(), "pattern": stringSchema()}, nil)},
 		{Name: "get_notebook_notes", Description: "List current notes directly in one notebook.", InputSchema: objectSchema(map[string]any{"notebook_id": stringSchema(), "limit": integerSchema(1, 200)}, nil)},
+		{Name: "scan_remote_media", Description: "Report the remote-media policy decision (allow/block/review with reason) for every remote image/media URL in one note, without downloading anything.", InputSchema: objectSchema(map[string]any{"document_id": stringSchema(), "uri": stringSchema()}, nil)},
 	}
 	if s.mcpWritesEnabled() {
 		tools = append(tools,

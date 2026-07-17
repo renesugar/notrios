@@ -107,6 +107,13 @@ Case-insensitive search within one note; returns matches with line numbers and c
 
 List current notes directly in one notebook.
 
+### scan_remote_media
+
+Report the remote-media policy decision (`allow`/`block`/`review`, with a
+reason, media class, and line number) for every remote image/media URL in one
+note. Purely static — nothing is downloaded, not even DNS lookups (v0.3 task
+H2). Takes `document_id` or a `document://` URI.
+
 ## Editor-profile write tools — implemented (task R8)
 
 Exposed by `tools/list` and callable only when `mcp.default_profile` is `editor`; the default read-only profile hides and rejects them.

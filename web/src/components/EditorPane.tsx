@@ -8,7 +8,7 @@
 // badge — the client never waits for a server 403 to explain protection.
 import { MdEditor, type UploadImgCallBack } from 'md-editor-rt';
 import type { ThemeMode } from '../themes';
-import { resourceContentURL, type DocumentLink, type DocumentRecord, type ResourceReference } from '../api';
+import { resourceContentURL, type DocumentLink, type DocumentRecord, type RemoteMediaDecision, type ResourceReference } from '../api';
 
 export interface EditorPaneProps {
   title: string;
@@ -26,6 +26,8 @@ export interface EditorPaneProps {
   links: DocumentLink[];
   backlinks: DocumentLink[];
   resources: ResourceReference[];
+  /** Server-side policy decisions for remote media found in this note. */
+  remoteMedia: RemoteMediaDecision[];
   onOpenDocument: (documentID: string) => void;
 }
 
@@ -46,6 +48,7 @@ export function EditorPane(props: EditorPaneProps) {
     links,
     backlinks,
     resources,
+    remoteMedia,
     onOpenDocument,
   } = props;
 
@@ -161,6 +164,27 @@ export function EditorPane(props: EditorPaneProps) {
                     </ul>
                   </>
                 )}
+              </div>
+            )}
+            {remoteMedia.length > 0 && (
+              <div className="remote-media-list" data-testid="remote-media-list">
+                <strong>Remote media ({remoteMedia.length})</strong>
+                <p className="muted remote-media-hint">
+                  Detected by a server-side policy scan; nothing has been downloaded.
+                </p>
+                <ul>
+                  {remoteMedia.map((decision) => (
+                    <li key={decision.url}>
+                      <span className={`media-action media-action-${decision.action}`}>{decision.action}</span>{' '}
+                      <span className="remote-media-url">{decision.url}</span>
+                      <span className="muted">
+                        {' '}
+                        · {decision.media_class} · {decision.reason}
+                        {decision.line ? ` · line ${decision.line}` : ''}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
               </div>
             )}
             {resources.length > 0 && (

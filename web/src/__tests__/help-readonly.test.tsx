@@ -45,6 +45,7 @@ function renderPane(overrides: Partial<EditorPaneProps>) {
     links: [],
     backlinks: [],
     resources: [],
+    remoteMedia: [],
     onOpenDocument: vi.fn(),
     ...overrides,
   };
@@ -79,5 +80,28 @@ describe('Help note read-only presentation', () => {
     expect(screen.getByLabelText('Note title')).toBeEnabled();
     expect(screen.getByTestId('editor-stub')).not.toHaveAttribute('readonly');
     expect(screen.getByText('Upload image/PDF/resource')).toBeInTheDocument();
+  });
+});
+
+describe('remote-media policy warnings', () => {
+  it('renders per-URL decisions in the note inspector', () => {
+    renderPane({
+      remoteMedia: [
+        { url: 'https://tracker.example.com/pixel.gif', media_class: 'image', action: 'block', reason: 'domain matches blocked pattern tracker.example.com', line: 3 },
+        { url: 'https://upload.wikimedia.org/a.png', media_class: 'image', action: 'allow', reason: 'domain matches allowed pattern *.wikimedia.org' },
+      ],
+    });
+    const list = screen.getByTestId('remote-media-list');
+    expect(list).toHaveTextContent('Remote media (2)');
+    expect(list).toHaveTextContent('nothing has been downloaded');
+    expect(list).toHaveTextContent('https://tracker.example.com/pixel.gif');
+    expect(list).toHaveTextContent('block');
+    expect(list).toHaveTextContent('line 3');
+    expect(list).toHaveTextContent('allow');
+  });
+
+  it('renders no remote-media section when the scan is empty', () => {
+    renderPane({ remoteMedia: [] });
+    expect(screen.queryByTestId('remote-media-list')).not.toBeInTheDocument();
   });
 });

@@ -1,6 +1,6 @@
 # Plan: v0.3 — Import, resource, and media hardening
 
-Status: **active** (drafted 2026-07-16 from `ROADMAP.md`; supersedes the archived draft `plans/v0.2/001-import-resource-media-hardening.md`). The completed v0.2 redesign plan is archived under `plans/v0.2/`. H1 is complete (`plans/v0.3/001-media-policy-config-schema.md`); H2 is next.
+Status: **active** (drafted 2026-07-16 from `ROADMAP.md`; supersedes the archived draft `plans/v0.2/001-import-resource-media-hardening.md`). The completed v0.2 redesign plan is archived under `plans/v0.2/`. H1 and H2 are complete (`plans/v0.3/`); H3 is next.
 
 ## Goal
 
@@ -26,7 +26,7 @@ Every task must leave the project in a working state. Update `agent/PLAN_STATUS.
 
 Working state: service starts with (or without) a policy config and reports policy state; schema migrates v6→v7; all existing tests pass.
 
-### H2. Remote-media scan endpoint
+### H2. Remote-media scan endpoint — COMPLETED (see `plans/v0.3/002-remote-media-scan.md`)
 
 - `GET/POST /api/v1/documents/{id}/remote-media`: parse the note body for remote `http(s)` image/media URLs and return per-URL policy decisions (allow/block/review + reason) **without downloading anything**.
 - Surface the scan in the GUI: remote-media warnings in the editor's note inspector (count + per-URL decision), consistent with the preview rule — the browser never fetches as a policy signal.

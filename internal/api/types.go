@@ -367,6 +367,24 @@ type RemoteMediaResult struct {
 	Failed     []map[string]any `json:"failed"`
 }
 
+// RemoteMediaDecision is the static policy verdict for one remote-media URL
+// found in a note (v0.3 task H2). Nothing has been downloaded.
+type RemoteMediaDecision struct {
+	URL        string `json:"url"`
+	MediaClass string `json:"media_class"`
+	Action     string `json:"action"` // allow | block | review
+	Reason     string `json:"reason"`
+	Line       int    `json:"line,omitempty"`
+}
+
+// RemoteMediaScanResult reports every remote-media URL in a document with
+// its policy decision, without fetching any bytes.
+type RemoteMediaScanResult struct {
+	DocumentID string                `json:"document_id,omitempty"`
+	Media      []RemoteMediaDecision `json:"media"`
+	Counts     map[string]int        `json:"counts"`
+}
+
 type GraphRequest struct {
 	Roots            []string `json:"roots"`
 	Direction        string   `json:"direction,omitempty"`

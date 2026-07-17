@@ -19,7 +19,7 @@ The REST persistence slice is implemented for managed Markdown documents:
 - `POST /api/v1/search` searches current, non-deleted managed documents with SQLite FTS5.
 - `GET /api/v1/documents/{document_id}/links` returns outgoing links and backlinks parsed from Markdown.
 - `POST /api/v1/graph` returns a small document/resource graph slice for selected roots.
-- import, publish, rich block indexing, links/resolve, and remote-media routes outside this slice remain placeholders until later MVP tasks; document, resource, search, link-listing, graph-slice routes, and the read-only MCP MVP adapter are live in the current slice.
+- import, publish, rich block indexing, links/resolve, and remote-media **localization** remain placeholders until later tasks; document, resource, search, link-listing, graph-slice, remote-media **scan**/policy routes, and the MCP adapter are live.
 
 ## Contract goals
 
@@ -146,14 +146,16 @@ POST /api/v1/links/resolve
 
 Link records preserve source syntax, raw target, normalized target URI, source position, context, anchor, relation type, and resolution status. MVP Task 5 extracts common Markdown links/images, Obsidian wikilinks/embeds, app URIs, external URLs, heading anchors, and block anchors with a conservative parser. `POST /api/v1/links/resolve` remains a future endpoint.
 
-### Remote media (staged contract — handlers return stub responses today)
+### Remote media (scan and policy routes implemented, v0.3 task H2; localize returns a stub until task H4)
 
 ```text
-POST /api/v1/documents/{document_id}/remote-media/scan
-POST /api/v1/documents/{document_id}/remote-media/localize
-GET  /api/v1/media-policy
-POST /api/v1/media-policy/check-url
+POST /api/v1/documents/{document_id}/remote-media/scan   # implemented: per-URL policy decisions, no downloads
+POST /api/v1/documents/{document_id}/remote-media/localize   # stub until v0.3 H4
+GET  /api/v1/media-policy                                 # implemented: active policy report
+POST /api/v1/media-policy/check-url                       # implemented: evaluate explicit URLs
 ```
+
+The scan evaluates every remote image/media URL in the stored body (Markdown images/embeds, media-extension links, HTML `<img>` tags) against the `remote_media` policy and returns `{url, media_class, action, reason, line}` decisions plus counts; an optional request body with `urls` evaluates that explicit list instead (e.g. unsaved editor drafts). Scanning is purely static — no downloads and no DNS resolution; address checks cover literals, and resolved addresses are re-checked at fetch time by the quarantine pipeline (H3). The read-only MCP tool `scan_remote_media` exposes the same scan.
 
 Remote media localization must never be implemented by reading browser preview caches. The server downloads into quarantine, applies URL/domain policy, size/MIME checks, exact/perceptual hash checks, deduplicates by content hash, stores approved resources, and rewrites Markdown in a new revision.
 
