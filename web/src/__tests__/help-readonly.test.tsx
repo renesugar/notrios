@@ -1,6 +1,6 @@
 // Read-only Help presentation: the client disables editing before any server
 // 403 — driven by the server-provided `editable` capability, never by name.
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { EditorPane, type EditorPaneProps } from '../components/EditorPane';
 import type { DocumentRecord } from '../api';
@@ -46,6 +46,7 @@ function renderPane(overrides: Partial<EditorPaneProps>) {
     backlinks: [],
     resources: [],
     remoteMedia: [],
+    onLocalizeRemoteMedia: vi.fn(),
     onOpenDocument: vi.fn(),
     ...overrides,
   };
@@ -103,5 +104,34 @@ describe('remote-media policy warnings', () => {
   it('renders no remote-media section when the scan is empty', () => {
     renderPane({ remoteMedia: [] });
     expect(screen.queryByTestId('remote-media-list')).not.toBeInTheDocument();
+  });
+
+  it('offers localization only for editable notes with allowed media', () => {
+    const onLocalizeRemoteMedia = vi.fn();
+    renderPane({
+      onLocalizeRemoteMedia,
+      remoteMedia: [
+        { url: 'https://upload.wikimedia.org/a.png', media_class: 'image', action: 'allow', reason: 'allowed' },
+      ],
+    });
+    const button = screen.getByTestId('localize-button');
+    fireEvent.click(button);
+    expect(onLocalizeRemoteMedia).toHaveBeenCalledTimes(1);
+  });
+
+  it('hides the localize action for read-only notes and blocked-only media', () => {
+    renderPane({
+      editable: false,
+      selectedDocument: doc({ notebook_id: 'nb_help', editable: false }),
+      remoteMedia: [
+        { url: 'https://upload.wikimedia.org/a.png', media_class: 'image', action: 'allow', reason: 'allowed' },
+      ],
+    });
+    expect(screen.queryByTestId('localize-button')).not.toBeInTheDocument();
+    cleanup();
+    renderPane({
+      remoteMedia: [{ url: 'https://tracker.example.com/x.gif', media_class: 'image', action: 'block', reason: 'blocked' }],
+    });
+    expect(screen.queryByTestId('localize-button')).not.toBeInTheDocument();
   });
 });

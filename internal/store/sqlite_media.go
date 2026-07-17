@@ -76,6 +76,74 @@ func (s *SQLiteStore) RecordMediaAttempt(ctx context.Context, attempt MediaAttem
 	return attempt, nil
 }
 
+// MediaHashRule blocks or flags content by hash. Exact hashes may block;
+// perceptual hashes only ever review (SECURITY_AND_MEDIA_POLICY.md).
+type MediaHashRule struct {
+	Algo      string
+	Hash      string
+	Kind      string // exact | perceptual
+	Action    string // block | review
+	Reason    string
+	CreatedAt string
+}
+
+func (s *SQLiteStore) AddMediaHashRule(ctx context.Context, rule MediaHashRule) error {
+	ctx = contextOrBackground(ctx)
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	rule.Algo = strings.ToLower(strings.TrimSpace(rule.Algo))
+	rule.Hash = strings.ToLower(strings.TrimSpace(rule.Hash))
+	if rule.Algo == "" || rule.Hash == "" {
+		return fmt.Errorf("%w: hash rule requires algo and hash", ErrInvalidInput)
+	}
+	if rule.Kind == "" {
+		rule.Kind = "exact"
+	}
+	if rule.Kind == "perceptual" && rule.Action == "block" {
+		return fmt.Errorf("%w: perceptual hash rules may only review, never block", ErrInvalidInput)
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.execPreparedLocked(`INSERT INTO media_hash_rules(algo, hash, kind, action, reason) VALUES(?, ?, ?, ?, ?)
+		ON CONFLICT(algo, hash) DO UPDATE SET kind = excluded.kind, action = excluded.action, reason = excluded.reason`,
+		rule.Algo, rule.Hash, rule.Kind, rule.Action, rule.Reason)
+}
+
+// FindMediaHashRule returns the rule for one hash, or ErrNotFound.
+func (s *SQLiteStore) FindMediaHashRule(ctx context.Context, algo, hash string) (MediaHashRule, error) {
+	ctx = contextOrBackground(ctx)
+	if err := ctx.Err(); err != nil {
+		return MediaHashRule{}, err
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	stmt, err := s.prepareLocked(`SELECT algo, hash, kind, action, COALESCE(reason, ''), created_at
+		FROM media_hash_rules WHERE algo = ? AND hash = ?`)
+	if err != nil {
+		return MediaHashRule{}, err
+	}
+	defer C.sqlite3_finalize(stmt)
+	if err := bindAll(stmt, []string{strings.ToLower(strings.TrimSpace(algo)), strings.ToLower(strings.TrimSpace(hash))}); err != nil {
+		return MediaHashRule{}, err
+	}
+	rc := C.sqlite3_step(stmt)
+	if rc == C.SQLITE_DONE {
+		return MediaHashRule{}, ErrNotFound
+	}
+	if rc != C.SQLITE_ROW {
+		return MediaHashRule{}, s.stepErrLocked(rc)
+	}
+	return MediaHashRule{
+		Algo:      columnText(stmt, 0),
+		Hash:      columnText(stmt, 1),
+		Kind:      columnText(stmt, 2),
+		Action:    columnText(stmt, 3),
+		Reason:    columnText(stmt, 4),
+		CreatedAt: columnText(stmt, 5),
+	}, nil
+}
+
 // ListMediaAttempts returns recorded attempts, newest first. An empty
 // documentID lists attempts across all documents (including document-less
 // check-url evaluations).

@@ -15,6 +15,7 @@ import (
 
 	"github.com/renesugar/notrios/internal/api"
 	"github.com/renesugar/notrios/internal/config"
+	"github.com/renesugar/notrios/internal/localize"
 	"github.com/renesugar/notrios/internal/media"
 	"github.com/renesugar/notrios/internal/query"
 	"github.com/renesugar/notrios/internal/recoll"
@@ -28,6 +29,7 @@ type Server struct {
 	config      config.Config
 	sidecar     SidecarSearcher
 	mediaPolicy *media.Policy
+	localizer   *localize.Localizer
 }
 
 // SidecarSearcher is the optional derived search backend (Recoll). Implemented
@@ -61,6 +63,10 @@ func NewServerWithOptions(options ServerOptions) *Server {
 		cfg = config.Default()
 	}
 	s := &Server{mux: http.NewServeMux(), store: options.Store, config: cfg, mediaPolicy: media.NewPolicy(cfg.RemoteMedia)}
+	if options.Store != nil {
+		// Lazy fetcher inside: no filesystem side effects until first use.
+		s.localizer = localize.New(cfg.RemoteMedia, options.Store)
+	}
 	s.routes()
 	return s
 }
@@ -729,8 +735,41 @@ func scanResultFromDecisions(documentID string, decisions []media.Decision) api.
 	return result
 }
 
+// handleRemoteMediaLocalize converts a note's remote media into local
+// resources through the shared localize engine (v0.3 task H4): quarantine
+// fetch → exact-hash rule check → content-addressed admission → Markdown
+// rewrite in a new revision. Dry runs never fetch or write.
 func (s *Server) handleRemoteMediaLocalize(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, http.StatusOK, emptyRemoteMediaResult())
+	if s.localizer == nil {
+		writeError(w, http.StatusServiceUnavailable, "store_not_wired", "persistence is not configured")
+		return
+	}
+	var request api.RemoteMediaRequest
+	if r.Body != nil && r.ContentLength != 0 {
+		if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+			writeError(w, http.StatusBadRequest, "invalid_json", err.Error())
+			return
+		}
+	}
+	baseRevisionID := firstNonEmpty(request.BaseRevisionID, revisionFromIfMatch(r.Header.Get("If-Match")))
+	if baseRevisionID == "" && !request.DryRun {
+		writeError(w, http.StatusPreconditionRequired, "precondition_required", "base_revision_id or If-Match is required")
+		return
+	}
+	result, err := s.localizer.LocalizeDocument(r.Context(), localize.Options{
+		DocumentID:     r.PathValue("document_id"),
+		BaseRevisionID: baseRevisionID,
+		DryRun:         request.DryRun,
+		AllowReview:    request.AllowReview,
+	})
+	if errors.Is(err, localize.ErrReadOnly) {
+		writeError(w, http.StatusForbidden, "forbidden", err.Error())
+		return
+	}
+	if writeStoreError(w, err, "localize_failed") {
+		return
+	}
+	writeJSON(w, http.StatusOK, result)
 }
 
 func (s *Server) handleCreateResource(w http.ResponseWriter, r *http.Request) {

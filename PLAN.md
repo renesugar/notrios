@@ -1,6 +1,6 @@
 # Plan: v0.3 — Import, resource, and media hardening
 
-Status: **active** (drafted 2026-07-16 from `ROADMAP.md`; supersedes the archived draft `plans/v0.2/001-import-resource-media-hardening.md`). The completed v0.2 redesign plan is archived under `plans/v0.2/`. H1–H3 are complete (`plans/v0.3/`); H4 is next.
+Status: **active** (drafted 2026-07-16 from `ROADMAP.md`; supersedes the archived draft `plans/v0.2/001-import-resource-media-hardening.md`). The completed v0.2 redesign plan is archived under `plans/v0.2/`. H1–H4 are complete (`plans/v0.3/`); H5 is next.
 
 ## Goal
 
@@ -42,7 +42,7 @@ Working state: users can inspect a note's remote media and the policy verdicts b
 
 Working state: `internal/media` can quarantine a URL list safely; refusals are recorded and reported; nothing reaches the asset store.
 
-### H4. Localize remote media
+### H4. Localize remote media — COMPLETED (see `plans/v0.3/004-localize-remote-media.md`)
 
 - Admission: exact-hash block check, then content-addressed store admission (dedup by construction), resource + provenance rows (original URL, final URL, retrieved timestamp, content type, hashes, decision).
 - Rewrite the note's Markdown image/media links to `resource://` URIs in a **new revision** with a `base_revision_id` precondition; attach resources to the document.

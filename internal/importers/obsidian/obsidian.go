@@ -46,6 +46,10 @@ type Report struct {
 	AttachmentsCreated   int      `json:"attachments_created"`
 	LinkIndexesRefreshed int      `json:"link_indexes_refreshed"`
 	Warnings             []string `json:"warnings,omitempty"`
+	// DocumentIDs lists the notes this run touched (created/updated/kept),
+	// for post-import passes like --localize-media. Not part of the JSON
+	// report.
+	DocumentIDs []string `json:"-"`
 }
 
 type markdownFile struct {
@@ -213,6 +217,7 @@ func Import(ctx context.Context, st store.Store, sourceDir string, options Optio
 			}
 			report.LinkIndexesRefreshed++
 		}
+		report.DocumentIDs = importedDocIDs
 	}
 
 	return report, nil

@@ -158,7 +158,7 @@ func (s *Server) handleMCPToolCall(r *http.Request, raw json.RawMessage) (mcpToo
 		return s.mcpGetNotebookNotes(r, params.Arguments)
 	case "scan_remote_media":
 		return s.mcpScanRemoteMedia(r, params.Arguments)
-	case "create_note", "update_note", "append_to_note", "prepend_to_note", "edit_note", "delete_note", "move_note_to_notebook":
+	case "create_note", "update_note", "append_to_note", "prepend_to_note", "edit_note", "delete_note", "move_note_to_notebook", "localize_remote_media":
 		if !s.mcpWritesEnabled() {
 			return mcpToolResult{}, fmt.Errorf("tool %q requires the %q MCP profile; the active profile is read-only", params.Name, "editor")
 		}
@@ -416,6 +416,7 @@ func (s *Server) mcpTools() []mcpTool {
 			mcpTool{Name: "edit_note", Description: "Server-side string replacement. Fails if the search text is missing or ambiguous without replace_all. Supports dry_run.", InputSchema: objectSchema(map[string]any{"document_id": stringSchema(), "search": stringSchema(), "replace": stringSchema(), "replace_all": booleanSchema(), "dry_run": booleanSchema()}, []string{"document_id", "search"})},
 			mcpTool{Name: "delete_note", Description: "Move a note to the Trash. Requires base_revision_id.", InputSchema: objectSchema(map[string]any{"document_id": stringSchema(), "base_revision_id": stringSchema()}, []string{"document_id", "base_revision_id"})},
 			mcpTool{Name: "move_note_to_notebook", Description: "Move a note to a different notebook.", InputSchema: objectSchema(map[string]any{"document_id": stringSchema(), "notebook_id": stringSchema()}, []string{"document_id", "notebook_id"})},
+			mcpTool{Name: "localize_remote_media", Description: "Download policy-allowed remote media through the quarantine pipeline, store it as local resources, and rewrite the note to resource:// URIs in a new revision. Requires base_revision_id; supports dry_run (no fetching) and allow_review.", InputSchema: objectSchema(map[string]any{"document_id": stringSchema(), "base_revision_id": stringSchema(), "dry_run": booleanSchema(), "allow_review": booleanSchema()}, []string{"document_id", "base_revision_id"})},
 		)
 	}
 	return tools

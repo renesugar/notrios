@@ -464,6 +464,26 @@ body.splitter-dragging {
   font-size: 12px;
 }
 
+.localize-button {
+  margin-left: 10px;
+  font-size: 12px;
+  padding: 1px 8px;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.localize-button:hover:not(:disabled) {
+  background: var(--accent-soft);
+}
+
+.localize-button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
 .remote-media-url {
   overflow-wrap: anywhere;
 }

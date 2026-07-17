@@ -357,6 +357,11 @@ type RemoteMediaRequest struct {
 	Types  []string `json:"types,omitempty"`
 	URLs   []string `json:"urls,omitempty"`
 	DryRun bool     `json:"dry_run,omitempty"`
+	// AllowReview also localizes URLs whose policy decision is "review"
+	// (an explicit reviewer action; "block" is never fetched).
+	AllowReview bool `json:"allow_review,omitempty"`
+	// BaseRevisionID guards the localize rewrite (or use If-Match).
+	BaseRevisionID string `json:"base_revision_id,omitempty"`
 }
 
 type RemoteMediaResult struct {

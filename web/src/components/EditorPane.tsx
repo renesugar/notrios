@@ -28,6 +28,8 @@ export interface EditorPaneProps {
   resources: ResourceReference[];
   /** Server-side policy decisions for remote media found in this note. */
   remoteMedia: RemoteMediaDecision[];
+  /** Localize policy-allowed remote media into local resources. */
+  onLocalizeRemoteMedia: () => void;
   onOpenDocument: (documentID: string) => void;
 }
 
@@ -49,6 +51,7 @@ export function EditorPane(props: EditorPaneProps) {
     backlinks,
     resources,
     remoteMedia,
+    onLocalizeRemoteMedia,
     onOpenDocument,
   } = props;
 
@@ -169,6 +172,18 @@ export function EditorPane(props: EditorPaneProps) {
             {remoteMedia.length > 0 && (
               <div className="remote-media-list" data-testid="remote-media-list">
                 <strong>Remote media ({remoteMedia.length})</strong>
+                {editable && remoteMedia.some((decision) => decision.action === 'allow') && (
+                  <button
+                    type="button"
+                    className="localize-button"
+                    data-testid="localize-button"
+                    disabled={busy}
+                    onClick={onLocalizeRemoteMedia}
+                    title="Download allowed remote media through the quarantine pipeline and rewrite this note to local resource:// links"
+                  >
+                    Localize allowed media
+                  </button>
+                )}
                 <p className="muted remote-media-hint">
                   Detected by a server-side policy scan; nothing has been downloaded.
                 </p>

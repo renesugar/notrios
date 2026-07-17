@@ -16,6 +16,7 @@ import {
   listDocumentResources,
   listSearchNotebooks,
   listTags,
+  localizeRemoteMedia,
   scanRemoteMedia,
   updateDocument,
   uploadResource,
@@ -325,6 +326,28 @@ export function App() {
     }
   }
 
+  async function onLocalizeRemoteMedia() {
+    if (!selectedDocument || !editable) return;
+    setBusy(true);
+    setError(null);
+    setMessage(null);
+    try {
+      const result = await localizeRemoteMedia(selectedDocument.id, selectedDocument.current_revision_id);
+      const parts = [`${result.localized.length} localized`];
+      if (result.blocked.length > 0) parts.push(`${result.blocked.length} blocked`);
+      if (result.review.length > 0) parts.push(`${result.review.length} needing review`);
+      if (result.failed.length > 0) parts.push(`${result.failed.length} failed`);
+      setMessage(`Remote media: ${parts.join(', ')}.`);
+      // The note body (and revision) changed; reload it, which also
+      // refreshes the remote-media scan.
+      await openDocumentByID(selectedDocument.id);
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   function resetEditor() {
     setSelectedDocument(null);
     setTitle('New note');
@@ -496,6 +519,7 @@ export function App() {
           backlinks={backlinks}
           resources={resources}
           remoteMedia={remoteMedia}
+          onLocalizeRemoteMedia={() => void onLocalizeRemoteMedia()}
           onOpenDocument={(id) => void openDocumentByID(id)}
         />
         <PaneSplitter

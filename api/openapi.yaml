@@ -484,7 +484,15 @@ paths:
                 $ref: '#/components/schemas/RemoteMediaScanResult'
   /api/v1/documents/{document_id}/remote-media/localize:
     post:
-      summary: Download approved remote media and rewrite the document
+      summary: Download policy-allowed remote media and rewrite the document to resource:// URIs
+      description: >
+        Runs the shared localization engine: quarantine fetch (redirect-hop
+        policy re-checks, connect-time private-address blocking, size caps,
+        MIME sniffing), exact-hash rule check, admission to the
+        content-addressed store, resource attachment, and a Markdown rewrite
+        in a new revision guarded by base_revision_id/If-Match. dry_run
+        reports decisions without fetching a byte. Blocked URLs are never
+        fetched; review URLs require allow_review.
       parameters:
         - $ref: '#/components/parameters/DocumentID'
         - $ref: '#/components/parameters/IfMatch'
@@ -496,11 +504,23 @@ paths:
               $ref: '#/components/schemas/RemoteMediaRequest'
       responses:
         '200':
-          description: Localization result
+          description: Localization result (localized/blocked/review/failed entries plus the new revision ID when a rewrite happened)
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/RemoteMediaResult'
+        '403':
+          description: Read-only note (Help notebook or Trash)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '428':
+          description: Missing base_revision_id / If-Match on a non-dry run
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
   /api/v1/documents/{document_id}/append:
     post:
       summary: Append text to a note (If-Match optional; retries once without it)
@@ -1075,6 +1095,13 @@ components:
           type: array
           items: { type: string, format: uri }
         dry_run: { type: boolean, default: false }
+        allow_review:
+          type: boolean
+          default: false
+          description: Also localize URLs whose policy decision is "review" (explicit reviewer action); "block" is never fetched.
+        base_revision_id:
+          type: string
+          description: Revision precondition for the localize rewrite (or send If-Match). Required for non-dry localize runs.
     RemoteMediaScanResult:
       type: object
       required: [media, counts]

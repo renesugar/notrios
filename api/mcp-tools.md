@@ -124,6 +124,7 @@ Exposed by `tools/list` and callable only when `mcp.default_profile` is `editor`
 - `edit_note(document_id, search, replace?, replace_all?, dry_run?)` — server-side string replacement; fails if the search text is missing or matches multiple locations without `replace_all`.
 - `delete_note(document_id, base_revision_id)` — moves the note to the Trash.
 - `move_note_to_notebook(document_id, notebook_id)` — Help-notebook moves are refused.
+- `localize_remote_media(document_id, base_revision_id, dry_run?, allow_review?)` — downloads policy-allowed remote media through the quarantine pipeline, stores it as local resources, and rewrites the note to `resource://` URIs in a new revision (v0.3 task H4). `dry_run` reports decisions without fetching; `allow_review` opts review-listed URLs in; blocked URLs are never fetched.
 
 ## Later write tools
 

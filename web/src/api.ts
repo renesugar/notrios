@@ -299,6 +299,36 @@ export async function scanRemoteMedia(documentID: string): Promise<RemoteMediaSc
   return parseJSON<RemoteMediaScanResult>(response);
 }
 
+export interface RemoteMediaLocalizeResult {
+  revision_id?: string;
+  localized: Array<Record<string, unknown>>;
+  blocked: Array<Record<string, unknown>>;
+  review: Array<Record<string, unknown>>;
+  failed: Array<Record<string, unknown>>;
+}
+
+/**
+ * Server-side localization: quarantine-fetch policy-allowed remote media,
+ * store it as local resources, and rewrite the note to resource:// URIs in
+ * a new revision (guarded by the base revision).
+ */
+export async function localizeRemoteMedia(
+  documentID: string,
+  baseRevisionID: string,
+  options: { dryRun?: boolean; allowReview?: boolean } = {},
+): Promise<RemoteMediaLocalizeResult> {
+  const response = await fetch(`/api/v1/documents/${encodeURIComponent(documentID)}/remote-media/localize`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      base_revision_id: baseRevisionID,
+      dry_run: options.dryRun ?? false,
+      allow_review: options.allowReview ?? false,
+    }),
+  });
+  return parseJSON<RemoteMediaLocalizeResult>(response);
+}
+
 export function resourceContentURL(resourceID: string, download = true): string {
   const suffix = download ? '?download=1' : '';
   return `/api/v1/resources/${encodeURIComponent(resourceID)}/content${suffix}`;

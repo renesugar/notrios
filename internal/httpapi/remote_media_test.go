@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -133,6 +135,168 @@ func TestMediaPolicyEndpoints(t *testing.T) {
 	s.ServeHTTP(rr, req)
 	if rr.Code != http.StatusBadRequest {
 		t.Fatalf("check-url without urls: expected 400, got %d", rr.Code)
+	}
+}
+
+// newLocalizeTestServer wires a real store plus a remote-media config whose
+// allowed list points at the given content server (loopback, so private
+// networks are permitted for the test).
+func newLocalizeTestServer(t *testing.T, contentServerURL string) (*Server, *store.SQLiteStore) {
+	t.Helper()
+	parsed, err := url.Parse(contentServerURL)
+	if err != nil {
+		t.Fatalf("parse content server URL: %v", err)
+	}
+	st, err := store.OpenSQLiteWithAssetStore(":memory:", filepath.Join(t.TempDir(), "assets"))
+	if err != nil {
+		t.Fatalf("OpenSQLite: %v", err)
+	}
+	t.Cleanup(func() { _ = st.Close() })
+	if err := st.Bootstrap(context.Background()); err != nil {
+		t.Fatalf("Bootstrap: %v", err)
+	}
+	cfg := config.Default()
+	cfg.RemoteMedia.AllowPrivateNetworks = true
+	cfg.RemoteMedia.AllowedDomains = []string{parsed.Hostname()}
+	cfg.RemoteMedia.BlockedDomains = []string{"tracker.example.com"}
+	cfg.RemoteMedia.QuarantineDir = filepath.Join(t.TempDir(), "quarantine")
+	return NewServerWithOptions(ServerOptions{Store: st, Config: cfg}), st
+}
+
+var testPNG = append([]byte("\x89PNG\r\n\x1a\n"), make([]byte, 40)...)
+
+func TestRemoteMediaLocalizeEndpoint(t *testing.T) {
+	content := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write(testPNG)
+	}))
+	defer content.Close()
+	s, st := newLocalizeTestServer(t, content.URL)
+	doc, err := st.CreateDocument(context.Background(), store.CreateDocumentRequest{
+		Title: "Localize via REST",
+		Body:  "![p](" + content.URL + "/a.png)\n![t](https://tracker.example.com/x.gif)\n",
+	})
+	if err != nil {
+		t.Fatalf("CreateDocument: %v", err)
+	}
+
+	// Missing precondition → 428.
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/documents/"+doc.ID+"/remote-media/localize", strings.NewReader(`{}`))
+	rr := httptest.NewRecorder()
+	s.ServeHTTP(rr, req)
+	if rr.Code != http.StatusPreconditionRequired {
+		t.Fatalf("expected 428 without base revision, got %d: %s", rr.Code, rr.Body.String())
+	}
+
+	// Real run with the precondition.
+	body := `{"base_revision_id":"` + doc.CurrentRevisionID + `"}`
+	req = httptest.NewRequest(http.MethodPost, "/api/v1/documents/"+doc.ID+"/remote-media/localize", strings.NewReader(body))
+	rr = httptest.NewRecorder()
+	s.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", rr.Code, rr.Body.String())
+	}
+	var result api.RemoteMediaResult
+	if err := json.NewDecoder(rr.Body).Decode(&result); err != nil {
+		t.Fatalf("decode result: %v", err)
+	}
+	if len(result.Localized) != 1 || len(result.Blocked) != 1 || result.RevisionID == "" {
+		t.Fatalf("unexpected localize result: %+v", result)
+	}
+	updated, _ := st.GetDocument(context.Background(), doc.ID)
+	if strings.Contains(updated.Body, content.URL) || !strings.Contains(updated.Body, "resource://") {
+		t.Fatalf("body not rewritten: %s", updated.Body)
+	}
+
+	// A stale precondition now conflicts.
+	req = httptest.NewRequest(http.MethodPost, "/api/v1/documents/"+doc.ID+"/remote-media/localize", strings.NewReader(body))
+	rr = httptest.NewRecorder()
+	s.ServeHTTP(rr, req)
+	if rr.Code == http.StatusOK {
+		var again api.RemoteMediaResult
+		_ = json.NewDecoder(rr.Body).Decode(&again)
+		// No remote media remains, so nothing rewrites and no conflict is hit.
+		if len(again.Localized) != 0 || again.RevisionID != "" {
+			t.Fatalf("second run must be a no-op: %+v", again)
+		}
+	}
+}
+
+func TestRemoteMediaLocalizeDryRunViaREST(t *testing.T) {
+	requests := 0
+	content := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests++
+	}))
+	defer content.Close()
+	s, st := newLocalizeTestServer(t, content.URL)
+	doc, err := st.CreateDocument(context.Background(), store.CreateDocumentRequest{
+		Title: "Dry run via REST",
+		Body:  "![p](" + content.URL + "/a.png)\n",
+	})
+	if err != nil {
+		t.Fatalf("CreateDocument: %v", err)
+	}
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/documents/"+doc.ID+"/remote-media/localize", strings.NewReader(`{"dry_run":true}`))
+	rr := httptest.NewRecorder()
+	s.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("expected 200 for dry run without precondition, got %d: %s", rr.Code, rr.Body.String())
+	}
+	if requests != 0 {
+		t.Fatalf("dry run must not fetch")
+	}
+	var result api.RemoteMediaResult
+	_ = json.NewDecoder(rr.Body).Decode(&result)
+	if len(result.Localized) != 1 || result.Localized[0]["would_localize"] != true || result.RevisionID != "" {
+		t.Fatalf("unexpected dry-run result: %+v", result)
+	}
+}
+
+func TestMCPLocalizeRemoteMedia(t *testing.T) {
+	content := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write(testPNG)
+	}))
+	defer content.Close()
+	s, st := newLocalizeTestServer(t, content.URL)
+	// Enable the editor profile for write tools.
+	s.config.MCP.DefaultProfile = "editor"
+	doc, err := st.CreateDocument(context.Background(), store.CreateDocumentRequest{
+		Title: "Localize via MCP",
+		Body:  "![p](" + content.URL + "/a.png)\n",
+	})
+	if err != nil {
+		t.Fatalf("CreateDocument: %v", err)
+	}
+
+	// base_revision_id is required for non-dry runs.
+	call := `{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"localize_remote_media","arguments":{"document_id":"` + doc.ID + `"}}}`
+	rr := httptest.NewRecorder()
+	s.ServeHTTP(rr, httptest.NewRequest(http.MethodPost, "/mcp", strings.NewReader(call)))
+	if !strings.Contains(rr.Body.String(), "base_revision_id is required") {
+		t.Fatalf("missing precondition must error: %s", rr.Body.String())
+	}
+
+	call = `{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"localize_remote_media","arguments":{"document_id":"` + doc.ID + `","base_revision_id":"` + doc.CurrentRevisionID + `"}}}`
+	rr = httptest.NewRecorder()
+	s.ServeHTTP(rr, httptest.NewRequest(http.MethodPost, "/mcp", strings.NewReader(call)))
+	if rr.Code != http.StatusOK || !strings.Contains(rr.Body.String(), "resource_uri") {
+		t.Fatalf("MCP localize failed: %d %s", rr.Code, rr.Body.String())
+	}
+	updated, _ := st.GetDocument(context.Background(), doc.ID)
+	if !strings.Contains(updated.Body, "resource://") {
+		t.Fatalf("MCP localize must rewrite the note: %s", updated.Body)
+	}
+}
+
+func TestMCPLocalizeRequiresEditorProfile(t *testing.T) {
+	content := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+	defer content.Close()
+	s, _ := newLocalizeTestServer(t, content.URL) // default read-only profile
+	call := `{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"localize_remote_media","arguments":{"document_id":"doc_x","base_revision_id":"rev_x"}}}`
+	rr := httptest.NewRecorder()
+	s.ServeHTTP(rr, httptest.NewRequest(http.MethodPost, "/mcp", strings.NewReader(call)))
+	if !strings.Contains(rr.Body.String(), "read-only") {
+		t.Fatalf("read-only profile must reject localize: %s", rr.Body.String())
 	}
 }
 

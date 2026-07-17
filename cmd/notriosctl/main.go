@@ -18,6 +18,7 @@ import (
 	"github.com/renesugar/notrios/internal/importers/joplinraw"
 	"github.com/renesugar/notrios/internal/importers/obsidian"
 	"github.com/renesugar/notrios/internal/importers/twitter"
+	"github.com/renesugar/notrios/internal/localize"
 	"github.com/renesugar/notrios/internal/store"
 	"github.com/renesugar/notrios/internal/version"
 )
@@ -39,6 +40,8 @@ func main() {
 		runExport(os.Args[2:])
 	case "seed-help":
 		runSeedHelp(os.Args[2:])
+	case "localize":
+		runLocalize(os.Args[2:])
 	case "help", "-h", "--help":
 		printHelp()
 	default:
@@ -81,6 +84,7 @@ func runImportJoplinRaw(args []string) {
 	assetStore := fs.String("asset-store", "", "asset store directory override")
 	collectionID := fs.String("collection", "default", "collection ID")
 	dryRun := fs.Bool("dry-run", false, "scan and report without writing")
+	localizeMedia := fs.Bool("localize-media", false, "after importing, localize policy-allowed remote media in the imported notes")
 	if err := fs.Parse(args); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(2)
@@ -123,6 +127,9 @@ func runImportJoplinRaw(args []string) {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
+	if *localizeMedia && !*dryRun {
+		localizeImportedNotes(ctx, cfg, st, report.DocumentIDs, false)
+	}
 	encoder := json.NewEncoder(os.Stdout)
 	encoder.SetIndent("", "  ")
 	if err := encoder.Encode(report); err != nil {
@@ -138,6 +145,7 @@ func runImportObsidian(args []string) {
 	assetStore := fs.String("asset-store", "", "asset store directory override")
 	collectionID := fs.String("collection", "default", "collection ID")
 	dryRun := fs.Bool("dry-run", false, "scan and report without writing")
+	localizeMedia := fs.Bool("localize-media", false, "after importing, localize policy-allowed remote media in the imported notes")
 	if err := fs.Parse(args); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(2)
@@ -180,6 +188,9 @@ func runImportObsidian(args []string) {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
+	if *localizeMedia && !*dryRun {
+		localizeImportedNotes(ctx, cfg, st, report.DocumentIDs, false)
+	}
 	encoder := json.NewEncoder(os.Stdout)
 	encoder.SetIndent("", "  ")
 	if err := encoder.Encode(report); err != nil {
@@ -188,20 +199,109 @@ func runImportObsidian(args []string) {
 	}
 }
 
+// runLocalize converts a note's remote media into local resources through
+// the shared localize engine (v0.3 task H4).
+func runLocalize(args []string) {
+	fs := flag.NewFlagSet("notriosctl localize", flag.ExitOnError)
+	configPath := fs.String("config", "", "optional config file")
+	dbPath := fs.String("db", "", "SQLite database path override")
+	assetStore := fs.String("asset-store", "", "asset store directory override")
+	dryRun := fs.Bool("dry-run", false, "report policy decisions without fetching or writing")
+	allowReview := fs.Bool("allow-review", false, "also localize URLs whose policy decision is review")
+	baseRevision := fs.String("base-revision", "", "base revision precondition (defaults to the note's current revision)")
+	if err := fs.Parse(args); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(2)
+	}
+	if fs.NArg() != 1 {
+		fmt.Fprintln(os.Stderr, "usage: notriosctl localize [options] <document-id>")
+		fs.PrintDefaults()
+		os.Exit(2)
+	}
+
+	cfg, err := config.Load(*configPath)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	if *dbPath != "" {
+		cfg.Data.DatabasePath = *dbPath
+	}
+	if *assetStore != "" {
+		cfg.Data.AssetStore = *assetStore
+	}
+	if err := config.EnsureDirectories(cfg); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	st, err := store.OpenSQLiteWithAssetStore(cfg.Data.DatabasePath, cfg.Data.AssetStore)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	defer st.Close()
+	ctx := context.Background()
+	if err := st.Bootstrap(ctx); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+
+	result, err := localize.New(cfg.RemoteMedia, st).LocalizeDocument(ctx, localize.Options{
+		DocumentID:     fs.Arg(0),
+		BaseRevisionID: *baseRevision,
+		DryRun:         *dryRun,
+		AllowReview:    *allowReview,
+	})
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	encoder := json.NewEncoder(os.Stdout)
+	encoder.SetIndent("", "  ")
+	if err := encoder.Encode(result); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+}
+
+// localizeImportedNotes runs the shared localize engine over the notes an
+// import touched (--localize-media). Failures are reported per note and do
+// not fail the completed import.
+func localizeImportedNotes(ctx context.Context, cfg config.Config, st store.Store, documentIDs []string, allowReview bool) {
+	localizer := localize.New(cfg.RemoteMedia, st)
+	total := struct{ localized, blocked, review, failed int }{}
+	for _, documentID := range documentIDs {
+		result, err := localizer.LocalizeDocument(ctx, localize.Options{DocumentID: documentID, AllowReview: allowReview})
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "localize %s: %v\n", documentID, err)
+			total.failed++
+			continue
+		}
+		total.localized += len(result.Localized)
+		total.blocked += len(result.Blocked)
+		total.review += len(result.Review)
+		total.failed += len(result.Failed)
+	}
+	fmt.Fprintf(os.Stderr, "localize-media: %d localized, %d blocked, %d needing review, %d failed across %d notes\n",
+		total.localized, total.blocked, total.review, total.failed, len(documentIDs))
+}
+
 func printHelp() {
 	fmt.Print(`notriosctl - Notrios import/export/maintenance CLI
 
 Usage:
   notriosctl doctor [--config config.yaml] [--db path] [--asset-store path]
   notriosctl version
-  notriosctl import joplin-raw [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--dry-run] <raw-export-dir>
-  notriosctl import obsidian [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--dry-run] <vault-dir>
+  notriosctl import joplin-raw [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--dry-run] [--localize-media] <raw-export-dir>
+  notriosctl import obsidian [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--dry-run] [--localize-media] <vault-dir>
   notriosctl import twitter [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--notebook Twitter] [--dry-run] <extracted-archive-dir>
   notriosctl import chatgpt [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--notebook ChatGPT] [--dry-run] <conversations.json|export-dir>
   notriosctl import claude  [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--notebook Claude] [--dry-run] <conversations.json|export-dir>
   notriosctl import archive [--db ...] [--dry-run] [--write-config path] [--import-config path] <archive-dir>
   notriosctl export archive [--db ...] [--query "tag:todo"] <out-dir>
   notriosctl seed-help [--db ...] [docs-dir]     # mirror docs/ into the read-only Help notebook
+  notriosctl localize [--config config.yaml] [--db ...] [--dry-run] [--allow-review] [--base-revision rev] <document-id>
+                                                 # download policy-allowed remote media and rewrite the note to resource:// URIs
 
 Future commands:
   notriosctl publish quartz --profile <name>

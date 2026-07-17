@@ -38,6 +38,10 @@ type Report struct {
 	LinksRewritten     int      `json:"links_rewritten"`
 	AttachmentsCreated int      `json:"attachments_created"`
 	Warnings           []string `json:"warnings,omitempty"`
+	// DocumentIDs lists the notes this run touched (created/updated/kept),
+	// for post-import passes like --localize-media. Not part of the JSON
+	// report.
+	DocumentIDs []string `json:"-"`
 }
 
 type parsedItem struct {
@@ -162,6 +166,7 @@ func Import(ctx context.Context, st store.Store, sourceDir string, options Optio
 				if err := setSource(); err != nil {
 					return report, err
 				}
+				report.DocumentIDs = append(report.DocumentIDs, logicalID)
 				continue
 			}
 			_, err = st.UpdateDocument(ctx, store.UpdateDocumentRequest{ID: logicalID, Title: noteTitle(note), Body: body, BodyMIMEType: "text/markdown", BaseRevisionID: existing.CurrentRevisionID, Message: "import update from Joplin RAW"})
@@ -192,6 +197,7 @@ func Import(ctx context.Context, st store.Store, sourceDir string, options Optio
 		if err := setSource(); err != nil {
 			return report, err
 		}
+		report.DocumentIDs = append(report.DocumentIDs, logicalID)
 		for originalResourceID, newResourceID := range resourceIDMap {
 			uri := store.ResourceURI(collectionID, newResourceID)
 			if strings.Contains(body, uri) {

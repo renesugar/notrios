@@ -49,7 +49,7 @@ The authoritative, always-current example is `config/config.example.yaml` in the
 | `remote_media.max_bytes.<class>` | `image: 20MB`, `video: 200MB`, `pdf: 100MB` | download size caps, human-readable sizes accepted |
 | `remote_media.quarantine_dir` | `./data/quarantine` | staging area for fetched bytes before policy admission |
 
-The `remote_media` policy is reported by `/api/v1/status` under `media_policy`. **Scanning and localization endpoints are not implemented yet** — they arrive later in the v0.3 milestone; today the policy is parsed, validated, and reported only.
+The `remote_media` policy is reported by `/api/v1/status` under `media_policy`. It drives the remote-media scan (`POST /api/v1/documents/{id}/remote-media/scan` — per-URL decisions, nothing downloaded) and localization (`POST …/remote-media/localize`, `notriosctl localize` — quarantine fetch with redirect-hop and connect-time address checks, size caps, MIME sniffing, exact hashes, then rewrite to `resource://` links in a new revision). Blocked domains and blocked schemes are never fetched; `review` means report-only until explicitly opted in.
 
 **Relative paths resolve against the working directory** of the process, not the config file's location. Use absolute paths for anything you run outside the repository checkout.
 

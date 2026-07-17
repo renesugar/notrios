@@ -146,14 +146,16 @@ POST /api/v1/links/resolve
 
 Link records preserve source syntax, raw target, normalized target URI, source position, context, anchor, relation type, and resolution status. MVP Task 5 extracts common Markdown links/images, Obsidian wikilinks/embeds, app URIs, external URLs, heading anchors, and block anchors with a conservative parser. `POST /api/v1/links/resolve` remains a future endpoint.
 
-### Remote media (scan and policy routes implemented, v0.3 task H2; localize returns a stub until task H4)
+### Remote media (implemented, v0.3 tasks H2–H4)
 
 ```text
-POST /api/v1/documents/{document_id}/remote-media/scan   # implemented: per-URL policy decisions, no downloads
-POST /api/v1/documents/{document_id}/remote-media/localize   # stub until v0.3 H4
-GET  /api/v1/media-policy                                 # implemented: active policy report
-POST /api/v1/media-policy/check-url                       # implemented: evaluate explicit URLs
+POST /api/v1/documents/{document_id}/remote-media/scan       # per-URL policy decisions, no downloads
+POST /api/v1/documents/{document_id}/remote-media/localize   # quarantine fetch → hash check → admission → rewrite
+GET  /api/v1/media-policy                                    # active policy report
+POST /api/v1/media-policy/check-url                          # evaluate explicit URLs
 ```
+
+Localize requires `base_revision_id` (or `If-Match`) for non-dry runs and rewrites the note in a new revision; `dry_run` reports decisions without fetching a byte; `allow_review` opts review-listed URLs in; blocked URLs and exact-hash-blocked content are never admitted. Read-only notes (Help, Trash) return 403. The editor-profile MCP tool `localize_remote_media` exposes the same engine, as do `notriosctl localize` and the importers' `--localize-media` flag (Joplin RAW, Obsidian).
 
 The scan evaluates every remote image/media URL in the stored body (Markdown images/embeds, media-extension links, HTML `<img>` tags) against the `remote_media` policy and returns `{url, media_class, action, reason, line}` decisions plus counts; an optional request body with `urls` evaluates that explicit list instead (e.g. unsaved editor drafts). Scanning is purely static — no downloads and no DNS resolution; address checks cover literals, and resolved addresses are re-checked at fetch time by the quarantine pipeline (H3). The read-only MCP tool `scan_remote_media` exposes the same scan.
 
