@@ -19,7 +19,7 @@ Goal: usable local note-taking/search app with REST/MCP and a built-in UI.
 - Preview links open internal notes and downloadable resources.
 - Test fixtures and CI.
 
-## v0.2 — Notrios redesign foundation (active; see `PLAN.md`)
+## v0.2 — Notrios redesign foundation (complete; archived under `plans/v0.2/`)
 
 The built-in Go/Wails GUI is part of the first released version, so it lives here rather than in a later milestone.
 
@@ -35,7 +35,7 @@ The built-in Go/Wails GUI is part of the first released version, so it lives her
 - Documentation site: `docs/` published to GitHub Pages with PageFind search; Help notebook seeded from the same content.
 - GitHub release preparation for `github.com/renesugar/notrios`.
 
-## v0.3 — Import, resource, and media hardening
+## v0.3 — Import, resource, and media hardening (active; see `PLAN.md`)
 
 (Deferred former v0.2 draft; see `plans/v0.2/001-import-resource-media-hardening.md`.)
 

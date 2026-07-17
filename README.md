@@ -50,7 +50,7 @@ On startup, the service creates the configured data directory, SQLite database p
 
 - v0.1 MVP: complete (see `plans/mvp/MVP_RELEASE_REPORT.md`).
 - v0.2 Notrios redesign: **complete** (all 16 tasks; see [`PLAN.md`](PLAN.md) and `plans/v0.2/`) — notebooks/tags/search notebooks, source provenance with conversation threads, the query language, the optional Recoll sidecar, five importers, query-scoped export/import, the Wails GUI with themes, and the documentation site.
-- Next milestone: v0.3 import/resource/media hardening (see [`ROADMAP.md`](ROADMAP.md)); a new `PLAN.md` should be drafted from the roadmap with user approval.
+- Active milestone: v0.3 import/resource/media hardening — see [`PLAN.md`](PLAN.md) (tasks H1–H10) and [`ROADMAP.md`](ROADMAP.md).
 - Agent progress/attempt tracking: [`agent/PLAN_STATUS.md`](agent/PLAN_STATUS.md), [`agent/ATTEMPT_LOG.jsonl`](agent/ATTEMPT_LOG.jsonl), and [`agent/MODEL_LOG.jsonl`](agent/MODEL_LOG.jsonl).
 
 ## Contributing

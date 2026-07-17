@@ -2,7 +2,9 @@
 
 ## Current phase
 
-v0.2 Notrios redesign foundation (`PLAN.md`). Tasks **R1 (documentation redesign)**, **R2 (code rename + Apache-2.0 license)**, **R3 (schema v5 — notebooks/tags/search notebooks)**, and **R4 (schema v6 — source provenance and threads)** are completed, as are **R5 (notebooks/tags/trash REST + MCP read tools)**, **R6 (query-language adapter)**, **R7 (Recoll integration)**, **R8 (full-client MCP/REST surface)**, **R9 (Twitter/X archive importer)**, **R10 (ChatGPT importer)**, and **R11 (Claude importer)**; as is **R12 (query-scoped export/import with dry-run)**; **R13 (Wails GUI shell)**, **R14 (GUI themes)**, and **R15 (Help notebook + documentation site)**; and **R16 (GitHub release preparation)** — **the v0.2 plan is complete**. Next: draft a v0.3 plan from `ROADMAP.md` with user approval; the first GitHub push is the user's step (`RELEASE_CHECKLIST.md`).
+**v0.3 import/resource/media hardening** (`PLAN.md`, tasks H1–H10, drafted 2026-07-16 from `ROADMAP.md`). No H-task implemented yet. Post-v0.2 work already landed on `develop`: the GUI conformance pass (four-pane workspace, splitters, read-only Help capability, cursor paging, resize equalization; commit c630411), native window-resize layout verification (`scripts/verify_layout_resize.py`; commit ccb7b2e), and the scaffold/MVP report archive move into `plans/scaffold/` and `plans/mvp/` (commit cbfe4b1).
+
+Previous phase (complete): v0.2 Notrios redesign foundation. Tasks **R1 (documentation redesign)**, **R2 (code rename + Apache-2.0 license)**, **R3 (schema v5 — notebooks/tags/search notebooks)**, and **R4 (schema v6 — source provenance and threads)** are completed, as are **R5 (notebooks/tags/trash REST + MCP read tools)**, **R6 (query-language adapter)**, **R7 (Recoll integration)**, **R8 (full-client MCP/REST surface)**, **R9 (Twitter/X archive importer)**, **R10 (ChatGPT importer)**, and **R11 (Claude importer)**; as is **R12 (query-scoped export/import with dry-run)**; **R13 (Wails GUI shell)**, **R14 (GUI themes)**, and **R15 (Help notebook + documentation site)**; and **R16 (GitHub release preparation)** — **the v0.2 plan is complete**. Next: draft a v0.3 plan from `ROADMAP.md` with user approval; the first GitHub push is the user's step (`RELEASE_CHECKLIST.md`).
 
 ## Current working state
 
@@ -55,7 +57,7 @@ v0.2 Notrios redesign foundation (`PLAN.md`). Tasks **R1 (documentation redesign
 
 ## Next suggested step
 
-Draft the v0.3 plan ("Import, resource, and media hardening") from `ROADMAP.md` and ask the user before starting it. The GitHub push itself is the user's step.
+Implement `PLAN.md` task **H1 (media-policy configuration and schema v7)**; work one task at a time and ask the user before starting the next. The GitHub push itself is the user's step.
 
 ## Validation
 
