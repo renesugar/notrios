@@ -68,13 +68,15 @@ Exports can rewrite these into relative Markdown paths.
 The desktop-facing stable link is planned as:
 
 ```text
-notrios://profiles/<profile-id>/databases/<database-id>/documents/<document-id>
+notrios://databases/<database-id>/documents/<document-id>
 ```
 
-The profile and logical database identity prevent an OS protocol handler from
-opening the same document ID in the wrong database. The handler must validate
-the URI, resolve an explicitly configured profile, and report stale/mismatched
-targets without silently switching databases.
+The logical database identity is portable across replicas; a profile ID is
+local configuration and therefore must not be required in a shared link. The
+OS handler validates the URI and finds profiles mapped to that database ID. It
+opens the unique match, prompts if several local profiles point at clones of
+the same database, and reports missing/stale targets without silently choosing
+another database.
 
 ## Resource model
 

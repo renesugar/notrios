@@ -148,7 +148,8 @@ Working state: with Recoll installed the index converges after crashes/manual fi
 ### H11. v0.3 wrap-up: docs, feature matrix, release checklist
 
 - User docs for media localization, resource reports/GC, importer resume/diff, and sidecar status (docs site + Help notebook reseed).
-- Update `FEATURE_MATRIX.md` rows (remote localization, dedupe, GC: Soon → Implemented), `DATABASE_SCHEMA.md` (schema v7 as implemented), `API_SPEC.md`.
+- Reconcile `FEATURE_MATRIX.md` active/implemented rows for H5–H10,
+  `DATABASE_SCHEMA.md`, and `API_SPEC.md`.
 - `RELEASE_CHECKLIST.md` v0.3.0 section; full validation + packaging run.
 
 Working state: documentation matches implementation; release checks pass.

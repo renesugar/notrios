@@ -47,8 +47,9 @@ unbounded transport log while sync is disabled is not required.
 Use a small Notrios-specific, operation-based replication core:
 
 1. A local write transaction allocates one or more consecutive operation IDs.
-2. Each operation also receives a hybrid logical clock (HLC) for deterministic
-   last-writer ordering.
+2. Each committed batch receives an HLC (operations retain consecutive sequence
+   IDs) for deterministic last-writer ordering without overflowing a
+   per-millisecond logical counter during a huge import.
 3. The database transaction writes canonical state, immutable operations, and
    an outbox checkpoint atomically.
 4. Peers exchange bounded envelopes and acknowledge the highest contiguous
@@ -59,8 +60,8 @@ Use a small Notrios-specific, operation-based replication core:
 HLCs order concurrent values, but they do **not** prove delivery completeness.
 Per-replica sequence vectors detect missing operations and drive retries,
 retention, tombstone collection, and peer retirement. Clock ties use
-`replica_id` as a deterministic final comparison. A wall-clock jump must not
-move an HLC backwards.
+`replica_id` and then operation sequence as deterministic comparisons. A
+wall-clock jump must not move an HLC backwards.
 
 ### Canonical data types
 

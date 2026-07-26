@@ -73,8 +73,9 @@ The built-in Go/Wails GUI is part of the first released version, so it lives her
 - Dry-run publishing privacy checks.
 - Optional Foam-style query/dashboard export.
 - Link reference definition generation for portable Markdown publishing.
-- Stable external `notrios://` document links including the profile/database
-  identity, with validated OS protocol registration and stale-target handling.
+- Stable external `notrios://` document links including the portable logical
+  database identity; the OS handler resolves it to local profiles and handles
+  ambiguity/stale targets.
 - Share a neutral selection/link/resource/privacy planner among native archive,
   portable vault, Quartz, and large-library publication targets.
 

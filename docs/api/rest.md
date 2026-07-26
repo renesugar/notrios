@@ -76,6 +76,11 @@ curl -s -X POST http://127.0.0.1:8080/api/v1/search \
 
 The `query` string accepts the full [query language](../query-language.md); the empty query is "All notes". When more results exist, the response includes `next_cursor` — send it back unchanged to fetch the next page. Cursors are opaque and bound to the query; reusing one with a different query returns `400`. This is how clients implement infinite scroll.
 
+Current limitation: the `q1` cursor is internally an offset and cannot advance
+beyond 100,000 matches. v0.3 H7 replaces unbounded traversal with stable
+keyset/snapshot cursors and matching indexes. Clients must keep tokens opaque
+so that cursor-version upgrade requires no client-side parsing.
+
 ## Notebooks, tags, search notebooks, trash
 
 ```sh
@@ -129,4 +134,9 @@ curl -s http://127.0.0.1:8080/api/v1/documents/$DOC/revisions | jq
 
 ## Placeholder endpoints (not yet functional)
 
-A few routes exist as staged contracts for future milestones and return stub responses today: `POST /api/v1/documents/{id}/remote-media/scan` and `/localize` (empty results — remote-media localization is unimplemented), `POST /api/v1/publish/quartz/plan`, `GET /api/v1/jobs/{id}`, `GET /api/v1/search` (use `POST /api/v1/search`), and collection creation/patching (collections are effectively fixed to `default` today). Don't build against these until the roadmap items land.
+Staged contracts include `POST /api/v1/publish/quartz/plan`,
+`GET /api/v1/jobs/{id}`, `GET /api/v1/search` (use POST), and collection
+creation/patching (collections are effectively fixed to `default`). Profiles,
+batch organizer operations, native archive v2 jobs, and sync endpoints are
+planned but not live. Remote-media scan and localization are implemented; see
+[the CLI guide](../cli.md#localize) and the note inspector in the GUI.

@@ -1,77 +1,88 @@
-# Security Review — MVP
+# Security Review — Current Local Product and Planned Remote Surfaces
 
-This MVP is designed as a local-first single-user application. It should still be treated as a network service because it exposes REST and MCP endpoints on an HTTP listener.
+This review reflects the repository after v0.3 H4. Notrios is local-first but
+its REST/MCP listener, importers, preview, downloaded media, future archive
+files, and future sync transports are security boundaries.
 
-## Reviewed areas
+## Current controls
 
-### Resource download endpoint
+### Resources and remote media
 
-Implemented controls:
+- Stored blob paths are SHA-256 content addresses, not user filenames.
+- Responses use `X-Content-Type-Options: nosniff` and sanitized
+  `Content-Disposition`.
+- Referenced logical resources cannot be deleted directly; exact duplicate
+  bytes share a blob.
+- Remote URLs are statically scanned before fetch. Every redirect is
+  re-evaluated; unsafe schemes/domains and connect-time private/link-local
+  addresses are blocked, environment proxies are disabled, size is bounded
+  while streaming, MIME is sniffed, SHA-256 is computed, and bytes remain in
+  quarantine until admission.
+- Localization checks exact-hash policy, creates resource/provenance rows, and
+  rewrites Markdown in a new revision under optimistic concurrency.
 
-- resources are stored under content-addressed SHA-256 paths, not user filenames;
-- logical resource filenames are metadata only;
-- resource content responses set `X-Content-Type-Options: nosniff`;
-- `Content-Disposition` is generated with `mime.FormatMediaType` and sanitized filenames;
-- resource deletion refuses referenced resources with `409 Conflict`;
-- exact duplicate bytes reuse existing blob files.
+Remaining: generic upload limits, H5 perceptual review hooks, H6
+retention/GC, and optional malware-scanner integration. Perceptual similarity
+may suggest review but must never silently identify or deduplicate content.
 
-Remaining work:
+### Markdown and WebView
 
-- configurable upload-size limits;
-- media MIME allow/review/block policy enforcement;
-- resource garbage-collection retention windows;
-- antivirus/malware scanning hooks for enterprise deployments.
+- Preview removes active/unsafe elements, event attributes, and inline styles.
+- Internal document/resource links route through application IDs rather than
+  storage paths.
+- Remote preview content does not cause localization or become a policy oracle.
 
-### Markdown preview sanitization
+Remaining: maintain a pinned reviewed sanitizer and browser-native regression
+corpus. A future `notrios://` OS handler must validate scheme, length,
+profile/database IDs, route type, and stale targets; malformed external input
+must never switch profiles or invoke arbitrary filesystem paths.
 
-Implemented controls:
+### REST and MCP
 
-- the built-in UI removes scripts, styles, iframes, objects, embeds, forms, inputs, buttons, metadata tags, event-handler attributes, and inline styles from preview HTML;
-- `document://` preview links are intercepted and routed inside the application;
-- `resource://` preview links are rewritten to local REST resource-content URLs;
-- non-HTTP, non-mailto, non-fragment external links are stripped from anchors;
-- non-local image sources are restricted to `http(s)` or `data:image/` in the MVP sanitizer.
+- Default binding is loopback.
+- Raw SQL, arbitrary filesystem access, and direct Recoll mutation are absent.
+- MCP output is bounded and marks note content untrusted.
+- Editor writes are profile-gated and destructive edits use revision
+  preconditions.
 
-Remaining work:
+Do not expose Notrios on a LAN/public address until authentication,
+authorization, CSRF/CORS, TLS/reverse-proxy guidance, rate/request quotas, and
+audit logging are implemented and tested. Future import/export/sync MCP tools
+are a bounded control plane only; bulk bytes travel through constrained REST or
+hash-verified objects.
 
-- replace the MVP DOM sanitizer with a pinned, reviewed sanitizer package and explicit allowlist;
-- implement remote-media policy warnings in preview;
-- block or proxy remote images according to organization policy;
-- add browser-driven UI tests using Playwright or equivalent.
+### Imports and archives
 
-### MCP endpoint
+- Importers use deterministic IDs, canonical store writes, content-addressed
+  resources, provenance, dry runs for current sources, and no resurrection of
+  trashed external items.
+- Native archive import validates conflicts before writes.
 
-Implemented controls:
+Remaining v0.3/v0.4 work: bounded batches/checkpoints, exact source bundles,
+path/symlink/zip-bomb defenses for every container, size/count/depth ceilings,
+manifest-last/checksum verification, snapshot consistency, and explicit
+archive compatibility. Native archive v1 is not a disaster-recovery backup.
 
-- MCP is read-only in v0.1;
-- raw SQL and arbitrary filesystem access are unavailable;
-- document bodies returned through MCP are size-limited;
-- returned document bodies are marked as untrusted data;
-- tool result limits are clamped by configuration.
+## Planned synchronization threat boundary
 
-Remaining work:
+`SYNCHRONIZATION.md` requires:
 
-- replace or wrap the MVP adapter with the official Go MCP SDK where practical;
-- add authentication/profile gates before write tools are introduced;
-- add audit logs for MCP tool calls;
-- add prompt-injection guidance to all MCP resource/tool output documentation.
+- database/profile/replica identity negotiation and no silent universe merge;
+- authenticated writers, transport confidentiality policy, replay-safe
+  operation IDs, deterministic encoding, and strict size/count limits;
+- SHA-256 verification before object admission, immutable names, quarantine,
+  atomic publish, and manifest-last completeness;
+- bounded pending dependencies/outboxes/retries and protection against disk,
+  memory, connection, and decompression exhaustion;
+- explicit peer retirement and acknowledgement-gated tombstone/blob GC;
+- corrupt/stale/malicious peer audit records and full-resync recovery.
 
-### Importers
+rclone/shared folders are untrusted carriers. `rclone sync` deletion is not
+used. Nostr/public relays and BLE couriers are deferred because metadata,
+retention, availability, key management, bandwidth, and abuse resistance add a
+larger threat surface than REST plus immutable rclone objects.
 
-Implemented controls:
-
-- Joplin RAW and Obsidian importers use deterministic IDs to support idempotent re-runs;
-- imports write through the companion store instead of bypassing SQLite/resource ownership;
-- local resources become content-addressed blobs.
-
-Remaining work:
-
-- dry-run diffs for large imports;
-- import quarantine for suspicious or disallowed media;
-- loop/stall-aware import checkpoints;
-- support for larger real-world test archives.
-
-## Recommended deployment posture for v0.1
+## Deployment posture
 
 Use the default loopback listener:
 
@@ -80,8 +91,5 @@ server:
   listen_addr: "127.0.0.1:8080"
 ```
 
-Do not bind to `0.0.0.0` or expose the service on a LAN until authentication, CSRF protection, CORS policy, and profile-based authorization are implemented.
-
-## Release-blocking issues
-
-No release-blocking issue is known for local-only MVP testing. Public or multi-user deployment is out of scope for v0.1.
+Current release testing is single-user/local. Public or multi-user deployment
+is not approved by this review.

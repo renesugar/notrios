@@ -97,7 +97,15 @@ sqlite3 data/notes.sqlite ".backup '/backups/notes-$(date +%F).sqlite'"
 cp -r data/assets /backups/assets-$(date +%F)
 ```
 
-**Restore:** stop the service, put the database file and asset directory back at the configured paths (delete any leftover `-wal`/`-shm` files from the failed state first), start the service — migrations bring an older backup's schema forward automatically.
+**Restore:** stop the service, preserve an emergency copy of the current
+database/assets, verify the backup, put the database file and asset directory
+back at the configured paths, and start the service — migrations bring an
+older backup's schema forward automatically. Do not delete live WAL/SHM files
+until the exact stopped database target and verified backup are resolved.
+
+Future synchronized profiles add explicit replace/merge/adopt/fork choices.
+Replacing a writable copy mints a new replica ID; forking also mints a new
+logical database ID. See `SYNCHRONIZATION.md` in the repository.
 
 **Portable alternative:** a [native archive export](import-export.md#exporting-a-notrios-archive) (`notriosctl export archive`) captures notes, notebooks, tags, and attachments in a human-readable form. It is ideal for moving a *subset* between machines, but it is not a byte-identical backup: revision history and provenance rows are not included, and re-imported notes become plain local notes.
 

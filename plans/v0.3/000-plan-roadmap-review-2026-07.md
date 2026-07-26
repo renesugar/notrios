@@ -247,8 +247,9 @@ REST plus immutable rclone/folder transport therefore remains first.
   All notes, Notes, Help, and Trash.
 - v0.6 gets bounded idempotent batch move/duplicate/trash/tag/untag/link
   operations with atomic/best-effort modes and per-item results.
-- Stable external links include profile and database identity:
-  `notrios://profiles/.../databases/.../documents/...`.
+- Stable external links include the portable database identity:
+  `notrios://databases/.../documents/...`; the OS handler maps that identity to
+  local profiles and prompts if multiple profiles point at clones.
 
 ## Files changed by the review
 
@@ -258,14 +259,21 @@ tracks it. Historical completed-plan content was not rewritten.
 
 ## Validation evidence
 
-Fill with final command results before closing this review:
-
-- `python3 scripts/check_required_files.py`
-- `bash scripts/validate-scaffold.sh`
-- `go vet ./...`
-- `go test ./...`
-- web typecheck/test/build
-- docs site/link build
-- release ZIP creation and `scripts/check_release_zip.py`
+- `python3 scripts/check_required_files.py`: 64 required files present.
+- `bash scripts/validate-scaffold.sh`: pass, including all Go packages and the
+  installed live Recoll pipeline. The first sandboxed attempt could not bind
+  loopback/write Recoll runtime state; the unrestricted rerun passed.
+- `go vet ./...`: pass.
+- `go test ./...`: pass through the scaffold validator.
+- `web`: TypeScript typecheck, Vite production build, and 37 Vitest tests pass.
+- `bash scripts/build_docs_site.sh`: 10 pages built; PageFind indexed all 10
+  pages (1,626 words).
+- `bash scripts/mvp_smoke.sh`: pass.
+- `bash scripts/run_performance_smoke.sh`: pass
+  (`BenchmarkGeneratedDatasetSearch-8`, 3.340 ms/op, 14,052 B/op, 194
+  allocations/op on the recorded Intel i5-9300H run).
+- Release-package preflight: `/tmp/notrios-plan-review-preflight.zip`, verified
+  by `scripts/check_release_zip.py` (424 entries, 1,297,072 bytes,
+  SHA-256 `c712bef0f9e90e9267381e4a5060bd1690afa0c821c3705cd2f0589e26155262`).
 
 Model used: GPT-5.6 (Codex). No subagents. No GitHub push.

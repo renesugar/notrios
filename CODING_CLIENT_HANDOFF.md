@@ -2,7 +2,11 @@
 
 This handoff applies to any coding agent or client continuing this project (Codex, Claude, aider, swival.dev, etc. — formerly `CODEX_HANDOFF.md`). The repository is designed so an agent can continue from repository files alone.
 
-Current phase: the v0.1 MVP and the v0.2 Notrios redesign are **complete**; active work is `PLAN.md` "v0.3 — Import, resource, and media hardening". Tasks H1–H4 (media policy config + schema v7, remote-media scan, quarantine pipeline, localization) are done and archived under `plans/v0.3/`; **H5 (exact-hash dedup reports and perceptual-hash hooks) is next**. Complete one plan task at a time, leave the repo in a working state, and ask the user before starting the next task.
+Current phase: v0.1 and v0.2 are complete; active work is `PLAN.md` v0.3
+import/resource/media/large-library hardening. H1–H4 are archived;
+**H5 (exact-hash reports and perceptual-hash hooks) is next**. The 2026-07-26
+plan review inserted H7 keyset/scale work and renumbered importer/Recoll/wrap
+tasks to H8–H11. Complete one task at a time and ask before the next.
 
 ## First files to read
 
@@ -14,7 +18,8 @@ Current phase: the v0.1 MVP and the v0.2 Notrios redesign are **complete**; acti
 6. `SYSTEM_ARCHITECTURE.md`
 7. `API_SPEC.md`
 8. `DATABASE_SCHEMA.md`
-9. `NOTEBOOKS_AND_SEARCH_NOTEBOOKS.md`, `SEARCH_QUERY_LANGUAGE.md`, `RECOLL_INTEGRATION.md`, `DOCS_SITE.md`
+9. `NOTEBOOKS_AND_SEARCH_NOTEBOOKS.md`, `SEARCH_QUERY_LANGUAGE.md`,
+   `RECOLL_INTEGRATION.md`, `SYNCHRONIZATION.md`, `DOCS_SITE.md`
 10. `TESTING_POLICY.md`, `ENVIRONMENT_SETUP.md`, `CONTEXT_MAP.md`
 11. `agent/PLAN_STATUS.md`, `agent/ATTEMPT_LOG.jsonl`, `agent/MODEL_LOG.jsonl`
 12. Release/history context when needed: `plans/mvp/MVP_RELEASE_REPORT.md`, `RELEASE_CHECKLIST.md`, `SECURITY_REVIEW.md`, `PACKAGING.md`
@@ -31,12 +36,17 @@ The completed v0.1 MVP supports:
 - content-addressed resource upload, metadata, content streaming, attachment, detachment, and safe delete;
 - Markdown link/backlink parsing and graph slices;
 - React/Vite UI using `md-editor-rt` with document/resource link routing;
-- read-only MCP MVP endpoint at `/mcp`;
+- dependency-free MCP endpoint at `/mcp` (read-only default; editor writes);
 - `notriosctl import joplin-raw` and `notriosctl import obsidian`;
 - generated-dataset smoke/performance tests;
 - release packaging and ZIP verification scripts.
 
-The completed v0.2 redesign added notebooks/tags/search notebooks, source provenance and conversation threads, the query language, the optional Recoll sidecar, five importers, query-scoped archive export/import, the Wails GUI (four-pane workspace with themes), and the docs site — see `plans/v0.2/COMPLETION_SUMMARY.md`. The v0.3 work so far added the remote-media policy engine, scan, quarantine, and localization surfaces — see `plans/v0.3/001`–`004` and `agent/PLAN_STATUS.md` for the precise per-task state.
+The completed v0.2 redesign added notebooks/tags/search notebooks, source
+provenance and threads, query language, optional Recoll, five importers, native
+archive v1 interchange, Wails v2 GUI, and docs site. v0.3 so far added the
+remote-media policy/scan/quarantine/localization surfaces. Archive v1 is not a
+full backup; v0.4 native archive v2 is planned as the full-snapshot/container
+layer reused by v0.7 sync. See `agent/PLAN_STATUS.md`.
 
 ## Validation commands
 
@@ -53,16 +63,17 @@ bash scripts/run_performance_smoke.sh
 
 GUI-affecting tasks also build with `make gui`; layout changes additionally run `scripts/verify_layout_resize.py` under Xvfb/Openbox (see `TESTING_POLICY.md`).
 
-## Git workflow and state (as of the 2026-07-17 handoff)
+## Git workflow and state (reviewed 2026-07-26)
 
 `main` takes reviewed merges; active work happens on `develop`. Commit each completed working-state slice; pushing to GitHub is the **user's step**.
 
-State at handoff — verify with `git fetch` before relying on it:
+State at review start (verify again before acting):
 
 - `origin` is configured (`https://github.com/renesugar/notrios.git`).
-- `origin/develop` is at `c630411`; everything after it on local `develop` is **not yet pushed** — the GUI resize-verification script, the scaffold/MVP report archive move, the v0.3 plan draft, v0.3 tasks H1–H4 (through `705c407`), and this handoff update. Push with `git push origin develop`.
-- **Local `main` (`9caccfd`) is two commits behind `origin/main`** — something was merged on GitHub that was never pulled locally. `git fetch` and fast-forward local `main` before touching it; never push local `main` as-is.
-- No stashes, no other branches, no uncommitted work at handoff.
+- `develop` review base was `26b0925`; it has no configured upstream.
+- local `main` was `265ef4e` tracking `origin/main`.
+- The review commits are local only. The user explicitly prohibited a GitHub
+  push for this session.
 
 Commit-message convention: each agent ends commit messages with its own `Co-Authored-By:` trailer, and appends its model to `agent/MODEL_LOG.jsonl` at session start (see `AGENTS.md`).
 
@@ -75,8 +86,12 @@ Commit-message convention: each agent ends commit messages with its own `Co-Auth
 - Imported Markdown and downloaded resources are untrusted; preview HTML must be sanitized.
 - Remote media localization must go through media policy and quarantine checks.
 - Every task must leave the repo in a working state; archive completed plans under `plans/`.
+- Unbounded paging uses keysets/snapshots, not hidden offsets.
+- Sync must follow `SYNCHRONIZATION.md`: canonical local stores, immutable
+  operations/objects, REST/folder/rclone transports, and acknowledgement-gated
+  retention. `rclone sync` is not the merge algorithm.
 
-## Local environment notes (handoff, 2026-07-17)
+## Local environment notes
 
 Facts about the development machine that no other document records:
 

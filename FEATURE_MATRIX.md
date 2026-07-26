@@ -4,106 +4,115 @@ This matrix keeps the long conversation compressed into implementation-sized fea
 
 ## Status legend
 
-- **MVP** — needed for `v0.1`.
-- **Soon** — likely `v0.2` to `v0.4`.
-- **Later** — useful after the local product works.
-- **Optional** — keep as adapter/research until a measured need appears.
+- **Implemented** — present in the repository (may still have a named
+  hardening task).
+- **Active** — in the current v0.3 plan.
+- **Planned vX** — assigned to a future milestone but not implemented.
+- **Optional/research** — no adoption decision until a measured need exists.
 
 ## Core storage and search
 
 | Feature | Status | Primary owner | Notes |
 |---|---:|---|---|
-| SQLite canonical storage | MVP | companion service | Documents, resources, revisions, links, collections, import state. |
-| SQLite FTS5 immediate search | MVP | companion service | First choice over Bleve when SQLite is authoritative. |
-| Content-addressed blobs | MVP | companion service | Exact-hash dedupe and safe resource lifecycle. |
-| Resource reference counting | MVP | companion service | Never delete shared resources accidentally. |
-| Document revisions and trash | MVP | companion service | App-level undo/restore; Fossil/Git are optional checkpoint layers. |
-| Cursor-ready search API | MVP | companion service | Cursor pagination required for large result sets; shallow offset may exist for UI. |
-| Recoll sidecar (replaces sist2) | Soon | adapter | Optional external process; front-matter field search, extraction, arbitrary-file search. See `RECOLL_INTEGRATION.md`. |
-| Notebooks/tags/search notebooks | Soon | companion service | Nested notebooks, emoji icons, tag counts, "All notes"/"Trash"/"Help" query notebooks. See `NOTEBOOKS_AND_SEARCH_NOTEBOOKS.md`. |
-| Query-language adapter | Soon | search service | `notebook:`/`tag:`/`author:`/`since:`/`until:`; compiles to FTS5 and Recoll. |
-| Bleve | Optional | adapter | Add only for fuzzy/faceted/advanced search needs not met by FTS5. |
-| LadybugDB | Optional | derived graph backend | Consider for advanced traversal/analytics; not primary storage. |
+| SQLite canonical storage | Implemented | Notrios service | Documents, resources, revisions, links, collections, import state. |
+| SQLite FTS5 immediate search | Implemented | Notrios service | Always-on baseline. |
+| Content-addressed blobs | Implemented | resource service | Exact-byte dedupe; H5/H6 add reports/GC. |
+| Resource reference reporting/GC | Active | resource service | Dry-run first; sync-aware retention interface. |
+| Document revisions and trash | Implemented | document service | v0.7 adds replicated death certificates/GC acknowledgements. |
+| Scalable keyset cursors | Active | search service | Current opaque `q1` cursor is offset-backed and capped at 100k; H7 replaces it. |
+| Recoll sidecar (replaces sist2) | Implemented/Active | adapter | Optional external process; H10 reconciliation/paging hardening. |
+| Notebooks/tags/search notebooks | Implemented | Notrios service | All notes/Notes/Help/Trash bootstrap and protections. |
+| Query-language adapter | Implemented | search service | FTS5 + optional Recoll compilation. |
+| Bluge generated-site search | Optional/research | publishing adapter | Apache-2.0/capable but inactive upstream; v0.4 spike only. |
+| LadybugDB | Optional/research | derived graph backend | Never primary storage. |
 
 ## Documents, links, and resources
 
 | Feature | Status | Primary owner | Notes |
 |---|---:|---|---|
-| Stable document/resource URIs | MVP | companion service | `document://...` and `resource://...`; do not expose search-index IDs. |
+| Stable document/resource URIs | Implemented | Notrios service | Internal `document://`/`resource://`; external `notrios://` planned v0.4. |
 | Markdown link parsing | MVP | link parser | Standard Markdown links, app URIs, Joplin IDs, Obsidian Wikilinks, embeds. |
 | Backlinks/outgoing links | MVP | graph service | Store source positions and link context when possible. |
 | Resource manifest | MVP | resource service | List embedded/attached resources for a note. |
 | Attachment download | MVP | REST/UI | Preview links to resources must download/open local resource content. |
-| Block anchors | Soon | parser/graph | First-class block references and block-level backlinks. |
-| PDF page-level resources | Later | extraction adapter | Separate page text/image/figures when needed. |
-| Graph paths/centrality/community detection | Later | graph service | SQLite first; LadybugDB optional later. |
+| Block anchors | Planned v0.5 | parser/graph | First-class block references and block-level backlinks. |
+| PDF page-level resources | Optional/research | extraction adapter | Separate page text/image/figures when needed. |
+| Graph paths/centrality/community detection | Planned v0.5 | graph service | SQLite first; LadybugDB optional later. |
 
 ## Import and export
 
 | Feature | Status | Primary owner | Notes |
 |---|---:|---|---|
-| Joplin RAW import | MVP | importer | Preferred over JEX for large imports; preserve original IDs. |
-| Obsidian vault import | MVP | importer | Markdown + frontmatter + assets + Wikilinks/embeds. |
-| Twitter/X import | Soon (active plan) | importer | Preserve tweet IDs, media, replies, quote/repost relationships. |
-| ChatGPT export import | Soon (active plan) | importer | Preserve conversation/message roles and attachments. |
-| Claude JSON import | Soon (active plan) | importer | Preserve conversation/message roles and attachments. |
-| Portable Markdown vault export | Soon | exporter | User-facing default export with stable frontmatter IDs. |
-| Lossless application archive | Soon | exporter | Backup/restore with metadata, revisions, resources, checksums. |
-| Joplin RAW export | Later | exporter | Only if exact Joplin round-trip becomes a requirement. |
+| Joplin RAW import | Implemented/Active | importer | H8 adds hierarchy, scale, checkpoints, exact source bundle. |
+| Obsidian vault import | Implemented/Active | importer | H9 adds hierarchy, scale, checkpoints, exact source bundle. |
+| Twitter/X import | Implemented | importer | Provenance/thread/media import. |
+| ChatGPT export import | Implemented | importer | Conversation provenance. |
+| Claude JSON import | Implemented | importer | Conversation provenance. |
+| Native archive v1 | Implemented | exporter | Query-scoped plain-note interchange; not lossless backup. |
+| Portable Markdown vault export | Planned v0.4 | exporter | User-facing interoperable export. |
+| Native archive v2/backup | Planned v0.4 | archive service | Full snapshot/object manifest reused by sync. |
+| Joplin RAW export | Optional/research | exporter | Only for measured exact round-trip need. |
 
 ## Built-in UI and editor
 
 | Feature | Status | Primary owner | Notes |
 |---|---:|---|---|
 | React + Vite built-in UI | MVP | web UI | Basic browser client embedded in the service; becomes the Wails webview frontend. |
-| Go/Wails built-in GUI (`-no-gui`/`-gui-only`, themes) | Soon (active plan) | GUI | Part of the first released version. See `UI_DESIGN.md`. |
+| Go/Wails v2 built-in GUI (`-no-gui`/`-gui-only`, themes) | Implemented | GUI | Desktop release shell. |
 | `md-editor-rt` editor/preview | MVP | web UI | Initial polished editor; wrap behind an adapter. |
 | Preview link interception | MVP | web UI | `document://` opens note; `resource://` opens/downloads resource. |
 | Resource upload/paste | MVP | web UI + REST | Images/PDFs become local resources, not inline base64. |
 | Preview sanitization | MVP | web UI | Sanitized Markdown/HTML; allow app routes/URIs carefully. |
-| LeafWiki-style layout | Soon | web UI | Folder/tree, editor/preview, search, backlinks, resources, revisions. |
-| CodeMirror 6 + unified migration | Later | web UI | Needed for deep editor-pane link widgets and AST/source-position behavior. |
-| Third-party native clients (C++/Qt, Rust/Tauri, …) | Later | separate client | Use the stable REST/MCP API; the API must be sufficient for a full client. |
+| Four-pane layout | Implemented | web UI | Accessible splitters and independent scrolling. |
+| Wails v3/mobile migration | Optional/research | GUI | Pre-release/experimental; real Android + desktop parity gate. |
+| CodeMirror 6 + unified migration | Planned v0.5 | web UI | For deeper AST/source-position behavior. |
+| Third-party native clients | Optional/research | separate client | Use stable REST/MCP. |
 
 ## Remote media, safety, and dedupe
 
 | Feature | Status | Primary owner | Notes |
 |---|---:|---|---|
-| Remote image localization | Soon | media service | Import-time and UI-triggered. Server downloads; preview only detects. |
-| Domain stop list | Soon | media policy | Applied before fetch and on every redirect. |
-| Quarantine fetch | Soon | media service | Temporary storage until content passes policy checks. |
-| Exact-hash dedupe | Soon | storage/media | SHA-256 first; optional BLAKE3 later. |
-| Perceptual-hash hooks | Later | media policy | Local moderation and near-duplicate detection; ThreatExchange/PDQ-compatible path. |
-| SSRF protections | Soon | media service | Block private networks, unsafe schemes, redirects. |
+| Remote image localization | Implemented | media service | REST/CLI/MCP/UI/import flag share one engine. |
+| Domain stop list | Implemented | media policy | Applied before fetch and every redirect. |
+| Quarantine fetch | Implemented | media service | SSRF/size/MIME/hash checks. |
+| Exact-hash reports | Active | storage/media | SHA-256 report in H5. |
+| Perceptual-hash hooks | Active | media policy | Inert/suggest-only hooks in H5. |
+| SSRF protections | Implemented | media service | Connect-time address policy and redirect checks. |
 
 ## MCP and automation
 
 | Feature | Status | Primary owner | Notes |
 |---|---:|---|---|
-| MCP read tools | MVP | MCP adapter | Search/read/list collections/links/resources. |
-| MCP resources | Soon | MCP adapter | Document/resource URIs; avoid global list of huge collections. |
-| MCP write tools | Later | MCP adapter | Scope-gated with revision preconditions. |
-| Tool visibility profiles | Later | MCP adapter | Search-only/read-only/editor/organizer/admin profiles. |
-| LLM surgical edits | Later | document service | SEARCH/REPLACE, dry-run, revision preconditions. |
-| Batch transactions | Later | document service | Atomic multi-document changes and link rewrites. |
+| MCP read tools | Implemented | MCP adapter | Bounded search/read/list tools. |
+| MCP editor write tools | Implemented | MCP adapter | Profile-gated with revision preconditions. |
+| MCP resources | Planned v0.6 | MCP adapter | Avoid global listing of huge collections. |
+| Tool visibility profiles | Planned v0.6 | MCP adapter | Search/read/editor/organizer/admin. |
+| LLM surgical edits | Implemented | document service | SEARCH/REPLACE, dry-run, revision preconditions. |
+| Batch organizer transactions | Planned v0.6 | document service | Bounded atomic/best-effort move/duplicate/trash/tag/link. |
+| Sync MCP control plane | Planned v0.7 | MCP adapter | Jobs/status/conflicts only; no bulk bytes in context. |
 
 ## Publishing and knowledge-base maintenance
 
 | Feature | Status | Primary owner | Notes |
 |---|---:|---|---|
-| Quartz publish profiles | Soon | publisher | Selected notebooks/folders/tags, recursive include, private-link/resource checks. |
-| Publishing dry run | Soon | publisher/UI | Show included/excluded notes/resources and privacy warnings. |
-| Foam-style query blocks | Later | query service/UI | Safe embedded dashboards, not arbitrary SQL/JS. |
-| Workspace lint/fix | Later | maintenance service | Broken links, stale reference definitions, remote images, unreferenced resources. |
-| Outline API | Soon | document parser | Useful for long notes and LLM context selection. |
-| Hierarchical tag rename | Later | maintenance service | Dry-run first; update frontmatter and inline tags. |
-| Link reference definitions | Later | exporter/maintenance | Make Wikilinks more portable in Markdown exports. |
+| Quartz publish profiles | Planned v0.4 | publisher | Curated subsets with privacy planner. |
+| Scalable archive-site profile | Planned v0.4 | publisher | Streamed generation/fixed nav/server search adapter. |
+| Publishing dry run | Planned v0.4 | publisher/UI | Included/excluded/resources/private links. |
+| Foam-style query blocks | Planned v0.5 | query service/UI | No arbitrary SQL/JS. |
+| Workspace lint/fix | Planned v0.5 | maintenance service | Broken links/media/resources. |
+| Outline API | Implemented | document parser | Headings/line anchors. |
+| Hierarchical tag rename | Planned v0.5 | maintenance service | Dry-run first. |
+| Link reference definitions | Planned v0.4 | exporter/maintenance | Portable Markdown links. |
 
 ## Versioning and sync
 
 | Feature | Status | Primary owner | Notes |
 |---|---:|---|---|
-| SQLite revision diff/restore | MVP/Soon | document service | Preferred immediate durable undo/redo foundation. |
-| go-git checkpoints | Optional | version adapter | Projection backup/history/sync, not canonical storage. |
-| Fossil checkpoints | Optional | version adapter | Useful for archive/sync but not primary store. |
-| Bidirectional external-vault sync | Later | sync service | Requires clear ownership/conflict policy. |
+| SQLite revision restore | Implemented | document service | Restore creates a new revision. |
+| Native record-level sync | Planned v0.7 | sync service | Operation IDs + HLC + ack vectors; see `SYNCHRONIZATION.md`. |
+| REST/folder/rclone transports | Planned v0.7 | sync service | One immutable object/envelope protocol; target `none` supported. |
+| Backup/restore replace/merge/fork | Planned v0.4/v0.7 | archive/sync | Verified snapshot identity semantics. |
+| Yjs-compatible live co-editing | Optional/research | editor service | Separate from database sync. |
+| go-git/Fossil checkpoints | Optional/research | version adapter | Projection history, never canonical sync. |
+| Bidirectional external-vault sync | Optional/research | sync adapter | Explicit ownership/conflict policy. |
+| Nostr/BLE courier transports | Optional/research | transport adapter | Post-v1; REST+rclone first. |

@@ -3,7 +3,7 @@
 This document defines the REST and MCP contract for the companion service. `api/openapi.yaml` is the machine-readable REST skeleton that agents should keep aligned with this document.
 
 
-## Implementation status (historical: as of MVP Task 5; see route list in `internal/httpapi/server.go` and the user guides in `docs/api/` for current state)
+## Implementation status
 
 The REST persistence slice is implemented for managed Markdown documents:
 
@@ -19,7 +19,10 @@ The REST persistence slice is implemented for managed Markdown documents:
 - `POST /api/v1/search` searches current, non-deleted managed documents with SQLite FTS5.
 - `GET /api/v1/documents/{document_id}/links` returns outgoing links and backlinks parsed from Markdown.
 - `POST /api/v1/graph` returns a small document/resource graph slice for selected roots.
-- import, publish, rich block indexing, links/resolve, and remote-media **localization** remain placeholders until later tasks; document, resource, search, link-listing, graph-slice, remote-media **scan**/policy routes, and the MCP adapter are live.
+- import/publish job APIs, rich block indexing, `links/resolve`, profiles,
+  batches, and sync remain planned. Document/resource/search/notebook/tag/trash,
+  link-listing, graph-slice, remote-media scan/policy/localization, CLI import
+  and CLI archive v1, and the MCP adapter are live.
 
 ## Contract goals
 
@@ -37,7 +40,10 @@ The API must support many hundreds of thousands of notes/resources while remaini
 - JSON request/response bodies except resource content streams.
 - Stable opaque IDs and URI fields; do not expose search-index row IDs (Recoll/Xapian docids) as public identity.
 - Optimistic concurrency for mutations through `If-Match` or request-body `base_revision_id`.
-- Cursor pagination for deep navigation; offset is allowed only for shallow UI pages.
+- Cursor pagination for deep navigation. Current `q1` tokens are query-bound
+  but offset-backed and stop at 100,000; v0.3 H7 replaces unbounded traversal
+  with keyset or bounded snapshot cursors. Offset is permitted only for an
+  explicitly bounded shallow-result contract.
 - Errors use a stable envelope.
 - Every write path must be implementable as a service-layer call so REST and MCP share semantics.
 
@@ -95,7 +101,10 @@ Default limits:
 - MCP default: 10.
 - MCP max: 50 unless explicitly configured.
 
-Cursor tokens must be opaque and bound to query, filters, sort order, collection set, and API version.
+Cursor tokens must be opaque and bound to query, filters, sort order,
+collection set, and cursor/API version. They must carry enough stable boundary
+state for keyset traversal or identify a bounded result snapshot. Opaque
+base64-encoding alone does not make an offset cursor scalable.
 
 ### Documents
 
@@ -119,7 +128,12 @@ GET    /api/v1/documents/{document_id}/search-in?pattern=   # case-insensitive, 
 
 `PATCH` edits follow joplin-mcp `editNote` semantics: a search string that matches multiple locations fails unless `replace_all` is set; dry runs preview the result.
 
-`PUT`, `PATCH`, `DELETE`, and revision restore require optimistic concurrency through `base_revision_id` or `If-Match`. `DELETE` means trash/soft-delete in MVP: the current row is hidden from normal reads/search, FTS is refreshed, and revisions remain available. Permanent deletion is a later maintenance operation.
+`PUT`, `PATCH`, `DELETE`, and revision restore require optimistic concurrency
+through `base_revision_id` or `If-Match`. `DELETE` means trash/soft-delete: the
+current row is hidden from normal reads/search, FTS is refreshed, and revisions
+remain available. The Trash route currently purges local-source notes; v0.7
+changes purge into a death-certificate operation whose payload collection is
+retention/acknowledgement gated.
 
 ### Resources
 
@@ -159,7 +173,11 @@ Localize requires `base_revision_id` (or `If-Match`) for non-dry runs and rewrit
 
 The scan evaluates every remote image/media URL in the stored body (Markdown images/embeds, media-extension links, HTML `<img>` tags) against the `remote_media` policy and returns `{url, media_class, action, reason, line}` decisions plus counts; an optional request body with `urls` evaluates that explicit list instead (e.g. unsaved editor drafts). Scanning is purely static — no downloads and no DNS resolution; address checks cover literals, and resolved addresses are re-checked at fetch time by the quarantine pipeline (H3). The read-only MCP tool `scan_remote_media` exposes the same scan.
 
-Remote media localization must never be implemented by reading browser preview caches. The server downloads into quarantine, applies URL/domain policy, size/MIME checks, exact/perceptual hash checks, deduplicates by content hash, stores approved resources, and rewrites Markdown in a new revision. The quarantine pipeline itself is implemented (v0.3 task H3, `internal/media.Fetcher`: redirect-hop policy re-checks, connect-time private-address blocking, streaming size caps, sniffed MIME enforcement, SHA-256, attempts recorded in `media_policy_decisions`); the localize route stays a stub until H4 wires admission and Markdown rewriting on top of it.
+Remote media localization never reads browser preview caches. The implemented
+server path downloads into quarantine, applies URL/domain policy, size/MIME
+checks and exact-hash policy, deduplicates by content hash, stores approved
+resources, and rewrites Markdown in a new revision. Perceptual checks remain
+inert hook slots until H5.
 
 ### Import/export/publish (staged contract — import/export run through `notriosctl` today; the publish/jobs routes return stubs)
 
@@ -174,6 +192,43 @@ GET  /api/v1/jobs/{job_id}
 ```
 
 Quartz publish planning must be privacy-aware: it selects a subset, rewrites links, copies only reachable public resources, applies media policy, strips private metadata, and reports warnings before building.
+
+Native archive v1 exists only through `notriosctl` and is not a lossless backup.
+Native archive v2 (v0.4) adds a versioned snapshot/manifest/object contract and
+later becomes the v0.7 full-sync bootstrap; see `IMPORT_EXPORT_POLICY.md`.
+
+### Profiles, batches, external links, and sync (planned)
+
+```text
+GET    /api/v1/profiles
+GET    /api/v1/profiles/{profile_id}
+POST   /api/v1/batches                         # bounded organizer transaction
+GET    /api/v1/batches/{job_id}
+GET    /api/v1/sync/status
+POST   /api/v1/sync/jobs                       # start pull/push/full-resync
+GET    /api/v1/sync/jobs/{job_id}
+DELETE /api/v1/sync/jobs/{job_id}              # cancel
+POST   /api/v1/sync/handshake
+GET    /api/v1/sync/objects/{sha256}           # resumable/range data plane
+PUT    /api/v1/sync/objects/{sha256}
+POST   /api/v1/sync/manifests
+POST   /api/v1/sync/acknowledgements
+```
+
+Batch operations cover bounded sets of IDs for move, duplicate, trash,
+tag/untag, and stable Markdown-link formatting. A request specifies
+all-or-nothing versus best-effort, an idempotency key, dry-run where meaningful,
+and revision preconditions for destructive edits; the response has per-item
+outcomes. Copying link text is not treated as exporting note contents.
+
+External desktop links use
+`notrios://databases/{database_id}/documents/{document_id}`. The OS handler
+maps the portable database ID to a local profile, prompts on multiple matches,
+and never guesses across database IDs.
+
+The sync surface is conceptual until v0.7. MCP may start/cancel/status a job and
+list bounded conflicts, but bulk envelopes/blobs use REST or immutable folder
+objects. Full algorithms and compatibility rules are in `SYNCHRONIZATION.md`.
 
 ### Notebooks, tags, and search notebooks (implemented — plan tasks R3/R5)
 
@@ -217,7 +272,9 @@ The REST + MCP surface must be sufficient to build a full-featured third-party n
 | resources/attachments | resources routes |
 | links/backlinks/graph | links + graph routes |
 
-Remaining known gaps (deferred): HTTP range requests for resource content, `links/resolve`, block-level addressability (`/blocks`), import/export job APIs (R12).
+Remaining known gaps (deferred): HTTP range requests for resource content,
+`links/resolve`, block-level addressability (`/blocks`), import/export job APIs,
+bulk organizer operations, stable external-link/profile routing, and sync.
 
 ## MCP MVP endpoint
 
@@ -244,15 +301,21 @@ Write tools implemented in task R8, exposed only when the MCP profile is `editor
 
 ## MCP tools planned later
 
-Write tools still planned later (beyond the R8 set):
+Tools implemented after R8:
+
+- `localize_remote_media` (editor profile; revision precondition)
+
+Tools still planned later:
 
 - `upload_resource`
-- `localize_remote_media`
 - `get_document_graph`
 - `lint_workspace`
 - `fix_workspace_issues`
 - `publish_quartz_plan`
 - `create_import_job`
+- `run_batch` / `get_batch_status` (organizer profile)
+- `plan_sync`, `start_sync`, `get_sync_status`, `list_sync_conflicts` (scoped
+  administration; bounded output only)
 
 ## MCP resources
 
@@ -286,6 +349,9 @@ Preview-rendered links must be routed by the web UI and backed by REST:
 - `document://{collection}/documents/{document_id}` opens the note in the UI.
 - `resource://{collection}/resources/{resource_id}` opens/downloads the resource via `/content`.
 - Remote `http(s)` image links are detected and can trigger localization, but preview loading alone must not modify the note.
+- `notrios://databases/.../documents/...` links enter through the validated OS
+  protocol handler and resolve to the internal `document://` route only after
+  local profile/database identity checks.
 
 ## API versioning
 
@@ -303,9 +369,14 @@ The CLI binary is `notriosctl` (renamed from `notesctl` in plan task R2). Twitte
 
 `notriosctl import chatgpt [--options] <conversations.json|export-dir>` and `notriosctl import claude [--options] <conversations.json|export-dir>` import conversation exports: each conversation becomes one Markdown note (messages as role/timestamp sections; ChatGPT follows the current-node main path, skipping system/tool messages and abandoned branches) in a "ChatGPT"/"Claude" notebook, with provenance rows using the conversation ID as the thread ID. The same trashed-note and idempotency rules apply. It preserves Markdown/frontmatter, records source paths in frontmatter, imports local assets as content-addressed resources, attaches referenced assets, and refreshes graph links after the batch.
 
-The commands are intentionally separate from REST/MCP in the MVP; later import jobs may expose an HTTP job API.
+The commands are intentionally separate from REST/MCP today; later import jobs
+expose a bounded HTTP/control-plane API while archive/source bytes stream
+outside MCP context.
 
 
 ## Release-hardening note
 
-Resource content responses now set `X-Content-Type-Options: nosniff` and generate `Content-Disposition` with sanitized filenames. This is an MVP local-service hardening measure; full upload-size and media-policy enforcement is deferred to v0.2.
+Resource content responses set `X-Content-Type-Options: nosniff` and generate
+`Content-Disposition` with sanitized filenames. Remote-media download policy is
+implemented through v0.3 H4; generic upload limits, HTTP range support, and
+perceptual hooks remain separate hardening items.

@@ -8,10 +8,16 @@ The v0.1 MVP and the v0.2 Notrios redesign are complete — see [`PLAN.md`](PLAN
 ## Technology choices
 
 - **Service:** Go, standard library first, SQLite/FTS5 canonical storage. Binaries: `notriosd` (service) and `notriosctl` (CLI); Go module `github.com/renesugar/notrios`.
-- **MCP:** read-only JSON-RPC MCP MVP adapter is mounted at `/mcp`; replace with the official Go SDK once dependency policy/tooling is settled. The MCP/REST surface is being expanded so a full note-taking client can be built on it alone.
-- **Built-in GUI:** Go + Wails (`cmd/notrios`, built with `make gui`) with `-no-gui` (headless service) and `-gui-only` (pure REST client, optionally against a remote service via `-remote`) modes; the React + Vite frontend (`md-editor-rt`, notebooks/tags sidebar, incremental "All notes") runs inside the webview and in the browser. See `UI_DESIGN.md`.
+- **MCP:** dependency-free JSON-RPC adapter at `/mcp`, with read-only tools by
+  default and editor-profile writes with revision preconditions; replace the
+  adapter with the official Go SDK later without changing tool semantics.
+- **Built-in GUI:** Go + Wails v2 (`cmd/notrios`, built with `make gui`) with
+  `-no-gui` and `-gui-only` modes; the React + Vite frontend runs inside the
+  webview and in the browser. Wails v3/mobile is a later measured migration.
 - **Search:** SQLite FTS5 for managed notes; Recoll as an optional derived sidecar for field/front-matter search, OCR-style extraction, and arbitrary files (see `RECOLL_INTEGRATION.md` and `SEARCH_QUERY_LANGUAGE.md`).
-- **Data model:** nested notebooks with emoji icons, tags, and query-backed "search notebooks" ("All notes", "Trash", "Help") — see `NOTEBOOKS_AND_SEARCH_NOTEBOOKS.md`.
+- **Data model:** nested notebooks with emoji icons, tags, query-backed search
+  notebooks (All notes/Trash), a default Notes notebook, and a read-only Help
+  notebook — see `NOTEBOOKS_AND_SEARCH_NOTEBOOKS.md`.
 - **Import sources:** Joplin RAW, Obsidian vaults, Twitter/X archives (thread-preserving), ChatGPT exports, Claude exports.
 - **Resource store:** content-addressed assets with exact hashes and later perceptual hashes.
 - **Publishing/docs:** Quartz-compatible curated subset publishing planned; project documentation ships as a GitHub Pages site with PageFind search (`DOCS_SITE.md`).
@@ -50,7 +56,8 @@ On startup, the service creates the configured data directory, SQLite database p
 
 - v0.1 MVP: complete (see `plans/mvp/MVP_RELEASE_REPORT.md`).
 - v0.2 Notrios redesign: **complete** (all 16 tasks; see [`PLAN.md`](PLAN.md) and `plans/v0.2/`) — notebooks/tags/search notebooks, source provenance with conversation threads, the query language, the optional Recoll sidecar, five importers, query-scoped export/import, the Wails GUI with themes, and the documentation site.
-- Active milestone: v0.3 import/resource/media hardening — see [`PLAN.md`](PLAN.md) (tasks H1–H10) and [`ROADMAP.md`](ROADMAP.md).
+- Active milestone: v0.3 import/resource/media/large-library hardening — see
+  [`PLAN.md`](PLAN.md) (tasks H1–H11) and [`ROADMAP.md`](ROADMAP.md).
 - Agent progress/attempt tracking: [`agent/PLAN_STATUS.md`](agent/PLAN_STATUS.md), [`agent/ATTEMPT_LOG.jsonl`](agent/ATTEMPT_LOG.jsonl), and [`agent/MODEL_LOG.jsonl`](agent/MODEL_LOG.jsonl).
 
 ## Contributing
@@ -67,6 +74,8 @@ Notrios is licensed under the [Apache License 2.0](LICENSE). All code and depend
 - `SEARCH_QUERY_LANGUAGE.md` — user query language and backend translation rules.
 - `RECOLL_INTEGRATION.md` — Recoll sidecar design (replaces sist2) and licensing boundary.
 - `DOCS_SITE.md` — GitHub Pages documentation site with PageFind and the Help notebook.
+- `SYNCHRONIZATION.md` — planned database/replica merge algorithm,
+  REST/folder/rclone transports, retention, and backup/restore relationships.
 - `CODING_CLIENT_HANDOFF.md` — agent handoff (formerly `CODEX_HANDOFF.md`).
 
 ## Historical design and report documents

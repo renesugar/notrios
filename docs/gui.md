@@ -28,7 +28,10 @@ make gui          # builds web/dist (installing frontend deps on first run) then
 
 Run from the repository checkout (the GUI loads its interface from `web/dist/` relative to the working directory — `make gui` builds it). In the default mode the embedded service also listens on `server.listen_addr` (default `127.0.0.1:8080`), so MCP clients and browsers can connect while the window is open. Configuration and flags are shared with the service: `-config`, `-addr`, `-db` — see [configuration](service.md#configuration-reference). Data lands wherever the config points (default `./data/` under the working directory).
 
-On first launch you'll see the "All notes" view (empty until you create or [import](import-export.md) notes) with the notebooks sidebar on the left.
+On first launch you'll see the "All notes" view (empty until you create or
+[import](import-export.md) notes) with the notebooks sidebar on the left. A
+fresh database always bootstraps protected **All notes**, **Notes**, **Help**,
+and **Trash** entries.
 
 ## Verifying the embedded service
 

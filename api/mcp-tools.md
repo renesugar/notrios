@@ -12,7 +12,7 @@ The server should support capability profiles so an LLM is not shown dangerous o
 | --- | --- |
 | `search-only` | `list_collections`, `search_documents` |
 | `read-only` | search, document retrieval, links, resources, outline |
-| `editor` | read-only tools plus create/update/upload/attach |
+| `editor` | read-only tools plus current note mutations and media localization |
 | `organizer` | editor tools plus move/rename/tag/link repair |
 | `administrator` | import, publish, index, delete, policy tools |
 
@@ -126,19 +126,22 @@ Exposed by `tools/list` and callable only when `mcp.default_profile` is `editor`
 - `move_note_to_notebook(document_id, notebook_id)` — Help-notebook moves are refused.
 - `localize_remote_media(document_id, base_revision_id, dry_run?, allow_review?)` — downloads policy-allowed remote media through the quarantine pipeline, stores it as local resources, and rewrites the note to `resource://` URIs in a new revision (v0.3 task H4). `dry_run` reports decisions without fetching; `allow_review` opts review-listed URLs in; blocked URLs are never fetched.
 
-## Later write tools
+## Later write/control tools
 
 Write tools require explicit scopes and revision preconditions:
 
-- `create_document`
-- `update_document`
-- `edit_document` with SEARCH/REPLACE blocks and dry-run support
 - `upload_resource`
 - `attach_resource`
 - `detach_resource`
-- `localize_remote_media`
-- `trash_document`
 - `restore_revision`
+- `run_batch` / `get_batch_status` for bounded move/duplicate/trash/tag/link
+  organizer operations;
+- `plan_sync` / `start_sync` / `get_sync_status` /
+  `list_sync_conflicts` for bounded sync administration.
+
+MCP does not carry native archives, change envelopes, or arbitrary blob bytes
+in model context. Those use REST/object transfer; MCP returns job IDs and
+bounded summaries.
 
 ## Resources
 

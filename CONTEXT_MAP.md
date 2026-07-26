@@ -5,7 +5,7 @@ This file is the codebase atlas. Update it whenever major files or directories a
 ## Root documents
 
 - `README.md` — project overview and quick start.
-- `PLAN.md` — active implementation plan (v0.2 Notrios redesign foundation).
+- `PLAN.md` — active implementation plan (v0.3 hardening; H5 next).
 - `plans/scaffold/SCAFFOLD_CREATION_PLAN.md` — process for creating/refining this scaffold.
 - `ROADMAP.md` — product roadmap and future features.
 - `AGENTS.md` — coding-agent instructions (`CLAUDE.md` points here).
@@ -15,6 +15,9 @@ This file is the codebase atlas. Update it whenever major files or directories a
 - `NOTEBOOKS_AND_SEARCH_NOTEBOOKS.md` — notebooks, tags, search notebooks, Trash/Help semantics.
 - `SEARCH_QUERY_LANGUAGE.md` — user query language and backend translation.
 - `RECOLL_INTEGRATION.md` — Recoll sidecar design and licensing boundary.
+- `SYNCHRONIZATION.md` — planned v0.7 database/replica identities, CRDT/change
+  rules, archive/envelope format, REST/folder/rclone transports, retention,
+  backup/restore relationships, library decision, and validation.
 - `DOCS_SITE.md` — GitHub Pages documentation site (PageFind) and Help notebook.
 - `CODING_STANDARDS.md` — coding style and guardrails.
 - `TESTING_POLICY.md` — definition of done and testing layers.
@@ -60,14 +63,18 @@ This file is the codebase atlas. Update it whenever major files or directories a
 - `FEATURE_MATRIX.md` — milestone and ownership map.
 - `UI_DESIGN.md` — web UI/editor decisions.
 - `PUBLISHING_POLICY.md` — Quartz/static publishing rules.
-- `VERSIONING_AND_SYNC_POLICY.md` — revisions/checkpoint/sync decisions.
+- `VERSIONING_AND_SYNC_POLICY.md` — revision/checkpoint policy and summary of
+  the synchronization invariants.
 - `WORKSPACE_MAINTENANCE.md` — query/lint/outline/block features.
 - `plans/scaffold/SCAFFOLD_REVIEW_REPORT.md` — Step 2 repair summary.
 
 ## Step 3 additions
 
 - `DATABASE_SCHEMA.md` explains the target SQLite schema and why search sidecars (now Recoll) remain derived indexes.
-- `api/openapi.yaml` now contains the expanded REST scaffold for collections, documents, resources, revisions, links, remote media, graph, publishing, and jobs. Document, resource, graph, and read-only MCP MVP routes have live implementations; import/publish/remote-media execution remains staged.
+- `api/openapi.yaml` contains the REST contract for collections, documents,
+  resources, revisions, links, remote media, graph, publishing, and jobs.
+  Remote-media scan/localization are live; publish/import job execution,
+  profiles/batches/sync remain staged.
 - `api/mcp-tools.md` now defines MCP tool profiles and the implemented read-only MVP tools. `internal/httpapi/mcp.go` contains the current dependency-free adapter mounted at `/mcp`.
 - `internal/api/types.go` mirrors the current REST DTO shapes.
 - `internal/httpapi/server.go` has placeholder route handlers for future routes and live SQLite-backed handlers for the Step 4 document create/read/body/search slice.

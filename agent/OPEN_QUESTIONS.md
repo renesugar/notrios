@@ -1,34 +1,45 @@
 # Open Questions
 
-1. Which license should the project use?
-2. Should the first SQLite driver be Cgo-based or pure Go?
-3. Which MCP Go SDK version should be pinned when MCP implementation begins?
-4. Should the repo name and Go module be changed from `example.com/notes-companion` before first commit?
+Resolved historical questions are recorded in archived plans and the attempt
+log. Current implementation-affecting questions:
 
-## Step 2 open questions
+## Existing local product
 
-- Which final license should the repository use?
-- Should the first implementation pin `md-editor-rt` to a known version before the web UI is implemented?
-- Which SQLite driver should be selected for the Go service: Cgo-backed or pure Go?
-- Should the MVP include a minimal Quartz dry-run planner, or defer all publishing to v0.4?
+1. Long-term SQLite driver: keep the cgo/libsqlite3 adapter or approve a
+   compatible pure-Go driver migration as a dedicated cleanup slice?
+2. Which official MCP Go SDK/version should replace the dependency-free
+   adapter, and what compatibility fixtures freeze current tool semantics?
+3. On regular-notebook deletion, should notes continue to move to Trash
+   (current implemented/spec behavior), or be rehomed live to parent/Notes?
+4. FTS5 is currently the always-on baseline and Recoll is optional. Is there
+   any product requirement that would justify making external Recoll mandatory?
+5. Which perceptual-hash algorithm should eventually occupy the H5 hook? H5
+   itself keeps hooks inert and suggest-only.
 
+## Pagination, publishing, and mobile
 
-## Step 6 handoff questions
+6. For relevance queries that cannot reproduce a stable `(score,id)` keyset,
+   should H7 use bounded server result snapshots or explicitly cap deep
+   relevance traversal?
+7. Which v0.4 large-site search adapter wins the measured
+   Bluge/Recoll/SQLite-FTS spike, and who owns maintenance if upstream is stale?
+8. What Wails v3 stability/release threshold is required before an Android
+   spike can propose migrating the Wails v2 desktop shell?
 
-- Should Codex replace the temporary local cgo SQLite wrapper before implementing more persistence features, or keep it until the MVP slice is further along?
-- What should the public repository/module path be?
-- Which license should be selected before the first public GitHub push?
-- Should configuration parsing use YAML with a dependency, JSON/TOML, or a small local parser for the first MVP slice?
+## Synchronization (resolve in separate v0.7 plans)
 
-## MVP release questions
+9. Which records use per-field versus whole-record LWW?
+10. Are concurrent set membership add/remove operations add-wins, remove-wins,
+    or LWW per membership row (current proposal)?
+11. What are the default offline retention horizon and peer-retirement UX?
+12. Is end-to-end encryption mandatory in protocol v1 above REST/rclone, and
+    how are writer keys enrolled/recovered?
+13. Which deterministic envelope encoding/compression is protocol v1?
+14. What blob size triggers fixed chunking, and what measurements justify
+    FastCDC later?
+15. What deterministic notebook-cycle repair rule best preserves user intent?
+16. What envelope/blob/pending limits are safe on the first real Android
+    target?
 
-- Has the user reviewed and approved the v0.1 MVP ZIP for first Gitea/GitHub commit?
-- Should `PLAN.md` v0.2 start with policy config, or should Codex first replace the SQLite/MCP MVP adapters in a less restricted environment?
-- Should UI bundle size be reduced before the first public release by pruning md-editor/highlight language imports or adding code splitting?
-
-## Notrios redesign questions (2026-07-15)
-
-1. ~~License~~ **Resolved 2026-07-15: Apache-2.0** (user decision; `LICENSE` added in R2).
-2. ~~notesctl rename~~ **Resolved 2026-07-15: renamed to `notriosctl`** with user approval of R2.
-3. When a regular notebook is deleted, its notes currently are specified to move to Trash (`NOTEBOOKS_AND_SEARCH_NOTEBOOKS.md`) — confirm, or should they move to the parent/default notebook?
-4. Should FTS5 remain the always-on baseline with Recoll optional (current design), or should Recoll become required for full query-language support?
+See `SYNCHRONIZATION.md` for the proposed defaults and validation needed before
+these choices become implementation contracts.

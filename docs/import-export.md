@@ -32,7 +32,11 @@ Precedence: `--db`/`--asset-store` override the config file, which overrides the
 
 **Can the service stay open during an import?** Yes for normal use: the database runs in WAL mode with a 5-second lock timeout, so the CLI and the service can share it. For very large imports, avoid heavy simultaneous editing; if you ever see a `database is locked` error, stop the service, re-run the import (it resumes idempotently), and restart.
 
-**Backup first.** Before any large import, either stop the service and copy `data/notes.sqlite` (plus `-wal`/`-shm` sidecars if present) and `data/assets/`, or take a [native archive export](#exporting-a-notrios-archive). See [backup guidance](service.md#backup-and-restore).
+**Backup first.** Before any large import, stop the service and copy the
+consistent database plus `data/assets/`, or use SQLite's online backup API and
+copy assets. Native archive v1 is useful for transfer but omits revisions and
+some provenance, so it is not the disaster-recovery backup. See
+[backup guidance](service.md#backup-and-restore).
 
 ---
 
@@ -216,6 +220,11 @@ my-archive/
   notes/<id>.md        # front matter: id, title, notebook path, tags, resources
   resources/<id>__<filename>
 ```
+
+This is native archive **v1**: query-scoped, human-readable interchange. It is
+not lossless and does not preserve database/profile/replica identity, every
+revision, or all provenance. v0.4 plans native archive v2 as a checksum-verified
+snapshot/backup format and the full-snapshot layer later reused by sync.
 
 ## Importing a Notrios archive
 
