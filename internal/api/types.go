@@ -178,10 +178,10 @@ type MoveDocumentRequest struct {
 }
 
 type Document struct {
-	ID                string         `json:"id"`
-	URI               string         `json:"uri"`
-	CollectionID      string         `json:"collection_id"`
-	NotebookID        string         `json:"notebook_id,omitempty"`
+	ID           string `json:"id"`
+	URI          string `json:"uri"`
+	CollectionID string `json:"collection_id"`
+	NotebookID   string `json:"notebook_id,omitempty"`
 	// Editable is the server-authoritative capability flag: false for notes
 	// in protected notebooks (Help) and for trashed notes. Clients must not
 	// infer editability from notebook names.
@@ -308,6 +308,73 @@ type ResourceReference struct {
 type ResourceReferencePage struct {
 	Resources  []ResourceReference `json:"resources"`
 	NextCursor string              `json:"next_cursor,omitempty"`
+}
+
+type ResourceReport struct {
+	ExactDuplicates   []ExactDuplicateGroup   `json:"exact_duplicates"`
+	UnreferencedBlobs []UnreferencedBlob      `json:"unreferenced_blobs"`
+	NotebookUsage     []NotebookResourceUsage `json:"notebook_usage"`
+	Perceptual        PerceptualHashReport    `json:"perceptual"`
+}
+
+type ExactDuplicateGroup struct {
+	SHA256          string               `json:"sha256"`
+	MIMEType        string               `json:"mime_type"`
+	SizeBytes       int64                `json:"size_bytes"`
+	ResourceCount   int                  `json:"resource_count"`
+	ReferenceCount  int                  `json:"reference_count"`
+	CollectionIDs   []string             `json:"collection_ids"`
+	CrossCollection bool                 `json:"cross_collection"`
+	Resources       []ResourceReportItem `json:"resources"`
+}
+
+type ResourceReportItem struct {
+	Resource       Resource `json:"resource"`
+	ReferenceCount int      `json:"reference_count"`
+}
+
+type UnreferencedBlob struct {
+	SHA256    string     `json:"sha256"`
+	MIMEType  string     `json:"mime_type"`
+	SizeBytes int64      `json:"size_bytes"`
+	Resources []Resource `json:"resources"`
+}
+
+type NotebookResourceUsage struct {
+	NotebookID      string `json:"notebook_id"`
+	NotebookName    string `json:"notebook_name"`
+	DocumentCount   int    `json:"document_count"`
+	ReferenceCount  int    `json:"reference_count"`
+	ResourceCount   int    `json:"resource_count"`
+	UniqueBlobCount int    `json:"unique_blob_count"`
+	ReferencedBytes int64  `json:"referenced_bytes"`
+	UniqueBytes     int64  `json:"unique_bytes"`
+}
+
+type PerceptualPolicyReview struct {
+	Algorithm   string   `json:"algorithm"`
+	Hash        string   `json:"hash"`
+	BlobSHA256  string   `json:"blob_sha256"`
+	ResourceIDs []string `json:"resource_ids"`
+	Reason      string   `json:"reason,omitempty"`
+}
+
+type NearDuplicateReview struct {
+	Algorithm        string   `json:"algorithm"`
+	LeftBlobSHA256   string   `json:"left_blob_sha256"`
+	RightBlobSHA256  string   `json:"right_blob_sha256"`
+	LeftResourceIDs  []string `json:"left_resource_ids"`
+	RightResourceIDs []string `json:"right_resource_ids"`
+	Distance         float64  `json:"distance"`
+	Reason           string   `json:"reason,omitempty"`
+}
+
+type PerceptualHashReport struct {
+	HookEnabled    bool                     `json:"hook_enabled"`
+	Algorithm      string                   `json:"algorithm,omitempty"`
+	StoredHashes   int                      `json:"stored_hashes"`
+	PolicyReviews  []PerceptualPolicyReview `json:"policy_reviews"`
+	NearDuplicates []NearDuplicateReview    `json:"near_duplicates"`
 }
 
 type DocumentLink struct {

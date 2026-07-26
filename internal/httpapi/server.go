@@ -112,6 +112,7 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("POST /api/v1/media-policy/check-url", s.handleMediaPolicyCheckURL)
 
 	s.mux.HandleFunc("POST /api/v1/resources", s.handleCreateResource)
+	s.mux.HandleFunc("GET /api/v1/resources/reports/reference", s.handleResourceReport)
 	s.mux.HandleFunc("HEAD /api/v1/resources/{resource_id}", s.handleResourceHead)
 	s.mux.HandleFunc("GET /api/v1/resources/{resource_id}", s.handleResource)
 	s.mux.HandleFunc("DELETE /api/v1/resources/{resource_id}", s.handleResource)
@@ -200,10 +201,10 @@ func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
 		ConfigPath:   s.config.ConfigPath,
 		DatabaseInfo: databaseInfo,
 		Storage: api.StorageStatus{
-			DataDirectory: s.config.Data.Directory,
-			DatabasePath:  s.config.Data.DatabasePath,
-			AssetStore:    s.config.Data.AssetStore,
-			ProjectionDir: s.config.Data.ProjectionDir,
+			DataDirectory:         s.config.Data.Directory,
+			DatabasePath:          s.config.Data.DatabasePath,
+			AssetStore:            s.config.Data.AssetStore,
+			ProjectionDir:         s.config.Data.ProjectionDir,
 			SearchSidecarIndexDir: s.config.SearchSidecar.IndexDir,
 		},
 		Capabilities: map[string]bool{
@@ -792,6 +793,26 @@ func (s *Server) handleCreateResource(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, toAPIResource(res))
 }
 
+func (s *Server) handleResourceReport(w http.ResponseWriter, r *http.Request) {
+	if s.store == nil {
+		writeJSON(w, http.StatusOK, api.ResourceReport{
+			ExactDuplicates:   []api.ExactDuplicateGroup{},
+			UnreferencedBlobs: []api.UnreferencedBlob{},
+			NotebookUsage:     []api.NotebookResourceUsage{},
+			Perceptual: api.PerceptualHashReport{
+				PolicyReviews:  []api.PerceptualPolicyReview{},
+				NearDuplicates: []api.NearDuplicateReview{},
+			},
+		})
+		return
+	}
+	report, err := s.store.ResourceReport(r.Context())
+	if writeStoreError(w, err, "resource_report_failed") {
+		return
+	}
+	writeJSON(w, http.StatusOK, toAPIResourceReport(report))
+}
+
 func (s *Server) handleResourceHead(w http.ResponseWriter, r *http.Request) {
 	if s.store == nil {
 		w.Header().Set("Content-Type", "application/octet-stream")
@@ -1045,6 +1066,85 @@ func toAPIResourceReference(ref store.ResourceReference) api.ResourceReference {
 		Ordinal:      ref.Ordinal,
 		Anchor:       anchor,
 	}
+}
+
+func toAPIResourceReport(report store.ResourceReport) api.ResourceReport {
+	out := api.ResourceReport{
+		ExactDuplicates:   make([]api.ExactDuplicateGroup, 0, len(report.ExactDuplicates)),
+		UnreferencedBlobs: make([]api.UnreferencedBlob, 0, len(report.UnreferencedBlobs)),
+		NotebookUsage:     make([]api.NotebookResourceUsage, 0, len(report.NotebookUsage)),
+		Perceptual: api.PerceptualHashReport{
+			HookEnabled:    report.Perceptual.HookEnabled,
+			Algorithm:      report.Perceptual.Algorithm,
+			StoredHashes:   report.Perceptual.StoredHashes,
+			PolicyReviews:  make([]api.PerceptualPolicyReview, 0, len(report.Perceptual.PolicyReviews)),
+			NearDuplicates: make([]api.NearDuplicateReview, 0, len(report.Perceptual.NearDuplicates)),
+		},
+	}
+	for _, group := range report.ExactDuplicates {
+		converted := api.ExactDuplicateGroup{
+			SHA256:          group.SHA256,
+			MIMEType:        group.MIMEType,
+			SizeBytes:       group.SizeBytes,
+			ResourceCount:   group.ResourceCount,
+			ReferenceCount:  group.ReferenceCount,
+			CollectionIDs:   append([]string(nil), group.CollectionIDs...),
+			CrossCollection: group.CrossCollection,
+			Resources:       make([]api.ResourceReportItem, 0, len(group.Resources)),
+		}
+		for _, item := range group.Resources {
+			converted.Resources = append(converted.Resources, api.ResourceReportItem{
+				Resource:       toAPIResource(item.Resource),
+				ReferenceCount: item.ReferenceCount,
+			})
+		}
+		out.ExactDuplicates = append(out.ExactDuplicates, converted)
+	}
+	for _, blob := range report.UnreferencedBlobs {
+		converted := api.UnreferencedBlob{
+			SHA256:    blob.SHA256,
+			MIMEType:  blob.MIMEType,
+			SizeBytes: blob.SizeBytes,
+			Resources: make([]api.Resource, 0, len(blob.Resources)),
+		}
+		for _, resource := range blob.Resources {
+			converted.Resources = append(converted.Resources, toAPIResource(resource))
+		}
+		out.UnreferencedBlobs = append(out.UnreferencedBlobs, converted)
+	}
+	for _, usage := range report.NotebookUsage {
+		out.NotebookUsage = append(out.NotebookUsage, api.NotebookResourceUsage{
+			NotebookID:      usage.NotebookID,
+			NotebookName:    usage.NotebookName,
+			DocumentCount:   usage.DocumentCount,
+			ReferenceCount:  usage.ReferenceCount,
+			ResourceCount:   usage.ResourceCount,
+			UniqueBlobCount: usage.UniqueBlobCount,
+			ReferencedBytes: usage.ReferencedBytes,
+			UniqueBytes:     usage.UniqueBytes,
+		})
+	}
+	for _, review := range report.Perceptual.PolicyReviews {
+		out.Perceptual.PolicyReviews = append(out.Perceptual.PolicyReviews, api.PerceptualPolicyReview{
+			Algorithm:   review.Algorithm,
+			Hash:        review.Hash,
+			BlobSHA256:  review.BlobSHA256,
+			ResourceIDs: append([]string(nil), review.ResourceIDs...),
+			Reason:      review.Reason,
+		})
+	}
+	for _, review := range report.Perceptual.NearDuplicates {
+		out.Perceptual.NearDuplicates = append(out.Perceptual.NearDuplicates, api.NearDuplicateReview{
+			Algorithm:        review.Algorithm,
+			LeftBlobSHA256:   review.LeftBlobSHA256,
+			RightBlobSHA256:  review.RightBlobSHA256,
+			LeftResourceIDs:  append([]string(nil), review.LeftResourceIDs...),
+			RightResourceIDs: append([]string(nil), review.RightResourceIDs...),
+			Distance:         review.Distance,
+			Reason:           review.Reason,
+		})
+	}
+	return out
 }
 
 func toAPILinkPage(page store.DocumentLinkPage) api.DocumentLinkPage {

@@ -16,8 +16,8 @@ This matrix keeps the long conversation compressed into implementation-sized fea
 |---|---:|---|---|
 | SQLite canonical storage | Implemented | Notrios service | Documents, resources, revisions, links, collections, import state. |
 | SQLite FTS5 immediate search | Implemented | Notrios service | Always-on baseline. |
-| Content-addressed blobs | Implemented | resource service | Exact-byte dedupe; H5/H6 add reports/GC. |
-| Resource reference reporting/GC | Active | resource service | Dry-run first; sync-aware retention interface. |
+| Content-addressed blobs | Implemented | resource service | Exact-byte dedupe and H5 reference reports; H6 adds GC. |
+| Resource reference reporting/GC | Implemented/Active | resource service | H5 reports are implemented; H6 deletion remains dry-run first and sync-aware. |
 | Document revisions and trash | Implemented | document service | v0.7 adds replicated death certificates/GC acknowledgements. |
 | Scalable keyset cursors | Active | search service | Current opaque `q1` cursor is offset-backed and capped at 100k; H7 replaces it. |
 | Recoll sidecar (replaces sist2) | Implemented/Active | adapter | Optional external process; H10 reconciliation/paging hardening. |
@@ -75,8 +75,8 @@ This matrix keeps the long conversation compressed into implementation-sized fea
 | Remote image localization | Implemented | media service | REST/CLI/MCP/UI/import flag share one engine. |
 | Domain stop list | Implemented | media policy | Applied before fetch and every redirect. |
 | Quarantine fetch | Implemented | media service | SSRF/size/MIME/hash checks. |
-| Exact-hash reports | Active | storage/media | SHA-256 report in H5. |
-| Perceptual-hash hooks | Active | media policy | Inert/suggest-only hooks in H5. |
+| Exact-hash reports | Implemented | storage/media | SHA-256 duplicates, unreferenced blobs, and notebook usage via REST/CLI. |
+| Perceptual-hash hooks | Implemented | media policy | Pluggable admission/policy/report contract; no algorithm ships; suggestions only. |
 | SSRF protections | Implemented | media service | Connect-time address policy and redirect checks. |
 
 ## MCP and automation

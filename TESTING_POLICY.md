@@ -38,6 +38,13 @@ Minimum UI flows:
 - Preview note.
 - Click internal document link.
 - Upload/download resource.
+- Resource report invariants: exact duplicates may span collections; a blob is
+  unreferenced only when none of its logical resources has any document
+  reference; trashed-note references remain protective; notebook usage counts
+  current notes only.
+- Perceptual-hook invariants: the default is inert, hashes are reused per exact
+  blob/algorithm, `block` rules are rejected, and near matches never collapse
+  distinct SHA-256 blobs.
 - Search and open result.
 
 Layout-resize testing rule: never verify window-resize behavior through

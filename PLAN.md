@@ -1,6 +1,6 @@
 # Plan: v0.3 — Import, resource, and media hardening
 
-Status: **active** (drafted 2026-07-16 from `ROADMAP.md`; supersedes the archived draft `plans/v0.2/001-import-resource-media-hardening.md`). The completed v0.2 redesign plan is archived under `plans/v0.2/`. H1–H4 are complete (`plans/v0.3/`); H5 is next.
+Status: **active** (drafted 2026-07-16 from `ROADMAP.md`; supersedes the archived draft `plans/v0.2/001-import-resource-media-hardening.md`). The completed v0.2 redesign plan is archived under `plans/v0.2/`. H1–H5 are complete (`plans/v0.3/`); H6 is next.
 
 ## Goal
 
@@ -55,7 +55,7 @@ Working state: `internal/media` can quarantine a URL list safely; refusals are r
 
 Working state: a note with remote images can be safely converted to local resources from UI, CLI, REST, or MCP; blocked domains stay blocked; dry run never writes.
 
-### H5. Exact-hash dedup reports and perceptual-hash hooks
+### H5. Exact-hash dedup reports and perceptual-hash hooks — COMPLETED (see `plans/v0.3/005-exact-hash-reports-perceptual-hooks.md`)
 
 - Resource/blob reference reports: duplicates by exact hash across collections, unreferenced blobs, per-notebook resource usage (REST + `notriosctl resources report`).
 - Perceptual-hash **hook** interface (pluggable; no algorithm shipped yet): compute-and-store slot on admission, policy-check slot, and a near-duplicate review report that only ever *suggests* (perceptual matches are moderation/similarity signals — never silent dedup, per `SECURITY_AND_MEDIA_POLICY.md`).
@@ -173,7 +173,8 @@ GUI-affecting tasks also build with `make gui` and, for layout changes, run `scr
 
 - `agent/OPEN_QUESTIONS.md` #3: notes of a deleted notebook go to Trash (current spec) — confirm before H8/H9 change notebook handling.
 - `agent/OPEN_QUESTIONS.md` #4: FTS5 stays the always-on baseline with Recoll optional (current design assumed by H10).
-- Which perceptual-hash algorithm (pHash/dHash/blockhash) to ship first — H5 only lands the hooks.
+- Which perceptual-hash algorithm (pHash/dHash/blockhash), if any, should
+  eventually occupy the implemented H5 hook? Core ships none.
 
 ## Scope control
 

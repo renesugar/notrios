@@ -5,7 +5,7 @@ Updated: 2026-07-26
 ## Active milestone
 
 `PLAN.md` is v0.3 import/resource/media/large-library hardening, now H1–H11.
-H1–H4 are complete and archived under `plans/v0.3/`; H5 is the next
+H1–H5 are complete and archived under `plans/v0.3/`; H6 is the next
 implementation task and still requires the normal user approval before coding.
 
 - H1: media-policy configuration and schema v7.
@@ -13,8 +13,9 @@ implementation task and still requires the normal user approval before coding.
 - H3: quarantine fetch with redirect/connect-time SSRF controls, size/MIME/hash
   checks, and attempt records.
 - H4: shared localization engine exposed through REST/CLI/MCP/GUI/importer flag.
-- H5 next: exact-hash resource reports and inert/suggest-only perceptual hooks.
-- H6: local-safe GC behind a future sync-aware retention interface.
+- H5: exact-hash/unreferenced/per-notebook reports through Store, REST, and
+  CLI; pluggable perceptual admission/policy/report hook, inert by default.
+- H6 next: local-safe GC behind a future sync-aware retention interface.
 - H7: keyset pagination, indexes, stable merged search paging, and generated
   10k/100k/500k performance profiles.
 - H8/H9: Joplin RAW/Obsidian hierarchy, exact source preservation, bounded
@@ -49,7 +50,7 @@ when this session completes.
 
 - v0.1 MVP is archived under `plans/mvp/`.
 - v0.2 redesign R1–R16 is complete under `plans/v0.2/`.
-- v0.3 H1–H4 are under `plans/v0.3/001`–`004`.
+- v0.3 H1–H5 are under `plans/v0.3/001`–`005`.
 - GUI conformance/native-resize verification and the scaffold/MVP report
   archive moves are committed before the current review.
 
@@ -63,6 +64,11 @@ attempt detail remains append-only in `agent/ATTEMPT_LOG.jsonl`.
 - Project license: Apache-2.0.
 - Canonical store: SQLite plus content-addressed assets; FTS5/Recoll are derived.
 - Current schema: v7.
+- Resource reference report:
+  `GET /api/v1/resources/reports/reference` and
+  `notriosctl resources report`.
+- Perceptual hashing: hook contract is wired, but no algorithm ships or is
+  installed by default; all output is review-only.
 - Fresh database builtins: All notes, Notes, Help, Trash.
 - MCP default profile is read-only; editor-profile write tools are implemented.
 - Native archive v1 is query-scoped interchange, not full backup.
@@ -74,4 +80,4 @@ attempt detail remains append-only in `agent/ATTEMPT_LOG.jsonl`.
 - Official MCP Go SDK adoption/version.
 - Real private Joplin/Obsidian corpus verification (never commit private data).
 - Sync decisions listed in `SYNCHRONIZATION.md` and
-  `agent/OPEN_QUESTIONS.md`; they do not block H5.
+  `agent/OPEN_QUESTIONS.md`; they do not block H6.

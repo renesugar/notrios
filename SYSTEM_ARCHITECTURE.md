@@ -84,6 +84,12 @@ Resources are logical attachments or embedded media. Blobs are exact bytes addre
 
 Remote resources must pass through media policy, quarantine, hash checks, and provenance recording before admission.
 
+The resource service exposes read-only reference reports for exact duplicate
+logical resources, unreferenced physical blobs, and direct per-notebook usage.
+An optional perceptual-hash hook may compute additional blob hashes and suggest
+review candidates, but it cannot change exact-blob identity or mutate content.
+No perceptual algorithm ships in the core service.
+
 ## Import model
 
 Importers should be separate commands but shared code. They should write

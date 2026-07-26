@@ -172,14 +172,14 @@ type DocumentRevision struct {
 // Resource is a logical attachment or embedded resource. Multiple resources may
 // point at the same content-addressed blob.
 type Resource struct {
-	ID           string
-	URI          string
-	CollectionID string
-	Filename     string
-	MIMEType     string
-	SizeBytes    int64
-	SHA256       string
-	CreatedAt    time.Time
+	ID           string    `json:"id"`
+	URI          string    `json:"uri"`
+	CollectionID string    `json:"collection_id"`
+	Filename     string    `json:"filename,omitempty"`
+	MIMEType     string    `json:"mime_type"`
+	SizeBytes    int64     `json:"size_bytes"`
+	SHA256       string    `json:"sha256"`
+	CreatedAt    time.Time `json:"created_at"`
 }
 
 // ResourceReference connects a document to a resource without duplicating bytes.
@@ -208,6 +208,119 @@ type AttachResourceRequest struct {
 	RelationType string
 	Ordinal      int
 	AnchorJSON   string
+}
+
+// ResourceReport summarizes logical resources, physical blobs, and their
+// document/notebook references. Exact SHA-256 groups are authoritative;
+// perceptual results are suggestions only.
+type ResourceReport struct {
+	ExactDuplicates   []ExactDuplicateGroup   `json:"exact_duplicates"`
+	UnreferencedBlobs []UnreferencedBlob      `json:"unreferenced_blobs"`
+	NotebookUsage     []NotebookResourceUsage `json:"notebook_usage"`
+	Perceptual        PerceptualHashReport    `json:"perceptual"`
+}
+
+// ExactDuplicateGroup is one physical blob referenced by multiple logical
+// resources. CrossCollection is true when those resources span collections.
+type ExactDuplicateGroup struct {
+	SHA256          string               `json:"sha256"`
+	MIMEType        string               `json:"mime_type"`
+	SizeBytes       int64                `json:"size_bytes"`
+	ResourceCount   int                  `json:"resource_count"`
+	ReferenceCount  int                  `json:"reference_count"`
+	CollectionIDs   []string             `json:"collection_ids"`
+	CrossCollection bool                 `json:"cross_collection"`
+	Resources       []ResourceReportItem `json:"resources"`
+}
+
+// ResourceReportItem adds total document-reference usage to resource metadata.
+type ResourceReportItem struct {
+	Resource       Resource `json:"resource"`
+	ReferenceCount int      `json:"reference_count"`
+}
+
+// UnreferencedBlob is a physical blob with no document-resource reference
+// through any of its logical resources. H5 reports it; H6 decides retention
+// and deletion eligibility.
+type UnreferencedBlob struct {
+	SHA256    string     `json:"sha256"`
+	MIMEType  string     `json:"mime_type"`
+	SizeBytes int64      `json:"size_bytes"`
+	Resources []Resource `json:"resources"`
+}
+
+// NotebookResourceUsage counts only current (non-trashed) documents directly
+// assigned to the notebook. ReferencedBytes counts every reference; UniqueBytes
+// counts each physical blob once within the notebook.
+type NotebookResourceUsage struct {
+	NotebookID      string `json:"notebook_id"`
+	NotebookName    string `json:"notebook_name"`
+	DocumentCount   int    `json:"document_count"`
+	ReferenceCount  int    `json:"reference_count"`
+	ResourceCount   int    `json:"resource_count"`
+	UniqueBlobCount int    `json:"unique_blob_count"`
+	ReferencedBytes int64  `json:"referenced_bytes"`
+	UniqueBytes     int64  `json:"unique_bytes"`
+}
+
+// PerceptualHashHook is the pluggable H5 extension point. Notrios ships no
+// implementation. A configured hook computes one algorithm-specific hash per
+// supported blob and returns review-only candidate pairs. It must never mutate
+// the store or decide exact deduplication.
+type PerceptualHashHook interface {
+	Algorithm() string
+	SupportsMIME(mimeType string) bool
+	Compute(ctx context.Context, content io.Reader, mimeType string) (string, error)
+	SuggestNearDuplicates(ctx context.Context, candidates []PerceptualHashCandidate) ([]PerceptualHashSuggestion, error)
+}
+
+// PerceptualHashCandidate is the store metadata supplied to a hook.
+type PerceptualHashCandidate struct {
+	BlobSHA256 string `json:"blob_sha256"`
+	Hash       string `json:"hash"`
+	MIMEType   string `json:"mime_type"`
+}
+
+// PerceptualHashSuggestion is returned by a hook. Distance is
+// algorithm-specific; lower is conventionally closer. Notrios validates that
+// both blob IDs were supplied and treats the result only as a review hint.
+type PerceptualHashSuggestion struct {
+	LeftBlobSHA256  string  `json:"left_blob_sha256"`
+	RightBlobSHA256 string  `json:"right_blob_sha256"`
+	Distance        float64 `json:"distance"`
+	Reason          string  `json:"reason,omitempty"`
+}
+
+// PerceptualPolicyReview is a current review rule matching a stored
+// perceptual hash. Perceptual policy never blocks admission.
+type PerceptualPolicyReview struct {
+	Algorithm   string   `json:"algorithm"`
+	Hash        string   `json:"hash"`
+	BlobSHA256  string   `json:"blob_sha256"`
+	ResourceIDs []string `json:"resource_ids"`
+	Reason      string   `json:"reason,omitempty"`
+}
+
+// NearDuplicateReview enriches a hook suggestion with affected resources.
+type NearDuplicateReview struct {
+	Algorithm        string   `json:"algorithm"`
+	LeftBlobSHA256   string   `json:"left_blob_sha256"`
+	RightBlobSHA256  string   `json:"right_blob_sha256"`
+	LeftResourceIDs  []string `json:"left_resource_ids"`
+	RightResourceIDs []string `json:"right_resource_ids"`
+	Distance         float64  `json:"distance"`
+	Reason           string   `json:"reason,omitempty"`
+}
+
+// PerceptualHashReport exposes stored hook state and review suggestions. An
+// empty/default report is the normal production state until an algorithm is
+// explicitly configured.
+type PerceptualHashReport struct {
+	HookEnabled    bool                     `json:"hook_enabled"`
+	Algorithm      string                   `json:"algorithm,omitempty"`
+	StoredHashes   int                      `json:"stored_hashes"`
+	PolicyReviews  []PerceptualPolicyReview `json:"policy_reviews"`
+	NearDuplicates []NearDuplicateReview    `json:"near_duplicates"`
 }
 
 // DocumentLink stores one parsed link edge from a Markdown document. It preserves
@@ -363,6 +476,7 @@ type Store interface {
 	ListDocumentResources(ctx context.Context, documentID string) ([]ResourceReference, error)
 	AttachDocumentResource(ctx context.Context, req AttachResourceRequest) (ResourceReference, error)
 	DetachDocumentResource(ctx context.Context, documentID, resourceID string) error
+	ResourceReport(ctx context.Context) (ResourceReport, error)
 	ListDocumentLinks(ctx context.Context, documentID, direction string) (DocumentLinkPage, error)
 	RebuildDocumentLinks(ctx context.Context, documentID string) error
 	Graph(ctx context.Context, req GraphRequest) (GraphResponse, error)

@@ -360,6 +360,20 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Resource'
+  /api/v1/resources/reports/reference:
+    get:
+      summary: Report exact duplicates, unreferenced blobs, notebook usage, and perceptual review suggestions
+      description: >
+        Read-only resource/blob reference report. Exact SHA-256 groups are
+        authoritative. Perceptual matches are review-only suggestions and are
+        empty unless an embedding application explicitly installs a hook.
+      responses:
+        '200':
+          description: Resource reference report
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceReport'
   /api/v1/resources/{resource_id}:
     head:
       summary: Resource metadata headers
@@ -1010,6 +1024,103 @@ components:
         sha256: { type: string }
         metadata: { type: object, additionalProperties: true }
         created_at: { type: string, format: date-time }
+    ResourceReport:
+      type: object
+      required: [exact_duplicates, unreferenced_blobs, notebook_usage, perceptual]
+      properties:
+        exact_duplicates:
+          type: array
+          items: { $ref: '#/components/schemas/ExactDuplicateGroup' }
+        unreferenced_blobs:
+          type: array
+          items: { $ref: '#/components/schemas/UnreferencedBlob' }
+        notebook_usage:
+          type: array
+          items: { $ref: '#/components/schemas/NotebookResourceUsage' }
+        perceptual: { $ref: '#/components/schemas/PerceptualHashReport' }
+    ExactDuplicateGroup:
+      type: object
+      required: [sha256, mime_type, size_bytes, resource_count, reference_count, collection_ids, cross_collection, resources]
+      properties:
+        sha256: { type: string }
+        mime_type: { type: string }
+        size_bytes: { type: integer }
+        resource_count: { type: integer }
+        reference_count: { type: integer }
+        collection_ids:
+          type: array
+          items: { type: string }
+        cross_collection: { type: boolean }
+        resources:
+          type: array
+          items: { $ref: '#/components/schemas/ResourceReportItem' }
+    ResourceReportItem:
+      type: object
+      required: [resource, reference_count]
+      properties:
+        resource: { $ref: '#/components/schemas/Resource' }
+        reference_count: { type: integer }
+    UnreferencedBlob:
+      type: object
+      required: [sha256, mime_type, size_bytes, resources]
+      properties:
+        sha256: { type: string }
+        mime_type: { type: string }
+        size_bytes: { type: integer }
+        resources:
+          type: array
+          items: { $ref: '#/components/schemas/Resource' }
+    NotebookResourceUsage:
+      type: object
+      required: [notebook_id, notebook_name, document_count, reference_count, resource_count, unique_blob_count, referenced_bytes, unique_bytes]
+      properties:
+        notebook_id: { type: string }
+        notebook_name: { type: string }
+        document_count: { type: integer }
+        reference_count: { type: integer }
+        resource_count: { type: integer }
+        unique_blob_count: { type: integer }
+        referenced_bytes: { type: integer }
+        unique_bytes: { type: integer }
+    PerceptualHashReport:
+      type: object
+      required: [hook_enabled, stored_hashes, policy_reviews, near_duplicates]
+      properties:
+        hook_enabled: { type: boolean }
+        algorithm: { type: string }
+        stored_hashes: { type: integer }
+        policy_reviews:
+          type: array
+          items: { $ref: '#/components/schemas/PerceptualPolicyReview' }
+        near_duplicates:
+          type: array
+          items: { $ref: '#/components/schemas/NearDuplicateReview' }
+    PerceptualPolicyReview:
+      type: object
+      required: [algorithm, hash, blob_sha256, resource_ids]
+      properties:
+        algorithm: { type: string }
+        hash: { type: string }
+        blob_sha256: { type: string }
+        resource_ids:
+          type: array
+          items: { type: string }
+        reason: { type: string }
+    NearDuplicateReview:
+      type: object
+      required: [algorithm, left_blob_sha256, right_blob_sha256, left_resource_ids, right_resource_ids, distance]
+      properties:
+        algorithm: { type: string }
+        left_blob_sha256: { type: string }
+        right_blob_sha256: { type: string }
+        left_resource_ids:
+          type: array
+          items: { type: string }
+        right_resource_ids:
+          type: array
+          items: { type: string }
+        distance: { type: number }
+        reason: { type: string }
     ResourceReference:
       type: object
       required: [document_id, resource_id, relation_type]

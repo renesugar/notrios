@@ -3,8 +3,9 @@
 This handoff applies to any coding agent or client continuing this project (Codex, Claude, aider, swival.dev, etc. — formerly `CODEX_HANDOFF.md`). The repository is designed so an agent can continue from repository files alone.
 
 Current phase: v0.1 and v0.2 are complete; active work is `PLAN.md` v0.3
-import/resource/media/large-library hardening. H1–H4 are archived;
-**H5 (exact-hash reports and perceptual-hash hooks) is next**. The 2026-07-26
+import/resource/media/large-library hardening. H1–H5 are archived;
+**H6 (resource garbage collection and
+retention) is next**. The 2026-07-26
 plan review inserted H7 keyset/scale work and renumbered importer/Recoll/wrap
 tasks to H8–H11. Complete one task at a time and ask before the next.
 
@@ -44,9 +45,11 @@ The completed v0.1 MVP supports:
 The completed v0.2 redesign added notebooks/tags/search notebooks, source
 provenance and threads, query language, optional Recoll, five importers, native
 archive v1 interchange, Wails v2 GUI, and docs site. v0.3 so far added the
-remote-media policy/scan/quarantine/localization surfaces. Archive v1 is not a
-full backup; v0.4 native archive v2 is planned as the full-snapshot/container
-layer reused by v0.7 sync. See `agent/PLAN_STATUS.md`.
+remote-media policy/scan/quarantine/localization surfaces, exact duplicate and
+unreferenced resource reports, per-notebook resource usage, and an optional
+review-only perceptual hook that is inert by default. Archive v1 is not a full
+backup; v0.4 native archive v2 is planned as the full-snapshot/container layer
+reused by v0.7 sync. See `agent/PLAN_STATUS.md`.
 
 ## Validation commands
 
@@ -85,6 +88,8 @@ Commit-message convention: each agent ends commit messages with its own `Co-Auth
 - MCP must not expose raw SQL or arbitrary filesystem operations.
 - Imported Markdown and downloaded resources are untrusted; preview HTML must be sanitized.
 - Remote media localization must go through media policy and quarantine checks.
+- Exact SHA-256 is the only deduplication identity. Perceptual hashes are
+  review suggestions only and no algorithm ships by default.
 - Every task must leave the repo in a working state; archive completed plans under `plans/`.
 - Unbounded paging uses keysets/snapshots, not hidden offsets.
 - Sync must follow `SYNCHRONIZATION.md`: canonical local stores, immutable

@@ -118,9 +118,13 @@ curl -s -X POST http://127.0.0.1:8080/api/v1/documents/$DOC/resources/$RES \
   -H 'Content-Type: application/json' -d '{"relation_type":"embedded"}' | jq
 curl -s http://127.0.0.1:8080/api/v1/documents/$DOC/resources | jq
 curl -sOJ 'http://127.0.0.1:8080/api/v1/resources/'$RES'/content?download=1'
+
+# Read-only exact duplicate, unreferenced blob, notebook usage, and optional
+# perceptual review report
+curl -s http://127.0.0.1:8080/api/v1/resources/reports/reference | jq
 ```
 
-Bytes are stored content-addressed (identical uploads share storage). Reference the resource in Markdown as `![chart](resource://default/resources/$RES)` — the UI renders and downloads through the same endpoints. Deleting a resource that notes still reference is refused.
+Bytes are stored content-addressed (identical uploads share storage). Reference the resource in Markdown as `![chart](resource://default/resources/$RES)` — the UI renders and downloads through the same endpoints. Deleting a resource that notes still reference is refused. Perceptual report entries are suggestions only; no perceptual algorithm ships by default.
 
 ## Links, graph, revisions
 

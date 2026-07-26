@@ -139,6 +139,7 @@ retention/acknowledgement gated.
 
 ```text
 POST   /api/v1/resources
+GET    /api/v1/resources/reports/reference
 HEAD   /api/v1/resources/{resource_id}
 GET    /api/v1/resources/{resource_id}
 GET    /api/v1/resources/{resource_id}/content
@@ -149,6 +150,15 @@ DELETE /api/v1/documents/{document_id}/resources/{resource_id}
 ```
 
 `POST /api/v1/resources` currently accepts a raw request body. `filename` and `collection_id` are supplied as query parameters or the filename can be inferred from `Content-Disposition`. `GET /content` streams the stored bytes and supports `?download=1`; HTTP range requests remain a future hardening item. Resource deletion refuses referenced resources unless an administrative force/GC policy is added later.
+
+`GET /api/v1/resources/reports/reference` is the read-only H5 report. It
+groups multiple logical resources that share an exact SHA-256 blob, identifies
+physical blobs with no document-resource references, and reports direct
+per-notebook usage for current (non-trashed) notes. References from trashed
+notes still prevent a blob from being classified as unreferenced. The
+`perceptual` block reports whether an embedding application installed a hook,
+stored hashes, matching review rules, and near-duplicate suggestions. Those
+suggestions never merge, reject, or delete content.
 
 ### Links and graph
 
@@ -176,8 +186,9 @@ The scan evaluates every remote image/media URL in the stored body (Markdown ima
 Remote media localization never reads browser preview caches. The implemented
 server path downloads into quarantine, applies URL/domain policy, size/MIME
 checks and exact-hash policy, deduplicates by content hash, stores approved
-resources, and rewrites Markdown in a new revision. Perceptual checks remain
-inert hook slots until H5.
+resources, and rewrites Markdown in a new revision. H5 wires the perceptual
+admission/policy/report hook, but Notrios ships no algorithm; the hook remains
+inert unless an embedding application explicitly installs one.
 
 ### Import/export/publish (staged contract — import/export run through `notriosctl` today; the publish/jobs routes return stubs)
 

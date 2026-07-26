@@ -13,8 +13,9 @@ log. Current implementation-affecting questions:
    (current implemented/spec behavior), or be rehomed live to parent/Notes?
 4. FTS5 is currently the always-on baseline and Recoll is optional. Is there
    any product requirement that would justify making external Recoll mandatory?
-5. Which perceptual-hash algorithm should eventually occupy the H5 hook? H5
-   itself keeps hooks inert and suggest-only.
+5. Which perceptual-hash algorithm should eventually occupy the implemented
+   H5 hook? Core ships none; any future choice remains optional and
+   suggest-only.
 
 ## Pagination, publishing, and mobile
 

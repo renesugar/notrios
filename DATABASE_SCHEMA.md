@@ -52,10 +52,10 @@ The media-policy tables support domain stop lists, exact-hash blocks, perceptual
 
 - `media_domain_rules` — user-managed domain patterns with an `allow`/`block`/`review` action (unique, case-insensitive), complementing the `remote_media` config lists.
 - `media_hash_rules` — hash-keyed rules (`algo` + `hash`), `kind` distinguishing `exact` from `perceptual`, action `block` or `review`. Exact hashes may block; perceptual hashes only ever raise review signals.
-- `resource_hashes` — additional hashes per stored blob (`blob_sha256` + `algo`), the storage slot for future perceptual hashes.
+- `resource_hashes` — additional hashes per stored blob (`blob_sha256` + `algo`). H5 populates this slot when an optional perceptual hook is installed; no algorithm ships by default. Rows are removed when the physical blob is removed.
 - `media_policy_decisions` — one row per remote-media attempt: original/final URL, decision, reason, hashes, plus v7 quarantine-state columns (`status`, `content_type`, `size_bytes`, `quarantine_path`, `updated_at`). Populated by the H3 quarantine pipeline (`store.RecordMediaAttempt` / `ListMediaAttempts`): every fetch attempt — quarantined or refused — is recorded.
 
-`media_hash_rules` is consulted during localization admission (H4, via `store.AddMediaHashRule`/`FindMediaHashRule`): exact-hash `block`/`review` rules stop quarantined content before it reaches the asset store. `media_domain_rules` (user-managed rules beyond the config lists) and `resource_hashes` come online with rule CRUD and the H5 hashing task.
+`media_hash_rules` is consulted during localization admission (H4, via `store.AddMediaHashRule`/`FindMediaHashRule`): exact-hash `block`/`review` rules stop quarantined content before it reaches the asset store. H5 wires `resource_hashes` into every `CreateResource` admission when a hook is installed and checks matching perceptual `review` rules without blocking admission. `media_domain_rules` user-managed CRUD remains future work beyond the config lists.
 
 ### index_outbox
 

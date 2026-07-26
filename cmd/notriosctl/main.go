@@ -42,6 +42,8 @@ func main() {
 		runSeedHelp(os.Args[2:])
 	case "localize":
 		runLocalize(os.Args[2:])
+	case "resources":
+		runResources(os.Args[2:])
 	case "help", "-h", "--help":
 		printHelp()
 	default:
@@ -264,6 +266,34 @@ func runLocalize(args []string) {
 	}
 }
 
+func runResources(args []string) {
+	if len(args) == 0 || args[0] != "report" {
+		fmt.Fprintln(os.Stderr, "usage: notriosctl resources report [--config config.yaml] [--db path] [--asset-store path]")
+		os.Exit(2)
+	}
+	fs := flag.NewFlagSet("notriosctl resources report", flag.ExitOnError)
+	configPath := fs.String("config", "", "optional config file")
+	dbPath := fs.String("db", "", "SQLite database path override")
+	assetStore := fs.String("asset-store", "", "asset store directory override")
+	if err := fs.Parse(args[1:]); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(2)
+	}
+	if fs.NArg() != 0 {
+		fmt.Fprintln(os.Stderr, "usage: notriosctl resources report [--config config.yaml] [--db path] [--asset-store path]")
+		fs.PrintDefaults()
+		os.Exit(2)
+	}
+	st := openStoreFromFlags(*configPath, *dbPath, *assetStore)
+	defer st.Close()
+	report, err := st.ResourceReport(context.Background())
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	printJSON(report)
+}
+
 // localizeImportedNotes runs the shared localize engine over the notes an
 // import touched (--localize-media). Failures are reported per note and do
 // not fail the completed import.
@@ -302,6 +332,8 @@ Usage:
   notriosctl seed-help [--db ...] [docs-dir]     # mirror docs/ into the read-only Help notebook
   notriosctl localize [--config config.yaml] [--db ...] [--dry-run] [--allow-review] [--base-revision rev] <document-id>
                                                  # download policy-allowed remote media and rewrite the note to resource:// URIs
+  notriosctl resources report [--config config.yaml] [--db ...] [--asset-store ...]
+                                                 # exact duplicates, unreferenced blobs, notebook usage, and review-only perceptual signals
 
 Future commands:
   notriosctl publish quartz --profile <name>

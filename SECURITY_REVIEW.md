@@ -1,6 +1,6 @@
 # Security Review — Current Local Product and Planned Remote Surfaces
 
-This review reflects the repository after v0.3 H4. Notrios is local-first but
+This review reflects the repository after v0.3 H5. Notrios is local-first but
 its REST/MCP listener, importers, preview, downloaded media, future archive
 files, and future sync transports are security boundaries.
 
@@ -20,10 +20,14 @@ files, and future sync transports are security boundaries.
   quarantine until admission.
 - Localization checks exact-hash policy, creates resource/provenance rows, and
   rewrites Markdown in a new revision under optimistic concurrency.
+- Resource reference reports are read-only. Exact SHA-256 remains the only
+  deduplication identity; the optional perceptual hook ships disabled, accepts
+  no filesystem path from callers, and can only emit validated review
+  suggestions. Perceptual `block` rules are rejected.
 
-Remaining: generic upload limits, H5 perceptual review hooks, H6
-retention/GC, and optional malware-scanner integration. Perceptual similarity
-may suggest review but must never silently identify or deduplicate content.
+Remaining: generic upload limits, H6 retention/GC, and optional
+malware-scanner integration. Perceptual similarity may suggest review but must
+never silently identify or deduplicate content.
 
 ### Markdown and WebView
 

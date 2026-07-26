@@ -428,6 +428,57 @@ func TestResourceHTTPUploadAttachDownloadAndSafeDelete(t *testing.T) {
 	}
 }
 
+func TestResourceReportHTTP(t *testing.T) {
+	ctx := context.Background()
+	st, err := store.OpenSQLiteWithAssetStore(":memory:", t.TempDir())
+	if err != nil {
+		t.Fatalf("OpenSQLiteWithAssetStore: %v", err)
+	}
+	t.Cleanup(func() { _ = st.Close() })
+	if err := st.Bootstrap(ctx); err != nil {
+		t.Fatalf("Bootstrap: %v", err)
+	}
+	doc, err := st.CreateDocument(ctx, store.CreateDocumentRequest{PreferredID: "doc_report", Title: "Report"})
+	if err != nil {
+		t.Fatalf("CreateDocument: %v", err)
+	}
+	first, err := st.CreateResource(ctx, store.CreateResourceRequest{PreferredID: "res_report_a", Filename: "a.txt", Content: strings.NewReader("duplicate")})
+	if err != nil {
+		t.Fatalf("CreateResource first: %v", err)
+	}
+	if _, err := st.CreateResource(ctx, store.CreateResourceRequest{PreferredID: "res_report_b", Filename: "b.txt", Content: strings.NewReader("duplicate")}); err != nil {
+		t.Fatalf("CreateResource second: %v", err)
+	}
+	if _, err := st.CreateResource(ctx, store.CreateResourceRequest{PreferredID: "res_report_orphan", Filename: "orphan.txt", Content: strings.NewReader("orphan")}); err != nil {
+		t.Fatalf("CreateResource orphan: %v", err)
+	}
+	if _, err := st.AttachDocumentResource(ctx, store.AttachResourceRequest{DocumentID: doc.ID, ResourceID: first.ID}); err != nil {
+		t.Fatalf("AttachDocumentResource: %v", err)
+	}
+
+	s := NewServerWithStore(st)
+	request := httptest.NewRequest(http.MethodGet, "/api/v1/resources/reports/reference", nil)
+	response := httptest.NewRecorder()
+	s.ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("report status=%d body=%s", response.Code, response.Body.String())
+	}
+	var report api.ResourceReport
+	if err := json.NewDecoder(response.Body).Decode(&report); err != nil {
+		t.Fatalf("decode report: %v", err)
+	}
+	if len(report.ExactDuplicates) != 1 || report.ExactDuplicates[0].ResourceCount != 2 {
+		t.Fatalf("exact duplicates: %+v", report.ExactDuplicates)
+	}
+	if len(report.UnreferencedBlobs) != 1 || len(report.UnreferencedBlobs[0].Resources) != 1 ||
+		report.UnreferencedBlobs[0].Resources[0].ID != "res_report_orphan" {
+		t.Fatalf("unreferenced blobs: %+v", report.UnreferencedBlobs)
+	}
+	if report.Perceptual.HookEnabled {
+		t.Fatalf("default hook must be inert: %+v", report.Perceptual)
+	}
+}
+
 func TestDocumentLinksAndGraphWithSQLiteStore(t *testing.T) {
 	st, err := store.OpenSQLite(":memory:")
 	if err != nil {

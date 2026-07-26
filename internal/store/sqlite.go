@@ -38,10 +38,11 @@ var migrationFS embed.FS
 // until the project can decide whether to use mattn/go-sqlite3, modernc.org/sqlite,
 // or this local wrapper long term.
 type SQLiteStore struct {
-	mu        sync.Mutex
-	db        *C.sqlite3
-	path      string
-	assetRoot string
+	mu                 sync.Mutex
+	db                 *C.sqlite3
+	path               string
+	assetRoot          string
+	perceptualHashHook PerceptualHashHook
 }
 
 func OpenSQLite(path string) (*SQLiteStore, error) {
@@ -774,6 +775,10 @@ func (s *SQLiteStore) CreateResource(ctx context.Context, req CreateResourceRequ
 		defer cleanup()
 	}
 	mimeType := firstNonEmptyString(req.MIMEType, blob.MIMEType, "application/octet-stream")
+	perceptualHash, err := s.computePerceptualHash(ctx, blob, mimeType)
+	if err != nil {
+		return Resource{}, err
+	}
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -789,6 +794,18 @@ func (s *SQLiteStore) CreateResource(ctx context.Context, req CreateResourceRequ
 
 	if err := s.execPreparedLocked(`INSERT OR IGNORE INTO blobs(sha256, storage_path, size_bytes, mime_type) VALUES(?, ?, ?, ?)`, blob.SHA256, blob.StoragePath, strconv.FormatInt(blob.SizeBytes, 10), mimeType); err != nil {
 		return Resource{}, err
+	}
+	if perceptualHash != nil {
+		if err := s.execPreparedLocked(`INSERT OR IGNORE INTO resource_hashes(blob_sha256, algo, hash) VALUES(?, ?, ?)`,
+			blob.SHA256, perceptualHash.Algorithm, perceptualHash.Hash); err != nil {
+			return Resource{}, err
+		}
+		// This is the admission-time policy-check slot. A matching perceptual
+		// rule is deliberately non-blocking; it is surfaced by ResourceReport
+		// as a review suggestion.
+		if err := s.checkPerceptualReviewRuleLocked(perceptualHash.Algorithm, perceptualHash.Hash); err != nil {
+			return Resource{}, err
+		}
 	}
 	if err := s.execPreparedLocked(`INSERT INTO resources(id, collection_id, blob_sha256, filename, mime_type) VALUES(?, ?, ?, ?, ?)`, resourceID, req.CollectionID, blob.SHA256, req.Filename, mimeType); err != nil {
 		return Resource{}, err
@@ -1035,6 +1052,9 @@ func (s *SQLiteStore) DeleteResource(ctx context.Context, id string) error {
 	}
 	deleteBlob := resourceCount == 0
 	if deleteBlob {
+		if err := s.execPreparedLocked(`DELETE FROM resource_hashes WHERE blob_sha256 = ?`, blobSHA); err != nil {
+			return err
+		}
 		if err := s.execPreparedLocked(`DELETE FROM blobs WHERE sha256 = ?`, blobSHA); err != nil {
 			return err
 		}

@@ -51,6 +51,13 @@ The authoritative, always-current example is `config/config.example.yaml` in the
 
 The `remote_media` policy is reported by `/api/v1/status` under `media_policy`. It drives the remote-media scan (`POST /api/v1/documents/{id}/remote-media/scan` — per-URL decisions, nothing downloaded) and localization (`POST …/remote-media/localize`, `notriosctl localize` — quarantine fetch with redirect-hop and connect-time address checks, size caps, MIME sniffing, exact hashes, then rewrite to `resource://` links in a new revision). Blocked domains and blocked schemes are never fetched; `review` means report-only until explicitly opted in.
 
+Resource reference health is available from
+`GET /api/v1/resources/reports/reference` or
+`notriosctl resources report`: exact duplicate logical resources,
+unreferenced physical blobs, direct per-notebook usage, and optional
+review-only perceptual suggestions. Notrios ships no perceptual algorithm, so
+that hook is inert by default.
+
 **Relative paths resolve against the working directory** of the process, not the config file's location. Use absolute paths for anything you run outside the repository checkout.
 
 **Automatic creation:** on startup the service creates every configured directory and, if absent, the database itself, applying schema migrations to older databases automatically. `/api/v1/status` reports the resolved paths, database state, schema version, capability flags, search limits, and the active remote-media policy.
