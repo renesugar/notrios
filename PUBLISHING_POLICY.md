@@ -2,7 +2,15 @@
 
 Publishing is not backup/export. Publishing produces a sanitized public subset of the note database. Backup/export preserves enough information to restore private application state.
 
-## Quartz as first-class target
+## Shared publish planner
+
+Every target consumes one neutral, deterministic plan containing selected note
+IDs, stable output paths, rewritten link decisions, reachable resource hashes,
+metadata-removal decisions, and privacy warnings. Planning must not depend on a
+particular site generator. Portable-vault, Quartz, and large-library targets
+therefore share the hard security and selection work.
+
+## Quartz as curated target
 
 Support Quartz publish profiles for users who want to publish selected notebooks/folders/subfolders/tags without exporting the full database.
 
@@ -17,6 +25,10 @@ The companion service owns:
 - writing a Quartz-compatible `content/` tree.
 
 Quartz owns static-site rendering.
+
+Quartz is the first curated/smaller-library target, not an unmeasured promise
+for a 100k-note public archive. Large publish sets require a separate profile
+with bounded/fixed navigation and server-side search.
 
 ## Publishing profile example
 
@@ -69,4 +81,28 @@ A publish dry run must report:
 - Portable Markdown vault export.
 - Quartz publishing.
 - Optional Foam-style query/dashboard materialization.
-- Optional simple static HTML export.
+- A scalable Hugo/Relearn-style or equivalent archive site: streamed
+  generation, fixed sidebar rather than the entire note tree, and a small
+  server-side search service.
+- Static PageFind remains appropriate for the small documentation site and may
+  be offered as a bounded archive fallback; it is not the default for a
+  hundreds-of-thousands-of-notes site.
+
+## Search backend spike
+
+The scalable-site search boundary requires text/phrase/prefix queries, stable
+pagination, highlighting, typed fields, facets/aggregations, deterministic
+rebuilds, bounded memory, and an Apache-2.0/MIT-compatible dependency story.
+
+Bluge currently exposes BM25 search, fuzzy/prefix/phrase/range queries,
+highlights, facets, custom sorts, and search-after. It is Apache-2.0, but the
+reviewed upstream has seen no commit since 2022. Recoll/Xapian is more capable
+for extraction but remains an external GPL process. SQLite FTS5 is already
+present but offers fewer site-search features. v0.4 must benchmark and assess
+maintenance/security before selecting an adapter; the publish manifest and
+frontend must not bind to one engine.
+
+The `movenotes-v3` implementation is a useful behavioral reference for exact
+source preservation, streamed JSONL, fixed navigation, deterministic/bucketed
+tag metadata, bounded indexing batches, and small-vs-large site profiles. It is
+not a source from which to copy code.

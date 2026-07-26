@@ -24,7 +24,9 @@ Goal: usable local note-taking/search app with REST/MCP and a built-in UI.
 The built-in Go/Wails GUI is part of the first released version, so it lives here rather than in a later milestone.
 
 - Rebrand to Notrios: `notesd` → `notriosd`, `notesctl` → `notriosctl`, module path `github.com/renesugar/notrios`, MIT/Apache-2.0 license selection.
-- Schema: nested notebooks with emoji icons, tags with counts, query-backed search notebooks ("All notes" first / "Trash" last / read-only "Help", user query notebooks), case-insensitive notebook names, trash/undelete/purge semantics.
+- Schema: nested notebooks with emoji icons, tags with counts, query-backed
+  search notebooks (All notes first, Trash last, plus user queries), a regular
+  read-only Help notebook, case-insensitive names, and trash/restore/purge.
 - Schema: source provenance for Joplin, Obsidian, Twitter/X, ChatGPT, and Claude, including conversation threads (author, author ID, thread ID, reply-to, post URL).
 - Query-language adapter: `notebook:`, `tag:`, `author:`, `authorid:`, `title:`, `since:`, `until:`, phrases (see `SEARCH_QUERY_LANGUAGE.md`).
 - Recoll integration replacing sist2: projection + outbox, generated Recoll config, from-scratch front-matter handler, external-process adapter (see `RECOLL_INTEGRATION.md`).
@@ -46,18 +48,35 @@ The built-in Go/Wails GUI is part of the first released version, so it lives her
 - Exact-hash deduplication.
 - Local perceptual-hash database hooks for moderation and near-duplicate review.
 - Resource garbage collection and retention policy.
+- Keyset pagination, matching indexes, and generated 10k/100k/500k performance
+  profiles before importer scale hardening.
 - Recoll hardening: batched incremental scans, periodic reconciliation, FTS5/Recoll search result merging, extraction status in UI.
 
-## v0.4 — Publishing and export
+## v0.4 — Portable data, publishing, and stable references
 
 - Portable Markdown vault export.
-- Lossless application archive export.
+- Native archive v2: a versioned manifest plus immutable, hash-addressed
+  objects, source-preservation bundles, checksums, capability/version bounds,
+  snapshot consistency, and streaming read/write. This is the full backup and
+  transfer format and deliberately becomes the container layer reused by v0.7
+  synchronization; a foreign Markdown/Joplin/Obsidian export remains a lossy or
+  format-limited projection.
 - Quartz publish profiles for selected notebooks/folders/tags, including recursive subfolder/subnotebook selection.
+- A scalable archive-site profile for much larger libraries: fixed/bounded
+  navigation, streamed generation, and a server-side search adapter. Evaluate
+  Bluge, an external Recoll service, and simpler FTS-backed options against
+  maintenance, licensing, query, highlight, facet, and deep-page requirements;
+  do not hard-code Bluge before the spike. Quartz remains the curated/smaller
+  publication target.
 - Link-to-private-note policy.
 - Public resource reachability analysis.
 - Dry-run publishing privacy checks.
 - Optional Foam-style query/dashboard export.
 - Link reference definition generation for portable Markdown publishing.
+- Stable external `notrios://` document links including the profile/database
+  identity, with validated OS protocol registration and stale-target handling.
+- Share a neutral selection/link/resource/privacy planner among native archive,
+  portable vault, Quartz, and large-library publication targets.
 
 ## v0.5 — Better editing and graph UX
 
@@ -71,24 +90,71 @@ The built-in Go/Wails GUI is part of the first released version, so it lives her
 - Trash-first delete/restore UX.
 - Workspace lint/fix.
 - Templates and task extraction.
+- Evaluate character-level live collaboration separately. A Yjs-compatible
+  Ygo library can be useful for simultaneous editing, but it must not become
+  the whole-database sync format or a prerequisite for ordinary offline sync.
 
 ## v0.6 — MCP and automation expansion
 
-- MCP write tools gated by explicit scopes.
+- Complete MCP write-tool coverage gated by explicit scopes.
 - Resource graph resources/read support.
 - LLM-safe surgical edits with dry-run and revision preconditions.
-- Batch transactions.
+- REST and MCP batch transactions for move, duplicate, trash, tag/untag, and
+  stable Markdown-link copy. Requests are bounded, idempotent, support
+  all-or-nothing versus best-effort modes, and return per-item outcomes.
 - LLM-safe SEARCH/REPLACE edits with dry-run and revision/hash preconditions.
 - Tool visibility profiles: search-only, read-only, editor, organizer, administrator.
+- MCP starts/statuses bulk export/import/sync jobs but does not carry unbounded
+  archive or blob bytes in model context; REST/object transfer remains the data
+  plane.
 
 ## v0.7 — Versioning and synchronization
 
-- SQLite saved-revision diff/restore UX.
-- Optional go-git projection checkpointing.
-- Optional Fossil export/checkpoint support.
-- Sync status and conflict workflows.
-- Git-managed Obsidian vault import/checkpoint support as an optional adapter.
-- External Obsidian-vault bidirectional sync policy.
+This is a multi-slice milestone; each slice gets a separate active plan and
+user approval. See `VERSIONING_AND_SYNC_POLICY.md`.
+
+1. **Profiles and identities** — explicit profiles, logical database UUID,
+   replica/device UUID, schema/protocol compatibility, bootstrap notebooks,
+   validated `notrios://` routing, and a `sync: none` target.
+2. **Replication core** — immutable operations identified by
+   `(replica_id, sequence)`, hybrid logical clocks for deterministic conflict
+   ordering, per-replica acknowledgement vectors for completeness and GC,
+   idempotent apply, record/field LWW registers, set membership tombstones,
+   body-snapshot conflict copies, and deterministic notebook-tree repair.
+3. **Native snapshot/change container** — reuse archive v2 manifests and object
+   storage for full snapshots and bounded change envelopes; blobs publish
+   before references and manifests publish last.
+4. **REST transport and folder/rclone transport** — the same protocol over
+   authenticated REST and immutable shared-folder objects. `rclone copy
+   --immutable` is a carrier; `rclone sync`/bisync are not the merge algorithm.
+   Same-machine folders, removable drives, and cloud remotes all use the same
+   inbox/outbox layout.
+5. **Operations and recovery** — durable outbox, retries/backpressure,
+   peer retirement, tombstone/blob GC watermarks, full-resync after retention
+   horizon, conflict UI, replace/merge/adopt/fork restore, and fault-injection
+   convergence tests.
+
+Research outcomes:
+
+- A small Notrios-specific Go replication library is preferred over Marmot:
+  Marmot's HLC, immutable CDC segments, manifest-last publication, and
+  anti-entropy are useful patterns, but its always-on SQL-cluster/2PC/CDC stack
+  does not match intermittent mobile/folder/rclone peers.
+- Cachapa's record-level HLC/LWW approach is the closest conceptual reference,
+  but the Dart packages are not adopted or ported wholesale. Notrios also needs
+  per-replica sequence vectors, tree invariants, immutable resources, revision
+  conflicts, retention acknowledgements, and Go/mobile test fixtures.
+- Yjs-compatible Ygo is reserved for optional live co-editing: per-character
+  CRDT history is too costly and semantically mismatched for whole-database
+  import/export/sync. Re-evaluate maintained Go implementations when that
+  separate feature is planned.
+- Nostr and bitchat-inspired transports are post-v1 research. Their signed
+  envelopes, outboxes, dedupe IDs, TTLs, acknowledgement, and opportunistic
+  courier patterns are useful; public relay metadata/retention and BLE
+  bandwidth/platform limits make them inferior to REST plus rclone for the
+  first supported sync transports.
+- Optional go-git/Fossil/Obsidian adapters remain projections/checkpoints, not
+  the canonical merge protocol.
 
 ## v1.0 — Feature-complete local product
 
@@ -96,9 +162,14 @@ The built-in Go/Wails GUI is part of the first released version, so it lives her
 - Stable MCP tool/resource schemas.
 - Large-scale performance tests with hundreds of thousands of documents/resources.
 - Installer/package story.
-- Backup/export/restore validation.
+- Backup/export/restore/sync compatibility and disaster-recovery validation.
 - Security review for remote media and MCP.
 - Usable documentation for Gitea/GitHub public release.
+- Desktop remains on stable Wails v2 until a separately approved Wails v3
+  migration spike passes desktop regression and real Android tests. Wails v3
+  currently offers a shared desktop/iOS/Android codebase, but v3 and mobile are
+  pre-release/experimental and Android/iOS impose mobile storage, lifecycle,
+  background, and file-dialog constraints.
 
 ## Future candidates
 
@@ -108,6 +179,8 @@ The built-in Go/Wails GUI is part of the first released version, so it lives her
 - More importers.
 - Multi-user deployment.
 - Enterprise policy administration.
+- Encrypted Nostr relay and BLE/opportunistic-courier sync transports after the
+  core protocol, threat model, and constrained-device benchmarks are stable.
 
 
 ## Agent handoff status
@@ -117,4 +190,5 @@ The scaffold handoff is complete; see `CODING_CLIENT_HANDOFF.md`. Future roadmap
 
 ## v0.1 completion note
 
-The v0.1 MVP milestone has been implemented and release-hardened. Active work follows the v0.2 Notrios redesign plan in `PLAN.md`; the former v0.2 media-hardening draft moved to the v0.3 milestone above.
+The v0.1 MVP and v0.2 redesign milestones are implemented and archived. Active
+work follows the v0.3 hardening plan in `PLAN.md`.

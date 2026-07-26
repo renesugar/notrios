@@ -1,6 +1,11 @@
 # Built-in GUI Design
 
-The built-in GUI is a **Go + Wails** desktop application (https://github.com/wailsapp/wails) named `notrios` (implemented in task R13; built with `make gui`, i.e. `-tags "gui desktop production webkit2_41"`; plain builds include a stub so headless/CI builds need no GUI system libraries), shipped in the first released version. It is not the only client: the REST/MCP API must stay complete enough for third-party native clients (C++/Qt, Rust/Tauri, other Go/Wails apps).
+The built-in GUI is a **Go + Wails v2** desktop application
+(https://github.com/wailsapp/wails) named `notrios` (implemented in task R13;
+built with `make gui`, i.e. `-tags "gui desktop production webkit2_41"`; plain
+builds include a stub so headless/CI builds need no GUI system libraries),
+shipped in the first released version. It is not the only client: the REST/MCP
+API must stay complete enough for third-party native clients.
 
 ## Executable modes
 
@@ -66,3 +71,23 @@ The existing React frontend is the basis of the Wails webview UI, currently usin
 - Show revision/conflict state using revision IDs or ETags.
 - Sanitize preview HTML.
 - Remote images in preview may show a warning/action but must never be silently localized; localization is a server operation under media policy.
+- Multi-select organizer actions (planned v0.6): move, duplicate, trash,
+  tag/untag, and copy stable Markdown links. The client calls the bounded batch
+  API and displays per-item/atomic outcomes; query-scoped export is not required
+  merely to organize a selection.
+- Profile selection and external `notrios://` links (planned before sync) show
+  the profile/database identity before switching and never guess on ambiguity.
+- Sync UI (planned v0.7) exposes target `none`, REST/folder/rclone job status,
+  pending/corrupt objects, behind/retired peers, body conflicts, and
+  notebook-tree repairs.
+
+## Mobile investigation
+
+Wails v3 documents reuse of one `main.go` and frontend on desktop, iOS, and
+Android, but v3 is pre-release and mobile support experimental. Keep Wails v2
+as the release shell until an approved migration spike passes desktop
+regression plus real Android validation. The UI will need a mobile layout (not
+four simultaneous panes), safe-area handling, lifecycle/background transfer,
+sandboxed file picking/export, touch targets, and memory tests. Sync/library
+interfaces must remain UI-framework independent so mobile work can proceed
+without redesigning the protocol.

@@ -10,6 +10,8 @@ This document expands the MVP SQLite schema represented by `migrations/0001_init
 - Treat FTS5 and Recoll as derived indexes. FTS5 is updated synchronously for managed documents; the Recoll projection is updated asynchronously through `index_outbox`.
 - Use soft deletion for documents first. MVP Task 4 implements safe resource deletion by refusing referenced resources and removing unreferenced logical resources; richer trash/GC policy remains future work.
 - Keep import and projection paths deterministic so bulk imports can be resumed and repeated idempotently.
+- Match every unbounded sort/filter cursor with a composite index and verify it
+  through `EXPLAIN QUERY PLAN` plus generated scale profiles.
 
 ## Core entities
 
@@ -63,18 +65,27 @@ The outbox coordinates filesystem projections and Recoll indexing after the cano
 
 `migrations/0001_initial.sql` has grown with each milestone and now represents schema version 7 (v5 notebooks/tags/search notebooks, v6 source provenance, v7 media policy), applied idempotently on every startup with upgrade shims for older databases. Its original MVP portion represents schema version 4. It includes managed-document tables, Task 2 revision fields (`body_mime_type`, `message`), content-addressed blob/resource tables, document-resource reference tables, document link graph rows, link context/target URI fields, and supporting indexes. Bootstrap contains compatibility shims for older development databases before setting `PRAGMA user_version = 4`. Do not rename public tables/columns casually once tests depend on them.
 
-## Required indexes
+## Current and required indexes
 
-The migration includes indexes for common lookups:
+The migration includes indexes for collections, revisions, resources, links,
+resource references, outbox rows, notebooks/tags/provenance, and media hashes.
+However, the current unbounded document search still uses offset-backed cursors
+and the migration does **not** yet contain the composite document index needed
+for the primary All Notes order. Do not treat the earlier documentation claim
+as implementation evidence.
 
-- collections by kind;
-- documents by collection, updated time, and deletion status;
-- revisions by document and creation time;
-- resources by collection and blob hash;
-- links by source, target, relation, and unresolved status;
-- resource references by document and resource;
-- outbox by completion and sequence;
-- media hashes by algorithm/hash.
+v0.3 H7 must add and test, at minimum, an index matching:
+
+```sql
+(collection_id, deleted_at, updated_at DESC, id DESC)
+```
+
+Equivalent live-only/partial variants may be used if migration compatibility
+and query plans are better. Notebook/tag-filtered traversal needs indexes whose
+leading columns match the filter and whose remaining columns match the stable
+sort. FTS relevance cursors require a reproducible score/ID boundary or a
+bounded result-snapshot table; a numeric offset inside an opaque token is not a
+keyset.
 
 ## Schema v5/v6 — Notrios redesign (tasks R3 and R4 implemented)
 
@@ -116,8 +127,21 @@ Thread/link-graph traversal stays in SQLite; the Recoll index only carries searc
 ### Deletion rules
 
 - Soft-deleted notes are excluded from every query and appear only through the "Trash" search notebook (`ListTrash`); restore makes them visible and searchable again.
-- Permanent deletion (purge) requires the note to be in the trash, removes its revisions/tags/links/FTS rows, and marks inbound links `target_deleted`. It is only permitted for notes whose source is the local database; externally-sourced trashed notes (any `document_sources` row) are refused and stay merely excluded from queries/results and exports.
+- Permanent deletion (purge) currently requires the note to be in the trash,
+  removes its revisions/tags/links/FTS rows, and marks inbound links
+  `target_deleted`. It is only permitted for notes whose source is the local
+  database; externally-sourced trashed notes are refused. With sync, purge must
+  instead leave a replicated death certificate and defer payload/blob
+  collection until retention plus peer acknowledgements make it safe.
 
 ## Future migrations
 
 Future migrations should be additive where possible. Any destructive change requires a migration note in `plans/` and a backup/export instruction.
+
+Planned v0.7 sync tables are described semantically in
+`SYNCHRONIZATION.md`: logical database/profile/replica IDs, per-replica
+sequence allocation, immutable operations, HLC field/register state,
+acknowledgement vectors, peer state/retirement, pending dependencies, object
+manifests, tombstones/death certificates, conflicts, jobs, and retention
+watermarks. Names and encodings remain open until the replication library API
+and convergence model tests are approved. Derived FTS/Recoll data is excluded.

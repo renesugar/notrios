@@ -11,12 +11,37 @@ Use three layers of history:
 | Layer | Owner | Purpose |
 |---|---|---|
 | Editor undo stack | UI | Keystroke-level undo while editing. |
-| SQLite revisions | companion service | Durable saved-note history, restore, conflict handling. |
+| SQLite revisions | Notrios service | Durable saved-note history, restore, conflict handling. |
 | Git/Fossil checkpoints | optional adapters | Projection backup, external diff/history, sync experiments. |
+
+Restoring an old revision is a normal new write and therefore produces a new
+replication operation once synchronization exists. Character-level editor
+history is not the database sync protocol.
+
+## Database synchronization
+
+The v0.7 design is specified in `SYNCHRONIZATION.md`. Its invariants are:
+
+- SQLite plus the asset store remain canonical on each replica.
+- Stable logical database IDs are distinct from per-copy replica/device IDs.
+- Operations have per-replica sequence IDs; HLCs order conflicts but do not
+  replace delivery/acknowledgement vectors.
+- Note bodies remain immutable saved revisions with visible concurrent
+  conflicts; metadata and relationship rows merge at field/element granularity.
+- Tombstone/resource collection waits for retention plus acknowledgements from
+  every active peer.
+- REST, shared folders, rclone, and removable media are transport adapters over
+  one protocol. `rclone sync` is never the conflict/deletion algorithm.
+- `target: none` is a first-class configuration and performs no peer transfer.
+- MCP is a bounded control plane for sync jobs; REST/object files carry bulk
+  envelopes and blobs.
 
 ## go-git
 
-go-git can simplify optional projection checkpointing, reading commit history, importing Git-managed Obsidian vaults, and simple fast-forward push/pull workflows. It is not required for the core REST/MCP service and does not replace SQLite revisions.
+go-git can simplify optional projection checkpointing, reading commit history,
+and importing Git-managed Obsidian vaults. It is not required for the core
+REST/MCP service and does not replace SQLite revisions or the Notrios
+replication protocol.
 
 Limitations to account for before enabling it as a sync backend:
 
@@ -26,7 +51,9 @@ Limitations to account for before enabling it as a sync backend:
 
 ## Fossil
 
-Fossil can be useful for a self-contained versioned projection/export, but it should not replace the application database. Fossil's checkout-operation undo is not a general note undo system. Durable note undo should remain in SQLite revisions.
+Fossil can be useful for a self-contained versioned projection/export, but it
+should not replace the application database or sync protocol. Fossil's
+checkout-operation undo is not a general note undo system.
 
 ## External vault sync
 
@@ -38,3 +65,5 @@ Bidirectional sync with existing Obsidian folders must be explicitly configured.
 - import snapshot only.
 
 Conflicts must be visible to users; do not silently overwrite external edits.
+External-vault sync is a format adapter with an ownership policy, not a second
+canonical database or an implicit participant in native sync.

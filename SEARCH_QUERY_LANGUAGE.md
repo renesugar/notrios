@@ -37,7 +37,10 @@ Notrios exposes one user-facing query language across the GUI search box, REST s
 - `author:` matches the display name case-insensitively (substring/phrase); `authorid:` matches the canonical identity exactly (case-insensitive).
 - `since:`/`until:` compare the source `published_ts` when provenance exists, falling back to the note's local creation time.
 - `is:trashed` queries search trashed notes with LIKE-based text matching (trashed notes have no FTS rows).
-- Cursors are opaque, bound to the query + collection, and reject replay against a different search.
+- Cursors are opaque, bound to the query + collection, and reject replay
+  against a different search. Current `q1` tokens nevertheless encode an
+  offset and SQL uses `LIMIT/OFFSET`, with a hard 100,000 offset ceiling. This
+  is an implementation limitation, not the final cursor contract.
 
 ## Reserved internal operators
 
@@ -48,4 +51,14 @@ Notrios exposes one user-facing query language across the GUI search box, REST s
 
 - Implicit AND, phrases, stemming, wildcards, and boolean expressions follow the backend's native behavior.
 - Query weighting (title above body) is a later adapter feature; Recoll supports per-element weights natively.
-- All search endpoints support cursor-based incremental results so a GUI can populate "All notes" lazily while scrolling (limits and cursor rules in `API_SPEC.md`).
+- All search endpoints support cursor-based incremental results so a GUI can
+  populate "All notes" lazily while scrolling (limits and cursor rules in
+  `API_SPEC.md`).
+- v0.3 H7 replaces chronological paging with a versioned keyset cursor over
+  `(updated_at DESC, id DESC)` and a matching composite index. SQLite documents
+  that OFFSET work grows in proportion to the skipped row count; there is no
+  database-size threshold at which it suddenly becomes safe or unsafe.
+- Relevance paging must preserve a stable `(score, id)` boundary or use a
+  bounded generation-labelled result snapshot. Merged FTS5/Recoll results need
+  the same stable contract on every page. Cursor version changes invalidate old
+  tokens explicitly rather than misinterpreting them.

@@ -51,7 +51,7 @@ the window; editor and preview split equally after a resize) from the DOM.
 
 ### Performance tests
 
-Synthetic datasets should eventually cover:
+v0.3 H7 generated datasets cover:
 
 - 10k notes.
 - 100k notes.
@@ -59,7 +59,40 @@ Synthetic datasets should eventually cover:
 - 1M links.
 - large resource directory with deduplication.
 
-Performance thresholds are not defined yet; first milestones should record baseline timings.
+Each profile records hardware/OS/SQLite version, database and index sizes,
+query plan, elapsed distribution, and peak RSS for:
+
+- first and next All Notes pages;
+- a 90th-percentile-deep traversal (keyset, never a fabricated giant offset);
+- selective/nonselective FTS queries and notebook/tag filters;
+- importer inventory/write batches and native archive streaming;
+- first/next merged FTS5/Recoll pages when Recoll is installed.
+
+Ordinary local first/next pages target p95 below 100 ms on the recorded
+reference machine. Memory, subprocess output, and rendered rows must remain
+proportional to the page/batch limit. This target catches regressions but is not
+a machine-independent product guarantee.
+
+SQLite's OFFSET cost grows linearly with skipped rows. In an ideal local
+1,000,000-row covering-index probe during the 2026-07 plan review, offsets
+10k/50k/100k/200k/500k/900k took approximately
+0.01/0.02/0.03/0.06/0.13/0.43 seconds while equivalent keyset pages rounded
+below 0.01 seconds. The exact crossover depends on joins, sort, cache, storage,
+and hardware, so the architectural rule is: use keysets for any unbounded
+collection, not “switch after N total notes.”
+
+### Sync model and transport tests (planned v0.7)
+
+- Property/model tests shuffle, duplicate, replay, drop, and eventually deliver
+  operations across at least three replicas and assert convergence.
+- Crash injection covers canonical transaction, blob/chunk, envelope, manifest,
+  acknowledgement, and retention boundaries.
+- REST and folder/rclone adapters replay identical golden protocol transcripts.
+- Test clock skew, cloned replica IDs, schema/protocol/database mismatch,
+  missing/corrupt/truncated objects, offline-horizon full resync, peer
+  retirement, delete/restore/purge, concurrent body edits, and notebook cycles.
+- Mobile profiles measure maximum envelope/pending/object sizes and foreground
+  responsiveness on a real Android device before release.
 
 ### Security tests
 

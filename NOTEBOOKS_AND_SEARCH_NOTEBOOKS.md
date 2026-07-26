@@ -21,7 +21,8 @@ This document defines the Notrios notebook model. It is design-normative for sch
 
 A **search notebook** is a notebook whose contents are defined by a query instead of direct membership. Deleting a search notebook deletes only the notebook row and its query — never any notes.
 
-Built-in search notebooks (cannot be deleted in the UI or via the API):
+Built-in search notebooks (created on a fresh database and not deletable through
+the UI or API):
 
 | Name | Position | Query semantics | Notes |
 |---|---|---|---|
@@ -29,6 +30,18 @@ Built-in search notebooks (cannot be deleted in the UI or via the API):
 | **Trash** | last in the sidebar | all notes marked deleted (reserved internal query `is:trashed`) | see Trash semantics below |
 
 **Help** is implemented as a built-in *regular* notebook (not a search notebook): it holds the read-only documentation notes seeded from `docs/` (see `DOCS_SITE.md`), cannot be deleted, its notes cannot be edited, deleted, or moved, and `notebook:help` searches it like any notebook.
+
+The fresh-database contract is therefore exactly four built-in navigation
+entries:
+
+- All notes — protected search notebook;
+- Notes — protected default regular notebook;
+- Help — protected/read-only regular notebook;
+- Trash — protected search notebook.
+
+Tests must create a database at a nonexistent path and assert all four IDs,
+types, protection rules, queries, and sidebar anchors. A migration test asserts
+the same contract without duplicating rows.
 
 User-created search notebooks:
 
@@ -43,7 +56,12 @@ User-created search notebooks:
   - are excluded from all queries and query results;
   - appear only in the "Trash" search notebook.
 - Undeleting a note in Trash makes it visible and searchable again.
-- **Permanent deletion is only allowed for notes stored purely in the local database.** Notes imported from external sources that are marked deleted are simply excluded from queries and results — useful when exporting query results instead of the entire database (see `IMPORT_EXPORT_POLICY.md` for export/import and the dry-run import configuration flow).
+- **Permanent deletion is currently only allowed for notes stored purely in the
+  local database.** Notes imported from external sources that are marked
+  deleted are simply excluded from queries/results. Under v0.7 sync, permanent
+  delete emits a death certificate and removes payload bytes only after
+  retention and active-peer acknowledgement rules permit it; see
+  `SYNCHRONIZATION.md`.
 
 ## Query addressing
 
