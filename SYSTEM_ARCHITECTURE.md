@@ -90,6 +90,13 @@ An optional perceptual-hash hook may compute additional blob hashes and suggest
 review candidates, but it cannot change exact-blob identity or mutate content.
 No perceptual algorithm ships in the core service.
 
+Retention state lives on logical resources and begins when their final
+document reference disappears. The garbage collector separates planning from
+apply, rechecks references transactionally, and deletes a physical blob only
+after its last logical resource is removed. A `RetentionGate` abstraction uses
+local time eligibility in v0.3 and is the insertion point for v0.7 peer
+acknowledgement watermarks.
+
 ## Import model
 
 Importers should be separate commands but shared code. They should write

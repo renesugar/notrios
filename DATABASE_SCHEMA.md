@@ -40,6 +40,15 @@ FTS5 indexes current managed documents. The Step 4 runnable slice uses a normal 
 
 `blobs` are exact bytes addressed by SHA-256 or BLAKE3. `resources` are logical resources with filenames, MIME types, source metadata, and privacy policy state. `document_resource_refs` links documents to resources as `embedded`, `attachment`, `cover`, `derived`, or future relation types.
 
+Schema v8 adds `resources.unreferenced_at` and
+`resources.unreferenced_reason` plus `resources_unreferenced_idx`. A new upload
+starts as `created_unattached`; attaching any document clears the retention
+state; detaching the final reference records `detached`; purging the final note
+reference records `purged_document`. The v7→v8 upgrade backfills old
+unreferenced resources from `created_at` as `legacy_unreferenced` and clears
+the fields on referenced resources. Garbage collection always rechecks the
+reference table before deleting a logical resource.
+
 ### document_links and document_blocks
 
 `document_links` records explicit links parsed from Markdown or imported source data. MVP Task 5 populates it transactionally on document create, update, restore, and soft-delete cleanup. It stores source syntax, raw target, display text, optional normalized target URI, resolved document/resource IDs, anchor type/value, context excerpt, source byte/line/column positions, relation type, and resolution status. Status values used in the MVP are `resolved`, `unresolved`, `ambiguous`, and `external`; later importers may add `invalid` and `target_deleted`.
@@ -63,7 +72,7 @@ The outbox coordinates filesystem projections and Recoll indexing after the cano
 
 ## MVP migration file
 
-`migrations/0001_initial.sql` has grown with each milestone and now represents schema version 7 (v5 notebooks/tags/search notebooks, v6 source provenance, v7 media policy), applied idempotently on every startup with upgrade shims for older databases. Its original MVP portion represents schema version 4. It includes managed-document tables, Task 2 revision fields (`body_mime_type`, `message`), content-addressed blob/resource tables, document-resource reference tables, document link graph rows, link context/target URI fields, and supporting indexes. Bootstrap contains compatibility shims for older development databases before setting `PRAGMA user_version = 4`. Do not rename public tables/columns casually once tests depend on them.
+`migrations/0001_initial.sql` has grown with each milestone and now represents schema version 8 (v5 notebooks/tags/search notebooks, v6 source provenance, v7 media policy, v8 resource retention), applied idempotently on every startup with upgrade shims for older databases. Its original MVP portion represents schema version 4. It includes managed-document tables, Task 2 revision fields (`body_mime_type`, `message`), content-addressed blob/resource tables, document-resource reference tables, document link graph rows, link context/target URI fields, and supporting indexes. Bootstrap contains compatibility shims for older development databases before setting `PRAGMA user_version = 4`. Do not rename public tables/columns casually once tests depend on them.
 
 ## Current and required indexes
 

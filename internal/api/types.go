@@ -377,6 +377,34 @@ type PerceptualHashReport struct {
 	NearDuplicates []NearDuplicateReview    `json:"near_duplicates"`
 }
 
+type GarbageCollectionPolicy struct {
+	UnreferencedSeconds   int64  `json:"unreferenced_seconds"`
+	PurgedResourceSeconds int64  `json:"purged_resource_seconds"`
+	Gate                  string `json:"gate"`
+}
+
+type GarbageCollectionCandidate struct {
+	Resource           Resource `json:"resource"`
+	UnreferencedAt     string   `json:"unreferenced_at"`
+	UnreferencedReason string   `json:"unreferenced_reason"`
+	RetentionSeconds   int64    `json:"retention_seconds"`
+	EligibleAt         string   `json:"eligible_at,omitempty"`
+	Decision           string   `json:"decision"`
+}
+
+type GarbageCollectionReport struct {
+	DryRun                  bool                         `json:"dry_run"`
+	AsOf                    string                       `json:"as_of"`
+	Policy                  GarbageCollectionPolicy      `json:"policy"`
+	Eligible                []GarbageCollectionCandidate `json:"eligible"`
+	Retained                []GarbageCollectionCandidate `json:"retained"`
+	Removed                 []GarbageCollectionCandidate `json:"removed"`
+	ReferencedResourceCount int                          `json:"referenced_resource_count"`
+	BlobsRemoved            int                          `json:"blobs_removed"`
+	BytesRemoved            int64                        `json:"bytes_removed"`
+	Warnings                []string                     `json:"warnings"`
+}
+
 type DocumentLink struct {
 	ID               string         `json:"id"`
 	SourceDocumentID string         `json:"source_document_id"`

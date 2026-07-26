@@ -209,9 +209,18 @@ func TestSearchNotebookAndTrashREST(t *testing.T) {
 	if del.Code != http.StatusNoContent {
 		t.Fatalf("second delete: %d %s", del.Code, del.Body.String())
 	}
-	rr = doJSON(t, s, http.MethodDelete, "/api/v1/trash/"+doc.ID, "")
-	if rr.Code != http.StatusNoContent {
-		t.Fatalf("purge: %d %s", rr.Code, rr.Body.String())
+	purgeReq := httptest.NewRequest(http.MethodDelete, "/api/v1/trash/"+doc.ID, nil)
+	purgeRR := httptest.NewRecorder()
+	s.ServeHTTP(purgeRR, purgeReq)
+	if purgeRR.Code != http.StatusPreconditionRequired {
+		t.Fatalf("purge without confirmation: %d %s", purgeRR.Code, purgeRR.Body.String())
+	}
+	purgeReq = httptest.NewRequest(http.MethodDelete, "/api/v1/trash/"+doc.ID, nil)
+	purgeReq.Header.Set("X-Notrios-Confirmation", "purge-document:"+doc.ID)
+	purgeRR = httptest.NewRecorder()
+	s.ServeHTTP(purgeRR, purgeReq)
+	if purgeRR.Code != http.StatusNoContent {
+		t.Fatalf("purge: %d %s", purgeRR.Code, purgeRR.Body.String())
 	}
 	rr = doJSON(t, s, http.MethodGet, "/api/v1/trash", "")
 	if strings.Contains(rr.Body.String(), doc.ID) {

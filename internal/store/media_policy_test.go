@@ -39,8 +39,8 @@ func TestSchemaV7MediaPolicyTables(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Status: %v", err)
 	}
-	if status.SchemaVersion != 7 {
-		t.Fatalf("schema version = %d, want 7", status.SchemaVersion)
+	if status.SchemaVersion != 8 {
+		t.Fatalf("schema version = %d, want 8", status.SchemaVersion)
 	}
 	for _, table := range []string{"media_domain_rules", "media_hash_rules", "resource_hashes", "media_policy_decisions"} {
 		if !mediaTableExists(t, st, table) {
@@ -72,8 +72,8 @@ func TestSchemaV7MediaPolicyTables(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Status after re-bootstrap: %v", err)
 	}
-	if status.SchemaVersion != 7 {
-		t.Fatalf("schema version after re-bootstrap = %d, want 7", status.SchemaVersion)
+	if status.SchemaVersion != 8 {
+		t.Fatalf("schema version after re-bootstrap = %d, want 8", status.SchemaVersion)
 	}
 }
 
@@ -246,7 +246,7 @@ func TestQuarantinePipelineRecordsIntoStore(t *testing.T) {
 	}
 }
 
-func TestSchemaV7UpgradeFromV6(t *testing.T) {
+func TestSchemaUpgradeFromV6(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "upgrade.sqlite")
 	ctx := context.Background()
 
@@ -286,12 +286,12 @@ func TestSchemaV7UpgradeFromV6(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Status: %v", err)
 	}
-	if status.SchemaVersion != 7 {
-		t.Fatalf("upgraded schema version = %d, want 7", status.SchemaVersion)
+	if status.SchemaVersion != 8 {
+		t.Fatalf("upgraded schema version = %d, want 8", status.SchemaVersion)
 	}
 	for _, table := range []string{"media_domain_rules", "media_hash_rules", "resource_hashes"} {
 		if !mediaTableExists(t, st, table) {
-			t.Fatalf("table %s missing after v6→v7 upgrade", table)
+			t.Fatalf("table %s missing after v6→current upgrade", table)
 		}
 	}
 }

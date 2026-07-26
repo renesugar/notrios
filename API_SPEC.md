@@ -144,6 +144,7 @@ HEAD   /api/v1/resources/{resource_id}
 GET    /api/v1/resources/{resource_id}
 GET    /api/v1/resources/{resource_id}/content
 DELETE /api/v1/resources/{resource_id}
+GET    /api/v1/admin/gc/report
 GET    /api/v1/documents/{document_id}/resources
 POST   /api/v1/documents/{document_id}/resources/{resource_id}
 DELETE /api/v1/documents/{document_id}/resources/{resource_id}
@@ -159,6 +160,22 @@ notes still prevent a blob from being classified as unreferenced. The
 `perceptual` block reports whether an embedding application installed a hook,
 stored hashes, matching review rules, and near-duplicate suggestions. Those
 suggestions never merge, reject, or delete content.
+
+`GET /api/v1/admin/gc/report` is the read-only H6 garbage-collection plan.
+It uses the configured retention windows and returns `eligible`, `retained`,
+and (always empty over REST) `removed` entries with timestamps, reasons, and
+the active retention gate. There is intentionally no REST apply endpoint.
+`notriosctl gc` is dry-run by default; only `notriosctl gc --apply` deletes
+retention-expired resources, rechecking reference state inside the deletion
+transaction.
+
+The existing immediate `DELETE /api/v1/resources/{resource_id}` remains a
+single-resource administrative escape hatch. It refuses any referenced
+resource and now requires
+`X-Notrios-Confirmation: delete-resource:{resource_id}`. Permanent trash purge
+similarly requires
+`X-Notrios-Confirmation: purge-document:{document_id}`. Missing or incorrect
+confirmation returns `428 confirmation_required`.
 
 ### Links and graph
 
@@ -263,7 +280,7 @@ POST   /api/v1/search-notebooks
 DELETE /api/v1/search-notebooks/{id}              # refuses builtin rows
 ```
 
-Name conflicts return `409 name_conflict`; builtin protection (Help/default notebooks, "All notes"/"Trash" search notebooks, Help note moves, purging externally-sourced notes) returns `403 forbidden`. `POST /api/v1/documents` accepts `notebook_id` (defaults to the "Notes" notebook), and document responses include `notebook_id`.
+Name conflicts return `409 name_conflict`; builtin protection (Help/default notebooks, "All notes"/"Trash" search notebooks, Help note moves, purging externally-sourced notes) returns `403 forbidden`. Permanent local-note purge also requires the object-specific confirmation header documented above. `POST /api/v1/documents` accepts `notebook_id` (defaults to the "Notes" notebook), and document responses include `notebook_id`.
 
 Search notebooks are notebook rows with a `query` (see `NOTEBOOKS_AND_SEARCH_NOTEBOOKS.md`); deleting one never deletes notes. `notebook:` and other query operators are defined in `SEARCH_QUERY_LANGUAGE.md`; search endpoints accept the user query language and must support cursor-based incremental results so clients can lazily populate large views like "All notes".
 

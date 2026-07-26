@@ -39,7 +39,7 @@ Exit `0` when all required checks pass, `1` otherwise. Note that doctor *creates
 
 ```text
 ok    config           config/config.example.yaml
-ok    database         ./data/notes.sqlite (schema version 7)
+ok    database         ./data/notes.sqlite (schema version 8)
 info  web ui           web/dist missing here; run `make web` or serve API-only
 doctor: required checks passed
 ```
@@ -131,3 +131,24 @@ References held by trashed notes still count, so the unreferenced list is safe
 input for the later retention-aware garbage collector. The perceptual section
 is empty by default because Notrios ships no perceptual algorithm; an installed
 hook may add review-only policy matches and near-duplicate suggestions.
+
+## gc
+
+```sh
+notriosctl gc [--config config.yaml] [--db path] [--asset-store path] [--dry-run | --apply]
+```
+
+Plans retention-aware resource garbage collection. With no mode flag—or with
+`--dry-run`—it only reports:
+
+- `eligible`: unreferenced logical resources whose configured retention window
+  and retention gate are satisfied;
+- `retained`: unreferenced resources kept, with the exact reason and eligible
+  timestamp;
+- `removed`: empty during a dry run;
+- physical blob/byte totals and warnings.
+
+Only `--apply` deletes. Apply rechecks every reference inside the SQLite
+transaction; referenced resources, including resources referenced only by
+notes in Trash, are never eligible. A shared physical blob remains until its
+last logical resource is removed.

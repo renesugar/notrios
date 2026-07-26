@@ -323,6 +323,67 @@ type PerceptualHashReport struct {
 	NearDuplicates []NearDuplicateReview    `json:"near_duplicates"`
 }
 
+// GarbageCollectionPolicy is the time-based portion of H6 eligibility. A
+// future sync-aware gate adds peer acknowledgement requirements without
+// weakening these minimum local retention windows.
+type GarbageCollectionPolicy struct {
+	UnreferencedFor   time.Duration
+	PurgedResourceFor time.Duration
+}
+
+// GarbageCollectionRequest plans or applies resource collection. Apply is
+// false by default. Now exists for deterministic tests and reports; zero means
+// the current UTC time. Gate defaults to LocalRetentionGate.
+type GarbageCollectionRequest struct {
+	Policy GarbageCollectionPolicy
+	Apply  bool
+	Now    time.Time
+	Gate   RetentionGate
+}
+
+// RetentionGate is the sync-aware extension point. v0.3's local gate allows a
+// time-expired unreferenced resource; v0.7 can additionally require peer
+// acknowledgement watermarks before returning true.
+type RetentionGate interface {
+	CanCollect(ctx context.Context, candidate GarbageCollectionCandidate) (allowed bool, reason string, err error)
+}
+
+type LocalRetentionGate struct{}
+
+func (LocalRetentionGate) CanCollect(_ context.Context, _ GarbageCollectionCandidate) (bool, string, error) {
+	return true, "local_retention_satisfied", nil
+}
+
+type GarbageCollectionPolicySummary struct {
+	UnreferencedSeconds   int64  `json:"unreferenced_seconds"`
+	PurgedResourceSeconds int64  `json:"purged_resource_seconds"`
+	Gate                  string `json:"gate"`
+}
+
+// GarbageCollectionCandidate is one logical resource with no references.
+// Removing it may or may not free its shared physical blob.
+type GarbageCollectionCandidate struct {
+	Resource           Resource  `json:"resource"`
+	UnreferencedAt     time.Time `json:"unreferenced_at"`
+	UnreferencedReason string    `json:"unreferenced_reason"`
+	RetentionSeconds   int64     `json:"retention_seconds"`
+	EligibleAt         time.Time `json:"eligible_at"`
+	Decision           string    `json:"decision"`
+}
+
+type GarbageCollectionReport struct {
+	DryRun                  bool                           `json:"dry_run"`
+	AsOf                    time.Time                      `json:"as_of"`
+	Policy                  GarbageCollectionPolicySummary `json:"policy"`
+	Eligible                []GarbageCollectionCandidate   `json:"eligible"`
+	Retained                []GarbageCollectionCandidate   `json:"retained"`
+	Removed                 []GarbageCollectionCandidate   `json:"removed"`
+	ReferencedResourceCount int                            `json:"referenced_resource_count"`
+	BlobsRemoved            int                            `json:"blobs_removed"`
+	BytesRemoved            int64                          `json:"bytes_removed"`
+	Warnings                []string                       `json:"warnings"`
+}
+
 // DocumentLink stores one parsed link edge from a Markdown document. It preserves
 // source syntax and resolution details so the UI, exporters, MCP tools, and
 // future graph backends can make policy-aware choices.
@@ -477,6 +538,7 @@ type Store interface {
 	AttachDocumentResource(ctx context.Context, req AttachResourceRequest) (ResourceReference, error)
 	DetachDocumentResource(ctx context.Context, documentID, resourceID string) error
 	ResourceReport(ctx context.Context) (ResourceReport, error)
+	GarbageCollect(ctx context.Context, req GarbageCollectionRequest) (GarbageCollectionReport, error)
 	ListDocumentLinks(ctx context.Context, documentID, direction string) (DocumentLinkPage, error)
 	RebuildDocumentLinks(ctx context.Context, documentID string) error
 	Graph(ctx context.Context, req GraphRequest) (GraphResponse, error)

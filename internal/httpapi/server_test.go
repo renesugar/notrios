@@ -56,7 +56,7 @@ func TestStatusReportsConfigurationAndSchema(t *testing.T) {
 	if err := json.NewDecoder(rr.Body).Decode(&got); err != nil {
 		t.Fatalf("decode status: %v", err)
 	}
-	if got.Status != "running" || got.DatabaseInfo.Driver != "sqlite" || got.DatabaseInfo.SchemaVersion != 7 {
+	if got.Status != "running" || got.DatabaseInfo.Driver != "sqlite" || got.DatabaseInfo.SchemaVersion != 8 {
 		t.Fatalf("unexpected database status: %+v", got)
 	}
 	if got.ConfigPath != "config/test.yaml" || got.Storage.AssetStore != "/tmp/notes-test-assets" {
@@ -410,6 +410,13 @@ func TestResourceHTTPUploadAttachDownloadAndSafeDelete(t *testing.T) {
 	deleteReferenced := httptest.NewRequest(http.MethodDelete, "/api/v1/resources/"+res.ID, nil)
 	deleteReferencedRR := httptest.NewRecorder()
 	s.ServeHTTP(deleteReferencedRR, deleteReferenced)
+	if deleteReferencedRR.Code != http.StatusPreconditionRequired {
+		t.Fatalf("expected confirmation requirement, got %d", deleteReferencedRR.Code)
+	}
+	deleteReferenced = httptest.NewRequest(http.MethodDelete, "/api/v1/resources/"+res.ID, nil)
+	deleteReferenced.Header.Set("X-Notrios-Confirmation", "delete-resource:"+res.ID)
+	deleteReferencedRR = httptest.NewRecorder()
+	s.ServeHTTP(deleteReferencedRR, deleteReferenced)
 	if deleteReferencedRR.Code != http.StatusConflict {
 		t.Fatalf("expected conflict deleting referenced resource, got %d", deleteReferencedRR.Code)
 	}
@@ -421,6 +428,7 @@ func TestResourceHTTPUploadAttachDownloadAndSafeDelete(t *testing.T) {
 		t.Fatalf("detach status=%d body=%s", detachRR.Code, detachRR.Body.String())
 	}
 	deleteFree := httptest.NewRequest(http.MethodDelete, "/api/v1/resources/"+res.ID, nil)
+	deleteFree.Header.Set("X-Notrios-Confirmation", "delete-resource:"+res.ID)
 	deleteFreeRR := httptest.NewRecorder()
 	s.ServeHTTP(deleteFreeRR, deleteFree)
 	if deleteFreeRR.Code != http.StatusNoContent {
@@ -476,6 +484,46 @@ func TestResourceReportHTTP(t *testing.T) {
 	}
 	if report.Perceptual.HookEnabled {
 		t.Fatalf("default hook must be inert: %+v", report.Perceptual)
+	}
+}
+
+func TestGarbageCollectionReportHTTPIsReadOnly(t *testing.T) {
+	ctx := context.Background()
+	st, err := store.OpenSQLiteWithAssetStore(":memory:", t.TempDir())
+	if err != nil {
+		t.Fatalf("OpenSQLiteWithAssetStore: %v", err)
+	}
+	t.Cleanup(func() { _ = st.Close() })
+	if err := st.Bootstrap(ctx); err != nil {
+		t.Fatalf("Bootstrap: %v", err)
+	}
+	resource, err := st.CreateResource(ctx, store.CreateResourceRequest{
+		PreferredID: "res_gc_http", Filename: "gc.txt", Content: strings.NewReader("gc report"),
+	})
+	if err != nil {
+		t.Fatalf("CreateResource: %v", err)
+	}
+	cfg := config.Default()
+	cfg.Retention.UnreferencedResourceDays = 0
+	cfg.Retention.PurgedResourceDays = 0
+	s := NewServerWithOptions(ServerOptions{Store: st, Config: cfg})
+
+	request := httptest.NewRequest(http.MethodGet, "/api/v1/admin/gc/report", nil)
+	response := httptest.NewRecorder()
+	s.ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("GC report status=%d body=%s", response.Code, response.Body.String())
+	}
+	var report api.GarbageCollectionReport
+	if err := json.NewDecoder(response.Body).Decode(&report); err != nil {
+		t.Fatalf("decode GC report: %v", err)
+	}
+	if !report.DryRun || len(report.Eligible) != 1 || report.Eligible[0].Resource.ID != resource.ID ||
+		len(report.Removed) != 0 || report.Policy.Gate != "local" {
+		t.Fatalf("unexpected GC report: %+v", report)
+	}
+	if _, err := st.GetResource(ctx, resource.ID); err != nil {
+		t.Fatalf("REST report must not delete: %v", err)
 	}
 }
 

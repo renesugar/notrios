@@ -54,6 +54,8 @@ CREATE TABLE IF NOT EXISTS resources (
     filename TEXT,
     mime_type TEXT NOT NULL,
     metadata_json TEXT NOT NULL DEFAULT '{}',
+    unreferenced_at TEXT,
+    unreferenced_reason TEXT NOT NULL DEFAULT '',
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -232,3 +234,8 @@ CREATE TABLE IF NOT EXISTS resource_hashes (
 CREATE INDEX IF NOT EXISTS resource_hashes_hash_idx ON resource_hashes(algo, hash);
 
 PRAGMA user_version = 7;
+
+-- Schema v8: retention-aware resource garbage collection (v0.3 task H6).
+-- Upgrade backfill and the index are applied by ensureSchemaV8 so existing
+-- databases and fresh databases share one idempotent path.
+PRAGMA user_version = 8;

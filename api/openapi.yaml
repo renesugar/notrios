@@ -393,12 +393,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/Resource'
     delete:
-      summary: Delete or mark resource for garbage collection
+      summary: Immediately delete one unreferenced resource with explicit confirmation
       parameters:
         - $ref: '#/components/parameters/ResourceID'
+        - name: X-Notrios-Confirmation
+          in: header
+          required: true
+          description: Must equal delete-resource:{resource_id}.
+          schema: { type: string }
       responses:
         '204': { description: Deleted when unreferenced }
         '409': { description: Resource is still referenced by at least one document }
+        '428': { description: Missing or incorrect explicit confirmation }
   /api/v1/resources/{resource_id}/content:
     get:
       summary: Download resource bytes
@@ -669,9 +675,15 @@ paths:
       summary: Permanently delete a trashed local note
       parameters:
         - { name: document_id, in: path, required: true, schema: { type: string } }
+        - name: X-Notrios-Confirmation
+          in: header
+          required: true
+          description: Must equal purge-document:{document_id}.
+          schema: { type: string }
       responses:
         '204': { description: Purged }
         '403': { description: Externally-sourced notes cannot be purged }
+        '428': { description: Missing or incorrect explicit confirmation }
   /api/v1/trash/{document_id}/restore:
     post:
       summary: Undelete a trashed note
@@ -679,6 +691,20 @@ paths:
         - { name: document_id, in: path, required: true, schema: { type: string } }
       responses:
         '200': { description: Restored document }
+  /api/v1/admin/gc/report:
+    get:
+      summary: Plan retention-aware resource garbage collection without deleting anything
+      description: >
+        Read-only administrative report using the configured retention windows
+        and local retention gate. There is intentionally no REST apply
+        endpoint; use notriosctl gc --apply for explicit local deletion.
+      responses:
+        '200':
+          description: Garbage collection dry-run report
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GarbageCollectionReport'
   /api/v1/graph:
     post:
       summary: Return a local document/resource graph
@@ -1121,6 +1147,47 @@ components:
           items: { type: string }
         distance: { type: number }
         reason: { type: string }
+    GarbageCollectionReport:
+      type: object
+      required: [dry_run, as_of, policy, eligible, retained, removed, referenced_resource_count, blobs_removed, bytes_removed, warnings]
+      properties:
+        dry_run: { type: boolean }
+        as_of: { type: string, format: date-time }
+        policy: { $ref: '#/components/schemas/GarbageCollectionPolicy' }
+        eligible:
+          type: array
+          items: { $ref: '#/components/schemas/GarbageCollectionCandidate' }
+        retained:
+          type: array
+          items: { $ref: '#/components/schemas/GarbageCollectionCandidate' }
+        removed:
+          type: array
+          items: { $ref: '#/components/schemas/GarbageCollectionCandidate' }
+        referenced_resource_count: { type: integer }
+        blobs_removed: { type: integer }
+        bytes_removed: { type: integer }
+        warnings:
+          type: array
+          items: { type: string }
+    GarbageCollectionPolicy:
+      type: object
+      required: [unreferenced_seconds, purged_resource_seconds, gate]
+      properties:
+        unreferenced_seconds: { type: integer }
+        purged_resource_seconds: { type: integer }
+        gate: { type: string, enum: [local, custom] }
+    GarbageCollectionCandidate:
+      type: object
+      required: [resource, unreferenced_at, unreferenced_reason, retention_seconds, decision]
+      properties:
+        resource: { $ref: '#/components/schemas/Resource' }
+        unreferenced_at: { type: string, format: date-time }
+        unreferenced_reason:
+          type: string
+          enum: [created_unattached, detached, purged_document, legacy_unreferenced, unknown]
+        retention_seconds: { type: integer }
+        eligible_at: { type: string, format: date-time }
+        decision: { type: string }
     ResourceReference:
       type: object
       required: [document_id, resource_id, relation_type]

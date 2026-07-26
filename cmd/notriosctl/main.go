@@ -44,6 +44,8 @@ func main() {
 		runLocalize(os.Args[2:])
 	case "resources":
 		runResources(os.Args[2:])
+	case "gc":
+		runGarbageCollection(os.Args[2:])
 	case "help", "-h", "--help":
 		printHelp()
 	default:
@@ -294,6 +296,62 @@ func runResources(args []string) {
 	printJSON(report)
 }
 
+func runGarbageCollection(args []string) {
+	fs := flag.NewFlagSet("notriosctl gc", flag.ExitOnError)
+	configPath := fs.String("config", "", "optional config file")
+	dbPath := fs.String("db", "", "SQLite database path override")
+	assetStore := fs.String("asset-store", "", "asset store directory override")
+	dryRun := fs.Bool("dry-run", false, "explicitly plan and report without deleting (also the default)")
+	apply := fs.Bool("apply", false, "delete only retention-expired, currently unreferenced resources")
+	if err := fs.Parse(args); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(2)
+	}
+	if fs.NArg() != 0 || (*dryRun && *apply) {
+		fmt.Fprintln(os.Stderr, "usage: notriosctl gc [--config config.yaml] [--db path] [--asset-store path] [--dry-run | --apply]")
+		fs.PrintDefaults()
+		os.Exit(2)
+	}
+	cfg, err := config.Load(*configPath)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	if *dbPath != "" {
+		cfg.Data.DatabasePath = *dbPath
+	}
+	if *assetStore != "" {
+		cfg.Data.AssetStore = *assetStore
+	}
+	if err := config.EnsureDirectories(cfg); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	st, err := store.OpenSQLiteWithAssetStore(cfg.Data.DatabasePath, cfg.Data.AssetStore)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	defer st.Close()
+	ctx := context.Background()
+	if err := st.Bootstrap(ctx); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	report, err := st.GarbageCollect(ctx, store.GarbageCollectionRequest{
+		Policy: store.GarbageCollectionPolicy{
+			UnreferencedFor:   cfg.Retention.UnreferencedDuration(),
+			PurgedResourceFor: cfg.Retention.PurgedResourceDuration(),
+		},
+		Apply: *apply,
+	})
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	printJSON(report)
+}
+
 // localizeImportedNotes runs the shared localize engine over the notes an
 // import touched (--localize-media). Failures are reported per note and do
 // not fail the completed import.
@@ -334,6 +392,8 @@ Usage:
                                                  # download policy-allowed remote media and rewrite the note to resource:// URIs
   notriosctl resources report [--config config.yaml] [--db ...] [--asset-store ...]
                                                  # exact duplicates, unreferenced blobs, notebook usage, and review-only perceptual signals
+  notriosctl gc [--config config.yaml] [--db ...] [--asset-store ...] [--dry-run | --apply]
+                                                 # retention-aware resource GC; dry-run is the default
 
 Future commands:
   notriosctl publish quartz --profile <name>

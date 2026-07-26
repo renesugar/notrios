@@ -39,6 +39,10 @@ remote_media:
     video: "200MB"
     pdf: "100MB"
 
+retention:
+  unreferenced_resource_days: 30  # unattached uploads and explicitly detached resources
+  purged_resource_days: 90        # resources orphaned by permanent note purge
+
 search_sidecar:
   enabled: false
   binary: "recollindex"

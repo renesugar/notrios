@@ -117,6 +117,7 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("GET /api/v1/resources/{resource_id}", s.handleResource)
 	s.mux.HandleFunc("DELETE /api/v1/resources/{resource_id}", s.handleResource)
 	s.mux.HandleFunc("GET /api/v1/resources/{resource_id}/content", s.handleResourceContent)
+	s.mux.HandleFunc("GET /api/v1/admin/gc/report", s.handleGarbageCollectionReport)
 
 	s.mux.HandleFunc("GET /api/v1/notebooks", s.handleListNotebooks)
 	s.mux.HandleFunc("GET /api/v1/notebooks/tree", s.handleNotebookTree)
@@ -208,20 +209,24 @@ func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
 			SearchSidecarIndexDir: s.config.SearchSidecar.IndexDir,
 		},
 		Capabilities: map[string]bool{
-			"documents.create": true,
-			"documents.read":   true,
-			"documents.update": s.store != nil,
-			"documents.delete": s.store != nil,
-			"search.fts5":      s.store != nil,
-			"resources":        s.store != nil,
-			"links":            s.store != nil,
-			"mcp":              s.store != nil && s.config.MCP.Enabled,
-			"search_sidecar":   s.config.SearchSidecar.Enabled,
+			"documents.create":    true,
+			"documents.read":      true,
+			"documents.update":    s.store != nil,
+			"documents.delete":    s.store != nil,
+			"search.fts5":         s.store != nil,
+			"resources":           s.store != nil,
+			"resources.report":    s.store != nil,
+			"resources.gc_report": s.store != nil,
+			"links":               s.store != nil,
+			"mcp":                 s.store != nil && s.config.MCP.Enabled,
+			"search_sidecar":      s.config.SearchSidecar.Enabled,
 		},
 		Limits: map[string]int{
-			"search_default_limit": s.config.Search.DefaultLimit,
-			"search_max_limit":     s.config.Search.MaxLimit,
-			"search_max_offset":    s.config.Search.MaxOffset,
+			"search_default_limit":                 s.config.Search.DefaultLimit,
+			"search_max_limit":                     s.config.Search.MaxLimit,
+			"search_max_offset":                    s.config.Search.MaxOffset,
+			"retention_unreferenced_resource_days": s.config.Retention.UnreferencedResourceDays,
+			"retention_purged_resource_days":       s.config.Retention.PurgedResourceDays,
 		},
 		MediaPolicy: s.mediaPolicyStatus(),
 	})
@@ -830,6 +835,9 @@ func (s *Server) handleResourceHead(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleResource(w http.ResponseWriter, r *http.Request) {
 	resourceID := r.PathValue("resource_id")
 	if r.Method == http.MethodDelete {
+		if !requireConfirmation(w, r, "delete-resource:"+resourceID) {
+			return
+		}
 		if s.store != nil {
 			if err := s.store.DeleteResource(r.Context(), resourceID); writeStoreError(w, err, "resource_delete_failed") {
 				return
@@ -847,6 +855,22 @@ func (s *Server) handleResource(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, toAPIResource(res))
+}
+
+func (s *Server) handleGarbageCollectionReport(w http.ResponseWriter, r *http.Request) {
+	if !s.requireStore(w) {
+		return
+	}
+	report, err := s.store.GarbageCollect(r.Context(), store.GarbageCollectionRequest{
+		Policy: store.GarbageCollectionPolicy{
+			UnreferencedFor:   s.config.Retention.UnreferencedDuration(),
+			PurgedResourceFor: s.config.Retention.PurgedResourceDuration(),
+		},
+	})
+	if writeStoreError(w, err, "gc_report_failed") {
+		return
+	}
+	writeJSON(w, http.StatusOK, toAPIGarbageCollectionReport(report))
 }
 
 func (s *Server) handleResourceContent(w http.ResponseWriter, r *http.Request) {
@@ -1145,6 +1169,54 @@ func toAPIResourceReport(report store.ResourceReport) api.ResourceReport {
 		})
 	}
 	return out
+}
+
+func toAPIGarbageCollectionReport(report store.GarbageCollectionReport) api.GarbageCollectionReport {
+	out := api.GarbageCollectionReport{
+		DryRun: report.DryRun,
+		AsOf:   report.AsOf.Format("2006-01-02T15:04:05Z07:00"),
+		Policy: api.GarbageCollectionPolicy{
+			UnreferencedSeconds:   report.Policy.UnreferencedSeconds,
+			PurgedResourceSeconds: report.Policy.PurgedResourceSeconds,
+			Gate:                  report.Policy.Gate,
+		},
+		Eligible:                toAPIGarbageCollectionCandidates(report.Eligible),
+		Retained:                toAPIGarbageCollectionCandidates(report.Retained),
+		Removed:                 toAPIGarbageCollectionCandidates(report.Removed),
+		ReferencedResourceCount: report.ReferencedResourceCount,
+		BlobsRemoved:            report.BlobsRemoved,
+		BytesRemoved:            report.BytesRemoved,
+		Warnings:                append([]string(nil), report.Warnings...),
+	}
+	return out
+}
+
+func toAPIGarbageCollectionCandidates(candidates []store.GarbageCollectionCandidate) []api.GarbageCollectionCandidate {
+	out := make([]api.GarbageCollectionCandidate, 0, len(candidates))
+	for _, candidate := range candidates {
+		eligibleAt := ""
+		if !candidate.EligibleAt.IsZero() {
+			eligibleAt = candidate.EligibleAt.Format("2006-01-02T15:04:05Z07:00")
+		}
+		out = append(out, api.GarbageCollectionCandidate{
+			Resource:           toAPIResource(candidate.Resource),
+			UnreferencedAt:     candidate.UnreferencedAt.Format("2006-01-02T15:04:05Z07:00"),
+			UnreferencedReason: candidate.UnreferencedReason,
+			RetentionSeconds:   candidate.RetentionSeconds,
+			EligibleAt:         eligibleAt,
+			Decision:           candidate.Decision,
+		})
+	}
+	return out
+}
+
+func requireConfirmation(w http.ResponseWriter, r *http.Request, expected string) bool {
+	if strings.TrimSpace(r.Header.Get("X-Notrios-Confirmation")) == expected {
+		return true
+	}
+	writeError(w, http.StatusPreconditionRequired, "confirmation_required",
+		"set X-Notrios-Confirmation to "+expected)
+	return false
 }
 
 func toAPILinkPage(page store.DocumentLinkPage) api.DocumentLinkPage {

@@ -1,6 +1,6 @@
 # Plan: v0.3 — Import, resource, and media hardening
 
-Status: **active** (drafted 2026-07-16 from `ROADMAP.md`; supersedes the archived draft `plans/v0.2/001-import-resource-media-hardening.md`). The completed v0.2 redesign plan is archived under `plans/v0.2/`. H1–H5 are complete (`plans/v0.3/`); H6 is next.
+Status: **active** (drafted 2026-07-16 from `ROADMAP.md`; supersedes the archived draft `plans/v0.2/001-import-resource-media-hardening.md`). The completed v0.2 redesign plan is archived under `plans/v0.2/`. H1–H6 are complete (`plans/v0.3/`); H7 is next.
 
 ## Goal
 
@@ -63,7 +63,7 @@ Working state: a note with remote images can be safely converted to local resour
 
 Working state: users can inspect duplicate and unreferenced resources; perceptual hooks are wired but inert by default.
 
-### H6. Resource garbage collection and retention
+### H6. Resource garbage collection and retention — COMPLETED (see `plans/v0.3/006-resource-garbage-collection-retention.md`)
 
 - Retention policy config: how long unreferenced blobs and resources of purged notes are kept.
 - `notriosctl gc --dry-run` (default) reports exactly what would be removed and why; `--apply` deletes only unreferenced, retention-expired blobs/resources. Referenced resources are never eligible.

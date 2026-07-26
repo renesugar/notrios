@@ -122,9 +122,24 @@ curl -sOJ 'http://127.0.0.1:8080/api/v1/resources/'$RES'/content?download=1'
 # Read-only exact duplicate, unreferenced blob, notebook usage, and optional
 # perceptual review report
 curl -s http://127.0.0.1:8080/api/v1/resources/reports/reference | jq
+
+# Retention-aware GC plan (always read-only over REST)
+curl -s http://127.0.0.1:8080/api/v1/admin/gc/report | jq
 ```
 
 Bytes are stored content-addressed (identical uploads share storage). Reference the resource in Markdown as `![chart](resource://default/resources/$RES)` — the UI renders and downloads through the same endpoints. Deleting a resource that notes still reference is refused. Perceptual report entries are suggestions only; no perceptual algorithm ships by default.
+
+Immediate deletion of one unreferenced resource requires:
+
+```sh
+curl -s -X DELETE http://127.0.0.1:8080/api/v1/resources/$RES \
+  -H "X-Notrios-Confirmation: delete-resource:$RES"
+```
+
+Permanent purge of a local note in Trash similarly requires
+`X-Notrios-Confirmation: purge-document:$DOC`. Missing or incorrect
+confirmation returns HTTP 428. Garbage-collection apply is intentionally CLI
+only (`notriosctl gc --apply`).
 
 ## Links, graph, revisions
 

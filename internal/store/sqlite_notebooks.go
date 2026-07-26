@@ -790,6 +790,15 @@ func (s *SQLiteStore) PurgeDocument(ctx context.Context, id string) error {
 			_ = s.execLocked("ROLLBACK")
 		}
 	}()
+	if err := s.execPreparedLocked(`UPDATE resources
+		SET unreferenced_at = CURRENT_TIMESTAMP, unreferenced_reason = 'purged_document'
+		WHERE id IN (SELECT resource_id FROM document_resource_refs WHERE document_id = ?)
+		  AND NOT EXISTS (
+			SELECT 1 FROM document_resource_refs other
+			WHERE other.resource_id = resources.id AND other.document_id <> ?
+		  )`, id, id); err != nil {
+		return err
+	}
 	statements := []string{
 		`DELETE FROM note_tags WHERE document_id = ?`,
 		`DELETE FROM document_resource_refs WHERE document_id = ?`,

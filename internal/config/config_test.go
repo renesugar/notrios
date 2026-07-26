@@ -17,6 +17,9 @@ func TestDefaultConfig(t *testing.T) {
 	if !cfg.MCP.Enabled {
 		t.Fatalf("MCP should be enabled by default for documented API parity")
 	}
+	if cfg.Retention.UnreferencedResourceDays != 30 || cfg.Retention.PurgedResourceDays != 90 {
+		t.Fatalf("unexpected retention defaults: %+v", cfg.Retention)
+	}
 }
 
 func TestLoadConfigOverride(t *testing.T) {
@@ -47,6 +50,10 @@ search_sidecar:
   enabled: true
   binary: "recollindex-dev"
   index_dir: "` + filepath.ToSlash(filepath.Join(dir, "state", "search-index")) + `"
+
+retention:
+  unreferenced_resource_days: 7
+  purged_resource_days: 45
 `
 	if err := os.WriteFile(path, []byte(contents), 0o644); err != nil {
 		t.Fatalf("write config: %v", err)
@@ -69,6 +76,28 @@ search_sidecar:
 	}
 	if !cfg.SearchSidecar.Enabled || cfg.SearchSidecar.Binary != "recollindex-dev" {
 		t.Fatalf("search sidecar config not loaded: %+v", cfg.SearchSidecar)
+	}
+	if cfg.Retention.UnreferencedResourceDays != 7 || cfg.Retention.PurgedResourceDays != 45 {
+		t.Fatalf("retention config not loaded: %+v", cfg.Retention)
+	}
+}
+
+func TestLoadRetentionInvalidValuesKeepSafeDefaults(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "notes.yaml")
+	contents := `retention:
+  unreferenced_resource_days: -1
+  purged_resource_days: "later"
+`
+	if err := os.WriteFile(path, []byte(contents), 0o644); err != nil {
+		t.Fatalf("write config: %v", err)
+	}
+	cfg, err := Load(path)
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if cfg.Retention.UnreferencedResourceDays != 30 || cfg.Retention.PurgedResourceDays != 90 {
+		t.Fatalf("invalid retention values must keep defaults: %+v", cfg.Retention)
 	}
 }
 

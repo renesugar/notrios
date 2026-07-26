@@ -1,6 +1,6 @@
 # Security Review — Current Local Product and Planned Remote Surfaces
 
-This review reflects the repository after v0.3 H5. Notrios is local-first but
+This review reflects the repository after v0.3 H6. Notrios is local-first but
 its REST/MCP listener, importers, preview, downloaded media, future archive
 files, and future sync transports are security boundaries.
 
@@ -24,10 +24,16 @@ files, and future sync transports are security boundaries.
   deduplication identity; the optional perceptual hook ships disabled, accepts
   no filesystem path from callers, and can only emit validated review
   suggestions. Perceptual `block` rules are rejected.
+- Resource GC starts its clock when the last reference disappears, distinguishes
+  purged-note recovery windows, defaults to dry-run, and rechecks reference
+  state transactionally on explicit CLI apply. The REST GC endpoint cannot
+  apply. Immediate resource deletion and permanent note purge require
+  object-specific confirmation headers.
 
-Remaining: generic upload limits, H6 retention/GC, and optional
-malware-scanner integration. Perceptual similarity may suggest review but must
-never silently identify or deduplicate content.
+Remaining: generic upload limits and optional malware-scanner integration.
+Perceptual similarity may suggest review but must never silently identify or
+deduplicate content. v0.7 must replace the local retention gate with
+peer-acknowledgement-aware eligibility.
 
 ### Markdown and WebView
 

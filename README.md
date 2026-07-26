@@ -21,7 +21,7 @@ The v0.1 MVP and the v0.2 Notrios redesign are complete — see [`PLAN.md`](PLAN
 - **Import sources:** Joplin RAW, Obsidian vaults, Twitter/X archives (thread-preserving), ChatGPT exports, Claude exports.
 - **Resource store:** content-addressed assets, exact-hash/reference reports,
   and optional review-only perceptual-hash hooks (no algorithm ships by
-  default).
+  default), with dry-run-first retention-aware garbage collection.
 - **Publishing/docs:** Quartz-compatible curated subset publishing planned; project documentation ships as a GitHub Pages site with PageFind search (`DOCS_SITE.md`).
 
 ## Documentation

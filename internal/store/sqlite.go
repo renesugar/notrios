@@ -141,6 +141,9 @@ func (s *SQLiteStore) Bootstrap(ctx context.Context) error {
 	if err := s.ensureSchemaV7(ctx); err != nil {
 		return err
 	}
+	if err := s.ensureSchemaV8(ctx); err != nil {
+		return err
+	}
 	if err := s.Exec(ctx, `INSERT OR IGNORE INTO collections(id, name, description) VALUES('default', 'Default', 'Managed notes created by the companion service.');`); err != nil {
 		return err
 	}
@@ -237,6 +240,34 @@ func (s *SQLiteStore) ensureSchemaV7(ctx context.Context) error {
 		`CREATE INDEX IF NOT EXISTS media_policy_decisions_document_idx ON media_policy_decisions(document_id);`,
 		`CREATE INDEX IF NOT EXISTS media_policy_decisions_url_idx ON media_policy_decisions(original_url);`,
 		`PRAGMA user_version = 7;`,
+	}
+	for _, statement := range statements {
+		if err := s.Exec(ctx, statement); err != nil {
+			if strings.Contains(err.Error(), "duplicate column name") {
+				continue
+			}
+			return err
+		}
+	}
+	return nil
+}
+
+// ensureSchemaV8 adds retention state for logical resources. Existing
+// unreferenced resources start their retention clock at their original
+// creation time; referenced resources remain explicitly ineligible.
+func (s *SQLiteStore) ensureSchemaV8(ctx context.Context) error {
+	statements := []string{
+		`ALTER TABLE resources ADD COLUMN unreferenced_at TEXT;`,
+		`ALTER TABLE resources ADD COLUMN unreferenced_reason TEXT NOT NULL DEFAULT '';`,
+		`CREATE INDEX IF NOT EXISTS resources_unreferenced_idx ON resources(unreferenced_at);`,
+		`UPDATE resources
+		 SET unreferenced_at = COALESCE(unreferenced_at, created_at),
+		     unreferenced_reason = CASE WHEN unreferenced_reason = '' THEN 'legacy_unreferenced' ELSE unreferenced_reason END
+		 WHERE NOT EXISTS (SELECT 1 FROM document_resource_refs rr WHERE rr.resource_id = resources.id);`,
+		`UPDATE resources
+		 SET unreferenced_at = NULL, unreferenced_reason = ''
+		 WHERE EXISTS (SELECT 1 FROM document_resource_refs rr WHERE rr.resource_id = resources.id);`,
+		`PRAGMA user_version = 8;`,
 	}
 	for _, statement := range statements {
 		if err := s.Exec(ctx, statement); err != nil {
@@ -807,7 +838,8 @@ func (s *SQLiteStore) CreateResource(ctx context.Context, req CreateResourceRequ
 			return Resource{}, err
 		}
 	}
-	if err := s.execPreparedLocked(`INSERT INTO resources(id, collection_id, blob_sha256, filename, mime_type) VALUES(?, ?, ?, ?, ?)`, resourceID, req.CollectionID, blob.SHA256, req.Filename, mimeType); err != nil {
+	if err := s.execPreparedLocked(`INSERT INTO resources(id, collection_id, blob_sha256, filename, mime_type, unreferenced_at, unreferenced_reason)
+		VALUES(?, ?, ?, ?, ?, CURRENT_TIMESTAMP, 'created_unattached')`, resourceID, req.CollectionID, blob.SHA256, req.Filename, mimeType); err != nil {
 		return Resource{}, err
 	}
 	if err := s.execLocked("COMMIT"); err != nil {
@@ -1167,6 +1199,9 @@ func (s *SQLiteStore) AttachDocumentResource(ctx context.Context, req AttachReso
 	if err := s.execPreparedLocked(`INSERT OR REPLACE INTO document_resource_refs(document_id, resource_id, relation_type, ordinal, anchor_json) VALUES(?, ?, ?, ?, ?)`, req.DocumentID, req.ResourceID, req.RelationType, strconv.Itoa(req.Ordinal), req.AnchorJSON); err != nil {
 		return ResourceReference{}, err
 	}
+	if err := s.execPreparedLocked(`UPDATE resources SET unreferenced_at = NULL, unreferenced_reason = '' WHERE id = ?`, req.ResourceID); err != nil {
+		return ResourceReference{}, err
+	}
 	return ResourceReference{DocumentID: req.DocumentID, ResourceID: req.ResourceID, Resource: res, RelationType: req.RelationType, Ordinal: req.Ordinal, AnchorJSON: req.AnchorJSON}, nil
 }
 
@@ -1185,9 +1220,33 @@ func (s *SQLiteStore) DetachDocumentResource(ctx context.Context, documentID, re
 	if _, err := s.getResourceLocked(resourceID); err != nil {
 		return err
 	}
+	if err := s.execLocked("BEGIN IMMEDIATE"); err != nil {
+		return err
+	}
+	committed := false
+	defer func() {
+		if !committed {
+			_ = s.execLocked("ROLLBACK")
+		}
+	}()
 	if err := s.execPreparedLocked(`DELETE FROM document_resource_refs WHERE document_id = ? AND resource_id = ?`, documentID, resourceID); err != nil {
 		return err
 	}
+	refCount, err := s.countLocked(`SELECT COUNT(*) FROM document_resource_refs WHERE resource_id = ?`, resourceID)
+	if err != nil {
+		return err
+	}
+	if refCount == 0 {
+		if err := s.execPreparedLocked(`UPDATE resources
+			SET unreferenced_at = CURRENT_TIMESTAMP, unreferenced_reason = 'detached'
+			WHERE id = ?`, resourceID); err != nil {
+			return err
+		}
+	}
+	if err := s.execLocked("COMMIT"); err != nil {
+		return err
+	}
+	committed = true
 	return nil
 }
 

@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // Config contains the runtime settings used by notriosd and notriosctl.
@@ -20,6 +21,7 @@ type Config struct {
 	MCP           MCPConfig           `json:"mcp"`
 	SearchSidecar SearchSidecarConfig `json:"search_sidecar"`
 	RemoteMedia   RemoteMediaConfig   `json:"remote_media"`
+	Retention     RetentionConfig     `json:"retention"`
 }
 
 type ServerConfig struct {
@@ -54,6 +56,33 @@ type SearchSidecarConfig struct {
 	Enabled  bool   `json:"enabled"`
 	Binary   string `json:"binary"`
 	IndexDir string `json:"index_dir"`
+}
+
+// RetentionConfig controls when unreferenced logical resources become
+// eligible for garbage collection. Resources orphaned by a permanent note
+// purge receive a separate, longer recovery window.
+type RetentionConfig struct {
+	UnreferencedResourceDays int `json:"unreferenced_resource_days"`
+	PurgedResourceDays       int `json:"purged_resource_days"`
+}
+
+func (c RetentionConfig) UnreferencedDuration() time.Duration {
+	return retentionDays(c.UnreferencedResourceDays)
+}
+
+func (c RetentionConfig) PurgedResourceDuration() time.Duration {
+	return retentionDays(c.PurgedResourceDays)
+}
+
+func retentionDays(days int) time.Duration {
+	if days <= 0 {
+		return 0
+	}
+	const maxDays = int((1<<63 - 1) / int64(24*time.Hour))
+	if days > maxDays {
+		days = maxDays
+	}
+	return time.Duration(days) * 24 * time.Hour
 }
 
 // RemoteMediaConfig is the remote-media localization policy
@@ -123,6 +152,10 @@ func Default() Config {
 				"pdf":   100 * 1024 * 1024,
 			},
 			QuarantineDir: "./data/quarantine",
+		},
+		Retention: RetentionConfig{
+			UnreferencedResourceDays: 30,
+			PurgedResourceDays:       90,
 		},
 	}
 }
@@ -277,6 +310,17 @@ func applyScalar(cfg *Config, section, subsection, key, value string) {
 		applySearchSidecar(&cfg.SearchSidecar, key, value)
 	case "remote_media":
 		applyRemoteMedia(&cfg.RemoteMedia, subsection, key, value)
+	case "retention":
+		applyRetention(&cfg.Retention, key, value)
+	}
+}
+
+func applyRetention(cfg *RetentionConfig, key, value string) {
+	switch key {
+	case "unreferenced_resource_days":
+		cfg.UnreferencedResourceDays = parseNonNegativeInt(value, cfg.UnreferencedResourceDays)
+	case "purged_resource_days":
+		cfg.PurgedResourceDays = parseNonNegativeInt(value, cfg.PurgedResourceDays)
 	}
 }
 
@@ -446,6 +490,14 @@ func applySearchSidecar(cfg *SearchSidecarConfig, key, value string) {
 func parseInt(value string, fallback int) int {
 	parsed, err := strconv.Atoi(value)
 	if err != nil {
+		return fallback
+	}
+	return parsed
+}
+
+func parseNonNegativeInt(value string, fallback int) int {
+	parsed, err := strconv.Atoi(value)
+	if err != nil || parsed < 0 {
 		return fallback
 	}
 	return parsed

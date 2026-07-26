@@ -17,7 +17,7 @@ This matrix keeps the long conversation compressed into implementation-sized fea
 | SQLite canonical storage | Implemented | Notrios service | Documents, resources, revisions, links, collections, import state. |
 | SQLite FTS5 immediate search | Implemented | Notrios service | Always-on baseline. |
 | Content-addressed blobs | Implemented | resource service | Exact-byte dedupe and H5 reference reports; H6 adds GC. |
-| Resource reference reporting/GC | Implemented/Active | resource service | H5 reports are implemented; H6 deletion remains dry-run first and sync-aware. |
+| Resource reference reporting/GC | Implemented | resource service | H5 reports plus H6 dry-run-first retention, transactional rechecks, and sync-aware gate. |
 | Document revisions and trash | Implemented | document service | v0.7 adds replicated death certificates/GC acknowledgements. |
 | Scalable keyset cursors | Active | search service | Current opaque `q1` cursor is offset-backed and capped at 100k; H7 replaces it. |
 | Recoll sidecar (replaces sist2) | Implemented/Active | adapter | Optional external process; H10 reconciliation/paging hardening. |

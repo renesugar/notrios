@@ -48,6 +48,8 @@ The authoritative, always-current example is `config/config.example.yaml` in the
 | `remote_media.blocked_domains` / `allowed_domains` / `review_domains` | empty | domain patterns (e.g. `*.wikimedia.org`) forcing block/allow/review |
 | `remote_media.max_bytes.<class>` | `image: 20MB`, `video: 200MB`, `pdf: 100MB` | download size caps, human-readable sizes accepted |
 | `remote_media.quarantine_dir` | `./data/quarantine` | staging area for fetched bytes before policy admission |
+| `retention.unreferenced_resource_days` | `30` | recovery window after an unattached upload or final explicit detach |
+| `retention.purged_resource_days` | `90` | longer recovery window for resources orphaned by permanent note purge |
 
 The `remote_media` policy is reported by `/api/v1/status` under `media_policy`. It drives the remote-media scan (`POST /api/v1/documents/{id}/remote-media/scan` — per-URL decisions, nothing downloaded) and localization (`POST …/remote-media/localize`, `notriosctl localize` — quarantine fetch with redirect-hop and connect-time address checks, size caps, MIME sniffing, exact hashes, then rewrite to `resource://` links in a new revision). Blocked domains and blocked schemes are never fetched; `review` means report-only until explicitly opted in.
 
@@ -58,9 +60,13 @@ unreferenced physical blobs, direct per-notebook usage, and optional
 review-only perceptual suggestions. Notrios ships no perceptual algorithm, so
 that hook is inert by default.
 
+Retention-aware deletion is separate: `GET /api/v1/admin/gc/report` is always
+read-only, while `notriosctl gc` is dry-run by default and requires `--apply`
+to delete. Resources referenced by any current or trashed note are protected.
+
 **Relative paths resolve against the working directory** of the process, not the config file's location. Use absolute paths for anything you run outside the repository checkout.
 
-**Automatic creation:** on startup the service creates every configured directory and, if absent, the database itself, applying schema migrations to older databases automatically. `/api/v1/status` reports the resolved paths, database state, schema version, capability flags, search limits, and the active remote-media policy.
+**Automatic creation:** on startup the service creates every configured directory and, if absent, the database itself, applying schema migrations to older databases automatically. The current schema is version 8. `/api/v1/status` reports the resolved paths, database state, schema version, capability flags, search limits, and the active remote-media policy.
 
 **The browser UI is loaded from `web/dist/` relative to the working directory** (build it with `make web`). Without it, `/` returns a `web_ui_not_built` error while the API and MCP endpoints work normally.
 

@@ -319,7 +319,11 @@ func (s *Server) handlePurgeDocument(w http.ResponseWriter, r *http.Request) {
 	if !s.requireStore(w) {
 		return
 	}
-	if writeStoreError(w, s.store.PurgeDocument(r.Context(), r.PathValue("document_id")), "trash_purge_failed") {
+	documentID := r.PathValue("document_id")
+	if !requireConfirmation(w, r, "purge-document:"+documentID) {
+		return
+	}
+	if writeStoreError(w, s.store.PurgeDocument(r.Context(), documentID), "trash_purge_failed") {
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)

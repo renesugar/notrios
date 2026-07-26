@@ -45,6 +45,10 @@ Minimum UI flows:
 - Perceptual-hook invariants: the default is inert, hashes are reused per exact
   blob/algorithm, `block` rules are rejected, and near matches never collapse
   distinct SHA-256 blobs.
+- Garbage-collection invariants: no reference (including Trash) may be crossed;
+  dry run never mutates; apply rechecks state; purged resources use their
+  longer window; shared blobs survive while any logical resource remains; a
+  custom retention gate can defer otherwise-expired candidates.
 - Search and open result.
 
 Layout-resize testing rule: never verify window-resize behavior through

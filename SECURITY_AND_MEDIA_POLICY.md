@@ -97,3 +97,29 @@ Reports are available from
 `GET /api/v1/resources/reports/reference` and
 `notriosctl resources report`. The report is advisory and read-only; H6 owns
 retention and deletion policy.
+
+## Resource retention and collection
+
+H6 garbage collection is conservative and dry-run first:
+
+- retention begins when the final reference disappears, not when bytes were
+  originally uploaded;
+- unattached/detached resources and resources orphaned by permanent note purge
+  have independently configured windows;
+- Trash references remain real references and therefore block collection;
+- every apply candidate is rechecked under an immediate SQLite transaction;
+- a logical resource may be removed while a shared exact blob remains for
+  another logical resource;
+- physical bytes and stored perceptual hashes are removed only after the final
+  logical resource for that exact blob is gone;
+- filesystem paths loaded from the database are constrained beneath the asset
+  root before unlinking.
+
+`store.RetentionGate` separates time eligibility from future synchronization
+safety. v0.3 uses the local gate; v0.7 must also require peer acknowledgement
+watermarks before allowing replicated resources, blobs, or tombstones to be
+collected.
+
+REST exposes only the dry-run report. CLI apply requires the explicit
+`--apply` flag. Existing immediate resource deletion and permanent note purge
+require object-specific `X-Notrios-Confirmation` headers.
