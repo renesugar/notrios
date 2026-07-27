@@ -67,7 +67,13 @@ Common mistakes:
 go run ./cmd/notriosctl import joplin-raw --dry-run "/path/to/joplin-export"
 ```
 
-The dry run parses everything and prints the JSON report with `"dry_run": true` and the would-be `notes_imported` count. No notes, resources, or notebooks are written (opening the store does create an empty database file with its schema if none existed).
+The dry run uses the same deterministic inventory and action planner as the
+real import. It reports note/resource/notebook/tag creates, updates, and skips,
+and writes a rename-on-conflict configuration to
+`<joplin-export>/import-config.json` (override with `--write-config`). No notes,
+resources, notebooks, tags, checkpoints, or source-bundle bytes are written
+(opening the store does create an empty database file with its schema if none
+existed).
 
 ### 3. Import
 
@@ -75,22 +81,54 @@ The dry run parses everything and prints the JSON report with `"dry_run": true` 
 go run ./cmd/notriosctl import joplin-raw \
   --db ./data/notes.sqlite \
   --asset-store ./data/assets \
+  --batch-size 100 \
+  --import-config "/path/to/joplin-export/import-config.json" \
   "/path/to/joplin-export"
 ```
+
+The import runs in bounded batches (1–500, default 100). A durable checkpoint
+records the inventory fingerprint, phase, next item, cumulative report, and
+per-item fingerprints. Re-run the same command after an interruption: it
+resumes the next durable batch if the source inventory is unchanged. If the
+export changed, a new plan begins and unchanged item fingerprints are skipped.
+Batch progress is printed to stderr; the final machine-readable report remains
+the only stdout output.
+
+Add `--preserve-source` when an exact archival copy matters. Notrios then
+stores every classified RAW item byte-for-byte under the source-bundle asset
+namespace and records its original relative path, SHA-256, byte size, unknown
+properties, and property order. This is separate from canonical note content
+and ordinary resource garbage collection.
 
 ### What the report means
 
 ```json
 {
-  "source_dir": "...", "collection_id": "default", "dry_run": false,
+  "source_dir": "...", "source_key": "...",
+  "collection_id": "default", "dry_run": false,
+  "resumed": false, "checkpoint_status": "completed",
+  "batches_completed": 8,
   "notes_seen": 120,          // note items found in the export
   "notes_imported": 118,      // created this run
   "notes_updated": 0,         // existed with different content; new revision written
   "notes_unchanged": 2,       // identical, or deliberately left in your Trash
+  "notebooks_seen": 12,
+  "notebooks_created": 10,
+  "notebooks_updated": 0,
+  "notebooks_skipped": 2,
+  "tags_seen": 25,
+  "tags_created": 20,
+  "tags_updated": 0,
+  "tags_skipped": 5,
+  "tags_applied": 96,
+  "tags_removed": 0,
   "resources_seen": 40,
   "resources_imported": 39,   // stored content-addressed (deduplicated by hash)
+  "resources_updated": 0,
   "resources_existing": 0,    // already present from an earlier run
   "resources_skipped": 1,     // no content file in resources/ — see warnings
+  "source_bundle_items": 0,   // nonzero with --preserve-source
+  "source_bundle_bytes": 0,
   "links_rewritten": 57,      // Joplin :/<id> links converted
   "attachments_created": 39,  // note-resource references
   "warnings": ["resource ab12... has no content file"]
@@ -103,19 +141,26 @@ go run ./cmd/notriosctl import joplin-raw \
 |---|---|
 | Note title and Markdown body | preserved; body gains a YAML front-matter block |
 | Internal `:/<id>` note/resource links | rewritten to `document://` / `resource://` links that work in the UI |
-| Notebook (folder) membership and hierarchy | **recorded as front matter only** (`joplin_notebook: "Parent/Child"`); see below |
-| Tags | **recorded as front matter only** (`joplin_tags:` list); full-text searchable, but they do **not** appear in the sidebar tag list |
+| Notebook (folder) membership and hierarchy | restored as nested Notrios notebooks with original names; also recorded in front matter |
+| Tags | restored as stable real Notrios tags (including unassigned source tags); also recorded in front matter |
 | Created/updated/user timestamps, `source_url`, author | preserved in front matter; the creation time also becomes the provenance published-time, so `since:`/`until:` queries work |
 | Original Joplin IDs | preserved (`joplin_id` front matter; deterministic Notrios IDs `doc_joplin_<id>` / `res_joplin_<id>` keep re-imports idempotent) |
 | Attachments | imported into the content-addressed asset store and attached to their notes |
+| Unknown properties and exact RAW layout | retained only when `--preserve-source` is enabled; exact bytes and property order remain in the source bundle |
 
-> **Notebook placement:** imported Joplin notes currently all land in the default **"Notes"** notebook — the Joplin notebook tree is *not* recreated as Notrios notebooks. The original notebook path is kept in each note's front matter (and is searchable); recreating source notebook hierarchies is planned importer hardening (`ROADMAP.md` v0.3). The Twitter/ChatGPT/Claude importers, by contrast, do create their own notebook.
+If a Joplin notebook name collides with a builtin or another source-bound
+notebook, the real import refuses before writing. Dry run suggests a
+path-scoped rename in `import-config.json`. A same-named plain local notebook
+is merged deliberately and reported as such.
 
 ### Edge cases (implementation-verified)
 
 - **Malformed items:** the parser is tolerant — it accepts both metadata-first and body-first item files and skips files it cannot classify.
 - **Missing resource files:** counted in `resources_skipped` with a warning naming the resource; the import completes.
 - **Duplicates / re-import:** deterministic IDs make re-runs safe — unchanged notes count as `notes_unchanged`, notes edited in Joplin become `notes_updated` (a new revision; the previous text stays in revision history).
+- **Interrupted imports:** completed batches and their cumulative report are
+  durable. Re-running resumes at the stored phase/index without duplicating
+  notes, tags, notebooks, or resources.
 - **Notes you deleted in Notrios:** stay in the Trash; the importer will not bring them back.
 
 ### Verify after importing

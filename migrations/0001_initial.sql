@@ -250,3 +250,59 @@ PRAGMA user_version = 8;
 -- Schema v9: scalable keyset traversal and filter-supporting indexes
 -- (v0.3 task H7).
 PRAGMA user_version = 9;
+
+-- Schema v10: resumable importer state and exact source-bundle manifests
+-- (v0.3 task H8). Source bytes remain in the asset store; only their
+-- content-addressed paths and hashes live in SQLite.
+CREATE TABLE IF NOT EXISTS import_checkpoints (
+    source_system TEXT NOT NULL,
+    source_key TEXT NOT NULL,
+    collection_id TEXT NOT NULL,
+    inventory_fingerprint TEXT NOT NULL,
+    phase TEXT NOT NULL,
+    next_index INTEGER NOT NULL DEFAULT 0,
+    total_items INTEGER NOT NULL DEFAULT 0,
+    processed_items INTEGER NOT NULL DEFAULT 0,
+    status TEXT NOT NULL,
+    report_json TEXT NOT NULL DEFAULT '{}',
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    completed_at TEXT,
+    PRIMARY KEY(source_system, source_key, collection_id)
+);
+
+CREATE TABLE IF NOT EXISTS import_item_states (
+    source_system TEXT NOT NULL,
+    source_key TEXT NOT NULL,
+    collection_id TEXT NOT NULL,
+    item_key TEXT NOT NULL,
+    item_type TEXT NOT NULL,
+    fingerprint TEXT NOT NULL,
+    target_id TEXT,
+    action TEXT NOT NULL,
+    processed_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY(source_system, source_key, collection_id, item_key)
+);
+
+CREATE INDEX IF NOT EXISTS import_item_states_type_idx
+    ON import_item_states(source_system, source_key, collection_id, item_type, item_key);
+
+CREATE TABLE IF NOT EXISTS source_bundle_items (
+    source_system TEXT NOT NULL,
+    source_key TEXT NOT NULL,
+    collection_id TEXT NOT NULL,
+    item_key TEXT NOT NULL,
+    item_type TEXT NOT NULL,
+    external_id TEXT NOT NULL,
+    relative_path TEXT NOT NULL,
+    sha256 TEXT NOT NULL,
+    size_bytes INTEGER NOT NULL,
+    storage_path TEXT NOT NULL,
+    property_order_json TEXT NOT NULL DEFAULT '[]',
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY(source_system, source_key, collection_id, item_key)
+);
+
+CREATE INDEX IF NOT EXISTS source_bundle_items_hash_idx
+    ON source_bundle_items(sha256);
+
+PRAGMA user_version = 10;

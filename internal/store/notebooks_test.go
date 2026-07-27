@@ -376,8 +376,8 @@ func TestSchemaV4DatabaseUpgradesToV5(t *testing.T) {
 		t.Fatalf("Bootstrap over v4 database: %v", err)
 	}
 	status, err := st.Status(ctx)
-	if err != nil || status.SchemaVersion != 9 {
-		t.Fatalf("expected schema version 9, got %+v err=%v", status, err)
+	if err != nil || status.SchemaVersion != 10 {
+		t.Fatalf("expected schema version 10, got %+v err=%v", status, err)
 	}
 	// Existing rows are backfilled into the default notebook.
 	count, err := st.countLocked(`SELECT COUNT(1) FROM documents WHERE id = 'doc_old' AND notebook_id = ?`, DefaultNotebookID)

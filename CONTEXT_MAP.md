@@ -5,7 +5,7 @@ This file is the codebase atlas. Update it whenever major files or directories a
 ## Root documents
 
 - `README.md` — project overview and quick start.
-- `PLAN.md` — active implementation plan (v0.3 hardening; H8 next).
+- `PLAN.md` — active implementation plan (v0.3 hardening; H9 next after H8 handoff approval).
 - `plans/scaffold/SCAFFOLD_CREATION_PLAN.md` — process for creating/refining this scaffold.
 - `ROADMAP.md` — product roadmap and future features.
 - `AGENTS.md` — coding-agent instructions (`CLAUDE.md` points here).
@@ -28,11 +28,11 @@ This file is the codebase atlas. Update it whenever major files or directories a
 
 - `cmd/notriosd/` — service daemon entry point.
 - `cmd/notriosctl/` — CLI/admin/import command entry point.
-- `internal/importers/joplinraw/` — MVP Joplin RAW Export Directory parser/importer.
+- `internal/importers/joplinraw/` — hardened Joplin RAW importer: deterministic inventory, nested notebooks, real tags, exact optional source bundles, fingerprints, bounded batches, checkpoints/resume, and dry-run/config planning.
 - `internal/importers/obsidian/` — MVP Obsidian vault Markdown/assets parser/importer.
 - `internal/api/` — shared API request/response models.
 - `internal/httpapi/` — REST HTTP adapter for status, documents, revisions, resources, links, graph slices, and staged future routes.
-- `internal/store/` — SQLite-backed persistence, document CRUD, revision history, soft delete, restore, FTS5 search, resource storage/reference reports (`sqlite_resource_reports.go`), retention-aware GC (`sqlite_gc.go`), link graph persistence, and notebooks/tags/search-notebooks/trash operations (`sqlite_notebooks.go`).
+- `internal/store/` — SQLite-backed persistence, document CRUD, revision history, soft delete, restore, FTS5 search, resource storage/reference reports (`sqlite_resource_reports.go`), retention-aware GC (`sqlite_gc.go`), importer batch/checkpoint/source-bundle state (`sqlite_imports.go`), link graph persistence, and notebooks/tags/search-notebooks/trash operations (`sqlite_notebooks.go`).
 - `internal/markdownlinks/` — conservative MVP Markdown/Obsidian/app-URI link extractor.
 - `internal/version/` — version constants.
 - `migrations/` — SQLite schema migrations.
@@ -123,8 +123,8 @@ This file is the codebase atlas. Update it whenever major files or directories a
 
 ## MVP Task 8 importer files
 
-- `internal/importers/joplinraw/joplinraw.go` parses Joplin RAW item files, imports notes/resources, rewrites `:/<id>` links, and returns a JSON-serializable report.
-- `internal/importers/joplinraw/joplinraw_test.go` builds a small RAW fixture and verifies import, resource attachment, link rewriting, searchability, and re-run behavior.
+- `internal/importers/joplinraw/joplinraw.go` owns RAW parsing/body/link helpers and the JSON report contract; `scalable.go` owns deterministic inventory, conflict planning, bounded phases, fingerprints, exact bundles, and resume.
+- `internal/importers/joplinraw/joplinraw_test.go` covers hierarchy, real tags and renames, exact RAW bytes/property order, dry-run parity, resource refresh, conflicts, bounded batches, and resume; `profile_test.go` drives generated 100/10k/100k profiles.
 - `cmd/notriosctl/main.go` now includes `notriosctl import joplin-raw`.
 - Store create requests support optional preferred IDs so importers can create deterministic source-derived document/resource IDs.
 
@@ -147,8 +147,12 @@ This file is the codebase atlas. Update it whenever major files or directories a
 - `scripts/run_performance_smoke.sh` — generated-dataset smoke and benchmark wrapper.
 - `scripts/run_large_library_profile.sh` — reproducible H7
   10k/100k/500k keyset/search/resource profile driver.
+- `scripts/run_joplin_import_profile.sh` — reproducible H8 generated
+  100/10k/100k dry-run plus interrupted/resumed import profile.
 - `performance/v0.3-h7/` — committed environment, query-plan, latency, size,
   and peak-RSS evidence from the H7 scale runs.
+- `performance/v0.3-h8/` — committed Joplin import duration, batch/resume, and
+  memory evidence for the H8 synthetic profiles.
 - `scripts/package_release.sh` — validates, builds UI, creates source ZIP, and verifies contents.
 - `scripts/check_release_zip.py` — catches missing `web/dist`, accidental `web/node_modules`, and runtime data in ZIPs.
 

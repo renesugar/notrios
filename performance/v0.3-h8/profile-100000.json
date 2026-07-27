@@ -1,0 +1,20 @@
+{
+  "mode": "dry-run-inventory",
+  "notes": 100000,
+  "folders": 10,
+  "tags": 20,
+  "resources": 20,
+  "batch_size": 100,
+  "dry_run_duration": 48796857149,
+  "import_duration": 0,
+  "resumed": false,
+  "batches_completed": 1003,
+  "notes_planned": 100000,
+  "notes_imported": 0,
+  "resources_planned": 20,
+  "resources_imported": 0,
+  "peak_go_sys_bytes": 275011912,
+  "go_version": "go1.26.5",
+  "goos": "linux",
+  "goarch": "amd64"
+}

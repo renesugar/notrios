@@ -1,6 +1,6 @@
 # Plan: v0.3 — Import, resource, and media hardening
 
-Status: **active** (drafted 2026-07-16 from `ROADMAP.md`; supersedes the archived draft `plans/v0.2/001-import-resource-media-hardening.md`). The completed v0.2 redesign plan is archived under `plans/v0.2/`. H1–H7 are complete (`plans/v0.3/`); H8 is next.
+Status: **active** (drafted 2026-07-16 from `ROADMAP.md`; supersedes the archived draft `plans/v0.2/001-import-resource-media-hardening.md`). The completed v0.2 redesign plan is archived under `plans/v0.2/`. H1–H8 are complete (`plans/v0.3/`); H9 is next and requires user approval.
 
 ## Goal
 
@@ -101,6 +101,9 @@ notes without linear offset work or a 100,000-result dead end; the benchmark is
 reproducible and reports its environment.
 
 ### H8. Joplin RAW importer hardening
+
+Status: completed 2026-07-26; archived at
+`plans/v0.3/008-joplin-raw-importer-hardening.md`.
 
 - Populate the notebook hierarchy from Joplin folder items (deferred from v0.2 R12): nested notebooks with original names, rename-on-conflict via the existing import-config mechanism.
 - Preserve Joplin tags as Notrios tags.

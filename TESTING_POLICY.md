@@ -22,6 +22,8 @@ A task is done only when:
 - Document CRUD + revisions + FTS5 updates.
 - Resource upload/download and reference counting.
 - Importer fixtures.
+- Joplin RAW hierarchy/tag/source-bundle, dry-run parity, changed-resource,
+  conflict, fingerprint, and interruption/resume fixtures.
 - REST/MCP service-layer parity.
 
 ### UI tests
@@ -89,6 +91,16 @@ H7's executable harness is `scripts/run_large_library_profile.sh`; its committed
 lives under `performance/v0.3-h7/`. The ordinary-page gate is asserted by the
 test. Recoll-specific measurements remain conditional on Recoll being installed
 and are part of H10 sidecar hardening.
+
+H8's executable harness is `scripts/run_joplin_import_profile.sh`. It accepts
+100, 10k, or 100k generated Joplin notes with nested folders, tags, and
+resources. Every tier runs the same bounded dry-run planner; the 100 and 10k
+tiers interrupt a real import at a durable note-batch boundary and resume it.
+The 100k tier profiles the complete inventory/dry-run path without pretending
+the current per-document canonical write API is a hardware-independent bulk
+throughput gate. Reports record elapsed time, batch count, environment, and Go
+memory. Exact unknown/reordered-property and CRLF-byte preservation is covered
+separately by the focused importer fixture.
 
 SQLite's OFFSET cost grows linearly with skipped rows. In an ideal local
 1,000,000-row covering-index probe during the 2026-07 plan review, offsets

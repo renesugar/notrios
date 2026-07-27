@@ -5,6 +5,7 @@ go test ./...
 python3 scripts/check_required_files.py
 bash -n scripts/mvp_smoke.sh
 bash -n scripts/run_performance_smoke.sh
+bash -n scripts/run_joplin_import_profile.sh
 bash -n scripts/package_release.sh
 # Syntax-check helper scripts without writing __pycache__ bytecode.
 python3 -c 'import ast, sys

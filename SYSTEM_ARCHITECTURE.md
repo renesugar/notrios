@@ -101,7 +101,12 @@ acknowledgement watermarks.
 
 Importers should be separate commands but shared code. They should write
 through bounded canonical transactions, not directly into any search index.
-Joplin RAW Export Directory is the preferred Joplin bulk-import format.
+Joplin RAW Export Directory is the preferred Joplin bulk-import format. Its
+importer restores nested notebooks and source tags, performs input-scoped
+batch lookups, and persists fingerprints/checkpoints. With
+`--preserve-source`, exact item bytes plus property order are stored in a
+separate content-addressed source-bundle namespace; they are not canonical
+notes or ordinary resource blobs.
 Obsidian vaults, Twitter/X archives, ChatGPT exports, and Claude exports are
 normalized into notebooks/collections with source provenance rows (including
 thread recovery for Twitter/X and conversation exports). The v0.3 scale design

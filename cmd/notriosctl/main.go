@@ -88,6 +88,10 @@ func runImportJoplinRaw(args []string) {
 	assetStore := fs.String("asset-store", "", "asset store directory override")
 	collectionID := fs.String("collection", "default", "collection ID")
 	dryRun := fs.Bool("dry-run", false, "scan and report without writing")
+	batchSize := fs.Int("batch-size", 100, "maximum source items per durable import batch (1-500)")
+	preserveSource := fs.Bool("preserve-source", false, "store exact RAW source items in a content-addressed source bundle")
+	writeConfig := fs.String("write-config", "", "dry run: where to write the import configuration (default <raw-export>/import-config.json)")
+	importConfig := fs.String("import-config", "", "import configuration file with notebook-path renames")
 	localizeMedia := fs.Bool("localize-media", false, "after importing, localize policy-allowed remote media in the imported notes")
 	if err := fs.Parse(args); err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -126,7 +130,48 @@ func runImportJoplinRaw(args []string) {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
-	report, err := joplinraw.Import(ctx, st, fs.Arg(0), joplinraw.Options{CollectionID: *collectionID, DryRun: *dryRun})
+	sourceDir := fs.Arg(0)
+	options := joplinraw.Options{
+		CollectionID:   *collectionID,
+		BatchSize:      *batchSize,
+		PreserveSource: *preserveSource,
+		AfterBatch: func(phase string, processed, total int) error {
+			fmt.Fprintf(os.Stderr, "joplin import: %s %d/%d\n", phase, processed, total)
+			return nil
+		},
+	}
+	if *dryRun {
+		importCfg, report, err := joplinraw.DryRun(ctx, st, sourceDir, options)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		target := *writeConfig
+		if target == "" {
+			target = filepath.Join(sourceDir, "import-config.json")
+		}
+		if err := joplinraw.WriteConfig(importCfg, target); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		fmt.Fprintf(os.Stderr, "import configuration written to %s\n", target)
+		encoder := json.NewEncoder(os.Stdout)
+		encoder.SetIndent("", "  ")
+		if err := encoder.Encode(report); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		return
+	}
+	if *importConfig != "" {
+		importCfg, err := joplinraw.LoadConfig(*importConfig)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		options.Config = importCfg
+	}
+	report, err := joplinraw.Import(ctx, st, sourceDir, options)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
@@ -380,7 +425,7 @@ func printHelp() {
 Usage:
   notriosctl doctor [--config config.yaml] [--db path] [--asset-store path]
   notriosctl version
-  notriosctl import joplin-raw [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--dry-run] [--localize-media] <raw-export-dir>
+  notriosctl import joplin-raw [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--batch-size 100] [--preserve-source] [--dry-run] [--write-config path] [--import-config path] [--localize-media] <raw-export-dir>
   notriosctl import obsidian [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--dry-run] [--localize-media] <vault-dir>
   notriosctl import twitter [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--notebook Twitter] [--dry-run] <extracted-archive-dir>
   notriosctl import chatgpt [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--notebook ChatGPT] [--dry-run] <conversations.json|export-dir>

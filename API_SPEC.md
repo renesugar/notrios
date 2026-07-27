@@ -396,7 +396,7 @@ Breaking changes require a new API version or a compatibility shim. Additive fie
 
 The CLI binary is `notriosctl` (renamed from `notesctl` in plan task R2). Twitter/X, ChatGPT, and Claude importers are added in plan tasks R9–R11.
 
-`notriosctl import joplin-raw [--config path] [--db path] [--asset-store path] [--collection id] [--dry-run] <raw-export-dir>` imports a Joplin RAW Export Directory into the canonical SQLite/resource store and prints a JSON report.
+`notriosctl import joplin-raw [--config path] [--db path] [--asset-store path] [--collection id] [--batch-size 100] [--preserve-source] [--dry-run] [--write-config path] [--import-config path] <raw-export-dir>` inventories a Joplin RAW Export Directory, restores nested notebooks and real tags, and imports it into the canonical SQLite/resource store. Dry run uses the same action planner, writes a rename-on-conflict configuration (default `<raw-export-dir>/import-config.json`), and reports creates/updates/skips without writing import state or content. Real imports checkpoint each bounded batch and resume only when the source inventory fingerprint still matches. `--preserve-source` additionally captures exact RAW item bytes and property order in the source-bundle store. The JSON report includes source/checkpoint identity, resume/batch progress, and note/resource/notebook/tag create-update-skip totals.
 
 `notriosctl import obsidian [--config path] [--db path] [--asset-store path] [--collection id] [--dry-run] <vault-dir>` imports an Obsidian-style Markdown vault.
 

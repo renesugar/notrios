@@ -1,12 +1,7 @@
 package joplinraw
 
 import (
-	"context"
 	"encoding/json"
-	"errors"
-	"fmt"
-	"io/fs"
-	"mime"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -19,25 +14,53 @@ import (
 const sourceSystem = "joplin_raw"
 
 type Options struct {
-	CollectionID string
-	DryRun       bool
+	CollectionID   string
+	DryRun         bool
+	PreserveSource bool
+	BatchSize      int
+	SourceKey      string
+	Config         *ImportConfig
+	// AfterBatch is a test/embedding hook invoked after a durable checkpoint.
+	AfterBatch func(phase string, processed, total int) error
 }
 
 type Report struct {
-	SourceDir          string   `json:"source_dir"`
-	CollectionID       string   `json:"collection_id"`
-	DryRun             bool     `json:"dry_run"`
-	NotesSeen          int      `json:"notes_seen"`
-	NotesImported      int      `json:"notes_imported"`
-	NotesUpdated       int      `json:"notes_updated"`
-	NotesUnchanged     int      `json:"notes_unchanged"`
-	ResourcesSeen      int      `json:"resources_seen"`
-	ResourcesImported  int      `json:"resources_imported"`
-	ResourcesExisting  int      `json:"resources_existing"`
-	ResourcesSkipped   int      `json:"resources_skipped"`
-	LinksRewritten     int      `json:"links_rewritten"`
-	AttachmentsCreated int      `json:"attachments_created"`
-	Warnings           []string `json:"warnings,omitempty"`
+	SourceDir          string        `json:"source_dir"`
+	SourceKey          string        `json:"source_key"`
+	CollectionID       string        `json:"collection_id"`
+	DryRun             bool          `json:"dry_run"`
+	Resumed            bool          `json:"resumed"`
+	CheckpointStatus   string        `json:"checkpoint_status"`
+	BatchesCompleted   int           `json:"batches_completed"`
+	NotesSeen          int           `json:"notes_seen"`
+	NotesImported      int           `json:"notes_imported"`
+	NotesUpdated       int           `json:"notes_updated"`
+	NotesUnchanged     int           `json:"notes_unchanged"`
+	NotebooksSeen      int           `json:"notebooks_seen"`
+	NotebooksCreated   int           `json:"notebooks_created"`
+	NotebooksUpdated   int           `json:"notebooks_updated"`
+	NotebooksSkipped   int           `json:"notebooks_skipped"`
+	NotebooksExisting  int           `json:"notebooks_existing"`
+	NotebooksMerged    int           `json:"notebooks_merged"`
+	NotebookConflicts  []string      `json:"notebook_conflicts,omitempty"`
+	TagsSeen           int           `json:"tags_seen"`
+	TagsCreated        int           `json:"tags_created"`
+	TagsUpdated        int           `json:"tags_updated"`
+	TagsSkipped        int           `json:"tags_skipped"`
+	TagsExisting       int           `json:"tags_existing"`
+	TagsApplied        int           `json:"tags_applied"`
+	TagsRemoved        int           `json:"tags_removed"`
+	ResourcesSeen      int           `json:"resources_seen"`
+	ResourcesImported  int           `json:"resources_imported"`
+	ResourcesUpdated   int           `json:"resources_updated"`
+	ResourcesExisting  int           `json:"resources_existing"`
+	ResourcesSkipped   int           `json:"resources_skipped"`
+	SourceBundleItems  int           `json:"source_bundle_items"`
+	SourceBundleBytes  int64         `json:"source_bundle_bytes"`
+	LinksRewritten     int           `json:"links_rewritten"`
+	AttachmentsCreated int           `json:"attachments_created"`
+	Warnings           []string      `json:"warnings,omitempty"`
+	SuggestedConfig    *ImportConfig `json:"suggested_config,omitempty"`
 	// DocumentIDs lists the notes this run touched (created/updated/kept),
 	// for post-import passes like --localize-media. Not part of the JSON
 	// report.
@@ -50,201 +73,6 @@ type parsedItem struct {
 	Type   string
 	Fields map[string]string
 	Body   string
-}
-
-func Import(ctx context.Context, st store.Store, sourceDir string, options Options) (Report, error) {
-	collectionID := strings.TrimSpace(options.CollectionID)
-	if collectionID == "" {
-		collectionID = "default"
-	}
-	report := Report{SourceDir: sourceDir, CollectionID: collectionID, DryRun: options.DryRun}
-	items, err := readItems(sourceDir)
-	if err != nil {
-		return report, err
-	}
-
-	folders := map[string]parsedItem{}
-	tags := map[string]string{}
-	noteTagIDs := map[string][]string{}
-	notes := []parsedItem{}
-	resources := []parsedItem{}
-	for _, item := range items {
-		switch item.Type {
-		case "1":
-			report.NotesSeen++
-			notes = append(notes, item)
-		case "2":
-			folders[item.ID] = item
-		case "4":
-			report.ResourcesSeen++
-			resources = append(resources, item)
-		case "5":
-			tags[item.ID] = item.Fields["title"]
-		case "6":
-			noteID := item.Fields["note_id"]
-			tagID := item.Fields["tag_id"]
-			if noteID != "" && tagID != "" {
-				noteTagIDs[noteID] = append(noteTagIDs[noteID], tagID)
-			}
-		}
-	}
-
-	noteTags := map[string][]string{}
-	for noteID, tagIDs := range noteTagIDs {
-		for _, tagID := range tagIDs {
-			if tag := tags[tagID]; tag != "" {
-				noteTags[noteID] = append(noteTags[noteID], tag)
-			}
-		}
-	}
-
-	noteIDMap := map[string]string{}
-	resourceIDMap := map[string]string{}
-	for _, note := range notes {
-		noteIDMap[note.ID] = noteDocumentID(note.ID)
-	}
-	for _, res := range resources {
-		resourceIDMap[res.ID] = resourceID(res.ID)
-	}
-
-	if !options.DryRun {
-		for _, res := range resources {
-			logicalID := resourceIDMap[res.ID]
-			if _, err := st.GetResource(ctx, logicalID); err == nil {
-				report.ResourcesExisting++
-				continue
-			} else if !errors.Is(err, store.ErrNotFound) {
-				return report, err
-			}
-			path, ok := findResourceContent(sourceDir, res)
-			if !ok {
-				report.ResourcesSkipped++
-				report.Warnings = append(report.Warnings, fmt.Sprintf("resource %s has no content file", res.ID))
-				continue
-			}
-			file, err := os.Open(path)
-			if err != nil {
-				return report, err
-			}
-			filename := resourceFilename(res, path)
-			mimeType := firstNonEmpty(res.Fields["mime"], res.Fields["mime_type"], mime.TypeByExtension(filepath.Ext(filename)), "application/octet-stream")
-			_, createErr := st.CreateResource(ctx, store.CreateResourceRequest{PreferredID: logicalID, CollectionID: collectionID, Filename: filename, MIMEType: mimeType, Content: file})
-			closeErr := file.Close()
-			if createErr != nil {
-				return report, createErr
-			}
-			if closeErr != nil {
-				return report, closeErr
-			}
-			report.ResourcesImported++
-		}
-	}
-
-	for _, note := range notes {
-		logicalID := noteIDMap[note.ID]
-		body, rewrites := buildDocumentBody(note, folders, noteTags[note.ID], noteIDMap, resourceIDMap, collectionID)
-		report.LinksRewritten += rewrites
-		if options.DryRun {
-			report.NotesImported++
-			continue
-		}
-		setSource := func() error {
-			_, err := st.SetDocumentSource(ctx, store.SetDocumentSourceRequest{
-				DocumentID:   logicalID,
-				SourceSystem: "joplin",
-				ExternalID:   note.ID,
-				Author:       strings.TrimSpace(note.Fields["author"]),
-				SourceURL:    strings.TrimSpace(note.Fields["source_url"]),
-				PublishedAt:  firstNonEmpty(note.Fields["user_created_time"], note.Fields["created_time"]),
-			})
-			return err
-		}
-		existing, err := st.GetDocument(ctx, logicalID)
-		if err == nil {
-			if existing.Title == noteTitle(note) && existing.Body == body {
-				report.NotesUnchanged++
-				if err := setSource(); err != nil {
-					return report, err
-				}
-				report.DocumentIDs = append(report.DocumentIDs, logicalID)
-				continue
-			}
-			_, err = st.UpdateDocument(ctx, store.UpdateDocumentRequest{ID: logicalID, Title: noteTitle(note), Body: body, BodyMIMEType: "text/markdown", BaseRevisionID: existing.CurrentRevisionID, Message: "import update from Joplin RAW"})
-			if err != nil {
-				return report, err
-			}
-			report.NotesUpdated++
-		} else if errors.Is(err, store.ErrNotFound) {
-			// The note may exist but sit in the user's Trash; never resurrect
-			// a note the user deleted — refresh its provenance below only.
-			if _, srcErr := st.FindDocumentBySource(ctx, "joplin", note.ID); srcErr == nil {
-				report.NotesUnchanged++
-				if err := setSource(); err != nil {
-					return report, err
-				}
-				continue
-			} else if !errors.Is(srcErr, store.ErrNotFound) {
-				return report, srcErr
-			}
-			_, err = st.CreateDocument(ctx, store.CreateDocumentRequest{PreferredID: logicalID, CollectionID: collectionID, Title: noteTitle(note), Body: body, BodyMIMEType: "text/markdown", Message: "import from Joplin RAW"})
-			if err != nil {
-				return report, err
-			}
-			report.NotesImported++
-		} else {
-			return report, err
-		}
-		if err := setSource(); err != nil {
-			return report, err
-		}
-		report.DocumentIDs = append(report.DocumentIDs, logicalID)
-		for originalResourceID, newResourceID := range resourceIDMap {
-			uri := store.ResourceURI(collectionID, newResourceID)
-			if strings.Contains(body, uri) {
-				_, err := st.AttachDocumentResource(ctx, store.AttachResourceRequest{DocumentID: logicalID, ResourceID: newResourceID, RelationType: "referenced", AnchorJSON: fmt.Sprintf(`{"joplin_resource_id":%q}`, originalResourceID)})
-				if err == nil {
-					report.AttachmentsCreated++
-				} else if !errors.Is(err, store.ErrNotFound) {
-					return report, err
-				}
-			}
-		}
-	}
-	return report, nil
-}
-
-func readItems(sourceDir string) ([]parsedItem, error) {
-	var items []parsedItem
-	err := filepath.WalkDir(sourceDir, func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		if d.IsDir() {
-			return nil
-		}
-		info, err := d.Info()
-		if err != nil {
-			return err
-		}
-		if info.Size() > 8*1024*1024 {
-			return nil
-		}
-		b, err := os.ReadFile(path)
-		if err != nil {
-			return err
-		}
-		item, ok := parseItem(path, string(b))
-		if !ok {
-			return nil
-		}
-		items = append(items, item)
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-	sort.Slice(items, func(i, j int) bool { return items[i].Path < items[j].Path })
-	return items, nil
 }
 
 var metadataLineRE = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_]*:\s*.*$`)
@@ -350,7 +178,7 @@ func buildDocumentBody(note parsedItem, folders map[string]parsedItem, tags []st
 	return strings.Join(frontmatter, "\n") + rewritten + "\n", count
 }
 
-var joplinLinkRE = regexp.MustCompile(`:/([A-Za-z0-9_-]+)`) // Joplin internal note/resource link.
+var joplinLinkRE = regexp.MustCompile(`:/([A-Za-z0-9_-]+)`)
 
 func rewriteJoplinLinks(body string, noteIDMap, resourceIDMap map[string]string, collectionID string) (string, int) {
 	count := 0
@@ -405,7 +233,7 @@ func findResourceContent(sourceDir string, item parsedItem) (string, bool) {
 		if candidate == metadataPath {
 			continue
 		}
-		if info, err := os.Stat(candidate); err == nil && !info.IsDir() {
+		if info, err := os.Lstat(candidate); err == nil && !info.IsDir() && info.Mode()&os.ModeSymlink == 0 {
 			return candidate, true
 		}
 	}
@@ -425,30 +253,30 @@ func resourceID(joplinID string) string     { return "res_joplin_" + safeID(jopl
 
 func safeID(id string) string {
 	id = strings.ToLower(strings.TrimSpace(id))
-	var b strings.Builder
-	for _, r := range id {
-		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '_' || r == '-' {
-			b.WriteRune(r)
+	var builder strings.Builder
+	for _, character := range id {
+		if (character >= 'a' && character <= 'z') || (character >= '0' && character <= '9') || character == '_' || character == '-' {
+			builder.WriteRune(character)
 		} else {
-			b.WriteByte('_')
+			builder.WriteByte('_')
 		}
 	}
-	if b.Len() == 0 {
+	if builder.Len() == 0 {
 		return "unknown"
 	}
-	return b.String()
+	return builder.String()
 }
 
 func firstNonEmpty(values ...string) string {
-	for _, v := range values {
-		if strings.TrimSpace(v) != "" {
-			return strings.TrimSpace(v)
+	for _, value := range values {
+		if strings.TrimSpace(value) != "" {
+			return strings.TrimSpace(value)
 		}
 	}
 	return ""
 }
 
 func yamlQuote(value string) string {
-	b, _ := json.Marshal(value)
-	return string(b)
+	raw, _ := json.Marshal(value)
+	return string(raw)
 }

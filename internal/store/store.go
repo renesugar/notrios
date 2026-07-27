@@ -202,6 +202,72 @@ type CreateResourceRequest struct {
 	Content      io.Reader
 }
 
+// UpdateResourceRequest replaces one logical resource's content/metadata while
+// preserving its stable resource ID and document references.
+type UpdateResourceRequest struct {
+	ID       string
+	Filename string
+	MIMEType string
+	Content  io.Reader
+}
+
+// ImportCheckpoint is durable progress for one source directory and target
+// collection. ReportJSON is importer-owned, versioned JSON.
+type ImportCheckpoint struct {
+	SourceSystem         string
+	SourceKey            string
+	CollectionID         string
+	InventoryFingerprint string
+	Phase                string
+	NextIndex            int
+	TotalItems           int
+	ProcessedItems       int
+	Status               string
+	ReportJSON           string
+	UpdatedAt            time.Time
+	CompletedAt          time.Time
+}
+
+// ImportItemState stores the last successfully applied source fingerprint.
+type ImportItemState struct {
+	SourceSystem string
+	SourceKey    string
+	CollectionID string
+	ItemKey      string
+	ItemType     string
+	Fingerprint  string
+	TargetID     string
+	Action       string
+	ProcessedAt  time.Time
+}
+
+// SourceBundleItem identifies one exact source file in an optional bundle.
+type SourceBundleItem struct {
+	SourceSystem  string
+	SourceKey     string
+	CollectionID  string
+	ItemKey       string
+	ItemType      string
+	ExternalID    string
+	RelativePath  string
+	SHA256        string
+	SizeBytes     int64
+	StoragePath   string
+	PropertyOrder []string
+}
+
+type PutSourceBundleItemRequest struct {
+	SourceSystem  string
+	SourceKey     string
+	CollectionID  string
+	ItemKey       string
+	ItemType      string
+	ExternalID    string
+	RelativePath  string
+	PropertyOrder []string
+	Content       io.Reader
+}
+
 // AttachResourceRequest creates or replaces a document-resource reference.
 type AttachResourceRequest struct {
 	DocumentID   string
@@ -545,7 +611,11 @@ type Store interface {
 	GetDocumentRevision(ctx context.Context, documentID, revisionID string) (DocumentRevision, error)
 	RestoreDocumentRevision(ctx context.Context, req RestoreRevisionRequest) (Document, error)
 	CreateResource(ctx context.Context, req CreateResourceRequest) (Resource, error)
+	UpdateResource(ctx context.Context, req UpdateResourceRequest) (Resource, error)
 	GetResource(ctx context.Context, id string) (Resource, error)
+	GetDocuments(ctx context.Context, ids []string) (map[string]Document, error)
+	GetResources(ctx context.Context, ids []string) (map[string]Resource, error)
+	GetDocumentTags(ctx context.Context, ids []string) (map[string][]Tag, error)
 	OpenResourceContent(ctx context.Context, id string) (Resource, io.ReadCloser, error)
 	DeleteResource(ctx context.Context, id string) error
 	ListDocumentResources(ctx context.Context, documentID string) ([]ResourceReference, error)
@@ -568,6 +638,7 @@ type Store interface {
 	MoveDocumentToNotebook(ctx context.Context, documentID, notebookID string) (Document, error)
 
 	AddDocumentTag(ctx context.Context, documentID, tagName string) (Tag, error)
+	UpsertTag(ctx context.Context, preferredID, tagName string) (Tag, string, error)
 	RemoveDocumentTag(ctx context.Context, documentID, tagName string) error
 	ListDocumentTags(ctx context.Context, documentID string) ([]Tag, error)
 	ListTags(ctx context.Context) ([]Tag, error)
@@ -589,6 +660,15 @@ type Store interface {
 	CompleteProjectionJob(ctx context.Context, sequence int64, jobErr error) error
 
 	NotebookHasSourcedDocuments(ctx context.Context, notebookID string) (bool, error)
+	FindDocumentsBySourceIDs(ctx context.Context, sourceSystem string, externalIDs []string) (map[string]string, error)
+
+	GetImportCheckpoint(ctx context.Context, sourceSystem, sourceKey, collectionID string) (ImportCheckpoint, error)
+	PutImportCheckpoint(ctx context.Context, checkpoint ImportCheckpoint) error
+	GetImportItemStates(ctx context.Context, sourceSystem, sourceKey, collectionID string, itemKeys []string) (map[string]ImportItemState, error)
+	PutImportItemStates(ctx context.Context, states []ImportItemState) error
+	PutSourceBundleItem(ctx context.Context, req PutSourceBundleItemRequest) (SourceBundleItem, error)
+	GetSourceBundleItem(ctx context.Context, sourceSystem, sourceKey, collectionID, itemKey string) (SourceBundleItem, error)
+	OpenSourceBundleItem(ctx context.Context, sourceSystem, sourceKey, collectionID, itemKey string) (SourceBundleItem, io.ReadCloser, error)
 
 	RecordMediaAttempt(ctx context.Context, attempt MediaAttempt) (MediaAttempt, error)
 	ListMediaAttempts(ctx context.Context, documentID string, limit int) ([]MediaAttempt, error)

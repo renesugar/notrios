@@ -5,8 +5,8 @@ Updated: 2026-07-26
 ## Active milestone
 
 `PLAN.md` is v0.3 import/resource/media/large-library hardening, now H1–H11.
-H1–H7 are complete and archived under `plans/v0.3/`; H8 is the next
-implementation task and still requires the normal user approval before coding.
+H1–H8 are complete and archived under `plans/v0.3/`; H9 (Obsidian importer
+hardening) is next and requires the normal user approval before coding.
 
 - H1: media-policy configuration and schema v7.
 - H2: static remote-media scan, policy API/MCP, GUI decisions.
@@ -20,7 +20,10 @@ implementation task and still requires the normal user approval before coding.
 - H7: schema-v9 keyset indexes, query/sort-bound `k2` cursors, bounded stable
   merged-sidecar snapshots, live GET search, and reproducible
   10k/100k/500k performance profiles.
-- H8/H9: Joplin RAW/Obsidian hierarchy, exact source preservation, bounded
+- H8: schema-v10 importer checkpoints/item fingerprints/exact source-bundle
+  manifests; Joplin nested notebooks, stable real tags, bounded phases,
+  dry-run/config parity, resource refresh, resume, and 100/10k/100k fixtures.
+- H9: Obsidian hierarchy, exact source preservation, bounded
   batches/fingerprints/checkpoints, and large fixtures.
 - H10: Recoll reconciliation, bounded batches, stable merge quality, UI status.
 - H11: v0.3 documentation/release wrap-up.
@@ -52,7 +55,7 @@ when this session completes.
 
 - v0.1 MVP is archived under `plans/mvp/`.
 - v0.2 redesign R1–R16 is complete under `plans/v0.2/`.
-- v0.3 H1–H7 are under `plans/v0.3/001`–`007`.
+- v0.3 H1–H8 are under `plans/v0.3/001`–`008`.
 - GUI conformance/native-resize verification and the scaffold/MVP report
   archive moves are committed before the current review.
 
@@ -65,11 +68,13 @@ attempt detail remains append-only in `agent/ATTEMPT_LOG.jsonl`.
 - Review base before this session: `26b0925`.
 - Project license: Apache-2.0.
 - Canonical store: SQLite plus content-addressed assets; FTS5/Recoll are derived.
-- Current schema: v9.
+- Current schema: v10.
 - Unbounded local traversal uses `(updated_at, id)` or `(score, id)` keysets;
   notebook and Trash pages are route-bound. Optional Recoll merge pages use a
   ten-minute, 1,000-hit immutable snapshot and report truncation explicitly.
 - H7 generated profile evidence is under `performance/v0.3-h7/`.
+- H8 generated Joplin dry-run/interruption/resume evidence is under
+  `performance/v0.3-h8/`.
 - Resource reference report:
   `GET /api/v1/resources/reports/reference` and
   `notriosctl resources report`.

@@ -86,7 +86,7 @@ The scaffold-era and v0.1-MVP reports (`plans/scaffold/SCAFFOLD_*.md`, `plans/mv
 
 ## Importing your notes
 
-`notriosctl` imports Joplin RAW exports, Obsidian vaults, Twitter/X archives, ChatGPT exports, and Claude exports, and round-trips a native archive format — each with a `--dry-run` mode and an idempotent re-run story. See [docs/import-export.md](docs/import-export.md) and [docs/cli.md](docs/cli.md).
+`notriosctl` imports Joplin RAW exports, Obsidian vaults, Twitter/X archives, ChatGPT exports, and Claude exports, and round-trips a native archive format — each with a `--dry-run` mode and an idempotent re-run story. The Joplin importer restores nested notebooks and real tags, resumes durable batches, and can retain an exact optional RAW source bundle. See [docs/import-export.md](docs/import-export.md) and [docs/cli.md](docs/cli.md).
 
 ## Validation
 
@@ -95,9 +95,11 @@ make validate                 # tests + repository checks
 make smoke                    # end-to-end REST/MCP smoke test
 bash scripts/run_performance_smoke.sh
 bash scripts/run_large_library_profile.sh 100000 /tmp/notrios-profile.json
+bash scripts/run_joplin_import_profile.sh 100000 /tmp/notrios-joplin-profile.json
 bash scripts/package_release.sh    # validated source ZIP into dist/
 ```
 
-The scale profile accepts `10000`, `100000`, or `500000`; committed H7 reference
-evidence is under `performance/v0.3-h7/`. See `PACKAGING.md`,
+The collection scale profile accepts `10000`, `100000`, or `500000`; the
+Joplin profile accepts `100`, `10000`, or `100000`. Committed reference
+evidence is under `performance/v0.3-h7/` and `performance/v0.3-h8/`. See `PACKAGING.md`,
 `SECURITY_REVIEW.md`, and `RELEASE_CHECKLIST.md` before tagging a release.

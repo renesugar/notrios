@@ -43,7 +43,7 @@ This matrix keeps the long conversation compressed into implementation-sized fea
 
 | Feature | Status | Primary owner | Notes |
 |---|---:|---|---|
-| Joplin RAW import | Implemented/Active | importer | H8 adds hierarchy, scale, checkpoints, exact source bundle. |
+| Joplin RAW import | Implemented | importer | Nested notebooks, stable real tags, bounded batches, fingerprints/checkpoints, dry-run diffs, rename config, and optional exact source bundle. |
 | Obsidian vault import | Implemented/Active | importer | H9 adds hierarchy, scale, checkpoints, exact source bundle. |
 | Twitter/X import | Implemented | importer | Provenance/thread/media import. |
 | ChatGPT export import | Implemented | importer | Conversation provenance. |

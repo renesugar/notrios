@@ -471,6 +471,61 @@ func (s *SQLiteStore) AddDocumentTag(ctx context.Context, documentID, tagName st
 	return tag, nil
 }
 
+// UpsertTag gives importers a stable source-derived tag identity. Action is
+// create, update, merge (an existing plain tag had the same name), or skip.
+func (s *SQLiteStore) UpsertTag(ctx context.Context, preferredID, tagName string) (Tag, string, error) {
+	ctx = contextOrBackground(ctx)
+	if err := ctx.Err(); err != nil {
+		return Tag{}, "", err
+	}
+	preferredID = strings.TrimSpace(preferredID)
+	tagName = strings.TrimSpace(tagName)
+	if preferredID == "" || tagName == "" {
+		return Tag{}, "", fmt.Errorf("%w: preferred tag ID and name are required", ErrInvalidInput)
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	stmt, err := s.prepareLocked(`SELECT id, name FROM tags WHERE id = ?`)
+	if err != nil {
+		return Tag{}, "", err
+	}
+	if err := bindAll(stmt, []string{preferredID}); err != nil {
+		C.sqlite3_finalize(stmt)
+		return Tag{}, "", err
+	}
+	rc := C.sqlite3_step(stmt)
+	if rc == C.SQLITE_ROW {
+		currentName := columnText(stmt, 1)
+		C.sqlite3_finalize(stmt)
+		action := "skip"
+		if currentName != tagName {
+			if err := s.execPreparedLocked(`UPDATE tags SET name = ? WHERE id = ?`, tagName, preferredID); err != nil {
+				if isUniqueConstraintErr(err) {
+					return Tag{}, "", fmt.Errorf("%w: tag name %q is already in use", ErrNameConflict, tagName)
+				}
+				return Tag{}, "", err
+			}
+			action = "update"
+		}
+		count, err := s.tagNoteCountLocked(preferredID)
+		return Tag{ID: preferredID, Name: tagName, NoteCount: count}, action, err
+	}
+	C.sqlite3_finalize(stmt)
+	if rc != C.SQLITE_DONE {
+		return Tag{}, "", s.stepErrLocked(rc)
+	}
+	if existing, found, err := s.findTagByNameLocked(tagName); err != nil {
+		return Tag{}, "", err
+	} else if found {
+		existing.NoteCount, err = s.tagNoteCountLocked(existing.ID)
+		return existing, "merge", err
+	}
+	if err := s.execPreparedLocked(`INSERT INTO tags(id, name) VALUES(?, ?)`, preferredID, tagName); err != nil {
+		return Tag{}, "", err
+	}
+	return Tag{ID: preferredID, Name: tagName}, "create", nil
+}
+
 func (s *SQLiteStore) RemoveDocumentTag(ctx context.Context, documentID, tagName string) error {
 	ctx = contextOrBackground(ctx)
 	if err := ctx.Err(); err != nil {

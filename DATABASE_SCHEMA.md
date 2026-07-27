@@ -72,7 +72,7 @@ The outbox coordinates filesystem projections and Recoll indexing after the cano
 
 ## MVP migration file
 
-`migrations/0001_initial.sql` has grown with each milestone and now represents schema version 9 (v5 notebooks/tags/search notebooks, v6 source provenance, v7 media policy, v8 resource retention, v9 scalable keyset indexes), applied idempotently on every startup with upgrade shims for older databases. Its original MVP portion represents schema version 4. It includes managed-document tables, Task 2 revision fields (`body_mime_type`, `message`), content-addressed blob/resource tables, document-resource reference tables, document link graph rows, link context/target URI fields, and supporting indexes. Do not rename public tables/columns casually once tests depend on them.
+`migrations/0001_initial.sql` has grown with each milestone and now represents schema version 10 (v5 notebooks/tags/search notebooks, v6 source provenance, v7 media policy, v8 resource retention, v9 scalable keyset indexes, v10 resumable import state/source bundles), applied idempotently on every startup with upgrade shims for older databases. Its original MVP portion represents schema version 4. It includes managed-document tables, Task 2 revision fields (`body_mime_type`, `message`), content-addressed blob/resource tables, document-resource reference tables, document link graph rows, link context/target URI fields, and supporting indexes. Do not rename public tables/columns casually once tests depend on them.
 
 ## Current and required indexes
 
@@ -88,6 +88,20 @@ membership. `internal/store/pagination_schema_test.go` verifies both migration
 version and planner use. Chronological and relevance traversal use row-value
 keysets; optional merged sidecar results use a bounded in-memory immutable
 snapshot rather than a numeric offset inside an opaque token.
+
+## Schema v10 — importer checkpoints and exact source bundles
+
+- `import_checkpoints` stores one phase/index/report row per
+  `(source_system, source_key, collection_id)`. The inventory fingerprint
+  prevents a changed source tree from replaying a stale checkpoint.
+- `import_item_states` stores each successfully applied input fingerprint,
+  target ID, and action. Its source/type index supports bounded input-scoped
+  batch lookups; importers do not scan the canonical document tables.
+- `source_bundle_items` is the manifest for optional exact source capture:
+  external ID, relative path, SHA-256, byte size, property-order JSON, and a
+  safe relative asset path. Exact bytes live under
+  `assets/source-bundles/sha256/`; this namespace is deliberately outside
+  ordinary `blobs` and resource garbage collection.
 
 ## Schema v5/v6 — Notrios redesign (tasks R3 and R4 implemented)
 

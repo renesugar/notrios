@@ -147,6 +147,9 @@ func (s *SQLiteStore) Bootstrap(ctx context.Context) error {
 	if err := s.ensureSchemaV9(ctx); err != nil {
 		return err
 	}
+	if err := s.ensureSchemaV10(ctx); err != nil {
+		return err
+	}
 	if err := s.Exec(ctx, `INSERT OR IGNORE INTO collections(id, name, description) VALUES('default', 'Default', 'Managed notes created by the companion service.');`); err != nil {
 		return err
 	}
@@ -296,6 +299,66 @@ func (s *SQLiteStore) ensureSchemaV9(ctx context.Context) error {
 		`CREATE INDEX IF NOT EXISTS note_tags_tag_document_idx
 			ON note_tags(tag_id, document_id);`,
 		`PRAGMA user_version = 9;`,
+	}
+	for _, statement := range statements {
+		if err := s.Exec(ctx, statement); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// ensureSchemaV10 adds durable, input-scoped importer checkpoints and exact
+// source-bundle manifests. Source bytes are stored beneath the asset root.
+func (s *SQLiteStore) ensureSchemaV10(ctx context.Context) error {
+	statements := []string{
+		`CREATE TABLE IF NOT EXISTS import_checkpoints (
+			source_system TEXT NOT NULL,
+			source_key TEXT NOT NULL,
+			collection_id TEXT NOT NULL,
+			inventory_fingerprint TEXT NOT NULL,
+			phase TEXT NOT NULL,
+			next_index INTEGER NOT NULL DEFAULT 0,
+			total_items INTEGER NOT NULL DEFAULT 0,
+			processed_items INTEGER NOT NULL DEFAULT 0,
+			status TEXT NOT NULL,
+			report_json TEXT NOT NULL DEFAULT '{}',
+			updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			completed_at TEXT,
+			PRIMARY KEY(source_system, source_key, collection_id)
+		);`,
+		`CREATE TABLE IF NOT EXISTS import_item_states (
+			source_system TEXT NOT NULL,
+			source_key TEXT NOT NULL,
+			collection_id TEXT NOT NULL,
+			item_key TEXT NOT NULL,
+			item_type TEXT NOT NULL,
+			fingerprint TEXT NOT NULL,
+			target_id TEXT,
+			action TEXT NOT NULL,
+			processed_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			PRIMARY KEY(source_system, source_key, collection_id, item_key)
+		);`,
+		`CREATE INDEX IF NOT EXISTS import_item_states_type_idx
+			ON import_item_states(source_system, source_key, collection_id, item_type, item_key);`,
+		`CREATE TABLE IF NOT EXISTS source_bundle_items (
+			source_system TEXT NOT NULL,
+			source_key TEXT NOT NULL,
+			collection_id TEXT NOT NULL,
+			item_key TEXT NOT NULL,
+			item_type TEXT NOT NULL,
+			external_id TEXT NOT NULL,
+			relative_path TEXT NOT NULL,
+			sha256 TEXT NOT NULL,
+			size_bytes INTEGER NOT NULL,
+			storage_path TEXT NOT NULL,
+			property_order_json TEXT NOT NULL DEFAULT '[]',
+			updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			PRIMARY KEY(source_system, source_key, collection_id, item_key)
+		);`,
+		`CREATE INDEX IF NOT EXISTS source_bundle_items_hash_idx
+			ON source_bundle_items(sha256);`,
+		`PRAGMA user_version = 10;`,
 	}
 	for _, statement := range statements {
 		if err := s.Exec(ctx, statement); err != nil {
@@ -876,6 +939,101 @@ func (s *SQLiteStore) CreateResource(ctx context.Context, req CreateResourceRequ
 		cleanup = nil
 	}
 	return s.getResourceLocked(resourceID)
+}
+
+func (s *SQLiteStore) UpdateResource(ctx context.Context, req UpdateResourceRequest) (Resource, error) {
+	ctx = contextOrBackground(ctx)
+	if err := ctx.Err(); err != nil {
+		return Resource{}, err
+	}
+	req.ID = strings.TrimSpace(req.ID)
+	req.Filename = strings.TrimSpace(req.Filename)
+	req.MIMEType = strings.TrimSpace(req.MIMEType)
+	if req.ID == "" || req.Content == nil {
+		return Resource{}, fmt.Errorf("%w: resource ID and content are required", ErrInvalidInput)
+	}
+	if req.MIMEType == "" {
+		req.MIMEType = "application/octet-stream"
+	}
+	if _, err := s.GetResource(ctx, req.ID); err != nil {
+		return Resource{}, err
+	}
+	blob, cleanup, err := s.writeBlob(ctx, req.Content, req.MIMEType)
+	if err != nil {
+		return Resource{}, err
+	}
+	if cleanup != nil {
+		defer cleanup()
+	}
+	mimeType := firstNonEmptyString(req.MIMEType, blob.MIMEType, "application/octet-stream")
+	perceptualHash, err := s.computePerceptualHash(ctx, blob, mimeType)
+	if err != nil {
+		return Resource{}, err
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if err := s.execLocked("BEGIN IMMEDIATE"); err != nil {
+		return Resource{}, err
+	}
+	committed := false
+	defer func() {
+		if !committed {
+			_ = s.execLocked("ROLLBACK")
+		}
+	}()
+	oldSHA, oldStoragePath, err := s.resourceBlobLocked(req.ID)
+	if err != nil {
+		return Resource{}, err
+	}
+	if err := s.execPreparedLocked(`INSERT OR IGNORE INTO blobs(sha256, storage_path, size_bytes, mime_type)
+		VALUES(?, ?, ?, ?)`, blob.SHA256, blob.StoragePath, strconv.FormatInt(blob.SizeBytes, 10), mimeType); err != nil {
+		return Resource{}, err
+	}
+	if perceptualHash != nil {
+		if err := s.execPreparedLocked(`INSERT OR IGNORE INTO resource_hashes(blob_sha256, algo, hash)
+			VALUES(?, ?, ?)`, blob.SHA256, perceptualHash.Algorithm, perceptualHash.Hash); err != nil {
+			return Resource{}, err
+		}
+		if err := s.checkPerceptualReviewRuleLocked(perceptualHash.Algorithm, perceptualHash.Hash); err != nil {
+			return Resource{}, err
+		}
+	}
+	if err := s.execPreparedLocked(`UPDATE resources
+		SET blob_sha256 = ?, filename = ?, mime_type = ?
+		WHERE id = ?`, blob.SHA256, req.Filename, mimeType, req.ID); err != nil {
+		return Resource{}, err
+	}
+	removeOldBlob := false
+	if oldSHA != blob.SHA256 {
+		resourceCount, err := s.countLocked(`SELECT COUNT(*) FROM resources WHERE blob_sha256 = ?`, oldSHA)
+		if err != nil {
+			return Resource{}, err
+		}
+		removeOldBlob = resourceCount == 0
+		if removeOldBlob {
+			if err := s.execPreparedLocked(`DELETE FROM resource_hashes WHERE blob_sha256 = ?`, oldSHA); err != nil {
+				return Resource{}, err
+			}
+			if err := s.execPreparedLocked(`DELETE FROM blobs WHERE sha256 = ?`, oldSHA); err != nil {
+				return Resource{}, err
+			}
+		}
+	}
+	if err := s.execLocked("COMMIT"); err != nil {
+		return Resource{}, err
+	}
+	committed = true
+	if cleanup != nil {
+		cleanup()
+		cleanup = nil
+	}
+	if removeOldBlob {
+		if oldPath, ok := safeAssetPath(s.assetRoot, oldStoragePath); ok {
+			_ = os.Remove(oldPath)
+		}
+	}
+	return s.getResourceLocked(req.ID)
 }
 
 type storedBlob struct {

@@ -39,7 +39,7 @@ Exit `0` when all required checks pass, `1` otherwise. Note that doctor *creates
 
 ```text
 ok    config           config/config.example.yaml
-ok    database         ./data/notes.sqlite (schema version 9)
+ok    database         ./data/notes.sqlite (schema version 10)
 info  web ui           web/dist missing here; run `make web` or serve API-only
 doctor: required checks passed
 ```
@@ -51,10 +51,22 @@ Six variants; all support `--dry-run` and the shared `--config/--db/--asset-stor
 ### import joplin-raw
 
 ```sh
-notriosctl import joplin-raw [shared flags] [--dry-run] <raw-export-dir>
+notriosctl import joplin-raw [shared flags] [--batch-size 100] [--preserve-source] \
+  [--dry-run] [--write-config path] [--import-config path] <raw-export-dir>
 ```
 
-Positional argument: the Joplin **RAW export directory** (not a `.jex` file). No source-specific flags. Imported notes land in the default "Notes" notebook with Joplin notebook/tag metadata preserved in front matter.
+Positional argument: the Joplin **RAW export directory** (not a `.jex` file).
+The importer restores nested notebooks and real tags. `--batch-size` is
+bounded to 1–500 (default 100), and durable checkpoints resume an interrupted
+run when the deterministic source fingerprint still matches.
+`--preserve-source` stores exact RAW item bytes, unknown fields, and property
+order in a separate content-addressed source bundle.
+
+`--dry-run` uses the real action planner and writes an import configuration
+(default `<raw-export-dir>/import-config.json`; override with
+`--write-config`). Resolve any suggested notebook-path renames, then pass the
+file to the real import with `--import-config`. Dry run creates no import
+checkpoint, note, resource, notebook, tag, or source-bundle object.
 
 ### import obsidian
 
