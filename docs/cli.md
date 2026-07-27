@@ -15,7 +15,7 @@ General behavior:
 notriosctl version
 ```
 
-Prints the version string (currently `0.2.0`) and exits 0. No flags.
+Prints the version string (currently `0.3.0`) and exits 0. No flags.
 
 ## doctor
 
@@ -149,7 +149,7 @@ notriosctl resources report [--config config.yaml] [--db path] [--asset-store pa
 Prints a read-only JSON report of logical resources sharing an exact SHA-256
 blob, blobs with no document references, and per-notebook resource usage.
 References held by trashed notes still count, so the unreferenced list is safe
-input for the later retention-aware garbage collector. The perceptual section
+input for the retention-aware garbage collector. The perceptual section
 is empty by default because Notrios ships no perceptual algorithm; an installed
 hook may add review-only policy matches and near-duplicate suggestions.
 

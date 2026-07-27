@@ -8,7 +8,10 @@ This document expands the MVP SQLite schema represented by `migrations/0001_init
 - Keep managed note saves transactional: document row, current revision, FTS row, links, resource references, and outbox records are updated in one SQLite transaction.
 - Store binary bytes outside SQLite in a content-addressed asset directory, while SQLite tracks blob hashes, resources, references, and provenance.
 - Treat FTS5 and Recoll as derived indexes. FTS5 is updated synchronously for managed documents; the Recoll projection is updated asynchronously through `index_outbox`.
-- Use soft deletion for documents first. MVP Task 4 implements safe resource deletion by refusing referenced resources and removing unreferenced logical resources; richer trash/GC policy remains future work.
+- Use soft deletion for documents first. Immediate resource deletion refuses
+  references and requires object-specific confirmation; retention-aware
+  garbage collection is dry-run first, transactionally rechecks references on
+  apply, and exposes a replaceable future sync-acknowledgement gate.
 - Keep import and projection paths deterministic so bulk imports can be resumed and repeated idempotently.
 - Match every unbounded sort/filter cursor with a composite index and verify it
   through `EXPLAIN QUERY PLAN` plus generated scale profiles.

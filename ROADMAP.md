@@ -37,7 +37,7 @@ The built-in Go/Wails GUI is part of the first released version, so it lives her
 - Documentation site: `docs/` published to GitHub Pages with PageFind search; Help notebook seeded from the same content.
 - GitHub release preparation for `github.com/renesugar/notrios`.
 
-## v0.3 — Import, resource, and media hardening (active; see `PLAN.md`)
+## v0.3 — Import, resource, and media hardening (complete; archived under `plans/v0.3/`)
 
 (Deferred former v0.2 draft; see `plans/v0.2/001-import-resource-media-hardening.md`.)
 
@@ -191,5 +191,6 @@ The scaffold handoff is complete; see `CODING_CLIENT_HANDOFF.md`. Future roadmap
 
 ## v0.1 completion note
 
-The v0.1 MVP and v0.2 redesign milestones are implemented and archived. Active
-work follows the v0.3 hardening plan in `PLAN.md`.
+The v0.1 MVP, v0.2 redesign, and v0.3 hardening milestones are implemented and
+archived. The proposed v0.4 implementation plan is in `PLAN.md` and must be
+approved before work starts.

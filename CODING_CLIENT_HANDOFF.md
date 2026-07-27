@@ -2,11 +2,9 @@
 
 This handoff applies to any coding agent or client continuing this project (Codex, Claude, aider, swival.dev, etc. — formerly `CODEX_HANDOFF.md`). The repository is designed so an agent can continue from repository files alone.
 
-Current phase: v0.1 and v0.2 are complete; active work is `PLAN.md` v0.3
-import/resource/media/large-library hardening. H1–H10 are archived;
-**H11 (v0.3 documentation/release wrap-up) is next and requires user approval**. The 2026-07-26
-plan review inserted H7 keyset/scale work and renumbered importer/Recoll/wrap
-tasks to H8–H11. Complete one task at a time and ask before the next.
+Current phase: v0.1, v0.2, and v0.3 are complete. H1–H11 are archived under
+`plans/v0.3/`; the `PLAN.md` v0.4 portable-data/publishing/stable-reference
+plan is **proposed and unstarted**. P1 requires user approval before coding.
 
 ## First files to read
 
@@ -43,7 +41,7 @@ The completed v0.1 MVP supports:
 
 The completed v0.2 redesign added notebooks/tags/search notebooks, source
 provenance and threads, query language, optional Recoll, five importers, native
-archive v1 interchange, Wails v2 GUI, and docs site. v0.3 so far added the
+archive v1 interchange, Wails v2 GUI, and docs site. v0.3 added the
 remote-media policy/scan/quarantine/localization surfaces, exact duplicate and
 unreferenced resource reports, per-notebook resource usage, and an optional
 review-only perceptual hook that is inert by default. H6 added schema-v8
@@ -67,7 +65,10 @@ canonicalization, stable resource refresh, resume/dry-run parity, and generated
 durable projection retry/backoff, bounded drains, exact missing/stale/orphan
 reconciliation, hardened cancellable Recoll processes/output, stable
 deduplicated per-hit engine attribution, status/UI observability, and real
-100k native Recoll evidence under `performance/v0.3-h10/`. See
+100k native Recoll evidence under `performance/v0.3-h10/`. H11 added the
+cross-cutting maintenance guide (also reseeded into Help), reconciled living
+specs and feature status, bumped product metadata to v0.3.0, completed the
+release-candidate gates, and drafted the unstarted v0.4 plan. See
 `agent/PLAN_STATUS.md`.
 
 ## Validation commands
@@ -92,12 +93,12 @@ GUI-affecting tasks also build with `make gui`; layout changes additionally run 
 
 `main` takes reviewed merges; active work happens on `develop`. Commit each completed working-state slice; pushing to GitHub is the **user's step**.
 
-State at review start (verify again before acting):
+Current handoff facts (verify again before acting):
 
 - `origin` is configured (`https://github.com/renesugar/notrios.git`).
 - `develop` review base was `26b0925`; it has no configured upstream.
 - local `main` was `265ef4e` tracking `origin/main`.
-- The review commits are local only. The user explicitly prohibited a GitHub
+- The v0.3 commits are local only. The user explicitly prohibited a GitHub
   push for this session.
 
 Commit-message convention: each agent ends commit messages with its own `Co-Authored-By:` trailer, and appends its model to `agent/MODEL_LOG.jsonl` at session start (see `AGENTS.md`).

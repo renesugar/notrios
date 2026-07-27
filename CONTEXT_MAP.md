@@ -5,8 +5,8 @@ This file is the codebase atlas. Update it whenever major files or directories a
 ## Root documents
 
 - `README.md` — project overview and quick start.
-- `PLAN.md` — active implementation plan (v0.3 hardening; H11 wrap-up is next
-  after H10 handoff approval).
+- `PLAN.md` — proposed v0.4 portable-data/publishing/stable-reference plan;
+  implementation awaits user approval.
 - `plans/scaffold/SCAFFOLD_CREATION_PLAN.md` — process for creating/refining this scaffold.
 - `ROADMAP.md` — product roadmap and future features.
 - `AGENTS.md` — coding-agent instructions (`CLAUDE.md` points here).
@@ -30,7 +30,9 @@ This file is the codebase atlas. Update it whenever major files or directories a
 - `cmd/notriosd/` — service daemon entry point.
 - `cmd/notriosctl/` — CLI/admin/import command entry point.
 - `internal/importers/joplinraw/` — hardened Joplin RAW importer: deterministic inventory, nested notebooks, real tags, exact optional source bundles, fingerprints, bounded batches, checkpoints/resume, and dry-run/config planning.
-- `internal/importers/obsidian/` — MVP Obsidian vault Markdown/assets parser/importer.
+- `internal/importers/obsidian/` — hardened deterministic vault importer with
+  nested notebooks, exact optional source bundles, bounded checkpoints/resume,
+  dry-run/config planning, and canonical alias/embed/anchor resolution.
 - `internal/api/` — shared API request/response models.
 - `internal/httpapi/` — REST HTTP adapter for status, documents, revisions, resources, links, graph slices, and staged future routes.
 - `internal/store/` — SQLite-backed persistence, document CRUD, revision history, soft delete, restore, FTS5 search, resource storage/reference reports (`sqlite_resource_reports.go`), retention-aware GC (`sqlite_gc.go`), importer batch/checkpoint/source-bundle state (`sqlite_imports.go`), link graph persistence, and notebooks/tags/search-notebooks/trash operations (`sqlite_notebooks.go`).
@@ -243,6 +245,9 @@ This file is the codebase atlas. Update it whenever major files or directories a
 
 ## Documentation completeness pass (2026-07-16)
 
-- New user docs: `docs/installation.md` (build/install guide), `docs/troubleshooting.md`; all pages in the site nav.
+- New user docs: `docs/installation.md` (build/install guide),
+  `docs/troubleshooting.md`, and `docs/operations.md` (remote media,
+  resources/GC, resumable imports, Recoll status); all pages are in the site
+  nav and deterministic Help seed.
 - Rewritten: `ENVIRONMENT_SETUP.md` (contributor guide incl. cleanup/precheck workflow), `PACKAGING.md`, `docs/cli.md` (full subcommand reference), `docs/service.md` (config reference + backup/restore), expanded `docs/import-export.md` (per-source workflows incl. the detailed Joplin RAW procedure) and API guides (curl examples, placeholder-endpoint labeling).
 - `notriosctl doctor` performs real diagnostics; importers gained trashed-note re-import guards (Joplin/Obsidian); SQLite opens with a 5s busy timeout; Makefile has full build/clean/precheck targets.

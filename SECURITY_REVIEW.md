@@ -1,6 +1,6 @@
 # Security Review — Current Local Product and Planned Remote Surfaces
 
-This review reflects the repository after v0.3 H6. Notrios is local-first but
+This review reflects the repository after v0.3 H10. Notrios is local-first but
 its REST/MCP listener, importers, preview, downloaded media, future archive
 files, and future sync transports are security boundaries.
 
@@ -68,10 +68,12 @@ hash-verified objects.
   trashed external items.
 - Native archive import validates conflicts before writes.
 
-Remaining v0.3/v0.4 work: bounded batches/checkpoints, exact source bundles,
-path/symlink/zip-bomb defenses for every container, size/count/depth ceilings,
-manifest-last/checksum verification, snapshot consistency, and explicit
-archive compatibility. Native archive v1 is not a disaster-recovery backup.
+Joplin RAW and Obsidian now use bounded batches, durable checkpoints,
+fingerprints, dry-run diffs, and optional exact source bundles. Remaining v0.4
+work includes path/symlink/zip-bomb defenses for every new container,
+size/count/depth ceilings, manifest-last/checksum verification, snapshot
+consistency, and explicit archive compatibility. Native archive v1 is not a
+disaster-recovery backup.
 
 ## Planned synchronization threat boundary
 

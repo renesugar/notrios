@@ -6,7 +6,7 @@ This matrix keeps the long conversation compressed into implementation-sized fea
 
 - **Implemented** — present in the repository (may still have a named
   hardening task).
-- **Active** — in the current v0.3 plan.
+- **Active** — in the current implementation plan.
 - **Planned vX** — assigned to a future milestone but not implemented.
 - **Optional/research** — no adoption decision until a measured need exists.
 
@@ -20,7 +20,7 @@ This matrix keeps the long conversation compressed into implementation-sized fea
 | Resource reference reporting/GC | Implemented | resource service | H5 reports plus H6 dry-run-first retention, transactional rechecks, and sync-aware gate. |
 | Document revisions and trash | Implemented | document service | v0.7 adds replicated death certificates/GC acknowledgements. |
 | Scalable keyset cursors | Implemented | search service | `k2` chronological/relevance keysets plus explicit bounded `m1` sidecar snapshots; no unbounded offset ceiling. |
-| Recoll sidecar (replaces sist2) | Implemented/Active | adapter | Optional external process; H10 reconciliation/paging hardening. |
+| Recoll sidecar (replaces sist2) | Implemented | adapter | Optional external process; bounded retry, exact reconciliation, attributed stable merges, and status/UI telemetry. |
 | Notebooks/tags/search notebooks | Implemented | Notrios service | All notes/Notes/Help/Trash bootstrap and protections. |
 | Query-language adapter | Implemented | search service | FTS5 + optional Recoll compilation. |
 | Bluge generated-site search | Optional/research | publishing adapter | Apache-2.0/capable but inactive upstream; v0.4 spike only. |
@@ -44,7 +44,7 @@ This matrix keeps the long conversation compressed into implementation-sized fea
 | Feature | Status | Primary owner | Notes |
 |---|---:|---|---|
 | Joplin RAW import | Implemented | importer | Nested notebooks, stable real tags, bounded batches, fingerprints/checkpoints, dry-run diffs, rename config, and optional exact source bundle. |
-| Obsidian vault import | Implemented/Active | importer | H9 adds hierarchy, scale, checkpoints, exact source bundle. |
+| Obsidian vault import | Implemented | importer | Nested hierarchy, bounded batches, fingerprints/checkpoints, dry-run diffs, rename config, exact source bundle, and canonical links/anchors. |
 | Twitter/X import | Implemented | importer | Provenance/thread/media import. |
 | ChatGPT export import | Implemented | importer | Conversation provenance. |
 | Claude JSON import | Implemented | importer | Conversation provenance. |

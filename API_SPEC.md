@@ -170,7 +170,13 @@ POST   /api/v1/documents/{document_id}/resources/{resource_id}
 DELETE /api/v1/documents/{document_id}/resources/{resource_id}
 ```
 
-`POST /api/v1/resources` currently accepts a raw request body. `filename` and `collection_id` are supplied as query parameters or the filename can be inferred from `Content-Disposition`. `GET /content` streams the stored bytes and supports `?download=1`; HTTP range requests remain a future hardening item. Resource deletion refuses referenced resources unless an administrative force/GC policy is added later.
+`POST /api/v1/resources` currently accepts a raw request body. `filename` and
+`collection_id` are supplied as query parameters or the filename can be
+inferred from `Content-Disposition`. `GET /content` streams the stored bytes
+and supports `?download=1`; HTTP range requests remain a future hardening
+item. Immediate resource deletion refuses references and requires the
+object-specific confirmation below; retention-aware bulk deletion is
+dry-run-first and CLI-only.
 
 `GET /api/v1/resources/reports/reference` is the read-only H5 report. It
 groups multiple logical resources that share an exact SHA-256 blob, identifies
@@ -349,11 +355,8 @@ Write tools implemented in task R8, exposed only when the MCP profile is `editor
 
 ## MCP tools planned later
 
-Tools implemented after R8:
-
-- `localize_remote_media` (editor profile; revision precondition)
-
-Tools still planned later:
+Tools implemented after R8 include `localize_remote_media` (editor profile;
+revision precondition). Tools still planned later:
 
 - `upload_resource`
 - `get_document_graph`

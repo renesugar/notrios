@@ -63,7 +63,9 @@ Re-importing an archive imports notes as **plain local notes**, not references t
 - the real import (`--import-config path`) validates the chosen names case-insensitively against source-bound notebooks **before writing anything** and refuses on conflict;
 - missing notebook paths are created (nesting and emoji preserved) and populated from the archive; imports are idempotent.
 
-Joplin RAW and Obsidian imports currently place notes in the default notebook; populating notebook hierarchies from those sources is deferred to the v0.3 importer-hardening milestone.
+Joplin RAW and Obsidian imports populate deterministic nested notebooks from
+their source folder hierarchies. Dry-run conflict plans and path-scoped rename
+configuration prevent ambiguous source-bound notebook collisions.
 
 Large importers must inventory once, use deterministic IDs and indexed source
 fingerprints, avoid one query per file, batch writes with progress/checkpoints,

@@ -17,6 +17,7 @@ nav='<nav class="site-nav">
   <a href="/notrios/query-language.html">Query language</a>
   <a href="/notrios/gui.html">GUI</a>
   <a href="/notrios/import-export.html">Import &amp; export</a>
+  <a href="/notrios/operations.html">Maintenance</a>
   <a href="/notrios/api/rest.html">REST API</a>
   <a href="/notrios/api/mcp.html">MCP</a>
   <a href="/notrios/troubleshooting.html">Troubleshooting</a>

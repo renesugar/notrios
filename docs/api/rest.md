@@ -161,7 +161,7 @@ curl -s http://127.0.0.1:8080/api/v1/documents/$DOC/revisions | jq
 ## Placeholder endpoints (not yet functional)
 
 Staged contracts include `POST /api/v1/publish/quartz/plan`,
-`GET /api/v1/jobs/{id}`, `GET /api/v1/search` (use POST), and collection
+`GET /api/v1/jobs/{id}`, and collection
 creation/patching (collections are effectively fixed to `default`). Profiles,
 batch organizer operations, native archive v2 jobs, and sync endpoints are
 planned but not live. Remote-media scan and localization are implemented; see

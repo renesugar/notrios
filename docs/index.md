@@ -10,6 +10,9 @@ Notrios is a local-first note-taking, search, import, and publishing system for 
 - **Importers** — Joplin RAW, Obsidian vaults, Twitter/X archives (with conversation threads), ChatGPT exports, and Claude exports. See [import & export](import-export.md).
 - **Open APIs** — a REST API and an MCP endpoint complete enough to build a full third-party client. See the [REST](api/rest.md) and [MCP](api/mcp.md) guides.
 - **Built-in GUI** — a Go/Wails desktop app with a notebooks sidebar, incremental search, Markdown editor/preview, and light/dark/custom themes. See the [GUI guide](gui.md).
+- **Safe maintenance** — explicit remote-media localization, read-only
+  resource reports, retention-aware garbage collection, resumable imports,
+  and observable Recoll repair. See [data safety and maintenance](operations.md).
 
 ## Getting started
 

@@ -26,6 +26,7 @@ docs/
   query-language.md     # user-facing form of SEARCH_QUERY_LANGUAGE.md
   gui.md                # built-in GUI: building, modes, layout, themes, errors
   import-export.md      # per-source import workflows, archive export/import
+  operations.md         # media, resources/GC, importer resume, sidecar status
   troubleshooting.md    # verified symptoms and fixes
 ```
 

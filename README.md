@@ -3,7 +3,10 @@
 Notrios (formerly "Notes Companion") is a local-first note-taking, search, import, and publishing system for very large Markdown and document collections.
 It combines a Go REST/MCP service (`notriosd`), a built-in GUI, SQLite/FTS5-backed canonical storage, content-addressed resources, optional Recoll-derived search/extraction, and support for third-party native clients (C++/Qt, Go/Wails, Rust/Tauri) over the same API.
 
-The v0.1 MVP and the v0.2 Notrios redesign are complete — see [`PLAN.md`](PLAN.md) and [`ROADMAP.md`](ROADMAP.md). The repository is structured so a coding agent can resume safely after usage limits or model changes.
+The v0.1 MVP, v0.2 redesign, and v0.3 hardening milestone are complete — see
+[`PLAN.md`](PLAN.md) and [`ROADMAP.md`](ROADMAP.md). The repository is
+structured so a coding agent can resume safely after usage limits or model
+changes.
 
 ## Technology choices
 
@@ -61,9 +64,14 @@ Recoll availability, backlog, sync/index, and reconciliation state.
 ## Project status
 
 - v0.1 MVP: complete (see `plans/mvp/MVP_RELEASE_REPORT.md`).
-- v0.2 Notrios redesign: **complete** (all 16 tasks; see [`PLAN.md`](PLAN.md) and `plans/v0.2/`) — notebooks/tags/search notebooks, source provenance with conversation threads, the query language, the optional Recoll sidecar, five importers, query-scoped export/import, the Wails GUI with themes, and the documentation site.
-- Active milestone: v0.3 import/resource/media/large-library hardening — see
-  [`PLAN.md`](PLAN.md) (tasks H1–H11) and [`ROADMAP.md`](ROADMAP.md).
+- v0.2 Notrios redesign: **complete** (all 16 tasks; see `plans/v0.2/`) — notebooks/tags/search notebooks, source provenance with conversation threads, the query language, the optional Recoll sidecar, five importers, query-scoped export/import, the Wails GUI with themes, and the documentation site.
+- v0.3 import/resource/media/large-library hardening: **complete** (tasks
+  H1–H11; see `plans/v0.3/`) — safe remote-media localization, resource
+  reports/retention, keyset pagination, hardened resumable Joplin/Obsidian
+  imports, and a convergent observable Recoll sidecar.
+- Proposed next milestone: v0.4 portable data, publishing, and stable
+  references — see [`PLAN.md`](PLAN.md) and [`ROADMAP.md`](ROADMAP.md);
+  implementation requires user approval.
 - Agent progress/attempt tracking: [`agent/PLAN_STATUS.md`](agent/PLAN_STATUS.md), [`agent/ATTEMPT_LOG.jsonl`](agent/ATTEMPT_LOG.jsonl), and [`agent/MODEL_LOG.jsonl`](agent/MODEL_LOG.jsonl).
 
 ## Contributing
@@ -101,10 +109,12 @@ bash scripts/run_performance_smoke.sh
 bash scripts/run_large_library_profile.sh 100000 /tmp/notrios-profile.json
 bash scripts/run_joplin_import_profile.sh 100000 /tmp/notrios-joplin-profile.json
 bash scripts/run_obsidian_import_profile.sh 100000 /tmp/notrios-obsidian-profile.json
+bash scripts/run_recoll_hardening_profile.sh 100000 /tmp/notrios-recoll-profile.json
 bash scripts/package_release.sh    # validated source ZIP into dist/
 ```
 
-The collection scale profile accepts `10000`, `100000`, or `500000`; the
-Joplin profile accepts `100`, `10000`, or `100000`. Committed reference
-evidence is under `performance/v0.3-h7/` and `performance/v0.3-h8/`. See `PACKAGING.md`,
+The collection scale profile accepts `10000`, `100000`, or `500000`; Joplin
+accepts `100`, `10000`, or `100000`; Obsidian also accepts `500000`; Recoll
+accepts `100` or `100000`. Committed reference evidence is under
+`performance/v0.3-h7/` through `performance/v0.3-h10/`. See `PACKAGING.md`,
 `SECURITY_REVIEW.md`, and `RELEASE_CHECKLIST.md` before tagging a release.

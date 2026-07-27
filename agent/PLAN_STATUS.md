@@ -2,12 +2,12 @@
 
 Updated: 2026-07-26
 
-## Active milestone
+## Proposed next milestone
 
-`PLAN.md` is v0.3 import/resource/media/large-library hardening, now H1–H11.
-H1–H10 are complete and archived under `plans/v0.3/`; H11 (v0.3
-documentation/release wrap-up) is next and requires the normal user approval
-before coding.
+v0.3 import/resource/media/large-library hardening is complete. H1–H11 are
+archived under `plans/v0.3/`. `PLAN.md` is now a proposed, unstarted v0.4
+portable-data/publishing/stable-reference plan drafted from `ROADMAP.md`; P1
+requires user approval before coding.
 
 - H1: media-policy configuration and schema v7.
 - H2: static remote-media scan, policy API/MCP, GUI decisions.
@@ -30,7 +30,8 @@ before coding.
   resolution, stable resource refresh, and 100/10k/100k/500k fixtures.
 - H10: schema-v11 Recoll retry/backoff, exact reconciliation, hardened
   processes, stable attributed merges, status/UI, and 100k native evidence.
-- H11: v0.3 documentation/release wrap-up.
+- H11: v0.3 documentation/release wrap-up, Help reseed, version 0.3.0,
+  release-candidate validation, and verified packaging.
 
 ## 2026-07-26 plan/roadmap review
 
@@ -59,7 +60,7 @@ when this session completes.
 
 - v0.1 MVP is archived under `plans/mvp/`.
 - v0.2 redesign R1–R16 is complete under `plans/v0.2/`.
-- v0.3 H1–H10 are under `plans/v0.3/001`–`010`.
+- v0.3 H1–H11 are under `plans/v0.3/001`–`011`.
 - GUI conformance/native-resize verification and the scaffold/MVP report
   archive moves are committed before the current review.
 
@@ -83,6 +84,9 @@ attempt detail remains append-only in `agent/ATTEMPT_LOG.jsonl`.
   `performance/v0.3-h9/`.
 - H10 native Recoll 100k index/query/drift/reconciliation evidence is under
   `performance/v0.3-h10/`.
+- H11 local release gates pass; `docs/operations.md` is included in the
+  11-page docs site and deterministic 11-note Help seed/reseed.
+- Product version: 0.3.0; current schema: v11.
 - Resource reference report:
   `GET /api/v1/resources/reports/reference` and
   `notriosctl resources report`.
@@ -103,4 +107,4 @@ attempt detail remains append-only in `agent/ATTEMPT_LOG.jsonl`.
 - Official MCP Go SDK adoption/version.
 - Real private Joplin/Obsidian corpus verification (never commit private data).
 - Sync decisions listed in `SYNCHRONIZATION.md` and
-  `agent/OPEN_QUESTIONS.md`; they do not block H11.
+  `agent/OPEN_QUESTIONS.md`; they do not block the proposed v0.4 P1.

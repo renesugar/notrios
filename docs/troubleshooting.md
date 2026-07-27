@@ -32,6 +32,7 @@ Verified symptoms and fixes, grouped by activity. `notriosctl doctor` diagnoses 
 | log: `search sidecar enabled but "recollindex"/recollq not found; continuing with FTS5 only` | Recoll isn't installed — `sudo apt install recoll` — or set `search_sidecar.binary` to its full path. Everything still works via FTS5 |
 | log: `recollindex failed; continuing with FTS5 only` | run `recollindex -c <search_sidecar.index_dir>` manually to see Recoll's own error; deleting the index directory forces a clean rebuild on next start |
 | field queries (`tag:`, `author:`) miss notes that plain search finds | the sidecar may still be indexing (it syncs ~every 30s) or is disabled; FTS5 alone doesn't index tags-as-fields |
+| desktop status shows Recoll `degraded` or a retry backlog | inspect `curl -s localhost:8080/api/v1/status \| jq .search_sidecar`; failed projection jobs back off without blocking later work, and startup/periodic reconciliation repairs drift |
 
 ## Importing
 
@@ -43,6 +44,7 @@ Verified symptoms and fixes, grouped by activity. `notriosctl doctor` diagnoses 
 | Joplin import reports `resources_skipped` with warnings | those attachments were missing from the export's `resources/` directory; re-export from Joplin if they matter |
 | `notebook name "X" conflicts with a notebook bound to another data source` | run the archive import's `--dry-run`, edit the generated `import-config.json` renames, then import with `--import-config` |
 | import seems to “miss” notes on re-run | notes you moved to the Trash are deliberately not resurrected; unchanged notes count as `notes_unchanged` |
+| a Joplin/Obsidian import was interrupted | re-run the same command and option set; if the source inventory fingerprint is unchanged it resumes at the next durable batch, otherwise it replans and skips unchanged item fingerprints |
 
 ## Documentation site
 

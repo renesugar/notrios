@@ -1,5 +1,48 @@
 # Release Checklist
 
+## v0.3.0 — import, resource, media, and scale hardening
+
+The v0.3 implementation is complete on `develop`. This section separates the
+reproducible local release-candidate gates from repository-owner publishing
+actions.
+
+Release-candidate gates (run for H11):
+
+- [x] Product version reports `0.3.0`; schema bootstraps/upgrades to v11.
+- [x] `go vet ./...` and `go test ./...`.
+- [x] Required-file, scaffold, OpenAPI parse, migration-copy, and plan-loop
+      checks.
+- [x] Web lockfile install, typecheck, tests, production build, and GUI build.
+- [x] Documentation site build and deterministic Help-notebook seed/reseed.
+- [x] End-to-end REST/MCP smoke and generated store performance smoke.
+- [x] 100-note Joplin RAW, Obsidian, and native Recoll profiles; committed
+      scale evidence remains under `performance/v0.3-h7/` through
+      `performance/v0.3-h10/`.
+- [x] Source release ZIP produced by `scripts/package_release.sh`, independently
+      checked by `scripts/check_release_zip.py`, and SHA-256 recorded in the
+      H11 handoff.
+- [x] ZIP contains `web/dist/` and excludes `.git/`, `web/node_modules/`,
+      runtime `data/`, SQLite databases, and generated build directories.
+
+Known release boundaries:
+
+- Recoll/Xapian remain optional user-installed external GPL processes and are
+  not linked, vendored, or redistributed.
+- Joplin/Obsidian correctness and scale evidence uses generated fixtures.
+  Before migrating irreplaceable notes, run a dry run and validate against a
+  private backup; never add private exports to this repository.
+- Notrios remains source-only, Ubuntu-only, single-user/local, and unauthenticated.
+  Do not expose the service directly to an untrusted network.
+- Native archive v1 is query-scoped interchange, not a full backup. Back up
+  the stopped SQLite database and asset store as documented.
+
+Repository-owner publishing steps (not performed by H11):
+
+- [ ] Review and merge/fast-forward `develop` into `main`.
+- [ ] Push the reviewed branches; confirm CI and the GitHub Pages docs workflow.
+- [ ] Protect `main` and require the desired review/check policy.
+- [ ] Tag and push `v0.3.0` only after the owner accepts the release candidate.
+
 ## v0.2 — first public GitHub push (task R16)
 
 The v0.2 Notrios redesign is complete; the repository is ready for its first
