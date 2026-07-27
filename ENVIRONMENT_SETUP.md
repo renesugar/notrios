@@ -52,6 +52,7 @@ make docs          # _site/ documentation site (uses npx marked + pagefind)
 make smoke         # end-to-end REST/MCP smoke test on a loopback port
 bash scripts/run_performance_smoke.sh   # generated-dataset store benchmark
 bash scripts/run_joplin_import_profile.sh 100 /tmp/notrios-joplin.json
+bash scripts/run_obsidian_import_profile.sh 100 /tmp/notrios-obsidian.json
 ```
 
 For iterative frontend work use `cd web && npm run dev`; Vite proxies `/api` and `/healthz` to a locally running `notriosd`.
@@ -104,6 +105,7 @@ cd web && npm ci && npm run typecheck && npm run build
 bash scripts/mvp_smoke.sh
 bash scripts/run_performance_smoke.sh
 bash scripts/run_joplin_import_profile.sh 100 /tmp/notrios-joplin.json
+bash scripts/run_obsidian_import_profile.sh 100 /tmp/notrios-obsidian.json
 ```
 
 These are the same checks CI runs (plus CI's GUI compile check with `-tags "gui desktop production webkit2_41"`).

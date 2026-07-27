@@ -5,7 +5,7 @@ Updated: 2026-07-26
 ## Active milestone
 
 `PLAN.md` is v0.3 import/resource/media/large-library hardening, now H1–H11.
-H1–H8 are complete and archived under `plans/v0.3/`; H9 (Obsidian importer
+H1–H9 are complete and archived under `plans/v0.3/`; H10 (Recoll sidecar
 hardening) is next and requires the normal user approval before coding.
 
 - H1: media-policy configuration and schema v7.
@@ -23,8 +23,10 @@ hardening) is next and requires the normal user approval before coding.
 - H8: schema-v10 importer checkpoints/item fingerprints/exact source-bundle
   manifests; Joplin nested notebooks, stable real tags, bounded phases,
   dry-run/config parity, resource refresh, resume, and 100/10k/100k fixtures.
-- H9: Obsidian hierarchy, exact source preservation, bounded
-  batches/fingerprints/checkpoints, and large fixtures.
+- H9: Obsidian nested vault hierarchy, conflict/config planning, exact
+  Markdown/frontmatter/non-Markdown source bundles, bounded
+  batches/fingerprints/checkpoints, canonical alias/relative/embed/anchor
+  resolution, stable resource refresh, and 100/10k/100k/500k fixtures.
 - H10: Recoll reconciliation, bounded batches, stable merge quality, UI status.
 - H11: v0.3 documentation/release wrap-up.
 
@@ -55,7 +57,7 @@ when this session completes.
 
 - v0.1 MVP is archived under `plans/mvp/`.
 - v0.2 redesign R1–R16 is complete under `plans/v0.2/`.
-- v0.3 H1–H8 are under `plans/v0.3/001`–`008`.
+- v0.3 H1–H9 are under `plans/v0.3/001`–`009`.
 - GUI conformance/native-resize verification and the scaffold/MVP report
   archive moves are committed before the current review.
 
@@ -75,6 +77,8 @@ attempt detail remains append-only in `agent/ATTEMPT_LOG.jsonl`.
 - H7 generated profile evidence is under `performance/v0.3-h7/`.
 - H8 generated Joplin dry-run/interruption/resume evidence is under
   `performance/v0.3-h8/`.
+- H9 generated Obsidian dry-run/interruption/resume and scale evidence is under
+  `performance/v0.3-h9/`.
 - Resource reference report:
   `GET /api/v1/resources/reports/reference` and
   `notriosctl resources report`.
@@ -95,4 +99,4 @@ attempt detail remains append-only in `agent/ATTEMPT_LOG.jsonl`.
 - Official MCP Go SDK adoption/version.
 - Real private Joplin/Obsidian corpus verification (never commit private data).
 - Sync decisions listed in `SYNCHRONIZATION.md` and
-  `agent/OPEN_QUESTIONS.md`; they do not block H8.
+  `agent/OPEN_QUESTIONS.md`; they do not block H10.

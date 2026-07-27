@@ -1,6 +1,6 @@
 # Plan: v0.3 — Import, resource, and media hardening
 
-Status: **active** (drafted 2026-07-16 from `ROADMAP.md`; supersedes the archived draft `plans/v0.2/001-import-resource-media-hardening.md`). The completed v0.2 redesign plan is archived under `plans/v0.2/`. H1–H8 are complete (`plans/v0.3/`); H9 is next and requires user approval.
+Status: **active** (drafted 2026-07-16 from `ROADMAP.md`; supersedes the archived draft `plans/v0.2/001-import-resource-media-hardening.md`). The completed v0.2 redesign plan is archived under `plans/v0.2/`. H1–H9 are complete (`plans/v0.3/`); H10 is next and requires user approval.
 
 ## Goal
 
@@ -122,6 +122,9 @@ Status: completed 2026-07-26; archived at
 Working state: importer remains idempotent; a large interrupted import resumes cleanly; dry run matches the subsequent real run.
 
 ### H9. Obsidian importer hardening
+
+Status: completed 2026-07-26; archived at
+`plans/v0.3/009-obsidian-importer-hardening.md`.
 
 - Populate notebooks from the vault folder hierarchy (same conflict/rename mechanism as H8).
 - Improve aliases, frontmatter, embeds (`![[...]]`), block references, and relative-path resolution.

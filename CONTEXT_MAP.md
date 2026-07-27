@@ -5,7 +5,7 @@ This file is the codebase atlas. Update it whenever major files or directories a
 ## Root documents
 
 - `README.md` — project overview and quick start.
-- `PLAN.md` — active implementation plan (v0.3 hardening; H9 next after H8 handoff approval).
+- `PLAN.md` — active implementation plan (v0.3 hardening; H10 next after H9 handoff approval).
 - `plans/scaffold/SCAFFOLD_CREATION_PLAN.md` — process for creating/refining this scaffold.
 - `ROADMAP.md` — product roadmap and future features.
 - `AGENTS.md` — coding-agent instructions (`CLAUDE.md` points here).
@@ -131,9 +131,16 @@ This file is the codebase atlas. Update it whenever major files or directories a
 
 ## MVP Task 9 importer files
 
-- `internal/importers/obsidian/obsidian.go` scans an Obsidian-style vault, imports Markdown notes and non-Markdown assets with deterministic source-path IDs, preserves/augments frontmatter, attaches referenced local assets, and refreshes link indexes after the batch.
-- `internal/importers/obsidian/obsidian_test.go` builds a small vault fixture and verifies import, resource attachment, Wikilink/embed/backlink resolution, unresolved-link preservation, searchability, and idempotent re-run behavior.
-- `cmd/notriosctl/main.go` now includes `notriosctl import obsidian`.
+- `internal/importers/obsidian/obsidian.go` owns deterministic one-pass vault
+  inventory, nested-folder conflict planning, bounded fingerprint/checkpoint
+  phases, exact source bundles, canonical alias/relative/embed/anchor
+  resolution, resource refresh, and link rebuild.
+- `internal/importers/obsidian/obsidian_test.go` covers exact Markdown/binary
+  recovery, hierarchy, conflicts/renames, dry-run parity, interruption/resume,
+  resource refresh, richer graph edges, Trash, search, and idempotence;
+  `profile_test.go` drives generated 100/10k/100k/500k tiers.
+- `cmd/notriosctl/main.go` exposes Obsidian batch, source preservation,
+  dry-run config, resume progress, and media-localization flags.
 - `store.RebuildDocumentLinks` lets batch importers refresh link resolution after all target documents/resources exist without creating extra revisions.
 
 
@@ -149,6 +156,8 @@ This file is the codebase atlas. Update it whenever major files or directories a
   10k/100k/500k keyset/search/resource profile driver.
 - `scripts/run_joplin_import_profile.sh` — reproducible H8 generated
   100/10k/100k dry-run plus interrupted/resumed import profile.
+- `scripts/run_obsidian_import_profile.sh` — reproducible H9 generated
+  100/10k/100k/500k dry-run plus interrupted/resumed vault profile.
 - `performance/v0.3-h7/` — committed environment, query-plan, latency, size,
   and peak-RSS evidence from the H7 scale runs.
 - `performance/v0.3-h8/` — committed Joplin import duration, batch/resume, and

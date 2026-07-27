@@ -194,6 +194,10 @@ func runImportObsidian(args []string) {
 	assetStore := fs.String("asset-store", "", "asset store directory override")
 	collectionID := fs.String("collection", "default", "collection ID")
 	dryRun := fs.Bool("dry-run", false, "scan and report without writing")
+	batchSize := fs.Int("batch-size", 100, "maximum source items per durable import batch (1-500)")
+	preserveSource := fs.Bool("preserve-source", false, "store exact vault files in a content-addressed source bundle")
+	writeConfig := fs.String("write-config", "", "dry run: where to write the import configuration (default <vault>/.notrios/import-config.json)")
+	importConfig := fs.String("import-config", "", "import configuration file with vault-folder renames")
 	localizeMedia := fs.Bool("localize-media", false, "after importing, localize policy-allowed remote media in the imported notes")
 	if err := fs.Parse(args); err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -232,7 +236,48 @@ func runImportObsidian(args []string) {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
-	report, err := obsidian.Import(ctx, st, fs.Arg(0), obsidian.Options{CollectionID: *collectionID, DryRun: *dryRun})
+	sourceDir := fs.Arg(0)
+	options := obsidian.Options{
+		CollectionID:   *collectionID,
+		BatchSize:      *batchSize,
+		PreserveSource: *preserveSource,
+		AfterBatch: func(phase string, processed, total int) error {
+			fmt.Fprintf(os.Stderr, "obsidian import: %s %d/%d\n", phase, processed, total)
+			return nil
+		},
+	}
+	if *dryRun {
+		importCfg, report, err := obsidian.DryRun(ctx, st, sourceDir, options)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		target := *writeConfig
+		if target == "" {
+			target = filepath.Join(sourceDir, ".notrios", "import-config.json")
+		}
+		if err := obsidian.WriteConfig(importCfg, target); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		fmt.Fprintf(os.Stderr, "import configuration written to %s\n", target)
+		encoder := json.NewEncoder(os.Stdout)
+		encoder.SetIndent("", "  ")
+		if err := encoder.Encode(report); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		return
+	}
+	if *importConfig != "" {
+		importCfg, err := obsidian.LoadConfig(*importConfig)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		options.Config = importCfg
+	}
+	report, err := obsidian.Import(ctx, st, sourceDir, options)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)

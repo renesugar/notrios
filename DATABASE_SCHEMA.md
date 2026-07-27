@@ -103,6 +103,13 @@ snapshot rather than a numeric offset inside an opaque token.
   `assets/source-bundles/sha256/`; this namespace is deliberately outside
   ordinary `blobs` and resource garbage collection.
 
+H8 Joplin RAW and H9 Obsidian both use these generic tables. Obsidian item
+keys are vault-relative file/folder paths; complete Markdown files preserve
+their exact frontmatter and line endings, while non-Markdown bundle items
+preserve original bytes. The importer checkpoint fingerprint also binds
+source-preservation and folder-rename choices so incompatible resumptions
+restart from the first phase.
+
 ## Schema v5/v6 — Notrios redesign (tasks R3 and R4 implemented)
 
 Schema v5 (notebooks) and v6 (source provenance) are live in `migrations/0001_initial.sql` (with an `ensureSchemaV5` upgrade shim for v4 databases that adds `documents.notebook_id` and backfills existing rows into the default notebook). It adds the note-taking data model on top of the existing document tables:

@@ -86,7 +86,7 @@ The scaffold-era and v0.1-MVP reports (`plans/scaffold/SCAFFOLD_*.md`, `plans/mv
 
 ## Importing your notes
 
-`notriosctl` imports Joplin RAW exports, Obsidian vaults, Twitter/X archives, ChatGPT exports, and Claude exports, and round-trips a native archive format — each with a `--dry-run` mode and an idempotent re-run story. The Joplin importer restores nested notebooks and real tags, resumes durable batches, and can retain an exact optional RAW source bundle. See [docs/import-export.md](docs/import-export.md) and [docs/cli.md](docs/cli.md).
+`notriosctl` imports Joplin RAW exports, Obsidian vaults, Twitter/X archives, ChatGPT exports, and Claude exports, and round-trips a native archive format — each with a `--dry-run` mode and an idempotent re-run story. Joplin and Obsidian restore nested notebooks, resume durable bounded batches, emit conflict-rename plans, and can retain exact optional source bundles; Obsidian also canonicalizes aliases, relative links, embeds, headings, and block references without discarding original vault bytes. See [docs/import-export.md](docs/import-export.md) and [docs/cli.md](docs/cli.md).
 
 ## Validation
 
@@ -96,6 +96,7 @@ make smoke                    # end-to-end REST/MCP smoke test
 bash scripts/run_performance_smoke.sh
 bash scripts/run_large_library_profile.sh 100000 /tmp/notrios-profile.json
 bash scripts/run_joplin_import_profile.sh 100000 /tmp/notrios-joplin-profile.json
+bash scripts/run_obsidian_import_profile.sh 100000 /tmp/notrios-obsidian-profile.json
 bash scripts/package_release.sh    # validated source ZIP into dist/
 ```
 

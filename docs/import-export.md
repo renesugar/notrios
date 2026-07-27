@@ -177,19 +177,37 @@ Point the importer at your vault directory (the folder containing your `.md` fil
 
 ```sh
 go run ./cmd/notriosctl import obsidian --dry-run "/path/to/vault"
-go run ./cmd/notriosctl import obsidian "/path/to/vault"
+go run ./cmd/notriosctl import obsidian --preserve-source \
+  --import-config "/path/to/vault/.notrios/import-config.json" "/path/to/vault"
 ```
 
 Behavior:
 
-- Scans Markdown notes and non-Markdown assets; skips `.obsidian/`, VCS, and dependency folders.
-- Preserves your Markdown as-is — Wikilinks `[[Target]]`, embeds `![[...]]`, and unresolved links survive; link/backlink indexes are refreshed after the whole batch so cross-references resolve regardless of import order (`link_indexes_refreshed` in the report).
-- Front matter is preserved and augmented with `source_system: obsidian` and `obsidian_path`; an existing front-matter `title:` wins over the first heading.
-- Local assets referenced by notes are imported content-addressed and attached.
-- Deterministic IDs derive from vault-relative paths, so re-imports are idempotent. Like Joplin, notes land in the default **"Notes"** notebook today; the vault folder structure survives in `obsidian_path`.
-- Report fields mirror Joplin's, with `markdown_seen` instead of `notes_seen` and no link-rewriting counter (links are preserved, not rewritten).
+- Scans once, in deterministic relative-path order; skips `.obsidian/`,
+  `.notrios/`, VCS, Trash, and dependency folders. Symlinks are refused.
+- Restores the vault folder hierarchy as nested notebooks. A collision with a
+  builtin or source-bound sibling is reported by dry run with a path-scoped
+  rename; a same-named plain local notebook can be merged deliberately.
+- Resolves note filenames, frontmatter aliases, vault-root and note-relative
+  paths. Wikilinks, Markdown links, note/resource embeds, heading anchors, and
+  block references are canonicalized to stable Notrios URIs; unresolved or
+  ambiguous source syntax remains in the canonical note with a warning.
+- Preserves frontmatter as canonical metadata and augments it with
+  `source_system`, `obsidian_path`, and `obsidian_folder`. A frontmatter
+  `title:` wins over the first heading.
+- `--preserve-source` keeps each original Markdown file (therefore its exact
+  frontmatter bytes and line endings), relative path, and every discovered
+  non-Markdown file byte-for-byte in the source-bundle store. Canonical parsing
+  never replaces that source representation.
+- Imports local assets content-addressed, attaches referenced assets, and
+  updates changed bytes behind the same deterministic resource ID.
+- Fingerprints and bounded 1–500 item batches make re-runs idempotent and
+  resumable. Dry run uses the same create/update/unchanged classifiers as the
+  real import and writes no import checkpoint or content.
 
-Limitations: Obsidian canvases and plugin-specific syntax import as plain text; front-matter `tags:` are not turned into sidebar tags.
+Limitations: Obsidian canvases and plugin-specific syntax import as ordinary
+non-Markdown source files; frontmatter `tags:` are not yet turned into sidebar
+tags. Test first on a copy of a real vault and inspect warnings.
 
 ---
 

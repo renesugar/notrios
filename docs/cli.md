@@ -71,10 +71,19 @@ checkpoint, note, resource, notebook, tag, or source-bundle object.
 ### import obsidian
 
 ```sh
-notriosctl import obsidian [shared flags] [--dry-run] <vault-dir>
+notriosctl import obsidian [shared flags] [--batch-size 100] [--preserve-source]
+  [--dry-run] [--write-config path] [--import-config path] <vault-dir>
 ```
 
-Positional argument: the vault directory. No source-specific flags.
+Positional argument: the vault directory. Folder hierarchy becomes nested
+notebooks. `--batch-size` is bounded to 1–500 (default 100); matching durable
+checkpoints resume interrupted imports. `--preserve-source` captures exact
+Markdown/frontmatter and non-Markdown bytes with their relative paths.
+
+Dry run uses the real action classifiers and writes a folder-conflict
+configuration (default `<vault>/.notrios/import-config.json`). Apply suggested
+path-scoped renames with `--import-config`. Dry run creates no canonical rows,
+checkpoint, or source-bundle object.
 
 ### import twitter
 

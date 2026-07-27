@@ -1,0 +1,21 @@
+{
+  "mode": "dry-run-interrupt-resume",
+  "notes": 10000,
+  "folders": 21,
+  "resources": 20,
+  "batch_size": 100,
+  "dry_run_duration": 4874032695,
+  "import_duration": 68252914696,
+  "resumed": true,
+  "batches_completed": 303,
+  "notes_planned": 10000,
+  "notes_imported": 10000,
+  "resources_planned": 20,
+  "resources_imported": 20,
+  "links_rewritten": 30000,
+  "source_bundle_items": 10020,
+  "peak_go_sys_bytes": 83650840,
+  "go_version": "go1.26.5",
+  "goos": "linux",
+  "goarch": "amd64"
+}

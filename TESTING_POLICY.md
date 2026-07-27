@@ -102,6 +102,15 @@ throughput gate. Reports record elapsed time, batch count, environment, and Go
 memory. Exact unknown/reordered-property and CRLF-byte preservation is covered
 separately by the focused importer fixture.
 
+H9's `scripts/run_obsidian_import_profile.sh` uses 100/10k/100k/500k tiers for
+generated vaults with nested folders, aliases, relative links,
+embeds, heading/block anchors, unknown frontmatter, exact source-bundle
+accounting, and local assets. The 100 and 10k tiers inject a durable
+interruption and verify resumed dry-run parity; 100k and 500k are bounded
+inventory/dry-run profiles. Focused fixtures recover original CRLF Markdown and
+binary bytes exactly and cover conflict renames, richer graph edges, stable
+asset refresh, Trash, and idempotence.
+
 SQLite's OFFSET cost grows linearly with skipped rows. In an ideal local
 1,000,000-row covering-index probe during the 2026-07 plan review, offsets
 10k/50k/100k/200k/500k/900k took approximately

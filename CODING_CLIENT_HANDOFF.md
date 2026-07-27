@@ -3,8 +3,8 @@
 This handoff applies to any coding agent or client continuing this project (Codex, Claude, aider, swival.dev, etc. — formerly `CODEX_HANDOFF.md`). The repository is designed so an agent can continue from repository files alone.
 
 Current phase: v0.1 and v0.2 are complete; active work is `PLAN.md` v0.3
-import/resource/media/large-library hardening. H1–H8 are archived;
-**H9 (Obsidian importer hardening) is next and requires user approval**. The 2026-07-26
+import/resource/media/large-library hardening. H1–H9 are archived;
+**H10 (Recoll sidecar hardening) is next and requires user approval**. The 2026-07-26
 plan review inserted H7 keyset/scale work and renumbered importer/Recoll/wrap
 tasks to H8–H11. Complete one task at a time and ask before the next.
 
@@ -59,7 +59,12 @@ optional FTS5/Recoll merging. Reproducible 10k/100k/500k evidence lives under
 fingerprints, exact optional source bundles, Joplin nested notebooks and stable
 real tags, bounded batch lookups, dry-run/config parity, stable resource
 refresh, interruption/resume, and generated 100/10k/100k evidence under
-`performance/v0.3-h8/`. See `agent/PLAN_STATUS.md`.
+`performance/v0.3-h8/`. H9 applies the same generic state model to Obsidian:
+nested vault notebooks and collision renames, exact Markdown/frontmatter and
+non-Markdown source capture, alias/relative/embed/heading/block
+canonicalization, stable resource refresh, resume/dry-run parity, and generated
+100/10k/100k/500k evidence under `performance/v0.3-h9/`. See
+`agent/PLAN_STATUS.md`.
 
 ## Validation commands
 
@@ -73,6 +78,7 @@ cd web && npm ci && npm run typecheck && npm run build && npm test
 bash scripts/mvp_smoke.sh
 bash scripts/run_performance_smoke.sh
 bash scripts/run_joplin_import_profile.sh 100 /tmp/notrios-joplin.json
+bash scripts/run_obsidian_import_profile.sh 100 /tmp/notrios-obsidian.json
 ```
 
 GUI-affecting tasks also build with `make gui`; layout changes additionally run `scripts/verify_layout_resize.py` under Xvfb/Openbox (see `TESTING_POLICY.md`).
