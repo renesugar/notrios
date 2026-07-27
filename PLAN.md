@@ -1,6 +1,6 @@
 # Plan: v0.3 — Import, resource, and media hardening
 
-Status: **active** (drafted 2026-07-16 from `ROADMAP.md`; supersedes the archived draft `plans/v0.2/001-import-resource-media-hardening.md`). The completed v0.2 redesign plan is archived under `plans/v0.2/`. H1–H6 are complete (`plans/v0.3/`); H7 is next.
+Status: **active** (drafted 2026-07-16 from `ROADMAP.md`; supersedes the archived draft `plans/v0.2/001-import-resource-media-hardening.md`). The completed v0.2 redesign plan is archived under `plans/v0.2/`. H1–H7 are complete (`plans/v0.3/`); H8 is next.
 
 ## Goal
 
@@ -75,7 +75,7 @@ Working state: users can inspect duplicate and unreferenced resources; perceptua
 
 Working state: GC never removes referenced data; dry run is the default everywhere; deletion requires an explicit flag.
 
-### H7. Large-library pagination and performance baseline
+### H7. Large-library pagination and performance baseline — COMPLETED (see `plans/v0.3/007-large-library-pagination-performance.md`)
 
 - Replace `q1:<offset>` cursors and `LIMIT ... OFFSET` for chronological
   document/notebook/search-notebook traversal with query-bound keyset cursors.

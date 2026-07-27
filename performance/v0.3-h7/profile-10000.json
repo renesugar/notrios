@@ -1,0 +1,94 @@
+{
+  "generated_at": "2026-07-27T00:04:12Z",
+  "document_count": 10000,
+  "resource_count": 100,
+  "physical_blob_count": 10,
+  "link_count": 20000,
+  "database_bytes": 11444224,
+  "peak_rss_bytes": 22159360,
+  "environment": {
+    "goos": "linux",
+    "goarch": "amd64",
+    "go_version": "go1.26.5",
+    "sqlite_version": "3.45.1",
+    "cpu_model": "Intel(R) Core(TM) i5-9300H CPU @ 2.40GHz"
+  },
+  "metrics": {
+    "all_notes_90_percent_deep_page": {
+      "iterations": 30,
+      "p50_ms": 1.48,
+      "p95_ms": 2.536,
+      "max_ms": 2.722,
+      "items": 100
+    },
+    "all_notes_first_page": {
+      "iterations": 30,
+      "p50_ms": 1.62,
+      "p95_ms": 3.102,
+      "max_ms": 3.626,
+      "items": 100
+    },
+    "all_notes_next_page": {
+      "iterations": 30,
+      "p50_ms": 3.817,
+      "p95_ms": 10.75,
+      "max_ms": 19.925,
+      "items": 100
+    },
+    "export_cursor_stream": {
+      "iterations": 1,
+      "p50_ms": 214.691,
+      "p95_ms": 214.691,
+      "max_ms": 214.691,
+      "items": 10000
+    },
+    "fts_nonselective_first_page": {
+      "iterations": 5,
+      "p50_ms": 19.207,
+      "p95_ms": 20.51,
+      "max_ms": 20.51,
+      "items": 100
+    },
+    "fts_selective_first_page": {
+      "iterations": 15,
+      "p50_ms": 0.528,
+      "p95_ms": 1.298,
+      "max_ms": 1.298,
+      "items": 1
+    },
+    "notebook_filter_first_page": {
+      "iterations": 30,
+      "p50_ms": 1.548,
+      "p95_ms": 3.326,
+      "max_ms": 3.498,
+      "items": 100
+    },
+    "synthetic_import_batch_seed": {
+      "iterations": 1,
+      "p50_ms": 7633.155,
+      "p95_ms": 7633.155,
+      "max_ms": 7633.155,
+      "items": 10000
+    },
+    "tag_filter_first_page": {
+      "iterations": 30,
+      "p50_ms": 4.019,
+      "p95_ms": 6.817,
+      "max_ms": 8.349,
+      "items": 100
+    }
+  },
+  "query_plans": {
+    "all_notes": [
+      "SEARCH documents USING COVERING INDEX documents_collection_state_updated_idx (collection_id=? AND deleted_at=?)"
+    ],
+    "notebook": [
+      "SEARCH documents USING COVERING INDEX documents_notebook_state_updated_idx (notebook_id=? AND deleted_at=?)"
+    ],
+    "tag_membership": [
+      "SEARCH note_tags USING COVERING INDEX note_tags_tag_document_idx (tag_id=?)"
+    ]
+  },
+  "ordinary_page_target_p95_ms": 100,
+  "ordinary_page_target_met": true
+}

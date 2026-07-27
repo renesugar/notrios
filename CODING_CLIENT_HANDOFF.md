@@ -3,8 +3,8 @@
 This handoff applies to any coding agent or client continuing this project (Codex, Claude, aider, swival.dev, etc. — formerly `CODEX_HANDOFF.md`). The repository is designed so an agent can continue from repository files alone.
 
 Current phase: v0.1 and v0.2 are complete; active work is `PLAN.md` v0.3
-import/resource/media/large-library hardening. H1–H6 are archived;
-**H7 (large-library pagination and performance baseline) is next**. The 2026-07-26
+import/resource/media/large-library hardening. H1–H7 are archived;
+**H8 (Joplin RAW importer hardening) is next**. The 2026-07-26
 plan review inserted H7 keyset/scale work and renumbered importer/Recoll/wrap
 tasks to H8–H11. Complete one task at a time and ask before the next.
 
@@ -51,7 +51,11 @@ resource retention state, configurable local retention, dry-run-first CLI
 garbage collection, a read-only REST report, explicit confirmation for
 permanent REST deletion, and a future sync-aware retention gate. Archive v1 is
 not a full backup; v0.4 native archive v2 is planned as the
-full-snapshot/container layer reused by v0.7 sync. See `agent/PLAN_STATUS.md`.
+full-snapshot/container layer reused by v0.7 sync. H7 added schema-v9 keyset
+indexes and query-bound cursors for chronological/relevance, route-bound
+notebook/Trash paging, live GET search, and bounded immutable snapshots for
+optional FTS5/Recoll merging. Reproducible 10k/100k/500k evidence lives under
+`performance/v0.3-h7/`. See `agent/PLAN_STATUS.md`.
 
 ## Validation commands
 

@@ -150,11 +150,17 @@ func (s *Server) handleNotebookNotes(w http.ResponseWriter, r *http.Request) {
 	if !s.requireStore(w) {
 		return
 	}
-	docs, err := s.store.ListNotebookDocuments(r.Context(), r.PathValue("notebook_id"), queryLimit(r))
+	page, err := s.store.ListNotebookDocuments(r.Context(), r.PathValue("notebook_id"), store.DocumentPageRequest{
+		Limit:  queryLimit(r),
+		Cursor: r.URL.Query().Get("cursor"),
+	})
 	if writeStoreError(w, err, "notebook_notes_failed") {
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"documents": toAPIDocuments(docs)})
+	writeJSON(w, http.StatusOK, api.DocumentPage{
+		Documents:  toAPIDocuments(page.Documents),
+		NextCursor: page.NextCursor,
+	})
 }
 
 func toAPIDocuments(docs []store.Document) []api.Document {
@@ -296,11 +302,17 @@ func (s *Server) handleListTrash(w http.ResponseWriter, r *http.Request) {
 	if !s.requireStore(w) {
 		return
 	}
-	docs, err := s.store.ListTrash(r.Context(), queryLimit(r))
+	page, err := s.store.ListTrash(r.Context(), store.DocumentPageRequest{
+		Limit:  queryLimit(r),
+		Cursor: r.URL.Query().Get("cursor"),
+	})
 	if writeStoreError(w, err, "trash_list_failed") {
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"documents": toAPIDocuments(docs)})
+	writeJSON(w, http.StatusOK, api.DocumentPage{
+		Documents:  toAPIDocuments(page.Documents),
+		NextCursor: page.NextCursor,
+	})
 }
 
 func (s *Server) handleRestoreTrashedDocument(w http.ResponseWriter, r *http.Request) {

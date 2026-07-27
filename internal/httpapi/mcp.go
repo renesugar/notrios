@@ -404,7 +404,7 @@ func (s *Server) mcpTools() []mcpTool {
 		{Name: "get_document_outline", Description: "Return headings extracted from one Markdown document.", InputSchema: objectSchema(map[string]any{"document_id": stringSchema(), "uri": stringSchema()}, nil)},
 		{Name: "get_note_line_range", Description: "Read a 1-indexed inclusive slice of a note body by line numbers.", InputSchema: objectSchema(map[string]any{"document_id": stringSchema(), "uri": stringSchema(), "start_line": integerSchema(1, 1000000), "end_line": integerSchema(1, 1000000)}, nil)},
 		{Name: "search_in_note", Description: "Case-insensitive search within one note. Returns matches with line numbers and context.", InputSchema: objectSchema(map[string]any{"document_id": stringSchema(), "uri": stringSchema(), "pattern": stringSchema()}, nil)},
-		{Name: "get_notebook_notes", Description: "List current notes directly in one notebook.", InputSchema: objectSchema(map[string]any{"notebook_id": stringSchema(), "limit": integerSchema(1, 200)}, nil)},
+		{Name: "get_notebook_notes", Description: "List current notes directly in one notebook with keyset pagination.", InputSchema: objectSchema(map[string]any{"notebook_id": stringSchema(), "limit": integerSchema(1, 200), "cursor": stringSchema()}, nil)},
 		{Name: "scan_remote_media", Description: "Report the remote-media policy decision (allow/block/review with reason) for every remote image/media URL in one note, without downloading anything.", InputSchema: objectSchema(map[string]any{"document_id": stringSchema(), "uri": stringSchema()}, nil)},
 	}
 	if s.mcpWritesEnabled() {

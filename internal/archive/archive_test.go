@@ -98,7 +98,7 @@ func TestExportImportRoundTripWithRenames(t *testing.T) {
 		t.Fatalf("creates missing: %+v", dryReport)
 	}
 	// Dry run wrote nothing.
-	if docs, _ := dst.ListNotebookDocuments(ctx, store.DefaultNotebookID, 10); len(docs) != 0 {
+	if page, _ := dst.ListNotebookDocuments(ctx, store.DefaultNotebookID, store.DocumentPageRequest{Limit: 10}); len(page.Documents) != 0 {
 		t.Fatalf("dry run must not import notes")
 	}
 

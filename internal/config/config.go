@@ -39,7 +39,6 @@ type DataConfig struct {
 type SearchConfig struct {
 	DefaultLimit int `json:"default_limit"`
 	MaxLimit     int `json:"max_limit"`
-	MaxOffset    int `json:"max_offset"`
 }
 
 type MCPConfig struct {
@@ -127,7 +126,6 @@ func Default() Config {
 		Search: SearchConfig{
 			DefaultLimit: 20,
 			MaxLimit:     100,
-			MaxOffset:    10000,
 		},
 		MCP: MCPConfig{
 			Enabled:          true,
@@ -458,8 +456,6 @@ func applySearch(cfg *SearchConfig, key, value string) {
 		cfg.DefaultLimit = parseInt(value, cfg.DefaultLimit)
 	case "max_limit":
 		cfg.MaxLimit = parseInt(value, cfg.MaxLimit)
-	case "max_offset":
-		cfg.MaxOffset = parseInt(value, cfg.MaxOffset)
 	}
 }
 

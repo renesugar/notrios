@@ -105,6 +105,10 @@ Case-insensitive search within one note; returns matches with line numbers and c
 
 ### get_notebook_notes
 
+Input accepts `notebook_id`, optional `limit`, and opaque optional `cursor`.
+Output is the REST-compatible `{documents, next_cursor}` page; cursors are
+bound to that notebook and must be returned unchanged.
+
 List current notes directly in one notebook.
 
 ### scan_remote_media

@@ -5,7 +5,7 @@ This file is the codebase atlas. Update it whenever major files or directories a
 ## Root documents
 
 - `README.md` — project overview and quick start.
-- `PLAN.md` — active implementation plan (v0.3 hardening; H7 next).
+- `PLAN.md` — active implementation plan (v0.3 hardening; H8 next).
 - `plans/scaffold/SCAFFOLD_CREATION_PLAN.md` — process for creating/refining this scaffold.
 - `ROADMAP.md` — product roadmap and future features.
 - `AGENTS.md` — coding-agent instructions (`CLAUDE.md` points here).
@@ -145,6 +145,10 @@ This file is the codebase atlas. Update it whenever major files or directories a
 - `plans/mvp/MVP_RELEASE_REPORT.md` — completed MVP capability summary and deferred features.
 - `scripts/mvp_smoke.sh` — end-to-end local REST/MCP/resource smoke test.
 - `scripts/run_performance_smoke.sh` — generated-dataset smoke and benchmark wrapper.
+- `scripts/run_large_library_profile.sh` — reproducible H7
+  10k/100k/500k keyset/search/resource profile driver.
+- `performance/v0.3-h7/` — committed environment, query-plan, latency, size,
+  and peak-RSS evidence from the H7 scale runs.
 - `scripts/package_release.sh` — validates, builds UI, creates source ZIP, and verifies contents.
 - `scripts/check_release_zip.py` — catches missing `web/dist`, accidental `web/node_modules`, and runtime data in ZIPs.
 

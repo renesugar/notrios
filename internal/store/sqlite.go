@@ -144,6 +144,9 @@ func (s *SQLiteStore) Bootstrap(ctx context.Context) error {
 	if err := s.ensureSchemaV8(ctx); err != nil {
 		return err
 	}
+	if err := s.ensureSchemaV9(ctx); err != nil {
+		return err
+	}
 	if err := s.Exec(ctx, `INSERT OR IGNORE INTO collections(id, name, description) VALUES('default', 'Default', 'Managed notes created by the companion service.');`); err != nil {
 		return err
 	}
@@ -274,6 +277,28 @@ func (s *SQLiteStore) ensureSchemaV8(ctx context.Context) error {
 			if strings.Contains(err.Error(), "duplicate column name") {
 				continue
 			}
+			return err
+		}
+	}
+	return nil
+}
+
+// ensureSchemaV9 adds the composite indexes used by H7 keyset traversal.
+func (s *SQLiteStore) ensureSchemaV9(ctx context.Context) error {
+	statements := []string{
+		`CREATE INDEX IF NOT EXISTS documents_collection_state_updated_idx
+			ON documents(collection_id, deleted_at, updated_at DESC, id DESC);`,
+		`CREATE INDEX IF NOT EXISTS documents_notebook_state_updated_idx
+			ON documents(notebook_id, deleted_at, updated_at DESC, id DESC);`,
+		`CREATE INDEX IF NOT EXISTS documents_trash_deleted_idx
+			ON documents(deleted_at DESC, id DESC)
+			WHERE deleted_at IS NOT NULL;`,
+		`CREATE INDEX IF NOT EXISTS note_tags_tag_document_idx
+			ON note_tags(tag_id, document_id);`,
+		`PRAGMA user_version = 9;`,
+	}
+	for _, statement := range statements {
+		if err := s.Exec(ctx, statement); err != nil {
 			return err
 		}
 	}
@@ -1723,12 +1748,15 @@ func (s *SQLiteStore) readHitsLocked(stmt *C.sqlite3_stmt) (SearchResponse, erro
 			collectionID := columnText(stmt, 1)
 			id := columnText(stmt, 0)
 			resp.Hits = append(resp.Hits, SearchHit{
-				ID:         id,
-				URI:        DocumentURI(collectionID, id),
-				Title:      columnText(stmt, 2),
-				Snippet:    columnText(stmt, 3),
-				Score:      columnFloat(stmt, 4),
-				NotebookID: columnText(stmt, 5),
+				ID:           id,
+				URI:          DocumentURI(collectionID, id),
+				CollectionID: collectionID,
+				Title:        columnText(stmt, 2),
+				Snippet:      columnText(stmt, 3),
+				Score:        columnFloat(stmt, 4),
+				NotebookID:   columnText(stmt, 5),
+				UpdatedAt:    parseSQLiteTime(columnText(stmt, 6)),
+				sortTime:     columnText(stmt, 6),
 			})
 		case C.SQLITE_DONE:
 			return resp, nil
@@ -1736,6 +1764,11 @@ func (s *SQLiteStore) readHitsLocked(stmt *C.sqlite3_stmt) (SearchResponse, erro
 			return SearchResponse{}, s.stepErrLocked(rc)
 		}
 	}
+}
+
+func parseSQLiteTime(value string) time.Time {
+	parsed, _ := time.Parse(time.RFC3339Nano, sqliteTimeToRFC3339(value))
+	return parsed
 }
 
 func (s *SQLiteStore) execPreparedLocked(sql string, values ...string) error {

@@ -7,9 +7,7 @@ import "C"
 
 import (
 	"context"
-	"encoding/base64"
-	"fmt"
-	"hash/fnv"
+	"encoding/json"
 	"strconv"
 	"strings"
 	"time"
@@ -17,13 +15,9 @@ import (
 	"github.com/renesugar/notrios/internal/query"
 )
 
-// Query-language execution for the SQLite backend (Notrios redesign task R6).
-// User queries (SEARCH_QUERY_LANGUAGE.md) are parsed by internal/query and
-// compiled here to FTS5 + SQL filters. Search notebooks execute through this
-// path: the empty query is "All notes" and `is:trashed` is the Trash query.
-
-const maxSearchOffset = 100000
-
+// Query-language execution for the SQLite backend. Chronological results use
+// an (updated_at DESC, id DESC) keyset. FTS5 relevance results use the stable
+// (bm25 score ASC, id ASC) boundary; neither path performs OFFSET work.
 func (s *SQLiteStore) Search(ctx context.Context, req SearchRequest) (SearchResponse, error) {
 	ctx = contextOrBackground(ctx)
 	if err := ctx.Err(); err != nil {
@@ -32,21 +26,12 @@ func (s *SQLiteStore) Search(ctx context.Context, req SearchRequest) (SearchResp
 	req = NormalizeSearchRequest(req)
 	parsed := query.Parse(req.Query, time.Now())
 
-	offset := 0
-	if strings.TrimSpace(req.Cursor) != "" {
-		var err error
-		offset, err = decodeSearchCursor(req.Cursor, req.Query, req.CollectionID)
-		if err != nil {
-			return SearchResponse{}, err
-		}
-	}
-
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	return s.searchQueryLocked(req, parsed, offset)
+	return s.searchQueryLocked(req, parsed)
 }
 
-func (s *SQLiteStore) searchQueryLocked(req SearchRequest, q query.Query, offset int) (SearchResponse, error) {
+func (s *SQLiteStore) searchQueryLocked(req SearchRequest, q query.Query) (SearchResponse, error) {
 	where := []string{"d.collection_id = ?"}
 	args := []string{req.CollectionID}
 
@@ -56,8 +41,6 @@ func (s *SQLiteStore) searchQueryLocked(req SearchRequest, q query.Query, offset
 		where = append(where, "d.deleted_at IS NULL")
 	}
 
-	// notebook: names expand to matching notebooks plus their descendants;
-	// no matching notebook means no results.
 	if len(q.Notebooks) > 0 {
 		ids, err := s.notebooksByNamesLocked(q.Notebooks)
 		if err != nil {
@@ -70,9 +53,18 @@ func (s *SQLiteStore) searchQueryLocked(req SearchRequest, q query.Query, offset
 		args = append(args, ids...)
 	}
 
-	for _, tag := range q.Tags {
-		where = append(where, `EXISTS (SELECT 1 FROM note_tags nt JOIN tags t ON t.id = nt.tag_id WHERE nt.document_id = d.id AND t.name = ? COLLATE NOCASE)`)
-		args = append(args, tag)
+	for _, tagName := range q.Tags {
+		tag, found, err := s.findTagByNameLocked(tagName)
+		if err != nil {
+			return SearchResponse{}, err
+		}
+		if !found {
+			return SearchResponse{Hits: []SearchHit{}}, nil
+		}
+		where = append(where, `d.id IN (
+			SELECT nt.document_id FROM note_tags nt WHERE nt.tag_id = ?
+		)`)
+		args = append(args, tag.ID)
 	}
 
 	needSources := len(q.Authors) > 0 || len(q.AuthorIDs) > 0 || q.Since > 0 || q.Until > 0
@@ -84,10 +76,6 @@ func (s *SQLiteStore) searchQueryLocked(req SearchRequest, q query.Query, offset
 		where = append(where, `ds.author_id = ? COLLATE NOCASE`)
 		args = append(args, authorID)
 	}
-	// since:/until: compare the published timestamp when provenance exists,
-	// falling back to the note's local creation time.
-	// Bound parameters arrive as TEXT through this cgo adapter, so cast them:
-	// SQLite would otherwise order every INTEGER below every TEXT value.
 	timeExpr := `COALESCE(ds.published_ts, CAST(strftime('%s', d.created_at) AS INTEGER))`
 	if q.Since > 0 {
 		where = append(where, timeExpr+" >= CAST(? AS INTEGER)")
@@ -99,37 +87,57 @@ func (s *SQLiteStore) searchQueryLocked(req SearchRequest, q query.Query, offset
 	}
 
 	useFTS := q.HasTextTerms() && !q.Trashed
+	binding := searchCursorBinding(req, q, useFTS)
 	var sql string
-	switch {
-	case useFTS:
+	if useFTS {
 		where = append([]string{"documents_fts MATCH ?"}, where...)
 		args = append([]string{ftsMatchExpr(q)}, args...)
-		sql = `SELECT d.id, d.collection_id, d.title,
-			snippet(documents_fts, 3, '<mark>', '</mark>', '…', 32) AS snippet,
-			bm25(documents_fts, 5.0, 1.0) AS score,
-			COALESCE(d.notebook_id, '')
+		sql = `WITH ranked AS (
+			SELECT d.id AS id, d.collection_id AS collection_id, d.title AS title,
+				snippet(documents_fts, 3, '<mark>', '</mark>', '…', 32) AS hit_snippet,
+				bm25(documents_fts, 5.0, 1.0) AS score,
+				COALESCE(d.notebook_id, '') AS notebook_id,
+				d.updated_at AS sort_time
 			FROM documents_fts
 			JOIN documents d ON d.id = documents_fts.document_id
 			JOIN document_revisions r ON r.id = d.current_revision_id` +
 			sourceJoin(needSources) +
 			" WHERE " + strings.Join(where, " AND ") +
-			" ORDER BY score, d.id"
-	default:
-		// Trash browsing and metadata-only queries match text with LIKE so
-		// trashed notes (absent from FTS) stay findable.
+			`) SELECT id, collection_id, title, hit_snippet, score, notebook_id, sort_time
+			FROM ranked`
+		if strings.TrimSpace(req.Cursor) != "" {
+			score, id, err := decodeRelevanceCursor(req.Cursor, binding)
+			if err != nil {
+				return SearchResponse{}, err
+			}
+			sql += ` WHERE (score > CAST(? AS REAL) OR (score = CAST(? AS REAL) AND id > ?))`
+			scoreText := strconv.FormatFloat(score, 'g', -1, 64)
+			args = append(args, scoreText, scoreText, id)
+		}
+		sql += " ORDER BY score ASC, id ASC"
+	} else {
 		for _, term := range append(append([]query.Term{}, q.Terms...), q.Title...) {
 			where = append(where, `(d.title LIKE ? ESCAPE '\' OR r.body LIKE ? ESCAPE '\')`)
 			pattern := "%" + escapeLike(term.Text) + "%"
 			args = append(args, pattern, pattern)
 		}
-		sql = `SELECT d.id, d.collection_id, d.title, substr(r.body, 1, 240), 0.0, COALESCE(d.notebook_id, '')
+		if strings.TrimSpace(req.Cursor) != "" {
+			timestamp, id, err := decodeChronologicalCursor(req.Cursor, binding)
+			if err != nil {
+				return SearchResponse{}, err
+			}
+			where = append(where, `(d.updated_at, d.id) < (?, ?)`)
+			args = append(args, timestamp, id)
+		}
+		sql = `SELECT d.id, d.collection_id, d.title, substr(r.body, 1, 240), 0.0,
+				COALESCE(d.notebook_id, ''), d.updated_at
 			FROM documents d
 			JOIN document_revisions r ON r.id = d.current_revision_id` +
 			sourceJoin(needSources) +
 			" WHERE " + strings.Join(where, " AND ") +
 			" ORDER BY d.updated_at DESC, d.id DESC"
 	}
-	sql += " LIMIT " + itoa(req.Limit+1) + " OFFSET " + itoa(offset)
+	sql += " LIMIT " + itoa(req.Limit+1)
 
 	stmt, err := s.prepareLocked(sql)
 	if err != nil {
@@ -145,12 +153,25 @@ func (s *SQLiteStore) searchQueryLocked(req SearchRequest, q query.Query, offset
 	}
 	if len(resp.Hits) > req.Limit {
 		resp.Hits = resp.Hits[:req.Limit]
-		next := offset + req.Limit
-		if next <= maxSearchOffset {
-			resp.NextCursor = encodeSearchCursor(next, req.Query, req.CollectionID)
+		last := resp.Hits[len(resp.Hits)-1]
+		if useFTS {
+			resp.NextCursor = encodeRelevanceCursor(binding, last.Score, last.ID)
+		} else {
+			resp.NextCursor = encodeChronologicalCursor(binding, last.sortTime, last.ID)
 		}
 	}
 	return resp, nil
+}
+
+func searchCursorBinding(req SearchRequest, q query.Query, relevance bool) string {
+	parsed, _ := json.Marshal(q)
+	mode := "chronological"
+	sortOrder := "updated_at:desc,id:desc"
+	if relevance {
+		mode = "relevance"
+		sortOrder = "bm25:asc,id:asc"
+	}
+	return cursorBinding("search", req.Query, req.CollectionID, mode, sortOrder, string(parsed))
 }
 
 func sourceJoin(need bool) string {
@@ -160,8 +181,6 @@ func sourceJoin(need bool) string {
 	return " LEFT JOIN document_sources ds ON ds.document_id = d.id"
 }
 
-// notebooksByNamesLocked resolves case-insensitive notebook names to notebook
-// IDs, including all descendants of each match.
 func (s *SQLiteStore) notebooksByNamesLocked(names []string) ([]string, error) {
 	seen := map[string]bool{}
 	ids := []string{}
@@ -205,8 +224,6 @@ func (s *SQLiteStore) notebooksByNamesLocked(names []string) ([]string, error) {
 	return ids, nil
 }
 
-// ftsMatchExpr builds the FTS5 MATCH expression: free terms search title and
-// body, title: terms use the FTS column filter, and everything joins with AND.
 func ftsMatchExpr(q query.Query) string {
 	parts := make([]string, 0, len(q.Terms)+len(q.Title))
 	for _, term := range q.Terms {
@@ -229,38 +246,4 @@ func escapeLike(value string) string {
 	value = strings.ReplaceAll(value, `\`, `\\`)
 	value = strings.ReplaceAll(value, `%`, `\%`)
 	return strings.ReplaceAll(value, `_`, `\_`)
-}
-
-// Search cursors are opaque offset tokens bound to the query and collection
-// so a cursor cannot be replayed against a different search.
-func searchCursorChecksum(queryText, collectionID string) uint32 {
-	h := fnv.New32a()
-	_, _ = h.Write([]byte(queryText))
-	_, _ = h.Write([]byte{0})
-	_, _ = h.Write([]byte(collectionID))
-	return h.Sum32()
-}
-
-func encodeSearchCursor(offset int, queryText, collectionID string) string {
-	raw := fmt.Sprintf("q1:%d:%08x", offset, searchCursorChecksum(queryText, collectionID))
-	return base64.RawURLEncoding.EncodeToString([]byte(raw))
-}
-
-func decodeSearchCursor(cursor, queryText, collectionID string) (int, error) {
-	raw, err := base64.RawURLEncoding.DecodeString(strings.TrimSpace(cursor))
-	if err != nil {
-		return 0, fmt.Errorf("%w: cursor is invalid", ErrInvalidInput)
-	}
-	parts := strings.Split(string(raw), ":")
-	if len(parts) != 3 || parts[0] != "q1" {
-		return 0, fmt.Errorf("%w: cursor is invalid", ErrInvalidInput)
-	}
-	offset, err := strconv.Atoi(parts[1])
-	if err != nil || offset < 0 || offset > maxSearchOffset {
-		return 0, fmt.Errorf("%w: cursor is invalid", ErrInvalidInput)
-	}
-	if parts[2] != fmt.Sprintf("%08x", searchCursorChecksum(queryText, collectionID)) {
-		return 0, fmt.Errorf("%w: cursor does not match this query", ErrInvalidInput)
-	}
-	return offset, nil
 }

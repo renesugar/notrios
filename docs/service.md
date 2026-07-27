@@ -32,7 +32,6 @@ The authoritative, always-current example is `config/config.example.yaml` in the
 | `data.projection_dir` | `./data/projections` | Markdown mirror of your notes for the search sidecar |
 | `search.default_limit` | `20` | search page size when the client sends none |
 | `search.max_limit` | `100` | hard cap on requested page size |
-| `search.max_offset` | `10000` | cap for shallow offset paging |
 | `mcp.enabled` | `true` | mount the `/mcp` endpoint |
 | `mcp.default_profile` | `read-only` | `read-only` hides/rejects MCP write tools; `editor` enables them ([MCP guide](api/mcp.md)) |
 | `mcp.max_results` | `10` | default MCP search page size |

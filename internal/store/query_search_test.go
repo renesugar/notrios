@@ -137,10 +137,65 @@ func TestTrashQueryAndCursorPagination(t *testing.T) {
 	}
 
 	// A cursor is bound to its query.
-	if _, err := st.Search(ctx, SearchRequest{Query: "different", Limit: 2, Cursor: page1.NextCursor}); !errors.Is(err, ErrInvalidInput) {
+	if _, err := st.Search(ctx, SearchRequest{Query: "different", Limit: 2, Cursor: page1.NextCursor}); !errors.Is(err, ErrInvalidCursor) {
 		t.Fatalf("cursor replay against another query must fail: %v", err)
 	}
-	if _, err := st.Search(ctx, SearchRequest{Query: "", Limit: 2, Cursor: "garbage!"}); !errors.Is(err, ErrInvalidInput) {
+	if _, err := st.Search(ctx, SearchRequest{Query: "", Limit: 2, Cursor: "garbage!"}); !errors.Is(err, ErrInvalidCursor) {
 		t.Fatalf("garbage cursor must fail cleanly: %v", err)
+	}
+}
+
+func TestSearchKeysetsChronologicalAndRelevanceResults(t *testing.T) {
+	st := newNotebookTestStore(t)
+	ctx := context.Background()
+
+	for i := 0; i < 7; i++ {
+		id := fmt.Sprintf("keyset_doc_%02d", i)
+		if _, err := st.CreateDocument(ctx, CreateDocumentRequest{
+			PreferredID: id,
+			Title:       fmt.Sprintf("Ranked %02d", i),
+			Body:        "shared ranking phrase",
+		}); err != nil {
+			t.Fatalf("CreateDocument %s: %v", id, err)
+		}
+	}
+
+	assertAllPages := func(queryText string) {
+		t.Helper()
+		cursor := ""
+		seen := map[string]bool{}
+		for {
+			page, err := st.Search(ctx, SearchRequest{Query: queryText, Limit: 2, Cursor: cursor})
+			if err != nil {
+				t.Fatalf("Search(%q): %v", queryText, err)
+			}
+			for _, hit := range page.Hits {
+				if seen[hit.ID] {
+					t.Fatalf("Search(%q) repeated %s across pages", queryText, hit.ID)
+				}
+				seen[hit.ID] = true
+			}
+			if page.NextCursor == "" {
+				break
+			}
+			cursor = page.NextCursor
+		}
+		if len(seen) != 7 {
+			t.Fatalf("Search(%q) visited %d documents, want 7", queryText, len(seen))
+		}
+	}
+	assertAllPages("")
+	assertAllPages(`"shared ranking"`)
+
+	chronological, err := st.Search(ctx, SearchRequest{Limit: 2})
+	if err != nil || chronological.NextCursor == "" {
+		t.Fatalf("chronological first page: %+v err=%v", chronological, err)
+	}
+	if _, err := st.Search(ctx, SearchRequest{
+		Query:  `"shared ranking"`,
+		Limit:  2,
+		Cursor: chronological.NextCursor,
+	}); !errors.Is(err, ErrInvalidCursor) {
+		t.Fatalf("chronological cursor must not replay as relevance cursor: %v", err)
 	}
 }

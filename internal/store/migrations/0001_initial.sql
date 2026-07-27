@@ -20,6 +20,12 @@ CREATE TABLE IF NOT EXISTS documents (
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE INDEX IF NOT EXISTS documents_collection_state_updated_idx
+    ON documents(collection_id, deleted_at, updated_at DESC, id DESC);
+CREATE INDEX IF NOT EXISTS documents_trash_deleted_idx
+    ON documents(deleted_at DESC, id DESC)
+    WHERE deleted_at IS NOT NULL;
+
 CREATE TABLE IF NOT EXISTS document_revisions (
     id TEXT PRIMARY KEY,
     document_id TEXT NOT NULL REFERENCES documents(id),
@@ -153,6 +159,7 @@ CREATE TABLE IF NOT EXISTS note_tags (
 );
 
 CREATE INDEX IF NOT EXISTS note_tags_tag_idx ON note_tags(tag_id);
+CREATE INDEX IF NOT EXISTS note_tags_tag_document_idx ON note_tags(tag_id, document_id);
 
 -- Search notebooks are query-backed virtual notebooks; deleting one never
 -- deletes notes. sort_anchor is 'first' (All notes), 'normal', or 'last' (Trash).
@@ -239,3 +246,7 @@ PRAGMA user_version = 7;
 -- Upgrade backfill and the index are applied by ensureSchemaV8 so existing
 -- databases and fresh databases share one idempotent path.
 PRAGMA user_version = 8;
+
+-- Schema v9: scalable keyset traversal and filter-supporting indexes
+-- (v0.3 task H7).
+PRAGMA user_version = 9;

@@ -356,36 +356,46 @@ func (s *SQLiteStore) MoveDocumentToNotebook(ctx context.Context, documentID, no
 
 // ListNotebookDocuments returns the current non-deleted notes directly in a
 // notebook (no descendant notebooks), most recently updated first.
-func (s *SQLiteStore) ListNotebookDocuments(ctx context.Context, notebookID string, limit int) ([]Document, error) {
+func (s *SQLiteStore) ListNotebookDocuments(ctx context.Context, notebookID string, req DocumentPageRequest) (DocumentPage, error) {
 	ctx = contextOrBackground(ctx)
 	if err := ctx.Err(); err != nil {
-		return nil, err
+		return DocumentPage{}, err
 	}
 	notebookID = strings.TrimSpace(notebookID)
-	if limit <= 0 || limit > 500 {
-		limit = 100
-	}
+	req = normalizeDocumentPageRequest(req)
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if exists, err := s.notebookExistsLocked(notebookID); err != nil {
-		return nil, err
+		return DocumentPage{}, err
 	} else if !exists {
-		return nil, fmt.Errorf("%w: notebook %q", ErrNotFound, notebookID)
+		return DocumentPage{}, fmt.Errorf("%w: notebook %q", ErrNotFound, notebookID)
+	}
+	binding := cursorBinding("notebook_documents", notebookID, "updated_at:desc,id:desc")
+	where := `d.notebook_id = ? AND d.deleted_at IS NULL`
+	args := []string{notebookID}
+	if strings.TrimSpace(req.Cursor) != "" {
+		timestamp, id, err := decodeChronologicalCursor(req.Cursor, binding)
+		if err != nil {
+			return DocumentPage{}, err
+		}
+		where += ` AND (d.updated_at, d.id) < (?, ?)`
+		args = append(args, timestamp, id)
 	}
 	stmt, err := s.prepareLocked(`SELECT d.id, d.collection_id, d.title, substr(r.body, 1, 240), COALESCE(r.body_mime_type, d.body_mime_type), d.current_revision_id, d.created_at, d.updated_at, COALESCE(d.notebook_id, '')
 		FROM documents d
 		JOIN document_revisions r ON r.id = d.current_revision_id
-		WHERE d.notebook_id = ? AND d.deleted_at IS NULL
-		ORDER BY d.updated_at DESC, d.id
-		LIMIT ` + itoa(limit))
+		WHERE ` + where + `
+		ORDER BY d.updated_at DESC, d.id DESC
+		LIMIT ` + itoa(req.Limit+1))
 	if err != nil {
-		return nil, err
+		return DocumentPage{}, err
 	}
 	defer C.sqlite3_finalize(stmt)
-	if err := bindAll(stmt, []string{notebookID}); err != nil {
-		return nil, err
+	if err := bindAll(stmt, args); err != nil {
+		return DocumentPage{}, err
 	}
 	docs := []Document{}
+	sortTimes := []string{}
 	for {
 		rc := C.sqlite3_step(stmt)
 		switch rc {
@@ -405,10 +415,17 @@ func (s *SQLiteStore) ListNotebookDocuments(ctx context.Context, notebookID stri
 			}
 			doc.URI = DocumentURI(doc.CollectionID, doc.ID)
 			docs = append(docs, doc)
+			sortTimes = append(sortTimes, columnText(stmt, 7))
 		case C.SQLITE_DONE:
-			return docs, nil
+			page := DocumentPage{Documents: docs}
+			if len(page.Documents) > req.Limit {
+				page.Documents = page.Documents[:req.Limit]
+				last := req.Limit - 1
+				page.NextCursor = encodeChronologicalCursor(binding, sortTimes[last], page.Documents[last].ID)
+			}
+			return page, nil
 		default:
-			return nil, s.stepErrLocked(rc)
+			return DocumentPage{}, s.stepErrLocked(rc)
 		}
 	}
 }
@@ -661,27 +678,40 @@ func (s *SQLiteStore) DeleteSearchNotebook(ctx context.Context, id string) error
 
 // ListTrash returns soft-deleted documents, newest deletions first. Trashed
 // documents are excluded from every other query surface.
-func (s *SQLiteStore) ListTrash(ctx context.Context, limit int) ([]Document, error) {
+func (s *SQLiteStore) ListTrash(ctx context.Context, req DocumentPageRequest) (DocumentPage, error) {
 	ctx = contextOrBackground(ctx)
 	if err := ctx.Err(); err != nil {
-		return nil, err
+		return DocumentPage{}, err
 	}
-	if limit <= 0 || limit > 500 {
-		limit = 100
+	req = normalizeDocumentPageRequest(req)
+	binding := cursorBinding("trash_documents", "deleted_at:desc,id:desc")
+	where := `d.deleted_at IS NOT NULL`
+	args := []string{}
+	if strings.TrimSpace(req.Cursor) != "" {
+		timestamp, id, err := decodeChronologicalCursor(req.Cursor, binding)
+		if err != nil {
+			return DocumentPage{}, err
+		}
+		where += ` AND (d.deleted_at, d.id) < (?, ?)`
+		args = append(args, timestamp, id)
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	stmt, err := s.prepareLocked(`SELECT d.id, d.collection_id, d.title, r.body, COALESCE(r.body_mime_type, d.body_mime_type), d.current_revision_id, d.created_at, d.updated_at, COALESCE(d.deleted_at, ''), COALESCE(d.notebook_id, '')
 		FROM documents d
 		JOIN document_revisions r ON r.id = d.current_revision_id
-		WHERE d.deleted_at IS NOT NULL
-		ORDER BY d.deleted_at DESC, d.id
-		LIMIT ` + itoa(limit))
+		WHERE ` + where + `
+		ORDER BY d.deleted_at DESC, d.id DESC
+		LIMIT ` + itoa(req.Limit+1))
 	if err != nil {
-		return nil, err
+		return DocumentPage{}, err
 	}
 	defer C.sqlite3_finalize(stmt)
+	if err := bindAll(stmt, args); err != nil {
+		return DocumentPage{}, err
+	}
 	docs := []Document{}
+	sortTimes := []string{}
 	for {
 		rc := C.sqlite3_step(stmt)
 		switch rc {
@@ -703,12 +733,27 @@ func (s *SQLiteStore) ListTrash(ctx context.Context, limit int) ([]Document, err
 			}
 			doc.URI = DocumentURI(doc.CollectionID, doc.ID)
 			docs = append(docs, doc)
+			sortTimes = append(sortTimes, columnText(stmt, 8))
 		case C.SQLITE_DONE:
-			return docs, nil
+			page := DocumentPage{Documents: docs}
+			if len(page.Documents) > req.Limit {
+				page.Documents = page.Documents[:req.Limit]
+				last := req.Limit - 1
+				page.NextCursor = encodeChronologicalCursor(binding, sortTimes[last], page.Documents[last].ID)
+			}
+			return page, nil
 		default:
-			return nil, s.stepErrLocked(rc)
+			return DocumentPage{}, s.stepErrLocked(rc)
 		}
 	}
+}
+
+func normalizeDocumentPageRequest(req DocumentPageRequest) DocumentPageRequest {
+	if req.Limit <= 0 || req.Limit > 500 {
+		req.Limit = 100
+	}
+	req.Cursor = strings.TrimSpace(req.Cursor)
+	return req
 }
 
 // RestoreDocument undeletes a trashed document: it becomes visible in queries

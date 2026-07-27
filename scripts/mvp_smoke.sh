@@ -31,7 +31,6 @@ data:
 search:
   default_limit: 20
   max_limit: 100
-  max_offset: 10000
 
 mcp:
   enabled: true

@@ -8,8 +8,8 @@ package recoll
 import (
 	"bytes"
 	"context"
-	"encoding/base64"
 	_ "embed"
+	"encoding/base64"
 	"fmt"
 	"os"
 	"os/exec"
@@ -132,7 +132,7 @@ func (s *Sidecar) Search(ctx context.Context, q query.Query, limit int) ([]Hit, 
 	if strings.TrimSpace(expr) == "" {
 		return nil, nil
 	}
-	if limit <= 0 || limit > 200 {
+	if limit <= 0 || limit > 1001 {
 		limit = 50
 	}
 	cmd := exec.CommandContext(ctx, s.QueryBinary, "-c", s.ConfDir, "-F", "url title abstract", "-n", "0-"+strconv.Itoa(limit), expr)

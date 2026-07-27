@@ -38,7 +38,6 @@ data:
 search:
   default_limit: 7
   max_limit: 77
-  max_offset: 777
 
 mcp:
   enabled: false
@@ -68,7 +67,7 @@ retention:
 	if cfg.Data.DatabasePath != filepath.ToSlash(filepath.Join(dir, "state", "custom.sqlite")) {
 		t.Fatalf("data config not loaded: %+v", cfg.Data)
 	}
-	if cfg.Search.MaxLimit != 77 || cfg.Search.DefaultLimit != 7 || cfg.Search.MaxOffset != 777 {
+	if cfg.Search.MaxLimit != 77 || cfg.Search.DefaultLimit != 7 {
 		t.Fatalf("search config not loaded: %+v", cfg.Search)
 	}
 	if cfg.MCP.Enabled || cfg.MCP.MaxResults != 3 || cfg.MCP.MaxDocumentBytes != 2048 {

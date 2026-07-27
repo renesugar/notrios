@@ -38,9 +38,9 @@ Notrios exposes one user-facing query language across the GUI search box, REST s
 - `since:`/`until:` compare the source `published_ts` when provenance exists, falling back to the note's local creation time.
 - `is:trashed` queries search trashed notes with LIKE-based text matching (trashed notes have no FTS rows).
 - Cursors are opaque, bound to the query + collection, and reject replay
-  against a different search. Current `q1` tokens nevertheless encode an
-  offset and SQL uses `LIMIT/OFFSET`, with a hard 100,000 offset ceiling. This
-  is an implementation limitation, not the final cursor contract.
+  against a different search. Version `k2` tokens carry chronological
+  `(updated_at, id)` or relevance `(score, id)` boundaries; SQL uses row-value
+  keysets and has no offset ceiling.
 
 ## Reserved internal operators
 
@@ -54,11 +54,10 @@ Notrios exposes one user-facing query language across the GUI search box, REST s
 - All search endpoints support cursor-based incremental results so a GUI can
   populate "All notes" lazily while scrolling (limits and cursor rules in
   `API_SPEC.md`).
-- v0.3 H7 replaces chronological paging with a versioned keyset cursor over
-  `(updated_at DESC, id DESC)` and a matching composite index. SQLite documents
-  that OFFSET work grows in proportion to the skipped row count; there is no
-  database-size threshold at which it suddenly becomes safe or unsafe.
-- Relevance paging must preserve a stable `(score, id)` boundary or use a
-  bounded generation-labelled result snapshot. Merged FTS5/Recoll results need
-  the same stable contract on every page. Cursor version changes invalidate old
-  tokens explicitly rather than misinterpreting them.
+- Chronological paging uses a versioned keyset cursor over
+  `(updated_at DESC, id DESC)` and matching composite indexes. Relevance paging
+  uses a reproducible `(score ASC, id ASC)` FTS5 boundary. Optional merged
+  FTS5/Recoll results are frozen in a generation-labelled `m1` snapshot capped
+  at 1,000 hits for at most ten minutes; `truncated` makes that bound explicit.
+  Cursor version changes invalidate old tokens rather than misinterpreting
+  them.

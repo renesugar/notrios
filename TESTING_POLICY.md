@@ -84,6 +84,12 @@ reference machine. Memory, subprocess output, and rendered rows must remain
 proportional to the page/batch limit. This target catches regressions but is not
 a machine-independent product guarantee.
 
+H7's executable harness is `scripts/run_large_library_profile.sh`; its committed
+10k/100k/500k JSON evidence, including the precise environment and query plans,
+lives under `performance/v0.3-h7/`. The ordinary-page gate is asserted by the
+test. Recoll-specific measurements remain conditional on Recoll being installed
+and are part of H10 sidecar hardening.
+
 SQLite's OFFSET cost grows linearly with skipped rows. In an ideal local
 1,000,000-row covering-index probe during the 2026-07 plan review, offsets
 10k/50k/100k/200k/500k/900k took approximately

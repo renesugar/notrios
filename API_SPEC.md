@@ -40,10 +40,11 @@ The API must support many hundreds of thousands of notes/resources while remaini
 - JSON request/response bodies except resource content streams.
 - Stable opaque IDs and URI fields; do not expose search-index row IDs (Recoll/Xapian docids) as public identity.
 - Optimistic concurrency for mutations through `If-Match` or request-body `base_revision_id`.
-- Cursor pagination for deep navigation. Current `q1` tokens are query-bound
-  but offset-backed and stop at 100,000; v0.3 H7 replaces unbounded traversal
-  with keyset or bounded snapshot cursors. Offset is permitted only for an
-  explicitly bounded shallow-result contract.
+- Cursor pagination for deep navigation. `k2` tokens are query/sort-bound
+  keysets: chronological traversal uses `(updated_at, id)` and reproducible
+  FTS relevance uses `(score, id)`. Optional FTS5/Recoll merging uses an
+  immutable `m1` snapshot capped at 1,000 hits and reports `truncated` when
+  that explicit window is full. Offset is not used for unbounded traversal.
 - Errors use a stable envelope.
 - Every write path must be implementable as a service-layer call so REST and MCP share semantics.
 
@@ -89,7 +90,7 @@ Collections are logical namespaces. Capabilities declare whether a collection is
 
 ```text
 POST /api/v1/search
-GET  /api/v1/search?q=...&collection=...&limit=...   # placeholder: returns empty results today; use POST
+GET  /api/v1/search?q=...&collection=...&limit=...
 ```
 
 Search response hits must include `source`, `id`, `uri`, `title`, `snippet`, `score`, `metadata`, and optional `resource_links`.
@@ -105,6 +106,12 @@ Cursor tokens must be opaque and bound to query, filters, sort order,
 collection set, and cursor/API version. They must carry enough stable boundary
 state for keyset traversal or identify a bounded result snapshot. Opaque
 base64-encoding alone does not make an offset cursor scalable.
+
+`next_cursor` is omitted at exhaustion. A cursor replayed with another query,
+collection, sort, or route returns `400 cursor_invalid`. Search responses may
+include `truncated: true` only for the explicit 1,000-hit optional-sidecar
+snapshot window. Notebook-note and Trash list responses use the same
+`documents` + `next_cursor` page shape with route-bound chronological keysets.
 
 ### Documents
 

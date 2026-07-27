@@ -18,6 +18,7 @@ var (
 	ErrInvalidInput         = errors.New("invalid input")
 	ErrNameConflict         = errors.New("name already in use")
 	ErrProtected            = errors.New("builtin object cannot be modified")
+	ErrInvalidCursor        = errors.New("invalid cursor")
 )
 
 // DefaultNotebookID is the bootstrap "Notes" notebook that holds managed
@@ -502,11 +503,24 @@ type SearchHit struct {
 	Title        string
 	Snippet      string
 	Score        float64
+	UpdatedAt    time.Time
+	sortTime     string
 }
 
 // SearchResponse is the store-level search response.
 type SearchResponse struct {
 	Hits       []SearchHit
+	NextCursor string
+	Truncated  bool
+}
+
+type DocumentPageRequest struct {
+	Limit  int
+	Cursor string
+}
+
+type DocumentPage struct {
+	Documents  []Document
 	NextCursor string
 }
 
@@ -550,7 +564,7 @@ type Store interface {
 	ListNotebooks(ctx context.Context) ([]Notebook, error)
 	UpdateNotebook(ctx context.Context, req UpdateNotebookRequest) (Notebook, error)
 	DeleteNotebook(ctx context.Context, id string) error
-	ListNotebookDocuments(ctx context.Context, notebookID string, limit int) ([]Document, error)
+	ListNotebookDocuments(ctx context.Context, notebookID string, req DocumentPageRequest) (DocumentPage, error)
 	MoveDocumentToNotebook(ctx context.Context, documentID, notebookID string) (Document, error)
 
 	AddDocumentTag(ctx context.Context, documentID, tagName string) (Tag, error)
@@ -562,7 +576,7 @@ type Store interface {
 	ListSearchNotebooks(ctx context.Context) ([]SearchNotebook, error)
 	DeleteSearchNotebook(ctx context.Context, id string) error
 
-	ListTrash(ctx context.Context, limit int) ([]Document, error)
+	ListTrash(ctx context.Context, req DocumentPageRequest) (DocumentPage, error)
 	RestoreDocument(ctx context.Context, id string) (Document, error)
 	PurgeDocument(ctx context.Context, id string) error
 

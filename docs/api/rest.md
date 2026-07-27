@@ -17,7 +17,7 @@ All request/response bodies are JSON except resource content streams. Errors use
 {"error": {"code": "revision_conflict", "message": "operation conflicts with the current resource state"}}
 ```
 
-Common codes: `validation_failed` (400), `not_found` (404), `precondition_required` (428), `revision_conflict`/`conflict` (409), `name_conflict` (409), `forbidden` (403), `web_ui_not_built` (404 on `/` without built assets).
+Common codes: `validation_failed`/`cursor_invalid` (400), `not_found` (404), `precondition_required` (428), `revision_conflict`/`conflict` (409), `name_conflict` (409), `forbidden` (403), `web_ui_not_built` (404 on `/` without built assets).
 
 ## Notes: create, read, edit
 
@@ -76,10 +76,13 @@ curl -s -X POST http://127.0.0.1:8080/api/v1/search \
 
 The `query` string accepts the full [query language](../query-language.md); the empty query is "All notes". When more results exist, the response includes `next_cursor` — send it back unchanged to fetch the next page. Cursors are opaque and bound to the query; reusing one with a different query returns `400`. This is how clients implement infinite scroll.
 
-Current limitation: the `q1` cursor is internally an offset and cannot advance
-beyond 100,000 matches. v0.3 H7 replaces unbounded traversal with stable
-keyset/snapshot cursors and matching indexes. Clients must keep tokens opaque
-so that cursor-version upgrade requires no client-side parsing.
+Chronological results use `(updated_at, id)` keysets and reproducible FTS5
+relevance uses `(score, id)` keysets. If optional Recoll adds results, paging
+uses a stable ten-minute snapshot with an explicit 1,000-hit bound;
+`"truncated": true` reports when that window is full. Clients must keep tokens
+opaque and restart a search after `cursor_invalid` (including an expired merged
+snapshot). GET `/api/v1/search?q=...&limit=...` is a live equivalent for the
+simple query/collection shape.
 
 ## Notebooks, tags, search notebooks, trash
 
@@ -103,6 +106,10 @@ curl -s http://127.0.0.1:8080/api/v1/trash | jq
 curl -s -X POST http://127.0.0.1:8080/api/v1/trash/$DOC/restore | jq
 curl -s -X DELETE http://127.0.0.1:8080/api/v1/trash/$DOC       # permanent; local notes only
 ```
+
+`GET /api/v1/notebooks/{id}/notes` and `GET /api/v1/trash` accept `limit` and
+`cursor` and return `{documents, next_cursor}`. Tokens are route-bound and
+cannot be replayed between notebook and Trash listings.
 
 Notebook and search-notebook names are case-insensitive; collisions return `409 name_conflict`. Protection rules return `403 forbidden`: deleting builtins ("All notes", "Trash", the Help notebook, the default "Notes" notebook), renaming/moving builtins, editing Help notes, moving notes into or out of Help, and purging externally-imported notes.
 

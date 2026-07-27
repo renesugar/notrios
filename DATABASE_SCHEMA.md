@@ -72,29 +72,22 @@ The outbox coordinates filesystem projections and Recoll indexing after the cano
 
 ## MVP migration file
 
-`migrations/0001_initial.sql` has grown with each milestone and now represents schema version 8 (v5 notebooks/tags/search notebooks, v6 source provenance, v7 media policy, v8 resource retention), applied idempotently on every startup with upgrade shims for older databases. Its original MVP portion represents schema version 4. It includes managed-document tables, Task 2 revision fields (`body_mime_type`, `message`), content-addressed blob/resource tables, document-resource reference tables, document link graph rows, link context/target URI fields, and supporting indexes. Bootstrap contains compatibility shims for older development databases before setting `PRAGMA user_version = 4`. Do not rename public tables/columns casually once tests depend on them.
+`migrations/0001_initial.sql` has grown with each milestone and now represents schema version 9 (v5 notebooks/tags/search notebooks, v6 source provenance, v7 media policy, v8 resource retention, v9 scalable keyset indexes), applied idempotently on every startup with upgrade shims for older databases. Its original MVP portion represents schema version 4. It includes managed-document tables, Task 2 revision fields (`body_mime_type`, `message`), content-addressed blob/resource tables, document-resource reference tables, document link graph rows, link context/target URI fields, and supporting indexes. Do not rename public tables/columns casually once tests depend on them.
 
 ## Current and required indexes
 
-The migration includes indexes for collections, revisions, resources, links,
-resource references, outbox rows, notebooks/tags/provenance, and media hashes.
-However, the current unbounded document search still uses offset-backed cursors
-and the migration does **not** yet contain the composite document index needed
-for the primary All Notes order. Do not treat the earlier documentation claim
-as implementation evidence.
-
-v0.3 H7 must add and test, at minimum, an index matching:
+Schema v9 adds and query-plan tests the primary chronological index:
 
 ```sql
 (collection_id, deleted_at, updated_at DESC, id DESC)
 ```
 
-Equivalent live-only/partial variants may be used if migration compatibility
-and query plans are better. Notebook/tag-filtered traversal needs indexes whose
-leading columns match the filter and whose remaining columns match the stable
-sort. FTS relevance cursors require a reproducible score/ID boundary or a
-bounded result-snapshot table; a numeric offset inside an opaque token is not a
-keyset.
+It also adds `(notebook_id, deleted_at, updated_at DESC, id DESC)`, a
+deleted-at/id partial Trash index, and `(tag_id, document_id)` for tag
+membership. `internal/store/pagination_schema_test.go` verifies both migration
+version and planner use. Chronological and relevance traversal use row-value
+keysets; optional merged sidecar results use a bounded in-memory immutable
+snapshot rather than a numeric offset inside an opaque token.
 
 ## Schema v5/v6 — Notrios redesign (tasks R3 and R4 implemented)
 

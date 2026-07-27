@@ -113,7 +113,7 @@ paths:
                 $ref: '#/components/schemas/Collection'
   /api/v1/search:
     get:
-      summary: Search documents with simple query parameters
+      summary: Search documents with simple query parameters and keyset cursors
       parameters:
         - name: q
           in: query
@@ -130,8 +130,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SearchResponse'
+        '400':
+          $ref: '#/components/responses/Error'
     post:
-      summary: Search documents
+      summary: Search documents with query-bound keyset or bounded snapshot cursors
       requestBody:
         required: true
         content:
@@ -145,6 +147,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SearchResponse'
+        '400':
+          $ref: '#/components/responses/Error'
         '400':
           $ref: '#/components/responses/Error'
   /api/v1/documents:
@@ -607,12 +611,20 @@ paths:
         '403': { description: Builtin/default notebooks cannot be deleted }
   /api/v1/notebooks/{notebook_id}/notes:
     get:
-      summary: List current notes directly in a notebook
+      summary: List current notes directly in a notebook using keyset pagination
       parameters:
         - { name: notebook_id, in: path, required: true, schema: { type: string } }
         - { name: limit, in: query, schema: { type: integer } }
+        - $ref: '#/components/parameters/Cursor'
       responses:
-        '200': { description: Documents }
+        '200':
+          description: Keyset-paged documents
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentPage'
+        '400':
+          $ref: '#/components/responses/Error'
   /api/v1/tags:
     get:
       summary: List tags with live note counts
@@ -665,11 +677,19 @@ paths:
         '403': { description: Builtin search notebooks cannot be deleted }
   /api/v1/trash:
     get:
-      summary: List soft-deleted notes (newest deletions first)
+      summary: List soft-deleted notes using a deleted-at keyset
       parameters:
         - { name: limit, in: query, schema: { type: integer } }
+        - $ref: '#/components/parameters/Cursor'
       responses:
-        '200': { description: Trashed documents }
+        '200':
+          description: Keyset-paged trashed documents
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentPage'
+        '400':
+          $ref: '#/components/responses/Error'
   /api/v1/trash/{document_id}:
     delete:
       summary: Permanently delete a trashed local note
@@ -943,6 +963,17 @@ components:
           items: { $ref: '#/components/schemas/SearchHit' }
         next_cursor: { type: string, nullable: true }
         total: { type: integer, nullable: true }
+        truncated:
+          type: boolean
+          description: True when an optional merged-sidecar snapshot reached its explicit 1000-hit window.
+    DocumentPage:
+      type: object
+      required: [documents]
+      properties:
+        documents:
+          type: array
+          items: { $ref: '#/components/schemas/Document' }
+        next_cursor: { type: string, nullable: true }
     SearchHit:
       type: object
       required: [id, uri, source]

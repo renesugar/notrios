@@ -115,6 +115,12 @@ type SearchResponse struct {
 	Hits       []SearchHit `json:"hits"`
 	NextCursor string      `json:"next_cursor,omitempty"`
 	Total      *int64      `json:"total,omitempty"`
+	Truncated  bool        `json:"truncated,omitempty"`
+}
+
+type DocumentPage struct {
+	Documents  []Document `json:"documents"`
+	NextCursor string     `json:"next_cursor,omitempty"`
 }
 
 // Notebook is a nested note container. Builtin notebooks (Help) cannot be

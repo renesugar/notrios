@@ -5,7 +5,7 @@ Updated: 2026-07-26
 ## Active milestone
 
 `PLAN.md` is v0.3 import/resource/media/large-library hardening, now H1–H11.
-H1–H6 are complete and archived under `plans/v0.3/`; H7 is the next
+H1–H7 are complete and archived under `plans/v0.3/`; H8 is the next
 implementation task and still requires the normal user approval before coding.
 
 - H1: media-policy configuration and schema v7.
@@ -17,7 +17,8 @@ implementation task and still requires the normal user approval before coding.
   CLI; pluggable perceptual admission/policy/report hook, inert by default.
 - H6: schema-v8 retention state, dry-run-first local GC, read-only REST report,
   explicit permanent-delete confirmation, and a future sync-aware gate.
-- H7 next: keyset pagination, indexes, stable merged search paging, and generated
+- H7: schema-v9 keyset indexes, query/sort-bound `k2` cursors, bounded stable
+  merged-sidecar snapshots, live GET search, and reproducible
   10k/100k/500k performance profiles.
 - H8/H9: Joplin RAW/Obsidian hierarchy, exact source preservation, bounded
   batches/fingerprints/checkpoints, and large fixtures.
@@ -51,7 +52,7 @@ when this session completes.
 
 - v0.1 MVP is archived under `plans/mvp/`.
 - v0.2 redesign R1–R16 is complete under `plans/v0.2/`.
-- v0.3 H1–H6 are under `plans/v0.3/001`–`006`.
+- v0.3 H1–H7 are under `plans/v0.3/001`–`007`.
 - GUI conformance/native-resize verification and the scaffold/MVP report
   archive moves are committed before the current review.
 
@@ -64,7 +65,11 @@ attempt detail remains append-only in `agent/ATTEMPT_LOG.jsonl`.
 - Review base before this session: `26b0925`.
 - Project license: Apache-2.0.
 - Canonical store: SQLite plus content-addressed assets; FTS5/Recoll are derived.
-- Current schema: v8.
+- Current schema: v9.
+- Unbounded local traversal uses `(updated_at, id)` or `(score, id)` keysets;
+  notebook and Trash pages are route-bound. Optional Recoll merge pages use a
+  ten-minute, 1,000-hit immutable snapshot and report truncation explicitly.
+- H7 generated profile evidence is under `performance/v0.3-h7/`.
 - Resource reference report:
   `GET /api/v1/resources/reports/reference` and
   `notriosctl resources report`.
@@ -85,4 +90,4 @@ attempt detail remains append-only in `agent/ATTEMPT_LOG.jsonl`.
 - Official MCP Go SDK adoption/version.
 - Real private Joplin/Obsidian corpus verification (never commit private data).
 - Sync decisions listed in `SYNCHRONIZATION.md` and
-  `agent/OPEN_QUESTIONS.md`; they do not block H7.
+  `agent/OPEN_QUESTIONS.md`; they do not block H8.

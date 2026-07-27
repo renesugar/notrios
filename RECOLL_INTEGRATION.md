@@ -35,9 +35,10 @@ Link-graph operations (direct replies, backlinks, thread ordering, orphan detect
 - No separate server process to operate (vs. Meilisearch).
 
 Recoll is not the answer to SQLite cursor scaling: the canonical All Notes path
-still needs keyset pagination and matching indexes. Merged FTS5/Recoll paging
-must maintain one stable cursor contract across every page rather than add
-sidecar-only hits to page one.
+uses SQLite keyset pagination and matching indexes. When optional Recoll adds
+sidecar-only hits, the service freezes the merged order in an immutable,
+generation-labelled snapshot for every page (1,000-hit explicit cap, ten-minute
+TTL, bounded cache). Sidecar failure still degrades to live FTS5 keysets.
 
 ## Components to build (implemented in task R7)
 

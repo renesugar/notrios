@@ -94,7 +94,10 @@ The scaffold-era and v0.1-MVP reports (`plans/scaffold/SCAFFOLD_*.md`, `plans/mv
 make validate                 # tests + repository checks
 make smoke                    # end-to-end REST/MCP smoke test
 bash scripts/run_performance_smoke.sh
+bash scripts/run_large_library_profile.sh 100000 /tmp/notrios-profile.json
 bash scripts/package_release.sh    # validated source ZIP into dist/
 ```
 
-See `PACKAGING.md`, `SECURITY_REVIEW.md`, and `RELEASE_CHECKLIST.md` before tagging a release.
+The scale profile accepts `10000`, `100000`, or `500000`; committed H7 reference
+evidence is under `performance/v0.3-h7/`. See `PACKAGING.md`,
+`SECURITY_REVIEW.md`, and `RELEASE_CHECKLIST.md` before tagging a release.

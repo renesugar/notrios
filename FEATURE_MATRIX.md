@@ -19,7 +19,7 @@ This matrix keeps the long conversation compressed into implementation-sized fea
 | Content-addressed blobs | Implemented | resource service | Exact-byte dedupe and H5 reference reports; H6 adds GC. |
 | Resource reference reporting/GC | Implemented | resource service | H5 reports plus H6 dry-run-first retention, transactional rechecks, and sync-aware gate. |
 | Document revisions and trash | Implemented | document service | v0.7 adds replicated death certificates/GC acknowledgements. |
-| Scalable keyset cursors | Active | search service | Current opaque `q1` cursor is offset-backed and capped at 100k; H7 replaces it. |
+| Scalable keyset cursors | Implemented | search service | `k2` chronological/relevance keysets plus explicit bounded `m1` sidecar snapshots; no unbounded offset ceiling. |
 | Recoll sidecar (replaces sist2) | Implemented/Active | adapter | Optional external process; H10 reconciliation/paging hardening. |
 | Notebooks/tags/search notebooks | Implemented | Notrios service | All notes/Notes/Help/Trash bootstrap and protections. |
 | Query-language adapter | Implemented | search service | FTS5 + optional Recoll compilation. |

@@ -30,6 +30,7 @@ type Server struct {
 	sidecar     SidecarSearcher
 	mediaPolicy *media.Policy
 	localizer   *localize.Localizer
+	searchCache *mergedSearchCache
 }
 
 // SidecarSearcher is the optional derived search backend (Recoll). Implemented
@@ -62,7 +63,13 @@ func NewServerWithOptions(options ServerOptions) *Server {
 	if cfg.Server.ListenAddr == "" {
 		cfg = config.Default()
 	}
-	s := &Server{mux: http.NewServeMux(), store: options.Store, config: cfg, mediaPolicy: media.NewPolicy(cfg.RemoteMedia)}
+	s := &Server{
+		mux:         http.NewServeMux(),
+		store:       options.Store,
+		config:      cfg,
+		mediaPolicy: media.NewPolicy(cfg.RemoteMedia),
+		searchCache: newMergedSearchCache(),
+	}
 	if options.Store != nil {
 		// Lazy fetcher inside: no filesystem side effects until first use.
 		s.localizer = localize.New(cfg.RemoteMedia, options.Store)
@@ -224,7 +231,8 @@ func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
 		Limits: map[string]int{
 			"search_default_limit":                 s.config.Search.DefaultLimit,
 			"search_max_limit":                     s.config.Search.MaxLimit,
-			"search_max_offset":                    s.config.Search.MaxOffset,
+			"search_cursor_version":                2,
+			"search_merged_snapshot_limit":         mergedSearchWindow,
 			"retention_unreferenced_resource_days": s.config.Retention.UnreferencedResourceDays,
 			"retention_purged_resource_days":       s.config.Retention.PurgedResourceDays,
 		},
@@ -289,9 +297,20 @@ func (s *Server) handleSearchGET(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	_ = r.URL.Query().Get("q")
-	writeJSON(w, http.StatusOK, api.SearchResponse{Hits: []api.SearchHit{}, NextCursor: "", Total: nil})
-	_ = limit
+	if s.store == nil {
+		writeJSON(w, http.StatusOK, api.SearchResponse{Hits: []api.SearchHit{}})
+		return
+	}
+	result, err := s.searchMerged(r.Context(), store.SearchRequest{
+		CollectionID: r.URL.Query().Get("collection"),
+		Query:        r.URL.Query().Get("q"),
+		Limit:        limit,
+		Cursor:       r.URL.Query().Get("cursor"),
+	})
+	if writeStoreError(w, err, "search_failed") {
+		return
+	}
+	writeJSON(w, http.StatusOK, toAPISearchResponse(result))
 }
 
 func (s *Server) handleSearchPOST(w http.ResponseWriter, r *http.Request) {
@@ -317,8 +336,7 @@ func (s *Server) handleSearchPOST(w http.ResponseWriter, r *http.Request) {
 		Limit:        req.Limit,
 		Cursor:       req.Cursor,
 	})
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, "search_failed", err.Error())
+	if writeStoreError(w, err, "search_failed") {
 		return
 	}
 	writeJSON(w, http.StatusOK, toAPISearchResponse(result))
@@ -1038,7 +1056,7 @@ func toAPISearchResponse(result store.SearchResponse) api.SearchResponse {
 			Editable:     hit.NotebookID != store.HelpNotebookID,
 		})
 	}
-	return api.SearchResponse{Hits: hits, NextCursor: result.NextCursor}
+	return api.SearchResponse{Hits: hits, NextCursor: result.NextCursor, Truncated: result.Truncated}
 }
 
 func writeJSON(w http.ResponseWriter, status int, v any) {
@@ -1338,6 +1356,8 @@ func writeStoreError(w http.ResponseWriter, err error, fallbackCode string) bool
 		writeError(w, http.StatusConflict, "conflict", "operation conflicts with the current resource state")
 	case errors.Is(err, store.ErrInvalidInput):
 		writeError(w, http.StatusBadRequest, "validation_failed", err.Error())
+	case errors.Is(err, store.ErrInvalidCursor):
+		writeError(w, http.StatusBadRequest, "cursor_invalid", err.Error())
 	case errors.Is(err, store.ErrNameConflict):
 		writeError(w, http.StatusConflict, "name_conflict", err.Error())
 	case errors.Is(err, store.ErrProtected):

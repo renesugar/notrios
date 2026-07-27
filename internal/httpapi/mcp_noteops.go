@@ -75,6 +75,7 @@ func (s *Server) mcpGetNotebookNotes(r *http.Request, raw json.RawMessage) (mcpT
 	var args struct {
 		NotebookID string `json:"notebook_id,omitempty"`
 		Limit      int    `json:"limit,omitempty"`
+		Cursor     string `json:"cursor,omitempty"`
 	}
 	if err := unmarshalMCPArgs(raw, &args); err != nil {
 		return mcpToolResult{}, err
@@ -82,11 +83,17 @@ func (s *Server) mcpGetNotebookNotes(r *http.Request, raw json.RawMessage) (mcpT
 	if strings.TrimSpace(args.NotebookID) == "" {
 		return mcpToolResult{}, fmt.Errorf("notebook_id is required")
 	}
-	docs, err := s.store.ListNotebookDocuments(r.Context(), args.NotebookID, args.Limit)
+	page, err := s.store.ListNotebookDocuments(r.Context(), args.NotebookID, store.DocumentPageRequest{
+		Limit:  args.Limit,
+		Cursor: args.Cursor,
+	})
 	if err != nil {
 		return mcpToolResult{}, err
 	}
-	return mcpStructured(map[string]any{"documents": toAPIDocuments(docs)})
+	return mcpStructured(api.DocumentPage{
+		Documents:  toAPIDocuments(page.Documents),
+		NextCursor: page.NextCursor,
+	})
 }
 
 func (s *Server) mcpResolveDocument(r *http.Request, documentID, uri string) (store.Document, error) {
