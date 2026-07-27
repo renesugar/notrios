@@ -57,7 +57,7 @@ func TestSchemaV8UpgradeBackfillsOnlyUnreferencedResources(t *testing.T) {
 		t.Fatalf("Bootstrap after rewind: %v", err)
 	}
 	status, err := st.Status(ctx)
-	if err != nil || status.SchemaVersion != 10 {
+	if err != nil || status.SchemaVersion != 11 {
 		t.Fatalf("schema status: %+v err=%v", status, err)
 	}
 	report, err := st.GarbageCollect(ctx, GarbageCollectionRequest{

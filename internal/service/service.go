@@ -7,6 +7,7 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/renesugar/notrios/internal/config"
@@ -18,10 +19,14 @@ import (
 
 // Service is a started Notrios backend.
 type Service struct {
-	Config  config.Config
-	Store   *store.SQLiteStore
-	Handler *httpapi.Server
-	stop    chan struct{}
+	Config    config.Config
+	Store     *store.SQLiteStore
+	Handler   *httpapi.Server
+	ctx       context.Context
+	cancel    context.CancelFunc
+	closeOnce sync.Once
+	closeErr  error
+	workers   sync.WaitGroup
 }
 
 // New creates storage directories, opens and bootstraps the store, builds the
@@ -39,7 +44,8 @@ func New(cfg config.Config) (*Service, error) {
 		return nil, err
 	}
 	handler := httpapi.NewServerWithOptions(httpapi.ServerOptions{Store: st, Config: cfg})
-	svc := &Service{Config: cfg, Store: st, Handler: handler, stop: make(chan struct{})}
+	ctx, cancel := context.WithCancel(context.Background())
+	svc := &Service{Config: cfg, Store: st, Handler: handler, ctx: ctx, cancel: cancel}
 	if cfg.SearchSidecar.Enabled {
 		svc.startSearchSidecar()
 	}
@@ -60,60 +66,115 @@ func (s *Service) HTTPServer() *http.Server {
 
 // Close stops background work and the store.
 func (s *Service) Close() error {
-	close(s.stop)
-	return s.Store.Close()
+	s.closeOnce.Do(func() {
+		s.cancel()
+		s.workers.Wait()
+		s.closeErr = s.Store.Close()
+	})
+	return s.closeErr
 }
 
 // startSearchSidecar wires the optional Recoll sidecar: generated config, an
-// initial projection full-sync plus index pass, merged search results, and a
-// background loop that drains the projection outbox and reindexes. Any
+// initial exact reconciliation plus index pass, merged search results, and a
+// background loop that drains bounded outbox batches, periodically reconciles,
+// and reindexes. Any
 // missing binary degrades to FTS5-only search without failing startup.
 func (s *Service) startSearchSidecar() {
 	cfg := s.Config
 	sidecar := recoll.New(cfg.SearchSidecar.IndexDir, cfg.Data.ProjectionDir, cfg.SearchSidecar.Binary)
+	s.Handler.AttachSidecarStatus(sidecar)
 	if !sidecar.Available() {
 		log.Printf("search sidecar enabled but %q/recollq not found; continuing with FTS5 only", cfg.SearchSidecar.Binary)
 		return
 	}
 	if err := sidecar.EnsureConfig(); err != nil {
+		sidecar.RecordError(err)
 		log.Printf("search sidecar config generation failed; continuing with FTS5 only: %v", err)
 		return
 	}
 	writer := projection.Writer{Dir: cfg.Data.ProjectionDir}
-	ctx := context.Background()
-	if report, err := projection.FullSync(ctx, s.Store, writer); err != nil {
-		log.Printf("projection full sync failed: %v", err)
+	if report, err := projection.Reconcile(s.ctx, s.Store, writer, 200); err != nil {
+		sidecar.RecordError(err)
+		log.Printf("projection reconciliation failed: %v", err)
 	} else {
-		log.Printf("startup %s", report)
+		sidecar.RecordReconciliation(report)
+		log.Printf("startup projection reconciliation: canonical=%d missing=%d stale=%d orphaned=%d repaired=%d failed=%d",
+			report.Canonical, report.Missing, report.Stale, report.Orphaned, report.Repaired, report.Failed)
 	}
-	if err := sidecar.Index(ctx); err != nil {
+	if report, err := projection.DrainOutbox(s.ctx, s.Store, writer, 200, 20); err != nil {
+		sidecar.RecordError(err)
+		log.Printf("projection outbox sync failed: %v", err)
+	} else {
+		sidecar.RecordProjection(report)
+		s.recordSidecarQueue(sidecar)
+	}
+	if err := sidecar.Index(s.ctx); err != nil {
 		log.Printf("recollindex failed; continuing with FTS5 only: %v", err)
 		return
 	}
+	sidecar.SetActive(true)
 	s.Handler.AttachSidecar(sidecar)
 	log.Printf("search sidecar active: recoll config %s indexing %s", cfg.SearchSidecar.IndexDir, cfg.Data.ProjectionDir)
 
+	s.workers.Add(1)
 	go func() {
-		ticker := time.NewTicker(30 * time.Second)
-		defer ticker.Stop()
+		defer s.workers.Done()
+		syncTicker := time.NewTicker(30 * time.Second)
+		reconcileTicker := time.NewTicker(10 * time.Minute)
+		defer syncTicker.Stop()
+		defer reconcileTicker.Stop()
 		for {
 			select {
-			case <-s.stop:
+			case <-s.ctx.Done():
 				return
-			case <-ticker.C:
-			}
-			report, err := projection.SyncOutbox(ctx, s.Store, writer, 200)
-			if err != nil {
-				log.Printf("projection outbox sync failed: %v", err)
-				continue
-			}
-			if report.Written == 0 && report.Removed == 0 {
-				continue
-			}
-			log.Printf("incremental %s", report)
-			if err := sidecar.Index(ctx); err != nil {
-				log.Printf("recollindex failed: %v", err)
+			case <-syncTicker.C:
+				s.runSidecarPass(sidecar, writer, false)
+			case <-reconcileTicker.C:
+				s.runSidecarPass(sidecar, writer, true)
 			}
 		}
 	}()
+}
+
+func (s *Service) runSidecarPass(sidecar *recoll.Sidecar, writer projection.Writer, reconcile bool) {
+	changed := false
+	report, err := projection.DrainOutbox(s.ctx, s.Store, writer, 200, 20)
+	if err != nil {
+		sidecar.RecordError(err)
+		log.Printf("projection outbox sync failed: %v", err)
+	} else {
+		sidecar.RecordProjection(report)
+		changed = report.Written > 0 || report.Removed > 0
+		if report.Jobs > 0 {
+			log.Printf("incremental %s", report)
+		}
+	}
+	s.recordSidecarQueue(sidecar)
+	if reconcile {
+		reconcileReport, reconcileErr := projection.Reconcile(s.ctx, s.Store, writer, 200)
+		if reconcileErr != nil {
+			sidecar.RecordError(reconcileErr)
+			log.Printf("projection reconciliation failed: %v", reconcileErr)
+		} else {
+			sidecar.RecordReconciliation(reconcileReport)
+			changed = changed || reconcileReport.Repaired > 0
+			log.Printf("projection reconciliation: canonical=%d missing=%d stale=%d orphaned=%d repaired=%d failed=%d",
+				reconcileReport.Canonical, reconcileReport.Missing, reconcileReport.Stale,
+				reconcileReport.Orphaned, reconcileReport.Repaired, reconcileReport.Failed)
+		}
+	}
+	if changed {
+		if err := sidecar.Index(s.ctx); err != nil {
+			log.Printf("recollindex failed: %v", err)
+		}
+	}
+}
+
+func (s *Service) recordSidecarQueue(sidecar *recoll.Sidecar) {
+	queue, err := s.Store.ProjectionQueueStatus(s.ctx)
+	if err != nil {
+		sidecar.RecordError(err)
+		return
+	}
+	sidecar.RecordQueue(queue.Pending, queue.Failed)
 }

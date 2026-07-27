@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"slices"
 	"strings"
 	"testing"
 
@@ -46,8 +47,17 @@ func TestSearchMergesSidecarOnlyHits(t *testing.T) {
 
 	s.AttachSidecar(fakeSidecar{hits: []recoll.Hit{{DocumentID: doc.ID, Title: "tagged only", Abstract: "tag match"}}})
 	rr = doJSON(t, s, http.MethodPost, "/api/v1/search", `{"query":"shopping","limit":10}`)
-	if !strings.Contains(rr.Body.String(), doc.ID) {
-		t.Fatalf("sidecar hit not merged: %s", rr.Body.String())
+	var merged struct {
+		Hits []struct {
+			ID      string   `json:"id"`
+			Sources []string `json:"sources"`
+		} `json:"hits"`
+	}
+	if err := json.NewDecoder(rr.Body).Decode(&merged); err != nil || len(merged.Hits) != 1 {
+		t.Fatalf("decode sidecar hit: %v %+v", err, merged)
+	}
+	if merged.Hits[0].ID != doc.ID || !slices.Contains(merged.Hits[0].Sources, "recoll") {
+		t.Fatalf("sidecar source attribution missing: %+v", merged.Hits)
 	}
 
 	// Sidecar failures degrade gracefully to FTS5-only results.
@@ -89,22 +99,35 @@ func TestSidecarDuplicatesKeepCanonicalKeysetCursor(t *testing.T) {
 		if err := json.NewDecoder(rr.Body).Decode(&doc); err != nil {
 			t.Fatalf("decode document: %v", err)
 		}
-		if i == 0 {
-			firstID = doc.ID
-		}
 	}
+	baseline := doJSON(t, s, http.MethodPost, "/api/v1/search", `{"query":"duplicatequery","limit":1}`)
+	var baselinePage struct {
+		Hits []struct {
+			ID string `json:"id"`
+		} `json:"hits"`
+	}
+	if err := json.NewDecoder(baseline.Body).Decode(&baselinePage); err != nil || len(baselinePage.Hits) != 1 {
+		t.Fatalf("decode baseline page: %v %+v", err, baselinePage)
+	}
+	firstID = baselinePage.Hits[0].ID
 	s.AttachSidecar(fakeSidecar{hits: []recoll.Hit{{DocumentID: firstID}}})
 
 	rr := doJSON(t, s, http.MethodPost, "/api/v1/search", `{"query":"duplicatequery","limit":1}`)
 	var page struct {
 		NextCursor string `json:"next_cursor"`
+		Hits       []struct {
+			Sources []string `json:"sources"`
+		} `json:"hits"`
 	}
 	if err := json.NewDecoder(rr.Body).Decode(&page); err != nil {
 		t.Fatalf("decode search page: %v", err)
 	}
 	raw, err := base64.RawURLEncoding.DecodeString(page.NextCursor)
-	if err != nil || !strings.Contains(string(raw), `"v":"k2"`) {
-		t.Fatalf("duplicate-only sidecar replaced canonical keyset: %q (%s)", page.NextCursor, raw)
+	if err != nil || !strings.Contains(string(raw), `"v":"m1"`) {
+		t.Fatalf("duplicate attribution should use stable merged snapshot: %q (%s)", page.NextCursor, raw)
+	}
+	if len(page.Hits) != 1 || !slices.Contains(page.Hits[0].Sources, "fts5") || !slices.Contains(page.Hits[0].Sources, "recoll") {
+		t.Fatalf("duplicate hit source attribution missing: %+v", page.Hits)
 	}
 }
 
@@ -128,8 +151,11 @@ func TestMergedSearchSnapshotPagesSidecarHitsStably(t *testing.T) {
 
 	rr := doJSON(t, s, http.MethodPost, "/api/v1/search", `{"query":"sidecar-only","limit":2}`)
 	var page1 struct {
-		Hits       []struct{ ID string } `json:"hits"`
-		NextCursor string                `json:"next_cursor"`
+		Hits []struct {
+			ID      string   `json:"id"`
+			Sources []string `json:"sources"`
+		} `json:"hits"`
+		NextCursor string `json:"next_cursor"`
 	}
 	if err := json.NewDecoder(rr.Body).Decode(&page1); err != nil {
 		t.Fatalf("decode page 1: %v", err)
@@ -141,8 +167,11 @@ func TestMergedSearchSnapshotPagesSidecarHitsStably(t *testing.T) {
 	rr = doJSON(t, s, http.MethodPost, "/api/v1/search",
 		fmt.Sprintf(`{"query":"sidecar-only","limit":2,"cursor":%q}`, page1.NextCursor))
 	var page2 struct {
-		Hits       []struct{ ID string } `json:"hits"`
-		NextCursor string                `json:"next_cursor"`
+		Hits []struct {
+			ID      string   `json:"id"`
+			Sources []string `json:"sources"`
+		} `json:"hits"`
+		NextCursor string `json:"next_cursor"`
 	}
 	if err := json.NewDecoder(rr.Body).Decode(&page2); err != nil {
 		t.Fatalf("decode page 2: %v", err)
@@ -156,6 +185,9 @@ func TestMergedSearchSnapshotPagesSidecarHitsStably(t *testing.T) {
 			t.Fatalf("duplicate merged hit %s", hit.ID)
 		}
 		seen[hit.ID] = true
+		if len(hit.Sources) != 1 || hit.Sources[0] != "recoll" {
+			t.Fatalf("sidecar-only source attribution = %+v", hit)
+		}
 	}
 	for _, id := range ids {
 		if !seen[id] {

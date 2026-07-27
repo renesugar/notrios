@@ -70,6 +70,13 @@ export function SearchPane({ query, onQueryChange, onSubmit, paged, onOpenHit, s
               {hit.editable === false ? '🔒 ' : ''}
               {hit.title ?? hit.uri}
             </strong>
+            {hit.sources && hit.sources.length > 0 && (
+              <span className="search-sources" aria-label={`Search sources: ${hit.sources.join(', ')}`}>
+                {hit.sources.map((source) => (
+                  <span className="search-source" key={source}>{source}</span>
+                ))}
+              </span>
+            )}
             {hit.snippet && <Snippet htmlSnippet={hit.snippet} />}
           </button>
         ))}

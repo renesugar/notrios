@@ -150,6 +150,9 @@ func (s *SQLiteStore) Bootstrap(ctx context.Context) error {
 	if err := s.ensureSchemaV10(ctx); err != nil {
 		return err
 	}
+	if err := s.ensureSchemaV11(ctx); err != nil {
+		return err
+	}
 	if err := s.Exec(ctx, `INSERT OR IGNORE INTO collections(id, name, description) VALUES('default', 'Default', 'Managed notes created by the companion service.');`); err != nil {
 		return err
 	}
@@ -362,6 +365,26 @@ func (s *SQLiteStore) ensureSchemaV10(ctx context.Context) error {
 	}
 	for _, statement := range statements {
 		if err := s.Exec(ctx, statement); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// ensureSchemaV11 adds durable exponential retry scheduling for projection
+// jobs. The projection and Recoll index remain reconstructible derived state.
+func (s *SQLiteStore) ensureSchemaV11(ctx context.Context) error {
+	statements := []string{
+		`ALTER TABLE index_outbox ADD COLUMN next_attempt_at TEXT;`,
+		`CREATE INDEX IF NOT EXISTS index_outbox_pending_idx
+			ON index_outbox(completed_at, next_attempt_at, sequence);`,
+		`PRAGMA user_version = 11;`,
+	}
+	for _, statement := range statements {
+		if err := s.Exec(ctx, statement); err != nil {
+			if strings.Contains(err.Error(), "duplicate column name") {
+				continue
+			}
 			return err
 		}
 	}

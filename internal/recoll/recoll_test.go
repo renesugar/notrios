@@ -3,6 +3,8 @@ package recoll
 import (
 	"context"
 	"encoding/base64"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -39,7 +41,7 @@ func TestParseResults(t *testing.T) {
 		b64("file:///data/projections/notes/doc_two.md") + " " + b64("Second title"),
 		"",
 	}, "\n")
-	hits := parseResults(output)
+	hits := parseResults(output, "/data/projections", 10)
 	if len(hits) != 2 {
 		t.Fatalf("expected 2 hits, got %+v", hits)
 	}
@@ -51,11 +53,118 @@ func TestParseResults(t *testing.T) {
 	}
 }
 
+func TestParseResultsRejectsHostileAndDuplicateRows(t *testing.T) {
+	b64 := func(s string) string { return base64.StdEncoding.EncodeToString([]byte(s)) }
+	validURL := "file:///data/projections/notes/doc_one.md"
+	output := strings.Join([]string{
+		b64("https://example.test/doc.md") + " " + b64("remote"),
+		b64("file://server/data/projections/notes/remote.md") + " " + b64("remote host"),
+		b64("file:///data/outside/notes/outside.md") + " " + b64("outside"),
+		b64("file:///data/projections/notes/nested/doc.md") + " " + b64("nested"),
+		b64(validURL) + " " + b64("<b>Safe</b>\x00 title") + " " + b64("&lt;script&gt;bad&lt;/script&gt; useful"),
+		b64(validURL) + " " + b64("duplicate"),
+		b64("file:///data/projections/notes/doc_two.md") + " " + b64("Second") + " " + b64("abstract") + " " + b64("extra"),
+		"not-base64",
+	}, "\n")
+
+	hits := parseResults(output, "/data/projections", 10)
+	if len(hits) != 1 {
+		t.Fatalf("expected only one safe unique hit, got %+v", hits)
+	}
+	if hits[0].DocumentID != "doc_one" || hits[0].Title != "Safe title" || hits[0].Abstract != "bad useful" {
+		t.Fatalf("unexpected sanitized hit: %+v", hits[0])
+	}
+}
+
+func TestParseResultsHonorsLimitAndFieldBounds(t *testing.T) {
+	b64 := func(s string) string { return base64.StdEncoding.EncodeToString([]byte(s)) }
+	output := strings.Join([]string{
+		b64("file:///data/projections/notes/too_large.md") + " " + b64(strings.Repeat("x", maxTitleFieldBytes+1)),
+		b64("file:///data/projections/notes/one.md") + " " + b64("One"),
+		b64("file:///data/projections/notes/two.md") + " " + b64("Two"),
+	}, "\n")
+	hits := parseResults(output, "/data/projections", 1)
+	if len(hits) != 1 || hits[0].DocumentID != "one" {
+		t.Fatalf("expected first bounded valid hit, got %+v", hits)
+	}
+}
+
+func TestBoundedBuffer(t *testing.T) {
+	buffer := newBoundedBuffer(4)
+	if count, err := buffer.Write([]byte("abcdef")); err != nil || count != 6 {
+		t.Fatalf("Write = %d, %v", count, err)
+	}
+	if buffer.String() != "abcd" || !buffer.Truncated() {
+		t.Fatalf("bounded buffer = %q truncated=%v", buffer.String(), buffer.Truncated())
+	}
+}
+
+func TestRuntimeStatusKeepsRetryingQueueDegraded(t *testing.T) {
+	sidecar := New("/tmp/conf", "/tmp/projection", "recollindex")
+	sidecar.RecordQueue(2, 1)
+	sidecar.SetActive(true)
+	sidecar.recordIndex(nil)
+	status := sidecar.Status(context.Background())
+	if !status.Active || status.State != "degraded" || status.Backlog != 2 || status.FailedJobs != 1 {
+		t.Fatalf("runtime status = %+v", status)
+	}
+}
+
+func TestSearchUsesExactBoundedSlice(t *testing.T) {
+	dir := t.TempDir()
+	b64 := func(value string) string { return base64.StdEncoding.EncodeToString([]byte(value)) }
+	script := filepath.Join(dir, "recollq")
+	body := `#!/bin/sh
+exact=false
+slice=false
+for arg in "$@"; do
+  [ "$arg" = "-E" ] && exact=true
+  [ "$arg" = "0-1" ] && slice=true
+done
+[ "$exact" = true ] && [ "$slice" = true ] || exit 9
+` + "printf '%s\\n' '" + b64("file://"+dir+"/projections/notes/one.md") + " " + b64("One") + "'\n" +
+		"printf '%s\\n' '" + b64("file://"+dir+"/projections/notes/two.md") + " " + b64("Two") + "'\n"
+	if err := os.WriteFile(script, []byte(body), 0o755); err != nil {
+		t.Fatalf("write fake recollq: %v", err)
+	}
+	sidecar := &Sidecar{ConfDir: dir, ProjectionDir: dir + "/projections", QueryBinary: script}
+	hits, err := sidecar.Search(context.Background(), query.Parse("needle", time.Now()), 1)
+	if err != nil {
+		t.Fatalf("Search: %v", err)
+	}
+	if len(hits) != 1 || hits[0].DocumentID != "one" {
+		t.Fatalf("bounded search hits = %+v", hits)
+	}
+}
+
+func TestSearchCancelsSubprocess(t *testing.T) {
+	dir := t.TempDir()
+	script := filepath.Join(dir, "recollq")
+	if err := os.WriteFile(script, []byte("#!/bin/sh\nexec sleep 10\n"), 0o755); err != nil {
+		t.Fatalf("write fake recollq: %v", err)
+	}
+	sidecar := &Sidecar{ConfDir: dir, ProjectionDir: dir + "/projections", QueryBinary: script}
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Millisecond)
+	defer cancel()
+	started := time.Now()
+	if _, err := sidecar.Search(ctx, query.Parse("needle", time.Now()), 1); err == nil {
+		t.Fatal("expected canceled search error")
+	}
+	if elapsed := time.Since(started); elapsed > time.Second {
+		t.Fatalf("canceled subprocess took %s", elapsed)
+	}
+}
+
 // TestLiveRecollPipeline exercises the real sidecar when recollindex/recollq
 // are installed: projection -> generated config -> front-matter handler ->
 // field queries. Skipped otherwise.
 func TestLiveRecollPipeline(t *testing.T) {
 	dir := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", dir+"/xdg-config")
+	t.Setenv("XDG_RUNTIME_DIR", dir+"/xdg-runtime")
+	if err := os.MkdirAll(dir+"/xdg-runtime", 0o700); err != nil {
+		t.Fatalf("create XDG runtime dir: %v", err)
+	}
 	sidecar := New(dir+"/conf", dir+"/proj", "recollindex")
 	if !sidecar.Available() {
 		t.Skip("recollindex/recollq not installed")

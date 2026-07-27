@@ -37,7 +37,7 @@ and **Trash** entries.
 
 ```sh
 curl http://127.0.0.1:8080/healthz            # -> ok
-curl http://127.0.0.1:8080/api/v1/status | jq  # storage paths, schema version
+curl http://127.0.0.1:8080/api/v1/status | jq  # storage, schema, Recoll backlog/reconciliation
 ```
 
 If the window opens but shows a JSON `web_ui_not_built` error, the binary can't find `web/dist/` in its working directory — run `make web` and launch from the checkout root.

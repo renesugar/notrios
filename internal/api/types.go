@@ -3,16 +3,44 @@ package api
 // StatusResponse describes service health, runtime configuration, storage roots,
 // and currently implemented capability flags.
 type StatusResponse struct {
-	Service      string             `json:"service"`
-	Version      string             `json:"version"`
-	Status       string             `json:"status"`
-	Database     string             `json:"database,omitempty"` // Deprecated summary retained for early UI compatibility.
-	ConfigPath   string             `json:"config_path,omitempty"`
-	DatabaseInfo DatabaseStatus     `json:"database_info,omitempty"`
-	Storage      StorageStatus      `json:"storage,omitempty"`
-	Capabilities map[string]bool    `json:"capabilities,omitempty"`
-	Limits       map[string]int     `json:"limits,omitempty"`
-	MediaPolicy  *MediaPolicyStatus `json:"media_policy,omitempty"`
+	Service       string              `json:"service"`
+	Version       string              `json:"version"`
+	Status        string              `json:"status"`
+	Database      string              `json:"database,omitempty"` // Deprecated summary retained for early UI compatibility.
+	ConfigPath    string              `json:"config_path,omitempty"`
+	DatabaseInfo  DatabaseStatus      `json:"database_info,omitempty"`
+	Storage       StorageStatus       `json:"storage,omitempty"`
+	Capabilities  map[string]bool     `json:"capabilities,omitempty"`
+	Limits        map[string]int      `json:"limits,omitempty"`
+	MediaPolicy   *MediaPolicyStatus  `json:"media_policy,omitempty"`
+	SearchSidecar SearchSidecarStatus `json:"search_sidecar"`
+}
+
+// SearchSidecarStatus reports derived Recoll health. SQLite remains canonical;
+// every field here is operational telemetry and may be reset by rebuilding.
+type SearchSidecarStatus struct {
+	Configured           bool                        `json:"configured"`
+	Available            bool                        `json:"available"`
+	Active               bool                        `json:"active"`
+	State                string                      `json:"state"`
+	Backlog              int                         `json:"backlog"`
+	FailedJobs           int                         `json:"failed_jobs"`
+	LastSyncAt           string                      `json:"last_sync_at,omitempty"`
+	LastIndexAt          string                      `json:"last_index_at,omitempty"`
+	LastReconciliationAt string                      `json:"last_reconciliation_at,omitempty"`
+	LastError            string                      `json:"last_error,omitempty"`
+	Reconciliation       *SearchReconciliationStatus `json:"reconciliation,omitempty"`
+}
+
+type SearchReconciliationStatus struct {
+	Complete  bool `json:"complete"`
+	Canonical int  `json:"canonical"`
+	Scanned   int  `json:"scanned"`
+	Missing   int  `json:"missing"`
+	Stale     int  `json:"stale"`
+	Orphaned  int  `json:"orphaned"`
+	Repaired  int  `json:"repaired"`
+	Failed    int  `json:"failed"`
 }
 
 // MediaPolicyStatus reports the active remote-media policy (v0.3 task H1):
@@ -103,6 +131,7 @@ type SearchHit struct {
 	ID           string         `json:"id"`
 	URI          string         `json:"uri"`
 	Source       string         `json:"source"`
+	Sources      []string       `json:"sources,omitempty"`
 	CollectionID string         `json:"collection_id,omitempty"`
 	Title        string         `json:"title,omitempty"`
 	Snippet      string         `json:"snippet,omitempty"`

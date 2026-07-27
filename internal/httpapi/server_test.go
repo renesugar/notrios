@@ -8,11 +8,21 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/renesugar/notrios/internal/api"
 	"github.com/renesugar/notrios/internal/config"
+	"github.com/renesugar/notrios/internal/recoll"
 	"github.com/renesugar/notrios/internal/store"
 )
+
+type fakeSidecarStatus struct {
+	status recoll.RuntimeStatus
+}
+
+func (f fakeSidecarStatus) Status(context.Context) recoll.RuntimeStatus {
+	return f.status
+}
 
 func TestHealth(t *testing.T) {
 	s := NewServer()
@@ -44,6 +54,14 @@ func TestStatusReportsConfigurationAndSchema(t *testing.T) {
 	cfg.Data.AssetStore = "/tmp/notes-test-assets"
 	cfg.SearchSidecar.Enabled = true
 	s := NewServerWithOptions(ServerOptions{Store: st, Config: cfg})
+	s.AttachSidecarStatus(fakeSidecarStatus{status: recoll.RuntimeStatus{
+		Configured: true, Available: true, Active: true, State: "active",
+		Backlog: 3, FailedJobs: 1,
+		LastSyncAt:           time.Date(2026, 7, 27, 1, 2, 3, 0, time.UTC),
+		LastIndexAt:          time.Date(2026, 7, 27, 1, 2, 4, 0, time.UTC),
+		LastReconciliationAt: time.Date(2026, 7, 27, 1, 2, 5, 0, time.UTC),
+		Reconciliation:       recoll.ReconciliationStatus{Complete: true, Canonical: 9, Scanned: 10, Orphaned: 1, Repaired: 1},
+	}})
 
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/status", nil)
 	rr := httptest.NewRecorder()
@@ -56,7 +74,7 @@ func TestStatusReportsConfigurationAndSchema(t *testing.T) {
 	if err := json.NewDecoder(rr.Body).Decode(&got); err != nil {
 		t.Fatalf("decode status: %v", err)
 	}
-	if got.Status != "running" || got.DatabaseInfo.Driver != "sqlite" || got.DatabaseInfo.SchemaVersion != 10 {
+	if got.Status != "running" || got.DatabaseInfo.Driver != "sqlite" || got.DatabaseInfo.SchemaVersion != 11 {
 		t.Fatalf("unexpected database status: %+v", got)
 	}
 	if got.ConfigPath != "config/test.yaml" || got.Storage.AssetStore != "/tmp/notes-test-assets" {
@@ -76,6 +94,13 @@ func TestStatusReportsConfigurationAndSchema(t *testing.T) {
 	}
 	if got.MediaPolicy.MaxBytes["image"] == 0 || got.MediaPolicy.QuarantineDir == "" {
 		t.Fatalf("media policy size caps/quarantine missing: %+v", got.MediaPolicy)
+	}
+	if !got.SearchSidecar.Active || got.SearchSidecar.Backlog != 3 || got.SearchSidecar.FailedJobs != 1 {
+		t.Fatalf("sidecar runtime status missing: %+v", got.SearchSidecar)
+	}
+	if got.SearchSidecar.Reconciliation == nil || !got.SearchSidecar.Reconciliation.Complete ||
+		got.SearchSidecar.Reconciliation.Orphaned != 1 || got.SearchSidecar.LastReconciliationAt == "" {
+		t.Fatalf("sidecar reconciliation status missing: %+v", got.SearchSidecar)
 	}
 }
 

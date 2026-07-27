@@ -5,7 +5,8 @@ This file is the codebase atlas. Update it whenever major files or directories a
 ## Root documents
 
 - `README.md` — project overview and quick start.
-- `PLAN.md` — active implementation plan (v0.3 hardening; H10 next after H9 handoff approval).
+- `PLAN.md` — active implementation plan (v0.3 hardening; H11 wrap-up is next
+  after H10 handoff approval).
 - `plans/scaffold/SCAFFOLD_CREATION_PLAN.md` — process for creating/refining this scaffold.
 - `ROADMAP.md` — product roadmap and future features.
 - `AGENTS.md` — coding-agent instructions (`CLAUDE.md` points here).
@@ -193,10 +194,14 @@ This file is the codebase atlas. Update it whenever major files or directories a
 
 ## v0.2 task R7 additions (Recoll sidecar)
 
-- `internal/projection/` — outbox-driven Markdown+front-matter filesystem projection of managed notes (plus `FullSync` for pre-outbox databases); document mutations now enqueue `index_outbox` jobs transactionally (`internal/store/sqlite_outbox.go`).
+- `internal/projection/` — outbox-driven Markdown+front-matter filesystem
+  projection with bounded draining, durable retry scheduling, exact
+  missing/stale/orphan reconciliation, and atomic repair writes.
 - `internal/recoll/` — external-process Recoll sidecar: generated config (fields prefixes, `publishedts` range slot, `underscoreasletter`), the embedded from-scratch `notrios_md_handler.py` front-matter handler, `recollindex`/`recollq` invocation, query compilation, and result parsing. GPL boundary: binaries are user-installed and never linked or vendored.
 - `internal/httpapi/sidecar_search.go` — merges sidecar-only hits into search results behind the existing API; FTS5 stays authoritative and sidecar failures degrade gracefully.
-- `cmd/notriosd` — activates the sidecar when `search_sidecar.enabled` is true: startup full sync + index, 30s outbox drain loop, merged search.
+- `internal/service/` — activates optional Recoll: startup reconciliation and
+  index, 30-second bounded drain, 10-minute reconciliation, runtime status,
+  cancellation, and stable deduplicated merged search.
 
 ## v0.2 task R9 additions (Twitter/X importer)
 

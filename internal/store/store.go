@@ -562,15 +562,16 @@ type SearchRequest struct {
 
 // SearchHit is one full-text search hit.
 type SearchHit struct {
-	ID           string
-	URI          string
-	CollectionID string
-	NotebookID   string
-	Title        string
-	Snippet      string
-	Score        float64
-	UpdatedAt    time.Time
-	sortTime     string
+	ID            string
+	URI           string
+	CollectionID  string
+	NotebookID    string
+	Title         string
+	Snippet       string
+	Score         float64
+	UpdatedAt     time.Time
+	SearchSources []string
+	sortTime      string
 }
 
 // SearchResponse is the store-level search response.
@@ -653,11 +654,13 @@ type Store interface {
 
 	SetDocumentSource(ctx context.Context, req SetDocumentSourceRequest) (DocumentSource, error)
 	GetDocumentSource(ctx context.Context, documentID string) (DocumentSource, error)
+	GetDocumentSources(ctx context.Context, documentIDs []string) (map[string]DocumentSource, error)
 	FindDocumentBySource(ctx context.Context, sourceSystem, externalID string) (string, error)
 	ListThreadDocuments(ctx context.Context, threadID string) ([]DocumentSource, error)
 
 	PendingProjectionJobs(ctx context.Context, limit int) ([]OutboxJob, error)
 	CompleteProjectionJob(ctx context.Context, sequence int64, jobErr error) error
+	ProjectionQueueStatus(ctx context.Context) (ProjectionQueueStatus, error)
 
 	NotebookHasSourcedDocuments(ctx context.Context, notebookID string) (bool, error)
 	FindDocumentsBySourceIDs(ctx context.Context, sourceSystem string, externalIDs []string) (map[string]string, error)
@@ -679,10 +682,23 @@ type Store interface {
 // OutboxJob is one pending projection/indexing job. Document mutations enqueue
 // jobs transactionally; the projection worker drains them after commit.
 type OutboxJob struct {
-	Sequence   int64
-	ObjectType string // "document"
-	ObjectID   string
-	Operation  string // "upsert" or "delete"
+	Sequence      int64
+	ObjectType    string // "document"
+	ObjectID      string
+	Operation     string // "upsert" or "delete"
+	AttemptCount  int
+	NextAttemptAt time.Time
+}
+
+// ProjectionQueueStatus is bounded queue telemetry for the optional derived
+// projection/search worker. Pending includes delayed retries; Due is runnable
+// now; Failed counts rows that have recorded at least one failed attempt.
+type ProjectionQueueStatus struct {
+	Pending         int
+	Due             int
+	Failed          int
+	OldestCreatedAt time.Time
+	NextAttemptAt   time.Time
 }
 
 func NormalizeCreateRequest(req CreateDocumentRequest) CreateDocumentRequest {

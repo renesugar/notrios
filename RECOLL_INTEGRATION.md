@@ -44,16 +44,32 @@ TTL, bounded cache). Sidecar failure still degrades to live FTS5 keysets.
 
 1. **Enhanced Markdown/front-matter handler** — `internal/recoll/notrios_md_handler.py`, a from-scratch (Apache-licensed, not derived from Recoll's GPL `rclmd.py`) Python `exec` filter with YAML/TOML front-matter extraction that emits `<meta>` fields; PyYAML is used when installed with a built-in fallback for the flat subset, TOML via stdlib `tomllib`. The generated config installs it for `text/markdown`.
 2. **Query adapter** — `internal/recoll.CompileQuery` translates the parsed Notrios query to Recoll syntax, including `since:`/`until:` → `publishedts:lower..upper` integer ranges; `recollq -F` output is parsed back to document IDs via projection filenames.
-3. **SQLite changes** — document mutations enqueue `index_outbox` jobs transactionally; `internal/projection` drains them into a Markdown+front-matter filesystem projection (plus a startup full sync for pre-outbox databases).
-4. **Adapter process management** — `internal/recoll.Sidecar` generates the config directory (recoll.conf with `underscoreasletter`, `fields` with the Notrios prefixes and the `publishedts` integer value slot, `mimeconf`), runs `recollindex -c`, and queries via `recollq -c -F` — external processes only. `notriosd` activates it when `search_sidecar.enabled` is true, runs a startup full sync + index, drains the outbox every 30 seconds, and merges sidecar-only hits into search results (FTS5 first and authoritative; sidecar failures degrade gracefully).
+3. **SQLite changes** — document mutations enqueue `index_outbox` jobs
+   transactionally. `internal/projection` drains due jobs in bounded batches;
+   failures persist exponential retry eligibility instead of spinning or
+   blocking later jobs.
+4. **Adapter process management** — `internal/recoll.Sidecar` generates the
+   config directory and invokes user-installed `recollindex`/`recollq` only as
+   cancellable argument arrays. Output, errors, fields, UTF-8, projection URLs,
+   snippets, and result count are bounded. Startup performs exact projection
+   reconciliation plus indexing; a 30-second worker drains bounded batches and
+   a 10-minute pass repairs missing/stale/orphaned files. Status is exposed at
+   `/api/v1/status.search_sidecar`.
+5. **Merged search** — canonical FTS5 traversal and Recoll results are
+   deduplicated by document ID, stale IDs are revalidated in 500-item batches,
+   and contributing engines are returned in `sources`. Any Recoll contribution
+   freezes the bounded merged order and attribution in the existing 1,000-hit
+   snapshot for all cursor pages.
 
-v0.3 H10 should reuse the independently developed `recollwebui-go`
+v0.3 H10 reuses the independently developed `recollwebui-go`
 **behavioral lessons**, not its product code: argument arrays instead of shell
 strings; strict bounded base64 field parsing; exact-count/query-drift checks;
 bounded batch exports; hostile snippet-to-plain-text handling; subprocess
 cancellation; stale result revalidation; accessible bounded result DOM; and
-real Recoll/native Wails evidence on a generated 100k corpus. Its page-number
-offset model is deliberately not reused.
+real Recoll/native Wails evidence on a generated 100k corpus. These behaviors
+are implemented independently; its page-number offset model and product code
+are deliberately not reused. Reproducible evidence lives under
+`performance/v0.3-h10/`.
 
 ## Front-matter field mapping
 

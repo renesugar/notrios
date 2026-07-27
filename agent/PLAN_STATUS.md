@@ -5,8 +5,9 @@ Updated: 2026-07-26
 ## Active milestone
 
 `PLAN.md` is v0.3 import/resource/media/large-library hardening, now H1–H11.
-H1–H9 are complete and archived under `plans/v0.3/`; H10 (Recoll sidecar
-hardening) is next and requires the normal user approval before coding.
+H1–H10 are complete and archived under `plans/v0.3/`; H11 (v0.3
+documentation/release wrap-up) is next and requires the normal user approval
+before coding.
 
 - H1: media-policy configuration and schema v7.
 - H2: static remote-media scan, policy API/MCP, GUI decisions.
@@ -27,7 +28,8 @@ hardening) is next and requires the normal user approval before coding.
   Markdown/frontmatter/non-Markdown source bundles, bounded
   batches/fingerprints/checkpoints, canonical alias/relative/embed/anchor
   resolution, stable resource refresh, and 100/10k/100k/500k fixtures.
-- H10: Recoll reconciliation, bounded batches, stable merge quality, UI status.
+- H10: schema-v11 Recoll retry/backoff, exact reconciliation, hardened
+  processes, stable attributed merges, status/UI, and 100k native evidence.
 - H11: v0.3 documentation/release wrap-up.
 
 ## 2026-07-26 plan/roadmap review
@@ -57,7 +59,7 @@ when this session completes.
 
 - v0.1 MVP is archived under `plans/mvp/`.
 - v0.2 redesign R1–R16 is complete under `plans/v0.2/`.
-- v0.3 H1–H9 are under `plans/v0.3/001`–`009`.
+- v0.3 H1–H10 are under `plans/v0.3/001`–`010`.
 - GUI conformance/native-resize verification and the scaffold/MVP report
   archive moves are committed before the current review.
 
@@ -70,7 +72,7 @@ attempt detail remains append-only in `agent/ATTEMPT_LOG.jsonl`.
 - Review base before this session: `26b0925`.
 - Project license: Apache-2.0.
 - Canonical store: SQLite plus content-addressed assets; FTS5/Recoll are derived.
-- Current schema: v10.
+- Current schema: v11.
 - Unbounded local traversal uses `(updated_at, id)` or `(score, id)` keysets;
   notebook and Trash pages are route-bound. Optional Recoll merge pages use a
   ten-minute, 1,000-hit immutable snapshot and report truncation explicitly.
@@ -79,6 +81,8 @@ attempt detail remains append-only in `agent/ATTEMPT_LOG.jsonl`.
   `performance/v0.3-h8/`.
 - H9 generated Obsidian dry-run/interruption/resume and scale evidence is under
   `performance/v0.3-h9/`.
+- H10 native Recoll 100k index/query/drift/reconciliation evidence is under
+  `performance/v0.3-h10/`.
 - Resource reference report:
   `GET /api/v1/resources/reports/reference` and
   `notriosctl resources report`.
@@ -99,4 +103,4 @@ attempt detail remains append-only in `agent/ATTEMPT_LOG.jsonl`.
 - Official MCP Go SDK adoption/version.
 - Real private Joplin/Obsidian corpus verification (never commit private data).
 - Sync decisions listed in `SYNCHRONIZATION.md` and
-  `agent/OPEN_QUESTIONS.md`; they do not block H10.
+  `agent/OPEN_QUESTIONS.md`; they do not block H11.

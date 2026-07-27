@@ -20,7 +20,20 @@ vi.mock('../api', async (importOriginal) => {
   const original = await importOriginal<typeof import('../api')>();
   return {
     ...original,
-    getStatus: vi.fn().mockResolvedValue({ service: 'notrios', version: 'test', status: 'running' }),
+    getStatus: vi.fn().mockResolvedValue({
+      service: 'notrios',
+      version: 'test',
+      status: 'running',
+      search_sidecar: {
+        configured: true,
+        available: true,
+        active: true,
+        state: 'active',
+        backlog: 2,
+        failed_jobs: 0,
+        last_sync_at: '2026-07-27T01:02:03Z',
+      },
+    }),
     getNotebookTree: vi.fn().mockResolvedValue([
       { id: 'nb_help', name: 'Help', builtin: true, position: 0 },
       { id: 'nb_notes', name: 'Notes', builtin: false, position: 0 },
@@ -44,6 +57,11 @@ afterEach(() => {
 });
 
 describe('workspace layout', () => {
+  it('shows live sidecar state and backlog in the header', async () => {
+    render(<App />);
+    expect(await screen.findByText(/Recoll active · 2 pending · synced/)).toBeInTheDocument();
+  });
+
   it('renders the four panes in DOM order with three separators between them', async () => {
     render(<App />);
     const workspace = await screen.findByTestId('workspace');

@@ -125,7 +125,8 @@ CREATE TABLE IF NOT EXISTS index_outbox (
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     completed_at TEXT,
     attempt_count INTEGER NOT NULL DEFAULT 0,
-    error_text TEXT
+    error_text TEXT,
+    next_attempt_at TEXT
 );
 
 -- Schema v5: notebooks, tags, and search notebooks (Notrios redesign task R3).

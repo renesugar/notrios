@@ -183,9 +183,13 @@ export function App() {
   }, []);
 
   useEffect(() => {
-    getStatus()
-      .then(setStatus)
-      .catch((err: unknown) => setError(errorMessage(err)));
+    const refreshStatus = () => {
+      getStatus()
+        .then(setStatus)
+        .catch((err: unknown) => setError(errorMessage(err)));
+    };
+    refreshStatus();
+    const statusInterval = window.setInterval(refreshStatus, 30_000);
     void refreshSidebar();
     const openHelp = () => runSearch('notebook:"Help"');
     // The native Help menu sets a flag before dispatching, so a click that
@@ -197,7 +201,10 @@ export function App() {
       runSearch(''); // startup view: the "All notes" search notebook
     }
     window.addEventListener('notrios:open-help', openHelp);
-    return () => window.removeEventListener('notrios:open-help', openHelp);
+    return () => {
+      window.clearInterval(statusInterval);
+      window.removeEventListener('notrios:open-help', openHelp);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -206,7 +213,10 @@ export function App() {
   const statusText = useMemo(() => {
     if (!status) return 'loading…';
     const schema = status.database_info?.schema_version ? ` · schema ${status.database_info.schema_version}` : '';
-    return `${status.service} ${status.version}${schema}`;
+    const sidecar = status.search_sidecar;
+    if (!sidecar?.configured) return `${status.service} ${status.version}${schema} · Recoll off`;
+    const sync = sidecar.last_sync_at ? new Date(sidecar.last_sync_at).toLocaleTimeString() : 'never';
+    return `${status.service} ${status.version}${schema} · Recoll ${sidecar.state} · ${sidecar.backlog} pending · synced ${sync}`;
   }, [status]);
 
   const editable = selectedDocument ? selectedDocument.editable !== false : true;
@@ -267,7 +277,7 @@ export function App() {
       // Update the results in place instead of re-searching, so the search
       // pane keeps its contents and scroll position.
       if (isNew) {
-        paged.prependHit({ id: saved.id, uri: saved.uri, source: 'managed-notes', title: saved.title, editable: true });
+        paged.prependHit({ id: saved.id, uri: saved.uri, source: 'managed-notes', sources: ['sqlite'], title: saved.title, editable: true });
       } else {
         paged.patchHit(saved.id, { title: saved.title });
       }

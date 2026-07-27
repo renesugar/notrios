@@ -3,8 +3,8 @@
 This handoff applies to any coding agent or client continuing this project (Codex, Claude, aider, swival.dev, etc. — formerly `CODEX_HANDOFF.md`). The repository is designed so an agent can continue from repository files alone.
 
 Current phase: v0.1 and v0.2 are complete; active work is `PLAN.md` v0.3
-import/resource/media/large-library hardening. H1–H9 are archived;
-**H10 (Recoll sidecar hardening) is next and requires user approval**. The 2026-07-26
+import/resource/media/large-library hardening. H1–H10 are archived;
+**H11 (v0.3 documentation/release wrap-up) is next and requires user approval**. The 2026-07-26
 plan review inserted H7 keyset/scale work and renumbered importer/Recoll/wrap
 tasks to H8–H11. Complete one task at a time and ask before the next.
 
@@ -63,7 +63,11 @@ refresh, interruption/resume, and generated 100/10k/100k evidence under
 nested vault notebooks and collision renames, exact Markdown/frontmatter and
 non-Markdown source capture, alias/relative/embed/heading/block
 canonicalization, stable resource refresh, resume/dry-run parity, and generated
-100/10k/100k/500k evidence under `performance/v0.3-h9/`. See
+100/10k/100k/500k evidence under `performance/v0.3-h9/`. H10 added schema-v11
+durable projection retry/backoff, bounded drains, exact missing/stale/orphan
+reconciliation, hardened cancellable Recoll processes/output, stable
+deduplicated per-hit engine attribution, status/UI observability, and real
+100k native Recoll evidence under `performance/v0.3-h10/`. See
 `agent/PLAN_STATUS.md`.
 
 ## Validation commands
@@ -79,6 +83,7 @@ bash scripts/mvp_smoke.sh
 bash scripts/run_performance_smoke.sh
 bash scripts/run_joplin_import_profile.sh 100 /tmp/notrios-joplin.json
 bash scripts/run_obsidian_import_profile.sh 100 /tmp/notrios-obsidian.json
+bash scripts/run_recoll_hardening_profile.sh 100 /tmp/notrios-recoll.json
 ```
 
 GUI-affecting tasks also build with `make gui`; layout changes additionally run `scripts/verify_layout_resize.py` under Xvfb/Openbox (see `TESTING_POLICY.md`).

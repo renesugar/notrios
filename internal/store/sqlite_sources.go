@@ -104,6 +104,45 @@ func (s *SQLiteStore) GetDocumentSource(ctx context.Context, documentID string) 
 	return s.getDocumentSourceLocked(strings.TrimSpace(documentID))
 }
 
+// GetDocumentSources resolves one bounded reconciliation/import batch without
+// issuing a query per note. Documents without provenance are simply omitted.
+func (s *SQLiteStore) GetDocumentSources(ctx context.Context, documentIDs []string) (map[string]DocumentSource, error) {
+	ctx = contextOrBackground(ctx)
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	result := make(map[string]DocumentSource, len(documentIDs))
+	if len(documentIDs) == 0 {
+		return result, nil
+	}
+	if err := validateLookupItems(documentIDs); err != nil {
+		return nil, err
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	stmt, err := s.prepareLocked(`SELECT ` + documentSourceColumns + `
+		FROM document_sources WHERE document_id IN (` + lookupPlaceholders(len(documentIDs)) + `)`)
+	if err != nil {
+		return nil, err
+	}
+	defer C.sqlite3_finalize(stmt)
+	if err := bindAll(stmt, documentIDs); err != nil {
+		return nil, err
+	}
+	for {
+		rc := C.sqlite3_step(stmt)
+		switch rc {
+		case C.SQLITE_ROW:
+			source := documentSourceFromStmt(stmt)
+			result[source.DocumentID] = source
+		case C.SQLITE_DONE:
+			return result, nil
+		default:
+			return nil, s.stepErrLocked(rc)
+		}
+	}
+}
+
 const documentSourceColumns = `document_id, source_system, external_id, author, author_id, thread_id, reply_to, source_url, published_at, COALESCE(published_ts, 0), metadata_json, created_at, updated_at`
 
 func (s *SQLiteStore) getDocumentSourceLocked(documentID string) (DocumentSource, error) {

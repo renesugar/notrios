@@ -111,6 +111,15 @@ inventory/dry-run profiles. Focused fixtures recover original CRLF Markdown and
 binary bytes exactly and cover conflict renames, richer graph edges, stable
 asset refresh, Trash, and idempotence.
 
+H10's `scripts/run_recoll_hardening_profile.sh` generates 100k Markdown
+projection files and exercises the installed Recoll index/query binaries,
+exact bounded result slices, and incremental deletion/addition convergence.
+The scale tier uses Recoll's internal plain-text extraction to isolate native
+index/result behavior; the ordinary live integration test separately verifies
+the production Notrios frontmatter handler and field/range searches. The same
+profile records missing/stale/orphan repair followed by a zero-drift
+reconciliation. Evidence lives under `performance/v0.3-h10/`.
+
 SQLite's OFFSET cost grows linearly with skipped rows. In an ideal local
 1,000,000-row covering-index probe during the 2026-07 plan review, offsets
 10k/50k/100k/200k/500k/900k took approximately

@@ -65,7 +65,12 @@ to delete. Resources referenced by any current or trashed note are protected.
 
 **Relative paths resolve against the working directory** of the process, not the config file's location. Use absolute paths for anything you run outside the repository checkout.
 
-**Automatic creation:** on startup the service creates every configured directory and, if absent, the database itself, applying schema migrations to older databases automatically. The current schema is version 8. `/api/v1/status` reports the resolved paths, database state, schema version, capability flags, search limits, and the active remote-media policy.
+**Automatic creation:** on startup the service creates every configured
+directory and, if absent, the database itself, applying schema migrations to
+older databases automatically. The current schema is version 11.
+`/api/v1/status` reports the resolved paths, database state, schema version,
+capability flags, search limits, remote-media policy, and optional Recoll
+backlog/sync/reconciliation state.
 
 **The browser UI is loaded from `web/dist/` relative to the working directory** (build it with `make web`). Without it, `/` returns a `web_ui_not_built` error while the API and MCP endpoints work normally.
 
@@ -79,7 +84,19 @@ ssh -L 8080:127.0.0.1:8080 your-server   # then use http://127.0.0.1:8080 locall
 
 ## Search sidecar
 
-With `search_sidecar.enabled: true` and [Recoll](https://www.recoll.org/) installed, the service mirrors notes into `data.projection_dir` (driven by a transactional outbox, plus a full sync at startup), generates a Recoll configuration — including a front-matter handler that indexes titles, authors, tags, and timestamps as searchable fields — runs `recollindex`, and merges Recoll-only hits into search responses, re-syncing every ~30 seconds as notes change.
+With `search_sidecar.enabled: true` and [Recoll](https://www.recoll.org/)
+installed, the service mirrors notes into `data.projection_dir` through a
+transactional outbox, generates a Recoll configuration and indexes titles,
+authors, tags, timestamps, and bodies. Startup and a periodic 10-minute pass
+compare exact canonical renderings with the projection, repairing missing or
+stale files and removing orphaned files. A 30-second worker drains at most 20
+200-job batches; failed jobs use durable exponential backoff. Search responses
+deduplicate FTS5/Recoll results and expose per-hit `sources`.
+
+The desktop header polls status every 30 seconds and shows whether Recoll is
+off/unavailable/active/degraded, its pending backlog, and last projection sync.
+Detailed repair counts and errors are available in
+`GET /api/v1/status` under `search_sidecar`.
 
 Recoll is strictly optional and strictly external: if the binaries are missing or any step fails, the service logs it and continues with the built-in FTS5 search. Recoll is GPL software; Notrios only ever invokes the user-installed executables.
 

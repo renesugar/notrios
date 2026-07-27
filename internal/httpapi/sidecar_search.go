@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/renesugar/notrios/internal/query"
+	"github.com/renesugar/notrios/internal/recoll"
 	"github.com/renesugar/notrios/internal/store"
 )
 
@@ -62,6 +63,7 @@ func (s *Server) searchMerged(ctx context.Context, req store.SearchRequest) (sto
 	if err != nil {
 		return result, err
 	}
+	addCanonicalSources(result.Hits, req.Query)
 	if s.sidecar == nil || strings.TrimSpace(req.Cursor) != "" {
 		return result, nil
 	}
@@ -91,6 +93,7 @@ func (s *Server) searchMerged(ctx context.Context, req store.SearchRequest) (sto
 		if err != nil {
 			return store.SearchResponse{}, err
 		}
+		addCanonicalSources(page.Hits, req.Query)
 		all = append(all, page.Hits...)
 		next = page.NextCursor
 	}
@@ -100,46 +103,67 @@ func (s *Server) searchMerged(ctx context.Context, req store.SearchRequest) (sto
 		truncated = true
 	}
 
-	seen := make(map[string]bool, len(all))
-	for _, hit := range all {
-		seen[hit.ID] = true
+	canonicalIndexes := make(map[string]int, len(all))
+	for index := range all {
+		canonicalIndexes[all[index].ID] = index
 	}
-	sidecarAdded := false
-	for index, hit := range sidecarHits {
+	sidecarContributed := false
+	sidecarOrder := make([]recoll.Hit, 0, len(sidecarHits))
+	candidateIDs := make([]string, 0, len(sidecarHits))
+	seenSidecar := make(map[string]bool, len(sidecarHits))
+	for _, hit := range sidecarHits {
+		if strings.TrimSpace(hit.DocumentID) == "" || seenSidecar[hit.DocumentID] {
+			continue
+		}
+		seenSidecar[hit.DocumentID] = true
+		if index, exists := canonicalIndexes[hit.DocumentID]; exists {
+			all[index].SearchSources = addSearchSource(all[index].SearchSources, "recoll")
+			sidecarContributed = true
+			continue
+		}
+		sidecarOrder = append(sidecarOrder, hit)
+		candidateIDs = append(candidateIDs, hit.DocumentID)
+	}
+	documents := make(map[string]store.Document, len(candidateIDs))
+	for start := 0; start < len(candidateIDs); start += 500 {
+		end := min(start+500, len(candidateIDs))
+		batch, err := s.store.GetDocuments(ctx, candidateIDs[start:end])
+		if err != nil {
+			return store.SearchResponse{}, err
+		}
+		for id, document := range batch {
+			documents[id] = document
+		}
+	}
+	for index, hit := range sidecarOrder {
 		if len(all) >= mergedSearchWindow {
-			truncated = truncated || index < len(sidecarHits)
+			truncated = truncated || index < len(sidecarOrder)
 			break
 		}
-		if seen[hit.DocumentID] {
+		doc, exists := documents[hit.DocumentID]
+		if !exists || doc.CollectionID != req.CollectionID {
 			continue
 		}
-		doc, err := s.store.GetDocument(ctx, hit.DocumentID)
-		if err != nil || doc.CollectionID != req.CollectionID {
-			continue
-		}
-		seen[doc.ID] = true
-		sidecarAdded = true
+		sidecarContributed = true
 		snippet := hit.Abstract
 		if snippet == "" {
-			snippet = doc.Body
-			if len(snippet) > 240 {
-				snippet = snippet[:240]
-			}
+			snippet = truncateRunes(doc.Body, 240)
 		}
 		all = append(all, store.SearchHit{
-			ID:           doc.ID,
-			URI:          doc.URI,
-			CollectionID: doc.CollectionID,
-			NotebookID:   doc.NotebookID,
-			Title:        doc.Title,
-			Snippet:      snippet,
-			UpdatedAt:    doc.UpdatedAt,
+			ID:            doc.ID,
+			URI:           doc.URI,
+			CollectionID:  doc.CollectionID,
+			NotebookID:    doc.NotebookID,
+			Title:         doc.Title,
+			Snippet:       snippet,
+			UpdatedAt:     doc.UpdatedAt,
+			SearchSources: []string{"recoll"},
 		})
 	}
 	if len(sidecarHits) > mergedSearchWindow {
 		truncated = true
 	}
-	if !sidecarAdded {
+	if !sidecarContributed {
 		return result, nil
 	}
 
@@ -164,6 +188,33 @@ func (s *Server) searchMerged(ctx context.Context, req store.SearchRequest) (sto
 		NextCursor: encodeMergedSearchCursor(snapshotID, req.Limit),
 		Truncated:  truncated,
 	}, nil
+}
+
+func addCanonicalSources(hits []store.SearchHit, queryText string) {
+	source := "sqlite"
+	if strings.TrimSpace(queryText) != "" {
+		source = "fts5"
+	}
+	for index := range hits {
+		hits[index].SearchSources = addSearchSource(hits[index].SearchSources, source)
+	}
+}
+
+func addSearchSource(sources []string, source string) []string {
+	for _, existing := range sources {
+		if existing == source {
+			return sources
+		}
+	}
+	return append(sources, source)
+}
+
+func truncateRunes(value string, limit int) string {
+	runes := []rune(value)
+	if len(runes) <= limit {
+		return value
+	}
+	return string(runes[:limit]) + "…"
 }
 
 func (s *Server) pageMergedSnapshot(cursor mergedSearchCursor, req store.SearchRequest) (store.SearchResponse, error) {

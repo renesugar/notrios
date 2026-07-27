@@ -21,7 +21,7 @@ func TestSchemaV10ImportStateBatchLookupsAndSourceBundle(t *testing.T) {
 		t.Fatal(err)
 	}
 	status, err := st.Status(ctx)
-	if err != nil || status.SchemaVersion != 10 {
+	if err != nil || status.SchemaVersion != 11 {
 		t.Fatalf("schema status=%+v err=%v", status, err)
 	}
 	doc, err := st.CreateDocument(ctx, CreateDocumentRequest{PreferredID: "doc_batch", Title: "Batch", Body: "body"})

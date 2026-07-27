@@ -52,7 +52,11 @@ Everything also runs from source: `go run ./cmd/notriosd -config config/config.e
 
 `notriosd` now loads runtime configuration from `-config <path>`. When no path is supplied, it loads `config/config.example.yaml` from a source checkout if that file exists; otherwise it uses compiled local-development defaults. The `-addr` and `-db` flags remain available as explicit overrides.
 
-On startup, the service creates the configured data directory, SQLite database parent directory, asset store, projection directory, and search-sidecar index directory (`search_sidecar.index_dir`). `/api/v1/status` reports the active storage roots, database state, schema version, capability flags, and search limits. The current schema version is reported by `/api/v1/status` (`database_info.schema_version`).
+On startup, the service creates the configured data directory, SQLite database
+parent directory, asset store, projection directory, and search-sidecar index
+directory (`search_sidecar.index_dir`). `/api/v1/status` reports the active
+storage roots, database/schema state, capability/search limits, and optional
+Recoll availability, backlog, sync/index, and reconciliation state.
 
 ## Project status
 

@@ -19,12 +19,35 @@ export interface StatusResponse {
   };
   capabilities?: Record<string, boolean>;
   limits?: Record<string, number>;
+  search_sidecar: {
+    configured: boolean;
+    available: boolean;
+    active: boolean;
+    state: string;
+    backlog: number;
+    failed_jobs: number;
+    last_sync_at?: string;
+    last_index_at?: string;
+    last_reconciliation_at?: string;
+    last_error?: string;
+    reconciliation?: {
+      complete: boolean;
+      canonical: number;
+      scanned: number;
+      missing: number;
+      stale: number;
+      orphaned: number;
+      repaired: number;
+      failed: number;
+    };
+  };
 }
 
 export interface SearchHit {
   id: string;
   uri: string;
   source: string;
+  sources?: string[];
   collection_id?: string;
   title?: string;
   snippet?: string;

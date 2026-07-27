@@ -68,11 +68,23 @@ The media-policy tables support domain stop lists, exact-hash blocks, perceptual
 
 ### index_outbox
 
-The outbox coordinates filesystem projections and Recoll indexing after the canonical SQLite transaction commits. Outbox jobs are retried and coalesced; failure does not invalidate the note save.
+The outbox coordinates filesystem projections and Recoll indexing after the
+canonical SQLite transaction commits. Schema v11 adds `next_attempt_at` and an
+index over `(completed_at, next_attempt_at, sequence)`. Failed jobs retain a
+bounded error, increment `attempt_count`, and receive durable exponential
+backoff (5 seconds through a one-hour cap); later due jobs continue in bounded
+batches, so one failure cannot spin or block the queue. Failure never
+invalidates the canonical note save.
 
 ## MVP migration file
 
-`migrations/0001_initial.sql` has grown with each milestone and now represents schema version 10 (v5 notebooks/tags/search notebooks, v6 source provenance, v7 media policy, v8 resource retention, v9 scalable keyset indexes, v10 resumable import state/source bundles), applied idempotently on every startup with upgrade shims for older databases. Its original MVP portion represents schema version 4. It includes managed-document tables, Task 2 revision fields (`body_mime_type`, `message`), content-addressed blob/resource tables, document-resource reference tables, document link graph rows, link context/target URI fields, and supporting indexes. Do not rename public tables/columns casually once tests depend on them.
+`migrations/0001_initial.sql` has grown with each milestone and now represents
+schema version 11 (v5 notebooks/tags/search notebooks, v6 source provenance,
+v7 media policy, v8 resource retention, v9 scalable keyset indexes, v10
+resumable import state/source bundles, v11 projection retry scheduling),
+applied idempotently on every startup with upgrade shims for older databases.
+Its original MVP portion represents schema version 4. Do not rename public
+tables/columns casually once tests depend on them.
 
 ## Current and required indexes
 
@@ -109,6 +121,14 @@ their exact frontmatter and line endings, while non-Markdown bundle items
 preserve original bytes. The importer checkpoint fingerprint also binds
 source-preservation and folder-rename choices so incompatible resumptions
 restart from the first phase.
+
+## Schema v11 — projection retry scheduling
+
+- `index_outbox.next_attempt_at` persists retry eligibility across restarts.
+- `index_outbox_pending_idx` supports due-job traversal by completion/retry
+  state and sequence.
+- `/api/v1/status.search_sidecar` exposes pending/retrying counts while exact
+  projection reconciliation remains a derived-filesystem operation.
 
 ## Schema v5/v6 — Notrios redesign (tasks R3 and R4 implemented)
 

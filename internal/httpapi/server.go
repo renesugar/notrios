@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/renesugar/notrios/internal/api"
 	"github.com/renesugar/notrios/internal/config"
@@ -24,13 +25,14 @@ import (
 )
 
 type Server struct {
-	mux         *http.ServeMux
-	store       store.Store
-	config      config.Config
-	sidecar     SidecarSearcher
-	mediaPolicy *media.Policy
-	localizer   *localize.Localizer
-	searchCache *mergedSearchCache
+	mux           *http.ServeMux
+	store         store.Store
+	config        config.Config
+	sidecar       SidecarSearcher
+	sidecarStatus SidecarStatusProvider
+	mediaPolicy   *media.Policy
+	localizer     *localize.Localizer
+	searchCache   *mergedSearchCache
 }
 
 // SidecarSearcher is the optional derived search backend (Recoll). Implemented
@@ -39,9 +41,19 @@ type SidecarSearcher interface {
 	Search(ctx context.Context, q query.Query, limit int) ([]recoll.Hit, error)
 }
 
+type SidecarStatusProvider interface {
+	Status(ctx context.Context) recoll.RuntimeStatus
+}
+
 // AttachSidecar enables merged sidecar search results.
 func (s *Server) AttachSidecar(sidecar SidecarSearcher) {
 	s.sidecar = sidecar
+}
+
+// AttachSidecarStatus exposes configured/unavailable/degraded state even when
+// Recoll is not active enough to participate in search.
+func (s *Server) AttachSidecarStatus(sidecar SidecarStatusProvider) {
+	s.sidecarStatus = sidecar
 }
 
 // ServerOptions configures the HTTP API adapter.
@@ -201,6 +213,16 @@ func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
 			SchemaVersion: storeStatus.SchemaVersion,
 		}
 	}
+	sidecarStatus := api.SearchSidecarStatus{
+		Configured: s.config.SearchSidecar.Enabled,
+		State:      "disabled",
+	}
+	if s.config.SearchSidecar.Enabled {
+		sidecarStatus.State = "configured"
+	}
+	if s.sidecarStatus != nil {
+		sidecarStatus = toAPISidecarStatus(s.sidecarStatus.Status(r.Context()))
+	}
 	writeJSON(w, http.StatusOK, api.StatusResponse{
 		Service:      "notrios",
 		Version:      version.Version,
@@ -236,8 +258,33 @@ func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
 			"retention_unreferenced_resource_days": s.config.Retention.UnreferencedResourceDays,
 			"retention_purged_resource_days":       s.config.Retention.PurgedResourceDays,
 		},
-		MediaPolicy: s.mediaPolicyStatus(),
+		MediaPolicy:   s.mediaPolicyStatus(),
+		SearchSidecar: sidecarStatus,
 	})
+}
+
+func toAPISidecarStatus(status recoll.RuntimeStatus) api.SearchSidecarStatus {
+	out := api.SearchSidecarStatus{
+		Configured: status.Configured, Available: status.Available, Active: status.Active,
+		State: status.State, Backlog: status.Backlog, FailedJobs: status.FailedJobs,
+		LastError: status.LastError,
+	}
+	if !status.LastSyncAt.IsZero() {
+		out.LastSyncAt = status.LastSyncAt.Format(time.RFC3339)
+	}
+	if !status.LastIndexAt.IsZero() {
+		out.LastIndexAt = status.LastIndexAt.Format(time.RFC3339)
+	}
+	if !status.LastReconciliationAt.IsZero() {
+		out.LastReconciliationAt = status.LastReconciliationAt.Format(time.RFC3339)
+		out.Reconciliation = &api.SearchReconciliationStatus{
+			Complete: status.Reconciliation.Complete, Canonical: status.Reconciliation.Canonical,
+			Scanned: status.Reconciliation.Scanned, Missing: status.Reconciliation.Missing,
+			Stale: status.Reconciliation.Stale, Orphaned: status.Reconciliation.Orphaned,
+			Repaired: status.Reconciliation.Repaired, Failed: status.Reconciliation.Failed,
+		}
+	}
+	return out
 }
 
 func (s *Server) handleCollections(w http.ResponseWriter, r *http.Request) {
@@ -1049,6 +1096,7 @@ func toAPISearchResponse(result store.SearchResponse) api.SearchResponse {
 			ID:           hit.ID,
 			URI:          hit.URI,
 			Source:       "managed-notes",
+			Sources:      append([]string(nil), hit.SearchSources...),
 			CollectionID: hit.CollectionID,
 			Title:        hit.Title,
 			Snippet:      hit.Snippet,

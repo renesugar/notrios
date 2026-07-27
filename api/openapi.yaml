@@ -817,7 +817,7 @@ components:
   schemas:
     StatusResponse:
       type: object
-      required: [service, version, status]
+      required: [service, version, status, search_sidecar]
       properties:
         service: { type: string }
         version: { type: string }
@@ -867,6 +867,35 @@ components:
               additionalProperties: { type: integer, format: int64 }
               description: Download size caps in bytes per media class (image/video/pdf).
             quarantine_dir: { type: string }
+        search_sidecar:
+          type: object
+          required: [configured, available, active, state, backlog, failed_jobs]
+          description: >
+            Runtime state for the optional derived Recoll index. SQLite remains
+            canonical; unavailable or degraded state does not disable FTS5.
+          properties:
+            configured: { type: boolean }
+            available: { type: boolean }
+            active: { type: boolean }
+            state: { type: string, enum: [disabled, configured, unavailable, active, degraded] }
+            backlog: { type: integer, minimum: 0 }
+            failed_jobs: { type: integer, minimum: 0 }
+            last_sync_at: { type: string, format: date-time }
+            last_index_at: { type: string, format: date-time }
+            last_reconciliation_at: { type: string, format: date-time }
+            last_error: { type: string }
+            reconciliation:
+              type: object
+              required: [complete, canonical, scanned, missing, stale, orphaned, repaired, failed]
+              properties:
+                complete: { type: boolean }
+                canonical: { type: integer, minimum: 0 }
+                scanned: { type: integer, minimum: 0 }
+                missing: { type: integer, minimum: 0 }
+                stale: { type: integer, minimum: 0 }
+                orphaned: { type: integer, minimum: 0 }
+                repaired: { type: integer, minimum: 0 }
+                failed: { type: integer, minimum: 0 }
     ErrorEnvelope:
       type: object
       required: [error]
@@ -981,6 +1010,10 @@ components:
         id: { type: string }
         uri: { type: string }
         source: { type: string }
+        sources:
+          type: array
+          items: { type: string, enum: [sqlite, fts5, recoll] }
+          description: Search engines that contributed this deduplicated hit.
         collection_id: { type: string }
         title: { type: string }
         snippet: { type: string }

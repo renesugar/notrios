@@ -39,8 +39,8 @@ func TestSchemaV7MediaPolicyTables(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Status: %v", err)
 	}
-	if status.SchemaVersion != 10 {
-		t.Fatalf("schema version = %d, want 10", status.SchemaVersion)
+	if status.SchemaVersion != 11 {
+		t.Fatalf("schema version = %d, want 11", status.SchemaVersion)
 	}
 	for _, table := range []string{"media_domain_rules", "media_hash_rules", "resource_hashes", "media_policy_decisions"} {
 		if !mediaTableExists(t, st, table) {
@@ -72,8 +72,8 @@ func TestSchemaV7MediaPolicyTables(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Status after re-bootstrap: %v", err)
 	}
-	if status.SchemaVersion != 10 {
-		t.Fatalf("schema version after re-bootstrap = %d, want 10", status.SchemaVersion)
+	if status.SchemaVersion != 11 {
+		t.Fatalf("schema version after re-bootstrap = %d, want 11", status.SchemaVersion)
 	}
 }
 
@@ -286,8 +286,8 @@ func TestSchemaUpgradeFromV6(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Status: %v", err)
 	}
-	if status.SchemaVersion != 10 {
-		t.Fatalf("upgraded schema version = %d, want 10", status.SchemaVersion)
+	if status.SchemaVersion != 11 {
+		t.Fatalf("upgraded schema version = %d, want 11", status.SchemaVersion)
 	}
 	for _, table := range []string{"media_domain_rules", "media_hash_rules", "resource_hashes"} {
 		if !mediaTableExists(t, st, table) {

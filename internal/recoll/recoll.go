@@ -11,13 +11,31 @@ import (
 	_ "embed"
 	"encoding/base64"
 	"fmt"
+	"html"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
+	"time"
+	"unicode"
+	"unicode/utf8"
 
+	"github.com/renesugar/notrios/internal/projection"
 	"github.com/renesugar/notrios/internal/query"
+)
+
+const (
+	maxQueryOutputBytes   = 8 * 1024 * 1024
+	maxProcessErrorBytes  = 64 * 1024
+	maxURLFieldBytes      = 4096
+	maxTitleFieldBytes    = 64 * 1024
+	maxAbstractFieldBytes = 256 * 1024
+	maxSnippetBytes       = 512
+	indexProcessTimeout   = 30 * time.Minute
+	queryProcessTimeout   = 30 * time.Second
 )
 
 //go:embed notrios_md_handler.py
@@ -30,6 +48,34 @@ type Sidecar struct {
 	ProjectionDir string
 	IndexBinary   string // recollindex
 	QueryBinary   string // recollq
+	statusMu      sync.RWMutex
+	status        RuntimeStatus
+}
+
+// RuntimeStatus is the live, derived-sidecar state exposed through /status.
+type RuntimeStatus struct {
+	Configured           bool
+	Available            bool
+	Active               bool
+	State                string
+	Backlog              int
+	FailedJobs           int
+	LastSyncAt           time.Time
+	LastIndexAt          time.Time
+	LastReconciliationAt time.Time
+	LastError            string
+	Reconciliation       ReconciliationStatus
+}
+
+type ReconciliationStatus struct {
+	Complete  bool
+	Canonical int
+	Scanned   int
+	Missing   int
+	Stale     int
+	Orphaned  int
+	Repaired  int
+	Failed    int
 }
 
 // New prepares a sidecar rooted at confDir. indexBinary defaults to
@@ -43,16 +89,22 @@ func New(confDir, projectionDir, indexBinary string) *Sidecar {
 	if dir := filepath.Dir(indexBinary); dir != "." {
 		queryBinary = filepath.Join(dir, "recollq")
 	}
-	return &Sidecar{ConfDir: confDir, ProjectionDir: projectionDir, IndexBinary: indexBinary, QueryBinary: queryBinary}
+	return &Sidecar{
+		ConfDir: confDir, ProjectionDir: projectionDir, IndexBinary: indexBinary, QueryBinary: queryBinary,
+		status: RuntimeStatus{Configured: true, State: "configured"},
+	}
 }
 
 // Available reports whether the Recoll binaries can be found.
 func (s *Sidecar) Available() bool {
 	if _, err := exec.LookPath(s.IndexBinary); err != nil {
+		s.setAvailable(false)
 		return false
 	}
 	_, err := exec.LookPath(s.QueryBinary)
-	return err == nil
+	available := err == nil
+	s.setAvailable(available)
+	return available
 }
 
 // EnsureConfig writes the generated Recoll configuration: recoll.conf watching
@@ -110,12 +162,25 @@ text/markdown = exec python3 %s ; mimetype=text/html
 
 // Index runs one incremental recollindex pass over the projection.
 func (s *Sidecar) Index(ctx context.Context) error {
-	cmd := exec.CommandContext(ctx, s.IndexBinary, "-c", s.ConfDir)
-	var stderr bytes.Buffer
+	processCtx, cancel := context.WithTimeout(ctx, indexProcessTimeout)
+	defer cancel()
+	cmd := exec.CommandContext(processCtx, s.IndexBinary, "-c", s.ConfDir)
+	stderr := newBoundedBuffer(maxProcessErrorBytes)
 	cmd.Stderr = &stderr
 	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("recollindex: %w: %s", err, strings.TrimSpace(stderr.String()))
+		if processCtx.Err() != nil {
+			err = processCtx.Err()
+		}
+		indexErr := fmt.Errorf("recollindex: %w: %s", err, strings.TrimSpace(stderr.String()))
+		s.recordIndex(indexErr)
+		return indexErr
 	}
+	if stderr.Truncated() {
+		indexErr := fmt.Errorf("recollindex stderr exceeded %d bytes", maxProcessErrorBytes)
+		s.recordIndex(indexErr)
+		return indexErr
+	}
+	s.recordIndex(nil)
 	return nil
 }
 
@@ -135,31 +200,55 @@ func (s *Sidecar) Search(ctx context.Context, q query.Query, limit int) ([]Hit, 
 	if limit <= 0 || limit > 1001 {
 		limit = 50
 	}
-	cmd := exec.CommandContext(ctx, s.QueryBinary, "-c", s.ConfDir, "-F", "url title abstract", "-n", "0-"+strconv.Itoa(limit), expr)
-	var stdout, stderr bytes.Buffer
+	processCtx, cancel := context.WithTimeout(ctx, queryProcessTimeout)
+	defer cancel()
+	cmd := exec.CommandContext(processCtx, s.QueryBinary, "-c", s.ConfDir, "-E", "-F", "url title abstract", "-n", "0-"+strconv.Itoa(limit), expr)
+	stdout := newBoundedBuffer(maxQueryOutputBytes)
+	stderr := newBoundedBuffer(maxProcessErrorBytes)
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 	if err := cmd.Run(); err != nil {
+		if processCtx.Err() != nil {
+			err = processCtx.Err()
+		}
 		return nil, fmt.Errorf("recollq: %w: %s", err, strings.TrimSpace(stderr.String()))
 	}
-	return parseResults(stdout.String()), nil
+	if stdout.Truncated() {
+		return nil, fmt.Errorf("recollq output exceeded %d bytes", maxQueryOutputBytes)
+	}
+	if stderr.Truncated() {
+		return nil, fmt.Errorf("recollq stderr exceeded %d bytes", maxProcessErrorBytes)
+	}
+	return parseResults(stdout.String(), s.ProjectionDir, limit), nil
 }
 
 // parseResults reads recollq -F output: header lines followed by one result
 // per line of space-separated base64-encoded field values. Lines that do not
 // decode are skipped (query echo, result counts).
-func parseResults(output string) []Hit {
+func parseResults(output, projectionDir string, limit int) []Hit {
+	if limit <= 0 {
+		return nil
+	}
 	hits := []Hit{}
+	seen := map[string]bool{}
 	for _, line := range strings.Split(output, "\n") {
+		if len(hits) >= limit {
+			break
+		}
 		fields := strings.Fields(line)
-		if len(fields) < 1 {
+		if len(fields) < 1 || len(fields) > 3 {
 			continue
 		}
+		maxima := []int{maxURLFieldBytes, maxTitleFieldBytes, maxAbstractFieldBytes}
 		decoded := make([]string, 0, len(fields))
 		ok := true
-		for _, field := range fields {
+		for index, field := range fields {
+			if base64.StdEncoding.DecodedLen(len(field)) > maxima[index] {
+				ok = false
+				break
+			}
 			raw, err := base64.StdEncoding.DecodeString(field)
-			if err != nil {
+			if err != nil || len(raw) > maxima[index] || !utf8.Valid(raw) {
 				ok = false
 				break
 			}
@@ -168,16 +257,17 @@ func parseResults(output string) []Hit {
 		if !ok || len(decoded) == 0 {
 			continue
 		}
-		id := documentIDFromURL(decoded[0])
-		if id == "" {
+		id := documentIDFromURL(decoded[0], projectionDir)
+		if id == "" || seen[id] {
 			continue
 		}
+		seen[id] = true
 		hit := Hit{DocumentID: id}
 		if len(decoded) > 1 {
-			hit.Title = decoded[1]
+			hit.Title = plainText(decoded[1], maxSnippetBytes)
 		}
 		if len(decoded) > 2 {
-			hit.Abstract = decoded[2]
+			hit.Abstract = plainText(decoded[2], maxSnippetBytes)
 		}
 		hits = append(hits, hit)
 	}
@@ -186,12 +276,199 @@ func parseResults(output string) []Hit {
 
 // documentIDFromURL recovers the document ID from a projection file URL
 // (file:///.../notes/<document_id>.md).
-func documentIDFromURL(url string) string {
-	base := filepath.Base(strings.TrimPrefix(url, "file://"))
+func documentIDFromURL(rawURL, projectionDir string) string {
+	parsed, err := url.Parse(rawURL)
+	if err != nil || parsed.Scheme != "file" || parsed.Host != "" {
+		return ""
+	}
+	path, err := url.PathUnescape(parsed.Path)
+	if err != nil {
+		return ""
+	}
+	path = filepath.Clean(path)
+	if strings.TrimSpace(projectionDir) != "" {
+		notesRoot := filepath.Join(filepath.Clean(projectionDir), "notes")
+		relative, err := filepath.Rel(notesRoot, path)
+		if err != nil || relative == "." || strings.HasPrefix(relative, ".."+string(filepath.Separator)) || filepath.IsAbs(relative) {
+			return ""
+		}
+		if filepath.Dir(relative) != "." {
+			return ""
+		}
+	}
+	base := filepath.Base(path)
 	if !strings.HasSuffix(base, ".md") {
 		return ""
 	}
-	return strings.TrimSuffix(base, ".md")
+	id := strings.TrimSuffix(base, ".md")
+	if id == "" || id == "." || id == ".." || strings.ContainsAny(id, `/\`) {
+		return ""
+	}
+	return id
+}
+
+func plainText(value string, maxBytes int) string {
+	value = html.UnescapeString(value)
+	var builder strings.Builder
+	inTag := false
+	for _, runeValue := range value {
+		switch runeValue {
+		case '<':
+			inTag = true
+			builder.WriteByte(' ')
+		case '>':
+			inTag = false
+			builder.WriteByte(' ')
+		default:
+			if inTag {
+				continue
+			}
+			if unicode.IsControl(runeValue) {
+				builder.WriteByte(' ')
+			} else {
+				builder.WriteRune(runeValue)
+			}
+		}
+	}
+	value = strings.Join(strings.Fields(builder.String()), " ")
+	if len(value) <= maxBytes {
+		return value
+	}
+	value = value[:maxBytes]
+	for !utf8.ValidString(value) {
+		value = value[:len(value)-1]
+	}
+	return strings.TrimSpace(value) + "…"
+}
+
+type boundedBuffer struct {
+	buffer    bytes.Buffer
+	limit     int
+	truncated bool
+}
+
+func newBoundedBuffer(limit int) boundedBuffer {
+	return boundedBuffer{limit: limit}
+}
+
+func (b *boundedBuffer) Write(value []byte) (int, error) {
+	original := len(value)
+	remaining := b.limit - b.buffer.Len()
+	if remaining <= 0 {
+		b.truncated = true
+		return original, nil
+	}
+	if len(value) > remaining {
+		value = value[:remaining]
+		b.truncated = true
+	}
+	_, _ = b.buffer.Write(value)
+	return original, nil
+}
+
+func (b *boundedBuffer) String() string  { return b.buffer.String() }
+func (b *boundedBuffer) Truncated() bool { return b.truncated }
+
+// Status implements the HTTP status-provider contract.
+func (s *Sidecar) Status(context.Context) RuntimeStatus {
+	s.statusMu.RLock()
+	defer s.statusMu.RUnlock()
+	return s.status
+}
+
+func (s *Sidecar) setAvailable(available bool) {
+	s.statusMu.Lock()
+	defer s.statusMu.Unlock()
+	s.status.Available = available
+	if !available {
+		s.status.Active = false
+		s.status.State = "unavailable"
+	}
+}
+
+func (s *Sidecar) SetActive(active bool) {
+	s.statusMu.Lock()
+	defer s.statusMu.Unlock()
+	s.status.Active = active
+	if active {
+		if s.status.FailedJobs > 0 || s.status.Reconciliation.Failed > 0 {
+			s.status.State = "degraded"
+		} else {
+			s.status.State = "active"
+			s.status.LastError = ""
+		}
+	}
+}
+
+func (s *Sidecar) RecordProjection(report projection.Report) {
+	s.statusMu.Lock()
+	defer s.statusMu.Unlock()
+	s.status.Backlog = report.Backlog
+	s.status.FailedJobs = report.Failed
+	s.status.LastSyncAt = time.Now().UTC()
+}
+
+func (s *Sidecar) RecordReconciliation(report projection.ReconcileReport) {
+	s.statusMu.Lock()
+	defer s.statusMu.Unlock()
+	s.status.LastReconciliationAt = report.CompletedAt
+	s.status.Reconciliation = ReconciliationStatus{
+		Complete: report.Complete, Canonical: report.Canonical, Scanned: report.FilesScanned,
+		Missing: report.Missing, Stale: report.Stale, Orphaned: report.Orphaned,
+		Repaired: report.Repaired, Failed: report.Failed,
+	}
+	if report.Failed > 0 {
+		s.status.State = "degraded"
+	} else if s.status.Active && s.status.FailedJobs == 0 && s.status.LastError == "" {
+		s.status.State = "active"
+	}
+}
+
+func (s *Sidecar) RecordQueue(backlog, failed int) {
+	s.statusMu.Lock()
+	defer s.statusMu.Unlock()
+	s.status.Backlog = backlog
+	s.status.FailedJobs = failed
+	if failed > 0 {
+		s.status.State = "degraded"
+	}
+}
+
+func (s *Sidecar) RecordError(err error) {
+	if err == nil {
+		return
+	}
+	s.statusMu.Lock()
+	defer s.statusMu.Unlock()
+	s.status.State = "degraded"
+	s.status.LastError = truncateError(err.Error())
+}
+
+func (s *Sidecar) recordIndex(err error) {
+	s.statusMu.Lock()
+	defer s.statusMu.Unlock()
+	if err != nil {
+		s.status.State = "degraded"
+		s.status.LastError = truncateError(err.Error())
+		return
+	}
+	s.status.LastIndexAt = time.Now().UTC()
+	s.status.LastError = ""
+	if s.status.Active {
+		if s.status.FailedJobs > 0 || s.status.Reconciliation.Failed > 0 {
+			s.status.State = "degraded"
+		} else {
+			s.status.State = "active"
+		}
+	}
+}
+
+func truncateError(value string) string {
+	value = strings.TrimSpace(value)
+	if len(value) > 1024 {
+		return value[:1024]
+	}
+	return value
 }
 
 // CompileQuery renders the parsed user query in Recoll query syntax

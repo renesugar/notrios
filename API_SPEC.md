@@ -73,7 +73,15 @@ GET /healthz
 GET /api/v1/status
 ```
 
-`/api/v1/status` reports runtime readiness plus the config path, database driver/path/state, schema version, storage roots, capability flags, configured search limits, and the active remote-media policy (`media_policy`: default action, network limits, per-list rule counts, size caps, quarantine directory — v0.3). `database` remains as a deprecated summary string for early UI compatibility; clients should prefer `database_info`.
+`/api/v1/status` reports runtime readiness plus the config path, database
+driver/path/state, schema version, storage roots, capability flags, configured
+search limits, and the active remote-media policy. Its `search_sidecar` object
+reports whether Recoll is configured/available/active, current state, pending
+and failed projection jobs, last sync/index/reconciliation timestamps, the
+last bounded reconciliation counts (missing/stale/orphaned/repaired), and a
+bounded last error. SQLite/FTS5 remains available when Recoll is unavailable or
+degraded. `database` remains as a deprecated summary string for early UI
+compatibility; clients should prefer `database_info`.
 
 ### Collections
 
@@ -93,7 +101,12 @@ POST /api/v1/search
 GET  /api/v1/search?q=...&collection=...&limit=...
 ```
 
-Search response hits must include `source`, `id`, `uri`, `title`, `snippet`, `score`, `metadata`, and optional `resource_links`.
+Search response hits include the legacy collection `source`, `id`, `uri`,
+`title`, `snippet`, `score`, and `metadata`. `sources` attributes each
+deduplicated hit to `sqlite`, `fts5`, and/or `recoll`; a hit found by both FTS5
+and Recoll appears once with both values. Optional Recoll merges use one
+bounded immutable snapshot so order and attribution remain stable on every
+cursor page.
 
 Default limits:
 
