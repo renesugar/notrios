@@ -51,7 +51,7 @@ This matrix keeps the long conversation compressed into implementation-sized fea
 | Native archive v1 | Implemented | exporter | Query-scoped plain-note interchange; not lossless backup. |
 | Shared selection/privacy planner | Implemented | archive/publishing service | Read-only typed recursive notebook/tag/query/ID selection, target policies, reachable resources, link/privacy/source-bundle/metadata decisions, bounded REST/MCP details, and deterministic digest. |
 | Portable Markdown vault export | External integration | movenotes-v3 | Planned `notrios2sql.py` consumes archive v2; movenotes owns Obsidian projection. |
-| Native archive v2/backup | Planned v0.4 | archive service | Full snapshot/object manifest reused by sync. |
+| Native archive v2/backup | Format/verifier implemented; P3/P4 planned | archive service | Schema-v12 database/replica identity, manifest-last SHA-256 objects, typed bounded records, explicit restore intent, and strict fixture verification; streaming export/restore remain P3/P4. |
 | Joplin RAW export | Optional/research | exporter | Only for measured exact round-trip need. |
 
 ## Built-in UI and editor
@@ -112,7 +112,7 @@ This matrix keeps the long conversation compressed into implementation-sized fea
 | SQLite revision restore | Implemented | document service | Restore creates a new revision. |
 | Native record-level sync | Planned v0.7 | sync service | Operation IDs + HLC + ack vectors; see `SYNCHRONIZATION.md`. |
 | REST/folder/rclone transports | Planned v0.7 | sync service | One immutable object/envelope protocol; target `none` supported. |
-| Backup/restore replace/merge/fork | Planned v0.4/v0.7 | archive/sync | Verified snapshot identity semantics. |
+| Backup/restore replace/merge/fork/adopt | Identity contract implemented; restore P4 | archive/sync | No default; verification completes before writes; replace/adopt/fork rotate replica identity while in-place merge retains the target replica. |
 | Yjs-compatible live co-editing | Optional/research | editor service | Separate from database sync. |
 | go-git/Fossil checkpoints | Optional/research | version adapter | Projection history, never canonical sync. |
 | Bidirectional external-vault sync | Optional/research | sync adapter | Explicit ownership/conflict policy. |

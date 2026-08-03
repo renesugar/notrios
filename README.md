@@ -75,7 +75,8 @@ Recoll availability, backlog, sync/index, and reconciliation state.
   imports, and a convergent observable Recoll sidecar.
 - Current milestone: v0.4 import correctness, portable data, publishing
   handoff, and stable references. J1–J3, Q1, and P1 are complete, including
-  bounded boolean search and the shared selection/privacy planner; P2 and the
+  bounded boolean search, the shared selection/privacy planner, and the native
+  archive-v2 format/identity verifier; P3 and the
   remaining product-feature tasks require approval — see [`PLAN.md`](PLAN.md) and
   [`ROADMAP.md`](ROADMAP.md).
 - Agent progress/attempt tracking: [`agent/PLAN_STATUS.md`](agent/PLAN_STATUS.md), [`agent/ATTEMPT_LOG.jsonl`](agent/ATTEMPT_LOG.jsonl), and [`agent/MODEL_LOG.jsonl`](agent/MODEL_LOG.jsonl).
@@ -96,6 +97,8 @@ Notrios is licensed under the [Apache License 2.0](LICENSE). All code and depend
 - `DOCS_SITE.md` — GitHub Pages documentation site with PageFind and the Help notebook.
 - `SYNCHRONIZATION.md` — planned database/replica merge algorithm,
   REST/folder/rclone transports, retention, and backup/restore relationships.
+- `NATIVE_ARCHIVE_V2.md` — implemented v2 identity, immutable-object,
+  manifest-last, compatibility, restore-intent, and verification contract.
 - `CODING_CLIENT_HANDOFF.md` — agent handoff (formerly `CODEX_HANDOFF.md`).
 
 ## Historical design and report documents

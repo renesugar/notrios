@@ -200,9 +200,10 @@ semantics:
 | Restore-merge | Feed snapshot records through the replication/import merge rules |
 | Sync | Repeated bidirectional exchange of incremental operations and acknowledgements |
 
-The v0.4 native archive v2 container becomes the full-snapshot layer. v0.7 adds
-operation logs, acknowledgement vectors, and transports without inventing a
-second blob/manifest format.
+The v0.4 P2 native archive-v2 identity/manifest/object verifier is the
+full-snapshot format foundation. P3/P4 add export/restore; v0.7 adds operation
+logs, acknowledgement vectors, and transports without inventing a second
+blob/manifest format.
 
 Imports execute in bounded transactions under one import-job identity. They may
 allocate an HLC plus consecutive operations for each committed batch; source

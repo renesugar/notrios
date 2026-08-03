@@ -139,9 +139,13 @@ back at the configured paths, and start the service — migrations bring an
 older backup's schema forward automatically. Do not delete live WAL/SHM files
 until the exact stopped database target and verified backup are resolved.
 
-Future synchronized profiles add explicit replace/merge/adopt/fork choices.
-Replacing a writable copy mints a new replica ID; forking also mints a new
-logical database ID. See `SYNCHRONIZATION.md` in the repository.
+The native archive-v2 identity contract defines explicit
+replace/merge/adopt/fork choices with no default. Replacing or adopting a full
+snapshot preserves its logical database ID, merging keeps the existing target
+database/replica IDs, and forking requires a new database ID. Replace, adopt,
+and fork mint a replica ID for the resulting writable copy.
+The P3/P4 commands are not implemented yet. See
+[archive v2](archive-v2.md) and `SYNCHRONIZATION.md`.
 
 **Portable alternative:** a [native archive export](import-export.md#exporting-a-notrios-archive) (`notriosctl export archive`) captures notes, notebooks, tags, and attachments in a human-readable form. It is ideal for moving a *subset* between machines, but it is not a byte-identical backup: revision history and provenance rows are not included, and re-imported notes become plain local notes.
 

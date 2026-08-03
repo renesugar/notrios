@@ -78,7 +78,7 @@ but does not rewrite content.
 The Store mutex supplies a consistent in-process read snapshot. The planner
 loads only document identity/revision state and processes resources, links,
 provenance, and source-bundle metadata in 400-ID batches. It never selects a
-note body or resource/source-bundle byte stream. P2 will stream the same
+note body or resource/source-bundle byte stream. P3 will stream the same
 content-free manifest contract into archive objects.
 
 ## Interfaces

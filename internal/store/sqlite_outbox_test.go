@@ -18,7 +18,7 @@ func TestSchemaV11ProjectionRetryBackoffAndQueueStatus(t *testing.T) {
 		t.Fatal(err)
 	}
 	status, err := st.Status(ctx)
-	if err != nil || status.SchemaVersion != 11 {
+	if err != nil || status.SchemaVersion != CurrentSchemaVersion {
 		t.Fatalf("schema status: %+v err=%v", status, err)
 	}
 	if _, err := st.CreateDocument(ctx, CreateDocumentRequest{PreferredID: "doc_retry", Title: "retry"}); err != nil {
@@ -82,7 +82,7 @@ func TestSchemaV10UpgradeAddsProjectionRetrySchedule(t *testing.T) {
 		t.Fatalf("v10 to v11 bootstrap: %v", err)
 	}
 	status, err := st.Status(ctx)
-	if err != nil || status.SchemaVersion != 11 {
+	if err != nil || status.SchemaVersion != CurrentSchemaVersion {
 		t.Fatalf("upgraded status: %+v err=%v", status, err)
 	}
 	if _, err := st.ProjectionQueueStatus(ctx); err != nil {

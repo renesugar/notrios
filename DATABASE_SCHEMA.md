@@ -82,9 +82,10 @@ invalidates the canonical note save.
 ## MVP migration file
 
 `migrations/0001_initial.sql` has grown with each milestone and now represents
-schema version 11 (v5 notebooks/tags/search notebooks, v6 source provenance,
+schema version 12 (v5 notebooks/tags/search notebooks, v6 source provenance,
 v7 media policy, v8 resource retention, v9 scalable keyset indexes, v10
-resumable import state/source bundles, v11 projection retry scheduling),
+resumable import state/source bundles, v11 projection retry scheduling, v12
+logical database/replica identity),
 applied idempotently on every startup with upgrade shims for older databases.
 Its original MVP portion represents schema version 4. Do not rename public
 tables/columns casually once tests depend on them.
@@ -132,6 +133,16 @@ restart from the first phase.
   state and sequence.
 - `/api/v1/status.search_sidecar` exposes pending/retrying counts while exact
   projection reconciliation remains a derived-filesystem operation.
+
+## Schema v12 — archive and synchronization identity
+
+`database_identity` has exactly one row. `database_id` is the stable logical
+database/synchronization universe; `replica_id` is one writable SQLite copy.
+Both are random opaque IDs and are never derived from the database path,
+profile, hostname, or asset directory. Bootstrap and reopen preserve both.
+Supported clone/restore workflows preserve or replace `database_id` only under
+an explicit archive intent and always rotate `replica_id` before the restored
+copy becomes writable. Profile routing identity remains separate and planned.
 
 ## Schema v5/v6 — Notrios redesign (tasks R3 and R4 implemented)
 

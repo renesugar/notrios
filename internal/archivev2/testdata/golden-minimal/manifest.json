@@ -1,0 +1,67 @@
+{
+  "format": "notrios-archive",
+  "version": 2,
+  "commit_sha256": "6d90e944e66a2d2029d487702f61a619679af3430afb5d69d7428098fa74a35f",
+  "snapshot": {
+    "id": "snap_golden",
+    "created_at": "2026-08-03T17:00:00Z",
+    "target": "full_archive",
+    "database_id": "db_archive",
+    "source_replica_id": "replica_source",
+    "consistency": "sqlite_read_transaction",
+    "collection_ids": ["default"],
+    "selection_manifest_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+  },
+  "compatibility": {
+    "minimum_reader_version": 2,
+    "source_schema_version": 12,
+    "minimum_schema_version": 12,
+    "maximum_schema_version": 12,
+    "required_capabilities": [
+      "identity.database-replica.v1",
+      "objects.sha256.v1",
+      "records.jsonl.v1",
+      "revisions.complete.v1"
+    ],
+    "optional_capabilities": []
+  },
+  "objects": [
+    {
+      "sha256": "5891b5b522d5df086d0ff0b110fbd9d21bb4fc7163af34d08286a2e846f6be03",
+      "path": "objects/sha256/58/5891b5b522d5df086d0ff0b110fbd9d21bb4fc7163af34d08286a2e846f6be03",
+      "kind": "blob",
+      "media_type": "text/markdown; charset=utf-8",
+      "size_bytes": 6,
+      "records": 0,
+      "record_counts": {"collections":0,"notebooks":0,"search_notebooks":0,"tags":0,"documents":0,"revisions":0,"document_tags":0,"resources":0,"document_resources":0,"links":0,"provenance":0,"source_bundles":0}
+    },
+    {
+      "sha256": "99c3cc2d1093a61c67bf322ef22d7bf2ac23198567ced1fa4fe57ce7da7e1494",
+      "path": "objects/sha256/99/99c3cc2d1093a61c67bf322ef22d7bf2ac23198567ced1fa4fe57ce7da7e1494",
+      "kind": "blob",
+      "media_type": "application/octet-stream",
+      "size_bytes": 16,
+      "records": 0,
+      "record_counts": {"collections":0,"notebooks":0,"search_notebooks":0,"tags":0,"documents":0,"revisions":0,"document_tags":0,"resources":0,"document_resources":0,"links":0,"provenance":0,"source_bundles":0}
+    },
+    {
+      "sha256": "d74be45a70c2e8a4980c903b6096c594c3e5a7aa10af2cd45c7f98b9cbfdd156",
+      "path": "objects/sha256/d7/d74be45a70c2e8a4980c903b6096c594c3e5a7aa10af2cd45c7f98b9cbfdd156",
+      "kind": "records",
+      "media_type": "application/vnd.notrios.archive-v2-records+jsonl",
+      "size_bytes": 2835,
+      "records": 12,
+      "record_counts": {"collections":1,"notebooks":1,"search_notebooks":1,"tags":1,"documents":1,"revisions":1,"document_tags":1,"resources":1,"document_resources":1,"links":1,"provenance":1,"source_bundles":1}
+    },
+    {
+      "sha256": "e1dd52c4fded473678d49aa9270d577e5a8fb064b45824dc1dd200427ec3cb52",
+      "path": "objects/sha256/e1/e1dd52c4fded473678d49aa9270d577e5a8fb064b45824dc1dd200427ec3cb52",
+      "kind": "blob",
+      "media_type": "image/png",
+      "size_bytes": 4,
+      "records": 0,
+      "record_counts": {"collections":0,"notebooks":0,"search_notebooks":0,"tags":0,"documents":0,"revisions":0,"document_tags":0,"resources":0,"document_resources":0,"links":0,"provenance":0,"source_bundles":0}
+    }
+  ],
+  "counts": {"collections":1,"notebooks":1,"search_notebooks":1,"tags":1,"documents":1,"revisions":1,"document_tags":1,"resources":1,"document_resources":1,"links":1,"provenance":1,"source_bundles":1}
+}

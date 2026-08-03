@@ -16,6 +16,9 @@ Notrios is a local-first note-taking, search, import, and publishing system for 
 - **Privacy-reviewed handoffs** — dry-run full archive, subset, or publication
   boundaries before any files are written. See [selection and privacy
   planning](selection-planning.md).
+- **Verified archive identity** — native archive v2 defines manifest-last,
+  SHA-256 object admission and explicit replace/merge/fork/adopt semantics.
+  See the [archive v2 safety contract](archive-v2.md).
 
 ## Getting started
 

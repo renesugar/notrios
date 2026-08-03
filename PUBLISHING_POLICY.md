@@ -17,6 +17,12 @@ counts, link/privacy decisions, exclusions, metadata decisions, and a complete
 manifest digest, never note bodies, source metadata JSON, raw resource bytes,
 or local paths. See `SELECTION_AND_PRIVACY_PLANNER.md`.
 
+P2 binds that complete planner digest into the strict archive-v2 snapshot
+manifest. The format verifier admits only immutable hash-addressed objects,
+bounded typed records, safe relative source-bundle paths, and consistent
+schema/capability/MIME/count/reference metadata. P3 remains responsible for
+streaming only the records and bytes authorized by the plan.
+
 ## Publishing implementation boundary
 
 Notrios plans and emits a scoped, sanitized native-archive-v2 handoff. The

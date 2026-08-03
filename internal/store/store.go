@@ -35,8 +35,23 @@ const (
 	TrashSearchNotebookID    = "snb_trash"
 )
 
+// CurrentSchemaVersion is the canonical SQLite schema understood by this
+// build. Archive-v2 manifests record this source schema but never include
+// derived FTS5 or Recoll state.
+const CurrentSchemaVersion = 12
+
+// DatabaseIdentity separates the stable logical synchronization/archive
+// universe from one writable database copy. Copy/restore workflows preserve
+// DatabaseID only when explicitly requested and always mint a ReplicaID.
+type DatabaseIdentity struct {
+	DatabaseID       string    `json:"database_id"`
+	ReplicaID        string    `json:"replica_id"`
+	CreatedAt        time.Time `json:"created_at"`
+	ReplicaCreatedAt time.Time `json:"replica_created_at"`
+}
+
 // Selection planner limits keep read-only dry runs bounded even when the
-// canonical library is large. P2 can stream the same manifest contract into
+// canonical library is large. P3 can stream the same manifest contract into
 // an archive without widening REST or MCP inputs.
 const (
 	MaxSelectionSelectors     = 100
@@ -811,6 +826,8 @@ type Store interface {
 	Graph(ctx context.Context, req GraphRequest) (GraphResponse, error)
 	Search(ctx context.Context, req SearchRequest) (SearchResponse, error)
 	PlanSelection(ctx context.Context, req SelectionPlanRequest) (SelectionPlan, error)
+	GetDatabaseIdentity(ctx context.Context) (DatabaseIdentity, error)
+	RotateReplicaIdentity(ctx context.Context) (DatabaseIdentity, error)
 	Status(ctx context.Context) (StoreStatus, error)
 
 	CreateNotebook(ctx context.Context, req CreateNotebookRequest) (Notebook, error)

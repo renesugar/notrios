@@ -153,6 +153,12 @@ func (s *SQLiteStore) Bootstrap(ctx context.Context) error {
 	if err := s.ensureSchemaV11(ctx); err != nil {
 		return err
 	}
+	if err := s.ensureSchemaV12(ctx); err != nil {
+		return err
+	}
+	if err := s.ensureDatabaseIdentity(ctx); err != nil {
+		return err
+	}
 	if err := s.Exec(ctx, `INSERT OR IGNORE INTO collections(id, name, description) VALUES('default', 'Default', 'Managed notes created by the companion service.');`); err != nil {
 		return err
 	}
@@ -385,6 +391,28 @@ func (s *SQLiteStore) ensureSchemaV11(ctx context.Context) error {
 			if strings.Contains(err.Error(), "duplicate column name") {
 				continue
 			}
+			return err
+		}
+	}
+	return nil
+}
+
+// ensureSchemaV12 adds the persisted identity row used by native archive v2
+// and later stable links/synchronization. The table is canonical state, not a
+// path-, host-, or projection-derived identifier.
+func (s *SQLiteStore) ensureSchemaV12(ctx context.Context) error {
+	statements := []string{
+		`CREATE TABLE IF NOT EXISTS database_identity (
+			singleton INTEGER PRIMARY KEY CHECK (singleton = 1),
+			database_id TEXT NOT NULL UNIQUE,
+			replica_id TEXT NOT NULL UNIQUE,
+			created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			replica_created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+		);`,
+		`PRAGMA user_version = 12;`,
+	}
+	for _, statement := range statements {
+		if err := s.Exec(ctx, statement); err != nil {
 			return err
 		}
 	}

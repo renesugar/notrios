@@ -1,6 +1,6 @@
 # Plan: v0.4 — Import correctness, portable data, publishing handoff, and stable references
 
-Status: **J1–J3, Q1, and P1 completed; P2 and all remaining product-feature tasks require user approval**.
+Status: **J1–J3, Q1, P1, and P2 completed; P3 and all remaining product-feature tasks require user approval**.
 Drafted 2026-07-26 and revised 2026-08-02 after comparing the Joplin importer
 and publishing/search plans with the real-data-tested `movenotes-v3` pipeline.
 
@@ -139,7 +139,7 @@ bodies in memory.
 Generated evidence is archived under `performance/v0.4-p1/` and implementation
 detail under `plans/v0.4/005-*`.
 
-### P2. Native archive v2 format and identity contract
+### P2. Native archive v2 format and identity contract — complete
 
 - Specify a versioned manifest, logical database identity, snapshot metadata,
   capability/schema bounds, immutable SHA-256 objects, and manifest-last
@@ -153,6 +153,9 @@ detail under `plans/v0.4/005-*`.
 
 Working state: format/golden fixtures reject corruption, traversal, unsupported
 versions, missing objects, and inconsistent manifests before canonical writes.
+Schema v12 persists stable logical database and per-writable-copy replica IDs;
+the verifier also rejects MIME/path/depth/count/reference violations.
+Implementation detail is archived under `plans/v0.4/006-*`.
 
 ### P3. Native archive v2 streaming export
 
@@ -254,9 +257,9 @@ specific real-format, round-trip, hostile-input, native-build, and scale gates.
 
 ## Decisions required before or during v0.4
 
-- Approve P2 before defining or implementing native archive v2.
-- Select exact archive-v2 restore defaults only after P2 presents explicit
-  replace/merge/fork/adopt behavior.
+- Approve P3 before implementing streaming archive-v2 export.
+- Restore has no default: P2 defines explicit replace/merge/fork/adopt identity
+  consequences; P4 must require one after verification.
 - Treat `movenotes-v3` and `hugo-theme-ledger` as optional external publishing
   tools under their own repositories and licenses; do not link or vendor them.
 - OS registration details remain Ubuntu-only unless another platform is

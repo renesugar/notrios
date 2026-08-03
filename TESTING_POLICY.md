@@ -161,6 +161,17 @@ below 0.01 seconds. The exact crossover depends on joins, sort, cache, storage,
 and hardware, so the architectural rule is: use keysets for any unbounded
 collection, not “switch after N total notes.”
 
+### Native archive v2 admission
+
+Archive-v2 tests start from a complete synthetic golden directory containing
+every canonical record type plus body/resource/source-bundle blobs. Mutated
+copies must reject absent manifests, missing/corrupt objects, unsupported
+version/schema/required capabilities, commit/count/reference drift, traversal,
+symlinks, extra files, unsafe source paths, invalid MIME, duplicate/unknown JSON
+fields, and count/path/JSON/notebook depth overflow. Verification is read-only
+and completes before any future restore Store transaction. Migration tests also
+prove database/replica identity stability and explicit replica rotation.
+
 ### Sync model and transport tests (planned v0.7)
 
 - Property/model tests shuffle, duplicate, replay, drop, and eventually deliver

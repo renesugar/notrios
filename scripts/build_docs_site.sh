@@ -16,6 +16,7 @@ nav='<nav class="site-nav">
   <a href="/notrios/cli.html">CLI</a>
   <a href="/notrios/query-language.html">Query language</a>
   <a href="/notrios/selection-planning.html">Selection planning</a>
+  <a href="/notrios/archive-v2.html">Archive v2</a>
   <a href="/notrios/gui.html">GUI</a>
   <a href="/notrios/import-export.html">Import &amp; export</a>
   <a href="/notrios/operations.html">Maintenance</a>

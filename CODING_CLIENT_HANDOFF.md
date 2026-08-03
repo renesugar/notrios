@@ -6,8 +6,9 @@ Current phase: v0.1, v0.2, and v0.3 are complete. H1–H11 are archived under
 `plans/v0.3/`. v0.4 J1 (Joplin RAW physical-line/canonical-title parsing), J2
 (real-export correctness and bounded relationship planning), J3
 (million-item transactional throughput), Q1 (bounded boolean/category search),
-and P1 (shared selection/privacy planning) are complete; P2 and all remaining archive/publishing product tasks
-require user approval. See the
+P1 (shared selection/privacy planning), and P2 (native archive-v2 format and
+identity verification) are complete; P3 and all remaining archive/publishing
+product tasks require user approval. See the
 revised `PLAN.md`.
 
 ## First files to read
@@ -52,8 +53,9 @@ review-only perceptual hook that is inert by default. H6 added schema-v8
 resource retention state, configurable local retention, dry-run-first CLI
 garbage collection, a read-only REST report, explicit confirmation for
 permanent REST deletion, and a future sync-aware retention gate. Archive v1 is
-not a full backup; v0.4 native archive v2 is planned as the
-full-snapshot/container layer reused by v0.7 sync. H7 added schema-v9 keyset
+not a full backup; P2 defines and verifies the v0.4 native archive-v2
+full-snapshot/container layer reused by v0.7 sync, while P3/P4 export/restore
+remain unimplemented. H7 added schema-v9 keyset
 indexes and query-bound cursors for chronological/relevance, route-bound
 notebook/Trash paging, live GET search, and bounded immutable snapshots for
 optional FTS5/Recoll merging. Reproducible 10k/100k/500k evidence lives under
@@ -167,5 +169,11 @@ The scaffold was created in a restricted container. Still-open consequences:
    paths/private metadata from API output, cap visible details, and bind the
    complete manifest to SHA-256. Generated 100k evidence is under
    `performance/v0.4-p1/`.
+6. P2 adds schema-v12 stable logical database and per-writable-copy replica
+   identities plus a separate read-only archive-v2 verifier. The manifest-last
+   format uses strict typed JSONL records and immutable SHA-256 body/resource/
+   source-bundle objects; schema/capability/MIME/size/count/path/depth and
+   cross-reference checks complete before future restore writes. Synthetic
+   golden/adversarial fixtures live under `internal/archivev2/testdata/`.
 
 (The formerly open "no browser testing" limitation is resolved: the GUI is browser-verified via Playwright, vitest/RTL covers the workspace, and `scripts/verify_layout_resize.py` covers native window resizing.)

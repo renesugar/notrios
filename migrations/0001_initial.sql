@@ -307,3 +307,16 @@ CREATE INDEX IF NOT EXISTS source_bundle_items_hash_idx
     ON source_bundle_items(sha256);
 
 PRAGMA user_version = 10;
+
+-- Schema v12: stable logical database identity and per-writable-copy replica
+-- identity. Archive v2 preserves database_id for in-universe restores while
+-- restore/clone workflows always mint a new replica_id.
+CREATE TABLE IF NOT EXISTS database_identity (
+    singleton INTEGER PRIMARY KEY CHECK (singleton = 1),
+    database_id TEXT NOT NULL UNIQUE,
+    replica_id TEXT NOT NULL UNIQUE,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    replica_created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+PRAGMA user_version = 12;

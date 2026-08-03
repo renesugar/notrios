@@ -7,7 +7,7 @@ Updated: 2026-08-03
 v0.3 import/resource/media/large-library hardening is complete. H1–H11 are
 archived under `plans/v0.3/`. The revised v0.4 plan begins with Joplin
 correctness/performance prerequisites, then archive-v2, publishing handoff,
-boolean search, and stable references. J1–J3, Q1, and P1 are complete; P2 and all
+boolean search, and stable references. J1–J3, Q1, P1, and P2 are complete; P3 and all
 subsequent product tasks require user approval.
 
 ## 2026-08-02 follow-up review
@@ -58,6 +58,16 @@ subsequent product tasks require user approval.
   internal/private/broken/external link decisions, hashed source-bundle keys,
   metadata preserve/strip decisions, warnings, and a deterministic manifest
   SHA-256 without returning bodies, bytes, source metadata JSON, or paths.
+- Completed P2: schema-v12 persisted logical database and writable-copy replica
+  identities; bootstrap/reopen stability and explicit replica rotation.
+- Added the separate `internal/archivev2` manifest/typed-record contract,
+  canonical commit digest, schema/capability negotiation, explicit
+  replace/merge/fork/adopt identity decisions, and strict read-only directory
+  verification before canonical writes.
+- The complete synthetic golden archive covers all twelve record types and exact
+  body/resource/source-bundle objects. Adversarial mutations reject absent or
+  corrupt objects, traversal/symlinks/extras, unsupported compatibility,
+  invalid MIME/counts/references/JSON, and bound overflows.
 
 - H1: media-policy configuration and schema v7.
 - H2: static remote-media scan, policy API/MCP, GUI decisions.
@@ -123,7 +133,7 @@ attempt detail remains append-only in `agent/ATTEMPT_LOG.jsonl`.
 - Review base before this session: `26b0925`.
 - Project license: Apache-2.0.
 - Canonical store: SQLite plus content-addressed assets; FTS5/Recoll are derived.
-- Current schema: v11.
+- Current schema: v12.
 - Unbounded local traversal uses `(updated_at, id)` or `(score, id)` keysets;
   notebook and Trash pages are route-bound. Optional Recoll merge pages use a
   ten-minute, 1,000-hit immutable snapshot and report truncation explicitly.
@@ -145,10 +155,13 @@ attempt detail remains append-only in `agent/ATTEMPT_LOG.jsonl`.
 - P1 generated 100k selection evidence is under `performance/v0.4-p1/`: the
   full plan covered 100,000 documents, 1,000 resources, and 200,000 links in
   16.239 seconds; whole-process peak RSS was 136 MiB.
+- P2 synthetic golden/adversarial evidence lives with the verifier under
+  `internal/archivev2/testdata/`; no content-bearing private corpus is needed
+  for the format-contract slice.
 - H11 local release gates pass; `docs/operations.md` is included in the
-  docs site; P1 expands it from 11 to 12 pages/Help notes with the selection
-  planning guide.
-- Product version: 0.3.0; current schema: v11.
+  docs site; P1/P2 expand it from 11 to 13 pages/Help notes with selection and
+  archive-v2 safety guides.
+- Product version: 0.3.0; current schema: v12.
 - Resource reference report:
   `GET /api/v1/resources/reports/reference` and
   `notriosctl resources report`.
@@ -168,4 +181,4 @@ attempt detail remains append-only in `agent/ATTEMPT_LOG.jsonl`.
 - Long-term SQLite driver choice (current local cgo/libsqlite3 adapter).
 - Official MCP Go SDK adoption/version.
 - Sync decisions listed in `SYNCHRONIZATION.md` and
-  `agent/OPEN_QUESTIONS.md`; they do not block v0.4 Q1 or P1.
+  `agent/OPEN_QUESTIONS.md`; they do not block v0.4 P3.

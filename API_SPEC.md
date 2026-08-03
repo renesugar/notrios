@@ -269,8 +269,11 @@ GET  /api/v1/jobs/{job_id}
 ```
 
 Native archive v1 exists only through `notriosctl` and is not a lossless backup.
-Native archive v2 (v0.4) adds a versioned snapshot/manifest/object contract and
-later becomes the v0.7 full-sync bootstrap; see `IMPORT_EXPORT_POLICY.md`.
+Native archive v2 P2 defines a strict versioned snapshot/manifest/object
+contract, schema-v12 logical database/replica identity, bounded typed records,
+manifest-last completeness, and read-only verification. It later becomes the
+v0.7 full-sync bootstrap; P3/P4 streaming export and restore are not exposed by
+REST, MCP, or CLI yet. See `NATIVE_ARCHIVE_V2.md`.
 
 ### Profiles, batches, external links, and sync (planned)
 
