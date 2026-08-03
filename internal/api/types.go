@@ -535,20 +535,6 @@ type GraphResponse struct {
 	Truncated bool             `json:"truncated,omitempty"`
 }
 
-type PublishPlanRequest struct {
-	Profile string         `json:"profile,omitempty"`
-	Target  string         `json:"target,omitempty"`
-	Include map[string]any `json:"include,omitempty"`
-	Exclude map[string]any `json:"exclude,omitempty"`
-}
-
-type PublishPlanResponse struct {
-	NotesIncluded     int      `json:"notes_included"`
-	ResourcesIncluded int      `json:"resources_included"`
-	NotesExcluded     int      `json:"notes_excluded"`
-	Warnings          []string `json:"warnings"`
-}
-
 type JobStatus struct {
 	ID       string  `json:"id"`
 	Kind     string  `json:"kind"`

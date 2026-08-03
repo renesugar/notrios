@@ -172,6 +172,12 @@ maintained `movenotes-v3/notrios2sql.py` importer consumes the handoff;
 Bluge according to site scale. v0.4 shares the neutral
 selection/link/resource/privacy plan between full archive, subset transfer, and
 publication handoff rather than duplicating those publishing engines.
+P1 implements that neutral layer as a read-only canonical SQLite planner with
+typed notebook/tag/query/explicit-ID selectors, target-specific privacy
+defaults, reachable-resource and link-boundary analysis, capped content-free
+details, and a digest over the complete manifest. REST and MCP call the same
+Store method; neither accepts SQL, paths, or output commands. See
+`SELECTION_AND_PRIVACY_PLANNER.md`.
 
 ## Optional derived systems
 
@@ -188,7 +194,8 @@ publication handoff rather than duplicating those publishing engines.
 
 - Use `FEATURE_MATRIX.md` to decide whether a feature is MVP, soon, later, or optional.
 - Use `UI_DESIGN.md` for built-in UI/editor behavior.
-- Use `PUBLISHING_POLICY.md` for Quartz and public-subset publishing.
+- Use `SELECTION_AND_PRIVACY_PLANNER.md` and `PUBLISHING_POLICY.md` for shared
+  archive/subset/publication selection and public handoff policy.
 - Use `VERSIONING_AND_SYNC_POLICY.md` for SQLite revisions, go-git, Fossil, and external-vault sync.
 - Use `SYNCHRONIZATION.md` for database/replica identity, merge algorithms,
   transport, retention, backup/restore relationships, and validation.

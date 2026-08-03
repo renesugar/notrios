@@ -24,6 +24,7 @@ docs/
   api/rest.md           # REST usage guide with curl examples (OpenAPI remains api/openapi.yaml)
   api/mcp.md            # MCP tools, profiles, client configuration
   query-language.md     # user-facing form of SEARCH_QUERY_LANGUAGE.md
+  selection-planning.md # archive/subset/publication dry-run privacy boundary
   gui.md                # built-in GUI: building, modes, layout, themes, errors
   import-export.md      # per-source import workflows, archive export/import
   operations.md         # media, resources/GC, importer resume, sidecar status

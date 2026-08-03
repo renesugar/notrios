@@ -49,6 +49,7 @@ This matrix keeps the long conversation compressed into implementation-sized fea
 | ChatGPT export import | Implemented | importer | Conversation provenance. |
 | Claude JSON import | Implemented | importer | Conversation provenance. |
 | Native archive v1 | Implemented | exporter | Query-scoped plain-note interchange; not lossless backup. |
+| Shared selection/privacy planner | Implemented | archive/publishing service | Read-only typed recursive notebook/tag/query/ID selection, target policies, reachable resources, link/privacy/source-bundle/metadata decisions, bounded REST/MCP details, and deterministic digest. |
 | Portable Markdown vault export | External integration | movenotes-v3 | Planned `notrios2sql.py` consumes archive v2; movenotes owns Obsidian projection. |
 | Native archive v2/backup | Planned v0.4 | archive service | Full snapshot/object manifest reused by sync. |
 | Joplin RAW export | Optional/research | exporter | Only for measured exact round-trip need. |

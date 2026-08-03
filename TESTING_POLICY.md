@@ -125,6 +125,16 @@ the established ordinary-page gate plus representative expression metrics.
 The intentionally nonselective pure-negation metric is reported separately and
 is not represented as an ordinary-page latency guarantee.
 
+v0.4 P1 extends the same generated profile with a complete content-free
+full-archive selection dry run. The 100k tier asserts selected document,
+reachable resource, and link-classification counts; capped visible details;
+and a full manifest digest. Evidence under `performance/v0.4-p1/` records
+elapsed time and whole-process peak RSS. Focused fixtures separately cover
+recursive notebooks, `any`/`all` tag/query/explicit-ID selectors, secure
+publication defaults, private/broken links, source-bundle key hashing,
+metadata decisions, deterministic replay, read-only canonical state, and
+REST/MCP output parity/caps.
+
 H9's `scripts/run_obsidian_import_profile.sh` uses 100/10k/100k/500k tiers for
 generated vaults with nested folders, aliases, relative links,
 embeds, heading/block anchors, unknown frontmatter, exact source-bundle

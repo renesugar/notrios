@@ -164,10 +164,26 @@ curl -s -X POST http://127.0.0.1:8080/api/v1/graph \
 curl -s http://127.0.0.1:8080/api/v1/documents/$DOC/revisions | jq
 ```
 
+## Selection and privacy dry runs
+
+`POST /api/v1/selection/plan` is the shared read-only planner for future full
+archives, subset transfers, and publication handoffs. It accepts typed
+notebook/tag/query/explicit-ID selectors and policy overrides; no SQL or paths.
+
+```sh
+curl -s -X POST http://127.0.0.1:8080/api/v1/selection/plan \
+  -H 'Content-Type: application/json' \
+  -d '{"target":"publication_handoff","selection":{"tags":["publish"]}}' | jq
+```
+
+The response contains stable content-free IDs/hashes, counts, link/privacy and
+metadata decisions, exclusions, warnings, and `manifest_sha256`. Detail arrays
+are bounded independently; `truncated` never means the counts/digest are
+partial. See [selection planning](../selection-planning.md).
+
 ## Placeholder endpoints (not yet functional)
 
-Staged contracts include `POST /api/v1/publish/quartz/plan`,
-`GET /api/v1/jobs/{id}`, and collection
+Staged contracts include `GET /api/v1/jobs/{id}` and collection
 creation/patching (collections are effectively fixed to `default`). Profiles,
 batch organizer operations, native archive v2 jobs, and sync endpoints are
 planned but not live. Remote-media scan and localization are implemented; see

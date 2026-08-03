@@ -59,6 +59,21 @@ Input:
 
 Output uses the same shape as REST `SearchResponse` plus MCP resource links for each hit.
 
+### plan_selection
+
+Runs the shared P1 selection/privacy planner without writing files or changing
+canonical state. Required `target` is `full_archive`, `subset_transfer`, or
+`publication_handoff`. Typed selectors are recursive notebook IDs, tags, one
+bounded query, and up to 1,000 explicit document IDs; policy fields are closed
+booleans/enums rather than arbitrary maps.
+
+Output is the REST-compatible content-free plan: stable IDs, resource hashes,
+complete counts, internal/private/broken/external link decisions, source-bundle
+policy results, exclusions, metadata decisions, warnings, and a deterministic
+manifest digest. Detail arrays use `mcp.max_results`; bodies, raw resource
+bytes, source metadata JSON/URLs, raw broken-link context, SQL, and local paths
+are never returned.
+
 ### get_document
 
 Retrieves one document by `document://` URI or document ID.

@@ -241,19 +241,32 @@ resources, and rewrites Markdown in a new revision. H5 wires the perceptual
 admission/policy/report hook, but Notrios ships no algorithm; the hook remains
 inert unless an embedding application explicitly installs one.
 
-### Import/export/publish (staged contract — import/export run through `notriosctl` today; the publish/jobs routes return stubs)
+### Selection/privacy planning — implemented
+
+```text
+POST /api/v1/selection/plan
+```
+
+The read-only planner accepts a typed target (`full_archive`,
+`subset_transfer`, or `publication_handoff`), recursive notebook IDs, tags, a
+Q1 query, and bounded explicit document IDs. It returns content-free document
+and resource manifests, link decisions, source-bundle policy results,
+exclusions, metadata stripping decisions, warnings, complete counts, and a
+deterministic SHA-256 manifest digest. Detail arrays are capped at 1,000 over
+REST and selected documents at 100,000. The endpoint accepts neither SQL nor
+filesystem/output paths and never returns note bodies, resource bytes, source
+metadata JSON, or local storage paths. See
+`SELECTION_AND_PRIVACY_PLANNER.md`.
+
+### Import/export/jobs (staged contract — import/export run through `notriosctl` today; jobs return stubs)
 
 ```text
 POST /api/v1/import-jobs
 GET  /api/v1/import-jobs/{job_id}
 POST /api/v1/export-jobs
 GET  /api/v1/export-jobs/{job_id}
-POST /api/v1/publish/quartz/plan
-POST /api/v1/publish/quartz/run
 GET  /api/v1/jobs/{job_id}
 ```
-
-Quartz publish planning must be privacy-aware: it selects a subset, rewrites links, copies only reachable public resources, applies media policy, strips private metadata, and reports warnings before building.
 
 Native archive v1 exists only through `notriosctl` and is not a lossless backup.
 Native archive v2 (v0.4) adds a versioned snapshot/manifest/object contract and
@@ -370,7 +383,6 @@ revision precondition). Tools still planned later:
 - `get_document_graph`
 - `lint_workspace`
 - `fix_workspace_issues`
-- `publish_quartz_plan`
 - `create_import_job`
 - `run_batch` / `get_batch_status` (organizer profile)
 - `plan_sync`, `start_sync`, `get_sync_status`, `list_sync_conflicts` (scoped

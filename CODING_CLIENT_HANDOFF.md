@@ -5,8 +5,8 @@ This handoff applies to any coding agent or client continuing this project (Code
 Current phase: v0.1, v0.2, and v0.3 are complete. H1–H11 are archived under
 `plans/v0.3/`. v0.4 J1 (Joplin RAW physical-line/canonical-title parsing), J2
 (real-export correctness and bounded relationship planning), J3
-(million-item transactional throughput), and Q1 (bounded boolean/category
-search) are complete; P1 and all remaining archive/publishing product tasks
+(million-item transactional throughput), Q1 (bounded boolean/category search),
+and P1 (shared selection/privacy planning) are complete; P2 and all remaining archive/publishing product tasks
 require user approval. See the
 revised `PLAN.md`.
 
@@ -161,5 +161,11 @@ The scaffold was created in a restricted container. Still-open consequences:
    with live parity tests, and unsupported sidecar shapes fall back explicitly
    to canonical SQLite rather than being approximated. Generated evidence is
    under `performance/v0.4-q1/`.
+5. P1 provides one read-only Store/REST/MCP planner for recursive
+   notebook/tag/query/explicit-ID selection. Target policies classify reachable
+   resources and internal/private/broken links, hash source-bundle keys, strip
+   paths/private metadata from API output, cap visible details, and bind the
+   complete manifest to SHA-256. Generated 100k evidence is under
+   `performance/v0.4-p1/`.
 
 (The formerly open "no browser testing" limitation is resolved: the GUI is browser-verified via Playwright, vitest/RTL covers the workspace, and `scripts/verify_layout_resize.py` covers native window resizing.)

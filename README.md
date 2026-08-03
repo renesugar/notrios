@@ -25,9 +25,10 @@ changes.
 - **Resource store:** content-addressed assets, exact-hash/reference reports,
   and optional review-only perceptual-hash hooks (no algorithm ships by
   default), with dry-run-first retention-aware garbage collection.
-- **Publishing/docs:** privacy-reviewed native-archive subset handoff to the
-  external `movenotes-v3` pipeline is planned; movenotes owns Obsidian/Quartz
-  and Hugo/Ledger+Bluge projections. Project documentation ships as a GitHub
+- **Publishing/docs:** the shared read-only selection/privacy planner is live;
+  the future native-archive subset handoff goes to the external `movenotes-v3`
+  pipeline, which owns Obsidian/Quartz and Hugo/Ledger+Bluge projections.
+  Project documentation ships as a GitHub
   Pages site with PageFind search (`DOCS_SITE.md`).
 
 ## Documentation
@@ -73,8 +74,8 @@ Recoll availability, backlog, sync/index, and reconciliation state.
   reports/retention, keyset pagination, hardened resumable Joplin/Obsidian
   imports, and a convergent observable Recoll sidecar.
 - Current milestone: v0.4 import correctness, portable data, publishing
-  handoff, and stable references. J1–J3 and Q1 are complete, including bounded
-  boolean search expressions and the `category:` notebook alias; P1 and the
+  handoff, and stable references. J1–J3, Q1, and P1 are complete, including
+  bounded boolean search and the shared selection/privacy planner; P2 and the
   remaining product-feature tasks require approval — see [`PLAN.md`](PLAN.md) and
   [`ROADMAP.md`](ROADMAP.md).
 - Agent progress/attempt tracking: [`agent/PLAN_STATUS.md`](agent/PLAN_STATUS.md), [`agent/ATTEMPT_LOG.jsonl`](agent/ATTEMPT_LOG.jsonl), and [`agent/MODEL_LOG.jsonl`](agent/MODEL_LOG.jsonl).
@@ -123,5 +124,5 @@ The collection scale profile accepts `10000`, `100000`, or `500000`; Joplin
 accepts `100`, `10000`, or `100000`; Obsidian also accepts `500000`; Recoll
 accepts `100` or `100000`. Committed reference evidence is under
 `performance/v0.3-h7/` through `performance/v0.3-h10/` and
-`performance/v0.4-j2/` through `performance/v0.4-q1/`. See `PACKAGING.md`,
+`performance/v0.4-j2/` through `performance/v0.4-p1/`. See `PACKAGING.md`,
 `SECURITY_REVIEW.md`, and `RELEASE_CHECKLIST.md` before tagging a release.

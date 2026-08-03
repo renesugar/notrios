@@ -1,0 +1,122 @@
+{
+  "generated_at": "2026-08-03T16:18:47Z",
+  "document_count": 100000,
+  "resource_count": 1000,
+  "physical_blob_count": 100,
+  "link_count": 200000,
+  "database_bytes": 113790976,
+  "peak_rss_bytes": 142639104,
+  "environment": {
+    "goos": "linux",
+    "goarch": "amd64",
+    "go_version": "go1.26.5",
+    "sqlite_version": "3.45.1",
+    "cpu_model": "Intel(R) Core(TM) i5-9300H CPU @ 2.40GHz"
+  },
+  "metrics": {
+    "all_notes_90_percent_deep_page": {
+      "iterations": 30,
+      "p50_ms": 3.045,
+      "p95_ms": 3.762,
+      "max_ms": 4.253,
+      "items": 100
+    },
+    "all_notes_first_page": {
+      "iterations": 30,
+      "p50_ms": 2.974,
+      "p95_ms": 3.802,
+      "max_ms": 3.961,
+      "items": 100
+    },
+    "all_notes_next_page": {
+      "iterations": 30,
+      "p50_ms": 2.971,
+      "p95_ms": 5.118,
+      "max_ms": 8.419,
+      "items": 100
+    },
+    "boolean_negated_field_first_page": {
+      "iterations": 15,
+      "p50_ms": 2963.807,
+      "p95_ms": 3768.247,
+      "max_ms": 3768.247,
+      "items": 100
+    },
+    "boolean_text_or_first_page": {
+      "iterations": 15,
+      "p50_ms": 0.999,
+      "p95_ms": 1.813,
+      "max_ms": 1.813,
+      "items": 2
+    },
+    "category_alias_first_page": {
+      "iterations": 30,
+      "p50_ms": 2.009,
+      "p95_ms": 3.679,
+      "max_ms": 5.332,
+      "items": 100
+    },
+    "export_cursor_stream": {
+      "iterations": 1,
+      "p50_ms": 3733.625,
+      "p95_ms": 3733.625,
+      "max_ms": 3733.625,
+      "items": 100000
+    },
+    "fts_nonselective_first_page": {
+      "iterations": 5,
+      "p50_ms": 399.89,
+      "p95_ms": 432.505,
+      "max_ms": 432.505,
+      "items": 100
+    },
+    "fts_selective_first_page": {
+      "iterations": 15,
+      "p50_ms": 1.17,
+      "p95_ms": 2.341,
+      "max_ms": 2.341,
+      "items": 1
+    },
+    "notebook_filter_first_page": {
+      "iterations": 30,
+      "p50_ms": 1.951,
+      "p95_ms": 3.556,
+      "max_ms": 4.538,
+      "items": 100
+    },
+    "selection_full_archive_plan": {
+      "iterations": 1,
+      "p50_ms": 16238.875,
+      "p95_ms": 16238.875,
+      "max_ms": 16238.875,
+      "items": 100000
+    },
+    "synthetic_import_batch_seed": {
+      "iterations": 1,
+      "p50_ms": 39836.18,
+      "p95_ms": 39836.18,
+      "max_ms": 39836.18,
+      "items": 100000
+    },
+    "tag_filter_first_page": {
+      "iterations": 30,
+      "p50_ms": 19.632,
+      "p95_ms": 27.887,
+      "max_ms": 36.997,
+      "items": 100
+    }
+  },
+  "query_plans": {
+    "all_notes": [
+      "SEARCH documents USING COVERING INDEX documents_collection_state_updated_idx (collection_id=? AND deleted_at=?)"
+    ],
+    "notebook": [
+      "SEARCH documents USING COVERING INDEX documents_notebook_state_updated_idx (notebook_id=? AND deleted_at=?)"
+    ],
+    "tag_membership": [
+      "SEARCH note_tags USING COVERING INDEX note_tags_tag_document_idx (tag_id=?)"
+    ]
+  },
+  "ordinary_page_target_p95_ms": 100,
+  "ordinary_page_target_met": true
+}

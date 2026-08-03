@@ -81,11 +81,14 @@ func TestStatusReportsConfigurationAndSchema(t *testing.T) {
 		t.Fatalf("unexpected config/storage status: %+v", got)
 	}
 	if !got.Capabilities["documents.create"] || !got.Capabilities["search.fts5"] || !got.Capabilities["search.boolean"] ||
-		!got.Capabilities["search.category_alias"] || !got.Capabilities["search_sidecar"] {
+		!got.Capabilities["search.category_alias"] || !got.Capabilities["selection.plan"] || !got.Capabilities["search_sidecar"] {
 		t.Fatalf("expected capability flags to be reported: %+v", got.Capabilities)
 	}
 	if got.Limits["search_query_max_bytes"] != 4096 || got.Limits["search_query_max_tokens"] != 256 || got.Limits["search_query_max_depth"] != 16 {
 		t.Fatalf("query parser limits missing: %+v", got.Limits)
+	}
+	if got.Limits["selection_max_selectors"] != store.MaxSelectionSelectors || got.Limits["selection_max_explicit_document_ids"] != store.MaxSelectionDocumentIDs || got.Limits["selection_rest_max_documents"] != restSelectionMaxDocuments || got.Limits["selection_max_detail_items"] != store.MaxSelectionDetailItems {
+		t.Fatalf("selection planner limits missing: %+v", got.Limits)
 	}
 	if got.MediaPolicy == nil {
 		t.Fatalf("status must report the media policy: %+v", got)

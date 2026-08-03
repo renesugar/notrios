@@ -7,7 +7,7 @@ Updated: 2026-08-03
 v0.3 import/resource/media/large-library hardening is complete. H1–H11 are
 archived under `plans/v0.3/`. The revised v0.4 plan begins with Joplin
 correctness/performance prerequisites, then archive-v2, publishing handoff,
-boolean search, and stable references. J1–J3 and Q1 are complete; P1 and all
+boolean search, and stable references. J1–J3, Q1, and P1 are complete; P2 and all
 subsequent product tasks require user approval.
 
 ## 2026-08-02 follow-up review
@@ -50,6 +50,14 @@ subsequent product tasks require user approval.
 - Live SQLite/Recoll parity covers grouped/negated fields, recursive category
   matching, authors, titles, and emoji. REST, MCP, search notebooks, GUI help,
   specifications, and generated scale tests all share the documented grammar.
+- Completed P1: one read-only Store operation with typed recursive
+  notebook/tag/query/explicit-ID selectors and reusable full-archive,
+  subset-transfer, and publication-handoff privacy defaults. REST and MCP call
+  the same planner with capped content-free details.
+- P1 reports complete selected/excluded counts, exact reachable resources,
+  internal/private/broken/external link decisions, hashed source-bundle keys,
+  metadata preserve/strip decisions, warnings, and a deterministic manifest
+  SHA-256 without returning bodies, bytes, source metadata JSON, or paths.
 
 - H1: media-policy configuration and schema v7.
 - H2: static remote-media scan, policy API/MCP, GUI decisions.
@@ -134,8 +142,12 @@ attempt detail remains append-only in `agent/ATTEMPT_LOG.jsonl`.
   `performance/v0.4-q1/`; ordinary first/next/deep pages remain below the
   recorded 100 ms target, while the nonselective negation cost is reported
   separately.
+- P1 generated 100k selection evidence is under `performance/v0.4-p1/`: the
+  full plan covered 100,000 documents, 1,000 resources, and 200,000 links in
+  16.239 seconds; whole-process peak RSS was 136 MiB.
 - H11 local release gates pass; `docs/operations.md` is included in the
-  11-page docs site and deterministic 11-note Help seed/reseed.
+  docs site; P1 expands it from 11 to 12 pages/Help notes with the selection
+  planning guide.
 - Product version: 0.3.0; current schema: v11.
 - Resource reference report:
   `GET /api/v1/resources/reports/reference` and

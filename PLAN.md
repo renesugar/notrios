@@ -1,6 +1,6 @@
 # Plan: v0.4 — Import correctness, portable data, publishing handoff, and stable references
 
-Status: **J1–J3 and Q1 completed; P1 and all remaining product-feature tasks require user approval**.
+Status: **J1–J3, Q1, and P1 completed; P2 and all remaining product-feature tasks require user approval**.
 Drafted 2026-07-26 and revised 2026-08-02 after comparing the Joplin importer
 and publishing/search plans with the real-data-tested `movenotes-v3` pipeline.
 
@@ -122,7 +122,7 @@ SQLite and Recoll fixtures, including negated/grouped fields and emoji terms.
 Generated scale evidence is archived under `performance/v0.4-q1/` and
 implementation detail under `plans/v0.4/004-*`.
 
-### P1. Shared selection and privacy planner
+### P1. Shared selection and privacy planner — complete
 
 - Define typed selection inputs for notebooks (recursive), tags, queries, and
   explicit bounded document IDs.
@@ -136,6 +136,8 @@ implementation detail under `plans/v0.4/004-*`.
 Working state: a dry-run planner returns deterministic bounded reports on
 small fixtures and generated 100k-note data without materializing all note
 bodies in memory.
+Generated evidence is archived under `performance/v0.4-p1/` and implementation
+detail under `plans/v0.4/005-*`.
 
 ### P2. Native archive v2 format and identity contract
 
@@ -252,7 +254,7 @@ specific real-format, round-trip, hostile-input, native-build, and scale gates.
 
 ## Decisions required before or during v0.4
 
-- Approve P1 before archive/publishing implementation.
+- Approve P2 before defining or implementing native archive v2.
 - Select exact archive-v2 restore defaults only after P2 presents explicit
   replace/merge/fork/adopt behavior.
 - Treat `movenotes-v3` and `hugo-theme-ledger` as optional external publishing

@@ -6,7 +6,7 @@ This file is the codebase atlas. Update it whenever major files or directories a
 
 - `README.md` — project overview and quick start.
 - `PLAN.md` — active v0.4 portable-data/publishing/stable-reference plan;
-  J1–J3 and Q1 are complete, while P1 requires user approval.
+  J1–J3, Q1, and P1 are complete, while P2 requires user approval.
 - `plans/scaffold/SCAFFOLD_CREATION_PLAN.md` — process for creating/refining this scaffold.
 - `ROADMAP.md` — product roadmap and future features.
 - `AGENTS.md` — coding-agent instructions (`CLAUDE.md` points here).
@@ -70,6 +70,8 @@ This file is the codebase atlas. Update it whenever major files or directories a
 - `FEATURE_MATRIX.md` — milestone and ownership map.
 - `UI_DESIGN.md` — web UI/editor decisions.
 - `PUBLISHING_POLICY.md` — Quartz/static publishing rules.
+- `SELECTION_AND_PRIVACY_PLANNER.md` — live P1 typed selection, target privacy
+  defaults, manifest/report shapes, content boundary, and scale limits.
 - `VERSIONING_AND_SYNC_POLICY.md` — revision/checkpoint policy and summary of
   the synchronization invariants.
 - `WORKSPACE_MAINTENANCE.md` — query/lint/outline/block features.
@@ -79,12 +81,14 @@ This file is the codebase atlas. Update it whenever major files or directories a
 
 - `DATABASE_SCHEMA.md` explains the target SQLite schema and why search sidecars (now Recoll) remain derived indexes.
 - `api/openapi.yaml` contains the REST contract for collections, documents,
-  resources, revisions, links, remote media, graph, publishing, and jobs.
-  Remote-media scan/localization are live; publish/import job execution,
+  resources, revisions, links, remote media, graph, selection planning, and jobs.
+  Remote-media scan/localization and selection/privacy dry runs are live; publish/import job execution,
   profiles/batches/sync remain staged.
 - `api/mcp-tools.md` now defines MCP tool profiles and the implemented read-only MVP tools. `internal/httpapi/mcp.go` contains the current dependency-free adapter mounted at `/mcp`.
 - `internal/api/types.go` mirrors the current REST DTO shapes.
-- `internal/httpapi/server.go` has placeholder route handlers for future routes and live SQLite-backed handlers for the Step 4 document create/read/body/search slice.
+- `internal/httpapi/server.go` and `selection.go` expose live SQLite-backed
+  document/search and shared selection-planning routes; future job routes stay
+  staged.
 
 ## MVP Task 1 additions
 

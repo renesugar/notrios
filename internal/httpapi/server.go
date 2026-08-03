@@ -158,7 +158,7 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("DELETE /api/v1/trash/{document_id}", s.handlePurgeDocument)
 
 	s.mux.HandleFunc("POST /api/v1/graph", s.handleGraph)
-	s.mux.HandleFunc("POST /api/v1/publish/quartz/plan", s.handlePublishQuartzPlan)
+	s.mux.HandleFunc("POST /api/v1/selection/plan", s.handleSelectionPlan)
 	s.mux.HandleFunc("GET /api/v1/jobs/{job_id}", s.handleJob)
 	s.mux.HandleFunc("GET /", s.handleWebApp)
 }
@@ -245,6 +245,7 @@ func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
 			"search.fts5":           s.store != nil,
 			"search.boolean":        s.store != nil,
 			"search.category_alias": s.store != nil,
+			"selection.plan":        s.store != nil,
 			"resources":             s.store != nil,
 			"resources.report":      s.store != nil,
 			"resources.gc_report":   s.store != nil,
@@ -260,6 +261,10 @@ func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
 			"search_query_max_bytes":               query.MaxInputBytes,
 			"search_query_max_tokens":              query.MaxTokens,
 			"search_query_max_depth":               query.MaxDepth,
+			"selection_max_selectors":              store.MaxSelectionSelectors,
+			"selection_max_explicit_document_ids":  store.MaxSelectionDocumentIDs,
+			"selection_rest_max_documents":         restSelectionMaxDocuments,
+			"selection_max_detail_items":           store.MaxSelectionDetailItems,
 			"retention_unreferenced_resource_days": s.config.Retention.UnreferencedResourceDays,
 			"retention_purged_resource_days":       s.config.Retention.PurgedResourceDays,
 		},
@@ -980,14 +985,6 @@ func (s *Server) handleGraph(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, toAPIGraph(graph))
-}
-
-func (s *Server) handlePublishQuartzPlan(w http.ResponseWriter, r *http.Request) {
-	var req api.PublishPlanRequest
-	if !decodeJSON(w, r, &req) {
-		return
-	}
-	writeJSON(w, http.StatusOK, api.PublishPlanResponse{Warnings: []string{"scaffold only: no documents evaluated"}})
 }
 
 func (s *Server) handleJob(w http.ResponseWriter, r *http.Request) {

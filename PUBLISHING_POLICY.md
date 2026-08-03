@@ -10,6 +10,13 @@ metadata-removal decisions, and privacy warnings. Planning must not depend on a
 particular site generator. Full archive, subset transfer, and publication
 handoff therefore share the hard security and selection work.
 
+P1 implements this neutral layer as `PlanSelection`,
+`POST /api/v1/selection/plan`, and the read-only MCP `plan_selection` tool.
+The live planner is content-free and read-only: it returns stable IDs, hashes,
+counts, link/privacy decisions, exclusions, metadata decisions, and a complete
+manifest digest, never note bodies, source metadata JSON, raw resource bytes,
+or local paths. See `SELECTION_AND_PRIVACY_PLANNER.md`.
+
 ## Publishing implementation boundary
 
 Notrios plans and emits a scoped, sanitized native-archive-v2 handoff. The
@@ -85,6 +92,10 @@ A publish dry run must report:
 - remote media decisions;
 - oversized resources;
 - metadata-stripping warnings.
+
+The live P1 report additionally classifies internal/private/broken/external
+links, reports exact source-bundle availability/inclusion, and caps detail
+arrays while keeping complete counts and `manifest_sha256`.
 
 ## Downstream publishing targets
 

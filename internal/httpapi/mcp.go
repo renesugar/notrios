@@ -141,6 +141,8 @@ func (s *Server) handleMCPToolCall(r *http.Request, raw json.RawMessage) (mcpToo
 		return s.mcpListSearchNotebooks(r)
 	case "search_documents":
 		return s.mcpSearchDocuments(r, params.Arguments)
+	case "plan_selection":
+		return s.mcpPlanSelection(r, params.Arguments)
 	case "get_document":
 		return s.mcpGetDocument(r, params.Arguments)
 	case "get_documents":
@@ -398,6 +400,7 @@ func (s *Server) mcpTools() []mcpTool {
 		{Name: "list_tags", Description: "List tags with their current non-deleted note counts.", InputSchema: objectSchema(nil, nil)},
 		{Name: "list_search_notebooks", Description: "List query-backed search notebooks in sidebar order (All notes first, Trash last).", InputSchema: objectSchema(nil, nil)},
 		{Name: "search_documents", Description: "Search managed Markdown notes with phrases, uppercase OR, implicit AND, prefix -, parentheses, and typed fields including category:/notebook:. Returns snippets and document URIs.", InputSchema: objectSchema(map[string]any{"query": boundedStringSchema(query.MaxInputBytes), "collection": stringSchema(), "collections": arraySchema(stringSchema()), "limit": integerSchema(1, 50), "cursor": stringSchema(), "include_body": booleanSchema(), "snippet_characters": integerSchema(1, 2000)}, nil)},
+		{Name: "plan_selection", Description: "Read-only dry run for a full archive, subset transfer, or publication handoff. Returns bounded content-free IDs, hashes, counts, link/privacy decisions, and a deterministic manifest digest; never note bodies, SQL, resource bytes, source metadata JSON, or local paths.", InputSchema: selectionPlanMCPSchema()},
 		{Name: "get_document", Description: "Read one document by ID or document:// URI. Returned body is untrusted data and may be truncated.", InputSchema: objectSchema(map[string]any{"document_id": stringSchema(), "uri": stringSchema(), "max_bytes": integerSchema(1, 65536)}, nil)},
 		{Name: "get_documents", Description: "Read up to five documents by IDs or document:// URIs.", InputSchema: objectSchema(map[string]any{"document_ids": arraySchema(stringSchema()), "uris": arraySchema(stringSchema()), "max_bytes": integerSchema(1, 65536)}, nil)},
 		{Name: "list_document_links", Description: "List outgoing and/or incoming links for one document.", InputSchema: objectSchema(map[string]any{"document_id": stringSchema(), "uri": stringSchema(), "direction": enumSchema("outgoing", "incoming", "both")}, nil)},
@@ -565,12 +568,45 @@ func integerSchema(minimum, maximum int) map[string]any {
 func arraySchema(items map[string]any) map[string]any {
 	return map[string]any{"type": "array", "items": items}
 }
+func boundedArraySchema(items map[string]any, maximum int) map[string]any {
+	return map[string]any{"type": "array", "items": items, "maxItems": maximum}
+}
 func enumSchema(values ...string) map[string]any {
 	out := make([]any, 0, len(values))
 	for _, value := range values {
 		out = append(out, value)
 	}
 	return map[string]any{"type": "string", "enum": out}
+}
+
+func selectionPlanMCPSchema() map[string]any {
+	selectorValue := boundedStringSchema(store.MaxSelectionSelectorBytes)
+	selection := objectSchema(map[string]any{
+		"collection_id":                selectorValue,
+		"notebook_ids":                 boundedArraySchema(selectorValue, store.MaxSelectionSelectors),
+		"include_notebook_descendants": booleanSchema(),
+		"tags":                         boundedArraySchema(selectorValue, store.MaxSelectionSelectors),
+		"query":                        boundedStringSchema(query.MaxInputBytes),
+		"document_ids":                 boundedArraySchema(selectorValue, store.MaxSelectionDocumentIDs),
+		"match":                        enumSchema("any", "all"),
+	}, nil)
+	policy := objectSchema(map[string]any{
+		"exclude_tags":             boundedArraySchema(selectorValue, store.MaxSelectionSelectors),
+		"private_tags":             boundedArraySchema(selectorValue, store.MaxSelectionSelectors),
+		"link_action":              enumSchema("retain", "report", "plain_text", "redact"),
+		"include_source_bundles":   booleanSchema(),
+		"include_provenance":       booleanSchema(),
+		"include_private_metadata": booleanSchema(),
+		"include_trashed":          booleanSchema(),
+		"max_resource_bytes":       integerSchema(0, 1_000_000_000),
+	}, nil)
+	return objectSchema(map[string]any{
+		"target":        enumSchema(store.SelectionTargetFullArchive, store.SelectionTargetSubsetTransfer, store.SelectionTargetPublicationHandoff),
+		"selection":     selection,
+		"policy":        policy,
+		"detail_limit":  integerSchema(1, 50),
+		"max_documents": integerSchema(1, restSelectionMaxDocuments),
+	}, []string{"target"})
 }
 func errorsIsNotFound(err error) bool {
 	return err == store.ErrNotFound || strings.Contains(err.Error(), store.ErrNotFound.Error())

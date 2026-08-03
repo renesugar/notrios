@@ -740,22 +740,24 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GraphResponse'
-  /api/v1/publish/quartz/plan:
+  /api/v1/selection/plan:
     post:
-      summary: Plan a Quartz publishing run without writing files
+      summary: Dry-run a full archive, subset transfer, or publication selection
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PublishPlanRequest'
+              $ref: '#/components/schemas/SelectionPlanRequest'
       responses:
         '200':
-          description: Publishing plan
+          description: Deterministic content-free selection/privacy plan
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PublishPlanResponse'
+                $ref: '#/components/schemas/SelectionPlan'
+        '400':
+          $ref: '#/components/responses/Error'
   /api/v1/jobs/{job_id}:
     get:
       summary: Get background job status
@@ -1408,26 +1410,89 @@ components:
           type: array
           items: { type: object, additionalProperties: true }
         truncated: { type: boolean }
-    PublishPlanRequest:
+    SelectionSpec:
       type: object
+      additionalProperties: false
       properties:
-        profile: { type: string }
-        include:
+        collection_id: { type: string, maxLength: 512, default: default }
+        notebook_ids:
+          type: array
+          maxItems: 100
+          items: { type: string, maxLength: 512 }
+        include_notebook_descendants: { type: boolean, default: true }
+        tags:
+          type: array
+          maxItems: 100
+          items: { type: string, maxLength: 512 }
+        query: { type: string, maxLength: 4096 }
+        document_ids:
+          type: array
+          maxItems: 1000
+          items: { type: string, maxLength: 512 }
+        match: { type: string, enum: [any, all], default: any }
+    PrivacyPolicy:
+      type: object
+      additionalProperties: false
+      properties:
+        exclude_tags:
+          type: array
+          maxItems: 100
+          items: { type: string, maxLength: 512 }
+        private_tags:
+          type: array
+          maxItems: 100
+          items: { type: string, maxLength: 512 }
+        link_action: { type: string, enum: [retain, report, plain_text, redact] }
+        include_source_bundles: { type: boolean }
+        include_provenance: { type: boolean }
+        include_private_metadata: { type: boolean }
+        include_trashed: { type: boolean }
+        max_resource_bytes: { type: integer, format: int64, minimum: 0 }
+    SelectionPlanRequest:
+      type: object
+      additionalProperties: false
+      required: [target]
+      properties:
+        target: { type: string, enum: [full_archive, subset_transfer, publication_handoff] }
+        selection: { $ref: '#/components/schemas/SelectionSpec' }
+        policy: { $ref: '#/components/schemas/PrivacyPolicy' }
+        detail_limit: { type: integer, minimum: 1, maximum: 1000, default: 100 }
+        max_documents: { type: integer, minimum: 1, maximum: 100000, default: 100000 }
+    SelectionPlan:
+      type: object
+      required: [version, target, policy, manifest_sha256, counts, documents, resources, links, source_bundles, exclusions, metadata_decisions, warnings, truncated]
+      properties:
+        version: { type: integer, enum: [1] }
+        target: { type: string, enum: [full_archive, subset_transfer, publication_handoff] }
+        policy:
           type: object
           additionalProperties: true
-        exclude:
+        manifest_sha256: { type: string, pattern: '^[a-f0-9]{64}$' }
+        counts:
           type: object
           additionalProperties: true
-        target: { type: string, enum: [quartz], default: quartz }
-    PublishPlanResponse:
-      type: object
-      properties:
-        notes_included: { type: integer }
-        resources_included: { type: integer }
-        notes_excluded: { type: integer }
+        documents:
+          type: array
+          items: { type: object, additionalProperties: true }
+        resources:
+          type: array
+          items: { type: object, additionalProperties: true }
+        links:
+          type: array
+          items: { type: object, additionalProperties: true }
+        source_bundles:
+          type: array
+          items: { type: object, additionalProperties: true }
+        exclusions:
+          type: array
+          items: { type: object, additionalProperties: true }
+        metadata_decisions:
+          type: array
+          items: { type: object, additionalProperties: true }
         warnings:
           type: array
           items: { type: string }
+        truncated: { type: boolean }
     JobStatus:
       type: object
       required: [id, kind, status]

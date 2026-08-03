@@ -180,6 +180,26 @@ func TestLargeLibraryProfile(t *testing.T) {
 		t.Fatal("generated category alias differs from notebook filter")
 	}
 
+	selectionStarted := time.Now()
+	selectionPlan, err := st.PlanSelection(ctx, SelectionPlanRequest{
+		Target: SelectionTargetFullArchive, DetailLimit: 10, MaxDocuments: count,
+	})
+	if err != nil {
+		t.Fatalf("generated full-archive selection plan: %v", err)
+	}
+	selectionElapsed := time.Since(selectionStarted)
+	wantResources := (count + 99) / 100
+	if selectionPlan.Counts.SelectedDocuments != count || selectionPlan.Counts.ReachableResources != wantResources || selectionPlan.Counts.InternalLinks != count*2 || len(selectionPlan.Documents) != 10 || !selectionPlan.Truncated || len(selectionPlan.ManifestSHA256) != 64 {
+		t.Fatalf("generated selection plan mismatch: counts=%+v documents=%d truncated=%t digest=%q", selectionPlan.Counts, len(selectionPlan.Documents), selectionPlan.Truncated, selectionPlan.ManifestSHA256)
+	}
+	profile.Metrics["selection_full_archive_plan"] = scaleProfileMetric{
+		Iterations: 1,
+		P50MS:      durationMS(selectionElapsed),
+		P95MS:      durationMS(selectionElapsed),
+		MaxMS:      durationMS(selectionElapsed),
+		Items:      selectionPlan.Counts.SelectedDocuments,
+	}
+
 	streamStarted := time.Now()
 	streamed := 0
 	cursor := ""

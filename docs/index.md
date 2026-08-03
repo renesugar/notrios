@@ -13,6 +13,9 @@ Notrios is a local-first note-taking, search, import, and publishing system for 
 - **Safe maintenance** — explicit remote-media localization, read-only
   resource reports, retention-aware garbage collection, resumable imports,
   and observable Recoll repair. See [data safety and maintenance](operations.md).
+- **Privacy-reviewed handoffs** — dry-run full archive, subset, or publication
+  boundaries before any files are written. See [selection and privacy
+  planning](selection-planning.md).
 
 ## Getting started
 

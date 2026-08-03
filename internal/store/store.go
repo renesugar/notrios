@@ -35,6 +35,155 @@ const (
 	TrashSearchNotebookID    = "snb_trash"
 )
 
+// Selection planner limits keep read-only dry runs bounded even when the
+// canonical library is large. P2 can stream the same manifest contract into
+// an archive without widening REST or MCP inputs.
+const (
+	MaxSelectionSelectors     = 100
+	MaxSelectionSelectorBytes = 512
+	MaxSelectionDocumentIDs   = 1000
+	MaxSelectionDocuments     = 1_000_000
+	MaxSelectionDetailItems   = 1000
+)
+
+const (
+	SelectionTargetFullArchive        = "full_archive"
+	SelectionTargetSubsetTransfer     = "subset_transfer"
+	SelectionTargetPublicationHandoff = "publication_handoff"
+)
+
+// SelectionSpec identifies notes without exposing SQL or filesystem paths.
+// Values within one selector type are ORed; Match controls how the populated
+// selector types combine ("any" or "all").
+type SelectionSpec struct {
+	CollectionID               string   `json:"collection_id,omitempty"`
+	NotebookIDs                []string `json:"notebook_ids,omitempty"`
+	IncludeNotebookDescendants *bool    `json:"include_notebook_descendants,omitempty"`
+	Tags                       []string `json:"tags,omitempty"`
+	Query                      string   `json:"query,omitempty"`
+	DocumentIDs                []string `json:"document_ids,omitempty"`
+	Match                      string   `json:"match,omitempty"`
+}
+
+// PrivacyPolicy is a reusable policy override. Pointer booleans distinguish
+// secure target defaults from an explicit opt-in. Publication defaults strip
+// provenance/private metadata/source bundles and exclude common private tags.
+type PrivacyPolicy struct {
+	ExcludeTags            []string `json:"exclude_tags,omitempty"`
+	PrivateTags            []string `json:"private_tags,omitempty"`
+	LinkAction             string   `json:"link_action,omitempty"`
+	IncludeSourceBundles   *bool    `json:"include_source_bundles,omitempty"`
+	IncludeProvenance      *bool    `json:"include_provenance,omitempty"`
+	IncludePrivateMetadata *bool    `json:"include_private_metadata,omitempty"`
+	IncludeTrashed         *bool    `json:"include_trashed,omitempty"`
+	MaxResourceBytes       int64    `json:"max_resource_bytes,omitempty"`
+}
+
+// EffectivePrivacyPolicy records the concrete target policy used by a plan.
+type EffectivePrivacyPolicy struct {
+	ExcludeTags            []string `json:"exclude_tags"`
+	PrivateTags            []string `json:"private_tags"`
+	LinkAction             string   `json:"link_action"`
+	IncludeSourceBundles   bool     `json:"include_source_bundles"`
+	IncludeProvenance      bool     `json:"include_provenance"`
+	IncludePrivateMetadata bool     `json:"include_private_metadata"`
+	IncludeTrashed         bool     `json:"include_trashed"`
+	MaxResourceBytes       int64    `json:"max_resource_bytes,omitempty"`
+}
+
+type SelectionPlanRequest struct {
+	Target       string        `json:"target"`
+	Selection    SelectionSpec `json:"selection"`
+	Policy       PrivacyPolicy `json:"policy,omitempty"`
+	DetailLimit  int           `json:"detail_limit,omitempty"`
+	MaxDocuments int           `json:"max_documents,omitempty"`
+}
+
+type SelectionPlanCounts struct {
+	SelectedDocuments      int `json:"selected_documents"`
+	ExcludedDocuments      int `json:"excluded_documents"`
+	ReachableResources     int `json:"reachable_resources"`
+	AvailableSourceBundles int `json:"available_source_bundles"`
+	IncludedSourceBundles  int `json:"included_source_bundles"`
+	InternalLinks          int `json:"internal_links"`
+	PrivateLinks           int `json:"private_links"`
+	BrokenLinks            int `json:"broken_links"`
+	ExternalLinks          int `json:"external_links"`
+	OversizedResources     int `json:"oversized_resources"`
+}
+
+type SelectionDocumentManifest struct {
+	ID                string   `json:"id"`
+	URI               string   `json:"uri"`
+	CollectionID      string   `json:"collection_id"`
+	NotebookID        string   `json:"notebook_id"`
+	CurrentRevisionID string   `json:"current_revision_id"`
+	Deleted           bool     `json:"deleted"`
+	InclusionReasons  []string `json:"inclusion_reasons"`
+}
+
+type SelectionResourceManifest struct {
+	ID           string `json:"id"`
+	URI          string `json:"uri"`
+	CollectionID string `json:"collection_id"`
+	MIMEType     string `json:"mime_type"`
+	SizeBytes    int64  `json:"size_bytes"`
+	SHA256       string `json:"sha256"`
+	Oversized    bool   `json:"oversized,omitempty"`
+}
+
+type SelectionLinkDecision struct {
+	SourceDocumentID string `json:"source_document_id"`
+	TargetDocumentID string `json:"target_document_id,omitempty"`
+	LinkSHA256       string `json:"link_sha256"`
+	Classification   string `json:"classification"`
+	ResolutionStatus string `json:"resolution_status"`
+	Action           string `json:"action"`
+}
+
+type SelectionSourceBundleManifest struct {
+	SourceSystem    string `json:"source_system"`
+	SourceKeySHA256 string `json:"source_key_sha256"`
+	CollectionID    string `json:"collection_id"`
+	ItemKeySHA256   string `json:"item_key_sha256"`
+	ItemType        string `json:"item_type"`
+	SHA256          string `json:"sha256"`
+	SizeBytes       int64  `json:"size_bytes"`
+}
+
+type SelectionExclusion struct {
+	Kind   string `json:"kind"`
+	ID     string `json:"id"`
+	Reason string `json:"reason"`
+}
+
+type SelectionMetadataDecision struct {
+	Field         string `json:"field"`
+	Action        string `json:"action"`
+	Reason        string `json:"reason"`
+	AffectedItems int    `json:"affected_items"`
+}
+
+// SelectionPlan is a content-free dry-run manifest: it contains stable IDs,
+// hashes, counts, and policy decisions, but never note bodies, source metadata
+// JSON, local paths, or resource bytes. Detail arrays are capped while the
+// digest and counts cover the complete bounded selection.
+type SelectionPlan struct {
+	Version           int                             `json:"version"`
+	Target            string                          `json:"target"`
+	Policy            EffectivePrivacyPolicy          `json:"policy"`
+	ManifestSHA256    string                          `json:"manifest_sha256"`
+	Counts            SelectionPlanCounts             `json:"counts"`
+	Documents         []SelectionDocumentManifest     `json:"documents"`
+	Resources         []SelectionResourceManifest     `json:"resources"`
+	Links             []SelectionLinkDecision         `json:"links"`
+	SourceBundles     []SelectionSourceBundleManifest `json:"source_bundles"`
+	Exclusions        []SelectionExclusion            `json:"exclusions"`
+	MetadataDecisions []SelectionMetadataDecision     `json:"metadata_decisions"`
+	Warnings          []string                        `json:"warnings"`
+	Truncated         bool                            `json:"truncated"`
+}
+
 // Collection is a logical group of documents.
 type Collection struct {
 	ID           string
@@ -661,6 +810,7 @@ type Store interface {
 	RebuildDocumentLinks(ctx context.Context, documentID string) error
 	Graph(ctx context.Context, req GraphRequest) (GraphResponse, error)
 	Search(ctx context.Context, req SearchRequest) (SearchResponse, error)
+	PlanSelection(ctx context.Context, req SelectionPlanRequest) (SelectionPlan, error)
 	Status(ctx context.Context) (StoreStatus, error)
 
 	CreateNotebook(ctx context.Context, req CreateNotebookRequest) (Notebook, error)

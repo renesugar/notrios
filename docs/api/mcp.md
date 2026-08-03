@@ -30,12 +30,23 @@ The default profile is **read-only**. Set `mcp.default_profile: "editor"` in the
 
 ## Read tools
 
-`search_documents`, `get_document`, `get_documents`, `list_collections`, `list_notebooks`, `get_notebook_tree`, `get_notebook_notes`, `list_tags`, `list_search_notebooks`, `list_document_links`, `list_document_resources`, `get_document_outline`, `get_note_line_range`, `search_in_note`.
+`search_documents`, `plan_selection`, `get_document`, `get_documents`,
+`list_collections`, `list_notebooks`, `get_notebook_tree`,
+`get_notebook_notes`, `list_tags`, `list_search_notebooks`,
+`list_document_links`, `list_document_resources`, `get_document_outline`,
+`get_note_line_range`, `search_in_note`.
 
 Search accepts the same bounded [query language](../query-language.md) as
 everywhere else—including uppercase OR, prefix negation, grouping, phrases,
 and `category:`—and returns snippets plus `document://` URIs; retrieve full
 bodies explicitly with `get_document`.
+
+`plan_selection` performs the same read-only privacy dry run as REST for full
+archive, subset transfer, or publication handoff. MCP caps each detail array at
+`mcp.max_results` (default 10, maximum 50) and returns no note bodies, resource
+bytes, source metadata JSON, or local paths. Complete counts and the manifest
+digest still cover the full selection. See [selection
+planning](../selection-planning.md).
 
 ## Write tools (editor profile)
 

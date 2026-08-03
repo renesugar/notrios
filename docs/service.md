@@ -74,6 +74,10 @@ backlog/sync/reconciliation state.
 Search capabilities include `search.boolean` and `search.category_alias`; the
 limits block reports the 4,096-byte, 256-token, and 16-level expression-parser
 bounds so clients can validate before submitting a query.
+P1 adds `selection.plan` plus advertised selector, explicit-ID, selected-note,
+and detail limits. The planner is read-only and content-free; REST and MCP use
+the same canonical Store operation. See [selection
+planning](selection-planning.md).
 
 **The browser UI is loaded from `web/dist/` relative to the working directory** (build it with `make web`). Without it, `/` returns a `web_ui_not_built` error while the API and MCP endpoints work normally.
 

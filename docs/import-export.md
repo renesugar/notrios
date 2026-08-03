@@ -312,6 +312,11 @@ not lossless and does not preserve database/profile/replica identity, every
 revision, or all provenance. v0.4 plans native archive v2 as a checksum-verified
 snapshot/backup format and the full-snapshot layer later reused by sync.
 
+Before archive v2 writes anything, the live [selection/privacy
+planner](selection-planning.md) can dry-run a full archive or explicit subset.
+It reports complete content-free counts/hashes and privacy/link decisions;
+P1 does not change the existing archive-v1 command or create archive-v2 files.
+
 ## Importing a Notrios archive
 
 ```sh
