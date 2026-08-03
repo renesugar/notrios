@@ -25,7 +25,10 @@ changes.
 - **Resource store:** content-addressed assets, exact-hash/reference reports,
   and optional review-only perceptual-hash hooks (no algorithm ships by
   default), with dry-run-first retention-aware garbage collection.
-- **Publishing/docs:** Quartz-compatible curated subset publishing planned; project documentation ships as a GitHub Pages site with PageFind search (`DOCS_SITE.md`).
+- **Publishing/docs:** privacy-reviewed native-archive subset handoff to the
+  external `movenotes-v3` pipeline is planned; movenotes owns Obsidian/Quartz
+  and Hugo/Ledger+Bluge projections. Project documentation ships as a GitHub
+  Pages site with PageFind search (`DOCS_SITE.md`).
 
 ## Documentation
 
@@ -69,9 +72,10 @@ Recoll availability, backlog, sync/index, and reconciliation state.
   H1–H11; see `plans/v0.3/`) — safe remote-media localization, resource
   reports/retention, keyset pagination, hardened resumable Joplin/Obsidian
   imports, and a convergent observable Recoll sidecar.
-- Proposed next milestone: v0.4 portable data, publishing, and stable
-  references — see [`PLAN.md`](PLAN.md) and [`ROADMAP.md`](ROADMAP.md);
-  implementation requires user approval.
+- Current milestone: v0.4 import correctness, portable data, publishing
+  handoff, and stable references. J1 parser compatibility is complete; J2 and
+  the product-feature tasks require approval — see [`PLAN.md`](PLAN.md) and
+  [`ROADMAP.md`](ROADMAP.md).
 - Agent progress/attempt tracking: [`agent/PLAN_STATUS.md`](agent/PLAN_STATUS.md), [`agent/ATTEMPT_LOG.jsonl`](agent/ATTEMPT_LOG.jsonl), and [`agent/MODEL_LOG.jsonl`](agent/MODEL_LOG.jsonl).
 
 ## Contributing

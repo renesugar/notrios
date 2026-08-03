@@ -339,7 +339,10 @@ func readInventory(ctx context.Context, sourceDir string, retainBundleInventory 
 		if err != nil {
 			return err
 		}
-		parsed, ok := parseItem(path, string(raw))
+		parsed, ok, err := parseItemBytes(path, raw)
+		if err != nil {
+			return err
+		}
 		if !ok {
 			return nil
 		}
@@ -354,7 +357,7 @@ func readInventory(ctx context.Context, sourceDir string, retainBundleInventory 
 			RelativePath:  filepath.ToSlash(relative),
 			Fingerprint:   hex.EncodeToString(sum[:]),
 			SizeBytes:     info.Size(),
-			PropertyOrder: metadataPropertyOrder(string(raw)),
+			PropertyOrder: append([]string(nil), parsed.PropertyOrder...),
 		}
 		item.ItemKey = item.Type + ":" + item.ID + ":" + item.RelativePath
 		if item.Type == "1" || item.Type == "2" || item.Type == "4" || item.Type == "5" {
@@ -428,54 +431,6 @@ func compactInventoryFields(fields map[string]string) map[string]string {
 		}
 	}
 	return compact
-}
-
-func metadataPropertyOrder(text string) []string {
-	normalized := strings.ReplaceAll(strings.ReplaceAll(text, "\r\n", "\n"), "\r", "\n")
-	lines := strings.Split(normalized, "\n")
-	metadataLines := []string{}
-	start := len(lines)
-	for index := len(lines) - 1; index >= 0; index-- {
-		line := strings.TrimSpace(lines[index])
-		if line == "" && start == len(lines) {
-			start = index
-			continue
-		}
-		if metadataLineRE.MatchString(line) {
-			start = index
-			continue
-		}
-		break
-	}
-	trailingFields := map[string]string{}
-	if start < len(lines) {
-		for _, line := range lines[start:] {
-			parseField(trailingFields, line)
-		}
-	}
-	if trailingFields["type_"] != "" {
-		metadataLines = lines[start:]
-	} else {
-		for _, line := range lines {
-			trimmed := strings.TrimSpace(line)
-			if trimmed == "" || !metadataLineRE.MatchString(trimmed) {
-				break
-			}
-			metadataLines = append(metadataLines, line)
-		}
-	}
-	order := []string{}
-	for _, line := range metadataLines {
-		trimmed := strings.TrimSpace(line)
-		if !metadataLineRE.MatchString(trimmed) {
-			continue
-		}
-		index := strings.Index(trimmed, ":")
-		if index > 0 {
-			order = append(order, strings.TrimSpace(trimmed[:index]))
-		}
-	}
-	return order
 }
 
 func hashFile(ctx context.Context, path string) (string, int64, error) {
@@ -1272,7 +1227,10 @@ func readInventoryItem(item inventoryItem) (parsedItem, error) {
 	if hex.EncodeToString(sum[:]) != item.Fingerprint {
 		return parsedItem{}, fmt.Errorf("%w: Joplin RAW item %s changed during import", store.ErrConflict, item.RelativePath)
 	}
-	parsed, ok := parseItem(item.Path, string(raw))
+	parsed, ok, err := parseItemBytes(item.Path, raw)
+	if err != nil {
+		return parsedItem{}, err
+	}
 	if !ok || parsed.ID != item.ID || parsed.Type != item.Type {
 		return parsedItem{}, fmt.Errorf("%w: Joplin RAW item %s no longer matches inventory", store.ErrConflict, item.RelativePath)
 	}

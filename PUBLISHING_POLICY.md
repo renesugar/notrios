@@ -4,17 +4,23 @@ Publishing is not backup/export. Publishing produces a sanitized public subset o
 
 ## Shared publish planner
 
-Every target consumes one neutral, deterministic plan containing selected note
+Every handoff target consumes one neutral, deterministic plan containing selected note
 IDs, stable output paths, rewritten link decisions, reachable resource hashes,
 metadata-removal decisions, and privacy warnings. Planning must not depend on a
-particular site generator. Portable-vault, Quartz, and large-library targets
-therefore share the hard security and selection work.
+particular site generator. Full archive, subset transfer, and publication
+handoff therefore share the hard security and selection work.
 
-## Quartz as curated target
+## Publishing implementation boundary
 
-Support Quartz publish profiles for users who want to publish selected notebooks/folders/subfolders/tags without exporting the full database.
+Notrios plans and emits a scoped, sanitized native-archive-v2 handoff. The
+separately maintained MIT-licensed `movenotes-v3` toolkit consumes that handoff
+through a planned `notrios2sql.py` importer and owns the downstream projections:
 
-The companion service owns:
+- Obsidian vault output for interoperability and Quartz;
+- Hugo project generation using `hugo-theme-ledger`;
+- Pagefind for bounded static sites and Bluge for large server-backed archives.
+
+Notrios owns:
 
 - selection of public notes/resources;
 - private/draft/confidential exclusion;
@@ -22,21 +28,25 @@ The companion service owns:
 - link rewriting for private/missing targets;
 - metadata stripping;
 - dry-run privacy warnings;
-- writing a Quartz-compatible `content/` tree.
+- writing a checksum-verified, explicitly subset-scoped publication handoff.
 
-Quartz owns static-site rendering.
+Notrios does not duplicate the portable-vault, Quartz, Hugo/Ledger, Pagefind, or
+Bluge implementations. It may invoke a user-installed compatible movenotes
+command as an external process after explicit plan approval, but never links,
+vendors, or silently downloads it.
 
-Quartz is the first curated/smaller-library target, not an unmeasured promise
-for a 100k-note public archive. Large publish sets require a separate profile
-with bounded/fixed navigation and server-side search.
+Quartz remains the curated/smaller-library target through movenotes' Obsidian
+projection. Hugo/Ledger with Bluge is the measured large-library route: fixed
+bounded navigation and server-side search, with Pagefind only as a bounded
+static fallback.
 
 ## Publishing profile example
 
 ```yaml
 profiles:
   public-research:
-    target: quartz
-    output: /sites/research-quartz/content
+    target: movenotes
+    output: /transfers/research-public.notrios
     include:
       notebooks:
         - Research/Public
@@ -76,33 +86,18 @@ A publish dry run must report:
 - oversized resources;
 - metadata-stripping warnings.
 
-## Future publishing targets
+## Downstream publishing targets
 
-- Portable Markdown vault export.
-- Quartz publishing.
-- Optional Foam-style query/dashboard materialization.
-- A scalable Hugo/Relearn-style or equivalent archive site: streamed
-  generation, fixed sidebar rather than the entire note tree, and a small
-  server-side search service.
-- Static PageFind remains appropriate for the small documentation site and may
-  be offered as a bounded archive fallback; it is not the default for a
-  hundreds-of-thousands-of-notes site.
+- Obsidian/Quartz for curated subsets, produced by `movenotes-v3`.
+- Hugo with `hugo-theme-ledger` and Bluge for large archives, produced by
+  `movenotes-v3`; Pagefind remains the static fallback.
+- Optional Foam-style query/dashboard materialization after the archive bridge.
 
-## Search backend spike
+## Evidence and compatibility
 
-The scalable-site search boundary requires text/phrase/prefix queries, stable
-pagination, highlighting, typed fields, facets/aggregations, deterministic
-rebuilds, bounded memory, and an Apache-2.0/MIT-compatible dependency story.
-
-Bluge currently exposes BM25 search, fuzzy/prefix/phrase/range queries,
-highlights, facets, custom sorts, and search-after. It is Apache-2.0, but the
-reviewed upstream has seen no commit since 2022. Recoll/Xapian is more capable
-for extraction but remains an external GPL process. SQLite FTS5 is already
-present but offers fewer site-search features. v0.4 must benchmark and assess
-maintenance/security before selecting an adapter; the publish manifest and
-frontend must not bind to one engine.
-
-The `movenotes-v3` implementation is a useful behavioral reference for exact
-source preservation, streamed JSONL, fixed navigation, deterministic/bucketed
-tag metadata, bounded indexing batches, and small-vs-large site profiles. It is
-not a source from which to copy code.
+`movenotes-v3` and `hugo-theme-ledger` contain measured 10k/100k/500k build and
+search evidence, bounded taxonomy/navigation rules, neutral streamed JSONL,
+and backend-specific unsupported-operator reporting. Notrios consumes those as
+behavioral and integration evidence, not as code to copy. v0.4 compatibility
+tests pin archive schemas/capabilities and privacy outcomes across the two
+repositories; each repository retains its own tests, license, and release.

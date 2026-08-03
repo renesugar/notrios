@@ -29,7 +29,11 @@ This file is the codebase atlas. Update it whenever major files or directories a
 
 - `cmd/notriosd/` — service daemon entry point.
 - `cmd/notriosctl/` — CLI/admin/import command entry point.
-- `internal/importers/joplinraw/` — hardened Joplin RAW importer: deterministic inventory, nested notebooks, real tags, exact optional source bundles, fingerprints, bounded batches, checkpoints/resume, and dry-run/config planning.
+- `internal/importers/joplinraw/` — hardened Joplin RAW importer: canonical
+  first-line titles, CR/LF-only physical parsing (including OCR controls), one
+  ordered future/duplicate-property parse, deterministic inventory, nested
+  notebooks, real tags, exact optional source bundles, fingerprints, bounded
+  batches, checkpoints/resume, and dry-run/config planning.
 - `internal/importers/obsidian/` — hardened deterministic vault importer with
   nested notebooks, exact optional source bundles, bounded checkpoints/resume,
   dry-run/config planning, and canonical alias/embed/anchor resolution.

@@ -93,15 +93,30 @@ and full-resync behavior.
 
 ## Publishing
 
-Publishing is privacy-sensitive. Quartz publishing profiles must select public subsets and copy only reachable public resources. Do not rely on static-site-generator private-page filters alone to protect resources.
+Publishing is privacy-sensitive. Notrios publication profiles select public
+subsets, copy only reachable public resources, strip disallowed metadata, and
+emit an explicitly subset-scoped archive-v2 handoff. Do not rely on a
+static-site-generator private-page filter to protect notes or resources.
+
+The handoff is consumed by a separately maintained
+`movenotes-v3/notrios2sql.py` importer. `movenotes-v3` then owns portable
+Obsidian output, Quartz generation, and Hugo/Ledger generation with Pagefind or
+Bluge. Notrios does not maintain parallel Joplin/Obsidian/Quartz/Hugo exporters.
 
 ## Export format distinction
 
-Use an Obsidian-like portable Markdown vault as the default user-facing export
-because it is human-readable, portable, and directly indexable. Use native
-archive v2 for restore fidelity. Joplin RAW is the preferred Joplin import
-source and only a later export target if exact Joplin round-trip is required.
+Use native archive v2 as Notrios' maintained transfer and restore format. Users
+who want an Obsidian vault or Quartz/Hugo site convert a verified full or scoped
+archive through `movenotes-v3`. This keeps foreign-format behavior in one
+real-data-tested toolkit while preserving a human-readable downstream option.
+Joplin RAW remains the preferred Joplin import source and is not a Notrios
+export target unless a future measured requirement changes this boundary.
 
 ## Joplin RAW importer MVP behavior
 
-The MVP importer is implemented as `notriosctl import joplin-raw`. It imports notes and resources into the canonical store, never into any search index. It preserves selected Joplin metadata in Markdown frontmatter and rewrites internal `:/<id>` links to companion app URIs. Production hardening should add a dedicated import-job/source-object table before large migrations.
+The importer is implemented as `notriosctl import joplin-raw`. It imports notes
+and resources into the canonical store, never into a search index. Schema v10
+provides import checkpoints, item fingerprints, and optional exact source
+bundles. v0.4 J1 corrects physical-line parsing and canonical first-line titles;
+J2/J3 add real-export relationship and million-note full-import evidence before
+large migrations are described as production-ready.

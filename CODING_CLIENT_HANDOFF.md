@@ -3,8 +3,9 @@
 This handoff applies to any coding agent or client continuing this project (Codex, Claude, aider, swival.dev, etc. — formerly `CODEX_HANDOFF.md`). The repository is designed so an agent can continue from repository files alone.
 
 Current phase: v0.1, v0.2, and v0.3 are complete. H1–H11 are archived under
-`plans/v0.3/`; the `PLAN.md` v0.4 portable-data/publishing/stable-reference
-plan is **proposed and unstarted**. P1 requires user approval before coding.
+`plans/v0.3/`. v0.4 J1 (Joplin RAW physical-line/canonical-title parsing) is
+complete; J2 real-export validation and all archive/publishing product tasks
+require user approval. See the revised `PLAN.md`.
 
 ## First files to read
 
@@ -68,7 +69,10 @@ deduplicated per-hit engine attribution, status/UI observability, and real
 100k native Recoll evidence under `performance/v0.3-h10/`. H11 added the
 cross-cutting maintenance guide (also reseeded into Help), reconciled living
 specs and feature status, bumped product metadata to v0.3.0, completed the
-release-candidate gates, and drafted the unstarted v0.4 plan. See
+release-candidate gates, and drafted the v0.4 plan. The 2026-08-02 follow-up
+selected an external `movenotes-v3` archive bridge instead of duplicating
+Obsidian/Quartz/Hugo publishing, planned boolean/category search, and completed
+the J1 parser slice. See
 `agent/PLAN_STATUS.md`.
 
 ## Validation commands
@@ -140,6 +144,9 @@ The scaffold was created in a restricted container. Still-open consequences:
 
 1. The SQLite store uses a small local cgo adapter over system `libsqlite3`; the long-term driver choice is open.
 2. The MCP adapter is dependency-free; the official MCP Go SDK can replace it later without changing tool semantics.
-3. Importers were tested on synthetic fixtures only — verify against real Joplin RAW exports and Obsidian vaults before large migrations; never commit private datasets.
+3. J1 now matches canonical Joplin first-line titles and CR/LF-only metadata
+   parsing, including OCR controls, but full real-export relationship and
+   million-note write evidence remain J2/J3. Never commit private datasets or
+   content-bearing evidence.
 
 (The formerly open "no browser testing" limitation is resolved: the GUI is browser-verified via Playwright, vitest/RTL covers the workspace, and `scripts/verify_layout_resize.py` covers native window resizing.)

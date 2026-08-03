@@ -16,6 +16,27 @@ Notrios exposes one user-facing query language across the GUI search box, REST s
 | `since:2026-07-01` | on/after start of that date | timestamp filter | `publishedts:<epoch>..` |
 | `until:2026-07-31` | through end of that date (23:59:59) | timestamp filter | `publishedts:..<epoch>` |
 
+## Planned v0.4 expression operators
+
+The current parser is a flat implicit-AND parser. v0.4 Q1 will replace that
+shape with one bounded backend-neutral expression tree:
+
+| Syntax | Planned meaning |
+|---|---|
+| `keyword1 keyword2` | implicit `AND` (unchanged) |
+| `keyword1 OR keyword2` | either branch; `OR` is uppercase only |
+| `-keyword`, `-tag:private` | prefix negation |
+| `(a OR b) c` | grouping; `AND` binds more tightly than `OR` |
+| `"multiple word phrase"` | exact phrase leaf (already supported) |
+| `category:"name"` | exact alias for `notebook:"name"` |
+| `category:"All notes"`, `notebook:"All notes"` | remove the notebook filter and search all current notes |
+
+The parser must keep URLs, emoji, and hyphenated words intact; bound query
+length, tokens, and nesting; and preserve the current literal fallback for
+unknown `word:value` tokens. SQLite FTS5 and Recoll must compile the same tree.
+Until Q1 is implemented, `OR`, `-`, and parentheses are ordinary text/punctuation
+and must not be documented by clients as live boolean behavior.
+
 ## Timestamp rules
 
 - Store and display ISO 8601 (`2026-07-13T18:42:07Z`). Normalize internally to UTC Unix seconds; keep the original offset as stored metadata when it matters.
@@ -49,7 +70,10 @@ Notrios exposes one user-facing query language across the GUI search box, REST s
 
 ## Result behavior
 
-- Implicit AND, phrases, stemming, wildcards, and boolean expressions follow the backend's native behavior.
+- Implicit AND and phrases are parsed by Notrios; stemming and supported
+  wildcards follow the backend. Boolean expressions remain planned Q1 work and
+  will be compiled from one application-owned tree rather than delegated to
+  backend-specific query-string parsing.
 - Query weighting (title above body) is a later adapter feature; Recoll supports per-element weights natively.
 - All search endpoints support cursor-based incremental results so a GUI can
   populate "All notes" lazily while scrolling (limits and cursor rules in

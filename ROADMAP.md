@@ -54,30 +54,37 @@ The built-in Go/Wails GUI is part of the first released version, so it lives her
 
 ## v0.4 — Portable data, publishing, and stable references
 
-- Portable Markdown vault export.
+- Correct Joplin RAW physical-line/title/property parsing against real exports,
+  then add attachment-aware and million-note full-import performance evidence;
+  synthetic dry-run profiles alone are not a throughput claim.
 - Native archive v2: a versioned manifest plus immutable, hash-addressed
   objects, source-preservation bundles, checksums, capability/version bounds,
   snapshot consistency, and streaming read/write. This is the full backup and
   transfer format and deliberately becomes the container layer reused by v0.7
   synchronization; a foreign Markdown/Joplin/Obsidian export remains a lossy or
   format-limited projection.
-- Quartz publish profiles for selected notebooks/folders/tags, including recursive subfolder/subnotebook selection.
-- A scalable archive-site profile for much larger libraries: fixed/bounded
-  navigation, streamed generation, and a server-side search adapter. Evaluate
-  Bluge, an external Recoll service, and simpler FTS-backed options against
-  maintenance, licensing, query, highlight, facet, and deep-page requirements;
-  do not hard-code Bluge before the spike. Quartz remains the curated/smaller
-  publication target.
+- Publication profiles for selected notebooks/folders/tags, including recursive
+  subnotebook selection, emit a privacy-reviewed scoped native-archive handoff.
+- Add a documented archive-v2 compatibility fixture for a separately maintained
+  `movenotes-v3/notrios2sql.py` importer. `movenotes-v3` owns portable Obsidian
+  projection, Quartz generation for curated/smaller subsets, and Hugo with
+  `hugo-theme-ledger` plus Bluge for large libraries. Notrios does not duplicate
+  those exporters, generators, or search indexes.
 - Link-to-private-note policy.
 - Public resource reachability analysis.
 - Dry-run publishing privacy checks.
-- Optional Foam-style query/dashboard export.
-- Link reference definition generation for portable Markdown publishing.
+- Optional Foam-style query/dashboard materialization remains a later
+  projection through the publishing boundary.
 - Stable external `notrios://` document links including the portable logical
   database identity; the OS handler resolves it to local profiles and handles
   ambiguity/stale targets.
 - Share a neutral selection/link/resource/privacy planner among native archive,
-  portable vault, Quartz, and large-library publication targets.
+  subset transfer, and publication-handoff targets.
+- Extend the shared query language with uppercase `OR`, implicit `AND`, prefix
+  `-negation`, parentheses, and quoted phrases. Add `category:` as an alias for
+  `notebook:`; `category:"All notes"` and `notebook:"All notes"` search all
+  current notes. SQLite FTS5 and Recoll must compile the same bounded expression
+  tree and must not silently approximate unsupported operators.
 
 ## v0.5 — Better editing and graph UX
 
@@ -192,5 +199,5 @@ The scaffold handoff is complete; see `CODING_CLIENT_HANDOFF.md`. Future roadmap
 ## v0.1 completion note
 
 The v0.1 MVP, v0.2 redesign, and v0.3 hardening milestones are implemented and
-archived. The proposed v0.4 implementation plan is in `PLAN.md` and must be
-approved before work starts.
+archived. v0.4 J1 is implemented; the next J2 slice and the remaining v0.4
+product tasks in `PLAN.md` require approval.

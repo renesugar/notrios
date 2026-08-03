@@ -31,6 +31,9 @@ Link-graph operations (direct replies, backlinks, thread ordering, orphan detect
 ## Why Recoll (vs. sist2, vs. Meilisearch)
 
 - Native field searches (`author:`, `title:`, quoted phrase values), implicit AND, custom fields, and integer range fields cover the target query language with only a thin adapter; only `since:`/`until:` timestamps need translation (Recoll's `date:` operator has no time-of-day support).
+- v0.4 Q1 adds application-owned `OR`/negation/grouping and `category:` alias
+  parsing. Recoll will compile the same bounded expression tree as FTS5 rather
+  than receiving unchecked backend-native query strings.
 - Real-time incremental indexing and proven behavior beyond 100k documents.
 - No separate server process to operate (vs. Meilisearch).
 

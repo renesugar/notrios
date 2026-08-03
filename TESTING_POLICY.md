@@ -23,7 +23,10 @@ A task is done only when:
 - Resource upload/download and reference counting.
 - Importer fixtures.
 - Joplin RAW hierarchy/tag/source-bundle, dry-run parity, changed-resource,
-  conflict, fingerprint, and interruption/resume fixtures.
+  conflict, fingerprint, and interruption/resume fixtures. Canonical fixtures
+  use first-line titles and cover CR/LF-only physical splitting, OCR control
+  characters, UTF-8 BOM/invalid input, duplicate/future property keys, and
+  delimiter whitespace.
 - REST/MCP service-layer parity.
 
 ### UI tests
@@ -101,6 +104,14 @@ the current per-document canonical write API is a hardware-independent bulk
 throughput gate. Reports record elapsed time, batch count, environment, and Go
 memory. Exact unknown/reordered-property and CRLF-byte preservation is covered
 separately by the focused importer fixture.
+
+v0.4 J2/J3 add read-only real-export profiles over the recipe Joplin/Obsidian
+pair and the attachment-bearing Joplin archive. Committed evidence contains
+only aggregate counts, timings, sizes, warnings, and redacted environment
+facts—never note titles, bodies, source paths, resources, or databases. J2
+measures relationship planning against actual links; J3 measures complete
+transactional import, interruption/resume, and no-op re-import at the
+million-note tier.
 
 H9's `scripts/run_obsidian_import_profile.sh` uses 100/10k/100k/500k tiers for
 generated vaults with nested folders, aliases, relative links,

@@ -22,8 +22,8 @@ This matrix keeps the long conversation compressed into implementation-sized fea
 | Scalable keyset cursors | Implemented | search service | `k2` chronological/relevance keysets plus explicit bounded `m1` sidecar snapshots; no unbounded offset ceiling. |
 | Recoll sidecar (replaces sist2) | Implemented | adapter | Optional external process; bounded retry, exact reconciliation, attributed stable merges, and status/UI telemetry. |
 | Notebooks/tags/search notebooks | Implemented | Notrios service | All notes/Notes/Help/Trash bootstrap and protections. |
-| Query-language adapter | Implemented | search service | FTS5 + optional Recoll compilation. |
-| Bluge generated-site search | Optional/research | publishing adapter | Apache-2.0/capable but inactive upstream; v0.4 spike only. |
+| Query-language adapter | Implemented + planned v0.4 | search service | Flat implicit-AND/phrases/fields are live; Q1 adds bounded `OR`/negation/grouping and `category:` alias with FTS5/Recoll parity. |
+| Bluge generated-site search | External integration | movenotes-v3/Ledger | Measured external publication backend; not a Notrios application dependency. |
 | LadybugDB | Optional/research | derived graph backend | Never primary storage. |
 
 ## Documents, links, and resources
@@ -43,13 +43,13 @@ This matrix keeps the long conversation compressed into implementation-sized fea
 
 | Feature | Status | Primary owner | Notes |
 |---|---:|---|---|
-| Joplin RAW import | Implemented | importer | Nested notebooks, stable real tags, bounded batches, fingerprints/checkpoints, dry-run diffs, rename config, and optional exact source bundle. |
+| Joplin RAW import | Implemented + active hardening | importer | J1 physical-line/canonical-title parser complete; J2/J3 add real-export relationship and million-note full-write evidence. |
 | Obsidian vault import | Implemented | importer | Nested hierarchy, bounded batches, fingerprints/checkpoints, dry-run diffs, rename config, exact source bundle, and canonical links/anchors. |
 | Twitter/X import | Implemented | importer | Provenance/thread/media import. |
 | ChatGPT export import | Implemented | importer | Conversation provenance. |
 | Claude JSON import | Implemented | importer | Conversation provenance. |
 | Native archive v1 | Implemented | exporter | Query-scoped plain-note interchange; not lossless backup. |
-| Portable Markdown vault export | Planned v0.4 | exporter | User-facing interoperable export. |
+| Portable Markdown vault export | External integration | movenotes-v3 | Planned `notrios2sql.py` consumes archive v2; movenotes owns Obsidian projection. |
 | Native archive v2/backup | Planned v0.4 | archive service | Full snapshot/object manifest reused by sync. |
 | Joplin RAW export | Optional/research | exporter | Only for measured exact round-trip need. |
 
@@ -95,14 +95,14 @@ This matrix keeps the long conversation compressed into implementation-sized fea
 
 | Feature | Status | Primary owner | Notes |
 |---|---:|---|---|
-| Quartz publish profiles | Planned v0.4 | publisher | Curated subsets with privacy planner. |
-| Scalable archive-site profile | Planned v0.4 | publisher | Streamed generation/fixed nav/server search adapter. |
-| Publishing dry run | Planned v0.4 | publisher/UI | Included/excluded/resources/private links. |
+| Publication profiles | Planned v0.4 | planner/archive | Curated, sanitized archive-v2 handoff to movenotes-v3. |
+| Quartz and scalable archive site | External integration | movenotes-v3/Ledger | Obsidian/Quartz for subsets; Hugo/Ledger+Bluge for large libraries. |
+| Publishing dry run | Planned v0.4 | planner/UI | Included/excluded/resources/private links before handoff. |
 | Foam-style query blocks | Planned v0.5 | query service/UI | No arbitrary SQL/JS. |
 | Workspace lint/fix | Planned v0.5 | maintenance service | Broken links/media/resources. |
 | Outline API | Implemented | document parser | Headings/line anchors. |
 | Hierarchical tag rename | Planned v0.5 | maintenance service | Dry-run first. |
-| Link reference definitions | Planned v0.4 | exporter/maintenance | Portable Markdown links. |
+| Link reference definitions | External integration | movenotes-v3 | Generated in downstream portable Markdown projection. |
 
 ## Versioning and sync
 

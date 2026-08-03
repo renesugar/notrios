@@ -16,13 +16,13 @@ import (
 	"github.com/renesugar/notrios/internal/store"
 )
 
-func TestParseItemSupportsBodyFirstAndMetadataFirst(t *testing.T) {
-	bodyFirst := "Hello Joplin\n\nid: note1\ntitle: Body First\ntype_: 1\n"
+func TestParseItemSupportsCanonicalAndMetadataFirst(t *testing.T) {
+	bodyFirst := "Canonical title\r\n\r\nHello Joplin\r\n\r\nid: note1\r\ntype_: 1\r\n"
 	item, ok := parseItem("note1.md", bodyFirst)
 	if !ok {
 		t.Fatal("body-first item did not parse")
 	}
-	if item.Body != "Hello Joplin" || item.Fields["title"] != "Body First" {
+	if item.Body != "Hello Joplin" || item.Fields["title"] != "Canonical title" {
 		t.Fatalf("unexpected body-first parse: %#v body=%q", item.Fields, item.Body)
 	}
 
@@ -36,15 +36,57 @@ func TestParseItemSupportsBodyFirstAndMetadataFirst(t *testing.T) {
 	}
 }
 
+func TestParseItemPreservesOCRControlsAndOrderedProperties(t *testing.T) {
+	ocrText := "SIP\\npage\x0bform\x0cfile\x1crecord\x1enext\u0085end"
+	raw := []byte("document.pdf\n\n" +
+		"id: resource1\n" +
+		"future-key:  value:with:colons  \n" +
+		"duplicate_future: first\n" +
+		"duplicate_future: second\n" +
+		"ocr_text: " + ocrText + "\n" +
+		"type_: 4\n\n")
+	item, ok, err := parseItemBytes("resource1.md", raw)
+	if err != nil || !ok {
+		t.Fatalf("parse OCR resource: ok=%v err=%v", ok, err)
+	}
+	if item.Fields["title"] != "document.pdf" {
+		t.Fatalf("resource title = %q", item.Fields["title"])
+	}
+	if item.Fields["ocr_text"] != ocrText {
+		t.Fatalf("ocr_text changed:\n got %q\nwant %q", item.Fields["ocr_text"], ocrText)
+	}
+	if item.Fields["future-key"] != " value:with:colons  " {
+		t.Fatalf("future property whitespace changed: %q", item.Fields["future-key"])
+	}
+	if item.Fields["duplicate_future"] != "second" {
+		t.Fatalf("last duplicate value = %q", item.Fields["duplicate_future"])
+	}
+	wantOrder := []string{"id", "future-key", "duplicate_future", "duplicate_future", "ocr_text", "type_"}
+	if !reflect.DeepEqual(item.PropertyOrder, wantOrder) {
+		t.Fatalf("property order = %#v, want %#v", item.PropertyOrder, wantOrder)
+	}
+}
+
+func TestParseItemBytesAcceptsBOMAndRejectsInvalidUTF8(t *testing.T) {
+	raw := append([]byte{0xef, 0xbb, 0xbf}, []byte("BOM title\n\nid: bom-note\ntype_: 1")...)
+	item, ok, err := parseItemBytes("bom-note.md", raw)
+	if err != nil || !ok || item.Fields["title"] != "BOM title" {
+		t.Fatalf("BOM parse: item=%+v ok=%v err=%v", item, ok, err)
+	}
+	if _, _, err := parseItemBytes("invalid.md", []byte("title\n\nid: bad\nfuture: \xff\ntype_: 1")); err == nil {
+		t.Fatal("invalid UTF-8 was accepted")
+	}
+}
+
 func TestImportJoplinRawFixture(t *testing.T) {
 	ctx := context.Background()
 	dir := t.TempDir()
-	writeFile(t, filepath.Join(dir, "folder-root.md"), "id: folder1\ntitle: Imported Notebook\ntype_: 2\n")
-	writeFile(t, filepath.Join(dir, "tag.md"), "id: tag1\ntitle: imported\ntype_: 5\n")
+	writeFile(t, filepath.Join(dir, "folder-root.md"), "Imported Notebook\n\nid: folder1\ntype_: 2\n")
+	writeFile(t, filepath.Join(dir, "tag.md"), "imported\n\nid: tag1\ntype_: 5\n")
 	writeFile(t, filepath.Join(dir, "note-tag.md"), "id: nt1\nnote_id: note1\ntag_id: tag1\ntype_: 6\n")
-	writeFile(t, filepath.Join(dir, "note1.md"), "# Hello\n\nSee [Target](:/note2).\n\n![Image](:/res1)\n\nid: note1\nparent_id: folder1\ntitle: Source Note\ntype_: 1\n")
-	writeFile(t, filepath.Join(dir, "note2.md"), "id: note2\nparent_id: folder1\ntitle: Target Note\ntype_: 1\n\n# Target\n")
-	writeFile(t, filepath.Join(dir, "res1.md"), "id: res1\ntitle: diagram.png\nfilename: diagram.png\nmime: image/png\nfile_extension: png\ntype_: 4\n")
+	writeFile(t, filepath.Join(dir, "note1.md"), "Source Note\n\n# Hello\n\nSee [Target](:/note2).\n\n![Image](:/res1)\n\nid: note1\nparent_id: folder1\ntype_: 1\n")
+	writeFile(t, filepath.Join(dir, "note2.md"), "Target Note\n\n# Target\n\nid: note2\nparent_id: folder1\ntype_: 1\n")
+	writeFile(t, filepath.Join(dir, "res1.md"), "diagram.png\n\nid: res1\nfilename: diagram.png\nmime: image/png\nfile_extension: png\ntype_: 4\n")
 	if err := os.MkdirAll(filepath.Join(dir, "resources"), 0o755); err != nil {
 		t.Fatal(err)
 	}
@@ -67,6 +109,9 @@ func TestImportJoplinRawFixture(t *testing.T) {
 	}
 	if !strings.Contains(doc.Body, "resource://default/resources/res_joplin_res1") {
 		t.Fatalf("resource link was not rewritten: %s", doc.Body)
+	}
+	if doc.Title != "Source Note" || strings.Contains(doc.Body, "\nSource Note\n") {
+		t.Fatalf("canonical title/body split failed: title=%q body=%q", doc.Title, doc.Body)
 	}
 	if !strings.Contains(doc.Body, "joplin_notebook: \"Imported Notebook\"") || !strings.Contains(doc.Body, "joplin_tags:") {
 		t.Fatalf("frontmatter missing notebook/tags: %s", doc.Body)
@@ -346,7 +391,7 @@ func TestH8ResourceFingerprintUpdatesStableResource(t *testing.T) {
 	ctx := context.Background()
 	dir := t.TempDir()
 	writeFile(t, filepath.Join(dir, "resource.md"), "id: res1\ntitle: file.bin\nfilename: file.bin\ntype_: 4\n")
-	writeFile(t, filepath.Join(dir, "note.md"), "![file](:/res1)\n\nid: note1\ntitle: Resource note\ntype_: 1\n")
+	writeFile(t, filepath.Join(dir, "note.md"), "Resource note\n\n![file](:/res1)\n\nid: note1\ntype_: 1\n")
 	contentPath := filepath.Join(dir, "resources", "res1")
 	writeFile(t, contentPath, "version one")
 	st := openTestStore(t)

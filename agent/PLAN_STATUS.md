@@ -1,13 +1,34 @@
 # Plan Status
 
-Updated: 2026-07-26
+Updated: 2026-08-02
 
-## Proposed next milestone
+## Active milestone
 
 v0.3 import/resource/media/large-library hardening is complete. H1–H11 are
-archived under `plans/v0.3/`. `PLAN.md` is now a proposed, unstarted v0.4
-portable-data/publishing/stable-reference plan drafted from `ROADMAP.md`; P1
-requires user approval before coding.
+archived under `plans/v0.3/`. The revised v0.4 plan begins with Joplin
+correctness/performance prerequisites, then archive-v2, publishing handoff,
+boolean search, and stable references. J1 is complete; J2 and all subsequent
+product tasks require user approval.
+
+## 2026-08-02 follow-up review
+
+- Compared the Go Joplin RAW importer with the real-data-tested
+  `movenotes-v3/joplin2sql.py` and `notesdb.py` behavior.
+- Found that Notrios' synthetic fixtures modeled `title:` metadata although
+  canonical RAW stores titles on the first physical line; real imports could
+  therefore use IDs as titles and retain duplicate title text in note bodies.
+- Completed J1: CR/LF-only physical splitting, canonical title/body separation,
+  unified ordered-property parsing, OCR control preservation, future/duplicate
+  keys, delimiter whitespace, BOM support, and invalid-UTF-8 rejection.
+- Planned J2 real-export relationship verification and J3 million-note complete
+  transactional throughput; H8 dry-run evidence alone is not a full-write claim.
+- Replaced duplicate Notrios Obsidian/Quartz/static-site work with a native
+  archive-v2 handoff to a separately maintained `movenotes-v3/notrios2sql.py`
+  importer. Movenotes owns Obsidian/Quartz and Hugo/Ledger+Bluge projections;
+  Notrios owns selection/privacy/reachable-resource decisions.
+- Added planned Q1 search expressions: uppercase `OR`, implicit `AND`, prefix
+  negation, grouping, phrases, `category:` alias, and All-notes semantics with
+  one bounded FTS5/Recoll expression tree.
 
 - H1: media-policy configuration and schema v7.
 - H2: static remote-media scan, policy API/MCP, GUI decisions.
@@ -105,6 +126,7 @@ attempt detail remains append-only in `agent/ATTEMPT_LOG.jsonl`.
 
 - Long-term SQLite driver choice (current local cgo/libsqlite3 adapter).
 - Official MCP Go SDK adoption/version.
-- Real private Joplin/Obsidian corpus verification (never commit private data).
+- J2/J3 real private Joplin/Obsidian correctness and full-write performance
+  verification (never commit private data or content-bearing evidence).
 - Sync decisions listed in `SYNCHRONIZATION.md` and
-  `agent/OPEN_QUESTIONS.md`; they do not block the proposed v0.4 P1.
+  `agent/OPEN_QUESTIONS.md`; they do not block v0.4 J2 or P1.

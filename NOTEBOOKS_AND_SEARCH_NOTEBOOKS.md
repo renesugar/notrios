@@ -67,6 +67,10 @@ User-created search notebooks:
 
 - `notebook:"notebook name"` (or `notebook:help` for single-word names) limits a search to a notebook. Matching is case-insensitive.
 - If several sibling trees contain the same notebook name, the filter matches all of them; a path form (`notebook:"parent/child"`) may be added when nesting-disambiguation is needed.
+- Planned v0.4 Q1: `category:` is an exact alias for `notebook:` for
+  Twitter/Joplin-style search compatibility. `category:"All notes"` and
+  `notebook:"All notes"` mean the builtin all-current-notes scope rather than a
+  literal notebook named "All notes".
 
 ## Protection rules summary
 

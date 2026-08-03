@@ -126,6 +126,12 @@ include `truncated: true` only for the explicit 1,000-hit optional-sidecar
 snapshot window. Notebook-note and Trash list responses use the same
 `documents` + `next_cursor` page shape with route-bound chronological keysets.
 
+The live query parser currently supports flat implicit-AND terms, phrases, and
+the documented field filters. v0.4 Q1 adds a bounded expression tree for
+uppercase `OR`, prefix `-`, grouping, and `category:` as a `notebook:` alias.
+Expression structure is part of the cursor fingerprint; clients must not assume
+those planned operators are live until the capability is reported.
+
 ### Documents
 
 ```text
@@ -413,6 +419,12 @@ Breaking changes require a new API version or a compatibility shim. Additive fie
 The CLI binary is `notriosctl` (renamed from `notesctl` in plan task R2). Twitter/X, ChatGPT, and Claude importers are added in plan tasks R9–R11.
 
 `notriosctl import joplin-raw [--config path] [--db path] [--asset-store path] [--collection id] [--batch-size 100] [--preserve-source] [--dry-run] [--write-config path] [--import-config path] <raw-export-dir>` inventories a Joplin RAW Export Directory, restores nested notebooks and real tags, and imports it into the canonical SQLite/resource store. Dry run uses the same action planner, writes a rename-on-conflict configuration (default `<raw-export-dir>/import-config.json`), and reports creates/updates/skips without writing import state or content. Real imports checkpoint each bounded batch and resume only when the source inventory fingerprint still matches. `--preserve-source` additionally captures exact RAW item bytes and property order in the source-bundle store. The JSON report includes source/checkpoint identity, resume/batch progress, and note/resource/notebook/tag create-update-skip totals.
+
+Joplin parsing uses CR/LF physical endings only, derives item titles from the
+first RAW source line, removes that title line from canonical note Markdown,
+preserves duplicate/future property order for source bundles, accepts UTF-8
+BOMs, and rejects invalid UTF-8. Real-export relationship validation and
+million-note full-write throughput are explicit v0.4 J2/J3 gates.
 
 `notriosctl import obsidian [--config path] [--db path] [--asset-store path] [--collection id] [--batch-size 100] [--preserve-source] [--dry-run] [--write-config path] [--import-config path] <vault-dir>` inventories an Obsidian vault, restores its folder hierarchy as nested notebooks, resolves aliases/relative paths/embeds/heading and block references to stable canonical URIs, imports or refreshes local assets, and rebuilds links after all targets exist. Dry run writes a path-scoped rename configuration (default `<vault>/.notrios/import-config.json`) and performs no canonical, checkpoint, or source-bundle writes. Real imports fingerprint and checkpoint bounded batches; `--preserve-source` stores exact Markdown/frontmatter and non-Markdown file bytes with relative paths.
 

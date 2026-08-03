@@ -1,24 +1,45 @@
-# Plan: v0.4 — Portable data, publishing, and stable references
+# Plan: v0.4 — Import correctness, portable data, publishing handoff, and stable references
 
-Status: **proposed; implementation has not started and requires user approval**.
-Drafted 2026-07-26 from `ROADMAP.md` after completing the archived v0.3 H1–H11
-plan under `plans/v0.3/`.
+Status: **J1 completed; J2 and all product-feature tasks require user approval**.
+Drafted 2026-07-26 and revised 2026-08-02 after comparing the Joplin importer
+and publishing/search plans with the real-data-tested `movenotes-v3` pipeline.
 
 ## Goal
 
-Build one safe, scalable selection and object pipeline that can produce:
+Build a correct large-library foundation and one safe, scalable selection and
+object pipeline that can provide:
 
-1. a checksum-verified native archive v2 suitable for full backup/transfer and
+1. faithful, resumable Joplin RAW import against real exports at million-note
+   scale;
+2. a checksum-verified native archive v2 suitable for full backup/transfer and
    later reuse by v0.7 synchronization;
-2. an interoperable portable Markdown vault;
-3. privacy-reviewed curated Quartz sites and a measured large-library static
-   publication target;
+3. privacy-reviewed subset handoffs to `movenotes-v3`, which owns Obsidian,
+   Quartz, Hugo/Ledger, Pagefind, and Bluge publication projections;
 4. stable `notrios://` links that include logical database identity and resolve
    without guessing between local profiles.
+5. Twitter/X-style boolean search (`OR`, implicit `AND`, `-negation`, grouping,
+   and phrases) plus `category:` as a `notebook:` alias.
 
 Native archive v1 remains supported as query-scoped interchange. v0.4 does not
 implement record-level synchronization, mobile clients, or the v0.6 bulk/MCP
 organizer.
+
+## Review decisions (2026-08-02)
+
+- Notrios will not duplicate `movenotes-v3`'s portable-vault, Quartz, Hugo/Ledger,
+  Pagefind, or Bluge implementations. The integration boundary is native archive
+  v2 plus compatibility fixtures and a separate `notrios2sql.py` importer owned
+  by the MIT-licensed `movenotes-v3` repository.
+- Notrios remains responsible for canonical selection, privacy decisions,
+  reachable-resource analysis, metadata stripping, and a reviewed publication
+  handoff. `movenotes-v3` owns format conversion and site building after that
+  boundary.
+- Quartz remains available for curated smaller subsets through
+  `movenotes-v3`'s Obsidian output. Hugo with `hugo-theme-ledger` and Bluge is
+  the already measured large-library route; v0.4 no longer contains a redundant
+  search-adapter spike or Notrios-native static-site generator.
+- Native archive v2 remains the restore-fidelity format. A scoped publication
+  handoff is explicitly not represented as a full backup.
 
 ## Working-state rule
 
@@ -29,6 +50,73 @@ before the next task.
 
 ## Tasks
 
+### J1. Joplin RAW physical-line parser and canonical title/body compatibility — complete
+
+- Parse metadata only on CR/LF physical lines so OCR control characters remain
+  inside `ocr_text` values.
+- Derive canonical Joplin item titles from the first source line and keep the
+  title out of a note's Markdown body; retain the legacy metadata-first parser
+  only as an explicit compatibility path.
+- Preserve property order (including duplicate and future keys) from the same
+  parse used for import, consume at most one delimiter space, accept UTF-8 BOMs,
+  and reject invalid UTF-8.
+- Cover CRLF, OCR controls, duplicate keys, future key spelling, whitespace,
+  exact source bundles, canonical resource/folder/tag titles, and idempotence.
+
+Working state: focused importer tests and canonical `movenotes-v3/sample`
+fixtures pass; implementation evidence is archived under `plans/v0.4/001-*`.
+
+### J2. Real-export correctness and bounded relationship planning
+
+- Validate read-only imports against `recipe_joplin` and the attachment-bearing
+  Joplin archive; compare aggregate recipe results with `recipe_vault` without
+  committing note data, paths, titles, databases, or resources.
+- Inventory every supported Joplin item type and report unsupported/malformed
+  items instead of silently dropping them; add sanitized fixtures for each
+  newly discovered shape.
+- Extract referenced `:/id` targets once per note instead of scanning every
+  known resource for every note, while retaining unresolved-link reports and
+  code-span/fence safety.
+- Record elapsed time, peak RSS, item/resource counts, warnings, idempotence,
+  and search/link/resource checks. Dry run must never write into the source.
+
+Working state: aggregate results agree with the source formats, attachment
+relationships are proportional to actual links, and real-data evidence contains
+no private content.
+
+### J3. Million-note transactional import throughput
+
+- Replace per-document canonical transactions with a bounded store batch API
+  that preserves revisions, FTS5, links, provenance, tags, resources, outbox,
+  and checkpoint atomicity.
+- Replace whole-inventory maps where measured memory requires it with a
+  temporary indexed manifest/spool; keep deterministic fingerprints and resume.
+- Profile complete imports, interruption/resume, no-op re-import, and search
+  readiness on the recipe corpus; record hardware, SQLite settings, database
+  size, elapsed distribution, throughput, and peak RSS.
+- Keep synthetic 100/10k/100k regression tiers, but do not use dry-run-only
+  evidence as a claim about full import throughput.
+
+Working state: a complete million-note import is resumable, bounded by the
+chosen batch/spool sizes, and has an evidence-backed throughput baseline.
+
+### Q1. Boolean search expressions and category alias
+
+- Replace the flat parser with a bounded expression tree for uppercase `OR`,
+  implicit `AND`, prefix `-`, parentheses, and quoted phrases; `AND` binds more
+  tightly than `OR`, URLs and hyphenated words remain intact, and unknown
+  `word:value` tokens remain searchable text.
+- Compile the same tree to SQLite FTS5/SQL and Recoll, with backend parity tests,
+  maximum query length/token/depth limits, and query-bound cursor fingerprints.
+- Treat `category:` as an exact alias for `notebook:`. `category:"All notes"`
+  and `notebook:"All notes"` remove the notebook filter and search all current
+  notes; ordinary notebook matching remains recursive and case-insensitive.
+- Update GUI, REST, MCP, search-notebook, docs, and generated scale tests; never
+  silently approximate an operator on a backend that cannot honor it.
+
+Working state: the documented grammar has identical result sets through live
+SQLite and Recoll fixtures, including negated/grouped fields and emoji terms.
+
 ### P1. Shared selection and privacy planner
 
 - Define typed selection inputs for notebooks (recursive), tags, queries, and
@@ -37,8 +125,8 @@ before the next task.
   internal/private/broken links, source bundles, and exclusion reasons.
 - Keep planning read-only and stream/batch canonical reads; no arbitrary SQL
   or filesystem paths cross REST/MCP boundaries.
-- Specify reusable privacy policy and report types for archive, vault, Quartz,
-  and large-site targets.
+- Specify reusable privacy policy and report types for full archive, subset
+  transfer, and publication-handoff targets.
 
 Working state: a dry-run planner returns deterministic bounded reports on
 small fixtures and generated 100k-note data without materializing all note
@@ -85,20 +173,7 @@ bounded-memory, and leave no apparently complete archive after interruption.
 Working state: a v2 archive can reconstruct the promised canonical state,
 corruption causes no partial restore, and archive v1 compatibility remains.
 
-### P5. Portable Markdown vault export
-
-- Export stable relative paths, nested folders, front matter, resources, and
-  generated link reference definitions through the shared planner.
-- Rewrite document/resource links portably and report links that cannot be
-  exported without revealing private targets.
-- Use deterministic collision naming and a dry-run path manifest.
-- Test generated large vaults without claiming that Obsidian itself can
-  interactively handle the largest tier.
-
-Working state: exported vaults are readable without Notrios, deterministic,
-and preserve navigable links/resources within the selected subset.
-
-### P6. Stable external links and local resolution
+### P5. Stable external links and local resolution
 
 - Define `notrios://databases/{database_id}/documents/{document_id}` parsing,
   validation, length bounds, and stale-target errors.
@@ -112,48 +187,40 @@ and preserve navigable links/resources within the selected subset.
 Working state: stable links survive local path/profile changes and malformed or
 wrong-database links cannot open another profile silently.
 
-### P7. Publishing privacy plan and Quartz profile
+### P6. Native archive compatibility bridge to movenotes-v3
+
+- Publish archive-v2 JSON Schemas/golden fixtures, capability bounds, and a
+  compatibility command that produces sanitized deterministic test archives.
+- Coordinate the separate `movenotes-v3/notrios2sql.py` importer against those
+  fixtures. Do not copy implementation code between repositories; exchange only
+  documented formats, behavior, and fixtures.
+- Verify revisions/provenance/source bundles needed for backup remain available
+  to the importer while publication mode exposes only the selected current-note
+  projection and explicitly allowed metadata.
+- Add cross-version consumer tests so Notrios format additions are rejected or
+  ignored according to declared capability rules.
+
+Working state: `movenotes-v3` can consume a Notrios archive without a Notrios
+Obsidian/Joplin exporter, and an unsupported archive fails before partial import.
+
+### P7. Publication profiles and privacy-reviewed archive handoff
 
 - Add saved publish profiles using the shared selection/privacy planner.
 - Support recursive notebook/folder/tag selection, reachable public resources,
   private-note link policy, metadata stripping, and dry-run warnings.
-- Generate a Quartz-compatible curated subset without invoking untrusted note
-  content as build code.
+- Emit a scoped, sanitized archive-v2 publication handoff; do not invoke
+  untrusted note content as build code inside Notrios.
 - Keep publish execution explicit after a reviewed plan.
 
-Working state: curated fixtures publish only selected reachable public content;
-privacy violations are visible before generation.
+Working state: curated fixtures hand off only selected reachable public content;
+privacy violations are visible before generation, and `movenotes-v3` can turn
+the handoff into either a Quartz vault or a Hugo/Ledger site.
 
-### P8. Large-library search adapter spike
+### P8. v0.4 documentation and release wrap-up
 
-- Measure Bluge, an external Recoll service, and a simpler FTS-backed option
-  for build time, index size, query/highlight/facet behavior, deep paging,
-  licensing, maintenance, and deployment.
-- Use generated 10k/100k/500k publication fixtures and bounded result APIs.
-- Do not adopt or vendor a library until the evidence and maintenance owner are
-  recorded.
-
-Working state: an archived decision report selects an adapter or documents why
-the milestone should retain a simpler option; no speculative dependency
-remains.
-
-### P9. Scalable archive-site publisher
-
-- Stream page/resource generation through the shared planner.
-- Use fixed/bounded navigation rather than rendering a full library tree or
-  client-side index; integrate the P8 selected search adapter behind a stable
-  interface.
-- Add resumable/atomic output, privacy checks, accessibility, and generated
-  100k/500k evidence.
-
-Working state: the generated site has bounded build/runtime behavior and no
-private or unreachable resources leak from the selected set.
-
-### P10. v0.4 documentation and release wrap-up
-
-- Document backup/verify/restore intent, portable vaults, stable links,
-  publishing privacy, and large-site operations in both the site and Help
-  notebook.
+- Document backup/verify/restore intent, the movenotes compatibility boundary,
+  stable links, publishing privacy, and Quartz versus Hugo/Ledger operations in
+  both the site and Help notebook.
 - Reconcile `FEATURE_MATRIX.md`, architecture/schema/API/security documents,
   and release checklist.
 - Run the full release validation, archive the plan, draft the next plan from
@@ -175,16 +242,18 @@ bash scripts/mvp_smoke.sh
 bash scripts/run_performance_smoke.sh
 ```
 
-Archive, publisher, GUI, and large-library tasks add their specific
-round-trip, hostile-input, native-build, and scale gates.
+Importer, archive, compatibility, GUI, and large-library tasks add their
+specific real-format, round-trip, hostile-input, native-build, and scale gates.
 
 ## Decisions required before or during v0.4
 
-- Approve P1 before implementation.
+- Approve J2 before the next implementation slice; J1 was explicitly authorized
+  by the 2026-08-02 follow-up prompt.
+- Approve P1 before archive/publishing implementation.
 - Select exact archive-v2 restore defaults only after P2 presents explicit
   replace/merge/fork/adopt behavior.
-- Select the large-site search adapter only from P8 measurements; Bluge is not
-  preselected.
+- Treat `movenotes-v3` and `hugo-theme-ledger` as optional external publishing
+  tools under their own repositories and licenses; do not link or vendor them.
 - OS registration details remain Ubuntu-only unless another platform is
   explicitly added and tested.
 

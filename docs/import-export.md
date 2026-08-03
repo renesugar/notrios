@@ -155,7 +155,17 @@ is merged deliberately and reported as such.
 
 ### Edge cases (implementation-verified)
 
-- **Malformed items:** the parser is tolerant — it accepts both metadata-first and body-first item files and skips files it cannot classify.
+- **Canonical RAW titles:** Joplin's first physical line becomes the Notrios
+  title and is removed from the canonical Markdown body. The legacy
+  metadata-first shape remains accepted for compatibility.
+- **PDF OCR controls:** metadata is split only on CR/LF physical endings, so
+  vertical tab, form feed, file/record separators, and NEL remain inside one
+  `ocr_text` value. Future and duplicate property keys retain their source
+  order when `--preserve-source` is enabled.
+- **Encoding:** an optional UTF-8 BOM is accepted; invalid UTF-8 is rejected
+  with an input error instead of being silently replaced.
+- **Malformed items:** files that cannot be classified are currently skipped;
+  v0.4 J2 will inventory/report unsupported and malformed real-export shapes.
 - **Missing resource files:** counted in `resources_skipped` with a warning naming the resource; the import completes.
 - **Duplicates / re-import:** deterministic IDs make re-runs safe — unchanged notes count as `notes_unchanged`, notes edited in Joplin become `notes_updated` (a new revision; the previous text stays in revision history).
 - **Interrupted imports:** completed batches and their cumulative report are

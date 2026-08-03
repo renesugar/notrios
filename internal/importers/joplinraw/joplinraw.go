@@ -2,11 +2,13 @@ package joplinraw
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/renesugar/notrios/internal/store"
 )
@@ -68,87 +70,183 @@ type Report struct {
 }
 
 type parsedItem struct {
-	Path   string
-	ID     string
-	Type   string
-	Fields map[string]string
-	Body   string
+	Path          string
+	ID            string
+	Type          string
+	Fields        map[string]string
+	Body          string
+	PropertyOrder []string
 }
 
-var metadataLineRE = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_]*:\s*.*$`)
-
 func parseItem(path string, text string) (parsedItem, bool) {
-	text = strings.ReplaceAll(text, "\r\n", "\n")
-	text = strings.ReplaceAll(text, "\r", "\n")
-	fields, body := parseTrailingMetadata(text)
+	text = strings.TrimPrefix(text, "\uFEFF")
+	fields, order, body, trailing := parseTrailingMetadata(text)
 	if fields["type_"] == "" {
-		fields, body = parseLeadingMetadata(text)
+		fields, order, body = parseLeadingMetadata(text)
+		trailing = false
 	}
 	if fields["type_"] == "" {
 		return parsedItem{}, false
+	}
+	itemType := strings.TrimSpace(fields["type_"])
+	if trailing && body != "" {
+		title, remaining := splitSourceTitle(body)
+		if title != "" {
+			// Canonical Joplin RAW stores the item title as the first physical
+			// body line, not in a title: property. Keep accepting the old
+			// metadata-first fixtures below, but prefer the canonical title.
+			fields["title"] = title
+		}
+		if itemType == "1" {
+			body = remaining
+		}
 	}
 	id := strings.TrimSpace(fields["id"])
 	if id == "" {
 		id = strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
 	}
-	return parsedItem{Path: path, ID: id, Type: strings.TrimSpace(fields["type_"]), Fields: fields, Body: strings.TrimRight(body, "\n")}, true
+	return parsedItem{
+		Path: path, ID: id, Type: itemType, Fields: fields,
+		Body: strings.TrimRight(body, "\n"), PropertyOrder: order,
+	}, true
 }
 
-func parseTrailingMetadata(text string) (map[string]string, string) {
-	lines := strings.Split(text, "\n")
-	start := len(lines)
-	for i := len(lines) - 1; i >= 0; i-- {
-		line := strings.TrimSpace(lines[i])
-		if line == "" && start == len(lines) {
-			start = i
-			continue
-		}
-		if metadataLineRE.MatchString(line) {
-			start = i
-			continue
-		}
-		break
+func parseItemBytes(path string, raw []byte) (parsedItem, bool, error) {
+	if !utf8.Valid(raw) {
+		return parsedItem{}, false, fmt.Errorf("%w: Joplin RAW item %s is not valid UTF-8", store.ErrInvalidInput, filepath.Base(path))
 	}
-	fields := map[string]string{}
-	if start < len(lines) {
-		for _, line := range lines[start:] {
-			parseField(fields, line)
-		}
-	}
-	if fields["type_"] == "" {
-		return map[string]string{}, text
-	}
-	return fields, strings.TrimRight(strings.Join(lines[:start], "\n"), "\n")
+	item, ok := parseItem(path, string(raw))
+	return item, ok, nil
 }
 
-func parseLeadingMetadata(text string) (map[string]string, string) {
-	lines := strings.Split(text, "\n")
+// splitPhysicalLines splits only at CR and LF. In particular it must not use
+// a Unicode line splitter: Joplin PDF resource ocr_text values can contain
+// vertical tab, form feed, file/record separators, and NEL as data.
+func splitPhysicalLines(text string) []string {
+	if text == "" {
+		return nil
+	}
+	lines := make([]string, 0, strings.Count(text, "\n")+1)
+	start := 0
+	for index := 0; index < len(text); index++ {
+		if text[index] != '\r' && text[index] != '\n' {
+			continue
+		}
+		lines = append(lines, text[start:index])
+		if text[index] == '\r' && index+1 < len(text) && text[index+1] == '\n' {
+			index++
+		}
+		start = index + 1
+	}
+	if start < len(text) {
+		lines = append(lines, text[start:])
+	}
+	return lines
+}
+
+func parseTrailingMetadata(text string) (map[string]string, []string, string, bool) {
+	lines := splitPhysicalLines(text)
+	end := len(lines)
+	for end > 0 && lines[end-1] == "" {
+		end--
+	}
+	separator := -1
+	for index := end - 1; index >= 0; index-- {
+		if lines[index] == "" {
+			separator = index
+			break
+		}
+		if !isMetadataLine(lines[index]) {
+			break
+		}
+	}
+	var bodyLines, metadataLines []string
+	if separator >= 0 {
+		bodyLines = lines[:separator]
+		metadataLines = lines[separator+1 : end]
+	} else {
+		allMetadata := end > 0
+		for _, line := range lines[:end] {
+			if line != "" && !isMetadataLine(line) {
+				allMetadata = false
+				break
+			}
+		}
+		if !allMetadata {
+			return map[string]string{}, nil, normalizePhysicalLines(lines), false
+		}
+		metadataLines = lines[:end]
+	}
+	fields, order := parseFields(metadataLines)
+	if strings.TrimSpace(fields["type_"]) == "" {
+		return map[string]string{}, nil, normalizePhysicalLines(lines), false
+	}
+	return fields, order, normalizePhysicalLines(bodyLines), true
+}
+
+func parseLeadingMetadata(text string) (map[string]string, []string, string) {
+	lines := splitPhysicalLines(text)
+	metadataLines := []string{}
 	fields := map[string]string{}
 	bodyStart := 0
-	for i, line := range lines {
-		trimmed := strings.TrimSpace(line)
-		if trimmed == "" {
-			bodyStart = i + 1
+	for index, line := range lines {
+		if line == "" {
+			bodyStart = index + 1
 			break
 		}
-		if !metadataLineRE.MatchString(trimmed) {
+		if !isMetadataLine(line) {
 			break
 		}
-		parseField(fields, trimmed)
-		bodyStart = i + 1
+		metadataLines = append(metadataLines, line)
+		bodyStart = index + 1
 	}
-	return fields, strings.Join(lines[bodyStart:], "\n")
+	fields, order := parseFields(metadataLines)
+	return fields, order, normalizePhysicalLines(lines[bodyStart:])
 }
 
-func parseField(fields map[string]string, line string) {
-	trimmed := strings.TrimSpace(line)
-	idx := strings.Index(trimmed, ":")
-	if idx <= 0 {
-		return
+func isMetadataLine(line string) bool {
+	index := strings.IndexByte(line, ':')
+	return index > 0 && strings.TrimSpace(line[:index]) != ""
+}
+
+func parseFields(lines []string) (map[string]string, []string) {
+	fields := map[string]string{}
+	order := make([]string, 0, len(lines))
+	for _, line := range lines {
+		if line == "" {
+			continue
+		}
+		index := strings.IndexByte(line, ':')
+		if index <= 0 {
+			continue
+		}
+		rawKey := line[:index]
+		key := strings.ToLower(strings.TrimSpace(rawKey))
+		value := line[index+1:]
+		if strings.HasPrefix(value, " ") {
+			value = value[1:]
+		}
+		fields[key] = value
+		order = append(order, strings.TrimSpace(rawKey))
 	}
-	key := strings.ToLower(strings.TrimSpace(trimmed[:idx]))
-	value := strings.TrimSpace(trimmed[idx+1:])
-	fields[key] = value
+	return fields, order
+}
+
+func normalizePhysicalLines(lines []string) string {
+	return strings.Join(lines, "\n")
+}
+
+func splitSourceTitle(body string) (string, string) {
+	lines := strings.Split(body, "\n")
+	if len(lines) == 0 {
+		return "", ""
+	}
+	title := strings.TrimSpace(lines[0])
+	start := 1
+	if start < len(lines) && lines[start] == "" {
+		start++
+	}
+	return title, strings.Join(lines[start:], "\n")
 }
 
 func buildDocumentBody(note parsedItem, folders map[string]parsedItem, tags []string, noteIDMap, resourceIDMap map[string]string, collectionID string) (string, int) {

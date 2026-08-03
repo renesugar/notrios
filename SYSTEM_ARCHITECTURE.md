@@ -107,6 +107,11 @@ batch lookups, and persists fingerprints/checkpoints. With
 `--preserve-source`, exact item bytes plus property order are stored in a
 separate content-addressed source-bundle namespace; they are not canonical
 notes or ordinary resource blobs.
+Canonical RAW parsing splits only on CR/LF physical endings (OCR control
+characters remain property data), derives titles from the first source line,
+and uses one ordered-property parse for both effective fields and source-bundle
+property order. Real-export and million-note full-write profiling remain v0.4
+J2/J3 gates.
 Obsidian vaults, Twitter/X archives, ChatGPT exports, and Claude exports are
 normalized into notebooks/collections with source provenance rows (including
 thread recovery for Twitter/X and conversation exports). The v0.3 scale design
@@ -153,22 +158,22 @@ snapshot. Cursors never expose SQLite offsets or sidecar row IDs.
 
 ## Publishing
 
-Publishing is not the same as backup. Quartz publishing profiles select a
+Publishing is not the same as backup. Notrios publication profiles select a
 public subset of notes/resources, sanitize metadata, rewrite private links
-safely, and emit a Quartz-compatible content tree. v0.4 adds a neutral
-selection/link/resource/privacy plan shared by portable export, native archive,
-Quartz, and a scalable archive-site profile. Large-site search uses an adapter
-selected by measurement; Bluge is a candidate, not a core dependency.
+safely, and emit a subset-scoped native-archive-v2 handoff. A separately
+maintained `movenotes-v3/notrios2sql.py` importer consumes the handoff;
+`movenotes-v3` owns Obsidian/Quartz and Hugo/Ledger generation, with Pagefind or
+Bluge according to site scale. v0.4 shares the neutral
+selection/link/resource/privacy plan between full archive, subset transfer, and
+publication handoff rather than duplicating those publishing engines.
 
 ## Optional derived systems
 
 - go-git or Fossil can checkpoint projections but should not replace SQLite revisions.
 - LadybugDB can be added later as a derived graph backend if advanced traversal/analytics are needed.
-- Bluge (or another maintained backend) can be evaluated for generated,
-  server-side publication search if fuzzy/facets/highlights and search-after
-  justify it. The reviewed Bluge repository is Apache-2.0 and capable but has
-  had no recent development, so it should not displace FTS5/Recoll without a
-  maintenance/performance spike.
+- Bluge remains an external `movenotes-v3`/Ledger publication dependency, not a
+  Notrios search dependency. Notrios keeps FTS5/Recoll for application search
+  and verifies only the archive/privacy integration boundary.
 - Yjs-compatible Go CRDTs can be evaluated for optional simultaneous note
   editing; they do not replace the record-level database protocol in
   `SYNCHRONIZATION.md`.

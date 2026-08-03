@@ -26,3 +26,12 @@ Details worth knowing:
 - The empty query is "All notes"; the Trash search notebook uses the reserved query `is:trashed`.
 
 Any query can be saved as a **search notebook**: give it a name (and an emoji if you like) and it appears in the sidebar. Deleting a search notebook never deletes notes — only the saved query.
+
+## Planned v0.4 additions
+
+Uppercase `OR`, prefix `-negation`, parentheses, and `category:` are planned but
+are not live operators yet. The planned grammar keeps implicit AND and phrases,
+adds grouping (`(rent OR lease) tag:van`), and treats `category:` as an alias for
+`notebook:`. `category:"All notes"` and `notebook:"All notes"` will mean the
+same thing as an empty query. Notrios will enable these only after SQLite FTS5
+and optional Recoll return the same tested results from one bounded parser.
