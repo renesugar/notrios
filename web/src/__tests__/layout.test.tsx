@@ -62,6 +62,13 @@ describe('workspace layout', () => {
     expect(await screen.findByText(/Recoll active · 2 pending · synced/)).toBeInTheDocument();
   });
 
+  it('advertises the bounded boolean query syntax', async () => {
+    render(<App />);
+    const input = await screen.findByRole('textbox', { name: 'Search query' });
+    expect(input).toHaveAttribute('maxlength', '4096');
+    expect(screen.getByText(/Uppercase OR · implicit AND/)).toBeInTheDocument();
+  });
+
   it('renders the four panes in DOM order with three separators between them', async () => {
     render(<App />);
     const workspace = await screen.findByTestId('workspace');

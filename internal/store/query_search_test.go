@@ -4,8 +4,24 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
+	"strings"
 	"testing"
 )
+
+func sortedHitIDs(response SearchResponse) []string {
+	ids := make([]string, 0, len(response.Hits))
+	for _, hit := range response.Hits {
+		ids = append(ids, hit.ID)
+	}
+	slices.Sort(ids)
+	return ids
+}
+
+func sortedStrings(values ...string) []string {
+	slices.Sort(values)
+	return values
+}
 
 func TestQueryLanguageSearch(t *testing.T) {
 	st := newNotebookTestStore(t)
@@ -89,6 +105,90 @@ func TestQueryAuthorAndTimeFilters(t *testing.T) {
 	res, _ = st.Search(ctx, SearchRequest{Query: `authorid:bob@example.social thread`, Limit: 10})
 	if len(res.Hits) != 1 || res.Hits[0].ID != post2.ID {
 		t.Fatalf("metadata+text combination: %+v", res)
+	}
+}
+
+func TestBooleanExpressionsCategoryAliasAndEmoji(t *testing.T) {
+	st := newNotebookTestStore(t)
+	ctx := context.Background()
+
+	work, _ := st.CreateNotebook(ctx, CreateNotebookRequest{Name: "Work"})
+	reports, _ := st.CreateNotebook(ctx, CreateNotebookRequest{Name: "Reports", ParentID: work.ID})
+	personal, _ := st.CreateNotebook(ctx, CreateNotebookRequest{Name: "Personal"})
+
+	alpha, _ := st.CreateDocument(ctx, CreateDocumentRequest{
+		PreferredID: "expr_alpha", NotebookID: work.ID, Title: "Alpha plan", Body: "roadmap 😀 well-known https://example.test/a_(b)",
+	})
+	beta, _ := st.CreateDocument(ctx, CreateDocumentRequest{
+		PreferredID: "expr_beta", NotebookID: reports.ID, Title: "Beta report", Body: "oranges 😀",
+	})
+	gamma, _ := st.CreateDocument(ctx, CreateDocumentRequest{
+		PreferredID: "expr_gamma", NotebookID: personal.ID, Title: "Gamma", Body: "alpha oranges re:invoice",
+	})
+	private, _ := st.CreateDocument(ctx, CreateDocumentRequest{
+		PreferredID: "expr_private", NotebookID: personal.ID, Title: "Private beta", Body: "secret oranges",
+	})
+	_, _ = st.AddDocumentTag(ctx, private.ID, "private")
+	_, _ = st.AddDocumentTag(ctx, beta.ID, "team")
+	_, _ = st.SetDocumentSource(ctx, SetDocumentSourceRequest{
+		DocumentID: alpha.ID, SourceSystem: "twitter", ExternalID: "alpha", Author: "Alice Smith", AuthorID: "alice@example.social",
+	})
+	_, _ = st.SetDocumentSource(ctx, SetDocumentSourceRequest{
+		DocumentID: beta.ID, SourceSystem: "twitter", ExternalID: "beta", Author: "Bob Jones", AuthorID: "bob@example.social",
+	})
+
+	tests := []struct {
+		query string
+		want  []string
+	}{
+		{`alpha OR beta oranges`, sortedStrings(alpha.ID, beta.ID, gamma.ID, private.ID)},
+		{`(alpha OR beta) oranges`, sortedStrings(beta.ID, gamma.ID, private.ID)},
+		{`(alpha OR beta) -tag:private`, sortedStrings(alpha.ID, beta.ID, gamma.ID)},
+		{`category:work`, sortedStrings(alpha.ID, beta.ID)},
+		{`notebook:WORK`, sortedStrings(alpha.ID, beta.ID)},
+		{`category:"All notes" -tag:private`, sortedStrings(alpha.ID, beta.ID, gamma.ID)},
+		{`-(title:Gamma OR tag:private) 😀`, sortedStrings(alpha.ID, beta.ID)},
+		{`(author:"Alice Smith" OR author:"Bob Jones") -authorid:bob@example.social`, []string{alpha.ID}},
+		{`re:invoice`, []string{gamma.ID}},
+		{`https://example.test/a_(b)`, []string{alpha.ID}},
+		{`well-known 😀`, []string{alpha.ID}},
+	}
+	for _, tc := range tests {
+		response, err := st.Search(ctx, SearchRequest{Query: tc.query, Limit: 20})
+		if err != nil {
+			t.Errorf("Search(%q): %v", tc.query, err)
+			continue
+		}
+		if got := sortedHitIDs(response); !slices.Equal(got, tc.want) {
+			t.Errorf("Search(%q) IDs = %v, want %v", tc.query, got, tc.want)
+		}
+	}
+}
+
+func TestExpressionCursorBindingAndQueryLimits(t *testing.T) {
+	st := newNotebookTestStore(t)
+	ctx := context.Background()
+	for index := 0; index < 4; index++ {
+		_, _ = st.CreateDocument(ctx, CreateDocumentRequest{
+			PreferredID: fmt.Sprintf("binding_%d", index), Title: "alpha beta", Body: "cursor expression",
+		})
+	}
+
+	first, err := st.Search(ctx, SearchRequest{Query: `alpha OR beta`, Limit: 1})
+	if err != nil || first.NextCursor == "" {
+		t.Fatalf("first expression page = %+v, %v", first, err)
+	}
+	if _, err := st.Search(ctx, SearchRequest{Query: `alpha   OR   beta`, Limit: 1, Cursor: first.NextCursor}); err != nil {
+		t.Fatalf("canonical-equivalent query should accept cursor: %v", err)
+	}
+	if _, err := st.Search(ctx, SearchRequest{Query: `(alpha OR beta) gamma`, Limit: 1, Cursor: first.NextCursor}); !errors.Is(err, ErrInvalidCursor) {
+		t.Fatalf("different expression must reject cursor: %v", err)
+	}
+	if _, err := st.Search(ctx, SearchRequest{Query: strings.Repeat("x", 4097), Limit: 1}); !errors.Is(err, ErrInvalidInput) {
+		t.Fatalf("oversized query error = %v", err)
+	}
+	if _, err := st.Search(ctx, SearchRequest{Query: strings.Repeat("(", 17) + "alpha" + strings.Repeat(")", 17), Limit: 1}); !errors.Is(err, ErrInvalidInput) {
+		t.Fatalf("over-nested query error = %v", err)
 	}
 }
 

@@ -11,7 +11,7 @@ curl -s -X POST http://127.0.0.1:8080/mcp \
 
 curl -s -X POST http://127.0.0.1:8080/mcp \
   -H 'Content-Type: application/json' \
-  -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"search_documents","arguments":{"query":"tag:todo","limit":5}}}' | jq
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"search_documents","arguments":{"query":"(tag:todo OR category:Work) -tag:private","limit":5}}}' | jq
 ```
 
 ## Connecting an MCP client
@@ -32,7 +32,10 @@ The default profile is **read-only**. Set `mcp.default_profile: "editor"` in the
 
 `search_documents`, `get_document`, `get_documents`, `list_collections`, `list_notebooks`, `get_notebook_tree`, `get_notebook_notes`, `list_tags`, `list_search_notebooks`, `list_document_links`, `list_document_resources`, `get_document_outline`, `get_note_line_range`, `search_in_note`.
 
-Search accepts the same [query language](../query-language.md) as everywhere else and returns snippets plus `document://` URIs; retrieve full bodies explicitly with `get_document`.
+Search accepts the same bounded [query language](../query-language.md) as
+everywhere else—including uppercase OR, prefix negation, grouping, phrases,
+and `category:`—and returns snippets plus `document://` URIs; retrieve full
+bodies explicitly with `get_document`.
 
 ## Write tools (editor profile)
 

@@ -117,7 +117,8 @@ paths:
       parameters:
         - name: q
           in: query
-          schema: { type: string }
+          description: Bounded Notrios boolean query (implicit AND, uppercase OR, prefix -, grouping, phrases, and fields).
+          schema: { type: string, maxLength: 4096 }
         - name: collection
           in: query
           schema: { type: string }
@@ -147,8 +148,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SearchResponse'
-        '400':
-          $ref: '#/components/responses/Error'
         '400':
           $ref: '#/components/responses/Error'
   /api/v1/documents:
@@ -949,7 +948,10 @@ components:
           type: array
           items: { type: string }
         collection: { type: string, deprecated: true }
-        query: { type: string }
+        query:
+          type: string
+          maxLength: 4096
+          description: Bounded Notrios boolean expression; maximum 256 tokens and 16 parenthesis levels.
         mode: { type: string, enum: [fts, phrase, all_terms, any_terms, semantic, hybrid], default: fts }
         filters: { $ref: '#/components/schemas/SearchFilters' }
         sort:

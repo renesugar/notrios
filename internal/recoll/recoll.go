@@ -10,6 +10,7 @@ import (
 	"context"
 	_ "embed"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"html"
 	"net/url"
@@ -37,6 +38,10 @@ const (
 	indexProcessTimeout   = 30 * time.Minute
 	queryProcessTimeout   = 30 * time.Second
 )
+
+// ErrUnsupportedQuery means Recoll cannot honor the requested canonical
+// scope. Callers must use SQLite only; they must not send an approximation.
+var ErrUnsupportedQuery = errors.New("query is unsupported by the Recoll projection")
 
 //go:embed notrios_md_handler.py
 var handlerScript []byte
@@ -138,6 +143,7 @@ threadid = XTHREADID
 replyto = XREPLYTO
 notebook = XNOTEBOOK
 sourceurl = XSOURCEURL
+emoji = XEMOJI
 
 [values]
 publishedts = 1001; type=int; len=10
@@ -193,7 +199,10 @@ type Hit struct {
 
 // Search compiles the parsed query to Recoll syntax and runs recollq.
 func (s *Sidecar) Search(ctx context.Context, q query.Query, limit int) ([]Hit, error) {
-	expr := CompileQuery(q)
+	expr, err := CompileQuery(q)
+	if err != nil {
+		return nil, err
+	}
 	if strings.TrimSpace(expr) == "" {
 		return nil, nil
 	}
@@ -471,46 +480,134 @@ func truncateError(value string) string {
 	return value
 }
 
-// CompileQuery renders the parsed user query in Recoll query syntax
-// (SEARCH_QUERY_LANGUAGE.md). Trash queries return "" — trashed notes are
-// never projected, so Recoll cannot serve them. notebook: filters compile to
-// the projected notebook field (direct name match; SQL-side filtering remains
-// authoritative for subtree semantics).
-func CompileQuery(q query.Query) string {
+// CompileQuery renders the same bounded AST used by SQLite in Recoll query
+// syntax. Parentheses are emitted around every boolean node because Recoll's
+// native OR precedence differs from Notrios. Trash is rejected explicitly:
+// deleted notes are intentionally absent from the derived projection.
+func CompileQuery(q query.Query) (string, error) {
 	if q.Trashed {
-		return ""
+		return "", fmt.Errorf("%w: Trash is not projected", ErrUnsupportedQuery)
 	}
-	parts := []string{}
-	quote := func(v string) string { return `"` + strings.ReplaceAll(v, `"`, ` `) + `"` }
-	for _, term := range q.Terms {
-		if term.Phrase {
-			parts = append(parts, quote(term.Text))
-		} else {
-			parts = append(parts, term.Text)
+	if q.IsEmpty() {
+		return "", fmt.Errorf("%w: an unfiltered All notes query has no sidecar-only results", ErrUnsupportedQuery)
+	}
+	return compileExpr(q.Root, false)
+}
+
+// compileExpr pushes negation to leaves with De Morgan's laws because Recoll
+// accepts -term exclusions but not -(group). This is an exact lowering of the
+// application AST, not a backend approximation.
+func compileExpr(expr *query.Expr, negated bool) (string, error) {
+	if expr == nil || expr.Op == query.OpMatchAll {
+		if negated {
+			return `noteid:"__notrios_no_match__"`, nil
 		}
+		return "", fmt.Errorf("%w: unbounded match-all expression", ErrUnsupportedQuery)
 	}
-	for _, term := range q.Title {
-		parts = append(parts, "title:"+quote(term.Text))
+	if expr.Op == query.OpMatchNone {
+		if negated {
+			return "", fmt.Errorf("%w: unbounded negated match-none expression", ErrUnsupportedQuery)
+		}
+		return `noteid:"__notrios_no_match__"`, nil
 	}
-	for _, name := range q.Notebooks {
-		parts = append(parts, "notebook:"+quote(name))
+	switch expr.Op {
+	case query.OpNot:
+		if len(expr.Children) != 1 {
+			return "", fmt.Errorf("malformed NOT expression")
+		}
+		return compileExpr(expr.Children[0], !negated)
+	case query.OpAnd, query.OpOr:
+		joiner := " " // Recoll's documented adjacency operator is AND.
+		op := expr.Op
+		if negated {
+			if op == query.OpAnd {
+				op = query.OpOr
+			} else {
+				op = query.OpAnd
+			}
+		}
+		if op == query.OpOr {
+			joiner = " OR "
+		}
+		parts := make([]string, 0, len(expr.Children))
+		for _, child := range expr.Children {
+			compiled, err := compileExpr(child, negated)
+			if err != nil {
+				return "", err
+			}
+			parts = append(parts, "("+compiled+")")
+		}
+		return "(" + strings.Join(parts, joiner) + ")", nil
+	case query.OpTerm:
+		if expr.Term == nil {
+			return "", fmt.Errorf("malformed term expression")
+		}
+		compiled, err := compileTerm(*expr.Term)
+		if err != nil {
+			return "", err
+		}
+		if negated {
+			if strings.HasPrefix(compiled, "(") {
+				return "", fmt.Errorf("%w: multi-symbol negation requires SQLite", ErrUnsupportedQuery)
+			}
+			return "-" + compiled, nil
+		}
+		return compiled, nil
+	default:
+		return "", fmt.Errorf("unsupported query expression %q", expr.Op)
 	}
-	for _, tag := range q.Tags {
-		parts = append(parts, "tag:"+quote(tag))
+}
+
+func compileTerm(term query.Term) (string, error) {
+	quote := func(value string) string {
+		value = strings.Map(func(r rune) rune {
+			if unicode.IsControl(r) {
+				return ' '
+			}
+			return r
+		}, value)
+		return `"` + strings.ReplaceAll(value, `"`, ` `) + `"`
 	}
-	for _, author := range q.Authors {
-		parts = append(parts, "author:"+quote(author))
+	switch term.Field {
+	case query.FieldText:
+		if keys := query.SymbolKeys(term.Text); len(keys) > 0 {
+			residual := strings.Map(func(r rune) rune {
+				if unicode.Is(unicode.So, r) || r == '\ufe0f' {
+					return ' '
+				}
+				return r
+			}, term.Text)
+			if term.Phrase || strings.TrimSpace(residual) != "" {
+				return "", fmt.Errorf("%w: mixed text/emoji terms require SQLite", ErrUnsupportedQuery)
+			}
+			parts := make([]string, 0, len(keys))
+			for _, key := range keys {
+				parts = append(parts, "emoji:"+quote(key))
+			}
+			return "(" + strings.Join(parts, " ") + ")", nil
+		}
+		if term.Phrase || strings.ContainsAny(term.Text, `:()"`) {
+			return quote(term.Text), nil
+		}
+		return term.Text, nil
+	case query.FieldTitle:
+		if query.ContainsSymbol(term.Text) {
+			return "", fmt.Errorf("%w: title emoji terms require SQLite", ErrUnsupportedQuery)
+		}
+		return "title:" + quote(term.Text), nil
+	case query.FieldNotebook:
+		return "notebook:" + quote(term.Text), nil
+	case query.FieldTag:
+		return "tag:" + quote(term.Text), nil
+	case query.FieldAuthor:
+		return "author:" + quote(term.Text), nil
+	case query.FieldAuthorID:
+		return "authorid:" + quote(term.Text), nil
+	case query.FieldSince:
+		return fmt.Sprintf("publishedts:%d..", term.UnixValue), nil
+	case query.FieldUntil:
+		return fmt.Sprintf("publishedts:..%d", term.UnixValue), nil
+	default:
+		return "", fmt.Errorf("%w: field %q", ErrUnsupportedQuery, term.Field)
 	}
-	for _, authorID := range q.AuthorIDs {
-		parts = append(parts, "authorid:"+quote(authorID))
-	}
-	switch {
-	case q.Since > 0 && q.Until > 0:
-		parts = append(parts, fmt.Sprintf("publishedts:%d..%d", q.Since, q.Until))
-	case q.Since > 0:
-		parts = append(parts, fmt.Sprintf("publishedts:%d..", q.Since))
-	case q.Until > 0:
-		parts = append(parts, fmt.Sprintf("publishedts:..%d", q.Until))
-	}
-	return strings.Join(parts, " ")
 }

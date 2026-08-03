@@ -153,6 +153,32 @@ func TestLargeLibraryProfile(t *testing.T) {
 		_, err := st.Search(ctx, SearchRequest{Query: `tag:scale_tag_7`, Limit: 100})
 		return err
 	})
+	profile.Metrics["boolean_text_or_first_page"] = measureProfile(t, 15, 2, func() error {
+		_, err := st.Search(ctx, SearchRequest{Query: `unique000001 OR unique000002`, Limit: 100})
+		return err
+	})
+	profile.Metrics["boolean_negated_field_first_page"] = measureProfile(t, 15, 100, func() error {
+		_, err := st.Search(ctx, SearchRequest{Query: `commonterm -tag:scale_tag_7`, Limit: 100})
+		return err
+	})
+	profile.Metrics["category_alias_first_page"] = measureProfile(t, 30, 100, func() error {
+		_, err := st.Search(ctx, SearchRequest{Query: `category:"Scale 2"`, Limit: 100})
+		return err
+	})
+
+	precedence, err := st.Search(ctx, SearchRequest{Query: `unique000001 OR unique000002 group2`, Limit: 10})
+	if err != nil || len(precedence.Hits) != 2 {
+		t.Fatalf("generated boolean precedence: hits=%d err=%v", len(precedence.Hits), err)
+	}
+	negated, err := st.Search(ctx, SearchRequest{Query: `(unique000001 OR unique000002) -tag:scale_tag_1`, Limit: 10})
+	if err != nil || len(negated.Hits) != 1 || negated.Hits[0].ID != "scale_doc_000002" {
+		t.Fatalf("generated grouped negation: hits=%+v err=%v", negated.Hits, err)
+	}
+	notebookPage, _ := st.Search(ctx, SearchRequest{Query: `notebook:"Scale 2"`, Limit: 100})
+	categoryPage, _ := st.Search(ctx, SearchRequest{Query: `category:"Scale 2"`, Limit: 100})
+	if fmt.Sprint(sortedHitIDs(notebookPage)) != fmt.Sprint(sortedHitIDs(categoryPage)) {
+		t.Fatal("generated category alias differs from notebook filter")
+	}
 
 	streamStarted := time.Now()
 	streamed := 0

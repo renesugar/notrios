@@ -91,6 +91,29 @@ func TestOutboxDrivenProjection(t *testing.T) {
 	}
 }
 
+func TestProjectionIndexesNotebookAncestorsForRecursiveSearch(t *testing.T) {
+	st := newTestStore(t)
+	ctx := context.Background()
+	w := Writer{Dir: t.TempDir()}
+	parent, _ := st.CreateNotebook(ctx, store.CreateNotebookRequest{Name: "Work"})
+	child, _ := st.CreateNotebook(ctx, store.CreateNotebookRequest{Name: "Reports", ParentID: parent.ID})
+	doc, _ := st.CreateDocument(ctx, store.CreateDocumentRequest{Title: "Nested", Body: "ancestry", NotebookID: child.ID})
+
+	if report, err := SyncOutbox(ctx, st, w, 100); err != nil || report.Written != 1 {
+		t.Fatalf("SyncOutbox = %+v, %v", report, err)
+	}
+	data, err := os.ReadFile(filepath.Join(w.Dir, "notes", doc.ID+".md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	content := string(data)
+	for _, want := range []string{`notebook: "Reports"`, "notebook_ancestors:\n", `  - "Work"`} {
+		if !strings.Contains(content, want) {
+			t.Fatalf("nested projection missing %q:\n%s", want, content)
+		}
+	}
+}
+
 func TestFullSyncProjectsExistingNotes(t *testing.T) {
 	st := newTestStore(t)
 	ctx := context.Background()

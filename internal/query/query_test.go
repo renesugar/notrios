@@ -1,84 +1,153 @@
 package query
 
 import (
+	"errors"
+	"strings"
 	"testing"
 	"time"
 )
 
 var now = time.Date(2026, 7, 15, 10, 0, 0, 0, time.UTC)
 
-func TestParseOperatorsAndPhrases(t *testing.T) {
-	q := Parse(`apples "exact phrase" title:architecture title:"multiple words" notebook:"My Work" tag:toys tag:"shopping mall" author:"Alice Smith" authorid:alice@example.social`, now)
+func mustParse(t *testing.T, input string) Query {
+	t.Helper()
+	q, err := Parse(input, now)
+	if err != nil {
+		t.Fatalf("Parse(%q): %v", input, err)
+	}
+	return q
+}
 
-	if len(q.Terms) != 2 || q.Terms[0].Text != "apples" || q.Terms[0].Phrase {
-		t.Fatalf("terms wrong: %+v", q.Terms)
+func terms(q Query) []Term {
+	out := []Term{}
+	walk(q.Root, func(expr *Expr) bool {
+		if expr.Op == OpTerm && expr.Term != nil {
+			out = append(out, *expr.Term)
+		}
+		return false
+	})
+	return out
+}
+
+func TestParseBooleanPrecedenceGroupingAndNegation(t *testing.T) {
+	q := mustParse(t, `alpha OR beta gamma`)
+	if q.Root.Op != OpOr || len(q.Root.Children) != 2 || q.Root.Children[1].Op != OpAnd {
+		t.Fatalf("AND must bind more tightly than OR: %+v", q.Root)
 	}
-	if !q.Terms[1].Phrase || q.Terms[1].Text != "exact phrase" {
-		t.Fatalf("phrase term wrong: %+v", q.Terms[1])
+
+	q = mustParse(t, `(alpha OR beta) -tag:private "exact phrase"`)
+	if q.Root.Op != OpAnd || len(q.Root.Children) != 3 || q.Root.Children[0].Op != OpOr || q.Root.Children[1].Op != OpNot {
+		t.Fatalf("grouped expression wrong: %+v", q.Root)
 	}
-	if len(q.Title) != 2 || q.Title[1].Text != "multiple words" || !q.Title[1].Phrase {
-		t.Fatalf("title terms wrong: %+v", q.Title)
+	gotTerms := terms(q)
+	if len(gotTerms) != 4 || gotTerms[2].Field != FieldTag || gotTerms[2].Text != "private" ||
+		gotTerms[3].Field != FieldText || !gotTerms[3].Phrase || gotTerms[3].Text != "exact phrase" {
+		t.Fatalf("typed leaves wrong: %+v", gotTerms)
 	}
-	if len(q.Notebooks) != 1 || q.Notebooks[0] != "My Work" {
-		t.Fatalf("notebooks wrong: %+v", q.Notebooks)
-	}
-	if len(q.Tags) != 2 || q.Tags[1] != "shopping mall" {
-		t.Fatalf("tags wrong: %+v", q.Tags)
-	}
-	if len(q.Authors) != 1 || q.Authors[0] != "Alice Smith" {
-		t.Fatalf("authors wrong: %+v", q.Authors)
-	}
-	if len(q.AuthorIDs) != 1 || q.AuthorIDs[0] != "alice@example.social" {
-		t.Fatalf("authorids wrong: %+v", q.AuthorIDs)
+
+	q = mustParse(t, `alpha or beta`)
+	if q.Root.Op != OpAnd || len(terms(q)) != 3 {
+		t.Fatalf("lowercase or must remain searchable text: %+v", q)
 	}
 }
 
-func TestParseTimeBounds(t *testing.T) {
-	q := Parse("since:2026-07-01 until:2026-07-31", now)
+func TestParseOperatorsAliasesAndLiteralFallbacks(t *testing.T) {
+	q := mustParse(t, `apples title:"multiple words" notebook:"My Work" category:Archive tag:"shopping mall" author:"Alice Smith" authorid:alice@example.social re:invoice https://example.com/a_(b) well-known 😀`)
+	got := terms(q)
+	wantFields := []Field{FieldText, FieldTitle, FieldNotebook, FieldNotebook, FieldTag, FieldAuthor, FieldAuthorID, FieldText, FieldText, FieldText, FieldText}
+	if len(got) != len(wantFields) {
+		t.Fatalf("terms = %+v", got)
+	}
+	for index, field := range wantFields {
+		if got[index].Field != field {
+			t.Fatalf("term %d field = %q, want %q (%+v)", index, got[index].Field, field, got)
+		}
+	}
+	if got[1].Text != "multiple words" || !got[1].Phrase || got[7].Text != "re:invoice" ||
+		got[8].Text != "https://example.com/a_(b)" || got[9].Text != "well-known" || got[10].Text != "😀" {
+		t.Fatalf("literal preservation wrong: %+v", got)
+	}
+
+	for _, input := range []string{`category:"All notes"`, `notebook:"all NOTES"`} {
+		if parsed := mustParse(t, input); !parsed.IsEmpty() || parsed.Trashed {
+			t.Fatalf("%q must simplify to All notes: %+v", input, parsed)
+		}
+	}
+	q = mustParse(t, `category:"All notes" tag:todo`)
+	if q.Root.Op != OpTerm || q.Root.Term.Field != FieldTag {
+		t.Fatalf("All notes must remove only its notebook constraint: %+v", q)
+	}
+}
+
+func TestParseTimeBoundsAndTrashScope(t *testing.T) {
+	q := mustParse(t, "since:2026-07-01 until:2026-07-31")
+	got := terms(q)
 	wantSince := time.Date(2026, 7, 1, 0, 0, 0, 0, time.UTC).Unix()
 	wantUntil := time.Date(2026, 7, 31, 23, 59, 59, 0, time.UTC).Unix()
-	if q.Since != wantSince {
-		t.Fatalf("date-only since = start of day: got %d want %d", q.Since, wantSince)
-	}
-	if q.Until != wantUntil {
-		t.Fatalf("date-only until = end of day: got %d want %d", q.Until, wantUntil)
-	}
-
-	q = Parse("since:2026-07-13T18:42:07Z", now)
-	if q.Since != time.Date(2026, 7, 13, 18, 42, 7, 0, time.UTC).Unix() {
-		t.Fatalf("RFC3339 since wrong: %d", q.Since)
-	}
-
-	// Zone-less timestamps and time-only values use the selected timezone/day.
-	q = Parse("since:14:30:00", now)
-	if q.Since != time.Date(2026, 7, 15, 14, 30, 0, 0, time.UTC).Unix() {
-		t.Fatalf("time-only since must mean today at that time: %d", q.Since)
+	if got[0].Field != FieldSince || got[0].UnixValue != wantSince || got[1].Field != FieldUntil || got[1].UnixValue != wantUntil {
+		t.Fatalf("time bounds = %+v", got)
 	}
 
 	zone := time.FixedZone("UTC+2", 2*3600)
 	localNow := time.Date(2026, 7, 15, 10, 0, 0, 0, zone)
-	q = Parse("since:2026-07-15", localNow)
-	if q.Since != time.Date(2026, 7, 15, 0, 0, 0, 0, zone).UTC().Unix() {
-		t.Fatalf("date-only since must use the selected timezone: %d", q.Since)
+	local, err := Parse("since:2026-07-15", localNow)
+	if err != nil || terms(local)[0].UnixValue != time.Date(2026, 7, 15, 0, 0, 0, 0, zone).UTC().Unix() {
+		t.Fatalf("timezone date bound = %+v, %v", local, err)
+	}
+
+	q = mustParse(t, `is:trashed lettuce`)
+	if !q.Trashed || len(terms(q)) != 1 || terms(q)[0].Text != "lettuce" {
+		t.Fatalf("trash scope = %+v", q)
+	}
+	for _, input := range []string{`-is:trashed`, `is:trashed OR lettuce`} {
+		if _, err := Parse(input, now); !errors.Is(err, ErrSyntax) {
+			t.Fatalf("Parse(%q) error = %v, want syntax error", input, err)
+		}
 	}
 }
 
-func TestParseFallbacksAndSpecials(t *testing.T) {
-	q := Parse("is:trashed", now)
-	if !q.Trashed {
-		t.Fatal("is:trashed not recognized")
+func TestParseBoundsAndSyntaxErrors(t *testing.T) {
+	cases := []struct {
+		input string
+		want  error
+	}{
+		{strings.Repeat("x", MaxInputBytes+1), ErrTooLong},
+		{strings.Repeat("x ", MaxTokens+1), ErrTooManyTokens},
+		{strings.Repeat("(", MaxDepth+1) + "x" + strings.Repeat(")", MaxDepth+1), ErrTooDeep},
+		{`"unterminated`, ErrSyntax},
+		{`(alpha OR beta`, ErrSyntax},
+		{`alpha OR`, ErrSyntax},
+		{`since:not-a-date`, ErrSyntax},
 	}
-	if Parse("", now).IsEmpty() != true {
-		t.Fatal("empty query must be IsEmpty")
+	for _, tc := range cases {
+		if _, err := Parse(tc.input, now); !errors.Is(err, tc.want) {
+			t.Errorf("Parse(%q) error = %v, want %v", tc.input, err, tc.want)
+		}
 	}
-	// Unknown operators and URL-ish tokens stay literal terms.
-	q = Parse("re:invoice https://example.com/x", now)
-	if len(q.Terms) != 2 {
-		t.Fatalf("unknown operators must fall back to terms: %+v", q)
+	if q := mustParse(t, ""); !q.IsEmpty() || q.HasTextTerms() || q.PositiveTextOnly() {
+		t.Fatalf("empty query flags = %+v", q)
 	}
-	// Trailing colon is not an operator.
-	q = Parse("note:", now)
-	if len(q.Terms) != 1 || q.Terms[0].Text != "note:" {
-		t.Fatalf("trailing colon handling wrong: %+v", q)
+}
+
+func TestCanonicalExpressionIsStable(t *testing.T) {
+	left := mustParse(t, `alpha   OR (beta tag:todo)`)
+	right := mustParse(t, `alpha OR ( beta tag:todo )`)
+	if left.Canonical() != right.Canonical() {
+		t.Fatalf("equivalent tokenization must canonicalize equally:\n%s\n%s", left.Canonical(), right.Canonical())
+	}
+	if left.PositiveTextOnly() {
+		t.Fatal("metadata expression must use the SQL predicate compiler")
+	}
+	if !mustParse(t, `alpha OR "beta gamma"`).PositiveTextOnly() {
+		t.Fatal("positive text-only tree should retain FTS relevance")
+	}
+	if mustParse(t, `alpha -beta`).PositiveTextOnly() {
+		t.Fatal("unary negation requires exact SQL predicates")
+	}
+	if !mustParse(t, `alpha -tag:private`).HasPositiveTextAnchor() {
+		t.Fatal("mandatory text in a mixed AND should be an FTS anchor")
+	}
+	if mustParse(t, `alpha OR tag:todo`).HasPositiveTextAnchor() {
+		t.Fatal("text in one OR branch cannot anchor the whole expression")
 	}
 }

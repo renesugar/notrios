@@ -1,6 +1,6 @@
 # Plan: v0.4 — Import correctness, portable data, publishing handoff, and stable references
 
-Status: **J1–J3 completed; Q1 and all remaining product-feature tasks require user approval**.
+Status: **J1–J3 and Q1 completed; P1 and all remaining product-feature tasks require user approval**.
 Drafted 2026-07-26 and revised 2026-08-02 after comparing the Joplin importer
 and publishing/search plans with the real-data-tested `movenotes-v3` pipeline.
 
@@ -103,7 +103,7 @@ chosen batch/spool sizes, and has an evidence-backed throughput baseline.
 Aggregate-only evidence is archived under `performance/v0.4-j3/` and
 implementation detail under `plans/v0.4/003-*`.
 
-### Q1. Boolean search expressions and category alias
+### Q1. Boolean search expressions and category alias — complete
 
 - Replace the flat parser with a bounded expression tree for uppercase `OR`,
   implicit `AND`, prefix `-`, parentheses, and quoted phrases; `AND` binds more
@@ -119,6 +119,8 @@ implementation detail under `plans/v0.4/003-*`.
 
 Working state: the documented grammar has identical result sets through live
 SQLite and Recoll fixtures, including negated/grouped fields and emoji terms.
+Generated scale evidence is archived under `performance/v0.4-q1/` and
+implementation detail under `plans/v0.4/004-*`.
 
 ### P1. Shared selection and privacy planner
 
@@ -250,8 +252,6 @@ specific real-format, round-trip, hostile-input, native-build, and scale gates.
 
 ## Decisions required before or during v0.4
 
-- Approve Q1 before the next implementation slice; J3 was explicitly authorized
-  on 2026-08-02.
 - Approve P1 before archive/publishing implementation.
 - Select exact archive-v2 restore defaults only after P2 presents explicit
   replace/merge/fork/adopt behavior.

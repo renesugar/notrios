@@ -199,5 +199,5 @@ The scaffold handoff is complete; see `CODING_CLIENT_HANDOFF.md`. Future roadmap
 ## v0.1 completion note
 
 The v0.1 MVP, v0.2 redesign, and v0.3 hardening milestones are implemented and
-archived. v0.4 J1 is implemented; the next J2 slice and the remaining v0.4
-product tasks in `PLAN.md` require approval.
+archived. v0.4 J1–J3 and Q1 are implemented; P1 and the remaining v0.4 product
+tasks in `PLAN.md` require approval.

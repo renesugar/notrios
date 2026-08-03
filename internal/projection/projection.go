@@ -44,11 +44,21 @@ func (w Writer) WriteNote(doc store.Document, source store.DocumentSource, tags 
 }
 
 func renderNote(doc store.Document, source store.DocumentSource, tags []store.Tag, notebookName string) []byte {
+	return renderNoteWithAncestors(doc, source, tags, notebookName, nil)
+}
+
+func renderNoteWithAncestors(doc store.Document, source store.DocumentSource, tags []store.Tag, notebookName string, notebookAncestors []string) []byte {
 	var b strings.Builder
 	b.WriteString("---\n")
 	writeScalar(&b, "id", doc.ID)
 	writeScalar(&b, "title", doc.Title)
 	writeScalar(&b, "notebook", notebookName)
+	if len(notebookAncestors) > 0 {
+		b.WriteString("notebook_ancestors:\n")
+		for _, ancestor := range notebookAncestors {
+			b.WriteString("  - " + yamlQuote(ancestor) + "\n")
+		}
+	}
 	writeScalar(&b, "author", source.Author)
 	writeScalar(&b, "author_id", source.AuthorID)
 	writeScalar(&b, "published", source.PublishedAt)
@@ -220,12 +230,37 @@ func projectionBytes(ctx context.Context, st store.Store, documentID string) (st
 		return store.Document{}, nil, err
 	}
 	notebookName := ""
+	notebookAncestors := []string{}
 	if doc.NotebookID != "" {
-		if notebook, err := st.GetNotebook(ctx, doc.NotebookID); err == nil {
+		if notebook, ancestors, err := projectionNotebookNames(ctx, st, doc.NotebookID); err == nil {
 			notebookName = notebook.Name
+			notebookAncestors = ancestors
 		}
 	}
-	return doc, renderNote(doc, source, tags, notebookName), nil
+	return doc, renderNoteWithAncestors(doc, source, tags, notebookName, notebookAncestors), nil
+}
+
+func projectionNotebookNames(ctx context.Context, st store.Store, notebookID string) (store.Notebook, []string, error) {
+	notebook, err := st.GetNotebook(ctx, notebookID)
+	if err != nil {
+		return store.Notebook{}, nil, err
+	}
+	ancestors := []string{}
+	seen := map[string]bool{notebook.ID: true}
+	parentID := notebook.ParentID
+	for parentID != "" {
+		if seen[parentID] || len(seen) > 256 {
+			return store.Notebook{}, nil, fmt.Errorf("notebook ancestry is cyclic or too deep")
+		}
+		seen[parentID] = true
+		parent, err := st.GetNotebook(ctx, parentID)
+		if err != nil {
+			return store.Notebook{}, nil, err
+		}
+		ancestors = append(ancestors, parent.Name)
+		parentID = parent.ParentID
+	}
+	return notebook, ancestors, nil
 }
 
 func projectDocument(ctx context.Context, st store.Store, w Writer, documentID string) error {
@@ -268,9 +303,25 @@ func Reconcile(ctx context.Context, st store.Store, w Writer, batchSize int) (Re
 	if err != nil {
 		return report, err
 	}
-	notebookNames := make(map[string]string, len(notebooks))
+	notebookNames := make(map[string]projectionNotebook, len(notebooks))
+	notebookByID := make(map[string]store.Notebook, len(notebooks))
 	for _, notebook := range notebooks {
-		notebookNames[notebook.ID] = notebook.Name
+		notebookByID[notebook.ID] = notebook
+	}
+	for _, notebook := range notebooks {
+		ancestors := []string{}
+		seen := map[string]bool{notebook.ID: true}
+		parentID := notebook.ParentID
+		for parentID != "" && !seen[parentID] && len(seen) <= 256 {
+			seen[parentID] = true
+			parent, ok := notebookByID[parentID]
+			if !ok {
+				break
+			}
+			ancestors = append(ancestors, parent.Name)
+			parentID = parent.ParentID
+		}
+		notebookNames[notebook.ID] = projectionNotebook{Name: notebook.Name, Ancestors: ancestors}
 	}
 	collections, err := st.ListCollections(ctx)
 	if err != nil {
@@ -289,12 +340,17 @@ func Reconcile(ctx context.Context, st store.Store, w Writer, batchSize int) (Re
 	return report, nil
 }
 
+type projectionNotebook struct {
+	Name      string
+	Ancestors []string
+}
+
 func reconcileCanonicalCollection(
 	ctx context.Context,
 	st store.Store,
 	w Writer,
 	collectionID string,
-	notebookNames map[string]string,
+	notebookNames map[string]projectionNotebook,
 	batchSize int,
 	report *ReconcileReport,
 ) error {
@@ -332,7 +388,8 @@ func reconcileCanonicalCollection(
 				report.recordFailure(fmt.Sprintf("canonical document %s disappeared during reconciliation", hit.ID))
 				continue
 			}
-			expected := renderNote(doc, sources[doc.ID], tags[doc.ID], notebookNames[doc.NotebookID])
+			notebook := notebookNames[doc.NotebookID]
+			expected := renderNoteWithAncestors(doc, sources[doc.ID], tags[doc.ID], notebook.Name, notebook.Ancestors)
 			path, err := w.notePath(doc.ID)
 			if err != nil {
 				report.recordFailure(err.Error())

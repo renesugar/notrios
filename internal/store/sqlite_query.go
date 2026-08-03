@@ -7,7 +7,7 @@ import "C"
 
 import (
 	"context"
-	"encoding/json"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -15,16 +15,20 @@ import (
 	"github.com/renesugar/notrios/internal/query"
 )
 
-// Query-language execution for the SQLite backend. Chronological results use
-// an (updated_at DESC, id DESC) keyset. FTS5 relevance results use the stable
-// (bm25 score ASC, id ASC) boundary; neither path performs OFFSET work.
+// Query-language execution for SQLite. Positive text-only trees retain FTS5
+// relevance ordering. Trees containing metadata or unary negation compile to
+// exact correlated predicates and use chronological keysets; neither path
+// performs unbounded OFFSET work.
 func (s *SQLiteStore) Search(ctx context.Context, req SearchRequest) (SearchResponse, error) {
 	ctx = contextOrBackground(ctx)
 	if err := ctx.Err(); err != nil {
 		return SearchResponse{}, err
 	}
 	req = NormalizeSearchRequest(req)
-	parsed := query.Parse(req.Query, time.Now())
+	parsed, err := query.Parse(req.Query, time.Now())
+	if err != nil {
+		return SearchResponse{}, fmt.Errorf("%w: %v", ErrInvalidInput, err)
+	}
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -34,64 +38,27 @@ func (s *SQLiteStore) Search(ctx context.Context, req SearchRequest) (SearchResp
 func (s *SQLiteStore) searchQueryLocked(req SearchRequest, q query.Query) (SearchResponse, error) {
 	where := []string{"d.collection_id = ?"}
 	args := []string{req.CollectionID}
-
 	if q.Trashed {
 		where = append(where, "d.deleted_at IS NOT NULL")
 	} else {
 		where = append(where, "d.deleted_at IS NULL")
 	}
 
-	if len(q.Notebooks) > 0 {
-		ids, err := s.notebooksByNamesLocked(q.Notebooks)
-		if err != nil {
-			return SearchResponse{}, err
-		}
-		if len(ids) == 0 {
-			return SearchResponse{Hits: []SearchHit{}}, nil
-		}
-		where = append(where, "d.notebook_id IN ("+placeholders(len(ids))+")")
-		args = append(args, ids...)
-	}
-
-	for _, tagName := range q.Tags {
-		tag, found, err := s.findTagByNameLocked(tagName)
-		if err != nil {
-			return SearchResponse{}, err
-		}
-		if !found {
-			return SearchResponse{Hits: []SearchHit{}}, nil
-		}
-		where = append(where, `d.id IN (
-			SELECT nt.document_id FROM note_tags nt WHERE nt.tag_id = ?
-		)`)
-		args = append(args, tag.ID)
-	}
-
-	needSources := len(q.Authors) > 0 || len(q.AuthorIDs) > 0 || q.Since > 0 || q.Until > 0
-	for _, author := range q.Authors {
-		where = append(where, `ds.author LIKE ? ESCAPE '\'`)
-		args = append(args, "%"+escapeLike(author)+"%")
-	}
-	for _, authorID := range q.AuthorIDs {
-		where = append(where, `ds.author_id = ? COLLATE NOCASE`)
-		args = append(args, authorID)
-	}
-	timeExpr := `COALESCE(ds.published_ts, CAST(strftime('%s', d.created_at) AS INTEGER))`
-	if q.Since > 0 {
-		where = append(where, timeExpr+" >= CAST(? AS INTEGER)")
-		args = append(args, strconv.FormatInt(q.Since, 10))
-	}
-	if q.Until > 0 {
-		where = append(where, timeExpr+" <= CAST(? AS INTEGER)")
-		args = append(args, strconv.FormatInt(q.Until, 10))
-	}
-
-	useFTS := q.HasTextTerms() && !q.Trashed
-	binding := searchCursorBinding(req, q, useFTS)
+	ftsAnchor, remainder := splitFTSAnchor(q)
+	useFTSRelevance := ftsAnchor != nil
+	binding := searchCursorBinding(req, q, useFTSRelevance)
 	var sql string
-	if useFTS {
+	if useFTSRelevance {
 		where = append([]string{"documents_fts MATCH ?"}, where...)
-		args = append([]string{ftsMatchExpr(q)}, args...)
+		args = append([]string{ftsMatchExpr(ftsAnchor)}, args...)
+		predicate, predicateArgs, err := s.compileSQLExprLocked(remainder, false)
+		if err != nil {
+			return SearchResponse{}, err
+		}
+		if predicate != "" && predicate != "1" {
+			where = append(where, predicate)
+			args = append(args, predicateArgs...)
+		}
 		sql = `WITH ranked AS (
 			SELECT d.id AS id, d.collection_id AS collection_id, d.title AS title,
 				snippet(documents_fts, 3, '<mark>', '</mark>', '…', 32) AS hit_snippet,
@@ -100,9 +67,8 @@ func (s *SQLiteStore) searchQueryLocked(req SearchRequest, q query.Query) (Searc
 				d.updated_at AS sort_time
 			FROM documents_fts
 			JOIN documents d ON d.id = documents_fts.document_id
-			JOIN document_revisions r ON r.id = d.current_revision_id` +
-			sourceJoin(needSources) +
-			" WHERE " + strings.Join(where, " AND ") +
+			JOIN document_revisions r ON r.id = d.current_revision_id
+			WHERE ` + strings.Join(where, " AND ") +
 			`) SELECT id, collection_id, title, hit_snippet, score, notebook_id, sort_time
 			FROM ranked`
 		if strings.TrimSpace(req.Cursor) != "" {
@@ -116,10 +82,13 @@ func (s *SQLiteStore) searchQueryLocked(req SearchRequest, q query.Query) (Searc
 		}
 		sql += " ORDER BY score ASC, id ASC"
 	} else {
-		for _, term := range append(append([]query.Term{}, q.Terms...), q.Title...) {
-			where = append(where, `(d.title LIKE ? ESCAPE '\' OR r.body LIKE ? ESCAPE '\')`)
-			pattern := "%" + escapeLike(term.Text) + "%"
-			args = append(args, pattern, pattern)
+		predicate, predicateArgs, err := s.compileSQLExprLocked(q.Root, q.Trashed)
+		if err != nil {
+			return SearchResponse{}, err
+		}
+		if predicate != "" && predicate != "1" {
+			where = append(where, predicate)
+			args = append(args, predicateArgs...)
 		}
 		if strings.TrimSpace(req.Cursor) != "" {
 			timestamp, id, err := decodeChronologicalCursor(req.Cursor, binding)
@@ -132,9 +101,8 @@ func (s *SQLiteStore) searchQueryLocked(req SearchRequest, q query.Query) (Searc
 		sql = `SELECT d.id, d.collection_id, d.title, substr(r.body, 1, 240), 0.0,
 				COALESCE(d.notebook_id, ''), d.updated_at
 			FROM documents d
-			JOIN document_revisions r ON r.id = d.current_revision_id` +
-			sourceJoin(needSources) +
-			" WHERE " + strings.Join(where, " AND ") +
+			JOIN document_revisions r ON r.id = d.current_revision_id
+			WHERE ` + strings.Join(where, " AND ") +
 			" ORDER BY d.updated_at DESC, d.id DESC"
 	}
 	sql += " LIMIT " + itoa(req.Limit+1)
@@ -154,7 +122,7 @@ func (s *SQLiteStore) searchQueryLocked(req SearchRequest, q query.Query) (Searc
 	if len(resp.Hits) > req.Limit {
 		resp.Hits = resp.Hits[:req.Limit]
 		last := resp.Hits[len(resp.Hits)-1]
-		if useFTS {
+		if useFTSRelevance {
 			resp.NextCursor = encodeRelevanceCursor(binding, last.Score, last.ID)
 		} else {
 			resp.NextCursor = encodeChronologicalCursor(binding, last.sortTime, last.ID)
@@ -163,22 +131,141 @@ func (s *SQLiteStore) searchQueryLocked(req SearchRequest, q query.Query) (Searc
 	return resp, nil
 }
 
+func splitFTSAnchor(q query.Query) (anchor, remainder *query.Expr) {
+	if q.Trashed || !q.HasPositiveTextAnchor() {
+		return nil, q.Root
+	}
+	if q.PositiveTextOnly() {
+		return q.Root, &query.Expr{Op: query.OpMatchAll}
+	}
+	anchors := []*query.Expr{}
+	remaining := []*query.Expr{}
+	for _, child := range q.Root.Children {
+		if (query.Query{Root: child}).PositiveTextOnly() {
+			anchors = append(anchors, child)
+		} else {
+			remaining = append(remaining, child)
+		}
+	}
+	return expressionGroup(query.OpAnd, anchors), expressionGroup(query.OpAnd, remaining)
+}
+
+func expressionGroup(op query.Op, children []*query.Expr) *query.Expr {
+	if len(children) == 0 {
+		return &query.Expr{Op: query.OpMatchAll}
+	}
+	if len(children) == 1 {
+		return children[0]
+	}
+	return &query.Expr{Op: op, Children: children}
+}
+
 func searchCursorBinding(req SearchRequest, q query.Query, relevance bool) string {
-	parsed, _ := json.Marshal(q)
 	mode := "chronological"
 	sortOrder := "updated_at:desc,id:desc"
 	if relevance {
 		mode = "relevance"
 		sortOrder = "bm25:asc,id:asc"
 	}
-	return cursorBinding("search", req.Query, req.CollectionID, mode, sortOrder, string(parsed))
+	return cursorBinding("search", req.CollectionID, mode, sortOrder, q.Canonical())
 }
 
-func sourceJoin(need bool) string {
-	if !need {
-		return ""
+func (s *SQLiteStore) compileSQLExprLocked(expr *query.Expr, trashed bool) (string, []string, error) {
+	if expr == nil || expr.Op == query.OpMatchAll {
+		return "1", nil, nil
 	}
-	return " LEFT JOIN document_sources ds ON ds.document_id = d.id"
+	if expr.Op == query.OpMatchNone {
+		return "0", nil, nil
+	}
+	switch expr.Op {
+	case query.OpNot:
+		if len(expr.Children) != 1 {
+			return "", nil, fmt.Errorf("%w: malformed NOT expression", ErrInvalidInput)
+		}
+		child, args, err := s.compileSQLExprLocked(expr.Children[0], trashed)
+		return "NOT (" + child + ")", args, err
+	case query.OpAnd, query.OpOr:
+		joiner := " AND "
+		if expr.Op == query.OpOr {
+			joiner = " OR "
+		}
+		parts := make([]string, 0, len(expr.Children))
+		args := []string{}
+		for _, child := range expr.Children {
+			part, childArgs, err := s.compileSQLExprLocked(child, trashed)
+			if err != nil {
+				return "", nil, err
+			}
+			parts = append(parts, "("+part+")")
+			args = append(args, childArgs...)
+		}
+		return "(" + strings.Join(parts, joiner) + ")", args, nil
+	case query.OpTerm:
+		if expr.Term == nil {
+			return "", nil, fmt.Errorf("%w: malformed term expression", ErrInvalidInput)
+		}
+		return s.compileSQLTermLocked(*expr.Term, trashed)
+	default:
+		return "", nil, fmt.Errorf("%w: unsupported query expression %q", ErrInvalidInput, expr.Op)
+	}
+}
+
+func (s *SQLiteStore) compileSQLTermLocked(term query.Term, trashed bool) (string, []string, error) {
+	switch term.Field {
+	case query.FieldText, query.FieldTitle:
+		if trashed || query.ContainsSymbol(term.Text) {
+			pattern := "%" + escapeLike(term.Text) + "%"
+			if term.Field == query.FieldTitle {
+				return `d.title LIKE ? ESCAPE '\'`, []string{pattern}, nil
+			}
+			return `(d.title LIKE ? ESCAPE '\' OR r.body LIKE ? ESCAPE '\')`, []string{pattern, pattern}, nil
+		}
+		match := ftsQuote(term.Text)
+		if term.Field == query.FieldTitle {
+			match = "title:" + match
+		}
+		return `d.id IN (
+			SELECT documents_fts.document_id FROM documents_fts
+			WHERE documents_fts MATCH ?
+		)`, []string{match}, nil
+	case query.FieldNotebook:
+		ids, err := s.notebooksByNamesLocked([]string{term.Text})
+		if err != nil {
+			return "", nil, err
+		}
+		if len(ids) == 0 {
+			return "0", nil, nil
+		}
+		return "d.notebook_id IN (" + placeholders(len(ids)) + ")", ids, nil
+	case query.FieldTag:
+		return `d.id IN (
+			SELECT qnt.document_id FROM note_tags qnt
+			JOIN tags qt ON qt.id = qnt.tag_id
+			WHERE qt.name = ? COLLATE NOCASE
+		)`, []string{term.Text}, nil
+	case query.FieldAuthor:
+		return `d.id IN (
+			SELECT qds.document_id FROM document_sources qds
+			WHERE qds.author LIKE ? ESCAPE '\'
+		)`, []string{"%" + escapeLike(term.Text) + "%"}, nil
+	case query.FieldAuthorID:
+		return `d.id IN (
+			SELECT qds.document_id FROM document_sources qds
+			WHERE qds.author_id = ? COLLATE NOCASE
+		)`, []string{term.Text}, nil
+	case query.FieldSince, query.FieldUntil:
+		op := ">="
+		if term.Field == query.FieldUntil {
+			op = "<="
+		}
+		timeExpr := `COALESCE(
+			(SELECT qds.published_ts FROM document_sources qds WHERE qds.document_id = d.id),
+			CAST(strftime('%s', d.created_at) AS INTEGER)
+		)`
+		return timeExpr + " " + op + " CAST(? AS INTEGER)", []string{strconv.FormatInt(term.UnixValue, 10)}, nil
+	default:
+		return "", nil, fmt.Errorf("%w: unsupported query field %q", ErrInvalidInput, term.Field)
+	}
 }
 
 func (s *SQLiteStore) notebooksByNamesLocked(names []string) ([]string, error) {
@@ -224,18 +311,33 @@ func (s *SQLiteStore) notebooksByNamesLocked(names []string) ([]string, error) {
 	return ids, nil
 }
 
-func ftsMatchExpr(q query.Query) string {
-	parts := make([]string, 0, len(q.Terms)+len(q.Title))
-	for _, term := range q.Terms {
-		parts = append(parts, ftsQuote(term.Text))
-	}
-	for _, term := range q.Title {
-		parts = append(parts, "title:"+ftsQuote(term.Text))
-	}
-	if len(parts) == 0 {
+func ftsMatchExpr(expr *query.Expr) string {
+	if expr == nil || expr.Op == query.OpMatchAll {
 		return `""`
 	}
-	return strings.Join(parts, " AND ")
+	if expr.Op == query.OpMatchNone {
+		return `noteid:"__notrios_no_match__"`
+	}
+	switch expr.Op {
+	case query.OpTerm:
+		value := ftsQuote(expr.Term.Text)
+		if expr.Term.Field == query.FieldTitle {
+			return "title:" + value
+		}
+		return value
+	case query.OpAnd, query.OpOr:
+		joiner := " AND "
+		if expr.Op == query.OpOr {
+			joiner = " OR "
+		}
+		parts := make([]string, 0, len(expr.Children))
+		for _, child := range expr.Children {
+			parts = append(parts, "("+ftsMatchExpr(child)+")")
+		}
+		return "(" + strings.Join(parts, joiner) + ")"
+	default:
+		return `noteid:"__notrios_no_match__"`
+	}
 }
 
 func ftsQuote(text string) string {

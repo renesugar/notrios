@@ -5,10 +5,15 @@ One query language works everywhere: the GUI search box, the REST/MCP search API
 | Example | Meaning |
 |---|---|
 | `apples oranges` | both words, anywhere in title or body |
+| `apples OR oranges` | either word (`OR` must be uppercase) |
+| `(apples OR oranges) fresh` | grouping; implicit AND binds more tightly than OR |
+| `-tag:private`, `-(tag:private OR tag:draft)` | exclude a field or group |
 | `"exact phrase"` | phrase match |
 | `title:architecture` | word in the title |
 | `title:"multiple words"` | phrase in the title |
 | `notebook:"Work"` | limit to a notebook **and its sub-notebooks** (case-insensitive) |
+| `category:"Work"` | exact alias for `notebook:` |
+| `category:"All notes"` | all current notes; removes that notebook constraint |
 | `tag:toys`, `tag:"shopping mall"` | notes with a tag |
 | `author:"Alice Smith"` | imported notes by display name |
 | `authorid:@alice` | imported notes by canonical account |
@@ -19,19 +24,18 @@ One query language works everywhere: the GUI search box, the REST/MCP search API
 
 Details worth knowing:
 
-- Everything combines with AND: `notebook:"Work" tag:todo quarterly`.
+- Adjacent terms combine with AND: `notebook:"Work" tag:todo quarterly`.
+- AND binds more tightly than uppercase OR. Lowercase `or` is searchable text.
+- Prefix `-` negates the next term, field, or parenthesized group.
 - Unknown `word:value` tokens are treated as literal text, so pasted URLs and things like `re:invoice` just work.
+- Queries are bounded to 4,096 UTF-8 bytes, 256 tokens, and 16 parenthesis levels. Invalid expressions are rejected clearly.
 - Date-only `until:` means 23:59:59 of that day; date-only `since:` means midnight, in your local timezone.
 - `since:`/`until:` compare the original published time of imported posts, falling back to the note's creation time.
 - The empty query is "All notes"; the Trash search notebook uses the reserved query `is:trashed`.
 
 Any query can be saved as a **search notebook**: give it a name (and an emoji if you like) and it appears in the sidebar. Deleting a search notebook never deletes notes — only the saved query.
 
-## Planned v0.4 additions
-
-Uppercase `OR`, prefix `-negation`, parentheses, and `category:` are planned but
-are not live operators yet. The planned grammar keeps implicit AND and phrases,
-adds grouping (`(rent OR lease) tag:van`), and treats `category:` as an alias for
-`notebook:`. `category:"All notes"` and `notebook:"All notes"` will mean the
-same thing as an empty query. Notrios will enable these only after SQLite FTS5
-and optional Recoll return the same tested results from one bounded parser.
+SQLite and optional Recoll compile the same application-owned expression tree.
+Recursive category filters and standalone emoji are represented explicitly in
+the Recoll projection; if Recoll cannot honor a query shape, Notrios uses the
+exact SQLite result instead of weakening the expression.

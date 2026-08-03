@@ -71,6 +71,9 @@ older databases automatically. The current schema is version 11.
 `/api/v1/status` reports the resolved paths, database state, schema version,
 capability flags, search limits, remote-media policy, and optional Recoll
 backlog/sync/reconciliation state.
+Search capabilities include `search.boolean` and `search.category_alias`; the
+limits block reports the 4,096-byte, 256-token, and 16-level expression-parser
+bounds so clients can validate before submitting a query.
 
 **The browser UI is loaded from `web/dist/` relative to the working directory** (build it with `make web`). Without it, `/` returns a `web_ui_not_built` error while the API and MCP endpoints work normally.
 

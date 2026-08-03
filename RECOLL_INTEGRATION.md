@@ -31,9 +31,12 @@ Link-graph operations (direct replies, backlinks, thread ordering, orphan detect
 ## Why Recoll (vs. sist2, vs. Meilisearch)
 
 - Native field searches (`author:`, `title:`, quoted phrase values), implicit AND, custom fields, and integer range fields cover the target query language with only a thin adapter; only `since:`/`until:` timestamps need translation (Recoll's `date:` operator has no time-of-day support).
-- v0.4 Q1 adds application-owned `OR`/negation/grouping and `category:` alias
-  parsing. Recoll will compile the same bounded expression tree as FTS5 rather
-  than receiving unchecked backend-native query strings.
+- v0.4 Q1 implements application-owned `OR`/negation/grouping and the
+  `category:` alias. Recoll compiles the same bounded expression tree as
+  SQLite rather than receiving unchecked backend-native query strings.
+  Negation is lowered to leaf exclusions with De Morgan's laws; notebook
+  ancestors and exact standalone-emoji keys are included in the derived
+  projection. Unsupported shapes fall back explicitly to exact SQLite results.
 - Real-time incremental indexing and proven behavior beyond 100k documents.
 - No separate server process to operate (vs. Meilisearch).
 
@@ -46,7 +49,11 @@ TTL, bounded cache). Sidecar failure still degrades to live FTS5 keysets.
 ## Components to build (implemented in task R7)
 
 1. **Enhanced Markdown/front-matter handler** — `internal/recoll/notrios_md_handler.py`, a from-scratch (Apache-licensed, not derived from Recoll's GPL `rclmd.py`) Python `exec` filter with YAML/TOML front-matter extraction that emits `<meta>` fields; PyYAML is used when installed with a built-in fallback for the flat subset, TOML via stdlib `tomllib`. The generated config installs it for `text/markdown`.
-2. **Query adapter** — `internal/recoll.CompileQuery` translates the parsed Notrios query to Recoll syntax, including `since:`/`until:` → `publishedts:lower..upper` integer ranges; `recollq -F` output is parsed back to document IDs via projection filenames.
+2. **Query adapter** — `internal/recoll.CompileQuery` translates the bounded
+   Notrios expression tree to fully parenthesized Recoll syntax, including
+   boolean fields, leaf exclusions, `since:`/`until:` → integer ranges,
+   recursive notebook/category metadata, and standalone emoji; `recollq -F`
+   output is parsed back to document IDs via projection filenames.
 3. **SQLite changes** — document mutations enqueue `index_outbox` jobs
    transactionally. `internal/projection` drains due jobs in bounded batches;
    failures persist exponential retry eligibility instead of spinning or

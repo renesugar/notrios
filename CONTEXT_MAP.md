@@ -5,8 +5,8 @@ This file is the codebase atlas. Update it whenever major files or directories a
 ## Root documents
 
 - `README.md` — project overview and quick start.
-- `PLAN.md` — proposed v0.4 portable-data/publishing/stable-reference plan;
-  implementation awaits user approval.
+- `PLAN.md` — active v0.4 portable-data/publishing/stable-reference plan;
+  J1–J3 and Q1 are complete, while P1 requires user approval.
 - `plans/scaffold/SCAFFOLD_CREATION_PLAN.md` — process for creating/refining this scaffold.
 - `ROADMAP.md` — product roadmap and future features.
 - `AGENTS.md` — coding-agent instructions (`CLAUDE.md` points here).
@@ -195,8 +195,15 @@ This file is the codebase atlas. Update it whenever major files or directories a
 
 ## v0.2 task R6 additions (query language)
 
-- `internal/query/` — backend-agnostic parser for the user search language (`notebook:`, `tag:`, `title:`, `author:`, `authorid:`, `since:`, `until:`, `is:trashed`, quoted phrases, implicit AND; date-only/time-only timestamp semantics per `SEARCH_QUERY_LANGUAGE.md`).
-- `internal/store/sqlite_query.go` — compiles parsed queries to FTS5 + SQL (notebook subtree expansion, tag EXISTS filters, provenance joins for author/time, LIKE fallback for trash queries) and implements opaque query-bound cursors for incremental scrolling. `store.Search` now routes every query through the adapter.
+- `internal/query/` — bounded backend-neutral expression parser for implicit
+  AND, uppercase OR, prefix negation, parentheses, phrases, `category:`/
+  `notebook:`, tags, provenance/time fields, literal unknown-colon fallback,
+  URLs/hyphens/emoji, and Trash scope.
+- `internal/store/sqlite_query.go` — compiles positive text trees to FTS5 with
+  relevance keysets and mixed/negated trees to exact parameterized SQL
+  predicates with chronological keysets; recursive case-insensitive notebook
+  expansion, All-notes alias semantics, emoji fallback, and canonical AST
+  cursor binding are shared by every search surface.
 
 ## v0.2 task R7 additions (Recoll sidecar)
 

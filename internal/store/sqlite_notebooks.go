@@ -10,6 +10,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/renesugar/notrios/internal/query"
 )
 
 // Notebook, tag, search-notebook, and trash operations for the SQLite store
@@ -628,6 +630,9 @@ func (s *SQLiteStore) CreateSearchNotebook(ctx context.Context, req CreateSearch
 	req.Query = strings.TrimSpace(req.Query)
 	if req.Name == "" {
 		return SearchNotebook{}, fmt.Errorf("%w: search notebook name is required", ErrInvalidInput)
+	}
+	if _, err := query.Parse(req.Query, time.Now()); err != nil {
+		return SearchNotebook{}, fmt.Errorf("%w: invalid search notebook query: %v", ErrInvalidInput, err)
 	}
 	id := strings.TrimSpace(req.PreferredID)
 	if id == "" {

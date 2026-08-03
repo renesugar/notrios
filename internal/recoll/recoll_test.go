@@ -3,8 +3,10 @@ package recoll
 import (
 	"context"
 	"encoding/base64"
+	"errors"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -16,10 +18,16 @@ import (
 
 func TestCompileQuery(t *testing.T) {
 	now := time.Date(2026, 7, 15, 0, 0, 0, 0, time.UTC)
-	q := query.Parse(`apples "exact words" title:arch tag:"note taking" author:"Alice Smith" authorid:alice@example.social since:2026-07-01 until:2026-07-31`, now)
-	got := CompileQuery(q)
+	q, err := query.Parse(`(apples OR "exact words") title:arch -tag:"note taking" author:"Alice Smith" authorid:alice@example.social since:2026-07-01 until:2026-07-31`, now)
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	got, err := CompileQuery(q)
+	if err != nil {
+		t.Fatalf("CompileQuery: %v", err)
+	}
 	for _, want := range []string{
-		"apples", `"exact words"`, `title:"arch"`, `tag:"note taking"`,
+		"apples", `OR`, `"exact words"`, `title:"arch"`, `-tag:"note taking"`,
 		`author:"Alice Smith"`, `authorid:"alice@example.social"`, "publishedts:",
 		"..",
 	} {
@@ -27,8 +35,19 @@ func TestCompileQuery(t *testing.T) {
 			t.Fatalf("compiled query missing %q: %s", want, got)
 		}
 	}
-	if CompileQuery(query.Parse("is:trashed lettuce", now)) != "" {
-		t.Fatal("trash queries must not compile to Recoll")
+	trash, err := query.Parse("is:trashed lettuce", now)
+	if err != nil {
+		t.Fatalf("Parse trash: %v", err)
+	}
+	if _, err := CompileQuery(trash); !errors.Is(err, ErrUnsupportedQuery) {
+		t.Fatalf("trash query error = %v, want ErrUnsupportedQuery", err)
+	}
+	emoji, err := query.Parse("😀", now)
+	if err != nil {
+		t.Fatalf("Parse emoji: %v", err)
+	}
+	if compiled, err := CompileQuery(emoji); err != nil || !strings.Contains(compiled, `emoji:"u1f600"`) {
+		t.Fatalf("emoji compile = %q, %v", compiled, err)
 	}
 }
 
@@ -128,7 +147,11 @@ done
 		t.Fatalf("write fake recollq: %v", err)
 	}
 	sidecar := &Sidecar{ConfDir: dir, ProjectionDir: dir + "/projections", QueryBinary: script}
-	hits, err := sidecar.Search(context.Background(), query.Parse("needle", time.Now()), 1)
+	parsed, parseErr := query.Parse("needle", time.Now())
+	if parseErr != nil {
+		t.Fatalf("Parse: %v", parseErr)
+	}
+	hits, err := sidecar.Search(context.Background(), parsed, 1)
 	if err != nil {
 		t.Fatalf("Search: %v", err)
 	}
@@ -147,7 +170,11 @@ func TestSearchCancelsSubprocess(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Millisecond)
 	defer cancel()
 	started := time.Now()
-	if _, err := sidecar.Search(ctx, query.Parse("needle", time.Now()), 1); err == nil {
+	parsed, parseErr := query.Parse("needle", time.Now())
+	if parseErr != nil {
+		t.Fatalf("Parse: %v", parseErr)
+	}
+	if _, err := sidecar.Search(ctx, parsed, 1); err == nil {
 		t.Fatal("expected canceled search error")
 	}
 	if elapsed := time.Since(started); elapsed > time.Second {
@@ -179,7 +206,12 @@ func TestLiveRecollPipeline(t *testing.T) {
 	if err := st.Bootstrap(ctx); err != nil {
 		t.Fatalf("Bootstrap: %v", err)
 	}
-	doc, err := st.CreateDocument(ctx, store.CreateDocumentRequest{Title: "Search engine architecture", Body: "Body text about xapian indexing."})
+	work, _ := st.CreateNotebook(ctx, store.CreateNotebookRequest{Name: "Work"})
+	reports, _ := st.CreateNotebook(ctx, store.CreateNotebookRequest{Name: "Reports", ParentID: work.ID})
+	doc, err := st.CreateDocument(ctx, store.CreateDocumentRequest{
+		PreferredID: "recoll_public", NotebookID: reports.ID,
+		Title: "Search engine architecture", Body: "Body text about xapian indexing 😀.",
+	})
 	if err != nil {
 		t.Fatalf("CreateDocument: %v", err)
 	}
@@ -192,6 +224,15 @@ func TestLiveRecollPipeline(t *testing.T) {
 		PublishedAt: "2026-07-13T18:42:07Z",
 	}); err != nil {
 		t.Fatalf("SetDocumentSource: %v", err)
+	}
+	privateDoc, err := st.CreateDocument(ctx, store.CreateDocumentRequest{
+		PreferredID: "recoll_private", Title: "Private architecture", Body: "secret xapian notes",
+	})
+	if err != nil {
+		t.Fatalf("Create private document: %v", err)
+	}
+	if _, err := st.AddDocumentTag(ctx, privateDoc.ID, "private"); err != nil {
+		t.Fatalf("tag private document: %v", err)
 	}
 
 	if err := sidecar.EnsureConfig(); err != nil {
@@ -219,7 +260,11 @@ func TestLiveRecollPipeline(t *testing.T) {
 		{`tag:"missing tag"`, false},
 	}
 	for _, tc := range cases {
-		hits, err := sidecar.Search(ctx, query.Parse(tc.queryText, now), 10)
+		parsed, parseErr := query.Parse(tc.queryText, now)
+		if parseErr != nil {
+			t.Fatalf("Parse %q: %v", tc.queryText, parseErr)
+		}
+		hits, err := sidecar.Search(ctx, parsed, 10)
 		if err != nil {
 			t.Fatalf("Search(%q): %v", tc.queryText, err)
 		}
@@ -236,6 +281,42 @@ func TestLiveRecollPipeline(t *testing.T) {
 		}
 		if found != tc.wantHit {
 			t.Fatalf("Search(%q): found=%v want=%v hits=%+v", tc.queryText, found, tc.wantHit, hits)
+		}
+	}
+
+	// The two live backends must agree on complete managed-note result sets for
+	// grouped/negated fields, recursive category matching, All notes, and emoji.
+	for _, queryText := range []string{
+		`(xapian OR secret) -tag:private`,
+		`category:work xapian`,
+		`category:"All notes" (xapian OR secret)`,
+		`(author:"Alice Smith" OR title:Private) -tag:private`,
+		`😀`,
+	} {
+		parsed, parseErr := query.Parse(queryText, now)
+		if parseErr != nil {
+			t.Fatalf("Parse parity query %q: %v", queryText, parseErr)
+		}
+		sqliteResults, searchErr := st.Search(ctx, store.SearchRequest{Query: queryText, Limit: 50})
+		if searchErr != nil {
+			t.Fatalf("SQLite Search(%q): %v", queryText, searchErr)
+		}
+		recollResults, searchErr := sidecar.Search(ctx, parsed, 50)
+		if searchErr != nil {
+			t.Fatalf("Recoll Search(%q): %v", queryText, searchErr)
+		}
+		sqliteIDs := []string{}
+		for _, hit := range sqliteResults.Hits {
+			sqliteIDs = append(sqliteIDs, hit.ID)
+		}
+		recollIDs := []string{}
+		for _, hit := range recollResults {
+			recollIDs = append(recollIDs, hit.DocumentID)
+		}
+		slices.Sort(sqliteIDs)
+		slices.Sort(recollIDs)
+		if !slices.Equal(sqliteIDs, recollIDs) {
+			t.Fatalf("backend parity %q: SQLite=%v Recoll=%v", queryText, sqliteIDs, recollIDs)
 		}
 	}
 }

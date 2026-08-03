@@ -87,6 +87,48 @@ func TestSearchGETReturnsLiveKeysetResults(t *testing.T) {
 	}
 }
 
+func TestBooleanSearchRESTMCPAndSavedQueryValidation(t *testing.T) {
+	s := newNotebookServer(t)
+	create := func(title, body string) string {
+		t.Helper()
+		rr := doJSON(t, s, http.MethodPost, "/api/v1/documents", fmt.Sprintf(`{"title":%q,"body":%q}`, title, body))
+		var doc struct {
+			ID string `json:"id"`
+		}
+		if err := json.NewDecoder(rr.Body).Decode(&doc); err != nil {
+			t.Fatalf("decode document: %v", err)
+		}
+		return doc.ID
+	}
+	publicID := create("alpha public", "😀 result")
+	privateID := create("beta private", "result")
+	rr := doJSON(t, s, http.MethodPost, "/api/v1/documents/"+privateID+"/tags/private", "")
+	if rr.Code != http.StatusOK {
+		t.Fatalf("tag private: %d %s", rr.Code, rr.Body.String())
+	}
+
+	queryText := `(alpha OR beta) -tag:private 😀`
+	rr = doJSON(t, s, http.MethodPost, "/api/v1/search", fmt.Sprintf(`{"query":%q,"limit":10}`, queryText))
+	if rr.Code != http.StatusOK || !strings.Contains(rr.Body.String(), publicID) || strings.Contains(rr.Body.String(), privateID) {
+		t.Fatalf("REST boolean search: %d %s", rr.Code, rr.Body.String())
+	}
+
+	mcpBody := fmt.Sprintf(`{"jsonrpc":"2.0","id":"q1","method":"tools/call","params":{"name":"search_documents","arguments":{"query":%q,"limit":10}}}`, queryText)
+	rr = doJSON(t, s, http.MethodPost, "/mcp", mcpBody)
+	if rr.Code != http.StatusOK || !strings.Contains(rr.Body.String(), publicID) || strings.Contains(rr.Body.String(), privateID) {
+		t.Fatalf("MCP boolean search: %d %s", rr.Code, rr.Body.String())
+	}
+
+	rr = doJSON(t, s, http.MethodPost, "/api/v1/search", `{"query":"alpha OR","limit":10}`)
+	if rr.Code != http.StatusBadRequest || !strings.Contains(rr.Body.String(), "validation_failed") {
+		t.Fatalf("invalid REST expression: %d %s", rr.Code, rr.Body.String())
+	}
+	rr = doJSON(t, s, http.MethodPost, "/api/v1/search-notebooks", `{"name":"Broken","query":"alpha OR"}`)
+	if rr.Code != http.StatusBadRequest || !strings.Contains(rr.Body.String(), "validation_failed") {
+		t.Fatalf("invalid saved expression: %d %s", rr.Code, rr.Body.String())
+	}
+}
+
 func TestSidecarDuplicatesKeepCanonicalKeysetCursor(t *testing.T) {
 	s := newNotebookServer(t)
 	var firstID string

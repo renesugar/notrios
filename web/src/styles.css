@@ -248,6 +248,13 @@ body.splitter-dragging {
   flex: none;
 }
 
+.search-query-hint {
+  margin: 0 0.75rem 0.45rem;
+  color: var(--muted);
+  font-size: 0.72rem;
+  line-height: 1.25;
+}
+
 .search-row input {
   flex: 1;
   min-width: 0;

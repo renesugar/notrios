@@ -58,7 +58,13 @@ If the window opens but shows a JSON `web_ui_not_built` error, the binary can't 
 Below the menu bar the window is four side-by-side panes, always in this order:
 
 1. **Sidebar** — notebooks and tags. The builtin **All notes** view is always at the top and **Trash** is always at the bottom, with **Help** immediately above Trash; between them are your notebooks (nested, with optional emoji icons) and your saved search notebooks. Below the notebooks is the tag list with live note counts. Click anything to search it.
-2. **Search panel** — the search box plus results. On startup the "All notes" view loads, and results page in incrementally as you scroll (a keyboard-accessible "Load more" button covers the same path), so even huge databases start instantly. Read-only notes show a 🔒 marker.
+2. **Search panel** — the search box plus results. Its inline hint covers
+   uppercase OR, implicit AND, prefix `-`, grouping, and `category:`/
+   `notebook:` fields; the complete grammar is in [Search query
+   language](query-language.md). On startup the "All notes" view loads, and
+   results page in incrementally as you scroll (a keyboard-accessible "Load
+   more" button covers the same path), so even huge databases start instantly.
+   Read-only notes show a 🔒 marker.
 3. **Markdown editor** — title, toolbar, and source editor. Note details (metadata, uploads, links, backlinks, resources) live in a collapsible **Note info** inspector at the bottom of this pane, not in a pane of their own. When a note references remote images or media, the inspector also lists each URL with its server-side policy decision (allow/block/review) — a static scan; nothing is downloaded. For editable notes with allowed media, a **Localize allowed media** button downloads those files through the server's quarantine pipeline, stores them as local resources, and rewrites the note to `resource://` links in a new revision (blocked URLs are never fetched).
 4. **Markdown preview** — rendered Markdown. `document://` links open the target note; `resource://` links download attachments; images can be pasted/uploaded in the editor and become local resources.
 

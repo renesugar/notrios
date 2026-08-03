@@ -1,0 +1,115 @@
+{
+  "generated_at": "2026-08-03T15:25:18Z",
+  "document_count": 10000,
+  "resource_count": 100,
+  "physical_blob_count": 10,
+  "link_count": 20000,
+  "database_bytes": 11485184,
+  "peak_rss_bytes": 23453696,
+  "environment": {
+    "goos": "linux",
+    "goarch": "amd64",
+    "go_version": "go1.26.5",
+    "sqlite_version": "3.45.1",
+    "cpu_model": "Intel(R) Core(TM) i5-9300H CPU @ 2.40GHz"
+  },
+  "metrics": {
+    "all_notes_90_percent_deep_page": {
+      "iterations": 30,
+      "p50_ms": 1.529,
+      "p95_ms": 2.974,
+      "max_ms": 3.82,
+      "items": 100
+    },
+    "all_notes_first_page": {
+      "iterations": 30,
+      "p50_ms": 2.105,
+      "p95_ms": 3.128,
+      "max_ms": 3.392,
+      "items": 100
+    },
+    "all_notes_next_page": {
+      "iterations": 30,
+      "p50_ms": 2.199,
+      "p95_ms": 3.468,
+      "max_ms": 5.238,
+      "items": 100
+    },
+    "boolean_negated_field_first_page": {
+      "iterations": 15,
+      "p50_ms": 192.371,
+      "p95_ms": 288.542,
+      "max_ms": 288.542,
+      "items": 100
+    },
+    "boolean_text_or_first_page": {
+      "iterations": 15,
+      "p50_ms": 0.819,
+      "p95_ms": 1.504,
+      "max_ms": 1.504,
+      "items": 2
+    },
+    "category_alias_first_page": {
+      "iterations": 30,
+      "p50_ms": 1.788,
+      "p95_ms": 3.331,
+      "max_ms": 4.02,
+      "items": 100
+    },
+    "export_cursor_stream": {
+      "iterations": 1,
+      "p50_ms": 263.858,
+      "p95_ms": 263.858,
+      "max_ms": 263.858,
+      "items": 10000
+    },
+    "fts_nonselective_first_page": {
+      "iterations": 5,
+      "p50_ms": 23.01,
+      "p95_ms": 24.826,
+      "max_ms": 24.826,
+      "items": 100
+    },
+    "fts_selective_first_page": {
+      "iterations": 15,
+      "p50_ms": 0.628,
+      "p95_ms": 1.459,
+      "max_ms": 1.459,
+      "items": 1
+    },
+    "notebook_filter_first_page": {
+      "iterations": 30,
+      "p50_ms": 2.114,
+      "p95_ms": 5.341,
+      "max_ms": 8.496,
+      "items": 100
+    },
+    "synthetic_import_batch_seed": {
+      "iterations": 1,
+      "p50_ms": 9409.657,
+      "p95_ms": 9409.657,
+      "max_ms": 9409.657,
+      "items": 10000
+    },
+    "tag_filter_first_page": {
+      "iterations": 30,
+      "p50_ms": 5.611,
+      "p95_ms": 8.324,
+      "max_ms": 13.8,
+      "items": 100
+    }
+  },
+  "query_plans": {
+    "all_notes": [
+      "SEARCH documents USING COVERING INDEX documents_collection_state_updated_idx (collection_id=? AND deleted_at=?)"
+    ],
+    "notebook": [
+      "SEARCH documents USING COVERING INDEX documents_notebook_state_updated_idx (notebook_id=? AND deleted_at=?)"
+    ],
+    "tag_membership": [
+      "SEARCH note_tags USING COVERING INDEX note_tags_tag_document_idx (tag_id=?)"
+    ]
+  },
+  "ordinary_page_target_p95_ms": 100,
+  "ordinary_page_target_met": true
+}

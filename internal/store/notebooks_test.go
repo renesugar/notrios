@@ -326,6 +326,9 @@ func TestSearchNotebookLifecycle(t *testing.T) {
 	if _, err := st.CreateSearchNotebook(ctx, CreateSearchNotebookRequest{Name: "todo", Query: "x"}); !errors.Is(err, ErrNameConflict) {
 		t.Fatalf("expected ErrNameConflict, got %v", err)
 	}
+	if _, err := st.CreateSearchNotebook(ctx, CreateSearchNotebookRequest{Name: "Broken", Query: "alpha OR"}); !errors.Is(err, ErrInvalidInput) {
+		t.Fatalf("invalid saved expression must be rejected, got %v", err)
+	}
 
 	// Sidebar order: All notes, TODO, Trash.
 	sns, _ := st.ListSearchNotebooks(ctx)

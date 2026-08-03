@@ -126,11 +126,13 @@ include `truncated: true` only for the explicit 1,000-hit optional-sidecar
 snapshot window. Notebook-note and Trash list responses use the same
 `documents` + `next_cursor` page shape with route-bound chronological keysets.
 
-The live query parser currently supports flat implicit-AND terms, phrases, and
-the documented field filters. v0.4 Q1 adds a bounded expression tree for
-uppercase `OR`, prefix `-`, grouping, and `category:` as a `notebook:` alias.
-Expression structure is part of the cursor fingerprint; clients must not assume
-those planned operators are live until the capability is reported.
+The live v0.4 Q1 parser supports implicit AND, uppercase `OR`, prefix `-`,
+parentheses, phrases, and the documented field filters. `category:` is an exact
+alias for `notebook:`; either field with `"All notes"` removes that notebook
+constraint. The shared expression tree is bounded to 4,096 UTF-8 bytes, 256
+tokens, and 16 parenthesis levels. Its canonical structure is part of the
+cursor fingerprint. `/status` reports `search.boolean`,
+`search.category_alias`, and the three parser limits.
 
 ### Documents
 

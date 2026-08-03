@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/renesugar/notrios/internal/api"
+	"github.com/renesugar/notrios/internal/query"
 	"github.com/renesugar/notrios/internal/store"
 	"github.com/renesugar/notrios/internal/version"
 )
@@ -396,7 +397,7 @@ func (s *Server) mcpTools() []mcpTool {
 		{Name: "get_notebook_tree", Description: "Return the nested notebook tree in sidebar order.", InputSchema: objectSchema(nil, nil)},
 		{Name: "list_tags", Description: "List tags with their current non-deleted note counts.", InputSchema: objectSchema(nil, nil)},
 		{Name: "list_search_notebooks", Description: "List query-backed search notebooks in sidebar order (All notes first, Trash last).", InputSchema: objectSchema(nil, nil)},
-		{Name: "search_documents", Description: "Search managed Markdown notes using conservative limits. Returns snippets and document URIs.", InputSchema: objectSchema(map[string]any{"query": stringSchema(), "collection": stringSchema(), "collections": arraySchema(stringSchema()), "limit": integerSchema(1, 50), "cursor": stringSchema(), "include_body": booleanSchema(), "snippet_characters": integerSchema(1, 2000)}, nil)},
+		{Name: "search_documents", Description: "Search managed Markdown notes with phrases, uppercase OR, implicit AND, prefix -, parentheses, and typed fields including category:/notebook:. Returns snippets and document URIs.", InputSchema: objectSchema(map[string]any{"query": boundedStringSchema(query.MaxInputBytes), "collection": stringSchema(), "collections": arraySchema(stringSchema()), "limit": integerSchema(1, 50), "cursor": stringSchema(), "include_body": booleanSchema(), "snippet_characters": integerSchema(1, 2000)}, nil)},
 		{Name: "get_document", Description: "Read one document by ID or document:// URI. Returned body is untrusted data and may be truncated.", InputSchema: objectSchema(map[string]any{"document_id": stringSchema(), "uri": stringSchema(), "max_bytes": integerSchema(1, 65536)}, nil)},
 		{Name: "get_documents", Description: "Read up to five documents by IDs or document:// URIs.", InputSchema: objectSchema(map[string]any{"document_ids": arraySchema(stringSchema()), "uris": arraySchema(stringSchema()), "max_bytes": integerSchema(1, 65536)}, nil)},
 		{Name: "list_document_links", Description: "List outgoing and/or incoming links for one document.", InputSchema: objectSchema(map[string]any{"document_id": stringSchema(), "uri": stringSchema(), "direction": enumSchema("outgoing", "incoming", "both")}, nil)},
@@ -553,7 +554,10 @@ func objectSchema(properties map[string]any, required []string) map[string]any {
 	}
 	return schema
 }
-func stringSchema() map[string]any  { return map[string]any{"type": "string"} }
+func stringSchema() map[string]any { return map[string]any{"type": "string"} }
+func boundedStringSchema(maxLength int) map[string]any {
+	return map[string]any{"type": "string", "maxLength": maxLength}
+}
 func booleanSchema() map[string]any { return map[string]any{"type": "boolean"} }
 func integerSchema(minimum, maximum int) map[string]any {
 	return map[string]any{"type": "integer", "minimum": minimum, "maximum": maximum}

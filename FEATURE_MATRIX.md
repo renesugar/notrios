@@ -22,7 +22,7 @@ This matrix keeps the long conversation compressed into implementation-sized fea
 | Scalable keyset cursors | Implemented | search service | `k2` chronological/relevance keysets plus explicit bounded `m1` sidecar snapshots; no unbounded offset ceiling. |
 | Recoll sidecar (replaces sist2) | Implemented | adapter | Optional external process; bounded retry, exact reconciliation, attributed stable merges, and status/UI telemetry. |
 | Notebooks/tags/search notebooks | Implemented | Notrios service | All notes/Notes/Help/Trash bootstrap and protections. |
-| Query-language adapter | Implemented + planned v0.4 | search service | Flat implicit-AND/phrases/fields are live; Q1 adds bounded `OR`/negation/grouping and `category:` alias with FTS5/Recoll parity. |
+| Query-language adapter | Implemented | search service | Bounded AST with implicit AND, uppercase `OR`, prefix negation, grouping, phrases, fields, `category:` alias/All-notes semantics, cursor binding, and live FTS5/SQL/Recoll parity. |
 | Bluge generated-site search | External integration | movenotes-v3/Ledger | Measured external publication backend; not a Notrios application dependency. |
 | LadybugDB | Optional/research | derived graph backend | Never primary storage. |
 

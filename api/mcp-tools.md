@@ -38,6 +38,12 @@ Output:
 
 Searches documents with conservative defaults.
 
+`query` uses the shared bounded expression language: implicit AND, uppercase
+`OR`, prefix `-`, parentheses, phrases, typed fields, and `category:` as a
+`notebook:` alias. Maximum query length is 4,096 UTF-8 bytes (also advertised
+as JSON Schema `maxLength`); the service additionally enforces 256 tokens and
+16 parenthesis levels.
+
 Input:
 
 ```json

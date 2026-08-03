@@ -71,10 +71,16 @@ curl -s -X POST http://127.0.0.1:8080/api/v1/documents/$DOC/append \
 ```sh
 curl -s -X POST http://127.0.0.1:8080/api/v1/search \
   -H 'Content-Type: application/json' \
-  -d '{"query":"notebook:\"Notes\" oranges","limit":25}' | jq
+  -d '{"query":"(category:\"Work\" OR tag:todo) -tag:private","limit":25}' | jq
 ```
 
-The `query` string accepts the full [query language](../query-language.md); the empty query is "All notes". When more results exist, the response includes `next_cursor` — send it back unchanged to fetch the next page. Cursors are opaque and bound to the query; reusing one with a different query returns `400`. This is how clients implement infinite scroll.
+The `query` string accepts the full [query language](../query-language.md):
+implicit AND, uppercase OR, prefix negation, grouping, phrases, typed fields,
+and the `category:`/`notebook:` alias. The empty query is "All notes". Queries
+are limited to 4,096 UTF-8 bytes, 256 tokens, and 16 parenthesis levels. When
+more results exist, the response includes `next_cursor` — send it back
+unchanged to fetch the next page. Cursors are opaque and bound to the canonical
+expression; reusing one with a different expression returns `400`.
 
 Chronological results use `(updated_at, id)` keysets and reproducible FTS5
 relevance uses `(score, id)` keysets. If optional Recoll adds results, paging

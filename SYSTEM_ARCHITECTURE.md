@@ -154,7 +154,7 @@ REST or immutable objects are the bulk-byte data plane.
 
 ## Recoll integration
 
-The service owns canonical notes and resources. It writes a managed filesystem projection and queues changes through a durable indexing outbox. Recoll (user-installed, optional, external process — GPL licensing boundary in `RECOLL_INTEGRATION.md`) indexes the projection through a generated config and an enhanced from-scratch front-matter handler, providing field search, derived metadata, and arbitrary-file search. The query-language adapter (`SEARCH_QUERY_LANGUAGE.md`) translates user queries for FTS5 and Recoll.
+The service owns canonical notes and resources. It writes a managed filesystem projection and queues changes through a durable indexing outbox. Recoll (user-installed, optional, external process — GPL licensing boundary in `RECOLL_INTEGRATION.md`) indexes the projection through a generated config and an enhanced from-scratch front-matter handler, providing field search, derived metadata, and arbitrary-file search. The query-language adapter (`SEARCH_QUERY_LANGUAGE.md`) translates one bounded expression tree to FTS5/exact SQL and Recoll. It owns uppercase OR, implicit AND, prefix negation, grouping, phrases, typed fields, and the category/notebook alias; no backend receives a weakened expression.
 
 Unbounded local lists page directly from SQLite with query-bound keysets:
 `(updated_at, id)` for chronological orders and `(score, id)` for reproducible

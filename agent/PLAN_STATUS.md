@@ -1,13 +1,13 @@
 # Plan Status
 
-Updated: 2026-08-02
+Updated: 2026-08-03
 
 ## Active milestone
 
 v0.3 import/resource/media/large-library hardening is complete. H1–H11 are
 archived under `plans/v0.3/`. The revised v0.4 plan begins with Joplin
 correctness/performance prerequisites, then archive-v2, publishing handoff,
-boolean search, and stable references. J1–J3 are complete; Q1 and all
+boolean search, and stable references. J1–J3 and Q1 are complete; P1 and all
 subsequent product tasks require user approval.
 
 ## 2026-08-02 follow-up review
@@ -42,9 +42,14 @@ subsequent product tasks require user approval.
   archive-v2 handoff to a separately maintained `movenotes-v3/notrios2sql.py`
   importer. Movenotes owns Obsidian/Quartz and Hugo/Ledger+Bluge projections;
   Notrios owns selection/privacy/reachable-resource decisions.
-- Added planned Q1 search expressions: uppercase `OR`, implicit `AND`, prefix
-  negation, grouping, phrases, `category:` alias, and All-notes semantics with
-  one bounded FTS5/Recoll expression tree.
+- Completed Q1: one bounded AST for uppercase `OR`, implicit `AND`, prefix
+  negation, grouping, phrases, fields, `category:` alias, and All-notes
+  semantics; exact parameterized SQLite compilation, supported-shape Recoll
+  compilation with explicit fallback, canonical cursor binding, recursive
+  notebooks, and exact emoji handling.
+- Live SQLite/Recoll parity covers grouped/negated fields, recursive category
+  matching, authors, titles, and emoji. REST, MCP, search notebooks, GUI help,
+  specifications, and generated scale tests all share the documented grammar.
 
 - H1: media-policy configuration and schema v7.
 - H2: static remote-media scan, policy API/MCP, GUI decisions.
@@ -125,6 +130,10 @@ attempt detail remains append-only in `agent/ATTEMPT_LOG.jsonl`.
   `performance/v0.4-j2/`.
 - J3 synthetic and private-safe full transactional evidence is under
   `performance/v0.4-j3/`.
+- Q1 generated boolean/category scale evidence is under
+  `performance/v0.4-q1/`; ordinary first/next/deep pages remain below the
+  recorded 100 ms target, while the nonselective negation cost is reported
+  separately.
 - H11 local release gates pass; `docs/operations.md` is included in the
   11-page docs site and deterministic 11-note Help seed/reseed.
 - Product version: 0.3.0; current schema: v11.

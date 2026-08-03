@@ -51,13 +51,18 @@ export function SearchPane({ query, onQueryChange, onSubmit, paged, onOpenHit, s
         <input
           value={query}
           onChange={(event) => onQueryChange(event.target.value)}
-          placeholder="Search notes…"
+          placeholder="Search: (alpha OR beta) -tag:private"
           aria-label="Search query"
+          aria-describedby="search-query-hint"
+          maxLength={4096}
         />
         <button type="submit" disabled={busy}>
           Search
         </button>
       </form>
+      <p className="search-query-hint" id="search-query-hint">
+        Uppercase OR · implicit AND · -exclude · (group) · category: or notebook:
+      </p>
       <div className="pane-scroll result-list" ref={listRef} aria-live="polite" data-testid="search-results">
         {paged.hits.map((hit) => (
           <button

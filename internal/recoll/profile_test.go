@@ -108,6 +108,14 @@ func TestRecollHardeningProfile(t *testing.T) {
 	profile.GenerateDuration = time.Since(generateStarted)
 
 	ctx := context.Background()
+	parse := func(value string) query.Query {
+		t.Helper()
+		parsed, err := query.Parse(value, time.Now())
+		if err != nil {
+			t.Fatalf("parse profile query %q: %v", value, err)
+		}
+		return parsed
+	}
 	indexStarted := time.Now()
 	if err := sidecar.Index(ctx); err != nil {
 		t.Fatalf("initial index: %v", err)
@@ -115,13 +123,13 @@ func TestRecollHardeningProfile(t *testing.T) {
 	profile.InitialIndex = time.Since(indexStarted)
 
 	selectiveStarted := time.Now()
-	selective, err := sidecar.Search(ctx, query.Parse(fmt.Sprintf("profiletoken%06d", count-1), time.Now()), 10)
+	selective, err := sidecar.Search(ctx, parse(fmt.Sprintf("profiletoken%06d", count-1)), 10)
 	if err != nil || len(selective) != 1 {
 		t.Fatalf("selective query: hits=%d err=%v", len(selective), err)
 	}
 	profile.SelectiveQuery = time.Since(selectiveStarted)
 	boundedStarted := time.Now()
-	bounded, err := sidecar.Search(ctx, query.Parse("commonterm", time.Now()), 1001)
+	bounded, err := sidecar.Search(ctx, parse("commonterm"), 1001)
 	if err != nil {
 		t.Fatalf("bounded query: %v", err)
 	}
@@ -143,11 +151,11 @@ func TestRecollHardeningProfile(t *testing.T) {
 		t.Fatalf("incremental index: %v", err)
 	}
 	profile.IncrementalIndex = time.Since(incrementalStarted)
-	deleted, err := sidecar.Search(ctx, query.Parse("profiletoken000010", time.Now()), 10)
+	deleted, err := sidecar.Search(ctx, parse("profiletoken000010"), 10)
 	if err != nil {
 		t.Fatal(err)
 	}
-	added, err := sidecar.Search(ctx, query.Parse("newdrifttoken", time.Now()), 10)
+	added, err := sidecar.Search(ctx, parse("newdrifttoken"), 10)
 	if err != nil {
 		t.Fatal(err)
 	}

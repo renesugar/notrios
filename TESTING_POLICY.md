@@ -118,6 +118,13 @@ settings/size, and revision-stable no-op evidence. The recipe evidence under
 `performance/v0.4-j3/` covers 1,237,553 source items and 382,206 canonical
 notes; private paths, titles, bodies, resources, and databases are excluded.
 
+v0.4 Q1 extends `scripts/run_large_library_profile.sh` with correctness and
+timing checks for boolean `OR`, grouped field negation, and the recursive
+`category:` alias. Aggregate 10k evidence under `performance/v0.4-q1/` records
+the established ordinary-page gate plus representative expression metrics.
+The intentionally nonselective pure-negation metric is reported separately and
+is not represented as an ordinary-page latency guarantee.
+
 H9's `scripts/run_obsidian_import_profile.sh` uses 100/10k/100k/500k tiers for
 generated vaults with nested folders, aliases, relative links,
 embeds, heading/block anchors, unknown frontmatter, exact source-bundle

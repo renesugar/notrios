@@ -23,7 +23,7 @@ const (
 
 type mergedSearchSnapshot struct {
 	ID           string
-	Query        string
+	QueryBinding string
 	CollectionID string
 	Hits         []store.SearchHit
 	Truncated    bool
@@ -52,6 +52,10 @@ func newMergedSearchCache() *mergedSearchCache {
 // only inside this explicitly bounded in-memory snapshot, never in SQLite.
 func (s *Server) searchMerged(ctx context.Context, req store.SearchRequest) (store.SearchResponse, error) {
 	req = store.NormalizeSearchRequest(req)
+	parsed, err := query.Parse(req.Query, time.Now())
+	if err != nil {
+		return store.SearchResponse{}, fmt.Errorf("%w: %v", store.ErrInvalidInput, err)
+	}
 	if cursor, recognized, err := decodeMergedSearchCursor(req.Cursor); recognized {
 		if err != nil {
 			return store.SearchResponse{}, err
@@ -63,11 +67,10 @@ func (s *Server) searchMerged(ctx context.Context, req store.SearchRequest) (sto
 	if err != nil {
 		return result, err
 	}
-	addCanonicalSources(result.Hits, req.Query)
+	addCanonicalSources(result.Hits, parsed.HasPositiveTextAnchor())
 	if s.sidecar == nil || strings.TrimSpace(req.Cursor) != "" {
 		return result, nil
 	}
-	parsed := query.Parse(req.Query, time.Now())
 	if parsed.IsEmpty() || parsed.Trashed {
 		return result, nil
 	}
@@ -93,7 +96,7 @@ func (s *Server) searchMerged(ctx context.Context, req store.SearchRequest) (sto
 		if err != nil {
 			return store.SearchResponse{}, err
 		}
-		addCanonicalSources(page.Hits, req.Query)
+		addCanonicalSources(page.Hits, parsed.HasPositiveTextAnchor())
 		all = append(all, page.Hits...)
 		next = page.NextCursor
 	}
@@ -176,7 +179,7 @@ func (s *Server) searchMerged(ctx context.Context, req store.SearchRequest) (sto
 	}
 	snapshot := mergedSearchSnapshot{
 		ID:           snapshotID,
-		Query:        req.Query,
+		QueryBinding: parsed.Canonical(),
 		CollectionID: req.CollectionID,
 		Hits:         all,
 		Truncated:    truncated,
@@ -190,9 +193,9 @@ func (s *Server) searchMerged(ctx context.Context, req store.SearchRequest) (sto
 	}, nil
 }
 
-func addCanonicalSources(hits []store.SearchHit, queryText string) {
+func addCanonicalSources(hits []store.SearchHit, ftsRelevance bool) {
 	source := "sqlite"
-	if strings.TrimSpace(queryText) != "" {
+	if ftsRelevance {
 		source = "fts5"
 	}
 	for index := range hits {
@@ -222,7 +225,11 @@ func (s *Server) pageMergedSnapshot(cursor mergedSearchCursor, req store.SearchR
 	if !ok {
 		return store.SearchResponse{}, fmt.Errorf("%w: merged search snapshot expired", store.ErrInvalidCursor)
 	}
-	if snapshot.Query != req.Query || snapshot.CollectionID != req.CollectionID {
+	parsed, err := query.Parse(req.Query, time.Now())
+	if err != nil {
+		return store.SearchResponse{}, fmt.Errorf("%w: %v", store.ErrInvalidInput, err)
+	}
+	if snapshot.QueryBinding != parsed.Canonical() || snapshot.CollectionID != req.CollectionID {
 		return store.SearchResponse{}, fmt.Errorf("%w: cursor does not match this query", store.ErrInvalidCursor)
 	}
 	if cursor.Offset < 0 || cursor.Offset >= len(snapshot.Hits) {

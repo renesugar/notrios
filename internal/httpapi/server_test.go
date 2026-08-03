@@ -80,8 +80,12 @@ func TestStatusReportsConfigurationAndSchema(t *testing.T) {
 	if got.ConfigPath != "config/test.yaml" || got.Storage.AssetStore != "/tmp/notes-test-assets" {
 		t.Fatalf("unexpected config/storage status: %+v", got)
 	}
-	if !got.Capabilities["documents.create"] || !got.Capabilities["search.fts5"] || !got.Capabilities["search_sidecar"] {
+	if !got.Capabilities["documents.create"] || !got.Capabilities["search.fts5"] || !got.Capabilities["search.boolean"] ||
+		!got.Capabilities["search.category_alias"] || !got.Capabilities["search_sidecar"] {
 		t.Fatalf("expected capability flags to be reported: %+v", got.Capabilities)
+	}
+	if got.Limits["search_query_max_bytes"] != 4096 || got.Limits["search_query_max_tokens"] != 256 || got.Limits["search_query_max_depth"] != 16 {
+		t.Fatalf("query parser limits missing: %+v", got.Limits)
 	}
 	if got.MediaPolicy == nil {
 		t.Fatalf("status must report the media policy: %+v", got)
