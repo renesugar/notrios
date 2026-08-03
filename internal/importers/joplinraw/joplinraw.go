@@ -33,12 +33,15 @@ type Report struct {
 	Resumed            bool           `json:"resumed"`
 	CheckpointStatus   string         `json:"checkpoint_status"`
 	BatchesCompleted   int            `json:"batches_completed"`
+	CanonicalBatches   int            `json:"canonical_document_batches"`
+	LinkBatches        int            `json:"link_rebuild_batches"`
 	MetadataFilesSeen  int            `json:"metadata_files_seen"`
 	ItemsSeen          int            `json:"items_seen"`
 	ItemTypeCounts     map[string]int `json:"item_type_counts"`
 	MalformedItems     int            `json:"malformed_items"`
 	UnsupportedItems   int            `json:"unsupported_items"`
 	IgnoredFiles       int            `json:"ignored_files"`
+	ManifestBytes      int64          `json:"temporary_manifest_bytes"`
 	NotesSeen          int            `json:"notes_seen"`
 	NotesImported      int            `json:"notes_imported"`
 	NotesUpdated       int            `json:"notes_updated"`
@@ -124,6 +127,106 @@ func parseItemBytes(path string, raw []byte) (parsedItem, bool, error) {
 	}
 	item, ok := parseItem(path, string(raw))
 	return item, ok, nil
+}
+
+// parseInventoryItemBytes extracts only routing/render fields for the
+// non-preserving inventory pass. Full note bodies and ordered properties are
+// reread in bounded batches before canonical writes.
+func parseInventoryItemBytes(path string, raw []byte) (parsedItem, bool, error) {
+	if !utf8.Valid(raw) {
+		return parsedItem{}, false, fmt.Errorf("%w: Joplin RAW item %s is not valid UTF-8", store.ErrInvalidInput, filepath.Base(path))
+	}
+	text := strings.TrimPrefix(string(raw), "\uFEFF")
+	lines := splitPhysicalLines(text)
+	end := len(lines)
+	for end > 0 && lines[end-1] == "" {
+		end--
+	}
+	separator := -1
+	for index := end - 1; index >= 0; index-- {
+		if lines[index] == "" {
+			separator = index
+			break
+		}
+		if !isMetadataLine(lines[index]) {
+			break
+		}
+	}
+	fields := map[string]string{}
+	trailing := false
+	if separator >= 0 {
+		fields = parseInventoryFields(lines[separator+1 : end])
+		trailing = strings.TrimSpace(fields["type_"]) != ""
+		if trailing && separator > 0 {
+			fields["title"] = strings.TrimSpace(lines[0])
+		}
+	} else {
+		allMetadata := end > 0
+		for _, line := range lines[:end] {
+			if line != "" && !isMetadataLine(line) {
+				allMetadata = false
+				break
+			}
+		}
+		if allMetadata {
+			fields = parseInventoryFields(lines[:end])
+			trailing = strings.TrimSpace(fields["type_"]) != ""
+		}
+	}
+	if !trailing {
+		metadataEnd := 0
+		for index, line := range lines {
+			if line == "" {
+				metadataEnd = index
+				break
+			}
+			if !isMetadataLine(line) {
+				break
+			}
+			metadataEnd = index + 1
+		}
+		fields = parseInventoryFields(lines[:metadataEnd])
+	}
+	itemType := strings.TrimSpace(fields["type_"])
+	if itemType == "" {
+		return parsedItem{}, false, nil
+	}
+	id := strings.TrimSpace(fields["id"])
+	if id == "" {
+		id = strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
+	}
+	return parsedItem{Path: path, ID: id, Type: itemType, Fields: fields}, true, nil
+}
+
+func parseInventoryFields(lines []string) map[string]string {
+	fields := make(map[string]string, 8)
+	for _, line := range lines {
+		index := strings.IndexByte(line, ':')
+		if index <= 0 {
+			continue
+		}
+		key := strings.ToLower(strings.TrimSpace(line[:index]))
+		if !inventoryField(key) {
+			continue
+		}
+		value := line[index+1:]
+		if strings.HasPrefix(value, " ") {
+			value = value[1:]
+		}
+		fields[key] = value
+	}
+	return fields
+}
+
+func inventoryField(key string) bool {
+	switch key {
+	case "id", "type_", "title", "parent_id", "note_id", "tag_id",
+		"filename", "file_extension", "mime", "mime_type", "author", "source_url",
+		"created_time", "updated_time", "user_created_time", "user_updated_time":
+		return true
+	default:
+		return false
+	}
 }
 
 // splitPhysicalLines splits only at CR and LF. In particular it must not use

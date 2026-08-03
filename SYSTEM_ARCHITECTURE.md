@@ -103,15 +103,21 @@ Importers should be separate commands but shared code. They should write
 through bounded canonical transactions, not directly into any search index.
 Joplin RAW Export Directory is the preferred Joplin bulk-import format. Its
 importer restores nested notebooks and source tags, performs input-scoped
-batch lookups, and persists fingerprints/checkpoints. With
+batch lookups, and persists fingerprints/checkpoints. Large RAW inventories
+use a temporary indexed SQLite manifest, bounded keyset pages, and a lean
+routing parser instead of retaining note bodies and note-tag joins on the Go
+heap. Canonical note batches commit revisions, FTS5, links, provenance, tags,
+resources, outbox, item state, and the matching checkpoint atomically; a final
+bounded link pass resolves targets created in later batches. With
 `--preserve-source`, exact item bytes plus property order are stored in a
 separate content-addressed source-bundle namespace; they are not canonical
 notes or ordinary resource blobs.
 Canonical RAW parsing splits only on CR/LF physical endings (OCR control
 characters remain property data), derives titles from the first source line,
 and uses one ordered-property parse for both effective fields and source-bundle
-property order. Real-export and million-note full-write profiling remain v0.4
-J2/J3 gates.
+property order. J2/J3 real-export and complete transactional profiling gates
+are satisfied by aggregate-only evidence under `performance/v0.4-j2/` and
+`performance/v0.4-j3/`.
 Obsidian vaults, Twitter/X archives, ChatGPT exports, and Claude exports are
 normalized into notebooks/collections with source provenance rows (including
 thread recovery for Twitter/X and conversation exports). The v0.3 scale design

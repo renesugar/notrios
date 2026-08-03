@@ -7,7 +7,7 @@ Updated: 2026-08-02
 v0.3 import/resource/media/large-library hardening is complete. H1–H11 are
 archived under `plans/v0.3/`. The revised v0.4 plan begins with Joplin
 correctness/performance prerequisites, then archive-v2, publishing handoff,
-boolean search, and stable references. J1 and J2 are complete; J3 and all
+boolean search, and stable references. J1–J3 are complete; Q1 and all
 subsequent product tasks require user approval.
 
 ## 2026-08-02 follow-up review
@@ -28,8 +28,16 @@ subsequent product tasks require user approval.
   corresponding Obsidian vault Markdown count. The 111,330-item attachment
   export planned 766 relationships over 763 resource records and reported five
   missing content files without silently dropping them.
-- J3 remains the million-note complete transactional throughput slice; J2's
-  dry-run evidence is not a full-write claim.
+- Completed J3: bounded canonical Store transactions with atomic checkpoints,
+  an indexed temporary manifest/keyset spool, final cross-batch link pass,
+  bounded notebook states, aggregate SQLite metrics, and private-safe complete
+  interruption/resume/search/no-op evidence under `performance/v0.4-j3/`.
+- The 1,237,553-item recipe profile imported 382,206 notes into matching
+  document/revision/FTS/provenance rows and 842,813 tag relations. The full
+  workflow completed in 58m11s; the 3.101 GB database was search-ready and a
+  complete no-op added no revisions.
+- Removed a correlated global tag count from the bounded document-membership
+  query after a real 3 GB A/B measured 54.32s before and 0.42s after.
 - Replaced duplicate Notrios Obsidian/Quartz/static-site work with a native
   archive-v2 handoff to a separately maintained `movenotes-v3/notrios2sql.py`
   importer. Movenotes owns Obsidian/Quartz and Hugo/Ledger+Bluge projections;
@@ -115,6 +123,8 @@ attempt detail remains append-only in `agent/ATTEMPT_LOG.jsonl`.
   `performance/v0.3-h10/`.
 - J2 private-safe real-export planner evidence is under
   `performance/v0.4-j2/`.
+- J3 synthetic and private-safe full transactional evidence is under
+  `performance/v0.4-j3/`.
 - H11 local release gates pass; `docs/operations.md` is included in the
   11-page docs site and deterministic 11-note Help seed/reseed.
 - Product version: 0.3.0; current schema: v11.
@@ -136,8 +146,5 @@ attempt detail remains append-only in `agent/ATTEMPT_LOG.jsonl`.
 
 - Long-term SQLite driver choice (current local cgo/libsqlite3 adapter).
 - Official MCP Go SDK adoption/version.
-- J3 complete million-note Joplin write, resume, idempotence, and search-ready
-  performance verification (never commit private data or content-bearing
-  evidence).
 - Sync decisions listed in `SYNCHRONIZATION.md` and
-  `agent/OPEN_QUESTIONS.md`; they do not block v0.4 J2 or P1.
+  `agent/OPEN_QUESTIONS.md`; they do not block v0.4 Q1 or P1.

@@ -96,6 +96,14 @@ export changed, a new plan begins and unchanged item fingerprints are skipped.
 Batch progress is printed to stderr; the final machine-readable report remains
 the only stdout output.
 
+For large exports, inventory rows and note-tag joins are spooled into a
+temporary indexed SQLite manifest rather than retained with note bodies in
+memory. Each canonical note batch commits documents, revisions, FTS5 rows,
+provenance, tags, resource references, projection outbox jobs, item
+fingerprints, and its checkpoint in one transaction. After all notes exist, a
+bounded final pass resolves links whose targets were created in later batches.
+The temporary manifest is removed on normal completion.
+
 Add `--preserve-source` when an exact archival copy matters. Notrios then
 stores every classified RAW item byte-for-byte under the source-bundle asset
 namespace and records its original relative path, SHA-256, byte size, unknown
@@ -110,6 +118,9 @@ and ordinary resource garbage collection.
   "collection_id": "default", "dry_run": false,
   "resumed": false, "checkpoint_status": "completed",
   "batches_completed": 8,
+  "canonical_document_batches": 2,
+  "link_rebuild_batches": 2,
+  "temporary_manifest_bytes": 262144,
   "notes_seen": 120,          // note items found in the export
   "notes_imported": 118,      // created this run
   "notes_updated": 0,         // existed with different content; new revision written
@@ -166,8 +177,8 @@ is merged deliberately and reported as such.
   order when `--preserve-source` is enabled.
 - **Encoding:** an optional UTF-8 BOM is accepted; invalid UTF-8 is rejected
   with an input error instead of being silently replaced.
-- **Malformed items:** files that cannot be classified are currently skipped;
-  v0.4 J2 will inventory/report unsupported and malformed real-export shapes.
+- **Malformed/unsupported items:** files that cannot be classified are skipped
+  but counted explicitly; unsupported parsed `type_` values are also counted.
 - **Missing resource files:** counted in `resources_skipped` with a warning naming the resource; the import completes.
 - **Duplicates / re-import:** deterministic IDs make re-runs safe — unchanged notes count as `notes_unchanged`, notes edited in Joplin become `notes_updated` (a new revision; the previous text stays in revision history).
 - **Interrupted imports:** completed batches and their cumulative report are

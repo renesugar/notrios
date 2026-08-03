@@ -1,0 +1,31 @@
+{
+  "label": "recipe-export-j3",
+  "mode": "full-dry-run",
+  "metadata_files_seen": 1237553,
+  "items_seen": 1237553,
+  "item_type_counts": {
+    "1": 382206,
+    "2": 781,
+    "5": 11753,
+    "6": 842813
+  },
+  "malformed_items": 0,
+  "unsupported_items": 0,
+  "ignored_files": 0,
+  "notes_seen": 382206,
+  "notebooks_seen": 781,
+  "tags_seen": 11753,
+  "resources_seen": 0,
+  "resources_missing_content": 0,
+  "links_rewritten": 0,
+  "unresolved_links": 14,
+  "attachments_planned": 0,
+  "warning_count": 0,
+  "elapsed_milliseconds": 550497,
+  "go_system_bytes": 2875231528,
+  "source_directory_unchanged": true,
+  "go_version": "go1.26.5",
+  "goos": "linux",
+  "goarch": "amd64",
+  "peak_rss_kib": 2809924
+}

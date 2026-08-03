@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -24,12 +25,18 @@ type joplinProfileResult struct {
 	BatchSize         int           `json:"batch_size"`
 	DryRunDuration    time.Duration `json:"dry_run_duration"`
 	ImportDuration    time.Duration `json:"import_duration"`
+	NoOpDuration      time.Duration `json:"no_op_duration"`
 	Resumed           bool          `json:"resumed"`
 	BatchesCompleted  int           `json:"batches_completed"`
 	NotesPlanned      int           `json:"notes_planned"`
 	NotesImported     int           `json:"notes_imported"`
+	NotesUnchanged    int           `json:"notes_unchanged_on_no_op"`
 	ResourcesPlanned  int           `json:"resources_planned"`
 	ResourcesImported int           `json:"resources_imported"`
+	CanonicalBatches  int           `json:"canonical_document_batches"`
+	LinkBatches       int           `json:"link_rebuild_batches"`
+	ManifestBytes     int64         `json:"temporary_manifest_bytes"`
+	RevisionsStable   bool          `json:"revision_count_stable_on_no_op"`
 	PeakGoSysBytes    uint64        `json:"peak_go_sys_bytes"`
 	GoVersion         string        `json:"go_version"`
 	GOOS              string        `json:"goos"`
@@ -60,6 +67,44 @@ type realJoplinProfileResult struct {
 	GoVersion                string         `json:"go_version"`
 	GOOS                     string         `json:"goos"`
 	GOARCH                   string         `json:"goarch"`
+}
+
+type fullJoplinProfileResult struct {
+	Label                     string                    `json:"label"`
+	Mode                      string                    `json:"mode"`
+	ItemsSeen                 int                       `json:"items_seen"`
+	ItemTypeCounts            map[string]int            `json:"item_type_counts"`
+	NotesSeen                 int                       `json:"notes_seen"`
+	NotebooksSeen             int                       `json:"notebooks_seen"`
+	TagsSeen                  int                       `json:"tags_seen"`
+	ResourcesSeen             int                       `json:"resources_seen"`
+	BatchSize                 int                       `json:"batch_size"`
+	InterruptedAfterNotes     int                       `json:"interrupted_after_notes"`
+	InterruptedMilliseconds   int64                     `json:"interrupted_milliseconds"`
+	ResumeMilliseconds        int64                     `json:"resume_milliseconds"`
+	NoOpMilliseconds          int64                     `json:"no_op_milliseconds"`
+	TotalMilliseconds         int64                     `json:"total_milliseconds"`
+	NotesImported             int                       `json:"notes_imported"`
+	NotesUnchangedOnNoOp      int                       `json:"notes_unchanged_on_no_op"`
+	CanonicalBatches          int                       `json:"canonical_document_batches"`
+	LinkBatches               int                       `json:"link_rebuild_batches"`
+	LinksRewritten            int                       `json:"links_rewritten"`
+	UnresolvedJoplinLinks     int                       `json:"unresolved_joplin_links"`
+	AttachmentsCreated        int                       `json:"attachments_created"`
+	SearchReady               bool                      `json:"search_ready"`
+	SearchHitSampleSize       int                       `json:"search_hit_sample_size"`
+	Resumed                   bool                      `json:"resumed"`
+	RevisionCountStableOnNoOp bool                      `json:"revision_count_stable_on_no_op"`
+	TemporaryManifestBytes    int64                     `json:"temporary_manifest_bytes"`
+	PeakGoSystemBytes         uint64                    `json:"peak_go_system_bytes"`
+	SQLite                    store.SQLiteImportMetrics `json:"sqlite"`
+	CPUModel                  string                    `json:"cpu_model"`
+	LogicalCPUs               int                       `json:"logical_cpus"`
+	SystemMemoryKiB           int64                     `json:"system_memory_kib"`
+	GoVersion                 string                    `json:"go_version"`
+	GOOS                      string                    `json:"goos"`
+	GOARCH                    string                    `json:"goarch"`
+	SourceDirectoryUnchanged  bool                      `json:"source_directory_unchanged"`
 }
 
 // TestJ2RealExportProfile is opt-in because its input may be private. Its JSON
@@ -134,6 +179,158 @@ func TestJ2RealExportProfile(t *testing.T) {
 	t.Logf("real Joplin profile completed: label=%s items=%d notes=%d elapsed=%s", label, report.ItemsSeen, report.NotesSeen, elapsed.Round(time.Millisecond))
 }
 
+// TestJ3RealExportFullImportProfile is deliberately opt-in and aggregate-only.
+// It performs a checkpointed interruption, complete resume, search-readiness
+// check, and complete no-op re-import against one real RAW export.
+func TestJ3RealExportFullImportProfile(t *testing.T) {
+	source := os.Getenv("NOTRIOS_JOPLIN_FULL_SOURCE")
+	if source == "" {
+		t.Skip("set NOTRIOS_JOPLIN_FULL_SOURCE to a read-only Joplin RAW export")
+	}
+	output := os.Getenv("NOTRIOS_JOPLIN_FULL_OUTPUT")
+	if output == "" {
+		t.Fatal("set NOTRIOS_JOPLIN_FULL_OUTPUT to a private-safe JSON output path")
+	}
+	label := os.Getenv("NOTRIOS_JOPLIN_FULL_LABEL")
+	if label == "" {
+		label = "private-corpus"
+	}
+	for _, character := range label {
+		if !(character >= 'a' && character <= 'z' || character >= '0' && character <= '9' || character == '-') {
+			t.Fatal("NOTRIOS_JOPLIN_FULL_LABEL must contain only lowercase letters, digits, and hyphens")
+		}
+	}
+	const batchSize = 500
+	before, err := os.Stat(source)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := context.Background()
+	storeDir := t.TempDir()
+	st, err := store.OpenSQLiteWithAssetStore(filepath.Join(storeDir, "full-import.sqlite"), filepath.Join(storeDir, "assets"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = st.Close() })
+	if err := st.Bootstrap(ctx); err != nil {
+		t.Fatal(err)
+	}
+
+	totalStarted := time.Now()
+	interruptedStarted := time.Now()
+	interrupted := errors.New("intentional J3 checkpoint interruption")
+	didInterrupt := false
+	partial, err := Import(ctx, st, source, Options{BatchSize: batchSize, AfterBatch: func(phase string, processed, _ int) error {
+		if phase == "notes" && !didInterrupt && processed > 0 {
+			didInterrupt = true
+			return interrupted
+		}
+		return nil
+	}})
+	if !errors.Is(err, interrupted) {
+		t.Fatalf("interrupted import error=%v", err)
+	}
+	interruptedDuration := time.Since(interruptedStarted)
+	if partial.NotesImported <= 0 || partial.NotesImported > batchSize {
+		t.Fatalf("atomic interruption committed %d notes, want 1..%d", partial.NotesImported, batchSize)
+	}
+
+	resumeStarted := time.Now()
+	completed, err := Import(ctx, st, source, Options{BatchSize: batchSize})
+	if err != nil {
+		t.Fatalf("resume: %v", err)
+	}
+	resumeDuration := time.Since(resumeStarted)
+	if !completed.Resumed || completed.NotesImported != completed.NotesSeen {
+		t.Fatalf("resume report=%#v", completed)
+	}
+	beforeNoOp, err := st.ImportMetrics(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	search, err := st.Search(ctx, store.SearchRequest{Query: "joplin", Limit: 5})
+	if err != nil || len(search.Hits) == 0 {
+		t.Fatalf("search readiness: hits=%d err=%v", len(search.Hits), err)
+	}
+
+	noOpStarted := time.Now()
+	noOp, err := Import(ctx, st, source, Options{BatchSize: batchSize})
+	if err != nil {
+		t.Fatalf("no-op re-import: %v", err)
+	}
+	noOpDuration := time.Since(noOpStarted)
+	if noOp.NotesImported != 0 || noOp.NotesUpdated != 0 || noOp.NotesUnchanged != noOp.NotesSeen {
+		t.Fatalf("no-op report=%#v", noOp)
+	}
+	afterNoOp, err := st.ImportMetrics(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if afterNoOp.Documents != int64(completed.NotesSeen) || afterNoOp.FTSRows != afterNoOp.Documents ||
+		afterNoOp.Sources != afterNoOp.Documents || afterNoOp.Revisions != beforeNoOp.Revisions {
+		t.Fatalf("canonical aggregate mismatch before=%+v after=%+v", beforeNoOp, afterNoOp)
+	}
+	after, err := os.Stat(source)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var memory runtime.MemStats
+	runtime.ReadMemStats(&memory)
+	result := fullJoplinProfileResult{
+		Label: label, Mode: "interrupt-resume-no-op-search", ItemsSeen: completed.ItemsSeen,
+		ItemTypeCounts: completed.ItemTypeCounts, NotesSeen: completed.NotesSeen,
+		NotebooksSeen: completed.NotebooksSeen, TagsSeen: completed.TagsSeen, ResourcesSeen: completed.ResourcesSeen,
+		BatchSize: batchSize, InterruptedAfterNotes: partial.NotesImported,
+		InterruptedMilliseconds: interruptedDuration.Milliseconds(), ResumeMilliseconds: resumeDuration.Milliseconds(),
+		NoOpMilliseconds: noOpDuration.Milliseconds(), TotalMilliseconds: time.Since(totalStarted).Milliseconds(),
+		NotesImported: completed.NotesImported, NotesUnchangedOnNoOp: noOp.NotesUnchanged,
+		CanonicalBatches: completed.CanonicalBatches, LinkBatches: completed.LinkBatches,
+		LinksRewritten: completed.LinksRewritten, UnresolvedJoplinLinks: completed.UnresolvedLinks,
+		AttachmentsCreated: completed.AttachmentsCreated, SearchReady: true, SearchHitSampleSize: len(search.Hits),
+		Resumed: completed.Resumed, RevisionCountStableOnNoOp: beforeNoOp.Revisions == afterNoOp.Revisions,
+		TemporaryManifestBytes: completed.ManifestBytes, PeakGoSystemBytes: memory.Sys, SQLite: afterNoOp,
+		CPUModel: cpuModel(), LogicalCPUs: runtime.NumCPU(), SystemMemoryKiB: systemMemoryKiB(),
+		GoVersion: runtime.Version(), GOOS: runtime.GOOS, GOARCH: runtime.GOARCH,
+		SourceDirectoryUnchanged: before.ModTime() == after.ModTime() && before.Size() == after.Size(),
+	}
+	raw, err := json.MarshalIndent(result, "", "  ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(output, append(raw, '\n'), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("J3 full import completed: label=%s notes=%d total=%s database=%d", label, completed.NotesSeen, time.Since(totalStarted).Round(time.Second), afterNoOp.DatabaseBytes)
+}
+
+func cpuModel() string {
+	raw, err := os.ReadFile("/proc/cpuinfo")
+	if err != nil {
+		return ""
+	}
+	for _, line := range strings.Split(string(raw), "\n") {
+		if key, value, found := strings.Cut(line, ":"); found && strings.TrimSpace(key) == "model name" {
+			return strings.TrimSpace(value)
+		}
+	}
+	return ""
+}
+
+func systemMemoryKiB() int64 {
+	raw, err := os.ReadFile("/proc/meminfo")
+	if err != nil {
+		return 0
+	}
+	for _, line := range strings.Split(string(raw), "\n") {
+		fields := strings.Fields(line)
+		if len(fields) >= 2 && fields[0] == "MemTotal:" {
+			value, _ := strconv.ParseInt(fields[1], 10, 64)
+			return value
+		}
+	}
+	return 0
+}
+
 // TestJoplinImporterProfile is an opt-in generated profile. It exercises the
 // full dry-run planner followed by an interrupted/resumed real import. The
 // supported sizes deliberately span hundreds through 100k source notes.
@@ -198,19 +395,6 @@ func TestJoplinImporterProfile(t *testing.T) {
 		t.Fatalf("dry run: %v", err)
 	}
 	dryDuration := time.Since(dryStarted)
-	if count == 100000 {
-		var memory runtime.MemStats
-		runtime.ReadMemStats(&memory)
-		result := joplinProfileResult{
-			Mode: "dry-run-inventory", Notes: count, Folders: folderCount, Tags: tagCount,
-			Resources: resourceCount, BatchSize: batchSize, DryRunDuration: dryDuration,
-			BatchesCompleted: dry.BatchesCompleted, NotesPlanned: dry.NotesImported,
-			ResourcesPlanned: dry.ResourcesImported, PeakGoSysBytes: memory.Sys,
-			GoVersion: runtime.Version(), GOOS: runtime.GOOS, GOARCH: runtime.GOARCH,
-		}
-		writeJoplinProfileResult(t, result)
-		return
-	}
 	interrupted := errors.New("profile interruption")
 	didInterrupt := false
 	importStarted := time.Now()
@@ -240,14 +424,33 @@ func TestJoplinImporterProfile(t *testing.T) {
 	if !actual.Resumed || actual.NotesImported != count {
 		t.Fatalf("profile did not resume/import all notes: %#v", actual)
 	}
+	beforeNoOp, err := st.ImportMetrics(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	noOpStarted := time.Now()
+	noOp, err := Import(ctx, st, dir, Options{BatchSize: batchSize, Config: &config})
+	if err != nil {
+		t.Fatalf("no-op: %v", err)
+	}
+	noOpDuration := time.Since(noOpStarted)
+	afterNoOp, err := st.ImportMetrics(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if noOp.NotesUnchanged != count || noOp.NotesImported != 0 || noOp.NotesUpdated != 0 || beforeNoOp.Revisions != afterNoOp.Revisions {
+		t.Fatalf("no-op was not revision-stable: report=%#v before=%+v after=%+v", noOp, beforeNoOp, afterNoOp)
+	}
 	var memory runtime.MemStats
 	runtime.ReadMemStats(&memory)
 	result := joplinProfileResult{
 		Mode: "dry-run-interrupt-resume", Notes: count, Folders: folderCount, Tags: tagCount, Resources: resourceCount,
-		BatchSize: batchSize, DryRunDuration: dryDuration, ImportDuration: importDuration,
+		BatchSize: batchSize, DryRunDuration: dryDuration, ImportDuration: importDuration, NoOpDuration: noOpDuration,
 		Resumed: actual.Resumed, BatchesCompleted: actual.BatchesCompleted,
-		NotesPlanned: dry.NotesImported, NotesImported: actual.NotesImported,
+		NotesPlanned: dry.NotesImported, NotesImported: actual.NotesImported, NotesUnchanged: noOp.NotesUnchanged,
 		ResourcesPlanned: dry.ResourcesImported, ResourcesImported: actual.ResourcesImported,
+		CanonicalBatches: actual.CanonicalBatches, LinkBatches: actual.LinkBatches,
+		ManifestBytes: actual.ManifestBytes, RevisionsStable: beforeNoOp.Revisions == afterNoOp.Revisions,
 		PeakGoSysBytes: memory.Sys, GoVersion: runtime.Version(), GOOS: runtime.GOOS, GOARCH: runtime.GOARCH,
 	}
 	writeJoplinProfileResult(t, result)

@@ -110,6 +110,20 @@ Keep the final JSON report and inspect every warning. `--preserve-source`
 stores exact source bytes separately from canonical notes and ordinary
 resource garbage collection.
 
+Joplin's canonical note batch also commits revisions, FTS5, link state,
+provenance, tags/resources, projection outbox jobs, item fingerprints, and the
+checkpoint atomically. Large inventories use a temporary indexed manifest; a
+final bounded pass resolves links after all targets exist. For private-safe
+capacity baselines, run:
+
+```sh
+scripts/run_full_joplin_import_profile.sh <label> /path/to/raw /tmp/joplin-full.json
+```
+
+The output contains aggregate counts, timings, SQLite settings/size, and peak
+RSS only. Do not commit a report until you have confirmed it contains no source
+paths, titles, bodies, resource bytes, or database files.
+
 ## Monitoring the Recoll sidecar
 
 SQLite/FTS5 remains the always-on search engine. When Recoll is enabled, the

@@ -49,13 +49,14 @@ type inventoryItem struct {
 }
 
 type inventory struct {
-	Items             []inventoryItem
 	Folders           map[string]inventoryItem
 	Tags              map[string]string
-	NoteTags          map[string][]string
-	Notes             []inventoryItem
+	NoteIDs           map[string]string
 	Resources         []inventoryItem
+	Manifest          *store.ImportManifest
 	Fingerprint       string
+	NoteCount         int
+	BundleCount       int
 	MetadataFilesSeen int
 	ItemsSeen         int
 	ItemTypeCounts    map[string]int
@@ -74,21 +75,27 @@ type folderPlan struct {
 }
 
 type importRun struct {
-	ctx         context.Context
-	st          store.Store
-	sourceDir   string
-	options     Options
-	inventory   inventory
-	report      Report
-	config      ImportConfig
-	folderPlans []folderPlan
-	folderIDs   map[string]string
-	noteIDMap   map[string]string
-	resourceMap map[string]string
-	phase       string
-	nextIndex   int
-	workTotal   int
-	processed   int
+	ctx             context.Context
+	st              store.Store
+	sourceDir       string
+	options         Options
+	inventory       inventory
+	report          Report
+	config          ImportConfig
+	folderPlans     []folderPlan
+	folderIDs       map[string]string
+	noteIDMap       map[string]string
+	resourceMap     map[string]string
+	manifestCursors map[string]manifestCursor
+	phase           string
+	nextIndex       int
+	workTotal       int
+	processed       int
+}
+
+type manifestCursor struct {
+	nextOffset int
+	sortKey    string
 }
 
 func Import(ctx context.Context, st store.Store, sourceDir string, options Options) (Report, error) {
@@ -96,6 +103,7 @@ func Import(ctx context.Context, st store.Store, sourceDir string, options Optio
 	if err != nil {
 		return Report{SourceDir: sourceDir, CollectionID: normalizedCollection(options.CollectionID), DryRun: options.DryRun}, err
 	}
+	defer run.inventory.close()
 	if options.DryRun {
 		run.report.SuggestedConfig = &run.config
 		if err := run.runAll(false); err != nil {
@@ -125,21 +133,36 @@ func Import(ctx context.Context, st store.Store, sourceDir string, options Optio
 }
 
 func (run *importRun) currentDocumentIDs() ([]string, error) {
-	ids := make([]string, 0, len(run.inventory.Notes))
-	for _, item := range run.inventory.Notes {
-		ids = append(ids, run.noteIDMap[item.ID])
-	}
-	currentIDs := make([]string, 0, len(ids))
-	for start := 0; start < len(ids); start += maxBatchSize {
+	currentIDs := make([]string, 0, run.inventory.NoteCount)
+	for start := 0; start < run.inventory.NoteCount; start += maxBatchSize {
 		end := start + maxBatchSize
-		if end > len(ids) {
-			end = len(ids)
+		if end > run.inventory.NoteCount {
+			end = run.inventory.NoteCount
 		}
-		documents, err := run.st.GetDocuments(run.ctx, ids[start:end])
+		items, err := run.inventoryItems("notes", start, end)
 		if err != nil {
 			return nil, err
 		}
-		for _, id := range ids[start:end] {
+		externalIDs := make([]string, 0, len(items))
+		for _, item := range items {
+			externalIDs = append(externalIDs, item.ID)
+		}
+		mapped, err := run.st.FindDocumentsBySourceIDs(run.ctx, "joplin", externalIDs)
+		if err != nil {
+			return nil, err
+		}
+		ids := make([]string, 0, len(items))
+		for _, item := range items {
+			if documentID := mapped[item.ID]; documentID != "" {
+				run.noteIDMap[item.ID] = documentID
+			}
+			ids = append(ids, run.noteIDMap[item.ID])
+		}
+		documents, err := run.st.GetDocuments(run.ctx, ids)
+		if err != nil {
+			return nil, err
+		}
+		for _, id := range ids {
 			if _, found := documents[id]; found {
 				currentIDs = append(currentIDs, id)
 			}
@@ -156,6 +179,7 @@ func DryRun(ctx context.Context, st store.Store, sourceDir string, options Optio
 	if err != nil {
 		return ImportConfig{Version: 1, Source: sourceDir, Renames: map[string]string{}}, Report{}, err
 	}
+	defer run.inventory.close()
 	run.report.SuggestedConfig = &run.config
 	if err := run.runAll(false); err != nil {
 		return run.config, run.report, err
@@ -241,15 +265,22 @@ func newImportRun(ctx context.Context, st store.Store, sourceDir string, options
 	if err != nil {
 		return nil, err
 	}
+	keepInventory := false
+	defer func() {
+		if !keepInventory {
+			inv.close()
+		}
+	}()
 	run := &importRun{
-		ctx:         ctx,
-		st:          st,
-		sourceDir:   absoluteDir,
-		options:     options,
-		inventory:   inv,
-		folderIDs:   map[string]string{},
-		noteIDMap:   map[string]string{},
-		resourceMap: map[string]string{},
+		ctx:             ctx,
+		st:              st,
+		sourceDir:       absoluteDir,
+		options:         options,
+		inventory:       inv,
+		folderIDs:       map[string]string{},
+		noteIDMap:       map[string]string{},
+		resourceMap:     map[string]string{},
+		manifestCursors: map[string]manifestCursor{},
 		report: Report{
 			SourceDir:         absoluteDir,
 			SourceKey:         sourceKey,
@@ -261,7 +292,8 @@ func newImportRun(ctx context.Context, st store.Store, sourceDir string, options
 			MalformedItems:    inv.MalformedItems,
 			UnsupportedItems:  inv.UnsupportedItems,
 			IgnoredFiles:      inv.IgnoredFiles,
-			NotesSeen:         len(inv.Notes),
+			ManifestBytes:     inv.Manifest.SizeBytes(),
+			NotesSeen:         inv.NoteCount,
 			NotebooksSeen:     len(inv.Folders),
 			TagsSeen:          len(inv.Tags),
 			ResourcesSeen:     len(inv.Resources),
@@ -274,8 +306,8 @@ func newImportRun(ctx context.Context, st store.Store, sourceDir string, options
 	if inv.UnsupportedItems > 0 {
 		run.addWarning(fmt.Sprintf("%d parsed Joplin item(s) used unsupported type values and were skipped", inv.UnsupportedItems))
 	}
-	for _, note := range inv.Notes {
-		run.noteIDMap[note.ID] = noteDocumentID(note.ID)
+	for noteID, documentID := range inv.NoteIDs {
+		run.noteIDMap[noteID] = documentID
 	}
 	for _, resource := range inv.Resources {
 		run.resourceMap[resource.ID] = resourceID(resource.ID)
@@ -292,11 +324,19 @@ func newImportRun(ctx context.Context, st store.Store, sourceDir string, options
 	run.folderPlans = plans
 	run.folderIDs = ids
 	run.applyFolderReport()
-	run.workTotal = len(inv.Folders) + len(inv.Tags) + len(inv.Resources) + len(inv.Notes)
+	run.workTotal = len(inv.Folders) + len(inv.Tags) + len(inv.Resources) + 2*inv.NoteCount
 	if options.PreserveSource {
-		run.workTotal += len(inv.Items)
+		run.workTotal += inv.BundleCount
 	}
+	keepInventory = true
 	return run, nil
+}
+
+func (inv *inventory) close() {
+	if inv != nil && inv.Manifest != nil {
+		_ = inv.Manifest.Close()
+		inv.Manifest = nil
+	}
 }
 
 func normalizedCollection(value string) string {
@@ -315,23 +355,43 @@ func contextOrBackground(ctx context.Context) context.Context {
 }
 
 func readInventory(ctx context.Context, sourceDir string, retainBundleInventory bool) (inventory, error) {
+	manifest, err := store.OpenImportManifest()
+	if err != nil {
+		return inventory{}, err
+	}
 	result := inventory{
 		Folders:        map[string]inventoryItem{},
 		Tags:           map[string]string{},
-		NoteTags:       map[string][]string{},
+		NoteIDs:        map[string]string{},
+		Manifest:       manifest,
 		ItemTypeCounts: map[string]int{},
 	}
-	inventoryHash := sha256.New()
-	seenIDs := map[string]string{}
-	err := filepath.WalkDir(sourceDir, func(path string, entry os.DirEntry, walkErr error) error {
-		if walkErr != nil {
-			return walkErr
+	keepManifest := false
+	defer func() {
+		if !keepManifest {
+			_ = manifest.Close()
 		}
-		if err := ctx.Err(); err != nil {
+	}()
+	manifestRecords := make([]store.ImportManifestRecord, 0, maxBatchSize)
+	flushManifest := func() error {
+		if err := manifest.Put(ctx, manifestRecords); err != nil {
 			return err
 		}
-		if entry.IsDir() {
-			return nil
+		manifestRecords = manifestRecords[:0]
+		return nil
+	}
+	appendManifest := func(record store.ImportManifestRecord) error {
+		manifestRecords = append(manifestRecords, record)
+		if len(manifestRecords) == cap(manifestRecords) {
+			return flushManifest()
+		}
+		return nil
+	}
+	var inventoryHash [sha256.Size]byte
+	seenIDs := map[string]string{}
+	err = walkDirStreaming(sourceDir, func(path string, entry os.DirEntry) error {
+		if err := ctx.Err(); err != nil {
+			return err
 		}
 		relative, err := filepath.Rel(sourceDir, path)
 		if err != nil {
@@ -363,7 +423,13 @@ func readInventory(ctx context.Context, sourceDir string, retainBundleInventory 
 		if err != nil {
 			return err
 		}
-		parsed, ok, err := parseItemBytes(path, raw)
+		var parsed parsedItem
+		var ok bool
+		if retainBundleInventory {
+			parsed, ok, err = parseItemBytes(path, raw)
+		} else {
+			parsed, ok, err = parseInventoryItemBytes(path, raw)
+		}
 		if err != nil {
 			return err
 		}
@@ -401,12 +467,20 @@ func readInventory(ctx context.Context, sourceDir string, retainBundleInventory 
 			}
 			seenIDs[identity] = item.RelativePath
 		}
-		_, _ = io.WriteString(inventoryHash, item.ItemKey+"\x00"+item.Fingerprint+"\x00")
+		addInventoryFingerprint(&inventoryHash, item.ItemKey+"\x00"+item.Fingerprint+"\x00")
 		switch item.Type {
 		case "1":
 			noteItem := item
 			noteItem.Fields = nil
-			result.Notes = append(result.Notes, noteItem)
+			payload, err := json.Marshal(noteItem)
+			if err != nil {
+				return err
+			}
+			if err := appendManifest(store.ImportManifestRecord{Kind: "notes", SortKey: item.ItemKey, LookupKey: item.ID, Payload: payload}); err != nil {
+				return err
+			}
+			result.NoteIDs[item.ID] = noteDocumentID(item.ID)
+			result.NoteCount++
 		case "2":
 			result.Folders[item.ID] = item
 		case "4":
@@ -418,7 +492,7 @@ func readInventory(ctx context.Context, sourceDir string, retainBundleInventory 
 				item.ContentPath = contentPath
 				item.ContentSHA = contentSHA
 				item.ContentSize = size
-				_, _ = io.WriteString(inventoryHash, item.ID+"\x00"+item.ContentSHA+"\x00")
+				addInventoryFingerprint(&inventoryHash, item.ID+"\x00"+item.ContentSHA+"\x00")
 			}
 			result.Resources = append(result.Resources, item)
 		case "5":
@@ -427,29 +501,98 @@ func readInventory(ctx context.Context, sourceDir string, retainBundleInventory 
 			noteID := strings.TrimSpace(item.Fields["note_id"])
 			tagID := strings.TrimSpace(item.Fields["tag_id"])
 			if noteID != "" && tagID != "" {
-				result.NoteTags[noteID] = append(result.NoteTags[noteID], tagID)
+				if err := appendManifest(store.ImportManifestRecord{
+					Kind: "note_tags", SortKey: tagID + "\x1f" + item.ItemKey, LookupKey: noteID, Payload: []byte(tagID),
+				}); err != nil {
+					return err
+				}
 			}
 		}
 		if retainBundleInventory {
 			bundleItem := item
 			bundleItem.Fields = nil
-			result.Items = append(result.Items, bundleItem)
+			payload, err := json.Marshal(bundleItem)
+			if err != nil {
+				return err
+			}
+			if err := appendManifest(store.ImportManifestRecord{Kind: "bundle", SortKey: item.RelativePath, LookupKey: item.ID, Payload: payload}); err != nil {
+				return err
+			}
+			result.BundleCount++
 		}
 		return nil
 	})
 	if err != nil {
 		return inventory{}, err
 	}
-	sort.Slice(result.Items, func(i, j int) bool {
-		return result.Items[i].RelativePath < result.Items[j].RelativePath
-	})
-	sort.Slice(result.Notes, func(i, j int) bool { return result.Notes[i].ItemKey < result.Notes[j].ItemKey })
-	sort.Slice(result.Resources, func(i, j int) bool { return result.Resources[i].ItemKey < result.Resources[j].ItemKey })
-	for noteID := range result.NoteTags {
-		sort.Strings(result.NoteTags[noteID])
+	if err := flushManifest(); err != nil {
+		return inventory{}, err
 	}
-	result.Fingerprint = hex.EncodeToString(inventoryHash.Sum(nil))
+	sort.Slice(result.Resources, func(i, j int) bool { return result.Resources[i].ItemKey < result.Resources[j].ItemKey })
+	result.Fingerprint = hex.EncodeToString(inventoryHash[:])
+	keepManifest = true
 	return result, nil
+}
+
+// walkDirStreaming avoids filepath.WalkDir's whole-directory name sort. RAW
+// exports can contain more than a million entries in one directory, so even
+// the directory enumeration itself must be bounded.
+func walkDirStreaming(root string, visit func(path string, entry os.DirEntry) error) error {
+	directories := []string{root}
+	for len(directories) > 0 {
+		directory := directories[len(directories)-1]
+		directories = directories[:len(directories)-1]
+		handle, err := os.Open(directory)
+		if err != nil {
+			return err
+		}
+		for {
+			entries, readErr := handle.ReadDir(1024)
+			for _, entry := range entries {
+				path := filepath.Join(directory, entry.Name())
+				if entry.IsDir() {
+					relative, err := filepath.Rel(root, path)
+					if err != nil {
+						_ = handle.Close()
+						return err
+					}
+					first := strings.SplitN(filepath.ToSlash(relative), "/", 2)[0]
+					if first != "resources" && first != ".resource" {
+						directories = append(directories, path)
+					}
+					continue
+				}
+				if err := visit(path, entry); err != nil {
+					_ = handle.Close()
+					return err
+				}
+			}
+			if errors.Is(readErr, io.EOF) {
+				break
+			}
+			if readErr != nil {
+				_ = handle.Close()
+				return readErr
+			}
+		}
+		if err := handle.Close(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// addInventoryFingerprint computes a stable multiset digest without retaining
+// or sorting every source name. SHA-256 digests are added modulo 2^256, so the
+// result is independent of filesystem enumeration order and preserves count.
+func addInventoryFingerprint(accumulator *[sha256.Size]byte, value string) {
+	digest := sha256.Sum256([]byte(value))
+	carry := uint16(0)
+	for index := sha256.Size - 1; index >= 0; index-- {
+		total := uint16(accumulator[index]) + uint16(digest[index]) + carry
+		accumulator[index] = byte(total)
+		carry = total >> 8
+	}
 }
 
 func compactInventoryFields(fields map[string]string) map[string]string {
@@ -712,7 +855,7 @@ func (run *importRun) runAll(write bool) error {
 	if run.options.PreserveSource {
 		phases = append(phases, "source_bundle")
 	}
-	phases = append(phases, "notebooks", "tags", "resources", "notes")
+	phases = append(phases, "notebooks", "tags", "resources", "notes", "links")
 	start := -1
 	for i, phase := range phases {
 		if phase == run.phase {
@@ -750,6 +893,10 @@ func (run *importRun) runAll(write bool) error {
 			if err := run.processNotes(write, nextPhase); err != nil {
 				return err
 			}
+		case "links":
+			if err := run.processLinks(write, nextPhase); err != nil {
+				return err
+			}
 		}
 		run.nextIndex = 0
 		run.phase = nextPhase
@@ -758,8 +905,12 @@ func (run *importRun) runAll(write bool) error {
 }
 
 func (run *importRun) processSourceBundle(write bool, nextPhase string) error {
-	return run.eachBatch("source_bundle", len(run.inventory.Items), write, nextPhase, func(start, end int) error {
-		for _, item := range run.inventory.Items[start:end] {
+	return run.eachBatch("source_bundle", run.inventory.BundleCount, write, nextPhase, func(start, end int) error {
+		items, err := run.inventoryItems("bundle", start, end)
+		if err != nil {
+			return err
+		}
+		for _, item := range items {
 			if write {
 				file, err := os.Open(item.Path)
 				if err != nil {
@@ -799,7 +950,17 @@ func (run *importRun) processNotebooks(write bool, nextPhase string) error {
 		return nil
 	}
 	if write {
-		states := make([]store.ImportItemState, 0, len(run.folderPlans))
+		states := make([]store.ImportItemState, 0, run.options.BatchSize)
+		flushStates := func() error {
+			if len(states) == 0 {
+				return nil
+			}
+			if err := run.st.PutImportItemStates(run.ctx, states); err != nil {
+				return err
+			}
+			states = states[:0]
+			return nil
+		}
 		for _, plan := range run.folderPlans {
 			switch plan.Action {
 			case "create":
@@ -819,8 +980,13 @@ func (run *importRun) processNotebooks(write bool, nextPhase string) error {
 				}
 			}
 			states = append(states, run.itemState(plan.Item, plan.TargetID, plan.Action, plan.Item.Fingerprint))
+			if len(states) == cap(states) {
+				if err := flushStates(); err != nil {
+					return err
+				}
+			}
 		}
-		if err := run.st.PutImportItemStates(run.ctx, states); err != nil {
+		if err := flushStates(); err != nil {
 			return err
 		}
 	}
@@ -998,19 +1164,25 @@ func (run *importRun) processNotes(write bool, nextPhase string) error {
 	for id, folder := range run.inventory.Folders {
 		folders[id] = folder.parsedItem
 	}
-	return run.eachBatch("notes", len(run.inventory.Notes), write, nextPhase, func(start, end int) error {
-		items := run.inventory.Notes[start:end]
-		ids := make([]string, 0, len(items))
+	total := run.inventory.NoteCount
+	start := 0
+	if run.phase == "notes" {
+		start = run.nextIndex
+	}
+	for start < total {
+		end := start + run.options.BatchSize
+		if end > total {
+			end = total
+		}
+		items, err := run.inventoryItems("notes", start, end)
+		if err != nil {
+			return err
+		}
 		externalIDs := make([]string, 0, len(items))
 		keys := make([]string, 0, len(items))
 		for _, item := range items {
-			ids = append(ids, run.noteIDMap[item.ID])
 			externalIDs = append(externalIDs, item.ID)
 			keys = append(keys, item.ItemKey)
-		}
-		documents, err := run.st.GetDocuments(run.ctx, ids)
-		if err != nil {
-			return err
 		}
 		sourceDocuments, err := run.st.FindDocumentsBySourceIDs(run.ctx, "joplin", externalIDs)
 		if err != nil {
@@ -1018,6 +1190,14 @@ func (run *importRun) processNotes(write bool, nextPhase string) error {
 		}
 		for externalID, documentID := range sourceDocuments {
 			run.noteIDMap[externalID] = documentID
+		}
+		ids := make([]string, 0, len(items))
+		for _, item := range items {
+			ids = append(ids, run.noteIDMap[item.ID])
+		}
+		documents, err := run.st.GetDocuments(run.ctx, ids)
+		if err != nil {
+			return err
 		}
 		tagRows, err := run.st.GetDocumentTags(run.ctx, ids)
 		if err != nil {
@@ -1027,13 +1207,17 @@ func (run *importRun) processNotes(write bool, nextPhase string) error {
 		if err != nil {
 			return err
 		}
-		newStates := make([]store.ImportItemState, 0, len(items))
+		noteTagRecords, err := run.inventory.Manifest.Lookup(run.ctx, "note_tags", externalIDs)
+		if err != nil {
+			return err
+		}
+		mutations := make([]store.ImportDocumentMutation, 0, len(items))
 		for _, item := range items {
 			parsed, err := readInventoryItem(item)
 			if err != nil {
 				return err
 			}
-			tagNames := run.noteTagNames(item.ID)
+			tagNames := run.noteTagNames(item.ID, noteTagRecords)
 			body, links := buildDocumentBody(parsed, folders, append([]string(nil), tagNames...), run.noteIDMap, run.resourceMap, run.options.CollectionID)
 			run.report.LinksRewritten += links.Rewritten
 			run.report.UnresolvedLinks += links.Unresolved
@@ -1082,76 +1266,133 @@ func (run *importRun) processNotes(write bool, nextPhase string) error {
 			run.report.TagsApplied += len(missingTags)
 			run.report.TagsRemoved += len(staleTags)
 			run.report.AttachmentsCreated += len(links.Resources)
-			if write && !trashed {
-				if action == "create" {
-					created, err := run.st.CreateDocument(run.ctx, store.CreateDocumentRequest{
+			if write {
+				state, stateFound := states[item.ItemKey]
+				skipStableMetadata := action == "unchanged" && !trashed && stateFound &&
+					state.Fingerprint == fingerprint && state.TargetID == targetID && sourceDocuments[item.ID] == targetID
+				message := "import from Joplin RAW"
+				if action == "update" {
+					message = "import update from Joplin RAW"
+				}
+				mutation := store.ImportDocumentMutation{
+					Action: action,
+					Document: store.CreateDocumentRequest{
 						PreferredID: targetID, CollectionID: run.options.CollectionID,
 						NotebookID: notebookID, Title: noteTitle(parsed), Body: body,
-						BodyMIMEType: "text/markdown", Message: "import from Joplin RAW",
-					})
-					if err != nil {
-						return err
-					}
-					current = created
-				} else if action == "update" {
-					if current.Title != noteTitle(parsed) || current.Body != body {
-						current, err = run.st.UpdateDocument(run.ctx, store.UpdateDocumentRequest{
-							ID: targetID, Title: noteTitle(parsed), Body: body,
-							BodyMIMEType: "text/markdown", BaseRevisionID: current.CurrentRevisionID,
-							Message: "import update from Joplin RAW",
-						})
-						if err != nil {
-							return err
-						}
-					}
-					if current.NotebookID != notebookID {
-						current, err = run.st.MoveDocumentToNotebook(run.ctx, targetID, notebookID)
-						if err != nil {
-							return err
-						}
-					}
-				}
-				if _, err := run.st.SetDocumentSource(run.ctx, store.SetDocumentSourceRequest{
-					DocumentID: targetID, SourceSystem: "joplin", ExternalID: item.ID,
-					Author:      strings.TrimSpace(parsed.Fields["author"]),
-					SourceURL:   strings.TrimSpace(parsed.Fields["source_url"]),
-					PublishedAt: firstNonEmpty(parsed.Fields["user_created_time"], parsed.Fields["created_time"]),
-				}); err != nil {
-					return err
-				}
-				for _, tagName := range missingTags {
-					if _, err := run.st.AddDocumentTag(run.ctx, targetID, tagName); err != nil {
-						return err
-					}
+						BodyMIMEType: "text/markdown", Message: message,
+					},
+					BaseRevisionID: current.CurrentRevisionID,
+					Source: store.SetDocumentSourceRequest{
+						DocumentID: targetID, SourceSystem: "joplin", ExternalID: item.ID,
+						Author:      strings.TrimSpace(parsed.Fields["author"]),
+						SourceURL:   strings.TrimSpace(parsed.Fields["source_url"]),
+						PublishedAt: firstNonEmpty(parsed.Fields["user_created_time"], parsed.Fields["created_time"]),
+					},
+					AddTags:      append([]string(nil), missingTags...),
+					State:        run.itemState(item, targetID, action, fingerprint),
+					SkipDocument: trashed,
+					SkipSource:   skipStableMetadata,
+					SkipState:    skipStableMetadata,
 				}
 				for _, tag := range staleTags {
-					if err := run.st.RemoveDocumentTag(run.ctx, targetID, tag.Name); err != nil {
-						return err
-					}
-					if sourceID, name, ok := run.sourceTagForTarget(tag.ID); ok {
-						if _, _, err := run.st.UpsertTag(run.ctx, "tag_joplin_"+safeID(sourceID), name); err != nil {
-							return err
-						}
-					}
+					mutation.RemoveTags = append(mutation.RemoveTags, tag.Name)
 				}
 				for _, reference := range links.Resources {
-					if _, err := run.st.AttachDocumentResource(run.ctx, store.AttachResourceRequest{
+					mutation.Resources = append(mutation.Resources, store.AttachResourceRequest{
 						DocumentID: targetID, ResourceID: reference.TargetID, RelationType: "referenced",
 						AnchorJSON: fmt.Sprintf(`{"joplin_resource_id":%q}`, reference.SourceID),
-					}); err != nil && !errors.Is(err, store.ErrNotFound) {
-						return err
-					}
+					})
+				}
+				mutations = append(mutations, mutation)
+			}
+		}
+		run.processed += end - start
+		run.report.BatchesCompleted++
+		if write {
+			run.report.CanonicalBatches++
+			checkpointPhase, checkpointIndex := "notes", end
+			if end == total {
+				checkpointPhase, checkpointIndex = nextPhase, 0
+			}
+			checkpoint, err := run.checkpoint(checkpointPhase, checkpointIndex, "running")
+			if err != nil {
+				return err
+			}
+			if err := run.st.ApplyImportDocumentBatch(run.ctx, store.ImportDocumentBatchRequest{Documents: mutations, Checkpoint: checkpoint}); err != nil {
+				return err
+			}
+			if run.options.AfterBatch != nil {
+				if err := run.options.AfterBatch("notes", end, total); err != nil {
+					return err
 				}
 			}
-			if write {
-				newStates = append(newStates, run.itemState(item, targetID, action, fingerprint))
+		}
+		start = end
+	}
+	if total == 0 && write {
+		return run.saveCheckpoint(nextPhase, 0, "running")
+	}
+	return nil
+}
+
+func (run *importRun) processLinks(write bool, nextPhase string) error {
+	if !write {
+		return nil
+	}
+	total := run.inventory.NoteCount
+	start := 0
+	if run.phase == "links" {
+		start = run.nextIndex
+	}
+	for start < total {
+		end := start + run.options.BatchSize
+		if end > total {
+			end = total
+		}
+		items, err := run.inventoryItems("notes", start, end)
+		if err != nil {
+			return err
+		}
+		externalIDs := make([]string, 0, len(items))
+		for _, item := range items {
+			externalIDs = append(externalIDs, item.ID)
+		}
+		mapped, err := run.st.FindDocumentsBySourceIDs(run.ctx, "joplin", externalIDs)
+		if err != nil {
+			return err
+		}
+		documentIDs := make([]string, 0, len(items))
+		for _, item := range items {
+			if documentID := mapped[item.ID]; documentID != "" {
+				run.noteIDMap[item.ID] = documentID
+			}
+			documentIDs = append(documentIDs, run.noteIDMap[item.ID])
+		}
+		run.processed += end - start
+		run.report.BatchesCompleted++
+		run.report.LinkBatches++
+		checkpointPhase, checkpointIndex := "links", end
+		if end == total {
+			checkpointPhase, checkpointIndex = nextPhase, 0
+		}
+		checkpoint, err := run.checkpoint(checkpointPhase, checkpointIndex, "running")
+		if err != nil {
+			return err
+		}
+		if err := run.st.RebuildImportDocumentLinksBatch(run.ctx, store.ImportLinkBatchRequest{DocumentIDs: documentIDs, Checkpoint: checkpoint}); err != nil {
+			return err
+		}
+		if run.options.AfterBatch != nil {
+			if err := run.options.AfterBatch("links", end, total); err != nil {
+				return err
 			}
 		}
-		if write {
-			return run.st.PutImportItemStates(run.ctx, newStates)
-		}
-		return nil
-	})
+		start = end
+	}
+	if total == 0 {
+		return run.saveCheckpoint(nextPhase, 0, "running")
+	}
+	return nil
 }
 
 func (run *importRun) eachBatch(phase string, total int, write bool, nextPhase string, process func(start, end int) error) error {
@@ -1206,11 +1447,19 @@ func (run *importRun) finishSinglePhase(phase string, total int, write bool, nex
 }
 
 func (run *importRun) saveCheckpoint(phase string, nextIndex int, status string) error {
-	raw, err := json.Marshal(run.report)
+	checkpoint, err := run.checkpoint(phase, nextIndex, status)
 	if err != nil {
 		return err
 	}
-	return run.st.PutImportCheckpoint(run.ctx, store.ImportCheckpoint{
+	return run.st.PutImportCheckpoint(run.ctx, checkpoint)
+}
+
+func (run *importRun) checkpoint(phase string, nextIndex int, status string) (store.ImportCheckpoint, error) {
+	raw, err := json.Marshal(run.report)
+	if err != nil {
+		return store.ImportCheckpoint{}, err
+	}
+	return store.ImportCheckpoint{
 		SourceSystem:         sourceSystem,
 		SourceKey:            run.report.SourceKey,
 		CollectionID:         run.options.CollectionID,
@@ -1221,7 +1470,7 @@ func (run *importRun) saveCheckpoint(phase string, nextIndex int, status string)
 		ProcessedItems:       run.processed,
 		Status:               status,
 		ReportJSON:           string(raw),
-	})
+	}, nil
 }
 
 func (run *importRun) addWarning(message string) {
@@ -1281,10 +1530,44 @@ func readInventoryItem(item inventoryItem) (parsedItem, error) {
 	return parsed, nil
 }
 
-func (run *importRun) noteTagNames(noteID string) []string {
+func (run *importRun) inventoryItems(kind string, start, end int) ([]inventoryItem, error) {
+	var records []store.ImportManifestRecord
+	var err error
+	cursor, sequential := run.manifestCursors[kind]
+	if start == 0 {
+		records, err = run.inventory.Manifest.BatchAfter(run.ctx, kind, "", end-start)
+	} else if sequential && cursor.nextOffset == start {
+		records, err = run.inventory.Manifest.BatchAfter(run.ctx, kind, cursor.sortKey, end-start)
+	} else {
+		// A resumed phase pays one indexed OFFSET lookup, then subsequent pages
+		// return to keyset pagination through the cursor recorded below.
+		records, err = run.inventory.Manifest.Batch(run.ctx, kind, start, end-start)
+	}
+	if err != nil {
+		return nil, err
+	}
+	items := make([]inventoryItem, 0, len(records))
+	for _, record := range records {
+		var item inventoryItem
+		if err := json.Unmarshal(record.Payload, &item); err != nil {
+			return nil, fmt.Errorf("decode Joplin %s manifest item: %w", kind, err)
+		}
+		items = append(items, item)
+	}
+	if len(items) != end-start {
+		return nil, fmt.Errorf("%w: Joplin %s manifest batch %d:%d returned %d items", store.ErrConflict, kind, start, end, len(items))
+	}
+	if len(records) > 0 {
+		run.manifestCursors[kind] = manifestCursor{nextOffset: end, sortKey: records[len(records)-1].SortKey}
+	}
+	return items, nil
+}
+
+func (run *importRun) noteTagNames(noteID string, records map[string][]store.ImportManifestRecord) []string {
 	names := []string{}
 	seen := map[string]bool{}
-	for _, tagID := range run.inventory.NoteTags[noteID] {
+	for _, record := range records[noteID] {
+		tagID := string(record.Payload)
 		name := strings.TrimSpace(run.inventory.Tags[tagID])
 		key := strings.ToLower(name)
 		if name != "" && !seen[key] {

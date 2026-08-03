@@ -1,6 +1,6 @@
 # Plan: v0.4 — Import correctness, portable data, publishing handoff, and stable references
 
-Status: **J1–J2 completed; J3 and all product-feature tasks require user approval**.
+Status: **J1–J3 completed; Q1 and all remaining product-feature tasks require user approval**.
 Drafted 2026-07-26 and revised 2026-08-02 after comparing the Joplin importer
 and publishing/search plans with the real-data-tested `movenotes-v3` pipeline.
 
@@ -85,7 +85,7 @@ relationships are proportional to actual links, and real-data evidence contains
 no private content. Evidence is archived under `performance/v0.4-j2/` and
 implementation detail under `plans/v0.4/002-*`.
 
-### J3. Million-note transactional import throughput
+### J3. Million-note transactional import throughput — complete
 
 - Replace per-document canonical transactions with a bounded store batch API
   that preserves revisions, FTS5, links, provenance, tags, resources, outbox,
@@ -100,6 +100,8 @@ implementation detail under `plans/v0.4/002-*`.
 
 Working state: a complete million-note import is resumable, bounded by the
 chosen batch/spool sizes, and has an evidence-backed throughput baseline.
+Aggregate-only evidence is archived under `performance/v0.4-j3/` and
+implementation detail under `plans/v0.4/003-*`.
 
 ### Q1. Boolean search expressions and category alias
 
@@ -248,7 +250,7 @@ specific real-format, round-trip, hostile-input, native-build, and scale gates.
 
 ## Decisions required before or during v0.4
 
-- Approve J3 before the next implementation slice; J2 was explicitly authorized
+- Approve Q1 before the next implementation slice; J3 was explicitly authorized
   on 2026-08-02.
 - Approve P1 before archive/publishing implementation.
 - Select exact archive-v2 restore defaults only after P2 presents explicit

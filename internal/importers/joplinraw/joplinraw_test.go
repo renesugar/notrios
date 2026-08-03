@@ -78,6 +78,27 @@ func TestParseItemBytesAcceptsBOMAndRejectsInvalidUTF8(t *testing.T) {
 	}
 }
 
+func TestJ3LeanInventoryParserMatchesFullRoutingFields(t *testing.T) {
+	fixtures := map[string][]byte{
+		"canonical.md": []byte("Canonical title\r\n\r\nBody with : colon\r\n\r\nid: note1\r\nparent_id: folder1\r\nauthor: Person\r\nfuture_field: ignored in manifest\r\ntype_: 1\r\n"),
+		"legacy.md":    []byte("id: note2\ntitle: Legacy\nsource_url: https://example.test\ntype_: 1\n\nBody"),
+		"resource.md":  []byte("file.pdf\n\nid: resource1\nfilename: original.pdf\nmime: application/pdf\nocr_text: page\vcontrol\ftest\ntype_: 4\n"),
+	}
+	for name, raw := range fixtures {
+		full, fullOK, fullErr := parseItemBytes(name, raw)
+		lean, leanOK, leanErr := parseInventoryItemBytes(name, raw)
+		if fullErr != nil || leanErr != nil || fullOK != leanOK {
+			t.Fatalf("%s parse: fullOK=%v leanOK=%v fullErr=%v leanErr=%v", name, fullOK, leanOK, fullErr, leanErr)
+		}
+		if full.ID != lean.ID || full.Type != lean.Type || !reflect.DeepEqual(compactInventoryFields(full.Fields), lean.Fields) {
+			t.Fatalf("%s inventory differs:\n full=%+v\n lean=%+v", name, full, lean)
+		}
+		if lean.Body != "" || len(lean.PropertyOrder) != 0 {
+			t.Fatalf("%s lean parser retained body/order: %+v", name, lean)
+		}
+	}
+}
+
 func TestJ2LinkRewriteSkipsCodeAndReturnsDirectResourceReferences(t *testing.T) {
 	body := strings.Join([]string{
 		"[note](:/note1)",
@@ -234,6 +255,25 @@ func TestImportJoplinRawFixture(t *testing.T) {
 	}
 	if report2.NotesUnchanged != 2 || report2.ResourcesExisting != 1 {
 		t.Fatalf("second import was not idempotent enough: %#v", report2)
+	}
+}
+
+func TestJ3FinalLinkPassResolvesTargetsAcrossCanonicalBatches(t *testing.T) {
+	ctx := context.Background()
+	dir := t.TempDir()
+	writeFile(t, filepath.Join(dir, "a-source.md"), "Source\n\n[target](:/z-target)\n\nid: a-source\ntype_: 1\n")
+	writeFile(t, filepath.Join(dir, "z-target.md"), "Target\n\nsearch target\n\nid: z-target\ntype_: 1\n")
+	st := openTestStore(t)
+	report, err := Import(ctx, st, dir, Options{BatchSize: 1})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if report.CanonicalBatches != 2 || report.LinkBatches != 2 {
+		t.Fatalf("batch report=%#v", report)
+	}
+	links, err := st.ListDocumentLinks(ctx, "doc_joplin_a-source", "outgoing")
+	if err != nil || len(links.Outgoing) != 1 || links.Outgoing[0].TargetDocumentID != "doc_joplin_z-target" || links.Outgoing[0].ResolutionStatus != "resolved" {
+		t.Fatalf("cross-batch links=%#v err=%v", links, err)
 	}
 }
 
@@ -432,7 +472,7 @@ func TestH8InterruptedImportResumesAtDurableBatch(t *testing.T) {
 	}
 }
 
-func TestH8ResumeFromFinalRunningCheckpointDoesNotReplay(t *testing.T) {
+func TestJ3ResumeFromAtomicNoteCheckpointDoesNotReplay(t *testing.T) {
 	ctx := context.Background()
 	dir := t.TempDir()
 	writeFile(t, filepath.Join(dir, "note.md"), "Body\n\nid: note1\ntitle: Final checkpoint\ntype_: 1\n")
@@ -448,7 +488,7 @@ func TestH8ResumeFromFinalRunningCheckpointDoesNotReplay(t *testing.T) {
 		t.Fatalf("first import error = %v", err)
 	}
 	checkpoint, err := st.GetImportCheckpoint(ctx, sourceSystem, filepath.Clean(dir), "default")
-	if err != nil || checkpoint.Phase != "done" || checkpoint.Status != "running" {
+	if err != nil || checkpoint.Phase != "links" || checkpoint.Status != "running" {
 		t.Fatalf("final running checkpoint=%+v err=%v", checkpoint, err)
 	}
 	report, err := Import(ctx, st, dir, Options{})
@@ -602,6 +642,43 @@ func TestH8GeneratedHundredsUseBoundedBatches(t *testing.T) {
 	}
 	if rerun.NotesUnchanged != count {
 		t.Fatalf("rerun unchanged=%d, want %d", rerun.NotesUnchanged, count)
+	}
+}
+
+func TestJ3InventoryFingerprintIsOrderIndependentAndCountSensitive(t *testing.T) {
+	var forward, reverse, missing [32]byte
+	for _, value := range []string{"one", "two", "two"} {
+		addInventoryFingerprint(&forward, value)
+	}
+	for _, value := range []string{"two", "one", "two"} {
+		addInventoryFingerprint(&reverse, value)
+	}
+	for _, value := range []string{"one", "two"} {
+		addInventoryFingerprint(&missing, value)
+	}
+	if forward != reverse {
+		t.Fatalf("inventory fingerprint depends on enumeration order: %x != %x", forward, reverse)
+	}
+	if forward == missing {
+		t.Fatalf("inventory fingerprint ignored duplicate item count: %x", forward)
+	}
+}
+
+func TestJ3NotebookImportStatesAreBoundedAboveStoreBatchLimit(t *testing.T) {
+	ctx := context.Background()
+	dir := t.TempDir()
+	const count = 501
+	for index := 0; index < count; index++ {
+		id := fmt.Sprintf("folder-%03d", index)
+		writeFile(t, filepath.Join(dir, id+".md"), fmt.Sprintf("id: %s\ntitle: Folder %03d\ntype_: 2\n", id, index))
+	}
+	st := openTestStore(t)
+	report, err := Import(ctx, st, dir, Options{BatchSize: 100})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if report.NotebooksCreated != count {
+		t.Fatalf("created %d notebooks, want %d", report.NotebooksCreated, count)
 	}
 }
 

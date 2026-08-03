@@ -73,9 +73,9 @@ Recoll availability, backlog, sync/index, and reconciliation state.
   reports/retention, keyset pagination, hardened resumable Joplin/Obsidian
   imports, and a convergent observable Recoll sidecar.
 - Current milestone: v0.4 import correctness, portable data, publishing
-  handoff, and stable references. J1 parser compatibility and J2 real-export
-  relationship validation are complete; J3 and the product-feature tasks
-  require approval — see [`PLAN.md`](PLAN.md) and
+  handoff, and stable references. J1–J3 parser, real-export relationship, and
+  transactional large-import prerequisites are complete; Q1 and the remaining
+  product-feature tasks require approval — see [`PLAN.md`](PLAN.md) and
   [`ROADMAP.md`](ROADMAP.md).
 - Agent progress/attempt tracking: [`agent/PLAN_STATUS.md`](agent/PLAN_STATUS.md), [`agent/ATTEMPT_LOG.jsonl`](agent/ATTEMPT_LOG.jsonl), and [`agent/MODEL_LOG.jsonl`](agent/MODEL_LOG.jsonl).
 
@@ -122,5 +122,6 @@ bash scripts/package_release.sh    # validated source ZIP into dist/
 The collection scale profile accepts `10000`, `100000`, or `500000`; Joplin
 accepts `100`, `10000`, or `100000`; Obsidian also accepts `500000`; Recoll
 accepts `100` or `100000`. Committed reference evidence is under
-`performance/v0.3-h7/` through `performance/v0.3-h10/`. See `PACKAGING.md`,
+`performance/v0.3-h7/` through `performance/v0.3-h10/` and
+`performance/v0.4-j2/` through `performance/v0.4-j3/`. See `PACKAGING.md`,
 `SECURITY_REVIEW.md`, and `RELEASE_CHECKLIST.md` before tagging a release.

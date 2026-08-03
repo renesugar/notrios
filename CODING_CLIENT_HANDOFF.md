@@ -3,9 +3,10 @@
 This handoff applies to any coding agent or client continuing this project (Codex, Claude, aider, swival.dev, etc. — formerly `CODEX_HANDOFF.md`). The repository is designed so an agent can continue from repository files alone.
 
 Current phase: v0.1, v0.2, and v0.3 are complete. H1–H11 are archived under
-`plans/v0.3/`. v0.4 J1 (Joplin RAW physical-line/canonical-title parsing) and
-J2 (real-export correctness and bounded relationship planning) are complete;
-J3 and all archive/publishing product tasks require user approval. See the
+`plans/v0.3/`. v0.4 J1 (Joplin RAW physical-line/canonical-title parsing), J2
+(real-export correctness and bounded relationship planning), and J3
+(million-item transactional throughput) are complete; Q1 and all remaining
+archive/publishing product tasks require user approval. See the
 revised `PLAN.md`.
 
 ## First files to read
@@ -73,7 +74,7 @@ specs and feature status, bumped product metadata to v0.3.0, completed the
 release-candidate gates, and drafted the v0.4 plan. The 2026-08-02 follow-up
 selected an external `movenotes-v3` archive bridge instead of duplicating
 Obsidian/Quartz/Hugo publishing, planned boolean/category search, and completed
-the J1 parser slice. See
+the J1–J3 Joplin prerequisite slices. See
 `agent/PLAN_STATUS.md`.
 
 ## Validation commands
@@ -147,10 +148,11 @@ The scaffold was created in a restricted container. Still-open consequences:
 1. The SQLite store uses a small local cgo adapter over system `libsqlite3`; the long-term driver choice is open.
 2. The MCP adapter is dependency-free; the official MCP Go SDK can replace it later without changing tool semantics.
 3. J1 matches canonical Joplin first-line titles and CR/LF-only metadata
-   parsing, including OCR controls. J2 validates both supplied real exports,
-   makes relationship planning proportional to parsed links, and records only
-   private-safe aggregates under `performance/v0.4-j2/`. Million-note complete
-   write evidence remains J3. Never commit private datasets or content-bearing
+   parsing, including OCR controls. J2 validates both supplied real exports and
+   makes relationship planning proportional to parsed links. J3 adds bounded
+   atomic canonical/checkpoint batches, an indexed temporary manifest, final
+   links, and private-safe complete recipe-corpus evidence under
+   `performance/v0.4-j3/`. Never commit private datasets or content-bearing
    evidence.
 
 (The formerly open "no browser testing" limitation is resolved: the GUI is browser-verified via Playwright, vitest/RTL covers the workspace, and `scripts/verify_layout_resize.py` covers native window resizing.)

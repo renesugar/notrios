@@ -241,6 +241,39 @@ type ImportItemState struct {
 	ProcessedAt  time.Time
 }
 
+// ImportDocumentMutation is one planned canonical document change inside a
+// bounded importer transaction. SkipDocument records only State (used when an
+// externally sourced document is already trashed). Action is create, update,
+// or unchanged. Tags and resources are applied after every document in the
+// batch is visible, preserving source relations without per-field transactions.
+type ImportDocumentMutation struct {
+	Action         string
+	Document       CreateDocumentRequest
+	BaseRevisionID string
+	Source         SetDocumentSourceRequest
+	AddTags        []string
+	RemoveTags     []string
+	Resources      []AttachResourceRequest
+	State          ImportItemState
+	SkipDocument   bool
+	SkipSource     bool
+	SkipState      bool
+}
+
+// ImportDocumentBatchRequest atomically applies a bounded set of document
+// mutations, item fingerprints, and the checkpoint that makes them durable.
+type ImportDocumentBatchRequest struct {
+	Documents  []ImportDocumentMutation
+	Checkpoint ImportCheckpoint
+}
+
+// ImportLinkBatchRequest atomically refreshes links for a bounded set of
+// already-created documents and advances the import checkpoint.
+type ImportLinkBatchRequest struct {
+	DocumentIDs []string
+	Checkpoint  ImportCheckpoint
+}
+
 // SourceBundleItem identifies one exact source file in an optional bundle.
 type SourceBundleItem struct {
 	SourceSystem  string
@@ -669,6 +702,8 @@ type Store interface {
 	PutImportCheckpoint(ctx context.Context, checkpoint ImportCheckpoint) error
 	GetImportItemStates(ctx context.Context, sourceSystem, sourceKey, collectionID string, itemKeys []string) (map[string]ImportItemState, error)
 	PutImportItemStates(ctx context.Context, states []ImportItemState) error
+	ApplyImportDocumentBatch(ctx context.Context, req ImportDocumentBatchRequest) error
+	RebuildImportDocumentLinksBatch(ctx context.Context, req ImportLinkBatchRequest) error
 	PutSourceBundleItem(ctx context.Context, req PutSourceBundleItemRequest) (SourceBundleItem, error)
 	GetSourceBundleItem(ctx context.Context, sourceSystem, sourceKey, collectionID, itemKey string) (SourceBundleItem, error)
 	OpenSourceBundleItem(ctx context.Context, sourceSystem, sourceKey, collectionID, itemKey string) (SourceBundleItem, io.ReadCloser, error)

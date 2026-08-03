@@ -150,10 +150,10 @@ func (s *SQLiteStore) GetDocumentTags(ctx context.Context, ids []string) (map[st
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	stmt, err := s.prepareLocked(`SELECT nt.document_id, t.id, t.name,
-			(SELECT COUNT(1) FROM note_tags nt2
-			 JOIN documents d2 ON d2.id = nt2.document_id
-			 WHERE nt2.tag_id = t.id AND d2.deleted_at IS NULL)
+	// Batch consumers reconcile document membership and do not need the global
+	// per-tag note count. Computing that correlated aggregate once per returned
+	// relation becomes quadratic on large imports with popular tags.
+	stmt, err := s.prepareLocked(`SELECT nt.document_id, t.id, t.name, 0
 		FROM note_tags nt
 		JOIN tags t ON t.id = nt.tag_id
 		WHERE nt.document_id IN (` + lookupPlaceholders(len(ids)) + `)
@@ -291,6 +291,12 @@ func (s *SQLiteStore) PutImportCheckpoint(ctx context.Context, checkpoint Import
 	if err := ctx.Err(); err != nil {
 		return err
 	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.putImportCheckpointLocked(checkpoint)
+}
+
+func (s *SQLiteStore) putImportCheckpointLocked(checkpoint ImportCheckpoint) error {
 	sourceSystem, sourceKey, collectionID, err := normalizeImportScope(checkpoint.SourceSystem, checkpoint.SourceKey, checkpoint.CollectionID)
 	if err != nil {
 		return err
@@ -306,8 +312,6 @@ func (s *SQLiteStore) PutImportCheckpoint(ctx context.Context, checkpoint Import
 	if checkpoint.Status == "completed" {
 		completed = "1"
 	}
-	s.mu.Lock()
-	defer s.mu.Unlock()
 	return s.execPreparedLocked(`INSERT INTO import_checkpoints(
 			source_system, source_key, collection_id, inventory_fingerprint, phase,
 			next_index, total_items, processed_items, status, report_json, completed_at)
@@ -406,25 +410,7 @@ func (s *SQLiteStore) PutImportItemStates(ctx context.Context, states []ImportIt
 		}
 	}()
 	for _, state := range states {
-		sourceSystem, sourceKey, collectionID, err := normalizeImportScope(state.SourceSystem, state.SourceKey, state.CollectionID)
-		if err != nil {
-			return err
-		}
-		if strings.TrimSpace(state.ItemKey) == "" || strings.TrimSpace(state.ItemType) == "" || strings.TrimSpace(state.Fingerprint) == "" || strings.TrimSpace(state.Action) == "" {
-			return fmt.Errorf("%w: import item key, type, fingerprint, and action are required", ErrInvalidInput)
-		}
-		if err := s.execPreparedLocked(`INSERT INTO import_item_states(
-				source_system, source_key, collection_id, item_key, item_type,
-				fingerprint, target_id, action)
-			VALUES(?, ?, ?, ?, ?, ?, NULLIF(?, ''), ?)
-			ON CONFLICT(source_system, source_key, collection_id, item_key) DO UPDATE SET
-				item_type = excluded.item_type,
-				fingerprint = excluded.fingerprint,
-				target_id = excluded.target_id,
-				action = excluded.action,
-				processed_at = CURRENT_TIMESTAMP`,
-			sourceSystem, sourceKey, collectionID, state.ItemKey, state.ItemType,
-			state.Fingerprint, state.TargetID, state.Action); err != nil {
+		if err := s.putImportItemStateLocked(state); err != nil {
 			return err
 		}
 	}
@@ -433,6 +419,28 @@ func (s *SQLiteStore) PutImportItemStates(ctx context.Context, states []ImportIt
 	}
 	committed = true
 	return nil
+}
+
+func (s *SQLiteStore) putImportItemStateLocked(state ImportItemState) error {
+	sourceSystem, sourceKey, collectionID, err := normalizeImportScope(state.SourceSystem, state.SourceKey, state.CollectionID)
+	if err != nil {
+		return err
+	}
+	if strings.TrimSpace(state.ItemKey) == "" || strings.TrimSpace(state.ItemType) == "" || strings.TrimSpace(state.Fingerprint) == "" || strings.TrimSpace(state.Action) == "" {
+		return fmt.Errorf("%w: import item key, type, fingerprint, and action are required", ErrInvalidInput)
+	}
+	return s.execPreparedLocked(`INSERT INTO import_item_states(
+			source_system, source_key, collection_id, item_key, item_type,
+			fingerprint, target_id, action)
+		VALUES(?, ?, ?, ?, ?, ?, NULLIF(?, ''), ?)
+		ON CONFLICT(source_system, source_key, collection_id, item_key) DO UPDATE SET
+			item_type = excluded.item_type,
+			fingerprint = excluded.fingerprint,
+			target_id = excluded.target_id,
+			action = excluded.action,
+			processed_at = CURRENT_TIMESTAMP`,
+		sourceSystem, sourceKey, collectionID, state.ItemKey, state.ItemType,
+		state.Fingerprint, state.TargetID, state.Action)
 }
 
 func (s *SQLiteStore) PutSourceBundleItem(ctx context.Context, req PutSourceBundleItemRequest) (SourceBundleItem, error) {

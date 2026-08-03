@@ -166,7 +166,10 @@ One provenance row per externally-sourced document (Joplin, Obsidian, Twitter/X,
 - `published_at` (ISO 8601 as provided; digit-only epoch seconds/milliseconds also accepted) with derived `published_ts` UTC Unix seconds for range queries;
 - `metadata_json` for source-specific extras.
 
-The Joplin and Obsidian importers write these rows on every run (create, update, or unchanged), so re-running an import backfills provenance for previously-imported notes.
+The Joplin and Obsidian importers create/update these rows with canonical
+changes and backfill missing provenance. A fingerprint- and source-mapping-
+verified Joplin no-op skips identical provenance/state rewrites while advancing
+the checkpoint atomically.
 
 Thread/link-graph traversal stays in SQLite; the Recoll index only carries searchable copies of these fields (`RECOLL_INTEGRATION.md`).
 

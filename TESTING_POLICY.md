@@ -95,15 +95,15 @@ lives under `performance/v0.3-h7/`. The ordinary-page gate is asserted by the
 test. Recoll-specific measurements remain conditional on Recoll being installed
 and are part of H10 sidecar hardening.
 
-H8's executable harness is `scripts/run_joplin_import_profile.sh`. It accepts
+H8/J3's executable harness is `scripts/run_joplin_import_profile.sh`. It accepts
 100, 10k, or 100k generated Joplin notes with nested folders, tags, and
-resources. Every tier runs the same bounded dry-run planner; the 100 and 10k
-tiers interrupt a real import at a durable note-batch boundary and resume it.
-The 100k tier profiles the complete inventory/dry-run path without pretending
-the current per-document canonical write API is a hardware-independent bulk
-throughput gate. Reports record elapsed time, batch count, environment, and Go
-memory. Exact unknown/reordered-property and CRLF-byte preservation is covered
-separately by the focused importer fixture.
+resources. Every tier runs the same bounded dry-run planner, interrupts a real
+canonical import at a durable note-batch boundary, resumes it, completes a
+final link pass, and verifies a revision-stable full no-op. Reports record dry
+run/import/no-op duration, canonical/link batch counts, temporary manifest
+size, environment, Go memory, and process peak RSS. Exact unknown/reordered-
+property and CRLF-byte preservation is covered separately by the focused
+importer fixture.
 
 v0.4 J2 adds `scripts/run_real_joplin_profile.sh` for read-only real-export
 profiles over the recipe Joplin/Obsidian pair and the attachment-bearing Joplin
@@ -111,9 +111,12 @@ archive. Committed evidence under `performance/v0.4-j2/` contains
 only aggregate counts, timings, sizes, warnings, and redacted environment
 facts—never note titles, bodies, source paths, resources, or databases. J2
 measures the production dry-run relationship planner against actual links,
-including peak RSS and a no-source-write check. J3 measures complete
-transactional import, interruption/resume, and no-op re-import at the
-million-note tier.
+including peak RSS and a no-source-write check. J3 adds
+`scripts/run_full_joplin_import_profile.sh` for aggregate-only complete
+transactional interruption/resume, search readiness, final links, SQLite
+settings/size, and revision-stable no-op evidence. The recipe evidence under
+`performance/v0.4-j3/` covers 1,237,553 source items and 382,206 canonical
+notes; private paths, titles, bodies, resources, and databases are excluded.
 
 H9's `scripts/run_obsidian_import_profile.sh` uses 100/10k/100k/500k tiers for
 generated vaults with nested folders, aliases, relative links,

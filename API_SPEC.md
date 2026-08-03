@@ -425,8 +425,12 @@ first RAW source line, removes that title line from canonical note Markdown,
 preserves duplicate/future property order for source bundles, accepts UTF-8
 BOMs, and rejects invalid UTF-8. J2's one-pass Markdown-aware link planner
 skips escaped/code targets, reports unresolved targets, and returns direct
-deduplicated resource relationships. Million-note full-write throughput remains
-the explicit v0.4 J3 gate.
+deduplicated resource relationships. J3 uses an indexed temporary manifest and
+bounded canonical transactions whose document/revision/FTS5/link/provenance/
+tag/resource/outbox/item-state changes commit with the matching checkpoint. A
+final bounded link pass resolves later-batch targets. Complete private-safe
+interruption/resume, search, and revision-stable no-op evidence satisfies the
+v0.4 J3 gate.
 
 `notriosctl import obsidian [--config path] [--db path] [--asset-store path] [--collection id] [--batch-size 100] [--preserve-source] [--dry-run] [--write-config path] [--import-config path] <vault-dir>` inventories an Obsidian vault, restores its folder hierarchy as nested notebooks, resolves aliases/relative paths/embeds/heading and block references to stable canonical URIs, imports or refreshes local assets, and rebuilds links after all targets exist. Dry run writes a path-scoped rename configuration (default `<vault>/.notrios/import-config.json`) and performs no canonical, checkpoint, or source-bundle writes. Real imports fingerprint and checkpoint bounded batches; `--preserve-source` stores exact Markdown/frontmatter and non-Markdown file bytes with relative paths.
 
