@@ -3,9 +3,10 @@
 This handoff applies to any coding agent or client continuing this project (Codex, Claude, aider, swival.dev, etc. — formerly `CODEX_HANDOFF.md`). The repository is designed so an agent can continue from repository files alone.
 
 Current phase: v0.1, v0.2, and v0.3 are complete. H1–H11 are archived under
-`plans/v0.3/`. v0.4 J1 (Joplin RAW physical-line/canonical-title parsing) is
-complete; J2 real-export validation and all archive/publishing product tasks
-require user approval. See the revised `PLAN.md`.
+`plans/v0.3/`. v0.4 J1 (Joplin RAW physical-line/canonical-title parsing) and
+J2 (real-export correctness and bounded relationship planning) are complete;
+J3 and all archive/publishing product tasks require user approval. See the
+revised `PLAN.md`.
 
 ## First files to read
 
@@ -87,6 +88,7 @@ cd web && npm ci && npm run typecheck && npm run build && npm test
 bash scripts/mvp_smoke.sh
 bash scripts/run_performance_smoke.sh
 bash scripts/run_joplin_import_profile.sh 100 /tmp/notrios-joplin.json
+bash scripts/run_real_joplin_profile.sh <label> <raw-export-dir> /tmp/notrios-joplin-real.json
 bash scripts/run_obsidian_import_profile.sh 100 /tmp/notrios-obsidian.json
 bash scripts/run_recoll_hardening_profile.sh 100 /tmp/notrios-recoll.json
 ```
@@ -144,9 +146,11 @@ The scaffold was created in a restricted container. Still-open consequences:
 
 1. The SQLite store uses a small local cgo adapter over system `libsqlite3`; the long-term driver choice is open.
 2. The MCP adapter is dependency-free; the official MCP Go SDK can replace it later without changing tool semantics.
-3. J1 now matches canonical Joplin first-line titles and CR/LF-only metadata
-   parsing, including OCR controls, but full real-export relationship and
-   million-note write evidence remain J2/J3. Never commit private datasets or
-   content-bearing evidence.
+3. J1 matches canonical Joplin first-line titles and CR/LF-only metadata
+   parsing, including OCR controls. J2 validates both supplied real exports,
+   makes relationship planning proportional to parsed links, and records only
+   private-safe aggregates under `performance/v0.4-j2/`. Million-note complete
+   write evidence remains J3. Never commit private datasets or content-bearing
+   evidence.
 
 (The formerly open "no browser testing" limitation is resolved: the GUI is browser-verified via Playwright, vitest/RTL covers the workspace, and `scripts/verify_layout_resize.py` covers native window resizing.)

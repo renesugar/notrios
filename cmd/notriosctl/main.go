@@ -90,7 +90,7 @@ func runImportJoplinRaw(args []string) {
 	dryRun := fs.Bool("dry-run", false, "scan and report without writing")
 	batchSize := fs.Int("batch-size", 100, "maximum source items per durable import batch (1-500)")
 	preserveSource := fs.Bool("preserve-source", false, "store exact RAW source items in a content-addressed source bundle")
-	writeConfig := fs.String("write-config", "", "dry run: where to write the import configuration (default <raw-export>/import-config.json)")
+	writeConfig := fs.String("write-config", "", "dry run: optionally write the import configuration to this path")
 	importConfig := fs.String("import-config", "", "import configuration file with notebook-path renames")
 	localizeMedia := fs.Bool("localize-media", false, "after importing, localize policy-allowed remote media in the imported notes")
 	if err := fs.Parse(args); err != nil {
@@ -146,15 +146,14 @@ func runImportJoplinRaw(args []string) {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
 		}
-		target := *writeConfig
-		if target == "" {
-			target = filepath.Join(sourceDir, "import-config.json")
-		}
-		if err := joplinraw.WriteConfig(importCfg, target); err != nil {
+		target, err := writeJoplinDryRunConfig(importCfg, *writeConfig)
+		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
 		}
-		fmt.Fprintf(os.Stderr, "import configuration written to %s\n", target)
+		if target != "" {
+			fmt.Fprintf(os.Stderr, "import configuration written to %s\n", target)
+		}
 		encoder := json.NewEncoder(os.Stdout)
 		encoder.SetIndent("", "  ")
 		if err := encoder.Encode(report); err != nil {
@@ -185,6 +184,16 @@ func runImportJoplinRaw(args []string) {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
+}
+
+func writeJoplinDryRunConfig(config joplinraw.ImportConfig, target string) (string, error) {
+	if target == "" {
+		return "", nil
+	}
+	if err := joplinraw.WriteConfig(config, target); err != nil {
+		return "", err
+	}
+	return target, nil
 }
 
 func runImportObsidian(args []string) {

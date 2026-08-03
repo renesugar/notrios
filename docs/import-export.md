@@ -68,9 +68,11 @@ go run ./cmd/notriosctl import joplin-raw --dry-run "/path/to/joplin-export"
 ```
 
 The dry run uses the same deterministic inventory and action planner as the
-real import. It reports note/resource/notebook/tag creates, updates, and skips,
-and writes a rename-on-conflict configuration to
-`<joplin-export>/import-config.json` (override with `--write-config`). No notes,
+real import. It reports per-type inventory totals, malformed/unsupported items,
+unresolved links, missing resource content, and note/resource/notebook/tag
+creates, updates, and skips. The suggested rename configuration is included in
+the JSON report; add `--write-config /path/to/import-config.json` to save it.
+Without that explicit flag, the source tree is never written. No notes,
 resources, notebooks, tags, checkpoints, or source-bundle bytes are written
 (opening the store does create an empty database file with its schema if none
 existed).

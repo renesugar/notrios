@@ -78,6 +78,79 @@ func TestParseItemBytesAcceptsBOMAndRejectsInvalidUTF8(t *testing.T) {
 	}
 }
 
+func TestJ2LinkRewriteSkipsCodeAndReturnsDirectResourceReferences(t *testing.T) {
+	body := strings.Join([]string{
+		"[note](:/note1)",
+		"![one](:/res1) and [duplicate](:/res1)",
+		"inline `:/res1` and double ``:/res1``",
+		`escaped \:/res1`,
+		"```markdown",
+		"fenced :/res1 :/missing",
+		"```",
+		"~~~",
+		"tilde fenced :/res1",
+		"~~~",
+		"unresolved :/missing",
+	}, "\n")
+
+	result := rewriteJoplinLinks(body,
+		map[string]string{"note1": "doc_joplin_note1"},
+		map[string]string{"res1": "res_joplin_res1"},
+		"default",
+	)
+	if result.Rewritten != 3 || result.Unresolved != 1 {
+		t.Fatalf("rewrite counts = rewritten %d unresolved %d", result.Rewritten, result.Unresolved)
+	}
+	wantResources := []resourceReference{{SourceID: "res1", TargetID: "res_joplin_res1"}}
+	if !reflect.DeepEqual(result.Resources, wantResources) {
+		t.Fatalf("resource references = %#v, want %#v", result.Resources, wantResources)
+	}
+	for _, untouched := range []string{"`:/res1`", "``:/res1``", `\:/res1`, "fenced :/res1 :/missing", "tilde fenced :/res1", "unresolved :/missing"} {
+		if !strings.Contains(result.Body, untouched) {
+			t.Fatalf("expected untouched %q in:\n%s", untouched, result.Body)
+		}
+	}
+	if !strings.Contains(result.Body, store.DocumentURI("default", "doc_joplin_note1")) ||
+		strings.Count(result.Body, store.ResourceURI("default", "res_joplin_res1")) != 2 {
+		t.Fatalf("resolved targets were not rewritten correctly:\n%s", result.Body)
+	}
+}
+
+func TestJ2InventoryReportsAllItemTypesMalformedAndIgnoredFiles(t *testing.T) {
+	dir := t.TempDir()
+	fixtures := map[string]string{
+		"note.md":        "Note\n\nid: note1\ntype_: 1\n",
+		"folder.md":      "Folder\n\nid: folder1\ntype_: 2\n",
+		"resource.md":    "file.bin\n\nid: resource1\ntype_: 4\n",
+		"tag.md":         "tag\n\nid: tag1\ntype_: 5\n",
+		"relation.md":    "id: relation1\nnote_id: note1\ntag_id: tag1\ntype_: 6\n",
+		"unsupported.md": "Future\n\nid: future1\ntype_: 13\n",
+		"malformed.md":   "ordinary Markdown without Joplin properties\n",
+		"ignored.txt":    "not metadata",
+	}
+	for name, contents := range fixtures {
+		writeFile(t, filepath.Join(dir, name), contents)
+	}
+
+	st := openTestStore(t)
+	_, report, err := DryRun(context.Background(), st, dir, Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if report.MetadataFilesSeen != 7 || report.ItemsSeen != 6 || report.MalformedItems != 1 ||
+		report.UnsupportedItems != 1 || report.IgnoredFiles != 1 {
+		t.Fatalf("inventory diagnostics: %#v", report)
+	}
+	wantTypes := map[string]int{"1": 1, "2": 1, "4": 1, "5": 1, "6": 1, "13": 1}
+	if !reflect.DeepEqual(report.ItemTypeCounts, wantTypes) {
+		t.Fatalf("item type counts = %#v, want %#v", report.ItemTypeCounts, wantTypes)
+	}
+	warnings := strings.Join(report.Warnings, "\n")
+	if !strings.Contains(warnings, "malformed and skipped") || !strings.Contains(warnings, "unsupported type values") {
+		t.Fatalf("diagnostic warnings = %#v", report.Warnings)
+	}
+}
+
 func TestImportJoplinRawFixture(t *testing.T) {
 	ctx := context.Background()
 	dir := t.TempDir()

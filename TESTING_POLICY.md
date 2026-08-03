@@ -105,11 +105,13 @@ throughput gate. Reports record elapsed time, batch count, environment, and Go
 memory. Exact unknown/reordered-property and CRLF-byte preservation is covered
 separately by the focused importer fixture.
 
-v0.4 J2/J3 add read-only real-export profiles over the recipe Joplin/Obsidian
-pair and the attachment-bearing Joplin archive. Committed evidence contains
+v0.4 J2 adds `scripts/run_real_joplin_profile.sh` for read-only real-export
+profiles over the recipe Joplin/Obsidian pair and the attachment-bearing Joplin
+archive. Committed evidence under `performance/v0.4-j2/` contains
 only aggregate counts, timings, sizes, warnings, and redacted environment
 facts—never note titles, bodies, source paths, resources, or databases. J2
-measures relationship planning against actual links; J3 measures complete
+measures the production dry-run relationship planner against actual links,
+including peak RSS and a no-source-write check. J3 measures complete
 transactional import, interruption/resume, and no-op re-import at the
 million-note tier.
 

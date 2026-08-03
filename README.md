@@ -73,8 +73,9 @@ Recoll availability, backlog, sync/index, and reconciliation state.
   reports/retention, keyset pagination, hardened resumable Joplin/Obsidian
   imports, and a convergent observable Recoll sidecar.
 - Current milestone: v0.4 import correctness, portable data, publishing
-  handoff, and stable references. J1 parser compatibility is complete; J2 and
-  the product-feature tasks require approval — see [`PLAN.md`](PLAN.md) and
+  handoff, and stable references. J1 parser compatibility and J2 real-export
+  relationship validation are complete; J3 and the product-feature tasks
+  require approval — see [`PLAN.md`](PLAN.md) and
   [`ROADMAP.md`](ROADMAP.md).
 - Agent progress/attempt tracking: [`agent/PLAN_STATUS.md`](agent/PLAN_STATUS.md), [`agent/ATTEMPT_LOG.jsonl`](agent/ATTEMPT_LOG.jsonl), and [`agent/MODEL_LOG.jsonl`](agent/MODEL_LOG.jsonl).
 
@@ -112,6 +113,7 @@ make smoke                    # end-to-end REST/MCP smoke test
 bash scripts/run_performance_smoke.sh
 bash scripts/run_large_library_profile.sh 100000 /tmp/notrios-profile.json
 bash scripts/run_joplin_import_profile.sh 100000 /tmp/notrios-joplin-profile.json
+bash scripts/run_real_joplin_profile.sh <label> <raw-export-dir> /tmp/notrios-joplin-real.json
 bash scripts/run_obsidian_import_profile.sh 100000 /tmp/notrios-obsidian-profile.json
 bash scripts/run_recoll_hardening_profile.sh 100000 /tmp/notrios-recoll-profile.json
 bash scripts/package_release.sh    # validated source ZIP into dist/

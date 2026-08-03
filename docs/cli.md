@@ -62,11 +62,12 @@ run when the deterministic source fingerprint still matches.
 `--preserve-source` stores exact RAW item bytes, unknown fields, and property
 order in a separate content-addressed source bundle.
 
-`--dry-run` uses the real action planner and writes an import configuration
-(default `<raw-export-dir>/import-config.json`; override with
-`--write-config`). Resolve any suggested notebook-path renames, then pass the
-file to the real import with `--import-config`. Dry run creates no import
-checkpoint, note, resource, notebook, tag, or source-bundle object.
+`--dry-run` uses the real action planner and returns its suggested configuration
+inside the JSON report. It writes that configuration only when
+`--write-config path` is supplied. Resolve any suggested notebook-path renames,
+then pass the file to the real import with `--import-config`. Dry run creates no
+source file, import checkpoint, note, resource, notebook, tag, or source-bundle
+object.
 
 ### import obsidian
 

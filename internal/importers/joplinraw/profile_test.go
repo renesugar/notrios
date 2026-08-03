@@ -36,6 +36,104 @@ type joplinProfileResult struct {
 	GOARCH            string        `json:"goarch"`
 }
 
+type realJoplinProfileResult struct {
+	Label                    string         `json:"label"`
+	Mode                     string         `json:"mode"`
+	MetadataFilesSeen        int            `json:"metadata_files_seen"`
+	ItemsSeen                int            `json:"items_seen"`
+	ItemTypeCounts           map[string]int `json:"item_type_counts"`
+	MalformedItems           int            `json:"malformed_items"`
+	UnsupportedItems         int            `json:"unsupported_items"`
+	IgnoredFiles             int            `json:"ignored_files"`
+	NotesSeen                int            `json:"notes_seen"`
+	NotebooksSeen            int            `json:"notebooks_seen"`
+	TagsSeen                 int            `json:"tags_seen"`
+	ResourcesSeen            int            `json:"resources_seen"`
+	ResourcesMissing         int            `json:"resources_missing_content"`
+	LinksRewritten           int            `json:"links_rewritten"`
+	UnresolvedLinks          int            `json:"unresolved_links"`
+	AttachmentsPlanned       int            `json:"attachments_planned"`
+	WarningCount             int            `json:"warning_count"`
+	ElapsedMilliseconds      int64          `json:"elapsed_milliseconds"`
+	GoSystemBytes            uint64         `json:"go_system_bytes"`
+	SourceDirectoryUnchanged bool           `json:"source_directory_unchanged"`
+	GoVersion                string         `json:"go_version"`
+	GOOS                     string         `json:"goos"`
+	GOARCH                   string         `json:"goarch"`
+}
+
+// TestJ2RealExportProfile is opt-in because its input may be private. Its JSON
+// deliberately contains aggregate counts only: never source paths, item paths,
+// titles, warning text, or note bodies. The source directory metadata check
+// also catches accidental default config writes during the dry run.
+func TestJ2RealExportProfile(t *testing.T) {
+	source := os.Getenv("NOTRIOS_JOPLIN_REAL_SOURCE")
+	if source == "" {
+		t.Skip("set NOTRIOS_JOPLIN_REAL_SOURCE to a read-only Joplin RAW export")
+	}
+	label := os.Getenv("NOTRIOS_JOPLIN_REAL_LABEL")
+	if label == "" {
+		label = "private-corpus"
+	}
+	for _, character := range label {
+		if !(character >= 'a' && character <= 'z' || character >= '0' && character <= '9' || character == '-') {
+			t.Fatalf("NOTRIOS_JOPLIN_REAL_LABEL must contain only lowercase letters, digits, and hyphens")
+		}
+	}
+	before, err := os.Stat(source)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ctx := context.Background()
+	storeDir := t.TempDir()
+	st, err := store.OpenSQLiteWithAssetStore(filepath.Join(storeDir, "profile.sqlite"), filepath.Join(storeDir, "assets"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = st.Close() })
+	if err := st.Bootstrap(ctx); err != nil {
+		t.Fatal(err)
+	}
+	started := time.Now()
+	_, report, err := DryRun(ctx, st, source, Options{BatchSize: 500})
+	if err != nil {
+		t.Fatal(err)
+	}
+	elapsed := time.Since(started)
+	after, err := os.Stat(source)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var memory runtime.MemStats
+	runtime.ReadMemStats(&memory)
+	result := realJoplinProfileResult{
+		Label: label, Mode: "full-dry-run", MetadataFilesSeen: report.MetadataFilesSeen,
+		ItemsSeen: report.ItemsSeen, ItemTypeCounts: report.ItemTypeCounts,
+		MalformedItems: report.MalformedItems, UnsupportedItems: report.UnsupportedItems,
+		IgnoredFiles: report.IgnoredFiles, NotesSeen: report.NotesSeen,
+		NotebooksSeen: report.NotebooksSeen, TagsSeen: report.TagsSeen,
+		ResourcesSeen: report.ResourcesSeen, ResourcesMissing: report.ResourcesMissing,
+		LinksRewritten:  report.LinksRewritten,
+		UnresolvedLinks: report.UnresolvedLinks, AttachmentsPlanned: report.AttachmentsCreated,
+		WarningCount: len(report.Warnings), ElapsedMilliseconds: elapsed.Milliseconds(),
+		GoSystemBytes: memory.Sys, SourceDirectoryUnchanged: before.ModTime() == after.ModTime() && before.Size() == after.Size(),
+		GoVersion: runtime.Version(), GOOS: runtime.GOOS, GOARCH: runtime.GOARCH,
+	}
+	output := os.Getenv("NOTRIOS_JOPLIN_REAL_OUTPUT")
+	if output == "" {
+		t.Fatal("set NOTRIOS_JOPLIN_REAL_OUTPUT to a private-safe JSON output path")
+	}
+	raw, err := json.MarshalIndent(result, "", "  ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(output, append(raw, '\n'), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("real Joplin profile completed: label=%s items=%d notes=%d elapsed=%s", label, report.ItemsSeen, report.NotesSeen, elapsed.Round(time.Millisecond))
+}
+
 // TestJoplinImporterProfile is an opt-in generated profile. It exercises the
 // full dry-run planner followed by an interrupted/resumed real import. The
 // supported sizes deliberately span hundreds through 100k source notes.

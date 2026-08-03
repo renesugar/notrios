@@ -1,6 +1,6 @@
 # Plan: v0.4 — Import correctness, portable data, publishing handoff, and stable references
 
-Status: **J1 completed; J2 and all product-feature tasks require user approval**.
+Status: **J1–J2 completed; J3 and all product-feature tasks require user approval**.
 Drafted 2026-07-26 and revised 2026-08-02 after comparing the Joplin importer
 and publishing/search plans with the real-data-tested `movenotes-v3` pipeline.
 
@@ -66,7 +66,7 @@ before the next task.
 Working state: focused importer tests and canonical `movenotes-v3/sample`
 fixtures pass; implementation evidence is archived under `plans/v0.4/001-*`.
 
-### J2. Real-export correctness and bounded relationship planning
+### J2. Real-export correctness and bounded relationship planning — complete
 
 - Validate read-only imports against `recipe_joplin` and the attachment-bearing
   Joplin archive; compare aggregate recipe results with `recipe_vault` without
@@ -82,7 +82,8 @@ fixtures pass; implementation evidence is archived under `plans/v0.4/001-*`.
 
 Working state: aggregate results agree with the source formats, attachment
 relationships are proportional to actual links, and real-data evidence contains
-no private content.
+no private content. Evidence is archived under `performance/v0.4-j2/` and
+implementation detail under `plans/v0.4/002-*`.
 
 ### J3. Million-note transactional import throughput
 
@@ -247,8 +248,8 @@ specific real-format, round-trip, hostile-input, native-build, and scale gates.
 
 ## Decisions required before or during v0.4
 
-- Approve J2 before the next implementation slice; J1 was explicitly authorized
-  by the 2026-08-02 follow-up prompt.
+- Approve J3 before the next implementation slice; J2 was explicitly authorized
+  on 2026-08-02.
 - Approve P1 before archive/publishing implementation.
 - Select exact archive-v2 restore defaults only after P2 presents explicit
   replace/merge/fork/adopt behavior.

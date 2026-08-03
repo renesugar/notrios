@@ -1,0 +1,32 @@
+{
+  "label": "attachment-export",
+  "mode": "full-dry-run",
+  "metadata_files_seen": 111330,
+  "items_seen": 111330,
+  "item_type_counts": {
+    "1": 103349,
+    "2": 6,
+    "4": 763,
+    "5": 322,
+    "6": 6890
+  },
+  "malformed_items": 0,
+  "unsupported_items": 0,
+  "ignored_files": 0,
+  "notes_seen": 103349,
+  "notebooks_seen": 6,
+  "tags_seen": 322,
+  "resources_seen": 763,
+  "resources_missing_content": 5,
+  "links_rewritten": 2420,
+  "unresolved_links": 95,
+  "attachments_planned": 766,
+  "warning_count": 5,
+  "elapsed_milliseconds": 55190,
+  "go_system_bytes": 598770072,
+  "peak_rss_kib": 580712,
+  "source_directory_unchanged": true,
+  "go_version": "go1.26.5",
+  "goos": "linux",
+  "goarch": "amd64"
+}

@@ -49,13 +49,19 @@ type inventoryItem struct {
 }
 
 type inventory struct {
-	Items       []inventoryItem
-	Folders     map[string]inventoryItem
-	Tags        map[string]string
-	NoteTags    map[string][]string
-	Notes       []inventoryItem
-	Resources   []inventoryItem
-	Fingerprint string
+	Items             []inventoryItem
+	Folders           map[string]inventoryItem
+	Tags              map[string]string
+	NoteTags          map[string][]string
+	Notes             []inventoryItem
+	Resources         []inventoryItem
+	Fingerprint       string
+	MetadataFilesSeen int
+	ItemsSeen         int
+	ItemTypeCounts    map[string]int
+	MalformedItems    int
+	UnsupportedItems  int
+	IgnoredFiles      int
 }
 
 type folderPlan struct {
@@ -245,16 +251,28 @@ func newImportRun(ctx context.Context, st store.Store, sourceDir string, options
 		noteIDMap:   map[string]string{},
 		resourceMap: map[string]string{},
 		report: Report{
-			SourceDir:        absoluteDir,
-			SourceKey:        sourceKey,
-			CollectionID:     options.CollectionID,
-			DryRun:           options.DryRun,
-			NotesSeen:        len(inv.Notes),
-			NotebooksSeen:    len(inv.Folders),
-			TagsSeen:         len(inv.Tags),
-			ResourcesSeen:    len(inv.Resources),
-			CheckpointStatus: "not-started",
+			SourceDir:         absoluteDir,
+			SourceKey:         sourceKey,
+			CollectionID:      options.CollectionID,
+			DryRun:            options.DryRun,
+			MetadataFilesSeen: inv.MetadataFilesSeen,
+			ItemsSeen:         inv.ItemsSeen,
+			ItemTypeCounts:    inv.ItemTypeCounts,
+			MalformedItems:    inv.MalformedItems,
+			UnsupportedItems:  inv.UnsupportedItems,
+			IgnoredFiles:      inv.IgnoredFiles,
+			NotesSeen:         len(inv.Notes),
+			NotebooksSeen:     len(inv.Folders),
+			TagsSeen:          len(inv.Tags),
+			ResourcesSeen:     len(inv.Resources),
+			CheckpointStatus:  "not-started",
 		},
+	}
+	if inv.MalformedItems > 0 {
+		run.addWarning(fmt.Sprintf("%d Markdown metadata file(s) were malformed and skipped", inv.MalformedItems))
+	}
+	if inv.UnsupportedItems > 0 {
+		run.addWarning(fmt.Sprintf("%d parsed Joplin item(s) used unsupported type values and were skipped", inv.UnsupportedItems))
 	}
 	for _, note := range inv.Notes {
 		run.noteIDMap[note.ID] = noteDocumentID(note.ID)
@@ -298,9 +316,10 @@ func contextOrBackground(ctx context.Context) context.Context {
 
 func readInventory(ctx context.Context, sourceDir string, retainBundleInventory bool) (inventory, error) {
 	result := inventory{
-		Folders:  map[string]inventoryItem{},
-		Tags:     map[string]string{},
-		NoteTags: map[string][]string{},
+		Folders:        map[string]inventoryItem{},
+		Tags:           map[string]string{},
+		NoteTags:       map[string][]string{},
+		ItemTypeCounts: map[string]int{},
 	}
 	inventoryHash := sha256.New()
 	seenIDs := map[string]string{}
@@ -325,6 +344,11 @@ func readInventory(ctx context.Context, sourceDir string, retainBundleInventory 
 		if entry.Type()&os.ModeSymlink != 0 {
 			return fmt.Errorf("%w: Joplin RAW metadata symlink %s is not allowed", store.ErrInvalidInput, filepath.ToSlash(relative))
 		}
+		if !strings.EqualFold(filepath.Ext(path), ".md") {
+			result.IgnoredFiles++
+			return nil
+		}
+		result.MetadataFilesSeen++
 		info, err := entry.Info()
 		if err != nil {
 			return err
@@ -344,20 +368,30 @@ func readInventory(ctx context.Context, sourceDir string, retainBundleInventory 
 			return err
 		}
 		if !ok {
+			result.MalformedItems++
 			return nil
+		}
+		result.ItemsSeen++
+		result.ItemTypeCounts[parsed.Type]++
+		if !supportedJoplinItemType(parsed.Type) {
+			result.UnsupportedItems++
 		}
 		// Inventory retains only bounded routing/render metadata. Note bodies
 		// and unknown properties are reread per batch; optional source bundles
 		// preserve the exact original bytes.
+		propertyOrder := parsed.PropertyOrder
 		parsed.Body = ""
 		parsed.Fields = compactInventoryFields(parsed.Fields)
+		parsed.PropertyOrder = nil
 		sum := sha256.Sum256(raw)
 		item := inventoryItem{
-			parsedItem:    parsed,
-			RelativePath:  filepath.ToSlash(relative),
-			Fingerprint:   hex.EncodeToString(sum[:]),
-			SizeBytes:     info.Size(),
-			PropertyOrder: append([]string(nil), parsed.PropertyOrder...),
+			parsedItem:   parsed,
+			RelativePath: filepath.ToSlash(relative),
+			Fingerprint:  hex.EncodeToString(sum[:]),
+			SizeBytes:    info.Size(),
+		}
+		if retainBundleInventory {
+			item.PropertyOrder = append([]string(nil), propertyOrder...)
 		}
 		item.ItemKey = item.Type + ":" + item.ID + ":" + item.RelativePath
 		if item.Type == "1" || item.Type == "2" || item.Type == "4" || item.Type == "5" {
@@ -431,6 +465,15 @@ func compactInventoryFields(fields map[string]string) map[string]string {
 		}
 	}
 	return compact
+}
+
+func supportedJoplinItemType(itemType string) bool {
+	switch itemType {
+	case "1", "2", "4", "5", "6":
+		return true
+	default:
+		return false
+	}
 }
 
 func hashFile(ctx context.Context, path string) (string, int64, error) {
@@ -877,6 +920,7 @@ func (run *importRun) processResources(write bool, nextPhase string) error {
 			fingerprint := resourceFingerprint(item)
 			if item.ContentPath == "" {
 				run.report.ResourcesSkipped++
+				run.report.ResourcesMissing++
 				run.addWarning(fmt.Sprintf("resource %s has no content file", item.ID))
 				if write {
 					newStates = append(newStates, run.itemState(item, targetID, "skipped", fingerprint))
@@ -990,8 +1034,9 @@ func (run *importRun) processNotes(write bool, nextPhase string) error {
 				return err
 			}
 			tagNames := run.noteTagNames(item.ID)
-			body, rewrites := buildDocumentBody(parsed, folders, append([]string(nil), tagNames...), run.noteIDMap, run.resourceMap, run.options.CollectionID)
-			run.report.LinksRewritten += rewrites
+			body, links := buildDocumentBody(parsed, folders, append([]string(nil), tagNames...), run.noteIDMap, run.resourceMap, run.options.CollectionID)
+			run.report.LinksRewritten += links.Rewritten
+			run.report.UnresolvedLinks += links.Unresolved
 			targetID := run.noteIDMap[item.ID]
 			notebookID := run.folderIDs[strings.TrimSpace(parsed.Fields["parent_id"])]
 			if notebookID == "" {
@@ -1036,8 +1081,7 @@ func (run *importRun) processNotes(write bool, nextPhase string) error {
 			}
 			run.report.TagsApplied += len(missingTags)
 			run.report.TagsRemoved += len(staleTags)
-			attachmentIDs := referencedResourceIDs(body, run.resourceMap, run.options.CollectionID)
-			run.report.AttachmentsCreated += len(attachmentIDs)
+			run.report.AttachmentsCreated += len(links.Resources)
 			if write && !trashed {
 				if action == "create" {
 					created, err := run.st.CreateDocument(run.ctx, store.CreateDocumentRequest{
@@ -1090,10 +1134,10 @@ func (run *importRun) processNotes(write bool, nextPhase string) error {
 						}
 					}
 				}
-				for _, resourceID := range attachmentIDs {
+				for _, reference := range links.Resources {
 					if _, err := run.st.AttachDocumentResource(run.ctx, store.AttachResourceRequest{
-						DocumentID: targetID, ResourceID: resourceID, RelationType: "referenced",
-						AnchorJSON: fmt.Sprintf(`{"joplin_resource_id":%q}`, originalResourceID(resourceID, run.resourceMap)),
+						DocumentID: targetID, ResourceID: reference.TargetID, RelationType: "referenced",
+						AnchorJSON: fmt.Sprintf(`{"joplin_resource_id":%q}`, reference.SourceID),
 					}); err != nil && !errors.Is(err, store.ErrNotFound) {
 						return err
 					}
@@ -1287,24 +1331,4 @@ func (run *importRun) sourceTagForTarget(targetID string) (string, string, bool)
 		}
 	}
 	return "", "", false
-}
-
-func referencedResourceIDs(body string, resources map[string]string, collectionID string) []string {
-	ids := []string{}
-	for _, targetID := range resources {
-		if strings.Contains(body, store.ResourceURI(collectionID, targetID)) {
-			ids = append(ids, targetID)
-		}
-	}
-	sort.Strings(ids)
-	return ids
-}
-
-func originalResourceID(targetID string, resources map[string]string) string {
-	for originalID, candidate := range resources {
-		if candidate == targetID {
-			return originalID
-		}
-	}
-	return ""
 }

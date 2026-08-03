@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"regexp"
 	"sort"
 	"strings"
 	"unicode/utf8"
@@ -27,42 +26,50 @@ type Options struct {
 }
 
 type Report struct {
-	SourceDir          string        `json:"source_dir"`
-	SourceKey          string        `json:"source_key"`
-	CollectionID       string        `json:"collection_id"`
-	DryRun             bool          `json:"dry_run"`
-	Resumed            bool          `json:"resumed"`
-	CheckpointStatus   string        `json:"checkpoint_status"`
-	BatchesCompleted   int           `json:"batches_completed"`
-	NotesSeen          int           `json:"notes_seen"`
-	NotesImported      int           `json:"notes_imported"`
-	NotesUpdated       int           `json:"notes_updated"`
-	NotesUnchanged     int           `json:"notes_unchanged"`
-	NotebooksSeen      int           `json:"notebooks_seen"`
-	NotebooksCreated   int           `json:"notebooks_created"`
-	NotebooksUpdated   int           `json:"notebooks_updated"`
-	NotebooksSkipped   int           `json:"notebooks_skipped"`
-	NotebooksExisting  int           `json:"notebooks_existing"`
-	NotebooksMerged    int           `json:"notebooks_merged"`
-	NotebookConflicts  []string      `json:"notebook_conflicts,omitempty"`
-	TagsSeen           int           `json:"tags_seen"`
-	TagsCreated        int           `json:"tags_created"`
-	TagsUpdated        int           `json:"tags_updated"`
-	TagsSkipped        int           `json:"tags_skipped"`
-	TagsExisting       int           `json:"tags_existing"`
-	TagsApplied        int           `json:"tags_applied"`
-	TagsRemoved        int           `json:"tags_removed"`
-	ResourcesSeen      int           `json:"resources_seen"`
-	ResourcesImported  int           `json:"resources_imported"`
-	ResourcesUpdated   int           `json:"resources_updated"`
-	ResourcesExisting  int           `json:"resources_existing"`
-	ResourcesSkipped   int           `json:"resources_skipped"`
-	SourceBundleItems  int           `json:"source_bundle_items"`
-	SourceBundleBytes  int64         `json:"source_bundle_bytes"`
-	LinksRewritten     int           `json:"links_rewritten"`
-	AttachmentsCreated int           `json:"attachments_created"`
-	Warnings           []string      `json:"warnings,omitempty"`
-	SuggestedConfig    *ImportConfig `json:"suggested_config,omitempty"`
+	SourceDir          string         `json:"source_dir"`
+	SourceKey          string         `json:"source_key"`
+	CollectionID       string         `json:"collection_id"`
+	DryRun             bool           `json:"dry_run"`
+	Resumed            bool           `json:"resumed"`
+	CheckpointStatus   string         `json:"checkpoint_status"`
+	BatchesCompleted   int            `json:"batches_completed"`
+	MetadataFilesSeen  int            `json:"metadata_files_seen"`
+	ItemsSeen          int            `json:"items_seen"`
+	ItemTypeCounts     map[string]int `json:"item_type_counts"`
+	MalformedItems     int            `json:"malformed_items"`
+	UnsupportedItems   int            `json:"unsupported_items"`
+	IgnoredFiles       int            `json:"ignored_files"`
+	NotesSeen          int            `json:"notes_seen"`
+	NotesImported      int            `json:"notes_imported"`
+	NotesUpdated       int            `json:"notes_updated"`
+	NotesUnchanged     int            `json:"notes_unchanged"`
+	NotebooksSeen      int            `json:"notebooks_seen"`
+	NotebooksCreated   int            `json:"notebooks_created"`
+	NotebooksUpdated   int            `json:"notebooks_updated"`
+	NotebooksSkipped   int            `json:"notebooks_skipped"`
+	NotebooksExisting  int            `json:"notebooks_existing"`
+	NotebooksMerged    int            `json:"notebooks_merged"`
+	NotebookConflicts  []string       `json:"notebook_conflicts,omitempty"`
+	TagsSeen           int            `json:"tags_seen"`
+	TagsCreated        int            `json:"tags_created"`
+	TagsUpdated        int            `json:"tags_updated"`
+	TagsSkipped        int            `json:"tags_skipped"`
+	TagsExisting       int            `json:"tags_existing"`
+	TagsApplied        int            `json:"tags_applied"`
+	TagsRemoved        int            `json:"tags_removed"`
+	ResourcesSeen      int            `json:"resources_seen"`
+	ResourcesImported  int            `json:"resources_imported"`
+	ResourcesUpdated   int            `json:"resources_updated"`
+	ResourcesExisting  int            `json:"resources_existing"`
+	ResourcesSkipped   int            `json:"resources_skipped"`
+	ResourcesMissing   int            `json:"resources_missing_content"`
+	SourceBundleItems  int            `json:"source_bundle_items"`
+	SourceBundleBytes  int64          `json:"source_bundle_bytes"`
+	LinksRewritten     int            `json:"links_rewritten"`
+	UnresolvedLinks    int            `json:"unresolved_links"`
+	AttachmentsCreated int            `json:"attachments_created"`
+	Warnings           []string       `json:"warnings,omitempty"`
+	SuggestedConfig    *ImportConfig  `json:"suggested_config,omitempty"`
 	// DocumentIDs lists the notes this run touched (created/updated/kept),
 	// for post-import passes like --localize-media. Not part of the JSON
 	// report.
@@ -249,7 +256,19 @@ func splitSourceTitle(body string) (string, string) {
 	return title, strings.Join(lines[start:], "\n")
 }
 
-func buildDocumentBody(note parsedItem, folders map[string]parsedItem, tags []string, noteIDMap, resourceIDMap map[string]string, collectionID string) (string, int) {
+type resourceReference struct {
+	SourceID string
+	TargetID string
+}
+
+type linkRewriteResult struct {
+	Body       string
+	Rewritten  int
+	Unresolved int
+	Resources  []resourceReference
+}
+
+func buildDocumentBody(note parsedItem, folders map[string]parsedItem, tags []string, noteIDMap, resourceIDMap map[string]string, collectionID string) (string, linkRewriteResult) {
 	frontmatter := []string{"---"}
 	frontmatter = append(frontmatter, "source_system: joplin_raw")
 	frontmatter = append(frontmatter, "joplin_id: "+yamlQuote(note.ID))
@@ -272,27 +291,151 @@ func buildDocumentBody(note parsedItem, folders map[string]parsedItem, tags []st
 		}
 	}
 	frontmatter = append(frontmatter, "---", "")
-	rewritten, count := rewriteJoplinLinks(note.Body, noteIDMap, resourceIDMap, collectionID)
-	return strings.Join(frontmatter, "\n") + rewritten + "\n", count
+	result := rewriteJoplinLinks(note.Body, noteIDMap, resourceIDMap, collectionID)
+	return strings.Join(frontmatter, "\n") + result.Body + "\n", result
 }
 
-var joplinLinkRE = regexp.MustCompile(`:/([A-Za-z0-9_-]+)`)
+// rewriteJoplinLinks rewrites each resolvable :/id target while it scans the
+// note once. It leaves fenced code, inline code, and escaped targets untouched,
+// and returns direct resource references for bounded attachment planning.
+func rewriteJoplinLinks(body string, noteIDMap, resourceIDMap map[string]string, collectionID string) linkRewriteResult {
+	var output strings.Builder
+	output.Grow(len(body))
+	result := linkRewriteResult{}
+	resources := map[string]resourceReference{}
+	fenceCharacter := byte(0)
+	fenceLength := 0
+	inlineCodeLength := 0
 
-func rewriteJoplinLinks(body string, noteIDMap, resourceIDMap map[string]string, collectionID string) (string, int) {
-	count := 0
-	out := joplinLinkRE.ReplaceAllStringFunc(body, func(match string) string {
-		id := strings.TrimPrefix(match, ":/")
-		if docID := noteIDMap[id]; docID != "" {
-			count++
-			return store.DocumentURI(collectionID, docID)
+	for start := 0; start < len(body); {
+		end := strings.IndexByte(body[start:], '\n')
+		hasNewline := end >= 0
+		if hasNewline {
+			end += start
+		} else {
+			end = len(body)
 		}
-		if resID := resourceIDMap[id]; resID != "" {
-			count++
-			return store.ResourceURI(collectionID, resID)
+		line := body[start:end]
+		character, length, closing := markdownFence(line, fenceCharacter, fenceLength)
+		if fenceCharacter != 0 {
+			output.WriteString(line)
+			if closing {
+				fenceCharacter, fenceLength = 0, 0
+			}
+		} else if character != 0 {
+			output.WriteString(line)
+			fenceCharacter, fenceLength = character, length
+			inlineCodeLength = 0
+		} else {
+			rewriteJoplinLinkLine(&output, line, &inlineCodeLength, noteIDMap, resourceIDMap, collectionID, &result, resources)
 		}
-		return match
+		if hasNewline {
+			output.WriteByte('\n')
+			start = end + 1
+		} else {
+			start = end
+		}
+	}
+	result.Body = output.String()
+	result.Resources = make([]resourceReference, 0, len(resources))
+	for _, reference := range resources {
+		result.Resources = append(result.Resources, reference)
+	}
+	sort.Slice(result.Resources, func(i, j int) bool {
+		if result.Resources[i].TargetID != result.Resources[j].TargetID {
+			return result.Resources[i].TargetID < result.Resources[j].TargetID
+		}
+		return result.Resources[i].SourceID < result.Resources[j].SourceID
 	})
-	return out, count
+	return result
+}
+
+func markdownFence(line string, activeCharacter byte, activeLength int) (byte, int, bool) {
+	indent := 0
+	for indent < len(line) && indent < 3 && line[indent] == ' ' {
+		indent++
+	}
+	if indent >= len(line) || (line[indent] != '`' && line[indent] != '~') {
+		return 0, 0, false
+	}
+	character := line[indent]
+	end := indent
+	for end < len(line) && line[end] == character {
+		end++
+	}
+	length := end - indent
+	if length < 3 {
+		return 0, 0, false
+	}
+	if activeCharacter == 0 {
+		return character, length, false
+	}
+	if character == activeCharacter && length >= activeLength && strings.TrimSpace(line[end:]) == "" {
+		return character, length, true
+	}
+	return 0, 0, false
+}
+
+func rewriteJoplinLinkLine(output *strings.Builder, line string, inlineCodeLength *int, noteIDMap, resourceIDMap map[string]string, collectionID string, result *linkRewriteResult, resources map[string]resourceReference) {
+	for index := 0; index < len(line); {
+		if line[index] == '`' {
+			end := index + 1
+			for end < len(line) && line[end] == '`' {
+				end++
+			}
+			runLength := end - index
+			if *inlineCodeLength == 0 {
+				*inlineCodeLength = runLength
+			} else if *inlineCodeLength == runLength {
+				*inlineCodeLength = 0
+			}
+			output.WriteString(line[index:end])
+			index = end
+			continue
+		}
+		if *inlineCodeLength != 0 || index+2 > len(line) || line[index:index+2] != ":/" || isEscaped(line, index) {
+			output.WriteByte(line[index])
+			index++
+			continue
+		}
+		end := index + 2
+		for end < len(line) && isJoplinIDCharacter(line[end]) {
+			end++
+		}
+		if end == index+2 {
+			output.WriteString(":/")
+			index += 2
+			continue
+		}
+		id := line[index+2 : end]
+		if documentID := noteIDMap[id]; documentID != "" {
+			output.WriteString(store.DocumentURI(collectionID, documentID))
+			result.Rewritten++
+		} else if resourceID := resourceIDMap[id]; resourceID != "" {
+			output.WriteString(store.ResourceURI(collectionID, resourceID))
+			result.Rewritten++
+			resources[resourceID] = resourceReference{SourceID: id, TargetID: resourceID}
+		} else {
+			output.WriteString(line[index:end])
+			result.Unresolved++
+		}
+		index = end
+	}
+}
+
+func isEscaped(text string, index int) bool {
+	backslashes := 0
+	for index > 0 && text[index-1] == '\\' {
+		backslashes++
+		index--
+	}
+	return backslashes%2 == 1
+}
+
+func isJoplinIDCharacter(character byte) bool {
+	return character >= 'a' && character <= 'z' ||
+		character >= 'A' && character <= 'Z' ||
+		character >= '0' && character <= '9' || character == '_' || character == '-'
 }
 
 func notebookPath(id string, folders map[string]parsedItem) string {
