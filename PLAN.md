@@ -1,7 +1,8 @@
 # Plan: v0.4 — Import correctness, portable data, publishing handoff, and stable references
 
-Status: **J1–J3, Q1, P1, P2, P3, P3a, and P3b completed; P4 and all remaining
-product-feature tasks require user approval**.
+Status: **J1–J3, Q1, P1, P2, P3, P3a, and P3b completed. P4 (verify and
+restore/import, including mandatory resource/attachment coverage) is in
+progress; the remaining product-feature tasks require user approval**.
 Drafted 2026-07-26 and revised 2026-08-02 after comparing the Joplin importer
 and publishing/search plans with the real-data-tested `movenotes-v3` pipeline.
 
@@ -289,7 +290,7 @@ self-describing, so trailer-based resume remains possible later without a
 format change. The A/B also exposed and fixed a byte-accounting defect that
 double-counted packed objects against `MaxTotalBytes`.
 
-### P4. Native archive v2 verify and restore/import
+### P4. Native archive v2 verify and restore/import — next task
 
 - Add verify-only CLI/API service behavior before any mutation.
 - Implement explicit replacement restore into a fresh initialized database and
@@ -297,10 +298,39 @@ double-counted packed objects against `MaxTotalBytes`.
   identity according to the chosen intent.
 - Admit objects through safe bounded paths and atomic canonical transactions;
   preserve revisions/provenance/source bundles.
+- Read both object layouts and reuse P3a's spooled verification rather than
+  reintroducing in-memory record sets; restore must stay bounded at the
+  382,206-note scale P3a and P3b measured.
 - Add crash/fault injection and round-trip equality tests.
 
-Working state: a v2 archive can reconstruct the promised canonical state,
-corruption causes no partial restore, and archive v1 compatibility remains.
+**Resource and attachment coverage is mandatory.** Neither recipe corpus
+carries resources or source bundles, so P3a/P3b exercised the blob path at
+scale with note bodies only. P4 must close that gap using the
+attachment-bearing Joplin RAW archive at
+`/home/renes/Documents/Joplin Archive/JoplinExport_2026_07_18/` — 111,330
+items with real resources, measured by J2 at 763 resource records and 766
+planned relationships, including five items whose content files are missing.
+Specifically:
+
+- import that archive with `--preserve-source` so resources *and* exact source
+  bundles are present, then export, verify, and restore it under both the loose
+  and packed layouts;
+- assert round-trip equality for resource bytes (exact SHA-256), logical
+  resource metadata, `document_resource_refs` relations with their ordinals and
+  anchors, and source-bundle items with their property order and relative
+  paths;
+- confirm restore re-admits resource bytes through the media/MIME admission
+  path rather than trusting archive metadata, and that a resource whose blob is
+  absent or corrupt fails before any canonical write;
+- confirm the J2 missing-content items remain reported rather than silently
+  dropped across the import → export → restore cycle.
+
+Evidence stays aggregate-only: counts, hashes, timings, and sizes, never note
+content, resource bytes, or local paths.
+
+Working state: a v2 archive can reconstruct the promised canonical state
+including resources and source bundles, corruption causes no partial restore,
+and archive v1 compatibility remains.
 
 ### P5. Stable external links and local resolution
 

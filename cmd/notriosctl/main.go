@@ -48,6 +48,8 @@ func main() {
 		runResources(os.Args[2:])
 	case "gc":
 		runGarbageCollection(os.Args[2:])
+	case "verify":
+		runVerify(os.Args[2:])
 	case "help", "-h", "--help":
 		printHelp()
 	default:
@@ -488,6 +490,7 @@ Usage:
   notriosctl import claude  [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--notebook Claude] [--dry-run] <conversations.json|export-dir>
   notriosctl import archive [--db ...] [--dry-run] [--write-config path] [--import-config path] <archive-dir>
   notriosctl export archive [--db ...] [--query "tag:todo"] <out-dir>
+  notriosctl verify archive-v2 <archive-dir>
   notriosctl export archive-v2 [--db ...] [--target full_archive|subset_transfer] [--notebooks id,id] [--tags a,b] [--query "tag:todo"] [--documents id,id] [--match any|all] [--pack] [--overwrite] [--no-verify] <out-dir>
   notriosctl seed-help [--db ...] [docs-dir]     # mirror docs/ into the read-only Help notebook
   notriosctl localize [--config config.yaml] [--db ...] [--dry-run] [--allow-review] [--base-revision rev] <document-id>
@@ -827,6 +830,31 @@ func runImportArchive(args []string) {
 		options.Config = cfg
 	}
 	report, err := archive.Import(ctx, st, archiveDir, options)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	printJSON(report)
+}
+
+// runVerify is read-only by construction: it opens no database and performs no
+// canonical write, so an archive can be checked before anything is restored
+// from it.
+func runVerify(args []string) {
+	if len(args) == 0 || args[0] != "archive-v2" {
+		fmt.Fprintln(os.Stderr, "usage: notriosctl verify archive-v2 <archive-dir>")
+		os.Exit(2)
+	}
+	fs := flag.NewFlagSet("notriosctl verify archive-v2", flag.ExitOnError)
+	if err := fs.Parse(args[1:]); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(2)
+	}
+	if fs.NArg() != 1 {
+		fmt.Fprintln(os.Stderr, "usage: notriosctl verify archive-v2 <archive-dir>")
+		os.Exit(2)
+	}
+	report, err := archivev2.VerifyDirectory(fs.Arg(0), archivev2.DefaultLimits())
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
