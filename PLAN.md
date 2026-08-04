@@ -1,6 +1,6 @@
 # Plan: v0.4 — Import correctness, portable data, publishing handoff, and stable references
 
-Status: **J1–J3, Q1, P1, and P2 completed; P3 and all remaining product-feature tasks require user approval**.
+Status: **J1–J3, Q1, P1, P2, and P3 completed; P4 and all remaining product-feature tasks require user approval**.
 Drafted 2026-07-26 and revised 2026-08-02 after comparing the Joplin importer
 and publishing/search plans with the real-data-tested `movenotes-v3` pipeline.
 
@@ -157,7 +157,7 @@ Schema v12 persists stable logical database and per-writable-copy replica IDs;
 the verifier also rejects MIME/path/depth/count/reference violations.
 Implementation detail is archived under `plans/v0.4/006-*`.
 
-### P3. Native archive v2 streaming export
+### P3. Native archive v2 streaming export — complete
 
 - Export one transactionally consistent snapshot through the P1 planner into
   immutable object files and publish the manifest last.
@@ -169,6 +169,17 @@ Implementation detail is archived under `plans/v0.4/006-*`.
 
 Working state: full and subset exports are deterministic, checksum-valid,
 bounded-memory, and leave no apparently complete archive after interruption.
+`notriosctl export archive-v2` reads through one SQLite read transaction,
+streams every body/resource/source bundle through a 64 KiB buffer, stages
+privately, publishes the manifest last, and verifies the result. Generated
+100/1,000/5,000-note evidence is archived under `performance/v0.4-p3/` and
+implementation detail under `plans/v0.4/007-*`.
+
+One format bound is deliberately left open rather than widened in this slice:
+one object per revision plus an inline manifest inventory caps an archive near
+9,900 revisions, so archive v2 cannot yet back up a million-note library. The
+exporter enforces the documented limits and fails before publishing a manifest.
+See `NATIVE_ARCHIVE_V2.md` and `agent/OPEN_QUESTIONS.md`.
 
 ### P4. Native archive v2 verify and restore/import
 
@@ -257,7 +268,9 @@ specific real-format, round-trip, hostile-input, native-build, and scale gates.
 
 ## Decisions required before or during v0.4
 
-- Approve P3 before implementing streaming archive-v2 export.
+- Approve P4 before implementing verified archive-v2 restore/import.
+- Decide whether archive v2 gains an out-of-manifest object inventory so a
+  full backup can exceed the current ~9,900-revision object bound.
 - Restore has no default: P2 defines explicit replace/merge/fork/adopt identity
   consequences; P4 must require one after verification.
 - Treat `movenotes-v3` and `hugo-theme-ledger` as optional external publishing

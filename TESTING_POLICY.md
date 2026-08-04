@@ -161,6 +161,29 @@ below 0.01 seconds. The exact crossover depends on joins, sort, cache, storage,
 and hardware, so the architectural rule is: use keysets for any unbounded
 collection, not “switch after N total notes.”
 
+### Native archive v2 export
+
+v0.4 P3 export fixtures build a complete canonical database (nested notebooks,
+tags, a shared resource, cross-boundary links, provenance with private source
+metadata, an exact source bundle, a trashed note, and two notes with identical
+bodies) and assert that a full archive verifies, carries complete revision
+history and the trashed note, deduplicates identical bodies to one object, and
+preserves private metadata. Subset fixtures assert the scoped notebook/tag set,
+omitted search notebooks, blanked private source `metadata_json`, and
+`target_excluded` links whose targets the selection excluded. Further fixtures
+cover byte-identical manifests across repeated exports, binding the dry-run
+`PlanSelection` digest, an interrupted export verifying as incomplete, a
+resumed export reusing published objects and pruning unlisted ones, refusal of
+foreign destinations and existing complete archives, refusal of
+publication-handoff and content-rewriting link actions, the object budget, and
+small record chunking.
+
+`scripts/run_archive_export_profile.sh` drives generated 100/1,000/5,000-note
+export, verify, resume, and subset tiers. Evidence under `performance/v0.4-p3/`
+records aggregate timings, object/byte counts, whole-process peak RSS, and the
+share of the object budget each tier consumed — never note titles, bodies,
+resources, or local paths.
+
 ### Native archive v2 admission
 
 Archive-v2 tests start from a complete synthetic golden directory containing

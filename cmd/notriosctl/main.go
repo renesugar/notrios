@@ -9,8 +9,10 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	"github.com/renesugar/notrios/internal/archive"
+	"github.com/renesugar/notrios/internal/archivev2"
 	"github.com/renesugar/notrios/internal/config"
 	"github.com/renesugar/notrios/internal/helpdocs"
 	"github.com/renesugar/notrios/internal/importers/chatgpt"
@@ -486,6 +488,7 @@ Usage:
   notriosctl import claude  [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--notebook Claude] [--dry-run] <conversations.json|export-dir>
   notriosctl import archive [--db ...] [--dry-run] [--write-config path] [--import-config path] <archive-dir>
   notriosctl export archive [--db ...] [--query "tag:todo"] <out-dir>
+  notriosctl export archive-v2 [--db ...] [--target full_archive|subset_transfer] [--notebooks id,id] [--tags a,b] [--query "tag:todo"] [--documents id,id] [--match any|all] [--overwrite] [--no-verify] <out-dir>
   notriosctl seed-help [--db ...] [docs-dir]     # mirror docs/ into the read-only Help notebook
   notriosctl localize [--config config.yaml] [--db ...] [--dry-run] [--allow-review] [--base-revision rev] <document-id>
                                                  # download policy-allowed remote media and rewrite the note to resource:// URIs
@@ -660,10 +663,89 @@ func printJSON(v any) {
 }
 
 func runExport(args []string) {
-	if len(args) == 0 || args[0] != "archive" {
-		fmt.Fprintln(os.Stderr, "usage: notriosctl export archive [options] <out-dir>")
+	if len(args) == 0 {
+		fmt.Fprintln(os.Stderr, "usage: notriosctl export archive|archive-v2 [options] <out-dir>")
 		os.Exit(2)
 	}
+	switch args[0] {
+	case "archive":
+		runExportArchiveV1(args)
+	case "archive-v2":
+		runExportArchiveV2(args[1:])
+	default:
+		fmt.Fprintf(os.Stderr, "unknown export format %q\n", args[0])
+		fmt.Fprintln(os.Stderr, "usage: notriosctl export archive|archive-v2 [options] <out-dir>")
+		os.Exit(2)
+	}
+}
+
+// runExportArchiveV2 writes the lossless native archive-v2 snapshot. It is a
+// local filesystem operation on purpose: no REST or MCP surface accepts an
+// output path.
+func runExportArchiveV2(args []string) {
+	fs := flag.NewFlagSet("notriosctl export archive-v2", flag.ExitOnError)
+	configPath := fs.String("config", "", "optional config file")
+	dbPath := fs.String("db", "", "SQLite database path override")
+	assetStore := fs.String("asset-store", "", "asset store directory override")
+	collectionID := fs.String("collection", "default", "collection ID")
+	target := fs.String("target", "full_archive", "full_archive (complete backup) or subset_transfer")
+	notebooks := fs.String("notebooks", "", "comma-separated notebook IDs (recursive) for a subset transfer")
+	tags := fs.String("tags", "", "comma-separated tag names for a subset transfer")
+	query := fs.String("query", "", "query-language scope for a subset transfer")
+	documents := fs.String("documents", "", "comma-separated document IDs for a subset transfer")
+	match := fs.String("match", "any", "combine populated selector types with any or all")
+	maxDocuments := fs.Int("max-documents", 0, "maximum selected documents (0 = planner default)")
+	recordsPerObject := fs.Int("records-per-object", 0, "maximum records per JSONL object (0 = format maximum)")
+	overwrite := fs.Bool("overwrite", false, "replace an existing complete archive in the destination")
+	skipVerify := fs.Bool("no-verify", false, "skip the read-only verification pass after publishing the manifest")
+	if err := fs.Parse(args); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(2)
+	}
+	if fs.NArg() != 1 {
+		fmt.Fprintln(os.Stderr, "usage: notriosctl export archive-v2 [options] <out-dir>")
+		fs.PrintDefaults()
+		os.Exit(2)
+	}
+	st := openStoreFromFlags(*configPath, *dbPath, *assetStore)
+	defer st.Close()
+	options := archivev2.ExportOptions{
+		Target: *target,
+		Selection: store.SelectionSpec{
+			CollectionID: *collectionID,
+			NotebookIDs:  splitCommaList(*notebooks),
+			Tags:         splitCommaList(*tags),
+			Query:        *query,
+			DocumentIDs:  splitCommaList(*documents),
+			Match:        *match,
+		},
+		MaxDocuments:     *maxDocuments,
+		RecordsPerObject: *recordsPerObject,
+		Overwrite:        *overwrite,
+		SkipVerification: *skipVerify,
+	}
+	report, err := archivev2.Export(context.Background(), st, fs.Arg(0), options)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	if !report.FullBackup {
+		fmt.Fprintln(os.Stderr, "note: this archive is a scoped snapshot and is not a complete database backup")
+	}
+	printJSON(report)
+}
+
+func splitCommaList(value string) []string {
+	values := []string{}
+	for _, part := range strings.Split(value, ",") {
+		if trimmed := strings.TrimSpace(part); trimmed != "" {
+			values = append(values, trimmed)
+		}
+	}
+	return values
+}
+
+func runExportArchiveV1(args []string) {
 	fs := flag.NewFlagSet("notriosctl export archive", flag.ExitOnError)
 	configPath := fs.String("config", "", "optional config file")
 	dbPath := fs.String("db", "", "SQLite database path override")

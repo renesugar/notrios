@@ -117,7 +117,20 @@ Imports a native Notrios archive. `--dry-run` analyzes notebook-name conflicts a
 notriosctl export archive [shared flags] [--query "tag:todo"] <out-dir>
 ```
 
-Writes a native Notrios archive directory. `--query` (default empty = all non-trashed notes) scopes the export with the [query language](query-language.md). The report lists `notes`, `notebooks`, `resources`, and any `warnings`.
+Writes a native archive **v1** directory: query-scoped, human-readable interchange. `--query` (default empty = all non-trashed notes) scopes the export with the [query language](query-language.md). The report lists `notes`, `notebooks`, `resources`, and any `warnings`. v1 is not a lossless backup — use `export archive-v2` for that.
+
+## export archive-v2
+
+```sh
+notriosctl export archive-v2 [shared flags] [--target full_archive|subset_transfer]
+    [--notebooks id,id] [--tags a,b] [--query "tag:todo"] [--documents id,id]
+    [--match any|all] [--max-documents N] [--records-per-object N]
+    [--overwrite] [--no-verify] <out-dir>
+```
+
+Writes the lossless [native archive v2](archive-v2.md) snapshot: immutable SHA-256 objects with `manifest.json` published last, verified before the command reports success. `--target full_archive` (the default) is the complete-backup mode and takes no selectors; `--target subset_transfer` requires at least one selector and is never described as a backup. Selectors go through the shared [selection/privacy planner](selection-planning.md), and the manifest binds that plan's digest.
+
+Re-running the command over an interrupted export reuses already-published objects and prunes objects the new manifest does not list; `--overwrite` is required to replace an archive that already has a manifest. `--no-verify` skips the post-publication verification pass (not recommended for backups). The JSON report includes `full_backup`, `commit_sha256`, typed `counts`, object and byte totals, `reused_objects`, `cleared_link_targets`, and `warnings`.
 
 ## seed-help
 

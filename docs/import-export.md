@@ -309,16 +309,33 @@ my-archive/
 
 This is native archive **v1**: query-scoped, human-readable interchange. It is
 not lossless and does not preserve database/profile/replica identity, every
-revision, or all provenance. Native archive v2 now has a documented and tested
-[identity, manifest, object, and verification contract](archive-v2.md), but its
-streaming export (P3) and verified restore (P4) commands are not implemented.
+revision, or all provenance.
 
-Before archive v2 writes anything, the live [selection/privacy
-planner](selection-planning.md) can dry-run a full archive or explicit subset.
-It reports complete content-free counts/hashes and privacy/link decisions;
-P1 does not change the existing archive-v1 command. P2 validates v2 fixture
-directories without writing canonical data; it still does not create v2 files
-from a live database.
+## Exporting a native archive v2 snapshot
+
+```sh
+# Complete database backup.
+go run ./cmd/notriosctl export archive-v2 ./notrios-backup
+
+# Explicitly scoped subset transfer.
+go run ./cmd/notriosctl export archive-v2 --target subset_transfer \
+  --notebooks nb_research --tags shared ./research-transfer
+```
+
+Archive **v2** is the lossless format: every saved revision, trashed notes,
+notebooks and tags, links, provenance, resources, exact source bundles, and
+logical database/replica identity, all as immutable SHA-256 objects under a
+manifest published last and verified before the command succeeds. See the
+[archive v2 safety contract](archive-v2.md) for the modes, the interruption and
+resume behavior, and the current object-count bound.
+
+Selection goes through the same [selection/privacy
+planner](selection-planning.md) you can dry-run first, and the manifest binds
+that plan's digest, so a reviewed dry run and the archive it produced can be
+matched afterwards.
+
+Verified restore (P4) is not implemented yet, so keep an archive-v1 export or a
+database copy alongside a v2 snapshot for now.
 
 ## Importing a Notrios archive
 

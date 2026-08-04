@@ -43,13 +43,20 @@ it imports notes as new plain local notes, omits some provenance/revision/source
 representation, and does not define database/replica identity. User docs must
 not call it lossless or a substitute for disaster recovery.
 
-## Native archive v2 (planned v0.4)
+## Native archive v2 (format/verify implemented in P2; streaming export in P3)
 
-Use a deterministic versioned manifest and immutable SHA-256-addressed objects.
-Include schema/container compatibility, a stable read-snapshot boundary,
+`notriosctl export archive-v2 <out-dir>` writes a deterministic versioned
+manifest over immutable SHA-256-addressed objects. It includes
+schema/container compatibility, one SQLite read-transaction snapshot boundary,
 notebooks/tags/search notebooks, all selected revisions and provenance,
 source-preservation bundles, resources, checksums, and an explicit scope.
-Stream records/bytes in bounded batches and publish the manifest last.
+Records and bytes stream in bounded batches and the manifest is published last;
+the writer then verifies the published archive before reporting success.
+
+`--target full_archive` is the default complete-backup mode;
+`--target subset_transfer` requires a selector and is never reported as a
+backup. Restore is P4, so a v2 archive is currently a verified snapshot Notrios
+cannot yet read back.
 
 This container is also the full-snapshot bootstrap for v0.7 sync. Sync adds
 incremental change envelopes and acknowledgements; it must not invent another

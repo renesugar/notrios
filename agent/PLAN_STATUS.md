@@ -1,14 +1,14 @@
 # Plan Status
 
-Updated: 2026-08-03
+Updated: 2026-08-04
 
 ## Active milestone
 
 v0.3 import/resource/media/large-library hardening is complete. H1–H11 are
 archived under `plans/v0.3/`. The revised v0.4 plan begins with Joplin
 correctness/performance prerequisites, then archive-v2, publishing handoff,
-boolean search, and stable references. J1–J3, Q1, P1, and P2 are complete; P3 and all
-subsequent product tasks require user approval.
+boolean search, and stable references. J1–J3, Q1, P1, P2, and P3 are complete;
+P4 and all subsequent product tasks require user approval.
 
 ## 2026-08-02 follow-up review
 
@@ -93,6 +93,39 @@ subsequent product tasks require user approval.
 - H11: v0.3 documentation/release wrap-up, Help reseed, version 0.3.0,
   release-candidate validation, and verified packaging.
 
+## 2026-08-04 session (Claude Code, Opus 5)
+
+- Completed P3: `notriosctl export archive-v2` streams one SQLite
+  read-transaction snapshot through the P1 planner into immutable SHA-256
+  objects and publishes `manifest.json` last.
+- Added a store-internal `ExportReader` contract (`internal/store/export.go`,
+  `sqlite_export.go`) with bounded identity-scoped reads, visitor-streamed
+  revisions/links, and blob/source-bundle content streams. It is deliberately
+  separate from `Store` so no REST or MCP adapter can reach complete identity
+  sets, raw source-bundle keys, or blob content.
+- `ResolveSelection` reuses `planSelectionLocked`, so the archive binds exactly
+  the `manifest_sha256` a dry-run `PlanSelection` reports for the same request.
+- full_archive keeps trashed notes, complete revision history, provenance with
+  private `metadata_json`, source bundles, all notebooks/tags, and builtin
+  search notebooks. subset_transfer requires a selector, blanks private source
+  metadata, exports only reachable notebooks plus ancestors and used tags, and
+  omits whole-library search notebooks. Links to excluded targets are recorded
+  as `target_excluded` with the target cleared, never as dangling references.
+- publication_handoff and the `plain_text`/`redact` link actions are refused:
+  both rewrite note content and belong to P7.
+- Interruption semantics: objects and the manifest are staged in a sibling
+  `<destination>.staging` directory and renamed in; an interrupted run leaves no
+  manifest, a resumed run reuses published objects and prunes unlisted ones, and
+  an archive that fails its own post-publication verification has its manifest
+  removed.
+- Generated 100/1,000/5,000-note evidence is under `performance/v0.4-p3/`:
+  5,000 notes exported in 3.210 s, verified in 5.130 s, resumed with zero bytes
+  rewritten, and used 46 MiB whole-process peak RSS.
+- Recorded an open format bound rather than widening limits silently: one object
+  per revision plus an inline manifest inventory caps an archive near 9,900
+  revisions, so archive v2 cannot yet back up the million-note libraries J3
+  imports. See `agent/OPEN_QUESTIONS.md` question 17.
+
 ## 2026-07-26 plan/roadmap review
 
 The review initiated by `/home/renes/prompts/notrios_codex_reviewplan.md`
@@ -174,6 +207,12 @@ attempt detail remains append-only in `agent/ATTEMPT_LOG.jsonl`.
 - Fresh database builtins: All notes, Notes, Help, Trash.
 - MCP default profile is read-only; editor-profile write tools are implemented.
 - Native archive v1 is query-scoped interchange, not full backup.
+- Native archive v2 streaming export is live as `notriosctl export archive-v2`;
+  it is a local CLI operation with no REST/MCP output-path surface, and restore
+  is still P4, so a v2 archive cannot yet be read back.
+- P3 generated 100/1,000/5,000-note export evidence is under
+  `performance/v0.4-p3/`. One archive currently holds at most ~9,900 revisions
+  because each revision is one object and the manifest lists objects inline.
 - No GitHub push is authorized for this review.
 
 ## Open implementation blockers

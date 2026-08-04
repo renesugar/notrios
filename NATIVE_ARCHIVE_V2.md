@@ -1,8 +1,8 @@
 # Native archive v2 format and identity contract
 
-Status: format and read-only verification implemented in v0.4 P2. Streaming
-export is P3; verified restore/import is P4. Archive v1 remains supported as
-human-readable interchange and is not interpreted as v2.
+Status: format and read-only verification implemented in v0.4 P2; streaming
+export implemented in v0.4 P3. Verified restore/import is P4. Archive v1
+remains supported as human-readable interchange and is not interpreted as v2.
 
 ## Purpose and boundaries
 
@@ -59,9 +59,20 @@ directory contains no temporary files after commit.
 
 The writer publishes every object first and `manifest.json` last. An absent
 manifest is always incomplete. The verifier does not infer completeness from
-directory timestamps, object count, or a partially written manifest. P3 will
-stage privately, flush and verify objects, then atomically publish the final
-manifest.
+directory timestamps, object count, or a partially written manifest.
+
+P3 (`internal/archivev2.Export`) implements that contract: object and manifest
+bytes are staged in a sibling `<destination>.staging` directory, flushed and
+fsynced, then renamed into place, so the archive directory never contains a
+temporary file. The writer refuses a destination holding anything other than
+`objects/` and `manifest.json`, and it removes an existing manifest before
+rewriting objects so a partially rewritten archive cannot claim completeness.
+
+Because objects are content-addressed and immutable, resuming is the ordinary
+path: re-running an interrupted export reuses every already-published object of
+the right size, prunes objects the new manifest does not list, republishes the
+manifest, and then verifies the result. A published archive that fails its own
+verification has its manifest removed rather than being reported as complete.
 
 ## Manifest
 
@@ -130,8 +141,29 @@ The manifest binds the P1 plan digest. Full archives preserve permitted
 canonical history/provenance/source bundles. Subset and publication archives
 remain explicitly scoped and must never claim to be full backups. Source and
 item keys are hashes; source-bundle paths are bounded relative paths, never
-absolute local paths. P3 must apply every P1 link and metadata decision while
-encoding records.
+absolute local paths.
+
+P3 applies every P1 link and metadata decision while encoding records:
+
+- `full_archive` is the only mode reported as `full_backup`, and only when no
+  selector narrowed it and Trash is included. It keeps complete revision
+  history, provenance including private `metadata_json`, exact source bundles,
+  every notebook/tag, and the builtin search notebooks.
+- `subset_transfer` requires a selector, keeps provenance identity but replaces
+  private source `metadata_json` with `{}`, exports only notebooks reachable
+  from selected notes plus their ancestors and only tags those notes use, and
+  omits query-backed search notebooks because their queries describe the whole
+  library.
+- A link whose target document or resource fell outside the archived selection
+  is recorded with the target cleared and `resolution_status: target_excluded`,
+  so no record ever names an object the archive does not contain. The count is
+  reported.
+- `plain_text` and `redact` link actions rewrite note bodies and are refused by
+  export; they belong to the publication projection. `publication_handoff` is
+  refused for the same reason and arrives with P7.
+
+Export is a local filesystem operation. No REST or MCP surface accepts an
+output path or streams archive bytes.
 
 ## Hard limits
 
@@ -148,6 +180,23 @@ The current verifier refuses caller limits wider than these defaults:
 P3 may create more/smaller chunks but may not widen these limits silently.
 P4 can use an indexed verification spool when large cross-reference sets make
 in-memory validation inappropriate; admission semantics remain identical.
+
+### Open format bound: object count versus full-database backup
+
+Every saved revision, resource, and source bundle is one immutable object, and
+the manifest lists every object inline. The 10,000-object and 4 MiB-manifest
+bounds therefore cap one archive at roughly 9,900 revisions plus attachments —
+measured at `performance/v0.4-p3/`, where 5,000 notes consumed 50.5 % of the
+object budget. That is well below the million-note libraries J3 imports, so
+archive v2 cannot yet back up a large library.
+
+This is a format decision, not an exporter defect, and it is deliberately left
+open rather than silently widened: raising `MaxObjects` alone does not work
+because the inline object inventory would exceed the manifest bound. A future
+revision needs the inventory to move into its own `records`-style object with
+its own checksum. The exporter enforces the documented bounds today and fails
+with an explicit object-budget error before publishing any manifest, so an
+over-budget archive can never appear complete. See `agent/OPEN_QUESTIONS.md`.
 
 ## Golden and hostile fixtures
 

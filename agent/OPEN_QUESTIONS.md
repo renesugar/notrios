@@ -27,6 +27,22 @@ log. Current implementation-affecting questions:
 8. What Wails v3 stability/release threshold is required before an Android
    spike can propose migrating the Wails v2 desktop shell?
 
+## Native archive v2 format bounds
+
+17. Archive v2 stores one immutable object per revision, resource, and source
+    bundle, and `manifest.json` lists every object inline. With the documented
+    10,000-object and 4 MiB-manifest limits, one archive holds roughly 9,900
+    revisions — far below the million-note libraries the J3 importer handles,
+    so v2 cannot yet back up a large library. Measured evidence is under
+    `performance/v0.4-p3/` (5,000 notes consumed 50.5 % of the object budget).
+    Raising `MaxObjects` alone does not work because the inline inventory would
+    then exceed the manifest bound. Should a format revision move the object
+    inventory into its own checksummed `records`-style object (and if so,
+    behind which declared capability), or should full backups of large
+    libraries use a different container? P3 deliberately did not widen the
+    limits: the exporter fails with an explicit object-budget error before
+    publishing any manifest.
+
 ## Synchronization (resolve in separate v0.7 plans)
 
 9. Which records use per-field versus whole-record LWW?

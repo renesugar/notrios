@@ -1,9 +1,10 @@
 # Native archive v2 safety contract
 
-Notrios archive v2 is the future lossless backup, transfer, and publication
-handoff format. The v0.4 P2 foundation now defines and verifies that format;
-the current CLI still exports/imports archive v1 until the P3 writer and P4
-verified restore tasks are implemented.
+Notrios archive v2 is the lossless backup and transfer format. v0.4 P2 defines
+and verifies the format; P3 adds the streaming writer
+(`notriosctl export archive-v2`). Verified restore is P4, so today a v2 archive
+is a checksum-verified snapshot you keep, not something Notrios can read back
+yet. Keep an archive v1 export or a database copy until P4 lands.
 
 ## What v2 preserves
 
@@ -49,5 +50,46 @@ There is no implicit default and Notrios never decides by comparing local
 filesystem paths. Replace/adopt/fork create a writable copy with a new replica
 ID; merge is an import into the existing target replica.
 
-For now, use archive v1 commands only for query-scoped plain-note interchange.
-P3 will add streaming v2 export; P4 will add verify-only and restore commands.
+## Writing an archive
+
+```bash
+# Complete database backup, verified before the command reports success.
+notriosctl export archive-v2 /backups/notrios-2026-08-04
+
+# Explicitly scoped subset transfer.
+notriosctl export archive-v2 --target subset_transfer \
+  --notebooks nb_research --tags shared /transfer/research
+```
+
+`full_archive` is the default and is the only mode that claims to be a complete
+backup: it includes trashed notes, every saved revision, provenance, private
+source metadata, and exact source bundles. `subset_transfer` requires at least
+one selector, keeps provenance identity but strips private source
+`metadata_json`, omits whole-library search notebooks, and records links whose
+target fell outside the selection as `target_excluded` instead of leaving a
+dangling reference. Any archive that is not a complete backup says so in its
+warnings and in the `full_backup` field of the JSON report.
+
+The writer publishes every object first and `manifest.json` last. If an export
+is interrupted, the destination has no manifest, so verification reports it as
+incomplete; re-running the same command reuses the already-published objects,
+removes any object the new manifest does not list, and republishes. Pass
+`--overwrite` to replace an archive that already has a manifest. Temporary
+files live in a sibling `<destination>.staging` directory that is removed when
+the command finishes, so the archive directory itself never holds one.
+
+Export is a local command on purpose: no REST or MCP endpoint accepts an output
+path or streams archive bytes.
+
+## Current size bound
+
+Each saved revision, resource, and source bundle becomes one immutable object,
+and the manifest lists every object inline. The format currently admits at most
+10,000 objects and a 4 MiB manifest, which bounds one archive to roughly 9,900
+revisions plus attachments. Larger libraries fail with an explicit
+object-budget error before any manifest is published — the export never
+silently truncates. Raising that bound needs a format revision that moves the
+object inventory out of the manifest.
+
+Use archive v1 commands for query-scoped plain-note interchange. P4 will add
+verify-only and restore commands.

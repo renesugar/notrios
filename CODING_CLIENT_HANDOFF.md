@@ -6,10 +6,10 @@ Current phase: v0.1, v0.2, and v0.3 are complete. H1–H11 are archived under
 `plans/v0.3/`. v0.4 J1 (Joplin RAW physical-line/canonical-title parsing), J2
 (real-export correctness and bounded relationship planning), J3
 (million-item transactional throughput), Q1 (bounded boolean/category search),
-P1 (shared selection/privacy planning), and P2 (native archive-v2 format and
-identity verification) are complete; P3 and all remaining archive/publishing
-product tasks require user approval. See the
-revised `PLAN.md`.
+P1 (shared selection/privacy planning), P2 (native archive-v2 format and
+identity verification), and P3 (native archive-v2 streaming export) are
+complete; P4 and all remaining archive/publishing product tasks require user
+approval. See the revised `PLAN.md`.
 
 ## First files to read
 

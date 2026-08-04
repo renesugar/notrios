@@ -25,3 +25,4 @@
 {"timestamp":"2026-07-27T01:50:09Z","task_id":"v0.3-h11","model":"GPT-5.6","observed_by":"Codex","notes":"Continued the same Codex session for H11 v0.3 documentation and release wrap-up; no model switch observed."}
 {"timestamp":"2026-08-03T00:47:24Z","task_id":"review-followup-2026-08","model":"GPT-5","observed_by":"Codex","notes":"Started the Joplin importer, publishing roadmap, and search-operator follow-up review requested in notrios_codex_review_followup.md; no model switch observed."}
 {"timestamp":"2026-08-03T17:05:00Z","task_id":"v0.4-p2","model":"GPT-5","observed_by":"Codex","notes":"Started the native archive v2 format and identity contract; no model switch observed."}
+{"timestamp":"2026-08-04T00:00:00Z","task_id":"v0.4-p3","model":"claude-opus-5","observed_by":"Claude Code","notes":"Started v0.4 P3 native archive v2 streaming export in a Claude Code session; previous v0.4 slices were completed by GPT-5 under Codex."}

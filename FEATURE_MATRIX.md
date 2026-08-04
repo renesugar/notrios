@@ -51,7 +51,7 @@ This matrix keeps the long conversation compressed into implementation-sized fea
 | Native archive v1 | Implemented | exporter | Query-scoped plain-note interchange; not lossless backup. |
 | Shared selection/privacy planner | Implemented | archive/publishing service | Read-only typed recursive notebook/tag/query/ID selection, target policies, reachable resources, link/privacy/source-bundle/metadata decisions, bounded REST/MCP details, and deterministic digest. |
 | Portable Markdown vault export | External integration | movenotes-v3 | Planned `notrios2sql.py` consumes archive v2; movenotes owns Obsidian projection. |
-| Native archive v2/backup | Format/verifier implemented; P3/P4 planned | archive service | Schema-v12 database/replica identity, manifest-last SHA-256 objects, typed bounded records, explicit restore intent, and strict fixture verification; streaming export/restore remain P3/P4. |
+| Native archive v2/backup | Format, verifier, and streaming export implemented; restore P4 | archive service | Schema-v12 database/replica identity, manifest-last SHA-256 objects, typed bounded records, explicit restore intent, and strict verification. `notriosctl export archive-v2` writes full-backup and explicitly scoped subset snapshots from one read transaction, stages privately, publishes the manifest last, resumes over published objects, and self-verifies. One archive is currently bounded to ~9,900 revisions by the object/manifest limits; restore remains P4. |
 | Joplin RAW export | Optional/research | exporter | Only for measured exact round-trip need. |
 
 ## Built-in UI and editor

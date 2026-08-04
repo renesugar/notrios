@@ -45,7 +45,8 @@ func (s *SQLiteStore) PlanSelection(ctx context.Context, req SelectionPlanReques
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	return s.planSelectionLocked(ctx, norm)
+	plan, _, err := s.planSelectionLocked(ctx, norm)
+	return plan, err
 }
 
 func normalizeSelectionPlanRequest(req SelectionPlanRequest) (normalizedSelectionRequest, error) {
@@ -202,7 +203,10 @@ func sortedUnique(values []string) []string {
 	return out
 }
 
-func (s *SQLiteStore) planSelectionLocked(ctx context.Context, norm normalizedSelectionRequest) (SelectionPlan, error) {
+// planSelectionLocked produces the capped REST/MCP-safe plan plus the complete
+// in-process identity sets an archive writer needs. Both come from one
+// traversal so a dry run and an export cannot disagree.
+func (s *SQLiteStore) planSelectionLocked(ctx context.Context, norm normalizedSelectionRequest) (SelectionPlan, SelectionResolution, error) {
 	plan := SelectionPlan{
 		Version: 1, Target: norm.request.Target, Policy: norm.policy,
 		Documents: []SelectionDocumentManifest{}, Resources: []SelectionResourceManifest{},
@@ -235,10 +239,10 @@ func (s *SQLiteStore) planSelectionLocked(ctx context.Context, norm normalizedSe
 	if norm.unscopedFull {
 		ids, err := s.selectDocumentIDsLocked(ctx, norm.request.Selection.CollectionID, norm.policy.IncludeTrashed, "1", nil, norm.request.MaxDocuments)
 		if err != nil {
-			return SelectionPlan{}, err
+			return SelectionPlan{}, SelectionResolution{}, err
 		}
 		if err := addCategory("full_archive", ids); err != nil {
-			return SelectionPlan{}, err
+			return SelectionPlan{}, SelectionResolution{}, err
 		}
 	}
 	if len(norm.request.Selection.NotebookIDs) > 0 {
@@ -246,14 +250,14 @@ func (s *SQLiteStore) planSelectionLocked(ctx context.Context, norm normalizedSe
 		for _, id := range norm.request.Selection.NotebookIDs {
 			if _, err := s.getNotebookLocked(id); err != nil {
 				if err == ErrNotFound {
-					return SelectionPlan{}, fmt.Errorf("%w: notebook %q was not found", ErrInvalidInput, id)
+					return SelectionPlan{}, SelectionResolution{}, fmt.Errorf("%w: notebook %q was not found", ErrInvalidInput, id)
 				}
-				return SelectionPlan{}, err
+				return SelectionPlan{}, SelectionResolution{}, err
 			}
 			if norm.includeDescendants {
 				subtree, err := s.notebookSubtreeIDsLocked(id)
 				if err != nil {
-					return SelectionPlan{}, err
+					return SelectionPlan{}, SelectionResolution{}, err
 				}
 				notebookIDs = append(notebookIDs, subtree...)
 			} else {
@@ -264,39 +268,39 @@ func (s *SQLiteStore) planSelectionLocked(ctx context.Context, norm normalizedSe
 		predicate := "d.notebook_id IN (" + placeholders(len(notebookIDs)) + ")"
 		ids, err := s.selectDocumentIDsLocked(ctx, norm.request.Selection.CollectionID, norm.policy.IncludeTrashed, predicate, notebookIDs, norm.request.MaxDocuments)
 		if err != nil {
-			return SelectionPlan{}, err
+			return SelectionPlan{}, SelectionResolution{}, err
 		}
 		if err := addCategory("notebook", ids); err != nil {
-			return SelectionPlan{}, err
+			return SelectionPlan{}, SelectionResolution{}, err
 		}
 	}
 	if len(norm.request.Selection.Tags) > 0 {
 		predicate := `d.id IN (SELECT nt.document_id FROM note_tags nt JOIN tags t ON t.id = nt.tag_id WHERE lower(t.name) IN (` + placeholders(len(norm.request.Selection.Tags)) + `))`
 		ids, err := s.selectDocumentIDsLocked(ctx, norm.request.Selection.CollectionID, norm.policy.IncludeTrashed, predicate, norm.request.Selection.Tags, norm.request.MaxDocuments)
 		if err != nil {
-			return SelectionPlan{}, err
+			return SelectionPlan{}, SelectionResolution{}, err
 		}
 		if err := addCategory("tag", ids); err != nil {
-			return SelectionPlan{}, err
+			return SelectionPlan{}, SelectionResolution{}, err
 		}
 	}
 	if norm.hasQuery {
 		predicate, args, err := s.compileSQLExprLocked(norm.parsedQuery.Root, norm.parsedQuery.Trashed)
 		if err != nil {
-			return SelectionPlan{}, err
+			return SelectionPlan{}, SelectionResolution{}, err
 		}
 		ids, err := s.selectDocumentIDsWithTrashScopeLocked(ctx, norm.request.Selection.CollectionID, norm.parsedQuery.Trashed, predicate, args, norm.request.MaxDocuments)
 		if err != nil {
-			return SelectionPlan{}, err
+			return SelectionPlan{}, SelectionResolution{}, err
 		}
 		if err := addCategory("query", ids); err != nil {
-			return SelectionPlan{}, err
+			return SelectionPlan{}, SelectionResolution{}, err
 		}
 	}
 	if len(norm.request.Selection.DocumentIDs) > 0 {
 		ids, missing, trashed, err := s.selectExplicitDocumentIDsLocked(ctx, norm.request.Selection.CollectionID, norm.request.Selection.DocumentIDs, norm.policy.IncludeTrashed)
 		if err != nil {
-			return SelectionPlan{}, err
+			return SelectionPlan{}, SelectionResolution{}, err
 		}
 		for _, id := range missing {
 			appendSelectionExclusion(&plan, norm.request.DetailLimit, &excludedDocumentCount, exclusionDigest, SelectionExclusion{Kind: "document", ID: id, Reason: "missing_document"})
@@ -305,7 +309,7 @@ func (s *SQLiteStore) planSelectionLocked(ctx context.Context, norm normalizedSe
 			appendSelectionExclusion(&plan, norm.request.DetailLimit, &excludedDocumentCount, exclusionDigest, SelectionExclusion{Kind: "document", ID: id, Reason: "trashed_not_allowed"})
 		}
 		if err := addCategory("document_id", ids); err != nil {
-			return SelectionPlan{}, err
+			return SelectionPlan{}, SelectionResolution{}, err
 		}
 	}
 
@@ -318,14 +322,14 @@ func (s *SQLiteStore) planSelectionLocked(ctx context.Context, norm normalizedSe
 		}
 	}
 	if len(candidates) > norm.request.MaxDocuments {
-		return SelectionPlan{}, fmt.Errorf("%w: selection exceeds max_documents=%d", ErrInvalidInput, norm.request.MaxDocuments)
+		return SelectionPlan{}, SelectionResolution{}, fmt.Errorf("%w: selection exceeds max_documents=%d", ErrInvalidInput, norm.request.MaxDocuments)
 	}
 
 	selectedIDs := sortedCandidateIDs(candidates)
 	if len(norm.policy.ExcludeTags) > 0 && len(selectedIDs) > 0 {
 		excluded, err := s.documentsWithTagsLocked(ctx, selectedIDs, norm.policy.ExcludeTags)
 		if err != nil {
-			return SelectionPlan{}, err
+			return SelectionPlan{}, SelectionResolution{}, err
 		}
 		excludedIDs := make([]string, 0, len(excluded))
 		for id := range excluded {
@@ -342,7 +346,7 @@ func (s *SQLiteStore) planSelectionLocked(ctx context.Context, norm normalizedSe
 
 	documents, err := s.loadSelectionDocumentsLocked(ctx, selectedIDs, candidates, categoryReasons)
 	if err != nil {
-		return SelectionPlan{}, err
+		return SelectionPlan{}, SelectionResolution{}, err
 	}
 	plan.Counts.SelectedDocuments = len(documents)
 	for _, document := range documents {
@@ -355,7 +359,7 @@ func (s *SQLiteStore) planSelectionLocked(ctx context.Context, norm normalizedSe
 
 	resources, err := s.loadSelectionResourcesLocked(ctx, selectedIDs, norm.policy.MaxResourceBytes)
 	if err != nil {
-		return SelectionPlan{}, err
+		return SelectionPlan{}, SelectionResolution{}, err
 	}
 	plan.Counts.ReachableResources = len(resources)
 	for _, resource := range resources {
@@ -371,12 +375,12 @@ func (s *SQLiteStore) planSelectionLocked(ctx context.Context, norm normalizedSe
 
 	linkDigest := sha256.New()
 	if err := s.scanSelectionLinksLocked(ctx, selectedIDs, candidates, norm.policy, norm.request.DetailLimit, &plan, linkDigest); err != nil {
-		return SelectionPlan{}, err
+		return SelectionPlan{}, SelectionResolution{}, err
 	}
 
-	bundles, err := s.loadSelectionSourceBundlesLocked(ctx, selectedIDs, norm.unscopedFull)
+	bundles, bundleKeys, err := s.loadSelectionSourceBundlesLocked(ctx, selectedIDs, norm.unscopedFull)
 	if err != nil {
-		return SelectionPlan{}, err
+		return SelectionPlan{}, SelectionResolution{}, err
 	}
 	plan.Counts.AvailableSourceBundles = len(bundles)
 	if norm.policy.IncludeSourceBundles {
@@ -392,13 +396,23 @@ func (s *SQLiteStore) planSelectionLocked(ctx context.Context, norm normalizedSe
 
 	provenanceCount, err := s.countSelectionProvenanceLocked(ctx, selectedIDs)
 	if err != nil {
-		return SelectionPlan{}, err
+		return SelectionPlan{}, SelectionResolution{}, err
 	}
 	plan.MetadataDecisions = selectionMetadataDecisions(norm.policy, provenanceCount, len(bundles), len(documents))
 	plan.Counts.ExcludedDocuments = excludedDocumentCount
 	plan.Warnings = selectionWarnings(plan)
 	plan.ManifestSHA256 = selectionManifestDigest(norm, documents, resources, linkDigest, bundles, exclusionDigest, plan.MetadataDecisions)
-	return plan, nil
+
+	resolution := SelectionResolution{DocumentIDs: selectedIDs, ResourceIDs: make([]string, 0, len(resources))}
+	for _, resource := range resources {
+		resolution.ResourceIDs = append(resolution.ResourceIDs, resource.ID)
+	}
+	if norm.policy.IncludeSourceBundles {
+		resolution.SourceBundleKeys = bundleKeys
+	} else {
+		resolution.SourceBundleKeys = []SourceBundleKey{}
+	}
+	return plan, resolution, nil
 }
 
 func appendSelectionExclusion(plan *SelectionPlan, detailLimit int, documentCount *int, digest hash.Hash, exclusion SelectionExclusion) {
@@ -760,8 +774,15 @@ func classifySelectionLink(sourceID, targetID, status string, selected map[strin
 	return decision
 }
 
-func (s *SQLiteStore) loadSelectionSourceBundlesLocked(ctx context.Context, documentIDs []string, all bool) ([]SelectionSourceBundleManifest, error) {
-	byKey := map[string]SelectionSourceBundleManifest{}
+// selectionSourceBundle pairs the content-free manifest entry a plan reports
+// with the raw composite key only an in-process writer may resolve.
+type selectionSourceBundle struct {
+	manifest SelectionSourceBundleManifest
+	key      SourceBundleKey
+}
+
+func (s *SQLiteStore) loadSelectionSourceBundlesLocked(ctx context.Context, documentIDs []string, all bool) ([]SelectionSourceBundleManifest, []SourceBundleKey, error) {
+	byKey := map[string]selectionSourceBundle{}
 	read := func(sql string, args []string) error {
 		stmt, err := s.prepareLocked(sql)
 		if err != nil {
@@ -780,7 +801,7 @@ func (s *SQLiteStore) loadSelectionSourceBundlesLocked(ctx context.Context, docu
 				rawSourceKey, rawItemKey := columnText(stmt, 1), columnText(stmt, 3)
 				item := SelectionSourceBundleManifest{SourceSystem: columnText(stmt, 0), SourceKeySHA256: sha256Text(rawSourceKey), CollectionID: columnText(stmt, 2), ItemKeySHA256: sha256Text(rawItemKey), ItemType: columnText(stmt, 4), SHA256: columnText(stmt, 5), SizeBytes: columnInt64(stmt, 6)}
 				key := strings.Join([]string{item.SourceSystem, rawSourceKey, item.CollectionID, rawItemKey}, "\x00")
-				byKey[key] = item
+				byKey[key] = selectionSourceBundle{manifest: item, key: SourceBundleKey{SourceSystem: item.SourceSystem, SourceKey: rawSourceKey, CollectionID: item.CollectionID, ItemKey: rawItemKey}}
 				continue
 			}
 			if rc == C.SQLITE_DONE {
@@ -792,7 +813,7 @@ func (s *SQLiteStore) loadSelectionSourceBundlesLocked(ctx context.Context, docu
 	columns := `sbi.source_system, sbi.source_key, sbi.collection_id, sbi.item_key, sbi.item_type, sbi.sha256, sbi.size_bytes`
 	if all {
 		if err := read(`SELECT `+columns+` FROM source_bundle_items sbi ORDER BY sbi.source_system, sbi.source_key, sbi.collection_id, sbi.item_key`, nil); err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 	} else {
 		for start := 0; start < len(documentIDs); start += selectionReadBatch {
@@ -803,18 +824,27 @@ func (s *SQLiteStore) loadSelectionSourceBundlesLocked(ctx context.Context, docu
 				WHERE ds.document_id IN (` + lookupPlaceholders(len(batch)) + `)
 				ORDER BY sbi.source_system, sbi.source_key, sbi.collection_id, sbi.item_key`
 			if err := read(sql, batch); err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 		}
 	}
-	bundles := make([]SelectionSourceBundleManifest, 0, len(byKey))
+	ordered := make([]selectionSourceBundle, 0, len(byKey))
 	for _, item := range byKey {
-		bundles = append(bundles, item)
+		ordered = append(ordered, item)
 	}
-	sort.Slice(bundles, func(i, j int) bool {
-		return strings.Join([]string{bundles[i].SourceSystem, bundles[i].SourceKeySHA256, bundles[i].CollectionID, bundles[i].ItemKeySHA256}, "\x00") < strings.Join([]string{bundles[j].SourceSystem, bundles[j].SourceKeySHA256, bundles[j].CollectionID, bundles[j].ItemKeySHA256}, "\x00")
+	manifestSortKey := func(item SelectionSourceBundleManifest) string {
+		return strings.Join([]string{item.SourceSystem, item.SourceKeySHA256, item.CollectionID, item.ItemKeySHA256}, "\x00")
+	}
+	sort.Slice(ordered, func(i, j int) bool {
+		return manifestSortKey(ordered[i].manifest) < manifestSortKey(ordered[j].manifest)
 	})
-	return bundles, nil
+	bundles := make([]SelectionSourceBundleManifest, 0, len(ordered))
+	keys := make([]SourceBundleKey, 0, len(ordered))
+	for _, item := range ordered {
+		bundles = append(bundles, item.manifest)
+		keys = append(keys, item.key)
+	}
+	return bundles, keys, nil
 }
 
 func (s *SQLiteStore) countSelectionProvenanceLocked(ctx context.Context, documentIDs []string) (int, error) {

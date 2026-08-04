@@ -6,7 +6,7 @@ This file is the codebase atlas. Update it whenever major files or directories a
 
 - `README.md` — project overview and quick start.
 - `PLAN.md` — active v0.4 portable-data/publishing/stable-reference plan;
-  J1–J3, Q1, P1, and P2 are complete, while P3 requires user approval.
+  J1–J3, Q1, P1, P2, and P3 are complete, while P4 requires user approval.
 - `plans/scaffold/SCAFFOLD_CREATION_PLAN.md` — process for creating/refining this scaffold.
 - `ROADMAP.md` — product roadmap and future features.
 - `AGENTS.md` — coding-agent instructions (`CLAUDE.md` points here).
@@ -20,7 +20,8 @@ This file is the codebase atlas. Update it whenever major files or directories a
   rules, archive/envelope format, REST/folder/rclone transports, retention,
   backup/restore relationships, library decision, and validation.
 - `NATIVE_ARCHIVE_V2.md` — v2 identity, manifest-last object/record contract,
-  compatibility/limits, explicit restore intent, and verification rules.
+  compatibility/limits, explicit restore intent, verification rules, P3 export
+  staging/resume semantics, and the open object-count bound.
 - `DOCS_SITE.md` — GitHub Pages documentation site (PageFind) and Help notebook.
 - `CODING_STANDARDS.md` — coding style and guardrails.
 - `TESTING_POLICY.md` — definition of done and testing layers.
@@ -42,9 +43,10 @@ This file is the codebase atlas. Update it whenever major files or directories a
 - `internal/api/` — shared API request/response models.
 - `internal/httpapi/` — REST HTTP adapter for status, documents, revisions, resources, links, graph slices, and staged future routes.
 - `internal/store/` — SQLite-backed persistence, document CRUD, revision history, soft delete, restore, FTS5 search, resource storage/reference reports (`sqlite_resource_reports.go`), retention-aware GC (`sqlite_gc.go`), importer batch/checkpoint/source-bundle state (`sqlite_imports.go`), link graph persistence, and notebooks/tags/search-notebooks/trash operations (`sqlite_notebooks.go`).
-- `internal/archivev2/` — no-write native archive-v2 manifest/record model,
-  identity-intent planner, bounded directory/hash/MIME/reference verifier, and
-  synthetic golden/adversarial fixtures.
+- `internal/archivev2/` — native archive-v2 manifest/record model,
+  identity-intent planner, bounded directory/hash/MIME/reference verifier,
+  synthetic golden/adversarial fixtures, and the P3 manifest-last streaming
+  exporter (`export.go`) with its generated scale profile.
 - `internal/markdownlinks/` — conservative MVP Markdown/Obsidian/app-URI link extractor.
 - `internal/version/` — version constants.
 - `migrations/` — SQLite schema migrations.
@@ -174,6 +176,10 @@ This file is the codebase atlas. Update it whenever major files or directories a
   100/10k/100k dry-run plus interrupted/resumed import profile.
 - `scripts/run_obsidian_import_profile.sh` — reproducible H9 generated
   100/10k/100k/500k dry-run plus interrupted/resumed vault profile.
+- `scripts/run_archive_export_profile.sh` — reproducible P3 generated
+  100/1,000/5,000-note archive-v2 export, verify, resume, and subset profile.
+- `performance/v0.4-p3/` — committed aggregate archive-v2 export timings,
+  object/byte counts, peak RSS, and object-budget usage.
 - `performance/v0.3-h7/` — committed environment, query-plan, latency, size,
   and peak-RSS evidence from the H7 scale runs.
 - `performance/v0.3-h8/` — committed Joplin import duration, batch/resume, and

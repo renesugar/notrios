@@ -451,6 +451,7 @@ type SourceBundleItem struct {
 	SizeBytes     int64
 	StoragePath   string
 	PropertyOrder []string
+	UpdatedAt     time.Time
 }
 
 type PutSourceBundleItemRequest struct {
