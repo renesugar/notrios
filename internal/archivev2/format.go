@@ -27,6 +27,10 @@ const (
 	CapabilityRecordsJSONL  = "records.jsonl.v1"
 	CapabilityIdentity      = "identity.database-replica.v1"
 	CapabilityRevisions     = "revisions.complete.v1"
+	// CapabilityObjectIndex marks the out-of-manifest object inventory added in
+	// v0.4 P3a. It is required, so a reader that predates the index cannot
+	// misread an archive whose manifest no longer lists objects inline.
+	CapabilityObjectIndex = "objects.index.v1"
 
 	TargetFullArchive        = store.SelectionTargetFullArchive
 	TargetSubsetTransfer     = store.SelectionTargetSubsetTransfer
@@ -34,8 +38,10 @@ const (
 )
 
 var (
+	// Sorted, because manifests must declare capabilities in sorted order.
 	requiredBaseCapabilities = []string{
 		CapabilityIdentity,
+		CapabilityObjectIndex,
 		CapabilitySHA256Objects,
 		CapabilityRecordsJSONL,
 		CapabilityRevisions,
@@ -47,50 +53,73 @@ var (
 // limits, but never wider values than these defaults without a new format
 // review and evidence.
 type Limits struct {
-	MaxManifestBytes       int64
-	MaxObjects             int
-	MaxRecords             int
-	MaxRecordsPerObject    int
-	MaxRecordBytes         int
-	MaxRecordObjectBytes   int64
-	MaxBlobBytes           int64
-	MaxTotalBytes          int64
-	MaxPathBytes           int
-	MaxPathDepth           int
-	MaxJSONDepth           int
-	MaxCollections         int
-	MaxNotebookDepth       int
-	MaxCapabilities        int
-	MaxCapabilityNameBytes int
+	MaxManifestBytes         int64
+	MaxObjects               int
+	MaxIndexObjects          int
+	MaxIndexEntriesPerObject int
+	MaxIndexEntryBytes       int
+	MaxIndexObjectBytes      int64
+	MaxRecords               int
+	MaxRecordsPerObject      int
+	MaxRecordBytes           int
+	MaxRecordObjectBytes     int64
+	MaxBlobBytes             int64
+	MaxTotalBytes            int64
+	MaxPathBytes             int
+	MaxPathDepth             int
+	MaxJSONDepth             int
+	MaxCollections           int
+	MaxNotebooks             int
+	MaxNotebookDepth         int
+	MaxCapabilities          int
+	MaxCapabilityNameBytes   int
 }
 
+// DefaultLimits are derived from the largest library this build is expected to
+// archive: 1,000,000 notes, each with saved revisions, plus reachable
+// resources and one exact source-bundle item per imported source item. The
+// real Joplin RAW corpus used for evidence holds 1,237,553 source items behind
+// 382,206 notes, so the object and record bounds allow several times that.
+//
+// The manifest bound stayed at 4 MiB because the manifest no longer lists
+// objects: it carries at most MaxIndexObjects index descriptors.
 func DefaultLimits() Limits {
 	return Limits{
-		MaxManifestBytes:       4 << 20,
-		MaxObjects:             10_000,
-		MaxRecords:             store.MaxSelectionDocuments * 12,
-		MaxRecordsPerObject:    10_000,
-		MaxRecordBytes:         1 << 20,
-		MaxRecordObjectBytes:   16 << 20,
-		MaxBlobBytes:           16 << 30,
-		MaxTotalBytes:          4 << 40,
-		MaxPathBytes:           255,
-		MaxPathDepth:           8,
-		MaxJSONDepth:           32,
-		MaxCollections:         1_000,
-		MaxNotebookDepth:       32,
-		MaxCapabilities:        64,
-		MaxCapabilityNameBytes: 128,
+		MaxManifestBytes:         4 << 20,
+		MaxObjects:               8_000_000,
+		MaxIndexObjects:          1_000,
+		MaxIndexEntriesPerObject: 10_000,
+		MaxIndexEntryBytes:       4 << 10,
+		MaxIndexObjectBytes:      64 << 20,
+		MaxRecords:               64_000_000,
+		MaxRecordsPerObject:      10_000,
+		MaxRecordBytes:           1 << 20,
+		MaxRecordObjectBytes:     16 << 20,
+		MaxBlobBytes:             16 << 30,
+		MaxTotalBytes:            4 << 40,
+		MaxPathBytes:             255,
+		MaxPathDepth:             8,
+		MaxJSONDepth:             32,
+		MaxCollections:           1_000,
+		MaxNotebooks:             1_000_000,
+		MaxNotebookDepth:         32,
+		MaxCapabilities:          64,
+		MaxCapabilityNameBytes:   128,
 	}
 }
 
+// Manifest is the completion marker and the root of the checksum chain. It no
+// longer lists objects: it lists the index chunks that list the objects, so
+// the commit digest still binds every object hash transitively while the
+// manifest itself stays small regardless of library size.
 type Manifest struct {
 	Format        string           `json:"format"`
 	Version       int              `json:"version"`
 	CommitSHA256  string           `json:"commit_sha256,omitempty"`
 	Snapshot      SnapshotMetadata `json:"snapshot"`
 	Compatibility Compatibility    `json:"compatibility"`
-	Objects       []Object         `json:"objects"`
+	Index         []IndexObject    `json:"index"`
+	Totals        ObjectTotals     `json:"totals"`
 	Counts        Counts           `json:"counts"`
 }
 
@@ -112,16 +141,6 @@ type Compatibility struct {
 	MaximumSchemaVersion int      `json:"maximum_schema_version"`
 	RequiredCapabilities []string `json:"required_capabilities"`
 	OptionalCapabilities []string `json:"optional_capabilities"`
-}
-
-type Object struct {
-	SHA256       string `json:"sha256"`
-	Path         string `json:"path"`
-	Kind         string `json:"kind"`
-	MediaType    string `json:"media_type"`
-	SizeBytes    int64  `json:"size_bytes"`
-	Records      int    `json:"records"`
-	RecordCounts Counts `json:"record_counts"`
 }
 
 type Counts struct {
@@ -228,54 +247,39 @@ func validateManifest(manifest Manifest, limits Limits) error {
 	if err := validateCapabilities(compat, limits); err != nil {
 		return err
 	}
-	if len(manifest.Objects) == 0 || len(manifest.Objects) > limits.MaxObjects {
-		return fmt.Errorf("object count is outside 1..%d", limits.MaxObjects)
-	}
 	if err := validateCounts(manifest.Counts, limits.MaxRecords); err != nil {
 		return fmt.Errorf("manifest counts: %w", err)
 	}
-	var descriptorCounts Counts
-	var totalBytes int64
-	seenHashes := map[string]bool{}
-	previousPath := ""
-	for _, object := range manifest.Objects {
-		if object.Path <= previousPath {
-			return fmt.Errorf("objects must be sorted by unique path")
+	if len(manifest.Index) == 0 || len(manifest.Index) > limits.MaxIndexObjects {
+		return fmt.Errorf("index object count is outside 1..%d", limits.MaxIndexObjects)
+	}
+	declaredEntries := 0
+	seenIndexHashes := map[string]bool{}
+	// Index chunks are listed in entry order, not path order: the concatenated
+	// entries must be globally sorted by object hash, which the verifier checks
+	// while it reads them.
+	for _, object := range manifest.Index {
+		if err := object.validate(limits); err != nil {
+			return err
 		}
-		previousPath = object.Path
-		if !validSHA256(object.SHA256) || seenHashes[object.SHA256] {
-			return fmt.Errorf("object SHA-256 values must be valid and unique: %q", object.SHA256)
+		if seenIndexHashes[object.SHA256] {
+			return fmt.Errorf("duplicate index object %s", object.SHA256)
 		}
-		seenHashes[object.SHA256] = true
-		if object.Path != objectPath(object.SHA256) || len(object.Path) > limits.MaxPathBytes {
-			return fmt.Errorf("object path does not match SHA-256: %q", object.Path)
-		}
-		if object.SizeBytes < 0 || object.SizeBytes > limits.MaxBlobBytes || totalBytes > limits.MaxTotalBytes-object.SizeBytes {
-			return fmt.Errorf("object or total byte limit exceeded")
-		}
-		totalBytes += object.SizeBytes
-		switch object.Kind {
-		case "records":
-			if object.MediaType != RecordsMediaType || object.SizeBytes > limits.MaxRecordObjectBytes || object.Records <= 0 || object.Records > limits.MaxRecordsPerObject || object.RecordCounts.Total() != object.Records {
-				return fmt.Errorf("invalid records object %q", object.Path)
-			}
-			if err := validateCounts(object.RecordCounts, limits.MaxRecordsPerObject); err != nil {
-				return fmt.Errorf("record object %q: %w", object.Path, err)
-			}
-			descriptorCounts.Add(object.RecordCounts)
-		case "blob":
-			if object.Records != 0 || object.RecordCounts.Total() != 0 {
-				return fmt.Errorf("blob object %q declares records", object.Path)
-			}
-			if _, err := normalizeMediaType(object.MediaType); err != nil {
-				return fmt.Errorf("blob object %q: %w", object.Path, err)
-			}
-		default:
-			return fmt.Errorf("unsupported object kind %q", object.Kind)
+		seenIndexHashes[object.SHA256] = true
+		declaredEntries += object.Entries
+		if declaredEntries > limits.MaxObjects {
+			return fmt.Errorf("index declares more than %d objects", limits.MaxObjects)
 		}
 	}
-	if descriptorCounts != manifest.Counts {
-		return fmt.Errorf("manifest counts do not match object descriptors")
+	totals := manifest.Totals
+	if totals.Objects != declaredEntries {
+		return fmt.Errorf("manifest totals declare %d objects but the index declares %d", totals.Objects, declaredEntries)
+	}
+	if totals.Objects <= 0 || totals.Bytes < 0 || totals.Bytes > limits.MaxTotalBytes {
+		return fmt.Errorf("manifest object totals are outside the admitted range")
+	}
+	if totals.RecordChunks <= 0 || totals.Blobs < 0 || totals.RecordChunks+totals.Blobs != totals.Objects {
+		return fmt.Errorf("manifest totals do not account for every object")
 	}
 	return nil
 }
@@ -331,8 +335,6 @@ func validSHA256(value string) bool {
 	_, err := hex.DecodeString(value)
 	return err == nil
 }
-
-func objectPath(hash string) string { return "objects/sha256/" + hash[:2] + "/" + hash }
 
 func sortedUnique(values []string) bool {
 	return sort.StringsAreSorted(values) && unique(values)

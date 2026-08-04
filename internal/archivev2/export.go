@@ -38,7 +38,8 @@ type ExportOptions struct {
 	// Selection and Policy are passed to the shared P1 planner unchanged.
 	Selection store.SelectionSpec
 	Policy    store.PrivacyPolicy
-	// MaxDocuments bounds the selection; zero uses the planner default.
+	// MaxDocuments bounds the selection; zero uses the direct-Store planner
+	// maximum rather than the smaller REST/MCP default.
 	MaxDocuments int
 	// Limits may tighten, but never widen, the format admission bounds.
 	Limits Limits
@@ -68,6 +69,7 @@ type ExportReport struct {
 	SelectionManifestSHA256 string   `json:"selection_manifest_sha256"`
 	CollectionIDs           []string `json:"collection_ids"`
 	Counts                  Counts   `json:"counts"`
+	IndexObjects            int      `json:"index_objects"`
 	Objects                 int      `json:"objects"`
 	RecordObjects           int      `json:"record_objects"`
 	BlobObjects             int      `json:"blob_objects"`
@@ -103,12 +105,20 @@ func Export(ctx context.Context, source store.ExportReader, destination string, 
 	}
 	defer os.RemoveAll(staging)
 
-	writer := newArchiveWriter(root, staging, options)
+	writer, err := newArchiveWriter(root, staging, options)
+	if err != nil {
+		return ExportReport{}, err
+	}
+	defer writer.close()
 	export := &exportRun{source: source, options: options, writer: writer}
 	if err := source.WithReadSnapshot(ctx, func() error { return export.collect(ctx) }); err != nil {
 		return ExportReport{}, err
 	}
-	manifest, err := export.buildManifest()
+	totals, err := writer.publishIndex()
+	if err != nil {
+		return ExportReport{}, err
+	}
+	manifest, err := export.buildManifest(totals)
 	if err != nil {
 		return ExportReport{}, err
 	}
@@ -155,6 +165,13 @@ func normalizeExportOptions(options ExportOptions) (ExportOptions, error) {
 	}
 	if err := validateLimits(options.Limits); err != nil {
 		return ExportOptions{}, err
+	}
+	if options.MaxDocuments <= 0 {
+		// PlanSelection defaults to the REST/MCP-facing 100,000-document cap.
+		// Export is an in-process Store caller, so a full backup of a real
+		// library must use the direct planner maximum instead; the real
+		// 382,206-note corpus is well past the smaller default.
+		options.MaxDocuments = store.MaxSelectionDocuments
 	}
 	if options.RecordsPerObject <= 0 {
 		options.RecordsPerObject = options.Limits.MaxRecordsPerObject
@@ -235,19 +252,28 @@ func prepareDestination(destination string, overwrite bool) (root, staging strin
 // archiveWriter owns object publication. Every object is content-addressed, so
 // writing is idempotent: an object already present from an interrupted run is
 // reused after its size is confirmed instead of being rewritten.
+//
+// Nothing proportional to the archive lives on the heap. The published object
+// tree is itself the deduplication index — an object exists exactly when its
+// content-addressed file exists — and index entries stream into an
+// external-sort spool that is replayed in hash order when the index chunks are
+// written.
 type archiveWriter struct {
 	root    string
 	staging string
 	options ExportOptions
 
-	objects       map[string]Object
-	order         []string
+	entries       *keySpool
 	totalBytes    int64
 	writtenBytes  int64
+	objects       int
 	reused        int
 	deduplicated  int
 	recordObjects int
 	blobObjects   int
+
+	index      []IndexObject
+	indexBytes int64
 
 	buffer       bytes.Buffer
 	bufferRecs   int
@@ -256,9 +282,15 @@ type archiveWriter struct {
 	sequence     int
 }
 
-func newArchiveWriter(root, staging string, options ExportOptions) *archiveWriter {
-	return &archiveWriter{root: root, staging: staging, options: options, objects: map[string]Object{}}
+func newArchiveWriter(root, staging string, options ExportOptions) (*archiveWriter, error) {
+	entries, err := newKeySpool(staging, "index-entries")
+	if err != nil {
+		return nil, err
+	}
+	return &archiveWriter{root: root, staging: staging, options: options, entries: entries}, nil
 }
+
+func (w *archiveWriter) close() { _ = w.entries.close() }
 
 // addRecord appends one typed record to the open JSONL chunk and flushes the
 // chunk when it reaches the configured record or byte bound.
@@ -302,19 +334,18 @@ func (w *archiveWriter) flushRecords() error {
 	records, counts := w.bufferRecs, w.bufferCounts
 	w.buffer.Reset()
 	w.bufferRecs, w.bufferCounts = 0, Counts{}
-	object, deduplicated, err := w.writeObject(bytes.NewReader(payload), "records", RecordsMediaType)
+	entry, err := w.writeObject(bytes.NewReader(payload), "records", RecordsMediaType, func(entry *IndexEntry) {
+		entry.Records = records
+		entry.RecordCounts = counts
+	})
 	if err != nil {
 		return err
 	}
-	if deduplicated {
+	if entry.Records != records {
 		// Every chunk carries unique record identities, so two chunks can only
 		// share a hash if the traversal emitted the same records twice.
-		return fmt.Errorf("records object %s was produced twice", object.SHA256)
+		return fmt.Errorf("records object %s was produced twice", entry.SHA256)
 	}
-	descriptor := w.objects[object.SHA256]
-	descriptor.Records = records
-	descriptor.RecordCounts = counts
-	w.objects[object.SHA256] = descriptor
 	w.recordObjects++
 	return nil
 }
@@ -326,22 +357,23 @@ func (w *archiveWriter) writeBlob(content io.Reader, mediaType string) (BlobRefe
 	if err != nil {
 		canonical = "application/octet-stream"
 	}
-	object, deduplicated, err := w.writeObject(content, "blob", canonical)
+	entry, err := w.writeObject(content, "blob", canonical, nil)
 	if err != nil {
 		return BlobReference{}, err
 	}
-	if !deduplicated {
-		w.blobObjects++
-	}
-	return BlobReference{SHA256: object.SHA256, SizeBytes: object.SizeBytes, MediaType: canonical}, nil
+	w.blobObjects++
+	return BlobReference{SHA256: entry.SHA256, SizeBytes: entry.SizeBytes, MediaType: canonical}, nil
 }
 
-func (w *archiveWriter) writeObject(content io.Reader, kind, mediaType string) (Object, bool, error) {
+// writeObject stages, hashes, and publishes one immutable object, then spools
+// its index entry. Duplicate hashes are collapsed when the spool is replayed,
+// so the writer never has to remember which hashes it has already seen.
+func (w *archiveWriter) writeObject(content io.Reader, kind, mediaType string, describe func(*IndexEntry)) (IndexEntry, error) {
 	w.sequence++
 	temporary := filepath.Join(w.staging, "object-"+strconv.Itoa(w.sequence))
 	file, err := os.Create(temporary)
 	if err != nil {
-		return Object{}, false, err
+		return IndexEntry{}, err
 	}
 	digest := sha256.New()
 	buffered := bufio.NewWriterSize(file, copyBufferBytes)
@@ -355,53 +387,196 @@ func (w *archiveWriter) writeObject(content io.Reader, kind, mediaType string) (
 	closeErr := file.Close()
 	if copyErr != nil || closeErr != nil {
 		_ = os.Remove(temporary)
-		return Object{}, false, firstError(copyErr, closeErr)
+		return IndexEntry{}, firstError(copyErr, closeErr)
 	}
 	hash := hex.EncodeToString(digest.Sum(nil))
-	if existing, ok := w.objects[hash]; ok {
-		_ = os.Remove(temporary)
-		if existing.SizeBytes != size || existing.Kind != kind {
-			return Object{}, false, fmt.Errorf("object %s was published with a different size or kind", hash)
-		}
-		w.deduplicated++
-		return existing, true, nil
-	}
 	if size > w.options.Limits.MaxBlobBytes || w.totalBytes > w.options.Limits.MaxTotalBytes-size {
 		_ = os.Remove(temporary)
-		return Object{}, false, fmt.Errorf("object or archive byte limit exceeded")
+		return IndexEntry{}, fmt.Errorf("object or archive byte limit exceeded")
 	}
-	if len(w.objects) >= w.options.Limits.MaxObjects {
+	if w.objects >= w.options.Limits.MaxObjects {
 		_ = os.Remove(temporary)
-		return Object{}, false, fmt.Errorf("archive needs more than %d immutable objects; archive-v2 currently bounds one archive to that many bodies, resources, source bundles, and record chunks", w.options.Limits.MaxObjects)
+		return IndexEntry{}, fmt.Errorf("archive needs more than %d immutable objects", w.options.Limits.MaxObjects)
 	}
 
-	relative := objectPath(hash)
-	final := filepath.Join(w.root, filepath.FromSlash(relative))
+	entry := IndexEntry{SHA256: hash, Kind: kind, MediaType: mediaType, SizeBytes: size, Location: newFanoutLocation(hash)}
+	if describe != nil {
+		describe(&entry)
+	}
+	final := filepath.Join(w.root, filepath.FromSlash(entry.Location.Path))
 	if info, statErr := os.Lstat(final); statErr == nil && info.Mode().IsRegular() && info.Size() == size {
-		// An interrupted export already published this exact object.
+		// Either an interrupted export already published this object or this
+		// run just wrote the same bytes; both are content-identical.
 		_ = os.Remove(temporary)
 		w.reused++
 	} else {
 		if err := os.MkdirAll(filepath.Dir(final), 0o755); err != nil {
 			_ = os.Remove(temporary)
-			return Object{}, false, err
+			return IndexEntry{}, err
 		}
 		if err := os.Rename(temporary, final); err != nil {
 			_ = os.Remove(temporary)
-			return Object{}, false, err
+			return IndexEntry{}, err
 		}
 		w.writtenBytes += size
 	}
-	object := Object{SHA256: hash, Path: relative, Kind: kind, MediaType: mediaType, SizeBytes: size}
-	w.objects[hash] = object
-	w.order = append(w.order, hash)
+	spooled, err := spoolIndexEntry(entry)
+	if err != nil {
+		return IndexEntry{}, err
+	}
+	if len(spooled) > w.options.Limits.MaxIndexEntryBytes {
+		return IndexEntry{}, fmt.Errorf("index entry for object %s is %d bytes, above the %d byte limit", hash, len(spooled), w.options.Limits.MaxIndexEntryBytes)
+	}
+	if err := w.entries.add(spooled); err != nil {
+		return IndexEntry{}, err
+	}
+	w.objects++
 	w.totalBytes += size
-	return object, false, nil
+	return entry, nil
 }
 
-// pruneUnlistedObjects removes object files that are not part of this archive,
-// so a resumed export with a different selection cannot leave stale objects
-// behind for the verifier to reject.
+// publishIndex replays the spooled entries in hash order, collapses duplicate
+// objects, and writes the index chunks the manifest will list. Peak memory is
+// one spool bucket plus one chunk buffer.
+func (w *archiveWriter) publishIndex() (ObjectTotals, error) {
+	if err := w.entries.flush(); err != nil {
+		return ObjectTotals{}, err
+	}
+	expected, err := os.Create(filepath.Join(w.staging, expectedPathsFile))
+	if err != nil {
+		return ObjectTotals{}, err
+	}
+	defer expected.Close()
+	expectedPaths := bufio.NewWriterSize(expected, copyBufferBytes)
+	var totals ObjectTotals
+	var chunk bytes.Buffer
+	chunkEntries := 0
+	previous := IndexEntry{}
+	flush := func() error {
+		if chunkEntries == 0 {
+			return nil
+		}
+		payload := append([]byte(nil), chunk.Bytes()...)
+		chunk.Reset()
+		entries := chunkEntries
+		chunkEntries = 0
+		object, err := w.writeIndexObject(payload, entries)
+		if err != nil {
+			return err
+		}
+		w.index = append(w.index, object)
+		if len(w.index) > w.options.Limits.MaxIndexObjects {
+			return fmt.Errorf("archive needs more than %d index objects", w.options.Limits.MaxIndexObjects)
+		}
+		return nil
+	}
+	err = w.entries.forEachSorted(func(line string) error {
+		entry, err := parseSpooledIndexEntry(line)
+		if err != nil {
+			return err
+		}
+		if entry.SHA256 == previous.SHA256 {
+			if entry.Kind != previous.Kind || entry.SizeBytes != previous.SizeBytes {
+				return fmt.Errorf("object %s was published with a different kind or size", entry.SHA256)
+			}
+			w.deduplicated++
+			return nil
+		}
+		previous = entry
+		encoded, err := encodeIndexEntry(entry)
+		if err != nil {
+			return err
+		}
+		if chunkEntries >= w.options.Limits.MaxIndexEntriesPerObject || int64(chunk.Len()+len(encoded)) > w.options.Limits.MaxIndexObjectBytes {
+			if err := flush(); err != nil {
+				return err
+			}
+		}
+		if _, err := expectedPaths.WriteString(entry.Location.Path + "\n"); err != nil {
+			return err
+		}
+		chunk.Write(encoded)
+		chunkEntries++
+		totals.Objects++
+		totals.Bytes += entry.SizeBytes
+		if entry.Kind == "records" {
+			totals.RecordChunks++
+		} else {
+			totals.Blobs++
+		}
+		return nil
+	})
+	if err != nil {
+		return ObjectTotals{}, err
+	}
+	if err := flush(); err != nil {
+		return ObjectTotals{}, err
+	}
+	if err := expectedPaths.Flush(); err != nil {
+		return ObjectTotals{}, err
+	}
+	// Chunk order is significant: it carries the global entry order, so the
+	// index list is never re-sorted by chunk path.
+	return totals, nil
+}
+
+// writeIndexObject publishes one index chunk. Index chunks are objects too,
+// but they are listed inline in the manifest rather than inside the index they
+// constitute.
+func (w *archiveWriter) writeIndexObject(payload []byte, entries int) (IndexObject, error) {
+	w.sequence++
+	temporary := filepath.Join(w.staging, "index-"+strconv.Itoa(w.sequence))
+	digest := sha256.Sum256(payload)
+	hash := hex.EncodeToString(digest[:])
+	if err := os.WriteFile(temporary, payload, 0o644); err != nil {
+		return IndexObject{}, err
+	}
+	if err := syncFile(temporary); err != nil {
+		return IndexObject{}, err
+	}
+	location := newFanoutLocation(hash)
+	final := filepath.Join(w.root, filepath.FromSlash(location.Path))
+	if info, statErr := os.Lstat(final); statErr == nil && info.Mode().IsRegular() && info.Size() == int64(len(payload)) {
+		_ = os.Remove(temporary)
+		w.reused++
+	} else {
+		if err := os.MkdirAll(filepath.Dir(final), 0o755); err != nil {
+			_ = os.Remove(temporary)
+			return IndexObject{}, err
+		}
+		if err := os.Rename(temporary, final); err != nil {
+			_ = os.Remove(temporary)
+			return IndexObject{}, err
+		}
+		w.writtenBytes += int64(len(payload))
+	}
+	w.indexBytes += int64(len(payload))
+	return IndexObject{SHA256: hash, SizeBytes: int64(len(payload)), Entries: entries, MediaType: IndexMediaType, Location: location}, nil
+}
+
+func syncFile(path string) error {
+	file, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	syncErr := file.Sync()
+	closeErr := file.Close()
+	return firstError(syncErr, closeErr)
+}
+
+// expectedPathsFile records, in sorted object-hash order, the path of every
+// object this archive lists. Pruning merges it against the object tree instead
+// of holding a path set proportional to the archive.
+const expectedPathsFile = "expected-paths"
+
+// pruneUnlistedObjects removes object files this archive does not list, so a
+// resumed export with a different selection cannot leave stale objects behind
+// for the verifier to reject.
+//
+// Both sides of the comparison are already sorted by object hash — the
+// expected-path list because it was written from the sorted spool, and the
+// object tree because a fanout path's lexical order is its hash's — so this is
+// a merge, not a set lookup, and it holds only the bounded index-chunk paths.
 func (w *archiveWriter) pruneUnlistedObjects() error {
 	objectsRoot := filepath.Join(w.root, "objects")
 	if _, err := os.Stat(objectsRoot); os.IsNotExist(err) {
@@ -409,12 +584,32 @@ func (w *archiveWriter) pruneUnlistedObjects() error {
 	} else if err != nil {
 		return err
 	}
-	listed := map[string]bool{}
-	for _, hash := range w.order {
-		listed[filepath.Join(w.root, filepath.FromSlash(w.objects[hash].Path))] = true
+	expected, err := os.Open(filepath.Join(w.staging, expectedPathsFile))
+	if err != nil {
+		return err
+	}
+	defer expected.Close()
+	scanner := bufio.NewScanner(expected)
+	scanner.Buffer(make([]byte, 16<<10), w.options.Limits.MaxPathBytes+16)
+	pending := ""
+	advance := func() error {
+		if scanner.Scan() {
+			pending = scanner.Text()
+			return nil
+		}
+		pending = ""
+		return scanner.Err()
+	}
+	if err := advance(); err != nil {
+		return err
+	}
+
+	indexPaths := make(map[string]bool, len(w.index))
+	for _, indexObject := range w.index {
+		indexPaths[indexObject.Location.Path] = true
 	}
 	var directories []string
-	err := filepath.WalkDir(objectsRoot, func(current string, entry fs.DirEntry, walkErr error) error {
+	err = filepath.WalkDir(objectsRoot, func(current string, entry fs.DirEntry, walkErr error) error {
 		if walkErr != nil {
 			return walkErr
 		}
@@ -422,10 +617,25 @@ func (w *archiveWriter) pruneUnlistedObjects() error {
 			directories = append(directories, current)
 			return nil
 		}
-		if !listed[current] {
-			return os.Remove(current)
+		relative, err := filepath.Rel(w.root, current)
+		if err != nil {
+			return err
 		}
-		return nil
+		relative = filepath.ToSlash(relative)
+		if indexPaths[relative] {
+			return nil
+		}
+		for pending != "" && pending < relative {
+			// The index names an object the tree does not hold. Byte
+			// verification reports that far more precisely than pruning could.
+			if err := advance(); err != nil {
+				return err
+			}
+		}
+		if pending == relative {
+			return advance()
+		}
+		return os.Remove(current)
 	})
 	if err != nil {
 		return err
@@ -454,13 +664,7 @@ func (w *archiveWriter) publishManifest(manifest Manifest) error {
 	if err := os.WriteFile(temporary, raw, 0o644); err != nil {
 		return err
 	}
-	file, err := os.Open(temporary)
-	if err != nil {
-		return err
-	}
-	syncErr := file.Sync()
-	closeErr := file.Close()
-	if err := firstError(syncErr, closeErr); err != nil {
+	if err := syncFile(temporary); err != nil {
 		return err
 	}
 	if err := os.Rename(temporary, filepath.Join(w.root, "manifest.json")); err != nil {
@@ -472,14 +676,6 @@ func (w *archiveWriter) publishManifest(manifest Manifest) error {
 	}
 	defer directory.Close()
 	return directory.Sync()
-}
-
-func (w *archiveWriter) sortedObjects() []Object {
-	objects := make([]Object, 0, len(w.order))
-	for _, hash := range w.order {
-		objects = append(objects, w.objects[hash])
-	}
-	return SortedObjects(objects)
 }
 
 // exportRun holds the state one export accumulates while streaming canonical
@@ -930,7 +1126,7 @@ func (r *exportRun) writeHeaderRecords(ctx context.Context) error {
 	return nil
 }
 
-func (r *exportRun) buildManifest() (Manifest, error) {
+func (r *exportRun) buildManifest(totals ObjectTotals) (Manifest, error) {
 	manifest := Manifest{
 		Format:  FormatName,
 		Version: FormatVersion,
@@ -952,8 +1148,9 @@ func (r *exportRun) buildManifest() (Manifest, error) {
 			RequiredCapabilities: sortedStrings(RequiredCapabilities()),
 			OptionalCapabilities: []string{},
 		},
-		Objects: r.writer.sortedObjects(),
-		Counts:  r.writer.counts,
+		Index:  r.writer.index,
+		Totals: totals,
+		Counts: r.writer.counts,
 	}
 	if err := FinalizeManifest(&manifest); err != nil {
 		return Manifest{}, err
@@ -991,19 +1188,23 @@ func (r *exportRun) report(manifest Manifest, started time.Time) ExportReport {
 		SelectionManifestSHA256: manifest.Snapshot.SelectionManifestSHA256,
 		CollectionIDs:           manifest.Snapshot.CollectionIDs,
 		Counts:                  manifest.Counts,
-		Objects:                 len(manifest.Objects),
-		RecordObjects:           r.writer.recordObjects,
-		BlobObjects:             r.writer.blobObjects,
+		IndexObjects:            len(manifest.Index),
+		Objects:                 manifest.Totals.Objects,
+		RecordObjects:           manifest.Totals.RecordChunks,
+		BlobObjects:             manifest.Totals.Blobs,
 		DeduplicatedObjects:     r.writer.deduplicated,
-		ReusedObjects:           r.writer.reused,
-		Bytes:                   r.writer.totalBytes,
-		BytesWritten:            r.writer.writtenBytes,
-		SelectedDocuments:       r.resolution.Plan.Counts.SelectedDocuments,
-		ExcludedDocuments:       r.resolution.Plan.Counts.ExcludedDocuments,
-		ReachableResources:      r.resolution.Plan.Counts.ReachableResources,
-		ClearedLinkTargets:      r.clearedLinks,
-		Warnings:                warnings,
-		ElapsedSeconds:          time.Since(started).Seconds(),
+		// Objects already present at their content-addressed path include both
+		// a resumed export's published objects and this run's own duplicates;
+		// the latter are counted separately as deduplicated.
+		ReusedObjects:      max(r.writer.reused-r.writer.deduplicated, 0),
+		Bytes:              manifest.Totals.Bytes,
+		BytesWritten:       r.writer.writtenBytes,
+		SelectedDocuments:  r.resolution.Plan.Counts.SelectedDocuments,
+		ExcludedDocuments:  r.resolution.Plan.Counts.ExcludedDocuments,
+		ReachableResources: r.resolution.Plan.Counts.ReachableResources,
+		ClearedLinkTargets: r.clearedLinks,
+		Warnings:           warnings,
+		ElapsedSeconds:     time.Since(started).Seconds(),
 	}
 }
 

@@ -1,8 +1,10 @@
 # Native archive v2 format and identity contract
 
 Status: format and read-only verification implemented in v0.4 P2; streaming
-export implemented in v0.4 P3. Verified restore/import is P4. Archive v1
-remains supported as human-readable interchange and is not interpreted as v2.
+export implemented in v0.4 P3; the large-library container revision (object
+index, two-level fanout, bounded writer and verifier) implemented in v0.4 P3a.
+Verified restore/import is P4. Archive v1 remains supported as human-readable
+interchange and is not interpreted as v2.
 
 ## Purpose and boundaries
 
@@ -48,11 +50,17 @@ ambiguous or inconsistent choices without mutating either side.
 
 ```text
 archive/
-  objects/sha256/ab/<64-lowercase-hex-sha256>
+  objects/sha256/ab/cd/<64-lowercase-hex-sha256>
   manifest.json
 ```
 
-An object path is exactly the content hash under the two-character fanout.
+An object path is exactly the content hash under a two-level fanout. One level
+would put every object of a million-note archive into 256 directories holding
+tens of thousands of entries each; two levels keeps them near 25 and matches
+the layout the canonical asset store already uses. A path's lexical order is
+therefore its hash's, which is what lets the writer prune and the verifier
+count by merging sorted streams instead of holding a path set.
+
 Objects are immutable regular files; symlinks, traversal, backslashes,
 unlisted files, and extra directories are rejected. The dedicated archive
 directory contains no temporary files after commit.
@@ -74,7 +82,7 @@ the right size, prunes objects the new manifest does not list, republishes the
 manifest, and then verifies the result. A published archive that fails its own
 verification has its manifest removed rather than being reported as complete.
 
-## Manifest
+## Manifest and object index
 
 The strict JSON manifest has these top-level fields:
 
@@ -86,24 +94,56 @@ The strict JSON manifest has these top-level fields:
   the complete P1 selection-manifest digest;
 - `compatibility`: minimum archive reader, source and accepted schema bounds,
   and sorted required/optional capability names;
-- sorted `objects`: exact hash/path/kind/MIME/byte length plus record counts;
-- aggregate typed `counts`, which must equal descriptor and decoded counts.
+- `index`: the index chunks, in entry order, each with exact
+  hash/size/entry-count/MIME/location;
+- `totals`: aggregate object count, byte count, record-chunk count, and blob
+  count, so a reader can bound its work before opening a chunk;
+- aggregate typed `counts`, which must equal decoded record counts.
+
+**The manifest does not list objects.** Until v0.4 P3a it did, at roughly 645
+bytes per descriptor inside a 4 MiB manifest, which capped an archive near
+6,500 objects — about 6,400 single-revision notes — and made a real library
+unarchivable. The inventory now lives in `index` chunks: LF-terminated
+`application/vnd.notrios.archive-v2-index+jsonl` objects whose entries are
+globally sorted by object hash across chunks in manifest order.
+
+The checksum chain is unbroken: the manifest commit digest binds each chunk's
+hash, and each chunk binds the hash of every object it names. Tampering with a
+chunk breaks its own hash; rehashing the chunk breaks the manifest.
+
+Each index entry carries `sha256`, `kind`, `media_type`, `size_bytes`, record
+counts for record chunks, and a discriminated `location`. Today the only
+layout is `fanout` (one object, one file).
+
+The layout is named rather than assumed because measurement showed one file
+per object is the wrong long-term storage shape: a full backup of a real
+382,206-note corpus wrote 382,407 loose objects in 48m26s — about 131 objects
+per second for 1.14 GB — since throughput tracks one
+`create + write + fsync + rename` per object rather than bytes, and v0.7 sync
+would pay one transport round trip per object over REST and folder/rclone.
+Plan task P3b adds a `pack` layout behind the optional `objects.pack.v1`
+capability, which is possible precisely because `location` is discriminated
+rather than assumed.
 
 Required v2 capabilities are `identity.database-replica.v1`,
-`objects.sha256.v1`, `records.jsonl.v1`, and `revisions.complete.v1`. Unknown
-required capabilities reject the archive. Unknown bounded optional
-capabilities may be ignored. This reader must fall inside the declared schema
-range; unsupported archive versions and schema ranges reject before objects
-are admitted.
+`objects.index.v1`, `objects.sha256.v1`, `records.jsonl.v1`, and
+`revisions.complete.v1`. Unknown required capabilities reject the archive.
+Unknown bounded optional capabilities may be ignored. This reader must fall
+inside the declared schema range; unsupported archive versions and schema
+ranges reject before objects are admitted.
 
 ## Objects and records
 
-Two object kinds exist:
+Three object kinds exist:
 
 - `blob`: exact body/resource/source-bundle bytes with a canonical MIME type;
 - `records`: LF-terminated
   `application/vnd.notrios.archive-v2-records+jsonl` chunks. Each line is a
   strict `{ "type", "payload" }` envelope.
+- `index`: LF-terminated
+  `application/vnd.notrios.archive-v2-index+jsonl` chunks listing every `blob`
+  and `records` object. Index chunks are named by the manifest rather than by
+  the index, so the inventory never lists itself.
 
 Record types cover:
 
@@ -167,51 +207,65 @@ output path or streams archive bytes.
 
 ## Hard limits
 
-The current verifier refuses caller limits wider than these defaults:
+P3a re-derived these from the largest library this build is expected to
+archive — 1,000,000 notes with saved revisions, reachable resources, and one
+exact source-bundle item per imported source item — rather than from the
+original small-archive defaults. The verifier refuses caller limits wider than
+them:
 
-- manifest: 4 MiB; objects: 10,000;
-- decoded records: 12,000,000 total, 10,000 per records object;
+- manifest: 4 MiB (it now holds only index descriptors);
+- objects: 8,000,000; index chunks: 1,000 of at most 10,000 entries each;
+- one index entry: 4 KiB; one index chunk: 64 MiB;
+- decoded records: 64,000,000 total, 10,000 per records object;
 - one JSONL record: 1 MiB; one records object: 16 MiB;
 - one blob: 16 GiB; archive object bytes: 4 TiB;
 - archive/source relative path: 255 bytes and 8 segments;
 - JSON nesting: 32; notebook nesting: 32;
-- collections: 1,000; capabilities: 64 names of at most 128 bytes.
+- collections: 1,000; notebooks: 1,000,000;
+- capabilities: 64 names of at most 128 bytes.
 
 P3 may create more/smaller chunks but may not widen these limits silently.
 P4 can use an indexed verification spool when large cross-reference sets make
 in-memory validation inappropriate; admission semantics remain identical.
 
-### Open format bound: object count versus full-database backup
+### Bounded writer and verifier
 
-Every saved revision, resource, and source bundle is one immutable object, and
-the manifest lists every object inline at roughly 645 bytes per descriptor. The
-4 MiB manifest bound therefore binds first and caps one archive near **6,500
-objects — about 6,400 single-revision notes**; the nominal 10,000-object limit
-is unreachable. `performance/v0.4-p3/` measures 5,000 notes at 5,052 objects.
+Neither side keeps state proportional to the archive.
 
-That is far below the supplied 382,206-note Joplin and Obsidian corpora and the
-1,237,553-item Joplin RAW export, so archive v2 cannot currently archive a real
-library at all.
+The writer needs no object table: the published object tree *is* the
+deduplication index, since an object exists exactly when its
+content-addressed file does. Index entries stream into a 256-bucket
+external-sort spool keyed by the object hash — the same first byte that
+selects the fanout directory — so replaying buckets in order yields globally
+sorted entries while holding one bucket. Duplicate hashes collapse during that
+replay, and pruning merges the sorted expected-path list against the sorted
+object tree.
 
-This is a format decision, not an exporter defect, and P3 deliberately left it
-open rather than widening limits silently: raising `MaxObjects` alone does not
-work because the inline inventory would exceed the manifest bound. The exporter
-enforces the documented bounds and fails with an explicit object-budget error
-before publishing any manifest, so an over-budget archive can never appear
-complete.
+The verifier keeps only the two genuinely bounded sets: collections
+(`MaxCollections`) and the notebook tree (`MaxNotebooks`, needed for cycle and
+depth checks). Every record identity and object hash goes to declaration and
+reference spools that are merge-joined per bucket. Composite keys fold
+consistency checks into that join: a revision key carries its document ID, and
+a blob key carries its exact byte length, so a wrong owner or a wrong size
+simply fails to find a declaration. The join reports references with no
+declaration, duplicate declarations, and blob objects nothing references.
 
-Plan task **P3a** resolves this by moving the object inventory into its own
-checksummed index objects, re-deriving the limits from a million-note target,
-and making both the writer's dedup state and the verifier's cross-reference
-state spooled rather than in-memory. See `PLAN.md` and
-`agent/OPEN_QUESTIONS.md` question 17.
+"No extra files" is proven by counting rather than by a path set: every
+declared object is opened during the index scan, so an equal file count leaves
+no room for an unlisted one.
 
 ## Golden and hostile fixtures
 
 `internal/archivev2/testdata/golden-minimal/` is a complete manifest-last
 archive containing all twelve record types plus body, resource, and source
-bundle objects. Tests copy and mutate it to prove rejection of missing
-manifests/objects, corruption, unsupported version/schema/capability, manifest
-checksum drift, inconsistent counts, traversal, symlinks, extras, invalid MIME,
-unknown/duplicate JSON fields, excessive count/depth, and unsafe relative
-paths. The fixture is synthetic and contains no private note data.
+bundle objects. It is built by a generator that does not use the exporter, so
+a writer bug cannot become the expected result, and a test asserts the
+committed fixture equals what that generator produces byte for byte
+(`NOTRIOS_UPDATE_GOLDEN=1` rewrites it after a deliberate format change).
+
+Tests copy and mutate it to prove rejection of missing manifests/objects,
+corruption of an object or of an index chunk, unsupported
+version/schema/capability, manifest checksum drift, inconsistent counts and
+object totals, index entry-count drift, traversal, symlinks, extras, invalid
+MIME, unknown/duplicate JSON fields, excessive count/depth, and unsafe
+relative paths. The fixture is synthetic and contains no private note data.

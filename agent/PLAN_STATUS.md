@@ -126,13 +126,39 @@ P4 and all subsequent product tasks require user approval.
   objects (~6,400 notes), because the 4 MiB manifest bound binds before the
   nominal 10,000-object limit at ~645 bytes per descriptor. Archive v2 therefore
   cannot archive the supplied 382,206-note corpora at all.
-- Resolved `agent/OPEN_QUESTIONS.md` question 17 as plan task **P3a**, now
-  sequenced ahead of P4: move the object inventory into checksummed index
-  objects with discriminated entry locations, re-derive limits from a
-  1,000,000-note target, and spool both the writer's object dedup state and the
-  verifier's cross-reference state. P3a is scheduled before P4 (a restore built
-  against the in-memory verifier would be rewritten) and before P6 (which pins
-  the container for an external consumer).
+- Resolved `agent/OPEN_QUESTIONS.md` question 17 as plan task **P3a**, then
+  implemented it.
+
+## 2026-08-04 P3a — archive-v2 large-library container revision
+
+- The object inventory left `manifest.json` for checksummed index chunks
+  (`application/vnd.notrios.archive-v2-index+jsonl`) listed in entry order.
+  The commit digest binds each chunk hash and each chunk binds every object
+  hash, so the checksum chain is unbroken while the manifest stays flat.
+- Index chunks are named by the manifest, never by the index, so the inventory
+  does not list itself. Entries are globally sorted by object hash across
+  chunks.
+- Every entry carries a discriminated `location`; `fanout` is the only layout
+  this build writes, so a packed layout can arrive behind an optional
+  capability instead of a second breaking revision.
+- Objects moved to a two-level `objects/sha256/ab/cd/<hash>` fanout, matching
+  the asset store and keeping directories near 25 entries at a million
+  objects. Path order equals hash order, which makes pruning and file counting
+  merges rather than set lookups.
+- `objects.index.v1` is a required capability. Limits were re-derived from a
+  1,000,000-note target: 8,000,000 objects, 1,000 index chunks of 10,000
+  entries, 64,000,000 records, 1,000,000 notebooks; the manifest bound stayed
+  at 4 MiB because it no longer scales with the archive.
+- The writer keeps no object table: the published tree is the dedup index, and
+  index entries stream through a 256-bucket external-sort spool.
+- The verifier keeps only collections and the notebook tree in memory. Record
+  identities and object hashes go to declaration/reference spools that are
+  merge-joined per bucket. Composite keys fold consistency into the join — a
+  revision key carries its document ID and a blob key its byte length — and
+  "no extra files" is proven by counting rather than by a path set.
+- The golden fixture is now produced by a generator that does not use the
+  exporter, with a test asserting the committed fixture matches it byte for
+  byte.
 
 ## 2026-07-26 plan/roadmap review
 
@@ -218,10 +244,13 @@ attempt detail remains append-only in `agent/ATTEMPT_LOG.jsonl`.
 - Native archive v2 streaming export is live as `notriosctl export archive-v2`;
   it is a local CLI operation with no REST/MCP output-path surface, and restore
   is still P4, so a v2 archive cannot yet be read back.
+- Archive-v2 objects live at `objects/sha256/ab/cd/<hash>`; the object
+  inventory lives in index chunks, not in the manifest.
 - P3 generated 100/1,000/5,000-note export evidence is under
-  `performance/v0.4-p3/`. One archive currently holds at most ~6,500 objects
-  because each revision is one object and the 4 MiB manifest lists every object
-  inline; P3a revises the container.
+  `performance/v0.4-p3/`; P3a container evidence, including the real
+  382,206-note Joplin corpus, is under `performance/v0.4-p3a/`.
+- An archive now admits up to 8,000,000 objects. The manifest carries index
+  chunk descriptors and totals only, so its size does not track library size.
 - No GitHub push is authorized for this review.
 
 ## Open implementation blockers

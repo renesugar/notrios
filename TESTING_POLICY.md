@@ -178,11 +178,34 @@ foreign destinations and existing complete archives, refusal of
 publication-handoff and content-rewriting link actions, the object budget, and
 small record chunking.
 
-`scripts/run_archive_export_profile.sh` drives generated 100/1,000/5,000-note
-export, verify, resume, and subset tiers. Evidence under `performance/v0.4-p3/`
-records aggregate timings, object/byte counts, whole-process peak RSS, and the
-share of the object budget each tier consumed — never note titles, bodies,
-resources, or local paths.
+`scripts/run_archive_export_profile.sh` drives generated
+100/1,000/5,000/100,000-note export, verify, resume, and subset tiers. The
+100,000-note tier exists because the pre-P3a container could not reach it.
+Evidence under `performance/v0.4-p3/` and `performance/v0.4-p3a/` records
+aggregate timings, object/byte counts, manifest size, and whole-process peak
+RSS — never note titles, bodies, resources, or local paths.
+
+P3a additionally exports and verifies the real 382,206-note Joplin RAW recipe
+corpus. That evidence is aggregate only and no private corpus, database, or
+archive is committed.
+
+### Native archive v2 container
+
+v0.4 P3a fixtures cover the container revision that made a real library
+archivable. `TestManifestSizeIsIndependentOfArchiveSize` exports 2,000 notes
+and asserts the manifest stays under 32 KiB while the object count exceeds the
+note count — the inline form needed roughly 1.3 MB at that size and stopped
+near 6,500 objects. Further fixtures assert bounded index chunking, the
+two-level `ab/cd` fanout, globally sorted unique index entries across chunks,
+and that corrupting an index chunk breaks the checksum chain.
+
+Spool fixtures cover the external-sort merge directly: balanced joins,
+missing declarations, duplicate declarations, unreferenced blobs, blob
+references with the wrong byte length, and global key ordering across buckets.
+
+The golden fixture is produced by a generator that does not use the exporter,
+and a test asserts the committed fixture matches that generator byte for byte,
+so the verifier is never checked against an archive its own writer produced.
 
 ### Native archive v2 admission
 

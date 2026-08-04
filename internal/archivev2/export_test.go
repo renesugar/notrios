@@ -444,13 +444,12 @@ func containsSubstring(values []string, needle string) bool {
 
 func decodeRecords(t *testing.T, root string) map[string][]json.RawMessage {
 	t.Helper()
-	manifest := readManifest(t, root)
 	records := map[string][]json.RawMessage{}
-	for _, object := range manifest.Objects {
-		if object.Kind != "records" {
+	for _, entry := range readIndexEntries(t, root) {
+		if entry.Kind != "records" {
 			continue
 		}
-		file, err := os.Open(filepath.Join(root, filepath.FromSlash(object.Path)))
+		file, err := os.Open(filepath.Join(root, filepath.FromSlash(entry.Location.Path)))
 		if err != nil {
 			t.Fatal(err)
 		}

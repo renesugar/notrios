@@ -8,6 +8,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"testing"
 )
@@ -27,7 +28,9 @@ func TestGoldenArchiveVerifies(t *testing.T) {
 		}
 		t.Fatal(err)
 	}
-	if report.SnapshotID != "snap_golden" || report.DatabaseID != "db_archive" || report.Objects != 4 || report.Records != 12 || report.RequiredObjects != 3 || report.Bytes != 2861 || report.Counts.Documents != 1 || report.Counts.SearchNotebooks != 1 {
+	if report.SnapshotID != "snap_golden" || report.DatabaseID != "db_archive" || report.Objects != 4 ||
+		report.IndexObjects != 1 || report.Records != 12 || report.Blobs != 3 || report.RecordChunks != 1 ||
+		report.Counts.Documents != 1 || report.Counts.SearchNotebooks != 1 {
 		t.Fatalf("unexpected report: %+v", report)
 	}
 }
@@ -54,9 +57,16 @@ func TestManifestLastAndStrictManifestAdmission(t *testing.T) {
 		{name: "required capability", mutate: func(m *Manifest) {
 			m.Compatibility.RequiredCapabilities = append(m.Compatibility.RequiredCapabilities, "unknown.required.v1")
 		}, want: "unsupported required capability"},
-		{name: "traversal", mutate: func(m *Manifest) { m.Objects[0].Path = "../object" }, want: "object path"},
+		{name: "traversal", mutate: func(m *Manifest) { m.Index[0].Location.Path = "../object" }, want: "does not match its content hash"},
 		{name: "inconsistent counts", mutate: func(m *Manifest) { m.Counts.Documents++ }, want: "counts do not match"},
-		{name: "invalid MIME", mutate: func(m *Manifest) { m.Objects[0].MediaType = "not a mime" }, want: "invalid MIME"},
+		{name: "index media type", mutate: func(m *Manifest) { m.Index[0].MediaType = "not a mime" }, want: "media type"},
+		{name: "object totals drift", mutate: func(m *Manifest) { m.Totals.Objects++ }, want: "objects but the index declares"},
+		{name: "byte totals drift", mutate: func(m *Manifest) { m.Totals.Bytes++ }, want: "index totals do not match"},
+		{name: "index entry count drift", mutate: func(m *Manifest) {
+			m.Index[0].Entries++
+			m.Totals.Objects++
+			m.Totals.Blobs++
+		}, want: "entries but holds"},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			root := copyFixture(t)
@@ -122,8 +132,7 @@ func TestManifestLastAndStrictManifestAdmission(t *testing.T) {
 }
 
 func TestObjectCorruptionMissingExtraAndSymlinkAreRejected(t *testing.T) {
-	manifest := readManifest(t, goldenFixture)
-	objectPath := manifest.Objects[1].Path
+	objectPath := firstBlobPath(t, goldenFixture)
 
 	t.Run("corrupt", func(t *testing.T) {
 		root := copyFixture(t)
@@ -198,7 +207,7 @@ func TestRecordReferenceAndPayloadConsistencyRejected(t *testing.T) {
 		replace string
 		want    string
 	}{
-		{name: "missing current revision", old: `"current_revision_id":"rev_alpha"`, replace: `"current_revision_id":"rev_missing"`, want: "inconsistent current revision"},
+		{name: "missing current revision", old: `"current_revision_id":"rev_alpha"`, replace: `"current_revision_id":"rev_missing"`, want: `references missing or mismatched "revision:rev_missing`},
 		{name: "resource MIME disagreement", old: `"filename":"image.png","mime_type":"image/png"`, replace: `"filename":"image.png","mime_type":"image/jpeg"`, want: "resource MIME mismatch"},
 		{name: "source path traversal", old: `"relative_path":"alpha.md"`, replace: `"relative_path":"../alpha.md"`, want: "invalid source_bundle record"},
 		{name: "unknown record type", old: `"type":"tag"`, replace: `"type":"future_tag"`, want: "unsupported record type"},
@@ -302,12 +311,47 @@ func writeManifest(t *testing.T, root string, manifest Manifest, finalize bool) 
 	}
 }
 
-func mutateRecordsObject(t *testing.T, root, old, replacement string) {
+// firstBlobPath returns the archive path of a blob object, read from the
+// index chunk rather than from the manifest.
+func firstBlobPath(t *testing.T, root string) string {
+	t.Helper()
+	for _, entry := range readIndexEntries(t, root) {
+		if entry.Kind == "blob" {
+			return entry.Location.Path
+		}
+	}
+	t.Fatal("fixture has no blob object")
+	return ""
+}
+
+func readIndexEntries(t *testing.T, root string) []IndexEntry {
 	t.Helper()
 	manifest := readManifest(t, root)
+	entries := []IndexEntry{}
+	for _, indexObject := range manifest.Index {
+		raw, err := os.ReadFile(filepath.Join(root, filepath.FromSlash(indexObject.Location.Path)))
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, line := range strings.Split(strings.TrimSuffix(string(raw), "\n"), "\n") {
+			var entry IndexEntry
+			if err := json.Unmarshal([]byte(line), &entry); err != nil {
+				t.Fatal(err)
+			}
+			entries = append(entries, entry)
+		}
+	}
+	return entries
+}
+
+// mutateRecordsObject edits the fixture's record chunk and republishes the
+// index and manifest so only the intended inconsistency remains.
+func mutateRecordsObject(t *testing.T, root, old, replacement string) {
+	t.Helper()
+	entries := readIndexEntries(t, root)
 	index := -1
-	for i, object := range manifest.Objects {
-		if object.Kind == "records" {
+	for i, entry := range entries {
+		if entry.Kind == "records" {
 			index = i
 			break
 		}
@@ -315,8 +359,8 @@ func mutateRecordsObject(t *testing.T, root, old, replacement string) {
 	if index < 0 {
 		t.Fatal("records object missing")
 	}
-	object := manifest.Objects[index]
-	oldPath := filepath.Join(root, filepath.FromSlash(object.Path))
+	entry := entries[index]
+	oldPath := filepath.Join(root, filepath.FromSlash(entry.Location.Path))
 	raw, err := os.ReadFile(oldPath)
 	if err != nil {
 		t.Fatal(err)
@@ -326,23 +370,83 @@ func mutateRecordsObject(t *testing.T, root, old, replacement string) {
 		t.Fatalf("mutation target %q absent", old)
 	}
 	digest := sha256.Sum256(updated)
-	object.SHA256 = fmt.Sprintf("%x", digest[:])
-	object.Path = objectPath(object.SHA256)
-	object.SizeBytes = int64(len(updated))
+	entry.SHA256 = fmt.Sprintf("%x", digest[:])
+	entry.Location = newFanoutLocation(entry.SHA256)
+	entry.SizeBytes = int64(len(updated))
 	if err := os.Remove(oldPath); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.Remove(filepath.Dir(oldPath)); err != nil {
-		t.Fatal(err)
-	}
-	newPath := filepath.Join(root, filepath.FromSlash(object.Path))
+	newPath := filepath.Join(root, filepath.FromSlash(entry.Location.Path))
 	if err := os.MkdirAll(filepath.Dir(newPath), 0o755); err != nil {
 		t.Fatal(err)
 	}
 	if err := os.WriteFile(newPath, updated, 0o644); err != nil {
 		t.Fatal(err)
 	}
-	manifest.Objects[index] = object
-	manifest.Objects = SortedObjects(manifest.Objects)
+	entries[index] = entry
+	republishIndex(t, root, entries)
+}
+
+// republishIndex rewrites the fixture's single index chunk and manifest from
+// the given entries, removing the previous chunk.
+func republishIndex(t *testing.T, root string, entries []IndexEntry) {
+	t.Helper()
+	manifest := readManifest(t, root)
+	for _, indexObject := range manifest.Index {
+		if err := os.Remove(filepath.Join(root, filepath.FromSlash(indexObject.Location.Path))); err != nil && !os.IsNotExist(err) {
+			t.Fatal(err)
+		}
+	}
+	sort.Slice(entries, func(i, j int) bool { return entries[i].SHA256 < entries[j].SHA256 })
+	var chunk strings.Builder
+	var totals ObjectTotals
+	for _, entry := range entries {
+		encoded, err := encodeIndexEntry(entry)
+		if err != nil {
+			t.Fatal(err)
+		}
+		chunk.Write(encoded)
+		totals.Objects++
+		totals.Bytes += entry.SizeBytes
+		if entry.Kind == "records" {
+			totals.RecordChunks++
+		} else {
+			totals.Blobs++
+		}
+	}
+	payload := chunk.String()
+	digest := sha256.Sum256([]byte(payload))
+	hash := fmt.Sprintf("%x", digest[:])
+	location := newFanoutLocation(hash)
+	path := filepath.Join(root, filepath.FromSlash(location.Path))
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, []byte(payload), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	manifest.Index = []IndexObject{{SHA256: hash, SizeBytes: int64(len(payload)), Entries: len(entries), MediaType: IndexMediaType, Location: location}}
+	manifest.Totals = totals
 	writeManifest(t, root, manifest, true)
+	pruneEmptyDirectories(t, filepath.Join(root, "objects"))
+}
+
+func pruneEmptyDirectories(t *testing.T, root string) {
+	t.Helper()
+	var directories []string
+	err := filepath.WalkDir(root, func(current string, entry fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if entry.IsDir() {
+			directories = append(directories, current)
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for index := len(directories) - 1; index > 0; index-- {
+		_ = os.Remove(directories[index])
+	}
 }

@@ -13,9 +13,9 @@ PROFILE=${1:-1000}
 OUTPUT=${2:-/tmp/notrios-archive-export-${PROFILE}.json}
 
 case "$PROFILE" in
-  100|1000|5000) ;;
+  100|1000|5000|100000) ;;
   *)
-    echo "usage: $0 [100|1000|5000] [output.json]" >&2
+    echo "usage: $0 [100|1000|5000|100000] [output.json]" >&2
     exit 2
     ;;
 esac

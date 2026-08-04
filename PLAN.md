@@ -1,8 +1,8 @@
 # Plan: v0.4 — Import correctness, portable data, publishing handoff, and stable references
 
-Status: **J1–J3, Q1, P1, P2, and P3 completed. P3a (archive-v2 large-library
-container revision) is the next task and requires user approval; P4 and all
-remaining product-feature tasks follow it**.
+Status: **J1–J3, Q1, P1, P2, P3, and P3a completed. P3b (packed object
+layout) is the next task and requires user approval; P4 and all remaining
+product-feature tasks follow it**.
 Drafted 2026-07-26 and revised 2026-08-02 after comparing the Joplin importer
 and publishing/search plans with the real-data-tested `movenotes-v3` pipeline.
 
@@ -183,7 +183,7 @@ one object per revision plus an inline manifest inventory caps an archive near
 enforces the documented limits and fails before publishing a manifest. P3a
 resolves it; see `NATIVE_ARCHIVE_V2.md` and `agent/OPEN_QUESTIONS.md`.
 
-### P3a. Archive-v2 large-library container revision — next task
+### P3a. Archive-v2 large-library container revision — complete
 
 Resolves `agent/OPEN_QUESTIONS.md` question 17. P3 proved the writer is
 correct but also proved the P2 container cannot hold a real library: the 4 MiB
@@ -233,6 +233,49 @@ objects prove too slow or too hostile to the future rclone/folder sync
 transport at that scale, a packed-object layout becomes its own approved slice
 before P6 — the discriminated `location` exists so that stays a measurement
 decision, not another format break.
+
+### P3b. Packed object layout — next task
+
+Resolves `agent/OPEN_QUESTIONS.md` question 18, which P3a deliberately left to
+measurement. The measurement is in: a full backup of the 382,206-note recipe
+corpus wrote 382,407 loose objects in 48m26s — roughly 131 objects per second
+end to end — for only 1.14 GB of content. The cost is one
+`create + write + fsync + rename` per object, so throughput tracks file
+operations rather than bytes.
+
+That is poor for a backup, and it is worse for what the container is meant to
+become. v0.7 sync carries this layout over REST and folder/rclone transports,
+where hundreds of thousands of small objects mean hundreds of thousands of
+round trips. The answer to question 18 is therefore yes: add a packed layout.
+
+- Add `pack` to the discriminated `location` union that P3a introduced:
+  `{ layout, pack_sha256, offset, length }`. The entry keeps the object's own
+  SHA-256, so an object's identity never depends on where it is stored.
+- Pack files are `kind: "pack"` index entries stored under the ordinary fanout.
+  They are excluded from the unreferenced-object check because the entries
+  inside them are what reference their bytes.
+- Each pack ends with a self-describing trailer: a JSONL listing of the
+  objects it contains and their offsets, plus the trailer offset in the final
+  bytes. A pack is then verifiable standalone, and a resumed export can
+  recover finalized packs instead of rewriting them.
+- Declare `objects.pack.v1` as an **optional** capability. Readers that do not
+  understand it must reject an archive that uses it, so the capability is
+  listed as required when packs are present and absent otherwise.
+- Verification streams each pack once in offset order using the existing spool
+  rather than seeking per object, and checks every contained object's hash and
+  length against its index entry.
+- Keep the loose fanout layout supported and default until the measurements
+  below justify switching the default. Packs are chosen explicitly
+  (`--pack`), and the trade-off is documented: packs trade per-object
+  filesystem reuse for far fewer file operations.
+- Re-measure both layouts on the same 382,206-note corpus: export wall clock,
+  verification wall clock, peak RSS, file count, and interrupted-resume
+  behavior. Record the fsync count difference explicitly.
+
+Working state: the same corpus exports and verifies under both layouts with
+identical record counts and identical selection digests; a packed archive is
+rejected by a reader that does not declare the capability; and an interrupted
+packed export resumes without rewriting finalized packs.
 
 ### P4. Native archive v2 verify and restore/import
 
@@ -321,10 +364,11 @@ specific real-format, round-trip, hostile-input, native-build, and scale gates.
 
 ## Decisions required before or during v0.4
 
-- Approve P3a before revising the archive-v2 container. It is sequenced before
-  P4 because a restore path built against the current in-memory verifier would
-  have to be rewritten, and before P6 because that task pins the container for
-  an external consumer.
+- Approve P3b before adding the packed object layout. It is sequenced before
+  P4 for the same reason P3a was — a restore path written against one layout
+  would have to be revisited — and before P6 and v0.7 sync, both of which pin
+  or carry the container. The alternative is to accept ~131 objects per second
+  and per-object transport round trips for the life of the format.
 - Approve P4 before implementing verified archive-v2 restore/import.
 - Restore has no default: P2 defines explicit replace/merge/fork/adopt identity
   consequences; P4 must require one after verification.

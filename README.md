@@ -77,8 +77,8 @@ Recoll availability, backlog, sync/index, and reconciliation state.
   handoff, and stable references. J1–J3, Q1, P1, P2, and P3 are complete,
   including bounded boolean search, the shared selection/privacy planner, the
   native archive-v2 format/identity verifier, and `notriosctl export
-  archive-v2` streaming backup/subset snapshots; P4 (verified restore) and the
-  remaining product-feature tasks require approval — see [`PLAN.md`](PLAN.md) and
+  archive-v2` streaming backup/subset snapshots at real-library scale; P4
+  (verified restore) and the remaining product-feature tasks require approval — see [`PLAN.md`](PLAN.md) and
   [`ROADMAP.md`](ROADMAP.md).
 - Agent progress/attempt tracking: [`agent/PLAN_STATUS.md`](agent/PLAN_STATUS.md), [`agent/ATTEMPT_LOG.jsonl`](agent/ATTEMPT_LOG.jsonl), and [`agent/MODEL_LOG.jsonl`](agent/MODEL_LOG.jsonl).
 

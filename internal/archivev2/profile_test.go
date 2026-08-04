@@ -26,6 +26,8 @@ type exportProfile struct {
 	Resources        int                      `json:"reachable_resources"`
 	Records          int                      `json:"records"`
 	Objects          int                      `json:"objects"`
+	IndexObjects     int                      `json:"index_objects"`
+	ManifestBytes    int64                    `json:"manifest_bytes"`
 	RecordObjects    int                      `json:"record_objects"`
 	BlobObjects      int                      `json:"blob_objects"`
 	Deduplicated     int                      `json:"deduplicated_objects"`
@@ -52,16 +54,15 @@ type exportProfileEnvironment struct {
 
 // TestArchiveExportProfile is opt-in evidence, not an ordinary unit test.
 // scripts/run_archive_export_profile.sh supplies one of the reviewed tiers.
-// The largest tier is bounded by the archive-v2 object budget: one body object
-// per revision plus resource, source-bundle, and record objects must stay
-// within Limits.MaxObjects.
+// The 100,000-note tier exists because the pre-P3a container could not reach
+// it: listing objects inline capped an archive near 6,500 objects.
 func TestArchiveExportProfile(t *testing.T) {
 	tierText := strings.TrimSpace(os.Getenv("NOTRIOS_ARCHIVE_PROFILE"))
 	if tierText == "" {
 		t.Skip("set NOTRIOS_ARCHIVE_PROFILE to 100, 1000, or 5000")
 	}
 	tier, err := strconv.Atoi(tierText)
-	if err != nil || (tier != 100 && tier != 1_000 && tier != 5_000) {
+	if err != nil || (tier != 100 && tier != 1_000 && tier != 5_000 && tier != 100_000) {
 		t.Fatalf("unsupported NOTRIOS_ARCHIVE_PROFILE %q", tierText)
 	}
 
@@ -96,6 +97,10 @@ func TestArchiveExportProfile(t *testing.T) {
 	profile.Resources = report.ReachableResources
 	profile.Records = report.Counts.Total()
 	profile.Objects = report.Objects
+	profile.IndexObjects = report.IndexObjects
+	if info, statErr := os.Stat(filepath.Join(full, "manifest.json")); statErr == nil {
+		profile.ManifestBytes = info.Size()
+	}
 	profile.RecordObjects = report.RecordObjects
 	profile.BlobObjects = report.BlobObjects
 	profile.Deduplicated = report.DeduplicatedObjects

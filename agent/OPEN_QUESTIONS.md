@@ -29,7 +29,7 @@ log. Current implementation-affecting questions:
 
 ## Native archive v2 format bounds
 
-17. **Resolved 2026-08-04; scheduled as plan task P3a.** Archive v2 stores one
+17. **Resolved and implemented 2026-08-04 as plan task P3a.** Archive v2 stored one
     immutable object per revision, resource, and source bundle, and
     `manifest.json` lists every object inline at ~645 bytes each. The 4 MiB
     manifest bound binds before the 10,000-object limit and caps one archive
@@ -47,9 +47,25 @@ log. Current implementation-affecting questions:
     carrying an inline-inventory compatibility path, since no archive exists
     outside this repository and P6 has not pinned the format.
 
-    Still open and gated on P3a measurement: whether loose objects remain
-    viable at ~1.6M files, or whether a packed-object layout is needed before
-    P6 and the v0.7 rclone/folder transport.
+    Delivered: the inventory moved into index chunks, the fanout went to two
+    levels, limits were re-derived from a 1,000,000-note target, and both the
+    writer's object state and the verifier's cross-reference state became
+    external-sorted spools. See `plans/v0.4/008-*` and `performance/v0.4-p3a/`.
+
+18. **Resolved 2026-08-04 by measurement; scheduled as plan task P3b.** A full
+    backup of the real 382,206-note corpus wrote 382,407 loose objects in
+    48m26s — about 131 objects per second for 1.14 GB of content — because
+    throughput tracks one `create + write + fsync + rename` per object rather
+    than bytes. v0.7 sync would additionally pay one transport round trip per
+    object over REST and folder/rclone.
+
+    Decision: add a packed layout as the optional `objects.pack.v1`
+    capability, using the discriminated `location` P3a introduced
+    (`pack_sha256`, `offset`, `length`). Packs are `kind: "pack"` index
+    entries under the ordinary fanout, carry a self-describing trailer so they
+    verify standalone and resume without rewriting, and are excluded from the
+    unreferenced-object check. Loose fanout stays supported and default until
+    the P3b measurements justify switching. See `PLAN.md`.
 
 ## Synchronization (resolve in separate v0.7 plans)
 

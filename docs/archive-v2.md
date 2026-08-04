@@ -29,7 +29,9 @@ A v2 archive is a directory of immutable SHA-256-addressed objects. Object
 hashes, exact sizes, canonical MIME types, typed record counts, schema bounds,
 required capabilities, database/snapshot identity, and the earlier
 [selection/privacy plan](selection-planning.md) digest are bound by a final
-manifest checksum.
+manifest checksum. The manifest binds the index chunks and each chunk binds
+the objects it names, so the checksum chain still reaches every byte even
+though the manifest itself never grows.
 
 `manifest.json` is written last and is the only completion marker. Verification
 rejects an absent manifest, damaged or missing objects, unknown required
@@ -81,18 +83,18 @@ the command finishes, so the archive directory itself never holds one.
 Export is a local command on purpose: no REST or MCP endpoint accepts an output
 path or streams archive bytes.
 
-## Current size bound
+## Size
 
-Each saved revision, resource, and source bundle becomes one immutable object,
-and `manifest.json` lists every object inline. The 4 MiB manifest bound
-therefore caps one archive near **6,500 objects — roughly 6,400
-single-revision notes**. Larger libraries fail with an explicit object-budget
-error before any manifest is published: the export never silently truncates.
+Each saved revision, resource, and source bundle becomes one immutable object.
+The manifest does not list them: it names checksummed **index chunks** that do,
+so the manifest stays a few kilobytes whether an archive holds a hundred notes
+or a million. An archive may hold up to 8,000,000 objects.
 
-This is the current format's main limitation, and it is being revised — a
-planned change moves the object inventory into its own checksummed index
-objects so a full backup can cover a real library. Until then, archive v2 suits
-small libraries and scoped subset transfers, not a large collection.
+Objects live under a two-level fanout (`objects/sha256/ab/cd/<hash>`) so a
+large archive does not pile millions of files into a few directories. Export
+and verification both stream: neither keeps a table of objects or records in
+memory, so peak memory tracks the library's notebook and collection counts
+rather than its note count.
 
 Use archive v1 commands for query-scoped plain-note interchange. P4 will add
 verify-only and restore commands.

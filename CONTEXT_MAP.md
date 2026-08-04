@@ -6,8 +6,8 @@ This file is the codebase atlas. Update it whenever major files or directories a
 
 - `README.md` — project overview and quick start.
 - `PLAN.md` — active v0.4 portable-data/publishing/stable-reference plan;
-  J1–J3, Q1, P1, P2, and P3 are complete. P3a (archive-v2 large-library
-  container revision) is next and requires user approval, followed by P4.
+  J1–J3, Q1, P1, P2, P3, and P3a are complete. P3b (packed object layout) is
+  next and requires user approval, followed by P4.
 - `plans/scaffold/SCAFFOLD_CREATION_PLAN.md` — process for creating/refining this scaffold.
 - `ROADMAP.md` — product roadmap and future features.
 - `AGENTS.md` — coding-agent instructions (`CLAUDE.md` points here).
@@ -44,10 +44,12 @@ This file is the codebase atlas. Update it whenever major files or directories a
 - `internal/api/` — shared API request/response models.
 - `internal/httpapi/` — REST HTTP adapter for status, documents, revisions, resources, links, graph slices, and staged future routes.
 - `internal/store/` — SQLite-backed persistence, document CRUD, revision history, soft delete, restore, FTS5 search, resource storage/reference reports (`sqlite_resource_reports.go`), retention-aware GC (`sqlite_gc.go`), importer batch/checkpoint/source-bundle state (`sqlite_imports.go`), link graph persistence, and notebooks/tags/search-notebooks/trash operations (`sqlite_notebooks.go`).
-- `internal/archivev2/` — native archive-v2 manifest/record model,
-  identity-intent planner, bounded directory/hash/MIME/reference verifier,
-  synthetic golden/adversarial fixtures, and the P3 manifest-last streaming
-  exporter (`export.go`) with its generated scale profile.
+- `internal/archivev2/` — native archive-v2 manifest/record model
+  (`format.go`), out-of-manifest object index and fanout layout (`index.go`),
+  identity-intent planner, bounded streaming verifier (`verify.go`), bounded
+  external-sort spool and merge join (`spool.go`), the manifest-last streaming
+  exporter (`export.go`), a generator-built synthetic golden fixture, and
+  generated scale profiles.
 - `internal/markdownlinks/` — conservative MVP Markdown/Obsidian/app-URI link extractor.
 - `internal/version/` — version constants.
 - `migrations/` — SQLite schema migrations.

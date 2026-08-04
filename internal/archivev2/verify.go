@@ -14,62 +14,69 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"sort"
 	"strings"
 	"time"
 )
 
 type VerificationReport struct {
-	SnapshotID      string `json:"snapshot_id"`
-	DatabaseID      string `json:"database_id"`
-	Target          string `json:"target"`
-	CommitSHA256    string `json:"commit_sha256"`
-	Objects         int    `json:"objects"`
-	Records         int    `json:"records"`
-	Bytes           int64  `json:"bytes"`
-	RequiredObjects int    `json:"required_objects"`
-	Counts          Counts `json:"counts"`
+	SnapshotID   string `json:"snapshot_id"`
+	DatabaseID   string `json:"database_id"`
+	Target       string `json:"target"`
+	CommitSHA256 string `json:"commit_sha256"`
+	IndexObjects int    `json:"index_objects"`
+	Objects      int    `json:"objects"`
+	RecordChunks int    `json:"record_chunks"`
+	Blobs        int    `json:"blobs"`
+	Records      int    `json:"records"`
+	Bytes        int64  `json:"bytes"`
+	Counts       Counts `json:"counts"`
 }
 
+// verificationState holds only what is genuinely bounded by the format: the
+// collection set (MaxCollections) and the notebook tree (MaxNotebooks, needed
+// for cycle and depth checks). Every set proportional to the archived library
+// — object hashes and the twelve record identity spaces — goes to disk-backed
+// spools instead, so verifying a million-note archive does not need a
+// million-note heap.
 type verificationState struct {
-	collections       map[string]CollectionRecord
-	notebooks         map[string]NotebookRecord
-	searchNotebooks   map[string]SearchNotebookRecord
-	tags              map[string]TagRecord
-	documents         map[string]DocumentRecord
-	revisions         map[string]RevisionRecord
-	documentTags      map[string]DocumentTagRecord
-	resources         map[string]ResourceRecord
-	documentResources map[string]DocumentResourceRecord
-	links             map[string]LinkRecord
-	provenance        map[string]ProvenanceRecord
-	sourceBundles     map[string]SourceBundleRecord
-	referencedBlobs   map[string]bool
-	counts            Counts
+	collections   map[string]bool
+	notebooks     map[string]string
+	declarations  *keySpool
+	references    *keySpool
+	counts        Counts
+	limits        Limits
+	notebookCount int
 }
 
-func newVerificationState() *verificationState {
-	return &verificationState{
-		collections:       map[string]CollectionRecord{},
-		notebooks:         map[string]NotebookRecord{},
-		searchNotebooks:   map[string]SearchNotebookRecord{},
-		tags:              map[string]TagRecord{},
-		documents:         map[string]DocumentRecord{},
-		revisions:         map[string]RevisionRecord{},
-		documentTags:      map[string]DocumentTagRecord{},
-		resources:         map[string]ResourceRecord{},
-		documentResources: map[string]DocumentResourceRecord{},
-		links:             map[string]LinkRecord{},
-		provenance:        map[string]ProvenanceRecord{},
-		sourceBundles:     map[string]SourceBundleRecord{},
-		referencedBlobs:   map[string]bool{},
-	}
-}
+// Declaration and reference keys share one namespace so a single sorted merge
+// checks every cross-reference at once. Composite keys fold a consistency
+// check into the join: a revision reference carries its document ID, and a
+// blob reference carries its exact byte length, so a mismatch simply fails to
+// find a declaration.
+const (
+	keyBlob             = "blob:"
+	keyCollection       = "collection:"
+	keyNotebook         = "notebook:"
+	keySearchNotebook   = "search_notebook:"
+	keyTag              = "tag:"
+	keyDocument         = "document:"
+	keyRevision         = "revision:"
+	keyDocumentTag      = "document_tag:"
+	keyResource         = "resource:"
+	keyDocumentResource = "document_resource:"
+	keyLink             = "link:"
+	keyProvenance       = "provenance:"
+	keySourceBundle     = "source_bundle:"
+)
 
 // VerifyDirectory performs a complete read-only admission pass. The manifest
-// is the sole completion marker; every listed object is size/hash/type checked,
-// every typed record is decoded under depth/size limits, and references are
-// reconciled before a future restore path may begin canonical writes.
+// is the sole completion marker; it names the index chunks, the index names
+// every object, every object is size/hash/type checked, every typed record is
+// decoded under depth/size limits, and references are reconciled before a
+// future restore path may begin canonical writes.
+//
+// Memory is bounded: objects and records stream, and cross-reference checking
+// uses external-sorted spools rather than in-memory record maps.
 func VerifyDirectory(root string, limits Limits) (VerificationReport, error) {
 	if err := validateLimits(limits); err != nil {
 		return VerificationReport{}, err
@@ -85,215 +92,302 @@ func VerifyDirectory(root string, limits Limits) (VerificationReport, error) {
 	if !rootInfo.IsDir() || rootInfo.Mode()&os.ModeSymlink != 0 {
 		return VerificationReport{}, fmt.Errorf("archive root must be a real directory")
 	}
-	manifestRaw, err := readRegularBounded(root, "manifest.json", limits.MaxManifestBytes)
+	manifest, err := readManifestFile(root, limits)
 	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			return VerificationReport{}, fmt.Errorf("incomplete archive: manifest.json is absent")
-		}
-		return VerificationReport{}, fmt.Errorf("manifest.json: %w", err)
-	}
-	if err := validateJSONDepth(manifestRaw, limits.MaxJSONDepth); err != nil {
-		return VerificationReport{}, fmt.Errorf("manifest.json: %w", err)
-	}
-	var manifest Manifest
-	if err := decodeStrict(manifestRaw, &manifest); err != nil {
-		return VerificationReport{}, fmt.Errorf("manifest.json: %w", err)
-	}
-	if err := validateManifest(manifest, limits); err != nil {
-		return VerificationReport{}, err
-	}
-	if err := validateArchiveTree(root, manifest.Objects); err != nil {
 		return VerificationReport{}, err
 	}
 
-	objectsByHash := make(map[string]Object, len(manifest.Objects))
-	state := newVerificationState()
-	var totalBytes int64
-	for _, object := range manifest.Objects {
-		objectsByHash[object.SHA256] = object
-		if err := verifyObjectBytes(root, object); err != nil {
-			return VerificationReport{}, err
-		}
-		totalBytes += object.SizeBytes
-		if object.Kind == "records" {
-			if err := verifyRecordObject(root, object, limits, state); err != nil {
-				return VerificationReport{}, err
-			}
-		}
+	spoolRoot, err := os.MkdirTemp("", "notrios-archive-verify-*")
+	if err != nil {
+		return VerificationReport{}, err
+	}
+	defer os.RemoveAll(spoolRoot)
+	state, err := newVerificationState(spoolRoot, limits)
+	if err != nil {
+		return VerificationReport{}, err
+	}
+	defer state.close()
+
+	totals, err := state.scanIndex(root, manifest)
+	if err != nil {
+		return VerificationReport{}, err
+	}
+	if totals != manifest.Totals {
+		return VerificationReport{}, fmt.Errorf("index totals do not match the manifest")
 	}
 	if state.counts != manifest.Counts {
 		return VerificationReport{}, fmt.Errorf("decoded record counts do not match manifest")
 	}
-	if err := state.validateReferences(manifest, objectsByHash, limits); err != nil {
+	if err := state.validateContainers(manifest); err != nil {
 		return VerificationReport{}, err
 	}
-	for hash, object := range objectsByHash {
-		if object.Kind == "blob" && !state.referencedBlobs[hash] {
-			return VerificationReport{}, fmt.Errorf("unreferenced blob object %s", hash)
-		}
+	if err := validateArchiveTree(root, manifest, totals.Objects); err != nil {
+		return VerificationReport{}, err
 	}
+	if err := state.reconcile(); err != nil {
+		return VerificationReport{}, err
+	}
+
 	return VerificationReport{
-		SnapshotID:      manifest.Snapshot.ID,
-		DatabaseID:      manifest.Snapshot.DatabaseID,
-		Target:          manifest.Snapshot.Target,
-		CommitSHA256:    manifest.CommitSHA256,
-		Objects:         len(manifest.Objects),
-		Records:         manifest.Counts.Total(),
-		Bytes:           totalBytes,
-		RequiredObjects: len(state.referencedBlobs),
-		Counts:          manifest.Counts,
+		SnapshotID:   manifest.Snapshot.ID,
+		DatabaseID:   manifest.Snapshot.DatabaseID,
+		Target:       manifest.Snapshot.Target,
+		CommitSHA256: manifest.CommitSHA256,
+		IndexObjects: len(manifest.Index),
+		Objects:      totals.Objects,
+		RecordChunks: totals.RecordChunks,
+		Blobs:        totals.Blobs,
+		Records:      manifest.Counts.Total(),
+		Bytes:        totals.Bytes,
+		Counts:       manifest.Counts,
 	}, nil
 }
 
-func validateLimits(limits Limits) error {
-	defaults := DefaultLimits()
-	if limits.MaxManifestBytes <= 0 || limits.MaxManifestBytes > defaults.MaxManifestBytes ||
-		limits.MaxObjects <= 0 || limits.MaxObjects > defaults.MaxObjects ||
-		limits.MaxRecords <= 0 || limits.MaxRecords > defaults.MaxRecords ||
-		limits.MaxRecordsPerObject <= 0 || limits.MaxRecordsPerObject > defaults.MaxRecordsPerObject ||
-		limits.MaxRecordBytes <= 0 || limits.MaxRecordBytes > defaults.MaxRecordBytes ||
-		limits.MaxRecordObjectBytes <= 0 || limits.MaxRecordObjectBytes > defaults.MaxRecordObjectBytes ||
-		limits.MaxBlobBytes <= 0 || limits.MaxBlobBytes > defaults.MaxBlobBytes ||
-		limits.MaxTotalBytes <= 0 || limits.MaxTotalBytes > defaults.MaxTotalBytes ||
-		limits.MaxPathBytes <= 0 || limits.MaxPathBytes > defaults.MaxPathBytes ||
-		limits.MaxPathDepth <= 0 || limits.MaxPathDepth > defaults.MaxPathDepth ||
-		limits.MaxJSONDepth <= 0 || limits.MaxJSONDepth > defaults.MaxJSONDepth ||
-		limits.MaxCollections <= 0 || limits.MaxCollections > defaults.MaxCollections ||
-		limits.MaxNotebookDepth <= 0 || limits.MaxNotebookDepth > defaults.MaxNotebookDepth ||
-		limits.MaxCapabilities <= 0 || limits.MaxCapabilities > defaults.MaxCapabilities ||
-		limits.MaxCapabilityNameBytes <= 0 || limits.MaxCapabilityNameBytes > defaults.MaxCapabilityNameBytes {
-		return fmt.Errorf("archive limits must be positive and no wider than defaults")
-	}
-	return nil
-}
-
-func validateArchiveTree(root string, objects []Object) error {
-	expectedFiles := map[string]bool{"manifest.json": true}
-	expectedDirs := map[string]bool{"objects": true, "objects/sha256": true}
-	for _, object := range objects {
-		expectedFiles[object.Path] = true
-		dir := path.Dir(object.Path)
-		for dir != "." && dir != "/" {
-			expectedDirs[dir] = true
-			dir = path.Dir(dir)
-		}
-	}
-	return filepath.WalkDir(root, func(current string, entry fs.DirEntry, walkErr error) error {
-		if walkErr != nil {
-			return walkErr
-		}
-		if current == root {
-			return nil
-		}
-		rel, err := filepath.Rel(root, current)
-		if err != nil {
-			return err
-		}
-		rel = filepath.ToSlash(rel)
-		if entry.Type()&os.ModeSymlink != 0 {
-			return fmt.Errorf("archive contains symlink %q", rel)
-		}
-		if entry.IsDir() {
-			if !expectedDirs[rel] {
-				return fmt.Errorf("archive contains unexpected directory %q", rel)
-			}
-			return nil
-		}
-		info, err := entry.Info()
-		if err != nil {
-			return err
-		}
-		if !info.Mode().IsRegular() || !expectedFiles[rel] {
-			return fmt.Errorf("archive contains unexpected non-regular or unlisted file %q", rel)
-		}
-		return nil
-	})
-}
-
-func verifyObjectBytes(root string, object Object) error {
-	file, err := openRegular(root, object.Path)
+func readManifestFile(root string, limits Limits) (Manifest, error) {
+	raw, err := readRegularBounded(root, "manifest.json", limits.MaxManifestBytes)
 	if err != nil {
-		return fmt.Errorf("object %s: %w", object.SHA256, err)
+		if errors.Is(err, os.ErrNotExist) {
+			return Manifest{}, fmt.Errorf("incomplete archive: manifest.json is absent")
+		}
+		return Manifest{}, fmt.Errorf("manifest.json: %w", err)
+	}
+	if err := validateJSONDepth(raw, limits.MaxJSONDepth); err != nil {
+		return Manifest{}, fmt.Errorf("manifest.json: %w", err)
+	}
+	var manifest Manifest
+	if err := decodeStrict(raw, &manifest); err != nil {
+		return Manifest{}, fmt.Errorf("manifest.json: %w", err)
+	}
+	if err := validateManifest(manifest, limits); err != nil {
+		return Manifest{}, err
+	}
+	return manifest, nil
+}
+
+func newVerificationState(spoolRoot string, limits Limits) (*verificationState, error) {
+	declarations, err := newKeySpool(spoolRoot, "declarations")
+	if err != nil {
+		return nil, err
+	}
+	references, err := newKeySpool(spoolRoot, "references")
+	if err != nil {
+		_ = declarations.close()
+		return nil, err
+	}
+	return &verificationState{
+		collections:  map[string]bool{},
+		notebooks:    map[string]string{},
+		declarations: declarations,
+		references:   references,
+		limits:       limits,
+	}, nil
+}
+
+func (state *verificationState) close() {
+	_ = state.declarations.close()
+	_ = state.references.close()
+}
+
+func (state *verificationState) declare(key string) error { return state.declarations.add(key) }
+func (state *verificationState) require(key string) error { return state.references.add(key) }
+
+// scanIndex reads every index chunk, verifies the bytes of every object it
+// names, and decodes record chunks in the same pass so records are read once.
+func (state *verificationState) scanIndex(root string, manifest Manifest) (ObjectTotals, error) {
+	var totals ObjectTotals
+	previousHash := ""
+	for _, indexObject := range manifest.Index {
+		if err := verifyObjectBytes(root, indexObject.Location.Path, indexObject.SHA256, indexObject.SizeBytes); err != nil {
+			return ObjectTotals{}, err
+		}
+		entries, err := state.scanIndexObject(root, indexObject, &previousHash, &totals)
+		if err != nil {
+			return ObjectTotals{}, err
+		}
+		if entries != indexObject.Entries {
+			return ObjectTotals{}, fmt.Errorf("index object %s declares %d entries but holds %d", indexObject.SHA256, indexObject.Entries, entries)
+		}
+	}
+	return totals, nil
+}
+
+func (state *verificationState) scanIndexObject(root string, indexObject IndexObject, previousHash *string, totals *ObjectTotals) (int, error) {
+	file, err := openRegular(root, indexObject.Location.Path)
+	if err != nil {
+		return 0, err
+	}
+	defer file.Close()
+	if err := requireTrailingLF(file, indexObject.SizeBytes, indexObject.SHA256); err != nil {
+		return 0, err
+	}
+	if _, err := file.Seek(0, io.SeekStart); err != nil {
+		return 0, err
+	}
+	scanner := bufio.NewScanner(file)
+	scanner.Buffer(make([]byte, 16<<10), state.limits.MaxIndexEntryBytes)
+	entries := 0
+	for scanner.Scan() {
+		line := scanner.Bytes()
+		if len(bytes.TrimSpace(line)) == 0 {
+			return 0, fmt.Errorf("index object %s contains a blank entry", indexObject.SHA256)
+		}
+		if err := validateJSONDepth(line, state.limits.MaxJSONDepth); err != nil {
+			return 0, fmt.Errorf("index object %s entry %d: %w", indexObject.SHA256, entries+1, err)
+		}
+		var entry IndexEntry
+		if err := decodeStrict(line, &entry); err != nil {
+			return 0, fmt.Errorf("index object %s entry %d: %w", indexObject.SHA256, entries+1, err)
+		}
+		if err := entry.validate(state.limits); err != nil {
+			return 0, fmt.Errorf("index object %s entry %d: %w", indexObject.SHA256, entries+1, err)
+		}
+		if entry.SHA256 <= *previousHash {
+			return 0, fmt.Errorf("index entries must be sorted by unique object hash")
+		}
+		*previousHash = entry.SHA256
+		if totals.Bytes > state.limits.MaxTotalBytes-entry.SizeBytes {
+			return 0, fmt.Errorf("archive byte limit exceeded")
+		}
+		totals.Objects++
+		totals.Bytes += entry.SizeBytes
+		if totals.Objects > state.limits.MaxObjects {
+			return 0, fmt.Errorf("archive declares more than %d objects", state.limits.MaxObjects)
+		}
+		if err := state.admitObject(root, entry, totals); err != nil {
+			return 0, err
+		}
+		entries++
+	}
+	if err := scanner.Err(); err != nil {
+		return 0, fmt.Errorf("index object %s: entry exceeds %d bytes or cannot be read: %w", indexObject.SHA256, state.limits.MaxIndexEntryBytes, err)
+	}
+	return entries, nil
+}
+
+func (state *verificationState) admitObject(root string, entry IndexEntry, totals *ObjectTotals) error {
+	if err := verifyObjectBytes(root, entry.Location.Path, entry.SHA256, entry.SizeBytes); err != nil {
+		return err
+	}
+	switch entry.Kind {
+	case "blob":
+		totals.Blobs++
+		// The declaration carries the exact length, so a record referring to
+		// this blob with a different length simply finds no declaration.
+		return state.declare(blobKey(entry.SHA256, entry.SizeBytes))
+	case "records":
+		totals.RecordChunks++
+		return state.verifyRecordObject(root, entry)
+	default:
+		return fmt.Errorf("unsupported object kind %q", entry.Kind)
+	}
+}
+
+func verifyObjectBytes(root, relative, hash string, size int64) error {
+	file, err := openRegular(root, relative)
+	if err != nil {
+		return fmt.Errorf("object %s: %w", hash, err)
 	}
 	defer file.Close()
 	stat, err := file.Stat()
 	if err != nil {
 		return err
 	}
-	if stat.Size() != object.SizeBytes {
-		return fmt.Errorf("object %s size mismatch", object.SHA256)
+	if stat.Size() != size {
+		return fmt.Errorf("object %s size mismatch", hash)
 	}
-	hash := sha256.New()
-	written, err := io.Copy(hash, file)
-	if err != nil || written != object.SizeBytes || hex.EncodeToString(hash.Sum(nil)) != object.SHA256 {
-		return fmt.Errorf("object %s checksum mismatch", object.SHA256)
+	digest := sha256.New()
+	written, err := io.Copy(digest, file)
+	if err != nil || written != size || hex.EncodeToString(digest.Sum(nil)) != hash {
+		return fmt.Errorf("object %s checksum mismatch", hash)
 	}
 	return nil
 }
 
-func verifyRecordObject(root string, object Object, limits Limits, state *verificationState) error {
-	file, err := openRegular(root, object.Path)
+func requireTrailingLF(file *os.File, size int64, hash string) error {
+	if size == 0 {
+		return fmt.Errorf("object %s is empty", hash)
+	}
+	last := []byte{0}
+	if _, err := file.ReadAt(last, size-1); err != nil || last[0] != '\n' {
+		return fmt.Errorf("object %s must end with LF", hash)
+	}
+	return nil
+}
+
+func (state *verificationState) verifyRecordObject(root string, entry IndexEntry) error {
+	file, err := openRegular(root, entry.Location.Path)
 	if err != nil {
 		return err
 	}
 	defer file.Close()
-	if object.SizeBytes == 0 {
-		return fmt.Errorf("records object %s is empty", object.SHA256)
-	}
-	last := []byte{0}
-	if _, err := file.ReadAt(last, object.SizeBytes-1); err != nil || last[0] != '\n' {
-		return fmt.Errorf("records object %s must end with LF", object.SHA256)
+	if err := requireTrailingLF(file, entry.SizeBytes, entry.SHA256); err != nil {
+		return err
 	}
 	if _, err := file.Seek(0, io.SeekStart); err != nil {
 		return err
 	}
 	scanner := bufio.NewScanner(file)
-	scanner.Buffer(make([]byte, 64<<10), limits.MaxRecordBytes)
+	scanner.Buffer(make([]byte, 64<<10), state.limits.MaxRecordBytes)
 	var actual Counts
 	records := 0
 	for scanner.Scan() {
-		line := append([]byte(nil), scanner.Bytes()...)
+		line := scanner.Bytes()
 		if len(bytes.TrimSpace(line)) == 0 {
-			return fmt.Errorf("records object %s contains a blank record", object.SHA256)
+			return fmt.Errorf("records object %s contains a blank record", entry.SHA256)
 		}
-		if err := validateJSONDepth(line, limits.MaxJSONDepth); err != nil {
-			return fmt.Errorf("records object %s line %d: %w", object.SHA256, records+1, err)
+		if err := validateJSONDepth(line, state.limits.MaxJSONDepth); err != nil {
+			return fmt.Errorf("records object %s line %d: %w", entry.SHA256, records+1, err)
 		}
 		var envelope RecordEnvelope
 		if err := decodeStrict(line, &envelope); err != nil {
-			return fmt.Errorf("records object %s line %d: %w", object.SHA256, records+1, err)
+			return fmt.Errorf("records object %s line %d: %w", entry.SHA256, records+1, err)
 		}
 		count, ok := countForRecordType(envelope.Type)
 		if !ok {
-			return fmt.Errorf("records object %s line %d: unsupported record type %q", object.SHA256, records+1, envelope.Type)
+			return fmt.Errorf("records object %s line %d: unsupported record type %q", entry.SHA256, records+1, envelope.Type)
 		}
-		if err := state.addRecord(envelope, limits); err != nil {
-			return fmt.Errorf("records object %s line %d: %w", object.SHA256, records+1, err)
+		if err := state.addRecord(envelope); err != nil {
+			return fmt.Errorf("records object %s line %d: %w", entry.SHA256, records+1, err)
 		}
 		actual.Add(count)
 		records++
 	}
 	if err := scanner.Err(); err != nil {
-		return fmt.Errorf("records object %s: record exceeds %d bytes or cannot be read: %w", object.SHA256, limits.MaxRecordBytes, err)
+		return fmt.Errorf("records object %s: record exceeds %d bytes or cannot be read: %w", entry.SHA256, state.limits.MaxRecordBytes, err)
 	}
-	if records != object.Records || actual != object.RecordCounts {
-		return fmt.Errorf("records object %s count mismatch", object.SHA256)
+	if records != entry.Records || actual != entry.RecordCounts {
+		return fmt.Errorf("records object %s count mismatch", entry.SHA256)
 	}
 	state.counts.Add(actual)
+	if state.counts.Total() > state.limits.MaxRecords {
+		return fmt.Errorf("archive holds more than %d records", state.limits.MaxRecords)
+	}
 	return nil
 }
 
-func (state *verificationState) addRecord(envelope RecordEnvelope, limits Limits) error {
+func blobKey(hash string, size int64) string {
+	return fmt.Sprintf("%s%s:%d", keyBlob, hash, size)
+}
+
+// addRecord validates one record's shape and emits its identity declaration
+// plus every reference it makes. Nothing about the record is retained except
+// the bounded collection and notebook sets.
+func (state *verificationState) addRecord(envelope RecordEnvelope) error {
+	maxDepth := state.limits.MaxJSONDepth
 	switch envelope.Type {
 	case RecordCollection:
 		var record CollectionRecord
 		if err := decodeStrict(envelope.Payload, &record); err != nil {
 			return err
 		}
-		if !validID(record.ID) || strings.TrimSpace(record.Name) == "" || len(record.Name) > 4096 || !validTimestamp(record.CreatedAt) || !validJSONObject(record.SettingsJSON, limits.MaxJSONDepth) || !sortedUnique(record.Capabilities) {
+		if !validID(record.ID) || strings.TrimSpace(record.Name) == "" || len(record.Name) > 4096 || !validTimestamp(record.CreatedAt) || !validJSONObject(record.SettingsJSON, maxDepth) || !sortedUnique(record.Capabilities) {
 			return fmt.Errorf("invalid collection record")
 		}
-		return addUnique(state.collections, record.ID, record)
+		if len(state.collections) >= state.limits.MaxCollections {
+			return fmt.Errorf("archive declares more than %d collections", state.limits.MaxCollections)
+		}
+		state.collections[record.ID] = true
+		return state.declare(keyCollection + record.ID)
 	case RecordNotebook:
 		var record NotebookRecord
 		if err := decodeStrict(envelope.Payload, &record); err != nil {
@@ -302,7 +396,21 @@ func (state *verificationState) addRecord(envelope RecordEnvelope, limits Limits
 		if !validID(record.ID) || (record.ParentID != "" && !validID(record.ParentID)) || strings.TrimSpace(record.Name) == "" || len(record.Name) > 4096 || !validTimestamp(record.CreatedAt) || !validTimestamp(record.UpdatedAt) {
 			return fmt.Errorf("invalid notebook record")
 		}
-		return addUnique(state.notebooks, record.ID, record)
+		state.notebookCount++
+		if state.notebookCount > state.limits.MaxNotebooks {
+			return fmt.Errorf("archive declares more than %d notebooks", state.limits.MaxNotebooks)
+		}
+		if _, exists := state.notebooks[record.ID]; exists {
+			return fmt.Errorf("duplicate notebook record %q", record.ID)
+		}
+		state.notebooks[record.ID] = record.ParentID
+		if err := state.declare(keyNotebook + record.ID); err != nil {
+			return err
+		}
+		if record.ParentID != "" {
+			return state.require(keyNotebook + record.ParentID)
+		}
+		return nil
 	case RecordSearchNotebook:
 		var record SearchNotebookRecord
 		if err := decodeStrict(envelope.Payload, &record); err != nil {
@@ -316,7 +424,7 @@ func (state *verificationState) addRecord(envelope RecordEnvelope, limits Limits
 		default:
 			return fmt.Errorf("invalid search_notebook sort anchor")
 		}
-		return addUnique(state.searchNotebooks, record.ID, record)
+		return state.declare(keySearchNotebook + record.ID)
 	case RecordTag:
 		var record TagRecord
 		if err := decodeStrict(envelope.Payload, &record); err != nil {
@@ -325,7 +433,7 @@ func (state *verificationState) addRecord(envelope RecordEnvelope, limits Limits
 		if !validID(record.ID) || strings.TrimSpace(record.Name) == "" || len(record.Name) > 4096 || !validTimestamp(record.CreatedAt) {
 			return fmt.Errorf("invalid tag record")
 		}
-		return addUnique(state.tags, record.ID, record)
+		return state.declare(keyTag + record.ID)
 	case RecordDocument:
 		var record DocumentRecord
 		if err := decodeStrict(envelope.Payload, &record); err != nil {
@@ -334,13 +442,24 @@ func (state *verificationState) addRecord(envelope RecordEnvelope, limits Limits
 		if !validID(record.ID) || !validID(record.CollectionID) || !validID(record.NotebookID) || !validID(record.CurrentRevisionID) || !validTimestamp(record.CreatedAt) || !validTimestamp(record.UpdatedAt) || (record.DeletedAt != "" && !validTimestamp(record.DeletedAt)) {
 			return fmt.Errorf("invalid document record")
 		}
-		return addUnique(state.documents, record.ID, record)
+		if err := state.declare(keyDocument + record.ID); err != nil {
+			return err
+		}
+		if err := state.require(keyCollection + record.CollectionID); err != nil {
+			return err
+		}
+		if err := state.require(keyNotebook + record.NotebookID); err != nil {
+			return err
+		}
+		// The composite key also proves the current revision belongs to this
+		// document without keeping either record.
+		return state.require(revisionKey(record.CurrentRevisionID, record.ID))
 	case RecordRevision:
 		var record RevisionRecord
 		if err := decodeStrict(envelope.Payload, &record); err != nil {
 			return err
 		}
-		if !validID(record.ID) || !validID(record.DocumentID) || len(record.Title) > 1<<20 || !validTimestamp(record.CreatedAt) || !validJSONObject(record.MetadataJSON, limits.MaxJSONDepth) {
+		if !validID(record.ID) || !validID(record.DocumentID) || len(record.Title) > 1<<20 || !validTimestamp(record.CreatedAt) || !validJSONObject(record.MetadataJSON, maxDepth) {
 			return fmt.Errorf("invalid revision record")
 		}
 		if err := validateBlobReferenceShape(record.Body); err != nil {
@@ -349,7 +468,13 @@ func (state *verificationState) addRecord(envelope RecordEnvelope, limits Limits
 		if normalized, err := normalizeMediaType(record.BodyMIMEType); err != nil || normalized != record.Body.MediaType {
 			return fmt.Errorf("revision body MIME mismatch")
 		}
-		return addUnique(state.revisions, record.ID, record)
+		if err := state.declare(revisionKey(record.ID, record.DocumentID)); err != nil {
+			return err
+		}
+		if err := state.require(keyDocument + record.DocumentID); err != nil {
+			return err
+		}
+		return state.require(blobKey(record.Body.SHA256, record.Body.SizeBytes))
 	case RecordDocumentTag:
 		var record DocumentTagRecord
 		if err := decodeStrict(envelope.Payload, &record); err != nil {
@@ -358,13 +483,19 @@ func (state *verificationState) addRecord(envelope RecordEnvelope, limits Limits
 		if !validID(record.DocumentID) || !validID(record.TagID) {
 			return fmt.Errorf("invalid document_tag record")
 		}
-		return addUnique(state.documentTags, record.DocumentID+"\x00"+record.TagID, record)
+		if err := state.declare(keyDocumentTag + record.DocumentID + "\x1f" + record.TagID); err != nil {
+			return err
+		}
+		if err := state.require(keyDocument + record.DocumentID); err != nil {
+			return err
+		}
+		return state.require(keyTag + record.TagID)
 	case RecordResource:
 		var record ResourceRecord
 		if err := decodeStrict(envelope.Payload, &record); err != nil {
 			return err
 		}
-		if !validID(record.ID) || !validID(record.CollectionID) || len(record.Filename) > 4096 || !validTimestamp(record.CreatedAt) || (record.UnreferencedAt != "" && !validTimestamp(record.UnreferencedAt)) || !validJSONObject(record.MetadataJSON, limits.MaxJSONDepth) {
+		if !validID(record.ID) || !validID(record.CollectionID) || len(record.Filename) > 4096 || !validTimestamp(record.CreatedAt) || (record.UnreferencedAt != "" && !validTimestamp(record.UnreferencedAt)) || !validJSONObject(record.MetadataJSON, maxDepth) {
 			return fmt.Errorf("invalid resource record")
 		}
 		if err := validateBlobReferenceShape(record.Blob); err != nil {
@@ -373,17 +504,29 @@ func (state *verificationState) addRecord(envelope RecordEnvelope, limits Limits
 		if normalized, err := normalizeMediaType(record.MIMEType); err != nil || normalized != record.Blob.MediaType {
 			return fmt.Errorf("resource MIME mismatch")
 		}
-		return addUnique(state.resources, record.ID, record)
+		if err := state.declare(keyResource + record.ID); err != nil {
+			return err
+		}
+		if err := state.require(keyCollection + record.CollectionID); err != nil {
+			return err
+		}
+		return state.require(blobKey(record.Blob.SHA256, record.Blob.SizeBytes))
 	case RecordDocumentResource:
 		var record DocumentResourceRecord
 		if err := decodeStrict(envelope.Payload, &record); err != nil {
 			return err
 		}
-		if !validID(record.DocumentID) || !validID(record.ResourceID) || strings.TrimSpace(record.RelationType) == "" || record.Ordinal < 0 || !validJSONObject(record.AnchorJSON, limits.MaxJSONDepth) {
+		if !validID(record.DocumentID) || !validID(record.ResourceID) || strings.TrimSpace(record.RelationType) == "" || record.Ordinal < 0 || !validJSONObject(record.AnchorJSON, maxDepth) {
 			return fmt.Errorf("invalid document_resource record")
 		}
-		key := fmt.Sprintf("%s\x00%s\x00%s\x00%d", record.DocumentID, record.ResourceID, record.RelationType, record.Ordinal)
-		return addUnique(state.documentResources, key, record)
+		key := fmt.Sprintf("%s%s\x1f%s\x1f%s\x1f%d", keyDocumentResource, record.DocumentID, record.ResourceID, record.RelationType, record.Ordinal)
+		if err := state.declare(key); err != nil {
+			return err
+		}
+		if err := state.require(keyDocument + record.DocumentID); err != nil {
+			return err
+		}
+		return state.require(keyResource + record.ResourceID)
 	case RecordLink:
 		var record LinkRecord
 		if err := decodeStrict(envelope.Payload, &record); err != nil {
@@ -392,37 +535,66 @@ func (state *verificationState) addRecord(envelope RecordEnvelope, limits Limits
 		if !validID(record.ID) || !validID(record.SourceDocumentID) || (record.TargetDocumentID != "" && !validID(record.TargetDocumentID)) || (record.TargetResourceID != "" && !validID(record.TargetResourceID)) || strings.TrimSpace(record.RelationType) == "" || strings.TrimSpace(record.SourceFormat) == "" || strings.TrimSpace(record.ResolutionStatus) == "" || record.SourceStartByte < 0 || record.SourceEndByte < record.SourceStartByte || record.SourceLine < 0 || record.SourceColumn < 0 {
 			return fmt.Errorf("invalid link record")
 		}
-		return addUnique(state.links, record.ID, record)
+		if err := state.declare(keyLink + record.ID); err != nil {
+			return err
+		}
+		if err := state.require(keyDocument + record.SourceDocumentID); err != nil {
+			return err
+		}
+		if record.TargetDocumentID != "" {
+			if err := state.require(keyDocument + record.TargetDocumentID); err != nil {
+				return err
+			}
+		}
+		if record.TargetResourceID != "" {
+			return state.require(keyResource + record.TargetResourceID)
+		}
+		return nil
 	case RecordProvenance:
 		var record ProvenanceRecord
 		if err := decodeStrict(envelope.Payload, &record); err != nil {
 			return err
 		}
-		if !validID(record.DocumentID) || strings.TrimSpace(record.SourceSystem) == "" || !validTimestamp(record.CreatedAt) || !validTimestamp(record.UpdatedAt) || !validJSONObject(record.MetadataJSON, limits.MaxJSONDepth) {
+		if !validID(record.DocumentID) || strings.TrimSpace(record.SourceSystem) == "" || !validTimestamp(record.CreatedAt) || !validTimestamp(record.UpdatedAt) || !validJSONObject(record.MetadataJSON, maxDepth) {
 			return fmt.Errorf("invalid provenance record")
 		}
-		return addUnique(state.provenance, record.DocumentID, record)
+		if err := state.declare(keyProvenance + record.DocumentID); err != nil {
+			return err
+		}
+		return state.require(keyDocument + record.DocumentID)
 	case RecordSourceBundle:
 		var record SourceBundleRecord
 		if err := decodeStrict(envelope.Payload, &record); err != nil {
 			return err
 		}
-		if strings.TrimSpace(record.SourceSystem) == "" || !validSHA256(record.SourceKeySHA256) || !validID(record.CollectionID) || !validSHA256(record.ItemKeySHA256) || strings.TrimSpace(record.ItemType) == "" || !validRelativePath(record.RelativePath, limits) || !validTimestamp(record.UpdatedAt) || !validStringArray(record.PropertyOrderJSON, limits.MaxJSONDepth) {
+		if strings.TrimSpace(record.SourceSystem) == "" || !validSHA256(record.SourceKeySHA256) || !validID(record.CollectionID) || !validSHA256(record.ItemKeySHA256) || strings.TrimSpace(record.ItemType) == "" || !validRelativePath(record.RelativePath, state.limits) || !validTimestamp(record.UpdatedAt) || !validStringArray(record.PropertyOrderJSON, maxDepth) {
 			return fmt.Errorf("invalid source_bundle record")
 		}
 		if err := validateBlobReferenceShape(record.Content); err != nil {
 			return err
 		}
-		key := record.SourceSystem + "\x00" + record.SourceKeySHA256 + "\x00" + record.CollectionID + "\x00" + record.ItemKeySHA256
-		return addUnique(state.sourceBundles, key, record)
+		key := keySourceBundle + strings.Join([]string{record.SourceSystem, record.SourceKeySHA256, record.CollectionID, record.ItemKeySHA256}, "\x1f")
+		if err := state.declare(key); err != nil {
+			return err
+		}
+		if err := state.require(keyCollection + record.CollectionID); err != nil {
+			return err
+		}
+		return state.require(blobKey(record.Content.SHA256, record.Content.SizeBytes))
 	default:
 		return fmt.Errorf("unsupported record type %q", envelope.Type)
 	}
 }
 
-func (state *verificationState) validateReferences(manifest Manifest, objects map[string]Object, limits Limits) error {
+func revisionKey(revisionID, documentID string) string {
+	return keyRevision + revisionID + "\x1f" + documentID
+}
+
+// validateContainers checks the two bounded sets the join cannot express:
+// snapshot collection scope and the notebook tree's acyclicity and depth.
+func (state *verificationState) validateContainers(manifest Manifest) error {
 	for _, collectionID := range manifest.Snapshot.CollectionIDs {
-		if _, ok := state.collections[collectionID]; !ok {
+		if !state.collections[collectionID] {
 			return fmt.Errorf("snapshot collection %q is missing its record", collectionID)
 		}
 	}
@@ -431,116 +603,160 @@ func (state *verificationState) validateReferences(manifest Manifest, objects ma
 			return fmt.Errorf("collection %q is outside snapshot collection_ids", id)
 		}
 	}
-	for id, notebook := range state.notebooks {
-		if notebook.ParentID != "" {
-			if _, ok := state.notebooks[notebook.ParentID]; !ok {
-				return fmt.Errorf("notebook %q has missing parent", id)
-			}
-		}
-		if err := state.validateNotebookDepth(id, limits.MaxNotebookDepth); err != nil {
+	for id := range state.notebooks {
+		if err := state.validateNotebookDepth(id); err != nil {
 			return err
-		}
-	}
-	for id, document := range state.documents {
-		if _, ok := state.collections[document.CollectionID]; !ok {
-			return fmt.Errorf("document %q has missing collection", id)
-		}
-		if _, ok := state.notebooks[document.NotebookID]; !ok {
-			return fmt.Errorf("document %q has missing notebook", id)
-		}
-		revision, ok := state.revisions[document.CurrentRevisionID]
-		if !ok || revision.DocumentID != id {
-			return fmt.Errorf("document %q has inconsistent current revision", id)
-		}
-	}
-	for id, revision := range state.revisions {
-		if _, ok := state.documents[revision.DocumentID]; !ok {
-			return fmt.Errorf("revision %q has missing document", id)
-		}
-		if err := state.validateBlobReference(revision.Body, objects); err != nil {
-			return fmt.Errorf("revision %q body: %w", id, err)
-		}
-	}
-	for _, membership := range state.documentTags {
-		if _, ok := state.documents[membership.DocumentID]; !ok {
-			return fmt.Errorf("document_tag has missing document")
-		}
-		if _, ok := state.tags[membership.TagID]; !ok {
-			return fmt.Errorf("document_tag has missing tag")
-		}
-	}
-	for id, resource := range state.resources {
-		if _, ok := state.collections[resource.CollectionID]; !ok {
-			return fmt.Errorf("resource %q has missing collection", id)
-		}
-		if err := state.validateBlobReference(resource.Blob, objects); err != nil {
-			return fmt.Errorf("resource %q blob: %w", id, err)
-		}
-	}
-	for _, reference := range state.documentResources {
-		if _, ok := state.documents[reference.DocumentID]; !ok {
-			return fmt.Errorf("document_resource has missing document")
-		}
-		if _, ok := state.resources[reference.ResourceID]; !ok {
-			return fmt.Errorf("document_resource has missing resource")
-		}
-	}
-	for id, link := range state.links {
-		if _, ok := state.documents[link.SourceDocumentID]; !ok {
-			return fmt.Errorf("link %q has missing source document", id)
-		}
-		if link.TargetDocumentID != "" {
-			if _, ok := state.documents[link.TargetDocumentID]; !ok {
-				return fmt.Errorf("link %q has missing target document", id)
-			}
-		}
-		if link.TargetResourceID != "" {
-			if _, ok := state.resources[link.TargetResourceID]; !ok {
-				return fmt.Errorf("link %q has missing target resource", id)
-			}
-		}
-	}
-	for documentID := range state.provenance {
-		if _, ok := state.documents[documentID]; !ok {
-			return fmt.Errorf("provenance has missing document %q", documentID)
-		}
-	}
-	for key, bundle := range state.sourceBundles {
-		if _, ok := state.collections[bundle.CollectionID]; !ok {
-			return fmt.Errorf("source bundle %q has missing collection", key)
-		}
-		if err := state.validateBlobReference(bundle.Content, objects); err != nil {
-			return fmt.Errorf("source bundle %q content: %w", key, err)
 		}
 	}
 	return nil
 }
 
-func (state *verificationState) validateNotebookDepth(start string, maxDepth int) error {
+func (state *verificationState) validateNotebookDepth(start string) error {
 	seen := map[string]bool{}
 	current := start
 	for depth := 0; current != ""; depth++ {
-		if depth >= maxDepth {
-			return fmt.Errorf("notebook %q exceeds depth %d", start, maxDepth)
+		if depth >= state.limits.MaxNotebookDepth {
+			return fmt.Errorf("notebook %q exceeds depth %d", start, state.limits.MaxNotebookDepth)
 		}
 		if seen[current] {
 			return fmt.Errorf("notebook %q participates in a cycle", start)
 		}
 		seen[current] = true
-		current = state.notebooks[current].ParentID
+		current = state.notebooks[current]
 	}
 	return nil
 }
 
-func (state *verificationState) validateBlobReference(reference BlobReference, objects map[string]Object) error {
-	object, ok := objects[reference.SHA256]
-	if !ok || object.Kind != "blob" {
-		return fmt.Errorf("missing blob object %s", reference.SHA256)
+// reconcile merges the declaration and reference spools. It rejects any
+// reference with no matching declaration (a record naming something the
+// archive omits, or naming it with the wrong size or owner), any duplicate
+// declaration, and any blob object nothing references.
+func (state *verificationState) reconcile() error {
+	if err := state.declarations.flush(); err != nil {
+		return err
 	}
-	if object.SizeBytes != reference.SizeBytes {
-		return fmt.Errorf("blob size mismatch")
+	if err := state.references.flush(); err != nil {
+		return err
 	}
-	state.referencedBlobs[reference.SHA256] = true
+	return joinSpools(state.declarations, state.references, keyBlob)
+}
+
+// validateArchiveTree rejects symlinks, unexpected directories, and files that
+// are not well-formed object paths, then proves there are no extra files by
+// counting: every declared object was opened during the index scan, so an
+// equal file count leaves no room for an unlisted one.
+func validateArchiveTree(root string, manifest Manifest, objects int) error {
+	indexPaths := make(map[string]bool, len(manifest.Index))
+	for _, indexObject := range manifest.Index {
+		indexPaths[indexObject.Location.Path] = true
+	}
+	files := 0
+	err := filepath.WalkDir(root, func(current string, entry fs.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
+		}
+		if current == root {
+			return nil
+		}
+		relative, err := filepath.Rel(root, current)
+		if err != nil {
+			return err
+		}
+		relative = filepath.ToSlash(relative)
+		if entry.Type()&os.ModeSymlink != 0 {
+			return fmt.Errorf("archive contains symlink %q", relative)
+		}
+		if entry.IsDir() {
+			if !validObjectDirectory(relative) {
+				return fmt.Errorf("archive contains unexpected directory %q", relative)
+			}
+			return nil
+		}
+		info, err := entry.Info()
+		if err != nil {
+			return err
+		}
+		if !info.Mode().IsRegular() {
+			return fmt.Errorf("archive contains a non-regular file %q", relative)
+		}
+		if relative == "manifest.json" {
+			return nil
+		}
+		if !indexPaths[relative] && !validObjectFilePath(relative) {
+			return fmt.Errorf("archive contains unexpected file %q", relative)
+		}
+		files++
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	if files != objects+len(manifest.Index) {
+		return fmt.Errorf("archive holds %d object files but the index and manifest declare %d", files, objects+len(manifest.Index))
+	}
+	return nil
+}
+
+func validObjectDirectory(relative string) bool {
+	segments := strings.Split(relative, "/")
+	switch len(segments) {
+	case 1:
+		return segments[0] == "objects"
+	case 2:
+		return segments[0] == "objects" && segments[1] == "sha256"
+	case 3, 4:
+		return segments[0] == "objects" && segments[1] == "sha256" && isLowerHex(segments[2], 2) &&
+			(len(segments) == 3 || isLowerHex(segments[3], 2))
+	default:
+		return false
+	}
+}
+
+func validObjectFilePath(relative string) bool {
+	segments := strings.Split(relative, "/")
+	if len(segments) != 5 || segments[0] != "objects" || segments[1] != "sha256" {
+		return false
+	}
+	hash := segments[4]
+	return validSHA256(hash) && segments[2] == hash[:2] && segments[3] == hash[2:4]
+}
+
+func isLowerHex(value string, length int) bool {
+	if len(value) != length {
+		return false
+	}
+	for index := 0; index < len(value); index++ {
+		if _, ok := hexValue(value[index]); !ok {
+			return false
+		}
+	}
+	return true
+}
+
+func validateLimits(limits Limits) error {
+	defaults := DefaultLimits()
+	if limits.MaxManifestBytes <= 0 || limits.MaxManifestBytes > defaults.MaxManifestBytes ||
+		limits.MaxObjects <= 0 || limits.MaxObjects > defaults.MaxObjects ||
+		limits.MaxIndexObjects <= 0 || limits.MaxIndexObjects > defaults.MaxIndexObjects ||
+		limits.MaxIndexEntriesPerObject <= 0 || limits.MaxIndexEntriesPerObject > defaults.MaxIndexEntriesPerObject ||
+		limits.MaxIndexEntryBytes <= 0 || limits.MaxIndexEntryBytes > defaults.MaxIndexEntryBytes ||
+		limits.MaxIndexObjectBytes <= 0 || limits.MaxIndexObjectBytes > defaults.MaxIndexObjectBytes ||
+		limits.MaxRecords <= 0 || limits.MaxRecords > defaults.MaxRecords ||
+		limits.MaxRecordsPerObject <= 0 || limits.MaxRecordsPerObject > defaults.MaxRecordsPerObject ||
+		limits.MaxRecordBytes <= 0 || limits.MaxRecordBytes > defaults.MaxRecordBytes ||
+		limits.MaxRecordObjectBytes <= 0 || limits.MaxRecordObjectBytes > defaults.MaxRecordObjectBytes ||
+		limits.MaxBlobBytes <= 0 || limits.MaxBlobBytes > defaults.MaxBlobBytes ||
+		limits.MaxTotalBytes <= 0 || limits.MaxTotalBytes > defaults.MaxTotalBytes ||
+		limits.MaxPathBytes <= 0 || limits.MaxPathBytes > defaults.MaxPathBytes ||
+		limits.MaxPathDepth <= 0 || limits.MaxPathDepth > defaults.MaxPathDepth ||
+		limits.MaxJSONDepth <= 0 || limits.MaxJSONDepth > defaults.MaxJSONDepth ||
+		limits.MaxCollections <= 0 || limits.MaxCollections > defaults.MaxCollections ||
+		limits.MaxNotebooks <= 0 || limits.MaxNotebooks > defaults.MaxNotebooks ||
+		limits.MaxNotebookDepth <= 0 || limits.MaxNotebookDepth > defaults.MaxNotebookDepth ||
+		limits.MaxCapabilities <= 0 || limits.MaxCapabilities > defaults.MaxCapabilities ||
+		limits.MaxCapabilityNameBytes <= 0 || limits.MaxCapabilityNameBytes > defaults.MaxCapabilityNameBytes {
+		return fmt.Errorf("archive limits must be positive and no wider than defaults")
+	}
 	return nil
 }
 
@@ -594,14 +810,6 @@ func validRelativePath(value string, limits Limits) bool {
 		return false
 	}
 	return len(strings.Split(clean, "/")) <= limits.MaxPathDepth
-}
-
-func addUnique[T any](values map[string]T, key string, value T) error {
-	if _, exists := values[key]; exists {
-		return fmt.Errorf("duplicate record key %q", key)
-	}
-	values[key] = value
-	return nil
 }
 
 func decodeStrict(raw []byte, target any) error {
@@ -769,12 +977,4 @@ func openRegular(root, relative string) (*os.File, error) {
 		}
 	}
 	return os.Open(current)
-}
-
-// SortedObjects returns a deterministic descriptor order for P3 writers and
-// fixture builders.
-func SortedObjects(objects []Object) []Object {
-	result := append([]Object(nil), objects...)
-	sort.Slice(result, func(i, j int) bool { return result[i].Path < result[j].Path })
-	return result
 }
