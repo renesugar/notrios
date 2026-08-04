@@ -29,19 +29,27 @@ log. Current implementation-affecting questions:
 
 ## Native archive v2 format bounds
 
-17. Archive v2 stores one immutable object per revision, resource, and source
-    bundle, and `manifest.json` lists every object inline. With the documented
-    10,000-object and 4 MiB-manifest limits, one archive holds roughly 9,900
-    revisions — far below the million-note libraries the J3 importer handles,
-    so v2 cannot yet back up a large library. Measured evidence is under
-    `performance/v0.4-p3/` (5,000 notes consumed 50.5 % of the object budget).
-    Raising `MaxObjects` alone does not work because the inline inventory would
-    then exceed the manifest bound. Should a format revision move the object
-    inventory into its own checksummed `records`-style object (and if so,
-    behind which declared capability), or should full backups of large
-    libraries use a different container? P3 deliberately did not widen the
-    limits: the exporter fails with an explicit object-budget error before
-    publishing any manifest.
+17. **Resolved 2026-08-04; scheduled as plan task P3a.** Archive v2 stores one
+    immutable object per revision, resource, and source bundle, and
+    `manifest.json` lists every object inline at ~645 bytes each. The 4 MiB
+    manifest bound binds before the 10,000-object limit and caps one archive
+    near 6,500 objects (~6,400 notes), so v2 cannot archive the supplied
+    382,206-note corpora at all.
+
+    Decision: move the object inventory into checksummed `index` objects that
+    use the same bounded JSONL chunking as records, keeping the commit digest
+    binding every object hash transitively. Index entries carry a discriminated
+    `location` so a packed-object layout can follow behind an optional
+    capability without a second breaking revision. Limits are re-derived from a
+    1,000,000-note target, and both the writer's object dedup state and the
+    verifier's cross-reference state move to an indexed temporary spool. The
+    index form becomes the only v2 form; fixtures are regenerated rather than
+    carrying an inline-inventory compatibility path, since no archive exists
+    outside this repository and P6 has not pinned the format.
+
+    Still open and gated on P3a measurement: whether loose objects remain
+    viable at ~1.6M files, or whether a packed-object layout is needed before
+    P6 and the v0.7 rclone/folder transport.
 
 ## Synchronization (resolve in separate v0.7 plans)
 

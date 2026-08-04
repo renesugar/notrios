@@ -111,18 +111,21 @@ content-rewriting modes, the object budget, and small record chunking.
 ## Recorded format limitation
 
 Each revision, resource, and source bundle is one object, and the manifest
-lists every object inline. Under the documented 10,000-object and 4 MiB
-manifest bounds an archive holds roughly 9,900 revisions — 5,000 notes already
-consumed 50.5 % of the budget. Archive v2 therefore cannot yet back up the
-million-note libraries J3 imports.
+lists every object inline at roughly 645 bytes per descriptor. The 4 MiB
+manifest bound therefore binds before the nominal 10,000-object limit and caps
+an archive near 6,500 objects — about 6,400 single-revision notes. Archive v2
+cannot archive the supplied 382,206-note corpora at all.
 
 This slice deliberately did **not** widen the limits. Raising `MaxObjects`
 alone fails because the inline inventory would exceed the manifest bound; the
 fix is a format revision that moves the object inventory into its own
 checksummed object, which needs review. The exporter enforces the documented
 bounds and fails with an explicit object-budget error before publishing any
-manifest, so an over-budget archive can never appear complete. Recorded as
-`agent/OPEN_QUESTIONS.md` question 17 and in `NATIVE_ARCHIVE_V2.md`.
+manifest, so an over-budget archive can never appear complete.
+
+Recorded as `agent/OPEN_QUESTIONS.md` question 17 and in
+`NATIVE_ARCHIVE_V2.md`, and resolved on 2026-08-04 as plan task **P3a**, which
+is sequenced ahead of P4.
 
 ## Validation
 
@@ -137,5 +140,7 @@ manifest, so an over-budget archive can never appear complete. Recorded as
 
 ## Next task
 
-P4, native archive-v2 verify and restore/import, requires explicit user
-approval.
+P3a, the archive-v2 large-library container revision, requires explicit user
+approval. It is sequenced ahead of P4 because a restore path built against the
+current in-memory verifier would have to be rewritten, and ahead of P6 because
+that task pins the container for an external consumer.

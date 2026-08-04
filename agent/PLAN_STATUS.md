@@ -122,9 +122,17 @@ P4 and all subsequent product tasks require user approval.
   5,000 notes exported in 3.210 s, verified in 5.130 s, resumed with zero bytes
   rewritten, and used 46 MiB whole-process peak RSS.
 - Recorded an open format bound rather than widening limits silently: one object
-  per revision plus an inline manifest inventory caps an archive near 9,900
-  revisions, so archive v2 cannot yet back up the million-note libraries J3
-  imports. See `agent/OPEN_QUESTIONS.md` question 17.
+  per revision plus an inline manifest inventory caps an archive near 6,500
+  objects (~6,400 notes), because the 4 MiB manifest bound binds before the
+  nominal 10,000-object limit at ~645 bytes per descriptor. Archive v2 therefore
+  cannot archive the supplied 382,206-note corpora at all.
+- Resolved `agent/OPEN_QUESTIONS.md` question 17 as plan task **P3a**, now
+  sequenced ahead of P4: move the object inventory into checksummed index
+  objects with discriminated entry locations, re-derive limits from a
+  1,000,000-note target, and spool both the writer's object dedup state and the
+  verifier's cross-reference state. P3a is scheduled before P4 (a restore built
+  against the in-memory verifier would be rewritten) and before P6 (which pins
+  the container for an external consumer).
 
 ## 2026-07-26 plan/roadmap review
 
@@ -211,8 +219,9 @@ attempt detail remains append-only in `agent/ATTEMPT_LOG.jsonl`.
   it is a local CLI operation with no REST/MCP output-path surface, and restore
   is still P4, so a v2 archive cannot yet be read back.
 - P3 generated 100/1,000/5,000-note export evidence is under
-  `performance/v0.4-p3/`. One archive currently holds at most ~9,900 revisions
-  because each revision is one object and the manifest lists objects inline.
+  `performance/v0.4-p3/`. One archive currently holds at most ~6,500 objects
+  because each revision is one object and the 4 MiB manifest lists every object
+  inline; P3a revises the container.
 - No GitHub push is authorized for this review.
 
 ## Open implementation blockers

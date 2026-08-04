@@ -184,19 +184,27 @@ in-memory validation inappropriate; admission semantics remain identical.
 ### Open format bound: object count versus full-database backup
 
 Every saved revision, resource, and source bundle is one immutable object, and
-the manifest lists every object inline. The 10,000-object and 4 MiB-manifest
-bounds therefore cap one archive at roughly 9,900 revisions plus attachments —
-measured at `performance/v0.4-p3/`, where 5,000 notes consumed 50.5 % of the
-object budget. That is well below the million-note libraries J3 imports, so
-archive v2 cannot yet back up a large library.
+the manifest lists every object inline at roughly 645 bytes per descriptor. The
+4 MiB manifest bound therefore binds first and caps one archive near **6,500
+objects — about 6,400 single-revision notes**; the nominal 10,000-object limit
+is unreachable. `performance/v0.4-p3/` measures 5,000 notes at 5,052 objects.
 
-This is a format decision, not an exporter defect, and it is deliberately left
-open rather than silently widened: raising `MaxObjects` alone does not work
-because the inline object inventory would exceed the manifest bound. A future
-revision needs the inventory to move into its own `records`-style object with
-its own checksum. The exporter enforces the documented bounds today and fails
-with an explicit object-budget error before publishing any manifest, so an
-over-budget archive can never appear complete. See `agent/OPEN_QUESTIONS.md`.
+That is far below the supplied 382,206-note Joplin and Obsidian corpora and the
+1,237,553-item Joplin RAW export, so archive v2 cannot currently archive a real
+library at all.
+
+This is a format decision, not an exporter defect, and P3 deliberately left it
+open rather than widening limits silently: raising `MaxObjects` alone does not
+work because the inline inventory would exceed the manifest bound. The exporter
+enforces the documented bounds and fails with an explicit object-budget error
+before publishing any manifest, so an over-budget archive can never appear
+complete.
+
+Plan task **P3a** resolves this by moving the object inventory into its own
+checksummed index objects, re-deriving the limits from a million-note target,
+and making both the writer's dedup state and the verifier's cross-reference
+state spooled rather than in-memory. See `PLAN.md` and
+`agent/OPEN_QUESTIONS.md` question 17.
 
 ## Golden and hostile fixtures
 

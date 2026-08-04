@@ -1,6 +1,8 @@
 # Plan: v0.4 — Import correctness, portable data, publishing handoff, and stable references
 
-Status: **J1–J3, Q1, P1, P2, and P3 completed; P4 and all remaining product-feature tasks require user approval**.
+Status: **J1–J3, Q1, P1, P2, and P3 completed. P3a (archive-v2 large-library
+container revision) is the next task and requires user approval; P4 and all
+remaining product-feature tasks follow it**.
 Drafted 2026-07-26 and revised 2026-08-02 after comparing the Joplin importer
 and publishing/search plans with the real-data-tested `movenotes-v3` pipeline.
 
@@ -175,11 +177,62 @@ privately, publishes the manifest last, and verifies the result. Generated
 100/1,000/5,000-note evidence is archived under `performance/v0.4-p3/` and
 implementation detail under `plans/v0.4/007-*`.
 
-One format bound is deliberately left open rather than widened in this slice:
+One format bound was deliberately left open rather than widened in this slice:
 one object per revision plus an inline manifest inventory caps an archive near
-9,900 revisions, so archive v2 cannot yet back up a million-note library. The
-exporter enforces the documented limits and fails before publishing a manifest.
-See `NATIVE_ARCHIVE_V2.md` and `agent/OPEN_QUESTIONS.md`.
+6,500 objects, so archive v2 cannot yet back up a real library. The exporter
+enforces the documented limits and fails before publishing a manifest. P3a
+resolves it; see `NATIVE_ARCHIVE_V2.md` and `agent/OPEN_QUESTIONS.md`.
+
+### P3a. Archive-v2 large-library container revision — next task
+
+Resolves `agent/OPEN_QUESTIONS.md` question 17. P3 proved the writer is
+correct but also proved the P2 container cannot hold a real library: the 4 MiB
+manifest lists every object inline at roughly 645 bytes each, so an archive
+tops out near **6,500 objects — about 6,400 single-revision notes**. The
+10,000-object limit is never reached. The supplied Joplin and Obsidian test
+corpora hold 382,206 notes each, and the Joplin RAW export holds 1,237,553
+source items, so neither can be archived or verified today. J3 already imports
+that corpus; export and verification must reach the same scale before archive
+v2 is usable, before P4 restores anything, and before P6 pins the format for an
+external consumer.
+
+- Move the object inventory out of `manifest.json` into checksummed `index`
+  objects using the same bounded JSONL chunking as records. The manifest keeps
+  format/version/snapshot/compatibility/counts plus a bounded list of index
+  descriptors and aggregate object totals, so the commit digest still binds
+  every object hash transitively.
+- Give each index entry a discriminated `location` so a later packed-object
+  layout can be added behind an optional capability without a second breaking
+  revision. Decide the object fanout at the same time: `ab/cd` matches the
+  asset store and keeps directories near 25 entries at 1.6M objects, where the
+  current single-level fanout would reach 6,250.
+- Re-derive every limit from the target library rather than the current
+  defaults: object count, record count, manifest bytes, index entries per
+  object, and total bytes must admit 1,000,000 notes with source preservation.
+- Make the writer's memory bounded. The object dedup map and the materialized
+  source-bundle key slice are both proportional to the archive today; replace
+  them with the indexed temporary spool and keyset streaming J3 already uses in
+  `internal/store/import_manifest.go`.
+- Make verification bounded. `verificationState` holds twelve in-memory maps of
+  full record structs; at 3.2M records that is several GB. Replace it with a
+  spooled two-pass identity and cross-reference check that keeps identical
+  admission semantics. P4 must reuse it rather than reintroduce in-memory sets.
+- Measure and choose a documented durability barrier: per-object fsync costs
+  minutes at 1.6M objects, and objects must still be durable before the
+  manifest is.
+- The index form becomes the only v2 form. No archive exists outside this
+  repository and P6 has not pinned anything, so regenerate the golden fixtures
+  instead of carrying an inline-inventory compatibility path.
+
+Working state: a full archive of the imported 382,206-note recipe corpus
+exports, verifies, and resumes within bounded memory, with aggregate-only
+evidence under `performance/v0.4-p3a/` that records elapsed time, throughput,
+peak RSS, object/record counts, manifest and index bytes, and spool size. No
+note titles, bodies, resources, paths, or databases are committed. If loose
+objects prove too slow or too hostile to the future rclone/folder sync
+transport at that scale, a packed-object layout becomes its own approved slice
+before P6 — the discriminated `location` exists so that stays a measurement
+decision, not another format break.
 
 ### P4. Native archive v2 verify and restore/import
 
@@ -268,9 +321,11 @@ specific real-format, round-trip, hostile-input, native-build, and scale gates.
 
 ## Decisions required before or during v0.4
 
+- Approve P3a before revising the archive-v2 container. It is sequenced before
+  P4 because a restore path built against the current in-memory verifier would
+  have to be rewritten, and before P6 because that task pins the container for
+  an external consumer.
 - Approve P4 before implementing verified archive-v2 restore/import.
-- Decide whether archive v2 gains an out-of-manifest object inventory so a
-  full backup can exceed the current ~9,900-revision object bound.
 - Restore has no default: P2 defines explicit replace/merge/fork/adopt identity
   consequences; P4 must require one after verification.
 - Treat `movenotes-v3` and `hugo-theme-ledger` as optional external publishing

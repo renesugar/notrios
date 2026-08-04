@@ -84,12 +84,15 @@ path or streams archive bytes.
 ## Current size bound
 
 Each saved revision, resource, and source bundle becomes one immutable object,
-and the manifest lists every object inline. The format currently admits at most
-10,000 objects and a 4 MiB manifest, which bounds one archive to roughly 9,900
-revisions plus attachments. Larger libraries fail with an explicit
-object-budget error before any manifest is published — the export never
-silently truncates. Raising that bound needs a format revision that moves the
-object inventory out of the manifest.
+and `manifest.json` lists every object inline. The 4 MiB manifest bound
+therefore caps one archive near **6,500 objects — roughly 6,400
+single-revision notes**. Larger libraries fail with an explicit object-budget
+error before any manifest is published: the export never silently truncates.
+
+This is the current format's main limitation, and it is being revised — a
+planned change moves the object inventory into its own checksummed index
+objects so a full backup can cover a real library. Until then, archive v2 suits
+small libraries and scoped subset transfers, not a large collection.
 
 Use archive v1 commands for query-scoped plain-note interchange. P4 will add
 verify-only and restore commands.

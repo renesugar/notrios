@@ -6,7 +6,8 @@ This file is the codebase atlas. Update it whenever major files or directories a
 
 - `README.md` — project overview and quick start.
 - `PLAN.md` — active v0.4 portable-data/publishing/stable-reference plan;
-  J1–J3, Q1, P1, P2, and P3 are complete, while P4 requires user approval.
+  J1–J3, Q1, P1, P2, and P3 are complete. P3a (archive-v2 large-library
+  container revision) is next and requires user approval, followed by P4.
 - `plans/scaffold/SCAFFOLD_CREATION_PLAN.md` — process for creating/refining this scaffold.
 - `ROADMAP.md` — product roadmap and future features.
 - `AGENTS.md` — coding-agent instructions (`CLAUDE.md` points here).

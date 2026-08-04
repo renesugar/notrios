@@ -8,8 +8,12 @@ Current phase: v0.1, v0.2, and v0.3 are complete. H1–H11 are archived under
 (million-item transactional throughput), Q1 (bounded boolean/category search),
 P1 (shared selection/privacy planning), P2 (native archive-v2 format and
 identity verification), and P3 (native archive-v2 streaming export) are
-complete; P4 and all remaining archive/publishing product tasks require user
-approval. See the revised `PLAN.md`.
+complete. **P3a** (archive-v2 large-library container revision) is the next
+task: P3 measured the container ceiling at roughly 6,500 objects — about 6,400
+notes — because the 4 MiB manifest lists every object inline, so archive v2
+cannot archive the supplied 382,206-note corpora at all. P3a and all remaining
+archive/publishing product tasks require user approval. See the revised
+`PLAN.md`.
 
 ## First files to read
 

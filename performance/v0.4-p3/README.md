@@ -44,11 +44,19 @@ The dominant object cost is one immutable body object per revision.
 | 1,000 | 1,011 | 10.1 % |
 | 5,000 | 5,052 | 50.5 % |
 
-The relationship is linear, so the current format bounds one archive to
-roughly 9,900 revisions plus resources and source bundles. That ceiling —
-and the 4 MiB manifest bound that lists every object inline — is a
-**format-level limitation recorded for review**, not an exporter defect: a
-million-note full backup needs an archive-v2 revision that moves the object
-inventory out of the manifest. The exporter refuses to exceed the documented
-limits and fails before publishing a manifest, so no over-budget archive can
-appear complete. See `agent/OPEN_QUESTIONS.md`.
+The relationship is linear, but `MaxObjects` is not the binding constraint:
+the 4 MiB manifest lists every object inline at roughly 645 bytes per
+descriptor, so an archive stops near **6,500 objects — about 6,400
+single-revision notes** and never reaches the nominal 10,000-object limit.
+
+That ceiling is a **format-level limitation**, not an exporter defect. The
+supplied Joplin and Obsidian test corpora hold 382,206 notes each and the
+Joplin RAW export holds 1,237,553 source items, so archive v2 cannot currently
+archive the real test data at all. The exporter refuses to exceed the
+documented limits and fails before publishing a manifest, so no over-budget
+archive can appear complete.
+
+Plan task **P3a** resolves it by moving the object inventory into checksummed
+index objects, re-deriving the limits from a million-note target, and spooling
+the writer's dedup state and the verifier's cross-reference state. See
+`PLAN.md` and `agent/OPEN_QUESTIONS.md` question 17.

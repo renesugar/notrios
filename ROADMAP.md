@@ -58,8 +58,9 @@ The built-in Go/Wails GUI is part of the first released version, so it lives her
   then add attachment-aware and million-note full-import performance evidence;
   synthetic dry-run profiles alone are not a throughput claim.
 - Native archive v2: a versioned manifest plus immutable, hash-addressed
-  objects, source-preservation bundles, checksums, capability/version bounds,
-  snapshot consistency, and streaming read/write. This is the full backup and
+  objects with an out-of-manifest object index, source-preservation bundles,
+  checksums, capability/version bounds, snapshot consistency, and bounded
+  streaming read/write at real-library scale. This is the full backup and
   transfer format and deliberately becomes the container layer reused by v0.7
   synchronization; a foreign Markdown/Joplin/Obsidian export remains a lossy or
   format-limited projection.
@@ -199,5 +200,6 @@ The scaffold handoff is complete; see `CODING_CLIENT_HANDOFF.md`. Future roadmap
 ## v0.1 completion note
 
 The v0.1 MVP, v0.2 redesign, and v0.3 hardening milestones are implemented and
-archived. v0.4 J1–J3, Q1, P1, P2, and P3 are implemented; P4 and the remaining
-v0.4 product tasks in `PLAN.md` require approval.
+archived. v0.4 J1–J3, Q1, P1, P2, and P3 are implemented; P3a (archive-v2
+large-library container revision) is next, and it plus the remaining v0.4
+product tasks in `PLAN.md` require approval.
