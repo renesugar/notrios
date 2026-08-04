@@ -43,9 +43,13 @@ type verificationState struct {
 	notebooks     map[string]string
 	declarations  *keySpool
 	references    *keySpool
+	packs         *packSource
 	counts        Counts
 	limits        Limits
 	notebookCount int
+	// fanoutObjects counts objects stored as their own file. Packed objects
+	// live inside a pack, so only these contribute to the archive's file count.
+	fanoutObjects int
 }
 
 // Declaration and reference keys share one namespace so a single sorted merge
@@ -54,6 +58,7 @@ type verificationState struct {
 // blob reference carries its exact byte length, so a mismatch simply fails to
 // find a declaration.
 const (
+	keyPack             = "pack:"
 	keyBlob             = "blob:"
 	keyCollection       = "collection:"
 	keyNotebook         = "notebook:"
@@ -121,7 +126,7 @@ func VerifyDirectory(root string, limits Limits) (VerificationReport, error) {
 	if err := state.validateContainers(manifest); err != nil {
 		return VerificationReport{}, err
 	}
-	if err := validateArchiveTree(root, manifest, totals.Objects); err != nil {
+	if err := validateArchiveTree(root, manifest, state.fanoutObjects); err != nil {
 		return VerificationReport{}, err
 	}
 	if err := state.reconcile(); err != nil {
@@ -179,11 +184,13 @@ func newVerificationState(spoolRoot string, limits Limits) (*verificationState, 
 		notebooks:    map[string]string{},
 		declarations: declarations,
 		references:   references,
+		packs:        newPackSource(limits),
 		limits:       limits,
 	}, nil
 }
 
 func (state *verificationState) close() {
+	state.packs.close()
 	_ = state.declarations.close()
 	_ = state.references.close()
 }
@@ -249,7 +256,11 @@ func (state *verificationState) scanIndexObject(root string, indexObject IndexOb
 			return 0, fmt.Errorf("archive byte limit exceeded")
 		}
 		totals.Objects++
-		totals.Bytes += entry.SizeBytes
+		// Storage bytes are counted once: a packed object's bytes live inside
+		// the pack entry that already contributed them.
+		if entry.Location.Layout == LayoutFanout {
+			totals.Bytes += entry.SizeBytes
+		}
 		if totals.Objects > state.limits.MaxObjects {
 			return 0, fmt.Errorf("archive declares more than %d objects", state.limits.MaxObjects)
 		}
@@ -265,17 +276,44 @@ func (state *verificationState) scanIndexObject(root string, indexObject IndexOb
 }
 
 func (state *verificationState) admitObject(root string, entry IndexEntry, totals *ObjectTotals) error {
-	if err := verifyObjectBytes(root, entry.Location.Path, entry.SHA256, entry.SizeBytes); err != nil {
+	if entry.Location.Layout == LayoutFanout {
+		state.fanoutObjects++
+	}
+	if entry.Location.Layout == LayoutPack {
+		// A packed object's bytes live inside a pack this scan also verifies.
+		// The reference ties the two together, so a packed entry naming a pack
+		// the archive does not carry fails the same join as any other dangling
+		// reference.
+		if err := state.require(keyPack + entry.Location.PackSHA256); err != nil {
+			return err
+		}
+	} else if err := verifyObjectBytes(root, entry.Location.Path, entry.SHA256, entry.SizeBytes); err != nil {
 		return err
 	}
 	switch entry.Kind {
+	case "pack":
+		totals.Packs++
+		if err := state.packs.verifyContents(root, entry); err != nil {
+			return err
+		}
+		return state.declare(keyPack + entry.SHA256)
 	case "blob":
 		totals.Blobs++
+		if entry.Location.Layout == LayoutPack {
+			if err := state.packs.verifySlice(root, entry); err != nil {
+				return err
+			}
+		}
 		// The declaration carries the exact length, so a record referring to
 		// this blob with a different length simply finds no declaration.
 		return state.declare(blobKey(entry.SHA256, entry.SizeBytes))
 	case "records":
 		totals.RecordChunks++
+		if entry.Location.Layout == LayoutPack {
+			if err := state.packs.verifySlice(root, entry); err != nil {
+				return err
+			}
+		}
 		return state.verifyRecordObject(root, entry)
 	default:
 		return fmt.Errorf("unsupported object kind %q", entry.Kind)
@@ -315,18 +353,15 @@ func requireTrailingLF(file *os.File, size int64, hash string) error {
 }
 
 func (state *verificationState) verifyRecordObject(root string, entry IndexEntry) error {
-	file, err := openRegular(root, entry.Location.Path)
+	reader, closer, err := state.packs.open(root, entry)
 	if err != nil {
 		return err
 	}
-	defer file.Close()
-	if err := requireTrailingLF(file, entry.SizeBytes, entry.SHA256); err != nil {
+	defer closer()
+	if err := requireTrailingLFAt(reader, entry.SizeBytes, entry.SHA256); err != nil {
 		return err
 	}
-	if _, err := file.Seek(0, io.SeekStart); err != nil {
-		return err
-	}
-	scanner := bufio.NewScanner(file)
+	scanner := bufio.NewScanner(io.NewSectionReader(reader, 0, entry.SizeBytes))
 	scanner.Buffer(make([]byte, 64<<10), state.limits.MaxRecordBytes)
 	var actual Counts
 	records := 0
@@ -643,9 +678,10 @@ func (state *verificationState) reconcile() error {
 
 // validateArchiveTree rejects symlinks, unexpected directories, and files that
 // are not well-formed object paths, then proves there are no extra files by
-// counting: every declared object was opened during the index scan, so an
-// equal file count leaves no room for an unlisted one.
-func validateArchiveTree(root string, manifest Manifest, objects int) error {
+// counting: every object stored as its own file was opened during the index
+// scan, so an equal file count leaves no room for an unlisted one. Packed
+// objects are not files, so only their pack counts here.
+func validateArchiveTree(root string, manifest Manifest, fanoutObjects int) error {
 	indexPaths := make(map[string]bool, len(manifest.Index))
 	for _, indexObject := range manifest.Index {
 		indexPaths[indexObject.Location.Path] = true
@@ -691,8 +727,8 @@ func validateArchiveTree(root string, manifest Manifest, objects int) error {
 	if err != nil {
 		return err
 	}
-	if files != objects+len(manifest.Index) {
-		return fmt.Errorf("archive holds %d object files but the index and manifest declare %d", files, objects+len(manifest.Index))
+	if files != fanoutObjects+len(manifest.Index) {
+		return fmt.Errorf("archive holds %d object files but the index and manifest declare %d", files, fanoutObjects+len(manifest.Index))
 	}
 	return nil
 }

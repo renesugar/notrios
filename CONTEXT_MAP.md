@@ -6,8 +6,8 @@ This file is the codebase atlas. Update it whenever major files or directories a
 
 - `README.md` — project overview and quick start.
 - `PLAN.md` — active v0.4 portable-data/publishing/stable-reference plan;
-  J1–J3, Q1, P1, P2, P3, and P3a are complete. P3b (packed object layout) is
-  next and requires user approval, followed by P4.
+  J1–J3, Q1, P1, P2, P3, P3a, and P3b are complete, while P4 requires user
+  approval.
 - `plans/scaffold/SCAFFOLD_CREATION_PLAN.md` — process for creating/refining this scaffold.
 - `ROADMAP.md` — product roadmap and future features.
 - `AGENTS.md` — coding-agent instructions (`CLAUDE.md` points here).
@@ -47,9 +47,9 @@ This file is the codebase atlas. Update it whenever major files or directories a
 - `internal/archivev2/` — native archive-v2 manifest/record model
   (`format.go`), out-of-manifest object index and fanout layout (`index.go`),
   identity-intent planner, bounded streaming verifier (`verify.go`), bounded
-  external-sort spool and merge join (`spool.go`), the manifest-last streaming
-  exporter (`export.go`), a generator-built synthetic golden fixture, and
-  generated scale profiles.
+  external-sort spool and merge join (`spool.go`), the optional packed object
+  layout (`pack.go`), the manifest-last streaming exporter (`export.go`), a
+  generator-built synthetic golden fixture, and generated scale profiles.
 - `internal/markdownlinks/` — conservative MVP Markdown/Obsidian/app-URI link extractor.
 - `internal/version/` — version constants.
 - `migrations/` — SQLite schema migrations.

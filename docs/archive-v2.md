@@ -96,5 +96,17 @@ and verification both stream: neither keeps a table of objects or records in
 memory, so peak memory tracks the library's notebook and collection counts
 rather than its note count.
 
+## Packing
+
+`--pack` concatenates objects into a few large pack files instead of writing
+one file per object. On a real 382,206-note library that turns 382,447 files
+into 46, and the export runs about 1.29× faster.
+
+Loose storage is still the default, because it deduplicates and resumes through
+the object tree and uses about 11% less disk. Reach for `--pack` when the
+archive will be *moved* — copied to a remote, synchronized, or shipped — where
+the number of files matters far more than the number of bytes. An interrupted
+packed export restarts rather than resuming.
+
 Use archive v1 commands for query-scoped plain-note interchange. P4 will add
 verify-only and restore commands.

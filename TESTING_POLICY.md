@@ -207,6 +207,15 @@ The golden fixture is produced by a generator that does not use the exporter,
 and a test asserts the committed fixture matches that generator byte for byte,
 so the verifier is never checked against an archive its own writer produced.
 
+### Native archive v2 packed layout
+
+P3b fixtures cover the optional pack layout: a packed export verifies and
+collapses file count, a packed archive declares `objects.pack.v1` while a loose
+one does not, using packs without declaring the capability is rejected,
+corrupting a pack fails the checksum, pack trailers describe exactly the
+objects the index places in packs, and manifest byte totals equal real on-disk
+object size. The real-corpus A/B lives under `performance/v0.4-p3b/`.
+
 ### Native archive v2 admission
 
 Archive-v2 tests start from a complete synthetic golden directory containing

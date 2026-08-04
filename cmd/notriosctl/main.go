@@ -488,7 +488,7 @@ Usage:
   notriosctl import claude  [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--notebook Claude] [--dry-run] <conversations.json|export-dir>
   notriosctl import archive [--db ...] [--dry-run] [--write-config path] [--import-config path] <archive-dir>
   notriosctl export archive [--db ...] [--query "tag:todo"] <out-dir>
-  notriosctl export archive-v2 [--db ...] [--target full_archive|subset_transfer] [--notebooks id,id] [--tags a,b] [--query "tag:todo"] [--documents id,id] [--match any|all] [--overwrite] [--no-verify] <out-dir>
+  notriosctl export archive-v2 [--db ...] [--target full_archive|subset_transfer] [--notebooks id,id] [--tags a,b] [--query "tag:todo"] [--documents id,id] [--match any|all] [--pack] [--overwrite] [--no-verify] <out-dir>
   notriosctl seed-help [--db ...] [docs-dir]     # mirror docs/ into the read-only Help notebook
   notriosctl localize [--config config.yaml] [--db ...] [--dry-run] [--allow-review] [--base-revision rev] <document-id>
                                                  # download policy-allowed remote media and rewrite the note to resource:// URIs
@@ -696,6 +696,8 @@ func runExportArchiveV2(args []string) {
 	match := fs.String("match", "any", "combine populated selector types with any or all")
 	maxDocuments := fs.Int("max-documents", 0, "maximum selected documents (0 = planner default)")
 	recordsPerObject := fs.Int("records-per-object", 0, "maximum records per JSONL object (0 = format maximum)")
+	pack := fs.Bool("pack", false, "concatenate objects into large pack files instead of one file per object (far fewer file operations; an interrupted packed export restarts rather than resumes)")
+	packBytes := fs.Int64("pack-bytes", 0, "target bytes per pack file (0 = default 256 MiB)")
 	overwrite := fs.Bool("overwrite", false, "replace an existing complete archive in the destination")
 	skipVerify := fs.Bool("no-verify", false, "skip the read-only verification pass after publishing the manifest")
 	if err := fs.Parse(args); err != nil {
@@ -721,6 +723,8 @@ func runExportArchiveV2(args []string) {
 		},
 		MaxDocuments:     *maxDocuments,
 		RecordsPerObject: *recordsPerObject,
+		Pack:             *pack,
+		PackTargetBytes:  *packBytes,
 		Overwrite:        *overwrite,
 		SkipVerification: *skipVerify,
 	}

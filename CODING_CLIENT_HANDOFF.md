@@ -8,13 +8,15 @@ Current phase: v0.1, v0.2, and v0.3 are complete. H1–H11 are archived under
 (million-item transactional throughput), Q1 (bounded boolean/category search),
 P1 (shared selection/privacy planning), P2 (native archive-v2 format and
 identity verification), P3 (native archive-v2 streaming export), and P3a
-(archive-v2 large-library container revision) are complete. **P3b** (packed
-object layout) is the next task: a full backup of the real 382,206-note corpus
-wrote 382,407 loose objects in 48m26s, about 131 objects per second, because
-throughput tracks one fsync per object rather than bytes — and v0.7 sync would
-pay one transport round trip per object. P3b and all remaining
-archive/publishing product tasks require user approval. See the revised
-`PLAN.md`.
+(archive-v2 large-library container revision), and P3b (packed object layout)
+are complete; P4 and all remaining archive/publishing product tasks require
+user approval. See the revised `PLAN.md`.
+
+Archive-v2 supports two object layouts. Loose `fanout` is the default and
+deduplicates and resumes through the object tree. Opt-in `--pack` collapses a
+382,206-note archive from 382,447 files to 46 at ~11% more disk and 1.29×
+faster; the file-count collapse, not local speed, is what v0.7's REST and
+folder/rclone transports need.
 
 ## First files to read
 

@@ -50,6 +50,15 @@ type ExportOptions struct {
 	// the only two otherwise time/random-derived manifest fields.
 	SnapshotID string
 	CreatedAt  time.Time
+	// Pack concatenates objects into large sequential pack files instead of
+	// writing one file per object. It trades per-object filesystem reuse for
+	// far fewer file operations, so an interrupted packed export restarts
+	// rather than resuming.
+	Pack bool
+	// PackTargetBytes and PackMaxObjects bound one pack; zero uses the
+	// defaults.
+	PackTargetBytes int64
+	PackMaxObjects  int
 	// Overwrite replaces an existing complete archive in the destination.
 	Overwrite bool
 	// SkipVerification disables the read-only verification pass that normally
@@ -70,6 +79,7 @@ type ExportReport struct {
 	CollectionIDs           []string `json:"collection_ids"`
 	Counts                  Counts   `json:"counts"`
 	IndexObjects            int      `json:"index_objects"`
+	PackObjects             int      `json:"pack_objects"`
 	Objects                 int      `json:"objects"`
 	RecordObjects           int      `json:"record_objects"`
 	BlobObjects             int      `json:"blob_objects"`
@@ -272,6 +282,7 @@ type archiveWriter struct {
 	recordObjects int
 	blobObjects   int
 
+	packs      *packWriter
 	index      []IndexObject
 	indexBytes int64
 
@@ -287,10 +298,41 @@ func newArchiveWriter(root, staging string, options ExportOptions) (*archiveWrit
 	if err != nil {
 		return nil, err
 	}
-	return &archiveWriter{root: root, staging: staging, options: options, entries: entries}, nil
+	writer := &archiveWriter{root: root, staging: staging, options: options, entries: entries}
+	if options.Pack {
+		writer.packs = newPackWriter(root, staging, options.Limits, options.PackTargetBytes, options.PackMaxObjects, writer.spoolEntry)
+	}
+	return writer, nil
 }
 
-func (w *archiveWriter) close() { _ = w.entries.close() }
+func (w *archiveWriter) close() {
+	if w.packs != nil {
+		_ = w.packs.close()
+	}
+	_ = w.entries.close()
+}
+
+// spoolEntry records one index entry for the external sort and enforces the
+// object budget. Packed objects reach it only when their pack is finalized,
+// because a packed entry names the pack that holds it.
+func (w *archiveWriter) spoolEntry(entry IndexEntry) error {
+	if w.objects >= w.options.Limits.MaxObjects {
+		return fmt.Errorf("archive needs more than %d immutable objects", w.options.Limits.MaxObjects)
+	}
+	spooled, err := spoolIndexEntry(entry)
+	if err != nil {
+		return err
+	}
+	if len(spooled) > w.options.Limits.MaxIndexEntryBytes {
+		return fmt.Errorf("index entry for object %s is %d bytes, above the %d byte limit", entry.SHA256, len(spooled), w.options.Limits.MaxIndexEntryBytes)
+	}
+	if err := w.entries.add(spooled); err != nil {
+		return err
+	}
+	w.objects++
+	w.totalBytes += entry.SizeBytes
+	return nil
+}
 
 // addRecord appends one typed record to the open JSONL chunk and flushes the
 // chunk when it reaches the configured record or byte bound.
@@ -369,6 +411,9 @@ func (w *archiveWriter) writeBlob(content io.Reader, mediaType string) (BlobRefe
 // its index entry. Duplicate hashes are collapsed when the spool is replayed,
 // so the writer never has to remember which hashes it has already seen.
 func (w *archiveWriter) writeObject(content io.Reader, kind, mediaType string, describe func(*IndexEntry)) (IndexEntry, error) {
+	if w.packs != nil {
+		return w.writePackedObject(content, kind, mediaType, describe)
+	}
 	w.sequence++
 	temporary := filepath.Join(w.staging, "object-"+strconv.Itoa(w.sequence))
 	file, err := os.Create(temporary)
@@ -420,25 +465,43 @@ func (w *archiveWriter) writeObject(content io.Reader, kind, mediaType string, d
 		}
 		w.writtenBytes += size
 	}
-	spooled, err := spoolIndexEntry(entry)
+	if err := w.spoolEntry(entry); err != nil {
+		return IndexEntry{}, err
+	}
+	return entry, nil
+}
+
+// writePackedObject appends into the open pack. The returned entry carries the
+// object's identity and size; its location is filled in and spooled when the
+// pack is finalized and its hash becomes known.
+func (w *archiveWriter) writePackedObject(content io.Reader, kind, mediaType string, describe func(*IndexEntry)) (IndexEntry, error) {
+	preview := IndexEntry{Kind: kind, MediaType: mediaType}
+	if describe != nil {
+		describe(&preview)
+	}
+	hash, size, err := w.packs.add(content, kind, mediaType, func(trailer *packTrailerEntry) {
+		trailer.Records = preview.Records
+		trailer.RecordCounts = preview.RecordCounts
+	})
 	if err != nil {
 		return IndexEntry{}, err
 	}
-	if len(spooled) > w.options.Limits.MaxIndexEntryBytes {
-		return IndexEntry{}, fmt.Errorf("index entry for object %s is %d bytes, above the %d byte limit", hash, len(spooled), w.options.Limits.MaxIndexEntryBytes)
-	}
-	if err := w.entries.add(spooled); err != nil {
-		return IndexEntry{}, err
-	}
-	w.objects++
-	w.totalBytes += size
-	return entry, nil
+	return IndexEntry{
+		SHA256: hash, Kind: kind, MediaType: mediaType, SizeBytes: size,
+		Records: preview.Records, RecordCounts: preview.RecordCounts,
+	}, nil
 }
 
 // publishIndex replays the spooled entries in hash order, collapses duplicate
 // objects, and writes the index chunks the manifest will list. Peak memory is
 // one spool bucket plus one chunk buffer.
 func (w *archiveWriter) publishIndex() (ObjectTotals, error) {
+	if w.packs != nil {
+		if err := w.packs.finalize(); err != nil {
+			return ObjectTotals{}, err
+		}
+		w.writtenBytes += w.packs.bytesWritten
+	}
 	if err := w.entries.flush(); err != nil {
 		return ObjectTotals{}, err
 	}
@@ -492,16 +555,28 @@ func (w *archiveWriter) publishIndex() (ObjectTotals, error) {
 				return err
 			}
 		}
-		if _, err := expectedPaths.WriteString(entry.Location.Path + "\n"); err != nil {
-			return err
+		// Only objects stored as their own file contribute a path. A packed
+		// object lives inside its pack, and the pack has its own entry.
+		if entry.Location.Layout == LayoutFanout {
+			if _, err := expectedPaths.WriteString(entry.Location.Path + "\n"); err != nil {
+				return err
+			}
 		}
 		chunk.Write(encoded)
 		chunkEntries++
 		totals.Objects++
-		totals.Bytes += entry.SizeBytes
-		if entry.Kind == "records" {
+		// Count storage bytes once. A packed object's bytes are already inside
+		// the pack that holds it, so adding both would double the archive's
+		// measured size and halve the effective MaxTotalBytes bound.
+		if entry.Location.Layout == LayoutFanout {
+			totals.Bytes += entry.SizeBytes
+		}
+		switch entry.Kind {
+		case "records":
 			totals.RecordChunks++
-		} else {
+		case "pack":
+			totals.Packs++
+		default:
 			totals.Blobs++
 		}
 		return nil
@@ -1145,7 +1220,7 @@ func (r *exportRun) buildManifest(totals ObjectTotals) (Manifest, error) {
 			SourceSchemaVersion:  r.schemaVersion,
 			MinimumSchemaVersion: MinimumSchemaVersion,
 			MaximumSchemaVersion: r.schemaVersion,
-			RequiredCapabilities: sortedStrings(RequiredCapabilities()),
+			RequiredCapabilities: sortedStrings(requiredCapabilitiesFor(totals)),
 			OptionalCapabilities: []string{},
 		},
 		Index:  r.writer.index,
@@ -1188,8 +1263,9 @@ func (r *exportRun) report(manifest Manifest, started time.Time) ExportReport {
 		SelectionManifestSHA256: manifest.Snapshot.SelectionManifestSHA256,
 		CollectionIDs:           manifest.Snapshot.CollectionIDs,
 		Counts:                  manifest.Counts,
-		IndexObjects:            len(manifest.Index),
 		Objects:                 manifest.Totals.Objects,
+		IndexObjects:            len(manifest.Index),
+		PackObjects:             manifest.Totals.Packs,
 		RecordObjects:           manifest.Totals.RecordChunks,
 		BlobObjects:             manifest.Totals.Blobs,
 		DeduplicatedObjects:     r.writer.deduplicated,

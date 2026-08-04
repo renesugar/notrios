@@ -31,6 +31,11 @@ const (
 	// v0.4 P3a. It is required, so a reader that predates the index cannot
 	// misread an archive whose manifest no longer lists objects inline.
 	CapabilityObjectIndex = "objects.index.v1"
+	// CapabilityObjectPack marks the packed object layout. It is declared
+	// required only by archives that actually use packs, so a reader without
+	// pack support rejects such an archive instead of misreading it, while
+	// ordinary loose archives stay readable by every v2 reader.
+	CapabilityObjectPack = "objects.pack.v1"
 
 	TargetFullArchive        = store.SelectionTargetFullArchive
 	TargetSubsetTransfer     = store.SelectionTargetSubsetTransfer
@@ -183,6 +188,18 @@ func RequiredCapabilities() []string {
 	return append([]string(nil), requiredBaseCapabilities...)
 }
 
+// requiredCapabilitiesFor adds the pack capability only to archives that
+// actually use packs. A reader without pack support then rejects a packed
+// archive outright instead of misreading it, while ordinary loose archives
+// remain readable by every v2 reader.
+func requiredCapabilitiesFor(totals ObjectTotals) []string {
+	capabilities := RequiredCapabilities()
+	if totals.Packs > 0 {
+		capabilities = append(capabilities, CapabilityObjectPack)
+	}
+	return capabilities
+}
+
 // ComputeCommitSHA256 hashes the canonical semantic manifest with the commit
 // field omitted. It binds snapshot identity, compatibility, object inventory,
 // and counts without relying on JSON whitespace or object write times.
@@ -278,8 +295,14 @@ func validateManifest(manifest Manifest, limits Limits) error {
 	if totals.Objects <= 0 || totals.Bytes < 0 || totals.Bytes > limits.MaxTotalBytes {
 		return fmt.Errorf("manifest object totals are outside the admitted range")
 	}
-	if totals.RecordChunks <= 0 || totals.Blobs < 0 || totals.RecordChunks+totals.Blobs != totals.Objects {
+	if totals.RecordChunks <= 0 || totals.Blobs < 0 || totals.Packs < 0 ||
+		totals.RecordChunks+totals.Blobs+totals.Packs != totals.Objects {
 		return fmt.Errorf("manifest totals do not account for every object")
+	}
+	// An archive that stores objects in packs must say so, or a reader without
+	// pack support would silently accept an archive it cannot read.
+	if totals.Packs > 0 && !contains(manifest.Compatibility.RequiredCapabilities, CapabilityObjectPack) {
+		return fmt.Errorf("archive uses packs without requiring %s", CapabilityObjectPack)
 	}
 	return nil
 }
@@ -301,7 +324,7 @@ func validateCapabilities(compat Compatibility, limits Limits) error {
 	if len(compat.RequiredCapabilities)+len(compat.OptionalCapabilities) > limits.MaxCapabilities || !sortedUnique(compat.RequiredCapabilities) || !sortedUnique(compat.OptionalCapabilities) {
 		return fmt.Errorf("capabilities must be sorted, unique, and bounded")
 	}
-	supported := map[string]bool{}
+	supported := map[string]bool{CapabilityObjectPack: true}
 	for _, capability := range requiredBaseCapabilities {
 		supported[capability] = true
 	}

@@ -121,9 +121,27 @@ per object is the wrong long-term storage shape: a full backup of a real
 per second for 1.14 GB — since throughput tracks one
 `create + write + fsync + rename` per object rather than bytes, and v0.7 sync
 would pay one transport round trip per object over REST and folder/rclone.
-Plan task P3b adds a `pack` layout behind the optional `objects.pack.v1`
-capability, which is possible precisely because `location` is discriminated
-rather than assumed.
+P3b added the `pack` layout behind the optional `objects.pack.v1` capability,
+which was possible precisely because `location` is discriminated rather than
+assumed.
+
+A packed entry carries `pack_sha256`, `offset`, and `length` instead of a path;
+its own SHA-256 still identifies it, so placement can never launder content.
+Pack containers are `kind: "pack"` entries stored under the ordinary fanout,
+and each ends with a self-describing trailer listing its contents and offsets,
+so a pack is verifiable without the archive index. An archive that stores
+objects in packs must declare `objects.pack.v1` as required, so a reader
+without pack support rejects rather than misreads it.
+
+Measurement decided the default. On the real 382,206-note corpus packing cut
+382,447 files to 46 and 48m26s to 37m28s — 1.29×, well short of the order of
+magnitude the fsync hypothesis predicted, because reading and hashing every
+revision body dominates and both layouts pay it. Packing also costs about 11%
+more disk, because a packed writer cannot use the object tree as its
+deduplication index. Loose therefore stays the default and `--pack` is opt-in;
+the file-count collapse is what the planned REST and folder/rclone sync
+transports need. An interrupted packed export restarts rather than resumes.
+See `performance/v0.4-p3b/`.
 
 Required v2 capabilities are `identity.database-replica.v1`,
 `objects.index.v1`, `objects.sha256.v1`, `records.jsonl.v1`, and

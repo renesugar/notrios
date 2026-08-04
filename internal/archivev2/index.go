@@ -11,20 +11,25 @@ import (
 const IndexMediaType = "application/vnd.notrios.archive-v2-index+jsonl"
 
 // LayoutFanout stores one object as one regular file at a content-addressed
-// path. It is the only layout this build writes or accepts.
-//
-// The layout is named in every index entry rather than assumed so a future
-// packed layout — several objects concatenated into one file, which suits
-// millions of small bodies and the planned rclone/folder sync transport far
-// better than millions of individual files — can be introduced behind an
-// optional capability instead of a second breaking format revision.
+// path. It is the default and the only layout a reader is required to support.
 const LayoutFanout = "fanout"
 
-// ObjectLocation says where an object's bytes live. Exactly the fields of the
-// declared layout may be present.
+// LayoutPack stores many objects inside one large sequential file. It exists
+// because measurement showed one file per object makes throughput track
+// filesystem operations rather than bytes: a real 382,206-note backup needed
+// 382,407 create+fsync+rename cycles to store 1.14 GB, and v0.7 sync would pay
+// one transport round trip per object on top of that.
+const LayoutPack = "pack"
+
+// ObjectLocation says where an object's bytes live. Only the fields of the
+// declared layout may be present, so the two layouts can never be confused.
+// An object's SHA-256 identity never depends on its location.
 type ObjectLocation struct {
-	Layout string `json:"layout"`
-	Path   string `json:"path"`
+	Layout     string `json:"layout"`
+	Path       string `json:"path,omitempty"`
+	PackSHA256 string `json:"pack_sha256,omitempty"`
+	Offset     int64  `json:"offset,omitempty"`
+	Length     int64  `json:"length,omitempty"`
 }
 
 // IndexEntry describes one immutable object. The set of entries replaces the
@@ -59,6 +64,7 @@ type ObjectTotals struct {
 	Bytes        int64 `json:"bytes"`
 	RecordChunks int   `json:"record_chunks"`
 	Blobs        int   `json:"blobs"`
+	Packs        int   `json:"packs,omitempty"`
 }
 
 // fanoutObjectPath places an object under a two-level fanout. One level would
@@ -74,13 +80,32 @@ func newFanoutLocation(hash string) ObjectLocation {
 }
 
 func (location ObjectLocation) validate(hash string, limits Limits) error {
-	if location.Layout != LayoutFanout {
+	switch location.Layout {
+	case LayoutFanout:
+		if location.PackSHA256 != "" || location.Offset != 0 || location.Length != 0 {
+			return fmt.Errorf("fanout object %s declares pack fields", hash)
+		}
+		if location.Path != fanoutObjectPath(hash) || len(location.Path) > limits.MaxPathBytes {
+			return fmt.Errorf("object path %q does not match its content hash", location.Path)
+		}
+		return nil
+	case LayoutPack:
+		if location.Path != "" {
+			return fmt.Errorf("packed object %s declares its own path", hash)
+		}
+		if !validSHA256(location.PackSHA256) {
+			return fmt.Errorf("packed object %s names an invalid pack", hash)
+		}
+		if location.PackSHA256 == hash {
+			return fmt.Errorf("pack %s cannot contain itself", hash)
+		}
+		if location.Offset < 0 || location.Length < 0 || location.Offset > limits.MaxBlobBytes || location.Length > limits.MaxBlobBytes {
+			return fmt.Errorf("packed object %s has an out-of-range extent", hash)
+		}
+		return nil
+	default:
 		return fmt.Errorf("unsupported object layout %q", location.Layout)
 	}
-	if location.Path != fanoutObjectPath(hash) || len(location.Path) > limits.MaxPathBytes {
-		return fmt.Errorf("object path %q does not match its content hash", location.Path)
-	}
-	return nil
 }
 
 func (entry IndexEntry) validate(limits Limits) error {
@@ -94,7 +119,18 @@ func (entry IndexEntry) validate(limits Limits) error {
 		return fmt.Errorf("index entry %s declares an out-of-range size", entry.SHA256)
 	}
 	switch entry.Kind {
+	case "pack":
+		// A pack container holds other objects; it carries no records and is
+		// always stored as its own file.
+		if entry.Location.Layout != LayoutFanout || entry.MediaType != PackMediaType ||
+			entry.Records != 0 || entry.RecordCounts.Total() != 0 || entry.SizeBytes < packFooterBytes {
+			return fmt.Errorf("invalid pack index entry %s", entry.SHA256)
+		}
+		return nil
 	case "records":
+		if entry.Location.Layout == LayoutPack && entry.Location.Length != entry.SizeBytes {
+			return fmt.Errorf("packed records object %s length disagrees with its size", entry.SHA256)
+		}
 		if entry.MediaType != RecordsMediaType || entry.SizeBytes > limits.MaxRecordObjectBytes ||
 			entry.Records <= 0 || entry.Records > limits.MaxRecordsPerObject || entry.RecordCounts.Total() != entry.Records {
 			return fmt.Errorf("invalid records index entry %s", entry.SHA256)
@@ -103,6 +139,9 @@ func (entry IndexEntry) validate(limits Limits) error {
 	case "blob":
 		if entry.Records != 0 || entry.RecordCounts.Total() != 0 {
 			return fmt.Errorf("blob index entry %s declares records", entry.SHA256)
+		}
+		if entry.Location.Layout == LayoutPack && entry.Location.Length != entry.SizeBytes {
+			return fmt.Errorf("packed blob %s length disagrees with its size", entry.SHA256)
 		}
 		if _, err := normalizeMediaType(entry.MediaType); err != nil {
 			return fmt.Errorf("blob index entry %s: %w", entry.SHA256, err)

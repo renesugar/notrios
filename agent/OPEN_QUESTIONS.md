@@ -52,7 +52,7 @@ log. Current implementation-affecting questions:
     writer's object state and the verifier's cross-reference state became
     external-sorted spools. See `plans/v0.4/008-*` and `performance/v0.4-p3a/`.
 
-18. **Resolved 2026-08-04 by measurement; scheduled as plan task P3b.** A full
+18. **Resolved and implemented 2026-08-04 as plan task P3b.** A full
     backup of the real 382,206-note corpus wrote 382,407 loose objects in
     48m26s — about 131 objects per second for 1.14 GB of content — because
     throughput tracks one `create + write + fsync + rename` per object rather

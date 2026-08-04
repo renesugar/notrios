@@ -1,0 +1,29 @@
+{
+  "corpus": "joplin-raw recipe export, 382,206 notes (private; not committed)",
+  "loose": {
+    "layout": "fanout",
+    "files": 382447,
+    "objects": 382407,
+    "wall_clock": "48:26.59",
+    "seconds": 2906.3,
+    "peak_rss_bytes": 312397824,
+    "disk_bytes": 1322321741,
+    "verified": true
+  },
+  "packed": {
+    "layout": "pack",
+    "files": 46,
+    "objects": 382413,
+    "packs": 6,
+    "wall_clock": "37:28.06",
+    "seconds": 2247.8,
+    "peak_rss_bytes": 299548672,
+    "disk_bytes": 1466000000,
+    "verified": true
+  },
+  "identical_records": true,
+  "speedup": 1.293,
+  "file_reduction": 8314.1,
+  "disk_overhead_fraction": 0.109,
+  "note": "Both runs include full verification. The packed run predates the totals.Bytes storage-accounting fix, so its manifest byte field is not comparable; disk_bytes is measured with du."
+}

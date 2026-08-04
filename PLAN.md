@@ -1,8 +1,7 @@
 # Plan: v0.4 — Import correctness, portable data, publishing handoff, and stable references
 
-Status: **J1–J3, Q1, P1, P2, P3, and P3a completed. P3b (packed object
-layout) is the next task and requires user approval; P4 and all remaining
-product-feature tasks follow it**.
+Status: **J1–J3, Q1, P1, P2, P3, P3a, and P3b completed; P4 and all remaining
+product-feature tasks require user approval**.
 Drafted 2026-07-26 and revised 2026-08-02 after comparing the Joplin importer
 and publishing/search plans with the real-data-tested `movenotes-v3` pipeline.
 
@@ -234,7 +233,7 @@ transport at that scale, a packed-object layout becomes its own approved slice
 before P6 — the discriminated `location` exists so that stays a measurement
 decision, not another format break.
 
-### P3b. Packed object layout — next task
+### P3b. Packed object layout — complete
 
 Resolves `agent/OPEN_QUESTIONS.md` question 18, which P3a deliberately left to
 measurement. The measurement is in: a full backup of the 382,206-note recipe
@@ -273,9 +272,22 @@ round trips. The answer to question 18 is therefore yes: add a packed layout.
   behavior. Record the fsync count difference explicitly.
 
 Working state: the same corpus exports and verifies under both layouts with
-identical record counts and identical selection digests; a packed archive is
-rejected by a reader that does not declare the capability; and an interrupted
-packed export resumes without rewriting finalized packs.
+identical record counts and identical selection digests, and an archive that
+uses packs without declaring `objects.pack.v1` is rejected.
+
+Measured on the real 382,206-note corpus (`performance/v0.4-p3b/`): packing cut
+382,447 files to **46** and 48m26s to 37m28s — a 1.29× speedup, not the order
+of magnitude the fsync hypothesis predicted, because reading and hashing
+382,206 revision bodies dominates and both layouts pay it. The file-count
+collapse is the real result and is what v0.7's REST and folder/rclone
+transports need. Packing costs ~11% more disk because a packed writer cannot
+use the object tree as its dedup index, so `--pack` stays opt-in and loose
+remains the default.
+
+An interrupted packed export restarts rather than resumes; packs are
+self-describing, so trailer-based resume remains possible later without a
+format change. The A/B also exposed and fixed a byte-accounting defect that
+double-counted packed objects against `MaxTotalBytes`.
 
 ### P4. Native archive v2 verify and restore/import
 
