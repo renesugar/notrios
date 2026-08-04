@@ -50,6 +50,8 @@ func main() {
 		runGarbageCollection(os.Args[2:])
 	case "verify":
 		runVerify(os.Args[2:])
+	case "restore":
+		runRestore(os.Args[2:])
 	case "help", "-h", "--help":
 		printHelp()
 	default:
@@ -491,6 +493,7 @@ Usage:
   notriosctl import archive [--db ...] [--dry-run] [--write-config path] [--import-config path] <archive-dir>
   notriosctl export archive [--db ...] [--query "tag:todo"] <out-dir>
   notriosctl verify archive-v2 <archive-dir>
+  notriosctl restore archive-v2 --intent replace|adopt|merge|fork [--db ...] [--new-database-id id] <archive-dir>
   notriosctl export archive-v2 [--db ...] [--target full_archive|subset_transfer] [--notebooks id,id] [--tags a,b] [--query "tag:todo"] [--documents id,id] [--match any|all] [--pack] [--overwrite] [--no-verify] <out-dir>
   notriosctl seed-help [--db ...] [docs-dir]     # mirror docs/ into the read-only Help notebook
   notriosctl localize [--config config.yaml] [--db ...] [--dry-run] [--allow-review] [--base-revision rev] <document-id>
@@ -860,6 +863,44 @@ func runVerify(args []string) {
 		os.Exit(1)
 	}
 	printJSON(report)
+}
+
+// runRestore admits a verified archive into a database. Intent is mandatory:
+// each choice has a different consequence for the logical database universe
+// and Notrios never guesses one.
+func runRestore(args []string) {
+	if len(args) == 0 || args[0] != "archive-v2" {
+		fmt.Fprintln(os.Stderr, "usage: notriosctl restore archive-v2 --intent replace|adopt|merge|fork [options] <archive-dir>")
+		os.Exit(2)
+	}
+	fs := flag.NewFlagSet("notriosctl restore archive-v2", flag.ExitOnError)
+	configPath := fs.String("config", "", "optional config file")
+	dbPath := fs.String("db", "", "SQLite database path override")
+	assetStore := fs.String("asset-store", "", "asset store directory override")
+	intent := fs.String("intent", "", "required: replace, adopt, merge, or fork")
+	newDatabaseID := fs.String("new-database-id", "", "fork only: the new logical database ID")
+	batchSize := fs.Int("batch-size", 0, "records per canonical transaction (0 = default)")
+	if err := fs.Parse(args[1:]); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(2)
+	}
+	if fs.NArg() != 1 || strings.TrimSpace(*intent) == "" {
+		fmt.Fprintln(os.Stderr, "usage: notriosctl restore archive-v2 --intent replace|adopt|merge|fork [options] <archive-dir>")
+		fs.PrintDefaults()
+		os.Exit(2)
+	}
+	st := openStoreFromFlags(*configPath, *dbPath, *assetStore)
+	defer st.Close()
+	summary, err := archivev2.Restore(context.Background(), st, fs.Arg(0), archivev2.RestoreOptions{
+		Intent:        archivev2.RestoreIntent(strings.ToLower(strings.TrimSpace(*intent))),
+		NewDatabaseID: *newDatabaseID,
+		BatchSize:     *batchSize,
+	})
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	printJSON(summary)
 }
 
 func runSeedHelp(args []string) {
