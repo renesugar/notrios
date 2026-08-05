@@ -319,10 +319,30 @@ archive's, and the reader treated the exporting database's schema version as a
 ceiling — so bumping the schema would have made every archive already written
 unreadable.
 
-Two pack byte-efficiency findings are deferred to a format revision rather than
-fixed here, since changing the pack format would invalidate the measured
-evidence: blob trailer entries carry a zero `record_counts` (44 MB on the
-corpus), and packs do not deduplicate (52 MB).
+Deduplication is now symmetric across layouts. The loose layout got it free —
+identical objects address the same path — but a pack writer only learns an
+object's hash after streaming it, so packed archives carried duplicate copies
+that loose archives collapsed. Export now checks a hash the store already
+records (`resources.blob_sha256`, `source_bundle_items.sha256`) or that is
+cheap to compute in memory (note bodies) *before* opening content, so a
+duplicate costs one indexed lookup instead of a read and a write. The
+membership index is the same bounded temporary spool J3 and the restore object
+index use, not an in-memory set.
+
+Restore already deduplicated but held every hash and bundle path in memory.
+Both maps now use the same bounded spool: loose restore peak RSS fell 42%
+(76,432 KB to 44,012 KB) for 7% more restore time, and no longer grows with the
+library.
+
+Measurement corrected the design twice. The lookup is a loss on the loose
+layout, which already deduplicates via content-addressed paths — it cost 7.6%
+of loose export time to find 27 duplicates in 215,410 objects — so it is gated
+to packed exports. And the memory saving is invisible under the packed layout,
+where peak RSS is set by reading pack trailers whole rather than by the maps.
+
+One pack byte-efficiency finding remains deferred to a format revision, since
+changing the pack format would invalidate the measured evidence: blob trailer
+entries carry a zero `record_counts`, 44 MB on the corpus.
 
 **Resource and attachment coverage is mandatory.** Neither recipe corpus
 carries resources or source bundles, so P3a/P3b exercised the blob path at

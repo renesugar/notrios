@@ -313,3 +313,62 @@ func TestPackedRestoreSpansMorePacksThanTheHandleCache(t *testing.T) {
 		}
 	}
 }
+
+// TestPacksCarryEachObjectOnce is the packed-layout half of deduplication. The
+// loose layout gets it free — identical objects address the same path — but a
+// pack writer only learns an object's hash after streaming it, so packs used to
+// carry duplicate copies of bytes the archive already held.
+func TestPacksCarryEachObjectOnce(t *testing.T) {
+	ctx := context.Background()
+	fixture := newExportFixture(t)
+	packed := filepath.Join(t.TempDir(), "packed")
+	report, err := Export(ctx, fixture.store, packed, packedOptions())
+	if err != nil {
+		t.Fatal(err)
+	}
+	// The fixture deliberately holds two notes with identical bodies.
+	if report.DeduplicatedObjects == 0 {
+		t.Fatalf("packed export collapsed nothing: %+v", report)
+	}
+
+	seen := map[string]int{}
+	for _, entry := range readIndexEntries(t, packed) {
+		if entry.Kind == "pack" {
+			continue
+		}
+		seen[entry.SHA256]++
+	}
+	for hash, count := range seen {
+		if count > 1 {
+			t.Fatalf("object %s is indexed %d times", hash, count)
+		}
+	}
+
+	// The bytes themselves, not merely the index, must appear once per pack.
+	inPacks := map[string]int{}
+	for _, entry := range readIndexEntries(t, packed) {
+		if entry.Kind != "pack" {
+			continue
+		}
+		file, err := os.Open(filepath.Join(packed, filepath.FromSlash(entry.Location.Path)))
+		if err != nil {
+			t.Fatal(err)
+		}
+		entries, err := readPackTrailer(file, DefaultLimits())
+		_ = file.Close()
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, packed := range entries {
+			inPacks[packed.SHA256]++
+		}
+	}
+	for hash, count := range inPacks {
+		if count > 1 {
+			t.Fatalf("pack files carry object %s %d times", hash, count)
+		}
+	}
+	if _, err := VerifyDirectory(packed, DefaultLimits()); err != nil {
+		t.Fatal(err)
+	}
+}

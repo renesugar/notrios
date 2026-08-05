@@ -98,6 +98,11 @@ func Restore(ctx context.Context, target store.RestoreTarget, root string, optio
 		return store.RestoreSummary{}, err
 	}
 	defer run.closeObjectIndex()
+	admitted, err := store.OpenImportManifest()
+	if err != nil {
+		return store.RestoreSummary{}, err
+	}
+	run.admitted, run.pendingAdmitted = admitted, map[string]string{}
 
 	// Mark before the first canonical write and clear after the last, so an
 	// interruption anywhere in between is visible in the restored database.
@@ -166,13 +171,15 @@ type restoreRun struct {
 	warnings  []string
 	blobs     int
 	blobBytes int64
-	admitted  map[string]bool
-	// bundlePaths caches storage paths for exact source bundles, which live in
-	// their own namespace rather than the blob store.
-	bundlePaths map[string]string
-	bundles     int
-	bundleBytes int64
-	objects     *store.ImportManifest
+	// admitted records what has already been written — blob hashes, and the
+	// storage paths of exact source bundles, which live in their own namespace
+	// rather than the blob store. It is a bounded spool rather than a map so
+	// restore memory does not grow with the library.
+	admitted        *store.ImportManifest
+	pendingAdmitted map[string]string
+	bundles         int
+	bundleBytes     int64
+	objects         *store.ImportManifest
 }
 
 // forEachRecord streams every record of the wanted types. Records objects are a
@@ -325,7 +332,6 @@ func orderNotebooksParentFirst(notebooks map[string]store.Notebook) []store.Note
 // applyContent writes resources and their blobs, then documents and revisions
 // with their body blobs.
 func (r *restoreRun) applyContent(ctx context.Context) error {
-	r.admitted = map[string]bool{}
 	batch := store.RestoreRecords{}
 	flush := func() error {
 		if err := r.apply(ctx, batch); err != nil {
@@ -515,10 +521,11 @@ func (r *restoreRun) apply(ctx context.Context, batch store.RestoreRecords) erro
 
 // admitBlob streams one archive object into the asset store exactly once.
 func (r *restoreRun) admitBlob(ctx context.Context, reference BlobReference) error {
-	if r.admitted == nil {
-		r.admitted = map[string]bool{}
+	seen, _, err := r.lookupAdmitted(ctx, "blob", reference.SHA256)
+	if err != nil {
+		return err
 	}
-	if r.admitted[reference.SHA256] {
+	if seen {
 		return nil
 	}
 	entry, err := r.findObject(reference.SHA256)
@@ -535,11 +542,67 @@ func (r *restoreRun) admitBlob(ctx context.Context, reference BlobReference) err
 	if err != nil {
 		return err
 	}
-	r.admitted[reference.SHA256] = true
+	if err := r.rememberAdmitted(ctx, "blob", reference.SHA256, ""); err != nil {
+		return err
+	}
 	r.blobs++
 	r.blobBytes += size
 	return nil
 }
+
+// lookupAdmitted and rememberAdmitted track what a restore has already written
+// without holding every hash in memory.
+//
+// Restore has always deduplicated — admitting the same bytes twice would be
+// pure waste — but it did so with unbounded maps. On the attachment corpus
+// that cost 24 MiB; the same design at ten million items would cost gigabytes,
+// which is the failure mode the spooled writer and verifier exist to avoid.
+func (r *restoreRun) lookupAdmitted(ctx context.Context, kind, hash string) (bool, string, error) {
+	if value, ok := r.pendingAdmitted[kind+":"+hash]; ok {
+		return true, value, nil
+	}
+	if r.admitted == nil {
+		return false, "", nil
+	}
+	found, err := r.admitted.Lookup(ctx, kind, []string{hash})
+	if err != nil {
+		return false, "", err
+	}
+	records := found[hash]
+	if len(records) == 0 {
+		return false, "", nil
+	}
+	return true, string(records[0].Payload), nil
+}
+
+func (r *restoreRun) rememberAdmitted(ctx context.Context, kind, hash, value string) error {
+	if r.admitted == nil {
+		return nil
+	}
+	if r.pendingAdmitted == nil {
+		r.pendingAdmitted = map[string]string{}
+	}
+	r.pendingAdmitted[kind+":"+hash] = value
+	if len(r.pendingAdmitted) < admittedBufferObjects {
+		return nil
+	}
+	batch := make([]store.ImportManifestRecord, 0, len(r.pendingAdmitted))
+	for key, payload := range r.pendingAdmitted {
+		parts := strings.SplitN(key, ":", 2)
+		batch = append(batch, store.ImportManifestRecord{
+			Kind: parts[0], SortKey: parts[1], LookupKey: parts[1], Payload: []byte(payload),
+		})
+	}
+	if err := r.admitted.Put(ctx, batch); err != nil {
+		return err
+	}
+	r.pendingAdmitted = map[string]string{}
+	return nil
+}
+
+// admittedBufferObjects batches writes into the spool. Single-row inserts would
+// make one transaction per object. It stays inside the spool's batch bound.
+const admittedBufferObjects = 500
 
 // admitSourceBundle writes exact source bytes through the source-bundle
 // namespace rather than the blob store. Bundles are deliberately outside
@@ -547,10 +610,9 @@ func (r *restoreRun) admitBlob(ctx context.Context, reference BlobReference) err
 // both pollute the blob table and leave the bundle row pointing at a path
 // nothing was written to.
 func (r *restoreRun) admitSourceBundle(ctx context.Context, reference BlobReference) (string, error) {
-	if r.bundlePaths == nil {
-		r.bundlePaths = map[string]string{}
-	}
-	if path, ok := r.bundlePaths[reference.SHA256]; ok {
+	if found, path, err := r.lookupAdmitted(ctx, "bundle", reference.SHA256); err != nil {
+		return "", err
+	} else if found {
 		return path, nil
 	}
 	entry, err := r.findObject(reference.SHA256)
@@ -567,7 +629,9 @@ func (r *restoreRun) admitSourceBundle(ctx context.Context, reference BlobRefere
 	if err != nil {
 		return "", err
 	}
-	r.bundlePaths[reference.SHA256] = path
+	if err := r.rememberAdmitted(ctx, "bundle", reference.SHA256, path); err != nil {
+		return "", err
+	}
 	r.bundleBytes += size
 	r.bundles++
 	return path, nil
@@ -666,6 +730,10 @@ func (r *restoreRun) closeObjectIndex() {
 	if r.objects != nil {
 		_ = r.objects.Close()
 		r.objects = nil
+	}
+	if r.admitted != nil {
+		_ = r.admitted.Close()
+		r.admitted = nil
 	}
 }
 

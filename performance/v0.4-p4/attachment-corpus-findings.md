@@ -92,12 +92,56 @@ belongs with a format revision, not with restore coverage.
 zeroes.** An object holding bytes has no records to count. This is 44 MB — 34%
 of all trailer bytes, 2.6% of the archive — spent describing nothing.
 
-**Packs do not deduplicate.** The loose layout collapses duplicates for free
-because two identical objects address the same path. A pack writer streams
-bytes and only learns the object's hash once it has written them, so the pack
-physically carries 27 duplicate copies of 24 hashes — 51.9 MB here. The index
-still holds one entry per hash, so restores are correct and the duplicates are
-pure waste rather than a fidelity risk.
+**Packs do not deduplicate.** *(fixed — see below.)* The loose layout collapses
+duplicates for free because two identical objects address the same path. A pack
+writer streams bytes and only learns the object's hash once it has written
+them, so the pack physically carried 27 duplicate copies of 24 hashes — 51.9 MB
+here. The index still held one entry per hash, so restores were correct and the
+duplicates were pure waste rather than a fidelity risk.
+
+## Deduplication, measured
+
+Export now checks a hash the store already records — `resources.blob_sha256`,
+`source_bundle_items.sha256`, or a note body hashed in memory — *before* opening
+content, so a duplicate costs an indexed lookup instead of a read and a write.
+The membership index is the bounded temporary spool J3 and the restore object
+index already use, not an in-memory set. Restore's `admitted` and `bundlePaths`
+maps moved to the same spool.
+
+| Measurement | Before | After |
+|---|---|---|
+| Packed archive bytes | 1,823,703,072 | **1,771,827,000** |
+| Packed export | 10m 11s | **9m 26s** |
+| Loose archive bytes | 1,690,137,952 | 1,690,137,952 |
+| Loose export | 16m 49s | 16m 50s |
+| Loose restore peak RSS | 76,432 KB | **44,012 KB** |
+| Loose restore | 12m 12s | 13m 05s |
+| Packed round trip | — | identical |
+
+The 51,876,072 bytes saved match the predicted duplicate total (51,875,340) to
+within 732 bytes, and packed export got *faster*: skipping 52 MB of writes more
+than pays for 215,410 lookups.
+
+Two results contradicted the reasoning that motivated the change, and are
+recorded because the corrected design came from them.
+
+**The lookup is a loss on the loose layout.** Enabling it everywhere cost loose
+export 7.6% — 16m 49s to 18m 06s — to find 27 duplicates among 215,410 objects,
+on the one layout that already deduplicates for free. The check is now gated to
+packed exports, and loose export measures 16m 50s against a 16m 49s baseline:
+the regression is gone rather than assumed gone.
+
+**The memory win is real but was invisible where it was first measured.**
+Packed restore peak RSS did not move (130,528 KB to 130,680 KB), because there
+the peak is set by reading pack trailers whole, not by the maps. On the loose
+layout, where nothing else dominates, peak RSS fell 42%, from 76,432 KB to
+44,012 KB — below even the 51,632 KB measured before source bundles were
+admitted correctly.
+
+The cost is 7% more restore time (12m 12s to 13m 05s) for memory that no longer
+grows with the library. At this scale that trade is marginal; at ten million
+items the maps would cost gigabytes while the spool stays flat, which is the
+failure mode the spooled writer and verifier exist to prevent.
 
 ## Finding 1 — `full_archive` dropped unreferenced resources (fixed)
 
