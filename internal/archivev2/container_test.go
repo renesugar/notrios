@@ -1,7 +1,11 @@
 package archivev2
 
 import (
+	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -263,4 +267,68 @@ func TestSpoolJoinDetectsMissingDuplicateAndUnreferenced(t *testing.T) {
 			}
 		}
 	})
+}
+
+// TestArchivesWrittenBeforeOptionalRecordCountsStillVerify pins backward
+// compatibility. `omitempty` never applied to a struct, so every archive
+// written before RecordCounts became a pointer carries an explicit all-zero
+// record_counts on its blob entries. Absence and an explicit zero mean the
+// same thing — no records — and a reader that rejected the older spelling
+// would make every archive already on disk unreadable for a cosmetic change.
+func TestArchivesWrittenBeforeOptionalRecordCountsStillVerify(t *testing.T) {
+	fixture := newExportFixture(t)
+	archive := filepath.Join(t.TempDir(), "archive")
+	if _, err := Export(context.Background(), fixture.store, archive, exportOptions(TargetFullArchive)); err != nil {
+		t.Fatal(err)
+	}
+	manifest := readManifest(t, archive)
+
+	// Rewrite one index chunk in the older spelling, then re-anchor the chain.
+	target := manifest.Index[0]
+	path := filepath.Join(archive, filepath.FromSlash(target.Location.Path))
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	rewritten := [][]byte{}
+	restated := 0
+	for _, line := range bytes.Split(bytes.TrimRight(raw, "\n"), []byte("\n")) {
+		var entry IndexEntry
+		if err := json.Unmarshal(line, &entry); err != nil {
+			t.Fatal(err)
+		}
+		if entry.Kind == "blob" && entry.RecordCounts == nil {
+			entry.RecordCounts = &Counts{}
+			restated++
+		}
+		encoded, err := json.Marshal(entry)
+		if err != nil {
+			t.Fatal(err)
+		}
+		rewritten = append(rewritten, encoded)
+	}
+	if restated == 0 {
+		t.Fatal("fixture had no blob entries to restate in the older form")
+	}
+	body := append(bytes.Join(rewritten, []byte("\n")), '\n')
+	if err := os.WriteFile(path, body, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	digest := sha256.Sum256(body)
+	updated := hex.EncodeToString(digest[:])
+	moved := filepath.Join(archive, filepath.FromSlash(fanoutObjectPath(updated)))
+	if err := os.MkdirAll(filepath.Dir(moved), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Rename(path, moved); err != nil {
+		t.Fatal(err)
+	}
+	manifest.Index[0].SHA256 = updated
+	manifest.Index[0].SizeBytes = int64(len(body))
+	manifest.Index[0].Location = newFanoutLocation(updated)
+	writeManifest(t, archive, manifest, true)
+
+	if _, err := VerifyDirectory(archive, DefaultLimits()); err != nil {
+		t.Fatalf("an archive in the older record_counts spelling was rejected: %v", err)
+	}
 }

@@ -390,7 +390,7 @@ func (state *verificationState) verifyRecordObject(root string, entry IndexEntry
 	if err := scanner.Err(); err != nil {
 		return fmt.Errorf("records object %s: record exceeds %d bytes or cannot be read: %w", entry.SHA256, state.limits.MaxRecordBytes, err)
 	}
-	if records != entry.Records || actual != entry.RecordCounts {
+	if records != entry.Records || entry.RecordCounts == nil || actual != *entry.RecordCounts {
 		return fmt.Errorf("records object %s count mismatch", entry.SHA256)
 	}
 	state.counts.Add(actual)

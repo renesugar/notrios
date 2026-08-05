@@ -3,13 +3,16 @@ package api
 // StatusResponse describes service health, runtime configuration, storage roots,
 // and currently implemented capability flags.
 type StatusResponse struct {
-	Service       string              `json:"service"`
-	Version       string              `json:"version"`
-	Status        string              `json:"status"`
-	Database      string              `json:"database,omitempty"` // Deprecated summary retained for early UI compatibility.
-	ConfigPath    string              `json:"config_path,omitempty"`
-	DatabaseInfo  DatabaseStatus      `json:"database_info,omitempty"`
-	Storage       StorageStatus       `json:"storage,omitempty"`
+	Service    string `json:"service"`
+	Version    string `json:"version"`
+	Status     string `json:"status"`
+	Database   string `json:"database,omitempty"` // Deprecated summary retained for early UI compatibility.
+	ConfigPath string `json:"config_path,omitempty"`
+	// Always populated by Status. `omitempty` never applied to a struct value,
+	// so these were emitted regardless; the tag is dropped rather than honoured
+	// because removing the keys would change a response clients already receive.
+	DatabaseInfo  DatabaseStatus      `json:"database_info"`
+	Storage       StorageStatus       `json:"storage"`
 	Capabilities  map[string]bool     `json:"capabilities,omitempty"`
 	Limits        map[string]int      `json:"limits,omitempty"`
 	MediaPolicy   *MediaPolicyStatus  `json:"media_policy,omitempty"`
@@ -104,7 +107,7 @@ type SearchRequest struct {
 	Collection   string        `json:"collection,omitempty"` // Deprecated single-collection convenience.
 	Query        string        `json:"query,omitempty"`
 	Mode         string        `json:"mode,omitempty"`
-	Filters      SearchFilters `json:"filters,omitempty"`
+	Filters      SearchFilters `json:"filters"`
 	Sort         []SortField   `json:"sort,omitempty"`
 	Limit        int           `json:"limit,omitempty"`
 	Cursor       string        `json:"cursor,omitempty"`
@@ -441,20 +444,22 @@ type GarbageCollectionReport struct {
 }
 
 type DocumentLink struct {
-	ID               string         `json:"id"`
-	SourceDocumentID string         `json:"source_document_id"`
-	TargetDocumentID string         `json:"target_document_id,omitempty"`
-	TargetResourceID string         `json:"target_resource_id,omitempty"`
-	TargetURI        string         `json:"target_uri,omitempty"`
-	RelationType     string         `json:"relation_type"`
-	SourceFormat     string         `json:"source_format,omitempty"`
-	RawTarget        string         `json:"raw_target,omitempty"`
-	DisplayText      string         `json:"display_text,omitempty"`
-	AnchorType       string         `json:"anchor_type,omitempty"`
-	AnchorValue      string         `json:"anchor_value,omitempty"`
-	Context          string         `json:"context,omitempty"`
-	ResolutionStatus string         `json:"resolution_status"`
-	SourcePosition   SourcePosition `json:"source_position,omitempty"`
+	ID               string `json:"id"`
+	SourceDocumentID string `json:"source_document_id"`
+	TargetDocumentID string `json:"target_document_id,omitempty"`
+	TargetResourceID string `json:"target_resource_id,omitempty"`
+	TargetURI        string `json:"target_uri,omitempty"`
+	RelationType     string `json:"relation_type"`
+	SourceFormat     string `json:"source_format,omitempty"`
+	RawTarget        string `json:"raw_target,omitempty"`
+	DisplayText      string `json:"display_text,omitempty"`
+	AnchorType       string `json:"anchor_type,omitempty"`
+	AnchorValue      string `json:"anchor_value,omitempty"`
+	Context          string `json:"context,omitempty"`
+	ResolutionStatus string `json:"resolution_status"`
+	// Always populated, and never omitted despite the former tag; see the note
+	// on StatusResponse.DatabaseInfo.
+	SourcePosition SourcePosition `json:"source_position"`
 }
 
 type SourcePosition struct {

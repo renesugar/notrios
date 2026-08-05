@@ -27,13 +27,15 @@ const packFooterBytes = 8 + 8 + 16
 
 // packTrailerEntry records where one object lives inside its pack.
 type packTrailerEntry struct {
-	SHA256       string `json:"sha256"`
-	Offset       int64  `json:"offset"`
-	Length       int64  `json:"length"`
-	Kind         string `json:"kind"`
-	MediaType    string `json:"media_type"`
-	Records      int    `json:"records,omitempty"`
-	RecordCounts Counts `json:"record_counts,omitempty"`
+	SHA256    string `json:"sha256"`
+	Offset    int64  `json:"offset"`
+	Length    int64  `json:"length"`
+	Kind      string `json:"kind"`
+	MediaType string `json:"media_type"`
+	Records   int    `json:"records,omitempty"`
+	// Pointer for the same reason as IndexEntry.RecordCounts: a struct value
+	// is never omitted, so blob entries carried twelve zeroes each.
+	RecordCounts *Counts `json:"record_counts,omitempty"`
 }
 
 // packWriter concatenates objects into large sequential files. It exists

@@ -109,7 +109,7 @@ type EffectivePrivacyPolicy struct {
 type SelectionPlanRequest struct {
 	Target       string        `json:"target"`
 	Selection    SelectionSpec `json:"selection"`
-	Policy       PrivacyPolicy `json:"policy,omitempty"`
+	Policy       PrivacyPolicy `json:"policy"`
 	DetailLimit  int           `json:"detail_limit,omitempty"`
 	MaxDocuments int           `json:"max_documents,omitempty"`
 }

@@ -1,7 +1,7 @@
 {
   "format": "notrios-archive",
   "version": 2,
-  "commit_sha256": "bfdb93d151efe80b630f61b6f9b7909ff33ea902a9cc4271105c6e96891ba7fe",
+  "commit_sha256": "6fb4613a2696ed8e1feb76f2f6126732db39ead3544a43adb07c159339d89964",
   "snapshot": {
     "id": "snap_golden",
     "created_at": "2026-08-03T17:00:00Z",
@@ -30,13 +30,13 @@
   },
   "index": [
     {
-      "sha256": "92115f5b18ce1e04a101abca07d6b3c251e55779678efab110cca630b7c1bd2e",
-      "size_bytes": 1945,
+      "sha256": "39d4ce15162814a092d9f25e84a6d03ef279b93621ae335f335d13e853c648ea",
+      "size_bytes": 1330,
       "entries": 4,
       "media_type": "application/vnd.notrios.archive-v2-index+jsonl",
       "location": {
         "layout": "fanout",
-        "path": "objects/sha256/92/11/92115f5b18ce1e04a101abca07d6b3c251e55779678efab110cca630b7c1bd2e"
+        "path": "objects/sha256/39/d4/39d4ce15162814a092d9f25e84a6d03ef279b93621ae335f335d13e853c648ea"
       }
     }
   ],

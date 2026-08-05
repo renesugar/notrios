@@ -395,9 +395,10 @@ func (w *archiveWriter) flushRecords() error {
 	records, counts := w.bufferRecs, w.bufferCounts
 	w.buffer.Reset()
 	w.bufferRecs, w.bufferCounts = 0, Counts{}
+	recordCounts := counts
 	entry, err := w.writeObject(bytes.NewReader(payload), "records", RecordsMediaType, func(entry *IndexEntry) {
 		entry.Records = records
-		entry.RecordCounts = counts
+		entry.RecordCounts = &recordCounts
 	})
 	if err != nil {
 		return err

@@ -88,9 +88,8 @@ recorded rather than fixed here because both change the pack format, which
 would invalidate the archive this evidence was measured against; the work
 belongs with a format revision, not with restore coverage.
 
-**Blob trailer entries carry a fully expanded `record_counts` of twelve
-zeroes.** An object holding bytes has no records to count. This is 44 MB — 34%
-of all trailer bytes, 2.6% of the archive — spent describing nothing.
+**Blob entries carry a fully expanded `record_counts` of twelve zeroes.**
+*(fixed — see below.)* An object holding bytes has no records to count.
 
 **Packs do not deduplicate.** *(fixed — see below.)* The loose layout collapses
 duplicates for free because two identical objects address the same path. A pack
@@ -228,12 +227,49 @@ not by the 111,330 items or by corpus size in bytes. It is a real cost, not a
 measurement artifact, and is recorded here so a later regression in restore
 memory is not mistaken for this change.
 
+## Optional record counts, measured
+
+The zero `record_counts` was not a format trade-off but a bug: the field
+already carried `json:"record_counts,omitempty"`, and Go's `encoding/json`
+silently ignores `omitempty` on a struct value. The writer contradicted its own
+declaration. It also affected **index entries in both layouts**, not only pack
+trailers, so it was roughly twice the size first reported.
+
+`RecordCounts` is now a pointer, genuinely absent for objects that hold no
+records.
+
+| Measurement | Before | After |
+|---|---|---|
+| Loose archive bytes | 1,690,137,952 | **1,645,978,902** |
+| Packed archive bytes | 1,771,827,000 | **1,683,507,465** |
+| Loose export | 16m 50s | 15m 48s |
+| Packed export | 9m 26s | **8m 22s** |
+| Packed verify | 5m 26s | **3m 46s** |
+| Packed verify peak RSS | 127,156 KB | **75,520 KB** |
+
+Loose saves 44,159,050 bytes and packed 88,319,535 — 2.6% and 5.0%, both
+within a few kilobytes of the predicted totals.
+
+The larger result is memory and time on the packed layout: a pack trailer is
+read whole, so shrinking each entry by the dead field cut packed verify peak
+RSS 41% and its runtime 31%. The packed layout's disadvantage against loose was
+substantially self-inflicted.
+
+Six struct-typed fields carried the same ineffective tag. The two archive ones
+are fixed as above. The four in `internal/api/types.go` and
+`internal/store/store.go` are always populated, so honouring the tag would
+delete keys from responses clients already receive; there the tag was dropped
+instead, leaving the wire unchanged and the declaration honest.
+
+A reader must accept an explicit all-zero `record_counts` as equivalent to
+absence — that is what every archive written before this change contains. The
+first implementation here rejected them, which would have made every existing
+archive unreadable; `TestArchivesWrittenBeforeOptionalRecordCountsStillVerify`
+rewrites a real archive into the older spelling and requires it to verify.
+
 ## Status
 
 The attachment-bearing round trip passes under both object layouts, and the two
 restored libraries are byte-identical to each other and to the source.
-
-Remaining P4 work: crash/fault injection.
-
-Deferred to a pack format revision, not blocking P4: the zero `record_counts`
-on blob trailer entries, and pack-internal deduplication.
+Deduplication is symmetric across layouts, and crash/fault injection is in
+place. No P4 work remains.

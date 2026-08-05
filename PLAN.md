@@ -340,9 +340,14 @@ of loose export time to find 27 duplicates in 215,410 objects — so it is gated
 to packed exports. And the memory saving is invisible under the packed layout,
 where peak RSS is set by reading pack trailers whole rather than by the maps.
 
-One pack byte-efficiency finding remains deferred to a format revision, since
-changing the pack format would invalidate the measured evidence: blob trailer
-entries carry a zero `record_counts`, 44 MB on the corpus.
+The zero `record_counts` on blob entries turned out to be a bug rather than a
+format trade-off: the field already declared `omitempty`, which Go ignores on a
+struct value, and it affected index entries in both layouts rather than only
+pack trailers. Making it a pointer saves 44 MB loose and 88 MB packed on the
+corpus, and — because a pack trailer is read whole — cut packed verify peak RSS
+41% and its runtime 31%. Five sibling fields carried the same ineffective tag;
+the API ones are always populated, so their tags were dropped rather than
+honoured, leaving responses unchanged.
 
 **Resource and attachment coverage is mandatory.** Neither recipe corpus
 carries resources or source bundles, so P3a/P3b exercised the blob path at

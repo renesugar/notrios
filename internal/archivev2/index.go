@@ -37,12 +37,21 @@ type ObjectLocation struct {
 // 645 bytes per object inside a 4 MiB manifest, which capped an archive near
 // 6,500 objects and made a real library unarchivable.
 type IndexEntry struct {
-	SHA256       string         `json:"sha256"`
-	Kind         string         `json:"kind"`
-	MediaType    string         `json:"media_type"`
-	SizeBytes    int64          `json:"size_bytes"`
-	Records      int            `json:"records,omitempty"`
-	RecordCounts Counts         `json:"record_counts,omitempty"`
+	SHA256    string `json:"sha256"`
+	Kind      string `json:"kind"`
+	MediaType string `json:"media_type"`
+	SizeBytes int64  `json:"size_bytes"`
+	Records   int    `json:"records,omitempty"`
+	// RecordCounts is a pointer so it is genuinely absent for objects that
+	// hold no records. As a value type, `omitempty` silently did nothing for a
+	// struct, so every blob entry carried twelve zeroes — 44 MB of the
+	// attachment corpus index, in both object layouts.
+	//
+	// Readers must accept an explicit all-zero object as equivalent to absence:
+	// that is what every archive written before this change contains, and
+	// rejecting it would make those archives unreadable for a purely cosmetic
+	// difference.
+	RecordCounts *Counts        `json:"record_counts,omitempty"`
 	Location     ObjectLocation `json:"location"`
 }
 
@@ -123,7 +132,7 @@ func (entry IndexEntry) validate(limits Limits) error {
 		// A pack container holds other objects; it carries no records and is
 		// always stored as its own file.
 		if entry.Location.Layout != LayoutFanout || entry.MediaType != PackMediaType ||
-			entry.Records != 0 || entry.RecordCounts.Total() != 0 || entry.SizeBytes < packFooterBytes {
+			entry.Records != 0 || entry.RecordCounts.nonZero() || entry.SizeBytes < packFooterBytes {
 			return fmt.Errorf("invalid pack index entry %s", entry.SHA256)
 		}
 		return nil
@@ -132,12 +141,13 @@ func (entry IndexEntry) validate(limits Limits) error {
 			return fmt.Errorf("packed records object %s length disagrees with its size", entry.SHA256)
 		}
 		if entry.MediaType != RecordsMediaType || entry.SizeBytes > limits.MaxRecordObjectBytes ||
-			entry.Records <= 0 || entry.Records > limits.MaxRecordsPerObject || entry.RecordCounts.Total() != entry.Records {
+			entry.Records <= 0 || entry.Records > limits.MaxRecordsPerObject ||
+			entry.RecordCounts == nil || entry.RecordCounts.Total() != entry.Records {
 			return fmt.Errorf("invalid records index entry %s", entry.SHA256)
 		}
-		return validateCounts(entry.RecordCounts, limits.MaxRecordsPerObject)
+		return validateCounts(*entry.RecordCounts, limits.MaxRecordsPerObject)
 	case "blob":
-		if entry.Records != 0 || entry.RecordCounts.Total() != 0 {
+		if entry.Records != 0 || entry.RecordCounts.nonZero() {
 			return fmt.Errorf("blob index entry %s declares records", entry.SHA256)
 		}
 		if entry.Location.Layout == LayoutPack && entry.Location.Length != entry.SizeBytes {
@@ -205,3 +215,10 @@ func parseSpooledIndexEntry(line string) (IndexEntry, error) {
 	}
 	return entry, nil
 }
+
+// nonZero reports whether record counts are present and actually count
+// something. Absence and an explicit all-zero object mean the same thing: no
+// records. Archives written before RecordCounts became a pointer carry the
+// explicit form, so treating it as a declaration of records would reject every
+// one of them.
+func (c *Counts) nonZero() bool { return c != nil && c.Total() != 0 }

@@ -64,8 +64,14 @@ func buildGoldenArchive(t *testing.T, root string) {
 		hash := goldenDigest(content)
 		entry := IndexEntry{
 			SHA256: hash, Kind: kind, MediaType: mediaType,
-			SizeBytes: int64(len(content)), Records: records, RecordCounts: counts,
+			SizeBytes: int64(len(content)), Records: records,
 			Location: newFanoutLocation(hash),
+		}
+		// Only record chunks carry counts; a blob that declared them would be
+		// rejected, which is the property the pointer makes expressible.
+		if kind == "records" {
+			counted := counts
+			entry.RecordCounts = &counted
 		}
 		path := filepath.Join(root, filepath.FromSlash(entry.Location.Path))
 		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
