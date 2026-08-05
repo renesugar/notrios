@@ -71,6 +71,10 @@ func Restore(ctx context.Context, target store.RestoreTarget, root string, optio
 		source:   newPackSource(options.Limits),
 	}
 	defer run.source.close()
+	if err := run.buildObjectIndex(ctx); err != nil {
+		return store.RestoreSummary{}, err
+	}
+	defer run.closeObjectIndex()
 
 	if decision.Intent == RestoreReplace {
 		if err := target.ClearLibraryForReplace(ctx); err != nil {
@@ -128,6 +132,7 @@ type restoreRun struct {
 	blobs     int
 	blobBytes int64
 	admitted  map[string]bool
+	objects   *store.ImportManifest
 }
 
 // forEachRecord streams every record of the wanted types. Records objects are a
@@ -505,34 +510,88 @@ func (r *restoreRun) readBlobText(reference BlobReference) (string, error) {
 	return builder.String(), nil
 }
 
-// findObject locates one index entry by hash. Verification already read the
-// whole index, so this re-reads chunks rather than caching an unbounded map.
-func (r *restoreRun) findObject(hash string) (IndexEntry, error) {
+// buildObjectIndex reads the index once into a temporary indexed spool so an
+// object lookup is an indexed query rather than a scan.
+//
+// The first implementation scanned every index chunk per lookup. That is
+// quadratic — roughly 112,000 blob lookups against 1.1M index entries on the
+// attachment corpus — and it made restore unusable at real scale while looking
+// deceptively "bounded" because it held no map.
+func (r *restoreRun) buildObjectIndex(ctx context.Context) error {
+	spool, err := store.OpenImportManifest()
+	if err != nil {
+		return err
+	}
+	r.objects = spool
+	batch := make([]store.ImportManifestRecord, 0, objectIndexBatch)
+	flush := func() error {
+		if len(batch) == 0 {
+			return nil
+		}
+		if err := r.objects.Put(ctx, batch); err != nil {
+			return err
+		}
+		batch = batch[:0]
+		return nil
+	}
 	for _, indexObject := range r.manifest.Index {
-		file, err := openRegular(r.root, indexObject.Location.Path)
-		if err != nil {
-			return IndexEntry{}, err
+		file, openErr := openRegular(r.root, indexObject.Location.Path)
+		if openErr != nil {
+			return openErr
 		}
 		scanner := bufio.NewScanner(file)
 		scanner.Buffer(make([]byte, 16<<10), r.options.Limits.MaxIndexEntryBytes)
 		for scanner.Scan() {
+			line := append([]byte(nil), scanner.Bytes()...)
 			var entry IndexEntry
-			if err := json.Unmarshal(scanner.Bytes(), &entry); err != nil {
+			if err := json.Unmarshal(line, &entry); err != nil {
 				_ = file.Close()
-				return IndexEntry{}, err
+				return err
 			}
-			if entry.SHA256 == hash {
-				_ = file.Close()
-				return entry, nil
+			batch = append(batch, store.ImportManifestRecord{
+				Kind: "object", SortKey: entry.SHA256, LookupKey: entry.SHA256, Payload: line,
+			})
+			if len(batch) >= objectIndexBatch {
+				if err := flush(); err != nil {
+					_ = file.Close()
+					return err
+				}
 			}
 		}
 		scanErr := scanner.Err()
 		closeErr := file.Close()
 		if err := firstError(scanErr, closeErr); err != nil {
-			return IndexEntry{}, err
+			return err
 		}
 	}
-	return IndexEntry{}, fmt.Errorf("archive does not contain object %s", hash)
+	return flush()
+}
+
+// objectIndexBatch stays inside the spool's per-call bound.
+const objectIndexBatch = 500
+
+func (r *restoreRun) closeObjectIndex() {
+	if r.objects != nil {
+		_ = r.objects.Close()
+		r.objects = nil
+	}
+}
+
+// findObject resolves one index entry by hash through the indexed spool.
+func (r *restoreRun) findObject(hash string) (IndexEntry, error) {
+	found, err := r.objects.Lookup(context.Background(), "object", []string{hash})
+	if err != nil {
+		return IndexEntry{}, err
+	}
+	records := found[hash]
+	if len(records) == 0 {
+		return IndexEntry{}, fmt.Errorf("archive does not contain object %s", hash)
+	}
+	var entry IndexEntry
+	if err := json.Unmarshal(records[0].Payload, &entry); err != nil {
+		return IndexEntry{}, err
+	}
+	return entry, nil
 }
 
 func sourceBundleStoragePath(hash string) string {
