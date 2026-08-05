@@ -1,10 +1,10 @@
 # Native archive v2 safety contract
 
-Notrios archive v2 is the lossless backup and transfer format. v0.4 P2 defines
-and verifies the format; P3 adds the streaming writer
-(`notriosctl export archive-v2`). Verified restore is P4, so today a v2 archive
-is a checksum-verified snapshot you keep, not something Notrios can read back
-yet. Keep an archive v1 export or a database copy until P4 lands.
+Notrios archive v2 is the lossless backup and transfer format. Three commands
+use it: `notriosctl export archive-v2` writes a snapshot,
+`notriosctl verify archive-v2` reads one back read-only, and
+`notriosctl restore archive-v2` admits one into a database under an explicit
+intent. All three are local filesystem commands with no REST or MCP equivalent.
 
 ## What v2 preserves
 
@@ -108,5 +108,37 @@ archive will be *moved* — copied to a remote, synchronized, or shipped — whe
 the number of files matters far more than the number of bytes. An interrupted
 packed export restarts rather than resuming.
 
-Use archive v1 commands for query-scoped plain-note interchange. P4 will add
-verify-only and restore commands.
+## Reading an archive back
+
+```bash
+# Read-only: report what the archive contains and prove it is intact.
+notriosctl verify archive-v2 /backups/notrios-2026-08-05
+
+# Restore into a database. The intent is required.
+notriosctl restore archive-v2 --intent adopt --db ./restored/notes.sqlite \
+  /backups/notrios-2026-08-05
+```
+
+`verify` never writes. `restore` finishes verifying the whole archive before it
+writes its first row, so a damaged archive cannot leave a half-restored library
+behind. It reads both object layouts, re-hashes every note body, resource, and
+source bundle as it uses it, and re-sniffs attachment types through the ordinary
+resource admission path instead of trusting what the archive claims.
+
+Pick the intent deliberately — Notrios never guesses one, and never infers it
+from a filesystem path:
+
+| Intent | Target | Result |
+|---|---|---|
+| `adopt` | empty database | the archive's logical database ID, a new replica ID |
+| `replace` | existing database | contents replaced; archive's database ID, new replica ID |
+| `merge` | existing database | records imported; the target keeps its own identity |
+| `fork` | any | a new logical database ID you supply with `--new-database-id` |
+
+If a restore is interrupted — power loss, a full disk, Ctrl-C — the library keeps
+a durable marker recording which snapshot it was restoring. That library is not
+a valid database: `adopt`, `merge`, and `fork` refuse it, and only
+`--intent replace` recovers it, producing the same library a clean restore
+would have.
+
+Use archive v1 commands for query-scoped plain-note interchange.

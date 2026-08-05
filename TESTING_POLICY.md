@@ -216,6 +216,30 @@ corrupting a pack fails the checksum, pack trailers describe exactly the
 objects the index places in packs, and manifest byte totals equal real on-disk
 object size. The real-corpus A/B lives under `performance/v0.4-p3b/`.
 
+### Native archive v2 verify and restore
+
+P4 fixtures cover the restore path: a canonical round trip, resource bytes with
+their relations/ordinals/anchors, refusal to write anything when verification
+fails, mandatory intent, `full_archive` carrying unreferenced resources, and
+source bundles staying out of the blob store. Packed-layout fixtures assert
+layout equivalence by re-exported object set, resource and bundle bytes read out
+of pack slices, corruption refusal, the pack handle-cache contract, and an
+archive spanning more packs than the cache holds — which fails 5 times out of 5
+without its fix.
+
+Crash/fault injection covers each of the six stages that commit canonical state.
+Every injected fault must fail the restore and leave a durable `restore_state`
+marker; `adopt`/`merge`/`fork` must refuse a marked library and `replace` must
+recover it into a library identical to a clean restore. Further fixtures cover
+objects that change between verification and use, and archives written before
+`record_counts` became optional.
+
+Resource and source-bundle coverage at scale is mandatory and neither recipe
+corpus provides it: the attachment-bearing Joplin RAW archive is the only corpus
+carrying resources and exact source bundles. Its aggregate-only evidence lives
+under `performance/v0.4-p4/` — counts, hashes, timings, and sizes, never note
+content, resource bytes, or local paths.
+
 ### Native archive v2 admission
 
 Archive-v2 tests start from a complete synthetic golden directory containing

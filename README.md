@@ -74,12 +74,14 @@ Recoll availability, backlog, sync/index, and reconciliation state.
   reports/retention, keyset pagination, hardened resumable Joplin/Obsidian
   imports, and a convergent observable Recoll sidecar.
 - Current milestone: v0.4 import correctness, portable data, publishing
-  handoff, and stable references. J1–J3, Q1, P1, P2, and P3 are complete,
-  including bounded boolean search, the shared selection/privacy planner, the
-  native archive-v2 format/identity verifier, and `notriosctl export
-  archive-v2` streaming backup/subset snapshots at real-library scale; P4
-  (verified restore) and the remaining product-feature tasks require approval — see [`PLAN.md`](PLAN.md) and
-  [`ROADMAP.md`](ROADMAP.md).
+  handoff, and stable references. J1–J3, Q1, P1, P2, P3, P3a, P3b, and P4 are
+  complete: bounded boolean search, the shared selection/privacy planner, the
+  native archive-v2 format/identity verifier, `notriosctl export archive-v2`
+  streaming backup/subset snapshots at real-library scale under a loose or
+  packed object layout, and `notriosctl verify`/`restore archive-v2` with
+  mandatory replace/adopt/merge/fork intent. P5 (stable external links) is
+  active; the remaining product-feature tasks require approval — see
+  [`PLAN.md`](PLAN.md) and [`ROADMAP.md`](ROADMAP.md).
 - Agent progress/attempt tracking: [`agent/PLAN_STATUS.md`](agent/PLAN_STATUS.md), [`agent/ATTEMPT_LOG.jsonl`](agent/ATTEMPT_LOG.jsonl), and [`agent/MODEL_LOG.jsonl`](agent/MODEL_LOG.jsonl).
 
 ## Contributing
@@ -130,3 +132,5 @@ accepts `100` or `100000`. Committed reference evidence is under
 `performance/v0.3-h7/` through `performance/v0.3-h10/` and
 `performance/v0.4-j2/` through `performance/v0.4-p1/`. See `PACKAGING.md`,
 `SECURITY_REVIEW.md`, and `RELEASE_CHECKLIST.md` before tagging a release.
+Archive-v2 evidence, including the attachment-bearing round trip, is under
+`performance/v0.4-p3/` through `performance/v0.4-p4/`.

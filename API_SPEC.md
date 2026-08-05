@@ -269,11 +269,12 @@ GET  /api/v1/jobs/{job_id}
 ```
 
 Native archive v1 exists only through `notriosctl` and is not a lossless backup.
-Native archive v2 P2 defines a strict versioned snapshot/manifest/object
-contract, schema-v12 logical database/replica identity, bounded typed records,
+Native archive v2 defines a strict versioned snapshot/manifest/object contract,
+schema-v12 logical database/replica identity, bounded typed records,
 manifest-last completeness, and read-only verification. It later becomes the
-v0.7 full-sync bootstrap; P3/P4 streaming export and restore are not exposed by
-REST, MCP, or CLI yet. See `NATIVE_ARCHIVE_V2.md`.
+v0.7 full-sync bootstrap. Its streaming export (P3/P3a/P3b) and verify/restore
+(P4) are deliberately CLI-only: no REST or MCP surface accepts an archive path,
+streams archive bytes, or restores a database. See `NATIVE_ARCHIVE_V2.md`.
 
 ### Profiles, batches, external links, and sync (planned)
 
@@ -458,6 +459,31 @@ v0.4 J3 gate.
 The commands are intentionally separate from REST/MCP today; later import jobs
 expose a bounded HTTP/control-plane API while archive/source bytes stream
 outside MCP context.
+
+## CLI archive surface
+
+Archive v1 (`export archive`, `import archive`) is query-scoped plain-note
+interchange. Archive v2 is the lossless snapshot format and has three commands,
+all local filesystem operations with no REST/MCP equivalent:
+
+```text
+notriosctl export archive-v2 [--target full_archive|subset_transfer]
+    [--notebooks ids] [--tags names] [--query "…"] [--documents ids]
+    [--match any|all] [--max-documents N] [--records-per-object N]
+    [--pack] [--pack-bytes N] [--overwrite] [--no-verify] <out-dir>
+notriosctl verify archive-v2 <archive-dir>
+notriosctl restore archive-v2 --intent replace|adopt|merge|fork
+    [--new-database-id id] [--batch-size N] <archive-dir>
+```
+
+`export` streams one SQLite read-transaction snapshot through the P1 planner,
+publishes `manifest.json` last, and verifies the result before reporting
+success. `--pack` selects the optional `objects.pack.v1` layout, which collapses
+file count at the cost of ~11% more disk and a restart-rather-than-resume
+interruption. `verify` is read-only. `restore` requires an intent — there is no
+default and no path-based inference — completes verification before its first
+canonical write, and leaves a durable `restore_state` marker if it is
+interrupted, which only `--intent replace` can recover.
 
 
 ## Release-hardening note

@@ -69,11 +69,19 @@ hash-verified objects.
 - Native archive import validates conflicts before writes.
 
 Joplin RAW and Obsidian now use bounded batches, durable checkpoints,
-fingerprints, dry-run diffs, and optional exact source bundles. Remaining v0.4
-work includes path/symlink/zip-bomb defenses for every new container,
-size/count/depth ceilings, manifest-last/checksum verification, snapshot
-consistency, and explicit archive compatibility. Native archive v1 is not a
-disaster-recovery backup.
+fingerprints, dry-run diffs, and optional exact source bundles. Native archive
+v1 is not a disaster-recovery backup.
+
+Native archive v2 closes that container gap for backup/transfer: path/symlink
+traversal refusal, size/count/depth ceilings, manifest-last completeness,
+transitive checksum verification through index chunks, one read-transaction
+snapshot boundary, and explicit capability/version compatibility. Restore
+verifies completely before its first canonical write, re-hashes every blob,
+revision body, and source-bundle item at the point of use rather than trusting
+the earlier pass, re-sniffs blob MIME through the ordinary resource admission
+path, and records a durable marker so an interrupted restore cannot pass as a
+complete library. Export, verification, and restore are CLI-only; no REST or
+MCP surface accepts an archive path or streams archive bytes.
 
 ## Planned synchronization threat boundary
 

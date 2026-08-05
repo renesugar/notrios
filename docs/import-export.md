@@ -334,8 +334,23 @@ planner](selection-planning.md) you can dry-run first, and the manifest binds
 that plan's digest, so a reviewed dry run and the archive it produced can be
 matched afterwards.
 
-Verified restore (P4) is not implemented yet, so keep an archive-v1 export or a
-database copy alongside a v2 snapshot for now.
+## Verifying and restoring an archive v2 snapshot
+
+```sh
+# Read-only integrity/contents check.
+go run ./cmd/notriosctl verify archive-v2 ./notrios-backup
+
+# Restore into a fresh database. The intent is mandatory.
+go run ./cmd/notriosctl restore archive-v2 --intent adopt \
+  --db ./restored/notes.sqlite ./notrios-backup
+```
+
+`adopt` restores into an empty database and keeps the archive's logical database
+ID; `replace` restores over an existing one; `merge` imports records into an
+existing database that keeps its own identity; `fork` creates a new logical
+database with `--new-database-id`. Verification completes before the first write,
+and an interrupted restore leaves a marker that only `--intent replace` can
+recover. See the [archive v2 safety contract](archive-v2.md).
 
 ## Importing a Notrios archive
 

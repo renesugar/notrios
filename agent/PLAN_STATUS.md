@@ -1,14 +1,15 @@
 # Plan Status
 
-Updated: 2026-08-04
+Updated: 2026-08-05
 
 ## Active milestone
 
 v0.3 import/resource/media/large-library hardening is complete. H1–H11 are
 archived under `plans/v0.3/`. The revised v0.4 plan begins with Joplin
 correctness/performance prerequisites, then archive-v2, publishing handoff,
-boolean search, and stable references. J1–J3, Q1, P1, P2, and P3 are complete;
-P4 and all subsequent product tasks require user approval.
+boolean search, and stable references. J1–J3, Q1, P1, P2, P3, P3a, P3b, and P4
+are complete and archived under `plans/v0.4/001`–`010`. P5 (stable external
+links and local resolution) is active; P6–P8 require user approval.
 
 ## 2026-08-02 follow-up review
 
@@ -160,6 +161,55 @@ P4 and all subsequent product tasks require user approval.
   exporter, with a test asserting the committed fixture matches it byte for
   byte.
 
+## 2026-08-04 P3b — packed object layout
+
+- Added `pack` to the discriminated `location` union behind the optional
+  `objects.pack.v1` capability. Packs are `kind: "pack"` index entries under the
+  ordinary fanout, each ending in a self-describing trailer, so a pack verifies
+  standalone and an object's identity never depends on where it is stored.
+- The real 382,206-note corpus collapsed from 382,447 files to 46 and from
+  48m26s to 37m28s — 1.29×, not the order of magnitude the fsync hypothesis
+  predicted, because reading and hashing every revision body dominates both
+  layouts. Packing costs ~11% more disk, so loose stays the default and
+  `--pack` is opt-in; the file-count collapse is what v0.7's REST and
+  folder/rclone transports need.
+- An interrupted packed export restarts rather than resumes. The A/B also
+  exposed and fixed a byte-accounting defect that double-counted packed objects
+  against `MaxTotalBytes`.
+
+## 2026-08-05 P4 — archive-v2 verify and restore
+
+- `notriosctl verify archive-v2` and `notriosctl restore archive-v2 --intent
+  replace|adopt|merge|fork` are live. Restore verifies an archive completely
+  before its first canonical write, reads both object layouts, re-hashes bytes
+  at the point of use, and re-sniffs blob MIME instead of trusting archive
+  metadata.
+- Schema v13 adds the durable `restore_state` marker, written before the first
+  canonical row and cleared after the last, so a restore interrupted part-way
+  cannot be mistaken for a complete library. Only `replace` recovers a marked
+  library.
+- The attachment-bearing Joplin corpus (111,330 items imported with
+  `--preserve-source`) round-trips byte-identically under both layouts against a
+  14-column aggregate including ordered `blobs.sha256` and
+  `source_bundle_items.sha256` fingerprints. Evidence:
+  `performance/v0.4-p4/`.
+- Seven defects surfaced, six of them only at corpus scale or under fault
+  injection: a quadratic restore lookup, `full_archive` dropping unreferenced
+  resources, source bundles registered as ordinary blobs, a pack handle cache
+  closing packs it was still reading, a partial library nothing marked as
+  incomplete, container rows keeping the target's builtins, and the exporting
+  schema version treated as a reader ceiling.
+- Export deduplication became symmetric across layouts through the same bounded
+  spool, and `record_counts` became a pointer so `omitempty` actually applies —
+  which cut packed verify peak RSS 41% and runtime 31%.
+
+## 2026-08-05 document reconciliation
+
+- Compared every living document with the source tree before starting P5 and
+  corrected the P3a/P3b/P4 status claims, the archive-v2 layout contradiction,
+  the missing schema-v13 documentation, and the CLI surface listings in both
+  `API_SPEC.md` and the user docs. Detail is in `PLAN.md`.
+
 ## 2026-07-26 plan/roadmap review
 
 The review initiated by `/home/renes/prompts/notrios_codex_reviewplan.md`
@@ -200,7 +250,9 @@ attempt detail remains append-only in `agent/ATTEMPT_LOG.jsonl`.
 - Review base before this session: `26b0925`.
 - Project license: Apache-2.0.
 - Canonical store: SQLite plus content-addressed assets; FTS5/Recoll are derived.
-- Current schema: v12.
+- Current schema: v13 (`store.CurrentSchemaVersion`). `migrations/0001_initial.sql`
+  creates through v12 and `ensureSchemaV13` adds `restore_state` on top, which
+  is the ordinary upgrade-shim pattern.
 - Unbounded local traversal uses `(updated_at, id)` or `(score, id)` keysets;
   notebook and Trash pages are route-bound. Optional Recoll merge pages use a
   ten-minute, 1,000-hit immutable snapshot and report truncation explicitly.
@@ -228,7 +280,7 @@ attempt detail remains append-only in `agent/ATTEMPT_LOG.jsonl`.
 - H11 local release gates pass; `docs/operations.md` is included in the
   docs site; P1/P2 expand it from 11 to 13 pages/Help notes with selection and
   archive-v2 safety guides.
-- Product version: 0.3.0; current schema: v12.
+- Product version: 0.3.0; current schema: v13.
 - Resource reference report:
   `GET /api/v1/resources/reports/reference` and
   `notriosctl resources report`.

@@ -7,9 +7,10 @@ Current phase: v0.1, v0.2, and v0.3 are complete. H1–H11 are archived under
 (real-export correctness and bounded relationship planning), J3
 (million-item transactional throughput), Q1 (bounded boolean/category search),
 P1 (shared selection/privacy planning), P2 (native archive-v2 format and
-identity verification), P3 (native archive-v2 streaming export), and P3a
-(archive-v2 large-library container revision), and P3b (packed object layout)
-are complete; P4 and all remaining archive/publishing product tasks require
+identity verification), P3 (native archive-v2 streaming export), P3a
+(archive-v2 large-library container revision), P3b (packed object layout), and
+P4 (archive-v2 verify and restore) are complete and archived under
+`plans/v0.4/001`–`010`. P5 (stable external links) is active; P6–P8 require
 user approval. See the revised `PLAN.md`.
 
 Archive-v2 supports two object layouts. Loose `fanout` is the default and
@@ -61,8 +62,9 @@ resource retention state, configurable local retention, dry-run-first CLI
 garbage collection, a read-only REST report, explicit confirmation for
 permanent REST deletion, and a future sync-aware retention gate. Archive v1 is
 not a full backup; P2 defines and verifies the v0.4 native archive-v2
-full-snapshot/container layer reused by v0.7 sync, while P3/P4 export/restore
-remain unimplemented. H7 added schema-v9 keyset
+full-snapshot/container layer reused by v0.7 sync, P3/P3a/P3b export it at real
+library scale under two object layouts, and P4 verifies and restores it under
+explicit replace/adopt/merge/fork intent. H7 added schema-v9 keyset
 indexes and query-bound cursors for chronological/relevance, route-bound
 notebook/Trash paging, live GET search, and bounded immutable snapshots for
 optional FTS5/Recoll merging. Reproducible 10k/100k/500k evidence lives under
@@ -180,7 +182,18 @@ The scaffold was created in a restricted container. Still-open consequences:
    identities plus a separate read-only archive-v2 verifier. The manifest-last
    format uses strict typed JSONL records and immutable SHA-256 body/resource/
    source-bundle objects; schema/capability/MIME/size/count/path/depth and
-   cross-reference checks complete before future restore writes. Synthetic
+   cross-reference checks complete before restore writes. Synthetic
    golden/adversarial fixtures live under `internal/archivev2/testdata/`.
+7. P3/P3a/P3b make the container hold a real library: the object inventory
+   lives in checksummed index chunks under an `ab/cd` fanout, the writer and
+   verifier stream through external-sorted spools, and an optional `--pack`
+   layout collapses file count behind the `objects.pack.v1` capability.
+8. P4 adds `verify archive-v2` and `restore archive-v2 --intent
+   replace|adopt|merge|fork`. Restore completes verification before its first
+   canonical write, reads both layouts, re-hashes bytes at use, re-sniffs blob
+   MIME, and records a schema-v13 `restore_state` marker so an interrupted
+   restore cannot pass as a complete library. Resource and source-bundle
+   coverage comes from the attachment-bearing Joplin corpus
+   (`performance/v0.4-p4/`); neither recipe corpus carries attachments.
 
 (The formerly open "no browser testing" limitation is resolved: the GUI is browser-verified via Playwright, vitest/RTL covers the workspace, and `scripts/verify_layout_resize.py` covers native window resizing.)

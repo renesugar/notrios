@@ -201,9 +201,12 @@ semantics:
 | Sync | Repeated bidirectional exchange of incremental operations and acknowledgements |
 
 The v0.4 P2 native archive-v2 identity/manifest/object verifier is the
-full-snapshot format foundation. P3/P4 add export/restore; v0.7 adds operation
-logs, acknowledgement vectors, and transports without inventing a second
-blob/manifest format.
+full-snapshot format foundation. P3/P3a/P3b add streaming export under a loose
+or packed object layout and P4 adds verification and restore under explicit
+intent; v0.7 adds operation logs, acknowledgement vectors, and transports
+without inventing a second blob/manifest format. The packed layout exists
+because loose objects cost one transport round trip each: the 382,206-note
+corpus is 382,447 files loose and 46 packed.
 
 Imports execute in bounded transactions under one import-job identity. They may
 allocate an HLC plus consecutive operations for each committed batch; source

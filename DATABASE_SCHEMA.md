@@ -81,12 +81,15 @@ invalidates the canonical note save.
 
 ## MVP migration file
 
-`migrations/0001_initial.sql` has grown with each milestone and now represents
+`migrations/0001_initial.sql` has grown with each milestone and creates through
 schema version 12 (v5 notebooks/tags/search notebooks, v6 source provenance,
 v7 media policy, v8 resource retention, v9 scalable keyset indexes, v10
 resumable import state/source bundles, v11 projection retry scheduling, v12
 logical database/replica identity),
 applied idempotently on every startup with upgrade shims for older databases.
+The current schema is **v13** (`store.CurrentSchemaVersion`): `ensureSchemaV13`
+adds `restore_state` on top of the migration file, which is the same
+upgrade-shim pattern every earlier version used before being folded in.
 Its original MVP portion represents schema version 4. Do not rename public
 tables/columns casually once tests depend on them.
 
@@ -143,6 +146,19 @@ profile, hostname, or asset directory. Bootstrap and reopen preserve both.
 Supported clone/restore workflows preserve or replace `database_id` only under
 an explicit archive intent and always rotate `replica_id` before the restored
 copy becomes writable. Profile routing identity remains separate and planned.
+
+## Schema v13 — restore-in-progress marker
+
+`restore_state` has at most one row. An archive-v2 restore commits many bounded
+transactions, so an interruption leaves committed rows behind; this row is what
+stops that partial library from being mistaken for a complete one. It records
+the archive's `snapshot_id`, `commit_sha256`, and the chosen `intent`, is
+written before the first canonical row, and is cleared after the last one
+including identity adoption.
+
+A library carrying the marker is neither empty nor complete. `adopt`, `merge`,
+and `fork` refuse it; only `replace` recovers it, and the recovered library is
+identical to a clean restore. Nothing else in the service writes this table.
 
 ## Schema v5/v6 — Notrios redesign (tasks R3 and R4 implemented)
 

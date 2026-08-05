@@ -2,9 +2,10 @@
 
 Status: format and read-only verification implemented in v0.4 P2; streaming
 export implemented in v0.4 P3; the large-library container revision (object
-index, two-level fanout, bounded writer and verifier) implemented in v0.4 P3a.
-Verified restore/import is P4. Archive v1 remains supported as human-readable
-interchange and is not interpreted as v2.
+index, two-level fanout, bounded writer and verifier) implemented in v0.4 P3a;
+the optional packed object layout in v0.4 P3b; verify-only and restore/import
+in v0.4 P4. Archive v1 remains supported as human-readable interchange and is
+not interpreted as v2.
 
 ## Purpose and boundaries
 
@@ -14,9 +15,10 @@ canonical records and immutable content objects. It never carries SQLite
 pages/WAL files, FTS5 rows, Recoll indexes/projections, caches, rendered sites,
 quarantine files, or active import/projection jobs.
 
-P2 exposes no REST/MCP filesystem operation and performs no canonical writes.
-`internal/archivev2.VerifyDirectory` must accept the complete archive before a
-future P4 restore can begin its first transaction.
+Export, verification, and restore are local CLI operations. No REST or MCP
+surface accepts an archive path, streams archive bytes, or performs canonical
+archive writes. `internal/archivev2.VerifyDirectory` must accept the complete
+archive before `internal/archivev2.Restore` begins its first transaction.
 
 ## Identity
 
@@ -111,9 +113,13 @@ The checksum chain is unbroken: the manifest commit digest binds each chunk's
 hash, and each chunk binds the hash of every object it names. Tampering with a
 chunk breaks its own hash; rehashing the chunk breaks the manifest.
 
-Each index entry carries `sha256`, `kind`, `media_type`, `size_bytes`, record
-counts for record chunks, and a discriminated `location`. Today the only
-layout is `fanout` (one object, one file).
+Each index entry carries `sha256`, `kind`, `media_type`, `size_bytes`, optional
+record counts for record chunks, and a discriminated `location`. Two layouts
+exist: `fanout` (one object, one file) is the default, and `pack` is the
+opt-in P3b layout described below. `record_counts` is a pointer and is absent
+on blob entries; readers treat an absent and an explicitly all-zero value as
+identical, because archives written before the field became optional spell it
+the second way.
 
 The layout is named rather than assumed because measurement showed one file
 per object is the wrong long-term storage shape: a full backup of a real
@@ -232,6 +238,38 @@ P3 applies every P1 link and metadata decision while encoding records:
 Export is a local filesystem operation. No REST or MCP surface accepts an
 output path or streams archive bytes.
 
+## Restore (P4)
+
+`internal/archivev2.Restore` is the only writer of an archive into a canonical
+store, and `notriosctl restore archive-v2 --intent replace|adopt|merge|fork`
+is its only surface. Its contract:
+
+- verification completes in full before the first canonical write, so a corrupt
+  or inconsistent archive can never leave a partial library;
+- both object layouts are read, and the object index is loaded once into the
+  temporary indexed spool so a lookup is an indexed query rather than a scan of
+  every index chunk;
+- records are applied in dependency order — containers, then content, then
+  relations — in bounded transactions. Records objects are a small fraction of
+  an archive's bytes, so more than one pass over them is cheap next to reading
+  blobs once;
+- every blob, revision body, and source-bundle item is re-hashed at the point of
+  use. Verification is a separate pass over the same files, and bit rot, a
+  concurrent writer, or a network filesystem can change an object between the
+  two;
+- blob admission re-sniffs MIME and applies resource admission policy rather
+  than trusting archive metadata;
+- exact source bundles are admitted through the source-bundle namespace, never
+  as ordinary blobs, so they stay outside `blobs` and resource garbage
+  collection and are readable at the path their records name;
+- a durable `restore_state` row (schema v13) is written before the first
+  canonical row and cleared after the last, including identity adoption. A
+  library carrying a marker is not empty and not complete: `adopt`, `merge`,
+  and `fork` refuse it and only `replace` recovers it.
+
+The restore path holds no state proportional to the archive. Its dedup and
+bundle-path maps use the same bounded spool as the writer and verifier.
+
 ## Hard limits
 
 P3a re-derived these from the largest library this build is expected to
@@ -252,8 +290,9 @@ them:
 - capabilities: 64 names of at most 128 bytes.
 
 P3 may create more/smaller chunks but may not widen these limits silently.
-P4 can use an indexed verification spool when large cross-reference sets make
-in-memory validation inappropriate; admission semantics remain identical.
+P4 reuses the same indexed verification spool rather than reintroducing
+in-memory record sets; admission semantics are identical for export,
+verification, and restore.
 
 ### Bounded writer and verifier
 

@@ -6,8 +6,8 @@ This file is the codebase atlas. Update it whenever major files or directories a
 
 - `README.md` — project overview and quick start.
 - `PLAN.md` — active v0.4 portable-data/publishing/stable-reference plan;
-  J1–J3, Q1, P1, P2, P3, P3a, and P3b are complete, while P4 requires user
-  approval.
+  J1–J3, Q1, P1, P2, P3, P3a, P3b, and P4 are complete, P5 is active, and
+  P6–P8 require user approval.
 - `plans/scaffold/SCAFFOLD_CREATION_PLAN.md` — process for creating/refining this scaffold.
 - `ROADMAP.md` — product roadmap and future features.
 - `AGENTS.md` — coding-agent instructions (`CLAUDE.md` points here).
@@ -22,7 +22,8 @@ This file is the codebase atlas. Update it whenever major files or directories a
   backup/restore relationships, library decision, and validation.
 - `NATIVE_ARCHIVE_V2.md` — v2 identity, manifest-last object/record contract,
   compatibility/limits, explicit restore intent, verification rules, P3 export
-  staging/resume semantics, and the open object-count bound.
+  staging/resume semantics, the P3a index-chunk container, the optional P3b
+  packed layout, and the P4 restore contract.
 - `DOCS_SITE.md` — GitHub Pages documentation site (PageFind) and Help notebook.
 - `CODING_STANDARDS.md` — coding style and guardrails.
 - `TESTING_POLICY.md` — definition of done and testing layers.
@@ -43,13 +44,14 @@ This file is the codebase atlas. Update it whenever major files or directories a
   dry-run/config planning, and canonical alias/embed/anchor resolution.
 - `internal/api/` — shared API request/response models.
 - `internal/httpapi/` — REST HTTP adapter for status, documents, revisions, resources, links, graph slices, and staged future routes.
-- `internal/store/` — SQLite-backed persistence, document CRUD, revision history, soft delete, restore, FTS5 search, resource storage/reference reports (`sqlite_resource_reports.go`), retention-aware GC (`sqlite_gc.go`), importer batch/checkpoint/source-bundle state (`sqlite_imports.go`), link graph persistence, and notebooks/tags/search-notebooks/trash operations (`sqlite_notebooks.go`).
+- `internal/store/` — SQLite-backed persistence, document CRUD, revision history, soft delete, restore, FTS5 search, resource storage/reference reports (`sqlite_resource_reports.go`), retention-aware GC (`sqlite_gc.go`), importer batch/checkpoint/source-bundle state (`sqlite_imports.go`), archive export reads (`export.go`, `sqlite_export.go`), archive restore writes (`restore.go`, `sqlite_restore.go`), logical database/replica identity (`sqlite_identity.go`), link graph persistence, and notebooks/tags/search-notebooks/trash operations (`sqlite_notebooks.go`).
 - `internal/archivev2/` — native archive-v2 manifest/record model
   (`format.go`), out-of-manifest object index and fanout layout (`index.go`),
   identity-intent planner, bounded streaming verifier (`verify.go`), bounded
   external-sort spool and merge join (`spool.go`), the optional packed object
-  layout (`pack.go`), the manifest-last streaming exporter (`export.go`), a
-  generator-built synthetic golden fixture, and generated scale profiles.
+  layout (`pack.go`), the manifest-last streaming exporter (`export.go`), the
+  verify-first restore reader (`restore.go`), a generator-built synthetic golden
+  fixture, and generated scale profiles.
 - `internal/markdownlinks/` — conservative MVP Markdown/Obsidian/app-URI link extractor.
 - `internal/version/` — version constants.
 - `migrations/` — SQLite schema migrations.

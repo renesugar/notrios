@@ -183,9 +183,13 @@ P2 adds schema-v12 logical `database_id` and per-writable-copy `replica_id`,
 plus the separate `internal/archivev2` format/verifier package. Archive objects
 are immutable SHA-256 files; strict typed JSONL records and a final manifest
 bind P1 selection, snapshot identity, schema/capabilities, MIME, sizes, counts,
-and references. Verification has no Store write dependency. P3 will stream
-exports and P4 will restore only after complete verification and explicit
-replace/merge/fork/adopt identity planning. See `NATIVE_ARCHIVE_V2.md`.
+and references. Verification has no Store write dependency. P3/P3a/P3b stream
+exports at real-library scale — the object inventory lives in checksummed index
+chunks under an `ab/cd` fanout, and an optional packed layout collapses file
+count for the future sync transports. P4 restores only after complete
+verification and explicit replace/merge/fork/adopt identity planning, and marks
+an interrupted restore so a partial library cannot pass as complete. See
+`NATIVE_ARCHIVE_V2.md`.
 
 ## Optional derived systems
 

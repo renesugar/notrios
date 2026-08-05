@@ -144,8 +144,11 @@ replace/merge/adopt/fork choices with no default. Replacing or adopting a full
 snapshot preserves its logical database ID, merging keeps the existing target
 database/replica IDs, and forking requires a new database ID. Replace, adopt,
 and fork mint a replica ID for the resulting writable copy.
-The P3/P4 commands are not implemented yet. See
-[archive v2](archive-v2.md) and `SYNCHRONIZATION.md`.
+`notriosctl export archive-v2`, `verify archive-v2`, and `restore archive-v2
+--intent replace|adopt|merge|fork` implement this. A v2 snapshot is a complete
+backup — every revision, trashed notes, provenance, resources, and exact source
+bundles — so it is an alternative to the file copy above rather than a subset
+export. See [archive v2](archive-v2.md) and `SYNCHRONIZATION.md`.
 
 **Portable alternative:** a [native archive export](import-export.md#exporting-a-notrios-archive) (`notriosctl export archive`) captures notes, notebooks, tags, and attachments in a human-readable form. It is ideal for moving a *subset* between machines, but it is not a byte-identical backup: revision history and provenance rows are not included, and re-imported notes become plain local notes.
 

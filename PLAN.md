@@ -1,9 +1,37 @@
 # Plan: v0.4 — Import correctness, portable data, publishing handoff, and stable references
 
-Status: **J1–J3, Q1, P1, P2, P3, P3a, P3b, and P4 completed. The remaining
-product-feature tasks require user approval**.
+Status: **J1–J3, Q1, P1, P2, P3, P3a, P3b, and P4 completed. P5 is active. The
+remaining product-feature tasks require user approval**.
 Drafted 2026-07-26 and revised 2026-08-02 after comparing the Joplin importer
 and publishing/search plans with the real-data-tested `movenotes-v3` pipeline.
+
+## Document reconciliation (2026-08-05)
+
+Before starting P5, the living documents were compared with the source tree.
+P3a, P3b, and P4 shipped faster than the documents that describe them, so the
+following claims were stale and are corrected in place rather than left for the
+P8 wrap-up, where a reader would have been misled for four more tasks:
+
+- `agent/PLAN_STATUS.md`, `CONTEXT_MAP.md`, `ROADMAP.md`, `README.md`, and
+  `CODING_CLIENT_HANDOFF.md` all still said P4 (and in places P3a/P3b) awaited
+  approval or was unimplemented.
+- `NATIVE_ARCHIVE_V2.md` said `fanout` was the only layout two paragraphs
+  before describing the packed layout, and wrote the bounded verifier as
+  something P4 "can" reuse rather than does.
+- `API_SPEC.md`, `SYSTEM_ARCHITECTURE.md`, `SYNCHRONIZATION.md`,
+  `IMPORT_EXPORT_POLICY.md`, `docs/archive-v2.md`, `docs/cli.md`,
+  `docs/import-export.md`, and `docs/service.md` said archive-v2 export/restore
+  had no CLI surface, or told users to keep an archive-v1 export "until P4
+  lands". All three commands exist.
+- `DATABASE_SCHEMA.md` documented schema v12 while `store.CurrentSchemaVersion`
+  is 13; the `restore_state` table had no schema section.
+- `FEATURE_MATRIX.md` and `TESTING_POLICY.md` had no restore rows or restore
+  test layer.
+
+No source behavior changed in that pass. The one thing that is *not* reconciled
+is deliberate: `migrations/0001_initial.sql` stops at v12 and `ensureSchemaV13`
+brings a fresh database to v13, which is the documented upgrade-shim pattern,
+not a defect.
 
 ## Goal
 
@@ -380,7 +408,7 @@ Working state: a v2 archive can reconstruct the promised canonical state
 including resources and source bundles, corruption causes no partial restore,
 and archive v1 compatibility remains.
 
-### P5. Stable external links and local resolution
+### P5. Stable external links and local resolution — active
 
 - Define `notrios://databases/{database_id}/documents/{document_id}` parsing,
   validation, length bounds, and stale-target errors.

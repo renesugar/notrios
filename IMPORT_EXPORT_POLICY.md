@@ -43,7 +43,7 @@ it imports notes as new plain local notes, omits some provenance/revision/source
 representation, and does not define database/replica identity. User docs must
 not call it lossless or a substitute for disaster recovery.
 
-## Native archive v2 (format/verify implemented in P2; streaming export in P3)
+## Native archive v2 (format/verify P2, streaming export P3–P3b, restore P4)
 
 `notriosctl export archive-v2 <out-dir>` writes a deterministic versioned
 manifest over immutable SHA-256-addressed objects. It includes
@@ -55,8 +55,14 @@ the writer then verifies the published archive before reporting success.
 
 `--target full_archive` is the default complete-backup mode;
 `--target subset_transfer` requires a selector and is never reported as a
-backup. Restore is P4, so a v2 archive is currently a verified snapshot Notrios
-cannot yet read back.
+backup. `--pack` selects the optional packed object layout, which collapses
+file count for the future sync transports at the cost of ~11% more disk.
+
+`notriosctl verify archive-v2 <archive-dir>` reads an archive read-only.
+`notriosctl restore archive-v2 --intent replace|adopt|merge|fork <archive-dir>`
+admits it into a database. Intent is mandatory, verification completes before
+the first canonical write, and an interrupted restore leaves a durable marker
+that only `--intent replace` can recover.
 
 This container is also the full-snapshot bootstrap for v0.7 sync. Sync adds
 incremental change envelopes and acknowledgements; it must not invent another

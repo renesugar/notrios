@@ -125,12 +125,42 @@ Writes a native archive **v1** directory: query-scoped, human-readable interchan
 notriosctl export archive-v2 [shared flags] [--target full_archive|subset_transfer]
     [--notebooks id,id] [--tags a,b] [--query "tag:todo"] [--documents id,id]
     [--match any|all] [--max-documents N] [--records-per-object N]
-    [--overwrite] [--no-verify] <out-dir>
+    [--pack] [--pack-bytes N] [--overwrite] [--no-verify] <out-dir>
 ```
 
 Writes the lossless [native archive v2](archive-v2.md) snapshot: immutable SHA-256 objects with `manifest.json` published last, verified before the command reports success. `--target full_archive` (the default) is the complete-backup mode and takes no selectors; `--target subset_transfer` requires at least one selector and is never described as a backup. Selectors go through the shared [selection/privacy planner](selection-planning.md), and the manifest binds that plan's digest.
 
 Re-running the command over an interrupted export reuses already-published objects and prunes objects the new manifest does not list; `--overwrite` is required to replace an archive that already has a manifest. `--no-verify` skips the post-publication verification pass (not recommended for backups). The JSON report includes `full_backup`, `commit_sha256`, typed `counts`, object and byte totals, `reused_objects`, `cleared_link_targets`, and `warnings`.
+
+`--pack` writes objects into a few large pack files instead of one file per object (`--pack-bytes` sets the target size, default 256 MiB). On a real 382,206-note library that is 46 files instead of 382,447, and about 1.29× faster, at roughly 11% more disk. Loose storage remains the default because it deduplicates and resumes through the object tree; an interrupted packed export restarts instead.
+
+## verify archive-v2
+
+```sh
+notriosctl verify archive-v2 <archive-dir>
+```
+
+Reads an archive **read-only** and prints what it contains: format/version, snapshot and database identity, capabilities, typed record counts, object and byte totals. It fails on an absent manifest, a missing or damaged object, checksum drift, unknown required capabilities, count or reference inconsistencies, unsafe paths, symlinks, and extra files. Nothing is written and no database is opened.
+
+## restore archive-v2
+
+```sh
+notriosctl restore archive-v2 [shared flags] --intent replace|adopt|merge|fork
+    [--new-database-id id] [--batch-size N] <archive-dir>
+```
+
+Admits a verified archive into a database. `--intent` is required — each choice has a different consequence for the logical database universe and Notrios never guesses one:
+
+| Intent | Target | Result |
+|---|---|---|
+| `adopt` | must be empty | archive's logical database ID, new replica ID |
+| `replace` | existing database | contents replaced; archive's database ID, new replica ID |
+| `merge` | existing database | records imported; target keeps its identity and replica ID |
+| `fork` | any | new logical database ID from `--new-database-id` |
+
+Verification completes in full before the first canonical write, so a damaged archive leaves the target untouched. Both object layouts are read; every note body, resource, and source bundle is re-hashed as it is used, and attachments are re-sniffed through the ordinary resource admission path rather than trusted from archive metadata.
+
+An interrupted restore leaves a durable marker naming the snapshot it was applying. That library is neither empty nor complete: `adopt`, `merge`, and `fork` refuse it and only `--intent replace` recovers it. The JSON summary reports the intent, resulting database/replica IDs, and applied record counts.
 
 ## seed-help
 
