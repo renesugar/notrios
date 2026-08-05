@@ -303,6 +303,15 @@ double-counted packed objects against `MaxTotalBytes`.
   382,206-note scale P3a and P3b measured.
 - Add crash/fault injection and round-trip equality tests.
 
+Done so far: verify-only CLI, the bounded restore reader and store write path,
+and the attachment-corpus round trip, which now passes with a byte-identical
+14-column aggregate including blob and source-bundle content fingerprints
+(`performance/v0.4-p4/attachment-corpus-findings.md`). That corpus run found
+and fixed three defects — a quadratic restore lookup, `full_archive` dropping
+unreferenced resources, and restore registering source bundles as ordinary
+blobs. Still open: crash/fault injection, and restore coverage for the packed
+layout.
+
 **Resource and attachment coverage is mandatory.** Neither recipe corpus
 carries resources or source bundles, so P3a/P3b exercised the blob path at
 scale with note bodies only. P4 must close that gap using the
