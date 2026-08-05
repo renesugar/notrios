@@ -186,7 +186,14 @@ func (r *restoreRun) readRecordObject(entry IndexEntry, wanted map[string]bool, 
 	for scanner.Scan() {
 		var envelope RecordEnvelope
 		if err := json.Unmarshal(scanner.Bytes(), &envelope); err != nil {
-			return err
+			// bufio.Scanner emits whatever is left in its buffer as a final
+			// token when the underlying read fails, so a read error arrives
+			// here disguised as a truncated record. Reporting the parse error
+			// would blame the archive for an I/O failure.
+			if readErr := scanner.Err(); readErr != nil {
+				return fmt.Errorf("record object %s: %w", entry.SHA256, readErr)
+			}
+			return fmt.Errorf("record object %s: %w", entry.SHA256, err)
 		}
 		if !wanted[envelope.Type] {
 			continue

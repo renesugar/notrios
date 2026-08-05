@@ -280,50 +280,98 @@ func readPackTrailer(file *os.File, limits Limits) ([]packTrailerEntry, error) {
 	return entries, nil
 }
 
-// packSource reads objects from either layout during verification. Pack files
-// are few and large, so their handles are cached; a loose object is opened and
-// closed per read exactly as before.
+// packSource reads objects from either layout during verification and restore.
+// Pack files are few and large, so their handles are cached; a loose object is
+// opened and closed per read exactly as before.
 type packSource struct {
 	limits Limits
-	open_  map[string]*os.File
+	open_  map[string]*packHandle
+	clock  uint64
+}
+
+// packHandle is one cached pack file. borrowed counts the readers currently
+// holding a section over it: a borrowed pack must never be evicted, because
+// closing it would invalidate a live reader rather than merely cost a reopen.
+type packHandle struct {
+	file     *os.File
+	borrowed int
+	used     uint64
 }
 
 func newPackSource(limits Limits) *packSource {
-	return &packSource{limits: limits, open_: map[string]*os.File{}}
+	return &packSource{limits: limits, open_: map[string]*packHandle{}}
 }
 
 func (s *packSource) close() {
-	for hash, file := range s.open_ {
-		_ = file.Close()
+	for hash, handle := range s.open_ {
+		_ = handle.file.Close()
 		delete(s.open_, hash)
 	}
 }
 
-// packFile returns a cached handle for one pack, bounding how many stay open.
-func (s *packSource) packFile(root, hash string) (*os.File, error) {
-	if file, ok := s.open_[hash]; ok {
-		return file, nil
+// acquire returns a cached handle for one pack and marks it in use. The caller
+// must release it.
+//
+// Restore reads a record object and, for each record inside it, opens the blob
+// that record names. Those blobs live in other packs, so a bounded cache that
+// evicted by arbitrary choice could close the record object's own pack while
+// its reader was still mid-scan. That is not a performance problem but a
+// correctness one, and it only appears once an archive holds more packs than
+// the cache — which no small fixture does.
+func (s *packSource) acquire(root, hash string) (*packHandle, error) {
+	s.clock++
+	if handle, ok := s.open_[hash]; ok {
+		handle.used = s.clock
+		handle.borrowed++
+		return handle, nil
 	}
-	if len(s.open_) >= maxOpenPacks {
-		for other, file := range s.open_ {
-			_ = file.Close()
-			delete(s.open_, other)
-			break
-		}
-	}
+	s.evictIdle()
 	file, err := openRegular(root, fanoutObjectPath(hash))
 	if err != nil {
 		return nil, fmt.Errorf("pack %s: %w", hash, err)
 	}
-	s.open_[hash] = file
-	return file, nil
+	handle := &packHandle{file: file, borrowed: 1, used: s.clock}
+	s.open_[hash] = handle
+	return handle, nil
+}
+
+func (s *packSource) release(handle *packHandle) {
+	if handle != nil && handle.borrowed > 0 {
+		handle.borrowed--
+	}
+}
+
+// evictIdle closes the least recently used idle handle to make room. If every
+// cached handle is borrowed the cache is allowed to exceed its bound: the
+// excess is bounded by how many readers are open at once, which is small, and
+// keeping a live reader valid matters more than the handle ceiling.
+func (s *packSource) evictIdle() {
+	if len(s.open_) < maxOpenPacks {
+		return
+	}
+	oldest, found := "", uint64(0)
+	for hash, handle := range s.open_ {
+		if handle.borrowed > 0 {
+			continue
+		}
+		if found == 0 || handle.used < found {
+			oldest, found = hash, handle.used
+		}
+	}
+	if found == 0 {
+		return
+	}
+	_ = s.open_[oldest].file.Close()
+	delete(s.open_, oldest)
 }
 
 // maxOpenPacks bounds cached pack handles. Packs are hundreds of megabytes, so
 // even a very large archive has few.
 const maxOpenPacks = 16
 
-// open returns a reader over one object's bytes regardless of layout.
+// open returns a reader over one object's bytes regardless of layout. The
+// returned closer must be called: for a packed object it releases the pack
+// handle back to the cache.
 func (s *packSource) open(root string, entry IndexEntry) (io.ReaderAt, func(), error) {
 	if entry.Location.Layout != LayoutPack {
 		file, err := openRegular(root, entry.Location.Path)
@@ -332,22 +380,24 @@ func (s *packSource) open(root string, entry IndexEntry) (io.ReaderAt, func(), e
 		}
 		return file, func() { _ = file.Close() }, nil
 	}
-	file, err := s.packFile(root, entry.Location.PackSHA256)
+	handle, err := s.acquire(root, entry.Location.PackSHA256)
 	if err != nil {
 		return nil, func() {}, err
 	}
 	// The handle stays cached; the section is a bounded view into it.
-	return io.NewSectionReader(file, entry.Location.Offset, entry.Location.Length), func() {}, nil
+	return io.NewSectionReader(handle.file, entry.Location.Offset, entry.Location.Length),
+		func() { s.release(handle) }, nil
 }
 
 // verifySlice confirms a packed object's bytes hash to the identity its index
 // entry claims, so placement can never launder content.
 func (s *packSource) verifySlice(root string, entry IndexEntry) error {
-	file, err := s.packFile(root, entry.Location.PackSHA256)
+	handle, err := s.acquire(root, entry.Location.PackSHA256)
 	if err != nil {
 		return err
 	}
-	section := io.NewSectionReader(file, entry.Location.Offset, entry.Location.Length)
+	defer s.release(handle)
+	section := io.NewSectionReader(handle.file, entry.Location.Offset, entry.Location.Length)
 	digest := sha256.New()
 	written, err := io.CopyBuffer(digest, section, make([]byte, copyBufferBytes))
 	if err != nil || written != entry.SizeBytes || hex.EncodeToString(digest.Sum(nil)) != entry.SHA256 {
@@ -360,11 +410,12 @@ func (s *packSource) verifySlice(root string, entry IndexEntry) error {
 // The trailer is what makes a pack independently verifiable, so it must agree
 // with the bytes it sits behind.
 func (s *packSource) verifyContents(root string, entry IndexEntry) error {
-	file, err := s.packFile(root, entry.SHA256)
+	handle, err := s.acquire(root, entry.SHA256)
 	if err != nil {
 		return err
 	}
-	entries, err := readPackTrailer(file, s.limits)
+	defer s.release(handle)
+	entries, err := readPackTrailer(handle.file, s.limits)
 	if err != nil {
 		return fmt.Errorf("pack %s: %w", entry.SHA256, err)
 	}
