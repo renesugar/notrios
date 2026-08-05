@@ -1,8 +1,7 @@
 # Plan: v0.4 — Import correctness, portable data, publishing handoff, and stable references
 
-Status: **J1–J3, Q1, P1, P2, P3, P3a, and P3b completed. P4 (verify and
-restore/import, including mandatory resource/attachment coverage) is in
-progress; the remaining product-feature tasks require user approval**.
+Status: **J1–J3, Q1, P1, P2, P3, P3a, P3b, and P4 completed. The remaining
+product-feature tasks require user approval**.
 Drafted 2026-07-26 and revised 2026-08-02 after comparing the Joplin importer
 and publishing/search plans with the real-data-tested `movenotes-v3` pipeline.
 
@@ -290,7 +289,10 @@ self-describing, so trailer-based resume remains possible later without a
 format change. The A/B also exposed and fixed a byte-accounting defect that
 double-counted packed objects against `MaxTotalBytes`.
 
-### P4. Native archive v2 verify and restore/import — next task
+### P4. Native archive v2 verify and restore/import — complete
+
+Archived as `plans/v0.4/010-archive-v2-verify-restore.md`.
+
 
 - Add verify-only CLI/API service behavior before any mutation.
 - Implement explicit replacement restore into a fresh initialized database and

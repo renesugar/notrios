@@ -241,14 +241,23 @@ attempt detail remains append-only in `agent/ATTEMPT_LOG.jsonl`.
 - Fresh database builtins: All notes, Notes, Help, Trash.
 - MCP default profile is read-only; editor-profile write tools are implemented.
 - Native archive v1 is query-scoped interchange, not full backup.
-- Native archive v2 streaming export is live as `notriosctl export archive-v2`;
-  it is a local CLI operation with no REST/MCP output-path surface, and restore
-  is still P4, so a v2 archive cannot yet be read back.
+- Native archive v2 export, verify, and restore are live as `notriosctl export
+  archive-v2`, `verify archive-v2`, and `restore archive-v2 --intent
+  replace|adopt|merge|fork`. They are local CLI operations with no REST/MCP
+  output-path surface. Restore verifies an archive completely before its first
+  canonical write, and records a `restore_state` marker (schema v13) so a
+  restore interrupted part-way cannot be mistaken for a complete library.
 - Archive-v2 objects live at `objects/sha256/ab/cd/<hash>`; the object
   inventory lives in index chunks, not in the manifest.
 - P3 generated 100/1,000/5,000-note export evidence is under
   `performance/v0.4-p3/`; P3a container evidence, including the real
-  382,206-note Joplin corpus, is under `performance/v0.4-p3a/`.
+  382,206-note Joplin corpus, is under `performance/v0.4-p3a/`; P3b's loose
+  versus packed A/B is under `performance/v0.4-p3b/`; and the attachment-bearing
+  round trip, which is the only corpus carrying resources and exact source
+  bundles, is under `performance/v0.4-p4/`.
+- Both object layouts restore to byte-identical libraries. Packing collapses
+  215,484 files to 30 and is faster to export, but costs more memory to verify
+  and restore because a pack trailer is read whole.
 - An archive now admits up to 8,000,000 objects. The manifest carries index
   chunk descriptors and totals only, so its size does not track library size.
 - No GitHub push is authorized for this review.
