@@ -1,7 +1,7 @@
 # Plan: v0.4 — Import correctness, portable data, publishing handoff, and stable references
 
-Status: **J1–J3, Q1, P1, P2, P3, P3a, P3b, P4, and P5 completed. The remaining
-product-feature tasks require user approval**.
+Status: **J1–J3, Q1, P1, P2, P3, P3a, P3b, P4, and P5 completed. P6 is deferred
+to v0.7. P7 and P8 require user approval**.
 Drafted 2026-07-26 and revised 2026-08-02 after comparing the Joplin importer
 and publishing/search plans with the real-data-tested `movenotes-v3` pipeline.
 
@@ -445,21 +445,54 @@ Working state: stable links survive local path/profile changes and malformed or
 wrong-database links cannot open another profile silently. Evidence is under
 `performance/v0.4-p5/`.
 
-### P6. Native archive compatibility bridge to movenotes-v3
+### P6. Native archive compatibility bridge to movenotes-v3 — deferred to v0.7
 
-- Publish archive-v2 JSON Schemas/golden fixtures, capability bounds, and a
-  compatibility command that produces sanitized deterministic test archives.
-- Coordinate the separate `movenotes-v3/notrios2sql.py` importer against those
-  fixtures. Do not copy implementation code between repositories; exchange only
-  documented formats, behavior, and fixtures.
-- Verify revisions/provenance/source bundles needed for backup remain available
-  to the importer while publication mode exposes only the selected current-note
-  projection and explicitly allowed metadata.
-- Add cross-version consumer tests so Notrios format additions are rejected or
-  ignored according to declared capability rules.
+Moved out of v0.4 on 2026-08-05. The gate is **v0.7 slice 3** (the native
+snapshot/change container), not the whole synchronization milestone: slices 4
+and 5 add transports and recovery and do not touch the container.
 
-Working state: `movenotes-v3` can consume a Notrios archive without a Notrios
-Obsidian/Joplin exporter, and an unsupported archive fails before partial import.
+Two things decided it.
+
+**The container is not finished being changed.** v0.7 slice 3 reuses archive-v2
+manifests and object storage for full snapshots and bounded change envelopes,
+and two open synchronization questions reach inside the container — question 13
+(deterministic envelope encoding and compression for protocol v1) and question
+14 (the blob size that triggers fixed chunking, which changes how blob bytes are
+addressed, the one thing an importer reads most). Unknown record types are
+rejected outright, so sync-era record additions must arrive behind a new
+required capability, and a reader pinned in v0.4 would then refuse every archive
+written after v0.7. That failure is safe and loud, which is the point of
+capability negotiation — but it is still a second integration pass, and
+sequencing work to avoid exactly that is why P3a and P3b came before P4.
+
+**The consumer does not exist yet.** `movenotes-v3` contains no
+`notrios2sql.py` and no reference to Notrios at all. Two of P6's four bullets
+are coordination against an importer nobody has started, and fixtures published
+now would be pinned against an imagined reader and then regenerated after
+v0.7 anyway.
+
+What is genuinely lost by waiting is small: the archive-v2 verifier already
+admits or rejects an archive on its own, the golden fixture is already built by
+a generator that does not use the exporter, and the adversarial fixtures already
+cover corruption, traversal, and capability violations. A second independent
+reader would add value, but not enough to pin a format mid-revision.
+
+When it lands, the task is unchanged in substance:
+
+- publish archive-v2 JSON Schemas/golden fixtures, capability bounds, and a
+  compatibility command producing sanitized deterministic test archives;
+- coordinate the separate `movenotes-v3/notrios2sql.py` importer against those
+  fixtures, exchanging documented formats, behavior, and fixtures rather than
+  implementation code;
+- verify revisions/provenance/source bundles needed for backup stay available to
+  the importer while publication mode exposes only the selected current-note
+  projection and explicitly allowed metadata;
+- add cross-version consumer tests so format additions are rejected or ignored
+  according to declared capability rules.
+
+Working state (when implemented): `movenotes-v3` can consume a Notrios archive
+without a Notrios Obsidian/Joplin exporter, and an unsupported archive fails
+before partial import.
 
 ### P7. Publication profiles and privacy-reviewed archive handoff
 
@@ -470,15 +503,19 @@ Obsidian/Joplin exporter, and an unsupported archive fails before partial import
   untrusted note content as build code inside Notrios.
 - Keep publish execution explicit after a reviewed plan.
 
-Working state: curated fixtures hand off only selected reachable public content;
-privacy violations are visible before generation, and `movenotes-v3` can turn
-the handoff into either a Quartz vault or a Hugo/Ledger site.
+Working state: curated fixtures hand off only selected reachable public content
+and privacy violations are visible before generation. With P6 deferred, v0.4
+does not claim that any external tool consumes the handoff: it is a
+checksum-verified, explicitly subset-scoped archive-v2 directory that Notrios'
+own verifier admits, and turning it into a Quartz vault or a Hugo/Ledger site
+is the deferred bridge's job.
 
 ### P8. v0.4 documentation and release wrap-up
 
-- Document backup/verify/restore intent, the movenotes compatibility boundary,
-  stable links, publishing privacy, and Quartz versus Hugo/Ledger operations in
-  both the site and Help notebook.
+- Document backup/verify/restore intent, stable links, and publishing privacy
+  in both the site and Help notebook. Describe the movenotes compatibility
+  boundary as a boundary and record that the bridge itself is deferred to v0.7;
+  do not document a consumer that does not exist.
 - Reconcile `FEATURE_MATRIX.md`, architecture/schema/API/security documents,
   and release checklist.
 - Run the full release validation, archive the plan, draft the next plan from
@@ -511,8 +548,10 @@ specific real-format, round-trip, hostile-input, native-build, and scale gates.
   or carry the container. The alternative is to accept ~131 objects per second
   and per-object transport round trips for the life of the format.
 - Approve P4 before implementing verified archive-v2 restore/import.
-- Approve P6 before pinning archive-v2 schemas/fixtures for `movenotes-v3`;
-  publishing a compatibility contract is harder to revise than the format.
+- P6 is deferred to v0.7, gated on slice 3 (the native snapshot/change
+  container). A published compatibility contract is harder to revise than the
+  format it describes, the container still changes in that slice, and
+  `movenotes-v3` has not started the importer that would consume it.
 - Restore has no default: P2 defines explicit replace/merge/fork/adopt identity
   consequences; P4 must require one after verification.
 - Treat `movenotes-v3` and `hugo-theme-ledger` as optional external publishing

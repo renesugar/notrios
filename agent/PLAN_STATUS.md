@@ -8,8 +8,8 @@ v0.3 import/resource/media/large-library hardening is complete. H1–H11 are
 archived under `plans/v0.3/`. The revised v0.4 plan begins with Joplin
 correctness/performance prerequisites, then archive-v2, publishing handoff,
 boolean search, and stable references. J1–J3, Q1, P1, P2, P3, P3a, P3b, P4, and
-P5 are complete and archived under `plans/v0.4/001`–`011`. P6–P8 require user
-approval.
+P5 are complete and archived under `plans/v0.4/001`–`011`. P6 is deferred to
+v0.7; P7 and P8 require user approval.
 
 ## 2026-08-02 follow-up review
 
@@ -202,6 +202,27 @@ approval.
 - Export deduplication became symmetric across layouts through the same bounded
   spool, and `record_counts` became a pointer so `omitempty` actually applies —
   which cut packed verify peak RSS 41% and runtime 31%.
+
+## 2026-08-05 P6 deferred to v0.7
+
+- The movenotes-v3 compatibility bridge moved out of v0.4. The gate is v0.7
+  slice 3 (the native snapshot/change container), not the whole milestone:
+  slices 4 and 5 add transports and recovery and leave the container alone.
+- Slice 3 reuses archive-v2 manifests and objects for snapshots and change
+  envelopes, and open questions 13 (envelope encoding/compression) and 14 (blob
+  chunk threshold) change container internals. Unknown record types are
+  rejected, so sync-era additions arrive behind a new required capability and a
+  reader pinned in v0.4 would refuse every archive written after v0.7 — a safe,
+  loud failure, but a second integration pass of exactly the kind P3a and P3b
+  were sequenced to avoid.
+- `movenotes-v3` contains no `notrios2sql.py` and no reference to Notrios as of
+  2026-08-05, so two of P6's four bullets are coordination against an importer
+  nobody has started.
+- P7 keeps its scope but no longer claims an external consumer: it emits a
+  checksum-verified, explicitly subset-scoped archive-v2 handoff that Notrios'
+  own verifier admits.
+- Recorded as accepted decision 16 in `PROJECT_DECISIONS.md`; `ROADMAP.md` now
+  lists the bridge as v0.7 item 6.
 
 ## 2026-08-05 P5 — stable external links and local resolution
 

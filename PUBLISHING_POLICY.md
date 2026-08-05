@@ -115,6 +115,13 @@ arrays while keeping complete counts and `manifest_sha256`.
 `movenotes-v3` and `hugo-theme-ledger` contain measured 10k/100k/500k build and
 search evidence, bounded taxonomy/navigation rules, neutral streamed JSONL,
 and backend-specific unsupported-operator reporting. Notrios consumes those as
-behavioral and integration evidence, not as code to copy. v0.4 compatibility
-tests pin archive schemas/capabilities and privacy outcomes across the two
-repositories; each repository retains its own tests, license, and release.
+behavioral and integration evidence, not as code to copy. Each repository
+retains its own tests, license, and release.
+
+The compatibility contract that pins archive schemas, capabilities, and privacy
+outcomes across the two repositories is **deferred to v0.7**, gated on the
+snapshot/change container slice: that slice extends the container the contract
+would pin, and `movenotes-v3` has not started the `notrios2sql.py` importer.
+Until then Notrios emits a checksum-verified, explicitly subset-scoped
+archive-v2 handoff admitted by its own verifier, and does not claim an external
+consumer.

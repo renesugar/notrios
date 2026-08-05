@@ -23,6 +23,12 @@
     not initial dependencies.
 15. Treat rclone/shared folders as immutable object transports, never as the
     merge or deletion algorithm.
+16. Publish the external archive-v2 compatibility contract (JSON Schemas,
+    pinned fixtures, cross-version consumer tests) only after the v0.7
+    snapshot/change container slice is final. That slice extends the container
+    the contract would pin, and unknown record types are rejected, so a reader
+    integrated earlier would refuse every archive written afterwards. Decided
+    2026-08-05; v0.4 P6 moved to v0.7.
 
 ## Deferred decisions
 

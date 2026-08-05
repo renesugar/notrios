@@ -179,7 +179,9 @@ snapshot. Cursors never expose SQLite offsets or sidecar row IDs.
 Publishing is not the same as backup. Notrios publication profiles select a
 public subset of notes/resources, sanitize metadata, rewrite private links
 safely, and emit a subset-scoped native-archive-v2 handoff. A separately
-maintained `movenotes-v3/notrios2sql.py` importer consumes the handoff;
+maintained `movenotes-v3/notrios2sql.py` importer is planned to consume the
+handoff — that bridge is deferred to v0.7, gated on the sync snapshot/change
+container slice that still extends archive v2;
 `movenotes-v3` owns Obsidian/Quartz and Hugo/Ledger generation, with Pagefind or
 Bluge according to site scale. v0.4 shares the neutral
 selection/link/resource/privacy plan between full archive, subset transfer, and

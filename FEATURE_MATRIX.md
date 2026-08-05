@@ -50,7 +50,7 @@ This matrix keeps the long conversation compressed into implementation-sized fea
 | Claude JSON import | Implemented | importer | Conversation provenance. |
 | Native archive v1 | Implemented | exporter | Query-scoped plain-note interchange; not lossless backup. |
 | Shared selection/privacy planner | Implemented | archive/publishing service | Read-only typed recursive notebook/tag/query/ID selection, target policies, reachable resources, link/privacy/source-bundle/metadata decisions, bounded REST/MCP details, and deterministic digest. |
-| Portable Markdown vault export | External integration | movenotes-v3 | Planned `notrios2sql.py` consumes archive v2; movenotes owns Obsidian projection. |
+| Portable Markdown vault export | Planned v0.7 | movenotes-v3 | `notrios2sql.py` consumes archive v2; movenotes owns Obsidian projection. The compatibility bridge moved from v0.4 P6 to v0.7 because slice 3 extends the container it would pin, and the importer does not exist yet. |
 | Native archive v2/backup | Implemented (export, verify, restore) | archive service | Schema-v12 database/replica identity, manifest-last SHA-256 objects, typed bounded records, explicit restore intent, and strict verification. `notriosctl export archive-v2` writes full-backup and explicitly scoped subset snapshots from one read transaction, stages privately, publishes the manifest last, resumes over published objects, and self-verifies. P3a moved the object inventory into checksummed index chunks under a two-level fanout and made writer and verifier stream through external-sorted spools, so an archive holds up to 8,000,000 objects and the manifest no longer grows with the library. P3b added the opt-in packed layout behind `objects.pack.v1`. P4 added `verify archive-v2` and `restore archive-v2`, proven on the attachment-bearing corpus under both layouts. |
 | Joplin RAW export | Optional/research | exporter | Only for measured exact round-trip need. |
 
@@ -96,7 +96,7 @@ This matrix keeps the long conversation compressed into implementation-sized fea
 
 | Feature | Status | Primary owner | Notes |
 |---|---:|---|---|
-| Publication profiles | Planned v0.4 | planner/archive | Curated, sanitized archive-v2 handoff to movenotes-v3. |
+| Publication profiles | Planned v0.4 | planner/archive | Curated, sanitized archive-v2 handoff. Consuming it downstream is the v0.7 compatibility bridge. |
 | Quartz and scalable archive site | External integration | movenotes-v3/Ledger | Obsidian/Quartz for subsets; Hugo/Ledger+Bluge for large libraries. |
 | Publishing dry run | Planned v0.4 | planner/UI | Included/excluded/resources/private links before handoff. |
 | Foam-style query blocks | Planned v0.5 | query service/UI | No arbitrary SQL/JS. |

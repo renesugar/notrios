@@ -10,8 +10,10 @@ P1 (shared selection/privacy planning), P2 (native archive-v2 format and
 identity verification), P3 (native archive-v2 streaming export), P3a
 (archive-v2 large-library container revision), P3b (packed object layout), and
 P4 (archive-v2 verify and restore), and P5 (stable external links and local
-resolution) are complete and archived under `plans/v0.4/001`–`011`. P6–P8
-require user approval. See the revised `PLAN.md`.
+resolution) are complete and archived under `plans/v0.4/001`–`011`. P6, the
+`movenotes-v3` compatibility bridge, is deferred to v0.7 slice 3, which still
+extends the container it would pin. P7 and P8 require user approval. See the
+revised `PLAN.md`.
 
 Archive-v2 supports two object layouts. Loose `fanout` is the default and
 deduplicates and resumes through the object tree. Opt-in `--pack` collapses a

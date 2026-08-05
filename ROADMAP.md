@@ -66,11 +66,13 @@ The built-in Go/Wails GUI is part of the first released version, so it lives her
   format-limited projection.
 - Publication profiles for selected notebooks/folders/tags, including recursive
   subnotebook selection, emit a privacy-reviewed scoped native-archive handoff.
-- Add a documented archive-v2 compatibility fixture for a separately maintained
-  `movenotes-v3/notrios2sql.py` importer. `movenotes-v3` owns portable Obsidian
-  projection, Quartz generation for curated/smaller subsets, and Hugo with
-  `hugo-theme-ledger` plus Bluge for large libraries. Notrios does not duplicate
-  those exporters, generators, or search indexes.
+- Emit a privacy-reviewed, checksum-verified subset archive that a downstream
+  toolkit can consume. `movenotes-v3` owns portable Obsidian projection, Quartz
+  generation for curated/smaller subsets, and Hugo with `hugo-theme-ledger` plus
+  Bluge for large libraries; Notrios does not duplicate those exporters,
+  generators, or search indexes. The published compatibility contract itself
+  (JSON Schemas, pinned fixtures, cross-version consumer tests) moved to v0.7 —
+  see below.
 - Link-to-private-note policy.
 - Public resource reachability analysis.
 - Dry-run publishing privacy checks.
@@ -142,6 +144,18 @@ user approval. See `VERSIONING_AND_SYNC_POLICY.md`.
    peer retirement, tombstone/blob GC watermarks, full-resync after retention
    horizon, conflict UI, replace/merge/adopt/fork restore, and fault-injection
    convergence tests.
+6. **Native archive compatibility bridge** (deferred from v0.4 P6; gated on
+   slice 3, not on slices 4–5) — publish archive-v2 JSON Schemas, golden
+   fixtures, and capability bounds, add a compatibility command producing
+   sanitized deterministic test archives, coordinate the separately maintained
+   `movenotes-v3/notrios2sql.py` importer against them, and add cross-version
+   consumer tests. It waits for slice 3 because that slice extends the very
+   container the contract would pin: snapshots and change envelopes reuse
+   archive-v2 manifests and objects, unknown record types are rejected, and
+   questions 13 (envelope encoding) and 14 (blob chunking) change container
+   internals. Pinning first would mean a reader integrated in v0.4 refusing
+   every archive written after v0.7 — a safe failure, but a second integration
+   pass. `movenotes-v3` had not started the importer as of 2026-08-05.
 
 Research outcomes:
 
@@ -201,5 +215,5 @@ The scaffold handoff is complete; see `CODING_CLIENT_HANDOFF.md`. Future roadmap
 
 The v0.1 MVP, v0.2 redesign, and v0.3 hardening milestones are implemented and
 archived. v0.4 J1–J3, Q1, P1, P2, P3, P3a, P3b, P4, and P5 are implemented and
-archived under `plans/v0.4/`; the remaining v0.4 product tasks in `PLAN.md`
-require approval.
+archived under `plans/v0.4/`; P6 is deferred to v0.7, and the remaining v0.4
+product tasks in `PLAN.md` require approval.

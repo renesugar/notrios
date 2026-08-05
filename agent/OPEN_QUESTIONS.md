@@ -67,6 +67,20 @@ log. Current implementation-affecting questions:
     unreferenced-object check. Loose fanout stays supported and default until
     the P3b measurements justify switching. See `PLAN.md`.
 
+## External format compatibility
+
+19. **Resolved 2026-08-05: deferred, not open.** Should the archive-v2
+    compatibility contract (JSON Schemas, pinned fixtures, cross-version
+    consumer tests) be published in v0.4?
+
+    No. v0.7 slice 3 reuses archive-v2 manifests and objects for snapshots and
+    change envelopes, and questions 13 and 14 below change container internals.
+    Unknown record types are rejected, so sync-era additions need a new required
+    capability and a reader pinned in v0.4 would refuse every later archive.
+    `movenotes-v3` has also not started `notrios2sql.py`. The bridge is now
+    v0.7 item 6, gated on slice 3 rather than on the whole milestone. See
+    `PROJECT_DECISIONS.md` decision 16.
+
 ## Synchronization (resolve in separate v0.7 plans)
 
 9. Which records use per-field versus whole-record LWW?
