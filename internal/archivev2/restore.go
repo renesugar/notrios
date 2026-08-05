@@ -132,7 +132,12 @@ type restoreRun struct {
 	blobs     int
 	blobBytes int64
 	admitted  map[string]bool
-	objects   *store.ImportManifest
+	// bundlePaths caches storage paths for exact source bundles, which live in
+	// their own namespace rather than the blob store.
+	bundlePaths map[string]string
+	bundles     int
+	bundleBytes int64
+	objects     *store.ImportManifest
 }
 
 // forEachRecord streams every record of the wanted types. Records objects are a
@@ -428,7 +433,8 @@ func (r *restoreRun) applyRelations(ctx context.Context) error {
 			if err := json.Unmarshal(envelope.Payload, &record); err != nil {
 				return err
 			}
-			if err := r.admitBlob(ctx, record.Content); err != nil {
+			storagePath, err := r.admitSourceBundle(ctx, record.Content)
+			if err != nil {
 				return fmt.Errorf("source bundle %s: %w", record.ItemKeySHA256, err)
 			}
 			var order []string
@@ -439,7 +445,7 @@ func (r *restoreRun) applyRelations(ctx context.Context) error {
 				SourceKey: record.SourceKeySHA256, CollectionID: record.CollectionID,
 				ItemKey: record.ItemKeySHA256, ItemType: record.ItemType, ExternalID: record.ExternalID,
 				RelativePath: record.RelativePath, SHA256: record.Content.SHA256,
-				SizeBytes: record.Content.SizeBytes, StoragePath: sourceBundleStoragePath(record.Content.SHA256),
+				SizeBytes: record.Content.SizeBytes, StoragePath: storagePath,
 				PropertyOrder: order, UpdatedAt: parseArchiveTime(record.UpdatedAt),
 			})
 		}
@@ -491,6 +497,38 @@ func (r *restoreRun) admitBlob(ctx context.Context, reference BlobReference) err
 	r.blobs++
 	r.blobBytes += size
 	return nil
+}
+
+// admitSourceBundle writes exact source bytes through the source-bundle
+// namespace rather than the blob store. Bundles are deliberately outside
+// `blobs` and resource garbage collection, so admitting them as blobs would
+// both pollute the blob table and leave the bundle row pointing at a path
+// nothing was written to.
+func (r *restoreRun) admitSourceBundle(ctx context.Context, reference BlobReference) (string, error) {
+	if r.bundlePaths == nil {
+		r.bundlePaths = map[string]string{}
+	}
+	if path, ok := r.bundlePaths[reference.SHA256]; ok {
+		return path, nil
+	}
+	entry, err := r.findObject(reference.SHA256)
+	if err != nil {
+		return "", err
+	}
+	reader, closer, err := r.source.open(r.root, entry)
+	if err != nil {
+		return "", err
+	}
+	defer closer()
+	size, path, err := r.target.AdmitRestoredSourceBundle(ctx, reference.SHA256,
+		io.NewSectionReader(reader, 0, entry.SizeBytes))
+	if err != nil {
+		return "", err
+	}
+	r.bundlePaths[reference.SHA256] = path
+	r.bundleBytes += size
+	r.bundles++
+	return path, nil
 }
 
 func (r *restoreRun) readBlobText(reference BlobReference) (string, error) {
@@ -592,10 +630,6 @@ func (r *restoreRun) findObject(hash string) (IndexEntry, error) {
 		return IndexEntry{}, err
 	}
 	return entry, nil
-}
-
-func sourceBundleStoragePath(hash string) string {
-	return "source-bundles/sha256/" + hash[0:2] + "/" + hash[2:4] + "/" + hash
 }
 
 func parseArchiveTime(value string) time.Time {

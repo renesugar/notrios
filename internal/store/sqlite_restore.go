@@ -11,6 +11,8 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -135,6 +137,55 @@ func (s *SQLiteStore) AdmitRestoredBlob(ctx context.Context, expectedSHA256, mim
 		return 0, err
 	}
 	return stored.SizeBytes, nil
+}
+
+// AdmitRestoredSourceBundle streams exact preserved source bytes into the
+// source-bundle namespace. That namespace sits deliberately outside `blobs`
+// and ordinary resource garbage collection, so a restored bundle must never
+// create a blobs row: doing so would expose preserved source bytes to a GC
+// that is not supposed to be able to reach them.
+func (s *SQLiteStore) AdmitRestoredSourceBundle(ctx context.Context, expectedSHA256 string, content io.Reader) (int64, string, error) {
+	ctx = contextOrBackground(ctx)
+	if err := ctx.Err(); err != nil {
+		return 0, "", err
+	}
+	bundleRoot := filepath.Join(s.assetRoot, "source-bundles")
+	if err := os.MkdirAll(bundleRoot, 0o755); err != nil {
+		return 0, "", err
+	}
+	temporary, err := os.CreateTemp(bundleRoot, "restoring-*")
+	if err != nil {
+		return 0, "", err
+	}
+	name := temporary.Name()
+	digest := sha256.New()
+	size, copyErr := copyWithContext(ctx, io.MultiWriter(temporary, digest), content)
+	closeErr := temporary.Close()
+	if copyErr != nil || closeErr != nil {
+		_ = os.Remove(name)
+		if copyErr != nil {
+			return 0, "", copyErr
+		}
+		return 0, "", closeErr
+	}
+	hash := hex.EncodeToString(digest.Sum(nil))
+	if hash != expectedSHA256 {
+		_ = os.Remove(name)
+		return 0, "", fmt.Errorf("%w: restored source bundle hashed to %s but the archive named %s", ErrInvalidInput, hash, expectedSHA256)
+	}
+	relative := filepath.Join("source-bundles", "sha256", hash[0:2], hash[2:4], hash)
+	final := filepath.Join(s.assetRoot, relative)
+	if err := os.MkdirAll(filepath.Dir(final), 0o755); err != nil {
+		_ = os.Remove(name)
+		return 0, "", err
+	}
+	if _, statErr := os.Stat(final); statErr == nil {
+		_ = os.Remove(name)
+	} else if err := os.Rename(name, final); err != nil {
+		_ = os.Remove(name)
+		return 0, "", err
+	}
+	return size, filepath.ToSlash(relative), nil
 }
 
 // ApplyRestoreRecords writes one bounded batch atomically. With additive true
@@ -421,10 +472,4 @@ func propertyOrderJSON(values []string) string {
 		encoded = append(encoded, strconv.Quote(value))
 	}
 	return "[" + strings.Join(encoded, ",") + "]"
-}
-
-// restoredBlobDigest is used by tests to confirm admitted bytes round-trip.
-func restoredBlobDigest(content []byte) string {
-	sum := sha256.Sum256(content)
-	return hex.EncodeToString(sum[:])
 }

@@ -357,7 +357,7 @@ func (s *SQLiteStore) planSelectionLocked(ctx context.Context, norm normalizedSe
 		}
 	}
 
-	resources, err := s.loadSelectionResourcesLocked(ctx, selectedIDs, norm.policy.MaxResourceBytes)
+	resources, err := s.loadSelectionResourcesLocked(ctx, selectedIDs, norm.policy.MaxResourceBytes, norm.unscopedFull)
 	if err != nil {
 		return SelectionPlan{}, SelectionResolution{}, err
 	}
@@ -644,8 +644,49 @@ func (s *SQLiteStore) loadSelectionDocumentsLocked(ctx context.Context, ids []st
 	return documents, nil
 }
 
-func (s *SQLiteStore) loadSelectionResourcesLocked(ctx context.Context, documentIDs []string, maxBytes int64) ([]SelectionResourceManifest, error) {
+// loadSelectionResourcesLocked reports the resources a target must carry.
+// A scoped selection carries only what its notes reach, but an unscoped full
+// archive carries every resource: one that no note currently references is
+// still live canonical state that retention has deliberately not collected,
+// and a backup that dropped it would not be a full backup. Source bundles
+// already follow the same rule.
+func (s *SQLiteStore) loadSelectionResourcesLocked(ctx context.Context, documentIDs []string, maxBytes int64, all bool) ([]SelectionResourceManifest, error) {
 	byID := map[string]SelectionResourceManifest{}
+	collect := func(stmt *C.sqlite3_stmt) error {
+		for {
+			if err := ctx.Err(); err != nil {
+				return err
+			}
+			rc := C.sqlite3_step(stmt)
+			if rc == C.SQLITE_ROW {
+				id, collectionID, size := columnText(stmt, 0), columnText(stmt, 1), columnInt64(stmt, 3)
+				byID[id] = SelectionResourceManifest{ID: id, URI: ResourceURI(collectionID, id), CollectionID: collectionID, MIMEType: columnText(stmt, 2), SizeBytes: size, SHA256: columnText(stmt, 4), Oversized: maxBytes > 0 && size > maxBytes}
+				continue
+			}
+			if rc == C.SQLITE_DONE {
+				return nil
+			}
+			return s.stepErrLocked(rc)
+		}
+	}
+	if all {
+		stmt, err := s.prepareLocked(`SELECT r.id, r.collection_id, r.mime_type, b.size_bytes, b.sha256
+			FROM resources r JOIN blobs b ON b.sha256 = r.blob_sha256 ORDER BY r.id`)
+		if err != nil {
+			return nil, err
+		}
+		err = collect(stmt)
+		C.sqlite3_finalize(stmt)
+		if err != nil {
+			return nil, err
+		}
+		resources := make([]SelectionResourceManifest, 0, len(byID))
+		for _, resource := range byID {
+			resources = append(resources, resource)
+		}
+		sort.Slice(resources, func(i, j int) bool { return resources[i].ID < resources[j].ID })
+		return resources, nil
+	}
 	for start := 0; start < len(documentIDs); start += selectionReadBatch {
 		end := min(start+selectionReadBatch, len(documentIDs))
 		batch := documentIDs[start:end]

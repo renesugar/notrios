@@ -223,3 +223,104 @@ func corruptFirstBlob(t *testing.T, root string) {
 	}
 	t.Fatal("fixture has no blob to corrupt")
 }
+
+// TestFullArchiveCarriesUnreferencedResources guards a defect the attachment
+// corpus found: the source held 758 resources and the archive carried 757,
+// because reachability starts from selected documents. That is right for a
+// subset and wrong for a backup — an unreferenced resource inside its
+// retention window is live state garbage collection has not collected.
+func TestFullArchiveCarriesUnreferencedResources(t *testing.T) {
+	ctx := context.Background()
+	fixture := newExportFixture(t)
+	orphan, err := fixture.store.CreateResource(ctx, store.CreateResourceRequest{
+		PreferredID: "res_orphan", Filename: "orphan.bin", MIMEType: "application/octet-stream",
+		Content: strings.NewReader("orphaned bytes no note references"),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	full := filepath.Join(t.TempDir(), "full")
+	report, err := Export(ctx, fixture.store, full, exportOptions(TargetFullArchive))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if report.Counts.Resources != 2 {
+		t.Fatalf("a full archive carried %d resources; both the attached and the unreferenced one belong in a backup", report.Counts.Resources)
+	}
+
+	target := newEmptyStore(t)
+	if _, err := Restore(ctx, target, full, RestoreOptions{Intent: RestoreAdopt}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := target.GetResource(ctx, orphan.ID); err != nil {
+		t.Fatalf("restore lost the unreferenced resource: %v", err)
+	}
+
+	// A scoped subset still carries only what its notes reach.
+	subset := filepath.Join(t.TempDir(), "subset")
+	subsetOptions := exportOptions(TargetSubsetTransfer)
+	subsetOptions.Selection = store.SelectionSpec{NotebookIDs: []string{fixture.public.ID}}
+	subsetReport, err := Export(ctx, fixture.store, subset, subsetOptions)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if subsetReport.Counts.Resources != 1 {
+		t.Fatalf("a subset transfer carried %d resources; it should carry only reachable ones", subsetReport.Counts.Resources)
+	}
+}
+
+// TestRestoredSourceBundlesStayOutOfTheBlobStore guards the second defect the
+// attachment corpus found: restore registered every source bundle as an
+// ordinary blob, taking that table from 731 rows to 112,060 and exposing
+// preserved source bytes to a garbage collector the schema deliberately keeps
+// away from them.
+func TestRestoredSourceBundlesStayOutOfTheBlobStore(t *testing.T) {
+	ctx := context.Background()
+	fixture := newExportFixture(t)
+	archive := filepath.Join(t.TempDir(), "archive")
+	if _, err := Export(ctx, fixture.store, archive, exportOptions(TargetFullArchive)); err != nil {
+		t.Fatal(err)
+	}
+	target := newEmptyStore(t)
+	summary, err := Restore(ctx, target, archive, RestoreOptions{Intent: RestoreAdopt})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if summary.Applied.SourceBundles == 0 {
+		t.Fatal("fixture carried no source bundle to check")
+	}
+
+	// The blob store must hold resource blobs and revision bodies only.
+	sourceReport, err := fixture.store.ResourceReport(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	restoredReport, err := target.ResourceReport(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(restoredReport.UnreferencedBlobs) > len(sourceReport.UnreferencedBlobs)+1 {
+		t.Fatalf("restore added unreferenced blobs: %d versus %d in the source",
+			len(restoredReport.UnreferencedBlobs), len(sourceReport.UnreferencedBlobs))
+	}
+
+	// And a restored bundle must actually be readable at the path it records.
+	item, content, err := target.OpenSourceBundleItem(ctx, "joplin",
+		sha256Hex("/home/user/private/export"), "default",
+		sha256Hex("/home/user/private/export/abc123.md"))
+	if err != nil {
+		t.Fatalf("restored source bundle is unreadable: %v", err)
+	}
+	raw, err := io.ReadAll(content)
+	_ = content.Close()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(raw) != "Public\n\nid: abc123\n" {
+		t.Fatal("restored source bundle bytes differ from the original")
+	}
+	if !strings.HasPrefix(item.StoragePath, "source-bundles/") {
+		t.Fatalf("restored bundle stored outside its namespace: %q", item.StoragePath)
+	}
+}

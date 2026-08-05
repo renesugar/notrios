@@ -70,6 +70,10 @@ type RestoreTarget interface {
 	// AdmitRestoredBlob streams archive bytes into the asset store, sniffing
 	// and recording the canonical MIME type rather than trusting the archive.
 	AdmitRestoredBlob(ctx context.Context, expectedSHA256, mimeType string, content io.Reader) (int64, error)
+	// AdmitRestoredSourceBundle streams exact source bytes into the
+	// source-bundle namespace, which sits outside `blobs` and resource garbage
+	// collection. It returns the storage path the bundle row must record.
+	AdmitRestoredSourceBundle(ctx context.Context, expectedSHA256 string, content io.Reader) (int64, string, error)
 	// ApplyRestoreRecords writes one batch atomically, reporting identities it
 	// refused to overwrite when additive is true.
 	ApplyRestoreRecords(ctx context.Context, batch RestoreRecords, additive bool) ([]RestoreConflict, error)
