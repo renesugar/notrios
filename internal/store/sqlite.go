@@ -156,6 +156,9 @@ func (s *SQLiteStore) Bootstrap(ctx context.Context) error {
 	if err := s.ensureSchemaV12(ctx); err != nil {
 		return err
 	}
+	if err := s.ensureSchemaV13(ctx); err != nil {
+		return err
+	}
 	if err := s.ensureDatabaseIdentity(ctx); err != nil {
 		return err
 	}
@@ -410,6 +413,28 @@ func (s *SQLiteStore) ensureSchemaV12(ctx context.Context) error {
 			replica_created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 		);`,
 		`PRAGMA user_version = 12;`,
+	}
+	for _, statement := range statements {
+		if err := s.Exec(ctx, statement); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// ensureSchemaV13 adds the restore-in-progress marker. A restore commits many
+// transactions, so an interruption leaves committed rows behind; this row is
+// what stops that partial library from being mistaken for a complete one.
+func (s *SQLiteStore) ensureSchemaV13(ctx context.Context) error {
+	statements := []string{
+		`CREATE TABLE IF NOT EXISTS restore_state (
+			singleton INTEGER PRIMARY KEY CHECK (singleton = 1),
+			snapshot_id TEXT NOT NULL,
+			commit_sha256 TEXT NOT NULL,
+			intent TEXT NOT NULL,
+			started_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+		);`,
+		`PRAGMA user_version = 13;`,
 	}
 	for _, statement := range statements {
 		if err := s.Exec(ctx, statement); err != nil {

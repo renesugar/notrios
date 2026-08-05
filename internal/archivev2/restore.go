@@ -3,6 +3,8 @@ package archivev2
 import (
 	"bufio"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -52,9 +54,30 @@ func Restore(ctx context.Context, target store.RestoreTarget, root string, optio
 	if err != nil {
 		return store.RestoreSummary{}, err
 	}
+	// An interrupted restore left committed rows behind. Continuing into that
+	// library with adopt or merge would blend two partial states into one that
+	// matches no archive, so only replace — which clears first — may proceed.
+	pending, interrupted, err := target.PendingRestore(ctx)
+	if err != nil {
+		return store.RestoreSummary{}, err
+	}
+	if interrupted && options.Intent != RestoreReplace {
+		return store.RestoreSummary{}, fmt.Errorf(
+			"target holds an interrupted restore of snapshot %s (commit %s, intent %s, started %s); "+
+				"restore with --intent replace to rebuild it, or use a different target",
+			pending.SnapshotID, pending.CommitSHA256, pending.Intent, pending.StartedAt)
+	}
 	empty, err := target.LibraryIsEmpty(ctx)
 	if err != nil {
 		return store.RestoreSummary{}, err
+	}
+	// A restore writes containers, resources, and bundles before the first
+	// document, so an interruption early on leaves a library that holds
+	// canonical state while still counting zero documents. Treating that as an
+	// empty target would refuse replace — the one intent allowed to recover it —
+	// and leave the library with no way forward at all.
+	if interrupted {
+		empty = false
 	}
 	request := RestoreIdentityRequest{Intent: options.Intent, TargetEmpty: empty, NewDatabaseID: options.NewDatabaseID}
 	if !empty {
@@ -76,6 +99,13 @@ func Restore(ctx context.Context, target store.RestoreTarget, root string, optio
 	}
 	defer run.closeObjectIndex()
 
+	// Mark before the first canonical write and clear after the last, so an
+	// interruption anywhere in between is visible in the restored database.
+	if err := target.BeginRestore(ctx, store.RestoreMarker{
+		SnapshotID: manifest.Snapshot.ID, CommitSHA256: manifest.CommitSHA256, Intent: string(decision.Intent),
+	}); err != nil {
+		return store.RestoreSummary{}, err
+	}
 	if decision.Intent == RestoreReplace {
 		if err := target.ClearLibraryForReplace(ctx); err != nil {
 			return store.RestoreSummary{}, err
@@ -93,7 +123,6 @@ func Restore(ctx context.Context, target store.RestoreTarget, root string, optio
 	if err := target.FinalizeRestoredDocuments(ctx); err != nil {
 		return store.RestoreSummary{}, err
 	}
-
 	summary := store.RestoreSummary{
 		Intent:    string(decision.Intent),
 		Applied:   run.counts,
@@ -114,6 +143,12 @@ func Restore(ctx context.Context, target store.RestoreTarget, root string, optio
 		summary.DatabaseID, summary.ReplicaID = updated.DatabaseID, updated.ReplicaID
 	} else {
 		summary.DatabaseID, summary.ReplicaID = identity.DatabaseID, identity.ReplicaID
+	}
+	// Cleared last, after identity adoption: a copy that still carried the
+	// source replica ID would impersonate the replica that produced the
+	// archive, so it is not yet a finished restore.
+	if err := target.CompleteRestore(ctx); err != nil {
+		return store.RestoreSummary{}, err
 	}
 	summary.Elapsed = time.Since(started).Seconds()
 	return summary, nil
@@ -538,6 +573,14 @@ func (r *restoreRun) admitSourceBundle(ctx context.Context, reference BlobRefere
 	return path, nil
 }
 
+// readBlobText loads a revision body and checks it against the identity the
+// archive names.
+//
+// Verification runs to completion before the first write, but it is a separate
+// pass over the same files: bit rot, a concurrent writer, or a network
+// filesystem can change an object between the two. Blob and source-bundle
+// admission already re-hash at the point of use; note bodies are the content
+// that matters most and were the one path taking the earlier pass on trust.
 func (r *restoreRun) readBlobText(reference BlobReference) (string, error) {
 	entry, err := r.findObject(reference.SHA256)
 	if err != nil {
@@ -549,8 +592,12 @@ func (r *restoreRun) readBlobText(reference BlobReference) (string, error) {
 	}
 	defer closer()
 	var builder strings.Builder
-	if _, err := io.Copy(&builder, io.NewSectionReader(reader, 0, entry.SizeBytes)); err != nil {
+	digest := sha256.New()
+	if _, err := io.Copy(io.MultiWriter(&builder, digest), io.NewSectionReader(reader, 0, entry.SizeBytes)); err != nil {
 		return "", err
+	}
+	if actual := hex.EncodeToString(digest.Sum(nil)); actual != reference.SHA256 {
+		return "", fmt.Errorf("object %s changed after verification: it now hashes to %s", reference.SHA256, actual)
 	}
 	return builder.String(), nil
 }

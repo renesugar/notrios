@@ -35,6 +35,73 @@ func (s *SQLiteStore) LibraryIsEmpty(ctx context.Context) (bool, error) {
 	return count == 0, nil
 }
 
+// BeginRestore durably marks that a restore is underway. It is written before
+// the first canonical row and cleared only after the last, so any interruption
+// in between — a crash, a kill, a power loss — leaves the marker behind.
+//
+// The marker is what makes a partial restore recognizable. Restore commits
+// many transactions, so an interrupted one leaves real, individually valid
+// rows; nothing in that library would otherwise distinguish it from a complete
+// one, and a half-restored backup that looks whole is worse than an obvious
+// failure.
+func (s *SQLiteStore) BeginRestore(ctx context.Context, marker RestoreMarker) error {
+	ctx = contextOrBackground(ctx)
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.execPreparedLocked(`INSERT INTO restore_state(singleton, snapshot_id, commit_sha256, intent)
+		VALUES(1, ?, ?, ?)
+		ON CONFLICT(singleton) DO UPDATE SET snapshot_id = excluded.snapshot_id,
+			commit_sha256 = excluded.commit_sha256, intent = excluded.intent,
+			started_at = CURRENT_TIMESTAMP`,
+		marker.SnapshotID, marker.CommitSHA256, marker.Intent)
+}
+
+// CompleteRestore clears the marker. It runs last, after every record, blob,
+// bundle, and the finalize pass.
+func (s *SQLiteStore) CompleteRestore(ctx context.Context) error {
+	ctx = contextOrBackground(ctx)
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.execLocked(`DELETE FROM restore_state`)
+}
+
+// PendingRestore reports an unfinished restore. The marker names the archive
+// so an interrupted library says which snapshot it was being rebuilt from,
+// not merely that something failed.
+func (s *SQLiteStore) PendingRestore(ctx context.Context) (RestoreMarker, bool, error) {
+	ctx = contextOrBackground(ctx)
+	if err := ctx.Err(); err != nil {
+		return RestoreMarker{}, false, err
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	stmt, err := s.prepareLocked(`SELECT snapshot_id, commit_sha256, intent, started_at
+		FROM restore_state WHERE singleton = 1`)
+	if err != nil {
+		return RestoreMarker{}, false, err
+	}
+	defer C.sqlite3_finalize(stmt)
+	rc := C.sqlite3_step(stmt)
+	if rc == C.SQLITE_DONE {
+		return RestoreMarker{}, false, nil
+	}
+	if rc != C.SQLITE_ROW {
+		return RestoreMarker{}, false, s.stepErrLocked(rc)
+	}
+	return RestoreMarker{
+		SnapshotID:   columnText(stmt, 0),
+		CommitSHA256: columnText(stmt, 1),
+		Intent:       columnText(stmt, 2),
+		StartedAt:    sqliteTimeToRFC3339(columnText(stmt, 3)),
+	}, true, nil
+}
+
 // ClearLibraryForReplace removes canonical note state in one transaction so a
 // replacement restore begins from a fresh initialized database. Asset bytes
 // are left in place: they are content-addressed, so a later restore reuses
@@ -230,6 +297,20 @@ func (s *SQLiteStore) ApplyRestoreRecords(ctx context.Context, batch RestoreReco
 		return false, nil
 	}
 
+	// Container rows a fresh database seeds for itself — the default collection,
+	// the builtin notebooks and search notebooks — already exist under the same
+	// IDs the archive uses. A replacement or adopting restore is authoritative,
+	// so it must overwrite them: leaving the target's rows in place silently
+	// keeps local names, positions, and creation times, and two restores of one
+	// archive then produce libraries that differ. An additive merge keeps what
+	// the target already holds, exactly as it does for documents.
+	conflict := func(update string) string {
+		if additive {
+			return " ON CONFLICT(id) DO NOTHING"
+		}
+		return " ON CONFLICT(id) DO UPDATE SET " + update
+	}
+
 	for _, collection := range batch.Collections {
 		if exists, err := taken("collection", "collections", "id", collection.ID); err != nil {
 			return nil, err
@@ -237,7 +318,8 @@ func (s *SQLiteStore) ApplyRestoreRecords(ctx context.Context, batch RestoreReco
 			continue
 		}
 		if err := s.execPreparedLocked(`INSERT INTO collections(id, name, description, created_at)
-			VALUES(?, ?, ?, ?) ON CONFLICT(id) DO NOTHING`,
+			VALUES(?, ?, ?, ?)`+conflict(`name = excluded.name, description = excluded.description,
+				created_at = excluded.created_at`),
 			collection.ID, collection.Name, collection.Description, restoreTimestamp(collection.CreatedAt)); err != nil {
 			return nil, err
 		}
@@ -249,7 +331,9 @@ func (s *SQLiteStore) ApplyRestoreRecords(ctx context.Context, batch RestoreReco
 			continue
 		}
 		if err := s.execPreparedLocked(`INSERT INTO notebooks(id, parent_id, name, icon_emoji, builtin, position, created_at, updated_at)
-			VALUES(?, NULLIF(?, ''), ?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO NOTHING`,
+			VALUES(?, NULLIF(?, ''), ?, ?, ?, ?, ?, ?)`+conflict(`parent_id = excluded.parent_id,
+				name = excluded.name, icon_emoji = excluded.icon_emoji, builtin = excluded.builtin,
+				position = excluded.position, created_at = excluded.created_at, updated_at = excluded.updated_at`),
 			notebook.ID, nullableText(notebook.ParentID), notebook.Name, notebook.IconEmoji,
 			boolText(notebook.Builtin), strconv.Itoa(notebook.Position),
 			restoreTimestamp(notebook.CreatedAt), restoreTimestamp(notebook.UpdatedAt)); err != nil {
@@ -263,7 +347,9 @@ func (s *SQLiteStore) ApplyRestoreRecords(ctx context.Context, batch RestoreReco
 			continue
 		}
 		if err := s.execPreparedLocked(`INSERT INTO search_notebooks(id, name, icon_emoji, query, builtin, sort_anchor, created_at)
-			VALUES(?, ?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO NOTHING`,
+			VALUES(?, ?, ?, ?, ?, ?, ?)`+conflict(`name = excluded.name, icon_emoji = excluded.icon_emoji,
+				query = excluded.query, builtin = excluded.builtin, sort_anchor = excluded.sort_anchor,
+				created_at = excluded.created_at`),
 			searchNotebook.ID, searchNotebook.Name, searchNotebook.IconEmoji, searchNotebook.Query,
 			boolText(searchNotebook.Builtin), searchNotebook.SortAnchor, restoreTimestamp(searchNotebook.CreatedAt)); err != nil {
 			return nil, err
@@ -275,8 +361,9 @@ func (s *SQLiteStore) ApplyRestoreRecords(ctx context.Context, batch RestoreReco
 		} else if exists {
 			continue
 		}
-		if err := s.execPreparedLocked(`INSERT INTO tags(id, name, created_at) VALUES(?, ?, ?)
-			ON CONFLICT(id) DO NOTHING`, tag.ID, tag.Name, restoreTimestamp(tag.CreatedAt)); err != nil {
+		if err := s.execPreparedLocked(`INSERT INTO tags(id, name, created_at) VALUES(?, ?, ?)`+
+			conflict(`name = excluded.name, created_at = excluded.created_at`),
+			tag.ID, tag.Name, restoreTimestamp(tag.CreatedAt)); err != nil {
 			return nil, err
 		}
 	}

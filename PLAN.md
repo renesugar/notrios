@@ -312,7 +312,12 @@ unreferenced resources, and restore registering source bundles as ordinary
 blobs. The corpus then restored under the packed layout as well, which found a
 fourth: the pack handle cache could close a pack while restore was still
 reading it. Both restored libraries are byte-identical to each other and to the
-source. Still open: crash/fault injection.
+source. Crash/fault injection then closed the last gap, and found three more:
+a restore interrupted mid-way left a partial library nothing marked as
+incomplete, a restore kept the target's builtin container rows instead of the
+archive's, and the reader treated the exporting database's schema version as a
+ceiling — so bumping the schema would have made every archive already written
+unreadable.
 
 Two pack byte-efficiency findings are deferred to a format revision rather than
 fixed here, since changing the pack format would invalidate the measured

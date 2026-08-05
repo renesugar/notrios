@@ -258,7 +258,16 @@ func validateManifest(manifest Manifest, limits Limits) error {
 	if compat.MinimumReaderVersion != FormatVersion {
 		return fmt.Errorf("unsupported minimum archive reader version %d", compat.MinimumReaderVersion)
 	}
-	if compat.MinimumSchemaVersion < MinimumSchemaVersion || compat.SourceSchemaVersion < compat.MinimumSchemaVersion || compat.SourceSchemaVersion > compat.MaximumSchemaVersion || store.CurrentSchemaVersion < compat.MinimumSchemaVersion || store.CurrentSchemaVersion > compat.MaximumSchemaVersion {
+	// A reader older than the archive's minimum cannot interpret it. A reader
+	// *newer* than the schema that produced it can: an export cannot know which
+	// schemas will exist later, so treating its own version as a ceiling would
+	// make every schema bump retroactively unreadable — including every backup
+	// already written. Genuine incompatibility is expressed with a required
+	// capability or a format version, which a reader does refuse.
+	if compat.MinimumSchemaVersion < MinimumSchemaVersion ||
+		compat.SourceSchemaVersion < compat.MinimumSchemaVersion ||
+		compat.SourceSchemaVersion > compat.MaximumSchemaVersion ||
+		store.CurrentSchemaVersion < compat.MinimumSchemaVersion {
 		return fmt.Errorf("unsupported schema bounds source=%d reader=%d range=%d..%d", compat.SourceSchemaVersion, store.CurrentSchemaVersion, compat.MinimumSchemaVersion, compat.MaximumSchemaVersion)
 	}
 	if err := validateCapabilities(compat, limits); err != nil {

@@ -11,6 +11,8 @@ import (
 	"sort"
 	"strings"
 	"testing"
+
+	"github.com/renesugar/notrios/internal/store"
 )
 
 const goldenFixture = "testdata/golden-minimal"
@@ -49,10 +51,13 @@ func TestManifestLastAndStrictManifestAdmission(t *testing.T) {
 		want   string
 	}{
 		{name: "unsupported version", mutate: func(m *Manifest) { m.Version = 3 }, want: "unsupported archive"},
+		// An archive that needs a schema newer than this build understands.
+		// Expressed relative to the reader so the case keeps its meaning as the
+		// schema advances, rather than becoming the reader's own version.
 		{name: "schema range", mutate: func(m *Manifest) {
-			m.Compatibility.MinimumSchemaVersion = 13
-			m.Compatibility.MaximumSchemaVersion = 13
-			m.Compatibility.SourceSchemaVersion = 13
+			m.Compatibility.MinimumSchemaVersion = store.CurrentSchemaVersion + 1
+			m.Compatibility.MaximumSchemaVersion = store.CurrentSchemaVersion + 1
+			m.Compatibility.SourceSchemaVersion = store.CurrentSchemaVersion + 1
 		}, want: "unsupported schema"},
 		{name: "required capability", mutate: func(m *Manifest) {
 			m.Compatibility.RequiredCapabilities = append(m.Compatibility.RequiredCapabilities, "unknown.required.v1")

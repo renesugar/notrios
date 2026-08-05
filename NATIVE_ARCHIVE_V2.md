@@ -146,9 +146,18 @@ See `performance/v0.4-p3b/`.
 Required v2 capabilities are `identity.database-replica.v1`,
 `objects.index.v1`, `objects.sha256.v1`, `records.jsonl.v1`, and
 `revisions.complete.v1`. Unknown required capabilities reject the archive.
-Unknown bounded optional capabilities may be ignored. This reader must fall
-inside the declared schema range; unsupported archive versions and schema
-ranges reject before objects are admitted.
+Unknown bounded optional capabilities may be ignored. Unsupported archive
+versions reject before objects are admitted.
+
+A reader older than `minimum_schema_version` rejects the archive: it cannot
+interpret what the archive contains. A reader **newer** than
+`maximum_schema_version` does not. `maximum_schema_version` records the newest
+schema known to read the archive *when it was written*, and an export cannot
+know which schemas will exist later; treating it as a ceiling made every schema
+bump retroactively invalidate every archive already on disk, including backups
+that were still perfectly readable. Genuine incompatibility is expressed with a
+required capability or a format version — both of which a reader does refuse —
+rather than by the source schema number.
 
 ## Objects and records
 

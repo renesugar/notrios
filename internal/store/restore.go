@@ -81,6 +81,26 @@ type RestoreTarget interface {
 	// its current revision and rebuilds the search index for current notes.
 	// It runs once, after every document and revision is present.
 	FinalizeRestoredDocuments(ctx context.Context) error
+
+	// BeginRestore durably records that a restore is underway, and
+	// CompleteRestore clears it. A restore writes many transactions, so a crash
+	// between them leaves real rows behind; without a marker that library is
+	// indistinguishable from a complete one, and a half-restored backup that
+	// looks whole is worse than one that obviously failed.
+	BeginRestore(ctx context.Context, marker RestoreMarker) error
+	CompleteRestore(ctx context.Context) error
+	// PendingRestore reports an unfinished restore, if any.
+	PendingRestore(ctx context.Context) (RestoreMarker, bool, error)
+}
+
+// RestoreMarker identifies the restore that is underway, so an interrupted
+// library reports which archive it was being rebuilt from rather than only
+// that something failed.
+type RestoreMarker struct {
+	SnapshotID   string `json:"snapshot_id"`
+	CommitSHA256 string `json:"commit_sha256"`
+	Intent       string `json:"intent"`
+	StartedAt    string `json:"started_at,omitempty"`
 }
 
 // RestoreSummary is the aggregate result of one restore.
