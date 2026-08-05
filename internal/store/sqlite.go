@@ -29,6 +29,7 @@ import (
 	"unsafe"
 
 	"github.com/renesugar/notrios/internal/markdownlinks"
+	"github.com/renesugar/notrios/internal/stablelink"
 )
 
 //go:embed migrations/0001_initial.sql
@@ -38,10 +39,14 @@ var migrationFS embed.FS
 // until the project can decide whether to use mattn/go-sqlite3, modernc.org/sqlite,
 // or this local wrapper long term.
 type SQLiteStore struct {
-	mu                 sync.Mutex
-	db                 *C.sqlite3
-	path               string
-	assetRoot          string
+	mu        sync.Mutex
+	db        *C.sqlite3
+	path      string
+	assetRoot string
+	// cachedDatabaseID memoizes the logical database ID. Link resolution
+	// consults it once per link in a batch import, and the value changes only
+	// through the explicit identity operations, which clear it.
+	cachedDatabaseID   string
 	perceptualHashHook PerceptualHashHook
 }
 
@@ -1594,6 +1599,9 @@ func (s *SQLiteStore) resolveLinkCandidateLocked(sourceDocumentID, collectionID 
 		link.ResolutionStatus = "external"
 		return link
 	}
+	if stablelink.HasScheme(raw) {
+		return s.resolveStableLinkCandidateLocked(link, raw)
+	}
 	if docID := documentIDFromURI(raw); docID != "" {
 		link.TargetURI = raw
 		if ok, err := s.documentExistsLocked(docID); err == nil && ok {
@@ -1638,6 +1646,42 @@ func (s *SQLiteStore) resolveLinkCandidateLocked(sourceDocumentID, collectionID 
 		}
 	}
 	link.TargetURI = raw
+	return link
+}
+
+// resolveStableLinkCandidateLocked classifies a notrios:// link found in a
+// note body. A stable link is portable by design, so the same syntax can name
+// this database or another one, and the two must not be confused:
+//
+//   - this database, note present  -> resolved, exactly like document://
+//   - this database, note missing  -> unresolved (a stale target, not an error)
+//   - another database             -> external; nothing local may be opened
+//   - malformed                    -> invalid
+//
+// A link naming a foreign database is never resolved against local IDs even if
+// a document with that ID happens to exist here. Document IDs are unique per
+// database, not globally, so matching one across universes would silently open
+// the wrong note.
+func (s *SQLiteStore) resolveStableLinkCandidateLocked(link DocumentLink, raw string) DocumentLink {
+	link.TargetURI = raw
+	parsed, err := stablelink.Parse(raw)
+	if err != nil {
+		link.ResolutionStatus = "invalid"
+		return link
+	}
+	localID, err := s.databaseIDLocked()
+	if err != nil || localID == "" {
+		link.ResolutionStatus = "unresolved"
+		return link
+	}
+	if parsed.DatabaseID != localID {
+		link.ResolutionStatus = "external"
+		return link
+	}
+	if ok, err := s.documentExistsLocked(parsed.DocumentID); err == nil && ok {
+		link.TargetDocumentID = parsed.DocumentID
+		link.ResolutionStatus = "resolved"
+	}
 	return link
 }
 

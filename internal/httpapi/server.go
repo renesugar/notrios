@@ -159,6 +159,7 @@ func (s *Server) routes() {
 
 	s.mux.HandleFunc("POST /api/v1/graph", s.handleGraph)
 	s.mux.HandleFunc("POST /api/v1/selection/plan", s.handleSelectionPlan)
+	s.mux.HandleFunc("POST /api/v1/links/resolve", s.handleResolveStableLink)
 	s.mux.HandleFunc("GET /api/v1/jobs/{job_id}", s.handleJob)
 	s.mux.HandleFunc("GET /", s.handleWebApp)
 }
@@ -211,6 +212,13 @@ func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
 			Path:          storeStatus.Path,
 			State:         storeStatus.State,
 			SchemaVersion: storeStatus.SchemaVersion,
+		}
+		// The logical database ID is what a client needs to build a stable
+		// notrios:// link for a note it already holds. The replica ID is
+		// deliberately not reported: it identifies this writable copy and has
+		// no meaning in a shared link.
+		if identity, err := s.store.GetDatabaseIdentity(r.Context()); err == nil {
+			databaseInfo.DatabaseID = identity.DatabaseID
 		}
 	}
 	sidecarStatus := api.SearchSidecarStatus{

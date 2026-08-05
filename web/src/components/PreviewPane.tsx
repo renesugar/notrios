@@ -8,15 +8,17 @@ import { MdPreview, type PreviewRendererProps } from 'md-editor-rt';
 import type { ThemeMode } from '../themes';
 import { normalizePreviewHTML, parseDocumentIDFromURI, parseResourceIDFromURI } from '../preview-utils';
 import { resourceContentURL } from '../api';
+import { isStableLink, parseStableLink } from '../stable-links';
 
 export interface PreviewPaneProps {
   body: string;
   themeBase: ThemeMode;
   onOpenDocument: (documentID: string) => void;
+  onOpenStableLink: (uri: string) => void;
   onError: (message: string) => void;
 }
 
-export function PreviewPane({ body, themeBase, onOpenDocument, onError }: PreviewPaneProps) {
+export function PreviewPane({ body, themeBase, onOpenDocument, onOpenStableLink, onError }: PreviewPaneProps) {
   // The renderer identity must be stable across keystrokes; recreate it only
   // when the navigation callbacks change.
   const Renderer = useMemo(() => {
@@ -36,6 +38,17 @@ export function PreviewPane({ body, themeBase, onOpenDocument, onError }: Previe
         onOpenDocument(documentID);
         return;
       }
+      // A stable link may name another database, so it is handed to the
+      // service to resolve rather than parsed into a local document ID here.
+      if (isStableLink(appURI)) {
+        event.preventDefault();
+        if (!parseStableLink(appURI)) {
+          onError(`Could not parse stable link: ${appURI}`);
+          return;
+        }
+        onOpenStableLink(appURI);
+        return;
+      }
       if (appURI.startsWith('resource://')) {
         event.preventDefault();
         const resourceID = parseResourceIDFromURI(appURI);
@@ -49,7 +62,7 @@ export function PreviewPane({ body, themeBase, onOpenDocument, onError }: Previe
     return function PreviewRenderer({ html, id, className }: PreviewRendererProps) {
       return <div id={id} className={className} onClick={onPreviewClick} dangerouslySetInnerHTML={{ __html: normalizePreviewHTML(html) }} />;
     };
-  }, [onOpenDocument, onError]);
+  }, [onOpenDocument, onOpenStableLink, onError]);
 
   return (
     <section className="pane preview-pane" aria-label="Markdown preview" data-testid="pane-preview">

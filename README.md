@@ -79,8 +79,9 @@ Recoll availability, backlog, sync/index, and reconciliation state.
   native archive-v2 format/identity verifier, `notriosctl export archive-v2`
   streaming backup/subset snapshots at real-library scale under a loose or
   packed object layout, and `notriosctl verify`/`restore archive-v2` with
-  mandatory replace/adopt/merge/fork intent. P5 (stable external links) is
-  active; the remaining product-feature tasks require approval — see
+  mandatory replace/adopt/merge/fork intent. P5 adds portable
+  `notrios://` links with an explicit local profile registry and an Ubuntu
+  protocol handler. The remaining product-feature tasks require approval — see
   [`PLAN.md`](PLAN.md) and [`ROADMAP.md`](ROADMAP.md).
 - Agent progress/attempt tracking: [`agent/PLAN_STATUS.md`](agent/PLAN_STATUS.md), [`agent/ATTEMPT_LOG.jsonl`](agent/ATTEMPT_LOG.jsonl), and [`agent/MODEL_LOG.jsonl`](agent/MODEL_LOG.jsonl).
 

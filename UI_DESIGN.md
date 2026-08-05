@@ -75,8 +75,13 @@ The existing React frontend is the basis of the Wails webview UI, currently usin
   tag/untag, and copy stable Markdown links. The client calls the bounded batch
   API and displays per-item/atomic outcomes; query-scoped export is not required
   merely to organize a selection.
-- Profile selection and external `notrios://` links (planned before sync) show
-  the profile/database identity before switching and never guess on ambiguity.
+- External `notrios://` links (implemented in v0.4 P5) are routed, never
+  followed: the preview hands the URI to `POST /api/v1/links/resolve`, opens the
+  note when this database owns it, and otherwise says the link belongs to
+  another database or names a note that no longer exists. The desktop handler
+  resolves the database through the local registry and opens the local UI at
+  `#document=<id>`. Multi-profile switching inside one window remains future
+  work; ambiguity is never guessed.
 - Sync UI (planned v0.7) exposes target `none`, REST/folder/rclone job status,
   pending/corrupt objects, behind/retired peers, body conflicts, and
   notebook-tree repairs.

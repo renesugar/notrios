@@ -30,7 +30,7 @@ This matrix keeps the long conversation compressed into implementation-sized fea
 
 | Feature | Status | Primary owner | Notes |
 |---|---:|---|---|
-| Stable document/resource URIs | Implemented | Notrios service | Internal `document://`/`resource://`; external `notrios://` planned v0.4. |
+| Stable document/resource URIs | Implemented | Notrios service | Internal `document://`/`resource://`; external `notrios://databases/{database_id}/documents/{document_id}` implemented in v0.4 P5 with strict parsing, an explicit local profile registry, `POST /api/v1/links/resolve`, and the Ubuntu/XDG protocol handler. |
 | Markdown link parsing | MVP | link parser | Standard Markdown links, app URIs, Joplin IDs, Obsidian Wikilinks, embeds. |
 | Backlinks/outgoing links | MVP | graph service | Store source positions and link context when possible. |
 | Resource manifest | MVP | resource service | List embedded/attached resources for a note. |

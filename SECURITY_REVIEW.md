@@ -43,9 +43,20 @@ peer-acknowledgement-aware eligibility.
 - Remote preview content does not cause localization or become a policy oracle.
 
 Remaining: maintain a pinned reviewed sanitizer and browser-native regression
-corpus. A future `notrios://` OS handler must validate scheme, length,
-profile/database IDs, route type, and stale targets; malformed external input
-must never switch profiles or invoke arbitrary filesystem paths.
+corpus.
+
+The `notrios://` OS handler is implemented (v0.4 P5) under those constraints.
+The parser is hand-written and strict rather than delegated to a permissive URL
+library: scheme, authority, route, identifier charset, every length bound, and
+the absence of query strings and percent-escapes are checked, and traversal,
+embedded newlines, and control characters are rejected. Resolution consults
+only databases the user registered explicitly; it never scans the filesystem,
+never infers a database from a path, and refuses rather than choosing when
+several profiles hold clones of one database. A link naming a foreign database
+is never matched against local IDs. The registry is written owner-only because
+it records local paths, and a corrupt registry is refused rather than partially
+applied. The generated desktop entry claims `x-scheme-handler/notrios` only,
+and installation requires an explicit `--apply`.
 
 ### REST and MCP
 

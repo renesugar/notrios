@@ -167,6 +167,9 @@ func (s *SQLiteStore) AdoptDatabaseIdentity(ctx context.Context, databaseID stri
 		return DatabaseIdentity{}, err
 	}
 	s.mu.Lock()
+	// Adoption changes the universe every stable link in this database names,
+	// so the memoized ID must not survive it.
+	s.cachedDatabaseID = ""
 	err = s.execPreparedLocked(`UPDATE database_identity SET database_id = ?, replica_id = ?,
 		replica_created_at = CURRENT_TIMESTAMP WHERE singleton = 1`, databaseID, replicaID)
 	s.mu.Unlock()

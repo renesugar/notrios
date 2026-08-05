@@ -52,6 +52,14 @@ func main() {
 		runVerify(os.Args[2:])
 	case "restore":
 		runRestore(os.Args[2:])
+	case "profile":
+		runProfile(os.Args[2:])
+	case "link":
+		runLink(os.Args[2:])
+	case "open":
+		runOpen(os.Args[2:])
+	case "register-url-handler":
+		runRegisterURLHandler(os.Args[2:])
 	case "help", "-h", "--help":
 		printHelp()
 	default:
@@ -502,6 +510,15 @@ Usage:
                                                  # exact duplicates, unreferenced blobs, notebook usage, and review-only perceptual signals
   notriosctl gc [--config config.yaml] [--db ...] [--asset-store ...] [--dry-run | --apply]
                                                  # retention-aware resource GC; dry-run is the default
+  notriosctl link [--db ...] <document-id>       # print the stable notrios:// link for a note
+  notriosctl open [--profile name] [--registry path] [--db path] [--launch] <notrios-uri>
+                                                 # resolve a stable link on this machine (exit 1 unresolved, 2 malformed)
+  notriosctl profile register --name <profile> [--db ...] [--registry path]
+  notriosctl profile list [--registry path]
+  notriosctl profile forget --name <profile> [--registry path]
+                                                 # local database registry used to route notrios:// links
+  notriosctl register-url-handler [--apply] [--binary path] [--dir path]
+                                                 # Ubuntu/XDG notrios:// protocol handler; prints unless --apply
 
 Future commands:
   notriosctl publish quartz --profile <name>

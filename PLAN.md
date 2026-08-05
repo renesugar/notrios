@@ -1,7 +1,7 @@
 # Plan: v0.4 — Import correctness, portable data, publishing handoff, and stable references
 
-Status: **J1–J3, Q1, P1, P2, P3, P3a, P3b, and P4 completed. P5 is active. The
-remaining product-feature tasks require user approval**.
+Status: **J1–J3, Q1, P1, P2, P3, P3a, P3b, P4, and P5 completed. The remaining
+product-feature tasks require user approval**.
 Drafted 2026-07-26 and revised 2026-08-02 after comparing the Joplin importer
 and publishing/search plans with the real-data-tested `movenotes-v3` pipeline.
 
@@ -408,7 +408,9 @@ Working state: a v2 archive can reconstruct the promised canonical state
 including resources and source bundles, corruption causes no partial restore,
 and archive v1 compatibility remains.
 
-### P5. Stable external links and local resolution — active
+### P5. Stable external links and local resolution — complete
+
+Archived as `plans/v0.4/011-stable-external-links.md`.
 
 - Define `notrios://databases/{database_id}/documents/{document_id}` parsing,
   validation, length bounds, and stale-target errors.
@@ -419,8 +421,29 @@ and archive v1 compatibility remains.
 - Keep authorization/network behavior unchanged; this is local routing, not
   sync.
 
+Delivered: `internal/stablelink` parses the URI strictly and by hand rather
+than through `net/url`, because the value arrives from outside the application
+and the only safe reading is one that matches the documented shape exactly or
+fails; its rejections are typed, so a foreign scheme is distinguishable from a
+broken Notrios link. `internal/profiles` is the explicit local registry, and
+the store answers `resolved`, `trashed`, `stale_target`, or
+`foreign_database`. `notrios://` links inside note bodies join the link graph.
+`POST /api/v1/links/resolve` and `database_info.database_id` in `/status` are
+the service surface; `notriosctl link`, `open`, `profile`, and
+`register-url-handler` are the desktop surface; the preview routes such links
+through the service instead of following them.
+
+Three refusals are the substance of the slice. Clones of one database are
+reported with every candidate rather than picked, because picking silently
+could edit the wrong copy. `--profile` settles that ambiguity but cannot
+redirect a link into a database that profile does not hold. And a link naming a
+foreign database is never matched against local IDs — nor does the response
+reveal whether that ID exists here — because document IDs are unique per
+database rather than globally.
+
 Working state: stable links survive local path/profile changes and malformed or
-wrong-database links cannot open another profile silently.
+wrong-database links cannot open another profile silently. Evidence is under
+`performance/v0.4-p5/`.
 
 ### P6. Native archive compatibility bridge to movenotes-v3
 
@@ -488,6 +511,8 @@ specific real-format, round-trip, hostile-input, native-build, and scale gates.
   or carry the container. The alternative is to accept ~131 objects per second
   and per-object transport round trips for the life of the format.
 - Approve P4 before implementing verified archive-v2 restore/import.
+- Approve P6 before pinning archive-v2 schemas/fixtures for `movenotes-v3`;
+  publishing a compatibility contract is harder to revise than the format.
 - Restore has no default: P2 defines explicit replace/merge/fork/adopt identity
   consequences; P4 must require one after verification.
 - Treat `movenotes-v3` and `hugo-theme-ledger` as optional external publishing

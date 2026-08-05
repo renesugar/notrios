@@ -181,10 +181,28 @@ metadata decisions, exclusions, warnings, and `manifest_sha256`. Detail arrays
 are bounded independently; `truncated` never means the counts/digest are
 partial. See [selection planning](../selection-planning.md).
 
+## Resolving a stable link
+
+```sh
+curl -s -X POST http://127.0.0.1:8080/api/v1/links/resolve \
+  -H 'Content-Type: application/json' \
+  -d '{"uri":"notrios://databases/db_qz.../documents/doc_01H..."}' | jq
+```
+
+Answers which note the link names in the database this service has open. The
+request takes a URI and nothing else — no path, no profile, no database
+selector — because choosing which local database answers a link is a desktop
+routing decision, not something an HTTP caller makes. `status` is `resolved`,
+`trashed`, `stale_target`, or `foreign_database`; the document fields are
+present only when this database can actually open the link. `GET
+/api/v1/status` reports `database_info.database_id` so a client can build stable
+links itself. See [stable links](../stable-links.md).
+
 ## Placeholder endpoints (not yet functional)
 
 Staged contracts include `GET /api/v1/jobs/{id}` and collection
 creation/patching (collections are effectively fixed to `default`). Profiles,
 batch organizer operations, native archive v2 jobs, and sync endpoints are
-planned but not live. Remote-media scan and localization are implemented; see
+planned but not live; archive v2 export/verify/restore are CLI commands by
+design. Remote-media scan and localization are implemented; see
 [the CLI guide](../cli.md#localize) and the note inspector in the GUI.

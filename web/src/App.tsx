@@ -17,6 +17,7 @@ import {
   listSearchNotebooks,
   listTags,
   localizeRemoteMedia,
+  resolveStableLink,
   scanRemoteMedia,
   updateDocument,
   uploadResource,
@@ -30,6 +31,7 @@ import {
   type StatusResponse,
   type TagRecord,
 } from './api';
+import { parseDeepLinkHash, stableLinkStatusMessage } from './stable-links';
 import {
   allThemes,
   applyTheme,
@@ -200,6 +202,10 @@ export function App() {
     } else {
       runSearch(''); // startup view: the "All notes" search notebook
     }
+    // The desktop protocol handler resolves a notrios:// link to a document ID
+    // and opens the local UI at `#document=<id>`, so honour that on startup.
+    const deepLink = parseDeepLinkHash(window.location.hash);
+    if (deepLink) void openDocumentByID(deepLink.documentID);
     window.addEventListener('notrios:open-help', openHelp);
     return () => {
       window.clearInterval(statusInterval);
@@ -253,6 +259,28 @@ export function App() {
       setBusy(false);
     }
   }, []);
+
+  // A stable link is resolved by the service, which answers only for the
+  // database it has open. A link belonging to another library is reported, not
+  // opened: silently matching its document ID here would show the wrong note.
+  const openStableLink = useCallback(async (uri: string) => {
+    setBusy(true);
+    setError(null);
+    setMessage(null);
+    try {
+      const resolution = await resolveStableLink(uri);
+      if (resolution.status === 'resolved' || resolution.status === 'trashed') {
+        await openDocumentByID(resolution.document_id);
+        if (resolution.status === 'trashed') setMessage('This note is in the Trash.');
+        return;
+      }
+      setError(stableLinkStatusMessage(resolution.status, resolution.uri));
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setBusy(false);
+    }
+  }, [openDocumentByID]);
 
   async function onSaveDocument() {
     if (!editable) return;
@@ -539,7 +567,13 @@ export function App() {
           max={containerWidth - MIN_WIDTHS.sidebar - MIN_WIDTHS.search - MIN_WIDTHS.preview}
           {...splitterHandlers(2)}
         />
-        <PreviewPane body={body} themeBase={activeTheme.base} onOpenDocument={(id) => void openDocumentByID(id)} onError={setError} />
+        <PreviewPane
+          body={body}
+          themeBase={activeTheme.base}
+          onOpenDocument={(id) => void openDocumentByID(id)}
+          onOpenStableLink={(uri) => void openStableLink(uri)}
+          onError={setError}
+        />
       </div>
       {/* Pane widths as CSS custom properties for the fixed-width panes. */}
       <style>{`.workspace > .sidebar-pane{width:${clamped.sidebar}px}.workspace > .search-pane{width:${clamped.search}px}.workspace > .editor-pane{width:${clamped.editor}px}.workspace > .preview-pane{width:${Math.max(MIN_WIDTHS.preview, previewWidth(clamped, containerWidth))}px}`}</style>

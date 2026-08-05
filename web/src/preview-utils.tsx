@@ -1,6 +1,7 @@
 // Shared preview/HTML helpers: sanitization, app-URI parsing, and snippet
 // rendering. Extracted from App.tsx so panes can share them.
 import { resourceContentURL } from './api';
+import { isStableLink } from './stable-links';
 
 export function normalizePreviewHTML(html: string): string {
   if (typeof DOMParser === 'undefined') return html;
@@ -28,6 +29,13 @@ export function normalizePreviewHTML(html: string): string {
       anchor.setAttribute('data-app-uri', href);
       const resourceID = parseResourceIDFromURI(href);
       if (resourceID) anchor.setAttribute('href', resourceContentURL(resourceID, true));
+      return;
+    }
+    // An external notrios:// link is routed, never followed: it may name
+    // another database, and only the server can say which note it means.
+    if (isStableLink(href)) {
+      anchor.setAttribute('data-app-uri', href);
+      anchor.setAttribute('href', '#');
       return;
     }
     if (href.startsWith('http://') || href.startsWith('https://') || href.startsWith('mailto:') || href.startsWith('#')) {

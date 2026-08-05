@@ -758,6 +758,30 @@ paths:
                 $ref: '#/components/schemas/SelectionPlan'
         '400':
           $ref: '#/components/responses/Error'
+  /api/v1/links/resolve:
+    post:
+      summary: Resolve an external notrios:// link against this database
+      description: >
+        Answers which note a stable link names in the database this service has
+        open. It accepts no path, profile, or database selector: choosing which
+        local database answers a link is a desktop routing decision made by the
+        local profile registry. A link naming another logical database is
+        reported as foreign_database and reveals nothing about local state.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StableLinkResolveRequest'
+      responses:
+        '200':
+          description: What the link names here
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StableLinkResolveResponse'
+        '400':
+          $ref: '#/components/responses/Error'
   /api/v1/jobs/{job_id}:
     get:
       summary: Get background job status
@@ -833,6 +857,11 @@ components:
             driver: { type: string }
             path: { type: string }
             state: { type: string }
+            database_id:
+              type: string
+              description: >
+                Stable logical database identity carried by external notrios://
+                links. The per-copy replica ID is deliberately not reported.
             schema_version: { type: integer }
         storage:
           type: object
@@ -1448,6 +1477,29 @@ components:
         include_private_metadata: { type: boolean }
         include_trashed: { type: boolean }
         max_resource_bytes: { type: integer, format: int64, minimum: 0 }
+    StableLinkResolveRequest:
+      type: object
+      additionalProperties: false
+      required: [uri]
+      properties:
+        uri:
+          type: string
+          maxLength: 2048
+          description: 'notrios://databases/{database_id}/documents/{document_id}[#anchor]'
+    StableLinkResolveResponse:
+      type: object
+      properties:
+        uri: { type: string }
+        status:
+          type: string
+          enum: [resolved, trashed, stale_target, foreign_database]
+        database_id: { type: string, description: The logical database the link names }
+        local_database_id: { type: string, description: The logical database that answered }
+        document_id: { type: string }
+        anchor: { type: string }
+        document_uri: { type: string, description: Present only when this database can open the link }
+        title: { type: string, description: Present only when this database can open the link }
+        notebook_id: { type: string, description: Present only when this database can open the link }
     SelectionPlanRequest:
       type: object
       additionalProperties: false

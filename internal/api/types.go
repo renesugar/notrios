@@ -63,10 +63,37 @@ type MediaPolicyStatus struct {
 }
 
 type DatabaseStatus struct {
-	Driver        string `json:"driver"`
-	Path          string `json:"path,omitempty"`
-	State         string `json:"state"`
+	Driver string `json:"driver"`
+	Path   string `json:"path,omitempty"`
+	State  string `json:"state"`
+	// DatabaseID is the stable logical database identity that external
+	// notrios:// links carry. The per-copy replica ID is not reported: it
+	// means nothing in a shared link.
+	DatabaseID    string `json:"database_id,omitempty"`
 	SchemaVersion int    `json:"schema_version,omitempty"`
+}
+
+// StableLinkResolveRequest asks which note a notrios:// link names in this
+// database. It accepts a URI and nothing else: no path, no profile, no
+// database selection. Choosing the database is a local desktop decision made
+// by the profile registry, never by an HTTP caller.
+type StableLinkResolveRequest struct {
+	URI string `json:"uri"`
+}
+
+// StableLinkResolveResponse reports what the link names here. Document fields
+// are populated only when this database can actually open the link, so a link
+// belonging to another database never reveals whether that ID exists locally.
+type StableLinkResolveResponse struct {
+	URI             string `json:"uri"`
+	Status          string `json:"status"`
+	DatabaseID      string `json:"database_id"`
+	LocalDatabaseID string `json:"local_database_id"`
+	DocumentID      string `json:"document_id"`
+	Anchor          string `json:"anchor,omitempty"`
+	DocumentURI     string `json:"document_uri,omitempty"`
+	Title           string `json:"title,omitempty"`
+	NotebookID      string `json:"notebook_id,omitempty"`
 }
 
 type StorageStatus struct {

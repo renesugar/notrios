@@ -53,6 +53,12 @@ This file is the codebase atlas. Update it whenever major files or directories a
   verify-first restore reader (`restore.go`), a generator-built synthetic golden
   fixture, and generated scale profiles.
 - `internal/markdownlinks/` — conservative MVP Markdown/Obsidian/app-URI link extractor.
+- `internal/stablelink/` — strict parser/formatter for the external
+  `notrios://databases/{database_id}/documents/{document_id}` link, with typed
+  rejections (foreign scheme, malformed, over-limit, unsupported route).
+- `internal/profiles/` — the explicit local registry mapping a logical database
+  ID to a database on this machine; resolves only unambiguous matches and
+  reports every candidate otherwise.
 - `internal/version/` — version constants.
 - `migrations/` — SQLite schema migrations.
 - `web/` — React/Vite built-in UI scaffold.
@@ -84,6 +90,8 @@ This file is the codebase atlas. Update it whenever major files or directories a
 - `PUBLISHING_POLICY.md` — Quartz/static publishing rules.
 - `SELECTION_AND_PRIVACY_PLANNER.md` — live P1 typed selection, target privacy
   defaults, manifest/report shapes, content boundary, and scale limits.
+- `docs/stable-links.md` — user guide for `notrios://` links, the profile
+  registry, `notriosctl link`/`open`/`profile`, and the desktop handler.
 - `VERSIONING_AND_SYNC_POLICY.md` — revision/checkpoint policy and summary of
   the synchronization invariants.
 - `WORKSPACE_MAINTENANCE.md` — query/lint/outline/block features.

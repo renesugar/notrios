@@ -27,8 +27,25 @@ func (s *SQLiteStore) ensureDatabaseIdentity(ctx context.Context) error {
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	s.cachedDatabaseID = ""
 	return s.execPreparedLocked(`INSERT OR IGNORE INTO database_identity(singleton, database_id, replica_id)
 		VALUES(1, ?, ?)`, databaseID, replicaID)
+}
+
+// databaseIDLocked returns the logical database ID, reading it once. Stable
+// links are resolved while rebuilding a note's links, which happens for every
+// note of an import; a query per link would be pure overhead for a value that
+// changes only under an explicit identity operation.
+func (s *SQLiteStore) databaseIDLocked() (string, error) {
+	if s.cachedDatabaseID != "" {
+		return s.cachedDatabaseID, nil
+	}
+	identity, err := s.getDatabaseIdentityLocked()
+	if err != nil {
+		return "", err
+	}
+	s.cachedDatabaseID = identity.DatabaseID
+	return s.cachedDatabaseID, nil
 }
 
 // GetDatabaseIdentity returns stable canonical identifiers and never derives

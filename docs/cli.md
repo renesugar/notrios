@@ -39,7 +39,7 @@ Exit `0` when all required checks pass, `1` otherwise. Note that doctor *creates
 
 ```text
 ok    config           config/config.example.yaml
-ok    database         ./data/notes.sqlite (schema version 12)
+ok    database         ./data/notes.sqlite (schema version 13)
 info  web ui           web/dist missing here; run `make web` or serve API-only
 doctor: required checks passed
 ```
@@ -161,6 +161,60 @@ Admits a verified archive into a database. `--intent` is required — each choic
 Verification completes in full before the first canonical write, so a damaged archive leaves the target untouched. Both object layouts are read; every note body, resource, and source bundle is re-hashed as it is used, and attachments are re-sniffed through the ordinary resource admission path rather than trusted from archive metadata.
 
 An interrupted restore leaves a durable marker naming the snapshot it was applying. That library is neither empty nor complete: `adopt`, `merge`, and `fork` refuse it and only `--intent replace` recovers it. The JSON summary reports the intent, resulting database/replica IDs, and applied record counts.
+
+## link
+
+```sh
+notriosctl link [--config config.yaml] [--db path] [--asset-store path] <document-id>
+```
+
+Prints the [stable link](stable-links.md) for a note: the portable
+`notrios://databases/{database_id}/documents/{document_id}` form that survives
+moving the database or renaming the profile. The report also carries the note's
+title and internal `document://` URI.
+
+## open
+
+```sh
+notriosctl open [--registry path] [--profile name] [--db path] [--launch] <notrios-uri>
+```
+
+Resolves a stable link on this machine. Without `--db` the [profile
+registry](stable-links.md) decides which database answers, and only when the
+answer is unambiguous. Exit `0` means the link named a note this machine can
+open, `1` means it could not be resolved (unregistered database, several
+candidate profiles, or a note that no longer exists), and `2` means the link
+was malformed — the codes matter because the desktop protocol handler runs this
+without a terminal.
+
+`--profile` settles ambiguity between profiles holding clones of one database;
+it cannot redirect a link into a different database. `--launch` opens the
+resolved note in the local web UI with `xdg-open`.
+
+## profile
+
+```sh
+notriosctl profile register --name <profile> [--db path] [--asset-store path] [--registry path]
+notriosctl profile list [--registry path]
+notriosctl profile forget --name <profile> [--registry path]
+```
+
+Manages the local registry (default `~/.config/notrios/profiles.json`, override
+with `--registry` or `NOTRIOS_PROFILE_REGISTRY`) that maps a logical database ID
+to a database on this machine. `register` reads the database ID out of the
+database itself — it cannot be asserted on the command line. `forget` edits the
+registry only and never touches the database it named.
+
+## register-url-handler
+
+```sh
+notriosctl register-url-handler [--apply] [--binary path] [--dir path]
+```
+
+Ubuntu/XDG protocol-handler registration for `notrios://`. It prints the
+desktop entry and changes nothing unless `--apply` is given, because installing
+it changes what happens when you click such a link anywhere on the machine. The
+entry claims `x-scheme-handler/notrios` and nothing else.
 
 ## seed-help
 

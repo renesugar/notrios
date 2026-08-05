@@ -74,8 +74,11 @@ GET /api/v1/status
 ```
 
 `/api/v1/status` reports runtime readiness plus the config path, database
-driver/path/state, schema version, storage roots, capability flags, configured
-search limits, and the active remote-media policy. Its `search_sidecar` object
+driver/path/state, the stable logical `database_id`, schema version, storage
+roots, capability flags, configured search limits, and the active remote-media
+policy. `database_id` is what a client needs to build an external
+`notrios://` link for a note it already holds; the per-copy replica ID is
+deliberately not reported because it means nothing in a shared link. Its `search_sidecar` object
 reports whether Recoll is configured/available/active, current state, pending
 and failed projection jobs, last sync/index/reconciliation timestamps, the
 last bounded reconciliation counts (missing/stale/orphaned/repaired), and a
@@ -219,7 +222,22 @@ POST /api/v1/graph
 POST /api/v1/links/resolve
 ```
 
-Link records preserve source syntax, raw target, normalized target URI, source position, context, anchor, relation type, and resolution status. MVP Task 5 extracts common Markdown links/images, Obsidian wikilinks/embeds, app URIs, external URLs, heading anchors, and block anchors with a conservative parser. `POST /api/v1/links/resolve` remains a future endpoint.
+Link records preserve source syntax, raw target, normalized target URI, source position, context, anchor, relation type, and resolution status. MVP Task 5 extracts common Markdown links/images, Obsidian wikilinks/embeds, app URIs, external URLs, heading anchors, and block anchors with a conservative parser.
+
+`POST /api/v1/links/resolve` (v0.4 P5) answers which note an external
+`notrios://` link names in the database this service has open. The request body
+is `{"uri": "..."}` and nothing else: it accepts no path, profile, or database
+selector, because choosing which local database answers a link is a desktop
+routing decision made by the profile registry, not by an HTTP caller. The
+response status is `resolved`, `trashed`, `stale_target`, or
+`foreign_database`; document fields are populated only when this database can
+open the link, so a foreign link never reveals whether that ID exists locally.
+Malformed URIs return `400 validation_failed`.
+
+A `notrios://` link inside a note body is a first-class link record: naming this
+database and a live note it is `resolved` exactly like `document://`, naming
+another database it is `external`, naming a missing note it is `unresolved`,
+and malformed it is `invalid` rather than searched for as a note title.
 
 ### Remote media (implemented, v0.3 tasks H2–H4)
 
@@ -301,9 +319,13 @@ and revision preconditions for destructive edits; the response has per-item
 outcomes. Copying link text is not treated as exporting note contents.
 
 External desktop links use
-`notrios://databases/{database_id}/documents/{document_id}`. The OS handler
-maps the portable database ID to a local profile, prompts on multiple matches,
-and never guesses across database IDs.
+`notrios://databases/{database_id}/documents/{document_id}` and are implemented
+in v0.4 P5 (`POST /api/v1/links/resolve` plus the `notriosctl link`, `open`,
+`profile`, and `register-url-handler` commands). The handler maps the portable
+database ID to a local profile through the explicit registry, reports every
+candidate on ambiguity, and never guesses across database IDs. The `profiles`
+REST routes below remain planned; the registry is local desktop configuration
+today, not an HTTP surface.
 
 The sync surface is conceptual until v0.7. MCP may start/cancel/status a job and
 list bounded conflicts, but bulk envelopes/blobs use REST or immutable folder
@@ -352,8 +374,8 @@ The REST + MCP surface must be sufficient to build a full-featured third-party n
 | links/backlinks/graph | links + graph routes |
 
 Remaining known gaps (deferred): HTTP range requests for resource content,
-`links/resolve`, block-level addressability (`/blocks`), import/export job APIs,
-bulk organizer operations, stable external-link/profile routing, and sync.
+block-level addressability (`/blocks`), import/export job APIs, bulk organizer
+operations, REST profile routes, and sync.
 
 ## MCP MVP endpoint
 
@@ -426,7 +448,11 @@ Preview-rendered links must be routed by the web UI and backed by REST:
 - Remote `http(s)` image links are detected and can trigger localization, but preview loading alone must not modify the note.
 - `notrios://databases/.../documents/...` links enter through the validated OS
   protocol handler and resolve to the internal `document://` route only after
-  local profile/database identity checks.
+  local profile/database identity checks. In the preview they are routed rather
+  than followed: the client parses the shape, asks
+  `POST /api/v1/links/resolve`, opens the note on `resolved`/`trashed`, and
+  reports `foreign_database`/`stale_target` instead of opening a local note
+  that happens to share the ID.
 
 ## API versioning
 
@@ -475,6 +501,23 @@ notriosctl verify archive-v2 <archive-dir>
 notriosctl restore archive-v2 --intent replace|adopt|merge|fork
     [--new-database-id id] [--batch-size N] <archive-dir>
 ```
+
+Stable-link routing is likewise CLI/desktop-local:
+
+```text
+notriosctl link [--db path] <document-id>
+notriosctl open [--registry path] [--profile name] [--db path] [--launch] <notrios-uri>
+notriosctl profile register --name <profile> [--db path] [--registry path]
+notriosctl profile list|forget [--registry path]
+notriosctl register-url-handler [--apply] [--binary path] [--dir path]
+```
+
+`open` exits 0 when the link named a note this machine can open, 1 when it
+could not be resolved (unregistered database, several candidate profiles, or a
+missing note), and 2 when the link was malformed — an OS protocol handler runs
+it without a terminal, so the codes are part of the contract.
+`register-url-handler` prints the Ubuntu/XDG desktop entry and installs it only
+with `--apply`.
 
 `export` streams one SQLite read-transaction snapshot through the P1 planner,
 publishes `manifest.json` last, and verifies the result before reporting

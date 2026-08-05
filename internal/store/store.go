@@ -829,6 +829,8 @@ type Store interface {
 	PlanSelection(ctx context.Context, req SelectionPlanRequest) (SelectionPlan, error)
 	GetDatabaseIdentity(ctx context.Context) (DatabaseIdentity, error)
 	RotateReplicaIdentity(ctx context.Context) (DatabaseIdentity, error)
+	StableDocumentURI(ctx context.Context, documentID string) (string, error)
+	ResolveStableLink(ctx context.Context, uri string) (StableLinkResolution, error)
 	Status(ctx context.Context) (StoreStatus, error)
 
 	CreateNotebook(ctx context.Context, req CreateNotebookRequest) (Notebook, error)

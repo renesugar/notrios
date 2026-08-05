@@ -251,6 +251,35 @@ fields, and count/path/JSON/notebook depth overflow. Verification is read-only
 and completes before any future restore Store transaction. Migration tests also
 prove database/replica identity stability and explicit replica rotation.
 
+### Stable external links (v0.4 P5)
+
+Parser fixtures cover the documented shape, anchors, case-insensitive
+scheme/authority with case-sensitive identifiers, the foreign-scheme versus
+malformed distinction, and rejection of traversal, percent-escapes, embedded
+newlines, query strings, unsupported routes, and every length bound.
+
+Registry fixtures cover the round trip and its `0600` permissions, upsert and
+remove, unambiguous resolution, ambiguity carrying every candidate in stable
+order, the rule that a preferred profile cannot redirect a link into a database
+it does not hold, invalid profiles, and refusal of a corrupt registry rather
+than partial application.
+
+Store fixtures cover the four resolution statuses, that no local state is
+reported for a foreign-database link, link-graph classification of `notrios://`
+targets inside note bodies, and that links keep resolving after the database
+file is copied to a new path — the property the whole link type exists for.
+
+CLI fixtures build the real binary and assert the exit-code contract an OS
+protocol handler depends on (0 opened, 1 unresolvable, 2 malformed), including
+a filesystem-level database clone that must produce `ambiguous_database` with
+both candidates rather than a choice. Desktop-entry fixtures assert it claims
+`x-scheme-handler/notrios` and nothing else.
+
+Web fixtures cover client-side parsing and rejection, deep-link hash parsing,
+preview routing of `notrios://` anchors, and the wrong-database message.
+
+Live service and CLI behaviour is recorded in `performance/v0.4-p5/`.
+
 ### Sync model and transport tests (planned v0.7)
 
 - Property/model tests shuffle, duplicate, replay, drop, and eventually deliver

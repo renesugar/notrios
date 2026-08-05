@@ -9,9 +9,9 @@ Current phase: v0.1, v0.2, and v0.3 are complete. H1–H11 are archived under
 P1 (shared selection/privacy planning), P2 (native archive-v2 format and
 identity verification), P3 (native archive-v2 streaming export), P3a
 (archive-v2 large-library container revision), P3b (packed object layout), and
-P4 (archive-v2 verify and restore) are complete and archived under
-`plans/v0.4/001`–`010`. P5 (stable external links) is active; P6–P8 require
-user approval. See the revised `PLAN.md`.
+P4 (archive-v2 verify and restore), and P5 (stable external links and local
+resolution) are complete and archived under `plans/v0.4/001`–`011`. P6–P8
+require user approval. See the revised `PLAN.md`.
 
 Archive-v2 supports two object layouts. Loose `fanout` is the default and
 deduplicates and resumes through the object tree. Opt-in `--pack` collapses a
@@ -195,5 +195,13 @@ The scaffold was created in a restricted container. Still-open consequences:
    restore cannot pass as a complete library. Resource and source-bundle
    coverage comes from the attachment-bearing Joplin corpus
    (`performance/v0.4-p4/`); neither recipe corpus carries attachments.
+9. P5 adds the external `notrios://databases/{id}/documents/{id}` link, the
+   strict `internal/stablelink` parser, the explicit `internal/profiles`
+   registry (`~/.config/notrios/profiles.json`, override with `--registry` or
+   `NOTRIOS_PROFILE_REGISTRY`), `POST /api/v1/links/resolve`, and the
+   `notriosctl link|open|profile|register-url-handler` commands. Resolution is
+   local routing only: it never contacts a peer, never scans the filesystem,
+   and refuses rather than choosing when several profiles hold clones of one
+   database.
 
 (The formerly open "no browser testing" limitation is resolved: the GUI is browser-verified via Playwright, vitest/RTL covers the workspace, and `scripts/verify_layout_resize.py` covers native window resizing.)

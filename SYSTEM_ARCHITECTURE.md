@@ -78,6 +78,18 @@ opens the unique match, prompts if several local profiles point at clones of
 the same database, and reports missing/stale targets without silently choosing
 another database.
 
+v0.4 P5 implements this. `internal/stablelink` parses the URI strictly — the
+value arrives from outside the application, so the only safe reading is one
+that matches the documented shape exactly or fails. `internal/profiles` is the
+explicit local registry mapping a logical database ID to a database path; it
+never scans the filesystem, never infers a database from a path, and reports
+every candidate rather than choosing when several profiles hold clones of one
+database. Naming a profile settles ambiguity but cannot redirect a link into a
+different database. A link naming a foreign database is never matched against
+local IDs, because document IDs are unique per database rather than globally.
+Resolution is local routing only: it opens a note in a database this machine
+already has and never contacts a peer.
+
 ## Resource model
 
 Resources are logical attachments or embedded media. Blobs are exact bytes addressed by hash. Multiple resources may share the same blob. Multiple documents may reference the same resource.

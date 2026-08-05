@@ -7,9 +7,9 @@ Updated: 2026-08-05
 v0.3 import/resource/media/large-library hardening is complete. H1–H11 are
 archived under `plans/v0.3/`. The revised v0.4 plan begins with Joplin
 correctness/performance prerequisites, then archive-v2, publishing handoff,
-boolean search, and stable references. J1–J3, Q1, P1, P2, P3, P3a, P3b, and P4
-are complete and archived under `plans/v0.4/001`–`010`. P5 (stable external
-links and local resolution) is active; P6–P8 require user approval.
+boolean search, and stable references. J1–J3, Q1, P1, P2, P3, P3a, P3b, P4, and
+P5 are complete and archived under `plans/v0.4/001`–`011`. P6–P8 require user
+approval.
 
 ## 2026-08-02 follow-up review
 
@@ -203,6 +203,39 @@ links and local resolution) is active; P6–P8 require user approval.
   spool, and `record_counts` became a pointer so `omitempty` actually applies —
   which cut packed verify peak RSS 41% and runtime 31%.
 
+## 2026-08-05 P5 — stable external links and local resolution
+
+- `notrios://databases/{database_id}/documents/{document_id}[#anchor]` is
+  parsed by `internal/stablelink`, hand-written and strict rather than built on
+  `net/url`, with typed rejections so a foreign scheme is distinguishable from
+  a broken Notrios link.
+- `internal/profiles` is the explicit local registry mapping a logical database
+  ID to a database path. It never scans the filesystem and never infers a
+  database from a path. Clones of one database are reported with every
+  candidate rather than picked; `--profile` settles that ambiguity but cannot
+  redirect a link into a database that profile does not hold.
+- A link naming a foreign database is never matched against local IDs, and the
+  response omits title/URI/notebook, so it cannot probe what this database
+  holds. Document IDs are unique per database, not globally.
+- Store resolution returns `resolved`, `trashed`, `stale_target`, or
+  `foreign_database`; `notrios://` links inside note bodies join the link graph
+  as `resolved`/`external`/`unresolved`/`invalid`.
+- Surfaces: `POST /api/v1/links/resolve`, `database_info.database_id` in
+  `/status`, `notriosctl link|open|profile|register-url-handler`, preview
+  routing, and the `#document=<id>` deep link.
+- `open` exit codes are the contract (0 opened, 1 unresolvable, 2 malformed)
+  because a protocol handler runs it without a terminal.
+  `register-url-handler` prints unless `--apply` and claims
+  `x-scheme-handler/notrios` only.
+- Two corrections during the slice: the desktop entry needed an embedded
+  `--config`, since a desktop launch otherwise resolves the service URL from
+  built-in defaults and would open the note in whatever runs on port 8080; and
+  the memoized database ID is cleared by `AdoptDatabaseIdentity`, which changes
+  the universe every stable link in the database names.
+- Evidence: `performance/v0.4-p5/stable-link-routing-check.md`. Browser-level
+  verification of the deep link was not run — no Python `playwright` module is
+  installed here.
+
 ## 2026-08-05 document reconciliation
 
 - Compared every living document with the source tree before starting P5 and
@@ -312,6 +345,10 @@ attempt detail remains append-only in `agent/ATTEMPT_LOG.jsonl`.
   and restore because a pack trailer is read whole.
 - An archive now admits up to 8,000,000 objects. The manifest carries index
   chunk descriptors and totals only, so its size does not track library size.
+- External links: `notrios://databases/{id}/documents/{id}`. The local registry
+  lives at `~/.config/notrios/profiles.json` (override with `--registry` or
+  `NOTRIOS_PROFILE_REGISTRY`) and is written `0600`.
+- P5 live routing evidence is under `performance/v0.4-p5/`.
 - No GitHub push is authorized for this review.
 
 ## Open implementation blockers

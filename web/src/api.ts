@@ -8,6 +8,9 @@ export interface StatusResponse {
     driver?: string;
     path?: string;
     state?: string;
+    // The logical database identity external notrios:// links carry. The
+    // per-copy replica ID is deliberately not reported by the service.
+    database_id?: string;
     schema_version?: number;
   };
   storage?: {
@@ -172,6 +175,33 @@ async function parseJSON<T>(response: Response): Promise<T> {
 export async function getStatus(): Promise<StatusResponse> {
   const response = await fetch('/api/v1/status');
   return parseJSON<StatusResponse>(response);
+}
+
+export interface StableLinkResolution {
+  uri: string;
+  status: string;
+  database_id: string;
+  local_database_id: string;
+  document_id: string;
+  anchor?: string;
+  document_uri?: string;
+  title?: string;
+  notebook_id?: string;
+}
+
+/**
+ * Asks the service which note a notrios:// link names. The service answers for
+ * the database it has open and takes no database selector, so a link belonging
+ * to another library comes back as `foreign_database` rather than silently
+ * matching a local ID.
+ */
+export async function resolveStableLink(uri: string): Promise<StableLinkResolution> {
+  const response = await fetch('/api/v1/links/resolve', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ uri }),
+  });
+  return parseJSON<StableLinkResolution>(response);
 }
 
 export async function createDocument(request: CreateDocumentRequest): Promise<DocumentRecord> {
