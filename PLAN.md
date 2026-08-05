@@ -1,546 +1,172 @@
-# Plan: v0.4 — Import correctness, portable data, publishing handoff, and stable references
+# Plan: v0.5 — Better editing, blocks, and graph UX
 
-Status: **J1–J3, Q1, P1, P2, P3, P3a, P3b, P4, P5, and P7 completed. P6 is
-deferred to v0.7. P8 remains**.
-Drafted 2026-07-26 and revised 2026-08-02 after comparing the Joplin importer
-and publishing/search plans with the real-data-tested `movenotes-v3` pipeline.
+Status: **drafted 2026-08-05 from `ROADMAP.md` after v0.4 completed. Unstarted;
+every task requires user approval.**
 
-## Document reconciliation (2026-08-05)
-
-Before starting P5, the living documents were compared with the source tree.
-P3a, P3b, and P4 shipped faster than the documents that describe them, so the
-following claims were stale and are corrected in place rather than left for the
-P8 wrap-up, where a reader would have been misled for four more tasks:
-
-- `agent/PLAN_STATUS.md`, `CONTEXT_MAP.md`, `ROADMAP.md`, `README.md`, and
-  `CODING_CLIENT_HANDOFF.md` all still said P4 (and in places P3a/P3b) awaited
-  approval or was unimplemented.
-- `NATIVE_ARCHIVE_V2.md` said `fanout` was the only layout two paragraphs
-  before describing the packed layout, and wrote the bounded verifier as
-  something P4 "can" reuse rather than does.
-- `API_SPEC.md`, `SYSTEM_ARCHITECTURE.md`, `SYNCHRONIZATION.md`,
-  `IMPORT_EXPORT_POLICY.md`, `docs/archive-v2.md`, `docs/cli.md`,
-  `docs/import-export.md`, and `docs/service.md` said archive-v2 export/restore
-  had no CLI surface, or told users to keep an archive-v1 export "until P4
-  lands". All three commands exist.
-- `DATABASE_SCHEMA.md` documented schema v12 while `store.CurrentSchemaVersion`
-  is 13; the `restore_state` table had no schema section.
-- `FEATURE_MATRIX.md` and `TESTING_POLICY.md` had no restore rows or restore
-  test layer.
-
-No source behavior changed in that pass. The one thing that is *not* reconciled
-is deliberate: `migrations/0001_initial.sql` stops at v12 and `ensureSchemaV13`
-brings a fresh database to v13, which is the documented upgrade-shim pattern,
-not a defect.
+v0.4 is complete and archived under `plans/v0.4/`, including a copy of its own
+plan at `plans/v0.4/000-v0.4-plan.md`. Its one deferral, P6 (the `movenotes-v3`
+archive compatibility bridge), moved to v0.7 slice 3 rather than into this
+milestone: it is gated on the sync container, not on editing.
 
 ## Goal
 
-Build a correct large-library foundation and one safe, scalable selection and
-object pipeline that can provide:
+v0.4 made the library portable and safe to move. v0.5 makes it better to *work
+in*: addressable blocks, links that tell you while you type whether they will
+resolve, a graph you can traverse and see, and bounded maintenance tools that
+find and fix what has rotted.
 
-1. faithful, resumable Joplin RAW import against real exports at million-note
-   scale;
-2. a checksum-verified native archive v2 suitable for full backup/transfer and
-   later reuse by v0.7 synchronization;
-3. privacy-reviewed subset handoffs to `movenotes-v3`, which owns Obsidian,
-   Quartz, Hugo/Ledger, Pagefind, and Bluge publication projections;
-4. stable `notrios://` links that include logical database identity and resolve
-   without guessing between local profiles.
-5. Twitter/X-style boolean search (`OR`, implicit `AND`, `-negation`, grouping,
-   and phrases) plus `category:` as a `notebook:` alias.
+Two constraints carry over unchanged and shape every task below:
 
-Native archive v1 remains supported as query-scoped interchange. v0.4 does not
-implement record-level synchronization, mobile clients, or the v0.6 bulk/MCP
-organizer.
-
-## Review decisions (2026-08-02)
-
-- Notrios will not duplicate `movenotes-v3`'s portable-vault, Quartz, Hugo/Ledger,
-  Pagefind, or Bluge implementations. The integration boundary is native archive
-  v2 plus compatibility fixtures and a separate `notrios2sql.py` importer owned
-  by the MIT-licensed `movenotes-v3` repository.
-- Notrios remains responsible for canonical selection, privacy decisions,
-  reachable-resource analysis, metadata stripping, and a reviewed publication
-  handoff. `movenotes-v3` owns format conversion and site building after that
-  boundary.
-- Quartz remains available for curated smaller subsets through
-  `movenotes-v3`'s Obsidian output. Hugo with `hugo-theme-ledger` and Bluge is
-  the already measured large-library route; v0.4 no longer contains a redundant
-  search-adapter spike or Notrios-native static-site generator.
-- Native archive v2 remains the restore-fidelity format. A scoped publication
-  handoff is explicitly not represented as a full backup.
+1. **Nothing unbounded.** Every new list, traversal, and report pages through a
+   keyset or an explicit bound, and every one gets a generated-scale profile.
+   The 500k-note tier is the reference, not a hundred-note fixture.
+2. **Note content is untrusted.** Query blocks, lint fixes, and templates are
+   structured and permission-controlled; none of them becomes a way for note
+   text to execute anything or to reach arbitrary filesystem paths.
 
 ## Working-state rule
 
-Complete one task at a time. Every task updates tests and living docs, runs its
-relevant validation, records attempt/model status, commits a working slice,
-archives it under `plans/v0.4/`, produces a verified ZIP, and asks for approval
-before the next task.
+Unchanged from v0.4. Complete one task at a time. Every task updates tests and
+living docs, runs its relevant validation, records attempt/model status, commits
+a working slice, archives it under `plans/v0.5/`, produces a verified ZIP, and
+asks for approval before the next task.
 
 ## Tasks
 
-### J1. Joplin RAW physical-line parser and canonical title/body compatibility — complete
-
-- Parse metadata only on CR/LF physical lines so OCR control characters remain
-  inside `ocr_text` values.
-- Derive canonical Joplin item titles from the first source line and keep the
-  title out of a note's Markdown body; retain the legacy metadata-first parser
-  only as an explicit compatibility path.
-- Preserve property order (including duplicate and future keys) from the same
-  parse used for import, consume at most one delimiter space, accept UTF-8 BOMs,
-  and reject invalid UTF-8.
-- Cover CRLF, OCR controls, duplicate keys, future key spelling, whitespace,
-  exact source bundles, canonical resource/folder/tag titles, and idempotence.
-
-Working state: focused importer tests and canonical `movenotes-v3/sample`
-fixtures pass; implementation evidence is archived under `plans/v0.4/001-*`.
-
-### J2. Real-export correctness and bounded relationship planning — complete
-
-- Validate read-only imports against `recipe_joplin` and the attachment-bearing
-  Joplin archive; compare aggregate recipe results with `recipe_vault` without
-  committing note data, paths, titles, databases, or resources.
-- Inventory every supported Joplin item type and report unsupported/malformed
-  items instead of silently dropping them; add sanitized fixtures for each
-  newly discovered shape.
-- Extract referenced `:/id` targets once per note instead of scanning every
-  known resource for every note, while retaining unresolved-link reports and
-  code-span/fence safety.
-- Record elapsed time, peak RSS, item/resource counts, warnings, idempotence,
-  and search/link/resource checks. Dry run must never write into the source.
-
-Working state: aggregate results agree with the source formats, attachment
-relationships are proportional to actual links, and real-data evidence contains
-no private content. Evidence is archived under `performance/v0.4-j2/` and
-implementation detail under `plans/v0.4/002-*`.
-
-### J3. Million-note transactional import throughput — complete
-
-- Replace per-document canonical transactions with a bounded store batch API
-  that preserves revisions, FTS5, links, provenance, tags, resources, outbox,
-  and checkpoint atomicity.
-- Replace whole-inventory maps where measured memory requires it with a
-  temporary indexed manifest/spool; keep deterministic fingerprints and resume.
-- Profile complete imports, interruption/resume, no-op re-import, and search
-  readiness on the recipe corpus; record hardware, SQLite settings, database
-  size, elapsed distribution, throughput, and peak RSS.
-- Keep synthetic 100/10k/100k regression tiers, but do not use dry-run-only
-  evidence as a claim about full import throughput.
-
-Working state: a complete million-note import is resumable, bounded by the
-chosen batch/spool sizes, and has an evidence-backed throughput baseline.
-Aggregate-only evidence is archived under `performance/v0.4-j3/` and
-implementation detail under `plans/v0.4/003-*`.
-
-### Q1. Boolean search expressions and category alias — complete
-
-- Replace the flat parser with a bounded expression tree for uppercase `OR`,
-  implicit `AND`, prefix `-`, parentheses, and quoted phrases; `AND` binds more
-  tightly than `OR`, URLs and hyphenated words remain intact, and unknown
-  `word:value` tokens remain searchable text.
-- Compile the same tree to SQLite FTS5/SQL and Recoll, with backend parity tests,
-  maximum query length/token/depth limits, and query-bound cursor fingerprints.
-- Treat `category:` as an exact alias for `notebook:`. `category:"All notes"`
-  and `notebook:"All notes"` remove the notebook filter and search all current
-  notes; ordinary notebook matching remains recursive and case-insensitive.
-- Update GUI, REST, MCP, search-notebook, docs, and generated scale tests; never
-  silently approximate an operator on a backend that cannot honor it.
-
-Working state: the documented grammar has identical result sets through live
-SQLite and Recoll fixtures, including negated/grouped fields and emoji terms.
-Generated scale evidence is archived under `performance/v0.4-q1/` and
-implementation detail under `plans/v0.4/004-*`.
-
-### P1. Shared selection and privacy planner — complete
-
-- Define typed selection inputs for notebooks (recursive), tags, queries, and
-  explicit bounded document IDs.
-- Produce a deterministic manifest of selected notes, reachable resources,
-  internal/private/broken links, source bundles, and exclusion reasons.
-- Keep planning read-only and stream/batch canonical reads; no arbitrary SQL
-  or filesystem paths cross REST/MCP boundaries.
-- Specify reusable privacy policy and report types for full archive, subset
-  transfer, and publication-handoff targets.
-
-Working state: a dry-run planner returns deterministic bounded reports on
-small fixtures and generated 100k-note data without materializing all note
-bodies in memory.
-Generated evidence is archived under `performance/v0.4-p1/` and implementation
-detail under `plans/v0.4/005-*`.
-
-### P2. Native archive v2 format and identity contract — complete
-
-- Specify a versioned manifest, logical database identity, snapshot metadata,
-  capability/schema bounds, immutable SHA-256 objects, and manifest-last
-  completeness rules.
-- Cover notes, revisions, notebooks, tags, links, provenance, resources, and
-  optional source bundles without including derived FTS5/Recoll state.
-- Define replace/merge/fork/adopt restore intent; no silent database-universe
-  merge.
-- Add strict size/count/path/depth limits, MIME handling, and checksum
-  validation fixtures.
-
-Working state: format/golden fixtures reject corruption, traversal, unsupported
-versions, missing objects, and inconsistent manifests before canonical writes.
-Schema v12 persists stable logical database and per-writable-copy replica IDs;
-the verifier also rejects MIME/path/depth/count/reference violations.
-Implementation detail is archived under `plans/v0.4/006-*`.
-
-### P3. Native archive v2 streaming export — complete
-
-- Export one transactionally consistent snapshot through the P1 planner into
-  immutable object files and publish the manifest last.
-- Stream bodies/resources/source bundles with bounded buffers; reuse exact
-  content objects and report bytes/counts/warnings.
-- Support full-database backup as the primary mode and explicit subset transfer
-  without representing a subset as a full backup.
-- Add interruption cleanup/resume or atomic staging semantics.
-
-Working state: full and subset exports are deterministic, checksum-valid,
-bounded-memory, and leave no apparently complete archive after interruption.
-`notriosctl export archive-v2` reads through one SQLite read transaction,
-streams every body/resource/source bundle through a 64 KiB buffer, stages
-privately, publishes the manifest last, and verifies the result. Generated
-100/1,000/5,000-note evidence is archived under `performance/v0.4-p3/` and
-implementation detail under `plans/v0.4/007-*`.
-
-One format bound was deliberately left open rather than widened in this slice:
-one object per revision plus an inline manifest inventory caps an archive near
-6,500 objects, so archive v2 cannot yet back up a real library. The exporter
-enforces the documented limits and fails before publishing a manifest. P3a
-resolves it; see `NATIVE_ARCHIVE_V2.md` and `agent/OPEN_QUESTIONS.md`.
-
-### P3a. Archive-v2 large-library container revision — complete
-
-Resolves `agent/OPEN_QUESTIONS.md` question 17. P3 proved the writer is
-correct but also proved the P2 container cannot hold a real library: the 4 MiB
-manifest lists every object inline at roughly 645 bytes each, so an archive
-tops out near **6,500 objects — about 6,400 single-revision notes**. The
-10,000-object limit is never reached. The supplied Joplin and Obsidian test
-corpora hold 382,206 notes each, and the Joplin RAW export holds 1,237,553
-source items, so neither can be archived or verified today. J3 already imports
-that corpus; export and verification must reach the same scale before archive
-v2 is usable, before P4 restores anything, and before P6 pins the format for an
-external consumer.
-
-- Move the object inventory out of `manifest.json` into checksummed `index`
-  objects using the same bounded JSONL chunking as records. The manifest keeps
-  format/version/snapshot/compatibility/counts plus a bounded list of index
-  descriptors and aggregate object totals, so the commit digest still binds
-  every object hash transitively.
-- Give each index entry a discriminated `location` so a later packed-object
-  layout can be added behind an optional capability without a second breaking
-  revision. Decide the object fanout at the same time: `ab/cd` matches the
-  asset store and keeps directories near 25 entries at 1.6M objects, where the
-  current single-level fanout would reach 6,250.
-- Re-derive every limit from the target library rather than the current
-  defaults: object count, record count, manifest bytes, index entries per
-  object, and total bytes must admit 1,000,000 notes with source preservation.
-- Make the writer's memory bounded. The object dedup map and the materialized
-  source-bundle key slice are both proportional to the archive today; replace
-  them with the indexed temporary spool and keyset streaming J3 already uses in
-  `internal/store/import_manifest.go`.
-- Make verification bounded. `verificationState` holds twelve in-memory maps of
-  full record structs; at 3.2M records that is several GB. Replace it with a
-  spooled two-pass identity and cross-reference check that keeps identical
-  admission semantics. P4 must reuse it rather than reintroduce in-memory sets.
-- Measure and choose a documented durability barrier: per-object fsync costs
-  minutes at 1.6M objects, and objects must still be durable before the
-  manifest is.
-- The index form becomes the only v2 form. No archive exists outside this
-  repository and P6 has not pinned anything, so regenerate the golden fixtures
-  instead of carrying an inline-inventory compatibility path.
-
-Working state: a full archive of the imported 382,206-note recipe corpus
-exports, verifies, and resumes within bounded memory, with aggregate-only
-evidence under `performance/v0.4-p3a/` that records elapsed time, throughput,
-peak RSS, object/record counts, manifest and index bytes, and spool size. No
-note titles, bodies, resources, paths, or databases are committed. If loose
-objects prove too slow or too hostile to the future rclone/folder sync
-transport at that scale, a packed-object layout becomes its own approved slice
-before P6 — the discriminated `location` exists so that stays a measurement
-decision, not another format break.
-
-### P3b. Packed object layout — complete
-
-Resolves `agent/OPEN_QUESTIONS.md` question 18, which P3a deliberately left to
-measurement. The measurement is in: a full backup of the 382,206-note recipe
-corpus wrote 382,407 loose objects in 48m26s — roughly 131 objects per second
-end to end — for only 1.14 GB of content. The cost is one
-`create + write + fsync + rename` per object, so throughput tracks file
-operations rather than bytes.
-
-That is poor for a backup, and it is worse for what the container is meant to
-become. v0.7 sync carries this layout over REST and folder/rclone transports,
-where hundreds of thousands of small objects mean hundreds of thousands of
-round trips. The answer to question 18 is therefore yes: add a packed layout.
-
-- Add `pack` to the discriminated `location` union that P3a introduced:
-  `{ layout, pack_sha256, offset, length }`. The entry keeps the object's own
-  SHA-256, so an object's identity never depends on where it is stored.
-- Pack files are `kind: "pack"` index entries stored under the ordinary fanout.
-  They are excluded from the unreferenced-object check because the entries
-  inside them are what reference their bytes.
-- Each pack ends with a self-describing trailer: a JSONL listing of the
-  objects it contains and their offsets, plus the trailer offset in the final
-  bytes. A pack is then verifiable standalone, and a resumed export can
-  recover finalized packs instead of rewriting them.
-- Declare `objects.pack.v1` as an **optional** capability. Readers that do not
-  understand it must reject an archive that uses it, so the capability is
-  listed as required when packs are present and absent otherwise.
-- Verification streams each pack once in offset order using the existing spool
-  rather than seeking per object, and checks every contained object's hash and
-  length against its index entry.
-- Keep the loose fanout layout supported and default until the measurements
-  below justify switching the default. Packs are chosen explicitly
-  (`--pack`), and the trade-off is documented: packs trade per-object
-  filesystem reuse for far fewer file operations.
-- Re-measure both layouts on the same 382,206-note corpus: export wall clock,
-  verification wall clock, peak RSS, file count, and interrupted-resume
-  behavior. Record the fsync count difference explicitly.
-
-Working state: the same corpus exports and verifies under both layouts with
-identical record counts and identical selection digests, and an archive that
-uses packs without declaring `objects.pack.v1` is rejected.
-
-Measured on the real 382,206-note corpus (`performance/v0.4-p3b/`): packing cut
-382,447 files to **46** and 48m26s to 37m28s — a 1.29× speedup, not the order
-of magnitude the fsync hypothesis predicted, because reading and hashing
-382,206 revision bodies dominates and both layouts pay it. The file-count
-collapse is the real result and is what v0.7's REST and folder/rclone
-transports need. Packing costs ~11% more disk because a packed writer cannot
-use the object tree as its dedup index, so `--pack` stays opt-in and loose
-remains the default.
-
-An interrupted packed export restarts rather than resumes; packs are
-self-describing, so trailer-based resume remains possible later without a
-format change. The A/B also exposed and fixed a byte-accounting defect that
-double-counted packed objects against `MaxTotalBytes`.
-
-### P4. Native archive v2 verify and restore/import — complete
-
-Archived as `plans/v0.4/010-archive-v2-verify-restore.md`.
-
-
-- Add verify-only CLI/API service behavior before any mutation.
-- Implement explicit replacement restore into a fresh initialized database and
-  additive import with conflict reporting; preserve or mint logical database
-  identity according to the chosen intent.
-- Admit objects through safe bounded paths and atomic canonical transactions;
-  preserve revisions/provenance/source bundles.
-- Read both object layouts and reuse P3a's spooled verification rather than
-  reintroducing in-memory record sets; restore must stay bounded at the
-  382,206-note scale P3a and P3b measured.
-- Add crash/fault injection and round-trip equality tests.
-
-Done so far: verify-only CLI, the bounded restore reader and store write path,
-and the attachment-corpus round trip, which now passes with a byte-identical
-14-column aggregate including blob and source-bundle content fingerprints
-(`performance/v0.4-p4/attachment-corpus-findings.md`). That corpus run found
-and fixed three defects — a quadratic restore lookup, `full_archive` dropping
-unreferenced resources, and restore registering source bundles as ordinary
-blobs. The corpus then restored under the packed layout as well, which found a
-fourth: the pack handle cache could close a pack while restore was still
-reading it. Both restored libraries are byte-identical to each other and to the
-source. Crash/fault injection then closed the last gap, and found three more:
-a restore interrupted mid-way left a partial library nothing marked as
-incomplete, a restore kept the target's builtin container rows instead of the
-archive's, and the reader treated the exporting database's schema version as a
-ceiling — so bumping the schema would have made every archive already written
-unreadable.
-
-Deduplication is now symmetric across layouts. The loose layout got it free —
-identical objects address the same path — but a pack writer only learns an
-object's hash after streaming it, so packed archives carried duplicate copies
-that loose archives collapsed. Export now checks a hash the store already
-records (`resources.blob_sha256`, `source_bundle_items.sha256`) or that is
-cheap to compute in memory (note bodies) *before* opening content, so a
-duplicate costs one indexed lookup instead of a read and a write. The
-membership index is the same bounded temporary spool J3 and the restore object
-index use, not an in-memory set.
-
-Restore already deduplicated but held every hash and bundle path in memory.
-Both maps now use the same bounded spool: loose restore peak RSS fell 42%
-(76,432 KB to 44,012 KB) for 7% more restore time, and no longer grows with the
-library.
-
-Measurement corrected the design twice. The lookup is a loss on the loose
-layout, which already deduplicates via content-addressed paths — it cost 7.6%
-of loose export time to find 27 duplicates in 215,410 objects — so it is gated
-to packed exports. And the memory saving is invisible under the packed layout,
-where peak RSS is set by reading pack trailers whole rather than by the maps.
-
-The zero `record_counts` on blob entries turned out to be a bug rather than a
-format trade-off: the field already declared `omitempty`, which Go ignores on a
-struct value, and it affected index entries in both layouts rather than only
-pack trailers. Making it a pointer saves 44 MB loose and 88 MB packed on the
-corpus, and — because a pack trailer is read whole — cut packed verify peak RSS
-41% and its runtime 31%. Five sibling fields carried the same ineffective tag;
-the API ones are always populated, so their tags were dropped rather than
-honoured, leaving responses unchanged.
-
-**Resource and attachment coverage is mandatory.** Neither recipe corpus
-carries resources or source bundles, so P3a/P3b exercised the blob path at
-scale with note bodies only. P4 must close that gap using the
-attachment-bearing Joplin RAW archive at
-`/home/renes/Documents/Joplin Archive/JoplinExport_2026_07_18/` — 111,330
-items with real resources, measured by J2 at 763 resource records and 766
-planned relationships, including five items whose content files are missing.
-Specifically:
-
-- import that archive with `--preserve-source` so resources *and* exact source
-  bundles are present, then export, verify, and restore it under both the loose
-  and packed layouts;
-- assert round-trip equality for resource bytes (exact SHA-256), logical
-  resource metadata, `document_resource_refs` relations with their ordinals and
-  anchors, and source-bundle items with their property order and relative
-  paths;
-- confirm restore re-admits resource bytes through the media/MIME admission
-  path rather than trusting archive metadata, and that a resource whose blob is
-  absent or corrupt fails before any canonical write;
-- confirm the J2 missing-content items remain reported rather than silently
-  dropped across the import → export → restore cycle.
-
-Evidence stays aggregate-only: counts, hashes, timings, and sizes, never note
-content, resource bytes, or local paths.
-
-Working state: a v2 archive can reconstruct the promised canonical state
-including resources and source bundles, corruption causes no partial restore,
-and archive v1 compatibility remains.
-
-### P5. Stable external links and local resolution — complete
-
-Archived as `plans/v0.4/011-stable-external-links.md`.
-
-- Define `notrios://databases/{database_id}/documents/{document_id}` parsing,
-  validation, length bounds, and stale-target errors.
-- Add the minimum local profile/database registry needed to resolve an external
-  link; prompt on ambiguity and never guess or switch by filesystem input.
-- Implement OS-handler registration only after route behavior is covered by
-  portable tests.
-- Keep authorization/network behavior unchanged; this is local routing, not
-  sync.
-
-Delivered: `internal/stablelink` parses the URI strictly and by hand rather
-than through `net/url`, because the value arrives from outside the application
-and the only safe reading is one that matches the documented shape exactly or
-fails; its rejections are typed, so a foreign scheme is distinguishable from a
-broken Notrios link. `internal/profiles` is the explicit local registry, and
-the store answers `resolved`, `trashed`, `stale_target`, or
-`foreign_database`. `notrios://` links inside note bodies join the link graph.
-`POST /api/v1/links/resolve` and `database_info.database_id` in `/status` are
-the service surface; `notriosctl link`, `open`, `profile`, and
-`register-url-handler` are the desktop surface; the preview routes such links
-through the service instead of following them.
-
-Three refusals are the substance of the slice. Clones of one database are
-reported with every candidate rather than picked, because picking silently
-could edit the wrong copy. `--profile` settles that ambiguity but cannot
-redirect a link into a database that profile does not hold. And a link naming a
-foreign database is never matched against local IDs — nor does the response
-reveal whether that ID exists here — because document IDs are unique per
-database rather than globally.
-
-Working state: stable links survive local path/profile changes and malformed or
-wrong-database links cannot open another profile silently. Evidence is under
-`performance/v0.4-p5/`.
-
-### P6. Native archive compatibility bridge to movenotes-v3 — deferred to v0.7
-
-Moved out of v0.4 on 2026-08-05. The gate is **v0.7 slice 3** (the native
-snapshot/change container), not the whole synchronization milestone: slices 4
-and 5 add transports and recovery and do not touch the container.
-
-Two things decided it.
-
-**The container is not finished being changed.** v0.7 slice 3 reuses archive-v2
-manifests and object storage for full snapshots and bounded change envelopes,
-and two open synchronization questions reach inside the container — question 13
-(deterministic envelope encoding and compression for protocol v1) and question
-14 (the blob size that triggers fixed chunking, which changes how blob bytes are
-addressed, the one thing an importer reads most). Unknown record types are
-rejected outright, so sync-era record additions must arrive behind a new
-required capability, and a reader pinned in v0.4 would then refuse every archive
-written after v0.7. That failure is safe and loud, which is the point of
-capability negotiation — but it is still a second integration pass, and
-sequencing work to avoid exactly that is why P3a and P3b came before P4.
-
-**The consumer does not exist yet.** `movenotes-v3` contains no
-`notrios2sql.py` and no reference to Notrios at all. Two of P6's four bullets
-are coordination against an importer nobody has started, and fixtures published
-now would be pinned against an imagined reader and then regenerated after
-v0.7 anyway.
-
-What is genuinely lost by waiting is small: the archive-v2 verifier already
-admits or rejects an archive on its own, the golden fixture is already built by
-a generator that does not use the exporter, and the adversarial fixtures already
-cover corruption, traversal, and capability violations. A second independent
-reader would add value, but not enough to pin a format mid-revision.
-
-When it lands, the task is unchanged in substance:
-
-- publish archive-v2 JSON Schemas/golden fixtures, capability bounds, and a
-  compatibility command producing sanitized deterministic test archives;
-- coordinate the separate `movenotes-v3/notrios2sql.py` importer against those
-  fixtures, exchanging documented formats, behavior, and fixtures rather than
-  implementation code;
-- verify revisions/provenance/source bundles needed for backup stay available to
-  the importer while publication mode exposes only the selected current-note
-  projection and explicitly allowed metadata;
-- add cross-version consumer tests so format additions are rejected or ignored
-  according to declared capability rules.
-
-Working state (when implemented): `movenotes-v3` can consume a Notrios archive
-without a Notrios Obsidian/Joplin exporter, and an unsupported archive fails
-before partial import.
-
-### P7. Publication profiles and privacy-reviewed archive handoff — complete
-
-Archived as `plans/v0.4/012-publication-profiles.md`.
-
-- Add saved publish profiles using the shared selection/privacy planner.
-- Support recursive notebook/folder/tag selection, reachable public resources,
-  private-note link policy, metadata stripping, and dry-run warnings.
-- Emit a scoped, sanitized archive-v2 publication handoff; do not invoke
-  untrusted note content as build code inside Notrios.
-- Keep publish execution explicit after a reviewed plan.
-
-Delivered: `notriosctl publish profile|plan|run`. A profile records selection
-and privacy decisions only — never an output path, a command, or anything from
-note content — and is stored owner-only beside the library. `publish plan` is
-the read-only review; `publish run` re-plans and refuses unless the result still
-matches the reviewed digest, because a profile is not a promise about a fixed
-set of notes.
-
-The projection publishes current revisions only, withholds Trash, provenance,
-exact source bundles, saved searches, and revision metadata, and rewrites links
-to withheld or unresolved targets. Rewriting the body turned out to be only half
-of it: a link record carries the raw target, the resolved ID, and a context
-excerpt, so records for rewritten links are dropped and `context` is cleared,
-while retained links keep offsets shifted onto the published body. A span whose
-bytes no longer look like the link it describes is left alone and warned about
-rather than cut at a stale offset. Content-rewriting link actions remain refused
-for `full_archive`.
-
-Working state: curated fixtures hand off only selected reachable public content
-and privacy violations are visible before generation. With P6 deferred, v0.4
-does not claim that any external tool consumes the handoff: it is a
-checksum-verified, explicitly subset-scoped archive-v2 directory that Notrios'
-own verifier admits, and turning it into a Quartz vault or a Hugo/Ledger site
-is the deferred bridge's job. Evidence is under `performance/v0.4-p7/`.
-
-### P8. v0.4 documentation and release wrap-up
-
-- Document backup/verify/restore intent, stable links, and publishing privacy
-  in both the site and Help notebook. Describe the movenotes compatibility
-  boundary as a boundary and record that the bridge itself is deferred to v0.7;
-  do not document a consumer that does not exist.
-- Reconcile `FEATURE_MATRIX.md`, architecture/schema/API/security documents,
-  and release checklist.
+### E1. Block anchors and block-level addressability
+
+The foundation the rest of the milestone leans on. `document_blocks` has been
+"planned" since the MVP schema; heading and block anchors currently live only on
+link records.
+
+- Add schema v14 `document_blocks`: stable block IDs, document, ordinal, kind
+  (heading/paragraph/list-item/code/table), heading level, byte range, and a
+  content hash, rebuilt in the same transaction as a note save.
+- Parse blocks deterministically from canonical Markdown, reusing the existing
+  extractor's conventions so a block anchor and a link anchor agree.
+- Implement `GET /api/v1/documents/{id}/blocks` and block-scoped backlinks;
+  extend `document://` and `notrios://` resolution to block anchors.
+- Keep the rebuild proportional to one note, and profile the 500k tier: block
+  rows will outnumber notes by an order of magnitude, so index choice and row
+  size matter more than in any earlier table.
+
+Working state: a block anchor resolves to a stable position across edits that do
+not touch it, block rows never outlive their document, and the 500k profile
+records row counts, database growth, and save latency against the v0.3 baseline.
+
+### E2. Workspace lint
+
+Read-only first, exactly as resource GC was. A report that cannot mutate is also
+a report that is safe to run on a library nobody has backed up yet.
+
+- Detect the checks `WORKSPACE_MAINTENANCE.md` lists: broken document/resource
+  links, ambiguous wikilinks, unresolved block references, duplicate IDs,
+  missing titles, unlocalized remote images, unreferenced resources, missing
+  alt text, and projection/index drift.
+- One bounded Store operation with typed findings, stable reason codes, capped
+  detail arrays, and complete counts — the shape P1 established.
+- Expose it through `notriosctl lint` and a read-only REST report. No fix
+  actions in this slice.
+- Profile the 500k tier: a lint pass is a whole-library read and must stay
+  bounded in memory and explicit about its cost.
+
+Working state: findings are deterministic, content-free at the API boundary, and
+reproducible; nothing about the library changes.
+
+### E3. Workspace fix
+
+- Implement the apply half for the mechanically safe subset only: unlocalized
+  remote images (through the existing media policy), missing alt text,
+  normalizable link syntax, and stale link reference definitions.
+- Dry run is the default and prints the exact edit; apply requires explicit
+  confirmation and a revision precondition per note, so a concurrent edit fails
+  rather than being overwritten.
+- Every fix writes an ordinary revision. There is no silent rewrite path, and
+  nothing bypasses the media policy or the link resolver.
+- Findings the tool cannot fix safely stay reported and unfixed rather than
+  guessed at.
+
+Working state: a fix run is reproducible, reversible through revision history,
+and refuses when the note changed under it.
+
+### E4. Graph traversal, paths, and visualization data
+
+- Extend the graph slice into bounded traversal: neighbors at depth N, shortest
+  path between two notes, and orphan/hub reports, all with explicit node and
+  edge ceilings and a documented refusal when a request would exceed them.
+- Keep it in SQLite. LadybugDB stays a research option and does not become a
+  dependency for this milestone.
+- Return data a client can render; do not put layout in the service.
+- Profile against the 1M-link tier the v0.3 harness already generates.
+
+Working state: every traversal is bounded, a refused request says which ceiling
+it hit, and the 1M-link profile records latency and peak RSS.
+
+### E5. Editor-pane link intelligence
+
+- Rich link autocomplete: a bounded prefix/title search endpoint the editor
+  calls while typing, returning stable IDs and titles, never whole bodies.
+- Broken-link markers while editing: the client asks whether the targets in the
+  current buffer resolve, in one bounded batch, without saving.
+- Both surfaces are read-only and bounded; neither writes a revision.
+
+Working state: autocomplete and markers work on the 500k library without a
+per-keystroke whole-library query, and an offline client degrades to no markers
+rather than to errors.
+
+### E6. CodeMirror 6 migration decision
+
+Explicitly a decision task, not an implementation one. `md-editor-rt` sits
+behind an application-owned adapter precisely so this stays a measured choice.
+
+- Establish what E5 could not do inside the current editor: source positions,
+  in-editor Ctrl-click, inline widgets, AST-safe edits.
+- Prototype the same two features on CodeMirror 6 + unified/remark/rehype behind
+  the existing adapter, and measure bundle size, first paint, typing latency on
+  a large note, and behaviour inside the Wails webview.
+- Recommend migrate or stay, with the measurement, and record it in
+  `PROJECT_DECISIONS.md`. A migration, if chosen, is its own approved slice.
+
+Working state: the recommendation is backed by numbers from both editors on the
+same notes, not by preference.
+
+### E7. Embedded query blocks
+
+- Render a fenced `note-query` block from the Q1 expression language plus a
+  bounded, typed selection of fields, sorts, and limits. No SQL, no JavaScript,
+  no filesystem reach.
+- Evaluate at render time with a hard result cap and a visible truncation
+  marker; a query block never blocks note loading.
+- Keep the block declarative and inert in export: a publication handoff carries
+  the block's text, not a materialized result, unless a profile explicitly asks
+  for materialization.
+
+Working state: a malformed or hostile query block renders an error inside the
+note rather than failing the note, and no query block can read anything the
+user's own search cannot.
+
+### E8. Organizer UX: trash-first delete, restore, and hierarchical tag rename
+
+- Make trash-first deletion and restore first-class in the GUI, including the
+  notebook-deletion rehoming rule the store already implements.
+- Add hierarchical tag rename with dry run, including child tags, through the
+  Store/REST/CLI with counts before apply.
+- Keep every bulk-shaped operation out of scope: batch organizer transactions
+  are v0.6 and must not be pre-empted here.
+
+Working state: a user can see and undo deletions without the CLI, and a tag
+rename reports exactly what it will touch before touching it.
+
+### E9. v0.5 documentation and release wrap-up
+
+- Document blocks, lint/fix, graph traversal, editor behaviour, and query blocks
+  in both the site and the Help notebook.
+- Reconcile `FEATURE_MATRIX.md`, architecture/schema/API/security documents, and
+  the release checklist.
 - Run the full release validation, archive the plan, draft the next plan from
   `ROADMAP.md`, and produce a verified source ZIP.
 
-Working state: documentation matches implementation and v0.4 release checks
+Working state: documentation matches implementation and v0.5 release checks
 pass.
 
 ## Baseline validation
@@ -556,32 +182,26 @@ bash scripts/mvp_smoke.sh
 bash scripts/run_performance_smoke.sh
 ```
 
-Importer, archive, compatibility, GUI, and large-library tasks add their
-specific real-format, round-trip, hostile-input, native-build, and scale gates.
+Block, lint, graph, and editor tasks add their own generated-scale profiles;
+GUI-affecting tasks also build with `make gui`, and layout changes run
+`scripts/verify_layout_resize.py` under Xvfb/Openbox.
 
-## Decisions required before or during v0.4
+## Decisions required before or during v0.5
 
-- Approve P3b before adding the packed object layout. It is sequenced before
-  P4 for the same reason P3a was — a restore path written against one layout
-  would have to be revisited — and before P6 and v0.7 sync, both of which pin
-  or carry the container. The alternative is to accept ~131 objects per second
-  and per-object transport round trips for the life of the format.
-- Approve P4 before implementing verified archive-v2 restore/import.
-- P6 is deferred to v0.7, gated on slice 3 (the native snapshot/change
-  container). A published compatibility contract is harder to revise than the
-  format it describes, the container still changes in that slice, and
-  `movenotes-v3` has not started the importer that would consume it.
-- Restore has no default: P2 defines explicit replace/merge/fork/adopt identity
-  consequences; P4 must require one after verification.
-- Treat `movenotes-v3` and `hugo-theme-ledger` as optional external publishing
-  tools under their own repositories and licenses; do not link or vendor them.
-- OS registration details remain Ubuntu-only unless another platform is
-  explicitly added and tested.
+- Approve E1 before adding schema v14. Block rows will outnumber notes by an
+  order of magnitude on a real library, so the row shape is expensive to change
+  later.
+- Decide whether a block anchor survives an edit that rewrites its text
+  (content-hash identity) or only an edit that moves it (positional identity).
+  E1 must state which, because block links inherit that choice.
+- E6 is a decision task. Approving E6 does not approve a CodeMirror migration.
+- Confirm that lint/fix stays single-note and revision-preconditioned in v0.5;
+  anything bulk belongs to the v0.6 organizer.
 
 ## Scope control
 
-CodeMirror/block graph UX (v0.5), expanded MCP/batch organizer profiles (v0.6),
-record-level sync and rclone transport (v0.7), authentication/multi-user
-deployment, Wails v3/mobile migration, HTTP range downloads, and the official
-MCP Go SDK migration remain outside v0.4 unless the roadmap is deliberately
-revised.
+Batch/organizer transactions and expanded MCP profiles (v0.6), record-level sync
+and transports (v0.7), the deferred `movenotes-v3` compatibility bridge (v0.7
+slice 3), authentication and multi-user deployment, Wails v3/mobile migration,
+HTTP range downloads, and the official MCP Go SDK migration all remain outside
+v0.5 unless the roadmap is deliberately revised.

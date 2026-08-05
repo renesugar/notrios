@@ -1,5 +1,65 @@
 # Release Checklist
 
+## v0.4.0 — portable data, publishing, and stable references
+
+The v0.4 implementation is complete on `develop`. As with v0.3, the
+reproducible local release-candidate gates are separated from repository-owner
+publishing actions.
+
+Release-candidate gates (run for P8):
+
+- [x] Product version reports `0.4.0`; schema bootstraps/upgrades to v13.
+- [x] `go vet ./...` and `go test ./...`.
+- [x] Required-file, scaffold, OpenAPI parse, migration-copy, and plan-loop
+      checks.
+- [x] Web lockfile install, typecheck, tests, production build, and GUI build.
+- [x] Documentation site build and deterministic Help-notebook seed/reseed
+      covering the two new pages (stable links, publishing).
+- [x] End-to-end REST/MCP smoke and generated store performance smoke.
+- [x] Committed evidence for every implemented slice under
+      `performance/v0.4-j2/` through `performance/v0.4-p7/`.
+- [x] Source release ZIP produced by `scripts/package_release.sh`, independently
+      checked by `scripts/check_release_zip.py`, and SHA-256 recorded in the
+      P8 handoff.
+- [x] ZIP contains `web/dist/` and excludes `.git/`, `web/node_modules/`,
+      runtime `data/`, SQLite databases, and generated build directories.
+
+What v0.4 adds beyond v0.3:
+
+- native archive v2 as a real backup format — streaming export at
+  382,206-note scale under a loose or optional packed object layout,
+  read-only verification, and restore under mandatory
+  replace/adopt/merge/fork intent;
+- Joplin RAW correctness and million-note transactional import throughput;
+- bounded boolean search with the `category:` alias;
+- the shared read-only selection/privacy planner;
+- stable external `notrios://` links with an explicit local profile registry
+  and an Ubuntu protocol handler;
+- reviewed publication profiles emitting a sanitized subset handoff.
+
+Known release boundaries:
+
+- A publication handoff is a projection, not a backup: current notes only, with
+  links to withheld or unresolved targets rewritten. Notrios does not build a
+  site, and no external tool is yet verified to consume the handoff — the
+  `movenotes-v3` compatibility bridge is deferred to v0.7 (see
+  `PROJECT_DECISIONS.md` decision 16).
+- `--pack` archives require a reader that understands `objects.pack.v1`; loose
+  remains the default.
+- An interrupted packed export restarts rather than resuming.
+- Stable-link OS handler registration is Ubuntu/XDG only.
+- Notrios remains source-only, Ubuntu-only, single-user/local, and
+  unauthenticated. Do not expose the service directly to an untrusted network.
+- Recoll/Xapian remain optional user-installed external GPL processes.
+- Native archive v1 is query-scoped interchange, not a full backup; archive v2
+  is the backup format.
+
+Repository-owner publishing steps (not performed by P8):
+
+- [ ] Review and merge/fast-forward `develop` into `main`.
+- [ ] Push the reviewed branches; confirm CI and the GitHub Pages docs workflow.
+- [ ] Tag and push `v0.4.0` only after the owner accepts the release candidate.
+
 ## v0.3.0 — import, resource, media, and scale hardening
 
 The v0.3 implementation is complete on `develop`. This section separates the

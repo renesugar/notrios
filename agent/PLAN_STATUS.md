@@ -4,12 +4,14 @@ Updated: 2026-08-05
 
 ## Active milestone
 
-v0.3 import/resource/media/large-library hardening is complete. H1–H11 are
-archived under `plans/v0.3/`. The revised v0.4 plan begins with Joplin
-correctness/performance prerequisites, then archive-v2, publishing handoff,
-boolean search, and stable references. J1–J3, Q1, P1, P2, P3, P3a, P3b, P4, and
-P5, and P7 are complete and archived under `plans/v0.4/001`–`012`. P6 is
-deferred to v0.7; P8 (documentation and release wrap-up) remains.
+**v0.4 is complete.** J1–J3, Q1, P1, P2, P3, P3a, P3b, P4, P5, P7, and P8 are
+archived under `plans/v0.4/`, together with a copy of the milestone plan at
+`plans/v0.4/000-v0.4-plan.md`. P6, the `movenotes-v3` compatibility bridge, is
+deferred to v0.7 slice 3. Product version is 0.4.0 and the schema is v13.
+
+`PLAN.md` now holds the **v0.5 draft** (blocks, lint/fix, graph traversal,
+editor link intelligence, query blocks, organizer UX). It is unstarted and
+every task requires user approval.
 
 ## 2026-08-02 follow-up review
 
@@ -203,6 +205,26 @@ deferred to v0.7; P8 (documentation and release wrap-up) remains.
   spool, and `record_counts` became a pointer so `omitempty` actually applies —
   which cut packed verify peak RSS 41% and runtime 31%.
 
+## 2026-08-05 P8 — v0.4 documentation and release wrap-up
+
+- Bumped service, CLI, MCP, and web metadata to 0.4.0; the schema bootstraps and
+  upgrades to v13.
+- Added the v0.4.0 release-candidate and owner-publishing sections to
+  `RELEASE_CHECKLIST.md`, including the boundaries a reader needs: a publication
+  is a projection rather than a backup, no external tool is yet verified to
+  consume the handoff, `--pack` requires a reader that understands
+  `objects.pack.v1`, an interrupted packed export restarts, and the OS handler
+  is Ubuntu-only.
+- Reconciled the API implementation status (what is live over REST versus what
+  is deliberately CLI-only) and extended `SECURITY_REVIEW.md` to cover
+  publication handoffs.
+- Help reseed verified: 15 pages seed, a second run keeps all 15 and updates
+  none, including the new stable-links and publishing guides.
+- Archived the completed v0.4 plan and drafted the v0.5 plan from `ROADMAP.md`.
+  No v0.5 implementation has started.
+- Full release validation passed, including `package_release.sh` and
+  `check_release_zip.py`.
+
 ## 2026-08-05 P7 — publication profiles and privacy-reviewed handoff
 
 - `notriosctl publish profile save|list|delete`, `publish plan`, `publish run`.
@@ -363,7 +385,7 @@ attempt detail remains append-only in `agent/ATTEMPT_LOG.jsonl`.
 - H11 local release gates pass; `docs/operations.md` is included in the
   docs site; P1/P2 expand it from 11 to 13 pages/Help notes with selection and
   archive-v2 safety guides.
-- Product version: 0.3.0; current schema: v13.
+- Product version: 0.4.0; current schema: v13.
 - Resource reference report:
   `GET /api/v1/resources/reports/reference` and
   `notriosctl resources report`.

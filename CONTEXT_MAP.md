@@ -5,9 +5,9 @@ This file is the codebase atlas. Update it whenever major files or directories a
 ## Root documents
 
 - `README.md` — project overview and quick start.
-- `PLAN.md` — active v0.4 portable-data/publishing/stable-reference plan;
-  J1–J3, Q1, P1, P2, P3, P3a, P3b, and P4 are complete, P5 is active, and
-  P6–P8 require user approval.
+- `PLAN.md` — drafted, unstarted v0.5 editing/blocks/graph plan. v0.4 is
+  complete and archived under `plans/v0.4/`, including its own plan copy at
+  `plans/v0.4/000-v0.4-plan.md`.
 - `plans/scaffold/SCAFFOLD_CREATION_PLAN.md` — process for creating/refining this scaffold.
 - `ROADMAP.md` — product roadmap and future features.
 - `AGENTS.md` — coding-agent instructions (`CLAUDE.md` points here).
@@ -96,6 +96,8 @@ This file is the codebase atlas. Update it whenever major files or directories a
   defaults, manifest/report shapes, content boundary, and scale limits.
 - `docs/stable-links.md` — user guide for `notrios://` links, the profile
   registry, `notriosctl link`/`open`/`profile`, and the desktop handler.
+- `docs/publishing.md` — user guide for publication profiles, the
+  review-then-publish gate, and what a publication withholds.
 - `VERSIONING_AND_SYNC_POLICY.md` — revision/checkpoint policy and summary of
   the synchronization invariants.
 - `WORKSPACE_MAINTENANCE.md` — query/lint/outline/block features.

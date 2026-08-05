@@ -2,18 +2,26 @@
 
 This handoff applies to any coding agent or client continuing this project (Codex, Claude, aider, swival.dev, etc. — formerly `CODEX_HANDOFF.md`). The repository is designed so an agent can continue from repository files alone.
 
-Current phase: v0.1, v0.2, and v0.3 are complete. H1–H11 are archived under
-`plans/v0.3/`. v0.4 J1 (Joplin RAW physical-line/canonical-title parsing), J2
-(real-export correctness and bounded relationship planning), J3
-(million-item transactional throughput), Q1 (bounded boolean/category search),
-P1 (shared selection/privacy planning), P2 (native archive-v2 format and
-identity verification), P3 (native archive-v2 streaming export), P3a
-(archive-v2 large-library container revision), P3b (packed object layout), and
-P4 (archive-v2 verify and restore), and P5 (stable external links and local
-resolution), and P7 (publication profiles) are complete and archived under
-`plans/v0.4/001`–`012`. P6, the `movenotes-v3` compatibility bridge, is deferred
-to v0.7 slice 3, which still extends the container it would pin. P8
-(documentation and release wrap-up) remains. See the revised `PLAN.md`.
+Current phase: v0.1, v0.2, v0.3, and **v0.4** are complete; product version is
+0.4.0 and the schema is v13. `PLAN.md` holds an unstarted v0.5 draft.
+
+Milestone detail follows. H1–H11 are archived under `plans/v0.3/`. The v0.4
+slices are archived under `plans/v0.4/`:
+
+- J1–J3: canonical Joplin RAW parsing, bounded relationship planning, and
+  million-item transactional import throughput;
+- Q1: bounded boolean/category search;
+- P1: the shared selection/privacy planner;
+- P2–P3b: the archive-v2 format and identity contract, streaming export, the
+  large-library container revision, and the optional packed object layout;
+- P4: verify and restore under mandatory intent;
+- P5: stable external links and local resolution;
+- P7: publication profiles and the privacy-reviewed handoff;
+- P8: documentation and release wrap-up (version 0.4.0, the v0.4.0 release
+  checklist, a verified Help reseed, and the v0.5 draft in `PLAN.md`).
+
+P6, the `movenotes-v3` compatibility bridge, is deferred to v0.7 slice 3, which
+still extends the container it would pin.
 
 Archive-v2 supports two object layouts. Loose `fanout` is the default and
 deduplicates and resumes through the object tree. Opt-in `--pack` collapses a

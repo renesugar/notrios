@@ -3,8 +3,8 @@
 Notrios (formerly "Notes Companion") is a local-first note-taking, search, import, and publishing system for very large Markdown and document collections.
 It combines a Go REST/MCP service (`notriosd`), a built-in GUI, SQLite/FTS5-backed canonical storage, content-addressed resources, optional Recoll-derived search/extraction, and support for third-party native clients (C++/Qt, Go/Wails, Rust/Tauri) over the same API.
 
-The v0.1 MVP, v0.2 redesign, and v0.3 hardening milestone are complete — see
-[`PLAN.md`](PLAN.md) and [`ROADMAP.md`](ROADMAP.md). The repository is
+The v0.1 MVP, v0.2 redesign, v0.3 hardening, and v0.4 portable-data milestones
+are complete — see [`PLAN.md`](PLAN.md) and [`ROADMAP.md`](ROADMAP.md). The repository is
 structured so a coding agent can resume safely after usage limits or model
 changes.
 
@@ -73,17 +73,17 @@ Recoll availability, backlog, sync/index, and reconciliation state.
   H1–H11; see `plans/v0.3/`) — safe remote-media localization, resource
   reports/retention, keyset pagination, hardened resumable Joplin/Obsidian
   imports, and a convergent observable Recoll sidecar.
-- Current milestone: v0.4 import correctness, portable data, publishing
-  handoff, and stable references. J1–J3, Q1, P1, P2, P3, P3a, P3b, and P4 are
-  complete: bounded boolean search, the shared selection/privacy planner, the
-  native archive-v2 format/identity verifier, `notriosctl export archive-v2`
-  streaming backup/subset snapshots at real-library scale under a loose or
-  packed object layout, and `notriosctl verify`/`restore archive-v2` with
-  mandatory replace/adopt/merge/fork intent. P5 adds portable
-  `notrios://` links with an explicit local profile registry and an Ubuntu
-  protocol handler, and P7 adds reviewed publication profiles that emit a
-  sanitized subset handoff. P6 is deferred to v0.7 and P8 (release wrap-up)
-  remains — see
+- v0.4 portable data, publishing, and stable references: **complete**
+  (see `plans/v0.4/`) — bounded boolean search, the shared selection/privacy
+  planner, native archive v2 as a real backup format (streaming export at
+  382,206-note scale under a loose or optional packed layout, read-only
+  verification, and restore under mandatory replace/adopt/merge/fork intent),
+  portable `notrios://` links with an explicit local profile registry and an
+  Ubuntu protocol handler, and reviewed publication profiles that emit a
+  sanitized subset handoff. P6, the movenotes-v3 compatibility bridge, is
+  deferred to v0.7.
+- Current milestone: v0.5 editing, blocks, and graph UX — drafted and unstarted;
+  see
   [`PLAN.md`](PLAN.md) and [`ROADMAP.md`](ROADMAP.md).
 - Agent progress/attempt tracking: [`agent/PLAN_STATUS.md`](agent/PLAN_STATUS.md), [`agent/ATTEMPT_LOG.jsonl`](agent/ATTEMPT_LOG.jsonl), and [`agent/MODEL_LOG.jsonl`](agent/MODEL_LOG.jsonl).
 

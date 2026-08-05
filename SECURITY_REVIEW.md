@@ -1,8 +1,8 @@
 # Security Review — Current Local Product and Planned Remote Surfaces
 
-This review reflects the repository after v0.3 H10. Notrios is local-first but
-its REST/MCP listener, importers, preview, downloaded media, future archive
-files, and future sync transports are security boundaries.
+This review reflects the repository after v0.4 P8. Notrios is local-first but
+its REST/MCP listener, importers, preview, downloaded media, archive files,
+published handoffs, and future sync transports are security boundaries.
 
 ## Current controls
 
@@ -93,6 +93,24 @@ the earlier pass, re-sniffs blob MIME through the ordinary resource admission
 path, and records a durable marker so an interrupted restore cannot pass as a
 complete library. Export, verification, and restore are CLI-only; no REST or
 MCP surface accepts an archive path or streams archive bytes.
+
+### Publication handoffs
+
+- A publication is a projection, not an archive of canonical state: current
+  revisions only, no Trash, provenance, exact source bundles, saved searches, or
+  revision metadata.
+- Links to withheld or unresolved targets are rewritten out of the published
+  bodies, and their link records are dropped rather than published: a record
+  carries the withheld target's ID, its raw target, and a context excerpt of the
+  surrounding sentence.
+- A link span whose stored bytes no longer match is left alone and reported,
+  never cut at a stale offset.
+- Publishing requires the digest of a reviewed plan and re-checks it before
+  writing, so a library change after the review stops the publication.
+- A profile records selection and privacy decisions only. It cannot name a
+  command, and Notrios never executes note content or runs a build step.
+- `full_archive` is refused as a publication profile target, so the export that
+  carries everything is not reachable through a publishing name.
 
 ## Planned synchronization threat boundary
 

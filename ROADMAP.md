@@ -52,7 +52,7 @@ The built-in Go/Wails GUI is part of the first released version, so it lives her
   profiles before importer scale hardening.
 - Recoll hardening: batched incremental scans, periodic reconciliation, FTS5/Recoll search result merging, extraction status in UI.
 
-## v0.4 — Portable data, publishing, and stable references
+## v0.4 — Portable data, publishing, and stable references (complete; archived under `plans/v0.4/`)
 
 - Correct Joplin RAW physical-line/title/property parsing against real exports,
   then add attachment-aware and million-note full-import performance evidence;
@@ -89,7 +89,7 @@ The built-in Go/Wails GUI is part of the first released version, so it lives her
   current notes. SQLite FTS5 and Recoll must compile the same bounded expression
   tree and must not silently approximate unsupported operators.
 
-## v0.5 — Better editing and graph UX
+## v0.5 — Better editing and graph UX (drafted in `PLAN.md`; unstarted)
 
 - Consider migration from `React + md-editor-rt` to `React + CodeMirror 6 + unified/remark/rehype` if deeper editor-pane behavior is needed.
 - Rich link autocomplete.
@@ -214,6 +214,6 @@ The scaffold handoff is complete; see `CODING_CLIENT_HANDOFF.md`. Future roadmap
 ## v0.1 completion note
 
 The v0.1 MVP, v0.2 redesign, and v0.3 hardening milestones are implemented and
-archived. v0.4 J1–J3, Q1, P1, P2, P3, P3a, P3b, P4, P5, and P7 are implemented
-and archived under `plans/v0.4/`; P6 is deferred to v0.7 and P8 (documentation
-and release wrap-up) remains.
+archived, and so is v0.4: J1–J3, Q1, P1, P2, P3, P3a, P3b, P4, P5, P7, and P8
+are under `plans/v0.4/`, with P6 deferred to v0.7 slice 3. The v0.5 plan is
+drafted in `PLAN.md` and unstarted.

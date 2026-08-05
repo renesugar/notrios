@@ -19,10 +19,15 @@ The REST persistence slice is implemented for managed Markdown documents:
 - `POST /api/v1/search` searches current, non-deleted managed documents with SQLite FTS5.
 - `GET /api/v1/documents/{document_id}/links` returns outgoing links and backlinks parsed from Markdown.
 - `POST /api/v1/graph` returns a small document/resource graph slice for selected roots.
-- import/publish job APIs, rich block indexing, `links/resolve`, profiles,
-  batches, and sync remain planned. Document/resource/search/notebook/tag/trash,
-  link-listing, graph-slice, remote-media scan/policy/localization, CLI import
-  and CLI archive v1, and the MCP adapter are live.
+- `POST /api/v1/selection/plan` returns the read-only selection/privacy plan.
+- `POST /api/v1/links/resolve` resolves an external `notrios://` link against
+  this database.
+- import/publish job APIs, rich block indexing, REST profiles, batches, and sync
+  remain planned. Document/resource/search/notebook/tag/trash, link-listing,
+  graph-slice, remote-media scan/policy/localization, selection planning, stable
+  link resolution, and the MCP adapter are live over REST; import, archive v1,
+  archive v2 export/verify/restore, stable-link routing, and publication are
+  local CLI operations by design.
 
 ## Contract goals
 
