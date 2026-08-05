@@ -126,6 +126,7 @@ func (s *SQLiteStore) ClearLibraryForReplace(ctx context.Context) error {
 	for _, statement := range []string{
 		`DELETE FROM documents_fts`,
 		`DELETE FROM document_links`,
+		`DELETE FROM document_blocks`,
 		`DELETE FROM document_resource_refs`,
 		`DELETE FROM note_tags`,
 		`DELETE FROM document_sources`,

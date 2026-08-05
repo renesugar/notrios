@@ -43,6 +43,8 @@ func (s *Server) handleResolveStableLink(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	writeJSON(w, http.StatusOK, api.StableLinkResolveResponse{
+		BlockID:         resolution.BlockID,
+		BlockKind:       resolution.BlockKind,
 		URI:             resolution.URI,
 		Status:          resolution.Status,
 		DatabaseID:      resolution.DatabaseID,

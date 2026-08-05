@@ -181,6 +181,18 @@ metadata decisions, exclusions, warnings, and `manifest_sha256`. Detail arrays
 are bounded independently; `truncated` never means the counts/digest are
 partial. See [selection planning](../selection-planning.md).
 
+## Listing a note's blocks
+
+```sh
+curl -s http://127.0.0.1:8080/api/v1/documents/doc_01H.../blocks | jq
+```
+
+Returns each addressable block in document order with its ID, kind, heading
+level, author-written marker if any, content hash, byte range, and how many
+links point at it. Block IDs derive from block text, so an ID names exactly the
+content it was written against. The response contains no block text — read the
+note body for that. See [stable links](../stable-links.md#linking-to-a-block-not-just-a-note).
+
 ## Resolving a stable link
 
 ```sh

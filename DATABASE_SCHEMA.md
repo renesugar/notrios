@@ -56,7 +56,8 @@ reference table before deleting a logical resource.
 
 `document_links` records explicit links parsed from Markdown or imported source data. MVP Task 5 populates it transactionally on document create, update, restore, and soft-delete cleanup. It stores source syntax, raw target, display text, optional normalized target URI, resolved document/resource IDs, anchor type/value, context excerpt, source byte/line/column positions, relation type, and resolution status. Status values used in the MVP are `resolved`, `unresolved`, `ambiguous`, and `external`; later importers may add `invalid` and `target_deleted`.
 
-`document_blocks` remains planned. Heading and block anchors are currently stored on link records, not as separately addressable block rows.
+`document_blocks` (schema v14) makes blocks separately addressable; heading and
+block anchors on link records now resolve against it. See the v14 section below.
 
 ### media policy (schema v7, v0.3 task H1)
 
@@ -81,15 +82,12 @@ invalidates the canonical note save.
 
 ## MVP migration file
 
-`migrations/0001_initial.sql` has grown with each milestone and creates through
-schema version 12 (v5 notebooks/tags/search notebooks, v6 source provenance,
-v7 media policy, v8 resource retention, v9 scalable keyset indexes, v10
-resumable import state/source bundles, v11 projection retry scheduling, v12
-logical database/replica identity),
-applied idempotently on every startup with upgrade shims for older databases.
-The current schema is **v13** (`store.CurrentSchemaVersion`): `ensureSchemaV13`
-adds `restore_state` on top of the migration file, which is the same
-upgrade-shim pattern every earlier version used before being folded in.
+`migrations/0001_initial.sql` has grown with each milestone and now creates
+through schema version **14** (v5 notebooks/tags/search notebooks, v6 source
+provenance, v7 media policy, v8 resource retention, v9 scalable keyset indexes,
+v10 resumable import state/source bundles, v11 projection retry scheduling, v12
+logical database/replica identity, v13 restore state, v14 note blocks), applied
+idempotently on every startup with upgrade shims for older databases.
 Its original MVP portion represents schema version 4. Do not rename public
 tables/columns casually once tests depend on them.
 
@@ -159,6 +157,38 @@ including identity adoption.
 A library carrying the marker is neither empty nor complete. `adopt`, `merge`,
 and `fork` refuse it; only `replace` recovers it, and the recovered library is
 identical to a clean restore. Nothing else in the service writes this table.
+
+## Schema v14 — note blocks
+
+`document_blocks` holds one row per addressable region of a note: heading,
+paragraph, list item, fenced code block, or table. Rows are derived state, like
+FTS5 rows and links, and are rebuilt from the body inside the same transaction
+as the save that produced them. They never outlive their document.
+
+**Block identity is content-based** (`PROJECT_DECISIONS.md` 17). `id` derives
+from a SHA-256 over the document ID, the block kind, the normalized text, and
+the occurrence index among identical blocks in that note. Moving a block within
+a note keeps its ID; editing its text mints a new one, so an anchor always names
+exactly the text it was written against and a rewritten block breaks links into
+it rather than silently redirecting them. Normalization is limited and
+deliberate: line endings are normalized and trailing whitespace is trimmed, so
+an editor that cleans whitespace on save does not break every anchor in the
+note. Document scope keeps identity local — the same sentence in two notes is
+two blocks, and a block key never lets one note's content be recognized in
+another.
+
+`marker` stores an author-written Obsidian-style `^marker` when the block ends
+with one. Those are names the author chose and they survive edits to the block's
+text, so anchor resolution tries the marker first and the derived ID second.
+
+Indexes: `(document_id, ordinal)` for listing a note's blocks in order, and a
+partial `(document_id, marker)` index for authored-anchor lookups. A database
+upgraded to v14 has no rows for notes nobody has edited since;
+`RebuildDocumentBlocks` fills them in without writing a revision.
+
+Sizing measured on the generated profiles: at six blocks per note the table
+roughly doubles the database (114 MB to 245 MB at 100,000 notes), while anchor
+resolution stays at 0.2–0.5 ms from 61,000 to 601,000 block rows.
 
 ## Schema v5/v6 — Notrios redesign (tasks R3 and R4 implemented)
 

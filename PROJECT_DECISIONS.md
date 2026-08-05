@@ -29,6 +29,20 @@
     the contract would pin, and unknown record types are rejected, so a reader
     integrated earlier would refuse every archive written afterwards. Decided
     2026-08-05; v0.4 P6 moved to v0.7.
+17. Block anchor identity is strictly content-based: a block's ID derives from
+    its text, so moving a block keeps its ID and editing its text mints a new
+    one. An anchor therefore names exactly the text it was written against, and
+    an edit breaks links into that block rather than silently redirecting them
+    at replaced content. The hash is scoped to the document and disambiguated by
+    occurrence, taken over text with line endings normalized and trailing
+    whitespace trimmed. Author-written Obsidian `^markers` continue to resolve
+    first, because they are names the author chose. Decided 2026-08-05 for
+    v0.5 E1.
+18. Workspace lint and fix stay single-note and revision-preconditioned in
+    v0.5: every fix writes an ordinary revision against a precondition for one
+    note, and no multi-note apply path is added. Bulk operations belong to the
+    v0.6 organizer, which has its own atomic/best-effort contract. Decided
+    2026-08-05 for v0.5 E2/E3.
 
 ## Deferred decisions
 

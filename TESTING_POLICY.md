@@ -308,6 +308,28 @@ selection after the review invalidates it.
 
 Evidence: `performance/v0.4-p7/`.
 
+### Note blocks (v0.5 E1)
+
+Parser fixtures cover the five block kinds, unclosed fences, tables, the
+per-document bound, and determinism. The identity decision is tested directly:
+moving a block keeps its ID, editing its text mints a new one, the same text in
+two notes is two blocks, identical blocks in one note are disambiguated by
+occurrence, a heading and a paragraph reading the same are distinct, and CRLF or
+trailing-whitespace changes do not disturb identity.
+
+Store fixtures assert that blocks are rebuilt in the same transaction as the
+save, that purging a note removes them, that an authored `^marker` outranks the
+derived ID and survives an edit that the derived ID does not, that backlink
+counts work for either spelling of an anchor, and that `RebuildDocumentBlocks`
+writes no revision. REST fixtures assert the listing, its 404, that no block
+text is returned, and that a stale anchor is reported distinctly while still
+naming the note.
+
+The generated scale profile adds block metrics at 10k/100k/500k: the real save
+path over a bounded sample, and anchor/listing lookups against a synthetically
+filled block table so index behaviour is measured at real row counts rather
+than at sample size. Evidence: `performance/v0.5-e1/`.
+
 ### Sync model and transport tests (planned v0.7)
 
 - Property/model tests shuffle, duplicate, replay, drop, and eventually deliver

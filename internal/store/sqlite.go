@@ -164,6 +164,9 @@ func (s *SQLiteStore) Bootstrap(ctx context.Context) error {
 	if err := s.ensureSchemaV13(ctx); err != nil {
 		return err
 	}
+	if err := s.ensureSchemaV14(ctx); err != nil {
+		return err
+	}
 	if err := s.ensureDatabaseIdentity(ctx); err != nil {
 		return err
 	}
@@ -440,6 +443,37 @@ func (s *SQLiteStore) ensureSchemaV13(ctx context.Context) error {
 			started_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 		);`,
 		`PRAGMA user_version = 13;`,
+	}
+	for _, statement := range statements {
+		if err := s.Exec(ctx, statement); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// ensureSchemaV14 adds content-addressed note blocks. Block rows are derived
+// state: they are rebuilt from the note body in the same transaction as the
+// save that produced them, so an upgrade needs no backfill — the first save of
+// each note fills them in, and `RebuildDocumentBlocks` fills them in for notes
+// nobody edits.
+func (s *SQLiteStore) ensureSchemaV14(ctx context.Context) error {
+	statements := []string{
+		`CREATE TABLE IF NOT EXISTS document_blocks (
+			id TEXT NOT NULL,
+			document_id TEXT NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+			ordinal INTEGER NOT NULL,
+			kind TEXT NOT NULL,
+			heading_level INTEGER NOT NULL DEFAULT 0,
+			marker TEXT,
+			content_sha256 TEXT NOT NULL,
+			start_byte INTEGER NOT NULL,
+			end_byte INTEGER NOT NULL,
+			PRIMARY KEY (document_id, id)
+		);`,
+		`CREATE INDEX IF NOT EXISTS document_blocks_document_idx ON document_blocks(document_id, ordinal);`,
+		`CREATE INDEX IF NOT EXISTS document_blocks_marker_idx ON document_blocks(document_id, marker) WHERE marker IS NOT NULL;`,
+		`PRAGMA user_version = 14;`,
 	}
 	for _, statement := range statements {
 		if err := s.Exec(ctx, statement); err != nil {
@@ -1551,7 +1585,14 @@ func (s *SQLiteStore) RebuildDocumentLinks(ctx context.Context, documentID strin
 	return nil
 }
 
+// rebuildDocumentLinksLocked re-derives a note's links and blocks. Both are
+// derived from the same body and must describe the same one, so they are
+// rebuilt together inside the caller's transaction rather than by separate
+// calls that could disagree.
 func (s *SQLiteStore) rebuildDocumentLinksLocked(documentID, collectionID, body string) error {
+	if err := s.rebuildDocumentBlocksLocked(documentID, body); err != nil {
+		return err
+	}
 	if err := s.execPreparedLocked(`DELETE FROM document_links WHERE source_document_id = ?`, documentID); err != nil {
 		return err
 	}

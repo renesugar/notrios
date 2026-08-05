@@ -1,7 +1,7 @@
 # Plan: v0.5 — Better editing, blocks, and graph UX
 
-Status: **drafted 2026-08-05 from `ROADMAP.md` after v0.4 completed. Unstarted;
-every task requires user approval.**
+Status: **drafted 2026-08-05 from `ROADMAP.md` after v0.4 completed. E1 is
+complete; E2–E9 require user approval.**
 
 v0.4 is complete and archived under `plans/v0.4/`, including a copy of its own
 plan at `plans/v0.4/000-v0.4-plan.md`. Its one deferral, P6 (the `movenotes-v3`
@@ -33,22 +33,53 @@ asks for approval before the next task.
 
 ## Tasks
 
-### E1. Block anchors and block-level addressability
+### E1. Block anchors and block-level addressability — complete
+
+Archived as `plans/v0.5/001-block-anchors.md`. Evidence:
+`performance/v0.5-e1/`. Anchor resolution measured flat (0.3 ms p95) from
+61,000 to 3,001,200 block rows; blocks roughly double the database at six blocks
+per note, which is what a second index over every note's text costs.
 
 The foundation the rest of the milestone leans on. `document_blocks` has been
 "planned" since the MVP schema; heading and block anchors currently live only on
 link records.
 
-- Add schema v14 `document_blocks`: stable block IDs, document, ordinal, kind
-  (heading/paragraph/list-item/code/table), heading level, byte range, and a
-  content hash, rebuilt in the same transaction as a note save.
+**Block identity is content-based** (decided 2026-08-05). A block's ID is
+derived from its text, not from its position: moving a block within a note
+keeps its ID, and editing a block's text mints a new one, so an anchor always
+names exactly the text it was written against. An edit therefore breaks
+anchors into that block — that is the intended trade, and links to it become
+unresolved rather than silently pointing at replaced text.
+
+Three consequences follow, all settled here rather than during implementation:
+
+- **Duplicate text needs a disambiguator.** Two identical paragraphs in one
+  note would otherwise share an ID. The hash covers the document ID, the block
+  kind, the normalized text, and the occurrence index among identical blocks in
+  that note, so identity stays deterministic and scoped to its note.
+- **Normalization is part of the contract.** The hash is taken over text with
+  line endings normalized and trailing whitespace trimmed, so re-saving a note
+  through an editor that cleans whitespace does not silently break every anchor
+  in it. Anything beyond that — case, punctuation, Markdown emphasis — is
+  content, and changing it changes identity.
+- **Authored `^markers` still win.** Obsidian-style block markers already
+  arrive through the importer and already resolve as link anchors. They are
+  identifiers the author chose and they survive edits to the block's text, so
+  resolution tries the authored marker first and the content hash second.
+  Content-based identity governs blocks Notrios names itself; it does not
+  overrule a name the author wrote.
+
+- Add schema v14 `document_blocks`: content-derived block IDs, document,
+  ordinal, kind (heading/paragraph/list-item/code/table), heading level, byte
+  range, authored marker when present, and the content hash, rebuilt in the same
+  transaction as a note save.
 - Parse blocks deterministically from canonical Markdown, reusing the existing
   extractor's conventions so a block anchor and a link anchor agree.
 - Implement `GET /api/v1/documents/{id}/blocks` and block-scoped backlinks;
   extend `document://` and `notrios://` resolution to block anchors.
-- Keep the rebuild proportional to one note, and profile the 500k tier: block
-  rows will outnumber notes by an order of magnitude, so index choice and row
-  size matter more than in any earlier table.
+- Keep the rebuild proportional to one note, and profile the largest tier the
+  harness generates: block rows will outnumber notes by an order of magnitude,
+  so index choice and row size matter more than in any earlier table.
 
 Working state: a block anchor resolves to a stable position across edits that do
 not touch it, block rows never outlive their document, and the 500k profile
@@ -188,15 +219,15 @@ GUI-affecting tasks also build with `make gui`, and layout changes run
 
 ## Decisions required before or during v0.5
 
-- Approve E1 before adding schema v14. Block rows will outnumber notes by an
-  order of magnitude on a real library, so the row shape is expensive to change
-  later.
-- Decide whether a block anchor survives an edit that rewrites its text
-  (content-hash identity) or only an edit that moves it (positional identity).
-  E1 must state which, because block links inherit that choice.
+- **Resolved 2026-08-05: block identity is strictly content-based.** An anchor
+  survives a block moving and breaks when the block's text changes. See E1 for
+  the three consequences that follow, and `PROJECT_DECISIONS.md` decision 17.
+- **Resolved 2026-08-05: lint and fix stay single-note and
+  revision-preconditioned.** Every fix writes an ordinary revision against a
+  precondition for one note; anything bulk belongs to the v0.6 organizer, and
+  E3 may not grow a multi-note apply path.
+- E1 is complete; the remaining tasks are not approved.
 - E6 is a decision task. Approving E6 does not approve a CodeMirror migration.
-- Confirm that lint/fix stays single-note and revision-preconditioned in v0.5;
-  anything bulk belongs to the v0.6 organizer.
 
 ## Scope control
 

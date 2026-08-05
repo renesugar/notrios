@@ -320,3 +320,36 @@ CREATE TABLE IF NOT EXISTS database_identity (
 );
 
 PRAGMA user_version = 12;
+
+-- Schema v13: the restore-in-progress marker. An archive-v2 restore commits
+-- many bounded transactions, so an interruption leaves committed rows behind;
+-- this row is what stops that partial library passing as a complete one.
+CREATE TABLE IF NOT EXISTS restore_state (
+    singleton INTEGER PRIMARY KEY CHECK (singleton = 1),
+    snapshot_id TEXT NOT NULL,
+    commit_sha256 TEXT NOT NULL,
+    intent TEXT NOT NULL,
+    started_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+PRAGMA user_version = 13;
+
+-- Schema v14: content-addressed note blocks. A block's ID derives from its
+-- text (PROJECT_DECISIONS.md 17), so moving a block keeps its identity and
+-- editing its text mints a new one. Rows are derived state, rebuilt in the same
+-- transaction as the note save that produced them.
+CREATE TABLE IF NOT EXISTS document_blocks (
+    id TEXT NOT NULL,
+    document_id TEXT NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+    ordinal INTEGER NOT NULL,
+    kind TEXT NOT NULL,
+    heading_level INTEGER NOT NULL DEFAULT 0,
+    marker TEXT,
+    content_sha256 TEXT NOT NULL,
+    start_byte INTEGER NOT NULL,
+    end_byte INTEGER NOT NULL,
+    PRIMARY KEY (document_id, id)
+);
+CREATE INDEX IF NOT EXISTS document_blocks_document_idx ON document_blocks(document_id, ordinal);
+CREATE INDEX IF NOT EXISTS document_blocks_marker_idx ON document_blocks(document_id, marker) WHERE marker IS NOT NULL;
+PRAGMA user_version = 14;

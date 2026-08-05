@@ -155,7 +155,7 @@ GET    /api/v1/documents/{document_id}/revisions
 GET    /api/v1/documents/{document_id}/revisions/{revision_id}
 POST   /api/v1/documents/{document_id}/revisions/{revision_id}/restore
 GET    /api/v1/documents/{document_id}/outline      # Markdown headings with lines/anchors
-GET    /api/v1/documents/{document_id}/blocks
+GET    /api/v1/documents/{document_id}/blocks      # addressable blocks with backlink counts
 POST   /api/v1/documents/{document_id}/append        # {text}; If-Match optional (retries once)
 POST   /api/v1/documents/{document_id}/prepend       # {text}
 GET    /api/v1/documents/{document_id}/lines?start=&end=    # 1-indexed inclusive slice
@@ -229,14 +229,25 @@ POST /api/v1/links/resolve
 
 Link records preserve source syntax, raw target, normalized target URI, source position, context, anchor, relation type, and resolution status. MVP Task 5 extracts common Markdown links/images, Obsidian wikilinks/embeds, app URIs, external URLs, heading anchors, and block anchors with a conservative parser.
 
+`GET /api/v1/documents/{document_id}/blocks` (v0.5 E1) lists a note's
+addressable blocks in document order: ID, kind, heading level, authored marker,
+content hash, byte range, and incoming block-anchor count. Block IDs are derived
+from block text, so an ID names exactly the content it was written against. The
+response carries no block text — a caller that wants content reads the body,
+which is already an authorized read. Blocks per note are bounded by the parser,
+so this is not a paged surface.
+
 `POST /api/v1/links/resolve` (v0.4 P5) answers which note an external
 `notrios://` link names in the database this service has open. The request body
 is `{"uri": "..."}` and nothing else: it accepts no path, profile, or database
 selector, because choosing which local database answers a link is a desktop
 routing decision made by the profile registry, not by an HTTP caller. The
-response status is `resolved`, `trashed`, `stale_target`, or
+response status is `resolved`, `trashed`, `stale_target`, `stale_anchor`, or
 `foreign_database`; document fields are populated only when this database can
 open the link, so a foreign link never reveals whether that ID exists locally.
+A link carrying an anchor also resolves the block: `stale_anchor` means the note
+is here but the block is not, which is the visible consequence of content-based
+block identity, and the note is still named so a client can offer to open it.
 Malformed URIs return `400 validation_failed`.
 
 A `notrios://` link inside a note body is a first-class link record: naming this
@@ -381,8 +392,8 @@ The REST + MCP surface must be sufficient to build a full-featured third-party n
 | links/backlinks/graph | links + graph routes |
 
 Remaining known gaps (deferred): HTTP range requests for resource content,
-block-level addressability (`/blocks`), import/export job APIs, bulk organizer
-operations, REST profile routes, and sync.
+import/export job APIs, bulk organizer operations, REST profile routes, and
+sync.
 
 ## MCP MVP endpoint
 

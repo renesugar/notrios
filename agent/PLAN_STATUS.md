@@ -9,9 +9,12 @@ archived under `plans/v0.4/`, together with a copy of the milestone plan at
 `plans/v0.4/000-v0.4-plan.md`. P6, the `movenotes-v3` compatibility bridge, is
 deferred to v0.7 slice 3. Product version is 0.4.0 and the schema is v13.
 
-`PLAN.md` now holds the **v0.5 draft** (blocks, lint/fix, graph traversal,
-editor link intelligence, query blocks, organizer UX). It is unstarted and
-every task requires user approval.
+`PLAN.md` holds the **v0.5 plan** (blocks, lint/fix, graph traversal, editor
+link intelligence, query blocks, organizer UX). **E1 is complete**; E2–E9
+require user approval. Two v0.5 decisions are settled and recorded as
+`PROJECT_DECISIONS.md` 17 and 18: block identity is strictly content-based, and
+lint/fix stays single-note and revision-preconditioned with anything bulk left
+to the v0.6 organizer.
 
 ## 2026-08-02 follow-up review
 
@@ -205,6 +208,28 @@ every task requires user approval.
   spool, and `record_counts` became a pointer so `omitempty` actually applies —
   which cut packed verify peak RSS 41% and runtime 31%.
 
+## 2026-08-05 E1 — block anchors and block-level addressability
+
+- Schema v14 `document_blocks`: content-derived IDs, kind, heading level,
+  authored marker, content hash, byte range, and ordinal, rebuilt from the body
+  in the same transaction as the save that produced it. The migration file now
+  creates through v14 and also folds in v13's `restore_state`, which had lived
+  only in a shim.
+- `internal/markdownblocks` splits headings, paragraphs, list items, fenced code
+  blocks, and tables, bounded at 10,000 blocks per note.
+- Identity follows the decision exactly: the hash covers document ID, kind,
+  normalized text, and occurrence among identical blocks. Moving a block keeps
+  its ID; editing its text mints a new one. Line endings and trailing
+  whitespace are normalized first, so an editor that tidies a file on save does
+  not break every anchor in it. The same sentence in two notes is two blocks.
+- Author-written `^markers` are stored separately and resolve first: they are
+  names the author chose and they survive edits the derived ID does not.
+- `GET /api/v1/documents/{id}/blocks` lists blocks with per-block backlink
+  counts and returns no block text. `notrios://`/`document://` anchors resolve
+  to blocks, and a new `stale_anchor` status reports the note being present
+  while the block is not — the visible consequence of content-based identity.
+- Generated 10k/100k/500k evidence under `performance/v0.5-e1/`.
+
 ## 2026-08-05 P8 — v0.4 documentation and release wrap-up
 
 - Bumped service, CLI, MCP, and web metadata to 0.4.0; the schema bootstraps and
@@ -355,9 +380,10 @@ attempt detail remains append-only in `agent/ATTEMPT_LOG.jsonl`.
 - Review base before this session: `26b0925`.
 - Project license: Apache-2.0.
 - Canonical store: SQLite plus content-addressed assets; FTS5/Recoll are derived.
-- Current schema: v13 (`store.CurrentSchemaVersion`). `migrations/0001_initial.sql`
-  creates through v12 and `ensureSchemaV13` adds `restore_state` on top, which
-  is the ordinary upgrade-shim pattern.
+- Current schema: v14 (`store.CurrentSchemaVersion`). `migrations/0001_initial.sql`
+  now creates through v14, including the v13 `restore_state` table that
+  previously lived only in a shim; the `ensureSchemaVn` shims remain for
+  upgrading older databases.
 - Unbounded local traversal uses `(updated_at, id)` or `(score, id)` keysets;
   notebook and Trash pages are route-bound. Optional Recoll merge pages use a
   ten-minute, 1,000-hit immutable snapshot and report truncation explicitly.
@@ -385,7 +411,7 @@ attempt detail remains append-only in `agent/ATTEMPT_LOG.jsonl`.
 - H11 local release gates pass; `docs/operations.md` is included in the
   docs site; P1/P2 expand it from 11 to 13 pages/Help notes with selection and
   archive-v2 safety guides.
-- Product version: 0.4.0; current schema: v13.
+- Product version: 0.4.0; current schema: v14.
 - Resource reference report:
   `GET /api/v1/resources/reports/reference` and
   `notriosctl resources report`.

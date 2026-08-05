@@ -908,6 +908,7 @@ func (s *SQLiteStore) PurgeDocument(ctx context.Context, id string) error {
 		`DELETE FROM note_tags WHERE document_id = ?`,
 		`DELETE FROM document_resource_refs WHERE document_id = ?`,
 		`DELETE FROM document_links WHERE source_document_id = ?`,
+		`DELETE FROM document_blocks WHERE document_id = ?`,
 		`UPDATE document_links SET target_document_id = NULL, resolution_status = 'target_deleted' WHERE target_document_id = ?`,
 		`DELETE FROM documents_fts WHERE document_id = ?`,
 		`DELETE FROM document_revisions WHERE document_id = ?`,

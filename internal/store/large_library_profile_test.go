@@ -15,19 +15,30 @@ import (
 	"time"
 )
 
+// digitsCTE generates a bounded integer sequence without a recursive CTE, so
+// the profile seeds rows in one statement.
+const digitsCTE = `WITH digits(d) AS (
+		VALUES (0),(1),(2),(3),(4),(5),(6),(7),(8),(9)
+	), seq(n) AS (
+		SELECT a.d + 10*b.d + 100*c.d + 1000*d.d + 10000*e.d + 100000*f.d
+		FROM digits a, digits b, digits c, digits d, digits e, digits f
+	)`
+
 type scaleProfile struct {
-	GeneratedAt     string                        `json:"generated_at"`
-	DocumentCount   int                           `json:"document_count"`
-	ResourceCount   int64                         `json:"resource_count"`
-	PhysicalBlobs   int64                         `json:"physical_blob_count"`
-	LinkCount       int64                         `json:"link_count"`
-	DatabaseBytes   int64                         `json:"database_bytes"`
-	PeakRSSBytes    int64                         `json:"peak_rss_bytes"`
-	Environment     scaleProfileEnvironment       `json:"environment"`
-	Metrics         map[string]scaleProfileMetric `json:"metrics"`
-	QueryPlans      map[string][]string           `json:"query_plans"`
-	PageTargetP95MS float64                       `json:"ordinary_page_target_p95_ms"`
-	PageTargetMet   bool                          `json:"ordinary_page_target_met"`
+	GeneratedAt             string                        `json:"generated_at"`
+	DocumentCount           int                           `json:"document_count"`
+	ResourceCount           int64                         `json:"resource_count"`
+	PhysicalBlobs           int64                         `json:"physical_blob_count"`
+	LinkCount               int64                         `json:"link_count"`
+	BlockCount              int64                         `json:"block_count"`
+	DatabaseBytes           int64                         `json:"database_bytes"`
+	DatabaseBytesWithBlocks int64                         `json:"database_bytes_with_scale_blocks,omitempty"`
+	PeakRSSBytes            int64                         `json:"peak_rss_bytes"`
+	Environment             scaleProfileEnvironment       `json:"environment"`
+	Metrics                 map[string]scaleProfileMetric `json:"metrics"`
+	QueryPlans              map[string][]string           `json:"query_plans"`
+	PageTargetP95MS         float64                       `json:"ordinary_page_target_p95_ms"`
+	PageTargetMet           bool                          `json:"ordinary_page_target_met"`
 }
 
 type scaleProfileEnvironment struct {
@@ -226,6 +237,105 @@ func TestLargeLibraryProfile(t *testing.T) {
 		Items:      streamed,
 	}
 
+	// E1 blocks. The seeder above writes rows with raw SQL for speed, so it
+	// produces no blocks; blocks are derived by the save path. The measurement
+	// that matters is therefore what the real path costs at this library size,
+	// taken over a bounded sample of genuine saves rather than over fabricated
+	// rows that could drift from the parser.
+	const blockSample = 200
+	blockBody := "# Heading\n\nOpening paragraph with a [link](document://default/documents/scale_doc_000001).\n\n" +
+		"- first item\n- second item\n\n```go\nfmt.Println(\"x\")\n```\n\nClosing paragraph. ^sample-anchor\n"
+	saveStarted := time.Now()
+	blockDocumentID := ""
+	for i := 0; i < blockSample; i++ {
+		created, err := st.CreateDocument(ctx, CreateDocumentRequest{
+			PreferredID: fmt.Sprintf("block_doc_%06d", i),
+			Title:       fmt.Sprintf("Block document %06d", i),
+			Body:        blockBody,
+		})
+		if err != nil {
+			t.Fatalf("block sample save %d: %v", i, err)
+		}
+		blockDocumentID = created.ID
+	}
+	saveElapsed := time.Since(saveStarted)
+	profile.Metrics["blocks_document_save"] = scaleProfileMetric{
+		Iterations: blockSample,
+		P50MS:      durationMS(saveElapsed / blockSample),
+		P95MS:      durationMS(saveElapsed / blockSample),
+		MaxMS:      durationMS(saveElapsed),
+		Items:      blockSample,
+	}
+	profile.BlockCount = profileCount(t, st, `SELECT COUNT(*) FROM document_blocks`)
+	if profile.BlockCount != int64(blockSample)*6 {
+		t.Fatalf("expected six blocks per sampled note, got %d for %d notes", profile.BlockCount, blockSample)
+	}
+	blocks, err := st.ListDocumentBlocks(ctx, blockDocumentID)
+	if err != nil || len(blocks) == 0 {
+		t.Fatalf("ListDocumentBlocks: %d blocks, err=%v", len(blocks), err)
+	}
+	profile.Metrics["blocks_list_one_document"] = measureProfile(t, 30, len(blocks), func() error {
+		_, err := st.ListDocumentBlocks(ctx, blockDocumentID)
+		return err
+	})
+	anchor := blocks[len(blocks)-1].ID
+	profile.Metrics["blocks_resolve_anchor"] = measureProfile(t, 30, 1, func() error {
+		_, err := st.FindDocumentBlock(ctx, blockDocumentID, anchor)
+		return err
+	})
+	profile.Metrics["blocks_rebuild_one_document"] = measureProfile(t, 10, len(blocks), func() error {
+		return st.RebuildDocumentBlocks(ctx, blockDocumentID)
+	})
+	profile.QueryPlans["blocks_by_document"], _ = st.explainQueryPlan(ctx,
+		`SELECT id, ordinal, kind FROM document_blocks WHERE document_id = 'doc_1' ORDER BY ordinal`)
+
+	// The sample above measures the real save path but leaves the block table
+	// far smaller than a real library's. Index behaviour is the other half of
+	// the question — block rows outnumber notes by design — so fill the table
+	// synthetically to library scale and re-measure the lookups. These rows are
+	// shaped like the parser's output but are not produced by it; they exist to
+	// answer "does the index still hold at this row count".
+	scaleBlockSeed := digitsCTE + fmt.Sprintf(` INSERT INTO document_blocks(
+			id, document_id, ordinal, kind, heading_level, marker, content_sha256, start_byte, end_byte
+		)
+		SELECT printf('blk_scale_%%06d_%%d', n, b.i), printf('scale_doc_%%06d', n), b.i,
+			CASE b.i WHEN 0 THEN 'heading' ELSE 'paragraph' END,
+			CASE b.i WHEN 0 THEN 1 ELSE 0 END,
+			CASE b.i WHEN 5 THEN printf('anchor-%%06d', n) ELSE NULL END,
+			printf('%%064d', n * 10 + b.i), b.i * 80, b.i * 80 + 79
+		FROM seq, (SELECT 0 AS i UNION ALL SELECT 1 UNION ALL SELECT 2
+			UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5) AS b
+		WHERE n < %d`, count)
+	scaleSeedStarted := time.Now()
+	for _, statement := range []string{`BEGIN IMMEDIATE`, scaleBlockSeed, `COMMIT`} {
+		if err := st.Exec(ctx, statement); err != nil {
+			t.Fatalf("scale block seed: %v", err)
+		}
+	}
+	profile.Metrics["blocks_scale_seed"] = scaleProfileMetric{
+		Iterations: 1,
+		P50MS:      durationMS(time.Since(scaleSeedStarted)),
+		P95MS:      durationMS(time.Since(scaleSeedStarted)),
+		MaxMS:      durationMS(time.Since(scaleSeedStarted)),
+		Items:      count * 6,
+	}
+	profile.BlockCount = profileCount(t, st, `SELECT COUNT(*) FROM document_blocks`)
+	if info, err := os.Stat(dbPath); err == nil {
+		profile.DatabaseBytesWithBlocks = info.Size()
+	}
+	scaleDocumentID := fmt.Sprintf("scale_doc_%06d", count/2)
+	scaleAnchor := fmt.Sprintf("anchor-%06d", count/2)
+	profile.Metrics["blocks_resolve_anchor_at_scale"] = measureProfile(t, 30, 1, func() error {
+		_, err := st.FindDocumentBlock(ctx, scaleDocumentID, scaleAnchor)
+		return err
+	})
+	profile.Metrics["blocks_list_one_document_at_scale"] = measureProfile(t, 30, 6, func() error {
+		st.mu.Lock()
+		_, err := st.listDocumentBlocksLocked(scaleDocumentID)
+		st.mu.Unlock()
+		return err
+	})
+
 	profile.QueryPlans["all_notes"], _ = st.explainQueryPlan(ctx, `SELECT id FROM documents
 		WHERE collection_id = ? AND deleted_at IS NULL
 		ORDER BY updated_at DESC, id DESC LIMIT 101`, "default")
@@ -258,12 +368,7 @@ func TestLargeLibraryProfile(t *testing.T) {
 
 func seedLargeLibrary(t *testing.T, ctx context.Context, st *SQLiteStore, count int) {
 	t.Helper()
-	digits := `WITH digits(d) AS (
-			VALUES (0),(1),(2),(3),(4),(5),(6),(7),(8),(9)
-		), seq(n) AS (
-			SELECT a.d + 10*b.d + 100*c.d + 1000*d.d + 10000*e.d + 100000*f.d
-			FROM digits a, digits b, digits c, digits d, digits e, digits f
-		)`
+	digits := digitsCTE
 	statements := []string{
 		`BEGIN IMMEDIATE`,
 		`INSERT OR IGNORE INTO notebooks(id, name, position) VALUES

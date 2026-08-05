@@ -3,7 +3,8 @@
 This handoff applies to any coding agent or client continuing this project (Codex, Claude, aider, swival.dev, etc. — formerly `CODEX_HANDOFF.md`). The repository is designed so an agent can continue from repository files alone.
 
 Current phase: v0.1, v0.2, v0.3, and **v0.4** are complete; product version is
-0.4.0 and the schema is v13. `PLAN.md` holds an unstarted v0.5 draft.
+0.4.0 and the schema is **v14**. `PLAN.md` holds the v0.5 plan, whose first task
+(E1, block anchors) is complete; E2–E9 require user approval.
 
 Milestone detail follows. H1–H11 are archived under `plans/v0.3/`. The v0.4
 slices are archived under `plans/v0.4/`:

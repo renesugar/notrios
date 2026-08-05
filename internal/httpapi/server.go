@@ -121,6 +121,7 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("DELETE /api/v1/documents/{document_id}/resources/{resource_id}", s.handleDocumentResource)
 	s.mux.HandleFunc("GET /api/v1/documents/{document_id}/links", s.handleDocumentLinks)
 	s.mux.HandleFunc("GET /api/v1/documents/{document_id}/outline", s.handleDocumentOutline)
+	s.mux.HandleFunc("GET /api/v1/documents/{document_id}/blocks", s.handleDocumentBlocks)
 	s.mux.HandleFunc("POST /api/v1/documents/{document_id}/append", s.handleAppendDocument)
 	s.mux.HandleFunc("POST /api/v1/documents/{document_id}/prepend", s.handlePrependDocument)
 	s.mux.HandleFunc("GET /api/v1/documents/{document_id}/lines", s.handleDocumentLines)

@@ -32,6 +32,12 @@ const (
 	// database. Nothing local is looked up, because document IDs are unique
 	// per database rather than globally.
 	StableLinkForeignDatabase = "foreign_database"
+	// StableLinkStaleAnchor means the note is here but the block the anchor
+	// names is not. Block identity is content-based, so editing a block's text
+	// mints a new ID and breaks anchors into it; a reader deserves to be told
+	// that rather than being dropped at the top of a note that no longer
+	// contains what the link pointed at.
+	StableLinkStaleAnchor = "stale_anchor"
 )
 
 // StableLinkResolution is the answer to "what does this notrios:// link name
@@ -49,6 +55,9 @@ type StableLinkResolution struct {
 	DocumentURI string
 	Title       string
 	NotebookID  string
+	// BlockID is the resolved block when the link carries an anchor.
+	BlockID   string
+	BlockKind string
 }
 
 // StableDocumentURI renders the external link for one of this database's
@@ -109,6 +118,18 @@ func (s *SQLiteStore) ResolveStableLink(ctx context.Context, raw string) (Stable
 		resolution.DocumentURI = document.URI
 		resolution.Title = document.Title
 		resolution.NotebookID = document.NotebookID
+		if parsed.Anchor != "" {
+			block, blockErr := s.findDocumentBlockLocked(parsed.DocumentID, strings.TrimPrefix(parsed.Anchor, "^"))
+			switch {
+			case blockErr == nil:
+				resolution.BlockID = block.ID
+				resolution.BlockKind = block.Kind
+			case errors.Is(blockErr, ErrNotFound):
+				resolution.Status = StableLinkStaleAnchor
+			default:
+				return StableLinkResolution{}, blockErr
+			}
+		}
 		return resolution, nil
 	}
 	if !errors.Is(err, ErrNotFound) {

@@ -112,6 +112,44 @@ Clicking one in the preview asks the service what it names. If it belongs to
 another database, the UI says so instead of opening a similarly-numbered local
 note.
 
+## Linking to a block, not just a note
+
+A link can point at one block inside a note — a heading, a paragraph, a list
+item, a code block, or a table — by adding an anchor:
+
+```text
+notrios://databases/db_qz.../documents/doc_01H...#^blk_7fq3...
+document://default/documents/doc_01H...#^blk_7fq3...
+```
+
+List a note's blocks, with the number of links pointing at each, with
+`GET /api/v1/documents/{id}/blocks`.
+
+**A block's ID comes from its text.** That has two consequences worth knowing
+before you paste one somewhere permanent:
+
+- Move the block around the note, or edit anything else in the note, and the
+  link keeps working.
+- Rewrite the block's text and the link stops resolving. Notrios reports this
+  as `stale_anchor` and still tells you which note it was: the anchor named
+  exactly that text, and quietly dropping you at the top of a note that no
+  longer contains it would be worse than saying so.
+
+If you want an anchor that survives rewriting, write your own marker at the end
+of the block, Obsidian-style:
+
+```markdown
+The paragraph you want to cite. ^my-anchor
+```
+
+Then link to `#^my-anchor`. Author-written markers are names you chose, so they
+outrank the derived ID and follow the block through edits. Notrios keeps both:
+the marker for stability, the content hash for precision.
+
+Whitespace cleanup is safe either way — line endings and trailing spaces are
+normalized before the ID is computed, so an editor that tidies your file on save
+does not break every anchor in it.
+
 ## What this is not
 
 This is local routing, not synchronization. Resolving a link opens a note in a

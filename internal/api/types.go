@@ -73,6 +73,30 @@ type DatabaseStatus struct {
 	SchemaVersion int    `json:"schema_version,omitempty"`
 }
 
+// DocumentBlock is one addressable region of a note. Block IDs are derived
+// from block text, so an ID names exactly the content it was written against.
+type DocumentBlock struct {
+	ID           string `json:"id"`
+	DocumentID   string `json:"document_id"`
+	Ordinal      int    `json:"ordinal"`
+	Kind         string `json:"kind"`
+	HeadingLevel int    `json:"heading_level,omitempty"`
+	// Marker is an author-written anchor (Obsidian `^marker`). It outranks the
+	// derived ID when a link names it, because it is a name the author chose.
+	Marker        string `json:"marker,omitempty"`
+	ContentSHA256 string `json:"content_sha256"`
+	StartByte     int    `json:"start_byte"`
+	EndByte       int    `json:"end_byte"`
+	Backlinks     int    `json:"backlinks"`
+}
+
+// DocumentBlocksResponse lists a note's blocks in document order. Blocks per
+// note are bounded by the parser, so this is not a paged surface.
+type DocumentBlocksResponse struct {
+	DocumentID string          `json:"document_id"`
+	Blocks     []DocumentBlock `json:"blocks"`
+}
+
 // StableLinkResolveRequest asks which note a notrios:// link names in this
 // database. It accepts a URI and nothing else: no path, no profile, no
 // database selection. Choosing the database is a local desktop decision made
@@ -94,6 +118,8 @@ type StableLinkResolveResponse struct {
 	DocumentURI     string `json:"document_uri,omitempty"`
 	Title           string `json:"title,omitempty"`
 	NotebookID      string `json:"notebook_id,omitempty"`
+	BlockID         string `json:"block_id,omitempty"`
+	BlockKind       string `json:"block_kind,omitempty"`
 }
 
 type StorageStatus struct {

@@ -44,7 +44,7 @@ This file is the codebase atlas. Update it whenever major files or directories a
   dry-run/config planning, and canonical alias/embed/anchor resolution.
 - `internal/api/` — shared API request/response models.
 - `internal/httpapi/` — REST HTTP adapter for status, documents, revisions, resources, links, graph slices, and staged future routes.
-- `internal/store/` — SQLite-backed persistence, document CRUD, revision history, soft delete, restore, FTS5 search, resource storage/reference reports (`sqlite_resource_reports.go`), retention-aware GC (`sqlite_gc.go`), importer batch/checkpoint/source-bundle state (`sqlite_imports.go`), archive export reads (`export.go`, `sqlite_export.go`), archive restore writes (`restore.go`, `sqlite_restore.go`), logical database/replica identity (`sqlite_identity.go`), link graph persistence, and notebooks/tags/search-notebooks/trash operations (`sqlite_notebooks.go`).
+- `internal/store/` — SQLite-backed persistence, document CRUD, revision history, soft delete, restore, FTS5 search, resource storage/reference reports (`sqlite_resource_reports.go`), retention-aware GC (`sqlite_gc.go`), importer batch/checkpoint/source-bundle state (`sqlite_imports.go`), archive export reads (`export.go`, `sqlite_export.go`), archive restore writes (`restore.go`, `sqlite_restore.go`), logical database/replica identity (`sqlite_identity.go`), note blocks (`sqlite_blocks.go`), link graph persistence, and notebooks/tags/search-notebooks/trash operations (`sqlite_notebooks.go`).
 - `internal/archivev2/` — native archive-v2 manifest/record model
   (`format.go`), out-of-manifest object index and fanout layout (`index.go`),
   identity-intent planner, bounded streaming verifier (`verify.go`), bounded
@@ -54,6 +54,8 @@ This file is the codebase atlas. Update it whenever major files or directories a
   (`publish.go`), a generator-built synthetic golden fixture, and generated
   scale profiles.
 - `internal/markdownlinks/` — conservative MVP Markdown/Obsidian/app-URI link extractor.
+- `internal/markdownblocks/` — deterministic block splitter behind schema-v14
+  addressable blocks; identity is content-derived and scoped to the document.
 - `internal/stablelink/` — strict parser/formatter for the external
   `notrios://databases/{database_id}/documents/{document_id}` link, with typed
   rejections (foreign scheme, malformed, over-limit, unsupported route).

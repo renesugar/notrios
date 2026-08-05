@@ -44,7 +44,10 @@ GET /api/v1/documents/{id}/outline
 GET /api/v1/documents/{id}/blocks
 ```
 
-Block anchors should become first-class addressable objects in a later milestone.
+Block anchors became first-class addressable objects in v0.5 E1: schema-v14
+`document_blocks`, `GET /api/v1/documents/{id}/blocks`, and anchor resolution
+for `document://` and `notrios://` links. Identity is content-based, so an
+anchor survives a block moving and breaks when the block's text changes.
 
 ## Trash-first deletion
 

@@ -758,6 +758,28 @@ paths:
                 $ref: '#/components/schemas/SelectionPlan'
         '400':
           $ref: '#/components/responses/Error'
+  /api/v1/documents/{document_id}/blocks:
+    get:
+      summary: List a note's addressable blocks
+      description: >
+        Blocks in document order with backlink counts. Block IDs are derived
+        from block text, so an ID names exactly the content it was written
+        against: it survives the block moving and stops resolving when the
+        block is rewritten. No block text is returned.
+      parameters:
+        - name: document_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: The note's blocks
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentBlocksResponse'
+        '404':
+          $ref: '#/components/responses/Error'
   /api/v1/links/resolve:
     post:
       summary: Resolve an external notrios:// link against this database
@@ -1477,6 +1499,30 @@ components:
         include_private_metadata: { type: boolean }
         include_trashed: { type: boolean }
         max_resource_bytes: { type: integer, format: int64, minimum: 0 }
+    DocumentBlock:
+      type: object
+      properties:
+        id: { type: string }
+        document_id: { type: string }
+        ordinal: { type: integer }
+        kind:
+          type: string
+          enum: [heading, paragraph, list_item, code, table]
+        heading_level: { type: integer, minimum: 0, maximum: 6 }
+        marker:
+          type: string
+          description: Author-written anchor; outranks the derived ID when a link names it.
+        content_sha256: { type: string }
+        start_byte: { type: integer }
+        end_byte: { type: integer }
+        backlinks: { type: integer }
+    DocumentBlocksResponse:
+      type: object
+      properties:
+        document_id: { type: string }
+        blocks:
+          type: array
+          items: { $ref: '#/components/schemas/DocumentBlock' }
     StableLinkResolveRequest:
       type: object
       additionalProperties: false
@@ -1492,7 +1538,7 @@ components:
         uri: { type: string }
         status:
           type: string
-          enum: [resolved, trashed, stale_target, foreign_database]
+          enum: [resolved, trashed, stale_target, stale_anchor, foreign_database]
         database_id: { type: string, description: The logical database the link names }
         local_database_id: { type: string, description: The logical database that answered }
         document_id: { type: string }
@@ -1500,6 +1546,8 @@ components:
         document_uri: { type: string, description: Present only when this database can open the link }
         title: { type: string, description: Present only when this database can open the link }
         notebook_id: { type: string, description: Present only when this database can open the link }
+        block_id: { type: string, description: Present when the link carries an anchor that resolves to a block }
+        block_kind: { type: string }
     SelectionPlanRequest:
       type: object
       additionalProperties: false
