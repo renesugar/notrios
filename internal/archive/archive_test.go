@@ -56,6 +56,48 @@ func buildSourceStore(t *testing.T) (*store.SQLiteStore, store.Document) {
 	return st, doc
 }
 
+// A note that links to another note in the same archive is imported before its
+// target as often as not, so the link is recorded unresolved at that moment.
+// Import must resolve them afterwards: otherwise every internal link in an
+// imported library stays broken until each note is edited, and a later
+// publication would rewrite them all out of the published bodies.
+func TestImportResolvesLinksBetweenNotesInTheSameArchive(t *testing.T) {
+	ctx := context.Background()
+	dir := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(dir, "notes"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	write := func(name, contents string) {
+		t.Helper()
+		if err := os.WriteFile(filepath.Join(dir, name), []byte(contents), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	write("manifest.json", `{"format":"notrios-archive","version":1,"query":"","notes":2}`)
+	write("notebooks.json", `[{"path":"Docs"}]`)
+	// The linking note sorts first, so its target does not exist yet when it is
+	// written.
+	write(filepath.Join("notes", "doc_a.md"),
+		"---\nid: doc_a\ntitle: A\nnotebook: Docs\n---\n\nSee [B](document://default/documents/doc_b).\n")
+	write(filepath.Join("notes", "doc_b.md"),
+		"---\nid: doc_b\ntitle: B\nnotebook: Docs\n---\n\nThe target.\n")
+
+	st := newTestStore(t)
+	if _, err := Import(ctx, st, dir, ImportOptions{}); err != nil {
+		t.Fatal(err)
+	}
+	links, err := st.ListDocumentLinks(ctx, "doc_a", "outgoing")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(links.Outgoing) != 1 {
+		t.Fatalf("expected one outgoing link, got %+v", links.Outgoing)
+	}
+	if got := links.Outgoing[0]; got.ResolutionStatus != "resolved" || got.TargetDocumentID != "doc_b" {
+		t.Fatalf("import left an internal link unresolved: %+v", got)
+	}
+}
+
 func TestExportImportRoundTripWithRenames(t *testing.T) {
 	ctx := context.Background()
 	src, doc := buildSourceStore(t)

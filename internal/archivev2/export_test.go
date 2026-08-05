@@ -386,20 +386,18 @@ func TestExportRefusesUnsafeDestinationsAndUnsupportedModes(t *testing.T) {
 		}
 	})
 
-	t.Run("publication handoff", func(t *testing.T) {
-		options := exportOptions(TargetPublicationHandoff)
-		options.Selection = store.SelectionSpec{NotebookIDs: []string{fixture.public.ID}}
-		if _, err := Export(ctx, fixture.store, filepath.Join(t.TempDir(), "publish"), options); err == nil || !strings.Contains(err.Error(), "publication profile slice") {
-			t.Fatalf("expected publication handoff to be refused, got %v", err)
-		}
-	})
-
-	t.Run("content rewriting policy", func(t *testing.T) {
-		options := exportOptions(TargetSubsetTransfer)
-		options.Selection = store.SelectionSpec{NotebookIDs: []string{fixture.public.ID}}
+	// A backup's promise is that what comes out is what went in, so the
+	// content-rewriting link actions are refused for full_archive even though
+	// P7 implements them for the publication projection.
+	t.Run("content rewriting policy in a backup", func(t *testing.T) {
+		options := exportOptions(TargetFullArchive)
 		options.Policy = store.PrivacyPolicy{LinkAction: "plain_text"}
-		if _, err := Export(ctx, fixture.store, filepath.Join(t.TempDir(), "rewrite"), options); err == nil || !strings.Contains(err.Error(), "rewrites note content") {
+		if _, err := Export(ctx, fixture.store, filepath.Join(t.TempDir(), "rewrite"), options); err == nil || !strings.Contains(err.Error(), "cannot be used for a full backup") {
 			t.Fatalf("expected a link-rewriting refusal, got %v", err)
+		}
+		options.Policy = store.PrivacyPolicy{LinkAction: "redact"}
+		if _, err := Export(ctx, fixture.store, filepath.Join(t.TempDir(), "redact"), options); err == nil || !strings.Contains(err.Error(), "cannot be used for a full backup") {
+			t.Fatalf("expected a redaction refusal, got %v", err)
 		}
 	})
 

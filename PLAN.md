@@ -1,7 +1,7 @@
 # Plan: v0.4 — Import correctness, portable data, publishing handoff, and stable references
 
-Status: **J1–J3, Q1, P1, P2, P3, P3a, P3b, P4, and P5 completed. P6 is deferred
-to v0.7. P7 and P8 require user approval**.
+Status: **J1–J3, Q1, P1, P2, P3, P3a, P3b, P4, P5, and P7 completed. P6 is
+deferred to v0.7. P8 remains**.
 Drafted 2026-07-26 and revised 2026-08-02 after comparing the Joplin importer
 and publishing/search plans with the real-data-tested `movenotes-v3` pipeline.
 
@@ -494,7 +494,9 @@ Working state (when implemented): `movenotes-v3` can consume a Notrios archive
 without a Notrios Obsidian/Joplin exporter, and an unsupported archive fails
 before partial import.
 
-### P7. Publication profiles and privacy-reviewed archive handoff
+### P7. Publication profiles and privacy-reviewed archive handoff — complete
+
+Archived as `plans/v0.4/012-publication-profiles.md`.
 
 - Add saved publish profiles using the shared selection/privacy planner.
 - Support recursive notebook/folder/tag selection, reachable public resources,
@@ -503,12 +505,29 @@ before partial import.
   untrusted note content as build code inside Notrios.
 - Keep publish execution explicit after a reviewed plan.
 
+Delivered: `notriosctl publish profile|plan|run`. A profile records selection
+and privacy decisions only — never an output path, a command, or anything from
+note content — and is stored owner-only beside the library. `publish plan` is
+the read-only review; `publish run` re-plans and refuses unless the result still
+matches the reviewed digest, because a profile is not a promise about a fixed
+set of notes.
+
+The projection publishes current revisions only, withholds Trash, provenance,
+exact source bundles, saved searches, and revision metadata, and rewrites links
+to withheld or unresolved targets. Rewriting the body turned out to be only half
+of it: a link record carries the raw target, the resolved ID, and a context
+excerpt, so records for rewritten links are dropped and `context` is cleared,
+while retained links keep offsets shifted onto the published body. A span whose
+bytes no longer look like the link it describes is left alone and warned about
+rather than cut at a stale offset. Content-rewriting link actions remain refused
+for `full_archive`.
+
 Working state: curated fixtures hand off only selected reachable public content
 and privacy violations are visible before generation. With P6 deferred, v0.4
 does not claim that any external tool consumes the handoff: it is a
 checksum-verified, explicitly subset-scoped archive-v2 directory that Notrios'
 own verifier admits, and turning it into a Quartz vault or a Hugo/Ledger site
-is the deferred bridge's job.
+is the deferred bridge's job. Evidence is under `performance/v0.4-p7/`.
 
 ### P8. v0.4 documentation and release wrap-up
 

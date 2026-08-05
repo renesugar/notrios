@@ -81,7 +81,9 @@ Recoll availability, backlog, sync/index, and reconciliation state.
   packed object layout, and `notriosctl verify`/`restore archive-v2` with
   mandatory replace/adopt/merge/fork intent. P5 adds portable
   `notrios://` links with an explicit local profile registry and an Ubuntu
-  protocol handler. The remaining product-feature tasks require approval — see
+  protocol handler, and P7 adds reviewed publication profiles that emit a
+  sanitized subset handoff. P6 is deferred to v0.7 and P8 (release wrap-up)
+  remains — see
   [`PLAN.md`](PLAN.md) and [`ROADMAP.md`](ROADMAP.md).
 - Agent progress/attempt tracking: [`agent/PLAN_STATUS.md`](agent/PLAN_STATUS.md), [`agent/ATTEMPT_LOG.jsonl`](agent/ATTEMPT_LOG.jsonl), and [`agent/MODEL_LOG.jsonl`](agent/MODEL_LOG.jsonl).
 

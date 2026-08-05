@@ -50,8 +50,9 @@ This file is the codebase atlas. Update it whenever major files or directories a
   identity-intent planner, bounded streaming verifier (`verify.go`), bounded
   external-sort spool and merge join (`spool.go`), the optional packed object
   layout (`pack.go`), the manifest-last streaming exporter (`export.go`), the
-  verify-first restore reader (`restore.go`), a generator-built synthetic golden
-  fixture, and generated scale profiles.
+  verify-first restore reader (`restore.go`), the publication projection
+  (`publish.go`), a generator-built synthetic golden fixture, and generated
+  scale profiles.
 - `internal/markdownlinks/` — conservative MVP Markdown/Obsidian/app-URI link extractor.
 - `internal/stablelink/` — strict parser/formatter for the external
   `notrios://databases/{database_id}/documents/{document_id}` link, with typed
@@ -59,6 +60,9 @@ This file is the codebase atlas. Update it whenever major files or directories a
 - `internal/profiles/` — the explicit local registry mapping a logical database
   ID to a database on this machine; resolves only unambiguous matches and
   reports every candidate otherwise.
+- `internal/publish/` — saved publication profiles (selection and privacy
+  decisions only, never an output path or a command) plus the reviewed-plan gate
+  that publishing must satisfy.
 - `internal/version/` — version constants.
 - `migrations/` — SQLite schema migrations.
 - `web/` — React/Vite built-in UI scaffold.

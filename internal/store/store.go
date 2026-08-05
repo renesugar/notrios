@@ -67,6 +67,17 @@ const (
 	SelectionTargetPublicationHandoff = "publication_handoff"
 )
 
+// Link actions a privacy policy may take on a link whose target the selection
+// does not include. `retain` and `report` leave note content untouched;
+// `plain_text` and `redact` rewrite it and therefore belong only to a
+// projection, never to a restore-fidelity backup.
+const (
+	SelectionLinkActionRetain    = "retain"
+	SelectionLinkActionReport    = "report"
+	SelectionLinkActionPlainText = "plain_text"
+	SelectionLinkActionRedact    = "redact"
+)
+
 // SelectionSpec identifies notes without exposing SQL or filesystem paths.
 // Values within one selector type are ORed; Match controls how the populated
 // selector types combine ("any" or "all").

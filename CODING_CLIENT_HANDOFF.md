@@ -10,10 +10,10 @@ P1 (shared selection/privacy planning), P2 (native archive-v2 format and
 identity verification), P3 (native archive-v2 streaming export), P3a
 (archive-v2 large-library container revision), P3b (packed object layout), and
 P4 (archive-v2 verify and restore), and P5 (stable external links and local
-resolution) are complete and archived under `plans/v0.4/001`–`011`. P6, the
-`movenotes-v3` compatibility bridge, is deferred to v0.7 slice 3, which still
-extends the container it would pin. P7 and P8 require user approval. See the
-revised `PLAN.md`.
+resolution), and P7 (publication profiles) are complete and archived under
+`plans/v0.4/001`–`012`. P6, the `movenotes-v3` compatibility bridge, is deferred
+to v0.7 slice 3, which still extends the container it would pin. P8
+(documentation and release wrap-up) remains. See the revised `PLAN.md`.
 
 Archive-v2 supports two object layouts. Loose `fanout` is the default and
 deduplicates and resumes through the object tree. Opt-in `--pack` collapses a
@@ -205,5 +205,12 @@ The scaffold was created in a restricted container. Still-open consequences:
    local routing only: it never contacts a peer, never scans the filesystem,
    and refuses rather than choosing when several profiles hold clones of one
    database.
+10. P7 adds `notriosctl publish profile|plan|run`. A publication is a
+    projection, not an archive of canonical state: current revisions only, no
+    Trash/provenance/source bundles/saved searches, stripped revision metadata,
+    links to withheld or unresolved targets rewritten, and their link records
+    dropped. Publishing requires the digest of a reviewed plan and re-checks it
+    before writing. Content-rewriting link actions remain refused for
+    `full_archive`.
 
 (The formerly open "no browser testing" limitation is resolved: the GUI is browser-verified via Playwright, vitest/RTL covers the workspace, and `scripts/verify_layout_resize.py` covers native window resizing.)

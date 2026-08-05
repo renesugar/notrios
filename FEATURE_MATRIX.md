@@ -96,9 +96,9 @@ This matrix keeps the long conversation compressed into implementation-sized fea
 
 | Feature | Status | Primary owner | Notes |
 |---|---:|---|---|
-| Publication profiles | Planned v0.4 | planner/archive | Curated, sanitized archive-v2 handoff. Consuming it downstream is the v0.7 compatibility bridge. |
+| Publication profiles | Implemented | planner/archive | Saved profiles (`notriosctl publish`), review-then-publish gated on the plan digest, current-note projection with link rewriting and dropped link records. Consuming the handoff downstream is the v0.7 compatibility bridge. |
 | Quartz and scalable archive site | External integration | movenotes-v3/Ledger | Obsidian/Quartz for subsets; Hugo/Ledger+Bluge for large libraries. |
-| Publishing dry run | Planned v0.4 | planner/UI | Included/excluded/resources/private links before handoff. |
+| Publishing dry run | Implemented | planner/UI | `publish plan` and `POST /api/v1/selection/plan` report included/excluded notes, resources, link decisions, metadata stripping, and warnings before anything is written. |
 | Foam-style query blocks | Planned v0.5 | query service/UI | No arbitrary SQL/JS. |
 | Workspace lint/fix | Planned v0.5 | maintenance service | Broken links/media/resources. |
 | Outline API | Implemented | document parser | Headings/line anchors. |

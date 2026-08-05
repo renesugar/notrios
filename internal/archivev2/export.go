@@ -32,8 +32,8 @@ const copyBufferBytes = 64 << 10
 // ExportOptions describes one archive-v2 export. The zero value exports a
 // complete full-database backup of the default collection.
 type ExportOptions struct {
-	// Target is full_archive (default) or subset_transfer. publication_handoff
-	// belongs to the reviewed publishing slice and is refused here.
+	// Target is full_archive (default), subset_transfer, or
+	// publication_handoff. Only full_archive is reported as a backup.
 	Target string
 	// Selection and Policy are passed to the shared P1 planner unchanged.
 	Selection store.SelectionSpec
@@ -91,9 +91,16 @@ type ExportReport struct {
 	ExcludedDocuments       int      `json:"excluded_documents"`
 	ReachableResources      int      `json:"reachable_resources"`
 	ClearedLinkTargets      int      `json:"cleared_link_targets"`
-	Verified                bool     `json:"verified"`
-	Warnings                []string `json:"warnings"`
-	ElapsedSeconds          float64  `json:"elapsed_seconds"`
+	// Publication projection counters. They are zero for every archive that
+	// preserves note content, which is every archive except a publication
+	// handoff with a content-rewriting link action.
+	RewrittenLinks     int      `json:"rewritten_links"`
+	RewrittenDocuments int      `json:"rewritten_documents"`
+	SkippedRewrites    int      `json:"skipped_rewrites"`
+	StrippedMetadata   int      `json:"stripped_metadata"`
+	Verified           bool     `json:"verified"`
+	Warnings           []string `json:"warnings"`
+	ElapsedSeconds     float64  `json:"elapsed_seconds"`
 }
 
 // Export streams one transactionally consistent snapshot of the canonical
@@ -159,16 +166,17 @@ func normalizeExportOptions(options ExportOptions) (ExportOptions, error) {
 		options.Target = TargetFullArchive
 	}
 	switch options.Target {
-	case TargetFullArchive, TargetSubsetTransfer:
-	case TargetPublicationHandoff:
-		return ExportOptions{}, fmt.Errorf("publication_handoff exports require the reviewed publication profile slice; use full_archive or subset_transfer")
+	case TargetFullArchive, TargetSubsetTransfer, TargetPublicationHandoff:
 	default:
 		return ExportOptions{}, fmt.Errorf("unsupported export target %q", options.Target)
 	}
-	if action := strings.ToLower(strings.TrimSpace(options.Policy.LinkAction)); action == "plain_text" || action == "redact" {
-		// Rewriting link syntax means rewriting note bodies, which belongs to
-		// the publication projection rather than to a restore-fidelity archive.
-		return ExportOptions{}, fmt.Errorf("link_action %q rewrites note content and is not available to archive export", action)
+	if action := strings.ToLower(strings.TrimSpace(options.Policy.LinkAction)); action == store.SelectionLinkActionPlainText || action == store.SelectionLinkActionRedact {
+		// Rewriting link syntax means rewriting note bodies. A projection may
+		// do that; a backup may not, because a backup's whole promise is that
+		// what comes out is what went in.
+		if options.Target == TargetFullArchive {
+			return ExportOptions{}, fmt.Errorf("link_action %q rewrites note content and cannot be used for a full backup", action)
+		}
 	}
 	if options.Limits == (Limits{}) {
 		options.Limits = DefaultLimits()
@@ -916,6 +924,31 @@ type exportRun struct {
 	clearedLinks    int
 	warnings        []string
 	collectionIDs   []string
+
+	// Publication projection state. rewrites holds the link spans for the
+	// document batch currently being written — bounded by the batch, never by
+	// the library — and the counters are reported so a publisher can see how
+	// much content the projection changed.
+	rewrites           map[string][]linkRewrite
+	rewriteDeltas      map[string][]offsetDelta
+	rewrittenLinks     int
+	rewrittenDocuments int
+	skippedRewrites    int
+	strippedMetadata   int
+}
+
+// publication reports whether this export is the projection rather than an
+// archive of canonical state.
+func (r *exportRun) publication() bool {
+	return r.options.Target == TargetPublicationHandoff
+}
+
+// rewritesContent reports whether the effective policy rewrites note bodies.
+// It is the policy's decision, not the target's: a subset transfer may ask for
+// plain-text link handling, and a publication profile may ask to retain links.
+func (r *exportRun) rewritesContent() bool {
+	action := r.resolution.Plan.Policy.LinkAction
+	return action == store.SelectionLinkActionPlainText || action == store.SelectionLinkActionRedact
 }
 
 func (r *exportRun) collect(ctx context.Context) error {
@@ -964,13 +997,25 @@ func (r *exportRun) collect(ctx context.Context) error {
 
 func (r *exportRun) writeDocuments(ctx context.Context) error {
 	documentIDs := r.resolution.DocumentIDs
-	currentOnly := false
+	// A publication handoff is a projection of the current notes, not a
+	// history: earlier revisions can contain exactly the text that was later
+	// removed for being private.
+	currentOnly := r.publication()
 	for start := 0; start < len(documentIDs); start += exportBatch {
 		end := min(start+exportBatch, len(documentIDs))
 		batch := documentIDs[start:end]
 		documents, err := r.source.ExportDocuments(ctx, batch)
 		if err != nil {
 			return err
+		}
+		if r.rewritesContent() {
+			// Bodies must be rewritten before they are written, so this batch's
+			// link decisions are collected first. Links stream in the same
+			// bounded batches the planner uses, so nothing proportional to the
+			// library is held.
+			if err := r.collectRewrites(ctx, batch); err != nil {
+				return err
+			}
 		}
 		for _, document := range documents {
 			notebookID := document.NotebookID
@@ -1059,12 +1104,20 @@ func (r *exportRun) writeRevision(revision store.ExportRevision) error {
 	// hashing one is far cheaper than writing bytes the archive already holds.
 	// Libraries routinely contain repeated bodies — duplicated notes, templates,
 	// an unchanged note re-imported — and every copy after the first is waste.
-	bodyDigest := sha256.Sum256([]byte(revision.Body))
+	text := r.projectBody(revision)
+	bodyDigest := sha256.Sum256([]byte(text))
 	body, err := r.writer.writeKnownBlob(hex.EncodeToString(bodyDigest[:]), canonical, func() (io.ReadCloser, error) {
-		return io.NopCloser(strings.NewReader(revision.Body)), nil
+		return io.NopCloser(strings.NewReader(text)), nil
 	})
 	if err != nil {
 		return fmt.Errorf("revision %s body: %w", revision.ID, err)
+	}
+	metadata := jsonObjectOrEmpty(revision.MetadataJSON)
+	if r.publication() && len(metadata) > 2 {
+		// Revision metadata is application-controlled and can carry importer
+		// state; a publication keeps only the note itself.
+		metadata = json.RawMessage("{}")
+		r.strippedMetadata++
 	}
 	return r.writer.addRecord(RecordRevision, RevisionRecord{
 		ID:           revision.ID,
@@ -1072,16 +1125,69 @@ func (r *exportRun) writeRevision(revision store.ExportRevision) error {
 		Title:        revision.Title,
 		Body:         body,
 		BodyMIMEType: canonical,
-		MetadataJSON: jsonObjectOrEmpty(revision.MetadataJSON),
+		MetadataJSON: metadata,
 		Message:      revision.Message,
 		CreatedAt:    timestamp(revision.CreatedAt),
 	})
+}
+
+// collectRewrites gathers the link spans this batch's bodies must have
+// rewritten. It runs before the batch's revisions are written, because a body
+// is hashed and published the moment it is written.
+func (r *exportRun) collectRewrites(ctx context.Context, batch []string) error {
+	r.rewrites = map[string][]linkRewrite{}
+	r.rewriteDeltas = map[string][]offsetDelta{}
+	return r.source.ExportLinks(ctx, batch, func(link store.DocumentLink) error {
+		if !publicationLinkNeedsRewrite(link, r.resolution.DocumentIDs, r.resolution.ResourceIDs) {
+			return nil
+		}
+		r.rewrites[link.SourceDocumentID] = append(r.rewrites[link.SourceDocumentID], linkRewrite{
+			start:       link.SourceStartByte,
+			end:         link.SourceEndByte,
+			displayText: link.DisplayText,
+			rawTarget:   link.RawTarget,
+		})
+		return nil
+	})
+}
+
+// projectBody applies the publication projection to one revision body. Every
+// other export writes canonical bytes through unchanged.
+func (r *exportRun) projectBody(revision store.ExportRevision) string {
+	if !r.rewritesContent() {
+		return revision.Body
+	}
+	rewrites := r.rewrites[revision.DocumentID]
+	if len(rewrites) == 0 {
+		return revision.Body
+	}
+	body, applied, skipped, deltas := rewriteBodyLinks(revision.Body, r.resolution.Plan.Policy.LinkAction, rewrites)
+	if applied > 0 {
+		r.rewrittenLinks += applied
+		r.rewrittenDocuments++
+		r.rewriteDeltas[revision.DocumentID] = deltas
+	}
+	if skipped > 0 {
+		r.skippedRewrites += skipped
+		// A link whose recorded span no longer matches the body is left in
+		// place rather than cut out at a stale offset. That can leave a link to
+		// withheld content in a published note, so it is a warning, not a note.
+		r.warn("some link spans did not match the stored body and were left unrewritten; re-save those notes and re-run the publication")
+	}
+	return body
 }
 
 // writeLink preserves the canonical link record but never lets it point
 // outside the archive: a target the selection excluded is reported instead of
 // being encoded as a dangling reference.
 func (r *exportRun) writeLink(link store.DocumentLink) error {
+	if r.rewritesContent() && publicationLinkNeedsRewrite(link, r.resolution.DocumentIDs, r.resolution.ResourceIDs) {
+		// The projection removed this link from the body, and its record would
+		// name the withheld note anyway — its raw target, its ID, and a context
+		// excerpt of the surrounding text. Keeping the record would hand over
+		// exactly what rewriting the body just withheld.
+		return nil
+	}
 	record := LinkRecord{
 		ID:               "lnk_" + strconv.FormatInt(link.ID, 10),
 		SourceDocumentID: link.SourceDocumentID,
@@ -1111,6 +1217,19 @@ func (r *exportRun) writeLink(link store.DocumentLink) error {
 		if record.ResolutionStatus != "target_excluded" {
 			record.ResolutionStatus = "target_excluded"
 			r.clearedLinks++
+		}
+	}
+	if r.publication() {
+		// A context excerpt is a copy of note text taken around the link. It
+		// has no use downstream and can carry a sentence the publication did
+		// not select.
+		record.Context = ""
+		if deltas := r.rewriteDeltas[link.SourceDocumentID]; len(deltas) > 0 {
+			// Rewriting earlier spans moved every byte after them, so an
+			// unadjusted offset would point into the wrong place in the
+			// published body.
+			record.SourceStartByte = shiftOffset(record.SourceStartByte, deltas)
+			record.SourceEndByte = max(shiftOffset(record.SourceEndByte, deltas), record.SourceStartByte)
 		}
 	}
 	return r.writer.addRecord(RecordLink, record)
@@ -1299,7 +1418,7 @@ func (r *exportRun) writeHeaderRecords(ctx context.Context) error {
 			}
 		}
 	} else if len(r.resolution.DocumentIDs) > 0 {
-		r.warn("query-backed search notebooks are omitted from a subset transfer because their queries describe the whole library")
+		r.warn("query-backed search notebooks are omitted from a scoped archive because their queries describe the whole library")
 	}
 
 	var tagIDs []string
@@ -1392,6 +1511,14 @@ func (r *exportRun) report(manifest Manifest, started time.Time) ExportReport {
 	if !fullBackup {
 		r.warn("this archive is a scoped snapshot, not a complete database backup")
 	}
+	if r.publication() {
+		// Publication is the only export that changes what the notes say. It
+		// must never be mistaken for an archive of the library.
+		r.warn("this is a publication projection: current notes only, no revision history, no provenance, and no exact source bundles")
+		if r.rewritesContent() && r.rewrittenLinks > 0 {
+			r.warn("link syntax pointing at withheld or unresolved targets was rewritten, so published bodies differ from the canonical notes")
+		}
+	}
 	if len(r.resolution.DocumentIDs) == 0 {
 		r.warn("the selection matched no notes; this archive contains only container records")
 	}
@@ -1427,6 +1554,10 @@ func (r *exportRun) report(manifest Manifest, started time.Time) ExportReport {
 		ExcludedDocuments:  r.resolution.Plan.Counts.ExcludedDocuments,
 		ReachableResources: r.resolution.Plan.Counts.ReachableResources,
 		ClearedLinkTargets: r.clearedLinks,
+		RewrittenLinks:     r.rewrittenLinks,
+		RewrittenDocuments: r.rewrittenDocuments,
+		SkippedRewrites:    r.skippedRewrites,
+		StrippedMetadata:   r.strippedMetadata,
 		Warnings:           warnings,
 		ElapsedSeconds:     time.Since(started).Seconds(),
 	}

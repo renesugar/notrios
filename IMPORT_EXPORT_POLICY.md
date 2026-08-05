@@ -111,6 +111,12 @@ subsets, copy only reachable public resources, strip disallowed metadata, and
 emit an explicitly subset-scoped archive-v2 handoff. Do not rely on a
 static-site-generator private-page filter to protect notes or resources.
 
+Implemented in v0.4 P7 as `notriosctl publish profile|plan|run`. A publication
+carries current revisions only — no history, trashed notes, provenance, exact
+source bundles, or saved searches — rewrites links to withheld or unresolved
+targets, and drops those links' records. Execution requires the digest printed
+by a reviewed plan and re-checks it before writing.
+
 The handoff is consumed by a separately maintained
 `movenotes-v3/notrios2sql.py` importer. `movenotes-v3` then owns portable
 Obsidian output, Quartz generation, and Hugo/Ledger generation with Pagefind or

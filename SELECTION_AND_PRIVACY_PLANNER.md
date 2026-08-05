@@ -17,7 +17,9 @@ Every plan requires one target:
 - `publication_handoff` — an explicitly selected current-note subset with
   secure defaults: exclude `private`, `draft`, and `confidential`, omit
   provenance/source bundles/private metadata, and convert private/broken links
-  to plain text in the later writer.
+  to plain text. v0.4 P7 implements that writer (`notriosctl publish`), which
+  also drops the corresponding link records, strips revision metadata, and
+  publishes current revisions only.
 
 Selectors are typed: recursive notebook IDs, tag names, one bounded canonical
 query, and up to 1,000 explicit document IDs. Values inside a selector type are
@@ -74,6 +76,11 @@ but does not rewrite content.
 - REST/MCP planner: at most 100,000 selected documents;
 - REST detail cap: 1,000 items per detail array; MCP uses its configured result
   cap (default 10, maximum 50).
+
+P7 uses the same planner for both halves of the publication workflow: the
+reviewed dry run and the export bind the identical `manifest_sha256`, and a
+publication refuses to run against a digest that no longer describes the
+library.
 
 The Store mutex supplies a consistent in-process read snapshot. The planner
 loads only document identity/revision state and processes resources, links,

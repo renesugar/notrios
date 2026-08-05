@@ -4,8 +4,8 @@ Status: format and read-only verification implemented in v0.4 P2; streaming
 export implemented in v0.4 P3; the large-library container revision (object
 index, two-level fanout, bounded writer and verifier) implemented in v0.4 P3a;
 the optional packed object layout in v0.4 P3b; verify-only and restore/import
-in v0.4 P4. Archive v1 remains supported as human-readable interchange and is
-not interpreted as v2.
+in v0.4 P4; and the publication projection in v0.4 P7. Archive v1 remains
+supported as human-readable interchange and is not interpreted as v2.
 
 ## Purpose and boundaries
 
@@ -231,12 +231,20 @@ P3 applies every P1 link and metadata decision while encoding records:
   is recorded with the target cleared and `resolution_status: target_excluded`,
   so no record ever names an object the archive does not contain. The count is
   reported.
-- `plain_text` and `redact` link actions rewrite note bodies and are refused by
-  export; they belong to the publication projection. `publication_handoff` is
-  refused for the same reason and arrives with P7.
+- `publication_handoff` (P7) is the projection target. It publishes current
+  revisions only, no trashed notes, no provenance, no exact source bundles, and
+  no search notebooks, and it blanks revision `metadata_json`.
+- `plain_text` and `redact` link actions rewrite note bodies. They are available
+  to scoped targets and refused for `full_archive`, because a backup must
+  reproduce canonical bytes. When they apply, the link records for the rewritten
+  links are omitted — a record names the withheld target and quotes the
+  surrounding text — and retained links keep offsets shifted onto the published
+  body.
 
-Export is a local filesystem operation. No REST or MCP surface accepts an
-output path or streams archive bytes.
+Export, verification, restore, and publication are local filesystem operations.
+No REST or MCP surface accepts an output path or streams archive bytes; the
+read-only `POST /api/v1/selection/plan` review is the only network-visible part
+of the publication workflow.
 
 ## Restore (P4)
 

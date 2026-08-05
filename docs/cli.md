@@ -216,6 +216,33 @@ desktop entry and changes nothing unless `--apply` is given, because installing
 it changes what happens when you click such a link anywhere on the machine. The
 entry claims `x-scheme-handler/notrios` and nothing else.
 
+## publish
+
+```sh
+notriosctl publish profile save --name <profile> [--target publication_handoff|subset_transfer]
+    [--notebooks id,id] [--tags a,b] [--query "..."] [--documents id,id] [--match any|all]
+    [--exclude-tags a,b] [--private-tags a,b] [--link-action plain_text|redact|report|retain]
+    [--include-provenance] [--include-source-bundles] [--max-resource-bytes N] [--profiles path]
+notriosctl publish profile list [--profiles path]
+notriosctl publish profile delete --name <profile> [--profiles path]
+notriosctl publish plan --profile <profile> [--detail-limit 100]
+notriosctl publish run --profile <profile> --reviewed-plan <sha256> [--overwrite] <out-dir>
+```
+
+Saves, reviews, and runs a [publication handoff](publishing.md): a scoped,
+sanitized archive-v2 directory containing only the notes you selected, with
+current text only — no revision history, trashed notes, provenance, exact source
+bundles, or saved searches.
+
+`publish plan` writes nothing and prints the notes, resources, link decisions,
+metadata decisions, warnings, and a `manifest_sha256`. `publish run` requires
+that digest and re-plans before writing: if anything about the library changed
+since the review, it refuses. `--target full_archive` is refused at save time —
+a backup must not be reachable through a name that sounds like publishing.
+
+Profiles live in `<data-dir>/publish-profiles.json` (override with `--profiles`
+or `NOTRIOS_PUBLISH_PROFILES`) and are written owner-only.
+
 ## seed-help
 
 ```sh

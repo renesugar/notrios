@@ -186,6 +186,13 @@ container slice that still extends archive v2;
 Bluge according to site scale. v0.4 shares the neutral
 selection/link/resource/privacy plan between full archive, subset transfer, and
 publication handoff rather than duplicating those publishing engines.
+P7 implements the publication itself: saved profiles record selection and
+privacy decisions only, `publish plan` reviews, and `publish run` refuses unless
+the library still matches the reviewed digest. The projection publishes current
+revisions only and rewrites links to withheld or unresolved targets, dropping
+their link records so a published archive cannot name what it withheld. Notrios
+never executes note content and runs no build step.
+
 P1 implements that neutral layer as a read-only canonical SQLite planner with
 typed notebook/tag/query/explicit-ID selectors, target-specific privacy
 defaults, reachable-resource and link-boundary analysis, capped content-free

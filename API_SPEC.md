@@ -267,7 +267,9 @@ POST /api/v1/selection/plan
 
 The read-only planner accepts a typed target (`full_archive`,
 `subset_transfer`, or `publication_handoff`), recursive notebook IDs, tags, a
-Q1 query, and bounded explicit document IDs. It returns content-free document
+Q1 query, and bounded explicit document IDs. It is the review step of the v0.4
+P7 publication workflow: the digest it returns is what `notriosctl publish run`
+requires before writing anything. It returns content-free document
 and resource manifests, link decisions, source-bundle policy results,
 exclusions, metadata stripping decisions, warnings, complete counts, and a
 deterministic SHA-256 manifest digest. Detail arrays are capped at 1,000 over
@@ -511,6 +513,19 @@ notriosctl profile register --name <profile> [--db path] [--registry path]
 notriosctl profile list|forget [--registry path]
 notriosctl register-url-handler [--apply] [--binary path] [--dir path]
 ```
+
+Publication is likewise CLI-only:
+
+```text
+notriosctl publish profile save|list|delete [--profiles path] …
+notriosctl publish plan --profile <profile> [--detail-limit N]
+notriosctl publish run --profile <profile> --reviewed-plan <sha256> <out-dir>
+```
+
+`publish plan` is a read-only review; `publish run` re-plans and refuses unless
+the result still matches the reviewed digest. No REST or MCP surface produces a
+handoff or accepts an output path — `POST /api/v1/selection/plan` with target
+`publication_handoff` is the network-visible review and nothing more.
 
 `open` exits 0 when the link named a note this machine can open, 1 when it
 could not be resolved (unregistered database, several candidate profiles, or a

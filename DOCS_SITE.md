@@ -27,6 +27,7 @@ docs/
   selection-planning.md # archive/subset/publication dry-run privacy boundary
   archive-v2.md         # native archive v2 identity/admission safety contract
   stable-links.md       # notrios:// links, profile registry, desktop handler
+  publishing.md         # publication profiles, review-then-publish, link handling
   gui.md                # built-in GUI: building, modes, layout, themes, errors
   import-export.md      # per-source import workflows, archive export/import
   operations.md         # media, resources/GC, importer resume, sidecar status

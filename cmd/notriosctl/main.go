@@ -60,6 +60,8 @@ func main() {
 		runOpen(os.Args[2:])
 	case "register-url-handler":
 		runRegisterURLHandler(os.Args[2:])
+	case "publish":
+		runPublish(os.Args[2:])
 	case "help", "-h", "--help":
 		printHelp()
 	default:
@@ -519,9 +521,14 @@ Usage:
                                                  # local database registry used to route notrios:// links
   notriosctl register-url-handler [--apply] [--binary path] [--dir path]
                                                  # Ubuntu/XDG notrios:// protocol handler; prints unless --apply
+  notriosctl publish profile save --name <profile> [--notebooks id,id] [--tags a,b] [--link-action plain_text]
+  notriosctl publish profile list|delete [--name <profile>]
+  notriosctl publish plan --profile <profile>    # read-only privacy review; prints the plan digest
+  notriosctl publish run --profile <profile> --reviewed-plan <sha256> <out-dir>
+                                                 # scoped sanitized archive-v2 handoff; refuses a stale review
 
 Future commands:
-  notriosctl publish quartz --profile <name>
+  notriosctl sync status
 `)
 }
 

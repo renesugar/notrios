@@ -198,6 +198,21 @@ func Import(ctx context.Context, st store.Store, archiveDir string, options Impo
 			return report, err
 		}
 	}
+
+	// Resolve links after every note exists. A note that links to another note
+	// in the same archive is imported before its target as often as not, and
+	// the link is recorded unresolved at that moment. Rebuilding here adds no
+	// revision and is what makes an imported archive's internal links work —
+	// including for a later publication, which rewrites unresolved links out of
+	// the published bodies.
+	for _, note := range notes {
+		if err := st.RebuildDocumentLinks(ctx, note.ID); err != nil {
+			if errors.Is(err, store.ErrNotFound) {
+				continue
+			}
+			return report, err
+		}
+	}
 	return report, nil
 }
 

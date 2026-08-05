@@ -280,6 +280,34 @@ preview routing of `notrios://` anchors, and the wrong-database message.
 
 Live service and CLI behaviour is recorded in `performance/v0.4-p5/`.
 
+### Publication handoff (v0.4 P7)
+
+Export fixtures reuse the P3 canonical database, whose public note links to an
+included note, a withheld note, an unresolved target, an external URL, and an
+embedded resource. They assert that withheld and broken links become plain text
+or a redaction placeholder while included and external links survive; that the
+withheld note appears nowhere in the archive, including in link records and
+their context excerpts; that retained links' byte offsets are shifted onto the
+published body; that only current revisions, no provenance, no source bundles,
+and no saved searches are published; that revision metadata is stripped; and
+that the result verifies as an ordinary archive whose report says
+`full_backup: false`.
+
+The rewriter is tested directly for the cases where it must refuse: a span past
+the end of the body, a span that is not a link, a span whose target has moved,
+inverted and negative spans, and overlapping spans. A skipped span leaves the
+body unchanged and warns.
+
+Profile fixtures cover the round trip and its `0600` permissions, refusal of
+`full_archive` and of an empty selection, refusal of a profile that would
+publish Trash, and refusal of a corrupt profile file rather than partial
+application. A CLI fixture builds the real binary and asserts the
+review-then-publish contract end to end: no digest and a stale digest both
+refuse and write nothing, the reviewed digest publishes, and a note joining the
+selection after the review invalidates it.
+
+Evidence: `performance/v0.4-p7/`.
+
 ### Sync model and transport tests (planned v0.7)
 
 - Property/model tests shuffle, duplicate, replay, drop, and eventually deliver

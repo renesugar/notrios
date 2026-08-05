@@ -20,8 +20,20 @@ or local paths. See `SELECTION_AND_PRIVACY_PLANNER.md`.
 P2 binds that complete planner digest into the strict archive-v2 snapshot
 manifest. The format verifier admits only immutable hash-addressed objects,
 bounded typed records, safe relative source-bundle paths, and consistent
-schema/capability/MIME/count/reference metadata. P3 remains responsible for
-streaming only the records and bytes authorized by the plan.
+schema/capability/MIME/count/reference metadata. P3 streams only the records and
+bytes the plan authorizes.
+
+P7 implements the publication itself (`notriosctl publish`). A publication
+handoff is a projection, not an archive of canonical state: current revisions
+only, no trashed notes, no provenance, no exact source bundles, no saved
+searches, and stripped revision metadata. It is the one export that rewrites
+note content — links to withheld or unresolved targets become plain text or a
+redaction placeholder — and the corresponding link records are dropped rather
+than published, because a record carries the withheld note's ID, its raw
+target, and a context excerpt of the surrounding sentence. Retained links keep
+byte offsets adjusted onto the published body. Content-rewriting link actions
+are refused for `full_archive`: a backup's promise is that what comes out is
+what went in.
 
 ## Publishing implementation boundary
 
@@ -55,11 +67,15 @@ static fallback.
 
 ## Publishing profile example
 
+Profiles are saved with `notriosctl publish profile save` into
+`<data-dir>/publish-profiles.json` (owner-only). They record selection and
+privacy decisions only — never an output path, a command, or anything derived
+from note content. The shape below is the equivalent of the implemented flags:
+
 ```yaml
 profiles:
   public-research:
-    target: movenotes
-    output: /transfers/research-public.notrios
+    target: publication_handoff
     include:
       notebooks:
         - Research/Public
@@ -85,7 +101,12 @@ profiles:
 - Copy only resources reachable from selected public notes.
 - Strip private metadata such as source IDs, import errors, moderation decisions, local paths, and private tags unless explicitly allowed.
 - Convert links to private notes into plain text, redacted placeholders, or warnings according to profile policy.
-- Run a dry-run plan before publishing.
+- Run a dry-run plan before publishing. Execution requires the digest that plan
+  printed: Notrios re-plans at publication time and refuses when the library no
+  longer matches the reviewed decision.
+- Never execute note content. A profile cannot name a command and publishing
+  runs no build step; conversion happens in a separate toolkit, invoked by the
+  user.
 
 ## Dry-run output
 

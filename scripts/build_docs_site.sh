@@ -18,6 +18,7 @@ nav='<nav class="site-nav">
   <a href="/notrios/selection-planning.html">Selection planning</a>
   <a href="/notrios/archive-v2.html">Archive v2</a>
   <a href="/notrios/stable-links.html">Stable links</a>
+  <a href="/notrios/publishing.html">Publishing</a>
   <a href="/notrios/gui.html">GUI</a>
   <a href="/notrios/import-export.html">Import &amp; export</a>
   <a href="/notrios/operations.html">Maintenance</a>

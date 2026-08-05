@@ -8,8 +8,8 @@ v0.3 import/resource/media/large-library hardening is complete. H1–H11 are
 archived under `plans/v0.3/`. The revised v0.4 plan begins with Joplin
 correctness/performance prerequisites, then archive-v2, publishing handoff,
 boolean search, and stable references. J1–J3, Q1, P1, P2, P3, P3a, P3b, P4, and
-P5 are complete and archived under `plans/v0.4/001`–`011`. P6 is deferred to
-v0.7; P7 and P8 require user approval.
+P5, and P7 are complete and archived under `plans/v0.4/001`–`012`. P6 is
+deferred to v0.7; P8 (documentation and release wrap-up) remains.
 
 ## 2026-08-02 follow-up review
 
@@ -203,6 +203,35 @@ v0.7; P7 and P8 require user approval.
   spool, and `record_counts` became a pointer so `omitempty` actually applies —
   which cut packed verify peak RSS 41% and runtime 31%.
 
+## 2026-08-05 P7 — publication profiles and privacy-reviewed handoff
+
+- `notriosctl publish profile save|list|delete`, `publish plan`, `publish run`.
+  Profiles record selection and privacy decisions only and are stored owner-only
+  at `<data-dir>/publish-profiles.json`; `full_archive` is refused as a profile
+  target so a backup is not reachable through a publishing name.
+- Publishing is gated on the digest of a reviewed plan. `publish run` re-plans
+  and refuses when the library no longer matches what was reviewed, because
+  adding a note to the published notebook or removing a `private` tag changes
+  what would go out.
+- The projection publishes current revisions only and withholds Trash,
+  provenance, exact source bundles, saved searches, and revision metadata.
+- Content rewriting moved from "never allowed" to "not allowed for
+  `full_archive`": a backup must reproduce canonical bytes, a projection may
+  not carry a reference a reader cannot follow.
+- Rewriting the body was only half the job. A link record carries the raw
+  target, the resolved ID, and a context excerpt of the surrounding sentence, so
+  records for rewritten links are dropped and `context` is cleared for every
+  published link; retained links keep offsets shifted onto the published body.
+- A span whose bytes no longer look like the link it describes is left alone and
+  warned about rather than cut at a stale offset.
+- The evidence run found that archive-v1 import never rebuilt links, so an
+  imported library's internal links stayed unresolved until each note was
+  edited — and a publication would have flattened all of them. `Import` now
+  rebuilds links after every note exists.
+- Evidence: `performance/v0.4-p7/publication-handoff-check.md`. No real-corpus
+  publication run: no available corpus has the public/private boundary a
+  profile exists to separate.
+
 ## 2026-08-05 P6 deferred to v0.7
 
 - The movenotes-v3 compatibility bridge moved out of v0.4. The gate is v0.7
@@ -369,7 +398,10 @@ attempt detail remains append-only in `agent/ATTEMPT_LOG.jsonl`.
 - External links: `notrios://databases/{id}/documents/{id}`. The local registry
   lives at `~/.config/notrios/profiles.json` (override with `--registry` or
   `NOTRIOS_PROFILE_REGISTRY`) and is written `0600`.
-- P5 live routing evidence is under `performance/v0.4-p5/`.
+- P5 live routing evidence is under `performance/v0.4-p5/`; P7 publication
+  evidence is under `performance/v0.4-p7/`.
+- Publication profiles live at `<data-dir>/publish-profiles.json` (override with
+  `--profiles` or `NOTRIOS_PUBLISH_PROFILES`), written `0600`.
 - No GitHub push is authorized for this review.
 
 ## Open implementation blockers
