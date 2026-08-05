@@ -309,8 +309,15 @@ and the attachment-corpus round trip, which now passes with a byte-identical
 (`performance/v0.4-p4/attachment-corpus-findings.md`). That corpus run found
 and fixed three defects — a quadratic restore lookup, `full_archive` dropping
 unreferenced resources, and restore registering source bundles as ordinary
-blobs. Still open: crash/fault injection, and restore coverage for the packed
-layout.
+blobs. The corpus then restored under the packed layout as well, which found a
+fourth: the pack handle cache could close a pack while restore was still
+reading it. Both restored libraries are byte-identical to each other and to the
+source. Still open: crash/fault injection.
+
+Two pack byte-efficiency findings are deferred to a format revision rather than
+fixed here, since changing the pack format would invalidate the measured
+evidence: blob trailer entries carry a zero `record_counts` (44 MB on the
+corpus), and packs do not deduplicate (52 MB).
 
 **Resource and attachment coverage is mandatory.** Neither recipe corpus
 carries resources or source bundles, so P3a/P3b exercised the blob path at

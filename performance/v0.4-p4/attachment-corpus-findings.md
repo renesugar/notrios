@@ -40,6 +40,65 @@ Export, standalone verify, and restore all report the same
 `commit_sha256 75afa028…` and `snapshot_id snap_2ahqhtk6…`, so the verified
 artifact is the one that was restored, not a re-derived equivalent.
 
+## Packed layout — the same corpus stored the other way
+
+P4 requires the corpus to restore under both object layouts. The same
+`attach.sqlite` was exported packed, verified, and restored into a third
+database.
+
+| Stage | Loose | Packed |
+|---|---|---|
+| Export | 16m 49s, 247 MiB | **10m 11s**, 283 MiB |
+| Verify (standalone CLI) | 4m 19s, 41 MiB | 5m 26s, 124 MiB |
+| Restore (adopt) | 12m 12s, 75 MiB | 12m 40s, 127 MiB |
+| Files on disk | 215,484 | **30** |
+| Space consumed (`du`) | 2.5 GB | **1.7 GB** |
+| Object bytes (apparent) | 1,587,759,142 | 1,717,940,079 |
+
+Two comparisons pass: the packed-restored database is byte-identical to the
+source under the same 14-column aggregate, **and** it is byte-identical to the
+loose-restored database. Layout is therefore invisible in the restored library
+— which is the property that matters, and which row counts alone would not
+establish.
+
+Packed export is 40% faster than loose: creating 215,410 files costs more than
+writing seven. The file count collapses 7,183× (30 files = 7 packs + 22 index
+chunks + the manifest), and block-rounding waste on 215k small files makes the
+packed archive occupy 0.8 GB less despite carrying more bytes.
+
+Verify and restore both cost more memory under packs (124 and 127 MiB, versus
+41 and 75 MiB). A pack trailer is read whole, so it scales with objects per
+pack rather than with the archive; it stays bounded, but the packed layout is
+not the cheaper one to read.
+
+### Packed archives carry 8.2% more object bytes, fully accounted
+
+The 130,180,937-byte difference decomposes exactly, with 224 bytes left over
+for the seven pack footers:
+
+| Component | Bytes |
+|---|---|
+| Pack trailers | 78,305,373 |
+| — of which zero `record_counts` on blob entries | 44,164,585 |
+| Duplicate object copies inside packs | 51,875,340 |
+| Pack footers (7 × 32) | 224 |
+
+Both components are avoidable, and neither is a correctness problem. They are
+recorded rather than fixed here because both change the pack format, which
+would invalidate the archive this evidence was measured against; the work
+belongs with a format revision, not with restore coverage.
+
+**Blob trailer entries carry a fully expanded `record_counts` of twelve
+zeroes.** An object holding bytes has no records to count. This is 44 MB — 34%
+of all trailer bytes, 2.6% of the archive — spent describing nothing.
+
+**Packs do not deduplicate.** The loose layout collapses duplicates for free
+because two identical objects address the same path. A pack writer streams
+bytes and only learns the object's hash once it has written them, so the pack
+physically carries 27 duplicate copies of 24 hashes — 51.9 MB here. The index
+still holds one entry per hash, so restores are correct and the duplicates are
+pure waste rather than a fidelity risk.
+
 ## Finding 1 — `full_archive` dropped unreferenced resources (fixed)
 
 The source database holds **758** resources; the first export carried **757**,
@@ -81,6 +140,31 @@ added blobs and that a restored bundle is readable at the path it records —
 the second assertion is the one that catches the unreadability, which a row
 count alone would miss.
 
+## Finding 4 — packed restore closed packs it was still reading (fixed)
+
+Restore reads a record object and, for each record inside it, opens the blob
+that record names. Those blobs live in other packs. The pack handle cache
+evicted by arbitrary map choice, so once an archive held more packs than the
+16-handle cache, it could close the record object's own pack while its reader
+was mid-scan.
+
+This is the defect loose-only coverage could not reach: it needs more packs
+than the cache holds *and* a record object too large to be consumed in one
+buffered read. No small fixture reaches that state.
+
+Handles are now reference counted. Eviction takes the least recently used idle
+handle and never one a reader holds; if every cached handle is borrowed the
+cache exceeds its bound rather than break a live reader, which is safe because
+the excess is bounded by concurrent readers rather than by archive size.
+
+A second defect sat underneath it. `bufio.Scanner` emits whatever is left in
+its buffer as a final token when the underlying read fails, so the closed-handle
+error arrived disguised as `unexpected end of JSON input` — blaming the archive
+for an I/O fault and pointing any investigation at the export path. Read errors
+now report as read errors.
+
+The regression test fails 5 times out of 5 without the fix.
+
 ## Finding 3 — restore object lookup was quadratic (fixed)
 
 The first restore reader resolved each object hash by scanning every index
@@ -102,6 +186,10 @@ memory is not mistaken for this change.
 
 ## Status
 
-The attachment-bearing round trip passes. Remaining P4 work: crash/fault
-injection, and restore coverage for the packed layout — the reader handles both
-layouts but only loose is exercised at corpus scale.
+The attachment-bearing round trip passes under both object layouts, and the two
+restored libraries are byte-identical to each other and to the source.
+
+Remaining P4 work: crash/fault injection.
+
+Deferred to a pack format revision, not blocking P4: the zero `record_counts`
+on blob trailer entries, and pack-internal deduplication.
