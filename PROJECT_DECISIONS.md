@@ -65,6 +65,59 @@
     asymmetry does not justify for anchors. Decided 2026-08-06 for v0.5 E1a and
     amended the same day for E1b.
 
+20. **Stay on `md-editor-rt`. There is no CodeMirror migration to make,
+    because `md-editor-rt` is CodeMirror.** v0.5 E6 was scheduled to weigh
+    migrating from `md-editor-rt` to `CodeMirror 6 + unified/remark/rehype`.
+    The premise was false. `md-editor-rt` 6.5.3 depends on
+    `@codemirror/{view,state,autocomplete,commands,language,search}` 6.x and
+    exposes them: `completions` takes `CompletionSource`s straight into
+    `@codemirror/autocomplete`, `config({ codeMirrorExtensions })` accepts
+    arbitrary extensions, `getEditorView()` returns the `EditorView` itself, and
+    `domEventHandlers` is CodeMirror's own handler map.
+
+    All three capabilities E5 reported as unreachable — caret position, inline
+    decorations, in-editor Ctrl-click — were reachable through that public API.
+    E6 implemented them rather than only arguing about them: `[[` autocomplete
+    inside the editor, wavy underlines on broken links that move with their
+    text, and Ctrl-click to open a link's target.
+
+    Measured on a 206,549-character note in real headless Chrome, three runs per
+    arm:
+
+    | | Bundle (eager, gzip) | Keystroke p50 | Keystroke p95 |
+    |---|---:|---:|---:|
+    | before | 259.64 kB | 30.9 ms | 71.4 ms |
+    | after | 260.94 kB | 30.0 ms | 67.4 ms |
+
+    The three features cost **1.3 kB gzipped** and nothing measurable in typing
+    latency, because the library was already in the bundle. Declaring
+    `@codemirror/*` as direct dependencies pinned to the versions already
+    installed produced a byte-identical build and a single copy of each package,
+    which is the outcome that matters: two copies of `@codemirror/state` break
+    CodeMirror at runtime.
+
+    Migrating would therefore buy nothing in capability. What it would buy is
+    the removal of md-editor-rt's other cargo — `markdown-it` and its plugins,
+    `xss`, `lucide-react`, `medium-zoom`, and above all
+    `@codemirror/language-data`, which contributes **113 lazy chunks totalling
+    1.32 MB raw / 480 kB gzipped** of syntax modes for languages a note editor
+    rarely meets. Those are lazily loaded, so they cost distribution size rather
+    than first paint. And it would cost re-implementing the preview renderer,
+    the sanitizer, the toolbar, image upload, and theming — all of which work
+    today.
+
+    The adapter stays worth keeping: this decision was cheap to reach precisely
+    because the editor sits behind one. Revisit only if distribution size becomes
+    a real constraint, and try trimming `@codemirror/language-data` first.
+    Decided 2026-08-06 for v0.5 E6.
+
+    A correction belongs with this decision. E5 recorded that the editor
+    "exposes no caret position and accepts no inline widgets" and that claim
+    reached `UI_DESIGN.md`, `PLAN.md`, `CODING_CLIENT_HANDOFF.md`, and the
+    archived slice. It came from reading part of the editor's exposed interface
+    and not the rest of it. It was wrong, it was the premise E6 inherited, and
+    every document carrying it has been corrected.
+
 ## Deferred decisions
 
 - Exact Go SQLite driver.

@@ -1,7 +1,7 @@
 # Plan: v0.5 — Better editing, blocks, and graph UX
 
 Status: **active. Drafted 2026-08-05 from `ROADMAP.md` after v0.4 completed.
-E1, E1a, E1b, E2, E3, E4, and E5 are complete; E6–E9 require user approval.**
+E1, E1a, E1b, E2, E3, E4, E5, and E6 are complete; E7–E9 require user approval.**
 
 v0.4 is complete and archived under `plans/v0.4/`, including a copy of its own
 plan at `plans/v0.4/000-v0.4-plan.md`. Its one deferral, P6 (the `movenotes-v3`
@@ -299,21 +299,25 @@ edited resolve against the **submitted body**, since while someone types the
 buffer is the truth about its own headings. Schema **v16** replaced
 `lower(title) = lower(?)` with a NOCASE index — the same comparison, but the old
 one made every title-resolved link a full scan of the document table on every
-save and every lint pass. And the slice produced E6's input as a measured fact:
-`md-editor-rt` gives `insert` at the caret but no caret position and no inline
-widgets, so broken links are listed beside the text rather than underlined in it.
+save and every lint pass. The slice also produced a claim about the editor that **E6 found to be wrong**:
+E5 recorded that `md-editor-rt` gives no caret position and no inline widgets.
+It gives both. See E6 and `PROJECT_DECISIONS.md` 20.
 
-### E6. CodeMirror 6 migration decision
+### E6. CodeMirror 6 migration decision — complete
+
+Archived as `plans/v0.5/008-codemirror-decision.md`. Evidence:
+`performance/v0.5-e6/`. **Recommendation: stay.** Recorded as
+`PROJECT_DECISIONS.md` 20.
 
 Explicitly a decision task, not an implementation one. `md-editor-rt` sits
 behind an application-owned adapter precisely so this stays a measured choice.
 
-E5 already established the first bullet as a fact rather than a hypothesis:
-`md-editor-rt` exposes `insert` at the caret, so autocomplete inserts in place,
-but it exposes no caret position and accepts no inline widgets, so broken links
-are listed beside the text instead of underlined inside it. In-editor marker
-placement and caret position are the two concrete capabilities the current
-editor cannot provide.
+**The task's premise was false, and finding that out was the task.**
+`md-editor-rt` 6.5.3 *is* CodeMirror 6: it depends on
+`@codemirror/{view,state,autocomplete,commands,language,search}` 6.x and exposes
+them through `completions`, `config({ codeMirrorExtensions })`,
+`getEditorView()`, and `domEventHandlers`. E5's claim that the editor gives no
+caret position and no inline widgets was wrong; both are available.
 
 - Establish what E5 could not do inside the current editor: source positions,
   in-editor Ctrl-click, inline widgets, AST-safe edits.
@@ -325,6 +329,21 @@ editor cannot provide.
 
 Working state: the recommendation is backed by numbers from both editors on the
 same notes, not by preference.
+
+Because the prototype had to be real to be evidence, and because it turned out
+to run on the editor already shipping, it was kept: `[[` autocomplete inside the
+editor, wavy underlines on broken links that move with their text, and Ctrl-click
+to open a target. Cost: **1.3 kB gzipped and nothing measurable in typing
+latency** over three runs per arm on a 206,549-character note in real headless
+Chrome. That is not a migration — no editor was replaced — and the four
+capabilities the task listed are now demonstrated rather than argued about.
+
+What migrating would still buy is removing `@codemirror/language-data`, which
+md-editor-rt pulls in for code-block highlighting and which contributes 113 lazy
+chunks totalling 1.32 MB raw / 480 kB gzipped. They load only when a fenced block
+names their language, so they cost distribution size rather than first paint —
+not enough to justify re-implementing the preview, sanitizer, toolbar, upload,
+and theming that work today.
 
 ### E7. Embedded query blocks
 
@@ -418,14 +437,16 @@ GUI-affecting tasks also build with `make gui`, and layout changes run
   revision-preconditioned.** Every fix writes an ordinary revision against a
   precondition for one note; anything bulk belongs to the v0.6 organizer, and
   E3 may not grow a multi-note apply path.
-- E1, E1a, E1b, E2, E3, E4, and E5 are complete; the remaining tasks are not
-  approved.
+- E1, E1a, E1b, E2, E3, E4, E5, and E6 are complete; the remaining tasks are
+  not approved.
 - **Resolved 2026-08-06: heading anchors in stable links use a slug, not
   percent-encoded heading text.** Obsidian percent-encodes the heading name into
   its URI; Notrios keeps P5's refusal to decode percent-escapes, so the URI form
   is the slug and resolution normalizes heading text to it. See E1a and
   `PROJECT_DECISIONS.md` 19.
-- E6 is a decision task. Approving E6 does not approve a CodeMirror migration.
+- **Resolved 2026-08-06: stay on `md-editor-rt`.** E6 found that it *is*
+  CodeMirror 6 and exposes it, so the migration it was weighing does not exist
+  as a capability question. See `PROJECT_DECISIONS.md` 20.
 
 ## Scope control
 

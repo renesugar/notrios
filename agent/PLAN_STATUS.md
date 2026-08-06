@@ -12,8 +12,8 @@ closed and is now **v16** (E1 added v14 blocks, E1a added v15 heading slugs, E5
 added v16 title/filename indexes).
 
 `PLAN.md` holds the **v0.5 plan** (blocks, lint/fix, graph traversal, editor
-link intelligence, query blocks, organizer UX). **E1, E1a, E1b, E2, E3, E4, and
-E5 are complete**; E6–E9 require user approval. Two v0.5 decisions are settled and recorded as
+link intelligence, query blocks, organizer UX). **E1, E1a, E1b, E2, E3, E4, E5,
+and E6 are complete**; E7–E9 require user approval. Two v0.5 decisions are settled and recorded as
 `PROJECT_DECISIONS.md` 17 and 18: block identity is strictly content-based, and
 lint/fix stays single-note and revision-preconditioned with anything bulk left
 to the v0.6 organizer.
@@ -210,6 +210,52 @@ to the v0.6 organizer.
   spool, and `record_counts` became a pointer so `omitempty` actually applies —
   which cut packed verify peak RSS 41% and runtime 31%.
 
+## 2026-08-06 E6 — CodeMirror decision: stay
+
+- The task's premise was false and finding that out was the task.
+  **`md-editor-rt` 6.5.3 is CodeMirror 6**: it depends on
+  `@codemirror/{view,state,autocomplete,commands,language,search}` 6.x and
+  exposes them through the `completions` prop,
+  `config({ codeMirrorExtensions })`, `getEditorView()`, and
+  `domEventHandlers`. So "migrate to CodeMirror to get source positions and
+  inline widgets" has no content — we are on CodeMirror and they are available.
+- **Corrected E5's claim** that the editor gives no caret position and no inline
+  widgets. It came from reading part of the exposed interface and not the rest.
+  The claim had reached `UI_DESIGN.md`, `PLAN.md`, `CODING_CLIENT_HANDOFF.md`,
+  this file, `FEATURE_MATRIX.md`, and the archived E5 slice; all corrected.
+- The prototype had to be real to be evidence, and it ran on the editor already
+  shipping, so it was kept: `[[` autocomplete inside the editor, wavy underlines
+  on broken links that map through document changes, and Ctrl-click via
+  `posAtCoords`. No editor was replaced; the migration remains unapproved.
+- `web/src/editor-offsets.ts` converts the service's UTF-8 byte offsets into
+  CodeMirror's UTF-16 indices. They agree on ASCII and diverge on the first
+  accent, so an unconverted offset underlines the wrong text. Offsets landing
+  inside a character are dropped rather than rounded.
+- `@codemirror/{autocomplete,state,view}` became direct dependencies pinned to
+  the versions already installed. Verified empirically: one copy of each on disk
+  and a byte-identical build, because two copies of `@codemirror/state` break
+  CodeMirror at runtime.
+- Measured in real headless Chrome on a 206,549-character note, three runs per
+  arm: keystroke p50 30.9 → 30.0 ms, p95 71.4 → 67.4 ms, eager bundle 259.64 →
+  260.94 kB gzipped. **1.3 kB and nothing measurable** — stated as "nothing
+  measurable" rather than "faster" because first paint alone ranged 160–528 ms
+  across three identical before runs.
+- What migrating would still buy: dropping `@codemirror/language-data`, which is
+  113 lazy chunks, 1.32 MB raw / 480 kB gzipped — 61% of the distribution by
+  size and 97% by file count. Lazily loaded, so distribution size rather than
+  first paint; not enough against re-implementing preview, sanitizer, toolbar,
+  upload, and theming.
+- **Not measured, and the task asked for it**: behaviour inside the Wails
+  webview. WebKitGTK does not speak the DevTools Protocol the harness uses and
+  no WebKit inspection tooling is installed here. `make gui` builds and the
+  webview loads the identical bundle, so the code path is the one measured — the
+  engine is not.
+- Also noted: `remark-gfm`, `remark-math`, `rehype-katex`, and `rehype-sanitize`
+  are declared in `web/package.json` and imported nowhere.
+- New harness: `scripts/run_editor_profile.sh` + `scripts/measure_editor.mjs`,
+  a CDP client written against Node's built-in WebSocket so measuring the editor
+  added no dependency. Evidence under `performance/v0.5-e6/`.
+
 ## 2026-08-06 E5 — editor-pane link intelligence
 
 - `GET /api/v1/links/suggest` is the bounded autocomplete an editor calls while
@@ -249,10 +295,8 @@ to the v0.6 organizer.
   and a located list of links that will not open. Both debounce, cancel the
   request they superseded, and degrade to nothing on error rather than to an
   error banner.
-- **E6's input, as a measured fact rather than a preference**: `md-editor-rt`
-  exposes `insert` at the caret but no caret position and no inline widgets, so
-  broken links are listed beside the text instead of underlined in it. Recorded
-  in `UI_DESIGN.md`.
+- E5 also recorded that `md-editor-rt` exposes no caret position and no inline
+  widgets. **E6 found that wrong** and corrected it everywhere; see below.
 
 ## 2026-08-06 E4 — graph traversal, paths, and visualization data
 

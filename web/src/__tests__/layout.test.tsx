@@ -13,6 +13,9 @@ vi.mock('md-editor-rt', () => ({
     <textarea data-testid="editor-stub" readOnly={readOnly} value={value} onChange={() => {}} />
   ),
   MdPreview: ({ value }: { value: string }) => <div data-testid="preview-stub">{value}</div>,
+  // EditorPane registers its CodeMirror extensions through md-editor-rt's
+  // global config hook at module load, so the stub has to accept the call.
+  config: () => {},
 }));
 vi.mock('md-editor-rt/lib/style.css', () => ({}));
 

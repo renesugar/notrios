@@ -7,12 +7,14 @@
 //   * a list of the links in the current buffer that would not open anything,
 //     located by line and column.
 //
-// What is *not* here is an underline drawn under the broken link in the editor
-// text. That needs the editor to hand out source positions and accept inline
-// widgets, and `md-editor-rt` exposes neither — it offers `insert` at the caret
-// and nothing about where the caret is. Marking is therefore a list beside the
-// text rather than decoration inside it. That gap is the concrete input to E6's
-// CodeMirror decision, and it is recorded here rather than worked around.
+// E5 claimed this list existed *because* the editor could not underline a
+// broken link in place. That was wrong: `md-editor-rt` is CodeMirror 6 and
+// exposes it, so E6 added the in-editor underline (`editor-extensions.ts`).
+//
+// The list stayed anyway, because it turned out to be the more useful half. An
+// underline says "something here is wrong" only where you happen to be looking;
+// the list says how many links are broken, where each one is, and why — for a
+// note longer than the screen, which is most of them.
 import { useState } from 'react';
 import type { CheckedLink } from '../api';
 import { describeLinkStatus, linkMarkdown, useLinkSuggestions, MIN_SUGGEST_QUERY } from '../useLinkIntelligence';

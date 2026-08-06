@@ -93,6 +93,12 @@ export interface BufferLinkState {
   broken: CheckedLink[];
   /** True once at least one check has returned for the current buffer. */
   checked: boolean;
+  /**
+   * The exact text the service classified. Every offset in `links` describes
+   * this string, so anything placing a marker must compare against it rather
+   * than assume the buffer has not moved on.
+   */
+  checkedBody: string;
 }
 
 /**
@@ -103,6 +109,7 @@ export interface BufferLinkState {
 export function useBufferLinks(body: string, documentID: string | undefined, enabled: boolean): BufferLinkState {
   const [links, setLinks] = useState<CheckedLink[]>([]);
   const [checked, setChecked] = useState(false);
+  const [checkedBody, setCheckedBody] = useState('');
   // Identifies the buffer a response belongs to, so a slow reply for older text
   // cannot overwrite a newer result.
   const latest = useRef(0);
@@ -111,6 +118,7 @@ export function useBufferLinks(body: string, documentID: string | undefined, ena
     if (!enabled) {
       setLinks([]);
       setChecked(false);
+      setCheckedBody('');
       return;
     }
     const generation = ++latest.current;
@@ -120,11 +128,13 @@ export function useBufferLinks(body: string, documentID: string | undefined, ena
         .then((response) => {
           if (generation !== latest.current) return;
           setLinks(response.links ?? []);
+          setCheckedBody(body);
           setChecked(true);
         })
         .catch(() => {
           if (generation !== latest.current) return;
           setLinks([]);
+          setCheckedBody('');
           setChecked(false);
         });
     }, CHECK_DEBOUNCE_MS);
@@ -135,7 +145,7 @@ export function useBufferLinks(body: string, documentID: string | undefined, ena
   }, [body, documentID, enabled]);
 
   const broken = useMemo(() => links.filter((link) => isBrokenStatus(link.status)), [links]);
-  return { links, broken, checked };
+  return { links, broken, checked, checkedBody };
 }
 
 /**

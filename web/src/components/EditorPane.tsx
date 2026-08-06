@@ -6,12 +6,35 @@
 // Read-only notes (server-provided `editable: false`, e.g. the Help notebook)
 // render with a disabled editor, hidden save/upload controls, and a visible
 // badge — the client never waits for a server 403 to explain protection.
-import { useRef } from 'react';
-import { MdEditor, type ExposeParam, type UploadImgCallBack } from 'md-editor-rt';
+import { useEffect, useMemo, useRef } from 'react';
+import { MdEditor, config, type ExposeParam, type UploadImgCallBack } from 'md-editor-rt';
 import type { ThemeMode } from '../themes';
 import { resourceContentURL, type DocumentLink, type DocumentRecord, type RemoteMediaDecision, type ResourceReference } from '../api';
 import { useBufferLinks } from '../useLinkIntelligence';
 import { BrokenLinkList, LinkPicker } from './LinkIntelligence';
+import {
+  applyBrokenLinks,
+  brokenLinkExtensions,
+  clearBrokenLinks,
+  linkClickHandler,
+  linkCompletionSource,
+} from '../editor-extensions';
+import { spansToEditorRanges } from '../editor-offsets';
+
+// md-editor-rt's editor pane is CodeMirror 6, and it accepts CodeMirror
+// extensions through this hook. Registering once at module load is what its
+// global config is for; the extensions themselves hold no note state.
+config({
+  codeMirrorExtensions(extensions) {
+    return [
+      ...extensions,
+      ...brokenLinkExtensions().map((extension, index) => ({
+        type: `notrios-broken-links-${index}`,
+        extension,
+      })),
+    ];
+  },
+});
 
 export interface EditorPaneProps {
   title: string;
@@ -58,11 +81,48 @@ export function EditorPane(props: EditorPaneProps) {
     onOpenDocument,
   } = props;
 
-  // md-editor-rt exposes `insert` at the caret but nothing about where the
-  // caret is, which is why a suggestion can be inserted in place while a broken
-  // link cannot be underlined in place. See LinkIntelligence.tsx.
   const editorRef = useRef<ExposeParam>(null);
   const bufferLinks = useBufferLinks(body, selectedDocument?.id, editable);
+
+  // Resolved link spans in editor coordinates, for Ctrl-click. They are derived
+  // from the body the service checked, not the current one, which is why the
+  // click handler re-reads them through a ref rather than closing over them.
+  const clickableSpans = useMemo(() => {
+    const resolved = bufferLinks.links.filter((link) => link.target_document_id);
+    return spansToEditorRanges(bufferLinks.checkedBody, resolved).map((span, index) => ({
+      ...span,
+      documentID: resolved[index]?.target_document_id,
+    }));
+  }, [bufferLinks.links, bufferLinks.checkedBody]);
+  const clickableRef = useRef(clickableSpans);
+  clickableRef.current = clickableSpans;
+
+  const completions = useMemo(
+    () => [linkCompletionSource(() => selectedDocument?.id)],
+    [selectedDocument?.id],
+  );
+
+  // Push the marks into CodeMirror whenever a check returns. `applyBrokenLinks`
+  // refuses when the buffer has moved on, so a stale offset never underlines
+  // the wrong text.
+  useEffect(() => {
+    const view = editorRef.current?.getEditorView();
+    if (!view) return;
+    if (!bufferLinks.checked) {
+      clearBrokenLinks(view);
+      return;
+    }
+    applyBrokenLinks(view, bufferLinks.checkedBody, bufferLinks.links);
+  }, [bufferLinks.checked, bufferLinks.checkedBody, bufferLinks.links]);
+
+  // Ctrl-click opens the target. `posAtCoords` is the source-position access the
+  // editor turned out to expose after all.
+  useEffect(() => {
+    if (!editorRef.current) return;
+    editorRef.current.domEventHandlers({
+      mousedown: linkClickHandler(() => clickableRef.current, onOpenDocument),
+    });
+  }, [onOpenDocument]);
 
   return (
     <section className="pane editor-pane" aria-label="Markdown editor" data-testid="pane-editor">
@@ -95,6 +155,7 @@ export function EditorPane(props: EditorPaneProps) {
       <div className="editor-host">
         <MdEditor
           ref={editorRef}
+          completions={completions}
           id="notrios-editor"
           value={body}
           onChange={onBodyChange}

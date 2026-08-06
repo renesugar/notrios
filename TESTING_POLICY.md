@@ -483,6 +483,33 @@ The generated scale profile measures both operations at 10k/100k/500k and runs
 an A/B against schema v16 by dropping the title index and restoring it, so the
 index's value is measured rather than asserted. Evidence: `performance/v0.5-e5/`.
 
+### In-editor link intelligence (v0.5 E6)
+
+Fixtures cover the byte-to-index conversion the service boundary requires, since
+Go locates links by UTF-8 byte and CodeMirror counts UTF-16 units: identity on
+ASCII, two-byte accents, four-byte emoji that are two units, the end of the
+text, offsets past it, and an offset landing *inside* a character — which is
+dropped rather than rounded, because a missing underline is a smaller error than
+one drawn in the wrong place.
+
+Further fixtures install the decoration field into a real CodeMirror state and
+assert the effect applies and survives an edit before the marked range; drive the
+completion source through a fake context to assert it stays silent outside a
+`[[` trigger, opens empty below the service's minimum query, inserts a canonical
+Markdown link that replaces the trigger, and returns nothing rather than throwing
+when the service is unreachable; and exercise the Ctrl-click handler for a plain
+click, a hit, and a miss.
+
+The editor profile (`scripts/run_editor_profile.sh`) is an evidence run rather
+than a test: it builds the UI, starts a throwaway service, seeds a
+206,549-character note, and drives real headless Chrome through the DevTools
+Protocol, timestamping a real `keydown` against the `MutationObserver` callback
+for the change it caused. Evidence: `performance/v0.5-e6/`.
+
+Behaviour inside the Wails webview is **not** covered: WebKitGTK does not speak
+the DevTools Protocol the harness uses and no WebKit inspection tooling is
+installed here. `make gui` verifies the build only.
+
 ### Sync model and transport tests (planned v0.7)
 
 - Property/model tests shuffle, duplicate, replay, drop, and eventually deliver

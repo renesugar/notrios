@@ -60,17 +60,28 @@ Implementation notes (task R13 GUI-fix pass):
 
 ## Frontend implementation
 
-The existing React frontend is the basis of the Wails webview UI, currently using `md-editor-rt` behind an application-owned adapter; a later migration to `CodeMirror 6 + unified/remark/rehype` is reserved for deeper source-position and editor-pane behavior (Ctrl-click in the editor pane, broken-link markers while typing, inline resource widgets, AST-safe edits, rich link autocomplete).
+The existing React frontend is the basis of the Wails webview UI, using `md-editor-rt` behind an application-owned adapter. A migration to `CodeMirror 6 + unified/remark/rehype` was weighed in v0.5 E6 and declined.
 
-**What v0.5 E5 established about that boundary.** Link autocomplete and
-broken-link checking are implemented, and half of each lands where it was
-wanted. `md-editor-rt` exposes `insert` at the caret, so a chosen suggestion is
-inserted where the author is typing. It exposes nothing about *where* the caret
-is and accepts no inline widgets, so a broken link is reported as a located list
-beside the text — target, line, column, reason — rather than underlined in it.
-That is the concrete, measured gap E6 weighs: not "CodeMirror would be nicer"
-but "in-editor marker placement and caret position are the two things the
-current editor cannot give."
+**There is no migration to make: `md-editor-rt` is CodeMirror 6.** v0.5 E5
+recorded that the editor exposed no caret position and accepted no inline
+widgets. That was wrong, and E6 corrected it. `md-editor-rt` 6.5.3 depends on
+`@codemirror/{view,state,autocomplete,commands,language,search}` 6.x and exposes
+them — `completions` feeds `@codemirror/autocomplete`, `codeMirrorExtensions`
+accepts arbitrary extensions, `getEditorView()` returns the `EditorView`, and
+`domEventHandlers` is CodeMirror's own handler map.
+
+E6 therefore implemented the features rather than planning a migration to reach
+them: `[[` autocomplete inside the editor, wavy underlines on broken links that
+move with their text, and Ctrl-click to open a target. They cost 1.3 kB gzipped
+and nothing measurable in typing latency, because the library was already in the
+bundle. See `PROJECT_DECISIONS.md` 20.
+
+The adapter still earns its place — it is what made that decision cheap to
+reach. The remaining argument for owning the editor outright is
+`@codemirror/language-data`, which md-editor-rt pulls in for code-block
+highlighting and which contributes 113 lazy chunks totalling 1.32 MB. Those load
+only when a fenced block names their language, so they cost distribution size
+rather than first paint.
 
 ## Required behavior (carried over from the web-UI MVP)
 

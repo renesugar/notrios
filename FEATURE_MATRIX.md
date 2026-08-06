@@ -67,8 +67,8 @@ This matrix keeps the long conversation compressed into implementation-sized fea
 | Preview sanitization | MVP | web UI | Sanitized Markdown/HTML; allow app routes/URIs carefully. |
 | Four-pane layout | Implemented | web UI | Accessible splitters and independent scrolling. |
 | Wails v3/mobile migration | Optional/research | GUI | Pre-release/experimental; real Android + desktop parity gate. |
-| Editor link intelligence | Implemented | web UI + service | v0.5 E5: `GET /api/v1/links/suggest` (bounded title autocomplete, IDs and titles only) and `POST /api/v1/links/check` (unsaved-buffer link resolution through the canonical extractor). The client shows a link picker that inserts a canonical URI at the caret and a located list of links that will not open; both degrade to nothing when the service is unreachable. In-editor underlines need source positions `md-editor-rt` does not expose — that is E6's input. |
-| CodeMirror 6 + unified migration | Planned v0.5 | web UI | For deeper AST/source-position behavior. E5 established the concrete gap: in-editor marker placement and caret position. |
+| Editor link intelligence | Implemented | web UI + service | v0.5 E5: `GET /api/v1/links/suggest` (bounded title autocomplete, IDs and titles only) and `POST /api/v1/links/check` (unsaved-buffer link resolution through the canonical extractor). E6 added the in-editor half: `[[` autocomplete, wavy underlines on broken links that map through edits, and Ctrl-click to open a target. Everything degrades to nothing when the service is unreachable. |
+| CodeMirror 6 + unified migration | Declined | web UI | v0.5 E6: `md-editor-rt` **is** CodeMirror 6 and exposes it, so the capabilities the migration was for cost 1.3 kB gzipped through its existing hooks. The remaining argument — dropping `@codemirror/language-data`'s 113 lazy chunks — does not justify re-implementing preview, sanitizer, toolbar, upload, and theming. `PROJECT_DECISIONS.md` 20. |
 | Third-party native clients | Optional/research | separate client | Use stable REST/MCP. |
 
 ## Remote media, safety, and dedupe

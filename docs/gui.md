@@ -79,6 +79,10 @@ inserts a canonical `[Title](document://…)` link at the cursor. It inserts the
 URI rather than the title on purpose: a link written as a title breaks the day
 the note is renamed.
 
+You can also stay in the text: typing `[[` followed by two or more characters
+opens the same search inline, and choosing a note replaces the `[[` with the
+finished link.
+
 Below it, the links in what you have typed are checked a moment after you stop
 typing — before you save, and without saving. Anything that would not open is
 listed with its line, column, and the reason: no such target, more than one
@@ -86,13 +90,16 @@ match, or the note exists but the section inside it does not. A heading you just
 typed counts immediately, because the check reads the text in front of you
 rather than the last saved version.
 
-Both assists are quiet when they cannot reach the service: you get no
-suggestions and no list, not an error interrupting your typing.
+Links that will not open are also underlined in red where they sit, and the
+underline follows the text as you keep typing. **Ctrl-click** (⌘-click on macOS)
+a link in the editor to open its target.
 
-Broken links are listed beside the text rather than underlined inside it. The
-current editor does not expose the source positions an in-editor marker would
-need; that is one of the things a possible editor change is being weighed
-against.
+The list is kept alongside the underlines rather than replaced by them: an
+underline only helps where you happen to be looking, while the list tells you
+how many links are broken in the whole note.
+
+All of it is quiet when the service cannot be reached: you get no suggestions,
+no underlines, and no list — not an error interrupting your typing.
 
 ### Resizing panes
 

@@ -6,8 +6,9 @@ Current phase: v0.1, v0.2, v0.3, and **v0.4** are complete; product version is
 0.4.0 and the schema is **v16**. `PLAN.md` holds the v0.5 plan; E1 (block
 anchors), E1a (heading anchors in stable links), E1b (scheme-scoped anchor
 decoding), E2 (workspace lint), E3 (workspace fix), E4 (bounded graph
-traversal, shortest paths, and the orphan/hub report), and E5 (editor link
-intelligence) are complete and E6–E9 require user approval.
+traversal, shortest paths, and the orphan/hub report), E5 (editor link
+intelligence), and E6 (the CodeMirror decision: stay) are complete and E7–E9
+require user approval.
 
 Milestone detail follows. H1–H11 are archived under `plans/v0.3/`. The v0.4
 slices are archived under `plans/v0.4/`:
@@ -237,8 +238,12 @@ The scaffold was created in a restricted container. Still-open consequences:
     an unsaved buffer, parsed by the canonical extractor so markers match what a
     save records). Schema v16 replaced `lower(title) = lower(?)` with a NOCASE
     index, which had made every title-resolved link a full scan of the document
-    table on every save and every lint pass. `md-editor-rt` gives no caret
-    position and no inline widgets, so broken links are listed beside the text
-    rather than underlined in it — that is E6's measured input.
+    table on every save and every lint pass.
+13. E6 weighed migrating to CodeMirror 6 and **declined**: `md-editor-rt` 6.5.3
+    *is* CodeMirror 6 and exposes it (`completions`, `codeMirrorExtensions`,
+    `getEditorView`, `domEventHandlers`), so the capabilities E5 wrongly recorded
+    as unavailable were available all along. In-editor `[[` autocomplete, broken-
+    link underlines, and Ctrl-click were implemented through those hooks for
+    1.3 kB gzipped and no measurable typing cost. See `PROJECT_DECISIONS.md` 20.
 
 (The formerly open "no browser testing" limitation is resolved: the GUI is browser-verified via Playwright, vitest/RTL covers the workspace, and `scripts/verify_layout_resize.py` covers native window resizing.)

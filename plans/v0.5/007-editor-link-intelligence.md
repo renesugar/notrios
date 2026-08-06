@@ -75,16 +75,24 @@ reply about older text cannot overwrite a newer result.
 sentence; an unfinished or failed check renders nothing at all. Silence must not
 be readable as "no problems".
 
-## The gap this slice hands to E6
+## A claim in this slice that E6 found to be wrong
 
-Half of each feature landed where it was wanted. `md-editor-rt` exposes `insert`
-at the caret, so a chosen suggestion goes in where the author is typing. It
-exposes nothing about *where* the caret is and accepts no inline widgets, so a
-broken link is a located list beside the text rather than an underline inside it.
+This slice recorded that `md-editor-rt` "exposes nothing about where the caret
+is and accepts no inline widgets", and offered that as E6's measured input.
 
-That is E6's input, stated as a measured limitation rather than a preference:
-**in-editor marker placement and caret position are the two things the current
-editor cannot give.** Recorded in `UI_DESIGN.md` beside the migration note.
+**It was wrong.** `md-editor-rt` 6.5.3 is CodeMirror 6 and exposes it:
+`getEditorView()` returns the `EditorView`, `domEventHandlers` is CodeMirror's
+own handler map, `config({ codeMirrorExtensions })` accepts arbitrary
+extensions, and the `completions` prop feeds `@codemirror/autocomplete`. The
+claim came from reading part of the editor's exposed interface and not the rest.
+
+E6 corrected it everywhere and implemented what this slice said was impossible —
+in-editor underlines, `[[` autocomplete, and Ctrl-click — for 1.3 kB gzipped.
+See `plans/v0.5/008-codemirror-decision.md` and `PROJECT_DECISIONS.md` 20.
+
+The located list this slice shipped stayed regardless: an underline says
+"something here is wrong" only where you happen to be looking, while the list
+says how many links are broken, where, and why.
 
 ## One latent defect found
 

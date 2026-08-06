@@ -5,8 +5,8 @@ This file is the codebase atlas. Update it whenever major files or directories a
 ## Root documents
 
 - `README.md` — project overview and quick start.
-- `PLAN.md` — the active v0.5 editing/blocks/graph plan. E1, E1a, E1b, E2, and
-  E3 are complete and archived under `plans/v0.5/`; the rest is drafted. v0.4 is
+- `PLAN.md` — the active v0.5 editing/blocks/graph plan. E1 through E6 are
+  complete and archived under `plans/v0.5/`; E7–E9 are drafted. v0.4 is
   complete and archived under `plans/v0.4/`, including its own plan copy at
   `plans/v0.4/000-v0.4-plan.md`.
 - `plans/scaffold/SCAFFOLD_CREATION_PLAN.md` — process for creating/refining this scaffold.
@@ -73,7 +73,11 @@ This file is the codebase atlas. Update it whenever major files or directories a
 - `web/` — React/Vite built-in UI scaffold. `src/useLinkIntelligence.ts` and
   `src/components/LinkIntelligence.tsx` hold the v0.5 E5 link picker and buffer
   link check; both debounce, cancel superseded requests, and degrade to nothing
-  when the service is unreachable.
+  when the service is unreachable. `src/editor-extensions.ts` and
+  `src/editor-offsets.ts` add the E6 in-editor half — `[[` autocomplete, broken-
+  link decorations, and Ctrl-click — through the CodeMirror 6 hooks
+  `md-editor-rt` already exposes, plus the UTF-8-byte to UTF-16-index conversion
+  the service boundary needs.
 
 ## Agent support
 
@@ -94,6 +98,10 @@ This file is the codebase atlas. Update it whenever major files or directories a
 
 - `scripts/check_required_files.py` — verifies required scaffold files exist.
 - `scripts/validate-scaffold.sh` — runs current scaffold validation checks.
+- `scripts/run_editor_profile.sh` + `scripts/measure_editor.mjs` — v0.5 E6
+  editor first-paint and keystroke-latency profile, driving real headless Chrome
+  over the DevTools Protocol with a client written against Node's built-in
+  WebSocket (no new dependency).
 
 ## Added design docs
 
