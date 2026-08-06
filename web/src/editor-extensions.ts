@@ -19,6 +19,7 @@ import { Decoration, EditorView, type DecorationSet } from '@codemirror/view';
 import { suggestLinkTargets, type CheckedLink } from './api';
 import { isBrokenStatus } from './useLinkIntelligence';
 import { spansToEditorRanges, type EditorSpan } from './editor-offsets';
+import { htmlTableToMarkdown } from './html-table-markdown';
 
 /** A broken link placed in editor coordinates. */
 export interface BrokenSpan extends EditorSpan {
@@ -149,6 +150,27 @@ export function linkCompletionSource(excludeDocumentID?: () => string | undefine
 /** Autocomplete wired to the link source, for the `codeMirrorExtensions` hook. */
 export function linkAutocompleteExtension(excludeDocumentID?: () => string | undefined): Extension {
   return autocompletion({ override: [linkCompletionSource(excludeDocumentID)] });
+}
+
+/**
+ * Converts a pasted HTML table into a Markdown table.
+ *
+ * Returns true when it handled the paste, which is the signal CodeMirror uses
+ * to skip its own. Anything the converter refuses — a merged cell, a nested
+ * list, a multi-line cell, a page excerpt that merely contains a table — falls
+ * through to the ordinary paste, so nothing a user pastes can be lost by this.
+ */
+export function tablePasteHandler(onConverted?: (rows: number, columns: number) => void) {
+  return (event: ClipboardEvent, view: EditorView): boolean => {
+    const html = event.clipboardData?.getData('text/html');
+    if (!html) return false;
+    const result = htmlTableToMarkdown(html);
+    if (!result.converted) return false;
+    event.preventDefault();
+    view.dispatch(view.state.replaceSelection(result.markdown));
+    onConverted?.(result.rows, result.columns);
+    return true;
+  };
 }
 
 /**

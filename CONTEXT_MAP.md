@@ -79,6 +79,8 @@ This file is the codebase atlas. Update it whenever major files or directories a
   `md-editor-rt` already exposes, plus the UTF-8-byte to UTF-16-index conversion
   the service boundary needs. `src/editor-assets.ts` supplies KaTeX,
   highlight.js, and cropper locally so nothing is fetched from a CDN (v0.5 E6a).
+  `src/html-table-markdown.ts` converts a pasted HTML table into a Markdown pipe
+  table and refuses anything a pipe table cannot hold (v0.5 E6b).
 
 ## Agent support
 

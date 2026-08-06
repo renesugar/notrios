@@ -101,6 +101,19 @@ how many links are broken in the whole note.
 All of it is quiet when the service cannot be reached: you get no suggestions,
 no underlines, and no list — not an error interrupting your typing.
 
+### Pasting a table
+
+Paste an HTML table — from a spreadsheet, a web page, or a document — and it
+becomes a Markdown table. That matters beyond tidiness: a table left as raw HTML
+is invisible to link checking, to the note graph, and to anything you later
+export the note to.
+
+Tables a Markdown pipe table cannot represent are pasted exactly as they
+arrived: merged cells, rows of differing length, a cell containing a list or a
+nested table, a cell with more than one line, or a page excerpt that merely
+contains a table. Nothing you paste is ever discarded — if it cannot be
+converted faithfully, it is left alone.
+
 ### Math and code blocks
 
 Write `$E = mc^2$` inline or `$$…$$` on its own lines and the preview renders it

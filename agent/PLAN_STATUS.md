@@ -13,7 +13,7 @@ added v16 title/filename indexes).
 
 `PLAN.md` holds the **v0.5 plan** (blocks, lint/fix, graph traversal, editor
 link intelligence, query blocks, organizer UX). **E1, E1a, E1b, E2, E3, E4, E5,
-E6, and E6a are complete**; E6b and E7–E9 require user approval. Two v0.5 decisions are settled and recorded as
+E6, E6a, and E6b are complete**; E7–E9 require user approval. Two v0.5 decisions are settled and recorded as
 `PROJECT_DECISIONS.md` 17 and 18: block identity is strictly content-based, and
 lint/fix stays single-note and revision-preconditioned with anything bulk left
 to the v0.6 organizer.
@@ -209,6 +209,37 @@ to the v0.6 organizer.
 - Export deduplication became symmetric across layouts through the same bounded
   spool, and `record_counts` became a pointer so `omitempty` actually applies —
   which cut packed verify peak RSS 41% and runtime 31%.
+
+## 2026-08-06 E6b — HTML table paste normalization
+
+- A pasted HTML table rendered correctly but stayed raw HTML in the note source,
+  where `markdownblocks` saw paragraphs, `markdownlinks` missed any `<a href>`
+  inside it, and a publication handoff carried the HTML downstream. A `paste`
+  handler on the editor now converts a simple table to a Markdown pipe table.
+- **The refusals are the feature.** `merged-cells`, `ragged-rows`,
+  `nested-block`, `multiline-cell`, `content-outside-table`, `multiple-tables`,
+  `no-table`, `empty-table` — each returns a reason and falls through to the
+  ordinary paste, so nothing a user pastes can be lost here. A mangled table is
+  worse than an HTML one, because the HTML at least renders.
+- Wrapper elements (`p`, `div`, `span`, `font`) are transparent because real
+  pastes are full of them; a *second* paragraph or a `<br>` is multi-line
+  content and is refused rather than flattened into a sentence nobody wrote.
+- A link is emitted only when its href survives Markdown — a space ends an
+  unquoted URL and an unescaped `)` closes the link early, the same rules E1a
+  and E3 each met in a fixture. Otherwise the text is kept and the link dropped.
+  `javascript:` is dropped outright.
+- One implementation correction: a nested table was first reported as
+  `multiple-tables`, because every `<table>` in the document was counted. Only
+  outermost tables count now. The refusal was right either way; the reason code
+  is the part a user reads.
+- Parsing is `DOMParser`, which is inert — no scripts run, no resources are
+  fetched — and no HTML is re-emitted. A fixture asserts a `<script>` and an
+  `onerror` in a pasted cell leave no trace.
+- Unit tests cannot cover the wiring, so the paste path was driven end to end in
+  real headless Chrome with a genuine `ClipboardEvent`: a simple table became a
+  Markdown table at the caret, a merged-cell table fell through to the
+  plain-text flavour, and nothing executed. No scale profile — this is a
+  per-paste transform with no library-size dimension.
 
 ## 2026-08-06 E6a — offline-first frontend assets
 

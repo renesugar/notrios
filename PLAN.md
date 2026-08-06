@@ -3,7 +3,7 @@
 Status: **active. Drafted 2026-08-05 from `ROADMAP.md` after v0.4 completed.
 E1, E1a, E1b, E2, E3, E4, E5, and E6 are complete. E6a and E6b were added
 2026-08-06 from what E6 measured and from a user question about math rendering;
-E6a is complete; E6b and E7–E9 require user approval.**
+E6a and E6b are complete; E7–E9 require user approval.**
 
 v0.4 is complete and archived under `plans/v0.4/`, including a copy of its own
 plan at `plans/v0.4/000-v0.4-plan.md`. Its one deferral, P6 (the `movenotes-v3`
@@ -406,7 +406,14 @@ Working state: a note containing `$E = mc^2$` and a fenced code block renders
 identically with the network unplugged, the page issues no third-party request,
 and the CSP would reject one if a future change tried.
 
-### E6b. Paste normalization: HTML tables to Markdown
+### E6b. Paste normalization: HTML tables to Markdown — complete
+
+Archived as `plans/v0.5/010-html-table-paste.md`. The converter refuses far more
+than it converts — merged cells, ragged rows, nested blocks, multi-line cells, a
+paste that merely contains a table — and every refusal falls through to the
+ordinary paste, so nothing a user pastes can be lost. Verified end to end in
+real headless Chrome with a genuine `ClipboardEvent`.
+
 
 Pasting an HTML table into the editor works today in the sense that the preview
 renders it — raw HTML is enabled and Notrios' sanitizer strips scripts, event
@@ -531,7 +538,7 @@ GUI-affecting tasks also build with `make gui`, and layout changes run
   revision-preconditioned.** Every fix writes an ordinary revision against a
   precondition for one note; anything bulk belongs to the v0.6 organizer, and
   E3 may not grow a multi-note apply path.
-- E1 through E6 and E6a are complete; E6b and E7–E9 are not approved.
+- E1 through E6, E6a, and E6b are complete; E7–E9 are not approved.
 - **Resolved 2026-08-06 by E6a: the frontend is offline-capable now.** KaTeX,
   highlight.js, and cropper are bundled, echarts and prettier are off, and a
   Content-Security-Policy from the service refuses third-party script. The cost

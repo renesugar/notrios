@@ -533,6 +533,32 @@ The Wails webview is not covered, for the same reason as E6: WebKitGTK does not
 speak the DevTools Protocol. The CSP reaches it by construction, since the Wails
 asset server routes every webview request through the same `handleWebApp`.
 
+### HTML table paste (v0.5 E6b)
+
+Fixtures cover the conversion — header promotion when the source has no `<th>`,
+inline emphasis, code, and links, app-URI links surviving into Markdown, pipe
+and backslash escaping, whitespace collapsing, and the wrapper elements real
+pastes are full of.
+
+The refusals get more coverage than the conversions, which is the right ratio: a
+mangled table is worse than an HTML one. Merged cells, ragged rows, nested
+tables/lists/headings/`pre`, `<br>` and multi-paragraph cells, a paste that
+merely contains a table, two tables, and an empty table each assert their own
+reason code. A separate fixture asserts the handler's fall-through contract —
+for every refusal it returns false, calls no `preventDefault`, and dispatches
+nothing, which is what guarantees no paste can be lost.
+
+Two safety fixtures: a link whose href would break Markdown (a space, an
+unescaped `)`) keeps its text and drops the link, `javascript:` is dropped
+outright, and a `<script>` plus an `onerror` in a pasted cell leave no trace in
+the output and set nothing on `window`.
+
+The wiring is not unit-testable — the converter is pure and the handler is
+tested against a fake view — so the paste path was verified end to end in real
+headless Chrome by dispatching a genuine `ClipboardEvent` carrying `text/html`
+at the live editor, asserting a simple table converts at the caret and a
+merged-cell table falls through to the plain-text clipboard flavour.
+
 ### Sync model and transport tests (planned v0.7)
 
 - Property/model tests shuffle, duplicate, replay, drop, and eventually deliver

@@ -18,6 +18,7 @@ import {
   clearBrokenLinks,
   linkClickHandler,
   linkCompletionSource,
+  tablePasteHandler,
 } from '../editor-extensions';
 import { spansToEditorRanges } from '../editor-offsets';
 import { disabledEditorExtensions, installEditorAssets } from '../editor-assets';
@@ -120,12 +121,14 @@ export function EditorPane(props: EditorPaneProps) {
     applyBrokenLinks(view, bufferLinks.checkedBody, bufferLinks.links);
   }, [bufferLinks.checked, bufferLinks.checkedBody, bufferLinks.links]);
 
-  // Ctrl-click opens the target. `posAtCoords` is the source-position access the
-  // editor turned out to expose after all.
+  // Ctrl-click opens the target; a pasted HTML table becomes a Markdown table.
+  // Both go in one call because `domEventHandlers` replaces the map rather than
+  // adding to it.
   useEffect(() => {
     if (!editorRef.current) return;
     editorRef.current.domEventHandlers({
       mousedown: linkClickHandler(() => clickableRef.current, onOpenDocument),
+      paste: tablePasteHandler(),
     });
   }, [onOpenDocument]);
 

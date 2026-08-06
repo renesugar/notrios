@@ -8,7 +8,8 @@ anchors), E1a (heading anchors in stable links), E1b (scheme-scoped anchor
 decoding), E2 (workspace lint), E3 (workspace fix), E4 (bounded graph
 traversal, shortest paths, and the orphan/hub report), E5 (editor link
 intelligence), E6 (the CodeMirror decision: stay), and E6a (offline-first
-frontend assets) are complete; E6b and E7–E9 require user approval.
+frontend assets), and E6b (HTML table paste normalization) are complete; E7–E9
+require user approval.
 
 Milestone detail follows. H1–H11 are archived under `plans/v0.3/`. The v0.4
 slices are archived under `plans/v0.4/`:
@@ -252,5 +253,11 @@ The scaffold was created in a restricted container. Still-open consequences:
     Content-Security-Policy, and `scripts/run_offline_assets_check.sh` fails if
     any of it returns. Cost: 151 kB gzipped and ~400 ms of first contentful
     paint, both measured.
+15. E6b converts a pasted HTML table into a Markdown pipe table, so blocks, link
+    extraction, and portable export can see into it. It refuses far more than it
+    converts — merged cells, ragged rows, nested blocks, multi-line cells, a
+    paste that merely contains a table — and every refusal falls through to the
+    ordinary paste, so nothing pasted can be lost. Parsing is inert `DOMParser`;
+    no HTML is re-emitted.
 
 (The formerly open "no browser testing" limitation is resolved: the GUI is browser-verified via Playwright, vitest/RTL covers the workspace, and `scripts/verify_layout_resize.py` covers native window resizing.)

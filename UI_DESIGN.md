@@ -96,7 +96,7 @@ Checked in a real browser against a note containing each case:
 | `[text](document://…)` | `<a data-app-uri="document://…" href="#">`, click intercepted and routed |
 | `[text](https://…)` | `<a target="_blank" rel="noreferrer">` |
 | Markdown pipe table | rendered as a `<table>` |
-| Pasted raw `<table>` HTML | rendered as a `<table>` — raw HTML is enabled |
+| Pasted raw `<table>` HTML | rendered as a `<table>` — raw HTML is enabled. Since v0.5 E6b a simple pasted table is converted to a Markdown table in the source instead, so it is only raw HTML when the converter refused it. |
 | `<script>`, `onerror=`, `style=` | removed |
 
 Sanitization is Notrios' own `normalizePreviewHTML` (DOMParser-based), passed to
