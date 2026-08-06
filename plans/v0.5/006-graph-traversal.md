@@ -94,9 +94,22 @@ opinion, and `E4`'s plan text asked for the opposite.
 `performance/v0.5-e4/`, generated at 10k/100k/500k by
 `scripts/run_large_library_profile.sh`. The 500k tier carries 1,000,000 links.
 
-The two bounded operations are flat against library size, which is the property
-the ceilings exist to produce. The whole-library report is linear, like lint, and
-is reported as measured rather than as a target.
+| Tier | Notes | Links | Neighbours d=1 | Neighbours d=5 | Path found | Report | Peak RSS |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| 10k | 10,000 | 20,200 | 1.04 ms | 18.57 ms | 2.19 ms | 0.21 s | 27 MB |
+| 100k | 100,000 | 200,200 | 0.95 ms | 20.43 ms | 1.85 ms | 3.92 s | 88 MB |
+| 500k | 500,000 | 1,000,200 | 0.72 ms | 19.16 ms | 2.03 ms | 21.6 s | 376 MB |
+
+The bounded operations are flat across a fifty-fold library, which is the
+property the ceilings exist to produce: a depth-5 expansion of 221 nodes costs
+the same 19 ms at half a million notes as at ten thousand, because the work is
+proportional to the neighbourhood rather than to the graph. Both frontier
+queries resolve to covering index searches, and peak RSS at 500k is unchanged
+against the same tier before this slice.
+
+The whole-library report is linear, like lint (0.21/3.92/21.6 s against lint's
+0.14/3.01/15.3 s on the same run), and is reported as measured rather than as a
+target. Its memory is flat: two capped example lists and a `limit`-sized heap.
 
 One honest caveat is recorded with the numbers: the generated library is a
 circulant graph (every note links to n+1 and n+2), so a BFS frontier grows

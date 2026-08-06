@@ -97,6 +97,36 @@ slug, so `#section-title` has something to compare against. On a library
 upgraded from an older schema, notes nobody has edited since have no slugs yet —
 saving a note fills them in.
 
+## Seeing the shape of the link graph
+
+`GET /api/v1/graph/report` reads the whole collection once and reports what the
+links look like from above:
+
+```sh
+curl -s "http://127.0.0.1:8080/api/v1/graph/report?limit=20" | jq
+```
+
+- `orphan_count` — notes nothing links to;
+- `isolated_count` — the subset that also links to nothing;
+- `hubs` — the notes most linked *to*.
+
+None of this is a defect, which is why it is a report and not a lint check.
+Plenty of notes are entry points nobody links to. What the report is good for is
+finding the parts of a library that have drifted out of the graph, and finding
+the notes everything else hangs off.
+
+`limit` caps the example lists only; the counts always describe the whole
+collection. Like lint, this is a whole-library read — about 4 seconds at 100,000
+notes on the reference machine — so run it deliberately.
+
+To walk outward from one note instead, `POST /api/v1/graph` takes a `depth`
+(maximum 5), and `POST /api/v1/graph/path` finds a shortest route between two
+notes. A path search that comes back `depth_exhausted` or `budget_exhausted`
+did not prove the notes are unconnected — it ran out of hops or visits, and
+raising `max_depth` or `max_visits` may change the answer. Only `no_path` means
+the search covered everything reachable. See the
+[REST guide](api/rest.md) for the full shapes.
+
 ## Localizing remote media
 
 Remote images remain remote until you explicitly localize them. The note

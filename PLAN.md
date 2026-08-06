@@ -238,7 +238,10 @@ and refuses when the note changed under it.
 ### E4. Graph traversal, paths, and visualization data — complete
 
 Archived as `plans/v0.5/006-graph-traversal.md`. Evidence:
-`performance/v0.5-e4/`.
+`performance/v0.5-e4/`. The bounded operations measured flat across a fifty-fold
+library (depth-5 expansion 18.6 → 19.2 ms p95 from 10k to 500k notes, 1,000,200
+links) and peak RSS was unchanged; the whole-library report is linear at
+0.21/3.92/21.6 s, the same shape as lint.
 
 A document reconciliation before this slice (see "Document reconciliation
 2026-08-06" below) found the concrete defect E4 had to fix first: **`depth` was

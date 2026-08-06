@@ -236,12 +236,14 @@ to the v0.6 organizer.
   `getDocumentLocked` would have pulled a note body per node.
 - The API response became typed: `nodes`/`edges` were `[]map[string]any`, which
   is how a declared field could go missing without anything noticing.
-- Cost at 10k/100k: neighbourhood and path lookups are flat (depth-1 0.9/0.9 ms
-  p95, max-depth 18.6/20.4 ms, path found 2.2/1.9 ms), while the whole-library
-  report is linear at 0.21 s and 3.92 s — the same shape as lint. Evidence under
-  `performance/v0.5-e4/`, with the caveat that the generated library is a
-  circulant graph whose frontier grows linearly, so traversal timings are a floor
-  for a densely cross-linked library.
+- Cost at 10k/100k/500k: the bounded operations are flat across a fifty-fold
+  library — depth-1 1.04/0.95/0.72 ms p95, depth-5 18.6/20.4/19.2 ms, path found
+  2.2/1.9/2.0 ms — while the whole-library report is linear at 0.21/3.92/21.6 s,
+  the same shape and order as lint on the same run. Peak RSS at 500k is unchanged
+  at 376 MB. Evidence under `performance/v0.5-e4/`, with the caveat recorded
+  beside the numbers: the generated library is a circulant graph whose frontier
+  grows linearly, so traversal timings are a floor rather than a worst case, and
+  the upper bound comes from the ceilings rather than from this measurement.
 
 ## 2026-08-06 document reconciliation
 
