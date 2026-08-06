@@ -62,6 +62,8 @@ func main() {
 		runRegisterURLHandler(os.Args[2:])
 	case "publish":
 		runPublish(os.Args[2:])
+	case "lint":
+		runLint(os.Args[2:])
 	case "help", "-h", "--help":
 		printHelp()
 	default:
@@ -512,6 +514,8 @@ Usage:
                                                  # exact duplicates, unreferenced blobs, notebook usage, and review-only perceptual signals
   notriosctl gc [--config config.yaml] [--db ...] [--asset-store ...] [--dry-run | --apply]
                                                  # retention-aware resource GC; dry-run is the default
+  notriosctl lint [--db ...] [--checks a,b] [--detail-limit 100] [--quiet] [--list-checks]
+                                                 # read-only workspace report; exit 1 when findings exist
   notriosctl link [--db ...] <document-id>       # print the stable notrios:// link for a note
   notriosctl open [--profile name] [--registry path] [--db path] [--launch] <notrios-uri>
                                                  # resolve a stable link on this machine (exit 1 unresolved, 2 malformed)

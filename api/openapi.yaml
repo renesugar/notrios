@@ -758,6 +758,36 @@ paths:
                 $ref: '#/components/schemas/SelectionPlan'
         '400':
           $ref: '#/components/responses/Error'
+  /api/v1/admin/lint/report:
+    get:
+      summary: Read-only workspace lint report
+      description: >
+        Reports broken links, ambiguous wikilinks, unresolved block anchors,
+        duplicate external identities, missing titles, unlocalized remote media,
+        missing alt text, unreferenced resources, and projection backlog.
+        Findings locate problems without quoting note content. Counts and the
+        digest always describe the whole library; detail_limit caps examples
+        only. There is no apply endpoint.
+      parameters:
+        - name: collection
+          in: query
+          schema: { type: string }
+        - name: checks
+          in: query
+          description: Comma-separated subset of check names.
+          schema: { type: string }
+        - name: detail_limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 1000, default: 100 }
+      responses:
+        '200':
+          description: Lint report
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LintReport'
+        '400':
+          $ref: '#/components/responses/Error'
   /api/v1/documents/{document_id}/blocks:
     get:
       summary: List a note's addressable blocks
@@ -1499,6 +1529,43 @@ components:
         include_private_metadata: { type: boolean }
         include_trashed: { type: boolean }
         max_resource_bytes: { type: integer, format: int64, minimum: 0 }
+    LintFinding:
+      type: object
+      properties:
+        check: { type: string }
+        document_id: { type: string }
+        resource_id: { type: string }
+        line: { type: integer }
+        column: { type: integer }
+        target_sha256:
+          type: string
+          description: Fingerprint of the offending target; the raw value never crosses the API.
+        detail: { type: string, description: Bounded content-free qualifier. }
+    LintCheckResult:
+      type: object
+      properties:
+        check: { type: string }
+        count: { type: integer, description: Complete count, unaffected by detail_limit. }
+        findings:
+          type: array
+          items: { $ref: '#/components/schemas/LintFinding' }
+        truncated: { type: boolean }
+    LintReport:
+      type: object
+      properties:
+        version: { type: integer }
+        collection_id: { type: string }
+        detail_limit: { type: integer }
+        checks:
+          type: array
+          items: { $ref: '#/components/schemas/LintCheckResult' }
+        total_findings: { type: integer }
+        report_sha256:
+          type: string
+          description: Covers every finding, including those the detail cap hid.
+        warnings:
+          type: array
+          items: { type: string }
     DocumentBlock:
       type: object
       properties:

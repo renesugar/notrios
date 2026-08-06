@@ -20,6 +20,17 @@ limit: 20
 
 ## Lint and auto-fix
 
+Lint is implemented in v0.5 E2 as a read-only report (`notriosctl lint`,
+`GET /api/v1/admin/lint/report`) covering broken document/resource links,
+ambiguous wikilinks, unresolved block anchors, duplicate external identities,
+missing titles, unlocalized remote media, missing alt text, unreferenced
+resources, and projection backlog. Heading anchors are deliberately not checked:
+a heading anchor is a slug and block rows store a content hash, so there is
+nothing to compare it against.
+
+Auto-fix is E3 and stays single-note and revision-preconditioned; bulk
+operations belong to the v0.6 organizer (`PROJECT_DECISIONS.md` 18).
+
 Workspace lint should detect:
 
 - missing titles/frontmatter IDs;

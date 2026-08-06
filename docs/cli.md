@@ -243,6 +243,24 @@ a backup must not be reachable through a name that sounds like publishing.
 Profiles live in `<data-dir>/publish-profiles.json` (override with `--profiles`
 or `NOTRIOS_PUBLISH_PROFILES`) and are written owner-only.
 
+## lint
+
+```sh
+notriosctl lint [--config config.yaml] [--db path] [--asset-store path] [--collection default]
+    [--checks a,b] [--detail-limit 100] [--quiet] [--list-checks]
+```
+
+Read-only [workspace lint](operations.md#finding-what-has-rotted-workspace-lint):
+broken document and resource links, ambiguous wikilinks, unresolved block
+anchors, duplicate external identities, missing titles, unlocalized remote
+media, missing alt text, unreferenced resources, and projection backlog.
+
+Exit `0` when the library is clean and `1` when findings exist, so
+`notriosctl lint --quiet` works in a hook. `--detail-limit` caps the examples
+printed per check, never the counts, and `report_sha256` covers every finding —
+the same library produces the same digest. Nothing is written; fixing is a
+separate operation.
+
 ## seed-help
 
 ```sh

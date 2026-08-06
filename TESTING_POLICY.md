@@ -330,6 +330,31 @@ path over a bounded sample, and anchor/listing lookups against a synthetically
 filled block table so index behaviour is measured at real row counts rather
 than at sample size. Evidence: `performance/v0.5-e1/`.
 
+### Workspace lint (v0.5 E2)
+
+One fixture carries a single instance of every detectable problem alongside
+healthy content, and asserts both that each check finds its own problem and that
+the healthy note and referenced resource appear in no check. Further fixtures
+assert that findings carry no note content, that lint is deterministic and
+writes no revision, that the detail cap hides examples without changing counts
+or the digest, that check selection and limits are validated, and that a trashed
+note stops being linted.
+
+Two fixture details record real behaviour rather than assumed behaviour: the
+parser records `![alt](x)` as an `embed` rather than an `image`, and
+`CreateDocument` substitutes "Untitled" for a blank title — so the missing-title
+fixture produces the state the way an importer or an interrupted restore would.
+
+REST fixtures assert the report, its validation, the absence of content in the
+response, and that no write method is routed. A CLI fixture builds the real
+binary and asserts the exit-code contract: 0 clean, 1 with findings, quiet mode
+silent, and check selection narrowing the result.
+
+The generated scale profile runs a full lint at each tier, records per-check
+timings, and asserts the digest does not change with the detail cap. Those
+timings are what showed six separate scans of `document_links` dominating the
+cost, which the single shared scan removed. Evidence: `performance/v0.5-e2/`.
+
 ### Sync model and transport tests (planned v0.7)
 
 - Property/model tests shuffle, duplicate, replay, drop, and eventually deliver

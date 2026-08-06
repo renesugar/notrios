@@ -10,7 +10,7 @@ archived under `plans/v0.4/`, together with a copy of the milestone plan at
 deferred to v0.7 slice 3. Product version is 0.4.0 and the schema is v13.
 
 `PLAN.md` holds the **v0.5 plan** (blocks, lint/fix, graph traversal, editor
-link intelligence, query blocks, organizer UX). **E1 is complete**; E2–E9
+link intelligence, query blocks, organizer UX). **E1 and E2 are complete**; E3–E9
 require user approval. Two v0.5 decisions are settled and recorded as
 `PROJECT_DECISIONS.md` 17 and 18: block identity is strictly content-based, and
 lint/fix stays single-note and revision-preconditioned with anything bulk left
@@ -207,6 +207,37 @@ to the v0.6 organizer.
 - Export deduplication became symmetric across layouts through the same bounded
   spool, and `record_counts` became a pointer so `omitempty` actually applies —
   which cut packed verify peak RSS 41% and runtime 31%.
+
+## 2026-08-05 E2 — workspace lint
+
+- Ten read-only checks — broken document/resource links, ambiguous wikilinks,
+  unresolved block anchors, duplicate external identities, missing titles,
+  unlocalized remote media, missing alt text, unreferenced resources, and
+  projection backlog — through `notriosctl lint` and
+  `GET /api/v1/admin/lint/report`. No apply surface anywhere; fixing is E3.
+- Findings locate rather than quote: document/resource ID, line, column, reason
+  code, and a SHA-256 fingerprint of the target. A broken wikilink's raw text is
+  frequently a private note's title, so it stays in the note.
+- Every check streams its rows, folding each into the digest before discarding
+  it, so counts and `report_sha256` describe the whole library at any detail cap
+  and memory stays flat.
+- `notriosctl lint` exits 0 clean and 1 with findings, so `--quiet` works in a
+  hook.
+- Heading anchors are deliberately unchecked: a heading anchor is a slug and
+  block rows store a content hash rather than heading text, so there is nothing
+  to compare against. Checking them needs a stored heading slug — a schema
+  question for its own slice, recorded rather than guessed at.
+- Two fixture corrections came from real behaviour: `![alt](x)` records as an
+  `embed` rather than an `image`, which had left the alt-text check finding
+  nothing; and `CreateDocument` substitutes "Untitled" for a blank title, so the
+  missing-title state only arises from an importer or an interrupted restore.
+- The first implementation ran each check separately and measured 61.3 s at
+  500,000 notes. Per-check timings showed six checks each scanning
+  `document_links`; they now share one ordered scan, taking 500k from 61.3 s to
+  18.9 s and 100k from 10.9 s to 3.2 s with every lint test unchanged. Per-check
+  timings stayed in the report.
+- Full lint: 0.34 s / 3.20 s / 18.9 s at 10k/100k/500k, peak RSS flat against
+  the same tier without lint. Evidence under `performance/v0.5-e2/`.
 
 ## 2026-08-05 E1 — block anchors and block-level addressability
 

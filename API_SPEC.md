@@ -203,6 +203,17 @@ notes still prevent a blob from being classified as unreferenced. The
 stored hashes, matching review rules, and near-duplicate suggestions. Those
 suggestions never merge, reject, or delete content.
 
+`GET /api/v1/admin/lint/report` is the read-only v0.5 E2 workspace lint. It
+returns per-check complete counts, capped examples, and a `report_sha256` over
+every finding including those the cap hid, so an unchanged library produces an
+unchanged digest. Findings carry a document/resource ID, a line and column, a
+stable reason code, and a SHA-256 fingerprint of the offending target — never a
+note title, body excerpt, raw link target, or local path, because a broken
+wikilink's raw text is frequently a private note's title. `checks=` selects a
+subset and `detail_limit=` caps examples (maximum 1,000). There is deliberately
+no apply endpoint; fixing is E3 and is CLI-only with a per-note revision
+precondition.
+
 `GET /api/v1/admin/gc/report` is the read-only H6 garbage-collection plan.
 It uses the configured retention windows and returns `eligible`, `retained`,
 and (always empty over REST) `removed` entries with timestamps, reasons, and

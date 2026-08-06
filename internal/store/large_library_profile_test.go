@@ -31,6 +31,7 @@ type scaleProfile struct {
 	PhysicalBlobs           int64                         `json:"physical_blob_count"`
 	LinkCount               int64                         `json:"link_count"`
 	BlockCount              int64                         `json:"block_count"`
+	LintFindings            int                           `json:"lint_findings"`
 	DatabaseBytes           int64                         `json:"database_bytes"`
 	DatabaseBytesWithBlocks int64                         `json:"database_bytes_with_scale_blocks,omitempty"`
 	PeakRSSBytes            int64                         `json:"peak_rss_bytes"`
@@ -335,6 +336,34 @@ func TestLargeLibraryProfile(t *testing.T) {
 		st.mu.Unlock()
 		return err
 	})
+
+	// E2 lint: a whole-library read that must stay bounded in memory. Every
+	// check streams its rows, so the cost is time rather than heap.
+	lintStarted := time.Now()
+	lintReport, err := st.LintWorkspace(ctx, LintRequest{DetailLimit: 10})
+	if err != nil {
+		t.Fatalf("LintWorkspace: %v", err)
+	}
+	if len(lintReport.ReportSHA256) != 64 {
+		t.Fatalf("lint report digest: %+v", lintReport)
+	}
+	profile.Metrics["lint_full_workspace"] = scaleProfileMetric{
+		Iterations: 1,
+		P50MS:      durationMS(time.Since(lintStarted)),
+		P95MS:      durationMS(time.Since(lintStarted)),
+		MaxMS:      durationMS(time.Since(lintStarted)),
+		Items:      lintReport.TotalFindings,
+	}
+	// The digest must not depend on the detail cap: it describes the library.
+	cappedLint, err := st.LintWorkspace(ctx, LintRequest{DetailLimit: 1})
+	if err != nil {
+		t.Fatalf("LintWorkspace capped: %v", err)
+	}
+	if cappedLint.ReportSHA256 != lintReport.ReportSHA256 || cappedLint.TotalFindings != lintReport.TotalFindings {
+		t.Fatalf("lint digest changed with the detail cap: %s/%d vs %s/%d",
+			lintReport.ReportSHA256, lintReport.TotalFindings, cappedLint.ReportSHA256, cappedLint.TotalFindings)
+	}
+	profile.LintFindings = lintReport.TotalFindings
 
 	profile.QueryPlans["all_notes"], _ = st.explainQueryPlan(ctx, `SELECT id FROM documents
 		WHERE collection_id = ? AND deleted_at IS NULL

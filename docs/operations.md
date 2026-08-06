@@ -6,6 +6,57 @@ commands are safe to run while the service is open. Before a large import or
 garbage-collection apply, make a verified backup as described in the
 [service guide](service.md#backup-and-restore).
 
+
+## Finding what has rotted (workspace lint)
+
+```sh
+notriosctl lint                       # JSON report; exit 1 if anything was found
+notriosctl lint --quiet               # exit code only, for a script or a hook
+notriosctl lint --checks broken_document_link,unreferenced_resource
+notriosctl lint --list-checks
+```
+
+Lint reads and never writes, so it is safe to run on a library you have not
+backed up — which is usually when you want to know what is broken. Fixing is a
+separate, explicitly confirmed operation.
+
+| Check | What it means |
+|---|---|
+| `broken_document_link` | a link whose target note does not resolve |
+| `broken_resource_link` | a `resource://` link with no such resource |
+| `ambiguous_link` | a wikilink matching more than one note |
+| `unresolved_block_anchor` | an anchor naming a block the target note no longer has |
+| `duplicate_source_id` | two notes claiming the same external identity |
+| `missing_title` | a note with an empty title |
+| `unlocalized_remote_media` | an image still fetched from the network on every preview |
+| `missing_alt_text` | an embedded image with no alt text |
+| `unreferenced_resource` | an attachment no note references |
+| `projection_backlog` | search-projection jobs pending or retrying |
+
+The report gives you a document ID with a line and column, a stable reason code,
+and a SHA-256 fingerprint of the offending target — not the target itself. A
+broken wikilink's raw text is frequently the title of a private note, so the
+location is what crosses the API and the text stays in your note. Open the note
+at that line to see it.
+
+Counts always describe the whole library. `--detail-limit` caps how many
+examples are listed, never what is counted, and `report_sha256` covers every
+finding including the ones the cap hid — so two runs over an unchanged library
+produce the same digest, and a changed digest means something really changed.
+
+`GET /api/v1/admin/lint/report` returns the same report. Like the
+garbage-collection report, there is deliberately no apply endpoint.
+
+Lint reads the whole library, so it is a command you run deliberately rather
+than on every save: about 3 seconds at 100,000 notes and 19 seconds at 500,000
+on the reference machine. Each check's own time is in the report, so you can see
+where it went on your library.
+
+One check is missing on purpose: heading anchors (`#section-title`) are not
+verified. A heading anchor is a slug, and block rows store a content hash rather
+than heading text, so there is nothing to compare it against — reporting all of
+them or none would both be wrong.
+
 ## Localizing remote media
 
 Remote images remain remote until you explicitly localize them. The note

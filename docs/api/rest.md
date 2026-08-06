@@ -181,6 +181,18 @@ metadata decisions, exclusions, warnings, and `manifest_sha256`. Detail arrays
 are bounded independently; `truncated` never means the counts/digest are
 partial. See [selection planning](../selection-planning.md).
 
+## Workspace lint report
+
+```sh
+curl -s 'http://127.0.0.1:8080/api/v1/admin/lint/report?detail_limit=20' | jq
+```
+
+Read-only, like the garbage-collection report, and with no apply endpoint.
+Returns per-check complete counts, capped examples, and `report_sha256` over
+every finding. Findings locate problems (document ID, line, column, reason code,
+target fingerprint) without quoting note content. `checks=` selects a subset.
+See [maintenance](../operations.md#finding-what-has-rotted-workspace-lint).
+
 ## Listing a note's blocks
 
 ```sh

@@ -100,7 +100,8 @@ This matrix keeps the long conversation compressed into implementation-sized fea
 | Quartz and scalable archive site | External integration | movenotes-v3/Ledger | Obsidian/Quartz for subsets; Hugo/Ledger+Bluge for large libraries. |
 | Publishing dry run | Implemented | planner/UI | `publish plan` and `POST /api/v1/selection/plan` report included/excluded notes, resources, link decisions, metadata stripping, and warnings before anything is written. |
 | Foam-style query blocks | Planned v0.5 | query service/UI | No arbitrary SQL/JS. |
-| Workspace lint/fix | Planned v0.5 | maintenance service | Broken links/media/resources. |
+| Workspace lint | Implemented | maintenance service | Ten read-only checks through `notriosctl lint` and `GET /api/v1/admin/lint/report`; complete counts with capped examples, a library-wide digest, and content-free findings. |
+| Workspace fix | Planned v0.5 | maintenance service | E3: single-note, revision-preconditioned, dry-run first. |
 | Outline API | Implemented | document parser | Headings/line anchors; v0.5 E1 adds the block model underneath. |
 | Hierarchical tag rename | Planned v0.5 | maintenance service | Dry-run first. |
 | Link reference definitions | External integration | movenotes-v3 | Generated in downstream portable Markdown projection. |

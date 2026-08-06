@@ -1,7 +1,7 @@
 # Plan: v0.5 — Better editing, blocks, and graph UX
 
-Status: **drafted 2026-08-05 from `ROADMAP.md` after v0.4 completed. E1 is
-complete; E2–E9 require user approval.**
+Status: **drafted 2026-08-05 from `ROADMAP.md` after v0.4 completed. E1 and E2
+are complete; E3–E9 require user approval.**
 
 v0.4 is complete and archived under `plans/v0.4/`, including a copy of its own
 plan at `plans/v0.4/000-v0.4-plan.md`. Its one deferral, P6 (the `movenotes-v3`
@@ -85,7 +85,15 @@ Working state: a block anchor resolves to a stable position across edits that do
 not touch it, block rows never outlive their document, and the 500k profile
 records row counts, database growth, and save latency against the v0.3 baseline.
 
-### E2. Workspace lint
+### E2. Workspace lint — complete
+
+Archived as `plans/v0.5/002-workspace-lint.md`. Ten checks through
+`notriosctl lint` and `GET /api/v1/admin/lint/report`, with no apply surface.
+Findings locate problems without quoting them; the detail cap hides examples
+while counts and `report_sha256` describe the whole library. Heading anchors are
+deliberately unchecked — a heading anchor is a slug and block rows store a hash,
+so there is nothing to compare against; that needs a stored slug and its own
+slice.
 
 Read-only first, exactly as resource GC was. A report that cannot mutate is also
 a report that is safe to run on a library nobody has backed up yet.
@@ -226,7 +234,7 @@ GUI-affecting tasks also build with `make gui`, and layout changes run
   revision-preconditioned.** Every fix writes an ordinary revision against a
   precondition for one note; anything bulk belongs to the v0.6 organizer, and
   E3 may not grow a multi-note apply path.
-- E1 is complete; the remaining tasks are not approved.
+- E1 and E2 are complete; the remaining tasks are not approved.
 - E6 is a decision task. Approving E6 does not approve a CodeMirror migration.
 
 ## Scope control

@@ -832,6 +832,7 @@ type Store interface {
 	AttachDocumentResource(ctx context.Context, req AttachResourceRequest) (ResourceReference, error)
 	DetachDocumentResource(ctx context.Context, documentID, resourceID string) error
 	ResourceReport(ctx context.Context) (ResourceReport, error)
+	LintWorkspace(ctx context.Context, req LintRequest) (LintReport, error)
 	GarbageCollect(ctx context.Context, req GarbageCollectionRequest) (GarbageCollectionReport, error)
 	ListDocumentLinks(ctx context.Context, documentID, direction string) (DocumentLinkPage, error)
 	RebuildDocumentLinks(ctx context.Context, documentID string) error
