@@ -101,6 +101,17 @@ how many links are broken in the whole note.
 All of it is quiet when the service cannot be reached: you get no suggestions,
 no underlines, and no list — not an error interrupting your typing.
 
+### Math and code blocks
+
+Write `$E = mc^2$` inline or `$$…$$` on its own lines and the preview renders it
+with KaTeX. Fenced code blocks are syntax-highlighted for about forty common
+languages; anything else renders as plain text.
+
+Both work with no network at all. Everything the editor needs ships with the
+application — nothing is fetched from a CDN at runtime, and the app makes no
+third-party requests. Search indexes the LaTeX you typed rather than the
+rendered formula, so searching `mc^2` finds the note.
+
 ### Resizing panes
 
 Three splitters separate the panes. Drag one with the mouse, or focus it with **Tab** and press **←/→** (16 px), **Shift+←/→** (64 px), or **Home/End**; double-click restores the default layout. Pane sizes persist across restarts.

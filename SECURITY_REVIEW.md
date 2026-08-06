@@ -45,6 +45,19 @@ peer-acknowledgement-aware eligibility.
 Remaining: maintain a pinned reviewed sanitizer and browser-native regression
 corpus.
 
+**Third-party asset loading (fixed in v0.5 E6a).** The built-in UI used to fetch
+KaTeX, highlight.js, echarts, cropperjs, and prettier from `unpkg.com` at
+runtime — thirteen requests and 623 kB on every launch, in the desktop app too.
+A local-first application that quarantines remote *images* behind a media policy
+was loading remote *executable JavaScript* unchecked, and a CDN compromise would
+have had script execution in the note editor. Those libraries are bundled or
+disabled now, and `handleWebApp` serves a Content-Security-Policy
+(`script-src 'self'`, `object-src 'none'`, `connect-src 'self'`,
+`form-action 'none'`). `img-src` still admits remote images because the preview
+is permitted to display them; localizing one remains a server operation under
+the media policy. `scripts/run_offline_assets_check.sh` fails if any remote
+asset returns.
+
 The `notrios://` OS handler is implemented (v0.4 P5) under those constraints.
 The parser is hand-written and strict rather than delegated to a permissive URL
 library: scheme, authority, route, identifier charset, every length bound, and

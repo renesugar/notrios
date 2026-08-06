@@ -85,9 +85,9 @@ rather than first paint.
 
 ## What the preview renders today (verified 2026-08-06)
 
-Recorded because the dead `remark`/`rehype` dependencies invite the wrong
-inference. They are unused, and nothing depends on them: `md-editor-rt` renders
-through **markdown-it**, not unified.
+Recorded because the `remark`/`rehype` dependencies that used to be declared
+here invited the wrong inference. They were unused and E6a removed them:
+`md-editor-rt` renders through **markdown-it**, not unified.
 
 Checked in a real browser against a note containing each case:
 
@@ -104,9 +104,14 @@ Sanitization is Notrios' own `normalizePreviewHTML` (DOMParser-based), passed to
 `rehype-sanitize` is not involved and could not be: it belongs to a unified
 pipeline this application does not run.
 
-**The frontend is not offline-capable**, and that is a defect rather than a
-design choice. Math and syntax highlighting are fetched from `unpkg.com` at
-runtime and fail silently without it. See `PLAN.md` E6a.
+**The frontend is offline-capable as of v0.5 E6a.** It had not been: KaTeX,
+highlight.js, echarts, cropperjs, and prettier were fetched from `unpkg.com` at
+runtime — 13 requests and 623 kB on every launch — and math silently rendered as
+raw LaTeX without a network. Those are bundled or disabled now
+(`web/src/editor-assets.ts`), and the service serves a Content-Security-Policy
+with `script-src 'self'` so a future dependency cannot reintroduce the problem
+quietly. The rule is: anything the editor would fetch is either bundled or
+turned off.
 
 ## Required behavior (carried over from the web-UI MVP)
 

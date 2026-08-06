@@ -1,0 +1,31 @@
+{
+  "generated_at": "2026-08-06T20:29:38.045Z",
+  "url": "http://127.0.0.1:18081/#document=doc_thrhyrojqqma3urz4hmj74bb4m",
+  "editor": {
+    "rendered_characters": 1000,
+    "rendered_lines": 15,
+    "title": "Editor profile note",
+    "note_characters": 206549
+  },
+  "paint": [
+    {
+      "name": "first-paint",
+      "startTime": 180
+    },
+    {
+      "name": "first-contentful-paint",
+      "startTime": 1452
+    }
+  ],
+  "navigation": {
+    "domContentLoaded": 1019.5999999940395,
+    "loadEvent": 1023.5999999940395
+  },
+  "keystrokes": {
+    "dispatched": 40,
+    "measured": 40,
+    "p50_ms": 31,
+    "p95_ms": 124.3,
+    "max_ms": 224.3
+  }
+}

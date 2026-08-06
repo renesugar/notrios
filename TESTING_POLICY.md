@@ -510,6 +510,29 @@ Behaviour inside the Wails webview is **not** covered: WebKitGTK does not speak
 the DevTools Protocol the harness uses and no WebKit inspection tooling is
 installed here. `make gui` verifies the build only.
 
+### Offline frontend assets (v0.5 E6a)
+
+A Go test asserts the built-in UI is served with a Content-Security-Policy
+containing `script-src 'self'`, `font-src 'self' data:`, and `object-src 'none'`,
+that `style-src` allows inline styles (CodeMirror injects them) and nothing
+remote, and that the headers are set before the `web_ui_not_built` branch — a
+policy that applies only on the success path is not a policy.
+
+`scripts/run_offline_assets_check.sh` is the behavioural guard. It drives real
+headless Chrome with the browser cache disabled and every known CDN blocked, and
+fails on a cross-origin request, an injected remote script or stylesheet, a CSP
+violation, or math that did not render. That last assertion is not decoration:
+without it, "no external requests" would also pass on a completely broken page.
+
+The guard was verified **in both directions** — it fails against the pre-fix
+commit, naming all thirteen `unpkg.com` requests and the missing KaTeX output,
+and passes against the fixed tree. A check that cannot fail proves nothing, and
+a regression guard that was never seen to fail is exactly that.
+
+The Wails webview is not covered, for the same reason as E6: WebKitGTK does not
+speak the DevTools Protocol. The CSP reaches it by construction, since the Wails
+asset server routes every webview request through the same `handleWebApp`.
+
 ### Sync model and transport tests (planned v0.7)
 
 - Property/model tests shuffle, duplicate, replay, drop, and eventually deliver

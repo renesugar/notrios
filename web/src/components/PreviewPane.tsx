@@ -9,6 +9,9 @@ import type { ThemeMode } from '../themes';
 import { normalizePreviewHTML, parseDocumentIDFromURI, parseResourceIDFromURI } from '../preview-utils';
 import { resourceContentURL } from '../api';
 import { isStableLink, parseStableLink } from '../stable-links';
+import { disabledEditorExtensions, installEditorAssets } from '../editor-assets';
+
+installEditorAssets();
 
 export interface PreviewPaneProps {
   body: string;
@@ -75,7 +78,7 @@ export function PreviewPane({ body, themeBase, onOpenDocument, onOpenStableLink,
           language="en-US"
           sanitize={normalizePreviewHTML}
           previewComponent={Renderer}
-          noMermaid
+          {...disabledEditorExtensions}
         />
       </div>
     </section>

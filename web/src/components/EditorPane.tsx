@@ -20,6 +20,11 @@ import {
   linkCompletionSource,
 } from '../editor-extensions';
 import { spansToEditorRanges } from '../editor-offsets';
+import { disabledEditorExtensions, installEditorAssets } from '../editor-assets';
+
+// Point md-editor-rt at the bundled KaTeX/highlight.js/cropper before the
+// editor mounts, so nothing is ever fetched from a CDN.
+installEditorAssets();
 
 // md-editor-rt's editor pane is CodeMirror 6, and it accepts CodeMirror
 // extensions through this hook. Registering once at module load is what its
@@ -172,7 +177,7 @@ export function EditorPane(props: EditorPaneProps) {
           toolbarsExclude={['preview', 'previewOnly', 'htmlPreview', 'catalog', 'github', 'fullscreen', 'pageFullscreen', 'save']}
           language="en-US"
           theme={themeBase}
-          noMermaid
+          {...disabledEditorExtensions}
           style={{ height: '100%' }}
         />
       </div>

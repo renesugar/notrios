@@ -7,8 +7,8 @@ Current phase: v0.1, v0.2, v0.3, and **v0.4** are complete; product version is
 anchors), E1a (heading anchors in stable links), E1b (scheme-scoped anchor
 decoding), E2 (workspace lint), E3 (workspace fix), E4 (bounded graph
 traversal, shortest paths, and the orphan/hub report), E5 (editor link
-intelligence), and E6 (the CodeMirror decision: stay) are complete and E7–E9
-require user approval.
+intelligence), E6 (the CodeMirror decision: stay), and E6a (offline-first
+frontend assets) are complete; E6b and E7–E9 require user approval.
 
 Milestone detail follows. H1–H11 are archived under `plans/v0.3/`. The v0.4
 slices are archived under `plans/v0.4/`:
@@ -245,5 +245,12 @@ The scaffold was created in a restricted container. Still-open consequences:
     as unavailable were available all along. In-editor `[[` autocomplete, broken-
     link underlines, and Ctrl-click were implemented through those hooks for
     1.3 kB gzipped and no measurable typing cost. See `PROJECT_DECISIONS.md` 20.
+14. E6a made the UI offline-capable. It had been fetching KaTeX, highlight.js,
+    echarts, cropperjs, and prettier from `unpkg.com` at runtime — 13 requests,
+    623 kB, on every launch — and math silently rendered as raw LaTeX without a
+    network. Those are bundled or disabled now, `handleWebApp` serves a
+    Content-Security-Policy, and `scripts/run_offline_assets_check.sh` fails if
+    any of it returns. Cost: 151 kB gzipped and ~400 ms of first contentful
+    paint, both measured.
 
 (The formerly open "no browser testing" limitation is resolved: the GUI is browser-verified via Playwright, vitest/RTL covers the workspace, and `scripts/verify_layout_resize.py` covers native window resizing.)

@@ -77,7 +77,8 @@ This file is the codebase atlas. Update it whenever major files or directories a
   `src/editor-offsets.ts` add the E6 in-editor half — `[[` autocomplete, broken-
   link decorations, and Ctrl-click — through the CodeMirror 6 hooks
   `md-editor-rt` already exposes, plus the UTF-8-byte to UTF-16-index conversion
-  the service boundary needs.
+  the service boundary needs. `src/editor-assets.ts` supplies KaTeX,
+  highlight.js, and cropper locally so nothing is fetched from a CDN (v0.5 E6a).
 
 ## Agent support
 
@@ -102,6 +103,10 @@ This file is the codebase atlas. Update it whenever major files or directories a
   editor first-paint and keystroke-latency profile, driving real headless Chrome
   over the DevTools Protocol with a client written against Node's built-in
   WebSocket (no new dependency).
+- `scripts/run_offline_assets_check.sh` + `scripts/check_offline_assets.mjs` —
+  v0.5 E6a guard: fails if the built-in UI issues any cross-origin request,
+  injects a remote script or stylesheet, violates the CSP, or fails to render
+  math with every CDN blocked.
 
 ## Added design docs
 

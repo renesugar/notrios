@@ -170,7 +170,46 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("GET /", s.handleWebApp)
 }
 
+// webAppCSP is the Content-Security-Policy served with the built-in UI.
+//
+// It exists because of what v0.5 E6a found: `md-editor-rt` fetched KaTeX,
+// highlight.js, and four other libraries from `unpkg.com` at runtime, so a
+// local-first application was loading remote executable JavaScript on every
+// launch. Those are bundled now, and this header is what stops the next
+// dependency from quietly reintroducing the problem. A test catches a
+// regression after the fact; a policy the browser enforces prevents one.
+//
+// Each directive is deliberate:
+//
+//   - `script-src 'self'` is the whole point — no third-party code, ever.
+//   - `style-src` needs `'unsafe-inline'`: CodeMirror and md-editor-rt inject
+//     `<style>` elements at runtime, which CSP counts as inline. External
+//     stylesheets are still refused, which is what a CDN would need.
+//   - `img-src` allows remote images because the preview is permitted to
+//     display them. Localizing them is a server operation under the media
+//     policy; displaying one has always been allowed and is documented as such
+//     in `UI_DESIGN.md`.
+//   - `font-src 'self' data:` holds now that KaTeX's fonts are bundled. `data:`
+//     is required because the bundler inlines the smallest font files as data
+//     URIs — those bytes ship in our own assets, so allowing them is not a
+//     remote-loading exemption.
+//   - `connect-src 'self'` keeps the UI talking only to its own service.
+const webAppCSP = "default-src 'self'; " +
+	"script-src 'self'; " +
+	"style-src 'self' 'unsafe-inline'; " +
+	"img-src 'self' data: blob: https: http:; " +
+	"font-src 'self' data:; " +
+	"connect-src 'self'; " +
+	"object-src 'none'; " +
+	"frame-src 'none'; " +
+	"base-uri 'self'; " +
+	"form-action 'none'"
+
 func (s *Server) handleWebApp(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Security-Policy", webAppCSP)
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	w.Header().Set("Referrer-Policy", "no-referrer")
+
 	distDir := filepath.Clean("web/dist")
 	indexPath := filepath.Join(distDir, "index.html")
 	if _, err := os.Stat(indexPath); err != nil {

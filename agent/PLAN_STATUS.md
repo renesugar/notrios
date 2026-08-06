@@ -13,7 +13,7 @@ added v16 title/filename indexes).
 
 `PLAN.md` holds the **v0.5 plan** (blocks, lint/fix, graph traversal, editor
 link intelligence, query blocks, organizer UX). **E1, E1a, E1b, E2, E3, E4, E5,
-and E6 are complete**; E7–E9 require user approval. Two v0.5 decisions are settled and recorded as
+E6, and E6a are complete**; E6b and E7–E9 require user approval. Two v0.5 decisions are settled and recorded as
 `PROJECT_DECISIONS.md` 17 and 18: block identity is strictly content-based, and
 lint/fix stays single-note and revision-preconditioned with anything bulk left
 to the v0.6 organizer.
@@ -209,6 +209,39 @@ to the v0.6 organizer.
 - Export deduplication became symmetric across layouts through the same bounded
   spool, and `record_counts` became a pointer so `omitempty` actually applies —
   which cut packed verify peak RSS 41% and runtime 31%.
+
+## 2026-08-06 E6a — offline-first frontend assets
+
+- Everything the editor would fetch is now bundled or turned off: local KaTeX,
+  highlight.js (`lib/common`), and cropper instances; `noEcharts` and
+  `noPrettier` for the two Notrios has no use for. Supplying an `instance` is
+  what stops md-editor-rt injecting the tag — it skips both the script *and* the
+  stylesheet, which is why `editor-assets.ts` imports the CSS explicitly.
+- `handleWebApp` now serves a Content-Security-Policy. `script-src 'self'` is
+  the directive that matters; `style-src` needs `'unsafe-inline'` because
+  CodeMirror injects `<style>` elements, and `font-src` needs `data:` because
+  the bundler inlines the smallest fonts. A test catches a regression; the
+  header prevents one.
+- Removed `remark-gfm`, `remark-math`, `rehype-katex`, and `rehype-sanitize` —
+  declared, imported nowhere, and unusable with a markdown-it renderer.
+  Removing `rehype-katex` is what made `katex` a direct dependency instead of
+  something installed by accident.
+- **Third-party requests 13 → 0, bytes 623 kB → 0.** The eager bundle grew
+  151 kB gzipped (KaTeX 272 kB raw, cropper 37 kB, highlight.js common, plus
+  260 kB of lazily-fetched KaTeX fonts).
+- **First contentful paint regressed ~400 ms and DOMContentLoaded ~240 ms**,
+  consistently across three runs. Reported rather than buried: it is the cost of
+  parsing more JavaScript. Typing p50 is unchanged (30.0 → 29.7 ms); p95 went
+  bimodal (124/56/127 against a tight 67/74/67) and is recorded as unresolved
+  rather than averaged into a conclusion.
+- The comparison flatters the before column, which had a fast connection to
+  unpkg.com. Offline that column does not render math at all.
+- `scripts/run_offline_assets_check.sh` + `check_offline_assets.mjs` is the
+  guard: real headless Chrome, cache disabled, CDNs blocked, failing on any
+  cross-origin request, injected remote script/stylesheet, CSP violation, or
+  math that did not render. **Verified in both directions** — it fails on the
+  pre-fix commit naming all 13 requests, and passes on the fixed tree. A check
+  that cannot fail proves nothing. Evidence: `performance/v0.5-e6a/`.
 
 ## 2026-08-06 plan addition — E6a and E6b
 

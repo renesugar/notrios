@@ -3,7 +3,7 @@
 Status: **active. Drafted 2026-08-05 from `ROADMAP.md` after v0.4 completed.
 E1, E1a, E1b, E2, E3, E4, E5, and E6 are complete. E6a and E6b were added
 2026-08-06 from what E6 measured and from a user question about math rendering;
-they and E7–E9 require user approval.**
+E6a is complete; E6b and E7–E9 require user approval.**
 
 v0.4 is complete and archived under `plans/v0.4/`, including a copy of its own
 plan at `plans/v0.4/000-v0.4-plan.md`. Its one deferral, P6 (the `movenotes-v3`
@@ -347,7 +347,14 @@ names their language, so they cost distribution size rather than first paint —
 not enough to justify re-implementing the preview, sanitizer, toolbar, upload,
 and theming that work today.
 
-### E6a. Offline-first frontend assets
+### E6a. Offline-first frontend assets — complete
+
+Archived as `plans/v0.5/009-offline-frontend-assets.md`. Evidence:
+`performance/v0.5-e6a/`. Third-party requests 13 → 0 and 623 kB → 0; the eager
+bundle grew 151 kB gzipped and first contentful paint regressed ~400 ms, which
+is reported rather than buried. `scripts/run_offline_assets_check.sh` was
+verified to fail on the pre-fix commit and pass on the fixed tree.
+
 
 **A defect found while measuring E6, not a feature.** Notrios binds to loopback
 by default, quarantines remote *images* behind a media policy, and refuses to
@@ -524,12 +531,12 @@ GUI-affecting tasks also build with `make gui`, and layout changes run
   revision-preconditioned.** Every fix writes an ordinary revision against a
   precondition for one note; anything bulk belongs to the v0.6 organizer, and
   E3 may not grow a multi-note apply path.
-- E1, E1a, E1b, E2, E3, E4, E5, and E6 are complete; the remaining tasks,
-  including the E6a/E6b additions, are not approved.
-- **Resolved 2026-08-06 by measurement, not by choice: the frontend is not
-  offline-capable.** Math and syntax highlighting load from `unpkg.com` at
-  runtime and fail silently without it. E6a fixes it; until then, "local-first"
-  is true of the service and not of the UI.
+- E1 through E6 and E6a are complete; E6b and E7–E9 are not approved.
+- **Resolved 2026-08-06 by E6a: the frontend is offline-capable now.** KaTeX,
+  highlight.js, and cropper are bundled, echarts and prettier are off, and a
+  Content-Security-Policy from the service refuses third-party script. The cost
+  is 151 kB gzipped and ~400 ms of first contentful paint, both measured and
+  recorded.
 - **Resolved 2026-08-06: heading anchors in stable links use a slug, not
   percent-encoded heading text.** Obsidian percent-encodes the heading name into
   its URI; Notrios keeps P5's refusal to decode percent-escapes, so the URI form
