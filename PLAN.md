@@ -1,7 +1,7 @@
 # Plan: v0.5 — Better editing, blocks, and graph UX
 
-Status: **drafted 2026-08-05 from `ROADMAP.md` after v0.4 completed. E1, E1a,
-E1b, E2, and E3 are complete; E4–E9 require user approval.**
+Status: **active. Drafted 2026-08-05 from `ROADMAP.md` after v0.4 completed.
+E1, E1a, E1b, E2, E3, and E4 are complete; E5–E9 require user approval.**
 
 v0.4 is complete and archived under `plans/v0.4/`, including a copy of its own
 plan at `plans/v0.4/000-v0.4-plan.md`. Its one deferral, P6 (the `movenotes-v3`
@@ -235,16 +235,19 @@ blind. The check and its fix belong together in a later slice.
 Working state: a fix run is reproducible, reversible through revision history,
 and refuses when the note changed under it.
 
-### E4. Graph traversal, paths, and visualization data
+### E4. Graph traversal, paths, and visualization data — complete
+
+Archived as `plans/v0.5/006-graph-traversal.md`. Evidence:
+`performance/v0.5-e4/`.
 
 A document reconciliation before this slice (see "Document reconciliation
-2026-08-06" below) found the concrete defect E4 has to fix first: **`depth` is
-accepted and silently ignored.** `POST /api/v1/graph` declares `depth` in
-`api/openapi.yaml` (minimum 0, maximum 5, default 1) and carries it through
+2026-08-06" below) found the concrete defect E4 had to fix first: **`depth` was
+accepted and silently ignored.** `POST /api/v1/graph` declared `depth` in
+`api/openapi.yaml` (minimum 0, maximum 5, default 1) and carried it through
 `internal/api.GraphRequest` into `store.GraphRequest`, and `store.Graph` never
-reads the field — every graph slice is the roots' immediate neighbours. The same
-schema declares `max_nodes: 250` and `max_edges: 500` while the store defaults
-are 100 and 200. A request that asks for depth 3 gets depth 1 with no warning,
+read the field — every graph slice was the roots' immediate neighbours. The same
+schema declared `max_nodes: 250` and `max_edges: 500` while the store defaults
+were 100 and 200. A request asking for depth 3 got depth 1 with no warning,
 which is worse than a refusal: the caller cannot tell a shallow graph from a
 small one.
 
@@ -261,6 +264,14 @@ small one.
 
 Working state: every traversal is bounded, a refused request says which ceiling
 it hit, and the 1M-link profile records latency and peak RSS.
+
+Three decisions came out of the implementation. A request naming a bound wider
+than a ceiling is refused rather than clamped, because clamping reproduces the
+original defect in another form. A traversal stopped by a ceiling reports
+`truncated_by` and `completed_depth`, so a partial neighbourhood is never read as
+a complete one. And a shortest-path search separates `no_path` — a proof that
+everything reachable was searched — from `depth_exhausted` and
+`budget_exhausted`, which only say the search stopped.
 
 ### E5. Editor-pane link intelligence
 
@@ -382,7 +393,8 @@ GUI-affecting tasks also build with `make gui`, and layout changes run
   revision-preconditioned.** Every fix writes an ordinary revision against a
   precondition for one note; anything bulk belongs to the v0.6 organizer, and
   E3 may not grow a multi-note apply path.
-- E1, E1a, E1b, E2, and E3 are complete; the remaining tasks are not approved.
+- E1, E1a, E1b, E2, E3, and E4 are complete; the remaining tasks are not
+  approved.
 - **Resolved 2026-08-06: heading anchors in stable links use a slug, not
   percent-encoded heading text.** Obsidian percent-encodes the heading name into
   its URI; Notrios keeps P5's refusal to decode percent-escapes, so the URI form

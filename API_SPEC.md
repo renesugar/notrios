@@ -18,7 +18,10 @@ The REST persistence slice is implemented for managed Markdown documents:
 - `POST /api/v1/documents/{document_id}/revisions/{revision_id}/restore` creates a new current revision from a historical revision.
 - `POST /api/v1/search` searches current, non-deleted managed documents with SQLite FTS5.
 - `GET /api/v1/documents/{document_id}/links` returns outgoing links and backlinks parsed from Markdown.
-- `POST /api/v1/graph` returns a small document/resource graph slice for selected roots.
+- `POST /api/v1/graph` returns a bounded document/resource neighbourhood for
+  selected roots, to the requested depth.
+- `POST /api/v1/graph/path` returns a shortest link path between two notes.
+- `GET /api/v1/graph/report` returns the read-only orphan/isolate/hub report.
 - `POST /api/v1/selection/plan` returns the read-only selection/privacy plan.
 - `POST /api/v1/links/resolve` resolves an external `notrios://` link against
   this database.
@@ -237,6 +240,8 @@ confirmation returns `428 confirmation_required`.
 ```text
 GET  /api/v1/documents/{document_id}/links?direction=outgoing|incoming|both
 POST /api/v1/graph
+POST /api/v1/graph/path
+GET  /api/v1/graph/report
 POST /api/v1/links/resolve
 ```
 
@@ -249,6 +254,40 @@ from block text, so an ID names exactly the content it was written against. The
 response carries no block text — a caller that wants content reads the body,
 which is already an authorized read. Blocks per note are bounded by the parser,
 so this is not a paged surface.
+
+`POST /api/v1/graph` (v0.5 E4) expands a bounded neighbourhood. `depth` is now
+honoured: until E4 it was accepted, carried through two request structs, and
+never read, so a caller asking for three hops received one with nothing saying
+so. The ceilings are depth 5, 100 roots, 5,000 nodes, and 20,000 edges, and a
+request naming a wider bound is refused with `400 validation_failed` naming the
+ceiling rather than clamped — a caller who asked for 50,000 nodes and received
+5,000 cannot otherwise tell a capped graph from a small one. Defaults are 250
+nodes and 500 edges, which is what this document has published since the MVP.
+When a ceiling stops an expansion the response sets `truncated`, names it in
+`truncated_by` (`nodes` or `edges`), and reports `completed_depth` — the deepest
+level expanded in full — beside `requested_depth`. Every node carries its hop
+distance from the nearest root as `depth`. Nodes, edges, and depths are the
+whole contract: no coordinates, no clustering, no layout.
+
+`POST /api/v1/graph/path` (v0.5 E4) finds a shortest link path between two
+notes, searching from both ends. `status` is `found`, `no_path`,
+`depth_exhausted`, or `budget_exhausted`. Only `no_path` is a statement about the
+library — everything reachable was searched — while the last two say the search
+stopped, at `max_depth` hops or after visiting `max_visits` notes. Reporting
+either of them as `no_path` would tell a user two notes are unrelated when the
+traversal merely gave up. Trashed notes are neither endpoints nor waypoints, so
+a missing or trashed endpoint returns `404 not_found`.
+
+`GET /api/v1/graph/report` (v0.5 E4) is the read-only orphan, isolate, and hub
+report: one ordered scan of the collection with flat memory. `isolated_count` is
+notes with no resolved document link either way; `orphan_count` is notes nothing
+links to, which includes the isolated ones. Hubs rank by in-degree rather than
+total degree, because out-degree describes how one note was written and
+in-degree describes how the library refers to it. `limit` caps the three example
+lists only — counts always describe the whole collection — and sets `truncated`
+when it hides an example. `elapsed_ms` is reported because this report reads the
+whole library and an operator should be able to see what that cost. There is no
+apply surface here, exactly as with lint and the GC report.
 
 `POST /api/v1/links/resolve` (v0.4 P5) answers which note an external
 `notrios://` link names in the database this service has open. The request body

@@ -5,7 +5,8 @@ This handoff applies to any coding agent or client continuing this project (Code
 Current phase: v0.1, v0.2, v0.3, and **v0.4** are complete; product version is
 0.4.0 and the schema is **v15**. `PLAN.md` holds the v0.5 plan; E1 (block
 anchors), E1a (heading anchors in stable links), E1b (scheme-scoped anchor
-decoding), E2 (workspace lint), and E3 (workspace fix) are complete and E4–E9
+decoding), E2 (workspace lint), E3 (workspace fix), and E4 (bounded graph
+traversal, shortest paths, and the orphan/hub report) are complete and E5–E9
 require user approval.
 
 Milestone detail follows. H1–H11 are archived under `plans/v0.3/`. The v0.4
@@ -223,5 +224,13 @@ The scaffold was created in a restricted container. Still-open consequences:
     dropped. Publishing requires the digest of a reviewed plan and re-checks it
     before writing. Content-rewriting link actions remain refused for
     `full_archive`.
+11. E4 replaced the MVP graph slice with bounded traversal: `POST /api/v1/graph`
+    honours `depth` (it was declared and never read), `POST /api/v1/graph/path`
+    finds a shortest path from both ends, and `GET /api/v1/graph/report` lists
+    orphans, isolates, and in-degree hubs. A bound wider than a ceiling is
+    refused rather than clamped; a traversal stopped by one reports
+    `truncated_by` and `completed_depth`; and `no_path` is kept distinct from
+    `depth_exhausted` and `budget_exhausted`, because only the first is a
+    statement about the library.
 
 (The formerly open "no browser testing" limitation is resolved: the GUI is browser-verified via Playwright, vitest/RTL covers the workspace, and `scripts/verify_layout_resize.py` covers native window resizing.)

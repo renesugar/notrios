@@ -32,6 +32,11 @@ type scaleProfile struct {
 	LinkCount               int64                         `json:"link_count"`
 	BlockCount              int64                         `json:"block_count"`
 	LintFindings            int                           `json:"lint_findings"`
+	GraphLinkCount          int64                         `json:"graph_link_count"`
+	GraphDeepNodes          int                           `json:"graph_max_depth_nodes"`
+	GraphDeepEdges          int                           `json:"graph_max_depth_edges"`
+	GraphDeepTruncatedBy    string                        `json:"graph_max_depth_truncated_by,omitempty"`
+	GraphFarPathVisits      int                           `json:"graph_far_path_visited_nodes"`
 	DatabaseBytes           int64                         `json:"database_bytes"`
 	DatabaseBytesWithBlocks int64                         `json:"database_bytes_with_scale_blocks,omitempty"`
 	PeakRSSBytes            int64                         `json:"peak_rss_bytes"`
@@ -364,6 +369,101 @@ func TestLargeLibraryProfile(t *testing.T) {
 			lintReport.ReportSHA256, lintReport.TotalFindings, cappedLint.ReportSHA256, cappedLint.TotalFindings)
 	}
 	profile.LintFindings = lintReport.TotalFindings
+
+	// E4 graph traversal. The seeded library is a circulant graph: every note
+	// links to n+1 and n+2, so the 500k tier carries 1,000,000 edges and every
+	// node has in-degree and out-degree 2. That shape matters when reading these
+	// numbers — a BFS frontier here grows linearly rather than exponentially, so
+	// the neighbourhood timings are a floor for a densely cross-linked library
+	// rather than a worst case. What the tier does test at full size is the
+	// index behaviour behind every hop and the whole-library report scan.
+	profile.Metrics["graph_neighbors_depth1"] = measureProfile(t, 30, 0, func() error {
+		_, err := st.Graph(ctx, GraphRequest{Roots: []string{"scale_doc_000000"}, Direction: GraphDirectionBoth, Depth: 1})
+		return err
+	})
+	deepGraph, err := st.Graph(ctx, GraphRequest{
+		Roots: []string{"scale_doc_000000"}, Direction: GraphDirectionBoth, Depth: MaxGraphDepth,
+		MaxNodes: MaxGraphNodes, MaxEdges: MaxGraphEdges,
+	})
+	if err != nil {
+		t.Fatalf("deep graph: %v", err)
+	}
+	if deepGraph.CompletedDepth == 0 {
+		t.Fatalf("deep graph completed no level: %+v", deepGraph)
+	}
+	profile.GraphDeepNodes = len(deepGraph.Nodes)
+	profile.GraphDeepEdges = len(deepGraph.Edges)
+	profile.GraphDeepTruncatedBy = deepGraph.TruncatedBy
+	profile.Metrics["graph_neighbors_max_depth"] = measureProfile(t, 10, len(deepGraph.Nodes), func() error {
+		_, err := st.Graph(ctx, GraphRequest{
+			Roots: []string{"scale_doc_000000"}, Direction: GraphDirectionBoth, Depth: MaxGraphDepth,
+			MaxNodes: MaxGraphNodes, MaxEdges: MaxGraphEdges,
+		})
+		return err
+	})
+
+	// A reachable path: +1/+2 edges make ten notes five hops apart.
+	shortPath, err := st.GraphPath(ctx, GraphPathRequest{From: "scale_doc_000000", To: "scale_doc_000010", Direction: GraphDirectionOutgoing})
+	if err != nil {
+		t.Fatalf("graph path: %v", err)
+	}
+	if shortPath.Status != GraphPathFound || shortPath.Length != 5 {
+		t.Fatalf("expected a five-hop path across the +1/+2 circulant, got %+v", shortPath)
+	}
+	profile.Metrics["graph_path_found"] = measureProfile(t, 20, shortPath.Length, func() error {
+		_, err := st.GraphPath(ctx, GraphPathRequest{From: "scale_doc_000000", To: "scale_doc_000010", Direction: GraphDirectionOutgoing})
+		return err
+	})
+	// A note half the library away is reachable but far past MaxGraphPathDepth.
+	// It must come back as depth_exhausted rather than as no_path: the search
+	// stopped, it did not prove anything.
+	far := fmt.Sprintf("scale_doc_%06d", count/2)
+	farPath, err := st.GraphPath(ctx, GraphPathRequest{From: "scale_doc_000000", To: far, Direction: GraphDirectionOutgoing, MaxDepth: MaxGraphPathDepth})
+	if err != nil {
+		t.Fatalf("far graph path: %v", err)
+	}
+	if farPath.Status != GraphPathDepthExhausted {
+		t.Fatalf("a note %d hops away must report depth_exhausted, got %q", count/4, farPath.Status)
+	}
+	profile.GraphFarPathVisits = farPath.VisitedNodes
+	profile.Metrics["graph_path_depth_exhausted"] = measureProfile(t, 10, farPath.VisitedNodes, func() error {
+		_, err := st.GraphPath(ctx, GraphPathRequest{From: "scale_doc_000000", To: far, Direction: GraphDirectionOutgoing, MaxDepth: MaxGraphPathDepth})
+		return err
+	})
+
+	// The orphan/hub report is the expensive one: it reads every note once and
+	// counts both its degrees. Memory stays flat — two capped example lists and
+	// a limit-sized heap — so the cost to record is time.
+	graphReportStarted := time.Now()
+	graphReport, err := st.GraphReport(ctx, GraphReportRequest{Limit: 10})
+	if err != nil {
+		t.Fatalf("GraphReport: %v", err)
+	}
+	// The circulant graph contributes two links per seeded note; the block
+	// sample above added `blockSample` notes that each link once into the chain
+	// and are linked to by nobody, which is exactly what an orphan is.
+	if graphReport.LinkCount != int64(count)*2+blockSample {
+		t.Fatalf("graph report link count = %d, want %d", graphReport.LinkCount, int64(count)*2+blockSample)
+	}
+	if graphReport.OrphanCount != blockSample {
+		t.Fatalf("orphan count = %d, want the %d sample notes nothing links to", graphReport.OrphanCount, blockSample)
+	}
+	if graphReport.IsolatedCount != 0 {
+		t.Fatalf("every note here has at least one link: %+v", graphReport)
+	}
+	profile.Metrics["graph_report_full_library"] = scaleProfileMetric{
+		Iterations: 1,
+		P50MS:      durationMS(time.Since(graphReportStarted)),
+		P95MS:      durationMS(time.Since(graphReportStarted)),
+		MaxMS:      durationMS(time.Since(graphReportStarted)),
+		Items:      int(graphReport.DocumentCount),
+	}
+	profile.GraphLinkCount = graphReport.LinkCount
+
+	profile.QueryPlans["graph_outgoing_frontier"], _ = st.explainQueryPlan(ctx,
+		`SELECT id FROM document_links WHERE source_document_id IN ('scale_doc_000000')`)
+	profile.QueryPlans["graph_incoming_frontier"], _ = st.explainQueryPlan(ctx,
+		`SELECT id FROM document_links WHERE target_document_id IN ('scale_doc_000000')`)
 
 	profile.QueryPlans["all_notes"], _ = st.explainQueryPlan(ctx, `SELECT id FROM documents
 		WHERE collection_id = ? AND deleted_at IS NULL

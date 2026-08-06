@@ -71,6 +71,25 @@ anchor survives a block moving and breaks when the block's text changes. E1a
 added heading anchors on the same footing: schema-v15 slugs, resolution by slug
 or heading text, and a `unresolved_heading_anchor` lint check.
 
+## Graph traversal and the orphan/hub report
+
+v0.5 E4 turned the MVP graph slice into bounded traversal:
+`POST /api/v1/graph` follows links to a requested depth, `POST /api/v1/graph/path`
+finds a shortest path between two notes from both ends, and
+`GET /api/v1/graph/report` lists orphans, isolates, and in-degree hubs from one
+ordered scan.
+
+The orphan report and lint's `unreferenced_resource` check answer different
+questions and both belong here: lint finds a resource nothing points at, while
+the graph report finds a *note* nothing points at. A note nobody links to is not
+a defect — plenty of notes are entry points — so it is a report rather than a
+lint finding.
+
+Ceilings are refused rather than clamped, and a traversal stopped by one names
+it. A shortest-path search reports `no_path`, `depth_exhausted`, and
+`budget_exhausted` separately, because only the first is a statement about the
+library.
+
 ## Trash-first deletion
 
 Default delete should move documents to trash or soft-delete. Permanent deletion and resource garbage collection require explicit commands and retention policy checks.

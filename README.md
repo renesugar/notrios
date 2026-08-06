@@ -84,10 +84,11 @@ Recoll availability, backlog, sync/index, and reconciliation state.
   deferred to v0.7.
 - Current milestone: v0.5 editing, blocks, and graph UX — **in progress**.
   Addressable blocks (E1), heading anchors in stable links (E1a),
-  scheme-scoped anchor decoding (E1b), workspace lint (E2), and workspace fix
-  (E3) are complete and archived under `plans/v0.5/`; the remaining tasks
-  (graph traversal, editor link intelligence, the CodeMirror decision, query
-  blocks, organizer UX, and the release wrap-up) are drafted. See
+  scheme-scoped anchor decoding (E1b), workspace lint (E2), workspace fix (E3),
+  and bounded graph traversal with shortest paths and an orphan/hub report (E4)
+  are complete and archived under `plans/v0.5/`; the remaining tasks (editor
+  link intelligence, the CodeMirror decision, query blocks, organizer UX, and
+  the release wrap-up) are drafted. See
   [`PLAN.md`](PLAN.md) and [`ROADMAP.md`](ROADMAP.md).
 - Agent progress/attempt tracking: [`agent/PLAN_STATUS.md`](agent/PLAN_STATUS.md), [`agent/ATTEMPT_LOG.jsonl`](agent/ATTEMPT_LOG.jsonl), and [`agent/MODEL_LOG.jsonl`](agent/MODEL_LOG.jsonl).
 
@@ -139,7 +140,7 @@ accepts `100` or `100000`. Committed reference evidence is under
 `performance/v0.3-h7/` through `performance/v0.3-h10/` and
 `performance/v0.4-j2/` through `performance/v0.4-p7/`; the v0.5 block, heading,
 and lint profiles are under `performance/v0.5-e1/`, `performance/v0.5-e1a/`,
-and `performance/v0.5-e2/`. See `PACKAGING.md`,
+`performance/v0.5-e2/`, and `performance/v0.5-e4/`. See `PACKAGING.md`,
 `SECURITY_REVIEW.md`, and `RELEASE_CHECKLIST.md` before tagging a release.
 Archive-v2 evidence, including the attachment-bearing round trip, is under
 `performance/v0.4-p3/` through `performance/v0.4-p4/`.

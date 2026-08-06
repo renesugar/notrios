@@ -406,6 +406,46 @@ One fixture records real Markdown behaviour again: `[x](Kitchen Plan)` truncates
 at the space, so title-resolved Markdown links are the space-free ones — the
 same rule that decided E1a's slug form.
 
+### Graph traversal (v0.5 E4)
+
+One fixture builds a library whose shape every assertion can reason about: a
+four-note chain, a hub three notes link to, an island nothing touches, an orphan
+that links out but is linked to by nobody, a trashed note, and an embedded
+resource.
+
+Store fixtures assert the thing that was broken: at depth 1 the far end of the
+chain is absent and at depth 3 it is present, with nothing changing but the
+number. Further fixtures cover direction selecting which edges are followed,
+per-node hop distance from the nearest root, a truncated expansion naming
+`nodes` or `edges` and refusing to claim it completed its depth, refusal of every
+over-ceiling request rather than clamping, trashed notes not appearing as
+neighbours, and resources being opt-in.
+
+Path fixtures assert the shortest chain in order with one fewer edge than nodes,
+a zero-hop path from a note to itself, and — the decision that matters most — that
+`no_path`, `depth_exhausted`, and `budget_exhausted` are three different answers:
+an unreachable note is `no_path`, a path longer than `max_depth` is
+`depth_exhausted` with no nodes returned, and a one-visit budget is
+`budget_exhausted`. Direction is tested both ways, since the chain runs one way.
+
+Report fixtures assert that isolates are a subset of orphans, that a note linking
+out is an orphan but not isolated, that hubs rank by in-degree, and that the
+example cap changes no count — the same property lint's detail cap has. A
+separate fixture asserts that running all three operations writes no revision and
+changes no current revision ID.
+
+REST fixtures cover depth over the wire, `requested_depth`/`completed_depth`, the
+typed `depth` field on a node, 400 for each over-ceiling bound, 404 for a missing
+path endpoint, and the absence of any write route on either graph path.
+
+The generated scale profile adds neighbourhood, path, and report metrics at
+10k/100k/500k, records the query plan for both frontier directions, and asserts
+the report's link and orphan counts against the seeded shape. Evidence:
+`performance/v0.5-e4/`. One caveat is recorded with the numbers rather than
+glossed: the generated library is a circulant graph, so a BFS frontier grows
+linearly and the traversal timings are a floor for a densely cross-linked
+library.
+
 ### Sync model and transport tests (planned v0.7)
 
 - Property/model tests shuffle, duplicate, replay, drop, and eventually deliver

@@ -726,7 +726,12 @@ paths:
                 $ref: '#/components/schemas/GarbageCollectionReport'
   /api/v1/graph:
     post:
-      summary: Return a local document/resource graph
+      summary: Expand a bounded neighbourhood around one or more notes
+      description: >
+        Follows links up to `depth` hops. A request naming a bound wider than a
+        ceiling is refused with `validation_failed` rather than clamped. When a
+        ceiling stops the expansion the response sets `truncated`, names it in
+        `truncated_by`, and reports the deepest level completed.
       requestBody:
         required: true
         content:
@@ -735,11 +740,59 @@ paths:
               $ref: '#/components/schemas/GraphRequest'
       responses:
         '200':
-          description: Graph
+          description: Bounded graph neighbourhood
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/GraphResponse'
+        '400':
+          $ref: '#/components/responses/Error'
+  /api/v1/graph/path:
+    post:
+      summary: Find a shortest link path between two notes
+      description: >
+        Searches from both ends. `status` distinguishes `found`, `no_path`
+        (everything reachable was searched), `depth_exhausted`, and
+        `budget_exhausted` (the search stopped early and proved nothing).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GraphPathRequest'
+      responses:
+        '200':
+          description: A shortest path, or the reason there is none
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GraphPathResponse'
+        '400':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+  /api/v1/graph/report:
+    get:
+      summary: Read-only orphan, isolate, and hub report over the whole link graph
+      description: >
+        One ordered scan of the collection. Counts are always complete; `limit`
+        caps only the example lists and sets `truncated` when it does.
+      parameters:
+        - in: query
+          name: collection_id
+          schema: { type: string }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 1000, default: 100 }
+      responses:
+        '200':
+          description: Graph shape report
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GraphReport'
+        '400':
+          $ref: '#/components/responses/Error'
   /api/v1/selection/plan:
     post:
       summary: Dry-run a full archive, subset transfer, or publication selection
@@ -1474,23 +1527,102 @@ components:
       properties:
         roots:
           type: array
+          maxItems: 100
           items: { type: string }
         direction: { type: string, enum: [outgoing, incoming, both], default: both }
         depth: { type: integer, minimum: 0, maximum: 5, default: 1 }
         include_resources: { type: boolean, default: false }
-        max_nodes: { type: integer, default: 250 }
-        max_edges: { type: integer, default: 500 }
+        max_nodes: { type: integer, minimum: 1, maximum: 5000, default: 250 }
+        max_edges: { type: integer, minimum: 1, maximum: 20000, default: 500 }
+    GraphNode:
+      type: object
+      required: [id, kind, depth]
+      properties:
+        id: { type: string }
+        uri: { type: string }
+        kind: { type: string, description: document, resource, or the link's resolution status for an unresolved target }
+        label: { type: string }
+        depth: { type: integer, description: hop distance from the nearest root }
+    GraphEdge:
+      type: object
+      required: [id, source_id, target_id]
+      properties:
+        id: { type: string }
+        source_id: { type: string }
+        target_id: { type: string }
+        kind: { type: string }
+        status: { type: string }
+        raw_target: { type: string }
     GraphResponse:
       type: object
-      required: [nodes, edges]
+      required: [nodes, edges, requested_depth, completed_depth]
       properties:
         nodes:
           type: array
-          items: { type: object, additionalProperties: true }
+          items: { $ref: '#/components/schemas/GraphNode' }
         edges:
           type: array
-          items: { type: object, additionalProperties: true }
+          items: { $ref: '#/components/schemas/GraphEdge' }
         truncated: { type: boolean }
+        truncated_by: { type: string, enum: [nodes, edges] }
+        requested_depth: { type: integer }
+        completed_depth: { type: integer, description: deepest level expanded in full }
+    GraphPathRequest:
+      type: object
+      required: [from, to]
+      properties:
+        from: { type: string }
+        to: { type: string }
+        direction: { type: string, enum: [outgoing, incoming, both], default: both }
+        max_depth: { type: integer, minimum: 1, maximum: 10, default: 6 }
+        max_visits: { type: integer, minimum: 1, maximum: 200000, default: 50000 }
+    GraphPathResponse:
+      type: object
+      required: [status, nodes, edges, length, visited_nodes]
+      properties:
+        status:
+          type: string
+          enum: [found, no_path, depth_exhausted, budget_exhausted]
+        nodes:
+          type: array
+          items: { $ref: '#/components/schemas/GraphNode' }
+        edges:
+          type: array
+          items: { $ref: '#/components/schemas/GraphEdge' }
+        length: { type: integer }
+        visited_nodes: { type: integer }
+        max_depth: { type: integer }
+        max_visits: { type: integer }
+    GraphReportEntry:
+      type: object
+      required: [document_id, in_degree, out_degree]
+      properties:
+        document_id: { type: string }
+        uri: { type: string }
+        title: { type: string }
+        in_degree: { type: integer }
+        out_degree: { type: integer }
+    GraphReport:
+      type: object
+      required: [collection_id, document_count, link_count, isolated_count, orphan_count]
+      properties:
+        collection_id: { type: string }
+        document_count: { type: integer }
+        link_count: { type: integer }
+        isolated_count: { type: integer }
+        orphan_count: { type: integer }
+        isolated:
+          type: array
+          items: { $ref: '#/components/schemas/GraphReportEntry' }
+        orphans:
+          type: array
+          items: { $ref: '#/components/schemas/GraphReportEntry' }
+        hubs:
+          type: array
+          items: { $ref: '#/components/schemas/GraphReportEntry' }
+        limit: { type: integer }
+        truncated: { type: boolean }
+        elapsed_ms: { type: number }
     SelectionSpec:
       type: object
       additionalProperties: false

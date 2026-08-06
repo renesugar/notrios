@@ -689,41 +689,6 @@ type DocumentLinkPage struct {
 	Incoming []DocumentLink
 }
 
-// GraphRequest is a small graph-expansion request for the MVP graph endpoint.
-type GraphRequest struct {
-	Roots            []string
-	Direction        string
-	Depth            int
-	IncludeResources bool
-	MaxNodes         int
-	MaxEdges         int
-}
-
-// GraphNode is a document or resource node returned by graph expansion.
-type GraphNode struct {
-	ID    string
-	URI   string
-	Kind  string
-	Label string
-}
-
-// GraphEdge is one link edge returned by graph expansion.
-type GraphEdge struct {
-	ID        string
-	SourceID  string
-	TargetID  string
-	Kind      string
-	Status    string
-	RawTarget string
-}
-
-// GraphResponse contains the current graph slice.
-type GraphResponse struct {
-	Nodes     []GraphNode
-	Edges     []GraphEdge
-	Truncated bool
-}
-
 // CreateDocumentRequest creates an initial managed Markdown document. An empty
 // NotebookID places the note in the default "Notes" notebook.
 type CreateDocumentRequest struct {
@@ -840,6 +805,8 @@ type Store interface {
 	FindDocumentBlock(ctx context.Context, documentID, anchor string) (DocumentBlock, error)
 	RebuildDocumentBlocks(ctx context.Context, documentID string) error
 	Graph(ctx context.Context, req GraphRequest) (GraphResponse, error)
+	GraphPath(ctx context.Context, req GraphPathRequest) (GraphPathResponse, error)
+	GraphReport(ctx context.Context, req GraphReportRequest) (GraphReport, error)
 	Search(ctx context.Context, req SearchRequest) (SearchResponse, error)
 	PlanSelection(ctx context.Context, req SelectionPlanRequest) (SelectionPlan, error)
 	GetDatabaseIdentity(ctx context.Context) (DatabaseIdentity, error)

@@ -11,8 +11,8 @@ deferred to v0.7 slice 3. Product version is 0.4.0; the schema was v13 when v0.4
 closed and is now **v15** (E1 added v14 blocks, E1a added v15 heading slugs).
 
 `PLAN.md` holds the **v0.5 plan** (blocks, lint/fix, graph traversal, editor
-link intelligence, query blocks, organizer UX). **E1, E1a, E1b, E2, and E3 are complete**;
-E4–E9 require user approval. Two v0.5 decisions are settled and recorded as
+link intelligence, query blocks, organizer UX). **E1, E1a, E1b, E2, E3, and E4
+are complete**; E5–E9 require user approval. Two v0.5 decisions are settled and recorded as
 `PROJECT_DECISIONS.md` 17 and 18: block identity is strictly content-based, and
 lint/fix stays single-note and revision-preconditioned with anything bulk left
 to the v0.6 organizer.
@@ -208,6 +208,40 @@ to the v0.6 organizer.
 - Export deduplication became symmetric across layouts through the same bounded
   spool, and `record_counts` became a pointer so `omitempty` actually applies —
   which cut packed verify peak RSS 41% and runtime 31%.
+
+## 2026-08-06 E4 — graph traversal, paths, and visualization data
+
+- `POST /api/v1/graph` now honours `depth`. It had been declared in
+  `api/openapi.yaml` and carried through two request structs since the MVP while
+  `store.Graph` never read it, so every graph slice was the roots' immediate
+  neighbours and a caller asking for three hops had no way to notice.
+- Added `POST /api/v1/graph/path` (shortest path, searched from both ends) and
+  `GET /api/v1/graph/report` (orphans, isolates, in-degree hubs). Store
+  operations are `Graph`, `GraphPath`, and `GraphReport` in
+  `internal/store/graph.go` and `sqlite_graph.go`. No MCP tool and no CLI: MCP
+  profile expansion is v0.6's and this is a client-rendering feature.
+- Ceilings are depth 5, 100 roots, 5,000 nodes, 20,000 edges, 10 path hops, and
+  200,000 path visits. A request naming a wider bound is refused rather than
+  clamped, because clamping reproduces the original defect in another form.
+- A traversal stopped by a ceiling reports `truncated_by` and `completed_depth`,
+  so a partial neighbourhood is never read as a complete one.
+- The three ways of not finding a path are kept apart: `no_path` proves that
+  everything reachable was searched, while `depth_exhausted` and
+  `budget_exhausted` only say the search stopped.
+- Expansion is level by level in Go with one bounded `IN (...)` query per 400-ID
+  batch, not a recursive CTE: a recursive SQL walk decides how far it has gone
+  only after SQLite has already walked, so the ceiling would bound the result
+  rather than the work. Both frontier queries are covering index searches.
+- Node metadata is batch-loaded (id, collection, title). Reusing
+  `getDocumentLocked` would have pulled a note body per node.
+- The API response became typed: `nodes`/`edges` were `[]map[string]any`, which
+  is how a declared field could go missing without anything noticing.
+- Cost at 10k/100k: neighbourhood and path lookups are flat (depth-1 0.9/0.9 ms
+  p95, max-depth 18.6/20.4 ms, path found 2.2/1.9 ms), while the whole-library
+  report is linear at 0.21 s and 3.92 s — the same shape as lint. Evidence under
+  `performance/v0.5-e4/`, with the caveat that the generated library is a
+  circulant graph whose frontier grows linearly, so traversal timings are a floor
+  for a densely cross-linked library.
 
 ## 2026-08-06 document reconciliation
 

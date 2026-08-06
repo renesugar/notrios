@@ -160,6 +160,8 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("DELETE /api/v1/trash/{document_id}", s.handlePurgeDocument)
 
 	s.mux.HandleFunc("POST /api/v1/graph", s.handleGraph)
+	s.mux.HandleFunc("POST /api/v1/graph/path", s.handleGraphPath)
+	s.mux.HandleFunc("GET /api/v1/graph/report", s.handleGraphReport)
 	s.mux.HandleFunc("POST /api/v1/selection/plan", s.handleSelectionPlan)
 	s.mux.HandleFunc("POST /api/v1/links/resolve", s.handleResolveStableLink)
 	s.mux.HandleFunc("GET /api/v1/jobs/{job_id}", s.handleJob)
@@ -974,29 +976,6 @@ func (s *Server) handleResourceContent(w http.ResponseWriter, r *http.Request) {
 	_, _ = io.Copy(w, content)
 }
 
-func (s *Server) handleGraph(w http.ResponseWriter, r *http.Request) {
-	var req api.GraphRequest
-	if !decodeJSON(w, r, &req) {
-		return
-	}
-	if s.store == nil {
-		writeJSON(w, http.StatusOK, api.GraphResponse{Nodes: []map[string]any{}, Edges: []map[string]any{}})
-		return
-	}
-	graph, err := s.store.Graph(r.Context(), store.GraphRequest{
-		Roots:            req.Roots,
-		Direction:        req.Direction,
-		Depth:            req.Depth,
-		IncludeResources: req.IncludeResources,
-		MaxNodes:         req.MaxNodes,
-		MaxEdges:         req.MaxEdges,
-	})
-	if writeStoreError(w, err, "graph_failed") {
-		return
-	}
-	writeJSON(w, http.StatusOK, toAPIGraph(graph))
-}
-
 func (s *Server) handleJob(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, api.JobStatus{ID: r.PathValue("job_id"), Kind: "scaffold", Status: "unknown"})
 }
@@ -1330,30 +1309,6 @@ func toAPILinks(links []store.DocumentLink) []api.DocumentLink {
 		})
 	}
 	return out
-}
-
-func toAPIGraph(graph store.GraphResponse) api.GraphResponse {
-	nodes := make([]map[string]any, 0, len(graph.Nodes))
-	for _, node := range graph.Nodes {
-		nodes = append(nodes, map[string]any{
-			"id":    node.ID,
-			"uri":   node.URI,
-			"kind":  node.Kind,
-			"label": node.Label,
-		})
-	}
-	edges := make([]map[string]any, 0, len(graph.Edges))
-	for _, edge := range graph.Edges {
-		edges = append(edges, map[string]any{
-			"id":         edge.ID,
-			"source_id":  edge.SourceID,
-			"target_id":  edge.TargetID,
-			"kind":       edge.Kind,
-			"status":     edge.Status,
-			"raw_target": edge.RawTarget,
-		})
-	}
-	return api.GraphResponse{Nodes: nodes, Edges: edges, Truncated: graph.Truncated}
 }
 
 func setResourceHeaders(w http.ResponseWriter, resource store.Resource, download bool) {

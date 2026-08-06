@@ -160,9 +160,60 @@ only (`notriosctl gc --apply`).
 curl -s "http://127.0.0.1:8080/api/v1/documents/$DOC/links?direction=both" | jq
 curl -s -X POST http://127.0.0.1:8080/api/v1/graph \
   -H 'Content-Type: application/json' \
-  -d "{\"roots\":[\"$DOC\"],\"direction\":\"both\",\"max_nodes\":20,\"max_edges\":40}" | jq
+  -d "{\"roots\":[\"$DOC\"],\"direction\":\"both\",\"depth\":2,\"max_nodes\":200,\"max_edges\":400}" | jq
 curl -s http://127.0.0.1:8080/api/v1/documents/$DOC/revisions | jq
 ```
+
+`depth` is how many link hops to follow (maximum 5; the default is 1). Every
+node comes back with its hop distance from the nearest root. The ceilings are
+100 roots, 5,000 nodes, and 20,000 edges; asking for more returns HTTP 400
+naming the ceiling rather than quietly giving you less. If a ceiling stops the
+expansion the response says so:
+
+```json
+{"truncated": true, "truncated_by": "nodes", "requested_depth": 4, "completed_depth": 2}
+```
+
+`completed_depth` is the deepest level that was expanded in full, so you can
+tell a partial neighbourhood from a small one.
+
+### Shortest path between two notes
+
+```sh
+curl -s -X POST http://127.0.0.1:8080/api/v1/graph/path \
+  -H 'Content-Type: application/json' \
+  -d "{\"from\":\"$DOC\",\"to\":\"$OTHER\",\"direction\":\"both\"}" | jq
+```
+
+`direction: "both"` ignores which way each link points, which is usually what
+"how are these two notes related" means; `"outgoing"` follows links as written.
+`status` is one of:
+
+| Status | Meaning |
+|---|---|
+| `found` | `nodes` runs from `from` to `to` and `length` is the hop count |
+| `no_path` | everything reachable was searched; these notes are not connected |
+| `depth_exhausted` | a path may exist but it is longer than `max_depth` (default 6, maximum 10) |
+| `budget_exhausted` | the search stopped after `max_visits` notes and proved nothing |
+
+Only `no_path` says something about your library. The other two say the search
+gave up, and raising `max_depth` or `max_visits` may change the answer.
+
+### Orphan, isolate, and hub report
+
+```sh
+curl -s "http://127.0.0.1:8080/api/v1/graph/report?limit=20" | jq
+```
+
+Read-only, and one pass over the collection. `orphan_count` is notes nothing
+links to; `isolated_count` is the subset that also links to nothing. `hubs`
+ranks by in-degree — how many notes point at it — because that is the property
+the rest of the library decides, not the note's own author. `limit` caps the
+example lists only; the counts always describe the whole collection.
+
+A note nobody links to is not an error, which is why this is a report and not a
+lint check. Lint's `unreferenced_resource` answers the neighbouring question
+about attachments.
 
 ## Selection and privacy dry runs
 

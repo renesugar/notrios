@@ -37,7 +37,8 @@ This matrix keeps the long conversation compressed into implementation-sized fea
 | Attachment download | MVP | REST/UI | Preview links to resources must download/open local resource content. |
 | Block and heading anchors | Implemented | parser/graph | Schema-v14 `document_blocks` with content-derived identity plus schema-v15 heading slugs. `GET /api/v1/documents/{id}/blocks`, per-anchor backlink counts, and anchor resolution for `document://` and `notrios://` links: precedence is authored `^marker`, then block ID, then heading slug. Heading text normalizes to the slug; a stable link carries no percent-escapes. |
 | PDF page-level resources | Optional/research | extraction adapter | Separate page text/image/figures when needed. |
-| Graph paths/centrality/community detection | Planned v0.5 | graph service | SQLite first; LadybugDB optional later. |
+| Bounded graph traversal and paths | Implemented | graph service | v0.5 E4: `POST /api/v1/graph` honours `depth` (it was accepted and ignored before), `POST /api/v1/graph/path` finds a shortest path from both ends, and `GET /api/v1/graph/report` lists orphans, isolates, and in-degree hubs. Every bound is refused rather than clamped, and a stopped traversal names the ceiling it hit. SQLite only; LadybugDB remains optional research. |
+| Graph centrality/community detection | Optional/research | graph service | E4 delivers degree-based hubs; clustering and centrality measures have no measured need yet. |
 
 ## Import and export
 

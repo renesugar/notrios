@@ -590,10 +590,77 @@ type GraphRequest struct {
 	MaxEdges         int      `json:"max_edges,omitempty"`
 }
 
+// GraphNode and GraphEdge were untyped maps until v0.5 E4. They are typed now
+// for the same reason every other DTO here is: a caller reading `depth` should
+// find it in the contract rather than in a response it happened to receive.
+type GraphNode struct {
+	ID    string `json:"id"`
+	URI   string `json:"uri,omitempty"`
+	Kind  string `json:"kind"`
+	Label string `json:"label,omitempty"`
+	Depth int    `json:"depth"`
+}
+
+type GraphEdge struct {
+	ID        string `json:"id"`
+	SourceID  string `json:"source_id"`
+	TargetID  string `json:"target_id"`
+	Kind      string `json:"kind,omitempty"`
+	Status    string `json:"status,omitempty"`
+	RawTarget string `json:"raw_target,omitempty"`
+}
+
 type GraphResponse struct {
-	Nodes     []map[string]any `json:"nodes"`
-	Edges     []map[string]any `json:"edges"`
-	Truncated bool             `json:"truncated,omitempty"`
+	Nodes []GraphNode `json:"nodes"`
+	Edges []GraphEdge `json:"edges"`
+	// Truncated says a ceiling stopped the expansion and TruncatedBy names it,
+	// so a partial neighbourhood is never read as a complete one.
+	Truncated      bool   `json:"truncated,omitempty"`
+	TruncatedBy    string `json:"truncated_by,omitempty"`
+	RequestedDepth int    `json:"requested_depth"`
+	CompletedDepth int    `json:"completed_depth"`
+}
+
+type GraphPathRequest struct {
+	From      string `json:"from"`
+	To        string `json:"to"`
+	Direction string `json:"direction,omitempty"`
+	MaxDepth  int    `json:"max_depth,omitempty"`
+	MaxVisits int    `json:"max_visits,omitempty"`
+}
+
+// GraphPathResponse reports a shortest path or the reason there is none.
+// `no_path` is a proof; `depth_exhausted` and `budget_exhausted` are not.
+type GraphPathResponse struct {
+	Status       string      `json:"status"`
+	Nodes        []GraphNode `json:"nodes"`
+	Edges        []GraphEdge `json:"edges"`
+	Length       int         `json:"length"`
+	VisitedNodes int         `json:"visited_nodes"`
+	MaxDepth     int         `json:"max_depth"`
+	MaxVisits    int         `json:"max_visits"`
+}
+
+type GraphReportEntry struct {
+	DocumentID string `json:"document_id"`
+	URI        string `json:"uri,omitempty"`
+	Title      string `json:"title,omitempty"`
+	InDegree   int64  `json:"in_degree"`
+	OutDegree  int64  `json:"out_degree"`
+}
+
+type GraphReport struct {
+	CollectionID  string             `json:"collection_id"`
+	DocumentCount int64              `json:"document_count"`
+	LinkCount     int64              `json:"link_count"`
+	IsolatedCount int64              `json:"isolated_count"`
+	OrphanCount   int64              `json:"orphan_count"`
+	Isolated      []GraphReportEntry `json:"isolated"`
+	Orphans       []GraphReportEntry `json:"orphans"`
+	Hubs          []GraphReportEntry `json:"hubs"`
+	Limit         int                `json:"limit"`
+	Truncated     bool               `json:"truncated,omitempty"`
+	ElapsedMS     float64            `json:"elapsed_ms"`
 }
 
 type JobStatus struct {
