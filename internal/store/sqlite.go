@@ -170,6 +170,9 @@ func (s *SQLiteStore) Bootstrap(ctx context.Context) error {
 	if err := s.ensureSchemaV15(ctx); err != nil {
 		return err
 	}
+	if err := s.ensureSchemaV16(ctx); err != nil {
+		return err
+	}
 	if err := s.ensureDatabaseIdentity(ctx); err != nil {
 		return err
 	}
@@ -502,6 +505,31 @@ func (s *SQLiteStore) ensureSchemaV15(ctx context.Context) error {
 			if strings.Contains(err.Error(), "duplicate column name") {
 				continue
 			}
+			return err
+		}
+	}
+	return nil
+}
+
+// ensureSchemaV16 adds the title and filename indexes editor link intelligence
+// needs.
+//
+// Resolving a link by title ran `lower(title) = lower(?)`, which no index can
+// serve: every link that did not name a URI cost a full scan of the document
+// table, once per link, on every save and every lint pass. The comparison moves
+// to the NOCASE collation — identical semantics, since SQLite's `lower()` folds
+// ASCII only, exactly as NOCASE does — so the same lookup becomes an index
+// probe. The collation additionally makes `title LIKE 'prefix%'` a range scan,
+// which is what lets the suggestion endpoint stop after a page instead of
+// reading the library.
+func (s *SQLiteStore) ensureSchemaV16(ctx context.Context) error {
+	statements := []string{
+		`CREATE INDEX IF NOT EXISTS documents_title_idx ON documents(collection_id, deleted_at, title COLLATE NOCASE, id);`,
+		`CREATE INDEX IF NOT EXISTS resources_filename_idx ON resources(collection_id, filename COLLATE NOCASE, id);`,
+		`PRAGMA user_version = 16;`,
+	}
+	for _, statement := range statements {
+		if err := s.Exec(ctx, statement); err != nil {
 			return err
 		}
 	}
@@ -1655,6 +1683,12 @@ func (s *SQLiteStore) resolveLinkCandidateLocked(sourceDocumentID, collectionID 
 	}
 	raw := strings.TrimSpace(candidate.RawTarget)
 	if raw == "" && candidate.AnchorValue != "" {
+		// An anchor with no target names a section of the note it is written
+		// in. Without a source note there is nothing for it to name, which only
+		// happens when a caller checks a buffer that has never been saved.
+		if sourceDocumentID == "" {
+			return link
+		}
 		link.TargetDocumentID = sourceDocumentID
 		link.TargetURI = DocumentURI(collectionID, sourceDocumentID)
 		link.ResolutionStatus = "resolved"
@@ -1793,7 +1827,7 @@ func (s *SQLiteStore) findDocumentByTitleLocked(collectionID, target string) (st
 	if name == "" {
 		return "", false, nil
 	}
-	stmt, err := s.prepareLocked(`SELECT id FROM documents WHERE collection_id = ? AND deleted_at IS NULL AND lower(title) = lower(?) ORDER BY id LIMIT 2`)
+	stmt, err := s.prepareLocked(`SELECT id FROM documents WHERE collection_id = ? AND deleted_at IS NULL AND title = ? COLLATE NOCASE ORDER BY id LIMIT 2`)
 	if err != nil {
 		return "", false, err
 	}
@@ -1824,7 +1858,7 @@ func (s *SQLiteStore) findResourceByFilenameLocked(collectionID, target string) 
 		return "", false, nil
 	}
 	name = strings.TrimPrefix(filepath.Base(name), "/")
-	stmt, err := s.prepareLocked(`SELECT id FROM resources WHERE collection_id = ? AND lower(filename) = lower(?) ORDER BY id LIMIT 2`)
+	stmt, err := s.prepareLocked(`SELECT id FROM resources WHERE collection_id = ? AND filename = ? COLLATE NOCASE ORDER BY id LIMIT 2`)
 	if err != nil {
 		return "", false, err
 	}

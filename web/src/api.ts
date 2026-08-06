@@ -386,3 +386,84 @@ export function resourceContentURL(resourceID: string, download = true): string 
   const suffix = download ? '?download=1' : '';
   return `/api/v1/resources/${encodeURIComponent(resourceID)}/content${suffix}`;
 }
+
+// --- Editor link intelligence (v0.5 E5) -------------------------------------
+//
+// Both calls are read-only and bounded, and both are made while someone is
+// typing. Neither writes a revision, and a failure of either degrades the
+// editor to no suggestions and no markers rather than to an error: link
+// intelligence is an assist, and an assist that interrupts typing is worse
+// than one that is quietly absent.
+
+export interface DocumentSuggestion {
+  document_id: string;
+  title: string;
+  uri: string;
+  notebook_id?: string;
+  /** `title_prefix` matched the start of the title, `word_prefix` a later word. */
+  match: string;
+}
+
+export interface DocumentSuggestionResponse {
+  suggestions: DocumentSuggestion[];
+  truncated?: boolean;
+  limit: number;
+}
+
+export interface CheckedLink {
+  raw_target: string;
+  display_text?: string;
+  relation_type?: string;
+  source_format?: string;
+  anchor_type?: string;
+  anchor_value?: string;
+  /** resolved | unresolved | ambiguous | external | invalid | stale_anchor */
+  status: string;
+  target_document_id?: string;
+  target_resource_id?: string;
+  target_uri?: string;
+  /** The URI a title-resolved link already points at, offered as a repair. */
+  canonical_target?: string;
+  start_byte: number;
+  end_byte: number;
+  line: number;
+  column: number;
+}
+
+export interface CheckLinksResponse {
+  links: CheckedLink[];
+  total: number;
+  unresolved: number;
+  truncated?: boolean;
+}
+
+/** Bounded link-target suggestions. The query must be at least two characters. */
+export async function suggestLinkTargets(
+  query: string,
+  options: { limit?: number; excludeDocumentID?: string; signal?: AbortSignal } = {},
+): Promise<DocumentSuggestionResponse> {
+  const params = new URLSearchParams({ q: query });
+  if (options.limit) params.set('limit', String(options.limit));
+  if (options.excludeDocumentID) params.set('exclude_document_id', options.excludeDocumentID);
+  const response = await fetch(`/api/v1/links/suggest?${params.toString()}`, { signal: options.signal });
+  return parseJSON<DocumentSuggestionResponse>(response);
+}
+
+/**
+ * Asks whether the links in an unsaved buffer resolve. The body goes to the
+ * server because extracting Markdown links is the canonical parser's job:
+ * a second implementation here would give markers that disagree with what a
+ * save records. Nothing is stored by this call.
+ */
+export async function checkBufferLinks(
+  body: string,
+  options: { documentID?: string; signal?: AbortSignal } = {},
+): Promise<CheckLinksResponse> {
+  const response = await fetch('/api/v1/links/check', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ body, document_id: options.documentID ?? '' }),
+    signal: options.signal,
+  });
+  return parseJSON<CheckLinksResponse>(response);
+}

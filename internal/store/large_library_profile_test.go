@@ -37,6 +37,8 @@ type scaleProfile struct {
 	GraphDeepEdges          int                           `json:"graph_max_depth_edges"`
 	GraphDeepTruncatedBy    string                        `json:"graph_max_depth_truncated_by,omitempty"`
 	GraphFarPathVisits      int                           `json:"graph_far_path_visited_nodes"`
+	CheckedBufferLinks      int                           `json:"checked_buffer_links"`
+	CheckedBufferUnresolved int                           `json:"checked_buffer_unresolved"`
 	DatabaseBytes           int64                         `json:"database_bytes"`
 	DatabaseBytesWithBlocks int64                         `json:"database_bytes_with_scale_blocks,omitempty"`
 	PeakRSSBytes            int64                         `json:"peak_rss_bytes"`
@@ -459,6 +461,76 @@ func TestLargeLibraryProfile(t *testing.T) {
 		Items:      int(graphReport.DocumentCount),
 	}
 	profile.GraphLinkCount = graphReport.LinkCount
+
+	// E5 editor link intelligence. Both of these run while someone is typing,
+	// so "flat against library size" is the requirement rather than a nicety.
+	suggestion, err := st.SuggestDocuments(ctx, DocumentSuggestionRequest{Query: "Scale doc"})
+	if err != nil || len(suggestion.Suggestions) == 0 {
+		t.Fatalf("SuggestDocuments: %d suggestions err=%v", len(suggestion.Suggestions), err)
+	}
+	if !suggestion.Truncated {
+		t.Fatalf("every seeded title shares this prefix, so the page must be truncated: %+v", suggestion)
+	}
+	profile.Metrics["suggest_title_prefix"] = measureProfile(t, 30, len(suggestion.Suggestions), func() error {
+		_, err := st.SuggestDocuments(ctx, DocumentSuggestionRequest{Query: "Scale doc"})
+		return err
+	})
+	// A prefix nothing matches still has to stop at the index, not at the end
+	// of the table.
+	profile.Metrics["suggest_no_match"] = measureProfile(t, 30, 0, func() error {
+		_, err := st.SuggestDocuments(ctx, DocumentSuggestionRequest{Query: "zzzznomatch"})
+		return err
+	})
+
+	// A buffer with links of every resolution kind, including one that resolves
+	// by title — the lookup that scanned the whole document table before the
+	// v16 index existed.
+	checkBody := strings.Join([]string{
+		"# Draft\n",
+		"[canonical](" + DocumentURI("default", "scale_doc_000001") + ")",
+		"[by title](" + fmt.Sprintf("Scale document %06d", 2) + ")",
+		"[missing](document://default/documents/scale_doc_999999999)",
+		"[external](https://example.com/page)",
+		"[anchor](" + DocumentURI("default", "scale_doc_000003") + "#nope)",
+	}, "\n\n")
+	checked, err := st.CheckLinks(ctx, CheckLinksRequest{DocumentID: "scale_doc_000000", Body: checkBody})
+	if err != nil || checked.Total != 5 {
+		t.Fatalf("CheckLinks: total=%d err=%v", checked.Total, err)
+	}
+	profile.CheckedBufferLinks = checked.Total
+	profile.CheckedBufferUnresolved = checked.Unresolved
+	profile.Metrics["check_buffer_links"] = measureProfile(t, 30, checked.Total, func() error {
+		_, err := st.CheckLinks(ctx, CheckLinksRequest{DocumentID: "scale_doc_000000", Body: checkBody})
+		return err
+	})
+
+	// The A/B that justifies schema v16. Before it, resolving a link by title
+	// ran `lower(title) = lower(?)` — no index can serve that, so every such
+	// link scanned the document table, once per link, on every save and every
+	// lint pass. Dropping the index here reproduces exactly that state.
+	// Iterations are low because the point is the magnitude, not the
+	// distribution, and an unindexed scan at 500k is expensive on purpose.
+	if err := st.Exec(ctx, `DROP INDEX IF EXISTS documents_title_idx`); err != nil {
+		t.Fatalf("drop title index: %v", err)
+	}
+	profile.Metrics["check_buffer_links_without_title_index"] = measureProfile(t, 5, checked.Total, func() error {
+		_, err := st.CheckLinks(ctx, CheckLinksRequest{DocumentID: "scale_doc_000000", Body: checkBody})
+		return err
+	})
+	profile.Metrics["suggest_title_prefix_without_title_index"] = measureProfile(t, 5, 10, func() error {
+		_, err := st.SuggestDocuments(ctx, DocumentSuggestionRequest{Query: "Scale doc"})
+		return err
+	})
+	if err := st.Exec(ctx, `CREATE INDEX IF NOT EXISTS documents_title_idx ON documents(collection_id, deleted_at, title COLLATE NOCASE, id)`); err != nil {
+		t.Fatalf("restore title index: %v", err)
+	}
+
+	profile.QueryPlans["suggest_title_prefix"], _ = st.explainQueryPlan(ctx,
+		`SELECT id, title FROM documents WHERE collection_id = 'default' AND deleted_at IS NULL
+			AND title LIKE 'Scale doc%' ESCAPE '\' ORDER BY title COLLATE NOCASE, id LIMIT 12`)
+	profile.QueryPlans["link_resolution_by_title"], _ = st.explainQueryPlan(ctx,
+		`SELECT id FROM documents WHERE collection_id = 'default' AND deleted_at IS NULL
+			AND title = 'Scale document 000002' COLLATE NOCASE ORDER BY id LIMIT 2`)
 
 	profile.QueryPlans["graph_outgoing_frontier"], _ = st.explainQueryPlan(ctx,
 		`SELECT id FROM document_links WHERE source_document_id IN ('scale_doc_000000')`)

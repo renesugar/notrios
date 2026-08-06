@@ -162,6 +162,8 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("POST /api/v1/graph", s.handleGraph)
 	s.mux.HandleFunc("POST /api/v1/graph/path", s.handleGraphPath)
 	s.mux.HandleFunc("GET /api/v1/graph/report", s.handleGraphReport)
+	s.mux.HandleFunc("GET /api/v1/links/suggest", s.handleDocumentSuggest)
+	s.mux.HandleFunc("POST /api/v1/links/check", s.handleCheckLinks)
 	s.mux.HandleFunc("POST /api/v1/selection/plan", s.handleSelectionPlan)
 	s.mux.HandleFunc("POST /api/v1/links/resolve", s.handleResolveStableLink)
 	s.mux.HandleFunc("GET /api/v1/jobs/{job_id}", s.handleJob)

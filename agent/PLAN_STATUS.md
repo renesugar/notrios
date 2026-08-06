@@ -8,11 +8,12 @@ Updated: 2026-08-05
 archived under `plans/v0.4/`, together with a copy of the milestone plan at
 `plans/v0.4/000-v0.4-plan.md`. P6, the `movenotes-v3` compatibility bridge, is
 deferred to v0.7 slice 3. Product version is 0.4.0; the schema was v13 when v0.4
-closed and is now **v15** (E1 added v14 blocks, E1a added v15 heading slugs).
+closed and is now **v16** (E1 added v14 blocks, E1a added v15 heading slugs, E5
+added v16 title/filename indexes).
 
 `PLAN.md` holds the **v0.5 plan** (blocks, lint/fix, graph traversal, editor
-link intelligence, query blocks, organizer UX). **E1, E1a, E1b, E2, E3, and E4
-are complete**; E5–E9 require user approval. Two v0.5 decisions are settled and recorded as
+link intelligence, query blocks, organizer UX). **E1, E1a, E1b, E2, E3, E4, and
+E5 are complete**; E6–E9 require user approval. Two v0.5 decisions are settled and recorded as
 `PROJECT_DECISIONS.md` 17 and 18: block identity is strictly content-based, and
 lint/fix stays single-note and revision-preconditioned with anything bulk left
 to the v0.6 organizer.
@@ -208,6 +209,50 @@ to the v0.6 organizer.
 - Export deduplication became symmetric across layouts through the same bounded
   spool, and `record_counts` became a pointer so `omitempty` actually applies —
   which cut packed verify peak RSS 41% and runtime 31%.
+
+## 2026-08-06 E5 — editor-pane link intelligence
+
+- `GET /api/v1/links/suggest` is the bounded autocomplete an editor calls while
+  typing: title-prefix matches first from an index range scan, then bounded
+  interior-word matches from FTS5's `title` column so "plan" finds "Kitchen
+  Plan". A suggestion is an ID, a title, and the canonical URI — never a body.
+- `POST /api/v1/links/check` classifies the links in an **unsaved buffer** and
+  writes nothing. It takes the body rather than a client-extracted target list,
+  because deciding what is a link belongs to the canonical extractor; a
+  TypeScript reimplementation would draw markers that disagree with the link
+  records a save writes. A test asserts check and save agree link for link.
+- Anchors into the note being edited resolve against the submitted body rather
+  than the saved blocks: while someone types, the buffer is the truth about its
+  own headings, and checking a just-typed `#new-section` against yesterday's
+  rows would mark a correct link broken.
+- Schema **v16** adds `documents(collection_id, deleted_at, title COLLATE
+  NOCASE, id)` and the matching resource filename index. Title lookup ran
+  `lower(title) = lower(?)`, which no index can serve, so every link that
+  resolved by title was a full scan of the document table — once per link, on
+  every save and every lint pass. NOCASE is the same comparison (SQLite's
+  `lower()` folds ASCII only) and makes it a probe; it also turns
+  `title LIKE 'prefix%'` into the range scan that bounds the suggestion endpoint.
+- The profile measures the index rather than asserting it: each tier drops it,
+  re-measures, and restores it. Indexed suggestion and buffer check are flat at
+  0.51/1.03/0.44 ms and 1.40/8.30/1.40 ms p95 across 10k/100k/500k; unindexed
+  they are linear at 41.6/1,324/5,390 ms and 19.5/1,000/4,198 ms — 5.4 seconds
+  per keystroke at half a million notes, a cost every title-resolved link was
+  already paying on every save and every lint pass. Evidence under
+  `performance/v0.5-e5/`. One measurement is honestly not flat: a query matching
+  nothing runs both passes to exhaustion and grows 0.62 → 5.83 ms, which is the
+  FTS5 term dictionary growing; recorded rather than omitted.
+- One latent defect fixed: `resolveLinkCandidateLocked` called an anchor-only
+  link resolved even with no source document, producing the ID-less URI
+  `document://default/documents/`. Unreachable from the save path, reachable the
+  moment a caller could check a never-saved buffer.
+- The web client gained a link picker that inserts a canonical URI at the caret
+  and a located list of links that will not open. Both debounce, cancel the
+  request they superseded, and degrade to nothing on error rather than to an
+  error banner.
+- **E6's input, as a measured fact rather than a preference**: `md-editor-rt`
+  exposes `insert` at the caret but no caret position and no inline widgets, so
+  broken links are listed beside the text instead of underlined in it. Recorded
+  in `UI_DESIGN.md`.
 
 ## 2026-08-06 E4 — graph traversal, paths, and visualization data
 
@@ -541,8 +586,8 @@ attempt detail remains append-only in `agent/ATTEMPT_LOG.jsonl`.
 - Review base before this session: `26b0925`.
 - Project license: Apache-2.0.
 - Canonical store: SQLite plus content-addressed assets; FTS5/Recoll are derived.
-- Current schema: v15 (`store.CurrentSchemaVersion`). `migrations/0001_initial.sql`
-  now creates through v15, including the v13 `restore_state` table that
+- Current schema: v16 (`store.CurrentSchemaVersion`). `migrations/0001_initial.sql`
+  now creates through v16, including the v13 `restore_state` table that
   previously lived only in a shim; the `ensureSchemaVn` shims remain for
   upgrading older databases.
 - Unbounded local traversal uses `(updated_at, id)` or `(score, id)` keysets;
@@ -572,7 +617,7 @@ attempt detail remains append-only in `agent/ATTEMPT_LOG.jsonl`.
 - H11 local release gates pass; `docs/operations.md` is included in the
   docs site; P1/P2 expand it from 11 to 13 pages/Help notes with selection and
   archive-v2 safety guides.
-- Product version: 0.4.0; current schema: v15.
+- Product version: 0.4.0; current schema: v16.
 - Resource reference report:
   `GET /api/v1/resources/reports/reference` and
   `notriosctl resources report`.

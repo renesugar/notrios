@@ -446,6 +446,43 @@ glossed: the generated library is a circulant graph, so a BFS frontier grows
 linearly and the traversal timings are a floor for a densely cross-linked
 library.
 
+### Editor link intelligence (v0.5 E5)
+
+One fixture uses titles chosen to separate the two suggestion passes: several
+sharing a prefix, one whose only match is an interior word, one trashed, and a
+resource to link at.
+
+Store fixtures assert that title-prefix matches come first and in title order,
+that the interior-word pass finds "Kitchen Plan" from "plan", that a trashed
+note is never offered, that the note being edited can be excluded, that the cap
+reports truncation, that every bound is refused rather than clamped, and that a
+typed `%` or `_` is text rather than a wildcard.
+
+Buffer-check fixtures cover every status the resolver can produce, the
+`canonical_target` a title-resolved link offers, a stale anchor reported
+distinctly from a missing note, and the refusal of an oversized buffer. Two
+assertions carry the design decisions: **anchors resolve against the submitted
+body**, so a heading typed only in the buffer resolves while one naming nothing
+in it is stale; and **the check agrees with the save**, asserted by checking a
+buffer, saving the same bytes, and comparing the link records status for status
+and offset for offset. A separate fixture proves that checking a buffer writes
+no revision and leaves the note's body untouched.
+
+A migration fixture takes a v15 database to v16 without losing a row, and a
+query-plan fixture asserts that the three statements the resolver and suggester
+run all search the v16 index rather than scanning.
+
+Web fixtures cover the helpers and both components: that nothing is requested
+below the minimum query length, that choosing a suggestion inserts the canonical
+URI rather than the title, that a clean check says "all N links resolve" rather
+than rendering nothing, that an unfinished check renders nothing rather than
+implying success, and that an unreachable service produces no suggestions and no
+error.
+
+The generated scale profile measures both operations at 10k/100k/500k and runs
+an A/B against schema v16 by dropping the title index and restoring it, so the
+index's value is measured rather than asserted. Evidence: `performance/v0.5-e5/`.
+
 ### Sync model and transport tests (planned v0.7)
 
 - Property/model tests shuffle, duplicate, replay, drop, and eventually deliver

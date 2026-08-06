@@ -38,7 +38,7 @@ const (
 // CurrentSchemaVersion is the canonical SQLite schema understood by this
 // build. Archive-v2 manifests record this source schema but never include
 // derived FTS5 or Recoll state.
-const CurrentSchemaVersion = 15
+const CurrentSchemaVersion = 16
 
 // DatabaseIdentity separates the stable logical synchronization/archive
 // universe from one writable database copy. Copy/restore workflows preserve
@@ -807,6 +807,8 @@ type Store interface {
 	Graph(ctx context.Context, req GraphRequest) (GraphResponse, error)
 	GraphPath(ctx context.Context, req GraphPathRequest) (GraphPathResponse, error)
 	GraphReport(ctx context.Context, req GraphReportRequest) (GraphReport, error)
+	SuggestDocuments(ctx context.Context, req DocumentSuggestionRequest) (DocumentSuggestionResponse, error)
+	CheckLinks(ctx context.Context, req CheckLinksRequest) (CheckLinksResponse, error)
 	Search(ctx context.Context, req SearchRequest) (SearchResponse, error)
 	PlanSelection(ctx context.Context, req SelectionPlanRequest) (SelectionPlan, error)
 	GetDatabaseIdentity(ctx context.Context) (DatabaseIdentity, error)

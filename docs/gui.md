@@ -70,6 +70,30 @@ Below the menu bar the window is four side-by-side panes, always in this order:
 
 Each pane scrolls on its own; the window itself never scrolls.
 
+### Link help while you write
+
+The **Note info** inspector holds two link assists for editable notes.
+
+**Insert link to note** searches your notes by title after two characters and
+inserts a canonical `[Title](document://…)` link at the cursor. It inserts the
+URI rather than the title on purpose: a link written as a title breaks the day
+the note is renamed.
+
+Below it, the links in what you have typed are checked a moment after you stop
+typing — before you save, and without saving. Anything that would not open is
+listed with its line, column, and the reason: no such target, more than one
+match, or the note exists but the section inside it does not. A heading you just
+typed counts immediately, because the check reads the text in front of you
+rather than the last saved version.
+
+Both assists are quiet when they cannot reach the service: you get no
+suggestions and no list, not an error interrupting your typing.
+
+Broken links are listed beside the text rather than underlined inside it. The
+current editor does not expose the source positions an in-editor marker would
+need; that is one of the things a possible editor change is being weighed
+against.
+
 ### Resizing panes
 
 Three splitters separate the panes. Drag one with the mouse, or focus it with **Tab** and press **←/→** (16 px), **Shift+←/→** (64 px), or **Home/End**; double-click restores the default layout. Pane sizes persist across restarts.

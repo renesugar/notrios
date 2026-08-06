@@ -621,6 +621,56 @@ type GraphResponse struct {
 	CompletedDepth int    `json:"completed_depth"`
 }
 
+// DocumentSuggestion is one candidate link target for editor autocomplete. It
+// carries an ID and a title, never a body or a snippet.
+type DocumentSuggestion struct {
+	DocumentID string `json:"document_id"`
+	Title      string `json:"title"`
+	URI        string `json:"uri"`
+	NotebookID string `json:"notebook_id,omitempty"`
+	Match      string `json:"match"`
+}
+
+type DocumentSuggestionResponse struct {
+	Suggestions []DocumentSuggestion `json:"suggestions"`
+	Truncated   bool                 `json:"truncated,omitempty"`
+	Limit       int                  `json:"limit"`
+}
+
+// CheckLinksRequest carries an unsaved buffer. The server parses it with the
+// canonical extractor and discards it; nothing is stored and no revision is
+// written.
+type CheckLinksRequest struct {
+	CollectionID string `json:"collection_id,omitempty"`
+	DocumentID   string `json:"document_id,omitempty"`
+	Body         string `json:"body"`
+}
+
+type CheckedLink struct {
+	RawTarget        string `json:"raw_target"`
+	DisplayText      string `json:"display_text,omitempty"`
+	RelationType     string `json:"relation_type,omitempty"`
+	SourceFormat     string `json:"source_format,omitempty"`
+	AnchorType       string `json:"anchor_type,omitempty"`
+	AnchorValue      string `json:"anchor_value,omitempty"`
+	Status           string `json:"status"`
+	TargetDocumentID string `json:"target_document_id,omitempty"`
+	TargetResourceID string `json:"target_resource_id,omitempty"`
+	TargetURI        string `json:"target_uri,omitempty"`
+	CanonicalTarget  string `json:"canonical_target,omitempty"`
+	StartByte        int    `json:"start_byte"`
+	EndByte          int    `json:"end_byte"`
+	Line             int    `json:"line"`
+	Column           int    `json:"column"`
+}
+
+type CheckLinksResponse struct {
+	Links      []CheckedLink `json:"links"`
+	Total      int           `json:"total"`
+	Unresolved int           `json:"unresolved"`
+	Truncated  bool          `json:"truncated,omitempty"`
+}
+
 type GraphPathRequest struct {
 	From      string `json:"from"`
 	To        string `json:"to"`

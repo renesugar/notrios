@@ -62,6 +62,16 @@ Implementation notes (task R13 GUI-fix pass):
 
 The existing React frontend is the basis of the Wails webview UI, currently using `md-editor-rt` behind an application-owned adapter; a later migration to `CodeMirror 6 + unified/remark/rehype` is reserved for deeper source-position and editor-pane behavior (Ctrl-click in the editor pane, broken-link markers while typing, inline resource widgets, AST-safe edits, rich link autocomplete).
 
+**What v0.5 E5 established about that boundary.** Link autocomplete and
+broken-link checking are implemented, and half of each lands where it was
+wanted. `md-editor-rt` exposes `insert` at the caret, so a chosen suggestion is
+inserted where the author is typing. It exposes nothing about *where* the caret
+is and accepts no inline widgets, so a broken link is reported as a located list
+beside the text — target, line, column, reason — rather than underlined in it.
+That is the concrete, measured gap E6 weighs: not "CodeMirror would be nicer"
+but "in-editor marker placement and caret position are the two things the
+current editor cannot give."
+
 ## Required behavior (carried over from the web-UI MVP)
 
 - Create, edit, save, and search Markdown notes.

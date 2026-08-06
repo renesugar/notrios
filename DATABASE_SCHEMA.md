@@ -83,11 +83,11 @@ invalidates the canonical note save.
 ## MVP migration file
 
 `migrations/0001_initial.sql` has grown with each milestone and now creates
-through schema version **15** (v5 notebooks/tags/search notebooks, v6 source
+through schema version **16** (v5 notebooks/tags/search notebooks, v6 source
 provenance, v7 media policy, v8 resource retention, v9 scalable keyset indexes,
 v10 resumable import state/source bundles, v11 projection retry scheduling, v12
 logical database/replica identity, v13 restore state, v14 note blocks, v15
-heading slugs), applied idempotently on every startup with upgrade shims for
+heading slugs, v16 title/filename indexes), applied idempotently on every startup with upgrade shims for
 older databases.
 Its original MVP portion represents schema version 4. Do not rename public
 tables/columns casually once tests depend on them.
@@ -201,6 +201,31 @@ upgraded to v14 has no rows for notes nobody has edited since;
 Sizing measured on the generated profiles: at six blocks per note the table
 roughly doubles the database (114 MB to 245 MB at 100,000 notes), while anchor
 resolution stays at 0.2–0.5 ms from 61,000 to 601,000 block rows.
+
+## Schema v16 — title and filename indexes
+
+Two indexes, added for v0.5 E5:
+
+```sql
+CREATE INDEX documents_title_idx  ON documents(collection_id, deleted_at, title COLLATE NOCASE, id);
+CREATE INDEX resources_filename_idx ON resources(collection_id, filename COLLATE NOCASE, id);
+```
+
+They exist because resolving a link by title ran `lower(title) = lower(?)`,
+which no index can serve. Every link that did not already name a URI therefore
+cost a full scan of the document table — once per link, on every save and every
+lint pass. The comparison moved to the NOCASE collation, which is the same
+comparison: SQLite's built-in `lower()` folds ASCII only, exactly as NOCASE
+does. The lookup is now an index probe.
+
+The collation does a second job. It makes `title LIKE 'prefix%'` a range scan
+rather than a table scan, which is what bounds the E5 suggestion endpoint: the
+scan starts at the first matching title, walks in title order, and stops one row
+past the page. Including `id` in the index makes `ORDER BY title COLLATE NOCASE,
+id` exactly index order, so no temporary B-tree is built for the tie-break.
+
+Both are pure additions. No row changes and no data migration; an upgraded
+database gets the indexes on the next startup.
 
 ## Schema v5/v6 — Notrios redesign (tasks R3 and R4 implemented)
 

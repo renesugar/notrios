@@ -22,6 +22,8 @@ The REST persistence slice is implemented for managed Markdown documents:
   selected roots, to the requested depth.
 - `POST /api/v1/graph/path` returns a shortest link path between two notes.
 - `GET /api/v1/graph/report` returns the read-only orphan/isolate/hub report.
+- `GET /api/v1/links/suggest` returns bounded link-target autocomplete.
+- `POST /api/v1/links/check` classifies the links in an unsaved buffer.
 - `POST /api/v1/selection/plan` returns the read-only selection/privacy plan.
 - `POST /api/v1/links/resolve` resolves an external `notrios://` link against
   this database.
@@ -242,6 +244,8 @@ GET  /api/v1/documents/{document_id}/links?direction=outgoing|incoming|both
 POST /api/v1/graph
 POST /api/v1/graph/path
 GET  /api/v1/graph/report
+GET  /api/v1/links/suggest?q=...&limit=...&exclude_document_id=...
+POST /api/v1/links/check
 POST /api/v1/links/resolve
 ```
 
@@ -288,6 +292,43 @@ lists only — counts always describe the whole collection — and sets `truncat
 when it hides an example. `elapsed_ms` is reported because this report reads the
 whole library and an operator should be able to see what that cost. There is no
 apply surface here, exactly as with lint and the GC report.
+
+`GET /api/v1/links/suggest` (v0.5 E5) is the bounded autocomplete an editor
+calls while someone types a link target. It answers in two passes: title-prefix
+matches first, in title order from a schema-v16 index range scan, then bounded
+interior-word matches from FTS5's `title` column so typing `plan` also finds
+"Kitchen Plan". A suggestion is a stable ID, a title, and the canonical URI —
+never a body and never a snippet, because an autocomplete dropdown is not a
+place note content should arrive. `q` must be at least two characters: a single
+letter matches so much of a large library that ranking it means reading the
+library. `limit` defaults to 10 and is capped at 50, `exclude_document_id` drops
+the note being edited, and `truncated` says more notes matched than fit. The
+interior-word pass reads at most 200 candidates, so for a very common word the
+matches shown are the first the index yields rather than the best; the
+title-prefix pass has no such limit, which is why it runs first.
+
+`POST /api/v1/links/check` (v0.5 E5) classifies the links in an **unsaved
+buffer**. The request carries `{body, document_id?, collection_id?}` and the
+response carries one entry per link: raw target, byte range, line, column,
+relation type, anchor, and a resolution status. Nothing is stored and no
+revision is written.
+
+It takes the body rather than a list of targets the client extracted, because
+deciding what is a link belongs to the canonical extractor: a client
+reimplementation would drift and start drawing markers that disagree with the
+link records a save actually writes. Statuses are the ordinary ones —
+`resolved`, `unresolved`, `ambiguous`, `external`, `invalid` — plus
+`stale_anchor` when the note resolves and the section or block inside it does
+not. `canonical_target` is filled in when a link resolved by title or filename,
+so an editor can offer the same substitution `notriosctl fix` performs, before
+the note is even saved.
+
+Anchors into the note being edited are resolved against the **submitted body**
+rather than the saved block rows. While someone is typing, the buffer is the
+truth about its own headings, and checking a just-typed `#new-section` against
+yesterday's saved blocks would mark a correct link broken. The body is bounded
+at 1 MiB and the returned list at 2,000 links; `total` and `unresolved` describe
+the whole buffer even when the list was capped.
 
 `POST /api/v1/links/resolve` (v0.4 P5) answers which note an external
 `notrios://` link names in the database this service has open. The request body

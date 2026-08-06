@@ -1,7 +1,7 @@
 # Plan: v0.5 — Better editing, blocks, and graph UX
 
 Status: **active. Drafted 2026-08-05 from `ROADMAP.md` after v0.4 completed.
-E1, E1a, E1b, E2, E3, and E4 are complete; E5–E9 require user approval.**
+E1, E1a, E1b, E2, E3, E4, and E5 are complete; E6–E9 require user approval.**
 
 v0.4 is complete and archived under `plans/v0.4/`, including a copy of its own
 plan at `plans/v0.4/000-v0.4-plan.md`. Its one deferral, P6 (the `movenotes-v3`
@@ -276,7 +276,10 @@ a complete one. And a shortest-path search separates `no_path` — a proof that
 everything reachable was searched — from `depth_exhausted` and
 `budget_exhausted`, which only say the search stopped.
 
-### E5. Editor-pane link intelligence
+### E5. Editor-pane link intelligence — complete
+
+Archived as `plans/v0.5/007-editor-link-intelligence.md`. Evidence:
+`performance/v0.5-e5/`.
 
 - Rich link autocomplete: a bounded prefix/title search endpoint the editor
   calls while typing, returning stable IDs and titles, never whole bodies.
@@ -288,10 +291,29 @@ Working state: autocomplete and markers work on the 500k library without a
 per-keystroke whole-library query, and an offline client degrades to no markers
 rather than to errors.
 
+Four things came out of the implementation. The buffer check takes the **body**
+rather than a client-extracted target list, because deciding what is a link
+belongs to the canonical extractor and a second implementation would draw
+markers that disagree with what a save records. Anchors into the note being
+edited resolve against the **submitted body**, since while someone types the
+buffer is the truth about its own headings. Schema **v16** replaced
+`lower(title) = lower(?)` with a NOCASE index — the same comparison, but the old
+one made every title-resolved link a full scan of the document table on every
+save and every lint pass. And the slice produced E6's input as a measured fact:
+`md-editor-rt` gives `insert` at the caret but no caret position and no inline
+widgets, so broken links are listed beside the text rather than underlined in it.
+
 ### E6. CodeMirror 6 migration decision
 
 Explicitly a decision task, not an implementation one. `md-editor-rt` sits
 behind an application-owned adapter precisely so this stays a measured choice.
+
+E5 already established the first bullet as a fact rather than a hypothesis:
+`md-editor-rt` exposes `insert` at the caret, so autocomplete inserts in place,
+but it exposes no caret position and accepts no inline widgets, so broken links
+are listed beside the text instead of underlined inside it. In-editor marker
+placement and caret position are the two concrete capabilities the current
+editor cannot provide.
 
 - Establish what E5 could not do inside the current editor: source positions,
   in-editor Ctrl-click, inline widgets, AST-safe edits.
@@ -396,7 +418,7 @@ GUI-affecting tasks also build with `make gui`, and layout changes run
   revision-preconditioned.** Every fix writes an ordinary revision against a
   precondition for one note; anything bulk belongs to the v0.6 organizer, and
   E3 may not grow a multi-note apply path.
-- E1, E1a, E1b, E2, E3, and E4 are complete; the remaining tasks are not
+- E1, E1a, E1b, E2, E3, E4, and E5 are complete; the remaining tasks are not
   approved.
 - **Resolved 2026-08-06: heading anchors in stable links use a slug, not
   percent-encoded heading text.** Obsidian percent-encodes the heading name into

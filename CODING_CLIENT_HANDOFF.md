@@ -3,11 +3,11 @@
 This handoff applies to any coding agent or client continuing this project (Codex, Claude, aider, swival.dev, etc. — formerly `CODEX_HANDOFF.md`). The repository is designed so an agent can continue from repository files alone.
 
 Current phase: v0.1, v0.2, v0.3, and **v0.4** are complete; product version is
-0.4.0 and the schema is **v15**. `PLAN.md` holds the v0.5 plan; E1 (block
+0.4.0 and the schema is **v16**. `PLAN.md` holds the v0.5 plan; E1 (block
 anchors), E1a (heading anchors in stable links), E1b (scheme-scoped anchor
-decoding), E2 (workspace lint), E3 (workspace fix), and E4 (bounded graph
-traversal, shortest paths, and the orphan/hub report) are complete and E5–E9
-require user approval.
+decoding), E2 (workspace lint), E3 (workspace fix), E4 (bounded graph
+traversal, shortest paths, and the orphan/hub report), and E5 (editor link
+intelligence) are complete and E6–E9 require user approval.
 
 Milestone detail follows. H1–H11 are archived under `plans/v0.3/`. The v0.4
 slices are archived under `plans/v0.4/`:
@@ -232,5 +232,13 @@ The scaffold was created in a restricted container. Still-open consequences:
     `truncated_by` and `completed_depth`; and `no_path` is kept distinct from
     `depth_exhausted` and `budget_exhausted`, because only the first is a
     statement about the library.
+12. E5 adds `GET /api/v1/links/suggest` (bounded title autocomplete returning
+    IDs and titles only) and `POST /api/v1/links/check` (read-only resolution of
+    an unsaved buffer, parsed by the canonical extractor so markers match what a
+    save records). Schema v16 replaced `lower(title) = lower(?)` with a NOCASE
+    index, which had made every title-resolved link a full scan of the document
+    table on every save and every lint pass. `md-editor-rt` gives no caret
+    position and no inline widgets, so broken links are listed beside the text
+    rather than underlined in it — that is E6's measured input.
 
 (The formerly open "no browser testing" limitation is resolved: the GUI is browser-verified via Playwright, vitest/RTL covers the workspace, and `scripts/verify_layout_resize.py` covers native window resizing.)

@@ -6,9 +6,12 @@
 // Read-only notes (server-provided `editable: false`, e.g. the Help notebook)
 // render with a disabled editor, hidden save/upload controls, and a visible
 // badge — the client never waits for a server 403 to explain protection.
-import { MdEditor, type UploadImgCallBack } from 'md-editor-rt';
+import { useRef } from 'react';
+import { MdEditor, type ExposeParam, type UploadImgCallBack } from 'md-editor-rt';
 import type { ThemeMode } from '../themes';
 import { resourceContentURL, type DocumentLink, type DocumentRecord, type RemoteMediaDecision, type ResourceReference } from '../api';
+import { useBufferLinks } from '../useLinkIntelligence';
+import { BrokenLinkList, LinkPicker } from './LinkIntelligence';
 
 export interface EditorPaneProps {
   title: string;
@@ -55,6 +58,12 @@ export function EditorPane(props: EditorPaneProps) {
     onOpenDocument,
   } = props;
 
+  // md-editor-rt exposes `insert` at the caret but nothing about where the
+  // caret is, which is why a suggestion can be inserted in place while a broken
+  // link cannot be underlined in place. See LinkIntelligence.tsx.
+  const editorRef = useRef<ExposeParam>(null);
+  const bufferLinks = useBufferLinks(body, selectedDocument?.id, editable);
+
   return (
     <section className="pane editor-pane" aria-label="Markdown editor" data-testid="pane-editor">
       <div className="editor-toolbar">
@@ -85,6 +94,7 @@ export function EditorPane(props: EditorPaneProps) {
 
       <div className="editor-host">
         <MdEditor
+          ref={editorRef}
           id="notrios-editor"
           value={body}
           onChange={onBodyChange}
@@ -133,6 +143,27 @@ export function EditorPane(props: EditorPaneProps) {
                   }}
                 />
               </label>
+            )}
+            {editable && (
+              <div className="link-intelligence" data-testid="link-intelligence">
+                <LinkPicker
+                  documentID={selectedDocument.id}
+                  disabled={busy}
+                  onInsert={(markdown) => {
+                    editorRef.current?.insert(() => ({
+                      targetValue: markdown,
+                      select: false,
+                      deviationStart: 0,
+                      deviationEnd: 0,
+                    }));
+                  }}
+                />
+                <BrokenLinkList
+                  broken={bufferLinks.broken}
+                  checked={bufferLinks.checked}
+                  total={bufferLinks.links.length}
+                />
+              </div>
             )}
             {(links.length > 0 || backlinks.length > 0) && (
               <div className="link-list">

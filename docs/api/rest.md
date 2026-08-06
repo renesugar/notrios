@@ -199,6 +199,43 @@ curl -s -X POST http://127.0.0.1:8080/api/v1/graph/path \
 Only `no_path` says something about your library. The other two say the search
 gave up, and raising `max_depth` or `max_visits` may change the answer.
 
+### Link autocomplete while typing
+
+```sh
+curl -s "http://127.0.0.1:8080/api/v1/links/suggest?q=kit&limit=10" | jq
+```
+
+Title-prefix matches come first, in title order; then interior-word matches, so
+`plan` also finds "Kitchen Plan". Each suggestion carries a stable ID, the
+title, and the canonical `document://` URI to insert — never a body or a
+snippet. The query must be at least two characters. `exclude_document_id` drops
+the note being edited so it is not offered as its own target.
+
+### Checking the links in an unsaved note
+
+```sh
+curl -s -X POST http://127.0.0.1:8080/api/v1/links/check \
+  -H 'Content-Type: application/json' \
+  -d "{\"document_id\":\"$DOC\",\"body\":\"[a](Kitchen)\n\n[b](document://default/documents/gone)\n\"}" | jq
+```
+
+This is the call an editor makes to mark broken links before anything is saved.
+It stores nothing and writes no revision.
+
+You send the body rather than a list of targets, because deciding what counts as
+a link is the service's canonical parser's job — a second implementation in the
+client would drift and start marking links a save would record differently.
+
+Each entry is located (`line`, `column`, `start_byte`, `end_byte`) and carries a
+status: `resolved`, `unresolved`, `ambiguous`, `external`, `invalid`, or
+`stale_anchor` when the note exists and the section or block inside it does not.
+A link that resolved by title also carries `canonical_target` — the URI it
+already points at — which is the same repair `notriosctl fix` applies, offered
+before you save.
+
+Anchors into the note you are editing are checked against the body you sent, not
+against the last saved version, so a heading you just typed resolves immediately.
+
 ### Orphan, isolate, and hub report
 
 ```sh

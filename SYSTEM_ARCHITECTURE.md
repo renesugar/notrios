@@ -154,6 +154,15 @@ and real-device resource use before changing the stable v2 shell.
 
 The GUI owns link interception, resource upload/download, preview sanitization, and routing to document/resource URIs. A later migration to CodeMirror 6 + unified/remark/rehype is reserved for deeper editor-pane behavior and AST-aware features.
 
+v0.5 E5 added the two read-only service surfaces an editor needs while someone
+types — bounded link-target suggestion and unsaved-buffer link resolution — and
+established the boundary that migration would cross. The buffer check parses the
+submitted body with the canonical extractor rather than trusting a
+client-extracted target list, so a marker the editor draws matches the link
+record a save will write; that keeps Markdown knowledge in one place. What the
+current editor cannot give is caret position and inline widgets, so broken links
+are listed beside the text rather than underlined in it.
+
 ## REST and MCP
 
 REST and MCP are adapters over the same service layer, and together must be

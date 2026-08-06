@@ -359,3 +359,16 @@ CREATE INDEX IF NOT EXISTS document_blocks_slug_idx ON document_blocks(document_
 -- column; block rows deliberately store no heading text, so without it a
 -- heading anchor has nothing to compare against (PROJECT_DECISIONS.md 19).
 PRAGMA user_version = 15;
+
+-- Schema v16: the title index editor link intelligence needs. Title lookup was
+-- `lower(title) = lower(?)`, which no index can serve, so every link that
+-- resolved by title scanned the whole document table -- once per link, on every
+-- save and every lint pass. The NOCASE collation makes the same comparison
+-- index-backed and additionally makes `title LIKE 'prefix%'` a range scan, which
+-- is what bounds the suggestion endpoint.
+CREATE INDEX IF NOT EXISTS documents_title_idx
+    ON documents(collection_id, deleted_at, title COLLATE NOCASE, id);
+CREATE INDEX IF NOT EXISTS resources_filename_idx
+    ON resources(collection_id, filename COLLATE NOCASE, id);
+
+PRAGMA user_version = 16;

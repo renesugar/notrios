@@ -747,6 +747,59 @@ paths:
                 $ref: '#/components/schemas/GraphResponse'
         '400':
           $ref: '#/components/responses/Error'
+  /api/v1/links/suggest:
+    get:
+      summary: Bounded link-target suggestions for editor autocomplete
+      description: >
+        Title-prefix matches first, in title order from an index range scan, then
+        bounded interior-word matches. Returns stable IDs and titles only — never
+        a body or a snippet. The query must be at least two characters.
+      parameters:
+        - in: query
+          name: q
+          required: true
+          schema: { type: string, minLength: 2, maxLength: 256 }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 50, default: 10 }
+        - in: query
+          name: collection_id
+          schema: { type: string }
+        - in: query
+          name: exclude_document_id
+          description: The note being edited, so it is not offered as its own target.
+          schema: { type: string }
+      responses:
+        '200':
+          description: Bounded suggestions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentSuggestionResponse'
+        '400':
+          $ref: '#/components/responses/Error'
+  /api/v1/links/check:
+    post:
+      summary: Classify the links in an unsaved buffer
+      description: >
+        Parses the submitted body with the canonical extractor and resolves each
+        link read-only, so a marker an editor draws matches the link record a
+        save would write. Nothing is stored and no revision is created.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckLinksRequest'
+      responses:
+        '200':
+          description: One classification per link, located in the buffer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckLinksResponse'
+        '400':
+          $ref: '#/components/responses/Error'
   /api/v1/graph/path:
     post:
       summary: Find a shortest link path between two notes
@@ -1567,6 +1620,71 @@ components:
         truncated_by: { type: string, enum: [nodes, edges] }
         requested_depth: { type: integer }
         completed_depth: { type: integer, description: deepest level expanded in full }
+    DocumentSuggestion:
+      type: object
+      required: [document_id, title, uri, match]
+      properties:
+        document_id: { type: string }
+        title: { type: string }
+        uri: { type: string }
+        notebook_id: { type: string }
+        match: { type: string, enum: [title_prefix, word_prefix] }
+    DocumentSuggestionResponse:
+      type: object
+      required: [suggestions, limit]
+      properties:
+        suggestions:
+          type: array
+          items: { $ref: '#/components/schemas/DocumentSuggestion' }
+        truncated: { type: boolean }
+        limit: { type: integer }
+    CheckLinksRequest:
+      type: object
+      required: [body]
+      properties:
+        body: { type: string, description: the unsaved buffer; at most 1 MiB }
+        document_id:
+          type: string
+          description: >
+            The note being edited. Anchor-only links resolve to it, and anchors
+            into it are resolved against the submitted body rather than the
+            saved blocks.
+        collection_id: { type: string }
+    CheckedLink:
+      type: object
+      required: [raw_target, status, start_byte, end_byte, line, column]
+      properties:
+        raw_target: { type: string }
+        display_text: { type: string }
+        relation_type: { type: string }
+        source_format: { type: string }
+        anchor_type: { type: string }
+        anchor_value: { type: string }
+        status:
+          type: string
+          enum: [resolved, unresolved, ambiguous, external, invalid, stale_anchor]
+        target_document_id: { type: string }
+        target_resource_id: { type: string }
+        target_uri: { type: string }
+        canonical_target:
+          type: string
+          description: >
+            The URI a title- or filename-resolved link already points at, which
+            an editor may offer to substitute.
+        start_byte: { type: integer }
+        end_byte: { type: integer }
+        line: { type: integer }
+        column: { type: integer }
+    CheckLinksResponse:
+      type: object
+      required: [links, total, unresolved]
+      properties:
+        links:
+          type: array
+          items: { $ref: '#/components/schemas/CheckedLink' }
+        total: { type: integer, description: links in the whole buffer, even when the list was capped }
+        unresolved: { type: integer }
+        truncated: { type: boolean }
     GraphPathRequest:
       type: object
       required: [from, to]

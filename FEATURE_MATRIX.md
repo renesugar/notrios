@@ -67,7 +67,8 @@ This matrix keeps the long conversation compressed into implementation-sized fea
 | Preview sanitization | MVP | web UI | Sanitized Markdown/HTML; allow app routes/URIs carefully. |
 | Four-pane layout | Implemented | web UI | Accessible splitters and independent scrolling. |
 | Wails v3/mobile migration | Optional/research | GUI | Pre-release/experimental; real Android + desktop parity gate. |
-| CodeMirror 6 + unified migration | Planned v0.5 | web UI | For deeper AST/source-position behavior. |
+| Editor link intelligence | Implemented | web UI + service | v0.5 E5: `GET /api/v1/links/suggest` (bounded title autocomplete, IDs and titles only) and `POST /api/v1/links/check` (unsaved-buffer link resolution through the canonical extractor). The client shows a link picker that inserts a canonical URI at the caret and a located list of links that will not open; both degrade to nothing when the service is unreachable. In-editor underlines need source positions `md-editor-rt` does not expose — that is E6's input. |
+| CodeMirror 6 + unified migration | Planned v0.5 | web UI | For deeper AST/source-position behavior. E5 established the concrete gap: in-editor marker placement and caret position. |
 | Third-party native clients | Optional/research | separate client | Use stable REST/MCP. |
 
 ## Remote media, safety, and dedupe
