@@ -210,6 +210,40 @@ to the v0.6 organizer.
   spool, and `record_counts` became a pointer so `omitempty` actually applies —
   which cut packed verify peak RSS 41% and runtime 31%.
 
+## 2026-08-06 plan addition — E6a and E6b
+
+A user question ("does the editor render KaTeX?") turned into two plan tasks.
+Both were verified in a real browser rather than reasoned about.
+
+- **Math renders, but only online.** `$…$` and `$$…$$` produce KaTeX output —
+  3 `.katex` elements, `window.katex` an object. With the CDN blocked and a cold
+  cache: 0 elements, `window.katex` undefined, and the formula silently renders
+  as its raw LaTeX source. Code highlighting fails the same way.
+- Cause: `md-editor-rt` does not bundle KaTeX. Its default config points at
+  `https://unpkg.com/katex@0.16.33/...` and injects script/link tags at runtime.
+  Loading one note issued **13 requests to unpkg.com** — katex js/css + 3 fonts,
+  highlight.js + theme css, echarts, cropperjs js/css, prettier ×2.
+- That is inconsistent with the project's own posture: the service binds to
+  loopback, the media policy quarantines remote *images* and refuses to fetch a
+  byte during a static scan, and meanwhile the UI loads remote *executable
+  JavaScript* unconditionally, in the desktop app too. Recorded as **E6a**,
+  including a CSP from the service so a regression is prevented rather than
+  merely tested.
+- **Corrected a user inference worth recording**: the dead `remark`/`rehype`
+  dependencies do *not* mean links go unrendered. Verified in the browser —
+  Markdown links render, `document://` gets `data-app-uri` and is intercepted,
+  external links get `target=_blank rel=noreferrer`, Markdown and pasted HTML
+  tables both render as tables, and `<script>`/`on*`/`style` are stripped.
+  Rendering is markdown-it; sanitization is Notrios' own `normalizePreviewHTML`
+  passed as the `sanitize` prop. `rehype-sanitize` is not involved and could not
+  be. Recorded in `UI_DESIGN.md` so the inference does not recur.
+- **E6b** added for HTML-table-to-Markdown conversion on paste. The argument is
+  not cosmetic: a pasted table renders fine but stays raw HTML in the note
+  source, so `markdownblocks` sees paragraphs, `markdownlinks` misses `<a href>`
+  inside it, and a publication handoff carries raw HTML downstream. Simple
+  tables only; anything with spans or nested blocks pastes unchanged rather than
+  being mangled.
+
 ## 2026-08-06 E6 — CodeMirror decision: stay
 
 - The task's premise was false and finding that out was the task.

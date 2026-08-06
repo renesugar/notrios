@@ -1,7 +1,9 @@
 # Plan: v0.5 — Better editing, blocks, and graph UX
 
 Status: **active. Drafted 2026-08-05 from `ROADMAP.md` after v0.4 completed.
-E1, E1a, E1b, E2, E3, E4, E5, and E6 are complete; E7–E9 require user approval.**
+E1, E1a, E1b, E2, E3, E4, E5, and E6 are complete. E6a and E6b were added
+2026-08-06 from what E6 measured and from a user question about math rendering;
+they and E7–E9 require user approval.**
 
 v0.4 is complete and archived under `plans/v0.4/`, including a copy of its own
 plan at `plans/v0.4/000-v0.4-plan.md`. Its one deferral, P6 (the `movenotes-v3`
@@ -345,6 +347,91 @@ names their language, so they cost distribution size rather than first paint —
 not enough to justify re-implementing the preview, sanitizer, toolbar, upload,
 and theming that work today.
 
+### E6a. Offline-first frontend assets
+
+**A defect found while measuring E6, not a feature.** Notrios binds to loopback
+by default, quarantines remote *images* behind a media policy, and refuses to
+fetch a byte during a static media scan. Meanwhile the frontend loads remote
+**executable JavaScript** from a third-party CDN, unconditionally, on every
+launch — including inside the Wails desktop app.
+
+Measured: opening one note issues thirteen requests to `unpkg.com` — six
+external scripts and three stylesheets, plus three KaTeX fonts.
+
+| Loaded from unpkg.com | Used by Notrios? |
+|---|---|
+| `katex.min.js` + css + 3 fonts | yes — `$…$` and `$$…$$` render through it |
+| `highlight.min.js` + theme css | yes — every fenced code block |
+| `echarts.min.js` | no |
+| `cropper.min.js` + css | only the image-crop dialog |
+| `prettier/standalone.js` + markdown plugin | no |
+
+With the CDN blocked and a cold cache, `window.katex` is `undefined`, no
+`.katex` element is produced, and a formula silently renders as its raw LaTeX
+source. Code blocks lose highlighting the same way. No error, no placeholder.
+
+`md-editor-rt` does not bundle these: its default config points at
+`https://unpkg.com/...` and injects `<script>`/`<link>` tags at runtime. It
+accepts local instances instead, which is the fix.
+
+- Supply local `katex` and `highlight.js` instances through
+  `config({ editorExtensions: … })`, and declare both as direct dependencies
+  pinned to the installed versions — with the same duplicate check E6 used,
+  because a second copy of a library is a runtime failure rather than a size
+  regression.
+- Turn off what Notrios does not use: `noEcharts`, `noPrettier` (`noMermaid` is
+  already off). Decide cropper deliberately — localize it or drop the crop
+  dialog; do not leave it fetching.
+- Remove `remark-gfm`, `remark-math`, `rehype-katex`, and `rehype-sanitize` from
+  `web/package.json`. They are declared and imported nowhere, and they cannot be
+  plugged into `md-editor-rt`, which renders through markdown-it. Preview
+  sanitization is already Notrios' own `normalizePreviewHTML` passed as the
+  `sanitize` prop.
+- Add the regression guard that makes this stay fixed: a test asserting **zero
+  external requests** on a note load, and a `Content-Security-Policy` from the
+  service restricting `script-src`/`style-src`/`font-src` to `'self'`. A test
+  catches a regression; the header prevents one.
+- Record the bundle cost honestly — KaTeX and highlight.js move roughly 300 kB
+  of JavaScript plus fonts into the distribution, against removing every
+  external request and making math and highlighting work offline.
+
+Working state: a note containing `$E = mc^2$` and a fenced code block renders
+identically with the network unplugged, the page issues no third-party request,
+and the CSP would reject one if a future change tried.
+
+### E6b. Paste normalization: HTML tables to Markdown
+
+Pasting an HTML table into the editor works today in the sense that the preview
+renders it — raw HTML is enabled and Notrios' sanitizer strips scripts, event
+handlers, and inline styles. What lands in the **note source** is still raw
+HTML, and that is where the cost sits:
+
+- `internal/markdownblocks` sees the table as paragraphs, so nothing in it is
+  block-addressable;
+- `internal/markdownlinks` does not extract `<a href>` inside HTML, so those
+  links are invisible to the graph, to lint, and to `notriosctl fix`;
+- a publication handoff carries the raw HTML downstream to `movenotes-v3`,
+  Obsidian, and Quartz, which is the least portable thing a note can contain.
+
+Converting on paste puts the content in the format the rest of the system
+already understands.
+
+- Handle `paste` on the editor through the CodeMirror `domEventHandlers` E6
+  established. When the clipboard offers `text/html` containing a table,
+  convert it to a Markdown pipe table.
+- Convert **simple tables only**: rectangular, no `colspan`/`rowspan`, no nested
+  tables, no block elements inside cells. Anything else pastes unchanged —
+  a mangled table is worse than an HTML one, and refusing is the same rule E3's
+  fix and P7's rewriter follow for a span they cannot place.
+- Parse to text; never re-emit HTML and never execute anything. Escape `|` in
+  cell content and preserve inline links as Markdown.
+- Keep it client-side and small. A server-side HTML-to-Markdown converter for
+  importers is a different feature and is not in scope.
+
+Working state: pasting a simple HTML table produces a Markdown table whose
+blocks and links the rest of the system can see; a complex table pastes exactly
+as it arrived; and no pasted markup is executed at any point.
+
 ### E7. Embedded query blocks
 
 - Render a fenced `note-query` block from the Q1 expression language plus a
@@ -437,8 +524,12 @@ GUI-affecting tasks also build with `make gui`, and layout changes run
   revision-preconditioned.** Every fix writes an ordinary revision against a
   precondition for one note; anything bulk belongs to the v0.6 organizer, and
   E3 may not grow a multi-note apply path.
-- E1, E1a, E1b, E2, E3, E4, E5, and E6 are complete; the remaining tasks are
-  not approved.
+- E1, E1a, E1b, E2, E3, E4, E5, and E6 are complete; the remaining tasks,
+  including the E6a/E6b additions, are not approved.
+- **Resolved 2026-08-06 by measurement, not by choice: the frontend is not
+  offline-capable.** Math and syntax highlighting load from `unpkg.com` at
+  runtime and fail silently without it. E6a fixes it; until then, "local-first"
+  is true of the service and not of the UI.
 - **Resolved 2026-08-06: heading anchors in stable links use a slug, not
   percent-encoded heading text.** Obsidian percent-encodes the heading name into
   its URI; Notrios keeps P5's refusal to decode percent-escapes, so the URI form

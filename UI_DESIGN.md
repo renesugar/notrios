@@ -83,6 +83,31 @@ highlighting and which contributes 113 lazy chunks totalling 1.32 MB. Those load
 only when a fenced block names their language, so they cost distribution size
 rather than first paint.
 
+## What the preview renders today (verified 2026-08-06)
+
+Recorded because the dead `remark`/`rehype` dependencies invite the wrong
+inference. They are unused, and nothing depends on them: `md-editor-rt` renders
+through **markdown-it**, not unified.
+
+Checked in a real browser against a note containing each case:
+
+| Input | Result |
+|---|---|
+| `[text](document://…)` | `<a data-app-uri="document://…" href="#">`, click intercepted and routed |
+| `[text](https://…)` | `<a target="_blank" rel="noreferrer">` |
+| Markdown pipe table | rendered as a `<table>` |
+| Pasted raw `<table>` HTML | rendered as a `<table>` — raw HTML is enabled |
+| `<script>`, `onerror=`, `style=` | removed |
+
+Sanitization is Notrios' own `normalizePreviewHTML` (DOMParser-based), passed to
+`md-editor-rt` as its `sanitize` prop, on top of that library's built-in `xss`.
+`rehype-sanitize` is not involved and could not be: it belongs to a unified
+pipeline this application does not run.
+
+**The frontend is not offline-capable**, and that is a defect rather than a
+design choice. Math and syntax highlighting are fetched from `unpkg.com` at
+runtime and fail silently without it. See `PLAN.md` E6a.
+
 ## Required behavior (carried over from the web-UI MVP)
 
 - Create, edit, save, and search Markdown notes.
