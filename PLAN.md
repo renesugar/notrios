@@ -237,9 +237,23 @@ and refuses when the note changed under it.
 
 ### E4. Graph traversal, paths, and visualization data
 
+A document reconciliation before this slice (see "Document reconciliation
+2026-08-06" below) found the concrete defect E4 has to fix first: **`depth` is
+accepted and silently ignored.** `POST /api/v1/graph` declares `depth` in
+`api/openapi.yaml` (minimum 0, maximum 5, default 1) and carries it through
+`internal/api.GraphRequest` into `store.GraphRequest`, and `store.Graph` never
+reads the field — every graph slice is the roots' immediate neighbours. The same
+schema declares `max_nodes: 250` and `max_edges: 500` while the store defaults
+are 100 and 200. A request that asks for depth 3 gets depth 1 with no warning,
+which is worse than a refusal: the caller cannot tell a shallow graph from a
+small one.
+
 - Extend the graph slice into bounded traversal: neighbors at depth N, shortest
   path between two notes, and orphan/hub reports, all with explicit node and
   edge ceilings and a documented refusal when a request would exceed them.
+- Honour `depth` or reject it. Reconcile the OpenAPI bounds and defaults with
+  the store's in the same change, so the declared contract and the implemented
+  one are the same contract.
 - Keep it in SQLite. LadybugDB stays a research option and does not become a
   dependency for this milestone.
 - Return data a client can render; do not put layout in the service.
@@ -314,6 +328,33 @@ rename reports exactly what it will touch before touching it.
 
 Working state: documentation matches implementation and v0.5 release checks
 pass.
+
+## Document reconciliation 2026-08-06
+
+Every living document was compared with the source tree before E4 started. Six
+findings, five of them stale claims and one a real gap between a declared API
+and its implementation:
+
+1. `README.md`, `ROADMAP.md`, and `CONTEXT_MAP.md` all called v0.5 "unstarted"
+   after five of its slices had shipped and been archived under `plans/v0.5/`.
+   Corrected to "in progress"/"active" with the completed slices named.
+2. `DATABASE_SCHEMA.md` said `migrations/0001_initial.sql` "creates through
+   schema version **14**" while the same sentence's parenthetical already listed
+   v15 and both migration copies end at `PRAGMA user_version = 15`. Corrected.
+3. `agent/PLAN_STATUS.md` said "the schema is v13" in its active-milestone
+   section, contradicting both its own working-state facts and
+   `store.CurrentSchemaVersion = 15`. Corrected, with the v14/v15 provenance.
+4. `README.md` listed committed evidence only through `performance/v0.4-p1/`
+   and `performance/v0.4-p4/`; `v0.4-p5/`, `v0.4-p7/`, `v0.4-q1/`, and the three
+   `v0.5-*` directories also exist. Corrected.
+5. `POST /api/v1/graph` accepts `depth` and never uses it, and its OpenAPI
+   node/edge defaults disagree with the store's. Recorded in E4 above rather
+   than patched in isolation, because honouring `depth` *is* E4.
+
+Nothing else disagreed. The REST route table, the eleven lint check names, the
+MCP tool list, the blocks response fields, and the archive-v2 CLI surface all
+match their documents, and `api/openapi.yaml` already carries the E1 blocks and
+E2 lint routes.
 
 ## Baseline validation
 

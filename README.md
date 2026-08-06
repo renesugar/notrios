@@ -82,8 +82,12 @@ Recoll availability, backlog, sync/index, and reconciliation state.
   Ubuntu protocol handler, and reviewed publication profiles that emit a
   sanitized subset handoff. P6, the movenotes-v3 compatibility bridge, is
   deferred to v0.7.
-- Current milestone: v0.5 editing, blocks, and graph UX — drafted and unstarted;
-  see
+- Current milestone: v0.5 editing, blocks, and graph UX — **in progress**.
+  Addressable blocks (E1), heading anchors in stable links (E1a),
+  scheme-scoped anchor decoding (E1b), workspace lint (E2), and workspace fix
+  (E3) are complete and archived under `plans/v0.5/`; the remaining tasks
+  (graph traversal, editor link intelligence, the CodeMirror decision, query
+  blocks, organizer UX, and the release wrap-up) are drafted. See
   [`PLAN.md`](PLAN.md) and [`ROADMAP.md`](ROADMAP.md).
 - Agent progress/attempt tracking: [`agent/PLAN_STATUS.md`](agent/PLAN_STATUS.md), [`agent/ATTEMPT_LOG.jsonl`](agent/ATTEMPT_LOG.jsonl), and [`agent/MODEL_LOG.jsonl`](agent/MODEL_LOG.jsonl).
 
@@ -133,7 +137,9 @@ The collection scale profile accepts `10000`, `100000`, or `500000`; Joplin
 accepts `100`, `10000`, or `100000`; Obsidian also accepts `500000`; Recoll
 accepts `100` or `100000`. Committed reference evidence is under
 `performance/v0.3-h7/` through `performance/v0.3-h10/` and
-`performance/v0.4-j2/` through `performance/v0.4-p1/`. See `PACKAGING.md`,
+`performance/v0.4-j2/` through `performance/v0.4-p7/`; the v0.5 block, heading,
+and lint profiles are under `performance/v0.5-e1/`, `performance/v0.5-e1a/`,
+and `performance/v0.5-e2/`. See `PACKAGING.md`,
 `SECURITY_REVIEW.md`, and `RELEASE_CHECKLIST.md` before tagging a release.
 Archive-v2 evidence, including the attachment-bearing round trip, is under
 `performance/v0.4-p3/` through `performance/v0.4-p4/`.

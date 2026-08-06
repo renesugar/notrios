@@ -89,7 +89,7 @@ The built-in Go/Wails GUI is part of the first released version, so it lives her
   current notes. SQLite FTS5 and Recoll must compile the same bounded expression
   tree and must not silently approximate unsupported operators.
 
-## v0.5 — Better editing and graph UX (drafted in `PLAN.md`; unstarted)
+## v0.5 — Better editing and graph UX (active in `PLAN.md`)
 
 - Consider migration from `React + md-editor-rt` to `React + CodeMirror 6 + unified/remark/rehype` if deeper editor-pane behavior is needed.
 - Rich link autocomplete.
@@ -219,5 +219,6 @@ The scaffold handoff is complete; see `CODING_CLIENT_HANDOFF.md`. Future roadmap
 
 The v0.1 MVP, v0.2 redesign, and v0.3 hardening milestones are implemented and
 archived, and so is v0.4: J1–J3, Q1, P1, P2, P3, P3a, P3b, P4, P5, P7, and P8
-are under `plans/v0.4/`, with P6 deferred to v0.7 slice 3. The v0.5 plan is
-drafted in `PLAN.md` and unstarted.
+are under `plans/v0.4/`, with P6 deferred to v0.7 slice 3. v0.5 is active in
+`PLAN.md`: E1, E1a, E1b, E2, and E3 are archived under `plans/v0.5/` and the
+remaining tasks are drafted.

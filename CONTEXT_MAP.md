@@ -5,7 +5,8 @@ This file is the codebase atlas. Update it whenever major files or directories a
 ## Root documents
 
 - `README.md` — project overview and quick start.
-- `PLAN.md` — drafted, unstarted v0.5 editing/blocks/graph plan. v0.4 is
+- `PLAN.md` — the active v0.5 editing/blocks/graph plan. E1, E1a, E1b, E2, and
+  E3 are complete and archived under `plans/v0.5/`; the rest is drafted. v0.4 is
   complete and archived under `plans/v0.4/`, including its own plan copy at
   `plans/v0.4/000-v0.4-plan.md`.
 - `plans/scaffold/SCAFFOLD_CREATION_PLAN.md` — process for creating/refining this scaffold.

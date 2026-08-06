@@ -7,7 +7,8 @@ Updated: 2026-08-05
 **v0.4 is complete.** J1–J3, Q1, P1, P2, P3, P3a, P3b, P4, P5, P7, and P8 are
 archived under `plans/v0.4/`, together with a copy of the milestone plan at
 `plans/v0.4/000-v0.4-plan.md`. P6, the `movenotes-v3` compatibility bridge, is
-deferred to v0.7 slice 3. Product version is 0.4.0 and the schema is v13.
+deferred to v0.7 slice 3. Product version is 0.4.0; the schema was v13 when v0.4
+closed and is now **v15** (E1 added v14 blocks, E1a added v15 heading slugs).
 
 `PLAN.md` holds the **v0.5 plan** (blocks, lint/fix, graph traversal, editor
 link intelligence, query blocks, organizer UX). **E1, E1a, E1b, E2, and E3 are complete**;
@@ -207,6 +208,20 @@ to the v0.6 organizer.
 - Export deduplication became symmetric across layouts through the same bounded
   spool, and `record_counts` became a pointer so `omitempty` actually applies —
   which cut packed verify peak RSS 41% and runtime 31%.
+
+## 2026-08-06 document reconciliation
+
+- Compared every living document with the source tree before starting E4.
+  Corrected three "v0.5 is unstarted" claims (`README.md`, `ROADMAP.md`,
+  `CONTEXT_MAP.md`), two stale schema numbers (`DATABASE_SCHEMA.md` said the
+  migration creates through v14, this file said the schema is v13; both are v15),
+  and the evidence listing in `README.md`.
+- Found one real API/implementation gap and recorded it in `PLAN.md` E4 rather
+  than patching it separately: `POST /api/v1/graph` accepts `depth` and
+  `store.Graph` never reads it, so every graph slice is depth 1, and the OpenAPI
+  node/edge defaults (250/500) disagree with the store's (100/200).
+- Everything else matched: REST routes, the eleven lint check names, the MCP
+  tool list, the blocks response fields, and the archive-v2 CLI surface.
 
 ## 2026-08-06 E1b — scheme-scoped anchor decoding
 

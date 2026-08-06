@@ -83,7 +83,7 @@ invalidates the canonical note save.
 ## MVP migration file
 
 `migrations/0001_initial.sql` has grown with each milestone and now creates
-through schema version **14** (v5 notebooks/tags/search notebooks, v6 source
+through schema version **15** (v5 notebooks/tags/search notebooks, v6 source
 provenance, v7 media policy, v8 resource retention, v9 scalable keyset indexes,
 v10 resumable import state/source bundles, v11 projection retry scheduling, v12
 logical database/replica identity, v13 restore state, v14 note blocks, v15
