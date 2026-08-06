@@ -43,6 +43,15 @@
     note, and no multi-note apply path is added. Bulk operations belong to the
     v0.6 organizer, which has its own atomic/best-effort contract. Decided
     2026-08-05 for v0.5 E2/E3.
+19. Heading anchors in stable links are slugs. Obsidian addresses a heading by
+    its text, percent-encoded into the URI (`file=Note%23Heading`); Notrios
+    keeps P5's decision that the stable-link parser refuses percent-escapes
+    rather than decoding them, because an identifier needing escapes is not one
+    this application minted and decoding lets two spellings name one target. A
+    `notrios://` heading anchor is therefore the slug, and resolution normalizes
+    heading text to the same slug so hand-written and imported anchors agree.
+    Slugs are disambiguated by occurrence within a note. Decided 2026-08-06 for
+    v0.5 E1a.
 
 ## Deferred decisions
 

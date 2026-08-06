@@ -35,7 +35,7 @@ This matrix keeps the long conversation compressed into implementation-sized fea
 | Backlinks/outgoing links | MVP | graph service | Store source positions and link context when possible. |
 | Resource manifest | MVP | resource service | List embedded/attached resources for a note. |
 | Attachment download | MVP | REST/UI | Preview links to resources must download/open local resource content. |
-| Block anchors | Implemented | parser/graph | Schema-v14 `document_blocks` with content-derived identity, `GET /api/v1/documents/{id}/blocks`, per-block backlink counts, and block-anchor resolution for `document://` and `notrios://` links. Authored `^markers` outrank derived IDs. |
+| Block and heading anchors | Implemented | parser/graph | Schema-v14 `document_blocks` with content-derived identity plus schema-v15 heading slugs. `GET /api/v1/documents/{id}/blocks`, per-anchor backlink counts, and anchor resolution for `document://` and `notrios://` links: precedence is authored `^marker`, then block ID, then heading slug. Heading text normalizes to the slug; a stable link carries no percent-escapes. |
 | PDF page-level resources | Optional/research | extraction adapter | Separate page text/image/figures when needed. |
 | Graph paths/centrality/community detection | Planned v0.5 | graph service | SQLite first; LadybugDB optional later. |
 
@@ -100,7 +100,7 @@ This matrix keeps the long conversation compressed into implementation-sized fea
 | Quartz and scalable archive site | External integration | movenotes-v3/Ledger | Obsidian/Quartz for subsets; Hugo/Ledger+Bluge for large libraries. |
 | Publishing dry run | Implemented | planner/UI | `publish plan` and `POST /api/v1/selection/plan` report included/excluded notes, resources, link decisions, metadata stripping, and warnings before anything is written. |
 | Foam-style query blocks | Planned v0.5 | query service/UI | No arbitrary SQL/JS. |
-| Workspace lint | Implemented | maintenance service | Ten read-only checks through `notriosctl lint` and `GET /api/v1/admin/lint/report`; complete counts with capped examples, a library-wide digest, and content-free findings. |
+| Workspace lint | Implemented | maintenance service | Eleven read-only checks through `notriosctl lint` and `GET /api/v1/admin/lint/report`; complete counts with capped examples, a library-wide digest, and content-free findings. |
 | Workspace fix | Planned v0.5 | maintenance service | E3: single-note, revision-preconditioned, dry-run first. |
 | Outline API | Implemented | document parser | Headings/line anchors; v0.5 E1 adds the block model underneath. |
 | Hierarchical tag rename | Planned v0.5 | maintenance service | Dry-run first. |

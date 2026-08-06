@@ -242,7 +242,7 @@ Link records preserve source syntax, raw target, normalized target URI, source p
 
 `GET /api/v1/documents/{document_id}/blocks` (v0.5 E1) lists a note's
 addressable blocks in document order: ID, kind, heading level, authored marker,
-content hash, byte range, and incoming block-anchor count. Block IDs are derived
+heading slug, content hash, byte range, and incoming anchor count. Block IDs are derived
 from block text, so an ID names exactly the content it was written against. The
 response carries no block text — a caller that wants content reads the body,
 which is already an authorized read. Blocks per note are bounded by the parser,
@@ -256,9 +256,12 @@ routing decision made by the profile registry, not by an HTTP caller. The
 response status is `resolved`, `trashed`, `stale_target`, `stale_anchor`, or
 `foreign_database`; document fields are populated only when this database can
 open the link, so a foreign link never reveals whether that ID exists locally.
-A link carrying an anchor also resolves the block: `stale_anchor` means the note
-is here but the block is not, which is the visible consequence of content-based
-block identity, and the note is still named so a client can offer to open it.
+A link carrying an anchor also resolves it: `#^marker`/`#^block-id` name a
+block, a bare `#section-title` names a heading by slug, and heading text is
+normalized to the same slug. Precedence is marker, then block ID, then heading
+slug. `stale_anchor` means the note is here but the block or heading is not —
+the visible consequence of content-based block identity and slug-following
+headings — and the note is still named so a client can offer to open it.
 Malformed URIs return `400 validation_failed`.
 
 A `notrios://` link inside a note body is a first-class link record: naming this

@@ -330,10 +330,31 @@ path over a bounded sample, and anchor/listing lookups against a synthetically
 filled block table so index behaviour is measured at real row counts rather
 than at sample size. Evidence: `performance/v0.5-e1/`.
 
+### Heading anchors (v0.5 E1a)
+
+Parser fixtures cover slug derivation — punctuation, Unicode, snake case,
+repeated spaces, length bound, and headings that slug to nothing — plus
+occurrence disambiguation and the fact that renaming a heading changes both its
+slug and its block ID. Store fixtures assert that only headings carry slugs,
+that a slug and the heading's text resolve to the same block, that a renamed
+heading stops resolving, that precedence is marker before block ID before slug,
+and that backlink counts fold both spellings onto one heading. A migration
+fixture takes a v14 database to v15 without losing block rows, without inventing
+slugs for rows it did not parse, and fills them in on rebuild. REST fixtures
+cover the exposed slug and the `stale_anchor` a renamed heading produces; a CLI
+fixture builds the real binary and checks `link --anchor` by slug, by heading
+text, and by marker, that an unresolvable anchor is refused rather than printed,
+and that the anchored link opens end to end.
+
+One fixture records real Markdown behaviour rather than assumed behaviour: a
+space ends an unquoted URL, so `[x](document://…#Install & Setup)` truncates at
+the space and the heading-text spelling belongs in a wikilink. That is why a
+stable link carries the slug.
+
 ### Workspace lint (v0.5 E2)
 
-One fixture carries a single instance of every detectable problem alongside
-healthy content, and asserts both that each check finds its own problem and that
+One fixture carries a single instance of every detectable problem — including a
+heading anchor that no longer resolves — alongside healthy content, and asserts both that each check finds its own problem and that
 the healthy note and referenced resource appear in no check. Further fixtures
 assert that findings carry no note content, that lint is deterministic and
 writes no revision, that the detail cap hides examples without changing counts

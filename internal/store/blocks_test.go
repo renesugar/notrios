@@ -206,3 +206,129 @@ func TestListDocumentBlocksRejectsUnknownDocuments(t *testing.T) {
 		t.Fatalf("expected ErrNotFound, got %v", err)
 	}
 }
+
+const headingBody = "# Getting Started\n\nIntro paragraph.\n\n## Install & Setup\n\nSteps.\n\n## Getting Started\n\nRepeat heading.\n"
+
+func TestHeadingBlocksStoreSlugs(t *testing.T) {
+	ctx := context.Background()
+	st := blockTestStore(t)
+	doc, err := st.CreateDocument(ctx, CreateDocumentRequest{Title: "Headings", Body: headingBody})
+	if err != nil {
+		t.Fatal(err)
+	}
+	blocks, err := st.ListDocumentBlocks(ctx, doc.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	slugs := map[string]string{}
+	for _, block := range blocks {
+		if block.Kind == "heading" {
+			slugs[block.HeadingSlug] = block.ID
+		} else if block.HeadingSlug != "" {
+			t.Fatalf("only headings carry slugs: %+v", block)
+		}
+	}
+	for _, want := range []string{"getting-started", "install-setup", "getting-started-1"} {
+		if slugs[want] == "" {
+			t.Fatalf("missing slug %q: %+v", want, slugs)
+		}
+	}
+}
+
+// A heading anchor may arrive slugged (what a stable link carries) or as the
+// heading's text (what Obsidian writes and the importer preserves). Both must
+// reach the same heading.
+func TestFindDocumentBlockResolvesHeadingAnchorsEitherSpelling(t *testing.T) {
+	ctx := context.Background()
+	st := blockTestStore(t)
+	doc, err := st.CreateDocument(ctx, CreateDocumentRequest{Title: "Headings", Body: headingBody})
+	if err != nil {
+		t.Fatal(err)
+	}
+	bySlug, err := st.FindDocumentBlock(ctx, doc.ID, "install-setup")
+	if err != nil {
+		t.Fatal(err)
+	}
+	byText, err := st.FindDocumentBlock(ctx, doc.ID, "Install & Setup")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if bySlug.ID != byText.ID || bySlug.Kind != "heading" {
+		t.Fatalf("spellings disagree: %+v vs %+v", bySlug, byText)
+	}
+
+	// Renaming the heading breaks the anchor rather than silently pointing at
+	// whatever now occupies that position.
+	if _, err := st.UpdateDocument(ctx, UpdateDocumentRequest{
+		ID: doc.ID, Title: "Headings", Body: "# Getting Started\n\nIntro paragraph.\n\n## Installation\n\nSteps.\n",
+		BaseRevisionID: mustCurrentRevision(t, st, doc.ID),
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := st.FindDocumentBlock(ctx, doc.ID, "install-setup"); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("a renamed heading must stop resolving: %v", err)
+	}
+	if _, err := st.FindDocumentBlock(ctx, doc.ID, "installation"); err != nil {
+		t.Fatalf("the new heading should resolve: %v", err)
+	}
+}
+
+// An author-written marker outranks a heading slug: precedence is marker, then
+// block ID, then slug.
+func TestAnchorPrecedenceIsMarkerThenIDThenSlug(t *testing.T) {
+	ctx := context.Background()
+	st := blockTestStore(t)
+	// A paragraph whose marker is spelled exactly like the heading's slug.
+	doc, err := st.CreateDocument(ctx, CreateDocumentRequest{
+		Title: "Precedence",
+		Body:  "# Summary\n\nThe paragraph the author named. ^summary\n",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	resolved, err := st.FindDocumentBlock(ctx, doc.ID, "summary")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resolved.Kind != "paragraph" || resolved.Marker != "summary" {
+		t.Fatalf("the author's marker must win over a heading slug: %+v", resolved)
+	}
+}
+
+func TestBacklinkCountsIncludeHeadingAnchors(t *testing.T) {
+	ctx := context.Background()
+	st := blockTestStore(t)
+	target, err := st.CreateDocument(ctx, CreateDocumentRequest{PreferredID: "doc_headings", Title: "Headings", Body: headingBody})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Two spellings of the same anchor. The slug form works in a Markdown link;
+	// the heading-text form needs a wikilink, because in Markdown a space ends
+	// an unquoted URL — which is part of why a stable link carries the slug.
+	body := "[slugged](" + target.URI + "#install-setup)\n\n[[Headings#Install & Setup]]\n"
+	if _, err := st.CreateDocument(ctx, CreateDocumentRequest{Title: "Source", Body: body}); err != nil {
+		t.Fatal(err)
+	}
+	blocks, err := st.ListDocumentBlocks(ctx, target.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, block := range blocks {
+		if block.HeadingSlug == "install-setup" {
+			if block.Backlinks != 2 {
+				t.Fatalf("both spellings should count against one heading: %+v", block)
+			}
+			return
+		}
+	}
+	t.Fatal("heading not found")
+}
+
+func mustCurrentRevision(t *testing.T, st *SQLiteStore, documentID string) string {
+	t.Helper()
+	document, err := st.GetDocument(context.Background(), documentID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return document.CurrentRevisionID
+}

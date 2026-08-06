@@ -32,11 +32,11 @@ const (
 	// database. Nothing local is looked up, because document IDs are unique
 	// per database rather than globally.
 	StableLinkForeignDatabase = "foreign_database"
-	// StableLinkStaleAnchor means the note is here but the block the anchor
-	// names is not. Block identity is content-based, so editing a block's text
-	// mints a new ID and breaks anchors into it; a reader deserves to be told
-	// that rather than being dropped at the top of a note that no longer
-	// contains what the link pointed at.
+	// StableLinkStaleAnchor means the note is here but the block or heading the
+	// anchor names is not. Block identity is content-based and a heading slug
+	// follows its text, so editing either breaks anchors into it; a reader
+	// deserves to be told that rather than being dropped at the top of a note
+	// that no longer contains what the link pointed at.
 	StableLinkStaleAnchor = "stale_anchor"
 )
 

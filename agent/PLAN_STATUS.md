@@ -10,7 +10,7 @@ archived under `plans/v0.4/`, together with a copy of the milestone plan at
 deferred to v0.7 slice 3. Product version is 0.4.0 and the schema is v13.
 
 `PLAN.md` holds the **v0.5 plan** (blocks, lint/fix, graph traversal, editor
-link intelligence, query blocks, organizer UX). **E1 and E2 are complete**; E3–E9
+link intelligence, query blocks, organizer UX). **E1, E1a, and E2 are complete**; E3–E9
 require user approval. Two v0.5 decisions are settled and recorded as
 `PROJECT_DECISIONS.md` 17 and 18: block identity is strictly content-based, and
 lint/fix stays single-note and revision-preconditioned with anything bulk left
@@ -207,6 +207,37 @@ to the v0.6 organizer.
 - Export deduplication became symmetric across layouts through the same bounded
   spool, and `record_counts` became a pointer so `omitempty` actually applies —
   which cut packed verify peak RSS 41% and runtime 31%.
+
+## 2026-08-06 E1a — heading anchors in stable links
+
+- Schema v15 `document_blocks.heading_slug` with a partial index. A heading
+  anchor now has something to compare against, which is what E2 said was
+  missing.
+- Obsidian's model was checked against its own documentation: headings by text,
+  blocks by `^id`, both usable in `obsidian://open` with percent-encoded
+  anchors. Notrios takes the model but not the encoding — P5 refuses
+  percent-escapes, so a stable link carries the slug and resolution normalizes
+  heading text to it. Recorded as `PROJECT_DECISIONS.md` 19.
+- Two claims in the prompt's source material could not be verified and were not
+  relied on: an Alt/Option "Copy obsidian URI" menu item, and `heading=`/`block=`
+  parameters in the Advanced URI plugin.
+- Precedence is author marker, then block ID, then heading slug. Repeated
+  headings are disambiguated (`notes`, `notes-1`); a heading that slugs to
+  nothing gets no slug rather than an invented one.
+- The `unresolved_heading_anchor` lint check is restored. It runs in Go rather
+  than SQL — matching an anchor means slugifying it with the parser's Unicode
+  rules — riding E2's single link scan with a bounded 512-document slug cache.
+- `notriosctl link --anchor` accepts a slug, heading text, a `^marker`, or a
+  block ID and refuses an anchor that does not resolve; `--list-anchors` shows
+  what a note offers.
+- A fixture taught a real Markdown rule worth documenting: a space ends an
+  unquoted URL, so `[x](…#Install & Setup)` truncates at the space and the
+  heading-text spelling belongs in a wikilink. Independent support for the slug
+  decision.
+- Cost at 100k notes: nothing measurable. Lint 3.20 s → 3.05 s, save 4.17 ms →
+  4.16 ms, database 114 MB unchanged, anchor resolution 0.276 → 0.404 ms p95 —
+  the last two within run noise and reported as measured. Evidence under
+  `performance/v0.5-e1a/`.
 
 ## 2026-08-05 E2 — workspace lint
 
@@ -411,8 +442,8 @@ attempt detail remains append-only in `agent/ATTEMPT_LOG.jsonl`.
 - Review base before this session: `26b0925`.
 - Project license: Apache-2.0.
 - Canonical store: SQLite plus content-addressed assets; FTS5/Recoll are derived.
-- Current schema: v14 (`store.CurrentSchemaVersion`). `migrations/0001_initial.sql`
-  now creates through v14, including the v13 `restore_state` table that
+- Current schema: v15 (`store.CurrentSchemaVersion`). `migrations/0001_initial.sql`
+  now creates through v15, including the v13 `restore_state` table that
   previously lived only in a shim; the `ensureSchemaVn` shims remain for
   upgrading older databases.
 - Unbounded local traversal uses `(updated_at, id)` or `(score, id)` keysets;
@@ -442,7 +473,7 @@ attempt detail remains append-only in `agent/ATTEMPT_LOG.jsonl`.
 - H11 local release gates pass; `docs/operations.md` is included in the
   docs site; P1/P2 expand it from 11 to 13 pages/Help notes with selection and
   archive-v2 safety guides.
-- Product version: 0.4.0; current schema: v14.
+- Product version: 0.4.0; current schema: v15.
 - Resource reference report:
   `GET /api/v1/resources/reports/reference` and
   `notriosctl resources report`.

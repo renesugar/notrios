@@ -21,12 +21,15 @@ import (
 // body in the same transaction as the save that produced them, and they never
 // outlive their document.
 type DocumentBlock struct {
-	ID            string
-	DocumentID    string
-	Ordinal       int
-	Kind          string
-	HeadingLevel  int
-	Marker        string
+	ID           string
+	DocumentID   string
+	Ordinal      int
+	Kind         string
+	HeadingLevel int
+	Marker       string
+	// HeadingSlug is the URI-safe name a `#section-title` anchor resolves
+	// against. Only heading blocks have one.
+	HeadingSlug   string
 	ContentSHA256 string
 	StartByte     int
 	EndByte       int
@@ -57,20 +60,22 @@ func (s *SQLiteStore) ListDocumentBlocks(ctx context.Context, documentID string)
 	if err != nil {
 		return nil, err
 	}
-	// A block anchor is written as either the author's marker or the derived
-	// ID, so a backlink count has to consider both spellings.
+	// An anchor can be written as the author's marker, the derived block ID, or
+	// a heading slug, so a backlink count has to consider all three.
 	counts, err := s.blockAnchorCountsLocked(documentID)
 	if err != nil {
 		return nil, err
 	}
 	for i := range blocks {
-		blocks[i].Backlinks = counts[blocks[i].ID] + counts[blocks[i].Marker]
+		// An anchor can be written three ways — the author's marker, the derived
+		// block ID, or a heading slug — and each of them names this block.
+		blocks[i].Backlinks = counts[blocks[i].ID] + counts[blocks[i].Marker] + counts[blocks[i].HeadingSlug]
 	}
 	return blocks, nil
 }
 
 func (s *SQLiteStore) listDocumentBlocksLocked(documentID string) ([]DocumentBlock, error) {
-	stmt, err := s.prepareLocked(`SELECT id, ordinal, kind, heading_level, COALESCE(marker, ''), content_sha256, start_byte, end_byte
+	stmt, err := s.prepareLocked(`SELECT id, ordinal, kind, heading_level, COALESCE(marker, ''), content_sha256, start_byte, end_byte, COALESCE(heading_slug, '')
 		FROM document_blocks WHERE document_id = ? ORDER BY ordinal`)
 	if err != nil {
 		return nil, err
@@ -98,16 +103,23 @@ func (s *SQLiteStore) listDocumentBlocksLocked(documentID string) ([]DocumentBlo
 			ContentSHA256: columnText(stmt, 5),
 			StartByte:     int(C.sqlite3_column_int(stmt, 6)),
 			EndByte:       int(C.sqlite3_column_int(stmt, 7)),
+			HeadingSlug:   columnText(stmt, 8),
 		})
 	}
 	return blocks, nil
 }
 
-// blockAnchorCountsLocked counts incoming block anchors by their written value.
+// blockAnchorCountsLocked counts incoming anchors by the name they resolve to.
+//
+// A heading anchor may be written as the heading's text or as its slug, so
+// heading values are normalized the same way resolution normalizes them;
+// otherwise `#Section Title` and `#section-title` would count as two different
+// anchors against one heading.
 func (s *SQLiteStore) blockAnchorCountsLocked(documentID string) (map[string]int, error) {
-	stmt, err := s.prepareLocked(`SELECT anchor_value, COUNT(*) FROM document_links
-		WHERE target_document_id = ? AND anchor_type = 'block' AND anchor_value IS NOT NULL AND anchor_value != ''
-		GROUP BY anchor_value`)
+	stmt, err := s.prepareLocked(`SELECT anchor_type, anchor_value, COUNT(*) FROM document_links
+		WHERE target_document_id = ? AND anchor_type IN ('block', 'heading')
+			AND anchor_value IS NOT NULL AND anchor_value != ''
+		GROUP BY anchor_type, anchor_value`)
 	if err != nil {
 		return nil, err
 	}
@@ -124,7 +136,11 @@ func (s *SQLiteStore) blockAnchorCountsLocked(documentID string) (map[string]int
 		if rc != C.SQLITE_ROW {
 			return nil, s.stepErrLocked(rc)
 		}
-		counts[columnText(stmt, 0)] = int(C.sqlite3_column_int(stmt, 1))
+		value := columnText(stmt, 1)
+		if columnText(stmt, 0) == "heading" {
+			value = markdownblocks.Slugify(value)
+		}
+		counts[value] += int(C.sqlite3_column_int(stmt, 2))
 	}
 	delete(counts, "")
 	return counts, nil
@@ -132,9 +148,11 @@ func (s *SQLiteStore) blockAnchorCountsLocked(documentID string) (map[string]int
 
 // FindDocumentBlock resolves an anchor value against one note's blocks.
 //
-// The author's own marker is tried first: it is a name the author wrote and it
-// survives edits to the block's text, which a content-derived ID deliberately
-// does not (PROJECT_DECISIONS.md 17). The derived ID is the fallback.
+// Precedence is marker, then block ID, then heading slug. The author's own
+// marker wins because it is a name the author wrote and it survives edits to
+// the block's text, which a content-derived ID deliberately does not
+// (PROJECT_DECISIONS.md 17). A heading slug comes last because it is the least
+// specific: it names a section rather than an exact piece of text.
 func (s *SQLiteStore) FindDocumentBlock(ctx context.Context, documentID, anchor string) (DocumentBlock, error) {
 	ctx = contextOrBackground(ctx)
 	if err := ctx.Err(); err != nil {
@@ -150,14 +168,20 @@ func (s *SQLiteStore) findDocumentBlockLocked(documentID, anchor string) (Docume
 	if documentID == "" || anchor == "" {
 		return DocumentBlock{}, fmt.Errorf("%w: a document ID and anchor are required", ErrInvalidInput)
 	}
-	stmt, err := s.prepareLocked(`SELECT id, ordinal, kind, heading_level, COALESCE(marker, ''), content_sha256, start_byte, end_byte
-		FROM document_blocks WHERE document_id = ? AND (marker = ? OR id = ?)
-		ORDER BY CASE WHEN marker = ? THEN 0 ELSE 1 END, ordinal LIMIT 1`)
+	// A heading anchor may arrive already slugged (`#section-title`, what a
+	// stable link carries) or as the heading's text (`#Section Title`, what
+	// Obsidian writes and what the importer preserves). Normalizing here means
+	// both spellings reach the same heading without the URI parser having to
+	// accept spaces or percent-escapes.
+	slug := markdownblocks.Slugify(anchor)
+	stmt, err := s.prepareLocked(`SELECT id, ordinal, kind, heading_level, COALESCE(marker, ''), content_sha256, start_byte, end_byte, COALESCE(heading_slug, '')
+		FROM document_blocks WHERE document_id = ? AND (marker = ? OR id = ? OR (heading_slug IS NOT NULL AND heading_slug = ?))
+		ORDER BY CASE WHEN marker = ? THEN 0 WHEN id = ? THEN 1 ELSE 2 END, ordinal LIMIT 1`)
 	if err != nil {
 		return DocumentBlock{}, err
 	}
 	defer C.sqlite3_finalize(stmt)
-	if err := bindAll(stmt, []string{documentID, anchor, anchor, anchor}); err != nil {
+	if err := bindAll(stmt, []string{documentID, anchor, anchor, slug, anchor, anchor}); err != nil {
 		return DocumentBlock{}, err
 	}
 	rc := C.sqlite3_step(stmt)
@@ -177,12 +201,14 @@ func (s *SQLiteStore) findDocumentBlockLocked(documentID, anchor string) (Docume
 		ContentSHA256: columnText(stmt, 5),
 		StartByte:     int(C.sqlite3_column_int(stmt, 6)),
 		EndByte:       int(C.sqlite3_column_int(stmt, 7)),
+		HeadingSlug:   columnText(stmt, 8),
 	}, nil
 }
 
 // RebuildDocumentBlocks re-derives one note's blocks without writing a
 // revision. Importers use it after a batch, and it is how a database upgraded
-// to schema v14 fills in blocks for notes nobody has edited since.
+// to schema v14/v15 fills in blocks and heading slugs for notes nobody has
+// edited since.
 func (s *SQLiteStore) RebuildDocumentBlocks(ctx context.Context, documentID string) error {
 	ctx = contextOrBackground(ctx)
 	if err := ctx.Err(); err != nil {
@@ -223,12 +249,41 @@ func (s *SQLiteStore) rebuildDocumentBlocksLocked(documentID, body string) error
 	for _, block := range markdownblocks.Extract(documentID, body) {
 		marker := block.Marker
 		if err := s.execPreparedLocked(`INSERT INTO document_blocks(
-			id, document_id, ordinal, kind, heading_level, marker, content_sha256, start_byte, end_byte
-		) VALUES(?, ?, ?, ?, ?, NULLIF(?, ''), ?, ?, ?)`,
+			id, document_id, ordinal, kind, heading_level, marker, content_sha256, start_byte, end_byte, heading_slug
+		) VALUES(?, ?, ?, ?, ?, NULLIF(?, ''), ?, ?, ?, NULLIF(?, ''))`,
 			block.ID, documentID, strconv.Itoa(block.Ordinal), block.Kind, strconv.Itoa(block.Level),
-			marker, block.ContentSHA256, strconv.Itoa(block.StartByte), strconv.Itoa(block.EndByte)); err != nil {
+			marker, block.ContentSHA256, strconv.Itoa(block.StartByte), strconv.Itoa(block.EndByte), block.Slug); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+// headingSlugsLocked returns one document's heading slugs. Blocks per note are
+// bounded by the parser, so this set is bounded by a note rather than by the
+// library.
+func (s *SQLiteStore) headingSlugsLocked(documentID string) (map[string]bool, error) {
+	stmt, err := s.prepareLocked(`SELECT heading_slug FROM document_blocks
+		WHERE document_id = ? AND heading_slug IS NOT NULL`)
+	if err != nil {
+		return nil, err
+	}
+	defer C.sqlite3_finalize(stmt)
+	if err := bindAll(stmt, []string{documentID}); err != nil {
+		return nil, err
+	}
+	slugs := map[string]bool{}
+	for {
+		rc := C.sqlite3_step(stmt)
+		if rc == C.SQLITE_DONE {
+			break
+		}
+		if rc != C.SQLITE_ROW {
+			return nil, s.stepErrLocked(rc)
+		}
+		if slug := columnText(stmt, 0); slug != "" {
+			slugs[slug] = true
+		}
+	}
+	return slugs, nil
 }

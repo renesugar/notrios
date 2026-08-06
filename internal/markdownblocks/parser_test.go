@@ -182,3 +182,69 @@ func byText(blocks []Block) map[string]Block {
 	}
 	return out
 }
+
+func TestSlugifyFollowsTheOrdinaryMarkdownRules(t *testing.T) {
+	cases := map[string]string{
+		"Section Title":            "section-title",
+		"  Padded  Heading  ":      "padded-heading",
+		"Punctuation: it's here!":  "punctuation-its-here",
+		"Already-Hyphenated":       "already-hyphenated",
+		"snake_case_heading":       "snake-case-heading",
+		"Multiple   Spaces":        "multiple-spaces",
+		"Ünïcode Ström":            "ünïcode-ström",
+		"日本語 見出し":                  "日本語-見出し",
+		"2026 Plans":               "2026-plans",
+		"-- leading and trailing -": "leading-and-trailing",
+	}
+	for text, want := range cases {
+		if got := Slugify(text); got != want {
+			t.Fatalf("Slugify(%q) = %q, want %q", text, got, want)
+		}
+	}
+	// A heading that slugs to nothing gets no slug rather than an invented one.
+	for _, text := range []string{"", "   ", "!!!", "🎉"} {
+		if got := Slugify(text); got != "" {
+			t.Fatalf("Slugify(%q) = %q, want empty", text, got)
+		}
+	}
+	long := strings.Repeat("a", MaxSlugBytes+50)
+	if got := Slugify(long); len(got) > MaxSlugBytes {
+		t.Fatalf("slug is %d bytes, limit %d", len(got), MaxSlugBytes)
+	}
+}
+
+func TestHeadingBlocksCarrySlugsAndRepeatsStayAddressable(t *testing.T) {
+	blocks := Extract("doc_a", "# Notes\n\nbody\n\n## Notes\n\nbody\n\n### Other\n\nbody\n")
+	headings := []Block{}
+	for _, block := range blocks {
+		if block.Kind == KindHeading {
+			headings = append(headings, block)
+		}
+	}
+	if len(headings) != 3 {
+		t.Fatalf("expected three headings, got %d", len(headings))
+	}
+	// Obsidian resolves a duplicate heading to the first match and offers no way
+	// to name the second; a numbered suffix keeps both addressable.
+	if headings[0].Slug != "notes" || headings[1].Slug != "notes-1" || headings[2].Slug != "other" {
+		t.Fatalf("slugs: %q %q %q", headings[0].Slug, headings[1].Slug, headings[2].Slug)
+	}
+	for _, block := range blocks {
+		if block.Kind != KindHeading && block.Slug != "" {
+			t.Fatalf("only headings carry slugs: %+v", block)
+		}
+	}
+}
+
+// A slug names a position in the document's outline; block identity stays
+// content-based. Renaming a heading changes both, which is the point.
+func TestHeadingSlugTracksTheHeadingText(t *testing.T) {
+	before := Extract("doc_a", "# Original Title\n\nbody\n")[0]
+	after := Extract("doc_a", "# Renamed Title\n\nbody\n")[0]
+	if before.Slug != "original-title" || after.Slug != "renamed-title" {
+		t.Fatalf("slugs: %q -> %q", before.Slug, after.Slug)
+	}
+	if before.ID == after.ID {
+		t.Fatal("renaming a heading must also mint a new block ID")
+	}
+}

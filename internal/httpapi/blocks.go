@@ -40,6 +40,7 @@ func toAPIBlocks(blocks []store.DocumentBlock) []api.DocumentBlock {
 			Kind:          block.Kind,
 			HeadingLevel:  block.HeadingLevel,
 			Marker:        block.Marker,
+			HeadingSlug:   block.HeadingSlug,
 			ContentSHA256: block.ContentSHA256,
 			StartByte:     block.StartByte,
 			EndByte:       block.EndByte,

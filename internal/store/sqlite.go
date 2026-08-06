@@ -167,6 +167,9 @@ func (s *SQLiteStore) Bootstrap(ctx context.Context) error {
 	if err := s.ensureSchemaV14(ctx); err != nil {
 		return err
 	}
+	if err := s.ensureSchemaV15(ctx); err != nil {
+		return err
+	}
 	if err := s.ensureDatabaseIdentity(ctx); err != nil {
 		return err
 	}
@@ -477,6 +480,28 @@ func (s *SQLiteStore) ensureSchemaV14(ctx context.Context) error {
 	}
 	for _, statement := range statements {
 		if err := s.Exec(ctx, statement); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// ensureSchemaV15 adds the heading slug a `#section-title` anchor resolves
+// against. Block rows deliberately store a content hash rather than heading
+// text, so before this column a heading anchor had nothing to compare against.
+// Like every block column it is derived state: a save fills it in, and
+// RebuildDocumentBlocks fills it in for notes nobody edits.
+func (s *SQLiteStore) ensureSchemaV15(ctx context.Context) error {
+	statements := []string{
+		`ALTER TABLE document_blocks ADD COLUMN heading_slug TEXT;`,
+		`CREATE INDEX IF NOT EXISTS document_blocks_slug_idx ON document_blocks(document_id, heading_slug) WHERE heading_slug IS NOT NULL;`,
+		`PRAGMA user_version = 15;`,
+	}
+	for _, statement := range statements {
+		if err := s.Exec(ctx, statement); err != nil {
+			if strings.Contains(err.Error(), "duplicate column name") {
+				continue
+			}
 			return err
 		}
 	}

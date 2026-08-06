@@ -275,3 +275,73 @@ func createNoteForCLI(t *testing.T, binary, dbPath, assetStore string) string {
 	}
 	return documentID
 }
+
+// A stable link can name a section. The anchor is checked before it is printed:
+// a link meant to be pasted somewhere permanent should not be one that never
+// resolved.
+func TestLinkEmitsAnchoredStableLinks(t *testing.T) {
+	binary := buildCLI(t)
+	workspace := t.TempDir()
+	dbPath := filepath.Join(workspace, "notes.sqlite")
+	assetStore := filepath.Join(workspace, "assets")
+
+	archiveDir := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(archiveDir, "notes"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	write := func(name, contents string) {
+		if err := os.WriteFile(filepath.Join(archiveDir, name), []byte(contents), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	write("manifest.json", `{"format":"notrios-archive","version":1,"query":"","notes":1}`)
+	write("notebooks.json", `[{"path":"Docs"}]`)
+	write(filepath.Join("notes", "doc_guide.md"),
+		"---\nid: doc_guide\ntitle: Guide\nnotebook: Docs\n---\n\n# Getting Started\n\nIntro.\n\n## Install & Setup\n\nSteps. ^install-note\n")
+	if result := runCLI(t, binary, "import", "archive", "--db", dbPath, "--asset-store", assetStore, archiveDir); result.exitCode != 0 {
+		t.Fatalf("seed import: %s", result.stderr)
+	}
+	shared := []string{"--db", dbPath, "--asset-store", assetStore}
+
+	listed := decodeCLIJSON(t, mustRunCLI(t, binary, append([]string{"link", "--list-anchors"}, append(shared, "doc_guide")...)...))
+	anchors, ok := listed["anchors"].([]any)
+	if !ok || len(anchors) == 0 {
+		t.Fatalf("expected anchors: %+v", listed)
+	}
+
+	// By heading slug.
+	bySlug := decodeCLIJSON(t, mustRunCLI(t, binary, append([]string{"link", "--anchor", "install-setup"}, append(shared, "doc_guide")...)...))
+	if bySlug["anchor_kind"] != "heading" || !strings.HasSuffix(bySlug["stable_uri"].(string), "#install-setup") {
+		t.Fatalf("heading anchor: %+v", bySlug)
+	}
+
+	// By heading text — the spelling Obsidian uses — normalizes to the slug.
+	byText := decodeCLIJSON(t, mustRunCLI(t, binary, append([]string{"link", "--anchor", "Install & Setup"}, append(shared, "doc_guide")...)...))
+	if byText["stable_uri"] != bySlug["stable_uri"] {
+		t.Fatalf("heading text should normalize to the slug: %v vs %v", byText["stable_uri"], bySlug["stable_uri"])
+	}
+
+	// By author-written marker, which keeps its caret.
+	byMarker := decodeCLIJSON(t, mustRunCLI(t, binary, append([]string{"link", "--anchor", "^install-note"}, append(shared, "doc_guide")...)...))
+	if !strings.HasSuffix(byMarker["stable_uri"].(string), "#^install-note") {
+		t.Fatalf("marker anchor: %+v", byMarker)
+	}
+
+	// An anchor that does not resolve is refused rather than printed.
+	missing := runCLI(t, binary, append([]string{"link", "--anchor", "no-such-heading"}, append(shared, "doc_guide")...)...)
+	if missing.exitCode == 0 {
+		t.Fatal("an unresolvable anchor must not be printed as a link")
+	}
+	if !strings.Contains(missing.stderr, "list-anchors") {
+		t.Fatalf("the refusal should say how to find the anchors: %s", missing.stderr)
+	}
+
+	// The anchored link resolves end to end.
+	opened := runCLI(t, binary, append([]string{"open"}, append(shared, bySlug["stable_uri"].(string))...)...)
+	if opened.exitCode != 0 {
+		t.Fatalf("anchored link did not open: exit %d %s", opened.exitCode, opened.stderr)
+	}
+	if decodeCLIJSON(t, opened.stdout)["status"] != "resolved" {
+		t.Fatalf("unexpected resolution: %s", opened.stdout)
+	}
+}

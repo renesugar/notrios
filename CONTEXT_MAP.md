@@ -55,7 +55,9 @@ This file is the codebase atlas. Update it whenever major files or directories a
   scale profiles.
 - `internal/markdownlinks/` — conservative MVP Markdown/Obsidian/app-URI link extractor.
 - `internal/markdownblocks/` — deterministic block splitter behind schema-v14
-  addressable blocks; identity is content-derived and scoped to the document.
+  addressable blocks and schema-v15 heading slugs; block identity is
+  content-derived and scoped to the document, and `Slugify` is the shared
+  heading-anchor normalization.
 - `internal/stablelink/` — strict parser/formatter for the external
   `notrios://databases/{database_id}/documents/{document_id}` link, with typed
   rejections (foreign scheme, malformed, over-limit, unsupported route).

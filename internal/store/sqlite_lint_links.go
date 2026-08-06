@@ -10,7 +10,39 @@ import (
 	"hash"
 	"strings"
 	"time"
+
+	"github.com/renesugar/notrios/internal/markdownblocks"
 )
+
+// headingSlugCacheLimit bounds what the lint pass remembers while checking
+// heading anchors. Beyond it the cache is cleared rather than grown: a lint run
+// must not hold state proportional to the library.
+const headingSlugCacheLimit = 512
+
+// headingSlugCache holds one document's heading slugs at a time so a note
+// linked from many places is fetched once.
+type headingSlugCache struct {
+	documents map[string]map[string]bool
+}
+
+func newHeadingSlugCache() *headingSlugCache {
+	return &headingSlugCache{documents: map[string]map[string]bool{}}
+}
+
+func (c *headingSlugCache) slugsFor(s *SQLiteStore, documentID string) (map[string]bool, error) {
+	if slugs, ok := c.documents[documentID]; ok {
+		return slugs, nil
+	}
+	slugs, err := s.headingSlugsLocked(documentID)
+	if err != nil {
+		return nil, err
+	}
+	if len(c.documents) >= headingSlugCacheLimit {
+		c.documents = map[string]map[string]bool{}
+	}
+	c.documents[documentID] = slugs
+	return slugs, nil
+}
 
 // linkLintChecks are the checks whose findings all come from `document_links`.
 //
@@ -25,6 +57,7 @@ func linkLintChecks() []string {
 		LintBrokenResourceLink,
 		LintAmbiguousLink,
 		LintUnresolvedBlockAnchor,
+		LintUnresolvedHeadingAnchor,
 		LintUnlocalizedRemoteMedia,
 		LintMissingAltText,
 	}
@@ -45,6 +78,8 @@ type linkLintRow struct {
 	relationType      string
 	displayText       string
 	blockMissing      bool
+	headingMissing    bool
+	targetDocument    string
 }
 
 // The WHERE clause is the union of every link check's condition, so one pass
@@ -61,12 +96,13 @@ const linkLintSQL = `SELECT l.source_document_id, l.source_line, l.source_column
 				WHERE b.document_id = l.target_document_id
 					AND (b.marker = l.anchor_value OR b.id = l.anchor_value)
 			)
-			ELSE 0 END
+			ELSE 0 END,
+		COALESCE(l.target_document_id, '')
 	FROM document_links l
 	JOIN documents d ON d.id = l.source_document_id
 	WHERE d.collection_id = ? AND d.deleted_at IS NULL AND (
 		l.resolution_status IN ('unresolved', 'invalid', 'target_deleted', 'ambiguous')
-		OR (l.anchor_type = 'block' AND COALESCE(l.anchor_value, '') != '' AND l.target_document_id IS NOT NULL)
+		OR (l.anchor_type IN ('block', 'heading') AND COALESCE(l.anchor_value, '') != '' AND l.target_document_id IS NOT NULL)
 		OR (l.relation_type IN ('image', 'embed') AND (l.raw_target LIKE 'http://%' OR l.raw_target LIKE 'https://%'))
 		OR (l.relation_type IN ('image', 'embed') AND TRIM(COALESCE(l.display_text, '')) = '')
 	)
@@ -91,6 +127,7 @@ func (s *SQLiteStore) runLinkLintChecksLocked(selected map[string]bool, collecti
 	}
 
 	started := time.Now()
+	headings := newHeadingSlugCache()
 	stmt, err := s.prepareLocked(linkLintSQL)
 	if err != nil {
 		return nil, err
@@ -120,6 +157,19 @@ func (s *SQLiteStore) runLinkLintChecksLocked(selected map[string]bool, collecti
 			relationType:      columnText(stmt, 9),
 			displayText:       columnText(stmt, 10),
 			blockMissing:      C.sqlite3_column_int(stmt, 11) != 0,
+			targetDocument:    columnText(stmt, 12),
+		}
+		// A heading anchor cannot be checked in SQL: matching it means
+		// slugifying the written anchor with the same Unicode rules the parser
+		// uses, which lives in Go. The target's heading slugs are fetched once
+		// per document and cached, so a note linked from a hundred places costs
+		// one query rather than a hundred.
+		if row.anchorType == "heading" && row.anchorValue != "" && row.targetDocument != "" {
+			slugs, err := headings.slugsFor(s, row.targetDocument)
+			if err != nil {
+				return nil, err
+			}
+			row.headingMissing = !slugs[markdownblocks.Slugify(row.anchorValue)]
 		}
 		// Check order is fixed so the digest does not depend on map iteration.
 		for _, check := range linkLintChecks() {
@@ -180,6 +230,12 @@ func classifyLinkLint(check string, row linkLintRow) (LintFinding, bool) {
 		if row.blockMissing {
 			finding.TargetSHA256 = sha256Text(row.anchorValue)
 			finding.Detail = "no block matches this anchor"
+			return finding, true
+		}
+	case LintUnresolvedHeadingAnchor:
+		if row.headingMissing {
+			finding.TargetSHA256 = sha256Text(row.anchorValue)
+			finding.Detail = "no heading matches this anchor"
 			return finding, true
 		}
 	case LintUnlocalizedRemoteMedia:

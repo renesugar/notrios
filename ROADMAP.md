@@ -94,7 +94,11 @@ The built-in Go/Wails GUI is part of the first released version, so it lives her
 - Consider migration from `React + md-editor-rt` to `React + CodeMirror 6 + unified/remark/rehype` if deeper editor-pane behavior is needed.
 - Rich link autocomplete.
 - Broken-link underlines while editing.
-- Block anchor database and navigation.
+- Block anchor database and navigation, including heading anchors: a
+  `notrios://` or `document://` link addresses a section by slug and a block by
+  ID or author-written marker, following Obsidian's model of naming a heading
+  and a block from outside the note while keeping Notrios' rule that a stable
+  link carries no percent-encoding.
 - Graph visualization and path finding.
 - Embedded query blocks inside notes.
 - Outline API and block-level addressability.

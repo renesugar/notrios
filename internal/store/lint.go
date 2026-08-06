@@ -19,26 +19,26 @@ package store
 // enough to find the problem; the raw text of a broken wikilink is often a
 // private note's title.
 //
-// One check the maintenance guide lists is deliberately absent. Heading anchors
-// (`#section-title`) cannot be verified: a heading anchor is a slug, and block
-// rows store a content hash rather than heading text, so there is nothing to
-// compare it against. Reporting every heading anchor as unresolved, or none of
-// them, would both be wrong; checking them needs a stored heading slug, which is
-// a schema question for its own slice.
+// Heading anchors were unverifiable until v0.5 E1a: a heading anchor is a slug
+// and block rows store a content hash rather than heading text, so there was
+// nothing to compare against. Schema v15 stores the slug, and
+// `unresolved_heading_anchor` now checks them the same way block anchors are
+// checked.
 
 // Lint check names. They are stable reason codes: a caller may key behaviour off
 // them, so they are part of the contract rather than display strings.
 const (
-	LintBrokenDocumentLink     = "broken_document_link"
-	LintBrokenResourceLink     = "broken_resource_link"
-	LintAmbiguousLink          = "ambiguous_link"
-	LintUnresolvedBlockAnchor  = "unresolved_block_anchor"
-	LintDuplicateSourceID      = "duplicate_source_id"
-	LintMissingTitle           = "missing_title"
-	LintUnlocalizedRemoteMedia = "unlocalized_remote_media"
-	LintMissingAltText         = "missing_alt_text"
-	LintUnreferencedResource   = "unreferenced_resource"
-	LintProjectionBacklog      = "projection_backlog"
+	LintBrokenDocumentLink      = "broken_document_link"
+	LintBrokenResourceLink      = "broken_resource_link"
+	LintAmbiguousLink           = "ambiguous_link"
+	LintUnresolvedBlockAnchor   = "unresolved_block_anchor"
+	LintUnresolvedHeadingAnchor = "unresolved_heading_anchor"
+	LintDuplicateSourceID       = "duplicate_source_id"
+	LintMissingTitle            = "missing_title"
+	LintUnlocalizedRemoteMedia  = "unlocalized_remote_media"
+	LintMissingAltText          = "missing_alt_text"
+	LintUnreferencedResource    = "unreferenced_resource"
+	LintProjectionBacklog       = "projection_backlog"
 )
 
 // LintChecks lists every check in report order.
@@ -48,6 +48,7 @@ func LintChecks() []string {
 		LintBrokenResourceLink,
 		LintAmbiguousLink,
 		LintUnresolvedBlockAnchor,
+		LintUnresolvedHeadingAnchor,
 		LintDuplicateSourceID,
 		LintMissingTitle,
 		LintUnlocalizedRemoteMedia,

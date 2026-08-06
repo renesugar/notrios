@@ -92,3 +92,61 @@ func TestStableLinkResolvesBlockAnchorsAndReportsStaleOnes(t *testing.T) {
 		t.Fatalf("a stale anchor must not report a block: %+v", staleBody)
 	}
 }
+
+const restHeadingBody = "# Getting Started\n\nIntro.\n\n## Install & Setup\n\nSteps.\n"
+
+func TestBlocksEndpointExposesHeadingSlugs(t *testing.T) {
+	s, st := newSelectionServer(t)
+	doc, err := st.CreateDocument(context.Background(), store.CreateDocumentRequest{Title: "Headings", Body: restHeadingBody})
+	if err != nil {
+		t.Fatal(err)
+	}
+	response := doJSON(t, s, http.MethodGet, "/api/v1/documents/"+doc.ID+"/blocks", "")
+	var body api.DocumentBlocksResponse
+	if err := json.NewDecoder(response.Body).Decode(&body); err != nil {
+		t.Fatal(err)
+	}
+	slugs := []string{}
+	for _, block := range body.Blocks {
+		if block.HeadingSlug != "" {
+			slugs = append(slugs, block.HeadingSlug)
+		}
+	}
+	if strings.Join(slugs, ",") != "getting-started,install-setup" {
+		t.Fatalf("heading slugs: %v", slugs)
+	}
+}
+
+// A heading anchor resolves in a stable link, and a renamed heading is reported
+// as stale rather than silently opening the top of the note.
+func TestStableLinkResolvesHeadingAnchors(t *testing.T) {
+	s, st := newSelectionServer(t)
+	ctx := context.Background()
+	identity, err := st.GetDatabaseIdentity(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	doc, err := st.CreateDocument(ctx, store.CreateDocumentRequest{Title: "Headings", Body: restHeadingBody})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	resolved := doJSON(t, s, http.MethodPost, "/api/v1/links/resolve",
+		`{"uri":"`+stablelink.Format(identity.DatabaseID, doc.ID)+`#install-setup"}`)
+	body := decodeResolveResponse(t, resolved.Body.String())
+	if body.Status != store.StableLinkResolved || body.BlockKind != "heading" || body.BlockID == "" {
+		t.Fatalf("heading anchor did not resolve: %+v", body)
+	}
+
+	if _, err := st.UpdateDocument(ctx, store.UpdateDocumentRequest{
+		ID: doc.ID, Title: "Headings", Body: "# Getting Started\n\nIntro.\n\n## Installation\n\nSteps.\n",
+		BaseRevisionID: doc.CurrentRevisionID,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	stale := doJSON(t, s, http.MethodPost, "/api/v1/links/resolve",
+		`{"uri":"`+stablelink.Format(identity.DatabaseID, doc.ID)+`#install-setup"}`)
+	if got := decodeResolveResponse(t, stale.Body.String()).Status; got != store.StableLinkStaleAnchor {
+		t.Fatalf("a renamed heading should report a stale anchor, got %q", got)
+	}
+}

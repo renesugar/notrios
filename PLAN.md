@@ -1,7 +1,7 @@
 # Plan: v0.5 — Better editing, blocks, and graph UX
 
-Status: **drafted 2026-08-05 from `ROADMAP.md` after v0.4 completed. E1 and E2
-are complete; E3–E9 require user approval.**
+Status: **drafted 2026-08-05 from `ROADMAP.md` after v0.4 completed. E1, E1a,
+and E2 are complete; E3–E9 require user approval.**
 
 v0.4 is complete and archived under `plans/v0.4/`, including a copy of its own
 plan at `plans/v0.4/000-v0.4-plan.md`. Its one deferral, P6 (the `movenotes-v3`
@@ -84,6 +84,66 @@ Three consequences follow, all settled here rather than during implementation:
 Working state: a block anchor resolves to a stable position across edits that do
 not touch it, block rows never outlive their document, and the 500k profile
 records row counts, database growth, and save latency against the v0.3 baseline.
+Heading anchors were out of scope here and are added by E1a.
+
+### E1a. Heading anchors in stable links — complete
+
+Archived as `plans/v0.5/003-heading-anchors.md`. Evidence:
+`performance/v0.5-e1a/`. Adding heading anchors cost nothing measurable at
+100,000 notes: the slug is one nullable column on an existing table and the
+check rides E2's single link scan.
+
+E1 made blocks addressable and E2 had to leave heading anchors unchecked: a
+heading anchor is a slug, and block rows store a content hash rather than
+heading text, so there was nothing to compare against. This closes that gap so
+`notrios://` and `document://` links can name a section, not only a note or a
+paragraph.
+
+**What Obsidian does** (verified against `obsidian.md/help/links` and the
+Obsidian URI help page on 2026-08-06):
+
+- internal links name a heading by its **text**: `[[Note#Heading Text]]`, with
+  nested subheading paths (`[[Note#H1#H2]]`) and a Markdown form
+  `[Section](Example.md#Details)`;
+- blocks use `[[Note#^block-id]]`, and block IDs are Latin letters, numbers, and
+  dashes;
+- the `obsidian://open` URI supports both by percent-encoding the anchor onto
+  the file parameter: `file=Note%23Heading` and `file=Note%23%5EBlock`, with
+  `%23` for `#`, `%5E` for `^`, `%20` for space, `%2F` for `/`.
+
+Two claims in the source material were **not** verified and are not relied on:
+that an Alt/Option-modified context menu yields "Copy obsidian URI", and that
+the Advanced URI plugin exposes explicit `heading=`/`block=` parameters — that
+plugin's schema page documents only the general form and `vault`.
+
+**What Notrios adopts, and what it deliberately does not.** Notrios takes the
+model — a heading is addressable by name, a block by ID, both usable in an
+external URI — but not the percent-encoded heading text. P5 decided that the
+stable-link parser rejects percent-encoding rather than decoding it, because an
+identifier needing escapes is not one this application minted and decoding lets
+two spellings name one target. A heading anchor in a `notrios://` link is
+therefore a **slug**: `notrios://databases/{db}/documents/{doc}#some-heading`,
+URI-safe by construction and the same convention Markdown, Joplin, and GitHub
+already use for in-note section links. Resolution normalizes whatever the caller
+wrote, so a `document://…#Heading Text` link written by hand or produced by the
+Obsidian importer resolves to the same heading.
+
+- Add schema v15 `document_blocks.heading_slug`, derived from heading text with
+  the documented normalization and disambiguated by occurrence (`slug`,
+  `slug-1`, …) so repeated headings in one note stay addressable.
+- Resolve heading anchors in `notrios://` and `document://` links, reusing E1's
+  precedence: an author-written `^marker` first, then a block ID, then a heading
+  slug.
+- Restore the `unresolved_heading_anchor` lint check E2 could not implement.
+- Expose the slug through `GET /api/v1/documents/{id}/blocks`, and let
+  `notriosctl link` emit an anchored stable link after checking it resolves.
+- Keep the anchor charset unchanged: no percent-encoding, no spaces, no new
+  parser surface.
+
+Working state: a heading anchor written as a slug or as heading text resolves to
+the same heading; a renamed heading reports `stale_anchor` rather than silently
+opening the top of the note; and lint reports heading anchors that no longer
+match.
 
 ### E2. Workspace lint — complete
 
@@ -234,7 +294,12 @@ GUI-affecting tasks also build with `make gui`, and layout changes run
   revision-preconditioned.** Every fix writes an ordinary revision against a
   precondition for one note; anything bulk belongs to the v0.6 organizer, and
   E3 may not grow a multi-note apply path.
-- E1 and E2 are complete; the remaining tasks are not approved.
+- E1, E1a, and E2 are complete; the remaining tasks are not approved.
+- **Resolved 2026-08-06: heading anchors in stable links use a slug, not
+  percent-encoded heading text.** Obsidian percent-encodes the heading name into
+  its URI; Notrios keeps P5's refusal to decode percent-escapes, so the URI form
+  is the slug and resolution normalizes heading text to it. See E1a and
+  `PROJECT_DECISIONS.md` 19.
 - E6 is a decision task. Approving E6 does not approve a CodeMirror migration.
 
 ## Scope control

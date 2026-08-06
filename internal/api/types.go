@@ -83,7 +83,10 @@ type DocumentBlock struct {
 	HeadingLevel int    `json:"heading_level,omitempty"`
 	// Marker is an author-written anchor (Obsidian `^marker`). It outranks the
 	// derived ID when a link names it, because it is a name the author chose.
-	Marker        string `json:"marker,omitempty"`
+	Marker string `json:"marker,omitempty"`
+	// HeadingSlug is the URI-safe name a `#section-title` anchor resolves
+	// against. Only heading blocks have one.
+	HeadingSlug   string `json:"heading_slug,omitempty"`
 	ContentSHA256 string `json:"content_sha256"`
 	StartByte     int    `json:"start_byte"`
 	EndByte       int    `json:"end_byte"`

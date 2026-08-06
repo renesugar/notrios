@@ -26,6 +26,7 @@ separate, explicitly confirmed operation.
 | `broken_resource_link` | a `resource://` link with no such resource |
 | `ambiguous_link` | a wikilink matching more than one note |
 | `unresolved_block_anchor` | an anchor naming a block the target note no longer has |
+| `unresolved_heading_anchor` | an anchor naming a heading the target note no longer has |
 | `duplicate_source_id` | two notes claiming the same external identity |
 | `missing_title` | a note with an empty title |
 | `unlocalized_remote_media` | an image still fetched from the network on every preview |
@@ -52,10 +53,10 @@ than on every save: about 3 seconds at 100,000 notes and 19 seconds at 500,000
 on the reference machine. Each check's own time is in the report, so you can see
 where it went on your library.
 
-One check is missing on purpose: heading anchors (`#section-title`) are not
-verified. A heading anchor is a slug, and block rows store a content hash rather
-than heading text, so there is nothing to compare it against — reporting all of
-them or none would both be wrong.
+Heading anchors are checked from v0.5 E1a onward: block rows now store a heading
+slug, so `#section-title` has something to compare against. On a library
+upgraded from an older schema, notes nobody has edited since have no slugs yet —
+saving a note fills them in.
 
 ## Localizing remote media
 

@@ -112,43 +112,77 @@ Clicking one in the preview asks the service what it names. If it belongs to
 another database, the UI says so instead of opening a similarly-numbered local
 note.
 
-## Linking to a block, not just a note
+## Linking to a section or a block
 
-A link can point at one block inside a note — a heading, a paragraph, a list
-item, a code block, or a table — by adding an anchor:
+A link can point inside a note, not just at it. Add an anchor:
 
 ```text
-notrios://databases/db_qz.../documents/doc_01H...#^blk_7fq3...
-document://default/documents/doc_01H...#^blk_7fq3...
+notrios://databases/db_qz.../documents/doc_01H...#getting-started      # a heading
+notrios://databases/db_qz.../documents/doc_01H...#^blk_7fq3...         # a block
+notrios://databases/db_qz.../documents/doc_01H...#^my-anchor           # your own marker
 ```
 
-List a note's blocks, with the number of links pointing at each, with
-`GET /api/v1/documents/{id}/blocks`.
+Ask a note what it offers, and build the link without typing it:
 
-**A block's ID comes from its text.** That has two consequences worth knowing
-before you paste one somewhere permanent:
+```sh
+notriosctl link --list-anchors doc_01H...
+notriosctl link --anchor getting-started doc_01H...
+notriosctl link --anchor 'Getting Started' doc_01H...   # heading text works too
+notriosctl link --anchor '^my-anchor' doc_01H...
+```
 
-- Move the block around the note, or edit anything else in the note, and the
-  link keeps working.
-- Rewrite the block's text and the link stops resolving. Notrios reports this
-  as `stale_anchor` and still tells you which note it was: the anchor named
-  exactly that text, and quietly dropping you at the top of a note that no
-  longer contains it would be worse than saying so.
+An anchor that does not resolve is refused rather than printed. A stable link is
+meant to be pasted somewhere permanent, and one that never worked is worse than
+no link.
 
-If you want an anchor that survives rewriting, write your own marker at the end
-of the block, Obsidian-style:
+### Headings
+
+A heading anchor is the heading's **slug**: lowercase, spaces to hyphens,
+punctuation dropped — `## Install & Setup` becomes `install-setup`. Repeated
+headings stay addressable (`notes`, `notes-1`, …).
+
+You can write the heading's text instead and Notrios normalizes it, so
+`#Install & Setup` and `#install-setup` reach the same heading. The slug is what
+a stable link carries, for a practical reason: in Markdown a space ends an
+unquoted URL, so `[x](document://…#Install & Setup)` truncates at the space. A
+wikilink (`[[Note#Install & Setup]]`) keeps the text intact, which is the form
+Obsidian uses.
+
+If you have used Obsidian, this is the same model with one difference. Obsidian
+percent-encodes the heading text into its URI
+(`obsidian://open?vault=V&file=Note%23Heading%20Name`); a Notrios stable link
+carries no percent-escapes at all, so the anchor is the slug. Everything else
+matches: headings by name, blocks by `^id`, and both usable from outside the
+app.
+
+### Blocks
+
+A block anchor is `#^` followed by either your own marker or the block's derived
+ID. Write your own by putting `^my-anchor` at the end of a paragraph, preceded
+by a space:
 
 ```markdown
 The paragraph you want to cite. ^my-anchor
 ```
 
-Then link to `#^my-anchor`. Author-written markers are names you chose, so they
-outrank the derived ID and follow the block through edits. Notrios keeps both:
-the marker for stability, the content hash for precision.
+Precedence when resolving is marker, then block ID, then heading slug — the name
+you chose wins.
 
-Whitespace cleanup is safe either way — line endings and trailing spaces are
-normalized before the ID is computed, so an editor that tidies your file on save
-does not break every anchor in it.
+### What breaks, and when
+
+| You change | The anchor |
+|---|---|
+| move a block or heading within the note | keeps working |
+| edit other parts of the note | keeps working |
+| clean up whitespace or line endings | keeps working |
+| rewrite the block's text | breaks (`stale_anchor`) |
+| rename the heading | breaks (`stale_anchor`) |
+| add your own `^marker` | survives rewriting that block |
+
+A broken anchor is reported as `stale_anchor` and Notrios still tells you which
+note it was, so a client can offer to open the note. Dropping you at the top of a
+note that no longer contains what the link named would be worse than saying so.
+`notriosctl lint` reports every anchor in your library that no longer resolves.
 
 ## What this is not
 

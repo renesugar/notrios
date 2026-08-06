@@ -1579,6 +1579,12 @@ components:
         marker:
           type: string
           description: Author-written anchor; outranks the derived ID when a link names it.
+        heading_slug:
+          type: string
+          description: >
+            URI-safe name a `#section-title` anchor resolves against. Heading
+            blocks only. Resolution precedence is marker, then block ID, then
+            heading slug.
         content_sha256: { type: string }
         start_byte: { type: integer }
         end_byte: { type: integer }

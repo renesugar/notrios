@@ -516,7 +516,8 @@ Usage:
                                                  # retention-aware resource GC; dry-run is the default
   notriosctl lint [--db ...] [--checks a,b] [--detail-limit 100] [--quiet] [--list-checks]
                                                  # read-only workspace report; exit 1 when findings exist
-  notriosctl link [--db ...] <document-id>       # print the stable notrios:// link for a note
+  notriosctl link [--db ...] [--anchor slug|^block] [--list-anchors] <document-id>
+                                                 # print the stable notrios:// link for a note or one of its sections
   notriosctl open [--profile name] [--registry path] [--db path] [--launch] <notrios-uri>
                                                  # resolve a stable link on this machine (exit 1 unresolved, 2 malformed)
   notriosctl profile register --name <profile> [--db ...] [--registry path]

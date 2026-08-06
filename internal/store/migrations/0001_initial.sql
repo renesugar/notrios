@@ -348,8 +348,14 @@ CREATE TABLE IF NOT EXISTS document_blocks (
     content_sha256 TEXT NOT NULL,
     start_byte INTEGER NOT NULL,
     end_byte INTEGER NOT NULL,
+    heading_slug TEXT,
     PRIMARY KEY (document_id, id)
 );
 CREATE INDEX IF NOT EXISTS document_blocks_document_idx ON document_blocks(document_id, ordinal);
 CREATE INDEX IF NOT EXISTS document_blocks_marker_idx ON document_blocks(document_id, marker) WHERE marker IS NOT NULL;
-PRAGMA user_version = 14;
+CREATE INDEX IF NOT EXISTS document_blocks_slug_idx ON document_blocks(document_id, heading_slug) WHERE heading_slug IS NOT NULL;
+
+-- Schema v15: heading slugs. A `#section-title` anchor resolves against this
+-- column; block rows deliberately store no heading text, so without it a
+-- heading anchor has nothing to compare against (PROJECT_DECISIONS.md 19).
+PRAGMA user_version = 15;

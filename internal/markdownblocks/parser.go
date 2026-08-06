@@ -18,6 +18,7 @@ import (
 	"encoding/base32"
 	"regexp"
 	"strings"
+	"unicode"
 )
 
 // Block kinds. They are stored, so they are part of the schema contract.
@@ -34,6 +35,7 @@ const (
 const (
 	MaxBlocksPerDocument = 10000
 	MaxMarkerBytes       = 128
+	MaxSlugBytes         = 128
 )
 
 // Block is one addressable region of a note body.
@@ -52,6 +54,9 @@ type Block struct {
 	// Marker is an author-written Obsidian-style `^marker`, without the caret,
 	// when the block ends with one. Authored names outrank derived ones.
 	Marker string
+	// Slug is the URI-safe name of a heading block, empty for every other kind.
+	// It is what a `#section-title` anchor resolves against.
+	Slug string
 	// ContentSHA256 is the hash over document scope, kind, normalized text, and
 	// occurrence. ID is its short opaque rendering.
 	ContentSHA256 string
@@ -87,6 +92,7 @@ func Extract(documentID, body string) []Block {
 	lines, offsets := physicalLines(body)
 	blocks := []Block{}
 	occurrences := map[string]int{}
+	slugs := map[string]int{}
 
 	appendBlock := func(block Block) bool {
 		if len(blocks) >= MaxBlocksPerDocument {
@@ -101,6 +107,9 @@ func Extract(documentID, body string) []Block {
 		block.Occurrence = occurrences[key]
 		occurrences[key]++
 		block.Ordinal = len(blocks)
+		if block.Kind == KindHeading {
+			block.Slug = disambiguate(Slugify(block.Text), slugs)
+		}
 		block.ContentSHA256, block.ID = identify(documentID, block)
 		blocks = append(blocks, block)
 		return true
@@ -205,6 +214,57 @@ func Extract(documentID, body string) []Block {
 		}
 	}
 	return blocks
+}
+
+// Slugify turns heading text into the URI-safe name a `#section-title` anchor
+// uses.
+//
+// The rules are the ordinary Markdown ones — lowercase, spaces to hyphens, drop
+// anything that is not a letter, digit, hyphen, or underscore — because that is
+// what a hand-written `[text](note.md#some-heading)` link already assumes, and
+// what Joplin and GitHub produce. Letters keep their Unicode case folding, so a
+// heading in any script still slugs to something addressable rather than being
+// emptied.
+//
+// A heading that slugs to nothing (an emoji, punctuation alone) gets no slug
+// rather than a made-up one: it is reachable by its block ID, and inventing a
+// name would make two unrelated headings collide.
+func Slugify(text string) string {
+	var out []rune
+	previousHyphen := false
+	for _, r := range strings.ToLower(strings.TrimSpace(text)) {
+		switch {
+		case unicode.IsLetter(r) || unicode.IsDigit(r):
+			out = append(out, r)
+			previousHyphen = false
+		case r == '_' || r == '-' || r == ' ' || r == '\t':
+			if len(out) > 0 && !previousHyphen {
+				out = append(out, '-')
+				previousHyphen = true
+			}
+		}
+	}
+	slug := strings.Trim(string(out), "-")
+	if len(slug) > MaxSlugBytes {
+		slug = strings.Trim(slug[:MaxSlugBytes], "-")
+	}
+	return slug
+}
+
+// disambiguate keeps repeated headings addressable: the first "Notes" is
+// `notes`, the second `notes-1`. Obsidian resolves a duplicate heading to the
+// first match and offers no way to name the second; a numbered suffix is the
+// convention Markdown renderers already use and it costs nothing.
+func disambiguate(slug string, seen map[string]int) string {
+	if slug == "" {
+		return ""
+	}
+	count := seen[slug]
+	seen[slug]++
+	if count == 0 {
+		return slug
+	}
+	return slug + "-" + itoa(count)
 }
 
 // identify derives the content hash and the opaque block ID.

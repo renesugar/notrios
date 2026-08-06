@@ -24,9 +24,8 @@ Lint is implemented in v0.5 E2 as a read-only report (`notriosctl lint`,
 `GET /api/v1/admin/lint/report`) covering broken document/resource links,
 ambiguous wikilinks, unresolved block anchors, duplicate external identities,
 missing titles, unlocalized remote media, missing alt text, unreferenced
-resources, and projection backlog. Heading anchors are deliberately not checked:
-a heading anchor is a slug and block rows store a content hash, so there is
-nothing to compare it against.
+resources, and projection backlog. Heading anchors joined the list in v0.5 E1a,
+once schema v15 gave a heading anchor a stored slug to compare against.
 
 Auto-fix is E3 and stays single-note and revision-preconditioned; bulk
 operations belong to the v0.6 organizer (`PROJECT_DECISIONS.md` 18).
@@ -58,7 +57,9 @@ GET /api/v1/documents/{id}/blocks
 Block anchors became first-class addressable objects in v0.5 E1: schema-v14
 `document_blocks`, `GET /api/v1/documents/{id}/blocks`, and anchor resolution
 for `document://` and `notrios://` links. Identity is content-based, so an
-anchor survives a block moving and breaks when the block's text changes.
+anchor survives a block moving and breaks when the block's text changes. E1a
+added heading anchors on the same footing: schema-v15 slugs, resolution by slug
+or heading text, and a `unresolved_heading_anchor` lint check.
 
 ## Trash-first deletion
 

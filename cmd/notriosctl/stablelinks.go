@@ -161,12 +161,15 @@ func runProfileForget(args []string) {
 	printJSON(map[string]any{"registry": path, "forgot": strings.TrimSpace(*name), "profiles": len(updated.Profiles)})
 }
 
-// runLink prints the external link for one of this database's notes.
+// runLink prints the external link for one of this database's notes, optionally
+// anchored at a heading or a block.
 func runLink(args []string) {
 	fs := flag.NewFlagSet("notriosctl link", flag.ExitOnError)
 	configPath := fs.String("config", "", "optional config file")
 	dbPath := fs.String("db", "", "SQLite database path override")
 	assetStore := fs.String("asset-store", "", "asset store directory override")
+	anchor := fs.String("anchor", "", "heading slug, heading text, block ID, or ^marker to anchor the link at")
+	list := fs.Bool("list-anchors", false, "print the note's addressable anchors instead of a link")
 	if err := fs.Parse(args); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(2)
@@ -189,12 +192,65 @@ func runLink(args []string) {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
-	printJSON(map[string]any{
+
+	if *list {
+		blocks, err := st.ListDocumentBlocks(ctx, documentID)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		anchors := []map[string]any{}
+		for _, block := range blocks {
+			entry := map[string]any{"kind": block.Kind, "ordinal": block.Ordinal, "block_id": block.ID, "backlinks": block.Backlinks}
+			switch {
+			case block.Marker != "":
+				entry["anchor"] = "^" + block.Marker
+			case block.HeadingSlug != "":
+				entry["anchor"] = block.HeadingSlug
+			default:
+				entry["anchor"] = "^" + block.ID
+			}
+			if block.HeadingLevel > 0 {
+				entry["heading_level"] = block.HeadingLevel
+			}
+			anchors = append(anchors, entry)
+		}
+		printJSON(map[string]any{"document_id": document.ID, "stable_uri": uri, "anchors": anchors})
+		return
+	}
+
+	output := map[string]any{
 		"document_id":  document.ID,
 		"title":        document.Title,
 		"document_uri": document.URI,
 		"stable_uri":   uri,
-	})
+	}
+	if trimmed := strings.TrimSpace(*anchor); trimmed != "" {
+		// An anchor that does not resolve is refused rather than printed: a
+		// stable link is meant to be pasted somewhere permanent, and one that
+		// never worked is worse than no link at all.
+		block, err := st.FindDocumentBlock(ctx, documentID, strings.TrimPrefix(trimmed, "^"))
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "%v\n", err)
+			fmt.Fprintln(os.Stderr, "run `notriosctl link --list-anchors <document-id>` to see this note's anchors")
+			os.Exit(1)
+		}
+		// Heading anchors are written bare; block anchors keep the caret, which
+		// is the spelling every Notrios and Obsidian link already uses.
+		suffix := "^" + block.ID
+		switch {
+		case block.Marker != "":
+			suffix = "^" + block.Marker
+		case block.HeadingSlug != "":
+			suffix = block.HeadingSlug
+		}
+		output["stable_uri"] = uri + "#" + suffix
+		output["document_uri"] = document.URI + "#" + suffix
+		output["anchor"] = suffix
+		output["anchor_kind"] = block.Kind
+		output["block_id"] = block.ID
+	}
+	printJSON(output)
 }
 
 // runOpen resolves an external link on this machine.

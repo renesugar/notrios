@@ -86,8 +86,9 @@ invalidates the canonical note save.
 through schema version **14** (v5 notebooks/tags/search notebooks, v6 source
 provenance, v7 media policy, v8 resource retention, v9 scalable keyset indexes,
 v10 resumable import state/source bundles, v11 projection retry scheduling, v12
-logical database/replica identity, v13 restore state, v14 note blocks), applied
-idempotently on every startup with upgrade shims for older databases.
+logical database/replica identity, v13 restore state, v14 note blocks, v15
+heading slugs), applied idempotently on every startup with upgrade shims for
+older databases.
 Its original MVP portion represents schema version 4. Do not rename public
 tables/columns casually once tests depend on them.
 
@@ -181,8 +182,19 @@ another.
 with one. Those are names the author chose and they survive edits to the block's
 text, so anchor resolution tries the marker first and the derived ID second.
 
-Indexes: `(document_id, ordinal)` for listing a note's blocks in order, and a
-partial `(document_id, marker)` index for authored-anchor lookups. A database
+`heading_slug` (schema v15) is the URI-safe name a `#section-title` anchor
+resolves against, derived from heading text: lowercase, spaces to hyphens,
+anything that is not a letter, digit, hyphen, or underscore dropped, and
+repeated headings disambiguated by occurrence (`notes`, `notes-1`). Only heading
+blocks have one. It exists because block rows deliberately store a content hash
+rather than heading text, which left a heading anchor with nothing to compare
+against. Resolution normalizes whatever a link wrote, so `#Install & Setup` and
+`#install-setup` reach the same heading; precedence is marker, then block ID,
+then slug.
+
+Indexes: `(document_id, ordinal)` for listing a note's blocks in order, a
+partial `(document_id, marker)` index for authored-anchor lookups, and a partial
+`(document_id, heading_slug)` index for heading anchors. A database
 upgraded to v14 has no rows for notes nobody has edited since;
 `RebuildDocumentBlocks` fills them in without writing a revision.
 

@@ -165,13 +165,19 @@ An interrupted restore leaves a durable marker naming the snapshot it was applyi
 ## link
 
 ```sh
-notriosctl link [--config config.yaml] [--db path] [--asset-store path] <document-id>
+notriosctl link [--config config.yaml] [--db path] [--asset-store path]
+    [--anchor slug|text|^marker] [--list-anchors] <document-id>
 ```
 
 Prints the [stable link](stable-links.md) for a note: the portable
 `notrios://databases/{database_id}/documents/{document_id}` form that survives
 moving the database or renaming the profile. The report also carries the note's
 title and internal `document://` URI.
+
+`--anchor` points the link at a heading or a block. Give a heading slug, the
+heading's text (normalized to the slug), a `^marker`, or a block ID; an anchor
+that does not resolve is refused rather than printed. `--list-anchors` prints
+what the note offers, with backlink counts.
 
 ## open
 

@@ -51,6 +51,8 @@ func newLintFixture(t *testing.T) (*SQLiteStore, map[string]string) {
 		"[broken](document://default/documents/doc_gone)",
 		"[stale block](" + healthy.URI + "#^no-such-block)",
 		"[good block](" + healthy.URI + "#^good-anchor)",
+		"[stale heading](" + healthy.URI + "#no-such-heading)",
+		"[good heading](" + healthy.URI + "#healthy)",
 		"![](https://example.com/remote.png)",
 		"![local alt](" + resource.URI + ")",
 		"[healthy](" + healthy.URI + ")",
@@ -117,14 +119,15 @@ func TestLintFindsEachProblemAndNothingElse(t *testing.T) {
 	}
 
 	wants := map[string]int{
-		LintBrokenDocumentLink:     1,
-		LintAmbiguousLink:          0,
-		LintUnresolvedBlockAnchor:  1,
-		LintDuplicateSourceID:      2,
-		LintMissingTitle:           1,
-		LintUnlocalizedRemoteMedia: 1,
-		LintMissingAltText:         1,
-		LintUnreferencedResource:   1,
+		LintBrokenDocumentLink:      1,
+		LintAmbiguousLink:           0,
+		LintUnresolvedBlockAnchor:   1,
+		LintUnresolvedHeadingAnchor: 1,
+		LintDuplicateSourceID:       2,
+		LintMissingTitle:            1,
+		LintUnlocalizedRemoteMedia:  1,
+		LintMissingAltText:          1,
+		LintUnreferencedResource:    1,
 	}
 	for check, want := range wants {
 		if got := checkResult(t, report, check).Count; got != want {
