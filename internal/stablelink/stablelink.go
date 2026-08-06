@@ -180,3 +180,70 @@ func validateAnchor(value string) error {
 	}
 	return nil
 }
+
+// URISchemes are the link schemes Notrios mints. Percent-encoding is defined
+// for URIs, so a target carrying one of these is the only place an escape
+// sequence may be read as an escape rather than as literal text.
+var URISchemes = []string{Scheme + "://", "document://", "resource://"}
+
+// IsURITarget reports whether a link target is one of Notrios' URI schemes.
+//
+// It is the signal that decides whether an anchor's `%XX` sequences mean
+// anything. A bare Markdown target is not a URI: `[x](#100%20off)` is text the
+// author typed, and reinterpreting it would be guessing. A URI-schemed target
+// declared itself, and RFC 3986 already says what `%20` means there.
+func IsURITarget(target string) bool {
+	lower := strings.ToLower(strings.TrimSpace(target))
+	for _, scheme := range URISchemes {
+		if strings.HasPrefix(lower, scheme) {
+			return true
+		}
+	}
+	return false
+}
+
+// DecodeAnchor resolves percent-escapes in an anchor that arrived inside a
+// URI-schemed link, so `Kitchen%20Plan` and `Kitchen Plan` name one heading.
+//
+// An invalid or truncated escape is left exactly as written rather than
+// dropped: `%zz` and a trailing `%` are literal text in someone's heading far
+// more often than they are a typo in an escape, and silently deleting bytes
+// from an anchor would make a link fail in a way nobody could see.
+//
+// Only `%XX` is decoded. `+` stays a plus: that is form encoding, not fragment
+// encoding, and treating it as a space would break every heading with one.
+func DecodeAnchor(anchor string) string {
+	if !strings.ContainsRune(anchor, '%') {
+		return anchor
+	}
+	var out strings.Builder
+	out.Grow(len(anchor))
+	for i := 0; i < len(anchor); i++ {
+		if anchor[i] != '%' || i+2 >= len(anchor) {
+			out.WriteByte(anchor[i])
+			continue
+		}
+		high, highOK := hexValue(anchor[i+1])
+		low, lowOK := hexValue(anchor[i+2])
+		if !highOK || !lowOK {
+			out.WriteByte(anchor[i])
+			continue
+		}
+		out.WriteByte(high<<4 | low)
+		i += 2
+	}
+	return out.String()
+}
+
+func hexValue(c byte) (byte, bool) {
+	switch {
+	case c >= '0' && c <= '9':
+		return c - '0', true
+	case c >= 'a' && c <= 'f':
+		return c - 'a' + 10, true
+	case c >= 'A' && c <= 'F':
+		return c - 'A' + 10, true
+	default:
+		return 0, false
+	}
+}

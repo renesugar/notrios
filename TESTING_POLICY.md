@@ -351,6 +351,15 @@ space ends an unquoted URL, so `[x](document://…#Install & Setup)` truncates a
 the space and the heading-text spelling belongs in a wikilink. That is why a
 stable link carries the slug.
 
+E1b covers scheme-scoped decoding: scheme recognition and its rejections,
+decoding of spaces/`%25`/UTF-8/lowercase hex, invalid escapes left literal, `+`
+preserved, identifiers still refusing escapes while anchors accept them, and a
+byte-for-byte round trip. Store fixtures assert that an escaped anchor resolves
+through a URI-schemed link while the same bytes in a bare Markdown anchor do
+not — with lint reporting exactly the bare one — that a decoded URI anchor
+counts as a backlink, and that a heading containing a real percent sign resolves
+both by text and as `%25`.
+
 ### Workspace lint (v0.5 E2)
 
 One fixture carries a single instance of every detectable problem — including a

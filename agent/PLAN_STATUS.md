@@ -10,8 +10,8 @@ archived under `plans/v0.4/`, together with a copy of the milestone plan at
 deferred to v0.7 slice 3. Product version is 0.4.0 and the schema is v13.
 
 `PLAN.md` holds the **v0.5 plan** (blocks, lint/fix, graph traversal, editor
-link intelligence, query blocks, organizer UX). **E1, E1a, E2, and E3 are complete**; E4–E9
-require user approval. Two v0.5 decisions are settled and recorded as
+link intelligence, query blocks, organizer UX). **E1, E1a, E1b, E2, and E3 are complete**;
+E4–E9 require user approval. Two v0.5 decisions are settled and recorded as
 `PROJECT_DECISIONS.md` 17 and 18: block identity is strictly content-based, and
 lint/fix stays single-note and revision-preconditioned with anything bulk left
 to the v0.6 organizer.
@@ -207,6 +207,30 @@ to the v0.6 organizer.
 - Export deduplication became symmetric across layouts through the same bounded
   spool, and `record_counts` became a pointer so `omitempty` actually applies —
   which cut packed verify peak RSS 41% and runtime 31%.
+
+## 2026-08-06 E1b — scheme-scoped anchor decoding
+
+- Fixed a defect E1a left: `stablelink.Parse` accepted `#Kitchen%20Plan` and
+  returned an anchor that could never resolve, because `validateID` refuses
+  escapes but `validateAnchor` did not.
+- The scheme is now the declaration. Percent-escapes are read as escapes only
+  inside a `notrios://`, `document://`, or `resource://` link — where something
+  declared itself a URI and RFC 3986 already defines `%20`. A bare Markdown
+  anchor stays literal.
+- A new prefix marker (`notrios+q:`) was considered and rejected: it would not
+  help a pasted Obsidian URI, which carries no Notrios prefix, and it would add
+  a second link spelling to the 18 non-test files that interpret a target or an
+  anchor. Notrios already has Joplin's `:/` equivalent in its schemes.
+- Targets stay literal: a wrong decode there opens the wrong note, while a wrong
+  decode in an anchor lands in the right note and lint reports it. That
+  asymmetry is why targets would need an explicit marker and anchors do not.
+- Invalid escapes are left exactly as written and `+` is not a space; `%%20`
+  decodes to `% `, matching every lenient decoder. `Parse` still returns the
+  anchor as written so links round-trip byte for byte.
+- Block anchors were deliberately left comparing in SQL: block IDs and markers
+  are letters, digits, and dashes, so nothing in that charset needs escaping.
+- Recorded as the amended `PROJECT_DECISIONS.md` 19: emit slugs; accept
+  percent-encoded anchors inside URI-schemed links only.
 
 ## 2026-08-06 E3 — workspace fix
 

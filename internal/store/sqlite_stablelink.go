@@ -119,7 +119,11 @@ func (s *SQLiteStore) ResolveStableLink(ctx context.Context, raw string) (Stable
 		resolution.Title = document.Title
 		resolution.NotebookID = document.NotebookID
 		if parsed.Anchor != "" {
-			block, blockErr := s.findDocumentBlockLocked(parsed.DocumentID, strings.TrimPrefix(parsed.Anchor, "^"))
+			// A notrios:// link is a URI, so its anchor's percent-escapes mean
+			// what RFC 3986 says they mean. The raw anchor is kept in the
+			// resolution so the reply echoes what was asked.
+			anchor := stablelink.DecodeAnchor(strings.TrimPrefix(parsed.Anchor, "^"))
+			block, blockErr := s.findDocumentBlockLocked(parsed.DocumentID, anchor)
 			switch {
 			case blockErr == nil:
 				resolution.BlockID = block.ID

@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/renesugar/notrios/internal/markdownblocks"
+	"github.com/renesugar/notrios/internal/stablelink"
 )
 
 // headingSlugCacheLimit bounds what the lint pass remembers while checking
@@ -169,7 +170,11 @@ func (s *SQLiteStore) runLinkLintChecksLocked(selected map[string]bool, collecti
 			if err != nil {
 				return nil, err
 			}
-			row.headingMissing = !slugs[markdownblocks.Slugify(row.anchorValue)]
+			anchor := row.anchorValue
+			if stablelink.IsURITarget(row.rawTarget) {
+				anchor = stablelink.DecodeAnchor(anchor)
+			}
+			row.headingMissing = !slugs[markdownblocks.Slugify(anchor)]
 		}
 		// Check order is fixed so the digest does not depend on map iteration.
 		for _, check := range linkLintChecks() {

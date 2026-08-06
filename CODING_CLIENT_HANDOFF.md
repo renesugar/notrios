@@ -4,8 +4,9 @@ This handoff applies to any coding agent or client continuing this project (Code
 
 Current phase: v0.1, v0.2, v0.3, and **v0.4** are complete; product version is
 0.4.0 and the schema is **v15**. `PLAN.md` holds the v0.5 plan; E1 (block
-anchors), E1a (heading anchors in stable links), E2 (workspace lint), and E3
-(workspace fix) are complete and E4–E9 require user approval.
+anchors), E1a (heading anchors in stable links), E1b (scheme-scoped anchor
+decoding), E2 (workspace lint), and E3 (workspace fix) are complete and E4–E9
+require user approval.
 
 Milestone detail follows. H1–H11 are archived under `plans/v0.3/`. The v0.4
 slices are archived under `plans/v0.4/`:

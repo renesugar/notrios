@@ -332,3 +332,92 @@ func mustCurrentRevision(t *testing.T, st *SQLiteStore, documentID string) strin
 	}
 	return document.CurrentRevisionID
 }
+
+// Percent-escapes are read as escapes only inside a URI-schemed link, which is
+// the one place something declared itself a URI. A bare Markdown anchor is text
+// the author typed.
+func TestPercentEscapesDecodeOnlyInsideURISchemedLinks(t *testing.T) {
+	ctx := context.Background()
+	st := blockTestStore(t)
+	identity, err := st.GetDatabaseIdentity(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	target, err := st.CreateDocument(ctx, CreateDocumentRequest{
+		PreferredID: "doc_encoded", Title: "Encoded", Body: headingBody,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Inside a stable link: decoded, so it reaches `install-setup`.
+	resolution, err := st.ResolveStableLink(ctx,
+		"notrios://databases/"+identity.DatabaseID+"/documents/"+target.ID+"#Install%20%26%20Setup")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resolution.Status != StableLinkResolved || resolution.BlockKind != "heading" {
+		t.Fatalf("an escaped anchor in a URI should resolve: %+v", resolution)
+	}
+
+	// The same bytes in a bare Markdown anchor stay literal and do not resolve.
+	source, err := st.CreateDocument(ctx, CreateDocumentRequest{
+		Title: "Source",
+		Body: "[uri form](" + target.URI + "#Install%20%26%20Setup)\n\n" +
+			"[bare form](#Install%20%26%20Setup)\n",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	report, err := st.LintWorkspace(ctx, LintRequest{Checks: []string{LintUnresolvedHeadingAnchor}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Only the bare one is unresolved: the URI form decoded and matched.
+	if report.Checks[0].Count != 1 {
+		t.Fatalf("expected exactly the bare anchor to be unresolved, got %d", report.Checks[0].Count)
+	}
+	if finding := report.Checks[0].Findings[0]; finding.DocumentID != source.ID || finding.Line != 3 {
+		t.Fatalf("the wrong anchor was reported: %+v", finding)
+	}
+
+	// The decoded URI anchor counts as a backlink against the heading it names.
+	blocks, err := st.ListDocumentBlocks(ctx, target.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, block := range blocks {
+		if block.HeadingSlug == "install-setup" && block.Backlinks != 1 {
+			t.Fatalf("a decoded URI anchor should count as a backlink: %+v", block)
+		}
+	}
+}
+
+// A heading whose text really contains a percent sign keeps working: nothing
+// in a bare anchor is reinterpreted, and a URI spelling encodes it as %25.
+func TestHeadingsContainingPercentSigns(t *testing.T) {
+	ctx := context.Background()
+	st := blockTestStore(t)
+	identity, err := st.GetDatabaseIdentity(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	doc, err := st.CreateDocument(ctx, CreateDocumentRequest{
+		PreferredID: "doc_percent", Title: "Percent", Body: "## 100% Coverage\n\nBody.\n",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	block, err := st.FindDocumentBlock(ctx, doc.ID, "100% Coverage")
+	if err != nil || block.HeadingSlug != "100-coverage" {
+		t.Fatalf("heading text lookup: %+v %v", block, err)
+	}
+	resolution, err := st.ResolveStableLink(ctx,
+		"notrios://databases/"+identity.DatabaseID+"/documents/"+doc.ID+"#100%25%20Coverage")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resolution.Status != StableLinkResolved || resolution.BlockKind != "heading" {
+		t.Fatalf("a properly encoded percent should resolve: %+v", resolution)
+	}
+}

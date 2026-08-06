@@ -1,7 +1,7 @@
 # Plan: v0.5 — Better editing, blocks, and graph UX
 
 Status: **drafted 2026-08-05 from `ROADMAP.md` after v0.4 completed. E1, E1a,
-E2, and E3 are complete; E4–E9 require user approval.**
+E1b, E2, and E3 are complete; E4–E9 require user approval.**
 
 v0.4 is complete and archived under `plans/v0.4/`, including a copy of its own
 plan at `plans/v0.4/000-v0.4-plan.md`. Its one deferral, P6 (the `movenotes-v3`
@@ -144,6 +144,41 @@ Working state: a heading anchor written as a slug or as heading text resolves to
 the same heading; a renamed heading reports `stale_anchor` rather than silently
 opening the top of the note; and lint reports heading anchors that no longer
 match.
+
+### E1b. Scheme-scoped anchor decoding — complete
+
+Archived as `plans/v0.5/005-scheme-scoped-anchor-decoding.md`.
+
+E1a left `stablelink.Parse` accepting `#Kitchen%20Plan` and handing back an
+anchor that could never resolve: the parser refused escapes in identifiers but
+not in anchors, so a percent-encoded anchor was accepted and then silently
+missed every heading. Rather than either rejecting it or decoding everywhere,
+the scheme decides. Percent-escapes are read as escapes only inside a
+`notrios://`, `document://`, or `resource://` link, because that is where
+something declared itself a URI and RFC 3986 already defines what `%20` means.
+A bare Markdown anchor stays literal.
+
+This is the "unique prefix" idea using the prefix Notrios already has. A new
+marker (`notrios+q:`) was considered and rejected: it would not help the case
+that motivated decoding — a pasted Obsidian URI carries no Notrios prefix — and
+it would add a second link spelling to the 18 non-test files that interpret a
+target or an anchor.
+
+- Decode `%XX` in anchors reached through a URI-schemed link: stable-link
+  resolution, the lint heading check, and backlink counting.
+- Leave link *targets* literal. A wrong decode there opens the wrong note; a
+  wrong decode in an anchor lands in the right note and lint reports it. That
+  asymmetry is why targets would need an explicit marker and anchors do not.
+- Leave invalid escapes (`%zz`, a trailing `%`) exactly as written: a heading
+  with a literal percent sign is likelier than a typo in an escape, and deleting
+  bytes would break a link invisibly. `+` is not a space.
+- Keep `Parse` returning the anchor as written, so a link round-trips byte for
+  byte and decoding stays a resolution-time reading.
+
+Working state: `notrios://…#Install%20%26%20Setup` and `#install-setup` reach the
+same heading, the same bytes in a bare Markdown anchor do not, a heading
+containing a real percent sign still resolves, and identifiers still refuse
+escapes.
 
 ### E2. Workspace lint — complete
 
@@ -306,7 +341,7 @@ GUI-affecting tasks also build with `make gui`, and layout changes run
   revision-preconditioned.** Every fix writes an ordinary revision against a
   precondition for one note; anything bulk belongs to the v0.6 organizer, and
   E3 may not grow a multi-note apply path.
-- E1, E1a, E2, and E3 are complete; the remaining tasks are not approved.
+- E1, E1a, E1b, E2, and E3 are complete; the remaining tasks are not approved.
 - **Resolved 2026-08-06: heading anchors in stable links use a slug, not
   percent-encoded heading text.** Obsidian percent-encodes the heading name into
   its URI; Notrios keeps P5's refusal to decode percent-escapes, so the URI form

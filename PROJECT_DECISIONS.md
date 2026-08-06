@@ -43,15 +43,27 @@
     note, and no multi-note apply path is added. Bulk operations belong to the
     v0.6 organizer, which has its own atomic/best-effort contract. Decided
     2026-08-05 for v0.5 E2/E3.
-19. Heading anchors in stable links are slugs. Obsidian addresses a heading by
-    its text, percent-encoded into the URI (`file=Note%23Heading`); Notrios
-    keeps P5's decision that the stable-link parser refuses percent-escapes
-    rather than decoding them, because an identifier needing escapes is not one
-    this application minted and decoding lets two spellings name one target. A
-    `notrios://` heading anchor is therefore the slug, and resolution normalizes
-    heading text to the same slug so hand-written and imported anchors agree.
-    Slugs are disambiguated by occurrence within a note. Decided 2026-08-06 for
-    v0.5 E1a.
+19. **Emit slugs; accept percent-encoded anchors inside URI-schemed links
+    only.** Obsidian addresses a heading by its text, percent-encoded into the
+    URI (`file=Note%23Heading`). Notrios emits the slug: a `notrios://` heading
+    anchor produced by this application is always `#some-heading`, and
+    resolution normalizes heading text to the same slug so hand-written and
+    imported anchors agree. Slugs are disambiguated by occurrence within a note.
+
+    Percent-escapes are *read* as escapes only when the link carries one of
+    Notrios' URI schemes (`notrios://`, `document://`, `resource://`). That
+    scheme is the declaration — percent-encoding is defined for URIs, and RFC
+    3986 already says what `%20` means there — so no new prefix syntax was
+    invented to mark encoded links. In a bare Markdown target or anchor the
+    bytes stay literal: `[x](#100%20off)` is text the author typed, and
+    rereading it would be guessing.
+
+    Identifiers are unaffected. `validateID` still refuses escapes outright,
+    because a wrong decode there opens the *wrong note*, while a wrong decode in
+    an anchor merely fails to find a section in the right one and is reported by
+    lint. Decoding a link *target* would need an explicit marker that this
+    asymmetry does not justify for anchors. Decided 2026-08-06 for v0.5 E1a and
+    amended the same day for E1b.
 
 ## Deferred decisions
 

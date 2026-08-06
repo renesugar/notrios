@@ -128,3 +128,88 @@ func TestFormatMatchesParse(t *testing.T) {
 		t.Fatalf("unexpected link: %+v", link)
 	}
 }
+
+func TestIsURITargetRecognizesOnlyNotriosSchemes(t *testing.T) {
+	for _, target := range []string{
+		"notrios://databases/db_a/documents/doc_b",
+		"document://default/documents/doc_b",
+		"resource://default/resources/res_b",
+		"DOCUMENT://default/documents/doc_b",
+	} {
+		if !IsURITarget(target) {
+			t.Fatalf("%q should be a URI target", target)
+		}
+	}
+	// A bare Markdown target is not a URI, so nothing in it may be reread as an
+	// escape.
+	for _, target := range []string{
+		"", "Kitchen", "Kitchen%20Plan", "notes/kitchen.md",
+		"https://example.com", "mailto:someone@example.com",
+	} {
+		if IsURITarget(target) {
+			t.Fatalf("%q must not be treated as a Notrios URI target", target)
+		}
+	}
+}
+
+func TestDecodeAnchor(t *testing.T) {
+	cases := map[string]string{
+		"Kitchen%20Plan":   "Kitchen Plan",
+		"kitchen-plan":     "kitchen-plan",
+		"100%25%20off":     "100% off",
+		"caf%C3%A9":        "café",
+		"%2Fslash":         "/slash",
+		"lower%2fcase-hex": "lower/case-hex",
+		"":                 "",
+	}
+	for encoded, want := range cases {
+		if got := DecodeAnchor(encoded); got != want {
+			t.Fatalf("DecodeAnchor(%q) = %q, want %q", encoded, got, want)
+		}
+	}
+
+	// An invalid or truncated escape is left exactly as written. A heading with
+	// a literal percent sign is far likelier than a typo in an escape, and
+	// deleting bytes would break the link invisibly.
+	for _, literal := range []string{"100%", "%zz", "%2", "50%off", "a%g0b"} {
+		if got := DecodeAnchor(literal); got != literal {
+			t.Fatalf("DecodeAnchor(%q) = %q, want it unchanged", literal, got)
+		}
+	}
+
+	// A literal percent followed by a valid escape is decided per sequence: the
+	// first % is not a valid escape and stays, the second one decodes. This is
+	// what every lenient decoder does, including Python's urllib.
+	if got := DecodeAnchor("%%20"); got != "% " {
+		t.Fatalf("DecodeAnchor(%q) = %q, want %q", "%%20", got, "% ")
+	}
+
+	// `+` is form encoding, not fragment encoding: a heading with a plus keeps
+	// it.
+	if got := DecodeAnchor("c+%2B+rules"); got != "c+++rules" {
+		t.Fatalf("plus handling: %q", got)
+	}
+}
+
+// Decoding must not become a second way to write a document ID: only the
+// anchor is decoded, and the ID validator still refuses escapes outright.
+func TestPercentEscapesStillRejectedInIdentifiers(t *testing.T) {
+	if _, err := Parse("notrios://databases/db_a/documents/doc%5Fb"); !errors.Is(err, ErrMalformed) {
+		t.Fatalf("an escaped identifier must stay refused, got %v", err)
+	}
+	link, err := Parse("notrios://databases/db_a/documents/doc_b#Kitchen%20Plan")
+	if err != nil {
+		t.Fatalf("an escaped anchor is accepted: %v", err)
+	}
+	// Parse keeps the anchor as written so the link round-trips byte for byte;
+	// decoding is a resolution-time reading of it.
+	if link.Anchor != "Kitchen%20Plan" {
+		t.Fatalf("anchor: %q", link.Anchor)
+	}
+	if link.String() != "notrios://databases/db_a/documents/doc_b#Kitchen%20Plan" {
+		t.Fatalf("round trip: %q", link.String())
+	}
+	if DecodeAnchor(link.Anchor) != "Kitchen Plan" {
+		t.Fatalf("decoded: %q", DecodeAnchor(link.Anchor))
+	}
+}

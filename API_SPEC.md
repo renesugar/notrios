@@ -261,7 +261,10 @@ open the link, so a foreign link never reveals whether that ID exists locally.
 A link carrying an anchor also resolves it: `#^marker`/`#^block-id` name a
 block, a bare `#section-title` names a heading by slug, and heading text is
 normalized to the same slug. Precedence is marker, then block ID, then heading
-slug. `stale_anchor` means the note is here but the block or heading is not —
+slug. Percent-escapes in an anchor are decoded only when the link carries a
+Notrios URI scheme (`notrios://`, `document://`, `resource://`), because that is
+where something declared itself a URI; a bare Markdown anchor stays literal and
+identifiers never accept escapes at all. `stale_anchor` means the note is here but the block or heading is not —
 the visible consequence of content-based block identity and slug-following
 headings — and the note is still named so a client can offer to open it.
 Malformed URIs return `400 validation_failed`.

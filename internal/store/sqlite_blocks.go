@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/renesugar/notrios/internal/markdownblocks"
+	"github.com/renesugar/notrios/internal/stablelink"
 )
 
 // DocumentBlock is one addressable region of a note.
@@ -116,10 +117,13 @@ func (s *SQLiteStore) listDocumentBlocksLocked(documentID string) ([]DocumentBlo
 // otherwise `#Section Title` and `#section-title` would count as two different
 // anchors against one heading.
 func (s *SQLiteStore) blockAnchorCountsLocked(documentID string) (map[string]int, error) {
-	stmt, err := s.prepareLocked(`SELECT anchor_type, anchor_value, COUNT(*) FROM document_links
+	// raw_target comes along because it decides whether the anchor's
+	// percent-escapes are escapes at all: only a URI-schemed link declares them.
+	stmt, err := s.prepareLocked(`SELECT anchor_type, anchor_value, COALESCE(raw_target, ''), COUNT(*)
+		FROM document_links
 		WHERE target_document_id = ? AND anchor_type IN ('block', 'heading')
 			AND anchor_value IS NOT NULL AND anchor_value != ''
-		GROUP BY anchor_type, anchor_value`)
+		GROUP BY anchor_type, anchor_value, raw_target`)
 	if err != nil {
 		return nil, err
 	}
@@ -137,10 +141,13 @@ func (s *SQLiteStore) blockAnchorCountsLocked(documentID string) (map[string]int
 			return nil, s.stepErrLocked(rc)
 		}
 		value := columnText(stmt, 1)
+		if stablelink.IsURITarget(columnText(stmt, 2)) {
+			value = stablelink.DecodeAnchor(value)
+		}
 		if columnText(stmt, 0) == "heading" {
 			value = markdownblocks.Slugify(value)
 		}
-		counts[value] += int(C.sqlite3_column_int(stmt, 2))
+		counts[value] += int(C.sqlite3_column_int(stmt, 3))
 	}
 	delete(counts, "")
 	return counts, nil

@@ -148,12 +148,26 @@ unquoted URL, so `[x](document://…#Install & Setup)` truncates at the space. A
 wikilink (`[[Note#Install & Setup]]`) keeps the text intact, which is the form
 Obsidian uses.
 
-If you have used Obsidian, this is the same model with one difference. Obsidian
-percent-encodes the heading text into its URI
-(`obsidian://open?vault=V&file=Note%23Heading%20Name`); a Notrios stable link
-carries no percent-escapes at all, so the anchor is the slug. Everything else
-matches: headings by name, blocks by `^id`, and both usable from outside the
-app.
+If you have used Obsidian, this is the same model with one difference in what
+Notrios *writes*. Obsidian percent-encodes the heading text into its URI
+(`obsidian://open?vault=V&file=Note%23Heading%20Name`); Notrios always emits the
+slug, which needs no encoding at all.
+
+Notrios does **read** a percent-encoded anchor, but only inside a link that
+carries one of its URI schemes:
+
+```text
+notrios://…/documents/doc_x#Install%20%26%20Setup     ✅ decoded → install-setup
+document://default/documents/doc_x#Install%20%26%20Setup ✅ decoded
+[in a note](#Install%20%26%20Setup)                    ❌ literal text
+```
+
+The scheme is what makes the difference: percent-encoding is defined for URIs,
+so a link that declares itself a URI is the one place `%20` means a space. A
+bare `#…` in a note is text you typed, and Notrios will not reinterpret it —
+which is why a heading called `100% Coverage` keeps working. Link *targets* are
+never decoded either; use the canonical URI or a wikilink for a note name with
+spaces.
 
 ### Blocks
 
