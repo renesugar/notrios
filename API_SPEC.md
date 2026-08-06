@@ -211,8 +211,10 @@ stable reason code, and a SHA-256 fingerprint of the offending target — never 
 note title, body excerpt, raw link target, or local path, because a broken
 wikilink's raw text is frequently a private note's title. `checks=` selects a
 subset and `detail_limit=` caps examples (maximum 1,000). There is deliberately
-no apply endpoint; fixing is E3 and is CLI-only with a per-note revision
-precondition.
+no apply endpoint. Fixing (v0.5 E3) is CLI-only for the same reason resource
+garbage collection is: `notriosctl fix` is dry-run by default and applies one
+note at a time against the revision its plan was computed from, writing an
+ordinary revision per note. No REST surface applies a fix.
 
 `GET /api/v1/admin/gc/report` is the read-only H6 garbage-collection plan.
 It uses the configured retention windows and returns `eligible`, `retained`,

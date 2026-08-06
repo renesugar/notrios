@@ -64,6 +64,8 @@ func main() {
 		runPublish(os.Args[2:])
 	case "lint":
 		runLint(os.Args[2:])
+	case "fix":
+		runFix(os.Args[2:])
 	case "help", "-h", "--help":
 		printHelp()
 	default:
@@ -516,6 +518,8 @@ Usage:
                                                  # retention-aware resource GC; dry-run is the default
   notriosctl lint [--db ...] [--checks a,b] [--detail-limit 100] [--quiet] [--list-checks]
                                                  # read-only workspace report; exit 1 when findings exist
+  notriosctl fix [--db ...] [--kinds a,b] [--document id] [--apply] [--list-kinds]
+                                                 # repair the mechanically safe findings; dry run is the default
   notriosctl link [--db ...] [--anchor slug|^block] [--list-anchors] <document-id>
                                                  # print the stable notrios:// link for a note or one of its sections
   notriosctl open [--profile name] [--registry path] [--db path] [--launch] <notrios-uri>

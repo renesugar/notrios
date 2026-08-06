@@ -376,6 +376,27 @@ timings, and asserts the digest does not change with the detail cap. Those
 timings are what showed six separate scans of `document_links` dominating the
 cost, which the single shared scan removed. Evidence: `performance/v0.5-e2/`.
 
+### Workspace fix (v0.5 E3)
+
+Store fixtures assert that planning changes nothing, that the plan carries the
+exact `before`/`after` and the revision it was computed from, that applying
+writes an ordinary revision and leaves the link pointing where it always did,
+and that a note edited since the plan fails with a conflict while its content
+survives untouched. Further fixtures cover the missing precondition, alt text
+being opt-in and derived from the resource filename, wikilinks and unresolved
+links being left alone, Help and trashed notes being skipped, request
+validation, and the span-refusal rules — moved text, spans past the end,
+inverted, negative.
+
+A CLI fixture builds the real binary and asserts that dry run is the default and
+reports no applied results, that `--apply` repairs and reports per note, that a
+second run finds nothing because the repair is idempotent, that the repaired
+note keeps its blocks, and that an unknown kind is refused.
+
+One fixture records real Markdown behaviour again: `[x](Kitchen Plan)` truncates
+at the space, so title-resolved Markdown links are the space-free ones — the
+same rule that decided E1a's slug form.
+
 ### Sync model and transport tests (planned v0.7)
 
 - Property/model tests shuffle, duplicate, replay, drop, and eventually deliver

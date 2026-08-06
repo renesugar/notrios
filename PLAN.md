@@ -1,7 +1,7 @@
 # Plan: v0.5 — Better editing, blocks, and graph UX
 
 Status: **drafted 2026-08-05 from `ROADMAP.md` after v0.4 completed. E1, E1a,
-and E2 are complete; E3–E9 require user approval.**
+E2, and E3 are complete; E4–E9 require user approval.**
 
 v0.4 is complete and archived under `plans/v0.4/`, including a copy of its own
 plan at `plans/v0.4/000-v0.4-plan.md`. Its one deferral, P6 (the `movenotes-v3`
@@ -172,7 +172,19 @@ a report that is safe to run on a library nobody has backed up yet.
 Working state: findings are deterministic, content-free at the API boundary, and
 reproducible; nothing about the library changes.
 
-### E3. Workspace fix
+### E3. Workspace fix — complete
+
+Archived as `plans/v0.5/004-workspace-fix.md`. `notriosctl fix` is dry-run by
+default, repairs one note at a time against the revision its plan was computed
+from, and writes an ordinary revision per fix. Non-canonical link targets are
+repaired by default; alt text and remote-media localization are opt-in — the
+first because a filename is not a description, the second because it reaches the
+network and runs through the full media policy.
+
+Stale link reference definitions are **not** fixed, because they are not
+detected: reference definitions are outside the link extractor, so E2 has no
+check for them, and a repair for something lint cannot find would be fixing
+blind. The check and its fix belong together in a later slice.
 
 - Implement the apply half for the mechanically safe subset only: unlocalized
   remote images (through the existing media policy), missing alt text,
@@ -294,7 +306,7 @@ GUI-affecting tasks also build with `make gui`, and layout changes run
   revision-preconditioned.** Every fix writes an ordinary revision against a
   precondition for one note; anything bulk belongs to the v0.6 organizer, and
   E3 may not grow a multi-note apply path.
-- E1, E1a, and E2 are complete; the remaining tasks are not approved.
+- E1, E1a, E2, and E3 are complete; the remaining tasks are not approved.
 - **Resolved 2026-08-06: heading anchors in stable links use a slug, not
   percent-encoded heading text.** Obsidian percent-encodes the heading name into
   its URI; Notrios keeps P5's refusal to decode percent-escapes, so the URI form

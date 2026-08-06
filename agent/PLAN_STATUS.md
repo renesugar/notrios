@@ -10,7 +10,7 @@ archived under `plans/v0.4/`, together with a copy of the milestone plan at
 deferred to v0.7 slice 3. Product version is 0.4.0 and the schema is v13.
 
 `PLAN.md` holds the **v0.5 plan** (blocks, lint/fix, graph traversal, editor
-link intelligence, query blocks, organizer UX). **E1, E1a, and E2 are complete**; E3–E9
+link intelligence, query blocks, organizer UX). **E1, E1a, E2, and E3 are complete**; E4–E9
 require user approval. Two v0.5 decisions are settled and recorded as
 `PROJECT_DECISIONS.md` 17 and 18: block identity is strictly content-based, and
 lint/fix stays single-note and revision-preconditioned with anything bulk left
@@ -207,6 +207,30 @@ to the v0.6 organizer.
 - Export deduplication became symmetric across layouts through the same bounded
   spool, and `record_counts` became a pointer so `omitempty` actually applies —
   which cut packed verify peak RSS 41% and runtime 31%.
+
+## 2026-08-06 E3 — workspace fix
+
+- `notriosctl fix` repairs the mechanically safe subset of what lint reports.
+  Dry run is the default and prints the exact before/after of every edit.
+- Each note is repaired against the revision its plan was computed from, with
+  per-note outcomes rather than one transaction; a note edited in between fails
+  and its content survives. Every fix writes an ordinary revision, so it is
+  visible in history and revertible.
+- `non_canonical_link_target` (a link that resolved by title or filename becomes
+  the canonical URI) runs by default. `missing_alt_text` is opt-in because a
+  filename is a starting point rather than a description, and
+  `unlocalized_remote_media` is opt-in because it reaches the network — it runs
+  the existing localization engine, so media policy, SSRF blocking, size/MIME
+  checks, and hash rules all apply.
+- Spans whose bytes are not what the plan recorded are skipped, never applied at
+  an arbitrary position. Wikilinks are left alone: rewriting them replaces the
+  author's syntax rather than repairing it.
+- Stale link reference definitions are deliberately not fixed: they are not
+  detected either, since reference definitions are outside the link extractor.
+  Check and fix belong together in a later slice rather than fixing blind.
+- Another Markdown lesson from a fixture: `[x](Kitchen Plan)` truncates at the
+  space, so title-resolved Markdown links are the space-free ones — the same
+  rule that decided E1a's slug form.
 
 ## 2026-08-06 E1a — heading anchors in stable links
 

@@ -27,8 +27,18 @@ missing titles, unlocalized remote media, missing alt text, unreferenced
 resources, and projection backlog. Heading anchors joined the list in v0.5 E1a,
 once schema v15 gave a heading anchor a stored slug to compare against.
 
-Auto-fix is E3 and stays single-note and revision-preconditioned; bulk
-operations belong to the v0.6 organizer (`PROJECT_DECISIONS.md` 18).
+Auto-fix arrived in v0.5 E3 as `notriosctl fix`: dry run by default, single-note
+and revision-preconditioned, every repair an ordinary revision
+(`PROJECT_DECISIONS.md` 18). It covers non-canonical link targets (default),
+alt text from the resource filename (opt-in), and remote-media localization
+through the media policy (opt-in). Bulk operations remain the v0.6 organizer's.
+
+Two repairs the plan listed are deliberately absent. Stale link reference
+definitions are not fixed because they are not detected: Markdown reference
+definitions are outside the link extractor, so the check and its repair belong
+together in a later slice rather than fixing something lint cannot find.
+Wikilinks are not rewritten into canonical Markdown links, because that replaces
+the syntax the author chose rather than repairing it.
 
 Workspace lint should detect:
 

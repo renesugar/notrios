@@ -267,6 +267,25 @@ printed per check, never the counts, and `report_sha256` covers every finding â€
 the same library produces the same digest. Nothing is written; fixing is a
 separate operation.
 
+## fix
+
+```sh
+notriosctl fix [--config config.yaml] [--db path] [--asset-store path] [--collection default]
+    [--kinds a,b] [--document id] [--max-documents 1000] [--apply] [--allow-review] [--list-kinds]
+```
+
+Repairs the [mechanically safe subset](operations.md#fixing-what-can-be-fixed-mechanically)
+of what `notriosctl lint` reports. Dry run is the default and prints the exact
+`before`/`after` of every edit; `--apply` writes them one note at a time, each
+against the revision its plan was computed from, so a note edited in between
+fails while the rest proceed. Every fix writes an ordinary revision.
+
+`non_canonical_link_target` runs by default. `missing_alt_text` and
+`unlocalized_remote_media` are opt-in â€” the first because a filename is not a
+description, the second because it reaches the network (through the full media
+policy, exactly as `notriosctl localize` does). Findings outside this set stay
+reported and unfixed rather than guessed at.
+
 ## seed-help
 
 ```sh

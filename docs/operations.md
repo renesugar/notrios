@@ -48,6 +48,45 @@ produce the same digest, and a changed digest means something really changed.
 `GET /api/v1/admin/lint/report` returns the same report. Like the
 garbage-collection report, there is deliberately no apply endpoint.
 
+## Fixing what can be fixed mechanically
+
+```sh
+notriosctl fix --list-kinds       # what can be repaired, and what is opt-in
+notriosctl fix                    # dry run: prints the exact edits, changes nothing
+notriosctl fix --apply            # writes them, one note at a time
+notriosctl fix --kinds missing_alt_text --apply
+notriosctl fix --kinds unlocalized_remote_media --apply
+```
+
+Most of what lint reports cannot be repaired without deciding what you meant —
+a broken link needs a target, an ambiguous wikilink needs a choice. Those stay
+reported. Fix handles the small, boring subset:
+
+| Kind | What it does | Default |
+|---|---|---|
+| `non_canonical_link_target` | rewrites a link that resolved by title or filename into the canonical `document://`/`resource://` URI it already points at, so a later rename cannot break it | on |
+| `missing_alt_text` | fills an image's empty alt text from the resource filename | off |
+| `unlocalized_remote_media` | downloads the image through the media policy and rewrites the note to a local `resource://` link | off |
+
+Alt text is off by default because a filename is a starting point for a
+description, not a description. Remote-media localization is off by default
+because it reaches the network; when you ask for it, it runs the same engine as
+`notriosctl localize`, with the same domain rules, private-address blocking,
+size caps, MIME sniffing, and hash checks — never a plain fetch.
+
+Three properties hold for every fix:
+
+- **Dry run is the default.** The plan shows the exact `before` and `after` for
+  each edit. Read it, then run it.
+- **Each note is repaired against the revision the plan was made from.** If the
+  note changed in between — you edited it, another run touched it — that note
+  fails and the others still proceed. Nothing is overwritten silently.
+- **Every fix is an ordinary revision.** It appears in the note's history and
+  you can revert it by restoring the previous revision.
+
+Wikilinks are left alone: rewriting `[[Kitchen]]` into a Markdown link changes
+the syntax you chose rather than repairing it.
+
 Lint reads the whole library, so it is a command you run deliberately rather
 than on every save: about 3 seconds at 100,000 notes and 19 seconds at 500,000
 on the reference machine. Each check's own time is in the report, so you can see
