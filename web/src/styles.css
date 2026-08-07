@@ -406,14 +406,61 @@ body.splitter-dragging {
 
 /* ---- Editor pane ---- */
 
+/* The editor toolbar is a title row plus an action row, never one wrapping
+   line. Before v0.5 E10 it was a single `flex-wrap: wrap` row holding the title,
+   the state chip and every button: the chip never left the title's row, buttons
+   wrapped one at a time from a 520 px pane down to the 280 px minimum, and
+   because the title is `flex: 1` it grew into whatever space a wrapped button
+   vacated — so its width moved *non-monotonically* as the pane narrowed. */
 .editor-toolbar {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 8px;
   padding: 8px;
   border-bottom: 1px solid var(--border);
   flex: none;
+}
+
+.editor-toolbar-title {
+  display: flex;
+}
+
+/* The action row. `flex-wrap` is the floor, not the intent: it keeps a narrow
+   row contained to itself on an engine without container queries, where it can
+   still never crowd the title. The container query below replaces it with an
+   all-or-nothing switch to a column. */
+.editor-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   flex-wrap: wrap;
+}
+
+/* The query is on the *pane*, not the viewport. These panes are resized by
+   splitters independently of the window, so a media query would measure the
+   wrong box — a wide window can hold a narrow editor pane. */
+.editor-pane {
+  container-type: inline-size;
+  container-name: editor-pane;
+}
+
+@container editor-pane (max-width: 300px) {
+  .editor-toolbar-actions {
+    flex-direction: column;
+    align-items: stretch;
+    flex-wrap: nowrap;
+  }
+}
+
+/* A trashed note's row is wider — a chip plus two buttons — so it stacks
+   sooner. Two breakpoints rather than one shared worst case, so the editable
+   row is not stacked at widths where it fits. */
+@container editor-pane (max-width: 380px) {
+  .editor-toolbar-actions.trashed-actions {
+    flex-direction: column;
+    align-items: stretch;
+    flex-wrap: nowrap;
+  }
 }
 
 .title-input {
@@ -452,6 +499,75 @@ body.splitter-dragging {
 
 .danger-button {
   color: var(--danger);
+}
+
+/* Start a new note. It lives in the search pane rather than the editor toolbar
+   because it is not an action on the open note, and it names its destination so
+   a note's notebook is answered before it is written. */
+.new-note-button {
+  display: block;
+  width: calc(100% - 16px);
+  margin: 0 8px 8px;
+  padding: 6px 10px;
+  border: 1px dashed var(--border-strong);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 13px;
+  text-align: left;
+}
+
+.new-note-button:hover {
+  background: var(--hover);
+}
+
+.new-note-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+/* The notebook control inside the Markdown editor's own toolbar. */
+.notebook-picker-trigger {
+  display: inline-block;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  vertical-align: middle;
+}
+
+.notebook-picker {
+  list-style: none;
+  margin: 0;
+  padding: 4px;
+  max-height: 320px;
+  overflow-y: auto;
+  min-width: 180px;
+}
+
+.notebook-picker-option {
+  display: block;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  padding: 5px 10px;
+  border-radius: 6px;
+  text-align: left;
+  cursor: pointer;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.notebook-picker-option:hover {
+  background: var(--hover);
+}
+
+.notebook-picker-option.selected {
+  background: var(--accent-soft);
+  font-weight: 600;
 }
 
 .trashed-badge {

@@ -142,6 +142,12 @@ export interface ResourceReferencePage {
 
 export interface CreateDocumentRequest {
   collection_id?: string;
+  /**
+   * Where the note is filed. Omitted, the service uses the default "Notes"
+   * notebook — which is the right answer when the sidebar has a search
+   * notebook selected, not a fallback worth apologising for.
+   */
+  notebook_id?: string;
   title: string;
   body: string;
   body_mime_type?: string;
@@ -210,6 +216,7 @@ export async function createDocument(request: CreateDocumentRequest): Promise<Do
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       collection_id: request.collection_id ?? 'default',
+      notebook_id: request.notebook_id || undefined,
       title: request.title,
       body: request.body,
       body_mime_type: request.body_mime_type ?? 'text/markdown',
@@ -581,6 +588,22 @@ export interface NotebookDeletionPreview {
 export async function previewNotebookDeletion(notebookID: string): Promise<NotebookDeletionPreview> {
   const response = await fetch(`/api/v1/notebooks/${encodeURIComponent(notebookID)}/deletion-preview`);
   return parseJSON<NotebookDeletionPreview>(response);
+}
+
+/**
+ * Files a note into another notebook.
+ *
+ * Not revision-scoped: a move changes where a note lives, not what it says, so
+ * it takes effect immediately and does not write a revision. The service
+ * refuses moves into and out of the protected Help notebook.
+ */
+export async function moveDocumentToNotebook(documentID: string, notebookID: string): Promise<DocumentRecord> {
+  const response = await fetch(`/api/v1/documents/${encodeURIComponent(documentID)}/notebook`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ notebook_id: notebookID }),
+  });
+  return parseJSON<DocumentRecord>(response);
 }
 
 /** Deletes a notebook and its descendants; their notes move to the Trash. */

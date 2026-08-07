@@ -87,8 +87,8 @@ Trash-first deletion (implemented in v0.5 E8):
   an available destination, and for a read-only or trashed note the dropdown is
   disabled rather than hidden so the note's notebook stays visible. Moving
   several notes at once is a batch operation and belongs with the rest of them.
-  (Planned as v0.6 F0; before it, the GUI created every note in "Notes" and
-  offered no way to move one.)
+  (v0.6 F0; before it, the GUI created every note in "Notes" and offered no way
+  to move one.)
 - The editor toolbar holds **only actions that apply to the open note** — save,
   move to Trash, restore, delete forever. Starting a *new* note is not one of
   them: it discards the editor's contents rather than acting on the note, and
@@ -96,15 +96,20 @@ Trash-first deletion (implemented in v0.5 E8):
   or Trash toolbar as an apparent offer to create something there. It belongs in
   the search pane, which is the list context and is present whatever is open —
   and it has to stay reachable there, because it is the only path back to a
-  blank draft. (Planned as v0.5 E10 part 2.)
+  blank draft. (v0.5 E10.)
 - The editor toolbar is a **title row plus an action row**, not one wrapping
   line. The title occupies its own row; the state chip and the note's actions
   sit beneath it on a single row, and when the pane is too narrow for that row
   they stack vertically **together** rather than wrapping one item at a time.
   The trigger is the *pane's* width, not the window's — the panes are
   splitter-resized independently, so a viewport media query would measure the
-  wrong box. (Planned as v0.5 E10; before it, a trashed note's toolbar went
-  ragged at every supported width and the chip never left the title's row.)
+  wrong box. Implemented with a CSS container query on the editor pane, with
+  `flex-wrap` as the floor so an engine lacking container-query support still
+  keeps a narrow row contained to itself. The breakpoints sit *above* the
+  measured content width on purpose: the all-or-nothing switch has to fire
+  before `flex-wrap` could raggedly wrap one item. (v0.5 E10; before it, a
+  trashed note's toolbar went ragged at every supported width and the chip never
+  left the title's row.)
 - Opening a trashed note works because `GET /api/v1/documents/{id}` returns one,
   with `deleted_at` set and `editable: false`. Before E8 it returned 404, which
   made the Trash unusable and left the `trashed` branch in stable-link routing

@@ -20,6 +20,43 @@ export const ALL_NOTES_SEARCH_ID = 'snb_all_notes';
 export const TRASH_SEARCH_ID = 'snb_trash';
 
 /**
+ * The notebook a new note should be created into, given the selected row.
+ *
+ * `null` means "let the service use the default Notes notebook", which is the
+ * right answer — not a fallback — for "All notes", a query-backed search
+ * notebook, and the read-only Help notebook. A new note has to land somewhere,
+ * and those three name a view rather than a place.
+ */
+export function creationTargetFor(row: SidebarRow | null | undefined): string | null {
+  if (!row || row.kind !== 'notebook' || row.builtin) return null;
+  return row.id;
+}
+
+/** One selectable destination in the notebook picker. */
+export interface NotebookOption {
+  id: string;
+  name: string;
+  depth: number;
+}
+
+/**
+ * Flattens the notebook tree into pickable destinations, in sidebar order.
+ *
+ * Builtin notebooks are omitted: the service refuses to move a note into or out
+ * of Help, so offering it would be offering a guaranteed 403. Mirroring the
+ * server rule beats discovering it.
+ */
+export function notebookOptions(tree: NotebookTreeNode[], depth = 0): NotebookOption[] {
+  const options: NotebookOption[] = [];
+  for (const node of tree) {
+    if (node.builtin) continue;
+    options.push({ id: node.id, name: node.name, depth });
+    if (node.children?.length) options.push(...notebookOptions(node.children, depth + 1));
+  }
+  return options;
+}
+
+/**
  * Whether a sidebar row offers a delete affordance.
  *
  * The service refuses to delete builtin notebooks and the default one, and a

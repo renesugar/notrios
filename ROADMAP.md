@@ -132,6 +132,8 @@ question, and are not on the original list.
 - Note templates and task extraction (moved from v0.5).
 - A graph view in the GUI, over the v0.5 E4 traversal/path/report data (moved
   from v0.5).
+- ~~Notebook targeting: create into the selected notebook, and a single-note
+  move control in the GUI and CLI~~ — done as F0.
 - Complete MCP write-tool coverage gated by explicit scopes.
 - Resource graph resources/read support.
 - LLM-safe surgical edits with dry-run and revision preconditions.

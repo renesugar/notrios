@@ -1,10 +1,9 @@
 # Plan: v0.6 — MCP and automation expansion
 
-Status: **draft. Written 2026-08-06 from `ROADMAP.md` after v0.5 completed.
-One v0.5.0 release-candidate fix (E10, the editor toolbar: layout at narrow pane
-widths plus which actions belong in it) is outstanding and comes first — see the
-section before the v0.6 tasks. No task is approved; both E10 and F1 require user
-approval before any code is written.**
+Status: **active. Written 2026-08-06 from `ROADMAP.md` after v0.5 completed.
+E10 (the v0.5.0 release-candidate toolbar fix) and F0 (notebook targeting) are
+complete, done as one pass over the editor toolbar. F1 onward require user
+approval.**
 
 v0.5 is complete and archived under `plans/v0.5/`, including a copy of its own
 plan at `plans/v0.5/000-v0.5-plan.md`. Product version is 0.5.0 and the schema
@@ -52,7 +51,11 @@ Both parts came from the same session of Trash testing, both live in
 `web/src/components/EditorPane.tsx`, and both are verified by the same browser
 sweep across pane widths, so they are one slice rather than two.
 
-### E10. Editor toolbar: layout at narrow pane widths, and which actions belong in it
+### E10. Editor toolbar: layout at narrow pane widths, and which actions belong in it — complete
+
+Archived as `plans/v0.5/014-editor-toolbar-and-notebook-targeting.md`, together
+with F0: both landed in one pass because they touch the same component and the
+same browser sweep.
 
 #### Part 1 — layout
 
@@ -188,7 +191,9 @@ new note stays reachable from anywhere.
 
 ## Tasks
 
-### F0. Notebook targeting: create where you are, and move what is misfiled
+### F0. Notebook targeting: create where you are, and move what is misfiled — complete
+
+Archived as `plans/v0.5/014-editor-toolbar-and-notebook-targeting.md`.
 
 Raised by the user after E10 part 2 turned up that the GUI always creates into
 the default "Notes" notebook. Checking the rest of the surface made it worse

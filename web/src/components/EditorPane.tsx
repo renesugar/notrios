@@ -7,7 +7,7 @@
 // render with a disabled editor, hidden save/upload controls, and a visible
 // badge — the client never waits for a server 403 to explain protection.
 import { useEffect, useMemo, useRef } from 'react';
-import { MdEditor, config, type ExposeParam, type UploadImgCallBack } from 'md-editor-rt';
+import { MdEditor, allToolbar, config, type ExposeParam, type ToolbarNames, type UploadImgCallBack } from 'md-editor-rt';
 import type { ThemeMode } from '../themes';
 import { resourceContentURL, type DocumentLink, type DocumentRecord, type RemoteMediaDecision, type ResourceReference } from '../api';
 import { useBufferLinks } from '../useLinkIntelligence';
@@ -22,6 +22,8 @@ import {
 } from '../editor-extensions';
 import { spansToEditorRanges } from '../editor-offsets';
 import { disabledEditorExtensions, installEditorAssets } from '../editor-assets';
+import { NotebookPicker } from './NotebookPicker';
+import type { NotebookOption } from '../sidebar';
 
 // Point md-editor-rt at the bundled KaTeX/highlight.js/cropper before the
 // editor mounts, so nothing is ever fetched from a CDN.
@@ -52,7 +54,6 @@ export interface EditorPaneProps {
   busy: boolean;
   themeBase: ThemeMode;
   onSave: () => void;
-  onNewNote: () => void;
   onUploadAndAttach: (file: File | null) => void;
   onEditorUploadImages: (files: Array<File>, callback: UploadImgCallBack) => void;
   links: DocumentLink[];
@@ -65,6 +66,18 @@ export interface EditorPaneProps {
   onOpenDocument: (documentID: string) => void;
   /** Server-reported: this note is in the Trash, not merely uneditable. */
   trashed: boolean;
+  /** Destinations for the toolbar's notebook control, in sidebar order. */
+  notebookOptions: NotebookOption[];
+  /**
+   * The notebook the control shows. For an open note this is the note's own
+   * notebook, not the sidebar's selection — otherwise reaching a note from
+   * "All notes" would show it filed wherever the sidebar happens to point.
+   */
+  notebookID: string | null;
+  /** Label when nothing matches: the service's own default notebook. */
+  defaultNotebookName: string;
+  /** File the open note (or the pending draft) into another notebook. */
+  onSelectNotebook: (notebookID: string) => void;
   /** Move the open note to the Trash. */
   onDelete: () => void;
   /** Bring the open trashed note back. */
@@ -84,7 +97,6 @@ export function EditorPane(props: EditorPaneProps) {
     busy,
     themeBase,
     onSave,
-    onNewNote,
     onUploadAndAttach,
     onEditorUploadImages,
     links,
@@ -94,6 +106,10 @@ export function EditorPane(props: EditorPaneProps) {
     onLocalizeRemoteMedia,
     onOpenDocument,
     trashed,
+    notebookOptions,
+    notebookID,
+    defaultNotebookName,
+    onSelectNotebook,
     onDelete,
     onRestore,
     onPurge,
@@ -144,55 +160,78 @@ export function EditorPane(props: EditorPaneProps) {
     });
   }, [onOpenDocument]);
 
+  // The notebook control is a custom item in md-editor-rt's own toolbar.
+  // `toolbars` has to be explicit to position it, which stays maintainable
+  // because `allToolbar` is exported — a built-in tool added in a future
+  // release still appears, and `toolbarsExclude` still filters the list.
+  const notebookPicker = (
+    <NotebookPicker
+      key="notrios-notebook"
+      options={notebookOptions}
+      selectedID={notebookID}
+      defaultName={defaultNotebookName}
+      disabled={busy || !editable}
+      onSelect={onSelectNotebook}
+    />
+  );
+  const toolbars = useMemo<ToolbarNames[]>(() => [...allToolbar, 0], []);
+
   return (
     <section className="pane editor-pane" aria-label="Markdown editor" data-testid="pane-editor">
+      {/* Two rows, not one wrapping line. The title gets its own row so the
+          state chip can never crowd it, and the actions share a row beneath
+          that stacks as a unit when the pane is too narrow — see the container
+          query in styles.css. Every control here acts on the open note;
+          starting a *new* note lives in the search pane, because it does not. */}
       <div className="editor-toolbar">
-        <input
-          className="title-input"
-          value={title}
-          onChange={(event) => onTitleChange(event.target.value)}
-          placeholder="Note title"
-          aria-label="Note title"
-          disabled={!editable}
-        />
-        {/* A trashed note is uneditable for a different reason than a Help
-            note, and saying "read-only" would hide the one thing the reader
-            can act on: it is recoverable. */}
-        {trashed && (
-          <span className="readonly-badge trashed-badge" data-testid="trashed-badge" role="status">
-            In the Trash
-          </span>
-        )}
-        {!editable && !trashed && (
-          <span className="readonly-badge" data-testid="readonly-badge" role="status">
-            Read-only Help note
-          </span>
-        )}
-        {editable && (
-          <button onClick={onSave} disabled={busy || title.trim() === ''} data-testid="save-button">
-            {busy ? 'Working…' : selectedDocument ? 'Save revision' : 'Create note'}
-          </button>
-        )}
-        {selectedDocument && (
-          <button type="button" onClick={onNewNote}>
-            New note
-          </button>
-        )}
-        {selectedDocument && editable && (
-          <button type="button" className="danger-button" disabled={busy} onClick={onDelete} data-testid="delete-button" title="Move this note to the Trash; it can be restored from there">
-            Move to Trash
-          </button>
-        )}
-        {trashed && (
-          <>
-            <button type="button" disabled={busy} onClick={onRestore} data-testid="restore-button">
-              Restore
+        <div className="editor-toolbar-title">
+          <input
+            className="title-input"
+            value={title}
+            onChange={(event) => onTitleChange(event.target.value)}
+            placeholder="Note title"
+            aria-label="Note title"
+            disabled={!editable}
+          />
+        </div>
+        <div
+          className={trashed ? 'editor-toolbar-actions trashed-actions' : 'editor-toolbar-actions'}
+          data-testid="editor-toolbar-actions"
+        >
+          {/* A trashed note is uneditable for a different reason than a Help
+              note, and saying "read-only" would hide the one thing the reader
+              can act on: it is recoverable. */}
+          {trashed && (
+            <span className="readonly-badge trashed-badge" data-testid="trashed-badge" role="status">
+              In the Trash
+            </span>
+          )}
+          {!editable && !trashed && (
+            <span className="readonly-badge" data-testid="readonly-badge" role="status">
+              Read-only Help note
+            </span>
+          )}
+          {editable && (
+            <button onClick={onSave} disabled={busy || title.trim() === ''} data-testid="save-button">
+              {busy ? 'Working…' : selectedDocument ? 'Save revision' : 'Create note'}
             </button>
-            <button type="button" className="danger-button" disabled={busy} onClick={onPurge} data-testid="purge-button" title="Permanently delete this note and its revisions">
-              Delete forever
+          )}
+          {selectedDocument && editable && (
+            <button type="button" className="danger-button" disabled={busy} onClick={onDelete} data-testid="delete-button" title="Move this note to the Trash; it can be restored from there">
+              Move to Trash
             </button>
-          </>
-        )}
+          )}
+          {trashed && (
+            <>
+              <button type="button" disabled={busy} onClick={onRestore} data-testid="restore-button">
+                Restore
+              </button>
+              <button type="button" className="danger-button" disabled={busy} onClick={onPurge} data-testid="purge-button" title="Permanently delete this note and its revisions">
+                Delete forever
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       <div className="editor-host">
@@ -212,6 +251,8 @@ export function EditorPane(props: EditorPaneProps) {
             }
             onEditorUploadImages(files, callback);
           }}
+          toolbars={toolbars}
+          defToolbars={[notebookPicker]}
           toolbarsExclude={['preview', 'previewOnly', 'htmlPreview', 'catalog', 'github', 'fullscreen', 'pageFullscreen', 'save']}
           language="en-US"
           theme={themeBase}

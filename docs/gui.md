@@ -64,8 +64,15 @@ Below the menu bar the window is four side-by-side panes, always in this order:
    language](query-language.md). On startup the "All notes" view loads, and
    results page in incrementally as you scroll (a keyboard-accessible "Load
    more" button covers the same path), so even huge databases start instantly.
-   Read-only notes show a 🔒 marker.
-3. **Markdown editor** — title, toolbar, and source editor. Note details (metadata, uploads, links, backlinks, resources) live in a collapsible **Note info** inspector at the bottom of this pane, not in a pane of their own. When a note references remote images or media, the inspector also lists each URL with its server-side policy decision (allow/block/review) — a static scan; nothing is downloaded. For editable notes with allowed media, a **Localize allowed media** button downloads those files through the server's quarantine pipeline, stores them as local resources, and rewrites the note to `resource://` links in a new revision (blocked URLs are never fetched).
+   Read-only notes show a 🔒 marker. Above the results, **New note** starts a
+   draft and names where it will be filed — see [choosing the
+   notebook](#choosing-which-notebook-a-note-goes-in).
+3. **Markdown editor** — title on its own line, then a row holding the note's
+   state and the actions that apply to it; below those, the editor toolbar and
+   the source editor. Narrow the pane and that action row stacks vertically as a
+   unit rather than wrapping a button at a time. Every control there acts on the
+   note in front of you — starting a *new* note lives in the search panel,
+   because it does not. Note details (metadata, uploads, links, backlinks, resources) live in a collapsible **Note info** inspector at the bottom of this pane, not in a pane of their own. When a note references remote images or media, the inspector also lists each URL with its server-side policy decision (allow/block/review) — a static scan; nothing is downloaded. For editable notes with allowed media, a **Localize allowed media** button downloads those files through the server's quarantine pipeline, stores them as local resources, and rewrites the note to `resource://` links in a new revision (blocked URLs are never fetched).
 4. **Markdown preview** — rendered Markdown. `document://` links open the target note; `resource://` links download attachments; images can be pasted/uploaded in the editor and become local resources.
 
 Each pane scrolls on its own; the window itself never scrolls.
@@ -159,6 +166,44 @@ Three splitters separate the panes. Drag one with the mouse, or focus it with **
 Panes always fill the window. When you resize the window, the sidebar and search panel keep their widths and the editor and preview re-split the remaining space **equally**; drag a splitter afterwards to make them unequal again. The layout is designed down to a window about 970 px wide — narrower than that, every pane sits at its minimum width and the workspace scrolls horizontally.
 
 The menu bar offers File (Reload/Quit), Edit, View (fullscreen), and Help — Help searches the built-in **Help notebook**, which holds this documentation offline (`notebook:help` finds it too).
+
+## Choosing which notebook a note goes in
+
+Select a notebook in the sidebar and it becomes the target: the sidebar
+highlights it, and the **New note** button in the search panel says where the
+note will be filed — "New note in **Work**". This is the same model Joplin uses,
+and the sidebar highlight is the main cue.
+
+Selecting **All notes**, the **Trash**, the **Help** notebook, or a saved search
+falls back to the default **Notes** notebook. Those name a view rather than a
+place, and a note has to be filed somewhere.
+
+The editor's own toolbar carries a notebook control showing where the open note
+lives. It is the second cue, and it is also the correction: pick another
+notebook and the note is filed there immediately, with a message naming the
+destination. That matters because the usual way notes end up misfiled is
+noticing several of them at once, long after the sidebar moved.
+
+Two details worth knowing:
+
+- The control shows the **open note's** notebook, not the sidebar's selection.
+  Reaching a note from "All notes" shows you where that note actually lives.
+- On a read-only or trashed note it is visible but disabled, so a note's
+  notebook is still legible where it cannot be changed. **Help** is never
+  offered as a destination — the service refuses notes moved into or out of it.
+
+To move a note from the command line:
+
+```sh
+notriosctl notes move --document doc_01H... --notebook nb_01H...
+notriosctl notes move --document doc_01H... --notebook Work
+```
+
+A notebook name is accepted when it identifies one notebook. Names are unique
+only among siblings, so if you have both `Contacts/Work` and `Personal/Work` the
+command refuses the name and asks for the ID rather than guessing.
+
+Moving several notes at once is not available yet.
 
 ## Deleting and restoring notes
 

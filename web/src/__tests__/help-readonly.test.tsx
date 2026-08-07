@@ -6,13 +6,23 @@ import { EditorPane, type EditorPaneProps } from '../components/EditorPane';
 import type { DocumentRecord } from '../api';
 
 vi.mock('md-editor-rt', () => ({
-  MdEditor: ({ value, readOnly, noUploadImg }: { value: string; readOnly?: boolean; noUploadImg?: boolean }) => (
-    <textarea data-testid="editor-stub" data-no-upload={noUploadImg ? 'true' : 'false'} readOnly={readOnly} value={value} onChange={() => {}} />
+  MdEditor: ({ value, readOnly, noUploadImg, defToolbars }: { value: string; readOnly?: boolean; noUploadImg?: boolean; defToolbars?: React.ReactNode }) => (
+    <>
+      <div data-testid="editor-toolbar-stub">{defToolbars}</div>
+      <textarea data-testid="editor-stub" data-no-upload={noUploadImg ? 'true' : 'false'} readOnly={readOnly} value={value} onChange={() => {}} />
+    </>
   ),
   MdPreview: ({ value }: { value: string }) => <div data-testid="preview-stub">{value}</div>,
   // EditorPane registers its CodeMirror extensions through md-editor-rt's
   // global config hook at module load, so the stub has to accept the call.
   config: () => {},
+  DropdownToolbar: ({ children, overlay, disabled }: { children?: React.ReactNode; overlay?: React.ReactNode; disabled?: boolean }) => (
+    <div data-testid="dropdown-toolbar" data-disabled={disabled ? 'true' : 'false'}>
+      {children}
+      {overlay}
+    </div>
+  ),
+  allToolbar: [],
 }));
 vi.mock('md-editor-rt/lib/style.css', () => ({}));
 
@@ -42,7 +52,6 @@ function renderPane(overrides: Partial<EditorPaneProps>) {
     busy: false,
     themeBase: 'light',
     onSave: vi.fn(),
-    onNewNote: vi.fn(),
     onUploadAndAttach: vi.fn(),
     onEditorUploadImages: vi.fn(),
     links: [],
@@ -52,6 +61,13 @@ function renderPane(overrides: Partial<EditorPaneProps>) {
     onLocalizeRemoteMedia: vi.fn(),
     onOpenDocument: vi.fn(),
     trashed: false,
+    notebookOptions: [
+      { id: 'nb_notes', name: 'Notes', depth: 0 },
+      { id: 'nb_work', name: 'Work', depth: 0 },
+    ],
+    notebookID: 'nb_notes',
+    defaultNotebookName: 'Notes',
+    onSelectNotebook: vi.fn(),
     onDelete: vi.fn(),
     onRestore: vi.fn(),
     onPurge: vi.fn(),

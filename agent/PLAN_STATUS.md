@@ -22,62 +22,49 @@ Three v0.5 roadmap bullets did not ship and moved to v0.6 rather than being left
 ambiguous: note templates, task extraction, and a graph *view* (E4 delivered the
 traversal, path, and report data it would be built on).
 
-**Two v0.5.0 release-candidate defects are outstanding, both from the same
-session of Trash testing and both in the editor toolbar, planned as one slice
-E10.** (1) The toolbar is a single wrapping row, so the "In the Trash" chip
-never leaves the title's row and the buttons wrap raggedly from 520 px down to
-the editor pane's own 280 px minimum, with the title width moving
-non-monotonically as the pane narrows. (2) "New note" appears for every open
-note, including read-only Help and trashed notes, because the condition tests
-only `selectedDocument` with no editability check.
+**E10 and F0 are complete**, done as one pass over the editor toolbar and
+archived as `plans/v0.5/014-editor-toolbar-and-notebook-targeting.md`. E10 was
+the v0.5.0 release-candidate toolbar fix; F0 was the first v0.6 task. They share
+a component, a test file, and a browser sweep, so splitting them would have
+meant restructuring the toolbar twice.
 
-Two facts found while checking part 2 shaped the fix rather than confirming the
-obvious one. `onNewNote` has exactly one caller, so simply hiding the button
-would strand a user on a read-only note with no way back to a blank draft — on a
-fresh library holding only the fifteen seeded Help notes, no way to create a
-note at all. It is therefore **moved** to the search pane rather than hidden.
-And creating a note is not notebook-scoped today: the client's `createDocument`
-sends no `notebook_id` and its request type lacks the field, so every GUI-created
-note lands in "Notes" whatever is open. The REST API has accepted `notebook_id`
-all along. Whether to make creation follow the selected notebook is recorded in
-`PLAN.md` as a decision for the user, with relocation-only recommended for a
-release candidate.
+- The toolbar is now a title row plus an action row that stacks as a unit.
+  Measured before and after across pane widths down to the 280 px minimum: the
+  chip never shares the title's row, the rows at 280 px went 4 → 2, and the
+  title width now decreases **monotonically** (it used to grow when the pane
+  narrowed, because `flex: 1` expanded it into space a wrapped button vacated).
+- **The container-query breakpoints sit above the measured content width on
+  purpose.** `flex-wrap: wrap` is the base rule and the floor for an engine
+  without container-query support; a breakpoint at the true fit-limit would
+  leave a band of widths where `flex-wrap` wrapped one item raggedly before the
+  all-or-nothing switch fired. Stacking slightly early makes the ragged state
+  unreachable.
+- "New note" moved to the search pane rather than being hidden on read-only
+  notes: `onNewNote` had one caller, so hiding it would have stranded a reader
+  on a library holding only the fifteen seeded Help notes.
+- The notebook control lives in `md-editor-rt`'s own toolbar, verified rather
+  than assumed — `defToolbars` plus a numeric `toolbars` entry take custom items,
+  `DropdownToolbar` is exported, and the toolbar measured 35 px tall at both a
+  300 px and a 900 px pane, so it scrolls instead of growing a row.
+- Selection is tracked by notebook **ID**: a row's query is `notebook:"<name>"`
+  and names are unique only among siblings, so `Contacts/Work` and
+  `Personal/Work` share a query.
+- The picker shows the **open note's** notebook, not the sidebar's selection, so
+  reaching a note from "All notes" does not claim it lives elsewhere.
+- `notriosctl notes move` closes the CLI gap and refuses an ambiguous notebook
+  name rather than picking one.
+- **A stub was passing over the feature**: every web fixture's `MdEditor` stub
+  rendered only a textarea and dropped `defToolbars`, so the picker never
+  reached the DOM. The stub now renders custom toolbar items — one that
+  discards half the contract it stands in for will pass whatever is built
+  against it.
 
-v0.5.0 is built and validated but not tagged or pushed, so E10 lands in the
-candidate under `plans/v0.5/` with no version change, before F1. It is drafted
-in `PLAN.md` and **not approved**.
-
-**The GUI cannot move a note between notebooks, and creates every note in
-"Notes".** Found when the user questioned E10 part 2's note about creation not
-being notebook-scoped. `MoveDocumentToNotebook` exists in the store,
-`POST /api/v1/documents/{id}/notebook` in REST, and `move_note_to_notebook` in
-MCP — but `notriosctl` has no command and `web/src/api.ts` has no client
-function, so the built-in client can create a note in the wrong notebook and
-then not correct it. Planned as **F0**, the first v0.6 task, ahead of F1 whose
-batch move generalizes the single-note control F0 adds. Traps recorded with
-it: the selected notebook must be tracked by ID rather than derived from the
-sidebar's `notebook:"<name>"` query (names are unique only among siblings, so
-two notebooks can share one), and a creation target landing on the protected
-Help notebook must be refused client-side rather than discovered as a 403.
-
-F0 follows Joplin's shape, which the user cited: the sidebar selection is the
-creation target and its highlight is the primary cue, with "New note" in the
-search pane. The user's conditional proposal of a notebook dropdown *inside the
-editor toolbar* — worth doing only if that toolbar can take it, since a separate
-control above it would wrap — was checked against the installed `md-editor-rt`
-6.5.3 and holds twice over: `defToolbars` plus a numeric `toolbars` entry accept
-custom items, `DropdownToolbar` is exported with a controlled `visible`/`overlay`
-contract, and `.md-editor-toolbar-wrapper` is `overflow-x: auto`, so that
-toolbar scrolls rather than wraps and cannot reintroduce the E10 defect. The
-explicit `toolbars` array a custom item requires stays maintainable because
-`allToolbar` is exported.
-
-`PLAN.md` now holds the **v0.6 draft** — notebook targeting and single-note move
-(F0), batch organizer transactions (F1), MCP
+`PLAN.md` now holds the **v0.6 plan** — notebook targeting and single-note move
+(F0, complete), batch organizer transactions (F1), MCP
 tool visibility profiles (F2), MCP coverage and resource reads (F3), templates
 and task extraction (F4), a graph view (F5), a job control plane (F6), and the
-wrap-up (F7). **No v0.6 task is approved**; F1 needs user approval before any
-code is written.
+wrap-up (F7). F0 is complete; **F1 onward need user approval before any code is
+written.**
 
 ## 2026-08-02 follow-up review
 

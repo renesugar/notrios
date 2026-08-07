@@ -19,6 +19,7 @@ import {
   listSearchNotebooks,
   listTags,
   localizeRemoteMedia,
+  moveDocumentToNotebook,
   previewNotebookDeletion,
   purgeDocument,
   resolveStableLink,
@@ -51,7 +52,13 @@ import {
   type ThemeMode,
   type ThemeTokens,
 } from './themes';
-import { composeSidebar, type SidebarRow } from './sidebar';
+import {
+  composeSidebar,
+  creationTargetFor,
+  DEFAULT_NOTEBOOK_ID,
+  notebookOptions as flattenNotebookOptions,
+  type SidebarRow,
+} from './sidebar';
 import { notebookDeletionPrompt, notebookName } from './organizer';
 import {
   clampWidths,
@@ -99,6 +106,11 @@ export function App() {
   const [notebooks, setNotebooks] = useState<NotebookTreeNode[]>([]);
   const [searchNotebooks, setSearchNotebooks] = useState<SearchNotebook[]>([]);
   const [tags, setTags] = useState<TagRecord[]>([]);
+  // The selected sidebar row, kept whole rather than as its query. A notebook
+  // row's query is `notebook:"<name>"` and names are unique only among
+  // siblings, so `Contacts/Work` and `Personal/Work` share a query — deriving
+  // the creation target from `activeQuery` would file into the wrong one.
+  const [selectedRow, setSelectedRow] = useState<SidebarRow | null>(null);
 
   const paged = usePagedSearch(25);
 
@@ -221,6 +233,25 @@ export function App() {
   }, []);
 
   const sidebarRows = useMemo(() => composeSidebar(notebooks, searchNotebooks), [notebooks, searchNotebooks]);
+  const notebookChoices = useMemo(() => flattenNotebookOptions(notebooks), [notebooks]);
+
+  // Where a new note is filed. `null` means the service's default notebook,
+  // which is the right answer for "All notes", a saved search, and Help — those
+  // name a view rather than a place.
+  const creationNotebookID = useMemo(() => creationTargetFor(selectedRow), [selectedRow]);
+  const defaultNotebookName = useMemo(
+    () => notebookChoices.find((option) => option.id === DEFAULT_NOTEBOOK_ID)?.name ?? 'Notes',
+    [notebookChoices],
+  );
+  const creationNotebookName = useMemo(
+    () => notebookChoices.find((option) => option.id === creationNotebookID)?.name ?? defaultNotebookName,
+    [notebookChoices, creationNotebookID, defaultNotebookName],
+  );
+  // The toolbar control shows the *open note's* notebook once one is open, and
+  // the pending creation target otherwise. Showing the sidebar's selection for
+  // an open note would claim a note reached from "All notes" lives wherever the
+  // sidebar happens to point.
+  const toolbarNotebookID = selectedDocument ? selectedDocument.notebook_id ?? null : creationNotebookID;
 
   const statusText = useMemo(() => {
     if (!status) return 'loading…';
@@ -312,7 +343,7 @@ export function App() {
             body_mime_type: selectedDocument.body_mime_type,
             base_revision_id: selectedDocument.current_revision_id,
           })
-        : await createDocument({ title, body });
+        : await createDocument({ title, body, notebook_id: creationNotebookID ?? undefined });
       const isNew = !selectedDocument;
       setSelectedDocument(saved);
       setTitle(saved.title);
@@ -514,6 +545,48 @@ export function App() {
     }
   }
 
+  // Filing a note. A move is not revision-scoped — it changes where a note
+  // lives, not what it says — so it takes effect immediately and the message
+  // names where the note landed rather than leaving the toolbar to imply it.
+  async function onSelectNotebook(notebookID: string) {
+    if (!selectedDocument) {
+      // No note yet: the choice retargets the pending draft by selecting the
+      // matching sidebar row, so the sidebar highlight and the toolbar agree.
+      const row = sidebarRows.find((candidate) => candidate.id === notebookID);
+      if (row) setSelectedRow(row);
+      return;
+    }
+    if (!editable) return;
+    setBusy(true);
+    setError(null);
+    setMessage(null);
+    try {
+      const moved = await moveDocumentToNotebook(selectedDocument.id, notebookID);
+      setSelectedDocument(moved);
+      const name = notebookChoices.find((option) => option.id === notebookID)?.name ?? notebookID;
+      setMessage(`Filed “${moved.title}” in “${name}”.`);
+      void refreshSidebar();
+      // The note may have left the notebook the current results describe.
+      if (activeQuery !== '') void paged.start(activeQuery);
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // Selecting a sidebar row both runs its query and sets the creation target;
+  // selecting a tag runs a query that names no notebook, so the target resets.
+  function onSelectRow(row: SidebarRow) {
+    setSelectedRow(row);
+    runSearch(row.query);
+  }
+
+  function onSelectTagQuery(nextQuery: string) {
+    setSelectedRow(null);
+    runSearch(nextQuery);
+  }
+
   function resetEditor() {
     setSelectedDocument(null);
     setTitle('New note');
@@ -648,7 +721,9 @@ export function App() {
           rows={sidebarRows}
           tags={tags}
           activeQuery={activeQuery}
-          onSelectQuery={runSearch}
+          selectedRowID={selectedRow?.id ?? null}
+          onSelectRow={onSelectRow}
+          onSelectQuery={onSelectTagQuery}
           onDeleteNotebook={(row) => void onDeleteNotebookRow(row)}
         />
         <PaneSplitter
@@ -666,6 +741,8 @@ export function App() {
           onOpenHit={onOpenHit}
           selectedDocumentID={selectedDocument?.id ?? null}
           busy={busy}
+          onNewNote={resetEditor}
+          newNoteNotebookName={creationNotebookName}
         />
         <PaneSplitter
           label="Resize search results"
@@ -684,7 +761,6 @@ export function App() {
           busy={busy}
           themeBase={activeTheme.base}
           onSave={() => void onSaveDocument()}
-          onNewNote={resetEditor}
           onUploadAndAttach={(file) => void onUploadAndAttachResource(file)}
           onEditorUploadImages={(files, callback) => void onEditorUploadImages(files, callback)}
           links={links}
@@ -694,6 +770,10 @@ export function App() {
           onLocalizeRemoteMedia={() => void onLocalizeRemoteMedia()}
           onOpenDocument={(id) => void openDocumentByID(id)}
           trashed={trashed}
+          notebookOptions={notebookChoices}
+          notebookID={toolbarNotebookID}
+          defaultNotebookName={defaultNotebookName}
+          onSelectNotebook={(id) => void onSelectNotebook(id)}
           onDelete={() => void onDeleteDocument()}
           onRestore={() => void onRestoreDocument()}
           onPurge={() => void onPurgeDocument()}

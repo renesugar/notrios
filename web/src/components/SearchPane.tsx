@@ -14,9 +14,18 @@ export interface SearchPaneProps {
   onOpenHit: (hit: SearchHit) => void;
   selectedDocumentID: string | null;
   busy: boolean;
+  /**
+   * Start a new note. It lives here rather than in the editor toolbar because
+   * it is not an action on the open note — it discards the editor and starts a
+   * draft. Among per-note controls it read, on a Help or trashed note, as an
+   * offer to create something there.
+   */
+  onNewNote: () => void;
+  /** Where a new note would be filed, for the label. */
+  newNoteNotebookName: string;
 }
 
-export function SearchPane({ query, onQueryChange, onSubmit, paged, onOpenHit, selectedDocumentID, busy }: SearchPaneProps) {
+export function SearchPane({ query, onQueryChange, onSubmit, paged, onOpenHit, selectedDocumentID, busy, onNewNote, newNoteNotebookName }: SearchPaneProps) {
   const sentinelRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -63,6 +72,17 @@ export function SearchPane({ query, onQueryChange, onSubmit, paged, onOpenHit, s
       <p className="search-query-hint" id="search-query-hint">
         Uppercase OR · implicit AND · -exclude · (group) · category: or notebook:
       </p>
+      {/* The destination is named on the button, so where a note will be filed
+          is answered before it is written rather than after it is saved. */}
+      <button
+        type="button"
+        className="new-note-button"
+        data-testid="new-note-button"
+        onClick={onNewNote}
+        title={`Start a new note in “${newNoteNotebookName}”`}
+      >
+        <span aria-hidden="true">＋</span> New note in <strong>{newNoteNotebookName}</strong>
+      </button>
       <div className="pane-scroll result-list" ref={listRef} aria-live="polite" data-testid="search-results">
         {paged.hits.map((hit) => (
           <button

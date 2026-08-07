@@ -74,17 +74,23 @@ Known release boundaries:
   stable-link handler registration is Ubuntu/XDG only; Recoll/Xapian remain
   optional user-installed external GPL processes.
 
-Outstanding before the candidate is accepted:
+Post-candidate fixes, complete:
 
-- [ ] **E10 — the editor toolbar: layout, and which actions belong in it.** Two
-      defects from the same session of Trash testing. (1) The toolbar is one
-      wrapping row, so the "In the Trash" chip never leaves the title's row and
-      the buttons wrap raggedly from 520 px down to the editor pane's 280 px
-      minimum. (2) "New note" shows for every open note including read-only Help
-      and Trash notes, because the condition tests only that a note is open; it
-      is not an action on the open note and moves to the search pane, where it
-      also has to stay reachable — it is currently the only path back to a blank
-      draft. No version change. See `PLAN.md`.
+- [x] **E10 — the editor toolbar: layout, and which actions belong in it.** Two
+      defects from the same session of Trash testing. (1) The toolbar was one
+      wrapping row, so the "In the Trash" chip never left the title's row and
+      the buttons wrapped raggedly from 520 px down to the editor pane's 280 px
+      minimum; it is now a title row plus an action row that stacks as a unit,
+      verified by measurement across the same widths. (2) "New note" showed for
+      every open note including read-only Help and Trash notes; it moved to the
+      search pane, where it also names the notebook a draft will be filed in.
+      No version change. Archived as
+      `plans/v0.5/014-editor-toolbar-and-notebook-targeting.md`.
+
+Also landed alongside it (v0.6 F0, not a v0.5 gate): notebook targeting — the
+sidebar selection is the creation target, a notebook control in the editor
+toolbar re-files the open note, and `notriosctl notes move` closes the CLI gap.
+Before it the GUI created every note in "Notes" and could not move one.
 
 Repository-owner publishing steps (not performed by E9):
 

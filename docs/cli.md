@@ -307,6 +307,27 @@ tags — or when a **dry run's plan contains a merge**. That last one is the
 useful case in a script: renaming onto a name that already exists combines two
 hierarchies, and it should not happen because nobody read the plan.
 
+## notes move
+
+```sh
+notriosctl notes move --document <id> --notebook <id|name>
+    [--config config.yaml] [--db path] [--asset-store path]
+```
+
+Files one note into another notebook. See [choosing which notebook a note goes
+in](gui.md#choosing-which-notebook-a-note-goes-in).
+
+There is no dry run and no `--apply`, unlike `gc`, `fix`, and `tags rename`. A
+move is neither destructive nor lossy — it changes where one note lives, and
+moving it back is the same command with the other notebook — so a confirmation
+step would be ceremony rather than safety.
+
+`--notebook` takes an ID, or a name when the name identifies one notebook.
+Notebook names are unique only among siblings, so `Contacts/Work` and
+`Personal/Work` can both exist; given an ambiguous name the command exits `1`
+and lists the matching IDs instead of picking one. Filing a note somewhere
+unintended is exactly what this command exists to correct.
+
 ## seed-help
 
 ```sh

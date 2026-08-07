@@ -10,11 +10,25 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from '../App';
 
 vi.mock('md-editor-rt', () => ({
-  MdEditor: ({ value, readOnly }: { value: string; readOnly?: boolean }) => (
-    <textarea data-testid="editor-stub" readOnly={readOnly} value={value} onChange={() => {}} />
+  // The real editor renders `defToolbars` into its toolbar; a stub that drops
+  // them would hide the notebook picker from every test that uses it.
+  MdEditor: ({ value, readOnly, defToolbars }: { value: string; readOnly?: boolean; defToolbars?: React.ReactNode }) => (
+    <>
+      <div data-testid="editor-toolbar-stub">{defToolbars}</div>
+      <textarea data-testid="editor-stub" readOnly={readOnly} value={value} onChange={() => {}} />
+    </>
   ),
   MdPreview: ({ value }: { value: string }) => <div data-testid="preview-stub">{value}</div>,
   config: () => {},
+  // The editor's toolbar takes custom items; the picker is one, so the stub has
+  // to render it rather than swallow it.
+  DropdownToolbar: ({ children, overlay, disabled }: { children?: React.ReactNode; overlay?: React.ReactNode; disabled?: boolean }) => (
+    <div data-testid="dropdown-toolbar" data-disabled={disabled ? 'true' : 'false'}>
+      {children}
+      {overlay}
+    </div>
+  ),
+  allToolbar: [],
 }));
 vi.mock('md-editor-rt/lib/style.css', () => ({}));
 

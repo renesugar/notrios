@@ -13,11 +13,25 @@ import { composeSidebar } from '../sidebar';
 import type { DocumentRecord, NotebookDeletionPreview, NotebookTreeNode, SearchNotebook } from '../api';
 
 vi.mock('md-editor-rt', () => ({
-  MdEditor: ({ value, readOnly }: { value: string; readOnly?: boolean }) => (
-    <textarea data-testid="editor-stub" readOnly={readOnly} value={value} onChange={() => {}} />
+  // The real editor renders `defToolbars` into its toolbar; a stub that drops
+  // them would hide the notebook picker from every test that uses it.
+  MdEditor: ({ value, readOnly, defToolbars }: { value: string; readOnly?: boolean; defToolbars?: React.ReactNode }) => (
+    <>
+      <div data-testid="editor-toolbar-stub">{defToolbars}</div>
+      <textarea data-testid="editor-stub" readOnly={readOnly} value={value} onChange={() => {}} />
+    </>
   ),
   MdPreview: ({ value }: { value: string }) => <div data-testid="preview-stub">{value}</div>,
   config: () => {},
+  // The editor's toolbar takes custom items; the picker is one, so the stub has
+  // to render it rather than swallow it.
+  DropdownToolbar: ({ children, overlay, disabled }: { children?: React.ReactNode; overlay?: React.ReactNode; disabled?: boolean }) => (
+    <div data-testid="dropdown-toolbar" data-disabled={disabled ? 'true' : 'false'}>
+      {children}
+      {overlay}
+    </div>
+  ),
+  allToolbar: [],
 }));
 vi.mock('md-editor-rt/lib/style.css', () => ({}));
 
@@ -47,7 +61,6 @@ function renderPane(overrides: Partial<EditorPaneProps>) {
     busy: false,
     themeBase: 'light',
     onSave: vi.fn(),
-    onNewNote: vi.fn(),
     onUploadAndAttach: vi.fn(),
     onEditorUploadImages: vi.fn(),
     links: [],
@@ -57,6 +70,13 @@ function renderPane(overrides: Partial<EditorPaneProps>) {
     onLocalizeRemoteMedia: vi.fn(),
     onOpenDocument: vi.fn(),
     trashed: false,
+    notebookOptions: [
+      { id: 'nb_notes', name: 'Notes', depth: 0 },
+      { id: 'nb_work', name: 'Work', depth: 0 },
+    ],
+    notebookID: 'nb_notes',
+    defaultNotebookName: 'Notes',
+    onSelectNotebook: vi.fn(),
     onDelete: vi.fn(),
     onRestore: vi.fn(),
     onPurge: vi.fn(),
@@ -125,6 +145,8 @@ describe('notebook deletion in the sidebar', () => {
         rows={composeSidebar(tree, searches)}
         tags={[]}
         activeQuery=""
+        selectedRowID={null}
+        onSelectRow={vi.fn()}
         onSelectQuery={vi.fn()}
         onDeleteNotebook={onDeleteNotebook}
       />,

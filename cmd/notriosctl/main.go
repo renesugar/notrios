@@ -68,6 +68,8 @@ func main() {
 		runFix(os.Args[2:])
 	case "tags":
 		runTags(os.Args[2:])
+	case "notes":
+		runNotes(os.Args[2:])
 	case "help", "-h", "--help":
 		printHelp()
 	default:
@@ -524,6 +526,8 @@ Usage:
                                                  # repair the mechanically safe findings; dry run is the default
   notriosctl tags rename --from <tag> --to <tag> [--db ...] [--include-children] [--apply]
                                                  # hierarchical tag rename; dry run is the default and reports every tag and count
+  notriosctl notes move --document <id> --notebook <id|name> [--db ...]
+                                                 # file one note into another notebook; a name is refused when it matches more than one
   notriosctl link [--db ...] [--anchor slug|^block] [--list-anchors] <document-id>
                                                  # print the stable notrios:// link for a note or one of its sections
   notriosctl open [--profile name] [--registry path] [--db path] [--launch] <notrios-uri>

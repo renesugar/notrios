@@ -7,12 +7,20 @@ export interface SidebarPaneProps {
   rows: SidebarRow[];
   tags: TagRecord[];
   activeQuery: string;
+  /**
+   * The selected row's ID. Selection is tracked by ID rather than by the row's
+   * query because a notebook row's query is `notebook:"<name>"` and notebook
+   * names are unique only among siblings — `Contacts/Work` and `Personal/Work`
+   * produce the same query, and highlighting by query would light up both.
+   */
+  selectedRowID: string | null;
+  onSelectRow: (row: SidebarRow) => void;
   onSelectQuery: (query: string) => void;
   /** Delete a notebook; the caller previews and confirms before doing it. */
   onDeleteNotebook: (row: SidebarRow) => void;
 }
 
-export function SidebarPane({ rows, tags, activeQuery, onSelectQuery, onDeleteNotebook }: SidebarPaneProps) {
+export function SidebarPane({ rows, tags, activeQuery, selectedRowID, onSelectRow, onSelectQuery, onDeleteNotebook }: SidebarPaneProps) {
   return (
     <nav className="pane sidebar-pane" aria-label="Notebooks and tags" data-testid="pane-sidebar">
       <div className="pane-scroll">
@@ -22,11 +30,11 @@ export function SidebarPane({ rows, tags, activeQuery, onSelectQuery, onDeleteNo
             <li key={row.id} className="sidebar-row">
               <button
                 type="button"
-                className={activeQuery === row.query ? 'sidebar-item active' : 'sidebar-item'}
+                className={selectedRowID === row.id ? 'sidebar-item active' : 'sidebar-item'}
                 style={row.depth > 0 ? { paddingLeft: `${12 + row.depth * 16}px` } : undefined}
-                aria-current={activeQuery === row.query ? 'true' : undefined}
+                aria-current={selectedRowID === row.id ? 'true' : undefined}
                 data-testid={`sidebar-row-${row.id}`}
-                onClick={() => onSelectQuery(row.query)}
+                onClick={() => onSelectRow(row)}
               >
                 <span className="sidebar-label">
                   {row.emoji ? `${row.emoji} ` : ''}

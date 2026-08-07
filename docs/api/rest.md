@@ -99,6 +99,8 @@ curl -s -X POST http://127.0.0.1:8080/api/v1/notebooks \
   -d '{"name":"Work","icon_emoji":"💼"}' | jq
 curl -s -X POST http://127.0.0.1:8080/api/v1/documents/$DOC/notebook \
   -H 'Content-Type: application/json' -d "{\"notebook_id\":\"$NB\"}" | jq
+# POST /api/v1/documents also accepts notebook_id; omitted, the note is filed
+# in the default "Notes" notebook.
 
 curl -s http://127.0.0.1:8080/api/v1/tags | jq                  # with note counts
 curl -s -X POST http://127.0.0.1:8080/api/v1/documents/$DOC/tags/todo | jq

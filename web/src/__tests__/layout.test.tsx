@@ -9,13 +9,27 @@ import { DEFAULT_WIDTHS, MIN_WIDTHS, PANE_WIDTHS_KEY } from '../panes';
 // The real editor is heavyweight and jsdom-hostile; substitute inert stubs
 // that preserve the value/onChange/readOnly contract.
 vi.mock('md-editor-rt', () => ({
-  MdEditor: ({ value, readOnly }: { value: string; readOnly?: boolean }) => (
-    <textarea data-testid="editor-stub" readOnly={readOnly} value={value} onChange={() => {}} />
+  // The real editor renders `defToolbars` into its toolbar; a stub that drops
+  // them would hide the notebook picker from every test that uses it.
+  MdEditor: ({ value, readOnly, defToolbars }: { value: string; readOnly?: boolean; defToolbars?: React.ReactNode }) => (
+    <>
+      <div data-testid="editor-toolbar-stub">{defToolbars}</div>
+      <textarea data-testid="editor-stub" readOnly={readOnly} value={value} onChange={() => {}} />
+    </>
   ),
   MdPreview: ({ value }: { value: string }) => <div data-testid="preview-stub">{value}</div>,
   // EditorPane registers its CodeMirror extensions through md-editor-rt's
   // global config hook at module load, so the stub has to accept the call.
   config: () => {},
+  // The notebook picker is a custom item in md-editor-rt's toolbar, so the
+  // stub has to provide the pieces that carry it.
+  DropdownToolbar: ({ children, overlay }: { children?: React.ReactNode; overlay?: React.ReactNode }) => (
+    <div data-testid="dropdown-toolbar">
+      {children}
+      {overlay}
+    </div>
+  ),
+  allToolbar: [],
 }));
 vi.mock('md-editor-rt/lib/style.css', () => ({}));
 
