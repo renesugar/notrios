@@ -22,6 +22,20 @@ Three v0.5 roadmap bullets did not ship and moved to v0.6 rather than being left
 ambiguous: note templates, task extraction, and a graph *view* (E4 delivered the
 traversal, path, and report data it would be built on).
 
+**E11 is outstanding and gates the v0.5.0 candidate**: the GUI resolves
+`web/dist` relative to the process working directory
+(`internal/httpapi/server.go`), with no flag and no config field, so running
+`bin/notrios` from `bin/` renders `web_ui_not_built` inside the window — and
+that message tells the reader to build assets that are already built, which is
+wrong in precisely the case it fires. Reproduced. Alongside it: the notebook
+dropdown trigger is a bare span with no border or caret so it does not read as a
+control; `make serve`, `make doctor`, and `make seed-help` are undocumented
+(verified by sweeping every target against `README.md`, `ENVIRONMENT_SETUP.md`,
+and `docs/`); and `web/README.md` is two milestones stale, naming "Notes
+Companion" and `cmd/notesd`. Answered while checking: `make clean` does not
+remove `web/node_modules` — `make clobber` does, deliberately, so a clean never
+forces a network reinstall. Drafted in `PLAN.md` and **not approved**.
+
 **E10 and F0 are complete**, done as one pass over the editor toolbar and
 archived as `plans/v0.5/014-editor-toolbar-and-notebook-targeting.md`. E10 was
 the v0.5.0 release-candidate toolbar fix; F0 was the first v0.6 task. They share

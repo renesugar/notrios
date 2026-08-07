@@ -2,8 +2,9 @@
 
 Status: **active. Written 2026-08-06 from `ROADMAP.md` after v0.5 completed.
 E10 (the v0.5.0 release-candidate toolbar fix) and F0 (notebook targeting) are
-complete, done as one pass over the editor toolbar. F1 onward require user
-approval.**
+complete, done as one pass over the editor toolbar. **E11 — locating the GUI's
+web files, plus the run/target documentation — is outstanding and gates the
+v0.5.0 candidate.** F1 onward require user approval.**
 
 v0.5 is complete and archived under `plans/v0.5/`, including a copy of its own
 plan at `plans/v0.5/000-v0.5-plan.md`. Product version is 0.5.0 and the schema
@@ -44,8 +45,74 @@ asks for approval before the next task.
 
 v0.5.0 is built and validated but **not tagged or pushed** — those are owner
 steps. It is still a release candidate, so a defect found in it is fixed *in
-it*, not carried into v0.6. E10 below lands under `plans/v0.5/`, does not change
-the version, and must be complete before the owner accepts the candidate.
+it*, not carried into v0.6. These land under `plans/v0.5/`, do not change the
+version, and must be complete before the owner accepts the candidate.
+
+E10 is complete. **E11 is outstanding and not approved.**
+
+### E11. Finding the GUI's own files, and the docs that explain running it
+
+Reported by the user, and every part verified against the source tree.
+
+**The GUI cannot be run from anywhere but the checkout root, and says the wrong
+thing when it is.** `internal/httpapi/server.go` resolves
+`filepath.Clean("web/dist")` — a path relative to the **process working
+directory**. Running `bin/notrios` with `bin/` as the working directory looks
+for `bin/web/dist` and finds nothing, so the webview renders raw JSON:
+
+```json
+{"error":{"code":"web_ui_not_built","message":"web/dist/index.html not found; run cd web && npm run build or use npm run dev"}}
+```
+
+That message is *wrong in exactly this case*: the assets are built, they are
+simply not where this process is looking. A diagnostic that sends someone to
+rebuild something already built is worse than no diagnostic.
+
+There is **no configuration option** for the directory — `config.Config` has no
+UI or web field — and no CLI flag. The only documented answer is one clause in
+`docs/gui.md` ("relative to the working directory"), which explains the rule
+without making it discoverable or forgiving.
+
+- Resolve the web root from an ordered, documented list: an explicit
+  `--web-dir` flag, then a config value, then the working directory, then the
+  executable's own directory and its parent — the last two so `bin/notrios`
+  works whether it is invoked from the checkout or from `bin/`.
+- **Check at startup, not at first paint.** A GUI launch that cannot find its
+  interface must fail on the terminal with a message naming every directory it
+  looked in, rather than opening a window containing an error object.
+- Keep the HTTP `web_ui_not_built` response for the headless service, but make
+  its message distinguish "not built" from "not found here".
+
+**The notebook dropdown has no border.** `.notebook-picker-trigger` is a bare
+span, and `md-editor-rt`'s toolbar item wrapper supplies neither a border nor a
+caret, so the notebook name floats over the editor with nothing marking it as a
+control. Give it a border, a disclosure caret, and hover/focus affordance, and
+keep the disabled state legible.
+
+**Three `make` targets are undocumented:** `serve`, `doctor`, and `seed-help`.
+Verified by sweeping every target in the `Makefile` against `README.md`,
+`ENVIRONMENT_SETUP.md`, and `docs/`. `make serve` is the one that matters most
+here — it is how a developer opens the GUI in a browser, and the user found it
+before the documentation mentioned it.
+
+- Document every target, in one table, including which are network-using.
+- Say plainly how to run the GUI standalone and how to reach it in a browser,
+  and where the web files must be for each.
+
+**`web/README.md` is two milestones stale.** It calls the project "Notes
+Companion", tells the reader to run `go run ./cmd/notesd` — a binary renamed in
+v0.2 — and describes a v0.1 feature set. Rewrite it as a frontend developer's
+entry point, or delete it if `ENVIRONMENT_SETUP.md` already covers the ground.
+
+**Not a defect, but an answer the user asked for:** `make clean` does **not**
+remove `web/node_modules`; `make clobber` does. That is deliberate — a clean
+should not force a network reinstall — and it is already documented in
+`docs/installation.md` and `ENVIRONMENT_SETUP.md`. The target table will state
+it in one line so the answer is where the question gets asked.
+
+Working state: `notrios` starts from any working directory or explains exactly
+where it looked; the notebook control looks like a control; and every `make`
+target is documented alongside instructions for running the GUI both ways.
 
 Both parts came from the same session of Trash testing, both live in
 `web/src/components/EditorPane.tsx`, and both are verified by the same browser

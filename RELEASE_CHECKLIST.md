@@ -74,6 +74,17 @@ Known release boundaries:
   stable-link handler registration is Ubuntu/XDG only; Recoll/Xapian remain
   optional user-installed external GPL processes.
 
+Outstanding before the candidate is accepted:
+
+- [ ] **E11 — the GUI cannot find its own web files outside the checkout root,
+      and says the wrong thing when it cannot.** `web/dist` is resolved relative
+      to the process working directory with no flag and no config option, so
+      running `bin/notrios` from `bin/` renders `web_ui_not_built` inside the
+      window — a message telling the reader to build assets that are already
+      built. Also: the notebook dropdown has no border, `make serve`/`doctor`/
+      `seed-help` are undocumented, and `web/README.md` still refers to
+      `cmd/notesd`. See `PLAN.md`.
+
 Post-candidate fixes, complete:
 
 - [x] **E10 — the editor toolbar: layout, and which actions belong in it.** Two
