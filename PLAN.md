@@ -3,7 +3,10 @@
 Status: **active. Written 2026-08-06 from `ROADMAP.md` after v0.5 completed.
 E10, E11, and E12 (the v0.5.0 release-candidate fixes) are complete and the
 candidate has no outstanding gates. F0 (notebook targeting) and F1 (batch
-organizer transactions) are complete. F2 onward require user approval.**
+organizer transactions) are complete. F2 onward require user approval, and
+**F2, F4, and F6 each carry a blocking open decision** — see the decisions
+register and each item's own Open decisions subsection. F5a was added as an
+investigation slice before F5.**
 
 v0.5 is complete and archived under `plans/v0.5/`, including a copy of its own
 plan at `plans/v0.5/000-v0.5-plan.md`. Product version is 0.5.0 and the schema
@@ -404,6 +407,23 @@ does not do it twice.
   the allowed set exactly, so a new tool cannot be added without deciding which
   profiles get it.
 
+**Open decisions**
+
+- **Is `administrator` reachable over MCP at all?** *Blocking.* Garbage
+  collection, restore, purge, and archive operations are administrator-shaped,
+  and v0.5's position — recorded in `docs/api/mcp.md` — is that whole-library
+  operations stay on surfaces a person drives. Either keep that (the profile
+  exists but is not selectable for MCP, and the roadmap's five become four plus
+  a CLI-only tier) or overturn it explicitly. *Recommended:* keep it. The
+  argument for exposing destructive whole-library operations to model output has
+  not been made, and F6's job control plane covers the "start something long"
+  case without it. This blocks because it decides whether the profile is even
+  implemented.
+- **Does a profile downgrade mid-session take effect immediately?** *Non-
+  blocking.* A profile comes from configuration today, so a change means a
+  restart. *Default if unanswered:* profiles are read at startup, and changing
+  one requires a restart — stated in the docs rather than silently true.
+
 Working state: connecting under `search-only` can search and read nothing else,
 and adding a tool without classifying it fails the test rather than shipping
 open.
@@ -419,6 +439,23 @@ open.
 - Keep the existing rule that bodies and payloads are truncated at
   `mcp.max_document_bytes` and never streamed whole into context.
 
+**Open decisions**
+
+- **Which REST surfaces become MCP tools.** *Non-blocking, but the answer is the
+  task.* Lint, fix, graph traversal, block listing, query-block evaluation, tag
+  rename, notebook deletion and its preview, GC, archive operations, and
+  publication are all currently withheld. *Default if unanswered:* read-shaped
+  surfaces (blocks, graph, query blocks, lint's report) become tools under the
+  `read-only` profile; write-shaped and whole-library ones (fix, tag rename,
+  notebook deletion, GC, archive, publication) stay off, with the reason
+  recorded per surface. F3's deliverable is that list, decided rather than
+  inherited.
+- **Do resource reads return bytes or only metadata plus a URL?** *Non-blocking.*
+  *Default if unanswered:* metadata plus a `resource://` URI, with bytes only for
+  text-like MIME types under `mcp.max_document_bytes`. Streaming arbitrary
+  attachment bytes into model context is the thing the bulk/control-plane split
+  exists to prevent.
+
 Working state: every REST capability is either an MCP tool or has a recorded
 reason it is not, and no tool can return an unbounded payload.
 
@@ -431,13 +468,52 @@ Moved from v0.5, where it was on the roadmap but never entered the plan.
 - Task extraction reads checkbox list items into a queryable form, addressable
   by the v0.5 block model rather than by line number.
 
+**Open decisions**
+
+- **What a placeholder is.** *Blocking.* Options: prompted values supplied at
+  creation; automatic substitutions (date, title, notebook); or both. Each
+  implies a different template syntax and a different UI. *Recommended:* both,
+  with a closed vocabulary of automatic names and everything else prompted —
+  but this needs an answer before the syntax is chosen, because changing it
+  later invalidates every template a user has written.
+- **Is an extracted task stored or computed on read?** *Non-blocking.* Storing
+  it means a table and an invalidation rule; computing it means parsing on
+  every query. *Default if unanswered:* computed on read from the existing
+  schema-v14 block rows, which already carry content-derived identity — no new
+  table until a query needs one that a scan cannot serve.
+
 Working state: creating a note from a template cannot execute anything or read
 a file, and a task's identity survives the note being edited around it.
+
+### F5a. Investigation: how to render a bounded graph
+
+An investigation slice, not a feature. F5's *goal* is clear; its *approach* is
+not, and the approaches differ enough in cost that choosing on paper would be
+guessing.
+
+- Try at least two: a force-directed canvas, and something cheaper that is not a
+  canvas at all (a depth-grouped list, or an SVG tree from the shortest-path
+  data). Measure both at the `MaxGraphNodes` ceiling of 5,000 and at a realistic
+  50.
+- Report frame time, bundle cost, and what each one actually makes visible. A
+  hairball at 5,000 nodes is a picture of nothing; if that is what the canvas
+  gives, that is the finding.
+- Check whether a graph library can be added at all under the MIT/Apache-2.0
+  constraint and the offline rule E6a established — nothing fetched at runtime.
+
+Deliverable: a recommendation with evidence, and a `PROJECT_DECISIONS.md` entry.
+It may conclude that the list beats the canvas, or that neither earns its bundle
+weight — v0.5 E6 concluded against its own premise and that was the useful
+result.
+
+Working state: F5 starts from a measured choice rather than an assumption about
+what a graph view should look like.
 
 ### F5. A graph view in the GUI
 
 Also moved from v0.5, where E4 shipped the data and named itself "visualization
-data" for exactly this reason.
+data" for exactly this reason. **Depends on F5a**: what to build here is F5a's
+output.
 
 - Render the bounded traversal from `POST /api/v1/graph` around the open note,
   with the depth ceiling visible rather than silently applied.
@@ -457,6 +533,22 @@ Working state: a node ceiling is a stated limit in the UI, not a frozen window.
 - `GET /api/v1/jobs/{job_id}` exists today as a placeholder; F6 is where it
   becomes real.
 
+**Open decisions**
+
+- **Do jobs survive a restart?** *Blocking.* An in-process registry is far
+  simpler; a persisted one means a table, a resume rule, and deciding what an
+  interrupted import means. *Recommended:* persist job *records* (id, kind,
+  state, counts, error) so a client can ask what happened to a job it started,
+  but do **not** resume the work — an interrupted import already resumes through
+  its own checkpoints, and inventing a second resume mechanism on top would give
+  two answers to one question. This blocks because it decides whether F6 needs a
+  schema version.
+- **Is cancellation cooperative or immediate?** *Non-blocking.* *Default if
+  unanswered:* cooperative — a cancel sets a flag the worker checks at its next
+  bounded batch boundary, matching how the importers already commit. Killing
+  work mid-transaction to honour a cancel promptly would trade durability for
+  responsiveness in the wrong direction.
+
 Working state: a long import can be started, watched, and cancelled without a
 client holding the connection open, and no job payload reaches a model.
 
@@ -472,27 +564,31 @@ client holding the connection open, and no job payload reaches a model.
 Working state: documentation matches implementation and v0.6 release checks
 pass.
 
-## Decisions required before or during v0.6
+## Decisions register
 
-- **Whether F0 belongs in the v0.5.0 release candidate.** The GUI cannot move a
-  note between notebooks at all, which is a gap rather than a regression — v0.5
-  never promised it — but it is the kind of gap a first user meets immediately.
-  Shipping the candidate first and fixing it in v0.6 is the conservative call;
-  pulling F0 forward is defensible.
-- **Resolved by F1: idempotency keys are database-scoped and persisted.** An
-  in-memory ledger forgets on restart, which is exactly when a batch is
-  retried. Schema v17 stores the key, a fingerprint of the arguments, and the
-  first run's response verbatim.
-- **Resolved by F1: a duplicate inherits content, not identity.** Body,
-  notebook, tags, and resource references; never the `document_sources` row
-  (two notes claiming one imported identity break re-import and trip lint) and
-  never the revision history.
-- **Whether `administrator` is reachable over MCP at all.** Garbage collection,
-  restore, and purge are administrator-shaped, and the v0.5 position was that
-  whole-library operations stay on surfaces a person drives. F2 should either
-  keep that or overturn it explicitly.
-- Carried forward from v0.5 and still open: the long-term SQLite driver choice,
-  and adoption of the official MCP Go SDK. Neither blocks F1.
+An index, not a home. Each decision lives in the item it affects, under that
+item's **Open decisions** subsection (see `AGENTS.md`, "Writing plan items"); if
+it is only listed here, the person approving the item will not see it. That is
+what happened to F1, whose two decisions sat here and nowhere else.
+
+| Decision | Item | Status |
+|---|---|---|
+| Idempotency key scope | F1 | **Resolved:** database-scoped and persisted (schema v17) |
+| What a duplicate inherits | F1 | **Resolved:** content, never external identity or revision history |
+| Whether F0 belonged in the v0.5.0 candidate | F0 | **Resolved by shipping:** F0 landed with E10 in `076526f`, so it is in the candidate |
+| Is `administrator` reachable over MCP | F2 | **Open, blocking** |
+| Does a profile change need a restart | F2 | Open, non-blocking |
+| Which REST surfaces become MCP tools | F3 | Open — this *is* F3's deliverable |
+| Do MCP resource reads return bytes | F3 | Open, non-blocking |
+| What a template placeholder is | F4 | **Open, blocking** |
+| Are extracted tasks stored or computed | F4 | Open, non-blocking |
+| How to render a bounded graph | F5 | Open — **F5a investigates it before F5 starts** |
+| Do jobs survive a restart | F6 | **Open, blocking** |
+| Long-term SQLite driver | — | Open; `agent/OPEN_QUESTIONS.md` 1 |
+| Official MCP Go SDK adoption | — | Open; `agent/OPEN_QUESTIONS.md` 2. Touches F2/F3 but blocks neither |
+
+Three items are blocked on an answer: **F2, F4, and F6**. F3, F5a, and F7 can
+start without one.
 
 ## Already implemented, deliberately not re-listed
 

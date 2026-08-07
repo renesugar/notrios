@@ -22,6 +22,26 @@ Three v0.5 roadmap bullets did not ship and moved to v0.6 rather than being left
 ambiguous: note templates, task extraction, and a graph *view* (E4 delivered the
 traversal, path, and report data it would be built on).
 
+**Process correction (2026-08-07, from user feedback).** F1's two open
+decisions were recorded in a milestone-level "Decisions required" section about
+two hundred lines below the F1 item, and nowhere in the item itself — so the
+task was approved without them being visible. An earlier draft of F1 *did*
+carry the duplicate question inline; a conflicted rewrite of `PLAN.md` dropped
+it and the milestone section did not compensate.
+
+`AGENTS.md` gained a **"Writing plan items"** section making this explicit: an
+item with an unresolved decision carries an `Open decisions` subsection inside
+the item, naming the options, the recommendation, whether it blocks, and the
+default that will be taken if no answer comes. An item whose *approach* is
+uncertain — as opposed to its goal — gets an investigation slice before it, with
+v0.5 E6 as the model. Milestone-level decision sections are an index, never the
+only home; `agent/OPEN_QUESTIONS.md` holds only questions with no owning item.
+
+Applied to the rest of v0.6: F2, F3, F4, and F6 now carry inline Open decisions,
+**F2, F4, and F6 are blocking**, and **F5a** was added as an investigation slice
+before F5 because how to render a bounded graph is an approach question that
+cannot be settled on paper.
+
 **F1 is complete**, archived as
 `plans/v0.6/001-batch-organizer-transactions.md`. `POST /api/v1/batch` and
 `store.RunBatch` apply one bounded organizer transaction — move, add_tags,

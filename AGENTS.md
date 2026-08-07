@@ -28,6 +28,61 @@ Start with the handoff: `CODING_CLIENT_HANDOFF.md` is the current compressed sta
 - Do not put secrets, medical data, private user exports, or proprietary datasets in the repository.
 
 
+## Writing plan items
+
+A plan item is read on its own, by whoever is about to approve or implement it.
+Anything it needs must be *in* it — a reader does not scroll two hundred lines
+to a milestone-level section to discover that the task has an unanswered
+question. (This rule exists because that is exactly what happened to v0.6 F1:
+its two open decisions sat in a "Decisions required" section far below the item,
+and the task was approved without them being seen.)
+
+Every item states its goal, its scope boundaries, and its working state. Beyond
+that:
+
+**An item with an unresolved decision carries an `Open decisions` subsection,
+inside the item.** List each decision, what the options are, which one you
+recommend and why, and what changes depending on the answer. Say plainly whether
+it blocks the work:
+
+- *Blocking* — the item cannot be designed without an answer. Say so, and do not
+  start until it is answered.
+- *Non-blocking* — you will take a defensible default if no answer comes. Name
+  the default in the plan, so approving the item is also approving the default.
+  Restate it in the completion report.
+
+Never leave a decision implicit because you intend to make it yourself. A choice
+recorded before the work is a decision; the same choice explained afterwards is
+a justification, and the reader has lost the chance to disagree cheaply.
+
+**An item whose *approach* is uncertain gets an investigation slice before it.**
+The distinction is between not knowing what to build (a decision — write it
+down and ask) and not knowing how, or whether the premise holds (an
+investigation — go and find out). Signals that a spike belongs first:
+
+- two or more approaches with materially different cost, and no way to choose on
+  paper;
+- a premise that has not been checked against the code or a dependency;
+- a claim about performance, size, or capability that nobody has measured.
+
+A spike is a real slice: it is numbered, archived, and produces evidence and a
+recommendation rather than a feature. v0.5 E6 is the model — framed as "migrate
+to CodeMirror", it found the premise false (the editor already *is* CodeMirror
+6) and returned a decision instead of a migration. That outcome was worth more
+than the migration would have been, and it was only reachable because the
+investigation was a task rather than an assumption inside one.
+
+Prefer a spike over a long item with a fork in the middle. An item that says
+"depending on what we find, do A or B" is two items.
+
+**Milestone-level decision sections are a summary, never the only home.** A
+decision that affects one item lives in that item; the milestone list may
+reference it. When a decision is resolved, say so where it was asked and mark it
+resolved rather than deleting it — the reasoning is the useful part.
+
+Questions with no owning item, or that outlive a milestone, belong in
+`agent/OPEN_QUESTIONS.md`.
+
 ## Handoff and environment limitations
 
 The scaffold was created in a restricted container. Before large implementation work, read `CODING_CLIENT_HANDOFF.md` and review the documented limitations. In particular:

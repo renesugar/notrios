@@ -42,6 +42,23 @@ would surface in lint as `duplicate_source_id`. Nor does it copy revision
 history: a duplicate starts fresh rather than claiming edits that never happened
 to it.
 
+## A process failure worth recording
+
+The two decisions above were in `PLAN.md` — in a milestone-level "Decisions
+required before or during v0.6" section, roughly two hundred lines below the F1
+item. They were not in the item. The task was approved without them being seen,
+which is the predictable outcome: a plan item is read on its own by whoever
+approves it.
+
+An earlier draft of F1 did carry the duplicate question inline. That Write hit a
+conflict, and the rewrite after re-reading dropped the sentence — a silent loss
+with no signal that anything had gone missing.
+
+`AGENTS.md` now has a "Writing plan items" section requiring an `Open decisions`
+subsection *inside* any item that has one, with the options, a recommendation,
+whether it blocks, and the default that will be taken if no answer arrives. The
+milestone section became an index that points at the items.
+
 ## Decisions worth recording
 
 **The modes differ in what a failure does, never in what the report says.** Both

@@ -3,6 +3,14 @@
 Resolved historical questions are recorded in archived plans and the attempt
 log. Current implementation-affecting questions:
 
+This register holds questions with **no owning plan item**, or that outlive a
+milestone. A question that belongs to a task lives in that task's **Open
+decisions** subsection in `PLAN.md` — see `AGENTS.md`, "Writing plan items" —
+because a decision recorded only here is invisible to whoever approves the task.
+
+`PLAN.md` also carries a decisions register indexing the per-item ones; it is an
+index, not a home.
+
 ## Existing local product
 
 1. Long-term SQLite driver: keep the cgo/libsqlite3 adapter or approve a
