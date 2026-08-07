@@ -511,6 +511,10 @@ GET    /api/v1/notebooks/{notebook_id}/deletion-preview  # what deletion would d
 GET    /api/v1/tags                           # with note counts
 POST   /api/v1/tags/rename                    # hierarchical rename; dry run by default (v0.5 E8)
 POST   /api/v1/batch                          # bounded organizer transaction over an explicit note list (v0.6 F1)
+GET    /api/v1/templates                      # note templates and the values each asks for (v0.6 F4)
+GET    /api/v1/templates/{document_id}
+POST   /api/v1/templates/{document_id}/create # fill a template in; every declared prompt needs a value
+GET    /api/v1/tasks                          # checkbox items, computed on read from note bodies (v0.6 F4)
 POST   /api/v1/documents/{document_id}/tags/{tag}
 DELETE /api/v1/documents/{document_id}/tags/{tag}
 POST   /api/v1/documents/{document_id}/notebook   # move note to notebook

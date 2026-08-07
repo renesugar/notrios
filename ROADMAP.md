@@ -129,7 +129,7 @@ question, and are not on the original list.
 
 ## v0.6 — MCP and automation expansion
 
-- Note templates and task extraction (moved from v0.5).
+- ~~Note templates and task extraction (moved from v0.5)~~ — done as F4.
 - Graph views that stay readable at scale, over the v0.5 E4 traversal/path/report
   data (moved from v0.5): a **local** graph around the open note, a **Top N hubs
   report written as a note**, and **export** to an interchange format for tools

@@ -654,6 +654,65 @@ paths:
       summary: List tags with live note counts
       responses:
         '200': { description: Tags }
+  /api/v1/templates:
+    get:
+      summary: List note templates and the values each asks for
+      description: >
+        A template is an ordinary note carrying a fenced ```note-template block
+        declaring `prompt:` lines and an optional `description:`. Substitution
+        is replacement, never evaluation: a placeholder is `{{name}}`, and a
+        name is either a declared prompt or one of a closed automatic
+        vocabulary (date, time, datetime, title, notebook). A malformed
+        template is listed with its error rather than hidden — it is exactly
+        the one its author needs to find.
+      responses:
+        '200': { description: Templates with prompts, description, and any parse error }
+  /api/v1/templates/{document_id}:
+    get:
+      summary: Read one template's declaration
+      parameters:
+        - { name: document_id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Template }
+        '400': { description: The note carries no note-template block }
+        '404': { description: No such note }
+  /api/v1/templates/{document_id}/create:
+    post:
+      summary: Create a note from a template
+      description: >
+        Every declared prompt needs a value; a missing one is refused rather
+        than left blank, and a value for an undeclared prompt is refused rather
+        than ignored. Supplied values are inserted literally and never
+        re-scanned, so a value cannot introduce a placeholder or recurse.
+      parameters:
+        - { name: document_id, in: path, required: true, schema: { type: string } }
+      responses:
+        '201': { description: The created note }
+        '400': { description: Malformed template, missing value, or undeclared value }
+  /api/v1/tasks:
+    get:
+      summary: Extract checkbox list items as tasks
+      description: >
+        Computed on read from note bodies rather than stored: `document_blocks`
+        holds a hash and byte offsets but not block text, so the body has to be
+        read either way. A task is identified by the block model, so it keeps
+        its identity when the note is edited around it — but a block ID is
+        derived from the block's text and a checkbox is part of that text, so
+        ticking a task changes its derived ID. An author-written `^marker` is
+        the identity that survives ticking.
+
+
+        Counts are complete even when the row list is capped. Restrict with
+        document_id or notebook_id to avoid a whole-library read.
+      parameters:
+        - { name: collection_id, in: query, schema: { type: string } }
+        - { name: document_id, in: query, schema: { type: string } }
+        - { name: notebook_id, in: query, schema: { type: string } }
+        - { name: state, in: query, schema: { type: string, enum: [open, done] } }
+        - { name: limit, in: query, schema: { type: integer } }
+      responses:
+        '200': { description: Tasks with complete open/done counts }
+        '400': { description: Unknown state }
   /api/v1/batch:
     post:
       summary: One bounded organizer transaction over an explicit list of notes

@@ -77,7 +77,8 @@ command line.
 `list_document_links`, `list_document_resources`, `get_document_outline`,
 `get_note_line_range`, `search_in_note`, `scan_remote_media`,
 `get_document_blocks`, `get_graph`, `find_graph_path`, `get_graph_report`,
-`run_note_query`, `get_lint_report`, `read_resource`.
+`run_note_query`, `get_lint_report`, `read_resource`, `list_templates`,
+`list_tasks`.
 
 The last seven arrived in v0.6 F3, once scopes existed to place them.
 `get_document_blocks` is how a model cites *part* of a note precisely — a block
@@ -119,7 +120,14 @@ planning](../selection-planning.md).
 
 `create_note`, `update_note` (requires `base_revision_id`), `append_to_note`, `prepend_to_note`, `edit_note` (server-side string replacement — fails when the search text is ambiguous unless `replace_all` is set; supports `dry_run`), `delete_note` (requires `base_revision_id`; moves to Trash),
 `move_note_to_notebook`, `localize_remote_media` (runs the same quarantine
-pipeline as `notriosctl localize` — never a plain fetch).
+pipeline as `notriosctl localize` — never a plain fetch),
+`create_from_template`.
+
+`list_templates` reports what each template *asks for*, so an agent can tell
+whether it has the values before trying. `create_from_template` refuses a
+missing value rather than leaving a blank, and inserts supplied values literally
+— a value containing `{{date}}` stays that text, because substitution is one
+pass and never re-scans what a caller supplied.
 
 ## Organizer tools (`organizer` scope)
 

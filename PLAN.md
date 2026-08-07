@@ -3,8 +3,8 @@
 Status: **active. Written 2026-08-06 from `ROADMAP.md` after v0.5 completed.
 E10, E11, and E12 (the v0.5.0 release-candidate fixes) are complete and the
 candidate has no outstanding gates. F0 (notebook targeting), F1 (batch organizer
-transactions), F2 (MCP tool scopes), and F3 (MCP read coverage and ranges) are
-complete. F2 onward require user approval, and
+transactions), F2 (MCP tool scopes), F3 (MCP read coverage and ranges), and F4
+(templates and task extraction) are complete. F2 onward require user approval, and
 sixteen of their open decisions were answered on 2026-08-07 across three rounds.
 **One blocking decision remains** — the hubs report participates in the graph it
 measures — which blocks only F5's hubs-report deliverable. F2, F3, F4, F6, and F7 are
@@ -527,7 +527,14 @@ content, which `read_resource` uses for bounded, offset-addressable text.
 Working state: every REST capability is either an MCP tool or has a recorded
 reason it is not, and no tool can return an unbounded payload.
 
-### F4. Note templates and task extraction
+### F4. Note templates and task extraction — complete
+
+Archived as `plans/v0.6/004-templates-and-tasks.md`. Templates are notes
+carrying a ```note-template block, with `{{name}}` substitution over a closed
+vocabulary and one-pass replacement so a supplied value is always data. Tasks
+are checkbox list items computed on read, identified by the block model — which
+keeps a task's identity through edits around it, and changes its derived ID when
+the box is ticked, exactly as the block model documents.
 
 Moved from v0.5, where it was on the roadmap but never entered the plan.
 

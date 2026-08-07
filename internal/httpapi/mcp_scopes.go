@@ -96,6 +96,10 @@ var mcpToolScopes = map[string]string{
 	"run_note_query":      MCPScopeReadOnly,
 	"get_lint_report":     MCPScopeReadOnly,
 	"read_resource":       MCPScopeReadOnly,
+	// v0.6 F4. Listing templates and reading tasks are reads; creating a note
+	// from a template writes one, so it sits with the other single-note writes.
+	"list_templates": MCPScopeReadOnly,
+	"list_tasks":     MCPScopeReadOnly,
 
 	// editor: single-note writes.
 	"create_note":           MCPScopeEditor,
@@ -106,6 +110,7 @@ var mcpToolScopes = map[string]string{
 	"delete_note":           MCPScopeEditor,
 	"move_note_to_notebook": MCPScopeEditor,
 	"localize_remote_media": MCPScopeEditor,
+	"create_from_template":  MCPScopeEditor,
 
 	// organizer: many notes at once.
 	"run_batch": MCPScopeOrganizer,

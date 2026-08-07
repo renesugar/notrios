@@ -853,6 +853,16 @@ type Store interface {
 	// RunBatch applies one bounded organizer transaction over an explicit list
 	// of notes, atomically or best-effort, reporting every item either way.
 	RunBatch(ctx context.Context, req BatchRequest) (BatchResult, error)
+
+	// Templates are ordinary notes carrying a ```note-template block.
+	// Substitution is replacement, never evaluation.
+	ListTemplates(ctx context.Context, collectionID string) ([]Template, error)
+	GetTemplate(ctx context.Context, documentID string) (Template, error)
+	CreateFromTemplate(ctx context.Context, req CreateFromTemplateRequest) (Document, error)
+
+	// ListTasks extracts checkbox list items, computed on read from note
+	// bodies rather than stored in a table.
+	ListTasks(ctx context.Context, req TaskListRequest) (TaskList, error)
 	PreviewNotebookDeletion(ctx context.Context, id string) (NotebookDeletionPreview, error)
 
 	CreateSearchNotebook(ctx context.Context, req CreateSearchNotebookRequest) (SearchNotebook, error)

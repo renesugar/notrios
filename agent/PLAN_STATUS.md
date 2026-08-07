@@ -96,6 +96,36 @@ recommendation.** Fourteen decisions are now settled across both rounds.
   *still running*, and *no such job*, or a script cannot tell "not finished"
   from "failed".
 
+**F4 is complete**, archived as `plans/v0.6/004-templates-and-tasks.md`.
+Templates are ordinary notes carrying a ```note-template block; tasks are
+checkbox list items computed on read. No schema change and no migration.
+
+- **The closed vocabulary is the safety argument.** A placeholder name is a
+  declared `prompt:` or one of `date`, `time`, `datetime`, `title`, `notebook`;
+  anything else errors and names the alternatives. An open vocabulary would be
+  an expression language, which is what E7 spent a slice refusing.
+- **Substitution is one pass, and that is a security property.** A supplied
+  value containing `{{date}}` is inserted literally and never re-scanned, so it
+  cannot introduce a placeholder, reach an automatic name it was not given, or
+  recurse. Asserted directly.
+- An unknown placeholder is an error **on the template, at listing time** — a
+  typo discovered when someone tries to use the template is discovered too late.
+  Malformed templates are listed with their error rather than hidden, since the
+  author is who needs to find them.
+- **Tasks are computed on read for a concrete reason:** `document_blocks` stores
+  a hash and byte offsets but **not** block text, so there is nothing to query
+  for "is this checked" — the body is read either way. A `LIKE` prefilter skips
+  notes that cannot contain a checkbox, and `document_id`/`notebook_id` turn the
+  whole-library scan into a small one.
+- **The identity property has an honest limit, asserted in both directions.** A
+  task keeps its block ID through edits *around* it (the test also asserts the
+  ordinal moved, so it cannot pass vacuously). But the checkbox is part of the
+  block's text — `- [ ] x` reaches the parser as `[ ] x` — so **ticking a task
+  changes its derived ID**. That is the block model working as documented, and
+  the answer is the one it already has: an author-written `^marker` outranks the
+  derived ID and survives. The assertion is worded to fail loudly if the block
+  model's contract ever changes.
+
 **F3 is complete**, archived as
 `plans/v0.6/003-mcp-read-coverage-and-ranges.md`. Seven read-shaped surfaces
 became MCP tools under `read-only` — `get_document_blocks`, `get_graph`,

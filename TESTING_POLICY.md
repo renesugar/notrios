@@ -830,6 +830,33 @@ report, which proves nothing.
 failed it immediately with a set diff, because it asserts whole sets rather than
 spot-checking membership.
 
+### Templates and task extraction (v0.6 F4)
+
+The template fixtures assert the *safety* properties rather than that
+substitution works. The decisive one: a supplied value containing `{{date}}`
+must appear literally in the created note, because substitution is one pass and
+a caller's value is data. Then the refusals — a missing value, a value for an
+undeclared prompt, a placeholder the template never declared, an automatic name
+someone tried to prompt for, and an unknown block key — each asserted to name
+what would have worked.
+
+A template with a typo is asserted to report its error **on listing**, not at
+creation. Finding out that `{{onwer}}` was wrong when someone tries to use the
+template is too late.
+
+The task fixtures assert the identity property in both directions, which is the
+only honest way to state it. Editing *around* a task — inserting a paragraph
+above and below — must leave its block ID unchanged, and the same test asserts
+the ordinal *did* move, so it cannot pass by the task having stayed put.
+**Ticking** a task must change its derived ID, because the checkbox is part of
+the block's text; that assertion is worded to fail loudly if the block model's
+contract ever changes, since a silent change there would quietly alter what
+every task link means. An author-written `^marker` and the anchor URI must
+survive both.
+
+Counts are asserted to stay complete when the row list is capped, and a trashed
+note's tasks must vanish — tasks are a view of the live library.
+
 ## MVP release validation
 
 Task 10 adds release-candidate checks beyond ordinary unit tests:

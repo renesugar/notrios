@@ -184,6 +184,12 @@ func (s *Server) handleMCPToolCall(r *http.Request, raw json.RawMessage) (mcpToo
 		return s.mcpGetLintReport(r, params.Arguments)
 	case "read_resource":
 		return s.mcpReadResource(r, params.Arguments)
+	case "list_templates":
+		return s.mcpListTemplates(r, params.Arguments)
+	case "list_tasks":
+		return s.mcpListTasks(r, params.Arguments)
+	case "create_from_template":
+		return s.mcpCreateFromTemplate(r, params.Arguments)
 	case "run_batch":
 		return s.mcpRunBatch(r, params.Arguments)
 	case "create_note", "update_note", "append_to_note", "prepend_to_note", "edit_note", "delete_note", "move_note_to_notebook", "localize_remote_media":
@@ -437,6 +443,8 @@ func (s *Server) mcpTools() []mcpTool {
 		{Name: "get_graph_report", Description: "Orphans (notes nothing links to), isolates, and in-degree hubs for a collection. Counts are always complete; limit caps only the example lists.", InputSchema: objectSchema(map[string]any{"collection_id": stringSchema(), "limit": integerSchema(1, 200)}, nil)},
 		{Name: "run_note_query", Description: "Evaluate one embedded ```note-query block. Parsed by the same query parser every search surface uses, so a block can express nothing you could not type into search_documents. A malformed block returns an error field rather than failing.", InputSchema: objectSchema(map[string]any{"block": stringSchema(), "collection_id": stringSchema()}, []string{"block"})},
 		{Name: "get_lint_report", Description: "Read-only workspace lint: broken links, ambiguous wikilinks, unresolved anchors, duplicate external identities, missing titles, unlocalized remote media, missing alt text, unreferenced resources, and projection backlog. Findings are content-free — a location and a hash, never the offending text.", InputSchema: objectSchema(map[string]any{"collection_id": stringSchema(), "checks": arraySchema(stringSchema()), "detail_limit": integerSchema(1, 50)}, nil)},
+		{Name: "list_templates", Description: "List note templates and the values each one asks for. A template is an ordinary note carrying a ```note-template block; substitution is replacement, never evaluation — there is no expression language, no arithmetic, and no filesystem reach.", InputSchema: objectSchema(map[string]any{"collection_id": stringSchema()}, nil)},
+		{Name: "list_tasks", Description: "Extract checkbox list items (`- [ ]` and `- [x]`) as tasks, with block-derived identity and a resolvable anchor URI. Counts are complete even when the row list is capped. Restrict by document_id or notebook_id to avoid a whole-library read.", InputSchema: objectSchema(map[string]any{"collection_id": stringSchema(), "document_id": stringSchema(), "notebook_id": stringSchema(), "state": enumSchema("open", "done"), "limit": integerSchema(1, 500)}, nil)},
 		{Name: "read_resource", Description: "Read one attachment's metadata (filename, MIME type, size, SHA-256, resource:// URI). Pass include_text to also get a bounded slice of a text-like resource, with offset and length for reading part of it. Binary resources are described, never transcribed.", InputSchema: objectSchema(map[string]any{"resource_id": stringSchema(), "uri": stringSchema(), "include_text": booleanSchema(), "offset": integerSchema(0, 1000000000), "length": integerSchema(1, 65536)}, nil)},
 	}
 	tools = append(tools,
@@ -451,6 +459,7 @@ func (s *Server) mcpTools() []mcpTool {
 			mcpTool{Name: "edit_note", Description: "Server-side string replacement. Fails if the search text is missing or ambiguous without replace_all. Supports dry_run.", InputSchema: objectSchema(map[string]any{"document_id": stringSchema(), "search": stringSchema(), "replace": stringSchema(), "replace_all": booleanSchema(), "dry_run": booleanSchema()}, []string{"document_id", "search"})},
 			mcpTool{Name: "delete_note", Description: "Move a note to the Trash. Requires base_revision_id.", InputSchema: objectSchema(map[string]any{"document_id": stringSchema(), "base_revision_id": stringSchema()}, []string{"document_id", "base_revision_id"})},
 			mcpTool{Name: "move_note_to_notebook", Description: "Move a note to a different notebook.", InputSchema: objectSchema(map[string]any{"document_id": stringSchema(), "notebook_id": stringSchema()}, []string{"document_id", "notebook_id"})},
+			mcpTool{Name: "create_from_template", Description: "Create a note from a template, supplying a value for every prompt it declares. A missing value is refused rather than left blank, and supplied values are inserted literally — never re-scanned for placeholders.", InputSchema: objectSchema(map[string]any{"template_id": stringSchema(), "title": stringSchema(), "notebook_id": stringSchema(), "values": objectSchema(nil, nil)}, []string{"template_id", "title"})},
 			mcpTool{Name: "localize_remote_media", Description: "Download policy-allowed remote media through the quarantine pipeline, store it as local resources, and rewrite the note to resource:// URIs in a new revision. Requires base_revision_id; supports dry_run (no fetching) and allow_review.", InputSchema: objectSchema(map[string]any{"document_id": stringSchema(), "base_revision_id": stringSchema(), "dry_run": booleanSchema(), "allow_review": booleanSchema()}, []string{"document_id", "base_revision_id"})},
 		)
 	}

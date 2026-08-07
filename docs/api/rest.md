@@ -357,6 +357,69 @@ links point at it. Block IDs derive from block text, so an ID names exactly the
 content it was written against. The response contains no block text — read the
 note body for that. See [stable links](../stable-links.md#linking-to-a-block-not-just-a-note).
 
+## Templates and tasks
+
+A **template** is an ordinary note carrying a fenced ```` ```note-template ````
+block:
+
+````markdown
+```note-template
+description: Kickoff note for a new project
+prompt: project — the project this note is about
+prompt: owner
+```
+# {{project}}
+
+Owner: {{owner}}
+Started: {{date}} in {{notebook}}
+````
+
+```sh
+curl -s http://127.0.0.1:8080/api/v1/templates | jq
+curl -s -X POST http://127.0.0.1:8080/api/v1/templates/$DOC/create \
+  -H 'Content-Type: application/json' \
+  -d '{"title":"Apollo kickoff","values":{"project":"Apollo","owner":"Rene"}}' | jq
+```
+
+**Substitution is replacement, never evaluation.** A placeholder is `{{name}}`,
+and a name is either a declared `prompt:` or one of a **closed** automatic
+vocabulary — `date`, `time`, `datetime`, `title`, `notebook`. There is no
+arithmetic, no conditionals, no filesystem reach. An open vocabulary would be an
+expression language, and an expression language living in note content is what
+the query-block design spent a slice refusing.
+
+An unknown placeholder is an error **on the template**, reported when you list
+or read it rather than when you use it — a typo like `{{onwer}}` is broken, and
+finding out at creation time is too late. A missing value is refused rather than
+left blank, and a value for a prompt that does not exist is refused rather than
+ignored.
+
+Supplied values are inserted **once and never re-scanned**, so a value
+containing `{{date}}` stays literal text. Everything a caller supplies is data.
+
+### Tasks
+
+```sh
+curl -s 'http://127.0.0.1:8080/api/v1/tasks?state=open' | jq
+curl -s "http://127.0.0.1:8080/api/v1/tasks?document_id=$DOC" | jq
+```
+
+A task is a checkbox list item — `- [ ] thing` or `- [x] thing` — **computed on
+read** rather than stored. Each one carries a block-derived identity and an
+anchor URI you can link to.
+
+Two properties worth knowing. A task keeps its identity when the note is edited
+*around* it, because identity comes from the block model rather than a line
+number. But a block ID is derived from the block's text and a checkbox is part
+of that text, so **ticking a task changes its derived ID**; write an
+author-written `^marker` on the item when you want an address that survives
+completion.
+
+Counts are complete even when the row list is capped, so a truncated list still
+tells the truth about how much there is. Extraction is a whole-library read of
+the same shape as lint — pass `document_id` or `notebook_id` to make it a small
+one.
+
 ## Batch organizer operations
 
 One bounded transaction over an explicit list of notes:
