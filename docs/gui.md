@@ -160,10 +160,63 @@ Panes always fill the window. When you resize the window, the sidebar and search
 
 The menu bar offers File (Reload/Quit), Edit, View (fullscreen), and Help — Help searches the built-in **Help notebook**, which holds this documentation offline (`notebook:help` finds it too).
 
+## Deleting and restoring notes
+
+Deleting a note in Notrios moves it to the **Trash**. Nothing is lost at that
+point, and the Trash view in the sidebar is where you go to look at it again.
+
+**Move to Trash** sits in the editor toolbar for any note you can edit. It asks
+first, and the question says what happens rather than "are you sure": the note
+stays in the Trash until you restore it or delete it permanently.
+
+Open a note from the Trash and it looks different. The title is greyed out, an
+**In the Trash** badge replaces the Save button, and two actions appear:
+
+- **Restore** — the note becomes editable again, in whichever notebook it is
+  currently assigned to.
+- **Delete forever** — the note and every revision of it are removed. This one
+  cannot be undone, and the confirmation says so.
+
+A trashed note is still readable, which is the point: you get to look at it
+before deciding. It is not searchable from ordinary queries — `is:trashed` is
+the only way to reach it, and the Trash view is that query.
+
+Notes that came from an import (Joplin, Obsidian, Twitter/X, a conversation
+export) cannot be permanently deleted. They stay in the Trash, out of search,
+rather than losing the record that they were ever imported.
+
+### Deleting a notebook
+
+Notebook rows show a 🗑 when you hover over them or reach them with the
+keyboard, except for the ones that cannot be deleted (**All notes**, **Trash**,
+**Help**, and the default **Notes** notebook).
+
+Clicking it asks the service what would happen and shows you that answer, not a
+generic warning:
+
+```text
+Delete the notebook “Work”?
+
+3 notebooks are removed, including Reports, Drafts.
+12 note(s) are not deleted: they move to the Trash, where you can restore them.
+Those notes move to “Notes”, so restoring one later has somewhere to put it.
+```
+
+That last line is the part worth reading. The notes in a deleted notebook are
+re-homed to the default notebook on their way to the Trash — otherwise restoring
+one later would have nowhere to put it.
+
 ## Themes
 
 The 🌙/☀️ button toggles between your light and dark themes; the 🎨 button opens theme settings. You can create custom themes (cloned from the current one, with per-color editing) and choose any theme — builtin or custom — as the one used for light mode and for dark mode.
 
 ## Protected items
 
-"All notes" and "Trash" cannot be deleted. The "Help" notebook cannot be deleted and its notes are read-only. The default "Notes" notebook cannot be deleted (restored notes land there if their original notebook is gone).
+"All notes" and "Trash" cannot be deleted. The "Help" notebook cannot be deleted
+and its notes are read-only. The default "Notes" notebook cannot be deleted
+(restored notes land there if their original notebook is gone).
+
+A read-only Help note and a trashed note both refuse edits, and the GUI
+distinguishes them on purpose: a Help note shows **Read-only Help note** and
+will never be editable, while a trashed note shows **In the Trash** and is one
+click from being editable again.

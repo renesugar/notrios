@@ -82,15 +82,17 @@ Recoll availability, backlog, sync/index, and reconciliation state.
   Ubuntu protocol handler, and reviewed publication profiles that emit a
   sanitized subset handoff. P6, the movenotes-v3 compatibility bridge, is
   deferred to v0.7.
-- Current milestone: v0.5 editing, blocks, and graph UX — **in progress**.
-  Addressable blocks (E1), heading anchors in stable links (E1a),
-  scheme-scoped anchor decoding (E1b), workspace lint (E2), workspace fix (E3),
-  bounded graph traversal with shortest paths and an orphan/hub report (E4),
-  editor link intelligence (E5), the CodeMirror decision (E6 — stay), and
-  offline-first frontend assets (E6a), and HTML table paste normalization (E6b)
-  and embedded query blocks (E7) are complete and archived under `plans/v0.5/`;
-  the remaining tasks (organizer UX and the release wrap-up) are drafted. See
-  [`PLAN.md`](PLAN.md) and [`ROADMAP.md`](ROADMAP.md).
+- **v0.5 (current, 0.5.0) — better editing, blocks, and graph UX.** Addressable
+  blocks (E1), heading anchors in stable links (E1a), scheme-scoped anchor
+  decoding (E1b), workspace lint (E2), workspace fix (E3), bounded graph
+  traversal with shortest paths and an orphan/hub report (E4), editor link
+  intelligence (E5), the CodeMirror decision (E6 — stay), offline-first frontend
+  assets (E6a), HTML table paste normalization (E6b), embedded query blocks
+  (E7), organizer UX with trash-first delete/restore in the GUI and hierarchical
+  tag rename (E8), and the documentation and release wrap-up (E9). All thirteen
+  slices are archived under `plans/v0.5/`, including a copy of the plan itself
+  at `plans/v0.5/000-v0.5-plan.md`. See [`PLAN.md`](PLAN.md) for the next
+  milestone and [`ROADMAP.md`](ROADMAP.md) for the sequence.
 - Agent progress/attempt tracking: [`agent/PLAN_STATUS.md`](agent/PLAN_STATUS.md), [`agent/ATTEMPT_LOG.jsonl`](agent/ATTEMPT_LOG.jsonl), and [`agent/MODEL_LOG.jsonl`](agent/MODEL_LOG.jsonl).
 
 ## Contributing
@@ -139,10 +141,12 @@ The collection scale profile accepts `10000`, `100000`, or `500000`; Joplin
 accepts `100`, `10000`, or `100000`; Obsidian also accepts `500000`; Recoll
 accepts `100` or `100000`. Committed reference evidence is under
 `performance/v0.3-h7/` through `performance/v0.3-h10/` and
-`performance/v0.4-j2/` through `performance/v0.4-p7/`; the v0.5 block, heading,
-and lint profiles are under `performance/v0.5-e1/`, `performance/v0.5-e1a/`,
-`performance/v0.5-e2/`, `performance/v0.5-e4/`, `performance/v0.5-e5/`, and
-`performance/v0.5-e6/`, and `performance/v0.5-e6a/`. See `PACKAGING.md`,
+`performance/v0.4-j2/` through `performance/v0.4-p7/`; the v0.5 profiles are
+under `performance/v0.5-e1/`, `performance/v0.5-e1a/`, `performance/v0.5-e2/`,
+`performance/v0.5-e4/`, `performance/v0.5-e5/`, `performance/v0.5-e6/`, and
+`performance/v0.5-e6a/`. Slices that added no new unbounded surface (E1b, E3,
+E6b, E7, E8) carry no profile of their own and say so in their archived plan.
+See `PACKAGING.md`,
 `SECURITY_REVIEW.md`, and `RELEASE_CHECKLIST.md` before tagging a release.
 Archive-v2 evidence, including the attachment-bearing round trip, is under
 `performance/v0.4-p3/` through `performance/v0.4-p4/`.

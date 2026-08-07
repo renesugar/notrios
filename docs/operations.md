@@ -1,10 +1,17 @@
 # Data safety and maintenance
 
-This guide covers the v0.3 workflows that protect imported notes, remote
-media, attachments, and the optional Recoll search sidecar. The reporting
-commands are safe to run while the service is open. Before a large import or
-garbage-collection apply, make a verified backup as described in the
-[service guide](service.md#backup-and-restore).
+This guide covers the workflows that keep a library healthy: finding what has
+rotted, repairing what can be repaired mechanically, reading the shape of the
+link graph, renaming a tag hierarchy, localizing remote media, auditing and
+collecting attachments, planning and resuming imports, and watching the optional
+Recoll sidecar.
+
+Everything here follows the same two rules. **Reports never write**, so they are
+safe to run on a library you have not backed up — which is usually exactly when
+you want to know what is broken. **Anything that writes is a dry run by
+default** and needs an explicit `--apply` (or `"dry_run": false`). Before a
+large import or a garbage-collection apply, make a verified backup as described
+in the [service guide](service.md#backup-and-restore).
 
 
 ## Finding what has rotted (workspace lint)
@@ -126,6 +133,81 @@ did not prove the notes are unconnected — it ran out of hops or visits, and
 raising `max_depth` or `max_visits` may change the answer. Only `no_path` means
 the search covered everything reachable. See the
 [REST guide](api/rest.md) for the full shapes.
+
+## Renaming a tag hierarchy
+
+Tags nest with `/`: `project/alpha` is a child of `project`. Renaming the parent
+can carry the children with it.
+
+```sh
+notriosctl tags rename --from project --to work                     # dry run
+notriosctl tags rename --from project --to work --include-children  # dry run
+notriosctl tags rename --from project --to work --include-children --apply
+```
+
+The dry run is the default, and it is not a guess. Notrios performs the rename
+inside a transaction and rolls it back, so what the dry run prints is what an
+apply does — including the parts that are hard to predict by hand:
+
+```json
+{
+  "from": "project", "to": "work", "dry_run": true,
+  "changes": [
+    {"from": "project",       "to": "work",       "action": "rename", "notes": 12, "notes_gained": 12},
+    {"from": "project/alpha", "to": "work/alpha", "action": "merge",  "notes": 5,  "notes_gained": 2}
+  ],
+  "notes": 15,
+  "warnings": ["1 saved search(es) mention \"project\" and are not rewritten: Project work"]
+}
+```
+
+`action: "merge"` means a tag with the destination name already existed, so the
+notes join it and the old tag disappears. `notes` is how many notes carried the
+old tag; `notes_gained` is how many actually change — the difference is the
+notes that already had both. Read the merges before applying: the CLI exits `1`
+on a dry run whose plan contains one, so a script cannot combine two hierarchies
+by accident.
+
+Three things a rename deliberately does not do:
+
+- **It does not match part of a name.** `projects` is not a child of `project`,
+  because the hierarchy is compared segment by segment.
+- **It does not touch your note text.** Tags in Notrios are stored alongside
+  notes, not inside them; a `#project` you wrote in a sentence is a sentence.
+- **It does not rewrite saved searches.** A search notebook whose query mentions
+  the old name is *reported*, as above, and left alone. Deciding which
+  occurrences of a word were the tag is a guess, and a wrong guess silently
+  changes what a saved search means.
+
+A rename is bounded at 500 tags and refuses beyond that rather than doing half
+of it. `POST /api/v1/tags/rename` is the same operation over REST, with the same
+`dry_run` default of `true`.
+
+## Deleting a notebook without surprises
+
+Deleting a notebook does not delete the notes in it. They move to the Trash —
+and they are re-homed to the default notebook on the way, so restoring one later
+has somewhere to land. Ask before you do it:
+
+```sh
+curl -s http://127.0.0.1:8080/api/v1/notebooks/$NB/deletion-preview | jq
+```
+
+```json
+{
+  "notebook_id": "nb_...", "name": "Work",
+  "notebooks": 3, "descendant_names": ["Reports", "Drafts"],
+  "notes": 12, "trashed_notes": 1,
+  "rehome_notebook_id": "nb_notes",
+  "deletable": true
+}
+```
+
+The preview is read-only and deletes nothing. A notebook that cannot be deleted
+answers `deletable: false` with a `reason` rather than an error — "what would
+happen" has an answer even when the answer is "nothing". The desktop GUI builds
+its confirmation from this response; see the
+[GUI guide](gui.md#deleting-a-notebook).
 
 ## Localizing remote media
 

@@ -89,7 +89,25 @@ The built-in Go/Wails GUI is part of the first released version, so it lives her
   current notes. SQLite FTS5 and Recoll must compile the same bounded expression
   tree and must not silently approximate unsupported operators.
 
-## v0.5 — Better editing and graph UX (active in `PLAN.md`)
+## v0.5 — Better editing and graph UX (complete, 0.5.0)
+
+Delivered in thirteen slices, all archived under `plans/v0.5/`: addressable blocks
+(E1), heading anchors in stable links (E1a), scheme-scoped anchor decoding
+(E1b), workspace lint (E2), workspace fix (E3), bounded graph traversal with
+shortest paths and an orphan/hub report (E4), editor link intelligence (E5), the
+CodeMirror decision — stay (E6), offline-first frontend assets (E6a), HTML table
+paste normalization (E6b), embedded query blocks (E7), organizer UX (E8), and
+this wrap-up (E9).
+
+Two bullets below did **not** ship and are moved to v0.6 rather than left
+ambiguous:
+
+- **Templates and task extraction** never entered `PLAN.md` as a task.
+- **Graph *visualization*** — E4 delivered the traversal, path, and report data
+  and named itself "visualization data"; there is no graph view in the GUI.
+
+E6a and E6b were added mid-milestone from what E6 measured and from a user
+question, and are not on the original list.
 
 - Consider migration from `React + md-editor-rt` to `React + CodeMirror 6 + unified/remark/rehype` if deeper editor-pane behavior is needed.
 - Rich link autocomplete.
@@ -111,6 +129,9 @@ The built-in Go/Wails GUI is part of the first released version, so it lives her
 
 ## v0.6 — MCP and automation expansion
 
+- Note templates and task extraction (moved from v0.5).
+- A graph view in the GUI, over the v0.5 E4 traversal/path/report data (moved
+  from v0.5).
 - Complete MCP write-tool coverage gated by explicit scopes.
 - Resource graph resources/read support.
 - LLM-safe surgical edits with dry-run and revision preconditions.
@@ -219,6 +240,11 @@ The scaffold handoff is complete; see `CODING_CLIENT_HANDOFF.md`. Future roadmap
 
 The v0.1 MVP, v0.2 redesign, and v0.3 hardening milestones are implemented and
 archived, and so is v0.4: J1–J3, Q1, P1, P2, P3, P3a, P3b, P4, P5, P7, and P8
-are under `plans/v0.4/`, with P6 deferred to v0.7 slice 3. v0.5 is active in
-`PLAN.md`: E1, E1a, E1b, E2, and E3 are archived under `plans/v0.5/` and the
-remaining tasks are drafted.
+are under `plans/v0.4/`, with P6 deferred to v0.7 slice 3. v0.5 is complete and
+archived under `plans/v0.5/`, including a copy of its own plan at
+`plans/v0.5/000-v0.5-plan.md`. Two v0.5 roadmap bullets did not ship and moved
+to v0.6: note templates with task extraction, and a graph *view* in the GUI (E4
+delivered the traversal, path, and report data it is built on).
+
+`PLAN.md` now holds the v0.6 plan.
+

@@ -15,7 +15,7 @@ General behavior:
 notriosctl version
 ```
 
-Prints the version string (currently `0.4.0`) and exits 0. No flags.
+Prints the version string (currently `0.5.0`) and exits 0. No flags.
 
 ## doctor
 
@@ -285,6 +285,27 @@ fails while the rest proceed. Every fix writes an ordinary revision.
 description, the second because it reaches the network (through the full media
 policy, exactly as `notriosctl localize` does). Findings outside this set stay
 reported and unfixed rather than guessed at.
+
+## tags rename
+
+```sh
+notriosctl tags rename --from <tag> --to <tag>
+    [--config config.yaml] [--db path] [--asset-store path]
+    [--include-children] [--apply]
+```
+
+Renames a tag and, with `--include-children`, every tag under `<from>/`. See
+[renaming a tag hierarchy](operations.md#renaming-a-tag-hierarchy).
+
+Dry run is the default. It is not a prediction: the rename runs inside a
+transaction and is rolled back, so the report is produced by the statements that
+would do the work. `--apply` commits instead.
+
+Exit `0` on a clean plan or a successful apply, and `1` when the tag does not
+exist, the destination name is invalid, the rename would touch more than 500
+tags — or when a **dry run's plan contains a merge**. That last one is the
+useful case in a script: renaming onto a name that already exists combines two
+hierarchies, and it should not happen because nobody read the plan.
 
 ## seed-help
 

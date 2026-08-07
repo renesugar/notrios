@@ -110,8 +110,66 @@ curl -s -X POST http://127.0.0.1:8080/api/v1/search-notebooks \
 
 curl -s http://127.0.0.1:8080/api/v1/trash | jq
 curl -s -X POST http://127.0.0.1:8080/api/v1/trash/$DOC/restore | jq
-curl -s -X DELETE http://127.0.0.1:8080/api/v1/trash/$DOC       # permanent; local notes only
+curl -s -X DELETE http://127.0.0.1:8080/api/v1/trash/$DOC \
+  -H "X-Notrios-Confirmation: purge-document:$DOC"            # permanent; local notes only
 ```
+
+A trashed note stays readable through `GET /api/v1/documents/{id}`, which
+returns it with `deleted_at` set and `editable: false`. It has to be readable to
+be recoverable — the Trash is a list you look at before deciding what to
+restore. Every *other* read stops at the Trash: it is absent from search, from
+link listings, and from MCP, so `is:trashed` remains something you ask for
+rather than something you fall into.
+
+### Previewing a notebook deletion
+
+Deleting a notebook does not delete its notes: they move to the Trash and are
+re-homed to the default notebook so a later restore has a destination. Ask what
+would happen first:
+
+```sh
+curl -s http://127.0.0.1:8080/api/v1/notebooks/$NB/deletion-preview | jq
+```
+
+```json
+{"notebook_id":"nb_...","name":"Work","notebooks":3,
+ "descendant_names":["Reports","Drafts"],"truncated":false,
+ "notes":12,"trashed_notes":1,"rehome_notebook_id":"nb_notes","deletable":true}
+```
+
+The route is read-only. A protected notebook answers `200` with
+`deletable: false` and a `reason` instead of an error.
+
+### Renaming a tag hierarchy
+
+```sh
+curl -s -X POST http://127.0.0.1:8080/api/v1/tags/rename \
+  -H 'Content-Type: application/json' \
+  -d '{"from":"project","to":"work","include_children":true}' | jq
+```
+
+**`dry_run` defaults to `true`.** The request above changes nothing; only
+`"dry_run": false` writes. The report is not a prediction — the service runs the
+rename inside a transaction and rolls it back — so a dry run and an apply cannot
+disagree.
+
+```json
+{"from":"project","to":"work","include_children":true,"dry_run":true,
+ "changes":[
+   {"tag_id":"tag_...","from":"project","to":"work","action":"rename","notes":12,"notes_gained":12},
+   {"tag_id":"tag_...","from":"project/alpha","to":"work/alpha","action":"merge",
+    "merged_into_tag_id":"tag_...","notes":5,"notes_gained":2}],
+ "notes":15,
+ "warnings":["1 saved search(es) mention \"project\" and are not rewritten: Project work"]}
+```
+
+Hierarchy is matched segment by segment, so `projects` is not a child of
+`project`. `action: "merge"` means the destination name already existed;
+`notes_gained` is how many notes actually change, which is smaller than `notes`
+when some already carried both tags. A rename never edits note bodies and never
+rewrites a saved search. Bounded at 500 tags; over that it returns `400` rather
+than renaming half a hierarchy. See
+[renaming a tag hierarchy](../operations.md#renaming-a-tag-hierarchy).
 
 `GET /api/v1/notebooks/{id}/notes` and `GET /api/v1/trash` accept `limit` and
 `cursor` and return `{documents, next_cursor}`. Tokens are route-bound and
@@ -292,6 +350,34 @@ level, author-written marker if any, content hash, byte range, and how many
 links point at it. Block IDs derive from block text, so an ID names exactly the
 content it was written against. The response contains no block text — read the
 note body for that. See [stable links](../stable-links.md#linking-to-a-block-not-just-a-note).
+
+## Running a note's query block
+
+A fenced ```` ```note-query ```` block in a note is evaluated by the service, not
+by the client:
+
+```sh
+curl -s -X POST http://127.0.0.1:8080/api/v1/note-queries/run \
+  -H 'Content-Type: application/json' \
+  -d '{"block":"query: tag:todo -tag:done\nfields: notebook, updated\nsort: updated\nlimit: 20"}' | jq
+```
+
+```json
+{"spec":{"query":"tag:todo -tag:done","fields":["title","notebook","updated"],
+         "sort":"updated","limit":20},
+ "rows":[{"document_id":"doc_...","uri":"document://default/documents/doc_...",
+          "title":"Renew passport","notebook":"Admin","updated_at":"2026-08-01T09:00:00Z"}],
+ "truncated":false}
+```
+
+The block is parsed with the same query parser every other search surface uses,
+so a block can express nothing its author could not type into the search box —
+there is no SQL, no scripting, and no filesystem reach. `limit` caps at 100 and
+`truncated` says when more matched.
+
+A malformed block returns **`200` with an `error` string**, not a `4xx`. The
+note it lives in still has to render; only the block should show a problem.
+Reserve failures for real transport or storage faults.
 
 ## Resolving a stable link
 

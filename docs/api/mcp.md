@@ -34,7 +34,7 @@ The default profile is **read-only**. Set `mcp.default_profile: "editor"` in the
 `list_collections`, `list_notebooks`, `get_notebook_tree`,
 `get_notebook_notes`, `list_tags`, `list_search_notebooks`,
 `list_document_links`, `list_document_resources`, `get_document_outline`,
-`get_note_line_range`, `search_in_note`.
+`get_note_line_range`, `search_in_note`, `scan_remote_media`.
 
 Search accepts the same bounded [query language](../query-language.md) as
 everywhere else—including uppercase OR, prefix negation, grouping, phrases,
@@ -50,7 +50,24 @@ planning](../selection-planning.md).
 
 ## Write tools (editor profile)
 
-`create_note`, `update_note` (requires `base_revision_id`), `append_to_note`, `prepend_to_note`, `edit_note` (server-side string replacement — fails when the search text is ambiguous unless `replace_all` is set; supports `dry_run`), `delete_note` (requires `base_revision_id`; moves to Trash), `move_note_to_notebook`.
+`create_note`, `update_note` (requires `base_revision_id`), `append_to_note`, `prepend_to_note`, `edit_note` (server-side string replacement — fails when the search text is ambiguous unless `replace_all` is set; supports `dry_run`), `delete_note` (requires `base_revision_id`; moves to Trash),
+`move_note_to_notebook`, `localize_remote_media` (runs the same quarantine
+pipeline as `notriosctl localize` — never a plain fetch).
+
+## What MCP deliberately does not expose
+
+Several surfaces exist over REST and the CLI and are **not** MCP tools:
+workspace lint and fix, graph traversal and the orphan/hub report, block
+listing, embedded query-block evaluation, tag rename, notebook deletion and its
+preview, garbage collection, archive export/verify/restore, and publication.
+
+That is a choice, not an oversight. MCP is where untrusted model output meets
+your library, so the tools it gets are reading, searching, and bounded
+single-note edits with revision preconditions. Whole-library reports and
+organizer operations stay on surfaces a person drives.
+
+Trashed notes are outside the MCP surface entirely: they do not appear in
+`search_documents` and `get_document` does not return them.
 
 ## Safety rules
 

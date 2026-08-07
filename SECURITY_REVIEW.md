@@ -79,6 +79,37 @@ and installation requires an explicit `--apply`.
 - Editor writes are profile-gated and destructive edits use revision
   preconditions.
 
+**Embedded query blocks (v0.5 E7)** widen what note content can *ask for*, and
+the containment is that they widen nothing. A fenced ```` ```note-query ````
+block is parsed server-side by the same query parser the search box uses, so it
+can express nothing its author could not already type there — no SQL, no
+scripting, no filesystem reach, no output target. Blocks carrying `sql:`,
+`file:`, or `exec:` keys are refused by name, and a SQL-injection-shaped
+*query* is simply text to the parser. Results are capped at 100 rows with
+visible truncation, and every rendered value is written as text or an element
+attribute: a fixture gives a note the title `<img src=x onerror=…>` and asserts
+it renders as text and sets nothing on `window`. A publication carries the
+block's source, never a materialized result, so a published note cannot leak
+what a query matched at export time.
+
+**Organizer operations (v0.5 E8)** keep the existing asymmetry between
+reversible and irreversible. Moving a note to the Trash is revision-
+preconditioned and reversible; permanently purging one still requires the
+object-specific `X-Notrios-Confirmation: purge-document:{id}` header and is
+refused outright for externally-sourced notes. Tag rename is a dry run by
+default on both REST and CLI, and the dry run is a rolled-back transaction
+rather than a separate predictor, so a report cannot understate what an apply
+does. A trashed note became readable through `GET /api/v1/documents/{id}` —
+deliberately, and only there: it is still absent from search, from link
+listings, and from MCP entirely, so `is:trashed` remains a scope a caller asks
+for rather than one it falls into.
+
+None of these surfaces is exposed over MCP. Lint, fix, graph traversal, block
+listing, query-block evaluation, tag rename, notebook deletion, garbage
+collection, archive operations, and publication are REST/CLI only. That keeps
+whole-library reads and organizer writes on surfaces a person drives rather than
+ones untrusted model output reaches.
+
 Do not expose Notrios on a LAN/public address until authentication,
 authorization, CSRF/CORS, TLS/reverse-proxy guidance, rate/request quotas, and
 audit logging are implemented and tested. Future import/export/sync MCP tools

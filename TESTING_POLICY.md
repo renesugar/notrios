@@ -639,6 +639,72 @@ npm run build
 ```
 
 
+### Organizer UX: trash and tag rename (v0.5 E8)
+
+Store fixtures assert the property the feature rests on: a dry run and an apply
+produce **identical reports**, checked by running both against two identically
+built libraries and comparing change lists field by field. The apply changes the
+tags; the dry run leaves them exactly as they were. Because the implementation
+is one transaction rolled back for a dry run, this is a regression guard on the
+rollback rather than on a second predictor.
+
+The hierarchy rules each get a fixture: `projects` is not a child of `project`
+(segment matching, not string prefix); a rename without `include_children` moves
+the parent alone and *warns* about the children rather than leaving the caller
+to notice; renaming a child up onto its parent's name works, which only holds
+because renames are applied shallowest-first; and a case-only rename is a rename
+of the same row rather than a merge with itself. Merges assert both counts
+separately — the note carrying both tags ends with one, the note carrying only
+the source gains the destination, and `notes_gained` is smaller than `notes`.
+
+Refusals are asserted as typed errors and as *no change*: a missing tag, an
+empty or segment-empty destination, a trailing separator, and a rename into the
+tag's own subtree all leave the library untouched.
+
+A projection fixture asserts a rename enqueues one outbox job per affected note
+— the projection carries a note's tags and nothing else in the transaction would
+— and that a dry run's rollback takes those rows with it.
+
+Notebook-deletion preview fixtures assert the counts match what `DeleteNotebook`
+actually does (preview, then delete, then count what reached the Trash and where
+it was re-homed), that the preview itself deletes nothing, and that a protected
+notebook previews as `deletable: false` with a reason rather than erroring.
+
+REST fixtures assert `dry_run` **defaults to true** on an omitted field, that
+only `"dry_run": false` writes, that a saved search mentioning the old tag is
+named in `warnings`, and that a missing tag and an invalid destination map to
+`404`/`400`.
+
+CLI fixtures assert the same default from the outside, that a dry run is
+repeatable, and that a dry run whose plan contains a merge **exits 1** — the
+case where a script meant to rename and would instead have combined two
+hierarchies.
+
+Web fixtures cover the presentation rules: a trashed note shows "In the Trash"
+and offers Restore and Delete forever while a Help note shows "Read-only" and
+offers neither; the sidebar exposes a delete affordance only where the service
+would allow one; and the notebook confirmation text states the counts, that the
+notes survive, and where they land. App-level fixtures assert a refused
+confirmation reaches the service **not at all**, that a delete carries the
+revision the note was opened at, and that a failed precondition is reported with
+the note still open.
+
+`scripts/mvp_smoke.sh` covers the whole surface against a running service: the
+dry-run default, the apply, the deletion preview, the trash cycle, a trashed
+note reading back as trashed, and a purge refused without its confirmation
+header.
+
+The flow was also driven end to end in a real browser — delete, read the trashed
+note, restore, delete the notebook holding the open note, purge — which is what
+found the trashed-note read defect that every unit test passed over. That is the
+lesson worth keeping: unit fixtures verified each piece while the feature did
+not work.
+
+No scale profile: the deletion preview is two indexed `COUNT(1)` queries over
+one notebook subtree, and a rename is bounded to 500 tags. The paths that scale
+— search, the trash keyset, notebook deletion itself — already carry
+10k/100k/500k evidence.
+
 ## MVP release validation
 
 Task 10 adds release-candidate checks beyond ordinary unit tests:

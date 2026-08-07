@@ -2,15 +2,25 @@
 
 This handoff applies to any coding agent or client continuing this project (Codex, Claude, aider, swival.dev, etc. — formerly `CODEX_HANDOFF.md`). The repository is designed so an agent can continue from repository files alone.
 
-Current phase: v0.1, v0.2, v0.3, and **v0.4** are complete; product version is
-0.4.0 and the schema is **v16**. `PLAN.md` holds the v0.5 plan; E1 (block
-anchors), E1a (heading anchors in stable links), E1b (scheme-scoped anchor
-decoding), E2 (workspace lint), E3 (workspace fix), E4 (bounded graph
-traversal, shortest paths, and the orphan/hub report), E5 (editor link
-intelligence), E6 (the CodeMirror decision: stay), and E6a (offline-first
-frontend assets), E6b (HTML table paste normalization), E7 (embedded query
-blocks), and E8 (organizer UX: trash-first delete/restore in the GUI plus
-hierarchical tag rename) are complete; E9 requires user approval.
+Current phase: v0.1, v0.2, v0.3, v0.4, and **v0.5** are complete; product
+version is **0.5.0** and the schema is **v16**. All thirteen v0.5 slices are
+archived under `plans/v0.5/`, including a copy of the plan itself at
+`plans/v0.5/000-v0.5-plan.md`: E1 (block anchors), E1a (heading anchors in
+stable links), E1b (scheme-scoped anchor decoding), E2 (workspace lint), E3
+(workspace fix), E4 (bounded graph traversal, shortest paths, and the orphan/hub
+report), E5 (editor link intelligence), E6 (the CodeMirror decision: stay), E6a
+(offline-first frontend assets), E6b (HTML table paste normalization), E7
+(embedded query blocks), E8 (organizer UX: trash-first delete/restore in the GUI
+plus hierarchical tag rename), and E9 (documentation and release wrap-up).
+
+`PLAN.md` now holds the **v0.6 draft** — batch organizer transactions, MCP tool
+visibility profiles, MCP coverage and resource reads, note templates and task
+extraction, a graph view, and a job control plane. **No v0.6 task is approved.**
+F1 needs user approval before any code is written.
+
+Three v0.5 roadmap bullets did not ship and moved to v0.6 rather than being left
+ambiguous: note templates, task extraction, and a graph *view* (E4 delivered the
+traversal, path, and report data it would be built on).
 
 Milestone detail follows. H1–H11 are archived under `plans/v0.3/`. The v0.4
 slices are archived under `plans/v0.4/`:

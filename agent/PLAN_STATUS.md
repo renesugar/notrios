@@ -4,19 +4,29 @@ Updated: 2026-08-05
 
 ## Active milestone
 
-**v0.4 is complete.** J1–J3, Q1, P1, P2, P3, P3a, P3b, P4, P5, P7, and P8 are
-archived under `plans/v0.4/`, together with a copy of the milestone plan at
-`plans/v0.4/000-v0.4-plan.md`. P6, the `movenotes-v3` compatibility bridge, is
-deferred to v0.7 slice 3. Product version is 0.4.0; the schema was v13 when v0.4
-closed and is now **v16** (E1 added v14 blocks, E1a added v15 heading slugs, E5
-added v16 title/filename indexes).
+**v0.5 is complete.** All thirteen slices — E1, E1a, E1b, E2, E3, E4, E5, E6,
+E6a, E6b, E7, E8, E9 — are archived under `plans/v0.5/`, together with a copy of
+the milestone plan at `plans/v0.5/000-v0.5-plan.md`. Product version is
+**0.5.0**; the schema is **v16** (E1 added v14 blocks, E1a added v15 heading
+slugs, E5 added v16 title/filename indexes). v0.4 remains archived under
+`plans/v0.4/`, with P6, the `movenotes-v3` compatibility bridge, deferred to
+v0.7 slice 3.
 
-`PLAN.md` holds the **v0.5 plan** (blocks, lint/fix, graph traversal, editor
-link intelligence, query blocks, organizer UX). **E1, E1a, E1b, E2, E3, E4, E5,
-E6, E6a, E6b, E7, and E8 are complete**; E9 requires user approval. Two v0.5 decisions are settled and recorded as
-`PROJECT_DECISIONS.md` 17 and 18: block identity is strictly content-based, and
-lint/fix stays single-note and revision-preconditioned with anything bulk left
-to the v0.6 organizer.
+Four v0.5 decisions are settled and recorded as `PROJECT_DECISIONS.md` 17–20:
+block identity is strictly content-based; lint/fix stays single-note and
+revision-preconditioned with anything bulk left to the v0.6 organizer; a
+heading anchor in a stable link is a slug rather than percent-encoded text; and
+the editor stays on `md-editor-rt`, which *is* CodeMirror 6 and exposes it.
+
+Three v0.5 roadmap bullets did not ship and moved to v0.6 rather than being left
+ambiguous: note templates, task extraction, and a graph *view* (E4 delivered the
+traversal, path, and report data it would be built on).
+
+`PLAN.md` now holds the **v0.6 draft** — batch organizer transactions (F1), MCP
+tool visibility profiles (F2), MCP coverage and resource reads (F3), templates
+and task extraction (F4), a graph view (F5), a job control plane (F6), and the
+wrap-up (F7). **No v0.6 task is approved**; F1 needs user approval before any
+code is written.
 
 ## 2026-08-02 follow-up review
 
@@ -209,6 +219,49 @@ to the v0.6 organizer.
 - Export deduplication became symmetric across layouts through the same bounded
   spool, and `record_counts` became a pointer so `omitempty` actually applies —
   which cut packed verify peak RSS 41% and runtime 31%.
+
+## 2026-08-06 E9 — v0.5 documentation and release wrap-up
+
+- Product version bumped to **0.5.0** across the service, CLI, MCP `serverInfo`,
+  the web package metadata, and its lockfile. Schema stays v16.
+- Documentation-site and Help-notebook pages caught up with E7 and E8: deleting
+  and restoring notes plus notebook deletion in `docs/gui.md`; renaming a tag
+  hierarchy and previewing a notebook deletion in `docs/operations.md`;
+  `tags rename` in `docs/cli.md`; the tag-rename, deletion-preview, and
+  note-query routes plus the trashed-note read contract in `docs/api/rest.md`;
+  and new v0.5 highlights in `docs/index.md`. `notriosctl seed-help` mirrors the
+  same directory, so the Help notebook and the site are the same source.
+- `docs/operations.md` opened with "This guide covers the v0.3 workflows",
+  which had been wrong for two milestones. Rewritten around the two rules the
+  page actually follows: reports never write, and anything that writes is a dry
+  run by default.
+- **The MCP guide disagreed with the code.** Its read-tool list omitted
+  `scan_remote_media` and its write-tool list omitted `localize_remote_media`,
+  both of which are registered. Fixed, and a new section states what MCP
+  deliberately does **not** expose — lint, fix, graph, blocks, query blocks, tag
+  rename, notebook deletion, GC, archive operations, publication — as a standing
+  decision rather than a gap.
+- **Three v0.5 roadmap bullets did not ship**, and the reconciliation is the
+  point of finding them: note templates and task extraction never entered
+  `PLAN.md` at all, and a graph *view* was never in scope — E4 shipped the data
+  and named itself "traversal, paths, and visualization data" for that reason.
+  All three moved to v0.6 explicitly, in `ROADMAP.md`, `FEATURE_MATRIX.md`, and
+  the release checklist's known boundaries, rather than being left ambiguous.
+- **Two `ROADMAP.md` v0.6 bullets were already implemented**: LLM-safe surgical
+  edits and LLM-safe SEARCH/REPLACE edits are the existing `edit_note` tool and
+  `PATCH /api/v1/documents/{id}`, complete since R8. The v0.6 draft records this
+  under "already implemented, deliberately not re-listed" instead of restating
+  them as work and making the milestone look larger than it is.
+- `RELEASE_CHECKLIST.md` gained a v0.5.0 section separating the reproducible
+  release-candidate gates from repository-owner publishing, with the known
+  boundaries stated plainly: no templates, no task extraction, no graph view, no
+  bulk/batch operations, no GUI tag rename, no MCP maintenance surface, and no
+  DevTools-Protocol measurement of the Wails webview.
+- `TESTING_POLICY.md` gained the E8 entry, including the lesson browser
+  verification taught: every unit fixture passed while the feature did not work.
+- v0.5 archived as `plans/v0.5/000-v0.5-plan.md` and
+  `plans/v0.5/013-v0.5-documentation-release-wrap-up.md`; `PLAN.md` now holds
+  the **v0.6 draft** (F1–F7). No v0.6 task is approved.
 
 ## 2026-08-06 E8 — organizer UX: trash-first delete, restore, tag rename
 
@@ -861,7 +914,7 @@ attempt detail remains append-only in `agent/ATTEMPT_LOG.jsonl`.
 - H11 local release gates pass; `docs/operations.md` is included in the
   docs site; P1/P2 expand it from 11 to 13 pages/Help notes with selection and
   archive-v2 safety guides.
-- Product version: 0.4.0; current schema: v16.
+- Product version: 0.5.0; current schema: v16.
 - Resource reference report:
   `GET /api/v1/resources/reports/reference` and
   `notriosctl resources report`.

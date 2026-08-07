@@ -5,10 +5,11 @@ This file is the codebase atlas. Update it whenever major files or directories a
 ## Root documents
 
 - `README.md` — project overview and quick start.
-- `PLAN.md` — the active v0.5 editing/blocks/graph plan. E1 through E6 are
-  complete and archived under `plans/v0.5/`; E7–E9 are drafted. v0.4 is
-  complete and archived under `plans/v0.4/`, including its own plan copy at
-  `plans/v0.4/000-v0.4-plan.md`.
+- `PLAN.md` — the **v0.6 draft** (MCP and automation expansion: batch organizer
+  transactions, tool visibility profiles, MCP coverage, templates, a graph view,
+  and a job control plane). No v0.6 task is approved. v0.5 is complete and
+  archived under `plans/v0.5/` — all thirteen slices plus its own plan copy at
+  `plans/v0.5/000-v0.5-plan.md`; v0.4 likewise under `plans/v0.4/`.
 - `plans/scaffold/SCAFFOLD_CREATION_PLAN.md` — process for creating/refining this scaffold.
 - `ROADMAP.md` — product roadmap and future features.
 - `AGENTS.md` — coding-agent instructions (`CLAUDE.md` points here).
@@ -82,7 +83,9 @@ This file is the codebase atlas. Update it whenever major files or directories a
   `src/html-table-markdown.ts` converts a pasted HTML table into a Markdown pipe
   table and refuses anything a pipe table cannot hold (v0.5 E6b).
   `src/note-query.ts` renders embedded ```note-query blocks after the note has
-  already rendered, writing every value as text (v0.5 E7).
+  already rendered, writing every value as text (v0.5 E7). `src/organizer.ts`
+  holds the notebook-deletion confirmation text, built from the service's own
+  preview rather than a guess (v0.5 E8).
 
 ## Agent support
 

@@ -1,5 +1,80 @@
 # Release Checklist
 
+## v0.5.0 — better editing, blocks, and graph UX
+
+The v0.5 implementation is complete on `develop`. As in earlier milestones, the
+reproducible local release-candidate gates are separated from repository-owner
+publishing actions.
+
+Release-candidate gates (run for E9):
+
+- [x] Product version reports `0.5.0`; schema bootstraps/upgrades to v16.
+- [x] `go vet ./...` and `go test ./...`.
+- [x] Required-file, scaffold, OpenAPI parse, migration-copy, and plan-loop
+      checks.
+- [x] Web lockfile install, typecheck, tests, production build, and GUI build.
+- [x] Documentation site build and deterministic Help-notebook seed/reseed.
+- [x] End-to-end REST/MCP smoke and generated store performance smoke.
+- [x] Offline-assets check: no third-party requests, no CSP violations, math
+      rendered with the network unavailable.
+- [x] Committed evidence for every slice that added a measurable surface, under
+      `performance/v0.5-e1/`, `-e1a/`, `-e2/`, `-e4/`, `-e5/`, `-e6/`, `-e6a/`.
+      Slices that added no new unbounded surface (E1b, E3, E6b, E7, E8) carry a
+      written reason in their archived plan instead.
+- [x] Source release ZIP produced by `scripts/package_release.sh`, independently
+      checked by `scripts/check_release_zip.py`, and SHA-256 recorded in the
+      E9 handoff.
+- [x] ZIP contains `web/dist/` and excludes `.git/`, `web/node_modules/`,
+      runtime `data/`, SQLite databases, and generated build directories.
+
+What v0.5 adds beyond v0.4:
+
+- addressable blocks and heading anchors — schema v14/v15, content-derived block
+  identity, `GET /api/v1/documents/{id}/blocks`, and anchor resolution for
+  `document://` and `notrios://` links;
+- a read-only workspace lint over eleven checks, and a dry-run-first `fix` for
+  the mechanically repairable subset;
+- bounded graph traversal, shortest paths from both ends, and an orphan/isolate/
+  hub report;
+- editor link intelligence — inline note search on `[[`, broken-link underlines
+  that follow their text, Ctrl-click to follow a link, and a whole-note list;
+- an offline-first frontend: KaTeX, highlight.js, and cropper bundled, echarts
+  and prettier off, and a Content-Security-Policy served with the UI;
+- HTML table paste normalization that refuses far more than it converts;
+- embedded `note-query` blocks parsed server-side by the same query parser as
+  every other search surface, and inert in a publication;
+- trash-first delete/restore in the GUI, a notebook-deletion preview, and
+  hierarchical tag rename whose dry run is a rolled-back apply.
+
+Known release boundaries:
+
+- **Templates, task extraction, and a graph *view* did not ship.** All three
+  were v0.5 roadmap bullets; the first two never entered `PLAN.md` and the third
+  was scoped to data only (E4 is named "traversal, paths, and visualization
+  data"). All three moved to v0.6 rather than being left ambiguous.
+- Bulk and batch organizer operations remain v0.6. v0.5's organizer is
+  deliberately single-object; a hierarchical tag rename touches many rows
+  because a hierarchy is one thing, not because it is a batch.
+- Tag rename has no GUI surface — it is Store/REST/CLI only.
+- MCP does not expose lint, fix, graph, blocks, query blocks, tag rename,
+  notebook deletion, GC, archive operations, or publication. That is a standing
+  decision, recorded in `docs/api/mcp.md`, not a gap.
+- The Wails webview is not measured by the editor and offline-asset harnesses:
+  WebKitGTK does not speak the DevTools Protocol they use. It loads the
+  identical bundle through the same handler, so the code path is the one
+  measured; the engine is not.
+- Every v0.4 boundary still applies: source-only, Ubuntu-only, single-user,
+  local, and unauthenticated; a publication handoff is a projection, not a
+  backup; `--pack` archives need a reader that understands `objects.pack.v1`;
+  stable-link handler registration is Ubuntu/XDG only; Recoll/Xapian remain
+  optional user-installed external GPL processes.
+
+Repository-owner publishing steps (not performed by E9):
+
+- [ ] Review and merge/fast-forward `develop` into `main`.
+- [ ] Push the reviewed branches; confirm CI and the GitHub Pages docs workflow.
+- [ ] Tag and push `v0.5.0` only after the owner accepts the release candidate.
+
 ## v0.4.0 — portable data, publishing, and stable references
 
 The v0.4 implementation is complete on `develop`. As with v0.3, the

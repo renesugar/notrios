@@ -152,16 +152,36 @@ sync design. A later spike must cover desktop parity, Android storage/lifecycle,
 background transfer, safe-area/responsive UI, mobile file-dialog limitations,
 and real-device resource use before changing the stable v2 shell.
 
-The GUI owns link interception, resource upload/download, preview sanitization, and routing to document/resource URIs. A later migration to CodeMirror 6 + unified/remark/rehype is reserved for deeper editor-pane behavior and AST-aware features.
+The GUI owns link interception, resource upload/download, preview sanitization, and routing to document/resource URIs.
 
 v0.5 E5 added the two read-only service surfaces an editor needs while someone
-types — bounded link-target suggestion and unsaved-buffer link resolution — and
-established the boundary that migration would cross. The buffer check parses the
-submitted body with the canonical extractor rather than trusting a
-client-extracted target list, so a marker the editor draws matches the link
-record a save will write; that keeps Markdown knowledge in one place. What the
-current editor cannot give is caret position and inline widgets, so broken links
-are listed beside the text rather than underlined in it.
+types — bounded link-target suggestion and unsaved-buffer link resolution. The
+buffer check parses the submitted body with the canonical extractor rather than
+trusting a client-extracted target list, so a marker the editor draws matches
+the link record a save will write; that keeps Markdown knowledge in one place.
+
+**v0.5 E6 settled the editor question: Notrios stays on `md-editor-rt`, because
+it *is* CodeMirror 6 and exposes it** (`PROJECT_DECISIONS.md` 20). It depends on
+`@codemirror/{view,state,autocomplete,commands,language,search}` and surfaces
+them through the `completions` prop, `config({codeMirrorExtensions})`,
+`getEditorView()`, and `domEventHandlers`. The "migrate to CodeMirror for caret
+position and inline widgets" framing had no content, and an earlier claim that
+this editor could give neither was wrong — it reached several documents before
+E6 corrected it. Broken links are underlined where they sit, the underlines
+follow their text through edits, Ctrl-click opens a target, and completions
+appear inline; the whole-note list is kept *alongside* the underlines because an
+underline only helps where a reader is already looking.
+
+The editor pane converts UTF-8 byte offsets from the service into CodeMirror's
+UTF-16 indices (`web/src/editor-offsets.ts`). They agree on ASCII and diverge at
+the first accent, so an unconverted offset marks the wrong text and drifts
+further into the note; an offset landing inside a character is dropped rather
+than rounded.
+
+The frontend is offline-first as of E6a: KaTeX, highlight.js, and cropper are
+bundled as local instances, echarts and prettier are disabled, and the service
+serves a Content-Security-Policy with the UI. Nothing is fetched from a CDN at
+runtime.
 
 ## REST and MCP
 
