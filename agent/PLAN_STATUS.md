@@ -96,15 +96,39 @@ recommendation.** Fourteen decisions are now settled across both rounds.
   *still running*, and *no such job*, or a script cannot tell "not finished"
   from "failed".
 
-**One blocking decision remains, and it came out of implementing an answer.**
-"Read-only" is not a property a note can carry: `toAPIDocument` computes
-`Editable: doc.NotebookID != store.HelpNotebookID`, hard-coded to one notebook.
-A generated report in the default notebook cannot be read-only without changing
-that, and the Help notebook would delete it on the next `seed-help` reseed.
-Recommended: a builtin **Reports** notebook plus generalizing the rule from "is
-the Help notebook" to "is a builtin notebook" — the protection mechanism already
-exists and only needs to stop naming one notebook. It also needs a position in
-the sidebar ordering that `sidebar.ts` and `UI_DESIGN.md` both fix.
+**Round 3 (2026-08-07).** A builtin **Reports** notebook, sitting above Help in
+the last-anchored group, with the protection rule generalized from "is the Help
+notebook" to "is a builtin notebook". Regeneration is explicit only. Sixteen
+decisions are now settled across three rounds.
+
+*Why the generalization matters:* **thirteen** places across `internal/httpapi`,
+`internal/store`, `internal/localize`, and `internal/helpdocs` hard-code
+`NotebookID == HelpNotebookID` to mean "protected". A single
+`store.IsBuiltinNotebook(id)` predicate replaces all of them and makes the next
+builtin free; adding a second constant to thirteen call sites would not. No
+migration is needed — the `notebooks` table exists and bootstrap's
+`INSERT OR IGNORE` reaches existing databases on next open.
+
+**Two problems found while working out what that touches**, one of them
+blocking:
+
+- **The report participates in the graph it measures.** *Blocking.* A note
+  linking to the top N hubs adds an incoming link to each, and the graph report
+  counts *all* incoming links with no notebook filter — so generating the report
+  changes the ranking the next generation sees. Excluding the report from its
+  own ranking, already agreed, does not fix this: the links still count.
+  Recommended: the report ignores links **originating in a builtin notebook**,
+  which reuses the protection predicate and generalizes to any later generated
+  note. Special-casing one note ID would leave the trap set.
+- **A publication would carry the report, and the report names notes the
+  publication excluded.** *Non-blocking, but a privacy boundary.* The hubs
+  report draws titles and links from the whole library; publication excludes by
+  *tag* only and has no notebook exclusion, so a broad selection sweeping in the
+  report would publish titles the selection itself withheld — E7's
+  export-inertness problem in a new shape. Recommended: builtin notebooks are
+  excluded from publication handoffs by default and reported in the dry run.
+  That also fixes a latent wart — nothing today stops a publication from
+  dumping Notrios' own Help documentation into someone's site.
 
 It blocks only F5's hubs-report deliverable. **F2, F3, F4, F6, and F7 are
 unblocked**, as are F5's local graph and export halves.

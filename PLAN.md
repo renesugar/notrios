@@ -4,9 +4,9 @@ Status: **active. Written 2026-08-06 from `ROADMAP.md` after v0.5 completed.
 E10, E11, and E12 (the v0.5.0 release-candidate fixes) are complete and the
 candidate has no outstanding gates. F0 (notebook targeting) and F1 (batch
 organizer transactions) are complete. F2 onward require user approval, and
-fourteen of their open decisions were answered on 2026-08-07 across two rounds.
-**One blocking decision remains** — where a read-only generated note can live,
-which blocks only F5's hubs-report deliverable. F2, F3, F4, F6, and F7 are
+sixteen of their open decisions were answered on 2026-08-07 across three rounds.
+**One blocking decision remains** — the hubs report participates in the graph it
+measures — which blocks only F5's hubs-report deliverable. F2, F3, F4, F6, and F7 are
 unblocked. F5a was **withdrawn** and F5 reframed away from a global graph
 canvas.**
 
@@ -600,32 +600,66 @@ filtering that a notes app has no business reimplementing.
   `notriosctl seed-help` removes notes whose source file disappeared, so the
   next reseed would delete the report.
 
-  **New, blocking for this deliverable.** Options:
-  - **(a) A builtin "Reports" notebook**, and generalize the rule from "is the
-    Help notebook" to "is a builtin notebook". Symmetric with Help, gives future
-    generated reports (lint, GC, resource usage) a home, and the protection
-    mechanism already exists — it just needs to stop naming one notebook.
-    Costs a sidebar row and a bootstrap row. **Recommended.**
-  - **(b) Keep it in the default notebook and add a per-note protection
-    reason** — a `generated_by` column or metadata key that `Editable` also
-    consults. More precise, but it makes note-level protection a second concept
-    alongside notebook-level protection, and every surface that decides
-    editability has to learn both.
-  - **(c) Accept that the report is editable**, and let regeneration overwrite
-    whatever was typed. Cheapest, and exactly the failure the answer above
-    rejects.
+  **Resolved 2026-08-07: a builtin "Reports" notebook**, sitting with Help in
+  the last-anchored group, above it. The protection rule generalizes from "is
+  the Help notebook" to "is a builtin notebook".
 
-  Note that (a) changes an invariant `sidebar.ts` and `UI_DESIGN.md` both
-  state — "Help is always immediately above Trash" — so a second builtin
-  notebook needs its position in that ordering decided too. *Recommended:*
-  Reports sits with Help in the last-anchored group, above it.
+  *That generalization is worth more than it looks.* **Thirteen places** across
+  `internal/httpapi`, `internal/store`, `internal/localize`, and
+  `internal/helpdocs` currently hard-code `NotebookID == HelpNotebookID` to mean
+  "this note is protected". Adding a second constant to all thirteen would be
+  the wrong move; a single `store.IsBuiltinNotebook(id)` predicate replaces the
+  comparison everywhere and makes the next builtin free. The set is genuinely
+  closed — builtin notebooks are created by bootstrap, never by a user.
 
-- **What triggers regeneration.** *New, non-blocking.* The report is stale the
-  moment a link changes. *Default if unanswered:* explicit only —
-  `notriosctl graph report --write-note` and a REST equivalent — never on a
+  No migration is needed: the `notebooks` table already exists and bootstrap's
+  `INSERT OR IGNORE` reaches existing databases on next open.
+
+  `sidebar.ts` and `UI_DESIGN.md` both state "Help is always immediately above
+  Trash" as an invariant. It becomes Reports, then Help, then Trash, and the
+  sidebar test that fixes the old ordering has to move with it.
+
+**Two problems found while working out what that touches.**
+
+- **The report participates in the graph it measures.** *New, blocking for this
+  deliverable.* A report note containing links to the top N hubs adds one
+  incoming link to each of them, and `GET /api/v1/graph/report` counts *all*
+  incoming links with no notebook filter. Generating the report therefore
+  changes the ranking the next generation sees — an observer effect built in by
+  construction, and the sort of thing that looks like a subtle data bug months
+  later. Excluding the report from its own *ranking* (already agreed) does not
+  fix this; the links still count.
+
+  *Recommended:* the graph report ignores links **originating in a builtin
+  notebook**. That keeps generated content out of a measurement of what the user
+  actually wrote, generalizes to any later report, and reuses the same predicate
+  as the protection rule. The alternative — special-casing one note ID — leaves
+  the trap set for the next generated note.
+
+- **A publication would carry the report, and the report names notes the
+  publication excluded.** *New, non-blocking but a privacy boundary.* The hubs
+  report lists titles and links drawn from the **whole library**. A publication
+  handoff excludes by *tag* (`confidential`, `draft`, `private`) and has no
+  notebook-exclusion mechanism, so a broad selection that swept in the report
+  note would publish the titles of notes the selection itself withheld. This is
+  E7's export-inertness problem in a new shape.
+
+  *Recommended:* **builtin notebooks are excluded from publication handoffs by
+  default**, reported as an exclusion in the selection dry run so it is visible
+  rather than silent. That fixes a second latent wart at the same time —
+  nothing today stops a publication from dumping Notrios' own Help
+  documentation into someone's site.
+
+- **Does an empty Reports notebook show in the sidebar?** *New, non-blocking.*
+  *Default if unanswered:* yes, always, consistent with All notes, Help, and
+  Trash, which all show when empty. A builtin that appears only once it has
+  content is a feature nobody discovers.
+
+- **What triggers regeneration.** **Resolved: explicit only** —
+  `notriosctl graph report --write-note` and a REST equivalent, never on a
   schedule and never on write. A whole-collection scan on every save would be
-  the one unbounded thing in an otherwise bounded design, and the report carries
-  its generation timestamp so a reader can see how old it is.
+  the one unbounded thing in an otherwise bounded design. The report carries its
+  generation timestamp so a reader can see how old it is.
 
 - **Which export format.** **Resolved: CSV node and edge lists.** They stream at
   any library size without holding a document tree in memory, and Gephi,
@@ -719,8 +753,11 @@ what happened to F1, whose two decisions sat here and nowhere else.
 | Are extracted tasks stored or computed | F4 | **Resolved: computed on read** |
 | How to render a bounded graph | F5 | **Resolved by reframing** — no global canvas; F5a withdrawn |
 | How the hubs report regenerates | F5 | **Resolved:** stable ID, overwritten, read-only |
-| Where a read-only generated note can live | F5 | **Open, blocking** — new; `Editable` is hard-coded to the Help notebook |
-| What triggers report regeneration | F5 | Open, non-blocking — new |
+| Where a read-only generated note can live | F5 | **Resolved: a builtin "Reports" notebook**, above Help; protection generalizes to any builtin |
+| What triggers report regeneration | F5 | **Resolved: explicit only** |
+| The report participates in the graph it measures | F5 | **Open, blocking** — new; recommend the report ignores links from builtin notebooks |
+| Whether a publication carries generated reports | F5 | **Open, non-blocking** — new; recommend excluding builtin notebooks from publication |
+| Does an empty Reports notebook show | F5 | Open, non-blocking — new |
 | Which graph export format | F5 | **Resolved: CSV node and edge lists** |
 | Whether graph export is CLI-only | F5 | **Resolved: CLI-only** |
 | Do jobs survive a restart | F6 | **Resolved:** persist records, do not resume work |
@@ -731,18 +768,22 @@ what happened to F1, whose two decisions sat here and nowhere else.
 | Long-term SQLite driver | — | Open; `agent/OPEN_QUESTIONS.md` 1 |
 | Official MCP Go SDK adoption | — | Open; `agent/OPEN_QUESTIONS.md` 2 |
 
-Fourteen decisions have been answered across two rounds, and each round threw
-off a few new ones — which is the normal shape of this rather than a failure of
-the round before.
+Sixteen decisions have been answered across three rounds, and each round threw
+off a few new ones — the normal shape of this rather than a failure of the round
+before. The new ones are getting narrower each time, which is what convergence
+looks like: round 1 asked what to build, round 3 asks what a generated note does
+to a measurement.
 
-**One blocking decision remains**, and like the others it came out of
-implementing an answer rather than out of nowhere: *where a read-only generated
-note can live*, since `Editable` is hard-coded to the Help notebook ID and the
-Help notebook itself would delete the report on the next reseed. It blocks only
-F5's second deliverable.
+**One blocking decision remains**, and again it came out of implementing an
+answer: *the hubs report participates in the graph it measures*. A note that
+links to the top N hubs adds an incoming link to each of them, and the report
+counts all incoming links, so generating it changes the next ranking.
+Recommended fix is one line of predicate — ignore links originating in a builtin
+notebook — but it needs deciding rather than assuming. It blocks only F5's
+hubs-report deliverable.
 
-**F2, F3, F4, F6, and F7 are unblocked.** F5's local graph and export halves are
-unblocked too; only the hubs-report note waits.
+**F2, F3, F4, F6, and F7 are unblocked.** So are F5's local graph and export
+halves.
 
 ## Already implemented, deliberately not re-listed
 
