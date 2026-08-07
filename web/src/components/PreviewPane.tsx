@@ -3,13 +3,14 @@
 // editor (source of truth) and preview are independently sized panes.
 // Sanitization and document://+resource:// link interception carry over via
 // the shared preview renderer.
-import { useMemo, type MouseEvent } from 'react';
+import { useEffect, useMemo, useRef, type MouseEvent } from 'react';
 import { MdPreview, type PreviewRendererProps } from 'md-editor-rt';
 import type { ThemeMode } from '../themes';
 import { normalizePreviewHTML, parseDocumentIDFromURI, parseResourceIDFromURI } from '../preview-utils';
 import { resourceContentURL } from '../api';
 import { isStableLink, parseStableLink } from '../stable-links';
 import { disabledEditorExtensions, installEditorAssets } from '../editor-assets';
+import { renderNoteQueryBlocks } from '../note-query';
 
 installEditorAssets();
 
@@ -63,7 +64,16 @@ export function PreviewPane({ body, themeBase, onOpenDocument, onOpenStableLink,
       }
     }
     return function PreviewRenderer({ html, id, className }: PreviewRendererProps) {
-      return <div id={id} className={className} onClick={onPreviewClick} dangerouslySetInnerHTML={{ __html: normalizePreviewHTML(html) }} />;
+      const containerRef = useRef<HTMLDivElement>(null);
+      const sanitized = useMemo(() => normalizePreviewHTML(html), [html]);
+      // Query blocks are filled in *after* the note has rendered, and the
+      // cleanup aborts anything still in flight — a late reply must not write
+      // into a preview that has since moved to another note.
+      useEffect(() => {
+        if (!containerRef.current) return;
+        return renderNoteQueryBlocks(containerRef.current);
+      }, [sanitized]);
+      return <div ref={containerRef} id={id} className={className} onClick={onPreviewClick} dangerouslySetInnerHTML={{ __html: sanitized }} />;
     };
   }, [onOpenDocument, onOpenStableLink, onError]);
 

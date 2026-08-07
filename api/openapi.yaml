@@ -800,6 +800,29 @@ paths:
                 $ref: '#/components/schemas/CheckLinksResponse'
         '400':
           $ref: '#/components/responses/Error'
+  /api/v1/note-queries/run:
+    post:
+      summary: Evaluate one embedded note-query block
+      description: >
+        Parses a fenced ```note-query block and runs it through the same bounded
+        search every other surface uses. Accepts no SQL, no filesystem path, and
+        no output target. A malformed block returns 200 with `error` set rather
+        than a 4xx, because the note containing it still has to render.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NoteQueryRequest'
+      responses:
+        '200':
+          description: The block's results, or the reason it could not run
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NoteQueryResult'
+        '400':
+          $ref: '#/components/responses/Error'
   /api/v1/graph/path:
     post:
       summary: Find a shortest link path between two notes
@@ -1685,6 +1708,54 @@ components:
         total: { type: integer, description: links in the whole buffer, even when the list was capped }
         unresolved: { type: integer }
         truncated: { type: boolean }
+    NoteQueryRequest:
+      type: object
+      required: [block]
+      properties:
+        block:
+          type: string
+          maxLength: 4096
+          description: >
+            The block's text: `key: value` lines using query, fields, sort, and
+            limit. `query` is required and is the Q1 expression language.
+        collection_id: { type: string }
+    NoteQuerySpec:
+      type: object
+      required: [query, fields, sort, limit]
+      properties:
+        query: { type: string }
+        fields:
+          type: array
+          items: { type: string, enum: [title, notebook, tags, updated, snippet] }
+        sort: { type: string, enum: [updated, relevance] }
+        limit: { type: integer, minimum: 1, maximum: 100 }
+    NoteQueryRow:
+      type: object
+      required: [document_id, uri, title]
+      properties:
+        document_id: { type: string }
+        uri: { type: string }
+        title: { type: string }
+        notebook: { type: string }
+        tags:
+          type: array
+          items: { type: string }
+        updated_at: { type: string, format: date-time }
+        snippet: { type: string }
+    NoteQueryResult:
+      type: object
+      required: [spec, rows, truncated]
+      properties:
+        spec: { $ref: '#/components/schemas/NoteQuerySpec' }
+        rows:
+          type: array
+          items: { $ref: '#/components/schemas/NoteQueryRow' }
+        truncated: { type: boolean, description: more notes match than the block's limit showed }
+        error:
+          type: string
+          description: >
+            Why the block could not run. Present on a 200 so the note renders
+            with a message in the block rather than failing.
     GraphPathRequest:
       type: object
       required: [from, to]

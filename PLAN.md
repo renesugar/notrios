@@ -3,7 +3,7 @@
 Status: **active. Drafted 2026-08-05 from `ROADMAP.md` after v0.4 completed.
 E1, E1a, E1b, E2, E3, E4, E5, and E6 are complete. E6a and E6b were added
 2026-08-06 from what E6 measured and from a user question about math rendering;
-E6a and E6b are complete; E7–E9 require user approval.**
+E6a, E6b, and E7 are complete; E8–E9 require user approval.**
 
 v0.4 is complete and archived under `plans/v0.4/`, including a copy of its own
 plan at `plans/v0.4/000-v0.4-plan.md`. Its one deferral, P6 (the `movenotes-v3`
@@ -446,7 +446,16 @@ Working state: pasting a simple HTML table produces a Markdown table whose
 blocks and links the rest of the system can see; a complex table pastes exactly
 as it arrived; and no pasted markup is executed at any point.
 
-### E7. Embedded query blocks
+### E7. Embedded query blocks — complete
+
+Archived as `plans/v0.5/011-embedded-query-blocks.md`. A fenced ```note-query
+block declares a Q1 query plus typed fields, sort, and limit; the service parses
+it with the same parser every search surface uses, so a block can express
+nothing its author could not type into the search box. A malformed block is a
+200 carrying `error`, because the note has to render. E7 also gave
+`SearchRequest` an explicit `Sort`: the order used to be implied by the query's
+shape, so `sort: updated` over a text query would silently have got relevance.
+
 
 - Render a fenced `note-query` block from the Q1 expression language plus a
   bounded, typed selection of fields, sorts, and limits. No SQL, no JavaScript,
@@ -538,7 +547,7 @@ GUI-affecting tasks also build with `make gui`, and layout changes run
   revision-preconditioned.** Every fix writes an ordinary revision against a
   precondition for one note; anything bulk belongs to the v0.6 organizer, and
   E3 may not grow a multi-note apply path.
-- E1 through E6, E6a, and E6b are complete; E7–E9 are not approved.
+- E1 through E6, E6a, E6b, and E7 are complete; E8–E9 are not approved.
 - **Resolved 2026-08-06 by E6a: the frontend is offline-capable now.** KaTeX,
   highlight.js, and cropper are bundled, echarts and prettier are off, and a
   Content-Security-Policy from the service refuses third-party script. The cost

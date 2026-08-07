@@ -671,6 +671,40 @@ type CheckLinksResponse struct {
 	Truncated  bool          `json:"truncated,omitempty"`
 }
 
+// NoteQueryRequest evaluates one embedded ```note-query block. It carries the
+// block's text and nothing else: no SQL, no path, no output target.
+type NoteQueryRequest struct {
+	CollectionID string `json:"collection_id,omitempty"`
+	Block        string `json:"block"`
+}
+
+type NoteQuerySpec struct {
+	Query  string   `json:"query"`
+	Fields []string `json:"fields"`
+	Sort   string   `json:"sort"`
+	Limit  int      `json:"limit"`
+}
+
+type NoteQueryRow struct {
+	DocumentID string   `json:"document_id"`
+	URI        string   `json:"uri"`
+	Title      string   `json:"title"`
+	Notebook   string   `json:"notebook,omitempty"`
+	Tags       []string `json:"tags,omitempty"`
+	UpdatedAt  string   `json:"updated_at,omitempty"`
+	Snippet    string   `json:"snippet,omitempty"`
+}
+
+// NoteQueryResult renders a block. `error` is part of a 200 response, not an
+// HTTP failure: a note with one broken query block still has to render, so the
+// block shows the message and the note around it is unaffected.
+type NoteQueryResult struct {
+	Spec      NoteQuerySpec  `json:"spec"`
+	Rows      []NoteQueryRow `json:"rows"`
+	Truncated bool           `json:"truncated"`
+	Error     string         `json:"error,omitempty"`
+}
+
 type GraphPathRequest struct {
 	From      string `json:"from"`
 	To        string `json:"to"`

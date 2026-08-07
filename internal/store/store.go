@@ -732,7 +732,21 @@ type SearchRequest struct {
 	Query        string
 	Limit        int
 	Cursor       string
+	// Sort is normally empty, meaning the ordering follows the query shape: a
+	// positive text-only query ranks by FTS5 relevance and anything mixing
+	// fields or negation traverses chronologically, because those are the two
+	// orders a keyset can reproduce. SortUpdated forces the chronological path
+	// for a text query too, which v0.5 E7 needs so a note-query block can ask
+	// for "newest first" and get it rather than get relevance and be told it
+	// asked for something else.
+	Sort string
 }
+
+// Explicit search orders. An empty Sort keeps the query-shape default.
+const (
+	SortRelevance = "relevance"
+	SortUpdated   = "updated"
+)
 
 // SearchHit is one full-text search hit.
 type SearchHit struct {
@@ -809,6 +823,7 @@ type Store interface {
 	GraphReport(ctx context.Context, req GraphReportRequest) (GraphReport, error)
 	SuggestDocuments(ctx context.Context, req DocumentSuggestionRequest) (DocumentSuggestionResponse, error)
 	CheckLinks(ctx context.Context, req CheckLinksRequest) (CheckLinksResponse, error)
+	RunNoteQuery(ctx context.Context, req NoteQueryRequest) (NoteQueryResult, error)
 	Search(ctx context.Context, req SearchRequest) (SearchResponse, error)
 	PlanSelection(ctx context.Context, req SelectionPlanRequest) (SelectionPlan, error)
 	GetDatabaseIdentity(ctx context.Context) (DatabaseIdentity, error)

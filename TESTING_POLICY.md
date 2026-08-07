@@ -559,6 +559,46 @@ headless Chrome by dispatching a genuine `ClipboardEvent` carrying `text/html`
 at the live editor, asserting a simple table converts at the caret and a
 merged-cell table falls through to the plain-text clipboard flavour.
 
+### Embedded query blocks (v0.5 E7)
+
+Store fixtures cover the block parser and the run: the Q1 grammar reaching the
+block unchanged (negation, fields, grouping, uppercase `OR`), opt-in fields in
+canonical order, the limit and its visible truncation, and the explicit sort
+being honoured rather than implied — a text query with `sort: updated` must come
+back chronological, which it did not before `SearchRequest.Sort` existed.
+
+The refusals are asserted as *values*, not errors: no `query:` line, an unknown
+key, a line that is not `key: value`, a bad or over-cap limit, an unknown sort or
+field, a repeated key, a malformed query, an oversized block, and too many lines
+each render a message and return no rows. A separate assertion checks the
+unknown-key message names the keys that do work, so the error is actionable from
+inside the note.
+
+Two invariants get their own fixtures: a query block sees only what the ordinary
+search sees (a trashed note never appears), and running one writes nothing.
+
+REST fixtures assert the same failures arrive as `200` with `error` rather than
+a `4xx`, that blocks carrying `sql:`, `file:`, or `exec:` keys are refused, that
+a SQL-injection-shaped *query* is just text to the Q1 parser and changes
+nothing, and that no write method is routed.
+
+An archive fixture asserts export inertness directly: a published note whose
+block queries `tag:private` — the exact boundary a publication protects — comes
+out byte-identical with the fence intact and no trace of the withheld title.
+
+Web fixtures cover the placeholder rewrite (a `note-query` fence becomes a
+placeholder carrying its source; an ordinary fence is untouched; block text
+cannot escape into markup), the rendering (routed links, opt-in fields, visible
+truncation, an empty result saying so, an error rendered inside the block), and
+that every value is written as text — a title of `<img src=x onerror=…>` renders
+as text and sets nothing on `window`. Further fixtures assert a block never
+blocks the note, an unreachable service is reported inside the block, and
+navigating away aborts in-flight work so a late reply cannot write into another
+note's preview.
+
+No scale profile: a block is bounded to 100 rows through the search path whose
+10k/100k/500k evidence H7 and Q1 already carry.
+
 ### Sync model and transport tests (planned v0.7)
 
 - Property/model tests shuffle, duplicate, replay, drop, and eventually deliver

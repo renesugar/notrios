@@ -355,3 +355,40 @@ func TestPublicationLinkRewriteDecision(t *testing.T) {
 		}
 	}
 }
+
+// A ```note-query block is declarative and stays that way in export. v0.5 E7
+// requires it: a publication carries the block's *text*, never a materialized
+// result, so a published note cannot leak the notes a query would have matched
+// at export time — and cannot go stale either.
+func TestPublicationHandoffCarriesQueryBlocksUnevaluated(t *testing.T) {
+	fixture := newExportFixture(t)
+	ctx := context.Background()
+
+	block := "```note-query\nquery: tag:private\nfields: title, snippet\nlimit: 50\n```"
+	body := "Outstanding work:\n\n" + block + "\n"
+	doc, err := fixture.store.CreateDocument(ctx, store.CreateDocumentRequest{
+		Title: "Dashboard", Body: body, NotebookID: fixture.public.ID,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	root := filepath.Join(t.TempDir(), "publication")
+	if _, err := Export(ctx, fixture.store, root, publicationOptions(fixture, store.SelectionLinkActionPlainText)); err != nil {
+		t.Fatal(err)
+	}
+
+	published := bodyFor(t, root, decodeRecords(t, root), doc.ID)
+	if published != body {
+		t.Fatalf("the block's text was not carried verbatim:\n got %q\nwant %q", published, body)
+	}
+	if !strings.Contains(published, "```note-query") {
+		t.Fatalf("the fence must survive export: %q", published)
+	}
+	// The query names `tag:private`, which is exactly the boundary a
+	// publication exists to protect. If anything had evaluated it, the withheld
+	// note's title would be in the published body.
+	if strings.Contains(published, fixture.privateDoc.Title) {
+		t.Fatalf("a query block was evaluated into the publication: %q", published)
+	}
+}

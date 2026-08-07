@@ -467,3 +467,48 @@ export async function checkBufferLinks(
   });
   return parseJSON<CheckLinksResponse>(response);
 }
+
+// --- Embedded query blocks (v0.5 E7) ----------------------------------------
+
+export interface NoteQuerySpec {
+  query: string;
+  fields: string[];
+  sort: string;
+  limit: number;
+}
+
+export interface NoteQueryRow {
+  document_id: string;
+  uri: string;
+  title: string;
+  notebook?: string;
+  tags?: string[];
+  updated_at?: string;
+  snippet?: string;
+}
+
+export interface NoteQueryResult {
+  spec: NoteQuerySpec;
+  rows: NoteQueryRow[];
+  truncated: boolean;
+  /** Set when the block could not run. Part of a 200 response, not a failure. */
+  error?: string;
+}
+
+/**
+ * Evaluates one ```note-query block. The block's text is parsed by the service
+ * with the same Q1 parser the search box uses, so a block can express nothing
+ * its author could not already search for.
+ */
+export async function runNoteQuery(
+  block: string,
+  options: { collectionID?: string; signal?: AbortSignal } = {},
+): Promise<NoteQueryResult> {
+  const response = await fetch('/api/v1/note-queries/run', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ block, collection_id: options.collectionID ?? '' }),
+    signal: options.signal,
+  });
+  return parseJSON<NoteQueryResult>(response);
+}

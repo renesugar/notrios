@@ -4,19 +4,36 @@ These features come from the Foam/Obsidian/networked-notes design space and are 
 
 ## Embedded query blocks
 
-Support safe embedded dashboard/query blocks later. They must be structured and permission-controlled, not arbitrary SQL or JavaScript.
+Implemented in v0.5 E7. A fenced block declares a Q1 query plus a typed
+selection of fields, a sort, and a limit — never SQL and never JavaScript:
 
-Example future syntax:
-
-```markdown
+````markdown
 ```note-query
-filter:
-  links_to: "$current"
-select: [title, tags, backlink_count]
-sort: backlink_count DESC
+query: tag:todo -tag:done
+fields: notebook, updated
+sort: updated
 limit: 20
 ```
-```
+````
+
+Four keys exist — `query` (required), `fields`, `sort`, `limit` — and an unknown
+one is an error naming the keys that work. The block is parsed **server-side**
+by the same Q1 parser every search surface uses, through
+`POST /api/v1/note-queries/run`, so a block can express nothing its author could
+not type into the search box.
+
+The earlier sketch here used nested YAML with `links_to: "$current"`. Neither
+survived. The service carries no YAML parser and four directives do not justify
+adding one; a line-oriented `key: value` form needs none, and everything the
+sketch expressed as nested filtering is already in the query language.
+`links_to` needs a link operator in Q1, which touches the expression tree
+SQLite and Recoll both compile — its own slice, not a side effect of a rendering
+feature.
+
+A malformed block renders its error inside the block and leaves the note alone;
+truncation is always visible; and a publication carries the block's text rather
+than a materialized result, so a published note cannot leak what the query
+matched at export time.
 
 ## Lint and auto-fix
 

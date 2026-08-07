@@ -39,3 +39,22 @@ SQLite and optional Recoll compile the same application-owned expression tree.
 Recursive category filters and standalone emoji are represented explicitly in
 the Recoll projection; if Recoll cannot honor a query shape, Notrios uses the
 exact SQLite result instead of weakening the expression.
+
+## Using a query inside a note
+
+A fenced `note-query` block runs one of these queries and renders the matching
+notes in the preview:
+
+````markdown
+```note-query
+query: tag:todo -tag:done
+fields: notebook, updated
+sort: updated
+limit: 20
+```
+````
+
+The `query:` line is exactly the language above — a block can find what you
+could type into the search box, and nothing more. See the
+[built-in GUI guide](gui.md) for the other keys and what a block does when the
+query has a mistake in it.

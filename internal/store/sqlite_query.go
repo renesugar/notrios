@@ -46,6 +46,15 @@ func (s *SQLiteStore) searchQueryLocked(req SearchRequest, q query.Query) (Searc
 
 	ftsAnchor, remainder := splitFTSAnchor(q)
 	useFTSRelevance := ftsAnchor != nil
+	// An explicit chronological request takes the predicate path, which
+	// compiles text terms exactly and orders by the `(updated_at, id)` keyset.
+	// Relevance is never forced the other way: without a positive text anchor
+	// there is nothing to rank, so the caller is refused above rather than
+	// handed an arbitrary order under a name that promises one.
+	if useFTSRelevance && req.Sort == SortUpdated {
+		useFTSRelevance = false
+		remainder = q.Root
+	}
 	binding := searchCursorBinding(req, q, useFTSRelevance)
 	var sql string
 	if useFTSRelevance {
@@ -160,6 +169,9 @@ func expressionGroup(op query.Op, children []*query.Expr) *query.Expr {
 	return &query.Expr{Op: op, Children: children}
 }
 
+// searchCursorBinding fingerprints everything a cursor is only valid against.
+// Sort belongs in it: replaying a relevance cursor against a chronological
+// request would decode the wrong boundary.
 func searchCursorBinding(req SearchRequest, q query.Query, relevance bool) string {
 	mode := "chronological"
 	sortOrder := "updated_at:desc,id:desc"

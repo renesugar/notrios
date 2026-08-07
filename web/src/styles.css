@@ -714,3 +714,50 @@ body.splitter-dragging {
 .link-picker-results button:focus-visible {
   text-decoration: underline;
 }
+
+/* Embedded query blocks (v0.5 E7). The block keeps its place in the note while
+   it runs, so the surrounding text never reflows when results arrive. */
+.note-query {
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 4px;
+  padding: 0.5rem 0.7rem;
+  margin: 0.75rem 0;
+  background: var(--panel-bg);
+}
+
+.note-query-status,
+.note-query-truncated {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.note-query-error {
+  color: #d93025;
+  font-size: 0.85rem;
+}
+
+.note-query-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.note-query-row {
+  padding: 0.15rem 0;
+}
+
+.note-query-title {
+  color: var(--accent);
+}
+
+.note-query-meta {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.note-query-snippet {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin-left: 0.5rem;
+}

@@ -59,6 +59,26 @@ export function normalizePreviewHTML(html: string): string {
     image.removeAttribute('src');
   });
 
+  // A fenced ```note-query becomes a placeholder the preview fills in after the
+  // note has already rendered. Marking it here rather than in the renderer
+  // keeps the whole HTML rewrite in one pass, and carrying the source on a
+  // data attribute means the serializer escapes it — nothing from a note body
+  // is ever concatenated into markup.
+  doc.querySelectorAll('pre > code').forEach((code) => {
+    if (!/(^|\s)language-note-query(\s|$)/.test(code.className)) return;
+    const pre = code.parentElement;
+    if (!pre) return;
+    const placeholder = doc.createElement('div');
+    placeholder.className = 'note-query';
+    placeholder.setAttribute('data-note-query', '');
+    placeholder.setAttribute('data-note-query-source', code.textContent ?? '');
+    const status = doc.createElement('div');
+    status.className = 'note-query-status';
+    status.textContent = 'Running query…';
+    placeholder.append(status);
+    pre.replaceWith(placeholder);
+  });
+
   return doc.body.innerHTML;
 }
 

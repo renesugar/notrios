@@ -8,8 +8,8 @@ anchors), E1a (heading anchors in stable links), E1b (scheme-scoped anchor
 decoding), E2 (workspace lint), E3 (workspace fix), E4 (bounded graph
 traversal, shortest paths, and the orphan/hub report), E5 (editor link
 intelligence), E6 (the CodeMirror decision: stay), and E6a (offline-first
-frontend assets), and E6b (HTML table paste normalization) are complete; E7–E9
-require user approval.
+frontend assets), E6b (HTML table paste normalization), and E7 (embedded query
+blocks) are complete; E8–E9 require user approval.
 
 Milestone detail follows. H1–H11 are archived under `plans/v0.3/`. The v0.4
 slices are archived under `plans/v0.4/`:
@@ -259,5 +259,11 @@ The scaffold was created in a restricted container. Still-open consequences:
     paste that merely contains a table — and every refusal falls through to the
     ordinary paste, so nothing pasted can be lost. Parsing is inert `DOMParser`;
     no HTML is re-emitted.
+16. E7 renders a fenced ```note-query block through
+    `POST /api/v1/note-queries/run`, which parses the block server-side with the
+    same Q1 parser every search surface uses. A malformed block is a 200 with
+    `error` so the note still renders. `SearchRequest` gained an explicit `Sort`
+    because the order used to be implied by the query's shape. A publication
+    carries the block's text, never a materialized result — asserted by test.
 
 (The formerly open "no browser testing" limitation is resolved: the GUI is browser-verified via Playwright, vitest/RTL covers the workspace, and `scripts/verify_layout_resize.py` covers native window resizing.)

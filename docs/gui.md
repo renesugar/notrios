@@ -114,6 +114,33 @@ nested table, a cell with more than one line, or a page excerpt that merely
 contains a table. Nothing you paste is ever discarded — if it cannot be
 converted faithfully, it is left alone.
 
+### Live query blocks
+
+A fenced `note-query` block turns into a live list of matching notes when the
+preview renders:
+
+````markdown
+```note-query
+query: tag:todo -tag:done
+fields: notebook, updated
+sort: updated
+limit: 20
+```
+````
+
+`query:` is the ordinary [search query language](query-language.md) — a block
+can find exactly what you could type into the search box, and nothing more.
+`fields:` picks from `title`, `notebook`, `tags`, `updated`, and `snippet`
+(title is always shown), `sort:` is `updated` or `relevance`, and `limit:` caps
+the list at 100. When more notes match than the limit shows, the block says so.
+
+A block with a mistake in it shows the mistake in place — the rest of the note
+renders normally, and the message names what to fix. Blocks are evaluated after
+the note appears, so a slow query never delays reading.
+
+Publishing a note keeps the block's text, not its results. A published note
+therefore cannot leak the notes a query happened to match when you exported it.
+
 ### Math and code blocks
 
 Write `$E = mc^2$` inline or `$$…$$` on its own lines and the preview renders it

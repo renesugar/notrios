@@ -88,8 +88,8 @@ Recoll availability, backlog, sync/index, and reconciliation state.
   bounded graph traversal with shortest paths and an orphan/hub report (E4),
   editor link intelligence (E5), the CodeMirror decision (E6 — stay), and
   offline-first frontend assets (E6a), and HTML table paste normalization (E6b)
-  are complete and archived under `plans/v0.5/`; the remaining tasks (query
-  blocks, organizer UX, and the release wrap-up) are drafted. See
+  and embedded query blocks (E7) are complete and archived under `plans/v0.5/`;
+  the remaining tasks (organizer UX and the release wrap-up) are drafted. See
   [`PLAN.md`](PLAN.md) and [`ROADMAP.md`](ROADMAP.md).
 - Agent progress/attempt tracking: [`agent/PLAN_STATUS.md`](agent/PLAN_STATUS.md), [`agent/ATTEMPT_LOG.jsonl`](agent/ATTEMPT_LOG.jsonl), and [`agent/MODEL_LOG.jsonl`](agent/MODEL_LOG.jsonl).
 

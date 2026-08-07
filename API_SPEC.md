@@ -24,6 +24,7 @@ The REST persistence slice is implemented for managed Markdown documents:
 - `GET /api/v1/graph/report` returns the read-only orphan/isolate/hub report.
 - `GET /api/v1/links/suggest` returns bounded link-target autocomplete.
 - `POST /api/v1/links/check` classifies the links in an unsaved buffer.
+- `POST /api/v1/note-queries/run` evaluates one embedded `note-query` block.
 - `POST /api/v1/selection/plan` returns the read-only selection/privacy plan.
 - `POST /api/v1/links/resolve` resolves an external `notrios://` link against
   this database.
@@ -353,6 +354,34 @@ A `notrios://` link inside a note body is a first-class link record: naming this
 database and a live note it is `resolved` exactly like `document://`, naming
 another database it is `external`, naming a missing note it is `unresolved`,
 and malformed it is `invalid` rather than searched for as a note title.
+
+### Embedded query blocks — implemented (v0.5 E7)
+
+```text
+POST /api/v1/note-queries/run
+```
+
+Evaluates one fenced ```` ```note-query ```` block. The request is
+`{block, collection_id?}` — the block's text and nothing else: no SQL, no
+filesystem path, no output target. The block is `key: value` lines using
+`query` (required, the Q1 expression language), `fields`, `sort`, and `limit`;
+an unknown key is an error that names the keys that work.
+
+Parsing happens here rather than in the client so a block reaches the same Q1
+parser as every other search surface and can express nothing its author could
+not type into the search box. Bounds: 4 KiB of block text, 32 lines, 100 rows
+(10 by default). Fields are opt-in from `title`, `notebook`, `tags`, `updated`,
+and `snippet`, with `title` always present. `sort` is `updated` or `relevance`
+— the two orders a keyset reproduces.
+
+**A malformed block returns `200` with `error` set, not a `4xx`.** The note
+containing it still has to render, so the block shows the message and the note
+around it is unaffected. `truncated` reports that more notes match than the
+block's limit showed.
+
+A publication handoff carries the block's *text*, never a materialized result:
+a rendered result would leak what the query matched at export time and would go
+stale immediately.
 
 ### Remote media (implemented, v0.3 tasks H2–H4)
 

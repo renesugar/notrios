@@ -13,7 +13,7 @@ added v16 title/filename indexes).
 
 `PLAN.md` holds the **v0.5 plan** (blocks, lint/fix, graph traversal, editor
 link intelligence, query blocks, organizer UX). **E1, E1a, E1b, E2, E3, E4, E5,
-E6, E6a, and E6b are complete**; E7–E9 require user approval. Two v0.5 decisions are settled and recorded as
+E6, E6a, E6b, and E7 are complete**; E8–E9 require user approval. Two v0.5 decisions are settled and recorded as
 `PROJECT_DECISIONS.md` 17 and 18: block identity is strictly content-based, and
 lint/fix stays single-note and revision-preconditioned with anything bulk left
 to the v0.6 organizer.
@@ -209,6 +209,45 @@ to the v0.6 organizer.
 - Export deduplication became symmetric across layouts through the same bounded
   spool, and `record_counts` became a pointer so `omitempty` actually applies —
   which cut packed verify peak RSS 41% and runtime 31%.
+
+## 2026-08-06 E7 — embedded query blocks
+
+- A fenced ```note-query block renders as a live list of matching notes.
+  `POST /api/v1/note-queries/run` parses the block and runs it through the same
+  bounded Store search the search box, REST, and MCP use, so a block can express
+  nothing its author could not already type into the search box.
+- The block format is `key: value` lines, not the nested YAML
+  `WORKSPACE_MAINTENANCE.md` sketched: the service carries no YAML parser, four
+  directives do not justify adding one, and everything the sketch expressed as
+  nested filters is already expressible in the Q1 query `query:` accepts. Keys
+  are `query` (required), `fields`, `sort`, `limit`; an unknown key is an error
+  whose message names the keys that work.
+- **A malformed block is a 200 carrying `error`, not a 4xx.** The note has to
+  render; only the block shows a problem. Every parser and query-language
+  failure is a value on the result, with returned errors reserved for real
+  storage faults.
+- **`SearchRequest` gained an explicit `Sort`.** The order used to be implied by
+  the query's shape — relevance for a positive text-only tree, chronological
+  otherwise — so a block asking `sort: updated` over a text query would silently
+  have got relevance. Sort is part of the cursor fingerprint, and an empty Sort
+  keeps the previous behaviour exactly.
+- Truncation comes from the search's own cursor rather than over-fetching by
+  one: `NormalizeSearchRequest` clamps a limit at 100, so the extra row would
+  have been silently dropped at exactly the block ceiling.
+- Fields are opt-in with `title` always present — a query block is not a way to
+  pull note bodies into a page that only wanted a list. Every rendered value is
+  written as `textContent` or an attribute; a fixture asserts a title of
+  `<img src=x onerror=…>` renders as text and sets nothing on `window`.
+- A block never blocks the note: it renders "Running query…" in place, results
+  arrive after, an unreachable service leaves a message inside the block, and
+  navigating away aborts in-flight work so a late reply cannot write into
+  another note's preview.
+- **Export inertness is asserted, not assumed**: a published note whose block
+  queries `tag:private` — the exact boundary a publication protects — comes out
+  byte-identical with the fence intact and no trace of the withheld title.
+- Out of scope and recorded as such: `links_to: "$current"` from the old sketch
+  needs a link operator in the Q1 language, which touches the expression tree
+  SQLite and Recoll both compile and belongs to its own slice.
 
 ## 2026-08-06 E6b — HTML table paste normalization
 
