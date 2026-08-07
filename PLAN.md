@@ -4,10 +4,11 @@ Status: **active. Written 2026-08-06 from `ROADMAP.md` after v0.5 completed.
 E10, E11, and E12 (the v0.5.0 release-candidate fixes) are complete and the
 candidate has no outstanding gates. F0 (notebook targeting) and F1 (batch
 organizer transactions) are complete. F2 onward require user approval, and
-nine of their open decisions were answered on 2026-08-07. Two blocking ones
-remain, both newly arising: the "profile" naming collision (F2) and how the hubs
-report regenerates (F5). F5a was **withdrawn** and F5 reframed away from a global
-graph canvas.**
+fourteen of their open decisions were answered on 2026-08-07 across two rounds.
+**One blocking decision remains** — where a read-only generated note can live,
+which blocks only F5's hubs-report deliverable. F2, F3, F4, F6, and F7 are
+unblocked. F5a was **withdrawn** and F5 reframed away from a global graph
+canvas.**
 
 v0.5 is complete and archived under `plans/v0.5/`, including a copy of its own
 plan at `plans/v0.5/000-v0.5-plan.md`. Product version is 0.5.0 and the schema
@@ -422,22 +423,26 @@ does not do it twice.
   MCP profiles, so "administrator" would name an empty set. `ROADMAP.md` says
   five; F2 corrects it rather than shipping a fifth that does nothing.
 
-- **The word "profile" already means something else in Notrios.** *New, blocking,
-  and mine to fix.* `mcp.default_profile` (which tools an MCP client sees) and
-  `notriosctl profile register` (a named local database in
-  `~/.config/notrios/profiles.json`, from v0.4 P5) are unrelated, both shipped,
-  and both called "profile". The answer to the mid-session question below was
-  given in the *database* sense, which is the collision doing its work already.
-  Options:
-  - **(a) Rename the MCP concept.** `mcp.default_scope` / "tool scopes", leaving
-    `notriosctl profile` alone. One config key changes, and `mcp.default_profile`
-    is accepted as a deprecated alias so existing configs keep working.
-    **Recommended:** the database registry is user-facing, documented, and on
-    disk; the MCP key is one line in a config file.
-  - **(b) Rename the database registry.** Larger blast radius: a CLI command, a
-    JSON file on disk, and the stable-link routing docs.
-  - **(c) Leave both.** Cheapest today, and guarantees the same confusion
-    recurs in every future conversation about either.
+- **The word "profile" already means something else in Notrios.** **Resolved
+  2026-08-07: rename the MCP concept.** The database registry is user-facing,
+  documented, and on disk; the MCP key is one line in a config file.
+
+  *Checking to implement it found the collision is **three**-way, not two.*
+  `notriosctl profile register` (a named local database), `notriosctl publish
+  profile save` (a saved publication selection), and `mcp.default_profile` (a
+  permission tier). That strengthens the answer rather than complicating it: the
+  first two are both "a saved named configuration", which is a coherent use of
+  the word, and the MCP one is a different kind of thing wearing the same name.
+  It is the odd one out, and it is the one that moves.
+
+  **The rename, concretely:** `mcp.default_profile` becomes `mcp.default_scope`,
+  and the concept is a **tool scope** throughout the documentation. Values are
+  unchanged — `search-only`, `read-only`, `editor`, `organizer`.
+  `mcp.default_profile` stays accepted as a deprecated alias, because a config
+  file that silently stops applying a *restriction* is the worst possible
+  failure mode for this particular key: it would widen what an agent may do
+  without saying so. If both keys appear, the narrower of the two wins and the
+  service logs it.
 
 - **Does a profile change take effect mid-session?** **Resolved: no, restart.**
   Making the choice explicit is the point — the same reasoning that makes
@@ -487,15 +492,24 @@ open.
   lets a model read part of a note instead of all of it. This is what makes the
   metadata-plus-URI default usable rather than merely safe.
 
-  *But it lands on a known gap:* `API_SPEC.md` lists HTTP range requests for
-  resource content among the deferred items, so `GET /api/v1/resources/{id}/content`
-  does not honour `Range` today. Options:
-  - **(a) Add REST range support first**, and have the MCP tool use it. One
-    implementation, and it closes a deferred gap that browsers and media
-    playback want anyway. **Recommended.**
-  - **(b) Give MCP its own bounded offset/length read** that does not touch
-    REST. Faster, but leaves two ways to read part of a resource and the
-    deferred gap still open.
+  *It lands on a known gap:* `API_SPEC.md` lists HTTP range requests for
+  resource content among the deferred items, so
+  `GET /api/v1/resources/{id}/content` does not honour `Range` today.
+  **Resolved 2026-08-07: add REST range support first**, and have the MCP tool
+  use it. One implementation, and it closes a deferred gap that browsers and
+  media playback want anyway.
+
+  Three details that follow, all defaults rather than open questions unless you
+  disagree. Range applies to **resource content only**, not to
+  `/documents/{id}/body` — a note body is already bounded and readable whole,
+  and `/lines` and `/search-in` already serve partial reads with better
+  semantics than byte offsets. A range request must remain compatible with
+  `?download=1`. And an unsatisfiable range gets `416` with a `Content-Range`
+  header naming the actual size, rather than silently returning the whole
+  resource, so a caller that guessed wrong finds out.
+
+  `API_SPEC.md`'s deferred list and `PLAN.md`'s scope-control section both
+  needed correcting, since both said range requests were out of scope.
 
 Working state: every REST capability is either an MCP tool or has a recorded
 reason it is not, and no tool can return an unbounded payload.
@@ -573,23 +587,53 @@ filtering that a notes app has no business reimplementing.
 
 **Open decisions**
 
-- **How the hubs report regenerates.** *Blocking for deliverable 2.* Options: a
-  stable note ID overwritten on each run (the model `notriosctl seed-help`
-  already uses for the Help notebook); a new dated note per run; or a
-  `note-query`-style block that renders live. *Recommended:* a stable ID,
-  overwritten, and read-only like a Help note — a report the user can edit is a
-  report that silently stops being true. It should also be excluded from its own
+- **How the hubs report regenerates.** **Resolved 2026-08-07: a stable note ID,
+  overwritten, read-only like a Help note** — a report a reader can edit is a
+  report that silently stops being true. It excludes itself from its own
   ranking, or the report becomes a hub.
-- **Which export format.** *Non-blocking.* Candidates: GraphML (Gephi and
-  Cytoscape both read it, XML), GEXF (Gephi's own), or a two-file CSV node/edge
-  list (universally readable, trivially streamable). *Recommended:* **CSV node
-  and edge lists**, because they stream at any library size without holding a
-  document tree in memory, and every tool named above imports them. GraphML can
-  follow if typed edges arrive.
-- **Whether export is CLI-only.** *Non-blocking.* *Default if unanswered:*
-  CLI-only (`notriosctl graph export`), matching archive export — it writes
-  files to a path the user names, which is not something a REST caller or an MCP
-  client should choose.
+
+  *Implementing that turned up a mechanism problem.* "Read-only" is not a
+  property a note can carry: `toAPIDocument` computes
+  `Editable: doc.NotebookID != store.HelpNotebookID`, hard-coded to one
+  notebook ID. A generated report in the default notebook cannot be read-only
+  without changing that, and the Help notebook is not a home for it —
+  `notriosctl seed-help` removes notes whose source file disappeared, so the
+  next reseed would delete the report.
+
+  **New, blocking for this deliverable.** Options:
+  - **(a) A builtin "Reports" notebook**, and generalize the rule from "is the
+    Help notebook" to "is a builtin notebook". Symmetric with Help, gives future
+    generated reports (lint, GC, resource usage) a home, and the protection
+    mechanism already exists — it just needs to stop naming one notebook.
+    Costs a sidebar row and a bootstrap row. **Recommended.**
+  - **(b) Keep it in the default notebook and add a per-note protection
+    reason** — a `generated_by` column or metadata key that `Editable` also
+    consults. More precise, but it makes note-level protection a second concept
+    alongside notebook-level protection, and every surface that decides
+    editability has to learn both.
+  - **(c) Accept that the report is editable**, and let regeneration overwrite
+    whatever was typed. Cheapest, and exactly the failure the answer above
+    rejects.
+
+  Note that (a) changes an invariant `sidebar.ts` and `UI_DESIGN.md` both
+  state — "Help is always immediately above Trash" — so a second builtin
+  notebook needs its position in that ordering decided too. *Recommended:*
+  Reports sits with Help in the last-anchored group, above it.
+
+- **What triggers regeneration.** *New, non-blocking.* The report is stale the
+  moment a link changes. *Default if unanswered:* explicit only —
+  `notriosctl graph report --write-note` and a REST equivalent — never on a
+  schedule and never on write. A whole-collection scan on every save would be
+  the one unbounded thing in an otherwise bounded design, and the report carries
+  its generation timestamp so a reader can see how old it is.
+
+- **Which export format.** **Resolved: CSV node and edge lists.** They stream at
+  any library size without holding a document tree in memory, and Gephi,
+  Cytoscape, NetworkX, and igraph all import them.
+- **Whether export is CLI-only.** **Resolved: CLI-only** —
+  `notriosctl graph export`, matching archive export. It writes files to a path
+  the user names, which is not a choice a REST caller or an MCP client should
+  make.
 
 **Deliberately not here:** a global graph canvas. No Go graph library is needed
 either — `gonum/graph`, `dominikbraun/graph`, and `yourbasic/graph` are all
@@ -620,26 +664,23 @@ if they want analysis Notrios does not do.
 - **Is cancellation cooperative or immediate?** **Resolved: cooperative** — the
   flag is checked at the next bounded batch boundary, matching how the importers
   already commit.
-- **Reproducing a job.** *New, requested, non-blocking.* A job record should
-  carry enough to re-create the invocation that started it. *Recommended:* store
-  the job's *parameters* and have `notriosctl jobs show --command` render them
-  back into a runnable command line, rather than storing the raw argv. Storing
-  argv would capture local paths and any secrets that happened to be on the
-  command line into the database; deriving the command from structured
-  parameters keeps the record inspectable and lets the rendering improve as
-  flags change.
-- **Job dependencies.** *New, requested, and a scope boundary worth stating.*
-  One job depending on another must be scriptable, so status has to be
-  *queryable by ID* and legible to a shell: `notriosctl jobs status <id>` exits
-  non-zero while running or on failure, and `--wait` blocks until the job
-  settles. That is enough for `job-a && job-b`.
+- **Reproducing a job.** **Resolved: store parameters, render the command.**
+  `notriosctl jobs show --command` renders stored *parameters* back into a
+  runnable command line rather than storing raw argv — argv would capture local
+  paths and any secrets that happened to be on the command line into the
+  database, and a rendering can improve as flags change while a stored string
+  cannot.
+- **Job dependencies, and the scope boundary.** **Resolved: no scheduler.**
+  Status is queryable by ID and legible to a shell — `notriosctl jobs status
+  <id>` exits non-zero while running or on failure, `--wait` blocks until the
+  job settles — which is enough for `job-a && job-b`. If `--wait` proves
+  insufficient in practice, the next step is a **documented exit-code
+  contract**, not a DAG. Sequencing stays in the caller's script.
 
-  **Notrios does not become a scheduler.** Sequencing lives in the caller's
-  script, not in a dependency graph inside the service. A workflow engine is a
-  large, stateful thing with its own failure modes — retries, cycles, orphaned
-  waits — and every one of them would be a new way for a note database to be
-  unavailable. *Open, non-blocking:* if `--wait` is not enough in practice, the
-  next step is a documented exit-code contract, not a DAG.
+  *Recorded so the contract is designed rather than accreted:* exit codes will
+  need to distinguish at least *succeeded*, *failed*, *still running*, and *no
+  such job*, because a script that cannot tell "not finished" from "failed" will
+  either poll forever or give up early.
 
 Working state: a long import can be started, watched, and cancelled without a
 client holding the connection open, and no job payload reaches a model.
@@ -670,30 +711,38 @@ what happened to F1, whose two decisions sat here and nowhere else.
 | Whether F0 belonged in the v0.5.0 candidate | F0 | **Resolved by shipping:** F0 landed with E10 in `076526f` |
 | Is `administrator` reachable over MCP | F2 | **Resolved 2026-08-07: no** — and so there are four profiles, not five |
 | Does a profile change need a restart | F2 | **Resolved: no, restart** |
-| The word "profile" already means two things | F2 | **Open, blocking** — new, arising from the answer above |
+| The word "profile" means three things | F2 | **Resolved: rename the MCP one** to `mcp.default_scope`, old key a deprecated alias |
 | Which REST surfaces become MCP tools | F3 | **Resolved:** read-shaped become tools; the rest stay off with a recorded reason |
 | Do MCP resource reads return bytes | F3 | **Resolved:** metadata plus URI, bytes only for text-like MIME |
-| How byte-range resource reads reach REST's deferred range support | F3 | **Open, non-blocking** — new |
+| How byte-range resource reads reach REST's deferred range support | F3 | **Resolved: add REST `Range` first**, MCP uses it |
 | What a template placeholder is | F4 | **Resolved: both**, with a closed vocabulary of automatic names |
 | Are extracted tasks stored or computed | F4 | **Resolved: computed on read** |
 | How to render a bounded graph | F5 | **Resolved by reframing** — no global canvas; F5a withdrawn |
-| How the hubs report regenerates | F5 | **Open, blocking** for that deliverable — new |
-| Which graph export format | F5 | **Open, non-blocking** — new |
-| Whether graph export is CLI-only | F5 | Open, non-blocking — new |
+| How the hubs report regenerates | F5 | **Resolved:** stable ID, overwritten, read-only |
+| Where a read-only generated note can live | F5 | **Open, blocking** — new; `Editable` is hard-coded to the Help notebook |
+| What triggers report regeneration | F5 | Open, non-blocking — new |
+| Which graph export format | F5 | **Resolved: CSV node and edge lists** |
+| Whether graph export is CLI-only | F5 | **Resolved: CLI-only** |
 | Do jobs survive a restart | F6 | **Resolved:** persist records, do not resume work |
 | Is cancellation cooperative | F6 | **Resolved: cooperative** |
-| How a job's command line is reproduced | F6 | **Open, non-blocking** — new |
-| Whether Notrios sequences dependent jobs | F6 | **Open, non-blocking** — recommended *no*; status plus `--wait`, never a DAG |
+| How a job's command line is reproduced | F6 | **Resolved:** stored parameters rendered back, never raw argv |
+| Whether Notrios sequences dependent jobs | F6 | **Resolved: no** — status plus `--wait`; an exit-code contract before a DAG |
 | Multi-user roles and an `author` concept | — | Deferred to a future milestone; `agent/OPEN_QUESTIONS.md` |
 | Long-term SQLite driver | — | Open; `agent/OPEN_QUESTIONS.md` 1 |
 | Official MCP Go SDK adoption | — | Open; `agent/OPEN_QUESTIONS.md` 2 |
 
-Nine decisions were answered on 2026-08-07 and five new ones arose from those
-answers — which is the normal shape of this, not a failure of the first round.
+Fourteen decisions have been answered across two rounds, and each round threw
+off a few new ones — which is the normal shape of this rather than a failure of
+the round before.
 
-Two blocking decisions remain, both **new**: the "profile" naming collision in
-F2, and how the hubs report regenerates in F5. F3, F4, F6, and F7 are unblocked
-and can start.
+**One blocking decision remains**, and like the others it came out of
+implementing an answer rather than out of nowhere: *where a read-only generated
+note can live*, since `Editable` is hard-coded to the Help notebook ID and the
+Help notebook itself would delete the report on the next reseed. It blocks only
+F5's second deliverable.
+
+**F2, F3, F4, F6, and F7 are unblocked.** F5's local graph and export halves are
+unblocked too; only the hubs-report note waits.
 
 ## Already implemented, deliberately not re-listed
 
@@ -710,9 +759,9 @@ compatibility bridge (v0.7 slice 3), authentication, multi-user deployment and
 user roles, Wails v3/mobile migration, semantic/vector search, and additional
 importers all remain outside v0.6 unless the roadmap is deliberately revised.
 
-**HTTP range requests moved *in*, conditionally.** They were on this list; F3's
-byte-range resource read needs them, and its recommended option (a) implements
-range support in REST once rather than giving MCP a private mechanism. If option
-(b) is chosen instead, range requests return to this list.
+**HTTP range requests moved *in*.** They were on this list; F3's byte-range
+resource read needs them, and the resolved answer implements range support in
+REST once rather than giving MCP a private mechanism. `API_SPEC.md`'s deferred
+list was corrected to match.
 
 A global graph canvas is now explicitly out: see F5.

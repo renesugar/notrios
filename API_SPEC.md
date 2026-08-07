@@ -201,7 +201,8 @@ DELETE /api/v1/documents/{document_id}/resources/{resource_id}
 `POST /api/v1/resources` currently accepts a raw request body. `filename` and
 `collection_id` are supplied as query parameters or the filename can be
 inferred from `Content-Disposition`. `GET /content` streams the stored bytes
-and supports `?download=1`; HTTP range requests remain a future hardening
+and supports `?download=1`; HTTP `Range` requests are planned in v0.6 F3, which
+needs them for bounded MCP resource reads — a future hardening
 item. Immediate resource deletion refuses references and requires the
 object-specific confirmation below; retention-aware bulk deletion is
 dry-run-first and CLI-only.
@@ -563,9 +564,10 @@ The REST + MCP surface must be sufficient to build a full-featured third-party n
 | resources/attachments | resources routes |
 | links/backlinks/graph | links + graph routes |
 
-Remaining known gaps (deferred): HTTP range requests for resource content,
-import/export job APIs, bulk organizer operations, REST profile routes, and
-sync.
+Remaining known gaps: import/export job APIs (v0.6 F6), REST routes for the
+local database registry and publication profiles, and sync (v0.7). HTTP `Range`
+on resource content moved from this list into v0.6 F3. Bulk organizer
+operations left it when v0.6 F1 shipped `POST /api/v1/batch`.
 
 ## MCP MVP endpoint
 

@@ -69,8 +69,45 @@ rather than a failure of the first round.
   Obsidian importer preserves neither tags nor frontmatter properties, so author
   data in an imported vault is dropped today regardless.
 
-**Two blocking decisions remain, both new:** the F2 naming collision and how the
-F5 hubs report regenerates. F3, F4, F6, and F7 are unblocked.
+**Round 2 (2026-08-07): the remaining five answered, each taking the
+recommendation.** Fourteen decisions are now settled across both rounds.
+
+- **F2:** the MCP concept is renamed. `mcp.default_profile` becomes
+  `mcp.default_scope` — a **tool scope** — with the old key kept as a deprecated
+  alias, because a config key that silently stops applying a *restriction* would
+  widen what an agent may do without saying so; if both appear the narrower
+  wins and the service logs it. *Implementing it found the collision is
+  three-way, not two:* `notriosctl profile register`, `notriosctl publish
+  profile save`, and the MCP key. That strengthens the answer — the first two
+  are both "a saved named configuration", and the MCP one is a permission tier
+  wearing the same word.
+- **F3:** REST gains `Range` on resource content first, and the MCP tool uses
+  it. Defaults recorded: resource content only (a note body is bounded, and
+  `/lines` and `/search-in` already do partial reads with better semantics),
+  compatible with `?download=1`, and `416` with `Content-Range` on an
+  unsatisfiable range rather than silently returning everything.
+  `API_SPEC.md`'s deferred-gaps list was corrected — and while there, "bulk
+  organizer operations" was removed from it, since F1 shipped them.
+- **F5:** hubs report is a stable note ID, overwritten, read-only; export is
+  **CSV node and edge lists**, **CLI-only** (`notriosctl graph export`).
+- **F6:** `notriosctl jobs show --command` renders stored parameters, never raw
+  argv; no scheduler, and a documented exit-code contract before any DAG. Noted
+  for when that contract is designed: it must distinguish *succeeded*, *failed*,
+  *still running*, and *no such job*, or a script cannot tell "not finished"
+  from "failed".
+
+**One blocking decision remains, and it came out of implementing an answer.**
+"Read-only" is not a property a note can carry: `toAPIDocument` computes
+`Editable: doc.NotebookID != store.HelpNotebookID`, hard-coded to one notebook.
+A generated report in the default notebook cannot be read-only without changing
+that, and the Help notebook would delete it on the next `seed-help` reseed.
+Recommended: a builtin **Reports** notebook plus generalizing the rule from "is
+the Help notebook" to "is a builtin notebook" — the protection mechanism already
+exists and only needs to stop naming one notebook. It also needs a position in
+the sidebar ordering that `sidebar.ts` and `UI_DESIGN.md` both fix.
+
+It blocks only F5's hubs-report deliverable. **F2, F3, F4, F6, and F7 are
+unblocked**, as are F5's local graph and export halves.
 
 **Process correction (2026-08-07, from user feedback).** F1's two open
 decisions were recorded in a milestone-level "Decisions required" section about
