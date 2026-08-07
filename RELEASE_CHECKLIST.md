@@ -76,11 +76,15 @@ Known release boundaries:
 
 Outstanding before the candidate is accepted:
 
-- [ ] **E10 — editor-toolbar layout for a trashed note at narrow pane widths.**
-      Found by the user during Trash testing and confirmed by measurement: the
-      toolbar is one wrapping row, so the "In the Trash" chip never leaves the
-      title's row and the buttons wrap raggedly from 520 px down to the editor
-      pane's 280 px minimum. A layout fix only; no version change. See `PLAN.md`.
+- [ ] **E10 — the editor toolbar: layout, and which actions belong in it.** Two
+      defects from the same session of Trash testing. (1) The toolbar is one
+      wrapping row, so the "In the Trash" chip never leaves the title's row and
+      the buttons wrap raggedly from 520 px down to the editor pane's 280 px
+      minimum. (2) "New note" shows for every open note including read-only Help
+      and Trash notes, because the condition tests only that a note is open; it
+      is not an action on the open note and moves to the search pane, where it
+      also has to stay reachable — it is currently the only path back to a blank
+      draft. No version change. See `PLAN.md`.
 
 Repository-owner publishing steps (not performed by E9):
 

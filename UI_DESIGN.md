@@ -71,6 +71,14 @@ Trash-first deletion (implemented in v0.5 E8):
   answer: how many notebooks go, that the notes are not deleted, and which
   notebook they are re-homed to so a later restore has a destination. The
   re-homing rule is a store rule the GUI surfaces, not one it invents.
+- The editor toolbar holds **only actions that apply to the open note** — save,
+  move to Trash, restore, delete forever. Starting a *new* note is not one of
+  them: it discards the editor's contents rather than acting on the note, and
+  putting it among per-note controls is what made it appear in a read-only Help
+  or Trash toolbar as an apparent offer to create something there. It belongs in
+  the search pane, which is the list context and is present whatever is open —
+  and it has to stay reachable there, because it is the only path back to a
+  blank draft. (Planned as v0.5 E10 part 2.)
 - The editor toolbar is a **title row plus an action row**, not one wrapping
   line. The title occupies its own row; the state chip and the note's actions
   sit beneath it on a single row, and when the pane is too narrow for that row

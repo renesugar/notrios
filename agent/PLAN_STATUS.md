@@ -22,15 +22,30 @@ Three v0.5 roadmap bullets did not ship and moved to v0.6 rather than being left
 ambiguous: note templates, task extraction, and a graph *view* (E4 delivered the
 traversal, path, and report data it would be built on).
 
-**One v0.5.0 release-candidate defect is outstanding: E10**, the editor-toolbar
-layout for a trashed note at narrow pane widths. The user found it while testing
-notes in the Trash; measuring the built UI confirmed the toolbar is a single
-wrapping row, so the chip never leaves the title's row and the buttons wrap
-raggedly from 520 px down to the editor pane's own 280 px minimum, with the
-title width moving non-monotonically as the pane narrows. v0.5.0 is built and
-validated but not tagged or pushed, so the fix lands in the candidate under
-`plans/v0.5/` with no version change, and comes before F1. It is drafted in
-`PLAN.md` and **not approved**.
+**Two v0.5.0 release-candidate defects are outstanding, both from the same
+session of Trash testing and both in the editor toolbar, planned as one slice
+E10.** (1) The toolbar is a single wrapping row, so the "In the Trash" chip
+never leaves the title's row and the buttons wrap raggedly from 520 px down to
+the editor pane's own 280 px minimum, with the title width moving
+non-monotonically as the pane narrows. (2) "New note" appears for every open
+note, including read-only Help and trashed notes, because the condition tests
+only `selectedDocument` with no editability check.
+
+Two facts found while checking part 2 shaped the fix rather than confirming the
+obvious one. `onNewNote` has exactly one caller, so simply hiding the button
+would strand a user on a read-only note with no way back to a blank draft — on a
+fresh library holding only the fifteen seeded Help notes, no way to create a
+note at all. It is therefore **moved** to the search pane rather than hidden.
+And creating a note is not notebook-scoped today: the client's `createDocument`
+sends no `notebook_id` and its request type lacks the field, so every GUI-created
+note lands in "Notes" whatever is open. The REST API has accepted `notebook_id`
+all along. Whether to make creation follow the selected notebook is recorded in
+`PLAN.md` as a decision for the user, with relocation-only recommended for a
+release candidate.
+
+v0.5.0 is built and validated but not tagged or pushed, so E10 lands in the
+candidate under `plans/v0.5/` with no version change, before F1. It is drafted
+in `PLAN.md` and **not approved**.
 
 `PLAN.md` now holds the **v0.6 draft** — batch organizer transactions (F1), MCP
 tool visibility profiles (F2), MCP coverage and resource reads (F3), templates

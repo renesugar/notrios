@@ -1,9 +1,10 @@
 # Plan: v0.6 — MCP and automation expansion
 
 Status: **draft. Written 2026-08-06 from `ROADMAP.md` after v0.5 completed.
-One v0.5.0 release-candidate fix (E10, editor-toolbar layout for a trashed note)
-is outstanding and comes first — see the section before the v0.6 tasks. No task
-is approved; both E10 and F1 require user approval before any code is written.**
+One v0.5.0 release-candidate fix (E10, the editor toolbar: layout at narrow pane
+widths plus which actions belong in it) is outstanding and comes first — see the
+section before the v0.6 tasks. No task is approved; both E10 and F1 require user
+approval before any code is written.**
 
 v0.5 is complete and archived under `plans/v0.5/`, including a copy of its own
 plan at `plans/v0.5/000-v0.5-plan.md`. Product version is 0.5.0 and the schema
@@ -38,14 +39,20 @@ living docs, runs its relevant validation, records attempt/model status, commits
 a working slice, archives it under `plans/v0.6/`, produces a verified ZIP, and
 asks for approval before the next task.
 
-## Before v0.6: an outstanding v0.5.0 release-candidate fix
+## Before v0.6: outstanding v0.5.0 release-candidate fixes
 
 v0.5.0 is built and validated but **not tagged or pushed** — those are owner
 steps. It is still a release candidate, so a defect found in it is fixed *in
 it*, not carried into v0.6. E10 below lands under `plans/v0.5/`, does not change
 the version, and must be complete before the owner accepts the candidate.
 
-### E10. Editor-toolbar layout for a trashed note at narrow pane widths
+Both parts came from the same session of Trash testing, both live in
+`web/src/components/EditorPane.tsx`, and both are verified by the same browser
+sweep across pane widths, so they are one slice rather than two.
+
+### E10. Editor toolbar: layout at narrow pane widths, and which actions belong in it
+
+#### Part 1 — layout
 
 Found by the user while testing notes in the Trash, and confirmed by measuring
 the built UI in a real browser at pane widths from 700 px down to the editor
@@ -99,17 +106,84 @@ leave the identical bug next door, so E10 applies the same title-row/action-row
 split to both states. If that is not wanted, say so and it narrows to the
 trashed state alone.
 
-**Out of scope:** changing pane minimums, the splitter behaviour, or the
-toolbar's contents. This is a layout fix, not a redesign.
+**Out of scope for part 1:** changing pane minimums or the splitter behaviour.
+This half is a layout fix, not a redesign.
 
-Tests must assert the arrangement rather than the CSS: at a wide pane the
-actions share one row and the title has its own; at a narrow pane the actions
-occupy one column; and the title's width never increases as the pane narrows.
+#### Part 2 — "New note" does not belong in a read-only note's toolbar
+
+Reported by the user: **New note** appears in the toolbar while viewing a note
+in the Trash, which is read-only. It appears for Help notes too — the condition
+is `selectedDocument && …`, with no editability test at all.
+
+The user is right, and for a sharper reason than it first looks. *"New note" is
+not an action on the open note.* Every other control in that toolbar acts on the
+note in front of you — save it, trash it, restore it, destroy it. "New note"
+discards the editor's contents and starts a blank draft. Putting it among
+per-note actions is what makes it read, in a read-only context, as an offer to
+create something there.
+
+**Two facts found while checking, both of which change the fix.**
+
+**`onNewNote` has exactly one caller.** `web/src/App.tsx` wires `resetEditor` to
+this button and nowhere else; the only other `resetEditor()` calls are internal,
+after a delete and after a purge. So *simply hiding the button on read-only
+notes strands the user*: open a Help note and there is no way back to a blank
+draft except opening an editable note first. On a fresh library — whose only
+notes are the fifteen seeded Help notes — a user could open one and then be
+unable to create a note at all.
+
+The fix is therefore to **move** the affordance, not to hide it conditionally.
+It belongs in the search pane, which is the list/notebook context rather than
+the open-note context, and is present whatever is open. The editor toolbar then
+holds only actions on the open note, which is the rule that made the button look
+wrong in the first place.
+
+**Creating a note is not notebook-scoped today.** `createDocument` in
+`web/src/api.ts` sends no `notebook_id` — the client's request type does not
+even carry the field — so **every note the GUI creates lands in the default
+"Notes" notebook**, regardless of which notebook or search view is open. The
+REST API has accepted `notebook_id` on create all along
+(`api.DocumentMutationRequest`); only the client never sends it.
+
+This matters because "it should only show up when a user can create a new note
+in that notebook" presumes creation targets the notebook being viewed. It does
+not. So there is a decision to make, and E10 does not make it silently:
+
+- **(a) Relocate only.** "New note" moves to the search pane and always starts a
+  draft that saves into "Notes", as today. A defect fix, nothing more, and the
+  right size for a release candidate. **Recommended.**
+- **(b) Also scope creation to the selected notebook.** A new note started while
+  a real notebook is selected is created *in* that notebook; a search notebook
+  (All notes, Trash, a saved search) falls back to "Notes". This is what the
+  report's wording describes, but it is a behaviour change with product
+  questions of its own — what a saved search should do, whether the target is
+  shown before saving — so it belongs in v0.6 rather than in a release-candidate
+  fix.
+
+E10 as written does **(a)**. Say the word and (b) comes with it.
+
+**Out of scope for part 2:** any other toolbar control, and the contents of the
+new-note draft itself.
+
+#### Testing both parts
+
+Tests assert arrangement and behaviour, never CSS. For part 1: at a wide pane
+the actions share one row and the title has its own; at a narrow pane the
+actions occupy one column; and the title's width never increases as the pane
+narrows. For part 2: the toolbar offers "New note" for no note, read-only or
+otherwise, and the search pane offers it always — including while a Help note or
+a trashed note is open, which is exactly the case that would otherwise strand a
+user.
+
 Verification includes measuring the built UI in a real browser across the same
-width sweep, because this is a defect every existing unit test passed over.
+width sweep, because part 1 is a defect every existing unit test passed over and
+part 2 shipped through a full test suite that never asked who the button was
+for.
 
 Working state: a trashed note's toolbar reads as a title with an action row
-under it at every supported pane width, and nothing ever half-wraps.
+under it at every supported pane width, nothing ever half-wraps, and the toolbar
+offers only actions that apply to the note in front of you — while starting a
+new note stays reachable from anywhere.
 
 ## Tasks
 
