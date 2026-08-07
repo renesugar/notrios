@@ -114,11 +114,13 @@ func TestEachScopeListsExactlyItsTools(t *testing.T) {
 			"list_search_notebooks", "list_tags", "search_documents",
 		},
 		MCPScopeReadOnly: {
-			"get_document", "get_document_outline", "get_documents",
+			"get_document", "get_document_blocks", "get_document_outline", "get_documents",
+			"get_graph", "get_graph_report", "get_lint_report",
 			"get_note_line_range", "get_notebook_tree", "get_notebook_notes",
-			"list_collections", "list_document_links", "list_document_resources",
-			"list_notebooks", "list_search_notebooks", "list_tags",
-			"plan_selection", "scan_remote_media", "search_documents", "search_in_note",
+			"find_graph_path", "list_collections", "list_document_links",
+			"list_document_resources", "list_notebooks", "list_search_notebooks",
+			"list_tags", "plan_selection", "read_resource", "run_note_query",
+			"scan_remote_media", "search_documents", "search_in_note",
 		},
 	}
 	for scope, want := range expected {

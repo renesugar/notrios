@@ -141,7 +141,10 @@ question, and are not on the original list.
 - ~~Notebook targeting: create into the selected notebook, and a single-note
   move control in the GUI and CLI~~ — done as F0.
 - Complete MCP write-tool coverage gated by explicit scopes.
-- Resource graph resources/read support.
+- ~~Resource graph resources/read support~~ — done as F3: read-shaped surfaces
+  became MCP tools (blocks, graph, paths, the graph report, query blocks, the
+  lint report) and `read_resource` reads attachment metadata plus bounded,
+  range-addressable text. HTTP `Range` landed in REST at the same time.
 - LLM-safe surgical edits with dry-run and revision preconditions.
 - REST and MCP batch transactions for move, duplicate, trash, tag/untag, and
   stable Markdown-link copy. Requests are bounded, idempotent, support

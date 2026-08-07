@@ -415,6 +415,12 @@ paths:
         '428': { description: Missing or incorrect explicit confirmation }
   /api/v1/resources/{resource_id}/content:
     get:
+      description: >
+        Honours HTTP `Range` (v0.6 F3): a satisfiable range returns `206` with
+        `Content-Range`, an unsatisfiable one returns `416` with the resource's
+        real size, and both compose with `?download=1`. Range support exists so
+        a bounded MCP `read_resource` can pull part of a resource after seeing
+        its metadata rather than all of it or none.
       summary: Download resource bytes
       parameters:
         - $ref: '#/components/parameters/ResourceID'

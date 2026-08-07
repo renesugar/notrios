@@ -96,6 +96,43 @@ recommendation.** Fourteen decisions are now settled across both rounds.
   *still running*, and *no such job*, or a script cannot tell "not finished"
   from "failed".
 
+**F3 is complete**, archived as
+`plans/v0.6/003-mcp-read-coverage-and-ranges.md`. Seven read-shaped surfaces
+became MCP tools under `read-only` — `get_document_blocks`, `get_graph`,
+`find_graph_path`, `get_graph_report`, `run_note_query`, `get_lint_report`,
+`read_resource` — and REST gained HTTP `Range` on resource content.
+
+- **Every withheld surface was decided, not inherited**; the list *was* the
+  deliverable. `docs/api/mcp.md` now carries a table with a reason per surface:
+  fix, tag rename, notebook deletion, GC, archive operations, publication,
+  purge. The pattern in one sentence: anything that writes outside the note
+  model, deletes permanently, or acts on the whole library at once stays a
+  deliberate act on the command line. Batch organizing is the exception that
+  proves it — bounded to an explicit ID list and gated behind `organizer`.
+- **Range came from `http.ServeContent`, not from an implementation.** The
+  handler was doing `io.Copy`; it now type-asserts the store's `io.ReadCloser`
+  to an `io.ReadSeeker` (an `*os.File` in practice) and delegates, so
+  `OpenResourceContent`'s interface is unchanged and a non-seekable source falls
+  back to a full copy without ranges. The test asserts `Content-Length`
+  describes the *slice*, which is what proves the delegation overrides the full
+  length the handler sets first.
+- **`read_resource` returns metadata by default**; bytes only on request, only
+  for text-like MIME types (an allowlist, not a "not binary" guess), only within
+  `mcp.max_document_bytes`. A slice ending mid-character is trimmed so the text
+  stays valid UTF-8 rather than handing a model a replacement character it would
+  read as content, and the reader takes one byte past the limit so `truncated`
+  can distinguish "there is more" from "that was exactly all of it".
+- **Lint reaches MCP; fix does not.** Lint findings are content-free by
+  construction — a location, a reason code, and a SHA-256 of the target, never
+  the target text, because a broken wikilink's raw text is frequently a private
+  note's title.
+- **The F2 guard worked on its first real use.**
+  `TestEachScopeListsExactlyItsTools` failed with a set diff the moment seven
+  tools were added, because it asserts whole sets rather than spot-checking
+  membership. And the lint leak test asserts a finding *exists* before asserting
+  the report omits the target — checking only the absence would pass on an empty
+  report.
+
 **F2 is complete**, archived as `plans/v0.6/002-mcp-tool-scopes.md`. Four
 cumulative MCP scopes — `search-only`, `read-only` (default), `editor`,
 `organizer` — enforced **at the call site** from the same table that filters

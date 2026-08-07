@@ -188,6 +188,17 @@ python3 -c 'import json,sys; r=json.load(sys.stdin); assert r["rolled_back"]==1 
 python3 -c 'import json,sys; tags=[t["name"] for t in json.load(sys.stdin)["tags"]]; assert "never" not in tags, tags' \
   <<<"$(curl -fsS "$BASE/api/v1/documents/$BATCH_B/tags")"
 
+# --- Resource range reads and MCP read coverage (v0.6 F3) --------------------
+RANGE_BODY=$(curl -fsS -H 'Range: bytes=6-13' "$BASE/api/v1/resources/$RESOURCE_ID/content")
+[ "$RANGE_BODY" = "resource" ] || { echo "range read returned '$RANGE_BODY', want 'resource'" >&2; exit 1; }
+RANGE_STATUS=$(curl -s -o /dev/null -w '%{http_code}' -H 'Range: bytes=9999-10000' "$BASE/api/v1/resources/$RESOURCE_ID/content")
+[ "$RANGE_STATUS" = "416" ] || { echo "unsatisfiable range returned $RANGE_STATUS, want 416" >&2; exit 1; }
+
+# read_resource returns metadata without bytes unless asked.
+READ_RESP=$(curl -fsS -H 'Content-Type: application/json' \
+  --data-binary "{\"jsonrpc\":\"2.0\",\"id\":9,\"method\":\"tools/call\",\"params\":{\"name\":\"read_resource\",\"arguments\":{\"resource_id\":\"${RESOURCE_ID}\"}}}" "$BASE/mcp")
+python3 -c 'import json,sys; r=json.load(sys.stdin)["result"]["structuredContent"]; assert r["text"] is None, r; assert r["sha256"], r' <<<"$READ_RESP"
+
 MCP_RESP=$(curl -fsS -H 'Content-Type: application/json' --data-binary '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' "$BASE/mcp")
 python3 -c 'import json,sys; resp=json.load(sys.stdin); tools=[tool["name"] for tool in resp["result"]["tools"]]; assert "search_documents" in tools, tools' <<<"$MCP_RESP"
 

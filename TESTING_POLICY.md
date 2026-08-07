@@ -805,6 +805,31 @@ read-only. Widening that set would silently drop every note in the default
 notebook from the graph report, from publications, and from lint — most of the
 library, for most users, with no error anywhere.
 
+### MCP read coverage and HTTP Range (v0.6 F3)
+
+Range is asserted against the RFC's shapes rather than one happy case: a middle
+slice, an open-ended slice, a suffix slice, and the whole resource by range,
+each checking status, body, `Content-Range`, **and** `Content-Length`. That last
+one matters because the handler sets the full length before delegating to
+`http.ServeContent`; asserting the slice length is what proves the delegation
+overrides it. An unsatisfiable range must be `416` carrying the real size, and a
+range must compose with `?download=1` without losing the disposition, the stored
+MIME type, or `nosniff`.
+
+`read_resource` is asserted on the property that keeps it safe: **no bytes
+unasked**. Then that a text-like resource reads in slices with an honest
+`truncated` flag, and that a binary one is described rather than transcribed —
+with its metadata surviving the refusal, so a caller can still fetch it over
+REST deliberately.
+
+The lint tool's fixture asserts a finding **exists** before asserting the report
+omits the offending target. Checking only the absence would pass on an empty
+report, which proves nothing.
+
+`TestEachScopeListsExactlyItsTools` earned its design here: adding seven tools
+failed it immediately with a set diff, because it asserts whole sets rather than
+spot-checking membership.
+
 ## MVP release validation
 
 Task 10 adds release-candidate checks beyond ordinary unit tests:

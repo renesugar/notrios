@@ -1045,8 +1045,25 @@ func (s *Server) handleResourceContent(w http.ResponseWriter, r *http.Request) {
 	}
 	defer content.Close()
 	setResourceHeaders(w, res, wantsDownload(r))
-	w.WriteHeader(http.StatusOK)
-	_, _ = io.Copy(w, content)
+
+	// `http.ServeContent` implements HTTP `Range` — including `If-Range`,
+	// multi-range refusal, `Content-Range`, and `416` on an unsatisfiable
+	// range — so v0.6 F3 gets range support by handing it a seeker rather than
+	// by reimplementing the RFC. The store returns an *os.File today; the
+	// assertion is what keeps `OpenResourceContent`'s interface unchanged, and
+	// the io.Copy fallback keeps a non-seekable source working (without
+	// ranges, which is the honest outcome rather than a wrong one).
+	seeker, seekable := content.(io.ReadSeeker)
+	if !seekable {
+		w.WriteHeader(http.StatusOK)
+		_, _ = io.Copy(w, content)
+		return
+	}
+	// ServeContent writes its own status, Content-Length, and Content-Range.
+	// It also sniffs a content type when one is absent; setResourceHeaders has
+	// already set the stored one, which is the sniffed-and-admitted type from
+	// the resource pipeline rather than a guess made here.
+	http.ServeContent(w, r, res.Filename, res.CreatedAt, seeker)
 }
 
 func (s *Server) handleJob(w http.ResponseWriter, r *http.Request) {

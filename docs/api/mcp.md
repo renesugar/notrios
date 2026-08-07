@@ -75,7 +75,33 @@ command line.
 `list_collections`, `list_notebooks`, `get_notebook_tree`,
 `get_notebook_notes`, `list_tags`, `list_search_notebooks`,
 `list_document_links`, `list_document_resources`, `get_document_outline`,
-`get_note_line_range`, `search_in_note`, `scan_remote_media`.
+`get_note_line_range`, `search_in_note`, `scan_remote_media`,
+`get_document_blocks`, `get_graph`, `find_graph_path`, `get_graph_report`,
+`run_note_query`, `get_lint_report`, `read_resource`.
+
+The last seven arrived in v0.6 F3, once scopes existed to place them.
+`get_document_blocks` is how a model cites *part* of a note precisely — a block
+ID names exactly the content it was derived from, so a citation breaks loudly
+when that text changes rather than silently pointing somewhere else.
+
+### Reading attachments
+
+`read_resource` returns metadata by default: filename, MIME type, size,
+SHA-256, and the `resource://` URI. **Bytes are not returned unless asked for**,
+and then only for text-like types (`text/*` plus JSON, XML, YAML, TOML, SQL,
+JavaScript, and SVG) and only within `mcp.max_document_bytes`. A PNG or a PDF is
+described, never transcribed.
+
+`offset` and `length` make it a range read, so a caller decides from the
+metadata how much to pull — the same shape as `get_note_line_range`. The result
+says `truncated` when more remained, and a slice that would end mid-character is
+trimmed back so the text stays valid UTF-8 rather than carrying a replacement
+character a model would read as content.
+
+Over REST the equivalent is an HTTP `Range` request on
+`GET /api/v1/resources/{id}/content`, added in the same slice: `206` with
+`Content-Range`, `416` with the real size when the range cannot be satisfied,
+and it composes with `?download=1`.
 
 Search accepts the same bounded [query language](../query-language.md) as
 everywhere else—including uppercase OR, prefix negation, grouping, phrases,
@@ -106,15 +132,25 @@ contract; the MCP tool is a pass-through to the same store operation.
 
 ## What MCP deliberately does not expose
 
-Several surfaces exist over REST and the CLI and are **not** MCP tools:
-workspace lint and fix, graph traversal and the orphan/hub report, block
-listing, embedded query-block evaluation, tag rename, notebook deletion and its
-preview, garbage collection, archive export/verify/restore, and publication.
+v0.6 F3 went through every REST surface and decided each one rather than
+inheriting the list. Read-shaped surfaces became tools; these did not, and the
+reason is recorded per surface:
 
-That is a choice, not an oversight. MCP is where untrusted model output meets
-your library, so the tools it gets are reading, searching, and bounded
-single-note edits with revision preconditions. Whole-library reports and
-organizer operations stay on surfaces a person drives.
+| Surface | Why it stays off |
+|---|---|
+| `notriosctl fix` | rewrites note bodies in bulk. A model may *see* what lint found without being able to repair it everywhere at once |
+| Tag rename | renames across the whole library from one call; the dry run is meant to be read by a person before applying |
+| Notebook deletion and its preview | moves every note in a subtree to the Trash |
+| Garbage collection | permanently deletes resource bytes under a retention policy |
+| Archive export, verify, restore | writes and reads files at a path the caller names — a filesystem operation, which MCP never gets |
+| Publication | writes a sanitized copy of part of your library to a directory, gated on a reviewed plan digest |
+| Trash purge | permanent deletion |
+
+The pattern: **anything that writes outside the note model, deletes
+permanently, or acts on the whole library at once stays a deliberate act on the
+command line.** Batch organizing is the exception that proves it — it reached
+MCP in F1/F2, bounded to an explicit list of note IDs, revision-preconditioned,
+and gated behind the `organizer` scope.
 
 Trashed notes are outside the MCP surface entirely: they do not appear in
 `search_documents` and `get_document` does not return them.

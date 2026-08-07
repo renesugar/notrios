@@ -192,6 +192,10 @@ curl -s -X POST http://127.0.0.1:8080/api/v1/documents/$DOC/resources/$RES \
 curl -s http://127.0.0.1:8080/api/v1/documents/$DOC/resources | jq
 curl -sOJ 'http://127.0.0.1:8080/api/v1/resources/'$RES'/content?download=1'
 
+# Partial reads (v0.6 F3): 206 with Content-Range, or 416 naming the real size
+# when the range cannot be satisfied. Composes with ?download=1 for a resume.
+curl -s -H 'Range: bytes=0-1023' 'http://127.0.0.1:8080/api/v1/resources/'$RES'/content'
+
 # Read-only exact duplicate, unreferenced blob, notebook usage, and optional
 # perceptual review report
 curl -s http://127.0.0.1:8080/api/v1/resources/reports/reference | jq

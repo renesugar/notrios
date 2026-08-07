@@ -88,6 +88,14 @@ var mcpToolScopes = map[string]string{
 	"list_document_resources": MCPScopeReadOnly,
 	"scan_remote_media":       MCPScopeReadOnly,
 	"plan_selection":          MCPScopeReadOnly,
+	// v0.6 F3: read-shaped surfaces that were withheld until scopes existed.
+	"get_document_blocks": MCPScopeReadOnly,
+	"get_graph":           MCPScopeReadOnly,
+	"find_graph_path":     MCPScopeReadOnly,
+	"get_graph_report":    MCPScopeReadOnly,
+	"run_note_query":      MCPScopeReadOnly,
+	"get_lint_report":     MCPScopeReadOnly,
+	"read_resource":       MCPScopeReadOnly,
 
 	// editor: single-note writes.
 	"create_note":           MCPScopeEditor,

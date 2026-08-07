@@ -170,6 +170,20 @@ func (s *Server) handleMCPToolCall(r *http.Request, raw json.RawMessage) (mcpToo
 		return s.mcpGetNotebookNotes(r, params.Arguments)
 	case "scan_remote_media":
 		return s.mcpScanRemoteMedia(r, params.Arguments)
+	case "get_document_blocks":
+		return s.mcpGetDocumentBlocks(r, params.Arguments)
+	case "get_graph":
+		return s.mcpGetGraph(r, params.Arguments)
+	case "find_graph_path":
+		return s.mcpFindGraphPath(r, params.Arguments)
+	case "get_graph_report":
+		return s.mcpGetGraphReport(r, params.Arguments)
+	case "run_note_query":
+		return s.mcpRunNoteQuery(r, params.Arguments)
+	case "get_lint_report":
+		return s.mcpGetLintReport(r, params.Arguments)
+	case "read_resource":
+		return s.mcpReadResource(r, params.Arguments)
 	case "run_batch":
 		return s.mcpRunBatch(r, params.Arguments)
 	case "create_note", "update_note", "append_to_note", "prepend_to_note", "edit_note", "delete_note", "move_note_to_notebook", "localize_remote_media":
@@ -417,6 +431,13 @@ func (s *Server) mcpTools() []mcpTool {
 		{Name: "search_in_note", Description: "Case-insensitive search within one note. Returns matches with line numbers and context.", InputSchema: objectSchema(map[string]any{"document_id": stringSchema(), "uri": stringSchema(), "pattern": stringSchema()}, nil)},
 		{Name: "get_notebook_notes", Description: "List current notes directly in one notebook with keyset pagination.", InputSchema: objectSchema(map[string]any{"notebook_id": stringSchema(), "limit": integerSchema(1, 200), "cursor": stringSchema()}, nil)},
 		{Name: "scan_remote_media", Description: "Report the remote-media policy decision (allow/block/review with reason) for every remote image/media URL in one note, without downloading anything.", InputSchema: objectSchema(map[string]any{"document_id": stringSchema(), "uri": stringSchema()}, nil)},
+		{Name: "get_document_blocks", Description: "List one note's addressable blocks: content-derived IDs, author-written ^markers, heading slugs, and byte offsets. Use a block ID to cite part of a note precisely — it names exactly the content it was derived from, so a citation breaks loudly when that text changes.", InputSchema: objectSchema(map[string]any{"document_id": stringSchema(), "uri": stringSchema()}, nil)},
+		{Name: "get_graph", Description: "Walk links outward from one or more notes to a bounded depth (maximum 5). Returns nodes and edges; a traversal stopped by a ceiling names which one it hit rather than truncating silently.", InputSchema: objectSchema(map[string]any{"document_id": stringSchema(), "document_ids": arraySchema(stringSchema()), "depth": integerSchema(0, 5), "direction": enumSchema("outgoing", "incoming", "both"), "limit": integerSchema(1, 5000)}, nil)},
+		{Name: "find_graph_path", Description: "Find a shortest link path between two notes, searched from both ends. Reports no_path, depth_exhausted, and budget_exhausted separately — only the first is a statement about the library.", InputSchema: objectSchema(map[string]any{"from_document_id": stringSchema(), "to_document_id": stringSchema(), "max_depth": integerSchema(1, 10), "direction": enumSchema("outgoing", "incoming", "both")}, []string{"from_document_id", "to_document_id"})},
+		{Name: "get_graph_report", Description: "Orphans (notes nothing links to), isolates, and in-degree hubs for a collection. Counts are always complete; limit caps only the example lists.", InputSchema: objectSchema(map[string]any{"collection_id": stringSchema(), "limit": integerSchema(1, 200)}, nil)},
+		{Name: "run_note_query", Description: "Evaluate one embedded ```note-query block. Parsed by the same query parser every search surface uses, so a block can express nothing you could not type into search_documents. A malformed block returns an error field rather than failing.", InputSchema: objectSchema(map[string]any{"block": stringSchema(), "collection_id": stringSchema()}, []string{"block"})},
+		{Name: "get_lint_report", Description: "Read-only workspace lint: broken links, ambiguous wikilinks, unresolved anchors, duplicate external identities, missing titles, unlocalized remote media, missing alt text, unreferenced resources, and projection backlog. Findings are content-free — a location and a hash, never the offending text.", InputSchema: objectSchema(map[string]any{"collection_id": stringSchema(), "checks": arraySchema(stringSchema()), "detail_limit": integerSchema(1, 50)}, nil)},
+		{Name: "read_resource", Description: "Read one attachment's metadata (filename, MIME type, size, SHA-256, resource:// URI). Pass include_text to also get a bounded slice of a text-like resource, with offset and length for reading part of it. Binary resources are described, never transcribed.", InputSchema: objectSchema(map[string]any{"resource_id": stringSchema(), "uri": stringSchema(), "include_text": booleanSchema(), "offset": integerSchema(0, 1000000000), "length": integerSchema(1, 65536)}, nil)},
 	}
 	tools = append(tools,
 		mcpTool{Name: "run_batch", Description: "Apply one bounded organizer transaction over an explicit list of notes: move, add_tags, remove_tags, trash, restore, or duplicate. Modes are best_effort (default) and atomic; every requested item gets an outcome either way. trash requires base_revision_id per item. Bounded at 500 items.", InputSchema: objectSchema(map[string]any{"operation": enumSchema("move", "add_tags", "remove_tags", "trash", "restore", "duplicate"), "mode": enumSchema("best_effort", "atomic"), "request_key": stringSchema(), "notebook_id": stringSchema(), "tags": arraySchema(stringSchema()), "items": arraySchema(objectSchema(map[string]any{"document_id": stringSchema(), "base_revision_id": stringSchema()}, []string{"document_id"}))}, []string{"operation", "items"})},

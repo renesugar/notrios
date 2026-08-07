@@ -3,7 +3,8 @@
 Status: **active. Written 2026-08-06 from `ROADMAP.md` after v0.5 completed.
 E10, E11, and E12 (the v0.5.0 release-candidate fixes) are complete and the
 candidate has no outstanding gates. F0 (notebook targeting), F1 (batch organizer
-transactions), and F2 (MCP tool scopes) are complete. F2 onward require user approval, and
+transactions), F2 (MCP tool scopes), and F3 (MCP read coverage and ranges) are
+complete. F2 onward require user approval, and
 sixteen of their open decisions were answered on 2026-08-07 across three rounds.
 **One blocking decision remains** — the hubs report participates in the graph it
 measures — which blocks only F5's hubs-report deliverable. F2, F3, F4, F6, and F7 are
@@ -471,7 +472,12 @@ Working state: connecting under `search-only` can search and read nothing else,
 and adding a tool without classifying it fails the test rather than shipping
 open.
 
-### F3. MCP coverage and resource reads
+### F3. MCP coverage and resource reads — complete
+
+Archived as `plans/v0.6/003-mcp-read-coverage-and-ranges.md`. Seven read-shaped
+surfaces became tools under `read-only`; every withheld surface got a recorded
+reason rather than inheriting the list. REST gained HTTP `Range` on resource
+content, which `read_resource` uses for bounded, offset-addressable text.
 
 - Close the gap between what REST exposes and what MCP does, deliberately: for
   each REST surface, either add the tool or record why it stays off the model
