@@ -464,6 +464,19 @@ POST   /api/v1/sync/manifests
 POST   /api/v1/sync/acknowledgements
 ```
 
+`POST /api/v1/batch` implements the bounded batch contract (v0.6 F1): `move`,
+`add_tags`, `remove_tags`, `trash`, `restore`, and `duplicate` over an explicit
+list of note IDs, in `best_effort` (default) or `atomic` mode. Every requested
+item gets an outcome in both modes — `applied`, `skipped`, `failed`, or
+`rolled_back` — so a caller always knows which half happened. A request that ran
+is `200` even when every item failed; `4xx` is reserved for a malformed call.
+`trash` requires `base_revision_id` per item. `request_key` gives exactly-once
+semantics through a persisted ledger (schema v17 `batch_operations`), replaying
+the first run's outcomes verbatim; a key reused with different arguments is
+refused. Bounded at `store.MaxBatchItems` (500), refused rather than truncated.
+
+Historical note — the original contract sketch:
+
 Batch operations cover bounded sets of IDs for move, duplicate, trash,
 tag/untag, and stable Markdown-link formatting. A request specifies
 all-or-nothing versus best-effort, an idempotency key, dry-run where meaningful,
@@ -495,6 +508,7 @@ GET    /api/v1/notebooks/{notebook_id}/notes  # cursor-paged
 GET    /api/v1/notebooks/{notebook_id}/deletion-preview  # what deletion would do (v0.5 E8)
 GET    /api/v1/tags                           # with note counts
 POST   /api/v1/tags/rename                    # hierarchical rename; dry run by default (v0.5 E8)
+POST   /api/v1/batch                          # bounded organizer transaction over an explicit note list (v0.6 F1)
 POST   /api/v1/documents/{document_id}/tags/{tag}
 DELETE /api/v1/documents/{document_id}/tags/{tag}
 POST   /api/v1/documents/{document_id}/notebook   # move note to notebook

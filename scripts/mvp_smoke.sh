@@ -154,6 +154,40 @@ if curl -fsS "$BASE/api/v1/documents/$DOC_ID" >/dev/null 2>&1; then
   exit 1
 fi
 
+# --- Batch organizer transactions (v0.6 F1) ---------------------------------
+BATCH_NB=$(curl -fsS -H 'Content-Type: application/json' --data-binary '{"name":"Batch Notebook"}' "$BASE/api/v1/notebooks" | python3 -c 'import json,sys; print(json.load(sys.stdin)["id"])')
+BATCH_A=$(curl -fsS -H 'Content-Type: application/json' --data-binary '{"title":"Batch A","body":"a"}' "$BASE/api/v1/documents" | python3 -c 'import json,sys; print(json.load(sys.stdin)["id"])')
+BATCH_B=$(curl -fsS -H 'Content-Type: application/json' --data-binary '{"title":"Batch B","body":"b"}' "$BASE/api/v1/documents" | python3 -c 'import json,sys; print(json.load(sys.stdin)["id"])')
+
+# Best effort reports every item, including one that cannot be moved.
+BATCH_BODY=$(python3 -c "
+import json
+print(json.dumps({'operation':'move','notebook_id':'${BATCH_NB}',
+  'items':[{'document_id':'${BATCH_A}'},{'document_id':'${BATCH_B}'},{'document_id':'doc_absent'}]}))")
+BATCH_RESP=$(curl -fsS -H 'Content-Type: application/json' --data-binary "$BATCH_BODY" "$BASE/api/v1/batch")
+python3 -c 'import json,sys; r=json.load(sys.stdin); assert r["applied"]==2 and r["failed"]==1, r; assert len(r["items"])==3, r' <<<"$BATCH_RESP"
+
+# A keyed request replays instead of doing the work twice.
+KEYED=$(python3 -c "
+import json
+print(json.dumps({'request_key':'smoke-1','operation':'add_tags','tags':['smoked'],
+  'items':[{'document_id':'${BATCH_A}'}]}))")
+curl -fsS -H 'Content-Type: application/json' --data-binary "$KEYED" "$BASE/api/v1/batch" >/dev/null
+REPLAY=$(curl -fsS -H 'Content-Type: application/json' --data-binary "$KEYED" "$BASE/api/v1/batch")
+python3 -c 'import json,sys; r=json.load(sys.stdin); assert r["replayed"] is True, r' <<<"$REPLAY"
+python3 -c 'import json,sys; tags=[t["name"] for t in json.load(sys.stdin)["tags"]]; assert tags.count("smoked")==1, tags' \
+  <<<"$(curl -fsS "$BASE/api/v1/documents/$BATCH_A/tags")"
+
+# An atomic run that hits a failure leaves the library untouched.
+ATOMIC=$(python3 -c "
+import json
+print(json.dumps({'operation':'add_tags','mode':'atomic','tags':['never'],
+  'items':[{'document_id':'${BATCH_B}'},{'document_id':'doc_absent'}]}))")
+ATOMIC_RESP=$(curl -fsS -H 'Content-Type: application/json' --data-binary "$ATOMIC" "$BASE/api/v1/batch")
+python3 -c 'import json,sys; r=json.load(sys.stdin); assert r["rolled_back"]==1 and r["failed"]==1, r' <<<"$ATOMIC_RESP"
+python3 -c 'import json,sys; tags=[t["name"] for t in json.load(sys.stdin)["tags"]]; assert "never" not in tags, tags' \
+  <<<"$(curl -fsS "$BASE/api/v1/documents/$BATCH_B/tags")"
+
 MCP_RESP=$(curl -fsS -H 'Content-Type: application/json' --data-binary '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' "$BASE/mcp")
 python3 -c 'import json,sys; resp=json.load(sys.stdin); tools=[tool["name"] for tool in resp["result"]["tools"]]; assert "search_documents" in tools, tools' <<<"$MCP_RESP"
 

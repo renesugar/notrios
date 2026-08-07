@@ -281,6 +281,49 @@ type TagRenameRequest struct {
 	DryRun          *bool  `json:"dry_run,omitempty"`
 }
 
+// BatchItem is one note in a batch request. `base_revision_id` is required
+// only for operations that write a revision (today, `trash`), and is per item
+// because a batch is a set of independent notes.
+type BatchItem struct {
+	DocumentID     string `json:"document_id"`
+	BaseRevisionID string `json:"base_revision_id,omitempty"`
+}
+
+// BatchRequest is one bounded organizer transaction over an explicit list of
+// notes. `mode` is "best_effort" (default) or "atomic".
+type BatchRequest struct {
+	RequestKey string      `json:"request_key,omitempty"`
+	Operation  string      `json:"operation"`
+	Mode       string      `json:"mode,omitempty"`
+	Items      []BatchItem `json:"items"`
+	NotebookID string      `json:"notebook_id,omitempty"`
+	Tags       []string    `json:"tags,omitempty"`
+}
+
+// BatchItemResult is one note's outcome: applied, skipped, failed, or
+// rolled_back (it succeeded and was undone when an atomic run failed later).
+type BatchItemResult struct {
+	DocumentID    string `json:"document_id"`
+	Status        string `json:"status"`
+	Reason        string `json:"reason,omitempty"`
+	Error         string `json:"error,omitempty"`
+	NewDocumentID string `json:"new_document_id,omitempty"`
+}
+
+// BatchResult reports every requested item in both modes.
+type BatchResult struct {
+	RequestKey string            `json:"request_key,omitempty"`
+	Operation  string            `json:"operation"`
+	Mode       string            `json:"mode"`
+	Items      []BatchItemResult `json:"items"`
+	Applied    int               `json:"applied"`
+	Skipped    int               `json:"skipped"`
+	Failed     int               `json:"failed"`
+	RolledBack int               `json:"rolled_back"`
+	// Replayed marks a response served from the idempotency ledger.
+	Replayed bool `json:"replayed"`
+}
+
 // TagRenameChange is one tag's outcome. `action` is "rename" or "merge".
 type TagRenameChange struct {
 	TagID           string `json:"tag_id"`

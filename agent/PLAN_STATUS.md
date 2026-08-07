@@ -22,6 +22,52 @@ Three v0.5 roadmap bullets did not ship and moved to v0.6 rather than being left
 ambiguous: note templates, task extraction, and a graph *view* (E4 delivered the
 traversal, path, and report data it would be built on).
 
+**F1 is complete**, archived as
+`plans/v0.6/001-batch-organizer-transactions.md`. `POST /api/v1/batch` and
+`store.RunBatch` apply one bounded organizer transaction — move, add_tags,
+remove_tags, trash, restore, duplicate — over an explicit note list, in
+`atomic` or `best_effort` mode. Schema is now **v17** (`batch_operations`).
+
+**Both open decisions were taken rather than deferred**, since the task was
+approved without answers. *Idempotency keys are database-scoped and persisted*:
+an in-memory ledger forgets on restart, which is exactly when a batch is
+retried, so the key, an argument fingerprint, and the first run's response are
+stored — and a replay returns that response verbatim rather than recomputing it
+against a library that has moved on. A key reused for different work is refused,
+because answering it would hide a client bug. *A duplicate inherits content, not
+identity*: body, notebook, tags, and resource references, but never the
+`document_sources` row (two notes claiming one imported identity break re-import
+and trip `duplicate_source_id`) and never the revision history.
+
+Four item outcomes rather than two: `applied`, `skipped` (nothing to do),
+`failed`, and `rolled_back` (succeeded, then undone by a later failure in an
+atomic run). Conflating skip with failure makes "nothing to do" look broken and
+overstates what a run changed; calling a rolled-back item "failed" blames it for
+someone else's problem. Both modes report **every** requested item, and an
+atomic report is never shorter than its request.
+
+Atomic mode required extracting locked cores from five exported store methods
+(`moveDocumentToNotebookLocked`, `addDocumentTagLocked`,
+`removeDocumentTagLocked`, `deleteDocumentLocked`, `restoreDocumentLocked`),
+since the exported ones each take the mutex and open their own transaction. The
+tag helpers gained a "did anything change" return, which is what makes an honest
+`skipped` possible.
+
+Two defects caught before shipping: `ensureSchemaV17` was inserted *before*
+`ensureSchemaV16`, so v16's `PRAGMA user_version = 16` ran last and bootstrap
+reported the wrong version (caught by an existing status test); and `duplicate`
+copied `document_resource_refs` naming a column `anchor` when it is
+`anchor_json` (caught by reading the schema — the compiler cannot see inside a
+SQL string). The atomic rollback test was verified to fail when the `ROLLBACK`
+is replaced by a `COMMIT`.
+
+Out of scope and recorded: stable Markdown-link copy (it produces clipboard text
+rather than changing the library, so it is not a transaction), a GUI
+multi-select (F1 is the API; the selection model is UI work F5 will want to
+share), and MCP exposure (batch tools belong with the `organizer` profile, which
+is F2 — adding them now would put bulk mutation on the default read-only
+surface).
+
 **E12 is complete**, archived as `plans/v0.5/016-readonly-title-control.md`. The
 note title used `disabled` rather than `readOnly` when a note could not be
 edited. Both refuse edits, but **`disabled` removes the control from the tab

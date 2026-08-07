@@ -334,7 +334,14 @@ func (s *SQLiteStore) MoveDocumentToNotebook(ctx context.Context, documentID, no
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	return s.moveDocumentToNotebookLocked(documentID, notebookID)
+}
 
+// moveDocumentToNotebookLocked is the move without the mutex, so a batch can
+// run many of them inside one transaction. It reports whether anything changed:
+// a note already in the destination is a skip, not a failure, and a report that
+// cannot tell the two apart overstates what a run did.
+func (s *SQLiteStore) moveDocumentToNotebookLocked(documentID, notebookID string) (Document, error) {
 	doc, err := s.getDocumentLocked(documentID)
 	if err != nil {
 		return Document{}, err
@@ -444,33 +451,43 @@ func (s *SQLiteStore) AddDocumentTag(ctx context.Context, documentID, tagName st
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	tag, _, err := s.addDocumentTagLocked(documentID, tagName)
+	return tag, err
+}
 
+// addDocumentTagLocked adds a tag and says whether the note actually gained it.
+// A tag the note already carried is a skip; the caller decides how to report it.
+func (s *SQLiteStore) addDocumentTagLocked(documentID, tagName string) (Tag, bool, error) {
 	if _, err := s.getDocumentLocked(documentID); err != nil {
-		return Tag{}, err
+		return Tag{}, false, err
 	}
 	tag, found, err := s.findTagByNameLocked(tagName)
 	if err != nil {
-		return Tag{}, err
+		return Tag{}, false, err
 	}
 	if !found {
 		id, err := NewID("tag")
 		if err != nil {
-			return Tag{}, err
+			return Tag{}, false, err
 		}
 		if err := s.execPreparedLocked(`INSERT INTO tags(id, name) VALUES(?, ?)`, id, tagName); err != nil {
-			return Tag{}, err
+			return Tag{}, false, err
 		}
 		tag = Tag{ID: id, Name: tagName}
 	}
+	already, err := s.countLocked(`SELECT COUNT(1) FROM note_tags WHERE document_id = ? AND tag_id = ?`, documentID, tag.ID)
+	if err != nil {
+		return Tag{}, false, err
+	}
 	if err := s.execPreparedLocked(`INSERT OR IGNORE INTO note_tags(document_id, tag_id) VALUES(?, ?)`, documentID, tag.ID); err != nil {
-		return Tag{}, err
+		return Tag{}, false, err
 	}
 	count, err := s.tagNoteCountLocked(tag.ID)
 	if err != nil {
-		return Tag{}, err
+		return Tag{}, false, err
 	}
 	tag.NoteCount = count
-	return tag, nil
+	return tag, already == 0, nil
 }
 
 // UpsertTag gives importers a stable source-derived tag identity. Action is
@@ -536,19 +553,32 @@ func (s *SQLiteStore) RemoveDocumentTag(ctx context.Context, documentID, tagName
 	documentID = strings.TrimSpace(documentID)
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	_, err := s.removeDocumentTagLocked(documentID, tagName)
+	return err
+}
 
+// removeDocumentTagLocked removes a tag and says whether the note actually had
+// it. A note that never carried the tag is a skip rather than a failure.
+func (s *SQLiteStore) removeDocumentTagLocked(documentID, tagName string) (bool, error) {
 	tag, found, err := s.findTagByNameLocked(strings.TrimSpace(tagName))
 	if err != nil {
-		return err
+		return false, err
 	}
 	if !found {
-		return ErrNotFound
+		return false, ErrNotFound
+	}
+	had, err := s.countLocked(`SELECT COUNT(1) FROM note_tags WHERE document_id = ? AND tag_id = ?`, documentID, tag.ID)
+	if err != nil {
+		return false, err
 	}
 	if err := s.execPreparedLocked(`DELETE FROM note_tags WHERE document_id = ? AND tag_id = ?`, documentID, tag.ID); err != nil {
-		return err
+		return false, err
 	}
 	// Unreferenced tags disappear from the sidebar entirely.
-	return s.execPreparedLocked(`DELETE FROM tags WHERE id = ? AND NOT EXISTS (SELECT 1 FROM note_tags WHERE tag_id = ?)`, tag.ID, tag.ID)
+	if err := s.execPreparedLocked(`DELETE FROM tags WHERE id = ? AND NOT EXISTS (SELECT 1 FROM note_tags WHERE tag_id = ?)`, tag.ID, tag.ID); err != nil {
+		return false, err
+	}
+	return had > 0, nil
 }
 
 func (s *SQLiteStore) findTagByNameLocked(name string) (Tag, bool, error) {
@@ -841,19 +871,7 @@ func (s *SQLiteStore) RestoreDocument(ctx context.Context, id string) (Document,
 			_ = s.execLocked("ROLLBACK")
 		}
 	}()
-	if err := s.execPreparedLocked(`UPDATE documents SET deleted_at = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?`, id); err != nil {
-		return Document{}, err
-	}
-	if err := s.execPreparedLocked(`DELETE FROM documents_fts WHERE document_id = ?`, id); err != nil {
-		return Document{}, err
-	}
-	if err := s.execPreparedLocked(`INSERT INTO documents_fts(document_id, collection_id, title, body) VALUES(?, ?, ?, ?)`, id, collectionID, title, body); err != nil {
-		return Document{}, err
-	}
-	if err := s.rebuildDocumentLinksLocked(id, collectionID, body); err != nil {
-		return Document{}, err
-	}
-	if err := s.enqueueProjectionLocked(id, "upsert"); err != nil {
+	if err := s.restoreDocumentBodyLocked(id, title, body, collectionID); err != nil {
 		return Document{}, err
 	}
 	if err := s.execLocked("COMMIT"); err != nil {
@@ -861,6 +879,35 @@ func (s *SQLiteStore) RestoreDocument(ctx context.Context, id string) (Document,
 	}
 	committed = true
 	return s.getDocumentLocked(id)
+}
+
+// restoreDocumentLocked undeletes a trashed note without owning a transaction,
+// so a batch can restore many inside one.
+func (s *SQLiteStore) restoreDocumentLocked(id string) (Document, error) {
+	title, body, collectionID, err := s.trashedDocumentStateLocked(id)
+	if err != nil {
+		return Document{}, err
+	}
+	if err := s.restoreDocumentBodyLocked(id, title, body, collectionID); err != nil {
+		return Document{}, err
+	}
+	return s.getDocumentLocked(id)
+}
+
+func (s *SQLiteStore) restoreDocumentBodyLocked(id, title, body, collectionID string) error {
+	if err := s.execPreparedLocked(`UPDATE documents SET deleted_at = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?`, id); err != nil {
+		return err
+	}
+	if err := s.execPreparedLocked(`DELETE FROM documents_fts WHERE document_id = ?`, id); err != nil {
+		return err
+	}
+	if err := s.execPreparedLocked(`INSERT INTO documents_fts(document_id, collection_id, title, body) VALUES(?, ?, ?, ?)`, id, collectionID, title, body); err != nil {
+		return err
+	}
+	if err := s.rebuildDocumentLinksLocked(id, collectionID, body); err != nil {
+		return err
+	}
+	return s.enqueueProjectionLocked(id, "upsert")
 }
 
 // PurgeDocument permanently deletes a trashed document and its revisions.

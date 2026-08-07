@@ -159,6 +159,7 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("GET /api/v1/notebooks/{notebook_id}/deletion-preview", s.handleNotebookDeletionPreview)
 	s.mux.HandleFunc("GET /api/v1/tags", s.handleListTags)
 	s.mux.HandleFunc("POST /api/v1/tags/rename", s.handleRenameTag)
+	s.mux.HandleFunc("POST /api/v1/batch", s.handleBatch)
 	s.mux.HandleFunc("GET /api/v1/documents/{document_id}/tags", s.handleDocumentTags)
 	s.mux.HandleFunc("POST /api/v1/documents/{document_id}/tags/{tag}", s.handleDocumentTag)
 	s.mux.HandleFunc("DELETE /api/v1/documents/{document_id}/tags/{tag}", s.handleDocumentTag)

@@ -1,9 +1,9 @@
 # Plan: v0.6 — MCP and automation expansion
 
 Status: **active. Written 2026-08-06 from `ROADMAP.md` after v0.5 completed.
-E10, E11, and E12 (the v0.5.0 release-candidate fixes) and F0 (notebook
-targeting) are complete. The candidate has no outstanding gates. F1 onward
-require user approval.**
+E10, E11, and E12 (the v0.5.0 release-candidate fixes) are complete and the
+candidate has no outstanding gates. F0 (notebook targeting) and F1 (batch
+organizer transactions) are complete. F2 onward require user approval.**
 
 v0.5 is complete and archived under `plans/v0.5/`, including a copy of its own
 plan at `plans/v0.5/000-v0.5-plan.md`. Product version is 0.5.0 and the schema
@@ -368,7 +368,14 @@ Working state: a note created while a notebook is selected lands in that
 notebook, the target is visible before saving, and a note in the wrong notebook
 can be moved from the GUI and from the CLI.
 
-### F1. Batch organizer transactions
+### F1. Batch organizer transactions — complete
+
+Archived as `plans/v0.6/001-batch-organizer-transactions.md`. Both open
+decisions were taken rather than deferred: **idempotency keys are
+database-scoped and persisted** (schema v17 `batch_operations`), because a batch
+is retried exactly when a process may have restarted; and **a duplicate
+inherits content, not identity** — body, notebook, tags, and resource
+references, but never the `document_sources` row or the revision history.
 
 - Add bounded batch operations over an explicit list of note IDs: move to
   notebook, add/remove tags, trash, restore, and duplicate.
@@ -472,13 +479,14 @@ pass.
   never promised it — but it is the kind of gap a first user meets immediately.
   Shipping the candidate first and fixing it in v0.6 is the conservative call;
   pulling F0 forward is defensible.
-- **Idempotency key scope.** Whether a batch request key is scoped to a session,
-  a client, or the database decides what "the same request twice" means across a
-  restart. F1 cannot be designed without answering it.
-- **What duplicate means.** A duplicated note must not inherit the original's
-  external identity (`document_sources`), but whether it inherits resource
-  references, tags, and its notebook is a product decision rather than an
-  implementation detail.
+- **Resolved by F1: idempotency keys are database-scoped and persisted.** An
+  in-memory ledger forgets on restart, which is exactly when a batch is
+  retried. Schema v17 stores the key, a fingerprint of the arguments, and the
+  first run's response verbatim.
+- **Resolved by F1: a duplicate inherits content, not identity.** Body,
+  notebook, tags, and resource references; never the `document_sources` row
+  (two notes claiming one imported identity break re-import and trip lint) and
+  never the revision history.
 - **Whether `administrator` is reachable over MCP at all.** Garbage collection,
   restore, and purge are administrator-shaped, and the v0.5 position was that
   whole-library operations stay on surfaces a person drives. F2 should either

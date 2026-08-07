@@ -372,3 +372,29 @@ CREATE INDEX IF NOT EXISTS resources_filename_idx
     ON resources(collection_id, filename COLLATE NOCASE, id);
 
 PRAGMA user_version = 16;
+
+-- Schema v17: batch organizer idempotency (v0.6 F1).
+--
+-- A batch is retried exactly when something went wrong — a dropped connection,
+-- a client restart — so the record of "this key already ran" has to outlive the
+-- process. An in-memory map would forget precisely when it is needed.
+--
+-- The stored response is the *first* run's outcomes. A replay returns them
+-- verbatim rather than re-deriving them, because the library has moved on and a
+-- recomputed answer would describe a different world than the one the caller
+-- was told about.
+CREATE TABLE IF NOT EXISTS batch_operations (
+    request_key TEXT PRIMARY KEY,
+    operation TEXT NOT NULL,
+    mode TEXT NOT NULL,
+    -- The response as it was returned, verbatim.
+    response TEXT NOT NULL,
+    -- A fingerprint of the request. A key reused with different arguments is a
+    -- client bug, and answering with the earlier unrelated result would hide it.
+    request_sha256 TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS batch_operations_created_idx ON batch_operations(created_at);
+
+PRAGMA user_version = 17;

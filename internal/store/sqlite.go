@@ -173,6 +173,9 @@ func (s *SQLiteStore) Bootstrap(ctx context.Context) error {
 	if err := s.ensureSchemaV16(ctx); err != nil {
 		return err
 	}
+	if err := s.ensureSchemaV17(ctx); err != nil {
+		return err
+	}
 	if err := s.ensureDatabaseIdentity(ctx); err != nil {
 		return err
 	}
@@ -536,6 +539,30 @@ func (s *SQLiteStore) ensureSchemaV16(ctx context.Context) error {
 	return nil
 }
 
+// ensureSchemaV17 adds the batch idempotency ledger. A batch is retried exactly
+// when something went wrong, so the record of "this key already ran" has to
+// outlive the process; an in-memory map would forget precisely when it matters.
+func (s *SQLiteStore) ensureSchemaV17(ctx context.Context) error {
+	statements := []string{
+		`CREATE TABLE IF NOT EXISTS batch_operations (
+			request_key TEXT PRIMARY KEY,
+			operation TEXT NOT NULL,
+			mode TEXT NOT NULL,
+			response TEXT NOT NULL,
+			request_sha256 TEXT NOT NULL,
+			created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+		);`,
+		`CREATE INDEX IF NOT EXISTS batch_operations_created_idx ON batch_operations(created_at);`,
+		`PRAGMA user_version = 17;`,
+	}
+	for _, statement := range statements {
+		if err := s.Exec(ctx, statement); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (s *SQLiteStore) exec(sql string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -866,6 +893,20 @@ func (s *SQLiteStore) DeleteDocument(ctx context.Context, req DeleteDocumentRequ
 		}
 	}()
 
+	if err := s.deleteDocumentLocked(req, revID); err != nil {
+		return err
+	}
+	if err := s.execLocked("COMMIT"); err != nil {
+		return err
+	}
+	committed = true
+	return nil
+}
+
+// deleteDocumentLocked is the trash-first delete without its transaction, so a
+// batch can run many inside one. The caller holds the mutex and owns the
+// transaction boundary.
+func (s *SQLiteStore) deleteDocumentLocked(req DeleteDocumentRequest, revID string) error {
 	current, err := s.getDocumentLocked(req.ID)
 	if err != nil {
 		return err
@@ -882,14 +923,7 @@ func (s *SQLiteStore) DeleteDocument(ctx context.Context, req DeleteDocumentRequ
 	if err := s.execPreparedLocked(`DELETE FROM documents_fts WHERE document_id = ?`, req.ID); err != nil {
 		return err
 	}
-	if err := s.enqueueProjectionLocked(req.ID, "delete"); err != nil {
-		return err
-	}
-	if err := s.execLocked("COMMIT"); err != nil {
-		return err
-	}
-	committed = true
-	return nil
+	return s.enqueueProjectionLocked(req.ID, "delete")
 }
 
 func (s *SQLiteStore) ListDocumentRevisions(ctx context.Context, documentID string) ([]DocumentRevision, error) {

@@ -94,7 +94,7 @@ This matrix keeps the long conversation compressed into implementation-sized fea
 | MCP resources | Planned v0.6 | MCP adapter | Avoid global listing of huge collections. |
 | Tool visibility profiles | Planned v0.6 | MCP adapter | Search/read/editor/organizer/admin. |
 | LLM surgical edits | Implemented | document service | SEARCH/REPLACE, dry-run, revision preconditions. |
-| Batch organizer transactions | Planned v0.6 | document service | Bounded atomic/best-effort move/duplicate/trash/tag/link. |
+| Batch organizer transactions | Implemented | document service | v0.6 F1: `POST /api/v1/batch` over an explicit note list — move, add_tags, remove_tags, trash, restore, duplicate — in `atomic` or `best_effort` mode. Every requested item gets an outcome in both modes (applied / skipped / failed / rolled_back), so a caller always knows which half happened. `trash` is revision-preconditioned per item. `request_key` gives exactly-once through a persisted ledger (schema v17), replaying the first run's outcomes verbatim; a reused key with different arguments is refused. Bounded at 500 items, refused rather than truncated. Stable Markdown-link copy is not an operation here — it produces text for a clipboard rather than changing the library. |
 | Sync MCP control plane | Planned v0.7 | MCP adapter | Jobs/status/conflicts only; no bulk bytes in context. |
 
 ## Publishing and knowledge-base maintenance

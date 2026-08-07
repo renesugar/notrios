@@ -38,7 +38,7 @@ const (
 // CurrentSchemaVersion is the canonical SQLite schema understood by this
 // build. Archive-v2 manifests record this source schema but never include
 // derived FTS5 or Recoll state.
-const CurrentSchemaVersion = 16
+const CurrentSchemaVersion = 17
 
 // DatabaseIdentity separates the stable logical synchronization/archive
 // universe from one writable database copy. Copy/restore workflows preserve
@@ -850,6 +850,9 @@ type Store interface {
 	ListDocumentTags(ctx context.Context, documentID string) ([]Tag, error)
 	ListTags(ctx context.Context) ([]Tag, error)
 	RenameTag(ctx context.Context, req TagRenameRequest) (TagRenameResult, error)
+	// RunBatch applies one bounded organizer transaction over an explicit list
+	// of notes, atomically or best-effort, reporting every item either way.
+	RunBatch(ctx context.Context, req BatchRequest) (BatchResult, error)
 	PreviewNotebookDeletion(ctx context.Context, id string) (NotebookDeletionPreview, error)
 
 	CreateSearchNotebook(ctx context.Context, req CreateSearchNotebookRequest) (SearchNotebook, error)

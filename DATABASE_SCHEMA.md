@@ -202,6 +202,29 @@ Sizing measured on the generated profiles: at six blocks per note the table
 roughly doubles the database (114 MB to 245 MB at 100,000 notes), while anchor
 resolution stays at 0.2–0.5 ms from 61,000 to 601,000 block rows.
 
+## Schema v17 — the batch idempotency ledger
+
+`batch_operations` (v0.6 F1) records which batch request keys have already run,
+and what they returned.
+
+| Column | Meaning |
+|---|---|
+| `request_key` | the caller's idempotency key (primary key) |
+| `operation`, `mode` | what ran, for readability in the table |
+| `response` | the first run's report, verbatim |
+| `request_sha256` | a fingerprint of the arguments the key was used for |
+| `created_at` | when it ran |
+
+Two decisions are embedded here. **The ledger is on disk rather than in memory**
+because a batch is retried exactly when something went wrong — a dropped
+connection, a client restart — and an in-memory map forgets precisely then.
+
+**The response is stored, not recomputed.** A replay returns the first run's
+outcomes verbatim; re-deriving them would describe a library that has since
+moved on, which is a different answer to the same question. `request_sha256`
+exists so a key reused with different arguments can be refused rather than
+answered with an unrelated result.
+
 ## Schema v16 — title and filename indexes
 
 Two indexes, added for v0.5 E5:

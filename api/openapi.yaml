@@ -648,6 +648,35 @@ paths:
       summary: List tags with live note counts
       responses:
         '200': { description: Tags }
+  /api/v1/batch:
+    post:
+      summary: One bounded organizer transaction over an explicit list of notes
+      description: >
+        Operations are move, add_tags, remove_tags, trash, restore, and
+        duplicate — each one the single-note surfaces already expose. `mode` is
+        `best_effort` (default) or `atomic`; they differ in what a failure does,
+        never in what the report says, and every requested item gets an outcome
+        either way: applied, skipped (nothing to do), failed, or rolled_back (it
+        succeeded and was undone when a later item failed an atomic run).
+        `trash` requires `base_revision_id` on every item, per item, because a
+        batch is a set of independent notes.
+
+
+        A request that ran is a 200 even when every item failed: per-item
+        failure is the report's content, not the request's fate. A 4xx means the
+        call itself was wrong.
+
+
+        `request_key` makes a retry safe. The key and the first run's outcomes
+        are stored, so a replay after a restart returns those outcomes verbatim
+        with `replayed: true` rather than doing the work again. A key reused
+        with different arguments is refused, because answering with the earlier
+        unrelated result would hide a client bug. Bounded at 500 items, refused
+        rather than truncated.
+      responses:
+        '200': { description: Batch report (fresh or replayed) }
+        '400': { description: Unknown operation or mode, no items, over the ceiling, a repeated document, a missing argument, or a reused request key }
+        '428': { description: trash without base_revision_id on every item }
   /api/v1/tags/rename:
     post:
       summary: Rename a tag hierarchy, dry run by default

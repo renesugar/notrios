@@ -353,6 +353,85 @@ links point at it. Block IDs derive from block text, so an ID names exactly the
 content it was written against. The response contains no block text — read the
 note body for that. See [stable links](../stable-links.md#linking-to-a-block-not-just-a-note).
 
+## Batch organizer operations
+
+One bounded transaction over an explicit list of notes:
+
+```sh
+curl -s -X POST http://127.0.0.1:8080/api/v1/batch \
+  -H 'Content-Type: application/json' -d '{
+    "request_key": "move-inbox-2026-08-07",
+    "operation": "move",
+    "mode": "best_effort",
+    "notebook_id": "'"$NB"'",
+    "items": [{"document_id": "doc_a"}, {"document_id": "doc_b"}]
+  }' | jq
+```
+
+Operations are `move`, `add_tags`, `remove_tags`, `trash`, `restore`, and
+`duplicate` — each one the single-note surfaces already expose. A batch is a way
+to ask for many of them at once, not a way to ask for something else.
+
+**Every requested item gets an outcome, in both modes.**
+
+| Status | Means |
+|---|---|
+| `applied` | it happened |
+| `skipped` | there was nothing to do — the note was already in that notebook, already carried the tag |
+| `failed` | it could not happen; `error` says why |
+| `rolled_back` | it succeeded and was undone because a later item failed an atomic run |
+
+`skipped` and `failed` are separate on purpose: conflating them makes "nothing
+to do" look like a fault and overstates how much a run changed.
+
+**The modes differ in what a failure does, never in what the report says.**
+`best_effort` (the default) gives each item its own transaction and keeps going.
+`atomic` runs everything in one transaction and rolls the lot back on the first
+failure — the items that had succeeded come back `rolled_back`, and the ones
+never reached come back `skipped` with a reason, so the report is never shorter
+than the request.
+
+**A request that ran is a `200` even when every item failed.** Per-item failure
+is the report's content, not the request's fate. A `4xx` means the call itself
+was wrong: an unknown operation or mode, no items, more than 500, the same
+document twice, a missing `notebook_id` or `tags`, or a reused request key.
+
+**`trash` requires `base_revision_id` on every item**, per item rather than per
+request, because a batch is a set of independent notes: one having moved on is
+not a reason to refuse the rest.
+
+### Retrying safely
+
+`request_key` makes a retry do the work once:
+
+```json
+{"request_key":"move-inbox-2026-08-07","operation":"move","...":"..."}
+```
+
+The key and the first run's outcomes are stored in the database, not in memory —
+a batch is retried exactly when something went wrong, and a process that
+restarted would otherwise have forgotten. A replay returns the first run's
+outcomes **verbatim**, with `"replayed": true`, rather than recomputing them
+against a library that has since moved on.
+
+A key reused with different arguments is refused with `400`. Answering it with
+the earlier, unrelated result would hide a client bug.
+
+Omitting `request_key` means no idempotency, which is honest rather than
+convenient: a caller who wants exactly-once has to ask for it.
+
+### What `duplicate` copies
+
+The body, the notebook, the tags, and the resource references — those are
+content-addressed, so sharing a blob is correct rather than wasteful. The title
+gains ` (copy)`.
+
+It does **not** copy external identity. A `document_sources` row says "this note
+*is* that imported note", and two notes claiming it would make re-import
+ambiguous and show up in lint as a duplicate source ID. Revision history is not
+copied either: a duplicate starts fresh rather than claiming edits that never
+happened to it.
+
 ## Running a note's query block
 
 A fenced ```` ```note-query ```` block in a note is evaluated by the service, not
