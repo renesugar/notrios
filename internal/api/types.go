@@ -271,6 +271,55 @@ type MoveDocumentRequest struct {
 	NotebookID string `json:"notebook_id"`
 }
 
+// TagRenameRequest renames a tag and, with include_children, everything under
+// it. `dry_run` is a pointer so an omitted field can default to true: a caller
+// that forgets it gets a report, not a change.
+type TagRenameRequest struct {
+	From            string `json:"from"`
+	To              string `json:"to"`
+	IncludeChildren bool   `json:"include_children,omitempty"`
+	DryRun          *bool  `json:"dry_run,omitempty"`
+}
+
+// TagRenameChange is one tag's outcome. `action` is "rename" or "merge".
+type TagRenameChange struct {
+	TagID           string `json:"tag_id"`
+	From            string `json:"from"`
+	To              string `json:"to"`
+	Action          string `json:"action"`
+	MergedIntoTagID string `json:"merged_into_tag_id,omitempty"`
+	Notes           int64  `json:"notes"`
+	NotesGained     int64  `json:"notes_gained"`
+}
+
+// TagRenameResult is reported identically for a dry run and an apply, because
+// the service produces both from the same statements.
+type TagRenameResult struct {
+	From            string            `json:"from"`
+	To              string            `json:"to"`
+	IncludeChildren bool              `json:"include_children"`
+	DryRun          bool              `json:"dry_run"`
+	Changes         []TagRenameChange `json:"changes"`
+	Notes           int64             `json:"notes"`
+	Warnings        []string          `json:"warnings"`
+}
+
+// NotebookDeletionPreview is what deleting a notebook would do. Deletion is
+// trash-first: no note is lost, but the subtree's notes move to the Trash and
+// are re-homed to `rehome_notebook_id` so a later restore has a destination.
+type NotebookDeletionPreview struct {
+	NotebookID       string   `json:"notebook_id"`
+	Name             string   `json:"name"`
+	Notebooks        int64    `json:"notebooks"`
+	DescendantNames  []string `json:"descendant_names"`
+	Truncated        bool     `json:"truncated"`
+	Notes            int64    `json:"notes"`
+	TrashedNotes     int64    `json:"trashed_notes"`
+	RehomeNotebookID string   `json:"rehome_notebook_id"`
+	Deletable        bool     `json:"deletable"`
+	Reason           string   `json:"reason,omitempty"`
+}
+
 type Document struct {
 	ID           string `json:"id"`
 	URI          string `json:"uri"`

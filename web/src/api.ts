@@ -512,3 +512,79 @@ export async function runNoteQuery(
   });
   return parseJSON<NoteQueryResult>(response);
 }
+
+// --- Trash-first deletion and organizer operations (v0.5 E8) -----------------
+//
+// Deleting a note in Notrios moves it to the Trash. That is a store rule, not a
+// client convention, and these calls are the GUI's way of reaching it — before
+// E8 the only way to undo a deletion was the CLI.
+
+/** Throws with the service's message for a non-2xx response with no body. */
+async function expectNoContent(response: Response): Promise<void> {
+  if (response.ok) return;
+  let message = `${response.status} ${response.statusText}`;
+  try {
+    const body = (await response.json()) as { error?: { message?: string } };
+    if (body.error?.message) message = body.error.message;
+  } catch {
+    // Keep the HTTP status message when the body is not JSON.
+  }
+  throw new Error(message);
+}
+
+/**
+ * Moves a note to the Trash. The base revision is a precondition: a note edited
+ * elsewhere since it was opened fails rather than being deleted out from under
+ * the other writer.
+ */
+export async function deleteDocument(documentID: string, baseRevisionID: string): Promise<void> {
+  const params = new URLSearchParams({ base_revision_id: baseRevisionID });
+  const response = await fetch(`/api/v1/documents/${encodeURIComponent(documentID)}?${params.toString()}`, { method: 'DELETE' });
+  await expectNoContent(response);
+}
+
+/** Brings a trashed note back, in the notebook it is currently assigned to. */
+export async function restoreTrashedDocument(documentID: string): Promise<DocumentRecord> {
+  const response = await fetch(`/api/v1/trash/${encodeURIComponent(documentID)}/restore`, { method: 'POST' });
+  return parseJSON<DocumentRecord>(response);
+}
+
+/**
+ * Permanently deletes a trashed note. The service requires a confirmation
+ * header naming the exact note, so a purge cannot be triggered by a stray
+ * request; the header is echoed here rather than invented, and the service is
+ * still the one that decides.
+ */
+export async function purgeDocument(documentID: string): Promise<void> {
+  const response = await fetch(`/api/v1/trash/${encodeURIComponent(documentID)}`, {
+    method: 'DELETE',
+    headers: { 'X-Notrios-Confirmation': `purge-document:${documentID}` },
+  });
+  await expectNoContent(response);
+}
+
+export interface NotebookDeletionPreview {
+  notebook_id: string;
+  name: string;
+  notebooks: number;
+  descendant_names: string[];
+  truncated?: boolean;
+  notes: number;
+  trashed_notes: number;
+  /** Where every note in the subtree ends up, so a later restore has a home. */
+  rehome_notebook_id: string;
+  deletable: boolean;
+  reason?: string;
+}
+
+/** What deleting a notebook would do, asked before asking the user. */
+export async function previewNotebookDeletion(notebookID: string): Promise<NotebookDeletionPreview> {
+  const response = await fetch(`/api/v1/notebooks/${encodeURIComponent(notebookID)}/deletion-preview`);
+  return parseJSON<NotebookDeletionPreview>(response);
+}
+
+/** Deletes a notebook and its descendants; their notes move to the Trash. */
+export async function deleteNotebook(notebookID: string): Promise<void> {
+  const response = await fetch(`/api/v1/notebooks/${encodeURIComponent(notebookID)}`, { method: 'DELETE' });
+  await expectNoContent(response);
+}

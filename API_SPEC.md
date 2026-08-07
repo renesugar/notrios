@@ -172,8 +172,14 @@ GET    /api/v1/documents/{document_id}/search-in?pattern=   # case-insensitive, 
 
 `PUT`, `PATCH`, `DELETE`, and revision restore require optimistic concurrency
 through `base_revision_id` or `If-Match`. `DELETE` means trash/soft-delete: the
-current row is hidden from normal reads/search, FTS is refreshed, and revisions
-remain available. The Trash route currently purges local-source notes; v0.7
+current row is hidden from search and from every write path, FTS is refreshed,
+and revisions remain available. `GET /api/v1/documents/{document_id}` is the
+one exception: it returns a trashed note with `deleted_at` set and
+`editable: false`, because the Trash is a list someone reads before deciding
+what to restore and a stable link resolving to `trashed` has to open something.
+Every other read (MCP `read_note`, search, links, remote-media scan) still stops
+at the Trash, so `is:trashed` remains a deliberate opt-in rather than a scope a
+caller falls into. The Trash route currently purges local-source notes; v0.7
 changes purge into a death-certificate operation whose payload collection is
 retention/acknowledgement gated.
 
@@ -486,7 +492,9 @@ GET    /api/v1/notebooks/{notebook_id}
 PATCH  /api/v1/notebooks/{notebook_id}        # rename (case-insensitive uniqueness), move, emoji
 DELETE /api/v1/notebooks/{notebook_id}        # refuses builtin search notebooks
 GET    /api/v1/notebooks/{notebook_id}/notes  # cursor-paged
+GET    /api/v1/notebooks/{notebook_id}/deletion-preview  # what deletion would do (v0.5 E8)
 GET    /api/v1/tags                           # with note counts
+POST   /api/v1/tags/rename                    # hierarchical rename; dry run by default (v0.5 E8)
 POST   /api/v1/documents/{document_id}/tags/{tag}
 DELETE /api/v1/documents/{document_id}/tags/{tag}
 POST   /api/v1/documents/{document_id}/notebook   # move note to notebook
@@ -500,6 +508,26 @@ DELETE /api/v1/search-notebooks/{id}              # refuses builtin rows
 ```
 
 Name conflicts return `409 name_conflict`; builtin protection (Help/default notebooks, "All notes"/"Trash" search notebooks, Help note moves, purging externally-sourced notes) returns `403 forbidden`. Permanent local-note purge also requires the object-specific confirmation header documented above. `POST /api/v1/documents` accepts `notebook_id` (defaults to the "Notes" notebook), and document responses include `notebook_id`.
+
+`POST /api/v1/tags/rename` renames a tag and, with `include_children`, every
+tag under `<from>/`. Hierarchy is matched by path segment, so `projects` is not
+a child of `project`. **`dry_run` defaults to `true`**: a request that omits the
+field reports and changes nothing, and only `"dry_run": false` writes. The
+report is not a prediction — the service runs the rename inside a transaction
+and rolls it back for a dry run, so a dry run and an apply cannot disagree.
+Renaming onto an existing name is a `merge`, reported per tag with `notes` (how
+many notes carried the source) and `notes_gained` (how many actually change).
+Saved searches mentioning the old name are reported in `warnings` and never
+rewritten, because a saved search is text the user wrote. Tags are relational,
+so a rename never edits a note body. The ceiling is
+`store.MaxTagRenameTags` (500) tags per rename, refused rather than truncated.
+
+`GET /api/v1/notebooks/{notebook_id}/deletion-preview` reports what deleting a
+notebook would do: the notebooks removed, the notes that would move to the
+Trash, the already-trashed notes affected, and `rehome_notebook_id` — the
+notebook the whole subtree is re-assigned to so a later restore has a
+destination. A protected notebook answers `200` with `deletable: false` and a
+`reason` rather than an error.
 
 Search notebooks are notebook rows with a `query` (see `NOTEBOOKS_AND_SEARCH_NOTEBOOKS.md`); deleting one never deletes notes. `notebook:` and other query operators are defined in `SEARCH_QUERY_LANGUAGE.md`; search endpoints accept the user query language and must support cursor-based incremental results so clients can lazily populate large views like "All notes".
 
@@ -516,6 +544,8 @@ The REST + MCP surface must be sufficient to build a full-featured third-party n
 | read note slices, in-note find, table of contents | `/lines`, `/search-in`, `/outline` |
 | append/prepend/string-replace edits | `/append`, `/prepend`, PATCH edits |
 | move note, tag/untag, trash/restore/purge | `/documents/{id}/notebook`, tags routes, trash routes |
+| hierarchical tag rename with a dry run | `/tags/rename` |
+| confirm a notebook deletion with real counts | `/notebooks/{id}/deletion-preview` |
 | resources/attachments | resources routes |
 | links/backlinks/graph | links + graph routes |
 

@@ -282,11 +282,35 @@ func TestDocumentUpdateRevisionConflictAndDeleteWithSQLiteStore(t *testing.T) {
 	if deleteRR.Code != http.StatusNoContent {
 		t.Fatalf("delete status=%d body=%s", deleteRR.Code, deleteRR.Body.String())
 	}
+	// A trashed note reads back, and reads back as trashed. It has to: the
+	// Trash is a list someone reads before deciding what to restore, and a
+	// stable link that resolves to `trashed` has to open something. The
+	// server-provided `editable` flag is what makes it read-only, not a 404.
 	getReq := httptest.NewRequest(http.MethodGet, "/api/v1/documents/"+created.ID, nil)
 	getRR := httptest.NewRecorder()
 	s.ServeHTTP(getRR, getReq)
-	if getRR.Code != http.StatusNotFound {
-		t.Fatalf("deleted document get should be 404, got %d", getRR.Code)
+	if getRR.Code != http.StatusOK {
+		t.Fatalf("trashed document get should be 200, got %d: %s", getRR.Code, getRR.Body.String())
+	}
+	var trashed api.Document
+	if err := json.NewDecoder(getRR.Body).Decode(&trashed); err != nil {
+		t.Fatalf("decode trashed document: %v", err)
+	}
+	if trashed.DeletedAt == "" || trashed.Editable {
+		t.Fatalf("a trashed note must report deleted_at and editable=false: %+v", trashed)
+	}
+
+	// It is still not editable, and it is still out of ordinary search scope.
+	editReq := httptest.NewRequest(http.MethodPut, "/api/v1/documents/"+created.ID, bytes.NewBufferString(updateBody))
+	editRR := httptest.NewRecorder()
+	s.ServeHTTP(editRR, editReq)
+	if editRR.Code == http.StatusOK {
+		t.Fatalf("a trashed note must not be editable, got %d", editRR.Code)
+	}
+	searchRR := httptest.NewRecorder()
+	s.ServeHTTP(searchRR, httptest.NewRequest(http.MethodGet, "/api/v1/search?q=", nil))
+	if strings.Contains(searchRR.Body.String(), created.ID) {
+		t.Fatalf("a trashed note must stay out of ordinary search: %s", searchRR.Body.String())
 	}
 }
 

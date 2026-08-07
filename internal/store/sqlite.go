@@ -698,11 +698,41 @@ func (s *SQLiteStore) GetDocument(ctx context.Context, id string) (Document, err
 	return s.getDocumentLocked(id)
 }
 
+// GetDocumentIncludingTrashed reads a note whether or not it is in the Trash.
+//
+// It exists because a trashed note has to be *readable* to be recoverable: the
+// Trash is a list of notes someone may want to look at before restoring one,
+// and a stable link that resolves to `trashed` has to open something. The
+// returned Document carries DeletedAt, which is what makes it read-only above
+// the store.
+//
+// Everything else keeps using GetDocument, which stops at the Trash. That is
+// the right default for every write path and for the agent-facing surfaces:
+// trashed notes are outside the ordinary query scope by design, and `is:trashed`
+// is a deliberate opt-in rather than something a caller falls into.
+func (s *SQLiteStore) GetDocumentIncludingTrashed(ctx context.Context, id string) (Document, error) {
+	ctx = contextOrBackground(ctx)
+	if err := ctx.Err(); err != nil {
+		return Document{}, err
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.readDocumentLocked(id, true)
+}
+
 func (s *SQLiteStore) getDocumentLocked(id string) (Document, error) {
+	return s.readDocumentLocked(id, false)
+}
+
+func (s *SQLiteStore) readDocumentLocked(id string, includeTrashed bool) (Document, error) {
+	trashFilter := ` AND d.deleted_at IS NULL`
+	if includeTrashed {
+		trashFilter = ""
+	}
 	stmt, err := s.prepareLocked(`SELECT d.id, d.collection_id, d.title, r.body, COALESCE(r.body_mime_type, d.body_mime_type), d.current_revision_id, d.created_at, d.updated_at, COALESCE(d.deleted_at, ''), COALESCE(d.notebook_id, '')
 		FROM documents d
 		JOIN document_revisions r ON r.id = d.current_revision_id
-		WHERE d.id = ? AND d.deleted_at IS NULL`)
+		WHERE d.id = ?` + trashFilter)
 	if err != nil {
 		return Document{}, err
 	}
@@ -729,6 +759,11 @@ func (s *SQLiteStore) getDocumentLocked(id string) (Document, error) {
 		CreatedAt:         createdAt,
 		UpdatedAt:         updatedAt,
 		NotebookID:        columnText(stmt, 9),
+	}
+	// DeletedAt is what makes a trashed note read-only above the store, so it
+	// has to survive the read. It is always empty on the non-trashed path.
+	if deleted := columnText(stmt, 8); deleted != "" {
+		doc.DeletedAt, _ = time.Parse(time.RFC3339Nano, sqliteTimeToRFC3339(deleted))
 	}
 	doc.URI = DocumentURI(doc.CollectionID, doc.ID)
 	return doc, nil

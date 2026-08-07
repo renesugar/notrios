@@ -794,6 +794,10 @@ type Store interface {
 	ListCollections(ctx context.Context) ([]Collection, error)
 	CreateDocument(ctx context.Context, req CreateDocumentRequest) (Document, error)
 	GetDocument(ctx context.Context, id string) (Document, error)
+	// GetDocumentIncludingTrashed reads a note whether or not it is trashed.
+	// A trashed note has to be readable to be recoverable; DeletedAt on the
+	// result is what makes it read-only above the store.
+	GetDocumentIncludingTrashed(ctx context.Context, id string) (Document, error)
 	UpdateDocument(ctx context.Context, req UpdateDocumentRequest) (Document, error)
 	DeleteDocument(ctx context.Context, req DeleteDocumentRequest) error
 	ListDocumentRevisions(ctx context.Context, documentID string) ([]DocumentRevision, error)
@@ -845,6 +849,8 @@ type Store interface {
 	RemoveDocumentTag(ctx context.Context, documentID, tagName string) error
 	ListDocumentTags(ctx context.Context, documentID string) ([]Tag, error)
 	ListTags(ctx context.Context) ([]Tag, error)
+	RenameTag(ctx context.Context, req TagRenameRequest) (TagRenameResult, error)
+	PreviewNotebookDeletion(ctx context.Context, id string) (NotebookDeletionPreview, error)
 
 	CreateSearchNotebook(ctx context.Context, req CreateSearchNotebookRequest) (SearchNotebook, error)
 	ListSearchNotebooks(ctx context.Context) ([]SearchNotebook, error)

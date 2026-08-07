@@ -51,6 +51,33 @@ Implementation notes (task R13 GUI-fix pass):
 - The four panes fill the window and scroll individually; the document body never scrolls. On a **window resize** the sidebar and search widths are kept and the space after them is re-split **equally** between the editor and the preview (they always come out the same width and height after a resize); splitter drags may then set individual sizes. Minimum pane widths give a minimum workspace width of ~966 px, below which every pane holds its minimum and the workspace scrolls horizontally.
 - Whether a note is editable is a **server-provided capability** (`editable` on documents and search hits — false for Help-notebook and trashed notes), never inferred from names in the client. Read-only notes render a visible badge, a read-only editor, and no save/title/upload affordances, while the preview still works.
 
+Trash-first deletion (implemented in v0.5 E8):
+
+- The editor toolbar offers **Move to Trash** on an editable note. It asks
+  first, and the question says what happens ("it stays in the Trash until you
+  restore it") rather than "are you sure". The delete carries the revision the
+  note was opened at, so a note edited elsewhere fails the precondition instead
+  of being deleted out from under the other writer.
+- A trashed note opens with an **In the Trash** badge and two offers: **Restore**
+  and **Delete forever**. It does not share the Help note's "read-only" badge —
+  both are uneditable, but only one can be brought back, and calling a trashed
+  note read-only would hide the one thing its reader can act on.
+- Deleting a note or restoring one updates the results list in place rather than
+  re-running the search, so the pane keeps its contents and scroll position.
+- Sidebar notebook rows carry a delete affordance, revealed on hover or focus,
+  and only where the service would allow it (never builtin or default
+  notebooks). Clicking it asks
+  `GET /api/v1/notebooks/{id}/deletion-preview` first and confirms with **that**
+  answer: how many notebooks go, that the notes are not deleted, and which
+  notebook they are re-homed to so a later restore has a destination. The
+  re-homing rule is a store rule the GUI surfaces, not one it invents.
+- Opening a trashed note works because `GET /api/v1/documents/{id}` returns one,
+  with `deleted_at` set and `editable: false`. Before E8 it returned 404, which
+  made the Trash unusable and left the `trashed` branch in stable-link routing
+  dead. The remote-media scan is skipped for a trashed note: localization writes
+  a revision it cannot take.
+- Tag rename has no GUI surface; v0.5 E8 scoped it to Store/REST/CLI.
+
 ## Themes (implemented, task R14)
 
 - A light/dark toggle (🌙/☀️) sits on the main window header; the mode persists.

@@ -9,6 +9,8 @@ import 'md-editor-rt/lib/style.css';
 import {
   attachResource,
   createDocument,
+  deleteDocument,
+  deleteNotebook,
   getDocument,
   getNotebookTree,
   getStatus,
@@ -17,7 +19,10 @@ import {
   listSearchNotebooks,
   listTags,
   localizeRemoteMedia,
+  previewNotebookDeletion,
+  purgeDocument,
   resolveStableLink,
+  restoreTrashedDocument,
   scanRemoteMedia,
   updateDocument,
   uploadResource,
@@ -46,7 +51,8 @@ import {
   type ThemeMode,
   type ThemeTokens,
 } from './themes';
-import { composeSidebar } from './sidebar';
+import { composeSidebar, type SidebarRow } from './sidebar';
+import { notebookDeletionPrompt, notebookName } from './organizer';
 import {
   clampWidths,
   DEFAULT_WIDTHS,
@@ -226,15 +232,26 @@ export function App() {
   }, [status]);
 
   const editable = selectedDocument ? selectedDocument.editable !== false : true;
+  // Trashed is not the same as uneditable: a Help note is permanently
+  // read-only, a trashed note is one click from being editable again.
+  const trashed = Boolean(selectedDocument?.deleted_at);
 
   // ----- Document operations -----
-  async function refreshDocumentSidebars(documentID: string) {
+  async function refreshDocumentSidebars(documentID: string, isTrashed = false) {
     const [resourcePage, linkPage] = await Promise.all([listDocumentResources(documentID), listDocumentLinks(documentID, 'both')]);
     setResources(resourcePage.resources);
     setLinks(linkPage.outgoing ?? []);
     setBacklinks(linkPage.incoming ?? []);
     // Remote-media policy scan (server-side, static — nothing downloaded);
     // best-effort: a scan failure never blocks opening the note.
+    //
+    // Skipped for a trashed note: localizing media writes a revision, which a
+    // trashed note cannot take, so the scan would only ever produce an offer
+    // that must be refused — and the service declines to scan one anyway.
+    if (isTrashed) {
+      setRemoteMedia([]);
+      return;
+    }
     try {
       const scan = await scanRemoteMedia(documentID);
       setRemoteMedia(scan.media ?? []);
@@ -252,7 +269,7 @@ export function App() {
       setSelectedDocument(documentRecord);
       setTitle(documentRecord.title);
       setBody(documentRecord.body ?? '');
-      await refreshDocumentSidebars(documentRecord.id);
+      await refreshDocumentSidebars(documentRecord.id, Boolean(documentRecord.deleted_at));
     } catch (err) {
       setError(errorMessage(err));
     } finally {
@@ -379,6 +396,117 @@ export function App() {
       // The note body (and revision) changed; reload it, which also
       // refreshes the remote-media scan.
       await openDocumentByID(selectedDocument.id);
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // ----- Trash-first deletion and restore -----
+  //
+  // Deleting a note moves it to the Trash; that is the store's rule, and these
+  // handlers are what makes it reachable without the CLI. Every irreversible
+  // step asks first, and the question says what actually happens rather than
+  // "are you sure": the difference between "moves to the Trash" and "cannot be
+  // undone" is the only thing worth confirming.
+
+  async function onDeleteDocument() {
+    if (!selectedDocument || !editable) return;
+    if (!window.confirm(`Move “${selectedDocument.title}” to the Trash?\n\nIt stays in the Trash until you restore it or delete it permanently.`)) return;
+    setBusy(true);
+    setError(null);
+    setMessage(null);
+    const { id, title: deletedTitle } = selectedDocument;
+    try {
+      await deleteDocument(id, selectedDocument.current_revision_id);
+      paged.removeHit(id);
+      resetEditor();
+      setMessage(`Moved “${deletedTitle}” to the Trash.`);
+      void refreshSidebar();
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onRestoreDocument() {
+    if (!selectedDocument) return;
+    setBusy(true);
+    setError(null);
+    setMessage(null);
+    try {
+      const restored = await restoreTrashedDocument(selectedDocument.id);
+      setSelectedDocument(restored);
+      setTitle(restored.title);
+      setBody(restored.body ?? '');
+      await refreshDocumentSidebars(restored.id);
+      // It was listed because it was trashed; it no longer is. The list is not
+      // re-run, so the note the user is now editing stays on screen.
+      paged.removeHit(restored.id);
+      setMessage(`Restored “${restored.title}”.`);
+      void refreshSidebar();
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onPurgeDocument() {
+    if (!selectedDocument) return;
+    if (!window.confirm(`Permanently delete “${selectedDocument.title}”?\n\nThe note and every revision of it are removed. This cannot be undone.`)) return;
+    setBusy(true);
+    setError(null);
+    setMessage(null);
+    const { id, title: purgedTitle } = selectedDocument;
+    try {
+      await purgeDocument(id);
+      paged.removeHit(id);
+      resetEditor();
+      setMessage(`Permanently deleted “${purgedTitle}”.`);
+      void refreshSidebar();
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // Deleting a notebook is trash-first too, and what it does to the notes
+  // inside it is not guessable from a dialog that only says "delete?". The
+  // service is asked what would happen and the answer is what gets confirmed.
+  async function onDeleteNotebookRow(row: SidebarRow) {
+    setBusy(true);
+    setError(null);
+    setMessage(null);
+    try {
+      const preview = await previewNotebookDeletion(row.id);
+      if (!preview.deletable) {
+        setError(`“${preview.name}” cannot be deleted: ${preview.reason ?? 'it is protected'}.`);
+        return;
+      }
+      if (!window.confirm(notebookDeletionPrompt(preview, notebookName(notebooks, preview.rehome_notebook_id)))) return;
+      await deleteNotebook(row.id);
+      setMessage(
+        preview.notes > 0
+          ? `Deleted “${preview.name}”. ${preview.notes} note(s) moved to the Trash.`
+          : `Deleted “${preview.name}”.`,
+      );
+      await refreshSidebar();
+      // The results and the open note may both have come from a notebook that
+      // no longer exists, so re-run the search and re-read the note rather than
+      // leaving rows that point at nothing.
+      if (activeQuery === row.query) {
+        runSearch('');
+      } else if (activeQuery !== '') {
+        void paged.start(activeQuery);
+      }
+      if (selectedDocument) {
+        const current = await getDocument(selectedDocument.id).catch(() => null);
+        if (current) setSelectedDocument(current);
+      }
     } catch (err) {
       setError(errorMessage(err));
     } finally {
@@ -516,7 +644,13 @@ export function App() {
       )}
 
       <div className="workspace" ref={workspaceRef} data-testid="workspace">
-        <SidebarPane rows={sidebarRows} tags={tags} activeQuery={activeQuery} onSelectQuery={runSearch} />
+        <SidebarPane
+          rows={sidebarRows}
+          tags={tags}
+          activeQuery={activeQuery}
+          onSelectQuery={runSearch}
+          onDeleteNotebook={(row) => void onDeleteNotebookRow(row)}
+        />
         <PaneSplitter
           label="Resize sidebar"
           value={clamped.sidebar}
@@ -559,6 +693,10 @@ export function App() {
           remoteMedia={remoteMedia}
           onLocalizeRemoteMedia={() => void onLocalizeRemoteMedia()}
           onOpenDocument={(id) => void openDocumentByID(id)}
+          trashed={trashed}
+          onDelete={() => void onDeleteDocument()}
+          onRestore={() => void onRestoreDocument()}
+          onPurge={() => void onPurgeDocument()}
         />
         <PaneSplitter
           label="Resize editor"

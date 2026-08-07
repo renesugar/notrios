@@ -1,23 +1,25 @@
 // Sidebar pane: search notebooks and the notebook tree (composed with the
 // deterministic ordering in sidebar.ts) above the tag list with counts.
 import type { TagRecord } from '../api';
-import type { SidebarRow } from '../sidebar';
+import { isDeletableNotebookRow, type SidebarRow } from '../sidebar';
 
 export interface SidebarPaneProps {
   rows: SidebarRow[];
   tags: TagRecord[];
   activeQuery: string;
   onSelectQuery: (query: string) => void;
+  /** Delete a notebook; the caller previews and confirms before doing it. */
+  onDeleteNotebook: (row: SidebarRow) => void;
 }
 
-export function SidebarPane({ rows, tags, activeQuery, onSelectQuery }: SidebarPaneProps) {
+export function SidebarPane({ rows, tags, activeQuery, onSelectQuery, onDeleteNotebook }: SidebarPaneProps) {
   return (
     <nav className="pane sidebar-pane" aria-label="Notebooks and tags" data-testid="pane-sidebar">
       <div className="pane-scroll">
         <h3>Notebooks</h3>
         <ul className="sidebar-list">
           {rows.map((row) => (
-            <li key={row.id}>
+            <li key={row.id} className="sidebar-row">
               <button
                 type="button"
                 className={activeQuery === row.query ? 'sidebar-item active' : 'sidebar-item'}
@@ -31,6 +33,18 @@ export function SidebarPane({ rows, tags, activeQuery, onSelectQuery }: SidebarP
                   {row.label}
                 </span>
               </button>
+              {isDeletableNotebookRow(row) && (
+                <button
+                  type="button"
+                  className="sidebar-action"
+                  data-testid={`sidebar-delete-${row.id}`}
+                  title={`Delete the notebook “${row.label}”`}
+                  aria-label={`Delete the notebook ${row.label}`}
+                  onClick={() => onDeleteNotebook(row)}
+                >
+                  🗑
+                </button>
+              )}
             </li>
           ))}
         </ul>

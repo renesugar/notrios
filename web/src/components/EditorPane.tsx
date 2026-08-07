@@ -63,6 +63,14 @@ export interface EditorPaneProps {
   /** Localize policy-allowed remote media into local resources. */
   onLocalizeRemoteMedia: () => void;
   onOpenDocument: (documentID: string) => void;
+  /** Server-reported: this note is in the Trash, not merely uneditable. */
+  trashed: boolean;
+  /** Move the open note to the Trash. */
+  onDelete: () => void;
+  /** Bring the open trashed note back. */
+  onRestore: () => void;
+  /** Permanently delete the open trashed note. */
+  onPurge: () => void;
 }
 
 export function EditorPane(props: EditorPaneProps) {
@@ -85,6 +93,10 @@ export function EditorPane(props: EditorPaneProps) {
     remoteMedia,
     onLocalizeRemoteMedia,
     onOpenDocument,
+    trashed,
+    onDelete,
+    onRestore,
+    onPurge,
   } = props;
 
   const editorRef = useRef<ExposeParam>(null);
@@ -143,7 +155,15 @@ export function EditorPane(props: EditorPaneProps) {
           aria-label="Note title"
           disabled={!editable}
         />
-        {!editable && (
+        {/* A trashed note is uneditable for a different reason than a Help
+            note, and saying "read-only" would hide the one thing the reader
+            can act on: it is recoverable. */}
+        {trashed && (
+          <span className="readonly-badge trashed-badge" data-testid="trashed-badge" role="status">
+            In the Trash
+          </span>
+        )}
+        {!editable && !trashed && (
           <span className="readonly-badge" data-testid="readonly-badge" role="status">
             Read-only Help note
           </span>
@@ -157,6 +177,21 @@ export function EditorPane(props: EditorPaneProps) {
           <button type="button" onClick={onNewNote}>
             New note
           </button>
+        )}
+        {selectedDocument && editable && (
+          <button type="button" className="danger-button" disabled={busy} onClick={onDelete} data-testid="delete-button" title="Move this note to the Trash; it can be restored from there">
+            Move to Trash
+          </button>
+        )}
+        {trashed && (
+          <>
+            <button type="button" disabled={busy} onClick={onRestore} data-testid="restore-button">
+              Restore
+            </button>
+            <button type="button" className="danger-button" disabled={busy} onClick={onPurge} data-testid="purge-button" title="Permanently delete this note and its revisions">
+              Delete forever
+            </button>
+          </>
         )}
       </div>
 

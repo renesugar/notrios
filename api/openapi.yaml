@@ -169,11 +169,16 @@ paths:
   /api/v1/documents/{document_id}:
     get:
       summary: Get document
+      description: >
+        Returns a trashed note too, with deleted_at set and editable=false —
+        the Trash is a list someone reads before deciding what to restore, and
+        a stable link resolving to `trashed` has to open something. Every other
+        read and every write still stops at the Trash.
       parameters:
         - $ref: '#/components/parameters/DocumentID'
       responses:
         '200':
-          description: Document
+          description: Document (possibly trashed; check deleted_at/editable)
           content:
             application/json:
               schema:
@@ -624,11 +629,42 @@ paths:
                 $ref: '#/components/schemas/DocumentPage'
         '400':
           $ref: '#/components/responses/Error'
+  /api/v1/notebooks/{notebook_id}/deletion-preview:
+    get:
+      summary: What deleting a notebook would do, without doing it
+      description: >
+        Read-only. Reports the notebooks that would be removed, the notes that
+        would move to the Trash, and the notebook they would be re-homed to so
+        a later restore has a destination. A protected notebook answers with
+        deletable=false and a reason rather than an error, because "what would
+        happen" has an answer even when the answer is "nothing".
+      parameters:
+        - { name: notebook_id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Deletion preview }
+        '404': { description: No such notebook }
   /api/v1/tags:
     get:
       summary: List tags with live note counts
       responses:
         '200': { description: Tags }
+  /api/v1/tags/rename:
+    post:
+      summary: Rename a tag hierarchy, dry run by default
+      description: >
+        Renames a tag and, with include_children, every tag under `<from>/`.
+        `dry_run` defaults to **true**: a request that omits it gets the report
+        and changes nothing. The report is not a prediction — the service runs
+        the rename inside a transaction and rolls it back for a dry run, so a
+        dry run and an apply cannot disagree. Renaming onto an existing name
+        merges into it, and the report says which changes are merges and how
+        many notes each one actually alters. Saved searches that mention the
+        old name are reported as warnings and never rewritten.
+      responses:
+        '200': { description: Rename report (dry run or applied) }
+        '400': { description: Invalid destination name, or over the tag ceiling }
+        '404': { description: No tag with that name }
+        '409': { description: Destination name conflict }
   /api/v1/documents/{document_id}/tags:
     get:
       summary: List one document's tags

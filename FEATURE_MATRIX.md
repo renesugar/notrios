@@ -18,7 +18,7 @@ This matrix keeps the long conversation compressed into implementation-sized fea
 | SQLite FTS5 immediate search | Implemented | Notrios service | Always-on baseline. |
 | Content-addressed blobs | Implemented | resource service | Exact-byte dedupe and H5 reference reports; H6 adds GC. |
 | Resource reference reporting/GC | Implemented | resource service | H5 reports plus H6 dry-run-first retention, transactional rechecks, and sync-aware gate. |
-| Document revisions and trash | Implemented | document service | v0.7 adds replicated death certificates/GC acknowledgements. |
+| Document revisions and trash | Implemented | document service | v0.5 E8 made deletion and restore reachable from the GUI; v0.7 adds replicated death certificates/GC acknowledgements. |
 | Scalable keyset cursors | Implemented | search service | `k2` chronological/relevance keysets plus explicit bounded `m1` sidecar snapshots; no unbounded offset ceiling. |
 | Recoll sidecar (replaces sist2) | Implemented | adapter | Optional external process; bounded retry, exact reconciliation, attributed stable merges, and status/UI telemetry. |
 | Notebooks/tags/search notebooks | Implemented | Notrios service | All notes/Notes/Help/Trash bootstrap and protections. |
@@ -108,7 +108,8 @@ This matrix keeps the long conversation compressed into implementation-sized fea
 | Workspace lint | Implemented | maintenance service | Eleven read-only checks through `notriosctl lint` and `GET /api/v1/admin/lint/report`; complete counts with capped examples, a library-wide digest, and content-free findings. |
 | Workspace fix | Implemented | maintenance service | `notriosctl fix`, dry-run first, single-note and revision-preconditioned, every fix an ordinary revision. Repairs non-canonical link targets by default; alt text and remote-media localization are opt-in. Everything else stays reported. |
 | Outline API | Implemented | document parser | Headings/line anchors; v0.5 E1 adds the block model underneath. |
-| Hierarchical tag rename | Planned v0.5 | maintenance service | Dry-run first. |
+| Hierarchical tag rename | Implemented | maintenance service | v0.5 E8: `store.RenameTag`, `POST /api/v1/tags/rename`, `notriosctl tags rename`. Dry run defaults to true, and it is a rolled-back apply rather than a prediction — the real statements run inside a transaction. Hierarchy matches by path segment (`projects` is not a child of `project`); renaming onto an existing name merges and reports it; saved searches mentioning the old name are warned about, never rewritten. Bounded at 500 tags, refused rather than truncated. No GUI surface. |
+| Trash-first delete/restore in the GUI | Implemented | UI | v0.5 E8: Move to Trash, Restore, and Delete forever in the editor pane, with a badge that distinguishes a trashed note from a permanently read-only one. Notebook deletion confirms with `GET /api/v1/notebooks/{id}/deletion-preview` — the service's counts and its re-homing rule — rather than a generic confirmation. |
 | Link reference definitions | External integration | movenotes-v3 | Generated in downstream portable Markdown projection. |
 
 ## Versioning and sync

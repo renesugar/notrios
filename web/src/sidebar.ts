@@ -15,8 +15,21 @@
 import type { NotebookTreeNode, SearchNotebook } from './api';
 
 export const HELP_NOTEBOOK_ID = 'nb_help';
+export const DEFAULT_NOTEBOOK_ID = 'nb_notes';
 export const ALL_NOTES_SEARCH_ID = 'snb_all_notes';
 export const TRASH_SEARCH_ID = 'snb_trash';
+
+/**
+ * Whether a sidebar row offers a delete affordance.
+ *
+ * The service refuses to delete builtin notebooks and the default one, and a
+ * button that always fails is worse than no button. This mirrors that rule
+ * rather than replacing it: the service is still the authority, and a delete
+ * that gets through here is still checked there.
+ */
+export function isDeletableNotebookRow(row: SidebarRow): boolean {
+  return row.kind === 'notebook' && !row.builtin && row.id !== DEFAULT_NOTEBOOK_ID;
+}
 
 export interface SidebarRow {
   /** Stable row identity for selection/active tracking. */

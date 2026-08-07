@@ -103,6 +103,57 @@ RESOURCE_ID=$(python3 -c 'import json,sys; print(json.load(sys.stdin)["id"])' <<
 curl -fsS -X POST "$BASE/api/v1/documents/$DOC_ID/resources/$RESOURCE_ID" >/dev/null
 curl -fsS "$BASE/api/v1/resources/$RESOURCE_ID/content?download=1" | grep -q 'smoke resource content'
 
+# --- Organizer surface (v0.5 E8) --------------------------------------------
+# Tag rename with its dry run, and the trash-first delete/restore/purge cycle,
+# against a real server rather than only in unit tests.
+
+curl -fsS -X POST "$BASE/api/v1/documents/$DOC_ID/tags/project" >/dev/null
+curl -fsS -X POST "$BASE/api/v1/documents/$DOC_ID/tags/project%2Falpha" >/dev/null
+
+# An omitted dry_run must default to true: it reports and changes nothing.
+RENAME_RESP=$(curl -fsS -H 'Content-Type: application/json' \
+  --data-binary '{"from":"project","to":"work","include_children":true}' "$BASE/api/v1/tags/rename")
+python3 -c 'import json,sys; r=json.load(sys.stdin); assert r["dry_run"] is True, r; assert len(r["changes"]) == 2, r' <<<"$RENAME_RESP"
+curl -fsS "$BASE/api/v1/tags" | grep -q '"name":"project"'
+
+curl -fsS -H 'Content-Type: application/json' \
+  --data-binary '{"from":"project","to":"work","include_children":true,"dry_run":false}' "$BASE/api/v1/tags/rename" >/dev/null
+TAGS_RESP=$(curl -fsS "$BASE/api/v1/tags")
+python3 -c 'import json,sys; names=sorted(t["name"] for t in json.load(sys.stdin)["tags"]); assert names == ["work","work/alpha"], names' <<<"$TAGS_RESP"
+
+# A notebook deletion preview is read-only and reports the re-homing rule.
+NB_RESP=$(curl -fsS -H 'Content-Type: application/json' --data-binary '{"name":"Smoke Notebook"}' "$BASE/api/v1/notebooks")
+NB_ID=$(python3 -c 'import json,sys; print(json.load(sys.stdin)["id"])' <<<"$NB_RESP")
+PREVIEW_RESP=$(curl -fsS "$BASE/api/v1/notebooks/$NB_ID/deletion-preview")
+python3 -c 'import json,sys; p=json.load(sys.stdin); assert p["deletable"] is True, p; assert p["rehome_notebook_id"] == "nb_notes", p' <<<"$PREVIEW_RESP"
+curl -fsS "$BASE/api/v1/notebooks/$NB_ID" >/dev/null   # the preview deleted nothing
+curl -fsS -X DELETE "$BASE/api/v1/notebooks/$NB_ID" >/dev/null
+
+# Delete is trash-first, and restore brings the note back.
+CURRENT_REV=$(curl -fsS "$BASE/api/v1/documents/$DOC_ID" | python3 -c 'import json,sys; print(json.load(sys.stdin)["current_revision_id"])')
+curl -fsS -X DELETE "$BASE/api/v1/documents/$DOC_ID?base_revision_id=$CURRENT_REV" >/dev/null
+curl -fsS "$BASE/api/v1/trash" | grep -q "$DOC_ID"
+# A trashed note reads back as trashed rather than 404-ing; that is what makes
+# it reviewable before a restore.
+python3 -c 'import json,sys; d=json.load(sys.stdin); assert d["deleted_at"], d; assert d["editable"] is False, d' \
+  <<<"$(curl -fsS "$BASE/api/v1/documents/$DOC_ID")"
+curl -fsS -X POST "$BASE/api/v1/trash/$DOC_ID/restore" >/dev/null
+python3 -c 'import json,sys; d=json.load(sys.stdin); assert d["editable"] is True, d; assert not d.get("deleted_at"), d' \
+  <<<"$(curl -fsS "$BASE/api/v1/documents/$DOC_ID")"
+
+# Purge requires the object-specific confirmation header.
+CURRENT_REV=$(curl -fsS "$BASE/api/v1/documents/$DOC_ID" | python3 -c 'import json,sys; print(json.load(sys.stdin)["current_revision_id"])')
+curl -fsS -X DELETE "$BASE/api/v1/documents/$DOC_ID?base_revision_id=$CURRENT_REV" >/dev/null
+if curl -fsS -X DELETE "$BASE/api/v1/trash/$DOC_ID" >/dev/null 2>&1; then
+  echo "purge succeeded without the confirmation header" >&2
+  exit 1
+fi
+curl -fsS -X DELETE -H "X-Notrios-Confirmation: purge-document:$DOC_ID" "$BASE/api/v1/trash/$DOC_ID" >/dev/null
+if curl -fsS "$BASE/api/v1/documents/$DOC_ID" >/dev/null 2>&1; then
+  echo "purged note is still readable" >&2
+  exit 1
+fi
+
 MCP_RESP=$(curl -fsS -H 'Content-Type: application/json' --data-binary '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' "$BASE/mcp")
 python3 -c 'import json,sys; resp=json.load(sys.stdin); tools=[tool["name"] for tool in resp["result"]["tools"]]; assert "search_documents" in tools, tools' <<<"$MCP_RESP"
 

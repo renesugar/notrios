@@ -19,6 +19,8 @@ export interface PagedSearch {
   patchHit: (id: string, patch: Partial<SearchHit>) => void;
   /** Insert a hit at the top if it is not already present. */
   prependHit: (hit: SearchHit) => void;
+  /** Drop a hit that no longer belongs in these results (trashed, purged). */
+  removeHit: (id: string) => void;
 }
 
 function dedupe(existing: SearchHit[], incoming: SearchHit[]): SearchHit[] {
@@ -106,5 +108,13 @@ export function usePagedSearch(pageSize = 25): PagedSearch {
     setHits((previous) => (previous.some((existing) => existing.id === hit.id) ? previous : [hit, ...previous]));
   }, []);
 
-  return { hits, loading, exhausted, started, error, start, loadMore, patchHit, prependHit };
+  // Removing a hit deliberately does not backfill from the cursor: the list
+  // would then contain a row from a page the user never scrolled to, and the
+  // next loadMore would be reading from a cursor that no longer lines up with
+  // what is on screen.
+  const removeHit = useCallback((id: string) => {
+    setHits((previous) => previous.filter((hit) => hit.id !== id));
+  }, []);
+
+  return { hits, loading, exhausted, started, error, start, loadMore, patchHit, prependHit, removeHit };
 }

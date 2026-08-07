@@ -8,8 +8,9 @@ anchors), E1a (heading anchors in stable links), E1b (scheme-scoped anchor
 decoding), E2 (workspace lint), E3 (workspace fix), E4 (bounded graph
 traversal, shortest paths, and the orphan/hub report), E5 (editor link
 intelligence), E6 (the CodeMirror decision: stay), and E6a (offline-first
-frontend assets), E6b (HTML table paste normalization), and E7 (embedded query
-blocks) are complete; E8–E9 require user approval.
+frontend assets), E6b (HTML table paste normalization), E7 (embedded query
+blocks), and E8 (organizer UX: trash-first delete/restore in the GUI plus
+hierarchical tag rename) are complete; E9 requires user approval.
 
 Milestone detail follows. H1–H11 are archived under `plans/v0.3/`. The v0.4
 slices are archived under `plans/v0.4/`:
@@ -265,5 +266,13 @@ The scaffold was created in a restricted container. Still-open consequences:
     `error` so the note still renders. `SearchRequest` gained an explicit `Sort`
     because the order used to be implied by the query's shape. A publication
     carries the block's text, never a materialized result — asserted by test.
+17. E8 puts trash-first deletion in the GUI — Move to Trash, Restore, Delete
+    forever — and confirms a notebook deletion with the service's own
+    `GET /api/v1/notebooks/{id}/deletion-preview`, including the re-homing rule
+    that gives a later restore somewhere to land. `store.RenameTag`,
+    `POST /api/v1/tags/rename`, and `notriosctl tags rename` add hierarchical
+    tag rename whose **dry run is a rolled-back apply**: the real statements run
+    inside a transaction, so a dry run and an apply cannot disagree. Dry run is
+    the default on both surfaces. Bulk organizer operations remain v0.6.
 
 (The formerly open "no browser testing" limitation is resolved: the GUI is browser-verified via Playwright, vitest/RTL covers the workspace, and `scripts/verify_layout_resize.py` covers native window resizing.)

@@ -147,7 +147,9 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("PATCH /api/v1/notebooks/{notebook_id}", s.handleNotebook)
 	s.mux.HandleFunc("DELETE /api/v1/notebooks/{notebook_id}", s.handleNotebook)
 	s.mux.HandleFunc("GET /api/v1/notebooks/{notebook_id}/notes", s.handleNotebookNotes)
+	s.mux.HandleFunc("GET /api/v1/notebooks/{notebook_id}/deletion-preview", s.handleNotebookDeletionPreview)
 	s.mux.HandleFunc("GET /api/v1/tags", s.handleListTags)
+	s.mux.HandleFunc("POST /api/v1/tags/rename", s.handleRenameTag)
 	s.mux.HandleFunc("GET /api/v1/documents/{document_id}/tags", s.handleDocumentTags)
 	s.mux.HandleFunc("POST /api/v1/documents/{document_id}/tags/{tag}", s.handleDocumentTag)
 	s.mux.HandleFunc("DELETE /api/v1/documents/{document_id}/tags/{tag}", s.handleDocumentTag)
@@ -515,7 +517,12 @@ func (s *Server) handleGetDocument(w http.ResponseWriter, r *http.Request, docID
 		writeJSON(w, http.StatusOK, placeholderDocument(docID))
 		return
 	}
-	doc, err := s.store.GetDocument(r.Context(), docID)
+	// A trashed note is readable here, and comes back with `deleted_at` set
+	// and `editable: false`. It has to be: the Trash is a list someone reads
+	// before deciding what to restore, and a stable link resolving to
+	// `trashed` has to open something. Every write path still stops at the
+	// Trash, and the agent-facing surfaces keep the plain GetDocument.
+	doc, err := s.store.GetDocumentIncludingTrashed(r.Context(), docID)
 	if writeStoreError(w, err, "document_read_failed") {
 		return
 	}

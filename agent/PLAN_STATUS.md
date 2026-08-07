@@ -13,7 +13,7 @@ added v16 title/filename indexes).
 
 `PLAN.md` holds the **v0.5 plan** (blocks, lint/fix, graph traversal, editor
 link intelligence, query blocks, organizer UX). **E1, E1a, E1b, E2, E3, E4, E5,
-E6, E6a, E6b, and E7 are complete**; E8–E9 require user approval. Two v0.5 decisions are settled and recorded as
+E6, E6a, E6b, E7, and E8 are complete**; E9 requires user approval. Two v0.5 decisions are settled and recorded as
 `PROJECT_DECISIONS.md` 17 and 18: block identity is strictly content-based, and
 lint/fix stays single-note and revision-preconditioned with anything bulk left
 to the v0.6 organizer.
@@ -209,6 +209,69 @@ to the v0.6 organizer.
 - Export deduplication became symmetric across layouts through the same bounded
   spool, and `record_counts` became a pointer so `omitempty` actually applies —
   which cut packed verify peak RSS 41% and runtime 31%.
+
+## 2026-08-06 E8 — organizer UX: trash-first delete, restore, tag rename
+
+- The GUI reaches the store's trash-first rule directly. The editor toolbar
+  offers **Move to Trash** on an editable note; a trashed note opens with an
+  "In the Trash" badge plus **Restore** and **Delete forever**. Before E8 the
+  only way to undo a deletion was the CLI.
+- **A trashed note does not share the Help note's badge.** Both are uneditable,
+  but only one can be brought back, and "read-only" would hide exactly that.
+- Deleting carries the revision the note was opened at, so a note edited
+  elsewhere fails the precondition rather than being deleted out from under the
+  other writer. A failed precondition is reported and the note stays open.
+- Sidebar notebook rows carry a delete affordance, and only where the service
+  would allow it. Clicking it asks the new read-only
+  `GET /api/v1/notebooks/{id}/deletion-preview` and confirms with **that**
+  answer: notebooks removed, notes that move to the Trash, and the notebook they
+  are re-homed to so a later restore has a destination. A protected notebook
+  previews as `deletable: false` with a reason rather than erroring — "what
+  would happen" has an answer even when the answer is "nothing".
+- **A dry run is a rolled-back apply, not a prediction.** `store.RenameTag`
+  opens one transaction, runs the real statements, and rolls back when
+  `dry_run` is set. Hierarchical renames cascade (renaming a child up onto its
+  parent's name; renaming onto an occupied name merges), and cascading is where
+  a separate predictor and applier drift apart.
+- `dry_run` defaults to **true** on REST and CLI; only `"dry_run": false` /
+  `--apply` writes. The CLI additionally exits 1 when a dry run's plan contains
+  a merge, so a script that meant to rename does not silently combine two
+  hierarchies.
+- Hierarchy is matched by **path segment**, so `projects` is not a child of
+  `project`, and folding is ASCII-only to match SQLite's `NOCASE` — which owns
+  the unique index on tag names. A Unicode-aware fold would sweep up tags the
+  database considers distinct.
+- Renaming a tag into its own subtree is refused (the result would depend on row
+  order); the remaining order-sensitive case is handled by processing
+  shallowest-first, which frees the shallower name before the deeper tag needs
+  it.
+- A rename never rewrites note bodies (tags are relational) and never rewrites
+  saved searches — it names them in `warnings`, because guessing which
+  occurrences of a word are the tag silently changes what a search means.
+- A rename enqueues projection upserts for every affected note, since the
+  projection carries a note's tags and nothing else in the transaction would.
+  A test asserts a dry run's rollback takes those outbox rows with it.
+- The ceiling is 500 tags per rename, **refused rather than truncated**: a
+  half-renamed hierarchy is worse than no rename.
+- **Browser verification found a pre-existing defect**: `GET /api/v1/documents/{id}`
+  returned 404 for a trashed note, so clicking a Trash row opened nothing. The
+  codebase already disagreed with itself — `api.Document.Editable` is documented
+  as false for trashed notes, `toAPIDocument` computes `deleted_at`, and
+  `openStableLink` has a `trashed` branch that calls the document read — all of
+  it dead. `store.GetDocumentIncludingTrashed` is a second, explicitly-named read
+  used by exactly one caller (the REST document GET); `GetDocument` is unchanged,
+  so writes and agent-facing reads still stop at the Trash. The read also had to
+  start populating `DeletedAt`, which it selected and discarded. An existing test
+  asserting the 404 now asserts the new contract plus the parts that must not
+  change: still unwritable, still out of ordinary search.
+- The client also stopped scanning remote media for a trashed note: localizing
+  writes a revision a trashed note cannot take, so the scan could only produce an
+  offer that must be refused.
+- Out of scope and recorded as such: a GUI tag rename (E8 scoped rename to
+  Store/REST/CLI), all bulk organizer operations (v0.6), and a projection
+  enqueue on `AddDocumentTag`/`RemoveDocumentTag` — a pre-existing gap noted
+  rather than widened, since adding one would put an outbox row per tag into
+  every import.
 
 ## 2026-08-06 E7 — embedded query blocks
 

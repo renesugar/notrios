@@ -51,6 +51,10 @@ function renderPane(overrides: Partial<EditorPaneProps>) {
     remoteMedia: [],
     onLocalizeRemoteMedia: vi.fn(),
     onOpenDocument: vi.fn(),
+    trashed: false,
+    onDelete: vi.fn(),
+    onRestore: vi.fn(),
+    onPurge: vi.fn(),
     ...overrides,
   };
   return render(<EditorPane {...props} />);

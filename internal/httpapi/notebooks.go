@@ -227,6 +227,81 @@ func (s *Server) handleDocumentTag(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// handleRenameTag renames a tag hierarchy.
+//
+// `dry_run` defaults to **true**. A caller who forgets the field gets the
+// report, and the only way to change the library is to say so. That asymmetry
+// is deliberate: a rename that swept up a hierarchy nobody meant to touch is
+// tedious to undo by hand, and the report costs one extra round trip.
+func (s *Server) handleRenameTag(w http.ResponseWriter, r *http.Request) {
+	if !s.requireStore(w) {
+		return
+	}
+	var req api.TagRenameRequest
+	if !decodeJSON(w, r, &req) {
+		return
+	}
+	dryRun := true
+	if req.DryRun != nil {
+		dryRun = *req.DryRun
+	}
+	result, err := s.store.RenameTag(r.Context(), store.TagRenameRequest{
+		From:            req.From,
+		To:              req.To,
+		IncludeChildren: req.IncludeChildren,
+		DryRun:          dryRun,
+	})
+	if writeStoreError(w, err, "tag_rename_failed") {
+		return
+	}
+	changes := make([]api.TagRenameChange, 0, len(result.Changes))
+	for _, change := range result.Changes {
+		changes = append(changes, api.TagRenameChange{
+			TagID:           change.TagID,
+			From:            change.From,
+			To:              change.To,
+			Action:          change.Action,
+			MergedIntoTagID: change.MergedIntoTagID,
+			Notes:           change.Notes,
+			NotesGained:     change.NotesGained,
+		})
+	}
+	writeJSON(w, http.StatusOK, api.TagRenameResult{
+		From:            result.From,
+		To:              result.To,
+		IncludeChildren: result.IncludeChildren,
+		DryRun:          result.DryRun,
+		Changes:         changes,
+		Notes:           result.Notes,
+		Warnings:        result.Warnings,
+	})
+}
+
+// handleNotebookDeletionPreview reports what a notebook deletion would do
+// without doing it — the counts a confirmation needs and the re-homing rule it
+// cannot infer.
+func (s *Server) handleNotebookDeletionPreview(w http.ResponseWriter, r *http.Request) {
+	if !s.requireStore(w) {
+		return
+	}
+	preview, err := s.store.PreviewNotebookDeletion(r.Context(), r.PathValue("notebook_id"))
+	if writeStoreError(w, err, "notebook_deletion_preview_failed") {
+		return
+	}
+	writeJSON(w, http.StatusOK, api.NotebookDeletionPreview{
+		NotebookID:       preview.NotebookID,
+		Name:             preview.Name,
+		Notebooks:        preview.Notebooks,
+		DescendantNames:  preview.DescendantNames,
+		Truncated:        preview.Truncated,
+		Notes:            preview.Notes,
+		TrashedNotes:     preview.TrashedNotes,
+		RehomeNotebookID: preview.RehomeNotebookID,
+		Deletable:        preview.Deletable,
+		Reason:           preview.Reason,
+	})
+}
+
 func (s *Server) handleMoveDocumentNotebook(w http.ResponseWriter, r *http.Request) {
 	if !s.requireStore(w) {
 		return

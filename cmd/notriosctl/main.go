@@ -66,6 +66,8 @@ func main() {
 		runLint(os.Args[2:])
 	case "fix":
 		runFix(os.Args[2:])
+	case "tags":
+		runTags(os.Args[2:])
 	case "help", "-h", "--help":
 		printHelp()
 	default:
@@ -520,6 +522,8 @@ Usage:
                                                  # read-only workspace report; exit 1 when findings exist
   notriosctl fix [--db ...] [--kinds a,b] [--document id] [--apply] [--list-kinds]
                                                  # repair the mechanically safe findings; dry run is the default
+  notriosctl tags rename --from <tag> --to <tag> [--db ...] [--include-children] [--apply]
+                                                 # hierarchical tag rename; dry run is the default and reports every tag and count
   notriosctl link [--db ...] [--anchor slug|^block] [--list-anchors] <document-id>
                                                  # print the stable notrios:// link for a note or one of its sections
   notriosctl open [--profile name] [--registry path] [--db path] [--launch] <notrios-uri>
