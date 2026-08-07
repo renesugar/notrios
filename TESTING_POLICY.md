@@ -768,8 +768,9 @@ the test and forces the decision to be made deliberately.
 Three separate problems turned out to share a fix, and the tests should assert
 them together so the predicate cannot drift apart across surfaces.
 
-A generated note in a builtin notebook must not appear as **link origin** in the
-graph report (it would inflate the in-degree of every note it names, and change
+A generated note in a **read-only builtin** notebook — Help or Reports, never
+the default Notes notebook — must not appear as **link origin** in the graph
+report (it would inflate the in-degree of every note it names, and change
 the ranking the next generation sees), must not be **published** in a handoff
 (it names notes drawn from the whole library, including ones the selection
 withheld), and — recommended — must not produce **lint findings** (nobody can
@@ -783,6 +784,26 @@ looks like a data bug months later rather than a design mistake on the day.
 A publication fixture should assert the same boundary E7 asserted for query
 blocks: a handoff whose selection excludes a note must not carry that note's
 title in a generated report either.
+
+**Trashed notes are a separate axis, and the graph report currently misses it.**
+The Trash is a search notebook — a saved query for soft-deleted notes — not a
+notebook, so it can never be in the notebook predicate; a trashed note still
+belongs to whatever notebook it was in. But its links should not count, and
+`deleteDocumentLocked` deliberately leaves `document_links` intact so a restore
+can use them. A fixture must assert that trashing a note drops the in-degree of
+everything it linked to, and that a note linked *only* from a trashed note is
+counted as an orphan. Publication (`IncludeTrashed: false`) and lint (joining on
+the link's source with `deleted_at IS NULL`) already satisfy this; the graph
+report does not.
+
+**And one fixture guards the definition itself.** The word "builtin" covers two
+different sets: *undeletable* is Help, Reports, and the default **Notes**
+notebook, while *read-only* is Help and Reports alone — `DeleteNotebook` needs
+two checks for exactly this reason, because Notes is bootstrap-created but its
+content is the user's. A test must assert `DefaultNotebookID` is **not**
+read-only. Widening that set would silently drop every note in the default
+notebook from the graph report, from publications, and from lint — most of the
+library, for most users, with no error anywhere.
 
 ## MVP release validation
 

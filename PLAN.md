@@ -609,7 +609,7 @@ filtering that a notes app has no business reimplementing.
 
   **Resolved 2026-08-07: a builtin "Reports" notebook**, sitting with Help in
   the last-anchored group, above it. The protection rule generalizes from "is
-  the Help notebook" to "is a builtin notebook".
+  the Help notebook" to "is a **read-only** builtin notebook".
 
   *That generalization is worth more than it looks.* **Thirteen places** across
   `internal/httpapi`, `internal/store`, `internal/localize`, and
@@ -617,7 +617,29 @@ filtering that a notes app has no business reimplementing.
   "this note is protected". Adding a second constant to all thirteen would be
   the wrong move; a single `store.IsBuiltinNotebook(id)` predicate replaces the
   comparison everywhere and makes the next builtin free. The set is genuinely
-  closed — builtin notebooks are created by bootstrap, never by a user.
+  closed — these notebooks are created by bootstrap, never by a user.
+
+  **The word "builtin" is a trap here, and the caveat is load-bearing.** There
+  are two different sets and the existing code already needs both:
+
+  | Set | Members | How it is checked today |
+  |---|---|---|
+  | Undeletable | Help, Reports, **Notes** | `nb.Builtin` **plus** a separate `id == DefaultNotebookID` |
+  | Read-only / system-authored | Help, Reports | `nb.Builtin` alone — Notes is `builtin = 0` in the database |
+
+  `DeleteNotebook` needs two checks precisely because the default **Notes**
+  notebook is bootstrap-created and undeletable but its content is the *user's*.
+  `isDeletableNotebookRow` in `sidebar.ts` mirrors the same pair.
+
+  So the predicate this slice needs is **read-only builtin**, never "builtin"
+  loosely. Getting it wrong would exclude every note in the default notebook —
+  most of the library for most users — from the graph report, from publications,
+  and from lint, *silently*. Name it `store.IsReadOnlyNotebook(id)` and not
+  `IsBuiltinNotebook`, so a reader who copies the deletion rule's pair of checks
+  is contradicted by the name.
+
+  **A test must pin it:** assert `DefaultNotebookID` is *not* read-only, so
+  nobody widens the set later by reaching for the more familiar word.
 
   No migration is needed: the `notebooks` table already exists and bootstrap's
   `INSERT OR IGNORE` reaches existing databases on next open.
@@ -626,11 +648,13 @@ filtering that a notes app has no business reimplementing.
   Trash" as an invariant. It becomes Reports, then Help, then Trash, and the
   sidebar test that fixes the old ordering has to move with it.
 
-**Three problems found while working out what that touches**, all resolved
-below and all sharing one predicate.
+**Four problems found while working out what that touches.** Three share a
+notebook predicate; the fourth is a second, independent axis — trashed notes —
+that two surfaces already handle and one does not.
 
 - **The report participates in the graph it measures.** **Resolved 2026-08-07:
-  the graph report ignores links originating in a builtin notebook.** A report
+  the graph report ignores links originating in a **read-only builtin**
+  notebook — Help and Reports, never the default Notes notebook.** A report
   note linking to the top N hubs would otherwise add an incoming link to each of
   them, changing the ranking the next generation sees — an observer effect built
   in by construction. Excluding the report from its own *ranking* does not fix
@@ -657,9 +681,11 @@ below and all sharing one predicate.
   being a graph neighbour of everything it names.
 
 - **A publication would carry the report, and the report names notes the
-  publication excluded.** **Resolved 2026-08-07: builtin notebooks are excluded
-  from publication handoffs by default**, and the exclusion is reported in the
-  selection dry run so it is visible rather than silent.
+  publication excluded.** **Resolved 2026-08-07: read-only builtin notebooks —
+  Help and Reports — are excluded from publication handoffs by default**, and
+  the exclusion is reported in the selection dry run so it is visible rather
+  than silent. The default **Notes** notebook is emphatically not in this set;
+  excluding it would make a publication ship almost nothing.
 
   *Scoped to `publication_handoff` only*, and the other two targets differ for
   real reasons rather than by omission. A **full archive** is a backup and must
@@ -677,6 +703,43 @@ below and all sharing one predicate.
   It fixes a second latent wart at the same time — nothing today stops a
   publication from dumping Notrios' own Help documentation into someone's site.
 
+- **Trashed notes are a second, independent axis — and the graph report misses
+  it.** *New, found from the user's observation that the Trash is read-only
+  too.*
+
+  The Trash is **not a notebook**. It is a search notebook — a saved query for
+  soft-deleted notes (`snb_trash`, `is:trashed`) — so a note "in the Trash"
+  still belongs to whatever notebook it was in, with `deleted_at` set. It can
+  never appear in a notebook predicate, and asking for it there would be a
+  category error.
+
+  But the point underneath is right: a trashed note is read-only (v0.5 E8), its
+  content is not part of the live library, and its links should not count.
+  That is a *state* filter (`deleted_at`) sitting alongside the *notebook*
+  filter, and the two are independent — either alone is incomplete.
+
+  Checking each surface against that axis:
+
+  | Surface | Trashed notes | Verdict |
+  |---|---|---|
+  | Publication | `IncludeTrashed: false` in the target policy | already correct |
+  | Lint | joins `documents` on `l.source_document_id` with `deleted_at IS NULL` | already correct |
+  | **Graph report** | rows are filtered, **the in-degree subquery is not** | **defective** |
+
+  The report's row set excludes trashed notes, so one is never *ranked*. But
+  `(SELECT COUNT(*) FROM document_links li WHERE li.target_document_id = d.id)`
+  places no condition on the *source*, and trashing a note **does not delete its
+  links** — `deleteDocumentLocked` writes a revision, clears the FTS row, and
+  enqueues a projection, but leaves `document_links` intact so a restore can use
+  them.
+
+  So a trashed note still inflates the in-degree of everything it linked to, and
+  a note linked only from the Trash is never counted as an orphan. That is a
+  **pre-existing defect**, the same shape as the report-note problem and found
+  by following the same thread. F5 fixes both in the same query, because a
+  filter that excludes generated content but not deleted content would still be
+  measuring something other than the live library.
+
 - **Lint reports findings it cannot fix, in notes nobody can edit.** *New,
   non-blocking, found while checking the above.* The lint link scan filters on
   collection and `deleted_at` and **nothing else**, while
@@ -687,8 +750,8 @@ below and all sharing one predicate.
   because regenerating the report would silently clear findings the user was
   told to act on.
 
-  *Recommended:* lint skips notes in builtin notebooks, using the same
-  predicate. A finding nobody can act on is noise, not information. This is a
+  *Recommended:* lint skips notes in read-only builtin notebooks, using the same
+  predicate — Help and Reports only. A finding nobody can act on is noise, not information. This is a
   visible change to existing lint output on any library with Help seeded, so it
   belongs in the F5 slice notes rather than passing unmentioned.
 
@@ -797,10 +860,11 @@ what happened to F1, whose two decisions sat here and nowhere else.
 | How the hubs report regenerates | F5 | **Resolved:** stable ID, overwritten, read-only |
 | Where a read-only generated note can live | F5 | **Resolved: a builtin "Reports" notebook**, above Help; protection generalizes to any builtin |
 | What triggers report regeneration | F5 | **Resolved: explicit only** |
-| The report participates in the graph it measures | F5 | **Resolved:** the report ignores links originating in a builtin notebook |
+| The report participates in the graph it measures | F5 | **Resolved:** the report ignores links originating in a **read-only builtin** notebook (Help, Reports — never Notes) |
 | Whether traversal also ignores builtin-origin links | F5 | Open, non-blocking — new; default **yes**, one predicate applied consistently |
-| Whether a publication carries generated reports | F5 | **Resolved:** builtin notebooks excluded from publication handoffs, reported in the dry run |
-| Whether lint reports findings in builtin notebooks | F5 | Open, non-blocking — new; recommend skipping them, since nobody can act on them |
+| Whether a publication carries generated reports | F5 | **Resolved:** read-only builtin notebooks excluded from publication handoffs, reported in the dry run |
+| Whether lint reports findings in read-only builtin notebooks | F5 | Open, non-blocking — new; recommend skipping them, since nobody can act on them |
+| Trashed notes' links inflate the graph report | F5 | **Defect, not a decision** — pre-existing; the in-degree subquery does not filter the link's source |
 | Does an empty Reports notebook show | F5 | **Resolved: yes, always** |
 | Which graph export format | F5 | **Resolved: CSV node and edge lists** |
 | Whether graph export is CLI-only | F5 | **Resolved: CLI-only** |
@@ -823,7 +887,10 @@ Two non-blocking questions remain, both from round 4 and both variations on one
 theme — *which surfaces should treat a generated note as part of the library*.
 Their recommended defaults are recorded in F5 and will be taken if nobody
 disagrees: traversal ignores builtin-origin links as the report does, and lint
-skips notes in builtin notebooks because a finding nobody can act on is noise.
+skips notes in read-only builtin notebooks because a finding nobody can act on
+is noise. **In all of them the set is Help and Reports only** — the default
+Notes notebook is bootstrap-created but its content is the user's, and treating
+it as system-owned would silently exclude most of the library.
 
 The two long-lived questions in `agent/OPEN_QUESTIONS.md` — the SQLite driver
 and the MCP Go SDK — remain open and block nothing.

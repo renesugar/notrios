@@ -128,15 +128,29 @@ read-only.
 answers, and a third problem found while checking them.** Nineteen decisions
 settled across four rounds; **nothing is blocking** and every task can start.
 
-- **The graph report ignores links originating in a builtin notebook.** It
+- **Corrected by the user before any code was written:** the predicate is
+  **read-only builtin** notebooks — Help and Reports — never "builtin" loosely.
+  The word covers two different sets and the existing code already needs both:
+  *undeletable* is Help, Reports, and the default **Notes** notebook
+  (`DeleteNotebook` checks `nb.Builtin` **and** `id == DefaultNotebookID`,
+  because Notes is `builtin = 0` in the database), while *read-only /
+  system-authored* is Help and Reports alone. Anyone implementing this by
+  copying the deletion rule's pair of checks would have excluded every note in
+  the default notebook — most of the library for most users — from the graph
+  report, publications, and lint, **silently**. The predicate is to be named
+  `store.IsReadOnlyNotebook(id)` rather than `IsBuiltinNotebook`, so a reader
+  reaching for the familiar word is contradicted by the name, and a test must
+  assert `DefaultNotebookID` is not in the set.
+- **The graph report ignores links originating in a read-only builtin
+  notebook.** It
   applies to the *whole* report, not just the hub ranking — a note that only the
   report links to would otherwise stop being an orphan, so `orphan_count` and
   `isolated_count` need the same filter or they quietly disagree with the hub
   list beside them. It also covers Help, whose notes link to each other heavily:
   **Notrios' own documentation has been inflating the in-degree of any note it
   referenced all along**, which is a pre-existing skew nobody had noticed.
-- **Builtin notebooks are excluded from publication handoffs**, reported in the
-  dry run. Scoped to `publication_handoff` only, for reasons rather than by
+- **Read-only builtin notebooks are excluded from publication handoffs**,
+  reported in the dry run. Scoped to `publication_handoff` only, for reasons rather than by
   omission: a full archive is a backup and must be faithful, and a subset
   transfer moves notes between the user's own databases where their own Help and
   Reports notebooks are not a disclosure. Implemented as a rule in the
@@ -148,13 +162,35 @@ settled across four rounds; **nothing is blocking** and every task can start.
   notes — so **lint already reports broken links inside Notrios' own
   documentation that `fix` structurally cannot repair and the user cannot edit
   either.** A stale hubs report would make this louder and more confusing.
-  Recommended: lint skips notes in builtin notebooks, same predicate; a finding
-  nobody can act on is noise, not information. Non-blocking, default recorded.
+  Recommended: lint skips notes in read-only builtin notebooks, same predicate;
+  a finding nobody can act on is noise, not information. Non-blocking, default recorded.
 - Also non-blocking, with a default: whether `POST /api/v1/graph` *traversal*
-  ignores builtin-origin links as the report does. Default yes — otherwise every
+  ignores read-only-builtin-origin links as the report does. Default yes — otherwise every
   hub's local graph shows the report at depth 1, noise in exactly the view F5
   says stays useful at scale.
 - An empty Reports notebook shows, consistent with All notes, Help, and Trash.
+- **Second user correction, and it found a pre-existing defect.** The Trash is
+  read-only too — but it is **not a notebook**: it is a search notebook, a saved
+  query for soft-deleted notes (`snb_trash`, `is:trashed`), so a trashed note
+  still belongs to whatever notebook it was in with `deleted_at` set. It can
+  never appear in a notebook predicate. The point underneath is right though: a
+  trashed note is read-only and its links should not count, which is a *state*
+  filter independent of the *notebook* filter.
+
+  Checking every surface against that axis: publication is already correct
+  (`IncludeTrashed: false`), lint is already correct (joins `documents` on
+  `l.source_document_id` with `deleted_at IS NULL`), and **the graph report is
+  not**. Its row set excludes trashed notes so one is never ranked, but the
+  in-degree subquery places no condition on the link's *source*, and
+  `deleteDocumentLocked` deliberately leaves `document_links` intact so a
+  restore can use them. **A trashed note therefore still inflates the in-degree
+  of everything it linked to, and a note linked only from the Trash is never
+  counted as an orphan.** Pre-existing defect, same shape as the report-note
+  problem, found by following the same thread. F5 fixes both in one query.
+
+*The round-3 entry below still says "builtin notebook" where it should say
+"read-only builtin notebook". It is left as written: it records what was
+recommended at the time, and this entry carries the correction forward.*
 
 **Round 3 (2026-08-07).** A builtin **Reports** notebook, sitting above Help in
 the last-anchored group, with the protection rule generalized from "is the Help
