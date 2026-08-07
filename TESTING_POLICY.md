@@ -705,6 +705,30 @@ one notebook subtree, and a rename is bounded to 500 tags. The paths that scale
 — search, the trash keyset, notebook deletion itself — already carry
 10k/100k/500k evidence.
 
+### Read-only presentation (v0.5 E12)
+
+A control that cannot be changed must still be **reachable**. The title of a
+Help or trashed note is `readOnly`, never `disabled`, and the fixtures assert
+the difference rather than the attribute alone: it carries `readonly`, it is
+*not* disabled, it can be focused, `setSelectionRange` covers the whole value,
+and typing into it with `user-event` changes nothing and calls no handler.
+
+`user-event` rather than `fireEvent` is the point of that last assertion.
+`fireEvent.change` dispatches synthetically and sails straight past `readonly`,
+so it would have tested jsdom's laxness rather than the control; typing the way
+a person does is what exercises the guard the browser actually applies.
+
+Verified in a browser against a plain probe input for contrast: `disabled` gives
+`focusable: false` while `readOnly` gives `focusable: true`, with selection and
+scrolling identical. That single difference is the whole reason for the change —
+a disabled title is unreadable when it overflows, because no keyboard
+interaction can reach it.
+
+Noted while measuring, and deliberately not asserted: Chrome does not advance
+`selectionStart` on a read-only input, though the field still scrolls. That is
+the engine's behaviour, identical for a plain non-React input, so the fixtures
+assert reachability and selection rather than caret arithmetic.
+
 ## MVP release validation
 
 Task 10 adds release-candidate checks beyond ordinary unit tests:

@@ -76,6 +76,13 @@ Known release boundaries:
 
 Post-candidate fixes, complete:
 
+- [x] **E12 — a read-only title you can still read.** The note title used
+      `disabled` rather than `readOnly` on Help and trashed notes. Both refuse
+      edits; only `disabled` removes the control from the tab order, so a title
+      longer than the box could not be focused, scrolled with the keyboard,
+      selected, or copied. Archived as
+      `plans/v0.5/016-readonly-title-control.md`.
+
 - [x] **E11 — finding the GUI's own web files.** `web/dist` was resolved
       relative to the process working directory with no flag and no config
       option, so `bin/notrios` run from `bin/` rendered `web_ui_not_built`

@@ -49,7 +49,12 @@ Implementation notes (task R13 GUI-fix pass):
 
 - The three pane boundaries are draggable splitters (Pointer Events) that are also keyboard-operable (`role="separator"`, Arrow / Shift+Arrow steps, Home/End, double-click resets). Widths persist in `localStorage` under a versioned key; invalid stored values fall back to defaults.
 - The four panes fill the window and scroll individually; the document body never scrolls. On a **window resize** the sidebar and search widths are kept and the space after them is re-split **equally** between the editor and the preview (they always come out the same width and height after a resize); splitter drags may then set individual sizes. Minimum pane widths give a minimum workspace width of ~966 px, below which every pane holds its minimum and the workspace scrolls horizontally.
-- Whether a note is editable is a **server-provided capability** (`editable` on documents and search hits — false for Help-notebook and trashed notes), never inferred from names in the client. Read-only notes render a visible badge, a read-only editor, and no save/title/upload affordances, while the preview still works.
+- Whether a note is editable is a **server-provided capability** (`editable` on documents and search hits — false for Help-notebook and trashed notes), never inferred from names in the client. Read-only notes render a visible badge, a read-only editor, and no save/upload
+affordances, while the preview still works. The title is **`readOnly`, never
+`disabled`**: a disabled input leaves the tab order entirely, so a protected or
+trashed note's title could not be focused, scrolled with the keyboard, or
+selected and copied — and a title longer than the box was simply unreadable.
+`readOnly` refuses edits and keeps all of that.
 
 Trash-first deletion (implemented in v0.5 E8):
 

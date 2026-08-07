@@ -194,13 +194,18 @@ export function EditorPane(props: EditorPaneProps) {
           starting a *new* note lives in the search pane, because it does not. */}
       <div className="editor-toolbar">
         <div className="editor-toolbar-title">
+          {/* `readOnly`, never `disabled`. A disabled input leaves the tab
+              order, so a Help or trashed note's title could not be focused,
+              scrolled with Home/End, or selected and copied — and a title
+              longer than the box was simply unreadable. `readOnly` refuses
+              edits and keeps all of that. */}
           <input
             className="title-input"
             value={title}
             onChange={(event) => onTitleChange(event.target.value)}
             placeholder="Note title"
             aria-label="Note title"
-            disabled={!editable}
+            readOnly={!editable}
           />
         </div>
         <div

@@ -473,9 +473,12 @@ body.splitter-dragging {
   color: var(--text);
 }
 
-.title-input:disabled {
+.title-input[readonly] {
   color: var(--muted);
   background: var(--bg);
+  /* Still focusable and still selectable — it is read-only, not inert — so it
+     keeps a visible focus ring and a text cursor. */
+  cursor: text;
 }
 
 .editor-toolbar button {

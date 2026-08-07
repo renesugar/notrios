@@ -82,7 +82,12 @@ describe('Help note read-only presentation', () => {
 
     expect(screen.getByTestId('readonly-badge')).toHaveTextContent('Read-only Help note');
     expect(screen.queryByTestId('save-button')).not.toBeInTheDocument();
-    expect(screen.getByLabelText('Note title')).toBeDisabled();
+    // Read-only, not disabled: a disabled input leaves the tab order, so the
+    // title of a protected note could not be focused, scrolled with Home/End,
+    // or selected and copied. A long title would be unreadable.
+    const title = screen.getByLabelText('Note title');
+    expect(title).toHaveAttribute('readonly');
+    expect(title).toBeEnabled();
     expect(screen.getByTestId('editor-stub')).toHaveAttribute('readonly');
     expect(screen.getByTestId('editor-stub')).toHaveAttribute('data-no-upload', 'true');
     expect(screen.queryByText('Upload image/PDF/resource')).not.toBeInTheDocument();
@@ -101,7 +106,9 @@ describe('Help note read-only presentation', () => {
     renderPane({ editable: true });
     expect(screen.queryByTestId('readonly-badge')).not.toBeInTheDocument();
     expect(screen.getByTestId('save-button')).toBeEnabled();
-    expect(screen.getByLabelText('Note title')).toBeEnabled();
+    const editableTitle = screen.getByLabelText('Note title');
+    expect(editableTitle).toBeEnabled();
+    expect(editableTitle).not.toHaveAttribute('readonly');
     expect(screen.getByTestId('editor-stub')).not.toHaveAttribute('readonly');
     expect(screen.getByText('Upload image/PDF/resource')).toBeInTheDocument();
   });

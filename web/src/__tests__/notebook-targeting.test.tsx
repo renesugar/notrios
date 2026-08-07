@@ -6,6 +6,7 @@
 // only actions on the open note, and that a note's notebook comes from the note
 // rather than from wherever the sidebar happens to point.
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { EditorPane, type EditorPaneProps } from '../components/EditorPane';
 import { SearchPane, type SearchPaneProps } from '../components/SearchPane';
@@ -108,6 +109,51 @@ describe('the editor toolbar is a title row and an action row', () => {
     cleanup();
     renderPane({});
     expect(screen.getByTestId('editor-toolbar-actions').className).not.toContain('trashed-actions');
+  });
+});
+
+describe('the title of a note that cannot be edited', () => {
+  // `disabled` would remove the input from the tab order, so a title longer
+  // than the box would be unreadable: no caret, no Home/End, no selection.
+  // `readOnly` refuses edits and keeps all of it.
+  it('is reachable, selectable, and refuses edits', async () => {
+    const onTitleChange = vi.fn();
+    const longTitle = 'A title far longer than the control is wide, which is exactly why it has to be scrollable';
+    renderPane({
+      editable: false,
+      title: longTitle,
+      onTitleChange,
+      selectedDocument: doc({ editable: false }),
+    });
+    const title = screen.getByLabelText('Note title') as HTMLInputElement;
+
+    expect(title).toHaveAttribute('readonly');
+    expect(title).toBeEnabled();
+    expect(title.value).toBe(longTitle);
+
+    // Focusable, so the keyboard can reach it and scroll through the value.
+    title.focus();
+    expect(document.activeElement).toBe(title);
+
+    // Selectable, so the whole title can be copied out.
+    title.setSelectionRange(0, longTitle.length);
+    expect(title.selectionEnd).toBe(longTitle.length);
+
+    // And still not editable. This types the way a person does — `fireEvent`
+    // dispatches synthetically and would sail straight past `readonly`, which
+    // would be testing jsdom's laxness rather than the control.
+    await userEvent.type(title, 'rewritten');
+    expect(onTitleChange).not.toHaveBeenCalled();
+    expect(title.value).toBe(longTitle);
+  });
+
+  it('stays editable on an ordinary note', async () => {
+    const onTitleChange = vi.fn();
+    renderPane({ onTitleChange, title: '' });
+    const title = screen.getByLabelText('Note title');
+    expect(title).not.toHaveAttribute('readonly');
+    await userEvent.type(title, 'R');
+    expect(onTitleChange).toHaveBeenCalledWith('R');
   });
 });
 

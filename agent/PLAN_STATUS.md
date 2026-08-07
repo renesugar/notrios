@@ -22,6 +22,23 @@ Three v0.5 roadmap bullets did not ship and moved to v0.6 rather than being left
 ambiguous: note templates, task extraction, and a graph *view* (E4 delivered the
 traversal, path, and report data it would be built on).
 
+**E12 is complete**, archived as `plans/v0.5/016-readonly-title-control.md`. The
+note title used `disabled` rather than `readOnly` when a note could not be
+edited. Both refuse edits, but **`disabled` removes the control from the tab
+order**, so a Help or trashed note's title could not be focused, scrolled with
+the keyboard, selected, or copied — a title longer than the box was unreadable
+by any means short of resizing the pane. Measured in a browser against a plain
+non-React probe: `disabled` gives `focusable: false`, `readOnly` gives
+`focusable: true`, with selection and scrolling otherwise identical. The CSS
+selector moved with the attribute and gained `cursor: text`, since the control
+is read-only rather than inert. The fixture types with `user-event` rather than
+`fireEvent`, because `fireEvent.change` dispatches synthetically and sails past
+`readonly` — it would have tested jsdom's laxness instead of the control. Noted
+and deliberately not asserted: Chrome does not advance `selectionStart` on a
+read-only input though the field still scrolls, reproduced on a plain input
+outside React, so the obvious `press End; expect caret` test would fail for a
+reason unrelated to Notrios.
+
 **E11 is complete**, archived as
 `plans/v0.5/015-finding-the-web-interface.md`. **The v0.5.0 candidate now has no
 outstanding gates.**

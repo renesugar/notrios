@@ -1,9 +1,9 @@
 # Plan: v0.6 — MCP and automation expansion
 
 Status: **active. Written 2026-08-06 from `ROADMAP.md` after v0.5 completed.
-E10 and E11 (the v0.5.0 release-candidate fixes) and F0 (notebook targeting) are
-complete. The candidate has no outstanding gates. F1 onward require user
-approval.**
+E10, E11, and E12 (the v0.5.0 release-candidate fixes) and F0 (notebook
+targeting) are complete. The candidate has no outstanding gates. F1 onward
+require user approval.**
 
 v0.5 is complete and archived under `plans/v0.5/`, including a copy of its own
 plan at `plans/v0.5/000-v0.5-plan.md`. Product version is 0.5.0 and the schema
@@ -47,7 +47,17 @@ steps. It is still a release candidate, so a defect found in it is fixed *in
 it*, not carried into v0.6. These land under `plans/v0.5/`, do not change the
 version, and must be complete before the owner accepts the candidate.
 
-E10 and E11 are complete. **The v0.5.0 candidate has no outstanding gates.**
+E10, E11, and E12 are complete. **The v0.5.0 candidate has no outstanding
+gates.**
+
+### E12. A read-only title you can still read — complete
+
+Archived as `plans/v0.5/016-readonly-title-control.md`. The note title used
+`disabled` rather than `readOnly` when a note could not be edited. Both refuse
+edits; only `disabled` removes the control from the tab order, so a title longer
+than the box could not be focused, scrolled, selected, or copied. Measured
+against a plain probe input: `disabled` gives `focusable: false`, `readOnly`
+gives `focusable: true`, with selection and scrolling otherwise identical.
 
 ### E11. Finding the GUI's own files, and the docs that explain running it — complete
 
