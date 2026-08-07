@@ -22,6 +22,16 @@ Three v0.5 roadmap bullets did not ship and moved to v0.6 rather than being left
 ambiguous: note templates, task extraction, and a graph *view* (E4 delivered the
 traversal, path, and report data it would be built on).
 
+**One v0.5.0 release-candidate defect is outstanding: E10**, the editor-toolbar
+layout for a trashed note at narrow pane widths. The user found it while testing
+notes in the Trash; measuring the built UI confirmed the toolbar is a single
+wrapping row, so the chip never leaves the title's row and the buttons wrap
+raggedly from 520 px down to the editor pane's own 280 px minimum, with the
+title width moving non-monotonically as the pane narrows. v0.5.0 is built and
+validated but not tagged or pushed, so the fix lands in the candidate under
+`plans/v0.5/` with no version change, and comes before F1. It is drafted in
+`PLAN.md` and **not approved**.
+
 `PLAN.md` now holds the **v0.6 draft** — batch organizer transactions (F1), MCP
 tool visibility profiles (F2), MCP coverage and resource reads (F3), templates
 and task extraction (F4), a graph view (F5), a job control plane (F6), and the

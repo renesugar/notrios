@@ -1,7 +1,9 @@
 # Plan: v0.6 — MCP and automation expansion
 
 Status: **draft. Written 2026-08-06 from `ROADMAP.md` after v0.5 completed.
-No task is approved; F1 requires user approval before any code is written.**
+One v0.5.0 release-candidate fix (E10, editor-toolbar layout for a trashed note)
+is outstanding and comes first — see the section before the v0.6 tasks. No task
+is approved; both E10 and F1 require user approval before any code is written.**
 
 v0.5 is complete and archived under `plans/v0.5/`, including a copy of its own
 plan at `plans/v0.5/000-v0.5-plan.md`. Product version is 0.5.0 and the schema
@@ -35,6 +37,79 @@ Unchanged from v0.5. Complete one task at a time. Every task updates tests and
 living docs, runs its relevant validation, records attempt/model status, commits
 a working slice, archives it under `plans/v0.6/`, produces a verified ZIP, and
 asks for approval before the next task.
+
+## Before v0.6: an outstanding v0.5.0 release-candidate fix
+
+v0.5.0 is built and validated but **not tagged or pushed** — those are owner
+steps. It is still a release candidate, so a defect found in it is fixed *in
+it*, not carried into v0.6. E10 below lands under `plans/v0.5/`, does not change
+the version, and must be complete before the owner accepts the candidate.
+
+### E10. Editor-toolbar layout for a trashed note at narrow pane widths
+
+Found by the user while testing notes in the Trash, and confirmed by measuring
+the built UI in a real browser at pane widths from 700 px down to the editor
+pane's own minimum of 280 px (`MIN_WIDTHS.editor` in `web/src/panes.ts`).
+
+**What is wrong.** `.editor-toolbar` is one `flex-wrap: wrap` row holding the
+title input, the state chip, and every button. For a trashed note that is five
+flex children competing for one line, and the result is ragged at every width
+the app supports:
+
+| Editor pane width | Toolbar rows | Behaviour |
+|---|---|---|
+| 700, 600 | 2 | chip shares the title's row, 7 px out of vertical alignment |
+| 520, 470 | 3 | "Delete forever" alone drops to a second row |
+| 430, 390, 350 | 3 | both buttons drop; chip still crowds the title |
+| 320, 280 | 4 | fully ragged |
+
+The chip never gets a row of its own, and because the title input is `flex: 1`
+it expands into whatever space a wrapped button vacates — so its width moves
+*non-monotonically* as the pane narrows (244 → 144 → 205 → 155 → 206 → 166 →
+126 → 202 px). Widening the pane can make the title smaller. That is the part
+that reads as broken rather than merely tight.
+
+**What it should do**, for a note in the Trash:
+
+- the title occupies its own row;
+- the chip, **Restore**, and **Delete forever** sit on one row beneath it;
+- when that row cannot fit, the chip and both buttons stack vertically —
+  together, as a unit.
+
+**The last point is the constraint that shapes the implementation.** Plain
+`flex-wrap: wrap` moves one item at a time, which is precisely the ragged
+behaviour being fixed; the switch to a column has to be all-or-nothing.
+
+It also has to trigger on the **pane's** width, not the window's. These panes
+are resized by splitters independently of the window, so a `@media` query would
+be measuring the wrong box — a wide window can hold a narrow editor pane and
+vice versa. A CSS container query (`container-type: inline-size` on the editor
+pane, `@container` on the action row) is the right tool. Its support in
+WebKitGTK must be **verified in the Wails webview**, not inferred from Chromium:
+the offline-asset and editor harnesses cannot drive that engine, so this is a
+manual check, and a `ResizeObserver` fallback is the alternative if it fails.
+`App.tsx` already uses `ResizeObserver` for pane measurement, so the fallback
+costs no new dependency.
+
+**In scope, decided rather than assumed:** the editable toolbar has the same
+defect in milder form — one row at 600 px, "Move to Trash" dropping at ≤470 px,
+"New note" joining it at ≤340 px, so it is already two ragged rows across most
+of the supported range. The user reported the Trash case; fixing only that would
+leave the identical bug next door, so E10 applies the same title-row/action-row
+split to both states. If that is not wanted, say so and it narrows to the
+trashed state alone.
+
+**Out of scope:** changing pane minimums, the splitter behaviour, or the
+toolbar's contents. This is a layout fix, not a redesign.
+
+Tests must assert the arrangement rather than the CSS: at a wide pane the
+actions share one row and the title has its own; at a narrow pane the actions
+occupy one column; and the title's width never increases as the pane narrows.
+Verification includes measuring the built UI in a real browser across the same
+width sweep, because this is a defect every existing unit test passed over.
+
+Working state: a trashed note's toolbar reads as a title with an action row
+under it at every supported pane width, and nothing ever half-wraps.
 
 ## Tasks
 

@@ -71,6 +71,14 @@ Trash-first deletion (implemented in v0.5 E8):
   answer: how many notebooks go, that the notes are not deleted, and which
   notebook they are re-homed to so a later restore has a destination. The
   re-homing rule is a store rule the GUI surfaces, not one it invents.
+- The editor toolbar is a **title row plus an action row**, not one wrapping
+  line. The title occupies its own row; the state chip and the note's actions
+  sit beneath it on a single row, and when the pane is too narrow for that row
+  they stack vertically **together** rather than wrapping one item at a time.
+  The trigger is the *pane's* width, not the window's — the panes are
+  splitter-resized independently, so a viewport media query would measure the
+  wrong box. (Planned as v0.5 E10; before it, a trashed note's toolbar went
+  ragged at every supported width and the chip never left the title's row.)
 - Opening a trashed note works because `GET /api/v1/documents/{id}` returns one,
   with `deleted_at` set and `editable: false`. Before E8 it returned 404, which
   made the Trash unusable and left the `trashed` branch in stable-link routing

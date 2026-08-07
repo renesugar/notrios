@@ -74,11 +74,20 @@ Known release boundaries:
   stable-link handler registration is Ubuntu/XDG only; Recoll/Xapian remain
   optional user-installed external GPL processes.
 
+Outstanding before the candidate is accepted:
+
+- [ ] **E10 — editor-toolbar layout for a trashed note at narrow pane widths.**
+      Found by the user during Trash testing and confirmed by measurement: the
+      toolbar is one wrapping row, so the "In the Trash" chip never leaves the
+      title's row and the buttons wrap raggedly from 520 px down to the editor
+      pane's 280 px minimum. A layout fix only; no version change. See `PLAN.md`.
+
 Repository-owner publishing steps (not performed by E9):
 
 - [ ] Review and merge/fast-forward `develop` into `main`.
 - [ ] Push the reviewed branches; confirm CI and the GitHub Pages docs workflow.
-- [ ] Tag and push `v0.5.0` only after the owner accepts the release candidate.
+- [ ] Tag and push `v0.5.0` only after the owner accepts the release candidate
+      and E10 has landed.
 
 ## v0.4.0 — portable data, publishing, and stable references
 
