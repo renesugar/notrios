@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/renesugar/notrios/internal/config"
+	"github.com/renesugar/notrios/internal/httpapi"
 	"github.com/renesugar/notrios/internal/service"
 )
 
@@ -14,6 +15,7 @@ func main() {
 	configPath := flag.String("config", "", "configuration file path; defaults to config/config.example.yaml when present")
 	addrOverride := flag.String("addr", "", "HTTP listen address override")
 	dbOverride := flag.String("db", "", "SQLite database path override, or :memory: for temporary storage")
+	webDir := flag.String("web-dir", "", "directory holding the built web interface (default: search the working directory, then the executable's directory and its parent)")
 	flag.Parse()
 
 	cfg, err := loadRuntimeConfig(*configPath)
@@ -26,6 +28,9 @@ func main() {
 	if strings.TrimSpace(*dbOverride) != "" {
 		cfg.Data.DatabasePath = *dbOverride
 	}
+	if strings.TrimSpace(*webDir) != "" {
+		cfg.Server.WebDir = *webDir
+	}
 
 	svc, err := service.New(cfg)
 	if err != nil {
@@ -33,6 +38,14 @@ func main() {
 	}
 	defer svc.Close()
 
+	// Reported, not enforced: REST and MCP are the point of the headless
+	// service and work without an interface. Saying so at startup beats a
+	// browser discovering it later.
+	if root, err := httpapi.ResolveWebRoot(cfg.Server.WebDir); err == nil {
+		log.Printf("notriosd serving the web interface from %s", root)
+	} else {
+		log.Printf("notriosd starting without a web interface (REST and MCP still work): %v", err)
+	}
 	log.Printf("notriosd listening on http://%s using db %s", cfg.Server.ListenAddr, cfg.Data.DatabasePath)
 	if err := svc.HTTPServer().ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		log.Fatal(err)

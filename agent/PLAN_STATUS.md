@@ -22,19 +22,35 @@ Three v0.5 roadmap bullets did not ship and moved to v0.6 rather than being left
 ambiguous: note templates, task extraction, and a graph *view* (E4 delivered the
 traversal, path, and report data it would be built on).
 
-**E11 is outstanding and gates the v0.5.0 candidate**: the GUI resolves
-`web/dist` relative to the process working directory
-(`internal/httpapi/server.go`), with no flag and no config field, so running
-`bin/notrios` from `bin/` renders `web_ui_not_built` inside the window — and
-that message tells the reader to build assets that are already built, which is
-wrong in precisely the case it fires. Reproduced. Alongside it: the notebook
-dropdown trigger is a bare span with no border or caret so it does not read as a
-control; `make serve`, `make doctor`, and `make seed-help` are undocumented
-(verified by sweeping every target against `README.md`, `ENVIRONMENT_SETUP.md`,
-and `docs/`); and `web/README.md` is two milestones stale, naming "Notes
-Companion" and `cmd/notesd`. Answered while checking: `make clean` does not
-remove `web/node_modules` — `make clobber` does, deliberately, so a clean never
-forces a network reinstall. Drafted in `PLAN.md` and **not approved**.
+**E11 is complete**, archived as
+`plans/v0.5/015-finding-the-web-interface.md`. **The v0.5.0 candidate now has no
+outstanding gates.**
+
+- The GUI resolved `web/dist` relative to the process working directory, so
+  `bin/notrios` run from `bin/` opened a window containing a JSON error whose
+  message told the reader to rebuild assets that already existed. It now
+  searches `--web-dir`, `server.web_dir`, the working directory, and the
+  executable's own directory and its parent — the last two being what make
+  `./bin/notrios` and `./notrios` both work. An explicit path is the *only*
+  candidate, because a wrong explicit answer should fail rather than fall
+  through to a directory that happens to work.
+- The GUI refuses to start and names every directory tried, absolute and
+  deduplicated; `-no-gui` starts anyway and says so (REST and MCP need no
+  interface) and `-gui-only` is exempt entirely, since it renders what the
+  remote service serves.
+- **Two defects found while verifying, both invisible to unit tests.** The
+  notebook control was appended after every built-in tool, and that toolbar
+  scrolls horizontally, so it was off-screen at exactly the narrow widths where
+  knowing your notebook matters; it now leads the toolbar. And a Help note's
+  control read "Notes", because the label was looked up in the pickable options
+  which deliberately omit builtins — so a note *in* one claimed to live
+  somewhere else. The label is now resolved over the whole tree.
+- Smaller: the dropdown got a border, caret, and a dashed disabled state; all
+  seventeen `make` targets are documented with a network column; and
+  `web/README.md` no longer refers to "Notes Companion" or `cmd/notesd`.
+- Answered rather than changed: `make clean` does not remove
+  `web/node_modules` — `make clobber` does, so a clean never forces a network
+  reinstall. The target table says so on the `clean` row.
 
 **E10 and F0 are complete**, done as one pass over the editor toolbar and
 archived as `plans/v0.5/014-editor-toolbar-and-notebook-targeting.md`. E10 was

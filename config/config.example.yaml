@@ -1,6 +1,12 @@
 server:
   listen_addr: "127.0.0.1:8080"
   public_base_url: "http://127.0.0.1:8080"
+  # Directory holding the built web interface (the one containing index.html).
+  # Leave it unset to search web/dist under the working directory, then under
+  # the executable's own directory and its parent — which covers running
+  # bin/notrios from the checkout root or from inside bin/. Set it when the
+  # binary lives apart from its assets.
+  # web_dir: "/opt/notrios/web/dist"
 
 data:
   directory: "./data"

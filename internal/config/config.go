@@ -27,6 +27,11 @@ type Config struct {
 type ServerConfig struct {
 	ListenAddr    string `json:"listen_addr"`
 	PublicBaseURL string `json:"public_base_url"`
+	// WebDir is the directory holding the built web interface (the one with
+	// index.html). Empty searches the default locations: the working
+	// directory, then the executable's own directory and its parent. Set it
+	// when the binary lives apart from its assets.
+	WebDir string `json:"web_dir,omitempty"`
 }
 
 type DataConfig struct {

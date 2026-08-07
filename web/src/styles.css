@@ -527,15 +527,50 @@ body.splitter-dragging {
   outline-offset: -2px;
 }
 
-/* The notebook control inside the Markdown editor's own toolbar. */
+/* The notebook control inside the Markdown editor's own toolbar.
+   It needs its own border and caret: md-editor-rt's toolbar item supplies
+   neither, so without these the notebook name is bare text floating over the
+   editor with nothing marking it as something you can click. */
 .notebook-picker-trigger {
-  display: inline-block;
-  max-width: 140px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 160px;
+  padding: 2px 8px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  background: var(--panel-bg);
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.notebook-picker-trigger .notebook-picker-name {
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 12px;
-  vertical-align: middle;
+}
+
+/* The caret is the part that says "there is more behind this". */
+.notebook-picker-trigger::after {
+  content: '▾';
+  font-size: 10px;
+  color: var(--muted);
+  flex: none;
+}
+
+.md-editor-toolbar-item:hover .notebook-picker-trigger {
+  border-color: var(--accent);
+  background: var(--hover);
+}
+
+/* A disabled control still has to read as a control, because on a read-only or
+   trashed note it is the only thing saying which notebook the note is in. */
+.md-editor-toolbar-item-disabled .notebook-picker-trigger,
+.notebook-picker-trigger[aria-disabled='true'] {
+  color: var(--muted);
+  border-style: dashed;
+  background: transparent;
 }
 
 .notebook-picker {

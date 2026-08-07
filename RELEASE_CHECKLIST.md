@@ -74,18 +74,19 @@ Known release boundaries:
   stable-link handler registration is Ubuntu/XDG only; Recoll/Xapian remain
   optional user-installed external GPL processes.
 
-Outstanding before the candidate is accepted:
-
-- [ ] **E11 — the GUI cannot find its own web files outside the checkout root,
-      and says the wrong thing when it cannot.** `web/dist` is resolved relative
-      to the process working directory with no flag and no config option, so
-      running `bin/notrios` from `bin/` renders `web_ui_not_built` inside the
-      window — a message telling the reader to build assets that are already
-      built. Also: the notebook dropdown has no border, `make serve`/`doctor`/
-      `seed-help` are undocumented, and `web/README.md` still refers to
-      `cmd/notesd`. See `PLAN.md`.
-
 Post-candidate fixes, complete:
+
+- [x] **E11 — finding the GUI's own web files.** `web/dist` was resolved
+      relative to the process working directory with no flag and no config
+      option, so `bin/notrios` run from `bin/` rendered `web_ui_not_built`
+      inside the window — telling the reader to rebuild assets that were
+      already built. It now searches `--web-dir`, `server.web_dir`, the working
+      directory, and the executable's own directory and its parent; the GUI
+      refuses to start when it finds nothing and names every directory tried.
+      Also: a border and caret on the notebook control (and its position moved
+      to lead the toolbar, since it was behind horizontal scroll), all
+      seventeen `make` targets documented, and `web/README.md` rewritten.
+      Archived as `plans/v0.5/015-finding-the-web-interface.md`.
 
 - [x] **E10 — the editor toolbar: layout, and which actions belong in it.** Two
       defects from the same session of Trash testing. (1) The toolbar was one

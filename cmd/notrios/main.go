@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	"github.com/renesugar/notrios/internal/config"
+	"github.com/renesugar/notrios/internal/httpapi"
 	"github.com/renesugar/notrios/internal/service"
 )
 
@@ -32,6 +33,7 @@ func main() {
 	noGUI := flag.Bool("no-gui", false, "run the service without the built-in GUI (use any REST/MCP client)")
 	guiOnly := flag.Bool("gui-only", false, "run only the GUI as a REST client against an already-running service")
 	remote := flag.String("remote", "", "service base URL for -gui-only (default http://<listen_addr> from config)")
+	webDir := flag.String("web-dir", "", "directory holding the built web interface (default: search the working directory, then the executable's directory and its parent)")
 	flag.Parse()
 
 	if *noGUI && *guiOnly {
@@ -47,6 +49,24 @@ func main() {
 	}
 	if strings.TrimSpace(*dbOverride) != "" {
 		cfg.Data.DatabasePath = *dbOverride
+	}
+	if strings.TrimSpace(*webDir) != "" {
+		cfg.Server.WebDir = *webDir
+	}
+
+	// A GUI that cannot find its interface must fail here, on the terminal,
+	// naming every directory it tried. Opening a window containing a JSON error
+	// object tells the reader almost nothing and makes the application look
+	// broken rather than misplaced.
+	//
+	// Only the default mode is checked. `-no-gui` serves REST and MCP, which
+	// work without an interface, and refusing to start a headless service over
+	// a missing web build would be gratuitous. `-gui-only` renders whatever the
+	// *remote* service serves, so the local machine needs no assets at all.
+	if !*noGUI && !*guiOnly {
+		if _, err := httpapi.ResolveWebRoot(cfg.Server.WebDir); err != nil {
+			log.Fatalf("notrios cannot start the GUI: %v", err)
+		}
 	}
 
 	switch {

@@ -33,6 +33,10 @@ type Server struct {
 	mediaPolicy   *media.Policy
 	localizer     *localize.Localizer
 	searchCache   *mergedSearchCache
+	// webRoot is the resolved directory holding the built interface, or "" when
+	// none was found. It is resolved once at construction rather than on every
+	// request so a misconfiguration is a startup fact, not a per-request one.
+	webRoot string
 }
 
 // SidecarSearcher is the optional derived search backend (Recoll). Implemented
@@ -85,6 +89,11 @@ func NewServerWithOptions(options ServerOptions) *Server {
 	if options.Store != nil {
 		// Lazy fetcher inside: no filesystem side effects until first use.
 		s.localizer = localize.New(cfg.RemoteMedia, options.Store)
+	}
+	// A missing interface is not fatal for the headless service: REST and MCP
+	// work without it. The GUI checks separately and refuses to open a window.
+	if root, err := ResolveWebRoot(cfg.Server.WebDir); err == nil {
+		s.webRoot = root
 	}
 	s.routes()
 	return s
@@ -213,10 +222,24 @@ func (s *Server) handleWebApp(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.Header().Set("Referrer-Policy", "no-referrer")
 
-	distDir := filepath.Clean("web/dist")
+	distDir := s.webRoot
+	if distDir == "" {
+		// Re-resolve rather than reporting a stale answer: the assets may have
+		// been built since the process started, which is the ordinary case
+		// during development with `make serve` running.
+		root, err := ResolveWebRoot(s.config.Server.WebDir)
+		if err != nil {
+			// "not built" and "not found here" are different problems and the
+			// old message conflated them, telling readers to rebuild assets
+			// that already existed somewhere else.
+			writeError(w, http.StatusNotFound, "web_ui_not_found", err.Error())
+			return
+		}
+		distDir = root
+	}
 	indexPath := filepath.Join(distDir, "index.html")
 	if _, err := os.Stat(indexPath); err != nil {
-		writeError(w, http.StatusNotFound, "web_ui_not_built", "web/dist/index.html not found; run cd web && npm run build or use npm run dev")
+		writeError(w, http.StatusNotFound, "web_ui_not_found", (&WebRootNotFoundError{Searched: []string{distDir}}).Error())
 		return
 	}
 

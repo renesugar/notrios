@@ -74,8 +74,12 @@ export interface EditorPaneProps {
    * "All notes" would show it filed wherever the sidebar happens to point.
    */
   notebookID: string | null;
-  /** Label when nothing matches: the service's own default notebook. */
-  defaultNotebookName: string;
+  /**
+   * The notebook name to display. Resolved from the whole notebook tree rather
+   * than from `notebookOptions`, which omits builtins: a Help note is in Help
+   * and has to say so, even though Help is never a destination.
+   */
+  notebookLabel: string;
   /** File the open note (or the pending draft) into another notebook. */
   onSelectNotebook: (notebookID: string) => void;
   /** Move the open note to the Trash. */
@@ -108,7 +112,7 @@ export function EditorPane(props: EditorPaneProps) {
     trashed,
     notebookOptions,
     notebookID,
-    defaultNotebookName,
+    notebookLabel,
     onSelectNotebook,
     onDelete,
     onRestore,
@@ -164,17 +168,22 @@ export function EditorPane(props: EditorPaneProps) {
   // `toolbars` has to be explicit to position it, which stays maintainable
   // because `allToolbar` is exported — a built-in tool added in a future
   // release still appears, and `toolbarsExclude` still filters the list.
+  //
+  // It leads the toolbar rather than trailing it. That toolbar scrolls
+  // horizontally at narrow pane widths, and a control appended after twenty
+  // formatting buttons is off-screen exactly when the pane is small — which is
+  // the case where knowing which notebook you are in matters most.
   const notebookPicker = (
     <NotebookPicker
       key="notrios-notebook"
       options={notebookOptions}
       selectedID={notebookID}
-      defaultName={defaultNotebookName}
+      label={notebookLabel}
       disabled={busy || !editable}
       onSelect={onSelectNotebook}
     />
   );
-  const toolbars = useMemo<ToolbarNames[]>(() => [...allToolbar, 0], []);
+  const toolbars = useMemo<ToolbarNames[]>(() => [0, '-', ...allToolbar], []);
 
   return (
     <section className="pane editor-pane" aria-label="Markdown editor" data-testid="pane-editor">

@@ -1,10 +1,9 @@
 # Plan: v0.6 — MCP and automation expansion
 
 Status: **active. Written 2026-08-06 from `ROADMAP.md` after v0.5 completed.
-E10 (the v0.5.0 release-candidate toolbar fix) and F0 (notebook targeting) are
-complete, done as one pass over the editor toolbar. **E11 — locating the GUI's
-web files, plus the run/target documentation — is outstanding and gates the
-v0.5.0 candidate.** F1 onward require user approval.**
+E10 and E11 (the v0.5.0 release-candidate fixes) and F0 (notebook targeting) are
+complete. The candidate has no outstanding gates. F1 onward require user
+approval.**
 
 v0.5 is complete and archived under `plans/v0.5/`, including a copy of its own
 plan at `plans/v0.5/000-v0.5-plan.md`. Product version is 0.5.0 and the schema
@@ -48,9 +47,11 @@ steps. It is still a release candidate, so a defect found in it is fixed *in
 it*, not carried into v0.6. These land under `plans/v0.5/`, do not change the
 version, and must be complete before the owner accepts the candidate.
 
-E10 is complete. **E11 is outstanding and not approved.**
+E10 and E11 are complete. **The v0.5.0 candidate has no outstanding gates.**
 
-### E11. Finding the GUI's own files, and the docs that explain running it
+### E11. Finding the GUI's own files, and the docs that explain running it — complete
+
+Archived as `plans/v0.5/015-finding-the-web-interface.md`.
 
 Reported by the user, and every part verified against the source tree.
 

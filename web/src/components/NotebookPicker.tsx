@@ -17,19 +17,22 @@ import type { NotebookOption } from '../sidebar';
 
 export interface NotebookPickerProps {
   options: NotebookOption[];
-  /** The notebook currently shown; `null` renders the default-notebook label. */
+  /** The notebook currently shown. */
   selectedID: string | null;
-  /** The label used when nothing matches — the service's own default. */
-  defaultName: string;
+  /**
+   * The name to display. It is passed in rather than looked up in `options`
+   * because `options` excludes builtin notebooks — they are not valid
+   * destinations — and a note *in* one still has to show where it lives. A
+   * Help note read "Notes" until this was separated.
+   */
+  label: string;
   /** Read-only and trashed notes show the control disabled, never hidden. */
   disabled: boolean;
   onSelect: (notebookID: string) => void;
 }
 
-export function NotebookPicker({ options, selectedID, defaultName, disabled, onSelect }: NotebookPickerProps) {
+export function NotebookPicker({ options, selectedID, label, disabled, onSelect }: NotebookPickerProps) {
   const [visible, setVisible] = useState(false);
-  const current = options.find((option) => option.id === selectedID);
-  const label = current?.name ?? defaultName;
 
   return (
     <DropdownToolbar
@@ -60,8 +63,12 @@ export function NotebookPicker({ options, selectedID, defaultName, disabled, onS
         </ul>
       }
     >
-      <span className="notebook-picker-trigger" data-testid="notebook-picker-trigger">
-        {label}
+      <span
+        className="notebook-picker-trigger"
+        data-testid="notebook-picker-trigger"
+        aria-disabled={disabled ? 'true' : undefined}
+      >
+        <span className="notebook-picker-name">{label}</span>
       </span>
     </DropdownToolbar>
   );

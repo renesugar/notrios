@@ -26,7 +26,15 @@ make gui          # builds web/dist (installing frontend deps on first run) then
 
 ## First launch
 
-Run from the repository checkout (the GUI loads its interface from `web/dist/` relative to the working directory — `make gui` builds it). In the default mode the embedded service also listens on `server.listen_addr` (default `127.0.0.1:8080`), so MCP clients and browsers can connect while the window is open. Configuration and flags are shared with the service: `-config`, `-addr`, `-db` — see [configuration](service.md#configuration-reference). Data lands wherever the config points (default `./data/` under the working directory).
+`make gui` builds both the binary and the interface it renders. The binary finds
+`web/dist/` by looking at `--web-dir`, then `server.web_dir` in the
+configuration, then `web/dist` under the working directory, the executable's own
+directory, and the executable's parent — so `./bin/notrios` from the checkout
+root and `./notrios` from inside `bin/` both work. Move the binary elsewhere and
+you must copy `web/dist/` next to it or pass `--web-dir`. If it finds nothing it
+**refuses to start and prints every directory it tried**, rather than opening a
+window containing an error. See [where the interface files have to
+be](installation.md#where-the-interface-files-have-to-be). In the default mode the embedded service also listens on `server.listen_addr` (default `127.0.0.1:8080`), so MCP clients and browsers can connect while the window is open. Configuration and flags are shared with the service: `-config`, `-addr`, `-db` — see [configuration](service.md#configuration-reference). Data lands wherever the config points (default `./data/` under the working directory).
 
 On first launch you'll see the "All notes" view (empty until you create or
 [import](import-export.md) notes) with the notebooks sidebar on the left. A
@@ -40,7 +48,13 @@ curl http://127.0.0.1:8080/healthz            # -> ok
 curl http://127.0.0.1:8080/api/v1/status | jq  # storage, schema, Recoll backlog/reconciliation
 ```
 
-If the window opens but shows a JSON `web_ui_not_built` error, the binary can't find `web/dist/` in its working directory — run `make web` and launch from the checkout root.
+If the window opens but shows a JSON error, the build predates v0.5 E11; current
+builds refuse to start and print the directories they searched. Run `make web`
+and launch from the checkout root, or pass `--web-dir`.
+
+To use the interface in a browser instead of a window, run the service on its
+own — `make serve` from source, or `./bin/notriosd` — and open
+`http://127.0.0.1:8080`.
 
 ## Common startup errors
 
@@ -50,7 +64,7 @@ If the window opens but shows a JSON `web_ui_not_built` error, the binary can't 
 | `this notrios binary was built without the GUI; rebuild with ...` | same, from the stub build; rebuild or run `-no-gui` |
 | `package gtk+-3.0 was not found` / `webkit2gtk-4.1 was not found` at build time | install `libgtk-3-dev` / `libwebkit2gtk-4.1-dev` |
 | `libEGL warning: DRI3 error` / renderer warnings at launch | harmless software-rendering fallback (common under VMs and Xvfb) |
-| window opens with `web_ui_not_built` JSON | build `web/dist` (`make web`) and launch from the checkout |
+| `notrios cannot start the GUI: the built web interface was not found` | build it with `make web`, run from the checkout, or pass `--web-dir /path/to/web/dist`; the message lists every directory tried |
 | `service listener stopped: listen tcp ... address already in use` in the log | another notriosd/notrios owns the port; stop it or change `-addr` (the GUI itself keeps working against its in-process handler) |
 
 ## Layout

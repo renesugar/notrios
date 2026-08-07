@@ -75,7 +75,7 @@ function renderPane(overrides: Partial<EditorPaneProps>) {
       { id: 'nb_work', name: 'Work', depth: 0 },
     ],
     notebookID: 'nb_notes',
-    defaultNotebookName: 'Notes',
+    notebookLabel: 'Work',
     onSelectNotebook: vi.fn(),
     onDelete: vi.fn(),
     onRestore: vi.fn(),

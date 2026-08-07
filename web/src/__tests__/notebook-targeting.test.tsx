@@ -77,7 +77,7 @@ function renderPane(overrides: Partial<EditorPaneProps> = {}) {
     trashed: false,
     notebookOptions: choices,
     notebookID: 'nb_work',
-    defaultNotebookName: 'Notes',
+    notebookLabel: 'Work',
     onSelectNotebook: vi.fn(),
     onDelete: vi.fn(),
     onRestore: vi.fn(),
@@ -176,9 +176,14 @@ describe('the notebook control in the editor toolbar', () => {
     expect(screen.getByTestId('dropdown-toolbar').getAttribute('data-disabled')).toBe('true');
   });
 
-  it('falls back to the default notebook label when nothing matches', () => {
-    renderPane({ notebookID: null });
-    expect(screen.getByTestId('notebook-picker-trigger').textContent).toBe('Notes');
+  // The label is supplied by the caller rather than looked up in the options,
+  // because the options omit builtin notebooks: a Help note lives in Help and
+  // has to say so even though Help is never a destination. It read "Notes"
+  // until the two were separated.
+  it('shows a notebook that is not a valid destination', () => {
+    renderPane({ notebookID: 'nb_help', notebookLabel: 'Help' });
+    expect(screen.getByTestId('notebook-picker-trigger').textContent).toBe('Help');
+    expect(screen.queryByTestId('notebook-option-nb_help')).toBeNull();
   });
 });
 

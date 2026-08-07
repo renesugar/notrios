@@ -44,18 +44,35 @@ cd notrios
 
 ## Build
 
-All build targets live in the `Makefile` (`make help` lists them). Output paths are git-ignored.
+Every target lives in the `Makefile`; `make help` prints the same list. Output
+paths are git-ignored. **Network** marks the targets that reach the network.
 
-| Command | Builds | Output |
-|---|---|---|
-| `make build` | headless service + CLI | `bin/notriosd`, `bin/notriosctl` |
-| `make web` | production web assets (installs `web/node_modules` from the lockfile on first run) | `web/dist/` |
-| `make gui` | desktop GUI binary (implies `make web`) | `bin/notrios` |
-| `make docs` | documentation site with PageFind search (uses `npx`) | `_site/` |
-| `make test` | all Go tests | — |
-| `make clean` | removes all of the above outputs (never `data/`) | — |
+| Command | What it does | Output | Network |
+|---|---|---|---|
+| `make help` | print this list | — | |
+| `make deps` | install frontend dependencies from the lockfile (`npm ci`) | `web/node_modules/` | ✅ |
+| `make build` | headless service + CLI | `bin/notriosd`, `bin/notriosctl` | |
+| `make build-service` | just the service | `bin/notriosd` | |
+| `make build-cli` | just the CLI | `bin/notriosctl` | |
+| `make web` | production web assets (runs `make deps` on first build) | `web/dist/` | first run |
+| `make gui` | desktop GUI binary (implies `make web`) | `bin/notrios` | first run |
+| `make docs` | documentation site with PageFind search (uses `npx`) | `_site/` | ✅ |
+| `make test` | all Go tests | — | |
+| `make validate` | tests plus scaffold and script checks | — | |
+| `make smoke` | end-to-end REST/MCP smoke test on a loopback port | — | |
+| `make serve` | **run the service from source** on `127.0.0.1:8080`, for opening the UI in a browser | — | |
+| `make doctor` | check the configuration and environment (`notriosctl doctor`) | — | |
+| `make seed-help` | mirror `docs/` into the built-in Help notebook of the default database | — | |
+| `make clean` | remove build/test/docs/release output — **never** `data/` and **never** `web/node_modules/` | — | |
+| `make clobber` | `clean` plus remove `web/node_modules/` | — | |
+| `make precheck` | fail if the tree has uncommitted changes or tracked ignored files | — | |
 
-Frontend dependencies install once into `web/node_modules` via `npm ci` (the lockfile-exact install); rerun `make deps` after pulling lockfile changes, and `make clobber` to remove them.
+Frontend dependencies install once into `web/node_modules` via `npm ci` (the
+lockfile-exact install). Rerun `make deps` after pulling lockfile changes.
+
+**`make clean` does not remove `web/node_modules`** — that is deliberate, so a
+clean never forces a network reinstall. Use `make clobber` when you want the
+dependencies gone too.
 
 ## Run
 
@@ -79,10 +96,51 @@ go run ./cmd/notriosd -config config/config.example.yaml
 go run ./cmd/notriosctl doctor
 ```
 
-Two working-directory rules to know (both are current implementation behavior):
+### The two ways to open the interface
 
-1. **The browser UI is loaded from `web/dist/` relative to the working directory.** Run `notriosd` (or the GUI) from the repository root after `make web`, or copy `web/dist/` into whatever directory you run from. If it is missing, `/` returns a `web_ui_not_built` error while the REST API, MCP endpoint, and importers keep working normally.
-2. **Relative paths in the configuration resolve against the working directory.** The example config uses `./data/...`, so the database and asset store appear under wherever you launched the binary. Use absolute paths in your config file for anything you run outside the checkout. See the [service guide](service.md#configuration).
+**As a desktop window.** `./bin/notrios` starts the service and opens the GUI in
+one process. Build it with `make gui` first.
+
+**In a browser.** Start the service and visit it — `make serve` runs it from
+source on `http://127.0.0.1:8080` without building any binaries, which is the
+quickest loop while developing. `./bin/notriosd` does the same from a built
+binary. Both serve the identical interface the desktop window renders; the
+desktop binary is a webview around it.
+
+### Where the interface files have to be
+
+The built interface is `web/dist/`, produced by `make web` (and by `make gui`,
+which implies it). A binary looks for it in this order and uses the first hit:
+
+1. the path given by `--web-dir`;
+2. `server.web_dir` in the configuration file;
+3. `web/dist` under the **working directory**;
+4. `web/dist` under the **executable's own directory**;
+5. `web/dist` under the executable's **parent** directory.
+
+The last two are what make `bin/notrios` work whether you run it as
+`./bin/notrios` from the repository root or as `./notrios` from inside `bin/`.
+If you move a binary somewhere else, copy `web/dist/` alongside it or pass
+`--web-dir`:
+
+```sh
+./notrios --web-dir /opt/notrios/web/dist
+```
+
+The GUI **refuses to start** when it cannot find the interface, and prints every
+directory it tried. The headless service starts anyway and says so in its log —
+REST, MCP, and the importers do not need an interface — and `/` then answers
+`web_ui_not_found` with the same list.
+
+`-gui-only` needs no local interface at all: it renders whatever the remote
+service serves.
+
+### Configuration paths resolve against the working directory too
+
+The example config uses `./data/...`, so the database and asset store appear
+under wherever you launched the binary. Use absolute paths in your config file
+for anything you run outside the checkout. See the [service
+guide](service.md#configuration).
 
 ## Optional local installation
 

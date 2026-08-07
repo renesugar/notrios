@@ -26,6 +26,7 @@ The authoritative, always-current example is `config/config.example.yaml` in the
 |---|---|---|
 | `server.listen_addr` | `127.0.0.1:8080` | bind address — see the security note below |
 | `server.public_base_url` | `http://127.0.0.1:8080` | base URL advertised to clients |
+| `server.web_dir` | *(unset)* | directory holding the built web interface. Unset searches `web/dist` under the working directory, then under the executable's own directory and its parent. `--web-dir` overrides it. See [where the interface files have to be](installation.md#where-the-interface-files-have-to-be) |
 | `data.directory` | `./data` | root data directory |
 | `data.database_path` | `./data/notes.sqlite` | the canonical SQLite database |
 | `data.asset_store` | `./data/assets` | content-addressed attachment bytes |

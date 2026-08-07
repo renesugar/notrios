@@ -252,6 +252,13 @@ export function App() {
   // an open note would claim a note reached from "All notes" lives wherever the
   // sidebar happens to point.
   const toolbarNotebookID = selectedDocument ? selectedDocument.notebook_id ?? null : creationNotebookID;
+  // Resolved over the whole tree, not the pickable options: those omit builtin
+  // notebooks because they are not valid destinations, but a Help note lives in
+  // Help and the control has to say so rather than falling back to "Notes".
+  const toolbarNotebookLabel = useMemo(
+    () => (toolbarNotebookID ? notebookName(notebooks, toolbarNotebookID) : defaultNotebookName),
+    [notebooks, toolbarNotebookID, defaultNotebookName],
+  );
 
   const statusText = useMemo(() => {
     if (!status) return 'loading…';
@@ -772,7 +779,7 @@ export function App() {
           trashed={trashed}
           notebookOptions={notebookChoices}
           notebookID={toolbarNotebookID}
-          defaultNotebookName={defaultNotebookName}
+          notebookLabel={toolbarNotebookLabel}
           onSelectNotebook={(id) => void onSelectNotebook(id)}
           onDelete={() => void onDeleteDocument()}
           onRestore={() => void onRestoreDocument()}

@@ -40,22 +40,26 @@ Active development happens on `develop`; `main` takes reviewed merges. Never com
 
 ## Everyday commands
 
-`make help` lists everything. The common loop:
+`make help` lists everything, and so does the table in
+[`docs/installation.md`](docs/installation.md#build). The common loop:
 
-```bash
+```sh
 make test          # go test ./...
 make validate      # tests + required-files + script syntax checks
 make build         # bin/notriosd + bin/notriosctl
 make web           # web/dist/ (npm ci runs automatically on first build)
 make gui           # bin/notrios desktop binary
+make serve         # run the service from source on 127.0.0.1:8080
 make docs          # _site/ documentation site (uses npx marked + pagefind)
 make smoke         # end-to-end REST/MCP smoke test on a loopback port
-bash scripts/run_performance_smoke.sh   # generated-dataset store benchmark
-bash scripts/run_joplin_import_profile.sh 100 /tmp/notrios-joplin.json
-bash scripts/run_obsidian_import_profile.sh 100 /tmp/notrios-obsidian.json
+make doctor        # notriosctl doctor: configuration and environment check
+make seed-help     # mirror docs/ into the Help notebook of the default database
 ```
 
-For iterative frontend work use `cd web && npm run dev`; Vite proxies `/api` and `/healthz` to a locally running `notriosd`.
+To see the interface while working on it, `make serve` and open
+<http://127.0.0.1:8080> — no binary build needed. For the frontend dev server
+with hot reload, run `make serve` in one terminal and `npm run dev` in `web/` in
+another; Vite proxies the API to port 8080.
 
 ## Runtime sanity checks
 

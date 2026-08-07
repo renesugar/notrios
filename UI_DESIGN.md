@@ -77,16 +77,23 @@ Trash-first deletion (implemented in v0.5 E8):
   selection is tracked by notebook **ID**, never derived from the sidebar row's
   `notebook:"<name>"` query — notebook names are unique only among siblings, so
   two notebooks under different parents can share a name and a query. A
-  notebook dropdown in the **editor's own toolbar** is both a second visual cue
-  and the correction: it shows the open note's notebook and changing it moves
+  notebook dropdown **leading the editor's own toolbar** is both a second visual
+  cue and the correction: it shows the open note's notebook and changing it moves
   the note. It lives in that toolbar rather than in a row of its own because
   `md-editor-rt` accepts custom toolbar items (`defToolbars` plus a numeric
   entry in `toolbars`, with an exported `DropdownToolbar`) and its toolbar
   scrolls horizontally instead of wrapping — a separate control above it would
   reintroduce exactly the wrapping this section otherwise forbids. Help is never
   an available destination, and for a read-only or trashed note the dropdown is
-  disabled rather than hidden so the note's notebook stays visible. Moving
-  several notes at once is a batch operation and belongs with the rest of them.
+  disabled rather than hidden so the note's notebook stays visible — with a
+  dashed border, since a control that reads as plain text is not a control. It
+  carries a border and a caret of its own because `md-editor-rt`'s toolbar item
+  supplies neither, and it *leads* the toolbar rather than trailing it: that
+  toolbar scrolls horizontally, so a control appended after the formatting tools
+  is off-screen exactly when the pane is narrow. The name shown is resolved over
+  the whole notebook tree, not the destination list — the list omits builtins,
+  so a Help note would otherwise claim to live in "Notes". Moving several notes
+  at once is a batch operation and belongs with the rest of them.
   (v0.6 F0; before it, the GUI created every note in "Notes" and offered no way
   to move one.)
 - The editor toolbar holds **only actions that apply to the open note** — save,
