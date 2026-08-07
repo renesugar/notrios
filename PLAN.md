@@ -626,41 +626,76 @@ filtering that a notes app has no business reimplementing.
   Trash" as an invariant. It becomes Reports, then Help, then Trash, and the
   sidebar test that fixes the old ordering has to move with it.
 
-**Two problems found while working out what that touches.**
+**Three problems found while working out what that touches**, all resolved
+below and all sharing one predicate.
 
-- **The report participates in the graph it measures.** *New, blocking for this
-  deliverable.* A report note containing links to the top N hubs adds one
-  incoming link to each of them, and `GET /api/v1/graph/report` counts *all*
-  incoming links with no notebook filter. Generating the report therefore
-  changes the ranking the next generation sees — an observer effect built in by
-  construction, and the sort of thing that looks like a subtle data bug months
-  later. Excluding the report from its own *ranking* (already agreed) does not
-  fix this; the links still count.
+- **The report participates in the graph it measures.** **Resolved 2026-08-07:
+  the graph report ignores links originating in a builtin notebook.** A report
+  note linking to the top N hubs would otherwise add an incoming link to each of
+  them, changing the ranking the next generation sees — an observer effect built
+  in by construction. Excluding the report from its own *ranking* does not fix
+  it; the links still count.
 
-  *Recommended:* the graph report ignores links **originating in a builtin
-  notebook**. That keeps generated content out of a measurement of what the user
-  actually wrote, generalizes to any later report, and reuses the same predicate
-  as the protection rule. The alternative — special-casing one note ID — leaves
-  the trap set for the next generated note.
+  The predicate is the same one the protection rule uses, so it generalizes to
+  any later generated note rather than leaving a trap set for the next one.
+
+  *Two things this covers that "ignore the hubs report" would not.* It applies
+  to the **whole** report, not just the hub ranking: a note that only the report
+  links to would otherwise stop being an orphan, so `orphan_count` and
+  `isolated_count` need the same filter or they quietly disagree with the hub
+  list beside them. And it covers the Help notebook, whose notes link to each
+  other heavily — Notrios' own documentation has been inflating the in-degree of
+  any note it happened to reference all along.
+
+  **New, non-blocking:** should `POST /api/v1/graph` — *traversal*, not the
+  report — also ignore builtin-origin links? They are different jobs: the report
+  measures, the traversal navigates, and a link to the report is a real link a
+  reader might want to follow. *Default if unanswered:* **yes, ignore them
+  there too**, one predicate applied consistently. Otherwise every hub's local
+  graph shows the report at depth 1, which is noise in exactly the view F5 says
+  stays useful at scale — and the report is reachable from the sidebar without
+  being a graph neighbour of everything it names.
 
 - **A publication would carry the report, and the report names notes the
-  publication excluded.** *New, non-blocking but a privacy boundary.* The hubs
-  report lists titles and links drawn from the **whole library**. A publication
-  handoff excludes by *tag* (`confidential`, `draft`, `private`) and has no
-  notebook-exclusion mechanism, so a broad selection that swept in the report
-  note would publish the titles of notes the selection itself withheld. This is
-  E7's export-inertness problem in a new shape.
+  publication excluded.** **Resolved 2026-08-07: builtin notebooks are excluded
+  from publication handoffs by default**, and the exclusion is reported in the
+  selection dry run so it is visible rather than silent.
 
-  *Recommended:* **builtin notebooks are excluded from publication handoffs by
-  default**, reported as an exclusion in the selection dry run so it is visible
-  rather than silent. That fixes a second latent wart at the same time —
-  nothing today stops a publication from dumping Notrios' own Help
-  documentation into someone's site.
+  *Scoped to `publication_handoff` only*, and the other two targets differ for
+  real reasons rather than by omission. A **full archive** is a backup and must
+  be faithful — excluding a notebook would make restore lossy. A **subset
+  transfer** moves notes between the user's own databases, where their own Help
+  and Reports notebooks are not a disclosure.
 
-- **Does an empty Reports notebook show in the sidebar?** *New, non-blocking.*
-  *Default if unanswered:* yes, always, consistent with All notes, Help, and
-  Trash, which all show when empty. A builtin that appears only once it has
-  content is a feature nobody discovers.
+  *Mechanism:* there is no notebook-exclusion today — publication excludes by
+  *tag* (`confidential`, `draft`, `private`). *Recommended:* a rule inside the
+  publication target's default policy rather than a new user-facing field. This
+  is not something a user should have to configure, and a field invites getting
+  it wrong. **Not overridable in v0.6:** adding an opt-in later is easy, and
+  removing a leak is not.
+
+  It fixes a second latent wart at the same time — nothing today stops a
+  publication from dumping Notrios' own Help documentation into someone's site.
+
+- **Lint reports findings it cannot fix, in notes nobody can edit.** *New,
+  non-blocking, found while checking the above.* The lint link scan filters on
+  collection and `deleted_at` and **nothing else**, while
+  `documentIsWritableLocked` refuses Help notes — so lint already reports broken
+  links inside Notrios' own documentation, `notriosctl fix` structurally cannot
+  repair them, and the user cannot edit the note either. A stale hubs report
+  after a linked note is deleted would make this louder and more confusing,
+  because regenerating the report would silently clear findings the user was
+  told to act on.
+
+  *Recommended:* lint skips notes in builtin notebooks, using the same
+  predicate. A finding nobody can act on is noise, not information. This is a
+  visible change to existing lint output on any library with Help seeded, so it
+  belongs in the F5 slice notes rather than passing unmentioned.
+
+- **Does an empty Reports notebook show in the sidebar?** **Resolved: yes,
+  always**, consistent with All notes, Help, and Trash, which all show when
+  empty. A builtin that appears only once it has content is a feature nobody
+  discovers.
 
 - **What triggers regeneration.** **Resolved: explicit only** —
   `notriosctl graph report --write-note` and a REST equivalent, never on a
@@ -762,9 +797,11 @@ what happened to F1, whose two decisions sat here and nowhere else.
 | How the hubs report regenerates | F5 | **Resolved:** stable ID, overwritten, read-only |
 | Where a read-only generated note can live | F5 | **Resolved: a builtin "Reports" notebook**, above Help; protection generalizes to any builtin |
 | What triggers report regeneration | F5 | **Resolved: explicit only** |
-| The report participates in the graph it measures | F5 | **Open, blocking** — new; recommend the report ignores links from builtin notebooks |
-| Whether a publication carries generated reports | F5 | **Open, non-blocking** — new; recommend excluding builtin notebooks from publication |
-| Does an empty Reports notebook show | F5 | Open, non-blocking — new |
+| The report participates in the graph it measures | F5 | **Resolved:** the report ignores links originating in a builtin notebook |
+| Whether traversal also ignores builtin-origin links | F5 | Open, non-blocking — new; default **yes**, one predicate applied consistently |
+| Whether a publication carries generated reports | F5 | **Resolved:** builtin notebooks excluded from publication handoffs, reported in the dry run |
+| Whether lint reports findings in builtin notebooks | F5 | Open, non-blocking — new; recommend skipping them, since nobody can act on them |
+| Does an empty Reports notebook show | F5 | **Resolved: yes, always** |
 | Which graph export format | F5 | **Resolved: CSV node and edge lists** |
 | Whether graph export is CLI-only | F5 | **Resolved: CLI-only** |
 | Do jobs survive a restart | F6 | **Resolved:** persist records, do not resume work |
@@ -775,22 +812,21 @@ what happened to F1, whose two decisions sat here and nowhere else.
 | Long-term SQLite driver | — | Open; `agent/OPEN_QUESTIONS.md` 1 |
 | Official MCP Go SDK adoption | — | Open; `agent/OPEN_QUESTIONS.md` 2 |
 
-Sixteen decisions have been answered across three rounds, and each round threw
-off a few new ones — the normal shape of this rather than a failure of the round
-before. The new ones are getting narrower each time, which is what convergence
-looks like: round 1 asked what to build, round 3 asks what a generated note does
-to a measurement.
+Nineteen decisions have been answered across four rounds. Each round threw off a
+few new ones and each new one was narrower than the last, which is what
+convergence looks like: round 1 asked what to build, round 4 asks whether a
+generated note should appear in a lint report.
 
-**One blocking decision remains**, and again it came out of implementing an
-answer: *the hubs report participates in the graph it measures*. A note that
-links to the top N hubs adds an incoming link to each of them, and the report
-counts all incoming links, so generating it changes the next ranking.
-Recommended fix is one line of predicate — ignore links originating in a builtin
-notebook — but it needs deciding rather than assuming. It blocks only F5's
-hubs-report deliverable.
+**Nothing is blocking.** Every task can start.
 
-**F2, F3, F4, F6, and F7 are unblocked.** So are F5's local graph and export
-halves.
+Two non-blocking questions remain, both from round 4 and both variations on one
+theme — *which surfaces should treat a generated note as part of the library*.
+Their recommended defaults are recorded in F5 and will be taken if nobody
+disagrees: traversal ignores builtin-origin links as the report does, and lint
+skips notes in builtin notebooks because a finding nobody can act on is noise.
+
+The two long-lived questions in `agent/OPEN_QUESTIONS.md` — the SQLite driver
+and the MCP Go SDK — remain open and block nothing.
 
 ## Already implemented, deliberately not re-listed
 

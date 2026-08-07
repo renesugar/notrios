@@ -124,6 +124,38 @@ read-only.
 - F1's batch surface arrived here as `run_batch` under `organizer`, which is
   where F1 said it belonged.
 
+**Round 4 (2026-08-07): the last two F5 decisions resolved with the recommended
+answers, and a third problem found while checking them.** Nineteen decisions
+settled across four rounds; **nothing is blocking** and every task can start.
+
+- **The graph report ignores links originating in a builtin notebook.** It
+  applies to the *whole* report, not just the hub ranking — a note that only the
+  report links to would otherwise stop being an orphan, so `orphan_count` and
+  `isolated_count` need the same filter or they quietly disagree with the hub
+  list beside them. It also covers Help, whose notes link to each other heavily:
+  **Notrios' own documentation has been inflating the in-degree of any note it
+  referenced all along**, which is a pre-existing skew nobody had noticed.
+- **Builtin notebooks are excluded from publication handoffs**, reported in the
+  dry run. Scoped to `publication_handoff` only, for reasons rather than by
+  omission: a full archive is a backup and must be faithful, and a subset
+  transfer moves notes between the user's own databases where their own Help and
+  Reports notebooks are not a disclosure. Implemented as a rule in the
+  publication target's default policy rather than a user-facing field — not
+  something a user should configure, and not overridable in v0.6, because adding
+  an opt-in later is easy and removing a leak is not.
+- **New, found while checking:** the lint link scan filters on collection and
+  `deleted_at` and nothing else, while `documentIsWritableLocked` refuses Help
+  notes — so **lint already reports broken links inside Notrios' own
+  documentation that `fix` structurally cannot repair and the user cannot edit
+  either.** A stale hubs report would make this louder and more confusing.
+  Recommended: lint skips notes in builtin notebooks, same predicate; a finding
+  nobody can act on is noise, not information. Non-blocking, default recorded.
+- Also non-blocking, with a default: whether `POST /api/v1/graph` *traversal*
+  ignores builtin-origin links as the report does. Default yes — otherwise every
+  hub's local graph shows the report at depth 1, noise in exactly the view F5
+  says stays useful at scale.
+- An empty Reports notebook shows, consistent with All notes, Help, and Trash.
+
 **Round 3 (2026-08-07).** A builtin **Reports** notebook, sitting above Help in
 the last-anchored group, with the protection rule generalized from "is the Help
 notebook" to "is a builtin notebook". Regeneration is explicit only. Sixteen

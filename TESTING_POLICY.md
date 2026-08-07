@@ -763,6 +763,27 @@ deletion, and purge appear in no scope's listing at all. It is written against
 names that do not exist yet on purpose, so adding one of them as a tool fails
 the test and forces the decision to be made deliberately.
 
+### One predicate, three surfaces (v0.6 F5, planned)
+
+Three separate problems turned out to share a fix, and the tests should assert
+them together so the predicate cannot drift apart across surfaces.
+
+A generated note in a builtin notebook must not appear as **link origin** in the
+graph report (it would inflate the in-degree of every note it names, and change
+the ranking the next generation sees), must not be **published** in a handoff
+(it names notes drawn from the whole library, including ones the selection
+withheld), and — recommended — must not produce **lint findings** (nobody can
+act on them: `fix` refuses builtin-notebook notes and the note is read-only).
+
+The fixture that matters is the round trip: generate the report, generate it
+again, and assert the ranking is identical. Without the filter the second run
+sees the first run's links and can reorder — which is the kind of defect that
+looks like a data bug months later rather than a design mistake on the day.
+
+A publication fixture should assert the same boundary E7 asserted for query
+blocks: a handoff whose selection excludes a note must not carry that note's
+title in a generated report either.
+
 ## MVP release validation
 
 Task 10 adds release-candidate checks beyond ordinary unit tests:
