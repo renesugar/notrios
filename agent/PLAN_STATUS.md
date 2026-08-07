@@ -22,6 +22,56 @@ Three v0.5 roadmap bullets did not ship and moved to v0.6 rather than being left
 ambiguous: note templates, task extraction, and a graph *view* (E4 delivered the
 traversal, path, and report data it would be built on).
 
+**v0.6 open decisions answered (2026-08-07).** Nine were answered by the user
+and five new ones arose from those answers, which is the normal shape of this
+rather than a failure of the first round.
+
+- **F2: `administrator` is not reachable over MCP.** Notrios is single-user, so
+  administrator and author are the same person; destructive whole-library
+  operations stay a deliberate act on the command line. *Consequence:* there are
+  **four** MCP profiles, not five — a profile that cannot be selected is not a
+  profile, and `ROADMAP.md` was corrected. Also recorded in `SECURITY_REVIEW.md`:
+  a profile is a **guardrail, not authorization**, because there is no second
+  principal to authorize against.
+- **New blocking decision from that answer:** "profile" already means two
+  unrelated shipped things — `mcp.default_profile` (tool visibility) and
+  `notriosctl profile register` (a named local database, v0.4 P5). The user's
+  answer to the mid-session question was given in the *database* sense, which is
+  the collision doing its work. Recommended fix: rename the MCP concept to a
+  scope, keeping `mcp.default_profile` as a deprecated alias.
+- **F3:** read-shaped surfaces become MCP tools; resource reads return metadata
+  plus a URI. **New:** byte-range resource reads were requested, mirroring
+  `get_note_line_range` — but they land on a deferred gap, since REST does not
+  honour `Range` on resource content. Recommended: implement range in REST once
+  rather than giving MCP a private mechanism. `PLAN.md`'s scope-control section
+  was corrected, since it had listed range requests as out of scope.
+- **F4:** placeholders are both prompted and automatic, with a **closed**
+  vocabulary — an open one is an expression language, which E7 spent a slice
+  refusing. Tasks are computed on read.
+- **F5a is withdrawn and F5 reframed.** The user's counter-proposal is stronger
+  than the investigation: no global canvas (Obsidian's degrades to a hairball
+  past a few thousand notes while its local graph stays useful), and instead a
+  local graph, a **Top N hubs report written as a note**, and **export** for
+  tools built for large graphs. Measuring a thing in order to reject it is only
+  worth doing when the rejection is in doubt. **Most of it already exists:**
+  `GET /api/v1/graph/report` has ranked hubs by in-degree since v0.5 E4 — the
+  metric the analysis recommends — so F5 is presentation, not computation, and
+  needs no Go graph library despite several suitable ones existing.
+- **F6:** persist job records without resuming work; cooperative cancellation.
+  **New:** reproducing a job's command line — recommended from stored
+  *parameters* rather than raw argv, which would capture local paths and any
+  secrets from the command line into the database. **New scope boundary:** job
+  dependencies are scriptable through queryable status and `--wait`, and
+  **Notrios does not become a scheduler** — a DAG would add retries, cycles, and
+  orphaned waits, each a new way for a note database to be unavailable.
+- Deferred with an owner: multi-user roles and an `author` concept, now
+  `agent/OPEN_QUESTIONS.md` 20–21. Notrios has no author field at all, and the
+  Obsidian importer preserves neither tags nor frontmatter properties, so author
+  data in an imported vault is dropped today regardless.
+
+**Two blocking decisions remain, both new:** the F2 naming collision and how the
+F5 hubs report regenerates. F3, F4, F6, and F7 are unblocked.
+
 **Process correction (2026-08-07, from user feedback).** F1's two open
 decisions were recorded in a milestone-level "Decisions required" section about
 two hundred lines below the F1 item, and nowhere in the item itself — so the

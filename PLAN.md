@@ -4,9 +4,10 @@ Status: **active. Written 2026-08-06 from `ROADMAP.md` after v0.5 completed.
 E10, E11, and E12 (the v0.5.0 release-candidate fixes) are complete and the
 candidate has no outstanding gates. F0 (notebook targeting) and F1 (batch
 organizer transactions) are complete. F2 onward require user approval, and
-**F2, F4, and F6 each carry a blocking open decision** — see the decisions
-register and each item's own Open decisions subsection. F5a was added as an
-investigation slice before F5.**
+nine of their open decisions were answered on 2026-08-07. Two blocking ones
+remain, both newly arising: the "profile" naming collision (F2) and how the hubs
+report regenerates (F5). F5a was **withdrawn** and F5 reframed away from a global
+graph canvas.**
 
 v0.5 is complete and archived under `plans/v0.5/`, including a copy of its own
 plan at `plans/v0.5/000-v0.5-plan.md`. Product version is 0.5.0 and the schema
@@ -409,20 +410,50 @@ does not do it twice.
 
 **Open decisions**
 
-- **Is `administrator` reachable over MCP at all?** *Blocking.* Garbage
-  collection, restore, purge, and archive operations are administrator-shaped,
-  and v0.5's position — recorded in `docs/api/mcp.md` — is that whole-library
-  operations stay on surfaces a person drives. Either keep that (the profile
-  exists but is not selectable for MCP, and the roadmap's five become four plus
-  a CLI-only tier) or overturn it explicitly. *Recommended:* keep it. The
-  argument for exposing destructive whole-library operations to model output has
-  not been made, and F6's job control plane covers the "start something long"
-  case without it. This blocks because it decides whether the profile is even
-  implemented.
-- **Does a profile downgrade mid-session take effect immediately?** *Non-
-  blocking.* A profile comes from configuration today, so a change means a
-  restart. *Default if unanswered:* profiles are read at startup, and changing
-  one requires a restart — stated in the docs rather than silently true.
+- **Is `administrator` reachable over MCP at all?** **Resolved 2026-08-07: no.**
+  Notrios is single-user, so administrator and author are the same person; a
+  profile here restricts what that person's *agent* may do, not who they are.
+  Destructive whole-library operations stay a deliberate act on the command
+  line. Multi-user roles are a future milestone, not this one.
+
+  *Consequence, and a revision to the roadmap wording:* **there are four MCP
+  profiles, not five.** `search-only`, `read-only`, `editor`, `organizer`. A
+  profile that cannot be selected is not a profile — the CLI is not gated by
+  MCP profiles, so "administrator" would name an empty set. `ROADMAP.md` says
+  five; F2 corrects it rather than shipping a fifth that does nothing.
+
+- **The word "profile" already means something else in Notrios.** *New, blocking,
+  and mine to fix.* `mcp.default_profile` (which tools an MCP client sees) and
+  `notriosctl profile register` (a named local database in
+  `~/.config/notrios/profiles.json`, from v0.4 P5) are unrelated, both shipped,
+  and both called "profile". The answer to the mid-session question below was
+  given in the *database* sense, which is the collision doing its work already.
+  Options:
+  - **(a) Rename the MCP concept.** `mcp.default_scope` / "tool scopes", leaving
+    `notriosctl profile` alone. One config key changes, and `mcp.default_profile`
+    is accepted as a deprecated alias so existing configs keep working.
+    **Recommended:** the database registry is user-facing, documented, and on
+    disk; the MCP key is one line in a config file.
+  - **(b) Rename the database registry.** Larger blast radius: a CLI command, a
+    JSON file on disk, and the stable-link routing docs.
+  - **(c) Leave both.** Cheapest today, and guarantees the same confusion
+    recurs in every future conversation about either.
+
+- **Does a profile change take effect mid-session?** **Resolved: no, restart.**
+  Making the choice explicit is the point — the same reasoning that makes
+  switching database profiles a deliberate act rather than a hidden one.
+
+*Recorded for the future, not built here:* multi-user roles (administrator,
+author, reviewer) over a shared remote service. Joplin offers only read-only
+versus read-write per shared notebook; Obsidian offers no granular permissions
+at all. If Notrios adds roles, it would be going further than either, which is
+a milestone of its own — see `agent/OPEN_QUESTIONS.md`.
+
+**When roles do arrive, profiles will not be the mechanism.** A tool-visibility
+profile is a guardrail the single user puts on their own agent; it is not
+authorization, because there is no second principal to authorize against. F2
+must say so in `SECURITY_REVIEW.md`, so a later reader does not mistake a
+seatbelt for a lock.
 
 Working state: connecting under `search-only` can search and read nothing else,
 and adding a tool without classifying it fails the test rather than shipping
@@ -441,20 +472,30 @@ open.
 
 **Open decisions**
 
-- **Which REST surfaces become MCP tools.** *Non-blocking, but the answer is the
-  task.* Lint, fix, graph traversal, block listing, query-block evaluation, tag
-  rename, notebook deletion and its preview, GC, archive operations, and
-  publication are all currently withheld. *Default if unanswered:* read-shaped
-  surfaces (blocks, graph, query blocks, lint's report) become tools under the
-  `read-only` profile; write-shaped and whole-library ones (fix, tag rename,
-  notebook deletion, GC, archive, publication) stay off, with the reason
-  recorded per surface. F3's deliverable is that list, decided rather than
-  inherited.
-- **Do resource reads return bytes or only metadata plus a URL?** *Non-blocking.*
-  *Default if unanswered:* metadata plus a `resource://` URI, with bytes only for
-  text-like MIME types under `mcp.max_document_bytes`. Streaming arbitrary
-  attachment bytes into model context is the thing the bulk/control-plane split
-  exists to prevent.
+- **Which REST surfaces become MCP tools.** **Resolved: the proposed default.**
+  Read-shaped surfaces become tools under `read-only` (blocks, graph traversal
+  and report, query-block evaluation, the lint report); write-shaped and
+  whole-library ones (fix, tag rename, notebook deletion, GC, archive
+  export/verify/restore, publication) stay off, with the reason recorded per
+  surface. Batch operations land under `organizer`.
+- **Do resource reads return bytes or metadata plus a URI?** **Resolved: the
+  proposed default** — metadata plus a `resource://` URI, bytes only for
+  text-like MIME types under `mcp.max_document_bytes`.
+- **Byte-range resource reads.** *New, requested, non-blocking.* The caller
+  should be able to read a *range* of a resource, deciding from the metadata and
+  URI how much to pull — the same shape as `get_note_line_range`, which already
+  lets a model read part of a note instead of all of it. This is what makes the
+  metadata-plus-URI default usable rather than merely safe.
+
+  *But it lands on a known gap:* `API_SPEC.md` lists HTTP range requests for
+  resource content among the deferred items, so `GET /api/v1/resources/{id}/content`
+  does not honour `Range` today. Options:
+  - **(a) Add REST range support first**, and have the MCP tool use it. One
+    implementation, and it closes a deferred gap that browsers and media
+    playback want anyway. **Recommended.**
+  - **(b) Give MCP its own bounded offset/length read** that does not touch
+    REST. Faster, but leaves two ways to read part of a resource and the
+    deferred gap still open.
 
 Working state: every REST capability is either an MCP tool or has a recorded
 reason it is not, and no tool can return an unbounded payload.
@@ -470,59 +511,95 @@ Moved from v0.5, where it was on the roadmap but never entered the plan.
 
 **Open decisions**
 
-- **What a placeholder is.** *Blocking.* Options: prompted values supplied at
-  creation; automatic substitutions (date, title, notebook); or both. Each
-  implies a different template syntax and a different UI. *Recommended:* both,
-  with a closed vocabulary of automatic names and everything else prompted —
-  but this needs an answer before the syntax is chosen, because changing it
-  later invalidates every template a user has written.
-- **Is an extracted task stored or computed on read?** *Non-blocking.* Storing
-  it means a table and an invalidation rule; computing it means parsing on
-  every query. *Default if unanswered:* computed on read from the existing
-  schema-v14 block rows, which already carry content-derived identity — no new
-  table until a query needs one that a scan cannot serve.
+- **What a placeholder is.** **Resolved: both**, as recommended — prompted
+  values supplied at creation, plus automatic substitutions drawn from a
+  **closed vocabulary** of names. Closed is the operative word: an open
+  vocabulary is an expression language, and an expression language in note
+  content is the thing E7 spent a slice refusing.
+- **Is an extracted task stored or computed on read?** **Resolved: computed on
+  read**, from the schema-v14 block rows that already carry content-derived
+  identity. No new table until a query needs one a scan cannot serve.
 
 Working state: creating a note from a template cannot execute anything or read
 a file, and a task's identity survives the note being edited around it.
 
-### F5a. Investigation: how to render a bounded graph
+### F5a. Investigation: how to render a bounded graph — **withdrawn**
 
-An investigation slice, not a feature. F5's *goal* is clear; its *approach* is
-not, and the approaches differ enough in cost that choosing on paper would be
-guessing.
+F5a would have measured a global force-directed canvas against cheaper
+alternatives at the 5,000-node ceiling. It is withdrawn because the user made
+the decision on better grounds than a measurement would have given, and the
+finding it was most likely to reach is already established: Obsidian's global
+graph degrades into an unreadable hairball past a few thousand notes, while its
+*local* graph stays useful at any scale.
 
-- Try at least two: a force-directed canvas, and something cheaper that is not a
-  canvas at all (a depth-grouped list, or an SVG tree from the shortest-path
-  data). Measure both at the `MaxGraphNodes` ceiling of 5,000 and at a realistic
-  50.
-- Report frame time, bundle cost, and what each one actually makes visible. A
-  hairball at 5,000 nodes is a picture of nothing; if that is what the canvas
-  gives, that is the finding.
-- Check whether a graph library can be added at all under the MIT/Apache-2.0
-  constraint and the offline rule E6a established — nothing fetched at runtime.
+Measuring a thing in order to reject it is only worth doing when the rejection
+is in doubt. Here it is not, and a spike that confirms an accepted answer is
+ceremony. Recorded rather than deleted, because "we chose not to investigate,
+and why" is the part a later reader needs.
 
-Deliverable: a recommendation with evidence, and a `PROJECT_DECISIONS.md` entry.
-It may conclude that the list beats the canvas, or that neither earns its bundle
-weight — v0.5 E6 concluded against its own premise and that was the useful
-result.
+What remains genuinely unknown is small enough to settle inside F5: a local
+graph at depth 1–2 is tens of nodes, which any rendering approach handles, so
+there is no library-versus-hand-rolled question worth a slice.
 
-Working state: F5 starts from a measured choice rather than an assumption about
-what a graph view should look like.
+### F5. Graph views that stay readable at scale
 
-### F5. A graph view in the GUI
+Reframed 2026-08-07 from the user's counter-proposal. The original — "a graph
+view in the GUI" — inherited Obsidian's global canvas without asking whether it
+earns its place at Notrios' target scale. It does not. Three deliverables
+replace it, each aimed at a question the global canvas answers badly.
 
-Also moved from v0.5, where E4 shipped the data and named itself "visualization
-data" for exactly this reason. **Depends on F5a**: what to build here is F5a's
-output.
+**1. A local graph, around the open note.** Bounded traversal from
+`POST /api/v1/graph` at depth 1–2, with the depth ceiling visible rather than
+silently applied. This is the half of Obsidian's feature that stays useful in a
+large vault: a map of contextual relevance for *this* note, not a picture of
+everything.
 
-- Render the bounded traversal from `POST /api/v1/graph` around the open note,
-  with the depth ceiling visible rather than silently applied.
-- Show what `GET /api/v1/graph/report` already computes — orphans, isolates,
-  hubs — without recomputing it in the client.
-- The view must degrade to a message when the service is unreachable, as every
-  other assist in the editor does.
+**2. A "Top N hubs" report, written as a note.** The most-linked notes as an
+ordinary Markdown note in the default notebook, with links to each. A ranked
+list is readable at any library size, which is exactly what the global canvas
+stops being.
 
-Working state: a node ceiling is a stated limit in the UI, not a frozen window.
+*Most of this already exists.* `GET /api/v1/graph/report` has shipped since v0.5
+E4 and already ranks hubs by **in-degree** — the same metric the analysis
+recommends — alongside orphans and isolates, from one ordered scan. F5 is
+presentation, not computation, and needs no graph library: the traversal is
+already SQL and already bounded.
+
+**3. Export for tools built for large graphs.** Notrios should not become Gephi.
+Emit the link graph in an interchange format so people who want centrality,
+modularity, or community detection can use software designed for it — Gephi
+handles hundreds of thousands of nodes, Cytoscape adds typed edges and semantic
+filtering that a notes app has no business reimplementing.
+
+**Open decisions**
+
+- **How the hubs report regenerates.** *Blocking for deliverable 2.* Options: a
+  stable note ID overwritten on each run (the model `notriosctl seed-help`
+  already uses for the Help notebook); a new dated note per run; or a
+  `note-query`-style block that renders live. *Recommended:* a stable ID,
+  overwritten, and read-only like a Help note — a report the user can edit is a
+  report that silently stops being true. It should also be excluded from its own
+  ranking, or the report becomes a hub.
+- **Which export format.** *Non-blocking.* Candidates: GraphML (Gephi and
+  Cytoscape both read it, XML), GEXF (Gephi's own), or a two-file CSV node/edge
+  list (universally readable, trivially streamable). *Recommended:* **CSV node
+  and edge lists**, because they stream at any library size without holding a
+  document tree in memory, and every tool named above imports them. GraphML can
+  follow if typed edges arrive.
+- **Whether export is CLI-only.** *Non-blocking.* *Default if unanswered:*
+  CLI-only (`notriosctl graph export`), matching archive export — it writes
+  files to a path the user names, which is not something a REST caller or an MCP
+  client should choose.
+
+**Deliberately not here:** a global graph canvas. No Go graph library is needed
+either — `gonum/graph`, `dominikbraun/graph`, and `yourbasic/graph` are all
+capable and appropriately licensed, but the traversal, the shortest path, and
+the in-degree ranking are already implemented in bounded SQL. Adding a
+dependency to recompute what the store already answers would be pure cost.
+
+Working state: a reader can see what surrounds the note in front of them, read
+which notes the library actually hangs off, and take the whole graph elsewhere
+if they want analysis Notrios does not do.
 
 ### F6. Job control plane for bulk work
 
@@ -535,19 +612,34 @@ Working state: a node ceiling is a stated limit in the UI, not a frozen window.
 
 **Open decisions**
 
-- **Do jobs survive a restart?** *Blocking.* An in-process registry is far
-  simpler; a persisted one means a table, a resume rule, and deciding what an
-  interrupted import means. *Recommended:* persist job *records* (id, kind,
-  state, counts, error) so a client can ask what happened to a job it started,
-  but do **not** resume the work — an interrupted import already resumes through
-  its own checkpoints, and inventing a second resume mechanism on top would give
-  two answers to one question. This blocks because it decides whether F6 needs a
-  schema version.
-- **Is cancellation cooperative or immediate?** *Non-blocking.* *Default if
-  unanswered:* cooperative — a cancel sets a flag the worker checks at its next
-  bounded batch boundary, matching how the importers already commit. Killing
-  work mid-transaction to honour a cancel promptly would trade durability for
-  responsiveness in the wrong direction.
+- **Do jobs survive a restart?** **Resolved: persist job records, do not resume
+  the work.** A client can ask what happened to a job it started; an interrupted
+  import already resumes through its own checkpoints, and a second resume
+  mechanism on top would give two answers to one question. This needs a schema
+  version for the job table.
+- **Is cancellation cooperative or immediate?** **Resolved: cooperative** — the
+  flag is checked at the next bounded batch boundary, matching how the importers
+  already commit.
+- **Reproducing a job.** *New, requested, non-blocking.* A job record should
+  carry enough to re-create the invocation that started it. *Recommended:* store
+  the job's *parameters* and have `notriosctl jobs show --command` render them
+  back into a runnable command line, rather than storing the raw argv. Storing
+  argv would capture local paths and any secrets that happened to be on the
+  command line into the database; deriving the command from structured
+  parameters keeps the record inspectable and lets the rendering improve as
+  flags change.
+- **Job dependencies.** *New, requested, and a scope boundary worth stating.*
+  One job depending on another must be scriptable, so status has to be
+  *queryable by ID* and legible to a shell: `notriosctl jobs status <id>` exits
+  non-zero while running or on failure, and `--wait` blocks until the job
+  settles. That is enough for `job-a && job-b`.
+
+  **Notrios does not become a scheduler.** Sequencing lives in the caller's
+  script, not in a dependency graph inside the service. A workflow engine is a
+  large, stateful thing with its own failure modes — retries, cycles, orphaned
+  waits — and every one of them would be a new way for a note database to be
+  unavailable. *Open, non-blocking:* if `--wait` is not enough in practice, the
+  next step is a documented exit-code contract, not a DAG.
 
 Working state: a long import can be started, watched, and cancelled without a
 client holding the connection open, and no job payload reaches a model.
@@ -575,20 +667,33 @@ what happened to F1, whose two decisions sat here and nowhere else.
 |---|---|---|
 | Idempotency key scope | F1 | **Resolved:** database-scoped and persisted (schema v17) |
 | What a duplicate inherits | F1 | **Resolved:** content, never external identity or revision history |
-| Whether F0 belonged in the v0.5.0 candidate | F0 | **Resolved by shipping:** F0 landed with E10 in `076526f`, so it is in the candidate |
-| Is `administrator` reachable over MCP | F2 | **Open, blocking** |
-| Does a profile change need a restart | F2 | Open, non-blocking |
-| Which REST surfaces become MCP tools | F3 | Open — this *is* F3's deliverable |
-| Do MCP resource reads return bytes | F3 | Open, non-blocking |
-| What a template placeholder is | F4 | **Open, blocking** |
-| Are extracted tasks stored or computed | F4 | Open, non-blocking |
-| How to render a bounded graph | F5 | Open — **F5a investigates it before F5 starts** |
-| Do jobs survive a restart | F6 | **Open, blocking** |
+| Whether F0 belonged in the v0.5.0 candidate | F0 | **Resolved by shipping:** F0 landed with E10 in `076526f` |
+| Is `administrator` reachable over MCP | F2 | **Resolved 2026-08-07: no** — and so there are four profiles, not five |
+| Does a profile change need a restart | F2 | **Resolved: no, restart** |
+| The word "profile" already means two things | F2 | **Open, blocking** — new, arising from the answer above |
+| Which REST surfaces become MCP tools | F3 | **Resolved:** read-shaped become tools; the rest stay off with a recorded reason |
+| Do MCP resource reads return bytes | F3 | **Resolved:** metadata plus URI, bytes only for text-like MIME |
+| How byte-range resource reads reach REST's deferred range support | F3 | **Open, non-blocking** — new |
+| What a template placeholder is | F4 | **Resolved: both**, with a closed vocabulary of automatic names |
+| Are extracted tasks stored or computed | F4 | **Resolved: computed on read** |
+| How to render a bounded graph | F5 | **Resolved by reframing** — no global canvas; F5a withdrawn |
+| How the hubs report regenerates | F5 | **Open, blocking** for that deliverable — new |
+| Which graph export format | F5 | **Open, non-blocking** — new |
+| Whether graph export is CLI-only | F5 | Open, non-blocking — new |
+| Do jobs survive a restart | F6 | **Resolved:** persist records, do not resume work |
+| Is cancellation cooperative | F6 | **Resolved: cooperative** |
+| How a job's command line is reproduced | F6 | **Open, non-blocking** — new |
+| Whether Notrios sequences dependent jobs | F6 | **Open, non-blocking** — recommended *no*; status plus `--wait`, never a DAG |
+| Multi-user roles and an `author` concept | — | Deferred to a future milestone; `agent/OPEN_QUESTIONS.md` |
 | Long-term SQLite driver | — | Open; `agent/OPEN_QUESTIONS.md` 1 |
-| Official MCP Go SDK adoption | — | Open; `agent/OPEN_QUESTIONS.md` 2. Touches F2/F3 but blocks neither |
+| Official MCP Go SDK adoption | — | Open; `agent/OPEN_QUESTIONS.md` 2 |
 
-Three items are blocked on an answer: **F2, F4, and F6**. F3, F5a, and F7 can
-start without one.
+Nine decisions were answered on 2026-08-07 and five new ones arose from those
+answers — which is the normal shape of this, not a failure of the first round.
+
+Two blocking decisions remain, both **new**: the "profile" naming collision in
+F2, and how the hubs report regenerates in F5. F3, F4, F6, and F7 are unblocked
+and can start.
 
 ## Already implemented, deliberately not re-listed
 
@@ -601,7 +706,13 @@ Restating them as work would make the milestone look larger than it is.
 ## Scope control
 
 Record-level sync and transports (v0.7), the deferred `movenotes-v3`
-compatibility bridge (v0.7 slice 3), authentication and multi-user deployment,
-Wails v3/mobile migration, HTTP range downloads, semantic/vector search, and
-additional importers all remain outside v0.6 unless the roadmap is deliberately
-revised.
+compatibility bridge (v0.7 slice 3), authentication, multi-user deployment and
+user roles, Wails v3/mobile migration, semantic/vector search, and additional
+importers all remain outside v0.6 unless the roadmap is deliberately revised.
+
+**HTTP range requests moved *in*, conditionally.** They were on this list; F3's
+byte-range resource read needs them, and its recommended option (a) implements
+range support in REST once rather than giving MCP a private mechanism. If option
+(b) is chosen instead, range requests return to this list.
+
+A global graph canvas is now explicitly out: see F5.

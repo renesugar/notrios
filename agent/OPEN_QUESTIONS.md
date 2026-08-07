@@ -25,6 +25,39 @@ index, not a home.
    H5 hook? Core ships none; any future choice remains optional and
    suggest-only.
 
+## Authorship and multi-user roles (no owning plan item)
+
+20. **Does Notrios need an `author` concept, and what fills it?** There is no
+    author field anywhere in the store today. The two reference implementations
+    disagree about almost everything here: Joplin carries a single flat
+    `author` string in its database, hidden from the UI, populated mainly by
+    Evernote import, and its search does **not** support an `author:` filter.
+    Obsidian puts it in YAML frontmatter where it can be a list, supports
+    metadata search, and lets an author be a link to that author's own note.
+    Neither prescribes a format — username, email, full name are all just text.
+
+    The question matters before roles do, because a role model needs something
+    to attach to. Sub-questions: is an author a string or a link to a note (the
+    Obsidian pattern generalises better and costs nothing extra given block
+    anchors); does the query language gain an `author:` field; and does the
+    Obsidian importer preserve frontmatter properties at all — it currently
+    extracts neither tags nor properties, so author data in an imported vault is
+    dropped today regardless of what Notrios later decides.
+
+21. **What would multi-user roles mean for a local-first single-user app?**
+    Raised 2026-08-07 while resolving v0.6 F2 and deferred to a future
+    milestone. Several people using GUI-only instances against one shared remote
+    service, with roles such as administrator, author, and reviewer. It would go
+    beyond both references: Joplin has read-only versus read-write per shared
+    notebook and nothing finer; Obsidian documents that fine-grained permissions
+    are unsupported and gives every collaborator the owner's rights.
+
+    Note what this is *not*: v0.6's MCP tool-visibility profiles are a guardrail
+    a single user places on their own agent, not authorization. There is no
+    second principal to authorize against. Roles would need authentication
+    first, which `SECURITY_REVIEW.md` lists as a precondition for any non-
+    loopback deployment.
+
 ## Pagination, publishing, and mobile
 
 6. For relevance queries that cannot reproduce a stable `(score,id)` keyset,

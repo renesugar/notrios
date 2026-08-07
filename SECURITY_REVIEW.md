@@ -104,6 +104,17 @@ deliberately, and only there: it is still absent from search, from link
 listings, and from MCP entirely, so `is:trashed` remains a scope a caller asks
 for rather than one it falls into.
 
+**MCP profiles are a guardrail, not authorization (v0.6 F2).** Notrios is
+single-user: administrator and author are the same person, so there is no second
+principal to authorize against. A tool-visibility profile is the user narrowing
+what their own agent may do — a seatbelt, not a lock. It must not be cited as an
+access-control boundary, and it does not make the endpoint safe to expose: the
+endpoint has no authentication, and the profile is chosen by the same
+configuration file the operator controls. Whole-library destructive operations
+(garbage collection, purge, archive restore, publication) are deliberately
+unreachable over MCP at all, so the guardrail is not the only thing standing
+between model output and them.
+
 None of these surfaces is exposed over MCP. Lint, fix, graph traversal, block
 listing, query-block evaluation, tag rename, notebook deletion, garbage
 collection, archive operations, and publication are REST/CLI only. That keeps

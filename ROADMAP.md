@@ -130,8 +130,14 @@ question, and are not on the original list.
 ## v0.6 — MCP and automation expansion
 
 - Note templates and task extraction (moved from v0.5).
-- A graph view in the GUI, over the v0.5 E4 traversal/path/report data (moved
-  from v0.5).
+- Graph views that stay readable at scale, over the v0.5 E4 traversal/path/report
+  data (moved from v0.5): a **local** graph around the open note, a **Top N hubs
+  report written as a note**, and **export** to an interchange format for tools
+  built for large graphs. Explicitly *not* a global canvas — Obsidian's degrades
+  into an unreadable hairball past a few thousand notes, while its local graph
+  stays useful at any size, and Notrios targets libraries far larger than that.
+  Analysis that wants centrality or community detection belongs in Gephi or
+  Cytoscape, which are built for it.
 - ~~Notebook targeting: create into the selected notebook, and a single-note
   move control in the GUI and CLI~~ — done as F0.
 - Complete MCP write-tool coverage gated by explicit scopes.
@@ -141,7 +147,11 @@ question, and are not on the original list.
   stable Markdown-link copy. Requests are bounded, idempotent, support
   all-or-nothing versus best-effort modes, and return per-item outcomes.
 - LLM-safe SEARCH/REPLACE edits with dry-run and revision/hash preconditions.
-- Tool visibility profiles: search-only, read-only, editor, organizer, administrator.
+- Tool visibility profiles: search-only, read-only, editor, organizer. (The
+  original list said five, including `administrator`. Resolved 2026-08-07: no —
+  Notrios is single-user, so administrator and author are the same person, and
+  destructive whole-library operations stay a deliberate act on the command
+  line. A profile that cannot be selected is not a profile.)
 - MCP starts/statuses bulk export/import/sync jobs but does not carry unbounded
   archive or blob bytes in model context; REST/object transfer remains the data
   plane.
@@ -223,6 +233,13 @@ Research outcomes:
 
 ## Future candidates
 
+- **Multi-user roles over a shared service** (administrator, author, reviewer),
+  for several people using GUI-only instances against one remote Notrios. This
+  would go further than either reference implementation: Joplin offers only
+  read-only versus read-write per shared notebook, and Obsidian states plainly
+  that fine-grained permissions are not supported — its collaborators all get
+  the owner's rights. It needs an `author` concept first, which Notrios has no
+  field for today; see `agent/OPEN_QUESTIONS.md`.
 - Native third-party clients over the public REST/MCP API (C++/Qt, Rust/Tauri, additional Go/Wails clients).
 - LadybugDB derived graph backend for advanced graph traversal and analytics.
 - Semantic/vector search.
