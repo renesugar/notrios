@@ -15,7 +15,8 @@ bash scripts/validate-scaffold.sh
 rm -f "$OUT"
 zip -qr "$OUT" . \
   -x 'web/node_modules/*' \
-  -x 'data/*' \
+  -x 'data/*' -x 'data/' \
+  -x '*/data/*' -x '*/data/' \
   -x '.git/*' \
   -x '*.sqlite' \
   -x '*.sqlite-*' \

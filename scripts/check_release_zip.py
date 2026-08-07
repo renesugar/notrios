@@ -25,9 +25,9 @@ required_exact = {
     "cmd/notriosctl/main.go",
     "web/dist/index.html",
 }
+# Anchored at the archive root: these directories only ever exist there.
 forbidden_prefixes = (
     "web/node_modules/",
-    "data/",
     ".git/",
     ".claude/",
     ".playwright-mcp/",
@@ -35,6 +35,23 @@ forbidden_prefixes = (
     "bin/",
     "dist/",
 )
+
+# Matched at ANY depth. A runtime `data/` is created wherever the service or a
+# test happens to be running, so `internal/service/data/` and
+# `cmd/notriosctl/data/` are just as real as the one at the root — and a
+# root-anchored check passed them straight through. `.gitignore` already treats
+# `data/` this way, which is why git ignored the same directories the archive
+# was shipping.
+forbidden_segments = (
+    "data/",
+    "quarantine/",
+    "search-index/",
+    "projections/",
+)
+
+
+def has_forbidden_segment(name: str) -> bool:
+    return any(("/" + name).find("/" + segment) >= 0 for segment in forbidden_segments)
 
 with zipfile.ZipFile(zip_path) as zf:
     names = set(zf.namelist())
@@ -51,6 +68,7 @@ with zipfile.ZipFile(zip_path) as zf:
         name
         for name in names
         if name.startswith(forbidden_prefixes)
+        or has_forbidden_segment(name)
         or "__pycache__/" in name
         or name.endswith((".pyc", ".sqlite", ".zip", "~"))
     )

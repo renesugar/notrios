@@ -25,7 +25,12 @@ Release-candidate gates (run for E9):
       checked by `scripts/check_release_zip.py`, and SHA-256 recorded in the
       E9 handoff.
 - [x] ZIP contains `web/dist/` and excludes `.git/`, `web/node_modules/`,
-      runtime `data/`, SQLite databases, and generated build directories.
+      runtime `data/` **at any depth**, SQLite databases, and generated build
+      directories. E9 found that both the packaging exclusion and the checker
+      were anchored at the archive root, so test-created directories such as
+      `internal/service/data/` and `cmd/notriosctl/data/` had been shipping in
+      every ZIP; both now match at any depth, and the strengthened checker was
+      confirmed to fail on the previously-built archive.
 
 What v0.5 adds beyond v0.4:
 

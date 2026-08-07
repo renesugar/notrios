@@ -259,6 +259,20 @@ code is written.
   DevTools-Protocol measurement of the Wails webview.
 - `TESTING_POLICY.md` gained the E8 entry, including the lesson browser
   verification taught: every unit fixture passed while the feature did not work.
+- **The release archive shipped directories the release gate claimed it
+  excluded.** `package_release.sh` excluded `data/*` and `check_release_zip.py`
+  rejected `data/`-prefixed entries — both anchored at the archive root. Test
+  runs leave a runtime layout beside the package that ran them
+  (`internal/service/data/quarantine/`, `cmd/notriosctl/data/{projections,
+  quarantine,search-index}/`), and every ZIP this project has produced carried
+  those six entries past the check meant to reject them. They were empty, so
+  nothing leaked — luck, not design: `*.sqlite` would have stopped a database
+  but not a projection, a quarantine file, or a search index. `.gitignore` had
+  it right all along, since a bare `data/` matches at any depth there. Both
+  sides now match at any depth, plus `quarantine/`, `search-index/`, and
+  `projections/`. Verified in both directions: the strengthened checker fails on
+  the previously-built ZIP naming all six, and passes on the repackaged one
+  (780 entries instead of 786).
 - v0.5 archived as `plans/v0.5/000-v0.5-plan.md` and
   `plans/v0.5/013-v0.5-documentation-release-wrap-up.md`; `PLAN.md` now holds
   the **v0.6 draft** (F1–F7). No v0.6 task is approved.
