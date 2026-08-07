@@ -16,7 +16,9 @@ v0.5 made the library better to work in by hand. v0.6 makes it safe to work in
 *by machine*: bounded batch operations that either all happen or report exactly
 which ones did, MCP tool sets scoped to what a caller is trusted with, and a
 control plane for long-running work that never drags bulk bytes through a
-model's context.
+model's context. It opens with F0, which is neither: the GUI cannot file a note
+into a notebook or move one out, and F1's batch move has no single-note control
+to generalize from until it can.
 
 Three constraints shape every task below. The first two carry over from v0.5
 unchanged; the third is what this milestone is actually about.
@@ -152,15 +154,14 @@ not. So there is a decision to make, and E10 does not make it silently:
 - **(a) Relocate only.** "New note" moves to the search pane and always starts a
   draft that saves into "Notes", as today. A defect fix, nothing more, and the
   right size for a release candidate. **Recommended.**
-- **(b) Also scope creation to the selected notebook.** A new note started while
-  a real notebook is selected is created *in* that notebook; a search notebook
-  (All notes, Trash, a saved search) falls back to "Notes". This is what the
-  report's wording describes, but it is a behaviour change with product
-  questions of its own — what a saved search should do, whether the target is
-  shown before saving — so it belongs in v0.6 rather than in a release-candidate
-  fix.
+- **(b) Also scope creation to the selected notebook.** This is what the
+  report's wording describes. It became **F0**, the first v0.6 task, once
+  checking showed the GUI has no way to move a note between notebooks either —
+  scoping creation without a way to correct a mistake would be half a feature.
 
-E10 as written does **(a)**. Say the word and (b) comes with it.
+E10 as written does **(a)** and stays a defect fix; F0 does the rest. Pull F0
+into the release candidate instead if you would rather not tag v0.5.0 with a GUI
+that cannot file a note.
 
 **Out of scope for part 2:** any other toolbar control, and the contents of the
 new-note draft itself.
@@ -186,6 +187,62 @@ offers only actions that apply to the note in front of you — while starting a
 new note stays reachable from anywhere.
 
 ## Tasks
+
+### F0. Notebook targeting: create where you are, and move what is misfiled
+
+Raised by the user after E10 part 2 turned up that the GUI always creates into
+the default "Notes" notebook. Checking the rest of the surface made it worse
+than a default-value complaint:
+
+| Layer | Move a note to another notebook |
+|---|---|
+| Store | `MoveDocumentToNotebook` |
+| REST | `POST /api/v1/documents/{document_id}/notebook` |
+| MCP | `move_note_to_notebook` (editor profile) |
+| CLI | **absent** |
+| GUI | **absent** — `web/src/api.ts` carries no client function for it at all |
+
+So the GUI creates every note in "Notes" and then offers no way to move it. The
+ordinary workflow — write a note, file it — is not merely tedious in the GUI, it
+cannot be completed there. `API_SPEC.md`'s full-client parity table has been
+claiming this capability on REST's behalf, which is true and beside the point:
+the built-in client does not use it.
+
+- Track the **selected notebook** in the app shell and create new notes into it.
+  Selecting a search notebook (All notes, Trash, a saved search) or having no
+  selection falls back to "Notes".
+- Show the target before it is used, so a note's destination is never a surprise
+  at save time.
+- Add a single-note **move to notebook** control — a destination picker over the
+  notebook tree — so a note created in the wrong place can be filed.
+- Add `notriosctl` coverage for the same single-note move, since the CLI lacks
+  it too.
+
+**Two traps found while checking, both of which constrain the implementation.**
+
+**The selected notebook must be tracked by ID, not inferred from the query.**
+The sidebar builds a notebook row's query as `notebook:"<name>"`
+(`web/src/sidebar.ts`), and notebook names are unique only **among siblings**
+(`notebooks_sibling_name_idx`). `Contacts/Work` and `Personal/Work` can both
+exist and both produce `notebook:"Work"`, so deriving the creation target from
+`activeQuery` would silently pick the wrong notebook. The app shell currently
+keeps only `activeQuery`; it needs the selected row.
+
+**"Create here" must not become "create in a place that refuses it."** The Help
+notebook is protected and notes cannot be moved into or out of it; the store
+returns `403`. A creation target that lands on Help has to be refused in the
+client the same way the delete affordance already is — by mirroring the server
+rule rather than discovering it through an error.
+
+**Explicitly not here:** moving *several* notes at once. Multi-select move is a
+batch operation and belongs to F1, which is the next task and already covers
+bounded move with per-item outcomes. F0 is the single-note path F1 builds on;
+doing them in this order means F1 extends a working control rather than
+inventing one.
+
+Working state: a note created while a notebook is selected lands in that
+notebook, the target is visible before saving, and a note in the wrong notebook
+can be moved from the GUI and from the CLI.
 
 ### F1. Batch organizer transactions
 
@@ -286,6 +343,11 @@ pass.
 
 ## Decisions required before or during v0.6
 
+- **Whether F0 belongs in the v0.5.0 release candidate.** The GUI cannot move a
+  note between notebooks at all, which is a gap rather than a regression — v0.5
+  never promised it — but it is the kind of gap a first user meets immediately.
+  Shipping the candidate first and fixing it in v0.6 is the conservative call;
+  pulling F0 forward is defensible.
 - **Idempotency key scope.** Whether a batch request key is scoped to a session,
   a client, or the database decides what "the same request twice" means across a
   restart. F1 cannot be designed without answering it.

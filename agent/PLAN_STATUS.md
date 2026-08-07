@@ -47,7 +47,21 @@ v0.5.0 is built and validated but not tagged or pushed, so E10 lands in the
 candidate under `plans/v0.5/` with no version change, before F1. It is drafted
 in `PLAN.md` and **not approved**.
 
-`PLAN.md` now holds the **v0.6 draft** — batch organizer transactions (F1), MCP
+**The GUI cannot move a note between notebooks, and creates every note in
+"Notes".** Found when the user questioned E10 part 2's note about creation not
+being notebook-scoped. `MoveDocumentToNotebook` exists in the store,
+`POST /api/v1/documents/{id}/notebook` in REST, and `move_note_to_notebook` in
+MCP — but `notriosctl` has no command and `web/src/api.ts` has no client
+function, so the built-in client can create a note in the wrong notebook and
+then not correct it. Planned as **F0**, the first v0.6 task, ahead of F1 whose
+batch move generalizes the single-note control F0 adds. Two traps recorded with
+it: the selected notebook must be tracked by ID rather than derived from the
+sidebar's `notebook:"<name>"` query (names are unique only among siblings, so
+two notebooks can share one), and a creation target landing on the protected
+Help notebook must be refused client-side rather than discovered as a 403.
+
+`PLAN.md` now holds the **v0.6 draft** — notebook targeting and single-note move
+(F0), batch organizer transactions (F1), MCP
 tool visibility profiles (F2), MCP coverage and resource reads (F3), templates
 and task extraction (F4), a graph view (F5), a job control plane (F6), and the
 wrap-up (F7). **No v0.6 task is approved**; F1 needs user approval before any

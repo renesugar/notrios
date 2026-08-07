@@ -71,6 +71,16 @@ Trash-first deletion (implemented in v0.5 E8):
   answer: how many notebooks go, that the notes are not deleted, and which
   notebook they are re-homed to so a later restore has a destination. The
   re-homing rule is a store rule the GUI surfaces, not one it invents.
+- A new note is created into the **selected notebook**, and the target is shown
+  before it is saved; selecting a search notebook (All notes, Trash, a saved
+  search), or selecting nothing, falls back to the default "Notes" notebook. The
+  selection is tracked by notebook **ID**, never derived from the sidebar row's
+  `notebook:"<name>"` query — notebook names are unique only among siblings, so
+  two notebooks under different parents can share a name and a query. A
+  single-note **move to notebook** control covers notes filed in the wrong
+  place; moving several at once is a batch operation and belongs with the rest
+  of them. (Planned as v0.6 F0; before it, the GUI created every note in "Notes"
+  and offered no way to move one.)
 - The editor toolbar holds **only actions that apply to the open note** — save,
   move to Trash, restore, delete forever. Starting a *new* note is not one of
   them: it discards the editor's contents rather than acting on the note, and
