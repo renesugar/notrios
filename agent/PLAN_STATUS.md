@@ -96,6 +96,34 @@ recommendation.** Fourteen decisions are now settled across both rounds.
   *still running*, and *no such job*, or a script cannot tell "not finished"
   from "failed".
 
+**F2 is complete**, archived as `plans/v0.6/002-mcp-tool-scopes.md`. Four
+cumulative MCP scopes — `search-only`, `read-only` (default), `editor`,
+`organizer` — enforced **at the call site** from the same table that filters
+`tools/list`, so the listing and the check cannot disagree. Before F2 only write
+tools had a call-site guard; every read tool dispatched unconditionally, which
+was latent rather than live only because no tier existed narrower than
+read-only.
+
+- `mcp.default_profile` → `mcp.default_scope`; the old key still works and the
+  **narrower wins** on conflict. `config.Default()` now leaves both empty rather
+  than pre-filling the deprecated one, which would have made every default
+  config look half-migrated and warn for no reason.
+- An unrecognized value falls back to `read-only` **with a warning** rather than
+  failing closed — a typo silently disabling reads looks like a broken service,
+  and the documented default plus a log line is debuggable.
+- An **unclassified** tool is refused, never defaulted to the narrowest scope. A
+  default would let a tool ship without anyone deciding how much trust it needs.
+- `TestEveryMCPToolIsClassified` fails in both directions: a registered tool with
+  no table entry, and a table entry naming no registered tool.
+  `TestNoScopeReachesWholeLibraryOperations` asserts the standing v0.5 decision
+  against tool names that do not exist yet, so adding one later fails the test
+  and forces a deliberate choice.
+- **Mutation-checked:** removing the call-site enforcement makes the hidden-tool
+  test fail, and instructively — `append_to_note` executes and complains that
+  `text is required`, which is exactly "hidden but answers when called".
+- F1's batch surface arrived here as `run_batch` under `organizer`, which is
+  where F1 said it belonged.
+
 **Round 3 (2026-08-07).** A builtin **Reports** notebook, sitting above Help in
 the last-anchored group, with the protection rule generalized from "is the Help
 notebook" to "is a builtin notebook". Regeneration is explicit only. Sixteen

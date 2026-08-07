@@ -2,8 +2,8 @@
 
 Status: **active. Written 2026-08-06 from `ROADMAP.md` after v0.5 completed.
 E10, E11, and E12 (the v0.5.0 release-candidate fixes) are complete and the
-candidate has no outstanding gates. F0 (notebook targeting) and F1 (batch
-organizer transactions) are complete. F2 onward require user approval, and
+candidate has no outstanding gates. F0 (notebook targeting), F1 (batch organizer
+transactions), and F2 (MCP tool scopes) are complete. F2 onward require user approval, and
 sixteen of their open decisions were answered on 2026-08-07 across three rounds.
 **One blocking decision remains** — the hubs report participates in the graph it
 measures — which blocks only F5's hubs-report deliverable. F2, F3, F4, F6, and F7 are
@@ -399,7 +399,14 @@ Working state: a client can move fifty notes into a notebook and know exactly
 what happened to each one, and re-sending the request after a dropped connection
 does not do it twice.
 
-### F2. Tool visibility profiles
+### F2. Tool visibility scopes — complete
+
+Archived as `plans/v0.6/002-mcp-tool-scopes.md`. Four cumulative scopes
+(`search-only`, `read-only`, `editor`, `organizer`), enforced at the call site
+from the same table that filters `tools/list`. `mcp.default_profile` became
+`mcp.default_scope`, old key kept as a deprecated alias with the narrower
+winning on conflict. F1's batch surface arrived as `run_batch` under
+`organizer`.
 
 - Replace the two-profile (`read-only` / `editor`) split with the roadmap's
   five: search-only, read-only, editor, organizer, administrator.

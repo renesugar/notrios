@@ -20,7 +20,17 @@ search:
 
 mcp:
   enabled: true
-  default_profile: "read-only"
+  # Which tools an MCP client sees and may call: search-only, read-only,
+  # editor, or organizer. Empty means read-only.
+  #
+  # This is a guardrail you place on your own agent, not authorization —
+  # Notrios is single-user, and this key lives in the file you control. It is
+  # not what keeps the endpoint safe; keeping the service on loopback is.
+  #
+  # `default_profile` is the deprecated former name and is still read. If both
+  # appear, the narrower of the two wins and the service logs it, because a key
+  # that quietly stops applying must never widen what an agent may do.
+  default_scope: "read-only"
   max_results: 10
   max_document_bytes: 65536
 

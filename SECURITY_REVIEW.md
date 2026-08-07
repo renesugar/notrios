@@ -76,7 +76,7 @@ and installation requires an explicit `--apply`.
 - Default binding is loopback.
 - Raw SQL, arbitrary filesystem access, and direct Recoll mutation are absent.
 - MCP output is bounded and marks note content untrusted.
-- Editor writes are profile-gated and destructive edits use revision
+- Editor writes are scope-gated and destructive edits use revision
   preconditions.
 
 **Embedded query blocks (v0.5 E7)** widen what note content can *ask for*, and
@@ -104,13 +104,23 @@ deliberately, and only there: it is still absent from search, from link
 listings, and from MCP entirely, so `is:trashed` remains a scope a caller asks
 for rather than one it falls into.
 
-**MCP profiles are a guardrail, not authorization (v0.6 F2).** Notrios is
+**MCP tool scopes are a guardrail, not authorization (v0.6 F2, implemented).** Notrios is
 single-user: administrator and author are the same person, so there is no second
-principal to authorize against. A tool-visibility profile is the user narrowing
-what their own agent may do — a seatbelt, not a lock. It must not be cited as an
-access-control boundary, and it does not make the endpoint safe to expose: the
-endpoint has no authentication, and the profile is chosen by the same
-configuration file the operator controls. Whole-library destructive operations
+principal to authorize against. A scope is the user narrowing what their own
+agent may do — a seatbelt, not a lock. It must not be cited as an access-control
+boundary, and it does not make the endpoint safe to expose: the endpoint has no
+authentication, and the scope is chosen by the same configuration file the
+operator controls.
+
+Four scopes exist — `search-only`, `read-only` (default), `editor`, `organizer`
+— and they are **enforced at the call site**, not only by filtering
+`tools/list`. Before F2 only write tools had a call-site check, so a read tool
+hidden from a narrower tier answered perfectly well when invoked directly. Both
+the listing and the check now read one table, and a test walks every registered
+tool against every scope so a new tool cannot ship unclassified. The deprecated
+`mcp.default_profile` key is still honoured; when it and `mcp.default_scope`
+disagree the **narrower** wins, because a key that quietly stops applying must
+never widen what an agent may do. Whole-library destructive operations
 (garbage collection, purge, archive restore, publication) are deliberately
 unreachable over MCP at all, so the guardrail is not the only thing standing
 between model output and them.

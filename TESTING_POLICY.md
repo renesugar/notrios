@@ -729,6 +729,40 @@ Noted while measuring, and deliberately not asserted: Chrome does not advance
 the engine's behaviour, identical for a plain non-React input, so the fixtures
 assert reachability and selection rather than caret arithmetic.
 
+### MCP tool scopes (v0.6 F2)
+
+The suite is built around one guard: **`TestEveryMCPToolIsClassified`** walks
+every tool the widest scope registers and fails if any lacks an entry in the
+scope table — and fails in the other direction too, if the table names a tool
+that no longer exists. Without it, a new tool would inherit whatever scope its
+position in the list happened to give it, which is the failure this feature
+exists to prevent. Defaulting an unclassified tool to the narrowest scope would
+be the dangerous kind of safe: it would ship silently.
+
+Each scope's tool set is asserted **as a whole set**, not by spot-checking
+membership, so a tool quietly moving tier fails here. The `editor` and
+`organizer` tiers are asserted as *deltas* over the tier below, which keeps the
+test readable as tools are added, plus an explicit check that scopes are
+cumulative — each a superset of the one before.
+
+**`TestHiddenToolsAreRefusedWhenCalledDirectly`** is the one that matters. It
+iterates every classified tool absent from a `search-only` listing and calls it
+anyway, asserting a refusal that names the scope required. Verified in both
+directions: removing the call-site check makes it fail — and instructively, the
+failure shows `append_to_note` *executing* and complaining that `text is
+required`, which is exactly the "hidden but answers when called" bug.
+
+The deprecated-key resolver is table-driven across seven cases, including the
+two that matter most: a half-migrated config where the deprecated key is
+narrower, and one where the new key is. Both resolve to the narrower, because a
+key that quietly stops applying must never widen what an agent may do.
+
+**`TestNoScopeReachesWholeLibraryOperations`** asserts a standing decision
+rather than a scope: lint, fix, GC, archive, publication, tag rename, notebook
+deletion, and purge appear in no scope's listing at all. It is written against
+names that do not exist yet on purpose, so adding one of them as a tool fails
+the test and forces the decision to be made deliberately.
+
 ## MVP release validation
 
 Task 10 adds release-candidate checks beyond ordinary unit tests:

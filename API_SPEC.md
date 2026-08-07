@@ -590,7 +590,7 @@ Implemented read-only tools:
 - `search_in_note`
 - `get_notebook_notes`
 
-Write tools implemented in task R8, exposed only when the MCP profile is `editor` (default profile is read-only): `create_note`, `update_note` (requires `base_revision_id`), `append_to_note`, `prepend_to_note`, `edit_note` (fails on ambiguous matches without `replace_all`; supports `dry_run`), `delete_note` (requires `base_revision_id`; moves to Trash), `move_note_to_notebook`.
+Write tools implemented in task R8, exposed only when the MCP scope is `editor` or wider (default scope is `read-only`; v0.6 F2 renamed `mcp.default_profile` to `mcp.default_scope` and keeps the old key as a deprecated alias): `create_note`, `update_note` (requires `base_revision_id`), `append_to_note`, `prepend_to_note`, `edit_note` (fails on ambiguous matches without `replace_all`; supports `dry_run`), `delete_note` (requires `base_revision_id`; moves to Trash), `move_note_to_notebook`.
 
 ## MCP tools planned later
 

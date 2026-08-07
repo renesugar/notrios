@@ -47,8 +47,15 @@ type SearchConfig struct {
 }
 
 type MCPConfig struct {
-	Enabled          bool   `json:"enabled"`
-	DefaultProfile   string `json:"default_profile"`
+	Enabled bool `json:"enabled"`
+	// DefaultScope is the MCP tool scope: search-only, read-only, editor, or
+	// organizer. Empty means read-only.
+	DefaultScope string `json:"default_scope"`
+	// DefaultProfile is the deprecated former name of DefaultScope. It is still
+	// read so existing configs keep working; when both are set the narrower
+	// wins, because a key that silently stops applying must never widen what an
+	// agent may do.
+	DefaultProfile string `json:"default_profile"`
 	MaxResults       int    `json:"max_results"`
 	MaxDocumentBytes int    `json:"max_document_bytes"`
 }
@@ -133,8 +140,13 @@ func Default() Config {
 			MaxLimit:     100,
 		},
 		MCP: MCPConfig{
-			Enabled:          true,
-			DefaultProfile:   "read-only",
+			Enabled: true,
+			// Both scope keys are left empty on purpose. The resolver treats
+			// "neither set" as read-only, and pre-filling the deprecated key
+			// would make every default config look half-migrated and emit a
+			// deprecation warning nobody caused.
+			DefaultScope:     "",
+			DefaultProfile:   "",
 			MaxResults:       10,
 			MaxDocumentBytes: 65536,
 		},
@@ -468,7 +480,10 @@ func applyMCP(cfg *MCPConfig, key, value string) {
 	switch key {
 	case "enabled":
 		cfg.Enabled = parseBool(value, cfg.Enabled)
+	case "default_scope":
+		cfg.DefaultScope = value
 	case "default_profile":
+		// Deprecated spelling, still read so existing configs keep working.
 		cfg.DefaultProfile = value
 	case "max_results":
 		cfg.MaxResults = parseInt(value, cfg.MaxResults)

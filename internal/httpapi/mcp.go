@@ -66,7 +66,9 @@ func (s *Server) handleMCPInfo(w http.ResponseWriter, r *http.Request) {
 		"transport":   "http-jsonrpc-mvp",
 		"tools":       toolNames(s.mcpTools()),
 		"read_only":   true,
-		"profile":     defaultString(s.config.MCP.DefaultProfile, "read-only"),
+		"scope":       s.mcpScope(),
+		"scopes":      MCPScopes(),
+		"profile":     s.mcpScope(), // deprecated key, kept for existing clients
 		"max_results": effectiveMCPMaxResults(s.config.MCP.MaxResults),
 	})
 }
@@ -128,6 +130,13 @@ func (s *Server) handleMCPToolCall(r *http.Request, raw json.RawMessage) (mcpToo
 		return mcpToolResult{}, fmt.Errorf("store is not wired")
 	}
 
+	// Enforced here, for every tool, before dispatch. Filtering `tools/list` is
+	// presentation; this is the check that matters. A tool that is hidden but
+	// answers when called directly is not hidden.
+	if !s.mcpScopeAllows(params.Name) {
+		return mcpToolResult{}, s.mcpScopeError(params.Name)
+	}
+
 	switch params.Name {
 	case "list_collections":
 		return s.mcpListCollections(r)
@@ -161,20 +170,18 @@ func (s *Server) handleMCPToolCall(r *http.Request, raw json.RawMessage) (mcpToo
 		return s.mcpGetNotebookNotes(r, params.Arguments)
 	case "scan_remote_media":
 		return s.mcpScanRemoteMedia(r, params.Arguments)
+	case "run_batch":
+		return s.mcpRunBatch(r, params.Arguments)
 	case "create_note", "update_note", "append_to_note", "prepend_to_note", "edit_note", "delete_note", "move_note_to_notebook", "localize_remote_media":
-		if !s.mcpWritesEnabled() {
-			return mcpToolResult{}, fmt.Errorf("tool %q requires the %q MCP profile; the active profile is read-only", params.Name, "editor")
-		}
 		return s.mcpWriteTool(r, params.Name, params.Arguments)
 	default:
 		return mcpToolResult{}, fmt.Errorf("unknown MCP tool %q", params.Name)
 	}
 }
 
-// mcpWritesEnabled reports whether the configured MCP profile permits write
-// tools. The default profile is read-only; writes require "editor".
+// mcpWritesEnabled reports whether the active scope permits single-note writes.
 func (s *Server) mcpWritesEnabled() bool {
-	return strings.EqualFold(strings.TrimSpace(s.config.MCP.DefaultProfile), "editor")
+	return scopeRank(s.mcpScope()) >= scopeRank(MCPScopeEditor)
 }
 
 func (s *Server) mcpListCollections(r *http.Request) (mcpToolResult, error) {
@@ -411,7 +418,10 @@ func (s *Server) mcpTools() []mcpTool {
 		{Name: "get_notebook_notes", Description: "List current notes directly in one notebook with keyset pagination.", InputSchema: objectSchema(map[string]any{"notebook_id": stringSchema(), "limit": integerSchema(1, 200), "cursor": stringSchema()}, nil)},
 		{Name: "scan_remote_media", Description: "Report the remote-media policy decision (allow/block/review with reason) for every remote image/media URL in one note, without downloading anything.", InputSchema: objectSchema(map[string]any{"document_id": stringSchema(), "uri": stringSchema()}, nil)},
 	}
-	if s.mcpWritesEnabled() {
+	tools = append(tools,
+		mcpTool{Name: "run_batch", Description: "Apply one bounded organizer transaction over an explicit list of notes: move, add_tags, remove_tags, trash, restore, or duplicate. Modes are best_effort (default) and atomic; every requested item gets an outcome either way. trash requires base_revision_id per item. Bounded at 500 items.", InputSchema: objectSchema(map[string]any{"operation": enumSchema("move", "add_tags", "remove_tags", "trash", "restore", "duplicate"), "mode": enumSchema("best_effort", "atomic"), "request_key": stringSchema(), "notebook_id": stringSchema(), "tags": arraySchema(stringSchema()), "items": arraySchema(objectSchema(map[string]any{"document_id": stringSchema(), "base_revision_id": stringSchema()}, []string{"document_id"}))}, []string{"operation", "items"})},
+	)
+	{
 		tools = append(tools,
 			mcpTool{Name: "create_note", Description: "Create a Markdown note. Optional notebook_id defaults to the Notes notebook.", InputSchema: objectSchema(map[string]any{"title": stringSchema(), "body": stringSchema(), "notebook_id": stringSchema()}, []string{"title"})},
 			mcpTool{Name: "update_note", Description: "Replace a note's title/body. Requires base_revision_id.", InputSchema: objectSchema(map[string]any{"document_id": stringSchema(), "title": stringSchema(), "body": stringSchema(), "base_revision_id": stringSchema()}, []string{"document_id", "base_revision_id"})},
@@ -423,7 +433,9 @@ func (s *Server) mcpTools() []mcpTool {
 			mcpTool{Name: "localize_remote_media", Description: "Download policy-allowed remote media through the quarantine pipeline, store it as local resources, and rewrite the note to resource:// URIs in a new revision. Requires base_revision_id; supports dry_run (no fetching) and allow_review.", InputSchema: objectSchema(map[string]any{"document_id": stringSchema(), "base_revision_id": stringSchema(), "dry_run": booleanSchema(), "allow_review": booleanSchema()}, []string{"document_id", "base_revision_id"})},
 		)
 	}
-	return tools
+	// One filter, from the same table the call site consults, so the list and
+	// the enforcement can never disagree.
+	return s.toolsInScope(tools)
 }
 
 func mcpStructured(v any) (mcpToolResult, error) {
