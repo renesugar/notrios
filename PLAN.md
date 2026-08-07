@@ -208,17 +208,48 @@ cannot be completed there. `API_SPEC.md`'s full-client parity table has been
 claiming this capability on REST's behalf, which is true and beside the point:
 the built-in client does not use it.
 
-- Track the **selected notebook** in the app shell and create new notes into it.
-  Selecting a search notebook (All notes, Trash, a saved search) or having no
-  selection falls back to "Notes".
-- Show the target before it is used, so a note's destination is never a surprise
-  at save time.
-- Add a single-note **move to notebook** control — a destination picker over the
-  notebook tree — so a note created in the wrong place can be filed.
+The shape follows Joplin, which the user cited: **the sidebar selection is the
+target, and the sidebar's own highlight is the primary visual cue.** "New note"
+lives in the search pane (E10 part 2 already moves it there for a different
+reason, and this is the second one). Selecting "All notes", a query-backed
+search notebook, or a read-only notebook falls back to "Notes", which is the
+right default in each of those cases rather than a compromise.
+
+- Track the **selected notebook** in the app shell and create new notes into it,
+  with the sidebar highlight as the cue.
+- Put a **notebook dropdown in the editor's own toolbar**, pre-selected to the
+  sidebar's notebook. It is a second cue *and* the correction: change it and the
+  open note moves. Joplin's failure mode is creating several notes in the wrong
+  notebook before noticing, and a control that shows the answer where the typing
+  happens is what shortens that.
 - Add `notriosctl` coverage for the same single-note move, since the CLI lacks
   it too.
 
-**Two traps found while checking, both of which constrain the implementation.**
+**The user's condition on the dropdown — only if the editor toolbar can take it,
+because a separate control above the toolbar would wrap awkwardly and "may not
+be worth doing" — checks out in our favour, twice.** Verified against the
+installed `md-editor-rt` 6.5.3 rather than assumed:
+
+- It accepts custom toolbar items. `defToolbars?: Array<ReactElement>` takes the
+  elements and `ToolbarNames = keyof ToolbarTips | number` positions them by
+  index in the `toolbars` array. It exports **`DropdownToolbar`** — controlled
+  `visible`/`onChange` with an arbitrary `overlay` — which is a dropdown
+  already, so the notebook picker is the overlay's content and nothing is
+  reimplemented.
+- Its toolbar **cannot** reintroduce the E10 wrapping problem, because it does
+  not wrap: `.md-editor-toolbar-wrapper` is `overflow-x: auto; overflow-y:
+  hidden; scrollbar-width: none`. It scrolls horizontally at narrow widths.
+
+So the fallback the user described — a separate control above the toolbar — is
+not needed, and the "may not be worth doing" branch does not apply.
+
+One cost, recorded rather than discovered later: positioning a custom item means
+passing an explicit `toolbars` array instead of relying on the default. That is
+cheap here because `md-editor-rt` exports **`allToolbar`**, so the list stays
+`[...allToolbar, 0]` with the existing `toolbarsExclude` still filtering it —
+a new built-in tool in a future release still appears.
+
+**Traps found while checking, which constrain the implementation.**
 
 **The selected notebook must be tracked by ID, not inferred from the query.**
 The sidebar builds a notebook row's query as `notebook:"<name>"`
@@ -232,7 +263,17 @@ keeps only `activeQuery`; it needs the selected row.
 notebook is protected and notes cannot be moved into or out of it; the store
 returns `403`. A creation target that lands on Help has to be refused in the
 client the same way the delete affordance already is — by mirroring the server
-rule rather than discovering it through an error.
+rule rather than discovering it through an error. The same rule governs the
+dropdown: Help is not an available destination, and for a Help note or a trashed
+note the dropdown is shown disabled rather than hidden, so the note's notebook
+stays visible even where it cannot be changed.
+
+**The dropdown must not silently move a note the user is only reading.** It is
+pre-selected from the *sidebar* when starting a new note, but from the *open
+note's own notebook* once one is open — otherwise browsing to a note from "All
+notes" would show it belonging somewhere it does not. Changing it is a move and
+takes effect immediately, as `MoveDocumentToNotebook` is not revision-scoped;
+the message says which notebook the note landed in.
 
 **Explicitly not here:** moving *several* notes at once. Multi-select move is a
 batch operation and belongs to F1, which is the next task and already covers

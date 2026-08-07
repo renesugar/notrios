@@ -77,10 +77,18 @@ Trash-first deletion (implemented in v0.5 E8):
   selection is tracked by notebook **ID**, never derived from the sidebar row's
   `notebook:"<name>"` query — notebook names are unique only among siblings, so
   two notebooks under different parents can share a name and a query. A
-  single-note **move to notebook** control covers notes filed in the wrong
-  place; moving several at once is a batch operation and belongs with the rest
-  of them. (Planned as v0.6 F0; before it, the GUI created every note in "Notes"
-  and offered no way to move one.)
+  notebook dropdown in the **editor's own toolbar** is both a second visual cue
+  and the correction: it shows the open note's notebook and changing it moves
+  the note. It lives in that toolbar rather than in a row of its own because
+  `md-editor-rt` accepts custom toolbar items (`defToolbars` plus a numeric
+  entry in `toolbars`, with an exported `DropdownToolbar`) and its toolbar
+  scrolls horizontally instead of wrapping — a separate control above it would
+  reintroduce exactly the wrapping this section otherwise forbids. Help is never
+  an available destination, and for a read-only or trashed note the dropdown is
+  disabled rather than hidden so the note's notebook stays visible. Moving
+  several notes at once is a batch operation and belongs with the rest of them.
+  (Planned as v0.6 F0; before it, the GUI created every note in "Notes" and
+  offered no way to move one.)
 - The editor toolbar holds **only actions that apply to the open note** — save,
   move to Trash, restore, delete forever. Starting a *new* note is not one of
   them: it discards the editor's contents rather than acting on the note, and

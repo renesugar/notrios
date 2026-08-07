@@ -54,11 +54,23 @@ being notebook-scoped. `MoveDocumentToNotebook` exists in the store,
 MCP — but `notriosctl` has no command and `web/src/api.ts` has no client
 function, so the built-in client can create a note in the wrong notebook and
 then not correct it. Planned as **F0**, the first v0.6 task, ahead of F1 whose
-batch move generalizes the single-note control F0 adds. Two traps recorded with
+batch move generalizes the single-note control F0 adds. Traps recorded with
 it: the selected notebook must be tracked by ID rather than derived from the
 sidebar's `notebook:"<name>"` query (names are unique only among siblings, so
 two notebooks can share one), and a creation target landing on the protected
 Help notebook must be refused client-side rather than discovered as a 403.
+
+F0 follows Joplin's shape, which the user cited: the sidebar selection is the
+creation target and its highlight is the primary cue, with "New note" in the
+search pane. The user's conditional proposal of a notebook dropdown *inside the
+editor toolbar* — worth doing only if that toolbar can take it, since a separate
+control above it would wrap — was checked against the installed `md-editor-rt`
+6.5.3 and holds twice over: `defToolbars` plus a numeric `toolbars` entry accept
+custom items, `DropdownToolbar` is exported with a controlled `visible`/`overlay`
+contract, and `.md-editor-toolbar-wrapper` is `overflow-x: auto`, so that
+toolbar scrolls rather than wraps and cannot reintroduce the E10 defect. The
+explicit `toolbars` array a custom item requires stays maintainable because
+`allToolbar` is exported.
 
 `PLAN.md` now holds the **v0.6 draft** — notebook targeting and single-note move
 (F0), batch organizer transactions (F1), MCP
