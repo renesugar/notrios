@@ -28,6 +28,60 @@ const DefaultNotebookID = "nb_notes"
 // HelpNotebookID holds the built-in read-only documentation notes.
 const HelpNotebookID = "nb_help"
 
+// ReportsNotebookID holds notes Notrios generates about the library itself,
+// such as the graph report. Like Help, it is read-only: a generated report a
+// reader can edit is a report that silently stops being true.
+const ReportsNotebookID = "nb_reports"
+
+// ReadOnlyNotebookIDs lists the notebooks whose notes the system authors and
+// nobody may edit, in sidebar order.
+//
+// The set is closed by construction: these notebooks are created by bootstrap
+// and there is no API that makes another one.
+func ReadOnlyNotebookIDs() []string {
+	return []string{ReportsNotebookID, HelpNotebookID}
+}
+
+// IsReadOnlyNotebook reports whether a notebook's notes are system-authored and
+// therefore not editable.
+//
+// **This is deliberately not "is it builtin".** Two different sets exist and
+// the code needs both:
+//
+//	Undeletable            Help, Reports, and Notes  (nb.Builtin OR the default ID)
+//	Read-only / generated  Help, Reports             (this predicate)
+//
+// The default "Notes" notebook is created by bootstrap and cannot be deleted,
+// but its content is the *user's* — it is `builtin = 0` in the database for
+// exactly that reason. Treating it as read-only would exclude most of the
+// library, silently, from the graph report, from publications, and from lint.
+// The name says "read-only" rather than "builtin" so that anyone who copies
+// DeleteNotebook's pair of checks is contradicted by it.
+func IsReadOnlyNotebook(notebookID string) bool {
+	switch strings.TrimSpace(notebookID) {
+	case HelpNotebookID, ReportsNotebookID:
+		return true
+	default:
+		return false
+	}
+}
+
+// ReadOnlyNotebookName names a read-only notebook for a refusal message.
+//
+// The name is a constant rather than a lookup because these notebooks refuse
+// renaming, and a refusal that has to read the database to explain itself can
+// fail while explaining.
+func ReadOnlyNotebookName(notebookID string) string {
+	switch strings.TrimSpace(notebookID) {
+	case HelpNotebookID:
+		return "Help"
+	case ReportsNotebookID:
+		return "Reports"
+	default:
+		return notebookID
+	}
+}
+
 // Builtin search-notebook IDs. "All notes" sorts first in sidebars and Trash
 // sorts last; neither can be deleted.
 const (
@@ -115,6 +169,15 @@ type EffectivePrivacyPolicy struct {
 	IncludePrivateMetadata bool     `json:"include_private_metadata"`
 	IncludeTrashed         bool     `json:"include_trashed"`
 	MaxResourceBytes       int64    `json:"max_resource_bytes,omitempty"`
+	// ExcludeReadOnlyNotebooks drops Notrios' own generated and documentation
+	// notes — Help and Reports — from a publication handoff.
+	//
+	// It is reported here and **not settable** through PrivacyPolicy. This is
+	// not something a user should have to configure, and a field invites
+	// getting it wrong; adding an opt-in later is easy, and removing a leak is
+	// not. The default Notes notebook is emphatically not in this set —
+	// excluding it would make a publication ship almost nothing.
+	ExcludeReadOnlyNotebooks bool `json:"exclude_read_only_notebooks,omitempty"`
 }
 
 type SelectionPlanRequest struct {
@@ -825,6 +888,7 @@ type Store interface {
 	Graph(ctx context.Context, req GraphRequest) (GraphResponse, error)
 	GraphPath(ctx context.Context, req GraphPathRequest) (GraphPathResponse, error)
 	GraphReport(ctx context.Context, req GraphReportRequest) (GraphReport, error)
+	WriteGraphReportNote(ctx context.Context, req GraphReportRequest) (Document, GraphReport, error)
 	SuggestDocuments(ctx context.Context, req DocumentSuggestionRequest) (DocumentSuggestionResponse, error)
 	CheckLinks(ctx context.Context, req CheckLinksRequest) (CheckLinksResponse, error)
 	RunNoteQuery(ctx context.Context, req NoteQueryRequest) (NoteQueryResult, error)

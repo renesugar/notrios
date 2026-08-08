@@ -1,9 +1,10 @@
 // Deterministic sidebar composition (UI_DESIGN.md invariants):
 //
 //   1. "All notes" (builtin first-anchored search notebook) is always first.
-//   2. The ordinary notebook tree, excluding the builtin Help node.
+//   2. The ordinary notebook tree, excluding the read-only builtin nodes.
 //   3. User-created (normal-anchored) search notebooks.
-//   4. The builtin Help regular notebook — always immediately above Trash.
+//   4. The read-only builtin notebooks — Reports, then Help — always
+//      immediately above Trash, in the order READ_ONLY_NOTEBOOK_IDS gives.
 //   5. "Trash" (builtin last-anchored search notebook) is always last.
 //
 // Ordering uses stable builtin IDs, never localized or user-visible names, so
@@ -15,7 +16,17 @@
 import type { NotebookTreeNode, SearchNotebook } from './api';
 
 export const HELP_NOTEBOOK_ID = 'nb_help';
+export const REPORTS_NOTEBOOK_ID = 'nb_reports';
 export const DEFAULT_NOTEBOOK_ID = 'nb_notes';
+
+/**
+ * Notebooks whose notes the service authors and nobody may edit, in the order
+ * they sit above Trash. Mirrors `store.ReadOnlyNotebookIDs()`.
+ *
+ * Not the same set as "undeletable", which also contains the default Notes
+ * notebook — see `isDeletableNotebookRow`, which needs both checks.
+ */
+export const READ_ONLY_NOTEBOOK_IDS = [REPORTS_NOTEBOOK_ID, HELP_NOTEBOOK_ID];
 export const ALL_NOTES_SEARCH_ID = 'snb_all_notes';
 export const TRASH_SEARCH_ID = 'snb_trash';
 
@@ -120,12 +131,12 @@ export function composeSidebar(tree: NotebookTreeNode[], searchNotebooks: Search
   for (const sn of allNotes) rows.push(searchRow(sn));
   for (const sn of otherFirst) rows.push(searchRow(sn));
 
-  // 2. The notebook tree, excluding the top-level builtin Help node.
-  let helpNode: NotebookTreeNode | null = null;
+  // 2. The notebook tree, excluding the top-level read-only builtin nodes.
+  const readOnlyNodes = new Map<string, NotebookTreeNode>();
   const walk = (nodes: NotebookTreeNode[], depth: number) => {
     for (const node of nodes) {
-      if (depth === 0 && node.id === HELP_NOTEBOOK_ID) {
-        helpNode = node;
+      if (depth === 0 && READ_ONLY_NOTEBOOK_IDS.includes(node.id)) {
+        readOnlyNodes.set(node.id, node);
         continue;
       }
       rows.push(notebookRow(node, depth));
@@ -137,9 +148,13 @@ export function composeSidebar(tree: NotebookTreeNode[], searchNotebooks: Search
   // 3. User search notebooks.
   for (const sn of userSearch) rows.push(searchRow(sn));
 
-  // 4/5. Any other last-anchored builtins, then Help immediately above Trash.
+  // 4/5. Any other last-anchored builtins, then the read-only builtins
+  // immediately above Trash.
   for (const sn of otherLast) rows.push(searchRow(sn));
-  if (helpNode !== null) rows.push(notebookRow(helpNode, 0));
+  for (const id of READ_ONLY_NOTEBOOK_IDS) {
+    const node = readOnlyNodes.get(id);
+    if (node) rows.push(notebookRow(node, 0));
+  }
   for (const sn of trash) rows.push(searchRow(sn));
 
   return rows;

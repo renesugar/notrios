@@ -14,15 +14,18 @@ import (
 // R8): append/prepend, line-range reads, and in-note search — parity with the
 // joplin-mcp tool surface.
 
-// guardHelpNote refuses API mutations of the read-only Help notebook's notes
-// (seeded from docs/ by `notriosctl seed-help`; task R15).
-func (s *Server) guardHelpNote(w http.ResponseWriter, r *http.Request, docID string) bool {
+// guardReadOnlyNote refuses API mutations of notes in a read-only builtin
+// notebook: Help, seeded from docs/ by `notriosctl seed-help` (task R15), and
+// Reports, written by the graph report (F5). It asks store.IsReadOnlyNotebook
+// rather than naming a notebook, so a later generated notebook is protected the
+// day it is added instead of the day someone remembers this line.
+func (s *Server) guardReadOnlyNote(w http.ResponseWriter, r *http.Request, docID string) bool {
 	doc, err := s.store.GetDocument(r.Context(), docID)
 	if err != nil {
 		return false // let the handler produce its own not-found/error
 	}
-	if doc.NotebookID == store.HelpNotebookID {
-		writeError(w, http.StatusForbidden, "forbidden", "Help notebook notes are read-only")
+	if store.IsReadOnlyNotebook(doc.NotebookID) {
+		writeError(w, http.StatusForbidden, "forbidden", "notes in the "+store.ReadOnlyNotebookName(doc.NotebookID)+" notebook are read-only")
 		return true
 	}
 	return false
@@ -50,7 +53,7 @@ func (s *Server) handleAppendOrPrepend(w http.ResponseWriter, r *http.Request, p
 	}
 	baseRevisionID := firstNonEmpty(req.BaseRevisionID, revisionFromIfMatch(r.Header.Get("If-Match")))
 	docID := r.PathValue("document_id")
-	if s.guardHelpNote(w, r, docID) {
+	if s.guardReadOnlyNote(w, r, docID) {
 		return
 	}
 

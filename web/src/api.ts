@@ -611,3 +611,64 @@ export async function deleteNotebook(notebookID: string): Promise<void> {
   const response = await fetch(`/api/v1/notebooks/${encodeURIComponent(notebookID)}`, { method: 'DELETE' });
   await expectNoContent(response);
 }
+
+/**
+ * A note's neighbourhood in the link graph.
+ *
+ * This is the half of a graph view that stays useful in a large library. A
+ * global canvas degrades into an unreadable hairball past a few thousand notes;
+ * a map of what surrounds *this* note does not, because its size is bounded by
+ * the note rather than by the library.
+ */
+export interface GraphNode {
+  id: string;
+  uri?: string;
+  /** `document`, `resource`, or a link resolution status for a broken target. */
+  kind: string;
+  label?: string;
+  /** Hops from the note in the editor. The note itself is 0. */
+  depth: number;
+}
+
+export interface GraphEdge {
+  id: string;
+  source_id: string;
+  target_id: string;
+  kind?: string;
+  status?: string;
+  raw_target?: string;
+}
+
+export interface GraphResponse {
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+  /** A ceiling stopped the expansion; `truncated_by` names which one. */
+  truncated?: boolean;
+  truncated_by?: string;
+  requested_depth: number;
+  completed_depth: number;
+}
+
+/**
+ * Depths the local graph offers.
+ *
+ * The service allows up to 5, but one and two hops are what stay readable: at
+ * depth 3 a well-linked note reaches a sizeable fraction of the library and the
+ * view stops answering the question it was opened to answer. The ceiling is
+ * shown rather than silently applied.
+ */
+export const LOCAL_GRAPH_DEPTHS = [1, 2] as const;
+
+export async function getLocalGraph(
+  documentID: string,
+  depth: number,
+  signal?: AbortSignal,
+): Promise<GraphResponse> {
+  const response = await fetch('/api/v1/graph', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ roots: [documentID], depth, direction: 'both' }),
+    signal,
+  });
+  return parseJSON<GraphResponse>(response);
+}

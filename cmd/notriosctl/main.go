@@ -70,6 +70,8 @@ func main() {
 		runTags(os.Args[2:])
 	case "notes":
 		runNotes(os.Args[2:])
+	case "graph":
+		runGraph(os.Args[2:])
 	case "help", "-h", "--help":
 		printHelp()
 	default:
@@ -528,6 +530,10 @@ Usage:
                                                  # hierarchical tag rename; dry run is the default and reports every tag and count
   notriosctl notes move --document <id> --notebook <id|name> [--db ...]
                                                  # file one note into another notebook; a name is refused when it matches more than one
+  notriosctl graph report [--db ...] [--collection default] [--limit N] [--write-note] [--quiet]
+                                                 # link-graph shape; --write-note overwrites the read-only note in Reports
+  notriosctl graph export [--db ...] [--collection default] [--overwrite] <out-dir>
+                                                 # nodes.csv and edges.csv for Gephi, Cytoscape, NetworkX or igraph
   notriosctl link [--db ...] [--anchor slug|^block] [--list-anchors] <document-id>
                                                  # print the stable notrios:// link for a note or one of its sections
   notriosctl open [--profile name] [--registry path] [--db path] [--launch] <notrios-uri>

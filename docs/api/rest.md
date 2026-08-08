@@ -241,6 +241,12 @@ expansion the response says so:
 `completed_depth` is the deepest level that was expanded in full, so you can
 tell a partial neighbourhood from a small one.
 
+Links originating in a read-only builtin notebook — Help, Reports — are not
+followed, **unless that note is one of the roots you asked about**. The graph
+report links to every hub it names, so without this every well-linked note would
+show the report sitting one hop away; with the exemption, asking about the
+report itself still shows what it names. Trashed notes are never neighbours.
+
 ### Shortest path between two notes
 
 ```sh
@@ -315,6 +321,37 @@ example lists only; the counts always describe the whole collection.
 A note nobody links to is not an error, which is why this is a report and not a
 lint check. Lint's `unreferenced_resource` answers the neighbouring question
 about attachments.
+
+**What is measured.** The live library you own. Notes in the Trash do not count,
+and neither do notes in the read-only builtin notebooks — Help and Reports. The
+default **Notes** notebook is not one of those: it holds your notes and is
+measured like any other.
+
+Both ends of every counted link are filtered, not just the source. Two of those
+filters arrived in v0.6, and one of them fixed a defect: trashing a note does
+not delete its links, because restoring it needs them, so a note in the Trash
+used to keep propping up the in-degree of everything it had pointed at, and a
+note linked only from the Trash was never reported as an orphan.
+
+### Writing the report into the library
+
+```sh
+curl -s -X POST "http://127.0.0.1:8080/api/v1/graph/report/note" | jq .document.uri
+```
+
+Renders the report as a Markdown note in the builtin **Reports** notebook, with
+a stable ID, overwritten in place, carrying the time it was generated. The
+notebook is read-only: the note comes back with `editable: false`, and `PUT`,
+`PATCH`, `DELETE`, `append`, and `prepend` all answer `403`. A generated report
+you can edit is a report that quietly stops being true.
+
+Nothing regenerates it for you. The scan reads every note, so it happens when
+you ask — here, or with `notriosctl graph report --write-note`. There is no MCP
+tool for it, the same way there is none for `run_lint`.
+
+The report links to every hub it names, and those links do not count toward the
+next report's ranking. That is the same notebook filter described above, and it
+is why the note can live in the library it measures without changing the answer.
 
 ## Selection and privacy dry runs
 

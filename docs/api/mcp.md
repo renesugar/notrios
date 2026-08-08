@@ -153,6 +153,8 @@ reason is recorded per surface:
 | Archive export, verify, restore | writes and reads files at a path the caller names — a filesystem operation, which MCP never gets |
 | Publication | writes a sanitized copy of part of your library to a directory, gated on a reviewed plan digest |
 | Trash purge | permanent deletion |
+| Graph report **regeneration** | scans the whole collection and overwrites a note. `get_graph_report` reads it; `POST /api/v1/graph/report/note` and `notriosctl graph report --write-note` write it (v0.6 F5) |
+| Graph CSV export | writes files at a path the caller names, like archive export |
 
 The pattern: **anything that writes outside the note model, deletes
 permanently, or acts on the whole library at once stays a deliberate act on the
@@ -162,6 +164,13 @@ and gated behind the `organizer` scope.
 
 Trashed notes are outside the MCP surface entirely: they do not appear in
 `search_documents` and `get_document` does not return them.
+
+`get_graph_report` measures the live library the user owns: notes in the Trash
+and notes in the read-only builtin notebooks — Help and Reports, never the
+default Notes notebook — are neither ranked nor counted, and neither end of a
+counted link may be one of them (v0.6 F5). `get_graph` follows the same rule for
+neighbours, except that a read-only note's own links are followed when it is the
+root being asked about.
 
 ## Safety rules
 

@@ -267,6 +267,14 @@ printed per check, never the counts, and `report_sha256` covers every finding �
 the same library produces the same digest. Nothing is written; fixing is a
 separate operation.
 
+Since v0.6, content checks skip notes in the read-only builtin notebooks — Help
+and Reports. `notriosctl fix` structurally cannot repair them and you cannot
+edit them either, so a finding there was noise rather than information. **On a
+library with Help seeded this changes the output**: findings inside Notrios' own
+documentation stop being reported, and `report_sha256` changes with them.
+`projection_backlog` still covers every note, because that one says the search
+index is behind rather than that a note needs editing.
+
 ## fix
 
 ```sh
@@ -327,6 +335,52 @@ Notebook names are unique only among siblings, so `Contacts/Work` and
 `Personal/Work` can both exist; given an ambiguous name the command exits `1`
 and lists the matching IDs instead of picking one. Filing a note somewhere
 unintended is exactly what this command exists to correct.
+
+## graph report
+
+```sh
+notriosctl graph report [--config config.yaml] [--db path] [--asset-store path] [--collection default]
+    [--limit N] [--write-note] [--quiet]
+```
+
+The shape of the link graph: totals, the most-linked notes by in-degree, the
+orphans, and the isolates. `--limit` caps the example lists only; the counts
+always describe the whole collection.
+
+`--write-note` also renders it as a note in the builtin **Reports** notebook,
+with a stable ID, overwritten in place, carrying the time it was generated. The
+notebook is read-only, so the note cannot be edited through any surface — a
+generated report someone can edit is one that silently stops being true.
+
+Nothing regenerates it on a timer or on save: the scan reads every note, which
+would be the one unbounded thing in an otherwise bounded design.
+
+What is measured is the live library you own. Notes in the Trash and notes in
+read-only builtin notebooks are neither ranked nor counted, and neither end of a
+counted link may be one of them — which is what lets the report live in the
+library it measures without changing the answer.
+
+## graph export
+
+```sh
+notriosctl graph export [--config config.yaml] [--db path] [--asset-store path] [--collection default]
+    [--overwrite] <out-dir>
+```
+
+Writes `nodes.csv` and `edges.csv` for tools built to analyse graphs — Gephi,
+Cytoscape, NetworkX, igraph all import them. Column names follow Gephi's
+convention (`Id`/`Label`, `Source`/`Target`/`Type`) because it is the fussiest
+of the four.
+
+Rows stream as they are read, so the export does not grow with what it can hold
+in memory. It refuses to replace an existing file unless you pass `--overwrite`.
+
+CLI-only, like archive export: it writes files to a path you named, which is not
+a choice a REST caller or an MCP client should make for you. The exported graph
+is the same one `graph report` measures.
+
+Centrality, modularity, and community detection are whole fields with software
+designed for them; Notrios emits the graph rather than reimplementing any of it.
 
 ## seed-help
 

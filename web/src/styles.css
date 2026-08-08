@@ -757,6 +757,45 @@ body.splitter-dragging {
   text-decoration: underline;
 }
 
+/* ---- Local graph ----
+   A short grouped list, not a canvas. Sized to sit inside the note inspector
+   without pushing the links below it off the pane, and scrolling on its own
+   when a note turns out to be well connected. */
+.local-graph {
+  margin: 8px 0 10px;
+}
+
+.local-graph-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.local-graph-depth {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.85em;
+}
+
+.local-graph-group ul {
+  margin: 2px 0 8px;
+  padding-left: 18px;
+  max-height: 12rem;
+  overflow-y: auto;
+}
+
+.local-graph-group button {
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+  text-decoration: underline;
+}
+
 /* ---- Preview pane ---- */
 
 .preview-pane {

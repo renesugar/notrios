@@ -178,6 +178,7 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("POST /api/v1/graph", s.handleGraph)
 	s.mux.HandleFunc("POST /api/v1/graph/path", s.handleGraphPath)
 	s.mux.HandleFunc("GET /api/v1/graph/report", s.handleGraphReport)
+	s.mux.HandleFunc("POST /api/v1/graph/report/note", s.handleWriteGraphReportNote)
 	s.mux.HandleFunc("GET /api/v1/links/suggest", s.handleDocumentSuggest)
 	s.mux.HandleFunc("POST /api/v1/links/check", s.handleCheckLinks)
 	s.mux.HandleFunc("POST /api/v1/note-queries/run", s.handleRunNoteQuery)
@@ -559,7 +560,7 @@ func (s *Server) handleGetDocument(w http.ResponseWriter, r *http.Request, docID
 }
 
 func (s *Server) handlePutDocument(w http.ResponseWriter, r *http.Request, docID string) {
-	if s.store != nil && s.guardHelpNote(w, r, docID) {
+	if s.store != nil && s.guardReadOnlyNote(w, r, docID) {
 		return
 	}
 	var req api.DocumentMutationRequest
@@ -594,7 +595,7 @@ func (s *Server) handlePutDocument(w http.ResponseWriter, r *http.Request, docID
 }
 
 func (s *Server) handlePatchDocument(w http.ResponseWriter, r *http.Request, docID string) {
-	if s.store != nil && s.guardHelpNote(w, r, docID) {
+	if s.store != nil && s.guardReadOnlyNote(w, r, docID) {
 		return
 	}
 	var req api.DocumentPatchRequest
@@ -645,7 +646,7 @@ func (s *Server) handlePatchDocument(w http.ResponseWriter, r *http.Request, doc
 }
 
 func (s *Server) handleDeleteDocument(w http.ResponseWriter, r *http.Request, docID string) {
-	if s.store != nil && s.guardHelpNote(w, r, docID) {
+	if s.store != nil && s.guardReadOnlyNote(w, r, docID) {
 		return
 	}
 	baseRevisionID := firstNonEmpty(r.URL.Query().Get("base_revision_id"), revisionFromIfMatch(r.Header.Get("If-Match")))
@@ -1163,7 +1164,7 @@ func toAPIDocument(doc store.Document) api.Document {
 		URI:               doc.URI,
 		CollectionID:      doc.CollectionID,
 		NotebookID:        doc.NotebookID,
-		Editable:          doc.NotebookID != store.HelpNotebookID && doc.DeletedAt.IsZero(),
+		Editable:          !store.IsReadOnlyNotebook(doc.NotebookID) && doc.DeletedAt.IsZero(),
 		Title:             doc.Title,
 		BodyMIMEType:      doc.BodyMIMEType,
 		Body:              doc.Body,
@@ -1186,7 +1187,7 @@ func toAPISearchResponse(result store.SearchResponse) api.SearchResponse {
 			Title:        hit.Title,
 			Snippet:      hit.Snippet,
 			Score:        hit.Score,
-			Editable:     hit.NotebookID != store.HelpNotebookID,
+			Editable:     !store.IsReadOnlyNotebook(hit.NotebookID),
 		})
 	}
 	return api.SearchResponse{Hits: hits, NextCursor: result.NextCursor, Truncated: result.Truncated}

@@ -999,6 +999,31 @@ paths:
                 $ref: '#/components/schemas/GraphReport'
         '400':
           $ref: '#/components/responses/Error'
+  /api/v1/graph/report/note:
+    post:
+      summary: Regenerate the hub report as a read-only note in the Reports notebook
+      description: >
+        Explicit only — never on a schedule and never on write, because the scan
+        reads the whole collection. The note has a stable ID and is overwritten
+        in place, and the Reports notebook is read-only so the note reports
+        `editable: false` and every mutation route refuses it. There is no MCP
+        tool for this, for the same reason `run_lint` has none.
+      parameters:
+        - in: query
+          name: collection_id
+          schema: { type: string }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 1000, default: 20 }
+      responses:
+        '200':
+          description: The note that was written and the report it was rendered from
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GraphReportNote'
+        '400':
+          $ref: '#/components/responses/Error'
   /api/v1/selection/plan:
     post:
       summary: Dry-run a full archive, subset transfer, or publication selection
@@ -1921,6 +1946,12 @@ components:
         title: { type: string }
         in_degree: { type: integer }
         out_degree: { type: integer }
+    GraphReportNote:
+      type: object
+      required: [document, report]
+      properties:
+        document: { $ref: '#/components/schemas/Document' }
+        report: { $ref: '#/components/schemas/GraphReport' }
     GraphReport:
       type: object
       required: [collection_id, document_count, link_count, isolated_count, orphan_count]

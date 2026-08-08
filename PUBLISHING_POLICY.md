@@ -114,7 +114,8 @@ A publish dry run must report:
 
 - included notes count;
 - included resources count;
-- excluded notes/resources and reasons;
+- excluded notes/resources and reasons, including
+  `read_only_notebook:<id>` for Notrios' own Help and Reports notes;
 - links to private or missing targets;
 - remote media decisions;
 - oversized resources;

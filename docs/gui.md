@@ -38,8 +38,8 @@ be](installation.md#where-the-interface-files-have-to-be). In the default mode t
 
 On first launch you'll see the "All notes" view (empty until you create or
 [import](import-export.md) notes) with the notebooks sidebar on the left. A
-fresh database always bootstraps protected **All notes**, **Notes**, **Help**,
-and **Trash** entries.
+fresh database always bootstraps protected **All notes**, **Notes**,
+**Reports**, **Help**, and **Trash** entries.
 
 ## Verifying the embedded service
 
@@ -71,7 +71,7 @@ own — `make serve` from source, or `./bin/notriosd` — and open
 
 Below the menu bar the window is four side-by-side panes, always in this order:
 
-1. **Sidebar** — notebooks and tags. The builtin **All notes** view is always at the top and **Trash** is always at the bottom, with **Help** immediately above Trash; between them are your notebooks (nested, with optional emoji icons) and your saved search notebooks. Below the notebooks is the tag list with live note counts. Click anything to search it.
+1. **Sidebar** — notebooks and tags. The builtin **All notes** view is always at the top and **Trash** is always at the bottom, with **Reports** and then **Help** immediately above Trash; between them are your notebooks (nested, with optional emoji icons) and your saved search notebooks. Below the notebooks is the tag list with live note counts. Click anything to search it.
 2. **Search panel** — the search box plus results. Its inline hint covers
    uppercase OR, implicit AND, prefix `-`, grouping, and `category:`/
    `notebook:` fields; the complete grammar is in [Search query
@@ -121,6 +121,50 @@ how many links are broken in the whole note.
 
 All of it is quiet when the service cannot be reached: you get no suggestions,
 no underlines, and no list — not an error interrupting your typing.
+
+### Seeing what is around a note
+
+The **Note info** inspector ends with **Nearby notes**: the notes one or two
+link hops from the one you have open, grouped by distance, in either direction.
+Click one to open it. Resources and links that do not resolve appear as plain
+entries rather than as something to click, since there is nothing to open.
+
+There is deliberately no whole-library graph picture. Past a few thousand notes
+a global graph becomes an unreadable tangle, while the neighbourhood of *one*
+note stays exactly as readable as it ever was — its size is set by the note, not
+by the library. For the shape of the whole library there is the [graph
+report](#the-graph-report) instead, which is a ranked list, and a ranked list
+reads the same at any size.
+
+If a ceiling stops the expansion, the panel says so rather than showing a
+partial neighbourhood as though it were the whole one.
+
+### The graph report
+
+The builtin **Reports** notebook, just above Help, holds notes Notrios writes
+about your library. Today that is the **Library graph report**: your most-linked
+notes, your orphans, and the totals, with the time it was generated.
+
+It is regenerated when you ask and not before — it reads every note, so nothing
+does it on a timer or on save:
+
+```sh
+notriosctl graph report --write-note
+```
+
+The note is read-only and overwritten in place, so a link to it keeps working
+and it cannot silently drift from the truth. Nothing in Reports or Help is
+measured by the report, so writing it does not change what it says, and neither
+notebook travels in a publication.
+
+To hand the graph to software built for graph analysis:
+
+```sh
+notriosctl graph export ~/graph      # nodes.csv and edges.csv
+```
+
+Gephi, Cytoscape, NetworkX, and igraph all read those. Notrios does not try to
+do centrality or community detection itself.
 
 ### Pasting a table
 
@@ -203,8 +247,9 @@ Two details worth knowing:
 - The control shows the **open note's** notebook, not the sidebar's selection.
   Reaching a note from "All notes" shows you where that note actually lives.
 - On a read-only or trashed note it is visible but disabled, so a note's
-  notebook is still legible where it cannot be changed. **Help** is never
-  offered as a destination — the service refuses notes moved into or out of it.
+  notebook is still legible where it cannot be changed. **Help** and **Reports**
+  are never offered as destinations — the service refuses notes moved into or
+  out of either.
 
 To move a note from the command line:
 

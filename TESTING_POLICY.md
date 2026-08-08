@@ -446,6 +446,23 @@ glossed: the generated library is a circulant graph, so a BFS frontier grows
 linearly and the traversal timings are a floor for a densely cross-linked
 library.
 
+**What the report measures (v0.6 F5).** Two filters were added and both are
+asserted from both sides, because a filter that never fires and a filter that
+always fires are both wrong. The trashed-source case is a **regression test for
+a defect**: the fixture asserts in-degree 1 while the source is live and 0 once
+it is trashed, and separately asserts that the link row still exists — this is a
+reporting filter, not a deletion, and soft delete keeps links so a restore can
+use them. The system-authored case asserts that a note linked only from
+Help/Reports is an orphan and that the Help note is not itself a row.
+
+Both were verified by mutation: restoring the original in-degree subquery makes
+both tests fail with the exact numbers the defect produced.
+
+The report-as-a-note fixture asserts the property the design rests on — writing
+the report does not change what the report says — and first asserts that the
+note really does link to a hub, so the property is not being measured against a
+note with no links in it.
+
 ### Editor link intelligence (v0.5 E5)
 
 One fixture uses titles chosen to separate the two suggestion passes: several

@@ -3,15 +3,17 @@
 // "Note info" inspector for links, backlinks, and attached resources so the
 // note context never becomes a fifth workspace column.
 //
-// Read-only notes (server-provided `editable: false`, e.g. the Help notebook)
-// render with a disabled editor, hidden save/upload controls, and a visible
-// badge — the client never waits for a server 403 to explain protection.
+// Read-only notes (server-provided `editable: false` — the Help and Reports
+// notebooks) render with a disabled editor, hidden save/upload controls, and a
+// visible badge naming the notebook — the client never waits for a server 403
+// to explain protection.
 import { useEffect, useMemo, useRef } from 'react';
 import { MdEditor, allToolbar, config, type ExposeParam, type ToolbarNames, type UploadImgCallBack } from 'md-editor-rt';
 import type { ThemeMode } from '../themes';
 import { resourceContentURL, type DocumentLink, type DocumentRecord, type RemoteMediaDecision, type ResourceReference } from '../api';
 import { useBufferLinks } from '../useLinkIntelligence';
 import { BrokenLinkList, LinkPicker } from './LinkIntelligence';
+import { LocalGraph } from './LocalGraph';
 import {
   applyBrokenLinks,
   brokenLinkExtensions,
@@ -220,9 +222,13 @@ export function EditorPane(props: EditorPaneProps) {
               In the Trash
             </span>
           )}
+          {/* Named by notebook rather than hard-coded to "Help": F5 added a
+              second read-only notebook, and a Reports note labelled "Help note"
+              would be wrong in the one place a reader looks to find out why
+              they cannot type. */}
           {!editable && !trashed && (
             <span className="readonly-badge" data-testid="readonly-badge" role="status">
-              Read-only Help note
+              Read-only {notebookLabel || 'system'} note
             </span>
           )}
           {editable && (
@@ -324,6 +330,12 @@ export function EditorPane(props: EditorPaneProps) {
                 />
               </div>
             )}
+            {/* The local graph goes below the note's own links, because it
+                answers the wider question: the lists above say what this note
+                names, this says what is around it. It is offered for every
+                note, read-only ones included — reading a neighbourhood is not
+                editing. */}
+            <LocalGraph documentID={selectedDocument.id} onOpenDocument={onOpenDocument} />
             {(links.length > 0 || backlinks.length > 0) && (
               <div className="link-list">
                 {links.length > 0 && (

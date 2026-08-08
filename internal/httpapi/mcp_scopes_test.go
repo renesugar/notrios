@@ -240,6 +240,11 @@ func TestNoScopeReachesWholeLibraryOperations(t *testing.T) {
 	withheld := []string{
 		"run_lint", "run_fix", "collect_garbage", "export_archive", "restore_archive",
 		"publish", "rename_tag", "delete_notebook", "purge_document",
+		// F5: regenerating the graph report scans the whole collection and
+		// overwrites a note, and exporting the graph writes files to a path
+		// someone chose. Both are CLI and REST, for the same reason as the rest
+		// of this list.
+		"write_graph_report", "export_graph",
 	}
 	for _, scope := range MCPScopes() {
 		s := scopedServer(t, scope)

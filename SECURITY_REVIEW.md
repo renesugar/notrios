@@ -176,6 +176,16 @@ MCP surface accepts an archive path or streams archive bytes.
   command, and Notrios never executes note content or runs a build step.
 - `full_archive` is refused as a publication profile target, so the export that
   carries everything is not reachable through a publishing name.
+- Read-only builtin notebooks — Help and Reports — are excluded from a
+  publication handoff by the target's default policy (v0.6 F5), and the
+  exclusion is named in the dry run rather than applied silently. It is not
+  overridable: adding an opt-in later is easy, removing a leak is not. This
+  closes two things at once — a generated graph report naming notes the
+  publication itself withheld, and nothing having stopped a publication from
+  dumping Notrios' own documentation onto someone's site. The default **Notes**
+  notebook is emphatically not in this set. A full archive and a subset transfer
+  keep both notebooks: the first is a backup and must restore faithfully, and
+  the second moves notes between the user's own databases.
 
 ## Planned synchronization threat boundary
 

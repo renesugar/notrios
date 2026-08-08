@@ -346,11 +346,11 @@ func (s *SQLiteStore) moveDocumentToNotebookLocked(documentID, notebookID string
 	if err != nil {
 		return Document{}, err
 	}
-	if doc.NotebookID == HelpNotebookID {
-		return Document{}, fmt.Errorf("%w: Help notes cannot be moved", ErrProtected)
+	if IsReadOnlyNotebook(doc.NotebookID) {
+		return Document{}, fmt.Errorf("%w: notes in the %s notebook cannot be moved", ErrProtected, ReadOnlyNotebookName(doc.NotebookID))
 	}
-	if notebookID == HelpNotebookID {
-		return Document{}, fmt.Errorf("%w: notes cannot be moved into the Help notebook", ErrProtected)
+	if IsReadOnlyNotebook(notebookID) {
+		return Document{}, fmt.Errorf("%w: notes cannot be moved into the %s notebook", ErrProtected, ReadOnlyNotebookName(notebookID))
 	}
 	if exists, err := s.notebookExistsLocked(notebookID); err != nil {
 		return Document{}, err

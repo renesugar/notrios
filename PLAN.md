@@ -3,13 +3,14 @@
 Status: **active. Written 2026-08-06 from `ROADMAP.md` after v0.5 completed.
 E10, E11, and E12 (the v0.5.0 release-candidate fixes) are complete and the
 candidate has no outstanding gates. F0 (notebook targeting), F1 (batch organizer
-transactions), F2 (MCP tool scopes), F3 (MCP read coverage and ranges), and F4
-(templates and task extraction) are complete. F2 onward require user approval, and
-sixteen of their open decisions were answered on 2026-08-07 across three rounds.
-**One blocking decision remains** — the hubs report participates in the graph it
-measures — which blocks only F5's hubs-report deliverable. F2, F3, F4, F6, and F7 are
-unblocked. F5a was **withdrawn** and F5 reframed away from a global graph
-canvas.**
+transactions), F2 (MCP tool scopes), F3 (MCP read coverage and ranges), F4
+(templates and task extraction), and F5 (graph views that stay readable at
+scale) are complete. Every open decision has been answered — eighteen across
+four rounds on 2026-08-07 — and no decision is outstanding. F5a was
+**withdrawn** and F5 was reframed away from a global graph canvas before being
+built that way. **F6 (job control plane) and F7 (documentation and release
+wrap-up) remain, both unblocked**, and each requires user approval before it
+starts.**
 
 v0.5 is complete and archived under `plans/v0.5/`, including a copy of its own
 plan at `plans/v0.5/000-v0.5-plan.md`. Product version is 0.5.0 and the schema
@@ -575,7 +576,15 @@ What remains genuinely unknown is small enough to settle inside F5: a local
 graph at depth 1–2 is tens of nodes, which any rendering approach handles, so
 there is no library-versus-hand-rolled question worth a slice.
 
-### F5. Graph views that stay readable at scale
+### F5. Graph views that stay readable at scale — **complete 2026-08-08**
+
+Archived as `plans/v0.6/005-graph-views-that-stay-readable.md`. All three
+deliverables shipped, along with `store.IsReadOnlyNotebook`, the builtin Reports
+notebook, the publication and lint exclusions, and both defects this item
+predicted. Two findings arrived during the work and are recorded there: Markdown
+escaping cannot save a title containing `]`, because Notrios' own link parser
+rejects it even escaped; and the editor's read-only badge was hard-coded to say
+"Help note", which browser verification caught it saying on a Reports note.
 
 Reframed 2026-08-07 from the user's counter-proposal. The original — "a graph
 view in the GUI" — inherited Obsidian's global canvas without asking whether it

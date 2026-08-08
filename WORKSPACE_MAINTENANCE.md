@@ -96,6 +96,15 @@ finds a shortest path between two notes from both ends, and
 `GET /api/v1/graph/report` lists orphans, isolates, and in-degree hubs from one
 ordered scan.
 
+v0.6 F5 added the presentation around it — a local neighbourhood view in the
+GUI, the report written as a read-only note in the builtin Reports notebook
+(`POST /api/v1/graph/report/note`, `notriosctl graph report --write-note`), and
+CSV node/edge export for tools built for graph analysis — plus the filters that
+make the numbers mean what they claim: trashed notes and system-authored notes
+are neither measured nor counted at either end of a link. The trashed-source
+half of that was a pre-existing defect, since soft delete deliberately leaves
+`document_links` intact so a restore can use them.
+
 The orphan report and lint's `unreferenced_resource` check answer different
 questions and both belong here: lint finds a resource nothing points at, while
 the graph report finds a *note* nothing points at. A note nobody links to is not

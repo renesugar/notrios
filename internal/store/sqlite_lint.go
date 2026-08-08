@@ -177,7 +177,7 @@ func lintQueryFor(check, collectionID string) lintQuery {
 			sql: `SELECT s.document_id, 0, 0, s.source_system || ':' || s.external_id, 'duplicate external identity'
 				FROM document_sources s
 				JOIN documents d ON d.id = s.document_id
-				WHERE d.collection_id = ? AND d.deleted_at IS NULL
+				WHERE d.collection_id = ? AND d.deleted_at IS NULL AND ` + notSystemAuthoredSQL("d") + `
 					AND EXISTS (
 						SELECT 1 FROM document_sources o
 						JOIN documents od ON od.id = o.document_id
@@ -185,15 +185,16 @@ func lintQueryFor(check, collectionID string) lintQuery {
 							AND o.document_id != s.document_id AND od.deleted_at IS NULL
 					)
 				ORDER BY s.source_system, s.external_id, s.document_id`,
-			args: []string{collectionID},
+			args: append([]string{collectionID}, readOnlyNotebookArgs()...),
 			scan: scanLocatedFinding,
 		}
 	case LintMissingTitle:
 		return lintQuery{
-			sql: `SELECT id, 0, 0, '', 'empty title' FROM documents
-				WHERE collection_id = ? AND deleted_at IS NULL AND TRIM(COALESCE(title, '')) = ''
+			sql: `SELECT id, 0, 0, '', 'empty title' FROM documents d
+				WHERE collection_id = ? AND deleted_at IS NULL AND ` + notSystemAuthoredSQL("d") + `
+					AND TRIM(COALESCE(title, '')) = ''
 				ORDER BY id`,
-			args: []string{collectionID},
+			args: append([]string{collectionID}, readOnlyNotebookArgs()...),
 			scan: scanLocatedFinding,
 		}
 	case LintUnreferencedResource:

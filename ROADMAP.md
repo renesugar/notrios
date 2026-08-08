@@ -130,14 +130,21 @@ question, and are not on the original list.
 ## v0.6 — MCP and automation expansion
 
 - ~~Note templates and task extraction (moved from v0.5)~~ — done as F4.
-- Graph views that stay readable at scale, over the v0.5 E4 traversal/path/report
-  data (moved from v0.5): a **local** graph around the open note, a **Top N hubs
-  report written as a note**, and **export** to an interchange format for tools
-  built for large graphs. Explicitly *not* a global canvas — Obsidian's degrades
-  into an unreadable hairball past a few thousand notes, while its local graph
-  stays useful at any size, and Notrios targets libraries far larger than that.
+- ~~Graph views that stay readable at scale, over the v0.5 E4
+  traversal/path/report data (moved from v0.5)~~ — done as F5: a **local** graph
+  around the open note, a **Top N hubs report written as a read-only note** in a
+  new builtin Reports notebook, and **CSV node/edge export** for tools built for
+  large graphs. Explicitly *not* a global canvas — Obsidian's degrades into an
+  unreadable hairball past a few thousand notes, while its local graph stays
+  useful at any size, and Notrios targets libraries far larger than that.
   Analysis that wants centrality or community detection belongs in Gephi or
   Cytoscape, which are built for it.
+
+  F5 also carried the three surfaces that share the read-only-notebook
+  predicate — the graph report, publication handoffs, and lint — and fixed a
+  pre-existing defect: trashed notes' links still counted toward the graph
+  report's in-degree, because soft delete deliberately keeps `document_links`
+  so a restore can use them.
 - ~~Notebook targeting: create into the selected notebook, and a single-note
   move control in the GUI and CLI~~ — done as F0.
 - Complete MCP write-tool coverage gated by explicit scopes.

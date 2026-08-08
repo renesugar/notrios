@@ -211,8 +211,9 @@ type DocumentPage struct {
 	NextCursor string     `json:"next_cursor,omitempty"`
 }
 
-// Notebook is a nested note container. Builtin notebooks (Help) cannot be
-// deleted or renamed; the default "Notes" notebook cannot be deleted.
+// Notebook is a nested note container. Builtin notebooks (Reports, Help) hold
+// system-authored notes and cannot be deleted, renamed, or edited; the default
+// "Notes" notebook cannot be deleted either, but its content is the user's.
 type Notebook struct {
 	ID        string `json:"id"`
 	ParentID  string `json:"parent_id,omitempty"`
@@ -837,6 +838,14 @@ type GraphReport struct {
 	Limit         int                `json:"limit"`
 	Truncated     bool               `json:"truncated,omitempty"`
 	ElapsedMS     float64            `json:"elapsed_ms"`
+}
+
+// GraphReportNote is what regenerating the hubs report answers with: the note
+// it wrote plus the report it rendered, so a caller does not have to read its
+// own output back and parse it.
+type GraphReportNote struct {
+	Document Document    `json:"document"`
+	Report   GraphReport `json:"report"`
 }
 
 type JobStatus struct {

@@ -91,7 +91,11 @@ func (s *Server) handleGraphReport(w http.ResponseWriter, r *http.Request) {
 	if writeStoreError(w, err, "graph_report_failed") {
 		return
 	}
-	writeJSON(w, http.StatusOK, api.GraphReport{
+	writeJSON(w, http.StatusOK, toAPIGraphReport(report))
+}
+
+func toAPIGraphReport(report store.GraphReport) api.GraphReport {
+	return api.GraphReport{
 		CollectionID:  report.CollectionID,
 		DocumentCount: report.DocumentCount,
 		LinkCount:     report.LinkCount,
@@ -103,6 +107,37 @@ func (s *Server) handleGraphReport(w http.ResponseWriter, r *http.Request) {
 		Limit:         report.Limit,
 		Truncated:     report.Truncated,
 		ElapsedMS:     report.ElapsedMS,
+	}
+}
+
+// handleWriteGraphReportNote regenerates the report note.
+//
+// A POST, and never anything automatic: the scan reads the whole collection, so
+// it happens when a person asks for it. This is the REST half of
+// `notriosctl graph report --write-note`; there is no MCP tool, for the same
+// reason `run_lint` has none — whole-library operations stay on surfaces a
+// person drives.
+func (s *Server) handleWriteGraphReportNote(w http.ResponseWriter, r *http.Request) {
+	if s.store == nil {
+		writeError(w, http.StatusServiceUnavailable, "store_not_wired", "graph reports require the canonical store")
+		return
+	}
+	req := store.GraphReportRequest{CollectionID: r.URL.Query().Get("collection_id")}
+	if raw := strings.TrimSpace(r.URL.Query().Get("limit")); raw != "" {
+		limit, err := strconv.Atoi(raw)
+		if err != nil || limit <= 0 {
+			writeError(w, http.StatusBadRequest, "validation_failed", "limit must be a positive integer")
+			return
+		}
+		req.Limit = limit
+	}
+	doc, report, err := s.store.WriteGraphReportNote(r.Context(), req)
+	if writeStoreError(w, err, "graph_report_failed") {
+		return
+	}
+	writeJSON(w, http.StatusOK, api.GraphReportNote{
+		Document: toAPIDocument(doc),
+		Report:   toAPIGraphReport(report),
 	})
 }
 

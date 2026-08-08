@@ -188,6 +188,7 @@ func (s *SQLiteStore) Bootstrap(ctx context.Context) error {
 func (s *SQLiteStore) seedNotebooks(ctx context.Context) error {
 	statements := []string{
 		`INSERT OR IGNORE INTO notebooks(id, parent_id, name, icon_emoji, builtin) VALUES('` + DefaultNotebookID + `', NULL, 'Notes', '', 0);`,
+		`INSERT OR IGNORE INTO notebooks(id, parent_id, name, icon_emoji, builtin) VALUES('` + ReportsNotebookID + `', NULL, 'Reports', '', 1);`,
 		`INSERT OR IGNORE INTO notebooks(id, parent_id, name, icon_emoji, builtin) VALUES('` + HelpNotebookID + `', NULL, 'Help', '', 1);`,
 		`INSERT OR IGNORE INTO search_notebooks(id, name, icon_emoji, query, builtin, sort_anchor) VALUES('` + AllNotesSearchNotebookID + `', 'All notes', '', '', 1, 'first');`,
 		`INSERT OR IGNORE INTO search_notebooks(id, name, icon_emoji, query, builtin, sort_anchor) VALUES('` + TrashSearchNotebookID + `', 'Trash', '', 'is:trashed', 1, 'last');`,

@@ -126,6 +126,29 @@ the notes everything else hangs off.
 collection. Like lint, this is a whole-library read — about 4 seconds at 100,000
 notes on the reference machine — so run it deliberately.
 
+**What counts as the library.** Notes in the Trash and notes in the read-only
+builtin notebooks — Help and Reports, never the default Notes notebook — are
+neither ranked nor counted, and neither end of a counted link may be one of
+them. Two of those filters arrived in v0.6 F5, and one closed a defect: trashing
+a note does not delete its links, because restoring it needs them, so a note in
+the Trash used to keep propping up the in-degree of everything it had pointed at,
+and a note linked only from the Trash was never reported as an orphan.
+
+To keep the report where you can read it:
+
+```sh
+notriosctl graph report --write-note
+```
+
+That renders it as a read-only note in the builtin **Reports** notebook, with a
+stable ID, overwritten in place. It happens when you ask and never on a timer,
+because it reads every note. The report links to every hub it names and those
+links do not count — the notebook filter above is what makes that true, so the
+report can live in the library it measures without changing the answer.
+
+To take the graph somewhere else, `notriosctl graph export <dir>` writes
+`nodes.csv` and `edges.csv` for Gephi, Cytoscape, NetworkX, or igraph.
+
 To walk outward from one note instead, `POST /api/v1/graph` takes a `depth`
 (maximum 5), and `POST /api/v1/graph/path` finds a shortest route between two
 notes. A path search that comes back `depth_exhausted` or `budget_exhausted`

@@ -283,7 +283,7 @@ func anchorSuffixForFix(link DocumentLink) string {
 // to edit: Help notes are read-only and trashed notes are not part of the
 // workspace.
 func (s *SQLiteStore) documentIsWritableLocked(document Document) bool {
-	return document.NotebookID != HelpNotebookID && document.DeletedAt.IsZero()
+	return !IsReadOnlyNotebook(document.NotebookID) && document.DeletedAt.IsZero()
 }
 
 // fixCandidatesLocked lists the notes worth planning, ordered for determinism.

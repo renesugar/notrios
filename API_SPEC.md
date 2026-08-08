@@ -22,6 +22,9 @@ The REST persistence slice is implemented for managed Markdown documents:
   selected roots, to the requested depth.
 - `POST /api/v1/graph/path` returns a shortest link path between two notes.
 - `GET /api/v1/graph/report` returns the read-only orphan/isolate/hub report.
+- `POST /api/v1/graph/report/note` regenerates that report as a read-only note
+  in the builtin Reports notebook. Explicit only — never scheduled, never on
+  write.
 - `GET /api/v1/links/suggest` returns bounded link-target autocomplete.
 - `POST /api/v1/links/check` classifies the links in an unsaved buffer.
 - `POST /api/v1/note-queries/run` evaluates one embedded `note-query` block.
@@ -253,6 +256,7 @@ GET  /api/v1/documents/{document_id}/links?direction=outgoing|incoming|both
 POST /api/v1/graph
 POST /api/v1/graph/path
 GET  /api/v1/graph/report
+POST /api/v1/graph/report/note
 GET  /api/v1/links/suggest?q=...&limit=...&exclude_document_id=...
 POST /api/v1/links/check
 POST /api/v1/links/resolve
@@ -301,6 +305,25 @@ lists only — counts always describe the whole collection — and sets `truncat
 when it hides an example. `elapsed_ms` is reported because this report reads the
 whole library and an operator should be able to see what that cost. There is no
 apply surface here, exactly as with lint and the GC report.
+
+**What the report measures (v0.6 F5).** The live library the user owns: notes in
+the Trash and notes in read-only builtin notebooks — Help and Reports, never the
+default Notes notebook — are neither ranked nor counted, and neither end of a
+counted edge may be one of them. Two of those filters are new, and one closed a
+defect. Trashing a note does not delete its links, because a restore needs them,
+so before F5 a note in the Trash still inflated the in-degree of everything it
+had pointed at, and a note linked only from the Trash was never reported as an
+orphan. The other filter is what lets the report be written into the library it
+measures without changing the answer: the report links to every hub it ranks.
+
+`POST /api/v1/graph/report/note` (v0.6 F5) regenerates the report and stores it
+as a note with a stable ID in the builtin **Reports** notebook, overwriting the
+previous one in place and carrying its generation time. The notebook is
+read-only, so the note reports `editable: false` and every mutation route
+refuses it: a generated report a reader can edit is a report that silently
+stops being true. Regeneration is explicit — a whole-collection scan on every
+save would be the one unbounded thing in an otherwise bounded design — and there
+is no MCP tool for it, for the same reason `run_lint` has none.
 
 `GET /api/v1/links/suggest` (v0.5 E5) is the bounded autocomplete an editor
 calls while someone types a link target. It answers in two passes: title-prefix

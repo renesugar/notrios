@@ -96,6 +96,50 @@ recommendation.** Fourteen decisions are now settled across both rounds.
   *still running*, and *no such job*, or a script cannot tell "not finished"
   from "failed".
 
+**F5 is complete**, archived as
+`plans/v0.6/005-graph-views-that-stay-readable.md`. Three deliverables replaced
+the global canvas: a **local graph** in the GUI (depth 1–2, ceiling stated), the
+**hubs report written as a read-only note** in a new builtin **Reports**
+notebook, and **CSV node/edge export** (`notriosctl graph export`, CLI-only). No
+schema change and no migration — bootstrap's `INSERT OR IGNORE` reaches an
+existing database on the next open.
+
+- **`store.IsReadOnlyNotebook`, deliberately not `IsBuiltinNotebook`.** One
+  predicate replaced thirteen hard-coded `NotebookID == HelpNotebookID`
+  comparisons, so Reports was protected the day it was added. The naming is
+  load-bearing: *undeletable* is Help, Reports **and Notes** (`nb.Builtin` **or**
+  the default ID), while *read-only* is Help and Reports alone. Notes is
+  `builtin = 0` because its content is the user's, and a test pins that it is
+  **not** read-only — getting that wrong would silently drop most of a library
+  from the report, from publications, and from lint.
+- **The graph report was measuring something other than the live library**, and
+  one of the two missing filters was a **pre-existing defect**: the in-degree
+  subquery placed no condition on the link's *source*, and soft delete
+  deliberately keeps `document_links` so a restore can use them — so a trashed
+  note kept propping up everything it had linked to, and a note linked only from
+  the Trash was never an orphan. The second filter is what lets the report live
+  in the library it measures: it links to every hub it ranks. Both ends of every
+  edge are filtered, so `link_count` finally means what it always claimed.
+- **Mutation-verified:** restoring the original subquery makes both new tests
+  fail with the exact numbers the defect produced.
+- **Traversal follows the same predicate with one exemption** — a read-only
+  note's own links are followed when it is the root being asked about, or every
+  Help page and the report itself would render an empty graph.
+- **Publication excludes read-only notebooks by default**, reported in the dry
+  run as `read_only_notebook:<id>` and not overridable; a full archive must stay
+  faithful and a subset transfer moves notes between the user's own databases.
+- **Lint skips content checks in read-only notebooks but not
+  `projection_backlog`** — indexing drift is an operational fact about every
+  note. Visible change: **71 unresolved-link findings disappear** from this
+  repository's own seeded Help notebook, and `report_sha256` changes with them.
+- **Markdown escaping could not save a hostile title.** Notrios' link parser
+  forbids `]` in link text *even escaped*, so the first implementation generated
+  links the store could not resolve. A bracketed title now stays verbatim beside
+  a short `([open](…))` link; both branches asserted.
+- **Browser verification found a defect the tests did not:** the read-only badge
+  was hard-coded to "Read-only Help note" and said so on a Reports note. It now
+  names the note's actual notebook.
+
 **F4 is complete**, archived as `plans/v0.6/004-templates-and-tasks.md`.
 Templates are ordinary notes carrying a ```note-template block; tasks are
 checkbox list items computed on read. No schema change and no migration.
@@ -293,8 +337,8 @@ blocking:
   That also fixes a latent wart — nothing today stops a publication from
   dumping Notrios' own Help documentation into someone's site.
 
-It blocks only F5's hubs-report deliverable. **F2, F3, F4, F6, and F7 are
-unblocked**, as are F5's local graph and export halves.
+It blocked only F5's hubs-report deliverable, and was answered in round 4. All
+of F5 shipped. **F6 and F7 remain**, both unblocked.
 
 **Process correction (2026-08-07, from user feedback).** F1's two open
 decisions were recorded in a milestone-level "Decisions required" section about

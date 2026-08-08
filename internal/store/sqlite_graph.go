@@ -44,6 +44,7 @@ type graphDocument struct {
 	id           string
 	collectionID string
 	title        string
+	notebookID   string
 }
 
 func graphPlaceholders(n int) string {
@@ -62,7 +63,7 @@ func (s *SQLiteStore) liveDocumentsLocked(ids []string) (map[string]graphDocumen
 			end = len(ids)
 		}
 		batch := ids[start:end]
-		stmt, err := s.prepareLocked(`SELECT id, collection_id, COALESCE(title, '')
+		stmt, err := s.prepareLocked(`SELECT id, collection_id, COALESCE(title, ''), COALESCE(notebook_id, '')
 			FROM documents
 			WHERE deleted_at IS NULL AND id IN (` + graphPlaceholders(len(batch)) + `)`)
 		if err != nil {
@@ -86,6 +87,7 @@ func (s *SQLiteStore) liveDocumentsLocked(ids []string) (map[string]graphDocumen
 				id:           columnText(stmt, 0),
 				collectionID: columnText(stmt, 1),
 				title:        columnText(stmt, 2),
+				notebookID:   columnText(stmt, 3),
 			}
 			found[doc.id] = doc
 		}
@@ -189,6 +191,10 @@ type graphBuilder struct {
 	edgeSeen  map[int64]bool
 	maxNodes  int
 	maxEdges  int
+	// roots are the notes the caller named. A read-only builtin note's own
+	// links are followed when it is a root and ignored otherwise — see
+	// addGraphRow.
+	roots map[string]bool
 }
 
 func newGraphBuilder(resp *GraphResponse, maxNodes, maxEdges int) *graphBuilder {
@@ -198,6 +204,7 @@ func newGraphBuilder(resp *GraphResponse, maxNodes, maxEdges int) *graphBuilder 
 		edgeSeen:  map[int64]bool{},
 		maxNodes:  maxNodes,
 		maxEdges:  maxEdges,
+		roots:     map[string]bool{},
 	}
 }
 
@@ -283,6 +290,7 @@ func (s *SQLiteStore) Graph(ctx context.Context, req GraphRequest) (GraphRespons
 		if !builder.addNode(GraphNode{ID: doc.id, URI: DocumentURI(doc.collectionID, doc.id), Kind: "document", Label: doc.title, Depth: 0}) {
 			break
 		}
+		builder.roots[doc.id] = true
 		frontier = append(frontier, doc.id)
 	}
 	if builder.truncated() {
@@ -387,6 +395,18 @@ func (s *SQLiteStore) addGraphRow(builder *graphBuilder, row graphLinkRow, docs 
 	if !ok {
 		// The source is trashed or gone. Soft delete clears a note's outgoing
 		// links, so this is only reachable for a row mid-rebuild.
+		return nil
+	}
+	// A system-authored note is not a neighbour of everything it names. The
+	// graph report links to every hub it ranks, so without this each hub's
+	// local graph would show the report at depth 1 — noise in exactly the view
+	// F5 argues stays useful at scale, and the report is reachable from the
+	// sidebar without being glued to the graph.
+	//
+	// **Unless it is the note the caller asked about.** Opening the report and
+	// asking what surrounds it should show what it names; without the exemption
+	// every Help page and the report itself would render an empty graph.
+	if IsReadOnlyNotebook(sourceDoc.notebookID) && !builder.roots[sourceDoc.id] {
 		return nil
 	}
 
@@ -754,6 +774,26 @@ func (h *hubHeap) Pop() any     { old := *h; n := len(old); item := old[n-1]; *h
 // lists and a `limit`-sized heap. That follows E2's lesson directly — the first
 // lint implementation was slow because it read the link table once per check,
 // and a whole-library report has to read the library once.
+//
+// **What it measures is the live library the user owns** — see
+// measuredDocumentSQL. Two filters were missing before v0.6 F5:
+//
+//   - A **trashed** note's links still counted. The row set excluded trashed
+//     notes, so one was never *ranked*, but the in-degree subquery placed no
+//     condition on the link's source. A note in the Trash inflated the
+//     in-degree of everything it had linked to, and a note linked only from the
+//     Trash was never counted as an orphan. That was a pre-existing defect.
+//   - A **system-authored** note's links counted too, which mattered the moment
+//     this report began writing itself into the library: a report linking to
+//     the top N hubs adds an incoming link to each of them and changes the
+//     ranking the next generation sees. Excluding the report from its own
+//     ranking would not have fixed that — the links still counted. The same
+//     filter retires a quieter one: Notrios' own Help notes link to each other
+//     heavily and had been inflating whatever they referenced all along.
+//
+// Both ends of a counted edge are filtered, not just the source, so LinkCount
+// means what its documentation has always claimed: edges between two live
+// notes that a traversal can actually follow.
 func (s *SQLiteStore) GraphReport(ctx context.Context, req GraphReportRequest) (GraphReport, error) {
 	ctx = contextOrBackground(ctx)
 	if err := ctx.Err(); err != nil {
@@ -775,17 +815,33 @@ func (s *SQLiteStore) GraphReport(ctx context.Context, req GraphReportRequest) (
 		Hubs:         []GraphReportEntry{},
 	}
 
+	// Both ends of every counted edge must be a note this report measures, and
+	// so must the note being ranked. See measuredDocumentSQL for why each of the
+	// three conditions is there — two of them were missing until F5.
+	excluded := readOnlyNotebookArgs()
+	measuredSource := measuredDocumentSQL("src")
+	measuredTarget := measuredDocumentSQL("tgt")
 	stmt, err := s.prepareLocked(`SELECT d.id, d.collection_id, COALESCE(d.title, ''),
-			(SELECT COUNT(*) FROM document_links li WHERE li.target_document_id = d.id),
-			(SELECT COUNT(*) FROM document_links lo WHERE lo.source_document_id = d.id AND lo.target_document_id IS NOT NULL)
+			(SELECT COUNT(*) FROM document_links li
+				JOIN documents src ON src.id = li.source_document_id
+				WHERE li.target_document_id = d.id AND ` + measuredSource + `),
+			(SELECT COUNT(*) FROM document_links lo
+				JOIN documents tgt ON tgt.id = lo.target_document_id
+				WHERE lo.source_document_id = d.id AND ` + measuredTarget + `)
 		FROM documents d
-		WHERE d.collection_id = ? AND d.deleted_at IS NULL
+		WHERE d.collection_id = ? AND ` + measuredDocumentSQL("d") + `
 		ORDER BY d.id`)
 	if err != nil {
 		return GraphReport{}, err
 	}
 	defer C.sqlite3_finalize(stmt)
-	if err := bindAll(stmt, []string{req.CollectionID}); err != nil {
+	// Bind order follows the statement: the in-degree subquery, the out-degree
+	// subquery, then the collection and the row filter.
+	args := append([]string{}, excluded...)
+	args = append(args, excluded...)
+	args = append(args, req.CollectionID)
+	args = append(args, excluded...)
+	if err := bindAll(stmt, args); err != nil {
 		return GraphReport{}, err
 	}
 

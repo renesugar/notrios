@@ -78,7 +78,11 @@ function renderPane(overrides: Partial<EditorPaneProps>) {
 
 describe('Help note read-only presentation', () => {
   it('renders a read-only editor with save/title/upload disabled and a visible badge', () => {
-    renderPane({ editable: false, selectedDocument: doc({ id: 'doc_help_index', notebook_id: 'nb_help', editable: false }) });
+    renderPane({
+      editable: false,
+      notebookLabel: 'Help',
+      selectedDocument: doc({ id: 'doc_help_index', notebook_id: 'nb_help', editable: false }),
+    });
 
     expect(screen.getByTestId('readonly-badge')).toHaveTextContent('Read-only Help note');
     expect(screen.queryByTestId('save-button')).not.toBeInTheDocument();
@@ -91,6 +95,19 @@ describe('Help note read-only presentation', () => {
     expect(screen.getByTestId('editor-stub')).toHaveAttribute('readonly');
     expect(screen.getByTestId('editor-stub')).toHaveAttribute('data-no-upload', 'true');
     expect(screen.queryByText('Upload image/PDF/resource')).not.toBeInTheDocument();
+  });
+
+  // The badge names the notebook rather than assuming Help. F5 added a second
+  // read-only notebook, and a Reports note labelled "Help note" would be wrong
+  // in the one place a reader looks to find out why they cannot type — which is
+  // exactly what browser verification found it doing.
+  it('names the notebook the note is actually in', () => {
+    renderPane({
+      editable: false,
+      notebookLabel: 'Reports',
+      selectedDocument: doc({ id: 'doc_graph_report', notebook_id: 'nb_reports', editable: false }),
+    });
+    expect(screen.getByTestId('readonly-badge')).toHaveTextContent('Read-only Reports note');
   });
 
   it('image-upload callbacks are rejected for read-only notes', () => {

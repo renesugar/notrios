@@ -155,7 +155,14 @@ func defaultSelectionPolicy(target string) EffectivePrivacyPolicy {
 		return EffectivePrivacyPolicy{LinkAction: "retain", IncludeSourceBundles: true, IncludeProvenance: true, IncludePrivateMetadata: true, IncludeTrashed: true, ExcludeTags: []string{}, PrivateTags: []string{}}
 	case SelectionTargetPublicationHandoff:
 		private := []string{"confidential", "draft", "private"}
-		return EffectivePrivacyPolicy{LinkAction: "plain_text", IncludeSourceBundles: false, IncludeProvenance: false, IncludePrivateMetadata: false, IncludeTrashed: false, ExcludeTags: append([]string(nil), private...), PrivateTags: private}
+		// Only this target excludes read-only notebooks, and the other two
+		// differ for reasons rather than by omission: a **full archive** is a
+		// backup and must be faithful, since excluding a notebook would make
+		// restore lossy; a **subset transfer** moves notes between the user's
+		// own databases, where their own Help and Reports are not a disclosure.
+		// A publication is the one that leaves, and nothing today stops it from
+		// dumping Notrios' own documentation onto someone's site.
+		return EffectivePrivacyPolicy{LinkAction: "plain_text", IncludeSourceBundles: false, IncludeProvenance: false, IncludePrivateMetadata: false, IncludeTrashed: false, ExcludeTags: append([]string(nil), private...), PrivateTags: private, ExcludeReadOnlyNotebooks: true}
 	default:
 		return EffectivePrivacyPolicy{LinkAction: "report", IncludeSourceBundles: true, IncludeProvenance: true, IncludePrivateMetadata: false, IncludeTrashed: false, ExcludeTags: []string{}, PrivateTags: []string{}}
 	}
@@ -326,6 +333,27 @@ func (s *SQLiteStore) planSelectionLocked(ctx context.Context, norm normalizedSe
 	}
 
 	selectedIDs := sortedCandidateIDs(candidates)
+	// Notebook exclusion runs before the tag pass so that a note carrying both
+	// reasons is reported under the one that is not the user's doing.
+	if norm.policy.ExcludeReadOnlyNotebooks && len(selectedIDs) > 0 {
+		excluded, err := s.documentsInNotebooksLocked(ctx, selectedIDs, ReadOnlyNotebookIDs())
+		if err != nil {
+			return SelectionPlan{}, SelectionResolution{}, err
+		}
+		excludedIDs := make([]string, 0, len(excluded))
+		for id := range excluded {
+			excludedIDs = append(excludedIDs, id)
+		}
+		sort.Strings(excludedIDs)
+		for _, id := range excludedIDs {
+			delete(candidates, id)
+			// Reported rather than silently dropped: a dry run exists so a
+			// person can see what a publication will and will not carry.
+			appendSelectionExclusion(&plan, norm.request.DetailLimit, &excludedDocumentCount, exclusionDigest,
+				SelectionExclusion{Kind: "document", ID: id, Reason: "read_only_notebook:" + excluded[id]})
+		}
+		selectedIDs = sortedCandidateIDs(candidates)
+	}
 	if len(norm.policy.ExcludeTags) > 0 && len(selectedIDs) > 0 {
 		excluded, err := s.documentsWithTagsLocked(ctx, selectedIDs, norm.policy.ExcludeTags)
 		if err != nil {
@@ -585,6 +613,50 @@ func (s *SQLiteStore) documentsWithTagsLocked(ctx context.Context, documentIDs, 
 				if _, exists := result[id]; !exists {
 					result[id] = tag
 				}
+				continue
+			}
+			if rc == C.SQLITE_DONE {
+				break
+			}
+			err := s.stepErrLocked(rc)
+			C.sqlite3_finalize(stmt)
+			return nil, err
+		}
+		C.sqlite3_finalize(stmt)
+	}
+	return result, nil
+}
+
+// documentsInNotebooksLocked maps each of the given notes that sits in one of
+// the given notebooks to that notebook's ID.
+func (s *SQLiteStore) documentsInNotebooksLocked(ctx context.Context, documentIDs, notebookIDs []string) (map[string]string, error) {
+	result := map[string]string{}
+	if len(notebookIDs) == 0 {
+		return result, nil
+	}
+	for start := 0; start < len(documentIDs); start += selectionReadBatch {
+		end := min(start+selectionReadBatch, len(documentIDs))
+		batch := documentIDs[start:end]
+		stmt, err := s.prepareLocked(`SELECT id, COALESCE(notebook_id, '') FROM documents
+			WHERE id IN (` + lookupPlaceholders(len(batch)) + `)
+			AND COALESCE(notebook_id, '') IN (` + placeholders(len(notebookIDs)) + `)
+			ORDER BY id`)
+		if err != nil {
+			return nil, err
+		}
+		values := append(append([]string{}, batch...), notebookIDs...)
+		if err := bindAll(stmt, values); err != nil {
+			C.sqlite3_finalize(stmt)
+			return nil, err
+		}
+		for {
+			if err := ctx.Err(); err != nil {
+				C.sqlite3_finalize(stmt)
+				return nil, err
+			}
+			rc := C.sqlite3_step(stmt)
+			if rc == C.SQLITE_ROW {
+				result[columnText(stmt, 0)] = columnText(stmt, 1)
 				continue
 			}
 			if rc == C.SQLITE_DONE {
@@ -962,7 +1034,7 @@ func selectionWarnings(plan SelectionPlan) []string {
 
 func selectionManifestDigest(norm normalizedSelectionRequest, documents []SelectionDocumentManifest, resources []SelectionResourceManifest, linkDigest hash.Hash, bundles []SelectionSourceBundleManifest, exclusionDigest hash.Hash, metadata []SelectionMetadataDecision) string {
 	digest := sha256.New()
-	writeDigestFields(digest, "selection-plan-v1", norm.request.Target, norm.request.Selection.CollectionID, norm.request.Selection.Match, fmt.Sprint(norm.includeDescendants), norm.parsedQuery.Canonical(), norm.policy.LinkAction, fmt.Sprint(norm.policy.IncludeSourceBundles), fmt.Sprint(norm.policy.IncludeProvenance), fmt.Sprint(norm.policy.IncludePrivateMetadata), fmt.Sprint(norm.policy.IncludeTrashed), fmt.Sprint(norm.policy.MaxResourceBytes), strings.Join(norm.policy.ExcludeTags, ","), strings.Join(norm.policy.PrivateTags, ","))
+	writeDigestFields(digest, "selection-plan-v1", norm.request.Target, norm.request.Selection.CollectionID, norm.request.Selection.Match, fmt.Sprint(norm.includeDescendants), norm.parsedQuery.Canonical(), norm.policy.LinkAction, fmt.Sprint(norm.policy.IncludeSourceBundles), fmt.Sprint(norm.policy.IncludeProvenance), fmt.Sprint(norm.policy.IncludePrivateMetadata), fmt.Sprint(norm.policy.IncludeTrashed), fmt.Sprint(norm.policy.ExcludeReadOnlyNotebooks), fmt.Sprint(norm.policy.MaxResourceBytes), strings.Join(norm.policy.ExcludeTags, ","), strings.Join(norm.policy.PrivateTags, ","))
 	for _, document := range documents {
 		writeDigestFields(digest, "document", document.ID, document.URI, document.CollectionID, document.NotebookID, document.CurrentRevisionID, fmt.Sprint(document.Deleted), strings.Join(document.InclusionReasons, ","))
 	}

@@ -85,9 +85,14 @@ func TestBootstrapCreatesBuiltinNotebooks(t *testing.T) {
 	if err != nil || notes.Name != "Notes" || notes.Builtin {
 		t.Fatalf("default notebook: %+v err=%v", notes, err)
 	}
-	help, err := st.GetNotebook(ctx, HelpNotebookID)
-	if err != nil || help.Name != "Help" || !help.Builtin {
-		t.Fatalf("help notebook: %+v err=%v", help, err)
+	// The read-only builtins, in the order they sit above Trash. Bootstrap
+	// reaches an existing database too — `INSERT OR IGNORE` runs on every open —
+	// so Reports needed no migration.
+	for id, name := range map[string]string{HelpNotebookID: "Help", ReportsNotebookID: "Reports"} {
+		nb, err := st.GetNotebook(ctx, id)
+		if err != nil || nb.Name != name || !nb.Builtin {
+			t.Fatalf("%s notebook: %+v err=%v", name, nb, err)
+		}
 	}
 
 	sns, err := st.ListSearchNotebooks(ctx)

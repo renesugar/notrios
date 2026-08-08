@@ -86,7 +86,7 @@ type linkLintRow struct {
 // The WHERE clause is the union of every link check's condition, so one pass
 // visits exactly the rows at least one check cares about. The ORDER BY is what
 // makes both the examples and the digest deterministic.
-const linkLintSQL = `SELECT l.source_document_id, l.source_line, l.source_column,
+var linkLintSQL = `SELECT l.source_document_id, l.source_line, l.source_column,
 		COALESCE(l.raw_target, ''), COALESCE(l.resolution_status, ''),
 		COALESCE(l.anchor_type, ''), COALESCE(l.anchor_value, ''),
 		l.target_document_id IS NOT NULL, l.target_resource_id IS NOT NULL,
@@ -101,7 +101,7 @@ const linkLintSQL = `SELECT l.source_document_id, l.source_line, l.source_column
 		COALESCE(l.target_document_id, '')
 	FROM document_links l
 	JOIN documents d ON d.id = l.source_document_id
-	WHERE d.collection_id = ? AND d.deleted_at IS NULL AND (
+	WHERE d.collection_id = ? AND d.deleted_at IS NULL AND ` + notSystemAuthoredSQL("d") + ` AND (
 		l.resolution_status IN ('unresolved', 'invalid', 'target_deleted', 'ambiguous')
 		OR (l.anchor_type IN ('block', 'heading') AND COALESCE(l.anchor_value, '') != '' AND l.target_document_id IS NOT NULL)
 		OR (l.relation_type IN ('image', 'embed') AND (l.raw_target LIKE 'http://%' OR l.raw_target LIKE 'https://%'))
@@ -134,7 +134,7 @@ func (s *SQLiteStore) runLinkLintChecksLocked(selected map[string]bool, collecti
 		return nil, err
 	}
 	defer C.sqlite3_finalize(stmt)
-	if err := bindAll(stmt, []string{collectionID}); err != nil {
+	if err := bindAll(stmt, append([]string{collectionID}, readOnlyNotebookArgs()...)); err != nil {
 		return nil, err
 	}
 	for {

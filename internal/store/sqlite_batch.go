@@ -251,8 +251,8 @@ func (s *SQLiteStore) duplicateDocumentLocked(documentID string) (Document, erro
 	if err != nil {
 		return Document{}, err
 	}
-	if source.NotebookID == HelpNotebookID {
-		return Document{}, fmt.Errorf("%w: Help notes cannot be duplicated", ErrProtected)
+	if IsReadOnlyNotebook(source.NotebookID) {
+		return Document{}, fmt.Errorf("%w: notes in the %s notebook cannot be duplicated", ErrProtected, ReadOnlyNotebookName(source.NotebookID))
 	}
 	newID, err := NewID("doc")
 	if err != nil {

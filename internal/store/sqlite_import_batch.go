@@ -44,8 +44,8 @@ func (s *SQLiteStore) ApplyImportDocumentBatch(ctx context.Context, req ImportDo
 		if document.PreferredID == "" {
 			return fmt.Errorf("%w: import document ID is required", ErrInvalidInput)
 		}
-		if document.NotebookID == HelpNotebookID {
-			return fmt.Errorf("%w: imported notes cannot be placed in Help", ErrProtected)
+		if IsReadOnlyNotebook(document.NotebookID) {
+			return fmt.Errorf("%w: imported notes cannot be placed in %s", ErrProtected, ReadOnlyNotebookName(document.NotebookID))
 		}
 		if exists, err := s.notebookExistsLocked(document.NotebookID); err != nil {
 			return err
