@@ -152,3 +152,41 @@ func TestMCPJobToolsWatchWithoutDisclosingPaths(t *testing.T) {
 type errRefused string
 
 func (e errRefused) Error() string { return string(e) }
+
+// Tagging one note is a single-note write, which is what `editor` is for.
+// Before v0.6 F7 the only MCP route to it was `run_batch` under `organizer`, so
+// labelling a note you had just created required granting the ability to trash
+// five hundred. That is a scope-design inconsistency, not a missing convenience.
+func TestTagNoteIsAnEditorScopeWrite(t *testing.T) {
+	ctx := context.Background()
+	s := scopedServer(t, MCPScopeEditor)
+	doc, err := s.store.CreateDocument(ctx, store.CreateDocumentRequest{Title: "Kitchen Plan", Body: "x\n"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	out := callToolJSON(t, s, "tag_note", `{"document_id":"`+doc.ID+`","tags":["kitchen","todo"]}`)
+	tags, _ := out["tags"].([]any)
+	if len(tags) != 2 {
+		t.Fatalf("expected two tags: %+v", out)
+	}
+
+	// Removing a tag the note does not carry is not an error: a caller
+	// enforcing a desired state should not have to check first.
+	after := callToolJSON(t, s, "untag_note", `{"document_id":"`+doc.ID+`","tags":["todo","never-had-it"]}`)
+	remaining, _ := after["tags"].([]any)
+	if len(remaining) != 1 {
+		t.Fatalf("expected one tag left: %+v", after)
+	}
+
+	// And it stops at the same boundary every other write does.
+	report, _, err := s.store.WriteGraphReportNote(ctx, store.GraphReportRequest{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	body := `{"jsonrpc":"2.0","id":9,"method":"tools/call","params":{"name":"tag_note","arguments":{"document_id":"` +
+		report.ID + `","tags":["mine"]}}}`
+	if rr := doJSON(t, s, http.MethodPost, "/mcp", body); !strings.Contains(rr.Body.String(), "read-only") {
+		t.Fatalf("tagging a read-only note should be refused: %s", rr.Body.String())
+	}
+}

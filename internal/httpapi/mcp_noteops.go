@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -106,18 +107,19 @@ func (s *Server) mcpResolveDocument(r *http.Request, documentID, uri string) (st
 
 func (s *Server) mcpWriteTool(r *http.Request, name string, raw json.RawMessage) (mcpToolResult, error) {
 	var args struct {
-		DocumentID     string `json:"document_id,omitempty"`
-		URI            string `json:"uri,omitempty"`
-		Title          string `json:"title,omitempty"`
-		Body           string `json:"body,omitempty"`
-		NotebookID     string `json:"notebook_id,omitempty"`
-		BaseRevisionID string `json:"base_revision_id,omitempty"`
-		Text           string `json:"text,omitempty"`
-		Search         string `json:"search,omitempty"`
-		Replace        string `json:"replace,omitempty"`
-		ReplaceAll     bool   `json:"replace_all,omitempty"`
-		DryRun         bool   `json:"dry_run,omitempty"`
-		AllowReview    bool   `json:"allow_review,omitempty"`
+		DocumentID     string   `json:"document_id,omitempty"`
+		URI            string   `json:"uri,omitempty"`
+		Title          string   `json:"title,omitempty"`
+		Body           string   `json:"body,omitempty"`
+		NotebookID     string   `json:"notebook_id,omitempty"`
+		BaseRevisionID string   `json:"base_revision_id,omitempty"`
+		Text           string   `json:"text,omitempty"`
+		Search         string   `json:"search,omitempty"`
+		Replace        string   `json:"replace,omitempty"`
+		ReplaceAll     bool     `json:"replace_all,omitempty"`
+		DryRun         bool     `json:"dry_run,omitempty"`
+		AllowReview    bool     `json:"allow_review,omitempty"`
+		Tags           []string `json:"tags,omitempty"`
 	}
 	if err := unmarshalMCPArgs(raw, &args); err != nil {
 		return mcpToolResult{}, err
@@ -222,6 +224,42 @@ func (s *Server) mcpWriteTool(r *http.Request, name string, raw json.RawMessage)
 			return mcpToolResult{}, err
 		}
 		return mcpStructured(toAPIDocument(updated))
+
+	case "tag_note", "untag_note":
+		// Tagging one note is a single-note write, which is what `editor` is
+		// for. Before v0.6 F7 the only way to do it over MCP was `run_batch`
+		// under `organizer` — so labelling one note you just created required
+		// granting the ability to trash five hundred. That is a scope-design
+		// inconsistency rather than a missing convenience.
+		if len(args.Tags) == 0 {
+			return mcpToolResult{}, fmt.Errorf("at least one tag is required")
+		}
+		if len(args.Tags) > store.MaxBatchTags {
+			return mcpToolResult{}, fmt.Errorf("at most %d tags at once", store.MaxBatchTags)
+		}
+		doc, err := s.mcpResolveDocument(r, args.DocumentID, args.URI)
+		if err != nil {
+			return mcpToolResult{}, err
+		}
+		if store.IsReadOnlyNotebook(doc.NotebookID) {
+			return mcpToolResult{}, fmt.Errorf("notes in the %s notebook are read-only", store.ReadOnlyNotebookName(doc.NotebookID))
+		}
+		for _, tag := range args.Tags {
+			if name == "tag_note" {
+				if _, err := s.store.AddDocumentTag(ctx, doc.ID, tag); err != nil {
+					return mcpToolResult{}, err
+				}
+				continue
+			}
+			if err := s.store.RemoveDocumentTag(ctx, doc.ID, tag); err != nil && !errors.Is(err, store.ErrNotFound) {
+				return mcpToolResult{}, err
+			}
+		}
+		tags, err := s.store.ListDocumentTags(ctx, doc.ID)
+		if err != nil {
+			return mcpToolResult{}, err
+		}
+		return mcpStructured(map[string]any{"document_id": doc.ID, "tags": tags})
 
 	case "delete_note":
 		doc, err := s.mcpResolveDocument(r, args.DocumentID, args.URI)

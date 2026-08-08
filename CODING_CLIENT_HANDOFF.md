@@ -2,25 +2,28 @@
 
 This handoff applies to any coding agent or client continuing this project (Codex, Claude, aider, swival.dev, etc. — formerly `CODEX_HANDOFF.md`). The repository is designed so an agent can continue from repository files alone.
 
-Current phase: v0.1, v0.2, v0.3, v0.4, and **v0.5** are complete; product
-version is **0.5.0** and the schema is **v16**. All thirteen v0.5 slices are
-archived under `plans/v0.5/`, including a copy of the plan itself at
-`plans/v0.5/000-v0.5-plan.md`: E1 (block anchors), E1a (heading anchors in
-stable links), E1b (scheme-scoped anchor decoding), E2 (workspace lint), E3
-(workspace fix), E4 (bounded graph traversal, shortest paths, and the orphan/hub
-report), E5 (editor link intelligence), E6 (the CodeMirror decision: stay), E6a
-(offline-first frontend assets), E6b (HTML table paste normalization), E7
-(embedded query blocks), E8 (organizer UX: trash-first delete/restore in the GUI
-plus hierarchical tag rename), and E9 (documentation and release wrap-up).
+Current phase: v0.1 through **v0.6** are complete; product version is **0.6.0**
+and the schema is **v18**. The eight v0.6 slices are archived under
+`plans/v0.6/`: F0 (notebook targeting, landed with v0.5 E10), F1 (batch
+organizer transactions), F2 (MCP tool scopes), F3 (MCP read coverage and HTTP
+`Range`), F4 (note templates and task extraction), F5 (graph views that stay
+readable at scale), F6 (job control plane), and F7 (documentation and release
+wrap-up). The thirteen v0.5 slices remain archived under `plans/v0.5/`.
 
-`PLAN.md` now holds the **v0.6 draft** — batch organizer transactions, MCP tool
-visibility profiles, MCP coverage and resource reads, note templates and task
-extraction, a graph view, and a job control plane. **No v0.6 task is approved.**
-F1 needs user approval before any code is written.
+`PLAN.md` now holds the **v0.7 draft** — versioning and synchronization. **No
+v0.7 task is approved**; each needs user approval before any code is written.
 
-Three v0.5 roadmap bullets did not ship and moved to v0.6 rather than being left
-ambiguous: note templates, task extraction, and a graph *view* (E4 delivered the
-traversal, path, and report data it would be built on).
+Two things a reader continuing this project should know about v0.6:
+
+- **One roadmap bullet shipped half.** "MCP starts/statuses bulk
+  export/import/sync jobs" became *watching* only. Every job kind names a
+  filesystem path, and no REST or MCP surface accepts one, so starting a job
+  stays a CLI act. The refusal is recorded in the bullet rather than the bullet
+  being marked done.
+- **F7's reconciliation found three defects**, all fixed in it: the batch route
+  applied `trash` and tag operations to notes in read-only notebooks that the
+  single-note routes refuse, single-note tagging had no read-only guard at all,
+  and six REST surfaces had neither an MCP tool nor a recorded reason.
 
 Milestone detail follows. H1–H11 are archived under `plans/v0.3/`. The v0.4
 slices are archived under `plans/v0.4/`:

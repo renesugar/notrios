@@ -1,5 +1,77 @@
 # Release Checklist
 
+## v0.6.0 — MCP and automation expansion
+
+The v0.6 implementation is complete on `develop`. As in earlier milestones, the
+reproducible local release-candidate gates are separated from repository-owner
+publishing actions.
+
+Release-candidate gates (run for F7):
+
+- [x] Product version reports `0.6.0`; schema bootstraps/upgrades to v18.
+- [x] `go vet ./...` and `go test ./...`.
+- [x] Required-file, scaffold, OpenAPI parse, migration-copy, and plan-loop
+      checks.
+- [x] Web lockfile install, typecheck, tests, production build, and GUI build.
+- [x] Documentation site build and deterministic Help-notebook seed/reseed.
+- [x] End-to-end REST/MCP smoke and generated store performance smoke.
+- [x] Offline-assets check: no third-party requests, no CSP violations, math
+      rendered with the network unavailable.
+- [x] Every registered MCP tool is named in `docs/api/mcp.md`, and every REST
+      route in `server.go` appears in `api/openapi.yaml` — both checked
+      mechanically in F7 rather than by reading.
+- [x] Every v0.6 `ROADMAP.md` bullet reconciled against the code. Ten shipped;
+      one shipped **half** and the other half was refused on the evidence, which
+      is recorded in the bullet rather than quietly marked done.
+- [x] Source release ZIP produced by `scripts/package_release.sh`, independently
+      checked by `scripts/check_release_zip.py`, and SHA-256 recorded in the
+      F7 handoff.
+
+What v0.6 adds beyond v0.5:
+
+- notebook targeting: the sidebar selection is the creation target, the editor
+  toolbar re-files the open note, and `notriosctl notes move` closes the CLI gap
+  (F0);
+- batch organizer transactions over an explicit note list, bounded at 500,
+  atomic or best-effort, with per-item outcomes and a schema-v17 idempotency
+  ledger (F1);
+- four cumulative MCP tool scopes — search-only, read-only, editor, organizer —
+  enforced at the call site rather than only in the tool listing (F2);
+- MCP read coverage decided surface by surface, bounded resource reads, and HTTP
+  `Range` in REST (F3);
+- note templates with a closed placeholder vocabulary and one-pass substitution,
+  and tasks computed on read with block-model identity (F4);
+- graph views that stay readable at scale: a local graph, a hubs report written
+  as a read-only note in a new builtin Reports notebook, and CSV node/edge
+  export — plus `store.IsReadOnlyNotebook` and the fix for trashed notes
+  inflating the graph report (F5);
+- a job control plane for long imports and exports, with cooperative
+  cancellation, a derived `interrupted` state, and a documented exit-code
+  contract instead of a scheduler (F6).
+
+Three defects found by F7's reconciliation and fixed in it:
+
+- `POST /api/v1/batch` applied `trash`, `add_tags`, and `remove_tags` to notes in
+  a read-only notebook, while the single-note routes answered 403 for the same
+  notes. `move` and `duplicate` were guarded and the rest were not, which is
+  what a per-operation check produces; the guard now runs once before the
+  dispatch.
+- `POST/DELETE /api/v1/documents/{id}/tags/{tag}` had no read-only guard at all,
+  and a tag outlives a reseed because `note_tags` is keyed by a stable document
+  ID.
+- Six REST surfaces had neither an MCP tool nor a recorded reason, despite F3
+  claiming every surface was decided. Each is now decided; `tag_note` and
+  `untag_note` were added at `editor`, because tagging one note previously
+  required `organizer`.
+
+Repository-owner publishing steps (not performed by F7):
+
+- [ ] Review and merge/fast-forward `develop` into `main`.
+- [ ] Push the reviewed branches; confirm CI and the GitHub Pages docs workflow.
+- [ ] Tag and push `v0.6.0` only after the owner accepts the release candidate.
+- [ ] The v0.5.0 tag is still outstanding; tag it from the same merge if it has
+      not been published yet.
+
 ## v0.5.0 — better editing, blocks, and graph UX
 
 The v0.5 implementation is complete on `develop`. As in earlier milestones, the

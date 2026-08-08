@@ -96,6 +96,35 @@ recommendation.** Fourteen decisions are now settled across both rounds.
   *still running*, and *no such job*, or a script cannot tell "not finished"
   from "failed".
 
+**v0.6 is complete.** All eight slices — F0, F1, F2, F3, F4, F5, F6, F7 — are
+archived under `plans/v0.6/`, including a copy of the plan itself at
+`plans/v0.6/000-v0.6-plan.md`. Product version is **0.6.0** and the schema is
+**v18**. `PLAN.md` now holds the v0.7 draft, and **no v0.7 slice is approved**.
+
+**F7 is complete**, archived as
+`plans/v0.6/007-documentation-and-release-wrap-up.md`. Its reconciliation found
+more than bookkeeping:
+
+- **`POST /api/v1/batch` applied `trash`, `add_tags`, and `remove_tags` to notes
+  in read-only notebooks** that the single-note routes refuse with 403 — `move`
+  and `duplicate` were guarded, the rest were not. Demonstrated live: a seeded
+  Help note was tagged and sent to the Trash through the batch route. The guard
+  now runs once before the dispatch, so a later operation inherits it;
+  `restore` is the deliberate exemption.
+- **Single-note tagging had no read-only guard at all**, and a tag outlives a
+  `seed-help` reseed because `note_tags` is keyed by a stable document ID.
+- **Six REST surfaces had neither an MCP tool nor a recorded reason**, despite
+  F3 claiming every surface was decided. Each is decided now.
+- **`tag_note` and `untag_note` were added at `editor`.** Tagging one note was
+  reachable only through `run_batch` under `organizer`, so labelling a note you
+  had just created required granting the ability to trash five hundred.
+- **One roadmap bullet shipped half and now says so:** MCP watches bulk jobs but
+  does not start them. It does not move to v0.7 — it is a decision, not an
+  omission.
+- Two reconciliation checks are now mechanical rather than read: every
+  registered MCP tool appears in `docs/api/mcp.md` (39 of 39), and REST routes
+  and OpenAPI paths agree in both directions (63 paths, no drift).
+
 **F6 is complete**, archived as `plans/v0.6/006-job-control-plane.md`. Schema
 v18 `jobs`; the two batching importers and archive export record into it;
 `notriosctl jobs list|status|show|cancel`, three REST routes, and two read-only

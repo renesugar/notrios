@@ -154,6 +154,25 @@ func (s *SQLiteStore) applyBatchItemLocked(req BatchRequest, item BatchItem) Bat
 		return out
 	}
 
+	// One guard for the whole dispatch rather than one per operation.
+	//
+	// v0.6 F7's reconciliation found `trash`, `add_tags`, and `remove_tags`
+	// reaching notes in a read-only notebook while the equivalent single-note
+	// routes answered 403 — `move` and `duplicate` were guarded and the rest
+	// were not. A per-operation check is exactly how that happens, so this one
+	// runs before the switch. `restore` is exempt: it can only apply to a note
+	// already in the Trash, and refusing to undo would strand it there.
+	if req.Operation != BatchOpRestore {
+		current, err := s.getDocumentLocked(item.DocumentID)
+		if err != nil {
+			return fail(err)
+		}
+		if IsReadOnlyNotebook(current.NotebookID) {
+			return fail(fmt.Errorf("%w: notes in the %s notebook are read-only",
+				ErrProtected, ReadOnlyNotebookName(current.NotebookID)))
+		}
+	}
+
 	switch req.Operation {
 	case BatchOpMove:
 		current, err := s.getDocumentLocked(item.DocumentID)

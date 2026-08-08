@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"strings"
 	"testing"
 )
 
@@ -166,5 +167,81 @@ func TestLintSkipsNotesNobodyCanFix(t *testing.T) {
 	// than a place the filter was forgotten.
 	if !reported[LintProjectionBacklog]["lint_"+HelpNotebookID] {
 		t.Fatalf("indexing drift is an operational fact about every note: %s", mustJSON(t, report))
+	}
+}
+
+// v0.6 F7 reconciliation found that the batch path reached notes the
+// single-note routes refuse. `move` and `duplicate` were guarded and `trash`,
+// `add_tags`, and `remove_tags` were not — so a Help note could be tagged and
+// sent to the Trash through `POST /api/v1/batch` while `DELETE
+// /api/v1/documents/{id}` answered 403 for the same note.
+//
+// Asserted for every operation rather than the three that were broken, because
+// a per-operation guard is exactly how three of five came to be missed.
+func TestBatchRefusesEveryOperationOnAReadOnlyNote(t *testing.T) {
+	ctx := context.Background()
+	st := newNotebookTestStore(t)
+	help, err := st.CreateDocument(ctx, CreateDocumentRequest{
+		PreferredID: "batch_help", Title: "Help page", NotebookID: HelpNotebookID, Body: "docs\n",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, tc := range []struct {
+		operation string
+		request   BatchRequest
+	}{
+		{BatchOpTrash, BatchRequest{Items: []BatchItem{{DocumentID: help.ID, BaseRevisionID: help.CurrentRevisionID}}}},
+		{BatchOpAddTags, BatchRequest{Tags: []string{"mine"}, Items: []BatchItem{{DocumentID: help.ID}}}},
+		{BatchOpRemoveTags, BatchRequest{Tags: []string{"mine"}, Items: []BatchItem{{DocumentID: help.ID}}}},
+		{BatchOpMove, BatchRequest{NotebookID: DefaultNotebookID, Items: []BatchItem{{DocumentID: help.ID}}}},
+		{BatchOpDuplicate, BatchRequest{Items: []BatchItem{{DocumentID: help.ID}}}},
+	} {
+		request := tc.request
+		request.Operation = tc.operation
+		request.Mode = BatchModeBestEffort
+		report, err := st.RunBatch(ctx, request)
+		if err != nil {
+			t.Fatalf("%s: %v", tc.operation, err)
+		}
+		if len(report.Items) != 1 || report.Items[0].Status != BatchStatusFailed {
+			t.Fatalf("%s should be refused on a read-only note: %+v", tc.operation, report.Items)
+		}
+		if !strings.Contains(report.Items[0].Error, "read-only") &&
+			!strings.Contains(report.Items[0].Error, "cannot be") {
+			t.Fatalf("%s: the refusal should say why: %q", tc.operation, report.Items[0].Error)
+		}
+	}
+
+	// Nothing happened to the note through any of them.
+	after, err := st.GetDocument(ctx, help.ID)
+	if err != nil || !after.DeletedAt.IsZero() || after.NotebookID != HelpNotebookID {
+		t.Fatalf("the note should be untouched: %+v err=%v", after, err)
+	}
+	tags, err := st.ListDocumentTags(ctx, help.ID)
+	if err != nil || len(tags) != 0 {
+		t.Fatalf("a read-only note should carry no tag it was refused: %+v err=%v", tags, err)
+	}
+}
+
+// Restore is the deliberate exemption: it can only apply to a note already in
+// the Trash, and refusing it would strand one there.
+func TestBatchRestoreStillWorksForAnAlreadyTrashedReadOnlyNote(t *testing.T) {
+	ctx := context.Background()
+	st := newNotebookTestStore(t)
+	doc, err := st.CreateDocument(ctx, CreateDocumentRequest{Title: "Ordinary", Body: "x\n"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := st.DeleteDocument(ctx, DeleteDocumentRequest{ID: doc.ID, BaseRevisionID: doc.CurrentRevisionID}); err != nil {
+		t.Fatal(err)
+	}
+	report, err := st.RunBatch(ctx, BatchRequest{
+		Operation: BatchOpRestore, Mode: BatchModeBestEffort,
+		Items: []BatchItem{{DocumentID: doc.ID}},
+	})
+	if err != nil || report.Items[0].Status != BatchStatusApplied {
+		t.Fatalf("restore should still work: %+v err=%v", report.Items, err)
 	}
 }

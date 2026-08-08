@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"strings"
@@ -73,5 +74,27 @@ func TestGraphReportNoteRegeneratesInPlaceOverREST(t *testing.T) {
 	}
 	if len(page.Documents) != 1 {
 		t.Fatalf("Reports should hold exactly one report note, got %d", len(page.Documents))
+	}
+}
+
+// The other half of the same F7 finding: tagging had no read-only guard, so a
+// Help or Reports note could be tagged over REST and the tag outlived a reseed,
+// because `note_tags` is keyed by a stable document ID.
+func TestTaggingAReadOnlyNoteIsRefused(t *testing.T) {
+	s := newNotebookServer(t)
+	if _, _, err := s.store.WriteGraphReportNote(context.Background(), store.GraphReportRequest{}); err != nil {
+		t.Fatal(err)
+	}
+	for _, method := range []string{http.MethodPost, http.MethodDelete} {
+		rr := doJSON(t, s, method, "/api/v1/documents/"+store.GraphReportNoteID+"/tags/mine", "")
+		if rr.Code != http.StatusForbidden {
+			t.Fatalf("%s tag = %d, want 403: %s", method, rr.Code, rr.Body.String())
+		}
+	}
+	// An ordinary note still tags, so the guard is not simply refusing
+	// everything.
+	doc := createNote(t, s, "Ordinary", "x\n")
+	if rr := doJSON(t, s, http.MethodPost, "/api/v1/documents/"+doc.ID+"/tags/mine", ""); rr.Code != http.StatusOK {
+		t.Fatalf("tagging an ordinary note = %d: %s", rr.Code, rr.Body.String())
 	}
 }

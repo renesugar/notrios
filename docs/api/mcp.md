@@ -121,7 +121,12 @@ planning](../selection-planning.md).
 `create_note`, `update_note` (requires `base_revision_id`), `append_to_note`, `prepend_to_note`, `edit_note` (server-side string replacement — fails when the search text is ambiguous unless `replace_all` is set; supports `dry_run`), `delete_note` (requires `base_revision_id`; moves to Trash),
 `move_note_to_notebook`, `localize_remote_media` (runs the same quarantine
 pipeline as `notriosctl localize` — never a plain fetch),
-`create_from_template`.
+`create_from_template`, `tag_note`, `untag_note`.
+
+`tag_note` and `untag_note` arrived in v0.6 F7. Until then the only way to tag a
+note over MCP was `run_batch` under `organizer` — so labelling one note you had
+just created required granting the ability to trash five hundred. Tagging one
+note is a single-note write, which is what this scope is for.
 
 `list_templates` reports what each template *asks for*, so an agent can tell
 whether it has the values before trying. `create_from_template` refuses a
@@ -140,9 +145,10 @@ contract; the MCP tool is a pass-through to the same store operation.
 
 ## What MCP deliberately does not expose
 
-v0.6 F3 went through every REST surface and decided each one rather than
-inheriting the list. Read-shaped surfaces became tools; these did not, and the
-reason is recorded per surface:
+v0.6 F3 went through the REST surfaces and decided each one rather than
+inheriting the list; **v0.6 F7's reconciliation found six it had missed**, and
+they are decided below with the rest. Read-shaped surfaces became tools; these
+did not, and the reason is recorded per surface:
 
 | Surface | Why it stays off |
 |---|---|
@@ -157,6 +163,13 @@ reason is recorded per surface:
 | Graph CSV export | writes files at a path the caller names, like archive export |
 | **Starting** a job | every job kind — the two importers and archive export — names a filesystem path. A job record around an operation does not change what the operation does (v0.6 F6) |
 | **Cancelling** a job | safe for the data, but stopping a four-hour import a person started is their decision. REST and the CLI both offer it |
+| Restoring a note from the Trash | trashed notes are outside the MCP surface entirely, so a model cannot see one to choose. Undo belongs to the person looking at the Trash (found in F7) |
+| Restoring an earlier revision | revisions are not listable over MCP, and a revert chosen without seeing what it contains is not an edit (F7) |
+| Attaching or detaching a resource | a model cannot create a resource — bytes never cross — so attaching one it did not make to a note is not a note edit (F7) |
+| Creating or renaming a notebook | renaming changes what every saved `notebook:"X"` query means. `move_note_to_notebook` files notes into notebooks that already exist, which is the note-shaped half (F7) |
+| Creating or deleting a search notebook | a saved search is the person's navigation, not note content (F7) |
+| Creating or patching a collection | collections are fixed to `default`; there is nothing to choose (F7) |
+| Buffer link checking and stable-link resolution | both answer questions about an editor buffer or a local database registry that a model does not have (F7) |
 
 The pattern: **anything that writes outside the note model, deletes
 permanently, or acts on the whole library at once stays a deliberate act on the

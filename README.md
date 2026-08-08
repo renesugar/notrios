@@ -82,7 +82,7 @@ Recoll availability, backlog, sync/index, and reconciliation state.
   Ubuntu protocol handler, and reviewed publication profiles that emit a
   sanitized subset handoff. P6, the movenotes-v3 compatibility bridge, is
   deferred to v0.7.
-- **v0.5 (current, 0.5.0) — better editing, blocks, and graph UX.** Addressable
+- **v0.5 (0.5.0) — better editing, blocks, and graph UX.** Addressable
   blocks (E1), heading anchors in stable links (E1a), scheme-scoped anchor
   decoding (E1b), workspace lint (E2), workspace fix (E3), bounded graph
   traversal with shortest paths and an orphan/hub report (E4), editor link
@@ -91,8 +91,17 @@ Recoll availability, backlog, sync/index, and reconciliation state.
   (E7), organizer UX with trash-first delete/restore in the GUI and hierarchical
   tag rename (E8), and the documentation and release wrap-up (E9). All thirteen
   slices are archived under `plans/v0.5/`, including a copy of the plan itself
-  at `plans/v0.5/000-v0.5-plan.md`. See [`PLAN.md`](PLAN.md) for the next
-  milestone and [`ROADMAP.md`](ROADMAP.md) for the sequence.
+  at `plans/v0.5/000-v0.5-plan.md`.
+- **v0.6 (current, 0.6.0) — MCP and automation expansion.** Notebook targeting
+  in the GUI and CLI (F0), bounded batch organizer transactions with an
+  idempotency ledger (F1), four cumulative MCP tool scopes enforced at the call
+  site (F2), MCP read coverage with bounded resource reads and HTTP `Range`
+  (F3), note templates and task extraction (F4), graph views that stay readable
+  at scale — a local graph, a hubs report written as a read-only note, and CSV
+  export (F5), a job control plane for long imports and exports (F6), and the
+  documentation and release wrap-up (F7). Archived under `plans/v0.6/`. See
+  [`PLAN.md`](PLAN.md) for the next milestone and [`ROADMAP.md`](ROADMAP.md) for
+  the sequence.
 - Agent progress/attempt tracking: [`agent/PLAN_STATUS.md`](agent/PLAN_STATUS.md), [`agent/ATTEMPT_LOG.jsonl`](agent/ATTEMPT_LOG.jsonl), and [`agent/MODEL_LOG.jsonl`](agent/MODEL_LOG.jsonl).
 
 ## Contributing

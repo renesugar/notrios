@@ -15,7 +15,7 @@ General behavior:
 notriosctl version
 ```
 
-Prints the version string (currently `0.5.0`) and exits 0. No flags.
+Prints the version string (currently `0.6.0`) and exits 0. No flags.
 
 ## doctor
 

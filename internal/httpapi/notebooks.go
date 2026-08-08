@@ -212,6 +212,12 @@ func (s *Server) handleDocumentTag(w http.ResponseWriter, r *http.Request) {
 	}
 	docID := r.PathValue("document_id")
 	tagName := r.PathValue("tag")
+	// A tag is a modification of a note the contract calls read-only, and it
+	// outlives a reseed because `note_tags` is keyed by a stable document ID.
+	// This route was the one mutation path without the guard until v0.6 F7.
+	if s.guardReadOnlyNote(w, r, docID) {
+		return
+	}
 	switch r.Method {
 	case http.MethodPost:
 		tag, err := s.store.AddDocumentTag(r.Context(), docID, tagName)

@@ -193,6 +193,24 @@ requiring explicit document/resource retrieval for larger content. For archive,
 bulk, and sync jobs, MCP is a bounded control plane returning job IDs/status;
 REST or immutable objects are the bulk-byte data plane.
 
+**v0.6 made both halves concrete, and the second one narrower than planned.**
+Tool visibility is four cumulative scopes — `search-only`, `read-only`,
+`editor`, `organizer` — enforced at the call site rather than only in the tool
+listing, since a hidden tool that answers when invoked directly is not hidden
+(F2). Every registered tool carries a scope, checked by a test that walks the
+whole surface, so a new tool cannot arrive unclassified.
+
+The job control plane (F6) watches and stops; it does not start. Every job kind
+names a filesystem path, and "MCP must not expose arbitrary filesystem
+operations" does not stop applying because the path is wrapped in a job record.
+Starting a job is a CLI act, which is the same line archive export, verify, and
+restore already draw.
+
+Three disclosure rules follow from what a job record holds: its parameters never
+leave the machine, the MCP view omits the free-text failure message because a
+filesystem error reads like a path, and a summary crosses because it is counts
+by construction.
+
 ## Recoll integration
 
 The service owns canonical notes and resources. It writes a managed filesystem projection and queues changes through a durable indexing outbox. Recoll (user-installed, optional, external process — GPL licensing boundary in `RECOLL_INTEGRATION.md`) indexes the projection through a generated config and an enhanced from-scratch front-matter handler, providing field search, derived metadata, and arbitrary-file search. The query-language adapter (`SEARCH_QUERY_LANGUAGE.md`) translates one bounded expression tree to FTS5/exact SQL and Recoll. It owns uppercase OR, implicit AND, prefix negation, grouping, phrases, typed fields, and the category/notebook alias; no backend receives a weakened expression.

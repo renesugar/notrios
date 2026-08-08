@@ -147,7 +147,11 @@ question, and are not on the original list.
   so a restore can use them.
 - ~~Notebook targeting: create into the selected notebook, and a single-note
   move control in the GUI and CLI~~ — done as F0.
-- Complete MCP write-tool coverage gated by explicit scopes.
+- ~~Complete MCP write-tool coverage gated by explicit scopes~~ — done across
+  F1, F2, F3, and F7. F7's reconciliation found six REST surfaces F3's pass had
+  missed and decided each; `tag_note`/`untag_note` were added at `editor`,
+  because tagging one note previously required `organizer` through `run_batch`.
+  The rest are recorded as withheld with a reason in `docs/api/mcp.md`.
 - ~~Resource graph resources/read support~~ — done as F3: read-shaped surfaces
   became MCP tools (blocks, graph, paths, the graph report, query blocks, the
   lint report) and `read_resource` reads attachment metadata plus bounded,
@@ -158,19 +162,31 @@ question, and are not on the original list.
   of a scheduler. Narrower than planned in one place: jobs are started from the
   CLI only, because every kind names a filesystem path and no REST or MCP
   surface accepts one.
-- LLM-safe surgical edits with dry-run and revision preconditions.
-- REST and MCP batch transactions for move, duplicate, trash, tag/untag, and
-  stable Markdown-link copy. Requests are bounded, idempotent, support
-  all-or-nothing versus best-effort modes, and return per-item outcomes.
-- LLM-safe SEARCH/REPLACE edits with dry-run and revision/hash preconditions.
-- Tool visibility profiles: search-only, read-only, editor, organizer. (The
+- ~~LLM-safe surgical edits with dry-run and revision preconditions~~ — shipped:
+  `edit_note` and `PATCH /api/v1/documents/{id}` take `edits`, honour `dry_run`,
+  and require `base_revision_id` for anything that writes.
+- ~~REST and MCP batch transactions for move, duplicate, trash, tag/untag, and
+  stable Markdown-link copy~~ — done as F1: bounded to 500 items, idempotent
+  through a persisted ledger, atomic or best-effort, per-item outcomes. Stable
+  Markdown-link copy is deliberately **not** an operation here: it produces text
+  for a clipboard rather than changing the library.
+- ~~LLM-safe SEARCH/REPLACE edits with dry-run and revision/hash
+  preconditions~~ — shipped as the same `edit_note` surface above; ambiguous
+  search text is refused rather than guessed at unless `replace_all` is set.
+- ~~Tool visibility profiles: search-only, read-only, editor, organizer~~ —
+  done as F2, cumulative, with enforcement at the call site rather than only in
+  the listing. (The
   original list said five, including `administrator`. Resolved 2026-08-07: no —
   Notrios is single-user, so administrator and author are the same person, and
   destructive whole-library operations stay a deliberate act on the command
   line. A profile that cannot be selected is not a profile.)
-- MCP starts/statuses bulk export/import/sync jobs but does not carry unbounded
-  archive or blob bytes in model context; REST/object transfer remains the data
-  plane.
+- **MCP *watches* bulk import/export jobs; it does not start them.** Half of
+  this bullet shipped as F6 and half was refused on the evidence. Every job kind
+  names a filesystem path, and no REST or MCP surface accepts one — a job record
+  around an operation does not change what the operation does. The second half
+  of the bullet, "does not carry unbounded archive or blob bytes in model
+  context", holds and is why the first half could not: bulk bytes and bulk paths
+  travel the same way. Starting a job stays a CLI act.
 
 ## v0.7 — Versioning and synchronization
 
@@ -281,5 +297,12 @@ archived under `plans/v0.5/`, including a copy of its own plan at
 to v0.6: note templates with task extraction, and a graph *view* in the GUI (E4
 delivered the traversal, path, and report data it is built on).
 
-`PLAN.md` now holds the v0.6 plan.
+**v0.6 is complete and archived under `plans/v0.6/`** (F0–F7), product version
+0.6.0, schema v18. Every v0.6 bullet above is reconciled against the code. One
+shipped **half**: MCP watches bulk jobs but does not start them, because every
+job kind names a filesystem path. That is recorded in the bullet rather than the
+bullet being marked done, and it does not move to v0.7 — it is a decision, not
+an omission.
+
+`PLAN.md` now holds the v0.7 plan.
 

@@ -142,7 +142,7 @@ func TestEachScopeListsExactlyItsTools(t *testing.T) {
 
 	editorAdds := setDifference(editor, readOnly)
 	sort.Strings(editorAdds)
-	wantEditor := []string{"append_to_note", "create_from_template", "create_note", "delete_note", "edit_note", "localize_remote_media", "move_note_to_notebook", "prepend_to_note", "update_note"}
+	wantEditor := []string{"append_to_note", "create_from_template", "create_note", "delete_note", "edit_note", "localize_remote_media", "move_note_to_notebook", "prepend_to_note", "tag_note", "untag_note", "update_note"}
 	if strings.Join(editorAdds, ",") != strings.Join(wantEditor, ",") {
 		t.Fatalf("editor adds %v, want %v", editorAdds, wantEditor)
 	}

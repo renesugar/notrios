@@ -112,6 +112,8 @@ var mcpToolScopes = map[string]string{
 	"prepend_to_note":       MCPScopeEditor,
 	"edit_note":             MCPScopeEditor,
 	"delete_note":           MCPScopeEditor,
+	"tag_note":              MCPScopeEditor,
+	"untag_note":            MCPScopeEditor,
 	"move_note_to_notebook": MCPScopeEditor,
 	"localize_remote_media": MCPScopeEditor,
 	"create_from_template":  MCPScopeEditor,
