@@ -96,6 +96,45 @@ recommendation.** Fourteen decisions are now settled across both rounds.
   *still running*, and *no such job*, or a script cannot tell "not finished"
   from "failed".
 
+**F6 is complete**, archived as `plans/v0.6/006-job-control-plane.md`. Schema
+v18 `jobs`; the two batching importers and archive export record into it;
+`notriosctl jobs list|status|show|cancel`, three REST routes, and two read-only
+MCP tools read and stop it. `GET /api/v1/jobs/{job_id}` stopped being a stub.
+
+- **Narrower than the plan bullet in one place, and this needs the user's
+  attention.** The bullet said "MCP may start and watch a job". **Nothing starts
+  a job over REST or MCP.** Every kind names a filesystem path, and the standing
+  v0.4 decision — restated in `SECURITY_REVIEW.md`, hardened in F3 and F5 — is
+  that no REST or MCP surface accepts one. A job record around an operation does
+  not change what the operation does. Cancelling is offered over REST and the
+  CLI but withheld from MCP: safe for the data, but stopping a person's
+  four-hour import is their decision.
+- **`interrupted` is derived, never stored.** A process that dies cannot write
+  its own epitaph. A sweeper that wrote the state would have to decide another
+  process is dead, and `notriosd` plus `notriosctl` on one database would take
+  turns declaring each other's work over. A merely-slow job can still finish.
+- **Records persist; the work does not.** Verified on real data: a 4,000-note
+  import cancelled from another process stopped at 1,225, and rerunning the same
+  command started at **1,250** and finished all 4,000. The importer's own
+  checkpoint is the resume mechanism; a second one would give two answers.
+- **The existing `AfterBatch` seam was already the right place to cancel** — it
+  runs after the batch is committed and checkpointed, and aborting it aborts the
+  import. Export has no such boundary and uses context cancellation instead;
+  **both classify as `cancelled`, never `failed`**, because they are one event
+  arriving two ways. Mutation-verified.
+- **Parameters stored, command rendered.** Raw argv would have captured local
+  paths and any secret on the command line. A `path` flag per parameter is what
+  lets the CLI print a command while REST and MCP return no parameters at all.
+- **No scheduler; the exit codes are why.** 0/1/2/3/4/5/6 for succeeded, failed,
+  usage, running, cancelled, no-such-job, interrupted. **6 is not 1** — an
+  interruption needs the command run again, which a failure does not.
+- **Two defects found while building:** listing was not actually newest-first
+  (`CURRENT_TIMESTAMP` has one-second resolution, so the tiebreak fell to a
+  random ID), and `jobs status <id> --wait` exited 2 with a bare usage dump.
+  A third was found in the docs: a **duplicate `JobStatus` schema** in
+  `openapi.yaml`, where the stale placeholder was silently overriding the new
+  definition.
+
 **F5 is complete**, archived as
 `plans/v0.6/005-graph-views-that-stay-readable.md`. Three deliverables replaced
 the global canvas: a **local graph** in the GUI (depth 1–2, ceiling stated), the
@@ -338,7 +377,7 @@ blocking:
   dumping Notrios' own Help documentation into someone's site.
 
 It blocked only F5's hubs-report deliverable, and was answered in round 4. All
-of F5 shipped. **F6 and F7 remain**, both unblocked.
+of F5 shipped, and so has F6. **F7 is the last v0.6 item**, unblocked.
 
 **Process correction (2026-08-07, from user feedback).** F1's two open
 decisions were recorded in a milestone-level "Decisions required" section about

@@ -382,6 +382,59 @@ is the same one `graph report` measures.
 Centrality, modularity, and community detection are whole fields with software
 designed for them; Notrios emits the graph rather than reimplementing any of it.
 
+## jobs
+
+```sh
+notriosctl jobs list   [--db path] [--kind k] [--state s] [--limit 50]
+notriosctl jobs status [--db path] [--wait] [--timeout 30m] [--quiet] <job-id>
+notriosctl jobs show   [--db path] [--command] <job-id>
+notriosctl jobs cancel [--db path] <job-id>
+```
+
+A long import or archive export records a job, so you can watch it from another
+shell, from the GUI, or over REST without holding the terminal that started it.
+Dry runs record nothing: they change nothing and finish quickly.
+
+`status` is the shell-legible half, and its exit codes are the reason no
+scheduler is needed — `job-a && job-b` works:
+
+| Code | Meaning |
+|---:|---|
+| 0 | succeeded |
+| 1 | failed |
+| 2 | usage error (as everywhere else in this CLI) |
+| 3 | queued or still running |
+| 4 | cancelled |
+| 5 | no such job |
+| 6 | interrupted — the process stopped without finishing |
+
+`--wait` blocks until the job settles and then exits with its code; `--timeout`
+gives up and exits 3. **Flags must come before the job ID**, as Go's flag
+parsing requires; the command says so if you get it the other way round.
+
+6 is separate from 1 on purpose. A failure needs investigating; an interruption
+usually just needs the command run again, because the importers resume from
+their own durable checkpoints.
+
+**Cancelling is cooperative.** The flag is set at once and the work stops after
+its next committed, checkpointed batch, so everything it finished is kept and
+rerunning the same command continues from there. Ctrl-C does the same thing —
+the first one cancels, a second stops the process immediately and leaves the
+record to go `interrupted`.
+
+`show --command` prints the command that reproduces the run:
+
+```sh
+$ notriosctl jobs show --command job_01H...
+notriosctl import obsidian --collection default --batch-size 25 '/home/you/My Vault'
+```
+
+That is rendered from stored *parameters*, not from stored argv. Storing the raw
+command line would have captured local paths and any secret that happened to be
+on it into the database, and a stored string cannot improve when a flag is
+renamed. `list` and the REST routes never show parameters at all; this command
+is local, which is where a local path belongs.
+
 ## seed-help
 
 ```sh

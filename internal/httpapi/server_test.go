@@ -169,7 +169,9 @@ func TestPlaceholderRoutes(t *testing.T) {
 		{http.MethodGet, "/api/v1/documents/doc1/links", http.StatusOK},
 		{http.MethodGet, "/api/v1/documents/doc1/outline", http.StatusOK},
 		{http.MethodGet, "/api/v1/resources/res1", http.StatusOK},
-		{http.MethodGet, "/api/v1/jobs/job1", http.StatusOK},
+		// /api/v1/jobs is no longer among these: v0.6 F6 made it real, and a
+		// real job route needs the canonical store. Without one it reports 503
+		// rather than inventing a status, which is asserted just below.
 	}
 	for _, tc := range cases {
 		req := httptest.NewRequest(tc.method, tc.path, nil)
@@ -177,6 +179,24 @@ func TestPlaceholderRoutes(t *testing.T) {
 		s.ServeHTTP(rr, req)
 		if rr.Code != tc.want {
 			t.Fatalf("%s %s: expected %d, got %d", tc.method, tc.path, tc.want, rr.Code)
+		}
+	}
+}
+
+// The job routes stopped being scaffolding in v0.6 F6. Answering "unknown" for
+// every job ID was harmless while nothing recorded jobs and is a lie now.
+func TestJobRoutesNeedTheCanonicalStore(t *testing.T) {
+	s := NewServer()
+	for _, tc := range []struct{ method, path string }{
+		{http.MethodGet, "/api/v1/jobs"},
+		{http.MethodGet, "/api/v1/jobs/job1"},
+		{http.MethodPost, "/api/v1/jobs/job1/cancel"},
+	} {
+		req := httptest.NewRequest(tc.method, tc.path, nil)
+		rr := httptest.NewRecorder()
+		s.ServeHTTP(rr, req)
+		if rr.Code != http.StatusServiceUnavailable {
+			t.Fatalf("%s %s: expected 503 without a store, got %d", tc.method, tc.path, rr.Code)
 		}
 	}
 }

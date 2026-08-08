@@ -92,7 +92,7 @@ const (
 // CurrentSchemaVersion is the canonical SQLite schema understood by this
 // build. Archive-v2 manifests record this source schema but never include
 // derived FTS5 or Recoll state.
-const CurrentSchemaVersion = 17
+const CurrentSchemaVersion = 18
 
 // DatabaseIdentity separates the stable logical synchronization/archive
 // universe from one writable database copy. Copy/restore workflows preserve
@@ -889,6 +889,16 @@ type Store interface {
 	GraphPath(ctx context.Context, req GraphPathRequest) (GraphPathResponse, error)
 	GraphReport(ctx context.Context, req GraphReportRequest) (GraphReport, error)
 	WriteGraphReportNote(ctx context.Context, req GraphReportRequest) (Document, GraphReport, error)
+
+	// Job control plane (v0.6 F6). Records persist across a restart; the work
+	// does not — an interrupted import resumes through its own checkpoints.
+	CreateJob(ctx context.Context, req CreateJobRequest) (Job, error)
+	StartJob(ctx context.Context, jobID string) (Job, error)
+	ReportJobProgress(ctx context.Context, jobID string, progress JobProgress) (bool, error)
+	FinishJob(ctx context.Context, jobID, state string, summary map[string]any, failure error) (Job, error)
+	RequestJobCancel(ctx context.Context, jobID string) (Job, error)
+	GetJob(ctx context.Context, jobID string) (Job, error)
+	ListJobs(ctx context.Context, req JobListRequest) (JobList, error)
 	SuggestDocuments(ctx context.Context, req DocumentSuggestionRequest) (DocumentSuggestionResponse, error)
 	CheckLinks(ctx context.Context, req CheckLinksRequest) (CheckLinksResponse, error)
 	RunNoteQuery(ctx context.Context, req NoteQueryRequest) (NoteQueryResult, error)

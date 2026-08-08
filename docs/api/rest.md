@@ -581,11 +581,46 @@ present only when this database can actually open the link. `GET
 /api/v1/status` reports `database_info.database_id` so a client can build stable
 links itself. See [stable links](../stable-links.md).
 
+## Long-running jobs
+
+A long import or export records a job you can watch from anywhere — another
+shell, the GUI, an MCP client — without holding the connection that started it.
+
+```sh
+curl -s http://127.0.0.1:8080/api/v1/jobs | jq
+curl -s http://127.0.0.1:8080/api/v1/jobs/$JOB | jq
+curl -s -X POST http://127.0.0.1:8080/api/v1/jobs/$JOB/cancel | jq
+```
+
+**These routes watch and stop; they do not start.** Every job kind names a
+filesystem path, and no REST or MCP surface accepts one — putting a job record
+around an operation does not change what the operation does. Start a job with
+`notriosctl import …` or `notriosctl export archive-v2 …`.
+
+A job reports `state`, `phase`, `processed`/`total`, and a content-free
+`summary`. It does **not** report its parameters: those name places on your
+machine, and `notriosctl jobs show <id>` prints them locally.
+
+| State | Meaning |
+|---|---|
+| `queued` | recorded, not started |
+| `running` | heard from within the last two minutes |
+| `succeeded` | finished |
+| `failed` | stopped on an error; `error` says what |
+| `cancelled` | stopped where it was asked to, at a checkpoint |
+| `interrupted` | the process stopped without saying so |
+
+Cancelling sets a flag and answers `200` straight away. The work stops at its
+next durable boundary — after a batch is committed and checkpointed — so what it
+finished is kept and rerunning the same command continues from there.
+
+`interrupted` means the same thing: the record says the run stopped, never that
+nothing happened. Rerun the command.
+
 ## Placeholder endpoints (not yet functional)
 
-Staged contracts include `GET /api/v1/jobs/{id}` and collection
-creation/patching (collections are effectively fixed to `default`). Profiles,
-batch organizer operations, native archive v2 jobs, and sync endpoints are
-planned but not live; archive v2 export/verify/restore are CLI commands by
-design. Remote-media scan and localization are implemented; see
+Staged contracts include import- and export-job creation and collection
+creation/patching (collections are effectively fixed to `default`). Profiles and
+sync endpoints are planned but not live; archive v2 export/verify/restore are
+CLI commands by design. Remote-media scan and localization are implemented; see
 [the CLI guide](../cli.md#localize) and the note inspector in the GUI.

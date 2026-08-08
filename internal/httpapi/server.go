@@ -184,7 +184,9 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("POST /api/v1/note-queries/run", s.handleRunNoteQuery)
 	s.mux.HandleFunc("POST /api/v1/selection/plan", s.handleSelectionPlan)
 	s.mux.HandleFunc("POST /api/v1/links/resolve", s.handleResolveStableLink)
+	s.mux.HandleFunc("GET /api/v1/jobs", s.handleListJobs)
 	s.mux.HandleFunc("GET /api/v1/jobs/{job_id}", s.handleJob)
+	s.mux.HandleFunc("POST /api/v1/jobs/{job_id}/cancel", s.handleCancelJob)
 	s.mux.HandleFunc("GET /", s.handleWebApp)
 }
 
@@ -1069,10 +1071,6 @@ func (s *Server) handleResourceContent(w http.ResponseWriter, r *http.Request) {
 	// already set the stored one, which is the sniffed-and-admitted type from
 	// the resource pipeline rather than a guess made here.
 	http.ServeContent(w, r, res.Filename, res.CreatedAt, seeker)
-}
-
-func (s *Server) handleJob(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, http.StatusOK, api.JobStatus{ID: r.PathValue("job_id"), Kind: "scaffold", Status: "unknown"})
 }
 
 func defaultCollection() api.Collection {

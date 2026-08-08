@@ -1118,9 +1118,35 @@ paths:
                 $ref: '#/components/schemas/StableLinkResolveResponse'
         '400':
           $ref: '#/components/responses/Error'
+  /api/v1/jobs:
+    get:
+      summary: List recent job records, newest first
+      description: >
+        Watching only. Every job kind names a filesystem path, and no REST or
+        MCP surface accepts one, so jobs are started with notriosctl. Parameters
+        are never returned: they name places on the local machine.
+      parameters:
+        - in: query
+          name: kind
+          schema: { type: string, enum: [import_joplin_raw, import_obsidian, export_archive_v2] }
+        - in: query
+          name: state
+          schema: { type: string, enum: [queued, running, succeeded, failed, cancelled, interrupted] }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 500, default: 50 }
+      responses:
+        '200':
+          description: Bounded job listing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobPage'
+        '400':
+          $ref: '#/components/responses/Error'
   /api/v1/jobs/{job_id}:
     get:
-      summary: Get background job status
+      summary: Get one job record
       parameters:
         - name: job_id
           in: path
@@ -1133,6 +1159,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/JobStatus'
+        '404':
+          $ref: '#/components/responses/Error'
+  /api/v1/jobs/{job_id}/cancel:
+    post:
+      summary: Ask a running job to stop at its next durable boundary
+      description: >
+        Cooperative. The flag is set immediately and the response returns at
+        once; the work stops after its next committed, checkpointed batch, so
+        what it finished is kept and rerunning the command continues from there.
+        Cancelling a settled job is a no-op rather than an error.
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: The record with cancel_requested set
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobStatus'
+        '404':
+          $ref: '#/components/responses/Error'
 components:
   parameters:
     CollectionID:
@@ -1946,6 +1996,41 @@ components:
         title: { type: string }
         in_degree: { type: integer }
         out_degree: { type: integer }
+    JobStatus:
+      type: object
+      required: [id, kind, state, processed, total, settled]
+      properties:
+        id: { type: string }
+        kind: { type: string, enum: [import_joplin_raw, import_obsidian, export_archive_v2] }
+        state: { type: string, enum: [queued, running, succeeded, failed, cancelled, interrupted] }
+        collection_id: { type: string }
+        phase: { type: string }
+        processed: { type: integer, format: int64 }
+        total:
+          type: integer
+          format: int64
+          description: Zero when the operation cannot know it yet, rather than a fabricated denominator.
+        summary:
+          type: object
+          additionalProperties: true
+          description: Counts and durations only; never note text and never a path.
+        error:
+          type: string
+          description: Failure message. Withheld from the MCP view, which routinely would carry a local path.
+        cancel_requested: { type: boolean }
+        settled: { type: boolean }
+        created_at: { type: string }
+        started_at: { type: string }
+        finished_at: { type: string }
+        heartbeat_at: { type: string }
+    JobPage:
+      type: object
+      required: [jobs]
+      properties:
+        jobs:
+          type: array
+          items: { $ref: '#/components/schemas/JobStatus' }
+        truncated: { type: boolean }
     GraphReportNote:
       type: object
       required: [document, report]
@@ -2148,12 +2233,3 @@ components:
           type: array
           items: { type: string }
         truncated: { type: boolean }
-    JobStatus:
-      type: object
-      required: [id, kind, status]
-      properties:
-        id: { type: string }
-        kind: { type: string }
-        status: { type: string }
-        progress: { type: number }
-        message: { type: string }

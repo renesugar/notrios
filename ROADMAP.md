@@ -152,6 +152,12 @@ question, and are not on the original list.
   became MCP tools (blocks, graph, paths, the graph report, query blocks, the
   lint report) and `read_resource` reads attachment metadata plus bounded,
   range-addressable text. HTTP `Range` landed in REST at the same time.
+- ~~Job control plane for bulk work~~ — done as F6: schema-v18 job records for
+  the importers and archive export, cooperative cancellation at a durable batch
+  boundary, and a documented `notriosctl jobs status` exit-code contract instead
+  of a scheduler. Narrower than planned in one place: jobs are started from the
+  CLI only, because every kind names a filesystem path and no REST or MCP
+  surface accepts one.
 - LLM-safe surgical edits with dry-run and revision preconditions.
 - REST and MCP batch transactions for move, duplicate, trash, tag/untag, and
   stable Markdown-link copy. Requests are bounded, idempotent, support

@@ -176,6 +176,9 @@ func (s *SQLiteStore) Bootstrap(ctx context.Context) error {
 	if err := s.ensureSchemaV17(ctx); err != nil {
 		return err
 	}
+	if err := s.ensureSchemaV18(ctx); err != nil {
+		return err
+	}
 	if err := s.ensureDatabaseIdentity(ctx); err != nil {
 		return err
 	}
@@ -555,6 +558,45 @@ func (s *SQLiteStore) ensureSchemaV17(ctx context.Context) error {
 		);`,
 		`CREATE INDEX IF NOT EXISTS batch_operations_created_idx ON batch_operations(created_at);`,
 		`PRAGMA user_version = 17;`,
+	}
+	for _, statement := range statements {
+		if err := s.Exec(ctx, statement); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// ensureSchemaV18 adds the job control plane's one table (v0.6 F6).
+//
+// Records persist across a restart; the work does not. There is no queue
+// column, no priority, and no dependency column, because none of those is a
+// job *record* — they are a scheduler, which this deliberately is not.
+func (s *SQLiteStore) ensureSchemaV18(ctx context.Context) error {
+	statements := []string{
+		`CREATE TABLE IF NOT EXISTS jobs (
+			id TEXT PRIMARY KEY,
+			kind TEXT NOT NULL,
+			status TEXT NOT NULL,
+			collection_id TEXT NOT NULL DEFAULT 'default',
+			parameters TEXT NOT NULL DEFAULT '[]',
+			phase TEXT NOT NULL DEFAULT '',
+			processed INTEGER NOT NULL DEFAULT 0,
+			total INTEGER NOT NULL DEFAULT 0,
+			summary TEXT NOT NULL DEFAULT '{}',
+			error TEXT NOT NULL DEFAULT '',
+			cancel_requested INTEGER NOT NULL DEFAULT 0,
+			created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			started_at TEXT,
+			finished_at TEXT,
+			heartbeat_at TEXT
+		);`,
+		// Listing is newest-first by rowid, which the table already provides in
+		// reverse order for free — CURRENT_TIMESTAMP's one-second resolution
+		// makes `created_at` an unreliable sort key for jobs started together.
+		// The one index that earns its place is the state filter.
+		`CREATE INDEX IF NOT EXISTS jobs_status_idx ON jobs(status);`,
+		`PRAGMA user_version = 18;`,
 	}
 	for _, statement := range statements {
 		if err := s.Exec(ctx, statement); err != nil {

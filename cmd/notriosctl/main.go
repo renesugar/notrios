@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 
 	"github.com/renesugar/notrios/internal/archive"
@@ -72,6 +73,8 @@ func main() {
 		runNotes(os.Args[2:])
 	case "graph":
 		runGraph(os.Args[2:])
+	case "jobs":
+		runJobs(os.Args[2:])
 	case "help", "-h", "--help":
 		printHelp()
 	default:
@@ -161,10 +164,6 @@ func runImportJoplinRaw(args []string) {
 		CollectionID:   *collectionID,
 		BatchSize:      *batchSize,
 		PreserveSource: *preserveSource,
-		AfterBatch: func(phase string, processed, total int) error {
-			fmt.Fprintf(os.Stderr, "joplin import: %s %d/%d\n", phase, processed, total)
-			return nil
-		},
 	}
 	if *dryRun {
 		importCfg, report, err := joplinraw.DryRun(ctx, st, sourceDir, options)
@@ -196,14 +195,34 @@ func runImportJoplinRaw(args []string) {
 		}
 		options.Config = importCfg
 	}
-	report, err := joplinraw.Import(ctx, st, sourceDir, options)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+	// A dry run writes nothing and is fast, so only a real import gets a job
+	// record. A control plane full of records for runs that changed nothing
+	// would make the list harder to read for no gain.
+	runner, jobCtx := startTrackedJob(st, store.JobKindImportJoplinRaw, []store.JobParameter{
+		{Name: "collection", Value: *collectionID},
+		{Name: "batch-size", Value: strconv.Itoa(*batchSize)},
+		{Name: "preserve-source", Value: strconv.FormatBool(*preserveSource)},
+		{Name: "import-config", Value: *importConfig, Path: *importConfig != ""},
+		{Name: "localize-media", Value: strconv.FormatBool(*localizeMedia)},
+		{Name: "_source-dir", Value: sourceDir, Path: true},
+	})
+	// AfterBatch runs *after* the batch is committed and the checkpoint saved,
+	// and aborting it aborts the import. That is exactly where a cooperative
+	// cancellation belongs, so progress and the stop signal share one hook.
+	options.AfterBatch = func(phase string, processed, total int) error {
+		fmt.Fprintf(os.Stderr, "joplin import: %s %d/%d\n", phase, processed, total)
+		return runner.Progress(phase, processed, total)
 	}
-	if *localizeMedia && !*dryRun {
-		localizeImportedNotes(ctx, cfg, st, report.DocumentIDs, false)
+	report, err := joplinraw.Import(jobCtx, st, sourceDir, options)
+	if err == nil && *localizeMedia {
+		localizeImportedNotes(jobCtx, cfg, st, report.DocumentIDs, false)
 	}
+	finishTrackedJob(runner, map[string]any{
+		"notes_imported":    report.NotesImported,
+		"notes_updated":     report.NotesUpdated,
+		"resources":         report.ResourcesImported,
+		"checkpoint_status": report.CheckpointStatus,
+	}, err)
 	encoder := json.NewEncoder(os.Stdout)
 	encoder.SetIndent("", "  ")
 	if err := encoder.Encode(report); err != nil {
@@ -276,10 +295,6 @@ func runImportObsidian(args []string) {
 		CollectionID:   *collectionID,
 		BatchSize:      *batchSize,
 		PreserveSource: *preserveSource,
-		AfterBatch: func(phase string, processed, total int) error {
-			fmt.Fprintf(os.Stderr, "obsidian import: %s %d/%d\n", phase, processed, total)
-			return nil
-		},
 	}
 	if *dryRun {
 		importCfg, report, err := obsidian.DryRun(ctx, st, sourceDir, options)
@@ -312,14 +327,28 @@ func runImportObsidian(args []string) {
 		}
 		options.Config = importCfg
 	}
-	report, err := obsidian.Import(ctx, st, sourceDir, options)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+	runner, jobCtx := startTrackedJob(st, store.JobKindImportObsidian, []store.JobParameter{
+		{Name: "collection", Value: *collectionID},
+		{Name: "batch-size", Value: strconv.Itoa(*batchSize)},
+		{Name: "preserve-source", Value: strconv.FormatBool(*preserveSource)},
+		{Name: "import-config", Value: *importConfig, Path: *importConfig != ""},
+		{Name: "localize-media", Value: strconv.FormatBool(*localizeMedia)},
+		{Name: "_vault-dir", Value: sourceDir, Path: true},
+	})
+	options.AfterBatch = func(phase string, processed, total int) error {
+		fmt.Fprintf(os.Stderr, "obsidian import: %s %d/%d\n", phase, processed, total)
+		return runner.Progress(phase, processed, total)
 	}
-	if *localizeMedia && !*dryRun {
-		localizeImportedNotes(ctx, cfg, st, report.DocumentIDs, false)
+	report, err := obsidian.Import(jobCtx, st, sourceDir, options)
+	if err == nil && *localizeMedia {
+		localizeImportedNotes(jobCtx, cfg, st, report.DocumentIDs, false)
 	}
+	finishTrackedJob(runner, map[string]any{
+		"notes_imported":    report.NotesImported,
+		"notes_updated":     report.NotesUpdated,
+		"resources":         report.ResourcesImported,
+		"checkpoint_status": report.CheckpointStatus,
+	}, err)
 	encoder := json.NewEncoder(os.Stdout)
 	encoder.SetIndent("", "  ")
 	if err := encoder.Encode(report); err != nil {
@@ -534,6 +563,12 @@ Usage:
                                                  # link-graph shape; --write-note overwrites the read-only note in Reports
   notriosctl graph export [--db ...] [--collection default] [--overwrite] <out-dir>
                                                  # nodes.csv and edges.csv for Gephi, Cytoscape, NetworkX or igraph
+  notriosctl jobs list [--db ...] [--kind k] [--state s] [--limit 50]
+  notriosctl jobs status [--db ...] [--wait] [--timeout 30m] [--quiet] <job-id>
+  notriosctl jobs show [--db ...] [--command] <job-id>
+  notriosctl jobs cancel [--db ...] <job-id>
+                                                 # long imports and exports record a job; status exits 0 succeeded,
+                                                 # 1 failed, 3 running, 4 cancelled, 5 no such job, 6 interrupted
   notriosctl link [--db ...] [--anchor slug|^block] [--list-anchors] <document-id>
                                                  # print the stable notrios:// link for a note or one of its sections
   notriosctl open [--profile name] [--registry path] [--db path] [--launch] <notrios-uri>
@@ -781,11 +816,31 @@ func runExportArchiveV2(args []string) {
 		Overwrite:        *overwrite,
 		SkipVerification: *skipVerify,
 	}
-	report, err := archivev2.Export(context.Background(), st, fs.Arg(0), options)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
+	// Export has no durable batch boundary to stop at, but it does thread a
+	// context through every store read. Cancelling that aborts at the next one,
+	// and because the manifest is written last and is the completion marker, a
+	// stopped export leaves nothing that could pass as a complete archive.
+	runner, jobCtx := startTrackedJob(st, store.JobKindExportArchiveV2, []store.JobParameter{
+		{Name: "collection", Value: *collectionID},
+		{Name: "target", Value: *target},
+		{Name: "notebooks", Value: *notebooks},
+		{Name: "tags", Value: *tags},
+		{Name: "query", Value: *query},
+		{Name: "documents", Value: *documents},
+		{Name: "match", Value: *match},
+		{Name: "pack", Value: strconv.FormatBool(*pack)},
+		{Name: "overwrite", Value: strconv.FormatBool(*overwrite)},
+		{Name: "no-verify", Value: strconv.FormatBool(*skipVerify)},
+		{Name: "_out-dir", Value: fs.Arg(0), Path: true},
+	})
+	report, err := archivev2.Export(jobCtx, st, fs.Arg(0), options)
+	finishTrackedJob(runner, map[string]any{
+		"documents":   report.SelectedDocuments,
+		"objects":     report.Objects,
+		"bytes":       report.Bytes,
+		"full_backup": report.FullBackup,
+		"verified":    report.Verified,
+	}, err)
 	if !report.FullBackup {
 		fmt.Fprintln(os.Stderr, "note: this archive is a scoped snapshot and is not a complete database backup")
 	}

@@ -100,6 +100,10 @@ var mcpToolScopes = map[string]string{
 	// from a template writes one, so it sits with the other single-note writes.
 	"list_templates": MCPScopeReadOnly,
 	"list_tasks":     MCPScopeReadOnly,
+	// Watching a job is a read. Starting and cancelling one are not offered at
+	// all, so there is no wider tier for them to sit in — see mcp_jobs.go.
+	"get_job":   MCPScopeReadOnly,
+	"list_jobs": MCPScopeReadOnly,
 
 	// editor: single-note writes.
 	"create_note":           MCPScopeEditor,

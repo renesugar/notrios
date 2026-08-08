@@ -4,13 +4,12 @@ Status: **active. Written 2026-08-06 from `ROADMAP.md` after v0.5 completed.
 E10, E11, and E12 (the v0.5.0 release-candidate fixes) are complete and the
 candidate has no outstanding gates. F0 (notebook targeting), F1 (batch organizer
 transactions), F2 (MCP tool scopes), F3 (MCP read coverage and ranges), F4
-(templates and task extraction), and F5 (graph views that stay readable at
-scale) are complete. Every open decision has been answered — eighteen across
-four rounds on 2026-08-07 — and no decision is outstanding. F5a was
-**withdrawn** and F5 was reframed away from a global graph canvas before being
-built that way. **F6 (job control plane) and F7 (documentation and release
-wrap-up) remain, both unblocked**, and each requires user approval before it
-starts.**
+(templates and task extraction), F5 (graph views that stay readable at scale),
+and F6 (job control plane) are complete. Every open decision has been answered —
+eighteen across four rounds on 2026-08-07 — and no decision is outstanding. F5a
+was **withdrawn** and F5 was reframed away from a global graph canvas before
+being built that way. **F7 (documentation and release wrap-up) is the last
+item**, unblocked, and requires user approval before it starts.**
 
 v0.5 is complete and archived under `plans/v0.5/`, including a copy of its own
 plan at `plans/v0.5/000-v0.5-plan.md`. Product version is 0.5.0 and the schema
@@ -806,7 +805,25 @@ Working state: a reader can see what surrounds the note in front of them, read
 which notes the library actually hangs off, and take the whole graph elsewhere
 if they want analysis Notrios does not do.
 
-### F6. Job control plane for bulk work
+### F6. Job control plane for bulk work — **complete 2026-08-08**
+
+Archived as `plans/v0.6/006-job-control-plane.md`. Schema v18 `jobs`, the two
+batching importers and archive export recording into it, `notriosctl jobs`, three
+REST routes, and two read-only MCP tools.
+
+**Narrower than the first bullet below in one place, deliberately: nothing
+starts a job over REST or MCP.** Every kind names a filesystem path, and a job
+record around an operation does not change what the operation does, so a `start`
+route would reopen the boundary F3 recorded a reason for closing. Cancelling is
+offered over REST and the CLI but not MCP — safe for the data, but stopping a
+person's four-hour import is their decision.
+
+Two defects found while building are recorded there: listing was not actually
+newest-first, because `CURRENT_TIMESTAMP`'s one-second resolution left the order
+to a random ID tiebreak; and `jobs status <id> --wait` exited 2 with a bare usage
+dump.
+
+### F6. Job control plane for bulk work — original item
 
 - Give import, export, and (later) sync a job API: start, status, cancel, and a
   bounded result summary.

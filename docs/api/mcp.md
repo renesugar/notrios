@@ -78,7 +78,7 @@ command line.
 `get_note_line_range`, `search_in_note`, `scan_remote_media`,
 `get_document_blocks`, `get_graph`, `find_graph_path`, `get_graph_report`,
 `run_note_query`, `get_lint_report`, `read_resource`, `list_templates`,
-`list_tasks`.
+`list_tasks`, `get_job`, `list_jobs`.
 
 The last seven arrived in v0.6 F3, once scopes existed to place them.
 `get_document_blocks` is how a model cites *part* of a note precisely — a block
@@ -155,6 +155,8 @@ reason is recorded per surface:
 | Trash purge | permanent deletion |
 | Graph report **regeneration** | scans the whole collection and overwrites a note. `get_graph_report` reads it; `POST /api/v1/graph/report/note` and `notriosctl graph report --write-note` write it (v0.6 F5) |
 | Graph CSV export | writes files at a path the caller names, like archive export |
+| **Starting** a job | every job kind — the two importers and archive export — names a filesystem path. A job record around an operation does not change what the operation does (v0.6 F6) |
+| **Cancelling** a job | safe for the data, but stopping a four-hour import a person started is their decision. REST and the CLI both offer it |
 
 The pattern: **anything that writes outside the note model, deletes
 permanently, or acts on the whole library at once stays a deliberate act on the
@@ -164,6 +166,13 @@ and gated behind the `organizer` scope.
 
 Trashed notes are outside the MCP surface entirely: they do not appear in
 `search_documents` and `get_document` does not return them.
+
+`get_job` and `list_jobs` watch long-running work. The view is narrower than
+REST's in two places, both because the value routinely contains a local
+filesystem path: the job's **parameters** (never returned outside the CLI at
+all) and the free-text **error**. A failed job is reported as failed, with a
+pointer to `notriosctl jobs show <id>` for the reason — a model that needs it
+has a person to ask.
 
 `get_graph_report` measures the live library the user owns: notes in the Trash
 and notes in the read-only builtin notebooks — Help and Reports, never the

@@ -225,6 +225,7 @@ moved on, which is a different answer to the same question. `request_sha256`
 exists so a key reused with different arguments can be refused rather than
 answered with an unrelated result.
 
+
 ## Schema v16 — title and filename indexes
 
 Two indexes, added for v0.5 E5:
@@ -250,6 +251,49 @@ id` exactly index order, so no temporary B-tree is built for the tie-break.
 Both are pure additions. No row changes and no data migration; an upgraded
 database gets the indexes on the next startup.
 
+## Schema v18 — the job control plane
+
+`jobs` (v0.6 F6) records one run of a long operation: an importer or an archive
+export.
+
+| Column | Meaning |
+|---|---|
+| `id`, `kind` | the record and which operation it was |
+| `status` | `queued`, `running`, `succeeded`, `failed`, or `cancelled` |
+| `parameters` | JSON list of `{name, value, path}`, enough to reproduce the run |
+| `phase`, `processed`, `total` | the last progress report |
+| `summary`, `error` | the bounded result, and why it stopped |
+| `cancel_requested` | the cooperative stop flag |
+| `created_at`, `started_at`, `finished_at`, `heartbeat_at` | when |
+
+Four decisions are embedded here.
+
+**There is no `interrupted` status**, even though callers see one. A process
+that dies cannot write its own epitaph, so a job left `running` with a heartbeat
+older than two minutes is *derived* as interrupted at read time. A sweeper that
+wrote it would have to decide another process is dead, and two Notrios processes
+against one database — `notriosd` serving the GUI while `notriosctl` imports —
+would take turns declaring each other's work over.
+
+**Records persist across a restart; the work does not.** There is no resume
+column, because an interrupted import already resumes through its own
+`import_checkpoints` row. Two resume mechanisms would give two answers to one
+question.
+
+**There is no priority, no dependency, and no queue column**, because none of
+those is a job record — they are a scheduler, which this deliberately is not.
+Sequencing lives in the caller's shell, which is what the `jobs status` exit
+codes are for.
+
+**Parameters are stored; the command is rendered.** Storing raw argv would have
+captured local paths and any secret that happened to be on the command line, and
+a stored string cannot improve when a flag is renamed. The `path` flag on each
+parameter is what lets `notriosctl jobs show` print a path locally while REST and
+MCP return no parameters at all.
+
+Listing orders by `rowid`, not `created_at`: `CURRENT_TIMESTAMP` has one-second
+resolution, so jobs started together share a timestamp and a tiebreak on the
+random job ID would look like chronology without being it.
 ## Schema v5/v6 — Notrios redesign (tasks R3 and R4 implemented)
 
 Schema v5 (notebooks) and v6 (source provenance) are live in `migrations/0001_initial.sql` (with an `ensureSchemaV5` upgrade shim for v4 databases that adds `documents.notebook_id` and backfills existing rows into the default notebook). It adds the note-taking data model on top of the existing document tables:

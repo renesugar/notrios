@@ -848,10 +848,37 @@ type GraphReportNote struct {
 	Report   GraphReport `json:"report"`
 }
 
+// JobStatus is the control-plane view of one long-running operation (v0.6 F6).
+//
+// **It carries no parameters and no bytes.** A job's parameters name places on
+// this machine — a vault directory, an export destination — and a control plane
+// exists to say what happened, not where. `notriosctl jobs show` renders them
+// locally, which is where a local path belongs.
 type JobStatus struct {
-	ID       string  `json:"id"`
-	Kind     string  `json:"kind"`
-	Status   string  `json:"status"`
-	Progress float64 `json:"progress,omitempty"`
-	Message  string  `json:"message,omitempty"`
+	ID           string `json:"id"`
+	Kind         string `json:"kind"`
+	State        string `json:"state"`
+	CollectionID string `json:"collection_id,omitempty"`
+	Phase        string `json:"phase,omitempty"`
+	Processed    int64  `json:"processed"`
+	// Total is zero when the operation cannot know it yet. A fabricated
+	// denominator would turn "unknown" into a wrong percentage.
+	Total int64 `json:"total"`
+	// Summary is counts and durations, never note text and never a path.
+	Summary map[string]any `json:"summary,omitempty"`
+	// Error is the failure message. Omitted from the MCP view, because a
+	// failure from a filesystem operation routinely contains a path.
+	Error           string `json:"error,omitempty"`
+	CancelRequested bool   `json:"cancel_requested,omitempty"`
+	Settled         bool   `json:"settled"`
+	CreatedAt       string `json:"created_at,omitempty"`
+	StartedAt       string `json:"started_at,omitempty"`
+	FinishedAt      string `json:"finished_at,omitempty"`
+	HeartbeatAt     string `json:"heartbeat_at,omitempty"`
+}
+
+// JobPage is a bounded listing, newest first.
+type JobPage struct {
+	Jobs      []JobStatus `json:"jobs"`
+	Truncated bool        `json:"truncated,omitempty"`
 }

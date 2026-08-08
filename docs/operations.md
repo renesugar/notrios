@@ -104,6 +104,32 @@ slug, so `#section-title` has something to compare against. On a library
 upgraded from an older schema, notes nobody has edited since have no slugs yet —
 saving a note fills them in.
 
+## Watching a long import or export
+
+A long import or an archive export records a job, so you can watch it from
+another shell — or from the GUI, or over REST — without holding the terminal
+that started it:
+
+```sh
+notriosctl jobs list
+notriosctl jobs status --wait <job-id>     # exits with the job's code
+notriosctl jobs cancel <job-id>
+```
+
+Cancelling is cooperative: the work stops after its next committed, checkpointed
+batch, so everything it finished is kept. Rerun the same command and it
+continues from there — that is the importer's own checkpoint doing the work, not
+the job record.
+
+Ctrl-C does the same thing. A second Ctrl-C stops the process immediately, and
+the record then reads `interrupted` rather than `running`, because a job that
+stops being heard from for two minutes is reported as having stopped.
+
+`notriosctl jobs status` exits 0 for succeeded, 1 for failed, 3 for still
+running, 4 for cancelled, 5 for no such job, and 6 for interrupted — so
+`job-a && job-b` sequences work without any scheduler. 6 is deliberately not 1:
+an interruption usually just needs the command run again.
+
 ## Seeing the shape of the link graph
 
 `GET /api/v1/graph/report` reads the whole collection once and reports what the

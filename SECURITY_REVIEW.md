@@ -133,9 +133,30 @@ ones untrusted model output reaches.
 
 Do not expose Notrios on a LAN/public address until authentication,
 authorization, CSRF/CORS, TLS/reverse-proxy guidance, rate/request quotas, and
-audit logging are implemented and tested. Future import/export/sync MCP tools
-are a bounded control plane only; bulk bytes travel through constrained REST or
-hash-verified objects.
+audit logging are implemented and tested.
+
+The job control plane (v0.6 F6) is the first of those bounded surfaces, and it
+came out narrower than the plan bullet that asked for it. **A job can be watched
+and stopped over REST, and only watched over MCP; it cannot be started from
+either.** Every kind this build runs names a filesystem path, and putting a job
+record around an operation does not change what the operation does — so a
+`start` route would have reopened exactly the boundary the archive commands draw.
+
+Three disclosure decisions follow from what a job record contains:
+
+- **Parameters never leave the machine.** They name a vault directory or an
+  export destination. `notriosctl jobs show` renders them; REST and MCP return
+  none. They are stored as typed values rather than as raw argv, which also
+  keeps any secret that happened to be on a command line out of the database.
+- **The MCP view omits the failure message**, because a failure from a
+  filesystem operation reads like `open /home/someone/private/x: permission
+  denied`. The state is reported, with a pointer to the local command that has
+  the reason. REST keeps the message: it is the surface a person drives.
+- **A summary crosses because it is counts by construction** — documents,
+  objects, bytes — never note text and never a path.
+
+Cancellation is cooperative and can destroy nothing: it sets a flag, and the
+work stops after a batch it has already committed and checkpointed.
 
 ### Imports and archives
 

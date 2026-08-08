@@ -453,15 +453,45 @@ filesystem/output paths and never returns note bodies, resource bytes, source
 metadata JSON, or local storage paths. See
 `SELECTION_AND_PRIVACY_PLANNER.md`.
 
-### Import/export/jobs (staged contract — import/export run through `notriosctl` today; jobs return stubs)
+### Jobs (live since v0.6 F6) and import/export (staged)
 
 ```text
-POST /api/v1/import-jobs
-GET  /api/v1/import-jobs/{job_id}
-POST /api/v1/export-jobs
-GET  /api/v1/export-jobs/{job_id}
+GET  /api/v1/jobs
 GET  /api/v1/jobs/{job_id}
+POST /api/v1/jobs/{job_id}/cancel
+
+POST /api/v1/import-jobs                       # staged
+GET  /api/v1/import-jobs/{job_id}              # staged
+POST /api/v1/export-jobs                       # staged
+GET  /api/v1/export-jobs/{job_id}              # staged
 ```
+
+**The job routes watch and stop; they do not start.** Every kind this build
+runs — `import_joplin_raw`, `import_obsidian`, `export_archive_v2` — names a
+filesystem path, and the standing decision since v0.4 is that no REST or MCP
+surface accepts an archive path or streams archive bytes. Wrapping such an
+operation in a job record does not change what it does, so starting one stays on
+the command line. That is narrower than the v0.6 plan's "MCP may start and watch
+a job", and deliberately so.
+
+`GET /api/v1/jobs/{job_id}` reports kind, state, phase, `processed`/`total`, a
+content-free summary, and timestamps. **It never returns the job's parameters**,
+which name places on this machine; `notriosctl jobs show` renders them locally.
+`POST /api/v1/jobs/{job_id}/cancel` sets a flag and answers `200` — asking is
+not stopping, and the work halts at its next durable boundary.
+
+States are `queued`, `running`, `succeeded`, `failed`, `cancelled`, and
+`interrupted`. **`interrupted` is derived, never stored**: a process that dies
+cannot write its own epitaph, so a job left `running` with a heartbeat older
+than two minutes is reported that way. Deriving it on read rather than having a
+sweeper write it matters because two Notrios processes against one database —
+`notriosd` serving the GUI while `notriosctl` runs an import — would otherwise
+take turns declaring each other's work dead.
+
+**Records persist across a restart; the work does not.** An interrupted import
+already resumes through its own durable checkpoints, and a second resume
+mechanism layered on top would give two answers to one question. Rerunning the
+same command continues from where it stopped.
 
 Native archive v1 exists only through `notriosctl` and is not a lossless backup.
 Native archive v2 defines a strict versioned snapshot/manifest/object contract,

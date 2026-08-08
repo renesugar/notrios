@@ -446,6 +446,38 @@ glossed: the generated library is a circulant graph, so a BFS frontier grows
 linearly and the traversal timings are a floor for a densely cross-linked
 library.
 
+### The job control plane (v0.6 F6)
+
+The classification test is the one that matters, and it is verified by mutation:
+removing the cancelled case makes both halves fail with `state = "failed", want
+cancelled`. Both routes are asserted, because cancellation reaches the runner
+two ways — `ErrCancelled` from a batch boundary and `context.Canceled` from a
+store read — and they are the same event. Recording either as a failure would
+send an operator hunting for a fault that does not exist.
+
+`interrupted` is asserted from both sides: a job heard from a moment ago is
+running, a backdated heartbeat makes it interrupted, and a job that was merely
+slow can still finish normally afterwards — which proves the state is derived
+rather than written.
+
+Disclosure is asserted against the real value rather than the field name: the
+REST fixture seeds a job whose parameter is `/home/someone/Private Vault` and
+fails if that string appears in any job response, so re-adding the field under a
+different name fails too. The MCP fixture seeds a *failed* job whose error
+contains a path, then asserts REST reports the message and MCP does not.
+
+The rendered command is tested against a hostile path — `/tmp/it's here; rm -rf
+/` — because it exists to be pasted into a shell. A separate test walks every
+kind `store.JobKinds()` knows and fails if the CLI has no command for it, so
+adding a kind cannot produce records that `jobs show --command` can only
+apologise for.
+
+Verified end to end against a 4,000-note vault: an import cancelled from another
+process stopped at 1,225 notes (a clean batch multiple), recorded `cancelled`,
+exited 4 — and rerunning the same command **started at 1,250** and finished all
+4,000. That is the evidence for "persist records, do not resume work": the
+importer's own checkpoint is the resume mechanism.
+
 **What the report measures (v0.6 F5).** Two filters were added and both are
 asserted from both sides, because a filter that never fires and a filter that
 always fires are both wrong. The trashed-source case is a **regression test for

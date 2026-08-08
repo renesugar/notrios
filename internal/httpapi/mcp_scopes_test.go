@@ -116,9 +116,10 @@ func TestEachScopeListsExactlyItsTools(t *testing.T) {
 		MCPScopeReadOnly: {
 			"get_document", "get_document_blocks", "get_document_outline", "get_documents",
 			"get_graph", "get_graph_report", "get_lint_report",
-			"get_note_line_range", "get_notebook_tree", "get_notebook_notes",
+			"get_job", "get_note_line_range", "get_notebook_tree", "get_notebook_notes",
 			"find_graph_path", "list_collections", "list_document_links",
-			"list_document_resources", "list_notebooks", "list_search_notebooks",
+			"list_document_resources", "list_jobs", "list_notebooks",
+			"list_search_notebooks",
 			"list_tags", "list_tasks", "list_templates", "plan_selection",
 			"read_resource", "run_note_query",
 			"scan_remote_media", "search_documents", "search_in_note",
@@ -245,6 +246,13 @@ func TestNoScopeReachesWholeLibraryOperations(t *testing.T) {
 		// someone chose. Both are CLI and REST, for the same reason as the rest
 		// of this list.
 		"write_graph_report", "export_graph",
+		// F6: every job kind this build runs names a filesystem path, so
+		// starting one over MCP would reopen the hole F3 closed — a job record
+		// around an operation does not change what the operation does. Cancel is
+		// withheld separately: it is safe for the data, but stopping a person's
+		// four-hour import is not a model's decision. Watching is a read and is
+		// offered.
+		"start_job", "cancel_job", "run_import", "run_export",
 	}
 	for _, scope := range MCPScopes() {
 		s := scopedServer(t, scope)
