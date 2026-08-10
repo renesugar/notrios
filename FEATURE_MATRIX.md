@@ -21,7 +21,7 @@ This matrix keeps the long conversation compressed into implementation-sized fea
 | Document revisions and trash | Implemented | document service | v0.5 E8 made deletion and restore reachable from the GUI; v0.7 adds replicated death certificates/GC acknowledgements. |
 | Scalable keyset cursors | Implemented | search service | `k2` chronological/relevance keysets plus explicit bounded `m1` sidecar snapshots; no unbounded offset ceiling. |
 | Recoll sidecar (replaces sist2) | Implemented | adapter | Optional external process; bounded retry, exact reconciliation, attributed stable merges, and status/UI telemetry. |
-| Notebooks/tags/search notebooks | Implemented | Notrios service | All notes/Notes/Help/Trash bootstrap and protections. |
+| Notebooks/tags/search notebooks | Implemented | Notrios service | All notes/Notes/Reports/Help/Trash bootstrap and protections. |
 | Query-language adapter | Implemented | search service | Bounded AST with implicit AND, uppercase `OR`, prefix negation, grouping, phrases, fields, `category:` alias/All-notes semantics, cursor binding, and live FTS5/SQL/Recoll parity. |
 | Bluge generated-site search | External integration | movenotes-v3/Ledger | Measured external publication backend; not a Notrios application dependency. |
 | LadybugDB | Optional/research | derived graph backend | Never primary storage. |
@@ -48,14 +48,14 @@ This matrix keeps the long conversation compressed into implementation-sized fea
 
 | Feature | Status | Primary owner | Notes |
 |---|---:|---|---|
-| Joplin RAW import | Implemented + active hardening | importer | J1 physical-line/canonical-title parser complete; J2/J3 add real-export relationship and million-note full-write evidence. |
+| Joplin RAW import | Implemented | importer | J1 physical-line/canonical-title parser plus J2/J3 real-export relationship and million-note full-write evidence. |
 | Obsidian vault import | Implemented | importer | Nested hierarchy, bounded batches, fingerprints/checkpoints, dry-run diffs, rename config, exact source bundle, and canonical links/anchors. |
 | Twitter/X import | Implemented | importer | Provenance/thread/media import. |
 | ChatGPT export import | Implemented | importer | Conversation provenance. |
 | Claude JSON import | Implemented | importer | Conversation provenance. |
 | Native archive v1 | Implemented | exporter | Query-scoped plain-note interchange; not lossless backup. |
 | Shared selection/privacy planner | Implemented | archive/publishing service | Read-only typed recursive notebook/tag/query/ID selection, target policies, reachable resources, link/privacy/source-bundle/metadata decisions, bounded REST/MCP details, and deterministic digest. |
-| Portable Markdown vault export | Planned v0.7 | movenotes-v3 | `notrios2sql.py` consumes archive v2; movenotes owns Obsidian projection. The compatibility bridge moved from v0.4 P6 to v0.7 because slice 3 extends the container it would pin, and the importer does not exist yet. |
+| Portable Markdown vault export | Planned v0.7 G19 bridge | movenotes-v3 | `notrios2sql.py` is intended to consume archive v2; movenotes owns Obsidian projection. The compatibility bridge waits for G9's sync-era container, and the importer was absent at the last check. |
 | Native archive v2/backup | Implemented (export, verify, restore) | archive service | Schema-v12 database/replica identity, manifest-last SHA-256 objects, typed bounded records, explicit restore intent, and strict verification. `notriosctl export archive-v2` writes full-backup and explicitly scoped subset snapshots from one read transaction, stages privately, publishes the manifest last, resumes over published objects, and self-verifies. P3a moved the object inventory into checksummed index chunks under a two-level fanout and made writer and verifier stream through external-sorted spools, so an archive holds up to 8,000,000 objects and the manifest no longer grows with the library. P3b added the opt-in packed layout behind `objects.pack.v1`. P4 added `verify archive-v2` and `restore archive-v2`, proven on the attachment-bearing corpus under both layouts. |
 | Joplin RAW export | Optional/research | exporter | Only for measured exact round-trip need. |
 
@@ -73,7 +73,7 @@ This matrix keeps the long conversation compressed into implementation-sized fea
 | Math rendering (KaTeX) | Implemented | web UI | `$…$` and `$$…$$` render, offline included since E6a. FTS indexes the LaTeX source, not the rendered output — searching `mc^2` finds the note. |
 | HTML paste to Markdown | Implemented | web UI | v0.5 E6b: a pasted HTML table becomes a Markdown pipe table, so blocks, link extraction, and portable export can see into it. Refuses merged cells, ragged rows, nested blocks, multi-line cells, and pastes that merely contain a table — every refusal falls through to the ordinary paste, so nothing pasted is lost. Parsing is inert `DOMParser`; no HTML is re-emitted. |
 | Four-pane layout | Implemented | web UI | Accessible splitters and independent scrolling. |
-| Wails v3/mobile migration | Optional/research | GUI | Pre-release/experimental; real Android + desktop parity gate. |
+| Wails v3/mobile migration | Planned v0.8 spike | GUI | Desktop v3 is beta; Android/iOS remain experimental. Requires Wails v2 desktop parity, rollback, and real Android gates. |
 | Editor link intelligence | Implemented | web UI + service | v0.5 E5: `GET /api/v1/links/suggest` (bounded title autocomplete, IDs and titles only) and `POST /api/v1/links/check` (unsaved-buffer link resolution through the canonical extractor). E6 added the in-editor half: `[[` autocomplete, wavy underlines on broken links that map through edits, and Ctrl-click to open a target. Everything degrades to nothing when the service is unreachable. |
 | CodeMirror 6 + unified migration | Declined | web UI | v0.5 E6: `md-editor-rt` **is** CodeMirror 6 and exposes it, so the capabilities the migration was for cost 1.3 kB gzipped through its existing hooks. The remaining argument — dropping `@codemirror/language-data`'s 113 lazy chunks — does not justify re-implementing preview, sanitizer, toolbar, upload, and theming. `PROJECT_DECISIONS.md` 20. |
 | Third-party native clients | Optional/research | separate client | Use stable REST/MCP. |
@@ -94,15 +94,15 @@ This matrix keeps the long conversation compressed into implementation-sized fea
 | Feature | Status | Primary owner | Notes |
 |---|---:|---|---|
 | MCP read tools | Implemented | MCP adapter | Bounded search/read/list tools. |
-| MCP editor write tools | Implemented | MCP adapter | Profile-gated with revision preconditions. |
-| MCP resources | Planned v0.6 | MCP adapter | Avoid global listing of huge collections. |
+| MCP editor write tools | Implemented | MCP adapter | Tool-scope-gated with revision preconditions. |
+| MCP protocol resources | Deliberately absent | MCP adapter | Notrios uses bounded tools and returned `document://`/`resource://` links; global `resources/list` would enumerate huge collections. |
 | MCP read coverage | Implemented | MCP adapter | v0.6 F3 decided every withheld REST surface rather than inheriting the list. Added under `read-only`: `get_document_blocks`, `get_graph`, `find_graph_path`, `get_graph_report`, `run_note_query`, `get_lint_report`, `read_resource`. Still off, each with a recorded reason: fix, tag rename, notebook deletion, GC, archive operations, publication, purge — anything that writes outside the note model, deletes permanently, or acts on the whole library at once. |
 | MCP resource reads | Implemented | MCP adapter | v0.6 F3: `read_resource` returns metadata plus a `resource://` URI by default; bytes only when asked for, only for text-like MIME types, and only within `mcp.max_document_bytes`. `offset`/`length` give a range read, and a slice ending mid-character is trimmed so the text stays valid UTF-8. Binary resources are described, never transcribed. |
 | HTTP range requests for resource content | Implemented | resource service | v0.6 F3: `206` with `Content-Range`, `416` naming the real size when unsatisfiable, composing with `?download=1`. Implemented by delegating to `http.ServeContent` rather than reimplementing the RFC. |
 | Tool visibility scopes | Implemented | MCP adapter | v0.6 F2: four cumulative scopes — `search-only`, `read-only` (default), `editor`, `organizer` — enforced **at the call site**, not only by filtering `tools/list`; before F2 a hidden read tool answered when called directly. One table drives both the listing and the check, and a test walks every registered tool against every scope so a tool cannot ship unclassified. No `administrator` scope: whole-library destructive operations are unreachable over MCP at any scope, so it would name an empty set. `mcp.default_profile` renamed to `mcp.default_scope`, old key kept as a deprecated alias with the narrower winning on conflict. A scope is a guardrail on one's own agent, not authorization. |
 | LLM surgical edits | Implemented | document service | SEARCH/REPLACE, dry-run, revision preconditions. |
 | Batch organizer transactions | Implemented | document service | v0.6 F1: `POST /api/v1/batch` over an explicit note list — move, add_tags, remove_tags, trash, restore, duplicate — in `atomic` or `best_effort` mode. Every requested item gets an outcome in both modes (applied / skipped / failed / rolled_back), so a caller always knows which half happened. `trash` is revision-preconditioned per item. `request_key` gives exactly-once through a persisted ledger (schema v17), replaying the first run's outcomes verbatim; a reused key with different arguments is refused. Bounded at 500 items, refused rather than truncated. Stable Markdown-link copy is not an operation here — it produces text for a clipboard rather than changing the library. |
-| Sync MCP control plane | Planned v0.7 | MCP adapter | Jobs/status/conflicts only; no bulk bytes in context. |
+| Sync MCP control plane | Planned v0.7 G15 | MCP adapter | Exact bounded start/cancel/status/conflict set remains an owning-item decision; no keys, backups, restore, enrollment, retirement, or bulk bytes in context. |
 
 ## Publishing and knowledge-base maintenance
 
@@ -129,8 +129,10 @@ This matrix keeps the long conversation compressed into implementation-sized fea
 | Feature | Status | Primary owner | Notes |
 |---|---:|---|---|
 | SQLite revision restore | Implemented | document service | Restore creates a new revision. |
-| Native record-level sync | Planned v0.7 | sync service | Operation IDs + HLC + ack vectors; see `SYNCHRONIZATION.md`. |
-| REST/folder/rclone transports | Planned v0.7 | sync service | One immutable object/envelope protocol; target `none` supported. |
+| Native record-level sync | Planned v0.7 | sync service | Transactional change log, contiguous state vectors, revision-aware three-way merge, lazy resources, acknowledgement/retention; see `PLAN.md` G0-G20. |
+| REST/ephemeral-directory transports | Planned v0.7 | sync service | One object/envelope protocol with encryption/signatures proposed as blocking G0 decisions; directory is disposable and reconstructible; rclone is test carrier only; target `none` supported. |
+| Snapshot catch-up/reset | Planned v0.7 | archive/sync | Signed request, encrypted archive-v2 snapshot/ZIP, explicit restore intent, then incremental replay from its state-vector boundary. |
+| Install/config/mobile portability | Planned v0.8 | packaging/GUI | Installed-path/permission/credential-store work plus separately gated Wails v3/real-Android spike. |
 | Backup/restore replace/merge/fork/adopt | Implemented | archive/sync | No default; verification completes before writes; replace/adopt/fork rotate replica identity while in-place merge retains the target replica. A schema-v13 `restore_state` marker makes an interrupted restore visible, and only `replace` recovers it. |
 | Yjs-compatible live co-editing | Optional/research | editor service | Separate from database sync. |
 | go-git/Fossil checkpoints | Optional/research | version adapter | Projection history, never canonical sync. |

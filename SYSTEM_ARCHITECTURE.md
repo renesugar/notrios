@@ -146,8 +146,8 @@ client), `-gui-only` (pure REST client, usable against a remote service and for
 testing the API the way a third-party client would). Layout, themes, and
 notebook sidebar behavior are specified in `UI_DESIGN.md`.
 
-Wails v3 now documents one desktop/iOS/Android codebase, but v3 remains
-pre-release and mobile support experimental. Migration is not a dependency for
+Wails v3 now documents one desktop/iOS/Android codebase. v3 is beta for desktop
+and mobile support remains experimental. Migration is not a dependency for
 sync design. A later spike must cover desktop parity, Android storage/lifecycle,
 background transfer, safe-area/responsive UI, mobile file-dialog limitations,
 and real-device resource use before changing the stable v2 shell.

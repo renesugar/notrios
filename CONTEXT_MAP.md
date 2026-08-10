@@ -5,11 +5,10 @@ This file is the codebase atlas. Update it whenever major files or directories a
 ## Root documents
 
 - `README.md` — project overview and quick start.
-- `PLAN.md` — the **v0.6 draft** (MCP and automation expansion: batch organizer
-  transactions, tool visibility profiles, MCP coverage, templates, a graph view,
-  and a job control plane). No v0.6 task is approved. v0.5 is complete and
-  archived under `plans/v0.5/` — all thirteen slices plus its own plan copy at
-  `plans/v0.5/000-v0.5-plan.md`; v0.4 likewise under `plans/v0.4/`.
+- `PLAN.md` — the **replacement v0.7 native synchronization draft**, divided
+  into twenty-one independently approvable slices (G0-G20). No v0.7 slice is
+  approved. v0.6 is complete at product 0.6.0/schema v18 and archived under
+  `plans/v0.6/`; v0.5 and v0.4 are archived under their version directories.
 - `plans/scaffold/SCAFFOLD_CREATION_PLAN.md` — process for creating/refining this scaffold.
 - `ROADMAP.md` — product roadmap and future features.
 - `AGENTS.md` — coding-agent instructions (`CLAUDE.md` points here).
@@ -19,9 +18,10 @@ This file is the codebase atlas. Update it whenever major files or directories a
 - `NOTEBOOKS_AND_SEARCH_NOTEBOOKS.md` — notebooks, tags, search notebooks, Trash/Help semantics.
 - `SEARCH_QUERY_LANGUAGE.md` — user query language and backend translation.
 - `RECOLL_INTEGRATION.md` — Recoll sidecar design and licensing boundary.
-- `SYNCHRONIZATION.md` — planned v0.7 database/replica identities, CRDT/change
-  rules, archive/envelope format, REST/folder/rclone transports, retention,
-  backup/restore relationships, library decision, and validation.
+- `SYNCHRONIZATION.md` — planned v0.7 database/replica identities,
+  state-vector/change-log and revision-merge rules, lazy resources,
+  archive/envelope security, ephemeral-directory and REST transports, snapshot
+  catch-up, retention, library decision, and validation.
 - `NATIVE_ARCHIVE_V2.md` — v2 identity, manifest-last object/record contract,
   compatibility/limits, explicit restore intent, verification rules, P3 export
   staging/resume semantics, the P3a index-chunk container, the optional P3b
@@ -136,13 +136,14 @@ This file is the codebase atlas. Update it whenever major files or directories a
 - `DATABASE_SCHEMA.md` explains the target SQLite schema and why search sidecars (now Recoll) remain derived indexes.
 - `api/openapi.yaml` contains the REST contract for collections, documents,
   resources, revisions, links, remote media, graph, selection planning, and jobs.
-  Remote-media scan/localization and selection/privacy dry runs are live; publish/import job execution,
-  profiles/batches/sync remain staged.
-- `api/mcp-tools.md` now defines MCP tool profiles and the implemented read-only MVP tools. `internal/httpapi/mcp.go` contains the current dependency-free adapter mounted at `/mcp`.
-- `internal/api/types.go` mirrors the current REST DTO shapes.
-- `internal/httpapi/server.go` and `selection.go` expose live SQLite-backed
-  document/search and shared selection-planning routes; future job routes stay
+  Remote-media scan/localization, selection/privacy dry runs, batches, and job
+  watch/cancel are live; remote job starts, REST profiles, and sync remain
   staged.
+- `api/mcp-tools.md` defines MCP tool scopes and the implemented bounded tools. `internal/httpapi/mcp.go` contains the current dependency-free adapter mounted at `/mcp`.
+- `internal/api/types.go` mirrors the current REST DTO shapes.
+- `internal/httpapi/server.go` plus its route-specific files expose live
+  SQLite-backed document/search/selection, batch, and job watch/cancel routes;
+  path-taking job starts remain deliberately absent.
 
 ## MVP Task 1 additions
 

@@ -1,16 +1,52 @@
 # Plan Status
 
-Updated: 2026-08-05
+Updated: 2026-08-10
 
 ## Active milestone
 
-**v0.5 is complete.** All thirteen slices — E1, E1a, E1b, E2, E3, E4, E5, E6,
-E6a, E6b, E7, E8, E9 — are archived under `plans/v0.5/`, together with a copy of
-the milestone plan at `plans/v0.5/000-v0.5-plan.md`. Product version is
-**0.5.0**; the schema is **v16** (E1 added v14 blocks, E1a added v15 heading
-slugs, E5 added v16 title/filename indexes). v0.4 remains archived under
-`plans/v0.4/`, with P6, the `movenotes-v3` compatibility bridge, deferred to
-v0.7 slice 3.
+**v0.1 through v0.6 are complete.** Product version is **0.6.0** and the
+canonical schema is **v18**. v0.6 F0-F7 are archived under `plans/v0.6/`;
+earlier milestones remain under their version directories.
+
+`PLAN.md` is now the **replacement v0.7 native synchronization draft**. It
+splits the former seven-item plan into G0-G20: evidence, profiles/local journal,
+state-vector convergence, revision deltas/merge, lazy resources, secure
+container/catch-up, ephemeral-directory and REST transports, jobs/UI/retention,
+mobile/installation handoff, compatibility, and final validation. **No v0.7
+item is approved.** G0 is first but cannot start until the user reviews its
+blocking E2EE and per-replica signature decisions.
+
+The same planning pass added distinct roadmap milestones: v0.8 installation,
+configuration, native credential stores, and Wails v3/Android portability;
+v0.9 release-candidate hardening; and a user-authorized installable GitHub
+release in v1.0. P6, the `movenotes-v3` bridge, is v0.7 G19 gated on G9.
+
+## 2026-08-10 synchronization planning and consistency audit
+
+- Replaced the seven-item sync draft with twenty-one resumable items. G0-G2 are
+  evidence/decision spikes; G3-G20 separate identity, journaling, convergence,
+  revision merge, lazy resources, crypto/container, catch-up, both transports,
+  operations/UI/retention, installation handoff, compatibility, and wrap-up.
+- Counter-proposed archive v2 rather than SVN dump as the wire container, while
+  retaining the requested state-vector/change-log and base-delta model. A note
+  revision binds a complete result object and may carry an optional transfer
+  delta; three-way merge preserves disjoint edits and exposes overlaps.
+- Recommended mandatory payload authenticated encryption plus per-replica
+  Ed25519 signatures as separate G0 decisions. TLS remains required for
+  non-loopback REST. No crypto control is described as implemented.
+- Made the shared directory ephemeral/reconstructible and rclone a conformance
+  carrier only. Added signed discovery/requests, snapshot catch-up/reset,
+  authorized resumable REST backup download, password UI, multiple runtime
+  profiles/server instances, and lazy resource materialization.
+- Reconciled source truth across living docs: product 0.6.0/schema v18,
+  baseline migrations through v17 plus the v18 bootstrap shim, MCP scope
+  terminology, live blocks/batches/jobs/ranges, Reports protections, and the
+  current Wails status (desktop beta, mobile experimental).
+- Validation passed: `go test ./...`, `scripts/check_plan_loops.py`,
+  `scripts/check_required_files.py`, `scripts/validate-scaffold.sh`, frontend
+  typecheck/build, docs-site build, and `git diff --check`.
+
+## Historical milestone notes
 
 Four v0.5 decisions are settled and recorded as `PROJECT_DECISIONS.md` 17–20:
 block identity is strictly content-based; lint/fix stays single-note and
@@ -812,7 +848,8 @@ written.**
   (780 entries instead of 786).
 - v0.5 archived as `plans/v0.5/000-v0.5-plan.md` and
   `plans/v0.5/013-v0.5-documentation-release-wrap-up.md`; `PLAN.md` now holds
-  the **v0.6 draft** (F1–F7). No v0.6 task is approved.
+  the **historical v0.6 draft** (F1–F7). This line records the state at that
+  time; v0.6 is now complete.
 
 ## 2026-08-06 E8 — organizer UX: trash-first delete, restore, tag rename
 
@@ -1335,12 +1372,12 @@ Both were verified in a real browser rather than reasoned about.
 
 ## 2026-08-05 P6 deferred to v0.7
 
-- The movenotes-v3 compatibility bridge moved out of v0.4. The gate is v0.7
-  slice 3 (the native snapshot/change container), not the whole milestone:
-  slices 4 and 5 add transports and recovery and leave the container alone.
-- Slice 3 reuses archive-v2 manifests and objects for snapshots and change
-  envelopes, and open questions 13 (envelope encoding/compression) and 14 (blob
-  chunk threshold) change container internals. Unknown record types are
+- The movenotes-v3 compatibility bridge moved out of v0.4. In the replacement
+  2026-08-10 plan it is G19, gated on G9 (the native change-envelope/container
+  codec), not the whole milestone. The original draft called that gate slice 3.
+- G9 reuses archive-v2 manifests and objects for snapshots and change
+  envelopes, and G2's encoding/compression and resource-chunk investigations
+  change container internals. Unknown record types are
   rejected, so sync-era additions arrive behind a new required capability and a
   reader pinned in v0.4 would refuse every archive written after v0.7 — a safe,
   loud failure, but a second integration pass of exactly the kind P3a and P3b
@@ -1352,7 +1389,7 @@ Both were verified in a real browser rather than reasoned about.
   checksum-verified, explicitly subset-scoped archive-v2 handoff that Notrios'
   own verifier admits.
 - Recorded as accepted decision 16 in `PROJECT_DECISIONS.md`; `ROADMAP.md` now
-  lists the bridge as v0.7 item 6.
+  lists the bridge as v0.7 G19 after G9.
 
 ## 2026-08-05 P5 — stable external links and local resolution
 
@@ -1410,8 +1447,8 @@ updated the planning model without implementing future product features:
 - added scalable publication planning and a Bluge/Recoll/FTS adapter spike;
 - kept Marmot, Cachapa, Ygo, Nostr, and bitchat as bounded design references,
   not dependencies; REST plus immutable rclone/folder transport comes first;
-- documented Wails v3/mobile as a later migration spike because v3/mobile are
-  currently pre-release/experimental;
+- documented Wails v3/mobile as a later migration spike. As of the replacement
+  2026-08-10 plan, Wails v3 desktop is beta and mobile remains experimental;
 - reconciled stale API/security/feature/docs claims after H4.
 
 See the archived review under `plans/v0.3/000-plan-roadmap-review-2026-07.md`
@@ -1431,13 +1468,12 @@ attempt detail remains append-only in `agent/ATTEMPT_LOG.jsonl`.
 ## Current working-state facts
 
 - Branch: `develop`.
-- Review base before this session: `26b0925`.
+- Review base before this planning session: `aaff582`.
 - Project license: Apache-2.0.
 - Canonical store: SQLite plus content-addressed assets; FTS5/Recoll are derived.
-- Current schema: v16 (`store.CurrentSchemaVersion`). `migrations/0001_initial.sql`
-  now creates through v16, including the v13 `restore_state` table that
-  previously lived only in a shim; the `ensureSchemaVn` shims remain for
-  upgrading older databases.
+- Current schema: v18 (`store.CurrentSchemaVersion`). The two baseline migration
+  copies create through v17; `ensureSchemaV18` adds `jobs`, and the additive
+  `ensureSchemaVn` shims upgrade older databases.
 - Unbounded local traversal uses `(updated_at, id)` or `(score, id)` keysets;
   notebook and Trash pages are route-bound. Optional Recoll merge pages use a
   ten-minute, 1,000-hit immutable snapshot and report truncation explicitly.
@@ -1465,7 +1501,7 @@ attempt detail remains append-only in `agent/ATTEMPT_LOG.jsonl`.
 - H11 local release gates pass; `docs/operations.md` is included in the
   docs site; P1/P2 expand it from 11 to 13 pages/Help notes with selection and
   archive-v2 safety guides.
-- Product version: 0.5.0; current schema: v16.
+- Product version: 0.6.0; current schema: v18.
 - Resource reference report:
   `GET /api/v1/resources/reports/reference` and
   `notriosctl resources report`.
@@ -1475,8 +1511,9 @@ attempt detail remains append-only in `agent/ATTEMPT_LOG.jsonl`.
   gate is replaceable with future peer-acknowledgement policy.
 - Perceptual hashing: hook contract is wired, but no algorithm ships or is
   installed by default; all output is review-only.
-- Fresh database builtins: All notes, Notes, Help, Trash.
-- MCP default profile is read-only; editor-profile write tools are implemented.
+- Fresh database builtins: All notes, Notes, Reports, Help, Trash.
+- MCP default tool scope is `read-only`; `editor` and `organizer` writes are
+  implemented. `mcp.default_profile` is only a deprecated configuration alias.
 - Native archive v1 is query-scoped interchange, not full backup.
 - Native archive v2 export, verify, and restore are live as `notriosctl export
   archive-v2`, `verify archive-v2`, and `restore archive-v2 --intent
@@ -1510,5 +1547,5 @@ attempt detail remains append-only in `agent/ATTEMPT_LOG.jsonl`.
 
 - Long-term SQLite driver choice (current local cgo/libsqlite3 adapter).
 - Official MCP Go SDK adoption/version.
-- Sync decisions listed in `SYNCHRONIZATION.md` and
-  `agent/OPEN_QUESTIONS.md`; they do not block v0.4 P3.
+- Sync decisions live in the owning G0-G17 items in `PLAN.md`; the register in
+  that plan is an index. No v0.7 implementation is approved.

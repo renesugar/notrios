@@ -190,48 +190,53 @@ question, and are not on the original list.
 
 ## v0.7 — Versioning and synchronization
 
-This is a multi-slice milestone; each slice gets a separate active plan and
-user approval. See `VERSIONING_AND_SYNC_POLICY.md`.
+This is the first milestone that merges independently changed canonical state,
+so the replacement `PLAN.md` divides it into **twenty-one independently
+approvable items (G0-G20)** rather than the former six implementation groups.
+Every completed item leaves a verified ZIP in the evidence directory and waits
+for approval before the next begins. See `VERSIONING_AND_SYNC_POLICY.md` and
+`SYNCHRONIZATION.md`.
 
-1. **Profiles and identities** — explicit profiles, logical database UUID,
-   replica/device UUID, schema/protocol compatibility, bootstrap notebooks,
-   validated `notrios://` routing, and a `sync: none` target.
-2. **Replication core** — immutable operations identified by
-   `(replica_id, sequence)`, hybrid logical clocks for deterministic conflict
-   ordering, per-replica acknowledgement vectors for completeness and GC,
-   idempotent apply, record/field LWW registers, set membership tombstones,
-   body-snapshot conflict copies, and deterministic notebook-tree repair.
-3. **Native snapshot/change container** — reuse archive v2 manifests and object
-   storage for full snapshots and bounded change envelopes; blobs publish
-   before references and manifests publish last.
-4. **REST transport and folder/rclone transport** — the same protocol over
-   authenticated REST and immutable shared-folder objects. `rclone copy
-   --immutable` is a carrier; `rclone sync`/bisync are not the merge algorithm.
-   Same-machine folders, removable drives, and cloud remotes all use the same
-   inbox/outbox layout.
-5. **Operations and recovery** — durable outbox, retries/backpressure,
-   peer retirement, tombstone/blob GC watermarks, full-resync after retention
-   horizon, conflict UI, replace/merge/adopt/fork restore, and fault-injection
-   convergence tests.
-6. **Native archive compatibility bridge** (deferred from v0.4 P6; gated on
-   slice 3, not on slices 4–5) — publish archive-v2 JSON Schemas, golden
-   fixtures, and capability bounds, add a compatibility command producing
-   sanitized deterministic test archives, coordinate the separately maintained
-   `movenotes-v3/notrios2sql.py` importer against them, and add cross-version
-   consumer tests. It waits for slice 3 because that slice extends the very
-   container the contract would pin: snapshots and change envelopes reuse
-   archive-v2 manifests and objects, unknown record types are rejected, and
-   questions 13 (envelope encoding) and 14 (blob chunking) change container
-   internals. Pinning first would mean a reader integrated in v0.4 refusing
-   every archive written after v0.7 — a safe failure, but a second integration
-   pass. `movenotes-v3` had not started the importer as of 2026-08-05.
+- **Evidence before contracts (G0-G2):** threat model and reference validation;
+  representative revision/delta/three-way-merge workloads; deterministic
+  envelope/compression, resource chunk, queue, and provisional mobile bounds.
+- **Identity and local replication (G3-G8):** multiple named runtime profiles
+  and isolated server instances; transactional operation journal; contiguous
+  state vectors and gap planning; deterministic metadata/set/tree/delete
+  convergence; complete note-revision objects with optional transfer deltas and
+  visible three-way conflicts; lazy, hash-verified resource materialization.
+- **Secure container and catch-up (G9-G10):** archive-v2 change-envelope
+  capabilities; authenticated encryption and proposed per-replica Ed25519
+  signatures; signed backup requests; encrypted snapshot/ZIP catch-up and reset
+  followed by incremental replay from the snapshot vector.
+- **Two carrier adapters, one protocol (G11-G15):** an ephemeral shared
+  directory that can be deleted and reconstructed, with immutable per-replica
+  advertisements/requests/artifacts; Google Drive/removable-media conformance
+  without an rclone dependency; REST authentication/pairing/TLS/quota/audit
+  foundation; resumable REST objects and backup downloads; durable jobs,
+  retry/backpressure, and bounded MCP status/control.
+- **User recovery and safe retention (G16-G18):** pairing/profile/directory,
+  encrypted-backup, lazy-resource, conflict and reset UI; explicit peer
+  retirement and acknowledgement/snapshot-gated tombstone/blob GC; a platform
+  and permissions contract handed to the distinct v0.8 milestone.
+- **Compatibility and completion (G19-G20):** publish the archive-v2 contract
+  deferred from v0.4 P6 after the sync-era container stabilizes, then run full
+  multi-peer convergence, security, disaster-recovery, large-corpus, API/docs,
+  and release-package reconciliation.
+
+The shared directory is disposable transport state, never canonical storage.
+`rclone copy --immutable` may exercise the mapped Google Drive during tests;
+`rclone sync`/`bisync` are not the merge or deletion algorithm, and mobile does
+not depend on rclone. Subversion contributes state-vector/change-log and
+base-delta ideas, not its dump grammar: archive v2 already supplies Notrios'
+verified content-addressed container.
 
 Research outcomes:
 
 - A small Notrios-specific Go replication library is preferred over Marmot:
   Marmot's HLC, immutable CDC segments, manifest-last publication, and
   anti-entropy are useful patterns, but its always-on SQL-cluster/2PC/CDC stack
-  does not match intermittent mobile/folder/rclone peers.
+  does not match intermittent mobile/directory/REST peers.
 - Cachapa's record-level HLC/LWW approach is the closest conceptual reference,
   but the Dart packages are not adopted or ported wholesale. Notrios also needs
   per-replica sequence vectors, tree invariants, immutable resources, revision
@@ -248,20 +253,65 @@ Research outcomes:
 - Optional go-git/Fossil/Obsidian adapters remain projections/checkpoints, not
   the canonical merge protocol.
 
+## v0.8 — Installation, configuration, and mobile portability
+
+This is deliberately separate from synchronization correctness. Packaging
+changes which directories, credentials, ports, background work, deep links, and
+file pickers an installed application may use, and those permissions must not
+be smuggled into v0.7 as desktop assumptions.
+
+- Select self-contained application-data/config/cache locations per OS and
+  migrate source-checkout defaults without losing data.
+- Package the built web UI and required SQLite/runtime dependencies with the
+  application; define upgrade, uninstall, and profile discovery behavior.
+- Validate multiple profiles/server instances, loopback ports, URL handlers,
+  shared-directory access, firewall prompts, and native file/directory pickers
+  in installed Linux, Windows, and macOS builds.
+- Select and test native credential-store implementations behind v0.7's secret
+  interface. `zalando/go-keyring` currently documents macOS, Linux/BSD, and
+  Windows only and is not the Android answer.
+- Run a separately approved Wails v3 migration spike. Wails v3 is currently
+  beta for desktop; Android/iOS support is explicitly experimental. Preserve
+  Wails v2 until desktop regression, dependency/license, and rollback gates
+  pass.
+- Android first: compile and run on a physical device; validate scoped storage
+  and the Storage Access Framework, app sandbox/database/assets, secure storage,
+  lifecycle/background transfer, notifications, responsive UI, memory/disk/
+  battery bounds, pairing, catch-up, incremental sync, and encrypted backup.
+- iOS follows only after the Android/core seams are proven and an Apple/Xcode
+  test environment is available.
+- Produce installable prerelease artifacts for internal evidence, not a public
+  GitHub release.
+
+## v0.9 — Release-candidate hardening
+
+- Cross-platform upgrades and profile/data migration from source builds and
+  earlier prereleases.
+- Installer signing/notarization policy, SBOM and dependency/license/security
+  audit, reproducible artifact metadata, rollback and disaster-recovery drills.
+- Long-running directory/REST/mobile soak tests, compatibility matrix, support
+  bundle/redaction, crash reporting policy, and release documentation.
+- Freeze REST, MCP, archive, sync, configuration, and installer compatibility
+  candidates for 1.0.
+
 ## v1.0 — Feature-complete local product
 
 - Stable REST API.
 - Stable MCP tool/resource schemas.
 - Large-scale performance tests with hundreds of thousands of documents/resources.
-- Installer/package story.
+- Installable signed artifacts for supported desktop platforms, with an
+  explicitly documented mobile support level.
 - Backup/export/restore/sync compatibility and disaster-recovery validation.
 - Security review for remote media and MCP.
 - Usable documentation for Gitea/GitHub public release.
+- Create a user-authorized GitHub release for `github.com/renesugar/notrios`:
+  version tag, checksums, signatures, SBOM/provenance, release notes, upgrade and
+  rollback instructions, installable artifacts, and readback verification.
 - Desktop remains on stable Wails v2 until a separately approved Wails v3
   migration spike passes desktop regression and real Android tests. Wails v3
-  currently offers a shared desktop/iOS/Android codebase, but v3 and mobile are
-  pre-release/experimental and Android/iOS impose mobile storage, lifecycle,
-  background, and file-dialog constraints.
+  currently offers a shared desktop/iOS/Android codebase; v3 desktop is beta
+  and mobile remains experimental, with Android/iOS storage, lifecycle,
+  background, credential, and file-dialog constraints.
 
 ## Future candidates
 
@@ -291,7 +341,8 @@ The scaffold handoff is complete; see `CODING_CLIENT_HANDOFF.md`. Future roadmap
 
 The v0.1 MVP, v0.2 redesign, and v0.3 hardening milestones are implemented and
 archived, and so is v0.4: J1–J3, Q1, P1, P2, P3, P3a, P3b, P4, P5, P7, and P8
-are under `plans/v0.4/`, with P6 deferred to v0.7 slice 3. v0.5 is complete and
+are under `plans/v0.4/`, with P6 deferred to v0.7 G19 after G9 stabilizes the
+sync-era container. v0.5 is complete and
 archived under `plans/v0.5/`, including a copy of its own plan at
 `plans/v0.5/000-v0.5-plan.md`. Two v0.5 roadmap bullets did not ship and moved
 to v0.6: note templates with task extraction, and a graph *view* in the GUI (E4
@@ -305,4 +356,3 @@ bullet being marked done, and it does not move to v0.7 — it is a decision, not
 an omission.
 
 `PLAN.md` now holds the v0.7 plan.
-

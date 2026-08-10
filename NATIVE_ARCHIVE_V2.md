@@ -126,7 +126,8 @@ per object is the wrong long-term storage shape: a full backup of a real
 382,206-note corpus wrote 382,407 loose objects in 48m26s — about 131 objects
 per second for 1.14 GB — since throughput tracks one
 `create + write + fsync + rename` per object rather than bytes, and v0.7 sync
-would pay one transport round trip per object over REST and folder/rclone.
+would pay one transport round trip per object over REST or an ephemeral
+directory carrier.
 P3b added the `pack` layout behind the optional `objects.pack.v1` capability,
 which was possible precisely because `location` is discriminated rather than
 assumed.
@@ -145,7 +146,7 @@ magnitude the fsync hypothesis predicted, because reading and hashing every
 revision body dominates and both layouts pay it. Packing also costs about 11%
 more disk, because a packed writer cannot use the object tree as its
 deduplication index. Loose therefore stays the default and `--pack` is opt-in;
-the file-count collapse is what the planned REST and folder/rclone sync
+the file-count collapse is what the planned REST and ephemeral-directory sync
 transports need. An interrupted packed export restarts rather than resumes.
 See `performance/v0.4-p3b/`.
 

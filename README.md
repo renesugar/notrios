@@ -3,24 +3,25 @@
 Notrios (formerly "Notes Companion") is a local-first note-taking, search, import, and publishing system for very large Markdown and document collections.
 It combines a Go REST/MCP service (`notriosd`), a built-in GUI, SQLite/FTS5-backed canonical storage, content-addressed resources, optional Recoll-derived search/extraction, and support for third-party native clients (C++/Qt, Go/Wails, Rust/Tauri) over the same API.
 
-The v0.1 MVP, v0.2 redesign, v0.3 hardening, and v0.4 portable-data milestones
-are complete — see [`PLAN.md`](PLAN.md) and [`ROADMAP.md`](ROADMAP.md). The repository is
+The v0.1 through v0.6 milestones are complete; the replacement v0.7 native
+synchronization plan is unapproved — see [`PLAN.md`](PLAN.md) and
+[`ROADMAP.md`](ROADMAP.md). The repository is
 structured so a coding agent can resume safely after usage limits or model
 changes.
 
 ## Technology choices
 
 - **Service:** Go, standard library first, SQLite/FTS5 canonical storage. Binaries: `notriosd` (service) and `notriosctl` (CLI); Go module `github.com/renesugar/notrios`.
-- **MCP:** dependency-free JSON-RPC adapter at `/mcp`, with read-only tools by
-  default and editor-profile writes with revision preconditions; replace the
+- **MCP:** dependency-free JSON-RPC adapter at `/mcp`, with the `read-only` tool
+  scope by default and `editor`-scope writes with revision preconditions; replace the
   adapter with the official Go SDK later without changing tool semantics.
 - **Built-in GUI:** Go + Wails v2 (`cmd/notrios`, built with `make gui`) with
   `-no-gui` and `-gui-only` modes; the React + Vite frontend runs inside the
   webview and in the browser. Wails v3/mobile is a later measured migration.
 - **Search:** SQLite FTS5 for managed notes; Recoll as an optional derived sidecar for field/front-matter search, OCR-style extraction, and arbitrary files (see `RECOLL_INTEGRATION.md` and `SEARCH_QUERY_LANGUAGE.md`).
 - **Data model:** nested notebooks with emoji icons, tags, query-backed search
-  notebooks (All notes/Trash), a default Notes notebook, and a read-only Help
-  notebook — see `NOTEBOOKS_AND_SEARCH_NOTEBOOKS.md`.
+  notebooks (All notes/Trash), a default Notes notebook, and read-only Help and
+  Reports notebooks — see `NOTEBOOKS_AND_SEARCH_NOTEBOOKS.md`.
 - **Import sources:** Joplin RAW, Obsidian vaults, Twitter/X archives (thread-preserving), ChatGPT exports, Claude exports.
 - **Resource store:** content-addressed assets, exact-hash/reference reports,
   and optional review-only perceptual-hash hooks (no algorithm ships by
@@ -118,8 +119,9 @@ Notrios is licensed under the [Apache License 2.0](LICENSE). All code and depend
 - `SEARCH_QUERY_LANGUAGE.md` — user query language and backend translation rules.
 - `RECOLL_INTEGRATION.md` — Recoll sidecar design (replaces sist2) and licensing boundary.
 - `DOCS_SITE.md` — GitHub Pages documentation site with PageFind and the Help notebook.
-- `SYNCHRONIZATION.md` — planned database/replica merge algorithm,
-  REST/folder/rclone transports, retention, and backup/restore relationships.
+- `SYNCHRONIZATION.md` — planned state-vector/change-log merge algorithm,
+  ephemeral-directory and REST transports, lazy resources, secure catch-up,
+  retention, and backup/restore relationships.
 - `NATIVE_ARCHIVE_V2.md` — implemented v2 identity, immutable-object,
   manifest-last, compatibility, restore-intent, and verification contract.
 - `CODING_CLIENT_HANDOFF.md` — agent handoff (formerly `CODEX_HANDOFF.md`).

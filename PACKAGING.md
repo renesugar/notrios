@@ -33,7 +33,10 @@ Because tests and the web build run first, a ZIP is only produced from a validat
 - the browser UI is served from `web/dist/` relative to the working directory, so a bare binary without that directory serves the API only;
 - the SQLite store links against the system `libsqlite3` (cgo), so binaries are tied to a compatible glibc/libsqlite3.
 
-A real installer/package story (self-contained assets, per-OS packages) remains future work on the roadmap (`ROADMAP.md` v1.0).
+A real installer/package story (self-contained assets, installed data/config
+locations, permissions, native credential stores, per-OS packages, upgrades,
+and mobile portability) is the distinct v0.8 roadmap milestone. v0.9 hardens
+release candidates; v1.0 creates user-authorized installable GitHub releases.
 
 ## Tagging a release
 

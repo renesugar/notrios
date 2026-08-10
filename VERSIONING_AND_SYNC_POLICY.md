@@ -26,15 +26,24 @@ The v0.7 design is specified in `SYNCHRONIZATION.md`. Its invariants are:
 - Stable logical database IDs are distinct from per-copy replica/device IDs.
 - Operations have per-replica sequence IDs; HLCs order conflicts but do not
   replace delivery/acknowledgement vectors.
-- Note bodies remain immutable saved revisions with visible concurrent
-  conflicts; metadata and relationship rows merge at field/element granularity.
+- Note bodies remain immutable saved revisions. A revision always binds its
+  complete result hash/object and may carry a transfer delta from a named
+  parent; verified three-way merge preserves disjoint concurrent edits and
+  exposes overlapping edits as typed conflicts.
+- Resource metadata may converge before bytes; content hashes and permanent
+  URIs support bounded lazy fetch, resume, verification, and deduplication.
 - Tombstone/resource collection waits for retention plus acknowledgements from
   every active peer.
-- REST, shared folders, rclone, and removable media are transport adapters over
-  one protocol. `rclone sync` is never the conflict/deletion algorithm.
+- REST and an ephemeral shared directory are transport adapters over one
+  protocol. Removable/cloud-mapped directories and rclone may carry the latter
+  during tests, but rclone is not a dependency and `rclone sync` is never the
+  conflict/deletion algorithm.
+- A blank, reset, or history-expired peer catches up through a verified,
+  encrypted archive-v2 snapshot bound to a state vector, then applies later
+  operations. The directory is disposable and peers can reconstruct it.
 - `target: none` is a first-class configuration and performs no peer transfer.
-- MCP is a bounded control plane for sync jobs; REST/object files carry bulk
-  envelopes and blobs.
+- The exact MCP sync controls are an open v0.7 G15 decision; REST/object files
+  carry bulk envelopes, resources, and backup artifacts in every case.
 
 ## go-git
 

@@ -28,11 +28,14 @@ The REST persistence slice is implemented for managed Markdown documents:
 - `GET /api/v1/links/suggest` returns bounded link-target autocomplete.
 - `POST /api/v1/links/check` classifies the links in an unsaved buffer.
 - `POST /api/v1/note-queries/run` evaluates one embedded `note-query` block.
+- `GET /api/v1/documents/{document_id}/blocks` returns addressable block and
+  heading-anchor metadata.
 - `POST /api/v1/selection/plan` returns the read-only selection/privacy plan.
 - `POST /api/v1/links/resolve` resolves an external `notrios://` link against
   this database.
-- import/publish job APIs, rich block indexing, REST profiles, batches, and sync
-  remain planned. Document/resource/search/notebook/tag/trash, link-listing,
+- job start APIs, REST profiles, and sync remain planned. Addressable block
+  indexing, bounded batch organizer transactions, and job watch/cancel are
+  live. Document/resource/search/notebook/tag/trash, link-listing,
   graph-slice, remote-media scan/policy/localization, selection planning, stable
   link resolution, and the MCP adapter are live over REST; import, archive v1,
   archive v2 export/verify/restore, stable-link routing, and publication are
@@ -423,7 +426,7 @@ GET  /api/v1/media-policy                                    # active policy rep
 POST /api/v1/media-policy/check-url                          # evaluate explicit URLs
 ```
 
-Localize requires `base_revision_id` (or `If-Match`) for non-dry runs and rewrites the note in a new revision; `dry_run` reports decisions without fetching a byte; `allow_review` opts review-listed URLs in; blocked URLs and exact-hash-blocked content are never admitted. Read-only notes (Help, Trash) return 403. The editor-profile MCP tool `localize_remote_media` exposes the same engine, as do `notriosctl localize` and the importers' `--localize-media` flag (Joplin RAW, Obsidian).
+Localize requires `base_revision_id` (or `If-Match`) for non-dry runs and rewrites the note in a new revision; `dry_run` reports decisions without fetching a byte; `allow_review` opts review-listed URLs in; blocked URLs and exact-hash-blocked content are never admitted. Notes in read-only builtin notebooks (Help/Reports) and trashed notes return 403. The `editor`-scope MCP tool `localize_remote_media` exposes the same engine, as do `notriosctl localize` and the importers' `--localize-media` flag (Joplin RAW, Obsidian).
 
 The scan evaluates every remote image/media URL in the stored body (Markdown images/embeds, media-extension links, HTML `<img>` tags) against the `remote_media` policy and returns `{url, media_class, action, reason, line}` decisions plus counts; an optional request body with `urls` evaluates that explicit list instead (e.g. unsaved editor drafts). Scanning is purely static — no downloads and no DNS resolution; address checks cover literals, and resolved addresses are re-checked at fetch time by the quarantine pipeline (H3). The read-only MCP tool `scan_remote_media` exposes the same scan.
 
@@ -453,7 +456,7 @@ filesystem/output paths and never returns note bodies, resource bytes, source
 metadata JSON, or local storage paths. See
 `SELECTION_AND_PRIVACY_PLANNER.md`.
 
-### Jobs (live since v0.6 F6) and import/export (staged)
+### Jobs (watch/cancel live since v0.6 F6; remote start deliberately absent)
 
 ```text
 GET  /api/v1/jobs
@@ -501,22 +504,20 @@ v0.7 full-sync bootstrap. Its streaming export (P3/P3a/P3b) and verify/restore
 (P4) are deliberately CLI-only: no REST or MCP surface accepts an archive path,
 streams archive bytes, or restores a database. See `NATIVE_ARCHIVE_V2.md`.
 
-### Profiles, batches, external links, and sync (planned)
+### Profiles, batches, external links, and sync
 
 ```text
-GET    /api/v1/profiles
-GET    /api/v1/profiles/{profile_id}
-POST   /api/v1/batches                         # bounded organizer transaction
-GET    /api/v1/batches/{job_id}
-GET    /api/v1/sync/status
-POST   /api/v1/sync/jobs                       # start pull/push/full-resync
-GET    /api/v1/sync/jobs/{job_id}
-DELETE /api/v1/sync/jobs/{job_id}              # cancel
+POST   /api/v1/batch                            # live bounded organizer transaction
+
+# Conceptual v0.7 sync data plane; exact routes wait for G13/G14 approval.
 POST   /api/v1/sync/handshake
-GET    /api/v1/sync/objects/{sha256}           # resumable/range data plane
+POST   /api/v1/sync/plans
+GET    /api/v1/sync/objects/{sha256}            # resumable/range data plane
 PUT    /api/v1/sync/objects/{sha256}
-POST   /api/v1/sync/manifests
+POST   /api/v1/sync/envelopes
 POST   /api/v1/sync/acknowledgements
+POST   /api/v1/sync/snapshots/requests
+GET    /api/v1/sync/snapshots/{artifact_id}     # authorized encrypted range download
 ```
 
 `POST /api/v1/batch` implements the bounded batch contract (v0.6 F1): `move`,
@@ -547,9 +548,12 @@ candidate on ambiguity, and never guesses across database IDs. The `profiles`
 REST routes below remain planned; the registry is local desktop configuration
 today, not an HTTP surface.
 
-The sync surface is conceptual until v0.7. MCP may start/cancel/status a job and
-list bounded conflicts, but bulk envelopes/blobs use REST or immutable folder
-objects. Full algorithms and compatibility rules are in `SYNCHRONIZATION.md`.
+The sync surface is conceptual until v0.7. The replacement plan does not
+pre-approve its old MCP start/cancel claim: G15 decides the bounded control set,
+while enrollment, keys, backup export/restore, peer retirement, and bulk bytes
+remain outside MCP. REST and the ephemeral directory carry the same encrypted,
+signed artifacts; full algorithms and compatibility rules are in
+`SYNCHRONIZATION.md`.
 
 ### Notebooks, tags, and search notebooks (implemented — plan tasks R3/R5)
 
@@ -622,11 +626,10 @@ The REST + MCP surface must be sufficient to build a full-featured third-party n
 | resources/attachments | resources routes |
 | links/backlinks/graph | links + graph routes |
 
-Remaining known gaps: import/export job APIs (v0.6 F6), REST routes for the
-local database registry and publication profiles, and sync (v0.7). Two items
-left this list recently: bulk organizer operations, when v0.6 F1 shipped
-`POST /api/v1/batch`, and HTTP `Range` on resource content, implemented in v0.6
-F3.
+Remaining known gaps: remote starting of path-taking import/export jobs
+(deliberately withheld in v0.6 F6), REST routes for the local database registry
+and publication profiles, and sync (v0.7). Job watch/cancel, bulk organizer
+operations, and HTTP `Range` on resource content are implemented.
 
 ## MCP MVP endpoint
 
@@ -653,17 +656,15 @@ Write tools implemented in task R8, exposed only when the MCP scope is `editor` 
 
 ## MCP tools planned later
 
-Tools implemented after R8 include `localize_remote_media` (editor profile;
-revision precondition). Tools still planned later:
+Tools implemented after R8 include `localize_remote_media` (editor scope;
+revision precondition), `get_document_graph` (`get_graph`), `get_lint_report`,
+`run_batch` (organizer scope), and bounded job reads. Tools still withheld or
+planned later:
 
 - `upload_resource`
-- `get_document_graph`
-- `lint_workspace`
 - `fix_workspace_issues`
 - `create_import_job`
-- `run_batch` / `get_batch_status` (organizer profile)
-- `plan_sync`, `start_sync`, `get_sync_status`, `list_sync_conflicts` (scoped
-  administration; bounded output only)
+- the exact sync control set, decided in `PLAN.md` G15 (bounded output only)
 
 ## MCP resources
 

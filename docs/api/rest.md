@@ -620,7 +620,9 @@ nothing happened. Rerun the command.
 ## Placeholder endpoints (not yet functional)
 
 Staged contracts include import- and export-job creation and collection
-creation/patching (collections are effectively fixed to `default`). Profiles and
-sync endpoints are planned but not live; archive v2 export/verify/restore are
-CLI commands by design. Remote-media scan and localization are implemented; see
+creation/patching (collections are effectively fixed to `default`). Runtime
+profiles and the v0.7 ephemeral-directory/REST sync endpoints are planned but
+not live; the exact REST data plane waits for G13/G14 approval. Current archive
+v2 export/verify/restore are CLI commands by design. Remote-media scan and
+localization are implemented; see
 [the CLI guide](../cli.md#localize) and the note inspector in the GUI.

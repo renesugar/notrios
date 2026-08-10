@@ -126,8 +126,9 @@
 - Whether to add LadybugDB as a derived graph backend.
 - Which backend, if any, to use for scalable generated-site search after the
   Bluge/Recoll/FTS adapter spike.
-- Exact sync envelope encoding, encryption policy, retention horizon, blob
-  chunk threshold, and per-set conflict policy (see `SYNCHRONIZATION.md`).
+- Exact sync envelope encoding, encryption/signature policy, revision-delta
+  merge, retention horizon, resource chunk threshold, and per-set conflict
+  policy (see the owning G0-G17 items in `PLAN.md`).
 - Whether optional live co-editing merits a Yjs-compatible Go dependency.
 - When Wails v3/mobile has sufficient stability and native evidence to replace
   the stable Wails v2 shell.

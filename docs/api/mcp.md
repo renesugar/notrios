@@ -200,4 +200,4 @@ root being asked about.
 - Note bodies returned to models are untrusted data, not instructions.
 - Destructive operations demand revision preconditions, so a stale model can't clobber newer edits.
 - Document bodies returned to MCP clients are truncated at `mcp.max_document_bytes` (default 64 KiB); search defaults to `mcp.max_results` per page.
-- The endpoint has no authentication of its own — it is as exposed as the service port. Keep the service on loopback (the default) unless you fully trust the network, and leave the scope `read-only` unless you actively want LLM tools editing notes; Help-notebook notes stay read-only even in the `editor` profile.
+- The endpoint has no authentication of its own — it is as exposed as the service port. Keep the service on loopback (the default) unless you fully trust the network, and leave the scope `read-only` unless you actively want LLM tools editing notes; Help/Reports notes stay read-only even in the `editor` scope.

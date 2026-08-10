@@ -1,7 +1,8 @@
 # Synchronization Architecture
 
-Status: design target for v0.7; not implemented. Each implementation slice
-requires a new active plan and user approval.
+Status: design target for v0.7; not implemented. `PLAN.md` contains twenty-one
+independently approvable slices (G0-G20). No slice starts without resolution of
+its blocking decisions and explicit user approval.
 
 ## Goals and non-goals
 
@@ -19,6 +20,12 @@ The first protocol is single-user/multi-device. Multi-user authorization,
 character-by-character simultaneous editing, public relay transport, and BLE
 mesh transport are separate future features.
 
+The shared directory is explicitly **ephemeral**. It is an untrusted,
+disposable message carrier rather than a durable source of truth. If it is
+deleted, peers reconstruct advertisements, requests, and still-retained
+artifacts from their canonical database, journal, and acknowledgements. A
+single shared mutable manifest would make that promise false and is forbidden.
+
 ## Identities and compatibility
 
 Never infer replica identity from a path, hostname, or copied database file.
@@ -26,7 +33,7 @@ Persist distinct random identifiers:
 
 | Identifier | Meaning | Copy/restore behavior |
 |---|---|---|
-| `profile_id` | User-visible local configuration and routing target | New for a separately created profile |
+| `profile_id` | User-visible local runtime configuration and routing target | New for a separately created profile; never synchronized |
 | `database_id` | Logical synchronization universe | Preserved for an in-universe restore; changed for an explicit fork |
 | `replica_id` | One writable database copy/device | Always new after cloning or restoring a writable copy |
 | `operation_id` | `(replica_id, monotonically increasing sequence)` | Never reused |
@@ -41,6 +48,12 @@ are accepted.
 `target: none` means that no peer, folder, REST, or background transfer job is
 configured. Enabling sync later starts with a full snapshot, so retaining an
 unbounded transport log while sync is disabled is not required.
+
+One installation may register several profiles and run several `notriosd`
+processes at once. Each profile resolves its own database/assets/config paths,
+listen address, sync target, and credential references. Profiles must refuse
+path, port, or replica-ID collisions rather than guessing which process owns a
+database. A profile is not the MCP tool-visibility scope and is not replicated.
 
 ## Replication model
 
@@ -70,9 +83,14 @@ wall-clock jump must not move an HLC backwards.
 - Tag membership, resource attachment, notebook membership helpers, and other
   many-to-many rows are individually addressed LWW/observed-remove set
   elements. Do not synchronize an entire tag list as one scalar.
-- Each saved body is an immutable revision/blob. The current-body pointer is an
-  LWW register, but concurrent body revisions are retained and surfaced as a
-  conflict copy instead of silently discarding either body.
+- Each saved body is an immutable revision object with parent revision IDs, a
+  complete result hash/length, and optionally a transfer delta against a named
+  parent. The complete result remains requestable so a missing base or broken
+  delta chain is repairable. Concurrent revisions with a common ancestor use a
+  verified three-way merge: disjoint edits produce a merge revision and
+  overlapping edits produce a typed conflict attached to the same document.
+  Neither body is silently discarded and a conflict is not disguised as an
+  ordinary duplicate note.
 - Deletes create tombstone operations. A later stale snapshot cannot resurrect
   an object unless an explicit restore operation sorts after the delete.
 - Purge emits a durable death certificate. Payload bytes may be collected only
@@ -96,16 +114,18 @@ An envelope is a versioned, deterministic object containing:
 - operation records and dependency object hashes;
 - the sender acknowledgement vector and optional snapshot base;
 - content length and SHA-256 for every part;
-- optional encryption/signature metadata;
+- authenticated-encryption and per-replica signature metadata when the G0
+  policy is accepted;
 - a final envelope checksum.
 
-Bound envelopes by both record count and encoded bytes. The first implementation
-should start with measured defaults in the 4–16 MiB range and adapt downward on
-mobile/slow links. This is transport framing, not a CRDT rule.
+Bound envelopes by both record count and encoded bytes. G2 measures and fixes
+the v1 limits; a desktop proxy does not prove Android safety, so v0.8 must
+confirm or lower the limits on a physical device. This is transport framing,
+not a merge rule.
 
 Publish dependencies in this order:
 
-1. immutable resource blobs or blob chunks;
+1. immutable revision/resource blobs or blob chunks needed eagerly;
 2. notebook/tag/resource identity operations;
 3. note revisions and metadata;
 4. membership/link/current-pointer operations;
@@ -116,6 +136,14 @@ moving bytes from quarantine. A complete transaction applies atomically. An
 out-of-order operation with unavailable dependencies stays in a bounded pending
 queue and is retried when dependencies arrive. Missing dependencies are
 requestable by hash; they must not turn into broken canonical references.
+
+Resource metadata may be admitted before its bytes. A permanent
+`resource://` identity, content hash, MIME, length, chunk manifest, and source
+availability allow a replica to show a synchronized note and lazily fetch,
+resume, verify, and atomically admit the resource when it is opened or pinned.
+Unavailable bytes remain a visible state; the reference is never replaced by
+an empty file. Remote-media URLs still go through the existing quarantine and
+SSRF policy before they become canonical resources.
 
 ### Blob and chunk policy
 
@@ -145,16 +173,19 @@ REST is the first online transport. The conceptual surface is:
 - upload/download immutable objects with range/resume and hash verification;
 - publish a manifest;
 - submit/read acknowledgement vectors;
-- request or stream a full snapshot;
+- request a full snapshot and range-download its completed encrypted ZIP/native
+  archive wrapper for catch-up or reset;
 - start, inspect, cancel, and retry a sync job.
 
 Authentication, authorization, TLS expectations, quotas, request-size limits,
 rate limits, cancellation, and audit records are mandatory before remote bind.
 
-MCP exposes bounded administration—plan/start/cancel/status/conflicts—over the
-same service layer. It returns job IDs and summaries, not multi-megabyte
-envelopes or arbitrary blob bytes in an LLM context. MCP is therefore a control
-plane, while REST/object storage is the data plane.
+MCP may expose bounded administration over the same service layer, but the
+exact start/cancel set is an open G15 decision. It returns job IDs and
+summaries, not envelopes, keys, backups, or arbitrary blob bytes in an LLM
+context. Enrollment, peer retirement, backup export/restore, and destructive
+recovery are not presumed to be MCP operations. REST/object storage remains the
+data plane.
 
 ### Shared folder and rclone
 
@@ -162,16 +193,24 @@ The folder layout uses unique immutable names, for example:
 
 ```text
 notrios-sync/v1/<database-id>/
-  objects/sha256/ab/<hash>
-  envelopes/<replica-id>/<first>-<last>-<hash>.bin
-  manifests/<replica-id>/<first>-<last>-<hash>.json
-  acknowledgements/<replica-id>/<generation>-<hash>.json
-  snapshots/<snapshot-id>/manifest.json
+  replicas/<replica-id>/advertisements/<generation>-<hash>.bin
+  replicas/<replica-id>/requests/<generation>-<hash>.bin
+  replicas/<replica-id>/envelopes/<first>-<last>-<hash>.bin
+  replicas/<replica-id>/acknowledgements/<generation>-<hash>.bin
+  replicas/<replica-id>/snapshots/<snapshot-id>/<artifact>
+  objects/sha256/ab/cd/<hash>
+  staging/<replica-id>/<private-temporary-name>
 ```
 
 Writers create a private temporary file, flush it, verify its hash, atomically
 rename it to the immutable name, then publish the manifest last. Readers ignore
 temporary, unknown, incomplete, or hash-invalid files.
+
+Each replica writes only its own namespace. Discovery comes from signed,
+immutable advertisements; missing ranges/objects and snapshot catch-up use
+signed requests. No peer overwrites another peer's acknowledgement or deletes
+another peer's only copy. Correctness must work by explicit scan/poll/manual
+sync; filesystem watchers improve latency only.
 
 rclone is a carrier, not the synchronization algorithm. Use non-destructive
 immutable copying, conceptually `rclone copy --immutable` (and `--no-traverse`
@@ -181,9 +220,14 @@ filesystem deletion can discard another replica's only envelope, and
 modification-time/size comparison cannot represent CRDT conflict semantics.
 Application deletes travel as operations.
 
-The same format works when both services watch one local directory or when a
-user copies the directory to a USB drive. Multiple devices may write the same
-namespace because no committed object name is overwritten.
+The same format works when both services watch one carrier directory or when a
+user copies the carrier to a USB drive. Multiple devices share the
+database-scoped root but write disjoint replica namespaces; content-addressed
+objects are immutable and identical names must have identical verified bytes.
+
+The available `/home/renes/GoogleDrive` mapping and `rclone copy --immutable`
+are conformance-test carriers only. Notrios does not wrap rclone as its sync
+engine, require its config, or carry that dependency to mobile.
 
 ## Import, export, backup, restore, and sync
 
@@ -199,6 +243,25 @@ semantics:
 | Restore-replace | Verify, preserve an emergency backup, replace state, mint a new replica ID |
 | Restore-merge | Feed snapshot records through the replication/import merge rules |
 | Sync | Repeated bidirectional exchange of incremental operations and acknowledgements |
+
+### Snapshot catch-up and reset
+
+A blank, far-behind, repaired, or user-reset replica may publish a signed
+snapshot request. An enrolled peer permitted to act as a snapshot source
+creates a consistent archive-v2 snapshot, binds it to a state-vector boundary,
+encrypts it for the requesting peer (or through the separately reviewed
+password-wrapping mode), and publishes the complete manifest last. The
+requester resumes transfer, verifies and decrypts before any canonical write,
+chooses an explicit restore intent, then requests only operations after the
+snapshot vector.
+
+The same state machine is carried through the directory and REST. REST exposes
+an opaque authorized artifact ID with range download; it never accepts an
+arbitrary server path. ZIP can be a user-facing transport wrapper, but the
+archive-v2 checksum/capability chain and encrypted payload define correctness.
+The UI prompts for a password without placing it in a manifest, process
+argument, job record, log, or command history and offers retry/cancel on a wrong
+password. A snapshot/backup is a sink, not a peer acknowledgement.
 
 The v0.4 P2 native archive-v2 identity/manifest/object verifier is the
 full-snapshot format foundation. P3/P3a/P3b add streaming export under a loose
@@ -250,6 +313,12 @@ needs explicit views for:
 - restore replace/merge/adopt/fork choices;
 - retryable versus permanent transport errors.
 
+The setup and recovery UI also names the active local profile, offers
+`none|directory|rest`, lets the user choose the shared directory, requires
+explicit peer pairing, shows lazy-resource availability, supports catch-up/reset
+requests, and handles password-encrypted backups. It does not silently retain a
+password or apply a destructive restore.
+
 “Last writer wins” is not a sufficient user explanation. Show both candidate
 values when a meaningful body or structural edit lost the current-pointer
 comparison.
@@ -270,6 +339,16 @@ first or a separately versioned library after its API stabilizes) with:
   operations and still prove convergence after eventual delivery;
 - storage interfaces so SQLite and in-memory model tests share semantics;
 - transport-neutral APIs and no unrestricted filesystem access.
+
+Cryptographic identity, encoding, and secret storage remain separate
+interfaces. The proposed security shape is authenticated encryption plus a
+per-replica Ed25519 signature over canonical control/envelope bytes: AEAD
+protects confidentiality and integrity for holders of the library key, while a
+signature attributes an artifact to an enrolled/revocable replica. This is an
+open G0 decision, not an implemented guarantee. The desktop-oriented
+`zalando/go-keyring` cannot be treated as the mobile abstraction: its own
+platform list is macOS, Linux/BSD, and Windows. v0.8 must validate native
+desktop and Android secret stores behind the interface.
 
 Marmot is not adopted: it targets an always-on distributed SQLite server with
 gossip, SQL proxying, distributed transactions, and a large operational
@@ -296,33 +375,33 @@ maintenance, interoperability, security, size-growth, and mobile benchmark.
   purge, and notebook-move operations.
 - Crash injection before/after every object, manifest, transaction, and
   acknowledgement boundary.
-- REST and folder/rclone conformance against identical golden transcripts.
+- REST and ephemeral-directory conformance against identical golden transcripts.
 - Same-machine, removable-drive interruption, slow link, corrupt/truncated
   object, clock-skew, schema mismatch, and device-clone tests.
 - Full snapshot bootstrap and forced full resync after retention expiry.
+- Shared-directory deletion/recreation, signed discovery and snapshot request,
+  lazy resource materialization, encrypted backup password failure, and
+  multi-profile/two-process port/path isolation.
 - Hundreds-of-thousands-of-notes profiles with bounded envelopes, foreground
   responsiveness, peak RSS, bytes transferred, and convergence time recorded.
 
 ## Questions to resolve before implementation
 
-1. Is metadata merge per field for every type, or do some small records use one
-   LWW register?
-2. Do tag/set concurrent add-versus-remove conflicts use add-wins,
-   remove-wins, or an explicit LWW membership clock? The initial proposal is
-   LWW per membership row because it matches visible user intent and supports a
-   deterministic restore.
-3. How long is the default offline retention horizon, and how is peer
-   retirement confirmed?
-4. Is transport encryption always end-to-end above rclone/REST, optional for
-   already encrypted private stores, or deferred? Integrity hashes alone do not
-   provide confidentiality or writer authentication.
-5. Which deterministic encoding and compression become protocol v1?
-6. What resource size triggers fixed chunking, and what measurements would
-   justify FastCDC later?
-7. Does a notebook cycle repair always choose the lowest operation ID as the
-   losing move, and how is the Recovered path presented?
-8. What maximum envelope/blob/pending sizes are safe on the first real Android
-   target?
+`PLAN.md` is the authoritative home because each decision must be visible in
+the item it blocks. Its G0-G17 items cover, among other choices:
+
+1. mandatory end-to-end encryption and per-replica digital signatures;
+2. complete-body plus optional delta representation and three-way merge;
+3. deterministic envelope encoding/compression and resource chunk bounds;
+4. profile layout, copied-database enrollment, and compatibility refusal;
+5. field-register, membership, notebook-cycle, purge, and conflict rules;
+6. snapshot responder/password wrapping and ephemeral-carrier cleanup;
+7. REST pairing/authorization, ZIP wrapper, and MCP control boundaries;
+8. secret-store behavior, retention horizon, and offline-peer retirement.
+
+G1 and G2 are investigations: approval selects the question and evidence, not
+a pre-decided implementation. Android limits remain provisional until the
+separate v0.8 milestone runs them on a physical device.
 
 External relay and BLE transport questions are intentionally deferred until the
-REST/folder protocol, threat model, and retention behavior are stable.
+REST/directory protocol, threat model, and retention behavior are stable.

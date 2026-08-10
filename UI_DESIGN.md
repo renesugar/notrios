@@ -200,7 +200,7 @@ turned off.
 - Show revision/conflict state using revision IDs or ETags.
 - Sanitize preview HTML.
 - Remote images in preview may show a warning/action but must never be silently localized; localization is a server operation under media policy.
-- Multi-select organizer actions (planned v0.6): move, duplicate, trash,
+- Multi-select organizer actions (implemented v0.6 F1): move, duplicate, trash,
   tag/untag, and copy stable Markdown links. The client calls the bounded batch
   API and displays per-item/atomic outcomes; query-scoped export is not required
   merely to organize a selection.
@@ -211,14 +211,16 @@ turned off.
   resolves the database through the local registry and opens the local UI at
   `#document=<id>`. Multi-profile switching inside one window remains future
   work; ambiguity is never guessed.
-- Sync UI (planned v0.7) exposes target `none`, REST/folder/rclone job status,
-  pending/corrupt objects, behind/retired peers, body conflicts, and
-  notebook-tree repairs.
+- Sync UI (planned v0.7 G16) exposes the active profile, target
+  `none|directory|rest`, pairing/catch-up, directory/REST job status,
+  pending/corrupt or lazy objects, behind/retired peers, body conflicts,
+  encrypted-backup prompts, and notebook-tree repairs.
 
 ## Mobile investigation
 
 Wails v3 documents reuse of one `main.go` and frontend on desktop, iOS, and
-Android, but v3 is pre-release and mobile support experimental. Keep Wails v2
+Android. v3 is now beta for desktop while mobile support remains experimental.
+Keep Wails v2
 as the release shell until an approved migration spike passes desktop
 regression plus real Android validation. The UI will need a mobile layout (not
 four simultaneous panes), safe-area handling, lifecycle/background transfer,

@@ -10,8 +10,11 @@ organizer transactions), F2 (MCP tool scopes), F3 (MCP read coverage and HTTP
 readable at scale), F6 (job control plane), and F7 (documentation and release
 wrap-up). The thirteen v0.5 slices remain archived under `plans/v0.5/`.
 
-`PLAN.md` now holds the **v0.7 draft** — versioning and synchronization. **No
-v0.7 task is approved**; each needs user approval before any code is written.
+`PLAN.md` now holds the **replacement v0.7 native synchronization draft** with
+twenty-one independently approvable slices, G0-G20. **No v0.7 task is
+approved**; the next possible item is G0 (threat model, terminology, and
+reference validation), but its blocking encryption/signature decisions need
+user review before work begins.
 
 Two things a reader continuing this project should know about v0.6:
 
@@ -40,8 +43,8 @@ slices are archived under `plans/v0.4/`:
 - P8: documentation and release wrap-up (version 0.4.0, the v0.4.0 release
   checklist, a verified Help reseed, and the v0.5 draft in `PLAN.md`).
 
-P6, the `movenotes-v3` compatibility bridge, is deferred to v0.7 slice 3, which
-still extends the container it would pin.
+P6, the `movenotes-v3` compatibility bridge, is deferred to v0.7 G19 and gated
+on G9, which stabilizes the sync-era container capabilities it would pin.
 
 Archive-v2 supports two object layouts. Loose `fanout` is the default and
 deduplicates and resumes through the object tree. Opt-in `--pack` collapses a
@@ -167,9 +170,12 @@ Commit-message convention: each agent ends commit messages with its own `Co-Auth
   policy through `store.RetentionGate`.
 - Every task must leave the repo in a working state; archive completed plans under `plans/`.
 - Unbounded paging uses keysets/snapshots, not hidden offsets.
-- Sync must follow `SYNCHRONIZATION.md`: canonical local stores, immutable
-  operations/objects, REST/folder/rclone transports, and acknowledgement-gated
-  retention. `rclone sync` is not the merge algorithm.
+- Sync must follow `SYNCHRONIZATION.md` and the approved item in `PLAN.md`:
+  canonical local stores, immutable operations/objects, contiguous state
+  vectors, revision-aware merge, lazy resources, ephemeral-directory and REST
+  adapters, secure snapshot catch-up, and acknowledgement-gated retention. The
+  directory is disposable; rclone is a test carrier only, and `rclone sync` is
+  not the merge algorithm.
 
 ## Local environment notes
 
@@ -179,7 +185,9 @@ Facts about the development machine that no other document records:
 - `web/dist/` is gitignored; run `cd web && npm ci && npm run build` after a fresh clone (CI and `scripts/package_release.sh` build it too).
 - `scripts/verify_layout_resize.py` needs Python `playwright` plus `xdotool`, `Xvfb`, and `openbox` (all installed system-wide here, but **no Python venv is committed** — create one with `python3 -m venv … && pip install playwright`; it can drive the system `google-chrome`, so no browser download is required).
 - `npm test` under Node 22 prints a harmless `ExperimentalWarning: localStorage` — the real polyfill lives in `web/src/test/setup.ts` (explained in its comments).
-- MCP write-tool tests enable the editor profile by setting `s.config.MCP.DefaultProfile = "editor"` directly on the server struct — a test-only shortcut (see `internal/httpapi/remote_media_test.go`).
+- MCP write-tool tests may still exercise the deprecated `DefaultProfile`
+  field as a compatibility case; new tests and configuration use
+  `DefaultScope`/`mcp.default_scope`.
 - The GUI before/after screenshots from the v0.2 conformance pass live in `/home/renes/prompts/` (outside the repo, intentionally uncommitted — transient browser-automation output is never committed).
 - All verification servers, Xvfb displays, and browser sessions from prior agent sessions are stopped; session scratchpads lived under `/tmp` and are disposable.
 

@@ -34,7 +34,7 @@ The authoritative, always-current example is `config/config.example.yaml` in the
 | `search.default_limit` | `20` | search page size when the client sends none |
 | `search.max_limit` | `100` | hard cap on requested page size |
 | `mcp.enabled` | `true` | mount the `/mcp` endpoint |
-| `mcp.default_profile` | `read-only` | `read-only` hides/rejects MCP write tools; `editor` enables them ([MCP guide](api/mcp.md)) |
+| `mcp.default_scope` | `read-only` | cumulative `search-only`, `read-only`, `editor`, or `organizer` MCP tool scope. `mcp.default_profile` remains a deprecated alias; if both are set, the narrower wins ([MCP guide](api/mcp.md)) |
 | `mcp.max_results` | `10` | default MCP search page size |
 | `mcp.max_document_bytes` | `65536` | truncation limit for document bodies returned to MCP clients |
 | `search_sidecar.enabled` | `false` | activate the optional Recoll sidecar |
@@ -68,7 +68,7 @@ to delete. Resources referenced by any current or trashed note are protected.
 
 **Automatic creation:** on startup the service creates every configured
 directory and, if absent, the database itself, applying schema migrations to
-older databases automatically. The current schema is version 11.
+older databases automatically. The current schema is version 18.
 `/api/v1/status` reports the resolved paths, database state, schema version,
 capability flags, search limits, remote-media policy, and optional Recoll
 backlog/sync/reconciliation state.

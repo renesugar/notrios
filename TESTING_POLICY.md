@@ -654,7 +654,9 @@ No scale profile: a block is bounded to 100 rows through the search path whose
   operations across at least three replicas and assert convergence.
 - Crash injection covers canonical transaction, blob/chunk, envelope, manifest,
   acknowledgement, and retention boundaries.
-- REST and folder/rclone adapters replay identical golden protocol transcripts.
+- REST and ephemeral-directory adapters replay identical golden protocol
+  transcripts; Google Drive/rclone is a carrier conformance run, not a second
+  sync engine.
 - Test clock skew, cloned replica IDs, schema/protocol/database mismatch,
   missing/corrupt/truncated objects, offline-horizon full resync, peer
   retirement, delete/restore/purge, concurrent body edits, and notebook cycles.
@@ -812,7 +814,7 @@ deletion, and purge appear in no scope's listing at all. It is written against
 names that do not exist yet on purpose, so adding one of them as a tool fails
 the test and forces the decision to be made deliberately.
 
-### One predicate, three surfaces (v0.6 F5, planned)
+### One predicate, three surfaces (implemented v0.6 F5)
 
 Three separate problems turned out to share a fix, and the tests should assert
 them together so the predicate cannot drift apart across surfaces.

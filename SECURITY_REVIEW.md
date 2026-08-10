@@ -1,6 +1,7 @@
 # Security Review — Current Local Product and Planned Remote Surfaces
 
-This review reflects the repository after v0.4 P8. Notrios is local-first but
+This review reflects the current 0.6.0 repository (schema v18). Notrios is
+local-first but
 its REST/MCP listener, importers, preview, downloaded media, archive files,
 published handoffs, and future sync transports are security boundaries.
 
@@ -226,6 +227,13 @@ rclone/shared folders are untrusted carriers. `rclone sync` deletion is not
 used. Nostr/public relays and BLE couriers are deferred because metadata,
 retention, availability, key management, bandwidth, and abuse resistance add a
 larger threat surface than REST plus immutable rclone objects.
+
+The replacement v0.7 plan proposes mandatory authenticated encryption plus
+per-replica signatures, but both remain blocking G0 decisions rather than
+current controls. A signature would attribute canonical control/envelope bytes
+to an enrolled and revocable replica; it would not replace encryption, TLS,
+hash verification, or authorization. G13 keeps sync credentials scoped to sync
+routes unless the user approves a wider authorization model.
 
 ## Deployment posture
 

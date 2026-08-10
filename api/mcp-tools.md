@@ -139,9 +139,11 @@ reason, media class, and line number) for every remote image/media URL in one
 note. Purely static — nothing is downloaded, not even DNS lookups (v0.3 task
 H2). Takes `document_id` or a `document://` URI.
 
-## Editor-profile write tools — implemented (task R8)
+## Editor-scope write tools — implemented (task R8)
 
-Exposed by `tools/list` and callable only when `mcp.default_profile` is `editor`; the default read-only profile hides and rejects them.
+Exposed by `tools/list` and callable only when `mcp.default_scope` is `editor`
+or wider; the default `read-only` scope hides and rejects them. The deprecated
+`mcp.default_profile` alias is still read for configuration compatibility.
 
 - `create_note(title, body?, notebook_id?)`
 - `update_note(document_id, base_revision_id, title?, body?)` — optimistic concurrency required.
@@ -153,16 +155,13 @@ Exposed by `tools/list` and callable only when `mcp.default_profile` is `editor`
 
 ## Later write/control tools
 
-Write tools require explicit scopes and revision preconditions:
+Write tools require explicit scopes and revision preconditions.
 
-- `upload_resource`
-- `attach_resource`
-- `detach_resource`
-- `restore_revision`
-- `run_batch` / `get_batch_status` for bounded move/duplicate/trash/tag/link
-  organizer operations;
-- `plan_sync` / `start_sync` / `get_sync_status` /
-  `list_sync_conflicts` for bounded sync administration.
+- `upload_resource`, `attach_resource`, `detach_resource`, and
+  `restore_revision` remain withheld pending a separately approved design;
+- `run_batch` is implemented at `organizer`; its response contains the complete
+  bounded outcomes, so there is no separate `get_batch_status`;
+- the exact v0.7 sync control set is an open G15 decision in `PLAN.md`.
 
 MCP does not carry native archives, change envelopes, or arbitrary blob bytes
 in model context. Those use REST/object transfer; MCP returns job IDs and

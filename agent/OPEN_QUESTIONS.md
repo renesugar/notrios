@@ -114,28 +114,19 @@ index, not a home.
     compatibility contract (JSON Schemas, pinned fixtures, cross-version
     consumer tests) be published in v0.4?
 
-    No. v0.7 slice 3 reuses archive-v2 manifests and objects for snapshots and
-    change envelopes, and questions 13 and 14 below change container internals.
+    No. v0.7 G9 reuses archive-v2 manifests and objects for snapshots and
+    change envelopes, and the encoding/chunk decisions in G2 change container internals.
     Unknown record types are rejected, so sync-era additions need a new required
     capability and a reader pinned in v0.4 would refuse every later archive.
     `movenotes-v3` has also not started `notrios2sql.py`. The bridge is now
-    v0.7 item 6, gated on slice 3 rather than on the whole milestone. See
+    v0.7 G19, gated on G9 rather than on the whole milestone. See
     `PROJECT_DECISIONS.md` decision 16.
 
-## Synchronization (resolve in separate v0.7 plans)
+## Synchronization questions moved to their owning v0.7 items
 
-9. Which records use per-field versus whole-record LWW?
-10. Are concurrent set membership add/remove operations add-wins, remove-wins,
-    or LWW per membership row (current proposal)?
-11. What are the default offline retention horizon and peer-retirement UX?
-12. Is end-to-end encryption mandatory in protocol v1 above REST/rclone, and
-    how are writer keys enrolled/recovered?
-13. Which deterministic envelope encoding/compression is protocol v1?
-14. What blob size triggers fixed chunking, and what measurements justify
-    FastCDC later?
-15. What deterministic notebook-cycle repair rule best preserves user intent?
-16. What envelope/blob/pending limits are safe on the first real Android
-    target?
-
-See `SYNCHRONIZATION.md` for the proposed defaults and validation needed before
-these choices become implementation contracts.
+Former questions 9-16 now live in the replacement `PLAN.md` items that they
+block, as required by `AGENTS.md`: field/record mapping (G4), membership and
+notebook repair (G6), retention/retirement (G17), encryption/enrollment (G0,
+G9, G13), encoding/chunking/mobile bounds (G2), and related conflict/catch-up/
+secret-store choices (G7, G10, G16). The plan's decisions register is the
+index. Do not add a second answer here and let the two copies drift.

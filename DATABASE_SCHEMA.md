@@ -1,6 +1,14 @@
 # Database Schema
 
-This document expands the MVP SQLite schema represented by `migrations/0001_initial.sql`. SQLite is the authoritative store for managed notes, metadata, revisions, resource relationships, link graphs, media-policy decisions, import state, and outbox jobs. Recoll is the optional derived index for front-matter field search, extraction, and broad filesystem search (see `RECOLL_INTEGRATION.md`).
+This document expands the SQLite schema represented by
+`migrations/0001_initial.sql` and the additive bootstrap upgrade shims in
+`internal/store/sqlite.go`. The two embedded/baseline migration copies create
+through schema v17; `ensureSchemaV18` adds the current `jobs` table when a
+database opens, and `store.CurrentSchemaVersion` is 18. SQLite is the
+authoritative store for managed notes, metadata, revisions, resource
+relationships, link graphs, media-policy decisions, import state, and jobs.
+Recoll is the optional derived index for front-matter field search, extraction,
+and broad filesystem search (see `RECOLL_INTEGRATION.md`).
 
 ## Schema principles
 
@@ -348,10 +356,12 @@ Thread/link-graph traversal stays in SQLite; the Recoll index only carries searc
 
 Future migrations should be additive where possible. Any destructive change requires a migration note in `plans/` and a backup/export instruction.
 
-Planned v0.7 sync tables are described semantically in
-`SYNCHRONIZATION.md`: logical database/profile/replica IDs, per-replica
-sequence allocation, immutable operations, HLC field/register state,
-acknowledgement vectors, peer state/retirement, pending dependencies, object
-manifests, tombstones/death certificates, conflicts, jobs, and retention
-watermarks. Names and encodings remain open until the replication library API
-and convergence model tests are approved. Derived FTS/Recoll data is excluded.
+Planned v0.7 sync tables are described semantically in `SYNCHRONIZATION.md` and
+split into approvable work in `PLAN.md` G3-G17: local profile references and
+replica enrollment, per-replica sequence allocation, immutable operations,
+contiguous state vectors and explicit gaps, HLC field/register state,
+acknowledgements, peer retirement/revocation, pending dependencies, revision
+parents/delta references, lazy-resource availability, tombstones/death
+certificates, conflicts, jobs, snapshot floors, and retention watermarks. Names
+and encodings remain open until G0-G2 evidence and the owning plan decisions are
+approved. Derived FTS/Recoll data is excluded.
