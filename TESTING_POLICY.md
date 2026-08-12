@@ -952,6 +952,24 @@ conflicting line/word/byte merges plus refusal of missing/wrong bases, wrong
 results, cursor and operation/insert limits, and invalid UTF-8. CPU and peak RSS
 are comparative host evidence, not cross-device protocol promises.
 
+## v0.7 G1a pure-Go xdelta/VCDIFF investigation
+
+G1a must test arbitrary bytes independently of G7's text merge behavior.
+Required vectors include empty, identical, insertion, deletion, repeated,
+random, sparse-edit, UTF-8, NUL-bearing, and attachment-like inputs. Every
+successful application must reconstruct the exact target; encoding the same
+inputs and parameters must produce identical bytes.
+
+Property/fuzz and hostile-vector tests must cover truncated/corrupt instructions,
+addresses and varints; integer overflow; invalid or overlapping copies;
+source/window/input/output, instruction/count, expansion, chain, allocation,
+and CPU/cancellation ceilings; and refusal of unsupported VCDIFF custom code
+tables or secondary compression. RFC 3284 and external xdelta3/open-vcdiff/
+Subversion comparisons are required only where the selected format/profile is
+compatible, and the report must name that compatibility rather than treating
+xdelta matching, svndiff, and VCDIFF as synonyms. Benchmarks record ratio,
+CPU, RSS, and allocations on this host without making a mobile claim.
+
 ## MVP release validation
 
 Task 10 adds release-candidate checks beyond ordinary unit tests:

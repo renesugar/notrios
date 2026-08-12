@@ -6,8 +6,9 @@ This file is the codebase atlas. Update it whenever major files or directories a
 
 - `README.md` — project overview and quick start.
 - `PLAN.md` — the **active v0.7 native synchronization plan**, divided into
-  twenty-one independently approvable slices (G0-G20). G0-G17 policy decisions
-  are resolved; G0-G1 are complete and G2 is next but unapproved. v0.6 is complete at product
+  twenty-two independently approvable slices (G0, G1, G1a, and G2-G20).
+  G0-G17 policy decisions are resolved; G0-G1 are complete and G1a is next but
+  unapproved. v0.6 is complete at product
   0.6.0/schema v18 and archived under
   `plans/v0.6/`; v0.5 and v0.4 are archived under their version directories.
 - `plans/scaffold/SCAFFOLD_CREATION_PLAN.md` — process for creating/refining this scaffold.
@@ -28,8 +29,11 @@ This file is the codebase atlas. Update it whenever major files or directories a
   platform validation, and its structural evidence validator.
 - `performance/v0.7-g1/` — completed G1 aggregate-only corpus profiles,
   deterministic delta/merge/hostile-patch workload, exact reconstruction and
-  CPU/RSS evidence, upstream merge-candidate probe, findings, and validators.
-- `plans/v0.7/` — archived completed v0.7 slices; currently G0-G1.
+  CPU/RSS evidence, superseded upstream merge-candidate probe, findings, and
+  validators. G1a will use this workload while investigating a Notrios-owned
+  pure-Go binary-safe delta codec.
+- `plans/v0.7/` — archived completed v0.7 slices G0-G1 plus the planning
+  amendment that inserted the still-unapproved G1a investigation.
 - `FLUTTER_GO_CLIENT.md` — verified Flutter/Dart FFI and Go build-mode facts,
   the pre-1.0 framework-neutral application facade/C ABI contract, post-1.0
   Flutter client split, memory/stream ownership, platform limits, and the fact

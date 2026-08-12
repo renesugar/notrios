@@ -1,8 +1,8 @@
 # Synchronization Architecture
 
-Status: design target for v0.7; not implemented. `PLAN.md` contains twenty-one
-independently approvable slices (G0-G20). No slice starts without resolution of
-its blocking decisions and explicit user approval.
+Status: design target for v0.7; not implemented. `PLAN.md` contains twenty-two
+independently approvable slices (G0, G1, G1a, and G2-G20). No slice starts
+without resolution of its blocking decisions and explicit user approval.
 
 ## Goals and non-goals
 
@@ -86,8 +86,11 @@ wall-clock jump must not move an HLC backwards.
 - Each saved body is an immutable revision object with parent revision IDs, a
   complete result hash/length, and optionally a transfer delta against a named
   parent. The complete result remains requestable so a missing base or broken
-  delta chain is repairable. Concurrent revisions with a common ancestor use a
-  verified three-way merge: disjoint edits produce a merge revision and
+  delta chain is repairable. G1a investigates a bounded pure-Go binary-safe
+  delta codec; Subversion's xdelta matcher, Subversion svndiff, and RFC 3284
+  VCDIFF are distinct and no format is selected yet. Concurrent revisions with
+  a common ancestor use a verified Notrios-owned pure-Go three-way merge:
+  disjoint edits produce a merge revision and
   overlapping edits produce a typed conflict attached to the same document.
   Neither body is silently discarded and a conflict is not disguised as an
   ordinary duplicate note.
@@ -422,8 +425,11 @@ result objects remain canonical; optional named-parent line deltas are retained
 only when bounded generation, exact reconstruction, and a material size gate
 succeed; and merge is bounded line-first with Unicode-aware word-token
 refinement of conflict regions. Same-token/delete-edit overlap remains a typed
-durable conflict. G2 remains an investigation: the review selected its decision
-rule and default candidate, not an unmeasured implementation. Android limits remain
+durable conflict. G1a is now the next unapproved investigation: it evaluates a
+pure-Go xdelta/VCDIFF codec for arbitrary bytes and hostile-decoder bounds while
+keeping the separate G7 line/word merge implementation Notrios-owned. G2 remains
+an investigation: the review selected its decision rule and default candidate,
+not an unmeasured implementation. Android limits remain
 provisional through the v0.8 emulator pass and require post-1.0 physical-device
 confirmation.
 

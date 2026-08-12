@@ -1,7 +1,7 @@
 # Plan: v0.7 — Native synchronization
 
 Status: **G0-G1 completed 2026-08-11. Product version remains 0.6.0 and the
-canonical schema remains v18. G2 is the next item and is not approved.** The
+canonical schema remains v18. G1a is the next item and is not approved.** The
 former seven-item draft was too coarse: it mixed protocol research, canonical
 write interception, merge semantics, two transports, cryptography, recovery,
 UI, retention, and release validation into slices that could not be reviewed or
@@ -203,8 +203,94 @@ generated body, and rejects seven malformed/untrusted patch cases. G7 is to use
 complete UTF-8 result objects plus optional beneficial named-parent line
 deltas, with line-first three-way merge and bounded Unicode-aware word-token
 refinement of conflict regions. Same-token/delete-edit overlap becomes a typed
-durable conflict. `github.com/epiclabs-io/diff3` at the recorded exact commit is
-the preferred MIT G7 candidate, but G1 added no dependency or runtime code.
+durable conflict. G1's measured merge behavior and transfer-ratio conclusions
+remain valid. Its recommendation to consider `github.com/epiclabs-io/diff3`
+as the G7 implementation was superseded by the 2026-08-11 G1a plan amendment:
+G7 is to own its bounded pure-Go line/word merge implementation, and G1a first
+investigates a separate pure-Go binary-safe delta codec. G1 added no dependency
+or runtime code.
+
+## G1a. Investigation — pure-Go xdelta/VCDIFF feasibility and dependency removal
+
+**Goal.** Determine whether a Notrios-owned pure-Go implementation can produce
+and apply deterministic, bounded transfer deltas for arbitrary text or binary
+bytes, while keeping the separate conflict-aware three-way merge implementation
+free of an external runtime dependency.
+
+**Scope.** Build an investigation-only prototype under
+`performance/v0.7-g1a/`. Specify the behavior independently, then compare three
+distinct things rather than conflating them: Subversion's rolling-checksum
+xdelta matcher and `COPY`/new-data operation stream, Subversion's separate
+`svndiff` serialization, and RFC 3284 VCDIFF. Evaluate source and target
+windows, rolling checksums, `ADD`/`COPY`/`RUN`, address modes, deterministic
+output, streaming `io.Reader`/`io.Writer` APIs, and source-versus-target copy
+semantics. Exercise the G1 text fixtures plus generated repetitive, random,
+sparse-edit, and attachment-like binary fixtures. Compare complete bytes, the
+G1 line delta, the pure-Go prototype, and external xdelta3/open-vcdiff/
+Subversion tools only as test oracles where their formats overlap. Record exact
+reconstruction, compression ratio, CPU, RSS, allocations, and format/license/
+provenance evidence.
+
+The decoder/parser investigation must define limits for source, window, input,
+output, instruction, address, and varint counts; integer overflow; expansion
+ratio; delta-chain depth; memory; CPU/cancellation; corrupt/truncated streams;
+overlap; unsupported custom code tables; and secondary compressors. It must
+also determine whether optional binary resource deltas are worthwhile only
+when an immutable resource has a known named parent; ordinary content-addressed
+resources without that relationship continue to use complete or chunked
+transfer.
+
+**Boundaries.** This is evidence and prototype code, not a production codec or
+protocol-format commitment. Do not add a project `go.mod` dependency, cgo,
+vendored C/C++, or code derived from GPL implementations. Do not treat xdelta
+as a three-way merge algorithm, and do not infer a parent relationship between
+unrelated content-addressed resources. Desktop results do not prove mobile
+safety.
+
+**Dependencies.** G0 security/provenance rules and G1 workload/merge behavior.
+
+**Working state.** A reproducible prototype, golden/corrupt vectors, benchmark
+results, interoperability matrix, license/provenance report, and recommendation
+under `performance/v0.7-g1a/`. Production promotion requires a later approved
+G7 or G8 slice.
+
+**Validation and evidence.** Exact round trips for empty, identical, inserted,
+deleted, repeated, random, sparse-edited, UTF-8, and binary inputs; deterministic
+bytes; property/fuzz tests; every declared decoder limit and malformed-input
+refusal; RFC 3284 vectors and external-oracle comparison where compatible;
+CPU/RSS/allocation/ratio distributions; and an explicit statement of whether
+the prototype emits VCDIFF, Subversion svndiff, or only a Notrios operation
+format.
+
+**Resolved direction (2026-08-11)**
+
+- **Production candidates must be pure Go and Notrios-owned.** External C/C++,
+  cgo wrappers, and Go merge/delta packages may be research or test oracles but
+  are not runtime dependencies.
+- **Binary delta and three-way merge stay separate.** G1's bounded line-first,
+  word-region conflict behavior remains G7's contract; an xdelta/VCDIFF codec
+  only optimizes transport from a named base.
+
+**Open decisions**
+
+- **Which interoperability target should Notrios adopt? — Non-blocking.** The
+  default is to evaluate a constrained RFC 3284 VCDIFF profile using the
+  default code table first, alongside the smallest deterministic private
+  operation container needed to expose the tradeoff. The report must compare
+  portability, implementation complexity, encoded size, and parser attack
+  surface, and state explicitly whether Subversion algorithm compatibility or
+  svndiff byte compatibility is intended. Approving G1a approves this
+  investigation/default, not adoption of a wire format.
+- **How should implementation provenance be handled? — Non-blocking.** Default:
+  implement spec-first from RFC 3284 and published algorithm descriptions,
+  using Apache Subversion source only for behavioral comparison and attribution.
+  No GPL source may be consulted to derive code. If the report recommends a
+  direct Apache-licensed translation, it must identify translated portions and
+  preserve required license/NOTICE material.
+- **May the prototype move into production? — Non-blocking.** Default: no. It
+  remains under `performance/`; a separately approved G7/G8 implementation
+  slice must review the design, tests, limits, and license evidence before
+  promoting or rewriting it.
 
 ## G2. Investigation — envelope, resource, and constrained-device bounds
 
@@ -222,7 +308,8 @@ post-1.0 physical-device checklist.
 **Boundaries.** No FastCDC unless fixed chunks fail a measured case. No claim
 that desktop measurements prove mobile safety. No private content in evidence.
 
-**Dependencies.** G0; G1 supplies body-delta samples.
+**Dependencies.** G0; G1 supplies body-delta samples; G1a supplies measured
+binary-safe delta candidates and decoder-bound requirements.
 
 **Working state.** A findings report under `performance/v0.7-g2/` that gives G8
 and G9 numeric limits and explains every proxy limitation.
@@ -406,14 +493,16 @@ and without making every small edit transfer the entire body.
 complete result hash/length, optional delta object and named base, authoring
 replica/sequence, and merge parents. Fetch or reconstruct the complete body,
 verify its hash, find a common ancestor, perform the G1-selected three-way
-merge, and create an ordinary merge revision. Non-overlapping edits merge;
+merge through a bounded Notrios-owned pure-Go line/word implementation, and
+create an ordinary merge revision. Non-overlapping edits merge;
 overlap creates a durable visible conflict holding both inputs and base. Never
 apply an unverified patch to canonical state.
 
 **Boundaries.** Not live collaboration. No hidden conflict-note duplication.
 Delta chains must be bounded and never be the sole recovery representation.
 
-**Dependencies.** G1 decision, G5 admission, G6 document metadata.
+**Dependencies.** G1 merge behavior, G1a delta/provenance recommendation, G5
+admission, and G6 document metadata.
 
 **Working state.** Independent edits to different regions converge to one
 verified merge revision; overlapping edits preserve both variants and never
@@ -444,13 +533,17 @@ content hash, MIME, length, chunk manifest where applicable, availability
 state, and source peers. A note may reference an admitted but nonmaterialized
 resource. Opening/downloading/pinning requests missing objects, verifies hashes
 and MIME through the existing admission path, and atomically marks them local.
-Support eager/pinned/lazy policy and bounded concurrent fetches.
+Support eager/pinned/lazy policy and bounded concurrent fetches. If G1a and G2
+show a material benefit, permit a bounded delta only when a resource version
+explicitly names an immutable parent; resources without that relationship use
+complete or chunked transfer.
 
 **Boundaries.** A remote-media URL is not a synced resource until ordinary
 quarantine policy admits it. No direct carrier path leaks through REST/MCP/UI.
 No placeholder bytes in the canonical asset store.
 
-**Dependencies.** G2 bounds, G5 admission, G7 revision references.
+**Dependencies.** G1a binary-delta recommendation, G2 bounds, G5 admission, and
+G7 revision references.
 
 **Working state.** A replica can read/search a synchronized note before its
 large attachment is local, request it later, verify it, deduplicate it, and
@@ -486,8 +579,8 @@ providers; production secret-store integration belongs to v0.8.
 make signatures substitute for encryption. Do not expose decrypted bulk bytes
 through MCP.
 
-**Dependencies.** G0 crypto decisions, G2 codec bounds, G5 operation ranges,
-G7/G8 objects.
+**Dependencies.** G0 crypto decisions, G1a delta-format decision if adopted,
+G2 codec bounds, G5 operation ranges, and G7/G8 objects.
 
 **Working state.** The same logical envelope produces the same canonical
 plaintext bytes, decrypts only for an enrolled key, verifies its sender, rejects
@@ -939,7 +1032,10 @@ recommendation, blocking status, and consequence.
 | Per-replica signatures | G0 | Resolved: Ed25519 over named canonical artifacts |
 | SVN dump compatibility | G0 | Resolved: no |
 | Canonical full-body/delta representation | G1 | Resolved: full object plus optional named-parent delta |
-| Three-way merge granularity/library | G1 | Resolved: bounded line-first plus word-region refinement; pinned diff3 candidate |
+| Three-way merge granularity/ownership | G1/G1a | Resolved: bounded line-first plus word-region refinement in Notrios-owned pure Go; external candidate superseded |
+| Binary-delta algorithm/format | G1a | Open, non-blocking: compare constrained RFC 3284 VCDIFF with a minimal private operation container |
+| Delta implementation provenance | G1a | Open, non-blocking: spec-first default; Apache behavioral reference; no GPL-derived code |
+| Investigation prototype promotion | G1a | Open, non-blocking: performance-only unless a later G7/G8 slice approves promotion |
 | Offline intervals measured | G1 | Resolved: 1 hour/day/week/30 days |
 | Envelope encoding/compression | G2 | Resolved selection rule; canonical JSON default candidate |
 | Resource chunk threshold | G2 | Resolved selection rule; whole then fixed chunks |
@@ -973,7 +1069,7 @@ recommendation, blocking status, and consequence.
 | Current-GUI Mermaid baseline | G18 | Resolved fact: upstream-capable but disabled pending offline/security evidence |
 | Release version/schema bookkeeping | G20 | Open, non-blocking until wrap-up |
 
-G0-G1 are complete. G2 is the next implementable item; its policy decisions are
-resolved, but the item itself is not approved. Implementation begins only after
-an explicit instruction naming G2; completing it still stops for a verified ZIP
-and approval before G3.
+G0-G1 are complete. G1a is the next implementable item; its pure-Go direction
+and non-blocking investigation defaults are recorded, but the item itself is
+not approved. Implementation begins only after an explicit instruction naming
+G1a; completing it still stops for a verified ZIP and approval before G2.

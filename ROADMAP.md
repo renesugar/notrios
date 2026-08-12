@@ -191,8 +191,9 @@ question, and are not on the original list.
 ## v0.7 — Versioning and synchronization
 
 This is the first milestone that merges independently changed canonical state,
-so the replacement `PLAN.md` divides it into **twenty-one independently
-approvable items (G0-G20)** rather than the former six implementation groups.
+so the replacement `PLAN.md` divides it into **twenty-two independently
+approvable items (G0, G1, G1a, and G2-G20)** rather than the former six
+implementation groups.
 The user's 2026-08-11 review resolved the G0-G17 policy decisions; no item is
 approved for implementation merely by resolving its decisions.
 Every completed item leaves a verified ZIP in the evidence directory and waits
@@ -210,16 +211,24 @@ requirements, not live controls.
 deterministic divergence fixtures selected complete UTF-8 revision objects,
 optional beneficial named-parent line deltas, and bounded line-first merge with
 word-token conflict-region refinement. Overlap remains a typed conflict; no
-merge dependency or sync runtime landed. G2 is next and remains approval-gated.
+merge dependency or sync runtime landed. A later review found that the probed
+merge package does not solve binary delta encoding, so the new G1a separately
+investigates a Notrios-owned pure-Go xdelta/VCDIFF implementation and makes the
+G7 line/word merge Notrios-owned as well. G1a is next and remains
+approval-gated.
 
-- **Evidence before contracts (G0-G2):** threat model and reference validation;
-  representative revision/delta/three-way-merge workloads; deterministic
-  envelope/compression, resource chunk, queue, and provisional mobile bounds.
+- **Evidence before contracts (G0-G2, including G1a):** threat model and
+  reference validation; representative revision/delta/three-way-merge
+  workloads; pure-Go binary-safe xdelta/VCDIFF feasibility and hostile-decoder
+  bounds; deterministic envelope/compression, resource chunk, queue, and
+  provisional mobile bounds.
 - **Identity and local replication (G3-G8):** multiple named runtime profiles
   and isolated server instances; transactional operation journal; contiguous
   state vectors and gap planning; deterministic metadata/set/tree/delete
   convergence; complete note-revision objects with optional transfer deltas and
-  visible three-way conflicts; lazy, hash-verified resource materialization.
+  visible three-way conflicts through Notrios-owned pure-Go implementations;
+  lazy, hash-verified resource materialization, with named-parent binary deltas
+  considered only if G1a/G2 evidence justifies them.
 - **Secure container and catch-up (G9-G10):** archive-v2 change-envelope
   capabilities; mandatory authenticated encryption and per-replica Ed25519
   signatures; signed backup requests; encrypted snapshot/ZIP catch-up and reset
@@ -244,8 +253,9 @@ The shared directory is disposable transport state, never canonical storage.
 `rclone copy --immutable` may exercise the mapped Google Drive during tests;
 `rclone sync`/`bisync` are not the merge or deletion algorithm, and mobile does
 not depend on rclone. Subversion contributes state-vector/change-log and
-base-delta ideas, not its dump grammar: archive v2 already supplies Notrios'
-verified content-addressed container.
+base-delta ideas, not its dump grammar: its xdelta matcher, its svndiff format,
+and RFC 3284 VCDIFF are distinct candidates that G1a must compare. Archive v2
+already supplies Notrios' verified content-addressed container.
 
 Research outcomes:
 

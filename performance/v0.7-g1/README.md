@@ -7,6 +7,11 @@ complete bodies with line, word, and byte-span transfer deltas, classifies
 three-way merges at line/word/byte granularity, and probes one permissive Go
 merge candidate without adding it to `go.mod`.
 
+The 2026-08-11 G1a plan amendment preserves these measurements but supersedes
+the external merge-candidate recommendation. G7 will own the bounded pure-Go
+line/word merge implementation; G1a separately investigates binary-safe
+xdelta/VCDIFF encoding in pure Go.
+
 ## Reproduce
 
 The committed corpus output is aggregate-only. The profiler accepts source

@@ -1,5 +1,11 @@
 # G1 findings and G7 selection
 
+> **Plan amendment, 2026-08-11:** The measurements and merge-behavior selection
+> below remain valid, but the external-library recommendation is superseded.
+> G1a now investigates a Notrios-owned pure-Go binary-safe xdelta/VCDIFF codec,
+> while G7 will implement the selected bounded line/word three-way merge in
+> Notrios-owned pure Go. Xdelta encoding is not a three-way merge algorithm.
+
 ## Decision
 
 G7 should store every immutable revision as a **complete UTF-8 body object with
@@ -19,15 +25,17 @@ delete/edit, malformed inputs, or a refinement that exceeds a bound become a
 durable typed conflict holding base/local/remote revision IDs and bodies. Byte merge is rejected: it is slower on the small cases, requires a low token limit
 on long lines, and offers no useful semantic boundary beyond word refinement.
 
-The preferred G7 library candidate is
+The originally preferred G7 library candidate was
 `github.com/epiclabs-io/diff3` at commit
 `3b1669897fb1aa7c1fb2699a3c6a45bbb46e9ec1`. It is a small MIT Go package with
 no runtime external imports, a generic token API, selectable Myers diff, and
 inspectable conflict records. Its upstream tests and the G1 probe passed for a
 clean disjoint Unicode-token merge, a same-token conflict, and exposed
 local/base/remote conflict values. It has no observed tag or release, so G7
-must use an exact pseudo-version, retain Notrios-owned conformance/property
-tests, and recheck maintenance before adding it. G1 does not add the dependency.
+would have needed an exact pseudo-version, Notrios-owned conformance/property
+tests, and a maintenance recheck before adoption. G1 added no dependency. The
+G1a plan amendment supersedes this candidate for production; the probe remains
+historical evidence for the selected merge behavior.
 
 ## Corpus shape
 

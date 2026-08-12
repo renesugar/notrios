@@ -1,6 +1,6 @@
 # Plan Status
 
-Updated: 2026-08-11 (G1 complete)
+Updated: 2026-08-11 (pure-Go xdelta/VCDIFF amendment; G1a next)
 
 ## Active milestone
 
@@ -8,13 +8,30 @@ Updated: 2026-08-11 (G1 complete)
 canonical schema is **v18**. v0.6 F0-F7 are archived under `plans/v0.6/`;
 earlier milestones remain under their version directories.
 
-`PLAN.md` is now the **active v0.7 native synchronization plan**. It retains
-G0-G20: evidence, profiles/local journal, state-vector convergence,
+`PLAN.md` is now the **active v0.7 native synchronization plan**. It contains
+G0, G1, G1a, and G2-G20: evidence, profiles/local journal, state-vector convergence,
 revision deltas/merge, lazy resources, secure container/catch-up,
 ephemeral-directory and REST transports, jobs/UI/retention, shared-core/FFI/
 Mermaid/mobile handoff, compatibility, and final validation. The user's
 2026-08-11 review resolved every G0-G17 policy decision. **G0-G1 are complete**
-and archived under `plans/v0.7/`; G2 is next and is not approved.
+and archived under `plans/v0.7/`; G1a is next and is not approved.
+
+## 2026-08-11 pure-Go xdelta/VCDIFF plan amendment
+
+- Added G1a as an independently approvable evidence spike before G2. It must
+  distinguish Subversion's binary-safe xdelta matcher, Subversion's separate
+  svndiff serialization, and RFC 3284 VCDIFF rather than treating them as one
+  format.
+- Resolved the runtime direction to Notrios-owned pure Go: no cgo, vendored
+  C/C++, GPL-derived code, or external merge/delta dependency. External tools
+  may serve only as test oracles.
+- Kept xdelta/VCDIFF transport optimization separate from three-way conflict
+  handling. G7 retains G1's bounded line-first/word-region behavior but owns its
+  implementation; the earlier `epiclabs-io/diff3` recommendation is
+  superseded.
+- Made format interoperability, implementation provenance, and prototype
+  promotion explicit non-blocking decisions with recorded defaults. G1a
+  remains unapproved and adds no production codec, schema, or runtime code.
 
 The roadmap no longer relies exclusively on Wails for mobile: v0.8 now includes
 an evidence-first framework-neutral application facade, versioned no-GUI Go C
@@ -43,7 +60,9 @@ is v0.7 G19 gated on G9.
   ordered LWW case with both operations retained for audit.
 - Probed the small MIT `github.com/epiclabs-io/diff3` candidate at exact commit
   `3b1669897fb1aa7c1fb2699a3c6a45bbb46e9ec1`; upstream and G1 UTF-8/conflict
-  probes passed. It remains untagged and was not added as a dependency.
+  probes passed. It remains untagged and was not added as a dependency. The
+  later G1a plan amendment supersedes it as a production candidate while
+  preserving the probe as historical evidence.
 - Preserved the evidence limit: static imports contain no independent-device
   history, so G1 makes no human concurrency/conflict-frequency or real
   revision-chain claim.

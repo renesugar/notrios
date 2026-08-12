@@ -283,6 +283,16 @@ missing or refused delta. It must never apply a best-effort or partially
 verified patch to canonical state. Same-token, delete/edit, malformed, and
 over-limit cases remain durable typed conflicts rather than silent winners.
 
+**G1a is a planned investigation, not a live binary-delta decoder.** Before any
+pure-Go xdelta/VCDIFF implementation can enter G7 or G8, it must prove bounds on
+source/window/input/output sizes, instruction and address counts, varints,
+integer arithmetic, expansion ratio, chain depth, memory, and CPU/cancellation.
+It must reject corrupt/truncated streams, unsupported custom code tables and
+secondary compressors, and malicious overlap without partially materializing a
+canonical object. External C/C++/cgo tools are test oracles only. Until a later
+approved implementation passes those gates, complete or fixed-chunk verified
+objects remain the only planned binary-resource transfer forms.
+
 ## Deployment posture
 
 Use the default loopback listener:
