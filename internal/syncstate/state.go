@@ -21,8 +21,8 @@ const (
 	ProtocolMajor = 1
 	ProtocolMinor = 0
 
-	MinCompatibleSchema = 19
-	MaxCompatibleSchema = 20
+	MinCompatibleSchema = 21
+	MaxCompatibleSchema = 21
 
 	MaxStateVectorEntries = 1_024
 	MaxMissingRanges      = 1_024
@@ -48,6 +48,7 @@ var (
 
 var requiredCapabilities = []string{
 	"sync.dependencies.v1",
+	"sync.metadata-lww.v1",
 	"sync.operations.v1",
 	"sync.state-vectors.v1",
 }
@@ -335,11 +336,22 @@ type Operation struct {
 	RecordType   string          `json:"record_type"`
 	RecordID     string          `json:"record_id"`
 	Payload      json.RawMessage `json:"payload"`
+	HLC          HLC             `json:"hlc"`
 	CreatedAt    string          `json:"created_at"`
 	Dependencies []OperationRef  `json:"dependencies"`
 }
 
-// NormalizeOperation produces the one internal G5 pending representation. G9
+// HLC is the durable hybrid logical timestamp used for field and membership
+// ordering. Delivery completeness remains the responsibility of state vectors.
+type HLC struct {
+	WallMS  int64 `json:"wall_ms"`
+	Logical int64 `json:"logical"`
+}
+
+const MaxHLCWallMS int64 = 253402300799999 // 9999-12-31T23:59:59.999Z
+const MaxHLCLogical int64 = math.MaxInt32
+
+// NormalizeOperation produces the one internal G5/G6 pending representation. G9
 // still owns the production wire codec and strict cross-version canonical form.
 func NormalizeOperation(operation Operation) (Operation, []byte, error) {
 	if err := validateIdentifier("replica id", operation.ReplicaID); err != nil {
@@ -351,6 +363,9 @@ func NormalizeOperation(operation Operation) (Operation, []byte, error) {
 	wantID := fmt.Sprintf("%s:%020d", operation.ReplicaID, operation.Sequence)
 	if operation.OperationID != wantID {
 		return Operation{}, nil, fmt.Errorf("%w: operation id must be %q", ErrInvalidState, wantID)
+	}
+	if operation.HLC.WallMS <= 0 || operation.HLC.WallMS > MaxHLCWallMS || operation.HLC.Logical < 0 || operation.HLC.Logical > MaxHLCLogical {
+		return Operation{}, nil, fmt.Errorf("%w: HLC is outside protocol bounds", ErrInvalidState)
 	}
 	if strings.TrimSpace(operation.Kind) == "" || len(operation.Kind) > 128 {
 		return Operation{}, nil, fmt.Errorf("%w: invalid operation kind", ErrInvalidState)

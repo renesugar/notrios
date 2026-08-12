@@ -326,6 +326,9 @@ func TestSyncJournalIdentityRotationRetiresBoundaryAndRequiresReenrollment(t *te
 	if second.ReplicaID != rotated.ReplicaID || second.LastSequence != 0 || second.SnapshotBoundaryID == first.SnapshotBoundaryID {
 		t.Fatalf("unexpected reenrollment: first=%+v second=%+v identity=%+v", first, second, rotated)
 	}
+	if floor := syncCount(t, st, `SELECT sequence FROM sync_metadata_baseline_floors WHERE replica_id=?`, first.ReplicaID); floor == 0 {
+		t.Fatal("reenrollment baseline did not floor the retired replica history")
+	}
 }
 
 func TestSyncJournalCloseRollsBackUncommittedCanonicalAndOperationRows(t *testing.T) {
@@ -404,8 +407,8 @@ func TestSyncJournalCapturesTrashRestorePurgeAndStructuralChanges(t *testing.T) 
 	if err := st.DeleteDocument(ctx, DeleteDocumentRequest{ID: doc.ID, BaseRevisionID: restored.CurrentRevisionID}); err != nil {
 		t.Fatal(err)
 	}
-	if err := st.PurgeDocument(ctx, doc.ID); err != nil {
-		t.Fatal(err)
+	if err := st.PurgeDocument(ctx, doc.ID); err == nil || !strings.Contains(err.Error(), "sync purge requires signed death certificate") {
+		t.Fatalf("enrolled local purge error = %v", err)
 	}
 	if err := st.DeleteNotebook(ctx, nb.ID); err != nil {
 		t.Fatal(err)
@@ -418,7 +421,7 @@ func TestSyncJournalCapturesTrashRestorePurgeAndStructuralChanges(t *testing.T) 
 	for _, operation := range operations {
 		seen[operation.Kind]++
 	}
-	for _, kind := range []string{"record.update", "document.trash", "document.restore", "document.purge", "record.delete"} {
+	for _, kind := range []string{"record.update", "document.trash", "document.restore", "record.delete"} {
 		if seen[kind] == 0 {
 			t.Errorf("missing lifecycle operation %q: %v", kind, seen)
 		}

@@ -68,6 +68,8 @@ type SyncOperation struct {
 	RecordType  string
 	RecordID    string
 	PayloadJSON string
+	HLCWallMS   int64
+	HLCLogical  int64
 	CreatedAt   time.Time
 }
 
@@ -135,6 +137,9 @@ func (s *SQLiteStore) EnrollLocalJournal(ctx context.Context, reason string) (Sy
 			_ = s.execLocked("ROLLBACK")
 		}
 	}()
+	if err := s.captureSyncMetadataBaselineLocked(true); err != nil {
+		return SyncJournalStatus{}, err
+	}
 	if err := s.execPreparedLocked(`INSERT INTO sync_replicas(replica_id, database_id, role, status)
 		VALUES(?, ?, 'local', 'active')
 		ON CONFLICT(replica_id) DO UPDATE SET database_id = excluded.database_id,
@@ -222,7 +227,7 @@ func (s *SQLiteStore) ListLocalOperations(ctx context.Context, afterSequence int
 	if err != nil || !found {
 		return []SyncOperation{}, err
 	}
-	stmt, err := s.prepareLocked(`SELECT replica_id, sequence, operation_id, kind, record_type, record_id, payload_json, created_at
+	stmt, err := s.prepareLocked(`SELECT replica_id, sequence, operation_id, kind, record_type, record_id, payload_json, hlc_wall_ms, hlc_logical, created_at
 		FROM sync_operations WHERE replica_id = ? AND sequence > ? ORDER BY sequence LIMIT ?`)
 	if err != nil {
 		return nil, err
@@ -236,7 +241,7 @@ func (s *SQLiteStore) ListLocalOperations(ctx context.Context, afterSequence int
 		rc := C.sqlite3_step(stmt)
 		switch rc {
 		case C.SQLITE_ROW:
-			createdAt, parseErr := time.Parse(time.RFC3339Nano, sqliteTimeToRFC3339(columnText(stmt, 7)))
+			createdAt, parseErr := time.Parse(time.RFC3339Nano, sqliteTimeToRFC3339(columnText(stmt, 9)))
 			if parseErr != nil {
 				return nil, fmt.Errorf("parse sync operation created_at: %w", parseErr)
 			}
@@ -248,6 +253,8 @@ func (s *SQLiteStore) ListLocalOperations(ctx context.Context, afterSequence int
 				RecordType:  columnText(stmt, 4),
 				RecordID:    columnText(stmt, 5),
 				PayloadJSON: columnText(stmt, 6),
+				HLCWallMS:   columnInt64(stmt, 7),
+				HLCLogical:  columnInt64(stmt, 8),
 				CreatedAt:   createdAt,
 			})
 		case C.SQLITE_DONE:

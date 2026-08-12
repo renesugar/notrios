@@ -165,7 +165,8 @@ func noopOperation(replicaID string, sequence int64, dependencies ...syncstate.O
 		ReplicaID: replicaID, Sequence: sequence,
 		OperationID: fmt.Sprintf("%s:%020d", replicaID, sequence),
 		Kind:        "sync.noop", RecordType: "sync_noop", RecordID: fmt.Sprintf("noop_%d", sequence),
-		Payload: json.RawMessage(`{"noop":true}`), CreatedAt: time.Unix(sequence, 0).UTC().Format(time.RFC3339Nano),
+		Payload: json.RawMessage(`{"noop":true}`), HLC: syncstate.HLC{WallMS: sequence * 1000},
+		CreatedAt:    time.Unix(sequence, 0).UTC().Format(time.RFC3339Nano),
 		Dependencies: dependencies,
 	}
 }
@@ -245,7 +246,7 @@ func TestSyncAdmissionRequiresConfiguredCompatiblePeerAndExactReplay(t *testing.
 		t.Fatalf("unknown required record error = %v", err)
 	}
 	changed := peer
-	changed.SchemaVersion = syncstate.MinCompatibleSchema
+	changed.OptionalCapabilities = []string{"sync.fixture.v1"}
 	if _, err := receiver.AdmitSyncOperations(ctx, changed, nil); !errors.Is(err, ErrConflict) {
 		t.Fatalf("changed configured compatibility error = %v", err)
 	}

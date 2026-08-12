@@ -94,6 +94,10 @@ func TestBootstrapCreatesBuiltinNotebooks(t *testing.T) {
 			t.Fatalf("%s notebook: %+v err=%v", name, nb, err)
 		}
 	}
+	recovered, err := st.GetNotebook(ctx, RecoveredNotebookID)
+	if err != nil || recovered.Name != "Recovered" || !recovered.Builtin || IsReadOnlyNotebook(recovered.ID) {
+		t.Fatalf("Recovered notebook: %+v err=%v", recovered, err)
+	}
 
 	sns, err := st.ListSearchNotebooks(ctx)
 	if err != nil {

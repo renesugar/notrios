@@ -295,7 +295,7 @@ acknowledgement, pending-admission, and audit tables. At G4 completion, later
 slices still owned their protocol behavior; G4 itself added no transport,
 merge, encryption, REST, MCP, or UI.
 
-G5 advances the current schema to v20 and implements that reserved protocol
+G5 advances schema v20 and implements that reserved protocol
 behavior without adding a carrier. `internal/syncstate` is a SQLite/HTTP/UI-free
 core for protocol-1.0 compatibility, bounded vector comparison, deterministic
 missing ranges, and strict operation normalization. The store persists only
@@ -303,8 +303,15 @@ explicitly configured compatible fixture peers, stages out-of-order or
 dependency-blocked operations, and transactionally admits every now-contiguous
 operation while updating gaps and the acknowledgement vector. An exact replay
 is inert; a conflicting replay, unknown record, compatibility mismatch, sparse
-sequence beyond the window, or quota overflow rolls back. G6 still owns
-canonical metadata application and conflict semantics; G9/G13 own authenticated
+sequence beyond the window, or quota overflow rolls back.
+
+G6 advances the current schema to v21. Operations carry bounded durable HLCs;
+scalar updates are sparse per-field LWW registers, document-tag rows are LWW
+elements, and lifecycle/death-certificate state is distinct from absence. A
+transport-neutral fold rebuilds the post-boundary metadata projection and
+applies it atomically with admission. Notebook cycles, missing parents, missing
+document homes, and uniqueness collisions produce deterministic visible repair
+rows. G7 still owns body revision/delta/merge semantics; G9/G13 own authenticated
 enrollment, wire encoding, encryption/signatures, and authorization.
 
 ## Optional derived systems

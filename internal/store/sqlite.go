@@ -185,13 +185,19 @@ func (s *SQLiteStore) Bootstrap(ctx context.Context) error {
 	if err := s.ensureSchemaV20(ctx); err != nil {
 		return err
 	}
+	if err := s.ensureSchemaV21(ctx); err != nil {
+		return err
+	}
 	if err := s.ensureDatabaseIdentity(ctx); err != nil {
 		return err
 	}
 	if err := s.Exec(ctx, `INSERT OR IGNORE INTO collections(id, name, description) VALUES('default', 'Default', 'Managed notes created by the companion service.');`); err != nil {
 		return err
 	}
-	return s.seedNotebooks(ctx)
+	if err := s.seedNotebooks(ctx); err != nil {
+		return err
+	}
+	return s.ensureSyncMetadataBaseline(ctx)
 }
 
 func (s *SQLiteStore) seedNotebooks(ctx context.Context) error {
@@ -199,6 +205,7 @@ func (s *SQLiteStore) seedNotebooks(ctx context.Context) error {
 		`INSERT OR IGNORE INTO notebooks(id, parent_id, name, icon_emoji, builtin) VALUES('` + DefaultNotebookID + `', NULL, 'Notes', '', 0);`,
 		`INSERT OR IGNORE INTO notebooks(id, parent_id, name, icon_emoji, builtin) VALUES('` + ReportsNotebookID + `', NULL, 'Reports', '', 1);`,
 		`INSERT OR IGNORE INTO notebooks(id, parent_id, name, icon_emoji, builtin) VALUES('` + HelpNotebookID + `', NULL, 'Help', '', 1);`,
+		`INSERT OR IGNORE INTO notebooks(id, parent_id, name, icon_emoji, builtin) VALUES('` + RecoveredNotebookID + `', NULL, 'Recovered', '', 1);`,
 		`INSERT OR IGNORE INTO search_notebooks(id, name, icon_emoji, query, builtin, sort_anchor) VALUES('` + AllNotesSearchNotebookID + `', 'All notes', '', '', 1, 'first');`,
 		`INSERT OR IGNORE INTO search_notebooks(id, name, icon_emoji, query, builtin, sort_anchor) VALUES('` + TrashSearchNotebookID + `', 'Trash', '', 'is:trashed', 1, 'last');`,
 		`UPDATE documents SET notebook_id = '` + DefaultNotebookID + `' WHERE notebook_id IS NULL;`,
@@ -617,6 +624,15 @@ func (s *SQLiteStore) ensureSchemaV18(ctx context.Context) error {
 // fresh databases and upgrades. Capture triggers are inert until explicit
 // enrollment creates sync_local_journal's singleton row.
 func (s *SQLiteStore) ensureSchemaV19(ctx context.Context) error {
+	s.mu.Lock()
+	version, versionErr := s.pragmaUserVersionLocked()
+	s.mu.Unlock()
+	if versionErr != nil {
+		return versionErr
+	}
+	if version >= 19 {
+		return nil
+	}
 	migration, err := migrationFS.ReadFile("migrations/0019_sync_journal.sql")
 	if err != nil {
 		return fmt.Errorf("read schema v19 migration: %w", err)
@@ -628,9 +644,71 @@ func (s *SQLiteStore) ensureSchemaV19(ctx context.Context) error {
 // sequence-exhaustion guard. Admission uses the G4 journal tables; it does not
 // need or create a transport outbox.
 func (s *SQLiteStore) ensureSchemaV20(ctx context.Context) error {
+	s.mu.Lock()
+	version, versionErr := s.pragmaUserVersionLocked()
+	s.mu.Unlock()
+	if versionErr != nil {
+		return versionErr
+	}
+	if version >= 20 {
+		return nil
+	}
 	migration, err := migrationFS.ReadFile("migrations/0020_sync_admission.sql")
 	if err != nil {
 		return fmt.Errorf("read schema v20 migration: %w", err)
+	}
+	return s.Exec(ctx, string(migration))
+}
+
+// ensureSchemaV21 adds G6's durable HLC and convergence projection. Unlike
+// earlier CREATE-only migrations it adds two columns independently before the
+// idempotent SQL portion, so interrupted development migrations can resume.
+func (s *SQLiteStore) ensureSchemaV21(ctx context.Context) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	s.mu.Lock()
+	version, err := s.pragmaUserVersionLocked()
+	hasWall, hasLogical := false, false
+	if err == nil {
+		stmt, prepareErr := s.prepareLocked(`PRAGMA table_info(sync_operations)`)
+		if prepareErr != nil {
+			err = prepareErr
+		} else {
+			for C.sqlite3_step(stmt) == C.SQLITE_ROW {
+				switch columnText(stmt, 1) {
+				case "hlc_wall_ms":
+					hasWall = true
+				case "hlc_logical":
+					hasLogical = true
+				}
+			}
+			C.sqlite3_finalize(stmt)
+		}
+	}
+	s.mu.Unlock()
+	if err != nil {
+		return err
+	}
+	if version >= 21 {
+		return nil
+	}
+	// Add each operation column independently so an interrupted/partially
+	// constructed development database resumes through the idempotent table and
+	// trigger portion below instead of being mistaken for a complete migration.
+	if !hasWall {
+		if err := s.Exec(ctx, `ALTER TABLE sync_operations ADD COLUMN hlc_wall_ms INTEGER NOT NULL DEFAULT 0;`); err != nil {
+			return err
+		}
+	}
+	if !hasLogical {
+		if err := s.Exec(ctx, `ALTER TABLE sync_operations ADD COLUMN hlc_logical INTEGER NOT NULL DEFAULT 0;`); err != nil {
+			return err
+		}
+	}
+	migration, err := migrationFS.ReadFile("migrations/0021_sync_metadata.sql")
+	if err != nil {
+		return fmt.Errorf("read schema v21 migration: %w", err)
 	}
 	return s.Exec(ctx, string(migration))
 }

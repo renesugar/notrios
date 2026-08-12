@@ -457,3 +457,20 @@ watermarks. G2 recommends bounded compact NCB1 operation records with per-kind
 canonical-JSON payloads, but G9 must promote or replace that evidence format
 deliberately; schema-v20 `payload_json` is local journal/admission state, not the wire
 codec. Derived FTS/Recoll data remains excluded.
+
+## Schema v21 — deterministic metadata convergence
+
+G6 adds `hlc_wall_ms` and `hlc_logical` to immutable operations plus a durable
+`sync_hlc_clock` that cannot move backward. `sync_field_registers`,
+`sync_lifecycle_registers`, and `sync_membership_registers` materialize the
+protocol-order winners; `sync_death_certificates` preserves structurally signed
+purge identity; and `sync_repair_events` is the deterministic visible report
+for notebook cycles/orphans, missing document homes, and uniqueness repairs.
+
+The sequence-zero baseline tables represent canonical state at enrollment, so
+pre-enrollment data does not become synthetic history. Every admitted metadata
+set is folded from that baseline and applied under `sync_apply_guard` in the
+same SQLite transaction as operation/vector advancement. The guard prevents an
+applied remote projection from being journaled as a new local mutation. Local
+purge is refused while enrolled until G9 supplies real signing and verification;
+payload and blob collection remains deferred to G17.

@@ -3,7 +3,7 @@
 This handoff applies to any coding agent or client continuing this project (Codex, Claude, aider, swival.dev, etc. — formerly `CODEX_HANDOFF.md`). The repository is designed so an agent can continue from repository files alone.
 
 Current phase: v0.1 through **v0.6** are complete; product version is **0.6.0**
-and the schema is **v20**. The eight v0.6 slices are archived under
+and the schema is **v21**. The eight v0.6 slices are archived under
 `plans/v0.6/`: F0 (notebook targeting, landed with v0.5 E10), F1 (batch
 organizer transactions), F2 (MCP tool scopes), F3 (MCP read coverage and HTTP
 `Range`), F4 (note templates and task extraction), F5 (graph views that stay
@@ -13,13 +13,13 @@ wrap-up). The thirteen v0.5 slices remain archived under `plans/v0.5/`.
 `PLAN.md` now holds the **active v0.7 native synchronization plan** with
 twenty-two independently approvable slices: G0, G1, G1a, and G2-G20. The user's 2026-08-11
 review resolved the policy decisions through G17, including mandatory payload
-encryption and per-replica Ed25519 signatures. **G0-G5 are complete** and
+encryption and per-replica Ed25519 signatures. **G0-G6 are complete** and
 archived under `plans/v0.7/`; their reviewed evidence is under
 `performance/v0.7-g0/`, `performance/v0.7-g1/`, and
 `performance/v0.7-g1a/`, `performance/v0.7-g2/`, and
-`performance/v0.7-g4/`, and `performance/v0.7-g5/`. **G6 is next and is not
-approved.** It owns deterministic metadata, membership, deletion, and notebook-
-tree convergence over G5's admitted operation set.
+`performance/v0.7-g4/`, `performance/v0.7-g5/`, and `performance/v0.7-g6/`.
+**G7 is next and is not approved.** It owns immutable note revision objects,
+bounded verified transfer deltas, three-way body merge, and typed conflicts.
 
 G0 added no production sync code or dependency. It freezes the threat model,
 normative glossary, thirty misuse/control traces, and upstream license/platform
@@ -99,6 +99,18 @@ converge after shuffle, duplicate, and drop-then-deliver schedules; restart,
 injected rollback, clock/sequence skew, and sequence exhaustion retain the
 correct boundary.
 
+G6 advances schema v21 and atomically applies G6-owned canonical metadata after
+G5 admission. Bounded HLCs order sparse field registers and LWW document-tag
+elements by wall/logical/replica/sequence; per-replica HLC regression refuses
+the whole admission. The fold starts at the explicit sequence-zero baseline,
+keeps trash/restore distinct from permanent death certificates, and repairs
+notebook cycles/orphans, document homes, and case-insensitive name collisions
+deterministically with visible current repair rows. Sync-enabled local purge is
+gated until G9 supplies signing; the internal G6 fixture seam only validates
+mandatory structural signer/signature fields. G6 does not merge bodies, move
+resource bytes, collect retained payloads, add a carrier, expose sync over
+REST/MCP/UI, or authenticate peers.
+
 That review also added a second portability route. v0.8 now investigates and
 builds a framework-neutral Go application facade and versioned no-GUI C ABI,
 with Android-emulator-only pre-1.0 evidence; v1.0 packages the supported ABI
@@ -108,16 +120,16 @@ the API/lifecycle/ownership/stream contract and source checks. The current GUI's
 Mermaid support is **disabled**, not merely untested (`noMermaid: true`), and a
 v0.8 offline/security-tested enablement slice owns it.
 
-Latest completed feature validation is G5 (2026-08-12). It includes the G4
-schema/enrollment journal baseline plus focused vector/plan/compatibility,
-three-replica model and SQLite convergence, replay/dependency/quota/skew,
-restart/rollback, acknowledgement, upgrade, and exhaustion tests, followed by
-the audit-first full repository, frontend, docs, smoke, and release checks
+Latest completed feature validation is G6 (2026-08-12). It includes G5's
+admission suite plus exhaustive 40,320-order and 250-seed convergence models,
+opposite-order real SQLite replicas, sparse-register, membership, lifecycle,
+tree-repair, clock-regression, restart/upgrade, and purge-gate checks, followed
+by the audit-first full repository, frontend, docs, smoke, and release checks
 recorded in its archive. Regular
 validation begins with audit/fix/reinstall/re-audit, while CI and release
-packaging enforce a non-mutating audit gate. Start G6 only after explicit user
+packaging enforce a non-mutating audit gate. Start G7 only after explicit user
 approval, then stop after its validation, commit, verified ZIP, and handoff
-before G7.
+before G8.
 
 Two things a reader continuing this project should know about v0.6:
 

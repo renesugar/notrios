@@ -1,6 +1,6 @@
 # Plan Status
 
-Updated: 2026-08-12 (G5 state-vector admission complete; G6 next)
+Updated: 2026-08-12 (G6 metadata convergence complete; G7 next)
 
 ## Active milestone
 
@@ -13,8 +13,31 @@ G0, G1, G1a, and G2-G20: evidence, profiles/local journal, state-vector converge
 revision deltas/merge, lazy resources, secure container/catch-up,
 ephemeral-directory and REST transports, jobs/UI/retention, shared-core/FFI/
 Mermaid/mobile handoff, compatibility, and final validation. The user's
-2026-08-11 review resolved every G0-G17 policy decision. **G0-G5 are complete**
-and archived under `plans/v0.7/`; G6 is next and is not approved.
+2026-08-11 review resolved every G0-G17 policy decision. **G0-G6 are complete**
+and archived under `plans/v0.7/`; G7 is next and is not approved.
+
+## v0.7 G6 completion — 2026-08-12
+
+- Schema v21 adds bounded durable HLC wall/logical components, a non-regressing
+  local clock, sparse scalar journal payloads, per-field/lifecycle/membership
+  materializations, structural death certificates, sequence-zero baselines,
+  and deterministic visible repair rows.
+- Metadata admission folds the same post-boundary operation set by
+  `(wall, logical, replica, sequence)` and applies canonical collections,
+  documents, notebooks, tags, search notebooks, provenance, and document-tag
+  membership in the vector-advancement transaction. The apply guard prevents
+  remote writes from echoing into the local journal.
+- LWW trash/restore and add/remove are independent from field writes. Notebook
+  parent edges are accepted from highest order downward; cycle/orphan losers
+  go to a valid root/Recovered home. Missing document homes and case-insensitive
+  name collisions receive deterministic repairs and stable IDs/suffixes.
+- A structurally signed death certificate blocks same-ID resurrection forever,
+  but G9 still owns signing and verification. Enrolled local purge is refused;
+  payload/blob collection stays deferred to G17.
+- All 40,320 small-state delivery orders, 250 randomized replay/duplication
+  seeds, opposite-order SQLite replicas, HLC rollback, restart/upgrade,
+  membership/lifecycle, purge-gate, foreign-key, and full regression checks
+  pass. Product remains 0.6.0; schema is v21. G7 remains unapproved.
 
 ## v0.7 G5 completion — 2026-08-12
 

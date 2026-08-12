@@ -213,8 +213,8 @@ func (s *SQLiteStore) syncStateVectorLocked(observerReplicaID string) (syncstate
 }
 
 // AdmitSyncOperations durably queues or admits operations from one explicitly
-// configured source replica. G5 admission is intentionally a no-op at the
-// canonical-record layer; G6/G7 own deterministic application semantics.
+// configured source replica. G6 metadata is applied in the same transaction;
+// G7/G8-owned body and resource records remain admitted but unapplied.
 func (s *SQLiteStore) AdmitSyncOperations(ctx context.Context, peer syncstate.Handshake, operations []syncstate.Operation) (SyncAdmissionResult, error) {
 	return s.admitSyncOperations(ctx, peer, operations, nil)
 }
@@ -345,6 +345,11 @@ func (s *SQLiteStore) admitSyncOperations(ctx context.Context, peer syncstate.Ha
 	if err != nil {
 		return SyncAdmissionResult{}, err
 	}
+	if result.Admitted > 0 {
+		if err := s.reconcileSyncMetadataLocked(); err != nil {
+			return SyncAdmissionResult{}, err
+		}
+	}
 	if err := s.rebuildSyncGapsLocked(local.ReplicaID); err != nil {
 		return SyncAdmissionResult{}, err
 	}
@@ -468,10 +473,34 @@ func (s *SQLiteStore) drainSyncPendingLocked(observerReplicaID string) (int, err
 }
 
 func (s *SQLiteStore) insertAdmittedSyncOperationLocked(operation syncstate.Operation) error {
+	if operation.Sequence > 1 {
+		stmt, err := s.prepareLocked(`SELECT hlc_wall_ms, hlc_logical FROM sync_operations WHERE replica_id=? AND sequence=?`)
+		if err != nil {
+			return err
+		}
+		if err := bindAll(stmt, []string{operation.ReplicaID, strconv.FormatInt(operation.Sequence-1, 10)}); err != nil {
+			C.sqlite3_finalize(stmt)
+			return err
+		}
+		rc := C.sqlite3_step(stmt)
+		if rc != C.SQLITE_ROW {
+			C.sqlite3_finalize(stmt)
+			if rc == C.SQLITE_DONE {
+				return fmt.Errorf("%w: admitted operation has no contiguous HLC predecessor", ErrConflict)
+			}
+			return s.stepErrLocked(rc)
+		}
+		priorWall, priorLogical := columnInt64(stmt, 0), columnInt64(stmt, 1)
+		C.sqlite3_finalize(stmt)
+		if operation.HLC.WallMS < priorWall || operation.HLC.WallMS == priorWall && operation.HLC.Logical < priorLogical {
+			return fmt.Errorf("%w: replica HLC moved backward at sequence %d", ErrConflict, operation.Sequence)
+		}
+	}
 	if err := s.execPreparedLocked(`INSERT INTO sync_operations(
-		replica_id, sequence, operation_id, kind, record_type, record_id, payload_json, created_at
-	) VALUES(?, ?, ?, ?, ?, ?, ?, ?)`, operation.ReplicaID, strconv.FormatInt(operation.Sequence, 10),
-		operation.OperationID, operation.Kind, operation.RecordType, operation.RecordID, string(operation.Payload), operation.CreatedAt); err != nil {
+		replica_id, sequence, operation_id, kind, record_type, record_id, payload_json, hlc_wall_ms, hlc_logical, created_at
+	) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, operation.ReplicaID, strconv.FormatInt(operation.Sequence, 10),
+		operation.OperationID, operation.Kind, operation.RecordType, operation.RecordID, string(operation.Payload),
+		strconv.FormatInt(operation.HLC.WallMS, 10), strconv.FormatInt(operation.HLC.Logical, 10), operation.CreatedAt); err != nil {
 		return err
 	}
 	for _, dependency := range operation.Dependencies {
@@ -602,7 +631,7 @@ func (s *SQLiteStore) ListSyncOperations(ctx context.Context, replicaID string, 
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	stmt, err := s.prepareLocked(`SELECT sequence, operation_id, kind, record_type, record_id, payload_json, created_at
+	stmt, err := s.prepareLocked(`SELECT sequence, operation_id, kind, record_type, record_id, payload_json, hlc_wall_ms, hlc_logical, created_at
 		FROM sync_operations WHERE replica_id = ? AND sequence > ? ORDER BY sequence LIMIT ?`)
 	if err != nil {
 		return nil, err
@@ -615,14 +644,15 @@ func (s *SQLiteStore) ListSyncOperations(ctx context.Context, replicaID string, 
 	for {
 		switch rc := C.sqlite3_step(stmt); rc {
 		case C.SQLITE_ROW:
-			createdAt, err := time.Parse(time.RFC3339Nano, sqliteTimeToRFC3339(columnText(stmt, 6)))
+			createdAt, err := time.Parse(time.RFC3339Nano, sqliteTimeToRFC3339(columnText(stmt, 8)))
 			if err != nil {
 				return nil, err
 			}
 			operation := syncstate.Operation{
 				ReplicaID: replicaID, Sequence: columnInt64(stmt, 0), OperationID: columnText(stmt, 1),
 				Kind: columnText(stmt, 2), RecordType: columnText(stmt, 3), RecordID: columnText(stmt, 4),
-				Payload: json.RawMessage(columnText(stmt, 5)), CreatedAt: createdAt.UTC().Format(time.RFC3339Nano),
+				Payload: json.RawMessage(columnText(stmt, 5)), HLC: syncstate.HLC{WallMS: columnInt64(stmt, 6), Logical: columnInt64(stmt, 7)},
+				CreatedAt:    createdAt.UTC().Format(time.RFC3339Nano),
 				Dependencies: []syncstate.OperationRef{},
 			}
 			operation.Dependencies, err = s.syncOperationDependenciesLocked(replicaID, operation.Sequence)
@@ -769,7 +799,7 @@ func (s *SQLiteStore) syncContiguousLocked(observer, subject string) (int64, err
 }
 
 func (s *SQLiteStore) syncStoredOperationBytesLocked(replicaID string, sequence int64, operationID string) ([]byte, bool, error) {
-	stmt, err := s.prepareLocked(`SELECT replica_id, sequence, operation_id, kind, record_type, record_id, payload_json, created_at
+	stmt, err := s.prepareLocked(`SELECT replica_id, sequence, operation_id, kind, record_type, record_id, payload_json, hlc_wall_ms, hlc_logical, created_at
 		FROM sync_operations WHERE (replica_id = ? AND sequence = ?) OR operation_id = ? LIMIT 1`)
 	if err != nil {
 		return nil, false, err
@@ -784,7 +814,7 @@ func (s *SQLiteStore) syncStoredOperationBytesLocked(replicaID string, sequence 
 	case C.SQLITE_ROW:
 		storedReplicaID := columnText(stmt, 0)
 		storedSequence := columnInt64(stmt, 1)
-		createdAt, err := time.Parse(time.RFC3339Nano, sqliteTimeToRFC3339(columnText(stmt, 7)))
+		createdAt, err := time.Parse(time.RFC3339Nano, sqliteTimeToRFC3339(columnText(stmt, 9)))
 		if err != nil {
 			return nil, false, err
 		}
@@ -795,6 +825,7 @@ func (s *SQLiteStore) syncStoredOperationBytesLocked(replicaID string, sequence 
 		_, encoded, err := syncstate.NormalizeOperation(syncstate.Operation{
 			ReplicaID: storedReplicaID, Sequence: storedSequence, OperationID: columnText(stmt, 2), Kind: columnText(stmt, 3),
 			RecordType: columnText(stmt, 4), RecordID: columnText(stmt, 5), Payload: json.RawMessage(columnText(stmt, 6)),
+			HLC:       syncstate.HLC{WallMS: columnInt64(stmt, 7), Logical: columnInt64(stmt, 8)},
 			CreatedAt: createdAt.UTC().Format(time.RFC3339Nano), Dependencies: dependencies,
 		})
 		return encoded, true, err

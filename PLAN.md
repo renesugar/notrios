@@ -1,7 +1,7 @@
 # Plan: v0.7 — Native synchronization
 
-Status: **G0-G5 completed through 2026-08-12. Product version remains 0.6.0 and the
-canonical schema is v20. G6 is the next item and is not approved.** The
+Status: **G0-G6 completed through 2026-08-12. Product version remains 0.6.0 and the
+canonical schema is v21. G7 is the next item and is not approved.** The
 former seven-item draft was too coarse: it mixed protocol research, canonical
 write interception, merge semantics, two transports, cryptography, recovery,
 UI, retention, and release validation into slices that could not be reviewed or
@@ -570,6 +570,42 @@ and replay; ordinary Store invariants after every admitted transaction.
 - **Purge propagates as a signed death certificate** that outlives the document
   until every active peer acknowledges it; restore after purge creates a new
   document identity rather than resurrecting erased state.
+
+**Implementation defaults recorded before G6 code (2026-08-12;
+non-blocking).**
+
+- Update operations carry only fields changed by that canonical statement;
+  create operations carry the complete initial scalar record. This is the
+  default required for per-field registers: a body-pointer or lifecycle write
+  cannot accidentally refresh a title register it did not edit.
+- Existing case-insensitive uniqueness constraints remain canonical. If
+  concurrent notebook, tag, or search-notebook names collide, the protocol-
+  order winner retains the requested name and each loser receives a stable
+  short ID suffix. The repair is deterministic and audited instead of making
+  admission depend on delivery order. Protected built-in names remain reserved;
+  a colliding mutable record receives the suffix.
+- Schema v21 stores non-empty death-certificate signer/signature bytes and
+  permanently rejects same-ID restoration once such a certificate is
+  admitted. G9 still owns key enrollment and cryptographic verification, so
+  G6 exposes only an internal trusted-fixture seam for a structurally signed
+  certificate and refuses local purge while synchronization is enrolled.
+  Absence never implies purge, and payload/blob collection remains deferred to
+  G17 acknowledgement and retention policy.
+
+**Completed 2026-08-12.** Schema v21 adds a durable non-regressing HLC to each
+operation, sparse per-field and lifecycle registers, LWW document-tag elements,
+structural death certificates, and deterministic current repair records. G5
+admission now folds the complete post-boundary G6 operation set and applies its
+projection in the same transaction as vector advancement; an apply guard keeps
+those canonical writes from echoing into a second local operation. Notebook
+parent edges are considered by descending protocol order, invalid edges go to
+the nearest valid root/Recovered home, and case-insensitive name collisions use
+a stable ID suffix. Exhaustive 40,320-order, 250-seed randomized, two-SQLite-
+replica, restart/upgrade, replay, clock, lifecycle, membership, and purge-gate
+tests pass. Body revisions, resource bytes, carrier/crypto, public surfaces,
+and retention collection remain outside G6. Evidence is archived in
+`plans/v0.7/009-metadata-membership-tree-convergence.md` and
+`performance/v0.7-g6/`.
 
 ## G7. Note revision objects, transfer deltas, three-way merge, and conflicts
 
@@ -1156,6 +1192,6 @@ recommendation, blocking status, and consequence.
 | Current-GUI Mermaid baseline | G18 | Resolved fact: upstream-capable but disabled pending offline/security evidence |
 | Release version/schema bookkeeping | G20 | Open, non-blocking until wrap-up |
 
-G0-G5 are complete. G6 is the next implementable item, but is not approved.
-Implementation begins only after an explicit instruction naming G6; completing
-it still stops for a verified ZIP and approval before G7.
+G0-G6 are complete. G7 is the next implementable item, but is not approved.
+Implementation begins only after an explicit instruction naming G7; completing
+it still stops for a verified ZIP and approval before G8.

@@ -3,10 +3,10 @@
 Notrios (formerly "Notes Companion") is a local-first note-taking, search, import, and publishing system for very large Markdown and document collections.
 It combines a Go REST/MCP service (`notriosd`), a built-in GUI, SQLite/FTS5-backed canonical storage, content-addressed resources, optional Recoll-derived search/extraction, and support for third-party native clients (C++/Qt, Go/Wails, Rust/Tauri) over the same API. A versioned no-GUI C ABI is planned before 1.0, followed by an independent post-1.0 Flutter client; mobile delivery does not depend exclusively on Wails.
 
-The v0.1 through v0.6 milestones are complete. v0.7 G0-G5 are complete: threat
+The v0.1 through v0.6 milestones are complete. v0.7 G0-G6 are complete: threat
 and workload evidence, pure-Go binary-delta feasibility, bounded envelope and
 resource design, isolated runtime profiles, the local journal, and bounded
-state-vector admission. G6 is next and unapproved — see
+state-vector admission, and deterministic metadata/tree convergence. G7 is next and unapproved — see
 [`PLAN.md`](PLAN.md) and
 [`ROADMAP.md`](ROADMAP.md). The repository is
 structured so a coding agent can resume safely after usage limits or model
@@ -24,8 +24,9 @@ changes.
   the roadmap also carries a shared Go C ABI and post-1.0 Flutter client.
 - **Search:** SQLite FTS5 for managed notes; Recoll as an optional derived sidecar for field/front-matter search, OCR-style extraction, and arbitrary files (see `RECOLL_INTEGRATION.md` and `SEARCH_QUERY_LANGUAGE.md`).
 - **Data model:** nested notebooks with emoji icons, tags, query-backed search
-  notebooks (All notes/Trash), a default Notes notebook, and read-only Help and
-  Reports notebooks — see `NOTEBOOKS_AND_SEARCH_NOTEBOOKS.md`.
+  notebooks (All notes/Trash), a default Notes notebook, read-only Help and
+  Reports notebooks, and G6's protected Recovered repair target — see
+  `NOTEBOOKS_AND_SEARCH_NOTEBOOKS.md`.
 - **Import sources:** Joplin RAW, Obsidian vaults, Twitter/X archives (thread-preserving), ChatGPT exports, Claude exports.
 - **Resource store:** content-addressed assets, exact-hash/reference reports,
   and optional review-only perceptual-hash hooks (no algorithm ships by
@@ -116,7 +117,10 @@ Recoll availability, backlog, sync/index, and reconciliation state.
   writes. G5 adds the transport-neutral protocol-1.0 compatibility handshake,
   bounded state vectors/missing-range planning, durable dependency queues,
   exact replay handling, and atomic contiguous acknowledgement advancement in
-  schema v20. No transport, record merge, or cryptography is implemented yet.
+  schema v20. G6 advances schema v21 with durable HLC order, sparse field and
+  membership registers, trash/restore/death-certificate state, and deterministic
+  notebook orphan/cycle/name repair applied atomically to canonical metadata.
+  Note-body merge, resource transfer, transport, and cryptography are not implemented yet.
 - Agent progress/attempt tracking: [`agent/PLAN_STATUS.md`](agent/PLAN_STATUS.md), [`agent/ATTEMPT_LOG.jsonl`](agent/ATTEMPT_LOG.jsonl), and [`agent/MODEL_LOG.jsonl`](agent/MODEL_LOG.jsonl).
 
 ## Contributing

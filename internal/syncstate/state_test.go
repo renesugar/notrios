@@ -80,8 +80,8 @@ func TestHandshakeCompatibilityIsClosedAndExplicit(t *testing.T) {
 		{"minor range", func(h *Handshake) { h.ProtocolMinMinor = ProtocolMinor + 1; h.ProtocolMaxMinor = ProtocolMinor + 1 }, ErrProtocolMismatch},
 		{"schema", func(h *Handshake) { h.SchemaVersion = MaxCompatibleSchema + 1 }, ErrSchemaMismatch},
 		{"self-inconsistent schema range", func(h *Handshake) {
-			h.MinCompatibleSchema = MinCompatibleSchema
-			h.MaxCompatibleSchema = MinCompatibleSchema
+			h.MinCompatibleSchema = MaxCompatibleSchema + 1
+			h.MaxCompatibleSchema = MaxCompatibleSchema + 1
 		}, ErrSchemaMismatch},
 		{"required capability", func(h *Handshake) { h.RequiredCapabilities = append(h.RequiredCapabilities, "sync.unknown.v1") }, ErrCapabilityMismatch},
 		{"missing own vector", func(h *Handshake) { h.StateVector = Vector{} }, ErrInvalidState},
@@ -103,7 +103,7 @@ func TestNormalizeOperationRejectsAmbiguityAndExhaustion(t *testing.T) {
 	operation := Operation{
 		ReplicaID: "replica_a", Sequence: 2, OperationID: "replica_a:00000000000000000002",
 		Kind: "sync.noop", RecordType: "sync_noop", RecordID: "noop_2",
-		Payload: json.RawMessage(`{ "ok": true }`), CreatedAt: time.Unix(1, 0).UTC().Format(time.RFC3339Nano),
+		Payload: json.RawMessage(`{ "ok": true }`), HLC: HLC{WallMS: 1000}, CreatedAt: time.Unix(1, 0).UTC().Format(time.RFC3339Nano),
 		Dependencies: []OperationRef{{ReplicaID: "replica_b", Sequence: 1}, {ReplicaID: "replica_a", Sequence: 1}},
 	}
 	normalized, encoded, err := NormalizeOperation(operation)
@@ -118,6 +118,16 @@ func TestNormalizeOperationRejectsAmbiguityAndExhaustion(t *testing.T) {
 		t.Fatalf("DecodeOperation = %+v, %v", decoded, err)
 	}
 	bad := operation
+	bad.HLC = HLC{}
+	if _, _, err := NormalizeOperation(bad); !errors.Is(err, ErrInvalidState) {
+		t.Fatalf("zero HLC error = %v", err)
+	}
+	bad = operation
+	bad.HLC.Logical = MaxHLCLogical + 1
+	if _, _, err := NormalizeOperation(bad); !errors.Is(err, ErrInvalidState) {
+		t.Fatalf("HLC logical overflow error = %v", err)
+	}
+	bad = operation
 	bad.OperationID = "reused"
 	if _, _, err := NormalizeOperation(bad); !errors.Is(err, ErrInvalidState) {
 		t.Fatalf("bad operation id error = %v", err)

@@ -72,13 +72,13 @@ G4 implements the local durability foundation of this model in schema v19.
 Explicit enrollment records a full-snapshot boundary, and transaction-local
 capture produces monotonic immutable operations for canonical rows. Derived
 indexes/projections are excluded. The dependency/gap/ack/pending tables exist,
-G5 now implements bounded remote-operation admission and gap/dependency
-planning in schema v20 for explicitly configured local fixture peers. It does
-not apply record conflicts to canonical rows; convergence semantics, transport,
-authenticated enrollment, and cryptographic framing remain owned by G6 onward.
+G5 implements bounded remote-operation admission and gap/dependency planning;
+G6 applies deterministic metadata/register/tree convergence in schema v21 for
+explicitly configured local fixture peers. Note bodies, resources, transport,
+authenticated enrollment, and cryptographic framing remain later work.
 
-The live G5 compatibility tuple is protocol 1.0 with schema compatibility
-19-20 and required capabilities `sync.dependencies.v1`,
+The live G6 compatibility tuple is protocol 1.0 with schema compatibility 21
+and required capabilities `sync.dependencies.v1`, `sync.metadata-lww.v1`,
 `sync.operations.v1`, and `sync.state-vectors.v1`. Database ID and protocol
 major must match, ranges must intersect, every required capability must be
 understood, and unknown required record/kind pairs reject. A handshake never

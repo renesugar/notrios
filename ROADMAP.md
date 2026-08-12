@@ -257,7 +257,9 @@ queues, and transactional contiguous-vector/acknowledgement advancement. Three
 local replicas converge after shuffled, duplicated, and delayed delivery; a
 gap, rejection, restart, or injected rollback cannot claim progress. No
 canonical conflict/merge rule, transport, crypto, REST/MCP/UI surface, or
-automatic peer enrollment landed; G6 is next and approval-gated.
+automatic peer enrollment landed. G6 now adds deterministic metadata,
+membership, lifecycle, and notebook-tree convergence; G7 is next and
+approval-gated.
 
 - **Evidence before contracts (G0-G2, including G1a):** threat model and
   reference validation; representative revision/delta/three-way-merge
