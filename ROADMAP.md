@@ -247,8 +247,17 @@ mutation through one transaction-local journal seam with exact per-replica
 sequences. Rollbacks retain neither canonical nor operation rows; `target:
 none` before enrollment remains journal-free. The 100k import A/B recorded
 23.9% elapsed and 92.8% database-byte overhead for 300,000 operations. No
-transport, admission/merge engine, encryption, or UI landed; G5 is next and
-approval-gated.
+transport, admission/merge engine, encryption, or UI landed.
+
+**G5 completed 2026-08-12.** Schema v20 and the transport-neutral sync-state
+core now enforce the fixed database/protocol/schema/capability handshake for
+already configured fixture peers, bounded vector comparison and deterministic
+missing-range planning, exact replay detection, disk-backed gap/dependency
+queues, and transactional contiguous-vector/acknowledgement advancement. Three
+local replicas converge after shuffled, duplicated, and delayed delivery; a
+gap, rejection, restart, or injected rollback cannot claim progress. No
+canonical conflict/merge rule, transport, crypto, REST/MCP/UI surface, or
+automatic peer enrollment landed; G6 is next and approval-gated.
 
 - **Evidence before contracts (G0-G2, including G1a):** threat model and
   reference validation; representative revision/delta/three-way-merge

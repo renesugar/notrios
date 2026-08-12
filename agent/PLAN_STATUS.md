@@ -1,11 +1,11 @@
 # Plan Status
 
-Updated: 2026-08-12 (G4 local replication journal complete; G5 next)
+Updated: 2026-08-12 (G5 state-vector admission complete; G6 next)
 
 ## Active milestone
 
 **v0.1 through v0.6 are complete.** Product version is **0.6.0** and the
-canonical schema is **v19**. v0.6 F0-F7 are archived under `plans/v0.6/`;
+canonical schema is **v20**. v0.6 F0-F7 are archived under `plans/v0.6/`;
 earlier milestones remain under their version directories.
 
 `PLAN.md` is now the **active v0.7 native synchronization plan**. It contains
@@ -13,8 +13,33 @@ G0, G1, G1a, and G2-G20: evidence, profiles/local journal, state-vector converge
 revision deltas/merge, lazy resources, secure container/catch-up,
 ephemeral-directory and REST transports, jobs/UI/retention, shared-core/FFI/
 Mermaid/mobile handoff, compatibility, and final validation. The user's
-2026-08-11 review resolved every G0-G17 policy decision. **G0-G4 are complete**
-and archived under `plans/v0.7/`; G5 is next and is not approved.
+2026-08-11 review resolved every G0-G17 policy decision. **G0-G5 are complete**
+and archived under `plans/v0.7/`; G6 is next and is not approved.
+
+## v0.7 G5 completion — 2026-08-12
+
+- Added the transport/storage-neutral `internal/syncstate` core: fixed protocol
+  1.0, schema 19-20 compatibility, three required capabilities, bounded vector
+  validation/comparison, and deterministic capped missing-range plans.
+- Schema v20 persists an explicitly configured peer's compatibility tuple and
+  adds a hard local sequence-exhaustion trigger. A successful handshake never
+  auto-enrolls a peer; G9/G13 still own cryptographic proof-of-possession.
+- SQLite admission strictly normalizes bounded internal operation bytes,
+  refuses unknown record/kind pairs and conflicting replay, keeps gaps and
+  unavailable dependencies disk-backed, and atomically advances only newly
+  contiguous operation/dependency/vector/gap state. Returned acknowledgement
+  vectors exist only after commit.
+- Enforced 1,024 vector/range, 10,000 planned-sequence/skew/pending-operation,
+  16 MiB admission-call, 64 MiB per-peer pending, 1 MiB operation, 512 KiB
+  payload, and 64-dependency bounds. Overflow rolls back without eviction.
+- A 100-seed three-replica model and three real SQLite replicas converge after
+  shuffle, duplicates, and drop-then-deliver. Focused fixtures cover explicit
+  gaps, dependencies, compatibility mismatches, exact/conflicting replay,
+  unknown records, clock/sequence skew, restart, injected rollback,
+  acknowledgements, v19 upgrade, and local sequence exhaustion.
+- No canonical record apply/merge behavior, carrier, authenticated enrollment,
+  cryptography, REST/MCP/UI surface, or background sync landed. Product remains
+  0.6.0; schema is v20. G6 remains unapproved.
 
 ## v0.7 G4 completion — 2026-08-12
 

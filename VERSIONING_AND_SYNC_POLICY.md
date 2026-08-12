@@ -30,7 +30,13 @@ The v0.7 design is specified in `SYNCHRONIZATION.md`. Its invariants are:
   establishes a full-snapshot boundary, and every later sync-relevant canonical
   row mutation shares one transaction with its immutable local operation and
   contiguous-vector advance. `target: none` before enrollment remains
-  journal-free. G5+ still own remote admission and convergence.
+  journal-free.
+- G5 implements the receive-order half in schema v20: a bounded contiguous
+  vector never crosses a gap or missing dependency; exact replays are inert;
+  conflicting replays and compatibility/record mismatches refuse atomically.
+  It uses explicitly configured local fixture peers only and still exposes no
+  transport, authentication, REST/MCP, or record-merge behavior. G6+ own
+  canonical convergence.
 - Note bodies remain immutable saved revisions. A revision always binds its
   complete result hash/object and may carry a transfer delta from a named
   parent. G1 selected optional beneficial line-token deltas and exact

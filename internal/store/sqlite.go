@@ -182,6 +182,9 @@ func (s *SQLiteStore) Bootstrap(ctx context.Context) error {
 	if err := s.ensureSchemaV19(ctx); err != nil {
 		return err
 	}
+	if err := s.ensureSchemaV20(ctx); err != nil {
+		return err
+	}
 	if err := s.ensureDatabaseIdentity(ctx); err != nil {
 		return err
 	}
@@ -617,6 +620,17 @@ func (s *SQLiteStore) ensureSchemaV19(ctx context.Context) error {
 	migration, err := migrationFS.ReadFile("migrations/0019_sync_journal.sql")
 	if err != nil {
 		return fmt.Errorf("read schema v19 migration: %w", err)
+	}
+	return s.Exec(ctx, string(migration))
+}
+
+// ensureSchemaV20 adds G5's persisted peer compatibility tuple and a hard
+// sequence-exhaustion guard. Admission uses the G4 journal tables; it does not
+// need or create a transport outbox.
+func (s *SQLiteStore) ensureSchemaV20(ctx context.Context) error {
+	migration, err := migrationFS.ReadFile("migrations/0020_sync_admission.sql")
+	if err != nil {
+		return fmt.Errorf("read schema v20 migration: %w", err)
 	}
 	return s.Exec(ctx, string(migration))
 }

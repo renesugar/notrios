@@ -1,6 +1,6 @@
 # Security Review — Current Local Product and Planned Remote Surfaces
 
-This review reflects the current 0.6.0 repository (schema v19). Notrios is
+This review reflects the current 0.6.0 repository (schema v20). Notrios is
 local-first but
 its REST/MCP listener, importers, preview, downloaded media, archive files,
 published handoffs, and future sync transports are security boundaries.
@@ -218,6 +218,18 @@ rotation retires the old allocator. The journal is local plaintext canonical
 state. It is not authenticated, encrypted, admitted from a peer, or exposed to
 a transport/API; none of the later network/cryptographic controls below should
 be inferred from schema v19.
+
+G5 implements the non-cryptographic replay/gap boundary in schema v20. It
+requires an explicitly configured same-database peer compatibility tuple,
+validates protocol 1.0/schema 19-20/required capabilities, bounds vectors,
+ranges, operation bytes, dependencies, pending disk usage, and sparse sequence
+skew, and refuses unknown record/kind pairs. Exact normalized replay is inert;
+a conflicting operation ID or sequence is rejected. Pending or rejected input
+cannot advance a vector or acknowledgement, and an injected pre-commit failure
+rolls the whole admission back. This is not authentication: G5 fixture peer
+configuration carries no signing/encryption key and has no REST/MCP/transport
+surface. G9/G13 must replace that local seam with proof-of-possession enrollment
+and signed/encrypted artifacts before an untrusted carrier can call admission.
 
 `SYNCHRONIZATION.md` requires:
 

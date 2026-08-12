@@ -9,6 +9,8 @@ import (
 	"io"
 	"strings"
 	"time"
+
+	"github.com/renesugar/notrios/internal/syncstate"
 )
 
 var (
@@ -92,7 +94,7 @@ const (
 // CurrentSchemaVersion is the canonical SQLite schema understood by this
 // build. Archive-v2 manifests record this source schema but never include
 // derived FTS5 or Recoll state.
-const CurrentSchemaVersion = 19
+const CurrentSchemaVersion = 20
 
 // DatabaseIdentity separates the stable logical synchronization/archive
 // universe from one writable database copy. Copy/restore workflows preserve
@@ -909,6 +911,13 @@ type Store interface {
 	EnrollLocalJournal(ctx context.Context, reason string) (SyncJournalStatus, error)
 	JournalStatus(ctx context.Context) (SyncJournalStatus, error)
 	ListLocalOperations(ctx context.Context, afterSequence int64, limit int) ([]SyncOperation, error)
+	LocalSyncHandshake(ctx context.Context) (syncstate.Handshake, error)
+	ConfigureSyncAdmissionPeer(ctx context.Context, peer syncstate.Handshake) error
+	SyncStateVector(ctx context.Context) (syncstate.Vector, error)
+	PlanMissingSyncOperations(ctx context.Context, remote syncstate.Vector) (syncstate.MissingPlan, error)
+	AdmitSyncOperations(ctx context.Context, peer syncstate.Handshake, operations []syncstate.Operation) (SyncAdmissionResult, error)
+	RecordSyncPeerAcknowledgement(ctx context.Context, peer syncstate.Handshake) error
+	ListSyncOperations(ctx context.Context, replicaID string, afterSequence int64, limit int) ([]syncstate.Operation, error)
 	StableDocumentURI(ctx context.Context, documentID string) (string, error)
 	ResolveStableLink(ctx context.Context, uri string) (StableLinkResolution, error)
 	Status(ctx context.Context) (StoreStatus, error)

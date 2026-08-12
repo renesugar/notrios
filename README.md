@@ -3,10 +3,10 @@
 Notrios (formerly "Notes Companion") is a local-first note-taking, search, import, and publishing system for very large Markdown and document collections.
 It combines a Go REST/MCP service (`notriosd`), a built-in GUI, SQLite/FTS5-backed canonical storage, content-addressed resources, optional Recoll-derived search/extraction, and support for third-party native clients (C++/Qt, Go/Wails, Rust/Tauri) over the same API. A versioned no-GUI C ABI is planned before 1.0, followed by an independent post-1.0 Flutter client; mobile delivery does not depend exclusively on Wails.
 
-The v0.1 through v0.6 milestones are complete. v0.7 G0's threat model, G1's
-representative revision/delta/merge workload, G1a's pure-Go binary-delta
-feasibility investigation, and G2's envelope/resource bounds are complete; G3
-is next and unapproved — see
+The v0.1 through v0.6 milestones are complete. v0.7 G0-G5 are complete: threat
+and workload evidence, pure-Go binary-delta feasibility, bounded envelope and
+resource design, isolated runtime profiles, the local journal, and bounded
+state-vector admission. G6 is next and unapproved — see
 [`PLAN.md`](PLAN.md) and
 [`ROADMAP.md`](ROADMAP.md). The repository is
 structured so a coding agent can resume safely after usage limits or model
@@ -113,7 +113,10 @@ Recoll availability, backlog, sync/index, and reconciliation state.
   isolated paths and loopback ports, copied-database adopt/fork checks, and a
   verified two-daemon working state. G4 adds schema-v19 explicit enrollment and
   snapshot boundaries plus an atomic local operation journal over canonical
-  writes. No transport, merge, or cryptography is implemented yet.
+  writes. G5 adds the transport-neutral protocol-1.0 compatibility handshake,
+  bounded state vectors/missing-range planning, durable dependency queues,
+  exact replay handling, and atomic contiguous acknowledgement advancement in
+  schema v20. No transport, record merge, or cryptography is implemented yet.
 - Agent progress/attempt tracking: [`agent/PLAN_STATUS.md`](agent/PLAN_STATUS.md), [`agent/ATTEMPT_LOG.jsonl`](agent/ATTEMPT_LOG.jsonl), and [`agent/MODEL_LOG.jsonl`](agent/MODEL_LOG.jsonl).
 
 ## Contributing

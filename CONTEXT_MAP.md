@@ -7,8 +7,8 @@ This file is the codebase atlas. Update it whenever major files or directories a
 - `README.md` — project overview and quick start.
 - `PLAN.md` — the **active v0.7 native synchronization plan**, divided into
   twenty-two independently approvable slices (G0, G1, G1a, and G2-G20).
-  G0-G17 policy decisions are resolved; G0-G4 are complete and G5 is next but
-  unapproved. The current product remains 0.6.0 at schema v19; v0.6 is archived under
+  G0-G17 policy decisions are resolved; G0-G5 are complete and G6 is next but
+  unapproved. The current product remains 0.6.0 at schema v20; v0.6 is archived under
   `plans/v0.6/`; v0.5 and v0.4 are archived under their version directories.
 - `plans/scaffold/SCAFFOLD_CREATION_PLAN.md` — process for creating/refining this scaffold.
 - `ROADMAP.md` — product roadmap and future features.
@@ -42,10 +42,15 @@ This file is the codebase atlas. Update it whenever major files or directories a
 - `performance/v0.7-g4/` — reproducible 100k import A/B for the schema-v19
   local journal, including exact sequence count, elapsed throughput, and
   database-byte overhead.
+- `performance/v0.7-g5/` — G5 compatibility/bounds table and reproducible
+  three-replica model plus durable SQLite convergence validation map.
+- `internal/syncstate/` — transport/storage-neutral protocol-1.0 handshake,
+  bounded state-vector comparison, deterministic missing-range planner, strict
+  normalized operation model, and randomized three-replica property tests.
 - `internal/profiles/runtime.go` — G3 named runtime-profile creation, redacted
   views, registry/config/database startup binding, path/port/replica collision
   detection, and explicit copied-database adopt/fork handling.
-- `plans/v0.7/` — archived completed v0.7 slices G0-G4 plus the planning
+- `plans/v0.7/` — archived completed v0.7 slices G0-G5 plus the planning
   amendment that inserted G1a and the bundled-dependency maintenance pass.
 - `FLUTTER_GO_CLIENT.md` — verified Flutter/Dart FFI and Go build-mode facts,
   the pre-1.0 framework-neutral application facade/C ABI contract, post-1.0
@@ -76,7 +81,8 @@ This file is the codebase atlas. Update it whenever major files or directories a
 - `internal/api/` — shared API request/response models.
 - `internal/httpapi/` — REST HTTP adapter for status, documents, revisions, resources, links, graph slices, and staged future routes.
 - `internal/store/` — SQLite-backed persistence, schema-v19 local replication
-  journal (`sync_journal.go` and `migrations/0019_sync_journal.sql`), document
+  journal plus schema-v20 bounded admission (`sync_journal.go`,
+  `sync_admission.go`, and migrations `0019`/`0020`), document
   CRUD, revision history, soft delete, restore, FTS5 search, resource
   storage/reference reports (`sqlite_resource_reports.go`), retention-aware GC
   (`sqlite_gc.go`), importer batch/checkpoint/source-bundle state

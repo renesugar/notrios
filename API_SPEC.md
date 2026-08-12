@@ -522,6 +522,13 @@ POST   /api/v1/sync/snapshots/requests
 GET    /api/v1/sync/snapshots/{artifact_id}     # authorized encrypted range download
 ```
 
+G5 does not make any of these routes live. Its protocol-1.0 handshake,
+state-vector/missing-range planner, and operation admission APIs are internal
+Go/store seams for local fixtures only. They carry no authentication,
+encryption, or transport authority, and cannot be reached through REST or MCP.
+G9/G13 must add authenticated enrollment/framing before G12/G14 can expose a
+data plane.
+
 `POST /api/v1/batch` implements the bounded batch contract (v0.6 F1): `move`,
 `add_tags`, `remove_tags`, `trash`, `restore`, and `duplicate` over an explicit
 list of note IDs, in `best_effort` (default) or `atomic` mode. Every requested

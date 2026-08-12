@@ -1,7 +1,8 @@
 # Synchronization Architecture
 
-Status: design target for v0.7; G3 local runtime profiles are implemented but
-replication is not. `PLAN.md` contains twenty-two
+Status: design target for v0.7; G3-G5 implement isolated profiles, the local
+journal, and transport-neutral bounded admission, but no carrier or merge
+engine. `PLAN.md` contains twenty-two
 independently approvable slices (G0, G1, G1a, and G2-G20). No slice starts
 without resolution of its blocking decisions and explicit user approval.
 
@@ -59,19 +60,31 @@ database. A profile is not the MCP tool-visibility scope and is not replicated.
 G3 implemented that local lifecycle in 2026-08-12: registry/config/database
 binding, collision and staleness validation, explicit copied-database
 adopt/fork, active-profile status, and a two-process smoke are live. Sync target
-fields remain configuration only; no journal, enrollment, key, container,
-transport, or background transfer is implemented yet.
+fields initially remained configuration only. G4/G5 have since added local
+journal enrollment and transport-neutral admission, while keys, containers,
+carriers, and background transfer remain unimplemented.
 
 ## Replication model
 
 Use a small Notrios-specific, operation-based replication core:
 
-G4 now implements the local durability foundation of this model in schema v19.
+G4 implements the local durability foundation of this model in schema v19.
 Explicit enrollment records a full-snapshot boundary, and transaction-local
 capture produces monotonic immutable operations for canonical rows. Derived
 indexes/projections are excluded. The dependency/gap/ack/pending tables exist,
-but remote admission, convergence, transport, and cryptographic framing remain
-unimplemented and owned by G5 onward.
+G5 now implements bounded remote-operation admission and gap/dependency
+planning in schema v20 for explicitly configured local fixture peers. It does
+not apply record conflicts to canonical rows; convergence semantics, transport,
+authenticated enrollment, and cryptographic framing remain owned by G6 onward.
+
+The live G5 compatibility tuple is protocol 1.0 with schema compatibility
+19-20 and required capabilities `sync.dependencies.v1`,
+`sync.operations.v1`, and `sync.state-vectors.v1`. Database ID and protocol
+major must match, ranges must intersect, every required capability must be
+understood, and unknown required record/kind pairs reject. A handshake never
+enrolls a peer. Vectors and plans are capped at 1,024 entries/ranges and 10,000
+requested sequences; pending work stays disk-backed under 10,000-operation/64
+MiB per-peer bounds and a 10,000-position sparse-sequence window.
 
 1. A local write transaction allocates one or more consecutive operation IDs.
 2. Each committed batch receives an HLC (operations retain consecutive sequence

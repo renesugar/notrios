@@ -425,11 +425,12 @@ func TestSyncJournalCapturesTrashRestorePurgeAndStructuralChanges(t *testing.T) 
 	}
 }
 
-func TestSchemaV19UpgradeCreatesCompleteReplicationTables(t *testing.T) {
+func TestSchemaV18UpgradeCreatesCompleteReplicationTables(t *testing.T) {
 	st := newSyncJournalTestStore(t)
 	ctx := context.Background()
 	st.mu.Lock()
 	for _, statement := range []string{
+		`DROP TABLE sync_peer_compatibility`,
 		`DROP TABLE sync_journal_capture`,
 		`DROP TABLE sync_audit_events`,
 		`DROP TABLE sync_pending_admissions`,
@@ -453,14 +454,14 @@ func TestSchemaV19UpgradeCreatesCompleteReplicationTables(t *testing.T) {
 		t.Fatalf("Bootstrap upgrade: %v", err)
 	}
 	status, err := st.Status(ctx)
-	if err != nil || status.SchemaVersion != 19 {
+	if err != nil || status.SchemaVersion != CurrentSchemaVersion {
 		t.Fatalf("schema status: %+v err=%v", status, err)
 	}
 	for _, table := range []string{
 		"sync_replicas", "sync_snapshot_boundaries", "sync_local_journal",
 		"sync_operations", "sync_operation_dependencies", "sync_state_vectors",
 		"sync_state_gaps", "sync_peer_acknowledgements", "sync_pending_admissions",
-		"sync_audit_events", "sync_journal_capture",
+		"sync_audit_events", "sync_journal_capture", "sync_peer_compatibility",
 	} {
 		if got := syncCount(t, st, `SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = ?`, table); got != 1 {
 			t.Errorf("table %s count = %d", table, got)

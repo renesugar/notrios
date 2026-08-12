@@ -4,8 +4,9 @@ This document expands the SQLite schema represented by
 `migrations/0001_initial.sql` and the additive bootstrap upgrade shims in
 `internal/store/sqlite.go`. The baseline migration creates through schema v17;
 `ensureSchemaV18` adds `jobs`, and the dedicated
-`migrations/0019_sync_journal.sql` adds the local replication journal.
-`store.CurrentSchemaVersion` is 19. SQLite is the
+`migrations/0019_sync_journal.sql` adds the local replication journal while
+`migrations/0020_sync_admission.sql` adds G5 peer compatibility and sequence
+exhaustion protection. `store.CurrentSchemaVersion` is 20. SQLite is the
 authoritative store for managed notes, metadata, revisions, resource
 relationships, link graphs, media-policy decisions, import state, and jobs.
 Recoll is the optional derived index for front-matter field search, extraction,
@@ -320,7 +321,7 @@ admission path:
   stores explicit missing ranges. `sync_peer_acknowledgements` is separate from
   both because receipt and peer acknowledgement are different claims.
 - `sync_pending_admissions` is disk-backed and rejects an individual encoded
-  operation over 1 MiB. G5 owns aggregate count/byte admission enforcement.
+  operation over 1 MiB. G5 enforces aggregate count/byte admission limits.
 - `sync_audit_events` records enrollment and identity-retirement events now and
   reserves the bounded operational audit surface for later slices.
 
@@ -360,6 +361,40 @@ A profile with `target: none` does not accumulate pre-enrollment history. A
 non-none target establishes the boundary at service startup but starts no
 transport. Rotating/adopting identity retires and disconnects the previous
 allocator; the new replica must explicitly enroll from a new snapshot boundary.
+
+## Schema v20 — state-vector admission compatibility
+
+G5 adds `sync_peer_compatibility`, keyed by an explicitly configured peer
+replica. It persists the exact protocol major/minor range, schema and compatible
+schema range, and sorted required/optional capability arrays used to approve
+local admission fixtures. A successful handshake never inserts this row; the
+caller must configure the already known peer explicitly. Cryptographic
+proof-of-possession enrollment and key material do not belong in this table and
+remain G9/G13 work.
+
+The G4 tables now have live bounded semantics:
+
+- `sync_pending_admissions` holds strict normalized operation bytes while a
+  source sequence is out of order or a named operation dependency is absent.
+  One operation remains capped at 1 MiB; each source is capped at 10,000 rows
+  and 64 MiB, and one admission call at 10,000 rows/16 MiB.
+- `sync_state_vectors` advances only through the next contiguous, dependency-
+  complete sequence in the same transaction that moves it into
+  `sync_operations`. `sync_state_gaps` is rebuilt from durable pending positions
+  in that transaction. Neither pending nor rejected input is progress.
+- `sync_operation_dependencies` is populated at admission and remains part of
+  the immutable operation set. Exact operation replay is inert; a sequence or
+  operation ID reused for different normalized bytes is a conflict.
+- `sync_peer_acknowledgements` accepts only monotonic positions no higher than
+  the local durable vector and only for known replicas in the same database.
+
+`sync_journal_sequence_exhaustion` aborts the canonical statement before the
+local allocator can exceed `9223372036854775806`; SQLite must never silently
+promote an exhausted sequence integer. The G5-only `sync_noop/sync.noop` record
+pair exists solely for local convergence fixtures. It is not produced by a
+canonical-table trigger and is not a future-extension escape hatch: every
+other unknown record/kind pair is refused.
+
 ## Schema v5/v6 — Notrios redesign (tasks R3 and R4 implemented)
 
 Schema v5 (notebooks) and v6 (source provenance) are live in `migrations/0001_initial.sql` (with an `ensureSchemaV5` upgrade shim for v4 databases that adds `documents.notebook_id` and backfills existing rows into the default notebook). It adds the note-taking data model on top of the existing document tables:
@@ -415,10 +450,10 @@ Thread/link-graph traversal stays in SQLite; the Recoll index only carries searc
 Future migrations should be additive where possible. Any destructive change requires a migration note in `plans/` and a backup/export instruction.
 
 Later v0.7 sync schema is described semantically in `SYNCHRONIZATION.md` and
-split across `PLAN.md` G5-G17: HLC field/register state, peer key enrollment and
+split across `PLAN.md` G6-G17: HLC field/register state, peer key enrollment and
 revocation, revision parents/delta references, lazy-resource availability,
 tombstones/death certificates, conflicts, jobs, snapshot floors, and retention
 watermarks. G2 recommends bounded compact NCB1 operation records with per-kind
 canonical-JSON payloads, but G9 must promote or replace that evidence format
-deliberately; schema-v19 `payload_json` is local journal state, not the wire
+deliberately; schema-v20 `payload_json` is local journal/admission state, not the wire
 codec. Derived FTS/Recoll data remains excluded.

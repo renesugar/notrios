@@ -73,7 +73,7 @@ to delete. Resources referenced by any current or trashed note are protected.
 
 **Automatic creation:** on startup the service creates every configured
 directory and, if absent, the database itself, applying schema migrations to
-older databases automatically. The current schema is version 19.
+older databases automatically. The current schema is version 20.
 `/api/v1/status` reports the active runtime profile name/ID (when managed), resolved paths, database state, schema version,
 capability flags, search limits, remote-media policy, and optional Recoll
 backlog/sync/reconciliation state.

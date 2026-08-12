@@ -110,6 +110,7 @@ cd web && npm ci && npm audit && npm run typecheck && npm test -- --run && npm r
 bash scripts/mvp_smoke.sh
 bash scripts/run_performance_smoke.sh
 bash scripts/run_sync_journal_profile.sh /tmp/notrios-g4-journal.json
+go test ./internal/syncstate ./internal/store -run 'TestSyncAdmission|TestThreeReplicaModel'
 bash scripts/run_joplin_import_profile.sh 100 /tmp/notrios-joplin.json
 bash scripts/run_obsidian_import_profile.sh 100 /tmp/notrios-obsidian.json
 ```

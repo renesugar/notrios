@@ -1,7 +1,7 @@
 # Plan: v0.7 — Native synchronization
 
-Status: **G0-G4 completed through 2026-08-12. Product version remains 0.6.0 and the
-canonical schema is v19. G5 is the next item and is not approved.** The
+Status: **G0-G5 completed through 2026-08-12. Product version remains 0.6.0 and the
+canonical schema is v20. G6 is the next item and is not approved.** The
 former seven-item draft was too coarse: it mixed protocol research, canonical
 write interception, merge semantics, two transports, cryptography, recovery,
 UI, retention, and release validation into slices that could not be reviewed or
@@ -499,6 +499,40 @@ bounded pending dependencies; restart and crash boundaries.
   required capabilities must be understood; schema may differ only inside an
   explicit protocol compatibility range. Unknown required records are refused,
   never skipped.
+
+**Implementation defaults recorded before G5 code (2026-08-12; non-blocking).**
+
+- The internal admission contract starts at protocol `1.0`. Schema v20 is
+  compatible with v19-v20 peers that explicitly advertise that same range;
+  widening either range requires an explicit compatibility-table change.
+- A handshake validates an already configured peer and never enrolls one.
+  G5 exposes only an internal explicit local configuration seam for fixtures;
+  cryptographic/user-approved enrollment remains owned by G9/G13.
+- State-vector and missing-plan inputs are bounded at 1,024 replicas/ranges and
+  10,000 requested sequences per plan. An inbound sequence may be at most
+  10,000 positions ahead of its durable contiguous vector. These limits make
+  sparse-range work bounded; snapshot catch-up can replace repeated windows.
+- G2's approved pending ceiling applies unchanged: 10,000 operations and 64
+  MiB of encoded bytes per source replica, with 64 dependencies, 512 KiB of
+  payload, and 1 MiB per encoded operation. Overflow refuses the transaction;
+  it never evicts an arbitrary dependency.
+
+**Completed 2026-08-12.** Schema v20 persists the compatibility tuple for an
+explicitly configured admission peer and adds a hard local sequence-exhaustion
+guard. The transport-neutral `internal/syncstate` core validates protocol 1.0,
+database/schema/capability compatibility, compares bounded vectors, and emits
+deterministic bounded missing ranges. SQLite admission normalizes a strict
+internal operation representation, refuses unknown record/kind pairs and
+conflicting replays, queues gaps/dependencies on disk, and moves operations,
+dependencies, vector positions, explicit gaps, and the returned acknowledgement
+in one transaction. A gap never advances the vector; exact duplicates are
+counted without another write. Three real local replicas converge after
+shuffle, duplication, and drop-then-deliver schedules. Restart and injected
+pre-commit rollback retain the original pending/vector boundary. G5 adds no
+network/directory adapter, record merge/application semantics, cryptography,
+REST/MCP/UI surface, or background synchronization. Evidence is archived in
+`plans/v0.7/008-state-vectors-missing-range-idempotent-admission.md` and
+`performance/v0.7-g5/`.
 
 ## G6. Deterministic metadata, membership, deletion, and tree convergence
 
@@ -1122,6 +1156,6 @@ recommendation, blocking status, and consequence.
 | Current-GUI Mermaid baseline | G18 | Resolved fact: upstream-capable but disabled pending offline/security evidence |
 | Release version/schema bookkeeping | G20 | Open, non-blocking until wrap-up |
 
-G0-G4 are complete. G5 is the next implementable item, but is not approved.
-Implementation begins only after an explicit instruction naming G5; completing
-it still stops for a verified ZIP and approval before G6.
+G0-G5 are complete. G6 is the next implementable item, but is not approved.
+Implementation begins only after an explicit instruction naming G6; completing
+it still stops for a verified ZIP and approval before G7.

@@ -160,6 +160,18 @@ per enrolled note (document, revision, provenance), then records elapsed
 throughput and SQLite byte overhead. This is a desktop write-path bound; it is
 not envelope, transport, encryption, or mobile evidence.
 
+G5 adds two complementary state-vector layers. `internal/syncstate` runs a
+100-seed, three-replica model that shuffles, duplicates, drops, and eventually
+redelivers 25 operations per source while asserting that no contiguous vector
+crosses an absent sequence. `internal/store/sync_admission_test.go` repeats the
+critical schedule against real SQLite replicas and additionally covers
+dependency blocking/drain, deterministic missing plans, exact and conflicting
+replay, unknown records, compatibility refusal without auto-enrollment,
+sequence and byte/count ceilings, backward/ahead acknowledgements, wall-clock
+skew, restart, injected pre-commit rollback, and local sequence exhaustion.
+These are local fixtures only; they do not count as transport, cryptographic,
+or canonical-merge validation.
+
 SQLite's OFFSET cost grows linearly with skipped rows. In an ideal local
 1,000,000-row covering-index probe during the 2026-07 plan review, offsets
 10k/50k/100k/200k/500k/900k took approximately

@@ -39,7 +39,7 @@ Exit `0` when all required checks pass, `1` otherwise. Note that doctor *creates
 
 ```text
 ok    config           config/config.example.yaml
-ok    database         ./data/notes.sqlite (schema version 19)
+ok    database         ./data/notes.sqlite (schema version 20)
 info  web ui           web/dist missing here; run `make web` or serve API-only
 doctor: required checks passed
 ```
