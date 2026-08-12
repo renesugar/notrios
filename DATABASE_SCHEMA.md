@@ -362,6 +362,7 @@ replica enrollment, per-replica sequence allocation, immutable operations,
 contiguous state vectors and explicit gaps, HLC field/register state,
 acknowledgements, peer retirement/revocation, pending dependencies, revision
 parents/delta references, lazy-resource availability, tombstones/death
-certificates, conflicts, jobs, snapshot floors, and retention watermarks. Names
-and encodings remain open until G0-G2 evidence and the owning plan decisions are
-approved. Derived FTS/Recoll data is excluded.
+certificates, conflicts, jobs, snapshot floors, and retention watermarks. Exact
+names and encodings are investigation/implementation outputs after G0-G2; the
+governing policy decisions were resolved 2026-08-11. Derived FTS/Recoll data is
+excluded.

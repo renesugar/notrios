@@ -10,11 +10,28 @@ organizer transactions), F2 (MCP tool scopes), F3 (MCP read coverage and HTTP
 readable at scale), F6 (job control plane), and F7 (documentation and release
 wrap-up). The thirteen v0.5 slices remain archived under `plans/v0.5/`.
 
-`PLAN.md` now holds the **replacement v0.7 native synchronization draft** with
-twenty-one independently approvable slices, G0-G20. **No v0.7 task is
-approved**; the next possible item is G0 (threat model, terminology, and
-reference validation), but its blocking encryption/signature decisions need
-user review before work begins.
+`PLAN.md` now holds the **second-round v0.7 native synchronization draft** with
+twenty-one independently approvable slices, G0-G20. The user's 2026-08-11
+review resolved the policy decisions through G17, including mandatory payload
+encryption and per-replica Ed25519 signatures. **No v0.7 task is approved**;
+the next possible item is G0 (threat model, terminology, and reference
+validation), which is now decision-ready but starts only after an explicit
+instruction naming it.
+
+That review also added a second portability route. v0.8 now investigates and
+builds a framework-neutral Go application facade and versioned no-GUI C ABI,
+with Android-emulator-only pre-1.0 evidence; v1.0 packages the supported ABI
+matrix; and a post-1.0 Flutter client owns physical mobile and native-desktop
+delivery. Dart FFI is not the Flutter Web bridge. `FLUTTER_GO_CLIENT.md` records
+the API/lifecycle/ownership/stream contract and source checks. The current GUI's
+Mermaid support is **disabled**, not merely untested (`noMermaid: true`), and a
+v0.8 offline/security-tested enablement slice owns it.
+
+Latest validation (2026-08-11) passed Go vet/tests, required-file and plan-loop
+checks, scaffold validation, frontend typecheck/all 155 tests/build, docs-site
+build, whitespace checks, and source-ZIP verification. `npm ci` still reports
+the existing 1 moderate and 2 high advisories; this planning pass changed no
+dependencies.
 
 Two things a reader continuing this project should know about v0.6:
 

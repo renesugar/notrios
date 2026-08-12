@@ -5,9 +5,10 @@ This file is the codebase atlas. Update it whenever major files or directories a
 ## Root documents
 
 - `README.md` — project overview and quick start.
-- `PLAN.md` — the **replacement v0.7 native synchronization draft**, divided
-  into twenty-one independently approvable slices (G0-G20). No v0.7 slice is
-  approved. v0.6 is complete at product 0.6.0/schema v18 and archived under
+- `PLAN.md` — the **revised v0.7 native synchronization draft**, divided into
+  twenty-one independently approvable slices (G0-G20). G0-G17 policy decisions
+  are resolved, but no v0.7 slice is approved. v0.6 is complete at product
+  0.6.0/schema v18 and archived under
   `plans/v0.6/`; v0.5 and v0.4 are archived under their version directories.
 - `plans/scaffold/SCAFFOLD_CREATION_PLAN.md` — process for creating/refining this scaffold.
 - `ROADMAP.md` — product roadmap and future features.
@@ -22,6 +23,10 @@ This file is the codebase atlas. Update it whenever major files or directories a
   state-vector/change-log and revision-merge rules, lazy resources,
   archive/envelope security, ephemeral-directory and REST transports, snapshot
   catch-up, retention, library decision, and validation.
+- `FLUTTER_GO_CLIENT.md` — verified Flutter/Dart FFI and Go build-mode facts,
+  the pre-1.0 framework-neutral application facade/C ABI contract, post-1.0
+  Flutter client split, memory/stream ownership, platform limits, and the fact
+  that current-GUI Mermaid support is disabled pending v0.8 evidence.
 - `NATIVE_ARCHIVE_V2.md` — v2 identity, manifest-last object/record contract,
   compatibility/limits, explicit restore intent, verification rules, P3 export
   staging/resume semantics, the P3a index-chunk container, the optional P3b
@@ -79,7 +84,9 @@ This file is the codebase atlas. Update it whenever major files or directories a
   link decorations, and Ctrl-click — through the CodeMirror 6 hooks
   `md-editor-rt` already exposes, plus the UTF-8-byte to UTF-16-index conversion
   the service boundary needs. `src/editor-assets.ts` supplies KaTeX,
-  highlight.js, and cropper locally so nothing is fetched from a CDN (v0.5 E6a).
+  highlight.js, and cropper locally so nothing is fetched from a CDN (v0.5 E6a),
+  and explicitly sets `noMermaid: true` until the planned offline/security-tested
+  v0.8 enablement.
   `src/html-table-markdown.ts` converts a pasted HTML table into a Markdown pipe
   table and refuses anything a pipe table cannot hold (v0.5 E6b).
   `src/note-query.ts` renders embedded ```note-query blocks after the note has

@@ -161,7 +161,10 @@ Write tools require explicit scopes and revision preconditions.
   `restore_revision` remain withheld pending a separately approved design;
 - `run_batch` is implemented at `organizer`; its response contains the complete
   bounded outcomes, so there is no separate `get_batch_status`;
-- the exact v0.7 sync control set is an open G15 decision in `PLAN.md`.
+- v0.7 G15's resolved policy permits plan/start ordinary incremental sync,
+  bounded resource fetch, and status/conflict inspection at an explicit sync
+  scope; it withholds enrollment, keys, backups, restore, retirement, purge,
+  another actor's catch-up cancellation, and bulk bytes.
 
 MCP does not carry native archives, change envelopes, or arbitrary blob bytes
 in model context. Those use REST/object transfer; MCP returns job IDs and

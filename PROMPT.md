@@ -14,11 +14,12 @@ Read these files first:
 8. `DATABASE_SCHEMA.md`
 9. `NOTEBOOKS_AND_SEARCH_NOTEBOOKS.md`, `SEARCH_QUERY_LANGUAGE.md`, `RECOLL_INTEGRATION.md`
 10. `TESTING_POLICY.md`
-11. `CONTEXT_MAP.md`
-12. `agent/PLAN_STATUS.md`
-13. `agent/ATTEMPT_LOG.jsonl`
-14. `agent/MODEL_LOG.jsonl`
-15. `agent/OPEN_QUESTIONS.md`
+11. `FLUTTER_GO_CLIENT.md`
+12. `CONTEXT_MAP.md`
+13. `agent/PLAN_STATUS.md`
+14. `agent/ATTEMPT_LOG.jsonl`
+15. `agent/MODEL_LOG.jsonl`
+16. `agent/OPEN_QUESTIONS.md`
 
 Then:
 
@@ -30,7 +31,9 @@ Then:
 6. Run validation.
 7. Update `agent/PLAN_STATUS.md`.
 8. Append a `completed` or `blocked` entry to `agent/ATTEMPT_LOG.jsonl`.
-9. Commit the working-state slice with git; if the plan step is complete, archive it under `plans/v0.2/` and ask before starting the next task.
+9. Commit the working-state slice with git; if the plan step is complete,
+   archive it under `plans/v<major>.<minor>/`, create and verify the requested
+   evidence ZIP, and ask before starting the next task.
 
 Important constraints:
 

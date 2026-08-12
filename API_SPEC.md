@@ -548,10 +548,10 @@ candidate on ambiguity, and never guesses across database IDs. The `profiles`
 REST routes below remain planned; the registry is local desktop configuration
 today, not an HTTP surface.
 
-The sync surface is conceptual until v0.7. The replacement plan does not
-pre-approve its old MCP start/cancel claim: G15 decides the bounded control set,
-while enrollment, keys, backup export/restore, peer retirement, and bulk bytes
-remain outside MCP. REST and the ephemeral directory carry the same encrypted,
+The sync surface is conceptual until v0.7. The resolved G15 policy lets MCP
+plan/start ordinary incremental sync, request a bounded resource fetch, and
+inspect status/conflicts; enrollment, keys, backup export/restore, peer
+retirement, purge, and bulk bytes remain outside MCP. REST and the ephemeral directory carry the same encrypted,
 signed artifacts; full algorithms and compatibility rules are in
 `SYNCHRONIZATION.md`.
 
@@ -630,6 +630,12 @@ Remaining known gaps: remote starting of path-taking import/export jobs
 (deliberately withheld in v0.6 F6), REST routes for the local database registry
 and publication profiles, and sync (v0.7). Job watch/cancel, bulk organizer
 operations, and HTTP `Range` on resource content are implemented.
+
+A planned pre-1.0 no-GUI C ABI does not create another set of REST routes. It
+reuses transport-neutral application request/response semantics and adds the
+in-process contracts HTTP normally supplies: instance lifecycle, ABI/capability
+versioning, opaque handles, typed errors, cancellation/polling, bounded streams,
+and explicit result-buffer ownership. See `FLUTTER_GO_CLIENT.md`.
 
 ## MCP MVP endpoint
 

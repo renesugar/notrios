@@ -65,6 +65,7 @@ This matrix keeps the long conversation compressed into implementation-sized fea
 |---|---:|---|---|
 | React + Vite built-in UI | MVP | web UI | Basic browser client embedded in the service; becomes the Wails webview frontend. |
 | Go/Wails v2 built-in GUI (`-no-gui`/`-gui-only`, themes) | Implemented | GUI | Desktop release shell. |
+| Mermaid diagrams in current GUI | Planned v0.8 | GUI | `md-editor-rt` is capable, but Notrios currently sets `noMermaid: true` after the offline-assets hardening. Requires a pinned local renderer plus CSP, sanitization, size/error, browser, and Wails evidence before enablement. |
 | `md-editor-rt` editor/preview | MVP | web UI | Initial polished editor; wrap behind an adapter. |
 | Preview link interception | MVP | web UI | `document://` opens note; `resource://` opens/downloads resource. |
 | Resource upload/paste | MVP | web UI + REST | Images/PDFs become local resources, not inline base64. |
@@ -73,7 +74,10 @@ This matrix keeps the long conversation compressed into implementation-sized fea
 | Math rendering (KaTeX) | Implemented | web UI | `$…$` and `$$…$$` render, offline included since E6a. FTS indexes the LaTeX source, not the rendered output — searching `mc^2` finds the note. |
 | HTML paste to Markdown | Implemented | web UI | v0.5 E6b: a pasted HTML table becomes a Markdown pipe table, so blocks, link extraction, and portable export can see into it. Refuses merged cells, ragged rows, nested blocks, multi-line cells, and pastes that merely contain a table — every refusal falls through to the ordinary paste, so nothing pasted is lost. Parsing is inert `DOMParser`; no HTML is re-emitted. |
 | Four-pane layout | Implemented | web UI | Accessible splitters and independent scrolling. |
-| Wails v3/mobile migration | Planned v0.8 spike | GUI | Desktop v3 is beta; Android/iOS remain experimental. Requires Wails v2 desktop parity, rollback, and real Android gates. |
+| Wails v3/mobile migration | Planned v0.8 spike | GUI | Optional route, not the only mobile plan. Requires Wails v2 desktop parity and rollback; pre-1.0 mobile evidence is emulator-only. |
+| Framework-neutral Go application facade | Planned v0.8 | core | Shared semantics for REST, Wails, and the no-GUI C ABI; transport adapters do not own business rules. |
+| Versioned no-GUI Go C ABI/shared library | Planned pre-1.0 (v0.8-v1.0) | core/packaging | Opaque handles, bounded serialized calls, typed errors, cancellation/polling, streams, and explicit memory ownership. Android emulator only before 1.0. |
+| Flutter/Go universal native client | Planned post-1.0 | GUI | Android/iOS/Linux/macOS/Windows over Dart FFI. `flutter_smooth_markdown` and secure storage are candidates pending evidence; Flutter Web uses REST or a separate Wasm adapter. |
 | Editor link intelligence | Implemented | web UI + service | v0.5 E5: `GET /api/v1/links/suggest` (bounded title autocomplete, IDs and titles only) and `POST /api/v1/links/check` (unsaved-buffer link resolution through the canonical extractor). E6 added the in-editor half: `[[` autocomplete, wavy underlines on broken links that map through edits, and Ctrl-click to open a target. Everything degrades to nothing when the service is unreachable. |
 | CodeMirror 6 + unified migration | Declined | web UI | v0.5 E6: `md-editor-rt` **is** CodeMirror 6 and exposes it, so the capabilities the migration was for cost 1.3 kB gzipped through its existing hooks. The remaining argument — dropping `@codemirror/language-data`'s 113 lazy chunks — does not justify re-implementing preview, sanitizer, toolbar, upload, and theming. `PROJECT_DECISIONS.md` 20. |
 | Third-party native clients | Optional/research | separate client | Use stable REST/MCP. |
@@ -102,7 +106,7 @@ This matrix keeps the long conversation compressed into implementation-sized fea
 | Tool visibility scopes | Implemented | MCP adapter | v0.6 F2: four cumulative scopes — `search-only`, `read-only` (default), `editor`, `organizer` — enforced **at the call site**, not only by filtering `tools/list`; before F2 a hidden read tool answered when called directly. One table drives both the listing and the check, and a test walks every registered tool against every scope so a tool cannot ship unclassified. No `administrator` scope: whole-library destructive operations are unreachable over MCP at any scope, so it would name an empty set. `mcp.default_profile` renamed to `mcp.default_scope`, old key kept as a deprecated alias with the narrower winning on conflict. A scope is a guardrail on one's own agent, not authorization. |
 | LLM surgical edits | Implemented | document service | SEARCH/REPLACE, dry-run, revision preconditions. |
 | Batch organizer transactions | Implemented | document service | v0.6 F1: `POST /api/v1/batch` over an explicit note list — move, add_tags, remove_tags, trash, restore, duplicate — in `atomic` or `best_effort` mode. Every requested item gets an outcome in both modes (applied / skipped / failed / rolled_back), so a caller always knows which half happened. `trash` is revision-preconditioned per item. `request_key` gives exactly-once through a persisted ledger (schema v17), replaying the first run's outcomes verbatim; a reused key with different arguments is refused. Bounded at 500 items, refused rather than truncated. Stable Markdown-link copy is not an operation here — it produces text for a clipboard rather than changing the library. |
-| Sync MCP control plane | Planned v0.7 G15 | MCP adapter | Exact bounded start/cancel/status/conflict set remains an owning-item decision; no keys, backups, restore, enrollment, retirement, or bulk bytes in context. |
+| Sync MCP control plane | Planned v0.7 G15 | MCP adapter | Resolved policy: plan/start ordinary incremental sync, bounded resource fetch, and status/conflict inspection at sync scope; no keys, backups, restore, enrollment, retirement, purge, or bulk bytes in context. |
 
 ## Publishing and knowledge-base maintenance
 
@@ -130,9 +134,9 @@ This matrix keeps the long conversation compressed into implementation-sized fea
 |---|---:|---|---|
 | SQLite revision restore | Implemented | document service | Restore creates a new revision. |
 | Native record-level sync | Planned v0.7 | sync service | Transactional change log, contiguous state vectors, revision-aware three-way merge, lazy resources, acknowledgement/retention; see `PLAN.md` G0-G20. |
-| REST/ephemeral-directory transports | Planned v0.7 | sync service | One object/envelope protocol with encryption/signatures proposed as blocking G0 decisions; directory is disposable and reconstructible; rclone is test carrier only; target `none` supported. |
+| REST/ephemeral-directory transports | Planned v0.7 | sync service | One object/envelope protocol with mandatory payload encryption and per-replica Ed25519 signatures; directory is disposable and reconstructible; rclone is test carrier only; target `none` supported. |
 | Snapshot catch-up/reset | Planned v0.7 | archive/sync | Signed request, encrypted archive-v2 snapshot/ZIP, explicit restore intent, then incremental replay from its state-vector boundary. |
-| Install/config/mobile portability | Planned v0.8 | packaging/GUI | Installed-path/permission/credential-store work plus separately gated Wails v3/real-Android spike. |
+| Install/config/mobile portability | Planned v0.8 | packaging/GUI | Installed-path/permission/credential-store work, shared-core/C-ABI build, Android-emulator smoke, and separately gated Wails v3 spike. Physical mobile release gates are post-1.0. |
 | Backup/restore replace/merge/fork/adopt | Implemented | archive/sync | No default; verification completes before writes; replace/adopt/fork rotate replica identity while in-place merge retains the target replica. A schema-v13 `restore_state` marker makes an interrupted restore visible, and only `replace` recovers it. |
 | Yjs-compatible live co-editing | Optional/research | editor service | Separate from database sync. |
 | go-git/Fossil checkpoints | Optional/research | version adapter | Projection history, never canonical sync. |

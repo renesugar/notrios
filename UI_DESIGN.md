@@ -191,6 +191,14 @@ with `script-src 'self'` so a future dependency cannot reintroduce the problem
 quietly. The rule is: anything the editor would fetch is either bundled or
 turned off.
 
+That rule currently turns Mermaid off. `md-editor-rt` 6.5.3 contains an optional
+Mermaid integration, but `web/src/editor-assets.ts` sets `noMermaid: true`; the
+current Notrios GUI therefore renders a fenced Mermaid block as code, not as a
+diagram. v0.8 may enable it only after pinning/bundling the renderer locally and
+passing offline-network, CSP, sanitization, malformed/oversized-diagram,
+browser, and Wails tests. “The dependency supports Mermaid” is not evidence that
+the application does.
+
 ## Required behavior (carried over from the web-UI MVP)
 
 - Create, edit, save, and search Markdown notes.
@@ -216,14 +224,24 @@ turned off.
   pending/corrupt or lazy objects, behind/retired peers, body conflicts,
   encrypted-backup prompts, and notebook-tree repairs.
 
-## Mobile investigation
+## Mobile and alternate-client investigation
 
 Wails v3 documents reuse of one `main.go` and frontend on desktop, iOS, and
 Android. v3 is now beta for desktop while mobile support remains experimental.
-Keep Wails v2
-as the release shell until an approved migration spike passes desktop
-regression plus real Android validation. The UI will need a mobile layout (not
-four simultaneous panes), safe-area handling, lifecycle/background transfer,
-sandboxed file picking/export, touch targets, and memory tests. Sync/library
-interfaces must remain UI-framework independent so mobile work can proceed
-without redesigning the protocol.
+Keep Wails v2 as the release shell until an approved migration spike passes
+desktop regression. Pre-1.0 mobile evidence is Android-emulator-only; physical
+device validation moves to the post-1.0 client gate.
+
+Wails is not the only mobile route. v0.8 adds a framework-neutral Go
+application facade and versioned no-GUI C ABI; a post-1.0 Flutter client uses it
+on Android, iOS, Linux, macOS, and Windows. Flutter Web continues over REST or
+requires its own Wasm/JavaScript adapter because `dart:ffi` is a native-platform
+facility. `flutter_smooth_markdown` is only a candidate until a spike proves
+source round-trip, Notrios link/resource behavior, Mermaid fidelity,
+sanitization, accessibility, and large-note performance. See
+`FLUTTER_GO_CLIENT.md`.
+
+Either mobile UI needs a non-four-pane layout, safe-area handling,
+lifecycle/background transfer, sandboxed file picking/export, touch targets,
+and memory tests. Sync/library interfaces remain UI-framework independent so
+mobile work does not redesign the protocol.

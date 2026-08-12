@@ -193,6 +193,8 @@ question, and are not on the original list.
 This is the first milestone that merges independently changed canonical state,
 so the replacement `PLAN.md` divides it into **twenty-one independently
 approvable items (G0-G20)** rather than the former six implementation groups.
+The user's 2026-08-11 review resolved the G0-G17 policy decisions; no item is
+approved for implementation merely by resolving its decisions.
 Every completed item leaves a verified ZIP in the evidence directory and waits
 for approval before the next begins. See `VERSIONING_AND_SYNC_POLICY.md` and
 `SYNCHRONIZATION.md`.
@@ -206,7 +208,7 @@ for approval before the next begins. See `VERSIONING_AND_SYNC_POLICY.md` and
   convergence; complete note-revision objects with optional transfer deltas and
   visible three-way conflicts; lazy, hash-verified resource materialization.
 - **Secure container and catch-up (G9-G10):** archive-v2 change-envelope
-  capabilities; authenticated encryption and proposed per-replica Ed25519
+  capabilities; mandatory authenticated encryption and per-replica Ed25519
   signatures; signed backup requests; encrypted snapshot/ZIP catch-up and reset
   followed by incremental replay from the snapshot vector.
 - **Two carrier adapters, one protocol (G11-G15):** an ephemeral shared
@@ -215,10 +217,11 @@ for approval before the next begins. See `VERSIONING_AND_SYNC_POLICY.md` and
   without an rclone dependency; REST authentication/pairing/TLS/quota/audit
   foundation; resumable REST objects and backup downloads; durable jobs,
   retry/backpressure, and bounded MCP status/control.
-- **User recovery and safe retention (G16-G18):** pairing/profile/directory,
+- **User recovery, safe retention, and portability handoff (G16-G18):** pairing/profile/directory,
   encrypted-backup, lazy-resource, conflict and reset UI; explicit peer
-  retirement and acknowledgement/snapshot-gated tombstone/blob GC; a platform
-  and permissions contract handed to the distinct v0.8 milestone.
+  retirement and acknowledgement/snapshot-gated tombstone/blob GC; a platform,
+  shared-core/C-ABI, and Mermaid contract handed to the distinct v0.8 milestone
+  and post-1.0 Flutter client.
 - **Compatibility and completion (G19-G20):** publish the archive-v2 contract
   deferred from v0.4 P6 after the sync-era container stabilizes, then run full
   multi-peer convergence, security, disaster-recovery, large-corpus, API/docs,
@@ -253,13 +256,31 @@ Research outcomes:
 - Optional go-git/Fossil/Obsidian adapters remain projections/checkpoints, not
   the canonical merge protocol.
 
-## v0.8 — Installation, configuration, and mobile portability
+## v0.8 — Installation, configuration, shared core, and portability
 
 This is deliberately separate from synchronization correctness. Packaging
 changes which directories, credentials, ports, background work, deep links, and
 file pickers an installed application may use, and those permissions must not
 be smuggled into v0.7 as desktop assumptions.
 
+- **H0 investigation — application facade and C ABI.** Audit the existing
+  `internal/service`/HTTP split, validate `c-shared`/`c-archive`, SQLite/cgo,
+  ownership, cancellation, threads, packaging, and Android-emulator premises,
+  then freeze the minimal versioned contract described in
+  `FLUTTER_GO_CLIENT.md`. This investigation comes before a bridge because the
+  desktop, Android, and iOS packaging costs differ materially.
+- **H1 shared core — no-GUI Notrios library.** Extract one transport-neutral
+  application facade used by REST and a small `cmd/notrioslib` wrapper. Build a
+  C ABI with opaque instance/stream handles, bounded serialized calls, typed
+  errors, cancellation/polling, capability/version query, and explicit buffer
+  ownership. Keep bulk data on bounded stream/range paths. Validate desktop
+  libraries and one Android-emulator host; document unsupported platforms
+  honestly. The pre-1.0 artifact is a backend/library, not a Flutter app.
+- **H2 current-GUI Mermaid evidence and enablement.** Start from the measured
+  fact that Notrios sets `noMermaid: true`. Pin and bundle the optional renderer
+  locally, preserve CSP/sanitization and zero-CDN behavior, bound malformed and
+  oversized diagrams, and test fixtures in a browser and Wails before changing
+  the feature status. Keep fenced source visible on failure.
 - Select self-contained application-data/config/cache locations per OS and
   migrate source-checkout defaults without losing data.
 - Package the built web UI and required SQLite/runtime dependencies with the
@@ -269,17 +290,20 @@ be smuggled into v0.7 as desktop assumptions.
   in installed Linux, Windows, and macOS builds.
 - Select and test native credential-store implementations behind v0.7's secret
   interface. `zalando/go-keyring` currently documents macOS, Linux/BSD, and
-  Windows only and is not the Android answer.
+  Windows only and is not the Android answer. Record `flutter_secure_storage`
+  only as a post-1.0 Flutter-side candidate with platform-specific prerequisites.
 - Run a separately approved Wails v3 migration spike. Wails v3 is currently
   beta for desktop; Android/iOS support is explicitly experimental. Preserve
   Wails v2 until desktop regression, dependency/license, and rollback gates
   pass.
-- Android first: compile and run on a physical device; validate scoped storage
-  and the Storage Access Framework, app sandbox/database/assets, secure storage,
-  lifecycle/background transfer, notifications, responsive UI, memory/disk/
-  battery bounds, pairing, catch-up, incremental sync, and encrypted backup.
-- iOS follows only after the Android/core seams are proven and an Apple/Xcode
-  test environment is available.
+- Before 1.0, mobile work stops at an Android emulator: compile/load the shared
+  library and smoke instance lifecycle, SQLite, CRUD/search, a bounded resource
+  stream, cancellation, and sync capability negotiation. This is architecture
+  evidence, not a supported mobile release or a battery/background claim.
+- Physical Android and all iOS client validation follow after 1.0. Record the
+  scoped-storage/Storage Access Framework, sandbox/database/assets, secure
+  storage, lifecycle/background transfer, notification, memory/disk/battery,
+  pairing, catch-up, incremental-sync, and encrypted-backup gates now.
 - Produce installable prerelease artifacts for internal evidence, not a public
   GitHub release.
 
@@ -291,8 +315,9 @@ be smuggled into v0.7 as desktop assumptions.
   audit, reproducible artifact metadata, rollback and disaster-recovery drills.
 - Long-running directory/REST/mobile soak tests, compatibility matrix, support
   bundle/redaction, crash reporting policy, and release documentation.
-- Freeze REST, MCP, archive, sync, configuration, and installer compatibility
-  candidates for 1.0.
+- Freeze REST, MCP, archive, sync, configuration, installer, and shared C ABI
+  compatibility candidates for 1.0. Run ABI ownership/leak/double-free,
+  wrong-handle, concurrent-shutdown, cancellation, and stream-limit tests.
 
 ## v1.0 — Feature-complete local product
 
@@ -301,6 +326,10 @@ be smuggled into v0.7 as desktop assumptions.
 - Large-scale performance tests with hundreds of thousands of documents/resources.
 - Installable signed artifacts for supported desktop platforms, with an
   explicitly documented mobile support level.
+- Versioned no-GUI Notrios library/header artifacts for the pre-1.0 supported
+  platform matrix, with lifecycle, ownership, threading, error, stream, and
+  compatibility examples. An Android-emulator result is not labelled physical
+  Android support; unsupported iOS artifacts are not implied.
 - Backup/export/restore/sync compatibility and disaster-recovery validation.
 - Security review for remote media and MCP.
 - Usable documentation for Gitea/GitHub public release.
@@ -308,10 +337,31 @@ be smuggled into v0.7 as desktop assumptions.
   version tag, checksums, signatures, SBOM/provenance, release notes, upgrade and
   rollback instructions, installable artifacts, and readback verification.
 - Desktop remains on stable Wails v2 until a separately approved Wails v3
-  migration spike passes desktop regression and real Android tests. Wails v3
+  migration spike passes desktop regression; any physical Android claim waits
+  for the post-1.0 device gate. Wails v3
   currently offers a shared desktop/iOS/Android codebase; v3 desktop is beta
   and mobile remains experimental, with Android/iOS storage, lifecycle,
   background, credential, and file-dialog constraints.
+
+## Post-v1.0 — Flutter/Go universal native client
+
+- Start with a separately approved dependency and architecture spike. Evaluate
+  `flutter_smooth_markdown` for Markdown round-trip fidelity, Notrios links and
+  resources, its Mermaid grammar, sanitization, accessibility, large-note
+  performance, maintenance, and BSD-3-Clause-compatible dependency tree; its
+  advertised feature list is not acceptance evidence.
+- Build one Flutter UI for phones, tablets, laptops, and desktops over the
+  versioned Notrios C ABI on Android, iOS, Linux, macOS, and Windows. Keep
+  profile, job, stream, sync, and secret-store lifecycle explicit.
+- Validate physical Android first, then iOS when Apple/Xcode hardware is
+  available, then the desktop targets. Responsive layout, touch/keyboard,
+  accessibility, lifecycle/background behavior, file pickers, secure storage,
+  deep links, pairing, catch-up, sync, conflict resolution, and encrypted
+  backup are release gates.
+- Flutter Web is not covered by `dart:ffi`. A web build continues over REST or
+  requires its own approved Go-Wasm/JavaScript-interoperability investigation.
+- Wails mobile remains an alternative if it reaches production quality; the
+  two clients share the core contracts rather than making either UI canonical.
 
 ## Future candidates
 
@@ -322,7 +372,8 @@ be smuggled into v0.7 as desktop assumptions.
   that fine-grained permissions are not supported — its collaborators all get
   the owner's rights. It needs an `author` concept first, which Notrios has no
   field for today; see `agent/OPEN_QUESTIONS.md`.
-- Native third-party clients over the public REST/MCP API (C++/Qt, Rust/Tauri, additional Go/Wails clients).
+- Native third-party clients over the public REST/MCP API or the versioned C ABI
+  (C++/Qt, Rust/Tauri, additional Go/Wails clients).
 - LadybugDB derived graph backend for advanced graph traversal and analytics.
 - Semantic/vector search.
 - More importers.

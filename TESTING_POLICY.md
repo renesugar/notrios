@@ -582,6 +582,32 @@ The Wails webview is not covered, for the same reason as E6: WebKitGTK does not
 speak the DevTools Protocol. The CSP reaches it by construction, since the Wails
 asset server routes every webview request through the same `handleWebApp`.
 
+Mermaid is deliberately absent from this passing baseline:
+`web/src/editor-assets.ts` sets `noMermaid: true`. A v0.8 enablement slice must
+first add fixtures for supported diagrams, malformed syntax, HTML/URL payloads,
+oversized node/edge/text counts, time/memory bounds, fallback-to-source, theme
+changes, zero cross-origin requests, CSP, and preview sanitization. It then runs
+those fixtures in real Chrome and performs a Wails smoke check. Merely removing
+`noMermaid` or asserting that the upstream package advertises the feature does
+not satisfy the test.
+
+### Planned shared C ABI and Flutter evidence
+
+The pre-1.0 C ABI requires tests at both sides of the boundary: ABI/capability
+version mismatch, open/close, multiple isolated instances, wrong/stale handles,
+caller- and library-owned buffer conventions, leaks, double free, bounded JSON,
+stream range/EOF/error, cancellation, polling, concurrent shutdown, logging and
+secret redaction, and semantic parity with the equivalent REST operation. Bulk
+blobs and archives must prove bounded streaming rather than one serialized
+allocation.
+
+Before 1.0, mobile validation stops at an Android emulator loading the library
+and smoking lifecycle, SQLite, CRUD/search, one bounded resource stream,
+cancellation, and sync capability negotiation. Physical-device storage,
+background, battery, secure-store, notification, pairing, sync, backup, and
+responsive/accessibility validation is a post-1.0 Flutter release gate. Flutter
+Web is not included in native-FFI tests.
+
 ### HTML table paste (v0.5 E6b)
 
 Fixtures cover the conversion — header promotion when the source has no `<th>`,
@@ -661,7 +687,8 @@ No scale profile: a block is bounded to 100 rows through the search path whose
   missing/corrupt/truncated objects, offline-horizon full resync, peer
   retirement, delete/restore/purge, concurrent body edits, and notebook cycles.
 - Mobile profiles measure maximum envelope/pending/object sizes and foreground
-  responsiveness on a real Android device before release.
+  responsiveness on an Android emulator before 1.0; physical Android/iOS
+  evidence is a post-1.0 client release gate.
 
 ### Security tests
 

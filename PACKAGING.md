@@ -35,8 +35,13 @@ Because tests and the web build run first, a ZIP is only produced from a validat
 
 A real installer/package story (self-contained assets, installed data/config
 locations, permissions, native credential stores, per-OS packages, upgrades,
-and mobile portability) is the distinct v0.8 roadmap milestone. v0.9 hardens
-release candidates; v1.0 creates user-authorized installable GitHub releases.
+and mobile portability) is the distinct v0.8 roadmap milestone. That milestone
+also adds a versioned no-GUI C ABI/shared-library build with explicit runtime,
+SQLite, header, ownership, and platform packaging rules; it is not part of the
+source ZIP today. Pre-1.0 mobile packaging evidence is Android-emulator-only.
+v0.9 hardens release candidates; v1.0 creates user-authorized installable
+GitHub releases. The Flutter client and physical mobile artifacts follow after
+1.0.
 
 ## Tagging a release
 

@@ -114,14 +114,14 @@ An envelope is a versioned, deterministic object containing:
 - operation records and dependency object hashes;
 - the sender acknowledgement vector and optional snapshot base;
 - content length and SHA-256 for every part;
-- authenticated-encryption and per-replica signature metadata when the G0
-  policy is accepted;
+- authenticated-encryption and per-replica Ed25519 signature metadata required
+  by the resolved G0 policy;
 - a final envelope checksum.
 
 Bound envelopes by both record count and encoded bytes. G2 measures and fixes
-the v1 limits; a desktop proxy does not prove Android safety, so v0.8 must
-confirm or lower the limits on a physical device. This is transport framing,
-not a merge rule.
+the v1 limits; a desktop proxy does not prove Android safety, so v0.8 checks an
+Android emulator and the post-1.0 Flutter release gate confirms or lowers the
+limits on physical devices. This is transport framing, not a merge rule.
 
 Publish dependencies in this order:
 
@@ -180,12 +180,12 @@ REST is the first online transport. The conceptual surface is:
 Authentication, authorization, TLS expectations, quotas, request-size limits,
 rate limits, cancellation, and audit records are mandatory before remote bind.
 
-MCP may expose bounded administration over the same service layer, but the
-exact start/cancel set is an open G15 decision. It returns job IDs and
+MCP may plan/start ordinary incremental sync, request bounded resource fetch,
+and inspect status/conflicts at an explicit sync scope. It returns job IDs and
 summaries, not envelopes, keys, backups, or arbitrary blob bytes in an LLM
-context. Enrollment, peer retirement, backup export/restore, and destructive
-recovery are not presumed to be MCP operations. REST/object storage remains the
-data plane.
+context. Enrollment, peer retirement, purge, backup export/restore, destructive
+recovery, and cancelling another actor's catch-up remain outside MCP.
+REST/object storage remains the data plane.
 
 ### Shared folder and rclone
 
@@ -341,11 +341,11 @@ first or a separately versioned library after its API stabilizes) with:
 - transport-neutral APIs and no unrestricted filesystem access.
 
 Cryptographic identity, encoding, and secret storage remain separate
-interfaces. The proposed security shape is authenticated encryption plus a
+interfaces. The resolved security shape is authenticated encryption plus a
 per-replica Ed25519 signature over canonical control/envelope bytes: AEAD
 protects confidentiality and integrity for holders of the library key, while a
-signature attributes an artifact to an enrolled/revocable replica. This is an
-open G0 decision, not an implemented guarantee. The desktop-oriented
+signature attributes an artifact to an enrolled/revocable replica. This is a
+selected design requirement, not an implemented guarantee. The desktop-oriented
 `zalando/go-keyring` cannot be treated as the mobile abstraction: its own
 platform list is macOS, Linux/BSD, and Windows. v0.8 must validate native
 desktop and Android secret stores behind the interface.
@@ -385,10 +385,11 @@ maintenance, interoperability, security, size-growth, and mobile benchmark.
 - Hundreds-of-thousands-of-notes profiles with bounded envelopes, foreground
   responsiveness, peak RSS, bytes transferred, and convergence time recorded.
 
-## Questions to resolve before implementation
+## Resolved policy and investigation outputs
 
 `PLAN.md` is the authoritative home because each decision must be visible in
-the item it blocks. Its G0-G17 items cover, among other choices:
+the item it affects. The user's 2026-08-11 review resolved G0-G17 policy,
+including:
 
 1. mandatory end-to-end encryption and per-replica digital signatures;
 2. complete-body plus optional delta representation and three-way merge;
@@ -399,9 +400,16 @@ the item it blocks. Its G0-G17 items cover, among other choices:
 7. REST pairing/authorization, ZIP wrapper, and MCP control boundaries;
 8. secret-store behavior, retention horizon, and offline-peer retirement.
 
-G1 and G2 are investigations: approval selects the question and evidence, not
-a pre-decided implementation. Android limits remain provisional until the
-separate v0.8 milestone runs them on a physical device.
+G1 and G2 remain investigations: the review selected the decision rule and
+default candidate, not an unmeasured implementation. Android limits remain
+provisional through the v0.8 emulator pass and require post-1.0 physical-device
+confirmation.
+
+G18 also records a framework-neutral Go application facade and pre-1.0 C ABI
+handoff. That ABI adds lifecycle, ownership, typed-error, cancellation/event,
+capability, and bounded-stream contracts around the same application semantics;
+it does not add ordinary REST routes or put HTTP inside the shared library. See
+`FLUTTER_GO_CLIENT.md`.
 
 External relay and BLE transport questions are intentionally deferred until the
 REST/directory protocol, threat model, and retention behavior are stable.

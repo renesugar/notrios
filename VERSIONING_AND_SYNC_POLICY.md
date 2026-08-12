@@ -42,8 +42,10 @@ The v0.7 design is specified in `SYNCHRONIZATION.md`. Its invariants are:
   encrypted archive-v2 snapshot bound to a state vector, then applies later
   operations. The directory is disposable and peers can reconstruct it.
 - `target: none` is a first-class configuration and performs no peer transfer.
-- The exact MCP sync controls are an open v0.7 G15 decision; REST/object files
-  carry bulk envelopes, resources, and backup artifacts in every case.
+- MCP may plan/start ordinary incremental sync, request bounded resource fetch,
+  and inspect status/conflicts at an explicit sync scope. Enrollment, keys,
+  backup export/restore, retirement, purge, and bulk bytes remain outside MCP;
+  REST/object files carry bulk artifacts.
 
 ## go-git
 

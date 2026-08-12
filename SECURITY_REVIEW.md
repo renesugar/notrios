@@ -228,12 +228,12 @@ used. Nostr/public relays and BLE couriers are deferred because metadata,
 retention, availability, key management, bandwidth, and abuse resistance add a
 larger threat surface than REST plus immutable rclone objects.
 
-The replacement v0.7 plan proposes mandatory authenticated encryption plus
-per-replica signatures, but both remain blocking G0 decisions rather than
-current controls. A signature would attribute canonical control/envelope bytes
-to an enrolled and revocable replica; it would not replace encryption, TLS,
+The 2026-08-11 plan review selected mandatory authenticated encryption plus
+per-replica Ed25519 signatures, but neither is a current control until its
+approved implementation slice lands. A signature attributes canonical control/envelope bytes
+to an enrolled and revocable replica; it does not replace encryption, TLS,
 hash verification, or authorization. G13 keeps sync credentials scoped to sync
-routes unless the user approves a wider authorization model.
+routes; they authorize no ordinary REST route.
 
 ## Deployment posture
 

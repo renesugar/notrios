@@ -1,7 +1,8 @@
 # Plan: v0.7 — Native synchronization
 
-Status: **replacement draft, written 2026-08-10. Product version is 0.6.0 and
-the canonical schema is v18. No v0.7 implementation item is approved.** The
+Status: **revised draft, decisions answered 2026-08-11. Product version is
+0.6.0 and the canonical schema is v18. No v0.7 implementation item is
+approved.** The
 former seven-item draft was too coarse: it mixed protocol research, canonical
 write interception, merge semantics, two transports, cryptography, recovery,
 UI, retention, and release validation into slices that could not be reviewed or
@@ -44,10 +45,13 @@ Not in v0.7:
 - Nostr, BLE, or other opportunistic courier transports;
 - using Subversion libraries or `svnadmin dump` as the wire format.
 
-Installation, filesystem permissions, OS credential stores, Wails v3 migration,
-and Android packaging form the distinct v0.8 milestone in `ROADMAP.md`. v0.7
-must nevertheless keep transport, crypto, storage, and job interfaces
-UI-framework independent and must record the constraints v0.8 has to validate.
+Installation, filesystem permissions, OS credential stores, a framework-neutral
+Go application facade and C ABI, current-GUI Mermaid support, Wails v3
+migration, and Android-emulator packaging form the distinct v0.8 milestone in
+`ROADMAP.md`. v0.7 must nevertheless keep transport, crypto, storage, and job
+interfaces UI-framework independent and must record the constraints v0.8 has
+to validate. A post-1.0 Flutter client is an independent native client of that
+shared core; it is not a Wails replacement hidden inside the sync milestone.
 
 ## Protocol shape to validate, not silently assume
 
@@ -123,26 +127,23 @@ reference implementations or treat hashes as authentication.
 license and platform matrix; misuse cases traced to planned controls; security
 review updated without claiming those controls are live.
 
-**Open decisions**
+**Resolved decisions (2026-08-11)**
 
-- **Must all sync payloads be end-to-end encrypted? — Blocking.** Options are
-  mandatory above every carrier, mandatory only for directory transport, or
-  optional everywhere. **Recommended: mandatory authenticated encryption for
-  every v1 protocol payload, including REST, with an explicit local development
-  test mode only.** One rule avoids a library being private over a directory but
-  exposed after switching targets. TLS remains required for non-loopback REST
+- **All v1 sync payloads use authenticated encryption, including over REST.**
+  The only exception is an explicit local-development test mode. One rule
+  avoids a library being private over a directory but exposed after switching
+  targets. TLS remains required for non-loopback REST
   because payload encryption does not hide endpoints, sizes, timing, or API
   credentials.
-- **Are per-replica digital signatures required? — Blocking.** AEAD with one
-  shared library key detects tampering but any holder can impersonate another
-  holder. **Recommended: yes—each enrolled replica signs canonical envelope,
-  advertisement, request, acknowledgement, and snapshot-manifest bytes with an
-  Ed25519 identity key; encryption remains separate.** Signatures give device
-  attribution, replay/revocation evidence, and safe untrusted-directory
+- **Per-replica Ed25519 signatures are required.** Each enrolled replica signs
+  canonical envelope, advertisement, request, acknowledgement, and
+  snapshot-manifest bytes with an Ed25519 identity key; encryption remains
+  separate. Signatures give device attribution, replay/revocation evidence, and
+  safe untrusted-directory
   discovery. Content hashes still verify objects; do not sign every blob twice.
-- **Is SVN dump compatibility a goal? — Non-blocking.** Default and
-  recommendation: no. Reuse the state-vector/change-log and base-delta ideas,
-  but extend archive v2 rather than adopting a foreign repository dump grammar.
+- **SVN dump compatibility is not a goal.** Reuse the state-vector/change-log
+  and base-delta ideas, but extend archive v2 rather than adopting a foreign
+  repository dump grammar.
 
 ## G1. Investigation — representative divergence and revision-delta workload
 
@@ -171,21 +172,19 @@ merge engine or new dependency.
 and conflict classifications; Unicode, Markdown, very-long-line, binary-looking
 text, missing-base, and malicious-patch cases; exact reconstruction hashes.
 
-**Open decisions**
+**Resolved decisions (2026-08-11)**
 
-- **What is the canonical body operation? — Blocking, resolved by this
-  investigation.** Options are complete snapshots only, deltas only, or a full
-  result hash/body object with an optional delta from a named parent.
-  **Recommended: the third.** A delta saves transfer when its base is present;
-  the complete object breaks dependency chains and makes repair possible.
-- **Which three-way merge granularity and library are accepted? — Blocking,
-  resolved by evidence.** Prefer the smallest maintained Apache-2.0/MIT/BSD
+- **The canonical representation is a full result hash/body object with an
+  optional delta from a named parent.** A delta saves transfer when its base is
+  present; the complete object breaks dependency chains and makes repair
+  possible.
+- **The investigation selects merge granularity and implementation by
+  evidence.** It must choose the smallest maintained Apache-2.0/MIT/BSD
   implementation that preserves UTF-8 and exposes conflicts. Do not adopt a
   CRDT merely because it merges character operations; ordinary offline sync is
   revision merge, not live co-editing.
-- **What counts as representative offline intervals? — Non-blocking.** Default:
-  one hour, one day, one week, and thirty days, with results reported
-  separately.
+- **The representative offline intervals are one hour, one day, one week, and
+  thirty days**, with results reported separately.
 
 ## G2. Investigation — envelope, resource, and constrained-device bounds
 
@@ -197,7 +196,8 @@ against the large recipe corpus and attachment-bearing Joplin corpus. Compare
 deterministic JSON/JSONL and one compact candidate, deterministic compression,
 fixed-size chunk thresholds, whole-resource fallback, range fetch, many-small
 objects, and decompression limits. Use desktop CPU/RSS/disk profiles as a proxy
-only; produce an explicit real-Android validation checklist for v0.8.
+only; produce an explicit Android-emulator checklist for v0.8 and a separate
+post-1.0 physical-device checklist.
 
 **Boundaries.** No FastCDC unless fixed chunks fail a measured case. No claim
 that desktop measurements prove mobile safety. No private content in evidence.
@@ -211,20 +211,22 @@ and G9 numeric limits and explains every proxy limitation.
 and attachment-heavy resources; compression-bomb and count-limit rejection;
 time/RSS/disk/file-count/round-trip estimates; deterministic byte checks.
 
-**Open decisions**
+**Resolved decisions (2026-08-11)**
 
-- **Which deterministic envelope encoding/compression is v1? — Blocking,
-  resolved by the spike.** Default candidate is canonical JSON/JSONL plus a
-  pinned deterministic compression profile because it is inspectable and fits
+- **The spike selects the v1 encoding/compression using the approved default
+  candidate:** canonical JSON/JSONL plus a pinned deterministic compression
+  profile because it is inspectable and fits
   archive v2; a compact binary encoding must show material benefit and have a
   canonicalization specification.
-- **When are resources chunked? — Blocking, resolved by the spike.** Default
-  candidate is whole-object transfer below a measured threshold and fixed-size
+- **The spike selects the numeric chunk threshold using the approved default:**
+  whole-object transfer below a measured threshold and fixed-size
   chunks above it. Content-defined chunking remains a later optimization unless
   repeated edits to large resources justify its CPU and complexity.
-- **Which Android bounds ship? — Blocking only for a mobile release.** v0.7
-  records provisional limits and v0.8 must lower or confirm them on a physical
-  Android device.
+- **Android bounds do not become a v0.7 support claim.** v0.7 records
+  provisional limits; pre-1.0 validation may use an Android emulator only.
+  Physical-device confirmation belongs to the post-1.0 Flutter client release
+  gate. The v0.8 shared-core/FFI work prevents Wails-mobile maturity from being
+  the only route to a mobile client.
 
 ## G3. Profiles, replica identity, and multi-instance process isolation
 
@@ -255,16 +257,17 @@ default.
 parallel-process smoke test; path/port/replica collision refusals; configuration
 redaction and `0600` file checks; stable-link routing across profiles.
 
-**Open decisions**
+**Resolved decisions (2026-08-11)**
 
-- **Where does profile configuration live? — Blocking.** Options are one
-  registry containing all settings or a small registry pointing to one config
-  file per profile. **Recommended: a small registry plus per-profile config.**
+- **Profile configuration uses a small registry plus one config file per
+  profile.**
   It gives each server an explicit file, keeps process arguments free of
   secrets, and lets packaging relocate the config root in v0.8.
-- **May an unpaired copied database synchronize? — Blocking.** Recommended: no.
+- **An unpaired copied database may not synchronize.**
   It must explicitly adopt the database universe while minting a new replica
   ID, or fork to a new database ID. A duplicated replica ID is always refused.
+  Moving selected notebooks between unrelated database universes uses an
+  explicit export followed by import, not synchronization.
 
 ## G4. Replication schema and transactionally complete local journal
 
@@ -295,16 +298,16 @@ non-sync behavior and import throughput remain within recorded bounds.
 driven coverage over every Store mutation; rollback/crash injection; batch and
 import atomicity; journal-disabled baseline; 100k import/write overhead profile.
 
-**Open decisions**
+**Resolved decisions (2026-08-11)**
 
-- **Which canonical rows are field registers versus indivisible records? —
-  Blocking.** Recommended starting rule: user-editable scalar metadata is a
-  field register; immutable revisions/operations/resources are indivisible;
+- **The record-classification rule is approved:** user-editable scalar metadata
+  is a field register; immutable revisions/operations/resources are indivisible;
   memberships are their own elements; derived rows are absent. The exact table
-  belongs in the migration report and must be approved before implementation.
-- **When does journaling begin? — Non-blocking.** Default: on explicit sync
-  enrollment, paired with a full snapshot boundary. Target `none` before
-  enrollment does not accumulate transport history.
+  belongs in the G4 implementation table. A deviation requires an item-local
+  plan amendment before code, not an after-the-fact justification.
+- **Journaling begins on explicit sync enrollment**, paired with a full snapshot
+  boundary. Target `none` before enrollment does not accumulate transport
+  history.
 
 ## G5. State vectors, missing-range planning, and idempotent admission
 
@@ -330,12 +333,12 @@ operation sets without falsely closing a gap.
 sequence exhaustion and skew cases; database/protocol/capability mismatch;
 bounded pending dependencies; restart and crash boundaries.
 
-**Open decisions**
+**Resolved decisions (2026-08-11)**
 
-- **What compatibility mismatches are accepted? — Blocking.** Recommended:
-  database ID must match; protocol major must match; required capabilities must
-  be understood; schema may differ only inside an explicit protocol
-  compatibility range. Unknown required records are refused, never skipped.
+- **Compatibility rules are fixed:** database ID and protocol major must match;
+  required capabilities must be understood; schema may differ only inside an
+  explicit protocol compatibility range. Unknown required records are refused,
+  never skipped.
 
 ## G6. Deterministic metadata, membership, deletion, and tree convergence
 
@@ -360,20 +363,19 @@ delivery order.
 concurrent update/delete/restore, add/remove, notebook move/cycle, clock skew,
 and replay; ordinary Store invariants after every admitted transaction.
 
-**Open decisions**
+**Resolved decisions (2026-08-11)**
 
-- **Concurrent membership add/remove policy — Blocking.** Options are add-wins,
-  remove-wins, or LWW per membership element. **Recommended: LWW per element
-  using the protocol order**, because user intent has an order without keeping
-  an unbounded observed-remove dot set; G1 must show whether that loses a
+- **Concurrent membership add/remove uses LWW per element using the protocol
+  order**, because user intent has an order without keeping an unbounded
+  observed-remove dot set; G1 must show whether that loses a
   material scenario.
-- **Notebook-cycle repair — Blocking.** Recommended: retain the winning parent
-  assignment by protocol order and reparent each losing/cycle-forming node to
-  the nearest valid ancestor or root, with an explicit repair record. The exact
+- **Notebook-cycle repair retains the winning parent assignment by protocol
+  order** and reparents each losing/cycle-forming node to the nearest valid
+  ancestor or root, with an explicit repair record. The exact
   algorithm must be deterministic from the operation set, not arrival order.
-- **Purge propagation — Blocking.** Recommended: a signed death certificate
-  outlives the document until every active peer acknowledges it; restore after
-  purge creates a new document identity rather than resurrecting erased state.
+- **Purge propagates as a signed death certificate** that outlives the document
+  until every active peer acknowledges it; restore after purge creates a new
+  document identity rather than resurrecting erased state.
 
 ## G7. Note revision objects, transfer deltas, three-way merge, and conflicts
 
@@ -402,16 +404,15 @@ conflicting merges in every delivery order; missing/corrupt/wrong-base delta;
 bounded chain fallback; delete/edit and restore/edit; transfer-byte comparison
 against full snapshots.
 
-**Open decisions**
+**Resolved decisions (2026-08-11)**
 
-- **Where is unresolved conflict content stored? — Blocking.** Recommended: a
-  typed conflict record attached to the same document and its revision graph,
-  not a second ordinary note. The UI can show base/local/remote without
-  inventing a notebook/title or polluting search and publication.
-- **May an automatic clean merge be emitted by more than one replica? —
-  Blocking.** Recommended: yes, if the merge revision ID is content- and
-  parent-derived so equivalent merges deduplicate; otherwise elect one emitter
-  deterministically.
+- **Unresolved content lives in a typed conflict record attached to the same
+  document and its revision graph**, not a second ordinary note. The UI can
+  show base/local/remote without inventing a notebook/title or polluting search
+  and publication.
+- **More than one replica may emit an automatic clean merge** if the merge
+  revision ID is content- and parent-derived so equivalent merges deduplicate;
+  otherwise elect one emitter deterministically.
 
 ## G8. Resource metadata, lazy materialization, chunks, and integrity
 
@@ -439,15 +440,15 @@ survive all advertised sources being temporarily offline.
 missing/corrupt/MIME-mismatch sources; shared-blob dedupe; pin/unpin; restart;
 bounded parallelism and disk limits; no accidental remote-media fetch.
 
-**Open decisions**
+**Resolved decisions (2026-08-11)**
 
-- **Default materialization policy — Non-blocking.** Default: metadata and
-  small inline-view resources are eligible for eager fetch within a byte
+- **The default materialization policy admits metadata immediately and makes
+  small inline-view resources eligible for eager fetch** within a byte
   budget; larger resources are lazy unless pinned. The G2 report supplies the
   threshold.
-- **What happens when no peer currently has bytes? — Non-blocking.** Default:
-  keep the resource metadata and a visible `unavailable` state indefinitely;
-  never drop the reference or substitute an empty file.
+- **When no peer currently has bytes, keep the resource metadata and a visible
+  `unavailable` state indefinitely;** never drop the reference or substitute an
+  empty file.
 
 ## G9. Deterministic envelope/container codec, encryption, and signatures
 
@@ -477,17 +478,16 @@ crypto tests; tampered header/ciphertext/signature/object; wrong/revoked key;
 nonce uniqueness; decompression bombs; deterministic pre-encryption bytes;
 license inventory.
 
-**Open decisions**
+**Resolved decisions (2026-08-11)**
 
-- **Which algorithms and Go libraries implement the G0 policy? — Blocking.**
-  Prefer standard-library Ed25519 and a maintained BSD/MIT/Apache authenticated-
-  encryption/KDF implementation with mobile-compatible builds. Record exact
-  versions and parameters only after G0/G2; do not assume `go-keyring` covers
+- **The algorithm/library selection rule is approved.** Use standard-library
+  Ed25519 and a maintained BSD/MIT/Apache authenticated-encryption/KDF
+  implementation with mobile-compatible builds. Exact versions and parameters
+  are a recorded output after G0/G2; do not assume `go-keyring` covers
   Android—it currently documents macOS, Linux/BSD, and Windows only.
-- **What metadata remains visible? — Blocking.** Recommended: expose only the
-  minimum routing tuple (protocol/database/key IDs, artifact kind, bounded
-  length, content address where needed); encrypt state vectors, record IDs,
-  titles, MIME, and filenames.
+- **Only the minimum routing tuple remains visible:** protocol/database/key IDs,
+  artifact kind, bounded length, and content address where needed. Encrypt
+  state vectors, record IDs, titles, MIME, and filenames.
 
 ## G10. Snapshot catch-up and reset state machine
 
@@ -516,14 +516,13 @@ transfer, decrypt, verify, restore, and post-snapshot replay; stale/competing
 responses; wrong password/key; source changes during snapshot; large-corpus
 aggregate profile.
 
-**Open decisions**
+**Resolved decisions (2026-08-11)**
 
-- **Who may answer a backup request? — Blocking.** Recommended: only an active
-  enrolled peer explicitly permitted as a snapshot source; if several answer,
-  the requester chooses a compatible verified response rather than merging ZIPs.
-- **How are password-encrypted portable backups related to enrolled-peer
-  encryption? — Blocking.** Recommended: one archive payload format with two
-  key-wrapping modes—peer-recipient keys for ordinary catch-up and a
+- **Only an active enrolled peer explicitly permitted as a snapshot source may
+  answer a backup request;** if several answer, the requester chooses a
+  compatible verified response rather than merging ZIPs.
+- **Portable backups and peer catch-up use one archive payload format with two
+  key-wrapping modes**—peer-recipient keys for ordinary catch-up and a
   memory-hard password KDF for portable/cloud backup. The password is entered
   at decrypt/restore time and never stored in the archive or command history.
 
@@ -555,14 +554,14 @@ to discover missing work and converge again.
 delete/recreate tests; torn writes; no atomic rename; stale cache; case
 insensitivity; reordered listings; two writers; bounded scan time/file count.
 
-**Open decisions**
+**Resolved decisions (2026-08-11)**
 
-- **Who may initialize a missing directory? — Non-blocking.** Default: any
-  enrolled profile may create the versioned/database-scoped skeleton and its own
-  advertisement; no peer owns the carrier.
-- **When may carrier artifacts be removed? — Blocking.** Recommended: only the
-  writer removes its own expired artifacts after durable acknowledgement by all
-  active peers, and correctness must survive no cleanup at all. Carrier cleanup
+- **Any enrolled profile may initialize a missing directory** by creating the
+  versioned/database-scoped skeleton and its own advertisement; no peer owns
+  the carrier.
+- **Only the writer removes its own expired artifacts after durable
+  acknowledgement by all active peers**, and correctness must survive no
+  cleanup at all. Carrier cleanup
   is not canonical GC.
 
 ## G12. Directory-carrier conformance over Google Drive and removable media
@@ -590,7 +589,7 @@ produce bounded retry/status, not divergence.
 disconnect/reconnect; delayed listing; duplicate/conflicting immutable name;
 full carrier loss and reconstruction; no-source-write checks.
 
-**Open decisions**
+**Resolved decisions (2026-08-11)**
 
 - None. This is evidence for the provider-neutral adapter. A surprising
   provider limitation that changes the protocol must reopen G11 rather than be
@@ -622,15 +621,15 @@ loopback/plaintext modes; CSRF/CORS tests; brute-force/rate/size/time limits;
 credential redaction; audit review; security scan and manual threat-model
 reconciliation.
 
-**Open decisions**
+**Resolved decisions (2026-08-11)**
 
-- **Does sync authentication authorize any ordinary REST route? — Blocking.**
-  Recommended: no. A peer credential reaches only `/api/v1/sync/...` and the
-  backup object it was explicitly granted; ordinary note APIs retain their
-  existing local posture until a separate multi-user authorization milestone.
-- **How is first pairing bootstrapped? — Blocking.** Recommended: a short-lived,
-  one-use pairing bundle transferred by QR/file/manual code, containing no
-  reusable library decryption key in displayable text. Exact UX waits for G18.
+- **Sync authentication authorizes no ordinary REST route.** A peer credential
+  reaches only `/api/v1/sync/...` and the backup object it was explicitly
+  granted; ordinary note APIs retain their existing local posture until a
+  separate multi-user authorization milestone.
+- **First pairing uses a short-lived, one-use pairing bundle transferred by
+  QR/file/manual code**, containing no reusable library decryption key in
+  displayable text. Exact UX waits for G18.
 
 ## G14. REST sync data plane and resumable encrypted backup download
 
@@ -658,12 +657,12 @@ incrementally.
 artifact; auth/database scope; quota/backpressure; large snapshot streaming
 with bounded memory.
 
-**Open decisions**
+**Resolved decisions (2026-08-11)**
 
-- **ZIP versus native outer container — Blocking.** Recommended: ZIP may be the
-  user-facing/download wrapper, but archive-v2 manifest/object verification and
-  encryption define correctness. Do not make ZIP central-directory parsing the
-  trust boundary or require a seekable multi-gigabyte buffer.
+- **ZIP may be the user-facing/download wrapper, but archive-v2 manifest/object
+  verification and encryption define correctness.** Do not make ZIP
+  central-directory parsing the trust boundary or require a seekable
+  multi-gigabyte buffer.
 
 ## G15. Durable sync jobs, scheduling boundaries, retries, and MCP control
 
@@ -691,12 +690,12 @@ can see what is waiting and why.
 quota backoff; two targets; stale heartbeat; status exit codes; REST/MCP size
 and scope tests; secrets absent from job records.
 
-**Open decisions**
+**Resolved decisions (2026-08-11)**
 
-- **Which sync actions may MCP initiate or cancel? — Blocking.** Recommended:
-  MCP may plan, start ordinary incremental sync, request bounded resource fetch,
-  and inspect status/conflicts at an explicit sync scope; it may not enroll a
-  peer, reveal keys, request/export a backup, retire a peer, purge, or apply a
+- **MCP may plan and start ordinary incremental sync, request bounded resource
+  fetch, and inspect status/conflicts at an explicit sync scope;** it may not
+  enroll a peer, reveal keys, request/export a backup, retire a peer, purge, or
+  apply a
   restore. Cancelling another actor's catch-up remains local UI/CLI/REST with
   authorization, not MCP.
 
@@ -728,16 +727,15 @@ screen-reader labels; narrow/touch layout; password redaction and clipboard
 tests; two-process end-to-end demo; cancel and retry; screenshots contain no
 private corpus.
 
-**Open decisions**
+**Resolved decisions (2026-08-11)**
 
-- **Where are long-lived secrets stored in v0.7 source builds? — Blocking.**
-  Recommended: define an injectable secret-store interface; use an explicit
-  locked-file development provider only with warnings and `0600`; v0.8 selects
+- **v0.7 defines an injectable secret-store interface and uses an explicit
+  locked-file development provider only with warnings and `0600`.** v0.8 selects
   and validates native desktop/Android stores. Do not claim the desktop-only
   `zalando/go-keyring` solves mobile storage.
-- **May the password be remembered? — Non-blocking.** Default: no. An opt-in
-  native credential-store action can be added only after v0.8 validates the
-  platform provider and labels the recovery consequences.
+- **The backup password is not remembered.** An opt-in native credential-store
+  action can be added only after v0.8 validates the platform provider and labels
+  the recovery consequences.
 
 ## G17. Peer retirement, retention horizon, tombstone/resource GC, and repair
 
@@ -764,48 +762,90 @@ must re-enroll/reset.
 simulation; retirement/revocation races; backup target excluded; resource still
 needed by one peer; tombstone resurrection attack; dry-run/apply parity.
 
-**Open decisions**
+**Resolved decisions (2026-08-11)**
 
-- **Default retention horizon — Blocking.** Recommended initial default: 90
-  days plus at least one verified snapshot floor, configurable per profile, with
-  warnings well before a peer crosses it. Evidence must report disk cost at the
-  real-corpus scale before accepting this value.
-- **Does retirement require every peer online? — Blocking.** Recommended: no;
-  the local owner can sign a retirement decision, but other peers learn it
-  through the ordinary log and refuse that replica thereafter. The UI must show
-  peers that have not yet acknowledged the retirement.
+- **The initial default retention horizon is 90 days plus at least one verified
+  snapshot floor**, configurable per profile, with warnings well before a peer
+  crosses it. Evidence must report disk cost at real-corpus scale; if that
+  invalidates the default, G17 reopens the value through a plan amendment.
+- **Retirement does not require every peer online.** The local owner can sign a
+  retirement decision, but other peers learn it through the ordinary log and
+  refuse that replica thereafter. The UI must show peers that have not yet
+  acknowledged the retirement.
 
-## G18. Installation/mobile portability contract handoff
+## G18. Shared-core, FFI, Mermaid, and installation/mobile portability handoff
 
 **Goal.** End v0.7 with an explicit, testable contract for the separate v0.8
-installation/configuration/mobile milestone.
+installation/configuration/shared-core milestone and the independent post-1.0
+Flutter client, so mobile delivery does not depend exclusively on Wails.
 
 **Scope.** Inventory every runtime path, port, loopback/network permission,
 shared-directory capability, file-picker need, credential-store operation,
 background/lifecycle assumption, cgo/SQLite requirement, notification, and
-deep-link association introduced by sync. Map them to Linux packages,
-Windows/macOS sandboxes, Wails v3 desktop beta, and experimental Android/iOS.
-Create build tags/interfaces where a desktop-only import would otherwise poison
-mobile compilation, but do not migrate the shell.
+deep-link association introduced by sync. Map them to Linux, Windows, macOS,
+Android-emulator, and deferred iOS/physical-device gates. Audit `internal/service`
+and HTTP handlers into a framework-neutral application facade shared by
+`notriosd`, Wails, and a future `cmd/notrioslib` C ABI wrapper. Specify a small
+versioned ABI: instance open/close, capability/version query, bounded serialized
+request/response calls, typed errors, cancellation, polling/event delivery,
+range/chunk stream handles, and an explicit result-buffer release or
+caller-owned-buffer contract. Use opaque handles rather than exposing Go
+pointers or Store objects. Map existing REST request/response schemas where
+they are transport-neutral; name each HTTP-only concept that needs an ABI
+status/error/stream equivalent. Audit native packaging, cgo pointer/thread
+rules, SQLite linkage, secret-store injection, and lifecycle ownership.
 
-**Boundaries.** No installer, APK, Wails v3 migration, Play Store claim, or
-physical-device performance claim.
+Also record the current GUI Markdown baseline. Source inspection on 2026-08-11
+found that `md-editor-rt` contains optional Mermaid support but Notrios
+deliberately sets `noMermaid: true` because E6a disabled every unbundled
+runtime/CDN extension. G18 therefore writes the exact offline bundle,
+sanitization, CSP, malformed/oversized-diagram, browser, and Wails evidence that
+v0.8 must require before claiming Mermaid support; a package capability is not
+an application test.
+
+**Boundaries.** No installer, Flutter app, production C ABI, APK, Wails v3
+migration, Mermaid enablement, Play Store claim, or physical-device performance
+claim. Do not implement an FFI bridge by routing through a loopback socket, by
+exposing one C symbol per REST endpoint, or by sharing live Go/Dart pointers.
+Flutter Web cannot load the native C ABI through `dart:ffi`; any future web
+client continues over REST or needs a separately designed Go-Wasm/JS adapter.
 
 **Dependencies.** G3, G9, G11, G13, G16.
 
-**Working state.** v0.8 can start from a finite permission/platform matrix and
-compile-time seams rather than rediscovering hidden desktop assumptions.
+**Design reference.** `FLUTTER_GO_CLIENT.md` records the verified upstream
+facts and proposed ABI shape; this item remains self-contained if that document
+changes later.
+
+**Working state.** v0.8 can start from a finite permission/platform matrix, a
+versioned application-facade/ABI proposal, and compile-time seams rather than
+rediscovering hidden desktop assumptions. It can also distinguish the Mermaid
+feature present in an upstream package from the feature currently disabled in
+Notrios.
 
 **Validation and evidence.** Dependency/build-tag audit; headless and Wails v2
-desktop regression; Android cross-compile feasibility report where tooling
-allows; documented physical-device gates; no unsupported mobile library in the
-shared core.
+desktop regression; facade-to-REST semantic mapping; ABI ownership/error/
+cancel/stream test design; Android-emulator cross-compile feasibility report
+where tooling allows; documented post-1.0 physical-device and iOS gates; no
+unsupported mobile or Wails import in the shared core; Mermaid fixture and
+offline/security test design.
 
-**Open decisions**
+**Resolved decisions (2026-08-11)**
 
-- None for v0.7. Wails v3 is currently beta for desktop while Android/iOS are
-  explicitly experimental. v0.8 decides migration only after its own approved
-  spike and real-device gate.
+- A no-GUI Go library and stable C ABI are pre-1.0 deliverables, but their
+  design/build belongs to v0.8 after this evidence handoff; G18 does not smuggle
+  an ABI implementation into synchronization.
+- The ABI reuses application semantics and serialized schema types from REST,
+  but adds non-HTTP lifecycle, ownership, cancellation, event, capability,
+  typed-error, and bounded-stream contracts. Those are ABI concerns, not new
+  ordinary REST routes.
+- Pre-1.0 mobile evidence is Android-emulator-only. Physical Android/iOS
+  support is a post-1.0 Flutter release gate.
+- Wails mobile remains an option if it matures, not the only mobile roadmap.
+  Flutter native targets use Dart FFI; Flutter Web is outside that ABI.
+- `flutter_smooth_markdown` is a candidate, not selected merely from its
+  feature list. Its Markdown fidelity, editor behavior, Mermaid subset,
+  sanitization, accessibility, performance, maintenance, and BSD-3-Clause
+  dependency tree must pass a post-1.0 spike before adoption.
 
 ## G19. Archive-v2 compatibility bridge
 
@@ -875,42 +915,45 @@ recommendation, blocking status, and consequence.
 
 | Decision | Owner | Status |
 |---|---|---|
-| Mandatory E2EE scope | G0 | **Open, blocking** |
-| Per-replica signatures | G0 | **Open, blocking** |
-| SVN dump compatibility | G0 | Open, non-blocking; default no |
-| Canonical full-body/delta representation | G1 | **Open, blocking; investigation** |
-| Three-way merge granularity/library | G1 | **Open, blocking; investigation** |
-| Offline intervals measured | G1 | Open, non-blocking; four defaults |
-| Envelope encoding/compression | G2 | **Open, blocking; investigation** |
-| Resource chunk threshold | G2 | **Open, blocking; investigation** |
-| Android bounds | G2 | Deferred gate for v0.8 physical device |
-| Profile config layout | G3 | **Open, blocking** |
-| Copied database enrollment | G3 | **Open, blocking** |
-| Field-register/record map | G4 | **Open, blocking** |
-| Journal start boundary | G4 | Open, non-blocking; enrollment default |
-| Compatibility mismatches | G5 | **Open, blocking** |
-| Membership add/remove rule | G6 | **Open, blocking** |
-| Notebook-cycle repair | G6 | **Open, blocking** |
-| Purge propagation | G6 | **Open, blocking** |
-| Conflict representation | G7 | **Open, blocking** |
-| Automatic merge dedup/emitter | G7 | **Open, blocking** |
-| Lazy-resource defaults/unavailable bytes | G8 | Open, non-blocking defaults |
-| Crypto algorithms/libraries | G9 | **Open, blocking after G0/G2** |
-| Visible protocol metadata | G9 | **Open, blocking** |
-| Snapshot responder policy | G10 | **Open, blocking** |
-| Peer-key versus password backup wrapping | G10 | **Open, blocking** |
-| Directory initialization | G11 | Open, non-blocking; any enrolled peer |
-| Carrier artifact cleanup | G11 | **Open, blocking** |
-| Sync credential reach into ordinary REST | G13 | **Open, blocking** |
-| Pairing bootstrap | G13 | **Open, blocking** |
-| ZIP wrapper contract | G14 | **Open, blocking** |
-| MCP sync controls | G15 | **Open, blocking** |
-| v0.7 secret-store provider | G16 | **Open, blocking** |
-| Remember backup password | G16 | Open, non-blocking; default no |
-| Retention horizon | G17 | **Open, blocking** |
-| Offline peer retirement | G17 | **Open, blocking** |
+| Mandatory E2EE scope | G0 | Resolved: every v1 payload; local-dev test exception only |
+| Per-replica signatures | G0 | Resolved: Ed25519 over named canonical artifacts |
+| SVN dump compatibility | G0 | Resolved: no |
+| Canonical full-body/delta representation | G1 | Resolved: full object plus optional named-parent delta |
+| Three-way merge granularity/library | G1 | Resolved selection rule; G1 records measured result |
+| Offline intervals measured | G1 | Resolved: 1 hour/day/week/30 days |
+| Envelope encoding/compression | G2 | Resolved selection rule; canonical JSON default candidate |
+| Resource chunk threshold | G2 | Resolved selection rule; whole then fixed chunks |
+| Android bounds | G2/G18 | Emulator-only before 1.0; physical-device gate after 1.0 |
+| Profile config layout | G3 | Resolved: registry plus per-profile config |
+| Copied database enrollment | G3 | Resolved: refuse until adopt/fork; transfer via export/import |
+| Field-register/record map | G4 | Resolved classification rule; G4 records exact table before code |
+| Journal start boundary | G4 | Resolved: explicit enrollment/snapshot boundary |
+| Compatibility mismatches | G5 | Resolved: exact database/protocol/capability rules in item |
+| Membership add/remove rule | G6 | Resolved: LWW per element by protocol order |
+| Notebook-cycle repair | G6 | Resolved: deterministic winning-parent repair |
+| Purge propagation | G6 | Resolved: signed death certificate and new identity on restore |
+| Conflict representation | G7 | Resolved: typed same-document conflict record |
+| Automatic merge dedup/emitter | G7 | Resolved: multiple emitters with derived deduplicating ID |
+| Lazy-resource defaults/unavailable bytes | G8 | Resolved: bounded eager/lazy default; preserve unavailable |
+| Crypto algorithms/libraries | G9 | Resolved selection rule; exact versions/parameters follow G0/G2 |
+| Visible protocol metadata | G9 | Resolved: minimum routing tuple only |
+| Snapshot responder policy | G10 | Resolved: explicitly permitted active enrolled peers |
+| Peer-key versus password backup wrapping | G10 | Resolved: one payload, two wrapping modes |
+| Directory initialization | G11 | Resolved: any enrolled profile |
+| Carrier artifact cleanup | G11 | Resolved: writer-owned and acknowledgement-gated |
+| Sync credential reach into ordinary REST | G13 | Resolved: none |
+| Pairing bootstrap | G13 | Resolved: short-lived one-use bundle |
+| ZIP wrapper contract | G14 | Resolved: UX wrapper, not trust boundary |
+| MCP sync controls | G15 | Resolved: bounded incremental controls only |
+| v0.7 secret-store provider | G16 | Resolved: interface plus warned `0600` development provider |
+| Remember backup password | G16 | Resolved: no |
+| Retention horizon | G17 | Resolved: 90 days plus verified snapshot floor |
+| Offline peer retirement | G17 | Resolved: no all-peers-online requirement |
+| Shared-core/FFI and Flutter boundary | G18 | Resolved: pre-1.0 ABI; post-1.0 client; no Web FFI |
+| Current-GUI Mermaid baseline | G18 | Resolved fact: upstream-capable but disabled pending offline/security evidence |
 | Release version/schema bookkeeping | G20 | Open, non-blocking until wrap-up |
 
-The first implementable item is G0, but it is not approved by this draft. The
-user reviews the decisions first; implementation begins only after an explicit
-instruction naming the item.
+The first implementable item is G0. Its blocking policy decisions are resolved,
+but the item itself is not approved by this planning pass. Implementation begins
+only after an explicit instruction naming G0; completing it still stops for a
+verified ZIP and approval before G1.

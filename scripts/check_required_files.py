@@ -20,6 +20,7 @@ required = [
     'PUBLISHING_POLICY.md',
     'VERSIONING_AND_SYNC_POLICY.md',
     'SYNCHRONIZATION.md',
+    'FLUTTER_GO_CLIENT.md',
     'WORKSPACE_MAINTENANCE.md',
     'plans/scaffold/SCAFFOLD_REVIEW_REPORT.md',
     'plans/scaffold/SCAFFOLD_STEP3_REPORT.md',

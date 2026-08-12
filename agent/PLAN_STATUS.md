@@ -1,6 +1,6 @@
 # Plan Status
 
-Updated: 2026-08-10
+Updated: 2026-08-11
 
 ## Active milestone
 
@@ -8,18 +8,51 @@ Updated: 2026-08-10
 canonical schema is **v18**. v0.6 F0-F7 are archived under `plans/v0.6/`;
 earlier milestones remain under their version directories.
 
-`PLAN.md` is now the **replacement v0.7 native synchronization draft**. It
-splits the former seven-item plan into G0-G20: evidence, profiles/local journal,
-state-vector convergence, revision deltas/merge, lazy resources, secure
-container/catch-up, ephemeral-directory and REST transports, jobs/UI/retention,
-mobile/installation handoff, compatibility, and final validation. **No v0.7
-item is approved.** G0 is first but cannot start until the user reviews its
-blocking E2EE and per-replica signature decisions.
+`PLAN.md` is now the **second-round v0.7 native synchronization draft**. It
+retains G0-G20: evidence, profiles/local journal, state-vector convergence,
+revision deltas/merge, lazy resources, secure container/catch-up,
+ephemeral-directory and REST transports, jobs/UI/retention, shared-core/FFI/
+Mermaid/mobile handoff, compatibility, and final validation. The user's
+2026-08-11 review resolved every G0-G17 policy decision. **No v0.7 item is
+approved.** G0 is now decision-ready and starts only after an explicit
+instruction naming it.
 
-The same planning pass added distinct roadmap milestones: v0.8 installation,
-configuration, native credential stores, and Wails v3/Android portability;
-v0.9 release-candidate hardening; and a user-authorized installable GitHub
-release in v1.0. P6, the `movenotes-v3` bridge, is v0.7 G19 gated on G9.
+The roadmap no longer relies exclusively on Wails for mobile: v0.8 now includes
+an evidence-first framework-neutral application facade, versioned no-GUI Go C
+ABI/shared library, Android-emulator host smoke, and current-GUI Mermaid
+enablement tests; v0.9 freezes the ABI candidate; v1.0 packages supported
+library artifacts; and a separate post-1.0 Flutter client owns physical Android
+and iOS validation plus native desktop clients. P6, the `movenotes-v3` bridge,
+is v0.7 G19 gated on G9.
+
+## 2026-08-11 synchronization decisions and Flutter/Go planning
+
+- Recorded the user's selections for mandatory payload authenticated
+  encryption, per-replica Ed25519 signatures, full-result-plus-optional-delta
+  revisions, profile/enrollment/journal/convergence/conflict/resource/container/
+  catch-up/transport/MCP/secret/retention policy, and marked them resolved in
+  their owning items. Resolution is not implementation approval.
+- Verified that Go `c-shared`/`c-archive` requires a main package and exported
+  cgo symbols, and that cgo pointer ownership rules forbid the proposed client
+  from retaining ordinary Go pointers. The planned ABI therefore uses opaque
+  handles, bounded serialized calls, explicit output ownership, cancellation/
+  polling, and stream handles over a shared application facade.
+- Corrected the supplied cross-platform claim: Dart FFI targets Dart Native;
+  Flutter Web uses JavaScript/Wasm interop and is not a consumer of the native
+  Go C ABI. It remains a REST client unless a separate adapter is approved.
+- Source inspection found current Mermaid rendering disabled, not merely
+  untested: `web/src/editor-assets.ts` sets `noMermaid: true` after the offline
+  asset hardening. v0.8 owns locally bundled, bounded, sanitized browser/Wails
+  evidence before the feature can be enabled.
+- `flutter_smooth_markdown` and `flutter_secure_storage` remain post-1.0
+  candidates. Their package claims were recorded with explicit fidelity,
+  security, platform-prerequisite, maintenance, and license gates rather than
+  treated as architecture facts.
+- Validation passed: `go vet ./...`, `go test ./...`, required-file and plan-loop
+  checks, scaffold validation, frontend typecheck and all 155 tests plus build,
+  docs-site build, `git diff --check`, and release ZIP creation/verification.
+  `npm ci` still reports the pre-existing 1 moderate and 2 high advisories; this
+  planning slice did not change dependencies.
 
 ## 2026-08-10 synchronization planning and consistency audit
 

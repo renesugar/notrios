@@ -7,7 +7,7 @@ Build a local-first companion service for very large note and document collectio
 ## Core boundary
 
 ```text
-Built-in Wails GUI / Web UI / CLI / MCP client / third-party clients (C++/Qt, Rust/Tauri, …)
+Built-in Wails GUI / Web UI / CLI / MCP client / third-party clients (REST/MCP today; C ABI planned)
         │
         ▼
 Notrios service (notriosd)
@@ -150,7 +150,21 @@ Wails v3 now documents one desktop/iOS/Android codebase. v3 is beta for desktop
 and mobile support remains experimental. Migration is not a dependency for
 sync design. A later spike must cover desktop parity, Android storage/lifecycle,
 background transfer, safe-area/responsive UI, mobile file-dialog limitations,
-and real-device resource use before changing the stable v2 shell.
+and post-1.0 physical-device resource use before changing the stable v2 shell.
+
+### Planned framework-neutral facade and native ABI
+
+Before 1.0, v0.8 extracts transport-neutral application orchestration from the
+HTTP adapter and exposes it through both the existing REST server and a small
+versioned C ABI. The ABI is not a second Store API and does not expose Go
+pointers: it owns instance lifecycle, opaque handles, bounded serialized
+request/response calls, typed errors, cancellation/polling, bulk streams, and
+explicit result-buffer ownership. See `FLUTTER_GO_CLIENT.md`.
+
+The post-1.0 Flutter client uses Dart FFI on Android, iOS, Linux, macOS, and
+Windows. Flutter Web is not a native-FFI target; it stays a REST client unless a
+separate Go-Wasm/JavaScript adapter is approved. Wails mobile remains an option,
+not the sole mobile architecture.
 
 The GUI owns link interception, resource upload/download, preview sanitization, and routing to document/resource URIs.
 
