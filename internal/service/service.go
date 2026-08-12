@@ -7,6 +7,7 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -46,6 +47,16 @@ func New(cfg config.Config) (*Service, error) {
 	if err := st.Bootstrap(context.Background()); err != nil {
 		_ = st.Close()
 		return nil, err
+	}
+	// A configured non-none target is the explicit enrollment boundary from
+	// G4. Enrollment creates durable local journal state only; transport remains
+	// unimplemented and changing an already enrolled profile back to none does
+	// not discard history that peers may still need.
+	if target := strings.TrimSpace(cfg.Sync.Target); target != "" && target != "none" {
+		if _, err := st.EnrollLocalJournal(context.Background(), "profile sync target "+target); err != nil {
+			_ = st.Close()
+			return nil, err
+		}
 	}
 	handler := httpapi.NewServerWithOptions(httpapi.ServerOptions{Store: st, Config: cfg})
 	ctx, cancel := context.WithCancel(context.Background())

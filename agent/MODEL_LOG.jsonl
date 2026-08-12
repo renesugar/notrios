@@ -39,3 +39,4 @@
 {"timestamp":"2026-08-12T02:28:19Z","task_id":"v0.7-g2","model":"GPT-5","observed_by":"Codex","notes":"Started the approved G2 envelope, resource, and constrained-device bounds investigation; exact model variant was not exposed to the agent."}
 {"timestamp":"2026-08-12T17:16:56Z","task_id":"v0.7-g3","model":"GPT-5","observed_by":"Codex","notes":"Started approved G3 runtime profiles and multi-instance isolation; exact model variant was not exposed to the agent."}
 {"timestamp":"2026-08-12T17:56:39Z","task_id":"dependency-audit-2026-08","model":"GPT-5","observed_by":"Codex","notes":"Started the requested bundled frontend dependency audit/fix pass; exact model variant was not exposed to the agent."}
+{"timestamp":"2026-08-12T18:08:15Z","task_id":"v0.7-g4","model":"GPT-5","observed_by":"Codex","notes":"Started approved G4 replication schema and transactionally complete local journal; exact model variant was not exposed to the agent."}

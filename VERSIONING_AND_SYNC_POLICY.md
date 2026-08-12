@@ -26,6 +26,11 @@ The v0.7 design is specified in `SYNCHRONIZATION.md`. Its invariants are:
 - Stable logical database IDs are distinct from per-copy replica/device IDs.
 - Operations have per-replica sequence IDs; HLCs order conflicts but do not
   replace delivery/acknowledgement vectors.
+- G4 implements the local half of that rule in schema v19: explicit enrollment
+  establishes a full-snapshot boundary, and every later sync-relevant canonical
+  row mutation shares one transaction with its immutable local operation and
+  contiguous-vector advance. `target: none` before enrollment remains
+  journal-free. G5+ still own remote admission and convergence.
 - Note bodies remain immutable saved revisions. A revision always binds its
   complete result hash/object and may carry a transfer delta from a named
   parent. G1 selected optional beneficial line-token deltas and exact

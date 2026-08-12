@@ -72,13 +72,33 @@ func (s *SQLiteStore) RotateReplicaIdentity(ctx context.Context) (DatabaseIdenti
 	if err != nil {
 		return DatabaseIdentity{}, err
 	}
+	auditID, err := NewID("audit")
+	if err != nil {
+		return DatabaseIdentity{}, err
+	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if err := s.execLocked("BEGIN IMMEDIATE"); err != nil {
+		return DatabaseIdentity{}, err
+	}
+	committed := false
+	defer func() {
+		if !committed {
+			_ = s.execLocked("ROLLBACK")
+		}
+	}()
+	if err := s.retireLocalJournalLocked(auditID, replicaID, "replica identity rotated"); err != nil {
+		return DatabaseIdentity{}, err
+	}
 	if err := s.execPreparedLocked(`UPDATE database_identity
 		SET replica_id = ?, replica_created_at = CURRENT_TIMESTAMP
 		WHERE singleton = 1`, replicaID); err != nil {
 		return DatabaseIdentity{}, err
 	}
+	if err := s.execLocked("COMMIT"); err != nil {
+		return DatabaseIdentity{}, err
+	}
+	committed = true
 	return s.getDatabaseIdentityLocked()
 }
 

@@ -1,6 +1,6 @@
 # Security Review — Current Local Product and Planned Remote Surfaces
 
-This review reflects the current 0.6.0 repository (schema v18). Notrios is
+This review reflects the current 0.6.0 repository (schema v19). Notrios is
 local-first but
 its REST/MCP listener, importers, preview, downloaded media, archive files,
 published handoffs, and future sync transports are security boundaries.
@@ -210,6 +210,14 @@ MCP surface accepts an archive path or streams archive bytes.
   the second moves notes between the user's own databases.
 
 ## Planned synchronization threat boundary
+
+G4 implements only the local durability portion of this boundary: explicit
+enrollment creates a snapshot floor, canonical writes and monotonic local
+operations share one SQLite transaction, rollback removes both, and identity
+rotation retires the old allocator. The journal is local plaintext canonical
+state. It is not authenticated, encrypted, admitted from a peer, or exposed to
+a transport/API; none of the later network/cryptographic controls below should
+be inferred from schema v19.
 
 `SYNCHRONIZATION.md` requires:
 

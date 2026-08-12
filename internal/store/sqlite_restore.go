@@ -167,17 +167,38 @@ func (s *SQLiteStore) AdoptDatabaseIdentity(ctx context.Context, databaseID stri
 	if err != nil {
 		return DatabaseIdentity{}, err
 	}
+	auditID, err := NewID("audit")
+	if err != nil {
+		return DatabaseIdentity{}, err
+	}
 	s.mu.Lock()
+	if err := s.execLocked("BEGIN IMMEDIATE"); err != nil {
+		s.mu.Unlock()
+		return DatabaseIdentity{}, err
+	}
+	committed := false
+	defer func() {
+		if !committed {
+			_ = s.execLocked("ROLLBACK")
+		}
+		s.mu.Unlock()
+	}()
+	if err := s.retireLocalJournalLocked(auditID, replicaID, "database identity adopted"); err != nil {
+		return DatabaseIdentity{}, err
+	}
 	// Adoption changes the universe every stable link in this database names,
 	// so the memoized ID must not survive it.
 	s.cachedDatabaseID = ""
 	err = s.execPreparedLocked(`UPDATE database_identity SET database_id = ?, replica_id = ?,
 		replica_created_at = CURRENT_TIMESTAMP WHERE singleton = 1`, databaseID, replicaID)
-	s.mu.Unlock()
 	if err != nil {
 		return DatabaseIdentity{}, err
 	}
-	return s.GetDatabaseIdentity(ctx)
+	if err := s.execLocked("COMMIT"); err != nil {
+		return DatabaseIdentity{}, err
+	}
+	committed = true
+	return s.getDatabaseIdentityLocked()
 }
 
 // AdmitRestoredBlob streams archive bytes into the content-addressed asset

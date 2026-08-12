@@ -51,6 +51,7 @@ required = [
     'plans/mvp/MVP_TASK10_REPORT.md',
     'scripts/mvp_smoke.sh',
     'scripts/run_performance_smoke.sh',
+    'scripts/run_sync_journal_profile.sh',
     'scripts/package_release.sh',
     'scripts/check_release_zip.py',
     'DATABASE_SCHEMA.md',

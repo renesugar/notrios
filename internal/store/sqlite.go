@@ -32,7 +32,7 @@ import (
 	"github.com/renesugar/notrios/internal/stablelink"
 )
 
-//go:embed migrations/0001_initial.sql
+//go:embed migrations/*.sql
 var migrationFS embed.FS
 
 // SQLiteStore is a small cgo-backed SQLite adapter. It is intentionally narrow
@@ -177,6 +177,9 @@ func (s *SQLiteStore) Bootstrap(ctx context.Context) error {
 		return err
 	}
 	if err := s.ensureSchemaV18(ctx); err != nil {
+		return err
+	}
+	if err := s.ensureSchemaV19(ctx); err != nil {
 		return err
 	}
 	if err := s.ensureDatabaseIdentity(ctx); err != nil {
@@ -604,6 +607,18 @@ func (s *SQLiteStore) ensureSchemaV18(ctx context.Context) error {
 		}
 	}
 	return nil
+}
+
+// ensureSchemaV19 adds the local replication journal. The migration is kept in
+// its own SQL file because the same triggers must be byte-for-byte identical on
+// fresh databases and upgrades. Capture triggers are inert until explicit
+// enrollment creates sync_local_journal's singleton row.
+func (s *SQLiteStore) ensureSchemaV19(ctx context.Context) error {
+	migration, err := migrationFS.ReadFile("migrations/0019_sync_journal.sql")
+	if err != nil {
+		return fmt.Errorf("read schema v19 migration: %w", err)
+	}
+	return s.Exec(ctx, string(migration))
 }
 
 func (s *SQLiteStore) exec(sql string) error {

@@ -1,7 +1,7 @@
 # Plan: v0.7 — Native synchronization
 
-Status: **G0-G3 completed through 2026-08-12. Product version remains 0.6.0 and the
-canonical schema remains v18. G4 is the next item and is not approved.** The
+Status: **G0-G4 completed through 2026-08-12. Product version remains 0.6.0 and the
+canonical schema is v19. G5 is the next item and is not approved.** The
 former seven-item draft was too coarse: it mixed protocol research, canonical
 write interception, merge semantics, two transports, cryptography, recovery,
 UI, retention, and release validation into slices that could not be reviewed or
@@ -415,7 +415,7 @@ ambiguity. A real integration fixture starts two profile-bound `notriosd`
 processes simultaneously and verifies separate status/routing. No schema,
 journal, sync transport, MCP profile surface, supervisor, or dependency landed.
 
-## G4. Replication schema and transactionally complete local journal
+## G4. Replication schema and transactionally complete local journal — complete
 
 **Goal.** Record every sync-relevant canonical mutation exactly once, in the
 same transaction as the mutation, without changing behavior when sync is off.
@@ -439,6 +439,20 @@ the final envelope codec.
 **Working state.** After enrollment, every committed canonical change has one
 durable `(replica_id, sequence)` operation and every rollback has none. Existing
 non-sync behavior and import throughput remain within recorded bounds.
+
+**Completed 2026-08-12.** Schema v19 adds explicit local enrollment/snapshot
+boundaries, replicas, one monotonic local allocator, immutable operations and
+dependencies, state vectors/gaps, peer acknowledgements, pending admissions,
+and audit events. Canonical-table triggers feed one transient capture seam;
+sequence allocation, operation insertion, and local-vector advancement occur
+inside the caller's existing transaction. `target: none` remains inert before
+enrollment. A non-none profile target establishes the boundary at startup but
+starts no transport. Identity rotation retires the old allocator and requires
+a new boundary. The 100k import A/B recorded 300,000 exact operations, 23.9%
+elapsed overhead, and 92.8% database-byte overhead; no-journal import retained
+zero operations. Evidence and the exact classification table are archived in
+`plans/v0.7/007-replication-schema-local-journal.md` and
+`performance/v0.7-g4/`.
 
 **Validation and evidence.** Migration upgrade/fresh-baseline parity; table-
 driven coverage over every Store mutation; rollback/crash injection; batch and
@@ -1108,6 +1122,6 @@ recommendation, blocking status, and consequence.
 | Current-GUI Mermaid baseline | G18 | Resolved fact: upstream-capable but disabled pending offline/security evidence |
 | Release version/schema bookkeeping | G20 | Open, non-blocking until wrap-up |
 
-G0-G3 are complete. G4 is the next implementable item, but is not approved.
-Implementation begins only after an explicit instruction naming G4; completing
-it still stops for a verified ZIP and approval before G5.
+G0-G4 are complete. G5 is the next implementable item, but is not approved.
+Implementation begins only after an explicit instruction naming G5; completing
+it still stops for a verified ZIP and approval before G6.

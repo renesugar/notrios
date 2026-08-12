@@ -1,0 +1,26 @@
+{
+  "generated_at": "2026-08-12T18:32:38Z",
+  "go_version": "go1.26.5",
+  "goos": "linux",
+  "goarch": "amd64",
+  "document_count": 100000,
+  "journal_disabled": {
+    "journal_enabled": false,
+    "documents": 100000,
+    "operations": 0,
+    "elapsed_ms": 315543.594,
+    "documents_per_second": 316.9134206182684,
+    "database_bytes": 182845440
+  },
+  "journal_enabled": {
+    "journal_enabled": true,
+    "documents": 100000,
+    "operations": 300000,
+    "elapsed_ms": 390886.585,
+    "documents_per_second": 255.82868228364714,
+    "database_bytes": 352526336
+  },
+  "elapsed_overhead_percent": 23.877205062195,
+  "database_byte_overhead_percent": 92.80017921146954,
+  "exact_sequences": true
+}

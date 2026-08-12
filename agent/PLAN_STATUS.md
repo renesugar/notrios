@@ -1,11 +1,11 @@
 # Plan Status
 
-Updated: 2026-08-12 (G3 runtime profiles and multi-instance isolation complete; G4 next)
+Updated: 2026-08-12 (G4 local replication journal complete; G5 next)
 
 ## Active milestone
 
 **v0.1 through v0.6 are complete.** Product version is **0.6.0** and the
-canonical schema is **v18**. v0.6 F0-F7 are archived under `plans/v0.6/`;
+canonical schema is **v19**. v0.6 F0-F7 are archived under `plans/v0.6/`;
 earlier milestones remain under their version directories.
 
 `PLAN.md` is now the **active v0.7 native synchronization plan**. It contains
@@ -13,8 +13,31 @@ G0, G1, G1a, and G2-G20: evidence, profiles/local journal, state-vector converge
 revision deltas/merge, lazy resources, secure container/catch-up,
 ephemeral-directory and REST transports, jobs/UI/retention, shared-core/FFI/
 Mermaid/mobile handoff, compatibility, and final validation. The user's
-2026-08-11 review resolved every G0-G17 policy decision. **G0-G3 are complete**
-and archived under `plans/v0.7/`; G4 is next and is not approved.
+2026-08-11 review resolved every G0-G17 policy decision. **G0-G4 are complete**
+and archived under `plans/v0.7/`; G5 is next and is not approved.
+
+## v0.7 G4 completion — 2026-08-12
+
+- Added schema v19 replicas, explicit snapshot boundaries, one local monotonic
+  allocator, immutable operations/dependencies, state vectors/gaps, peer
+  acknowledgements, bounded pending admissions, and audit events.
+- Canonical collection/document/revision/notebook/tag/membership/search-
+  notebook/resource/provenance triggers feed one transient capture seam. The
+  operation, sequence, and local vector share the canonical transaction;
+  rollbacks and an uncommitted close retain neither side.
+- `target: none` remains inert before enrollment. Starting a profile with a
+  non-none target establishes the local boundary but starts no transport.
+  Replica/database identity rotation retires the old allocator and requires a
+  new boundary instead of continuing another replica's sequence.
+- FTS, links, blocks, projections, reports, tasks, jobs, importer state, and
+  search snippets remain derived/local and have no journal trigger. No raw SQL,
+  REST, MCP, or UI journal surface was added.
+- The reproducible 100k import A/B captured exactly 300,000 operations. It
+  measured 316.9 documents/s without the journal and 255.8 documents/s with it
+  (23.9% elapsed overhead); database bytes rose from 182,845,440 to 352,526,336
+  (92.8%). These are recorded desktop bounds, not a mobile claim.
+- No transport, remote admission, convergence/merge, encryption/signatures, or
+  G5 behavior landed. Product remains 0.6.0; schema is v19.
 
 ## Bundled frontend dependency maintenance — 2026-08-12
 

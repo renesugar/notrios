@@ -2,9 +2,10 @@
 
 This document expands the SQLite schema represented by
 `migrations/0001_initial.sql` and the additive bootstrap upgrade shims in
-`internal/store/sqlite.go`. The two embedded/baseline migration copies create
-through schema v17; `ensureSchemaV18` adds the current `jobs` table when a
-database opens, and `store.CurrentSchemaVersion` is 18. SQLite is the
+`internal/store/sqlite.go`. The baseline migration creates through schema v17;
+`ensureSchemaV18` adds `jobs`, and the dedicated
+`migrations/0019_sync_journal.sql` adds the local replication journal.
+`store.CurrentSchemaVersion` is 19. SQLite is the
 authoritative store for managed notes, metadata, revisions, resource
 relationships, link graphs, media-policy decisions, import state, and jobs.
 Recoll is the optional derived index for front-matter field search, extraction,
@@ -302,6 +303,63 @@ MCP return no parameters at all.
 Listing orders by `rowid`, not `created_at`: `CURRENT_TIMESTAMP` has one-second
 resolution, so jobs started together share a timestamp and a tiebreak on the
 random job ID would look like chronology without being it.
+
+## Schema v19 — local replication journal
+
+G4 adds local replication durability without adding a transport or remote
+admission path:
+
+- `sync_replicas` records local/peer identities and active/retired/revoked
+  lifecycle state.
+- `sync_snapshot_boundaries` records the explicit full-snapshot floor at which
+  a replica begins journaling. `sync_local_journal` is the one local monotonic
+  allocator and points at that boundary.
+- `sync_operations` stores immutable `(replica_id, sequence)` operations;
+  `sync_operation_dependencies` reserves their causal edges.
+- `sync_state_vectors` stores contiguous positions and `sync_state_gaps`
+  stores explicit missing ranges. `sync_peer_acknowledgements` is separate from
+  both because receipt and peer acknowledgement are different claims.
+- `sync_pending_admissions` is disk-backed and rejects an individual encoded
+  operation over 1 MiB. G5 owns aggregate count/byte admission enforcement.
+- `sync_audit_events` records enrollment and identity-retirement events now and
+  reserves the bounded operational audit surface for later slices.
+
+Before enrollment, `sync_local_journal` has no row and every canonical capture
+trigger is inert. Enrollment writes a sequence-zero boundary and the local
+vector. Afterward, triggers on sync-relevant canonical tables write into
+`sync_journal_capture`; its single trigger increments the allocator, inserts
+the immutable operation, advances the local contiguous vector, and deletes the
+transient row. These statements execute inside the canonical caller's existing
+transaction, so rollback removes both the data mutation and operation.
+
+The exact G4 classification is:
+
+| Record type | Class | Captured mutations |
+|---|---|---|
+| collection | field register | create, update, delete |
+| document | field register | create, update, trash, restore, purge |
+| revision | immutable record | create only |
+| notebook | field register/tree node | create, update, delete |
+| tag | field register | create, update, delete |
+| document-tag | membership element | add, remove |
+| search notebook | field register | create, update, delete |
+| resource | immutable content reference plus metadata registers | create, update, delete |
+| document-resource | membership element | add, metadata update, remove |
+| document source/provenance | field register | create, update, delete |
+| exact source-bundle item | immutable content reference plus metadata registers | create, update, delete |
+
+FTS5 rows, parsed links and blocks, projections/Recoll, reports, task
+extraction, jobs, batch ledgers, importer checkpoints/item state, local
+source-bundle storage paths, media fetch attempts/policy rules, and search
+snippets are derived or local operational state and deliberately have no
+capture trigger. Resource
+operations name the canonical blob hash; physical blob placement remains local
+and G8 owns transfer/materialization.
+
+A profile with `target: none` does not accumulate pre-enrollment history. A
+non-none target establishes the boundary at service startup but starts no
+transport. Rotating/adopting identity retires and disconnects the previous
+allocator; the new replica must explicitly enroll from a new snapshot boundary.
 ## Schema v5/v6 — Notrios redesign (tasks R3 and R4 implemented)
 
 Schema v5 (notebooks) and v6 (source provenance) are live in `migrations/0001_initial.sql` (with an `ensureSchemaV5` upgrade shim for v4 databases that adds `documents.notebook_id` and backfills existing rows into the default notebook). It adds the note-taking data model on top of the existing document tables:
@@ -356,15 +414,11 @@ Thread/link-graph traversal stays in SQLite; the Recoll index only carries searc
 
 Future migrations should be additive where possible. Any destructive change requires a migration note in `plans/` and a backup/export instruction.
 
-Planned v0.7 sync tables are described semantically in `SYNCHRONIZATION.md` and
-split into approvable work in `PLAN.md` G3-G17: local profile references and
-replica enrollment, per-replica sequence allocation, immutable operations,
-contiguous state vectors and explicit gaps, HLC field/register state,
-acknowledgements, peer retirement/revocation, pending dependencies, revision
-parents/delta references, lazy-resource availability, tombstones/death
-certificates, conflicts, jobs, snapshot floors, and retention watermarks. Exact
-names remain implementation outputs after G0-G2. G2 recommends bounded compact
-NCB1 operation records with per-kind canonical-JSON payloads, but G9 must
-promote or replace that evidence format deliberately; it is not a table schema
-or current codec. The governing policy decisions were resolved 2026-08-11.
-Derived FTS/Recoll data is excluded.
+Later v0.7 sync schema is described semantically in `SYNCHRONIZATION.md` and
+split across `PLAN.md` G5-G17: HLC field/register state, peer key enrollment and
+revocation, revision parents/delta references, lazy-resource availability,
+tombstones/death certificates, conflicts, jobs, snapshot floors, and retention
+watermarks. G2 recommends bounded compact NCB1 operation records with per-kind
+canonical-JSON payloads, but G9 must promote or replace that evidence format
+deliberately; schema-v19 `payload_json` is local journal state, not the wire
+codec. Derived FTS/Recoll data remains excluded.

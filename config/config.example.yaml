@@ -17,6 +17,8 @@ data:
 # `notriosctl profile create` writes a separate owner-only config with a local
 # profile identity, absolute isolated paths, and one of these targets. The
 # ordinary checkout config is unmanaged and safely keeps synchronization off.
+# Changing a managed profile to directory/rest establishes its sequence-zero
+# local journal boundary; transfer remains a later v0.7 slice.
 sync:
   target: "none"                 # none | directory | rest
 

@@ -7,9 +7,8 @@ This file is the codebase atlas. Update it whenever major files or directories a
 - `README.md` — project overview and quick start.
 - `PLAN.md` — the **active v0.7 native synchronization plan**, divided into
   twenty-two independently approvable slices (G0, G1, G1a, and G2-G20).
-  G0-G17 policy decisions are resolved; G0-G3 are complete and G4 is next but
-  unapproved. v0.6 is complete at product
-  0.6.0/schema v18 and archived under
+  G0-G17 policy decisions are resolved; G0-G4 are complete and G5 is next but
+  unapproved. The current product remains 0.6.0 at schema v19; v0.6 is archived under
   `plans/v0.6/`; v0.5 and v0.4 are archived under their version directories.
 - `plans/scaffold/SCAFFOLD_CREATION_PLAN.md` — process for creating/refining this scaffold.
 - `ROADMAP.md` — product roadmap and future features.
@@ -40,11 +39,14 @@ This file is the codebase atlas. Update it whenever major files or directories a
   bounds harness and evidence, NCB1 investigation specification, hostile-limit
   probes, fixed-chunk/pack recommendations, and separate emulator/physical
   mobile checklists. It is investigation code, not a production sync package.
+- `performance/v0.7-g4/` — reproducible 100k import A/B for the schema-v19
+  local journal, including exact sequence count, elapsed throughput, and
+  database-byte overhead.
 - `internal/profiles/runtime.go` — G3 named runtime-profile creation, redacted
   views, registry/config/database startup binding, path/port/replica collision
   detection, and explicit copied-database adopt/fork handling.
-- `plans/v0.7/` — archived completed v0.7 slices G0-G2 plus the planning
-  amendment that inserted G1a.
+- `plans/v0.7/` — archived completed v0.7 slices G0-G4 plus the planning
+  amendment that inserted G1a and the bundled-dependency maintenance pass.
 - `FLUTTER_GO_CLIENT.md` — verified Flutter/Dart FFI and Go build-mode facts,
   the pre-1.0 framework-neutral application facade/C ABI contract, post-1.0
   Flutter client split, memory/stream ownership, platform limits, and the fact
@@ -73,7 +75,14 @@ This file is the codebase atlas. Update it whenever major files or directories a
   dry-run/config planning, and canonical alias/embed/anchor resolution.
 - `internal/api/` — shared API request/response models.
 - `internal/httpapi/` — REST HTTP adapter for status, documents, revisions, resources, links, graph slices, and staged future routes.
-- `internal/store/` — SQLite-backed persistence, document CRUD, revision history, soft delete, restore, FTS5 search, resource storage/reference reports (`sqlite_resource_reports.go`), retention-aware GC (`sqlite_gc.go`), importer batch/checkpoint/source-bundle state (`sqlite_imports.go`), archive export reads (`export.go`, `sqlite_export.go`), archive restore writes (`restore.go`, `sqlite_restore.go`), logical database/replica identity (`sqlite_identity.go`), note blocks (`sqlite_blocks.go`), read-only workspace lint (`lint.go`, `sqlite_lint.go`, plus the single shared link scan in `sqlite_lint_links.go`), dry-run-first workspace fix (`fix.go`, `sqlite_fix.go`), bounded graph traversal, shortest paths, and the orphan/hub report (`graph.go`, `sqlite_graph.go`), read-only editor link suggestion and unsaved-buffer link checking (`editorlinks.go`, `sqlite_editorlinks.go`), embedded query blocks (`notequery.go`, `sqlite_notequery.go`), hierarchical tag rename and notebook-deletion preview (`organizer.go`, `sqlite_organizer.go`), link graph persistence, and notebooks/tags/search-notebooks/trash operations (`sqlite_notebooks.go`).
+- `internal/store/` — SQLite-backed persistence, schema-v19 local replication
+  journal (`sync_journal.go` and `migrations/0019_sync_journal.sql`), document
+  CRUD, revision history, soft delete, restore, FTS5 search, resource
+  storage/reference reports (`sqlite_resource_reports.go`), retention-aware GC
+  (`sqlite_gc.go`), importer batch/checkpoint/source-bundle state
+  (`sqlite_imports.go`), archive export/restore, logical database/replica
+  identity, note blocks, lint/fix, graph traversal/reports, editor links,
+  query blocks, organizer operations, and notebooks/tags/search-notebooks/Trash.
 - `internal/archivev2/` — native archive-v2 manifest/record model
   (`format.go`), out-of-manifest object index and fanout layout (`index.go`),
   identity-intent planner, bounded streaming verifier (`verify.go`), bounded

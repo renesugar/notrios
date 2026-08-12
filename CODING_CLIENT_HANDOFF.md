@@ -3,7 +3,7 @@
 This handoff applies to any coding agent or client continuing this project (Codex, Claude, aider, swival.dev, etc. — formerly `CODEX_HANDOFF.md`). The repository is designed so an agent can continue from repository files alone.
 
 Current phase: v0.1 through **v0.6** are complete; product version is **0.6.0**
-and the schema is **v18**. The eight v0.6 slices are archived under
+and the schema is **v19**. The eight v0.6 slices are archived under
 `plans/v0.6/`: F0 (notebook targeting, landed with v0.5 E10), F1 (batch
 organizer transactions), F2 (MCP tool scopes), F3 (MCP read coverage and HTTP
 `Range`), F4 (note templates and task extraction), F5 (graph views that stay
@@ -13,12 +13,12 @@ wrap-up). The thirteen v0.5 slices remain archived under `plans/v0.5/`.
 `PLAN.md` now holds the **active v0.7 native synchronization plan** with
 twenty-two independently approvable slices: G0, G1, G1a, and G2-G20. The user's 2026-08-11
 review resolved the policy decisions through G17, including mandatory payload
-encryption and per-replica Ed25519 signatures. **G0-G3 are complete** and
+encryption and per-replica Ed25519 signatures. **G0-G4 are complete** and
 archived under `plans/v0.7/`; their reviewed evidence is under
 `performance/v0.7-g0/`, `performance/v0.7-g1/`, and
-`performance/v0.7-g1a/`, and `performance/v0.7-g2/`. **G4 is next and is not
-approved.** It owns the replication schema and transactionally complete local
-journal.
+`performance/v0.7-g1a/`, `performance/v0.7-g2/`, and
+`performance/v0.7-g4/`. **G5 is next and is not approved.** It owns missing-
+range planning and idempotent admission over the G4 journal schema.
 
 G0 added no production sync code or dependency. It freezes the threat model,
 normative glossary, thirty misuse/control traces, and upstream license/platform
@@ -73,6 +73,17 @@ Raw filesystem copies are refused until explicit adopt/fork, while two valid
 replicas of one database remain explicit stable-link ambiguity. Status/UI name
 the active profile. The real CLI fixture runs two daemons simultaneously.
 
+G4 adds schema-v19 local replication durability but no transport, admission,
+merge, cryptography, REST/MCP surface, or UI. Explicit enrollment records a
+sequence-zero full-snapshot boundary for the current replica. Canonical-table
+triggers feed one transient seam that allocates an immutable local operation
+and advances the local contiguous vector inside the caller's transaction;
+rollbacks and interrupted uncommitted transactions retain neither side.
+`target: none` before enrollment stays journal-free, while a non-none target
+establishes the boundary at startup. Identity rotation retires the allocator
+and requires re-enrollment. The 100k import A/B produced exactly 300,000
+operations with 23.9% elapsed and 92.8% database-byte overhead.
+
 That review also added a second portability route. v0.8 now investigates and
 builds a framework-neutral Go application facade and versioned no-GUI C ABI,
 with Android-emulator-only pre-1.0 evidence; v1.0 packages the supported ABI
@@ -82,18 +93,14 @@ the API/lifecycle/ownership/stream contract and source checks. The current GUI's
 Mermaid support is **disabled**, not merely untested (`noMermaid: true`), and a
 v0.8 offline/security-tested enablement slice owns it.
 
-Latest completed feature validation is G3 (2026-08-12). The subsequent bundled
-frontend maintenance pass applied a non-forced `npm audit fix`, updated the
-affected transitive packages, and reduced the audit result from 1 moderate/2
-high to zero. Its clean-install audit, frontend typecheck/all 155 tests/build,
-repository Go tests/vet, required-file and plan-loop checks, scaffold
-validation, docs-site build, end-to-end smoke, performance smoke, and
-whitespace checks all passed. Regular validation now begins with
-audit/fix/reinstall/re-audit, while CI and release packaging enforce a
-non-mutating audit gate. The final archive records exact commands;
-release-ZIP verification is the post-commit handoff step. Start G4 only
-after explicit user approval, then stop after its validation, commit, verified
-ZIP, and handoff before G5.
+Latest completed feature validation is G4 (2026-08-12). It includes focused
+schema/enrollment/sequence/vocabulary/rollback/crash/import/batch/identity
+tests and the 100k import profile, followed by the audit-first full repository,
+frontend, docs, smoke, and release checks recorded in its archive. Regular
+validation begins with audit/fix/reinstall/re-audit, while CI and release
+packaging enforce a non-mutating audit gate. Start G5 only after explicit user
+approval, then stop after its validation, commit, verified ZIP, and handoff
+before G6.
 
 Two things a reader continuing this project should know about v0.6:
 

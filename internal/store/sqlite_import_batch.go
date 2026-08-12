@@ -182,8 +182,11 @@ func (s *SQLiteStore) ApplyImportDocumentBatch(ctx context.Context, req ImportDo
 					}
 					return err
 				}
-				if err := s.execPreparedLocked(`INSERT OR REPLACE INTO document_resource_refs(document_id, resource_id, relation_type, ordinal, anchor_json)
-					VALUES(?, ?, ?, ?, ?)`, documentID, reference.ResourceID, reference.RelationType, strconv.Itoa(reference.Ordinal), reference.AnchorJSON); err != nil {
+				if err := s.execPreparedLocked(`INSERT INTO document_resource_refs(document_id, resource_id, relation_type, ordinal, anchor_json)
+					VALUES(?, ?, ?, ?, ?)
+					ON CONFLICT(document_id, resource_id, relation_type, ordinal) DO UPDATE
+					SET anchor_json = excluded.anchor_json
+					WHERE anchor_json IS NOT excluded.anchor_json`, documentID, reference.ResourceID, reference.RelationType, strconv.Itoa(reference.Ordinal), reference.AnchorJSON); err != nil {
 					return err
 				}
 				if err := s.execPreparedLocked(`UPDATE resources SET unreferenced_at = NULL, unreferenced_reason = '' WHERE id = ?`, reference.ResourceID); err != nil {

@@ -35,8 +35,9 @@ type ProfileConfig struct {
 }
 
 // SyncConfig reserves the local transport choice and credential-store
-// reference for later v0.7 slices. G3 does not interpret credentials or start
-// synchronization; target "none" is the safe, complete default.
+// reference for later v0.7 slices. A non-none target establishes G4's explicit
+// local journal boundary at service startup; no transport or credential use is
+// implemented yet. Target "none" remains the safe, complete default.
 type SyncConfig struct {
 	Target        string `json:"target"`
 	Directory     string `json:"directory,omitempty"`

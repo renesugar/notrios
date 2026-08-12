@@ -239,7 +239,15 @@ per-profile configs to explicit database/replica identities, isolated absolute
 paths and loopback ports, a public URL, and a safe `sync.target: none` default.
 CLI create/show/list/validate/start surfaces, copied-database adopt/fork gates,
 startup revalidation, active-profile UI/status, stable-link routing, and a real
-two-daemon smoke are live. No sync journal or transport landed; G4 is next and
+two-daemon smoke are live.
+
+**G4 completed 2026-08-12.** Schema v19 now establishes an explicit enrollment
+and full-snapshot boundary, then captures every sync-relevant canonical row
+mutation through one transaction-local journal seam with exact per-replica
+sequences. Rollbacks retain neither canonical nor operation rows; `target:
+none` before enrollment remains journal-free. The 100k import A/B recorded
+23.9% elapsed and 92.8% database-byte overhead for 300,000 operations. No
+transport, admission/merge engine, encryption, or UI landed; G5 is next and
 approval-gated.
 
 - **Evidence before contracts (G0-G2, including G1a):** threat model and

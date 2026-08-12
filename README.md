@@ -111,8 +111,9 @@ Recoll availability, backlog, sync/index, and reconciliation state.
   revision/delta, pure-Go VCDIFF, envelope, and resource-bound investigations.
   G3 adds named owner-only runtime profiles, explicit database/replica binding,
   isolated paths and loopback ports, copied-database adopt/fork checks, and a
-  verified two-daemon working state. Replication itself begins with G4 and is
-  not yet implemented.
+  verified two-daemon working state. G4 adds schema-v19 explicit enrollment and
+  snapshot boundaries plus an atomic local operation journal over canonical
+  writes. No transport, merge, or cryptography is implemented yet.
 - Agent progress/attempt tracking: [`agent/PLAN_STATUS.md`](agent/PLAN_STATUS.md), [`agent/ATTEMPT_LOG.jsonl`](agent/ATTEMPT_LOG.jsonl), and [`agent/MODEL_LOG.jsonl`](agent/MODEL_LOG.jsonl).
 
 ## Contributing

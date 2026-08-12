@@ -153,6 +153,13 @@ the production Notrios frontmatter handler and field/range searches. The same
 profile records missing/stale/orphan repair followed by a zero-drift
 reconciliation. Evidence lives under `performance/v0.3-h10/`.
 
+G4's `scripts/run_sync_journal_profile.sh` runs identical generated 100,000-
+note bounded imports with the schema-v19 journal disabled and enabled. It
+asserts zero pre-enrollment operations and exactly three monotonic operations
+per enrolled note (document, revision, provenance), then records elapsed
+throughput and SQLite byte overhead. This is a desktop write-path bound; it is
+not envelope, transport, encryption, or mobile evidence.
+
 SQLite's OFFSET cost grows linearly with skipped rows. In an ideal local
 1,000,000-row covering-index probe during the 2026-07 plan review, offsets
 10k/50k/100k/200k/500k/900k took approximately

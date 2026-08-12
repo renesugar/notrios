@@ -282,6 +282,18 @@ whole below 1 MiB and use 1 MiB fixed chunks above it. These are desktop-proxy
 bounds pending the v0.8 emulator and post-1.0 physical-device gates. See
 `performance/v0.7-g2/`.
 
+G4 adds schema-v19 local replication durability. Before explicit enrollment,
+the journal is inert. Enrollment records a full-snapshot boundary at sequence
+zero for the current replica. SQLite triggers on sync-relevant canonical tables
+write into one transient capture seam; that seam allocates the next local
+sequence, inserts an immutable operation, and advances the local contiguous
+vector in the same transaction as the canonical row. Rollback therefore leaves
+neither side behind. FTS, parsed links/blocks, projections, reports, jobs, and
+import checkpoints have no capture triggers. Identity rotation retires the old
+allocator and requires a new boundary. The schema reserves dependency, gap,
+acknowledgement, pending-admission, and audit tables, but G5+ still own their
+protocol behavior; G4 adds no transport, merge, encryption, REST, MCP, or UI.
+
 ## Optional derived systems
 
 - go-git or Fossil can checkpoint projections but should not replace SQLite revisions.

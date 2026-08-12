@@ -56,6 +56,38 @@ func TestUnavailableSidecarReportsStateAndFTSServiceStarts(t *testing.T) {
 	}
 }
 
+func TestNonNoneSyncTargetEstablishesLocalJournalBoundary(t *testing.T) {
+	dir := t.TempDir()
+	cfg := config.Default()
+	cfg.Data.Directory = dir
+	cfg.Data.DatabasePath = filepath.Join(dir, "notes.sqlite")
+	cfg.Data.AssetStore = filepath.Join(dir, "assets")
+	cfg.Data.ProjectionDir = filepath.Join(dir, "projections")
+	cfg.Sync.Target = "directory"
+	cfg.Sync.Directory = filepath.Join(dir, "carrier")
+
+	svc, err := New(cfg)
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	t.Cleanup(func() { _ = svc.Close() })
+	status, err := svc.Store.JournalStatus(context.Background())
+	if err != nil {
+		t.Fatalf("JournalStatus: %v", err)
+	}
+	if !status.Enabled || status.LastSequence != 0 || status.SnapshotBoundaryID == "" {
+		t.Fatalf("non-none target did not establish boundary: %+v", status)
+	}
+	doc, err := svc.Store.CreateDocument(context.Background(), store.CreateDocumentRequest{Title: "after enrollment", Body: "journaled"})
+	if err != nil {
+		t.Fatalf("CreateDocument: %v", err)
+	}
+	operations, err := svc.Store.ListLocalOperations(context.Background(), 0, 10)
+	if err != nil || len(operations) != 2 || operations[0].RecordID != doc.ID {
+		t.Fatalf("operations=%+v err=%v", operations, err)
+	}
+}
+
 func TestLiveSidecarStartupRepairsDamageAndReportsStatus(t *testing.T) {
 	if _, err := exec.LookPath("recollindex"); err != nil {
 		t.Skip("recollindex not installed")

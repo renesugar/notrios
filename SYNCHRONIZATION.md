@@ -66,6 +66,13 @@ transport, or background transfer is implemented yet.
 
 Use a small Notrios-specific, operation-based replication core:
 
+G4 now implements the local durability foundation of this model in schema v19.
+Explicit enrollment records a full-snapshot boundary, and transaction-local
+capture produces monotonic immutable operations for canonical rows. Derived
+indexes/projections are excluded. The dependency/gap/ack/pending tables exist,
+but remote admission, convergence, transport, and cryptographic framing remain
+unimplemented and owned by G5 onward.
+
 1. A local write transaction allocates one or more consecutive operation IDs.
 2. Each committed batch receives an HLC (operations retain consecutive sequence
    IDs) for deterministic last-writer ordering without overflowing a
