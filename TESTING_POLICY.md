@@ -997,6 +997,23 @@ file-count/pack bounds, cancellation, and pending-queue backpressure belong to
 G8/G9 implementation tests. Desktop results make no mobile claim; the checked
 v0.8 emulator and post-1.0 physical-device evidence files are required gates.
 
+## v0.7 G3 runtime profiles and process isolation
+
+Profile fixtures assert owner-only registry/config round trips, credential
+reference redaction, fresh identity separation, raw-copy refusal, explicit
+adopt/fork identity behavior, stale config/database bindings, changed
+identities, exact/nested path sharing, duplicate replica IDs, and normalized
+loopback port collisions. Stable links remain ambiguous across two valid
+replicas of one logical database and resolve through a named profile's own
+public URL.
+
+The CLI fixture builds the real `notriosctl` and `notriosd`, creates two runtime
+profiles, validates secret-free start commands, starts both daemons
+simultaneously on different loopback ports and databases, checks each status
+names the right local profile, and refuses a third profile sharing a port.
+Generated configs are revalidated at service startup, so bypassing the CLI
+launcher does not bypass identity/path checks.
+
 ## MVP release validation
 
 Task 10 adds release-candidate checks beyond ordinary unit tests:

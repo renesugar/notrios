@@ -200,16 +200,40 @@ resolved note in the local web UI with `xdg-open`.
 ## profile
 
 ```sh
+notriosctl profile create --name <profile> [--listen 127.0.0.1:8080]
+    [--db path] [--asset-store path] [--sync-target none|directory|rest]
+    [--sync-directory path | --sync-rest-url URL] [--credential-ref reference]
+    [--copied-database-as adopt|fork] [--registry path]
+notriosctl profile show --name <profile> [--registry path]
 notriosctl profile register --name <profile> [--db path] [--asset-store path] [--registry path]
 notriosctl profile list [--registry path]
+notriosctl profile validate [--name <profile>] [--registry path]
+notriosctl profile start --name <profile> [--binary notriosd] [--dry-run]
 notriosctl profile forget --name <profile> [--registry path]
 ```
 
-Manages the local registry (default `~/.config/notrios/profiles.json`, override
-with `--registry` or `NOTRIOS_PROFILE_REGISTRY`) that maps a logical database ID
-to a database on this machine. `register` reads the database ID out of the
-database itself — it cannot be asserted on the command line. `forget` edits the
-registry only and never touches the database it named.
+`create` makes a named runtime profile: a registry entry plus one generated
+`0600` config with absolute, isolated database/assets/derived paths, a loopback
+listen address, public URL, safe `sync-target none` default, and one bound local
+replica identity. `show` redacts the credential-store reference to a boolean.
+`validate` refuses stale config/database bindings, shared runtime paths,
+duplicate loopback ports, and duplicate replica IDs. `start` validates first
+and invokes only `notriosd -config <generated-file>`; no credential or reference
+is placed in the server command line. It is a foreground launcher, not a
+supervisor.
+
+A raw filesystem copy carries the original replica ID and is refused. On the
+copy, `--copied-database-as adopt` preserves the logical database ID and mints a
+replica ID; `fork` mints both. The action is accepted only when the registry can
+prove the duplicate. Existing archive-v2 adopt/fork restore flows already mint
+the appropriate identity before profile creation.
+
+The registry defaults to `~/.config/notrios/profiles.json` and may be overridden
+with `--registry` or `NOTRIOS_PROFILE_REGISTRY`. `register` is retained as the
+older stable-link routing-only surface: it reads identity from the database and
+can describe ambiguity, but its entry has no startable config and cannot
+replace an existing runtime binding of the same name. `forget` edits
+the registry only and never touches the database or generated config it named.
 
 ## register-url-handler
 

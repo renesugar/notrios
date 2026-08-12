@@ -22,20 +22,152 @@ import (
 // database ID inside a stable link into a database on this machine.
 func runProfile(args []string) {
 	if len(args) == 0 {
-		fmt.Fprintln(os.Stderr, "usage: notriosctl profile register|list|forget [options]")
+		fmt.Fprintln(os.Stderr, "usage: notriosctl profile create|show|list|validate|start|register|forget [options]")
 		os.Exit(2)
 	}
 	switch args[0] {
+	case "create":
+		runProfileCreate(args[1:])
+	case "show":
+		runProfileShow(args[1:])
 	case "register":
 		runProfileRegister(args[1:])
 	case "list":
 		runProfileList(args[1:])
+	case "validate":
+		runProfileValidate(args[1:])
+	case "start":
+		runProfileStart(args[1:])
 	case "forget":
 		runProfileForget(args[1:])
 	default:
 		fmt.Fprintf(os.Stderr, "unknown profile command %q\n", args[0])
-		fmt.Fprintln(os.Stderr, "usage: notriosctl profile register|list|forget [options]")
+		fmt.Fprintln(os.Stderr, "usage: notriosctl profile create|show|list|validate|start|register|forget [options]")
 		os.Exit(2)
+	}
+}
+
+func runProfileCreate(args []string) {
+	fs := flag.NewFlagSet("notriosctl profile create", flag.ExitOnError)
+	registryPath := fs.String("registry", "", "profile registry path (default: the user registry)")
+	name := fs.String("name", "", "required: local runtime profile name")
+	dataDir := fs.String("data-dir", "", "profile data directory (default: isolated under the config root)")
+	dbPath := fs.String("db", "", "existing or new SQLite database path")
+	assetStore := fs.String("asset-store", "", "asset store directory")
+	listenAddr := fs.String("listen", "127.0.0.1:8080", "loopback HTTP listen address")
+	publicURL := fs.String("public-url", "", "public base URL (default: http://<listen>)")
+	syncTarget := fs.String("sync-target", profiles.SyncNone, "none, directory, or rest")
+	syncDirectory := fs.String("sync-directory", "", "absolute ephemeral carrier directory for target=directory")
+	syncRESTURL := fs.String("sync-rest-url", "", "REST peer base URL for target=rest")
+	credentialRef := fs.String("credential-ref", "", "native credential-store reference (never a credential value)")
+	copyAction := fs.String("copied-database-as", "", "explicit duplicate handling: adopt or fork")
+	if err := fs.Parse(args); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(2)
+	}
+	if fs.NArg() != 0 || strings.TrimSpace(*name) == "" {
+		fmt.Fprintln(os.Stderr, "usage: notriosctl profile create --name <profile> [options]")
+		fs.PrintDefaults()
+		os.Exit(2)
+	}
+	path := registryPathOrDefault(*registryPath)
+	profile, err := profiles.Create(context.Background(), profiles.CreateOptions{
+		Name: strings.TrimSpace(*name), RegistryPath: path, DataDirectory: *dataDir,
+		DatabasePath: *dbPath, AssetStore: *assetStore, ListenAddr: *listenAddr,
+		PublicBaseURL: *publicURL, SyncTarget: *syncTarget,
+		SyncDirectory: *syncDirectory, SyncRESTBaseURL: *syncRESTURL,
+		CredentialRef: *credentialRef, CopiedDatabaseAs: *copyAction,
+	})
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	view, err := profiles.Show(path, profile.Name)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	printJSON(map[string]any{"registry": path, "profile": view})
+}
+
+func runProfileShow(args []string) {
+	fs := flag.NewFlagSet("notriosctl profile show", flag.ExitOnError)
+	registryPath := fs.String("registry", "", "profile registry path (default: the user registry)")
+	name := fs.String("name", "", "required: runtime profile name")
+	if err := fs.Parse(args); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(2)
+	}
+	if fs.NArg() != 0 || strings.TrimSpace(*name) == "" {
+		fmt.Fprintln(os.Stderr, "usage: notriosctl profile show --name <profile> [--registry path]")
+		os.Exit(2)
+	}
+	view, err := profiles.Show(registryPathOrDefault(*registryPath), strings.TrimSpace(*name))
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	printJSON(view)
+}
+
+func runProfileValidate(args []string) {
+	fs := flag.NewFlagSet("notriosctl profile validate", flag.ExitOnError)
+	registryPath := fs.String("registry", "", "profile registry path (default: the user registry)")
+	name := fs.String("name", "", "optional: validate one runtime profile")
+	if err := fs.Parse(args); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(2)
+	}
+	if fs.NArg() != 0 {
+		fmt.Fprintln(os.Stderr, "usage: notriosctl profile validate [--name profile] [--registry path]")
+		os.Exit(2)
+	}
+	report := profiles.Validate(context.Background(), registryPathOrDefault(*registryPath), strings.TrimSpace(*name))
+	printJSON(report)
+	if !report.Valid {
+		os.Exit(1)
+	}
+}
+
+func runProfileStart(args []string) {
+	fs := flag.NewFlagSet("notriosctl profile start", flag.ExitOnError)
+	registryPath := fs.String("registry", "", "profile registry path (default: the user registry)")
+	name := fs.String("name", "", "required: runtime profile name")
+	binary := fs.String("binary", "notriosd", "notriosd executable")
+	dryRun := fs.Bool("dry-run", false, "validate and print the secret-free command without starting")
+	if err := fs.Parse(args); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(2)
+	}
+	if fs.NArg() != 0 || strings.TrimSpace(*name) == "" {
+		fmt.Fprintln(os.Stderr, "usage: notriosctl profile start --name <profile> [--binary notriosd] [--dry-run]")
+		os.Exit(2)
+	}
+	path := registryPathOrDefault(*registryPath)
+	report := profiles.Validate(context.Background(), path, strings.TrimSpace(*name))
+	if !report.Valid {
+		printJSON(report)
+		os.Exit(1)
+	}
+	view, err := profiles.Show(path, strings.TrimSpace(*name))
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	if err := profiles.CheckListenAvailable(view.ListenAddr); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	command := []string{*binary, "-config", view.ConfigPath}
+	if *dryRun {
+		printJSON(map[string]any{"profile": view.Name, "command": command, "credential_on_argv": false})
+		return
+	}
+	cmd := exec.Command(command[0], command[1:]...)
+	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
+	if err := cmd.Run(); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
 	}
 }
 
@@ -88,9 +220,14 @@ func runProfileRegister(args []string) {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
+	if existing, ok := registry.ByName(strings.TrimSpace(*name)); ok && existing.ProfileID != "" {
+		fmt.Fprintf(os.Stderr, "profile %q is a runtime profile; register cannot replace its config/identity binding (forget it explicitly first)\n", existing.Name)
+		os.Exit(1)
+	}
 	updated, err := registry.Upsert(profiles.Profile{
 		Name:         strings.TrimSpace(*name),
 		DatabaseID:   identity.DatabaseID,
+		ReplicaID:    identity.ReplicaID,
 		DatabasePath: absoluteDB,
 		AssetStore:   absoluteAssets,
 		RegisteredAt: time.Now().UTC(),
@@ -283,6 +420,7 @@ func runOpen(args []string) {
 	}
 
 	profileLabel := ""
+	profileConfigPath := strings.TrimSpace(*configPath)
 	databasePath := strings.TrimSpace(*dbPath)
 	assetPath := strings.TrimSpace(*assetStore)
 	if databasePath == "" {
@@ -301,6 +439,9 @@ func runOpen(args []string) {
 		}
 		profileLabel = profile.Name
 		databasePath = profile.DatabasePath
+		if profileConfigPath == "" && profile.ConfigPath != "" {
+			profileConfigPath = profile.ConfigPath
+		}
 		if assetPath == "" {
 			assetPath = profile.AssetStore
 		}
@@ -333,7 +474,7 @@ func runOpen(args []string) {
 	}
 	openable := resolution.Status == store.StableLinkResolved || resolution.Status == store.StableLinkTrashed
 	if openable {
-		output["local_url"] = localNoteURL(*configPath, resolution.DocumentID, resolution.Anchor)
+		output["local_url"] = localNoteURL(profileConfigPath, resolution.DocumentID, resolution.Anchor)
 	}
 	printJSON(output)
 	if !openable {

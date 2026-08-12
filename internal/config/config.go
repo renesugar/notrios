@@ -15,13 +15,33 @@ import (
 // chooses and pins the long-term configuration library.
 type Config struct {
 	ConfigPath    string              `json:"config_path,omitempty"`
+	Profile       ProfileConfig       `json:"profile"`
 	Server        ServerConfig        `json:"server"`
 	Data          DataConfig          `json:"data"`
+	Sync          SyncConfig          `json:"sync"`
 	Search        SearchConfig        `json:"search"`
 	MCP           MCPConfig           `json:"mcp"`
 	SearchSidecar SearchSidecarConfig `json:"search_sidecar"`
 	RemoteMedia   RemoteMediaConfig   `json:"remote_media"`
 	Retention     RetentionConfig     `json:"retention"`
+}
+
+// ProfileConfig binds a generated per-profile config file back to the local
+// registry entry that owns it. It is local routing state and is never synced.
+type ProfileConfig struct {
+	ID           string `json:"id,omitempty"`
+	Name         string `json:"name,omitempty"`
+	RegistryPath string `json:"registry_path,omitempty"`
+}
+
+// SyncConfig reserves the local transport choice and credential-store
+// reference for later v0.7 slices. G3 does not interpret credentials or start
+// synchronization; target "none" is the safe, complete default.
+type SyncConfig struct {
+	Target        string `json:"target"`
+	Directory     string `json:"directory,omitempty"`
+	RESTBaseURL   string `json:"rest_base_url,omitempty"`
+	CredentialRef string `json:"credential_ref,omitempty"`
 }
 
 type ServerConfig struct {
@@ -55,7 +75,7 @@ type MCPConfig struct {
 	// read so existing configs keep working; when both are set the narrower
 	// wins, because a key that silently stops applying must never widen what an
 	// agent may do.
-	DefaultProfile string `json:"default_profile"`
+	DefaultProfile   string `json:"default_profile"`
 	MaxResults       int    `json:"max_results"`
 	MaxDocumentBytes int    `json:"max_document_bytes"`
 }
@@ -125,6 +145,7 @@ var MediaActions = map[string]bool{"allow": true, "block": true, "review": true}
 // Default returns a complete local-development configuration.
 func Default() Config {
 	return Config{
+		Sync: SyncConfig{Target: "none"},
 		Server: ServerConfig{
 			ListenAddr:    "127.0.0.1:8080",
 			PublicBaseURL: "http://127.0.0.1:8080",
@@ -315,8 +336,12 @@ func applyScalar(cfg *Config, section, subsection, key, value string) {
 	switch section {
 	case "server":
 		applyServer(&cfg.Server, key, value)
+	case "profile":
+		applyProfile(&cfg.Profile, key, value)
 	case "data":
 		applyData(&cfg.Data, key, value)
+	case "sync":
+		applySync(&cfg.Sync, key, value)
 	case "search":
 		applySearch(&cfg.Search, key, value)
 	case "mcp":
@@ -327,6 +352,30 @@ func applyScalar(cfg *Config, section, subsection, key, value string) {
 		applyRemoteMedia(&cfg.RemoteMedia, subsection, key, value)
 	case "retention":
 		applyRetention(&cfg.Retention, key, value)
+	}
+}
+
+func applyProfile(cfg *ProfileConfig, key, value string) {
+	switch key {
+	case "id":
+		cfg.ID = value
+	case "name":
+		cfg.Name = value
+	case "registry_path":
+		cfg.RegistryPath = value
+	}
+}
+
+func applySync(cfg *SyncConfig, key, value string) {
+	switch key {
+	case "target":
+		cfg.Target = strings.ToLower(strings.TrimSpace(value))
+	case "directory":
+		cfg.Directory = value
+	case "rest_base_url":
+		cfg.RESTBaseURL = value
+	case "credential_ref":
+		cfg.CredentialRef = value
 	}
 }
 
@@ -451,6 +500,8 @@ func applyServer(cfg *ServerConfig, key, value string) {
 		cfg.ListenAddr = value
 	case "public_base_url":
 		cfg.PublicBaseURL = value
+	case "web_dir":
+		cfg.WebDir = value
 	}
 }
 

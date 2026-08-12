@@ -133,6 +133,7 @@ This matrix keeps the long conversation compressed into implementation-sized fea
 | Feature | Status | Primary owner | Notes |
 |---|---:|---|---|
 | SQLite revision restore | Implemented | document service | Restore creates a new revision. |
+| Named runtime profiles and multi-instance isolation | Implemented v0.7 G3 | config/service/CLI | Version-2 local registry plus one `0600` config per runtime profile; explicit profile/database/replica binding, isolated paths and loopback ports, safe `none` target, copied-database adopt/fork gate, startup validation, active-profile status, and no REST/MCP management surface. |
 | Native record-level sync | Planned v0.7 | sync service | Transactional change log, contiguous state vectors, Notrios-owned pure-Go revision merge and optional named-parent constrained-VCDIFF transfer delta (G1a evidence; production still gated), G2's bounded NCB1 envelope candidate and 1 MiB resource chunks (also production-gated), lazy resources, acknowledgement/retention; see `PLAN.md` G0, G1, G1a, and G2-G20. |
 | REST/ephemeral-directory transports | Planned v0.7 | sync service | One object/envelope protocol with mandatory payload encryption and per-replica Ed25519 signatures; directory is disposable and reconstructible; rclone is test carrier only; target `none` supported. |
 | Snapshot catch-up/reset | Planned v0.7 | archive/sync | Signed request, encrypted archive-v2 snapshot/ZIP, explicit restore intent, then incremental replay from its state-vector boundary. |

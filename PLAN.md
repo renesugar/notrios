@@ -1,7 +1,7 @@
 # Plan: v0.7 — Native synchronization
 
-Status: **G0-G2 completed 2026-08-11. Product version remains 0.6.0 and the
-canonical schema remains v18. G3 is the next item and is not approved.** The
+Status: **G0-G3 completed through 2026-08-12. Product version remains 0.6.0 and the
+canonical schema remains v18. G4 is the next item and is not approved.** The
 former seven-item draft was too coarse: it mixed protocol research, canonical
 write interception, merge semantics, two transports, cryptography, recovery,
 UI, retention, and release validation into slices that could not be reviewed or
@@ -361,6 +361,9 @@ mobile bounds. No production sync codec, schema, dependency, or runtime landed.
 
 ## G3. Profiles, replica identity, and multi-instance process isolation
 
+**Status: complete 2026-08-12.** Archived as
+`plans/v0.7/005-profiles-replica-identity-multi-instance-isolation.md`.
+
 **Goal.** Make one installation manage multiple databases explicitly and allow
 two or more server processes on one machine without sharing paths, ports,
 replica identities, or secrets accidentally.
@@ -399,6 +402,18 @@ redaction and `0600` file checks; stable-link routing across profiles.
   ID, or fork to a new database ID. A duplicated replica ID is always refused.
   Moving selected notebooks between unrelated database universes uses an
   explicit export followed by import, not synchronization.
+
+**Completion evidence (2026-08-12).** Runtime profiles now use the version-2
+local registry plus one generated `0600` config, bind a random local profile ID
+and the database/replica identity, resolve isolated absolute runtime paths and
+loopback ports, default sync to `none`, redact credential references, and
+validate again during service startup. The CLI exposes
+`create|show|list|validate|start`; start passes only the config path and remains
+a foreground launcher. Raw copies are refused until explicit adopt/fork,
+whereas valid replicas of one logical database remain explicit stable-link
+ambiguity. A real integration fixture starts two profile-bound `notriosd`
+processes simultaneously and verifies separate status/routing. No schema,
+journal, sync transport, MCP profile surface, supervisor, or dependency landed.
 
 ## G4. Replication schema and transactionally complete local journal
 
@@ -1093,6 +1108,6 @@ recommendation, blocking status, and consequence.
 | Current-GUI Mermaid baseline | G18 | Resolved fact: upstream-capable but disabled pending offline/security evidence |
 | Release version/schema bookkeeping | G20 | Open, non-blocking until wrap-up |
 
-G0-G2 are complete. G3 is the next implementable item, but is not approved.
-Implementation begins only after an explicit instruction naming G3; completing
-it still stops for a verified ZIP and approval before G4.
+G0-G3 are complete. G4 is the next implementable item, but is not approved.
+Implementation begins only after an explicit instruction naming G4; completing
+it still stops for a verified ZIP and approval before G5.

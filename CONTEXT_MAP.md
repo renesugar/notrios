@@ -7,7 +7,7 @@ This file is the codebase atlas. Update it whenever major files or directories a
 - `README.md` — project overview and quick start.
 - `PLAN.md` — the **active v0.7 native synchronization plan**, divided into
   twenty-two independently approvable slices (G0, G1, G1a, and G2-G20).
-  G0-G17 policy decisions are resolved; G0-G2 are complete and G3 is next but
+  G0-G17 policy decisions are resolved; G0-G3 are complete and G4 is next but
   unapproved. v0.6 is complete at product
   0.6.0/schema v18 and archived under
   `plans/v0.6/`; v0.5 and v0.4 are archived under their version directories.
@@ -40,6 +40,9 @@ This file is the codebase atlas. Update it whenever major files or directories a
   bounds harness and evidence, NCB1 investigation specification, hostile-limit
   probes, fixed-chunk/pack recommendations, and separate emulator/physical
   mobile checklists. It is investigation code, not a production sync package.
+- `internal/profiles/runtime.go` — G3 named runtime-profile creation, redacted
+  views, registry/config/database startup binding, path/port/replica collision
+  detection, and explicit copied-database adopt/fork handling.
 - `plans/v0.7/` — archived completed v0.7 slices G0-G2 plus the planning
   amendment that inserted G1a.
 - `FLUTTER_GO_CLIENT.md` — verified Flutter/Dart FFI and Go build-mode facts,
@@ -88,8 +91,9 @@ This file is the codebase atlas. Update it whenever major files or directories a
   `notrios://databases/{database_id}/documents/{document_id}` link, with typed
   rejections (foreign scheme, malformed, over-limit, unsupported route).
 - `internal/profiles/` — the explicit local registry mapping a logical database
-  ID to a database on this machine; resolves only unambiguous matches and
-  reports every candidate otherwise.
+  ID to a database on this machine plus G3 runtime-profile config/identity and
+  process-isolation validation; stable links resolve only unambiguous matches
+  and report every candidate otherwise.
 - `internal/publish/` — saved publication profiles (selection and privacy
   decisions only, never an output path or a command) plus the reviewed-plan gate
   that publishing must satisfy.
@@ -163,8 +167,8 @@ This file is the codebase atlas. Update it whenever major files or directories a
 - `api/openapi.yaml` contains the REST contract for collections, documents,
   resources, revisions, links, remote media, graph, selection planning, and jobs.
   Remote-media scan/localization, selection/privacy dry runs, batches, and job
-  watch/cancel are live; remote job starts, REST profiles, and sync remain
-  staged.
+  watch/cancel are live; G3 local runtime profiles are CLI/config-only, while
+  remote job starts, REST profile management, and sync remain staged.
 - `api/mcp-tools.md` defines MCP tool scopes and the implemented bounded tools. `internal/httpapi/mcp.go` contains the current dependency-free adapter mounted at `/mcp`.
 - `internal/api/types.go` mirrors the current REST DTO shapes.
 - `internal/httpapi/server.go` plus its route-specific files expose live

@@ -48,6 +48,13 @@ notriosctl profile forget --name work        # registry edit only; the database 
 assert one on the command line. The registry is written with owner-only
 permissions because it records local paths.
 
+For a server you intend to start, prefer `profile create`; it adds a generated
+owner-only config and replica binding, validates paths and ports, and keeps the
+stable-link mapping in the same registry. `profile register` remains the
+routing-only compatibility surface. Several entries with one `database_id`
+stay explicit link ambiguity, while two entries with one `replica_id` fail
+runtime validation because that indicates an unrotated filesystem copy.
+
 ## Opening a link
 
 ```sh

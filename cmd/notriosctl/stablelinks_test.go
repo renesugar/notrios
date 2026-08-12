@@ -2,11 +2,14 @@ package main
 
 import (
 	"encoding/json"
+	"net"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestDesktopEntryRegistersOnlyTheNotriosScheme(t *testing.T) {
@@ -62,6 +65,33 @@ func buildCLI(t *testing.T) string {
 	return binary
 }
 
+func buildDaemon(t *testing.T) string {
+	t.Helper()
+	if testing.Short() {
+		t.Skip("skipping daemon build in short mode")
+	}
+	binary := filepath.Join(t.TempDir(), "notriosd")
+	build := exec.Command("go", "build", "-o", binary, "../notriosd")
+	build.Stderr = os.Stderr
+	if err := build.Run(); err != nil {
+		t.Fatalf("build notriosd: %v", err)
+	}
+	return binary
+}
+
+func unusedLoopbackAddress(t *testing.T) string {
+	t.Helper()
+	listener, err := net.Listen("tcp4", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("allocate loopback port: %v", err)
+	}
+	address := listener.Addr().String()
+	if err := listener.Close(); err != nil {
+		t.Fatal(err)
+	}
+	return address
+}
+
 type cliResult struct {
 	exitCode int
 	stdout   string
@@ -93,6 +123,111 @@ func decodeCLIJSON(t *testing.T, output string) map[string]any {
 		t.Fatalf("decode CLI output %q: %v", output, err)
 	}
 	return decoded
+}
+
+func TestRuntimeProfilesStartTwoIsolatedDaemons(t *testing.T) {
+	binary := buildCLI(t)
+	daemon := buildDaemon(t)
+	root := t.TempDir()
+	registry := filepath.Join(root, "profiles.json")
+	addresses := []string{unusedLoopbackAddress(t), unusedLoopbackAddress(t)}
+	configs := make([]string, 0, 2)
+	for i, name := range []string{"work", "personal"} {
+		result := runCLI(t, binary, "profile", "create", "--registry", registry,
+			"--name", name, "--listen", addresses[i],
+			"--db", filepath.Join(root, name+".sqlite"),
+			"--asset-store", filepath.Join(root, name+"-assets"))
+		if result.exitCode != 0 {
+			t.Fatalf("create %s: %s", name, result.stderr)
+		}
+		profile, ok := decodeCLIJSON(t, result.stdout)["profile"].(map[string]any)
+		if !ok {
+			t.Fatalf("create output: %s", result.stdout)
+		}
+		configs = append(configs, profile["config_path"].(string))
+		dryRun := runCLI(t, binary, "profile", "start", "--registry", registry,
+			"--name", name, "--binary", daemon, "--dry-run")
+		if dryRun.exitCode != 0 {
+			t.Fatalf("start dry run %s: %s", name, dryRun.stderr)
+		}
+		if strings.Contains(dryRun.stdout, "credential_ref") || !strings.Contains(dryRun.stdout, `"credential_on_argv": false`) {
+			t.Fatalf("start command must be secret-free: %s", dryRun.stdout)
+		}
+	}
+
+	collision := runCLI(t, binary, "profile", "create", "--registry", registry,
+		"--name", "collision", "--listen", addresses[0],
+		"--db", filepath.Join(root, "collision.sqlite"),
+		"--asset-store", filepath.Join(root, "collision-assets"))
+	if collision.exitCode != 1 || !strings.Contains(collision.stderr, "collide") {
+		t.Fatalf("port collision was not refused: exit=%d stderr=%s", collision.exitCode, collision.stderr)
+	}
+	legacyOverwrite := runCLI(t, binary, "profile", "register", "--registry", registry,
+		"--name", "work", "--db", filepath.Join(root, "personal.sqlite"),
+		"--asset-store", filepath.Join(root, "personal-assets"))
+	if legacyOverwrite.exitCode != 1 || !strings.Contains(legacyOverwrite.stderr, "cannot replace") {
+		t.Fatalf("legacy register replaced a runtime binding: exit=%d stderr=%s", legacyOverwrite.exitCode, legacyOverwrite.stderr)
+	}
+
+	documentID := createNoteForCLI(t, binary, filepath.Join(root, "work.sqlite"), filepath.Join(root, "work-assets"))
+	link := decodeCLIJSON(t, mustRunCLI(t, binary, "link", "--db", filepath.Join(root, "work.sqlite"), "--asset-store", filepath.Join(root, "work-assets"), documentID))["stable_uri"].(string)
+	opened := runCLI(t, binary, "open", "--registry", registry, "--profile", "work", link)
+	if opened.exitCode != 0 {
+		t.Fatalf("open runtime profile link: %s", opened.stderr)
+	}
+	if localURL := decodeCLIJSON(t, opened.stdout)["local_url"].(string); !strings.HasPrefix(localURL, "http://"+addresses[0]+"/") {
+		t.Fatalf("stable-link routing used the wrong profile URL: %s", localURL)
+	}
+
+	processes := []*exec.Cmd{}
+	for _, configPath := range configs {
+		cmd := exec.Command(daemon, "-config", configPath)
+		var stderr strings.Builder
+		cmd.Stderr = &stderr
+		if err := cmd.Start(); err != nil {
+			t.Fatal(err)
+		}
+		processes = append(processes, cmd)
+		proc := cmd
+		t.Cleanup(func() {
+			if proc.Process != nil {
+				_ = proc.Process.Kill()
+				_ = proc.Wait()
+			}
+		})
+	}
+
+	for i, name := range []string{"work", "personal"} {
+		endpoint := "http://" + addresses[i] + "/api/v1/status"
+		var response *http.Response
+		var err error
+		deadline := time.Now().Add(10 * time.Second)
+		for time.Now().Before(deadline) {
+			response, err = http.Get(endpoint)
+			if err == nil {
+				break
+			}
+			time.Sleep(25 * time.Millisecond)
+		}
+		if err != nil {
+			t.Fatalf("wait for %s at %s: %v", name, endpoint, err)
+		}
+		var status map[string]any
+		if decodeErr := json.NewDecoder(response.Body).Decode(&status); decodeErr != nil {
+			response.Body.Close()
+			t.Fatal(decodeErr)
+		}
+		response.Body.Close()
+		if response.StatusCode != http.StatusOK || status["profile"] != name {
+			t.Fatalf("%s status: HTTP %d %+v", name, response.StatusCode, status)
+		}
+		if got := status["profile_id"]; got == nil || got == "" {
+			t.Fatalf("%s status omitted profile identity: %+v", name, status)
+		}
+	}
+	if len(processes) != 2 {
+		t.Fatalf("started %d processes, want 2", len(processes))
+	}
 }
 
 // The whole point of a stable link is that it names a logical database rather

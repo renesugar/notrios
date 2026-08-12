@@ -1,6 +1,6 @@
 # Plan Status
 
-Updated: 2026-08-11 (G2 envelope/resource bounds investigation complete; G3 next)
+Updated: 2026-08-12 (G3 runtime profiles and multi-instance isolation complete; G4 next)
 
 ## Active milestone
 
@@ -13,8 +13,31 @@ G0, G1, G1a, and G2-G20: evidence, profiles/local journal, state-vector converge
 revision deltas/merge, lazy resources, secure container/catch-up,
 ephemeral-directory and REST transports, jobs/UI/retention, shared-core/FFI/
 Mermaid/mobile handoff, compatibility, and final validation. The user's
-2026-08-11 review resolved every G0-G17 policy decision. **G0-G2 are complete**
-and archived under `plans/v0.7/`; G3 is next and is not approved.
+2026-08-11 review resolved every G0-G17 policy decision. **G0-G3 are complete**
+and archived under `plans/v0.7/`; G4 is next and is not approved.
+
+## v0.7 G3 completion — 2026-08-12
+
+- Upgraded the owner-only stable-link registry to format v2 while preserving
+  v1 reads and routing-only entries. Runtime entries bind a random local
+  profile ID, database/replica IDs, and one generated owner-only config.
+- Added `notriosctl profile create|show|list|validate|start`; show redacts the
+  credential reference, start passes only `-config`, and the foreground
+  launcher does not supervise or persist a process.
+- Generated profiles resolve isolated absolute canonical/derived paths, a
+  loopback listen address/public URL, and `sync.target none|directory|rest`.
+  `none` is the first-class default; transfer remains unimplemented.
+- Validation refuses exact/nested runtime path sharing, normalized loopback
+  port collisions, stale config/database/identity bindings, and duplicate
+  replica IDs. Raw copies require explicit adopt (same database, new replica)
+  or fork (new database and replica).
+- Service startup repeats the binding check. REST/UI report the active local
+  profile, while replica ID stays out of REST. Stable-link open uses the
+  selected profile's public URL and retains explicit ambiguity across valid
+  replicas of one logical database.
+- A real CLI integration fixture builds both binaries and runs two isolated
+  daemons simultaneously. Product remains 0.6.0/schema v18; no journal,
+  transport, MCP profile management, supervisor, scan, or dependency landed.
 
 ## v0.7 G2 completion — 2026-08-11
 

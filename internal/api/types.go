@@ -6,6 +6,8 @@ type StatusResponse struct {
 	Service    string `json:"service"`
 	Version    string `json:"version"`
 	Status     string `json:"status"`
+	Profile    string `json:"profile,omitempty"`
+	ProfileID  string `json:"profile_id,omitempty"`
 	Database   string `json:"database,omitempty"` // Deprecated summary retained for early UI compatibility.
 	ConfigPath string `json:"config_path,omitempty"`
 	// Always populated by Status. `omitempty` never applied to a struct value,

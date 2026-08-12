@@ -573,10 +573,15 @@ Usage:
                                                  # print the stable notrios:// link for a note or one of its sections
   notriosctl open [--profile name] [--registry path] [--db path] [--launch] <notrios-uri>
                                                  # resolve a stable link on this machine (exit 1 unresolved, 2 malformed)
-  notriosctl profile register --name <profile> [--db ...] [--registry path]
+  notriosctl profile create --name <profile> [--listen 127.0.0.1:8080] [--db ...] [--sync-target none|directory|rest]
+  notriosctl profile show --name <profile> [--registry path]
   notriosctl profile list [--registry path]
+  notriosctl profile validate [--name <profile>] [--registry path]
+  notriosctl profile start --name <profile> [--binary notriosd] [--dry-run]
+                                                 # owner-only config, identity/path/port checks, and secret-free startup
+  notriosctl profile register --name <profile> [--db ...] [--registry path]
   notriosctl profile forget --name <profile> [--registry path]
-                                                 # local database registry used to route notrios:// links
+                                                 # legacy stable-link routing entry; ambiguity remains explicit
   notriosctl register-url-handler [--apply] [--binary path] [--dir path]
                                                  # Ubuntu/XDG notrios:// protocol handler; prints unless --apply
   notriosctl publish profile save --name <profile> [--notebooks id,id] [--tags a,b] [--link-action plain_text]

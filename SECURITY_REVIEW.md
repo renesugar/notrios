@@ -310,6 +310,16 @@ no canonical write occurs before complete verification. These numbers are
 desktop proxies and may only be retained or lowered by the v0.8 emulator and
 post-1.0 physical-device gates.
 
+**G3 adds local process isolation, not sync authentication.** Generated runtime
+profiles use one `0600` config per registry entry, absolute isolated storage
+paths, loopback listeners, and `sync.target: none` by default. Startup rechecks
+the config/registry/database identity binding and refuses duplicate paths,
+ports, or replica IDs; a copied database requires explicit adopt or fork. CLI
+show output reports only whether a credential reference is configured, and the
+start command passes only the config path. This does not protect a user who can
+read the account's files, does not authenticate REST, and does not implement a
+sync transport or credential store.
+
 ## Deployment posture
 
 Use the default loopback listener:

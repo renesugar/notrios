@@ -107,6 +107,12 @@ Recoll availability, backlog, sync/index, and reconciliation state.
   documentation and release wrap-up (F7). Archived under `plans/v0.6/`. See
   [`PLAN.md`](PLAN.md) for the next milestone and [`ROADMAP.md`](ROADMAP.md) for
   the sequence.
+- **v0.7 (in progress) — native synchronization.** G0-G2 completed the threat,
+  revision/delta, pure-Go VCDIFF, envelope, and resource-bound investigations.
+  G3 adds named owner-only runtime profiles, explicit database/replica binding,
+  isolated paths and loopback ports, copied-database adopt/fork checks, and a
+  verified two-daemon working state. Replication itself begins with G4 and is
+  not yet implemented.
 - Agent progress/attempt tracking: [`agent/PLAN_STATUS.md`](agent/PLAN_STATUS.md), [`agent/ATTEMPT_LOG.jsonl`](agent/ATTEMPT_LOG.jsonl), and [`agent/MODEL_LOG.jsonl`](agent/MODEL_LOG.jsonl).
 
 ## Contributing

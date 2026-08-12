@@ -33,7 +33,8 @@ The REST persistence slice is implemented for managed Markdown documents:
 - `POST /api/v1/selection/plan` returns the read-only selection/privacy plan.
 - `POST /api/v1/links/resolve` resolves an external `notrios://` link against
   this database.
-- job start APIs, REST profiles, and sync remain planned. Addressable block
+- job start APIs, REST profile management, and sync remain planned. G3 local
+  runtime profiles are live through CLI/config and active-profile status only. Addressable block
   indexing, bounded batch organizer transactions, and job watch/cancel are
   live. Document/resource/search/notebook/tag/trash, link-listing,
   graph-slice, remote-media scan/policy/localization, selection planning, stable
@@ -90,7 +91,8 @@ GET /healthz
 GET /api/v1/status
 ```
 
-`/api/v1/status` reports runtime readiness plus the config path, database
+`/api/v1/status` reports runtime readiness plus the active local runtime
+profile name/ID when configured, config path, database
 driver/path/state, the stable logical `database_id`, schema version, storage
 roots, capability flags, configured search limits, and the active remote-media
 policy. `database_id` is what a client needs to build an external
@@ -765,8 +767,11 @@ Stable-link routing is likewise CLI/desktop-local:
 ```text
 notriosctl link [--db path] <document-id>
 notriosctl open [--registry path] [--profile name] [--db path] [--launch] <notrios-uri>
-notriosctl profile register --name <profile> [--db path] [--registry path]
-notriosctl profile list|forget [--registry path]
+notriosctl profile create --name <profile> [--listen host:port] [--db path]
+    [--sync-target none|directory|rest] [--registry path]
+notriosctl profile show|list|validate|start [--name <profile>] [--registry path]
+notriosctl profile register --name <profile> [--db path] [--registry path] # legacy routing-only entry
+notriosctl profile forget --name <profile> [--registry path]
 notriosctl register-url-handler [--apply] [--binary path] [--dir path]
 ```
 

@@ -8,7 +8,7 @@ Start the service (`make build && ./bin/notriosd -config config/config.example.y
 
 ```sh
 curl http://127.0.0.1:8080/healthz              # -> ok
-curl http://127.0.0.1:8080/api/v1/status | jq   # paths, schema version, capabilities
+curl http://127.0.0.1:8080/api/v1/status | jq   # active profile, paths, schema, capabilities
 ```
 
 All request/response bodies are JSON except resource content streams. Errors use a stable envelope:
@@ -620,9 +620,10 @@ nothing happened. Rerun the command.
 ## Placeholder endpoints (not yet functional)
 
 Staged contracts include import- and export-job creation and collection
-creation/patching (collections are effectively fixed to `default`). Runtime
-profiles and the v0.7 ephemeral-directory/REST sync endpoints are planned but
-not live; the exact REST data plane waits for G13/G14 approval. Current archive
+creation/patching (collections are effectively fixed to `default`). G3 runtime
+profiles are live as local CLI/config state and status reports the active
+profile, but they deliberately have no REST or MCP management surface. The
+v0.7 ephemeral-directory/REST sync data plane waits for G13/G14 approval. Current archive
 v2 export/verify/restore are CLI commands by design. Remote-media scan and
 localization are implemented; see
 [the CLI guide](../cli.md#localize) and the note inspector in the GUI.

@@ -24,6 +24,7 @@ The authoritative, always-current example is `config/config.example.yaml` in the
 
 | Section / key | Default | Meaning |
 |---|---|---|
+| `profile.id` / `profile.name` / `profile.registry_path` | *(unset)* | generated local runtime-profile binding; use `notriosctl profile create`, do not copy it to make a second writable replica |
 | `server.listen_addr` | `127.0.0.1:8080` | bind address — see the security note below |
 | `server.public_base_url` | `http://127.0.0.1:8080` | base URL advertised to clients |
 | `server.web_dir` | *(unset)* | directory holding the built web interface. Unset searches `web/dist` under the working directory, then under the executable's own directory and its parent. `--web-dir` overrides it. See [where the interface files have to be](installation.md#where-the-interface-files-have-to-be) |
@@ -31,6 +32,10 @@ The authoritative, always-current example is `config/config.example.yaml` in the
 | `data.database_path` | `./data/notes.sqlite` | the canonical SQLite database |
 | `data.asset_store` | `./data/assets` | content-addressed attachment bytes |
 | `data.projection_dir` | `./data/projections` | Markdown mirror of your notes for the search sidecar |
+| `sync.target` | `none` | local transport choice: `none`, `directory`, or `rest`; G3 records and validates it but later slices implement transfer |
+| `sync.directory` | *(unset)* | absolute ephemeral carrier path required only for `directory` |
+| `sync.rest_base_url` | *(unset)* | absolute peer URL required only for `rest` |
+| `sync.credential_ref` | *(unset)* | reference to a native credential-store item, never a credential value; redacted from CLI profile output |
 | `search.default_limit` | `20` | search page size when the client sends none |
 | `search.max_limit` | `100` | hard cap on requested page size |
 | `mcp.enabled` | `true` | mount the `/mcp` endpoint |
@@ -69,7 +74,7 @@ to delete. Resources referenced by any current or trashed note are protected.
 **Automatic creation:** on startup the service creates every configured
 directory and, if absent, the database itself, applying schema migrations to
 older databases automatically. The current schema is version 18.
-`/api/v1/status` reports the resolved paths, database state, schema version,
+`/api/v1/status` reports the active runtime profile name/ID (when managed), resolved paths, database state, schema version,
 capability flags, search limits, remote-media policy, and optional Recoll
 backlog/sync/reconciliation state.
 Search capabilities include `search.boolean` and `search.category_alias`; the

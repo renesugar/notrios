@@ -13,12 +13,12 @@ wrap-up). The thirteen v0.5 slices remain archived under `plans/v0.5/`.
 `PLAN.md` now holds the **active v0.7 native synchronization plan** with
 twenty-two independently approvable slices: G0, G1, G1a, and G2-G20. The user's 2026-08-11
 review resolved the policy decisions through G17, including mandatory payload
-encryption and per-replica Ed25519 signatures. **G0-G2 are complete** and
+encryption and per-replica Ed25519 signatures. **G0-G3 are complete** and
 archived under `plans/v0.7/`; their reviewed evidence is under
 `performance/v0.7-g0/`, `performance/v0.7-g1/`, and
-`performance/v0.7-g1a/`, and `performance/v0.7-g2/`. **G3 is next and is not
-approved.** It owns runtime profiles, replica identity, and multi-instance
-process isolation.
+`performance/v0.7-g1a/`, and `performance/v0.7-g2/`. **G4 is next and is not
+approved.** It owns the replication schema and transactionally complete local
+journal.
 
 G0 added no production sync code or dependency. It freezes the threat model,
 normative glossary, thirty misuse/control traces, and upstream license/platform
@@ -62,6 +62,17 @@ trailers. G9 must still promote or replace the codec, pin goldens, and implement
 crypto/admission. FastCDC remains deferred. Emulator and physical-device
 checklists prevent these desktop-proxy numbers from becoming a mobile claim.
 
+G3 added production local profile/config isolation but no replication schema or
+transport. The version-2 stable-link registry now supports generated runtime
+profiles with a random local profile ID, one bound database/replica identity,
+one owner-only config, isolated absolute runtime paths, a distinct loopback
+port/public URL, and `sync.target: none` by default. `notriosctl profile
+create|show|list|validate|start` is live; start launches only `notriosd -config
+<path>` and is not a supervisor. Startup independently revalidates the binding.
+Raw filesystem copies are refused until explicit adopt/fork, while two valid
+replicas of one database remain explicit stable-link ambiguity. Status/UI name
+the active profile. The real CLI fixture runs two daemons simultaneously.
+
 That review also added a second portability route. v0.8 now investigates and
 builds a framework-neutral Go application facade and versioned no-GUI C ABI,
 with Android-emulator-only pre-1.0 evidence; v1.0 packages the supported ABI
@@ -71,15 +82,15 @@ the API/lifecycle/ownership/stream contract and source checks. The current GUI's
 Mermaid support is **disabled**, not merely untested (`noMermaid: true`), and a
 v0.8 offline/security-tested enablement slice owns it.
 
-Latest completed plan validation is G2 (2026-08-11): focused codec/resource
-tests, reproducible evidence generation and structural validation, repository
-Go tests/vet, required-file and plan-loop checks, scaffold validation, frontend
-typecheck/all tests/build, docs-site build, and whitespace checks. The final
-archive records exact commands; release-ZIP verification is the post-commit
-handoff step. `npm audit` still reports the pre-existing 1 moderate and 2 high
-advisories; G2 changed no project dependency or runtime code. Start G3 only
+Latest completed plan validation is G3 (2026-08-12): focused profile/config and
+real two-daemon CLI tests, repository Go tests/vet, required-file and plan-loop
+checks, scaffold validation, frontend typecheck/all 155 tests/build, docs-site
+build, and whitespace checks. The final archive records exact commands;
+release-ZIP verification is the post-commit handoff step. `npm audit` still
+reports the pre-existing 1 moderate and 2 high advisories; G3 changed no
+dependency. Start G4 only
 after explicit user approval, then stop after its validation, commit, verified
-ZIP, and handoff before G4.
+ZIP, and handoff before G5.
 
 Two things a reader continuing this project should know about v0.6:
 

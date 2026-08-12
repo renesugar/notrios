@@ -14,6 +14,12 @@ data:
   asset_store: "./data/assets"
   projection_dir: "./data/projections"
 
+# `notriosctl profile create` writes a separate owner-only config with a local
+# profile identity, absolute isolated paths, and one of these targets. The
+# ordinary checkout config is unmanaged and safely keeps synchronization off.
+sync:
+  target: "none"                 # none | directory | rest
+
 search:
   default_limit: 20
   max_limit: 100

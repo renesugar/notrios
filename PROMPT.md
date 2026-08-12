@@ -14,12 +14,13 @@ Read these files first:
 8. `DATABASE_SCHEMA.md`
 9. `NOTEBOOKS_AND_SEARCH_NOTEBOOKS.md`, `SEARCH_QUERY_LANGUAGE.md`, `RECOLL_INTEGRATION.md`
 10. `TESTING_POLICY.md`
-11. `FLUTTER_GO_CLIENT.md`
-12. `CONTEXT_MAP.md`
-13. `agent/PLAN_STATUS.md`
-14. `agent/ATTEMPT_LOG.jsonl`
-15. `agent/MODEL_LOG.jsonl`
-16. `agent/OPEN_QUESTIONS.md`
+11. `SYNCHRONIZATION.md`
+12. `FLUTTER_GO_CLIENT.md`
+13. `CONTEXT_MAP.md`
+14. `agent/PLAN_STATUS.md`
+15. `agent/ATTEMPT_LOG.jsonl`
+16. `agent/MODEL_LOG.jsonl`
+17. `agent/OPEN_QUESTIONS.md`
 
 Then:
 

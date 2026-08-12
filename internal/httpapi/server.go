@@ -314,6 +314,8 @@ func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
 		Service:      "notrios",
 		Version:      version.Version,
 		Status:       status,
+		Profile:      s.config.Profile.Name,
+		ProfileID:    s.config.Profile.ID,
 		Database:     database,
 		ConfigPath:   s.config.ConfigPath,
 		DatabaseInfo: databaseInfo,

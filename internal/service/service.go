@@ -12,6 +12,7 @@ import (
 
 	"github.com/renesugar/notrios/internal/config"
 	"github.com/renesugar/notrios/internal/httpapi"
+	"github.com/renesugar/notrios/internal/profiles"
 	"github.com/renesugar/notrios/internal/projection"
 	"github.com/renesugar/notrios/internal/recoll"
 	"github.com/renesugar/notrios/internal/store"
@@ -32,6 +33,9 @@ type Service struct {
 // New creates storage directories, opens and bootstraps the store, builds the
 // HTTP handler, and starts the optional search sidecar.
 func New(cfg config.Config) (*Service, error) {
+	if err := profiles.ValidateStartup(context.Background(), cfg); err != nil {
+		return nil, err
+	}
 	if err := config.EnsureDirectories(cfg); err != nil {
 		return nil, err
 	}

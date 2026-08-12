@@ -232,7 +232,15 @@ operations, 16 MiB canonical bytes, or 4 MiB compressed bytes. Resources stay
 whole below 1 MiB and use 1 MiB fixed chunks above it; pending admission and
 sync packs have explicit disk/count/size bounds. Android numbers remain
 provisional behind the v0.8 emulator and post-1.0 physical-device gates. No
-production sync code or dependency landed; G3 is next and approval-gated.
+production sync code or dependency landed.
+
+**G3 completed 2026-08-12.** Named runtime profiles now bind owner-only
+per-profile configs to explicit database/replica identities, isolated absolute
+paths and loopback ports, a public URL, and a safe `sync.target: none` default.
+CLI create/show/list/validate/start surfaces, copied-database adopt/fork gates,
+startup revalidation, active-profile UI/status, stable-link routing, and a real
+two-daemon smoke are live. No sync journal or transport landed; G4 is next and
+approval-gated.
 
 - **Evidence before contracts (G0-G2, including G1a):** threat model and
   reference validation; representative revision/delta/three-way-merge

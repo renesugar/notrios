@@ -50,6 +50,7 @@ func TestStatusReportsConfigurationAndSchema(t *testing.T) {
 	}
 	cfg := config.Default()
 	cfg.ConfigPath = "config/test.yaml"
+	cfg.Profile = config.ProfileConfig{ID: "profile_test", Name: "test"}
 	cfg.Data.DatabasePath = ":memory:"
 	cfg.Data.AssetStore = "/tmp/notes-test-assets"
 	cfg.SearchSidecar.Enabled = true
@@ -79,6 +80,9 @@ func TestStatusReportsConfigurationAndSchema(t *testing.T) {
 	}
 	if got.ConfigPath != "config/test.yaml" || got.Storage.AssetStore != "/tmp/notes-test-assets" {
 		t.Fatalf("unexpected config/storage status: %+v", got)
+	}
+	if got.Profile != "test" || got.ProfileID != "profile_test" {
+		t.Fatalf("active runtime profile missing: %+v", got)
 	}
 	if !got.Capabilities["documents.create"] || !got.Capabilities["search.fts5"] || !got.Capabilities["search.boolean"] ||
 		!got.Capabilities["search.category_alias"] || !got.Capabilities["selection.plan"] || !got.Capabilities["search_sidecar"] {

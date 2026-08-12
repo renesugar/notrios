@@ -1233,6 +1233,12 @@ components:
         service: { type: string }
         version: { type: string }
         status: { type: string, enum: [scaffold, running] }
+        profile:
+          type: string
+          description: Local runtime profile name when started from a generated profile config.
+        profile_id:
+          type: string
+          description: Local, non-synchronized runtime profile identity.
         database:
           type: string
           description: Deprecated summary retained for early UI compatibility.

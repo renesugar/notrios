@@ -1,6 +1,7 @@
 # Synchronization Architecture
 
-Status: design target for v0.7; not implemented. `PLAN.md` contains twenty-two
+Status: design target for v0.7; G3 local runtime profiles are implemented but
+replication is not. `PLAN.md` contains twenty-two
 independently approvable slices (G0, G1, G1a, and G2-G20). No slice starts
 without resolution of its blocking decisions and explicit user approval.
 
@@ -54,6 +55,12 @@ processes at once. Each profile resolves its own database/assets/config paths,
 listen address, sync target, and credential references. Profiles must refuse
 path, port, or replica-ID collisions rather than guessing which process owns a
 database. A profile is not the MCP tool-visibility scope and is not replicated.
+
+G3 implemented that local lifecycle in 2026-08-12: registry/config/database
+binding, collision and staleness validation, explicit copied-database
+adopt/fork, active-profile status, and a two-process smoke are live. Sync target
+fields remain configuration only; no journal, enrollment, key, container,
+transport, or background transfer is implemented yet.
 
 ## Replication model
 

@@ -263,10 +263,11 @@ export function App() {
   const statusText = useMemo(() => {
     if (!status) return 'loading…';
     const schema = status.database_info?.schema_version ? ` · schema ${status.database_info.schema_version}` : '';
+    const profile = status.profile ? ` · profile ${status.profile}` : '';
     const sidecar = status.search_sidecar;
-    if (!sidecar?.configured) return `${status.service} ${status.version}${schema} · Recoll off`;
+    if (!sidecar?.configured) return `${status.service} ${status.version}${profile}${schema} · Recoll off`;
     const sync = sidecar.last_sync_at ? new Date(sidecar.last_sync_at).toLocaleTimeString() : 'never';
-    return `${status.service} ${status.version}${schema} · Recoll ${sidecar.state} · ${sidecar.backlog} pending · synced ${sync}`;
+    return `${status.service} ${status.version}${profile}${schema} · Recoll ${sidecar.state} · ${sidecar.backlog} pending · synced ${sync}`;
   }, [status]);
 
   const editable = selectedDocument ? selectedDocument.editable !== false : true;

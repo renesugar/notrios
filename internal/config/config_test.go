@@ -258,3 +258,36 @@ func TestEnsureDirectories(t *testing.T) {
 		}
 	}
 }
+
+func TestWriteProfileFileRoundTripIsOwnerOnly(t *testing.T) {
+	cfg := Default()
+	root := t.TempDir()
+	path := filepath.Join(root, "profiles", "profile_one.yaml")
+	cfg.Profile = ProfileConfig{ID: "profile_one", Name: "Work #1", RegistryPath: filepath.Join(root, "profiles.json")}
+	cfg.Server.ListenAddr = "127.0.0.1:8123"
+	cfg.Server.PublicBaseURL = "http://127.0.0.1:8123"
+	cfg.Data.Directory = filepath.Join(root, "data")
+	cfg.Data.DatabasePath = filepath.Join(root, "data", "notes.sqlite")
+	cfg.Data.AssetStore = filepath.Join(root, "data", "assets")
+	cfg.Data.ProjectionDir = filepath.Join(root, "data", "projections")
+	cfg.SearchSidecar.IndexDir = filepath.Join(root, "data", "search-index")
+	cfg.RemoteMedia.QuarantineDir = filepath.Join(root, "data", "quarantine")
+	cfg.Sync = SyncConfig{Target: "rest", RESTBaseURL: "https://sync.example.invalid/base", CredentialRef: "secret-service:notrios/work#1"}
+	if err := WriteProfileFile(path, cfg); err != nil {
+		t.Fatal(err)
+	}
+	info, err := os.Stat(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if info.Mode().Perm() != 0o600 {
+		t.Fatalf("profile config permissions = %v, want 0600", info.Mode().Perm())
+	}
+	loaded, err := Load(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if loaded.Profile != cfg.Profile || loaded.Sync != cfg.Sync || loaded.Server.ListenAddr != cfg.Server.ListenAddr {
+		t.Fatalf("generated profile did not round trip: %+v", loaded)
+	}
+}

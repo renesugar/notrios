@@ -8,9 +8,11 @@
 // database I can find" — resolving a link must never open a database the user
 // did not associate with that identity.
 //
-// Several local profiles may hold clones of one logical database. That is
-// ambiguity, not an error, and it is reported with every candidate so the
-// caller can prompt. It is never resolved by picking one.
+// Several local routing entries may hold replicas of one logical database.
+// That remains explicit stable-link ambiguity and is reported with every
+// candidate. G3 runtime profiles additionally bind distinct replica IDs; an
+// unrotated filesystem clone may remain visible for routing diagnostics but
+// validation/startup refuse it until an explicit adopt or fork.
 package profiles
 
 import (
@@ -26,7 +28,7 @@ import (
 
 // Format version of the registry file. A reader that does not recognize the
 // version refuses the file rather than interpreting unknown fields.
-const Version = 1
+const Version = 2
 
 // Limits keep a hand-edited or corrupted registry bounded.
 const (
@@ -54,9 +56,12 @@ var (
 // Profile is one local database this machine knows about.
 type Profile struct {
 	Name         string    `json:"name"`
+	ProfileID    string    `json:"profile_id,omitempty"`
 	DatabaseID   string    `json:"database_id"`
+	ReplicaID    string    `json:"replica_id,omitempty"`
 	DatabasePath string    `json:"database_path"`
 	AssetStore   string    `json:"asset_store,omitempty"`
+	ConfigPath   string    `json:"config_path,omitempty"`
 	RegisteredAt time.Time `json:"registered_at"`
 }
 
@@ -114,13 +119,14 @@ func Load(path string) (Registry, error) {
 	if err := decoder.Decode(&registry); err != nil {
 		return Registry{}, fmt.Errorf("%w: %s: %v", ErrInvalidRegistry, path, err)
 	}
-	if registry.Version != Version {
-		return Registry{}, fmt.Errorf("%w: %s declares version %d, this build reads version %d", ErrInvalidRegistry, path, registry.Version, Version)
+	if registry.Version != 1 && registry.Version != Version {
+		return Registry{}, fmt.Errorf("%w: %s declares version %d, this build reads versions 1 and %d", ErrInvalidRegistry, path, registry.Version, Version)
 	}
 	if len(registry.Profiles) > MaxProfiles {
 		return Registry{}, fmt.Errorf("%w: %d profiles exceeds the limit of %d", ErrInvalidRegistry, len(registry.Profiles), MaxProfiles)
 	}
 	seen := map[string]bool{}
+	seenProfileIDs := map[string]bool{}
 	for _, profile := range registry.Profiles {
 		if err := validate(profile); err != nil {
 			return Registry{}, fmt.Errorf("%w: %s: %v", ErrInvalidRegistry, path, err)
@@ -130,6 +136,12 @@ func Load(path string) (Registry, error) {
 			return Registry{}, fmt.Errorf("%w: duplicate profile name %q", ErrInvalidRegistry, profile.Name)
 		}
 		seen[key] = true
+		if profile.ProfileID != "" {
+			if seenProfileIDs[profile.ProfileID] {
+				return Registry{}, fmt.Errorf("%w: duplicate runtime profile ID %q", ErrInvalidRegistry, profile.ProfileID)
+			}
+			seenProfileIDs[profile.ProfileID] = true
+		}
 	}
 	return registry, nil
 }
@@ -304,11 +316,23 @@ func validate(profile Profile) error {
 	if path == "" {
 		return fmt.Errorf("%w: a database path is required", ErrInvalidProfile)
 	}
-	if len(path) > MaxPathBytes || len(profile.AssetStore) > MaxPathBytes {
+	if len(path) > MaxPathBytes || len(profile.AssetStore) > MaxPathBytes || len(profile.ConfigPath) > MaxPathBytes {
 		return fmt.Errorf("%w: path exceeds %d bytes", ErrInvalidProfile, MaxPathBytes)
 	}
 	if !filepath.IsAbs(path) {
 		return fmt.Errorf("%w: database path must be absolute, got %q", ErrInvalidProfile, path)
+	}
+	if profile.ConfigPath != "" && !filepath.IsAbs(profile.ConfigPath) {
+		return fmt.Errorf("%w: config path must be absolute, got %q", ErrInvalidProfile, profile.ConfigPath)
+	}
+	if (profile.ProfileID == "") != (profile.ConfigPath == "") {
+		return fmt.Errorf("%w: runtime profiles require both profile_id and config_path", ErrInvalidProfile)
+	}
+	if len(profile.ProfileID) > MaxNameBytes*2 || len(profile.ReplicaID) > MaxNameBytes*2 {
+		return fmt.Errorf("%w: local identity is too long", ErrInvalidProfile)
+	}
+	if profile.ProfileID != "" && strings.TrimSpace(profile.ReplicaID) == "" {
+		return fmt.Errorf("%w: runtime profiles require a replica_id binding", ErrInvalidProfile)
 	}
 	return nil
 }

@@ -2,6 +2,8 @@ export interface StatusResponse {
   service: string;
   version: string;
   status: string;
+  profile?: string;
+  profile_id?: string;
   database?: string;
   config_path?: string;
   database_info?: {
