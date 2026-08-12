@@ -82,13 +82,16 @@ the API/lifecycle/ownership/stream contract and source checks. The current GUI's
 Mermaid support is **disabled**, not merely untested (`noMermaid: true`), and a
 v0.8 offline/security-tested enablement slice owns it.
 
-Latest completed plan validation is G3 (2026-08-12): focused profile/config and
-real two-daemon CLI tests, repository Go tests/vet, required-file and plan-loop
-checks, scaffold validation, frontend typecheck/all 155 tests/build, docs-site
-build, and whitespace checks. The final archive records exact commands;
-release-ZIP verification is the post-commit handoff step. `npm audit` still
-reports the pre-existing 1 moderate and 2 high advisories; G3 changed no
-dependency. Start G4 only
+Latest completed feature validation is G3 (2026-08-12). The subsequent bundled
+frontend maintenance pass applied a non-forced `npm audit fix`, updated the
+affected transitive packages, and reduced the audit result from 1 moderate/2
+high to zero. Its clean-install audit, frontend typecheck/all 155 tests/build,
+repository Go tests/vet, required-file and plan-loop checks, scaffold
+validation, docs-site build, end-to-end smoke, performance smoke, and
+whitespace checks all passed. Regular validation now begins with
+audit/fix/reinstall/re-audit, while CI and release packaging enforce a
+non-mutating audit gate. The final archive records exact commands;
+release-ZIP verification is the post-commit handoff step. Start G4 only
 after explicit user approval, then stop after its validation, commit, verified
 ZIP, and handoff before G5.
 
@@ -206,7 +209,8 @@ Run these before committing any task:
 go vet ./... && go test ./...
 python3 scripts/check_required_files.py
 bash scripts/validate-scaffold.sh
-cd web && npm ci && npm run typecheck && npm run build && npm test
+cd web && npm audit && npm audit fix
+cd web && npm ci && npm audit && npm run typecheck && npm run build && npm test -- --run
 bash scripts/mvp_smoke.sh
 bash scripts/run_performance_smoke.sh
 bash scripts/run_joplin_import_profile.sh 100 /tmp/notrios-joplin.json

@@ -16,6 +16,21 @@ Mermaid/mobile handoff, compatibility, and final validation. The user's
 2026-08-11 review resolved every G0-G17 policy decision. **G0-G3 are complete**
 and archived under `plans/v0.7/`; G4 is next and is not approved.
 
+## Bundled frontend dependency maintenance — 2026-08-12
+
+- Ran the requested regular, non-forced `npm audit fix` before testing. It
+  updated transitive `nanoid` 3.3.16 to 3.3.18, `postcss` 8.5.19 to 8.5.26,
+  and `undici` 7.28.0 to 7.29.0; direct dependency ranges did not change.
+- A clean `npm ci` now reports zero vulnerabilities. TypeScript checks, all
+  155 frontend tests, and the production offline bundle build pass. The real
+  headless-browser offline check observed no third-party request, remote asset,
+  or CSP violation and rendered bundled KaTeX successfully.
+- Documented audit/fix/reinstall/re-audit as the regular local maintenance
+  workflow. CI and release packaging now run a non-mutating audit gate against
+  the committed lockfile. `--force` remains an explicit dependency-upgrade
+  decision, not an automatic audit action.
+- This maintenance slice does not approve or begin G4.
+
 ## v0.7 G3 completion — 2026-08-12
 
 - Upgraded the owner-only stable-link registry to format v2 while preserving

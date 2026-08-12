@@ -148,6 +148,7 @@ The scaffold-era and v0.1-MVP reports (`plans/scaffold/SCAFFOLD_*.md`, `plans/mv
 
 ```bash
 make validate                 # tests + repository checks
+cd web && npm audit           # advisory gate for the bundled offline modules
 make smoke                    # end-to-end REST/MCP smoke test
 bash scripts/run_performance_smoke.sh
 bash scripts/run_large_library_profile.sh 100000 /tmp/notrios-profile.json

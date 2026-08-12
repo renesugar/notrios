@@ -21,6 +21,10 @@ Start with the handoff: `CODING_CLIENT_HANDOFF.md` is the current compressed sta
 - Work in the smallest coherent slice that can be validated.
 - Add or update tests with the change.
 - Run the relevant validation commands.
+- At the start of a regular validation pass, audit the bundled frontend with
+  `cd web && npm audit`. Apply available compatible fixes with `npm audit fix`,
+  review the lockfile, then use `npm ci` and rerun the audit before testing. Do
+  not use `--force` without a separately approved dependency upgrade.
 - Do not rewrite large areas without preserving working behavior.
 - Do not introduce raw SQL or unrestricted filesystem access in MCP tools.
 - Do not make Recoll (or any search sidecar) the canonical document store; Recoll is a derived, optional extraction/search sidecar (see `RECOLL_INTEGRATION.md`).
@@ -93,7 +97,7 @@ The scaffold was created in a restricted container. Before large implementation 
 - real private import datasets were intentionally not included;
 - UI validation has been build/typecheck level only, not Playwright-level browser testing.
 
-In a less restricted environment, consider resolving the SQLite driver, npm dependency audit, MCP SDK pin, and browser test stack before deep feature work. Do not make these changes all at once unless the active plan calls for a cleanup slice.
+In a less restricted environment, consider resolving the SQLite driver, MCP SDK pin, and browser test stack before deep feature work. Do not make these changes all at once unless the active plan calls for a cleanup slice.
 
 ## Progress and loop detection
 

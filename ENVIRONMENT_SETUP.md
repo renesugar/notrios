@@ -105,7 +105,8 @@ go vet ./...
 go test ./...
 python3 scripts/check_required_files.py
 bash scripts/validate-scaffold.sh
-cd web && npm ci && npm run typecheck && npm run build
+cd web && npm audit && npm audit fix       # regular, non-forced maintenance pass
+cd web && npm ci && npm audit && npm run typecheck && npm test -- --run && npm run build
 bash scripts/mvp_smoke.sh
 bash scripts/run_performance_smoke.sh
 bash scripts/run_joplin_import_profile.sh 100 /tmp/notrios-joplin.json

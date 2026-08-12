@@ -10,7 +10,7 @@ mkdir -p "$(dirname "$OUT")"
 go test ./...
 python3 scripts/check_required_files.py
 bash scripts/validate-scaffold.sh
-(cd web && npm ci && npm run build)
+(cd web && npm ci && npm audit && npm run build)
 
 rm -f "$OUT"
 zip -qr "$OUT" . \

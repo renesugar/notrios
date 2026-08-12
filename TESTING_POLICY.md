@@ -707,14 +707,28 @@ python3 scripts/check_required_files.py
 bash scripts/validate-scaffold.sh
 ```
 
-Frontend validation after dependencies are installed:
+Start each regular test pass by checking the lockfile-resolved offline bundle
+against the current npm advisory database. Apply only compatible fixes during
+this maintenance step; `--force` requires a separately reviewed dependency
+upgrade. Review the resulting lockfile, reinstall from it, and prove the clean
+install remains free of known advisories before running frontend tests:
 
 ```bash
 cd web
-npm install
+npm audit
+npm audit fix
+npm ci
+npm audit
 npm run typecheck
+npm test -- --run
 npm run build
 ```
+
+If the first audit is already clean, `npm audit fix` is a no-op and may be
+omitted. CI and release packaging are non-mutating consumers of the committed
+lockfile: both run `npm ci` followed by `npm audit` and fail on a newly reported
+advisory. Registry-unavailable/offline validation may use the last committed
+clean lockfile, but must record that the advisory check could not refresh.
 
 
 ### Organizer UX: trash and tag rename (v0.5 E8)
