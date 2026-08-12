@@ -28,8 +28,10 @@ The v0.7 design is specified in `SYNCHRONIZATION.md`. Its invariants are:
   replace delivery/acknowledgement vectors.
 - Note bodies remain immutable saved revisions. A revision always binds its
   complete result hash/object and may carry a transfer delta from a named
-  parent; verified three-way merge preserves disjoint concurrent edits and
-  exposes overlapping edits as typed conflicts.
+  parent. G1 selected optional beneficial line-token deltas, exact base/result
+  verification, bounded line-first three-way merge, and Unicode-aware
+  word-token refinement only for bounded conflict regions. Same-token,
+  delete/edit, malformed, or over-limit overlap remains a typed conflict.
 - Resource metadata may converge before bytes; content hashes and permanent
   URIs support bounded lazy fetch, resume, verification, and deduplication.
 - Tombstone/resource collection waits for retention plus acknowledgements from

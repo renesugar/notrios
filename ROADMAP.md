@@ -204,7 +204,13 @@ trace, and primary-source dependency/platform/license validation are under
 `performance/v0.7-g0/` and archived in `plans/v0.7/`. The review requires an
 encryption-epoch advance after replica compromise/revocation and keeps
 plaintext content hashes out of carrier-visible routing. These are design
-requirements, not live controls. G1 is next and remains approval-gated.
+requirements, not live controls.
+
+**G1 completed 2026-08-11.** Aggregate-only evidence over 2,063,061 bodies and
+deterministic divergence fixtures selected complete UTF-8 revision objects,
+optional beneficial named-parent line deltas, and bounded line-first merge with
+word-token conflict-region refinement. Overlap remains a typed conflict; no
+merge dependency or sync runtime landed. G2 is next and remains approval-gated.
 
 - **Evidence before contracts (G0-G2):** threat model and reference validation;
   representative revision/delta/three-way-merge workloads; deterministic

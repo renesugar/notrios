@@ -1,0 +1,21 @@
+{
+  "candidate": "github.com/epiclabs-io/diff3",
+  "candidate_commit": "3b1669897fb1aa7c1fb2699a3c6a45bbb46e9ec1",
+  "candidate_commit_date": "2026-05-20T13:15:23+02:00",
+  "candidate_license": "MIT",
+  "candidate_release_state": "no tags or releases observed; G7 must pin an exact pseudo-version if adopted",
+  "candidate_size": {
+    "go_source_lines_including_tests": 1119,
+    "repository_commits_observed": 19,
+    "runtime_external_imports": 0
+  },
+  "probe": {
+    "command": "GOCACHE=/tmp/notrios-g1-go-cache GOMODCACHE=/tmp/notrios-g1-go-mod-cache go test ./...",
+    "upstream_tests": "passed",
+    "g1_utf8_word_token_clean_merge": "passed",
+    "g1_same_token_explicit_conflict": "passed",
+    "g1_conflict_exposes_local_base_remote": "passed"
+  },
+  "selection": "preferred G7 evaluation candidate, not yet a Notrios dependency",
+  "source": "https://github.com/epiclabs-io/diff3"
+}

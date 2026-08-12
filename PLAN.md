@@ -1,7 +1,7 @@
 # Plan: v0.7 — Native synchronization
 
-Status: **G0 completed 2026-08-11. Product version remains 0.6.0 and the
-canonical schema remains v18. G1 is the next item and is not approved.** The
+Status: **G0-G1 completed 2026-08-11. Product version remains 0.6.0 and the
+canonical schema remains v18. G2 is the next item and is not approved.** The
 former seven-item draft was too coarse: it mixed protocol research, canonical
 write interception, merge semantics, two transports, cryptography, recovery,
 UI, retention, and release validation into slices that could not be reviewed or
@@ -154,7 +154,7 @@ compromise revocation advances the encryption epoch for remaining peers, and
 visible content addresses name ciphertext/artifact bytes rather than exposing
 raw plaintext hashes. No crypto, transport, schema, or sync runtime was added.
 
-## G1. Investigation — representative divergence and revision-delta workload
+## G1. Investigation — representative divergence and revision-delta workload — complete
 
 **Goal.** Choose merge and delta techniques from measured Notrios bodies and
 explicit concurrent-edit scenarios instead of pretending a static import can
@@ -194,6 +194,17 @@ text, missing-base, and malicious-patch cases; exact reconstruction hashes.
   revision merge, not live co-editing.
 - **The representative offline intervals are one hour, one day, one week, and
   thirty days**, with results reported separately.
+
+**Completion (2026-08-11).** Archived as
+`plans/v0.7/001-representative-divergence-revision-delta-workload.md`. Evidence
+under `performance/v0.7-g1/` profiles 2,063,061 aggregate-only bodies, runs 112
+delta measurements and eighteen merge classifications, checks a 1 MiB
+generated body, and rejects seven malformed/untrusted patch cases. G7 is to use
+complete UTF-8 result objects plus optional beneficial named-parent line
+deltas, with line-first three-way merge and bounded Unicode-aware word-token
+refinement of conflict regions. Same-token/delete-edit overlap becomes a typed
+durable conflict. `github.com/epiclabs-io/diff3` at the recorded exact commit is
+the preferred MIT G7 candidate, but G1 added no dependency or runtime code.
 
 ## G2. Investigation — envelope, resource, and constrained-device bounds
 
@@ -928,7 +939,7 @@ recommendation, blocking status, and consequence.
 | Per-replica signatures | G0 | Resolved: Ed25519 over named canonical artifacts |
 | SVN dump compatibility | G0 | Resolved: no |
 | Canonical full-body/delta representation | G1 | Resolved: full object plus optional named-parent delta |
-| Three-way merge granularity/library | G1 | Resolved selection rule; G1 records measured result |
+| Three-way merge granularity/library | G1 | Resolved: bounded line-first plus word-region refinement; pinned diff3 candidate |
 | Offline intervals measured | G1 | Resolved: 1 hour/day/week/30 days |
 | Envelope encoding/compression | G2 | Resolved selection rule; canonical JSON default candidate |
 | Resource chunk threshold | G2 | Resolved selection rule; whole then fixed chunks |
@@ -962,7 +973,7 @@ recommendation, blocking status, and consequence.
 | Current-GUI Mermaid baseline | G18 | Resolved fact: upstream-capable but disabled pending offline/security evidence |
 | Release version/schema bookkeeping | G20 | Open, non-blocking until wrap-up |
 
-The first implementable item is G0. Its blocking policy decisions are resolved,
-but the item itself is not approved by this planning pass. Implementation begins
-only after an explicit instruction naming G0; completing it still stops for a
-verified ZIP and approval before G1.
+G0-G1 are complete. G2 is the next implementable item; its policy decisions are
+resolved, but the item itself is not approved. Implementation begins only after
+an explicit instruction naming G2; completing it still stops for a verified ZIP
+and approval before G3.

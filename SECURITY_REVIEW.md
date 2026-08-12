@@ -275,6 +275,14 @@ Current REST still has no general authentication and remains approved only for
 the local/loopback deployment posture below. Planned sync-route authentication,
 payload encryption, and TLS do not retroactively secure the present listener.
 
+**G1 completed the revision/delta/merge investigation on 2026-08-11; it did not
+implement patch admission or merging.** Later G7 code must name and verify the
+delta base, reconstruct under byte/token/operation/insert/CPU bounds, validate
+UTF-8 and the complete result hash, and fall back to the complete object on a
+missing or refused delta. It must never apply a best-effort or partially
+verified patch to canonical state. Same-token, delete/edit, malformed, and
+over-limit cases remain durable typed conflicts rather than silent winners.
+
 ## Deployment posture
 
 Use the default loopback listener:

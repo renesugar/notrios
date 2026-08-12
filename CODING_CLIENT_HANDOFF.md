@@ -13,9 +13,9 @@ wrap-up). The thirteen v0.5 slices remain archived under `plans/v0.5/`.
 `PLAN.md` now holds the **active v0.7 native synchronization plan** with
 twenty-one independently approvable slices, G0-G20. The user's 2026-08-11
 review resolved the policy decisions through G17, including mandatory payload
-encryption and per-replica Ed25519 signatures. **G0 is complete** and archived
-at `plans/v0.7/000-threat-model-terminology-reference-validation.md`. Its
-reviewed evidence is under `performance/v0.7-g0/`; G1 is next and is not
+encryption and per-replica Ed25519 signatures. **G0-G1 are complete** and
+archived under `plans/v0.7/`; their reviewed evidence is under
+`performance/v0.7-g0/` and `performance/v0.7-g1/`. G2 is next and is not
 approved.
 
 G0 added no production sync code or dependency. It freezes the threat model,
@@ -26,6 +26,15 @@ binding the visible header as AEAD associated data, and avoid exposing plaintext
 content hashes as carrier routing names. Current REST still has no general
 authentication and remains local/loopback-only.
 
+G1 likewise added no production sync code, schema, or dependency. Its
+aggregate-only scan covers 2,063,061 bodies without committing private paths or
+content, and its deterministic workload selected complete UTF-8 revision
+objects, optional beneficial named-parent line deltas, and line-first merge
+with bounded Unicode-aware word-token refinement. Same-token and delete/edit
+overlap becomes a durable typed conflict. The preferred G7 candidate is the MIT
+`github.com/epiclabs-io/diff3` at the exact commit recorded in the evidence; G7
+must recheck and pin it before adoption.
+
 That review also added a second portability route. v0.8 now investigates and
 builds a framework-neutral Go application facade and versioned no-GUI C ABI,
 with Android-emulator-only pre-1.0 evidence; v1.0 packages the supported ABI
@@ -35,11 +44,13 @@ the API/lifecycle/ownership/stream contract and source checks. The current GUI's
 Mermaid support is **disabled**, not merely untested (`noMermaid: true`), and a
 v0.8 offline/security-tested enablement slice owns it.
 
-Latest G0 validation (2026-08-11) passed the evidence validator, Go vet/tests,
+Latest G1 validation (2026-08-11) passed the evidence validator, four focused
+workload/privacy tests, upstream candidate tests/probe, Go vet/tests,
 required-file and plan-loop checks, scaffold validation, frontend typecheck/all
-155 tests/build, docs-site build, whitespace checks, and source-ZIP
-verification. The prior `npm ci` audit still reported 1 moderate and 2 high
-advisories; G0 changed no dependency or runtime code.
+155 tests/build, docs-site build, and whitespace checks. The final archive
+records exact commands; release-ZIP verification is the post-commit handoff
+step. The prior `npm ci` audit still reported 1 moderate and 2 high advisories;
+G1 changed no dependency or runtime code.
 
 Two things a reader continuing this project should know about v0.6:
 

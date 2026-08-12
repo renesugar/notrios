@@ -417,8 +417,13 @@ including:
 7. REST pairing/authorization, ZIP wrapper, and MCP control boundaries;
 8. secret-store behavior, retention horizon, and offline-peer retirement.
 
-G1 and G2 remain investigations: the review selected the decision rule and
-default candidate, not an unmeasured implementation. Android limits remain
+G1 completed its investigation under `performance/v0.7-g1/`: complete UTF-8
+result objects remain canonical; optional named-parent line deltas are retained
+only when bounded generation, exact reconstruction, and a material size gate
+succeed; and merge is bounded line-first with Unicode-aware word-token
+refinement of conflict regions. Same-token/delete-edit overlap remains a typed
+durable conflict. G2 remains an investigation: the review selected its decision
+rule and default candidate, not an unmeasured implementation. Android limits remain
 provisional through the v0.8 emulator pass and require post-1.0 physical-device
 confirmation.
 

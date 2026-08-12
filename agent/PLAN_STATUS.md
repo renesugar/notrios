@@ -1,6 +1,6 @@
 # Plan Status
 
-Updated: 2026-08-11 (G0 complete)
+Updated: 2026-08-11 (G1 complete)
 
 ## Active milestone
 
@@ -13,10 +13,8 @@ G0-G20: evidence, profiles/local journal, state-vector convergence,
 revision deltas/merge, lazy resources, secure container/catch-up,
 ephemeral-directory and REST transports, jobs/UI/retention, shared-core/FFI/
 Mermaid/mobile handoff, compatibility, and final validation. The user's
-2026-08-11 review resolved every G0-G17 policy decision. **G0 is complete** and
-archived at
-`plans/v0.7/000-threat-model-terminology-reference-validation.md`; G1 is next
-and is not approved.
+2026-08-11 review resolved every G0-G17 policy decision. **G0-G1 are complete**
+and archived under `plans/v0.7/`; G2 is next and is not approved.
 
 The roadmap no longer relies exclusively on Wails for mobile: v0.8 now includes
 an evidence-first framework-neutral application facade, versioned no-GUI Go C
@@ -25,6 +23,30 @@ enablement tests; v0.9 freezes the ABI candidate; v1.0 packages supported
 library artifacts; and a separate post-1.0 Flutter client owns physical Android
 and iOS validation plus native desktop clients. P6, the `movenotes-v3` bridge,
 is v0.7 G19 gated on G9.
+
+## v0.7 G1 completion — 2026-08-11
+
+- Added reproducible aggregate-only corpus profiling and deterministic
+  divergence/delta/merge workloads under `performance/v0.7-g1/`; 2,063,061
+  bodies were profiled without committing paths, names, content, source hashes,
+  databases, or resources.
+- Reported one-hour/day/week/30-day results separately across 112 delta
+  measurements, eighteen line/word/byte merge classifications, four 1 MiB
+  scale probes, and seven rejected malformed/untrusted patch cases.
+- Selected complete UTF-8 result objects plus optional beneficial named-parent
+  line deltas. Missing/wrong bases, wrong result hashes, malformed/over-limit
+  operations, and invalid UTF-8 fall back to the complete object rather than
+  applying best effort.
+- Selected bounded line-first three-way merge with Unicode-aware word-token
+  refinement of conflict regions. Same-token and delete/edit overlap remains a
+  durable typed conflict; concurrent same-element tag add/remove remains G6's
+  ordered LWW case with both operations retained for audit.
+- Probed the small MIT `github.com/epiclabs-io/diff3` candidate at exact commit
+  `3b1669897fb1aa7c1fb2699a3c6a45bbb46e9ec1`; upstream and G1 UTF-8/conflict
+  probes passed. It remains untagged and was not added as a dependency.
+- Preserved the evidence limit: static imports contain no independent-device
+  history, so G1 makes no human concurrency/conflict-frequency or real
+  revision-chain claim.
 
 ## v0.7 G0 completion — 2026-08-11
 

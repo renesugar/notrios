@@ -935,6 +935,23 @@ survive both.
 Counts are asserted to stay complete when the row list is capped, and a trashed
 note's tasks must vanish — tasks are a view of the live library.
 
+## v0.7 G1 revision/delta investigation
+
+G1 evidence under `performance/v0.7-g1/` separates private-corpus shape from
+synthetic divergence. The corpus profiler commits only aggregate counts, byte
+distributions, item-type counts, and parse-quality counters; fixtures assert
+that paths, filenames, titles, bodies, and source-content hashes do not cross
+that boundary. Static imports are explicitly not treated as multi-device
+revision history or evidence of human conflict frequency.
+
+The deterministic workload reports one-hour/day/week/30-day intervals
+separately and covers ordinary, Unicode, Markdown, valid control-bearing,
+very-long-line, and 1 MiB generated bodies. Every accepted delta must reproduce
+the exact result hash. Focused tests and the evidence validator cover clean and
+conflicting line/word/byte merges plus refusal of missing/wrong bases, wrong
+results, cursor and operation/insert limits, and invalid UTF-8. CPU and peak RSS
+are comparative host evidence, not cross-device protocol promises.
+
 ## MVP release validation
 
 Task 10 adds release-candidate checks beyond ordinary unit tests:

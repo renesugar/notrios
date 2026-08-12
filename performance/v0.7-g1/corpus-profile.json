@@ -1,0 +1,155 @@
+{
+  "corpora": [
+    {
+      "body_sizes": {
+        "bytes_max": 326359,
+        "bytes_min": 1,
+        "bytes_p50": 293,
+        "bytes_p90": 1768,
+        "bytes_p95": 2878,
+        "bytes_p99": 8283,
+        "bytes_total": 95557281,
+        "count": 103349,
+        "histogram": {
+          "0-255": 45075,
+          "1024-4095": 14996,
+          "16384-65535": 392,
+          "256-1023": 40204,
+          "262144-1048575": 5,
+          "4096-16383": 2592,
+          "65536-262143": 85
+        }
+      },
+      "invalid_or_unclassified_files": 29,
+      "item_type_counts": {
+        "1": 103349,
+        "2": 6,
+        "4": 763,
+        "5": 322,
+        "6": 6890
+      },
+      "kind": "joplin-raw",
+      "label": "joplin-export",
+      "privacy": "aggregate-only",
+      "resource_sizes": {
+        "bytes_max": 107951795,
+        "bytes_min": 301,
+        "bytes_p50": 197998,
+        "bytes_p90": 1801393,
+        "bytes_p95": 3825632,
+        "bytes_p99": 28928496,
+        "bytes_total": 1005655997,
+        "count": 734,
+        "histogram": {
+          "1024-4095": 36,
+          "16384-65535": 120,
+          "256-1023": 5,
+          "262144-1048575": 197,
+          "4096-16383": 21,
+          "65536-262143": 236,
+          ">=1048576": 119
+        }
+      },
+      "revision_observation": {
+        "inference": "no revision-chain depth is inferred from a static export",
+        "revision_items": 0,
+        "static_current_bodies": 103349
+      }
+    },
+    {
+      "body_sizes": {
+        "bytes_max": 209873,
+        "bytes_min": 224,
+        "bytes_p50": 224,
+        "bytes_p90": 3231,
+        "bytes_p95": 3850,
+        "bytes_p99": 5346,
+        "bytes_total": 2027524354,
+        "count": 1619768,
+        "histogram": {
+          "0-255": 842813,
+          "1024-4095": 646227,
+          "16384-65535": 74,
+          "256-1023": 69987,
+          "4096-16383": 60666,
+          "65536-262143": 1
+        }
+      },
+      "invalid_or_unclassified_files": 0,
+      "kind": "plain-files",
+      "label": "recipe-markdown",
+      "privacy": "aggregate-only",
+      "resource_sizes": {
+        "bytes_max": 153175560,
+        "bytes_min": 15,
+        "bytes_p50": 97771,
+        "bytes_p90": 318806,
+        "bytes_p95": 369969,
+        "bytes_p99": 1364063,
+        "bytes_total": 429203879,
+        "count": 1266,
+        "histogram": {
+          "0-255": 45,
+          "1024-4095": 49,
+          "16384-65535": 186,
+          "256-1023": 70,
+          "262144-1048575": 113,
+          "4096-16383": 182,
+          "65536-262143": 592,
+          ">=1048576": 29
+        }
+      },
+      "revision_observation": {
+        "inference": "no revision-chain depth is inferred from a static corpus",
+        "revision_items": 0,
+        "static_current_bodies": 1619768
+      }
+    },
+    {
+      "body_sizes": {
+        "bytes_max": 5719,
+        "bytes_min": 218,
+        "bytes_p50": 1446,
+        "bytes_p90": 4752,
+        "bytes_p95": 4811,
+        "bytes_p99": 4919,
+        "bytes_total": 968759771,
+        "count": 339944,
+        "histogram": {
+          "0-255": 1,
+          "1024-4095": 159237,
+          "256-1023": 14052,
+          "4096-16383": 166654
+        }
+      },
+      "invalid_or_unclassified_files": 0,
+      "kind": "plain-files",
+      "label": "twitter-vault",
+      "privacy": "aggregate-only",
+      "resource_sizes": {
+        "bytes_max": 82969993,
+        "bytes_min": 4302,
+        "bytes_p50": 104547,
+        "bytes_p90": 280419,
+        "bytes_p95": 433430,
+        "bytes_p99": 10675350,
+        "bytes_total": 6018856805,
+        "count": 13269,
+        "histogram": {
+          "16384-65535": 3754,
+          "262144-1048575": 1142,
+          "4096-16383": 226,
+          "65536-262143": 7784,
+          ">=1048576": 363
+        }
+      },
+      "revision_observation": {
+        "inference": "no revision-chain depth is inferred from a static corpus",
+        "revision_items": 0,
+        "static_current_bodies": 339944
+      }
+    }
+  ],
+  "privacy": "aggregate-only; source paths and content are intentionally absent",
+  "schema": "notrios.g1.corpus-profile.v1"
+}
