@@ -133,7 +133,7 @@ This matrix keeps the long conversation compressed into implementation-sized fea
 | Feature | Status | Primary owner | Notes |
 |---|---:|---|---|
 | SQLite revision restore | Implemented | document service | Restore creates a new revision. |
-| Native record-level sync | Planned v0.7 | sync service | Transactional change log, contiguous state vectors, Notrios-owned pure-Go revision merge and optional binary-safe delta codec, lazy resources, acknowledgement/retention; see `PLAN.md` G0, G1, G1a, and G2-G20. |
+| Native record-level sync | Planned v0.7 | sync service | Transactional change log, contiguous state vectors, Notrios-owned pure-Go revision merge and optional named-parent constrained-VCDIFF transfer delta (G1a evidence; production still gated), lazy resources, acknowledgement/retention; see `PLAN.md` G0, G1, G1a, and G2-G20. |
 | REST/ephemeral-directory transports | Planned v0.7 | sync service | One object/envelope protocol with mandatory payload encryption and per-replica Ed25519 signatures; directory is disposable and reconstructible; rclone is test carrier only; target `none` supported. |
 | Snapshot catch-up/reset | Planned v0.7 | archive/sync | Signed request, encrypted archive-v2 snapshot/ZIP, explicit restore intent, then incremental replay from its state-vector boundary. |
 | Install/config/mobile portability | Planned v0.8 | packaging/GUI | Installed-path/permission/credential-store work, shared-core/C-ABI build, Android-emulator smoke, and separately gated Wails v3 spike. Physical mobile release gates are post-1.0. |

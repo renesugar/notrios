@@ -29,12 +29,13 @@ The v0.7 design is specified in `SYNCHRONIZATION.md`. Its invariants are:
 - Note bodies remain immutable saved revisions. A revision always binds its
   complete result hash/object and may carry a transfer delta from a named
   parent. G1 selected optional beneficial line-token deltas and exact
-  base/result verification. G1a investigates whether a Notrios-owned pure-Go
-  xdelta/VCDIFF implementation should provide binary-safe transfer deltas;
-  Subversion xdelta matching, Subversion svndiff, and RFC 3284 VCDIFF are not
-  interchangeable. Conflict resolution separately uses a Notrios-owned bounded
-  line-first three-way merge with Unicode-aware word-token refinement only for
-  bounded conflict regions. Same-token,
+  base/result verification. G1a found a Notrios-owned pure-Go Subversion-style
+  matcher and constrained RFC 3284 VCDIFF default-table profile feasible for
+  optional binary-safe transfer deltas from a real named parent. It explicitly
+  does not select Subversion svndiff or a private container; production use is
+  gated on G2 bounds and a later G7/G8 approval. Conflict resolution separately
+  uses a Notrios-owned bounded line-first three-way merge with Unicode-aware
+  word-token refinement only for bounded conflict regions. Same-token,
   delete/edit, malformed, or over-limit overlap remains a typed conflict.
 - Resource metadata may converge before bytes; content hashes and permanent
   URIs support bounded lazy fetch, resume, verification, and deduplication.

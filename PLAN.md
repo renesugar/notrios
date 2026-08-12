@@ -1,7 +1,7 @@
 # Plan: v0.7 — Native synchronization
 
-Status: **G0-G1 completed 2026-08-11. Product version remains 0.6.0 and the
-canonical schema remains v18. G1a is the next item and is not approved.** The
+Status: **G0-G1a completed 2026-08-11. Product version remains 0.6.0 and the
+canonical schema remains v18. G2 is the next item and is not approved.** The
 former seven-item draft was too coarse: it mixed protocol research, canonical
 write interception, merge semantics, two transports, cryptography, recovery,
 UI, retention, and release validation into slices that could not be reviewed or
@@ -210,7 +210,7 @@ G7 is to own its bounded pure-Go line/word merge implementation, and G1a first
 investigates a separate pure-Go binary-safe delta codec. G1 added no dependency
 or runtime code.
 
-## G1a. Investigation — pure-Go xdelta/VCDIFF feasibility and dependency removal
+## G1a. Investigation — pure-Go xdelta/VCDIFF feasibility and dependency removal — complete
 
 **Goal.** Determine whether a Notrios-owned pure-Go implementation can produce
 and apply deterministic, bounded transfer deltas for arbitrary text or binary
@@ -271,26 +271,35 @@ format.
   word-region conflict behavior remains G7's contract; an xdelta/VCDIFF codec
   only optimizes transport from a named base.
 
-**Open decisions**
+**Resolved decisions (2026-08-11)**
 
-- **Which interoperability target should Notrios adopt? — Non-blocking.** The
-  default is to evaluate a constrained RFC 3284 VCDIFF profile using the
-  default code table first, alongside the smallest deterministic private
-  operation container needed to expose the tradeoff. The report must compare
-  portability, implementation complexity, encoded size, and parser attack
-  surface, and state explicitly whether Subversion algorithm compatibility or
-  svndiff byte compatibility is intended. Approving G1a approves this
-  investigation/default, not adoption of a wire format.
-- **How should implementation provenance be handled? — Non-blocking.** Default:
-  implement spec-first from RFC 3284 and published algorithm descriptions,
-  using Apache Subversion source only for behavioral comparison and attribution.
-  No GPL source may be consulted to derive code. If the report recommends a
-  direct Apache-licensed translation, it must identify translated portions and
-  preserve required license/NOTICE material.
-- **May the prototype move into production? — Non-blocking.** Default: no. It
-  remains under `performance/`; a separately approved G7/G8 implementation
-  slice must review the design, tests, limits, and license evidence before
-  promoting or rewriting it.
+- **Which interoperability target should Notrios adopt? — Resolved.** Recommend
+  a constrained RFC 3284 default-code-table profile over the private `NXD1`
+  comparison container. The measured private saving was normally ten bytes,
+  while both pinned external oracles decoded every Go-emitted VCDIFF fixture
+  exactly. This is Subversion-style matcher compatibility, not svndiff byte
+  compatibility, and it is still a recommendation rather than a live wire
+  format.
+- **How should implementation provenance be handled? — Resolved.** Keep the
+  spec-first independent Go implementation model. Apache Subversion is an
+  attributed behavioral reference; no direct translation is claimed and no
+  GPL source was used. Pinned Apache-2.0 C/C++ implementations remain external
+  test oracles only.
+- **May the prototype move into production? — Resolved.** No. It remains under
+  `performance/v0.7-g1a/`; a separately approved G7/G8 slice must review and
+  either rewrite or deliberately promote it after G2 fixes numeric bounds.
+
+**Completion (2026-08-11).** Archived as
+`plans/v0.7/003-pure-go-xdelta-vcdiff-feasibility.md`. The pure-Go prototype
+under `performance/v0.7-g1a/` produced exact deterministic round trips across
+14 text and seven generated binary fixtures. VCDIFF was beneficial in 19 of 21
+cases and smaller than G1's JSON line delta in all 14 comparisons; empty and
+unrelated random bytes prove the complete-object size gate is still required.
+Both xdelta3 and open-vcdiff decoded all three representative Go-emitted
+fixtures exactly. The bounded decoder intentionally accepts only a strict
+profile, rejects unsupported RFC features and hostile/over-limit inputs, and
+is not a general VCDIFF decoder. G1a added no production codec, dependency,
+schema, or mobile-safety claim.
 
 ## G2. Investigation — envelope, resource, and constrained-device bounds
 
@@ -1033,9 +1042,9 @@ recommendation, blocking status, and consequence.
 | SVN dump compatibility | G0 | Resolved: no |
 | Canonical full-body/delta representation | G1 | Resolved: full object plus optional named-parent delta |
 | Three-way merge granularity/ownership | G1/G1a | Resolved: bounded line-first plus word-region refinement in Notrios-owned pure Go; external candidate superseded |
-| Binary-delta algorithm/format | G1a | Open, non-blocking: compare constrained RFC 3284 VCDIFF with a minimal private operation container |
-| Delta implementation provenance | G1a | Open, non-blocking: spec-first default; Apache behavioral reference; no GPL-derived code |
-| Investigation prototype promotion | G1a | Open, non-blocking: performance-only unless a later G7/G8 slice approves promotion |
+| Binary-delta algorithm/format | G1a | Resolved: recommend constrained RFC 3284 default-table VCDIFF; not svndiff or NXD1 |
+| Delta implementation provenance | G1a | Resolved: independent spec-first Go; attributed Apache behavioral reference; no GPL-derived code |
+| Investigation prototype promotion | G1a | Resolved: performance-only; later G7/G8 must approve rewrite or promotion after G2 |
 | Offline intervals measured | G1 | Resolved: 1 hour/day/week/30 days |
 | Envelope encoding/compression | G2 | Resolved selection rule; canonical JSON default candidate |
 | Resource chunk threshold | G2 | Resolved selection rule; whole then fixed chunks |
@@ -1069,7 +1078,6 @@ recommendation, blocking status, and consequence.
 | Current-GUI Mermaid baseline | G18 | Resolved fact: upstream-capable but disabled pending offline/security evidence |
 | Release version/schema bookkeeping | G20 | Open, non-blocking until wrap-up |
 
-G0-G1 are complete. G1a is the next implementable item; its pure-Go direction
-and non-blocking investigation defaults are recorded, but the item itself is
-not approved. Implementation begins only after an explicit instruction naming
-G1a; completing it still stops for a verified ZIP and approval before G2.
+G0-G1a are complete. G2 is the next implementable item, but is not approved.
+Implementation begins only after an explicit instruction naming G2; completing
+it still stops for a verified ZIP and approval before G3.

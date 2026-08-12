@@ -13,11 +13,11 @@ wrap-up). The thirteen v0.5 slices remain archived under `plans/v0.5/`.
 `PLAN.md` now holds the **active v0.7 native synchronization plan** with
 twenty-two independently approvable slices: G0, G1, G1a, and G2-G20. The user's 2026-08-11
 review resolved the policy decisions through G17, including mandatory payload
-encryption and per-replica Ed25519 signatures. **G0-G1 are complete** and
+encryption and per-replica Ed25519 signatures. **G0-G1a are complete** and
 archived under `plans/v0.7/`; their reviewed evidence is under
-`performance/v0.7-g0/` and `performance/v0.7-g1/`. **G1a is next and is not
-approved.** It investigates a Notrios-owned pure-Go binary-safe xdelta/VCDIFF
-codec before G2 freezes format and resource bounds.
+`performance/v0.7-g0/`, `performance/v0.7-g1/`, and
+`performance/v0.7-g1a/`. **G2 is next and is not approved.** It freezes
+envelope, resource, and constrained-device bounds before implementation.
 
 G0 added no production sync code or dependency. It freezes the threat model,
 normative glossary, thirty misuse/control traces, and upstream license/platform
@@ -35,9 +35,18 @@ with bounded Unicode-aware word-token refinement. Same-token and delete/edit
 overlap becomes a durable typed conflict. The earlier
 `github.com/epiclabs-io/diff3` recommendation is now superseded: it does not
 provide binary delta encoding, and G7 will own a bounded pure-Go line/word merge
-implementation. G1a separately compares Subversion's xdelta matcher,
-Subversion svndiff, and RFC 3284 VCDIFF; external implementations are test
-oracles only, not runtime dependencies.
+implementation.
+
+G1a added an investigation-only pure-Go Subversion-style matcher, a bounded
+constrained RFC 3284 VCDIFF codec, and a minimal private comparison container
+under `performance/`; it added no production sync code or dependency. All 21
+text/binary fixtures reconstructed exactly and deterministically. VCDIFF was
+beneficial in 19 cases and smaller than G1's line JSON in all 14 comparisons;
+empty and unrelated bytes retain complete-object fallback. Pinned xdelta3 and
+open-vcdiff oracles decoded every representative Go stream exactly. The strict
+Go decoder is not a general VCDIFF decoder, and the private container and
+Subversion svndiff are not selected. Production use requires G2 bounds, a real
+immutable named parent, exact outer hashes, and separate G7/G8 approval.
 
 That review also added a second portability route. v0.8 now investigates and
 builds a framework-neutral Go application facade and versioned no-GUI C ABI,
@@ -48,18 +57,15 @@ the API/lifecycle/ownership/stream contract and source checks. The current GUI's
 Mermaid support is **disabled**, not merely untested (`noMermaid: true`), and a
 v0.8 offline/security-tested enablement slice owns it.
 
-Latest completed implementation validation remains G1 (2026-08-11): the
-evidence validator, four focused
-workload/privacy tests, upstream candidate tests/probe, Go vet/tests,
+Latest completed plan validation is G1a (2026-08-11): focused and repository Go
+tests/vet, two ten-second single-worker fuzz runs, the evidence validator,
 required-file and plan-loop checks, scaffold validation, frontend typecheck/all
-155 tests/build, docs-site build, and whitespace checks. The final archive
-records exact commands; release-ZIP verification is the post-commit handoff
-step. The prior `npm ci` audit still reported 1 moderate and 2 high advisories;
-G1 changed no dependency or runtime code. The 2026-08-11 G1a amendment changed
-planning/handoff documentation only; it added no codec, dependency, schema, or
-sync runtime. Start G1a only after explicit user approval, keep its prototype
-under `performance/v0.7-g1a/`, then stop for validation, commit, a verified ZIP,
-and approval before G2.
+tests/build, docs-site build, and whitespace checks. The final archive records
+exact commands; release-ZIP verification is the post-commit handoff step. The
+prior `npm ci` audit still reported 1 moderate and 2 high advisories; G1a
+changed no project dependency or runtime code. Start G2 only after explicit
+user approval, then stop after its validation, commit, verified ZIP, and handoff
+before G3.
 
 Two things a reader continuing this project should know about v0.6:
 

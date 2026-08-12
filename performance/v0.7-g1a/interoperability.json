@@ -1,0 +1,127 @@
+{
+  "schema": "notrios.g1a.interoperability.v1",
+  "generated_at": "2026-08-12T02:03:05Z",
+  "profile": "RFC 3284 default table; Go emitter uses RUN, ADD, and SELF COPY only",
+  "tools": [
+    {
+      "name": "open-vcdiff",
+      "role": "external test oracle only",
+      "license": "Apache-2.0",
+      "source_commit": "868f459a8d815125c2457f8c74b12493853100f9",
+      "version": "source commit (CLI has no version flag)"
+    },
+    {
+      "name": "xdelta3",
+      "role": "external test oracle only",
+      "license": "Apache-2.0",
+      "source_commit": "9822b17313263d458b80511b08124971fc0e04fa",
+      "version": "Xdelta version 3.2.0, Copyright (C) Joshua MacDonald"
+    }
+  ],
+  "fixtures": [
+    {
+      "id": "binary-repetitive-1048576",
+      "target_bytes": 1048576,
+      "target_sha256": "a81aeecc7bea71d813147e6221d9d2fce9f871e91d8dd0a28525d57f2d1ebba7",
+      "results": {
+        "open-vcdiff": {
+          "go_to_tool": {
+            "delta_bytes": 32,
+            "accepted": true,
+            "exact": true
+          },
+          "tool_to_go": {
+            "delta_bytes": 4129,
+            "accepted": false,
+            "exact": false,
+            "note": "unsupported VCDIFF feature: default-code-table opcode 115"
+          }
+        },
+        "xdelta3": {
+          "go_to_tool": {
+            "delta_bytes": 32,
+            "accepted": true,
+            "exact": true
+          },
+          "tool_to_go": {
+            "delta_bytes": 34,
+            "accepted": true,
+            "exact": true
+          }
+        }
+      }
+    },
+    {
+      "id": "binary-sparse-262144",
+      "target_bytes": 263167,
+      "target_sha256": "a895f2680490ee7982a3585d62a50eae1a17c303be441742b2c8c9fbaa15f77c",
+      "results": {
+        "open-vcdiff": {
+          "go_to_tool": {
+            "delta_bytes": 1358,
+            "accepted": true,
+            "exact": true
+          },
+          "tool_to_go": {
+            "delta_bytes": 1292,
+            "accepted": false,
+            "exact": false,
+            "note": "unsupported VCDIFF feature: default-code-table opcode 115"
+          }
+        },
+        "xdelta3": {
+          "go_to_tool": {
+            "delta_bytes": 1358,
+            "accepted": true,
+            "exact": true
+          },
+          "tool_to_go": {
+            "delta_bytes": 273,
+            "accepted": false,
+            "exact": false,
+            "note": "unsupported VCDIFF feature: default-code-table opcode 67"
+          }
+        }
+      }
+    },
+    {
+      "id": "g1-localized-30-days",
+      "target_bytes": 73759,
+      "target_sha256": "33b18f9046862e4c21fda25d20d2462a4136090ea88726686d0a556368671c9f",
+      "results": {
+        "open-vcdiff": {
+          "go_to_tool": {
+            "delta_bytes": 45,
+            "accepted": true,
+            "exact": true
+          },
+          "tool_to_go": {
+            "delta_bytes": 94,
+            "accepted": false,
+            "exact": false,
+            "note": "unsupported VCDIFF feature: default-code-table opcode 115"
+          }
+        },
+        "xdelta3": {
+          "go_to_tool": {
+            "delta_bytes": 45,
+            "accepted": true,
+            "exact": true
+          },
+          "tool_to_go": {
+            "delta_bytes": 44,
+            "accepted": true,
+            "exact": true
+          }
+        }
+      }
+    }
+  ],
+  "summary": {
+    "external_encode_attempts": 6,
+    "external_encodes_accepted_by_constrained_go_decoder": 2,
+    "fixtures": 3,
+    "interpretation": "Outbound portability is demonstrated. The prototype decoder intentionally accepts a strict profile, not arbitrary default-table VCDIFF streams.",
+    "outbound_external_decodes_exact": true
+  }
+}

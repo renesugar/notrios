@@ -1,0 +1,1198 @@
+{
+  "schema": "notrios.g1a.benchmark.v1",
+  "generated_at": "2026-08-12T02:02:56Z",
+  "generator": "go run ./performance/v0.7-g1a/cmd/evidence",
+  "environment": {
+    "cpu_count": 8,
+    "go": "go1.26.5",
+    "goarch": "amd64",
+    "goos": "linux",
+    "kernel": "Linux 6.8.0-137-generic x86_64 GNU/Linux",
+    "peak_rss_kib": 22116
+  },
+  "profile": {
+    "limits": {
+      "MaxSourceBytes": 8388608,
+      "MaxTargetBytes": 8388608,
+      "MaxDeltaBytes": 10485760,
+      "MaxWindowBytes": 8388608,
+      "MaxSectionBytes": 8388608,
+      "MaxOperations": 100000,
+      "MaxWindows": 64,
+      "MaxChecksumCandidates": 64,
+      "MaxVarintBytes": 10,
+      "MaxExpansionRatio": 1024,
+      "MaxChainDepth": 8
+    },
+    "matcher": "Subversion-style 64-byte source blocks and rolling pseudo-Adler checksum",
+    "measurement_runs": 7,
+    "private": "NXD1 comparison container over identical operations",
+    "vcdiff": "RFC 3284 default table; emit RUN/ADD/SELF-COPY only; one bounded target window"
+  },
+  "records": [
+    {
+      "id": "g1-localized-1-hour",
+      "class": "text",
+      "case": "localized",
+      "interval": "1-hour",
+      "source_bytes": 21820,
+      "target_bytes": 21827,
+      "source_sha256": "3edb0499f54c31f27af076d3a23f1eecff32a647cb50b9dc70bb76df67bedf3a",
+      "target_sha256": "a4f96d8cc15e61011dda6c95912e86c9ac43584d4d956e1d622bb110072c21dc",
+      "complete_bytes": 21827,
+      "g1_line_json_bytes": 587,
+      "vcdiff_bytes": 45,
+      "vcdiff_ratio_to_complete": 0.002061666743024694,
+      "private_bytes": 35,
+      "private_ratio_to_complete": 0.0016035185779080955,
+      "operations": {
+        "count": 3,
+        "adds": 1,
+        "copies": 2,
+        "runs": 0,
+        "add_bytes": 15,
+        "copy_bytes": 21812,
+        "run_bytes": 0
+      },
+      "vcdiff_encode": {
+        "cpu_nanos_p50": 928000,
+        "cpu_nanos_p95": 986000,
+        "wall_nanos_p50": 881867,
+        "allocated_bytes_p50": 21872,
+        "peak_rss_kib": 21948
+      },
+      "vcdiff_decode": {
+        "cpu_nanos_p50": 361000,
+        "cpu_nanos_p95": 449000,
+        "wall_nanos_p50": 336580,
+        "allocated_bytes_p50": 49232,
+        "peak_rss_kib": 21948
+      },
+      "private_encode": {
+        "cpu_nanos_p50": 492000,
+        "cpu_nanos_p95": 622000,
+        "wall_nanos_p50": 458526,
+        "allocated_bytes_p50": 21800,
+        "peak_rss_kib": 21948
+      },
+      "private_decode": {
+        "cpu_nanos_p50": 100000,
+        "cpu_nanos_p95": 116000,
+        "wall_nanos_p50": 69400,
+        "allocated_bytes_p50": 24768,
+        "peak_rss_kib": 21948
+      },
+      "exact_vcdiff_round_trip": true,
+      "exact_private_round_trip": true,
+      "deterministic": true
+    },
+    {
+      "id": "g1-scattered-1-hour",
+      "class": "text",
+      "case": "scattered",
+      "interval": "1-hour",
+      "source_bytes": 21820,
+      "target_bytes": 21828,
+      "source_sha256": "3edb0499f54c31f27af076d3a23f1eecff32a647cb50b9dc70bb76df67bedf3a",
+      "target_sha256": "5ebd6495320597cc9cadc4b3bbf6e9f185c605741e5f5072b6bcb5c63b263a71",
+      "complete_bytes": 21828,
+      "g1_line_json_bytes": 587,
+      "vcdiff_bytes": 78,
+      "vcdiff_ratio_to_complete": 0.0035733919736118747,
+      "private_bytes": 68,
+      "private_ratio_to_complete": 0.003115264797507788,
+      "operations": {
+        "count": 13,
+        "adds": 4,
+        "copies": 9,
+        "runs": 0,
+        "add_bytes": 12,
+        "copy_bytes": 21816,
+        "run_bytes": 0
+      },
+      "vcdiff_encode": {
+        "cpu_nanos_p50": 575000,
+        "cpu_nanos_p95": 680000,
+        "wall_nanos_p50": 539860,
+        "allocated_bytes_p50": 24256,
+        "peak_rss_kib": 21948
+      },
+      "vcdiff_decode": {
+        "cpu_nanos_p50": 461000,
+        "cpu_nanos_p95": 493000,
+        "wall_nanos_p50": 412383,
+        "allocated_bytes_p50": 49232,
+        "peak_rss_kib": 21948
+      },
+      "private_encode": {
+        "cpu_nanos_p50": 753000,
+        "cpu_nanos_p95": 957000,
+        "wall_nanos_p50": 712071,
+        "allocated_bytes_p50": 24024,
+        "peak_rss_kib": 21948
+      },
+      "private_decode": {
+        "cpu_nanos_p50": 80000,
+        "cpu_nanos_p95": 127000,
+        "wall_nanos_p50": 74309,
+        "allocated_bytes_p50": 25376,
+        "peak_rss_kib": 21948
+      },
+      "exact_vcdiff_round_trip": true,
+      "exact_private_round_trip": true,
+      "deterministic": true
+    },
+    {
+      "id": "g1-append-1-hour",
+      "class": "text",
+      "case": "append",
+      "interval": "1-hour",
+      "source_bytes": 21820,
+      "target_bytes": 21863,
+      "source_sha256": "3edb0499f54c31f27af076d3a23f1eecff32a647cb50b9dc70bb76df67bedf3a",
+      "target_sha256": "6a4c616424517a385b53f85595a0cee60ac815c13f447f097c7012b977428c36",
+      "complete_bytes": 21863,
+      "g1_line_json_bytes": 321,
+      "vcdiff_bytes": 68,
+      "vcdiff_ratio_to_complete": 0.00311027763801857,
+      "private_bytes": 58,
+      "private_ratio_to_complete": 0.0026528838677217217,
+      "operations": {
+        "count": 2,
+        "adds": 1,
+        "copies": 1,
+        "runs": 0,
+        "add_bytes": 43,
+        "copy_bytes": 21820,
+        "run_bytes": 0
+      },
+      "vcdiff_encode": {
+        "cpu_nanos_p50": 82000,
+        "cpu_nanos_p95": 84000,
+        "wall_nanos_p50": 52305,
+        "allocated_bytes_p50": 624,
+        "peak_rss_kib": 21948
+      },
+      "vcdiff_decode": {
+        "cpu_nanos_p50": 401000,
+        "cpu_nanos_p95": 414000,
+        "wall_nanos_p50": 362171,
+        "allocated_bytes_p50": 49232,
+        "peak_rss_kib": 21948
+      },
+      "private_encode": {
+        "cpu_nanos_p50": 150000,
+        "cpu_nanos_p95": 365000,
+        "wall_nanos_p50": 82443,
+        "allocated_bytes_p50": 480,
+        "peak_rss_kib": 21948
+      },
+      "private_decode": {
+        "cpu_nanos_p50": 54000,
+        "cpu_nanos_p95": 56000,
+        "wall_nanos_p50": 22314,
+        "allocated_bytes_p50": 24736,
+        "peak_rss_kib": 21948
+      },
+      "exact_vcdiff_round_trip": true,
+      "exact_private_round_trip": true,
+      "deterministic": true
+    },
+    {
+      "id": "g1-unicode-1-hour",
+      "class": "text",
+      "case": "unicode",
+      "interval": "1-hour",
+      "source_bytes": 21820,
+      "target_bytes": 21820,
+      "source_sha256": "3edb0499f54c31f27af076d3a23f1eecff32a647cb50b9dc70bb76df67bedf3a",
+      "target_sha256": "efdd1dd74ce4e332e576b443501f31dd4a9860f5ccf488a6eb1440d08cb66121",
+      "complete_bytes": 21820,
+      "g1_line_json_bytes": 579,
+      "vcdiff_bytes": 87,
+      "vcdiff_ratio_to_complete": 0.003987167736021998,
+      "private_bytes": 77,
+      "private_ratio_to_complete": 0.003528872593950504,
+      "operations": {
+        "count": 12,
+        "adds": 4,
+        "copies": 8,
+        "runs": 0,
+        "add_bytes": 24,
+        "copy_bytes": 21796,
+        "run_bytes": 0
+      },
+      "vcdiff_encode": {
+        "cpu_nanos_p50": 539000,
+        "cpu_nanos_p95": 586000,
+        "wall_nanos_p50": 517975,
+        "allocated_bytes_p50": 24192,
+        "peak_rss_kib": 21948
+      },
+      "vcdiff_decode": {
+        "cpu_nanos_p50": 276000,
+        "cpu_nanos_p95": 282000,
+        "wall_nanos_p50": 241792,
+        "allocated_bytes_p50": 49232,
+        "peak_rss_kib": 21948
+      },
+      "private_encode": {
+        "cpu_nanos_p50": 649000,
+        "cpu_nanos_p95": 777000,
+        "wall_nanos_p50": 616571,
+        "allocated_bytes_p50": 23992,
+        "peak_rss_kib": 21948
+      },
+      "private_decode": {
+        "cpu_nanos_p50": 57000,
+        "cpu_nanos_p95": 60000,
+        "wall_nanos_p50": 26100,
+        "allocated_bytes_p50": 25336,
+        "peak_rss_kib": 21948
+      },
+      "exact_vcdiff_round_trip": true,
+      "exact_private_round_trip": true,
+      "deterministic": true
+    },
+    {
+      "id": "g1-markdown-1-hour",
+      "class": "text",
+      "case": "markdown",
+      "interval": "1-hour",
+      "source_bytes": 21820,
+      "target_bytes": 21818,
+      "source_sha256": "3edb0499f54c31f27af076d3a23f1eecff32a647cb50b9dc70bb76df67bedf3a",
+      "target_sha256": "91524fb2b8f5e49d37bbd5f31930727fb75f4def29f8ab81b5dc320d6f28ad1a",
+      "complete_bytes": 21818,
+      "g1_line_json_bytes": 575,
+      "vcdiff_bytes": 73,
+      "vcdiff_ratio_to_complete": 0.003345861215510129,
+      "private_bytes": 63,
+      "private_ratio_to_complete": 0.0028875240627005225,
+      "operations": {
+        "count": 12,
+        "adds": 4,
+        "copies": 8,
+        "runs": 0,
+        "add_bytes": 11,
+        "copy_bytes": 21807,
+        "run_bytes": 0
+      },
+      "vcdiff_encode": {
+        "cpu_nanos_p50": 871000,
+        "cpu_nanos_p95": 943000,
+        "wall_nanos_p50": 823438,
+        "allocated_bytes_p50": 24096,
+        "peak_rss_kib": 21948
+      },
+      "vcdiff_decode": {
+        "cpu_nanos_p50": 296000,
+        "cpu_nanos_p95": 316000,
+        "wall_nanos_p50": 256206,
+        "allocated_bytes_p50": 49232,
+        "peak_rss_kib": 21948
+      },
+      "private_encode": {
+        "cpu_nanos_p50": 647000,
+        "cpu_nanos_p95": 696000,
+        "wall_nanos_p50": 624969,
+        "allocated_bytes_p50": 23832,
+        "peak_rss_kib": 21948
+      },
+      "private_decode": {
+        "cpu_nanos_p50": 40000,
+        "cpu_nanos_p95": 43000,
+        "wall_nanos_p50": 17838,
+        "allocated_bytes_p50": 25312,
+        "peak_rss_kib": 21948
+      },
+      "exact_vcdiff_round_trip": true,
+      "exact_private_round_trip": true,
+      "deterministic": true
+    },
+    {
+      "id": "g1-binary-looking-1-hour",
+      "class": "text",
+      "case": "binary-looking",
+      "interval": "1-hour",
+      "source_bytes": 21820,
+      "target_bytes": 21844,
+      "source_sha256": "3edb0499f54c31f27af076d3a23f1eecff32a647cb50b9dc70bb76df67bedf3a",
+      "target_sha256": "9f4dca2214d54ca9a12139c118ad1c07c432b45bc668c0eebfb9f682082fe9a4",
+      "complete_bytes": 21844,
+      "g1_line_json_bytes": 611,
+      "vcdiff_bytes": 68,
+      "vcdiff_ratio_to_complete": 0.0031129829701519868,
+      "private_bytes": 58,
+      "private_ratio_to_complete": 0.0026551913568943417,
+      "operations": {
+        "count": 3,
+        "adds": 1,
+        "copies": 2,
+        "runs": 0,
+        "add_bytes": 38,
+        "copy_bytes": 21806,
+        "run_bytes": 0
+      },
+      "vcdiff_encode": {
+        "cpu_nanos_p50": 540000,
+        "cpu_nanos_p95": 604000,
+        "wall_nanos_p50": 490879,
+        "allocated_bytes_p50": 22072,
+        "peak_rss_kib": 21948
+      },
+      "vcdiff_decode": {
+        "cpu_nanos_p50": 362000,
+        "cpu_nanos_p95": 397000,
+        "wall_nanos_p50": 404659,
+        "allocated_bytes_p50": 49232,
+        "peak_rss_kib": 21948
+      },
+      "private_encode": {
+        "cpu_nanos_p50": 588000,
+        "cpu_nanos_p95": 869000,
+        "wall_nanos_p50": 547979,
+        "allocated_bytes_p50": 21832,
+        "peak_rss_kib": 21948
+      },
+      "private_decode": {
+        "cpu_nanos_p50": 105000,
+        "cpu_nanos_p95": 127000,
+        "wall_nanos_p50": 75048,
+        "allocated_bytes_p50": 24800,
+        "peak_rss_kib": 21948
+      },
+      "exact_vcdiff_round_trip": true,
+      "exact_private_round_trip": true,
+      "deterministic": true
+    },
+    {
+      "id": "g1-very-long-line-1-hour",
+      "class": "text",
+      "case": "very-long-line",
+      "interval": "1-hour",
+      "source_bytes": 66000,
+      "target_bytes": 66008,
+      "source_sha256": "480bb67c32ce209b57b06d4f4f44c88ba0187d9f34a5d3ee4112403d3bd1123a",
+      "target_sha256": "933a19bfa5ea2cb43fc14dbe44f9beae0b3a5a9f7ce96db8f6753d52e18f1f48",
+      "complete_bytes": 66008,
+      "g1_line_json_bytes": 88271,
+      "vcdiff_bytes": 36,
+      "vcdiff_ratio_to_complete": 0.0005453884377651194,
+      "private_bytes": 26,
+      "private_ratio_to_complete": 0.00039389164949703065,
+      "operations": {
+        "count": 3,
+        "adds": 1,
+        "copies": 2,
+        "runs": 0,
+        "add_bytes": 8,
+        "copy_bytes": 66000,
+        "run_bytes": 0
+      },
+      "vcdiff_encode": {
+        "cpu_nanos_p50": 1955000,
+        "cpu_nanos_p95": 2588000,
+        "wall_nanos_p50": 1794617,
+        "allocated_bytes_p50": 91056,
+        "peak_rss_kib": 21948
+      },
+      "vcdiff_decode": {
+        "cpu_nanos_p50": 1183000,
+        "cpu_nanos_p95": 1403000,
+        "wall_nanos_p50": 1046218,
+        "allocated_bytes_p50": 147536,
+        "peak_rss_kib": 21948
+      },
+      "private_encode": {
+        "cpu_nanos_p50": 1738000,
+        "cpu_nanos_p95": 2160000,
+        "wall_nanos_p50": 1646276,
+        "allocated_bytes_p50": 90944,
+        "peak_rss_kib": 21948
+      },
+      "private_decode": {
+        "cpu_nanos_p50": 53000,
+        "cpu_nanos_p95": 60000,
+        "wall_nanos_p50": 28222,
+        "allocated_bytes_p50": 73920,
+        "peak_rss_kib": 21948
+      },
+      "exact_vcdiff_round_trip": true,
+      "exact_private_round_trip": true,
+      "deterministic": true
+    },
+    {
+      "id": "g1-localized-30-days",
+      "class": "text",
+      "case": "localized",
+      "interval": "30-days",
+      "source_bytes": 73752,
+      "target_bytes": 73759,
+      "source_sha256": "ca2e796d7dd60ccde148fda2f70128513035d605d8c690f237b6d2036b1fc4f5",
+      "target_sha256": "33b18f9046862e4c21fda25d20d2462a4136090ea88726686d0a556368671c9f",
+      "complete_bytes": 73759,
+      "g1_line_json_bytes": 587,
+      "vcdiff_bytes": 45,
+      "vcdiff_ratio_to_complete": 0.0006100950392494475,
+      "private_bytes": 35,
+      "private_ratio_to_complete": 0.0004745183638606814,
+      "operations": {
+        "count": 3,
+        "adds": 1,
+        "copies": 2,
+        "runs": 0,
+        "add_bytes": 15,
+        "copy_bytes": 73744,
+        "run_bytes": 0
+      },
+      "vcdiff_encode": {
+        "cpu_nanos_p50": 1721000,
+        "cpu_nanos_p95": 2389000,
+        "wall_nanos_p50": 1678012,
+        "allocated_bytes_p50": 88264,
+        "peak_rss_kib": 21948
+      },
+      "vcdiff_decode": {
+        "cpu_nanos_p50": 1003000,
+        "cpu_nanos_p95": 1027000,
+        "wall_nanos_p50": 816954,
+        "allocated_bytes_p50": 163920,
+        "peak_rss_kib": 21948
+      },
+      "private_encode": {
+        "cpu_nanos_p50": 2386000,
+        "cpu_nanos_p95": 3350000,
+        "wall_nanos_p50": 1887338,
+        "allocated_bytes_p50": 88192,
+        "peak_rss_kib": 21948
+      },
+      "private_decode": {
+        "cpu_nanos_p50": 322000,
+        "cpu_nanos_p95": 654000,
+        "wall_nanos_p50": 204635,
+        "allocated_bytes_p50": 82112,
+        "peak_rss_kib": 21948
+      },
+      "exact_vcdiff_round_trip": true,
+      "exact_private_round_trip": true,
+      "deterministic": true
+    },
+    {
+      "id": "g1-scattered-30-days",
+      "class": "text",
+      "case": "scattered",
+      "interval": "30-days",
+      "source_bytes": 73752,
+      "target_bytes": 74008,
+      "source_sha256": "ca2e796d7dd60ccde148fda2f70128513035d605d8c690f237b6d2036b1fc4f5",
+      "target_sha256": "ed54969ea680d3605b07666ff8c5966ee906a5f370a1455d6c045202fd61195f",
+      "complete_bytes": 74008,
+      "g1_line_json_bytes": 11458,
+      "vcdiff_bytes": 2763,
+      "vcdiff_ratio_to_complete": 0.037333801751162035,
+      "private_bytes": 2750,
+      "private_ratio_to_complete": 0.037158145065398336,
+      "operations": {
+        "count": 548,
+        "adds": 180,
+        "copies": 368,
+        "runs": 0,
+        "add_bytes": 581,
+        "copy_bytes": 73427,
+        "run_bytes": 0
+      },
+      "vcdiff_encode": {
+        "cpu_nanos_p50": 2091000,
+        "cpu_nanos_p95": 2929000,
+        "wall_nanos_p50": 2150824,
+        "allocated_bytes_p50": 204336,
+        "peak_rss_kib": 21948
+      },
+      "vcdiff_decode": {
+        "cpu_nanos_p50": 1213000,
+        "cpu_nanos_p95": 1316000,
+        "wall_nanos_p50": 973932,
+        "allocated_bytes_p50": 163920,
+        "peak_rss_kib": 21948
+      },
+      "private_encode": {
+        "cpu_nanos_p50": 2098000,
+        "cpu_nanos_p95": 2270000,
+        "wall_nanos_p50": 1723402,
+        "allocated_bytes_p50": 197120,
+        "peak_rss_kib": 21948
+      },
+      "private_decode": {
+        "cpu_nanos_p50": 427000,
+        "cpu_nanos_p95": 569000,
+        "wall_nanos_p50": 322708,
+        "allocated_bytes_p50": 116240,
+        "peak_rss_kib": 21948
+      },
+      "exact_vcdiff_round_trip": true,
+      "exact_private_round_trip": true,
+      "deterministic": true
+    },
+    {
+      "id": "g1-append-30-days",
+      "class": "text",
+      "case": "append",
+      "interval": "30-days",
+      "source_bytes": 73752,
+      "target_bytes": 75150,
+      "source_sha256": "ca2e796d7dd60ccde148fda2f70128513035d605d8c690f237b6d2036b1fc4f5",
+      "target_sha256": "401cc18d39c8fa6a8d692de861c3040a25c9395d01ab89146b29b07134ad092d",
+      "complete_bytes": 75150,
+      "g1_line_json_bytes": 2125,
+      "vcdiff_bytes": 1426,
+      "vcdiff_ratio_to_complete": 0.01897538256819694,
+      "private_bytes": 1414,
+      "private_ratio_to_complete": 0.018815701929474384,
+      "operations": {
+        "count": 2,
+        "adds": 1,
+        "copies": 1,
+        "runs": 0,
+        "add_bytes": 1398,
+        "copy_bytes": 73752,
+        "run_bytes": 0
+      },
+      "vcdiff_encode": {
+        "cpu_nanos_p50": 915000,
+        "cpu_nanos_p95": 1334000,
+        "wall_nanos_p50": 1000777,
+        "allocated_bytes_p50": 97024,
+        "peak_rss_kib": 21948
+      },
+      "vcdiff_decode": {
+        "cpu_nanos_p50": 901000,
+        "cpu_nanos_p95": 914000,
+        "wall_nanos_p50": 863701,
+        "allocated_bytes_p50": 163920,
+        "peak_rss_kib": 21948
+      },
+      "private_encode": {
+        "cpu_nanos_p50": 999000,
+        "cpu_nanos_p95": 1104000,
+        "wall_nanos_p50": 1000207,
+        "allocated_bytes_p50": 92128,
+        "peak_rss_kib": 21948
+      },
+      "private_decode": {
+        "cpu_nanos_p50": 50000,
+        "cpu_nanos_p95": 54000,
+        "wall_nanos_p50": 32066,
+        "allocated_bytes_p50": 83440,
+        "peak_rss_kib": 21948
+      },
+      "exact_vcdiff_round_trip": true,
+      "exact_private_round_trip": true,
+      "deterministic": true
+    },
+    {
+      "id": "g1-unicode-30-days",
+      "class": "text",
+      "case": "unicode",
+      "interval": "30-days",
+      "source_bytes": 73752,
+      "target_bytes": 73752,
+      "source_sha256": "ca2e796d7dd60ccde148fda2f70128513035d605d8c690f237b6d2036b1fc4f5",
+      "target_sha256": "a99460e2b5c10459d26ac48b304a813af0fb0b5fab6360a87e9992d451800a03",
+      "complete_bytes": 73752,
+      "g1_line_json_bytes": 11119,
+      "vcdiff_bytes": 2065,
+      "vcdiff_ratio_to_complete": 0.027999240698557328,
+      "private_bytes": 2052,
+      "private_ratio_to_complete": 0.027822974292222583,
+      "operations": {
+        "count": 92,
+        "adds": 41,
+        "copies": 51,
+        "runs": 0,
+        "add_bytes": 1696,
+        "copy_bytes": 72056,
+        "run_bytes": 0
+      },
+      "vcdiff_encode": {
+        "cpu_nanos_p50": 1673000,
+        "cpu_nanos_p95": 1728000,
+        "wall_nanos_p50": 1642007,
+        "allocated_bytes_p50": 126552,
+        "peak_rss_kib": 21948
+      },
+      "vcdiff_decode": {
+        "cpu_nanos_p50": 930000,
+        "cpu_nanos_p95": 1104000,
+        "wall_nanos_p50": 928012,
+        "allocated_bytes_p50": 163920,
+        "peak_rss_kib": 21948
+      },
+      "private_encode": {
+        "cpu_nanos_p50": 2989000,
+        "cpu_nanos_p95": 3173000,
+        "wall_nanos_p50": 2944571,
+        "allocated_bytes_p50": 121248,
+        "peak_rss_kib": 21948
+      },
+      "private_decode": {
+        "cpu_nanos_p50": 97000,
+        "cpu_nanos_p95": 112000,
+        "wall_nanos_p50": 71792,
+        "allocated_bytes_p50": 89184,
+        "peak_rss_kib": 21948
+      },
+      "exact_vcdiff_round_trip": true,
+      "exact_private_round_trip": true,
+      "deterministic": true
+    },
+    {
+      "id": "g1-markdown-30-days",
+      "class": "text",
+      "case": "markdown",
+      "interval": "30-days",
+      "source_bytes": 73752,
+      "target_bytes": 73688,
+      "source_sha256": "ca2e796d7dd60ccde148fda2f70128513035d605d8c690f237b6d2036b1fc4f5",
+      "target_sha256": "feddf7cb19bc99e99698a258c4a6e7dd2546a48a8e2e18ff0571da87765418b4",
+      "complete_bytes": 73688,
+      "g1_line_json_bytes": 10991,
+      "vcdiff_bytes": 1090,
+      "vcdiff_ratio_to_complete": 0.014792096406470525,
+      "private_bytes": 1077,
+      "private_ratio_to_complete": 0.014615676908044729,
+      "operations": {
+        "count": 143,
+        "adds": 65,
+        "copies": 78,
+        "runs": 0,
+        "add_bytes": 582,
+        "copy_bytes": 73106,
+        "run_bytes": 0
+      },
+      "vcdiff_encode": {
+        "cpu_nanos_p50": 2345000,
+        "cpu_nanos_p95": 2997000,
+        "wall_nanos_p50": 1963601,
+        "allocated_bytes_p50": 121376,
+        "peak_rss_kib": 21948
+      },
+      "vcdiff_decode": {
+        "cpu_nanos_p50": 828000,
+        "cpu_nanos_p95": 862000,
+        "wall_nanos_p50": 793641,
+        "allocated_bytes_p50": 147536,
+        "peak_rss_kib": 21948
+      },
+      "private_encode": {
+        "cpu_nanos_p50": 1806000,
+        "cpu_nanos_p95": 2045000,
+        "wall_nanos_p50": 1768975,
+        "allocated_bytes_p50": 117024,
+        "peak_rss_kib": 21948
+      },
+      "private_decode": {
+        "cpu_nanos_p50": 141000,
+        "cpu_nanos_p95": 363000,
+        "wall_nanos_p50": 102955,
+        "allocated_bytes_p50": 82840,
+        "peak_rss_kib": 21948
+      },
+      "exact_vcdiff_round_trip": true,
+      "exact_private_round_trip": true,
+      "deterministic": true
+    },
+    {
+      "id": "g1-binary-looking-30-days",
+      "class": "text",
+      "case": "binary-looking",
+      "interval": "30-days",
+      "source_bytes": 73752,
+      "target_bytes": 74520,
+      "source_sha256": "ca2e796d7dd60ccde148fda2f70128513035d605d8c690f237b6d2036b1fc4f5",
+      "target_sha256": "8b40b0f7585656938bc9ffea22c8191c2fd2edae5b7b5ef605652cfc8e8a08bc",
+      "complete_bytes": 74520,
+      "g1_line_json_bytes": 12143,
+      "vcdiff_bytes": 1992,
+      "vcdiff_ratio_to_complete": 0.026731078904991948,
+      "private_bytes": 1979,
+      "private_ratio_to_complete": 0.026556629092860978,
+      "operations": {
+        "count": 76,
+        "adds": 32,
+        "copies": 44,
+        "runs": 0,
+        "add_bytes": 1699,
+        "copy_bytes": 72821,
+        "run_bytes": 0
+      },
+      "vcdiff_encode": {
+        "cpu_nanos_p50": 1933000,
+        "cpu_nanos_p95": 2597000,
+        "wall_nanos_p50": 2074700,
+        "allocated_bytes_p50": 124048,
+        "peak_rss_kib": 21948
+      },
+      "vcdiff_decode": {
+        "cpu_nanos_p50": 940000,
+        "cpu_nanos_p95": 1481000,
+        "wall_nanos_p50": 896082,
+        "allocated_bytes_p50": 163920,
+        "peak_rss_kib": 21948
+      },
+      "private_encode": {
+        "cpu_nanos_p50": 3136000,
+        "cpu_nanos_p95": 3693000,
+        "wall_nanos_p50": 3069276,
+        "allocated_bytes_p50": 117712,
+        "peak_rss_kib": 21948
+      },
+      "private_decode": {
+        "cpu_nanos_p50": 89000,
+        "cpu_nanos_p95": 103000,
+        "wall_nanos_p50": 66832,
+        "allocated_bytes_p50": 88704,
+        "peak_rss_kib": 21948
+      },
+      "exact_vcdiff_round_trip": true,
+      "exact_private_round_trip": true,
+      "deterministic": true
+    },
+    {
+      "id": "g1-very-long-line-30-days",
+      "class": "text",
+      "case": "very-long-line",
+      "interval": "30-days",
+      "source_bytes": 66000,
+      "target_bytes": 66256,
+      "source_sha256": "480bb67c32ce209b57b06d4f4f44c88ba0187d9f34a5d3ee4112403d3bd1123a",
+      "target_sha256": "0b1e491baf9ce74dc181546e7fd7636eae0b2c2d7bae1c664e508dba8f0ddf66",
+      "complete_bytes": 66256,
+      "g1_line_json_bytes": 88603,
+      "vcdiff_bytes": 526,
+      "vcdiff_ratio_to_complete": 0.007938903646462207,
+      "private_bytes": 513,
+      "private_ratio_to_complete": 0.007742695001207438,
+      "operations": {
+        "count": 65,
+        "adds": 32,
+        "copies": 33,
+        "runs": 0,
+        "add_bytes": 256,
+        "copy_bytes": 66000,
+        "run_bytes": 0
+      },
+      "vcdiff_encode": {
+        "cpu_nanos_p50": 1593000,
+        "cpu_nanos_p95": 1665000,
+        "wall_nanos_p50": 1590803,
+        "allocated_bytes_p50": 105600,
+        "peak_rss_kib": 21948
+      },
+      "vcdiff_decode": {
+        "cpu_nanos_p50": 732000,
+        "cpu_nanos_p95": 757000,
+        "wall_nanos_p50": 699887,
+        "allocated_bytes_p50": 147536,
+        "peak_rss_kib": 21948
+      },
+      "private_encode": {
+        "cpu_nanos_p50": 1628000,
+        "cpu_nanos_p95": 1680000,
+        "wall_nanos_p50": 1592042,
+        "allocated_bytes_p50": 104832,
+        "peak_rss_kib": 21948
+      },
+      "private_decode": {
+        "cpu_nanos_p50": 249000,
+        "cpu_nanos_p95": 288000,
+        "wall_nanos_p50": 180703,
+        "allocated_bytes_p50": 78080,
+        "peak_rss_kib": 21948
+      },
+      "exact_vcdiff_round_trip": true,
+      "exact_private_round_trip": true,
+      "deterministic": true
+    },
+    {
+      "id": "binary-empty",
+      "class": "binary",
+      "source_bytes": 0,
+      "target_bytes": 0,
+      "source_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "target_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "complete_bytes": 0,
+      "vcdiff_bytes": 5,
+      "vcdiff_ratio_to_complete": 1,
+      "private_bytes": 6,
+      "private_ratio_to_complete": 1,
+      "operations": {
+        "count": 0,
+        "adds": 0,
+        "copies": 0,
+        "runs": 0,
+        "add_bytes": 0,
+        "copy_bytes": 0,
+        "run_bytes": 0
+      },
+      "vcdiff_encode": {
+        "cpu_nanos_p50": 8000,
+        "cpu_nanos_p95": 9000,
+        "wall_nanos_p50": 2552,
+        "allocated_bytes_p50": 16,
+        "peak_rss_kib": 21948
+      },
+      "vcdiff_decode": {
+        "cpu_nanos_p50": 7000,
+        "cpu_nanos_p95": 7000,
+        "wall_nanos_p50": 780,
+        "allocated_bytes_p50": 0,
+        "peak_rss_kib": 21948
+      },
+      "private_encode": {
+        "cpu_nanos_p50": 9000,
+        "cpu_nanos_p95": 9000,
+        "wall_nanos_p50": 3362,
+        "allocated_bytes_p50": 16,
+        "peak_rss_kib": 21948
+      },
+      "private_decode": {
+        "cpu_nanos_p50": 7000,
+        "cpu_nanos_p95": 7000,
+        "wall_nanos_p50": 1242,
+        "allocated_bytes_p50": 0,
+        "peak_rss_kib": 21948
+      },
+      "exact_vcdiff_round_trip": true,
+      "exact_private_round_trip": true,
+      "deterministic": true
+    },
+    {
+      "id": "binary-identical-random-65536",
+      "class": "binary",
+      "source_bytes": 65536,
+      "target_bytes": 65536,
+      "source_sha256": "a7d282163fb6fe826353666e9d9b39ac7af5db0ae65530cae40976a5ff4c36e0",
+      "target_sha256": "a7d282163fb6fe826353666e9d9b39ac7af5db0ae65530cae40976a5ff4c36e0",
+      "complete_bytes": 65536,
+      "vcdiff_bytes": 23,
+      "vcdiff_ratio_to_complete": 0.0003509521484375,
+      "private_bytes": 13,
+      "private_ratio_to_complete": 0.0001983642578125,
+      "operations": {
+        "count": 1,
+        "adds": 0,
+        "copies": 1,
+        "runs": 0,
+        "add_bytes": 0,
+        "copy_bytes": 65536,
+        "run_bytes": 0
+      },
+      "vcdiff_encode": {
+        "cpu_nanos_p50": 284000,
+        "cpu_nanos_p95": 316000,
+        "wall_nanos_p50": 257742,
+        "allocated_bytes_p50": 224,
+        "peak_rss_kib": 21948
+      },
+      "vcdiff_decode": {
+        "cpu_nanos_p50": 908000,
+        "cpu_nanos_p95": 960000,
+        "wall_nanos_p50": 713108,
+        "allocated_bytes_p50": 131152,
+        "peak_rss_kib": 21948
+      },
+      "private_encode": {
+        "cpu_nanos_p50": 362000,
+        "cpu_nanos_p95": 364000,
+        "wall_nanos_p50": 253100,
+        "allocated_bytes_p50": 160,
+        "peak_rss_kib": 21948
+      },
+      "private_decode": {
+        "cpu_nanos_p50": 87000,
+        "cpu_nanos_p95": 107000,
+        "wall_nanos_p50": 32511,
+        "allocated_bytes_p50": 65600,
+        "peak_rss_kib": 21948
+      },
+      "exact_vcdiff_round_trip": true,
+      "exact_private_round_trip": true,
+      "deterministic": true
+    },
+    {
+      "id": "binary-sparse-262144",
+      "class": "binary",
+      "source_bytes": 262144,
+      "target_bytes": 263167,
+      "source_sha256": "0090f4febccdeac60e76ee58c8acf064e295194dc441c57747507bde6bf5d1cd",
+      "target_sha256": "a895f2680490ee7982a3585d62a50eae1a17c303be441742b2c8c9fbaa15f77c",
+      "complete_bytes": 263167,
+      "vcdiff_bytes": 1358,
+      "vcdiff_ratio_to_complete": 0.0051602214563376105,
+      "private_bytes": 1345,
+      "private_ratio_to_complete": 0.005110823165518473,
+      "operations": {
+        "count": 71,
+        "adds": 35,
+        "copies": 36,
+        "runs": 0,
+        "add_bytes": 1057,
+        "copy_bytes": 262110,
+        "run_bytes": 0
+      },
+      "vcdiff_encode": {
+        "cpu_nanos_p50": 6822000,
+        "cpu_nanos_p95": 14350000,
+        "wall_nanos_p50": 6875373,
+        "allocated_bytes_p50": 381776,
+        "peak_rss_kib": 21948
+      },
+      "vcdiff_decode": {
+        "cpu_nanos_p50": 3672000,
+        "cpu_nanos_p95": 5166000,
+        "wall_nanos_p50": 3000631,
+        "allocated_bytes_p50": 540752,
+        "peak_rss_kib": 21948
+      },
+      "private_encode": {
+        "cpu_nanos_p50": 7513000,
+        "cpu_nanos_p95": 9475000,
+        "wall_nanos_p50": 7507667,
+        "allocated_bytes_p50": 378720,
+        "peak_rss_kib": 21948
+      },
+      "private_decode": {
+        "cpu_nanos_p50": 184000,
+        "cpu_nanos_p95": 1050000,
+        "wall_nanos_p50": 154595,
+        "allocated_bytes_p50": 275728,
+        "peak_rss_kib": 21948
+      },
+      "exact_vcdiff_round_trip": true,
+      "exact_private_round_trip": true,
+      "deterministic": true
+    },
+    {
+      "id": "binary-unrelated-262144",
+      "class": "binary",
+      "source_bytes": 262144,
+      "target_bytes": 262144,
+      "source_sha256": "c08fa005f4109703b2a90a22f786c5cd0208673aa0ec8a4f7333e650f2f64028",
+      "target_sha256": "513f451c11fb55645b87c02632021e9e1070c0aa5b6133adbefa14cd09b532c9",
+      "complete_bytes": 262144,
+      "vcdiff_bytes": 262166,
+      "vcdiff_ratio_to_complete": 1.0000839233398438,
+      "private_bytes": 262156,
+      "private_ratio_to_complete": 1.0000457763671875,
+      "operations": {
+        "count": 1,
+        "adds": 1,
+        "copies": 0,
+        "runs": 0,
+        "add_bytes": 262144,
+        "copy_bytes": 0,
+        "run_bytes": 0
+      },
+      "vcdiff_encode": {
+        "cpu_nanos_p50": 29024000,
+        "cpu_nanos_p95": 33598000,
+        "wall_nanos_p50": 28976244,
+        "allocated_bytes_p50": 1688112,
+        "peak_rss_kib": 21948
+      },
+      "vcdiff_decode": {
+        "cpu_nanos_p50": 247000,
+        "cpu_nanos_p95": 1070000,
+        "wall_nanos_p50": 207960,
+        "allocated_bytes_p50": 524368,
+        "peak_rss_kib": 21948
+      },
+      "private_encode": {
+        "cpu_nanos_p50": 33395000,
+        "cpu_nanos_p95": 42782000,
+        "wall_nanos_p50": 33474918,
+        "allocated_bytes_p50": 1155600,
+        "peak_rss_kib": 21948
+      },
+      "private_decode": {
+        "cpu_nanos_p50": 197000,
+        "cpu_nanos_p95": 244000,
+        "wall_nanos_p50": 188348,
+        "allocated_bytes_p50": 524352,
+        "peak_rss_kib": 21948
+      },
+      "exact_vcdiff_round_trip": true,
+      "exact_private_round_trip": true,
+      "deterministic": true
+    },
+    {
+      "id": "binary-repetitive-1048576",
+      "class": "binary",
+      "source_bytes": 1048576,
+      "target_bytes": 1048576,
+      "source_sha256": "8dc44cd6fd77c04dedb4c8f7a22dec8d30660694f3f349a5636edd9e476fa4bd",
+      "target_sha256": "a81aeecc7bea71d813147e6221d9d2fce9f871e91d8dd0a28525d57f2d1ebba7",
+      "complete_bytes": 1048576,
+      "vcdiff_bytes": 32,
+      "vcdiff_ratio_to_complete": 0.000030517578125,
+      "private_bytes": 22,
+      "private_ratio_to_complete": 0.0000209808349609375,
+      "operations": {
+        "count": 3,
+        "adds": 0,
+        "copies": 2,
+        "runs": 1,
+        "add_bytes": 0,
+        "copy_bytes": 1044480,
+        "run_bytes": 4096
+      },
+      "vcdiff_encode": {
+        "cpu_nanos_p50": 19371000,
+        "cpu_nanos_p95": 19890000,
+        "wall_nanos_p50": 19470031,
+        "allocated_bytes_p50": 1316840,
+        "peak_rss_kib": 21948
+      },
+      "vcdiff_decode": {
+        "cpu_nanos_p50": 15637000,
+        "cpu_nanos_p95": 16529000,
+        "wall_nanos_p50": 13710017,
+        "allocated_bytes_p50": 2097232,
+        "peak_rss_kib": 21948
+      },
+      "private_encode": {
+        "cpu_nanos_p50": 16289000,
+        "cpu_nanos_p95": 20569000,
+        "wall_nanos_p50": 16262444,
+        "allocated_bytes_p50": 1316784,
+        "peak_rss_kib": 22116
+      },
+      "private_decode": {
+        "cpu_nanos_p50": 434000,
+        "cpu_nanos_p95": 1454000,
+        "wall_nanos_p50": 427466,
+        "allocated_bytes_p50": 1048752,
+        "peak_rss_kib": 22116
+      },
+      "exact_vcdiff_round_trip": true,
+      "exact_private_round_trip": true,
+      "deterministic": true
+    },
+    {
+      "id": "binary-nul-65536",
+      "class": "binary",
+      "source_bytes": 65536,
+      "target_bytes": 65536,
+      "source_sha256": "7daca2095d0438260fa849183dfc67faa459fdf4936e1bc91eec6b281b27e4c2",
+      "target_sha256": "20872dd98ad94613b9dd2dae5cc83f3bf12ea8450f3daf7a96c77cb834f16699",
+      "complete_bytes": 65536,
+      "vcdiff_bytes": 31,
+      "vcdiff_ratio_to_complete": 0.0004730224609375,
+      "private_bytes": 21,
+      "private_ratio_to_complete": 0.0003204345703125,
+      "operations": {
+        "count": 3,
+        "adds": 0,
+        "copies": 2,
+        "runs": 1,
+        "add_bytes": 0,
+        "copy_bytes": 61441,
+        "run_bytes": 4095
+      },
+      "vcdiff_encode": {
+        "cpu_nanos_p50": 3677000,
+        "cpu_nanos_p95": 3747000,
+        "wall_nanos_p50": 2924302,
+        "allocated_bytes_p50": 86872,
+        "peak_rss_kib": 22116
+      },
+      "vcdiff_decode": {
+        "cpu_nanos_p50": 892000,
+        "cpu_nanos_p95": 922000,
+        "wall_nanos_p50": 688243,
+        "allocated_bytes_p50": 131152,
+        "peak_rss_kib": 22116
+      },
+      "private_encode": {
+        "cpu_nanos_p50": 2254000,
+        "cpu_nanos_p95": 2990000,
+        "wall_nanos_p50": 1831340,
+        "allocated_bytes_p50": 86816,
+        "peak_rss_kib": 22116
+      },
+      "private_decode": {
+        "cpu_nanos_p50": 117000,
+        "cpu_nanos_p95": 139000,
+        "wall_nanos_p50": 58763,
+        "allocated_bytes_p50": 65712,
+        "peak_rss_kib": 22116
+      },
+      "exact_vcdiff_round_trip": true,
+      "exact_private_round_trip": true,
+      "deterministic": true
+    },
+    {
+      "id": "attachment-png-like-131096",
+      "class": "binary",
+      "source_bytes": 131098,
+      "target_bytes": 131098,
+      "source_sha256": "cfabd699428cf627df25f0aad9fe82ea93953151422e86baeb5bc4fa9231f665",
+      "target_sha256": "a6aeb45be9acca39490bd12afe78e40626a88a1ced7340e70a633bbdb3098c19",
+      "complete_bytes": 131098,
+      "vcdiff_bytes": 73,
+      "vcdiff_ratio_to_complete": 0.0005568353445514043,
+      "private_bytes": 63,
+      "private_ratio_to_complete": 0.0004805565302292941,
+      "operations": {
+        "count": 4,
+        "adds": 1,
+        "copies": 2,
+        "runs": 1,
+        "add_bytes": 40,
+        "copy_bytes": 131034,
+        "run_bytes": 24
+      },
+      "vcdiff_encode": {
+        "cpu_nanos_p50": 3112000,
+        "cpu_nanos_p95": 3951000,
+        "wall_nanos_p50": 3040845,
+        "allocated_bytes_p50": 181808,
+        "peak_rss_kib": 22116
+      },
+      "vcdiff_decode": {
+        "cpu_nanos_p50": 1438000,
+        "cpu_nanos_p95": 1595000,
+        "wall_nanos_p50": 1393785,
+        "allocated_bytes_p50": 278608,
+        "peak_rss_kib": 22116
+      },
+      "private_encode": {
+        "cpu_nanos_p50": 2798000,
+        "cpu_nanos_p95": 3571000,
+        "wall_nanos_p50": 2763917,
+        "allocated_bytes_p50": 181568,
+        "peak_rss_kib": 22116
+      },
+      "private_decode": {
+        "cpu_nanos_p50": 74000,
+        "cpu_nanos_p95": 109000,
+        "wall_nanos_p50": 51618,
+        "allocated_bytes_p50": 139536,
+        "peak_rss_kib": 22116
+      },
+      "exact_vcdiff_round_trip": true,
+      "exact_private_round_trip": true,
+      "deterministic": true
+    }
+  ],
+  "summary": {
+    "all_deterministic": true,
+    "all_exact": true,
+    "beneficial_private": 19,
+    "beneficial_vcdiff": 19,
+    "binary_fixtures": 7,
+    "fixtures": 21,
+    "text_fixtures": 14
+  }
+}

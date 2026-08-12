@@ -1,6 +1,6 @@
 # Plan Status
 
-Updated: 2026-08-11 (pure-Go xdelta/VCDIFF amendment; G1a next)
+Updated: 2026-08-11 (G1a pure-Go xdelta/VCDIFF investigation complete; G2 next)
 
 ## Active milestone
 
@@ -13,8 +13,35 @@ G0, G1, G1a, and G2-G20: evidence, profiles/local journal, state-vector converge
 revision deltas/merge, lazy resources, secure container/catch-up,
 ephemeral-directory and REST transports, jobs/UI/retention, shared-core/FFI/
 Mermaid/mobile handoff, compatibility, and final validation. The user's
-2026-08-11 review resolved every G0-G17 policy decision. **G0-G1 are complete**
-and archived under `plans/v0.7/`; G1a is next and is not approved.
+2026-08-11 review resolved every G0-G17 policy decision. **G0-G1a are complete**
+and archived under `plans/v0.7/`; G2 is next and is not approved.
+
+## v0.7 G1a completion — 2026-08-11
+
+- Added an investigation-only pure-Go matcher using 64-byte source blocks,
+  rolling pseudo-Adler checksums, byte confirmation, and match extension, plus
+  bounded constrained-VCDIFF and minimal-private-container serializers under
+  `performance/v0.7-g1a/`.
+- Ran 14 G1-compatible text fixtures and seven generated binary fixtures. Both
+  formats reconstructed exactly and deterministically in all 21; VCDIFF was
+  smaller than complete bytes in 19 and smaller than G1 line JSON in all 14
+  text comparisons.
+- Recorded the honest fallbacks: empty VCDIFF costs a five-byte header and
+  unrelated 256 KiB random data was 22 bytes larger than complete content.
+  Later code must require material benefit and retain the complete object.
+- Demonstrated outbound interoperability: pinned Apache-2.0 xdelta3 and
+  open-vcdiff builds decoded every representative Go-emitted stream exactly.
+  The strict Go decoder accepted two of six external encodes and explicitly
+  rejects valid compound opcodes outside its profile; it is not a general RFC
+  decoder.
+- Resolved the format recommendation to constrained RFC 3284 default-table
+  VCDIFF, not Subversion svndiff or the private `NXD1` container. Kept the
+  implementation spec-first and independently written with Apache behavioral
+  attribution and no GPL-derived code.
+- Kept the prototype under `performance/`. G2 owns production numeric limits;
+  G7/G8 must separately approve a rewrite or deliberate promotion, require a
+  real named parent and outer exact hashes, and preserve complete-object
+  fallback. No production codec, schema, dependency, or mobile claim landed.
 
 ## 2026-08-11 pure-Go xdelta/VCDIFF plan amendment
 
@@ -30,8 +57,9 @@ and archived under `plans/v0.7/`; G1a is next and is not approved.
   implementation; the earlier `epiclabs-io/diff3` recommendation is
   superseded.
 - Made format interoperability, implementation provenance, and prototype
-  promotion explicit non-blocking decisions with recorded defaults. G1a
-  remains unapproved and adds no production codec, schema, or runtime code.
+  promotion explicit non-blocking decisions with recorded defaults. The later
+  approved G1a investigation resolved them as recorded above without adding a
+  production codec, schema, or runtime dependency.
 
 The roadmap no longer relies exclusively on Wails for mobile: v0.8 now includes
 an evidence-first framework-neutral application facade, versioned no-GUI Go C

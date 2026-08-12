@@ -212,10 +212,18 @@ deterministic divergence fixtures selected complete UTF-8 revision objects,
 optional beneficial named-parent line deltas, and bounded line-first merge with
 word-token conflict-region refinement. Overlap remains a typed conflict; no
 merge dependency or sync runtime landed. A later review found that the probed
-merge package does not solve binary delta encoding, so the new G1a separately
-investigates a Notrios-owned pure-Go xdelta/VCDIFF implementation and makes the
-G7 line/word merge Notrios-owned as well. G1a is next and remains
-approval-gated.
+merge package does not solve binary delta encoding, so G1a separately evaluated
+a Notrios-owned pure-Go xdelta/VCDIFF implementation and made the G7 line/word
+merge Notrios-owned as well.
+
+**G1a completed 2026-08-11.** Its investigation-only pure-Go matcher and
+bounded codec produced exact deterministic results across 21 text/binary
+fixtures. The recommendation is constrained RFC 3284 default-table VCDIFF,
+not Subversion svndiff or a private container, only from a real named parent
+and only when materially smaller than complete bytes. External xdelta3 and
+open-vcdiff decoded all representative Go streams exactly. The prototype stays
+under `performance/`; G2 is next and remains approval-gated, and later G7/G8
+must separately approve any production rewrite or promotion.
 
 - **Evidence before contracts (G0-G2, including G1a):** threat model and
   reference validation; representative revision/delta/three-way-merge
@@ -254,7 +262,8 @@ The shared directory is disposable transport state, never canonical storage.
 `rclone sync`/`bisync` are not the merge or deletion algorithm, and mobile does
 not depend on rclone. Subversion contributes state-vector/change-log and
 base-delta ideas, not its dump grammar: its xdelta matcher, its svndiff format,
-and RFC 3284 VCDIFF are distinct candidates that G1a must compare. Archive v2
+and RFC 3284 VCDIFF are distinct candidates that G1a compared before selecting
+the constrained RFC profile recommendation. Archive v2
 already supplies Notrios' verified content-addressed container.
 
 Research outcomes:
