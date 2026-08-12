@@ -10,13 +10,21 @@ organizer transactions), F2 (MCP tool scopes), F3 (MCP read coverage and HTTP
 readable at scale), F6 (job control plane), and F7 (documentation and release
 wrap-up). The thirteen v0.5 slices remain archived under `plans/v0.5/`.
 
-`PLAN.md` now holds the **second-round v0.7 native synchronization draft** with
+`PLAN.md` now holds the **active v0.7 native synchronization plan** with
 twenty-one independently approvable slices, G0-G20. The user's 2026-08-11
 review resolved the policy decisions through G17, including mandatory payload
-encryption and per-replica Ed25519 signatures. **No v0.7 task is approved**;
-the next possible item is G0 (threat model, terminology, and reference
-validation), which is now decision-ready but starts only after an explicit
-instruction naming it.
+encryption and per-replica Ed25519 signatures. **G0 is complete** and archived
+at `plans/v0.7/000-threat-model-terminology-reference-validation.md`. Its
+reviewed evidence is under `performance/v0.7-g0/`; G1 is next and is not
+approved.
+
+G0 added no production sync code or dependency. It freezes the threat model,
+normative glossary, thirty misuse/control traces, and upstream license/platform
+matrix. Later crypto design must advance the encryption epoch when a compromised
+replica is revoked, sign domain-separated canonical outer artifact bytes while
+binding the visible header as AEAD associated data, and avoid exposing plaintext
+content hashes as carrier routing names. Current REST still has no general
+authentication and remains local/loopback-only.
 
 That review also added a second portability route. v0.8 now investigates and
 builds a framework-neutral Go application facade and versioned no-GUI C ABI,
@@ -27,11 +35,11 @@ the API/lifecycle/ownership/stream contract and source checks. The current GUI's
 Mermaid support is **disabled**, not merely untested (`noMermaid: true`), and a
 v0.8 offline/security-tested enablement slice owns it.
 
-Latest validation (2026-08-11) passed Go vet/tests, required-file and plan-loop
-checks, scaffold validation, frontend typecheck/all 155 tests/build, docs-site
-build, whitespace checks, and source-ZIP verification. `npm ci` still reports
-the existing 1 moderate and 2 high advisories; this planning pass changed no
-dependencies.
+Latest G0 validation (2026-08-11) passed the evidence validator, Go vet/tests,
+required-file and plan-loop checks, scaffold validation, frontend typecheck/all
+155 tests/build, docs-site build, whitespace checks, and source-ZIP
+verification. The prior `npm ci` audit still reported 1 moderate and 2 high
+advisories; G0 changed no dependency or runtime code.
 
 Two things a reader continuing this project should know about v0.6:
 

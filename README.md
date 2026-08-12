@@ -3,9 +3,9 @@
 Notrios (formerly "Notes Companion") is a local-first note-taking, search, import, and publishing system for very large Markdown and document collections.
 It combines a Go REST/MCP service (`notriosd`), a built-in GUI, SQLite/FTS5-backed canonical storage, content-addressed resources, optional Recoll-derived search/extraction, and support for third-party native clients (C++/Qt, Go/Wails, Rust/Tauri) over the same API. A versioned no-GUI C ABI is planned before 1.0, followed by an independent post-1.0 Flutter client; mobile delivery does not depend exclusively on Wails.
 
-The v0.1 through v0.6 milestones are complete; the revised v0.7 native
-synchronization plan has resolved policy decisions but no approved implementation
-item — see [`PLAN.md`](PLAN.md) and
+The v0.1 through v0.6 milestones are complete. v0.7 G0's threat model,
+terminology, and reference validation are complete; G1 is next and unapproved
+— see [`PLAN.md`](PLAN.md) and
 [`ROADMAP.md`](ROADMAP.md). The repository is
 structured so a coding agent can resume safely after usage limits or model
 changes.

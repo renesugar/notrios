@@ -1,6 +1,6 @@
 # Plan Status
 
-Updated: 2026-08-11
+Updated: 2026-08-11 (G0 complete)
 
 ## Active milestone
 
@@ -8,14 +8,15 @@ Updated: 2026-08-11
 canonical schema is **v18**. v0.6 F0-F7 are archived under `plans/v0.6/`;
 earlier milestones remain under their version directories.
 
-`PLAN.md` is now the **second-round v0.7 native synchronization draft**. It
-retains G0-G20: evidence, profiles/local journal, state-vector convergence,
+`PLAN.md` is now the **active v0.7 native synchronization plan**. It retains
+G0-G20: evidence, profiles/local journal, state-vector convergence,
 revision deltas/merge, lazy resources, secure container/catch-up,
 ephemeral-directory and REST transports, jobs/UI/retention, shared-core/FFI/
 Mermaid/mobile handoff, compatibility, and final validation. The user's
-2026-08-11 review resolved every G0-G17 policy decision. **No v0.7 item is
-approved.** G0 is now decision-ready and starts only after an explicit
-instruction naming it.
+2026-08-11 review resolved every G0-G17 policy decision. **G0 is complete** and
+archived at
+`plans/v0.7/000-threat-model-terminology-reference-validation.md`; G1 is next
+and is not approved.
 
 The roadmap no longer relies exclusively on Wails for mobile: v0.8 now includes
 an evidence-first framework-neutral application facade, versioned no-GUI Go C
@@ -24,6 +25,25 @@ enablement tests; v0.9 freezes the ABI candidate; v1.0 packages supported
 library artifacts; and a separate post-1.0 Flutter client owns physical Android
 and iOS validation plus native desktop clients. P6, the `movenotes-v3` bridge,
 is v0.7 G19 gated on G9.
+
+## v0.7 G0 completion — 2026-08-11
+
+- Added the reviewed sync threat model, normative eleven-term glossary,
+  thirty misuse cases traced to owning plan controls, and primary-source
+  dependency/license/platform validation under `performance/v0.7-g0/`.
+- Froze two security consequences later slices must implement: compromise
+  revocation advances the encryption epoch for remaining peers, and
+  carrier-visible addresses do not expose raw plaintext content hashes.
+- Required domain-separated signatures over canonical outer artifacts and AEAD
+  associated-data binding of the same visible header, while keeping signature,
+  encryption, hash, enrollment, and replay state as separate controls.
+- Preserved the honest current posture: no sync cryptography, enrollment,
+  transport, REST authentication, or schema code landed. Current REST remains
+  loopback/local only.
+- Confirmed the Go standard Ed25519 package as the preferred primitive candidate;
+  left AEAD/KDF suite and exact pins to G9/G2. Marmot, Cachapa, Ygo, Subversion,
+  rclone, and minisign remain reference/test/rejected dependencies as recorded
+  in the G0 matrix.
 
 ## 2026-08-11 synchronization decisions and Flutter/Go planning
 
@@ -1581,4 +1601,5 @@ attempt detail remains append-only in `agent/ATTEMPT_LOG.jsonl`.
 - Long-term SQLite driver choice (current local cgo/libsqlite3 adapter).
 - Official MCP Go SDK adoption/version.
 - Sync decisions live in the owning G0-G17 items in `PLAN.md`; the register in
-  that plan is an index. No v0.7 implementation is approved.
+  that plan is an index. G0 is complete; G1 and every later slice remain
+  approval-gated.

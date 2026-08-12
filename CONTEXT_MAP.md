@@ -5,9 +5,9 @@ This file is the codebase atlas. Update it whenever major files or directories a
 ## Root documents
 
 - `README.md` — project overview and quick start.
-- `PLAN.md` — the **revised v0.7 native synchronization draft**, divided into
+- `PLAN.md` — the **active v0.7 native synchronization plan**, divided into
   twenty-one independently approvable slices (G0-G20). G0-G17 policy decisions
-  are resolved, but no v0.7 slice is approved. v0.6 is complete at product
+  are resolved; G0 is complete and G1 is next but unapproved. v0.6 is complete at product
   0.6.0/schema v18 and archived under
   `plans/v0.6/`; v0.5 and v0.4 are archived under their version directories.
 - `plans/scaffold/SCAFFOLD_CREATION_PLAN.md` — process for creating/refining this scaffold.
@@ -23,6 +23,10 @@ This file is the codebase atlas. Update it whenever major files or directories a
   state-vector/change-log and revision-merge rules, lazy resources,
   archive/envelope security, ephemeral-directory and REST transports, snapshot
   catch-up, retention, library decision, and validation.
+- `performance/v0.7-g0/` — completed G0 threat model, normative protocol
+  glossary, thirty misuse/control traces, primary-source dependency/license/
+  platform validation, and its structural evidence validator.
+- `plans/v0.7/` — archived completed v0.7 slices; currently G0 only.
 - `FLUTTER_GO_CLIENT.md` — verified Flutter/Dart FFI and Go build-mode facts,
   the pre-1.0 framework-neutral application facade/C ABI contract, post-1.0
   Flutter client split, memory/stream ownership, platform limits, and the fact

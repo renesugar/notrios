@@ -235,6 +235,46 @@ to an enrolled and revocable replica; it does not replace encryption, TLS,
 hash verification, or authorization. G13 keeps sync credentials scoped to sync
 routes; they authorize no ordinary REST route.
 
+**G0 completed the design threat model on 2026-08-11; it did not implement a
+sync control.** The reviewed model and control trace are under
+`performance/v0.7-g0/`. It freezes these requirements for later slices:
+
+- discovery never enrolls a peer; enrollment explicitly binds database,
+  replica, signing public key, encryption recipient/key epoch, capabilities,
+  and active status through a one-use, expiring, proof-of-possession flow;
+- signatures, AEAD, and hashes have separate jobs. Signed canonical outer
+  artifact bytes bind visible routing and ciphertext commitment; AEAD binds the
+  same header as associated data; exact hashes verify immutable object bytes.
+  None of them alone supplies replay protection or authorization;
+- replay/order safety also requires database/type/version binding, contiguous
+  replica sequences, dependencies, state vectors, durable key/retirement
+  status, and replay floors retained after payload collection;
+- compromise revocation advances the encryption epoch for remaining active
+  peers. Revoking only the Ed25519 key would still let a former replica read
+  future traffic encrypted under a key it retained. Historical plaintext
+  already obtained cannot be revoked;
+- an active compromised replica can create valid signed/encrypted destructive
+  operations. v0.7 is single-user, multi-device sync, so recovery depends on
+  attribution, retained revisions/conflicts/tombstones, acknowledgement-gated
+  GC, snapshots, and explicit restore intent rather than an invented
+  per-operation human authorization signal;
+- carrier-visible metadata is limited to justified opaque routing fields.
+  Plaintext content hashes, names/titles, operation kinds, state vectors,
+  request ranges, acknowledgement positions, and peer display names stay
+  encrypted. Timing, frequency, ciphertext size, account/endpoint identity,
+  and some routing linkage remain observable;
+- parsers/decryptors/decompressors operate under compressed/expanded byte,
+  ratio, count, depth, dependency, disk, concurrency, and time bounds. Cheap
+  fixed-header and signature/replay gates precede expensive work where the
+  final G9 format permits it;
+- plaintext development mode must be explicit, loopback-only,
+  non-interoperable with production protocol mode, visibly audited, and never
+  selected through negotiation or failure fallback.
+
+Current REST still has no general authentication and remains approved only for
+the local/loopback deployment posture below. Planned sync-route authentication,
+payload encryption, and TLS do not retroactively secure the present listener.
+
 ## Deployment posture
 
 Use the default loopback listener:

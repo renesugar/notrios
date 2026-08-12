@@ -350,6 +350,23 @@ selected design requirement, not an implemented guarantee. The desktop-oriented
 platform list is macOS, Linux/BSD, and Windows. v0.8 must validate native
 desktop and Android secret stores behind the interface.
 
+G0's reviewed threat model and normative vocabulary are under
+`performance/v0.7-g0/`. Discovery never enrolls a peer. Enrollment explicitly
+binds database, replica, signing key, encryption recipient/key epoch,
+capabilities, and status. A compromised replica's revocation must also advance
+the encryption epoch for remaining active peers; disabling only its signing
+key would not stop it reading future traffic with encryption material it kept.
+Historical plaintext already obtained cannot be revoked.
+
+The G9 outer format must sign domain-separated canonical artifact bytes,
+including visible routing and a ciphertext commitment, and bind that visible
+header as AEAD associated data. Signature, AEAD, content hash, and replay state
+are independent controls. Plaintext body/resource hashes, names, operation
+kinds, state vectors, request ranges, and acknowledgement positions remain
+inside encryption. A carrier-visible content address, where needed, addresses
+ciphertext/artifact bytes rather than exposing a raw plaintext hash. These too
+are selected requirements, not current controls.
+
 Marmot is not adopted: it targets an always-on distributed SQLite server with
 gossip, SQL proxying, distributed transactions, and a large operational
 dependency set. Its HLC, immutable CDC segment, manifest-last, and anti-entropy

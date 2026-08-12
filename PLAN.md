@@ -1,8 +1,7 @@
 # Plan: v0.7 — Native synchronization
 
-Status: **revised draft, decisions answered 2026-08-11. Product version is
-0.6.0 and the canonical schema is v18. No v0.7 implementation item is
-approved.** The
+Status: **G0 completed 2026-08-11. Product version remains 0.6.0 and the
+canonical schema remains v18. G1 is the next item and is not approved.** The
 former seven-item draft was too coarse: it mixed protocol research, canonical
 write interception, merge semantics, two transports, cryptography, recovery,
 UI, retention, and release validation into slices that could not be reviewed or
@@ -101,7 +100,7 @@ with the change. At completion:
    `/home/renes/evidence/notrios`;
 6. report the ZIP and ask whether to proceed to the next item.
 
-## G0. Investigation — threat model, terminology, and reference validation
+## G0. Investigation — threat model, terminology, and reference validation — complete
 
 **Goal.** Freeze what is being protected and which ideas from the supplied
 references actually fit Notrios before a schema or format is written.
@@ -144,6 +143,16 @@ review updated without claiming those controls are live.
 - **SVN dump compatibility is not a goal.** Reuse the state-vector/change-log
   and base-delta ideas, but extend archive v2 rather than adopting a foreign
   repository dump grammar.
+
+**Completion (2026-08-11).** Archived as
+`plans/v0.7/000-threat-model-terminology-reference-validation.md`. The reviewed
+evidence under `performance/v0.7-g0/` defines the protocol glossary, adversary/
+asset/trust-boundary model, thirty misuse cases with owning controls, metadata
+leakage and audit budgets, and a primary-source dependency/license/platform
+matrix. It additionally freezes two consequences later slices must preserve:
+compromise revocation advances the encryption epoch for remaining peers, and
+visible content addresses name ciphertext/artifact bytes rather than exposing
+raw plaintext hashes. No crypto, transport, schema, or sync runtime was added.
 
 ## G1. Investigation — representative divergence and revision-delta workload
 
