@@ -1,0 +1,874 @@
+{
+  "schema": "notrios.g2.bounds-evidence.v1",
+  "generated_at": "2026-08-12T03:04:22Z",
+  "generator": "go run ./performance/v0.7-g2/cmd/evidence",
+  "environment": {
+    "cpu_count": 8,
+    "desktop_proxy_only": true,
+    "go_version": "go1.26.5",
+    "goarch": "amd64",
+    "goos": "linux",
+    "measurement_runs": 3
+  },
+  "inputs": {
+    "schema": "notrios.g2.aggregate-inputs.v1",
+    "privacy": "aggregate-only; copied from committed G1 and archive-v2 evidence",
+    "corpora": [
+      {
+        "label": "recipe-markdown",
+        "bodies": {
+          "count": 1619768,
+          "bytes_total": 2027524354,
+          "bytes_p50": 224,
+          "bytes_p90": 3231,
+          "bytes_p95": 3850,
+          "bytes_p99": 5346,
+          "bytes_max": 209873
+        },
+        "resources": {
+          "count": 1266,
+          "bytes_total": 429203879,
+          "bytes_p50": 97771,
+          "bytes_p90": 318806,
+          "bytes_p95": 369969,
+          "bytes_p99": 1364063,
+          "bytes_max": 153175560,
+          "count_at_least_1_mib": 29
+        }
+      },
+      {
+        "label": "joplin-attachment",
+        "bodies": {
+          "count": 103349,
+          "bytes_total": 95557281,
+          "bytes_p50": 293,
+          "bytes_p90": 1768,
+          "bytes_p95": 2878,
+          "bytes_p99": 8283,
+          "bytes_max": 326359
+        },
+        "resources": {
+          "count": 734,
+          "bytes_total": 1005655997,
+          "bytes_p50": 197998,
+          "bytes_p90": 1801393,
+          "bytes_p95": 3825632,
+          "bytes_p99": 28928496,
+          "bytes_max": 107951795,
+          "count_at_least_1_mib": 119
+        }
+      }
+    ],
+    "archive_layouts": [
+      {
+        "label": "recipe-382206",
+        "bytes_basis": "measured disk bytes",
+        "loose_files": 382447,
+        "packed_files": 46,
+        "loose_bytes": 1322321741,
+        "packed_bytes": 1466000000,
+        "loose_seconds": 2906.3,
+        "packed_seconds": 2247.8
+      },
+      {
+        "label": "joplin-attachment",
+        "bytes_basis": "final apparent archive bytes; filesystem block savings are separate",
+        "loose_files": 215484,
+        "packed_files": 30,
+        "loose_bytes": 1645978902,
+        "packed_bytes": 1683507465,
+        "loose_seconds": 1010,
+        "packed_seconds": 502
+      }
+    ]
+  },
+  "operation_tiers": [
+    {
+      "format": "canonical-jsonl",
+      "operations": 100,
+      "encoded_bytes": 30759,
+      "compressed_bytes": 4557,
+      "compressed_ratio": 0.14815176046035305,
+      "encode": {
+        "cpu_nanos_p50": 2014000,
+        "wall_nanos_p50": 1973855,
+        "allocated_bytes_p50": 86952,
+        "peak_rss_kib": 22656
+      },
+      "decode": {
+        "cpu_nanos_p50": 4075000,
+        "wall_nanos_p50": 4027741,
+        "allocated_bytes_p50": 313712,
+        "peak_rss_kib": 22656
+      },
+      "compress": {
+        "cpu_nanos_p50": 1843000,
+        "wall_nanos_p50": 1795310,
+        "allocated_bytes_p50": 830096,
+        "peak_rss_kib": 22656
+      },
+      "decompress": {
+        "cpu_nanos_p50": 567000,
+        "wall_nanos_p50": 527771,
+        "allocated_bytes_p50": 106304,
+        "peak_rss_kib": 22656
+      },
+      "exact": true,
+      "deterministic": true,
+      "proposed_envelope_count": 1,
+      "maximum_envelope_encoded_bytes": 30759,
+      "maximum_envelope_compressed_bytes": 4557
+    },
+    {
+      "format": "compact-ncb1",
+      "operations": 100,
+      "encoded_bytes": 14789,
+      "compressed_bytes": 3914,
+      "compressed_ratio": 0.2646561633646629,
+      "encode": {
+        "cpu_nanos_p50": 752000,
+        "wall_nanos_p50": 611539,
+        "allocated_bytes_p50": 77840,
+        "peak_rss_kib": 22656
+      },
+      "decode": {
+        "cpu_nanos_p50": 970000,
+        "wall_nanos_p50": 932178,
+        "allocated_bytes_p50": 40328,
+        "peak_rss_kib": 22656
+      },
+      "compress": {
+        "cpu_nanos_p50": 1399000,
+        "wall_nanos_p50": 1368357,
+        "allocated_bytes_p50": 821904,
+        "peak_rss_kib": 22656
+      },
+      "decompress": {
+        "cpu_nanos_p50": 1346000,
+        "wall_nanos_p50": 777203,
+        "allocated_bytes_p50": 79544,
+        "peak_rss_kib": 22656
+      },
+      "exact": true,
+      "deterministic": true,
+      "proposed_envelope_count": 1,
+      "maximum_envelope_encoded_bytes": 14789,
+      "maximum_envelope_compressed_bytes": 3914
+    },
+    {
+      "format": "canonical-jsonl",
+      "operations": 10000,
+      "encoded_bytes": 3090440,
+      "compressed_bytes": 424041,
+      "compressed_ratio": 0.1372105590142504,
+      "encode": {
+        "cpu_nanos_p50": 105855000,
+        "wall_nanos_p50": 104285574,
+        "allocated_bytes_p50": 10250664,
+        "peak_rss_kib": 32992
+      },
+      "decode": {
+        "cpu_nanos_p50": 272984000,
+        "wall_nanos_p50": 256394194,
+        "allocated_bytes_p50": 18478832,
+        "peak_rss_kib": 33072
+      },
+      "compress": {
+        "cpu_nanos_p50": 163476000,
+        "wall_nanos_p50": 157543097,
+        "allocated_bytes_p50": 1862288,
+        "peak_rss_kib": 33072
+      },
+      "decompress": {
+        "cpu_nanos_p50": 37202000,
+        "wall_nanos_p50": 36884458,
+        "allocated_bytes_p50": 7036784,
+        "peak_rss_kib": 33072
+      },
+      "exact": true,
+      "deterministic": true,
+      "proposed_envelope_count": 1,
+      "maximum_envelope_encoded_bytes": 3090440,
+      "maximum_envelope_compressed_bytes": 424041
+    },
+    {
+      "format": "compact-ncb1",
+      "operations": 10000,
+      "encoded_bytes": 1485497,
+      "compressed_bytes": 355032,
+      "compressed_ratio": 0.23899879972830643,
+      "encode": {
+        "cpu_nanos_p50": 71947000,
+        "wall_nanos_p50": 59542347,
+        "allocated_bytes_p50": 9875272,
+        "peak_rss_kib": 36764
+      },
+      "decode": {
+        "cpu_nanos_p50": 43482000,
+        "wall_nanos_p50": 42094559,
+        "allocated_bytes_p50": 3838408,
+        "peak_rss_kib": 36764
+      },
+      "compress": {
+        "cpu_nanos_p50": 84786000,
+        "wall_nanos_p50": 83063755,
+        "allocated_bytes_p50": 1862288,
+        "peak_rss_kib": 36764
+      },
+      "decompress": {
+        "cpu_nanos_p50": 25097000,
+        "wall_nanos_p50": 24140398,
+        "allocated_bytes_p50": 3286056,
+        "peak_rss_kib": 36764
+      },
+      "exact": true,
+      "deterministic": true,
+      "proposed_envelope_count": 1,
+      "maximum_envelope_encoded_bytes": 1485497,
+      "maximum_envelope_compressed_bytes": 355032
+    },
+    {
+      "format": "canonical-jsonl",
+      "operations": 100000,
+      "encoded_bytes": 31004229,
+      "compressed_bytes": 4236049,
+      "compressed_ratio": 0.13662810321779006,
+      "encode": {
+        "cpu_nanos_p50": 1093465000,
+        "wall_nanos_p50": 1092957446,
+        "allocated_bytes_p50": 85704840,
+        "peak_rss_kib": 255380
+      },
+      "decode": {
+        "cpu_nanos_p50": 2880849000,
+        "wall_nanos_p50": 2777206217,
+        "allocated_bytes_p50": 194088392,
+        "peak_rss_kib": 255380
+      },
+      "compress": {
+        "cpu_nanos_p50": 1738412000,
+        "wall_nanos_p50": 1727543299,
+        "allocated_bytes_p50": 17590928,
+        "peak_rss_kib": 255380
+      },
+      "decompress": {
+        "cpu_nanos_p50": 435494000,
+        "wall_nanos_p50": 432195372,
+        "allocated_bytes_p50": 74908040,
+        "peak_rss_kib": 255380
+      },
+      "exact": true,
+      "deterministic": true,
+      "proposed_envelope_count": 10,
+      "maximum_envelope_encoded_bytes": 3103771,
+      "maximum_envelope_compressed_bytes": 424041
+    },
+    {
+      "format": "compact-ncb1",
+      "operations": 100000,
+      "encoded_bytes": 14909133,
+      "compressed_bytes": 3551376,
+      "compressed_ratio": 0.23820137629733398,
+      "encode": {
+        "cpu_nanos_p50": 648028000,
+        "wall_nanos_p50": 528027892,
+        "allocated_bytes_p50": 96771928,
+        "peak_rss_kib": 255380
+      },
+      "decode": {
+        "cpu_nanos_p50": 420350000,
+        "wall_nanos_p50": 419744011,
+        "allocated_bytes_p50": 38372232,
+        "peak_rss_kib": 255380
+      },
+      "compress": {
+        "cpu_nanos_p50": 863213000,
+        "wall_nanos_p50": 865224895,
+        "allocated_bytes_p50": 9202320,
+        "peak_rss_kib": 255380
+      },
+      "decompress": {
+        "cpu_nanos_p50": 207094000,
+        "wall_nanos_p50": 205413592,
+        "allocated_bytes_p50": 34406512,
+        "peak_rss_kib": 255380
+      },
+      "exact": true,
+      "deterministic": true,
+      "proposed_envelope_count": 10,
+      "maximum_envelope_encoded_bytes": 1495878,
+      "maximum_envelope_compressed_bytes": 355858
+    }
+  ],
+  "resource_policies": [
+    {
+      "whole_below": 262144,
+      "chunk_bytes": 262144,
+      "cases": {
+        "attachment-heavy": {
+          "size_bytes": 107951795,
+          "objects": 412,
+          "manifest_bytes": 39552,
+          "maximum_retry_bytes": 262144,
+          "range_request_bytes": 65536,
+          "range_transfer_bytes": 262144,
+          "worst_case_range_transfer_bytes": 524288
+        },
+        "large": {
+          "size_bytes": 33554432,
+          "objects": 128,
+          "manifest_bytes": 12288,
+          "maximum_retry_bytes": 262144,
+          "range_request_bytes": 65536,
+          "range_transfer_bytes": 262144,
+          "worst_case_range_transfer_bytes": 524288
+        },
+        "small": {
+          "size_bytes": 65536,
+          "objects": 1,
+          "manifest_bytes": 0,
+          "maximum_retry_bytes": 65536,
+          "range_request_bytes": 65536,
+          "range_transfer_bytes": 65536,
+          "worst_case_range_transfer_bytes": 65536
+        },
+        "zero": {
+          "size_bytes": 0,
+          "objects": 1,
+          "manifest_bytes": 0,
+          "maximum_retry_bytes": 0,
+          "range_request_bytes": 0,
+          "range_transfer_bytes": 0,
+          "worst_case_range_transfer_bytes": 0
+        }
+      },
+      "corpus_proxy": {
+        "joplin-attachment": {
+          "maximum_retry_bytes": 262144,
+          "proxy_manifest_bytes": 52320,
+          "proxy_objects": 546,
+          "proxy_sample_points": 5
+        },
+        "recipe-markdown": {
+          "maximum_retry_bytes": 262144,
+          "proxy_manifest_bytes": 57120,
+          "proxy_objects": 596,
+          "proxy_sample_points": 5
+        }
+      }
+    },
+    {
+      "whole_below": 262144,
+      "chunk_bytes": 1048576,
+      "cases": {
+        "attachment-heavy": {
+          "size_bytes": 107951795,
+          "objects": 103,
+          "manifest_bytes": 9888,
+          "maximum_retry_bytes": 1048576,
+          "range_request_bytes": 65536,
+          "range_transfer_bytes": 1048576,
+          "worst_case_range_transfer_bytes": 2097152
+        },
+        "large": {
+          "size_bytes": 33554432,
+          "objects": 32,
+          "manifest_bytes": 3072,
+          "maximum_retry_bytes": 1048576,
+          "range_request_bytes": 65536,
+          "range_transfer_bytes": 1048576,
+          "worst_case_range_transfer_bytes": 2097152
+        },
+        "small": {
+          "size_bytes": 65536,
+          "objects": 1,
+          "manifest_bytes": 0,
+          "maximum_retry_bytes": 65536,
+          "range_request_bytes": 65536,
+          "range_transfer_bytes": 65536,
+          "worst_case_range_transfer_bytes": 65536
+        },
+        "zero": {
+          "size_bytes": 0,
+          "objects": 1,
+          "manifest_bytes": 0,
+          "maximum_retry_bytes": 0,
+          "range_request_bytes": 0,
+          "range_transfer_bytes": 0,
+          "worst_case_range_transfer_bytes": 0
+        }
+      },
+      "corpus_proxy": {
+        "joplin-attachment": {
+          "maximum_retry_bytes": 1048576,
+          "proxy_manifest_bytes": 13152,
+          "proxy_objects": 138,
+          "proxy_sample_points": 5
+        },
+        "recipe-markdown": {
+          "maximum_retry_bytes": 1048576,
+          "proxy_manifest_bytes": 14496,
+          "proxy_objects": 152,
+          "proxy_sample_points": 5
+        }
+      }
+    },
+    {
+      "whole_below": 262144,
+      "chunk_bytes": 4194304,
+      "cases": {
+        "attachment-heavy": {
+          "size_bytes": 107951795,
+          "objects": 26,
+          "manifest_bytes": 2496,
+          "maximum_retry_bytes": 4194304,
+          "range_request_bytes": 65536,
+          "range_transfer_bytes": 4194304,
+          "worst_case_range_transfer_bytes": 8388608
+        },
+        "large": {
+          "size_bytes": 33554432,
+          "objects": 8,
+          "manifest_bytes": 768,
+          "maximum_retry_bytes": 4194304,
+          "range_request_bytes": 65536,
+          "range_transfer_bytes": 4194304,
+          "worst_case_range_transfer_bytes": 8388608
+        },
+        "small": {
+          "size_bytes": 65536,
+          "objects": 1,
+          "manifest_bytes": 0,
+          "maximum_retry_bytes": 65536,
+          "range_request_bytes": 65536,
+          "range_transfer_bytes": 65536,
+          "worst_case_range_transfer_bytes": 65536
+        },
+        "zero": {
+          "size_bytes": 0,
+          "objects": 1,
+          "manifest_bytes": 0,
+          "maximum_retry_bytes": 0,
+          "range_request_bytes": 0,
+          "range_transfer_bytes": 0,
+          "worst_case_range_transfer_bytes": 0
+        }
+      },
+      "corpus_proxy": {
+        "joplin-attachment": {
+          "maximum_retry_bytes": 4194304,
+          "proxy_manifest_bytes": 3360,
+          "proxy_objects": 36,
+          "proxy_sample_points": 5
+        },
+        "recipe-markdown": {
+          "maximum_retry_bytes": 4194304,
+          "proxy_manifest_bytes": 3840,
+          "proxy_objects": 41,
+          "proxy_sample_points": 5
+        }
+      }
+    },
+    {
+      "whole_below": 1048576,
+      "chunk_bytes": 262144,
+      "cases": {
+        "attachment-heavy": {
+          "size_bytes": 107951795,
+          "objects": 412,
+          "manifest_bytes": 39552,
+          "maximum_retry_bytes": 262144,
+          "range_request_bytes": 65536,
+          "range_transfer_bytes": 262144,
+          "worst_case_range_transfer_bytes": 524288
+        },
+        "large": {
+          "size_bytes": 33554432,
+          "objects": 128,
+          "manifest_bytes": 12288,
+          "maximum_retry_bytes": 262144,
+          "range_request_bytes": 65536,
+          "range_transfer_bytes": 262144,
+          "worst_case_range_transfer_bytes": 524288
+        },
+        "small": {
+          "size_bytes": 65536,
+          "objects": 1,
+          "manifest_bytes": 0,
+          "maximum_retry_bytes": 65536,
+          "range_request_bytes": 65536,
+          "range_transfer_bytes": 65536,
+          "worst_case_range_transfer_bytes": 65536
+        },
+        "zero": {
+          "size_bytes": 0,
+          "objects": 1,
+          "manifest_bytes": 0,
+          "maximum_retry_bytes": 0,
+          "range_request_bytes": 0,
+          "range_transfer_bytes": 0,
+          "worst_case_range_transfer_bytes": 0
+        }
+      },
+      "corpus_proxy": {
+        "joplin-attachment": {
+          "maximum_retry_bytes": 262144,
+          "proxy_manifest_bytes": 52320,
+          "proxy_objects": 546,
+          "proxy_sample_points": 5
+        },
+        "recipe-markdown": {
+          "maximum_retry_bytes": 369969,
+          "proxy_manifest_bytes": 56736,
+          "proxy_objects": 594,
+          "proxy_sample_points": 5
+        }
+      }
+    },
+    {
+      "whole_below": 1048576,
+      "chunk_bytes": 1048576,
+      "cases": {
+        "attachment-heavy": {
+          "size_bytes": 107951795,
+          "objects": 103,
+          "manifest_bytes": 9888,
+          "maximum_retry_bytes": 1048576,
+          "range_request_bytes": 65536,
+          "range_transfer_bytes": 1048576,
+          "worst_case_range_transfer_bytes": 2097152
+        },
+        "large": {
+          "size_bytes": 33554432,
+          "objects": 32,
+          "manifest_bytes": 3072,
+          "maximum_retry_bytes": 1048576,
+          "range_request_bytes": 65536,
+          "range_transfer_bytes": 1048576,
+          "worst_case_range_transfer_bytes": 2097152
+        },
+        "small": {
+          "size_bytes": 65536,
+          "objects": 1,
+          "manifest_bytes": 0,
+          "maximum_retry_bytes": 65536,
+          "range_request_bytes": 65536,
+          "range_transfer_bytes": 65536,
+          "worst_case_range_transfer_bytes": 65536
+        },
+        "zero": {
+          "size_bytes": 0,
+          "objects": 1,
+          "manifest_bytes": 0,
+          "maximum_retry_bytes": 0,
+          "range_request_bytes": 0,
+          "range_transfer_bytes": 0,
+          "worst_case_range_transfer_bytes": 0
+        }
+      },
+      "corpus_proxy": {
+        "joplin-attachment": {
+          "maximum_retry_bytes": 1048576,
+          "proxy_manifest_bytes": 13152,
+          "proxy_objects": 138,
+          "proxy_sample_points": 5
+        },
+        "recipe-markdown": {
+          "maximum_retry_bytes": 1048576,
+          "proxy_manifest_bytes": 14304,
+          "proxy_objects": 152,
+          "proxy_sample_points": 5
+        }
+      }
+    },
+    {
+      "whole_below": 1048576,
+      "chunk_bytes": 4194304,
+      "cases": {
+        "attachment-heavy": {
+          "size_bytes": 107951795,
+          "objects": 26,
+          "manifest_bytes": 2496,
+          "maximum_retry_bytes": 4194304,
+          "range_request_bytes": 65536,
+          "range_transfer_bytes": 4194304,
+          "worst_case_range_transfer_bytes": 8388608
+        },
+        "large": {
+          "size_bytes": 33554432,
+          "objects": 8,
+          "manifest_bytes": 768,
+          "maximum_retry_bytes": 4194304,
+          "range_request_bytes": 65536,
+          "range_transfer_bytes": 4194304,
+          "worst_case_range_transfer_bytes": 8388608
+        },
+        "small": {
+          "size_bytes": 65536,
+          "objects": 1,
+          "manifest_bytes": 0,
+          "maximum_retry_bytes": 65536,
+          "range_request_bytes": 65536,
+          "range_transfer_bytes": 65536,
+          "worst_case_range_transfer_bytes": 65536
+        },
+        "zero": {
+          "size_bytes": 0,
+          "objects": 1,
+          "manifest_bytes": 0,
+          "maximum_retry_bytes": 0,
+          "range_request_bytes": 0,
+          "range_transfer_bytes": 0,
+          "worst_case_range_transfer_bytes": 0
+        }
+      },
+      "corpus_proxy": {
+        "joplin-attachment": {
+          "maximum_retry_bytes": 4194304,
+          "proxy_manifest_bytes": 3360,
+          "proxy_objects": 36,
+          "proxy_sample_points": 5
+        },
+        "recipe-markdown": {
+          "maximum_retry_bytes": 4194304,
+          "proxy_manifest_bytes": 3648,
+          "proxy_objects": 41,
+          "proxy_sample_points": 5
+        }
+      }
+    },
+    {
+      "whole_below": 4194304,
+      "chunk_bytes": 262144,
+      "cases": {
+        "attachment-heavy": {
+          "size_bytes": 107951795,
+          "objects": 412,
+          "manifest_bytes": 39552,
+          "maximum_retry_bytes": 262144,
+          "range_request_bytes": 65536,
+          "range_transfer_bytes": 262144,
+          "worst_case_range_transfer_bytes": 524288
+        },
+        "large": {
+          "size_bytes": 33554432,
+          "objects": 128,
+          "manifest_bytes": 12288,
+          "maximum_retry_bytes": 262144,
+          "range_request_bytes": 65536,
+          "range_transfer_bytes": 262144,
+          "worst_case_range_transfer_bytes": 524288
+        },
+        "small": {
+          "size_bytes": 65536,
+          "objects": 1,
+          "manifest_bytes": 0,
+          "maximum_retry_bytes": 65536,
+          "range_request_bytes": 65536,
+          "range_transfer_bytes": 65536,
+          "worst_case_range_transfer_bytes": 65536
+        },
+        "zero": {
+          "size_bytes": 0,
+          "objects": 1,
+          "manifest_bytes": 0,
+          "maximum_retry_bytes": 0,
+          "range_request_bytes": 0,
+          "range_transfer_bytes": 0,
+          "worst_case_range_transfer_bytes": 0
+        }
+      },
+      "corpus_proxy": {
+        "joplin-attachment": {
+          "maximum_retry_bytes": 3825632,
+          "proxy_manifest_bytes": 50208,
+          "proxy_objects": 526,
+          "proxy_sample_points": 5
+        },
+        "recipe-markdown": {
+          "maximum_retry_bytes": 1364063,
+          "proxy_manifest_bytes": 56160,
+          "proxy_objects": 589,
+          "proxy_sample_points": 5
+        }
+      }
+    },
+    {
+      "whole_below": 4194304,
+      "chunk_bytes": 1048576,
+      "cases": {
+        "attachment-heavy": {
+          "size_bytes": 107951795,
+          "objects": 103,
+          "manifest_bytes": 9888,
+          "maximum_retry_bytes": 1048576,
+          "range_request_bytes": 65536,
+          "range_transfer_bytes": 1048576,
+          "worst_case_range_transfer_bytes": 2097152
+        },
+        "large": {
+          "size_bytes": 33554432,
+          "objects": 32,
+          "manifest_bytes": 3072,
+          "maximum_retry_bytes": 1048576,
+          "range_request_bytes": 65536,
+          "range_transfer_bytes": 1048576,
+          "worst_case_range_transfer_bytes": 2097152
+        },
+        "small": {
+          "size_bytes": 65536,
+          "objects": 1,
+          "manifest_bytes": 0,
+          "maximum_retry_bytes": 65536,
+          "range_request_bytes": 65536,
+          "range_transfer_bytes": 65536,
+          "worst_case_range_transfer_bytes": 65536
+        },
+        "zero": {
+          "size_bytes": 0,
+          "objects": 1,
+          "manifest_bytes": 0,
+          "maximum_retry_bytes": 0,
+          "range_request_bytes": 0,
+          "range_transfer_bytes": 0,
+          "worst_case_range_transfer_bytes": 0
+        }
+      },
+      "corpus_proxy": {
+        "joplin-attachment": {
+          "maximum_retry_bytes": 3825632,
+          "proxy_manifest_bytes": 12576,
+          "proxy_objects": 134,
+          "proxy_sample_points": 5
+        },
+        "recipe-markdown": {
+          "maximum_retry_bytes": 1364063,
+          "proxy_manifest_bytes": 14112,
+          "proxy_objects": 151,
+          "proxy_sample_points": 5
+        }
+      }
+    },
+    {
+      "whole_below": 4194304,
+      "chunk_bytes": 4194304,
+      "cases": {
+        "attachment-heavy": {
+          "size_bytes": 107951795,
+          "objects": 26,
+          "manifest_bytes": 2496,
+          "maximum_retry_bytes": 4194304,
+          "range_request_bytes": 65536,
+          "range_transfer_bytes": 4194304,
+          "worst_case_range_transfer_bytes": 8388608
+        },
+        "large": {
+          "size_bytes": 33554432,
+          "objects": 8,
+          "manifest_bytes": 768,
+          "maximum_retry_bytes": 4194304,
+          "range_request_bytes": 65536,
+          "range_transfer_bytes": 4194304,
+          "worst_case_range_transfer_bytes": 8388608
+        },
+        "small": {
+          "size_bytes": 65536,
+          "objects": 1,
+          "manifest_bytes": 0,
+          "maximum_retry_bytes": 65536,
+          "range_request_bytes": 65536,
+          "range_transfer_bytes": 65536,
+          "worst_case_range_transfer_bytes": 65536
+        },
+        "zero": {
+          "size_bytes": 0,
+          "objects": 1,
+          "manifest_bytes": 0,
+          "maximum_retry_bytes": 0,
+          "range_request_bytes": 0,
+          "range_transfer_bytes": 0,
+          "worst_case_range_transfer_bytes": 0
+        }
+      },
+      "corpus_proxy": {
+        "joplin-attachment": {
+          "maximum_retry_bytes": 4194304,
+          "proxy_manifest_bytes": 3168,
+          "proxy_objects": 36,
+          "proxy_sample_points": 5
+        },
+        "recipe-markdown": {
+          "maximum_retry_bytes": 4194304,
+          "proxy_manifest_bytes": 3552,
+          "proxy_objects": 41,
+          "proxy_sample_points": 5
+        }
+      }
+    }
+  ],
+  "pack_reuse": [
+    {
+      "byte_ratio": 1.1086560513565662,
+      "bytes_basis": "measured disk bytes",
+      "file_reduction": 8314.065217391304,
+      "label": "recipe-382206",
+      "loose_files": 382447,
+      "packed_files": 46,
+      "speedup": 1.2929531097072693
+    },
+    {
+      "byte_ratio": 1.0228001482609526,
+      "bytes_basis": "final apparent archive bytes; filesystem block savings are separate",
+      "file_reduction": 7182.8,
+      "label": "joplin-attachment",
+      "loose_files": 215484,
+      "packed_files": 30,
+      "speedup": 2.0119521912350598
+    }
+  ],
+  "hostile_cases": [
+    {
+      "name": "operation-count",
+      "rejected": true
+    },
+    {
+      "name": "payload-size",
+      "rejected": true
+    },
+    {
+      "name": "compression-ratio",
+      "rejected": true
+    },
+    {
+      "name": "multiple-gzip-members",
+      "rejected": true
+    },
+    {
+      "name": "non-minimal-varint",
+      "rejected": true
+    },
+    {
+      "name": "unknown-json-field",
+      "rejected": true
+    }
+  ],
+  "selected_limits": {
+    "compression": "gzip/DEFLATE level 6; mtime 0; OS 255; no name/comment/extra fields",
+    "dependencies_per_operation": 64,
+    "envelope_compressed_bytes": 4194304,
+    "envelope_encoded_bytes": 16777216,
+    "envelope_operations": 10000,
+    "expansion_ratio": 64,
+    "fixed_chunk_bytes": 1048576,
+    "maximum_resource_chunks": 16384,
+    "operation_encoding": "NCB1 compact canonical record stream; canonical JSON remains the outer manifest candidate",
+    "operation_payload_bytes": 524288,
+    "pending_encoded_bytes_per_peer": 67108864,
+    "pending_operations_per_peer": 10000,
+    "record_bytes": 1048576,
+    "sync_pack_objects": 4096,
+    "sync_pack_target_bytes": 67108864,
+    "sync_pack_trailer_bytes": 4194304,
+    "whole_resource_below_bytes": 1048576
+  }
+}

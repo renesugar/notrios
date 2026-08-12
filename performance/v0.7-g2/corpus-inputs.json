@@ -1,0 +1,20 @@
+{
+  "schema": "notrios.g2.aggregate-inputs.v1",
+  "privacy": "aggregate-only; copied from committed G1 and archive-v2 evidence",
+  "corpora": [
+    {
+      "label": "recipe-markdown",
+      "bodies": {"count": 1619768, "bytes_total": 2027524354, "bytes_p50": 224, "bytes_p90": 3231, "bytes_p95": 3850, "bytes_p99": 5346, "bytes_max": 209873},
+      "resources": {"count": 1266, "bytes_total": 429203879, "bytes_p50": 97771, "bytes_p90": 318806, "bytes_p95": 369969, "bytes_p99": 1364063, "bytes_max": 153175560, "count_at_least_1_mib": 29}
+    },
+    {
+      "label": "joplin-attachment",
+      "bodies": {"count": 103349, "bytes_total": 95557281, "bytes_p50": 293, "bytes_p90": 1768, "bytes_p95": 2878, "bytes_p99": 8283, "bytes_max": 326359},
+      "resources": {"count": 734, "bytes_total": 1005655997, "bytes_p50": 197998, "bytes_p90": 1801393, "bytes_p95": 3825632, "bytes_p99": 28928496, "bytes_max": 107951795, "count_at_least_1_mib": 119}
+    }
+  ],
+  "archive_layouts": [
+    {"label": "recipe-382206", "bytes_basis": "measured disk bytes", "loose_files": 382447, "packed_files": 46, "loose_bytes": 1322321741, "packed_bytes": 1466000000, "loose_seconds": 2906.3, "packed_seconds": 2247.8},
+    {"label": "joplin-attachment", "bytes_basis": "final apparent archive bytes; filesystem block savings are separate", "loose_files": 215484, "packed_files": 30, "loose_bytes": 1645978902, "packed_bytes": 1683507465, "loose_seconds": 1010, "packed_seconds": 502}
+  ]
+}

@@ -291,9 +291,24 @@ It rejects corrupt/truncated streams, unsupported custom code tables and
 secondary compressors, and malicious overlap without partially materializing a
 canonical object. Its constrained RFC 3284 recommendation still requires a
 named-parent check plus exact outer result-hash verification. External
-C/C++/cgo tools are test oracles only. Until G2 and a later approved G7/G8
-implementation pass production gates, complete or fixed-chunk verified objects
-remain the only planned binary-resource transfer forms.
+C/C++/cgo tools are test oracles only. Until later approved G7/G8 implementation
+passes the remaining production gates using G2's completed bounds, complete or
+fixed-chunk verified objects remain the only planned binary-resource transfer
+forms.
+
+**G2 completed the bounds investigation; it did not add a live decoder or
+admission path.** The G9 candidate closes an envelope at 10,000 operations,
+16 MiB canonical bytes, or 4 MiB compressed bytes and independently limits one
+record to 1 MiB, its payload to 512 KiB, dependencies to 64, and decompression
+to 64:1. Pending unavailable dependencies stop at 10,000 operations/64 MiB of
+disk-backed encoded bytes per peer and must backpressure/repair rather than
+evict arbitrary prerequisites. Resources below 1 MiB remain whole; larger
+resources use exact-hash-verified 1 MiB fixed chunks, at most 16,384 per 16 GiB
+resource. G9 must still arrange cheap outer/signature/replay gates before
+expensive decompression, pin compressor goldens, fuzz all parsers, and ensure
+no canonical write occurs before complete verification. These numbers are
+desktop proxies and may only be retained or lowered by the v0.8 emulator and
+post-1.0 physical-device gates.
 
 ## Deployment posture
 

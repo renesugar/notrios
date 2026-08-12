@@ -273,6 +273,15 @@ verification and explicit replace/merge/fork/adopt identity planning, and marks
 an interrupted restore so a partial library cannot pass as complete. See
 `NATIVE_ARCHIVE_V2.md`.
 
+G2's investigation candidate keeps the archive-v2 JSONL snapshot contract
+unchanged but recommends compact canonical NCB1 records inside incremental
+change envelopes, with a canonical-JSON outer manifest and bounded
+deterministic gzip. The production gate is G9. Envelopes close at 10,000
+operations, 16 MiB canonical bytes, or 4 MiB compressed bytes; resources stay
+whole below 1 MiB and use 1 MiB fixed chunks above it. These are desktop-proxy
+bounds pending the v0.8 emulator and post-1.0 physical-device gates. See
+`performance/v0.7-g2/`.
+
 ## Optional derived systems
 
 - go-git or Fossil can checkpoint projections but should not replace SQLite revisions.

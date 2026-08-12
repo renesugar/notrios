@@ -39,6 +39,12 @@ The v0.7 design is specified in `SYNCHRONIZATION.md`. Its invariants are:
   delete/edit, malformed, or over-limit overlap remains a typed conflict.
 - Resource metadata may converge before bytes; content hashes and permanent
   URIs support bounded lazy fetch, resume, verification, and deduplication.
+- G2 recommends compact canonical NCB1 operation records inside a readable
+  canonical-JSON outer envelope, deterministic gzip, simultaneous
+  10,000-operation/16 MiB canonical/4 MiB compressed envelope ceilings, and
+  1 MiB fixed resource chunks above a 1 MiB whole-object threshold. These are
+  G9/G8 implementation inputs, not current protocol code; mobile limits remain
+  provisional.
 - Tombstone/resource collection waits for retention plus acknowledgements from
   every active peer.
 - REST and an ephemeral shared directory are transport adapters over one

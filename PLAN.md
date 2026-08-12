@@ -1,7 +1,7 @@
 # Plan: v0.7 — Native synchronization
 
-Status: **G0-G1a completed 2026-08-11. Product version remains 0.6.0 and the
-canonical schema remains v18. G2 is the next item and is not approved.** The
+Status: **G0-G2 completed 2026-08-11. Product version remains 0.6.0 and the
+canonical schema remains v18. G3 is the next item and is not approved.** The
 former seven-item draft was too coarse: it mixed protocol research, canonical
 write interception, merge semantics, two transports, cryptography, recovery,
 UI, retention, and release validation into slices that could not be reviewed or
@@ -287,7 +287,7 @@ format.
   test oracles only.
 - **May the prototype move into production? — Resolved.** No. It remains under
   `performance/v0.7-g1a/`; a separately approved G7/G8 slice must review and
-  either rewrite or deliberately promote it after G2 fixes numeric bounds.
+  either rewrite or deliberately promote it using G2's completed numeric bounds.
 
 **Completion (2026-08-11).** Archived as
 `plans/v0.7/003-pure-go-xdelta-vcdiff-feasibility.md`. The pure-Go prototype
@@ -301,7 +301,7 @@ profile, rejects unsupported RFC features and hostile/over-limit inputs, and
 is not a general VCDIFF decoder. G1a added no production codec, dependency,
 schema, or mobile-safety claim.
 
-## G2. Investigation — envelope, resource, and constrained-device bounds
+## G2. Investigation — envelope, resource, and constrained-device bounds — complete
 
 **Goal.** Determine format, compression, pack, chunk, and pending-queue bounds
 before they become an immutable protocol contract.
@@ -327,7 +327,7 @@ and G9 numeric limits and explains every proxy limitation.
 and attachment-heavy resources; compression-bomb and count-limit rejection;
 time/RSS/disk/file-count/round-trip estimates; deterministic byte checks.
 
-**Resolved decisions (2026-08-11)**
+**Resolved decisions (2026-08-11; measured outcome recorded at completion)**
 
 - **The spike selects the v1 encoding/compression using the approved default
   candidate:** canonical JSON/JSONL plus a pinned deterministic compression
@@ -343,6 +343,21 @@ time/RSS/disk/file-count/round-trip estimates; deterministic byte checks.
   Physical-device confirmation belongs to the post-1.0 Flutter client release
   gate. The v0.8 shared-core/FFI work prevents Wails-mobile maturity from being
   the only route to a mobile client.
+
+**Completion evidence (2026-08-11).** The compact NCB1 record candidate met
+the recorded exception gate: at 10,000 generated operations it was 51.9%
+smaller raw and 16.3% smaller after deterministic gzip, decoded materially
+faster, and allocated about one-fifth as much as canonical JSONL on the desktop
+proxy. G9 therefore receives NCB1 plus a canonical-JSON outer manifest as the
+implementation candidate, with gzip level 6/fixed headers and cross-toolchain
+goldens still required. Envelopes close at 10,000 operations, 16 MiB canonical
+bytes, or 4 MiB compressed bytes; pending admission is bounded per peer at
+10,000 operations/64 MiB disk-backed bytes. Resources stay whole below 1 MiB
+and use 1 MiB fixed chunks above it, with at most 16,384 chunks under the
+existing 16 GiB resource ceiling. Sync packs provisionally target 64 MiB/4,096
+objects/4 MiB trailers. FastCDC remains deferred. The v0.8 emulator and
+post-1.0 physical-device checklists may only retain or lower these provisional
+mobile bounds. No production sync codec, schema, dependency, or runtime landed.
 
 ## G3. Profiles, replica identity, and multi-instance process isolation
 
@@ -1046,8 +1061,8 @@ recommendation, blocking status, and consequence.
 | Delta implementation provenance | G1a | Resolved: independent spec-first Go; attributed Apache behavioral reference; no GPL-derived code |
 | Investigation prototype promotion | G1a | Resolved: performance-only; later G7/G8 must approve rewrite or promotion after G2 |
 | Offline intervals measured | G1 | Resolved: 1 hour/day/week/30 days |
-| Envelope encoding/compression | G2 | Resolved selection rule; canonical JSON default candidate |
-| Resource chunk threshold | G2 | Resolved selection rule; whole then fixed chunks |
+| Envelope encoding/compression | G2 | Resolved: NCB1 compact records plus canonical-JSON outer candidate and pinned deterministic gzip; G9 goldens required |
+| Resource chunk threshold | G2 | Resolved: whole below 1 MiB; 1 MiB fixed chunks above; FastCDC deferred |
 | Android bounds | G2/G18 | Emulator-only before 1.0; physical-device gate after 1.0 |
 | Profile config layout | G3 | Resolved: registry plus per-profile config |
 | Copied database enrollment | G3 | Resolved: refuse until adopt/fork; transfer via export/import |
@@ -1078,6 +1093,6 @@ recommendation, blocking status, and consequence.
 | Current-GUI Mermaid baseline | G18 | Resolved fact: upstream-capable but disabled pending offline/security evidence |
 | Release version/schema bookkeeping | G20 | Open, non-blocking until wrap-up |
 
-G0-G1a are complete. G2 is the next implementable item, but is not approved.
-Implementation begins only after an explicit instruction naming G2; completing
-it still stops for a verified ZIP and approval before G3.
+G0-G2 are complete. G3 is the next implementable item, but is not approved.
+Implementation begins only after an explicit instruction naming G3; completing
+it still stops for a verified ZIP and approval before G4.

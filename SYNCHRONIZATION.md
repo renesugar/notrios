@@ -89,7 +89,8 @@ wall-clock jump must not move an HLC backwards.
   delta chain is repairable. G1a recommends a bounded pure-Go Subversion-style
   matcher with a constrained RFC 3284 default-table VCDIFF transfer profile;
   Subversion svndiff remains distinct and is not selected. Production adoption
-  remains gated on G2 and a later G7/G8 approval. Concurrent revisions with
+  remains gated on G2's completed numeric bounds and a later G7/G8 approval.
+  Concurrent revisions with
   a common ancestor use a verified Notrios-owned pure-Go three-way merge:
   disjoint edits produce a merge revision and
   overlapping edits produce a typed conflict attached to the same document.
@@ -122,10 +123,15 @@ An envelope is a versioned, deterministic object containing:
   by the resolved G0 policy;
 - a final envelope checksum.
 
-Bound envelopes by both record count and encoded bytes. G2 measures and fixes
-the v1 limits; a desktop proxy does not prove Android safety, so v0.8 checks an
-Android emulator and the post-1.0 Flutter release gate confirms or lowers the
-limits on physical devices. This is transport framing, not a merge rule.
+Close a v1 candidate envelope at the first of 10,000 operation records, 16 MiB
+canonical record bytes, or 4 MiB compressed record bytes. One record is at most
+1 MiB, its kind payload at most 512 KiB, and it names at most 64 dependencies.
+G2 recommends compact canonical NCB1 operation records, a canonical-JSON outer
+manifest, and deterministic gzip level 6 with fixed headers; G9 must promote or
+replace that evidence format and pin cross-toolchain goldens. A desktop proxy
+does not prove Android safety, so v0.8 confirms or lowers the limits on an
+Android emulator and the post-1.0 Flutter release gate does so on physical
+devices. This is transport framing, not a merge rule.
 
 Publish dependencies in this order:
 
@@ -153,9 +159,11 @@ SSRF policy before they become canonical resources.
 
 Whole-resource content addressing is the initial default because attachments
 are usually immutable and existing Notrios blobs already deduplicate exact
-bytes. Split only large objects at a measured threshold so a transfer can
-resume and memory stays bounded. Fixed chunks are simpler for the first
-implementation.
+bytes. G2 keeps resources below 1 MiB whole and splits resources at or above
+that threshold into 1 MiB fixed chunks, up to 16,384 chunks under archive-v2's
+existing 16 GiB resource ceiling. A 64 KiB range on a chunked resource may
+transfer one aligned 1 MiB chunk; every chunk is verified and the resource is
+admitted atomically only when complete.
 
 FastCDC/content-defined chunking is an optional later optimization for large
 binaries that are repeatedly modified. It is not the change algorithm, is not
@@ -273,7 +281,11 @@ or packed object layout and P4 adds verification and restore under explicit
 intent; v0.7 adds operation logs, acknowledgement vectors, and transports
 without inventing a second blob/manifest format. The packed layout exists
 because loose objects cost one transport round trip each: the 382,206-note
-corpus is 382,447 files loose and 46 packed.
+corpus is 382,447 files loose and 46 packed. G2 provisionally targets sync
+carrier packs at 64 MiB/4,096 contained objects with a 4 MiB trailer ceiling,
+below the desktop archive writer's 256 MiB/65,536-object targets because the
+current reader loads a trailer whole. G9 must preserve loose compatibility and
+bound or stream trailer reads.
 
 Imports execute in bounded transactions under one import-job identity. They may
 allocate an HLC plus consecutive operations for each committed batch; source
@@ -431,11 +443,17 @@ under `performance/v0.7-g1a/`: 21 exact deterministic fixture round trips and
 external decoding evidence support a constrained RFC 3284 default-table
 profile from a real named parent, with complete-object fallback. Its strict
 decoder limits and rejects unsupported features; it is not live sync code and
-does not replace the G7 line/word merge. G2 remains an investigation: the
-review selected its decision rule and default candidate, not an unmeasured
-implementation. Android limits remain
-provisional through the v0.8 emulator pass and require post-1.0 physical-device
-confirmation.
+does not replace the G7 line/word merge.
+
+G2 completed its aggregate-only bounds investigation under
+`performance/v0.7-g2/`. At 10,000 generated operations, NCB1 was 51.9% smaller
+raw and 16.3% smaller after deterministic gzip than canonical JSONL, with lower
+desktop decode time and allocation. The numeric envelope/resource/pack bounds
+above and a per-peer pending ceiling of 10,000 operations/64 MiB disk-backed
+encoded bytes are inputs to G5/G8/G9, not current runtime controls. FastCDC is
+deferred because static corpora contain no repeated binary-edit trace. Android
+limits remain provisional through the v0.8 emulator pass and require post-1.0
+physical-device confirmation.
 
 G18 also records a framework-neutral Go application facade and pre-1.0 C ABI
 handoff. That ABI adds lifecycle, ownership, typed-error, cancellation/event,

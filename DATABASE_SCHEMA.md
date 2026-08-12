@@ -363,6 +363,8 @@ contiguous state vectors and explicit gaps, HLC field/register state,
 acknowledgements, peer retirement/revocation, pending dependencies, revision
 parents/delta references, lazy-resource availability, tombstones/death
 certificates, conflicts, jobs, snapshot floors, and retention watermarks. Exact
-names and encodings are investigation/implementation outputs after G0-G2; the
-governing policy decisions were resolved 2026-08-11. Derived FTS/Recoll data is
-excluded.
+names remain implementation outputs after G0-G2. G2 recommends bounded compact
+NCB1 operation records with per-kind canonical-JSON payloads, but G9 must
+promote or replace that evidence format deliberately; it is not a table schema
+or current codec. The governing policy decisions were resolved 2026-08-11.
+Derived FTS/Recoll data is excluded.

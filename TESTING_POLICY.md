@@ -971,7 +971,31 @@ compatible, and the report names that compatibility rather than treating
 xdelta matching, svndiff, and VCDIFF as synonyms. Benchmarks record ratio,
 CPU, RSS, and allocations on this host without making a mobile claim. The
 selected constrained default-table VCDIFF profile is evidence for later G7/G8,
-not production admission; G2 still owns numeric limits.
+not production admission; G2 now supplies its completed numeric bounds.
+
+## v0.7 G2 envelope/resource bounds investigation
+
+G2 evidence under `performance/v0.7-g2/` compares canonical JSONL and compact
+NCB1 records at 100, 10,000, and 100,000 generated operations. Every row must
+round-trip exactly and produce identical repeat bytes before size/time/RSS/
+allocation evidence is considered. The 100,000 tier must split into bounded
+candidate envelopes rather than widening the receive limit.
+
+The selected compact exception to the JSONL default remains valid only while
+the 10,000-operation candidate is at least 15% smaller after deterministic
+gzip, decodes within 20% of the JSONL prototype time, allocates within 25%, and
+keeps its complete minimal-varint/canonical-payload specification. Hostile
+tests reject count, record, payload, dependency, compressed/expanded/ratio,
+truncation, non-minimal integer, unknown-field, and trailing-data violations
+before production adoption; G2's exemplar set is not the later fuzz suite.
+
+Resource evidence covers zero, 64 KiB, 32 MiB, and attachment-heavy cases at
+256 KiB/1 MiB/4 MiB whole/chunk candidates, plus aggregate recipe and Joplin
+resource shapes and both archive-v2 layouts. Exact chunk hashes, bounded range
+amplification, incomplete-resource visibility, atomic final admission,
+file-count/pack bounds, cancellation, and pending-queue backpressure belong to
+G8/G9 implementation tests. Desktop results make no mobile claim; the checked
+v0.8 emulator and post-1.0 physical-device evidence files are required gates.
 
 ## MVP release validation
 

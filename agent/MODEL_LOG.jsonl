@@ -36,3 +36,4 @@
 {"timestamp":"2026-08-12T00:51:46Z","task_id":"v0.7-g1","model":"GPT-5","observed_by":"Codex","notes":"Started G1 representative divergence and revision-delta workload investigation; exact model variant was not exposed to the agent."}
 {"timestamp":"2026-08-12T01:28:10Z","task_id":"v0.7-pure-go-xdelta-plan-amendment","model":"GPT-5","observed_by":"Codex","notes":"Started the requested pure-Go xdelta/VCDIFF planning amendment; exact model variant was not exposed to the agent."}
 {"timestamp":"2026-08-12T01:41:19Z","task_id":"v0.7-g1a","model":"GPT-5","observed_by":"Codex","notes":"Started the approved G1a pure-Go xdelta/VCDIFF feasibility investigation; exact model variant was not exposed to the agent."}
+{"timestamp":"2026-08-12T02:28:19Z","task_id":"v0.7-g2","model":"GPT-5","observed_by":"Codex","notes":"Started the approved G2 envelope, resource, and constrained-device bounds investigation; exact model variant was not exposed to the agent."}

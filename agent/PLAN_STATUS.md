@@ -1,6 +1,6 @@
 # Plan Status
 
-Updated: 2026-08-11 (G1a pure-Go xdelta/VCDIFF investigation complete; G2 next)
+Updated: 2026-08-11 (G2 envelope/resource bounds investigation complete; G3 next)
 
 ## Active milestone
 
@@ -13,8 +13,34 @@ G0, G1, G1a, and G2-G20: evidence, profiles/local journal, state-vector converge
 revision deltas/merge, lazy resources, secure container/catch-up,
 ephemeral-directory and REST transports, jobs/UI/retention, shared-core/FFI/
 Mermaid/mobile handoff, compatibility, and final validation. The user's
-2026-08-11 review resolved every G0-G17 policy decision. **G0-G1a are complete**
-and archived under `plans/v0.7/`; G2 is next and is not approved.
+2026-08-11 review resolved every G0-G17 policy decision. **G0-G2 are complete**
+and archived under `plans/v0.7/`; G3 is next and is not approved.
+
+## v0.7 G2 completion — 2026-08-11
+
+- Added an investigation-only pure-Go codec/resource harness under
+  `performance/v0.7-g2/`; no production sync codec, schema, cryptography,
+  transport, dependency, or mobile implementation landed.
+- Compared canonical JSONL and compact canonical NCB1 at 100, 10,000, and
+  100,000 generated aggregate-shaped operations. All six rows round-tripped
+  exactly and deterministically; the 100k tier split into ten bounded candidate
+  envelopes.
+- Selected NCB1 plus a canonical-JSON outer manifest candidate because at
+  10,000 operations it was 51.9% smaller raw, 16.3% smaller after deterministic
+  gzip, decoded materially faster, and allocated about one-fifth as much as
+  the JSONL prototype on the desktop proxy. G9 still owns promotion, goldens,
+  per-kind payload schemas, cryptographic framing, and fuzzing.
+- Fixed simultaneous envelope ceilings at 10,000 operations, 16 MiB canonical
+  bytes, and 4 MiB compressed bytes, with 1 MiB record, 512 KiB payload,
+  64-dependency, and 64:1 expansion sub-limits. Per-peer pending admission is
+  10,000 operations/64 MiB disk-backed encoded bytes.
+- Selected whole resources below 1 MiB and 1 MiB fixed chunks above it, up to
+  16,384 chunks under the inherited 16 GiB resource ceiling. FastCDC remains
+  deferred because static corpora contain no repeated binary-edit trace.
+- Reused archive-v2 evidence showing 7,183×-8,314× pack file-count reductions;
+  sync packs provisionally target 64 MiB, 4,096 objects, and 4 MiB trailers.
+  Android limits remain provisional behind explicit v0.8 emulator and
+  post-1.0 physical-device checklists.
 
 ## v0.7 G1a completion — 2026-08-11
 

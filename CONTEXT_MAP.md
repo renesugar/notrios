@@ -7,7 +7,7 @@ This file is the codebase atlas. Update it whenever major files or directories a
 - `README.md` — project overview and quick start.
 - `PLAN.md` — the **active v0.7 native synchronization plan**, divided into
   twenty-two independently approvable slices (G0, G1, G1a, and G2-G20).
-  G0-G17 policy decisions are resolved; G0-G1a are complete and G2 is next but
+  G0-G17 policy decisions are resolved; G0-G2 are complete and G3 is next but
   unapproved. v0.6 is complete at product
   0.6.0/schema v18 and archived under
   `plans/v0.6/`; v0.5 and v0.4 are archived under their version directories.
@@ -36,7 +36,11 @@ This file is the codebase atlas. Update it whenever major files or directories a
   benchmarks, hostile/golden/fuzz vectors, external interoperability evidence,
   provenance, findings, and structural validator. It is investigation code,
   not a production sync package.
-- `plans/v0.7/` — archived completed v0.7 slices G0-G1a plus the planning
+- `performance/v0.7-g2/` — completed aggregate-only envelope/codec/resource
+  bounds harness and evidence, NCB1 investigation specification, hostile-limit
+  probes, fixed-chunk/pack recommendations, and separate emulator/physical
+  mobile checklists. It is investigation code, not a production sync package.
+- `plans/v0.7/` — archived completed v0.7 slices G0-G2 plus the planning
   amendment that inserted G1a.
 - `FLUTTER_GO_CLIENT.md` — verified Flutter/Dart FFI and Go build-mode facts,
   the pre-1.0 framework-neutral application facade/C ABI contract, post-1.0

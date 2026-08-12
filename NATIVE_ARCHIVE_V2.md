@@ -150,6 +150,15 @@ the file-count collapse is what the planned REST and ephemeral-directory sync
 transports need. An interrupted packed export restarts rather than resumes.
 See `performance/v0.4-p3b/`.
 
+G2 does not change this snapshot format or its JSONL records. Its incremental
+sync candidate uses compact NCB1 operation records behind a future G9
+capability, while reusing archive-v2 object identity and pack structure. For
+sync carriers G2 provisionally targets smaller 64 MiB/4,096-object packs and a
+4 MiB trailer ceiling because the current reader loads the trailer whole;
+ordinary desktop archive exports retain their existing 256 MiB/65,536-object
+targets. G9 must preserve explicit capability rejection and loose-layout
+compatibility.
+
 Required v2 capabilities are `identity.database-replica.v1`,
 `objects.index.v1`, `objects.sha256.v1`, `records.jsonl.v1`, and
 `revisions.complete.v1`. Unknown required capabilities reject the archive.

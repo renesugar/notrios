@@ -222,8 +222,17 @@ fixtures. The recommendation is constrained RFC 3284 default-table VCDIFF,
 not Subversion svndiff or a private container, only from a real named parent
 and only when materially smaller than complete bytes. External xdelta3 and
 open-vcdiff decoded all representative Go streams exactly. The prototype stays
-under `performance/`; G2 is next and remains approval-gated, and later G7/G8
-must separately approve any production rewrite or promotion.
+under `performance/`; later G7/G8 must separately approve any production
+rewrite or promotion.
+
+**G2 completed 2026-08-11.** Aggregate-only 100/10k/100k operation and resource
+evidence selected compact NCB1 operation records plus a canonical-JSON outer
+manifest candidate and deterministic gzip profile. Envelopes close at 10,000
+operations, 16 MiB canonical bytes, or 4 MiB compressed bytes. Resources stay
+whole below 1 MiB and use 1 MiB fixed chunks above it; pending admission and
+sync packs have explicit disk/count/size bounds. Android numbers remain
+provisional behind the v0.8 emulator and post-1.0 physical-device gates. No
+production sync code or dependency landed; G3 is next and approval-gated.
 
 - **Evidence before contracts (G0-G2, including G1a):** threat model and
   reference validation; representative revision/delta/three-way-merge
