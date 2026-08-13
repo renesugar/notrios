@@ -1,0 +1,75 @@
+{
+  "schema": "notrios.g11.carrier.v1",
+  "generated_for": "v0.7 G11 ephemeral shared-directory protocol and peer discovery",
+  "database_schema_version": 24,
+  "tiers": [
+    {
+      "notes": 200,
+      "operations": 400,
+      "rounds_to_converge": 3,
+      "first_exchange_ms": 2980,
+      "quiet_round_ms": 132,
+      "carrier_artifacts": 5,
+      "carrier_bytes": 189360,
+      "database_bytes": 1654784,
+      "carrier_bytes_over_database_bytes": 0.11443185334158416,
+      "artifacts_added_by_ten_quiet_rounds": 0,
+      "direct_exchange_ms": 2861,
+      "seal_and_publish_ms": 21,
+      "read_and_open_ms": 17,
+      "carrier_layer_operations": 240,
+      "notes_pending_when_carrier_deleted": 20,
+      "rounds_to_reconverge_after_carrier_deleted": 2,
+      "reconverge_after_delete_ms": 963,
+      "converged": true
+    },
+    {
+      "notes": 1000,
+      "operations": 2000,
+      "rounds_to_converge": 3,
+      "first_exchange_ms": 21838,
+      "quiet_round_ms": 452,
+      "carrier_artifacts": 5,
+      "carrier_bytes": 942163,
+      "database_bytes": 5152768,
+      "carrier_bytes_over_database_bytes": 0.18284599655951908,
+      "artifacts_added_by_ten_quiet_rounds": 0,
+      "direct_exchange_ms": 15375,
+      "seal_and_publish_ms": 100,
+      "read_and_open_ms": 125,
+      "carrier_layer_operations": 1200,
+      "notes_pending_when_carrier_deleted": 100,
+      "rounds_to_reconverge_after_carrier_deleted": 2,
+      "reconverge_after_delete_ms": 4489,
+      "converged": true
+    }
+  ],
+  "scan_bounds": [
+    {
+      "artifacts_in_one_class": 100,
+      "list_microseconds": 362,
+      "listed": 100
+    },
+    {
+      "artifacts_in_one_class": 1000,
+      "list_microseconds": 3936,
+      "listed": 1000
+    },
+    {
+      "artifacts_in_one_class": 5000,
+      "list_microseconds": 50003,
+      "listed": 4096
+    }
+  ],
+  "notes": [
+    "Every note is generated. No private corpus content is read or recorded.",
+    "Two replicas of one database exchange through one real directory on the local filesystem.",
+    "first_exchange_ms is the wall time of the rounds that carry a fresh library across.",
+    "quiet_round_ms is one round with nothing new to say, which is what a poll costs.",
+    "seal_and_publish_ms and read_and_open_ms isolate the carrier layer itself over carrier_layer_operations operations.",
+    "direct_exchange_ms admits the same workload with no carrier at all; it is context, and one run of each is not a benchmark.",
+    "carrier_bytes counts every artifact in the folder; the folder is disposable and never a backup.",
+    "artifacts_added_by_ten_quiet_rounds must be zero: artifacts are named by what they are, not by their sealed bytes.",
+    "Desktop measurements on one host and one filesystem; no cloud provider or removable device is involved (that is G12)."
+  ]
+}

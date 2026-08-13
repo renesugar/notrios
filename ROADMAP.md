@@ -257,9 +257,20 @@ queues, and transactional contiguous-vector/acknowledgement advancement. Three
 local replicas converge after shuffled, duplicated, and delayed delivery; a
 gap, rejection, restart, or injected rollback cannot claim progress. No
 canonical conflict/merge rule, transport, crypto, REST/MCP/UI surface, or
-automatic peer enrollment landed. G6 now adds deterministic metadata,
-membership, lifecycle, and notebook-tree convergence; G7 is next and
-approval-gated.
+automatic peer enrollment landed.
+
+**G6–G11 completed 2026-08-12 and 2026-08-13**, each archived under
+`plans/v0.7/` with its own evidence directory: schema v21 deterministic
+metadata, membership, lifecycle, and notebook-tree convergence (G6); schema v22
+note revision objects, bounded transfer deltas, and durable typed conflicts
+(G7); schema v23 attachments that converge before their bytes (G8); the
+encrypted, signed NAR1 artifact and canonical wire codec, with no schema change
+and no dependency (G9); schema v24 snapshot catch-up and the reset state machine
+(G10); and the ephemeral shared-directory carrier, its discovery, and
+`notriosctl sync`, with no schema change (G11). Two replicas of one database now
+converge through a folder either of them can delete. **G12 is next and
+approval-gated**: conformance over the mapped Google Drive and removable media,
+which G11 deliberately does not claim from a local filesystem.
 
 - **Evidence before contracts (G0-G2, including G1a):** threat model and
   reference validation; representative revision/delta/three-way-merge

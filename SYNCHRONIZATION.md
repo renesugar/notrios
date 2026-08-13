@@ -279,28 +279,54 @@ REST/object storage remains the data plane.
 
 ### Shared folder and rclone
 
-The folder layout uses unique immutable names, for example:
+The folder layout uses unique immutable names. As implemented in G11
+(`internal/synccarrier`):
 
 ```text
-notrios-sync/v1/<database-id>/
-  replicas/<replica-id>/advertisements/<generation>-<hash>.bin
-  replicas/<replica-id>/requests/<generation>-<hash>.bin
-  replicas/<replica-id>/envelopes/<first>-<last>-<hash>.bin
-  replicas/<replica-id>/acknowledgements/<generation>-<hash>.bin
-  replicas/<replica-id>/snapshots/<snapshot-id>/<artifact>
-  objects/sha256/ab/cd/<hash>
-  staging/<replica-id>/<private-temporary-name>
+notrios-sync/v1/<blinded-database>/
+  replicas/<blinded-replica>/advertisements/<blinded-name>.nar
+  replicas/<blinded-replica>/requests/<blinded-name>.nar
+  replicas/<blinded-replica>/envelopes/<blinded-name>.nar
+  replicas/<blinded-replica>/objects/<ab>/<blinded-name>.nar
+  replicas/<blinded-replica>/snapshots/<content-hash>.nar
+  replicas/<blinded-replica>/staging/<private-temporary-name>.tmp
 ```
 
-Writers create a private temporary file, flush it, verify its hash, atomically
-rename it to the immutable name, then publish the manifest last. Readers ignore
-temporary, unknown, incomplete, or hash-invalid files.
+Every path segment below the layout version is a keyed HMAC blind under the
+group key (`syncwire.CarrierName`), and the drafted layout above it was
+corrected in three places when it met G0's metadata budget:
 
-Each replica writes only its own namespace. Discovery comes from signed,
-immutable advertisements; missing ranges/objects and snapshot catch-up use
-signed requests. No peer overwrites another peer's acknowledgement or deletes
-another peer's only copy. Correctness must work by explicit scan/poll/manual
-sync; filesystem watchers improve latency only.
+- **an `objects/sha256/ab/cd/<hash>` tree publishes plaintext content hashes**,
+  which is exactly what the budget forbids: anyone holding the same file could
+  confirm the library holds it. Object addresses are keyed blinds.
+- **`<first>-<last>` in an envelope name publishes a sequence range**, and
+  request ranges and acknowledgement positions are on the encrypted side of the
+  budget. An artifact's name is a blind of what it logically covers, so the name
+  is stable — republishing the same thing is a no-op — without being readable.
+- **`acknowledgements/` is not a separate class.** A replica's contiguous state
+  vector *is* what it has durably admitted from every peer, so the advertisement
+  carries both. Two artifacts for one fact can disagree; one cannot.
+
+A name is stable rather than derived from sealed bytes because every seal draws
+a fresh salt: byte-named artifacts would leave a new file per round on a shared
+drive forever. Writers create a private temporary file, flush it, rename it, and
+publish the advertisement last, so everything an advertised vector implies is
+already readable. Where a filesystem refuses to rename, the writer falls back to
+writing in place — correctness does not depend on atomic rename, because
+artifacts are authenticated and a torn one fails to open.
+
+A publisher republishes when its own copy is *unreadable*, not merely absent: a
+half-copied artifact keeps its name, and treating the name as proof would strand
+the peer waiting for it.
+
+Each replica writes only its own namespace, including its objects and staging.
+Discovery comes from signed, immutable advertisements and reports candidates it
+cannot verify by signing key alone; pairing stays an explicit act. A round
+begins from what the journal remembers about each enrolled peer, so a new or
+deleted folder still receives exactly the missing work rather than waiting to be
+greeted. No peer overwrites another peer's artifact or deletes another peer's
+only copy, and correctness survives no cleanup at all. Correctness works by
+explicit scan/poll/manual sync; filesystem watchers improve latency only.
 
 rclone is a carrier, not the synchronization algorithm. Use non-destructive
 immutable copying, conceptually `rclone copy --immutable` (and `--no-traverse`

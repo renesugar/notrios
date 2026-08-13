@@ -459,6 +459,106 @@ on it into the database, and a stored string cannot improve when a flag is
 renamed. `list` and the REST routes never show parameters at all; this command
 is local, which is where a local path belongs.
 
+## sync
+
+```sh
+notriosctl sync init     [--db path] [--keys path]
+notriosctl sync bundle   [--db path] [--keys path] --out <file>
+notriosctl sync pair     [--db path] [--keys path] <bundle-file>
+notriosctl sync status   [--db path] [--keys path]
+notriosctl sync discover [--db path] [--keys path] [--carrier dir]
+notriosctl sync once     [--db path] [--keys path] [--carrier dir] [--cleanup] [--materialize N]
+```
+
+Synchronizes two of *your own* libraries through a folder you both can reach — a
+mapped cloud drive, a file share, a USB stick. The folder is a postbox, not a
+backup: everything in it is encrypted and signed, everything in it also exists
+in the libraries that published it, and deleting the whole thing loses nothing.
+
+Sync is off until you turn it on. `init` enrols this library's journal and
+creates its key material; nothing before that point writes a single sync record.
+
+### Making the second replica
+
+Two libraries created separately are two *databases*, and sync refuses to join
+them — that check is the reason a stray copy cannot quietly merge into your
+notes. A second replica is made from the first:
+
+```sh
+notriosctl export archive-v2 --db first/notes.sqlite /tmp/snapshot
+notriosctl restore archive-v2 --intent adopt --db second/notes.sqlite /tmp/snapshot
+```
+
+`adopt` keeps the database identity and mints a new replica identity, which is
+exactly what a second device is.
+
+### Pairing
+
+Pairing is explicit, mutual, and manual. **Pair the joining replica first**: a
+replica adopts the group key when it joins, and adopting one after it already
+has peers would make everything those peers published unreadable, so the command
+refuses that and says so.
+
+```sh
+# on the first replica
+notriosctl sync init --db first/notes.sqlite
+notriosctl sync bundle --db first/notes.sqlite --out /tmp/first.bundle.json
+
+# on the second, which joins the group and then describes itself
+notriosctl sync init   --db second/notes.sqlite
+notriosctl sync pair   --db second/notes.sqlite /tmp/first.bundle.json
+notriosctl sync bundle --db second/notes.sqlite --out /tmp/second.bundle.json
+
+# back on the first
+notriosctl sync pair --db first/notes.sqlite /tmp/second.bundle.json
+```
+
+A bundle contains the library's group key in clear text. Carry it the way you
+would carry a password and delete it afterwards. This is a development
+ceremony: a short-lived, one-use pairing exchange is planned, and until it
+arrives the file is what there is.
+
+### Exchanging
+
+```sh
+notriosctl sync once --carrier /home/you/Drive/notrios --db first/notes.sqlite
+```
+
+One round publishes what your peers are missing, reads what they published,
+and then materializes up to `--materialize` attachments whose bytes have
+arrived. Attachments are fetched only when asked for, so a note referencing a
+large file arrives long before the file does, and a note whose attachment nobody
+has published stays readable with that attachment marked unavailable.
+
+Run it when you like: from a shell, from `cron`, from a script after an import.
+**There is no watcher and no scheduler**, and correctness does not depend on
+one — a round is a full scan, so a missed notification costs latency and
+nothing else.
+
+`--cleanup` lets this replica remove its own artifacts once every peer has
+acknowledged them. It is off by default and the folder stays correct without it;
+it never touches another peer's files.
+
+### Seeing who is there
+
+```sh
+notriosctl sync discover --carrier /home/you/Drive/notrios
+```
+
+Reports the replicas publishing into the folder without publishing, admitting,
+or trusting anything. A peer whose signing key you have not paired with shows up
+as a key id and nothing else — its artifacts are refused before they are
+decrypted, so there is genuinely nothing else to report.
+
+### Keys
+
+Key material lives in a `0600` JSON file, by default under your user config
+directory, and never inside the library — a database copied to another machine
+must not carry the keys that decrypt its traffic. If the file becomes readable
+by other users, `status` reports it and `once` refuses to run. This is a
+development secret provider, not a system keychain; every command that touches
+it says so.
+
 ## seed-help
 
 ```sh

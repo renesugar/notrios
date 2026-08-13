@@ -30,6 +30,7 @@ const (
 	domainRoutingName = "notrios.routing-name.v1"
 	domainDeathCert   = "notrios.death-certificate.v1"
 	domainRoutingKey  = "notrios.routing-key.v1"
+	domainCarrierName = "notrios.carrier-name.v1"
 )
 
 // Sizes fixed by the chosen primitives.
@@ -329,6 +330,19 @@ func Open(keys KeyRing, verifier Verifier, artifact []byte, requested Limits) (H
 	return header, plaintext, nil
 }
 
+// PeekSignerKeyID reads the signing key identifier from an artifact this
+// replica cannot verify. It exists for one purpose: G11's discovery has to be
+// able to say "an unenrolled key is publishing here" without pretending to know
+// anything else. Nothing is authenticated, nothing is decrypted, and the caller
+// must treat the result as a claim rather than an identity.
+func PeekSignerKeyID(artifact []byte, requested Limits) (string, error) {
+	header, _, _, _, err := parseArtifact(artifact, normalizeLimits(requested))
+	if err != nil {
+		return "", err
+	}
+	return header.SignerKeyID, nil
+}
+
 func parseArtifact(artifact []byte, limits Limits) (Header, []byte, []byte, []byte, error) {
 	if int64(len(artifact)) > limits.MaxEncodedBytes+int64(limits.MaxIdentifierBytes)+1024 {
 		return Header{}, nil, nil, nil, fmt.Errorf("%w: artifact is %d bytes", ErrLimitExceeded, len(artifact))
@@ -413,6 +427,25 @@ func RoutingName(group GroupKey, kind ArtifactKind, contentAddress string) strin
 	mac.Write([]byte(kind))
 	mac.Write([]byte{0})
 	mac.Write([]byte(contentAddress))
+	return hex.EncodeToString(mac.Sum(nil)[:16])
+}
+
+// CarrierName blinds a path segment for a carrier that addresses artifacts by
+// directory and file name. G11 needs it for database and replica identifiers,
+// which G0's leakage budget keeps out of a directory listing exactly as it
+// keeps content hashes out: a peer identifier in a folder name tells anyone who
+// can list the folder how many replicas a library has and which one is writing.
+//
+// It is a distinct domain from RoutingName because it is a distinct purpose for
+// the same key material, and it lowercases nothing: the output is hex, so a
+// case-insensitive filesystem cannot fold two different names together.
+func CarrierName(group GroupKey, scope, value string) string {
+	mac := hmac.New(sha256.New, routingKey(group))
+	mac.Write([]byte(domainCarrierName))
+	mac.Write([]byte{0})
+	mac.Write([]byte(scope))
+	mac.Write([]byte{0})
+	mac.Write([]byte(value))
 	return hex.EncodeToString(mac.Sum(nil)[:16])
 }
 

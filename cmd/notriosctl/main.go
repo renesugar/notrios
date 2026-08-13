@@ -75,6 +75,8 @@ func main() {
 		runGraph(os.Args[2:])
 	case "jobs":
 		runJobs(os.Args[2:])
+	case "sync":
+		runSync(os.Args[2:])
 	case "help", "-h", "--help":
 		printHelp()
 	default:
@@ -569,6 +571,13 @@ Usage:
   notriosctl jobs cancel [--db ...] <job-id>
                                                  # long imports and exports record a job; status exits 0 succeeded,
                                                  # 1 failed, 3 running, 4 cancelled, 5 no such job, 6 interrupted
+  notriosctl sync init|status [--db ...] [--keys path]
+  notriosctl sync bundle --out <file> [--db ...]   # development pairing bundle; contains the group key in clear text
+  notriosctl sync pair <bundle-file> [--db ...]    # trust a peer's signing key and configure it for admission
+  notriosctl sync discover [--carrier dir] [--db ...]
+  notriosctl sync once [--carrier dir] [--cleanup] [--materialize N] [--db ...]
+                                                 # one exchange through a shared directory; polling or manual runs are
+                                                 # the mechanism, and no filesystem watcher is required for correctness
   notriosctl link [--db ...] [--anchor slug|^block] [--list-anchors] <document-id>
                                                  # print the stable notrios:// link for a note or one of its sections
   notriosctl open [--profile name] [--registry path] [--db path] [--launch] <notrios-uri>

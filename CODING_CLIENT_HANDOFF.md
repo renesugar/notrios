@@ -13,14 +13,14 @@ wrap-up). The thirteen v0.5 slices remain archived under `plans/v0.5/`.
 `PLAN.md` now holds the **active v0.7 native synchronization plan** with
 twenty-two independently approvable slices: G0, G1, G1a, and G2-G20. The user's 2026-08-11
 review resolved the policy decisions through G17, including mandatory payload
-encryption and per-replica Ed25519 signatures. **G0-G10 are complete** and
+encryption and per-replica Ed25519 signatures. **G0-G11 are complete** and
 archived under `plans/v0.7/`; their reviewed evidence is under
 `performance/v0.7-g0/`, `performance/v0.7-g1/`, `performance/v0.7-g1a/`,
 `performance/v0.7-g2/`, `performance/v0.7-g4/`, `performance/v0.7-g5/`,
-`performance/v0.7-g6/`, `performance/v0.7-g7/`, `performance/v0.7-g8/`, and
-`performance/v0.7-g9/`, and `performance/v0.7-g10/`.
-**G11 is next and is not approved.** It owns the ephemeral shared-directory
-protocol and peer discovery.
+`performance/v0.7-g6/`, `performance/v0.7-g7/`, `performance/v0.7-g8/`,
+`performance/v0.7-g9/`, `performance/v0.7-g10/`, and `performance/v0.7-g11/`.
+**G12 is next and is not approved.** It owns directory-carrier conformance over
+the mapped Google Drive and removable media.
 
 G0 added no production sync code or dependency. It freezes the threat model,
 normative glossary, thirty misuse/control traces, and upstream license/platform
@@ -185,6 +185,25 @@ for a missing predecessor, and a replica without one still leaves such
 operations pending. Password wrapping is Argon2id, which promotes
 `golang.org/x/crypto` from indirect to direct at the same version.
 
+G11 adds `internal/synccarrier`, `internal/synckeys`, and `notriosctl sync`, and
+**no schema change**. The shared folder is a disposable postbox: every path
+segment below `notrios-sync/v1/` is a keyed blind, every artifact is a G9
+sealed artifact, and every writable path lives inside the writing replica's own
+namespace. **Three things a later agent should know.** First, the illustrative
+layout in `SYNCHRONIZATION.md` was wrong and is corrected there — object paths
+published plaintext content hashes, envelope names published sequence ranges,
+and a separate acknowledgement class duplicated what a contiguous vector already
+says. Second, artifacts are named by what they logically are rather than by
+their sealed bytes, because every seal draws a fresh salt; a publisher
+republishes when its own copy is *unreadable*, not merely absent, which is what
+repairs a torn artifact and what keeps a quiet carrier from growing. Third, a
+round starts from what the journal remembers each peer acknowledged rather than
+from what the folder says, so an empty or deleted carrier is not a standoff and
+removable media converges in two trips. Measured: the carrier layer is about 1%
+of an exchange — SQLite admission is the rest. `internal/synckeys` is the warned
+`0600` development secret provider; v0.8 still owns the platform store, and G13
+still owns real pairing.
+
 That review also added a second portability route. v0.8 now investigates and
 builds a framework-neutral Go application facade and versioned no-GUI C ABI,
 with Android-emulator-only pre-1.0 evidence; v1.0 packages the supported ABI
@@ -194,7 +213,17 @@ the API/lifecycle/ownership/stream contract and source checks. The current GUI's
 Mermaid support is **disabled**, not merely untested (`noMermaid: true`), and a
 v0.8 offline/security-tested enablement slice owns it.
 
-Latest completed feature validation is G10 (2026-08-13). It includes G5's
+Latest completed feature validation is G11 (2026-08-13), which added the
+synccarrier suite — two- and three-replica convergence through a real folder,
+carrier deletion and republication, truncation, unenrolled signers, unpaired
+replicas, foreign namespaces, provider sidecars and wrong-case names, idempotent
+publication, cleanup refusing another namespace, correctness with cleanup off,
+an unavailable mount, the no-rename fallback, vanished and oversized entries,
+stable listing order, concurrent writers, removable media, attachment bytes on
+request — plus a three-test multi-process `notriosctl sync` fixture and a
+carrier-wide assertion that no title, body, replica id, or database id appears
+in any path or byte of the folder. The preceding feature validation is G10
+(2026-08-13). It includes G5's
 admission suite plus exhaustive 40,320-order and 250-seed convergence models,
 opposite-order real SQLite replicas, sparse-register, membership, lifecycle,
 tree-repair, clock-regression, restart/upgrade, and purge-gate checks, followed

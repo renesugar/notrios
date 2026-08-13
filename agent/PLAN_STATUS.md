@@ -1,6 +1,6 @@
 # Plan Status
 
-Updated: 2026-08-13 (G10 snapshot catch-up and reset state machine complete; G11 next)
+Updated: 2026-08-13 (G11 ephemeral shared-directory carrier complete; G12 next)
 
 ## Active milestone
 
@@ -13,8 +13,45 @@ G0, G1, G1a, and G2-G20: evidence, profiles/local journal, state-vector converge
 revision deltas/merge, lazy resources, secure container/catch-up,
 ephemeral-directory and REST transports, jobs/UI/retention, shared-core/FFI/
 Mermaid/mobile handoff, compatibility, and final validation. The user's
-2026-08-11 review resolved every G0-G17 policy decision. **G0-G10 are complete**
-and archived under `plans/v0.7/`; G11 is next and is not approved.
+2026-08-11 review resolved every G0-G17 policy decision. **G0-G11 are complete**
+and archived under `plans/v0.7/`; G12 is next and is not approved.
+
+## v0.7 G11 completion — 2026-08-13
+
+- `internal/synccarrier` adds the transport-neutral `Carrier` surface, the
+  shared-folder `Directory`, the exchange `Round`, discovery that reports
+  without enrolling, and the `ObjectProvider` G8 defined and left for this
+  slice. `internal/synckeys` is the warned `0600` development secret provider
+  v0.7's resolved decision calls for. No schema change; the schema stays v24.
+- **`SYNCHRONIZATION.md`'s illustrative folder layout was wrong in three ways**
+  and is corrected there: `objects/sha256/ab/cd/<hash>` published plaintext
+  content hashes, `<first>-<last>` envelope names published sequence ranges, and
+  a separate `acknowledgements/` class would have been a second source for what
+  a contiguous state vector already says. Every path segment below the layout
+  version is now a keyed blind, which also makes the layout case-safe.
+- Artifacts are named by what they logically are, not by their sealed bytes.
+  Every seal draws a fresh salt, so byte-named artifacts would leave a new file
+  per round on a shared drive forever; measured over ten quiet rounds at both
+  library sizes, this layout adds zero.
+- **Two defects found and fixed.** A torn artifact could never be repaired,
+  because an existing name was treated as proof one was there — publishing now
+  asks whether a *readable* copy is present. And a fresh carrier was a standoff,
+  because publishing waited to see a peer's advertisement; a round now starts
+  from the acknowledgement the journal already remembers, which is also what
+  makes removable media a two-trip exchange rather than three.
+- Measured: 200 and 1,000 notes converge in three rounds; five artifacts hold a
+  thousand notes; the carrier layer is about 1% of an exchange (100 ms to seal
+  and publish 1,200 operations, 125 ms to read and open them, against 21,838 ms
+  for the exchange, which is SQLite admission); listing one class is 362 µs at
+  100 artifacts and 50 ms at 5,000, where it returns the 4,096 cap.
+- `notriosctl sync init|bundle|pair|status|discover|once` is the first way to run
+  any of this. Pairing has an order — the joining replica pairs first, because
+  adopting a group key after acquiring peers would make their artifacts
+  unreadable — and the multi-process CLI fixture performs the whole ceremony.
+- No cloud or removable-media evidence (G12), no snapshot transfer over the
+  carrier (G14), no scheduling or watcher (G15), no REST/MCP/UI surface, no
+  peer authentication or real pairing ceremony (G13). Product remains 0.6.0;
+  schema is v24. G12 remains unapproved.
 
 ## v0.7 G10 completion — 2026-08-13
 

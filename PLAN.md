@@ -1,7 +1,7 @@
 # Plan: v0.7 — Native synchronization
 
-Status: **G0-G10 completed through 2026-08-13. Product version remains 0.6.0 and the
-canonical schema is v24. G11 is the next item and is not approved.** The
+Status: **G0-G11 completed through 2026-08-13. Product version remains 0.6.0 and the
+canonical schema is v24. G12 is the next item and is not approved.** The
 former seven-item draft was too coarse: it mixed protocol research, canonical
 write interception, merge semantics, two transports, cryptography, recovery,
 UI, retention, and release validation into slices that could not be reviewed or
@@ -830,7 +830,7 @@ same version. Evidence is archived in
 `plans/v0.7/013-snapshot-catchup-reset-state-machine.md` and
 `performance/v0.7-g10/`.
 
-## G11. Ephemeral shared-directory protocol and peer discovery
+## G11. Ephemeral shared-directory protocol and peer discovery — complete
 
 **Goal.** Synchronize without a direct connection through a disposable folder
 that peers can recreate and inspect safely.
@@ -867,6 +867,23 @@ insensitivity; reordered listings; two writers; bounded scan time/file count.
   acknowledgement by all active peers**, and correctness must survive no
   cleanup at all. Carrier cleanup
   is not canonical GC.
+
+**Outcome (2026-08-13).** Complete, archived as
+`plans/v0.7/014-ephemeral-shared-directory-protocol.md` with evidence under
+`performance/v0.7-g11/`. `internal/synccarrier` holds the carrier, the round,
+and the object provider G8 left for this slice; `internal/synckeys` is the
+warned `0600` development secret provider; `notriosctl sync` is the first way to
+run any of it. No schema change. **The illustrative layout in
+`SYNCHRONIZATION.md` was wrong in three ways and is corrected there**: object
+paths published plaintext content hashes, envelope names published sequence
+ranges, and a separate acknowledgement class would have been a second source for
+what a state vector already says. Two defects were found and fixed — a torn
+artifact could never be repaired, because an existing name was taken as proof
+one was there; and a fresh carrier was a standoff, because publishing waited on
+an advertisement instead of starting from what the journal remembers each peer
+acknowledged. Measured: the carrier layer is about one percent of an exchange,
+ten quiet rounds add zero artifacts, and a carrier deleted with work in flight
+recovers in two rounds. Cloud and removable-media evidence remains G12's.
 
 ## G12. Directory-carrier conformance over Google Drive and removable media
 

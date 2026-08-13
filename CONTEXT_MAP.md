@@ -51,6 +51,16 @@ This file is the codebase atlas. Update it whenever major files or directories a
   catch-up: signed requests, explicit source permission, competing-offer
   selection, the durable reset state machine, catch-up floors, and password
   wrapping.
+- `internal/synccarrier/` and `performance/v0.7-g11/` — the ephemeral
+  shared-directory carrier: the transport-neutral `Carrier` surface, the blinded
+  folder layout, the exchange `Round`, discovery that reports without enrolling,
+  and the carrier-backed `ObjectProvider`. No schema change.
+- `internal/synckeys/` — the warned `0600` development secret provider holding
+  one group key per epoch, this replica's signing key, and paired peers' public
+  keys. v0.8 owns the platform store.
+- `cmd/notriosctl/sync.go` — `notriosctl sync init|bundle|pair|status|discover|once`,
+  the only way to run an exchange; every round is explicit, and there is no
+  watcher or scheduler (G15).
 - `internal/syncwire/` and `performance/v0.7-g9/` — the canonical NCB1/NEV1
   encoding, deterministic gzip, and the encrypted, signed NAR1 artifact every
   transport carries. No schema change and no dependency.
