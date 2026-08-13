@@ -474,3 +474,47 @@ same SQLite transaction as operation/vector advancement. The guard prevents an
 applied remote projection from being journaled as a new local mutation. Local
 purge is refused while enrolled until G9 supplies real signing and verification;
 payload and blob collection remains deferred to G17.
+
+## Schema v22 — note revision objects, transfer deltas, and body conflicts
+
+G7 makes a revision an object rather than a row of text. `document_revisions`
+gains `content_sha256`, `content_length`, and `parent_revision_ids`, so every
+revision names its exact content and its place in the note's history. The v22
+upgrade backfills all three for existing revisions, synthesizing the parent
+chain from each document's own revision order — which is the honest reading of a
+pre-v22 history, because it had no branching. The tiebreak within one
+`created_at` second is `rowid`, not `id`: revision ids are random, and ordering
+by one would give a note's history an arbitrary direction.
+
+`sync_capture_revisions_insert` now emits a named `revision.create` operation
+and **refuses** an enrolled insert whose content hash is missing or malformed. A
+revision without one could not be verified after transfer, could not be a delta
+base, and could not be found as a merge ancestor.
+
+Three tables support the transfer and the disagreement:
+
+- `sync_revision_deltas` — an optional named-base delta in the constrained
+  RFC 3284 VCDIFF profile, stored base64 with both endpoint hashes. It is a
+  transfer optimization and never canonical state; the complete body stays in
+  `document_revisions`, so a receiver that lacks the base can still obtain it.
+- `sync_revision_pending_bodies` — a revision this replica knows exists but
+  whose bytes it does not hold, with the reason: `oversize` (larger than an
+  operation payload, awaiting the G8/G9 object path), `missing_base` (a delta
+  named a base this replica lacks), or `unverified` (a refusal, and terminal).
+- `sync_document_conflicts` — a durable typed conflict attached to the document
+  and its revision graph, never a second note. Its two revisions are stored in
+  sorted order rather than as "mine" and "theirs", because each replica calls a
+  different one local and a conflict with two identities would be reported twice
+  and resolved once.
+
+`sync_revision_transfer` is transient: Go writes one row immediately before
+inserting a revision when it has measured an exact inline payload or generated a
+beneficial delta, and the capture trigger consumes and deletes it. With no row
+the trigger inlines a body of at most 65,536 bytes, so a code path that predates
+G7 still journals a usable object.
+
+A document's `current_revision_id` is **not** a last-writer-wins field. It is
+derived from the revision graph: the single head, the merge that reduced two
+heads to one, or — while a conflict stands — the newer of the two heads by the
+same `(wall, logical, replica, sequence)` order G6 uses, so a conflicted
+document does not additionally disagree about which side it is displaying.

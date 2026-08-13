@@ -28,7 +28,11 @@ type SyncRecordClassification struct {
 var syncRecordClassifications = []SyncRecordClassification{
 	{RecordType: "collection", Class: "field_register", Mutations: []string{"record.create", "record.update", "record.delete"}},
 	{RecordType: "document", Class: "field_register", Mutations: []string{"record.create", "record.update", "document.trash", "document.restore", "document.purge"}},
-	{RecordType: "revision", Class: "immutable_record", Mutations: []string{"record.create"}},
+	// G7 replaced the generic `record.create` for revisions with a named kind.
+	// A revision operation carries a content hash, a parent list, and either a
+	// complete body or a named-base delta, and none of those are meaningful for
+	// the field-register records that share the generic kind.
+	{RecordType: "revision", Class: "immutable_record", Mutations: []string{"revision.create"}},
 	{RecordType: "notebook", Class: "field_register", Mutations: []string{"record.create", "record.update", "record.delete"}},
 	{RecordType: "tag", Class: "field_register", Mutations: []string{"record.create", "record.update", "record.delete"}},
 	{RecordType: "document_tag", Class: "membership_element", Mutations: []string{"membership.add", "membership.remove"}},

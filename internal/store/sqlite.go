@@ -188,6 +188,9 @@ func (s *SQLiteStore) Bootstrap(ctx context.Context) error {
 	if err := s.ensureSchemaV21(ctx); err != nil {
 		return err
 	}
+	if err := s.ensureSchemaV22(ctx); err != nil {
+		return err
+	}
 	if err := s.ensureDatabaseIdentity(ctx); err != nil {
 		return err
 	}
@@ -845,7 +848,7 @@ func (s *SQLiteStore) CreateDocument(ctx context.Context, req CreateDocumentRequ
 		VALUES(?, ?, ?, ?, ?, ?)`, docID, req.CollectionID, req.NotebookID, req.Title, req.BodyMIMEType, revID); err != nil {
 		return Document{}, err
 	}
-	if err := s.execPreparedLocked(`INSERT INTO document_revisions(id, document_id, title, body, body_mime_type, message) VALUES(?, ?, ?, ?, ?, ?)`, revID, docID, req.Title, req.Body, req.BodyMIMEType, req.Message); err != nil {
+	if err := s.insertRevisionLocked(revID, docID, req.Title, req.Body, req.BodyMIMEType, req.Message, ""); err != nil {
 		return Document{}, err
 	}
 	if err := s.execPreparedLocked(`INSERT INTO documents_fts(document_id, collection_id, title, body) VALUES(?, ?, ?, ?)`, docID, req.CollectionID, req.Title, req.Body); err != nil {
@@ -989,7 +992,7 @@ func (s *SQLiteStore) UpdateDocument(ctx context.Context, req UpdateDocumentRequ
 	if current.CurrentRevisionID != req.BaseRevisionID {
 		return Document{}, ErrConflict
 	}
-	if err := s.execPreparedLocked(`INSERT INTO document_revisions(id, document_id, title, body, body_mime_type, message) VALUES(?, ?, ?, ?, ?, ?)`, revID, req.ID, req.Title, req.Body, req.BodyMIMEType, req.Message); err != nil {
+	if err := s.insertRevisionLocked(revID, req.ID, req.Title, req.Body, req.BodyMIMEType, req.Message, current.CurrentRevisionID); err != nil {
 		return Document{}, err
 	}
 	if err := s.execPreparedLocked(`UPDATE documents SET title = ?, body_mime_type = ?, current_revision_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND deleted_at IS NULL`, req.Title, req.BodyMIMEType, revID, req.ID); err != nil {
@@ -1064,7 +1067,7 @@ func (s *SQLiteStore) deleteDocumentLocked(req DeleteDocumentRequest, revID stri
 	if current.CurrentRevisionID != req.BaseRevisionID {
 		return ErrConflict
 	}
-	if err := s.execPreparedLocked(`INSERT INTO document_revisions(id, document_id, title, body, body_mime_type, message) VALUES(?, ?, ?, ?, ?, ?)`, revID, req.ID, current.Title, current.Body, current.BodyMIMEType, req.Message); err != nil {
+	if err := s.insertRevisionLocked(revID, req.ID, current.Title, current.Body, current.BodyMIMEType, req.Message, current.CurrentRevisionID); err != nil {
 		return err
 	}
 	if err := s.execPreparedLocked(`UPDATE documents SET current_revision_id = ?, deleted_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND deleted_at IS NULL`, revID, req.ID); err != nil {
@@ -1160,7 +1163,7 @@ func (s *SQLiteStore) RestoreDocumentRevision(ctx context.Context, req RestoreRe
 	if err != nil {
 		return Document{}, err
 	}
-	if err := s.execPreparedLocked(`INSERT INTO document_revisions(id, document_id, title, body, body_mime_type, message) VALUES(?, ?, ?, ?, ?, ?)`, newRevID, req.DocumentID, target.Title, target.Body, target.BodyMIMEType, req.Message); err != nil {
+	if err := s.insertRevisionLocked(newRevID, req.DocumentID, target.Title, target.Body, target.BodyMIMEType, req.Message, currentRevisionID); err != nil {
 		return Document{}, err
 	}
 	if err := s.execPreparedLocked(`UPDATE documents SET title = ?, body_mime_type = ?, current_revision_id = ?, deleted_at = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?`, target.Title, target.BodyMIMEType, newRevID, req.DocumentID); err != nil {

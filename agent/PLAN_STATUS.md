@@ -1,11 +1,11 @@
 # Plan Status
 
-Updated: 2026-08-12 (G6 metadata convergence complete; G7 next)
+Updated: 2026-08-12 (G7 revision objects, deltas, merge, and conflicts complete; G8 next)
 
 ## Active milestone
 
 **v0.1 through v0.6 are complete.** Product version is **0.6.0** and the
-canonical schema is **v20**. v0.6 F0-F7 are archived under `plans/v0.6/`;
+canonical schema is **v22**. v0.6 F0-F7 are archived under `plans/v0.6/`;
 earlier milestones remain under their version directories.
 
 `PLAN.md` is now the **active v0.7 native synchronization plan**. It contains
@@ -13,8 +13,45 @@ G0, G1, G1a, and G2-G20: evidence, profiles/local journal, state-vector converge
 revision deltas/merge, lazy resources, secure container/catch-up,
 ephemeral-directory and REST transports, jobs/UI/retention, shared-core/FFI/
 Mermaid/mobile handoff, compatibility, and final validation. The user's
-2026-08-11 review resolved every G0-G17 policy decision. **G0-G6 are complete**
-and archived under `plans/v0.7/`; G7 is next and is not approved.
+2026-08-11 review resolved every G0-G17 policy decision. **G0-G7 are complete**
+and archived under `plans/v0.7/`; G8 is next and is not approved.
+
+## v0.7 G7 completion — 2026-08-12
+
+- Schema v22 makes a revision an object: `document_revisions` carries an exact
+  content hash, byte length, and parent list, and the capture trigger refuses an
+  enrolled insert that lacks one. The upgrade backfills every existing revision
+  and synthesizes its linear parent chain, breaking `created_at` ties by
+  insertion order rather than by random revision id.
+- `internal/syncdelta` is the reviewed promotion of the G1a prototype:
+  constrained RFC 3284 default-table VCDIFF with production bounds, a benefit
+  gate, and endpoint-bound deltas. The unselected `NXD1` container and the
+  buffering stream wrappers were not promoted. `internal/syncbody` implements
+  G1's bounded line-first merge with word-region refinement plus the revision
+  DAG, heads, merge base, and the derived merge and conflict identities.
+- Admission converges bodies inside the vector-advancement transaction, after
+  G6 metadata. Remote revisions are materialized under the apply guard; a merge
+  this replica computes is journaled as the local authored revision it is.
+  `current_revision_id` is derived from the graph, never last-writer-wins.
+- Nothing unverified reaches canonical storage. A delta names its base and its
+  result by exact hash; a missing base, a corrupt patch, or a wrong result is a
+  refusal recorded as `missing_base` or the terminal `unverified`, never a
+  best-effort patch. Delta chains cannot form: a base is always a complete local
+  object, asserted by test.
+- Overlapping edits become a durable typed conflict on the same document holding
+  the base and both inputs, with its two revisions stored sorted so both
+  replicas derive one identity. Delete/edit is answered exactly from the
+  revision the trash operation names, so an informed deletion is not a conflict.
+- Real two-replica evidence at G1's four offline intervals transferred 55.37%,
+  27.92%, 16.49%, and 12.06% of the complete-body counterfactual, with every
+  document converging on both replicas and no pending bodies.
+- Two merge defects were found by a randomized property test and fixed: word
+  refinement resolved a two-line structural disagreement into text neither
+  replica held, and then rejoined words across a line boundary. Refinement is
+  now confined to a single-line region, which is what G1 selected.
+- No resource bytes, carrier, wire codec, cryptography, catch-up, transport, or
+  REST/MCP/UI surface landed. Product remains 0.6.0; schema is v22. G8 remains
+  unapproved.
 
 ## v0.7 G6 completion — 2026-08-12
 

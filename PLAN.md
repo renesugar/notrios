@@ -1,7 +1,7 @@
 # Plan: v0.7 — Native synchronization
 
-Status: **G0-G6 completed through 2026-08-12. Product version remains 0.6.0 and the
-canonical schema is v21. G7 is the next item and is not approved.** The
+Status: **G0-G7 completed through 2026-08-12. Product version remains 0.6.0 and the
+canonical schema is v22. G8 is the next item and is not approved.** The
 former seven-item draft was too coarse: it mixed protocol research, canonical
 write interception, merge semantics, two transports, cryptography, recovery,
 UI, retention, and release validation into slices that could not be reviewed or
@@ -607,7 +607,7 @@ and retention collection remain outside G6. Evidence is archived in
 `plans/v0.7/009-metadata-membership-tree-convergence.md` and
 `performance/v0.7-g6/`.
 
-## G7. Note revision objects, transfer deltas, three-way merge, and conflicts
+## G7. Note revision objects, transfer deltas, three-way merge, and conflicts — complete
 
 **Goal.** Synchronize note bodies without silently overwriting concurrent edits
 and without making every small edit transfer the entire body.
@@ -645,6 +645,22 @@ against full snapshots.
 - **More than one replica may emit an automatic clean merge** if the merge
   revision ID is content- and parent-derived so equivalent merges deduplicate;
   otherwise elect one emitter deterministically.
+
+**Outcome (2026-08-12).** Schema v22 gives every revision an exact content hash,
+byte length, and parent list, and the capture trigger refuses an enrolled
+revision without one. `internal/syncdelta` is the reviewed promotion of the G1a
+VCDIFF prototype with production bounds and a benefit gate; `internal/syncbody`
+implements the bounded line-first merge with single-line word refinement plus
+the revision DAG. Admission reconstructs and verifies a body before any
+canonical write, merges concurrent edits into a derived-identity merge revision,
+and records overlapping ones as a durable typed conflict on the same document.
+`current_revision_id` is derived from the graph. Real two-replica evidence
+transferred 55.37%, 27.92%, 16.49%, and 12.06% of the complete-body
+counterfactual at G1's four offline intervals with every document converging.
+Resource bytes, carrier, cryptography, catch-up, transport, and any REST/MCP/UI
+surface remain outside G7. Evidence is archived in
+`plans/v0.7/010-note-revision-objects-deltas-merge-conflicts.md` and
+`performance/v0.7-g7/`.
 
 ## G8. Resource metadata, lazy materialization, chunks, and integrity
 
@@ -1192,6 +1208,6 @@ recommendation, blocking status, and consequence.
 | Current-GUI Mermaid baseline | G18 | Resolved fact: upstream-capable but disabled pending offline/security evidence |
 | Release version/schema bookkeeping | G20 | Open, non-blocking until wrap-up |
 
-G0-G6 are complete. G7 is the next implementable item, but is not approved.
-Implementation begins only after an explicit instruction naming G7; completing
-it still stops for a verified ZIP and approval before G8.
+G0-G7 are complete. G8 is the next implementable item, but is not approved.
+Implementation begins only after an explicit instruction naming G8; completing
+it still stops for a verified ZIP and approval before G9.

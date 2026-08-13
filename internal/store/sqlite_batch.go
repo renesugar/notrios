@@ -287,8 +287,7 @@ func (s *SQLiteStore) duplicateDocumentLocked(documentID string) (Document, erro
 		newID, source.CollectionID, source.NotebookID, title, source.BodyMIMEType, revID); err != nil {
 		return Document{}, err
 	}
-	if err := s.execPreparedLocked(`INSERT INTO document_revisions(id, document_id, title, body, body_mime_type, message) VALUES(?, ?, ?, ?, ?, ?)`,
-		revID, newID, title, source.Body, source.BodyMIMEType, "duplicated from "+source.ID); err != nil {
+	if err := s.insertRevisionLocked(revID, newID, title, source.Body, source.BodyMIMEType, "duplicated from "+source.ID, ""); err != nil {
 		return Document{}, err
 	}
 	if err := s.execPreparedLocked(`INSERT INTO documents_fts(document_id, collection_id, title, body) VALUES(?, ?, ?, ?)`,

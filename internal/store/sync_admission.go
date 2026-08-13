@@ -341,12 +341,19 @@ func (s *SQLiteStore) admitSyncOperations(ctx context.Context, peer syncstate.Ha
 	if count > syncstate.MaxPendingOperations || encodedBytes > syncstate.MaxPendingBytes {
 		return SyncAdmissionResult{}, fmt.Errorf("%w: pending admission limit exceeded for replica %q", ErrConflict, peer.ReplicaID)
 	}
-	result.Admitted, err = s.drainSyncPendingLocked(local.ReplicaID)
+	var touchedDocuments []string
+	result.Admitted, touchedDocuments, err = s.drainSyncPendingLocked(local.ReplicaID)
 	if err != nil {
 		return SyncAdmissionResult{}, err
 	}
 	if result.Admitted > 0 {
 		if err := s.reconcileSyncMetadataLocked(); err != nil {
+			return SyncAdmissionResult{}, err
+		}
+		// Bodies converge after metadata, in the same transaction, so a merge
+		// sees the title and lifecycle the batch settled rather than the ones
+		// it started with.
+		if err := s.reconcileSyncRevisionsLocked(touchedDocuments); err != nil {
 			return SyncAdmissionResult{}, err
 		}
 	}
@@ -413,35 +420,39 @@ func bindTextAt(stmt *C.sqlite3_stmt, index int, value string) error {
 	return nil
 }
 
-func (s *SQLiteStore) drainSyncPendingLocked(observerReplicaID string) (int, error) {
+// drainSyncPendingLocked admits every newly contiguous pending operation and
+// reports the documents whose bodies a revision operation touched, so body
+// convergence can be scoped to them rather than to the whole library.
+func (s *SQLiteStore) drainSyncPendingLocked(observerReplicaID string) (int, []string, error) {
 	admitted := 0
+	var touchedDocuments []string
 	for {
 		replicas, err := s.syncPendingReplicaIDsLocked()
 		if err != nil {
-			return 0, err
+			return 0, nil, err
 		}
 		progress := false
 		for _, replicaID := range replicas {
 			contiguous, err := s.syncContiguousLocked(observerReplicaID, replicaID)
 			if err != nil {
-				return 0, err
+				return 0, nil, err
 			}
 			encoded, found, err := s.syncPendingAtLocked(replicaID, contiguous+1)
 			if err != nil {
-				return 0, err
+				return 0, nil, err
 			}
 			if !found {
 				continue
 			}
 			operation, err := syncstate.DecodeOperation(encoded)
 			if err != nil {
-				return 0, err
+				return 0, nil, err
 			}
 			ready := true
 			for _, dependency := range operation.Dependencies {
 				exists, err := s.syncOperationExistsLocked(dependency.ReplicaID, dependency.Sequence)
 				if err != nil {
-					return 0, err
+					return 0, nil, err
 				}
 				if !exists {
 					ready = false
@@ -452,22 +463,31 @@ func (s *SQLiteStore) drainSyncPendingLocked(observerReplicaID string) (int, err
 				continue
 			}
 			if err := s.insertAdmittedSyncOperationLocked(operation); err != nil {
-				return 0, err
+				return 0, nil, err
 			}
 			if err := s.execPreparedLocked(`DELETE FROM sync_pending_admissions WHERE replica_id = ? AND sequence = ?`, replicaID, strconv.FormatInt(operation.Sequence, 10)); err != nil {
-				return 0, err
+				return 0, nil, err
 			}
 			if err := s.execPreparedLocked(`INSERT INTO sync_state_vectors(observer_replica_id, subject_replica_id, contiguous_sequence)
 				VALUES(?, ?, ?) ON CONFLICT(observer_replica_id, subject_replica_id) DO UPDATE SET
 				contiguous_sequence = excluded.contiguous_sequence, updated_at = CURRENT_TIMESTAMP`,
 				observerReplicaID, replicaID, strconv.FormatInt(operation.Sequence, 10)); err != nil {
-				return 0, err
+				return 0, nil, err
 			}
 			admitted++
 			progress = true
+			if operation.RecordType == "revision" {
+				var payload struct {
+					DocumentID string `json:"document_id"`
+				}
+				if err := json.Unmarshal(operation.Payload, &payload); err != nil {
+					return 0, nil, fmt.Errorf("revision operation payload: %w", err)
+				}
+				touchedDocuments = append(touchedDocuments, payload.DocumentID)
+			}
 		}
 		if !progress {
-			return admitted, nil
+			return admitted, touchedDocuments, nil
 		}
 	}
 }

@@ -74,10 +74,25 @@ capture produces monotonic immutable operations for canonical rows. Derived
 indexes/projections are excluded. The dependency/gap/ack/pending tables exist,
 G5 implements bounded remote-operation admission and gap/dependency planning;
 G6 applies deterministic metadata/register/tree convergence in schema v21 for
-explicitly configured local fixture peers. Note bodies, resources, transport,
-authenticated enrollment, and cryptographic framing remain later work.
+explicitly configured local fixture peers. G7 adds note-body convergence in
+schema v22: immutable revision objects with named parents and exact content
+hashes, optional named-base transfer deltas, a bounded line-first three-way
+merge with word-region refinement, and durable typed conflicts. Resources,
+transport, authenticated enrollment, and cryptographic framing remain later
+work.
 
-The live G6 compatibility tuple is protocol 1.0 with schema compatibility 21
+A revision travels as its identity plus either its complete body inline or a
+delta against a named parent. A delta is a transfer optimization and never
+canonical state: reconstruction verifies the base hash, decodes, and verifies
+the exact result hash and length before any canonical write, and every refusal
+falls back to obtaining the complete object rather than patching best effort.
+Non-overlapping edits become an ordinary merge revision whose identity is
+derived from the document, its sorted parents, and the merged bytes, so two
+replicas computing the same merge produce one revision rather than two.
+Overlapping edits become a conflict attached to the document and its revision
+graph, holding the base and both inputs, and never a second note.
+
+The live G7 compatibility tuple is protocol 1.0 with schema compatibility 22
 and required capabilities `sync.dependencies.v1`, `sync.metadata-lww.v1`,
 `sync.operations.v1`, and `sync.state-vectors.v1`. Database ID and protocol
 major must match, ranges must intersect, every required capability must be

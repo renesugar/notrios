@@ -211,7 +211,7 @@ func TestEnrolledLocalPurgeIsGatedUntilCryptographicSigning(t *testing.T) {
 func TestSchemaV21HasDurableConvergenceTables(t *testing.T) {
 	st := newSyncJournalTestStore(t)
 	status, err := st.Status(context.Background())
-	if err != nil || status.SchemaVersion != 21 {
+	if err != nil || status.SchemaVersion != CurrentSchemaVersion {
 		t.Fatalf("status = %+v, %v", status, err)
 	}
 	for _, table := range []string{"sync_hlc_clock", "sync_field_registers", "sync_lifecycle_registers", "sync_membership_registers", "sync_death_certificates", "sync_repair_events"} {

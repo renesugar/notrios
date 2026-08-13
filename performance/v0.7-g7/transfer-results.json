@@ -1,0 +1,102 @@
+{
+  "schema": "notrios.g7.transfer.v1",
+  "generated_for": "v0.7 G7 note revision objects, transfer deltas, three-way merge, and conflicts",
+  "protocol": "1.0",
+  "database_schema_version": 22,
+  "bounds": {
+    "max_operation_bytes": 1048576,
+    "max_payload_bytes": 524288
+  },
+  "intervals": [
+    {
+      "interval": "1 hour",
+      "edits_per_side": 1,
+      "documents": 24,
+      "base_body_bytes": 6258,
+      "revisions": 48,
+      "delta_revisions": 24,
+      "inline_revisions": 24,
+      "complete_body_bytes": 319080,
+      "transfer_bytes": 176664,
+      "transfer_percent_of_complete": 55.366679202707786,
+      "clean_merges": 16,
+      "conflicts": 8,
+      "conflict_kinds": {
+        "same_token": 8
+      },
+      "pending_reasons": {},
+      "pending_bodies": 0,
+      "converged_documents": 24,
+      "elapsed_ms": 5878
+    },
+    {
+      "interval": "1 day",
+      "edits_per_side": 4,
+      "documents": 24,
+      "base_body_bytes": 6258,
+      "revisions": 120,
+      "delta_revisions": 96,
+      "inline_revisions": 24,
+      "complete_body_bytes": 790968,
+      "transfer_bytes": 220840,
+      "transfer_percent_of_complete": 27.92021927562177,
+      "clean_merges": 16,
+      "conflicts": 8,
+      "conflict_kinds": {
+        "same_token": 8
+      },
+      "pending_reasons": {},
+      "pending_bodies": 0,
+      "converged_documents": 24,
+      "elapsed_ms": 9500
+    },
+    {
+      "interval": "1 week",
+      "edits_per_side": 12,
+      "documents": 24,
+      "base_body_bytes": 6258,
+      "revisions": 312,
+      "delta_revisions": 288,
+      "inline_revisions": 24,
+      "complete_body_bytes": 2054688,
+      "transfer_bytes": 338728,
+      "transfer_percent_of_complete": 16.485617281066517,
+      "clean_merges": 18,
+      "conflicts": 8,
+      "conflict_kinds": {
+        "same_token": 8
+      },
+      "pending_reasons": {},
+      "pending_bodies": 0,
+      "converged_documents": 24,
+      "elapsed_ms": 21527
+    },
+    {
+      "interval": "30 days",
+      "edits_per_side": 32,
+      "documents": 24,
+      "base_body_bytes": 6258,
+      "revisions": 792,
+      "delta_revisions": 768,
+      "inline_revisions": 24,
+      "complete_body_bytes": 5253408,
+      "transfer_bytes": 633384,
+      "transfer_percent_of_complete": 12.056630667178334,
+      "clean_merges": 27,
+      "conflicts": 9,
+      "conflict_kinds": {
+        "same_token": 9
+      },
+      "pending_reasons": {},
+      "pending_bodies": 0,
+      "converged_documents": 24,
+      "elapsed_ms": 57555
+    }
+  ],
+  "notes": [
+    "Every body is generated. No private corpus content, path, or hash is recorded.",
+    "transfer_bytes counts the revision operation payloads that actually travelled.",
+    "complete_body_bytes is what the same revisions would cost with every body inline.",
+    "Desktop measurements. G2's emulator and physical-device checklists still gate any mobile claim."
+  ]
+}

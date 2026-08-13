@@ -3,7 +3,7 @@
 This handoff applies to any coding agent or client continuing this project (Codex, Claude, aider, swival.dev, etc. — formerly `CODEX_HANDOFF.md`). The repository is designed so an agent can continue from repository files alone.
 
 Current phase: v0.1 through **v0.6** are complete; product version is **0.6.0**
-and the schema is **v21**. The eight v0.6 slices are archived under
+and the schema is **v22**. The eight v0.6 slices are archived under
 `plans/v0.6/`: F0 (notebook targeting, landed with v0.5 E10), F1 (batch
 organizer transactions), F2 (MCP tool scopes), F3 (MCP read coverage and HTTP
 `Range`), F4 (note templates and task extraction), F5 (graph views that stay
@@ -13,13 +13,13 @@ wrap-up). The thirteen v0.5 slices remain archived under `plans/v0.5/`.
 `PLAN.md` now holds the **active v0.7 native synchronization plan** with
 twenty-two independently approvable slices: G0, G1, G1a, and G2-G20. The user's 2026-08-11
 review resolved the policy decisions through G17, including mandatory payload
-encryption and per-replica Ed25519 signatures. **G0-G6 are complete** and
+encryption and per-replica Ed25519 signatures. **G0-G7 are complete** and
 archived under `plans/v0.7/`; their reviewed evidence is under
-`performance/v0.7-g0/`, `performance/v0.7-g1/`, and
-`performance/v0.7-g1a/`, `performance/v0.7-g2/`, and
-`performance/v0.7-g4/`, `performance/v0.7-g5/`, and `performance/v0.7-g6/`.
-**G7 is next and is not approved.** It owns immutable note revision objects,
-bounded verified transfer deltas, three-way body merge, and typed conflicts.
+`performance/v0.7-g0/`, `performance/v0.7-g1/`, `performance/v0.7-g1a/`,
+`performance/v0.7-g2/`, `performance/v0.7-g4/`, `performance/v0.7-g5/`,
+`performance/v0.7-g6/`, and `performance/v0.7-g7/`.
+**G8 is next and is not approved.** It owns resource metadata, lazy
+materialization, chunks, and integrity.
 
 G0 added no production sync code or dependency. It freezes the threat model,
 normative glossary, thirty misuse/control traces, and upstream license/platform
@@ -111,6 +111,28 @@ mandatory structural signer/signature fields. G6 does not merge bodies, move
 resource bytes, collect retained payloads, add a carrier, expose sync over
 REST/MCP/UI, or authenticate peers.
 
+G7 advances schema v22 and converges note bodies. A revision is an immutable
+object naming its parents, its exact content hash, and its byte length; the
+capture trigger refuses an enrolled revision without one, and the upgrade
+backfills every existing revision plus a synthesized linear parent chain,
+breaking `created_at` ties by insertion order rather than by random id.
+`internal/syncdelta` is the reviewed promotion of the G1a VCDIFF prototype with
+production bounds and a benefit gate; the unselected `NXD1` container and the
+stream wrappers were not promoted. `internal/syncbody` implements G1's bounded
+line-first merge with **single-line** word refinement — two randomized cases
+proved a wider region invents lines — plus the revision DAG and the derived
+merge and conflict identities. Admission verifies a reconstructed body against
+its exact hash before any canonical write; a missing base or corrupt patch
+becomes `missing_base` or the terminal `unverified` in
+`sync_revision_pending_bodies`, never a best-effort patch. Overlapping edits
+become a durable typed conflict on the same document with its two revisions
+stored sorted, so both replicas derive one identity. `current_revision_id` is
+derived from the revision graph, not last-writer-wins. Real two-replica evidence
+transferred 55.37%, 27.92%, 16.49%, and 12.06% of the complete-body
+counterfactual at G1's four offline intervals with every document converging.
+G7 does not move resource bytes, add a carrier or wire codec, sign anything, or
+expose revisions, deltas, or conflicts over REST/MCP/UI.
+
 That review also added a second portability route. v0.8 now investigates and
 builds a framework-neutral Go application facade and versioned no-GUI C ABI,
 with Android-emulator-only pre-1.0 evidence; v1.0 packages the supported ABI
@@ -120,16 +142,21 @@ the API/lifecycle/ownership/stream contract and source checks. The current GUI's
 Mermaid support is **disabled**, not merely untested (`noMermaid: true`), and a
 v0.8 offline/security-tested enablement slice owns it.
 
-Latest completed feature validation is G6 (2026-08-12). It includes G5's
+Latest completed feature validation is G7 (2026-08-12). It includes G5's
 admission suite plus exhaustive 40,320-order and 250-seed convergence models,
 opposite-order real SQLite replicas, sparse-register, membership, lifecycle,
 tree-repair, clock-regression, restart/upgrade, and purge-gate checks, followed
 by the audit-first full repository, frontend, docs, smoke, and release checks
 recorded in its archive. Regular
 validation begins with audit/fix/reinstall/re-audit, while CI and release
-packaging enforce a non-mutating audit gate. Start G7 only after explicit user
+packaging enforce a non-mutating audit gate. G7 added its own suite on top:
+the syncdelta round-trip/hostile/limit/fuzz set, the syncbody merge and
+merge-base fixtures with 4,000 committed randomized merges, and real two-replica
+store fixtures covering clean merges, durable conflicts, four broken-delta
+refusals, tampered operations, six delivery orders, delete/edit, restore/edit,
+and the v22 upgrade backfill. Start G8 only after explicit user
 approval, then stop after its validation, commit, verified ZIP, and handoff
-before G8.
+before G9.
 
 Two things a reader continuing this project should know about v0.6:
 

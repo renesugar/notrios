@@ -15,6 +15,8 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+
+	"github.com/renesugar/notrios/internal/syncdelta"
 )
 
 var _ RestoreTarget = (*SQLiteStore)(nil)
@@ -431,12 +433,18 @@ func (s *SQLiteStore) ApplyRestoreRecords(ctx context.Context, batch RestoreReco
 		if skip["document\x00"+revision.DocumentID] {
 			continue
 		}
+		// A restored revision keeps its archived identity and timestamps, so
+		// its content hash and length are recomputed from the bytes rather than
+		// trusted from a field. FinalizeRestoredDocuments rebuilds the parent
+		// chain once the whole history has landed, because a revision's parent
+		// may arrive in a later chunk than the revision itself.
 		if err := s.execPreparedLocked(`INSERT INTO document_revisions(id, document_id, title, body, body_mime_type,
-				metadata_json, message, created_at)
-			VALUES(?, ?, ?, ?, ?, ?, NULLIF(?, ''), ?) ON CONFLICT(id) DO NOTHING`,
+				metadata_json, message, created_at, content_sha256, content_length)
+			VALUES(?, ?, ?, ?, ?, ?, NULLIF(?, ''), ?, ?, ?) ON CONFLICT(id) DO NOTHING`,
 			revision.ID, revision.DocumentID, revision.Title, revision.Body, defaultMIME(revision.BodyMIMEType),
 			jsonOrEmptyObject(revision.MetadataJSON), nullableText(revision.Message),
-			restoreTimestamp(revision.CreatedAt)); err != nil {
+			restoreTimestamp(revision.CreatedAt),
+			syncdelta.SHA256Hex([]byte(revision.Body)), strconv.Itoa(len(revision.Body))); err != nil {
 			return nil, err
 		}
 	}
@@ -537,6 +545,11 @@ func (s *SQLiteStore) FinalizeRestoredDocuments(ctx context.Context) error {
 			SELECT d.id, d.collection_id, r.title, r.body
 			FROM documents d JOIN document_revisions r ON r.id = d.current_revision_id
 			WHERE d.deleted_at IS NULL`,
+		// The archive-v2 container records a document's revisions but not
+		// their parent edges, so the restored history is relinked from each
+		// document's own revision order. It belongs here rather than per chunk
+		// because a revision's predecessor may arrive in a later chunk.
+		linkLinearRevisionParentsSQL,
 	} {
 		if err := s.execLocked(statement); err != nil {
 			return fmt.Errorf("finalize restored documents: %w", err)

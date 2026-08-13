@@ -311,8 +311,18 @@ elements, and lifecycle/death-certificate state is distinct from absence. A
 transport-neutral fold rebuilds the post-boundary metadata projection and
 applies it atomically with admission. Notebook cycles, missing parents, missing
 document homes, and uniqueness collisions produce deterministic visible repair
-rows. G7 still owns body revision/delta/merge semantics; G9/G13 own authenticated
-enrollment, wire encoding, encryption/signatures, and authorization.
+rows.
+
+G7 advances the current schema to v22 and converges note bodies. A revision is
+an immutable object naming its parents, its exact content hash, and its length;
+it travels with its complete body inline or as a bounded named-base VCDIFF
+delta, and nothing unverified reaches canonical storage. Concurrent edits to
+different regions become a merge revision with a content- and parent-derived
+identity; overlapping edits become a durable typed conflict on the same
+document. `internal/syncbody` and `internal/syncdelta` are transport- and
+storage-neutral, like the G5 state core and the G6 metadata core. G8 owns
+resource bytes; G9/G13 own authenticated enrollment, wire encoding,
+encryption/signatures, and authorization.
 
 ## Optional derived systems
 
