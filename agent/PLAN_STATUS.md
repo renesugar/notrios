@@ -1,11 +1,11 @@
 # Plan Status
 
-Updated: 2026-08-13 (G9 envelope codec, encryption, and signatures complete; G10 next)
+Updated: 2026-08-13 (G10 snapshot catch-up and reset state machine complete; G11 next)
 
 ## Active milestone
 
 **v0.1 through v0.6 are complete.** Product version is **0.6.0** and the
-canonical schema is **v23**. v0.6 F0-F7 are archived under `plans/v0.6/`;
+canonical schema is **v24**. v0.6 F0-F7 are archived under `plans/v0.6/`;
 earlier milestones remain under their version directories.
 
 `PLAN.md` is now the **active v0.7 native synchronization plan**. It contains
@@ -13,8 +13,37 @@ G0, G1, G1a, and G2-G20: evidence, profiles/local journal, state-vector converge
 revision deltas/merge, lazy resources, secure container/catch-up,
 ephemeral-directory and REST transports, jobs/UI/retention, shared-core/FFI/
 Mermaid/mobile handoff, compatibility, and final validation. The user's
-2026-08-11 review resolved every G0-G17 policy decision. **G0-G9 are complete**
-and archived under `plans/v0.7/`; G10 is next and is not approved.
+2026-08-11 review resolved every G0-G17 policy decision. **G0-G10 are complete**
+and archived under `plans/v0.7/`; G11 is next and is not approved.
+
+## v0.7 G10 completion — 2026-08-13
+
+- `internal/synccatchup` adds signed backup requests and responses, explicit
+  snapshot-source permission separate from enrollment, one-of-many offer
+  selection that never merges, the interruptible state machine as an explicit
+  transition table, and Argon2id password wrapping alongside peer-key wrapping.
+- Schema v24 makes catch-up durable: sessions with progress, snapshot vector,
+  explicit restore intent and reason; permissions; and catch-up floors.
+- **The evidence run found a real defect.** A replica built from a snapshot has
+  no predecessor operation rows and correctly should not, so G5 refused the
+  first operation after the snapshot and catch-up could not resume at all. The
+  catch-up floor fixes it and is the only thing permitted to stand in for a
+  missing predecessor; a replica without one still leaves such operations
+  pending rather than admitting a history with a hole in it. Every unit was
+  already correct — only the whole flow exposed the seam.
+- Cutover installs the snapshot's vector, refuses without an explicit intent,
+  and writes no peer acknowledgement, so a backup never holds back collection.
+- A restore in progress cannot re-fetch underneath itself, be cancelled, or be
+  expired by a clock. A wrong password is reported as a wrong password rather
+  than as a corrupt archive.
+- Measured 90.91% of operations avoided and 90.18%/93.87% of time saved at 200
+  and 1,000 notes (2,231 ms to 219 ms; 20,790 ms to 1,274 ms).
+- `golang.org/x/crypto` moves from indirect to direct at the same version for
+  Argon2id; the standard library has no memory-hard derivation. G9's
+  zero-dependency artifact crypto is unchanged.
+- No carrier, transport, peer authentication, secret store, or REST/MCP/UI
+  surface landed; the archive container itself remains P2-P4's. Product remains
+  0.6.0; schema is v24. G11 remains unapproved.
 
 ## v0.7 G9 completion — 2026-08-13
 

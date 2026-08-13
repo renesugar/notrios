@@ -8,7 +8,7 @@ This file is the codebase atlas. Update it whenever major files or directories a
 - `PLAN.md` — the **active v0.7 native synchronization plan**, divided into
   twenty-two independently approvable slices (G0, G1, G1a, and G2-G20).
   G0-G17 policy decisions are resolved; G0-G6 are complete and G7 is next but
-  unapproved. The current product remains 0.6.0 at schema v23; v0.6 is archived under
+  unapproved. The current product remains 0.6.0 at schema v24; v0.6 is archived under
   `plans/v0.6/`; v0.5 and v0.4 are archived under their version directories.
 - `plans/scaffold/SCAFFOLD_CREATION_PLAN.md` — process for creating/refining this scaffold.
 - `ROADMAP.md` — product roadmap and future features.
@@ -47,6 +47,10 @@ This file is the codebase atlas. Update it whenever major files or directories a
 - `internal/syncstate/` — transport/storage-neutral protocol-1.0 handshake,
   bounded state-vector comparison, deterministic missing-range planner, strict
   normalized operation model, and randomized three-replica property tests.
+- `internal/synccatchup/` and `performance/v0.7-g10/` — schema-v24 snapshot
+  catch-up: signed requests, explicit source permission, competing-offer
+  selection, the durable reset state machine, catch-up floors, and password
+  wrapping.
 - `internal/syncwire/` and `performance/v0.7-g9/` — the canonical NCB1/NEV1
   encoding, deterministic gzip, and the encrypted, signed NAR1 artifact every
   transport carries. No schema change and no dependency.

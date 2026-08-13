@@ -328,6 +328,17 @@ func (s *SQLiteStore) admitSyncOperations(ctx context.Context, peer syncstate.Ha
 			continue
 		}
 		if item.operation.Sequence <= contiguous {
+			// After a snapshot cutover the vector is ahead of the operation
+			// set on purpose. An operation the snapshot already contains is an
+			// inert duplicate, not a conflict.
+			covered, err := s.catchupFloorCoversLocked(item.operation.ReplicaID, item.operation.Sequence)
+			if err != nil {
+				return SyncAdmissionResult{}, err
+			}
+			if covered {
+				result.Duplicates++
+				continue
+			}
 			return SyncAdmissionResult{}, fmt.Errorf("%w: sequence %d is below the durable vector without an admitted operation", ErrConflict, item.operation.Sequence)
 		}
 		if err := s.insertSyncPendingLocked(item.operation, item.encoded); err != nil {
@@ -512,7 +523,18 @@ func (s *SQLiteStore) insertAdmittedSyncOperationLocked(operation syncstate.Oper
 		if rc != C.SQLITE_ROW {
 			C.sqlite3_finalize(stmt)
 			if rc == C.SQLITE_DONE {
-				return fmt.Errorf("%w: admitted operation has no contiguous HLC predecessor", ErrConflict)
+				// A replica built from a snapshot has no predecessor row, and
+				// correctly should not: the snapshot is that history in
+				// canonical form. G10's catch-up floor says so explicitly, and
+				// nothing else may stand in for a missing predecessor.
+				covered, floorErr := s.catchupFloorCoversLocked(operation.ReplicaID, operation.Sequence-1)
+				if floorErr != nil {
+					return floorErr
+				}
+				if !covered {
+					return fmt.Errorf("%w: admitted operation has no contiguous HLC predecessor", ErrConflict)
+				}
+				return s.insertAdmittedSyncOperationRowLocked(operation)
 			}
 			return s.stepErrLocked(rc)
 		}
@@ -522,6 +544,10 @@ func (s *SQLiteStore) insertAdmittedSyncOperationLocked(operation syncstate.Oper
 			return fmt.Errorf("%w: replica HLC moved backward at sequence %d", ErrConflict, operation.Sequence)
 		}
 	}
+	return s.insertAdmittedSyncOperationRowLocked(operation)
+}
+
+func (s *SQLiteStore) insertAdmittedSyncOperationRowLocked(operation syncstate.Operation) error {
 	if err := s.execPreparedLocked(`INSERT INTO sync_operations(
 		replica_id, sequence, operation_id, kind, record_type, record_id, payload_json, hlc_wall_ms, hlc_logical, created_at
 	) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, operation.ReplicaID, strconv.FormatInt(operation.Sequence, 10),

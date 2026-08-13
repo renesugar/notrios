@@ -68,8 +68,8 @@ type TaskList struct {
 	// OpenCount and DoneCount describe everything found, not everything
 	// returned. A capped list that also capped its counts would understate the
 	// library, which is the failure lint's contract exists to avoid.
-	OpenCount int `json:"open_count"`
-	DoneCount int `json:"done_count"`
+	OpenCount int  `json:"open_count"`
+	DoneCount int  `json:"done_count"`
 	Truncated bool `json:"truncated"`
 	// DocumentsScanned says how much work this cost, and DocumentsTruncated
 	// says the scan itself hit its ceiling — a different thing from the row

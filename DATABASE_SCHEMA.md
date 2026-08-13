@@ -559,3 +559,28 @@ transfer state and staged chunks with it, so a later admission of the same bytes
 does not believe it has already fetched them. And an archive-v2 export refuses,
 naming the object, rather than producing a container that silently omits bytes
 it claims to hold.
+
+## Schema v24 — snapshot catch-up and the reset state machine
+
+G10 makes catch-up durable. `sync_catchup_sessions` records where a large,
+slow, interruptible process has got to: what was asked, who answered, the
+snapshot's recorded state vector, how many archive bytes have arrived, the
+explicit restore intent, and why a session stopped. `sync_catchup_permissions`
+is separate from enrollment on purpose — a peer may exchange operations and
+still not be allowed to answer a backup request, because answering means
+handing over a complete copy of the library.
+
+`sync_catchup_floors` is the table that makes catch-up work at all. G5 admits an
+operation only when the row for the sequence before it is present, and a replica
+built from a snapshot does not have those rows and correctly should not: the
+snapshot *is* that history, already folded into canonical state. A floor records,
+per replica, the sequence a restored snapshot accounts for. Admission consults it
+in exactly two places — the missing-predecessor check, and the below-the-vector
+check that reports an already-contained operation as an inert duplicate rather
+than a conflict. It is the only thing permitted to stand in for a missing
+predecessor; a replica without a snapshot still leaves the same operations
+pending rather than admitting a history with a hole in it.
+
+Cutover installs the snapshot's vector as this replica's own observation and
+writes no peer acknowledgement: this replica holding a copy says nothing about
+what any peer has durably admitted, so a backup must never hold back collection.

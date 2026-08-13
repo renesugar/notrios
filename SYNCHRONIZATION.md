@@ -107,6 +107,17 @@ epoch advances when a replica is revoked; retiring an epoch is a separate act
 from advancing it, so a library keeps reading its own history. Every primitive
 is from the Go standard library, so G9 adds no dependency.
 
+G10 adds snapshot catch-up in schema v24. A blank, far-behind, repaired, or
+reset replica signs a backup request; only an active enrolled peer it has
+*explicitly permitted* as a snapshot source may answer; and among several
+answers it takes one compatible verified offer rather than merging them. The
+snapshot's manifest records the state vector it was taken at, so after restoring
+under an explicit `adopt|replace|merge|fork` intent the replica asks only for
+later envelopes. Cutover also records a catch-up floor per replica, because a
+library built from a snapshot has canonical state without the operations that
+produced it and would otherwise look like a history with a hole in it. A backup
+is not a peer acknowledgement and holds nothing back from collection.
+
 G8 adds attachment convergence in schema v23. A resource's identity, length,
 content type, and transfer shape travel as ordinary metadata, so a note that
 references an attachment is usable before the attachment is. Bytes are fetched

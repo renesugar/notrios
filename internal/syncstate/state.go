@@ -21,8 +21,8 @@ const (
 	ProtocolMajor = 1
 	ProtocolMinor = 0
 
-	MinCompatibleSchema = 23
-	MaxCompatibleSchema = 23
+	MinCompatibleSchema = 24
+	MaxCompatibleSchema = 24
 
 	MaxStateVectorEntries = 1_024
 	MaxMissingRanges      = 1_024

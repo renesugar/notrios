@@ -340,6 +340,14 @@ cannot be edited in transit. It adds no schema and no dependency. G13 still owns
 authenticated enrollment and authorization, and v0.8 owns the secret store the
 key interfaces stand in for.
 
+G10 advances the schema to v24 with the durable catch-up state machine.
+`internal/synccatchup` signs requests, decides which peers may answer and which
+answer to take, defines the states an interruptible restore passes through, and
+wraps a payload key either for the enrolled group or under Argon2id for a
+portable backup. The store keeps the session, the explicit restore intent, and
+the catch-up floor that lets admission resume after a snapshot supplies history
+it has no operation rows for.
+
 ## Optional derived systems
 
 - go-git or Fossil can checkpoint projections but should not replace SQLite revisions.

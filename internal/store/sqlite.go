@@ -198,6 +198,9 @@ func (s *SQLiteStore) Bootstrap(ctx context.Context) error {
 	if err := s.ensureSchemaV23(ctx); err != nil {
 		return err
 	}
+	if err := s.ensureSchemaV24(ctx); err != nil {
+		return err
+	}
 	if err := s.ensureDatabaseIdentity(ctx); err != nil {
 		return err
 	}

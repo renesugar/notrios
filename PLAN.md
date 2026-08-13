@@ -1,7 +1,7 @@
 # Plan: v0.7 — Native synchronization
 
-Status: **G0-G9 completed through 2026-08-13. Product version remains 0.6.0 and the
-canonical schema is v23. G10 is the next item and is not approved.** The
+Status: **G0-G10 completed through 2026-08-13. Product version remains 0.6.0 and the
+canonical schema is v24. G11 is the next item and is not approved.** The
 former seven-item draft was too coarse: it mixed protocol research, canonical
 write interception, merge semantics, two transports, cryptography, recovery,
 UI, retention, and release validation into slices that could not be reviewed or
@@ -776,7 +776,7 @@ stays with G17's retention work. Evidence is archived in
 `plans/v0.7/012-envelope-codec-encryption-signatures.md` and
 `performance/v0.7-g9/`.
 
-## G10. Snapshot catch-up and reset state machine
+## G10. Snapshot catch-up and reset state machine — complete
 
 **Goal.** Bring a new, far-behind, repaired, or user-reset replica to a known
 state quickly through existing verified backup/restore machinery.
@@ -812,6 +812,23 @@ aggregate profile.
   key-wrapping modes**—peer-recipient keys for ordinary catch-up and a
   memory-hard password KDF for portable/cloud backup. The password is entered
   at decrypt/restore time and never stored in the archive or command history.
+
+**Outcome (2026-08-13).** `internal/synccatchup` signs requests and responses,
+enforces that only an active enrolled peer explicitly permitted as a snapshot
+source may answer, selects one compatible verified offer among competitors
+rather than merging, and defines the interruptible state machine as an explicit
+transition table. Schema v24 makes sessions, permissions, and catch-up floors
+durable. Cutover installs the snapshot's vector, requires an explicit restore
+intent, and writes no peer acknowledgement. The evidence run found a real
+defect: a replica built from a snapshot has no predecessor operation rows, so
+G5 refused the first operation after it; the catch-up floor is the only thing
+permitted to stand in for a missing predecessor, and a replica without one still
+leaves such operations pending. Measured 90.91% of operations avoided and
+90.18-93.87% of time saved at 200 and 1,000 notes. Argon2id password wrapping
+promotes `golang.org/x/crypto` from an indirect to a direct dependency at the
+same version. Evidence is archived in
+`plans/v0.7/013-snapshot-catchup-reset-state-machine.md` and
+`performance/v0.7-g10/`.
 
 ## G11. Ephemeral shared-directory protocol and peer discovery
 
@@ -1243,6 +1260,6 @@ recommendation, blocking status, and consequence.
 | Current-GUI Mermaid baseline | G18 | Resolved fact: upstream-capable but disabled pending offline/security evidence |
 | Release version/schema bookkeeping | G20 | Open, non-blocking until wrap-up |
 
-G0-G9 are complete. G10 is the next implementable item, but is not approved.
-Implementation begins only after an explicit instruction naming G10; completing
-it still stops for a verified ZIP and approval before G11.
+G0-G10 are complete. G11 is the next implementable item, but is not approved.
+Implementation begins only after an explicit instruction naming G11; completing
+it still stops for a verified ZIP and approval before G12.

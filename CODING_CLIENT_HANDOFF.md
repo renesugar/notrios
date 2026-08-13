@@ -3,7 +3,7 @@
 This handoff applies to any coding agent or client continuing this project (Codex, Claude, aider, swival.dev, etc. — formerly `CODEX_HANDOFF.md`). The repository is designed so an agent can continue from repository files alone.
 
 Current phase: v0.1 through **v0.6** are complete; product version is **0.6.0**
-and the schema is **v23**. The eight v0.6 slices are archived under
+and the schema is **v24**. The eight v0.6 slices are archived under
 `plans/v0.6/`: F0 (notebook targeting, landed with v0.5 E10), F1 (batch
 organizer transactions), F2 (MCP tool scopes), F3 (MCP read coverage and HTTP
 `Range`), F4 (note templates and task extraction), F5 (graph views that stay
@@ -13,14 +13,14 @@ wrap-up). The thirteen v0.5 slices remain archived under `plans/v0.5/`.
 `PLAN.md` now holds the **active v0.7 native synchronization plan** with
 twenty-two independently approvable slices: G0, G1, G1a, and G2-G20. The user's 2026-08-11
 review resolved the policy decisions through G17, including mandatory payload
-encryption and per-replica Ed25519 signatures. **G0-G9 are complete** and
+encryption and per-replica Ed25519 signatures. **G0-G10 are complete** and
 archived under `plans/v0.7/`; their reviewed evidence is under
 `performance/v0.7-g0/`, `performance/v0.7-g1/`, `performance/v0.7-g1a/`,
 `performance/v0.7-g2/`, `performance/v0.7-g4/`, `performance/v0.7-g5/`,
 `performance/v0.7-g6/`, `performance/v0.7-g7/`, `performance/v0.7-g8/`, and
-`performance/v0.7-g9/`.
-**G10 is next and is not approved.** It owns snapshot catch-up and the reset
-state machine.
+`performance/v0.7-g9/`, and `performance/v0.7-g10/`.
+**G11 is next and is not approved.** It owns the ephemeral shared-directory
+protocol and peer discovery.
 
 G0 added no production sync code or dependency. It freezes the threat model,
 normative glossary, thirty misuse/control traces, and upstream license/platform
@@ -172,6 +172,19 @@ switched over — that belongs with G17's retention horizon. The store still
 journals and admits JSON operations locally; the canonical codec is a wire
 format, not the journal's storage.
 
+G10 advances schema v24 with the durable catch-up state machine. Requests and
+responses are signed; only an active enrolled peer **explicitly permitted** as a
+snapshot source may answer; competing offers are chosen among, never merged; and
+the state machine is an explicit transition table in which a restore in progress
+cannot re-fetch underneath itself, be cancelled, or be expired by a clock.
+Cutover requires an explicit restore intent and writes no peer acknowledgement.
+**The thing a later agent most needs to know:** a replica built from a snapshot
+has no predecessor operation rows, which broke G5 admission outright until
+`sync_catchup_floors` was added. A floor is the only thing permitted to stand in
+for a missing predecessor, and a replica without one still leaves such
+operations pending. Password wrapping is Argon2id, which promotes
+`golang.org/x/crypto` from indirect to direct at the same version.
+
 That review also added a second portability route. v0.8 now investigates and
 builds a framework-neutral Go application facade and versioned no-GUI C ABI,
 with Android-emulator-only pre-1.0 evidence; v1.0 packages the supported ABI
@@ -181,7 +194,7 @@ the API/lifecycle/ownership/stream contract and source checks. The current GUI's
 Mermaid support is **disabled**, not merely untested (`noMermaid: true`), and a
 v0.8 offline/security-tested enablement slice owns it.
 
-Latest completed feature validation is G9 (2026-08-13). It includes G5's
+Latest completed feature validation is G10 (2026-08-13). It includes G5's
 admission suite plus exhaustive 40,320-order and 250-seed convergence models,
 opposite-order real SQLite replicas, sparse-register, membership, lifecycle,
 tree-repair, clock-regression, restart/upgrade, and purge-gate checks, followed
@@ -196,9 +209,10 @@ refusals, tampered operations, six delivery orders, delete/edit, restore/edit,
 and the v22 upgrade backfill, plus G8's syncassets chunk/manifest/policy suite
 and real two-replica attachment fixtures covering hostile sources, resume,
 dedupe, restart, and the v23 backfill, plus G9's independently generated goldens, RFC/NIST
-known-answer vectors, exhaustive tamper cases, and two fuzz targets. Start G10
-only after explicit user approval, then stop after its validation, commit,
-verified ZIP, and handoff before G11.
+known-answer vectors, exhaustive tamper cases, and two fuzz targets, plus G10's
+permission, offer-selection, state-machine, floor, and password fixtures. Start
+G11 only after explicit user approval, then stop after its validation, commit,
+verified ZIP, and handoff before G12.
 
 Two things a reader continuing this project should know about v0.6:
 

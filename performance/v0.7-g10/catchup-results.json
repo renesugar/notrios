@@ -1,0 +1,36 @@
+{
+  "schema": "notrios.g10.catchup.v1",
+  "generated_for": "v0.7 G10 snapshot catch-up and reset state machine",
+  "database_schema_version": 24,
+  "tiers": [
+    {
+      "notes": 200,
+      "total_operations": 440,
+      "snapshot_operations": 400,
+      "tail_operations": 40,
+      "full_replay_ms": 2231,
+      "tail_replay_ms": 219,
+      "work_avoided_percent": 90.9090909090909,
+      "time_saved_percent": 90.18377409233527,
+      "converged": true
+    },
+    {
+      "notes": 1000,
+      "total_operations": 2200,
+      "snapshot_operations": 2000,
+      "tail_operations": 200,
+      "full_replay_ms": 20790,
+      "tail_replay_ms": 1274,
+      "work_avoided_percent": 90.9090909090909,
+      "time_saved_percent": 93.87205387205387,
+      "converged": true
+    }
+  ],
+  "notes": [
+    "Every note is generated. No private corpus content is read or recorded.",
+    "full_replay_ms admits the whole operation history into a blank replica.",
+    "tail_replay_ms admits only what came after the snapshot's recorded state vector.",
+    "The snapshot restore itself is archive-v2's, measured under P3/P4, and is not re-measured here.",
+    "Desktop measurements on one host; no carrier or network is involved."
+  ]
+}

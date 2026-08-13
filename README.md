@@ -127,7 +127,10 @@ Recoll availability, backlog, sync/index, and reconciliation state.
   attachment metadata that converges before its bytes, chunk manifests,
   resumable verified materialization, and eager/pinned/lazy policy. G9 adds the
   canonical envelope codec and the encrypted, signed protocol artifact every
-  transport will carry, using only Go standard-library cryptography.
+  transport will carry, using only Go standard-library cryptography. G10 adds
+  schema-v24 snapshot catch-up: signed backup requests, explicit snapshot-source
+  permission, one-of-many offer selection, the durable reset state machine, and
+  the catch-up floor that lets a restored replica resume incremental admission.
   Transport and peer authentication are not implemented yet.
 - Agent progress/attempt tracking: [`agent/PLAN_STATUS.md`](agent/PLAN_STATUS.md), [`agent/ATTEMPT_LOG.jsonl`](agent/ATTEMPT_LOG.jsonl), and [`agent/MODEL_LOG.jsonl`](agent/MODEL_LOG.jsonl).
 
