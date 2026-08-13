@@ -341,9 +341,31 @@ user copies the carrier to a USB drive. Multiple devices share the
 database-scoped root but write disjoint replica namespaces; content-addressed
 objects are immutable and identical names must have identical verified bytes.
 
-The available `/home/renes/GoogleDrive` mapping and `rclone copy --immutable`
-are conformance-test carriers only. Notrios does not wrap rclone as its sync
-engine, require its config, or carry that dependency to mobile.
+A mapped cloud folder and `rclone copy --immutable` are conformance-test
+carriers only. Notrios does not wrap rclone as its sync engine, require its
+config, or carry that dependency to mobile.
+
+G12 ran the shipped protocol against Google Drive through `rclone mount` and
+measured what such a carrier costs (`performance/v0.7-g12/`). Two results
+change how the rest of the milestone should be planned:
+
+- **A change published by another device took 45–57 seconds to become
+  visible.** That is the provider's change-notification cadence, not a protocol
+  cost, and it is the floor on how fresh any folder-carried exchange can be.
+  Scheduling work should treat a few minutes as a sensible interval and an
+  explicit sync after real work as better than any interval.
+- **Resolving a known name is no fresher than listing the directory** — the two
+  differ by a millisecond or two. A stale listing cannot be worked around by
+  fetching an object whose address is already known.
+
+Consequently **publication order is a latency optimization on such a carrier,
+not a correctness mechanism**: a reader may see an advertisement before the
+envelopes it implies, and must admit nothing, claim no progress, and converge on
+a later round. That is asserted directly rather than assumed. The same run
+confirmed that no peer writes outside its own namespace even while the
+provider's listing lags, that a substituted artifact is refused and republished
+by its owner while a peer still needs it, and that a carrier deleted in full
+costs only republication.
 
 ## Import, export, backup, restore, and sync
 

@@ -268,9 +268,17 @@ encrypted, signed NAR1 artifact and canonical wire codec, with no schema change
 and no dependency (G9); schema v24 snapshot catch-up and the reset state machine
 (G10); and the ephemeral shared-directory carrier, its discovery, and
 `notriosctl sync`, with no schema change (G11). Two replicas of one database now
-converge through a folder either of them can delete. **G12 is next and
-approval-gated**: conformance over the mapped Google Drive and removable media,
-which G11 deliberately does not claim from a local filesystem.
+converge through a folder either of them can delete.
+
+**G12 completed 2026-08-13** and changed no production code. The shipped carrier
+was run against a Google Drive folder mounted with `rclone mount` and against a
+drive passed between peers; all eight conformance phases passed and no provider
+limitation forced a protocol change. It measured what such a carrier costs:
+another device's change took **45-57 seconds** to become visible, and resolving
+a known name is no fresher than listing the directory. Publication order is
+therefore a latency optimization on a cloud folder rather than a correctness
+mechanism, which G15's scheduling must respect. **G13 is next and
+approval-gated**: the REST security foundation, pairing, and transport policy.
 
 - **Evidence before contracts (G0-G2, including G1a):** threat model and
   reference validation; representative revision/delta/three-way-merge

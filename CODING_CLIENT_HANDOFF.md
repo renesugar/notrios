@@ -13,14 +13,15 @@ wrap-up). The thirteen v0.5 slices remain archived under `plans/v0.5/`.
 `PLAN.md` now holds the **active v0.7 native synchronization plan** with
 twenty-two independently approvable slices: G0, G1, G1a, and G2-G20. The user's 2026-08-11
 review resolved the policy decisions through G17, including mandatory payload
-encryption and per-replica Ed25519 signatures. **G0-G11 are complete** and
+encryption and per-replica Ed25519 signatures. **G0-G12 are complete** and
 archived under `plans/v0.7/`; their reviewed evidence is under
 `performance/v0.7-g0/`, `performance/v0.7-g1/`, `performance/v0.7-g1a/`,
 `performance/v0.7-g2/`, `performance/v0.7-g4/`, `performance/v0.7-g5/`,
 `performance/v0.7-g6/`, `performance/v0.7-g7/`, `performance/v0.7-g8/`,
-`performance/v0.7-g9/`, `performance/v0.7-g10/`, and `performance/v0.7-g11/`.
-**G12 is next and is not approved.** It owns directory-carrier conformance over
-the mapped Google Drive and removable media.
+`performance/v0.7-g9/`, `performance/v0.7-g10/`, `performance/v0.7-g11/`, and
+`performance/v0.7-g12/`.
+**G13 is next and is not approved.** It owns the REST security foundation,
+pairing, and transport policy.
 
 G0 added no production sync code or dependency. It freezes the threat model,
 normative glossary, thirty misuse/control traces, and upstream license/platform
@@ -204,6 +205,19 @@ of an exchange — SQLite admission is the rest. `internal/synckeys` is the warn
 `0600` development secret provider; v0.8 still owns the platform store, and G13
 still owns real pairing.
 
+G12 changed **no production code**: it is the evidence run that puts G11's
+carrier on a real provider. Two measurements from it constrain later work and
+now live in `SYNCHRONIZATION.md`: through a Google Drive `rclone mount`, another
+device's change took **45-57 seconds** to become visible, and **resolving a
+known name is no fresher than listing the directory**. So publication order —
+envelopes first, advertisement last — is a latency optimization on such a
+carrier and *not* a correctness mechanism; a phase makes the advertisement
+visible without its envelopes and asserts the reader claims no progress it did
+not make. G15 should not schedule polls faster than a provider announces
+changes. `docs/operations.md` now carries the operator section, the safe
+commands, and the never-run rclone verbs, whose refusal the harness enforces in
+code rather than in a comment.
+
 That review also added a second portability route. v0.8 now investigates and
 builds a framework-neutral Go application facade and versioned no-GUI C ABI,
 with Android-emulator-only pre-1.0 evidence; v1.0 packages the supported ABI
@@ -213,7 +227,10 @@ the API/lifecycle/ownership/stream contract and source checks. The current GUI's
 Mermaid support is **disabled**, not merely untested (`noMermaid: true`), and a
 v0.8 offline/security-tested enablement slice owns it.
 
-Latest completed feature validation is G11 (2026-08-13), which added the
+Latest completed feature validation is G12 (2026-08-13), whose eight
+conformance phases ran the shipped round against a mounted Google Drive folder
+and a drive passed between peers. The preceding feature validation is G11
+(2026-08-13), which added the
 synccarrier suite — two- and three-replica convergence through a real folder,
 carrier deletion and republication, truncation, unenrolled signers, unpaired
 replicas, foreign namespaces, provider sidecars and wrong-case names, idempotent

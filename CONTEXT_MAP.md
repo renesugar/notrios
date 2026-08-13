@@ -7,7 +7,7 @@ This file is the codebase atlas. Update it whenever major files or directories a
 - `README.md` — project overview and quick start.
 - `PLAN.md` — the **active v0.7 native synchronization plan**, divided into
   twenty-two independently approvable slices (G0, G1, G1a, and G2-G20).
-  G0-G17 policy decisions are resolved; G0-G6 are complete and G7 is next but
+  G0-G17 policy decisions are resolved; G0-G12 are complete and G13 is next but
   unapproved. The current product remains 0.6.0 at schema v24; v0.6 is archived under
   `plans/v0.6/`; v0.5 and v0.4 are archived under their version directories.
 - `plans/scaffold/SCAFFOLD_CREATION_PLAN.md` — process for creating/refining this scaffold.
@@ -55,6 +55,10 @@ This file is the codebase atlas. Update it whenever major files or directories a
   shared-directory carrier: the transport-neutral `Carrier` surface, the blinded
   folder layout, the exchange `Round`, discovery that reports without enrolling,
   and the carrier-backed `ObjectProvider`. No schema change.
+- `performance/v0.7-g12/` — the conformance run that puts that carrier on a real
+  provider: measured visibility delay, eight protocol phases through a mounted
+  Google Drive folder and a drive passed between peers, and the enforced
+  refusal of every destructive rclone verb. No production code.
 - `internal/synckeys/` — the warned `0600` development secret provider holding
   one group key per epoch, this replica's signing key, and paired peers' public
   keys. v0.8 owns the platform store.

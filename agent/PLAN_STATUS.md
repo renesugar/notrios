@@ -1,6 +1,6 @@
 # Plan Status
 
-Updated: 2026-08-13 (G11 ephemeral shared-directory carrier complete; G12 next)
+Updated: 2026-08-13 (G12 directory-carrier conformance complete; G13 next)
 
 ## Active milestone
 
@@ -13,8 +13,45 @@ G0, G1, G1a, and G2-G20: evidence, profiles/local journal, state-vector converge
 revision deltas/merge, lazy resources, secure container/catch-up,
 ephemeral-directory and REST transports, jobs/UI/retention, shared-core/FFI/
 Mermaid/mobile handoff, compatibility, and final validation. The user's
-2026-08-11 review resolved every G0-G17 policy decision. **G0-G11 are complete**
-and archived under `plans/v0.7/`; G12 is next and is not approved.
+2026-08-11 review resolved every G0-G17 policy decision. **G0-G12 are complete**
+and archived under `plans/v0.7/`; G13 is next and is not approved.
+
+## v0.7 G12 completion — 2026-08-13
+
+- **No production code changed.** `performance/v0.7-g12/cmd/conformance` drives
+  the shipped G11 round against a Google Drive folder mounted with `rclone
+  mount` and against a drive alternately available to each peer. No provider
+  limitation forced a protocol change, which is what the item required.
+- All eight phases passed: 12 notes converged in 3 rounds (21.7 s); replica A's
+  artifacts were unchanged byte for byte after replica B's rounds; a substituted
+  artifact was refused and republished by its owner; an advertisement arriving
+  before its envelopes admitted nothing; a disconnected carrier refused without
+  creating the absent mount point; full carrier loss rebuilt in 3 rounds
+  (20.9 s); `rclone copy --immutable` moved the carrier out and back unchanged
+  while the destructive verbs were refused **in code**; and a drive carried 3
+  notes out and 2 back in one trip each.
+- **Two measurements now constrain later slices**, and are recorded in
+  `SYNCHRONIZATION.md`: another device's change took **45-57 seconds** to become
+  visible, and **resolving a known name is no fresher than listing** the
+  directory (the two differ by a millisecond or two). Polling faster than the
+  provider's cadence buys nothing, which is G15's problem to respect.
+- The consequence is stated rather than implied: **publication order is a
+  latency optimization on such a carrier, not a correctness mechanism.** A
+  dedicated phase makes the advertisement visible while its envelopes are not
+  and asserts the reader claims no progress it did not make.
+- A boundary was written down that had only been assumed: an artifact
+  substituted while a peer still needs it is republished, while one substituted
+  after every peer has admitted what it carried is not — nobody is waiting for
+  it, and cleanup removes it once acknowledged. The first version of that phase
+  asserted the wrong one and failed.
+- Observed provider behavior worth remembering: no half-written file was ever
+  exposed, `rename` works, filename case is preserved and distinct, and mtime
+  survived a rename in one run but not another — which is the measurement that
+  says nothing may read it.
+- `docs/operations.md` gains the operator section: safe commands, the never-run
+  rclone verbs with the reason each is dangerous, the measured provider table,
+  and a symptom-to-action table. Product remains 0.6.0; schema is v24. G13
+  remains unapproved.
 
 ## v0.7 G11 completion — 2026-08-13
 

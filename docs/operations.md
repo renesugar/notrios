@@ -376,6 +376,84 @@ The output contains aggregate counts, timings, SQLite settings/size, and peak
 RSS only. Do not commit a report until you have confirmed it contains no source
 paths, titles, bodies, resource bytes, or database files.
 
+## Running sync through a cloud folder or a USB drive
+
+`notriosctl sync once --carrier <dir>` exchanges through any folder both of
+your replicas can reach. The folder is a postbox, not a library: everything in
+it is encrypted and signed, everything in it also exists in the replica that
+published it, and deleting all of it loses nothing. See the
+[CLI reference](cli.md#sync) for pairing and the commands themselves; this
+section is about running it against a real provider.
+
+### Commands that are safe against a carrier
+
+```sh
+# One exchange. Run it by hand, from cron, or after an import.
+notriosctl sync once --carrier ~/Drive/notrios
+
+# Look before you trust: reports who is publishing, changes nothing.
+notriosctl sync discover --carrier ~/Drive/notrios
+
+# Copy a carrier onto a drive, or off one, without altering it.
+rclone copy --immutable <source> <destination>
+rclone copy --immutable --no-traverse <source> <destination>   # small set into a large folder
+rclone lsf <path>                                              # look at what is there
+```
+
+### Commands that must never touch protocol state
+
+```sh
+rclone sync      # mirrors deletions: can destroy another replica's only envelope
+rclone bisync    # decides conflicts by timestamp, which is not what a conflict is
+rclone move      # removes the source, which is another peer's copy
+rclone delete    # same, one file at a time
+rclone purge     # same, all at once
+```
+
+Notrios deletions travel as operations, inside sealed artifacts. A file-level
+mirroring tool cannot tell "this peer deleted a note" from "this peer has not
+uploaded yet", and it will act on the difference either way. **`rclone` is a
+courier for a carrier, never the synchronizer.**
+
+### What a cloud provider actually does, measured
+
+Against a Google Drive folder mounted with `rclone mount` (evidence under
+`performance/v0.7-g12/`):
+
+| Behavior | Observed |
+|---|---|
+| A file published by another device becomes visible | **45–57 seconds** later |
+| Asking for that file *by name* rather than listing | the same 45–57 seconds |
+| A half-written file exposed to other readers | not observed |
+| `rename` | available |
+| Filename case | preserved and distinct |
+| Modification time after a rename | preserved in one run, not in another |
+| Throughput through the mount | ~57 MiB/s write, ~23 MiB/s read |
+
+Two consequences worth planning around:
+
+- **A minute is the floor.** However often you sync, a change made on the other
+  device cannot arrive faster than the provider announces it. Polling every ten
+  seconds against this provider buys nothing; a few minutes is a sensible
+  interval, and syncing on demand after real work is better than either.
+- **Do not read the folder to judge progress.** Its listing is a claim about the
+  past, and its timestamps disagree with themselves between runs. `notriosctl
+  sync status` reads the library, which knows.
+
+### When it goes wrong
+
+| Symptom | What it means | What to do |
+|---|---|---|
+| `carrier directory is not available` | the drive is unplugged or the share is disconnected | plug it in; nothing was written, and the folder was not created underneath the missing mount |
+| A round reports entries under `skipped` | files that were half-copied, stale, or not ours | ordinary; the publisher republishes what a peer still needs |
+| Nothing arrives, but both sides report success | the provider has not listed the other side's files yet | wait out the interval above, then run again |
+| The peer is listed as a candidate, not a peer | it is not paired with this library | `notriosctl sync pair`, deliberately |
+| The folder is gone entirely | nothing is lost | run a round; the replicas republish what each other lacks |
+
+Never repair a carrier by editing it. There is nothing in it to fix by hand:
+every artifact is authenticated, an edited one is refused, and the replica that
+owns it republishes a correct copy on its next round.
+
 ## Monitoring the Recoll sidecar
 
 SQLite/FTS5 remains the always-on search engine. When Recoll is enabled, the

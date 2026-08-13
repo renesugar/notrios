@@ -1,7 +1,7 @@
 # Plan: v0.7 — Native synchronization
 
-Status: **G0-G11 completed through 2026-08-13. Product version remains 0.6.0 and the
-canonical schema is v24. G12 is the next item and is not approved.** The
+Status: **G0-G12 completed through 2026-08-13. Product version remains 0.6.0 and the
+canonical schema is v24. G13 is the next item and is not approved.** The
 former seven-item draft was too coarse: it mixed protocol research, canonical
 write interception, merge semantics, two transports, cryptography, recovery,
 UI, retention, and release validation into slices that could not be reviewed or
@@ -885,7 +885,7 @@ acknowledged. Measured: the carrier layer is about one percent of an exchange,
 ten quiet rounds add zero artifacts, and a carrier deleted with work in flight
 recovers in two rounds. Cloud and removable-media evidence remains G12's.
 
-## G12. Directory-carrier conformance over Google Drive and removable media
+## G12. Directory-carrier conformance over Google Drive and removable media — complete
 
 **Goal.** Prove the shared-directory adapter against the available mapped cloud
 folder and a USB-like handoff without making either provider part of the engine.
@@ -915,6 +915,23 @@ full carrier loss and reconstruction; no-source-write checks.
 - None. This is evidence for the provider-neutral adapter. A surprising
   provider limitation that changes the protocol must reopen G11 rather than be
   hidden in an rclone-specific workaround.
+
+**Outcome (2026-08-13).** Complete, archived as
+`plans/v0.7/015-directory-carrier-conformance.md` with evidence under
+`performance/v0.7-g12/`. **No production code changed** — the harness drives the
+shipped round and adds no dependency, and no provider limitation forced a
+protocol change. All eight phases passed against a Google Drive folder mounted
+with `rclone mount`: convergence, no foreign writes, a substituted artifact
+refused and repaired, an advertisement arriving before its envelopes, a
+disconnected carrier, full carrier loss, `rclone copy --immutable` in both
+directions with the destructive verbs refused in code, and a drive passed
+between peers. **Two measurements now constrain later slices and are recorded in
+`SYNCHRONIZATION.md`:** another device's change took 45-57 seconds to become
+visible, and resolving a known name is no fresher than listing the directory.
+The consequence is stated plainly — publication order is a latency optimization
+on such a carrier, not a correctness mechanism, and the state vector is what
+carries correctness. `docs/operations.md` gains the operator section, the safe
+commands, and the never-run list.
 
 ## G13. REST security foundation, pairing, and transport policy
 
@@ -1277,6 +1294,6 @@ recommendation, blocking status, and consequence.
 | Current-GUI Mermaid baseline | G18 | Resolved fact: upstream-capable but disabled pending offline/security evidence |
 | Release version/schema bookkeeping | G20 | Open, non-blocking until wrap-up |
 
-G0-G10 are complete. G11 is the next implementable item, but is not approved.
-Implementation begins only after an explicit instruction naming G11; completing
-it still stops for a verified ZIP and approval before G12.
+G0-G12 are complete. G13 is the next implementable item, but is not approved.
+Implementation begins only after an explicit instruction naming G13; completing
+it still stops for a verified ZIP and approval before G14.
