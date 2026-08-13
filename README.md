@@ -125,8 +125,10 @@ Recoll availability, backlog, sync/index, and reconciliation state.
   line-first three-way merge with word-region refinement, and durable typed
   body conflicts that keep both variants. G8 advances schema v23 with
   attachment metadata that converges before its bytes, chunk manifests,
-  resumable verified materialization, and eager/pinned/lazy policy.
-  Transport and cryptography are not implemented yet.
+  resumable verified materialization, and eager/pinned/lazy policy. G9 adds the
+  canonical envelope codec and the encrypted, signed protocol artifact every
+  transport will carry, using only Go standard-library cryptography.
+  Transport and peer authentication are not implemented yet.
 - Agent progress/attempt tracking: [`agent/PLAN_STATUS.md`](agent/PLAN_STATUS.md), [`agent/ATTEMPT_LOG.jsonl`](agent/ATTEMPT_LOG.jsonl), and [`agent/MODEL_LOG.jsonl`](agent/MODEL_LOG.jsonl).
 
 ## Contributing

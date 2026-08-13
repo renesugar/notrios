@@ -92,6 +92,21 @@ replicas computing the same merge produce one revision rather than two.
 Overlapping edits become a conflict attached to the document and its revision
 graph, holding the base and both inputs, and never a second note.
 
+G9 turns all of that into artifacts. `internal/syncwire` defines one canonical
+byte representation per logical envelope — minimal varints, sorted vectors and
+dependencies, pinned gzip — so two replicas that agree on the content agree on
+its hash and its signature. Each artifact is sealed with AES-256-GCM under a key
+derived per artifact by HKDF-SHA256 from a fresh random salt, then signed with
+Ed25519 over domain-separated canonical outer bytes. The visible header carries
+only the routing tuple G0 permitted: protocol, key and signer identifiers, the
+artifact kind, a bounded length, and a keyed blind of a content address where a
+carrier needs a name. Record ids, titles, MIME types, filenames, and state
+vectors are inside the ciphertext. The header is both the HKDF salt and the AEAD
+associated data, and the signature is checked before decryption. An encryption
+epoch advances when a replica is revoked; retiring an epoch is a separate act
+from advancing it, so a library keeps reading its own history. Every primitive
+is from the Go standard library, so G9 adds no dependency.
+
 G8 adds attachment convergence in schema v23. A resource's identity, length,
 content type, and transfer shape travel as ordinary metadata, so a note that
 references an attachment is usable before the attachment is. Bytes are fetched

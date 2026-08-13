@@ -47,6 +47,9 @@ This file is the codebase atlas. Update it whenever major files or directories a
 - `internal/syncstate/` — transport/storage-neutral protocol-1.0 handshake,
   bounded state-vector comparison, deterministic missing-range planner, strict
   normalized operation model, and randomized three-replica property tests.
+- `internal/syncwire/` and `performance/v0.7-g9/` — the canonical NCB1/NEV1
+  encoding, deterministic gzip, and the encrypted, signed NAR1 artifact every
+  transport carries. No schema change and no dependency.
 - `internal/syncassets/` and `performance/v0.7-g8/` — schema-v23 attachment
   metadata that converges before its bytes, chunk manifests, bounded verified
   materialization, and eager/pinned/lazy policy.

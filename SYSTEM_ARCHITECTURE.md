@@ -329,8 +329,16 @@ whether it has bytes. `internal/syncassets` owns the chunk plan, manifests, and
 materialization policy, and the store fetches through an `ObjectProvider` that
 G11 and G14 implement. Nothing is installed until the manifest digest, each
 chunk hash, the whole-object hash, the length, and the sniffed content type
-agree. G9/G13 own authenticated enrollment, wire encoding,
-encryption/signatures, and authorization.
+agree.
+
+G9 adds `internal/syncwire`: the canonical NCB1 operation and NEV1 envelope
+encoding, deterministic gzip, and the NAR1 artifact that seals a plaintext with
+AES-256-GCM under a per-artifact HKDF-derived key and signs it with Ed25519.
+Encrypt-then-sign lets a receiver reject a forgery without decrypting; the
+canonical header is both the key-derivation salt and the associated data, so it
+cannot be edited in transit. It adds no schema and no dependency. G13 still owns
+authenticated enrollment and authorization, and v0.8 owns the secret store the
+key interfaces stand in for.
 
 ## Optional derived systems
 

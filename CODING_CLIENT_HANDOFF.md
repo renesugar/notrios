@@ -13,13 +13,14 @@ wrap-up). The thirteen v0.5 slices remain archived under `plans/v0.5/`.
 `PLAN.md` now holds the **active v0.7 native synchronization plan** with
 twenty-two independently approvable slices: G0, G1, G1a, and G2-G20. The user's 2026-08-11
 review resolved the policy decisions through G17, including mandatory payload
-encryption and per-replica Ed25519 signatures. **G0-G8 are complete** and
+encryption and per-replica Ed25519 signatures. **G0-G9 are complete** and
 archived under `plans/v0.7/`; their reviewed evidence is under
 `performance/v0.7-g0/`, `performance/v0.7-g1/`, `performance/v0.7-g1a/`,
 `performance/v0.7-g2/`, `performance/v0.7-g4/`, `performance/v0.7-g5/`,
-`performance/v0.7-g6/`, `performance/v0.7-g7/`, and `performance/v0.7-g8/`.
-**G9 is next and is not approved.** It owns the deterministic envelope and
-container codec, encryption, and signatures.
+`performance/v0.7-g6/`, `performance/v0.7-g7/`, `performance/v0.7-g8/`, and
+`performance/v0.7-g9/`.
+**G10 is next and is not approved.** It owns snapshot catch-up and the reset
+state machine.
 
 G0 added no production sync code or dependency. It freezes the threat model,
 normative glossary, thirty misuse/control traces, and upstream license/platform
@@ -152,6 +153,25 @@ collection removes an unmaterialized blob's transfer state and staged chunks
 with it. Resource deltas were considered and not implemented — G1a's benefit
 case needs a named immutable parent, which resources do not have.
 
+G9 adds `internal/syncwire` and **no schema change and no dependency**. It is
+the canonical NCB1 operation block, the NEV1 envelope, deterministic gzip, and
+the NAR1 artifact: AES-256-GCM under a key derived per artifact by HKDF-SHA256
+from a fresh 32-byte salt, signed with Ed25519 over domain-separated canonical
+outer bytes. Encrypt-then-sign lets a receiver reject a forgery without
+decrypting, and the canonical header is both the derivation salt and the AEAD
+associated data. The visible header carries only G0's routing tuple, with
+routing names as keyed HMAC blinds rather than plaintext content hashes.
+Advancing an encryption epoch and retiring one are separate acts, so revocation
+does not cost a library its own history. Every primitive is Go standard library.
+**Two things a later agent should know:** G2's fixed sixteen-byte identifier
+assumption did not survive production identifiers and was replaced with length
+prefixes, so the promoted codec is not byte-identical to the prototype that
+justified it; and `SignDeathCertificate`/`VerifyDeathCertificate` supply the
+signing G6 recorded as owed, but the enrolled-purge path is deliberately **not**
+switched over — that belongs with G17's retention horizon. The store still
+journals and admits JSON operations locally; the canonical codec is a wire
+format, not the journal's storage.
+
 That review also added a second portability route. v0.8 now investigates and
 builds a framework-neutral Go application facade and versioned no-GUI C ABI,
 with Android-emulator-only pre-1.0 evidence; v1.0 packages the supported ABI
@@ -161,7 +181,7 @@ the API/lifecycle/ownership/stream contract and source checks. The current GUI's
 Mermaid support is **disabled**, not merely untested (`noMermaid: true`), and a
 v0.8 offline/security-tested enablement slice owns it.
 
-Latest completed feature validation is G8 (2026-08-13). It includes G5's
+Latest completed feature validation is G9 (2026-08-13). It includes G5's
 admission suite plus exhaustive 40,320-order and 250-seed convergence models,
 opposite-order real SQLite replicas, sparse-register, membership, lifecycle,
 tree-repair, clock-regression, restart/upgrade, and purge-gate checks, followed
@@ -175,9 +195,10 @@ store fixtures covering clean merges, durable conflicts, four broken-delta
 refusals, tampered operations, six delivery orders, delete/edit, restore/edit,
 and the v22 upgrade backfill, plus G8's syncassets chunk/manifest/policy suite
 and real two-replica attachment fixtures covering hostile sources, resume,
-dedupe, restart, and the v23 backfill. Start G9 only after explicit user
-approval, then stop after its validation, commit, verified ZIP, and handoff
-before G10.
+dedupe, restart, and the v23 backfill, plus G9's independently generated goldens, RFC/NIST
+known-answer vectors, exhaustive tamper cases, and two fuzz targets. Start G10
+only after explicit user approval, then stop after its validation, commit,
+verified ZIP, and handoff before G11.
 
 Two things a reader continuing this project should know about v0.6:
 

@@ -1,0 +1,53 @@
+{
+  "schema": "notrios.g9.wire.v1",
+  "generated_for": "v0.7 G9 deterministic envelope codec, encryption, and signatures",
+  "protocol": "1.0",
+  "primitives": {
+    "aead": "AES-256-GCM (crypto/aes, crypto/cipher)",
+    "external_dependencies": 0,
+    "kdf": "HKDF-SHA256 (crypto/hkdf)",
+    "license": "Go standard library, BSD-3-Clause",
+    "routing_blind": "HMAC-SHA256 (crypto/hmac)",
+    "signature": "Ed25519 (crypto/ed25519)"
+  },
+  "tiers": [
+    {
+      "operations": 100,
+      "json_bytes": 34082,
+      "canonical_bytes": 13751,
+      "canonical_smaller_percent": 59.653189366821195,
+      "json_gzip_bytes": 2060,
+      "canonical_gzip_bytes": 1481,
+      "canonical_gzip_smaller_percent": 28.106796116504853,
+      "encode_ms": 2,
+      "decode_ms": 3,
+      "seal_ms": 0,
+      "open_ms": 1,
+      "artifact_bytes": 13932,
+      "artifact_overhead_bytes": 181,
+      "round_trip_exact": true
+    },
+    {
+      "operations": 10000,
+      "json_bytes": 3447784,
+      "canonical_bytes": 1398827,
+      "canonical_smaller_percent": 59.428229842704766,
+      "json_gzip_bytes": 179324,
+      "canonical_gzip_bytes": 121678,
+      "canonical_gzip_smaller_percent": 32.14628270616315,
+      "encode_ms": 161,
+      "decode_ms": 228,
+      "seal_ms": 48,
+      "open_ms": 45,
+      "artifact_bytes": 1399010,
+      "artifact_overhead_bytes": 183,
+      "round_trip_exact": true
+    }
+  ],
+  "notes": [
+    "Every operation is generated. No private corpus content is read or recorded.",
+    "The JSON baseline is the representation the local journal stores today.",
+    "artifact_overhead_bytes is the whole cost of the header, the AEAD tag, and the signature.",
+    "Desktop measurements on one host; no carrier or network is involved."
+  ]
+}

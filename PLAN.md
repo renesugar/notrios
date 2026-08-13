@@ -1,7 +1,7 @@
 # Plan: v0.7 — Native synchronization
 
-Status: **G0-G8 completed through 2026-08-13. Product version remains 0.6.0 and the
-canonical schema is v23. G9 is the next item and is not approved.** The
+Status: **G0-G9 completed through 2026-08-13. Product version remains 0.6.0 and the
+canonical schema is v23. G10 is the next item and is not approved.** The
 former seven-item draft was too coarse: it mixed protocol research, canonical
 write interception, merge semantics, two transports, cryptography, recovery,
 UI, retention, and release validation into slices that could not be reviewed or
@@ -718,7 +718,7 @@ now refuses rather than omitting unmaterialized bytes. Evidence is archived in
 `plans/v0.7/011-resource-metadata-lazy-materialization-chunks-integrity.md` and
 `performance/v0.7-g8/`.
 
-## G9. Deterministic envelope/container codec, encryption, and signatures
+## G9. Deterministic envelope/container codec, encryption, and signatures — complete
 
 **Goal.** Turn admitted operation ranges and objects into bounded, deterministic,
 encrypted, signed protocol artifacts reusable by every transport.
@@ -756,6 +756,25 @@ license inventory.
 - **Only the minimum routing tuple remains visible:** protocol/database/key IDs,
   artifact kind, bounded length, and content address where needed. Encrypt
   state vectors, record IDs, titles, MIME, and filenames.
+
+**Outcome (2026-08-13).** `internal/syncwire` defines one canonical byte
+representation per logical envelope and seals it as an NAR1 artifact:
+AES-256-GCM under a per-artifact HKDF-SHA256 key, signed with Ed25519 over
+domain-separated outer bytes, with the visible header serving as both the
+derivation salt and the associated data. Routing names are keyed blinds, never
+plaintext content hashes. Epoch advance and epoch retirement are separate acts,
+so revocation does not cost a library its own history. Every primitive comes
+from the Go standard library, so the license inventory is one line and no
+dependency was added; no schema changed. Goldens are produced by an independent
+Python implementation of `FORMAT.md` and compared byte for byte, alongside RFC
+8032, NIST GCM, and RFC 5869 known-answer vectors. The canonical encoding is
+59.4-59.7% smaller than the journal's JSON and 28-32% smaller compressed, with
+constant 181-183 byte crypto overhead. G2's fixed-width identifier assumption
+did not survive production identifiers and was replaced with length prefixes.
+Signing for death certificates is supplied; wiring the enrolled-purge path to it
+stays with G17's retention work. Evidence is archived in
+`plans/v0.7/012-envelope-codec-encryption-signatures.md` and
+`performance/v0.7-g9/`.
 
 ## G10. Snapshot catch-up and reset state machine
 
@@ -1224,6 +1243,6 @@ recommendation, blocking status, and consequence.
 | Current-GUI Mermaid baseline | G18 | Resolved fact: upstream-capable but disabled pending offline/security evidence |
 | Release version/schema bookkeeping | G20 | Open, non-blocking until wrap-up |
 
-G0-G8 are complete. G9 is the next implementable item, but is not approved.
-Implementation begins only after an explicit instruction naming G9; completing
-it still stops for a verified ZIP and approval before G10.
+G0-G9 are complete. G10 is the next implementable item, but is not approved.
+Implementation begins only after an explicit instruction naming G10; completing
+it still stops for a verified ZIP and approval before G11.
