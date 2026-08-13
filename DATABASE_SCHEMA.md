@@ -518,3 +518,44 @@ derived from the revision graph: the single head, the merge that reduced two
 heads to one, or — while a conflict stands — the newer of the two heads by the
 same `(wall, logical, replica, sequence)` order G6 uses, so a conflicted
 document does not additionally disagree about which side it is displaying.
+
+## Schema v23 — attachment metadata that arrives before its bytes
+
+G8 lets a blob row exist without a file. That is what makes lazy
+materialization possible: a note can reference an attachment whose identity,
+size, and type this replica knows but has not downloaded. `blobs.availability`
+is `local` or `unavailable`, and a trigger refuses in **both directions** any
+row whose availability contradicts whether it has a storage path — a CHECK
+constraint cannot be added to an existing table, and a rule that only applied to
+databases created after v23 would be the rule least likely to hold.
+
+- `sync_blob_manifests` — an object's byte length, content type, chunk count,
+  chunk size, and the manifest's own digest. That digest is what travels inside
+  a bounded operation payload: 16,384 chunk hashes would not fit in one, and a
+  digest lets the manifest be fetched by another route and still be verified on
+  arrival. `complete` distinguishes a manifest built from a local file from a
+  shell that only records the shape.
+- `sync_blob_chunks` — one row per transfer segment with its hash, length, and
+  whether it has been fetched. This is what makes a resumed download resume.
+- `sync_blob_sources` — which peers advertised the object. Advertisements are
+  kept: the answer to "nobody has it right now" is to ask again later, not to
+  forget who used to.
+- `sync_blob_materialization` — this replica's own intent, separate from what
+  the protocol says exists: `pinned`, `requested`, attempt count, staged bytes,
+  and the reason the last pass produced no bytes.
+
+The resource capture trigger now names the blob's length, content type, chunk
+count, and manifest digest alongside the hash it already carried, so a receiver
+can decide whether to fetch and how to verify. Go maintains
+`sync_blob_manifests` for every local blob, so the trigger reads rather than
+computes.
+
+Partially fetched objects live in `<asset root>/staging/<object hash>/<ordinal>`
+— inside the asset root but deliberately outside the content-addressed tree, so
+a half-downloaded object is never reachable as a blob.
+
+Two consequences elsewhere. Garbage collection removes an unmaterialized blob's
+transfer state and staged chunks with it, so a later admission of the same bytes
+does not believe it has already fetched them. And an archive-v2 export refuses,
+naming the object, rather than producing a container that silently omits bytes
+it claims to hold.

@@ -223,9 +223,7 @@ func (s *SQLiteStore) AdmitRestoredBlob(ctx context.Context, expectedSHA256, mim
 		return 0, fmt.Errorf("%w: restored blob hashed to %s but the archive named %s", ErrInvalidInput, stored.SHA256, expectedSHA256)
 	}
 	s.mu.Lock()
-	err = s.execPreparedLocked(`INSERT INTO blobs(sha256, storage_path, size_bytes, mime_type)
-		VALUES(?, ?, ?, ?) ON CONFLICT(sha256) DO NOTHING`,
-		stored.SHA256, stored.StoragePath, strconv.FormatInt(stored.SizeBytes, 10), stored.MIMEType)
+	err = s.upsertLocalBlobLocked(stored, stored.MIMEType)
 	s.mu.Unlock()
 	if err != nil {
 		return 0, err

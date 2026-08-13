@@ -424,7 +424,11 @@ func (s *SQLiteStore) OpenBlobContent(ctx context.Context, sha256Hex string) (io
 		return nil, 0, err
 	}
 	if storagePath == "" {
-		return nil, 0, ErrNotFound
+		// The object is known but its bytes were never materialized. An archive
+		// that silently omitted it would not be the full snapshot it claims to
+		// be, so the export refuses and says which object is missing; pinning
+		// and materializing it first is the fix.
+		return nil, 0, fmt.Errorf("%w: object %s must be materialized before it can be exported", ErrResourceUnavailable, sha256Hex)
 	}
 	path, ok := safeAssetPath(s.assetRoot, storagePath)
 	if !ok {

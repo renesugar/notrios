@@ -356,6 +356,12 @@ func (s *SQLiteStore) admitSyncOperations(ctx context.Context, peer syncstate.Ha
 		if err := s.reconcileSyncRevisionsLocked(touchedDocuments); err != nil {
 			return SyncAdmissionResult{}, err
 		}
+		// Attachment metadata converges last and separately from its bytes: a
+		// note that names a file this replica has not downloaded is a normal,
+		// visible state rather than a broken reference.
+		if err := s.reconcileSyncAssetsLocked(); err != nil {
+			return SyncAdmissionResult{}, err
+		}
 	}
 	if err := s.rebuildSyncGapsLocked(local.ReplicaID); err != nil {
 		return SyncAdmissionResult{}, err

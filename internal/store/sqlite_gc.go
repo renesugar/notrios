@@ -238,6 +238,14 @@ func (s *SQLiteStore) applyGarbageCollection(ctx context.Context, eligible []Gar
 		if err := s.execPreparedLocked(`DELETE FROM blobs WHERE sha256 = ?`, candidate.Resource.SHA256); err != nil {
 			return nil, nil, nil, 0, nil, err
 		}
+		// The G8 transfer state describes an object that no longer exists.
+		// Leaving it would make a later admission of the same bytes think it
+		// had already fetched chunks it no longer holds.
+		for _, table := range []string{"sync_blob_chunks", "sync_blob_manifests", "sync_blob_sources", "sync_blob_materialization"} {
+			if err := s.execPreparedLocked(`DELETE FROM `+table+` WHERE blob_sha256 = ?`, candidate.Resource.SHA256); err != nil {
+				return nil, nil, nil, 0, nil, err
+			}
+		}
 		blobs = append(blobs, gcBlobRemoval{
 			SHA256:      candidate.Resource.SHA256,
 			StoragePath: storagePath,
@@ -256,6 +264,16 @@ func (s *SQLiteStore) applyGarbageCollection(ctx context.Context, eligible []Gar
 	var bytesRemoved int64
 	warnings := []string{}
 	for _, blob := range blobs {
+		if strings.TrimSpace(blob.StoragePath) == "" {
+			// A blob admitted from a peer but never materialized has no file
+			// to unlink. It is an ordinary state rather than a suspicious one,
+			// so it produces no warning — only the partial transfer it may
+			// have staged needs clearing.
+			if err := os.RemoveAll(filepath.Join(s.assetRoot, stagingDirectory, blob.SHA256)); err != nil && !os.IsNotExist(err) {
+				warnings = append(warnings, fmt.Sprintf("clear staged chunks for %s: %v", blob.SHA256, err))
+			}
+			continue
+		}
 		path, ok := safeAssetPath(s.assetRoot, blob.StoragePath)
 		if !ok {
 			warnings = append(warnings, fmt.Sprintf("blob %s has unsafe storage path; database row removed but file was not touched", blob.SHA256))

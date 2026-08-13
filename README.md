@@ -123,8 +123,10 @@ Recoll availability, backlog, sync/index, and reconciliation state.
   G7 advances schema v22 with immutable revision objects, optional named-base
   VCDIFF transfer deltas that are verified before any canonical write, a bounded
   line-first three-way merge with word-region refinement, and durable typed
-  body conflicts that keep both variants.
-  Resource transfer, transport, and cryptography are not implemented yet.
+  body conflicts that keep both variants. G8 advances schema v23 with
+  attachment metadata that converges before its bytes, chunk manifests,
+  resumable verified materialization, and eager/pinned/lazy policy.
+  Transport and cryptography are not implemented yet.
 - Agent progress/attempt tracking: [`agent/PLAN_STATUS.md`](agent/PLAN_STATUS.md), [`agent/ATTEMPT_LOG.jsonl`](agent/ATTEMPT_LOG.jsonl), and [`agent/MODEL_LOG.jsonl`](agent/MODEL_LOG.jsonl).
 
 ## Contributing

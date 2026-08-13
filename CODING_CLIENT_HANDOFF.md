@@ -3,7 +3,7 @@
 This handoff applies to any coding agent or client continuing this project (Codex, Claude, aider, swival.dev, etc. — formerly `CODEX_HANDOFF.md`). The repository is designed so an agent can continue from repository files alone.
 
 Current phase: v0.1 through **v0.6** are complete; product version is **0.6.0**
-and the schema is **v22**. The eight v0.6 slices are archived under
+and the schema is **v23**. The eight v0.6 slices are archived under
 `plans/v0.6/`: F0 (notebook targeting, landed with v0.5 E10), F1 (batch
 organizer transactions), F2 (MCP tool scopes), F3 (MCP read coverage and HTTP
 `Range`), F4 (note templates and task extraction), F5 (graph views that stay
@@ -13,13 +13,13 @@ wrap-up). The thirteen v0.5 slices remain archived under `plans/v0.5/`.
 `PLAN.md` now holds the **active v0.7 native synchronization plan** with
 twenty-two independently approvable slices: G0, G1, G1a, and G2-G20. The user's 2026-08-11
 review resolved the policy decisions through G17, including mandatory payload
-encryption and per-replica Ed25519 signatures. **G0-G7 are complete** and
+encryption and per-replica Ed25519 signatures. **G0-G8 are complete** and
 archived under `plans/v0.7/`; their reviewed evidence is under
 `performance/v0.7-g0/`, `performance/v0.7-g1/`, `performance/v0.7-g1a/`,
 `performance/v0.7-g2/`, `performance/v0.7-g4/`, `performance/v0.7-g5/`,
-`performance/v0.7-g6/`, and `performance/v0.7-g7/`.
-**G8 is next and is not approved.** It owns resource metadata, lazy
-materialization, chunks, and integrity.
+`performance/v0.7-g6/`, `performance/v0.7-g7/`, and `performance/v0.7-g8/`.
+**G9 is next and is not approved.** It owns the deterministic envelope and
+container codec, encryption, and signatures.
 
 G0 added no production sync code or dependency. It freezes the threat model,
 normative glossary, thirty misuse/control traces, and upstream license/platform
@@ -133,6 +133,25 @@ counterfactual at G1's four offline intervals with every document converging.
 G7 does not move resource bytes, add a carrier or wire codec, sign anything, or
 expose revisions, deltas, or conflicts over REST/MCP/UI.
 
+G8 advances schema v23 and converges attachments before their bytes. A blob row
+may now exist without a file — `blobs.availability` is `local` or `unavailable`,
+and a trigger refuses in both directions any row whose availability contradicts
+whether it has a storage path — so a note can reference an attachment this
+replica has not downloaded, with no placeholder bytes anywhere.
+`internal/syncassets` holds G2's whole-below-1-MiB and 1-MiB-chunk plan, the
+16,384-chunk and 16 GiB ceilings, manifests with per-chunk hashes and a
+content-addressed digest, and the eager/pinned/lazy policy whose threshold is
+deliberately the same mebibyte that decides chunking. Bytes are fetched through
+a transport-neutral `ObjectProvider` that G11 and G14 will implement; chunks are
+staged outside the content-addressed tree, transfers resume from verified
+segments, and nothing is installed until the manifest digest, each chunk hash,
+the whole-object hash, the length, and the sniffed content type all agree.
+**Two behaviors changed elsewhere on purpose:** an archive-v2 export now refuses,
+naming the object, rather than omitting unmaterialized bytes, and garbage
+collection removes an unmaterialized blob's transfer state and staged chunks
+with it. Resource deltas were considered and not implemented — G1a's benefit
+case needs a named immutable parent, which resources do not have.
+
 That review also added a second portability route. v0.8 now investigates and
 builds a framework-neutral Go application facade and versioned no-GUI C ABI,
 with Android-emulator-only pre-1.0 evidence; v1.0 packages the supported ABI
@@ -142,7 +161,7 @@ the API/lifecycle/ownership/stream contract and source checks. The current GUI's
 Mermaid support is **disabled**, not merely untested (`noMermaid: true`), and a
 v0.8 offline/security-tested enablement slice owns it.
 
-Latest completed feature validation is G7 (2026-08-12). It includes G5's
+Latest completed feature validation is G8 (2026-08-13). It includes G5's
 admission suite plus exhaustive 40,320-order and 250-seed convergence models,
 opposite-order real SQLite replicas, sparse-register, membership, lifecycle,
 tree-repair, clock-regression, restart/upgrade, and purge-gate checks, followed
@@ -154,9 +173,11 @@ the syncdelta round-trip/hostile/limit/fuzz set, the syncbody merge and
 merge-base fixtures with 4,000 committed randomized merges, and real two-replica
 store fixtures covering clean merges, durable conflicts, four broken-delta
 refusals, tampered operations, six delivery orders, delete/edit, restore/edit,
-and the v22 upgrade backfill. Start G8 only after explicit user
+and the v22 upgrade backfill, plus G8's syncassets chunk/manifest/policy suite
+and real two-replica attachment fixtures covering hostile sources, resume,
+dedupe, restart, and the v23 backfill. Start G9 only after explicit user
 approval, then stop after its validation, commit, verified ZIP, and handoff
-before G9.
+before G10.
 
 Two things a reader continuing this project should know about v0.6:
 

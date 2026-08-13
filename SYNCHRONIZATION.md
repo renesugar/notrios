@@ -92,7 +92,17 @@ replicas computing the same merge produce one revision rather than two.
 Overlapping edits become a conflict attached to the document and its revision
 graph, holding the base and both inputs, and never a second note.
 
-The live G7 compatibility tuple is protocol 1.0 with schema compatibility 22
+G8 adds attachment convergence in schema v23. A resource's identity, length,
+content type, and transfer shape travel as ordinary metadata, so a note that
+references an attachment is usable before the attachment is. Bytes are fetched
+separately through a transport-neutral object provider: whole below G2's one
+mebibyte threshold, 1 MiB chunks above it, resumed from verified segments, and
+installed only after the manifest digest, every chunk hash, the whole-object
+hash, the byte length, and the sniffed content type all agree. When no peer has
+the bytes, the resource keeps its metadata and a visible unavailable state
+indefinitely; nothing drops the reference or substitutes an empty file.
+
+The live G8 compatibility tuple is protocol 1.0 with schema compatibility 23
 and required capabilities `sync.dependencies.v1`, `sync.metadata-lww.v1`,
 `sync.operations.v1`, and `sync.state-vectors.v1`. Database ID and protocol
 major must match, ranges must intersect, every required capability must be

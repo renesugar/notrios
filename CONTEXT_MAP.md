@@ -8,7 +8,7 @@ This file is the codebase atlas. Update it whenever major files or directories a
 - `PLAN.md` — the **active v0.7 native synchronization plan**, divided into
   twenty-two independently approvable slices (G0, G1, G1a, and G2-G20).
   G0-G17 policy decisions are resolved; G0-G6 are complete and G7 is next but
-  unapproved. The current product remains 0.6.0 at schema v22; v0.6 is archived under
+  unapproved. The current product remains 0.6.0 at schema v23; v0.6 is archived under
   `plans/v0.6/`; v0.5 and v0.4 are archived under their version directories.
 - `plans/scaffold/SCAFFOLD_CREATION_PLAN.md` — process for creating/refining this scaffold.
 - `ROADMAP.md` — product roadmap and future features.
@@ -47,6 +47,9 @@ This file is the codebase atlas. Update it whenever major files or directories a
 - `internal/syncstate/` — transport/storage-neutral protocol-1.0 handshake,
   bounded state-vector comparison, deterministic missing-range planner, strict
   normalized operation model, and randomized three-replica property tests.
+- `internal/syncassets/` and `performance/v0.7-g8/` — schema-v23 attachment
+  metadata that converges before its bytes, chunk manifests, bounded verified
+  materialization, and eager/pinned/lazy policy.
 - `internal/syncbody/`, `internal/syncdelta/`, and `performance/v0.7-g7/` —
   schema-v22 note revision objects, bounded named-base transfer deltas, the
   line-first three-way merge with word-region refinement, and durable typed
@@ -88,7 +91,7 @@ This file is the codebase atlas. Update it whenever major files or directories a
 - `internal/api/` — shared API request/response models.
 - `internal/httpapi/` — REST HTTP adapter for status, documents, revisions, resources, links, graph slices, and staged future routes.
 - `internal/store/` — SQLite-backed persistence, schema-v19 local replication
-  journal, schema-v20 bounded admission, schema-v21 deterministic metadata, and schema-v22 revision-object body convergence
+  journal, schema-v20 bounded admission, schema-v21 deterministic metadata, schema-v22 revision-object body convergence, and schema-v23 lazy attachment materialization
   application (`sync_journal.go`, `sync_admission.go`, `sync_metadata.go`, and
   migrations `0019`-`0021`), document
   CRUD, revision history, soft delete, restore, FTS5 search, resource

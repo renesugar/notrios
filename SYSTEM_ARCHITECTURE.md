@@ -320,8 +320,16 @@ delta, and nothing unverified reaches canonical storage. Concurrent edits to
 different regions become a merge revision with a content- and parent-derived
 identity; overlapping edits become a durable typed conflict on the same
 document. `internal/syncbody` and `internal/syncdelta` are transport- and
-storage-neutral, like the G5 state core and the G6 metadata core. G8 owns
-resource bytes; G9/G13 own authenticated enrollment, wire encoding,
+storage-neutral, like the G5 state core and the G6 metadata core.
+
+G8 advances the schema to v23 and converges attachments. A blob row may exist
+without a file, so a note can reference an attachment this replica has not
+downloaded; a structural trigger refuses any row whose availability contradicts
+whether it has bytes. `internal/syncassets` owns the chunk plan, manifests, and
+materialization policy, and the store fetches through an `ObjectProvider` that
+G11 and G14 implement. Nothing is installed until the manifest digest, each
+chunk hash, the whole-object hash, the length, and the sniffed content type
+agree. G9/G13 own authenticated enrollment, wire encoding,
 encryption/signatures, and authorization.
 
 ## Optional derived systems

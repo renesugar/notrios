@@ -48,6 +48,10 @@ type SQLiteStore struct {
 	// through the explicit identity operations, which clear it.
 	cachedDatabaseID   string
 	perceptualHashHook PerceptualHashHook
+	// assetPolicy is the G8 materialization policy. It is a field rather than
+	// a config read so a replica that intends to be a complete copy can say so
+	// without a config file, and it is normalized on use.
+	assetPolicy string
 }
 
 func OpenSQLite(path string) (*SQLiteStore, error) {
@@ -189,6 +193,9 @@ func (s *SQLiteStore) Bootstrap(ctx context.Context) error {
 		return err
 	}
 	if err := s.ensureSchemaV22(ctx); err != nil {
+		return err
+	}
+	if err := s.ensureSchemaV23(ctx); err != nil {
 		return err
 	}
 	if err := s.ensureDatabaseIdentity(ctx); err != nil {
@@ -1301,7 +1308,7 @@ func (s *SQLiteStore) CreateResource(ctx context.Context, req CreateResourceRequ
 		}
 	}()
 
-	if err := s.execPreparedLocked(`INSERT OR IGNORE INTO blobs(sha256, storage_path, size_bytes, mime_type) VALUES(?, ?, ?, ?)`, blob.SHA256, blob.StoragePath, strconv.FormatInt(blob.SizeBytes, 10), mimeType); err != nil {
+	if err := s.upsertLocalBlobLocked(blob, mimeType); err != nil {
 		return Resource{}, err
 	}
 	if perceptualHash != nil {
@@ -1376,8 +1383,7 @@ func (s *SQLiteStore) UpdateResource(ctx context.Context, req UpdateResourceRequ
 	if err != nil {
 		return Resource{}, err
 	}
-	if err := s.execPreparedLocked(`INSERT OR IGNORE INTO blobs(sha256, storage_path, size_bytes, mime_type)
-		VALUES(?, ?, ?, ?)`, blob.SHA256, blob.StoragePath, strconv.FormatInt(blob.SizeBytes, 10), mimeType); err != nil {
+	if err := s.upsertLocalBlobLocked(blob, mimeType); err != nil {
 		return Resource{}, err
 	}
 	if perceptualHash != nil {
@@ -1577,6 +1583,12 @@ func (s *SQLiteStore) OpenResourceContent(ctx context.Context, id string) (Resou
 	s.mu.Unlock()
 	if err != nil {
 		return Resource{}, nil, err
+	}
+	if strings.TrimSpace(storagePath) == "" {
+		// The resource exists and is referenced; its bytes are simply not here
+		// yet. Reporting ErrNotFound would tell a reader their attachment was
+		// gone, which is a different and much worse thing to be told.
+		return Resource{}, nil, fmt.Errorf("%w: %s", ErrResourceUnavailable, id)
 	}
 	file, err := os.Open(filepath.Join(s.assetRoot, storagePath))
 	if err != nil {

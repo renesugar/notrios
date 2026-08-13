@@ -1,11 +1,11 @@
 # Plan Status
 
-Updated: 2026-08-12 (G7 revision objects, deltas, merge, and conflicts complete; G8 next)
+Updated: 2026-08-13 (G8 resource metadata and lazy materialization complete; G9 next)
 
 ## Active milestone
 
 **v0.1 through v0.6 are complete.** Product version is **0.6.0** and the
-canonical schema is **v22**. v0.6 F0-F7 are archived under `plans/v0.6/`;
+canonical schema is **v23**. v0.6 F0-F7 are archived under `plans/v0.6/`;
 earlier milestones remain under their version directories.
 
 `PLAN.md` is now the **active v0.7 native synchronization plan**. It contains
@@ -13,8 +13,45 @@ G0, G1, G1a, and G2-G20: evidence, profiles/local journal, state-vector converge
 revision deltas/merge, lazy resources, secure container/catch-up,
 ephemeral-directory and REST transports, jobs/UI/retention, shared-core/FFI/
 Mermaid/mobile handoff, compatibility, and final validation. The user's
-2026-08-11 review resolved every G0-G17 policy decision. **G0-G7 are complete**
-and archived under `plans/v0.7/`; G8 is next and is not approved.
+2026-08-11 review resolved every G0-G17 policy decision. **G0-G8 are complete**
+and archived under `plans/v0.7/`; G9 is next and is not approved.
+
+## v0.7 G8 completion — 2026-08-13
+
+- Schema v23 lets a blob row exist without a file. `blobs.availability` is
+  `local` or `unavailable`, and a trigger refuses in both directions any row
+  whose availability contradicts whether it has a storage path, so a note can
+  reference an attachment this replica has not downloaded without any
+  placeholder bytes in the content-addressed store.
+- `internal/syncassets` owns G2's whole-below-1-MiB and 1-MiB-chunk plan, the
+  16,384-chunk and 16 GiB ceilings, manifests with per-chunk hashes and a
+  content-addressed digest, and the eager/pinned/lazy policy. The eager
+  threshold is deliberately the same mebibyte that decides chunking.
+- Materialization fetches through a transport-neutral `ObjectProvider`, stages
+  verified chunks outside the content-addressed tree, resumes from what it
+  already holds, and installs through the ordinary blob write path only after
+  the manifest digest, each chunk hash, the whole-object hash, the byte length,
+  and the sniffed content type all agree. Seven refusal reasons are recorded and
+  each leaves the object known, referenced, and unavailable.
+- Pin, request, and availability reads landed, with `ErrResourceUnavailable`
+  distinct from `ErrNotFound` on the read path. When no peer has the bytes the
+  metadata and the visible unavailable state persist indefinitely.
+- Real two-replica evidence across 64 KiB, 1 MiB, 4 MiB, and 16 MiB objects:
+  admission is flat at 79-106 ms across a 256x size range, the note is readable
+  before any attachment byte moves, the policy split lands exactly on the
+  threshold in both directions, every object reconstructs byte for byte, and an
+  interrupted transfer refetches only the segments it lacked.
+- Two defects found while building: a test fixture whose `corruptChunk` zero
+  value corrupted every first chunk and made three resume tests fail for the
+  wrong reason, and an install path that re-read each assembled object to
+  rebuild a manifest it had just verified (16 MiB row: 16.6 s to 8.0 s).
+- Consequences elsewhere, both deliberate: an archive-v2 export now refuses,
+  naming the object, rather than omitting unmaterialized bytes; and garbage
+  collection removes an unmaterialized blob's transfer state and staged chunks
+  with it. Resource deltas were considered and not implemented, because G1a's
+  benefit case needs a named immutable parent that resources do not have.
+- No carrier, wire codec, cryptography, catch-up, transport, or REST/MCP/UI
+  surface landed. Product remains 0.6.0; schema is v23. G9 remains unapproved.
 
 ## v0.7 G7 completion — 2026-08-12
 

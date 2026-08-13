@@ -1,7 +1,7 @@
 # Plan: v0.7 — Native synchronization
 
-Status: **G0-G7 completed through 2026-08-12. Product version remains 0.6.0 and the
-canonical schema is v22. G8 is the next item and is not approved.** The
+Status: **G0-G8 completed through 2026-08-13. Product version remains 0.6.0 and the
+canonical schema is v23. G9 is the next item and is not approved.** The
 former seven-item draft was too coarse: it mixed protocol research, canonical
 write interception, merge semantics, two transports, cryptography, recovery,
 UI, retention, and release validation into slices that could not be reviewed or
@@ -662,7 +662,7 @@ surface remain outside G7. Evidence is archived in
 `plans/v0.7/010-note-revision-objects-deltas-merge-conflicts.md` and
 `performance/v0.7-g7/`.
 
-## G8. Resource metadata, lazy materialization, chunks, and integrity
+## G8. Resource metadata, lazy materialization, chunks, and integrity — complete
 
 **Goal.** Converge attachment references immediately while downloading bytes
 only when policy or user action needs them.
@@ -701,6 +701,22 @@ bounded parallelism and disk limits; no accidental remote-media fetch.
 - **When no peer currently has bytes, keep the resource metadata and a visible
   `unavailable` state indefinitely;** never drop the reference or substitute an
   empty file.
+
+**Outcome (2026-08-13).** Schema v23 lets a blob row exist without a file, with
+a structural trigger refusing any row whose availability contradicts whether it
+has bytes, so a note can reference an attachment this replica has not
+downloaded. `internal/syncassets` owns G2's chunk plan, manifests with a
+content-addressed digest, and the eager/pinned/lazy policy whose threshold is
+G2's one mebibyte in both roles. Materialization fetches through a
+transport-neutral `ObjectProvider`, stages verified chunks, resumes from what it
+holds, and installs only after the manifest digest, every chunk hash, the
+whole-object hash, the length, and the sniffed type agree. Admission time is
+flat across a 256× attachment-size range and every object reconstructs exactly.
+Resource deltas were considered and not implemented: G1a's benefit case needs a
+named immutable parent, which Notrios resources do not have. An archive export
+now refuses rather than omitting unmaterialized bytes. Evidence is archived in
+`plans/v0.7/011-resource-metadata-lazy-materialization-chunks-integrity.md` and
+`performance/v0.7-g8/`.
 
 ## G9. Deterministic envelope/container codec, encryption, and signatures
 
@@ -1208,6 +1224,6 @@ recommendation, blocking status, and consequence.
 | Current-GUI Mermaid baseline | G18 | Resolved fact: upstream-capable but disabled pending offline/security evidence |
 | Release version/schema bookkeeping | G20 | Open, non-blocking until wrap-up |
 
-G0-G7 are complete. G8 is the next implementable item, but is not approved.
-Implementation begins only after an explicit instruction naming G8; completing
-it still stops for a verified ZIP and approval before G9.
+G0-G8 are complete. G9 is the next implementable item, but is not approved.
+Implementation begins only after an explicit instruction naming G9; completing
+it still stops for a verified ZIP and approval before G10.
