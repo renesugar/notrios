@@ -144,7 +144,7 @@ review updated without claiming those controls are live.
   and base-delta ideas, but extend archive v2 rather than adopting a foreign
   repository dump grammar.
 
-**Completion (2026-08-11).** Archived as
+**Outcome (2026-08-11).** Archived as
 `plans/v0.7/000-threat-model-terminology-reference-validation.md`. The reviewed
 evidence under `performance/v0.7-g0/` defines the protocol glossary, adversary/
 asset/trust-boundary model, thirty misuse cases with owning controls, metadata
@@ -195,7 +195,7 @@ text, missing-base, and malicious-patch cases; exact reconstruction hashes.
 - **The representative offline intervals are one hour, one day, one week, and
   thirty days**, with results reported separately.
 
-**Completion (2026-08-11).** Archived as
+**Outcome (2026-08-11).** Archived as
 `plans/v0.7/001-representative-divergence-revision-delta-workload.md`. Evidence
 under `performance/v0.7-g1/` profiles 2,063,061 aggregate-only bodies, runs 112
 delta measurements and eighteen merge classifications, checks a 1 MiB
@@ -289,7 +289,7 @@ format.
   `performance/v0.7-g1a/`; a separately approved G7/G8 slice must review and
   either rewrite or deliberately promote it using G2's completed numeric bounds.
 
-**Completion (2026-08-11).** Archived as
+**Outcome (2026-08-11).** Archived as
 `plans/v0.7/003-pure-go-xdelta-vcdiff-feasibility.md`. The pure-Go prototype
 under `performance/v0.7-g1a/` produced exact deterministic round trips across
 14 text and seven generated binary fixtures. VCDIFF was beneficial in 19 of 21
@@ -344,7 +344,7 @@ time/RSS/disk/file-count/round-trip estimates; deterministic byte checks.
   gate. The v0.8 shared-core/FFI work prevents Wails-mobile maturity from being
   the only route to a mobile client.
 
-**Completion evidence (2026-08-11).** The compact NCB1 record candidate met
+**Outcome (2026-08-11).** The compact NCB1 record candidate met
 the recorded exception gate: at 10,000 generated operations it was 51.9%
 smaller raw and 16.3% smaller after deterministic gzip, decoded materially
 faster, and allocated about one-fifth as much as canonical JSONL on the desktop
@@ -359,7 +359,7 @@ objects/4 MiB trailers. FastCDC remains deferred. The v0.8 emulator and
 post-1.0 physical-device checklists may only retain or lower these provisional
 mobile bounds. No production sync codec, schema, dependency, or runtime landed.
 
-## G3. Profiles, replica identity, and multi-instance process isolation
+## G3. Profiles, replica identity, and multi-instance process isolation — complete
 
 **Status: complete 2026-08-12.** Archived as
 `plans/v0.7/005-profiles-replica-identity-multi-instance-isolation.md`.
@@ -403,7 +403,7 @@ redaction and `0600` file checks; stable-link routing across profiles.
   Moving selected notebooks between unrelated database universes uses an
   explicit export followed by import, not synchronization.
 
-**Completion evidence (2026-08-12).** Runtime profiles now use the version-2
+**Outcome (2026-08-12).** Runtime profiles now use the version-2
 local registry plus one generated `0600` config, bind a random local profile ID
 and the database/replica identity, resolve isolated absolute runtime paths and
 loopback ports, default sync to `none`, redact credential references, and
@@ -440,7 +440,7 @@ the final envelope codec.
 durable `(replica_id, sequence)` operation and every rollback has none. Existing
 non-sync behavior and import throughput remain within recorded bounds.
 
-**Completed 2026-08-12.** Schema v19 adds explicit local enrollment/snapshot
+**Outcome (2026-08-12).** Schema v19 adds explicit local enrollment/snapshot
 boundaries, replicas, one monotonic local allocator, immutable operations and
 dependencies, state vectors/gaps, peer acknowledgements, pending admissions,
 and audit events. Canonical-table triggers feed one transient capture seam;
@@ -469,7 +469,7 @@ import atomicity; journal-disabled baseline; 100k import/write overhead profile.
   boundary. Target `none` before enrollment does not accumulate transport
   history.
 
-## G5. State vectors, missing-range planning, and idempotent admission
+## G5. State vectors, missing-range planning, and idempotent admission — complete
 
 **Goal.** Exchange immutable operations repeatedly, out of order, and with
 gaps, while proving what each replica has and still needs.
@@ -517,7 +517,7 @@ bounded pending dependencies; restart and crash boundaries.
   payload, and 1 MiB per encoded operation. Overflow refuses the transaction;
   it never evicts an arbitrary dependency.
 
-**Completed 2026-08-12.** Schema v20 persists the compatibility tuple for an
+**Outcome (2026-08-12).** Schema v20 persists the compatibility tuple for an
 explicitly configured admission peer and adds a hard local sequence-exhaustion
 guard. The transport-neutral `internal/syncstate` core validates protocol 1.0,
 database/schema/capability compatibility, compares bounded vectors, and emits
@@ -534,7 +534,7 @@ REST/MCP/UI surface, or background synchronization. Evidence is archived in
 `plans/v0.7/008-state-vectors-missing-range-idempotent-admission.md` and
 `performance/v0.7-g5/`.
 
-## G6. Deterministic metadata, membership, deletion, and tree convergence
+## G6. Deterministic metadata, membership, deletion, and tree convergence — complete
 
 **Goal.** Make non-body canonical records converge before note text and blobs
 add their own dependency graphs.
@@ -592,7 +592,7 @@ non-blocking).**
   Absence never implies purge, and payload/blob collection remains deferred to
   G17 acknowledgement and retention policy.
 
-**Completed 2026-08-12.** Schema v21 adds a durable non-regressing HLC to each
+**Outcome (2026-08-12).** Schema v21 adds a durable non-regressing HLC to each
 operation, sparse per-field and lifecycle registers, LWW document-tag elements,
 structural death certificates, and deterministic current repair records. G5
 admission now folds the complete post-boundary G6 operation set and applies its

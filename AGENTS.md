@@ -84,6 +84,17 @@ decision that affects one item lives in that item; the milestone list may
 reference it. When a decision is resolved, say so where it was asked and mark it
 resolved rather than deleting it — the reasoning is the useful part.
 
+**A completed item is marked in two places, in one spelling.** Append
+`— complete` to the item's `##` heading, and close the item with a paragraph
+that begins `**Outcome (YYYY-MM-DD).**` and names its archive under `plans/`.
+
+This rule exists because it was broken. v0.7 accumulated four spellings of the
+closing paragraph — `Completion`, `Completion evidence`, `Completed`, and
+`Outcome` — and three completed items (G3, G5, G6) had the paragraph but lost
+the heading marker, so the plan appeared to show unfinished work that was
+finished, archived, and logged. Nothing reads the marker mechanically, which is
+exactly why it drifts: only a reader notices, and only later.
+
 Questions with no owning item, or that outlive a milestone, belong in
 `agent/OPEN_QUESTIONS.md`.
 
