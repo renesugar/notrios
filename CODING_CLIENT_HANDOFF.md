@@ -13,15 +13,15 @@ wrap-up). The thirteen v0.5 slices remain archived under `plans/v0.5/`.
 `PLAN.md` now holds the **active v0.7 native synchronization plan** with
 twenty-two independently approvable slices: G0, G1, G1a, and G2-G20. The user's 2026-08-11
 review resolved the policy decisions through G17, including mandatory payload
-encryption and per-replica Ed25519 signatures. **G0-G13 are complete** and
+encryption and per-replica Ed25519 signatures. **G0-G14 are complete** and
 archived under `plans/v0.7/`; their reviewed evidence is under
 `performance/v0.7-g0/`, `performance/v0.7-g1/`, `performance/v0.7-g1a/`,
 `performance/v0.7-g2/`, `performance/v0.7-g4/`, `performance/v0.7-g5/`,
 `performance/v0.7-g6/`, `performance/v0.7-g7/`, `performance/v0.7-g8/`,
 `performance/v0.7-g9/`, `performance/v0.7-g10/`, `performance/v0.7-g11/`, and
-`performance/v0.7-g12/`, and `performance/v0.7-g13/`.
-**G14 is next and is not approved.** It owns the REST sync data plane and
-resumable encrypted backup download.
+`performance/v0.7-g12/`, `performance/v0.7-g13/`, and `performance/v0.7-g14/`.
+**G15 is next and is not approved.** It owns durable sync jobs, scheduling
+boundaries, retries, and bounded MCP control.
 
 G0 added no production sync code or dependency. It freezes the threat model,
 normative glossary, thirty misuse/control traces, and upstream license/platform
@@ -235,6 +235,22 @@ transport policy is a **startup refusal** — with the surface enabled, a
 non-loopback listener without TLS makes `notriosd` exit and name the setting.
 No data plane landed; G14 owns it.
 
+G14 adds the REST data plane and **no schema change**. `internal/syncrest`
+implements G11's `Carrier` over G13's signing client, so REST and a shared
+folder are one protocol with two couriers — transcript parity by construction,
+asserted by comparing what each carrier holds. Measured, REST costs +15.4% at
+100 notes and +0.07% at 500 against the folder, so keeping the merge off the
+server costs nothing. `internal/syncbackup` packs, seals in fixed authenticated
+frames, and extracts safely; a downloaded snapshot passes four gates in order —
+declared hash, frames, container, **then archive-v2's verifier** — and backups
+are addressed by opaque id, produced only for an explicitly permitted replica,
+and fetched only by the one that asked. **The thing a later agent most needs to
+know:** G13's per-address failure budget was being spent on every request rather
+than on refusals, which one request per authentication hid and a data-plane
+round exposed immediately as a `429` against a legitimate peer. It is now
+checked before work and spent only on refusal, pairing excepted, and the
+per-peer request budget rose from 120 to 600 a minute.
+
 That review also added a second portability route. v0.8 now investigates and
 builds a framework-neutral Go application facade and versioned no-GUI C ABI,
 with Android-emulator-only pre-1.0 evidence; v1.0 packages the supported ABI
@@ -244,7 +260,13 @@ the API/lifecycle/ownership/stream contract and source checks. The current GUI's
 Mermaid support is **disabled**, not merely untested (`noMermaid: true`), and a
 v0.8 offline/security-tested enablement slice owns it.
 
-Latest completed feature validation is G13 (2026-08-13): the seventeen-case
+Latest completed feature validation is G14 (2026-08-14): two replicas
+converging over REST with an asserted identical transcript, `206`/`416` range
+behavior, an interrupted snapshot download resumed, verified, restored under an
+explicit intent and then continuing incrementally, a tampered snapshot refused
+at the transport's own hash, a backup refused to a replica that did not ask for
+it, and the syncbackup frame suite. The preceding validation is G13
+(2026-08-13): the seventeen-case
 authentication matrix, the syncauth binding/replay/skew/limiter suite, the
 store's enrolment and single-use-invitation fixtures, ten transport-policy
 rows, and a cross-process pairing over a live `notriosd`. The preceding

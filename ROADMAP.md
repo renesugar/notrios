@@ -284,9 +284,16 @@ this project has had: a peer principal proved by an Ed25519 signature over the
 request, authorizing `/api/v1/sync/...` for one database and nothing else, with
 pairing reduced to a short-lived single-use code under which the group key
 travels sealed. The transport policy refuses at startup rather than warning, and
-ordinary note routes keep their local posture. **G14 is next and
-approval-gated**: the REST sync data plane and resumable encrypted backup
-download.
+ordinary note routes keep their local posture.
+
+**G14 completed 2026-08-14** with no schema change. The REST data plane carries
+G11's artifacts over that authenticated surface by implementing the same
+`Carrier` interface, so REST and a shared folder are one protocol with two
+couriers — measured at +0.07% overhead at 500 notes, because admission dominates
+either way. A snapshot download is resumable, encrypted in authenticated frames,
+and verified by archive-v2 itself before any restore. **G15 is next and
+approval-gated**: durable sync jobs, scheduling boundaries, retries, and bounded
+MCP control.
 
 - **Evidence before contracts (G0-G2, including G1a):** threat model and
   reference validation; representative revision/delta/three-way-merge

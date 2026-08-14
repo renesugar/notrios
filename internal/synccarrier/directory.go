@@ -150,8 +150,22 @@ func (d *Directory) Available() bool {
 // torn or partially-synchronized file without trusting size, mtime, or the
 // provider's claim to have written atomically.
 func (d *Directory) Publish(ctx context.Context, class Class, name string, artifact []byte) (string, error) {
+	return d.PublishTo(ctx, d.namespace, class, name, artifact)
+}
+
+// PublishTo writes into a named namespace.
+//
+// It exists for one caller: a service hosting this carrier for its peers, which
+// writes on behalf of the replica it has just authenticated. That is not a hole
+// in "each replica writes only its own namespace" — it is where the rule is
+// enforced rather than assumed, because the host derives the namespace from the
+// authenticated principal and never from anything the request said.
+func (d *Directory) PublishTo(ctx context.Context, namespace string, class Class, name string, artifact []byte) (string, error) {
 	if err := ctx.Err(); err != nil {
 		return "", err
+	}
+	if !validBlindName(namespace) {
+		return "", ErrNotOwned
 	}
 	if !classes[class] {
 		return "", fmt.Errorf("synccarrier: unknown artifact class %q", class)
@@ -166,7 +180,7 @@ func (d *Directory) Publish(ctx context.Context, class Class, name string, artif
 	if !validArtifactName(name) {
 		return "", fmt.Errorf("synccarrier: refusing to publish under name %q", name)
 	}
-	target := d.artifactPath(d.namespace, class, name)
+	target := d.artifactPath(namespace, class, name)
 	if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
 		return "", fmt.Errorf("%w: %v", ErrCarrierUnavailable, err)
 	}
@@ -176,7 +190,7 @@ func (d *Directory) Publish(ctx context.Context, class Class, name string, artif
 	// the one place it is entitled to repair. Callers decide whether to
 	// republish by reading what is there first; a write that reaches here
 	// replaces it.
-	if err := d.writeAtomic(target, artifact); err != nil {
+	if err := d.writeAtomic(namespace, target, artifact); err != nil {
 		return "", err
 	}
 	return name, nil
@@ -186,8 +200,8 @@ func (d *Directory) Publish(ctx context.Context, class Class, name string, artif
 // rename it writes in place instead and records that it did: the protocol does
 // not need atomic rename to be correct, because names commit to contents, and
 // pretending the carrier supports it would be the actual risk.
-func (d *Directory) writeAtomic(target string, artifact []byte) error {
-	staging := filepath.Join(d.namespacePath(d.namespace), stagingDir)
+func (d *Directory) writeAtomic(namespace, target string, artifact []byte) error {
+	staging := filepath.Join(d.namespacePath(namespace), stagingDir)
 	if err := os.MkdirAll(staging, 0o700); err != nil {
 		return fmt.Errorf("%w: %v", ErrCarrierUnavailable, err)
 	}
@@ -366,13 +380,20 @@ func (d *Directory) Read(ctx context.Context, namespace string, class Class, nam
 // namespace. Cleanup on a shared carrier must never be able to delete another
 // peer's only copy of an envelope.
 func (d *Directory) Remove(ctx context.Context, class Class, name string) error {
+	return d.RemoveFrom(ctx, d.namespace, class, name)
+}
+
+// RemoveFrom deletes from a named namespace, for a host acting on behalf of the
+// replica it authenticated. Every other caller uses Remove and can only reach
+// its own.
+func (d *Directory) RemoveFrom(ctx context.Context, namespace string, class Class, name string) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
-	if !classes[class] || !validArtifactName(name) {
+	if !classes[class] || !validArtifactName(name) || !validBlindName(namespace) {
 		return ErrNotOwned
 	}
-	if err := os.Remove(d.artifactPath(d.namespace, class, name)); err != nil && !errors.Is(err, fs.ErrNotExist) {
+	if err := os.Remove(d.artifactPath(namespace, class, name)); err != nil && !errors.Is(err, fs.ErrNotExist) {
 		return fmt.Errorf("%w: %v", ErrCarrierUnavailable, err)
 	}
 	return nil

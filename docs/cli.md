@@ -565,6 +565,41 @@ pairing, so it is a decision rather than a side effect. The old epoch stays
 readable, because a library should not lose its own history in order to exclude
 a device.
 
+### Exchanging with a peer directly
+
+If the other replica runs a service you can reach, you can exchange with it
+without a folder in between:
+
+```sh
+notriosctl sync exchange --url https://desktop.local:8443
+```
+
+This is the same exchange, over a different courier. The peer moves artifacts;
+your replica merges them, exactly as it does through a folder. Attachments are
+fetched afterwards, bounded by `--materialize`.
+
+To fetch a whole library — a new device, or one being rebuilt:
+
+```sh
+notriosctl sync fetch-backup --url https://desktop.local:8443 --out /tmp/restore
+```
+
+The peer must have explicitly permitted your replica to receive a snapshot;
+being enrolled is not enough, because a snapshot is a complete copy of the
+library. The download is encrypted, resumable, and verified as an archive-v2
+snapshot before the command reports success — interrupt it and run it again and
+it continues from where it stopped.
+
+It stops at a verified archive on purpose, and prints the command that would
+restore it:
+
+```sh
+notriosctl restore archive-v2 --intent adopt --db second/notes.sqlite /tmp/restore/archive
+```
+
+What a restore does to a library is a decision with an intent, not something a
+download should make for you.
+
 ### Exchanging through a folder
 
 ```sh

@@ -663,8 +663,29 @@ their status, the transport policy and limits, open invitation count, recent
 authentication events. Never key material, and a forwarding header cannot make a
 remote request local.
 
-The data plane — envelopes, objects, snapshots — is **not** here yet; G14 owns
-it. What this surface carries today is a handshake and a pairing exchange.
+### The data plane
+
+| Route | What it does |
+|---|---|
+| `GET /api/v1/sync/carrier/namespaces` | lists the replica namespaces this peer holds |
+| `GET /api/v1/sync/carrier/{namespace}/{class}` | lists artifacts |
+| `GET`/`HEAD` `/api/v1/sync/carrier/{namespace}/{class}/{name}` | reads one, with HTTP `Range` |
+| `PUT /api/v1/sync/carrier/{class}/{name}` | publishes into **the caller's own** namespace |
+| `DELETE /api/v1/sync/carrier/{class}/{name}` | removes one of the caller's own |
+| `POST /api/v1/sync/backups` | produces a snapshot, for an explicitly permitted replica only |
+| `GET`/`HEAD` `/api/v1/sync/backups/{backup_id}` | downloads it, resumably |
+
+The publish and delete routes take **no namespace**: the peer derives it from
+the authenticated principal, so "each replica writes only its own namespace" is
+enforced here rather than assumed. What travels is opaque sealed protocol bytes;
+the merge happens on the machine that owns the library, and REST is a courier.
+
+A backup is addressed by an **opaque id**, never a server path, and only the
+replica that asked for it may fetch it — "no such backup" and "not yours" are
+the same answer. It is encrypted in fixed frames under a per-backup key that
+travels sealed for the enrolled group, and the client verifies the declared hash
+before opening anything and archive-v2's own verifier before restoring anything.
+ZIP is the wrapper; archive-v2 is the correctness.
 
 ## Placeholder endpoints (not yet functional)
 

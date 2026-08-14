@@ -578,6 +578,10 @@ Usage:
   notriosctl sync accept --invite <file> --code <code> --out <file>
   notriosctl sync enroll --acceptance <file> --code <code>
   notriosctl sync peers | sync revoke --key <id> [--advance-epoch]
+  notriosctl sync exchange --url <base-url> [--materialize N]
+                                                 # one exchange over a peer's authenticated surface
+  notriosctl sync fetch-backup --url <base-url> --out <dir>
+                                                 # resumable encrypted snapshot download, verified as archive-v2
   notriosctl sync discover [--carrier dir] [--db ...]
   notriosctl sync once [--carrier dir] [--cleanup] [--materialize N] [--db ...]
                                                  # one exchange through a shared directory; polling or manual runs are

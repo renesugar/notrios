@@ -97,6 +97,49 @@ paths:
               schema: { type: object, additionalProperties: true }
         '403':
           $ref: '#/components/responses/Error'
+  /api/v1/sync/carrier/{namespace}/{class}/{name}:
+    get:
+      summary: Read one sync artifact (v0.7 G14)
+      description: >
+        Returns opaque sealed protocol bytes to an enrolled peer, honouring HTTP
+        Range so a large artifact can be fetched in pieces. Publishing and
+        removal take no namespace parameter: the peer derives the caller's own
+        namespace from the authenticated principal.
+      responses:
+        '200': { description: The artifact }
+        '206': { description: The requested byte range }
+        '404':
+          $ref: '#/components/responses/Error'
+        '416':
+          $ref: '#/components/responses/Error'
+  /api/v1/sync/backups:
+    post:
+      summary: Produce an encrypted snapshot for a permitted peer (v0.7 G14)
+      description: >
+        Exports an archive-v2 snapshot, packs and seals it in fixed frames under
+        a fresh payload key, and returns an opaque backup id, its length, its
+        hash, the sealed payload key, and the snapshot's state vector. Enrolment
+        is not permission: only a replica explicitly permitted as a snapshot
+        recipient is answered.
+      responses:
+        '200': { description: The produced backup }
+        '403':
+          $ref: '#/components/responses/Error'
+  /api/v1/sync/backups/{backup_id}:
+    get:
+      summary: Download a produced snapshot, resumably (v0.7 G14)
+      description: >
+        Serves the sealed snapshot with Range support and an ETag of its hash.
+        Only the replica that asked for it may fetch it; every other caller is
+        answered as though it does not exist. The client verifies the declared
+        hash, then the frames, then archive-v2 itself before restoring.
+      responses:
+        '200': { description: The whole sealed snapshot }
+        '206': { description: The requested byte range }
+        '404':
+          $ref: '#/components/responses/Error'
+        '416':
+          $ref: '#/components/responses/Error'
   /mcp:
     get:
       summary: MCP MVP endpoint metadata

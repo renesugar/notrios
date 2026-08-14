@@ -1,7 +1,7 @@
 # Plan: v0.7 — Native synchronization
 
-Status: **G0-G13 completed through 2026-08-13. Product version remains 0.6.0 and the
-canonical schema is v25. G14 is the next item and is not approved.** The
+Status: **G0-G14 completed through 2026-08-14. Product version remains 0.6.0 and the
+canonical schema is v25. G15 is the next item and is not approved.** The
 former seven-item draft was too coarse: it mixed protocol research, canonical
 write interception, merge semantics, two transports, cryptography, recovery,
 UI, retention, and release validation into slices that could not be reviewed or
@@ -990,7 +990,7 @@ matrix cases, three authorized and fourteen refused, none explaining itself. No
 data plane (G14), no multi-user concept, no public deployment claim, and no
 external security review.
 
-## G14. REST sync data plane and resumable encrypted backup download
+## G14. REST sync data plane and resumable encrypted backup download — complete
 
 **Goal.** Carry the same artifacts as G11 over a direct authenticated API,
 including catch-up ZIP/container download.
@@ -1022,6 +1022,26 @@ with bounded memory.
   verification and encryption define correctness.** Do not make ZIP
   central-directory parsing the trust boundary or require a seekable
   multi-gigabyte buffer.
+
+**Outcome (2026-08-14).** Complete, archived as
+`plans/v0.7/017-rest-sync-data-plane.md` with evidence under
+`performance/v0.7-g14/`. No schema change. `internal/syncrest` implements
+G11's `Carrier` over G13's signing client, so **REST/directory transcript parity
+is by construction** rather than by a second implementation — asserted by
+comparing what each carrier holds. Measured, REST costs +15.4% at 100 notes and
++0.07% at 500 against the same exchange through a folder: admission dominates,
+so keeping the merge off the server costs nothing. `internal/syncbackup` packs,
+seals in fixed authenticated frames, and extracts safely; a snapshot passes four
+gates in order — declared hash, frames, container, **then archive-v2's own
+verifier** — and a test asserts which layer refuses a tampered byte. Backups are
+addressed by opaque id, produced only for an explicitly permitted replica, and
+fetched only by the replica that asked. The working state is closed end to end:
+an interrupted download resumes, verifies, restores under an explicit intent,
+and then continues incrementally. **A defect in G13 was found and fixed here:**
+the per-address failure budget was spent on every request rather than on
+refusals, so the second data-plane round returned `429` and a legitimate peer
+throttled itself out of its own library. Scheduling, retries, and backpressure
+remain G15's.
 
 ## G15. Durable sync jobs, scheduling boundaries, retries, and MCP control
 
@@ -1315,6 +1335,6 @@ recommendation, blocking status, and consequence.
 | Current-GUI Mermaid baseline | G18 | Resolved fact: upstream-capable but disabled pending offline/security evidence |
 | Release version/schema bookkeeping | G20 | Open, non-blocking until wrap-up |
 
-G0-G13 are complete. G14 is the next implementable item, but is not approved.
-Implementation begins only after an explicit instruction naming G14; completing
-it still stops for a verified ZIP and approval before G15.
+G0-G14 are complete. G15 is the next implementable item, but is not approved.
+Implementation begins only after an explicit instruction naming G15; completing
+it still stops for a verified ZIP and approval before G16.

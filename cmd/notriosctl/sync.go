@@ -50,6 +50,10 @@ func runSync(args []string) {
 		runSyncDiscover(args[1:])
 	case "handshake":
 		runSyncHandshake(args[1:])
+	case "exchange":
+		runSyncPush(args[1:])
+	case "fetch-backup":
+		runSyncFetchBackup(args[1:])
 	case "once":
 		runSyncOnce(args[1:])
 	default:
@@ -68,6 +72,8 @@ func printSyncUsage() {
   notriosctl sync enroll   --acceptance <file> --code <code>
   notriosctl sync peers    [--db ...]
   notriosctl sync handshake --url <base-url> [--db ...] [--keys path]
+  notriosctl sync exchange --url <base-url> [--materialize N]
+  notriosctl sync fetch-backup --url <base-url> --out <dir> [--chunk-bytes N]
   notriosctl sync revoke   --key <signer-key-id> [--reason ...] [--advance-epoch]
   notriosctl sync status   [--db ...] [--keys path]
   notriosctl sync discover [--db ...] [--keys path] [--carrier dir]

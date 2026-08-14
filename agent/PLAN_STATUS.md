@@ -1,6 +1,6 @@
 # Plan Status
 
-Updated: 2026-08-13 (G13 REST security foundation complete; G14 next)
+Updated: 2026-08-14 (G14 REST sync data plane complete; G15 next)
 
 ## Active milestone
 
@@ -13,8 +13,48 @@ G0, G1, G1a, and G2-G20: evidence, profiles/local journal, state-vector converge
 revision deltas/merge, lazy resources, secure container/catch-up,
 ephemeral-directory and REST transports, jobs/UI/retention, shared-core/FFI/
 Mermaid/mobile handoff, compatibility, and final validation. The user's
-2026-08-11 review resolved every G0-G17 policy decision. **G0-G13 are complete**
-and archived under `plans/v0.7/`; G14 is next and is not approved.
+2026-08-11 review resolved every G0-G17 policy decision. **G0-G14 are complete**
+and archived under `plans/v0.7/`; G15 is next and is not approved.
+
+## v0.7 G14 completion — 2026-08-14
+
+- `internal/syncrest` implements G11's `Carrier` over G13's signing client, so
+  **transcript parity between REST and a folder is by construction** — one
+  protocol, two couriers, no second implementation to keep in step. A test
+  proves the artifacts a REST peer stores are the same sealed `NAR1` bytes with
+  the same blinded names a folder would hold.
+- Measured: REST costs **+15.4% at 100 notes and +0.07% at 500** against the
+  same exchange through a folder. Admission dominates, which is why keeping the
+  merge off the server costs nothing and why "REST never becomes the merge
+  implementation" is not a sacrifice.
+- `internal/syncbackup` packs an archive-v2 directory deterministically, seals
+  it in fixed AES-256-GCM frames whose associated data authenticates each
+  frame's index and finality, and extracts with every escaping entry refused.
+- **Four gates in order**: the declared hash of the sealed bytes, the frames,
+  the container, then archive-v2's own verifier. ZIP is the wrapper;
+  archive-v2 is the correctness. A test asserts *which* layer refuses a
+  tampered byte rather than merely that something does.
+- Backups are addressed by an opaque id, produced only for a replica explicitly
+  permitted as a snapshot recipient, and fetched only by the replica that asked
+  — every other caller is told there is no such backup.
+- **The working state is closed end to end**: an interrupted download resumes
+  from the local file's own length, verifies, restores under an explicit intent,
+  and the restored replica then continues incrementally over REST.
+- **A G13 defect was found and fixed here.** The per-address failure budget was
+  spent on every request rather than on refusals; with one request per
+  authentication that was invisible, but a data-plane round makes a dozen, so
+  the second exchange returned `429` and a legitimate peer had throttled itself
+  out of its own library. The budget is now checked before work and spent only
+  on a refusal, with pairing the deliberate exception; the per-peer request
+  budget rose from 120 to 600 a minute in the same change.
+- Honest cost recorded: sealing adds 25%, and it is the **ZIP container's
+  per-entry headers** over many small objects rather than the encryption, which
+  adds 28 bytes per mebibyte. P3b's `--pack` is named as the fix nobody has
+  measured at this scale yet.
+- No scheduling, retries, or backpressure (G15), no UI (G16), no decrypted
+  streaming to MCP, no remote archive import request, and no network
+  measurement — loopback on one host. Product remains 0.6.0; schema is v25.
+  G15 remains unapproved.
 
 ## v0.7 G13 completion — 2026-08-13
 

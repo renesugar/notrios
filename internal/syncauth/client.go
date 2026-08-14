@@ -46,6 +46,10 @@ var ErrInsecureTransport = errors.New("refusing to authenticate over plaintext t
 // have to hold the line: a client that happily signs over plaintext to a remote
 // host is the thing that makes an operator's misconfiguration invisible.
 func (c *Client) Do(ctx context.Context, method, path string, body []byte) (int, []byte, error) {
+	return c.do(ctx, method, path, body, "")
+}
+
+func (c *Client) do(ctx context.Context, method, path string, body []byte, byteRange string) (int, []byte, error) {
 	if c.Private == nil || c.ReplicaID == "" || c.DatabaseID == "" {
 		return 0, nil, fmt.Errorf("%w: a client needs its identity and key", ErrMalformed)
 	}
@@ -82,7 +86,10 @@ func (c *Client) Do(ctx context.Context, method, path string, body []byte) (int,
 	}
 	httpRequest.Header.Set("Authorization", header)
 	if len(body) > 0 {
-		httpRequest.Header.Set("Content-Type", "application/json")
+		httpRequest.Header.Set("Content-Type", "application/octet-stream")
+	}
+	if byteRange != "" {
+		httpRequest.Header.Set("Range", byteRange)
 	}
 	client := c.HTTP
 	if client == nil {
@@ -98,6 +105,17 @@ func (c *Client) Do(ctx context.Context, method, path string, body []byte) (int,
 		return response.StatusCode, nil, err
 	}
 	return response.StatusCode, answer, nil
+}
+
+// DoRange performs one signed request asking for a byte range.
+//
+// The range header is deliberately *not* part of the signature: it names which
+// bytes of an artifact the caller wants, not what the artifact is, and a
+// resumed download would otherwise need a fresh signature per attempt whose
+// only difference was an offset. What the signature covers is the object being
+// requested; what the peer returns is verified against the hash it declared.
+func (c *Client) DoRange(ctx context.Context, method, path, byteRange string) (int, []byte, error) {
+	return c.do(ctx, method, path, nil, byteRange)
 }
 
 // Pair performs the unauthenticated pairing request, which carries the code in

@@ -60,7 +60,9 @@ type keys struct {
 	private ed25519.PrivateKey
 }
 
-func (k *keys) Current() (syncwire.GroupKey, error) { return k.group, nil }
+func (k *keys) Current() (syncwire.GroupKey, error)              { return k.group, nil }
+func (k *keys) Lookup(string, uint32) (syncwire.GroupKey, error) { return k.group, nil }
+func (k *keys) Sign(message []byte) []byte                       { return ed25519.Sign(k.private, message) }
 func (k *keys) SignerKeyID() string {
 	return syncwire.SignerKeyID(k.private.Public().(ed25519.PublicKey))
 }

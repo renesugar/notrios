@@ -7,6 +7,8 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -17,14 +19,17 @@ import (
 )
 
 // SyncKeys is the local key material the sync surface needs: the group key it
-// hands to a replica it is pairing with, and its own signing identity.
+// hands to a replica it is pairing with, its own signing identity, and — since
+// G14 — the ability to seal a payload key for the enrolled group.
 //
 // It is an interface so the HTTP layer never learns where keys live. G13 ships
 // the warned `0600` file provider from G11; v0.8 replaces it with a platform
 // store and this signature does not change.
 type SyncKeys interface {
 	Current() (syncwire.GroupKey, error)
+	Lookup(keyID string, epoch uint32) (syncwire.GroupKey, error)
 	SignerKeyID() string
+	Sign(message []byte) []byte
 	PublicSigningKey() ed25519.PublicKey
 }
 
@@ -39,6 +44,14 @@ type SyncSecurity struct {
 	databaseID   string
 	publicURL    string
 	now          func() time.Time
+	// signer is the same key material, named for what the data plane uses it
+	// for: sealing a backup's payload key for the enrolled group.
+	signer syncwire.Signer
+	// carrierRoot is the folder this service hosts for its peers, and backups
+	// is where produced snapshots live. Both are empty when the service carries
+	// artifacts for nobody, which is the default.
+	carrierRoot string
+	backups     *backupStore
 }
 
 // DefaultSyncBodyBytes bounds a G13 request. The data plane is G14's, and it
@@ -81,10 +94,29 @@ func (s *Server) AttachSyncSecurity(canonical *store.SQLiteStore, keys SyncKeys,
 		maxBody = DefaultSyncBodyBytes
 	}
 	s.sync = &SyncSecurity{
-		store: canonical, keys: keys, limiter: limiter,
+		store: canonical, keys: keys, limiter: limiter, signer: keys,
 		verifier:     syncauth.NewVerifier(identity.DatabaseID, lookup, limiter, now),
 		maxBodyBytes: maxBody, databaseID: identity.DatabaseID,
 		publicURL: s.config.Server.PublicBaseURL, now: now,
+	}
+	// The data plane needs somewhere to keep what it carries. Both directories
+	// are derived from the configured data directory rather than from anything
+	// a request says, which is what keeps "no arbitrary path parameters" true
+	// at the only place it could stop being true.
+	if root := strings.TrimSpace(s.config.Data.Directory); root != "" {
+		// Both are created here rather than on first use. They are this
+		// service's own directories under its own data root — not a mount point
+		// somebody might not have plugged in — so a missing one is a directory
+		// to make, and creating it at startup means a peer's first request does
+		// not fail on a race two of them could lose.
+		carrierRoot := filepath.Join(root, "sync-carrier")
+		if err := os.MkdirAll(carrierRoot, 0o700); err == nil {
+			s.sync.carrierRoot = carrierRoot
+		}
+		backupRoot := filepath.Join(root, "sync-backups")
+		if err := os.MkdirAll(backupRoot, 0o700); err == nil {
+			s.sync.backups = newBackupStore(backupRoot)
+		}
 	}
 	return nil
 }
@@ -102,6 +134,7 @@ func (s *Server) syncRoutes() {
 	s.mux.HandleFunc("POST /api/v1/sync/pair", s.handleSyncPair)
 	s.mux.HandleFunc("GET /api/v1/sync/handshake", s.requirePeer(s.handleSyncHandshake))
 	s.mux.HandleFunc("GET /api/v1/sync/status", s.handleSyncStatus)
+	s.dataRoutes()
 }
 
 // refuseBrowsers is the CSRF and CORS posture in one place.
@@ -136,14 +169,17 @@ func (s *Server) requirePeer(handler func(http.ResponseWriter, *http.Request, sy
 			return
 		}
 		address := remoteAddress(r)
-		if !s.sync.limiter.AllowFailure(address, s.sync.now()) {
-			// The failure budget is spent before any work, so a caller that has
-			// been guessing cannot keep the process busy while it does.
+		if s.sync.limiter.FailureBudgetExhausted(address, s.sync.now()) {
+			// An address that has been guessing is answered before any work is
+			// done. The budget is *checked* here and *spent* only on a refusal:
+			// charging a peer for its own successful requests would throttle
+			// the legitimate exchange rather than the guesser.
 			writeError(w, http.StatusTooManyRequests, "rate_limited", "too many refused requests from this address")
 			return
 		}
 		body, err := io.ReadAll(http.MaxBytesReader(w, r.Body, s.sync.maxBodyBytes))
 		if err != nil {
+			s.sync.limiter.AllowFailure(address, s.sync.now())
 			s.recordAuthRefusal("", "oversized_body")
 			writeError(w, http.StatusRequestEntityTooLarge, "body_too_large", "request body exceeds the configured limit")
 			return
@@ -151,6 +187,7 @@ func (s *Server) requirePeer(handler func(http.ResponseWriter, *http.Request, sy
 		principal, err := s.sync.verifier.Verify(r.Header.Get("Authorization"), r.Method, r.URL.Path, syncauth.BodyDigest(body))
 		if err != nil {
 			reason := syncauth.Reason(err)
+			s.sync.limiter.AllowFailure(address, s.sync.now())
 			s.recordAuthRefusal(principalReplica(r), reason)
 			status := http.StatusUnauthorized
 			if errors.Is(err, syncauth.ErrRateLimited) {
@@ -163,6 +200,7 @@ func (s *Server) requirePeer(handler func(http.ResponseWriter, *http.Request, sy
 		}
 		enrolled, err := s.sync.store.SyncPeerEnrolled(r.Context(), principal.ReplicaID)
 		if err != nil || !enrolled {
+			s.sync.limiter.AllowFailure(address, s.sync.now())
 			s.recordAuthRefusal(principal.ReplicaID, "not_enrolled_for_admission")
 			writeError(w, http.StatusForbidden, "not_enrolled",
 				"that replica is not configured for admission on this database")
@@ -244,10 +282,14 @@ func (s *Server) handleSyncPair(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	address := remoteAddress(r)
-	if !s.sync.limiter.AllowFailure(address, s.sync.now()) {
+	if s.sync.limiter.FailureBudgetExhausted(address, s.sync.now()) {
 		writeError(w, http.StatusTooManyRequests, "rate_limited", "too many pairing attempts from this address")
 		return
 	}
+	// Every pairing attempt spends a token whether or not it succeeds: unlike an
+	// authenticated request, a pairing attempt *is* a guess at a secret, and
+	// there is no legitimate reason to make hundreds of them.
+	s.sync.limiter.AllowFailure(address, s.sync.now())
 	body, err := io.ReadAll(http.MaxBytesReader(w, r.Body, syncauth.MaxPairingBodyBytes))
 	if err != nil {
 		writeError(w, http.StatusRequestEntityTooLarge, "body_too_large", "pairing request is too large")

@@ -25,7 +25,9 @@ type testKeys struct {
 	private ed25519.PrivateKey
 }
 
-func (k *testKeys) Current() (syncwire.GroupKey, error) { return k.group, nil }
+func (k *testKeys) Current() (syncwire.GroupKey, error)              { return k.group, nil }
+func (k *testKeys) Lookup(string, uint32) (syncwire.GroupKey, error) { return k.group, nil }
+func (k *testKeys) Sign(message []byte) []byte                       { return ed25519.Sign(k.private, message) }
 func (k *testKeys) SignerKeyID() string {
 	return syncwire.SignerKeyID(k.private.Public().(ed25519.PublicKey))
 }

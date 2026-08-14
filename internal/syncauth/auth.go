@@ -319,11 +319,16 @@ type Limits struct {
 	FailuresPerMinute int
 }
 
-// DefaultLimits are deliberately modest. Sync is a background exchange of
-// bounded envelopes, not an interactive API, and a peer that needs more than
-// this per minute is either misconfigured or not a peer.
+// DefaultLimits bound a peer generously and a guesser tightly.
+//
+// The request figures went up when G14 added the data plane: one exchange lists
+// namespaces, lists several classes, reads each artifact, and publishes its
+// own, so a round is tens of requests rather than one. The failure figure did
+// not move, because it bounds something else entirely — how fast an
+// unauthenticated caller can guess — and that has nothing to do with how
+// chatty a legitimate peer is.
 func DefaultLimits() Limits {
-	return Limits{RequestsPerMinute: 120, Burst: 30, FailuresPerMinute: 10}
+	return Limits{RequestsPerMinute: 600, Burst: 120, FailuresPerMinute: 10}
 }
 
 // Limiter is a token bucket per peer plus a failure bucket per source address.
@@ -365,10 +370,29 @@ func (l *Limiter) Allow(replicaID string, now time.Time) bool {
 }
 
 // AllowFailure spends one token from a source address's failure budget. It is
-// called after a refusal, so a caller guessing keys or codes slows to the
+// called **after** a refusal, so a caller guessing keys or codes slows to the
 // budget rather than to the speed of the network.
+//
+// Spending it on every request instead would charge a legitimate peer for its
+// own successes — which is exactly the bug G14's first data-plane run hit, when
+// a round's dozen ordinary requests exhausted a budget meant for guessers.
 func (l *Limiter) AllowFailure(address string, now time.Time) bool {
 	return l.spend(l.failures, address, float64(l.limits.FailuresPerMinute), float64(l.limits.FailuresPerMinute), now)
+}
+
+// FailureBudgetExhausted reports whether an address has already spent its
+// failure budget, without spending anything itself. A caller that is being
+// refused repeatedly is answered from here before any work is done.
+func (l *Limiter) FailureBudgetExhausted(address string, now time.Time) bool {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	current, found := l.failures[address]
+	if !found {
+		return false
+	}
+	elapsed := now.Sub(current.updated).Seconds()
+	tokens := current.tokens + elapsed*float64(l.limits.FailuresPerMinute)/60
+	return tokens < 1
 }
 
 func (l *Limiter) spend(buckets map[string]*bucket, key string, perMinute, burst float64, now time.Time) bool {

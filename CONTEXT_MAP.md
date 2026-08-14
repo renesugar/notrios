@@ -7,7 +7,7 @@ This file is the codebase atlas. Update it whenever major files or directories a
 - `README.md` — project overview and quick start.
 - `PLAN.md` — the **active v0.7 native synchronization plan**, divided into
   twenty-two independently approvable slices (G0, G1, G1a, and G2-G20).
-  G0-G17 policy decisions are resolved; G0-G13 are complete and G14 is next but
+  G0-G17 policy decisions are resolved; G0-G14 are complete and G15 is next but
   unapproved. The current product remains 0.6.0 at schema v25; v0.6 is archived under
   `plans/v0.6/`; v0.5 and v0.4 are archived under their version directories.
 - `plans/scaffold/SCAFFOLD_CREATION_PLAN.md` — process for creating/refining this scaffold.
@@ -66,6 +66,11 @@ This file is the codebase atlas. Update it whenever major files or directories a
   peer public keys and pairing invitations.
 - `internal/httpapi/sync.go` — the three peer routes and the middleware that
   guards them; a peer credential reaches this surface and no ordinary route.
+- `internal/syncrest/`, `internal/syncbackup/`, `internal/httpapi/sync_data.go`,
+  and `performance/v0.7-g14/` — the REST data plane: G11's `Carrier` implemented
+  over the signing client so both transports run one protocol, the carrier
+  routes with `Range`, and the resumable encrypted snapshot download whose
+  correctness comes from archive-v2 rather than from its ZIP wrapper.
 - `internal/synckeys/` — the warned `0600` development secret provider holding
   one group key per epoch and this replica's signing key. Since G13 it holds
   secrets only: which peers are trusted is database state. v0.8 owns the
