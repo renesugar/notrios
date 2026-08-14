@@ -462,18 +462,23 @@ is local, which is where a local path belongs.
 ## sync
 
 ```sh
-notriosctl sync init     [--db path] [--keys path]
-notriosctl sync bundle   [--db path] [--keys path] --out <file>
-notriosctl sync pair     [--db path] [--keys path] <bundle-file>
-notriosctl sync status   [--db path] [--keys path]
-notriosctl sync discover [--db path] [--keys path] [--carrier dir]
-notriosctl sync once     [--db path] [--keys path] [--carrier dir] [--cleanup] [--materialize N]
+notriosctl sync init      [--db path] [--keys path]
+notriosctl sync invite    [--ttl 15m] [--label ...] [--offline --out <file>]
+notriosctl sync join      --url <base-url> --code <code>
+notriosctl sync accept    --invite <file> --code <code> --out <file>
+notriosctl sync enroll    --acceptance <file> --code <code>
+notriosctl sync handshake --url <base-url>
+notriosctl sync peers     [--db path]
+notriosctl sync revoke    --key <signer-key-id> [--reason ...] [--advance-epoch]
+notriosctl sync status    [--db path] [--keys path]
+notriosctl sync discover  [--carrier dir]
+notriosctl sync once      [--carrier dir] [--cleanup] [--materialize N]
 ```
 
-Synchronizes two of *your own* libraries through a folder you both can reach — a
-mapped cloud drive, a file share, a USB stick. The folder is a postbox, not a
-backup: everything in it is encrypted and signed, everything in it also exists
-in the libraries that published it, and deleting the whole thing loses nothing.
+Synchronizes two of *your own* libraries — through a folder you both can reach,
+or directly over an authenticated connection. Everything that moves is
+encrypted and signed, and everything in a shared folder also exists in the
+library that published it, so deleting the folder loses nothing.
 
 Sync is off until you turn it on. `init` enrols this library's journal and
 creates its key material; nothing before that point writes a single sync record.
@@ -494,31 +499,73 @@ exactly what a second device is.
 
 ### Pairing
 
-Pairing is explicit, mutual, and manual. **Pair the joining replica first**: a
-replica adopts the group key when it joins, and adopting one after it already
-has peers would make everything those peers published unreadable, so the command
-refuses that and says so.
+Pairing is explicit and deliberate. One replica issues a **code**: short,
+single-use, and valid for minutes rather than days. The other spends it, and in
+that one exchange the two learn each other's signing keys and the joining side
+receives the library's group key — **sealed under the code**, never in readable
+text.
+
+Over a network:
 
 ```sh
-# on the first replica
-notriosctl sync init --db first/notes.sqlite
-notriosctl sync bundle --db first/notes.sqlite --out /tmp/first.bundle.json
+# on the replica that is already set up
+notriosctl sync invite --ttl 5m --label "the laptop"
+# → reads out a code like ABCD-EFGH-IJKL-…
 
-# on the second, which joins the group and then describes itself
-notriosctl sync init   --db second/notes.sqlite
-notriosctl sync pair   --db second/notes.sqlite /tmp/first.bundle.json
-notriosctl sync bundle --db second/notes.sqlite --out /tmp/second.bundle.json
-
-# back on the first
-notriosctl sync pair --db first/notes.sqlite /tmp/second.bundle.json
+# on the joining replica
+notriosctl sync join --url https://desktop.local:8443 --code ABCD-EFGH-IJKL-…
 ```
 
-A bundle contains the library's group key in clear text. Carry it the way you
-would carry a password and delete it afterwards. This is a development
-ceremony: a short-lived, one-use pairing exchange is planned, and until it
-arrives the file is what there is.
+For a replica that has no network path to its peer — one that will only ever
+meet it through a folder or a USB stick — the same ceremony splits into a file
+and a code that travel **separately**:
 
-### Exchanging
+```sh
+# on the inviting replica: writes the file, reads out the code
+notriosctl sync invite --offline --out /tmp/invite.json --ttl 1h
+
+# on the joining replica: needs both halves
+notriosctl sync accept --invite /tmp/invite.json --code ABCD-… --out /tmp/accept.json
+
+# back on the inviting replica: enrols what came back
+notriosctl sync enroll --acceptance /tmp/accept.json --code ABCD-…
+```
+
+**Send the file and the code by different means.** The file alone cannot be
+opened, and the code alone is useless once it is spent or expired; together they
+are the whole of your library's security, which is why nothing in either half is
+a password you might reuse.
+
+To check that pairing worked:
+
+```sh
+notriosctl sync handshake --url https://desktop.local:8443
+```
+
+That signs a request with this replica's key and asks the peer who it is. A
+success means the peer authenticated you as an enrolled replica of the same
+database. It carries no note content.
+
+### Seeing and ending trust
+
+```sh
+notriosctl sync peers
+notriosctl sync revoke --key <signer-key-id> --reason "lost laptop" --advance-epoch
+```
+
+`peers` lists every signing key this library has enrolled, whether it is still
+active, and whether that replica is configured for admission. `revoke` ends a
+key: requests signed with it are refused from that moment, and the refusal is
+audited.
+
+`--advance-epoch` is the other half of the answer, and deliberately separate.
+Revoking stops a device *signing*; advancing the epoch mints a new group key so
+it cannot *read* what is published next. It costs every remaining peer a fresh
+pairing, so it is a decision rather than a side effect. The old epoch stays
+readable, because a library should not lose its own history in order to exclude
+a device.
+
+### Exchanging through a folder
 
 ```sh
 notriosctl sync once --carrier /home/you/Drive/notrios --db first/notes.sqlite
@@ -558,6 +605,11 @@ must not carry the keys that decrypt its traffic. If the file becomes readable
 by other users, `status` reports it and `once` refuses to run. This is a
 development secret provider, not a system keychain; every command that touches
 it says so.
+
+The file holds secrets only: this replica's signing key and the library's group
+key per epoch. **Which peers you trust is in the database**, where enrolling and
+revoking are transactional, auditable, and visible to every process at once —
+`sync peers` reads it, and `sync revoke` changes it.
 
 ## seed-help
 

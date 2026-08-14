@@ -7,8 +7,8 @@ This file is the codebase atlas. Update it whenever major files or directories a
 - `README.md` — project overview and quick start.
 - `PLAN.md` — the **active v0.7 native synchronization plan**, divided into
   twenty-two independently approvable slices (G0, G1, G1a, and G2-G20).
-  G0-G17 policy decisions are resolved; G0-G12 are complete and G13 is next but
-  unapproved. The current product remains 0.6.0 at schema v24; v0.6 is archived under
+  G0-G17 policy decisions are resolved; G0-G13 are complete and G14 is next but
+  unapproved. The current product remains 0.6.0 at schema v25; v0.6 is archived under
   `plans/v0.6/`; v0.5 and v0.4 are archived under their version directories.
 - `plans/scaffold/SCAFFOLD_CREATION_PLAN.md` — process for creating/refining this scaffold.
 - `ROADMAP.md` — product roadmap and future features.
@@ -59,9 +59,17 @@ This file is the codebase atlas. Update it whenever major files or directories a
   provider: measured visibility delay, eight protocol phases through a mounted
   Google Drive folder and a drive passed between peers, and the enforced
   refusal of every destructive rclone verb. No production code.
+- `internal/syncauth/` and `performance/v0.7-g13/` — the peer principal: signed
+  requests rather than bearer tokens, the replay cache and rate limiters, the
+  short-lived single-use pairing code and its proofs, the signing client, and
+  the generated authentication/authorization matrix. Schema v25 holds enrolled
+  peer public keys and pairing invitations.
+- `internal/httpapi/sync.go` — the three peer routes and the middleware that
+  guards them; a peer credential reaches this surface and no ordinary route.
 - `internal/synckeys/` — the warned `0600` development secret provider holding
-  one group key per epoch, this replica's signing key, and paired peers' public
-  keys. v0.8 owns the platform store.
+  one group key per epoch and this replica's signing key. Since G13 it holds
+  secrets only: which peers are trusted is database state. v0.8 owns the
+  platform store.
 - `cmd/notriosctl/sync.go` — `notriosctl sync init|bundle|pair|status|discover|once`,
   the only way to run an exchange; every round is explicit, and there is no
   watcher or scheduler (G15).

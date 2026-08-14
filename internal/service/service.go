@@ -5,6 +5,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"strings"
@@ -17,6 +18,8 @@ import (
 	"github.com/renesugar/notrios/internal/projection"
 	"github.com/renesugar/notrios/internal/recoll"
 	"github.com/renesugar/notrios/internal/store"
+	"github.com/renesugar/notrios/internal/syncauth"
+	"github.com/renesugar/notrios/internal/synckeys"
 )
 
 // Service is a started Notrios backend.
@@ -59,12 +62,59 @@ func New(cfg config.Config) (*Service, error) {
 		}
 	}
 	handler := httpapi.NewServerWithOptions(httpapi.ServerOptions{Store: st, Config: cfg})
+	if err := attachSyncSecurity(cfg, st, handler); err != nil {
+		_ = st.Close()
+		return nil, err
+	}
 	ctx, cancel := context.WithCancel(context.Background())
 	svc := &Service{Config: cfg, Store: st, Handler: handler, ctx: ctx, cancel: cancel}
 	if cfg.SearchSidecar.Enabled {
 		svc.startSearchSidecar()
 	}
 	return svc, nil
+}
+
+// attachSyncSecurity enables the peer-authenticated sync surface, and refuses
+// to start rather than expose it unsafely.
+//
+// The refusals are the point of this function. A sync surface on a non-loopback
+// address without TLS would put a library's traffic on the network in the
+// clear; a surface enabled without key material would answer pairing requests
+// it cannot complete. Both are configuration mistakes that are invisible until
+// something is already exposed, so they are startup failures with an
+// explanation rather than warnings in a log nobody reads.
+func attachSyncSecurity(cfg config.Config, st *store.SQLiteStore, handler *httpapi.Server) error {
+	if !cfg.Sync.REST.Enabled {
+		return nil
+	}
+	if err := config.ValidateSyncTransport(cfg); err != nil {
+		return err
+	}
+	identity, err := st.GetDatabaseIdentity(context.Background())
+	if err != nil {
+		return err
+	}
+	path := cfg.Sync.REST.KeyFile
+	if strings.TrimSpace(path) == "" {
+		if path, err = synckeys.DefaultPath(identity.DatabaseID); err != nil {
+			return err
+		}
+	}
+	keys, err := synckeys.Open(path)
+	if err != nil {
+		return fmt.Errorf("sync rest is enabled but its key material is unusable: %w", err)
+	}
+	limits := syncauth.Limits{
+		RequestsPerMinute: cfg.Sync.REST.RequestsPerMinute,
+		Burst:             cfg.Sync.REST.Burst,
+		FailuresPerMinute: cfg.Sync.REST.FailuresPerMinute,
+	}
+	if err := handler.AttachSyncSecurity(st, keys, limits, nil); err != nil {
+		return err
+	}
+	log.Printf("sync REST surface enabled for database %s (tls=%t)", identity.DatabaseID,
+		cfg.Sync.REST.TLSCertFile != "")
+	return nil
 }
 
 // HTTPServer returns a configured *http.Server for the service handler.
@@ -77,6 +127,12 @@ func (s *Service) HTTPServer() *http.Server {
 		WriteTimeout:      30 * time.Second,
 		IdleTimeout:       120 * time.Second,
 	}
+}
+
+// TLSFiles returns the certificate and key the service should serve with, or
+// two empty strings for plaintext.
+func (s *Service) TLSFiles() (string, string) {
+	return s.Config.Sync.REST.TLSCertFile, s.Config.Sync.REST.TLSKeyFile
 }
 
 // Close stops background work and the store.

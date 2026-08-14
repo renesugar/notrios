@@ -131,7 +131,12 @@ Recoll availability, backlog, sync/index, and reconciliation state.
   schema-v24 snapshot catch-up: signed backup requests, explicit snapshot-source
   permission, one-of-many offer selection, the durable reset state machine, and
   the catch-up floor that lets a restored replica resume incremental admission.
-  Transport and peer authentication are not implemented yet.
+  G11 adds the ephemeral shared-directory carrier and `notriosctl sync`, G12
+  proves it against a mapped cloud folder and a drive passed between peers, and
+  G13 advances schema v25 with the first authenticated surface: a peer principal
+  proved by a signature over each request, authorizing `/api/v1/sync/...` for one
+  database and nothing else, paired by a short-lived single-use code. The REST
+  sync data plane is not implemented yet.
 - Agent progress/attempt tracking: [`agent/PLAN_STATUS.md`](agent/PLAN_STATUS.md), [`agent/ATTEMPT_LOG.jsonl`](agent/ATTEMPT_LOG.jsonl), and [`agent/MODEL_LOG.jsonl`](agent/MODEL_LOG.jsonl).
 
 ## Contributing

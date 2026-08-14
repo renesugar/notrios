@@ -617,13 +617,63 @@ finished is kept and rerunning the same command continues from there.
 `interrupted` means the same thing: the record says the run stopped, never that
 nothing happened. Rerun the command.
 
+## The peer sync surface
+
+Three routes under `/api/v1/sync/`, and they are unlike everything above: they
+are the only authenticated part of the API, and the only part another machine
+may reach.
+
+| Route | Who may call it |
+|---|---|
+| `GET /api/v1/sync/handshake` | an enrolled peer of this database, signature-authenticated |
+| `POST /api/v1/sync/pair` | anyone holding an unspent, unexpired pairing code |
+| `GET /api/v1/sync/status` | the local operator, over loopback only |
+
+They exist only when `sync.rest.enabled` is true; otherwise every one of them
+answers `404` with `sync_disabled`.
+
+**Authentication is a signature, not a token.** A peer sends:
+
+```text
+Authorization: Notrios-Sync-v1 replica="rep_…", key="…", ts="2026-08-13T21:04:05.1Z",
+               nonce="<32 hex>", sig="<base64 Ed25519>"
+```
+
+covering the method, path, database id, replica id, timestamp, nonce, and a
+SHA-256 of the body. Nothing reusable travels, a request is spent once (the
+nonce is remembered inside a two-minute window), and changing any covered field
+invalidates it.
+
+**A peer credential authorizes this surface and nothing else.** Presenting one
+to `/api/v1/documents/...` changes nothing about what that route does: ordinary
+routes keep their existing local, unauthenticated posture. There is no user
+concept, and sync authentication is not a login.
+
+Refusals are uniform — one message, one code — because which check failed is
+information for the operator's audit log rather than for whoever failed it:
+`401 unauthorized`, `403 not_enrolled` or `browser_context_refused`,
+`429 rate_limited`, `413 body_too_large`.
+
+**No CORS headers are ever emitted**, and any request carrying `Origin`,
+`Cookie`, or `Referer` is refused: a peer is a program with a private key, never
+a browser.
+
+`GET /api/v1/sync/status` is loopback-only and redacted — enrolled key *ids* and
+their status, the transport policy and limits, open invitation count, recent
+authentication events. Never key material, and a forwarding header cannot make a
+remote request local.
+
+The data plane — envelopes, objects, snapshots — is **not** here yet; G14 owns
+it. What this surface carries today is a handshake and a pairing exchange.
+
 ## Placeholder endpoints (not yet functional)
 
 Staged contracts include import- and export-job creation and collection
 creation/patching (collections are effectively fixed to `default`). G3 runtime
 profiles are live as local CLI/config state and status reports the active
 profile, but they deliberately have no REST or MCP management surface. The
-v0.7 ephemeral-directory/REST sync data plane waits for G13/G14 approval. Current archive
+v0.7 REST sync **data plane** waits for G14; G13 delivered the security
+foundation above. Current archive
 v2 export/verify/restore are CLI commands by design. Remote-media scan and
 localization are implemented; see
 [the CLI guide](../cli.md#localize) and the note inspector in the GUI.

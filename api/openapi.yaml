@@ -27,6 +27,76 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/StatusResponse'
+  /api/v1/sync/handshake:
+    get:
+      summary: Peer-authenticated sync handshake (v0.7 G13)
+      description: >
+        Returns this replica's protocol, schema, capability, and state-vector
+        compatibility to an enrolled peer. Requires a Notrios-Sync-v1
+        authorization header: an Ed25519 signature over the method, path,
+        database id, replica id, timestamp, nonce, and body hash. Available only
+        when sync.rest.enabled is true, and never reachable from a browser — the
+        surface emits no CORS headers and refuses requests carrying Origin,
+        Cookie, or Referer. A peer credential authorizes this surface only and
+        no ordinary note route.
+      responses:
+        '200':
+          description: Handshake response
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/Error'
+  /api/v1/sync/pair:
+    post:
+      summary: Spend a pairing invitation (v0.7 G13)
+      description: >
+        The one unauthenticated route on the sync surface, because pairing is
+        what happens before authentication is possible. The caller presents a
+        short-lived, single-use code in the X-Notrios-Pairing-Code header and an
+        HMAC proof over its claims; the response returns the inviter's identity
+        and the library group key sealed under a key derived from the same code.
+        The invitation is spent in one transaction, so two callers racing one
+        code produce one pairing and one refusal.
+      responses:
+        '200':
+          description: Pairing response with a wrapped group key
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/Error'
+  /api/v1/sync/status:
+    get:
+      summary: Redacted local sync security status (v0.7 G13)
+      description: >
+        Loopback-only. Reports whether the surface is enabled, its transport
+        policy and limits, enrolled peer key ids with their status, the number
+        of open invitations, and recent authentication events. It reports key
+        ids and never key material, and a forwarding header cannot make a remote
+        request local.
+      responses:
+        '200':
+          description: Redacted status
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        '403':
+          $ref: '#/components/responses/Error'
   /mcp:
     get:
       summary: MCP MVP endpoint metadata

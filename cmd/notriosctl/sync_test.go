@@ -90,17 +90,10 @@ func TestTwoProcessesConvergeThroughASharedDirectory(t *testing.T) {
 	adoptSnapshot(t, left, right)
 	right.run(t, "init")
 
-	// Pairing is explicit and mutual: a bundle is carried from one to the other
-	// by hand, which is the whole ceremony until G13 replaces it. The joining
-	// replica pairs first, because pairing is what makes it a member of the
-	// group its own bundle then describes.
-	bundles := t.TempDir()
-	leftBundle := filepath.Join(bundles, "left.bundle.json")
-	rightBundle := filepath.Join(bundles, "right.bundle.json")
-	left.run(t, "bundle", "--out", leftBundle)
-	right.run(t, "pair", leftBundle)
-	right.run(t, "bundle", "--out", rightBundle)
-	left.run(t, "pair", rightBundle)
+	// Pairing is one ceremony with two halves that travel separately: a file
+	// the joining replica reads, and a code it is told. Neither is usable
+	// alone, which is the property G13 exists to provide.
+	pairOffline(t, left, right)
 
 	rightNote := right.note(t, "from-right", "# From the right\n\nright body\n")
 	leftSecond := left.note(t, "left-after-adopt", "# Left again\n\nmore left\n")
@@ -133,10 +126,9 @@ func TestDiscoveryReportsAnUnpairedPeerAndChangesNothing(t *testing.T) {
 	right.run(t, "init")
 
 	// Only one direction is paired: the right replica trusts the left's key and
-	// admits it, while the left has never heard of the right.
-	leftBundle := filepath.Join(t.TempDir(), "left.bundle.json")
-	left.run(t, "bundle", "--out", leftBundle)
-	right.run(t, "pair", leftBundle)
+	// admits it, while the left has never heard of the right. The offline
+	// ceremony's last step — the inviter enrolling the acceptance — is skipped.
+	pairOfflineWithoutEnrolling(t, left, right)
 
 	left.note(t, "one-sided", "# One sided\n\nbody\n")
 	left.run(t, "once", "--carrier", carrier)
@@ -186,6 +178,34 @@ func TestSyncRefusesAKeyFileOtherUsersCanRead(t *testing.T) {
 	if exchange.exitCode == 0 {
 		t.Fatal("a sync ran with a world-readable key file")
 	}
+}
+
+// pairOffline runs the whole offline ceremony: the inviter writes a file and
+// displays a code, the joiner accepts with both, and the inviter enrols what
+// comes back. The code is parsed out of the invite command's own output, which
+// is what a user reads off a screen.
+func pairOffline(t *testing.T, inviter, joiner *syncReplica) {
+	t.Helper()
+	code, acceptance := pairOfflineWithoutEnrolling(t, inviter, joiner)
+	inviter.run(t, "enroll", "--acceptance", acceptance, "--code", code)
+}
+
+// pairOfflineWithoutEnrolling stops one step short: the joiner has adopted the
+// group key and trusts the inviter, but the inviter has not yet enrolled the
+// joiner's key. That is a real state — the acceptance file is still in
+// someone's hand — and it is what discovery is for.
+func pairOfflineWithoutEnrolling(t *testing.T, inviter, joiner *syncReplica) (string, string) {
+	t.Helper()
+	workspace := t.TempDir()
+	invite := filepath.Join(workspace, "invite.json")
+	result := inviter.runJSON(t, "invite", "--offline", "--out", invite)
+	code, _ := result["code"].(string)
+	if code == "" {
+		t.Fatalf("invite produced no code: %v", result)
+	}
+	acceptance := filepath.Join(workspace, "acceptance.json")
+	joiner.run(t, "accept", "--invite", invite, "--code", code, "--out", acceptance)
+	return code, acceptance
 }
 
 // adoptSnapshot copies one library into another as a second replica of the same

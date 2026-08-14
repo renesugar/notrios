@@ -655,3 +655,25 @@ const (
 func hkdfKeyForTest(secret, salt []byte, info string, length int) ([]byte, error) {
 	return hkdf.Key(sha256.New, secret, salt, info, length)
 }
+
+// MultiVerifier resolves a signer key against several sources in order.
+//
+// It exists because "whose signatures do we trust?" now has two answers that
+// must both hold: this replica's own key, which it needs to read back what it
+// published, and the enrolled peer keys, which live in the database where
+// enrolment and revocation are transactional and auditable.
+type MultiVerifier []Verifier
+
+// PublicKey returns the first match. A revoked key is absent from every source,
+// so order cannot resurrect one.
+func (m MultiVerifier) PublicKey(signerKeyID string) (ed25519.PublicKey, bool) {
+	for _, verifier := range m {
+		if verifier == nil {
+			continue
+		}
+		if public, found := verifier.PublicKey(signerKeyID); found {
+			return public, true
+		}
+	}
+	return nil, false
+}

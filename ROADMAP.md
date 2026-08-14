@@ -277,8 +277,16 @@ limitation forced a protocol change. It measured what such a carrier costs:
 another device's change took **45-57 seconds** to become visible, and resolving
 a known name is no fresher than listing the directory. Publication order is
 therefore a latency optimization on a cloud folder rather than a correctness
-mechanism, which G15's scheduling must respect. **G13 is next and
-approval-gated**: the REST security foundation, pairing, and transport policy.
+mechanism, which G15's scheduling must respect.
+
+**G13 completed 2026-08-13.** Schema v25 adds the first authenticated surface
+this project has had: a peer principal proved by an Ed25519 signature over the
+request, authorizing `/api/v1/sync/...` for one database and nothing else, with
+pairing reduced to a short-lived single-use code under which the group key
+travels sealed. The transport policy refuses at startup rather than warning, and
+ordinary note routes keep their local posture. **G14 is next and
+approval-gated**: the REST sync data plane and resumable encrypted backup
+download.
 
 - **Evidence before contracts (G0-G2, including G1a):** threat model and
   reference validation; representative revision/delta/three-way-merge

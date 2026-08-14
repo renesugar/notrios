@@ -454,6 +454,84 @@ Never repair a carrier by editing it. There is nothing in it to fix by hand:
 every artifact is authenticated, an edited one is refused, and the replica that
 owns it republishes a correct copy on its next round.
 
+## Exposing the sync surface to a peer
+
+Everything else in Notrios is local. The sync surface is the one thing that can
+be reached by another machine, so turning it on is a decision with a
+configuration block of its own:
+
+```yaml
+server:
+  listen_addr: "0.0.0.0:8443"
+
+sync:
+  target: "rest"
+  rest:
+    enabled: true            # off by default
+    require_tls: true        # keep it true
+    tls_cert_file: /etc/notrios/cert.pem
+    tls_key_file: /etc/notrios/key.pem
+    requests_per_minute: 120 # per peer
+    burst: 30
+    failures_per_minute: 10  # per source address
+    max_body_bytes: 1MB
+```
+
+**The service refuses to start** rather than expose the surface unsafely. On a
+non-loopback address with no TLS configured, on a certificate without its key,
+or on TLS files it cannot read, `notriosd` exits and names the setting to
+change. A misconfiguration that starts is one you find out about later.
+
+Loopback plaintext is allowed — that is how the surface is tested, and the
+traffic never leaves the machine.
+
+### What a peer credential is, and is not
+
+A peer authenticates by **signing each request** with its Ed25519 key: the
+method, path, database id, replica id, timestamp, nonce, and a hash of the body.
+There is no token, no password, and no session. A captured request is useless
+once it is spent, and the private key never travels.
+
+It authorizes **`/api/v1/sync/...` on this database and nothing else**. Ordinary
+note routes keep exactly the posture they have always had — local and
+unauthenticated — and presenting a peer credential to one of them changes
+nothing about what it does. Sync authentication is not a login, and Notrios
+still has no concept of a user.
+
+The surface is not for browsers. It emits no CORS headers at all, and it refuses
+any request carrying `Origin`, `Cookie`, or `Referer`.
+
+### Watching it
+
+```sh
+curl -s http://127.0.0.1:8443/api/v1/sync/status | jq .
+```
+
+Loopback only, and redacted: enrolled key ids and their status, the transport
+policy and limits, how many invitations are open, and the recent authentication
+events. It reports key *ids* and never key material. A forwarding header cannot
+make a remote request local — the check reads the connection, not a header
+somebody else wrote.
+
+Refusals are audited with a closed vocabulary — `malformed`, `unenrolled_key`,
+`bad_signature`, `stale_timestamp`, `replayed_nonce`, `wrong_principal`,
+`rate_limited` — and never record a credential, a header, or a body. The reply
+to whoever was refused says only that they were not authorized: which check
+failed is in your log, not in their answer.
+
+### If a device is lost
+
+```sh
+notriosctl sync peers
+notriosctl sync revoke --key <signer-key-id> --reason "lost laptop" --advance-epoch
+```
+
+Revoking ends that key immediately; every request signed with it is refused and
+audited from that moment. `--advance-epoch` additionally mints a new group key,
+so the lost device cannot read anything published afterwards — at the cost of
+pairing every remaining peer again. The old epoch stays readable, because a
+library should not lose its own history in order to exclude a device.
+
 ## Monitoring the Recoll sidecar
 
 SQLite/FTS5 remains the always-on search engine. When Recoll is enabled, the

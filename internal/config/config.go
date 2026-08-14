@@ -39,10 +39,41 @@ type ProfileConfig struct {
 // local journal boundary at service startup; no transport or credential use is
 // implemented yet. Target "none" remains the safe, complete default.
 type SyncConfig struct {
-	Target        string `json:"target"`
-	Directory     string `json:"directory,omitempty"`
-	RESTBaseURL   string `json:"rest_base_url,omitempty"`
-	CredentialRef string `json:"credential_ref,omitempty"`
+	Target        string         `json:"target"`
+	Directory     string         `json:"directory,omitempty"`
+	RESTBaseURL   string         `json:"rest_base_url,omitempty"`
+	CredentialRef string         `json:"credential_ref,omitempty"`
+	REST          SyncRESTConfig `json:"rest"`
+}
+
+// SyncRESTConfig is v0.7 G13's transport policy for the sync surface.
+//
+// It is off by default, and that default is the product: Notrios is a local
+// application whose REST API has no general authentication, and turning on a
+// peer-authenticated surface is a decision a user makes rather than a state
+// they arrive in.
+type SyncRESTConfig struct {
+	// Enabled exposes /api/v1/sync/... to authenticated peers. Nothing else on
+	// the API becomes remotely reachable or remotely authorized by it.
+	Enabled bool `json:"enabled"`
+	// RequireTLS refuses to serve the sync surface over plaintext on anything
+	// but a loopback address. It defaults to true and should stay true: a peer
+	// credential is a signature rather than a bearer token, so plaintext does
+	// not leak a reusable secret, but every byte of every note would be in the
+	// clear once G14 carries data.
+	RequireTLS bool `json:"require_tls"`
+	// TLSCertFile and TLSKeyFile enable HTTPS for the whole service.
+	TLSCertFile string `json:"tls_cert_file,omitempty"`
+	TLSKeyFile  string `json:"tls_key_file,omitempty"`
+	// MaxBodyBytes bounds an authenticated request body.
+	MaxBodyBytes int64 `json:"max_body_bytes,omitempty"`
+	// RequestsPerMinute and Burst bound one peer; FailuresPerMinute bounds how
+	// fast one address can guess.
+	RequestsPerMinute int `json:"requests_per_minute,omitempty"`
+	Burst             int `json:"burst,omitempty"`
+	FailuresPerMinute int `json:"failures_per_minute,omitempty"`
+	// KeyFile is the local sync key material. Empty uses the default path.
+	KeyFile string `json:"key_file,omitempty"`
 }
 
 type ServerConfig struct {
@@ -146,7 +177,7 @@ var MediaActions = map[string]bool{"allow": true, "block": true, "review": true}
 // Default returns a complete local-development configuration.
 func Default() Config {
 	return Config{
-		Sync: SyncConfig{Target: "none"},
+		Sync: SyncConfig{Target: "none", REST: SyncRESTConfig{RequireTLS: true}},
 		Server: ServerConfig{
 			ListenAddr:    "127.0.0.1:8080",
 			PublicBaseURL: "http://127.0.0.1:8080",
@@ -342,7 +373,7 @@ func applyScalar(cfg *Config, section, subsection, key, value string) {
 	case "data":
 		applyData(&cfg.Data, key, value)
 	case "sync":
-		applySync(&cfg.Sync, key, value)
+		applySync(&cfg.Sync, subsection, key, value)
 	case "search":
 		applySearch(&cfg.Search, key, value)
 	case "mcp":
@@ -367,7 +398,11 @@ func applyProfile(cfg *ProfileConfig, key, value string) {
 	}
 }
 
-func applySync(cfg *SyncConfig, key, value string) {
+func applySync(cfg *SyncConfig, subsection, key, value string) {
+	if subsection == "rest" {
+		applySyncREST(&cfg.REST, key, value)
+		return
+	}
 	switch key {
 	case "target":
 		cfg.Target = strings.ToLower(strings.TrimSpace(value))
@@ -377,6 +412,31 @@ func applySync(cfg *SyncConfig, key, value string) {
 		cfg.RESTBaseURL = value
 	case "credential_ref":
 		cfg.CredentialRef = value
+	}
+}
+
+func applySyncREST(cfg *SyncRESTConfig, key, value string) {
+	switch key {
+	case "enabled":
+		cfg.Enabled = parseBool(value, cfg.Enabled)
+	case "require_tls":
+		cfg.RequireTLS = parseBool(value, cfg.RequireTLS)
+	case "tls_cert_file":
+		cfg.TLSCertFile = value
+	case "tls_key_file":
+		cfg.TLSKeyFile = value
+	case "key_file":
+		cfg.KeyFile = value
+	case "max_body_bytes":
+		if size, ok := parseByteSize(value); ok {
+			cfg.MaxBodyBytes = size
+		}
+	case "requests_per_minute":
+		cfg.RequestsPerMinute = parseNonNegativeInt(value, cfg.RequestsPerMinute)
+	case "burst":
+		cfg.Burst = parseNonNegativeInt(value, cfg.Burst)
+	case "failures_per_minute":
+		cfg.FailuresPerMinute = parseNonNegativeInt(value, cfg.FailuresPerMinute)
 	}
 }
 

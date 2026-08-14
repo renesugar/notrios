@@ -3,7 +3,7 @@
 This handoff applies to any coding agent or client continuing this project (Codex, Claude, aider, swival.dev, etc. — formerly `CODEX_HANDOFF.md`). The repository is designed so an agent can continue from repository files alone.
 
 Current phase: v0.1 through **v0.6** are complete; product version is **0.6.0**
-and the schema is **v24**. The eight v0.6 slices are archived under
+and the schema is **v25**. The eight v0.6 slices are archived under
 `plans/v0.6/`: F0 (notebook targeting, landed with v0.5 E10), F1 (batch
 organizer transactions), F2 (MCP tool scopes), F3 (MCP read coverage and HTTP
 `Range`), F4 (note templates and task extraction), F5 (graph views that stay
@@ -13,15 +13,15 @@ wrap-up). The thirteen v0.5 slices remain archived under `plans/v0.5/`.
 `PLAN.md` now holds the **active v0.7 native synchronization plan** with
 twenty-two independently approvable slices: G0, G1, G1a, and G2-G20. The user's 2026-08-11
 review resolved the policy decisions through G17, including mandatory payload
-encryption and per-replica Ed25519 signatures. **G0-G12 are complete** and
+encryption and per-replica Ed25519 signatures. **G0-G13 are complete** and
 archived under `plans/v0.7/`; their reviewed evidence is under
 `performance/v0.7-g0/`, `performance/v0.7-g1/`, `performance/v0.7-g1a/`,
 `performance/v0.7-g2/`, `performance/v0.7-g4/`, `performance/v0.7-g5/`,
 `performance/v0.7-g6/`, `performance/v0.7-g7/`, `performance/v0.7-g8/`,
 `performance/v0.7-g9/`, `performance/v0.7-g10/`, `performance/v0.7-g11/`, and
-`performance/v0.7-g12/`.
-**G13 is next and is not approved.** It owns the REST security foundation,
-pairing, and transport policy.
+`performance/v0.7-g12/`, and `performance/v0.7-g13/`.
+**G14 is next and is not approved.** It owns the REST sync data plane and
+resumable encrypted backup download.
 
 G0 added no production sync code or dependency. It freezes the threat model,
 normative glossary, thirty misuse/control traces, and upstream license/platform
@@ -218,6 +218,23 @@ changes. `docs/operations.md` now carries the operator section, the safe
 commands, and the never-run rclone verbs, whose refusal the harness enforces in
 code rather than in a comment.
 
+G13 advances the schema to **v25** and adds the first authenticated surface this
+project has ever had. A peer principal is one enrolled replica of one database,
+proved by an Ed25519 signature over the method, path, database id, replica id,
+timestamp, nonce, and body hash — never a bearer token. It authorizes
+`/api/v1/sync/...` for that database **and nothing else**; a test compares an
+ordinary note route's answer with and without a peer credential and requires
+them identical. **Three things a later agent needs to know.** First, peer public
+keys are database state now (`sync_peer_keys`), not key-file entries, so
+enrolment and revocation are transactional and audited, and the carrier's
+verifier became `syncwire.MultiVerifier{own key, database peers}`. Second,
+G11's clear-text development bundle is **gone**: pairing is a short-lived,
+single-use code under which the group key travels sealed, and `sync
+bundle|pair` were replaced by `sync invite|join|accept|enroll`. Third, the
+transport policy is a **startup refusal** — with the surface enabled, a
+non-loopback listener without TLS makes `notriosd` exit and name the setting.
+No data plane landed; G14 owns it.
+
 That review also added a second portability route. v0.8 now investigates and
 builds a framework-neutral Go application facade and versioned no-GUI C ABI,
 with Android-emulator-only pre-1.0 evidence; v1.0 packages the supported ABI
@@ -227,9 +244,13 @@ the API/lifecycle/ownership/stream contract and source checks. The current GUI's
 Mermaid support is **disabled**, not merely untested (`noMermaid: true`), and a
 v0.8 offline/security-tested enablement slice owns it.
 
-Latest completed feature validation is G12 (2026-08-13), whose eight
-conformance phases ran the shipped round against a mounted Google Drive folder
-and a drive passed between peers. The preceding feature validation is G11
+Latest completed feature validation is G13 (2026-08-13): the seventeen-case
+authentication matrix, the syncauth binding/replay/skew/limiter suite, the
+store's enrolment and single-use-invitation fixtures, ten transport-policy
+rows, and a cross-process pairing over a live `notriosd`. The preceding
+validation is G12 (2026-08-13), whose eight conformance phases ran the shipped
+round against a mounted Google Drive folder and a drive passed between peers,
+and before that G11
 (2026-08-13), which added the
 synccarrier suite — two- and three-replica convergence through a real folder,
 carrier deletion and republication, truncation, unenrolled signers, unpaired

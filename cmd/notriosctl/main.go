@@ -572,8 +572,12 @@ Usage:
                                                  # long imports and exports record a job; status exits 0 succeeded,
                                                  # 1 failed, 3 running, 4 cancelled, 5 no such job, 6 interrupted
   notriosctl sync init|status [--db ...] [--keys path]
-  notriosctl sync bundle --out <file> [--db ...]   # development pairing bundle; contains the group key in clear text
-  notriosctl sync pair <bundle-file> [--db ...]    # trust a peer's signing key and configure it for admission
+  notriosctl sync invite [--ttl 15m] [--offline --out <file>]
+                                                 # one-use, short-lived pairing code; the file half is useless without it
+  notriosctl sync join --url <base-url> --code <code>
+  notriosctl sync accept --invite <file> --code <code> --out <file>
+  notriosctl sync enroll --acceptance <file> --code <code>
+  notriosctl sync peers | sync revoke --key <id> [--advance-epoch]
   notriosctl sync discover [--carrier dir] [--db ...]
   notriosctl sync once [--carrier dir] [--cleanup] [--materialize N] [--db ...]
                                                  # one exchange through a shared directory; polling or manual runs are

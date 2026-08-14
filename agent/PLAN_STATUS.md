@@ -1,6 +1,6 @@
 # Plan Status
 
-Updated: 2026-08-13 (G12 directory-carrier conformance complete; G13 next)
+Updated: 2026-08-13 (G13 REST security foundation complete; G14 next)
 
 ## Active milestone
 
@@ -13,8 +13,55 @@ G0, G1, G1a, and G2-G20: evidence, profiles/local journal, state-vector converge
 revision deltas/merge, lazy resources, secure container/catch-up,
 ephemeral-directory and REST transports, jobs/UI/retention, shared-core/FFI/
 Mermaid/mobile handoff, compatibility, and final validation. The user's
-2026-08-11 review resolved every G0-G17 policy decision. **G0-G12 are complete**
-and archived under `plans/v0.7/`; G13 is next and is not approved.
+2026-08-11 review resolved every G0-G17 policy decision. **G0-G13 are complete**
+and archived under `plans/v0.7/`; G14 is next and is not approved.
+
+## v0.7 G13 completion — 2026-08-13
+
+- **The first authenticated surface this project has had.** `internal/syncauth`
+  defines a peer principal as an Ed25519 signature over the method, path,
+  database id, replica id, timestamp, nonce, and body hash — never a bearer
+  token, so nothing reusable travels and a captured request is already spent.
+  Three routes landed: `/api/v1/sync/handshake` (authenticated),
+  `/api/v1/sync/pair` (invitation-gated), and a loopback-only redacted
+  `/api/v1/sync/status`.
+- **A peer credential authorizes that surface and nothing else.** A test
+  compares an ordinary note route's answer with and without one and requires
+  them identical. Sync authentication is not a login; there is still no user.
+- **Schema v25** adds `sync_peer_keys` and `sync_pairing_invitations`. Peer
+  *public* keys moved out of the key file and into the database, because
+  enrolment and revocation must be transactional, auditable, and visible to
+  every process at once — a key file read by a daemon and rewritten by a CLI is
+  a race with a security outcome. The key file now holds secrets only.
+- **G11's clear-text development bundle is gone.** Pairing is a short-lived,
+  single-use code — spoken, not sent with the file — under which the group key
+  travels sealed. Online, `sync join` spends it in one exchange; offline,
+  `sync invite --offline` splits it into a file and a code that travel
+  separately and are useless apart. Single use is a transaction: eight callers
+  racing one code produce one winner.
+- **The transport policy is a startup refusal, not a warning.** With the surface
+  enabled, a non-loopback listener without TLS, a certificate without its key,
+  or unreadable TLS material makes `notriosd` exit and name the setting. `:8080`
+  is covered explicitly, because reading an empty host as "local" is how a
+  library ends up on a coffee-shop network.
+- **Every refusal is uniform and audited.** One status family and one message;
+  the reason is a closed vocabulary in the local log. A revoked key is reported
+  as unknown, because "no longer trusted" and "never knew it" are the same
+  answer to a caller. Failed attempts spend a per-address budget.
+- Measured as a table: seventeen matrix cases, three authorized, fourteen
+  refused, none explaining itself, plus five transport-policy decisions.
+  Mutation-checked: removing the replay cache, the browser refusal, or the
+  admission check each fails exactly the intended test.
+- Cross-process evidence runs two compiled binaries and a live `notriosd`: an
+  unenrolled replica refused, a code issued and spent over the network, the same
+  replica then authenticating, the code refused on reuse, an anonymous request
+  refused with no CORS header, the key revoked so it stops working, and a
+  service that refuses to start with the surface exposed without TLS.
+- **Deliberately absent:** the data plane (G14), multi-user accounts or roles,
+  remote authorization of any note route, a platform secret store (v0.8), how a
+  code is presented (G18), and any public deployment claim — no external
+  security review has happened. Product remains 0.6.0; schema is v25. G14
+  remains unapproved.
 
 ## v0.7 G12 completion — 2026-08-13
 

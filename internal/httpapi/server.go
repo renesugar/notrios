@@ -37,6 +37,9 @@ type Server struct {
 	// none was found. It is resolved once at construction rather than on every
 	// request so a misconfiguration is a startup fact, not a per-request one.
 	webRoot string
+	// sync is the peer-authenticated surface, attached only when a caller
+	// supplies key material. Nil means the sync routes refuse.
+	sync *SyncSecurity
 }
 
 // SidecarSearcher is the optional derived search backend (Recoll). Implemented
@@ -104,6 +107,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) routes() {
+	s.syncRoutes()
 	s.mux.HandleFunc("GET /healthz", s.handleHealth)
 	s.mux.HandleFunc("GET /api/v1/status", s.handleStatus)
 	s.mux.HandleFunc("GET /mcp", s.handleMCPInfo)

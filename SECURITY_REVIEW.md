@@ -231,6 +231,40 @@ configuration carries no signing/encryption key and has no REST/MCP/transport
 surface. G9/G13 must replace that local seam with proof-of-possession enrollment
 and signed/encrypted artifacts before an untrusted carrier can call admission.
 
+**G13 implements the REST security foundation, and it is the first authenticated
+surface this project has ever had.** What it does *not* do is as important as
+what it does:
+
+- **A peer principal is one enrolled replica of one database.** It is proved by
+  an Ed25519 signature over the request's method, path, database id, replica id,
+  timestamp, nonce, and body hash — never a bearer token, so nothing reusable
+  travels and a captured request is spent. Enrolled public keys live in schema
+  v25 `sync_peer_keys`, where enrolment and revocation are transactional and
+  audited; a revoked key is reported as unknown.
+- **It authorizes `/api/v1/sync/...` on that database and nothing else.**
+  Ordinary note routes keep their existing local, unauthenticated posture, and a
+  test asserts that presenting a peer credential to one changes nothing about
+  its answer. Sync authentication is not a login and creates no user concept.
+- **Pairing is a short-lived, single-use code**, spent in one transaction, whose
+  only job is to carry trust once. The group key travels back sealed under a key
+  derived from that code, so no reusable library key exists in displayable text
+  in any artifact — which replaces the clear-text development bundle G11 shipped.
+- **The transport policy is a refusal, not a warning.** With the surface
+  enabled, a non-loopback listener without TLS, a certificate without its key,
+  or unreadable TLS material makes `notriosd` exit and name the setting. Only
+  loopback plaintext is permitted, and only because it never leaves the machine.
+- **The surface is not for browsers.** It emits no CORS header and refuses any
+  request carrying `Origin`, `Cookie`, or `Referer`.
+- **Refusals are uniform and audited.** One message and one status for every
+  failed check; the reason is a closed vocabulary in the local audit log. Failed
+  attempts spend a per-address budget, so guessing a key or a code is bounded by
+  the limiter rather than by the network.
+- **Still out of scope:** multi-user accounts or roles, remote authorization of
+  any note route, and a public deployment claim. G14 owns the data plane, so the
+  authenticated surface currently carries a handshake and a pairing exchange and
+  no note content at all. The private key material remains in the warned `0600`
+  development file provider until v0.8 selects a platform store.
+
 `SYNCHRONIZATION.md` requires:
 
 - database/profile/replica identity negotiation and no silent universe merge;
@@ -351,3 +385,12 @@ server:
 
 Current release testing is single-user/local. Public or multi-user deployment
 is not approved by this review.
+
+**One exception exists as of v0.7 G13, and it is narrow.** The peer sync surface
+may be reached from another machine when `sync.rest.enabled` is true, and the
+service refuses to start rather than serve it on a non-loopback address without
+TLS. That does not make Notrios a networked application: the only routes reachable
+with a peer credential are `/api/v1/sync/...` for the one database that credential
+belongs to, and every other route keeps the local posture above. Exposing the
+service itself — the note API, the GUI, MCP — to a network remains unapproved and
+untested by this review.

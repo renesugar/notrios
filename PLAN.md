@@ -1,7 +1,7 @@
 # Plan: v0.7 — Native synchronization
 
-Status: **G0-G12 completed through 2026-08-13. Product version remains 0.6.0 and the
-canonical schema is v24. G13 is the next item and is not approved.** The
+Status: **G0-G13 completed through 2026-08-13. Product version remains 0.6.0 and the
+canonical schema is v25. G14 is the next item and is not approved.** The
 former seven-item draft was too coarse: it mixed protocol research, canonical
 write interception, merge semantics, two transports, cryptography, recovery,
 UI, retention, and release validation into slices that could not be reviewed or
@@ -933,7 +933,7 @@ on such a carrier, not a correctness mechanism, and the state vector is what
 carries correctness. `docs/operations.md` gains the operator section, the safe
 commands, and the never-run list.
 
-## G13. REST security foundation, pairing, and transport policy
+## G13. REST security foundation, pairing, and transport policy — complete
 
 **Goal.** Satisfy the security prerequisites that currently prohibit exposing
 Notrios beyond loopback before adding sync endpoints.
@@ -968,6 +968,27 @@ reconciliation.
 - **First pairing uses a short-lived, one-use pairing bundle transferred by
   QR/file/manual code**, containing no reusable library decryption key in
   displayable text. Exact UX waits for G18.
+
+**Outcome (2026-08-13).** Complete, archived as
+`plans/v0.7/016-rest-security-pairing-transport-policy.md` with evidence under
+`performance/v0.7-g13/`. Schema **v25** adds `sync_peer_keys` and
+`sync_pairing_invitations`. `internal/syncauth` defines the peer principal — an
+Ed25519 signature over the method, path, database id, replica id, timestamp,
+nonce, and body hash, never a bearer token — plus the pairing proofs, the replay
+cache, and the two rate limiters. Three routes landed:
+`/api/v1/sync/handshake`, `/api/v1/sync/pair`, and a loopback-only redacted
+`/api/v1/sync/status`. **A peer credential authorizes that surface and nothing
+else**, asserted by comparing an ordinary route's answer with and without one.
+**G11's clear-text development bundle is gone**: pairing is now a short-lived,
+single-use code, spent in one transaction, under which the group key travels
+sealed — so no artifact carries a reusable library key in displayable text. Peer
+public keys moved into the database, where enrolment and revocation are
+transactional and audited. The transport policy is a **startup refusal**, not a
+warning: a non-loopback listener without TLS, a certificate without its key, or
+unreadable TLS material makes the service exit and name the setting. Seventeen
+matrix cases, three authorized and fourteen refused, none explaining itself. No
+data plane (G14), no multi-user concept, no public deployment claim, and no
+external security review.
 
 ## G14. REST sync data plane and resumable encrypted backup download
 
@@ -1282,7 +1303,7 @@ recommendation, blocking status, and consequence.
 | Peer-key versus password backup wrapping | G10 | Resolved: one payload, two wrapping modes |
 | Directory initialization | G11 | Resolved: any enrolled profile |
 | Carrier artifact cleanup | G11 | Resolved: writer-owned and acknowledgement-gated |
-| Sync credential reach into ordinary REST | G13 | Resolved: none |
+| Sync credential reach into ordinary REST | G13 | Resolved: none — implemented and asserted |
 | Pairing bootstrap | G13 | Resolved: short-lived one-use bundle |
 | ZIP wrapper contract | G14 | Resolved: UX wrapper, not trust boundary |
 | MCP sync controls | G15 | Resolved: bounded incremental controls only |
@@ -1294,6 +1315,6 @@ recommendation, blocking status, and consequence.
 | Current-GUI Mermaid baseline | G18 | Resolved fact: upstream-capable but disabled pending offline/security evidence |
 | Release version/schema bookkeeping | G20 | Open, non-blocking until wrap-up |
 
-G0-G12 are complete. G13 is the next implementable item, but is not approved.
-Implementation begins only after an explicit instruction naming G13; completing
-it still stops for a verified ZIP and approval before G14.
+G0-G13 are complete. G14 is the next implementable item, but is not approved.
+Implementation begins only after an explicit instruction naming G14; completing
+it still stops for a verified ZIP and approval before G15.

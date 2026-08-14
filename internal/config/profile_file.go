@@ -29,6 +29,20 @@ func WriteProfileFile(path string, cfg Config) error {
 	if cfg.Sync.CredentialRef != "" {
 		fmt.Fprintf(&b, "  credential_ref: %s\n", q(cfg.Sync.CredentialRef))
 	}
+	// The transport policy is written out even at its defaults. A generated
+	// profile that silently omitted "the peer surface is off and TLS is
+	// required" would leave the most consequential setting in the file
+	// invisible, and an operator turning sync on would have to know it exists.
+	fmt.Fprintf(&b, "  rest:\n    enabled: %t\n    require_tls: %t\n", cfg.Sync.REST.Enabled, cfg.Sync.REST.RequireTLS)
+	if cfg.Sync.REST.TLSCertFile != "" {
+		fmt.Fprintf(&b, "    tls_cert_file: %s\n", q(cfg.Sync.REST.TLSCertFile))
+	}
+	if cfg.Sync.REST.TLSKeyFile != "" {
+		fmt.Fprintf(&b, "    tls_key_file: %s\n", q(cfg.Sync.REST.TLSKeyFile))
+	}
+	if cfg.Sync.REST.KeyFile != "" {
+		fmt.Fprintf(&b, "    key_file: %s\n", q(cfg.Sync.REST.KeyFile))
+	}
 	fmt.Fprintf(&b, "\nsearch_sidecar:\n  enabled: %t\n  binary: %s\n  index_dir: %s\n\n",
 		cfg.SearchSidecar.Enabled, q(cfg.SearchSidecar.Binary), q(cfg.SearchSidecar.IndexDir))
 	fmt.Fprintf(&b, "remote_media:\n  quarantine_dir: %s\n", q(cfg.RemoteMedia.QuarantineDir))

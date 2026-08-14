@@ -584,3 +584,28 @@ pending rather than admitting a history with a hole in it.
 Cutover installs the snapshot's vector as this replica's own observation and
 writes no peer acknowledgement: this replica holding a copy says nothing about
 what any peer has durably admitted, so a backup must never hold back collection.
+
+## Schema v25 — peer keys and pairing invitations
+
+G13 moves two things into the database, and both are about who may talk to this
+replica.
+
+`sync_peer_keys` holds each enrolled peer's **public** signing key, its replica,
+its status, and when it was enrolled or revoked. Nothing secret moved: these are
+public keys. What was gained is that enrolling and revoking are transactional,
+auditable, and visible to every process at once — a key file read by a daemon
+and rewritten by a CLI is a race with a security outcome. A revoked key is
+reported to the verifier as unknown and cannot be re-enrolled; minting a new one
+is the deliberate act.
+
+`sync_pairing_invitations` makes a pairing code single-use across restarts. The
+code itself is never stored — only its SHA-256, so a stolen database yields no
+usable invitation — and the row is moved to `consumed` in the same statement
+that checks it is open and unexpired. Two peers racing one code therefore
+produce one pairing and one refusal rather than two pairings, and an expired or
+consumed row is evidence rather than a credential.
+
+The private half of this — this replica's signing key and the library group key
+per epoch — stays outside the database in the warned `0600` key file, because a
+database copied to another machine must not carry the keys that decrypt its
+traffic.

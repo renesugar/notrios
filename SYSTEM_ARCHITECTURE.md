@@ -340,6 +340,18 @@ cannot be edited in transit. It adds no schema and no dependency. G13 still owns
 authenticated enrollment and authorization, and v0.8 owns the secret store the
 key interfaces stand in for.
 
+G13 advances the schema to v25 and adds the first authenticated surface. A peer
+principal is one enrolled replica of one database, proved by an Ed25519
+signature over the method, path, database id, replica id, timestamp, nonce, and
+body hash — not a bearer token, so nothing reusable travels. It reaches
+`/api/v1/sync/...` for that database and no ordinary note route, which keeps its
+existing local posture. Enrolled peer public keys are database state; the key
+file holds secrets only. Pairing is a short-lived, single-use code, spent in one
+transaction, under which the group key travels sealed. With the surface enabled,
+the service refuses to start on a non-loopback address without TLS rather than
+warning about it. G11 and G12 add and prove the ephemeral shared-directory
+carrier; the REST data plane remains G14's.
+
 G10 advances the schema to v24 with the durable catch-up state machine.
 `internal/synccatchup` signs requests, decides which peers may answer and which
 answer to take, defines the states an interruptible restore passes through, and

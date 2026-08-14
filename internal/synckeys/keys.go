@@ -62,6 +62,10 @@ type KeyFile struct {
 	path    string
 	data    keyFile
 	private ed25519.PrivateKey
+	// paired records that this process has already adopted a group key from a
+	// peer, so a second adoption in one session is refused for the same reason
+	// a second one across sessions is.
+	paired bool
 }
 
 // DefaultPath is where key material lives when a config does not say
@@ -203,6 +207,75 @@ func (f *KeyFile) SignerKeyID() string {
 
 // Sign implements syncwire.Signer.
 func (f *KeyFile) Sign(message []byte) []byte { return ed25519.Sign(f.private, message) }
+
+// PublicSigningKey is this replica's public identity, which peers enrol.
+func (f *KeyFile) PublicSigningKey() ed25519.PublicKey {
+	return f.private.Public().(ed25519.PublicKey)
+}
+
+// PrivateSigningKey is used to sign REST requests. It never leaves the process
+// and is deliberately not part of any serialized structure.
+func (f *KeyFile) PrivateSigningKey() ed25519.PrivateKey { return f.private }
+
+// AdoptGroupKey installs a group key received through a pairing exchange.
+//
+// It is the REST counterpart of ImportBundle, minus the peer key: G13 records
+// peer public keys in the database, where enrolment and revocation are
+// transactional and auditable, and leaves this file holding only secrets.
+func (f *KeyFile) AdoptGroupKey(keyID string, epoch uint32, key []byte) error {
+	if len(key) != syncwire.GroupKeyBytes {
+		return fmt.Errorf("%w: a group key is %d bytes", ErrUnknownFormat, syncwire.GroupKeyBytes)
+	}
+	encoded := base64.StdEncoding.EncodeToString(key)
+	slot := fmt.Sprint(epoch)
+	if f.data.KeyID == keyID {
+		if existing, held := f.data.Epochs[slot]; held && existing != encoded {
+			return fmt.Errorf("this replica already holds a different key for %s epoch %d", keyID, epoch)
+		}
+		f.data.Epochs[slot] = encoded
+		f.data.CurrentEpoch = epoch
+		return f.save()
+	}
+	if len(f.data.Peers) > 0 || f.paired {
+		return fmt.Errorf(
+			"this replica is already paired under key %s; adopting key %s would make its peers unreadable",
+			f.data.KeyID, keyID)
+	}
+	f.data.KeyID = keyID
+	f.data.Epochs = map[string]string{slot: encoded}
+	f.data.CurrentEpoch = epoch
+	f.data.Retired = nil
+	f.paired = true
+	return f.save()
+}
+
+// AdvanceEpoch mints a new group key and makes it current.
+//
+// It is the rotation hook G13 owes: after a revocation, remaining peers move to
+// a new epoch so a compromised device cannot read what is published next.
+// Retiring the old epoch is a separate act, because a library should not lose
+// the ability to read its own history in order to exclude a device.
+func (f *KeyFile) AdvanceEpoch() (uint32, error) {
+	key := make([]byte, syncwire.GroupKeyBytes)
+	if _, err := rand.Read(key); err != nil {
+		return 0, err
+	}
+	epoch := f.data.CurrentEpoch + 1
+	f.data.Epochs[fmt.Sprint(epoch)] = base64.StdEncoding.EncodeToString(key)
+	f.data.CurrentEpoch = epoch
+	return epoch, f.save()
+}
+
+// RetireEpoch refuses artifacts published under an epoch.
+func (f *KeyFile) RetireEpoch(epoch uint32) error {
+	for _, retired := range f.data.Retired {
+		if retired == epoch {
+			return nil
+		}
+	}
+	f.data.Retired = append(f.data.Retired, epoch)
+	return f.save()
+}
 
 // PublicKey implements syncwire.Verifier. This replica's own key is included
 // so that a round can read back and verify what it published itself.

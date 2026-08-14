@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
@@ -10,6 +9,7 @@ import (
 
 	"github.com/renesugar/notrios/internal/config"
 	"github.com/renesugar/notrios/internal/store"
+	"github.com/renesugar/notrios/internal/syncauth"
 	"github.com/renesugar/notrios/internal/synccarrier"
 	"github.com/renesugar/notrios/internal/synckeys"
 	"github.com/renesugar/notrios/internal/syncwire"
@@ -32,14 +32,24 @@ func runSync(args []string) {
 	switch args[0] {
 	case "init":
 		runSyncInit(args[1:])
-	case "bundle":
-		runSyncBundle(args[1:])
-	case "pair":
-		runSyncPair(args[1:])
+	case "invite":
+		runSyncInvite(args[1:])
+	case "join":
+		runSyncJoin(args[1:])
+	case "accept":
+		runSyncAccept(args[1:])
+	case "enroll":
+		runSyncEnroll(args[1:])
+	case "peers":
+		runSyncPeers(args[1:])
+	case "revoke":
+		runSyncRevoke(args[1:])
 	case "status":
 		runSyncStatus(args[1:])
 	case "discover":
 		runSyncDiscover(args[1:])
+	case "handshake":
+		runSyncHandshake(args[1:])
 	case "once":
 		runSyncOnce(args[1:])
 	default:
@@ -51,12 +61,17 @@ func runSync(args []string) {
 
 func printSyncUsage() {
 	fmt.Fprint(os.Stderr, `usage:
-  notriosctl sync init    [--db ...] [--keys path]
-  notriosctl sync bundle  [--db ...] [--keys path] --out <file>
-  notriosctl sync pair    [--db ...] [--keys path] <bundle-file>
-  notriosctl sync status  [--db ...] [--keys path]
-  notriosctl sync discover[--db ...] [--keys path] [--carrier dir]
-  notriosctl sync once    [--db ...] [--keys path] [--carrier dir] [--cleanup] [--materialize N]
+  notriosctl sync init     [--db ...] [--keys path]
+  notriosctl sync invite   [--ttl 15m] [--label ...] [--offline --out <file>]
+  notriosctl sync join     --url <base-url> --code <code>
+  notriosctl sync accept   --invite <file> --code <code> --out <file>
+  notriosctl sync enroll   --acceptance <file> --code <code>
+  notriosctl sync peers    [--db ...]
+  notriosctl sync handshake --url <base-url> [--db ...] [--keys path]
+  notriosctl sync revoke   --key <signer-key-id> [--reason ...] [--advance-epoch]
+  notriosctl sync status   [--db ...] [--keys path]
+  notriosctl sync discover [--db ...] [--keys path] [--carrier dir]
+  notriosctl sync once     [--db ...] [--keys path] [--carrier dir] [--cleanup] [--materialize N]
 `)
 }
 
@@ -172,87 +187,35 @@ func runSyncInit(args []string) {
 	})
 }
 
-func runSyncBundle(args []string) {
-	flags := newSyncFlags("bundle")
-	out := flags.set.String("out", "", "file to write the pairing bundle to")
+// runSyncHandshake proves the whole security foundation in one command: this
+// replica signs a request, a peer authenticates it as an enrolled principal of
+// the same database, and answers with what it is compatible with. It carries no
+// note content — the data plane is G14's.
+func runSyncHandshake(args []string) {
+	flags := newSyncFlags("handshake")
+	peerURL := flags.set.String("url", "", "the peer's base URL")
 	flags.parse(args)
-	if strings.TrimSpace(*out) == "" {
-		fmt.Fprintln(os.Stderr, "usage: notriosctl sync bundle --out <file>")
-		os.Exit(2)
-	}
-	st, _, databaseID := flags.openSyncStore()
-	defer st.Close()
-	keys := mustOpenKeys(flags.keyPath(databaseID))
-	handshake, err := st.LocalSyncHandshake(context.Background())
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
-	bundle, err := keys.ExportBundle(handshake)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
-	contents, err := json.MarshalIndent(bundle, "", "  ")
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
-	if err := os.WriteFile(*out, append(contents, '\n'), 0o600); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
-	fmt.Fprintln(os.Stderr, developmentKeyWarning)
-	fmt.Fprintln(os.Stderr, "warning: this bundle contains the library's group key in clear text. "+
-		"Transfer it the way you would a password, and delete it afterwards.")
-	printJSON(map[string]any{"bundle": *out, "replica_id": handshake.ReplicaID, "database_id": handshake.DatabaseID})
-}
-
-func runSyncPair(args []string) {
-	flags := newSyncFlags("pair")
-	flags.parse(args)
-	if flags.set.NArg() != 1 {
-		fmt.Fprintln(os.Stderr, "usage: notriosctl sync pair <bundle-file>")
-		os.Exit(2)
-	}
-	contents, err := os.ReadFile(flags.set.Arg(0))
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
-	var bundle synckeys.Bundle
-	if err := json.Unmarshal(contents, &bundle); err != nil {
-		fmt.Fprintln(os.Stderr, err)
+	if strings.TrimSpace(*peerURL) == "" {
+		fmt.Fprintln(os.Stderr, "usage: notriosctl sync handshake --url <base-url>")
 		os.Exit(2)
 	}
 	st, status, databaseID := flags.openSyncStore()
 	defer st.Close()
-	if !status.Enabled {
-		fmt.Fprintln(os.Stderr, "this library is not enrolled for sync: run `notriosctl sync init` first")
-		os.Exit(2)
-	}
-	if bundle.Handshake.DatabaseID != databaseID {
-		fmt.Fprintf(os.Stderr, "this bundle is for database %s, not %s\n", bundle.Handshake.DatabaseID, databaseID)
-		os.Exit(1)
-	}
+	requireEnrolled(status)
 	keys := mustOpenKeys(flags.keyPath(databaseID))
-	signerKeyID, err := keys.ImportBundle(bundle)
+	client := &syncauth.Client{
+		BaseURL: *peerURL, DatabaseID: databaseID, ReplicaID: status.ReplicaID,
+		SignerKeyID: keys.SignerKeyID(), Private: keys.PrivateSigningKey(),
+	}
+	code, body, err := client.Do(context.Background(), "GET", "/api/v1/sync/handshake", nil)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		exit(err)
+	}
+	if code != 200 {
+		fmt.Fprintf(os.Stderr, "the peer refused this replica (HTTP %d): %s\n", code, strings.TrimSpace(string(body)))
 		os.Exit(1)
 	}
-	// Two separate enrollments, because they answer two questions: the key file
-	// decides whose signatures are believed, and the store decides whose
-	// operations may be admitted. Pairing is the one act that does both.
-	if err := st.ConfigureSyncAdmissionPeer(context.Background(), bundle.Handshake); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
-	printJSON(map[string]any{
-		"paired_replica_id": bundle.Handshake.ReplicaID,
-		"signer_key_id":     signerKeyID,
-		"database_id":       bundle.Handshake.DatabaseID,
-	})
+	fmt.Println(strings.TrimSpace(string(body)))
 }
 
 func runSyncStatus(args []string) {
@@ -322,7 +285,8 @@ func runSyncOnce(args []string) {
 	}
 	report := map[string]any{"exchange": result}
 	if *materialize > 0 {
-		provider := synccarrier.NewProvider(round.Carrier(), keys, keys, syncwire.Limits{})
+		provider := synccarrier.NewProvider(round.Carrier(), keys,
+			syncwire.MultiVerifier{keys, st.PeerVerifier()}, syncwire.Limits{})
 		materialized, err := st.MaterializeResources(context.Background(), provider, *materialize)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
@@ -359,7 +323,11 @@ func mustBuildRound(flags *syncFlags, options synccarrier.Options) (*store.SQLit
 		fmt.Fprintf(os.Stderr, "carrier directory is not available: %s\n", flags.carrierDirectory())
 		os.Exit(1)
 	}
-	round := synccarrier.NewRound(synccarrier.NewStoreReplica(st), carrier, keys, keys, keys,
+	// Whose signatures this replica trusts now has two sources: its own key,
+	// so it can read back what it published, and the peer keys the database
+	// holds, where enrolment and revocation are transactional and auditable.
+	verifier := syncwire.MultiVerifier{keys, st.PeerVerifier()}
+	round := synccarrier.NewRound(synccarrier.NewStoreReplica(st), carrier, keys, keys, verifier,
 		store.NewLocalObjectProvider(st), options)
 	return st, keys, round
 }
