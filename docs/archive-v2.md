@@ -1,9 +1,11 @@
 # Native archive v2 safety contract
 
 > Scale review (2026-08-15): export, verification, restore, and both existing
-> object layouts remain supported. Before later synchronization work, G14a-G14e
-> will measure the physical full-backup/catch-up default at the supplied real
-> scale. The current loose default is not yet the frozen catch-up default.
+> object layouts remain supported. G14a's generated calibration now confirms
+> that the current loose path grows one file per note/object and that ZIP, not
+> authenticated framing, supplies meaningful byte overhead. G14b-G14e still
+> measure, select, implement, and freeze the physical full-backup/catch-up
+> default at the supplied real scale; loose is not yet that frozen default.
 
 Notrios archive v2 is the lossless backup and transfer format. Three commands
 use it: `notriosctl export archive-v2` writes a snapshot,

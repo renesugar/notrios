@@ -16,6 +16,12 @@ but no full-scale end-to-end catch-up comparison against a consistent SQLite
 snapshot, restic, and borg. Do not interpret `fanout` being the current default
 as the final full-backup/catch-up decision.
 
+G14a's generated 100k calibration confirms the physical issue while preserving
+the semantic contract: loose export produced 100,093 files; stored ZIP added
+11.15%, while authenticated framing added only 6,004 bytes; open/restore stayed
+below 92 MiB and the canonical content fingerprint matched. G14b still owns the
+real-corpus/candidate decision.
+
 ## Purpose and boundaries
 
 Archive v2 is the lossless, versioned snapshot container for backup, transfer,

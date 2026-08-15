@@ -297,9 +297,12 @@ also exposed about **25% stored-ZIP overhead from one entry per loose archive
 object**, while the existing pack fix has never been exercised end to end at
 the supplied full scale.
 
-**Archive scalability now blocks further synchronization work. G14a is next and
-approval-gated; G15 cannot start until G14e completes.** G14a builds a
-resumable, aggregate-only benchmark contract. G14b runs the equivalent recipe
+**Archive scalability now blocks further synchronization work. G14a is
+complete; G14b is next and approval-gated, and G15 cannot start until G14e
+completes.** G14a supplies the resumable, aggregate-only benchmark contract and
+generated 10k/100k calibration. That evidence confirms one-file-per-object
+growth, isolates stored-ZIP overhead from framing, and records a 100k
+incremental-replay memory failure without changing production code. G14b runs the equivalent recipe
 Joplin/Obsidian pair and attachment-bearing Joplin corpus against loose and
 packed archive-v2, the current catch-up wrapper, stopped and online SQLite
 snapshot candidates with packed external assets, and comparable restic/borg

@@ -1,8 +1,8 @@
 # Plan: v0.7 — Native synchronization
 
-Status: **G0-G14 completed through 2026-08-14. Product version remains 0.6.0 and the
+Status: **G0-G14a completed through 2026-08-15. Product version remains 0.6.0 and the
 canonical schema is v25. Archive scalability is reopened as a release-blocking
-G14a-G14e sequence; G14a is next and is not approved. G15 cannot start until
+G14a-G14e sequence; G14b is next and is not approved. G15 cannot start until
 G14e is complete.** The
 former seven-item draft was too coarse: it mixed protocol research, canonical
 write interception, merge semantics, two transports, cryptography, recovery,
@@ -1049,7 +1049,7 @@ refusals, so the second data-plane round returned `429` and a legitimate peer
 throttled itself out of its own library. Scheduling, retries, and backpressure
 remain G15's.
 
-## G14a. Investigation — archive scalability benchmark contract and resumable harness
+## G14a. Investigation — archive scalability benchmark contract and resumable harness — complete
 
 **Goal.** Make the format decision reproducible before another long private-
 corpus run, with each phase independently resumable after interruption and no
@@ -1125,6 +1125,24 @@ bytes, compression ratio, and tool versions. Archive under
 - **Cache control — Non-blocking.** Default: run interleaved first and repeat
   passes and label them honestly; do not call a pass "cold" unless the harness
   actually controlled cache state.
+
+**Outcome (2026-08-15).** Complete, archived as
+`plans/v0.7/019-archive-scalability-benchmark-harness.md` with generated,
+aggregate-only evidence under `performance/v0.7-g14a/`. The approved defaults
+were used: every pass is labeled `interleaved-first`, no cache state is called
+cold, correctness/recoverability are mandatory, and the 2-hour/512-MiB/
+256-MiB/non-object-per-file gates remain unchanged for G14b. One command now
+runs or resumes any named tier/phase, atomically publishes an immutable result,
+validates privacy/arithmetic, and emits the 11-adapter stage map. Both 10k and
+100k generated loose-path calibrations completed all nine stages. The 100k
+loose archive carried 100,093 files and therefore fails the object-per-file
+gate even though fanout bounded one directory at 256 entries; stored ZIP added
+26,224,320 bytes (11.15%) while authenticated framing added only 6,004 bytes.
+Snapshot open and restore remained below 92 MiB and content fingerprints
+matched, but one post-snapshot replay reached 797,937,664 bytes peak RSS and
+fails the 512 MiB desktop gate. G14a changes no production code, schema,
+dependency, archive default, encryption, or catch-up behavior. G14b is next and
+is not approved.
 
 ## G14b. Investigation — full-corpus baseline and physical snapshot selection
 
@@ -1581,7 +1599,7 @@ recommendation, blocking status, and consequence.
 | Sync credential reach into ordinary REST | G13 | Resolved: none — implemented and asserted |
 | Pairing bootstrap | G13 | Resolved: short-lived one-use bundle |
 | ZIP wrapper contract | G14 | Resolved: UX wrapper, not trust boundary |
-| Archive benchmark acceptance policy | G14a | Open, non-blocking defaults recorded |
+| Archive benchmark acceptance policy | G14a | Resolved: approved defaults exercised and retained for G14b |
 | Physical full-snapshot representation | G14b/G14c | Open; G14b investigation blocks G14c and all later sync work |
 | MCP sync controls | G15 | Resolved: bounded incremental controls only |
 | v0.7 secret-store provider | G16 | Resolved: interface plus warned `0600` development provider |
@@ -1592,8 +1610,8 @@ recommendation, blocking status, and consequence.
 | Current-GUI Mermaid baseline | G18 | Resolved fact: upstream-capable but disabled pending offline/security evidence |
 | Release version/schema bookkeeping | G20 | Open, non-blocking until wrap-up |
 
-G0-G14 are complete and the archive-scalability planning amendment is recorded.
-G14a is the next implementable item, but is not approved. G15-G20 are blocked
+G0-G14a are complete and the archive-scalability planning amendment is recorded.
+G14b is the next implementable item, but is not approved. G15-G20 are blocked
 until G14e completes. Implementation begins only after an explicit instruction
-naming G14a; completing it still stops for a verified ZIP and approval before
-G14b.
+naming G14b; completing it still stops for a verified ZIP and approval before
+G14c.

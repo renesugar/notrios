@@ -14,18 +14,29 @@ wrap-up). The thirteen v0.5 slices remain archived under `plans/v0.5/`.
 independently approvable G0-G20 slices plus the newly inserted, blocking
 G14a-G14e archive-scalability sequence. The user's 2026-08-11
 review resolved the policy decisions through G17, including mandatory payload
-encryption and per-replica Ed25519 signatures. **G0-G14 are complete** and
+encryption and per-replica Ed25519 signatures. **G0-G14a are complete** and
 archived under `plans/v0.7/`; their reviewed evidence is under
 `performance/v0.7-g0/`, `performance/v0.7-g1/`, `performance/v0.7-g1a/`,
 `performance/v0.7-g2/`, `performance/v0.7-g4/`, `performance/v0.7-g5/`,
 `performance/v0.7-g6/`, `performance/v0.7-g7/`, `performance/v0.7-g8/`,
 `performance/v0.7-g9/`, `performance/v0.7-g10/`, `performance/v0.7-g11/`, and
-`performance/v0.7-g12/`, `performance/v0.7-g13/`, and `performance/v0.7-g14/`.
-**G14a is next and is not approved. G15 is blocked until G14e completes.** G14a
-owns the resumable aggregate-only benchmark contract; G14b runs the supplied
+`performance/v0.7-g12/`, `performance/v0.7-g13/`, `performance/v0.7-g14/`, and
+`performance/v0.7-g14a/`. **G14b is next and is not approved. G15 is blocked
+until G14e completes.** G14a now owns the resumable aggregate-only benchmark
+contract and its 10k/100k generated calibration; G14b runs the supplied
 large corpora and selects the physical full-snapshot representation; G14c/G14d
 implement and integrate that choice; G14e repeats the full-scale acceptance
 matrix and freezes the format.
+
+G14a adds only evidence/prototype code. Its 11 adapters map loose/packed
+archive-v2 and catch-up, stopped/online/bundled SQLite-image candidates, and
+restic/borg raw/canonical references onto nine common stages. Eighteen generated
+phase rows validate immutable resume, source-read-only behavior, privacy,
+arithmetic, exact wrapper hashes, semantic restore, and real incremental replay.
+At 100k, loose export made 100,093 files; ZIP added 11.15% while NBK1 added
+6,004 bytes; open and restore stayed under 92 MiB, but incremental replay
+reached 797,937,664 bytes peak RSS. Those are baseline failures for G14b, not
+production changes made by G14a.
 
 G0 added no production sync code or dependency. It freezes the threat model,
 normative glossary, thirty misuse/control traces, and upstream license/platform

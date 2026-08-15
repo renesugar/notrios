@@ -89,7 +89,9 @@ future synchronization clocks.
 ## Backup and restore
 
 The physical full-snapshot representation is under a blocking v0.7 G14a-G14e
-scale review as of 2026-08-15. The rules below remain mandatory for every
+scale review as of 2026-08-15. G14a's resumable benchmark contract and generated
+10k/100k calibration are complete; G14b is the next approval-gated comparison.
+The rules below remain mandatory for every
 candidate; they do not preselect loose/packed semantic archive-v2 versus a
 capability-declared compatible SQLite image with packed external assets.
 

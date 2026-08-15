@@ -417,11 +417,15 @@ That physical-format conclusion is reopened before G15. G14's implemented
 catch-up path exports loose archive-v2, wraps each object as a stored ZIP entry,
 then seals the stream; ZIP metadata added about 25% at 100 and 500 notes, while
 the authentication frames add only 28 bytes per MiB. G14a-G14e now block later
-sync work: build a resumable aggregate-only harness; compare loose/packed
+sync work. G14a completed the resumable aggregate-only harness and its generated
+10k/100k calibration: the loose archive produced 100,093 files at 100k, stored
+ZIP added 11.15%, authenticated framing added only 6,004 bytes, and one
+incremental replay exceeded the 512 MiB desktop gate. G14b must now compare loose/packed
 archive-v2, the complete catch-up path, stopped/online SQLite snapshot
 candidates with packed external assets, restic, and borg on the supplied real
 corpora; implement the measured winner; integrate crash-safe restore and
-catch-up; then repeat full-scale acceptance. A raw live-WAL copy is never a
+corpora; G14c/G14d then implement the measured winner and integrate crash-safe
+restore/catch-up, and G14e repeats full-scale acceptance. A raw live-WAL copy is never a
 candidate. SQLCipher may encrypt a database image but does not by itself bind
 external assets or provide semantic subset/merge, capability verification,
 signatures, or replica-identity handling.

@@ -1,6 +1,6 @@
 # Plan Status
 
-Updated: 2026-08-15 (archive scalability amendment complete; G14a next)
+Updated: 2026-08-15 (G14a benchmark harness complete; G14b next)
 
 ## Active milestone
 
@@ -14,9 +14,9 @@ G15-G20: evidence, profiles/local journal, state-vector convergence,
 revision deltas/merge, lazy resources, secure container/catch-up,
 ephemeral-directory and REST transports, jobs/UI/retention, shared-core/FFI/
 Mermaid/mobile handoff, compatibility, and final validation. The user's
-2026-08-11 review resolved every original G0-G17 policy decision. **G0-G14 are
+2026-08-11 review resolved every original G0-G17 policy decision. **G0-G14a are
 complete** and archived under `plans/v0.7/`; the 2026-08-15 planning amendment
-reopens physical snapshot scalability. G14a is next and is not approved. G15 is
+reopens physical snapshot scalability. G14b is next and is not approved. G15 is
 blocked until G14e completes.
 
 ## Archive scalability planning amendment — 2026-08-15
@@ -46,8 +46,29 @@ blocked until G14e completes.
   index.
 - The planning slice changes no production code, schema, dependency, archive
   default, or sync behavior. It is archived as
-  `plans/v0.7/018-archive-scalability-plan-amendment.md`. G14a still requires
-  explicit user approval.
+  `plans/v0.7/018-archive-scalability-plan-amendment.md`.
+
+## v0.7 G14a completion — 2026-08-15
+
+- `scripts/run_archive_scalability_benchmark.sh` runs one named 10k/100k
+  phase in an external workspace. Every phase has an atomic checkpoint and an
+  immutable, separately valid aggregate result; rerunning a completed phase
+  reads it without invoking work.
+- The machine-readable contract maps all 11 Notrios/SQLite/restic/borg
+  candidates onto nine common boundaries. It records source/output inventory,
+  directory histograms, resources, environment/tools, wall/CPU/I/O/RSS,
+  exact artifact hashes, and correctness assertions without paths or content.
+- All 18 loose-path calibration rows passed. Scaling from 10k to 100k stayed
+  below 10× and every stage stayed below two hours. At 100k, snapshot open and
+  restore stayed below 92 MiB and the P4 content fingerprint matched.
+- The current baseline nonetheless fails two approved defaults: loose export
+  grows to 100,093 files for 100,000 notes, and one post-snapshot replay peaks
+  at 797,937,664 bytes RSS. Stored ZIP adds 11.15% at 100k while NBK1 adds only
+  6,004 bytes, confirming container-entry overhead rather than encryption.
+- No production code, schema, dependency, default, database encryption, or
+  catch-up behavior changed. Archived as
+  `plans/v0.7/019-archive-scalability-benchmark-harness.md`; G14b needs explicit
+  user approval.
 
 ## v0.7 G14 completion — 2026-08-14
 

@@ -693,7 +693,7 @@ note's preview.
 No scale profile: a block is bounded to 100 rows through the search path whose
 10k/100k/500k evidence H7 and Q1 already carry.
 
-### Archive scalability tests (planned v0.7 G14a-G14e)
+### Archive scalability tests (v0.7 G14a complete; G14b-G14e planned)
 
 Before sync tests advance beyond G14, G14a-G14e add a blocking archive-
 scalability gate. The aggregate-only harness must checkpoint each long phase
@@ -716,6 +716,18 @@ the reference machine, desktop RSS over 512 MiB, receiver proxy RSS over 256
 MiB, or an object-per-note transport tree. ext4 and the Google Drive FUSE
 mapping are available; exFAT is not, so evidence may prove bounded shape but
 must not claim measured exFAT or physical-mobile performance.
+
+G14a implements that contract in
+`scripts/run_archive_scalability_benchmark.sh` and
+`performance/v0.7-g14a/harness`. Unit tests cover the complete adapter-stage
+map, interrupted retry, immutable completed-result resume, atomic refusal of an
+invalid result, aggregate privacy, directory arithmetic, source mutation
+detection, and compression arithmetic. Generated 10k/100k calibration drives
+all nine stages. The current loose baseline stays correct but fails the
+object-per-note shape gate (100,093 files at 100k) and the desktop memory gate
+during one incremental replay (797,937,664 bytes); open and restore remain
+below the 256 MiB proxy. G14b must preserve those failures while running the
+full candidate/private-corpus matrix.
 
 ### Sync model and transport tests (planned v0.7)
 

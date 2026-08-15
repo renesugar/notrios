@@ -7,7 +7,7 @@ This file is the codebase atlas. Update it whenever major files or directories a
 - `README.md` — project overview and quick start.
 - `PLAN.md` — the **active v0.7 native synchronization plan**, divided into
   independently approvable G0-G20 slices plus the blocking G14a-G14e archive-
-  scalability sequence. G0-G14 are complete; G14a is next but unapproved, and
+  scalability sequence. G0-G14a are complete; G14b is next but unapproved, and
   G15 is blocked through G14e. The current product remains 0.6.0 at schema v25; v0.6 is archived under
   `plans/v0.6/`; v0.5 and v0.4 are archived under their version directories.
 - `plans/scaffold/SCAFFOLD_CREATION_PLAN.md` — process for creating/refining this scaffold.
