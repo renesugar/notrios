@@ -129,6 +129,11 @@
 - Exact sync envelope encoding, encryption/signature policy, revision-delta
   merge, retention horizon, resource chunk threshold, and per-set conflict
   policy (see the owning G0-G17 items in `PLAN.md`).
+- Physical full-snapshot representation after the G14 scale gap: G14b must
+  choose packed semantic archive-v2, a compatible SQLite-image capability with
+  packed external assets and semantic fallback, or a further repository
+  investigation from full-corpus evidence. G14c and all later sync work are
+  blocked on that recorded choice.
 - Whether optional live co-editing merits a Yjs-compatible Go dependency.
 - When Wails v3/mobile has sufficient stability and native evidence to replace
   the stable Wails v2 shell.

@@ -3,10 +3,10 @@
 Notrios (formerly "Notes Companion") is a local-first note-taking, search, import, and publishing system for very large Markdown and document collections.
 It combines a Go REST/MCP service (`notriosd`), a built-in GUI, SQLite/FTS5-backed canonical storage, content-addressed resources, optional Recoll-derived search/extraction, and support for third-party native clients (C++/Qt, Go/Wails, Rust/Tauri) over the same API. A versioned no-GUI C ABI is planned before 1.0, followed by an independent post-1.0 Flutter client; mobile delivery does not depend exclusively on Wails.
 
-The v0.1 through v0.6 milestones are complete. v0.7 G0-G6 are complete: threat
-and workload evidence, pure-Go binary-delta feasibility, bounded envelope and
-resource design, isolated runtime profiles, the local journal, and bounded
-state-vector admission, and deterministic metadata/tree convergence. G7 is next and unapproved — see
+The v0.1 through v0.6 milestones are complete. v0.7 G0-G14 are complete through
+the authenticated REST sync data plane and resumable encrypted snapshot
+download. Archive scalability is now reopened as blocking G14a-G14e work before
+the scheduler/UI/retention slices: G14a is next and unapproved — see
 [`PLAN.md`](PLAN.md) and
 [`ROADMAP.md`](ROADMAP.md). The repository is
 structured so a coding agent can resume safely after usage limits or model
@@ -135,8 +135,13 @@ Recoll availability, backlog, sync/index, and reconciliation state.
   proves it against a mapped cloud folder and a drive passed between peers, and
   G13 advances schema v25 with the first authenticated surface: a peer principal
   proved by a signature over each request, authorizing `/api/v1/sync/...` for one
-  database and nothing else, paired by a short-lived single-use code. The REST
-  sync data plane is not implemented yet.
+  database and nothing else, paired by a short-lived single-use code. G14
+  implements the REST data plane and resumable encrypted snapshot download.
+  Its 100/500-note evidence exposed about 25% stored-ZIP overhead from loose
+  per-object entries, so G14a-G14e now block G15: build the resumable benchmark,
+  compare packed archive-v2 and consistent SQLite snapshot candidates with
+  restic/borg on the supplied real corpora, implement the winner, integrate
+  restore/catch-up, and repeat full-scale acceptance.
 - Agent progress/attempt tracking: [`agent/PLAN_STATUS.md`](agent/PLAN_STATUS.md), [`agent/ATTEMPT_LOG.jsonl`](agent/ATTEMPT_LOG.jsonl), and [`agent/MODEL_LOG.jsonl`](agent/MODEL_LOG.jsonl).
 
 ## Contributing

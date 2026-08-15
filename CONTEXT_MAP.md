@@ -6,9 +6,9 @@ This file is the codebase atlas. Update it whenever major files or directories a
 
 - `README.md` — project overview and quick start.
 - `PLAN.md` — the **active v0.7 native synchronization plan**, divided into
-  twenty-two independently approvable slices (G0, G1, G1a, and G2-G20).
-  G0-G17 policy decisions are resolved; G0-G14 are complete and G15 is next but
-  unapproved. The current product remains 0.6.0 at schema v25; v0.6 is archived under
+  independently approvable G0-G20 slices plus the blocking G14a-G14e archive-
+  scalability sequence. G0-G14 are complete; G14a is next but unapproved, and
+  G15 is blocked through G14e. The current product remains 0.6.0 at schema v25; v0.6 is archived under
   `plans/v0.6/`; v0.5 and v0.4 are archived under their version directories.
 - `plans/scaffold/SCAFFOLD_CREATION_PLAN.md` — process for creating/refining this scaffold.
 - `ROADMAP.md` — product roadmap and future features.
@@ -70,7 +70,9 @@ This file is the codebase atlas. Update it whenever major files or directories a
   and `performance/v0.7-g14/` — the REST data plane: G11's `Carrier` implemented
   over the signing client so both transports run one protocol, the carrier
   routes with `Range`, and the resumable encrypted snapshot download whose
-  correctness comes from archive-v2 rather than from its ZIP wrapper.
+  correctness comes from archive-v2 rather than from its ZIP wrapper. Its
+  loose-object ZIP overhead triggered G14a-G14e; do not treat this small-tier
+  transport evidence as the full-scale format decision.
 - `internal/synckeys/` — the warned `0600` development secret provider holding
   one group key per epoch and this replica's signing key. Since G13 it holds
   secrets only: which peers are trusted is database state. v0.8 owns the

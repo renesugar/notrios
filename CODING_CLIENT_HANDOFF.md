@@ -11,7 +11,8 @@ readable at scale), F6 (job control plane), and F7 (documentation and release
 wrap-up). The thirteen v0.5 slices remain archived under `plans/v0.5/`.
 
 `PLAN.md` now holds the **active v0.7 native synchronization plan** with
-twenty-two independently approvable slices: G0, G1, G1a, and G2-G20. The user's 2026-08-11
+independently approvable G0-G20 slices plus the newly inserted, blocking
+G14a-G14e archive-scalability sequence. The user's 2026-08-11
 review resolved the policy decisions through G17, including mandatory payload
 encryption and per-replica Ed25519 signatures. **G0-G14 are complete** and
 archived under `plans/v0.7/`; their reviewed evidence is under
@@ -20,8 +21,11 @@ archived under `plans/v0.7/`; their reviewed evidence is under
 `performance/v0.7-g6/`, `performance/v0.7-g7/`, `performance/v0.7-g8/`,
 `performance/v0.7-g9/`, `performance/v0.7-g10/`, `performance/v0.7-g11/`, and
 `performance/v0.7-g12/`, `performance/v0.7-g13/`, and `performance/v0.7-g14/`.
-**G15 is next and is not approved.** It owns durable sync jobs, scheduling
-boundaries, retries, and bounded MCP control.
+**G14a is next and is not approved. G15 is blocked until G14e completes.** G14a
+owns the resumable aggregate-only benchmark contract; G14b runs the supplied
+large corpora and selects the physical full-snapshot representation; G14c/G14d
+implement and integrate that choice; G14e repeats the full-scale acceptance
+matrix and freezes the format.
 
 G0 added no production sync code or dependency. It freezes the threat model,
 normative glossary, thirty misuse/control traces, and upstream license/platform
@@ -251,6 +255,15 @@ round exposed immediately as a `429` against a legitimate peer. It is now
 checked before work and spent only on refusal, pairing excepted, and the
 per-peer request budget rose from 120 to 600 a minute.
 
+The 2026-08-15 scalability amendment reopens only the **physical full-snapshot
+representation**, not G14's security or transport contract. G14 exported loose
+archive-v2 objects, then stored every one as a ZIP entry before frame sealing;
+at 100 and 500 notes that added about 25%, almost entirely ZIP entry metadata.
+P3b already collapsed a 382,206-note archive from 382,447 files to 46, but that
+pack path has not been measured through production catch-up or compared with a
+consistent SQLite snapshot, restic, and borg at the supplied recipedb scale.
+Do not start G15 to schedule a path whose scale/default is still undecided.
+
 That review also added a second portability route. v0.8 now investigates and
 builds a framework-neutral Go application facade and versioned no-GUI C ABI,
 with Android-emulator-only pre-1.0 evidence; v1.0 packages the supported ABI
@@ -337,7 +350,8 @@ Archive-v2 supports two object layouts. Loose `fanout` is the default and
 deduplicates and resumes through the object tree. Opt-in `--pack` collapses a
 382,206-note archive from 382,447 files to 46 at ~11% more disk and 1.29×
 faster; the file-count collapse, not local speed, is what v0.7's REST and
-folder/rclone transports need.
+folder/rclone transports need. That earlier conclusion is now a hypothesis to
+retest end to end in G14b rather than the final default.
 
 ## First files to read
 

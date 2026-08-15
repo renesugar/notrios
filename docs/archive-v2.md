@@ -1,5 +1,10 @@
 # Native archive v2 safety contract
 
+> Scale review (2026-08-15): export, verification, restore, and both existing
+> object layouts remain supported. Before later synchronization work, G14a-G14e
+> will measure the physical full-backup/catch-up default at the supplied real
+> scale. The current loose default is not yet the frozen catch-up default.
+
 Notrios archive v2 is the lossless backup and transfer format. Three commands
 use it: `notriosctl export archive-v2` writes a snapshot,
 `notriosctl verify archive-v2` reads one back read-only, and

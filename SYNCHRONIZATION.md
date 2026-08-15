@@ -413,6 +413,19 @@ below the desktop archive writer's 256 MiB/65,536-object targets because the
 current reader loads a trailer whole. G9 must preserve loose compatibility and
 bound or stream trailer reads.
 
+That physical-format conclusion is reopened before G15. G14's implemented
+catch-up path exports loose archive-v2, wraps each object as a stored ZIP entry,
+then seals the stream; ZIP metadata added about 25% at 100 and 500 notes, while
+the authentication frames add only 28 bytes per MiB. G14a-G14e now block later
+sync work: build a resumable aggregate-only harness; compare loose/packed
+archive-v2, the complete catch-up path, stopped/online SQLite snapshot
+candidates with packed external assets, restic, and borg on the supplied real
+corpora; implement the measured winner; integrate crash-safe restore and
+catch-up; then repeat full-scale acceptance. A raw live-WAL copy is never a
+candidate. SQLCipher may encrypt a database image but does not by itself bind
+external assets or provide semantic subset/merge, capability verification,
+signatures, or replica-identity handling.
+
 Imports execute in bounded transactions under one import-job identity. They may
 allocate an HLC plus consecutive operations for each committed batch; source
 timestamps are metadata, never the synchronization clock. Blobs publish before

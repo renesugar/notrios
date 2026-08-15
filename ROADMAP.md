@@ -191,8 +191,9 @@ question, and are not on the original list.
 ## v0.7 — Versioning and synchronization
 
 This is the first milestone that merges independently changed canonical state,
-so the replacement `PLAN.md` divides it into **twenty-two independently
-approvable items (G0, G1, G1a, and G2-G20)** rather than the former six
+so the replacement `PLAN.md` divides it into independently approvable items
+(G0, G1, G1a, G2-G14, the blocking G14a-G14e archive-scalability sequence,
+and G15-G20) rather than the former six
 implementation groups.
 The user's 2026-08-11 review resolved the G0-G17 policy decisions; no item is
 approved for implementation merely by resolving its decisions.
@@ -291,9 +292,24 @@ G11's artifacts over that authenticated surface by implementing the same
 `Carrier` interface, so REST and a shared folder are one protocol with two
 couriers — measured at +0.07% overhead at 500 notes, because admission dominates
 either way. A snapshot download is resumable, encrypted in authenticated frames,
-and verified by archive-v2 itself before any restore. **G15 is next and
-approval-gated**: durable sync jobs, scheduling boundaries, retries, and bounded
-MCP control.
+and verified by archive-v2 itself before any restore. G14's small backup tiers
+also exposed about **25% stored-ZIP overhead from one entry per loose archive
+object**, while the existing pack fix has never been exercised end to end at
+the supplied full scale.
+
+**Archive scalability now blocks further synchronization work. G14a is next and
+approval-gated; G15 cannot start until G14e completes.** G14a builds a
+resumable, aggregate-only benchmark contract. G14b runs the equivalent recipe
+Joplin/Obsidian pair and attachment-bearing Joplin corpus against loose and
+packed archive-v2, the current catch-up wrapper, stopped and online SQLite
+snapshot candidates with packed external assets, and comparable restic/borg
+tasks. It decides whether packing salvages the semantic format or a required
+same-schema SQLite-image capability is justified. G14c implements only the
+selected representation; G14d integrates crash-safe restore, emergency backup,
+and catch-up; G14e repeats the full-corpus comparison with production code and
+freezes the contract for G19. exFAT is no longer available on the test drives,
+so the gate requires a bounded, non-object-per-file layout but makes no
+unmeasured exFAT performance claim.
 
 - **Evidence before contracts (G0-G2, including G1a):** threat model and
   reference validation; representative revision/delta/three-way-merge
@@ -307,10 +323,12 @@ MCP control.
   visible three-way conflicts through Notrios-owned pure-Go implementations;
   lazy, hash-verified resource materialization, with named-parent binary deltas
   considered only if G1a/G2 evidence justifies them.
-- **Secure container and catch-up (G9-G10):** archive-v2 change-envelope
+- **Secure container and catch-up (G9-G10, G14a-G14e):** archive-v2 change-envelope
   capabilities; mandatory authenticated encryption and per-replica Ed25519
   signatures; signed backup requests; encrypted snapshot/ZIP catch-up and reset
-  followed by incremental replay from the snapshot vector.
+  followed by incremental replay from the snapshot vector; then a blocking,
+  full-corpus physical-format benchmark, implementation, catch-up integration,
+  and acceptance freeze before scheduling or UI work.
 - **Two carrier adapters, one protocol (G11-G15):** an ephemeral shared
   directory that can be deleted and reconstructed, with immutable per-replica
   advertisements/requests/artifacts; Google Drive/removable-media conformance

@@ -1,20 +1,53 @@
 # Plan Status
 
-Updated: 2026-08-14 (G14 REST sync data plane complete; G15 next)
+Updated: 2026-08-15 (archive scalability amendment complete; G14a next)
 
 ## Active milestone
 
 **v0.1 through v0.6 are complete.** Product version is **0.6.0** and the
-canonical schema is **v24**. v0.6 F0-F7 are archived under `plans/v0.6/`;
+canonical schema is **v25**. v0.6 F0-F7 are archived under `plans/v0.6/`;
 earlier milestones remain under their version directories.
 
 `PLAN.md` is now the **active v0.7 native synchronization plan**. It contains
-G0, G1, G1a, and G2-G20: evidence, profiles/local journal, state-vector convergence,
+G0, G1, G1a, G2-G14, the blocking G14a-G14e archive-scalability sequence, and
+G15-G20: evidence, profiles/local journal, state-vector convergence,
 revision deltas/merge, lazy resources, secure container/catch-up,
 ephemeral-directory and REST transports, jobs/UI/retention, shared-core/FFI/
 Mermaid/mobile handoff, compatibility, and final validation. The user's
-2026-08-11 review resolved every G0-G17 policy decision. **G0-G14 are complete**
-and archived under `plans/v0.7/`; G15 is next and is not approved.
+2026-08-11 review resolved every original G0-G17 policy decision. **G0-G14 are
+complete** and archived under `plans/v0.7/`; the 2026-08-15 planning amendment
+reopens physical snapshot scalability. G14a is next and is not approved. G15 is
+blocked until G14e completes.
+
+## Archive scalability planning amendment — 2026-08-15
+
+- G14 measured about 25% stored-ZIP overhead at 100/500 notes because the
+  catch-up producer exports loose archive-v2 and creates one ZIP entry per
+  object. Encryption frames add only 28 bytes per MiB.
+- Existing evidence is necessary but insufficient: P3b's pack layout collapsed
+  382,447 files to 46 at 382,206 notes and P4 restored both layouts with
+  attachment/source-bundle fidelity, but production catch-up still uses loose
+  export and no full-scale catch-up/SQLite/restic/borg comparison exists.
+- `PLAN.md` now inserts five approval-gated slices before G15. G14a builds a
+  resumable aggregate-only harness; G14b runs the supplied recipe pair and
+  attachment corpus and selects packed semantic archive-v2, a compatible
+  SQLite-image capability, or a further repository investigation; G14c
+  implements the selection; G14d integrates restore/emergency backup/catch-up;
+  G14e repeats full-scale acceptance and freezes the format.
+- The available local data facts are aggregate only: the recipe Joplin and
+  Obsidian inputs contain 1,619,759 files together; the attachment Joplin input
+  contains 112,093 files. The reference data and `/media/renes/HD2` are ext4;
+  `/home/renes/GoogleDrive` is a FUSE mapping. exFAT is no longer available, so
+  the plan requires bounded directory shape but makes no exFAT timing claim.
+- SQLCipher is treated as an encryption-at-rest/database-image candidate, not
+  as a substitute for external-asset binding, semantic subset/merge, manifest
+  verification, signatures, or identity rotation. A Borg port and Bluge are
+  out of scope; Bluge does not replace a transactional authoritative pack
+  index.
+- The planning slice changes no production code, schema, dependency, archive
+  default, or sync behavior. It is archived as
+  `plans/v0.7/018-archive-scalability-plan-amendment.md`. G14a still requires
+  explicit user approval.
 
 ## v0.7 G14 completion — 2026-08-14
 
@@ -54,7 +87,7 @@ and archived under `plans/v0.7/`; G15 is next and is not approved.
 - No scheduling, retries, or backpressure (G15), no UI (G16), no decrypted
   streaming to MCP, no remote archive import request, and no network
   measurement — loopback on one host. Product remains 0.6.0; schema is v25.
-  G15 remains unapproved.
+  G15 was then unapproved; the 2026-08-15 amendment now places G14a-G14e first.
 
 ## v0.7 G13 completion — 2026-08-13
 

@@ -88,6 +88,11 @@ future synchronization clocks.
 
 ## Backup and restore
 
+The physical full-snapshot representation is under a blocking v0.7 G14a-G14e
+scale review as of 2026-08-15. The rules below remain mandatory for every
+candidate; they do not preselect loose/packed semantic archive-v2 versus a
+capability-declared compatible SQLite image with packed external assets.
+
 - The default offline backup stops writes, snapshots SQLite consistently, and
   includes every referenced asset plus a checksum manifest.
 - An online backup uses SQLite's backup API or an equivalent consistent

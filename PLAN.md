@@ -1,7 +1,9 @@
 # Plan: v0.7 — Native synchronization
 
 Status: **G0-G14 completed through 2026-08-14. Product version remains 0.6.0 and the
-canonical schema is v25. G15 is the next item and is not approved.** The
+canonical schema is v25. Archive scalability is reopened as a release-blocking
+G14a-G14e sequence; G14a is next and is not approved. G15 cannot start until
+G14e is complete.** The
 former seven-item draft was too coarse: it mixed protocol research, canonical
 write interception, merge semantics, two transports, cryptography, recovery,
 UI, retention, and release validation into slices that could not be reviewed or
@@ -78,8 +80,12 @@ Subversion is a useful model for monotonic revisions, change logs, and
 base-aware deltas. Its dump format is not the proposed Notrios format: it does
 not express Notrios' content-addressed resources, archive-v2 capability chain,
 per-replica state vector, peer enrollment, encryption, or lazy objects. The
-existing archive-v2 container has already been verified at 382,206 notes and is
-the safer basis.
+existing archive-v2 container has already been verified at 382,206 notes, but
+the current catch-up path wraps a loose archive in a stored ZIP and adds about
+25% at only 100-500 notes. Its packed layout has not been measured end to end
+through catch-up at the supplied full-corpus scale. G14a-G14e therefore reopen
+the physical snapshot choice without discarding archive-v2's semantic,
+compatibility, identity, and verification contract.
 
 ## Execution rule for every item
 
@@ -1043,6 +1049,255 @@ refusals, so the second data-plane round returned `429` and a legitimate peer
 throttled itself out of its own library. Scheduling, retries, and backpressure
 remain G15's.
 
+## G14a. Investigation — archive scalability benchmark contract and resumable harness
+
+**Goal.** Make the format decision reproducible before another long private-
+corpus run, with each phase independently resumable after interruption and no
+private content entering the repository.
+
+**Scope.** Add an evidence-only harness and aggregate schema for the three
+supplied corpora: the equivalent recipe Joplin RAW and Obsidian libraries, and
+the attachment-bearing Joplin RAW export. Record source item/file counts,
+apparent and allocated bytes, per-directory entry histograms, resource counts,
+filesystem type, tool versions, CPU, memory, and cache-state limitations. Drive
+generated calibration tiers through foreign import, native full export,
+verification, transport preparation/sealing, extraction/open, restore, and
+post-snapshot incremental replay. Make every phase write an atomic checkpoint
+and a separately valid aggregate result so a usage limit never requires
+repeating completed hours of work.
+
+Define adapters, without adding production dependencies, for these full-scale
+G14b candidates: current loose archive-v2; archive-v2 `--pack`; the current
+loose-directory + stored-ZIP + authenticated-frame catch-up path; packed
+archive-v2 through the same catch-up path; a stopped-database file copy; the
+SQLite Online Backup API; and a versioned SQLite-image bundle with external
+resources/source bundles packed behind a manifest. Define comparable restic
+and borg commands for both the raw source tree and the canonical Notrios state.
+Never mutate the existing `/media/renes/HD2/recipedb_repo`; comparison runs use
+new, explicitly named repositories.
+
+**Boundaries.** Evidence/prototype code only: no production format, schema,
+default, dependency, database encryption, or catch-up behavior changes. Do not
+commit private paths, filenames, titles, bodies, hashes, databases, archives,
+resource bytes, repository contents, or cloud contents. The available test
+filesystems are ext4 plus the Google Drive FUSE mapping; exFAT is not currently
+available, so this slice may prove bounded directory shape but must not claim
+measured exFAT performance. Do not drop kernel caches, modify mounts, or delete
+an existing borg/restic repository.
+
+SQLCipher is an encrypted SQLite implementation, not by itself a complete
+backup container for external assets, a semantic subset/merge format, or a
+signed multi-file snapshot. Measure or model its encryption role separately
+from physical snapshot layout. A Go port of Borg and Bluge are outside this
+sequence: Bluge is a search index, not the authoritative transactional
+key-to-pack index a backup repository requires.
+
+**Dependencies.** G14, P3a/P3b/P4 evidence, and the existing importer profile
+harnesses.
+
+**Working state.** One command can run a named phase/tier, resume without
+overwriting another phase, validate aggregate privacy and arithmetic, and emit
+a machine-readable comparison row. Generated calibration proves all adapters
+measure the same stage boundaries before private full-scale work begins.
+
+**Validation and evidence.** Harness unit tests; interrupted/resumed phase;
+atomic result publication; source-read-only checks; aggregate privacy scanner;
+generated 10k/100k calibration; canonical content fingerprints rather than row
+counts alone; `PRAGMA integrity_check` for database images; exact archive and
+sealed-byte hashes; filesystem entry totals and maximum entries in one
+directory; wall/CPU time, peak RSS, read/write bytes where available, output
+bytes, compression ratio, and tool versions. Archive under
+`performance/v0.7-g14a/`.
+
+**Open decisions**
+
+- **Benchmark acceptance policy — Non-blocking.** Default: correctness and
+  recoverability are mandatory; a candidate fails if work is superlinear in
+  observed items/bytes, a full stage does not finish within two hours on the
+  reference machine, desktop peak RSS exceeds 512 MiB, the receiver-side
+  open/verify/restore path exceeds a 256 MiB proxy bound, or transport/archive
+  filesystem entries grow one-for-one with notes/objects. Among candidates
+  that pass, compare end-to-end create + verify + transfer preparation + open +
+  restore, and require a candidate offering the same semantics to stay within
+  2× the fastest such candidate unless a recorded integrity, compatibility, or
+  resume property justifies the cost. Restic/borg rows are references, not an
+  excuse to compare unlike stages as one number.
+- **Cache control — Non-blocking.** Default: run interleaved first and repeat
+  passes and label them honestly; do not call a pass "cold" unless the harness
+  actually controlled cache state.
+
+## G14b. Investigation — full-corpus baseline and physical snapshot selection
+
+**Goal.** Decide, from full-scale evidence, whether archive-v2 packing salvages
+the current backup/catch-up path or whether full snapshots need a compatible
+SQLite-image capability while semantic import/export remains record based.
+
+**Scope.** Run the G14a matrix phase by phase against the supplied recipe pair
+and attachment-bearing Joplin export. Import the equivalent Joplin and Obsidian
+recipe sources into isolated Notrios databases and require equivalent canonical
+content aggregates before using them as two source-format views of one
+workload. Compare current loose/packed export, verify, restore, ZIP/seal/open,
+stopped copy, Online Backup API, SQLite-image + packed-assets prototype, restic,
+and borg. Test an unchanged second snapshot separately from a first snapshot so
+repository deduplication is not confused with full-backup speed. Record ext4
+results and Google Drive copy/visibility separately; never restore directly
+into the provider mapping and call provider latency a format cost.
+
+The outcome must choose one of: (A) keep semantic archive-v2 and make a bounded
+packed representation the full-snapshot default; (B) add a required
+archive-v2 SQLite-image capability for compatible full backup/catch-up while
+retaining semantic records for subset, merge, and long-lived interchange; or
+(C) schedule a new repository/chunk investigation because both fail. SQLCipher
+or current authenticated framing may protect a chosen SQLite-image payload,
+but encryption does not decide A/B/C. The report also answers why restic/borg
+repository features help repeated general filesystem backups yet still pay to
+recreate every source file on restore, whereas Notrios can exploit canonical
+SQLite state and packed assets.
+
+**Boundaries.** Investigation and performance-only prototypes; no production
+format/default/dependency change. Do not port Borg, adopt Bluge, or treat a raw
+copy of a live WAL database as a snapshot. Do not publish a universal exFAT,
+mobile, or cloud-filesystem performance claim from the available ext4/FUSE
+hosts.
+
+**Dependencies.** G14a.
+
+**Working state.** Aggregate full-corpus evidence names the selected physical
+snapshot design, rejected alternatives, measured tradeoffs, compatibility and
+failure model, and the exact production work G14c/G14d must perform. `PLAN.md`
+is amended so G14c's blocking decision is resolved before implementation is
+approved.
+
+**Validation and evidence.** Complete/full-corpus phase records; independent
+validators; semantic fingerprints across Joplin/Obsidian imports and every
+restore; attachment/source-bundle fingerprints; corrupt/truncated candidate
+refusal; interrupted production/resume classification; unchanged second run;
+restic `check --read-data` and borg `check --verify-data` where supported;
+maximum directory width; end-to-end comparison table with no combined
+incomparable stage. Archive under `performance/v0.7-g14b/`.
+
+**Open decisions**
+
+- **Physical full-snapshot representation — Blocking for G14c, not for this
+  investigation.** Recommendation before measurement: A, packed semantic
+  archive-v2, because it already preserves cross-schema semantic restore,
+  subset/merge, exact verification, and explicit identity. Select B only if the
+  same-schema SQLite-image path materially improves end-to-end backup/catch-up
+  and the capability can exclude or safely rebuild local-only/derived state,
+  bind external assets, rotate replica identity, and retain a semantic fallback.
+  Select C only if neither meets the recorded acceptance policy.
+
+## G14c. Implement the selected scalable native snapshot representation
+
+**Goal.** Turn G14b's selected design into a versioned, bounded production
+snapshot without weakening archive-v2 verification, compatibility, or privacy.
+
+**Scope.** Implement only the representation selected and written into this
+item by G14b. If A wins, make pack creation, trailers/indexes, compression, and
+resume behavior scale and remove per-entry ZIP amplification. If B wins, add a
+required capability whose manifest binds a consistent SQLite snapshot and
+packed external assets/source bundles, names exact schema/application bounds,
+excludes or rebuilds derived/local-only state, and retains semantic archive-v2
+for subset/merge/interchange. Pin any compressor with deterministic goldens,
+bounded decoder memory/expansion, license review, and mobile-proxy evidence.
+
+**Boundaries.** No raw live-WAL copy, silent format reinterpretation, SQLCipher
+driver migration, general deduplicating repository, Borg port, or Bluge index.
+No removal of loose/archive-v2 read compatibility. Do not change import/export
+semantics merely to win a benchmark.
+
+**Dependencies.** G14b selection.
+
+**Working state.** New full snapshots use the selected scalable representation;
+old loose and packed archives still verify/restore according to their declared
+capabilities; interrupted production is incomplete or resumable by an explicit
+tested rule; output directory width and receiver memory are bounded by bytes/
+pack limits rather than note count.
+
+**Validation and evidence.** Independent golden fixture; previous/current
+reader matrix; deterministic output where promised; pack/container corruption,
+truncation, expansion and path attacks; fault injection at publication; bounded
+memory; generated 100k run; license inventory; no private content.
+
+**Open decisions**
+
+- **Selected representation — Blocking.** G14b owns the answer. Do not approve
+  or implement G14c until this subsection is amended with the selected option,
+  exact capability/default, compression, pack and resume rules, migration
+  behavior, and the measurements that justify them.
+
+## G14d. Scalable restore, emergency backup, and synchronization catch-up
+
+**Goal.** Use G14c's representation safely for full backup/restore and the G10/
+G14 catch-up loop on desktop and the pre-mobile bounded core.
+
+**Scope.** Replace the loose-object stored-ZIP catch-up production path with the
+selected bounded representation; stream seal/download/open/verify without a
+seekable multi-gigabyte buffer or one ZIP entry per content object. Before a
+replace/reset, create and verify an emergency snapshot of current canonical
+state. Enforce compatible schema/capability, explicit restore intent, database/
+replica identity rotation, catch-up floor, unavailable-resource policy, and
+post-snapshot incremental replay. Make interruption restart/resume rules
+durable at every stage.
+
+**Boundaries.** No automatic destructive restore, no archive bytes through MCP,
+no arbitrary remote path, no background scheduler (still G15), and no claim
+that a desktop proxy is a physical mobile result.
+
+**Dependencies.** G10, G14, G14c.
+
+**Working state.** A large snapshot can be requested, produced, resumed,
+verified, restored under explicit intent, and followed by incremental sync
+without materializing an object-per-note transport tree. A failed replacement
+leaves a verified emergency snapshot and a typed recoverable state.
+
+**Validation and evidence.** Multi-gigabyte range resume; crash/fault injection
+at snapshot, seal, download, open, verify, emergency backup, replace and cutover;
+wrong schema/capability/key; tamper/truncation; bounded memory and disk space;
+directory and REST carrier parity; Android-emulator checklist update.
+
+**Open decisions**
+
+- None beyond G14c's resolved representation. If restore requires a materially
+  different physical format from production, stop and add an investigation
+  rather than hiding a second format here.
+
+## G14e. Full-scale archive/catch-up acceptance and format freeze
+
+**Goal.** Prove the production choice on the supplied real corpora and freeze
+it before scheduling, UI, retention, or external compatibility build on it.
+
+**Scope.** Re-run the G14b comparison with production G14c/G14d code. Cover
+Joplin and Obsidian import into equivalent canonical libraries, portable native
+export/verify/restore, first and unchanged backup, attachment/source-bundle
+round trip, REST and directory catch-up, emergency replacement, and
+post-snapshot incremental convergence. Compare the same frozen restic/borg
+baseline rows and explain semantic differences. Update archive, sync, user,
+operations, troubleshooting, testing, security, and compatibility documents;
+feed the frozen capability into G19.
+
+**Boundaries.** Aggregate-only committed evidence. No private archive/database,
+cloud content, GitHub action, public release, or claim about untested exFAT or
+physical mobile devices. Fix only defects in the approved G14c/G14d contract;
+a new format returns to planning.
+
+**Dependencies.** G14c and G14d.
+
+**Working state.** Every full-scale workflow meets the recorded correctness,
+time, memory, file-shape, interruption, and compatibility gates. The chosen
+snapshot format/default is documented consistently and G15 becomes the next
+approval-gated item.
+
+**Validation and evidence.** Privacy-validated aggregate JSON; exact canonical
+and attachment fingerprints; current/previous archive matrix; full first and
+unchanged runs; restic/borg integrity checks; REST/directory catch-up; full
+repository validation; verified release ZIP copied to the evidence directory.
+
+**Open decisions**
+
+- None. A failed gate reopens its owning item; it is not waived in the release
+  wrap-up.
+
 ## G15. Durable sync jobs, scheduling boundaries, retries, and MCP control
 
 **Goal.** Make long sync/catch-up/resource operations observable, cancellable,
@@ -1326,6 +1581,8 @@ recommendation, blocking status, and consequence.
 | Sync credential reach into ordinary REST | G13 | Resolved: none — implemented and asserted |
 | Pairing bootstrap | G13 | Resolved: short-lived one-use bundle |
 | ZIP wrapper contract | G14 | Resolved: UX wrapper, not trust boundary |
+| Archive benchmark acceptance policy | G14a | Open, non-blocking defaults recorded |
+| Physical full-snapshot representation | G14b/G14c | Open; G14b investigation blocks G14c and all later sync work |
 | MCP sync controls | G15 | Resolved: bounded incremental controls only |
 | v0.7 secret-store provider | G16 | Resolved: interface plus warned `0600` development provider |
 | Remember backup password | G16 | Resolved: no |
@@ -1335,6 +1592,8 @@ recommendation, blocking status, and consequence.
 | Current-GUI Mermaid baseline | G18 | Resolved fact: upstream-capable but disabled pending offline/security evidence |
 | Release version/schema bookkeeping | G20 | Open, non-blocking until wrap-up |
 
-G0-G14 are complete. G15 is the next implementable item, but is not approved.
-Implementation begins only after an explicit instruction naming G15; completing
-it still stops for a verified ZIP and approval before G16.
+G0-G14 are complete and the archive-scalability planning amendment is recorded.
+G14a is the next implementable item, but is not approved. G15-G20 are blocked
+until G14e completes. Implementation begins only after an explicit instruction
+naming G14a; completing it still stops for a verified ZIP and approval before
+G14b.

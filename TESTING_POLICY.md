@@ -693,6 +693,30 @@ note's preview.
 No scale profile: a block is bounded to 100 rows through the search path whose
 10k/100k/500k evidence H7 and Q1 already carry.
 
+### Archive scalability tests (planned v0.7 G14a-G14e)
+
+Before sync tests advance beyond G14, G14a-G14e add a blocking archive-
+scalability gate. The aggregate-only harness must checkpoint each long phase
+atomically and compare identical stage boundaries across loose and packed
+archive-v2, current ZIP/seal catch-up, stopped and Online Backup API SQLite
+snapshots with packed external assets, restic, and borg. It uses the equivalent
+recipe Joplin/Obsidian pair for source-format parity and the attachment-bearing
+Joplin export for resource/source-bundle fidelity. No private path, filename,
+title, body, content hash, database, archive, resource byte, or competitor
+repository is committed.
+
+Correctness uses canonical content and attachment fingerprints, archive-v2
+verification, `PRAGMA integrity_check` for database images, competitor
+read-data verification, and post-snapshot convergence. Performance records
+each import/create/verify/transport-open/restore phase separately with wall and
+CPU time, peak RSS, apparent/allocated bytes, regular-file count, maximum
+entries in one directory, and honestly labelled cache state. A candidate fails
+the default G14a policy on superlinear observed work, a stage over two hours on
+the reference machine, desktop RSS over 512 MiB, receiver proxy RSS over 256
+MiB, or an object-per-note transport tree. ext4 and the Google Drive FUSE
+mapping are available; exFAT is not, so evidence may prove bounded shape but
+must not claim measured exFAT or physical-mobile performance.
+
 ### Sync model and transport tests (planned v0.7)
 
 - Property/model tests shuffle, duplicate, replay, drop, and eventually deliver

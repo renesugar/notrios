@@ -7,6 +7,15 @@ the optional packed object layout in v0.4 P3b; verify-only and restore/import
 in v0.4 P4; and the publication projection in v0.4 P7. Archive v1 remains
 supported as human-readable interchange and is not interpreted as v2.
 
+Scalability status (2026-08-15): the semantic/verification contract remains
+implemented, but the physical full-snapshot default is reopened by v0.7
+G14a-G14e before any further synchronization work. G14's catch-up producer
+currently exports loose objects and stores each as a ZIP entry, adding about
+25% at the 100/500-note tiers. P3b's pack layout has strong file-count evidence
+but no full-scale end-to-end catch-up comparison against a consistent SQLite
+snapshot, restic, and borg. Do not interpret `fanout` being the current default
+as the final full-backup/catch-up decision.
+
 ## Purpose and boundaries
 
 Archive v2 is the lossless, versioned snapshot container for backup, transfer,
