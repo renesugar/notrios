@@ -118,6 +118,17 @@
     and not the rest of it. It was wrong, it was the premise E6 inherited, and
     every document carrying it has been corrected.
 
+21. **Use a required same-schema SQLite image plus bounded packed assets for
+    whole-library full backup and synchronization catch-up; retain packed
+    semantic archive-v2 for subset, merge, schema-independent interchange, and
+    fallback.** G14b's 382,206-document full-corpus matrix measured the physical
+    path at 1,884.2 seconds locally versus 4,384.0 seconds for packed semantic
+    reconstruction, with exact recovery and bounded memory. The semantic
+    artifact was 78.3% smaller, so this is a complementary capability rather
+    than a replacement. G14c owns the versioned production implementation and
+    exact compatibility, pack, resume, local-state, and migration rules.
+    Decided 2026-08-22 for v0.7 G14b.
+
 ## Deferred decisions
 
 - Exact Go SQLite driver.
@@ -129,11 +140,6 @@
 - Exact sync envelope encoding, encryption/signature policy, revision-delta
   merge, retention horizon, resource chunk threshold, and per-set conflict
   policy (see the owning G0-G17 items in `PLAN.md`).
-- Physical full-snapshot representation after the G14 scale gap: G14b must
-  choose packed semantic archive-v2, a compatible SQLite-image capability with
-  packed external assets and semantic fallback, or a further repository
-  investigation from full-corpus evidence. G14c and all later sync work are
-  blocked on that recorded choice.
 - Whether optional live co-editing merits a Yjs-compatible Go dependency.
 - When Wails v3/mobile has sufficient stability and native evidence to replace
   the stable Wails v2 shell.

@@ -1,8 +1,8 @@
 # Plan: v0.7 — Native synchronization
 
-Status: **G0-G14a completed through 2026-08-15. Product version remains 0.6.0 and the
+Status: **G0-G14b completed through 2026-08-22. Product version remains 0.6.0 and the
 canonical schema is v25. Archive scalability is reopened as a release-blocking
-G14a-G14e sequence; G14b is next and is not approved. G15 cannot start until
+G14a-G14e sequence; G14c is next and is not approved. G15 cannot start until
 G14e is complete.** The
 former seven-item draft was too coarse: it mixed protocol research, canonical
 write interception, merge semantics, two transports, cryptography, recovery,
@@ -1141,10 +1141,10 @@ gate even though fanout bounded one directory at 256 entries; stored ZIP added
 Snapshot open and restore remained below 92 MiB and content fingerprints
 matched, but one post-snapshot replay reached 797,937,664 bytes peak RSS and
 fails the 512 MiB desktop gate. G14a changes no production code, schema,
-dependency, archive default, encryption, or catch-up behavior. G14b is next and
-is not approved.
+dependency, archive default, encryption, or catch-up behavior. G14b completed
+the full-corpus selection without changing those production behaviors.
 
-## G14b. Investigation — full-corpus baseline and physical snapshot selection
+## G14b. Investigation — full-corpus baseline and physical snapshot selection — complete
 
 **Goal.** Decide, from full-scale evidence, whether archive-v2 packing salvages
 the current backup/catch-up path or whether full snapshots need a compatible
@@ -1196,14 +1196,31 @@ incomparable stage. Archive under `performance/v0.7-g14b/`.
 
 **Open decisions**
 
-- **Physical full-snapshot representation — Blocking for G14c, not for this
-  investigation.** Recommendation before measurement: A, packed semantic
-  archive-v2, because it already preserves cross-schema semantic restore,
-  subset/merge, exact verification, and explicit identity. Select B only if the
-  same-schema SQLite-image path materially improves end-to-end backup/catch-up
-  and the capability can exclude or safely rebuild local-only/derived state,
-  bind external assets, rotate replica identity, and retain a semantic fallback.
-  Select C only if neither meets the recorded acceptance policy.
+- **Physical full-snapshot representation — Resolved 2026-08-22: option B.**
+  Use a required, versioned SQLite-image plus bounded packed-assets capability
+  for compatible same-schema whole-library backup and catch-up. Retain packed
+  semantic archive-v2 for subset, merge, schema-independent interchange, and
+  fallback recovery. The image path was 2.33x faster locally and 1.99x faster
+  including the separately measured provider copy while remaining within the
+  correctness, memory, time, and file-shape gates. The semantic artifact was
+  78.3% smaller, so option B complements rather than replaces it. Loose layouts
+  and raw Restic/Borg source-tree paths failed the approved shape or memory
+  gates. The required state classification, compatibility, pack, resume, and
+  restore rules are pinned in G14c and
+  `performance/v0.7-g14b/SQLITE_IMAGE_CAPABILITY.md`.
+
+**Outcome (2026-08-22).** Complete, archived as
+`plans/v0.7/020-full-corpus-physical-snapshot-selection.md` with 57 validated,
+aggregate-only phase rows under `performance/v0.7-g14b/`. Option B is selected
+for G14c. Both semantic and physical candidates restored the exact 382,206-note
+canonical aggregate; the image bundle completed the local path in 1,884.2
+seconds versus 4,384.0 seconds for packed semantic archive-v2. Restic and Borg
+data checks and exact restores completed for canonical and 1,237,553-file raw
+inputs; repository storage was bounded, but raw traversal/restore repeatedly
+failed memory gates. The investigation also records importer scale failures as
+separate future performance debt. No production format, schema, dependency,
+default, encryption, or catch-up behavior changed. G14c is next and requires
+explicit approval.
 
 ## G14c. Implement the selected scalable native snapshot representation
 
@@ -1239,10 +1256,43 @@ memory; generated 100k run; license inventory; no private content.
 
 **Open decisions**
 
-- **Selected representation — Blocking.** G14b owns the answer. Do not approve
-  or implement G14c until this subsection is amended with the selected option,
-  exact capability/default, compression, pack and resume rules, migration
-  behavior, and the measurements that justify them.
+- **Selected representation — Resolved 2026-08-22: option B.** Implement a
+  required `sqlite-image+packed-assets.v1` capability as the default for
+  compatible, whole-library full backup and synchronization catch-up. Create a
+  consistent image with SQLite Online Backup while writes are live; a stopped,
+  checkpointed close may use the same capability. Bind the image, exact schema/
+  application bounds, snapshot vector/floor, database identity, and every
+  external pack in a manifest. Keep semantic packed archive-v2 as the supported
+  subset/merge/interchange and incompatible-schema fallback; keep all existing
+  loose and packed readers.
+- **Compression and pack limits — Resolved 2026-08-22.** Add no compressor or
+  compression dependency in G14c. Deterministic stored external packs close
+  before 256 MiB of payload or 65,536 entries; one item larger than the byte
+  target occupies a separately declared oversized pack and is streamed with
+  the existing resource limits. Publish each hash-verified pack through a
+  private partial file, fsync, and atomic rename, with the manifest last. Resume
+  only from complete verified pack boundaries; restart an interrupted SQLite
+  image creation. A later compression change requires its own evidence and
+  capability version.
+- **Admission, migration, and local state — Resolved 2026-08-22.** Admit the
+  physical path only for its exact declared schema/application compatibility
+  range. An incompatible image refuses and directs the user to semantic
+  archive-v2; it is never silently migrated in place. Before cutover, verify
+  hashes, pack lengths, capability, SQLite integrity, vector/floor, and external
+  completeness, then make an emergency snapshot. Install via durable staging,
+  preserve the logical database identity, mint a new replica identity, clear
+  reviewed local/transient state and private path material, and rebuild invalid
+  FTS/derived projections. Signing and group-encryption private keys stay
+  outside the image. G14c must review every table against the state classes in
+  `performance/v0.7-g14b/SQLITE_IMAGE_CAPABILITY.md` and test interruption at
+  every publication/cutover boundary.
+- **Measured justification — Resolved 2026-08-22.** At 382,206 documents the
+  physical local path took 1,884.2 seconds versus 4,384.0 for packed semantic
+  restore (2.33x faster), wrote 6.04 GB versus 28.4 GB during recovery, stayed
+  below the absolute memory gates, and restored exactly. Including the distinct
+  Google Drive copy yielded 2,245.1 versus 4,457.6 seconds (1.99x). The 6.040 GB
+  image is larger than the 1.309 GB semantic artifact, so semantic export stays
+  first-class rather than becoming a compatibility afterthought.
 
 ## G14d. Scalable restore, emergency backup, and synchronization catch-up
 
@@ -1600,7 +1650,7 @@ recommendation, blocking status, and consequence.
 | Pairing bootstrap | G13 | Resolved: short-lived one-use bundle |
 | ZIP wrapper contract | G14 | Resolved: UX wrapper, not trust boundary |
 | Archive benchmark acceptance policy | G14a | Resolved: approved defaults exercised and retained for G14b |
-| Physical full-snapshot representation | G14b/G14c | Open; G14b investigation blocks G14c and all later sync work |
+| Physical full-snapshot representation | G14b/G14c | Resolved: option B, same-schema SQLite image + bounded packed assets with semantic archive-v2 retained |
 | MCP sync controls | G15 | Resolved: bounded incremental controls only |
 | v0.7 secret-store provider | G16 | Resolved: interface plus warned `0600` development provider |
 | Remember backup password | G16 | Resolved: no |
@@ -1610,8 +1660,7 @@ recommendation, blocking status, and consequence.
 | Current-GUI Mermaid baseline | G18 | Resolved fact: upstream-capable but disabled pending offline/security evidence |
 | Release version/schema bookkeeping | G20 | Open, non-blocking until wrap-up |
 
-G0-G14a are complete and the archive-scalability planning amendment is recorded.
-G14b is the next implementable item, but is not approved. G15-G20 are blocked
+G0-G14b are complete and the archive-scalability selection is recorded. G14c
+is the next implementable item, but is not approved. G15-G20 remain blocked
 until G14e completes. Implementation begins only after an explicit instruction
-naming G14b; completing it still stops for a verified ZIP and approval before
-G14c.
+naming G14c.

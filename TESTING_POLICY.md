@@ -693,7 +693,7 @@ note's preview.
 No scale profile: a block is bounded to 100 rows through the search path whose
 10k/100k/500k evidence H7 and Q1 already carry.
 
-### Archive scalability tests (v0.7 G14a complete; G14b-G14e planned)
+### Archive scalability tests (v0.7 G14a-G14b complete; G14c-G14e planned)
 
 Before sync tests advance beyond G14, G14a-G14e add a blocking archive-
 scalability gate. The aggregate-only harness must checkpoint each long phase
@@ -726,8 +726,16 @@ detection, and compression arithmetic. Generated 10k/100k calibration drives
 all nine stages. The current loose baseline stays correct but fails the
 object-per-note shape gate (100,093 files at 100k) and the desktop memory gate
 during one incremental replay (797,937,664 bytes); open and restore remain
-below the 256 MiB proxy. G14b must preserve those failures while running the
-full candidate/private-corpus matrix.
+below the 256 MiB proxy. G14b preserved those failures and completed 57
+validated aggregate phase rows on the full candidate/private-corpus matrix.
+It selected a compatible same-schema SQLite image plus bounded packed assets:
+the exact local create-through-restore path was 1,884.2 seconds versus 4,384.0
+for packed semantic archive-v2, with both within absolute correctness, time,
+memory, and shape gates. Semantic archive-v2 remains required for subset,
+merge, schema-independent interchange, and fallback. G14c must add independent
+goldens, reader compatibility, bounded pack/publication fault injection, exact
+schema/capability admission, local-state exclusion, derived-state rebuild, and
+replica-rotation tests; G14d must make post-snapshot replay bounded.
 
 ### Sync model and transport tests (planned v0.7)
 

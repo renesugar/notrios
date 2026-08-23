@@ -7,7 +7,7 @@ This file is the codebase atlas. Update it whenever major files or directories a
 - `README.md` — project overview and quick start.
 - `PLAN.md` — the **active v0.7 native synchronization plan**, divided into
   independently approvable G0-G20 slices plus the blocking G14a-G14e archive-
-  scalability sequence. G0-G14a are complete; G14b is next but unapproved, and
+  scalability sequence. G0-G14b are complete; G14c is next but unapproved, and
   G15 is blocked through G14e. The current product remains 0.6.0 at schema v25; v0.6 is archived under
   `plans/v0.6/`; v0.5 and v0.4 are archived under their version directories.
 - `plans/scaffold/SCAFFOLD_CREATION_PLAN.md` — process for creating/refining this scaffold.
@@ -73,6 +73,14 @@ This file is the codebase atlas. Update it whenever major files or directories a
   correctness comes from archive-v2 rather than from its ZIP wrapper. Its
   loose-object ZIP overhead triggered G14a-G14e; do not treat this small-tier
   transport evidence as the full-scale format decision.
+- `performance/v0.7-g14a/` and
+  `scripts/run_archive_scalability_benchmark.sh` — the generated 10k/100k,
+  aggregate-only calibration contract and resumable 11-adapter harness.
+- `performance/v0.7-g14b/` and
+  `scripts/run_archive_full_corpus_benchmark.sh` — the completed private-
+  corpus investigation harness, 57 sanitized phase rows, option-B findings,
+  and selected SQLite-image capability contract. Private inputs, detailed
+  phase rows, repositories, paths, hashes, and logs remain external.
 - `internal/synckeys/` — the warned `0600` development secret provider holding
   one group key per epoch and this replica's signing key. Since G13 it holds
   secrets only: which peers are trusted is database state. v0.8 owns the

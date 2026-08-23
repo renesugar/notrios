@@ -1,6 +1,6 @@
 # Plan Status
 
-Updated: 2026-08-15 (G14a benchmark harness complete; G14b next)
+Updated: 2026-08-22 (G14b complete; G14c next and unapproved)
 
 ## Active milestone
 
@@ -14,24 +14,54 @@ G15-G20: evidence, profiles/local journal, state-vector convergence,
 revision deltas/merge, lazy resources, secure container/catch-up,
 ephemeral-directory and REST transports, jobs/UI/retention, shared-core/FFI/
 Mermaid/mobile handoff, compatibility, and final validation. The user's
-2026-08-11 review resolved every original G0-G17 policy decision. **G0-G14a are
+2026-08-11 review resolved every original G0-G17 policy decision. **G0-G14b are
 complete** and archived under `plans/v0.7/`; the 2026-08-15 planning amendment
-reopens physical snapshot scalability. G14b is next and is not approved. G15 is
-blocked until G14e completes.
+reopened physical snapshot scalability. G14b selected option B from full-corpus
+evidence. G14c is next and unapproved; G15 is blocked until G14e completes.
+
+## v0.7 G14b completion — 2026-08-22
+
+- Option B is the final evidence-backed selection. On the 382,206-document
+  recipe workload, complete local create-through-restore time is 4,383.9
+  seconds for packed semantic archive-v2 and 1,884.2 seconds for the SQLite
+  image bundle. Including distinct Google Drive copy/hash evidence yields
+  4,457.6 versus 2,245.1 seconds. Both pass correctness, stage-time, memory,
+  bounded-entry, and corruption-refusal gates; the packed semantic format stays
+  required because it is 78.3% smaller and preserves subset/merge/interchange.
+- The loose recipe archive measured 382,447 files; the attachment Online
+  Backup plus loose assets measured 112,063 files. Both fail the approved
+  object-per-file transport rule. The packed attachment image restores the
+  complete resource and preserved-source aggregate from one external tar.
+- Existing post-snapshot replay still fails at 3.22 GiB RSS despite converging.
+  That is G14d work and is not hidden by the representation choice.
+- Restic and Borg canonical and raw first/check/unchanged/restore phases all
+  completed. Both raw repositories bounded stored repository entries and
+  restored 1,237,553 files exactly, but raw traversal/restore repeatedly failed
+  memory gates. Application-level admission, identity, and semantic fallback
+  still require a native capability rather than adopting either repository.
+- The recipe imports took 8,158 and 9,861 seconds and 2.82/1.65 GiB RSS; the
+  attachment import took 1,611.8 seconds and 608.6 MiB. This is separately
+  recorded importer performance debt and did not decide the representation.
+- Fifty-seven aggregate phase rows pass the independent evidence validator.
+  Detailed private inputs, hashes, repositories, paths, and logs remain outside
+  the repository. No production format, schema, dependency, default,
+  encryption, or catch-up behavior changed. Archived as
+  `plans/v0.7/020-full-corpus-physical-snapshot-selection.md`; G14c requires
+  explicit approval.
 
 ## Archive scalability planning amendment — 2026-08-15
 
 - G14 measured about 25% stored-ZIP overhead at 100/500 notes because the
   catch-up producer exports loose archive-v2 and creates one ZIP entry per
   object. Encryption frames add only 28 bytes per MiB.
-- Existing evidence is necessary but insufficient: P3b's pack layout collapsed
+- At amendment time, existing evidence was necessary but insufficient: P3b's pack layout collapsed
   382,447 files to 46 at 382,206 notes and P4 restored both layouts with
   attachment/source-bundle fidelity, but production catch-up still uses loose
   export and no full-scale catch-up/SQLite/restic/borg comparison exists.
-- `PLAN.md` now inserts five approval-gated slices before G15. G14a builds a
-  resumable aggregate-only harness; G14b runs the supplied recipe pair and
-  attachment corpus and selects packed semantic archive-v2, a compatible
-  SQLite-image capability, or a further repository investigation; G14c
+- `PLAN.md` inserted five approval-gated slices before G15. G14a built a
+  resumable aggregate-only harness; G14b ran the supplied recipe pair and
+  attachment corpus and selected the compatible SQLite-image capability with
+  bounded packed assets and semantic archive-v2 fallback; G14c
   implements the selection; G14d integrates restore/emergency backup/catch-up;
   G14e repeats full-scale acceptance and freezes the format.
 - The available local data facts are aggregate only: the recipe Joplin and
@@ -67,8 +97,8 @@ blocked until G14e completes.
   6,004 bytes, confirming container-entry overhead rather than encryption.
 - No production code, schema, dependency, default, database encryption, or
   catch-up behavior changed. Archived as
-  `plans/v0.7/019-archive-scalability-benchmark-harness.md`; G14b needs explicit
-  user approval.
+  `plans/v0.7/019-archive-scalability-benchmark-harness.md`; G14b subsequently
+  completed the private full-corpus selection.
 
 ## v0.7 G14 completion — 2026-08-14
 

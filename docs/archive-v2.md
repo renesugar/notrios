@@ -1,11 +1,11 @@
 # Native archive v2 safety contract
 
-> Scale review (2026-08-15): export, verification, restore, and both existing
-> object layouts remain supported. G14a's generated calibration now confirms
-> that the current loose path grows one file per note/object and that ZIP, not
-> authenticated framing, supplies meaningful byte overhead. G14b-G14e still
-> measure, select, implement, and freeze the physical full-backup/catch-up
-> default at the supplied real scale; loose is not yet that frozen default.
+> Scale review (updated 2026-08-22): export, verification, restore, and both
+> existing object layouts remain supported. G14b selected a separate,
+> compatible same-schema SQLite image plus bounded packed assets for physical
+> whole-library backup/catch-up. G14c-G14e still implement, integrate, and
+> freeze that default. Archive v2 remains the semantic subset, merge,
+> schema-independent interchange, and fallback format.
 
 Notrios archive v2 is the lossless backup and transfer format. Three commands
 use it: `notriosctl export archive-v2` writes a snapshot,

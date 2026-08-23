@@ -297,22 +297,23 @@ also exposed about **25% stored-ZIP overhead from one entry per loose archive
 object**, while the existing pack fix has never been exercised end to end at
 the supplied full scale.
 
-**Archive scalability now blocks further synchronization work. G14a is
-complete; G14b is next and approval-gated, and G15 cannot start until G14e
+**Archive scalability now blocks further synchronization work. G14a and G14b
+are complete; G14c is next and approval-gated, and G15 cannot start until G14e
 completes.** G14a supplies the resumable, aggregate-only benchmark contract and
 generated 10k/100k calibration. That evidence confirms one-file-per-object
 growth, isolates stored-ZIP overhead from framing, and records a 100k
-incremental-replay memory failure without changing production code. G14b runs the equivalent recipe
-Joplin/Obsidian pair and attachment-bearing Joplin corpus against loose and
-packed archive-v2, the current catch-up wrapper, stopped and online SQLite
-snapshot candidates with packed external assets, and comparable restic/borg
-tasks. It decides whether packing salvages the semantic format or a required
-same-schema SQLite-image capability is justified. G14c implements only the
-selected representation; G14d integrates crash-safe restore, emergency backup,
-and catch-up; G14e repeats the full-corpus comparison with production code and
-freezes the contract for G19. exFAT is no longer available on the test drives,
-so the gate requires a bounded, non-object-per-file layout but makes no
-unmeasured exFAT performance claim.
+incremental-replay memory failure without changing production code. G14b's
+382,206-document and attachment-bearing full-corpus matrix selected option B:
+a required, same-schema SQLite image plus bounded packed external assets for
+whole-library backup/catch-up, with packed semantic archive-v2 retained for
+subset, merge, interchange, and fallback. The image path was 2.33x faster
+locally and 1.99x faster including the distinct Google Drive copy; loose
+layouts and raw Restic/Borg paths failed shape or memory gates. G14c implements
+only that selected representation; G14d integrates crash-safe restore,
+emergency backup, and catch-up; G14e repeats the full-corpus comparison with
+production code and freezes the contract for G19. exFAT is no longer available
+on the test drives, so the gate requires a bounded, non-object-per-file layout
+but makes no unmeasured exFAT performance claim.
 
 - **Evidence before contracts (G0-G2, including G1a):** threat model and
   reference validation; representative revision/delta/three-way-merge

@@ -3,10 +3,12 @@
 Notrios (formerly "Notes Companion") is a local-first note-taking, search, import, and publishing system for very large Markdown and document collections.
 It combines a Go REST/MCP service (`notriosd`), a built-in GUI, SQLite/FTS5-backed canonical storage, content-addressed resources, optional Recoll-derived search/extraction, and support for third-party native clients (C++/Qt, Go/Wails, Rust/Tauri) over the same API. A versioned no-GUI C ABI is planned before 1.0, followed by an independent post-1.0 Flutter client; mobile delivery does not depend exclusively on Wails.
 
-The v0.1 through v0.6 milestones are complete. v0.7 G0-G14a are complete through
+The v0.1 through v0.6 milestones are complete. v0.7 G0-G14b are complete through
 the authenticated REST sync data plane and resumable encrypted snapshot
 download. Archive scalability is now reopened as blocking G14a-G14e work before
-the scheduler/UI/retention slices: G14b is next and unapproved — see
+the scheduler/UI/retention slices: G14b selected a same-schema SQLite image plus
+bounded packed assets for full backup/catch-up while retaining semantic
+archive-v2; G14c is next and unapproved — see
 [`PLAN.md`](PLAN.md) and
 [`ROADMAP.md`](ROADMAP.md). The repository is
 structured so a coding agent can resume safely after usage limits or model
@@ -139,9 +141,11 @@ Recoll availability, backlog, sync/index, and reconciliation state.
   implements the REST data plane and resumable encrypted snapshot download.
   Its 100/500-note evidence exposed about 25% stored-ZIP overhead from loose
   per-object entries. G14a has now built and calibrated the resumable benchmark
-  at 10k/100k; G14b-G14e still block G15: compare packed archive-v2 and consistent SQLite snapshot candidates with
-  restic/borg on the supplied real corpora, implement the winner, integrate
-  restore/catch-up, and repeat full-scale acceptance.
+  at 10k/100k. G14b's full-corpus evidence selected a consistent same-schema
+  SQLite image plus bounded packed assets for whole-library backup/catch-up,
+  while retaining semantic archive-v2. G14c-G14e still block G15: implement
+  the selected representation, integrate restore/catch-up, and repeat
+  full-scale acceptance against the frozen restic/borg reference rows.
 - Agent progress/attempt tracking: [`agent/PLAN_STATUS.md`](agent/PLAN_STATUS.md), [`agent/ATTEMPT_LOG.jsonl`](agent/ATTEMPT_LOG.jsonl), and [`agent/MODEL_LOG.jsonl`](agent/MODEL_LOG.jsonl).
 
 ## Contributing

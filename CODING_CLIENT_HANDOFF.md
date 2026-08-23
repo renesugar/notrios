@@ -14,19 +14,33 @@ wrap-up). The thirteen v0.5 slices remain archived under `plans/v0.5/`.
 independently approvable G0-G20 slices plus the newly inserted, blocking
 G14a-G14e archive-scalability sequence. The user's 2026-08-11
 review resolved the policy decisions through G17, including mandatory payload
-encryption and per-replica Ed25519 signatures. **G0-G14a are complete** and
+encryption and per-replica Ed25519 signatures. **G0-G14b are complete** and
 archived under `plans/v0.7/`; their reviewed evidence is under
 `performance/v0.7-g0/`, `performance/v0.7-g1/`, `performance/v0.7-g1a/`,
 `performance/v0.7-g2/`, `performance/v0.7-g4/`, `performance/v0.7-g5/`,
 `performance/v0.7-g6/`, `performance/v0.7-g7/`, `performance/v0.7-g8/`,
 `performance/v0.7-g9/`, `performance/v0.7-g10/`, `performance/v0.7-g11/`, and
-`performance/v0.7-g12/`, `performance/v0.7-g13/`, `performance/v0.7-g14/`, and
-`performance/v0.7-g14a/`. **G14b is next and is not approved. G15 is blocked
-until G14e completes.** G14a now owns the resumable aggregate-only benchmark
-contract and its 10k/100k generated calibration; G14b runs the supplied
-large corpora and selects the physical full-snapshot representation; G14c/G14d
-implement and integrate that choice; G14e repeats the full-scale acceptance
-matrix and freezes the format.
+`performance/v0.7-g12/`, `performance/v0.7-g13/`, `performance/v0.7-g14/`,
+`performance/v0.7-g14a/`, and `performance/v0.7-g14b/`. **G14c is next and is
+not approved; G15 remains blocked until G14e.** G14b selected option B: a
+required compatible same-schema SQLite-image plus bounded packed-assets
+capability for whole-library full backup/catch-up, retaining packed semantic
+archive-v2 for subset, merge, schema-independent interchange, and fallback.
+G14c implements that exact representation, G14d integrates it, and G14e repeats
+the full-scale acceptance matrix and freezes the format.
+
+G14b added only investigation/prototype code and aggregate evidence. Its 57
+validated full-corpus phase rows cover equivalent 382,206-document Joplin and
+Obsidian views, an attachment-bearing workload, both native candidates, current
+catch-up boundaries, stopped/online SQLite variants, Restic/Borg canonical and
+1,237,553-file raw references, corruption refusal, unchanged snapshots, and a
+distinct Google Drive copy. The image path was 1,884.2 seconds locally versus
+4,384.0 for packed semantic reconstruction (2.33x faster), or 2,245.1 versus
+4,457.6 seconds including provider evidence. The semantic artifact was 78.3%
+smaller and remains first-class. Loose layouts failed file shape; raw
+repository paths repeatedly failed memory. Import time/RSS and the 3.22 GiB
+post-snapshot replay are recorded as separate performance debt. No production
+format, schema, dependency, default, encryption, or catch-up behavior changed.
 
 G14a adds only evidence/prototype code. Its 11 adapters map loose/packed
 archive-v2 and catch-up, stopped/online/bundled SQLite-image candidates, and

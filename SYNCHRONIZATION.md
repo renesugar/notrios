@@ -420,13 +420,13 @@ the authentication frames add only 28 bytes per MiB. G14a-G14e now block later
 sync work. G14a completed the resumable aggregate-only harness and its generated
 10k/100k calibration: the loose archive produced 100,093 files at 100k, stored
 ZIP added 11.15%, authenticated framing added only 6,004 bytes, and one
-incremental replay exceeded the 512 MiB desktop gate. G14b must now compare loose/packed
-archive-v2, the complete catch-up path, stopped/online SQLite snapshot
-candidates with packed external assets, restic, and borg on the supplied real
-corpora; implement the measured winner; integrate crash-safe restore and
-corpora; G14c/G14d then implement the measured winner and integrate crash-safe
-restore/catch-up, and G14e repeats full-scale acceptance. A raw live-WAL copy is never a
-candidate. SQLCipher may encrypt a database image but does not by itself bind
+incremental replay exceeded the 512 MiB desktop gate. G14b then compared the
+complete candidates on the supplied real corpora and selected a required,
+same-schema SQLite image plus bounded packed external assets for whole-library
+backup/catch-up. Packed semantic archive-v2 remains the subset, merge,
+interchange, and fallback path. G14c/G14d implement that measured choice and
+integrate crash-safe restore/catch-up; G14e repeats full-scale acceptance. A raw
+live-WAL copy is never a candidate. SQLCipher may encrypt a database image but does not by itself bind
 external assets or provide semantic subset/merge, capability verification,
 signatures, or replica-identity handling.
 

@@ -88,12 +88,13 @@ future synchronization clocks.
 
 ## Backup and restore
 
-The physical full-snapshot representation is under a blocking v0.7 G14a-G14e
-scale review as of 2026-08-15. G14a's resumable benchmark contract and generated
-10k/100k calibration are complete; G14b is the next approval-gated comparison.
-The rules below remain mandatory for every
-candidate; they do not preselect loose/packed semantic archive-v2 versus a
-capability-declared compatible SQLite image with packed external assets.
+The physical full-snapshot representation remains blocking v0.7 G14a-G14e
+work. G14a's resumable contract and calibration are complete; G14b's
+full-corpus evidence selected a capability-declared, same-schema SQLite image
+with bounded packed external assets for whole-library backup/catch-up. Packed
+semantic archive-v2 remains mandatory for subset, merge, schema-independent
+interchange, and fallback. G14c is the next approval-gated implementation. The
+rules below remain mandatory for the selected physical capability.
 
 - The default offline backup stops writes, snapshots SQLite consistently, and
   includes every referenced asset plus a checksum manifest.
