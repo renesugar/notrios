@@ -16,6 +16,7 @@ import (
 	"crypto/sha256"
 	"embed"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
 	"mime"
@@ -31,6 +32,16 @@ import (
 	"github.com/renesugar/notrios/internal/markdownlinks"
 	"github.com/renesugar/notrios/internal/stablelink"
 )
+
+// ErrPhysicalRestoreInProgress prevents a service or ordinary CLI command from
+// opening a database while a G14d multi-file cutover is between durable
+// boundaries. The restore coordinator removes the adjacent marker only after
+// both the database and asset tree are installed.
+var ErrPhysicalRestoreInProgress = errors.New("physical snapshot restore is in progress")
+
+// PhysicalRestoreMarkerPath is deliberately derived from the configured local
+// database path. It is never accepted from a peer or exposed through MCP.
+func PhysicalRestoreMarkerPath(path string) string { return path + ".notrios-restore-in-progress" }
 
 //go:embed migrations/*.sql
 var migrationFS embed.FS
@@ -54,15 +65,36 @@ type SQLiteStore struct {
 	assetPolicy string
 }
 
+// AssetRoot returns the configured local store root for internal bulk
+// operations. It is never exposed through REST or MCP and is not accepted from
+// a peer.
+func (s *SQLiteStore) AssetRoot() string { return s.assetRoot }
+
 func OpenSQLite(path string) (*SQLiteStore, error) {
 	return OpenSQLiteWithAssetStore(path, defaultAssetRoot(path))
 }
 
 func OpenSQLiteWithAssetStore(path, assetRoot string) (*SQLiteStore, error) {
+	return openSQLiteWithAssetStore(path, assetRoot, false)
+}
+
+// OpenSQLiteWithAssetStoreForRestore is only for the physical-restore
+// coordinator after it has installed both paths but before it removes the
+// startup blocker. Ordinary callers must use OpenSQLiteWithAssetStore.
+func OpenSQLiteWithAssetStoreForRestore(path, assetRoot string) (*SQLiteStore, error) {
+	return openSQLiteWithAssetStore(path, assetRoot, true)
+}
+
+func openSQLiteWithAssetStore(path, assetRoot string, allowRestore bool) (*SQLiteStore, error) {
 	if strings.TrimSpace(assetRoot) == "" {
 		assetRoot = defaultAssetRoot(path)
 	}
 	if path != ":memory:" {
+		if _, err := os.Lstat(PhysicalRestoreMarkerPath(path)); err == nil && !allowRestore {
+			return nil, fmt.Errorf("%w: run the same local restore command to resume", ErrPhysicalRestoreInProgress)
+		} else if err != nil && !errors.Is(err, os.ErrNotExist) {
+			return nil, err
+		}
 		if err := os.MkdirAll(parentDir(path), 0o755); err != nil {
 			return nil, err
 		}

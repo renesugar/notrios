@@ -7,7 +7,7 @@ This file is the codebase atlas. Update it whenever major files or directories a
 - `README.md` — project overview and quick start.
 - `PLAN.md` — the **active v0.7 native synchronization plan**, divided into
   independently approvable G0-G20 slices plus the blocking G14a-G14e archive-
-  scalability sequence. G0-G14c are complete; G14d is next but unapproved, and
+  scalability sequence. G0-G14d are complete; G14e is next but unapproved, and
   G15 is blocked through G14e. The current product remains 0.6.0 at schema v25; v0.6 is archived under
   `plans/v0.6/`; v0.5 and v0.4 are archived under their version directories.
 - `plans/scaffold/SCAFFOLD_CREATION_PLAN.md` — process for creating/refining this scaffold.
@@ -69,10 +69,10 @@ This file is the codebase atlas. Update it whenever major files or directories a
 - `internal/syncrest/`, `internal/syncbackup/`, `internal/httpapi/sync_data.go`,
   and `performance/v0.7-g14/` — the REST data plane: G11's `Carrier` implemented
   over the signing client so both transports run one protocol, the carrier
-  routes with `Range`, and the resumable encrypted snapshot download whose
-  correctness comes from archive-v2 rather than from its ZIP wrapper. Its
-  loose-object ZIP overhead triggered G14a-G14e; do not treat this small-tier
-  transport evidence as the full-scale format decision.
+  routes with `Range`, and the original resumable encrypted archive-v2 snapshot
+  baseline. Its loose-object ZIP overhead triggered G14a-G14e; G14d has replaced
+  that production backup payload and wrapper, while the historical evidence
+  remains the baseline.
 - `performance/v0.7-g14a/` and
   `scripts/run_archive_scalability_benchmark.sh` — the generated 10k/100k,
   aggregate-only calibration contract and resumable 11-adapter harness.
@@ -81,6 +81,9 @@ This file is the codebase atlas. Update it whenever major files or directories a
   corpus investigation harness, 57 sanitized phase rows, option-B findings,
   and selected SQLite-image capability contract. Private inputs, detailed
   phase rows, repositories, paths, hashes, and logs remain external.
+- `performance/v0.7-g14c/` and `performance/v0.7-g14d/` — production physical
+  snapshot creation/admission state review, generated 100k create/restore
+  evidence, recovery state machine, and Android-emulator follow-up checklist.
 - `internal/synckeys/` — the warned `0600` development secret provider holding
   one group key per epoch and this replica's signing key. Since G13 it holds
   secrets only: which peers are trusted is database state. v0.8 owns the
@@ -152,11 +155,16 @@ This file is the codebase atlas. Update it whenever major files or directories a
   verify-first restore reader (`restore.go`), the publication projection
   (`publish.go`), a generator-built synthetic golden fixture, and generated
   scale profiles.
-- `internal/snapshotimage/` and `internal/store/sqlite_snapshot.go` — G14c's
+- `internal/snapshotimage/`, `internal/store/sqlite_snapshot.go`, and
+  `internal/store/sync_snapshot_activate.go` — G14c/G14d's
   exact-schema SQLite Online Backup image, deterministic bounded external
-  packs, strict manifest-last verifier, table-state sanitization, and generated
-  100k evidence. This local representation is not yet wired into encrypted
-  catch-up or destructive installation; G14d owns that boundary.
+  packs, strict manifest-last verifier, table-state sanitization, verified
+  emergency backup, durable physical install, replica rotation/floors, derived
+  rebuild selection, and generated 100k evidence.
+- `internal/syncbackup/`, `internal/syncrest/backup.go`, and
+  `internal/synccarrier/snapshot.go` — the sequential deterministic USTAR plus
+  NBK1 physical snapshot transport and bounded resumable REST/directory byte
+  paths. The physical verifier, not USTAR, is the trust boundary.
 - `internal/markdownlinks/` — conservative MVP Markdown/Obsidian/app-URI link extractor.
 - `internal/markdownblocks/` — deterministic block splitter behind schema-v14
   addressable blocks and schema-v15 heading slugs; block identity is

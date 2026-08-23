@@ -1,6 +1,6 @@
 # Plan Status
 
-Updated: 2026-08-22 (G14c complete; G14d next and unapproved)
+Updated: 2026-08-22 (G14d complete; G14e next and unapproved)
 
 ## Active milestone
 
@@ -14,11 +14,38 @@ G15-G20: evidence, profiles/local journal, state-vector convergence,
 revision deltas/merge, lazy resources, secure container/catch-up,
 ephemeral-directory and REST transports, jobs/UI/retention, shared-core/FFI/
 Mermaid/mobile handoff, compatibility, and final validation. The user's
-2026-08-11 review resolved every original G0-G17 policy decision. **G0-G14c are
+2026-08-11 review resolved every original G0-G17 policy decision. **G0-G14d are
 complete** and archived under `plans/v0.7/`; the 2026-08-15 planning amendment
 reopened physical snapshot scalability. G14b selected option B from full-corpus
-evidence and G14c implemented the local production representation and verifier.
-G14d is next and unapproved; G15 is blocked until G14e completes.
+evidence, G14c implemented the local production representation/verifier, and
+G14d integrated encrypted transport plus crash-safe restore/catch-up. G14e is
+next and unapproved; G15 is blocked until G14e completes.
+
+## v0.7 G14d completion — 2026-08-22
+
+- The authenticated REST snapshot producer/consumer now carries
+  `sqlite-image+packed-assets.v1` through deterministic sequential USTAR and
+  fixed 1 MiB NBK1 frames. It preserves opaque authorization, exact ownership,
+  range resume, key/signature verification, and physical manifest metadata.
+- `notriosctl snapshot restore --intent replace|adopt` verifies an emergency
+  snapshot before destructive work, durably advances an adjacent roll-forward
+  plan, blocks ordinary startup throughout cutover, verifies installed
+  identity, retains the emergency copy, and archives the completed recovery
+  record. `sync fetch-backup` can stop at verified staging or install only when
+  the operator supplies the same explicit intent.
+- Staged activation rotates the writable replica ID, retains the snapshot
+  source as a peer, installs authenticated vector/floors without creating an
+  acknowledgement, preserves unavailable resource declarations, and enqueues
+  all documents for external-index rebuild. Ordinary incremental sync after
+  the installed vector converges in the REST integration test.
+- REST sparse-file resume beyond 3 GiB, byte-identical resumable directory
+  bulk transfer, bounded frame memory, wrong key/tamper/ownership, startup
+  blocker, and every emergency/replace/cutover fault boundary pass. The
+  generated 100k restore completed in 13.080 seconds at 24,788,992 bytes peak
+  RSS and queued 100,000 documents.
+- No schema, compressor, third-party dependency, MCP archive path, automatic
+  restore, Android-emulator claim, or archive-v2 behavior changed. Archived as
+  `plans/v0.7/022-scalable-restore-catchup.md`; G14e requires explicit approval.
 
 ## v0.7 G14c completion — 2026-08-22
 

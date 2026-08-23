@@ -1,7 +1,7 @@
 package syncbackup
 
 import (
-	"archive/zip"
+	"archive/tar"
 	"bytes"
 	"crypto/rand"
 	"os"
@@ -144,7 +144,7 @@ func TestPackAndUnpackRoundTripDeterministically(t *testing.T) {
 		t.Fatal("two packs of one directory produced different bytes")
 	}
 
-	container := filepath.Join(t.TempDir(), "container.zip")
+	container := filepath.Join(t.TempDir(), "container.tar")
 	if err := os.WriteFile(container, first.Bytes(), 0o600); err != nil {
 		t.Fatal(err)
 	}
@@ -161,21 +161,21 @@ func TestPackAndUnpackRoundTripDeterministically(t *testing.T) {
 }
 
 // TestUnpackRefusesAnEscapingEntry is the check that matters for a container
-// that arrives from a peer. A peer is authenticated, not trusted, and a ZIP
+// that arrives from a peer. A peer is authenticated, not trusted, and a tar
 // entry named ../../etc/something is the oldest trick there is.
 func TestUnpackRefusesAnEscapingEntry(t *testing.T) {
-	container := filepath.Join(t.TempDir(), "hostile.zip")
+	container := filepath.Join(t.TempDir(), "hostile.tar")
 	file, err := os.Create(container)
 	if err != nil {
 		t.Fatal(err)
 	}
-	writer := zip.NewWriter(file)
+	writer := tar.NewWriter(file)
 	for _, name := range []string{"../escaped.txt", "objects/../../escaped-too.txt"} {
-		entry, err := writer.CreateHeader(&zip.FileHeader{Name: name, Method: zip.Store})
-		if err != nil {
+		contents := []byte("should never be written")
+		if err := writer.WriteHeader(&tar.Header{Name: name, Mode: 0o600, Size: int64(len(contents)), Typeflag: tar.TypeReg}); err != nil {
 			t.Fatal(err)
 		}
-		if _, err := entry.Write([]byte("should never be written")); err != nil {
+		if _, err := writer.Write(contents); err != nil {
 			t.Fatal(err)
 		}
 	}

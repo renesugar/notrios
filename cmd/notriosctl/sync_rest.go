@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/renesugar/notrios/internal/snapshotimage"
 	"github.com/renesugar/notrios/internal/store"
 	"github.com/renesugar/notrios/internal/syncauth"
 	"github.com/renesugar/notrios/internal/synccarrier"
@@ -70,16 +71,15 @@ func runSyncPush(args []string) {
 }
 
 // runSyncFetchBackup downloads a snapshot from a peer that is permitted to give
-// one, resuming until it is complete, and verifies it as an archive.
-//
-// It stops there on purpose. Restoring is the existing explicit act —
-// `notriosctl restore archive-v2 --intent ...` — because deciding what a
-// restore does to a library is not something a download should decide.
+// one, resuming until it is complete, and verifies it as a physical snapshot.
+// Installation remains optional and requires an explicit replace/adopt intent.
 func runSyncFetchBackup(args []string) {
 	flags := newSyncFlags("fetch-backup")
 	peerURL := flags.set.String("url", "", "the peer's base URL")
 	out := flags.set.String("out", "", "directory to place the verified archive in")
 	chunk := flags.set.Int64("chunk-bytes", 4<<20, "how much to fetch per request")
+	intent := flags.set.String("intent", "", "optional explicit physical restore intent: replace or adopt")
+	emergency := flags.set.String("emergency", "", "verified emergency snapshot directory for restore")
 	flags.parse(args)
 	if strings.TrimSpace(*peerURL) == "" || strings.TrimSpace(*out) == "" {
 		fmt.Fprintln(os.Stderr, "usage: notriosctl sync fetch-backup --url <base-url> --out <dir>")
@@ -87,6 +87,11 @@ func runSyncFetchBackup(args []string) {
 	}
 	st, status, databaseID := flags.openSyncStore()
 	defer st.Close()
+	storeStatus, err := st.Status(context.Background())
+	if err != nil {
+		exit(err)
+	}
+	assetRoot := st.AssetRoot()
 	requireEnrolled(status)
 	keys := mustOpenKeys(flags.keyPath(databaseID))
 	client := peerClient(st, keys, status, databaseID, *peerURL)
@@ -123,8 +128,9 @@ func runSyncFetchBackup(args []string) {
 	// The sealed file has served its purpose and is a complete copy of somebody's
 	// library; leaving it beside the extracted archive doubles that exposure.
 	_ = os.Remove(sealed)
-	printJSON(map[string]any{
-		"archive":         archiveDir,
+	result := map[string]any{
+		"snapshot":        archiveDir,
+		"format":          backup.Format,
 		"sealed_bytes":    backup.SealedBytes,
 		"requests":        requests,
 		"elapsed_ms":      time.Since(started).Milliseconds(),
@@ -133,9 +139,26 @@ func runSyncFetchBackup(args []string) {
 			"database_id":   report.DatabaseID,
 			"snapshot_id":   report.SnapshotID,
 			"commit_sha256": report.CommitSHA256,
-			"records":       report.Records,
 			"objects":       report.Objects,
 		},
-		"next": "notriosctl restore archive-v2 --intent adopt --db <this library> " + archiveDir,
-	})
+		"next": "notriosctl snapshot restore --intent replace --db <this library> " + archiveDir,
+	}
+	if *intent != "" {
+		if *intent != "replace" && *intent != "adopt" {
+			exit(fmt.Errorf("restore intent must be replace or adopt"))
+		}
+		if err := st.Close(); err != nil {
+			exit(err)
+		}
+		restored, err := snapshotimage.Restore(ctx, archiveDir, snapshotimage.RestoreOptions{
+			Intent: *intent, TargetDatabase: storeStatus.Path, TargetAssetRoot: assetRoot,
+			EmergencyDirectory: *emergency,
+		})
+		if err != nil {
+			exit(err)
+		}
+		result["restore"] = restored
+		result["next"] = "re-enroll the new replica identity, then run ordinary incremental sync"
+	}
+	printJSON(result)
 }

@@ -162,11 +162,13 @@ Verification completes in full before the first canonical write, so a damaged ar
 
 An interrupted restore leaves a durable marker naming the snapshot it was applying. That library is neither empty nor complete: `adopt`, `merge`, and `fork` refuse it and only `--intent replace` recovers it. The JSON summary reports the intent, resulting database/replica IDs, and applied record counts.
 
-## snapshot create / snapshot verify
+## snapshot create / snapshot verify / snapshot restore
 
 ```bash
 notriosctl snapshot create [shared flags] <out-dir>
 notriosctl snapshot verify <snapshot-dir>
+notriosctl snapshot restore [shared flags] --intent replace|adopt
+    [--emergency dir] <snapshot-dir>
 ```
 
 Creates or verifies the same-schema whole-library
@@ -178,11 +180,13 @@ only complete verified packs and restarts the SQLite image.
 
 Verification is read-only. It checks exact schema/application capability,
 every hash and length, SQLite integrity, identity, vector/floors, local-state
-clearing, safe paths, and database-to-pack object completeness. A successful
-report says `ready_for_install`, but G14c intentionally has no physical install
-command: emergency backup, atomic cutover, replica rotation, derived-index
-rebuild, and incremental replay arrive in G14d. Use archive-v2 for subset,
-merge, publication, or incompatible-schema recovery.
+clearing, safe paths, and database-to-pack object completeness. Restore accepts
+no default intent: `replace` requires the same logical database ID and `adopt`
+accepts a compatible library explicitly. It verifies an emergency snapshot,
+uses a durable startup-blocking roll-forward plan, rotates the writable replica
+ID, preserves vector/floors, and queues derived projections. Stop the service;
+after interruption, run the identical command again. Use archive-v2 for subset,
+merge, fork, publication, or incompatible-schema recovery.
 
 ## link
 
@@ -608,19 +612,26 @@ notriosctl sync fetch-backup --url https://desktop.local:8443 --out /tmp/restore
 
 The peer must have explicitly permitted your replica to receive a snapshot;
 being enrolled is not enough, because a snapshot is a complete copy of the
-library. The download is encrypted, resumable, and verified as an archive-v2
-snapshot before the command reports success — interrupt it and run it again and
+library. The download is encrypted, resumable, and verified as a same-schema
+physical snapshot before the command reports success — interrupt it and run it again and
 it continues from where it stopped.
 
-It stops at a verified archive on purpose, and prints the command that would
+Without an install intent it stops at a verified snapshot and prints the command that would
 restore it:
 
 ```sh
-notriosctl restore archive-v2 --intent adopt --db second/notes.sqlite /tmp/restore/archive
+notriosctl snapshot restore --intent adopt --db second/notes.sqlite \
+  --asset-store second/assets /tmp/restore/snapshot
 ```
 
 What a restore does to a library is a decision with an intent, not something a
 download should make for you.
+
+On a stopped service, `fetch-backup` can perform that same explicit restore
+after verification with `--intent replace|adopt [--emergency dir]`. It never
+chooses an intent automatically. Re-enroll the fresh replica identity, then run
+ordinary incremental sync so only operations after the installed snapshot
+vector replay.
 
 ### Exchanging through a folder
 

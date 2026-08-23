@@ -1,8 +1,8 @@
 # Plan: v0.7 — Native synchronization
 
-Status: **G0-G14c completed through 2026-08-22. Product version remains 0.6.0 and the
+Status: **G0-G14d completed through 2026-08-22. Product version remains 0.6.0 and the
 canonical schema is v25. Archive scalability is reopened as a release-blocking
-G14a-G14e sequence; G14d is next and is not approved. G15 cannot start until
+G14a-G14e sequence; G14e is next and is not approved. G15 cannot start until
 G14e is complete.** The
 former seven-item draft was too coarse: it mixed protocol research, canonical
 write interception, merge semantics, two transports, cryptography, recovery,
@@ -1312,7 +1312,7 @@ golden, reader-matrix, corruption/fault, and generated 100k tests pass; the
 100k image used 23,547,904 bytes peak RSS. No schema, archive-v2 compatibility,
 compressor, dependency, REST/MCP surface, or current catch-up behavior changed.
 
-## G14d. Scalable restore, emergency backup, and synchronization catch-up
+## G14d. Scalable restore, emergency backup, and synchronization catch-up — complete
 
 **Goal.** Use G14c's representation safely for full backup/restore and the G10/
 G14 catch-up loop on desktop and the pre-mobile bounded core.
@@ -1347,6 +1347,19 @@ directory and REST carrier parity; Android-emulator checklist update.
 - None beyond G14c's resolved representation. If restore requires a materially
   different physical format from production, stop and add an investigation
   rather than hiding a second format here.
+
+**Outcome (2026-08-22).** G14d is complete and archived under
+`plans/v0.7/022-scalable-restore-catchup.md`. The selected G14c physical
+representation now moves through deterministic sequential USTAR plus the
+existing fixed authenticated frames over resumable REST and directory bulk
+paths. Explicit local replace/adopt creates a verified emergency snapshot,
+persists and resumes every blocked cutover stage, rotates the writable replica,
+installs snapshot vector/floors, queues derived projections, and converges after
+ordinary incremental replay. Sparse range resume beyond 3 GiB, injected failure
+at every recovery boundary, wrong key/tamper/ownership, bounded memory/disk
+shape, and the generated 100k restore gate pass. The approved default remained
+G14c's physical format; no second restore format, schema, compressor, dependency,
+automatic destructive action, MCP path, or physical-mobile claim was added.
 
 ## G14e. Full-scale archive/catch-up acceptance and format freeze
 
@@ -1678,7 +1691,7 @@ recommendation, blocking status, and consequence.
 | Current-GUI Mermaid baseline | G18 | Resolved fact: upstream-capable but disabled pending offline/security evidence |
 | Release version/schema bookkeeping | G20 | Open, non-blocking until wrap-up |
 
-G0-G14c are complete and the production physical representation is recorded.
-G14d is the next implementable item, but is not approved. G15-G20 remain blocked
+G0-G14d are complete and the production physical restore/catch-up path is recorded.
+G14e is the next implementable item, but is not approved. G15-G20 remain blocked
 until G14e completes. Implementation begins only after an explicit instruction
-naming G14d.
+naming G14e.

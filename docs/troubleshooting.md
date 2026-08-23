@@ -46,6 +46,16 @@ Verified symptoms and fixes, grouped by activity. `notriosctl doctor` diagnoses 
 | import seems to “miss” notes on re-run | notes you moved to the Trash are deliberately not resurrected; unchanged notes count as `notes_unchanged` |
 | a Joplin/Obsidian import was interrupted | re-run the same command and option set; if the source inventory fingerprint is unchanged it resumes at the next durable batch, otherwise it replans and skips unchanged item fingerprints |
 
+## Physical snapshot restore
+
+| Symptom | Fix |
+|---|---|
+| startup reports that a physical restore is in progress | keep the service stopped and re-run the identical `notriosctl snapshot restore --intent ...` command; do not remove the blocker or rename database/assets manually |
+| restore says the existing plan names different input or targets | use the original snapshot, intent, database, and asset paths to finish recovery; after it completes, start a separate explicit restore |
+| `replace requires the same database id` | use `--intent adopt` only if adopting that compatible library is intended, or use archive-v2 for merge/fork/incompatible-schema recovery |
+| restore stopped after cutover | verify the emergency snapshot path printed in the recovery plan remains protected, then re-run the same command; the coordinator rolls forward and verifies installed identity before unblocking startup |
+| restored attachments remain unavailable | physical snapshots include only database-declared local bytes; declarations that were remote/unavailable remain so and ordinary materialization fetches them from an enrolled source later |
+
 ## Documentation site
 
 | Symptom | Fix |

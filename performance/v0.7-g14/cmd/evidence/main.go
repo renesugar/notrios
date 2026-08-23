@@ -428,7 +428,11 @@ func measureBackup(notes int) (backupTier, error) {
 		return backupTier{}, err
 	}
 	measurement.Verified = report.CommitSHA256 != ""
-	measurement.RestoredRecords = report.Records
+	// G14d replaced archive-v2 records with one physical database image plus
+	// bounded external objects. Keep this historical aggregate field populated
+	// from the physical inventory so the old harness continues to compile; G14e
+	// owns the new production acceptance schema.
+	measurement.RestoredRecords = int(report.Objects)
 	measurement.ArchiveBytes = directoryBytes(archiveDir)
 	if measurement.ArchiveBytes > 0 {
 		measurement.OverheadPct = 100 * float64(measurement.SealedBytes-measurement.ArchiveBytes) /

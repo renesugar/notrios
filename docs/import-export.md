@@ -361,12 +361,18 @@ snapshot representation selected from full-corpus evidence:
 go run ./cmd/notriosctl snapshot create --db data/notes.sqlite \
   --asset-store data/assets ./notrios-physical-snapshot
 go run ./cmd/notriosctl snapshot verify ./notrios-physical-snapshot
+go run ./cmd/notriosctl snapshot restore --intent replace \
+  --db data/notes.sqlite --asset-store data/assets \
+  ./notrios-physical-snapshot
 ```
 
 This is not a subset export and cannot be merged. It binds one consistent
 SQLite Online Backup image to deterministic bounded packs of every
-database-declared local resource and preserved source bundle. Verification
-prepares a package for later installation but does not replace a database.
+database-declared local resource and preserved source bundle. Restore requires
+the service to be stopped and an explicit `replace` (same database ID) or
+`adopt` intent. It creates and verifies an emergency physical snapshot, records
+each cutover stage durably, mints a new replica ID, and leaves the installed
+replica ready to re-enroll and replay operations after the snapshot floor.
 Use packed archive-v2 for portable interchange, selective transfer, merge, and
 fallback when schema compatibility is not exact.
 

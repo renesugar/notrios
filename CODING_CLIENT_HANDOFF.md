@@ -14,7 +14,7 @@ wrap-up). The thirteen v0.5 slices remain archived under `plans/v0.5/`.
 independently approvable G0-G20 slices plus the newly inserted, blocking
 G14a-G14e archive-scalability sequence. The user's 2026-08-11
 review resolved the policy decisions through G17, including mandatory payload
-encryption and per-replica Ed25519 signatures. **G0-G14c are complete** and
+encryption and per-replica Ed25519 signatures. **G0-G14d are complete** and
 archived under `plans/v0.7/`; their reviewed evidence is under
 `performance/v0.7-g0/`, `performance/v0.7-g1/`, `performance/v0.7-g1a/`,
 `performance/v0.7-g2/`, `performance/v0.7-g4/`, `performance/v0.7-g5/`,
@@ -22,7 +22,7 @@ archived under `plans/v0.7/`; their reviewed evidence is under
 `performance/v0.7-g9/`, `performance/v0.7-g10/`, `performance/v0.7-g11/`, and
 `performance/v0.7-g12/`, `performance/v0.7-g13/`, `performance/v0.7-g14/`,
 `performance/v0.7-g14a/`, `performance/v0.7-g14b/`, and
-`performance/v0.7-g14c/`. **G14d is next and is not approved; G15 remains
+`performance/v0.7-g14c/` and `performance/v0.7-g14d/`. **G14e is next and is not approved; G15 remains
 blocked until G14e.** G14b selected option B: a
 required compatible same-schema SQLite-image plus bounded packed-assets
 capability for whole-library full backup/catch-up, retaining packed semantic
@@ -40,12 +40,20 @@ pack boundaries, restarts the image, and publishes the manifest last.
 `notriosctl snapshot verify` checks exact schema/application capability,
 hashes/lengths, SQLite integrity, identity, vector/floors, cleared state, safe
 paths, deterministic headers, object hashes, and external completeness. It
-returns install-ready staging only. The current encrypted catch-up still uses
-archive-v2; G14d must add emergency backup, crash-safe install, replica
-rotation, derived rebuild, and bounded replay. Generated 100k evidence passed
-at 23,547,904 bytes peak RSS. No schema, compressor, dependency, REST/MCP surface, or
+returns install-ready staging only. G14d adds `snapshot restore --intent
+replace|adopt`: a verified emergency physical snapshot, adjacent durable
+roll-forward plan/startup blocker, staged activation with a fresh replica ID
+and catch-up floors, external-index rebuild queue, and post-snapshot replay.
+REST now produces and verifies the same physical snapshot through deterministic
+sequential USTAR plus existing NBK1 frames; range resume beyond 3 GiB and
+identical resumable directory bytes are tested. Generated 100k restore evidence
+completed in 13.080 seconds at 24,788,992 bytes peak RSS and queued all 100,000
+documents. No schema, compressor, dependency, REST/MCP path surface, or
 archive-v2 behavior changed. G14c is archived as
-`plans/v0.7/021-scalable-native-snapshot-representation.md`.
+`plans/v0.7/021-scalable-native-snapshot-representation.md`; G14d is archived as
+`plans/v0.7/022-scalable-restore-catchup.md`. G14e must run the frozen
+full-corpus acceptance before G15 can begin. Neither an Android emulator nor a
+physical device was measured in G14d.
 
 G14b added only investigation/prototype code and aggregate evidence. Its 57
 validated full-corpus phase rows cover equivalent 382,206-document Joplin and

@@ -3,6 +3,8 @@ package synccarrier
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"os"
@@ -33,6 +35,61 @@ func testDirectory(t *testing.T, root string) *Directory {
 		t.Fatal(err)
 	}
 	return carrier
+}
+
+func TestLargeSnapshotUsesTheSameResumableBytesAsREST(t *testing.T) {
+	ctx := context.Background()
+	root := t.TempDir()
+	keys, err := syncwire.NewMemoryKeyRing("key_bulk_snapshot")
+	if err != nil {
+		t.Fatal(err)
+	}
+	group, err := keys.Current()
+	if err != nil {
+		t.Fatal(err)
+	}
+	publisher, err := NewDirectory(root, group, "db_bulk_snapshot", "replica_publisher")
+	if err != nil {
+		t.Fatal(err)
+	}
+	receiver, err := NewDirectory(root, group, "db_bulk_snapshot", "replica_receiver")
+	if err != nil {
+		t.Fatal(err)
+	}
+	payload := bytes.Repeat([]byte("sealed physical snapshot frame\n"), 90_000)
+	digestBytes := sha256.Sum256(payload)
+	digest := hex.EncodeToString(digestBytes[:])
+	source := filepath.Join(t.TempDir(), "snapshot.nbk")
+	if err := os.WriteFile(source, payload, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	position, complete, err := publisher.PublishSnapshotFile(ctx, digest, source, digest, 73_000)
+	if err != nil || complete || position != 73_000 {
+		t.Fatalf("first publish range: %d %v %v", position, complete, err)
+	}
+	for !complete {
+		position, complete, err = publisher.PublishSnapshotFile(ctx, digest, source, digest, 73_000)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	if position != int64(len(payload)) {
+		t.Fatalf("published %d of %d", position, len(payload))
+	}
+
+	destination := filepath.Join(t.TempDir(), "download.nbk")
+	position, complete = 0, false
+	for !complete {
+		position, complete, err = receiver.DownloadSnapshotFile(ctx, publisher.Namespace(), digest, digest,
+			destination, int64(len(payload)), 61_000)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	got, err := os.ReadFile(destination)
+	if err != nil || !bytes.Equal(got, payload) || position != int64(len(payload)) {
+		t.Fatalf("directory snapshot differs from the sealed source: bytes=%d err=%v", position, err)
+	}
 }
 
 func TestAContentNamedArtifactIsVerifiedAgainstItsOwnName(t *testing.T) {

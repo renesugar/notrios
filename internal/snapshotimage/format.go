@@ -123,18 +123,20 @@ type PackDescriptor struct {
 }
 
 type VerificationReport struct {
-	SnapshotID      string `json:"snapshot_id"`
-	DatabaseID      string `json:"database_id"`
-	SourceReplicaID string `json:"source_replica_id"`
-	SchemaVersion   int    `json:"schema_version"`
-	CommitSHA256    string `json:"commit_sha256"`
-	ContentSHA256   string `json:"content_sha256"`
-	Packs           int    `json:"packs"`
-	Objects         int64  `json:"objects"`
-	DatabaseBytes   int64  `json:"database_bytes"`
-	ExternalBytes   int64  `json:"external_bytes"`
-	ReadyForInstall bool   `json:"ready_for_install"`
-	InstallBoundary string `json:"install_boundary"`
+	SnapshotID      string           `json:"snapshot_id"`
+	DatabaseID      string           `json:"database_id"`
+	SourceReplicaID string           `json:"source_replica_id"`
+	SchemaVersion   int              `json:"schema_version"`
+	CommitSHA256    string           `json:"commit_sha256"`
+	ContentSHA256   string           `json:"content_sha256"`
+	Packs           int              `json:"packs"`
+	Objects         int64            `json:"objects"`
+	DatabaseBytes   int64            `json:"database_bytes"`
+	ExternalBytes   int64            `json:"external_bytes"`
+	ReadyForInstall bool             `json:"ready_for_install"`
+	InstallBoundary string           `json:"install_boundary"`
+	SnapshotVector  syncstate.Vector `json:"snapshot_vector"`
+	SnapshotFloors  syncstate.Vector `json:"snapshot_floors"`
 }
 
 func ComputeCommitSHA256(manifest Manifest) (string, error) {

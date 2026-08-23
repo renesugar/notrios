@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/ed25519"
 	"crypto/rand"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -12,9 +13,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/renesugar/notrios/internal/archivev2"
 	"github.com/renesugar/notrios/internal/config"
 	"github.com/renesugar/notrios/internal/httpapi"
+	"github.com/renesugar/notrios/internal/snapshotimage"
 	"github.com/renesugar/notrios/internal/store"
 	"github.com/renesugar/notrios/internal/syncauth"
 	"github.com/renesugar/notrios/internal/synccarrier"
@@ -298,10 +299,50 @@ func TestRangeRequestsBehaveAndAnUnsatisfiableOneIs416(t *testing.T) {
 	}
 }
 
+func TestMultiGiBDownloadResumesFromTheDurableFileLength(t *testing.T) {
+	const total = int64(3)<<30 + 12345
+	const tail = int64(64 << 10)
+	var gotRange string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotRange = r.Header.Get("Range")
+		w.Header().Set("Content-Range", fmt.Sprintf("bytes %d-%d/%d", total-tail, total-1, total))
+		w.WriteHeader(http.StatusPartialContent)
+		_, _ = w.Write(make([]byte, tail))
+	}))
+	defer server.Close()
+	_, private, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	client := &syncauth.Client{
+		BaseURL: server.URL, DatabaseID: "db_multigib", ReplicaID: "replica_multigib",
+		SignerKeyID: syncwire.SignerKeyID(private.Public().(ed25519.PublicKey)), Private: private,
+	}
+	destination := filepath.Join(t.TempDir(), "snapshot.nbk")
+	file, err := os.OpenFile(destination, os.O_CREATE|os.O_WRONLY, 0o600)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := file.Truncate(total - tail); err != nil {
+		t.Fatal(err)
+	}
+	file.Close()
+	written, complete, err := DownloadBackup(context.Background(), client, Backup{
+		ID: "opaque-multigib", SealedBytes: total,
+	}, destination, tail)
+	if err != nil || !complete || written != total {
+		t.Fatalf("multi-GiB resume: %d %v %v", written, complete, err)
+	}
+	wantRange := fmt.Sprintf("bytes=%d-%d", total-tail, total-1)
+	if gotRange != wantRange {
+		t.Fatalf("Range = %q, want %q", gotRange, wantRange)
+	}
+}
+
 // TestAnInterruptedBackupResumesAndVerifies is G14's working state: a replica
 // asks for a snapshot, the transfer stops part way, it resumes from where it
-// stopped, and archive-v2 — not the container, not the transport — decides
-// whether what arrived is a snapshot.
+// stopped, and the G14c physical snapshot verifier — not the container or
+// transport — decides whether what arrived is an installable snapshot.
 func TestAnInterruptedBackupResumesAndVerifies(t *testing.T) {
 	ctx := context.Background()
 	fixture := newFixture(t)
@@ -332,7 +373,7 @@ func TestAnInterruptedBackupResumesAndVerifies(t *testing.T) {
 	// resumes from the local file's own length.
 	calls := 0
 	for {
-		written, complete, err := DownloadBackup(ctx, fixture.client, backup, sealed, 4096)
+		written, complete, err := DownloadBackup(ctx, fixture.client, backup, sealed, 64<<10)
 		if err != nil {
 			t.Fatalf("download: %v", err)
 		}
@@ -356,13 +397,22 @@ func TestAnInterruptedBackupResumesAndVerifies(t *testing.T) {
 	if err != nil {
 		t.Fatalf("OpenBackup: %v", err)
 	}
-	// VerifyDirectory returning without error *is* the verification; the report
-	// then says what it saw, and a snapshot of five notes has records.
-	if report.Records == 0 || report.CommitSHA256 == "" {
-		t.Fatalf("archive-v2 verified an empty snapshot: %+v", report)
+	if report.CommitSHA256 == "" || !report.ReadyForInstall {
+		t.Fatalf("the physical snapshot did not verify: %+v", report)
 	}
 	if _, err := os.Stat(filepath.Join(archiveDir, "manifest.json")); err != nil {
 		t.Fatalf("the extracted archive has no manifest: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(archiveDir, "interrupted-open.partial"), []byte("partial"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	archiveDir, report, err = OpenBackup(backup, sealed, workspace,
+		fixture.guest.keys, syncwire.MultiVerifier{fixture.guest.keys, fixture.guest.store.PeerVerifier()})
+	if err != nil || !report.ReadyForInstall {
+		t.Fatalf("restart physical open from durable sealed bytes: %+v %v", report, err)
+	}
+	if _, err := os.Stat(filepath.Join(archiveDir, "interrupted-open.partial")); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("restarted open retained partial extraction: %v", err)
 	}
 	// The snapshot's vector is what makes a restored replica able to resume
 	// incrementally rather than asking for everything again.
@@ -375,20 +425,29 @@ func TestAnInterruptedBackupResumesAndVerifies(t *testing.T) {
 	// G14 exist to close: a new device gets a library from a snapshot and then
 	// keeps up with ordinary exchanges rather than replaying everything.
 	blankRoot := t.TempDir()
-	blank, err := store.OpenSQLiteWithAssetStore(filepath.Join(blankRoot, "notes.sqlite"),
-		filepath.Join(blankRoot, "assets"))
+	blankDB := filepath.Join(blankRoot, "notes.sqlite")
+	blankAssets := filepath.Join(blankRoot, "assets")
+	blank, err := store.OpenSQLiteWithAssetStore(blankDB, blankAssets)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := blank.Bootstrap(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if err := blank.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := snapshotimage.Restore(ctx, archiveDir, snapshotimage.RestoreOptions{
+		Intent: "adopt", TargetDatabase: blankDB, TargetAssetRoot: blankAssets,
+		EmergencyDirectory: filepath.Join(blankRoot, "emergency"),
+	}); err != nil {
+		t.Fatalf("restore with an explicit intent: %v", err)
+	}
+	blank, err = store.OpenSQLiteWithAssetStore(blankDB, blankAssets)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer blank.Close()
-	if err := blank.Bootstrap(ctx); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := archivev2.Restore(ctx, blank, archiveDir, archivev2.RestoreOptions{
-		Intent: archivev2.RestoreAdopt,
-	}); err != nil {
-		t.Fatalf("restore with an explicit intent: %v", err)
-	}
 	for index := 0; index < 5; index++ {
 		if _, err := blank.GetDocument(ctx, fmt.Sprintf("doc_backup_%d", index)); err != nil {
 			t.Fatalf("the restored replica is missing doc_backup_%d: %v", index, err)
@@ -568,7 +627,7 @@ func TestBackupMemoryStaysBoundedByTheFrame(t *testing.T) {
 	}
 	_, report, err := OpenBackup(backup, sealed, workspace, fixture.guest.keys,
 		syncwire.MultiVerifier{fixture.guest.keys, fixture.guest.store.PeerVerifier()})
-	if err != nil || report.Records == 0 {
+	if err != nil || !report.ReadyForInstall {
 		t.Fatalf("a multi-frame snapshot did not verify: %v %+v", err, report)
 	}
 }

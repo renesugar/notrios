@@ -1,0 +1,14 @@
+{
+  "generated_at": "2026-08-23T06:01:44Z",
+  "documents": 100000,
+  "restore_milliseconds": 13080,
+  "snapshot_bytes": 60557003,
+  "old_canonical_bytes": 790528,
+  "estimated_peak_working_bytes": 62138059,
+  "heap_alloc_bytes": 2570736,
+  "peak_rss_bytes": 24788992,
+  "derived_documents": 100000,
+  "go_version": "go1.27.0",
+  "bounded_memory": true,
+  "bounded_disk_shape": true
+}

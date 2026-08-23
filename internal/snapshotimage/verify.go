@@ -115,8 +115,20 @@ func VerifyDirectory(ctx context.Context, root string, limits Limits) (Verificat
 		CommitSHA256: manifest.CommitSHA256, ContentSHA256: manifest.ContentSHA256,
 		Packs: len(manifest.External.Packs), Objects: objectCount,
 		DatabaseBytes: databaseBytes, ExternalBytes: payloadBytes, ReadyForInstall: true,
-		InstallBoundary: "verified staging only; G14d must create an emergency backup, install atomically, rotate the replica, and replay after the snapshot vector",
+		InstallBoundary: "verified staging; installation requires an explicit intent and verified emergency snapshot",
+		SnapshotVector:  manifest.Snapshot.Vector, SnapshotFloors: manifest.Snapshot.Floors,
 	}, nil
+}
+
+// ReadManifest returns the strictly decoded and validated manifest without
+// weakening VerifyDirectory's full admission boundary. Installation calls it
+// only after complete verification to obtain the declared pack inventory.
+func ReadManifest(root string, limits Limits) (Manifest, error) {
+	absolute, err := filepath.Abs(root)
+	if err != nil {
+		return Manifest{}, err
+	}
+	return readManifest(absolute, limits)
 }
 
 func readManifest(root string, limits Limits) (Manifest, error) {

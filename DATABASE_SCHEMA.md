@@ -458,6 +458,14 @@ floors, and cleared-table assertions to match the manifest exactly. No in-place
 migration of a physical image is allowed; an incompatible image uses semantic
 archive-v2 instead.
 
+G14d also adds no table or migration. Physical activation occurs only on the
+private staged schema-v25 copy. It mints a fresh local replica/allocator,
+retains the snapshot source as a peer, installs the authenticated snapshot
+vector and catch-up floors, clears copied peer acknowledgements, and enqueues
+every document in `index_outbox` for external projection rebuild. An adjacent
+owner-only JSON restore plan and startup-blocker file make filesystem cutover
+roll-forward resumable; they are deliberately outside canonical SQLite state.
+
 Future migrations should be additive where possible. Any destructive change requires a migration note in `plans/` and a backup/export instruction.
 
 Later v0.7 sync schema is described semantically in `SYNCHRONIZATION.md` and

@@ -552,6 +552,8 @@ Usage:
   notriosctl snapshot create [--config config.yaml] [--db ...] [--asset-store ...] <out-dir>
                                                  # same-schema whole-library SQLite image plus deterministic bounded asset packs
   notriosctl snapshot verify <snapshot-dir>     # full read-only physical snapshot admission
+  notriosctl snapshot restore --intent replace|adopt [--db ...] [--asset-store ...] [--emergency dir] <snapshot-dir>
+                                                 # stopped-service, emergency-first, crash-resumable physical cutover
   notriosctl seed-help [--db ...] [docs-dir]     # mirror docs/ into the read-only Help notebook
   notriosctl localize [--config config.yaml] [--db ...] [--dry-run] [--allow-review] [--base-revision rev] <document-id>
                                                  # download policy-allowed remote media and rewrite the note to resource:// URIs
@@ -997,7 +999,7 @@ func runVerify(args []string) {
 
 func runSnapshot(args []string) {
 	if len(args) == 0 {
-		fmt.Fprintln(os.Stderr, "usage: notriosctl snapshot create|verify [options]")
+		fmt.Fprintln(os.Stderr, "usage: notriosctl snapshot create|verify|restore [options]")
 		os.Exit(2)
 	}
 	switch args[0] {
@@ -1005,6 +1007,8 @@ func runSnapshot(args []string) {
 		runSnapshotCreate(args[1:])
 	case "verify":
 		runSnapshotVerify(args[1:])
+	case "restore":
+		runSnapshotRestore(args[1:])
 	default:
 		fmt.Fprintf(os.Stderr, "unknown snapshot operation %q\n", args[0])
 		os.Exit(2)
@@ -1075,6 +1079,43 @@ func runSnapshotVerify(args []string) {
 		os.Exit(2)
 	}
 	report, err := snapshotimage.VerifyDirectory(context.Background(), fs.Arg(0), snapshotimage.DefaultLimits())
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	printJSON(report)
+}
+
+func runSnapshotRestore(args []string) {
+	fs := flag.NewFlagSet("notriosctl snapshot restore", flag.ExitOnError)
+	configPath := fs.String("config", "", "optional config file")
+	dbPath := fs.String("db", "", "SQLite database path override")
+	assetStore := fs.String("asset-store", "", "asset store directory override")
+	intent := fs.String("intent", "", "required: replace or adopt")
+	emergency := fs.String("emergency", "", "emergency snapshot directory (default beside the database)")
+	if err := fs.Parse(args); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(2)
+	}
+	if fs.NArg() != 1 || (*intent != "replace" && *intent != "adopt") {
+		fmt.Fprintln(os.Stderr, "usage: notriosctl snapshot restore --intent replace|adopt [--db path] [--asset-store path] [--emergency dir] <snapshot-dir>")
+		os.Exit(2)
+	}
+	cfg, err := config.Load(*configPath)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	if *dbPath != "" {
+		cfg.Data.DatabasePath = *dbPath
+	}
+	if *assetStore != "" {
+		cfg.Data.AssetStore = *assetStore
+	}
+	report, err := snapshotimage.Restore(context.Background(), fs.Arg(0), snapshotimage.RestoreOptions{
+		Intent: *intent, TargetDatabase: cfg.Data.DatabasePath,
+		TargetAssetRoot: cfg.Data.AssetStore, EmergencyDirectory: *emergency,
+	})
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)

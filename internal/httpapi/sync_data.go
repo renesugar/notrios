@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/renesugar/notrios/internal/archivev2"
+	"github.com/renesugar/notrios/internal/snapshotimage"
 	"github.com/renesugar/notrios/internal/syncauth"
 	"github.com/renesugar/notrios/internal/syncbackup"
 	"github.com/renesugar/notrios/internal/synccarrier"
@@ -41,15 +41,19 @@ const MaxArtifactUploadBytes = synccarrier.MaxArtifactBytes
 // a server filesystem path, and a hash would still be a name a caller could
 // guess at from elsewhere.
 type backupRecord struct {
-	ID             string    `json:"backup_id"`
-	RequesterID    string    `json:"requester_replica_id"`
-	SealedBytes    int64     `json:"sealed_bytes"`
-	SealedSHA256   string    `json:"sealed_sha256"`
-	WrappedKey     string    `json:"wrapped_payload_key"`
-	SnapshotVector any       `json:"snapshot_vector"`
-	CreatedAt      time.Time `json:"created_at"`
-	ExpiresAt      time.Time `json:"expires_at"`
-	path           string
+	ID              string    `json:"backup_id"`
+	Format          string    `json:"format"`
+	SnapshotID      string    `json:"snapshot_id"`
+	CommitSHA256    string    `json:"commit_sha256"`
+	SourceReplicaID string    `json:"source_replica_id"`
+	RequesterID     string    `json:"requester_replica_id"`
+	SealedBytes     int64     `json:"sealed_bytes"`
+	SealedSHA256    string    `json:"sealed_sha256"`
+	WrappedKey      string    `json:"wrapped_payload_key"`
+	SnapshotVector  any       `json:"snapshot_vector"`
+	CreatedAt       time.Time `json:"created_at"`
+	ExpiresAt       time.Time `json:"expires_at"`
+	path            string
 }
 
 // backupStore holds produced backups for the lifetime of the service.
@@ -251,21 +255,20 @@ func (s *Server) handleBackupCreate(w http.ResponseWriter, r *http.Request, prin
 		writeError(w, http.StatusServiceUnavailable, "backups_unavailable", "this service produces no backups")
 		return
 	}
-	handshake, err := s.sync.store.LocalSyncHandshake(r.Context())
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, "backup_failed", "could not read the local sync state")
-		return
-	}
-
 	workspace, err := os.MkdirTemp(s.sync.backups.root, "staging-")
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "backup_failed", "could not stage the snapshot")
 		return
 	}
 	defer os.RemoveAll(workspace)
-	archiveDir := filepath.Join(workspace, "archive")
-	if _, err := archivev2.Export(r.Context(), s.sync.store, archiveDir, archivev2.ExportOptions{}); err != nil {
+	snapshotDir := filepath.Join(workspace, "snapshot")
+	if _, err := snapshotimage.Create(r.Context(), s.sync.store, s.sync.store.AssetRoot(), snapshotDir, snapshotimage.CreateOptions{}); err != nil {
 		writeError(w, http.StatusInternalServerError, "backup_failed", "the snapshot export failed")
+		return
+	}
+	verified, err := snapshotimage.VerifyDirectory(r.Context(), snapshotDir, snapshotimage.DefaultLimits())
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "backup_failed", "the physical snapshot did not verify")
 		return
 	}
 
@@ -281,7 +284,9 @@ func (s *Server) handleBackupCreate(w http.ResponseWriter, r *http.Request, prin
 	}
 	record := &backupRecord{
 		ID: hex.EncodeToString(identifier), RequesterID: principal.ReplicaID,
-		SnapshotVector: handshake.StateVector, CreatedAt: time.Now().UTC(),
+		Format: snapshotimage.CapabilitySQLiteImage, SnapshotID: verified.SnapshotID,
+		CommitSHA256: verified.CommitSHA256, SourceReplicaID: verified.SourceReplicaID,
+		SnapshotVector: verified.SnapshotVector, CreatedAt: time.Now().UTC(),
 		ExpiresAt: time.Now().UTC().Add(24 * time.Hour),
 	}
 	record.path = filepath.Join(s.sync.backups.root, record.ID+".nbk")
@@ -295,10 +300,14 @@ func (s *Server) handleBackupCreate(w http.ResponseWriter, r *http.Request, prin
 	}
 	reader, writer := io.Pipe()
 	go func() {
-		_, packErr := syncbackup.Pack(archiveDir, writer)
+		_, packErr := syncbackup.Pack(snapshotDir, writer)
 		_ = writer.CloseWithError(packErr)
 	}()
 	length, digest, sealErr := syncbackup.Seal(reader, payloadKey, sealed)
+	_ = reader.CloseWithError(sealErr)
+	if sealErr == nil {
+		sealErr = sealed.Sync()
+	}
 	closeErr := sealed.Close()
 	if sealErr != nil || closeErr != nil {
 		os.Remove(record.path)

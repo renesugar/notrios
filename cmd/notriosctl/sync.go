@@ -74,6 +74,7 @@ func printSyncUsage() {
   notriosctl sync handshake --url <base-url> [--db ...] [--keys path]
   notriosctl sync exchange --url <base-url> [--materialize N]
   notriosctl sync fetch-backup --url <base-url> --out <dir> [--chunk-bytes N]
+      [--intent replace|adopt] [--emergency dir]
   notriosctl sync revoke   --key <signer-key-id> [--reason ...] [--advance-epoch]
   notriosctl sync status   [--db ...] [--keys path]
   notriosctl sync discover [--db ...] [--keys path] [--carrier dir]

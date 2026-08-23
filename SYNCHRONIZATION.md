@@ -393,10 +393,13 @@ requester resumes transfer, verifies and decrypts before any canonical write,
 chooses an explicit restore intent, then requests only operations after the
 snapshot vector.
 
-The same state machine is carried through the directory and REST. REST exposes
+The same protocol is carried through the directory and REST. REST exposes
 an opaque authorized artifact ID with range download; it never accepts an
-arbitrary server path. ZIP can be a user-facing transport wrapper, but the
-archive-v2 checksum/capability chain and encrypted payload define correctness.
+arbitrary server path. G14d uses a deterministic sequential USTAR wrapper and
+fixed 1 MiB authenticated-encryption frames; the physical manifest/database/
+pack verifier, not the wrapper, defines correctness. Directory bulk transfer
+publishes and resumes the same sealed bytes without the ordinary small-artifact
+in-memory limit.
 The UI prompts for a password without placing it in a manifest, process
 argument, job record, log, or command history and offers retry/cancel on a wrong
 password. A snapshot/backup is a sink, not a peer acknowledgement.
@@ -413,8 +416,8 @@ below the desktop archive writer's 256 MiB/65,536-object targets because the
 current reader loads a trailer whole. G9 must preserve loose compatibility and
 bound or stream trailer reads.
 
-That physical-format conclusion is reopened before G15. G14's implemented
-catch-up path exports loose archive-v2, wraps each object as a stored ZIP entry,
+That physical-format conclusion was reopened before G15. G14's original
+catch-up path exported loose archive-v2, wrapped each object as a stored ZIP entry,
 then seals the stream; ZIP metadata added about 25% at 100 and 500 notes, while
 the authentication frames add only 28 bytes per MiB. G14a-G14e now block later
 sync work. G14a completed the resumable aggregate-only harness and its generated
@@ -425,10 +428,13 @@ complete candidates on the supplied real corpora and selected a required,
 same-schema SQLite image plus bounded packed external assets for whole-library
 backup/catch-up. Packed semantic archive-v2 remains the subset, merge,
 interchange, and fallback path. G14c implements local creation and complete
-read-only admission for `sqlite-image+packed-assets.v1`; its verifier produces
-install-ready staging but performs no replacement. G14d integrates encrypted
-transport, emergency backup, atomic cutover, new-replica enrollment, derived
-rebuild, and bounded post-vector replay; G14e repeats full-scale acceptance. A raw
+read-only admission for `sqlite-image+packed-assets.v1`. G14d makes it the
+encrypted catch-up artifact, creates a verified emergency physical snapshot,
+durably rolls forward an explicit replace/adopt cutover, rotates the replica
+allocator, installs vector/floors, queues the external derived index, and proves
+ordinary post-vector replay. Packed semantic archive-v2 remains the merge,
+fork, portable, incompatible-schema, and subset path. G14e repeats full-scale
+acceptance. A raw
 live-WAL copy is never a candidate. SQLCipher may encrypt a database image but does not by itself bind
 external assets or provide semantic subset/merge, capability verification,
 signatures, or replica-identity handling.

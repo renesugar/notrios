@@ -1,17 +1,16 @@
-// Package syncbackup packages and encrypts an archive-v2 snapshot for transfer,
-// and opens one again.
+// Package syncbackup wraps and encrypts a physical snapshot for transfer, and
+// opens one again.
 //
-// Two rules from v0.7's resolved decisions shape it. **ZIP may be the wrapper,
-// but archive-v2 defines correctness**: the container here is a convenience for
-// moving one file, and the restoring replica verifies the extracted archive
-// with archive-v2's own verifier before anything canonical is written. ZIP
-// central-directory parsing is never the trust boundary. And **nothing requires
-// a seekable multi-gigabyte buffer**: the payload is sealed in fixed frames and
-// both directions stream, so memory is one frame regardless of library size.
+// G14d replaces the loose-object stored-ZIP path with G14c's database image and
+// bounded asset packs. USTAR is only a sequential transport wrapper around
+// those few physical files; snapshotimage's exact-schema verifier remains the
+// trust boundary. Nothing requires a seekable multi-gigabyte buffer: the
+// payload is sealed in fixed frames and both directions stream, so memory is
+// one frame regardless of library size.
 package syncbackup
 
 import (
-	"archive/zip"
+	"archive/tar"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/sha256"
@@ -24,6 +23,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 const (
@@ -42,7 +42,7 @@ const (
 	domain = "notrios.backup-frame.v1"
 	// MaxEntryBytes bounds one packed file, so a hostile container cannot ask
 	// for an unbounded allocation while being extracted.
-	MaxEntryBytes = int64(8) << 30
+	MaxEntryBytes = int64(16) << 30
 )
 
 var (
@@ -56,13 +56,13 @@ var (
 	ErrUnsafeEntry = errors.New("backup entry name is not safe to extract")
 )
 
-// Pack writes a directory into a ZIP stream, deterministically ordered.
+// Pack writes a directory into a deterministic USTAR stream.
 //
 // Ordering matters only so two packs of one archive produce the same bytes,
 // which makes a transfer's content hash reproducible; correctness still comes
-// from archive-v2 after extraction.
+// from the physical snapshot verifier after extraction.
 func Pack(root string, out io.Writer) (int64, error) {
-	writer := zip.NewWriter(out)
+	writer := tar.NewWriter(out)
 	var total int64
 	var names []string
 	if err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
@@ -71,6 +71,9 @@ func Pack(root string, out io.Writer) (int64, error) {
 		}
 		if entry.IsDir() {
 			return nil
+		}
+		if entry.Type()&os.ModeSymlink != 0 || !entry.Type().IsRegular() {
+			return fmt.Errorf("%w: %s is not a regular file", ErrUnsafeEntry, path)
 		}
 		relative, err := filepath.Rel(root, path)
 		if err != nil {
@@ -87,16 +90,20 @@ func Pack(root string, out io.Writer) (int64, error) {
 		if err != nil {
 			return 0, err
 		}
-		// Stored rather than deflated: archive-v2 objects are already
-		// content-addressed blobs, most of them incompressible, and spending
-		// CPU to re-compress a gigabyte of hashes is not a trade worth making.
-		header := &zip.FileHeader{Name: name, Method: zip.Store}
-		entry, err := writer.CreateHeader(header)
+		info, err := contents.Stat()
 		if err != nil {
 			contents.Close()
 			return 0, err
 		}
-		written, err := io.Copy(entry, contents)
+		header := &tar.Header{
+			Name: name, Mode: 0o600, Size: info.Size(), Typeflag: tar.TypeReg,
+			ModTime: time.Unix(0, 0).UTC(), Format: tar.FormatUSTAR,
+		}
+		if err := writer.WriteHeader(header); err != nil {
+			contents.Close()
+			return 0, err
+		}
+		written, err := io.Copy(writer, contents)
 		contents.Close()
 		if err != nil {
 			return 0, err
@@ -106,47 +113,53 @@ func Pack(root string, out io.Writer) (int64, error) {
 	return total, writer.Close()
 }
 
-// Unpack extracts a ZIP into a directory, refusing any entry whose name would
-// escape it.
+// Unpack extracts a deterministic USTAR stream into a directory, refusing
+// links, duplicate paths, and any entry whose name would escape it.
 func Unpack(path, destination string) error {
-	reader, err := zip.OpenReader(path)
+	file, err := os.Open(path)
 	if err != nil {
 		return fmt.Errorf("%w: %v", ErrMalformed, err)
 	}
-	defer reader.Close()
-	for _, entry := range reader.File {
+	defer file.Close()
+	reader := tar.NewReader(file)
+	seen := map[string]bool{}
+	for {
+		entry, err := reader.Next()
+		if errors.Is(err, io.EOF) {
+			return nil
+		}
+		if err != nil {
+			return fmt.Errorf("%w: %v", ErrMalformed, err)
+		}
+		if entry.Typeflag != tar.TypeReg || entry.Linkname != "" || entry.Size < 0 || entry.Size > MaxEntryBytes {
+			return fmt.Errorf("%w: entry %q is not a bounded regular file", ErrMalformed, entry.Name)
+		}
 		target, err := safeJoin(destination, entry.Name)
 		if err != nil {
 			return err
 		}
-		if entry.FileInfo().IsDir() {
-			continue
+		if seen[target] {
+			return fmt.Errorf("%w: duplicate entry %q", ErrMalformed, entry.Name)
 		}
-		if int64(entry.UncompressedSize64) > MaxEntryBytes {
-			return fmt.Errorf("%w: entry %q declares %d bytes", ErrMalformed, entry.Name, entry.UncompressedSize64)
-		}
+		seen[target] = true
 		if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
 			return err
 		}
-		source, err := entry.Open()
+		output, err := os.OpenFile(target, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o600)
 		if err != nil {
 			return err
 		}
-		file, err := os.OpenFile(target, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o644)
-		if err != nil {
-			source.Close()
-			return err
+		written, copyErr := io.Copy(output, io.LimitReader(reader, entry.Size+1))
+		if copyErr == nil && written != entry.Size {
+			copyErr = fmt.Errorf("%w: entry %q length changed", ErrMalformed, entry.Name)
 		}
-		_, copyErr := io.Copy(file, io.LimitReader(source, MaxEntryBytes+1))
-		source.Close()
-		if closeErr := file.Close(); copyErr == nil {
+		if closeErr := output.Close(); copyErr == nil {
 			copyErr = closeErr
 		}
 		if copyErr != nil {
 			return copyErr
 		}
 	}
-	return nil
 }
 
 // safeJoin refuses absolute paths, parent traversal, and anything that resolves

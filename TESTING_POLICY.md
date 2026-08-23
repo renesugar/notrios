@@ -693,7 +693,7 @@ note's preview.
 No scale profile: a block is bounded to 100 rows through the search path whose
 10k/100k/500k evidence H7 and Q1 already carry.
 
-### Archive scalability tests (v0.7 G14a-G14c complete; G14d-G14e planned)
+### Archive scalability tests (v0.7 G14a-G14d complete; G14e planned)
 
 Before sync tests advance beyond G14, G14a-G14e add a blocking archive-
 scalability gate. The aggregate-only harness must checkpoint each long phase
@@ -742,8 +742,21 @@ secure local-state exclusion, and an opt-in generated 100k bounded-memory run:
 bash scripts/run_snapshot_image_profile.sh /tmp/notrios-snapshot-image-100000.json
 ```
 
-G14d must test emergency backup, every cutover boundary, replica rotation,
-derived-state rebuild selection, and bounded post-snapshot replay.
+G14d adds wrong-key/tamper/ownership and physical metadata checks, sparse-file
+range resume beyond 3 GiB, byte-identical REST/directory resume, bounded frame
+memory, verified emergency backup, startup refusal during cutover, fault
+injection at every durable replacement stage, replica rotation, catch-up floors,
+derived-state rebuild selection, and post-snapshot incremental replay. Its
+opt-in generated 100k restore gate is:
+
+```bash
+bash scripts/run_snapshot_restore_profile.sh /tmp/notrios-snapshot-restore-100000.json
+```
+
+The committed aggregate result reports 13.080 seconds restore, 24,788,992-byte
+process peak RSS, 2,570,736-byte live heap at report time, and 100,000 documents
+queued for derived rebuild. Android emulator and physical-device results remain
+explicitly deferred; see `performance/v0.7-g14d/ANDROID_EMULATOR_CHECKLIST.md`.
 
 ### Sync model and transport tests (planned v0.7)
 

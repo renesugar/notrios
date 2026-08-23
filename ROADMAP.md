@@ -297,8 +297,8 @@ also exposed about **25% stored-ZIP overhead from one entry per loose archive
 object**, while the existing pack fix has never been exercised end to end at
 the supplied full scale.
 
-**Archive scalability now blocks further synchronization work. G14a-G14c are
-complete; G14d is next and approval-gated, and G15 cannot start until G14e
+**Archive scalability now blocks further synchronization work. G14a-G14d are
+complete; G14e is next and approval-gated, and G15 cannot start until G14e
 completes.** G14a supplies the resumable, aggregate-only benchmark contract and
 generated 10k/100k calibration. That evidence confirms one-file-per-object
 growth, isolates stored-ZIP overhead from framing, and records a 100k
@@ -309,8 +309,9 @@ whole-library backup/catch-up, with packed semantic archive-v2 retained for
 subset, merge, interchange, and fallback. The image path was 2.33x faster
 locally and 1.99x faster including the distinct Google Drive copy; loose
 layouts and raw Restic/Borg paths failed shape or memory gates. G14c implements
-only that selected representation; G14d integrates crash-safe restore,
-emergency backup, and catch-up; G14e repeats the full-corpus comparison with
+that selected representation; G14d integrates crash-safe restore, emergency
+backup, physical encrypted catch-up, and post-vector replay. G14e repeats the
+full-corpus comparison with
 production code and freezes the contract for G19. exFAT is no longer available
 on the test drives, so the gate requires a bounded, non-object-per-file layout
 but makes no unmeasured exFAT performance claim.

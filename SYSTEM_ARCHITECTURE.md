@@ -280,11 +280,17 @@ SQLite Online Backup image, exact compatibility/vector/identity metadata, and
 bounded external resource/source-bundle packs. It does not replace or
 reinterpret semantic archive-v2, which remains the subset, merge,
 schema-independent interchange, and fallback format.
-`internal/snapshotimage` creates and verifies the local manifest-last
+`internal/snapshotimage` creates, verifies, and explicitly restores the local manifest-last
 representation; `internal/store/sqlite_snapshot.go` owns Online Backup, secure
 local-state clearing, integrity, vector/floor inspection, and a bounded
-external-object inventory. G14d owns encrypted catch-up integration, emergency
-backup, atomic install, replica rotation, derived rebuild, and replay.
+external-object inventory. G14d moves this representation through deterministic
+sequential USTAR and the existing 1 MiB authenticated-encryption frames. Its
+restore coordinator verifies an emergency snapshot before cutover, persists a
+startup-blocking roll-forward plan, rotates the replica allocator, installs the
+snapshot vector/floors, queues external derived indexes, and resumes ordinary
+incremental admission. REST authorizes opaque artifacts; neither REST nor MCP
+accepts a filesystem path. The directory carrier exposes the same bounded
+resumable sealed-byte path.
 
 G2's investigation candidate keeps the archive-v2 JSONL snapshot contract
 unchanged but recommends compact canonical NCB1 records inside incremental

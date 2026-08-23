@@ -260,10 +260,22 @@ what it does:
   attempts spend a per-address budget, so guessing a key or a code is bounded by
   the limiter rather than by the network.
 - **Still out of scope:** multi-user accounts or roles, remote authorization of
-  any note route, and a public deployment claim. G14 owns the data plane, so the
-  authenticated surface currently carries a handshake and a pairing exchange and
-  no note content at all. The private key material remains in the warned `0600`
-  development file provider until v0.8 selects a platform store.
+  any note route, and a public deployment claim. G14/G14d's data plane carries
+  encrypted protocol artifacts and requester-authorized opaque physical
+  snapshots only; it never accepts an archive/database path or exposes note
+  routes to a peer credential. The private key material remains in the warned
+  `0600` development file provider until v0.8 selects a platform store.
+
+G14d physical replacement is also local-only and explicit. Exact schema,
+application capability, manifest/database/pack hashes, identity, vector/floors,
+and every local object are verified before cutover. A second verified physical
+snapshot preserves the current canonical state before the first destructive
+rename. An owner-only durable plan blocks ordinary startup throughout cutover,
+and only the coordinator's narrow verification open can bypass that marker.
+The installed image mints a fresh replica allocator and never treats snapshot
+possession as a peer acknowledgement. Completed plans are retained as local
+recovery records; emergency snapshots contain a full library and require the
+same access protection as the canonical database.
 
 `SYNCHRONIZATION.md` requires:
 
