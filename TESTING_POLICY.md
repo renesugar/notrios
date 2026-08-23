@@ -693,7 +693,7 @@ note's preview.
 No scale profile: a block is bounded to 100 rows through the search path whose
 10k/100k/500k evidence H7 and Q1 already carry.
 
-### Archive scalability tests (v0.7 G14a-G14b complete; G14c-G14e planned)
+### Archive scalability tests (v0.7 G14a-G14c complete; G14d-G14e planned)
 
 Before sync tests advance beyond G14, G14a-G14e add a blocking archive-
 scalability gate. The aggregate-only harness must checkpoint each long phase
@@ -732,10 +732,18 @@ It selected a compatible same-schema SQLite image plus bounded packed assets:
 the exact local create-through-restore path was 1,884.2 seconds versus 4,384.0
 for packed semantic archive-v2, with both within absolute correctness, time,
 memory, and shape gates. Semantic archive-v2 remains required for subset,
-merge, schema-independent interchange, and fallback. G14c must add independent
-goldens, reader compatibility, bounded pack/publication fault injection, exact
-schema/capability admission, local-state exclusion, derived-state rebuild, and
-replica-rotation tests; G14d must make post-snapshot replay bounded.
+merge, schema-independent interchange, and fallback. G14c adds an independent
+golden fixture, cross-format reader matrix, deterministic-pack checks,
+corruption/truncation/expansion/path/symlink attacks, manifest-last fault and
+verified-pack resume tests, exact schema/capability/vector/floor admission,
+secure local-state exclusion, and an opt-in generated 100k bounded-memory run:
+
+```bash
+bash scripts/run_snapshot_image_profile.sh /tmp/notrios-snapshot-image-100000.json
+```
+
+G14d must test emergency backup, every cutover boundary, replica rotation,
+derived-state rebuild selection, and bounded post-snapshot replay.
 
 ### Sync model and transport tests (planned v0.7)
 

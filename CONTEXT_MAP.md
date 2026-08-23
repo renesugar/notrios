@@ -7,7 +7,7 @@ This file is the codebase atlas. Update it whenever major files or directories a
 - `README.md` — project overview and quick start.
 - `PLAN.md` — the **active v0.7 native synchronization plan**, divided into
   independently approvable G0-G20 slices plus the blocking G14a-G14e archive-
-  scalability sequence. G0-G14b are complete; G14c is next but unapproved, and
+  scalability sequence. G0-G14c are complete; G14d is next but unapproved, and
   G15 is blocked through G14e. The current product remains 0.6.0 at schema v25; v0.6 is archived under
   `plans/v0.6/`; v0.5 and v0.4 are archived under their version directories.
 - `plans/scaffold/SCAFFOLD_CREATION_PLAN.md` — process for creating/refining this scaffold.
@@ -152,6 +152,11 @@ This file is the codebase atlas. Update it whenever major files or directories a
   verify-first restore reader (`restore.go`), the publication projection
   (`publish.go`), a generator-built synthetic golden fixture, and generated
   scale profiles.
+- `internal/snapshotimage/` and `internal/store/sqlite_snapshot.go` — G14c's
+  exact-schema SQLite Online Backup image, deterministic bounded external
+  packs, strict manifest-last verifier, table-state sanitization, and generated
+  100k evidence. This local representation is not yet wired into encrypted
+  catch-up or destructive installation; G14d owns that boundary.
 - `internal/markdownlinks/` — conservative MVP Markdown/Obsidian/app-URI link extractor.
 - `internal/markdownblocks/` — deterministic block splitter behind schema-v14
   addressable blocks and schema-v15 heading slugs; block identity is

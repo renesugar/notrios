@@ -1,6 +1,6 @@
 # Plan Status
 
-Updated: 2026-08-22 (G14b complete; G14c next and unapproved)
+Updated: 2026-08-22 (G14c complete; G14d next and unapproved)
 
 ## Active milestone
 
@@ -14,10 +14,39 @@ G15-G20: evidence, profiles/local journal, state-vector convergence,
 revision deltas/merge, lazy resources, secure container/catch-up,
 ephemeral-directory and REST transports, jobs/UI/retention, shared-core/FFI/
 Mermaid/mobile handoff, compatibility, and final validation. The user's
-2026-08-11 review resolved every original G0-G17 policy decision. **G0-G14b are
+2026-08-11 review resolved every original G0-G17 policy decision. **G0-G14c are
 complete** and archived under `plans/v0.7/`; the 2026-08-15 planning amendment
 reopened physical snapshot scalability. G14b selected option B from full-corpus
-evidence. G14c is next and unapproved; G15 is blocked until G14e completes.
+evidence and G14c implemented the local production representation and verifier.
+G14d is next and unapproved; G15 is blocked until G14e completes.
+
+## v0.7 G14c completion — 2026-08-22
+
+- `internal/snapshotimage` implements required
+  `sqlite-image+packed-assets.v1`: a sanitized consistent SQLite Online Backup
+  image, deterministic uncompressed USTAR packs bounded by 256 MiB payload or
+  65,536 entries, explicit single-object oversize, verified-pack resume,
+  database-image restart, and manifest-last publication.
+- Full read-only admission checks strict capabilities and exact schema 25,
+  hashes/lengths, SQLite integrity, database identity, vector/floors, secure
+  local-table clearing, deterministic headers, path/symlink safety, object
+  hashes, and exact database-to-pack completeness. It produces install-ready
+  staging and performs no cutover.
+- `notriosctl snapshot create|verify` is local-filesystem only. Semantic loose
+  and packed archive-v2 remain supported for subset, merge, publication,
+  schema-independent interchange, and incompatible-schema fallback. The G14
+  encrypted catch-up path is unchanged until G14d.
+- The exhaustive schema-v25 classification is under
+  `performance/v0.7-g14c/STATE_REVIEW.md`. Local resumptions/path material are
+  cleared with SQLite secure-delete; Recoll and secret files stay outside.
+- Independent golden, cross-format reader, corruption/truncation/expansion/
+  path/symlink, deterministic pack, publication fault/resume, and full-suite
+  tests pass. The generated 100k image was 61,181,952 bytes, created in 18.212
+  seconds, verified in 8.231 seconds, and peaked at 23,547,904 bytes RSS.
+- No schema, compressor, dependency, REST/MCP surface, archive-v2 behavior, or
+  current catch-up behavior changed. Archived as
+  `plans/v0.7/021-scalable-native-snapshot-representation.md`; G14d requires
+  explicit approval.
 
 ## v0.7 G14b completion — 2026-08-22
 

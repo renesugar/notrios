@@ -81,6 +81,9 @@ Relative config paths (the example uses `./data/...`) resolve against the workin
 - `bin/` (Go binaries), `dist/` (release archives), `_site/` (docs site), `web/dist/` (web assets), `.playwright-mcp/` (browser-automation output);
 - `coverage.out`/`coverage.*`, `*.test`, `*.prof`, stray root binaries, `notrios-*.zip`;
 - `__pycache__/` directories, `*.pyc`, editor `*~` backups.
+- Generated G14c snapshot profile databases and packages. Keep them under
+  `/tmp` and commit only aggregate JSON from
+  `bash scripts/run_snapshot_image_profile.sh <output.json>`.
 
 Deliberately preserved: `data/` and any databases/asset stores (user data), `config/`, `testdata/` fixtures, `web/node_modules/` (use `make clobber` to remove dependencies too), and all sources.
 

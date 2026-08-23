@@ -3,8 +3,9 @@
 > Scale review (updated 2026-08-22): export, verification, restore, and both
 > existing object layouts remain supported. G14b selected a separate,
 > compatible same-schema SQLite image plus bounded packed assets for physical
-> whole-library backup/catch-up. G14c-G14e still implement, integrate, and
-> freeze that default. Archive v2 remains the semantic subset, merge,
+> whole-library backup/catch-up. G14c implements local production creation and
+> verification; G14d-G14e still integrate and freeze the catch-up default.
+> Archive v2 remains the semantic subset, merge,
 > schema-independent interchange, and fallback format.
 
 Notrios archive v2 is the lossless backup and transfer format. Three commands

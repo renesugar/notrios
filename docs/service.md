@@ -156,6 +156,13 @@ backup — every revision, trashed notes, provenance, resources, and exact sourc
 bundles — so it is an alternative to the file copy above rather than a subset
 export. See [archive v2](archive-v2.md) and `SYNCHRONIZATION.md`.
 
+G14c also provides `notriosctl snapshot create|verify` for faster exact-schema
+whole-library recovery: a SQLite Online Backup image plus deterministic bounded
+asset packs. It is local-filesystem only and currently stops at verified
+install-ready staging. The service's encrypted catch-up producer remains on
+the G14 archive-v2 path until G14d adds emergency backup, crash-safe cutover,
+replica rotation, and replay.
+
 **Portable alternative:** a [native archive export](import-export.md#exporting-a-notrios-archive) (`notriosctl export archive`) captures notes, notebooks, tags, and attachments in a human-readable form. It is ideal for moving a *subset* between machines, but it is not a byte-identical backup: revision history and provenance rows are not included, and re-imported notes become plain local notes.
 
 ## Data-safety rules (always on)

@@ -22,6 +22,7 @@ import (
 	"github.com/renesugar/notrios/internal/importers/obsidian"
 	"github.com/renesugar/notrios/internal/importers/twitter"
 	"github.com/renesugar/notrios/internal/localize"
+	"github.com/renesugar/notrios/internal/snapshotimage"
 	"github.com/renesugar/notrios/internal/store"
 	"github.com/renesugar/notrios/internal/version"
 )
@@ -77,6 +78,8 @@ func main() {
 		runJobs(os.Args[2:])
 	case "sync":
 		runSync(os.Args[2:])
+	case "snapshot":
+		runSnapshot(os.Args[2:])
 	case "help", "-h", "--help":
 		printHelp()
 	default:
@@ -546,6 +549,9 @@ Usage:
   notriosctl verify archive-v2 <archive-dir>
   notriosctl restore archive-v2 --intent replace|adopt|merge|fork [--db ...] [--new-database-id id] <archive-dir>
   notriosctl export archive-v2 [--db ...] [--target full_archive|subset_transfer] [--notebooks id,id] [--tags a,b] [--query "tag:todo"] [--documents id,id] [--match any|all] [--pack] [--overwrite] [--no-verify] <out-dir>
+  notriosctl snapshot create [--config config.yaml] [--db ...] [--asset-store ...] <out-dir>
+                                                 # same-schema whole-library SQLite image plus deterministic bounded asset packs
+  notriosctl snapshot verify <snapshot-dir>     # full read-only physical snapshot admission
   notriosctl seed-help [--db ...] [docs-dir]     # mirror docs/ into the read-only Help notebook
   notriosctl localize [--config config.yaml] [--db ...] [--dry-run] [--allow-review] [--base-revision rev] <document-id>
                                                  # download policy-allowed remote media and rewrite the note to resource:// URIs
@@ -982,6 +988,93 @@ func runVerify(args []string) {
 		os.Exit(2)
 	}
 	report, err := archivev2.VerifyDirectory(fs.Arg(0), archivev2.DefaultLimits())
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	printJSON(report)
+}
+
+func runSnapshot(args []string) {
+	if len(args) == 0 {
+		fmt.Fprintln(os.Stderr, "usage: notriosctl snapshot create|verify [options]")
+		os.Exit(2)
+	}
+	switch args[0] {
+	case "create":
+		runSnapshotCreate(args[1:])
+	case "verify":
+		runSnapshotVerify(args[1:])
+	default:
+		fmt.Fprintf(os.Stderr, "unknown snapshot operation %q\n", args[0])
+		os.Exit(2)
+	}
+}
+
+// runSnapshotCreate is local-filesystem only. It does not wrap, transmit, or
+// install the result; those security and cutover boundaries remain G14d.
+func runSnapshotCreate(args []string) {
+	fs := flag.NewFlagSet("notriosctl snapshot create", flag.ExitOnError)
+	configPath := fs.String("config", "", "optional config file")
+	dbPath := fs.String("db", "", "SQLite database path override")
+	assetStore := fs.String("asset-store", "", "asset store directory override")
+	if err := fs.Parse(args); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(2)
+	}
+	if fs.NArg() != 1 {
+		fmt.Fprintln(os.Stderr, "usage: notriosctl snapshot create [--config path] [--db path] [--asset-store path] <out-dir>")
+		fs.PrintDefaults()
+		os.Exit(2)
+	}
+	cfg, err := config.Load(*configPath)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	if *dbPath != "" {
+		cfg.Data.DatabasePath = *dbPath
+	}
+	if *assetStore != "" {
+		cfg.Data.AssetStore = *assetStore
+	}
+	if err := config.EnsureDirectories(cfg); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	st, err := store.OpenSQLiteWithAssetStore(cfg.Data.DatabasePath, cfg.Data.AssetStore)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	defer st.Close()
+	if err := st.Bootstrap(context.Background()); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	runner, jobCtx := startTrackedJob(st, store.JobKindSnapshotImage, []store.JobParameter{
+		{Name: "_out-dir", Value: fs.Arg(0), Path: true},
+	})
+	report, err := snapshotimage.Create(jobCtx, st, cfg.Data.AssetStore, fs.Arg(0), snapshotimage.CreateOptions{})
+	finishTrackedJob(runner, map[string]any{
+		"snapshot_id": report.SnapshotID, "packs": report.Packs,
+		"objects": report.Objects, "bytes": report.DatabaseBytes + report.ExternalBytes,
+		"verified": report.Verified,
+	}, err)
+	printJSON(report)
+}
+
+func runSnapshotVerify(args []string) {
+	fs := flag.NewFlagSet("notriosctl snapshot verify", flag.ExitOnError)
+	if err := fs.Parse(args); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(2)
+	}
+	if fs.NArg() != 1 {
+		fmt.Fprintln(os.Stderr, "usage: notriosctl snapshot verify <snapshot-dir>")
+		os.Exit(2)
+	}
+	report, err := snapshotimage.VerifyDirectory(context.Background(), fs.Arg(0), snapshotimage.DefaultLimits())
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)

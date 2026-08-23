@@ -506,6 +506,19 @@ v0.7 full-sync bootstrap. Its streaming export (P3/P3a/P3b) and verify/restore
 (P4) are deliberately CLI-only: no REST or MCP surface accepts an archive path,
 streams archive bytes, or restores a database. See `NATIVE_ARCHIVE_V2.md`.
 
+The G14c same-schema physical snapshot is also CLI/local-filesystem only:
+
+```text
+notriosctl snapshot create [--config ...] [--db ...] [--asset-store ...] <out-dir>
+notriosctl snapshot verify <snapshot-dir>
+```
+
+`create` produces `sqlite-image+packed-assets.v1`; `verify` performs complete
+read-only admission and never installs it. No public endpoint or MCP tool
+accepts a database, asset-store, snapshot input, or snapshot output path. The
+existing sync snapshot routes continue to carry the G14 catch-up artifact until
+G14d deliberately switches their producer/consumer.
+
 ### Profiles, batches, external links, and sync
 
 ```text
@@ -767,7 +780,13 @@ notriosctl export archive-v2 [--target full_archive|subset_transfer]
 notriosctl verify archive-v2 <archive-dir>
 notriosctl restore archive-v2 --intent replace|adopt|merge|fork
     [--new-database-id id] [--batch-size N] <archive-dir>
+notriosctl snapshot create [--db path] [--asset-store path] <out-dir>
+notriosctl snapshot verify <snapshot-dir>
 ```
+
+The physical commands are whole-library and exact-schema only; they accept no
+selection or merge flags. Verification returns install-ready staging, not an
+installed or writable replica.
 
 Stable-link routing is likewise CLI/desktop-local:
 

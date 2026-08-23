@@ -6,7 +6,7 @@ This document expands the SQLite schema represented by
 `ensureSchemaV18` adds `jobs`, and the dedicated
 `migrations/0019_sync_journal.sql` adds the local replication journal while
 `migrations/0020_sync_admission.sql` adds G5 peer compatibility and sequence
-exhaustion protection. `store.CurrentSchemaVersion` is 20. SQLite is the
+exhaustion protection. `store.CurrentSchemaVersion` is 25. SQLite is the
 authoritative store for managed notes, metadata, revisions, resource
 relationships, link graphs, media-policy decisions, import state, and jobs.
 Recoll is the optional derived index for front-matter field search, extraction,
@@ -446,6 +446,17 @@ Thread/link-graph traversal stays in SQLite; the Recoll index only carries searc
   collection until retention plus peer acknowledgements make it safe.
 
 ## Future migrations
+
+## Schema-v25 physical image policy
+
+G14c adds no table or migration. It copies schema v25 with SQLite Online Backup
+and securely clears machine-local resumptions from the private image before
+publication. The exhaustive retained/cleared/rebuildable classification is in
+`performance/v0.7-g14c/STATE_REVIEW.md`. Admission requires the image's
+`PRAGMA user_version`, database identity, local-observer vector, catch-up
+floors, and cleared-table assertions to match the manifest exactly. No in-place
+migration of a physical image is allowed; an incompatible image uses semantic
+archive-v2 instead.
 
 Future migrations should be additive where possible. Any destructive change requires a migration note in `plans/` and a backup/export instruction.
 

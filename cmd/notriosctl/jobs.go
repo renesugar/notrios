@@ -308,6 +308,7 @@ var jobCommands = map[string][]string{
 	store.JobKindImportJoplinRaw: {"import", "joplin-raw"},
 	store.JobKindImportObsidian:  {"import", "obsidian"},
 	store.JobKindExportArchiveV2: {"export", "archive-v2"},
+	store.JobKindSnapshotImage:   {"snapshot", "create"},
 }
 
 // renderJobCommand turns stored parameters back into a runnable command line.

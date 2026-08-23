@@ -1,8 +1,8 @@
 # Plan: v0.7 — Native synchronization
 
-Status: **G0-G14b completed through 2026-08-22. Product version remains 0.6.0 and the
+Status: **G0-G14c completed through 2026-08-22. Product version remains 0.6.0 and the
 canonical schema is v25. Archive scalability is reopened as a release-blocking
-G14a-G14e sequence; G14c is next and is not approved. G15 cannot start until
+G14a-G14e sequence; G14d is next and is not approved. G15 cannot start until
 G14e is complete.** The
 former seven-item draft was too coarse: it mixed protocol research, canonical
 write interception, merge semantics, two transports, cryptography, recovery,
@@ -1222,7 +1222,7 @@ separate future performance debt. No production format, schema, dependency,
 default, encryption, or catch-up behavior changed. G14c is next and requires
 explicit approval.
 
-## G14c. Implement the selected scalable native snapshot representation
+## G14c. Implement the selected scalable native snapshot representation — complete
 
 **Goal.** Turn G14b's selected design into a versioned, bounded production
 snapshot without weakening archive-v2 verification, compatibility, or privacy.
@@ -1285,7 +1285,9 @@ memory; generated 100k run; license inventory; no private content.
   FTS/derived projections. Signing and group-encryption private keys stay
   outside the image. G14c must review every table against the state classes in
   `performance/v0.7-g14b/SQLITE_IMAGE_CAPABILITY.md` and test interruption at
-  every publication/cutover boundary.
+  every publication/cutover boundary. G14c tests representation publication;
+  G14d owns emergency backup, installation/cutover, identity rotation, derived
+  rebuild, and replay fault boundaries because G14c performs no installation.
 - **Measured justification — Resolved 2026-08-22.** At 382,206 documents the
   physical local path took 1,884.2 seconds versus 4,384.0 for packed semantic
   restore (2.33x faster), wrote 6.04 GB versus 28.4 GB during recovery, stayed
@@ -1293,6 +1295,22 @@ memory; generated 100k run; license inventory; no private content.
   Google Drive copy yielded 2,245.1 versus 4,457.6 seconds (1.99x). The 6.040 GB
   image is larger than the 1.309 GB semantic artifact, so semantic export stays
   first-class rather than becoming a compatibility afterthought.
+
+**Outcome (2026-08-22).** Complete, archived as
+`plans/v0.7/021-scalable-native-snapshot-representation.md`. Production
+`sqlite-image+packed-assets.v1` creation uses SQLite Online Backup, securely
+clears reviewed machine-local state in the copy, streams deterministic
+uncompressed USTAR packs under the 256 MiB/65,536-entry limits, resumes only
+verified pack boundaries, restarts interrupted database images, and publishes
+the manifest last. Read-only admission checks exact schema/application
+capabilities, all hashes/lengths, SQLite integrity, identity, vector/floors,
+safe paths, deterministic pack structure, and database-to-pack completeness.
+`notriosctl snapshot create|verify` is local-filesystem only and stops at
+install-ready staging; G14d still owns encrypted catch-up, emergency backup,
+atomic cutover, replica rotation, derived rebuild, and replay. Independent
+golden, reader-matrix, corruption/fault, and generated 100k tests pass; the
+100k image used 23,547,904 bytes peak RSS. No schema, archive-v2 compatibility,
+compressor, dependency, REST/MCP surface, or current catch-up behavior changed.
 
 ## G14d. Scalable restore, emergency backup, and synchronization catch-up
 
@@ -1660,7 +1678,7 @@ recommendation, blocking status, and consequence.
 | Current-GUI Mermaid baseline | G18 | Resolved fact: upstream-capable but disabled pending offline/security evidence |
 | Release version/schema bookkeeping | G20 | Open, non-blocking until wrap-up |
 
-G0-G14b are complete and the archive-scalability selection is recorded. G14c
-is the next implementable item, but is not approved. G15-G20 remain blocked
+G0-G14c are complete and the production physical representation is recorded.
+G14d is the next implementable item, but is not approved. G15-G20 remain blocked
 until G14e completes. Implementation begins only after an explicit instruction
-naming G14c.
+naming G14d.

@@ -44,6 +44,7 @@ const (
 	JobKindImportJoplinRaw = "import_joplin_raw"
 	JobKindImportObsidian  = "import_obsidian"
 	JobKindExportArchiveV2 = "export_archive_v2"
+	JobKindSnapshotImage   = "snapshot_image"
 )
 
 const (
@@ -70,7 +71,7 @@ const (
 
 // JobKinds lists the kinds this build knows how to run.
 func JobKinds() []string {
-	return []string{JobKindImportJoplinRaw, JobKindImportObsidian, JobKindExportArchiveV2}
+	return []string{JobKindImportJoplinRaw, JobKindImportObsidian, JobKindExportArchiveV2, JobKindSnapshotImage}
 }
 
 // IsSettledJobState reports whether a state will not change again.

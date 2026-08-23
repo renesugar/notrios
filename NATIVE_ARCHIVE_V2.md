@@ -7,9 +7,9 @@ the optional packed object layout in v0.4 P3b; verify-only and restore/import
 in v0.4 P4; and the publication projection in v0.4 P7. Archive v1 remains
 supported as human-readable interchange and is not interpreted as v2.
 
-Scalability status (2026-08-15): the semantic/verification contract remains
-implemented, but the physical full-snapshot default is reopened by v0.7
-G14a-G14e before any further synchronization work. G14's catch-up producer
+Scalability status (2026-08-22): the semantic/verification contract remains
+implemented, and G14c now implements the separate physical full-snapshot
+representation selected by G14b. G14's catch-up producer
 currently exports loose objects and stores each as a ZIP entry, adding about
 25% at the 100/500-note tiers. P3b's pack layout has strong file-count evidence
 but no full-scale end-to-end catch-up comparison against a consistent SQLite
@@ -21,7 +21,10 @@ the semantic contract: loose export produced 100,093 files; stored ZIP added
 11.15%, while authenticated framing added only 6,004 bytes; open/restore stayed
 below 92 MiB and the canonical content fingerprint matched. G14b's full-corpus
 matrix selected a separate required `sqlite-image+packed-assets.v1` capability
-for compatible same-schema whole-library backup/catch-up. Archive v2 remains
+for compatible same-schema whole-library backup/catch-up. G14c implements that
+capability as `notriosctl snapshot create|verify`: a sanitized SQLite Online
+Backup image, deterministic bounded uncompressed USTAR packs, and a strict
+manifest-last verifier. Archive v2 remains
 the record-level subset, merge, schema-independent interchange, and fallback
 format; the physical image capability does not reinterpret or remove it.
 
@@ -32,6 +35,13 @@ publication handoff, and the future v0.7 full-sync bootstrap. It carries
 canonical records and immutable content objects. It never carries SQLite
 pages/WAL files, FTS5 rows, Recoll indexes/projections, caches, rendered sites,
 quarantine files, or active import/projection jobs.
+
+The physical `notrios-sqlite-image` v1 format is complementary, not archive-v3
+and not a reinterpretation of this manifest. It is admitted only at exact
+schema/application compatibility for whole-library replacement/catch-up. An
+incompatible reader must refuse it and direct the user to archive-v2. Subset,
+merge, publication, and schema-independent interchange remain archive-v2
+operations.
 
 Export, verification, and restore are local CLI operations. No REST or MCP
 surface accepts an archive path, streams archive bytes, or performs canonical

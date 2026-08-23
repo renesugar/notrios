@@ -386,7 +386,7 @@ semantics:
 
 A blank, far-behind, repaired, or user-reset replica may publish a signed
 snapshot request. An enrolled peer permitted to act as a snapshot source
-creates a consistent archive-v2 snapshot, binds it to a state-vector boundary,
+creates a consistent whole-library snapshot, binds it to a state-vector boundary,
 encrypts it for the requesting peer (or through the separately reviewed
 password-wrapping mode), and publishes the complete manifest last. The
 requester resumes transfer, verifies and decrypts before any canonical write,
@@ -424,8 +424,11 @@ incremental replay exceeded the 512 MiB desktop gate. G14b then compared the
 complete candidates on the supplied real corpora and selected a required,
 same-schema SQLite image plus bounded packed external assets for whole-library
 backup/catch-up. Packed semantic archive-v2 remains the subset, merge,
-interchange, and fallback path. G14c/G14d implement that measured choice and
-integrate crash-safe restore/catch-up; G14e repeats full-scale acceptance. A raw
+interchange, and fallback path. G14c implements local creation and complete
+read-only admission for `sqlite-image+packed-assets.v1`; its verifier produces
+install-ready staging but performs no replacement. G14d integrates encrypted
+transport, emergency backup, atomic cutover, new-replica enrollment, derived
+rebuild, and bounded post-vector replay; G14e repeats full-scale acceptance. A raw
 live-WAL copy is never a candidate. SQLCipher may encrypt a database image but does not by itself bind
 external assets or provide semantic subset/merge, capability verification,
 signatures, or replica-identity handling.

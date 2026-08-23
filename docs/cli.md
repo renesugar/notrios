@@ -162,6 +162,28 @@ Verification completes in full before the first canonical write, so a damaged ar
 
 An interrupted restore leaves a durable marker naming the snapshot it was applying. That library is neither empty nor complete: `adopt`, `merge`, and `fork` refuse it and only `--intent replace` recovers it. The JSON summary reports the intent, resulting database/replica IDs, and applied record counts.
 
+## snapshot create / snapshot verify
+
+```bash
+notriosctl snapshot create [shared flags] <out-dir>
+notriosctl snapshot verify <snapshot-dir>
+```
+
+Creates or verifies the same-schema whole-library
+`sqlite-image+packed-assets.v1` representation. Creation uses SQLite Online
+Backup, securely clears machine-local resumptions in the copy, writes
+deterministic uncompressed asset/source-bundle packs with bounded payload and
+entry counts, and publishes `manifest.json` last. An interrupted rerun reuses
+only complete verified packs and restarts the SQLite image.
+
+Verification is read-only. It checks exact schema/application capability,
+every hash and length, SQLite integrity, identity, vector/floors, local-state
+clearing, safe paths, and database-to-pack object completeness. A successful
+report says `ready_for_install`, but G14c intentionally has no physical install
+command: emergency backup, atomic cutover, replica rotation, derived-index
+rebuild, and incremental replay arrive in G14d. Use archive-v2 for subset,
+merge, publication, or incompatible-schema recovery.
+
 ## link
 
 ```sh

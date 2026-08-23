@@ -14,20 +14,38 @@ wrap-up). The thirteen v0.5 slices remain archived under `plans/v0.5/`.
 independently approvable G0-G20 slices plus the newly inserted, blocking
 G14a-G14e archive-scalability sequence. The user's 2026-08-11
 review resolved the policy decisions through G17, including mandatory payload
-encryption and per-replica Ed25519 signatures. **G0-G14b are complete** and
+encryption and per-replica Ed25519 signatures. **G0-G14c are complete** and
 archived under `plans/v0.7/`; their reviewed evidence is under
 `performance/v0.7-g0/`, `performance/v0.7-g1/`, `performance/v0.7-g1a/`,
 `performance/v0.7-g2/`, `performance/v0.7-g4/`, `performance/v0.7-g5/`,
 `performance/v0.7-g6/`, `performance/v0.7-g7/`, `performance/v0.7-g8/`,
 `performance/v0.7-g9/`, `performance/v0.7-g10/`, `performance/v0.7-g11/`, and
 `performance/v0.7-g12/`, `performance/v0.7-g13/`, `performance/v0.7-g14/`,
-`performance/v0.7-g14a/`, and `performance/v0.7-g14b/`. **G14c is next and is
-not approved; G15 remains blocked until G14e.** G14b selected option B: a
+`performance/v0.7-g14a/`, `performance/v0.7-g14b/`, and
+`performance/v0.7-g14c/`. **G14d is next and is not approved; G15 remains
+blocked until G14e.** G14b selected option B: a
 required compatible same-schema SQLite-image plus bounded packed-assets
 capability for whole-library full backup/catch-up, retaining packed semantic
 archive-v2 for subset, merge, schema-independent interchange, and fallback.
 G14c implements that exact representation, G14d integrates it, and G14e repeats
 the full-scale acceptance matrix and freezes the format.
+
+G14c adds production `sqlite-image+packed-assets.v1` creation and read-only
+admission under `internal/snapshotimage/` and
+`internal/store/sqlite_snapshot.go`. `notriosctl snapshot create` uses SQLite
+Online Backup, securely clears the reviewed local/transient tables in the copy,
+packs database-declared local blobs/source bundles into deterministic stored
+USTAR files bounded at 256 MiB payload or 65,536 entries, resumes only verified
+pack boundaries, restarts the image, and publishes the manifest last.
+`notriosctl snapshot verify` checks exact schema/application capability,
+hashes/lengths, SQLite integrity, identity, vector/floors, cleared state, safe
+paths, deterministic headers, object hashes, and external completeness. It
+returns install-ready staging only. The current encrypted catch-up still uses
+archive-v2; G14d must add emergency backup, crash-safe install, replica
+rotation, derived rebuild, and bounded replay. Generated 100k evidence passed
+at 23,547,904 bytes peak RSS. No schema, compressor, dependency, REST/MCP surface, or
+archive-v2 behavior changed. G14c is archived as
+`plans/v0.7/021-scalable-native-snapshot-representation.md`.
 
 G14b added only investigation/prototype code and aggregate evidence. Its 57
 validated full-corpus phase rows cover equivalent 382,206-document Joplin and

@@ -352,6 +352,24 @@ database with `--new-database-id`. Verification completes before the first write
 and an interrupted restore leaves a marker that only `--intent replace` can
 recover. See the [archive v2 safety contract](archive-v2.md).
 
+## Fast same-schema whole-library snapshots
+
+For a complete local library on the current schema, G14c provides the physical
+snapshot representation selected from full-corpus evidence:
+
+```bash
+go run ./cmd/notriosctl snapshot create --db data/notes.sqlite \
+  --asset-store data/assets ./notrios-physical-snapshot
+go run ./cmd/notriosctl snapshot verify ./notrios-physical-snapshot
+```
+
+This is not a subset export and cannot be merged. It binds one consistent
+SQLite Online Backup image to deterministic bounded packs of every
+database-declared local resource and preserved source bundle. Verification
+prepares a package for later installation but does not replace a database.
+Use packed archive-v2 for portable interchange, selective transfer, merge, and
+fallback when schema compatibility is not exact.
+
 ## Importing a Notrios archive
 
 ```sh

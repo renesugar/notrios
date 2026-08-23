@@ -118,6 +118,10 @@ Notrios code targets an MIT or Apache-2.0 license. Recoll and Xapian are GPL. Th
 - Recoll is an **optional, user-installed external tool**, invoked as a subprocess; it is never linked into Notrios binaries, vendored, or redistributed in Notrios release artifacts.
 - The front-matter handler and Recoll config we generate are original Notrios code (no code derived from Recoll's handlers).
 - When Recoll is absent, Notrios degrades gracefully to SQLite FTS5 search; no feature of the canonical store may depend on Recoll.
+- Physical snapshots never include Recoll/Xapian indexes or a Recoll
+  configuration. G14c packs only SQLite-declared canonical blob/source-bundle
+  bytes; after G14d installs an image, Recoll is reconciled from the canonical
+  store like any other derived projection.
 
 ## Bluge boundary
 

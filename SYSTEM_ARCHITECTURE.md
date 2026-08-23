@@ -273,15 +273,18 @@ verification and explicit replace/merge/fork/adopt identity planning, and marks
 an interrupted restore so a partial library cannot pass as complete. See
 `NATIVE_ARCHIVE_V2.md`.
 
-G14b's full-corpus investigation selected a separate required
+G14b's full-corpus investigation selected and G14c implemented a separate required
 `sqlite-image+packed-assets.v1` capability for compatible same-schema,
 whole-library backup and synchronization catch-up. It binds a consistent
 SQLite Online Backup image, exact compatibility/vector/identity metadata, and
 bounded external resource/source-bundle packs. It does not replace or
 reinterpret semantic archive-v2, which remains the subset, merge,
-schema-independent interchange, and fallback format. G14c-G14d own the
-production implementation and crash-safe integration; no production behavior
-changed in G14b.
+schema-independent interchange, and fallback format.
+`internal/snapshotimage` creates and verifies the local manifest-last
+representation; `internal/store/sqlite_snapshot.go` owns Online Backup, secure
+local-state clearing, integrity, vector/floor inspection, and a bounded
+external-object inventory. G14d owns encrypted catch-up integration, emergency
+backup, atomic install, replica rotation, derived rebuild, and replay.
 
 G2's investigation candidate keeps the archive-v2 JSONL snapshot contract
 unchanged but recommends compact canonical NCB1 records inside incremental

@@ -88,12 +88,28 @@ future synchronization clocks.
 
 ## Backup and restore
 
-The physical full-snapshot representation remains blocking v0.7 G14a-G14e
-work. G14a's resumable contract and calibration are complete; G14b's
+The physical full-snapshot sequence remains blocking v0.7 through G14e. G14a's
+resumable contract and calibration are complete; G14b's
 full-corpus evidence selected a capability-declared, same-schema SQLite image
 with bounded packed external assets for whole-library backup/catch-up. Packed
 semantic archive-v2 remains mandatory for subset, merge, schema-independent
-interchange, and fallback. G14c is the next approval-gated implementation. The
+interchange, and fallback. G14c implements the local production representation:
+
+```text
+notriosctl snapshot create [--db ...] [--asset-store ...] <out-dir>
+notriosctl snapshot verify <snapshot-dir>
+```
+
+Creation uses SQLite Online Backup and packs only database-declared local blobs
+and source bundles into deterministic stored USTAR files. Packs close at 256
+MiB payload or 65,536 entries; a larger single object is declared oversized.
+Every pack is written privately, fsynced, verified, and atomically renamed;
+the manifest publishes last. Reruns reuse only verified complete pack
+boundaries and restart the database image. Verification is read-only and
+checks exact schema/application capability, hashes/lengths, SQLite integrity,
+identity, vector/floors, securely cleared local state, safe paths, and exact
+external completeness. It does not install the snapshot. G14d owns emergency
+backup, durable cutover, replica rotation, derived rebuild, and replay. The
 rules below remain mandatory for the selected physical capability.
 
 - The default offline backup stops writes, snapshots SQLite consistently, and

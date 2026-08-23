@@ -297,8 +297,8 @@ also exposed about **25% stored-ZIP overhead from one entry per loose archive
 object**, while the existing pack fix has never been exercised end to end at
 the supplied full scale.
 
-**Archive scalability now blocks further synchronization work. G14a and G14b
-are complete; G14c is next and approval-gated, and G15 cannot start until G14e
+**Archive scalability now blocks further synchronization work. G14a-G14c are
+complete; G14d is next and approval-gated, and G15 cannot start until G14e
 completes.** G14a supplies the resumable, aggregate-only benchmark contract and
 generated 10k/100k calibration. That evidence confirms one-file-per-object
 growth, isolates stored-ZIP overhead from framing, and records a 100k
