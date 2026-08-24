@@ -182,15 +182,15 @@ func TestTheInvitationSecretIsNeverStored(t *testing.T) {
 	}
 }
 
-func TestSchemaV25SecuritySurfaceSurvivesSchemaV26(t *testing.T) {
+func TestSchemaV25SecuritySurfaceSurvivesSchemaV27(t *testing.T) {
 	ctx := context.Background()
 	st := newSecurityStore(t)
 	version, err := st.syncJournalTextForTest(`SELECT CAST((SELECT * FROM pragma_user_version) AS TEXT)`)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if version != "26" {
-		t.Fatalf("schema version = %s, want 26", version)
+	if version != "27" {
+		t.Fatalf("schema version = %s, want 27", version)
 	}
 	for _, table := range []string{"sync_peer_keys", "sync_pairing_invitations"} {
 		found, err := st.syncJournalTextForTest(

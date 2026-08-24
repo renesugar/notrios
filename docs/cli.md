@@ -501,6 +501,8 @@ notriosctl sync enroll    --acceptance <file> --code <code>
 notriosctl sync handshake --url <base-url>
 notriosctl sync peers     [--db path]
 notriosctl sync revoke    --key <signer-key-id> [--reason ...] [--advance-epoch]
+notriosctl sync retire    --peer <replica-id> [--reason ...] [--confirm retire-peer:<replica-id>]
+notriosctl sync retention --snapshot <retained-snapshot-dir> [--apply --confirm-digest <digest>]
 notriosctl sync status    [--db path] [--keys path]
 notriosctl sync discover  [--carrier dir]
 notriosctl sync once      [--carrier dir] [--cleanup] [--materialize N]
@@ -595,6 +597,35 @@ it cannot *read* what is published next. It costs every remaining peer a fresh
 pairing, so it is a decision rather than a side effect. The old epoch stays
 readable, because a library should not lose its own history in order to exclude
 a device.
+
+Credential revocation is deliberately not peer retirement: it stops trust but
+keeps that replica holding the history watermark open. To end the replica and
+permit future collection, preview first and then repeat the exact confirmation:
+
+```sh
+notriosctl sync retire --peer replica_abc
+notriosctl sync retire --peer replica_abc --reason "device recycled" --confirm retire-peer:replica_abc
+```
+
+The signed decision travels in the ordinary operation log without requiring
+every peer online. Old credentials cannot re-enroll; that device must reset and
+pair as a new replica. The result lists active peers that have not acknowledged
+the decision.
+
+Retention is also review-first. Both commands fully verify the retained
+physical snapshot and its database identity at invocation, so a stale database
+record cannot stand in for a directory that was deleted:
+
+```sh
+notriosctl sync retention --snapshot /safe/notrios-snapshot
+notriosctl sync retention --snapshot /safe/notrios-snapshot --apply --confirm-digest <digest-from-review>
+```
+
+The configurable default is 90 days. Time alone never authorizes collection:
+the safe floor also needs that snapshot and every active peer acknowledgement.
+If the state changes between review and apply, the digest is refused. A peer
+below an already collected floor needs verified snapshot catch-up; installation
+is never automatic.
 
 ### Exchanging with a peer directly
 
@@ -722,7 +753,7 @@ hook may add review-only policy matches and near-duplicate suggestions.
 ## gc
 
 ```sh
-notriosctl gc [--config config.yaml] [--db path] [--asset-store path] [--dry-run | --apply]
+notriosctl gc [--config config.yaml] [--db path] [--asset-store path] [--snapshot retained-snapshot-dir] [--dry-run | --apply]
 ```
 
 Plans retention-aware resource garbage collection. With no mode flag—or with
@@ -739,3 +770,7 @@ Only `--apply` deletes. Apply rechecks every reference inside the SQLite
 transaction; referenced resources, including resources referenced only by
 notes in Trash, are never eligible. A shared physical blob remains until its
 last logical resource is removed.
+
+For a sync-enrolled library, `--snapshot` is required even for the plan so the
+same physical recovery image is re-verified before the acknowledgement gate is
+built. Backup/export sinks never count as active peers.

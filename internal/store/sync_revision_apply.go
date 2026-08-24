@@ -638,13 +638,18 @@ func compareInt64(left, right int64) int {
 // synchronized one.
 func (s *SQLiteStore) revisionOrderLocked(revisionID string) (revisionOrder, error) {
 	stmt, err := s.prepareLocked(
-		`SELECT hlc_wall_ms, hlc_logical, replica_id, sequence FROM sync_operations
-		  WHERE record_type = 'revision' AND record_id = ? ORDER BY hlc_wall_ms, hlc_logical, replica_id, sequence LIMIT 1`)
+		`SELECT hlc_wall_ms, hlc_logical, replica_id, sequence FROM (
+			SELECT hlc_wall_ms, hlc_logical, replica_id, sequence FROM sync_operations
+			 WHERE record_type = 'revision' AND record_id = ?
+			UNION ALL
+			SELECT hlc_wall_ms, hlc_logical, replica_id, sequence FROM sync_retained_revision_orders
+			 WHERE revision_id = ?
+		) ORDER BY hlc_wall_ms, hlc_logical, replica_id, sequence LIMIT 1`)
 	if err != nil {
 		return revisionOrder{}, err
 	}
 	defer C.sqlite3_finalize(stmt)
-	if err := bindAll(stmt, []string{revisionID}); err != nil {
+	if err := bindAll(stmt, []string{revisionID, revisionID}); err != nil {
 		return revisionOrder{}, err
 	}
 	switch rc := C.sqlite3_step(stmt); rc {

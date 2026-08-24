@@ -17,7 +17,32 @@ import (
 	"github.com/renesugar/notrios/internal/config"
 	"github.com/renesugar/notrios/internal/store"
 	"github.com/renesugar/notrios/internal/syncstate"
+	"github.com/renesugar/notrios/internal/syncwire"
 )
+
+type syncUITestKeys struct{ *testKeys }
+
+func (k *syncUITestKeys) AdoptGroupKey(keyID string, epoch uint32, key []byte) error {
+	k.group = syncwire.GroupKey{KeyID: keyID, Epoch: epoch}
+	copy(k.group.Key[:], key)
+	return nil
+}
+
+type syncUITestSecrets struct{ keys *syncUITestKeys }
+
+func (s syncUITestSecrets) ProviderName() string           { return "test-memory" }
+func (s syncUITestSecrets) Warning() string                { return "test-only ephemeral keys" }
+func (s syncUITestSecrets) Open() (SyncLocalKeys, error)   { return s.keys, nil }
+func (s syncUITestSecrets) Create() (SyncLocalKeys, error) { return s.keys, nil }
+
+func newSyncUITestSecrets(t *testing.T) syncUITestSecrets {
+	t.Helper()
+	_, private, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return syncUITestSecrets{keys: &syncUITestKeys{testKeys: &testKeys{private: private}}}
+}
 
 func syncUITestServer(t *testing.T) (*Server, *store.SQLiteStore, config.Config) {
 	t.Helper()
@@ -180,6 +205,76 @@ func TestSyncUISnapshotPermissionIsSeparateAndExplicit(t *testing.T) {
 		"/api/v1/sync-ui/peers/"+replicaID+"/snapshot-permission", []byte(`{"permitted":false}`), "application/json")
 	if revoke.Code != http.StatusOK || st.SnapshotSources().PermittedSource(replicaID) {
 		t.Fatalf("revoke = %d %s", revoke.Code, revoke.Body.String())
+	}
+}
+
+func TestSyncUIRetentionIsDryRunOnlyAndRedacted(t *testing.T) {
+	server, st, _ := syncUITestServer(t)
+	if _, err := st.EnrollLocalJournal(context.Background(), "G17 retention fixture"); err != nil {
+		t.Fatal(err)
+	}
+	response := localSyncUIRequest(t, server, http.MethodGet, "/api/v1/sync-ui/retention", nil, "")
+	if response.Code != http.StatusOK || !strings.Contains(response.Body.String(), `"dry_run":true`) ||
+		!strings.Contains(response.Body.String(), "No verified retained snapshot") {
+		t.Fatalf("retention review = %d %s", response.Code, response.Body.String())
+	}
+	if strings.Contains(response.Body.String(), "path") || strings.Contains(response.Body.String(), "signature") {
+		t.Fatalf("retention review disclosed local details: %s", response.Body.String())
+	}
+	apply := localSyncUIRequest(t, server, http.MethodPost, "/api/v1/sync-ui/retention/apply",
+		[]byte(`{"digest":"anything"}`), "application/json")
+	if apply.Code != http.StatusMethodNotAllowed {
+		t.Fatalf("web retention apply exists: %d %s", apply.Code, apply.Body.String())
+	}
+}
+
+func TestSyncUIPeerRetirementRequiresPreviewAndExactConfirmation(t *testing.T) {
+	server, st, _ := syncUITestServer(t)
+	ctx := context.Background()
+	if _, err := st.EnrollLocalJournal(ctx, "G17 retirement fixture"); err != nil {
+		t.Fatal(err)
+	}
+	identity, _ := st.GetDatabaseIdentity(ctx)
+	const replicaID = "replica_g17_drawer_phone"
+	peer := syncstate.NewHandshake(identity.DatabaseID, replicaID, store.CurrentSchemaVersion, syncstate.Vector{replicaID: 0})
+	if err := st.ConfigureSyncAdmissionPeer(ctx, peer); err != nil {
+		t.Fatal(err)
+	}
+	peerPublic, _, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := st.EnrollPeerSigningKey(ctx, replicaID, peerPublic, "G17 fixture"); err != nil {
+		t.Fatal(err)
+	}
+	server.AttachSyncSecretStore(newSyncUITestSecrets(t))
+	preview := localSyncUIRequest(t, server, http.MethodPost,
+		"/api/v1/sync-ui/peers/"+replicaID+"/retirement-preview", []byte(`{}`), "application/json")
+	if preview.Code != http.StatusOK || !strings.Contains(preview.Body.String(), `"confirmation":"retire-peer:`+replicaID+`"`) ||
+		!strings.Contains(preview.Body.String(), "old credentials cannot re-enroll") {
+		t.Fatalf("retirement preview = %d %s", preview.Code, preview.Body.String())
+	}
+	wrong := localSyncUIRequest(t, server, http.MethodPost, "/api/v1/sync-ui/peers/"+replicaID+"/retire",
+		[]byte(`{"confirmation":"retire-peer:somebody-else"}`), "application/json")
+	if wrong.Code != http.StatusBadRequest {
+		t.Fatalf("wrong confirmation = %d %s", wrong.Code, wrong.Body.String())
+	}
+	if active, err := st.SyncPeerEnrolled(ctx, replicaID); err != nil || !active {
+		t.Fatalf("wrong confirmation mutated peer: active=%v err=%v", active, err)
+	}
+	confirmed := localSyncUIRequest(t, server, http.MethodPost, "/api/v1/sync-ui/peers/"+replicaID+"/retire",
+		[]byte(`{"confirmation":"retire-peer:`+replicaID+`","reason":"device recycled"}`), "application/json")
+	if confirmed.Code != http.StatusOK || !strings.Contains(confirmed.Body.String(), `"status":"retired"`) {
+		t.Fatalf("confirmed retirement = %d %s", confirmed.Code, confirmed.Body.String())
+	}
+	status := localSyncUIRequest(t, server, http.MethodGet, "/api/v1/sync-ui", nil, "")
+	if status.Code != http.StatusOK || !strings.Contains(status.Body.String(), `"status":"retired"`) {
+		t.Fatalf("retired status = %d %s", status.Code, status.Body.String())
+	}
+	for _, forbidden := range []string{"device recycled", `"signature"`, `"signer_key_id"`} {
+		if strings.Contains(status.Body.String(), forbidden) {
+			t.Fatalf("status disclosed retirement secret/detail %q: %s", forbidden, status.Body.String())
+		}
 	}
 }
 

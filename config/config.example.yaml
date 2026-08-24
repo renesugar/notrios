@@ -70,6 +70,8 @@ remote_media:
 retention:
   unreferenced_resource_days: 30  # unattached uploads and explicitly detached resources
   purged_resource_days: 90        # resources orphaned by permanent note purge
+  sync_history_days: 90           # minimum operation/tombstone age; never sufficient without snapshot + peer acks
+  sync_peer_warning_days: 30      # warn this long before an active peer reaches the history horizon
 
 search_sidecar:
   enabled: false

@@ -20,7 +20,8 @@ func TestDefaultConfig(t *testing.T) {
 	if cfg.MCP.SyncScope != "" {
 		t.Fatalf("MCP sync must default disabled/empty, got %q", cfg.MCP.SyncScope)
 	}
-	if cfg.Retention.UnreferencedResourceDays != 30 || cfg.Retention.PurgedResourceDays != 90 {
+	if cfg.Retention.UnreferencedResourceDays != 30 || cfg.Retention.PurgedResourceDays != 90 ||
+		cfg.Retention.SyncHistoryDays != 90 || cfg.Retention.SyncPeerWarningDays != 30 {
 		t.Fatalf("unexpected retention defaults: %+v", cfg.Retention)
 	}
 }
@@ -57,6 +58,8 @@ search_sidecar:
 retention:
   unreferenced_resource_days: 7
   purged_resource_days: 45
+  sync_history_days: 120
+  sync_peer_warning_days: 21
 `
 	if err := os.WriteFile(path, []byte(contents), 0o644); err != nil {
 		t.Fatalf("write config: %v", err)
@@ -80,7 +83,8 @@ retention:
 	if !cfg.SearchSidecar.Enabled || cfg.SearchSidecar.Binary != "recollindex-dev" {
 		t.Fatalf("search sidecar config not loaded: %+v", cfg.SearchSidecar)
 	}
-	if cfg.Retention.UnreferencedResourceDays != 7 || cfg.Retention.PurgedResourceDays != 45 {
+	if cfg.Retention.UnreferencedResourceDays != 7 || cfg.Retention.PurgedResourceDays != 45 ||
+		cfg.Retention.SyncHistoryDays != 120 || cfg.Retention.SyncPeerWarningDays != 21 {
 		t.Fatalf("retention config not loaded: %+v", cfg.Retention)
 	}
 }

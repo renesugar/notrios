@@ -1,7 +1,7 @@
 # Plan: v0.7 — Native synchronization
 
-Status: **G0-G16 completed through 2026-08-24. Product version remains 0.6.0 and the
-canonical schema is v26. G17 is next and is not approved.** The
+Status: **G0-G17 completed through 2026-08-24. Product version remains 0.6.0 and the
+canonical schema is v27. G18 is next and is not approved.** The
 former seven-item draft was too coarse: it mixed protocol research, canonical
 write interception, merge semantics, two transports, cryptography, recovery,
 UI, retention, and release validation into slices that could not be reviewed or
@@ -1506,7 +1506,7 @@ Playwright sweep passed. No schema or mobile-build claim was added. Archived as
 `plans/v0.7/025-sync-recovery-ui.md` with evidence under
 `performance/v0.7-g16/`.
 
-## G17. Peer retirement, retention horizon, tombstone/resource GC, and repair
+## G17. Peer retirement, retention horizon, tombstone/resource GC, and repair — complete
 
 **Goal.** Reclaim history and blobs without making an offline peer diverge or
 allowing a stale device to resurrect deleted state.
@@ -1541,6 +1541,18 @@ needed by one peer; tombstone resurrection attack; dry-run/apply parity.
   retirement decision, but other peers learn it through the ordinary log and
   refuse that replica thereafter. The UI must show peers that have not yet
   acknowledged the retirement.
+
+**Outcome (2026-08-24).** Schema v27 now keeps signed retirement decisions,
+verified-snapshot vectors, monotonic collection floors, retained revision
+orders, and compact death-certificate baselines. Operation/tombstone and
+resource collection require age plus a currently re-verified physical snapshot
+plus every active peer acknowledgement; stale digests are refused and below-
+floor peers receive an explicit non-automatic snapshot catch-up requirement.
+The Sync Center provides path-free retention and retirement review; destructive
+retention remains local CLI-only with exact digest confirmation and immediate
+snapshot re-verification. Full-corpus-scale evidence keeps the resolved 90-day
+default. Archived as `plans/v0.7/026-peer-retention-gc-repair.md` with evidence
+under `performance/v0.7-g17/`.
 
 ## G18. Shared-core, FFI, Mermaid, and installation/mobile portability handoff
 
@@ -1732,7 +1744,7 @@ recommendation, blocking status, and consequence.
 | Current-GUI Mermaid baseline | G18 | Resolved fact: upstream-capable but disabled pending offline/security evidence |
 | Release version/schema bookkeeping | G20 | Open, non-blocking until wrap-up |
 
-G0-G16 are complete and the production physical restore/catch-up, durable
-sync-job, and local recovery UI contracts are frozen. G17 is the next
-implementable item but is not approved. Implementation begins only after an
-explicit instruction naming G17.
+G0-G17 are complete and the production physical restore/catch-up, durable
+sync-job, local recovery UI, and safe-retention contracts are frozen. G18 is
+the next implementable item but is not approved. Implementation begins only
+after an explicit instruction naming G18.

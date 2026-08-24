@@ -3,7 +3,7 @@
 Notrios (formerly "Notes Companion") is a local-first note-taking, search, import, and publishing system for very large Markdown and document collections.
 It combines a Go REST/MCP service (`notriosd`), a built-in GUI, SQLite/FTS5-backed canonical storage, content-addressed resources, optional Recoll-derived search/extraction, and support for third-party native clients (C++/Qt, Go/Wails, Rust/Tauri) over the same API. A versioned no-GUI C ABI is planned before 1.0, followed by an independent post-1.0 Flutter client; mobile delivery does not depend exclusively on Wails.
 
-The v0.1 through v0.6 milestones are complete. v0.7 G0-G16 are complete through
+The v0.1 through v0.6 milestones are complete. v0.7 G0-G17 are complete through
 the authenticated REST sync data plane and resumable encrypted snapshot
 download. The blocking G14a-G14e archive-scalability sequence is complete:
 G14b selected and G14c implemented a
@@ -14,7 +14,10 @@ G15 adds the schema-v26 durable sync outbox, bounded retries/cancellation, and
 explicit-scope REST/MCP control. G16 adds the responsive local Sync Center,
 native directory chooser, explicit pairing/snapshot permission, lazy-resource
 and three-way conflict workflows, and non-persistent password backup review.
-G17 is next but unapproved — see
+G17 advances schema v27 with signed peer retirement, a configurable 90-day
+history horizon, acknowledgement plus re-verified-snapshot collection floors,
+permanent death identity, sync-aware resource GC, and explicit snapshot catch-
+up below the floor. G18 is next but unapproved — see
 [`PLAN.md`](PLAN.md) and
 [`ROADMAP.md`](ROADMAP.md). The repository is
 structured so a coding agent can resume safely after usage limits or model

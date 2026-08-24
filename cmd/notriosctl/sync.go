@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/renesugar/notrios/internal/config"
+	"github.com/renesugar/notrios/internal/snapshotimage"
 	"github.com/renesugar/notrios/internal/store"
 	"github.com/renesugar/notrios/internal/syncauth"
 	"github.com/renesugar/notrios/internal/synccarrier"
@@ -44,6 +45,10 @@ func runSync(args []string) {
 		runSyncPeers(args[1:])
 	case "revoke":
 		runSyncRevoke(args[1:])
+	case "retire":
+		runSyncRetire(args[1:])
+	case "retention":
+		runSyncRetention(args[1:])
 	case "status":
 		runSyncStatus(args[1:])
 	case "discover":
@@ -78,11 +83,85 @@ func printSyncUsage() {
   notriosctl sync fetch-backup --url <base-url> --out <dir> [--chunk-bytes N]
       [--intent replace|adopt] [--emergency dir]
   notriosctl sync revoke   --key <signer-key-id> [--reason ...] [--advance-epoch]
+  notriosctl sync retire   --peer <replica-id> [--reason ...] [--confirm retire-peer:<replica-id>]
+  notriosctl sync retention --snapshot <retained-snapshot-dir> [--apply --confirm-digest <dry-run-digest>]
   notriosctl sync status   [--db ...] [--keys path]
   notriosctl sync discover [--db ...] [--keys path] [--carrier dir]
   notriosctl sync once     [--db ...] [--keys path] [--carrier dir] [--cleanup] [--materialize N]
   notriosctl sync start    [--db ...] [--resource-fetch] [--byte-budget N] [--max-attempts N]
 `)
+}
+
+func runSyncRetire(args []string) {
+	flags := newSyncFlags("retire")
+	peerID := flags.set.String("peer", "", "replica id to retire")
+	reason := flags.set.String("reason", "", "bounded owner-visible retirement reason")
+	confirm := flags.set.String("confirm", "", "exact confirmation from the preview")
+	flags.parse(args)
+	if strings.TrimSpace(*peerID) == "" {
+		fmt.Fprintln(os.Stderr, "usage: notriosctl sync retire --peer <replica-id> [--reason ...] [--confirm retire-peer:<replica-id>]")
+		os.Exit(2)
+	}
+	st, status, databaseID := flags.openSyncStore()
+	defer st.Close()
+	requireEnrolled(status)
+	expected := "retire-peer:" + strings.TrimSpace(*peerID)
+	if strings.TrimSpace(*confirm) != expected {
+		printJSON(map[string]any{"dry_run": true, "peer_replica_id": strings.TrimSpace(*peerID),
+			"confirmation": expected, "consequences": []string{"the peer stops holding the retention watermark open", "old credentials cannot re-enroll", "the device must reset and pair as a new replica"}})
+		return
+	}
+	keys := mustOpenKeys(flags.keyPath(databaseID))
+	result, err := st.RetireSyncPeer(context.Background(), store.RetireSyncPeerRequest{
+		ReplicaID: *peerID, Reason: *reason, Signer: keys,
+	})
+	if err != nil {
+		exit(err)
+	}
+	printJSON(result)
+}
+
+func runSyncRetention(args []string) {
+	flags := newSyncFlags("retention")
+	apply := flags.set.Bool("apply", false, "apply exactly the reviewed dry-run digest")
+	digest := flags.set.String("confirm-digest", "", "exact digest returned by the dry run")
+	snapshotPath := flags.set.String("snapshot", "", "retained physical snapshot to verify before planning or applying")
+	flags.parse(args)
+	if strings.TrimSpace(*snapshotPath) == "" {
+		fmt.Fprintln(os.Stderr, "usage: notriosctl sync retention --snapshot <retained-snapshot-dir> [--apply --confirm-digest <dry-run-digest>]")
+		os.Exit(2)
+	}
+	st, status, databaseID := flags.openSyncStore()
+	defer st.Close()
+	requireEnrolled(status)
+	verified, err := snapshotimage.VerifyDirectory(context.Background(), *snapshotPath, snapshotimage.DefaultLimits())
+	if err != nil {
+		exit(err)
+	}
+	if verified.DatabaseID != databaseID {
+		exit(fmt.Errorf("retained snapshot belongs to database %s, not %s", verified.DatabaseID, databaseID))
+	}
+	if err := st.RecordVerifiedSyncSnapshot(context.Background(), store.VerifiedSyncSnapshot{
+		SnapshotID: verified.SnapshotID, CommitSHA256: verified.CommitSHA256, Vector: verified.SnapshotVector,
+	}); err != nil {
+		exit(err)
+	}
+	cfg, err := config.Load(*flags.configPath)
+	if err != nil {
+		exit(err)
+	}
+	req := store.SyncRetentionRequest{HistoryFor: cfg.Retention.SyncHistoryDuration(),
+		WarningBefore: cfg.Retention.SyncPeerWarningDuration(), Apply: *apply, ExpectedDigest: *digest}
+	var report store.SyncRetentionReport
+	if *apply {
+		report, err = st.ApplySyncRetention(context.Background(), req)
+	} else {
+		report, err = st.PlanSyncRetention(context.Background(), req)
+	}
+	if err != nil {
+		exit(err)
+	}
+	printJSON(report)
 }
 
 // runSyncStart adds one explicit operation to G15's durable outbox. It does

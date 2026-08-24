@@ -416,7 +416,26 @@ func (s *Server) handlePurgeDocument(w http.ResponseWriter, r *http.Request) {
 	if !requireConfirmation(w, r, "purge-document:"+documentID) {
 		return
 	}
-	if writeStoreError(w, s.store.PurgeDocument(r.Context(), documentID), "trash_purge_failed") {
+	purgeErr := error(nil)
+	if canonical, ok := s.sqliteStore(); ok {
+		if journal, journalErr := canonical.JournalStatus(r.Context()); journalErr == nil && journal.Enabled {
+			if s.syncSecrets == nil {
+				writeError(w, http.StatusServiceUnavailable, "sync_keys_unavailable", "signed permanent deletion requires the configured local sync secret provider")
+				return
+			}
+			keys, keyErr := s.syncSecrets.Open()
+			if keyErr != nil {
+				writeError(w, http.StatusServiceUnavailable, "sync_keys_unavailable", "signed permanent deletion requires available local sync keys")
+				return
+			}
+			purgeErr = canonical.PurgeDocumentWithCertificate(r.Context(), documentID, keys)
+		} else {
+			purgeErr = s.store.PurgeDocument(r.Context(), documentID)
+		}
+	} else {
+		purgeErr = s.store.PurgeDocument(r.Context(), documentID)
+	}
+	if writeStoreError(w, purgeErr, "trash_purge_failed") {
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)

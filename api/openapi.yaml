@@ -1548,6 +1548,65 @@ paths:
               schema: { type: object, additionalProperties: true }
         '403': { $ref: '#/components/responses/Error' }
         '409': { $ref: '#/components/responses/Error' }
+  /api/v1/sync-ui/peers/{replica_id}/retirement-preview:
+    post:
+      summary: Preview the consequences and exact confirmation for retiring one peer
+      description: Loopback/native only. Changes nothing and discloses no signature, key, or artifact path.
+      parameters:
+        - name: replica_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Peer watermark state, consequences, and exact confirmation text
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+  /api/v1/sync-ui/peers/{replica_id}/retire:
+    post:
+      summary: Sign and append an explicitly confirmed peer-retirement decision
+      description: The decision travels in the ordinary operation log. Old credentials cannot re-enroll; the retired device must reset and pair as a new replica.
+      parameters:
+        - name: replica_id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [confirmation]
+              properties:
+                confirmation: { type: string, description: 'Exact value retire-peer:<replica_id> from the preview.' }
+                reason: { type: string, maxLength: 512 }
+      responses:
+        '200':
+          description: Retirement decision identity and peers that have not acknowledged it
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        '400': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /api/v1/sync-ui/retention:
+    get:
+      summary: Review the current acknowledgement/snapshot-gated retention plan
+      description: Loopback/native, read-only, and path-free. Applying collection requires local CLI re-verification of a retained physical snapshot and the exact dry-run digest; there is no HTTP apply operation.
+      responses:
+        '200':
+          description: Safe floors, peer horizon states, candidates, digest, and non-automatic repair plan
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SyncRetentionReport' }
+        '403': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
   /api/v1/sync-ui/recovery:
     post:
       summary: Queue catch-up or reset preparation without installing a snapshot
@@ -1738,7 +1797,7 @@ components:
         password: { type: string, format: password, minLength: 8, maxLength: 4096 }
     SyncUIStatus:
       type: object
-      required: [status, active_profile, profiles, configuration, journal_enabled, secret_store, peers, jobs, conflicts, resources, repairs]
+      required: [status, active_profile, profiles, configuration, journal_enabled, secret_store, peers, jobs, conflicts, resources, repairs, retention]
       properties:
         status: { type: string, enum: [setup, ready, syncing, offline, attention] }
         active_profile: { type: object, additionalProperties: true }
@@ -1754,6 +1813,29 @@ components:
         resources_truncated: { type: boolean }
         repairs: { type: array, maxItems: 50, items: { type: object, additionalProperties: true } }
         repairs_truncated: { type: boolean }
+        retention: { type: object, additionalProperties: true }
+    SyncRetentionReport:
+      type: object
+      additionalProperties: false
+      required: [dry_run, applied, as_of, history_seconds, warning_seconds, subjects, peers, tombstones, eligible_operations, eligible_bytes, removed_operations, collected_tombstones, digest, warnings, repair]
+      properties:
+        dry_run: { type: boolean }
+        applied: { type: boolean }
+        as_of: { type: string, format: date-time }
+        history_seconds: { type: integer, minimum: 1 }
+        warning_seconds: { type: integer, minimum: 1 }
+        snapshot_id: { type: string }
+        snapshot_created_at: { type: string, format: date-time }
+        subjects: { type: array, items: { type: object, additionalProperties: true } }
+        peers: { type: array, maxItems: 200, items: { type: object, additionalProperties: true } }
+        tombstones: { type: array, items: { type: object, additionalProperties: true } }
+        eligible_operations: { type: integer, minimum: 0 }
+        eligible_bytes: { type: integer, minimum: 0 }
+        removed_operations: { type: integer, minimum: 0 }
+        collected_tombstones: { type: integer, minimum: 0 }
+        digest: { type: string, pattern: '^[a-f0-9]{64}$' }
+        warnings: { type: array, items: { type: string } }
+        repair: { type: object, additionalProperties: true }
     StatusResponse:
       type: object
       required: [service, version, status, search_sidecar]

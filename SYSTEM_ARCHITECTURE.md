@@ -409,6 +409,17 @@ portable backup. The store keeps the session, the explicit restore intent, and
 the catch-up floor that lets admission resume after a snapshot supplies history
 it has no operation rows for.
 
+G17 advances the schema to v27 and closes the collection/repair loop. The
+canonical store computes a monotonic safe floor from operation age, a physical
+snapshot vector that covers all prior floors, and every active peer's durable
+acknowledgement. It retains compact checkpoint, revision-order, and permanent-
+death identity when payload/log rows are collected. Signed peer retirement is
+an ordinary operation; credential revocation alone is not retirement and does
+not release the watermark. The existing resource collector receives a frozen,
+conservative version of the same gate. Local CLI is the destructive adapter:
+it re-verifies the snapshot directory and exact dry-run digest. The React/HTTP
+surface only reviews redacted state and consequences.
+
 ## Optional derived systems
 
 - go-git or Fossil can checkpoint projections but should not replace SQLite revisions.

@@ -3,6 +3,7 @@ package syncjobs
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
@@ -103,6 +104,25 @@ func TestG15ManagerClassifiesOfflineQuotaAndBudgetForBackoff(t *testing.T) {
 				t.Fatalf("provider detail leaked or job changed: %+v", retrying)
 			}
 		})
+	}
+}
+
+func TestG17ManagerClassifiesCollectedHistoryAsCatchupRequired(t *testing.T) {
+	st := newManagerTestStore(t)
+	m := New(st)
+	targetID := store.SyncTargetID("fake:collected-history")
+	_ = m.Register(targetID, fakeTarget{run: func(context.Context, string, int64, Progress) (map[string]any, error) {
+		return nil, errors.Join(store.ErrSyncFullResyncRequired, errors.New("private replica and floor detail"))
+	}})
+	queued, _ := m.Start(context.Background(), store.CreateSyncJobRequest{
+		Kind: store.JobKindSyncIncremental, Actor: store.SyncJobActorService, TargetID: targetID, ByteBudget: 100,
+	})
+	finished, err := m.RunNext(context.Background(), "worker")
+	if err != nil || finished.Job.State != store.JobFailed || finished.Job.Summary["reason"] != "catchup_required" {
+		t.Fatalf("finished=%+v err=%v", finished, err)
+	}
+	if finished.Job.ID != queued.Job.ID || strings.Contains(finished.Job.Error, "private replica") {
+		t.Fatalf("catch-up classification leaked detail or changed job: %+v", finished)
 	}
 }
 

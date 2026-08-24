@@ -56,6 +56,8 @@ The authoritative, always-current example is `config/config.example.yaml` in the
 | `remote_media.quarantine_dir` | `./data/quarantine` | staging area for fetched bytes before policy admission |
 | `retention.unreferenced_resource_days` | `30` | recovery window after an unattached upload or final explicit detach |
 | `retention.purged_resource_days` | `90` | longer recovery window for resources orphaned by permanent note purge |
+| `retention.sync_history_days` | `90` | minimum sync-operation/tombstone age; snapshot and active-peer acknowledgements are also mandatory |
+| `retention.sync_peer_warning_days` | `30` | warning interval before an active peer reaches the history horizon |
 
 The `remote_media` policy is reported by `/api/v1/status` under `media_policy`. It drives the remote-media scan (`POST /api/v1/documents/{id}/remote-media/scan` — per-URL decisions, nothing downloaded) and localization (`POST …/remote-media/localize`, `notriosctl localize` — quarantine fetch with redirect-hop and connect-time address checks, size caps, MIME sniffing, exact hashes, then rewrite to `resource://` links in a new revision). Blocked domains and blocked schemes are never fetched; `review` means report-only until explicitly opted in.
 

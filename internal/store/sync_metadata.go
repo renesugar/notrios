@@ -51,7 +51,7 @@ func (s *SQLiteStore) ensureSyncMetadataBaseline(ctx context.Context) error {
 }
 
 func (s *SQLiteStore) captureSyncMetadataBaselineLocked(includeExistingOperationFloors bool) error {
-	for _, table := range []string{"sync_metadata_baseline_memberships", "sync_metadata_baseline_records", "sync_metadata_baseline_floors"} {
+	for _, table := range []string{"sync_metadata_baseline_memberships", "sync_metadata_baseline_records", "sync_metadata_baseline_floors", "sync_metadata_baseline_deaths"} {
 		if err := s.execLocked("DELETE FROM " + table); err != nil {
 			return err
 		}
@@ -83,6 +83,12 @@ func (s *SQLiteStore) captureSyncMetadataBaselineLocked(includeExistingOperation
 			return err
 		}
 	}
+	if err := s.execLocked(`INSERT INTO sync_metadata_baseline_deaths(
+		document_id, signer_replica_id, signer_sequence, signature, hlc_wall_ms, hlc_logical)
+		SELECT document_id, signer_replica_id, signer_sequence, signature, hlc_wall_ms, hlc_logical
+		FROM sync_death_certificates`); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -95,11 +101,15 @@ func (s *SQLiteStore) reconcileSyncMetadataLocked() error {
 	if err != nil {
 		return err
 	}
+	baselineDeaths, err := s.syncMetadataBaselineDeathsLocked()
+	if err != nil {
+		return err
+	}
 	operations, err := s.syncMetadataOperationsLocked()
 	if err != nil {
 		return err
 	}
-	projection, err := syncmerge.Converge(baseline, baselineMemberships, operations)
+	projection, err := syncmerge.ConvergeWithDeaths(baseline, baselineMemberships, baselineDeaths, operations)
 	if err != nil {
 		return fmt.Errorf("sync metadata convergence: %w", err)
 	}
@@ -107,6 +117,29 @@ func (s *SQLiteStore) reconcileSyncMetadataLocked() error {
 		return err
 	}
 	return s.applySyncProjectionLocked(projection)
+}
+
+func (s *SQLiteStore) syncMetadataBaselineDeathsLocked() ([]syncmerge.DeathCertificate, error) {
+	stmt, err := s.prepareLocked(`SELECT document_id, signer_replica_id, signer_sequence,
+		signature, hlc_wall_ms, hlc_logical FROM sync_metadata_baseline_deaths ORDER BY document_id`)
+	if err != nil {
+		return nil, err
+	}
+	defer C.sqlite3_finalize(stmt)
+	var deaths []syncmerge.DeathCertificate
+	for {
+		switch rc := C.sqlite3_step(stmt); rc {
+		case C.SQLITE_ROW:
+			deaths = append(deaths, syncmerge.DeathCertificate{
+				DocumentID: columnText(stmt, 0), Signer: columnText(stmt, 1), Signature: columnText(stmt, 3),
+				Order: syncmerge.Order{ReplicaID: columnText(stmt, 1), Sequence: columnInt64(stmt, 2), WallMS: columnInt64(stmt, 4), Logical: columnInt64(stmt, 5)},
+			})
+		case C.SQLITE_DONE:
+			return deaths, nil
+		default:
+			return nil, s.stepErrLocked(rc)
+		}
+	}
 }
 
 func (s *SQLiteStore) syncMetadataBaselineMembershipsLocked() ([]syncmerge.Membership, error) {

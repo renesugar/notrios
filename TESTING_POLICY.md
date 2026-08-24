@@ -772,7 +772,7 @@ not a native receiver gate. Evidence and its privacy validator are under
 `performance/v0.7-g14e/`; exFAT, cloud-provider rerun, Android emulator, and
 physical-mobile claims remain explicitly false.
 
-### Sync model and transport tests (planned v0.7)
+### Sync model and transport tests (implemented through G17; final G20 matrix remains)
 
 - Property/model tests shuffle, duplicate, replay, drop, and eventually deliver
   operations across at least three replicas and assert convergence.
@@ -787,6 +787,14 @@ physical-mobile claims remain explicitly false.
 - Mobile profiles measure maximum envelope/pending/object sizes and foreground
   responsiveness on an Android emulator before 1.0; physical Android/iOS
   evidence is a post-1.0 client release gate.
+
+G17's focused matrix additionally fixes time and vectors to prove two-active-
+peer minimum watermarks, a phone past its warning/horizon, credential revocation
+versus explicit retirement, retirement propagation and stale re-enrollment
+refusal, snapshot coverage of prior floors, one-peer resource reachability,
+death-certificate survival after compaction, below-floor typed catch-up, and
+exact dry-run/apply digest parity. Generated disk-cost evidence uses the
+published 382,206-document aggregate only and reads no private corpus content.
 
 ### Security tests
 

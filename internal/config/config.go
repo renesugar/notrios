@@ -131,6 +131,8 @@ type SearchSidecarConfig struct {
 type RetentionConfig struct {
 	UnreferencedResourceDays int `json:"unreferenced_resource_days"`
 	PurgedResourceDays       int `json:"purged_resource_days"`
+	SyncHistoryDays          int `json:"sync_history_days"`
+	SyncPeerWarningDays      int `json:"sync_peer_warning_days"`
 }
 
 func (c RetentionConfig) UnreferencedDuration() time.Duration {
@@ -139,6 +141,14 @@ func (c RetentionConfig) UnreferencedDuration() time.Duration {
 
 func (c RetentionConfig) PurgedResourceDuration() time.Duration {
 	return retentionDays(c.PurgedResourceDays)
+}
+
+func (c RetentionConfig) SyncHistoryDuration() time.Duration {
+	return retentionDays(c.SyncHistoryDays)
+}
+
+func (c RetentionConfig) SyncPeerWarningDuration() time.Duration {
+	return retentionDays(c.SyncPeerWarningDays)
 }
 
 func retentionDays(days int) time.Duration {
@@ -228,6 +238,8 @@ func Default() Config {
 		Retention: RetentionConfig{
 			UnreferencedResourceDays: 30,
 			PurgedResourceDays:       90,
+			SyncHistoryDays:          90,
+			SyncPeerWarningDays:      30,
 		},
 	}
 }
@@ -450,6 +462,10 @@ func applyRetention(cfg *RetentionConfig, key, value string) {
 		cfg.UnreferencedResourceDays = parseNonNegativeInt(value, cfg.UnreferencedResourceDays)
 	case "purged_resource_days":
 		cfg.PurgedResourceDays = parseNonNegativeInt(value, cfg.PurgedResourceDays)
+	case "sync_history_days":
+		cfg.SyncHistoryDays = parseNonNegativeInt(value, cfg.SyncHistoryDays)
+	case "sync_peer_warning_days":
+		cfg.SyncPeerWarningDays = parseNonNegativeInt(value, cfg.SyncPeerWarningDays)
 	}
 }
 

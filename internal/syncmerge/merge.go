@@ -118,11 +118,24 @@ var scalarFields = map[string]map[string]bool{
 // Converge folds exactly the G6-owned records. Revision bodies, resource bytes,
 // and their links remain in later slices and are ignored here.
 func Converge(baseline []*Record, baselineMemberships []Membership, operations []syncstate.Operation) (Projection, error) {
+	return ConvergeWithDeaths(baseline, baselineMemberships, nil, operations)
+}
+
+// ConvergeWithDeaths starts from checkpointed permanent-delete identities as
+// well as ordinary baseline rows. G17 can therefore compact an acknowledged
+// purge operation without ever making resurrection possible.
+func ConvergeWithDeaths(baseline []*Record, baselineMemberships []Membership, baselineDeaths []DeathCertificate, operations []syncstate.Operation) (Projection, error) {
 	p := Projection{
 		Records: make(map[string]*Record), Memberships: make(map[string]Membership),
 		Deaths: make(map[string]DeathCertificate), NotebookName: make(map[string]string), RecordName: make(map[string]string),
 		NotebookParent: make(map[string]string), DocumentNotebook: make(map[string]string),
 		DocumentCollection: make(map[string]string),
+	}
+	for _, death := range baselineDeaths {
+		if death.DocumentID == "" || death.Signer == "" || death.Order.Sequence <= 0 || death.Signature == "" {
+			return Projection{}, fmt.Errorf("invalid baseline death certificate")
+		}
+		p.Deaths[death.DocumentID] = death
 	}
 	for _, source := range baseline {
 		if source == nil || scalarFields[source.Type] == nil || source.ID == "" {

@@ -3,7 +3,7 @@
 This handoff applies to any coding agent or client continuing this project (Codex, Claude, aider, swival.dev, etc. — formerly `CODEX_HANDOFF.md`). The repository is designed so an agent can continue from repository files alone.
 
 Current phase: v0.1 through **v0.6** are complete; product version is **0.6.0**
-and the schema is **v26**. The eight v0.6 slices are archived under
+and the schema is **v27**. The eight v0.6 slices are archived under
 `plans/v0.6/`: F0 (notebook targeting, landed with v0.5 E10), F1 (batch
 organizer transactions), F2 (MCP tool scopes), F3 (MCP read coverage and HTTP
 `Range`), F4 (note templates and task extraction), F5 (graph views that stay
@@ -14,7 +14,7 @@ wrap-up). The thirteen v0.5 slices remain archived under `plans/v0.5/`.
 independently approvable G0-G20 slices plus the newly inserted, blocking
 G14a-G14e archive-scalability sequence. The user's 2026-08-11
 review resolved the policy decisions through G17, including mandatory payload
-encryption and per-replica Ed25519 signatures. **G0-G16 are complete** and
+encryption and per-replica Ed25519 signatures. **G0-G17 are complete** and
 archived under `plans/v0.7/`; their reviewed evidence is under
 `performance/v0.7-g0/`, `performance/v0.7-g1/`, `performance/v0.7-g1a/`,
 `performance/v0.7-g2/`, `performance/v0.7-g4/`, `performance/v0.7-g5/`,
@@ -23,9 +23,12 @@ archived under `plans/v0.7/`; their reviewed evidence is under
 `performance/v0.7-g12/`, `performance/v0.7-g13/`, `performance/v0.7-g14/`,
 `performance/v0.7-g14a/`, `performance/v0.7-g14b/`, and
 `performance/v0.7-g14c/`, `performance/v0.7-g14d/`, and
-`performance/v0.7-g14e/` and `performance/v0.7-g16/`. G15's archive is
+`performance/v0.7-g14e/`, `performance/v0.7-g16/`, and
+`performance/v0.7-g17/`. G15's archive is
 `plans/v0.7/024-durable-sync-jobs.md`; G16's archive is
-`plans/v0.7/025-sync-recovery-ui.md`. **G17 is next and is not approved.** G14b selected option B: a
+`plans/v0.7/025-sync-recovery-ui.md`; G17's archive is
+`plans/v0.7/026-peer-retention-gc-repair.md`. **G18 is next and is not
+approved.** G14b selected option B: a
 required compatible same-schema SQLite-image plus bounded packed-assets
 capability for whole-library full backup/catch-up, retaining packed semantic
 archive-v2 for subset, merge, schema-independent interchange, and fallback.
@@ -58,6 +61,25 @@ is injectable and shared live by pairing, the peer surface, and each job attempt
 The real two-daemon acceptance flow and regular Playwright desktop/mobile sweep
 passed; no Browser plugin or mobile build is claimed. OpenAPI and code match all
 106 normalized non-HEAD operations.
+
+G17 advances schema v27. `internal/store/sync_retention.go` plans operation and
+tombstone collection at the minimum of the configurable 90-day age floor, a
+verified physical-snapshot vector, every active peer acknowledgement, and the
+current vector; floors only advance. `sync retention --snapshot <dir>` fully
+re-verifies the retained image and database identity before dry-run or apply,
+and apply needs the exact digest. Sync-aware `gc` likewise requires a currently
+verified snapshot. Signed ordinary `replica.retire` operations revoke old peer
+credentials, propagate without requiring every peer online, expose peers that
+have not acknowledged the decision, and prevent stale re-enrollment. Key
+revocation alone deliberately keeps the acknowledgement watermark open. Signed
+purge retains payload until safe and preserves compact permanent-death identity
+afterward. Peers below a collected floor get typed, non-automatic snapshot
+catch-up; repair selects only a retained snapshot covering every existing
+floor, then newer log operations. The Sync Center is a path-free review surface
+with explicit retirement confirmation and no retention-apply HTTP route.
+OpenAPI/code parity is 109 operations. Generated full-corpus-scale evidence
+measured 169,906,176 incremental bytes for 382,206 representative operations,
+so the reviewed 90-day default remains.
 
 G14c adds production `sqlite-image+packed-assets.v1` creation and read-only
 admission under `internal/snapshotimage/` and
@@ -98,7 +120,7 @@ generic response ceiling truncating 16 MiB ranges, unconditional whole-library
 reconciliation for a body edit, and quadratic repeated-prefix validation in
 bounded directory publication. Tests cover each boundary; no format, schema,
 compressor, third-party dependency, REST/MCP path surface, or automatic restore
-was added. G15 and G16 are now complete; G17 requires separate user approval.
+was added. G15-G17 are now complete; G18 requires separate user approval.
 
 G14b added only investigation/prototype code and aggregate evidence. Its 57
 validated full-corpus phase rows cover equivalent 382,206-document Joplin and

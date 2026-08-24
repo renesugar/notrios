@@ -19,6 +19,17 @@ const baseStatus: SyncUIStatus = {
   conflicts: [{ id: 'conflict_1', document_id: 'doc_shared', revision_a: 'rev_a', revision_b: 'rev_b', base_revision_id: 'rev_base', kind: 'same_token', created_at: '2026-08-24T16:10:00Z' }],
   resources: [{ id: 'res_pdf', filename: 'paper.pdf', mime_type: 'application/pdf', size_bytes: 4096, availability: 'unavailable', pinned: false, requested: false }],
   repairs: [{ id: 'repair_1', kind: 'notebook.cycle', subject_id: 'nb_work', details: { effective: 'nb_recovered' } }],
+  retention: { history_seconds: 7776000, snapshot_id: 'snapshot_safe', eligible_operations: 12, eligible_tombstones: 1, digest: 'abc123', repair: { ready: true, snapshot_id: 'snapshot_safe', snapshot_vector: { rep_1234567890abcdef: 8 }, newer_operations: 2, install_automatic: false } },
+};
+
+const retentionReport = {
+  dry_run: true, applied: false, as_of: '2026-08-24T19:00:00Z', history_seconds: 7776000, warning_seconds: 2592000,
+  snapshot_id: 'snapshot_safe', snapshot_created_at: '2026-08-24T18:00:00Z',
+  subjects: [{ replica_id: 'rep_1234567890abcdef', current_sequence: 10, current_floor: 0, age_floor: 8, snapshot_floor: 8, acknowledged_floor: 8, eligible_floor: 8, eligible_operations: 8, eligible_bytes: 2048 }],
+  peers: [{ replica_id: 'rep_peer_abcdefghijkl', status: 'active', last_acknowledged: '2026-08-01T00:00:00Z', warning_at: '2026-09-30T00:00:00Z', horizon_at: '2026-10-30T00:00:00Z', warning: false, beyond_horizon: false, full_resync_required: false }],
+  tombstones: [{ document_id: 'doc_gone', replica_id: 'rep_1234567890abcdef', sequence: 7, purged_at: '2026-01-01T00:00:00Z' }],
+  eligible_operations: 8, eligible_bytes: 2048, removed_operations: 0, collected_tombstones: 0, digest: 'abc123', warnings: [],
+  repair: { ready: true, snapshot_id: 'snapshot_safe', snapshot_vector: { rep_1234567890abcdef: 8 }, newer_operations: 2, install_automatic: false },
 };
 
 function json(value: unknown, status = 200) {
@@ -33,6 +44,7 @@ function mockFetch(extra?: (path: string, init?: RequestInit) => Response | unde
     const override = extra?.(path, init);
     if (override) return override;
     if (path === '/api/v1/sync-ui') return json(baseStatus);
+    if (path === '/api/v1/sync-ui/retention') return json(retentionReport);
     if (path === '/api/v1/jobs/sync/start') return json({ job: { id: 'job_new' } }, 202);
     if (path.endsWith('/retry')) return json({ job: { id: 'job_old', state: 'queued' } });
     return json({});
@@ -126,6 +138,39 @@ describe('SyncCenter', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Copy code' }));
     expect(writeText).toHaveBeenCalledWith('ABCD-EFGH-IJKL');
     expect(writeText).toHaveBeenCalledTimes(1);
+  });
+
+  it('requires a retirement preview and explicit consequence confirmation', async () => {
+    const preview = { dry_run: true, peer: retentionReport.peers[0], confirmation: 'retire-peer:rep_peer_abcdefghijkl', consequences: ['The peer stops holding the retention watermark open.', 'Its old credentials cannot re-enroll.', 'That device must reset and pair as a new replica.'] };
+    const { calls } = mockFetch((path) => {
+      if (path.endsWith('/retirement-preview')) return json(preview);
+      if (path.endsWith('/retire')) return json({ replica_id: 'rep_peer_abcdefghijkl', status: 'retired', unacknowledged_peers: [] });
+      return undefined;
+    });
+    render(<SyncCenter onClose={() => undefined} />);
+    await screen.findByText('Needs attention');
+    await userEvent.click(screen.getByRole('button', { name: 'Peers' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Review retirement' }));
+    expect(await screen.findByRole('region', { name: 'Peer retirement review' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Retire peer' })).toBeDisabled();
+    await userEvent.click(screen.getByRole('checkbox', { name: /must reset and pair/i }));
+    await userEvent.click(screen.getByRole('button', { name: 'Retire peer' }));
+    const retirement = calls.find((call) => call.path.endsWith('/retire'));
+    expect(JSON.parse(String(retirement?.init?.body))).toEqual({ confirmation: 'retire-peer:rep_peer_abcdefghijkl', reason: '' });
+  });
+
+  it('shows dry-run retention watermarks without exposing an apply endpoint or path input', async () => {
+    const { calls } = mockFetch();
+    render(<SyncCenter onClose={() => undefined} />);
+    await screen.findByText('Needs attention');
+    await userEvent.click(screen.getByRole('button', { name: 'Retention' }));
+    expect(await screen.findByRole('heading', { name: 'Safe retention horizon' })).toBeInTheDocument();
+    expect(screen.getByText(/Time alone never authorizes deletion/)).toBeInTheDocument();
+    expect(await screen.findByText(/snapshot_safe/)).toBeInTheDocument();
+    expect(screen.getByText(/never automatic/i)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /apply/i })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/snapshot path/i)).not.toBeInTheDocument();
+    expect(calls.some((call) => call.path === '/api/v1/sync-ui/retention')).toBe(true);
   });
 
   it('clears a wrong backup password while keeping retry and cancel explicit', async () => {

@@ -416,6 +416,25 @@ body.splitter-dragging {
 .sync-metric-grid button:hover { border-color: var(--accent); }
 .sync-metric-grid strong { font-size: 22px; }
 .sync-metric-grid span { color: var(--muted); font-size: 12px; }
+.sync-metric-grid article {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-height: 78px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  background: var(--panel-bg);
+}
+.retention-metrics { margin-top: 20px; }
+.retention-section code { overflow-wrap: anywhere; }
+.retention-section .boundary-note {
+  margin-top: 18px;
+  border-left: 4px solid var(--accent);
+  border-radius: 8px;
+  padding: 12px 14px;
+  background: var(--accent-soft);
+}
 
 .sync-card,
 .warning-card,

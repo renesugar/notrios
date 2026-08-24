@@ -659,3 +659,22 @@ revision whose two parents are the conflicting heads; snapshot permission uses
 `sync_catchup_permissions`; no UI-only canonical table or stored password was
 added. NPB1 password-backup headers and private verification staging are files,
 not database records.
+
+## Schema v27 — peer retirement and safe collection floors
+
+G17 adds `sync_peer_retirements` for signed ordinary-log retirement identity;
+`sync_verified_snapshots` plus vectors for local verification evidence;
+`sync_retention_floors` for monotonic collected history; and
+`sync_tombstone_payloads` for permanent-delete payload still awaiting the safe
+floor. `sync_retained_revision_orders` preserves deterministic merge ordering
+after creation operations are compacted, while
+`sync_metadata_baseline_deaths` keeps the minimum permanent-death identity in
+the canonical checkpoint after payload/log collection.
+
+Snapshot verification records are local operational evidence and contain no
+path or bytes. Published physical images clear those records and peer
+acknowledgements, but preserve canonical collection floors, retirements,
+revision order, and death identity. A repair snapshot is usable only when its
+vector covers every existing retention floor. Destructive CLI entry points
+re-verify the actual retained directory and database identity at invocation;
+the stored record alone never proves the directory still exists.

@@ -29,6 +29,7 @@ const (
 	domainArtifactSig = "notrios.artifact-signature.v1"
 	domainRoutingName = "notrios.routing-name.v1"
 	domainDeathCert   = "notrios.death-certificate.v1"
+	domainRetirement  = "notrios.replica-retirement.v1"
 	domainRoutingKey  = "notrios.routing-key.v1"
 	domainCarrierName = "notrios.carrier-name.v1"
 )
@@ -509,6 +510,38 @@ func deathCertificateMessage(documentID, replicaID string, sequence int64) []byt
 	message := append([]byte(nil), domainDeathCert...)
 	message = appendString(message, documentID)
 	message = appendString(message, replicaID)
+	message = appendUvarint(message, uint64(sequence))
+	return message
+}
+
+// SignReplicaRetirement binds an explicit owner decision to the database,
+// retired replica, deciding replica, and immutable operation sequence. The
+// decision travels in the ordinary signed log, but retaining this focused
+// signature lets a compacted operation leave independently verifiable proof.
+func SignReplicaRetirement(signer Signer, databaseID, retiredReplicaID, decisionReplicaID string, sequence int64) string {
+	return hex.EncodeToString(signer.Sign(replicaRetirementMessage(databaseID, retiredReplicaID, decisionReplicaID, sequence)))
+}
+
+func VerifyReplicaRetirement(verifier Verifier, signerKeyID, signature, databaseID, retiredReplicaID, decisionReplicaID string, sequence int64) error {
+	publicKey, enrolled := verifier.PublicKey(signerKeyID)
+	if !enrolled {
+		return fmt.Errorf("%w: %s", ErrUnknownSigner, signerKeyID)
+	}
+	raw, err := hex.DecodeString(signature)
+	if err != nil || len(raw) != SignatureBytes {
+		return ErrBadSignature
+	}
+	if !ed25519.Verify(publicKey, replicaRetirementMessage(databaseID, retiredReplicaID, decisionReplicaID, sequence), raw) {
+		return ErrBadSignature
+	}
+	return nil
+}
+
+func replicaRetirementMessage(databaseID, retiredReplicaID, decisionReplicaID string, sequence int64) []byte {
+	message := append([]byte(nil), domainRetirement...)
+	message = appendString(message, databaseID)
+	message = appendString(message, retiredReplicaID)
+	message = appendString(message, decisionReplicaID)
 	message = appendUvarint(message, uint64(sequence))
 	return message
 }

@@ -297,8 +297,8 @@ also exposed about **25% stored-ZIP overhead from one entry per loose archive
 object**, while the existing pack fix has never been exercised end to end at
 the supplied full scale.
 
-**The blocking G14a-G14e archive-scalability sequence and G15-G16 sync control/
-recovery UI are complete; G17 is next and approval-gated.** G14a supplies the resumable, aggregate-only benchmark contract and
+**The blocking G14a-G14e archive-scalability sequence and G15-G17 sync control,
+recovery UI, and safe retention are complete; G18 is next and approval-gated.** G14a supplies the resumable, aggregate-only benchmark contract and
 generated 10k/100k calibration. That evidence confirms one-file-per-object
 growth, isolates stored-ZIP overhead from framing, and records a 100k
 incremental-replay memory failure without changing production code. G14b's
@@ -332,6 +332,17 @@ lazy attachment fetch/pin, three-way conflict resolution, repair reports,
 verified catch-up staging, and NPB1 password backups. Passwords are cleared and
 never persisted; restore/reset remain review-only. A real two-daemon test and
 desktop/mobile Playwright sweep passed. No mobile build is claimed.
+
+**G17 completed 2026-08-24** with schema v27. Signed peer-retirement decisions
+travel through the ordinary log and prevent stale credential re-enrollment.
+The 90-day configurable floor now takes the minimum of age, a retained physical
+snapshot re-verified at the destructive boundary, and every active peer's
+acknowledgement. Compaction retains checkpoint/death/revision-order identity;
+below-floor peers receive a typed snapshot catch-up requirement. Resource GC
+uses the same conservative gate. The Sync Center reviews horizons and
+retirement consequences without receiving filesystem paths or exposing an
+HTTP apply route. Generated one-full-corpus-churn evidence measured about 162
+MiB for 382,206 representative operations, so the resolved default remains.
 
 - **Evidence before contracts (G0-G2, including G1a):** threat model and
   reference validation; representative revision/delta/three-way-merge

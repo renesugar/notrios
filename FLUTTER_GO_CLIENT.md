@@ -35,6 +35,14 @@ The implementation should move transport-neutral orchestration out of HTTP
 handlers into one application facade, then let HTTP and FFI adapters translate
 to it.
 
+G17 sharpens that split for G18: retention planning and peer-retirement preview
+are transport-neutral bounded application operations, while physical snapshot
+path selection/re-verification is native-host capability and must not be
+smuggled through a generic web request. The future ABI needs typed
+`full_resync_required`, retirement confirmation, retention digest, and snapshot
+verification/stream or file-picker handoff equivalents; it must preserve the
+same no-automatic-install and no-time-only-deletion boundaries.
+
 The ABI needs contracts that HTTP supplies implicitly:
 
 - open/close an isolated Notrios instance for a named profile;

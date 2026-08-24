@@ -704,6 +704,68 @@ export interface SyncUIPeer {
   snapshot_permitted: boolean;
   enrolled_at?: string;
   revoked_at?: string;
+  last_acknowledged?: string;
+  warning_at?: string;
+  horizon_at?: string;
+  full_resync_required?: boolean;
+}
+
+export interface SyncRetentionSubject {
+  replica_id: string;
+  current_sequence: number;
+  current_floor: number;
+  age_floor: number;
+  snapshot_floor: number;
+  acknowledged_floor: number;
+  eligible_floor: number;
+  eligible_operations: number;
+  eligible_bytes: number;
+}
+
+export interface SyncPeerRetentionStatus {
+  replica_id: string;
+  status: string;
+  last_acknowledged?: string;
+  warning_at?: string;
+  horizon_at?: string;
+  warning: boolean;
+  beyond_horizon: boolean;
+  full_resync_required: boolean;
+}
+
+export interface SyncRepairPlan {
+  ready: boolean;
+  snapshot_id?: string;
+  snapshot_vector: Record<string, number>;
+  newer_operations: number;
+  install_automatic: false;
+}
+
+export interface SyncRetentionReport {
+  dry_run: boolean;
+  applied: boolean;
+  as_of: string;
+  history_seconds: number;
+  warning_seconds: number;
+  snapshot_id?: string;
+  snapshot_created_at?: string;
+  subjects: SyncRetentionSubject[];
+  peers: SyncPeerRetentionStatus[];
+  tombstones: Array<{ document_id: string; replica_id: string; sequence: number; purged_at: string }>;
+  eligible_operations: number;
+  eligible_bytes: number;
+  removed_operations: number;
+  collected_tombstones: number;
+  digest: string;
+  warnings: string[];
+  repair: SyncRepairPlan;
+}
+
+export interface SyncRetirementPreview {
+  dry_run: true;
+  peer: SyncPeerRetentionStatus;
+  confirmation: string;
+  consequences: string[];
 }
 
 export function setSyncSnapshotPermission(replicaID: string, permitted: boolean): Promise<{ replica_id: string; snapshot_permitted: boolean }> {
@@ -774,6 +836,14 @@ export interface SyncUIStatus {
   resources_truncated?: boolean;
   repairs: SyncUIRepair[];
   repairs_truncated?: boolean;
+  retention: {
+    history_seconds: number;
+    snapshot_id?: string;
+    eligible_operations: number;
+    eligible_tombstones: number;
+    digest: string;
+    repair: SyncRepairPlan;
+  };
 }
 
 export async function getSyncUIStatus(): Promise<SyncUIStatus> {
@@ -806,6 +876,18 @@ export function createSyncInvitation(label = ''): Promise<{ code: string; expire
 
 export function pairSyncPeer(baseURL: string, code: string): Promise<{ paired_with: string }> {
   return syncUIJSON('/api/v1/sync-ui/pair', 'POST', { base_url: baseURL, code });
+}
+
+export function previewSyncPeerRetirement(replicaID: string): Promise<SyncRetirementPreview> {
+  return syncUIJSON(`/api/v1/sync-ui/peers/${encodeURIComponent(replicaID)}/retirement-preview`, 'POST', {});
+}
+
+export function retireSyncPeer(replicaID: string, confirmation: string, reason: string): Promise<{ replica_id: string; status: string; unacknowledged_peers: string[] }> {
+  return syncUIJSON(`/api/v1/sync-ui/peers/${encodeURIComponent(replicaID)}/retire`, 'POST', { confirmation, reason });
+}
+
+export async function getSyncRetention(): Promise<SyncRetentionReport> {
+  return parseJSON<SyncRetentionReport>(await fetch('/api/v1/sync-ui/retention', { cache: 'no-store' }));
 }
 
 export function startSync(kind: 'incremental' | 'resource_fetch' = 'incremental'): Promise<Record<string, unknown>> {

@@ -7,8 +7,8 @@ This file is the codebase atlas. Update it whenever major files or directories a
 - `README.md` — project overview and quick start.
 - `PLAN.md` — the **active v0.7 native synchronization plan**, divided into
   independently approvable G0-G20 slices plus the blocking G14a-G14e archive-
-  scalability sequence. G0-G16 are complete; G17 is next but unapproved. The
-  current product remains 0.6.0 at schema v26; v0.6 is archived under
+  scalability sequence. G0-G17 are complete; G18 is next but unapproved. The
+  current product remains 0.6.0 at schema v27; v0.6 is archived under
   `plans/v0.6/`; v0.5 and v0.4 are archived under their version directories.
 - `plans/scaffold/SCAFFOLD_CREATION_PLAN.md` — process for creating/refining this scaffold.
 - `ROADMAP.md` — product roadmap and future features.
@@ -37,6 +37,10 @@ This file is the codebase atlas. Update it whenever major files or directories a
   local service mode; GUI-only remote mode deliberately receives no path picker.
 - `cmd/notriosctl/sync_ui_e2e_test.go` and `performance/v0.7-g16/` — G16's real
   two-daemon acceptance flow and content-free desktop/mobile browser evidence.
+- `internal/store/sync_retention.go`, migration `0027_sync_retention.sql`, and
+  `performance/v0.7-g17/` — G17's signed peer retirement, snapshot/acknowledgement
+  floors, death/tombstone compaction, resource-GC gate, repair plan, safety
+  matrix, and generated full-corpus-scale retention-cost evidence.
 - `performance/v0.7-g0/` — completed G0 threat model, normative protocol
   glossary, thirty misuse/control traces, primary-source dependency/license/
   platform validation, and its structural evidence validator.

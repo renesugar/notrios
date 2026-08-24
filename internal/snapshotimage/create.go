@@ -28,16 +28,18 @@ type CreateOptions struct {
 }
 
 type CreateReport struct {
-	SnapshotID    string `json:"snapshot_id"`
-	DatabaseID    string `json:"database_id"`
-	CommitSHA256  string `json:"commit_sha256"`
-	ContentSHA256 string `json:"content_sha256"`
-	Packs         int    `json:"packs"`
-	Objects       int64  `json:"objects"`
-	DatabaseBytes int64  `json:"database_bytes"`
-	ExternalBytes int64  `json:"external_bytes"`
-	ResumedPacks  int    `json:"resumed_packs"`
-	Verified      bool   `json:"verified"`
+	SnapshotID     string           `json:"snapshot_id"`
+	DatabaseID     string           `json:"database_id"`
+	CommitSHA256   string           `json:"commit_sha256"`
+	ContentSHA256  string           `json:"content_sha256"`
+	Packs          int              `json:"packs"`
+	Objects        int64            `json:"objects"`
+	DatabaseBytes  int64            `json:"database_bytes"`
+	ExternalBytes  int64            `json:"external_bytes"`
+	ResumedPacks   int              `json:"resumed_packs"`
+	Verified       bool             `json:"verified"`
+	CreatedAt      string           `json:"created_at"`
+	SnapshotVector map[string]int64 `json:"snapshot_vector"`
 }
 
 // Create publishes a manifest-last physical snapshot. The target may contain
@@ -211,6 +213,7 @@ func Create(ctx context.Context, source *store.SQLiteStore, assetRoot, target st
 		ContentSHA256: manifest.ContentSHA256, Packs: len(manifest.External.Packs),
 		Objects: manifest.External.Objects, DatabaseBytes: imageBytes,
 		ExternalBytes: manifest.External.PayloadBytes, ResumedPacks: resumed, Verified: verified.ReadyForInstall,
+		CreatedAt: manifest.Snapshot.CreatedAt, SnapshotVector: state.Vector,
 	}, nil
 }
 

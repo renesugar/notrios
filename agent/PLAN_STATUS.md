@@ -1,11 +1,11 @@
 # Plan Status
 
-Updated: 2026-08-24 (G16 complete; G17 next and unapproved)
+Updated: 2026-08-24 (G17 complete; G18 next and unapproved)
 
 ## Active milestone
 
 **v0.1 through v0.6 are complete.** Product version is **0.6.0** and the
-canonical schema is **v26**. v0.6 F0-F7 are archived under `plans/v0.6/`;
+canonical schema is **v27**. v0.6 F0-F7 are archived under `plans/v0.6/`;
 earlier milestones remain under their version directories.
 
 `PLAN.md` is now the **active v0.7 native synchronization plan**. It contains
@@ -14,15 +14,36 @@ G15-G20: evidence, profiles/local journal, state-vector convergence,
 revision deltas/merge, lazy resources, secure container/catch-up,
 ephemeral-directory and REST transports, jobs/UI/retention, shared-core/FFI/
 Mermaid/mobile handoff, compatibility, and final validation. The user's
-2026-08-11 review resolved every original G0-G17 policy decision. **G0-G16 are
+2026-08-11 review resolved every original G0-G17 policy decision. **G0-G17 are
 complete** and archived under `plans/v0.7/`; the 2026-08-15 planning amendment
 reopened physical snapshot scalability. G14b selected option B from full-corpus
 evidence, G14c implemented the local production representation/verifier, and
 G14d integrated encrypted transport plus crash-safe restore/catch-up, and G14e
 passed the production full-scale matrix and froze the format. G15 then added
 the schema-v26 durable sync outbox and bounded local REST/MCP control. G16 adds
-the local Sync Center and password recovery workflow. G17 is next and
-unapproved.
+the local Sync Center and password recovery workflow. G17 adds safe retention
+and retirement. G18 is next and unapproved.
+
+## v0.7 G17 completion — 2026-08-24
+
+- Schema v27 stores signed retirement decisions, verified-snapshot vectors,
+  monotonic operation floors, tombstone-payload state, retained revision order,
+  and checkpointed death identity. Time alone authorizes nothing.
+- The default is configurable 90-day history with a 30-day peer warning.
+  Collection also requires a retained physical snapshot re-verified at apply
+  and every active peer acknowledgement. A stale dry-run digest is refused.
+- Credential revocation stops trust but deliberately does not release the
+  watermark; explicit signed retirement does. Retired credentials cannot
+  re-enroll, unacknowledged peers remain visible, and below-floor peers receive
+  a typed non-automatic snapshot catch-up requirement.
+- Sync-aware resource GC uses the same conservative current-vector gate. Signed
+  purge retains payload until safe, then keeps permanent death identity to
+  prevent resurrection.
+- React/HTTP provide path-free retirement and retention review; apply remains
+  local CLI-only with exact digest plus immediate snapshot re-verification.
+  OpenAPI/code parity is 109 operations. Archive:
+  `plans/v0.7/026-peer-retention-gc-repair.md`; evidence:
+  `performance/v0.7-g17/`.
 
 ## v0.7 G16 completion — 2026-08-24
 
@@ -2320,4 +2341,4 @@ attempt detail remains append-only in `agent/ATTEMPT_LOG.jsonl`.
 - Long-term SQLite driver choice (current local cgo/libsqlite3 adapter).
 - Official MCP Go SDK adoption/version.
 - Sync decisions live in the owning plan items; the register in `PLAN.md` is an
-  index. G0-G16 are complete; G17 and every later slice remain approval-gated.
+  index. G0-G17 are complete; G18 and every later slice remain approval-gated.

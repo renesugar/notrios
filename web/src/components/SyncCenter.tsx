@@ -4,30 +4,36 @@ import {
   createPasswordBackup,
   createSyncInvitation,
   discoverSyncPeers,
+  getSyncRetention,
   getSyncConflict,
   getSyncUIStatus,
   initializeSync,
   inspectPasswordBackup,
   pairSyncPeer,
+  previewSyncPeerRetirement,
   requestSyncRecovery,
   resolveSyncConflict,
   retrySyncJob,
+  retireSyncPeer,
   saveSyncConfiguration,
   setSyncResourceIntent,
   setSyncSnapshotPermission,
   startSync,
   type BackupReview,
   type SyncUIConflictDetail,
+  type SyncRetentionReport,
+  type SyncRetirementPreview,
   type SyncUIStatus,
 } from '../api';
 import { errorMessage } from '../preview-utils';
 
-type SyncTab = 'overview' | 'setup' | 'peers' | 'resources' | 'conflicts' | 'backup' | 'repairs';
+type SyncTab = 'overview' | 'setup' | 'peers' | 'retention' | 'resources' | 'conflicts' | 'backup' | 'repairs';
 
 const tabs: Array<{ id: SyncTab; label: string }> = [
   { id: 'overview', label: 'Overview' },
   { id: 'setup', label: 'Setup' },
   { id: 'peers', label: 'Peers' },
+  { id: 'retention', label: 'Retention' },
   { id: 'resources', label: 'Attachments' },
   { id: 'conflicts', label: 'Conflicts' },
   { id: 'backup', label: 'Backup & recovery' },
@@ -144,6 +150,7 @@ export function SyncCenter({ onClose }: SyncCenterProps) {
           {status && tab === 'overview' ? <Overview status={status} busy={busy} act={act} onTab={setTab} /> : null}
           {status && tab === 'setup' ? <Setup status={status} busy={busy} act={act} /> : null}
           {status && tab === 'peers' ? <Peers status={status} busy={busy} act={act} setNotice={setNotice} setError={setError} /> : null}
+          {status && tab === 'retention' ? <Retention status={status} setError={setError} /> : null}
           {status && tab === 'resources' ? <Resources status={status} busy={busy} act={act} /> : null}
           {status && tab === 'conflicts' ? <Conflicts status={status} busy={busy} refresh={refresh} setBusy={setBusy} setNotice={setNotice} setError={setError} /> : null}
           {status && tab === 'backup' ? <BackupRecovery status={status} busy={busy} act={act} refresh={refresh} setBusy={setBusy} setNotice={setNotice} setError={setError} /> : null}
@@ -274,6 +281,10 @@ function Peers({ status, busy, act, setNotice, setError }: SectionProps & { setN
   const [label, setLabel] = useState('');
   const [invitation, setInvitation] = useState<{ code: string; expires_at: string } | null>(null);
   const [discovery, setDiscovery] = useState<string[]>([]);
+  const [retirement, setRetirement] = useState<SyncRetirementPreview | null>(null);
+  const [retirementReason, setRetirementReason] = useState('');
+  const [retirementConfirmed, setRetirementConfirmed] = useState(false);
+  const [reviewingPeer, setReviewingPeer] = useState('');
   async function invite() {
     setError('');
     try {
@@ -291,21 +302,38 @@ function Peers({ status, busy, act, setNotice, setError }: SectionProps & { setN
       setNotice(`Discovery scanned ${result.scanned_artifacts ?? 0} carrier artifacts without enrolling anyone.`);
     } catch (err) { setError(errorMessage(err)); }
   }
+  async function reviewRetirement(replicaID: string) {
+    setReviewingPeer(replicaID); setError(''); setRetirement(null); setRetirementConfirmed(false);
+    try {
+      setRetirement(await previewSyncPeerRetirement(replicaID));
+    } catch (err) { setError(errorMessage(err)); } finally { setReviewingPeer(''); }
+  }
   return (
     <div className="sync-section">
       <h3>Paired peers</h3>
       <div className="sync-list">
         {status.peers.map((peer) => <article key={peer.replica_id} className="sync-list-row peer-row">
-          <div><strong>{peer.replica_id.slice(0, 16)}…</strong><small>{peer.behind_operations > 0 ? `${peer.behind_operations} operations behind` : 'Caught up at last acknowledgement'}</small></div>
+          <div><strong>{peer.replica_id.slice(0, 16)}…</strong><small>{peer.status === 'retired' ? 'Retired credentials cannot rejoin; reset and pair this device as a new replica.' : peer.full_resync_required ? 'History below this peer was collected; verified snapshot catch-up is required.' : peer.behind_operations > 0 ? `${peer.behind_operations} operations behind` : 'Caught up at last acknowledgement'}</small></div>
           <span className={`state-chip ${peer.status}`}>{peer.status}</span>
-          <button type="button" disabled={busy !== '' || peer.status !== 'active' && peer.status !== 'behind'} aria-pressed={peer.snapshot_permitted}
-            onClick={() => void act(`snapshot-permission-${peer.replica_id}`, () => setSyncSnapshotPermission(peer.replica_id, !peer.snapshot_permitted),
-              peer.snapshot_permitted ? 'Catch-up snapshots are no longer allowed for this peer.' : 'This peer may now request a complete catch-up snapshot.')}>
-            {peer.snapshot_permitted ? 'Disallow snapshot' : 'Allow catch-up snapshot'}
-          </button>
+          <div className="row-actions">
+            <button type="button" disabled={busy !== '' || peer.status !== 'active' && peer.status !== 'behind'} aria-pressed={peer.snapshot_permitted}
+              onClick={() => void act(`snapshot-permission-${peer.replica_id}`, () => setSyncSnapshotPermission(peer.replica_id, !peer.snapshot_permitted),
+                peer.snapshot_permitted ? 'Catch-up snapshots are no longer allowed for this peer.' : 'This peer may now request a complete catch-up snapshot.')}>
+              {peer.snapshot_permitted ? 'Disallow snapshot' : 'Allow catch-up snapshot'}
+            </button>
+            <button type="button" className="danger-button" disabled={busy !== '' || reviewingPeer !== '' || peer.status === 'retired' || peer.status === 'revoked'} onClick={() => void reviewRetirement(peer.replica_id)}>Review retirement</button>
+          </div>
         </article>)}
         {status.peers.length === 0 ? <p className="sync-empty">No peers are enrolled. Discovery never enrolls one automatically.</p> : null}
       </div>
+      {retirement ? <article className="destructive-review" role="region" aria-label="Peer retirement review">
+        <h4>Retire {retirement.peer.replica_id.slice(0, 20)}…?</h4>
+        <p>This signed decision does not require every peer online. It travels in the ordinary operation log.</p>
+        <ul>{retirement.consequences.map((consequence) => <li key={consequence}>{consequence}</li>)}</ul>
+        <label>Owner-visible reason (optional)<input maxLength={512} value={retirementReason} onChange={(event) => setRetirementReason(event.target.value)} /></label>
+        <label className="checkbox-row"><input type="checkbox" checked={retirementConfirmed} onChange={(event) => setRetirementConfirmed(event.target.checked)} /> I understand this peer must reset and pair as a new replica.</label>
+        <div className="row-actions"><button type="button" onClick={() => { setRetirement(null); setRetirementConfirmed(false); setRetirementReason(''); }}>Cancel</button><button type="button" className="danger-button" disabled={busy !== '' || !retirementConfirmed} onClick={() => void act(`retire-${retirement.peer.replica_id}`, () => retireSyncPeer(retirement.peer.replica_id, retirement.confirmation, retirementReason), 'Peer retired. Other peers that have not acknowledged the decision remain visible in the retention report.').then(() => { setRetirement(null); setRetirementConfirmed(false); setRetirementReason(''); })}>Retire peer</button></div>
+      </article> : null}
       <div className="sync-two-column">
         <article className="sync-card">
           <h4>Invite a peer</h4>
@@ -329,6 +357,35 @@ function Peers({ status, busy, act, setNotice, setError }: SectionProps & { setN
       {discovery.length > 0 ? <ul className="discovery-list">{discovery.map((peer) => <li key={peer}>{peer}</li>)}</ul> : null}
     </div>
   );
+}
+
+function Retention({ status, setError }: { status: SyncUIStatus; setError: (value: string) => void }) {
+  const [report, setReport] = useState<SyncRetentionReport | null>(null);
+  useEffect(() => {
+    let active = true;
+    void getSyncRetention().then((next) => { if (active) setReport(next); }).catch((err) => { if (active) setError(errorMessage(err)); });
+    return () => { active = false; };
+  }, [setError]);
+  const summary = report ?? status.retention;
+  const historyDays = Math.round(summary.history_seconds / 86400);
+  return <div className="sync-section retention-section">
+    <h3>Safe retention horizon</h3>
+    <p>Time alone never authorizes deletion. History is eligible only below the {historyDays}-day age floor, one currently retained verified snapshot, and every active peer’s acknowledgement.</p>
+    <div className="sync-metric-grid retention-metrics">
+      <article><strong>{historyDays}</strong><span>days of history</span></article>
+      <article><strong>{summary.snapshot_id ? 'Verified' : 'Missing'}</strong><span>retained snapshot</span></article>
+      <article><strong>{summary.eligible_operations}</strong><span>eligible operations</span></article>
+      <article><strong>{'eligible_tombstones' in summary ? summary.eligible_tombstones : summary.tombstones.length}</strong><span>eligible tombstones</span></article>
+    </div>
+    {!report ? <p role="status">Calculating peer watermarks…</p> : <>
+      {report.warnings.map((warning) => <div className="warning-card" role="note" key={warning}>{warning}</div>)}
+      <article className="sync-card"><div className="sync-card-heading"><h4>Recovery floor</h4><span className={`state-chip ${report.repair.ready ? 'succeeded' : 'failed'}`}>{report.repair.ready ? 'ready' : 'blocked'}</span></div>
+        {report.repair.ready ? <p>Repair starts from verified snapshot <code>{report.repair.snapshot_id}</code>, then replays {report.repair.newer_operations} newer operations. Installation is never automatic.</p> : <p>Create and retain a verified physical snapshot before applying any collection.</p>}
+      </article>
+      <div className="sync-list"><h4>Peer watermarks</h4>{report.peers.map((peer) => <article className="sync-list-row" key={peer.replica_id}><div><strong>{peer.replica_id}</strong><small>{peer.status === 'retired' ? 'Retired; no longer holds the safe floor open' : peer.full_resync_required ? 'Below collected history; snapshot catch-up required' : peer.beyond_horizon ? 'Past retention horizon; retirement or catch-up needs review' : peer.warning ? 'Approaching retention horizon' : 'Within incremental history window'}</small></div><span className={`state-chip ${peer.full_resync_required ? 'retired' : peer.warning ? 'offline' : 'active'}`}>{peer.status}</span></article>)}</div>
+      <article className="boundary-note"><strong>Apply locally after review.</strong> The web layer never receives a filesystem path. Run <code>notriosctl sync retention --snapshot &lt;retained-dir&gt;</code>, review its digest, then repeat with <code>--apply --confirm-digest &lt;digest&gt;</code>. The snapshot is fully re-verified immediately before either command.</article>
+    </>}
+  </div>;
 }
 
 function Resources({ status, busy, act }: SectionProps) {

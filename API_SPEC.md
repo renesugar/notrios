@@ -598,7 +598,19 @@ invite/pair, grant or revoke a peer's complete-snapshot permission, queue
 catch-up/reset preparation, fetch/pin lazy resources, inspect/resolve three-way
 conflicts, and create/inspect password backups. NPB1 inspection always returns
 `applied: false`; actual restore remains a shutdown/native handoff. The OpenAPI
-file documents all 106 normalized non-HEAD registered API operations.
+file documents all 109 normalized non-HEAD registered API operations.
+
+G17 extends that local human facade with `GET /api/v1/sync-ui/retention` and
+explicit peer retirement preview/confirmation routes. Retention is a bounded,
+path-free dry run: age, snapshot, active-peer acknowledgement floors,
+tombstone candidates, full-resync state, digest, and the non-automatic repair
+snapshot plus newer-log count. There is deliberately no HTTP retention-apply
+route. Applying history/resource collection is a local CLI boundary that fully
+re-verifies the retained physical snapshot and database identity immediately
+before using the exact reviewed digest. Retirement requires the preview's
+`retire-peer:<replica_id>` confirmation and returns peers that have not yet
+acknowledged the signed ordinary-log decision; status never returns its reason,
+signature, signer key, credential, or path.
 
 ### Notebooks, tags, and search notebooks (implemented — plan tasks R3/R5)
 

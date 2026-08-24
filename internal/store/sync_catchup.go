@@ -375,10 +375,14 @@ func (s *SQLiteStore) catchupFloorCoversLocked(replicaID string, sequence int64)
 		return false, nil
 	}
 	count, err := s.countLocked(
-		`SELECT COUNT(*) FROM sync_catchup_floors WHERE replica_id = ? AND sequence >= ?`,
-		replicaID, strconv.FormatInt(sequence, 10))
+		`SELECT COUNT(*) FROM (
+			SELECT sequence FROM sync_catchup_floors WHERE replica_id = ?
+			UNION ALL
+			SELECT sequence FROM sync_retention_floors WHERE replica_id = ?
+		) WHERE sequence >= ?`,
+		replicaID, replicaID, strconv.FormatInt(sequence, 10))
 	if err != nil {
 		return false, err
 	}
-	return count == 1, nil
+	return count > 0, nil
 }

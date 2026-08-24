@@ -125,6 +125,8 @@ func retentionGateName(gate RetentionGate) string {
 	switch gate.(type) {
 	case LocalRetentionGate, *LocalRetentionGate:
 		return "local"
+	case SyncRetentionGate, *SyncRetentionGate:
+		return "sync_ack_snapshot"
 	default:
 		return "custom"
 	}

@@ -54,6 +54,9 @@ func (s *Server) syncUIRoutes() {
 	s.mux.HandleFunc("POST /api/v1/sync-ui/invitations", s.handleSyncUIInvitation)
 	s.mux.HandleFunc("POST /api/v1/sync-ui/pair", s.handleSyncUIPair)
 	s.mux.HandleFunc("POST /api/v1/sync-ui/peers/{replica_id}/snapshot-permission", s.handleSyncUISnapshotPermission)
+	s.mux.HandleFunc("POST /api/v1/sync-ui/peers/{replica_id}/retirement-preview", s.handleSyncUIRetirementPreview)
+	s.mux.HandleFunc("POST /api/v1/sync-ui/peers/{replica_id}/retire", s.handleSyncUIRetirePeer)
+	s.mux.HandleFunc("GET /api/v1/sync-ui/retention", s.handleSyncUIRetention)
 	s.mux.HandleFunc("POST /api/v1/sync-ui/recovery", s.handleSyncUIRecovery)
 	s.mux.HandleFunc("GET /api/v1/sync-ui/conflicts/{conflict_id}", s.handleSyncUIConflict)
 	s.mux.HandleFunc("POST /api/v1/sync-ui/conflicts/{conflict_id}/resolve", s.handleSyncUIConflictResolve)
@@ -143,6 +146,11 @@ func (s *Server) handleSyncUIStatus(w http.ResponseWriter, r *http.Request) {
 	vector, _ := st.SyncStateVector(ctx)
 	peerStates, _ := st.ListSyncPeers(ctx)
 	peerKeys, _ := st.ListPeerSigningKeys(ctx)
+	retention, _ := st.PlanSyncRetention(ctx, s.syncUIRetentionRequest())
+	retentionPeers := map[string]store.SyncPeerRetentionStatus{}
+	for _, peer := range retention.Peers {
+		retentionPeers[peer.ReplicaID] = peer
+	}
 	acknowledged := map[string]syncstate.Vector{}
 	for _, peer := range peerStates {
 		acknowledged[peer.Handshake.ReplicaID] = peer.Handshake.StateVector
@@ -156,6 +164,16 @@ func (s *Server) handleSyncUIStatus(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		state := key.Status
+		retentionPeer := retentionPeers[key.ReplicaID]
+		if retentionPeer.Status == "retired" {
+			state = "retired"
+		} else if retentionPeer.FullResyncRequired {
+			state = "full_resync_required"
+		} else if retentionPeer.BeyondHorizon {
+			state = "retention_horizon"
+		} else if retentionPeer.Warning {
+			state = "retention_warning"
+		}
 		if state == "active" && behind > 0 {
 			state = "behind"
 		}
@@ -163,6 +181,8 @@ func (s *Server) handleSyncUIStatus(w http.ResponseWriter, r *http.Request) {
 			"replica_id": key.ReplicaID, "status": state, "behind_operations": behind,
 			"enrolled_at": key.EnrolledAt, "revoked_at": key.RevokedAt,
 			"snapshot_permitted": st.SnapshotSources().PermittedSource(key.ReplicaID),
+			"last_acknowledged":  retentionPeer.LastAcknowledged, "warning_at": retentionPeer.WarningAt,
+			"horizon_at": retentionPeer.HorizonAt, "full_resync_required": retentionPeer.FullResyncRequired,
 		})
 	}
 	jobs := s.syncUIJobs(ctx)
@@ -206,7 +226,90 @@ func (s *Server) handleSyncUIStatus(w http.ResponseWriter, r *http.Request) {
 		"conflicts": conflicts.Conflicts, "conflicts_truncated": conflicts.Truncated,
 		"resources": resources, "resources_truncated": resourceTruncated,
 		"repairs": repairs, "repairs_truncated": repairTruncated,
+		"retention": map[string]any{"history_seconds": retention.HistorySeconds, "snapshot_id": retention.SnapshotID,
+			"eligible_operations": retention.EligibleOperations, "eligible_tombstones": len(retention.Tombstones),
+			"digest": retention.Digest, "repair": retention.Repair},
 	})
+}
+
+func (s *Server) syncUIRetentionRequest() store.SyncRetentionRequest {
+	return store.SyncRetentionRequest{HistoryFor: s.config.Retention.SyncHistoryDuration(),
+		WarningBefore: s.config.Retention.SyncPeerWarningDuration()}
+}
+
+func (s *Server) handleSyncUIRetention(w http.ResponseWriter, r *http.Request) {
+	if !s.requireLocalSyncUI(w, r) {
+		return
+	}
+	st, ok := s.sqliteStore()
+	if !ok {
+		writeError(w, http.StatusServiceUnavailable, "store_unavailable", "retention requires the canonical SQLite store")
+		return
+	}
+	report, err := st.PlanSyncRetention(r.Context(), s.syncUIRetentionRequest())
+	if writeStoreError(w, err, "sync_retention_failed") {
+		return
+	}
+	writeJSON(w, http.StatusOK, report)
+}
+
+func (s *Server) handleSyncUIRetirementPreview(w http.ResponseWriter, r *http.Request) {
+	if !s.requireLocalSyncUI(w, r) {
+		return
+	}
+	st, ok := s.sqliteStore()
+	if !ok {
+		writeError(w, http.StatusServiceUnavailable, "store_unavailable", "peer retirement requires the canonical SQLite store")
+		return
+	}
+	replicaID := strings.TrimSpace(r.PathValue("replica_id"))
+	report, err := st.PlanSyncRetention(r.Context(), s.syncUIRetentionRequest())
+	if writeStoreError(w, err, "peer_retirement_preview_failed") {
+		return
+	}
+	for _, peer := range report.Peers {
+		if peer.ReplicaID != replicaID {
+			continue
+		}
+		writeJSON(w, http.StatusOK, map[string]any{"dry_run": true, "peer": peer,
+			"confirmation": "retire-peer:" + replicaID,
+			"consequences": []string{"The peer stops holding the retention watermark open.", "Its old credentials cannot re-enroll.", "That device must reset and pair as a new replica."}})
+		return
+	}
+	writeError(w, http.StatusNotFound, "peer_not_found", "no such enrolled peer")
+}
+
+func (s *Server) handleSyncUIRetirePeer(w http.ResponseWriter, r *http.Request) {
+	if !s.requireLocalSyncUI(w, r) {
+		return
+	}
+	st, ok := s.sqliteStore()
+	if !ok || s.syncSecrets == nil {
+		writeError(w, http.StatusServiceUnavailable, "sync_keys_unavailable", "peer retirement requires the canonical store and local signing keys")
+		return
+	}
+	replicaID := strings.TrimSpace(r.PathValue("replica_id"))
+	var req struct {
+		Confirmation string `json:"confirmation"`
+		Reason       string `json:"reason"`
+	}
+	if !decodeBoundedJSON(w, r, 4096, &req) {
+		return
+	}
+	if req.Confirmation != "retire-peer:"+replicaID {
+		writeError(w, http.StatusBadRequest, "confirmation_required", "review this peer's retirement preview and confirm its exact identity")
+		return
+	}
+	keys, err := s.syncSecrets.Open()
+	if err != nil {
+		writeError(w, http.StatusServiceUnavailable, "sync_keys_unavailable", "local signing keys are unavailable")
+		return
+	}
+	result, err := st.RetireSyncPeer(r.Context(), store.RetireSyncPeerRequest{ReplicaID: replicaID, Reason: req.Reason, Signer: keys})
+	if writeStoreError(w, err, "peer_retirement_failed") {
+		return
+	}
+	writeJSON(w, http.StatusOK, result)
 }
 
 func itemsOrEmpty(items []syncUIProfile) []syncUIProfile {

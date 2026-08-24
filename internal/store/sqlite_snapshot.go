@@ -36,6 +36,8 @@ var SnapshotLocalTables = []string{
 	"sync_journal_capture",
 	"sync_pending_admissions",
 	"sync_peer_acknowledgements",
+	"sync_verified_snapshot_vectors",
+	"sync_verified_snapshots",
 	"sync_state_gaps",
 	"sync_blob_chunks",
 	"sync_blob_sources",
@@ -314,7 +316,11 @@ func (s *SQLiteStore) snapshotStateLocked() (SQLiteSnapshotState, error) {
 }
 
 func (s *SQLiteStore) snapshotFloorsLocked() (syncstate.Vector, error) {
-	stmt, err := s.prepareLocked("SELECT replica_id, sequence FROM sync_catchup_floors ORDER BY replica_id LIMIT ?")
+	stmt, err := s.prepareLocked(`SELECT replica_id, MAX(sequence) FROM (
+		SELECT replica_id, sequence FROM sync_catchup_floors
+		UNION ALL
+		SELECT replica_id, sequence FROM sync_retention_floors
+	) GROUP BY replica_id ORDER BY replica_id LIMIT ?`)
 	if err != nil {
 		return nil, err
 	}

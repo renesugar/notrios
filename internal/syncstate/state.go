@@ -22,7 +22,7 @@ const (
 	ProtocolMinor = 0
 
 	MinCompatibleSchema = 24
-	MaxCompatibleSchema = 26
+	MaxCompatibleSchema = 27
 
 	MaxStateVectorEntries = 1_024
 	MaxMissingRanges      = 1_024
@@ -50,6 +50,7 @@ var requiredCapabilities = []string{
 	"sync.dependencies.v1",
 	"sync.metadata-lww.v1",
 	"sync.operations.v1",
+	"sync.retention.v1",
 	"sync.state-vectors.v1",
 }
 

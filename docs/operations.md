@@ -316,9 +316,9 @@ installed hook can suggest review only—it never merges or deletes resources.
 Garbage collection is retention-aware and dry-run first:
 
 ```sh
-notriosctl gc                 # same as --dry-run
-notriosctl gc --dry-run
-notriosctl gc --apply         # explicit destructive step
+notriosctl gc                 # same as --dry-run for an unsynchronized library
+notriosctl gc --snapshot /safe/snapshot --dry-run  # sync-enrolled library
+notriosctl gc --snapshot /safe/snapshot --apply    # explicit destructive step
 curl -s http://127.0.0.1:8080/api/v1/admin/gc/report | jq
 ```
 
@@ -328,6 +328,23 @@ rechecks references inside the deletion transaction; a shared blob remains
 until its final logical resource is removed. Default recovery windows are 30
 days after an unattached upload/final detach and 90 days after permanent note
 purge, configurable under `retention`.
+
+For sync-enrolled libraries, age is only one input. The supplied physical
+snapshot is fully re-verified, its vector must cover existing collection floors,
+and every active peer must acknowledge the current resource reachability state.
+A backup sink is not a peer. Peer credential revocation does not release this
+gate; only explicit signed retirement does.
+
+Operation/tombstone retention has a separate exact-digest review:
+
+```sh
+notriosctl sync retention --snapshot /safe/snapshot
+notriosctl sync retention --snapshot /safe/snapshot --apply --confirm-digest <reviewed-digest>
+```
+
+The Sync Center shows the same horizon, blockers, and repair source without a
+filesystem path or apply endpoint. A below-floor peer must use verified
+snapshot catch-up and the newer log; Notrios never installs it automatically.
 
 For immediate administrative deletion of one unreferenced resource, REST
 requires the object-specific `X-Notrios-Confirmation` header documented in the

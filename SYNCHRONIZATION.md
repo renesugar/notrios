@@ -484,6 +484,25 @@ offline/retention horizon performs a full snapshot resync; it cannot demand
 history that was legitimately collected. Backups are sinks, not peers, and
 therefore never hold the acknowledgement watermark open.
 
+G17 implements this policy with a configurable 90-day history interval and a
+30-day warning window. The eligible sequence for each replica is the minimum
+of age, current vector, a currently usable verified snapshot, and every active
+peer acknowledgement; existing floors never move backward. Destructive CLI
+commands re-verify the retained physical snapshot and database identity at the
+boundary and require the exact dry-run digest. A verified snapshot that falls
+below any prior collection floor is not a repair source. The repair plan names
+the covering snapshot plus newer operations and is never installed
+automatically.
+
+Key revocation only ends credential trust and deliberately leaves that replica
+holding the watermark open. Retirement is a separate, signed `replica.retire`
+operation with explicit owner confirmation. It travels through the ordinary
+log without requiring all peers online, revokes old credentials, reports which
+active peers have not acknowledged the decision, and requires the retired
+device to reset and pair as a new replica. Signed permanent purge retains the
+document payload until safe collection, then keeps death-certificate identity
+in the checkpoint so replay cannot resurrect it.
+
 ## Conflict and recovery UX
 
 Normal scalar conflicts resolve deterministically and remain auditable. The UI

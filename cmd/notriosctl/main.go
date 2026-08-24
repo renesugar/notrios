@@ -11,6 +11,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/renesugar/notrios/internal/archive"
 	"github.com/renesugar/notrios/internal/archivev2"
@@ -462,12 +463,13 @@ func runGarbageCollection(args []string) {
 	assetStore := fs.String("asset-store", "", "asset store directory override")
 	dryRun := fs.Bool("dry-run", false, "explicitly plan and report without deleting (also the default)")
 	apply := fs.Bool("apply", false, "delete only retention-expired, currently unreferenced resources")
+	snapshotPath := fs.String("snapshot", "", "retained physical snapshot to verify for sync-aware collection")
 	if err := fs.Parse(args); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(2)
 	}
 	if fs.NArg() != 0 || (*dryRun && *apply) {
-		fmt.Fprintln(os.Stderr, "usage: notriosctl gc [--config config.yaml] [--db path] [--asset-store path] [--dry-run | --apply]")
+		fmt.Fprintln(os.Stderr, "usage: notriosctl gc [--config config.yaml] [--db path] [--asset-store path] [--snapshot retained-snapshot-dir] [--dry-run | --apply]")
 		fs.PrintDefaults()
 		os.Exit(2)
 	}
@@ -497,12 +499,47 @@ func runGarbageCollection(args []string) {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
+	var gate store.RetentionGate
+	if journal, journalErr := st.JournalStatus(ctx); journalErr == nil && journal.Enabled {
+		if strings.TrimSpace(*snapshotPath) == "" {
+			fmt.Fprintln(os.Stderr, "sync-aware resource collection requires --snapshot so the retained recovery image can be re-verified")
+			os.Exit(2)
+		}
+		verified, verifyErr := snapshotimage.VerifyDirectory(ctx, *snapshotPath, snapshotimage.DefaultLimits())
+		if verifyErr != nil {
+			fmt.Fprintln(os.Stderr, verifyErr)
+			os.Exit(1)
+		}
+		identity, identityErr := st.GetDatabaseIdentity(ctx)
+		if identityErr != nil || verified.DatabaseID != identity.DatabaseID {
+			if identityErr != nil {
+				fmt.Fprintln(os.Stderr, identityErr)
+			} else {
+				fmt.Fprintf(os.Stderr, "retained snapshot belongs to database %s, not %s\n", verified.DatabaseID, identity.DatabaseID)
+			}
+			os.Exit(1)
+		}
+		if err := st.RecordVerifiedSyncSnapshot(ctx, store.VerifiedSyncSnapshot{
+			SnapshotID: verified.SnapshotID, CommitSHA256: verified.CommitSHA256, Vector: verified.SnapshotVector,
+		}); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		gate, err = st.BuildSyncRetentionGate(ctx, store.SyncRetentionRequest{
+			HistoryFor: cfg.Retention.SyncHistoryDuration(), WarningBefore: cfg.Retention.SyncPeerWarningDuration(),
+		})
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+	}
 	report, err := st.GarbageCollect(ctx, store.GarbageCollectionRequest{
 		Policy: store.GarbageCollectionPolicy{
 			UnreferencedFor:   cfg.Retention.UnreferencedDuration(),
 			PurgedResourceFor: cfg.Retention.PurgedResourceDuration(),
 		},
 		Apply: *apply,
+		Gate:  gate,
 	})
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -1061,6 +1098,17 @@ func runSnapshotCreate(args []string) {
 		{Name: "_out-dir", Value: fs.Arg(0), Path: true},
 	})
 	report, err := snapshotimage.Create(jobCtx, st, cfg.Data.AssetStore, fs.Arg(0), snapshotimage.CreateOptions{})
+	if err == nil && report.Verified {
+		createdAt, parseErr := time.Parse(time.RFC3339Nano, report.CreatedAt)
+		if parseErr != nil {
+			err = parseErr
+		} else {
+			err = st.RecordVerifiedSyncSnapshot(jobCtx, store.VerifiedSyncSnapshot{
+				SnapshotID: report.SnapshotID, CommitSHA256: report.CommitSHA256,
+				CreatedAt: createdAt, Vector: report.SnapshotVector,
+			})
+		}
+	}
 	finishTrackedJob(runner, map[string]any{
 		"snapshot_id": report.SnapshotID, "packs": report.Packs,
 		"objects": report.Objects, "bytes": report.DatabaseBytes + report.ExternalBytes,

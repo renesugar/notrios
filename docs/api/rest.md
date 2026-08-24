@@ -662,6 +662,21 @@ their status, the transport policy and limits, open invitation count, recent
 authentication events. Never key material, and a forwarding header cannot make a
 remote request local.
 
+The local Sync Center has a separate loopback-only operator surface under
+`/api/v1/sync-ui/`. Its retention review is read-only and deliberately accepts
+no filesystem path:
+
+| Route | What it does |
+|---|---|
+| `GET /api/v1/sync-ui/retention` | reports the acknowledgement/snapshot-gated safe floor, eligible counts, and repair source |
+| `POST /api/v1/sync-ui/peers/{replica_id}/retirement-preview` | returns consequences and the exact `retire-peer:<replica_id>` confirmation |
+| `POST /api/v1/sync-ui/peers/{replica_id}/retire` | signs and appends the explicitly confirmed retirement operation |
+
+There is no REST retention-apply route. Collection requires a physical snapshot
+that the CLI re-verifies at the destructive boundary. Credential revocation also
+remains separate from retirement: it stops trust but does not release the
+peer's retention watermark.
+
 ### The data plane
 
 | Route | What it does |

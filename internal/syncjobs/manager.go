@@ -179,6 +179,10 @@ func (m *Manager) RunNext(ctx context.Context, workerID string) (store.SyncJob, 
 	if runErr == nil {
 		return m.store.FinishSyncJob(context.Background(), job.Job.ID, workerID, store.JobSucceeded, summary, nil)
 	}
+	if errors.Is(runErr, store.ErrSyncFullResyncRequired) {
+		return m.store.FinishSyncJob(context.Background(), job.Job.ID, workerID, store.JobFailed,
+			map[string]any{"reason": "catchup_required"}, errors.New("verified snapshot catch-up is required"))
+	}
 	if code := retryCode(runErr); code != "" {
 		return m.store.RescheduleSyncJob(context.Background(), job.Job.ID, workerID, code, m.now())
 	}

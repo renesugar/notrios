@@ -775,7 +775,8 @@ func (s *SQLiteStore) ListTrash(ctx context.Context, req DocumentPageRequest) (D
 	}
 	req = normalizeDocumentPageRequest(req)
 	binding := cursorBinding("trash_documents", "deleted_at:desc,id:desc")
-	where := `d.deleted_at IS NOT NULL`
+	where := `d.deleted_at IS NOT NULL AND NOT EXISTS (
+		SELECT 1 FROM sync_death_certificates death WHERE death.document_id=d.id)`
 	args := []string{}
 	if strings.TrimSpace(req.Cursor) != "" {
 		timestamp, id, err := decodeChronologicalCursor(req.Cursor, binding)
@@ -990,7 +991,8 @@ func (s *SQLiteStore) trashedDocumentStateLocked(id string) (title, body, collec
 	stmt, err := s.prepareLocked(`SELECT d.title, r.body, d.collection_id
 		FROM documents d
 		JOIN document_revisions r ON r.id = d.current_revision_id
-		WHERE d.id = ? AND d.deleted_at IS NOT NULL`)
+		WHERE d.id = ? AND d.deleted_at IS NOT NULL
+		  AND NOT EXISTS (SELECT 1 FROM sync_death_certificates death WHERE death.document_id=d.id)`)
 	if err != nil {
 		return "", "", "", err
 	}

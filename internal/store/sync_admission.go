@@ -380,6 +380,11 @@ func (s *SQLiteStore) admitSyncOperations(ctx context.Context, peer syncstate.Ha
 				return SyncAdmissionResult{}, err
 			}
 		}
+		if reconcile.retention {
+			if err := s.applyAdmittedRetirementsLocked(); err != nil {
+				return SyncAdmissionResult{}, err
+			}
+		}
 	}
 	if err := s.rebuildSyncGapsLocked(local.ReplicaID); err != nil {
 		return SyncAdmissionResult{}, err
@@ -450,6 +455,7 @@ func bindTextAt(stmt *C.sqlite3_stmt, index int, value string) error {
 type syncReconcileScope struct {
 	metadata  bool
 	assets    bool
+	retention bool
 	documents []string
 }
 
@@ -482,6 +488,8 @@ func (scope *syncReconcileScope) include(operation syncstate.Operation) error {
 		scope.metadata = true
 	case "collection", "notebook", "tag", "document_tag", "search_notebook", "document_source":
 		scope.metadata = true
+	case "replica":
+		scope.retention = true
 	}
 	return nil
 }
@@ -520,8 +528,14 @@ func (s *SQLiteStore) drainSyncPendingLocked(observerReplicaID string) (int, syn
 					return 0, syncReconcileScope{}, err
 				}
 				if !exists {
-					ready = false
-					break
+					covered, floorErr := s.catchupFloorCoversLocked(dependency.ReplicaID, dependency.Sequence)
+					if floorErr != nil {
+						return 0, syncReconcileScope{}, floorErr
+					}
+					if !covered {
+						ready = false
+						break
+					}
 				}
 			}
 			if !ready {
@@ -590,6 +604,9 @@ func (s *SQLiteStore) insertAdmittedSyncOperationLocked(operation syncstate.Oper
 }
 
 func (s *SQLiteStore) insertAdmittedSyncOperationRowLocked(operation syncstate.Operation) error {
+	if err := s.verifyAndMarkDeathOperationLocked(operation); err != nil {
+		return err
+	}
 	if err := s.execPreparedLocked(`INSERT INTO sync_operations(
 		replica_id, sequence, operation_id, kind, record_type, record_id, payload_json, hlc_wall_ms, hlc_logical, created_at
 	) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, operation.ReplicaID, strconv.FormatInt(operation.Sequence, 10),
@@ -725,6 +742,13 @@ func (s *SQLiteStore) ListSyncOperations(ctx context.Context, replicaID string, 
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	floor, err := s.retentionFloorLocked(replicaID)
+	if err != nil {
+		return nil, err
+	}
+	if afterSequence < floor {
+		return nil, fmt.Errorf("%w: replica %s needs sequence %d but retained history starts after %d", ErrSyncFullResyncRequired, replicaID, afterSequence+1, floor)
+	}
 	stmt, err := s.prepareLocked(`SELECT sequence, operation_id, kind, record_type, record_id, payload_json, hlc_wall_ms, hlc_logical, created_at
 		FROM sync_operations WHERE replica_id = ? AND sequence > ? ORDER BY sequence LIMIT ?`)
 	if err != nil {
@@ -764,6 +788,9 @@ func (s *SQLiteStore) ListSyncOperations(ctx context.Context, replicaID string, 
 
 func knownSyncOperation(recordType, kind string) bool {
 	if recordType == "sync_noop" && kind == "sync.noop" {
+		return true
+	}
+	if recordType == "replica" && kind == "replica.retire" {
 		return true
 	}
 	for _, classification := range syncRecordClassifications {
@@ -850,7 +877,24 @@ func (s *SQLiteStore) validateConfiguredSyncPeerLocked(peer syncstate.Handshake)
 	if !found || role != "peer" || status != "active" || databaseID != peer.DatabaseID {
 		return fmt.Errorf("%w: peer is not active for this database", ErrConflict)
 	}
-	return nil
+	stmt, err := s.prepareLocked(`SELECT replica_id, sequence FROM sync_retention_floors ORDER BY replica_id`)
+	if err != nil {
+		return err
+	}
+	defer C.sqlite3_finalize(stmt)
+	for {
+		switch rc := C.sqlite3_step(stmt); rc {
+		case C.SQLITE_ROW:
+			subject, floor := columnText(stmt, 0), columnInt64(stmt, 1)
+			if peer.StateVector[subject] < floor {
+				return fmt.Errorf("%w: peer %s is below %s:%d", ErrSyncFullResyncRequired, peer.ReplicaID, subject, floor)
+			}
+		case C.SQLITE_DONE:
+			return nil
+		default:
+			return s.stepErrLocked(rc)
+		}
+	}
 }
 
 func (s *SQLiteStore) syncReplicaLocked(replicaID string) (role, databaseID, status string, found bool, err error) {
@@ -1096,6 +1140,13 @@ func (s *SQLiteStore) syncMissingDependenciesLocked(remote syncstate.Vector) ([]
 					return nil, false, err
 				}
 				if exists {
+					continue
+				}
+				covered, err := s.catchupFloorCoversLocked(dependency.ReplicaID, dependency.Sequence)
+				if err != nil {
+					return nil, false, err
+				}
+				if covered {
 					continue
 				}
 				pending, _, err := s.syncPendingAtLocked(dependency.ReplicaID, dependency.Sequence)
