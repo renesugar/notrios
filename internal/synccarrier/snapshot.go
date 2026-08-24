@@ -17,11 +17,20 @@ import (
 // interface.
 const MaxSnapshotTransferBytes = int64(17) << 30
 
+type snapshotPrefix struct {
+	sourcePath     string
+	expectedSHA256 string
+	sourceBytes    int64
+	position       int64
+}
+
 // PublishSnapshotFile copies a locally produced encrypted snapshot into this
 // replica's snapshot namespace. A partial private staging file resumes only
 // after its prefix is compared byte-for-byte with the immutable source.
 // `limit` bounds one call; zero means copy to completion.
 func (d *Directory) PublishSnapshotFile(ctx context.Context, name, sourcePath, expectedSHA256 string, limit int64) (int64, bool, error) {
+	d.snapshotMu.Lock()
+	defer d.snapshotMu.Unlock()
 	if !validArtifactName(name) || !validSHA256(expectedSHA256) {
 		return 0, false, fmt.Errorf("synccarrier: invalid snapshot name or digest")
 	}
@@ -45,9 +54,21 @@ func (d *Directory) PublishSnapshotFile(ctx context.Context, name, sourcePath, e
 	if err := os.MkdirAll(filepath.Dir(partial), 0o700); err != nil {
 		return 0, false, err
 	}
-	existing, err := verifiedPrefix(source, partial, info.Size())
-	if err != nil {
-		return 0, false, err
+	existing := int64(-1)
+	if staged, statErr := os.Stat(partial); statErr == nil {
+		cached, found := d.snapshotPrefixes[partial]
+		if found && cached.sourcePath == sourcePath && cached.expectedSHA256 == expectedSHA256 &&
+			cached.sourceBytes == info.Size() && cached.position == staged.Size() {
+			existing = cached.position
+		}
+	}
+	if existing < 0 {
+		existing, err = d.verifySnapshotPrefix(source, partial, info.Size())
+		if err != nil {
+			delete(d.snapshotPrefixes, partial)
+			return 0, false, err
+		}
+		d.snapshotPrefixes[partial] = snapshotPrefix{sourcePath, expectedSHA256, info.Size(), existing}
 	}
 	if _, err := source.Seek(existing, io.SeekStart); err != nil {
 		return existing, false, err
@@ -73,18 +94,23 @@ func (d *Directory) PublishSnapshotFile(ctx context.Context, name, sourcePath, e
 	}
 	position := existing + written
 	if copyErr != nil {
+		delete(d.snapshotPrefixes, partial)
 		return position, false, copyErr
 	}
+	d.snapshotPrefixes[partial] = snapshotPrefix{sourcePath, expectedSHA256, info.Size(), position}
 	if position < info.Size() {
 		return position, false, nil
 	}
 	digest, size, err := hashFile(partial)
 	if err != nil || size != info.Size() || digest != expectedSHA256 {
+		delete(d.snapshotPrefixes, partial)
 		return position, false, fmt.Errorf("%w: completed snapshot digest mismatch", ErrUnreadable)
 	}
 	if err := d.rename(partial, target); err != nil {
+		delete(d.snapshotPrefixes, partial)
 		return position, false, fmt.Errorf("%w: %v", ErrCarrierUnavailable, err)
 	}
+	delete(d.snapshotPrefixes, partial)
 	return position, true, nil
 }
 

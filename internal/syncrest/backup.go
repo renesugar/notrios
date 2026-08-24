@@ -42,11 +42,13 @@ var (
 	ErrBackupCorrupt = errors.New("the downloaded snapshot does not match its declared hash")
 )
 
-const maxBackupDownloadChunk = int64(16 << 20)
+const maxBackupDownloadChunk = int64(syncauth.MaxRangeResponseBytes)
 
 // RequestBackup asks a peer for a snapshot.
 func RequestBackup(ctx context.Context, client *syncauth.Client) (Backup, error) {
-	status, body, err := client.Do(ctx, http.MethodPost, "/api/v1/sync/backups", []byte(`{}`))
+	requestCtx, cancel := context.WithTimeout(ctx, syncauth.BackupCreationTimeout)
+	defer cancel()
+	status, body, err := client.DoWithin(requestCtx, http.MethodPost, "/api/v1/sync/backups", []byte(`{}`), syncauth.BackupCreationTimeout)
 	if err != nil {
 		return Backup{}, err
 	}

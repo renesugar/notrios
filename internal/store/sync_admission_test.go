@@ -376,6 +376,38 @@ func TestSyncAdmissionAcknowledgementBoundsAndSequenceExhaustion(t *testing.T) {
 	}
 }
 
+func TestSyncReconcileScopeKeepsBodyOnlyReplayBounded(t *testing.T) {
+	operation := func(recordType, kind, payload string) syncstate.Operation {
+		return syncstate.Operation{RecordType: recordType, Kind: kind, Payload: json.RawMessage(payload)}
+	}
+	tests := []struct {
+		name      string
+		operation syncstate.Operation
+		metadata  bool
+		assets    bool
+		documents []string
+	}{
+		{"revision", operation("revision", "revision.create", `{"document_id":"doc_a"}`), false, false, []string{"doc_a"}},
+		{"revision pointer companion", operation("document", "record.update", `{"current_revision_id":"rev_b"}`), false, false, nil},
+		{"document metadata", operation("document", "record.update", `{"current_revision_id":"rev_b","title":"changed"}`), true, false, nil},
+		{"document lifecycle", operation("document", "document.trash", `{}`), true, false, nil},
+		{"resource", operation("resource", "record.create", `{}`), false, true, nil},
+		{"resource reference", operation("document_resource", "membership.add", `{}`), false, true, nil},
+		{"noop", operation("sync_noop", "sync.noop", `{}`), false, false, nil},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			var got syncReconcileScope
+			if err := got.include(test.operation); err != nil {
+				t.Fatal(err)
+			}
+			if got.metadata != test.metadata || got.assets != test.assets || !reflect.DeepEqual(got.documents, test.documents) {
+				t.Fatalf("scope = %+v, want metadata=%v assets=%v documents=%v", got, test.metadata, test.assets, test.documents)
+			}
+		})
+	}
+}
+
 func TestSchemaV19UpgradeAddsG5CompatibilityState(t *testing.T) {
 	st := newSyncJournalTestStore(t)
 	ctx := context.Background()

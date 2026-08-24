@@ -433,8 +433,11 @@ encrypted catch-up artifact, creates a verified emergency physical snapshot,
 durably rolls forward an explicit replace/adopt cutover, rotates the replica
 allocator, installs vector/floors, queues the external derived index, and proves
 ordinary post-vector replay. Packed semantic archive-v2 remains the merge,
-fork, portable, incompatible-schema, and subset path. G14e repeats full-scale
-acceptance. A raw
+fork, portable, incompatible-schema, and subset path. G14e freezes the physical
+capability as the compatible whole-library default only after exact full-scale
+canonical/resource/source-bundle round trips, current/previous semantic reader
+coverage, REST/directory resume, emergency replacement, post-vector replay, and
+the frozen Restic/Borg integrity rows pass. A raw
 live-WAL copy is never a candidate. SQLCipher may encrypt a database image but does not by itself bind
 external assets or provide semantic subset/merge, capability verification,
 signatures, or replica-identity handling.

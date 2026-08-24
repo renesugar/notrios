@@ -297,9 +297,8 @@ also exposed about **25% stored-ZIP overhead from one entry per loose archive
 object**, while the existing pack fix has never been exercised end to end at
 the supplied full scale.
 
-**Archive scalability now blocks further synchronization work. G14a-G14d are
-complete; G14e is next and approval-gated, and G15 cannot start until G14e
-completes.** G14a supplies the resumable, aggregate-only benchmark contract and
+**The blocking G14a-G14e archive-scalability sequence is complete; G15 is next
+and approval-gated.** G14a supplies the resumable, aggregate-only benchmark contract and
 generated 10k/100k calibration. That evidence confirms one-file-per-object
 growth, isolates stored-ZIP overhead from framing, and records a 100k
 incremental-replay memory failure without changing production code. G14b's
@@ -310,9 +309,11 @@ subset, merge, interchange, and fallback. The image path was 2.33x faster
 locally and 1.99x faster including the distinct Google Drive copy; loose
 layouts and raw Restic/Borg paths failed shape or memory gates. G14c implements
 that selected representation; G14d integrates crash-safe restore, emergency
-backup, physical encrypted catch-up, and post-vector replay. G14e repeats the
-full-corpus comparison with
-production code and freezes the contract for G19. exFAT is no longer available
+backup, physical encrypted catch-up, and post-vector replay. G14e passed 19
+privacy-sanitized production phases and froze the compatible whole-library
+default for G19 while retaining semantic archive-v2 as portable. The final
+catch-up took 2,948.669 seconds at 210,010,112 bytes peak RSS with exact
+post-vector equality. exFAT is no longer available
 on the test drives, so the gate requires a bounded, non-object-per-file layout
 but makes no unmeasured exFAT performance claim.
 
@@ -330,7 +331,8 @@ but makes no unmeasured exFAT performance claim.
   considered only if G1a/G2 evidence justifies them.
 - **Secure container and catch-up (G9-G10, G14a-G14e):** archive-v2 change-envelope
   capabilities; mandatory authenticated encryption and per-replica Ed25519
-  signatures; signed backup requests; encrypted snapshot/ZIP catch-up and reset
+  signatures; signed backup requests; encrypted physical snapshot catch-up
+  through deterministic sequential USTAR and NBK1, plus reset
   followed by incremental replay from the snapshot vector; then a blocking,
   full-corpus physical-format benchmark, implementation, catch-up integration,
   and acceptance freeze before scheduling or UI work.

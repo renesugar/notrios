@@ -1,11 +1,12 @@
 # Native archive v2 safety contract
 
-> Scale review (updated 2026-08-22): export, verification, restore, and both
+> Scale review (updated 2026-08-23): export, verification, restore, and both
 > existing object layouts remain supported. G14b selected a separate,
 > compatible same-schema SQLite image plus bounded packed assets for physical
 > whole-library backup/catch-up. G14c implements creation/verification and G14d
-> integrates encrypted transport plus crash-safe restore; G14e still runs the
-> full-scale acceptance and freezes the catch-up default.
+> integrates encrypted transport plus crash-safe restore. G14e passed 19
+> aggregate full-scale phases and freezes that physical capability as the
+> compatible whole-library default.
 > Archive v2 remains the semantic subset, merge,
 > schema-independent interchange, and fallback format.
 

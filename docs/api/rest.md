@@ -619,9 +619,8 @@ nothing happened. Rerun the command.
 
 ## The peer sync surface
 
-Three routes under `/api/v1/sync/`, and they are unlike everything above: they
-are the only authenticated part of the API, and the only part another machine
-may reach.
+The routes under `/api/v1/sync/` are unlike everything above: they are the only
+authenticated part of the API, and the only part another machine may reach.
 
 | Route | Who may call it |
 |---|---|
@@ -684,17 +683,21 @@ A backup is addressed by an **opaque id**, never a server path, and only the
 replica that asked for it may fetch it — "no such backup" and "not yours" are
 the same answer. It is encrypted in fixed frames under a per-backup key that
 travels sealed for the enrolled group, and the client verifies the declared hash
-before opening anything and archive-v2's own verifier before restoring anything.
-ZIP is the wrapper; archive-v2 is the correctness.
+before opening anything. The decrypted payload is deterministic sequential
+USTAR containing `sqlite-image+packed-assets.v1`; its strict physical verifier,
+not the wrapper, is the correctness boundary. Signed range responses are
+bounded to one 16 MiB download chunk, and synchronous authenticated snapshot
+creation has a separate two-hour deadline while ordinary API requests retain
+their short deadline.
 
 ## Placeholder endpoints (not yet functional)
 
 Staged contracts include import- and export-job creation and collection
 creation/patching (collections are effectively fixed to `default`). G3 runtime
 profiles are live as local CLI/config state and status reports the active
-profile, but they deliberately have no REST or MCP management surface. The
-v0.7 REST sync **data plane** waits for G14; G13 delivered the security
-foundation above. Current archive
-v2 export/verify/restore are CLI commands by design. Remote-media scan and
+profile, but they deliberately have no REST or MCP management surface. G13
+delivered the security foundation and G14/G14d delivered the REST data plane
+and physical catch-up above. Current archive-v2 export/verify/restore are CLI
+commands by design. Remote-media scan and
 localization are implemented; see
 [the CLI guide](../cli.md#localize) and the note inspector in the GUI.

@@ -255,6 +255,13 @@ func (s *Server) handleBackupCreate(w http.ResponseWriter, r *http.Request, prin
 		writeError(w, http.StatusServiceUnavailable, "backups_unavailable", "this service produces no backups")
 		return
 	}
+	// The service-wide write deadline is deliberately short for ordinary API
+	// traffic. Snapshot creation cannot write response headers until Online
+	// Backup, packing, and sealing complete, so extend only this authenticated,
+	// separately permitted operation to the same bounded G14 stage ceiling as
+	// the client. ResponseController reaches the underlying net/http writer even
+	// through middleware; direct recorder tests may not implement deadlines.
+	_ = http.NewResponseController(w).SetWriteDeadline(time.Now().Add(syncauth.BackupCreationTimeout))
 	workspace, err := os.MkdirTemp(s.sync.backups.root, "staging-")
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "backup_failed", "could not stage the snapshot")

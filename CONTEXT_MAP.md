@@ -7,8 +7,8 @@ This file is the codebase atlas. Update it whenever major files or directories a
 - `README.md` — project overview and quick start.
 - `PLAN.md` — the **active v0.7 native synchronization plan**, divided into
   independently approvable G0-G20 slices plus the blocking G14a-G14e archive-
-  scalability sequence. G0-G14d are complete; G14e is next but unapproved, and
-  G15 is blocked through G14e. The current product remains 0.6.0 at schema v25; v0.6 is archived under
+  scalability sequence. G0-G14e are complete; G15 is next but unapproved. The
+  current product remains 0.6.0 at schema v25; v0.6 is archived under
   `plans/v0.6/`; v0.5 and v0.4 are archived under their version directories.
 - `plans/scaffold/SCAFFOLD_CREATION_PLAN.md` — process for creating/refining this scaffold.
 - `ROADMAP.md` — product roadmap and future features.
@@ -84,6 +84,13 @@ This file is the codebase atlas. Update it whenever major files or directories a
 - `performance/v0.7-g14c/` and `performance/v0.7-g14d/` — production physical
   snapshot creation/admission state review, generated 100k create/restore
   evidence, recovery state machine, and Android-emulator follow-up checklist.
+- `performance/v0.7-g14e/` and
+  `scripts/run_archive_production_acceptance.sh` — the 19-phase resumable
+  production full-scale matrix, privacy-sanitized format freeze, current/
+  previous semantic reader coverage, physical first/unchanged/restore evidence,
+  REST/directory catch-up, and frozen Restic/Borg integrity checks. Private
+  corpora, artifacts, fingerprints, repositories, paths, and logs remain under
+  the external evidence workspace.
 - `internal/synckeys/` — the warned `0600` development secret provider holding
   one group key per epoch and this replica's signing key. Since G13 it holds
   secrets only: which peers are trusted is database state. v0.8 owns the

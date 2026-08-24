@@ -156,7 +156,7 @@ backup — every revision, trashed notes, provenance, resources, and exact sourc
 bundles — so it is an alternative to the file copy above rather than a subset
 export. See [archive v2](archive-v2.md) and `SYNCHRONIZATION.md`.
 
-G14c/G14d also provide `notriosctl snapshot create|verify|restore` for faster exact-schema
+The G14c-G14e production path provides `notriosctl snapshot create|verify|restore` for faster exact-schema
 whole-library recovery: a SQLite Online Backup image plus deterministic bounded
 asset packs. Physical restore is local-filesystem only, requires explicit
 `replace` or `adopt`, verifies an emergency snapshot before the first rename,

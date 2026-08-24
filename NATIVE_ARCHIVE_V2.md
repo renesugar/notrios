@@ -7,14 +7,15 @@ the optional packed object layout in v0.4 P3b; verify-only and restore/import
 in v0.4 P4; and the publication projection in v0.4 P7. Archive v1 remains
 supported as human-readable interchange and is not interpreted as v2.
 
-Scalability status (2026-08-22): the semantic/verification contract remains
-implemented, and G14c now implements the separate physical full-snapshot
-representation selected by G14b. G14's catch-up producer
-currently exports loose objects and stores each as a ZIP entry, adding about
-25% at the 100/500-note tiers. P3b's pack layout has strong file-count evidence
-but no full-scale end-to-end catch-up comparison against a consistent SQLite
-snapshot, restic, and borg. Do not interpret `fanout` being the current default
-as the final full-backup/catch-up decision.
+Scalability status (2026-08-23): the semantic/verification contract remains
+implemented. G14c implements the separate physical full-snapshot representation
+selected by G14b, and G14d carries it through deterministic sequential USTAR
+and authenticated NBK1 frames for REST/directory catch-up and crash-safe
+restore. This replaced G14's loose-object stored-ZIP producer without changing
+archive-v2. G14e passed the production full-scale acceptance and freezes
+`sqlite-image+packed-assets.v1` as the compatible whole-library default.
+Archive-v2 remains the portable subset/merge/fork/interchange/fallback contract;
+G15 scheduler/retry work is next and separately approval-gated.
 
 G14a's generated 100k calibration confirmed the physical issue while preserving
 the semantic contract: loose export produced 100,093 files; stored ZIP added

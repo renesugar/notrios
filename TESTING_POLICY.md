@@ -693,7 +693,7 @@ note's preview.
 No scale profile: a block is bounded to 100 rows through the search path whose
 10k/100k/500k evidence H7 and Q1 already carry.
 
-### Archive scalability tests (v0.7 G14a-G14d complete; G14e planned)
+### Archive scalability tests (v0.7 G14a-G14e complete)
 
 Before sync tests advance beyond G14, G14a-G14e add a blocking archive-
 scalability gate. The aggregate-only harness must checkpoint each long phase
@@ -757,6 +757,20 @@ The committed aggregate result reports 13.080 seconds restore, 24,788,992-byte
 process peak RSS, 2,570,736-byte live heap at report time, and 100,000 documents
 queued for derived rebuild. Android emulator and physical-device results remain
 explicitly deferred; see `performance/v0.7-g14d/ANDROID_EMULATOR_CHECKLIST.md`.
+
+G14e reuses unchanged private import results but independently re-fingerprints
+the equivalent 382,206-document Joplin/Obsidian views and the attachment-bearing
+workload. Its 19 immutable aggregate phases cover current and previous packed
+archive-v2 verify/restore, first/verify/unchanged/restore for both physical
+workloads, production REST/directory catch-up and emergency replacement,
+post-snapshot convergence, and frozen Restic/Borg data-integrity checks. The
+final catch-up completed in 2,948.669 seconds at 210,010,112 bytes peak RSS;
+exact canonical equality and every carrier/restore/replay assertion passed.
+Raw Restic remains a comparison row whose 2,256,838,656-byte check RSS explains
+why repository tooling was not selected as the native application format; it is
+not a native receiver gate. Evidence and its privacy validator are under
+`performance/v0.7-g14e/`; exFAT, cloud-provider rerun, Android emulator, and
+physical-mobile claims remain explicitly false.
 
 ### Sync model and transport tests (planned v0.7)
 

@@ -354,8 +354,9 @@ recover. See the [archive v2 safety contract](archive-v2.md).
 
 ## Fast same-schema whole-library snapshots
 
-For a complete local library on the current schema, G14c provides the physical
-snapshot representation selected from full-corpus evidence:
+For a complete local library on the current schema, the frozen G14c-G14e path
+provides the physical snapshot representation selected and accepted against the
+full corpora:
 
 ```bash
 go run ./cmd/notriosctl snapshot create --db data/notes.sqlite \

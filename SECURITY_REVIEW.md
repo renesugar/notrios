@@ -277,6 +277,17 @@ possession as a peer acknowledgement. Completed plans are retained as local
 recovery records; emergency snapshots contain a full library and require the
 same access protection as the canonical database.
 
+G14e keeps those boundaries at full scale. Only an authenticated peer already
+permitted as a snapshot source receives the exceptional two-hour synchronous
+creation deadline; ordinary requests keep the short deadline, and a signed
+Range response is bounded to one 16 MiB chunk. Directory resume may cache the
+exact prefix length validated by the current process, but it still hashes the
+completed sealed file against the authenticated digest before publication, and
+a restarted process revalidates its durable prefix once. Incremental admission
+selects only the metadata/body/asset reconcilers named by admitted record
+families; this removes whole-library memory amplification without relaxing
+operation validation or the single-transaction convergence boundary.
+
 `SYNCHRONIZATION.md` requires:
 
 - database/profile/replica identity negotiation and no silent universe merge;

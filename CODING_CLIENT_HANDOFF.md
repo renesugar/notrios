@@ -14,7 +14,7 @@ wrap-up). The thirteen v0.5 slices remain archived under `plans/v0.5/`.
 independently approvable G0-G20 slices plus the newly inserted, blocking
 G14a-G14e archive-scalability sequence. The user's 2026-08-11
 review resolved the policy decisions through G17, including mandatory payload
-encryption and per-replica Ed25519 signatures. **G0-G14d are complete** and
+encryption and per-replica Ed25519 signatures. **G0-G14e are complete** and
 archived under `plans/v0.7/`; their reviewed evidence is under
 `performance/v0.7-g0/`, `performance/v0.7-g1/`, `performance/v0.7-g1a/`,
 `performance/v0.7-g2/`, `performance/v0.7-g4/`, `performance/v0.7-g5/`,
@@ -22,13 +22,13 @@ archived under `plans/v0.7/`; their reviewed evidence is under
 `performance/v0.7-g9/`, `performance/v0.7-g10/`, `performance/v0.7-g11/`, and
 `performance/v0.7-g12/`, `performance/v0.7-g13/`, `performance/v0.7-g14/`,
 `performance/v0.7-g14a/`, `performance/v0.7-g14b/`, and
-`performance/v0.7-g14c/` and `performance/v0.7-g14d/`. **G14e is next and is not approved; G15 remains
-blocked until G14e.** G14b selected option B: a
+`performance/v0.7-g14c/`, `performance/v0.7-g14d/`, and
+`performance/v0.7-g14e/`. **G15 is next and is not approved.** G14b selected option B: a
 required compatible same-schema SQLite-image plus bounded packed-assets
 capability for whole-library full backup/catch-up, retaining packed semantic
 archive-v2 for subset, merge, schema-independent interchange, and fallback.
-G14c implements that exact representation, G14d integrates it, and G14e repeats
-the full-scale acceptance matrix and freezes the format.
+G14c implements that exact representation, G14d integrates it, and G14e passed
+the full-scale acceptance matrix and froze the format.
 
 G14c adds production `sqlite-image+packed-assets.v1` creation and read-only
 admission under `internal/snapshotimage/` and
@@ -51,9 +51,25 @@ completed in 13.080 seconds at 24,788,992 bytes peak RSS and queued all 100,000
 documents. No schema, compressor, dependency, REST/MCP path surface, or
 archive-v2 behavior changed. G14c is archived as
 `plans/v0.7/021-scalable-native-snapshot-representation.md`; G14d is archived as
-`plans/v0.7/022-scalable-restore-catchup.md`. G14e must run the frozen
-full-corpus acceptance before G15 can begin. Neither an Android emulator nor a
-physical device was measured in G14d.
+`plans/v0.7/022-scalable-restore-catchup.md`; G14e is archived as
+`plans/v0.7/023-full-scale-archive-catchup-acceptance.md`. Neither exFAT, a
+cloud-provider rerun, an Android emulator, nor a physical device is claimed by
+G14e.
+
+G14e's resumable production harness reused unchanged import results but
+re-fingerprinted the equivalent 382,206-document Joplin/Obsidian views and the
+attachment workload. Nineteen privacy-sanitized phases pass: current/previous
+packed archive-v2 verify/restore, physical first/verify/unchanged/restore for
+both workloads, full REST/directory catch-up with emergency replacement and
+post-vector replay, and frozen Restic/Borg integrity checks. The final catch-up
+completed in 2,948.669 seconds at 210,010,112 bytes peak RSS with exact
+canonical equality. Full scale exposed and fixed four G14d contract defects:
+the ordinary 30-second timeout on synchronous snapshot creation, an 8 MiB
+generic response ceiling truncating 16 MiB ranges, unconditional whole-library
+reconciliation for a body edit, and quadratic repeated-prefix validation in
+bounded directory publication. Tests cover each boundary; no format, schema,
+compressor, third-party dependency, REST/MCP path surface, or automatic restore
+was added. G15 requires separate user approval.
 
 G14b added only investigation/prototype code and aggregate evidence. Its 57
 validated full-corpus phase rows cover equivalent 382,206-document Joplin and
@@ -64,8 +80,9 @@ distinct Google Drive copy. The image path was 1,884.2 seconds locally versus
 4,384.0 for packed semantic reconstruction (2.33x faster), or 2,245.1 versus
 4,457.6 seconds including provider evidence. The semantic artifact was 78.3%
 smaller and remains first-class. Loose layouts failed file shape; raw
-repository paths repeatedly failed memory. Import time/RSS and the 3.22 GiB
-post-snapshot replay are recorded as separate performance debt. No production
+repository paths repeatedly failed memory. Import time/RSS remains separate
+performance debt; G14e fixed the 3.22 GiB post-snapshot replay by scoping
+reconciliation to admitted record families. G14b itself changed no production
 format, schema, dependency, default, encryption, or catch-up behavior changed.
 
 G14a adds only evidence/prototype code. Its 11 adapters map loose/packed
@@ -297,7 +314,8 @@ asserted by comparing what each carrier holds. Measured, REST costs +15.4% at
 100 notes and +0.07% at 500 against the folder, so keeping the merge off the
 server costs nothing. `internal/syncbackup` packs, seals in fixed authenticated
 frames, and extracts safely; a downloaded snapshot passes four gates in order —
-declared hash, frames, container, **then archive-v2's verifier** — and backups
+declared hash, frames, sequential USTAR container, **then the strict physical
+snapshot verifier** — and backups
 are addressed by opaque id, produced only for an explicitly permitted replica,
 and fetched only by the one that asked. **The thing a later agent most needs to
 know:** G13's per-address failure budget was being spent on every request rather
@@ -306,14 +324,14 @@ round exposed immediately as a `429` against a legitimate peer. It is now
 checked before work and spent only on refusal, pairing excepted, and the
 per-peer request budget rose from 120 to 600 a minute.
 
-The 2026-08-15 scalability amendment reopens only the **physical full-snapshot
+The 2026-08-15 scalability amendment reopened only the **physical full-snapshot
 representation**, not G14's security or transport contract. G14 exported loose
 archive-v2 objects, then stored every one as a ZIP entry before frame sealing;
 at 100 and 500 notes that added about 25%, almost entirely ZIP entry metadata.
-P3b already collapsed a 382,206-note archive from 382,447 files to 46, but that
-pack path has not been measured through production catch-up or compared with a
-consistent SQLite snapshot, restic, and borg at the supplied recipedb scale.
-Do not start G15 to schedule a path whose scale/default is still undecided.
+G14a-G14e completed that review and froze the compatible physical default.
+G15 may now start only after explicit user approval; it must preserve this
+format split and must not turn synchronous backup creation into an unbounded
+ordinary API operation.
 
 That review also added a second portability route. v0.8 now investigates and
 builds a framework-neutral Go application facade and versioned no-GUI C ABI,

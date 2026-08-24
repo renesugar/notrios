@@ -52,6 +52,12 @@ func TestLargeSnapshotUsesTheSameResumableBytesAsREST(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	verifiedPrefixes := 0
+	verifyPrefix := publisher.verifySnapshotPrefix
+	publisher.verifySnapshotPrefix = func(source *os.File, partial string, sourceBytes int64) (int64, error) {
+		verifiedPrefixes++
+		return verifyPrefix(source, partial, sourceBytes)
+	}
 	receiver, err := NewDirectory(root, group, "db_bulk_snapshot", "replica_receiver")
 	if err != nil {
 		t.Fatal(err)
@@ -67,6 +73,18 @@ func TestLargeSnapshotUsesTheSameResumableBytesAsREST(t *testing.T) {
 	if err != nil || complete || position != 73_000 {
 		t.Fatalf("first publish range: %d %v %v", position, complete, err)
 	}
+	// A new process has no in-memory prefix checkpoint, so it validates the
+	// durable prefix once and then keeps the rest of this many-call resume
+	// linear as well.
+	publisher, err = NewDirectory(root, group, "db_bulk_snapshot", "replica_publisher")
+	if err != nil {
+		t.Fatal(err)
+	}
+	verifyPrefix = publisher.verifySnapshotPrefix
+	publisher.verifySnapshotPrefix = func(source *os.File, partial string, sourceBytes int64) (int64, error) {
+		verifiedPrefixes++
+		return verifyPrefix(source, partial, sourceBytes)
+	}
 	for !complete {
 		position, complete, err = publisher.PublishSnapshotFile(ctx, digest, source, digest, 73_000)
 		if err != nil {
@@ -75,6 +93,9 @@ func TestLargeSnapshotUsesTheSameResumableBytesAsREST(t *testing.T) {
 	}
 	if position != int64(len(payload)) {
 		t.Fatalf("published %d of %d", position, len(payload))
+	}
+	if verifiedPrefixes != 2 {
+		t.Fatalf("resumable publication validated the durable prefix %d times, want once per process", verifiedPrefixes)
 	}
 
 	destination := filepath.Join(t.TempDir(), "download.nbk")

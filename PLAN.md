@@ -1,9 +1,8 @@
 # Plan: v0.7 — Native synchronization
 
-Status: **G0-G14d completed through 2026-08-22. Product version remains 0.6.0 and the
-canonical schema is v25. Archive scalability is reopened as a release-blocking
-G14a-G14e sequence; G14e is next and is not approved. G15 cannot start until
-G14e is complete.** The
+Status: **G0-G14e completed through 2026-08-23. Product version remains 0.6.0 and the
+canonical schema is v25. The release-blocking G14a-G14e archive-scalability
+sequence is complete; G15 is next and is not approved.** The
 former seven-item draft was too coarse: it mixed protocol research, canonical
 write interception, merge semantics, two transports, cryptography, recovery,
 UI, retention, and release validation into slices that could not be reviewed or
@@ -1361,7 +1360,7 @@ shape, and the generated 100k restore gate pass. The approved default remained
 G14c's physical format; no second restore format, schema, compressor, dependency,
 automatic destructive action, MCP path, or physical-mobile claim was added.
 
-## G14e. Full-scale archive/catch-up acceptance and format freeze
+## G14e. Full-scale archive/catch-up acceptance and format freeze — complete
 
 **Goal.** Prove the production choice on the supplied real corpora and freeze
 it before scheduling, UI, retention, or external compatibility build on it.
@@ -1396,6 +1395,20 @@ repository validation; verified release ZIP copied to the evidence directory.
 
 - None. A failed gate reopens its owning item; it is not waived in the release
   wrap-up.
+
+**Outcome (2026-08-23).** Production G14c/G14d code passed all 19 resumable,
+privacy-sanitized full-scale phases and the frozen Restic/Borg integrity rows.
+The final REST/directory catch-up restored and exactly matched 382,209 generated
+private-workspace documents after post-snapshot replay in 2,948.669 seconds at
+210,010,112 bytes peak RSS. Compatible whole-library backup/catch-up is frozen
+as `sqlite-image+packed-assets.v1` through deterministic sequential USTAR and
+NBK1; semantic archive-v2 remains the portable subset/merge/fork/interchange/
+fallback contract. Four G14d scale defects were fixed without a new format:
+operation-specific snapshot timeout, 16 MiB signed range ceiling, scoped
+reconciliation for body-only replay, and linear per-process directory-prefix
+resume. Aggregate evidence is under `performance/v0.7-g14e/`; the completion
+archive is `plans/v0.7/023-full-scale-archive-catchup-acceptance.md`. G15 is
+next and separately approval-gated.
 
 ## G15. Durable sync jobs, scheduling boundaries, retries, and MCP control
 
@@ -1587,6 +1600,11 @@ the sync-era container capabilities are stable.
 
 **Scope.** Publish JSON Schemas, capability/version bounds, sanitized
 deterministic loose/packed/sync-era golden fixtures, and a compatibility command.
+Carry G14e's freeze explicitly: archive-v2 is the portable semantic consumer
+contract, while `sqlite-image+packed-assets.v1` is a same-schema whole-library
+capability that an incompatible or portable consumer must identify and refuse,
+not reinterpret as archive-v3. Include a sanitized physical-manifest refusal
+golden without publishing a private or full database image.
 Coordinate `movenotes-v3/notrios2sql.py` against verified fixtures and add
 cross-version consumer tests if that external importer now exists.
 
@@ -1679,7 +1697,7 @@ recommendation, blocking status, and consequence.
 | Carrier artifact cleanup | G11 | Resolved: writer-owned and acknowledgement-gated |
 | Sync credential reach into ordinary REST | G13 | Resolved: none — implemented and asserted |
 | Pairing bootstrap | G13 | Resolved: short-lived one-use bundle |
-| ZIP wrapper contract | G14 | Resolved: UX wrapper, not trust boundary |
+| Snapshot wrapper contract | G14/G14d/G14e | Resolved: deterministic sequential USTAR is transport only; the physical manifest/verifier is the trust boundary |
 | Archive benchmark acceptance policy | G14a | Resolved: approved defaults exercised and retained for G14b |
 | Physical full-snapshot representation | G14b/G14c | Resolved: option B, same-schema SQLite image + bounded packed assets with semantic archive-v2 retained |
 | MCP sync controls | G15 | Resolved: bounded incremental controls only |
@@ -1691,7 +1709,6 @@ recommendation, blocking status, and consequence.
 | Current-GUI Mermaid baseline | G18 | Resolved fact: upstream-capable but disabled pending offline/security evidence |
 | Release version/schema bookkeeping | G20 | Open, non-blocking until wrap-up |
 
-G0-G14d are complete and the production physical restore/catch-up path is recorded.
-G14e is the next implementable item, but is not approved. G15-G20 remain blocked
-until G14e completes. Implementation begins only after an explicit instruction
-naming G14e.
+G0-G14e are complete and the production physical restore/catch-up format is
+frozen. G15 is the next implementable item but is not approved. Implementation
+begins only after an explicit instruction naming G15.

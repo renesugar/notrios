@@ -522,6 +522,10 @@ No public endpoint or MCP tool
 accepts a database, asset-store, snapshot input, or snapshot output path. The
 authenticated sync snapshot routes now carry opaque, encrypted physical
 snapshot bytes and permit range resume; they still never accept a server path.
+Snapshot production is the one authenticated request allowed the bounded
+two-hour full-scale stage deadline; ordinary requests retain their short client
+and server timeouts. Signed backup ranges are bounded to 16 MiB, matching one
+download chunk without widening the ordinary 8 MiB response ceiling.
 
 ### Profiles, batches, external links, and sync
 

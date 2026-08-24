@@ -292,6 +292,14 @@ incremental admission. REST authorizes opaque artifacts; neither REST nor MCP
 accepts a filesystem path. The directory carrier exposes the same bounded
 resumable sealed-byte path.
 
+G14e freezes that physical capability as the compatible whole-library default
+after production full-scale acceptance while keeping archive-v2 as the portable
+semantic contract. Admission chooses metadata, revision, and asset reconcilers
+from the newly contiguous record families; a body-only revision no longer
+rebuilds the whole metadata projection. Directory snapshot publication validates
+a durable prefix once per process and hashes the completed file in full before
+publish, so bounded resume stays linear without weakening final admission.
+
 G2's investigation candidate keeps the archive-v2 JSONL snapshot contract
 unchanged but recommends compact canonical NCB1 records inside incremental
 change envelopes, with a canonical-JSON outer manifest and bounded

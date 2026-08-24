@@ -1,6 +1,6 @@
 # Plan Status
 
-Updated: 2026-08-22 (G14d complete; G14e next and unapproved)
+Updated: 2026-08-23 (G14e complete; G15 next and unapproved)
 
 ## Active milestone
 
@@ -14,12 +14,41 @@ G15-G20: evidence, profiles/local journal, state-vector convergence,
 revision deltas/merge, lazy resources, secure container/catch-up,
 ephemeral-directory and REST transports, jobs/UI/retention, shared-core/FFI/
 Mermaid/mobile handoff, compatibility, and final validation. The user's
-2026-08-11 review resolved every original G0-G17 policy decision. **G0-G14d are
+2026-08-11 review resolved every original G0-G17 policy decision. **G0-G14e are
 complete** and archived under `plans/v0.7/`; the 2026-08-15 planning amendment
 reopened physical snapshot scalability. G14b selected option B from full-corpus
 evidence, G14c implemented the local production representation/verifier, and
-G14d integrated encrypted transport plus crash-safe restore/catch-up. G14e is
-next and unapproved; G15 is blocked until G14e completes.
+G14d integrated encrypted transport plus crash-safe restore/catch-up, and G14e
+passed the production full-scale matrix and froze the format. G15 is next and
+unapproved.
+
+## v0.7 G14e completion — 2026-08-23
+
+- Nineteen resumable aggregate-only phases passed and independently validate
+  under `performance/v0.7-g14e/`: equivalent 382,206-document source views,
+  the attachment/source-bundle workload, current/previous semantic readers,
+  physical first/verify/unchanged/restore, REST/directory catch-up, emergency
+  replacement, replay, and frozen Restic/Borg integrity.
+- Final production catch-up completed in 2,948.669 seconds at 210,010,112 bytes
+  peak RSS. Both couriers resumed, decrypted, and strictly verified; cutover
+  completed with a fresh replica, post-snapshot body replay converged, and host/
+  restored canonical fingerprints matched exactly.
+- Full scale found and fixed four G14d contract defects: synchronous backup
+  creation inherited the 30-second ordinary timeout; 16 MiB ranges were
+  truncated by the 8 MiB generic response ceiling; any admitted operation ran
+  all whole-library reconcilers; and bounded directory publish re-read its full
+  prefix every call. Focused tests cover each correction.
+- `sqlite-image+packed-assets.v1` is frozen as the exact-schema compatible
+  whole-library backup/catch-up default through deterministic USTAR and NBK1.
+  Semantic archive-v2 remains the portable subset/merge/fork/interchange/
+  incompatible-schema fallback and previous readers still verify/restore it.
+- No private path, database, archive, object, filename, content hash, key, or
+  repository enters committed evidence. exFAT, cloud-provider rerun, Android
+  emulator, physical mobile, public release, and GitHub action claims remain
+  false. No schema, compressor, dependency, new format, or REST/MCP path was
+  added.
+- Archived as `plans/v0.7/023-full-scale-archive-catchup-acceptance.md`; G15
+  requires explicit approval.
 
 ## v0.7 G14d completion — 2026-08-22
 
@@ -45,7 +74,7 @@ next and unapproved; G15 is blocked until G14e completes.
   RSS and queued 100,000 documents.
 - No schema, compressor, third-party dependency, MCP archive path, automatic
   restore, Android-emulator claim, or archive-v2 behavior changed. Archived as
-  `plans/v0.7/022-scalable-restore-catchup.md`; G14e requires explicit approval.
+  `plans/v0.7/022-scalable-restore-catchup.md`; G14e supplied the full-scale gate.
 
 ## v0.7 G14c completion — 2026-08-22
 
@@ -118,8 +147,8 @@ next and unapproved; G15 is blocked until G14e completes.
   resumable aggregate-only harness; G14b ran the supplied recipe pair and
   attachment corpus and selected the compatible SQLite-image capability with
   bounded packed assets and semantic archive-v2 fallback; G14c
-  implements the selection; G14d integrates restore/emergency backup/catch-up;
-  G14e repeats full-scale acceptance and freezes the format.
+  implemented the selection; G14d integrated restore/emergency backup/catch-up;
+  G14e passed full-scale acceptance and froze the format.
 - The available local data facts are aggregate only: the recipe Joplin and
   Obsidian inputs contain 1,619,759 files together; the attachment Joplin input
   contains 112,093 files. The reference data and `/media/renes/HD2` are ext4;
@@ -167,13 +196,13 @@ next and unapproved; G15 is blocked until G14e completes.
   same exchange through a folder. Admission dominates, which is why keeping the
   merge off the server costs nothing and why "REST never becomes the merge
   implementation" is not a sacrifice.
-- `internal/syncbackup` packs an archive-v2 directory deterministically, seals
+- The historical G14 baseline packed archive-v2 deterministically and sealed
   it in fixed AES-256-GCM frames whose associated data authenticates each
   frame's index and finality, and extracts with every escaping entry refused.
-- **Four gates in order**: the declared hash of the sealed bytes, the frames,
-  the container, then archive-v2's own verifier. ZIP is the wrapper;
-  archive-v2 is the correctness. A test asserts *which* layer refuses a
-  tampered byte rather than merely that something does.
+- G14d/G14e production uses four gates in order: the declared sealed-byte hash,
+  NBK1 frames, sequential USTAR extraction, then the strict physical snapshot
+  verifier. The wrapper is transport only. Tests assert *which* layer refuses
+  a tampered byte rather than merely that something does.
 - Backups are addressed by an opaque id, produced only for a replica explicitly
   permitted as a snapshot recipient, and fetched only by the replica that asked
   — every other caller is told there is no such backup.
@@ -2246,6 +2275,5 @@ attempt detail remains append-only in `agent/ATTEMPT_LOG.jsonl`.
 
 - Long-term SQLite driver choice (current local cgo/libsqlite3 adapter).
 - Official MCP Go SDK adoption/version.
-- Sync decisions live in the owning G0-G17 items in `PLAN.md`; the register in
-  that plan is an index. G0 is complete; G1 and every later slice remain
-  approval-gated.
+- Sync decisions live in the owning plan items; the register in `PLAN.md` is an
+  index. G0-G14e are complete; G15 and every later slice remain approval-gated.

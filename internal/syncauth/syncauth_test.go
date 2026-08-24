@@ -1,9 +1,12 @@
 package syncauth
 
 import (
+	"context"
 	"crypto/ed25519"
 	"crypto/rand"
 	"encoding/hex"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
@@ -270,5 +273,37 @@ func TestClientRefusesPlaintextToARemoteHost(t *testing.T) {
 		t.Fatal("expected a connection error, not a policy refusal")
 	} else if strings.Contains(err.Error(), "plaintext") {
 		t.Fatalf("loopback was refused by policy: %v", err)
+	}
+}
+
+func TestOperationSpecificDeadlineOverridesOnlyThatRequest(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		time.Sleep(30 * time.Millisecond)
+		_, _ = w.Write([]byte(`{}`))
+	}))
+	defer server.Close()
+	_, private := testKeyPair(t)
+	client := &Client{
+		BaseURL: server.URL, DatabaseID: "db_test", ReplicaID: "rep_a",
+		SignerKeyID: "key_a", Private: private, HTTP: &http.Client{Timeout: 5 * time.Millisecond},
+	}
+	if _, _, err := client.Do(context.Background(), http.MethodPost, "/slow", nil); err == nil {
+		t.Fatal("ordinary request ignored the client's short deadline")
+	}
+	status, _, err := client.DoWithin(context.Background(), http.MethodPost, "/slow", nil, time.Second)
+	if err != nil || status != http.StatusOK {
+		t.Fatalf("operation-specific deadline did not override one request: status=%d err=%v", status, err)
+	}
+	if client.HTTP.Timeout != 5*time.Millisecond {
+		t.Fatal("operation-specific request mutated the shared HTTP client")
+	}
+}
+
+func TestRangeResponseHasItsOwnBoundedChunkCeiling(t *testing.T) {
+	if MaxResponseBytes >= MaxRangeResponseBytes {
+		t.Fatal("range ceiling must accommodate a backup chunk without widening ordinary responses")
+	}
+	if MaxRangeResponseBytes != 16<<20 {
+		t.Fatalf("range ceiling = %d, want one 16 MiB backup chunk", MaxRangeResponseBytes)
 	}
 }

@@ -188,6 +188,11 @@ ID, preserves vector/floors, and queues derived projections. Stop the service;
 after interruption, run the identical command again. Use archive-v2 for subset,
 merge, fork, publication, or incompatible-schema recovery.
 
+For compatible whole-library backup/catch-up this is the frozen production
+default. It is deliberately not archive-v3: archive-v2 remains the portable,
+schema-independent semantic format for previous readers, subset, merge, fork,
+and publication workflows.
+
 ## link
 
 ```sh

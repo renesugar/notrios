@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/renesugar/notrios/internal/syncwire"
 )
@@ -62,6 +63,16 @@ type Directory struct {
 	// works. There is no way to ask a real filesystem to stop supporting
 	// rename, and "we believe the fallback compiles" is not evidence.
 	rename func(oldPath, newPath string) error
+
+	// Snapshot publication may be deliberately split into many calls. A fresh
+	// process verifies the durable prefix once; subsequent calls on this bound
+	// carrier remember the exact length they just synced and avoid turning N
+	// chunks into N whole-prefix reads. The completed file is still hashed in
+	// full before publication, so carrier mutation can only make the transfer
+	// restart, never admit different bytes.
+	snapshotMu           sync.Mutex
+	snapshotPrefixes     map[string]snapshotPrefix
+	verifySnapshotPrefix func(*os.File, string, int64) (int64, error)
 }
 
 // NewDirectory binds a carrier root to one database and one local replica.
@@ -81,11 +92,13 @@ func NewDirectory(root string, group syncwire.GroupKey, databaseID, replicaID st
 		return nil, err
 	}
 	return &Directory{
-		root:      absolute,
-		database:  syncwire.CarrierName(group, "database", databaseID),
-		namespace: syncwire.CarrierName(group, "replica", replicaID),
-		group:     group,
-		rename:    os.Rename,
+		root:                 absolute,
+		database:             syncwire.CarrierName(group, "database", databaseID),
+		namespace:            syncwire.CarrierName(group, "replica", replicaID),
+		group:                group,
+		rename:               os.Rename,
+		snapshotPrefixes:     map[string]snapshotPrefix{},
+		verifySnapshotPrefix: verifiedPrefix,
 	}, nil
 }
 

@@ -55,6 +55,8 @@ Verified symptoms and fixes, grouped by activity. `notriosctl doctor` diagnoses 
 | `replace requires the same database id` | use `--intent adopt` only if adopting that compatible library is intended, or use archive-v2 for merge/fork/incompatible-schema recovery |
 | restore stopped after cutover | verify the emergency snapshot path printed in the recovery plan remains protected, then re-run the same command; the coordinator rolls forward and verifies installed identity before unblocking startup |
 | restored attachments remain unavailable | physical snapshots include only database-declared local bytes; declarations that were remote/unavailable remain so and ordinary materialization fetches them from an enrolled source later |
+| a large backup request reaches the ordinary 30-second HTTP deadline | update both peers to a G14e-capable build; authenticated, explicitly permitted snapshot creation has its own bounded two-hour deadline while ordinary API calls remain short |
+| a resumable backup reports a wrong range length | update the client and server together; signed backup ranges use one bounded 16 MiB response chunk while ordinary responses remain capped at 8 MiB |
 
 ## Documentation site
 

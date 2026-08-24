@@ -3,13 +3,14 @@
 Notrios (formerly "Notes Companion") is a local-first note-taking, search, import, and publishing system for very large Markdown and document collections.
 It combines a Go REST/MCP service (`notriosd`), a built-in GUI, SQLite/FTS5-backed canonical storage, content-addressed resources, optional Recoll-derived search/extraction, and support for third-party native clients (C++/Qt, Go/Wails, Rust/Tauri) over the same API. A versioned no-GUI C ABI is planned before 1.0, followed by an independent post-1.0 Flutter client; mobile delivery does not depend exclusively on Wails.
 
-The v0.1 through v0.6 milestones are complete. v0.7 G0-G14d are complete through
+The v0.1 through v0.6 milestones are complete. v0.7 G0-G14e are complete through
 the authenticated REST sync data plane and resumable encrypted snapshot
-download. Archive scalability is now reopened as blocking G14a-G14e work before
-the scheduler/UI/retention slices: G14b selected and G14c implemented a
+download. The blocking G14a-G14e archive-scalability sequence is complete:
+G14b selected and G14c implemented a
 same-schema SQLite image plus bounded packed assets for full backup/catch-up
 while retaining semantic archive-v2; G14d integrated crash-safe restore and
-incremental catch-up, and G14e is next but unapproved — see
+incremental catch-up, and G14e passed/froze the production full-scale contract.
+G15 is next but unapproved — see
 [`PLAN.md`](PLAN.md) and
 [`ROADMAP.md`](ROADMAP.md). The repository is
 structured so a coding agent can resume safely after usage limits or model
@@ -149,8 +150,12 @@ Recoll availability, backlog, sync/index, and reconciliation state.
   replaces the loose-object stored-ZIP producer with sequential USTAR plus the
   existing authenticated frames, adds resumable REST/directory bulk transfer,
   a verified emergency snapshot and durable crash-safe `snapshot restore`, a
-  fresh replica identity/floor, and post-snapshot replay. G14e still blocks G15:
-  repeat full-scale acceptance against the frozen restic/borg reference rows.
+  fresh replica identity/floor, and post-snapshot replay. G14e then passed 19
+  privacy-sanitized full-scale phases, including current/previous semantic
+  readers, first/unchanged physical snapshots, attachment/source-bundle round
+  trips, REST/directory restore, scoped replay, and frozen Restic/Borg checks.
+  `sqlite-image+packed-assets.v1` is now the compatible whole-library default;
+  semantic archive-v2 remains portable. G15 is next and approval-gated.
 - Agent progress/attempt tracking: [`agent/PLAN_STATUS.md`](agent/PLAN_STATUS.md), [`agent/ATTEMPT_LOG.jsonl`](agent/ATTEMPT_LOG.jsonl), and [`agent/MODEL_LOG.jsonl`](agent/MODEL_LOG.jsonl).
 
 ## Contributing
