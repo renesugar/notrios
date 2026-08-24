@@ -107,7 +107,11 @@ type MCPConfig struct {
 	// read so existing configs keep working; when both are set the narrower
 	// wins, because a key that silently stops applying must never widen what an
 	// agent may do.
-	DefaultProfile   string `json:"default_profile"`
+	DefaultProfile string `json:"default_profile"`
+	// SyncScope is orthogonal to the content scope. Empty/disabled is the
+	// default; status permits bounded operational reads and control additionally
+	// permits ordinary incremental and resource-fetch jobs.
+	SyncScope        string `json:"sync_scope"`
 	MaxResults       int    `json:"max_results"`
 	MaxDocumentBytes int    `json:"max_document_bytes"`
 }
@@ -597,6 +601,8 @@ func applyMCP(cfg *MCPConfig, key, value string) {
 	case "default_profile":
 		// Deprecated spelling, still read so existing configs keep working.
 		cfg.DefaultProfile = value
+	case "sync_scope":
+		cfg.SyncScope = strings.ToLower(strings.TrimSpace(value))
 	case "max_results":
 		cfg.MaxResults = parseInt(value, cfg.MaxResults)
 	case "max_document_bytes":

@@ -277,6 +277,19 @@ context. Enrollment, peer retirement, purge, backup export/restore, destructive
 recovery, and cancelling another actor's catch-up remain outside MCP.
 REST/object storage remains the data plane.
 
+G15 implements this as a schema-v26 sync-only extension of the existing job
+record. An explicit CLI, local REST, or MCP control call queues one closed kind;
+the daemon drains queued/due rows but never creates work on a timer. One target
+may have one running job, while different targets can progress concurrently.
+Each attempt has a byte allowance and durable `plan`, `pull`,
+`resource_serve`, `push`, `advertise`, and optional `resource_fetch`
+checkpoints. A crash preserves the last checkpoint and replans from canonical
+vectors/verified chunks. Offline, quota, temporary, and budget failures use
+exponential backoff with stable ±20% jitter, capped at 15 minutes. MCP sync
+authority is separately configured as `disabled|status|control` and never
+reaches catch-up/restore preparation, enrollment, keys, backup/restore,
+retirement, purge, or reset.
+
 ### Shared folder and rclone
 
 The folder layout uses unique immutable names. As implemented in G11

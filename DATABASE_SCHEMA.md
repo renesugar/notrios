@@ -263,8 +263,8 @@ database gets the indexes on the next startup.
 
 ## Schema v18 — the job control plane
 
-`jobs` (v0.6 F6) records one run of a long operation: an importer or an archive
-export.
+`jobs` (v0.6 F6) records one run of a long operation: an importer, archive
+export, snapshot, or (through G15's closed extension) sync operation.
 
 | Column | Meaning |
 |---|---|
@@ -285,10 +285,10 @@ wrote it would have to decide another process is dead, and two Notrios processes
 against one database — `notriosd` serving the GUI while `notriosctl` imports —
 would take turns declaring each other's work over.
 
-**Records persist across a restart; the work does not.** There is no resume
-column, because an interrupted import already resumes through its own
-`import_checkpoints` row. Two resume mechanisms would give two answers to one
-question.
+**Ordinary records persist across a restart; their work does not.** Imports
+resume through their own `import_checkpoints`. G15's sync-only companion table
+is the narrow exception: it preserves phase/count checkpoints and replans from
+canonical vectors and verified resource chunks.
 
 **There is no priority, no dependency, and no queue column**, because none of
 those is a job record — they are a scheduler, which this deliberately is not.
@@ -304,6 +304,26 @@ MCP return no parameters at all.
 Listing orders by `rowid`, not `created_at`: `CURRENT_TIMESTAMP` has one-second
 resolution, so jobs started together share a timestamp and a tiebreak on the
 random job ID would look like chronology without being it.
+
+## Schema v26 — durable sync job outbox
+
+G15 adds `sync_jobs`, keyed one-to-one to a closed sync kind in `jobs`. It is a
+durable outbox, not a general scheduler: there are no commands, raw argv,
+priorities, dependencies, DAG edges, or cron fields.
+
+| Column | Meaning |
+|---|---|
+| `actor` | provenance: `cli`, `rest`, `mcp`, or `service` |
+| `target_id` | opaque SHA-256-derived target identity; never a path, URL, credential reference, or key |
+| `attempt`, `max_attempts`, `next_attempt_at`, `retry_code` | bounded exponential retry state (`offline`, `quota`, `temporary`, or `byte_budget`) |
+| `byte_budget`, `bytes_used` | per-attempt encrypted artifact allowance |
+| `checkpoint` | at most 4 KiB of content-free phase/count metadata; canonical vectors and verified chunks remain the resume authority |
+| `lease_owner` | process-local worker token, never exposed over REST/MCP |
+
+Claiming holds `BEGIN IMMEDIATE`, recovers stale heartbeats, and refuses a
+second running row for the same target. Checkpoint, retry/reset, and settlement
+update the base job, sync extension, and `sync_job_audit` event in one
+transaction. `sync_job_audit` stores bounded event codes/counts only.
 
 ## Schema v19 — local replication journal
 
@@ -447,9 +467,9 @@ Thread/link-graph traversal stays in SQLite; the Recoll index only carries searc
 
 ## Future migrations
 
-## Schema-v25 physical image policy
+## Schema-v25/v26 physical image policy
 
-G14c adds no table or migration. It copies schema v25 with SQLite Online Backup
+G14c adds no table or migration. It originally copied schema v25 with SQLite Online Backup
 and securely clears machine-local resumptions from the private image before
 publication. The exhaustive retained/cleared/rebuildable classification is in
 `performance/v0.7-g14c/STATE_REVIEW.md`. Admission requires the image's
@@ -459,7 +479,7 @@ migration of a physical image is allowed; an incompatible image uses semantic
 archive-v2 instead.
 
 G14d also adds no table or migration. Physical activation occurs only on the
-private staged schema-v25 copy. It mints a fresh local replica/allocator,
+private staged same-schema copy (v26 after G15). It mints a fresh local replica/allocator,
 retains the snapshot source as a peer, installs the authenticated snapshot
 vector and catch-up floors, clears copied peer acknowledgements, and enqueues
 every document in `index_outbox` for external projection rebuild. An adjacent

@@ -131,6 +131,10 @@ type Options struct {
 	// way to keep that true.
 	Cleanup bool
 	Limits  syncwire.Limits
+	// Checkpoint runs after each durable phase. Returning an error stops before
+	// the next phase. G15 uses this for heartbeats, cooperative cancellation,
+	// and content-free job checkpoints; nil preserves the pre-G15 behaviour.
+	Checkpoint func(ctx context.Context, phase string, result Result) error
 }
 
 func (o Options) normalized() Options {
@@ -236,6 +240,9 @@ func (r *Round) Run(ctx context.Context) (Result, error) {
 	if err := r.carrier.Initialize(ctx); err != nil {
 		return result, err
 	}
+	if err := r.checkpoint(ctx, "plan", result); err != nil {
+		return result, err
+	}
 
 	peers, err := r.rememberedPeers(ctx)
 	if err != nil {
@@ -245,6 +252,9 @@ func (r *Round) Run(ctx context.Context) (Result, error) {
 		return result, err
 	}
 	if err := r.admit(ctx, local, peers, &result); err != nil {
+		return result, err
+	}
+	if err := r.checkpoint(ctx, "pull", result); err != nil {
 		return result, err
 	}
 	// The vector is re-read after admission so this replica advertises what it
@@ -257,7 +267,13 @@ func (r *Round) Run(ctx context.Context) (Result, error) {
 	if err := r.serveObjects(ctx, peers, &result); err != nil {
 		return result, err
 	}
+	if err := r.checkpoint(ctx, "resource_serve", result); err != nil {
+		return result, err
+	}
 	if err := r.publishOperations(ctx, local, peers, &result); err != nil {
+		return result, err
+	}
+	if err := r.checkpoint(ctx, "push", result); err != nil {
 		return result, err
 	}
 	requestName, err := r.publishRequest(ctx, local, peers, &result)
@@ -265,6 +281,9 @@ func (r *Round) Run(ctx context.Context) (Result, error) {
 		return result, err
 	}
 	if err := r.advertise(ctx, local, &result); err != nil {
+		return result, err
+	}
+	if err := r.checkpoint(ctx, "advertise", result); err != nil {
 		return result, err
 	}
 	if r.options.Cleanup {
@@ -283,6 +302,13 @@ func (r *Round) Run(ctx context.Context) (Result, error) {
 		return result.Candidates[i].SignerKeyID < result.Candidates[j].SignerKeyID
 	})
 	return result, nil
+}
+
+func (r *Round) checkpoint(ctx context.Context, phase string, result Result) error {
+	if r.options.Checkpoint == nil {
+		return ctx.Err()
+	}
+	return r.options.Checkpoint(ctx, phase, result)
 }
 
 // rememberedPeers seeds the round from durable local state, so a carrier that

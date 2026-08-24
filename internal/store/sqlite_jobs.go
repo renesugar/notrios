@@ -65,6 +65,29 @@ func (s *SQLiteStore) StartJob(ctx context.Context, jobID string) (Job, error) {
 	return s.getJobLocked(jobID)
 }
 
+// TouchJob refreshes a running job's heartbeat without changing its last
+// durable progress point. Timer heartbeats used to call ReportJobProgress with
+// an empty value, which erased useful phase/progress information every five
+// seconds.
+func (s *SQLiteStore) TouchJob(ctx context.Context, jobID string) (bool, error) {
+	ctx = contextOrBackground(ctx)
+	if err := ctx.Err(); err != nil {
+		return false, err
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if err := s.execPreparedLocked(
+		`UPDATE jobs SET heartbeat_at = CURRENT_TIMESTAMP WHERE id = ? AND status = ?`,
+		jobID, JobRunning); err != nil {
+		return false, err
+	}
+	job, err := s.getJobLocked(jobID)
+	if err != nil {
+		return false, err
+	}
+	return job.CancelRequested, nil
+}
+
 // ReportJobProgress records a progress point and refreshes the heartbeat.
 //
 // It returns whether cancellation has been requested, because the caller is

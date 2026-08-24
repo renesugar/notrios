@@ -300,6 +300,17 @@ rebuilds the whole metadata projection. Directory snapshot publication validates
 a durable prefix once per process and hashes the completed file in full before
 publish, so bounded resume stays linear without weakening final admission.
 
+G15 extends the ordinary job record with a schema-v26 sync-only durable outbox.
+One opaque target lease runs at a time; separate targets may progress together.
+The worker drains only explicitly queued/due rows and never creates periodic
+work. It checkpoints transport phases, wraps encrypted artifact reads/writes in
+a per-attempt byte allowance, resumes from canonical vectors and verified
+chunks, and applies deterministic jittered backoff to offline/quota/temporary
+failures. Local REST controls the full retry/reset surface. MCP has an
+orthogonal `disabled|status|control` sync permission and can control only its
+own ordinary incremental/resource jobs—never paths, keys, backup/restore,
+catch-up/restore preparation, enrollment, retirement, purge, or reset.
+
 G2's investigation candidate keeps the archive-v2 JSONL snapshot contract
 unchanged but recommends compact canonical NCB1 records inside incremental
 change envelopes, with a canonical-JSON outer manifest and bounded

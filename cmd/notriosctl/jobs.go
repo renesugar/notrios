@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -102,7 +103,7 @@ func finishTrackedJob(runner *jobs.Runner, summary map[string]any, failure error
 
 func runJobs(args []string) {
 	if len(args) == 0 {
-		fmt.Fprintln(os.Stderr, "usage: notriosctl jobs list|status|show|cancel ...")
+		fmt.Fprintln(os.Stderr, "usage: notriosctl jobs list|status|show|cancel|retry ...")
 		os.Exit(exitJobUsage)
 	}
 	switch args[0] {
@@ -114,10 +115,39 @@ func runJobs(args []string) {
 		runJobsShow(args[1:])
 	case "cancel":
 		runJobsCancel(args[1:])
+	case "retry":
+		runJobsRetry(args[1:])
 	default:
-		fmt.Fprintf(os.Stderr, "unknown jobs subcommand %q (want list, status, show or cancel)\n", args[0])
+		fmt.Fprintf(os.Stderr, "unknown jobs subcommand %q (want list, status, show, cancel or retry)\n", args[0])
 		os.Exit(exitJobUsage)
 	}
+}
+
+func runJobsRetry(args []string) {
+	fs := flag.NewFlagSet("notriosctl jobs retry", flag.ExitOnError)
+	configPath := fs.String("config", "", "optional config file")
+	dbPath := fs.String("db", "", "SQLite database path override")
+	assetStore := fs.String("asset-store", "", "asset store directory override")
+	reset := fs.Bool("reset", false, "clear the sync checkpoint and attempt counter (local explicit control only)")
+	if err := fs.Parse(args); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(exitJobUsage)
+	}
+	if fs.NArg() != 1 {
+		fmt.Fprintln(os.Stderr, "usage: notriosctl jobs retry [--reset] <sync-job-id>")
+		os.Exit(exitJobUsage)
+	}
+	st := openStoreFromFlags(*configPath, *dbPath, *assetStore)
+	defer st.Close()
+	job, err := st.RetrySyncJob(context.Background(), fs.Arg(0), *reset, time.Now())
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		if errors.Is(err, store.ErrNotFound) {
+			os.Exit(exitJobUnknown)
+		}
+		os.Exit(exitJobFailed)
+	}
+	printJSON(job)
 }
 
 func runJobsList(args []string) {
@@ -305,10 +335,12 @@ func runJobsCancel(args []string) {
 
 // jobCommands maps a kind to the command line that runs it.
 var jobCommands = map[string][]string{
-	store.JobKindImportJoplinRaw: {"import", "joplin-raw"},
-	store.JobKindImportObsidian:  {"import", "obsidian"},
-	store.JobKindExportArchiveV2: {"export", "archive-v2"},
-	store.JobKindSnapshotImage:   {"snapshot", "create"},
+	store.JobKindImportJoplinRaw:   {"import", "joplin-raw"},
+	store.JobKindImportObsidian:    {"import", "obsidian"},
+	store.JobKindExportArchiveV2:   {"export", "archive-v2"},
+	store.JobKindSnapshotImage:     {"snapshot", "create"},
+	store.JobKindSyncIncremental:   {"sync", "start"},
+	store.JobKindSyncResourceFetch: {"sync", "start", "--resource-fetch"},
 }
 
 // renderJobCommand turns stored parameters back into a runnable command line.

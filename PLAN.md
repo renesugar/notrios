@@ -1,8 +1,7 @@
 # Plan: v0.7 — Native synchronization
 
-Status: **G0-G14e completed through 2026-08-23. Product version remains 0.6.0 and the
-canonical schema is v25. The release-blocking G14a-G14e archive-scalability
-sequence is complete; G15 is next and is not approved.** The
+Status: **G0-G15 completed through 2026-08-24. Product version remains 0.6.0 and the
+canonical schema is v26. G16 is next and is not approved.** The
 former seven-item draft was too coarse: it mixed protocol research, canonical
 write interception, merge semantics, two transports, cryptography, recovery,
 UI, retention, and release validation into slices that could not be reviewed or
@@ -1407,10 +1406,9 @@ fallback contract. Four G14d scale defects were fixed without a new format:
 operation-specific snapshot timeout, 16 MiB signed range ceiling, scoped
 reconciliation for body-only replay, and linear per-process directory-prefix
 resume. Aggregate evidence is under `performance/v0.7-g14e/`; the completion
-archive is `plans/v0.7/023-full-scale-archive-catchup-acceptance.md`. G15 is
-next and separately approval-gated.
+archive is `plans/v0.7/023-full-scale-archive-catchup-acceptance.md`.
 
-## G15. Durable sync jobs, scheduling boundaries, retries, and MCP control
+## G15. Durable sync jobs, scheduling boundaries, retries, and MCP control — complete
 
 **Goal.** Make long sync/catch-up/resource operations observable, cancellable,
 restart-safe, and bounded without turning Notrios into a workflow scheduler.
@@ -1444,6 +1442,20 @@ and scope tests; secrets absent from job records.
   apply a
   restore. Cancelling another actor's catch-up remains local UI/CLI/REST with
   authorization, not MCP.
+
+**Outcome (2026-08-24).** Schema v26 extends the F6 job record with a closed,
+transactional sync outbox and content-free audit trail. Explicit CLI, local
+REST, or MCP control queues work; the daemon only drains queued/due rows and
+never creates a cadence. Atomic per-target leases, durable phase checkpoints,
+heartbeats, safe cancellation, byte allowances, stale-worker recovery, and
+deterministic exponential jittered retry passed restart/offline/quota/two-target
+fixtures. The non-blocking permission default is `mcp.sync_scope=disabled`;
+`status` exposes bounded status/conflicts and `control` adds only path-free
+incremental/resource operations plus retry/cancel of the MCP actor's own jobs.
+Catch-up/restore-prep records remain local-only; keys, backup/restore,
+enrollment, retirement, purge, reset, and bulk bytes remain outside MCP. The
+implementation and validation evidence are archived at
+`plans/v0.7/024-durable-sync-jobs.md`.
 
 ## G16. Sync, pairing, catch-up, encrypted-backup, and conflict UI
 
@@ -1709,6 +1721,6 @@ recommendation, blocking status, and consequence.
 | Current-GUI Mermaid baseline | G18 | Resolved fact: upstream-capable but disabled pending offline/security evidence |
 | Release version/schema bookkeeping | G20 | Open, non-blocking until wrap-up |
 
-G0-G14e are complete and the production physical restore/catch-up format is
-frozen. G15 is the next implementable item but is not approved. Implementation
-begins only after an explicit instruction naming G15.
+G0-G15 are complete and the production physical restore/catch-up plus durable
+sync-job contracts are frozen. G16 is the next implementable item but is not
+approved. Implementation begins only after an explicit instruction naming G16.

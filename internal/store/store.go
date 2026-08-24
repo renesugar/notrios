@@ -94,7 +94,7 @@ const (
 // CurrentSchemaVersion is the canonical SQLite schema understood by this
 // build. Archive-v2 manifests record this source schema but never include
 // derived FTS5 or Recoll state.
-const CurrentSchemaVersion = 25
+const CurrentSchemaVersion = 26
 
 // DatabaseIdentity separates the stable logical synchronization/archive
 // universe from one writable database copy. Copy/restore workflows preserve
@@ -892,15 +892,26 @@ type Store interface {
 	GraphReport(ctx context.Context, req GraphReportRequest) (GraphReport, error)
 	WriteGraphReportNote(ctx context.Context, req GraphReportRequest) (Document, GraphReport, error)
 
-	// Job control plane (v0.6 F6). Records persist across a restart; the work
-	// does not — an interrupted import resumes through its own checkpoints.
+	// Job control plane (v0.6 F6/G15). Ordinary records persist while imports
+	// resume through their own checkpoints; the closed sync extension is also a
+	// durable outbox that replans from canonical vectors/verified chunks.
 	CreateJob(ctx context.Context, req CreateJobRequest) (Job, error)
 	StartJob(ctx context.Context, jobID string) (Job, error)
+	TouchJob(ctx context.Context, jobID string) (bool, error)
 	ReportJobProgress(ctx context.Context, jobID string, progress JobProgress) (bool, error)
 	FinishJob(ctx context.Context, jobID, state string, summary map[string]any, failure error) (Job, error)
 	RequestJobCancel(ctx context.Context, jobID string) (Job, error)
 	GetJob(ctx context.Context, jobID string) (Job, error)
 	ListJobs(ctx context.Context, req JobListRequest) (JobList, error)
+	CreateSyncJob(ctx context.Context, req CreateSyncJobRequest) (SyncJob, error)
+	ClaimSyncJob(ctx context.Context, workerID string, now time.Time) (SyncJob, error)
+	CheckpointSyncJob(ctx context.Context, jobID, workerID string, checkpoint SyncJobCheckpoint) (SyncJob, error)
+	RescheduleSyncJob(ctx context.Context, jobID, workerID, retryCode string, now time.Time) (SyncJob, error)
+	FinishSyncJob(ctx context.Context, jobID, workerID, state string, summary map[string]any, failure error) (SyncJob, error)
+	RetrySyncJob(ctx context.Context, jobID string, reset bool, now time.Time) (SyncJob, error)
+	GetSyncJob(ctx context.Context, jobID string) (SyncJob, error)
+	ListSyncJobAudit(ctx context.Context, jobID string, limit int) (SyncJobAuditList, error)
+	ListSyncConflicts(ctx context.Context, limit int) (SyncConflictPage, error)
 	SuggestDocuments(ctx context.Context, req DocumentSuggestionRequest) (DocumentSuggestionResponse, error)
 	CheckLinks(ctx context.Context, req CheckLinksRequest) (CheckLinksResponse, error)
 	RunNoteQuery(ctx context.Context, req NoteQueryRequest) (NoteQueryResult, error)

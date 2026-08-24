@@ -7,8 +7,8 @@ This file is the codebase atlas. Update it whenever major files or directories a
 - `README.md` — project overview and quick start.
 - `PLAN.md` — the **active v0.7 native synchronization plan**, divided into
   independently approvable G0-G20 slices plus the blocking G14a-G14e archive-
-  scalability sequence. G0-G14e are complete; G15 is next but unapproved. The
-  current product remains 0.6.0 at schema v25; v0.6 is archived under
+  scalability sequence. G0-G15 are complete; G16 is next but unapproved. The
+  current product remains 0.6.0 at schema v26; v0.6 is archived under
   `plans/v0.6/`; v0.5 and v0.4 are archived under their version directories.
 - `plans/scaffold/SCAFFOLD_CREATION_PLAN.md` — process for creating/refining this scaffold.
 - `ROADMAP.md` — product roadmap and future features.
@@ -23,6 +23,8 @@ This file is the codebase atlas. Update it whenever major files or directories a
   state-vector/change-log and revision-merge rules, lazy resources,
   archive/envelope security, ephemeral-directory and REST transports, snapshot
   catch-up, retention, library decision, and validation.
+- `internal/syncjobs/` — G15's closed durable sync-outbox worker and
+  directory/REST carrier target adapter; explicit work only, no cadence.
 - `performance/v0.7-g0/` — completed G0 threat model, normative protocol
   glossary, thirty misuse/control traces, primary-source dependency/license/
   platform validation, and its structural evidence validator.

@@ -6,16 +6,19 @@ import (
 	"time"
 )
 
-// The job control plane (v0.6 F6).
+// The job control plane (v0.6 F6, extended for sync by v0.7 G15).
 //
 // A job record is a durable answer to "what happened to the long thing I
-// started". It is **not** a scheduler, not a queue, and not a work-resumption
-// mechanism:
+// started". The base record is **not** a scheduler or general queue:
 //
 //   - **Records survive a restart; the work does not.** An interrupted import
 //     already resumes through its own durable checkpoints, and a second resume
 //     mechanism layered on top would give two answers to one question. The
 //     record says the run stopped; running the same import again continues it.
+//     G15's closed sync-only companion is the narrow exception: its row is a
+//     durable outbox and its phase checkpoint points back to canonical vectors
+//     and verified chunks. It still has no arbitrary command, priority,
+//     dependency, or cadence.
 //   - **No dependencies and no DAG.** Status is queryable by ID and legible to
 //     a shell — `notriosctl jobs status <id>` exits non-zero unless the job
 //     succeeded, and `--wait` blocks until it settles — which is enough for
@@ -41,10 +44,14 @@ const (
 // operation with specific parameters, and an open set would make
 // `jobs show --command` a guess.
 const (
-	JobKindImportJoplinRaw = "import_joplin_raw"
-	JobKindImportObsidian  = "import_obsidian"
-	JobKindExportArchiveV2 = "export_archive_v2"
-	JobKindSnapshotImage   = "snapshot_image"
+	JobKindImportJoplinRaw   = "import_joplin_raw"
+	JobKindImportObsidian    = "import_obsidian"
+	JobKindExportArchiveV2   = "export_archive_v2"
+	JobKindSnapshotImage     = "snapshot_image"
+	JobKindSyncIncremental   = "sync_incremental"
+	JobKindSyncResourceFetch = "sync_resource_fetch"
+	JobKindSyncCatchup       = "sync_catchup"
+	JobKindSyncRestorePrep   = "sync_restore_prep"
 )
 
 const (
@@ -67,11 +74,35 @@ const (
 	// MaxJobRows and DefaultJobRows bound a listing.
 	MaxJobRows     = 500
 	DefaultJobRows = 50
+
+	// Sync jobs are a deliberately closed, bounded durable outbox. These limits
+	// keep its checkpoint and audit metadata content-free and cheap to expose.
+	MaxSyncJobCheckpointBytes = 4096
+	MaxSyncJobTargetBytes     = 128
+	MaxSyncJobAttempts        = 32
+	DefaultSyncJobAttempts    = 8
+	MaxSyncJobAuditRows       = 200
+	DefaultSyncJobAuditRows   = 50
+	MaxSyncJobByteBudget      = int64(16 << 30)
+	DefaultSyncJobByteBudget  = int64(64 << 20)
 )
 
 // JobKinds lists the kinds this build knows how to run.
 func JobKinds() []string {
-	return []string{JobKindImportJoplinRaw, JobKindImportObsidian, JobKindExportArchiveV2, JobKindSnapshotImage}
+	return []string{
+		JobKindImportJoplinRaw, JobKindImportObsidian, JobKindExportArchiveV2, JobKindSnapshotImage,
+		JobKindSyncIncremental, JobKindSyncResourceFetch,
+	}
+}
+
+// IsSyncJobKind reports whether a kind belongs to G15's durable sync outbox.
+func IsSyncJobKind(kind string) bool {
+	switch kind {
+	case JobKindSyncIncremental, JobKindSyncResourceFetch, JobKindSyncCatchup, JobKindSyncRestorePrep:
+		return true
+	default:
+		return false
+	}
 }
 
 // IsSettledJobState reports whether a state will not change again.
@@ -159,6 +190,81 @@ type JobProgress struct {
 	Phase     string
 	Processed int64
 	Total     int64
+}
+
+// Sync job actors are provenance, not identities or authorization roles.
+const (
+	SyncJobActorCLI     = "cli"
+	SyncJobActorREST    = "rest"
+	SyncJobActorMCP     = "mcp"
+	SyncJobActorService = "service"
+)
+
+// SyncJob is the sync-only extension of one ordinary Job record. TargetID is
+// an opaque, stable digest chosen by the configured target adapter; it is never
+// a directory, URL, credential reference, key, or peer secret.
+type SyncJob struct {
+	Job           Job            `json:"job"`
+	Actor         string         `json:"actor"`
+	TargetID      string         `json:"target_id"`
+	Attempt       int            `json:"attempt"`
+	MaxAttempts   int            `json:"max_attempts"`
+	NextAttemptAt time.Time      `json:"next_attempt_at,omitempty"`
+	RetryCode     string         `json:"retry_code,omitempty"`
+	ByteBudget    int64          `json:"byte_budget"`
+	BytesUsed     int64          `json:"bytes_used"`
+	Checkpoint    map[string]any `json:"checkpoint,omitempty"`
+	LeaseOwner    string         `json:"-"`
+}
+
+type CreateSyncJobRequest struct {
+	Kind        string
+	Actor       string
+	TargetID    string
+	ByteBudget  int64
+	MaxAttempts int
+}
+
+type SyncJobCheckpoint struct {
+	Phase      string
+	Processed  int64
+	Total      int64
+	BytesUsed  int64
+	Checkpoint map[string]any
+}
+
+// SyncJobAuditEvent is content-free operational evidence. Details are bounded
+// counts/codes only; callers must never place paths, URLs, keys, or note text in
+// them.
+type SyncJobAuditEvent struct {
+	ID        string         `json:"id"`
+	JobID     string         `json:"job_id"`
+	EventType string         `json:"event_type"`
+	Details   map[string]any `json:"details,omitempty"`
+	CreatedAt time.Time      `json:"created_at"`
+}
+
+type SyncJobAuditList struct {
+	Events    []SyncJobAuditEvent `json:"events"`
+	Truncated bool                `json:"truncated,omitempty"`
+}
+
+// SyncConflictSummary is the deliberately content-free conflict view exposed
+// by G15. It names stable records and revision IDs but never document titles,
+// bodies, or stored conflict-region text.
+type SyncConflictSummary struct {
+	ID             string `json:"id"`
+	DocumentID     string `json:"document_id"`
+	BaseRevisionID string `json:"base_revision_id,omitempty"`
+	RevisionA      string `json:"revision_a"`
+	RevisionB      string `json:"revision_b"`
+	Kind           string `json:"kind"`
+	CreatedAt      string `json:"created_at"`
+}
+
+type SyncConflictPage struct {
+	Conflicts []SyncConflictSummary `json:"conflicts"`
+	Truncated bool                  `json:"truncated,omitempty"`
 }
 
 // validate normalizes a creation request.

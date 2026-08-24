@@ -83,6 +83,7 @@ func callToolError(t *testing.T, s *Server, name string) string {
 func TestEveryMCPToolIsClassified(t *testing.T) {
 	// The widest scope lists everything, which is what makes this exhaustive.
 	s := scopedServer(t, MCPScopeOrganizer)
+	s.config.MCP.SyncScope = MCPSyncControl
 	listed := listedTools(t, s)
 	if len(listed) == 0 {
 		t.Fatal("the widest scope must list tools")
@@ -103,6 +104,42 @@ func TestEveryMCPToolIsClassified(t *testing.T) {
 			t.Fatalf("mcpToolScopes classifies %q, which is not a registered tool", name)
 		}
 	}
+}
+
+func TestG15SyncScopeIsExplicitAndOrthogonal(t *testing.T) {
+	s := scopedServer(t, MCPScopeReadOnly)
+	disabled := listedTools(t, s)
+	for name := range mcpSyncToolScopes {
+		if containsString(disabled, name) {
+			t.Fatalf("sync tool %q listed with default-disabled sync scope", name)
+		}
+	}
+	s.config.MCP.SyncScope = MCPSyncStatus
+	status := listedTools(t, s)
+	for _, name := range []string{"get_sync_status", "list_sync_conflicts"} {
+		if !containsString(status, name) {
+			t.Fatalf("status scope omitted %q: %v", name, status)
+		}
+	}
+	if containsString(status, "start_sync") {
+		t.Fatalf("status scope listed control tool: %v", status)
+	}
+	s.config.MCP.SyncScope = MCPSyncControl
+	control := listedTools(t, s)
+	for name := range mcpSyncToolScopes {
+		if !containsString(control, name) {
+			t.Fatalf("control scope omitted %q: %v", name, control)
+		}
+	}
+}
+
+func containsString(values []string, wanted string) bool {
+	for _, value := range values {
+		if value == wanted {
+			return true
+		}
+	}
+	return false
 }
 
 // Each scope lists exactly what it should — asserted as a whole set, so a tool

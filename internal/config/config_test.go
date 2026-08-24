@@ -17,6 +17,9 @@ func TestDefaultConfig(t *testing.T) {
 	if !cfg.MCP.Enabled {
 		t.Fatalf("MCP should be enabled by default for documented API parity")
 	}
+	if cfg.MCP.SyncScope != "" {
+		t.Fatalf("MCP sync must default disabled/empty, got %q", cfg.MCP.SyncScope)
+	}
 	if cfg.Retention.UnreferencedResourceDays != 30 || cfg.Retention.PurgedResourceDays != 90 {
 		t.Fatalf("unexpected retention defaults: %+v", cfg.Retention)
 	}
@@ -42,6 +45,7 @@ search:
 mcp:
   enabled: false
   default_profile: "disabled"
+  sync_scope: "control"
   max_results: 3
   max_document_bytes: 2048
 
@@ -70,7 +74,7 @@ retention:
 	if cfg.Search.MaxLimit != 77 || cfg.Search.DefaultLimit != 7 {
 		t.Fatalf("search config not loaded: %+v", cfg.Search)
 	}
-	if cfg.MCP.Enabled || cfg.MCP.MaxResults != 3 || cfg.MCP.MaxDocumentBytes != 2048 {
+	if cfg.MCP.Enabled || cfg.MCP.SyncScope != "control" || cfg.MCP.MaxResults != 3 || cfg.MCP.MaxDocumentBytes != 2048 {
 		t.Fatalf("mcp config not loaded: %+v", cfg.MCP)
 	}
 	if !cfg.SearchSidecar.Enabled || cfg.SearchSidecar.Binary != "recollindex-dev" {

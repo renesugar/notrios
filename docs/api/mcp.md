@@ -42,6 +42,7 @@ call too.
 ```yaml
 mcp:
   default_scope: "read-only"
+  sync_scope: "disabled" # disabled | status | control
 ```
 
 Tools outside the active scope are hidden from `tools/list` **and refused when
@@ -69,6 +70,15 @@ archive restore, and publication are not reachable over MCP at any scope, so a
 scope naming them would cover an empty set. Those stay a deliberate act on the
 command line.
 
+Sync has a second, orthogonal permission because granting note reads or edits
+must not silently grant network work. `mcp.sync_scope` defaults to `disabled`;
+`status` adds `get_sync_status` and `list_sync_conflicts`; `control` also adds
+`plan_sync`, `start_sync`, `request_resource_fetch`, `retry_sync_job`, and
+`cancel_sync_job`. Control accepts only byte/attempt bounds and job IDs. Targets
+are opaque digests: no tool accepts or returns a path, URL, credential, key,
+backup, restore request, peer enrollment/retirement, purge, or reset. Retry and
+cancel apply only to the MCP actor's own incremental/resource jobs.
+
 ## Read tools
 
 `search_documents`, `plan_selection`, `get_document`, `get_documents`,
@@ -78,7 +88,8 @@ command line.
 `get_note_line_range`, `search_in_note`, `scan_remote_media`,
 `get_document_blocks`, `get_graph`, `find_graph_path`, `get_graph_report`,
 `run_note_query`, `get_lint_report`, `read_resource`, `list_templates`,
-`list_tasks`, `get_job`, `list_jobs`.
+`list_tasks`, `get_job`, `list_jobs`. Sync records are hidden from the generic
+job tools unless `mcp.sync_scope` is at least `status`.
 
 The last seven arrived in v0.6 F3, once scopes existed to place them.
 `get_document_blocks` is how a model cites *part* of a note precisely — a block

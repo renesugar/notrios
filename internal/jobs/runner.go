@@ -91,7 +91,7 @@ func (r *Runner) poll(ctx context.Context) {
 			// A background heartbeat is a plain write, so it uses a fresh
 			// context: once the run context is cancelled this would otherwise
 			// fail, exactly when the record most needs updating.
-			cancelled, err := r.store.ReportJobProgress(context.Background(), r.id, store.JobProgress{})
+			cancelled, err := r.store.TouchJob(context.Background(), r.id)
 			if err == nil && cancelled {
 				r.requestStop()
 				return

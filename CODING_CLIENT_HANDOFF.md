@@ -3,7 +3,7 @@
 This handoff applies to any coding agent or client continuing this project (Codex, Claude, aider, swival.dev, etc. — formerly `CODEX_HANDOFF.md`). The repository is designed so an agent can continue from repository files alone.
 
 Current phase: v0.1 through **v0.6** are complete; product version is **0.6.0**
-and the schema is **v25**. The eight v0.6 slices are archived under
+and the schema is **v26**. The eight v0.6 slices are archived under
 `plans/v0.6/`: F0 (notebook targeting, landed with v0.5 E10), F1 (batch
 organizer transactions), F2 (MCP tool scopes), F3 (MCP read coverage and HTTP
 `Range`), F4 (note templates and task extraction), F5 (graph views that stay
@@ -14,7 +14,7 @@ wrap-up). The thirteen v0.5 slices remain archived under `plans/v0.5/`.
 independently approvable G0-G20 slices plus the newly inserted, blocking
 G14a-G14e archive-scalability sequence. The user's 2026-08-11
 review resolved the policy decisions through G17, including mandatory payload
-encryption and per-replica Ed25519 signatures. **G0-G14e are complete** and
+encryption and per-replica Ed25519 signatures. **G0-G15 are complete** and
 archived under `plans/v0.7/`; their reviewed evidence is under
 `performance/v0.7-g0/`, `performance/v0.7-g1/`, `performance/v0.7-g1a/`,
 `performance/v0.7-g2/`, `performance/v0.7-g4/`, `performance/v0.7-g5/`,
@@ -23,12 +23,27 @@ archived under `plans/v0.7/`; their reviewed evidence is under
 `performance/v0.7-g12/`, `performance/v0.7-g13/`, `performance/v0.7-g14/`,
 `performance/v0.7-g14a/`, `performance/v0.7-g14b/`, and
 `performance/v0.7-g14c/`, `performance/v0.7-g14d/`, and
-`performance/v0.7-g14e/`. **G15 is next and is not approved.** G14b selected option B: a
+`performance/v0.7-g14e/`. G15's archive is
+`plans/v0.7/024-durable-sync-jobs.md`. **G16 is next and is not approved.** G14b selected option B: a
 required compatible same-schema SQLite-image plus bounded packed-assets
 capability for whole-library full backup/catch-up, retaining packed semantic
 archive-v2 for subset, merge, schema-independent interchange, and fallback.
 G14c implements that exact representation, G14d integrates it, and G14e passed
 the full-scale acceptance matrix and froze the format.
+
+G15 advances schema v26 with a sync-only durable outbox over the F6 job
+records. `internal/syncjobs/` drains only explicitly queued/due rows; it never
+creates periodic work. Atomic target leases, content-free phase checkpoints,
+heartbeats, cancellation, 64 MiB default/16 GiB maximum per-attempt artifact
+budgets, stale-worker recovery, and deterministic jittered retry are live over
+the existing directory/REST round. Targets persist only as opaque digests.
+CLI adds `sync start` and `jobs retry [--reset]`; local REST adds bounded
+plan/start/status/retry/reset/conflict routes. MCP has an orthogonal
+`mcp.sync_scope=disabled|status|control`, default disabled, and can control only
+its own path-free incremental/resource jobs—never locations, credentials,
+keys, bulk bytes, enrollment, backup/restore, retirement, purge,
+catch-up/restore-prep, reset, or another actor's job. The full Go/UI/docs/smoke
+validation passed; OpenAPI and code now match all 93 registered operations.
 
 G14c adds production `sqlite-image+packed-assets.v1` creation and read-only
 admission under `internal/snapshotimage/` and
@@ -387,11 +402,10 @@ verified ZIP, and handoff before G12.
 
 Two things a reader continuing this project should know about v0.6:
 
-- **One roadmap bullet shipped half.** "MCP starts/statuses bulk
-  export/import/sync jobs" became *watching* only. Every job kind names a
-  filesystem path, and no REST or MCP surface accepts one, so starting a job
-  stays a CLI act. The refusal is recorded in the bullet rather than the bullet
-  being marked done.
+- **The v0.6 half-shipped job bullet is now resolved for sync.** Import/export/
+  snapshot jobs remain watching-only because they name local paths. G15 adds a
+  distinct closed, path-free start/control surface for incremental/resource
+  sync only; it does not make arbitrary jobs remotely startable.
 - **F7's reconciliation found three defects**, all fixed in it: the batch route
   applied `trash` and tag operations to notes in read-only notebooks that the
   single-note routes refuse, single-note tagging had no read-only guard at all,

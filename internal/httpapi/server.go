@@ -21,6 +21,7 @@ import (
 	"github.com/renesugar/notrios/internal/query"
 	"github.com/renesugar/notrios/internal/recoll"
 	"github.com/renesugar/notrios/internal/store"
+	"github.com/renesugar/notrios/internal/syncjobs"
 	"github.com/renesugar/notrios/internal/version"
 )
 
@@ -40,6 +41,18 @@ type Server struct {
 	// sync is the peer-authenticated surface, attached only when a caller
 	// supplies key material. Nil means the sync routes refuse.
 	sync *SyncSecurity
+	// syncJobs is the local G15 control plane. It never receives peer requests;
+	// peer-authenticated transport remains under sync above.
+	syncJobs     *syncjobs.Manager
+	syncTargetID string
+}
+
+// AttachSyncJobs enables the local REST/MCP sync control plane for the one
+// configured target. The target location and credentials remain inside the
+// manager's adapter and never enter HTTP values.
+func (s *Server) AttachSyncJobs(manager *syncjobs.Manager, targetID string) {
+	s.syncJobs = manager
+	s.syncTargetID = targetID
 }
 
 // SidecarSearcher is the optional derived search backend (Recoll). Implemented
@@ -191,6 +204,12 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("GET /api/v1/jobs", s.handleListJobs)
 	s.mux.HandleFunc("GET /api/v1/jobs/{job_id}", s.handleJob)
 	s.mux.HandleFunc("POST /api/v1/jobs/{job_id}/cancel", s.handleCancelJob)
+	s.mux.HandleFunc("POST /api/v1/jobs/sync/plan", s.handlePlanSyncJob)
+	s.mux.HandleFunc("POST /api/v1/jobs/sync/start", s.handleStartSyncJob)
+	s.mux.HandleFunc("GET /api/v1/jobs/{job_id}/sync", s.handleSyncJob)
+	s.mux.HandleFunc("POST /api/v1/jobs/{job_id}/retry", s.handleRetrySyncJob)
+	s.mux.HandleFunc("POST /api/v1/jobs/{job_id}/reset", s.handleResetSyncJob)
+	s.mux.HandleFunc("GET /api/v1/sync-conflicts", s.handleSyncConflicts)
 	s.mux.HandleFunc("GET /", s.handleWebApp)
 }
 

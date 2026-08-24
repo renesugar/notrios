@@ -297,8 +297,8 @@ also exposed about **25% stored-ZIP overhead from one entry per loose archive
 object**, while the existing pack fix has never been exercised end to end at
 the supplied full scale.
 
-**The blocking G14a-G14e archive-scalability sequence is complete; G15 is next
-and approval-gated.** G14a supplies the resumable, aggregate-only benchmark contract and
+**The blocking G14a-G14e archive-scalability sequence and G15 durable sync-job
+control are complete; G16 is next and approval-gated.** G14a supplies the resumable, aggregate-only benchmark contract and
 generated 10k/100k calibration. That evidence confirms one-file-per-object
 growth, isolates stored-ZIP overhead from framing, and records a 100k
 incremental-replay memory failure without changing production code. G14b's
@@ -316,6 +316,14 @@ catch-up took 2,948.669 seconds at 210,010,112 bytes peak RSS with exact
 post-vector equality. exFAT is no longer available
 on the test drives, so the gate requires a bounded, non-object-per-file layout
 but makes no unmeasured exFAT performance claim.
+
+**G15 completed 2026-08-24** with schema v26. Explicit operations now enter a
+closed per-target durable outbox with atomic leases, phase checkpoints,
+heartbeats, cancellation, byte budgets, and bounded jittered retry. Local REST
+and CLI expose safe control; MCP sync visibility/control is separately disabled
+by default and can never reach target locations, credentials, keys,
+backup/restore, enrollment/retirement, purge, reset, or another actor's
+catch-up. The worker drains work but never schedules periodic sync.
 
 - **Evidence before contracts (G0-G2, including G1a):** threat model and
   reference validation; representative revision/delta/three-way-merge

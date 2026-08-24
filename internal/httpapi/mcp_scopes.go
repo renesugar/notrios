@@ -42,6 +42,22 @@ const (
 	MCPScopeOrganizer = "organizer"
 )
 
+const (
+	MCPSyncDisabled = "disabled"
+	MCPSyncStatus   = "status"
+	MCPSyncControl  = "control"
+)
+
+var mcpSyncToolScopes = map[string]string{
+	"get_sync_status":        MCPSyncStatus,
+	"list_sync_conflicts":    MCPSyncStatus,
+	"plan_sync":              MCPSyncControl,
+	"start_sync":             MCPSyncControl,
+	"request_resource_fetch": MCPSyncControl,
+	"retry_sync_job":         MCPSyncControl,
+	"cancel_sync_job":        MCPSyncControl,
+}
+
 // MCPScopes lists every scope, narrowest first.
 func MCPScopes() []string {
 	return []string{MCPScopeSearchOnly, MCPScopeReadOnly, MCPScopeEditor, MCPScopeOrganizer}
@@ -104,6 +120,14 @@ var mcpToolScopes = map[string]string{
 	// all, so there is no wider tier for them to sit in — see mcp_jobs.go.
 	"get_job":   MCPScopeReadOnly,
 	"list_jobs": MCPScopeReadOnly,
+	// G15 sync tools also pass the orthogonal mcp.sync_scope gate below.
+	"get_sync_status":        MCPScopeReadOnly,
+	"list_sync_conflicts":    MCPScopeReadOnly,
+	"plan_sync":              MCPScopeReadOnly,
+	"start_sync":             MCPScopeReadOnly,
+	"request_resource_fetch": MCPScopeReadOnly,
+	"retry_sync_job":         MCPScopeReadOnly,
+	"cancel_sync_job":        MCPScopeReadOnly,
 
 	// editor: single-note writes.
 	"create_note":           MCPScopeEditor,
@@ -193,7 +217,13 @@ func (s *Server) mcpScopeAllows(tool string) bool {
 	if !classified {
 		return false
 	}
-	return scopeRank(s.mcpScope()) >= scopeRank(required)
+	if scopeRank(s.mcpScope()) < scopeRank(required) {
+		return false
+	}
+	if syncRequired, isSyncTool := mcpSyncToolScopes[tool]; isSyncTool {
+		return mcpSyncScopeRank(s.mcpSyncScope()) >= mcpSyncScopeRank(syncRequired)
+	}
+	return true
 }
 
 // mcpScopeError explains a refusal in terms the caller can act on: which scope
@@ -203,8 +233,34 @@ func (s *Server) mcpScopeError(tool string) error {
 	if !classified {
 		return fmt.Errorf("unknown MCP tool %q", tool)
 	}
+	if syncRequired, isSyncTool := mcpSyncToolScopes[tool]; isSyncTool &&
+		mcpSyncScopeRank(s.mcpSyncScope()) < mcpSyncScopeRank(syncRequired) {
+		return fmt.Errorf("tool %q requires mcp.sync_scope=%q or wider; the active sync scope is %q",
+			tool, syncRequired, s.mcpSyncScope())
+	}
 	return fmt.Errorf("tool %q requires the %q MCP scope or wider; the active scope is %q (set mcp.default_scope)",
 		tool, required, s.mcpScope())
+}
+
+func (s *Server) mcpSyncScope() string {
+	value := strings.ToLower(strings.TrimSpace(s.config.MCP.SyncScope))
+	if mcpSyncScopeRank(value) < 0 {
+		return MCPSyncDisabled
+	}
+	return value
+}
+
+func mcpSyncScopeRank(scope string) int {
+	switch strings.ToLower(strings.TrimSpace(scope)) {
+	case MCPSyncDisabled, "":
+		return 0
+	case MCPSyncStatus:
+		return 1
+	case MCPSyncControl:
+		return 2
+	default:
+		return -1
+	}
 }
 
 // mcpToolsForScope filters a tool list to what the active scope may call.

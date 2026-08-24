@@ -1,11 +1,11 @@
 # Plan Status
 
-Updated: 2026-08-23 (G14e complete; G15 next and unapproved)
+Updated: 2026-08-24 (G15 complete; G16 next and unapproved)
 
 ## Active milestone
 
 **v0.1 through v0.6 are complete.** Product version is **0.6.0** and the
-canonical schema is **v25**. v0.6 F0-F7 are archived under `plans/v0.6/`;
+canonical schema is **v26**. v0.6 F0-F7 are archived under `plans/v0.6/`;
 earlier milestones remain under their version directories.
 
 `PLAN.md` is now the **active v0.7 native synchronization plan**. It contains
@@ -14,13 +14,35 @@ G15-G20: evidence, profiles/local journal, state-vector convergence,
 revision deltas/merge, lazy resources, secure container/catch-up,
 ephemeral-directory and REST transports, jobs/UI/retention, shared-core/FFI/
 Mermaid/mobile handoff, compatibility, and final validation. The user's
-2026-08-11 review resolved every original G0-G17 policy decision. **G0-G14e are
+2026-08-11 review resolved every original G0-G17 policy decision. **G0-G15 are
 complete** and archived under `plans/v0.7/`; the 2026-08-15 planning amendment
 reopened physical snapshot scalability. G14b selected option B from full-corpus
 evidence, G14c implemented the local production representation/verifier, and
 G14d integrated encrypted transport plus crash-safe restore/catch-up, and G14e
-passed the production full-scale matrix and froze the format. G15 is next and
-unapproved.
+passed the production full-scale matrix and froze the format. G15 then added
+the schema-v26 durable sync outbox and bounded local REST/MCP control. G16 is
+next and unapproved.
+
+## v0.7 G15 completion — 2026-08-24
+
+- Schema v26 adds `sync_jobs` and `sync_job_audit`: opaque targets, atomic
+  one-per-target leases, phase/count checkpoints, attempt/next-run state,
+  per-attempt artifact budgets, and content-free events. It adds no arbitrary
+  commands, priority, dependencies, DAG, cron, or periodic enqueue.
+- `internal/syncjobs` drains explicit rows through the existing directory/REST
+  round, checkpoints plan/pull/resource-serve/push/advertise/resource-fetch,
+  recovers stale workers, cancels at safe boundaries, and applies deterministic
+  exponential ±20% jitter for offline/quota/temporary/budget failures.
+- CLI adds `sync start` and `jobs retry [--reset]`. Local REST adds bounded
+  plan/start/status/retry/reset/conflict operations. OpenAPI and code match all
+  93 registered operations.
+- MCP's new orthogonal permission defaults to `sync_scope=disabled`; `status`
+  reads bounded status/conflicts and `control` adds only path-free incremental/
+  resource work plus retry/cancel of its own jobs. Keys, target locations,
+  bytes, enrollment, backup/restore, retirement, purge, catch-up/restore-prep,
+  reset, and other actors' control remain unavailable.
+- Full Go/UI/docs/scaffold/GUI/smoke/offline/performance validation passed. The
+  archive is `plans/v0.7/024-durable-sync-jobs.md`.
 
 ## v0.7 G14e completion — 2026-08-23
 
@@ -2276,4 +2298,4 @@ attempt detail remains append-only in `agent/ATTEMPT_LOG.jsonl`.
 - Long-term SQLite driver choice (current local cgo/libsqlite3 adapter).
 - Official MCP Go SDK adoption/version.
 - Sync decisions live in the owning plan items; the register in `PLAN.md` is an
-  index. G0-G14e are complete; G15 and every later slice remain approval-gated.
+  index. G0-G15 are complete; G16 and every later slice remain approval-gated.

@@ -577,6 +577,7 @@ Usage:
   notriosctl jobs status [--db ...] [--wait] [--timeout 30m] [--quiet] <job-id>
   notriosctl jobs show [--db ...] [--command] <job-id>
   notriosctl jobs cancel [--db ...] <job-id>
+  notriosctl jobs retry [--db ...] [--reset] <sync-job-id>
                                                  # long imports and exports record a job; status exits 0 succeeded,
                                                  # 1 failed, 3 running, 4 cancelled, 5 no such job, 6 interrupted
   notriosctl sync init|status [--db ...] [--keys path]

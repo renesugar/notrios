@@ -18,7 +18,8 @@ data:
 # profile identity, absolute isolated paths, and one of these targets. The
 # ordinary checkout config is unmanaged and safely keeps synchronization off.
 # Changing a managed profile to directory/rest establishes its sequence-zero
-# local journal boundary; transfer remains a later v0.7 slice.
+# local journal boundary. G15 drains only explicitly queued durable jobs; it
+# does not create periodic work.
 sync:
   target: "none"                 # none | directory | rest
 
@@ -39,6 +40,10 @@ mcp:
   # appear, the narrower of the two wins and the service logs it, because a key
   # that quietly stops applying must never widen what an agent may do.
   default_scope: "read-only"
+  # Orthogonal sync authority: disabled (default), status, or control.
+  # control can only plan/start bounded incremental and wanted-resource jobs;
+  # it cannot enroll, expose keys, back up, restore, retire, purge, or reset.
+  sync_scope: "disabled"
   max_results: 10
   max_document_bytes: 65536
 

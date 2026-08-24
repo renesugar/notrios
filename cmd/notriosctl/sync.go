@@ -56,6 +56,8 @@ func runSync(args []string) {
 		runSyncFetchBackup(args[1:])
 	case "once":
 		runSyncOnce(args[1:])
+	case "start":
+		runSyncStart(args[1:])
 	default:
 		fmt.Fprintf(os.Stderr, "unknown sync subcommand %q\n", args[0])
 		printSyncUsage()
@@ -79,7 +81,62 @@ func printSyncUsage() {
   notriosctl sync status   [--db ...] [--keys path]
   notriosctl sync discover [--db ...] [--keys path] [--carrier dir]
   notriosctl sync once     [--db ...] [--keys path] [--carrier dir] [--cleanup] [--materialize N]
+  notriosctl sync start    [--db ...] [--resource-fetch] [--byte-budget N] [--max-attempts N]
 `)
+}
+
+// runSyncStart adds one explicit operation to G15's durable outbox. It does
+// not invent a cadence: a running notriosd drains it, and otherwise it remains
+// queued for the next service start.
+func runSyncStart(args []string) {
+	flags := newSyncFlags("start")
+	resourceFetch := flags.set.Bool("resource-fetch", false, "fetch resources already marked wanted after the exchange")
+	byteBudget := flags.set.Int64("byte-budget", store.DefaultSyncJobByteBudget, "maximum transport bytes for one attempt")
+	maxAttempts := flags.set.Int("max-attempts", store.DefaultSyncJobAttempts, "maximum attempts including the first")
+	flags.parse(args)
+	st, status, _ := flags.openSyncStore()
+	defer st.Close()
+	requireEnrolled(status)
+	cfg, err := config.Load(*flags.configPath)
+	if err != nil {
+		exit(err)
+	}
+	targetType := strings.ToLower(strings.TrimSpace(cfg.Sync.Target))
+	canonical := ""
+	switch targetType {
+	case "directory":
+		directory := strings.TrimSpace(*flags.carrier)
+		if directory == "" {
+			directory = strings.TrimSpace(cfg.Sync.Directory)
+		}
+		if directory == "" {
+			exit(fmt.Errorf("sync.directory is required"))
+		}
+		canonical = "directory:" + directory
+	case "rest":
+		if strings.TrimSpace(cfg.Sync.RESTBaseURL) == "" {
+			exit(fmt.Errorf("sync.rest_base_url is required"))
+		}
+		canonical = "rest:" + strings.TrimRight(strings.TrimSpace(cfg.Sync.RESTBaseURL), "/")
+	default:
+		exit(fmt.Errorf("sync.target must be directory or rest before a job can be queued"))
+	}
+	kind := store.JobKindSyncIncremental
+	if *resourceFetch {
+		kind = store.JobKindSyncResourceFetch
+	}
+	job, err := st.CreateSyncJob(context.Background(), store.CreateSyncJobRequest{
+		Kind: kind, Actor: store.SyncJobActorCLI, TargetID: store.SyncTargetID(canonical),
+		ByteBudget: *byteBudget, MaxAttempts: *maxAttempts,
+	})
+	if err != nil {
+		exit(err)
+	}
+	printJSON(map[string]any{
+		"job_id": job.Job.ID, "state": job.Job.State, "kind": job.Job.Kind,
+		"target_id": job.TargetID, "byte_budget": job.ByteBudget,
+		"next": "notriosctl jobs status " + job.Job.ID + " --wait",
+	})
 }
 
 // syncFlags are the options every sync subcommand shares.

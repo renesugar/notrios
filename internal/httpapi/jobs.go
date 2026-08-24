@@ -13,15 +13,9 @@ import (
 
 // The job control plane over HTTP (v0.6 F6).
 //
-// **Watching, not starting.** Every operation that has a job — the importers
-// and archive export — takes a filesystem path, and the standing decision since
-// v0.4 is that no REST or MCP surface accepts an archive path or streams
-// archive bytes. Wrapping such an operation in a job does not change what it
-// does, so start stays on the command line and these routes report and stop.
-//
-// That is narrower than the v0.6 plan bullet's "MCP may start and watch a job",
-// and deliberately so: the same bullet says bulk bytes never travel this way,
-// and the only jobs this build knows how to run are ones that name a path.
+// Import/export/snapshot kinds remain watching-only because they name local
+// paths. G15's separate sync routes may plan/start the two path-free ordinary
+// sync kinds; they never make arbitrary job kinds remotely startable.
 
 func (s *Server) handleJob(w http.ResponseWriter, r *http.Request) {
 	if s.store == nil {

@@ -1126,6 +1126,20 @@ names the right local profile, and refuses a third profile sharing a port.
 Generated configs are revalidated at service startup, so bypassing the CLI
 launcher does not bypass identity/path checks.
 
+## v0.7 G15 durable sync-job validation
+
+G15 fixtures cover schema-v26 upgrade and opaque-target privacy; atomic claim
+and one-running-job-per-target behavior with two targets; durable phase/count
+checkpoints; stale-heartbeat recovery; checkpoint-preserving retry and explicit
+reset; deterministic exponential ±20% jitter capped at 15 minutes; offline,
+quota, temporary, and byte-budget classification; cancellation at a durable
+boundary; bounded audit/conflict views; and the existing CLI job status exit
+codes. REST route-drift and MCP whole-set scope tests prove that sync tools are
+hidden and refused by default, status is read-only, control accepts no target
+location, and MCP cannot control another actor's or catch-up job. Full test
+passes that open local listeners require the normal unsandboxed validation
+environment.
+
 ## MVP release validation
 
 Task 10 adds release-candidate checks beyond ordinary unit tests:

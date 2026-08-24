@@ -2,24 +2,22 @@ package httpapi
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/renesugar/notrios/internal/api"
 	"github.com/renesugar/notrios/internal/store"
 )
 
-// Job tools for MCP: watching only, and content-free (v0.6 F6).
+// Generic job tools for MCP: watching only, and content-free (v0.6 F6/G15).
 //
-// **A model may not start a job.** Every kind this build knows how to run — the
-// two importers and archive export — takes a filesystem path, and the standing
-// decision since v0.4 is that no MCP surface accepts one. Wrapping an operation
-// in a job record does not change what the operation does, so `start` would
-// reopen exactly the hole F3 recorded a reason for closing.
+// **A model may not start an arbitrary job.** Import/export/snapshot kinds take
+// a filesystem path. G15's separate, explicit-scope tools start only ordinary
+// incremental/resource jobs whose configured target stays behind an opaque ID.
 //
-// **A model may not cancel one either.** Cancelling is safe for the data, but a
-// model deciding to stop a four-hour import a person started is not a decision
-// it should be making. REST and the CLI both offer cancel to whoever is
-// driving them.
+// **A model may not cancel an arbitrary job either.** The G15 tool accepts only
+// an MCP-owned incremental/resource job, never another actor's catch-up or a
+// person's import.
 
 // mcpJobView is the narrowed job a model sees.
 //
@@ -69,6 +67,9 @@ func (s *Server) mcpGetJob(r *http.Request, raw json.RawMessage) (mcpToolResult,
 	if err != nil {
 		return mcpToolResult{}, err
 	}
+	if store.IsSyncJobKind(job.Kind) && mcpSyncScopeRank(s.mcpSyncScope()) < mcpSyncScopeRank(MCPSyncStatus) {
+		return mcpToolResult{}, fmt.Errorf("sync job status requires mcp.sync_scope=status or control")
+	}
 	return mcpStructured(mcpJobView(toAPIJob(job)))
 }
 
@@ -89,6 +90,9 @@ func (s *Server) mcpListJobs(r *http.Request, raw json.RawMessage) (mcpToolResul
 	}
 	views := make([]map[string]any, 0, len(list.Jobs))
 	for _, job := range list.Jobs {
+		if store.IsSyncJobKind(job.Kind) && mcpSyncScopeRank(s.mcpSyncScope()) < mcpSyncScopeRank(MCPSyncStatus) {
+			continue
+		}
 		views = append(views, mcpJobView(toAPIJob(job)))
 	}
 	return mcpStructured(map[string]any{"jobs": views, "truncated": list.Truncated})

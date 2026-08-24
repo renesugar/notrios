@@ -32,7 +32,7 @@ The authoritative, always-current example is `config/config.example.yaml` in the
 | `data.database_path` | `./data/notes.sqlite` | the canonical SQLite database |
 | `data.asset_store` | `./data/assets` | content-addressed attachment bytes |
 | `data.projection_dir` | `./data/projections` | Markdown mirror of your notes for the search sidecar |
-| `sync.target` | `none` | local transport choice: `none`, `directory`, or `rest`; a non-none managed profile establishes G4's local snapshot/journal boundary, but later slices implement transfer |
+| `sync.target` | `none` | local transport choice: `none`, `directory`, or `rest`; a non-none managed profile establishes the local journal boundary and G15 runs only explicitly queued durable jobs |
 | `sync.directory` | *(unset)* | absolute ephemeral carrier path required only for `directory` |
 | `sync.rest_base_url` | *(unset)* | absolute peer URL required only for `rest` |
 | `sync.credential_ref` | *(unset)* | reference to a native credential-store item, never a credential value; redacted from CLI profile output |
@@ -40,6 +40,7 @@ The authoritative, always-current example is `config/config.example.yaml` in the
 | `search.max_limit` | `100` | hard cap on requested page size |
 | `mcp.enabled` | `true` | mount the `/mcp` endpoint |
 | `mcp.default_scope` | `read-only` | cumulative `search-only`, `read-only`, `editor`, or `organizer` MCP tool scope. `mcp.default_profile` remains a deprecated alias; if both are set, the narrower wins ([MCP guide](api/mcp.md)) |
+| `mcp.sync_scope` | `disabled` | orthogonal `disabled`, `status`, or `control` sync permission; control is limited to bounded incremental/resource jobs and never includes keys, backup/restore, retirement, purge, or reset |
 | `mcp.max_results` | `10` | default MCP search page size |
 | `mcp.max_document_bytes` | `65536` | truncation limit for document bodies returned to MCP clients |
 | `search_sidecar.enabled` | `false` | activate the optional Recoll sidecar |

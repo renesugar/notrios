@@ -578,10 +578,13 @@ candidate on ambiguity, and never guesses across database IDs. The `profiles`
 REST routes below remain planned; the registry is local desktop configuration
 today, not an HTTP surface.
 
-The sync surface is conceptual until v0.7. The resolved G15 policy lets MCP
-plan/start ordinary incremental sync, request a bounded resource fetch, and
-inspect status/conflicts; enrollment, keys, backup export/restore, peer
-retirement, purge, and bulk bytes remain outside MCP. REST and the ephemeral directory carry the same encrypted,
+The G15 local sync control surface queues bounded durable jobs at
+`POST /api/v1/jobs/sync/plan|start`, inspects them at
+`GET /api/v1/jobs/{job_id}/sync`, retries/resets locally, and lists content-free
+conflicts at `GET /api/v1/sync-conflicts`. MCP may plan/start ordinary
+incremental sync, request a bounded resource fetch, and inspect status/conflicts
+only under explicit `mcp.sync_scope`; enrollment, keys, backup export/restore,
+peer retirement, purge, reset, and bulk bytes remain outside MCP. REST and the ephemeral directory carry the same encrypted,
 signed artifacts; full algorithms and compatibility rules are in
 `SYNCHRONIZATION.md`.
 

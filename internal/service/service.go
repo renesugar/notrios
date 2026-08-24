@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -19,7 +20,11 @@ import (
 	"github.com/renesugar/notrios/internal/recoll"
 	"github.com/renesugar/notrios/internal/store"
 	"github.com/renesugar/notrios/internal/syncauth"
+	"github.com/renesugar/notrios/internal/synccarrier"
+	"github.com/renesugar/notrios/internal/syncjobs"
 	"github.com/renesugar/notrios/internal/synckeys"
+	"github.com/renesugar/notrios/internal/syncrest"
+	"github.com/renesugar/notrios/internal/syncwire"
 )
 
 // Service is a started Notrios backend.
@@ -27,6 +32,7 @@ type Service struct {
 	Config    config.Config
 	Store     *store.SQLiteStore
 	Handler   *httpapi.Server
+	SyncJobs  *syncjobs.Manager
 	ctx       context.Context
 	cancel    context.CancelFunc
 	closeOnce sync.Once
@@ -68,10 +74,104 @@ func New(cfg config.Config) (*Service, error) {
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	svc := &Service{Config: cfg, Store: st, Handler: handler, ctx: ctx, cancel: cancel}
+	if err := svc.startSyncJobs(); err != nil {
+		cancel()
+		_ = st.Close()
+		return nil, err
+	}
 	if cfg.SearchSidecar.Enabled {
 		svc.startSearchSidecar()
 	}
 	return svc, nil
+}
+
+// startSyncJobs wires the one explicitly configured target into G15's durable
+// outbox. Missing development key material leaves control unavailable (and is
+// reported) while preserving G4's journal boundary; `sync init` is the explicit
+// act that makes the target runnable.
+func (s *Service) startSyncJobs() error {
+	targetType := strings.ToLower(strings.TrimSpace(s.Config.Sync.Target))
+	if targetType == "" || targetType == "none" {
+		return nil
+	}
+	status, err := s.Store.JournalStatus(s.ctx)
+	if err != nil {
+		return err
+	}
+	identity, err := s.Store.GetDatabaseIdentity(s.ctx)
+	if err != nil {
+		return err
+	}
+	keyPath := strings.TrimSpace(s.Config.Sync.REST.KeyFile)
+	if keyPath == "" {
+		keyPath, err = synckeys.DefaultPath(identity.DatabaseID)
+		if err != nil {
+			return err
+		}
+	}
+	keys, err := synckeys.Open(keyPath)
+	if err != nil {
+		log.Printf("sync target configured but durable jobs are unavailable until `notriosctl sync init` creates usable key material: %v", err)
+		return nil
+	}
+	group, err := keys.Current()
+	if err != nil {
+		return fmt.Errorf("load sync group key: %w", err)
+	}
+	verifier := syncwire.MultiVerifier{keys, s.Store.PeerVerifier()}
+	manager := syncjobs.New(s.Store)
+	var targetID string
+	var builder syncjobs.CarrierBuild
+
+	switch targetType {
+	case "directory":
+		root := filepath.Clean(strings.TrimSpace(s.Config.Sync.Directory))
+		if root == "." || root == "" {
+			log.Printf("sync target directory establishes a journal boundary, but durable jobs are unavailable until sync.directory is configured")
+			return nil
+		}
+		targetID = store.SyncTargetID("directory:" + root)
+		builder = func(options synccarrier.Options, byteBudget int64) (*synccarrier.Round, *synccarrier.BudgetCarrier, store.ObjectProvider, error) {
+			carrier, buildErr := synccarrier.NewDirectory(root, group, identity.DatabaseID, status.ReplicaID)
+			if buildErr != nil {
+				return nil, nil, nil, buildErr
+			}
+			budget := synccarrier.NewBudgetCarrier(carrier, byteBudget)
+			round := synccarrier.NewRound(synccarrier.NewStoreReplica(s.Store), budget, keys, keys, verifier,
+				store.NewLocalObjectProvider(s.Store), options)
+			return round, budget, synccarrier.NewProvider(budget, keys, verifier, syncwire.Limits{}), nil
+		}
+	case "rest":
+		baseURL := strings.TrimRight(strings.TrimSpace(s.Config.Sync.RESTBaseURL), "/")
+		if baseURL == "" {
+			log.Printf("sync target rest establishes/serves a journal boundary, but outbound durable jobs are unavailable until sync.rest_base_url is configured")
+			return nil
+		}
+		targetID = store.SyncTargetID("rest:" + baseURL)
+		builder = func(options synccarrier.Options, byteBudget int64) (*synccarrier.Round, *synccarrier.BudgetCarrier, store.ObjectProvider, error) {
+			client := &syncauth.Client{BaseURL: baseURL, DatabaseID: identity.DatabaseID, ReplicaID: status.ReplicaID,
+				SignerKeyID: keys.SignerKeyID(), Private: keys.PrivateSigningKey()}
+			carrier := syncrest.New(client, group, status.ReplicaID)
+			budget := synccarrier.NewBudgetCarrier(carrier, byteBudget)
+			round := synccarrier.NewRound(synccarrier.NewStoreReplica(s.Store), budget, keys, keys, verifier,
+				store.NewLocalObjectProvider(s.Store), options)
+			return round, budget, synccarrier.NewProvider(budget, keys, verifier, syncwire.Limits{}), nil
+		}
+	default:
+		return fmt.Errorf("sync target must be none, directory, or rest")
+	}
+	if err := manager.Register(targetID, &syncjobs.CarrierTarget{Store: s.Store, Build: builder, MaterializeLimit: 16}); err != nil {
+		return err
+	}
+	s.SyncJobs = manager
+	s.Handler.AttachSyncJobs(manager, targetID)
+	s.workers.Add(1)
+	go func() {
+		defer s.workers.Done()
+		manager.Serve(s.ctx, "service-"+status.ReplicaID)
+	}()
+	log.Printf("durable sync job worker active for opaque target %s", targetID)
+	return nil
 }
 
 // attachSyncSecurity enables the peer-authenticated sync surface, and refuses

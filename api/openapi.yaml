@@ -97,6 +97,36 @@ paths:
               schema: { type: object, additionalProperties: true }
         '403':
           $ref: '#/components/responses/Error'
+  /api/v1/sync/carrier/namespaces:
+    get:
+      summary: List opaque carrier namespaces (v0.7 G14)
+      responses:
+        '200': { description: Bounded opaque namespace names }
+        '401': { $ref: '#/components/responses/Error' }
+  /api/v1/sync/carrier/{segment1}/{segment2}:
+    get:
+      summary: List opaque artifact names in one namespace/class (v0.7 G14)
+      responses:
+        '200': { description: Bounded opaque artifact names }
+        '401': { $ref: '#/components/responses/Error' }
+    put:
+      summary: Publish one immutable artifact into the authenticated caller's namespace
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema: { type: string, format: binary }
+      responses:
+        '200': { description: Artifact already present }
+        '201': { description: Artifact published }
+        '401': { $ref: '#/components/responses/Error' }
+        '413': { $ref: '#/components/responses/Error' }
+    delete:
+      summary: Remove one artifact from the authenticated caller's own namespace
+      responses:
+        '204': { description: Artifact absent }
+        '401': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
   /api/v1/sync/carrier/{namespace}/{class}/{name}:
     get:
       summary: Read one sync artifact (v0.7 G14)
@@ -1235,13 +1265,13 @@ paths:
     get:
       summary: List recent job records, newest first
       description: >
-        Watching only. Every job kind names a filesystem path, and no REST or
-        MCP surface accepts one, so jobs are started with notriosctl. Parameters
-        are never returned: they name places on the local machine.
+        Parameters are never returned: import/export jobs may name places on
+        the local machine. G15 sync jobs are the exception to watching-only:
+        their closed, path-free controls are below.
       parameters:
         - in: query
           name: kind
-          schema: { type: string, enum: [import_joplin_raw, import_obsidian, export_archive_v2] }
+          schema: { type: string, enum: [import_joplin_raw, import_obsidian, export_archive_v2, snapshot_image, sync_incremental, sync_resource_fetch, sync_catchup, sync_restore_prep] }
         - in: query
           name: state
           schema: { type: string, enum: [queued, running, succeeded, failed, cancelled, interrupted] }
@@ -1296,6 +1326,105 @@ paths:
                 $ref: '#/components/schemas/JobStatus'
         '404':
           $ref: '#/components/responses/Error'
+  /api/v1/jobs/sync/plan:
+    post:
+      summary: Plan one bounded ordinary sync without queueing it
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SyncControlRequest' }
+      responses:
+        '200':
+          description: Content-free local plan against an opaque target
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        '400': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /api/v1/jobs/sync/start:
+    post:
+      summary: Queue one bounded incremental or resource-fetch sync job
+      description: Accepts no path, URL, credential, key, backup, restore, retirement, or purge input.
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SyncControlRequest' }
+      responses:
+        '202':
+          description: Durable queued sync job
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SyncJobStatus' }
+        '400': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /api/v1/jobs/{job_id}/sync:
+    get:
+      summary: Inspect one sync job and its bounded content-free audit trail
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Sync job and recent audit events
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [sync_job, audit]
+                properties:
+                  sync_job: { $ref: '#/components/schemas/SyncJobStatus' }
+                  audit: { $ref: '#/components/schemas/SyncJobAuditPage' }
+        '404': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /api/v1/jobs/{job_id}/retry:
+    post:
+      summary: Requeue a settled sync job while preserving its checkpoint
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Requeued sync job
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SyncJobStatus' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+  /api/v1/jobs/{job_id}/reset:
+    post:
+      summary: Locally requeue a sync job after clearing its checkpoint and attempts
+      description: Deliberately unavailable over MCP.
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Reset queued sync job
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SyncJobStatus' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+  /api/v1/sync-conflicts:
+    get:
+      summary: List bounded content-free durable sync conflicts
+      parameters:
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+      responses:
+        '200':
+          description: Conflict identities and kinds; no title, body, or conflict-region text
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SyncConflictPage' }
+        '400': { $ref: '#/components/responses/Error' }
 components:
   parameters:
     CollectionID:
@@ -2120,7 +2249,7 @@ components:
       required: [id, kind, state, processed, total, settled]
       properties:
         id: { type: string }
-        kind: { type: string, enum: [import_joplin_raw, import_obsidian, export_archive_v2] }
+        kind: { type: string, enum: [import_joplin_raw, import_obsidian, export_archive_v2, snapshot_image, sync_incremental, sync_resource_fetch, sync_catchup, sync_restore_prep] }
         state: { type: string, enum: [queued, running, succeeded, failed, cancelled, interrupted] }
         collection_id: { type: string }
         phase: { type: string }
@@ -2149,6 +2278,68 @@ components:
         jobs:
           type: array
           items: { $ref: '#/components/schemas/JobStatus' }
+        truncated: { type: boolean }
+    SyncControlRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        kind: { type: string, enum: [incremental, resource_fetch], default: incremental }
+        byte_budget: { type: integer, format: int64, minimum: 1, maximum: 17179869184, default: 67108864 }
+        max_attempts: { type: integer, minimum: 1, maximum: 32, default: 8 }
+    SyncJobStatus:
+      type: object
+      required: [job, actor, target_id, attempt, max_attempts, byte_budget, bytes_used]
+      properties:
+        job: { $ref: '#/components/schemas/JobStatus' }
+        actor: { type: string, enum: [cli, rest, mcp, service] }
+        target_id:
+          type: string
+          description: Opaque target digest; never a path, URL, credential reference, or key.
+        attempt: { type: integer }
+        max_attempts: { type: integer }
+        next_attempt_at: { type: string }
+        retry_code: { type: string, enum: ['', offline, quota, temporary, byte_budget] }
+        byte_budget: { type: integer, format: int64 }
+        bytes_used: { type: integer, format: int64 }
+        checkpoint:
+          type: object
+          additionalProperties: true
+          description: Bounded content-free durable phase/count metadata.
+    SyncJobAuditPage:
+      type: object
+      required: [events]
+      properties:
+        events:
+          type: array
+          maxItems: 200
+          items:
+            type: object
+            required: [id, job_id, event_type, created_at]
+            properties:
+              id: { type: string }
+              job_id: { type: string }
+              event_type: { type: string }
+              details: { type: object, additionalProperties: true }
+              created_at: { type: string }
+        truncated: { type: boolean }
+    SyncConflictPage:
+      type: object
+      required: [conflicts]
+      properties:
+        conflicts:
+          type: array
+          maxItems: 200
+          items:
+            type: object
+            required: [id, document_id, revision_a, revision_b, kind, created_at]
+            properties:
+              id: { type: string }
+              document_id: { type: string }
+              base_revision_id: { type: string }
+              revision_a: { type: string }
+              revision_b: { type: string }
+              kind: { type: string }
+              created_at: { type: string }
         truncated: { type: boolean }
     GraphReportNote:
       type: object
