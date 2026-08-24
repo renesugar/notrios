@@ -311,6 +311,17 @@ orthogonal `disabled|status|control` sync permission and can control only its
 own ordinary incremental/resource jobs—never paths, keys, backup/restore,
 catch-up/restore preparation, enrollment, retirement, purge, or reset.
 
+G16 adds no schema. `internal/httpapi/sync_ui.go` is a loopback/native-only
+application facade over the existing profile, peer, job, conflict, resource,
+repair, snapshot, and carrier contracts. React never receives private keys,
+credentials, raw job parameters, or staging paths. The injectable secret-store
+interface currently shares one warned owner-only `0600` provider instance with
+the peer surface and job worker; each attempt reads its current group epoch, so
+a live pairing takes effect without retaining a stale pre-pair key. Native
+Wails binds only a local directory chooser; GUI-only remote mode does not.
+Portable NPB1 backup wraps the verified physical NBK1 payload key with Argon2id;
+inspection authenticates and verifies into private staging but cannot install.
+
 G2's investigation candidate keeps the archive-v2 JSONL snapshot contract
 unchanged but recommends compact canonical NCB1 records inside incremental
 change envelopes, with a canonical-JSON outer manifest and bounded

@@ -648,3 +648,14 @@ The private half of this — this replica's signing key and the library group ke
 per epoch — stays outside the database in the warned `0600` key file, because a
 database copied to another machine must not carry the keys that decrypt its
 traffic.
+
+## G16 UI projection — no schema change
+
+G16 remains at schema v26. Sync Center state is a bounded projection of the
+existing journal/vector, peer-key, catch-up-permission, job/audit, conflict,
+blob/materialization, and repair rows. Pin/request intent uses the existing
+resource materialization table; conflict resolution adds an ordinary immutable
+revision whose two parents are the conflicting heads; snapshot permission uses
+`sync_catchup_permissions`; no UI-only canonical table or stored password was
+added. NPB1 password-backup headers and private verification staging are files,
+not database records.

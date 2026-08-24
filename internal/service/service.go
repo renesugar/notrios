@@ -5,9 +5,11 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -38,6 +40,7 @@ type Service struct {
 	closeOnce sync.Once
 	closeErr  error
 	workers   sync.WaitGroup
+	syncKeys  *fileSyncSecretStore
 }
 
 // New creates storage directories, opens and bootstraps the store, builds the
@@ -68,12 +71,18 @@ func New(cfg config.Config) (*Service, error) {
 		}
 	}
 	handler := httpapi.NewServerWithOptions(httpapi.ServerOptions{Store: st, Config: cfg})
-	if err := attachSyncSecurity(cfg, st, handler); err != nil {
+	provider, providerErr := newFileSyncSecretStore(cfg, st)
+	if providerErr == nil {
+		handler.AttachSyncSecretStore(provider)
+	} else {
+		log.Printf("local sync secret provider is unavailable: %v", providerErr)
+	}
+	if err := attachSyncSecurity(cfg, st, handler, provider); err != nil {
 		_ = st.Close()
 		return nil, err
 	}
 	ctx, cancel := context.WithCancel(context.Background())
-	svc := &Service{Config: cfg, Store: st, Handler: handler, ctx: ctx, cancel: cancel}
+	svc := &Service{Config: cfg, Store: st, Handler: handler, ctx: ctx, cancel: cancel, syncKeys: provider}
 	if err := svc.startSyncJobs(); err != nil {
 		cancel()
 		_ = st.Close()
@@ -102,21 +111,14 @@ func (s *Service) startSyncJobs() error {
 	if err != nil {
 		return err
 	}
-	keyPath := strings.TrimSpace(s.Config.Sync.REST.KeyFile)
-	if keyPath == "" {
-		keyPath, err = synckeys.DefaultPath(identity.DatabaseID)
-		if err != nil {
-			return err
-		}
+	if s.syncKeys == nil {
+		log.Printf("sync target configured but the local secret provider is unavailable")
+		return nil
 	}
-	keys, err := synckeys.Open(keyPath)
+	keys, err := s.syncKeys.openFile()
 	if err != nil {
 		log.Printf("sync target configured but durable jobs are unavailable until `notriosctl sync init` creates usable key material: %v", err)
 		return nil
-	}
-	group, err := keys.Current()
-	if err != nil {
-		return fmt.Errorf("load sync group key: %w", err)
 	}
 	verifier := syncwire.MultiVerifier{keys, s.Store.PeerVerifier()}
 	manager := syncjobs.New(s.Store)
@@ -132,6 +134,10 @@ func (s *Service) startSyncJobs() error {
 		}
 		targetID = store.SyncTargetID("directory:" + root)
 		builder = func(options synccarrier.Options, byteBudget int64) (*synccarrier.Round, *synccarrier.BudgetCarrier, store.ObjectProvider, error) {
+			group, currentErr := keys.Current()
+			if currentErr != nil {
+				return nil, nil, nil, fmt.Errorf("load current sync group key: %w", currentErr)
+			}
 			carrier, buildErr := synccarrier.NewDirectory(root, group, identity.DatabaseID, status.ReplicaID)
 			if buildErr != nil {
 				return nil, nil, nil, buildErr
@@ -149,6 +155,10 @@ func (s *Service) startSyncJobs() error {
 		}
 		targetID = store.SyncTargetID("rest:" + baseURL)
 		builder = func(options synccarrier.Options, byteBudget int64) (*synccarrier.Round, *synccarrier.BudgetCarrier, store.ObjectProvider, error) {
+			group, currentErr := keys.Current()
+			if currentErr != nil {
+				return nil, nil, nil, fmt.Errorf("load current sync group key: %w", currentErr)
+			}
 			client := &syncauth.Client{BaseURL: baseURL, DatabaseID: identity.DatabaseID, ReplicaID: status.ReplicaID,
 				SignerKeyID: keys.SignerKeyID(), Private: keys.PrivateSigningKey()}
 			carrier := syncrest.New(client, group, status.ReplicaID)
@@ -160,7 +170,16 @@ func (s *Service) startSyncJobs() error {
 	default:
 		return fmt.Errorf("sync target must be none, directory, or rest")
 	}
-	if err := manager.Register(targetID, &syncjobs.CarrierTarget{Store: s.Store, Build: builder, MaterializeLimit: 16}); err != nil {
+	target := &syncjobs.CarrierTarget{Store: s.Store, Build: builder, MaterializeLimit: 16}
+	if targetType == "rest" {
+		target.Catchup = func(ctx context.Context, byteBudget int64, progress syncjobs.Progress) (map[string]any, error) {
+			client := &syncauth.Client{BaseURL: strings.TrimRight(strings.TrimSpace(s.Config.Sync.RESTBaseURL), "/"),
+				DatabaseID: identity.DatabaseID, ReplicaID: status.ReplicaID,
+				SignerKeyID: keys.SignerKeyID(), Private: keys.PrivateSigningKey()}
+			return s.runRESTCatchup(ctx, client, keys, byteBudget, progress)
+		}
+	}
+	if err := manager.Register(targetID, target); err != nil {
 		return err
 	}
 	s.SyncJobs = manager
@@ -174,6 +193,105 @@ func (s *Service) startSyncJobs() error {
 	return nil
 }
 
+type fileSyncSecretStore struct {
+	path string
+	mu   sync.Mutex
+	keys *synckeys.KeyFile
+}
+
+func newFileSyncSecretStore(cfg config.Config, st *store.SQLiteStore) (*fileSyncSecretStore, error) {
+	path := strings.TrimSpace(cfg.Sync.REST.KeyFile)
+	if path == "" {
+		identity, err := st.GetDatabaseIdentity(context.Background())
+		if err != nil {
+			return nil, err
+		}
+		path, err = synckeys.DefaultPath(identity.DatabaseID)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return &fileSyncSecretStore{path: path}, nil
+}
+
+func (p *fileSyncSecretStore) ProviderName() string { return "locked-file-development" }
+func (p *fileSyncSecretStore) Warning() string {
+	return "Sync keys use an owner-only 0600 development file, not an operating-system keychain. Treat it like the password to this library."
+}
+func (p *fileSyncSecretStore) openFile() (*synckeys.KeyFile, error) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if p.keys != nil {
+		return p.keys, nil
+	}
+	keys, err := synckeys.Open(p.path)
+	if err != nil {
+		return nil, err
+	}
+	p.keys = keys
+	return keys, nil
+}
+
+func (p *fileSyncSecretStore) Open() (httpapi.SyncLocalKeys, error) { return p.openFile() }
+func (p *fileSyncSecretStore) Create() (httpapi.SyncLocalKeys, error) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if p.keys != nil {
+		return p.keys, nil
+	}
+	keys, err := synckeys.Create(p.path)
+	if err != nil {
+		return nil, err
+	}
+	p.keys = keys
+	return keys, nil
+}
+
+// runRESTCatchup downloads and fully verifies a peer-key-wrapped physical
+// snapshot into the profile's private inbox. It never installs it: reset or
+// replacement remains a separate explicit destructive review.
+func (s *Service) runRESTCatchup(ctx context.Context, client *syncauth.Client, keys *synckeys.KeyFile,
+	byteBudget int64, progress syncjobs.Progress) (map[string]any, error) {
+	backup, err := syncrest.RequestBackup(ctx, client)
+	if err != nil {
+		return nil, err
+	}
+	if backup.SealedBytes > byteBudget {
+		return nil, synccarrier.ErrByteBudget
+	}
+	root := filepath.Join(s.Config.Data.Directory, "catchup-inbox", backup.ID)
+	if err := os.MkdirAll(root, 0o700); err != nil {
+		return nil, err
+	}
+	sealedPath := filepath.Join(root, "snapshot.nbk")
+	for {
+		written, complete, err := syncrest.DownloadBackup(ctx, client, backup, sealedPath, int64(syncauth.MaxRangeResponseBytes))
+		if err != nil {
+			return nil, err
+		}
+		if err := progress("catchup_transfer", written, backup.SealedBytes, written,
+			map[string]any{"last_phase": "catchup_transfer", "received_bytes": written}); err != nil {
+			return nil, err
+		}
+		if complete {
+			break
+		}
+	}
+	snapshotDir, report, err := syncrest.OpenBackup(backup, sealedPath, root, keys,
+		syncwire.MultiVerifier{keys, s.Store.PeerVerifier()})
+	if err != nil {
+		return nil, err
+	}
+	_ = os.Remove(sealedPath)
+	if err := progress("catchup_verified", 1, 1, backup.SealedBytes,
+		map[string]any{"last_phase": "catchup_verified", "objects": report.Objects}); err != nil {
+		return nil, err
+	}
+	_ = snapshotDir // The path is intentionally kept out of job summaries and API responses.
+	return map[string]any{"snapshot_id": report.SnapshotID, "database_id": report.DatabaseID,
+		"objects": report.Objects, "sealed_bytes": backup.SealedBytes, "ready_for_review": true}, nil
+}
+
 // attachSyncSecurity enables the peer-authenticated sync surface, and refuses
 // to start rather than expose it unsafely.
 //
@@ -183,7 +301,7 @@ func (s *Service) startSyncJobs() error {
 // it cannot complete. Both are configuration mistakes that are invisible until
 // something is already exposed, so they are startup failures with an
 // explanation rather than warnings in a log nobody reads.
-func attachSyncSecurity(cfg config.Config, st *store.SQLiteStore, handler *httpapi.Server) error {
+func attachSyncSecurity(cfg config.Config, st *store.SQLiteStore, handler *httpapi.Server, provider *fileSyncSecretStore) error {
 	if !cfg.Sync.REST.Enabled {
 		return nil
 	}
@@ -194,13 +312,10 @@ func attachSyncSecurity(cfg config.Config, st *store.SQLiteStore, handler *httpa
 	if err != nil {
 		return err
 	}
-	path := cfg.Sync.REST.KeyFile
-	if strings.TrimSpace(path) == "" {
-		if path, err = synckeys.DefaultPath(identity.DatabaseID); err != nil {
-			return err
-		}
+	if provider == nil {
+		return errors.New("sync rest is enabled but its secret provider is unavailable")
 	}
-	keys, err := synckeys.Open(path)
+	keys, err := provider.openFile()
 	if err != nil {
 		return fmt.Errorf("sync rest is enabled but its key material is unusable: %w", err)
 	}

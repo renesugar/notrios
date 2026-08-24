@@ -4,6 +4,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"net/http"
 
 	"github.com/wailsapp/wails/v2"
@@ -19,8 +20,25 @@ import (
 // the in-process service in the default mode, or a reverse proxy to a remote
 // service in -gui-only mode. The frontend therefore behaves identically to a
 // browser pointed at notriosd.
-func runGUI(handler http.Handler) error {
+type NativeUIBridge struct {
+	ctx context.Context
+}
+
+// ChooseSyncDirectory is deliberately available only in the native app that
+// owns the local service. GUI-only mode may point at another machine, where a
+// local path selected here would name the wrong filesystem.
+func (b *NativeUIBridge) ChooseSyncDirectory() (string, error) {
+	if b == nil || b.ctx == nil {
+		return "", errors.New("the native window is not ready")
+	}
+	return runtime.OpenDirectoryDialog(b.ctx, runtime.OpenDialogOptions{
+		Title: "Choose a Notrios synchronization folder",
+	})
+}
+
+func runGUI(handler http.Handler, allowLocalDirectoryChooser bool) error {
 	var appCtx context.Context
+	bridge := &NativeUIBridge{}
 
 	appMenu := menu.NewMenu()
 	fileMenu := appMenu.AddSubmenu("File")
@@ -57,7 +75,7 @@ func runGUI(handler http.Handler) error {
 		}
 	})
 
-	return wails.Run(&options.App{
+	app := &options.App{
 		Title:  "Notrios",
 		Width:  1400,
 		Height: 900,
@@ -67,6 +85,11 @@ func runGUI(handler http.Handler) error {
 		},
 		OnStartup: func(ctx context.Context) {
 			appCtx = ctx
+			bridge.ctx = ctx
 		},
-	})
+	}
+	if allowLocalDirectoryChooser {
+		app.Bind = []interface{}{bridge}
+	}
+	return wails.Run(app)
 }

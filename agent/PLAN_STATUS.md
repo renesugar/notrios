@@ -1,6 +1,6 @@
 # Plan Status
 
-Updated: 2026-08-24 (G15 complete; G16 next and unapproved)
+Updated: 2026-08-24 (G16 complete; G17 next and unapproved)
 
 ## Active milestone
 
@@ -14,14 +14,36 @@ G15-G20: evidence, profiles/local journal, state-vector convergence,
 revision deltas/merge, lazy resources, secure container/catch-up,
 ephemeral-directory and REST transports, jobs/UI/retention, shared-core/FFI/
 Mermaid/mobile handoff, compatibility, and final validation. The user's
-2026-08-11 review resolved every original G0-G17 policy decision. **G0-G15 are
+2026-08-11 review resolved every original G0-G17 policy decision. **G0-G16 are
 complete** and archived under `plans/v0.7/`; the 2026-08-15 planning amendment
 reopened physical snapshot scalability. G14b selected option B from full-corpus
 evidence, G14c implemented the local production representation/verifier, and
 G14d integrated encrypted transport plus crash-safe restore/catch-up, and G14e
 passed the production full-scale matrix and froze the format. G15 then added
-the schema-v26 durable sync outbox and bounded local REST/MCP control. G16 is
-next and unapproved.
+the schema-v26 durable sync outbox and bounded local REST/MCP control. G16 adds
+the local Sync Center and password recovery workflow. G17 is next and
+unapproved.
+
+## v0.7 G16 completion — 2026-08-24
+
+- No schema change. The loopback/native Sync Center names active profile,
+  database, and replica; saves none/directory/REST configuration for restart;
+  uses a native-only directory chooser; and makes inbound REST, pairing, and
+  complete-snapshot permission separate explicit acts.
+- Durable job/peer/offline/behind/retired state, lazy attachment download/pin,
+  notebook repair reports, base/current/other conflict comparison, and an
+  explicit two-parent resolution revision are live.
+- NPB1 wraps the strictly verified physical NBK1 snapshot payload key with
+  Argon2id. Passwords are never persisted, are cleared after attempts, and a
+  correct password produces review with `applied=false`; catch-up verifies only
+  into private staging and reset/restore remain destructive-review boundaries.
+- A two-daemon product-boundary test passes pairing, convergence, conflict,
+  attachment request/serve/retry, password refusal/retry, permissioned catch-up,
+  and non-installation. Regular Playwright (Browser plugin unavailable) passes
+  1440×960 and 390×844 content-free flows with zero console errors, exact modal
+  bounds, Escape, and 44-pixel touch controls.
+- OpenAPI/code parity is 106 normalized non-HEAD operations. Archive:
+  `plans/v0.7/025-sync-recovery-ui.md`; evidence: `performance/v0.7-g16/`.
 
 ## v0.7 G15 completion — 2026-08-24
 
@@ -2298,4 +2320,4 @@ attempt detail remains append-only in `agent/ATTEMPT_LOG.jsonl`.
 - Long-term SQLite driver choice (current local cgo/libsqlite3 adapter).
 - Official MCP Go SDK adoption/version.
 - Sync decisions live in the owning plan items; the register in `PLAN.md` is an
-  index. G0-G15 are complete; G16 and every later slice remain approval-gated.
+  index. G0-G16 are complete; G17 and every later slice remain approval-gated.

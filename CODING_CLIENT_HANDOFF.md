@@ -14,7 +14,7 @@ wrap-up). The thirteen v0.5 slices remain archived under `plans/v0.5/`.
 independently approvable G0-G20 slices plus the newly inserted, blocking
 G14a-G14e archive-scalability sequence. The user's 2026-08-11
 review resolved the policy decisions through G17, including mandatory payload
-encryption and per-replica Ed25519 signatures. **G0-G15 are complete** and
+encryption and per-replica Ed25519 signatures. **G0-G16 are complete** and
 archived under `plans/v0.7/`; their reviewed evidence is under
 `performance/v0.7-g0/`, `performance/v0.7-g1/`, `performance/v0.7-g1a/`,
 `performance/v0.7-g2/`, `performance/v0.7-g4/`, `performance/v0.7-g5/`,
@@ -23,8 +23,9 @@ archived under `plans/v0.7/`; their reviewed evidence is under
 `performance/v0.7-g12/`, `performance/v0.7-g13/`, `performance/v0.7-g14/`,
 `performance/v0.7-g14a/`, `performance/v0.7-g14b/`, and
 `performance/v0.7-g14c/`, `performance/v0.7-g14d/`, and
-`performance/v0.7-g14e/`. G15's archive is
-`plans/v0.7/024-durable-sync-jobs.md`. **G16 is next and is not approved.** G14b selected option B: a
+`performance/v0.7-g14e/` and `performance/v0.7-g16/`. G15's archive is
+`plans/v0.7/024-durable-sync-jobs.md`; G16's archive is
+`plans/v0.7/025-sync-recovery-ui.md`. **G17 is next and is not approved.** G14b selected option B: a
 required compatible same-schema SQLite-image plus bounded packed-assets
 capability for whole-library full backup/catch-up, retaining packed semantic
 archive-v2 for subset, merge, schema-independent interchange, and fallback.
@@ -44,6 +45,19 @@ its own path-free incremental/resource jobs—never locations, credentials,
 keys, bulk bytes, enrollment, backup/restore, retirement, purge,
 catch-up/restore-prep, reset, or another actor's job. The full Go/UI/docs/smoke
 validation passed; OpenAPI and code now match all 93 registered operations.
+
+G16 adds no schema. The responsive loopback/native Sync Center names the active
+profile/database/replica; configures none/directory/REST with a native-only
+folder chooser and explicit inbound switch; discovers, invites, pairs, and
+separately grants complete-snapshot permission; shows durable job/peer/resource/
+repair state; resolves body conflicts with an explicit two-parent revision; and
+stages catch-up/reset for review. NPB1 wraps the verified physical NBK1 payload
+key with an Argon2id password and inspection always leaves canonical state
+untouched. Passwords are cleared and never stored. The warned `0600` provider
+is injectable and shared live by pairing, the peer surface, and each job attempt.
+The real two-daemon acceptance flow and regular Playwright desktop/mobile sweep
+passed; no Browser plugin or mobile build is claimed. OpenAPI and code match all
+106 normalized non-HEAD operations.
 
 G14c adds production `sqlite-image+packed-assets.v1` creation and read-only
 admission under `internal/snapshotimage/` and
@@ -84,7 +98,7 @@ generic response ceiling truncating 16 MiB ranges, unconditional whole-library
 reconciliation for a body edit, and quadratic repeated-prefix validation in
 bounded directory publication. Tests cover each boundary; no format, schema,
 compressor, third-party dependency, REST/MCP path surface, or automatic restore
-was added. G15 requires separate user approval.
+was added. G15 and G16 are now complete; G17 requires separate user approval.
 
 G14b added only investigation/prototype code and aggregate evidence. Its 57
 validated full-corpus phase rows cover equivalent 382,206-document Joplin and

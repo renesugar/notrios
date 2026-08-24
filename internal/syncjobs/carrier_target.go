@@ -18,6 +18,10 @@ type CarrierTarget struct {
 	Store            *store.SQLiteStore
 	Build            CarrierBuild
 	MaterializeLimit int
+	// Catchup is optional because directory and REST adapters acquire physical
+	// snapshots differently. Local UI/CLI may enqueue this kind; MCP and the
+	// ordinary G15 REST start surface still cannot.
+	Catchup func(ctx context.Context, byteBudget int64, progress Progress) (map[string]any, error)
 }
 
 func (t *CarrierTarget) Plan(ctx context.Context, kind string, byteBudget int64) (map[string]any, error) {
@@ -46,6 +50,15 @@ func (t *CarrierTarget) Plan(ctx context.Context, kind string, byteBudget int64)
 func (t *CarrierTarget) Run(ctx context.Context, kind string, byteBudget int64, progress Progress) (map[string]any, error) {
 	if t.Store == nil || t.Build == nil {
 		return nil, fmt.Errorf("sync target is not wired")
+	}
+	if kind == store.JobKindSyncCatchup {
+		if t.Catchup == nil {
+			return nil, fmt.Errorf("catch-up is not available for this configured target")
+		}
+		return t.Catchup(ctx, byteBudget, progress)
+	}
+	if kind != store.JobKindSyncIncremental && kind != store.JobKindSyncResourceFetch {
+		return nil, fmt.Errorf("sync job kind %q is not implemented by the carrier target", kind)
 	}
 	var budget *synccarrier.BudgetCarrier
 	options := synccarrier.Options{Checkpoint: func(ctx context.Context, phase string, result synccarrier.Result) error {
@@ -94,4 +107,23 @@ func (t *CarrierTarget) Run(ctx context.Context, kind string, byteBudget int64, 
 		}
 	}
 	return summary, nil
+}
+
+func (t *CarrierTarget) Discover(ctx context.Context) (map[string]any, error) {
+	if t.Store == nil || t.Build == nil {
+		return nil, fmt.Errorf("sync target is not wired")
+	}
+	round, _, _, err := t.Build(synccarrier.Options{}, store.DefaultSyncJobByteBudget)
+	if err != nil {
+		return nil, err
+	}
+	result, err := round.Discover(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return map[string]any{
+		"namespaces": result.Namespaces, "peers": result.Peers,
+		"candidates": result.Candidates, "skipped": result.Skipped,
+		"scanned_artifacts": result.ScannedArtifacts,
+	}, nil
 }

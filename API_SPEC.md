@@ -588,6 +588,18 @@ peer retirement, purge, reset, and bulk bytes remain outside MCP. REST and the e
 signed artifacts; full algorithms and compatibility rules are in
 `SYNCHRONIZATION.md`.
 
+G16 adds a separate loopback/native-only `/api/v1/sync-ui` facade for the human
+Sync Center. Its bounded aggregate status names the active profile, logical
+database, and replica and reports redacted peers/jobs/conflicts/resources/
+repairs; it never returns keys, credentials, passwords, raw job parameters, or
+staging paths. Subroutes explicitly initialize the local provider/journal, save
+`none|directory|rest` configuration for restart, discover without enrolling,
+invite/pair, grant or revoke a peer's complete-snapshot permission, queue
+catch-up/reset preparation, fetch/pin lazy resources, inspect/resolve three-way
+conflicts, and create/inspect password backups. NPB1 inspection always returns
+`applied: false`; actual restore remains a shutdown/native handoff. The OpenAPI
+file documents all 106 normalized non-HEAD registered API operations.
+
 ### Notebooks, tags, and search notebooks (implemented — plan tasks R3/R5)
 
 ```text

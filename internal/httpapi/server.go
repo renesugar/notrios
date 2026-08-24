@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/renesugar/notrios/internal/api"
@@ -45,6 +46,11 @@ type Server struct {
 	// peer-authenticated transport remains under sync above.
 	syncJobs     *syncjobs.Manager
 	syncTargetID string
+	// syncSecrets is the injectable local secret-store boundary used by the
+	// G16 UI. The shipped implementation is the explicitly warned owner-only
+	// development file; the web layer sees only redacted provider state.
+	syncSecrets SyncSecretStore
+	syncUIMu    sync.Mutex
 }
 
 // AttachSyncJobs enables the local REST/MCP sync control plane for the one
@@ -210,6 +216,7 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("POST /api/v1/jobs/{job_id}/retry", s.handleRetrySyncJob)
 	s.mux.HandleFunc("POST /api/v1/jobs/{job_id}/reset", s.handleResetSyncJob)
 	s.mux.HandleFunc("GET /api/v1/sync-conflicts", s.handleSyncConflicts)
+	s.syncUIRoutes()
 	s.mux.HandleFunc("GET /", s.handleWebApp)
 }
 

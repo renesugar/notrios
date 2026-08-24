@@ -912,6 +912,11 @@ type Store interface {
 	GetSyncJob(ctx context.Context, jobID string) (SyncJob, error)
 	ListSyncJobAudit(ctx context.Context, jobID string, limit int) (SyncJobAuditList, error)
 	ListSyncConflicts(ctx context.Context, limit int) (SyncConflictPage, error)
+	GetSyncConflictDetail(ctx context.Context, conflictID string) (SyncConflictDetail, error)
+	ResolveSyncConflict(ctx context.Context, req ResolveSyncConflictRequest) (Document, error)
+	ListSyncResourceStatus(ctx context.Context, limit int) ([]SyncResourceStatus, bool, error)
+	SetSyncResourceIntent(ctx context.Context, resourceID string, pinned, requested bool) error
+	ListSyncRepairEvents(ctx context.Context, limit int) ([]SyncRepairEvent, bool, error)
 	SuggestDocuments(ctx context.Context, req DocumentSuggestionRequest) (DocumentSuggestionResponse, error)
 	CheckLinks(ctx context.Context, req CheckLinksRequest) (CheckLinksResponse, error)
 	RunNoteQuery(ctx context.Context, req NoteQueryRequest) (NoteQueryResult, error)

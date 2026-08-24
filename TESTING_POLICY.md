@@ -1140,6 +1140,25 @@ location, and MCP cannot control another actor's or catch-up job. Full test
 passes that open local listeners require the normal unsandboxed validation
 environment.
 
+## v0.7 G16 Sync Center and recovery validation
+
+G16 adds focused store/API/portable-backup tests plus six React user flows for
+active identity and keyboard closure, explicit start/retry, native directory
+selection, three-way conflict resolution, pairing-code clipboard scope, and
+wrong-password clearing/cancel. `TestSyncUITwoProcessRecoveryFlow` builds and
+runs two real daemons and drives only product HTTP/CLI boundaries through
+pairing, divergent edits, conflict review/resolution, lazy attachment request/
+serve/retry, explicit snapshot permission, wrong/correct backup password, and
+verified catch-up staging. Because it opens loopback sockets, run it in the
+normal host validation environment.
+
+The Browser plugin was not available, so G16 used regular Playwright 1.63 with
+installed Google Chrome against a fresh content-free profile. Desktop 1440×960
+and mobile 390×844 sweeps check modal bounds, responsive navigation, native-
+chooser absence in a browser, password visibility, Escape, 44-pixel touch
+controls, and console/page errors. Screenshots contain only generated Help/
+empty-profile UI and fixture text; no private corpus.
+
 ## MVP release validation
 
 Task 10 adds release-candidate checks beyond ordinary unit tests:

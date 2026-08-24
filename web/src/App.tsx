@@ -80,6 +80,7 @@ import { SidebarPane } from './components/SidebarPane';
 import { SearchPane } from './components/SearchPane';
 import { EditorPane } from './components/EditorPane';
 import { PreviewPane } from './components/PreviewPane';
+import { SyncCenter } from './components/SyncCenter';
 
 const defaultBody = `# New note\n\nWrite Markdown here. Link other notes with:\n\n[Related note](document://default/documents/<document-id>)\n`;
 
@@ -111,6 +112,7 @@ export function App() {
   // siblings, so `Contacts/Work` and `Personal/Work` share a query — deriving
   // the creation target from `activeQuery` would file into the wrong one.
   const [selectedRow, setSelectedRow] = useState<SidebarRow | null>(null);
+  const [showSyncCenter, setShowSyncCenter] = useState(false);
 
   const paged = usePagedSearch(25);
 
@@ -654,6 +656,9 @@ export function App() {
         <h1>Notrios</h1>
         <div className="header-actions">
           <p className="status">{statusText}</p>
+          <button type="button" className="sync-header-button" title="Open synchronization, pairing, backup, and recovery" onClick={() => setShowSyncCenter(true)}>
+            <span aria-hidden="true">↻</span> Sync
+          </button>
           <button type="button" className="icon-button" title="Toggle light/dark theme" aria-label="Toggle light/dark theme" onClick={toggleMode}>
             {mode === 'light' ? '🌙' : '☀️'}
           </button>
@@ -662,6 +667,8 @@ export function App() {
           </button>
         </div>
       </header>
+
+      {showSyncCenter ? <SyncCenter onClose={() => setShowSyncCenter(false)} /> : null}
 
       {showThemes && (
         <section className="theme-panel" aria-label="Theme settings">

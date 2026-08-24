@@ -7,7 +7,7 @@ This file is the codebase atlas. Update it whenever major files or directories a
 - `README.md` — project overview and quick start.
 - `PLAN.md` — the **active v0.7 native synchronization plan**, divided into
   independently approvable G0-G20 slices plus the blocking G14a-G14e archive-
-  scalability sequence. G0-G15 are complete; G16 is next but unapproved. The
+  scalability sequence. G0-G16 are complete; G17 is next but unapproved. The
   current product remains 0.6.0 at schema v26; v0.6 is archived under
   `plans/v0.6/`; v0.5 and v0.4 are archived under their version directories.
 - `plans/scaffold/SCAFFOLD_CREATION_PLAN.md` — process for creating/refining this scaffold.
@@ -25,6 +25,18 @@ This file is the codebase atlas. Update it whenever major files or directories a
   catch-up, retention, library decision, and validation.
 - `internal/syncjobs/` — G15's closed durable sync-outbox worker and
   directory/REST carrier target adapter; explicit work only, no cadence.
+- `internal/httpapi/sync_ui.go`, `internal/store/sync_ui.go`, and
+  `web/src/components/SyncCenter.tsx` — G16's loopback/native human facade:
+  redacted aggregate state, setup/discovery/pairing and separate snapshot
+  permission, conflict comparison/two-parent resolution, lazy resource intent,
+  repair visibility, catch-up/reset preparation, and responsive UI.
+- `internal/syncbackup/portable.go` — NPB1 password wrapper around the verified
+  physical NBK1 payload; Argon2id wraps a fresh payload key and inspection is
+  authenticated, bounded, private-staging-only, and non-installing.
+- `cmd/notrios/gui_wails.go` — native-only directory chooser binding for the
+  local service mode; GUI-only remote mode deliberately receives no path picker.
+- `cmd/notriosctl/sync_ui_e2e_test.go` and `performance/v0.7-g16/` — G16's real
+  two-daemon acceptance flow and content-free desktop/mobile browser evidence.
 - `performance/v0.7-g0/` — completed G0 threat model, normative protocol
   glossary, thirty misuse/control traces, primary-source dependency/license/
   platform validation, and its structural evidence validator.
@@ -116,8 +128,9 @@ This file is the codebase atlas. Update it whenever major files or directories a
 - `internal/profiles/runtime.go` — G3 named runtime-profile creation, redacted
   views, registry/config/database startup binding, path/port/replica collision
   detection, and explicit copied-database adopt/fork handling.
-- `plans/v0.7/` — archived completed v0.7 slices G0-G6 plus the planning
-  amendment that inserted G1a and the bundled-dependency maintenance pass.
+- `plans/v0.7/` — archived completed v0.7 slices through G16 plus the planning
+  amendment that inserted G1a, the G14a-G14e scalability sequence, and the
+  bundled-dependency maintenance pass.
 - `FLUTTER_GO_CLIENT.md` — verified Flutter/Dart FFI and Go build-mode facts,
   the pre-1.0 framework-neutral application facade/C ABI contract, post-1.0
   Flutter client split, memory/stream ownership, platform limits, and the fact

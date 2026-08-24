@@ -130,6 +130,13 @@ security-relevant, and Web storage is explicitly experimental. v0.8 keeps the
 Go secret-store interface injectable; the Flutter spike validates and pins its
 own provider per platform.
 
+G16 exercises that injectable interface with an explicitly warned owner-only
+file provider and designs the React Sync Center down to a 390×844 touch layout,
+but it does not claim a Flutter, Android, or other mobile build. The later
+client must supply its own validated credential provider and native directory/
+document pickers while preserving the same no-password-persistence and
+destructive-review boundaries.
+
 ## Primary references checked 2026-08-11
 
 - Dart C interop: <https://dart.dev/interop/c-interop>

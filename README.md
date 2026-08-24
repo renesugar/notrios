@@ -3,7 +3,7 @@
 Notrios (formerly "Notes Companion") is a local-first note-taking, search, import, and publishing system for very large Markdown and document collections.
 It combines a Go REST/MCP service (`notriosd`), a built-in GUI, SQLite/FTS5-backed canonical storage, content-addressed resources, optional Recoll-derived search/extraction, and support for third-party native clients (C++/Qt, Go/Wails, Rust/Tauri) over the same API. A versioned no-GUI C ABI is planned before 1.0, followed by an independent post-1.0 Flutter client; mobile delivery does not depend exclusively on Wails.
 
-The v0.1 through v0.6 milestones are complete. v0.7 G0-G15 are complete through
+The v0.1 through v0.6 milestones are complete. v0.7 G0-G16 are complete through
 the authenticated REST sync data plane and resumable encrypted snapshot
 download. The blocking G14a-G14e archive-scalability sequence is complete:
 G14b selected and G14c implemented a
@@ -11,7 +11,10 @@ same-schema SQLite image plus bounded packed assets for full backup/catch-up
 while retaining semantic archive-v2; G14d integrated crash-safe restore and
 incremental catch-up, and G14e passed/froze the production full-scale contract.
 G15 adds the schema-v26 durable sync outbox, bounded retries/cancellation, and
-explicit-scope REST/MCP control. G16 is next but unapproved — see
+explicit-scope REST/MCP control. G16 adds the responsive local Sync Center,
+native directory chooser, explicit pairing/snapshot permission, lazy-resource
+and three-way conflict workflows, and non-persistent password backup review.
+G17 is next but unapproved — see
 [`PLAN.md`](PLAN.md) and
 [`ROADMAP.md`](ROADMAP.md). The repository is
 structured so a coding agent can resume safely after usage limits or model
@@ -158,8 +161,11 @@ Recoll availability, backlog, sync/index, and reconciliation state.
   `sqlite-image+packed-assets.v1` is now the compatible whole-library default;
   semantic archive-v2 remains portable. G15 then adds durable per-target sync
   jobs, checkpoint-safe cancellation/retry, byte budgets, and explicit-scope
-  REST/MCP control without adding cron or a workflow scheduler. G16 is next and
-  approval-gated.
+  REST/MCP control without adding cron or a workflow scheduler. G16 then adds a
+  loopback/native-only Sync Center for setup, pairing, explicit catch-up
+  permission, job state, lazy attachments, conflicts, repair reports, and
+  password-protected backup review without silently restoring anything. G17 is
+  next and approval-gated.
 - Agent progress/attempt tracking: [`agent/PLAN_STATUS.md`](agent/PLAN_STATUS.md), [`agent/ATTEMPT_LOG.jsonl`](agent/ATTEMPT_LOG.jsonl), and [`agent/MODEL_LOG.jsonl`](agent/MODEL_LOG.jsonl).
 
 ## Contributing

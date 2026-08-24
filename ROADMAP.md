@@ -297,8 +297,8 @@ also exposed about **25% stored-ZIP overhead from one entry per loose archive
 object**, while the existing pack fix has never been exercised end to end at
 the supplied full scale.
 
-**The blocking G14a-G14e archive-scalability sequence and G15 durable sync-job
-control are complete; G16 is next and approval-gated.** G14a supplies the resumable, aggregate-only benchmark contract and
+**The blocking G14a-G14e archive-scalability sequence and G15-G16 sync control/
+recovery UI are complete; G17 is next and approval-gated.** G14a supplies the resumable, aggregate-only benchmark contract and
 generated 10k/100k calibration. That evidence confirms one-file-per-object
 growth, isolates stored-ZIP overhead from framing, and records a 100k
 incremental-replay memory failure without changing production code. G14b's
@@ -324,6 +324,14 @@ and CLI expose safe control; MCP sync visibility/control is separately disabled
 by default and can never reach target locations, credentials, keys,
 backup/restore, enrollment/retirement, purge, reset, or another actor's
 catch-up. The worker drains work but never schedules periodic sync.
+
+**G16 completed 2026-08-24** without a schema change. The responsive local
+Sync Center exposes active-profile identity, native directory selection,
+explicit REST pairing and complete-snapshot permission, durable job states,
+lazy attachment fetch/pin, three-way conflict resolution, repair reports,
+verified catch-up staging, and NPB1 password backups. Passwords are cleared and
+never persisted; restore/reset remain review-only. A real two-daemon test and
+desktop/mobile Playwright sweep passed. No mobile build is claimed.
 
 - **Evidence before contracts (G0-G2, including G1a):** threat model and
   reference validation; representative revision/delta/three-way-merge

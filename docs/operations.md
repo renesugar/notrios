@@ -456,6 +456,13 @@ owns it republishes a correct copy on its next round.
 
 ## Exposing the sync surface to a peer
 
+The desktop **Sync Center → Setup/Peers** can write the active generated
+profile's none/directory/REST choice, explicitly enable inbound REST, create or
+consume a pairing code, and separately grant complete-snapshot permission.
+Saved transport changes require a profile restart. The UI does not make remote
+network exposure safe automatically: the TLS and listener rules below still
+apply, and non-loopback plaintext is refused.
+
 Everything else in Notrios is local. The sync surface is the one thing that can
 be reached by another machine, so turning it on is a decision with a
 configuration block of its own:

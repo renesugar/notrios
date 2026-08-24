@@ -91,6 +91,32 @@ Below the menu bar the window is four side-by-side panes, always in this order:
 
 Each pane scrolls on its own; the window itself never scrolls.
 
+### Sync Center
+
+The **↻ Sync** button opens the local Sync Center. Its header always names the
+active profile, logical library, and replica so setup cannot silently target a
+different copy. Sections cover overview/jobs, profile and transport setup,
+peers, lazy attachments, body conflicts, backup/recovery, and deterministic
+repair reports.
+
+Transport changes are saved to the active profile and require restart; they do
+not pair or start work. The desktop's local-service mode offers **Choose
+folder…** for a shared-directory carrier. Browsers retain an absolute-path
+field, and `-gui-only` deliberately has no native chooser because its local
+filesystem is not the remote service's filesystem. REST inbound access is a
+separate explicit checkbox, and pairing still needs a short-lived code.
+
+Allowing ordinary sync does not authorize a peer to receive a complete library
+snapshot. Use **Allow catch-up snapshot** on that peer only when intended.
+Catch-up downloads and verifies into private staging; reset and restore remain
+blocked on a separate destructive review. Password backups never remember the
+password. Wrong-password retry and Cancel change no library data, and a
+successful upload review still does not apply the backup.
+
+At narrow/mobile-sized viewports the Sync Center becomes a full-screen,
+touch-sized layout. This is responsive design only; it is not a supported
+mobile build.
+
 ### Link help while you write
 
 The **Note info** inspector holds two link assists for editable notes.

@@ -29,6 +29,10 @@ type Target interface {
 	Run(ctx context.Context, kind string, byteBudget int64, progress Progress) (map[string]any, error)
 }
 
+type discoverTarget interface {
+	Discover(ctx context.Context) (map[string]any, error)
+}
+
 type RetryableError struct {
 	Code string
 	Err  error
@@ -97,6 +101,21 @@ func (m *Manager) Plan(ctx context.Context, targetID, kind string, byteBudget in
 	plan["kind"] = kind
 	plan["byte_budget"] = byteBudget
 	return plan, nil
+}
+
+// Discover performs the configured carrier's read-only discovery pass. It is
+// intentionally outside the durable outbox: discovery publishes, enrolls, and
+// admits nothing, so repeating it after a crash has no state to recover.
+func (m *Manager) Discover(ctx context.Context, targetID string) (map[string]any, error) {
+	target, err := m.target(targetID)
+	if err != nil {
+		return nil, err
+	}
+	discoverer, ok := target.(discoverTarget)
+	if !ok {
+		return nil, fmt.Errorf("%w: configured target does not support discovery", store.ErrInvalidInput)
+	}
+	return discoverer.Discover(ctx)
 }
 
 func (m *Manager) Start(ctx context.Context, req store.CreateSyncJobRequest) (store.SyncJob, error) {

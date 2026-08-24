@@ -657,8 +657,8 @@ func (s *SQLiteStore) ListSyncConflicts(ctx context.Context, limit int) (SyncCon
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	stmt, err := s.prepareLocked(`SELECT id, document_id, base_revision_id, revision_a, revision_b, kind, created_at
-		FROM sync_document_conflicts ORDER BY created_at DESC, id DESC LIMIT ?`)
+	stmt, err := s.prepareLocked(`SELECT id, document_id, base_revision_id, revision_a, revision_b, kind, detected_at
+		FROM sync_document_conflicts ORDER BY detected_at DESC, id DESC LIMIT ?`)
 	if err != nil {
 		return SyncConflictPage{}, err
 	}

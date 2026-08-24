@@ -1,7 +1,7 @@
 # Plan: v0.7 — Native synchronization
 
-Status: **G0-G15 completed through 2026-08-24. Product version remains 0.6.0 and the
-canonical schema is v26. G16 is next and is not approved.** The
+Status: **G0-G16 completed through 2026-08-24. Product version remains 0.6.0 and the
+canonical schema is v26. G17 is next and is not approved.** The
 former seven-item draft was too coarse: it mixed protocol research, canonical
 write interception, merge semantics, two transports, cryptography, recovery,
 UI, retention, and release validation into slices that could not be reviewed or
@@ -1457,7 +1457,7 @@ enrollment, retirement, purge, reset, and bulk bytes remain outside MCP. The
 implementation and validation evidence are archived at
 `plans/v0.7/024-durable-sync-jobs.md`.
 
-## G16. Sync, pairing, catch-up, encrypted-backup, and conflict UI
+## G16. Sync, pairing, catch-up, encrypted-backup, and conflict UI — complete
 
 **Goal.** Give the user a comprehensible path through setup, normal operation,
 missing resources, conflicts, password-protected backups, reset, and repair.
@@ -1494,6 +1494,17 @@ private corpus.
 - **The backup password is not remembered.** An opt-in native credential-store
   action can be added only after v0.8 validates the platform provider and labels
   the recovery consequences.
+
+**Outcome (2026-08-24).** The responsive loopback/native Sync Center now covers
+active-profile identity, none/directory/REST setup with a native-only chooser,
+explicit pairing and separate snapshot permission, durable operational state,
+lazy-resource intent, three-way conflict resolution, repair visibility,
+verified catch-up staging, reset review, and NPB1 password backups. The warned
+owner-only provider remains injectable; passwords are cleared and never stored;
+restore remains non-applying. A real two-daemon flow and desktop/mobile
+Playwright sweep passed. No schema or mobile-build claim was added. Archived as
+`plans/v0.7/025-sync-recovery-ui.md` with evidence under
+`performance/v0.7-g16/`.
 
 ## G17. Peer retirement, retention horizon, tombstone/resource GC, and repair
 
@@ -1721,6 +1732,7 @@ recommendation, blocking status, and consequence.
 | Current-GUI Mermaid baseline | G18 | Resolved fact: upstream-capable but disabled pending offline/security evidence |
 | Release version/schema bookkeeping | G20 | Open, non-blocking until wrap-up |
 
-G0-G15 are complete and the production physical restore/catch-up plus durable
-sync-job contracts are frozen. G16 is the next implementable item but is not
-approved. Implementation begins only after an explicit instruction naming G16.
+G0-G16 are complete and the production physical restore/catch-up, durable
+sync-job, and local recovery UI contracts are frozen. G17 is the next
+implementable item but is not approved. Implementation begins only after an
+explicit instruction naming G17.

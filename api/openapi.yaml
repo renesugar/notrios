@@ -1425,6 +1425,259 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/SyncConflictPage' }
         '400': { $ref: '#/components/responses/Error' }
+  /api/v1/sync-ui:
+    get:
+      summary: Read the local profile's synchronization dashboard state
+      description: Loopback/native only. Returns redacted identities and operational state, never keys, credentials, passwords, job parameters, or artifact paths.
+      responses:
+        '200':
+          description: Bounded Sync Center state
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SyncUIStatus' }
+        '403': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /api/v1/sync-ui/initialize:
+    post:
+      summary: Initialize this local profile's warned development secret provider and journal
+      responses:
+        '200':
+          description: Initialization result; restart is required before transport work
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        '403': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /api/v1/sync-ui/configuration:
+    put:
+      summary: Save the active local profile's explicit synchronization transport choice
+      description: Does not enroll a peer or start synchronization. A restart is required. HTTPS is required except for loopback REST peers.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SyncUIConfiguration' }
+      responses:
+        '200':
+          description: Saved configuration and restart requirement
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        '400': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+  /api/v1/sync-ui/discover:
+    post:
+      summary: Discover candidates on the configured carrier without enrolling them
+      responses:
+        '200':
+          description: Redacted carrier discovery result
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        '403': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /api/v1/sync-ui/invitations:
+    post:
+      summary: Create one bounded single-use pairing code on the local profile
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                label: { type: string, maxLength: 128 }
+                ttl_minutes: { type: integer, minimum: 5, maximum: 60, default: 15 }
+      responses:
+        '201':
+          description: Single-use pairing code and expiry
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        '400': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /api/v1/sync-ui/pair:
+    post:
+      summary: Explicitly join an inviting REST peer with its address and single-use code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [base_url, code]
+              properties:
+                base_url: { type: string, format: uri, maxLength: 4096 }
+                code: { type: string, maxLength: 256 }
+      responses:
+        '200':
+          description: Enrolled peer identity; no key material
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        '400': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '502': { $ref: '#/components/responses/Error' }
+  /api/v1/sync-ui/peers/{replica_id}/snapshot-permission:
+    post:
+      summary: Explicitly allow or disallow one active peer to receive a complete catch-up snapshot
+      parameters:
+        - name: replica_id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [permitted]
+              properties:
+                permitted: { type: boolean }
+      responses:
+        '200':
+          description: Effective snapshot permission
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        '403': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+  /api/v1/sync-ui/recovery:
+    post:
+      summary: Queue catch-up or reset preparation without installing a snapshot
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [action]
+              properties:
+                action: { type: string, enum: [catchup, reset] }
+      responses:
+        '202':
+          description: Durable catch-up job; reset still requires separate destructive review
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        '400': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /api/v1/sync-ui/conflicts/{conflict_id}:
+    get:
+      summary: Read base, current, and other bodies for one local conflict review
+      parameters:
+        - name: conflict_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Local three-way conflict detail
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+  /api/v1/sync-ui/conflicts/{conflict_id}/resolve:
+    post:
+      summary: Store an explicit two-parent conflict resolution revision
+      parameters:
+        - name: conflict_id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [body]
+              properties:
+                title: { type: string }
+                body: { type: string, maxLength: 1048576 }
+      responses:
+        '200':
+          description: Resolved document
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Document' }
+        '400': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+  /api/v1/sync-ui/resources/{resource_id}/intent:
+    post:
+      summary: Set local lazy-download/pin intent and optionally queue a bounded fetch
+      parameters:
+        - $ref: '#/components/parameters/ResourceID'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [pinned, requested]
+              properties:
+                pinned: { type: boolean }
+                requested: { type: boolean }
+      responses:
+        '200':
+          description: Effective local intent and optional job
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+  /api/v1/sync-ui/backups:
+    post:
+      summary: Stream a verified password-protected physical backup
+      description: The password wraps a fresh payload key with Argon2id and is never persisted.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SyncUIPassword' }
+      responses:
+        '200':
+          description: NPB1 encrypted backup
+          content:
+            application/vnd.notrios.password-backup:
+              schema: { type: string, format: binary }
+        '400': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+        '500': { $ref: '#/components/responses/Error' }
+  /api/v1/sync-ui/backups/inspect:
+    post:
+      summary: Authenticate and verify a password backup for destructive review without restoring it
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [backup, password]
+              properties:
+                backup: { type: string, format: binary }
+                password: { type: string, format: password, maxLength: 4096 }
+      responses:
+        '200':
+          description: Verified review with applied=false
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
 components:
   parameters:
     CollectionID:
@@ -1468,6 +1721,39 @@ components:
           schema:
             $ref: '#/components/schemas/ErrorEnvelope'
   schemas:
+    SyncUIConfiguration:
+      type: object
+      additionalProperties: false
+      required: [target]
+      properties:
+        target: { type: string, enum: [none, directory, rest] }
+        directory: { type: string, description: Absolute path selected on the local device. }
+        rest_base_url: { type: string, format: uri }
+        rest_inbound_enabled: { type: boolean }
+    SyncUIPassword:
+      type: object
+      additionalProperties: false
+      required: [password]
+      properties:
+        password: { type: string, format: password, minLength: 8, maxLength: 4096 }
+    SyncUIStatus:
+      type: object
+      required: [status, active_profile, profiles, configuration, journal_enabled, secret_store, peers, jobs, conflicts, resources, repairs]
+      properties:
+        status: { type: string, enum: [setup, ready, syncing, offline, attention] }
+        active_profile: { type: object, additionalProperties: true }
+        profiles: { type: array, items: { type: object, additionalProperties: true } }
+        configuration: { type: object, additionalProperties: true }
+        journal_enabled: { type: boolean }
+        secret_store: { type: object, additionalProperties: true }
+        peers: { type: array, maxItems: 200, items: { type: object, additionalProperties: true } }
+        jobs: { type: array, maxItems: 20, items: { $ref: '#/components/schemas/JobStatus' } }
+        conflicts: { type: array, maxItems: 50, items: { type: object, additionalProperties: true } }
+        conflicts_truncated: { type: boolean }
+        resources: { type: array, maxItems: 50, items: { type: object, additionalProperties: true } }
+        resources_truncated: { type: boolean }
+        repairs: { type: array, maxItems: 50, items: { type: object, additionalProperties: true } }
+        repairs_truncated: { type: boolean }
     StatusResponse:
       type: object
       required: [service, version, status, search_sidecar]

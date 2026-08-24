@@ -497,11 +497,18 @@ needs explicit views for:
 - restore replace/merge/adopt/fork choices;
 - retryable versus permanent transport errors.
 
-The setup and recovery UI also names the active local profile, offers
-`none|directory|rest`, lets the user choose the shared directory, requires
-explicit peer pairing, shows lazy-resource availability, supports catch-up/reset
-requests, and handles password-encrypted backups. It does not silently retain a
-password or apply a destructive restore.
+G16 implements the setup and recovery UI as a responsive loopback/native-only
+Sync Center. It names the active profile/database/replica, offers
+`none|directory|rest`, uses the native desktop directory chooser when available,
+requires explicit peer pairing, separately grants complete-snapshot permission,
+shows durable pending/running/offline/failed/behind/retired state, and drives
+lazy-resource fetch/pin. Conflict review shows common base, current, and other
+bodies and writes an explicit two-parent resolution revision. Catch-up verifies
+into private staging; reset and restore remain blocked on destructive review.
+NPB1 password backups reuse the verified physical NBK1 payload, wrap a fresh
+payload key with Argon2id, clear password fields after each attempt, and never
+persist or copy the password. This is a responsive/mobile design, not a mobile
+build claim.
 
 “Last writer wins” is not a sufficient user explanation. Show both candidate
 values when a meaningful body or structural edit lost the current-pointer

@@ -674,3 +674,194 @@ export async function getLocalGraph(
   });
   return parseJSON<GraphResponse>(response);
 }
+
+export interface SyncUIProfile {
+  name: string;
+  profile_id?: string;
+  database_id?: string;
+  public_base_url?: string;
+  sync_target: 'none' | 'directory' | 'rest';
+  active: boolean;
+}
+
+export interface SyncUIJob {
+  id: string;
+  kind: string;
+  state: string;
+  phase?: string;
+  processed: number;
+  total: number;
+  summary?: Record<string, unknown>;
+  error?: string;
+  cancel_requested?: boolean;
+  created_at: string;
+}
+
+export interface SyncUIPeer {
+  replica_id: string;
+  status: string;
+  behind_operations: number;
+  snapshot_permitted: boolean;
+  enrolled_at?: string;
+  revoked_at?: string;
+}
+
+export function setSyncSnapshotPermission(replicaID: string, permitted: boolean): Promise<{ replica_id: string; snapshot_permitted: boolean }> {
+  return syncUIJSON(`/api/v1/sync-ui/peers/${encodeURIComponent(replicaID)}/snapshot-permission`, 'POST', { permitted });
+}
+
+export interface SyncUIConflictSummary {
+  id: string;
+  document_id: string;
+  base_revision_id?: string;
+  revision_a: string;
+  revision_b: string;
+  kind: string;
+  created_at: string;
+}
+
+export interface SyncConflictRevision {
+  id: string;
+  title: string;
+  body: string;
+}
+
+export interface SyncUIConflictDetail extends SyncUIConflictSummary {
+  title: string;
+  body_mime_type: string;
+  base: SyncConflictRevision;
+  local: SyncConflictRevision;
+  remote: SyncConflictRevision;
+  region_count: number;
+  regions_clipped?: boolean;
+}
+
+export interface SyncUIResource {
+  id: string;
+  filename?: string;
+  mime_type: string;
+  size_bytes: number;
+  availability: string;
+  pinned: boolean;
+  requested: boolean;
+}
+
+export interface SyncUIRepair {
+  id: string;
+  kind: string;
+  subject_id: string;
+  details?: Record<string, unknown>;
+}
+
+export interface SyncUIStatus {
+  status: 'setup' | 'ready' | 'syncing' | 'offline' | 'attention' | string;
+  active_profile: { name: string; profile_id?: string; database_id: string; replica_id: string };
+  profiles: SyncUIProfile[];
+  configuration: {
+    target: 'none' | 'directory' | 'rest';
+    directory?: string;
+    rest_base_url?: string;
+    rest_inbound_enabled: boolean;
+    restart_required: boolean;
+  };
+  journal_enabled: boolean;
+  secret_store: { available: boolean; configured: boolean; name: string; warning: string };
+  peers: SyncUIPeer[];
+  jobs: SyncUIJob[];
+  conflicts: SyncUIConflictSummary[];
+  conflicts_truncated?: boolean;
+  resources: SyncUIResource[];
+  resources_truncated?: boolean;
+  repairs: SyncUIRepair[];
+  repairs_truncated?: boolean;
+}
+
+export async function getSyncUIStatus(): Promise<SyncUIStatus> {
+  return parseJSON<SyncUIStatus>(await fetch('/api/v1/sync-ui', { cache: 'no-store' }));
+}
+
+async function syncUIJSON<T>(path: string, method: 'POST' | 'PUT', body: unknown): Promise<T> {
+  return parseJSON<T>(await fetch(path, {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  }));
+}
+
+export function initializeSync(): Promise<{ restart_required: boolean; warning: string }> {
+  return syncUIJSON('/api/v1/sync-ui/initialize', 'POST', {});
+}
+
+export function saveSyncConfiguration(configuration: { target: string; directory?: string; rest_base_url?: string; rest_inbound_enabled?: boolean }): Promise<{ restart_required: boolean; message: string }> {
+  return syncUIJSON('/api/v1/sync-ui/configuration', 'PUT', configuration);
+}
+
+export function discoverSyncPeers(): Promise<{ peers?: string[]; candidates?: Array<Record<string, unknown>>; scanned_artifacts?: number }> {
+  return syncUIJSON('/api/v1/sync-ui/discover', 'POST', {});
+}
+
+export function createSyncInvitation(label = ''): Promise<{ code: string; expires_at: string; single_use: boolean }> {
+  return syncUIJSON('/api/v1/sync-ui/invitations', 'POST', { label, ttl_minutes: 15 });
+}
+
+export function pairSyncPeer(baseURL: string, code: string): Promise<{ paired_with: string }> {
+  return syncUIJSON('/api/v1/sync-ui/pair', 'POST', { base_url: baseURL, code });
+}
+
+export function startSync(kind: 'incremental' | 'resource_fetch' = 'incremental'): Promise<Record<string, unknown>> {
+  return syncUIJSON('/api/v1/jobs/sync/start', 'POST', { kind });
+}
+
+export function requestSyncRecovery(action: 'catchup' | 'reset'): Promise<{ job: SyncUIJob; destructive_review_required: boolean }> {
+  return syncUIJSON('/api/v1/sync-ui/recovery', 'POST', { action });
+}
+
+export function cancelSyncJob(jobID: string): Promise<SyncUIJob> {
+  return syncUIJSON(`/api/v1/jobs/${encodeURIComponent(jobID)}/cancel`, 'POST', {});
+}
+
+export function retrySyncJob(jobID: string): Promise<Record<string, unknown>> {
+  return syncUIJSON(`/api/v1/jobs/${encodeURIComponent(jobID)}/retry`, 'POST', {});
+}
+
+export async function getSyncConflict(conflictID: string): Promise<SyncUIConflictDetail> {
+  return parseJSON<SyncUIConflictDetail>(await fetch(`/api/v1/sync-ui/conflicts/${encodeURIComponent(conflictID)}`, { cache: 'no-store' }));
+}
+
+export function resolveSyncConflict(conflictID: string, title: string, body: string): Promise<DocumentRecord> {
+  return syncUIJSON(`/api/v1/sync-ui/conflicts/${encodeURIComponent(conflictID)}/resolve`, 'POST', { title, body });
+}
+
+export function setSyncResourceIntent(resourceID: string, pinned: boolean, requested: boolean): Promise<Record<string, unknown>> {
+  return syncUIJSON(`/api/v1/sync-ui/resources/${encodeURIComponent(resourceID)}/intent`, 'POST', { pinned, requested });
+}
+
+export async function createPasswordBackup(password: string): Promise<Blob> {
+  const response = await fetch('/api/v1/sync-ui/backups', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password }),
+  });
+  if (!response.ok) await parseJSON(response);
+  return response.blob();
+}
+
+export interface BackupReview {
+  verified: boolean;
+  database_id: string;
+  snapshot_id: string;
+  schema_version: number;
+  objects: number;
+  database_bytes: number;
+  external_bytes: number;
+  ready_for_destructive_review: boolean;
+  applied: false;
+  next: string;
+}
+
+export async function inspectPasswordBackup(file: File, password: string): Promise<BackupReview> {
+  const form = new FormData();
+  form.append('password', password);
+  form.append('backup', file, file.name);
+  return parseJSON<BackupReview>(await fetch('/api/v1/sync-ui/backups/inspect', { method: 'POST', body: form }));
+}
