@@ -616,10 +616,11 @@ maintenance, interoperability, security, size-growth, and mobile benchmark.
 
 `PLAN.md` is the authoritative home because each decision must be visible in
 the item it affects. The user's 2026-08-11 review resolved G0-G17 sync policy;
-the completed G17a evidence-preservation investigation leaves filesystem scope,
-signing fingerprint, and RFC 3161 authority/policy as explicit user decisions
-before G17b or any GitHub push. No production key operation, timestamp request,
-ISO, push, or physical burn is implied.
+the user resolved G17a's filesystem scope, exact signing fingerprint, and
+RFC 3161 provider order on 2026-08-25. G17b remains unapproved and requires
+explicit production key/credential, timestamp-network, and reserve-write
+authorization plus offline recovery/revocation readiness. No ISO, push, or
+physical burn is implied.
 The resolved synchronization decisions include:
 
 1. mandatory end-to-end encryption and per-replica digital signatures;

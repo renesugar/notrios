@@ -302,8 +302,8 @@ the supplied full scale.
 
 **The blocking G14a-G14e archive-scalability sequence and G15-G17 sync control,
 recovery UI, and safe retention are complete. G17a has now completed the
-evidence-preservation investigation; G17b is next, decision-blocked, and blocks
-G18 and every GitHub push.**
+evidence-preservation investigation. G17b's design decisions are resolved; it
+is next but operationally unapproved and blocks G18 and every GitHub push.**
 The 2026-08-24 documentation-integrity amendment adds G18a-G18g after G18 and
 before the compatibility/release slices; none of G17b onward is approved. G14a supplies the resumable, aggregate-only benchmark contract and
 generated 10k/100k calibration. That evidence confirms one-file-per-object
@@ -352,16 +352,17 @@ HTTP apply route. Generated one-full-corpus-churn evidence measured about 162
 MiB for 382,206 representative operations, so the resolved default remains.
 
 **G17a-G17b are a blocking pre-push evidence-preservation sequence. G17a is
-complete; G17b is unapproved and blocked.** G17a
+complete; G17b's design inputs are resolved but implementation is unapproved.** G17a
 freezes the curated external evidence inventory, corrects the proposed
 claims about hashes, OpenPGP signatures, RFC 3161 time evidence, Git history,
 custody, and legal scope, and selects a canonical chained manifest plus
-deterministic CD-sized ISO contract. It uses generated prototypes only and must
-resolve the exact user-approved filesystem scope, signing fingerprint, and TSA
-policy before G17b. It found 78 top-level files but also three recursive private
+deterministic CD-sized ISO contract. It found 78 top-level files but also three recursive private
 benchmark workspaces, so recursive all-file inclusion is rejected by default.
 It recommends per-artifact signatures plus one timestamped signed batch
-checkpoint. G17b then backfills every approved original ZIP and screenshot without rewriting it,
+checkpoint. The user selected curated top-level scope, exact Ed25519 evidence
+subkey `4ABE…4005`, DigiCert primary, and Sectigo fallback on 2026-08-25;
+operational key/network/reserve permission and offline backup/revocation
+attestation remain required. G17b then backfills every approved original ZIP and screenshot without rewriting it,
 checks the canonical manifest and ISO catalog into Git, places immutable
 numbered ISO images and their verification sets only under
 `/media/renes/SEAGATE2TB/notrios-evidence/`, and adds a host-side pre-push gate.

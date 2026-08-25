@@ -24,10 +24,13 @@ CD-sized ISO images on the designated external disk before any GitHub push.
 G17a is complete: it validated the 78 curated top-level artifacts, found three
 recursive private benchmark workspaces that cannot be included silently, and
 proved the generated manifest/signature/timestamp/ISO contract. G17b is next
-but blocked on explicit scope, OpenPGP identity, and RFC 3161 authority choices;
-it also blocks G18 and the planned G18a-G18g source-anchored documentation/Hugo-
-Ledger work. No production signing, timestamp request, ISO, push, or disc burn
-is authorized — see
+and its design choices are resolved: curated top-level scope, exact evidence
+signing subkey, DigiCert primary, and Sectigo fallback. Implementation remains
+unapproved; key use, credential retrieval, TSA requests, and reserve writes need
+explicit operational authorization and offline recovery/revocation readiness
+must be attested. G17b also blocks G18 and the planned G18a-G18g source-anchored
+documentation/Hugo-Ledger work. No production signing, timestamp request, ISO,
+push, or disc burn is authorized — see
 [`PLAN.md`](PLAN.md) and
 [`ROADMAP.md`](ROADMAP.md). The repository is
 structured so a coding agent can resume safely after usage limits or model

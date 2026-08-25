@@ -36,8 +36,9 @@ The root also contains three recursive G14 benchmark workspaces with private
 inputs, caches, repositories, logs, diagnostics, and generated artifacts. A
 read-only ISO probe had observed at least 47,400 nodes when stopped. Recursive
 inclusion is therefore neither a privacy-safe default nor consistent with the
-one-disc premise. G17b needs an explicit scope approval; the recommendation is
-the curated top-level handoffs plus the expected G17a release ZIP.
+one-disc premise. At G17a completion, G17b needed explicit scope approval and
+the recommendation was curated top-level handoffs plus the expected G17a ZIP;
+the post-completion addendum below records its later resolution.
 
 ## Selected contract
 
@@ -104,19 +105,21 @@ Primary references:
 - SSL.com TSA: <https://www.ssl.com/products/content-authenticity/timestamping/>
 - GNU xorriso manual: <https://www.gnu.org/software/xorriso/man_1_xorriso.html>
 
-## G17b blockers
+## Post-completion decision resolution (2026-08-25)
 
-1. Approve the curated top-level handoffs plus the G17a ZIP, or separately scope
-   a privacy-reviewed recursive workspace selection.
-2. Approve an exact existing OpenPGP fingerprint or creation of the recommended
-   dedicated offline-primary evidence identity and replaceable signing subkey,
-   including UID, algorithm, expiry, backups, revocation, and attestation.
-3. Approve the recommended DigiCert generated pilot and, only after successful
-   review, the exact authority/policy/chain for production checkpoint sealing;
-   otherwise explicitly omit or waive the third-party time claim.
+The user later selected curated top-level scope and excluded every recursive
+workspace; selected primary fingerprint `AEE5…8098` and exact Ed25519 signing
+subkey `4ABE…4005`; and selected DigiCert primary with Sectigo fallback under a
+strict generated-pilot policy/chain gate. The complete fingerprints and
+operational requirements are in the active `PLAN.md` and
+`EVIDENCE_PRESERVATION.md`.
 
-G17b, G18, all later work, and every GitHub push remain blocked until these
-decisions are resolved.
+This resolves G17a's design questions but does not retroactively alter its
+investigation boundary. G17b remains unapproved. Starting it still requires
+explicit exact-key/credential, TSA-network, and reserve-write authorization,
+and offline primary-backup/revocation readiness must be attested before the
+first production signature. G18, later work, and every GitHub push remain
+blocked through G17b.
 
 ## Files
 

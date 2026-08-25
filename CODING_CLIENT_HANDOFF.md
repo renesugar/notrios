@@ -29,10 +29,12 @@ archived under `plans/v0.7/`; their reviewed evidence is under
 `performance/v0.7-g17/`. G15's archive is
 `plans/v0.7/024-durable-sync-jobs.md`; G16's archive is
 `plans/v0.7/025-sync-recovery-ui.md`; G17's archive is
-`plans/v0.7/026-peer-retention-gc-repair.md`. **G17a is complete. G17b is next
-but blocked on explicit filesystem-scope, OpenPGP-identity, and RFC-3161-
-authority decisions; it is not approved and blocks G18 and every GitHub push.
-G18/G18a-G18g are also not approved.** G14b selected option B: a
+`plans/v0.7/026-peer-retention-gc-repair.md`; G17a and its later decision record
+are `plans/v0.7/028-evidence-preservation-contract.md` and
+`plans/v0.7/029-evidence-handling-decisions.md`. **G17a is complete. The user
+resolved G17b's curated scope, exact OpenPGP identity, and DigiCert/Sectigo
+provider order on 2026-08-25. G17b is next but is not operationally approved;
+it blocks G18 and every GitHub push. G18/G18a-G18g are also not approved.** G14b selected option B: a
 required compatible same-schema SQLite-image plus bounded packed-assets
 capability for whole-library full backup/catch-up, retaining packed semantic
 archive-v2 for subset, merge, schema-independent interchange, and fallback.
@@ -105,19 +107,27 @@ contains 78 files (74 ZIPs and four PNGs), 270,506,844 source bytes, no existing
 signature/timestamp sidecars, and 73 distinct six-anchor exact commit mappings;
 legacy `notrios.zip` remains unknown. All ZIP and PNG structural checks pass.
 The same root has three recursive G14 private benchmark workspaces; an all-
-recursive ISO would violate the private-data boundary, so G17b needs explicit
-scope approval. The recommended scope is curated top-level handoffs plus the
-G17a ZIP. The curated sources print as a 270,962,688-byte ISO, 39.75% of the
-650 MiB project budget.
+recursive ISO would violate the private-data boundary. The user selected curated
+top-level handoffs—including the G17a and any verified pre-G17b decision ZIPs—
+and excluded every recursive workspace. The curated G17a sources print as a
+270,962,688-byte ISO, 39.75% of the 650 MiB project budget.
 
 Generated `/tmp` fixtures proved canonical chain mutation refusal, detached
 OpenPGP verification, RFC 3161 nonce/imprint/policy and explicit-CA checks with
 wrong-data/wrong-CA refusal, and two byte-identical xorriso builds plus exact
 extraction. `EVIDENCE_PRESERVATION.md` selects one signature per artifact and
 one RFC 3161 token over the signed batch checkpoint that hashes all artifacts
-and signatures. No local secret key exists, so G17b also needs approval for a
-dedicated evidence identity or external key. DigiCert is the recommended pilot,
-not selected; exact policy/chain/terms and the network request need approval.
+and signatures. The selected evidence identity is UID `Rene Sugar (Evidence
+Identity) <rene.sugar@gmail.com>`, primary fingerprint
+`AEE5F82F2C216D6D15992C8DC96A1C6039BC8098`, and exact Ed25519 signing subkey
+`4ABEB98AF99C8321931BCF282C6A8A4568264005`, expiring 2027-08-25. Read-only
+metadata shows `sec#`/usable `ssb`; the user attests that separate Secret Service
+items hold the operational subkey export and passphrase. Never retrieve or log
+them during planning, and force the subkey with its fingerprint plus `!` during
+authorized signing. DigiCert `http://timestamp.digicert.com` is primary and
+Sectigo `http://timestamp.sectigo.com` fallback; an authorized generated pilot
+must still pin and verify the actual policy OID and responder chain before any
+production request.
 G17b then backfills without rewriting originals, checks the chained manifest
 and outer ISO catalog into Git, and writes immutable numbered ISO images only
 under `/media/renes/SEAGATE2TB/notrios-evidence/`. Backfilled records are
@@ -163,8 +173,11 @@ generic response ceiling truncating 16 MiB ranges, unconditional whole-library
 reconciliation for a body edit, and quadratic repeated-prefix validation in
 bounded directory publication. Tests cover each boundary; no format, schema,
 compressor, third-party dependency, REST/MCP path surface, or automatic restore
-was added. G15-G17a are now complete; decision-blocked G17b is next and blocks
-G18 and any GitHub push. Every remaining item requires separate item-by-item
+was added. G15-G17a are now complete; operationally unapproved G17b is next and
+blocks G18 and any GitHub push. Starting it must explicitly authorize the exact
+subkey/credential use, TSA network requests, and external reserve writes; the
+owner must attest offline primary backup and revocation readiness before the
+first production signature. Every remaining item requires separate item-by-item
 user approval.
 
 G14b added only investigation/prototype code and aggregate evidence. Its 57

@@ -1,10 +1,12 @@
 # Plan: v0.7 — Native synchronization
 
 Status: **G0-G17a completed through 2026-08-24. Product version remains 0.6.0 and
-the canonical schema is v27. G17b is next but remains blocked on explicit
-evidence-scope, OpenPGP-identity, and RFC-3161-authority decisions; it is not
-approved. G18/G18a-G18g are also not approved, and any GitHub push remains
-blocked through G17b.** The
+the canonical schema is v27. The user resolved G17b's evidence scope, exact
+OpenPGP identity, and RFC-3161 provider order on 2026-08-25. G17b is next but is
+not approved to start; production signing, credential retrieval, TSA requests,
+and reserve writes still need explicit operational authorization and the offline
+backup/revocation readiness gate remains open. G18/G18a-G18g are also not
+approved, and any GitHub push remains blocked through G17b.** The
 former seven-item draft was too coarse: it mixed protocol research, canonical
 write interception, merge semantics, two transports, cryptography, recovery,
 UI, retention, and release validation into slices that could not be reviewed or
@@ -1654,48 +1656,54 @@ entry-chain mutation tests; ISO clean rebuild byte comparison, print-size/capaci
 gate, extraction/read-back, long-name/Unicode/permission checks; corrupt/missing/
 extra source refusal; privacy scan; and no network or evidence-directory write.
 
-**Open decisions**
+**Resolved decisions (2026-08-25)**
 
-- **Which OpenPGP identity signs the evidence? — Blocking G17b.** Options are an
-  existing dedicated project/evidence key selected by exact fingerprint, a new
-  dedicated evidence key created with an approved protection/backup/rotation
-  procedure, or no signature claim. Recommendation: a dedicated non-expiring
-  primary identity with a separately managed signing subkey and an exported
-  public-key packet; select an existing suitable key if one already exists.
-  The user must approve the exact fingerprint or key-creation operation. This
-  changes who can make the signer claim and how later verifiers establish trust.
-  **Investigated 2026-08-24:** the local GnuPG keyring contains no secret key.
-  Recommendation: user-approved creation of a dedicated offline-primary evidence
-  identity with a replaceable signing subkey, exact fingerprint, independently
-  published/attested public key, encrypted backups, and revocation procedure.
-  An externally held existing key remains an option; no key was created or used
-  for production in G17a.
-- **Which independent RFC 3161 authority and policy are accepted? — Blocking
-  third-party timestamping in G17b.** Options are a verified public/commercial
-  TSA with pinned trust material and acceptable policy/terms, an organization-
-  controlled TSA whose independence is explicitly limited, or no third-party
-  time claim. Recommendation: select a maintained external RFC 3161 service only
-  after a live certificate-chain/policy/availability check. Network access and
-  the request itself require approval. If no authority is selected or it is
-  unavailable, record `timestamp_status` truthfully and treat the strict
-  pre-push gate as blocked unless the user signs an explicit waiver.
-  **Investigated 2026-08-24:** DigiCert is the recommended one-checkpoint pilot
-  because its published material names a generic RFC 3161 endpoint and current
-  responder-chain downloads. Sectigo is the fallback; its published guidance
-  requests a 15-second scripted-call interval. SSL.com's documented service is
-  C2PA/access-coordinated. G17b must still review terms, pin exact response
-  policy/certificates, and obtain approval before a generated pilot or
-  production submission. No TSA endpoint was contacted in G17a.
-- **Which filesystem scope is evidence? — Blocking G17b.** Options are (A) the
-  curated top-level release ZIPs/screenshots plus the expected G17a ZIP; (B) a
-  separately privacy-reviewed selection of aggregate workspace outputs; or (C)
-  every recursive file. Recommendation: option A. Investigation found three
-  nested G14 benchmark workspaces containing private inputs, caches,
-  repositories, logs, diagnostics, and large artifacts; a recursive probe had
-  already traversed at least 47,400 nodes when stopped. Option C contradicts
-  the private-data boundary and the one-CD premise. Option B needs a separate
-  scoped preservation plan. G17a froze and committed only aggregate facts and
-  commitments for the 78 top-level files.
+- **OpenPGP identity — resolved.** Use the dedicated existing UID `Rene Sugar
+  (Evidence Identity) <rene.sugar@gmail.com>`, primary fingerprint
+  `AEE5F82F2C216D6D15992C8DC96A1C6039BC8098`, and exact Ed25519 signing-subkey
+  fingerprint `4ABEB98AF99C8321931BCF282C6A8A4568264005`. A read-only colon listing
+  shows the certification primary secret offline (`sec#`) and the signing
+  subkey usable (`ssb`); the subkey expires `2027-08-25T18:32:16Z`. Production
+  commands must force the subkey by full fingerprint plus `!`, never select by
+  email or short key ID. The user attests that the operational secret-subkey
+  export and passphrase are stored as separate Secret Service items selected by
+  `service=gpg_evidence,type=subkey_secret|passphrase`, and that a clearsign
+  test succeeded. This decision update did not retrieve either secret. G17a's
+  statement that no production key existed during its capture remains historical.
+- **RFC 3161 authority/policy — resolved provider order and acceptance rule.**
+  Use DigiCert `http://timestamp.digicert.com` first and Sectigo
+  `http://timestamp.sectigo.com` as fallback. Accept no policy or certificate
+  merely because it came from that host: an authorized generated pilot must
+  capture the actual policy OID and responder chain, match nonce and SHA-256
+  imprint, require timestamping EKU and validity at `genTime`, validate through
+  explicit pinned CA/intermediate inputs, and preserve the verified response.
+  A passing DigiCert pilot fixes its observed policy/chain for production; if it
+  fails, apply the same gate to Sectigo. If neither passes, stop and ask rather
+  than silently waive timestamping. This plan update contacted no TSA endpoint.
+- **Filesystem scope — resolved as option A.** Preserve only curated top-level
+  handoff ZIPs/screenshots present at the G17b freeze, including the G17a ZIP and
+  any verified decision-update ZIP created before G17b. Exclude all three
+  recursive G14 benchmark workspaces. Any other drift is refused until named
+  and approved; workspace preservation remains separate privacy-reviewed work.
+
+**Reference assessment (2026-08-25).** The supplied descriptions are broadly
+accurate, with scope qualifications:
+
+- Notary Project's Apache-2.0 `tspclient-go` implements RFC 3161/RFC 5816
+  request, transport, response, and verification support
+  (<https://github.com/notaryproject/tspclient-go>). It is a compatible future
+  implementation candidate, not an approved new dependency for G17b; the
+  selected baseline remains the already exercised GnuPG/OpenSSL subprocess
+  boundary unless a focused dependency/pinning review justifies a change.
+- Trail of Bits' Apache-2.0 `rfc3161-client` is a Python API backed by Rust/PyO3
+  for constructing and verifying RFC 3161 objects; network transport is separate
+  (<https://pypi.org/project/rfc3161-client/>). Older releases through 1.0.2
+  were yanked for CVE-2025-52556. Do not add or pin it implicitly merely because
+  it is referenced.
+- Notary Project Notation is an OCI/blob signature CLI and now supports RFC 3161
+  timestamps (<https://github.com/notaryproject/notation>). Its signature and
+  trust-policy model is not the selected detached-OpenPGP evidence format, so it
+  is not a drop-in verifier for this contract and is not selected for G17b.
 
 **Outcome (2026-08-24).** G17a froze 78 curated top-level artifacts totaling
 270,506,844 bytes: 74 CRC/path-valid ZIPs and four chunk-CRC-valid PNGs. All 73
@@ -1721,16 +1729,28 @@ store verifiable manifests and tooling in Git, reserve burn-ready ISO images on
 `/media/renes/SEAGATE2TB`, and make complete coverage a mandatory gate before
 the next GitHub push.
 
-**Scope.** Re-freeze the source inventory and refuse unexplained drift from
-G17a. Validate every ZIP with the repository release checker when compatible
+**Resolved inputs (2026-08-25).** The source is curated top-level handoffs at
+the G17b freeze, including verified G17a and pre-G17b decision ZIPs; all three
+recursive G14 workspaces are excluded. The signer is exact Ed25519 subkey
+`4ABEB98AF99C8321931BCF282C6A8A4568264005` under primary
+`AEE5F82F2C216D6D15992C8DC96A1C6039BC8098`; automated GnuPG selection appends
+`!`. DigiCert `http://timestamp.digicert.com` is the primary RFC 3161 endpoint
+and Sectigo `http://timestamp.sectigo.com` is fallback. The generated pilot,
+not the hostname alone, fixes the accepted policy OID and responder chain. No
+new RFC 3161/Notation dependency is selected.
+
+**Scope.** Re-freeze the source inventory, reconcile only the named verified
+post-G17a appends, and refuse all other drift. Validate every ZIP with the
+repository release checker when compatible
 and with complete ZIP CRC/path checks otherwise; validate image decodability;
 hash original bytes without rewriting metadata. Resolve task/commit provenance
 only from reproducible evidence and record uncertainty. Generate each artifact's
 detached OpenPGP signature and verification record. Hash every artifact and
-signature into the canonical manifest, sign the content checkpoint, and obtain
-one RFC 3161 request/response over that checkpoint signature using the user-
-approved key and TSA. Optional per-artifact timestamp tokens require a separate
-standalone-extraction profile and are not the default. Keep the private key
+signature into the canonical manifest, sign the content checkpoint with the
+exact resolved subkey, and obtain one RFC 3161 request/response over that
+checkpoint signature using the first selected provider whose generated pilot
+passes the strict acceptance gate. Optional per-artifact timestamp tokens
+require a separate standalone-extraction profile and are not the default. Keep the private key
 outside the repository, logs, ISO, and process arguments.
 
 Add the versioned manifest schema, canonicalizer, append/checkpoint tool,
@@ -1784,9 +1804,12 @@ independent creation, clean-room status, or admissibility. Do not mutate the
 original artifact bytes. Do not depend on a GUI verifier, mounted ISO, network,
 secret key, or the original repository for ordinary offline verification.
 
-**Dependencies.** Completed and user-approved G17a contract and all three blocking
-decisions; explicit permission for external evidence/reserve writes, signing-key
-use or creation, and TSA network requests.
+**Dependencies.** Completed and user-approved G17a contract and the three
+resolved design decisions above; explicit permission for external evidence/
+reserve writes, exact signing-subkey use and Secret Service passphrase retrieval,
+and network requests to the selected TSA endpoints. Before the first production
+signature, the owner must attest that a restorable full primary-key backup and
+revocation certificate exist offline; do not inspect or record secret locations.
 
 **Working state.** Every frozen evidence file has an exact checked-in manifest
 entry, validated signature, signed/timestamped checkpoint coverage, and immutable volume assignment;
@@ -1808,10 +1831,25 @@ with no recursive release-ZIP requirement.
 
 **Open decisions**
 
-- None after G17a's filesystem scope, signing identity, and TSA choices are
-  explicitly resolved. Approving G17b also approves the selected curated scope, immutable
-  numbered-volume policy, two-level no-self-hash catalog, and strict pre-push
-  gate described above; it does not approve a push or a physical burn.
+- **May G17b perform its operational actions? — Blocking start.** This request
+  approved plan text only. Starting G17b requires an explicit instruction that
+  authorizes use of signing subkey
+  `4ABEB98AF99C8321931BCF282C6A8A4568264005`, non-logging Secret Service
+  passphrase retrieval, generated and production RFC 3161 requests to the
+  selected DigiCert/Sectigo endpoints under the acceptance gate above, and
+  writes below `/media/renes/SEAGATE2TB/notrios-evidence/`. It still does not
+  authorize a GitHub push or physical burn.
+- **Is offline recovery/revocation ready? — Blocking the first production
+  signature, not implementation or generated pilot work.** The owner must attest
+  that the full primary identity and revocation certificate have restorable
+  offline custody. Do not put their paths, media identifiers, or secret bytes in
+  the repository. If the attestation is unavailable, G17b may build and test
+  tooling but must stop before signing an artifact.
+- **Unexpected TSA pilot result — Non-blocking default.** Pin DigiCert's observed
+  policy/chain only if every stated check passes; otherwise try Sectigo once
+  under its published pacing guidance. If neither passes, stop and reopen the
+  authority decision. Never fall back to local wall-clock time or an implicit CA
+  store.
 
 ## G18. Shared-core, FFI, Mermaid, and installation/mobile portability handoff
 
@@ -2326,9 +2364,11 @@ recommendation, blocking status, and consequence.
 | Remember backup password | G16 | Resolved: no |
 | Retention horizon | G17 | Resolved: 90 days plus verified snapshot floor |
 | Offline peer retirement | G17 | Resolved: no all-peers-online requirement |
-| Evidence filesystem scope | G17a | Open, blocking G17b: curated top-level handoffs plus G17a ZIP recommended; recursive private workspaces excluded |
-| Evidence OpenPGP signing identity | G17a | Open, blocking G17b: exact existing fingerprint or separately approved dedicated-key creation |
-| Evidence RFC 3161 authority/policy | G17a | Open, blocking timestamping in G17b: DigiCert checkpoint pilot recommended; strict pre-push gate otherwise needs an explicit waiver |
+| Evidence filesystem scope | G17a | Resolved 2026-08-25: curated top-level handoffs at G17b freeze; all recursive private workspaces excluded |
+| Evidence OpenPGP signing identity | G17a | Resolved 2026-08-25: exact full primary/subkey fingerprints are in the owning item; abbreviated IDs must not select keys |
+| Evidence RFC 3161 authority/policy | G17a | Resolved 2026-08-25: DigiCert primary, Sectigo fallback; accept only the explicit policy/chain that passes the generated pilot gate |
+| G17b operational authorization | G17b | Open, blocking start: exact signer/credential use, TSA network requests, and external reserve writes |
+| Evidence key offline recovery/revocation | G17b | Open, blocking first production signature: owner attestation required; no secret paths/bytes recorded |
 | Shared-core/FFI and Flutter boundary | G18 | Resolved: pre-1.0 ABI; post-1.0 client; no Web FFI |
 | Current-GUI Mermaid baseline | G18 | Resolved fact: upstream-capable but disabled pending offline/security evidence |
 | Cross-language documentation anchor/calibration mechanism | G18a | Investigation; blocking G18c-G18f until one finite mechanism and labelled set are selected |
@@ -2340,7 +2380,7 @@ recommendation, blocking status, and consequence.
 
 G0-G17a are complete and the production physical restore/catch-up, durable
 sync-job, local recovery UI, safe-retention, and evidence-preservation design
-contracts are frozen. G17b is next but blocked and unapproved; it blocks G18
-and any GitHub push. G18/G18a-G18g are also unapproved. Implementation begins only after an
-explicit instruction naming the item to start and, where stated, resolving its
-blocking decisions.
+contracts are frozen. G17b's design inputs are resolved; it is next but
+operationally unapproved and blocks G18 and any GitHub push. G18/G18a-G18g are
+also unapproved. Implementation begins only after an explicit instruction naming
+the item to start and, where stated, authorizing its blocking operations.

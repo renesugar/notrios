@@ -1,7 +1,8 @@
 # Evidence preservation and optical reserve contract
 
-Status: G17a investigation contract. G17b is not approved and no production
-evidence has been sealed.
+Status: G17a investigation contract with the 2026-08-25 scope, signer, and TSA
+design decisions resolved. G17b is not approved and no production evidence has
+been sealed.
 
 This document defines an engineering preservation record for Notrios release
 artifacts. It is not legal advice and does not declare any artifact admissible,
@@ -31,16 +32,17 @@ not an unsigned artifact or an unbound prose timestamp.
 The external root currently has two materially different classes:
 
 1. **Curated handoff artifacts:** top-level release/plan ZIPs and content-free UI
-   screenshots. G17a froze 78 such files at `2026-08-25T03:09:46Z`; the expected
-   next append is the verified G17a release ZIP.
+   screenshots. G17a froze 78 such files at `2026-08-25T03:09:46Z`; subsequent
+   verified G17a and evidence-decision release ZIPs are explained appends.
 2. **Private benchmark workspaces:** three nested directory trees holding private
    inputs, caches, repositories, logs, diagnostics, and generated artifacts from
    archive-scale investigations. They are not release handoffs and are not safe
    for a public/pre-push manifest or recursive ISO copy.
 
-G17b is blocked until the user approves the recommended curated-top-level scope
-or separately commissions a privacy-reviewed workspace-preservation plan. A
-whitelist is mandatory. Never run a production ISO builder recursively on the
+The user selected the curated-top-level scope on 2026-08-25. G17b re-freezes all
+curated top-level handoffs then present, explains the known post-G17a appends,
+and refuses any other drift. All recursive workspace content is excluded. A
+whitelist is mandatory; never run a production ISO builder recursively on the
 external evidence root.
 
 The two G17a inventory commitments bind the pre-G17a-ZIP top-level set. The
@@ -166,41 +168,58 @@ artifact-signature byte. Per-artifact tokens may be added only as an explicit
 standalone-extraction profile; they are not stronger evidence that the complete
 batch existed by the checkpoint time.
 
-## OpenPGP identity recommendation
+## Selected OpenPGP identity
 
-No secret key was present in the local GnuPG keyring during G17a. G17b therefore
-cannot reuse an assumed identity. Recommended profile, subject to explicit user
-approval:
+No secret key was present during the G17a inventory/prototype capture. After
+that investigation, the user created and selected this dedicated evidence
+identity on 2026-08-25:
 
-- a dedicated evidence identity with an offline certification primary key and
-  a replaceable signing subkey;
-- Ed25519 with a finite signing-subkey lifetime for the initial profile, after
-  confirming required verifier compatibility; use RSA-3072/4096 instead if the
-  user prioritizes older OpenPGP implementations;
-- two encrypted offline secret/revocation backups on distinct media;
-- the exact primary and subkey fingerprints committed and independently
-  published/attested on the first authorized push or release;
-- no passphrase in arguments, logs, repository, manifest, ISO, or environment;
-- explicit rotation/compromise records; old signatures are never rewritten.
+- UID: `Rene Sugar (Evidence Identity) <rene.sugar@gmail.com>`;
+- Ed25519 certification primary fingerprint:
+  `AEE5F82F2C216D6D15992C8DC96A1C6039BC8098`;
+- Ed25519 signing-subkey fingerprint:
+  `4ABEB98AF99C8321931BCF282C6A8A4568264005`;
+- signing-subkey expiry: `2027-08-25T18:32:16Z`.
 
-The user must choose the UID, algorithm profile, expiry, backup custodian, and
-exact fingerprint before G17b signs anything.
+A read-only GnuPG colon listing showed `sec#` for the primary, meaning its secret
+part is offline/unusable on this workstation, and a usable `ssb` signing subkey.
+Every automated signing command must select
+`4ABEB98AF99C8321931BCF282C6A8A4568264005!`; GnuPG documents the `!` suffix as
+forcing the exact primary or secondary key. Email, short key ID, default-key
+selection, or ambient trust must never select a production signer.
 
-## RFC 3161 authority recommendation
+The user attests that Secret Service holds separate items with selectors
+`service=gpg_evidence,type=subkey_secret` and
+`service=gpg_evidence,type=passphrase`, and that the stored passphrase unlocked a
+test signature. This review did not retrieve either value. G17b may stream the
+passphrase only to GnuPG's standard input in a non-logging process; it must never
+put it in arguments, environment, files, output, manifest, ISO, or logs. Do not
+export or retrieve the secret-subkey item when the verified local `ssb` is
+usable. Before the first production signature, the owner must attest that a
+restorable full primary-key backup and revocation certificate exist offline;
+the repository records the attestation, not secret locations or bytes.
 
-G17a recommends an approved one-checkpoint DigiCert pilot because DigiCert's
-published documentation names an RFC 3161 endpoint and current downloadable
-responder chain. This is not provider selection. Before submission, G17b must
-review terms, download/hash the exact trust material, make one generated pilot
-request, verify response policy/nonce/imprint/EKU/chain/revocation behavior, and
-show the user the selected endpoint, policy, chain fingerprints, and retained
-materials. Sectigo is a documented fallback; SSL.com's published C2PA service
-requires use-case/access coordination. No production request occurs without
-separate approval.
+Export the minimal public key for the ISO and a clean verifier, require exact
+primary/subkey `VALIDSIG` fingerprints, and independently publish/attest the
+public fingerprint on the first authorized push or release. Rotation and
+compromise append records; old signatures are never rewritten.
 
-If the provider is unavailable or trust materials cannot be preserved, record
-`timestamp_status` truthfully and keep the pre-push gate blocked unless the user
-approves a signed waiver. Never substitute local wall-clock time.
+## Selected RFC 3161 authority order
+
+The user selected DigiCert `http://timestamp.digicert.com` as primary and
+Sectigo `http://timestamp.sectigo.com` as fallback. This provider choice does
+not trust an arbitrary response from either host. Before production submission,
+an explicitly authorized generated pilot must review current terms, download
+and hash exact trust material, and verify response policy, nonce, SHA-256
+imprint, timestamping EKU, chain, validity at `genTime`, and available revocation
+evidence through explicit `-CAfile` and `-untrusted` inputs. A passing DigiCert
+pilot pins its observed policy OID and responder chain. If it fails, run one
+Sectigo pilot under its published pacing guidance and the same gate.
+
+If neither provider passes or trust material cannot be preserved, record
+`timestamp_status` truthfully and stop for a new authority decision. Never
+substitute local wall-clock time, an implicit system CA set, or an unsigned
+waiver. This decision update contacted no TSA endpoint.
 
 ## Deterministic ISO contract
 
@@ -304,15 +323,19 @@ with volume/hash/checkpoint identifiers, and records storage/custody. Multiple
 copies are independently verified. “Read-only” media is not called immutable
 against loss, substitution, degradation, or malicious remastering.
 
-## G17b blocking approvals
+## G17b blocking operational approvals
 
-G17b cannot begin until the user explicitly resolves all three:
+The scope, signer, and provider-order design decisions are resolved. G17b cannot begin
+from this planning update alone. An explicit start instruction must
+authorize all of the following named operations:
 
-1. approve curated top-level scope plus the G17a ZIP, or authorize a separate
-   privacy-reviewed recursive-workspace plan;
-2. approve the OpenPGP identity/key-creation or external-key procedure and exact
-   fingerprint;
-3. approve the RFC 3161 provider pilot, endpoint/policy/trust material, and
-   production request, or explicitly waive third-party time evidence.
+1. use of signing subkey `4ABEB98AF99C8321931BCF282C6A8A4568264005` and
+   non-logging Secret Service passphrase retrieval;
+2. generated and production RFC 3161 requests to the selected DigiCert/Sectigo
+   endpoints under the strict acceptance gate above; and
+3. evidence staging and immutable reserve writes below
+   `/media/renes/SEAGATE2TB/notrios-evidence/`.
 
-None of those approvals authorizes a GitHub push or a physical burn.
+The owner must also attest offline primary-backup and revocation-certificate
+readiness before the first production signature. None of these approvals
+authorizes a GitHub push or physical burn.

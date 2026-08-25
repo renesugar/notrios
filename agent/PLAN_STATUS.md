@@ -1,7 +1,7 @@
 # Plan Status
 
-Updated: 2026-08-24 (G17a evidence-preservation investigation complete;
-decision-blocked G17b next and unapproved)
+Updated: 2026-08-25 (G17a complete; G17b design decisions resolved,
+operational authorization and recovery/revocation readiness still pending)
 
 ## Active milestone
 
@@ -25,9 +25,38 @@ G14d integrated encrypted transport plus crash-safe restore/catch-up, and G14e
 passed the production full-scale matrix and froze the format. G15 then added
 the schema-v26 durable sync outbox and bounded local REST/MCP control. G16 adds
 the local Sync Center and password recovery workflow. G17 adds safe retention
-and retirement. G17a is complete. G17b is next but blocked on explicit evidence
-scope, OpenPGP identity, and RFC 3161 authority decisions; it blocks G18 and any
-GitHub push. None of G17b onward is approved.
+and retirement. G17a is complete. G17b's evidence scope, exact OpenPGP identity,
+and RFC 3161 provider order are resolved. G17b is next but operationally
+unapproved; it blocks G18 and any GitHub push. None of G17b onward is approved.
+
+## v0.7 G17b decision resolution — 2026-08-25
+
+- Scope is curated top-level handoffs present at the G17b freeze, including the
+  G17a and any verified pre-G17b decision ZIPs. All three recursive private G14
+  workspaces are excluded; unexplained drift is refused.
+- The selected UID is `Rene Sugar (Evidence Identity) <rene.sugar@gmail.com>`.
+  Primary fingerprint is `AEE5F82F2C216D6D15992C8DC96A1C6039BC8098`;
+  exact Ed25519 signing subkey is
+  `4ABEB98AF99C8321931BCF282C6A8A4568264005`, expiring 2027-08-25. Read-only
+  metadata shows offline primary secret (`sec#`) and usable signing secret
+  (`ssb`). Production selection must use the full subkey fingerprint plus `!`.
+- The user attests that separate Secret Service items selected by
+  `service=gpg_evidence,type=subkey_secret|passphrase` exist and the passphrase
+  unlocked a test signature. No secret was retrieved during this update.
+- DigiCert `http://timestamp.digicert.com` is primary; Sectigo
+  `http://timestamp.sectigo.com` is fallback. A generated pilot must still pin
+  and verify the actual response policy OID and chain; neither endpoint was
+  contacted.
+- `tspclient-go` and Trail of Bits `rfc3161-client` are accurately described
+  Apache-2.0 implementation candidates, but neither is approved as a dependency.
+  Notation supports OCI/blob signatures and RFC 3161 but is not a drop-in
+  detached-OpenPGP verifier, so it is not selected.
+- Starting G17b still requires explicit authorization for the exact subkey and
+  non-logging credential use, TSA network requests, and external reserve writes.
+  Before the first production signature, the owner must attest that a restorable
+  full primary backup and revocation certificate exist offline. GitHub push and
+  physical burn remain separately unauthorized.
+- Decision archive: `plans/v0.7/029-evidence-handling-decisions.md`.
 
 ## v0.7 G17a completion — 2026-08-24
 
@@ -40,9 +69,9 @@ GitHub push. None of G17b onward is approved.
   individual filenames/hashes/candidates remain uncommitted scratch evidence.
 - The root also contains three recursive G14 private benchmark workspaces. A
   recursive ISO probe had seen at least 47,400 nodes when stopped; exact recursive
-  scope was intentionally not frozen or hashed. G17b must obtain user approval
-  for the recommended curated top-level scope plus the expected G17a ZIP. A
-  privacy-reviewed recursive preservation effort is separate work.
+  scope was intentionally not frozen or hashed. At G17a completion, G17b still
+  needed scope approval; the 2026-08-25 resolution above selected curated
+  top-level scope. A privacy-reviewed recursive preservation effort is separate.
 - The curated source set prints as 270,962,688 ISO bytes, 39.75% of the
   conservative 650 MiB project budget. Final G17b staging must re-run the exact
   size gate against actual media; the budget is not a universal CD claim.
@@ -54,13 +83,14 @@ GitHub push. None of G17b onward is approved.
   signature hashes in the canonical chain, then one RFC 3161 token over the
   signed content checkpoint. Per-artifact tokens are optional, not stronger for
   the complete-batch time claim.
-- No secret key is present locally. The recommended G17b choice is an explicitly
-  approved dedicated offline-primary evidence identity with a replaceable
-  signing subkey, exact fingerprint, backups, and revocation procedure.
-- DigiCert is the recommended one-checkpoint pilot from published materials;
-  Sectigo is fallback and SSL.com requires C2PA/access coordination. No endpoint
-  was contacted. Exact terms, policy, chain, pilot, and production request still
-  need approval.
+- At the G17a capture, no secret key was present locally. Its recommendation was
+  a dedicated offline-primary evidence identity with a replaceable signing
+  subkey, exact fingerprint, backups, and revocation procedure; the exact
+  identity is now resolved above.
+- G17a recommended DigiCert for the one-checkpoint pilot, Sectigo as fallback,
+  and found SSL.com required C2PA/access coordination. No endpoint was contacted.
+  The provider order is now resolved; the live pilot/chain gate remains an
+  operational G17b action.
 - `EVIDENCE_PRESERVATION.md` is the contract; archive:
   `plans/v0.7/028-evidence-preservation-contract.md`; aggregate evidence:
   `performance/v0.7-g17a/`. No production evidence, key, TSA, ISO, reserve,
@@ -79,10 +109,11 @@ GitHub push. None of G17b onward is approved.
 - A backfilled seal is marked `retroactive: true`; a current TSA response proves
   the timestamped signature existed by its current token time, not that a past
   task completed then. Unknown commit/task associations remain unknown.
-- The exact curated scope, signing fingerprint, and RFC 3161 authority/policy
-  are blocking decisions left by G17a. Key use/creation and network timestamp requests need
-  explicit approval. Provider certificates and policy are pinned and verified;
-  OpenSSL's verifier is never allowed to rely on an unspecified default CA set.
+- The exact curated scope, signing fingerprint, and RFC 3161 provider order were
+  resolved on 2026-08-25. Key use and network timestamp requests still need
+  explicit operational approval. Provider certificates and policy are pinned
+  and verified; OpenSSL's verifier is never allowed to rely on an unspecified
+  default CA set.
 - G17b applies the approved contract without rewriting originals. It checks a
   canonical content manifest and outer ISO catalog into Git, while numbered
   immutable ISO images and their verification material live only under
@@ -92,7 +123,7 @@ GitHub push. None of G17b onward is approved.
   volume coverage before the next GitHub push. CI can validate tracked schemas,
   fixtures, and canonicalization but cannot claim to see the external reserve.
   No push or physical optical burn is authorized by the planning amendment.
-- G17a is complete. G17b is next but decision-blocked and unapproved; G18 and
+- G17a is complete. G17b is next but operationally unapproved; G18 and
   all later work remain blocked and separately approval-gated.
 
 ## 2026-08-24 planning amendment — source-anchored docs and Hugo/Ledger
@@ -2435,6 +2466,7 @@ attempt detail remains append-only in `agent/ATTEMPT_LOG.jsonl`.
 - Long-term SQLite driver choice (current local cgo/libsqlite3 adapter).
 - Official MCP Go SDK adoption/version.
 - Sync and evidence-preservation decisions live in the owning plan items; the
-  register in `PLAN.md` is an index. G0-G17a are complete; G17b is next but
-  blocked on the explicit scope, signer, and TSA decisions. Every later slice
-  remains approval-gated.
+  register in `PLAN.md` is an index. G0-G17a are complete; G17b's design inputs
+  are resolved but its credential/network/reserve operations and offline
+  recovery/revocation readiness are not approved. Every later slice remains
+  approval-gated.
