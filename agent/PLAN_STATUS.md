@@ -1,7 +1,7 @@
 # Plan Status
 
-Updated: 2026-08-24 (G17 complete; blocking G17a-G17b evidence preservation
-planned; G17a next and unapproved)
+Updated: 2026-08-24 (G17a evidence-preservation investigation complete;
+decision-blocked G17b next and unapproved)
 
 ## Active milestone
 
@@ -25,8 +25,46 @@ G14d integrated encrypted transport plus crash-safe restore/catch-up, and G14e
 passed the production full-scale matrix and froze the format. G15 then added
 the schema-v26 durable sync outbox and bounded local REST/MCP control. G16 adds
 the local Sync Center and password recovery workflow. G17 adds safe retention
-and retirement. G17a is now next and blocks G17b, G18, and any GitHub push;
-none of G17a onward is approved.
+and retirement. G17a is complete. G17b is next but blocked on explicit evidence
+scope, OpenPGP identity, and RFC 3161 authority decisions; it blocks G18 and any
+GitHub push. None of G17b onward is approved.
+
+## v0.7 G17a completion — 2026-08-24
+
+- The exact curated top-level capture contains 78 files: 74 ZIPs and four PNGs,
+  totaling 270,506,844 bytes. Full ZIP CRC/path and PNG chunk-CRC checks pass.
+  No `.sig`, `.asc`, `.tsq`, or `.tsr` sidecar exists.
+- Six embedded Git-tree anchors map 73 current-shape release ZIPs uniquely to 73
+  distinct commits. The legacy `notrios.zip` has no anchors and remains unknown.
+  The aggregate content/capture commitments are under `performance/v0.7-g17a/`;
+  individual filenames/hashes/candidates remain uncommitted scratch evidence.
+- The root also contains three recursive G14 private benchmark workspaces. A
+  recursive ISO probe had seen at least 47,400 nodes when stopped; exact recursive
+  scope was intentionally not frozen or hashed. G17b must obtain user approval
+  for the recommended curated top-level scope plus the expected G17a ZIP. A
+  privacy-reviewed recursive preservation effort is separate work.
+- The curated source set prints as 270,962,688 ISO bytes, 39.75% of the
+  conservative 650 MiB project budget. Final G17b staging must re-run the exact
+  size gate against actual media; the budget is not a universal CD claim.
+- Generated-only fixtures pass canonical-chain mutation, detached OpenPGP,
+  RFC 3161 nonce/imprint/policy/explicit-chain, wrong-data/wrong-CA, two clean
+  byte-identical ISO builds, Unicode/long-name/rationalized-permission, and full
+  extraction-hash validation.
+- The scalable default is one detached signature per artifact, all artifact and
+  signature hashes in the canonical chain, then one RFC 3161 token over the
+  signed content checkpoint. Per-artifact tokens are optional, not stronger for
+  the complete-batch time claim.
+- No secret key is present locally. The recommended G17b choice is an explicitly
+  approved dedicated offline-primary evidence identity with a replaceable
+  signing subkey, exact fingerprint, backups, and revocation procedure.
+- DigiCert is the recommended one-checkpoint pilot from published materials;
+  Sectigo is fallback and SSL.com requires C2PA/access coordination. No endpoint
+  was contacted. Exact terms, policy, chain, pilot, and production request still
+  need approval.
+- `EVIDENCE_PRESERVATION.md` is the contract; archive:
+  `plans/v0.7/028-evidence-preservation-contract.md`; aggregate evidence:
+  `performance/v0.7-g17a/`. No production evidence, key, TSA, ISO, reserve,
+  remote, or medium changed.
 
 ## 2026-08-24 planning amendment — sealed evidence and optical ISO reserve
 
@@ -34,15 +72,15 @@ none of G17a onward is approved.
   73 ZIPs and four PNGs, about 266 MB in total. No existing `.sig`, `.asc`,
   `.tsq`, or `.tsr` sidecar was found. The historical source set is every
   regular file, not only release ZIPs.
-- G17a is an investigation-only slice. It freezes the inventory and provenance
+- G17a was an investigation-only slice. It freezes the inventory and provenance
   rules, distinguishes digest integrity, OpenPGP signer identity, RFC 3161 time
   evidence, and physical custody, and tests canonical chained-manifest plus
   deterministic CD-sized ISO behavior with generated files under `/tmp` only.
 - A backfilled seal is marked `retroactive: true`; a current TSA response proves
   the timestamped signature existed by its current token time, not that a past
   task completed then. Unknown commit/task associations remain unknown.
-- The exact signing fingerprint and RFC 3161 authority/policy are blocking
-  decisions owned by G17a. Key use/creation and network timestamp requests need
+- The exact curated scope, signing fingerprint, and RFC 3161 authority/policy
+  are blocking decisions left by G17a. Key use/creation and network timestamp requests need
   explicit approval. Provider certificates and policy are pinned and verified;
   OpenSSL's verifier is never allowed to rely on an unspecified default CA set.
 - G17b applies the approved contract without rewriting originals. It checks a
@@ -54,8 +92,8 @@ none of G17a onward is approved.
   volume coverage before the next GitHub push. CI can validate tracked schemas,
   fixtures, and canonicalization but cannot claim to see the external reserve.
   No push or physical optical burn is authorized by the planning amendment.
-- G17a is next and unapproved. G17b, G18, and all later work remain blocked and
-  separately approval-gated.
+- G17a is complete. G17b is next but decision-blocked and unapproved; G18 and
+  all later work remain blocked and separately approval-gated.
 
 ## 2026-08-24 planning amendment — source-anchored docs and Hugo/Ledger
 
@@ -2397,5 +2435,6 @@ attempt detail remains append-only in `agent/ATTEMPT_LOG.jsonl`.
 - Long-term SQLite driver choice (current local cgo/libsqlite3 adapter).
 - Official MCP Go SDK adoption/version.
 - Sync and evidence-preservation decisions live in the owning plan items; the
-  register in `PLAN.md` is an index. G0-G17 are complete; G17a is next and
-  every later slice remains approval-gated.
+  register in `PLAN.md` is an index. G0-G17a are complete; G17b is next but
+  blocked on the explicit scope, signer, and TSA decisions. Every later slice
+  remains approval-gated.

@@ -1167,21 +1167,30 @@ chooser absence in a browser, password visibility, Escape, 44-pixel touch
 controls, and console/page errors. Screenshots contain only generated Help/
 empty-profile UI and fixture text; no private corpus.
 
-## Planned G17a-G17b evidence-preservation validation
+## G17a-G17b evidence-preservation validation
 
-G17a must test the proposed evidence format with generated files only. Fixtures
-cover canonical JSONL and entry-chain mutation, good/wrong detached signatures,
-good/wrong data and CA trust for RFC 3161, truncation/swap/missing/extra files,
-deterministic ISO rebuild, CD-volume overflow, Unicode/long names, extraction,
-and full hash walk. OpenSSL timestamp verification must name the trusted CA and
-any untrusted intermediates explicitly; GnuPG detached verification must name
-both signature and data. The investigation may not write the historical
-evidence root, contact a TSA, or use/create a secret key.
+G17a completed generated-only canonical JSONL/entry-chain mutation, correct and
+tampered detached-signature, RFC 3161 nonce/imprint/policy/explicit-chain,
+wrong-data/wrong-CA, deterministic two-build ISO, Unicode/long-name,
+rationalized-permission, extraction, and full hash-walk checks. Its ephemeral
+one-day OpenPGP key and local fixture TSA existed only in a new `/tmp` workspace;
+no production key or trust material was created or used. OpenSSL verification
+named the trusted root and untrusted intermediate explicitly, and GnuPG named
+both signature and data. The historical evidence root was read only, no TSA
+endpoint was contacted, and no production ISO was created.
 
-After separate approval and resolution of the exact signing fingerprint and
-TSA policy, G17b must verify the whole frozen chain from original artifact to
-signature to timestamp to checked-in content checkpoint to external ISO and
-outer ISO catalog. Backfilled records must say `retroactive: true`. A clean
+G17a also fully decompressed and CRC/path-validated all 74 curated top-level
+ZIPs, checked PNG chunk CRCs for four images, mapped 73 current release-shaped
+ZIPs to unique commits through six embedded source anchors, and kept the legacy
+archive unknown. It stopped recursive measurement after finding three private
+G14 benchmark workspaces; those files are not silently promoted into the public
+preservation set.
+
+After separate approval of the curated filesystem scope, exact signing
+fingerprint, and TSA authority/policy, G17b must verify the whole frozen chain
+from each original artifact and detached signature to one signed/timestamped
+content checkpoint, then to the external ISO and outer ISO catalog. Backfilled
+records must say `retroactive: true`. A clean
 offline verifier must work without the repository, network, private key, GUI,
 or mounted image. CI checks tracked schemas, canonicalization, support files,
 and generated fixtures; only the host-side pre-push gate may claim coverage of

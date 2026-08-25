@@ -29,9 +29,10 @@ archived under `plans/v0.7/`; their reviewed evidence is under
 `performance/v0.7-g17/`. G15's archive is
 `plans/v0.7/024-durable-sync-jobs.md`; G16's archive is
 `plans/v0.7/025-sync-recovery-ui.md`; G17's archive is
-`plans/v0.7/026-peer-retention-gc-repair.md`. **G17a is next, is not approved,
-and blocks G17b, G18, and every GitHub push. G17b and G18/G18a-G18g are also
-not approved.** G14b selected option B: a
+`plans/v0.7/026-peer-retention-gc-repair.md`. **G17a is complete. G17b is next
+but blocked on explicit filesystem-scope, OpenPGP-identity, and RFC-3161-
+authority decisions; it is not approved and blocks G18 and every GitHub push.
+G18/G18a-G18g are also not approved.** G14b selected option B: a
 required compatible same-schema SQLite-image plus bounded packed-assets
 capability for whole-library full backup/catch-up, retaining packed semantic
 archive-v2 for subset, merge, schema-independent interchange, and fallback.
@@ -99,19 +100,29 @@ claim versus canonical v27 and preserves it as G18a calibration evidence before
 the audited correction. No new slice is approved by this amendment.
 
 The 2026-08-24 evidence-preservation amendment inserts G17a-G17b ahead of G18
-and any GitHub push. A read-only inventory found 77 regular files in
-`/home/renes/evidence/notrios`: 73 ZIPs and four PNGs, about 266 MB total, with
-no existing detached-signature or RFC 3161 sidecars. G17a must freeze the full
-all-file scope; define honest hash, signer-identity, third-party-time, and
-custody claims; select the exact user-approved OpenPGP fingerprint and RFC 3161
-authority/policy; and prove a deterministic CD-sized ISO contract with generated
-fixtures only. G17b then backfills without rewriting original bytes, checks a
-canonical chained manifest and outer ISO catalog into Git, and writes immutable
-numbered ISO images only under `/media/renes/SEAGATE2TB/notrios-evidence/`.
-Backfilled records are explicitly retroactive. ISO images, network timestamp
-requests, signing-key operations, a GitHub push, and physical burning are
-distinct permissions; neither planning amendment authorizes them. G17a and
-G17b have no product/schema/runtime scope.
+and any GitHub push. G17a is complete. Its exact read-only top-level capture
+contains 78 files (74 ZIPs and four PNGs), 270,506,844 source bytes, no existing
+signature/timestamp sidecars, and 73 distinct six-anchor exact commit mappings;
+legacy `notrios.zip` remains unknown. All ZIP and PNG structural checks pass.
+The same root has three recursive G14 private benchmark workspaces; an all-
+recursive ISO would violate the private-data boundary, so G17b needs explicit
+scope approval. The recommended scope is curated top-level handoffs plus the
+G17a ZIP. The curated sources print as a 270,962,688-byte ISO, 39.75% of the
+650 MiB project budget.
+
+Generated `/tmp` fixtures proved canonical chain mutation refusal, detached
+OpenPGP verification, RFC 3161 nonce/imprint/policy and explicit-CA checks with
+wrong-data/wrong-CA refusal, and two byte-identical xorriso builds plus exact
+extraction. `EVIDENCE_PRESERVATION.md` selects one signature per artifact and
+one RFC 3161 token over the signed batch checkpoint that hashes all artifacts
+and signatures. No local secret key exists, so G17b also needs approval for a
+dedicated evidence identity or external key. DigiCert is the recommended pilot,
+not selected; exact policy/chain/terms and the network request need approval.
+G17b then backfills without rewriting originals, checks the chained manifest
+and outer ISO catalog into Git, and writes immutable numbered ISO images only
+under `/media/renes/SEAGATE2TB/notrios-evidence/`. Backfilled records are
+explicitly retroactive. ISO images, network timestamp requests, signing-key
+operations, GitHub push, and physical burning remain distinct permissions.
 
 G14c adds production `sqlite-image+packed-assets.v1` creation and read-only
 admission under `internal/snapshotimage/` and
@@ -152,8 +163,9 @@ generic response ceiling truncating 16 MiB ranges, unconditional whole-library
 reconciliation for a body edit, and quadratic repeated-prefix validation in
 bounded directory publication. Tests cover each boundary; no format, schema,
 compressor, third-party dependency, REST/MCP path surface, or automatic restore
-was added. G15-G17 are now complete; G17a is next and blocks G17b, G18, and any
-GitHub push. Every remaining item requires separate item-by-item user approval.
+was added. G15-G17a are now complete; decision-blocked G17b is next and blocks
+G18 and any GitHub push. Every remaining item requires separate item-by-item
+user approval.
 
 G14b added only investigation/prototype code and aggregate evidence. Its 57
 validated full-corpus phase rows cover equivalent 382,206-document Joplin and

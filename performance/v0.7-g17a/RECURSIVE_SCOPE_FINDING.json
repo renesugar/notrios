@@ -1,0 +1,12 @@
+{
+  "contains_known_private_benchmark_workspaces": true,
+  "exact_recursive_inventory_completed": false,
+  "full_recursive_inventory_commitment_sha256": null,
+  "observed_recursive_iso_nodes_at_least": 47400,
+  "production_iso_created": false,
+  "recommended_g17b_scope": "curated top-level regular files, with the expected G17a release ZIP appended after capture",
+  "schema": "notrios.g17a.recursive-scope-finding.v1",
+  "top_level_directories": 3,
+  "traversal_disposition": "stopped after repeated multi-minute read-only traversals because exact recursive inclusion would inspect private corpus, cache, repository, log, diagnostic, and artifact workspaces that the plan forbids publishing",
+  "user_scope_decision_required": true
+}

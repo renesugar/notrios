@@ -301,10 +301,11 @@ object**, while the existing pack fix has never been exercised end to end at
 the supplied full scale.
 
 **The blocking G14a-G14e archive-scalability sequence and G15-G17 sync control,
-recovery UI, and safe retention are complete. The newly planned G17a-G17b
-evidence-preservation sequence is next and blocks G18 and every GitHub push.**
+recovery UI, and safe retention are complete. G17a has now completed the
+evidence-preservation investigation; G17b is next, decision-blocked, and blocks
+G18 and every GitHub push.**
 The 2026-08-24 documentation-integrity amendment adds G18a-G18g after G18 and
-before the compatibility/release slices; none of G17a onward is approved. G14a supplies the resumable, aggregate-only benchmark contract and
+before the compatibility/release slices; none of G17b onward is approved. G14a supplies the resumable, aggregate-only benchmark contract and
 generated 10k/100k calibration. That evidence confirms one-file-per-object
 growth, isolates stored-ZIP overhead from framing, and records a 100k
 incremental-replay memory failure without changing production code. G14b's
@@ -350,13 +351,17 @@ retirement consequences without receiving filesystem paths or exposing an
 HTTP apply route. Generated one-full-corpus-churn evidence measured about 162
 MiB for 382,206 representative operations, so the resolved default remains.
 
-**G17a-G17b are a blocking pre-push evidence-preservation sequence.** G17a
-first freezes the complete external evidence inventory, corrects the proposed
+**G17a-G17b are a blocking pre-push evidence-preservation sequence. G17a is
+complete; G17b is unapproved and blocked.** G17a
+freezes the curated external evidence inventory, corrects the proposed
 claims about hashes, OpenPGP signatures, RFC 3161 time evidence, Git history,
 custody, and legal scope, and selects a canonical chained manifest plus
 deterministic CD-sized ISO contract. It uses generated prototypes only and must
-resolve the exact user-approved signing fingerprint and TSA policy before G17b.
-G17b then backfills every original ZIP and screenshot without rewriting it,
+resolve the exact user-approved filesystem scope, signing fingerprint, and TSA
+policy before G17b. It found 78 top-level files but also three recursive private
+benchmark workspaces, so recursive all-file inclusion is rejected by default.
+It recommends per-artifact signatures plus one timestamped signed batch
+checkpoint. G17b then backfills every approved original ZIP and screenshot without rewriting it,
 checks the canonical manifest and ISO catalog into Git, places immutable
 numbered ISO images and their verification sets only under
 `/media/renes/SEAGATE2TB/notrios-evidence/`, and adds a host-side pre-push gate.
@@ -390,8 +395,9 @@ physical CD-R burning, which remain separate operations.
   foundation; resumable REST objects and backup downloads; durable jobs,
   retry/backpressure, and bounded MCP status/control.
 - **Evidence preservation before external publication (G17a-G17b):** frozen
-  all-file inventory; versioned chained manifest; per-artifact detached
-  signature and independently verified RFC 3161 token over that signature;
+  curated inventory plus explicit private-workspace exclusion; versioned
+  chained manifest; per-artifact detached signatures bound by one signed
+  checkpoint and independently verified RFC 3161 token over that checkpoint;
   explicit retroactive/contemporaneous time semantics; deterministic,
   immutable numbered ISO 9660 reserves on the designated external disk; clean
   offline restore and a strict host-side pre-push coverage gate. Hashes,

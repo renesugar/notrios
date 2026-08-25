@@ -1,9 +1,10 @@
 # Plan: v0.7 — Native synchronization
 
-Status: **G0-G17 completed through 2026-08-24. Product version remains 0.6.0 and the
-canonical schema is v27. The newly inserted G17a evidence-preservation
-investigation is next, blocking G17b, G18, and any GitHub push; it is not
-approved. G17b and the planned G18/G18a-G18g slices are also not approved.** The
+Status: **G0-G17a completed through 2026-08-24. Product version remains 0.6.0 and
+the canonical schema is v27. G17b is next but remains blocked on explicit
+evidence-scope, OpenPGP-identity, and RFC-3161-authority decisions; it is not
+approved. G18/G18a-G18g are also not approved, and any GitHub push remains
+blocked through G17b.** The
 former seven-item draft was too coarse: it mixed protocol research, canonical
 write interception, merge semantics, two transports, cryptography, recovery,
 UI, retention, and release validation into slices that could not be reviewed or
@@ -107,10 +108,10 @@ with the change. At completion:
 6. report the ZIP and ask whether to proceed to the next item.
 
 G17b adds the missing custody step to this rule. After G17b is complete, every
-new release ZIP must be hashed, signed, independently timestamped, appended to
-the checked-in evidence manifest, verified from a clean process, and assigned
-to an external immutable ISO checkpoint before the corresponding task is
-called complete. No GitHub push may occur until the host-side evidence gate
+new release ZIP must be hashed, signed, appended to the checked-in evidence
+manifest, covered by an independently timestamped signed checkpoint, verified
+from a clean process, and assigned to an external immutable ISO checkpoint
+before the corresponding task is called complete. No GitHub push may occur until the host-side evidence gate
 confirms that every frozen artifact is covered. A push, a network timestamp
 request, use or creation of a signing key, and writing physical optical media
 each remain separately authorized operations; this plan does not silently
@@ -1566,16 +1567,17 @@ snapshot re-verification. Full-corpus-scale evidence keeps the resolved 90-day
 default. Archived as `plans/v0.7/026-peer-retention-gc-repair.md` with evidence
 under `performance/v0.7-g17/`.
 
-## G17a. Investigation — evidence provenance, sealing, and optical reserve contract
+## G17a. Investigation — evidence provenance, sealing, and optical reserve contract — complete
 
 **Goal.** Turn the accumulated release ZIPs and screenshots into a finite,
 truthfully described preservation set before any repository push, without
 retroactively claiming contemporaneous authorship or completion times that were
 never recorded cryptographically.
 
-**Scope.** Freeze a read-only inventory of every regular file present in
-`/home/renes/evidence/notrios` at the investigation boundary, including ZIPs,
-PNGs, and any legacy or plan-only bundle; record counts, byte totals, file type,
+**Scope.** Freeze a read-only inventory of every top-level regular file present
+in `/home/renes/evidence/notrios` at the investigation boundary, including
+ZIPs, PNGs, and any legacy or plan-only bundle; separately inspect directory
+scope without publishing private recursive contents; record counts, byte totals, file type,
 ZIP structural validation, filesystem modification time as weak source metadata,
 and the strongest repository commit/task association that can be proved from
 archive contents, Git history, archived plans, and attempt logs. An unknown or
@@ -1594,10 +1596,12 @@ claims separate:
 4. inventory, transfer, ISO creation, storage, and later burn/read-back records
    document custody but do not by themselves decide legal admissibility.
 
-Choose the exact signed and timestamped datum. The recommended construction is
-a detached signature over each original artifact followed by an RFC 3161 token
-over that signature, so the token establishes that the signature—not merely the
-artifact—existed by the TSA time. Preserve the request, response, signer public
+Choose the exact signed and timestamped datum. The selected scalable construction
+is a detached signature over each original artifact, hashes of every artifact
+and signature in the canonical manifest, a detached signature over its content
+checkpoint, and one RFC 3161 token over that checkpoint signature. The token
+therefore commits the complete batch of exact artifact/signature bytes by the
+TSA time. Preserve the request, response, signer public
 key/fingerprint, TSA leaf/intermediate/root certificates as licensing and
 redistribution allow, policy OID, verification command, tool versions, and
 retrieval facts. Specify explicit `captured_at`, independently sourced
@@ -1626,7 +1630,7 @@ but do not burn media.
 
 **Boundaries.** Investigation, generated prototypes, and aggregate inventory
 only. Do not modify the evidence directory, create the production ISO, contact
-a TSA, create/use a secret key, push Git, burn optical media, claim WORM storage,
+a TSA, create/use a production secret key, push Git, burn optical media, claim WORM storage,
 or offer legal advice. Git history is useful corroboration but is not an
 immutable public ledger. The ISO is a preservation container, not automatic
 proof of authorship, independent creation, custody, or admissibility.
@@ -1660,6 +1664,12 @@ extra source refusal; privacy scan; and no network or evidence-directory write.
   public-key packet; select an existing suitable key if one already exists.
   The user must approve the exact fingerprint or key-creation operation. This
   changes who can make the signer claim and how later verifiers establish trust.
+  **Investigated 2026-08-24:** the local GnuPG keyring contains no secret key.
+  Recommendation: user-approved creation of a dedicated offline-primary evidence
+  identity with a replaceable signing subkey, exact fingerprint, independently
+  published/attested public key, encrypted backups, and revocation procedure.
+  An externally held existing key remains an option; no key was created or used
+  for production in G17a.
 - **Which independent RFC 3161 authority and policy are accepted? — Blocking
   third-party timestamping in G17b.** Options are a verified public/commercial
   TSA with pinned trust material and acceptable policy/terms, an organization-
@@ -1669,6 +1679,40 @@ extra source refusal; privacy scan; and no network or evidence-directory write.
   the request itself require approval. If no authority is selected or it is
   unavailable, record `timestamp_status` truthfully and treat the strict
   pre-push gate as blocked unless the user signs an explicit waiver.
+  **Investigated 2026-08-24:** DigiCert is the recommended one-checkpoint pilot
+  because its published material names a generic RFC 3161 endpoint and current
+  responder-chain downloads. Sectigo is the fallback; its published guidance
+  requests a 15-second scripted-call interval. SSL.com's documented service is
+  C2PA/access-coordinated. G17b must still review terms, pin exact response
+  policy/certificates, and obtain approval before a generated pilot or
+  production submission. No TSA endpoint was contacted in G17a.
+- **Which filesystem scope is evidence? — Blocking G17b.** Options are (A) the
+  curated top-level release ZIPs/screenshots plus the expected G17a ZIP; (B) a
+  separately privacy-reviewed selection of aggregate workspace outputs; or (C)
+  every recursive file. Recommendation: option A. Investigation found three
+  nested G14 benchmark workspaces containing private inputs, caches,
+  repositories, logs, diagnostics, and large artifacts; a recursive probe had
+  already traversed at least 47,400 nodes when stopped. Option C contradicts
+  the private-data boundary and the one-CD premise. Option B needs a separate
+  scoped preservation plan. G17a froze and committed only aggregate facts and
+  commitments for the 78 top-level files.
+
+**Outcome (2026-08-24).** G17a froze 78 curated top-level artifacts totaling
+270,506,844 bytes: 74 CRC/path-valid ZIPs and four chunk-CRC-valid PNGs. All 73
+current-shape release ZIPs map uniquely to 73 distinct commits through six
+embedded source anchors; legacy `notrios.zip` remains provenance-unknown. The
+curated sources print as a 270,962,688-byte ISO, 39.75% of the conservative
+650 MiB project budget. Generated-only fixtures proved canonical entry-chain
+mutation refusal, detached-signature verification, RFC 3161 nonce/imprint/
+policy/explicit-chain verification and wrong-data/wrong-CA refusal, and two
+byte-identical xorriso builds with full extraction hashes. The selected default
+is per-artifact signatures bound by one signed/timestamped batch checkpoint,
+not one TSA call per artifact. `EVIDENCE_PRESERVATION.md` records the contract;
+aggregate evidence is under `performance/v0.7-g17a/`; archived as
+`plans/v0.7/028-evidence-preservation-contract.md`. No production artifact,
+evidence/reserve directory, signing identity, TSA, ISO, remote, or physical
+medium changed; the generated one-day key and local fixture TSA existed only in
+the disposable `/tmp` self-test.
 
 ## G17b. Backfill evidence seals, checked-in manifest, and immutable ISO reserve
 
@@ -1682,9 +1726,12 @@ G17a. Validate every ZIP with the repository release checker when compatible
 and with complete ZIP CRC/path checks otherwise; validate image decodability;
 hash original bytes without rewriting metadata. Resolve task/commit provenance
 only from reproducible evidence and record uncertainty. Generate each artifact's
-detached OpenPGP signature, timestamp request, RFC 3161 response over the
-signature, and verification record using the user-approved key and TSA. Keep
-the private key outside the repository, logs, ISO, and process arguments.
+detached OpenPGP signature and verification record. Hash every artifact and
+signature into the canonical manifest, sign the content checkpoint, and obtain
+one RFC 3161 request/response over that checkpoint signature using the user-
+approved key and TSA. Optional per-artifact timestamp tokens require a separate
+standalone-extraction profile and are not the default. Keep the private key
+outside the repository, logs, ISO, and process arguments.
 
 Add the versioned manifest schema, canonicalizer, append/checkpoint tool,
 read-only verifier, committed public key, permitted TSA trust/policy material,
@@ -1714,7 +1761,7 @@ of calling the current ISO self-contained with respect to its own catalog.
 
 Add a host-side pre-push evidence command that fails closed on an unmanifested
 artifact, source drift, invalid entry chain/checkpoint, missing or invalid
-signature/timestamp, unassigned artifact, absent external ISO, ISO hash/volume
+artifact signature or checkpoint timestamp, unassigned artifact, absent external ISO, ISO hash/volume
 mismatch, failed ISO extraction/content verification, or catalog commit not in
 HEAD. CI validates schemas, canonicalization, fixtures, and tracked support
 files without pretending it can see the external reserve. Document that the
@@ -1737,12 +1784,12 @@ independent creation, clean-room status, or admissibility. Do not mutate the
 original artifact bytes. Do not depend on a GUI verifier, mounted ISO, network,
 secret key, or the original repository for ordinary offline verification.
 
-**Dependencies.** Completed and user-approved G17a contract and both blocking
+**Dependencies.** Completed and user-approved G17a contract and all three blocking
 decisions; explicit permission for external evidence/reserve writes, signing-key
 use or creation, and TSA network requests.
 
 **Working state.** Every frozen evidence file has an exact checked-in manifest
-entry, validated signature and timestamp record, and immutable volume assignment;
+entry, validated signature, signed/timestamped checkpoint coverage, and immutable volume assignment;
 every numbered ISO and adjacent verification set exists on the designated
 SEAGATE reserve and passes a clean offline restore. The pre-push command reports
 complete coverage. G18 remains unstarted and no remote state has changed.
@@ -1761,8 +1808,8 @@ with no recursive release-ZIP requirement.
 
 **Open decisions**
 
-- None after G17a's signing identity and TSA choices are explicitly resolved.
-  Approving G17b also approves the frozen all-regular-file scope, immutable
+- None after G17a's filesystem scope, signing identity, and TSA choices are
+  explicitly resolved. Approving G17b also approves the selected curated scope, immutable
   numbered-volume policy, two-level no-self-hash catalog, and strict pre-push
   gate described above; it does not approve a push or a physical burn.
 
@@ -2279,8 +2326,9 @@ recommendation, blocking status, and consequence.
 | Remember backup password | G16 | Resolved: no |
 | Retention horizon | G17 | Resolved: 90 days plus verified snapshot floor |
 | Offline peer retirement | G17 | Resolved: no all-peers-online requirement |
+| Evidence filesystem scope | G17a | Open, blocking G17b: curated top-level handoffs plus G17a ZIP recommended; recursive private workspaces excluded |
 | Evidence OpenPGP signing identity | G17a | Open, blocking G17b: exact existing fingerprint or separately approved dedicated-key creation |
-| Evidence RFC 3161 authority/policy | G17a | Open, blocking timestamping in G17b: verified external TSA recommended; strict pre-push gate otherwise needs an explicit waiver |
+| Evidence RFC 3161 authority/policy | G17a | Open, blocking timestamping in G17b: DigiCert checkpoint pilot recommended; strict pre-push gate otherwise needs an explicit waiver |
 | Shared-core/FFI and Flutter boundary | G18 | Resolved: pre-1.0 ABI; post-1.0 client; no Web FFI |
 | Current-GUI Mermaid baseline | G18 | Resolved fact: upstream-capable but disabled pending offline/security evidence |
 | Cross-language documentation anchor/calibration mechanism | G18a | Investigation; blocking G18c-G18f until one finite mechanism and labelled set are selected |
@@ -2290,9 +2338,9 @@ recommendation, blocking status, and consequence.
 | Hosted semantic-review execution | G18f | Open, non-blocking default: maintainer-only recorded command; hosted source upload needs separate approval |
 | Release version/schema bookkeeping | G20 | Open, non-blocking until wrap-up |
 
-G0-G17 are complete and the production physical restore/catch-up, durable
-sync-job, local recovery UI, and safe-retention contracts are frozen. G17a is
-the next item but is not approved; it blocks G17b, G18, and any GitHub push.
-G17b and G18/G18a-G18g are also unapproved. Implementation begins only after an
+G0-G17a are complete and the production physical restore/catch-up, durable
+sync-job, local recovery UI, safe-retention, and evidence-preservation design
+contracts are frozen. G17b is next but blocked and unapproved; it blocks G18
+and any GitHub push. G18/G18a-G18g are also unapproved. Implementation begins only after an
 explicit instruction naming the item to start and, where stated, resolving its
 blocking decisions.
