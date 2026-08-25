@@ -7,7 +7,9 @@ This file is the codebase atlas. Update it whenever major files or directories a
 - `README.md` — project overview and quick start.
 - `PLAN.md` — the **active v0.7 native synchronization plan**, divided into
   independently approvable G0-G20 slices plus the blocking G14a-G14e archive-
-  scalability sequence. G0-G17 are complete; G18 is next but unapproved. The
+  scalability sequence and the newly planned G18a-G18g documentation-integrity/
+  Hugo-Ledger sequence. G0-G17 are complete; G18 is next but unapproved, and
+  G18a-G18g are also unapproved. The
   current product remains 0.6.0 at schema v27; v0.6 is archived under
   `plans/v0.6/`; v0.5 and v0.4 are archived under their version directories.
 - `plans/scaffold/SCAFFOLD_CREATION_PLAN.md` — process for creating/refining this scaffold.
@@ -132,7 +134,7 @@ This file is the codebase atlas. Update it whenever major files or directories a
 - `internal/profiles/runtime.go` — G3 named runtime-profile creation, redacted
   views, registry/config/database startup binding, path/port/replica collision
   detection, and explicit copied-database adopt/fork handling.
-- `plans/v0.7/` — archived completed v0.7 slices through G16 plus the planning
+- `plans/v0.7/` — archived completed v0.7 slices through G17 plus the planning
   amendment that inserted G1a, the G14a-G14e scalability sequence, and the
   bundled-dependency maintenance pass.
 - `FLUTTER_GO_CLIENT.md` — verified Flutter/Dart FFI and Go build-mode facts,
@@ -143,7 +145,10 @@ This file is the codebase atlas. Update it whenever major files or directories a
   compatibility/limits, explicit restore intent, verification rules, P3 export
   staging/resume semantics, the P3a index-chunk container, the optional P3b
   packed layout, and the P4 restore contract.
-- `DOCS_SITE.md` — GitHub Pages documentation site (PageFind) and Help notebook.
+- `DOCS_SITE.md` — current Marked/Pagefind GitHub Pages site and Help notebook,
+  plus the approved-plan boundary for G18a-G18g source anchors, executable
+  examples/GUI journeys, generated freshness, advisory prose review, and a
+  pinned Hugo/Ledger migration.
 - `CODING_STANDARDS.md` — coding style and guardrails.
 - `TESTING_POLICY.md` — definition of done and testing layers.
 - `ENVIRONMENT_SETUP.md` — development setup.

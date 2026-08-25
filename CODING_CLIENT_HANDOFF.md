@@ -12,7 +12,8 @@ wrap-up). The thirteen v0.5 slices remain archived under `plans/v0.5/`.
 
 `PLAN.md` now holds the **active v0.7 native synchronization plan** with
 independently approvable G0-G20 slices plus the newly inserted, blocking
-G14a-G14e archive-scalability sequence. The user's 2026-08-11
+G14a-G14e archive-scalability sequence and the newly planned G18a-G18g
+documentation-integrity/Hugo-Ledger sequence. The user's 2026-08-11
 review resolved the policy decisions through G17, including mandatory payload
 encryption and per-replica Ed25519 signatures. **G0-G17 are complete** and
 archived under `plans/v0.7/`; their reviewed evidence is under
@@ -28,7 +29,7 @@ archived under `plans/v0.7/`; their reviewed evidence is under
 `plans/v0.7/024-durable-sync-jobs.md`; G16's archive is
 `plans/v0.7/025-sync-recovery-ui.md`; G17's archive is
 `plans/v0.7/026-peer-retention-gc-repair.md`. **G18 is next and is not
-approved.** G14b selected option B: a
+approved. G18a-G18g follow G18 and are also not approved.** G14b selected option B: a
 required compatible same-schema SQLite-image plus bounded packed-assets
 capability for whole-library full backup/catch-up, retaining packed semantic
 archive-v2 for subset, merge, schema-independent interchange, and fallback.
@@ -81,6 +82,20 @@ OpenAPI/code parity is 109 operations. Generated full-corpus-scale evidence
 measured 169,906,176 incremental bytes for 382,206 representative operations,
 so the reviewed 90-day default remains.
 
+The 2026-08-24 planning amendment adds G18a-G18g between the portability
+handoff and G19 compatibility bridge. Two investigations first freeze a
+cross-language source-anchor/claim grammar and a reproducible
+`hugo-theme-ledger` integration. The implementation slices then add an honest
+executed/generated/claimed/unverified audit, result-bearing CLI/config/REST/MCP
+examples, browser-executed GUI journeys with action-length evidence, generated
+user/API fragments with freshness checks, calibrated advisory blind-code
+contradiction/actionability review, and the pinned Hugo/Ledger+Pagefind site.
+Semantic similarity is explicitly rejected for truth checking; model output is
+never a CI gate. Raw `docs/` Markdown remains the one source for protected
+offline Help. Planning inventory found `docs/service.md`'s stale schema-v20
+claim versus canonical v27 and preserves it as G18a calibration evidence before
+the audited correction. No new slice is approved by this amendment.
+
 G14c adds production `sqlite-image+packed-assets.v1` creation and read-only
 admission under `internal/snapshotimage/` and
 `internal/store/sqlite_snapshot.go`. `notriosctl snapshot create` uses SQLite
@@ -120,7 +135,8 @@ generic response ceiling truncating 16 MiB ranges, unconditional whole-library
 reconciliation for a body edit, and quadratic repeated-prefix validation in
 bounded directory publication. Tests cover each boundary; no format, schema,
 compressor, third-party dependency, REST/MCP path surface, or automatic restore
-was added. G15-G17 are now complete; G18 requires separate user approval.
+was added. G15-G17 are now complete; G18 and the later G18a-G18g amendment
+require separate item-by-item user approval.
 
 G14b added only investigation/prototype code and aggregate evidence. Its 57
 validated full-corpus phase rows cover equivalent 382,206-document Joplin and

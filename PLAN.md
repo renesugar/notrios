@@ -1,7 +1,8 @@
 # Plan: v0.7 — Native synchronization
 
 Status: **G0-G17 completed through 2026-08-24. Product version remains 0.6.0 and the
-canonical schema is v27. G18 is next and is not approved.** The
+canonical schema is v27. G18 is next and is not approved. G18a-G18g are newly
+planned documentation-integrity and Hugo/Ledger slices; none is approved.** The
 former seven-item draft was too coarse: it mixed protocol research, canonical
 write interception, merge semantics, two transports, cryptography, recovery,
 UI, retention, and release validation into slices that could not be reviewed or
@@ -1628,6 +1629,329 @@ offline/security test design.
   sanitization, accessibility, performance, maintenance, and BSD-3-Clause
   dependency tree must pass a post-1.0 spike before adoption.
 
+## G18a. Investigation — documentation anchors, truth grades, and review calibration
+
+**Goal.** Adapt the proven Borge doc-anchor method to Notrios before moving
+prose or adding a generator, so source-adjacent documentation becomes
+auditable without pretending that all prose can be proved by a test.
+
+**Scope.** Inventory the 15 published/Help-notebook Markdown pages, CLI help,
+configuration reference, OpenAPI operations, MCP tools/resources, and GUI user
+journeys. Map each actionable claim to the declaration that implements it and,
+where the behavior is not local, its direct same-package callees. Verify
+Go `doc/comment` directive behavior against the project toolchain and define the
+Notrios directive grammar corresponding to `doc`, `help`, `enumerates`, and
+`claim`. Determine the source-symbol anchoring rule for Go and TS/TSX without
+accepting a free-form path/line registry that can silently point nowhere.
+
+Define four honest grades per topic: **executed** (an example or journey is run
+and its result checked), **generated** (a finite list comes from the same
+registry as code), **claimed** (prose names an executable behavioral check),
+and **unverified** (permitted but counted). Separate user, API, and maintainer
+audiences; rationale stays unmarked. Build a small labelled contradiction
+calibration set from real history or controlled mutations before selecting any
+semantic checker. The known current drift where `docs/service.md` names schema
+v20 while the canonical store is v27 belongs in the baseline rather than being
+silently corrected before the audit can observe it.
+
+**Boundaries.** Investigation and fixtures only. Do not move the manual, emit
+generated docs, call an external model, or make a non-deterministic result fail
+CI. Semantic similarity/cosine distance is explicitly not an agreement test:
+negated false prose can remain highly similar to the correct explanation.
+
+**Dependencies.** Existing docs/Help pipeline, OpenAPI/MCP parity checks, G16
+GUI, and the current Go/TypeScript build toolchains.
+
+**Working state.** `performance/v0.7-g18a/` contains the inventory, proposed
+directive grammar, source-symbol rules, per-topic grade baseline, labelled
+supported/contradicted/not-determinable cases, and a recommendation that makes
+G18c-G18f finite.
+
+**Validation and evidence.** Parser fixtures for ordinary/directive comments,
+duplicate/dangling symbols, mixed audiences, direct-callee scope, and TS/TSX
+anchors; grade totals reconcile to every topic/section; calibration includes
+negation and rationale; no user data, private note content, or generated model
+claim is committed.
+
+**Open decisions**
+
+- None. This slice exists to measure the uncertain anchoring and calibration
+  premises. Any materially different viable approaches become separate plan
+  items rather than a fork inside G18c.
+
+## G18b. Investigation — Hugo/Ledger migration and reproducible site contract
+
+**Goal.** Prove how the existing static documentation and offline Help source
+can use `hugo-theme-ledger` without losing stable URLs, Pagefind search,
+offline assets, or reproducible release packaging.
+
+**Scope.** Evaluate the local Apache-2.0 theme copy at
+`/home/renes/projects/hugo-theme-ledger` (clean `develop` at observed commit
+`f9d28ea297427890ecffa31fa74caa9ee385d9f5`) against Notrios' 15-page hierarchy,
+GitHub Pages `/notrios/` base path, raw Markdown Help seeding, internal anchors,
+Pagefind indexing, light/dark/high-contrast behavior, and current CI. Measure a
+prototype with Hugo Extended 0.146 or newer (the local environment currently
+has 0.164.0), `googleFonts=false`, the static Pagefind backend, and no Bluge
+server. Compare vendored pinned theme source, a Git submodule, and a network-
+resolved Hugo module for clean clone, source ZIP, license/provenance, update,
+and offline-build behavior. Inventory URL and content-adapter changes rather
+than assuming a notes-oriented theme is already a documentation information
+architecture.
+
+**Boundaries.** No production site/workflow switch and no changes to the Help
+notebook. Do not copy `node_modules`, the reference search-server binary, or a
+floating theme checkout. This task does not change the separate Notrios note-
+publication/Hugo pipeline or select Bluge for the small documentation site.
+
+**Dependencies.** Current `scripts/build_docs_site.sh`, `.github/workflows/docs.yml`,
+`DOCS_SITE.md`, release-ZIP rules, and the theme's README/AGENTS/performance
+constraints.
+
+**Working state.** `performance/v0.7-g18b/` contains a pinned prototype,
+route/link/search diff, asset/request inventory, license bill, build-time/size
+baseline, Help-seed byte comparison, and a single recommended integration for
+G18g.
+
+**Validation and evidence.** Clean local and CI-shaped builds; all current
+public page/fragment links resolve or have explicit redirects; Pagefind finds a
+known term and excludes site furniture; no third-party runtime request; the
+source ZIP contains everything needed except documented build tools; keyboard,
+mobile, and contrast smoke designs are executable.
+
+**Open decisions**
+
+- **How is the theme pinned? — Non-blocking.** Options are a vendored source
+  snapshot, Git submodule, or Hugo module. Default/recommendation: vendor the
+  minimal upstream source plus LICENSE and commit provenance. It keeps release
+  ZIPs and offline/clean builds self-contained; approving G18b approves this
+  default unless the evidence shows an unacceptable maintenance cost.
+- **Does the public URL shape change? — Non-blocking.** Default: preserve the
+  existing `.html` and fragment URLs, adding generated redirects only where
+  Hugo cannot emit an exact equivalent. A visual theme migration does not
+  justify breaking saved documentation links.
+- **Which Ledger search backend is used? — Non-blocking.** Default: Pagefind.
+  The documentation corpus is small and static; adding the Bluge service would
+  create deployment and operations scope with no measured benefit.
+
+## G18c. Documentation anchor audit and executable-claim registry
+
+**Goal.** Make documentation drift visible before generating or relocating
+large amounts of prose.
+
+**Scope.** Implement a repository-only `docaudit` tool/library using G18a's
+selected Go and TS/TSX source-symbol rules. Recognize the frozen
+`notrios:doc`, `notrios:help`, `notrios:enumerates`, and `notrios:claim`
+directives; bind fragments to existing Markdown page/section templates; and
+maintain a typed registry from claim IDs to tests. Report executed, generated,
+claimed, and unverified counts per topic. Fail deterministic checks on unknown
+audiences, duplicate fragment/claim IDs, missing topics or declarations,
+dangling claims, orphan registered checks, mixed user/API blocks, or an
+unaccounted executable example/journey.
+
+Start with the highest-risk finite surfaces: product/schema/version claims,
+configuration keys/defaults, CLI command/flag lists, REST operation IDs, MCP
+tool/resource names/scopes, destructive confirmations, and GUI controls that
+authorize destructive or recovery actions. Existing prose remains authoritative
+until a later generation slice moves a fragment.
+
+**Boundaries.** Read-only audit and a small first anchor set. No bulk comment
+migration, rendered-doc generation, semantic/model verdict, or behavior change.
+An anchor does not prove truth by proximity; only its grade states what backs it.
+
+**Dependencies.** G18a.
+
+**Working state.** One deterministic command and one test expose the coverage
+and every broken edge in the documentation/source/claim graph. The initial
+unverified share is recorded, not hidden behind a pass/fail total.
+
+**Validation and evidence.** Golden and mutation fixtures for every dangling,
+duplicate, orphan, audience, and source-symbol case; the audit finds the G18a
+known-drift fixture before its correction and stays green after the generated
+or claimed source replaces it; deletion of either an anchor or registered
+check fails in the expected direction.
+
+**Open decisions**
+
+- None. G18a freezes the grammar and symbol mechanism before this item may be
+  approved.
+
+## G18d. Executed CLI, configuration, REST, and MCP documentation examples
+
+**Goal.** Ensure copyable non-GUI examples both run and do the specific thing
+the surrounding prose promises.
+
+**Scope.** Extract every explicit `notriosctl`, `notriosd`, configuration,
+`curl`/REST, and MCP request example from published/Help documentation into a
+bidirectional manifest. Each entry names its document fragment, fixture,
+substitutions, expected exit/HTTP/tool status, and a semantic postcondition:
+created rows, selected notes, archive contents, unchanged state for a dry run,
+redaction, or typed refusal. Build isolated scratch profiles/databases and a
+loopback service/MCP harness with real non-vacuous data. Destructive examples
+run only inside their fresh fixture or carry an explicit, reviewed unrun reason.
+Configuration fragments must parse and demonstrate precedence/default effects;
+OpenAPI/MCP request and response examples must also validate against their
+published schemas.
+
+**Boundaries.** No private corpus, user path, network service, or shared test
+state. Exit code/HTTP status alone is not a sufficient assertion. Do not make a
+dangerous example harmless by testing a different command than users copy.
+When an example exposes a product defect, first pin the contradiction and then
+fix only behavior already required by an approved contract; otherwise record a
+new plan item rather than silently changing semantics.
+
+**Dependencies.** G18c and existing CLI/REST/MCP test seams.
+
+**Working state.** Every executable non-GUI example has a result-bearing test
+or an explicit reason it cannot run, in both directions: no undocumented test
+entry and no untracked example. Every documentation topic that teaches a
+command/API action carries at least one executed example.
+
+**Validation and evidence.** Mutation checks break an example and separately
+break its implementation; both fail. Fixtures include empty/absent input,
+options before/after positionals where supported, no-match read versus write,
+dry-run/apply parity, config precedence, REST confirmation/redaction, MCP scope,
+and rollback/cleanup. Report per-topic executed coverage and runtime.
+
+**Open decisions**
+
+- None. Examples unsafe to execute are visible manifest entries with reasons,
+  not a decision to omit them silently.
+
+## G18e. Executed GUI user journeys and action-length baseline
+
+**Goal.** Test the menu clicks, buttons, checkboxes, fields, dialogs, and
+keyboard actions that the GUI documentation tells a user to perform, while
+measuring—not guessing—the interaction cost of each task.
+
+**Scope.** Turn each documented GUI procedure into a structured journey linked
+through G18a's selected source-symbol mechanism to its React component/action
+handler and any owning Go handler. Run the journeys in a deterministic seeded
+profile through the browser harness at desktop and narrow/mobile viewports.
+Assert the visible result and canonical/API postcondition for create/edit/move/
+trash/restore, import/export handoff, settings/theme, links, resources, Sync
+Center pairing/job/conflict/backup/retirement review, and every documented
+destructive confirmation. Record click/keypress count, typed-field count,
+branch/decision count, modal depth, and recovery steps per user goal.
+
+**Boundaries.** Journey length is an ease-of-use signal, not a universal score
+or automatic redesign trigger. Setup/teardown and accessibility navigation are
+reported separately from the user's task. No screenshot-only assertion,
+sleep-based success, automatic destructive restore, real peer/cloud account,
+or unsupported mobile claim.
+
+**Dependencies.** G18a, G18c, G16, and the existing browser test stack.
+
+**Working state.** Every GUI procedure is executed or explicitly marked with a
+reason and owner; its source anchor and behavioral postcondition are auditable.
+The baseline identifies unusually long or branching flows for human review
+without changing product scope inside a documentation task.
+
+**Validation and evidence.** Browser-plugin-first policy with recorded
+Playwright fallback; desktop/mobile layout, keyboard/Escape/focus, 44 px mobile
+targets, console/CSP, and no-vacuity checks; mutation of a control label/action
+or expected postcondition fails; step-count report is stable after excluding
+fixture mechanics.
+
+**Open decisions**
+
+- None. Any flow selected for redesign from the measured baseline becomes its
+  own approved feature item.
+
+## G18f. Generated documentation subsets, freshness, and advisory prose review
+
+**Goal.** Make anchored user/API fragments and finite lists impossible to
+silently drift, then use calibrated semantic review to reduce—not disguise—the
+remaining unverified prose.
+
+**Scope.** Implement `docgen --user` and `docgen --api` over explicit per-page/
+section templates, never source-order concatenation. Generate finite lists
+from the same registries used by configuration, CLI, REST/OpenAPI, MCP, and GUI
+code. Keep user-facing and API paragraphs as separate anchored comment blocks;
+maintainer rationale remains ordinary source commentary. Commit generated
+Markdown fragments consumed by the site and Help seeder, and add a
+`TestDocsAreCurrent` in-memory regeneration diff.
+
+Add an advisory `doccheck` pass for `notrios:doc user` blocks only. First
+explain the anchored declaration plus bounded direct same-package callees with
+the prose withheld; then classify the independent explanation against the
+claim as supported, contradicted, or not determinable. Run the G18a labelled
+calibration set before accepting a report. Do not use embedding similarity as
+the verdict. Separately, ask whether each topic is actionable by generating a
+command, configuration, API request, or GUI journey from the prose alone and
+running it through G18d/G18e's fixture. Emit a human/co-author triage report
+containing the claim, anchor, blind explanation, verdict/attempt, and evidence
+hash; never rewrite prose automatically.
+
+**Boundaries.** Deterministic generation/freshness is a CI gate; model-based
+contradiction/actionability is advisory and never blocks a build. No external
+model receives source without separate approval, and no note/database content
+is ever input. A model cannot register its own claim test or mark rationale as
+proved. Cross-package behavior beyond the bounded source view remains not
+determinable and should move to a better anchor or explicit claim test.
+
+**Dependencies.** G18a, G18c, G18d, and G18e.
+
+**Working state.** User and API subsets have a reviewable template-defined
+shape; edits without regeneration fail; coverage reports show all four grades;
+semantic and actionability reports surface calibrated disagreements without
+making probabilistic output a release oracle.
+
+**Validation and evidence.** Generated-output goldens and freshness mutation;
+enumeration parity for config/CLI/REST/MCP/GUI; stable fragment ordering;
+calibration confusion matrix with the negation cases separated; manual review
+disposition for every contradicted verdict; repeated advisory runs record model,
+prompt, source hash, variance, and cost without committing secrets.
+
+**Open decisions**
+
+- **Where may semantic review run? — Non-blocking.** Default: an explicit
+  maintainer command with recorded inputs/outputs, never ordinary CI. A local
+  model may run without network; any hosted-model source upload needs separate
+  approval. Approving this item does not approve an external service,
+  dependency, or recurring cost.
+
+## G18g. Migrate the documentation site to pinned Hugo/Ledger
+
+**Goal.** Replace the bespoke Marked template with the selected pinned
+`hugo-theme-ledger` integration while retaining one Markdown source for the
+public site and offline Help notebook.
+
+**Scope.** Apply G18b's selected integration, including upstream commit and
+Apache-2.0 provenance, a pinned Hugo Extended/Node/Pagefind build, Hugo config,
+content adapter or staging step, Notrios navigation/information architecture,
+and GitHub Pages workflow. Preserve current public routes/fragments or ship
+tested redirects; preserve raw `docs/` Markdown and deterministic Help IDs.
+Configure the static Pagefind backend, project base path, site-furniture
+exclusion, newest/appropriate documentation ordering, and local fonts/system
+fallback with `googleFonts=false`. Keep the theme's cached-sidebar, bounded
+pagination, URL-helper, and search-index invariants intact; any Notrios override
+is minimal, named, and browser-tested.
+
+**Boundaries.** No Bluge service, remote font/CDN/runtime asset, generated user
+note site, movenotes projection change, or theme `node_modules`/binary vendor.
+Do not expose design/contributor documents through the user site or seed them
+into Help. The local theme checkout is reference input, not an implicit runtime
+dependency.
+
+**Dependencies.** G18b and G18f.
+
+**Working state.** `scripts/build_docs_site.sh` produces the complete Ledger-
+themed `_site` reproducibly from a clean release ZIP; GitHub Pages uses the same
+command; `seed-help` still mirrors the same user Markdown into protected Help.
+
+**Validation and evidence.** Pinned clean build with no network after declared
+tool installation; release-ZIP rebuild; internal/external-link and fragment
+check; route/redirect manifest; Pagefind known-term, exclusion, and result-link
+tests under `/notrios/`; zero third-party requests/CSP violations; semantic
+heading/code/table rendering; desktop/mobile/keyboard/screen-reader/contrast
+browser sweep; Help reseed idempotence and byte/content equivalence; build time
+and output size recorded against G18b.
+
+**Open decisions**
+
+- None. G18b resolves the pinning, URL, and search choices before this
+  implementation slice may be approved.
+
 ## G19. Archive-v2 compatibility bridge
 
 **Goal.** Publish the external archive contract deferred from v0.4 only after
@@ -1647,7 +1971,8 @@ cross-version consumer tests if that external importer now exists.
 external consumer that does not exist; a missing consumer yields producer-side
 contract evidence, not invented coordination.
 
-**Dependencies.** G9; archive v2 P2–P4.
+**Dependencies.** G9, G18a-G18g documentation integrity/site pipeline; archive
+v2 P2–P4.
 
 **Working state.** A consumer can validate which Notrios archive/container
 capabilities it supports and safely refuse the rest.
@@ -1676,14 +2001,17 @@ to satisfy already approved v0.7 contracts; new features return to planning.
 **Boundaries.** No GitHub push, tag, or public release without separate user
 authorization. No v0.8 installer/mobile work.
 
-**Dependencies.** G3–G19 as applicable.
+**Dependencies.** G3–G19 as applicable, including G18a-G18g.
 
 **Working state.** Product/version/schema/docs agree; all supported peers
 converge or report a typed recoverable state; source ZIP verifies and is copied
 to the evidence directory; the active plan can be archived and the next plan is
 created from the roadmap only after user review.
 
-**Validation and evidence.** Full repository checks and smoke tests; mutation
+**Validation and evidence.** Full repository checks and smoke tests; doc-anchor
+audit, generated-doc freshness, all executable CLI/config/API/GUI examples,
+Hugo/Ledger clean build/search/link/accessibility checks, and disposition of
+advisory contradiction/actionability reports; mutation
 or fault-injection evidence for merge/admission/GC boundaries; 382,206-note
 aggregate snapshot/incremental profile; attachment-bearing lazy-fetch profile;
 security review; upgrade/rollback notes; verified ZIP checksum.
@@ -1742,9 +2070,15 @@ recommendation, blocking status, and consequence.
 | Offline peer retirement | G17 | Resolved: no all-peers-online requirement |
 | Shared-core/FFI and Flutter boundary | G18 | Resolved: pre-1.0 ABI; post-1.0 client; no Web FFI |
 | Current-GUI Mermaid baseline | G18 | Resolved fact: upstream-capable but disabled pending offline/security evidence |
+| Cross-language documentation anchor/calibration mechanism | G18a | Investigation; blocking G18c-G18f until one finite mechanism and labelled set are selected |
+| Ledger theme pin/distribution | G18b | Open, non-blocking default: minimal vendored source snapshot with license and upstream commit |
+| Documentation public URL shape | G18b | Open, non-blocking default: preserve `.html`/fragment links or add tested redirects |
+| Documentation search backend | G18b | Open, non-blocking default: static Pagefind; no Bluge service |
+| Hosted semantic-review execution | G18f | Open, non-blocking default: maintainer-only recorded command; hosted source upload needs separate approval |
 | Release version/schema bookkeeping | G20 | Open, non-blocking until wrap-up |
 
 G0-G17 are complete and the production physical restore/catch-up, durable
 sync-job, local recovery UI, and safe-retention contracts are frozen. G18 is
-the next implementable item but is not approved. Implementation begins only
-after an explicit instruction naming G18.
+the next implementable item but is not approved. G18a-G18g are planned after it
+and are also not approved. Implementation begins only after an explicit
+instruction naming the item to start.

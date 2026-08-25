@@ -13,6 +13,32 @@ User and reference documentation for the `notriosd` service, `notriosctl` CLI, R
 
 The Pages site uses **PageFind** (https://github.com/pagefind/pagefind): a post-build index step over the generated static HTML, producing a fully static search UI with no server component — consistent with the local-first ethos.
 
+## Planned documentation-integrity and Hugo migration
+
+`PLAN.md` G18a-G18g now owns a staged replacement for the current bespoke site
+builder and an integrity pipeline shared by the site and Help content. None of
+these slices is implemented or approved yet:
+
+- investigate Go/TS/TSX source-adjacent `notrios:` doc anchors and report every
+  topic as executed, generated, claimed, or unverified;
+- execute copyable CLI/config/REST/MCP examples with behavioral postconditions,
+  and execute documented GUI steps in desktop/mobile browser journeys while
+  reporting their user-action length;
+- generate template-ordered user/API fragments and fail deterministic freshness
+  drift;
+- run blind code explanation followed by supported/contradicted/not-determinable
+  review as calibrated advisory evidence—never an embedding-similarity or CI
+  truth oracle—and generate actionable commands/config/API/GUI attempts from
+  prose for human review;
+- migrate the site to a pinned, Apache-2.0 `hugo-theme-ledger` snapshot with
+  Hugo Extended and static Pagefind, preserving `/notrios/` URLs/fragments,
+  `googleFonts=false`, zero third-party runtime requests, clean release-ZIP
+  builds, and the raw Markdown Help source.
+
+The local theme checkout is investigation input, not an undeclared build
+dependency. G18b selects and records the exact pin/integration before G18g may
+change this document's implemented build description.
+
 ## Structure (initial)
 
 ```text

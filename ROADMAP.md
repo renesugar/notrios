@@ -193,7 +193,8 @@ question, and are not on the original list.
 This is the first milestone that merges independently changed canonical state,
 so the replacement `PLAN.md` divides it into independently approvable items
 (G0, G1, G1a, G2-G14, the blocking G14a-G14e archive-scalability sequence,
-and G15-G20) rather than the former six
+G15-G18, the G18a-G18g documentation-integrity/site sequence, and G19-G20)
+rather than the former six
 implementation groups.
 The user's 2026-08-11 review resolved the G0-G17 policy decisions; no item is
 approved for implementation merely by resolving its decisions.
@@ -298,7 +299,9 @@ object**, while the existing pack fix has never been exercised end to end at
 the supplied full scale.
 
 **The blocking G14a-G14e archive-scalability sequence and G15-G17 sync control,
-recovery UI, and safe retention are complete; G18 is next and approval-gated.** G14a supplies the resumable, aggregate-only benchmark contract and
+recovery UI, and safe retention are complete; G18 is next and approval-gated.**
+The 2026-08-24 documentation-integrity amendment adds G18a-G18g after that
+handoff and before the compatibility/release slices; none is approved. G14a supplies the resumable, aggregate-only benchmark contract and
 generated 10k/100k calibration. That evidence confirms one-file-per-object
 growth, isolates stored-ZIP overhead from framing, and records a 100k
 incremental-replay memory failure without changing production code. G14b's
@@ -374,8 +377,16 @@ MiB for 382,206 representative operations, so the resolved default remains.
   retirement and acknowledgement/snapshot-gated tombstone/blob GC; a platform,
   shared-core/C-ABI, and Mermaid contract handed to the distinct v0.8 milestone
   and post-1.0 Flutter client.
+- **Documentation integrity and site migration (G18a-G18g):** investigate and
+  then implement source-adjacent user/API doc anchors; honest executed,
+  generated, claimed, and unverified grades; result-bearing CLI/config/REST/MCP
+  examples; browser-executed GUI journeys with action-length evidence;
+  deterministic generated-subset freshness; calibrated advisory contradiction/
+  actionability review; and a pinned, offline Hugo/Ledger+Pagefind GitHub Pages
+  build that preserves the same Markdown Help source and public links.
 - **Compatibility and completion (G19-G20):** publish the archive-v2 contract
-  deferred from v0.4 P6 after the sync-era container stabilizes, then run full
+  deferred from v0.4 P6 through the new documentation checks after the sync-era
+  container stabilizes, then run full
   multi-peer convergence, security, disaster-recovery, large-corpus, API/docs,
   and release-package reconciliation.
 

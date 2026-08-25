@@ -1,6 +1,6 @@
 # Plan Status
 
-Updated: 2026-08-24 (G17 complete; G18 next and unapproved)
+Updated: 2026-08-24 (G17 complete; G18 next and unapproved; G18a-G18g planned)
 
 ## Active milestone
 
@@ -9,8 +9,9 @@ canonical schema is **v27**. v0.6 F0-F7 are archived under `plans/v0.6/`;
 earlier milestones remain under their version directories.
 
 `PLAN.md` is now the **active v0.7 native synchronization plan**. It contains
-G0, G1, G1a, G2-G14, the blocking G14a-G14e archive-scalability sequence, and
-G15-G20: evidence, profiles/local journal, state-vector convergence,
+G0, G1, G1a, G2-G14, the blocking G14a-G14e archive-scalability sequence,
+G15-G18, the newly planned G18a-G18g documentation-integrity/site sequence,
+and G19-G20: evidence, profiles/local journal, state-vector convergence,
 revision deltas/merge, lazy resources, secure container/catch-up,
 ephemeral-directory and REST transports, jobs/UI/retention, shared-core/FFI/
 Mermaid/mobile handoff, compatibility, and final validation. The user's
@@ -22,7 +23,31 @@ G14d integrated encrypted transport plus crash-safe restore/catch-up, and G14e
 passed the production full-scale matrix and froze the format. G15 then added
 the schema-v26 durable sync outbox and bounded local REST/MCP control. G16 adds
 the local Sync Center and password recovery workflow. G17 adds safe retention
-and retirement. G18 is next and unapproved.
+and retirement. G18 is next and unapproved; the new G18a-G18g slices are also
+unapproved and do not authorize implementation.
+
+## 2026-08-24 planning amendment — source-anchored docs and Hugo/Ledger
+
+- G18a inventories every published/Help, CLI/config, REST/OpenAPI, MCP, and GUI
+  claim; freezes cross-language source anchors and the four honest grades
+  (executed/generated/claimed/unverified); and calibrates contradiction review.
+  It explicitly rejects semantic-similarity thresholds, which miss negation.
+- G18b measures the local Apache-2.0 `hugo-theme-ledger` reference against the
+  current `/notrios/` URLs, raw-Markdown Help seeding, Pagefind, clean ZIP/CI
+  build, and offline assets. The plan recommends a minimal pinned vendored
+  source snapshot, preserved URLs, and static Pagefind unless evidence rejects
+  a default.
+- G18c-G18f add deterministic anchor/claim auditing, result-bearing CLI/config/
+  REST/MCP examples, browser-executed GUI journeys and action-length baselines,
+  generated user/API subsets with freshness checks, and calibrated advisory
+  blind-explanation contradiction/actionability reports. Model output never
+  gates CI or rewrites prose.
+- G18g migrates the public docs build to pinned Hugo/Ledger while keeping one
+  `docs/` Markdown source for the site and protected offline Help. G19 consumes
+  the pipeline for the archive contract; G20 runs its full release gate.
+- Initial planning inventory found a useful known-drift case:
+  `docs/service.md` still names schema v20 while the canonical schema is v27.
+  G18a retains it as a failing calibration/audit fixture before correction.
 
 ## v0.7 G17 completion — 2026-08-24
 

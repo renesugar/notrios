@@ -17,7 +17,9 @@ and three-way conflict workflows, and non-persistent password backup review.
 G17 advances schema v27 with signed peer retirement, a configurable 90-day
 history horizon, acknowledgement plus re-verified-snapshot collection floors,
 permanent death identity, sync-aware resource GC, and explicit snapshot catch-
-up below the floor. G18 is next but unapproved — see
+up below the floor. G18 is next but unapproved; the newly planned source-
+anchored documentation and Hugo/Ledger sequence G18a-G18g follows it and is
+also unapproved — see
 [`PLAN.md`](PLAN.md) and
 [`ROADMAP.md`](ROADMAP.md). The repository is
 structured so a coding agent can resume safely after usage limits or model
@@ -50,7 +52,7 @@ changes.
 
 ## Documentation
 
-User documentation lives under [`docs/`](docs/index.md) and is published as a GitHub Pages site with PageFind search (`bash scripts/build_docs_site.sh` builds it locally). `notriosctl seed-help` mirrors the same content into the app's built-in read-only Help notebook for offline use.
+User documentation lives under [`docs/`](docs/index.md) and is published as a GitHub Pages site with PageFind search (`bash scripts/build_docs_site.sh` builds it locally). `notriosctl seed-help` mirrors the same content into the app's built-in read-only Help notebook for offline use. The approved-plan boundary in G18a-G18g will add source-adjacent truth grades and executed examples/journeys, then migrate this site to a pinned `hugo-theme-ledger`; that work is planned, not implemented.
 
 ## Quick start
 
