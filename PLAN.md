@@ -1,8 +1,9 @@
 # Plan: v0.7 — Native synchronization
 
 Status: **G0-G17 completed through 2026-08-24. Product version remains 0.6.0 and the
-canonical schema is v27. G18 is next and is not approved. G18a-G18g are newly
-planned documentation-integrity and Hugo/Ledger slices; none is approved.** The
+canonical schema is v27. The newly inserted G17a evidence-preservation
+investigation is next, blocking G17b, G18, and any GitHub push; it is not
+approved. G17b and the planned G18/G18a-G18g slices are also not approved.** The
 former seven-item draft was too coarse: it mixed protocol research, canonical
 write interception, merge semantics, two transports, cryptography, recovery,
 UI, retention, and release validation into slices that could not be reviewed or
@@ -104,6 +105,16 @@ with the change. At completion:
    `scripts/check_release_zip.py`, and copy the verified ZIP to
    `/home/renes/evidence/notrios`;
 6. report the ZIP and ask whether to proceed to the next item.
+
+G17b adds the missing custody step to this rule. After G17b is complete, every
+new release ZIP must be hashed, signed, independently timestamped, appended to
+the checked-in evidence manifest, verified from a clean process, and assigned
+to an external immutable ISO checkpoint before the corresponding task is
+called complete. No GitHub push may occur until the host-side evidence gate
+confirms that every frozen artifact is covered. A push, a network timestamp
+request, use or creation of a signing key, and writing physical optical media
+each remain separately authorized operations; this plan does not silently
+grant them.
 
 ## G0. Investigation — threat model, terminology, and reference validation — complete
 
@@ -1555,6 +1566,206 @@ snapshot re-verification. Full-corpus-scale evidence keeps the resolved 90-day
 default. Archived as `plans/v0.7/026-peer-retention-gc-repair.md` with evidence
 under `performance/v0.7-g17/`.
 
+## G17a. Investigation — evidence provenance, sealing, and optical reserve contract
+
+**Goal.** Turn the accumulated release ZIPs and screenshots into a finite,
+truthfully described preservation set before any repository push, without
+retroactively claiming contemporaneous authorship or completion times that were
+never recorded cryptographically.
+
+**Scope.** Freeze a read-only inventory of every regular file present in
+`/home/renes/evidence/notrios` at the investigation boundary, including ZIPs,
+PNGs, and any legacy or plan-only bundle; record counts, byte totals, file type,
+ZIP structural validation, filesystem modification time as weak source metadata,
+and the strongest repository commit/task association that can be proved from
+archive contents, Git history, archived plans, and attempt logs. An unknown or
+ambiguous association stays unknown or lists candidates. Never infer a commit
+from a filename alone.
+
+Define a versioned canonical evidence schema and threat model that keeps four
+claims separate:
+
+1. SHA-256 and archive validation detect byte changes relative to a recorded
+   digest;
+2. an OpenPGP detached signature proves that the selected key signed exact
+   bytes, while identity depends on the separately documented key-trust process;
+3. a verified RFC 3161 response proves that the timestamped datum existed no
+   later than the token time under the selected TSA policy and trust chain; and
+4. inventory, transfer, ISO creation, storage, and later burn/read-back records
+   document custody but do not by themselves decide legal admissibility.
+
+Choose the exact signed and timestamped datum. The recommended construction is
+a detached signature over each original artifact followed by an RFC 3161 token
+over that signature, so the token establishes that the signature—not merely the
+artifact—existed by the TSA time. Preserve the request, response, signer public
+key/fingerprint, TSA leaf/intermediate/root certificates as licensing and
+redistribution allow, policy OID, verification command, tool versions, and
+retrieval facts. Specify explicit `captured_at`, independently sourced
+`step_completed_at`, `sealed_at`, and `retroactive` fields; backfilled artifacts
+always use `retroactive: true`, and a 2026 seal must never be described as a
+2025 or earlier completion timestamp.
+
+Design an append-only canonical JSONL content manifest whose entry digest chains
+canonical entry bytes, not just artifact ZIP hashes. It must use repository-
+relative logical names rather than machine-specific absolute paths, record every
+artifact/signature/request/response/support-file digest and size, represent
+unknown values explicitly, and support signed checkpoints. Design a two-level
+ISO catalog: the content manifest included inside an image covers every payload
+byte, while a checked-in outer catalog records the completed ISO's SHA-256 and
+its content-manifest/checkpoint digest. An ISO cannot contain its own final hash.
+
+Measure the current set against a conservative CD-R volume budget using the
+actual ISO builder's print-size result; define stable sorting, volume IDs,
+timestamps, permissions, Rock Ridge/Joliet compatibility, tool/version capture,
+and a deterministic rebuild test. Test the contract only with generated files
+under `/tmp`. Specify volume rollover and immutable checkpoint rules: an issued
+ISO is never silently regenerated; later evidence goes into the next numbered
+volume even when an earlier image has free space. Define a restore/verifier and
+future burn/read-back runbook, including full-image and per-file verification,
+but do not burn media.
+
+**Boundaries.** Investigation, generated prototypes, and aggregate inventory
+only. Do not modify the evidence directory, create the production ISO, contact
+a TSA, create/use a secret key, push Git, burn optical media, claim WORM storage,
+or offer legal advice. Git history is useful corroboration but is not an
+immutable public ledger. The ISO is a preservation container, not automatic
+proof of authorship, independent creation, custody, or admissibility.
+
+**Dependencies.** G17 completion; existing release-packaging script and archives;
+Git/attempt/plan history; locally available OpenSSL, GnuPG, and xorriso-compatible
+tools.
+
+**Working state.** `performance/v0.7-g17a/` contains only privacy-safe aggregate
+inventory, generated prototype evidence, the schema/claim vocabulary, provider
+and trust-chain assessment, deterministic ISO/capacity findings, commit-mapping
+rules, and one recommended implementation contract. `EVIDENCE_PRESERVATION.md`
+is the human-readable verification and custody specification. No digest of an
+artifact absent from the frozen set is presented as if it had been observed.
+
+**Validation and evidence.** Generated good/tampered/swapped/truncated artifact,
+signature, timestamp, chain, and manifest fixtures; explicit OpenSSL verification
+with the selected CA file and any required untrusted intermediates; detached
+signature verification with the data filename supplied; canonical JSONL and
+entry-chain mutation tests; ISO clean rebuild byte comparison, print-size/capacity
+gate, extraction/read-back, long-name/Unicode/permission checks; corrupt/missing/
+extra source refusal; privacy scan; and no network or evidence-directory write.
+
+**Open decisions**
+
+- **Which OpenPGP identity signs the evidence? — Blocking G17b.** Options are an
+  existing dedicated project/evidence key selected by exact fingerprint, a new
+  dedicated evidence key created with an approved protection/backup/rotation
+  procedure, or no signature claim. Recommendation: a dedicated non-expiring
+  primary identity with a separately managed signing subkey and an exported
+  public-key packet; select an existing suitable key if one already exists.
+  The user must approve the exact fingerprint or key-creation operation. This
+  changes who can make the signer claim and how later verifiers establish trust.
+- **Which independent RFC 3161 authority and policy are accepted? — Blocking
+  third-party timestamping in G17b.** Options are a verified public/commercial
+  TSA with pinned trust material and acceptable policy/terms, an organization-
+  controlled TSA whose independence is explicitly limited, or no third-party
+  time claim. Recommendation: select a maintained external RFC 3161 service only
+  after a live certificate-chain/policy/availability check. Network access and
+  the request itself require approval. If no authority is selected or it is
+  unavailable, record `timestamp_status` truthfully and treat the strict
+  pre-push gate as blocked unless the user signs an explicit waiver.
+
+## G17b. Backfill evidence seals, checked-in manifest, and immutable ISO reserve
+
+**Goal.** Apply G17a's approved contract to every frozen historical artifact,
+store verifiable manifests and tooling in Git, reserve burn-ready ISO images on
+`/media/renes/SEAGATE2TB`, and make complete coverage a mandatory gate before
+the next GitHub push.
+
+**Scope.** Re-freeze the source inventory and refuse unexplained drift from
+G17a. Validate every ZIP with the repository release checker when compatible
+and with complete ZIP CRC/path checks otherwise; validate image decodability;
+hash original bytes without rewriting metadata. Resolve task/commit provenance
+only from reproducible evidence and record uncertainty. Generate each artifact's
+detached OpenPGP signature, timestamp request, RFC 3161 response over the
+signature, and verification record using the user-approved key and TSA. Keep
+the private key outside the repository, logs, ISO, and process arguments.
+
+Add the versioned manifest schema, canonicalizer, append/checkpoint tool,
+read-only verifier, committed public key, permitted TSA trust/policy material,
+custody template, burn/read-back runbook, and tests under a clearly documented
+repository evidence directory. Check in the canonical historical manifest and
+signed content checkpoint, including byte/size/hash coverage of signatures,
+requests, responses, and support material. Never check in the release ZIPs,
+screenshots, ISO bytes, a secret key, passphrase, private pathname, or a token
+that has not independently verified.
+
+Build numbered deterministic ISO 9660 images from private staging directly on
+`/media/renes/SEAGATE2TB/notrios-evidence/`, partitioned below G17a's measured
+CD-R budget. Each image contains original artifacts, their detached signatures
+and timestamp material, the content manifest/checkpoint, public verification
+materials, verifier source, and plain-text restore/custody instructions. Write
+an adjacent external checksum/signature/timestamp set for each ISO. After an
+image is byte-final, append its SHA-256, byte size, volume ID, content-checkpoint
+digest, creation tool/options/version, and external reserve location identifier
+to the checked-in outer ISO catalog; do not attempt a self-hash inside the ISO.
+Commit the content checkpoint before imaging and the outer catalog afterward,
+then verify both commits remain ancestors of the final pre-push HEAD. Define the
+catalog-only closure commit as an explicit trust boundary: it does not trigger a
+new release ZIP of itself, because requiring that ZIP to appear in the catalog
+would recurse forever. The next ordinary content checkpoint covers the prior
+closure commit. The verifier reports this one expected outer boundary instead
+of calling the current ISO self-contained with respect to its own catalog.
+
+Add a host-side pre-push evidence command that fails closed on an unmanifested
+artifact, source drift, invalid entry chain/checkpoint, missing or invalid
+signature/timestamp, unassigned artifact, absent external ISO, ISO hash/volume
+mismatch, failed ISO extraction/content verification, or catalog commit not in
+HEAD. CI validates schemas, canonicalization, fixtures, and tracked support
+files without pretending it can see the external reserve. Document that the
+current `develop` branch has no upstream and that no remote write is part of
+this item.
+
+Amend the per-item release workflow so each later ZIP is sealed immediately
+after verification, with `retroactive: false` only when capture is genuinely
+contemporaneous. Create a new immutable ISO volume checkpoint before each future
+GitHub push and at milestone close; do not rebuild historical volume IDs.
+Physical CD-R burning remains a later owner-authorized custody operation from
+these exact ISO bytes. The runbook uses a drive/media-supported speed rather
+than assuming 4× is universally safer, closes the session where supported, and
+requires full read-back plus per-file verification for every copy.
+
+**Boundaries.** No GitHub push, tag, release, remote upload, or physical-media
+write. No fabricated old signature/time/custodian event and no claim that
+hashes, signatures, timestamps, Git, or an ISO alone prove authorship,
+independent creation, clean-room status, or admissibility. Do not mutate the
+original artifact bytes. Do not depend on a GUI verifier, mounted ISO, network,
+secret key, or the original repository for ordinary offline verification.
+
+**Dependencies.** Completed and user-approved G17a contract and both blocking
+decisions; explicit permission for external evidence/reserve writes, signing-key
+use or creation, and TSA network requests.
+
+**Working state.** Every frozen evidence file has an exact checked-in manifest
+entry, validated signature and timestamp record, and immutable volume assignment;
+every numbered ISO and adjacent verification set exists on the designated
+SEAGATE reserve and passes a clean offline restore. The pre-push command reports
+complete coverage. G18 remains unstarted and no remote state has changed.
+
+**Validation and evidence.** Full source-to-manifest-to-signature-to-RFC3161-to-
+ISO-to-outer-catalog verification in a clean temporary environment; independent
+recomputation of hashes and entry chain; key fingerprint/trust-material pinning;
+TSA nonce, imprint, time, policy, signer purpose, and chain validation; bad-key,
+bad-CA, wrong-data, stale-query, tamper, missing/extra/swap, unavailable-reserve,
+and catalog/HEAD mutation tests; two deterministic builds with identical inputs/
+toolchain; ISO size budget and no-overflow proof; extraction and full hash walk;
+repository secret/private-path/privacy scan; standard repository validation;
+verified release ZIP built from G17b's content checkpoint and sealed into the
+first applicable volume; one documented catalog-only closure commit afterward,
+with no recursive release-ZIP requirement.
+
+**Open decisions**
+
+- None after G17a's signing identity and TSA choices are explicitly resolved.
+  Approving G17b also approves the frozen all-regular-file scope, immutable
+  numbered-volume policy, two-level no-self-hash catalog, and strict pre-push
+  gate described above; it does not approve a push or a physical burn.
+
 ## G18. Shared-core, FFI, Mermaid, and installation/mobile portability handoff
 
 **Goal.** End v0.7 with an explicit, testable contract for the separate v0.8
@@ -2068,6 +2279,8 @@ recommendation, blocking status, and consequence.
 | Remember backup password | G16 | Resolved: no |
 | Retention horizon | G17 | Resolved: 90 days plus verified snapshot floor |
 | Offline peer retirement | G17 | Resolved: no all-peers-online requirement |
+| Evidence OpenPGP signing identity | G17a | Open, blocking G17b: exact existing fingerprint or separately approved dedicated-key creation |
+| Evidence RFC 3161 authority/policy | G17a | Open, blocking timestamping in G17b: verified external TSA recommended; strict pre-push gate otherwise needs an explicit waiver |
 | Shared-core/FFI and Flutter boundary | G18 | Resolved: pre-1.0 ABI; post-1.0 client; no Web FFI |
 | Current-GUI Mermaid baseline | G18 | Resolved fact: upstream-capable but disabled pending offline/security evidence |
 | Cross-language documentation anchor/calibration mechanism | G18a | Investigation; blocking G18c-G18f until one finite mechanism and labelled set are selected |
@@ -2078,7 +2291,8 @@ recommendation, blocking status, and consequence.
 | Release version/schema bookkeeping | G20 | Open, non-blocking until wrap-up |
 
 G0-G17 are complete and the production physical restore/catch-up, durable
-sync-job, local recovery UI, and safe-retention contracts are frozen. G18 is
-the next implementable item but is not approved. G18a-G18g are planned after it
-and are also not approved. Implementation begins only after an explicit
-instruction naming the item to start.
+sync-job, local recovery UI, and safe-retention contracts are frozen. G17a is
+the next item but is not approved; it blocks G17b, G18, and any GitHub push.
+G17b and G18/G18a-G18g are also unapproved. Implementation begins only after an
+explicit instruction naming the item to start and, where stated, resolving its
+blocking decisions.

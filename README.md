@@ -17,9 +17,13 @@ and three-way conflict workflows, and non-persistent password backup review.
 G17 advances schema v27 with signed peer retirement, a configurable 90-day
 history horizon, acknowledgement plus re-verified-snapshot collection floors,
 permanent death identity, sync-aware resource GC, and explicit snapshot catch-
-up below the floor. G18 is next but unapproved; the newly planned source-
-anchored documentation and Hugo/Ledger sequence G18a-G18g follows it and is
-also unapproved — see
+up below the floor. The newly inserted blocking G17a-G17b preservation sequence
+comes next: it will inventory and cryptographically seal every historical evidence
+file, check the canonical manifest/ISO catalog into Git, and reserve immutable
+CD-sized ISO images on the designated external disk before any GitHub push.
+G17a is unapproved and blocks G17b, G18, and the planned G18a-G18g source-
+anchored documentation/Hugo-Ledger work. No signing, timestamp request, push,
+or disc burn is authorized — see
 [`PLAN.md`](PLAN.md) and
 [`ROADMAP.md`](ROADMAP.md). The repository is
 structured so a coding agent can resume safely after usage limits or model

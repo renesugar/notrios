@@ -1,6 +1,7 @@
 # Plan Status
 
-Updated: 2026-08-24 (G17 complete; G18 next and unapproved; G18a-G18g planned)
+Updated: 2026-08-24 (G17 complete; blocking G17a-G17b evidence preservation
+planned; G17a next and unapproved)
 
 ## Active milestone
 
@@ -10,8 +11,9 @@ earlier milestones remain under their version directories.
 
 `PLAN.md` is now the **active v0.7 native synchronization plan**. It contains
 G0, G1, G1a, G2-G14, the blocking G14a-G14e archive-scalability sequence,
-G15-G18, the newly planned G18a-G18g documentation-integrity/site sequence,
-and G19-G20: evidence, profiles/local journal, state-vector convergence,
+G15-G17, the blocking G17a-G17b evidence-preservation sequence, G18, the newly
+planned G18a-G18g documentation-integrity/site sequence, and G19-G20: evidence,
+profiles/local journal, state-vector convergence,
 revision deltas/merge, lazy resources, secure container/catch-up,
 ephemeral-directory and REST transports, jobs/UI/retention, shared-core/FFI/
 Mermaid/mobile handoff, compatibility, and final validation. The user's
@@ -23,8 +25,37 @@ G14d integrated encrypted transport plus crash-safe restore/catch-up, and G14e
 passed the production full-scale matrix and froze the format. G15 then added
 the schema-v26 durable sync outbox and bounded local REST/MCP control. G16 adds
 the local Sync Center and password recovery workflow. G17 adds safe retention
-and retirement. G18 is next and unapproved; the new G18a-G18g slices are also
-unapproved and do not authorize implementation.
+and retirement. G17a is now next and blocks G17b, G18, and any GitHub push;
+none of G17a onward is approved.
+
+## 2026-08-24 planning amendment — sealed evidence and optical ISO reserve
+
+- Read-only inventory found 77 regular files under the external evidence root:
+  73 ZIPs and four PNGs, about 266 MB in total. No existing `.sig`, `.asc`,
+  `.tsq`, or `.tsr` sidecar was found. The historical source set is every
+  regular file, not only release ZIPs.
+- G17a is an investigation-only slice. It freezes the inventory and provenance
+  rules, distinguishes digest integrity, OpenPGP signer identity, RFC 3161 time
+  evidence, and physical custody, and tests canonical chained-manifest plus
+  deterministic CD-sized ISO behavior with generated files under `/tmp` only.
+- A backfilled seal is marked `retroactive: true`; a current TSA response proves
+  the timestamped signature existed by its current token time, not that a past
+  task completed then. Unknown commit/task associations remain unknown.
+- The exact signing fingerprint and RFC 3161 authority/policy are blocking
+  decisions owned by G17a. Key use/creation and network timestamp requests need
+  explicit approval. Provider certificates and policy are pinned and verified;
+  OpenSSL's verifier is never allowed to rely on an unspecified default CA set.
+- G17b applies the approved contract without rewriting originals. It checks a
+  canonical content manifest and outer ISO catalog into Git, while numbered
+  immutable ISO images and their verification material live only under
+  `/media/renes/SEAGATE2TB/notrios-evidence/`. The two levels avoid the impossible
+  claim that an ISO contains its own final hash.
+- A strict host-side gate must verify complete manifest/signature/timestamp/
+  volume coverage before the next GitHub push. CI can validate tracked schemas,
+  fixtures, and canonicalization but cannot claim to see the external reserve.
+  No push or physical optical burn is authorized by the planning amendment.
+- G17a is next and unapproved. G17b, G18, and all later work remain blocked and
+  separately approval-gated.
 
 ## 2026-08-24 planning amendment — source-anchored docs and Hugo/Ledger
 
@@ -2365,5 +2396,6 @@ attempt detail remains append-only in `agent/ATTEMPT_LOG.jsonl`.
 
 - Long-term SQLite driver choice (current local cgo/libsqlite3 adapter).
 - Official MCP Go SDK adoption/version.
-- Sync decisions live in the owning plan items; the register in `PLAN.md` is an
-  index. G0-G17 are complete; G18 and every later slice remain approval-gated.
+- Sync and evidence-preservation decisions live in the owning plan items; the
+  register in `PLAN.md` is an index. G0-G17 are complete; G17a is next and
+  every later slice remains approval-gated.

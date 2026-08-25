@@ -193,14 +193,16 @@ question, and are not on the original list.
 This is the first milestone that merges independently changed canonical state,
 so the replacement `PLAN.md` divides it into independently approvable items
 (G0, G1, G1a, G2-G14, the blocking G14a-G14e archive-scalability sequence,
-G15-G18, the G18a-G18g documentation-integrity/site sequence, and G19-G20)
+G15-G17, the blocking G17a-G17b evidence-preservation sequence, G18, the
+G18a-G18g documentation-integrity/site sequence, and G19-G20)
 rather than the former six
 implementation groups.
 The user's 2026-08-11 review resolved the G0-G17 policy decisions; no item is
 approved for implementation merely by resolving its decisions.
 Every completed item leaves a verified ZIP in the evidence directory and waits
-for approval before the next begins. See `VERSIONING_AND_SYNC_POLICY.md` and
-`SYNCHRONIZATION.md`.
+for approval before the next begins. G17a-G17b must backfill and then maintain
+the missing signature/timestamp/manifest/ISO custody layer before any GitHub
+push. See `VERSIONING_AND_SYNC_POLICY.md` and `SYNCHRONIZATION.md`.
 
 **G0 completed 2026-08-11.** Its threat model, glossary, thirty-case control
 trace, and primary-source dependency/platform/license validation are under
@@ -299,9 +301,10 @@ object**, while the existing pack fix has never been exercised end to end at
 the supplied full scale.
 
 **The blocking G14a-G14e archive-scalability sequence and G15-G17 sync control,
-recovery UI, and safe retention are complete; G18 is next and approval-gated.**
-The 2026-08-24 documentation-integrity amendment adds G18a-G18g after that
-handoff and before the compatibility/release slices; none is approved. G14a supplies the resumable, aggregate-only benchmark contract and
+recovery UI, and safe retention are complete. The newly planned G17a-G17b
+evidence-preservation sequence is next and blocks G18 and every GitHub push.**
+The 2026-08-24 documentation-integrity amendment adds G18a-G18g after G18 and
+before the compatibility/release slices; none of G17a onward is approved. G14a supplies the resumable, aggregate-only benchmark contract and
 generated 10k/100k calibration. That evidence confirms one-file-per-object
 growth, isolates stored-ZIP overhead from framing, and records a 100k
 incremental-replay memory failure without changing production code. G14b's
@@ -347,6 +350,20 @@ retirement consequences without receiving filesystem paths or exposing an
 HTTP apply route. Generated one-full-corpus-churn evidence measured about 162
 MiB for 382,206 representative operations, so the resolved default remains.
 
+**G17a-G17b are a blocking pre-push evidence-preservation sequence.** G17a
+first freezes the complete external evidence inventory, corrects the proposed
+claims about hashes, OpenPGP signatures, RFC 3161 time evidence, Git history,
+custody, and legal scope, and selects a canonical chained manifest plus
+deterministic CD-sized ISO contract. It uses generated prototypes only and must
+resolve the exact user-approved signing fingerprint and TSA policy before G17b.
+G17b then backfills every original ZIP and screenshot without rewriting it,
+checks the canonical manifest and ISO catalog into Git, places immutable
+numbered ISO images and their verification sets only under
+`/media/renes/SEAGATE2TB/notrios-evidence/`, and adds a host-side pre-push gate.
+Backfilled seals say they are retroactive; a current timestamp never becomes a
+historical completion time. ISO creation does not authorize GitHub push or
+physical CD-R burning, which remain separate operations.
+
 - **Evidence before contracts (G0-G2, including G1a):** threat model and
   reference validation; representative revision/delta/three-way-merge
   workloads; pure-Go binary-safe xdelta/VCDIFF feasibility and hostile-decoder
@@ -372,6 +389,14 @@ MiB for 382,206 representative operations, so the resolved default remains.
   without an rclone dependency; REST authentication/pairing/TLS/quota/audit
   foundation; resumable REST objects and backup downloads; durable jobs,
   retry/backpressure, and bounded MCP status/control.
+- **Evidence preservation before external publication (G17a-G17b):** frozen
+  all-file inventory; versioned chained manifest; per-artifact detached
+  signature and independently verified RFC 3161 token over that signature;
+  explicit retroactive/contemporaneous time semantics; deterministic,
+  immutable numbered ISO 9660 reserves on the designated external disk; clean
+  offline restore and a strict host-side pre-push coverage gate. Hashes,
+  signatures, timestamps, Git, and ISO media are described as corroborating
+  controls, not automatic legal proof.
 - **User recovery, safe retention, and portability handoff (G16-G18):** pairing/profile/directory,
   encrypted-backup, lazy-resource, conflict and reset UI; explicit peer
   retirement and acknowledgement/snapshot-gated tombstone/blob GC; a platform,

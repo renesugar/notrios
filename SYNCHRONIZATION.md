@@ -615,8 +615,11 @@ maintenance, interoperability, security, size-growth, and mobile benchmark.
 ## Resolved policy and investigation outputs
 
 `PLAN.md` is the authoritative home because each decision must be visible in
-the item it affects. The user's 2026-08-11 review resolved G0-G17 policy,
-including:
+the item it affects. The user's 2026-08-11 review resolved G0-G17 sync policy;
+the later G17a evidence-preservation investigation owns the still-open signing
+fingerprint and RFC 3161 authority/policy choices before G17b or any GitHub
+push. No key operation, timestamp request, push, or physical burn is implied.
+The resolved synchronization decisions include:
 
 1. mandatory end-to-end encryption and per-replica digital signatures;
 2. complete-body plus optional delta representation and three-way merge;

@@ -12,8 +12,9 @@ wrap-up). The thirteen v0.5 slices remain archived under `plans/v0.5/`.
 
 `PLAN.md` now holds the **active v0.7 native synchronization plan** with
 independently approvable G0-G20 slices plus the newly inserted, blocking
-G14a-G14e archive-scalability sequence and the newly planned G18a-G18g
-documentation-integrity/Hugo-Ledger sequence. The user's 2026-08-11
+G14a-G14e archive-scalability sequence, the newly inserted blocking G17a-G17b
+evidence-preservation sequence, and the newly planned G18a-G18g documentation-
+integrity/Hugo-Ledger sequence. The user's 2026-08-11
 review resolved the policy decisions through G17, including mandatory payload
 encryption and per-replica Ed25519 signatures. **G0-G17 are complete** and
 archived under `plans/v0.7/`; their reviewed evidence is under
@@ -28,8 +29,9 @@ archived under `plans/v0.7/`; their reviewed evidence is under
 `performance/v0.7-g17/`. G15's archive is
 `plans/v0.7/024-durable-sync-jobs.md`; G16's archive is
 `plans/v0.7/025-sync-recovery-ui.md`; G17's archive is
-`plans/v0.7/026-peer-retention-gc-repair.md`. **G18 is next and is not
-approved. G18a-G18g follow G18 and are also not approved.** G14b selected option B: a
+`plans/v0.7/026-peer-retention-gc-repair.md`. **G17a is next, is not approved,
+and blocks G17b, G18, and every GitHub push. G17b and G18/G18a-G18g are also
+not approved.** G14b selected option B: a
 required compatible same-schema SQLite-image plus bounded packed-assets
 capability for whole-library full backup/catch-up, retaining packed semantic
 archive-v2 for subset, merge, schema-independent interchange, and fallback.
@@ -96,6 +98,21 @@ offline Help. Planning inventory found `docs/service.md`'s stale schema-v20
 claim versus canonical v27 and preserves it as G18a calibration evidence before
 the audited correction. No new slice is approved by this amendment.
 
+The 2026-08-24 evidence-preservation amendment inserts G17a-G17b ahead of G18
+and any GitHub push. A read-only inventory found 77 regular files in
+`/home/renes/evidence/notrios`: 73 ZIPs and four PNGs, about 266 MB total, with
+no existing detached-signature or RFC 3161 sidecars. G17a must freeze the full
+all-file scope; define honest hash, signer-identity, third-party-time, and
+custody claims; select the exact user-approved OpenPGP fingerprint and RFC 3161
+authority/policy; and prove a deterministic CD-sized ISO contract with generated
+fixtures only. G17b then backfills without rewriting original bytes, checks a
+canonical chained manifest and outer ISO catalog into Git, and writes immutable
+numbered ISO images only under `/media/renes/SEAGATE2TB/notrios-evidence/`.
+Backfilled records are explicitly retroactive. ISO images, network timestamp
+requests, signing-key operations, a GitHub push, and physical burning are
+distinct permissions; neither planning amendment authorizes them. G17a and
+G17b have no product/schema/runtime scope.
+
 G14c adds production `sqlite-image+packed-assets.v1` creation and read-only
 admission under `internal/snapshotimage/` and
 `internal/store/sqlite_snapshot.go`. `notriosctl snapshot create` uses SQLite
@@ -135,8 +152,8 @@ generic response ceiling truncating 16 MiB ranges, unconditional whole-library
 reconciliation for a body edit, and quadratic repeated-prefix validation in
 bounded directory publication. Tests cover each boundary; no format, schema,
 compressor, third-party dependency, REST/MCP path surface, or automatic restore
-was added. G15-G17 are now complete; G18 and the later G18a-G18g amendment
-require separate item-by-item user approval.
+was added. G15-G17 are now complete; G17a is next and blocks G17b, G18, and any
+GitHub push. Every remaining item requires separate item-by-item user approval.
 
 G14b added only investigation/prototype code and aggregate evidence. Its 57
 validated full-corpus phase rows cover equivalent 382,206-document Joplin and

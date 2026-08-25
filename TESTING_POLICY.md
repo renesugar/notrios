@@ -1167,6 +1167,27 @@ chooser absence in a browser, password visibility, Escape, 44-pixel touch
 controls, and console/page errors. Screenshots contain only generated Help/
 empty-profile UI and fixture text; no private corpus.
 
+## Planned G17a-G17b evidence-preservation validation
+
+G17a must test the proposed evidence format with generated files only. Fixtures
+cover canonical JSONL and entry-chain mutation, good/wrong detached signatures,
+good/wrong data and CA trust for RFC 3161, truncation/swap/missing/extra files,
+deterministic ISO rebuild, CD-volume overflow, Unicode/long names, extraction,
+and full hash walk. OpenSSL timestamp verification must name the trusted CA and
+any untrusted intermediates explicitly; GnuPG detached verification must name
+both signature and data. The investigation may not write the historical
+evidence root, contact a TSA, or use/create a secret key.
+
+After separate approval and resolution of the exact signing fingerprint and
+TSA policy, G17b must verify the whole frozen chain from original artifact to
+signature to timestamp to checked-in content checkpoint to external ISO and
+outer ISO catalog. Backfilled records must say `retroactive: true`. A clean
+offline verifier must work without the repository, network, private key, GUI,
+or mounted image. CI checks tracked schemas, canonicalization, support files,
+and generated fixtures; only the host-side pre-push gate may claim coverage of
+the ISO reserve under `/media/renes/SEAGATE2TB`. Physical burning and read-back
+are a separately authorized custody procedure, not part of G17b.
+
 ## MVP release validation
 
 Task 10 adds release-candidate checks beyond ordinary unit tests:
