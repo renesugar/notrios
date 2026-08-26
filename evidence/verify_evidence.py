@@ -32,6 +32,8 @@ ZERO_HASH = "0" * 64
 PRIMARY_FINGERPRINT = "AEE5F82F2C216D6D15992C8DC96A1C6039BC8098"
 SIGNING_FINGERPRINT = "4ABEB98AF99C8321931BCF282C6A8A4568264005"
 TSA_POLICY_OID = "2.16.840.1.114412.7.1"
+TSA_ROOT_SHA256 = "552f7bdcf1a7af9e6ce672017f4f12abf77240c78e761ac203d1d9d20ac89988"
+TSA_RESPONDER_SHA256 = "4aa03fa22cd75c84c55c938f828e676b9caecab33fe36d269aa334f146110a33"
 CD_BUDGET_BYTES = 650 * 1024 * 1024
 
 
@@ -233,8 +235,8 @@ def gpg_validsig(signature: Path, datum: Path, public_key: Path) -> dict[str, ob
         home.chmod(0o700)
         env = os.environ.copy()
         env["GNUPGHOME"] = str(home)
-        run(["gpg", "--batch", "--quiet", "--import", str(public_key)], env=env)
-        result = run(["gpg", "--batch", "--status-fd", "1", "--trust-model", "always",
+        run(["gpg", "--batch", "--no-autostart", "--quiet", "--import", str(public_key)], env=env)
+        result = run(["gpg", "--batch", "--no-autostart", "--status-fd", "1", "--trust-model", "always",
                       "--verify", str(signature), str(datum)], env=env)
     lines = result.stdout.decode("utf-8", "replace").splitlines()
     fields = next((line.split() for line in lines if line.startswith("[GNUPG:] VALIDSIG ")), None)
@@ -278,6 +280,10 @@ def verify_timestamp(datum: Path, query: Path, response: Path, trust_root: Path,
         raise EvidenceError("TSA responder lacks critical timeStamping EKU")
     fingerprint = run(["openssl", "x509", "-in", str(responder), "-noout",
                        "-fingerprint", "-sha256"]).stdout.decode().strip().split("=", 1)[-1].replace(":", "").lower()
+    root_fingerprint = run(["openssl", "x509", "-in", str(trust_root), "-noout",
+                            "-fingerprint", "-sha256"]).stdout.decode().strip().split("=", 1)[-1].replace(":", "").lower()
+    if fingerprint != TSA_RESPONDER_SHA256 or root_fingerprint != TSA_ROOT_SHA256:
+        raise EvidenceError("TSA responder or root fingerprint differs from accepted pilot")
     return {"policy_oid": policy.group(1), "nonce": nonce_reply.group(1).lower(),
             "gen_time": generated.isoformat().replace("+00:00", "Z"),
             "responder_sha256": fingerprint, "certificate_valid_at_gen_time": True,
@@ -322,6 +328,8 @@ def verify_checkpoint(root: Path, *, verify_payload: bool) -> dict[str, object]:
             logical = payload.get("logical_name")
             if not isinstance(artifact_id, str) or not isinstance(logical, str) or not safe_logical_name(logical):
                 raise EvidenceError("invalid artifact identity or logical name")
+            if payload.get("assigned_checkpoint_id") != "g17b-backfill-20260825-0001" or payload.get("assigned_volume_id") != "NTR-EV-0001":
+                raise EvidenceError("artifact is not assigned to the current checkpoint and volume")
             if artifact_id in artifacts:
                 raise EvidenceError("duplicate artifact identity")
             artifacts[artifact_id] = (payload, str(record["entry_sha256"]))
@@ -332,6 +340,8 @@ def verify_checkpoint(root: Path, *, verify_payload: bool) -> dict[str, object]:
                 raise EvidenceError("invalid signature identity or logical name")
             if artifact_id in signatures:
                 raise EvidenceError("duplicate artifact signature")
+            if payload.get("primary_fingerprint") != PRIMARY_FINGERPRINT or payload.get("signing_fingerprint") != SIGNING_FINGERPRINT:
+                raise EvidenceError("signature metadata fingerprint mismatch")
             signatures[artifact_id] = payload
         else:
             raise EvidenceError("unknown manifest record type")
@@ -372,6 +382,35 @@ def verify_checkpoint(root: Path, *, verify_payload: bool) -> dict[str, object]:
             result = gpg_validsig(signature_path, artifact_path, root / "TRUST" / "openpgp-public.asc")
             if result["signing_fingerprint"] != signature.get("signing_fingerprint"):
                 raise EvidenceError("artifact signature record fingerprint mismatch")
+        support = {
+            "README.txt", "TOOLS/verify-evidence.py",
+            "SCHEMAS/manifest-entry-v1.schema.json", "SCHEMAS/content-checkpoint-v1.schema.json",
+            "CUSTODY/CUSTODY_TEMPLATE.json", "CUSTODY/BURN_AND_READBACK.md",
+            "CHECKPOINT/content-manifest.jsonl", "CHECKPOINT/content-checkpoint.json",
+            "CHECKPOINT/content-checkpoint.json.sig", "CHECKPOINT/content-checkpoint.sig.tsq",
+            "CHECKPOINT/content-checkpoint.sig.tsr", "CHECKPOINT/timestamp-verification.json",
+            "CHECKPOINT/seal-materials.json", "TRUST/openpgp-public.asc",
+            "TRUST/tsa-root.pem", "TRUST/tsa-untrusted.pem", "TRUST/tsa-responder.pem",
+        }
+        all_files = {path.relative_to(root).as_posix() for path in root.rglob("*") if path.is_file()}
+        if all_files != expected_paths | support:
+            raise EvidenceError("complete evidence tree has missing or extra files")
+    timestamp_record = load_canonical(root / "CHECKPOINT" / "timestamp-verification.json")
+    if not isinstance(timestamp_record, dict):
+        raise EvidenceError("timestamp verification record is not an object")
+    for key in ("policy_oid", "nonce", "gen_time", "responder_sha256",
+                "certificate_valid_at_gen_time", "critical_timestamping_eku"):
+        if timestamp_record.get(key) != timestamp.get(key):
+            raise EvidenceError(f"timestamp verification record mismatch: {key}")
+    materials = load_canonical(root / "CHECKPOINT" / "seal-materials.json")
+    if not isinstance(materials, dict) or materials.get("schema") != "notrios.evidence.seal-materials.v1":
+        raise EvidenceError("seal-materials record is invalid")
+    for item in materials.get("materials", []):
+        if not isinstance(item, dict) or not isinstance(item.get("logical_name"), str) or not safe_logical_name(item["logical_name"]):
+            raise EvidenceError("invalid seal-materials member")
+        path = root / item["logical_name"]
+        if not path.is_file() or path.stat().st_size != item.get("size_bytes") or sha256_file(path) != item.get("sha256"):
+            raise EvidenceError("seal support material differs")
     return {"entries": len(records), "artifacts": len(artifacts),
             "manifest_sha256": expected["manifest_sha256"], "timestamp": timestamp}
 
@@ -418,9 +457,16 @@ def verify_reserve(reserve_root: Path, catalog_path: Path, catalog_checkpoint: P
         iso = reserve_root / relative
         if not iso.is_file() or iso.stat().st_size != payload.get("size_bytes") or sha256_file(iso) != payload.get("sha256"):
             raise EvidenceError("reserved ISO is absent or differs")
+        pvd_result = run(["xorriso", "-no_rc", "-indev", str(iso), "-pvd_info"])
+        pvd = (pvd_result.stdout + pvd_result.stderr).decode()
+        volume = re.search(r"^Volume Id\s+: '([^']+)'", pvd, re.MULTILINE)
+        if not volume or volume.group(1) != payload.get("volume_id"):
+            raise EvidenceError("reserved ISO volume identifier differs")
         signature = iso.with_suffix(iso.suffix + ".sig")
         if sha256_file(signature) != payload.get("signature_sha256"):
             raise EvidenceError("reserved ISO signature differs")
+        if sha256_file(iso.with_suffix(iso.suffix + ".sig.tsq")) != payload.get("timestamp_query_sha256") or sha256_file(iso.with_suffix(iso.suffix + ".sig.tsr")) != payload.get("timestamp_response_sha256"):
+            raise EvidenceError("reserved ISO timestamp material differs")
         gpg_validsig(signature, iso, public_key)
         verify_timestamp(signature, iso.with_suffix(iso.suffix + ".sig.tsq"),
                          iso.with_suffix(iso.suffix + ".sig.tsr"), trust_root,
@@ -440,6 +486,28 @@ def _default_tracked_root(repo: Path) -> Path:
     return repo / "evidence" / "current"
 
 
+def verify_source(repo: Path, source_root: Path) -> dict[str, object]:
+    root = _default_tracked_root(repo)
+    records = load_chain(root / "CHECKPOINT" / "content-manifest.jsonl")
+    artifacts = [record["payload"] for record in records if record["payload"].get("record_type") == "artifact"]
+    signatures = {record["payload"]["artifact_id"]: record["payload"] for record in records
+                  if record["payload"].get("record_type") == "signature"}
+    expected = {str(item["logical_name"]).removeprefix("PAYLOAD/") for item in artifacts}
+    actual = {path.name for path in source_root.iterdir() if path.is_file()}
+    if actual != expected or any(path.is_symlink() for path in source_root.iterdir()):
+        raise EvidenceError("curated source membership drift")
+    for artifact in artifacts:
+        path = source_root / str(artifact["logical_name"]).removeprefix("PAYLOAD/")
+        if path.stat().st_size != artifact.get("size_bytes") or sha256_file(path) != artifact.get("sha256"):
+            raise EvidenceError("curated source byte drift")
+        validation = structural_validation(path, str(artifact["media_type"]))
+        if validation != artifact.get("structural_validation") or not validation["valid"]:
+            raise EvidenceError("curated source structural drift")
+        signature = signatures[str(artifact["artifact_id"])]
+        gpg_validsig(root / str(signature["logical_name"]), path, root / "TRUST" / "openpgp-public.asc")
+    return {"artifacts": len(artifacts), "source_drift": False}
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
@@ -447,6 +515,9 @@ def main() -> None:
     tracked.add_argument("--repo", type=Path, default=Path(__file__).resolve().parents[1])
     payload = sub.add_parser("payload", help="verify a staged or extracted complete checkpoint")
     payload.add_argument("root", type=Path)
+    source = sub.add_parser("source", help="verify the live curated source against the checkpoint")
+    source.add_argument("--repo", type=Path, default=Path(__file__).resolve().parents[1])
+    source.add_argument("--source-root", type=Path, required=True)
     reserve = sub.add_parser("reserve", help="verify external ISO reserve and checked-in catalog")
     reserve.add_argument("--repo", type=Path, default=Path(__file__).resolve().parents[1])
     reserve.add_argument("--reserve-root", type=Path, required=True)
@@ -456,6 +527,8 @@ def main() -> None:
         result = verify_checkpoint(root, verify_payload=False)
     elif args.command == "payload":
         result = verify_checkpoint(args.root, verify_payload=True)
+    elif args.command == "source":
+        result = verify_source(args.repo, args.source_root)
     else:
         repo = args.repo
         current = _default_tracked_root(repo)
