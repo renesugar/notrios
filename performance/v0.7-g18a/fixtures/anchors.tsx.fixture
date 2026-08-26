@@ -1,0 +1,13 @@
+export function RootJourney() {
+  return directStep();
+}
+
+function directStep() {
+  return transitiveStep();
+}
+
+function transitiveStep() {
+  return <button>Done</button>;
+}
+
+export const NamedRegistry = ["one", "two"] as const;

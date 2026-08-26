@@ -1,0 +1,28 @@
+{
+  "schema": "notrios.g18a.directive-grammar.v1",
+  "prefix": "//notrios:",
+  "spacing_rule": "No space is permitted between // and notrios; Go otherwise retains the line as ordinary prose.",
+  "directives": {
+    "doc": "//notrios:doc <user|api|maintainer> <fragment-id>",
+    "help": "//notrios:help <topic-id> <section-id>",
+    "enumerates": "//notrios:enumerates <registry-anchor>",
+    "claim": "//notrios:claim <claim-id> <check-anchor>"
+  },
+  "rules": [
+    "A declaration doc group has exactly one doc directive and therefore one audience.",
+    "Fragment IDs and claim IDs are globally unique, lowercase kebab-case identifiers.",
+    "help is valid only with a user fragment and identifies one template slot.",
+    "enumerates names a resolvable Go or TS/TSX declaration, never an expression or path/line pair.",
+    "claim names an executable repository check; it does not upgrade the grade unless that check exists.",
+    "Rationale is an ordinary unmarked comment and is excluded from claim review.",
+    "A directive without an attached declaration or a symbol that cannot resolve is an error.",
+    "Two audiences in one declaration doc group are an error rather than an ordering convention."
+  ],
+  "toolchain_finding": {
+    "module_minimum": "go1.25.0",
+    "investigation_runtime": "go1.27.0 linux/amd64",
+    "comment_text": "go/ast.CommentGroup.Text removes recognized directives while CommentGroup.List retains the original comments.",
+    "parse_directive": "go/ast.ParseDirective was added in Go 1.26 and therefore cannot be the G18c implementation while Go 1.25 remains supported.",
+    "recommendation": "Parse CommentGroup.List with a small tested compatibility parser and take prose from CommentGroup.Text; run the fixtures on the minimum and current Go toolchains."
+  }
+}

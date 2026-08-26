@@ -16,7 +16,7 @@ G14a-G14e archive-scalability sequence, the newly inserted blocking G17a-G17b
 evidence-preservation sequence, and the newly planned G18a-G18g documentation-
 integrity/Hugo-Ledger sequence. The user's 2026-08-11
 review resolved the policy decisions through G17, including mandatory payload
-encryption and per-replica Ed25519 signatures. **G0-G18 are complete** and
+encryption and per-replica Ed25519 signatures. **G0-G18a are complete** and
 archived under `plans/v0.7/`; their reviewed evidence is under
 `performance/v0.7-g0/`, `performance/v0.7-g1/`, `performance/v0.7-g1a/`,
 `performance/v0.7-g2/`, `performance/v0.7-g4/`, `performance/v0.7-g5/`,
@@ -26,17 +26,20 @@ archived under `plans/v0.7/`; their reviewed evidence is under
 `performance/v0.7-g14a/`, `performance/v0.7-g14b/`, and
 `performance/v0.7-g14c/`, `performance/v0.7-g14d/`, and
 `performance/v0.7-g14e/`, `performance/v0.7-g16/`, and
-`performance/v0.7-g17/`. G15's archive is
+`performance/v0.7-g17/`, `performance/v0.7-g18/`, and
+`performance/v0.7-g18a/`. G15's archive is
 `plans/v0.7/024-durable-sync-jobs.md`; G16's archive is
 `plans/v0.7/025-sync-recovery-ui.md`; G17's archive is
 `plans/v0.7/026-peer-retention-gc-repair.md`; G17a and its later decision record
 are `plans/v0.7/028-evidence-preservation-contract.md` and
 `plans/v0.7/029-evidence-handling-decisions.md`. G17b is complete and archived
 as `plans/v0.7/030-evidence-seals-iso-reserve.md`. G18 is complete and archived
-as `plans/v0.7/031-shared-core-ffi-portability-handoff.md`. **G0-G18 are complete.
+as `plans/v0.7/031-shared-core-ffi-portability-handoff.md`. G18a is complete and
+archived as `plans/v0.7/032-documentation-anchor-investigation.md`.
+**G0-G18a are complete.
 The G17b pre-push verifier is mandatory before any future GitHub push; no push
-or physical burn was authorized or performed. G18a/G18b and later items are
-next and are not approved.** G14b selected option B: a
+or physical burn was authorized or performed. G18b and later items are next and
+are not approved.** G14b selected option B: a
 required compatible same-schema SQLite-image plus bounded packed-assets
 capability for whole-library full backup/catch-up, retaining packed semantic
 archive-v2 for subset, merge, schema-independent interchange, and fallback.
@@ -115,6 +118,21 @@ CodeMirror UI exposes case, regexp, by-word, and replacement controls through
 Ctrl+F; Ctrl/Cmd+H is not a default binding.
 Mermaid remains disabled behind `noMermaid: true`; exact browser/Wails/offline/
 CSP/sanitization/accessibility and size/time/heap gates now belong to v0.8.
+
+G18a freezes the documentation-integrity premise without moving prose. Its
+checked inventory covers the 15 public/Help pages as 199 non-fenced H1-H3 migration units,
+plus 55 CLI forms, 59 config keys, 109 OpenAPI operations, 46 MCP tools, zero MCP
+protocol resources, and nine proposed GUI journeys. Every current section is
+honestly `unverified` until source-adjacent prose names a generated registry,
+executable check, or executed result. Go and TS/TSX anchors resolve named
+declarations and a bounded one-hop direct-callee slice; path/line, missing, and
+ambiguous anchors fail. One doc group carries one user/API/maintainer audience,
+while rationale is unmarked. Go 1.27 confirms directive stripping from
+`CommentGroup.Text`, but the Go 1.25 minimum predates `ast.ParseDirective`, so
+G18c must use the tested compatibility parser. The eight-case calibration set
+preserves the real schema-v20/v27 contradiction, a one-word negation pair,
+rationale, and scope limits. No external model was called and semantic review
+remains a future advisory, never a CI gate.
 
 The 2026-08-24 planning amendment adds G18a-G18g between the portability
 handoff and G19 compatibility bridge. Two investigations first freeze a
@@ -211,7 +229,7 @@ was added. G15-G17b are complete. G17b sealed 81 curated artifacts, produced
 the verified release ZIP and immutable reserve described above, and committed
 the finite outer-catalog closure. The generated DigiCert pilot and all
 production tokens passed policy/nonce/imprint/EKU/time/explicit-chain checks;
-Sectigo was not used. G18 is complete; G18a is next but unapproved. Every
+Sectigo was not used. G18a is complete; G18b is next but unapproved. Every
 remaining item requires separate item-by-item user approval, and every future
 push must first pass the G17b gate.
 

@@ -1,6 +1,6 @@
 # Plan Status
 
-Updated: 2026-08-26 (G0-G18 complete; G18a next and unapproved)
+Updated: 2026-08-26 (G0-G18a complete; G18b next and unapproved)
 
 ## Active milestone
 
@@ -16,7 +16,7 @@ profiles/local journal, state-vector convergence,
 revision deltas/merge, lazy resources, secure container/catch-up,
 ephemeral-directory and REST transports, jobs/UI/retention, shared-core/FFI/
 Mermaid/mobile handoff, compatibility, and final validation. The user's
-2026-08-11 review resolved every original G0-G17 policy decision. **G0-G18 are
+2026-08-11 review resolved every original G0-G17 policy decision. **G0-G18a are
 complete** and archived under `plans/v0.7/`; the 2026-08-15 planning amendment
 reopened physical snapshot scalability. G14b selected option B from full-corpus
 evidence, G14c implemented the local production representation/verifier, and
@@ -28,8 +28,28 @@ and retirement. G17a-G17b are complete. G17b sealed the curated historical
 handoffs, issued and independently verified immutable reserve volume
 `NTR-EV-0001`, and committed the finite outer catalog. Its host-side evidence
 gate is mandatory before every future GitHub push. No push or physical burn was
-authorized or performed. G18 is complete. G18a is next; none of G18a onward is
-approved.
+authorized or performed. G18 and G18a are complete. G18b is next; none of G18b
+onward is approved.
+
+## v0.7 G18a completion — 2026-08-26
+
+- The deterministic inventory covers 15 published/Help pages and 199 non-fenced H1-H3
+  migration units, 55 CLI usage forms, 59 config keys, 109 OpenAPI operations,
+  46 MCP tools, zero MCP protocol resources, and nine proposed GUI journeys.
+- Go and TS/TSX anchors resolve named declarations rather than paths/lines.
+  Review is bounded to the root and one direct-callee hop; missing, ambiguous,
+  dynamic, transitive, or over-budget evidence becomes `not-determinable`.
+- `doc`, `help`, `enumerates`, and `claim` directives have one audience per doc
+  group. Rationale stays unmarked. Go 1.27 proves recognized directive removal
+  from `CommentGroup.Text`; the Go 1.25 minimum requires a compatibility parser
+  instead of the Go-1.26-added `ast.ParseDirective`.
+- All 199 present sections honestly grade `unverified`: independent tests do not
+  prove prose until it names a fragment/check. The eight-case calibration set
+  includes the preserved schema-v20/v27 contradiction, an opposite-verdict
+  one-word negation pair, rationale, and direct-callee scope.
+- Evidence is under `performance/v0.7-g18a/`; archive is
+  `plans/v0.7/032-documentation-anchor-investigation.md`. No prose, behavior,
+  schema, dependency, model output, or docs renderer changed.
 
 ## v0.7 G18 completion — 2026-08-25
 
@@ -189,7 +209,7 @@ approved.
   volume coverage before the next GitHub push. CI can validate tracked schemas,
   fixtures, and canonicalization but cannot claim to see the external reserve.
   No push or physical optical burn is authorized by the planning amendment.
-- G17a-G18 are complete. G18a is next but unapproved; all later work remains
+- G17a-G18a are complete. G18b is next but unapproved; all later work remains
   separately approval-gated and every future push must pass the G17b gate.
 
 ## 2026-08-24 planning amendment — source-anchored docs and Hugo/Ledger
@@ -2532,5 +2552,5 @@ attempt detail remains append-only in `agent/ATTEMPT_LOG.jsonl`.
 - Long-term SQLite driver choice (current local cgo/libsqlite3 adapter).
 - Official MCP Go SDK adoption/version.
 - Sync and evidence-preservation decisions live in the owning plan items; the
-  register in `PLAN.md` is an index. G0-G18 are complete. G18a and every later
+  register in `PLAN.md` is an index. G0-G18a are complete. G18b and every later
   slice remain approval-gated; the checked-in G17b verifier gates future pushes.

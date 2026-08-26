@@ -1,10 +1,10 @@
 # Plan: v0.7 — Native synchronization
 
-Status: **G0-G18 are complete through 2026-08-25. Product version remains 0.6.0 and
+Status: **G0-G18a are complete through 2026-08-26. Product version remains 0.6.0 and
 the canonical schema is v27. The user resolved G17b's evidence scope, exact
 OpenPGP identity, and RFC-3161 provider order on 2026-08-25, then authorized
 the exact signer/Secret Service workflow, TSA requests, and reserve writes and
-attested offline backup/revocation readiness. G18a-G18g are not approved. The
+attested offline backup/revocation readiness. G18b-G18g are not approved. The
 G17b pre-push evidence gate is now mandatory; no GitHub push or
 physical optical burn occurred.** The
 former seven-item draft was too coarse: it mixed protocol research, canonical
@@ -2013,7 +2013,7 @@ code, schema, dependency, installer, ABI, Flutter artifact, Mermaid setting,
 remote, or physical device changed. Archive:
 `plans/v0.7/031-shared-core-ffi-portability-handoff.md`.
 
-## G18a. Investigation — documentation anchors, truth grades, and review calibration
+## G18a. Investigation — documentation anchors, truth grades, and review calibration — complete
 
 **Goal.** Adapt the proven Borge doc-anchor method to Notrios before moving
 prose or adding a generator, so source-adjacent documentation becomes
@@ -2062,6 +2062,20 @@ claim is committed.
 - None. This slice exists to measure the uncertain anchoring and calibration
   premises. Any materially different viable approaches become separate plan
   items rather than a fork inside G18c.
+
+**Outcome (2026-08-26).** The investigation is archived under
+`plans/v0.7/032-documentation-anchor-investigation.md`. It inventories all 15
+published/Help pages as 199 non-fenced H1-H3 migration units plus 55 CLI usage forms, 59
+configuration keys, 109 OpenAPI operations, 46 MCP tools, zero MCP protocol
+resources, and nine proposed GUI journeys. It freezes declaration-resolving Go
+and TS/TSX anchors, one-hop direct-callee review, the four-grade reconciliation,
+and an eight-case three-verdict calibration set containing the preserved schema
+v20/v27 contradiction, a negation pair, and rationale. Go 1.27 proves that
+recognized directives remain in `CommentGroup.List` but are removed from
+`CommentGroup.Text()`; because `ast.ParseDirective` postdates the module's Go
+1.25 minimum, G18c will use a small compatibility parser. The present manual
+honestly starts with all 199 units unverified. No prose moved, generated docs,
+external model output, product behavior, dependency, or schema changed.
 
 ## G18b. Investigation — Hugo/Ledger migration and reproducible site contract
 
@@ -2459,16 +2473,16 @@ recommendation, blocking status, and consequence.
 | Evidence key offline recovery/revocation | G17b | Resolved 2026-08-25: owner attested restorable offline primary backup and revocation certificate; no secret paths/bytes recorded |
 | Shared-core/FFI and Flutter boundary | G18 | Resolved: pre-1.0 ABI; post-1.0 client; no Web FFI |
 | Current-GUI Mermaid baseline | G18 | Resolved fact: upstream-capable but disabled pending offline/security evidence |
-| Cross-language documentation anchor/calibration mechanism | G18a | Investigation; blocking G18c-G18f until one finite mechanism and labelled set are selected |
+| Cross-language documentation anchor/calibration mechanism | G18a | Resolved 2026-08-26: declaration anchors, one direct-callee hop, four grades, compatibility directives, and an eight-case labelled set |
 | Ledger theme pin/distribution | G18b | Open, non-blocking default: minimal vendored source snapshot with license and upstream commit |
 | Documentation public URL shape | G18b | Open, non-blocking default: preserve `.html`/fragment links or add tested redirects |
 | Documentation search backend | G18b | Open, non-blocking default: static Pagefind; no Bluge service |
 | Hosted semantic-review execution | G18f | Open, non-blocking default: maintainer-only recorded command; hosted source upload needs separate approval |
 | Release version/schema bookkeeping | G20 | Open, non-blocking until wrap-up |
 
-G0-G18 are complete and the production physical restore/catch-up, durable
+G0-G18a are complete and the production physical restore/catch-up, durable
 sync-job, local recovery UI, safe-retention, and evidence-preservation design
 contracts are frozen. The G17b host-side evidence gate is mandatory before any
-future GitHub push. G18a-G18g are unapproved and G18a is next.
+future GitHub push. G18b-G18g are unapproved and G18b is next.
 Implementation begins only after an explicit instruction naming
 the item to start and, where stated, authorizing its blocking operations.
