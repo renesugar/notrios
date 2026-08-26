@@ -1,6 +1,7 @@
 {
   "schema": "notrios.g18.android-sqlite-followup.v1",
   "captured_at": "2026-08-26T15:50:05Z",
+  "modernc_amended_at": "2026-08-26T20:56:21Z",
   "current_notrios_store": {
     "canonical_owner": "Go shared core",
     "adapter": "direct cgo SQLite C API wrapper",
@@ -63,7 +64,7 @@
   "approaches": [
     {
       "id": "pinned_upstream_amalgamation_in_go_core",
-      "fit": "recommended investigation default",
+      "fit": "required C baseline for H0 comparison",
       "effect": "Compile one checksum-pinned sqlite3.c/sqlite3.h into the Go shared library for each supported Android ABI while retaining Go ownership of canonical persistence.",
       "unknowns": [
         "pinned version and security update cadence",
@@ -71,6 +72,18 @@
         "symbol visibility and duplicate-engine collision behavior",
         "Android ABI/minSdk packaging",
         "desktop-versus-Android database interoperability"
+      ]
+    },
+    {
+      "id": "pinned_modernc_sqlite_in_go_core",
+      "fit": "promising H0 candidate; not selected",
+      "effect": "Replace the direct cgo SQLite adapter with the BSD-3-Clause CGo-free database/sql driver while retaining Go ownership. v1.57.0 built Android/arm64 executable and c-shared artifacts, but Android is absent from the upstream support table and no Android runtime test has passed.",
+      "unknowns": [
+        "Android runtime, filesystem, locking, WAL, FTS5, and crash behavior on the selected emulator ABI",
+        "direct-wrapper versus database/sql semantics, error mapping, cancellation, backup, and connection model",
+        "Notrios write/read/FTS5/snapshot/sync performance, build time, package size, and RSS",
+        "exact modernc.org/libc pin and generated-code/security update cadence",
+        "iOS support on a macOS/Xcode host"
       ]
     },
     {
@@ -95,20 +108,20 @@
     }
   ],
   "blocking_v0_8_decisions": [
-    "SQLite ownership and packaging: retain Go ownership with a pinned amalgamation, or explicitly redesign ownership before selecting a Kotlin driver",
+    "SQLite package under retained Go ownership: select a pinned C amalgamation or a pinned modernc.org/sqlite build from same-emulator Notrios evidence; a Kotlin owner requires an explicit whole-store redesign",
     "exact SQLite version, checksum/provenance, security-update policy, and compile options",
     "supported minSdk and Android ABIs, including the emulator ABI used by the pre-1.0 gate",
     "one-engine-per-process and symbol-visibility policy that prevents duplicate SQLite collisions",
     "Android sandbox paths, backup/no-backup behavior, WAL/checkpoint lifecycle, and crash recovery"
   ],
   "required_investigation_gates": [
-    "build and load the Go shared library for a pinned Android emulator API and ABI",
+    "build and load both the pinned C-control and modernc-candidate Go shared libraries for the same pinned Android emulator API and ABI",
     "record sqlite_version() and PRAGMA compile_options",
     "prove FTS5 table creation/search and JSON function execution",
     "run the existing bootstrap, CRUD, search, snapshot, restore, and sync store tests against the bundled build",
     "round-trip a checkpointed database between supported desktop and Android builds and run integrity_check",
     "prove FULLMUTEX plus the Go store mutex preserves the intended connection model",
-    "measure per-ABI packaged-size and peak-RSS deltas",
+    "measure per-ABI packaged-size, build-time, latency, CPU, allocation, and peak-RSS deltas for both candidates",
     "prove no second SQLite engine opens the canonical file concurrently"
   ],
   "references": [
@@ -120,6 +133,9 @@
     "https://www.sqlite.org/android/doc/trunk/www/install.wiki",
     "https://www.sqlite.org/amalgamation.html",
     "https://www.sqlite.org/fts5.html",
-    "https://www.sqlite.org/json1.html"
+    "https://www.sqlite.org/json1.html",
+    "https://pkg.go.dev/modernc.org/sqlite",
+    "https://gitlab.com/cznic/sqlite-bench/-/raw/v1.1.3/README.md",
+    "https://www.sqlite.org/howtocorrupt.html"
   ]
 }

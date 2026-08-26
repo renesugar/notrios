@@ -32,6 +32,7 @@ def main() -> None:
     android = load("ANDROID_FEASIBILITY.json")
     editor_search = load("EDITOR_SEARCH_QA.json")
     android_sqlite = load("ANDROID_SQLITE_FOLLOWUP.json")
+    modernc_sqlite = load("MODERNC_SQLITE_EVALUATION.json")
 
     require(audit["schema"] == "notrios.g18.source-audit.v1", "source-audit schema differs")
     require(platform["schema"] == "notrios.g18.platform-matrix.v1", "platform schema differs")
@@ -42,6 +43,8 @@ def main() -> None:
             "editor-search QA schema differs")
     require(android_sqlite["schema"] == "notrios.g18.android-sqlite-followup.v1",
             "Android SQLite follow-up schema differs")
+    require(modernc_sqlite["schema"] == "notrios.g18.modernc-sqlite-evaluation.v1",
+            "modernc SQLite evaluation schema differs")
 
     routes: list[tuple[str, str]] = []
     for path in production_go_files(REPO / "internal" / "httpapi"):
@@ -167,7 +170,9 @@ def main() -> None:
             "JSON SQL functions are no longer a required store feature")
     approach_fits = {item["id"]: item["fit"] for item in android_sqlite["approaches"]}
     require(approach_fits["pinned_upstream_amalgamation_in_go_core"] ==
-            "recommended investigation default", "Android SQLite recommendation drifted")
+            "required C baseline for H0 comparison", "Android SQLite C baseline drifted")
+    require(approach_fits["pinned_modernc_sqlite_in_go_core"] ==
+            "promising H0 candidate; not selected", "modernc Android candidate drifted")
     require(approach_fits["jetpack_bundled_sqlite_driver"] ==
             "not a drop-in dependency for the selected Go core",
             "Jetpack driver is misrepresented as satisfying cgo")
@@ -177,12 +182,43 @@ def main() -> None:
             len(android_sqlite["required_investigation_gates"]) >= 8,
             "Android SQLite investigation is underspecified")
 
-    serialized = json.dumps([audit, platform, abi, mermaid, android, editor_search, android_sqlite])
+    package = modernc_sqlite["package"]
+    require(package["module"] == "modernc.org/sqlite" and package["version"] == "v1.57.0",
+            "modernc probe pin differs")
+    require(package["exact_modernc_libc_version"] == "v1.74.4",
+            "modernc libc probe pin differs")
+    require(package["license_compatible_with_notrios"] is True,
+            "modernc license conclusion differs")
+    probe = modernc_sqlite["disposable_probe"]
+    require(probe["repository_dependency_changed"] is False,
+            "modernc evaluation crossed the dependency boundary")
+    require(probe["native_linux"]["runtime"] == "passed" and
+            probe["native_linux"]["fts5_create_insert_match"] == "passed" and
+            probe["native_linux"]["json_extract"] == "passed",
+            "modernc native feature probe differs")
+    require(probe["android_arm64"]["ordinary_executable_build"].startswith("passed") and
+            probe["android_arm64"]["c_shared_build"].startswith("passed") and
+            probe["android_arm64"]["upstream_documented_support"] is False and
+            probe["android_arm64"]["runtime_executed"] is False,
+            "modernc Android build-only boundary differs")
+    require(probe["browser_js_wasm"]["build"] == "failed" and
+            probe["browser_js_wasm"]["upstream_documented_support"] is False,
+            "modernc Web conclusion differs")
+    require(modernc_sqlite["linux_file_interoperability_probe"]["result"] == "passed",
+            "modernc C file round-trip differs")
+    require(len(modernc_sqlite["blocking_h0_gates"]) >= 10,
+            "modernc H0 comparison is underspecified")
+    root_go_mod = (REPO / "go.mod").read_text(encoding="utf-8")
+    require("modernc.org/sqlite" not in root_go_mod,
+            "modernc was added to the product before H0 selection")
+
+    serialized = json.dumps([audit, platform, abi, mermaid, android, editor_search,
+                             android_sqlite, modernc_sqlite])
     require("/home/" not in serialized and "SEAGATE" not in serialized,
             "portable evidence contains a host-private path")
     require(audit["private_data_read"] is False and audit["production_code_changed"] is False,
             "G18 crossed its investigation/handoff boundary")
-    print("g18 evidence: 109 API operations, 19 platform capabilities, ABI/Mermaid/Android/editor follow-up validated")
+    print("g18 evidence: 109 API operations, 19 platform capabilities, ABI/Mermaid/Android/editor/modernc follow-up validated")
 
 
 if __name__ == "__main__":

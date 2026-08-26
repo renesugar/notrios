@@ -78,9 +78,13 @@ onward is approved.
   `plans/v0.7/031-shared-core-ffi-portability-handoff.md`.
 - The 2026-08-26 follow-up corrects the Android premise: SQLite is not a public
   NDK C API, and Jetpack's bundled Kotlin driver does not satisfy the Go cgo
-  boundary. v0.8 H0 now investigates a checksum-pinned upstream amalgamation as
-  its recommended default, with explicit blocking ownership, version/options,
-  ABI, symbol/concurrency, storage, and compatibility decisions and gates.
+  boundary. The later modernc evaluation changes H0 to a same-emulator A/B of a
+  checksum-pinned C amalgamation control and exact modernc/libc candidate.
+  modernc v1.57.0 passed native FTS5/JSON/WAL and C-file interoperability and
+  cross-built Android executable/`c-shared`, macOS, and Windows artifacts, but
+  has no Android runtime/support or iOS evidence and fails `js/wasm` in libc.
+  Ownership, versions/options, ABI, driver semantics/performance, symbol/
+  concurrency, storage, and compatibility decisions remain explicit gates.
 - Ubuntu Clang/Clang++ 18.1.3 resolve normally and Flutter Doctor reports no
   issues. Swiftly is reachable with Swift 6.3.3 installed but no selected
   toolchain. Zero AVDs/devices and no Android build remain the honest boundary.

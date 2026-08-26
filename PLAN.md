@@ -1957,19 +1957,25 @@ NDK `sqlite3.h`/`libsqlite3` C development contract. Jetpack's
 `BundledSQLiteDriver` embeds SQLite for Kotlin/Room but does not satisfy the
 current Go cgo adapter. Notrios canonical persistence is owned by the Go core
 across 43 C-importing store files and requires FULLMUTEX/WAL, FTS5, and JSON.
-H0's recommended investigation default is therefore one checksum-pinned
-upstream SQLite amalgamation compiled into the Go shared library.
+The first H0 control is therefore one checksum-pinned upstream SQLite
+amalgamation compiled into the Go shared library. A later same-day evaluation
+adds pinned `modernc.org/sqlite` as a second, serious Go-owned candidate: v1.57.0
+built an Android/arm64 executable and NDK `c-shared` library and passed native
+FTS5/JSON/WAL probes, but upstream does not list Android/iOS support and no
+mobile runtime was available. H0 must compare both; neither is selected.
 
 **Open decisions for v0.8 H0.** These do not block completed G18, but all are
 blocking for H1's Android build. H0 must measure and recommend before H1 starts.
 
-- **Database owner/package.** Choose the pinned amalgamation in the Go core
-  (recommended because it preserves one transport-neutral canonical store), or
-  explicitly approve a Kotlin/Room ownership redesign and new bridge. Android
+- **Database owner/package.** Retain the transport-neutral Go owner and choose
+  either the pinned C amalgamation control or an exact `modernc.org/sqlite` plus
+  `modernc.org/libc` pin from same-emulator Notrios evidence. A Kotlin/Room
+  owner needs an explicitly approved whole-store/bridge redesign. Android
   framework SQLite and an implicit dual-engine file share are not candidates.
-- **Version and features.** Pin exact upstream source/checksum, security-update
-  cadence, and compile options. FTS5 and JSON probes are required; any optional
-  extension must be justified by source use and size/security evidence.
+- **Version and features.** Pin exact upstream source/checksum or exact modernc
+  module/libc versions, provenance, licenses, security-update cadence, and
+  compile options. FTS5 and JSON probes are required; any optional extension
+  must be justified by source use and size/security evidence.
 - **Platform contract.** Select minSdk and packaged ABIs, including the actual
   emulator ABI. Measure per-ABI size/RSS and reject an architecture inferred
   only from the host or an unconfigured emulator.
@@ -2005,13 +2011,19 @@ host include root produces incompatible glibc/Android headers. A 2026-08-26
 follow-up records that Flutter Doctor now passes every check after Clang PATH
 correction; Swiftly has no selected toolchain, and there is still no AVD,
 connected Android device, or Flutter/Android build claim. It also records the
-Android SQLite H0 decisions and rendered editor-search result above. Mermaid
+Android SQLite H0 decisions and rendered editor-search result above. The later
+modernc probe cross-built Android executable/`c-shared` artifacts but could not
+execute them; iOS still requires an Apple external-linking host and `js/wasm`
+failed in modernc libc. Linux FTS5/JSON/WAL and a C-modernc-C round trip passed.
+Mixed maintainer benchmarks make a same-workload C-versus-modernc comparison
+mandatory instead of supporting a universal “slightly slower” claim. Mermaid
 remains disabled; the v0.8 gate now
 has exact source/node/edge/label/time/heap bounds plus browser/Wails/offline/
 CSP/sanitization/accessibility fixtures and safe source fallback. No production
 code, schema, dependency, installer, ABI, Flutter artifact, Mermaid setting,
 remote, or physical device changed. Archive:
-`plans/v0.7/031-shared-core-ffi-portability-handoff.md`.
+`plans/v0.7/031-shared-core-ffi-portability-handoff.md`; modernc evaluation
+amendment: `plans/v0.7/033-modernc-sqlite-evaluation.md`.
 
 ## G18a. Investigation — documentation anchors, truth grades, and review calibration — complete
 
@@ -2472,6 +2484,7 @@ recommendation, blocking status, and consequence.
 | G17b operational authorization | G17b | Resolved 2026-08-25: exact signer/credential use, selected TSA requests, and external reserve writes authorized; no push or burn |
 | Evidence key offline recovery/revocation | G17b | Resolved 2026-08-25: owner attested restorable offline primary backup and revocation certificate; no secret paths/bytes recorded |
 | Shared-core/FFI and Flutter boundary | G18 | Resolved: pre-1.0 ABI; post-1.0 client; no Web FFI |
+| v0.8 Go-owned SQLite package | G18/H0 | Open, blocking for H1: same-emulator C amalgamation control versus exact modernc/libc candidate; Jetpack ownership and Web reuse rejected without separate redesign |
 | Current-GUI Mermaid baseline | G18 | Resolved fact: upstream-capable but disabled pending offline/security evidence |
 | Cross-language documentation anchor/calibration mechanism | G18a | Resolved 2026-08-26: declaration anchors, one direct-callee hop, four grades, compatibility directives, and an eight-case labelled set |
 | Ledger theme pin/distribution | G18b | Open, non-blocking default: minimal vendored source snapshot with license and upstream commit |

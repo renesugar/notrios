@@ -471,17 +471,20 @@ be smuggled into v0.7 as desktop assumptions.
   desktop, Android, and iOS packaging costs differ materially. Its Android
   SQLite sub-investigation starts from the measured fact that the NDK exposes
   no public `sqlite3.h`/`libsqlite3` development contract and Jetpack's bundled
-  Kotlin driver is not a drop-in for Notrios's Go cgo store. The recommended
-  default is a checksum-pinned upstream amalgamation compiled into the Go
-  shared core. Before H1, H0 must resolve the blocking owner/package,
+  Kotlin driver is not a drop-in for Notrios's Go cgo store. H0 must compare a
+  checksum-pinned upstream amalgamation control with a pinned
+  `modernc.org/sqlite` candidate inside the Go shared core. The latter has
+  Android/arm64 executable and `c-shared` build feasibility but no upstream
+  Android support claim or device/emulator runtime evidence; it is not a Web
+  adapter. Before H1, H0 must resolve the blocking owner/package,
   version/checksum/update/compile-option, minSdk/ABI, symbol/duplicate-engine,
   concurrency, sandbox/WAL/crash, and cross-platform image-compatibility
   decisions recorded inside PLAN G18. Evidence must build/load the selected
   emulator ABI; record version/compile options; execute FTS5 and JSON; run
   store/snapshot/sync tests; round-trip a checkpointed desktop/Android database;
-  measure size/RSS; and prove one engine owns the canonical file. H0 does not
-  adopt Jetpack, Room, an amalgamation, or an Android dependency merely by
-  investigating them.
+  measure performance/build/package size/RSS for both; and prove one engine
+  owns the canonical file. H0 does not adopt Jetpack, Room, an amalgamation,
+  modernc, or an Android dependency merely by investigating them.
 - **H1 shared core — no-GUI Notrios library.** Extract one transport-neutral
   application facade used by REST and a small `cmd/notrioslib` wrapper. Build a
   C ABI with opaque instance/stream handles, bounded serialized calls, typed

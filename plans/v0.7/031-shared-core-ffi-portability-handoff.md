@@ -100,14 +100,33 @@ core across 43 C-importing store files, with FULLMUTEX, WAL, FTS5, and JSON
 requirements. Selecting the Jetpack driver for that database would be a
 database-ownership redesign and bridge, not a linkage fix.
 
-The v0.8 H0 investigation now recommends a checksum-pinned upstream SQLite
-amalgamation compiled into the Go shared library as its default hypothesis.
-Implementation remains blocked on the recorded version/update/compile-option,
+The v0.8 H0 investigation uses a checksum-pinned upstream SQLite amalgamation
+compiled into the Go shared library as its C baseline. The later
+`modernc.org/sqlite` amendment adds a second unselected Go-owned candidate.
+Implementation remains blocked on the recorded package/version/update/compile-option,
 minSdk/ABI, symbol/duplicate-engine, Android sandbox/lifecycle, and cross-
 platform database-compatibility decisions. The exact build/load, compile-
 option, FTS5/JSON, store/snapshot/sync, database round-trip, size/RSS, and
 single-engine gates are machine-recorded in
 `performance/v0.7-g18/ANDROID_SQLITE_FOLLOWUP.json`.
+
+## 2026-08-26 modernc/cznic SQLite evaluation amendment
+
+Pinned v1.57.0/native evidence proves SQLite 3.53.3 with FTS5/JSON/WAL and a
+C-modernc-C Linux database round trip. Disposable Linux, macOS, and Windows
+executables compiled. Android/arm64 compiled both an ordinary executable and an
+NDK `c-shared` artifact, but Android/iOS are absent from upstream's support
+table and no device/AVD existed to execute the library. iOS remains an Apple-
+host external-linking gate. `js/wasm` failed in the required modernc libc layer.
+
+The maintainer benchmark is mixed rather than “slightly slower”: representative
+bulk inserts were about 3.2–4.8× slower than the CGo driver, while many repeated
+and concurrent reads were faster. Its older versions and DELETE/FULL workload
+are not a Notrios decision oracle. H0 now A/B tests the pinned C baseline and
+exact modernc/libc candidate on the same emulator and production-shaped
+WAL/FTS5/snapshot/sync corpus. Go retains sole canonical ownership; Jetpack is
+not a query bridge, and Web remains REST or a separately planned browser store.
+Machine evidence: `performance/v0.7-g18/MODERNC_SQLITE_EVALUATION.json`.
 
 The installed editor stack was also tested rather than inferred. md-editor-rt
 6.5.3 installs CodeMirror search 6.7.1. Ctrl+F opened the editable-note search

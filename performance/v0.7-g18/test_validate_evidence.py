@@ -52,12 +52,26 @@ class G18ContractTests(unittest.TestCase):
         followup = self.load("ANDROID_SQLITE_FOLLOWUP.json")
         approaches = {item["id"]: item for item in followup["approaches"]}
         self.assertEqual(approaches["pinned_upstream_amalgamation_in_go_core"]["fit"],
-                         "recommended investigation default")
+                         "required C baseline for H0 comparison")
+        self.assertEqual(approaches["pinned_modernc_sqlite_in_go_core"]["fit"],
+                         "promising H0 candidate; not selected")
         self.assertEqual(approaches["jetpack_bundled_sqlite_driver"]["fit"],
                          "not a drop-in dependency for the selected Go core")
         self.assertFalse(followup["android_facts"]["ndk_public_sqlite_c_api"])
         self.assertIn("FTS5", followup["current_notrios_store"]["required_features"])
         self.assertIn("JSON SQL functions", followup["current_notrios_store"]["required_features"])
+
+    def test_modernc_is_build_only_on_android_and_rejected_for_web(self) -> None:
+        evaluation = self.load("MODERNC_SQLITE_EVALUATION.json")
+        probe = evaluation["disposable_probe"]
+        self.assertTrue(probe["android_arm64"]["ordinary_executable_build"].startswith("passed"))
+        self.assertTrue(probe["android_arm64"]["c_shared_build"].startswith("passed"))
+        self.assertFalse(probe["android_arm64"]["upstream_documented_support"])
+        self.assertFalse(probe["android_arm64"]["runtime_executed"])
+        self.assertEqual(probe["browser_js_wasm"]["build"], "failed")
+        self.assertEqual(evaluation["linux_file_interoperability_probe"]["result"], "passed")
+        self.assertEqual(evaluation["architecture_decision"]["canonical_database_owner"],
+                         "Go shared core")
 
     def test_mermaid_limits_have_negative_fixtures(self) -> None:
         mermaid = self.load("MERMAID_CONTRACT.json")

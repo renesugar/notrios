@@ -35,7 +35,8 @@ are `plans/v0.7/028-evidence-preservation-contract.md` and
 `plans/v0.7/029-evidence-handling-decisions.md`. G17b is complete and archived
 as `plans/v0.7/030-evidence-seals-iso-reserve.md`. G18 is complete and archived
 as `plans/v0.7/031-shared-core-ffi-portability-handoff.md`. G18a is complete and
-archived as `plans/v0.7/032-documentation-anchor-investigation.md`.
+archived as `plans/v0.7/032-documentation-anchor-investigation.md`. The G18
+modernc evaluation amendment is `plans/v0.7/033-modernc-sqlite-evaluation.md`.
 **G0-G18a are complete.
 The G17b pre-push verifier is mandatory before any future GitHub push; no push
 or physical burn was authorized or performed. G18b and later items are next and
@@ -105,11 +106,16 @@ library are installed, but NDK compilation still stops at the absent Android-
 target SQLite boundary; adding `/usr/include` proves invalid because it mixes
 glibc host headers into the Android sysroot. A 2026-08-26 follow-up confirms
 that SQLite is not a public NDK C API and Jetpack `BundledSQLiteDriver` is a
-Kotlin/Room driver, not a drop-in `sqlite3.h`/cgo dependency. v0.8 H0 now starts
-from a checksum-pinned upstream amalgamation in the Go shared core as the
-recommended investigation default, with exact version/update/compile flags,
-ABI/minSdk, one-engine symbol policy, sandbox/WAL lifecycle, and desktop/
-Android interoperability still blocking. Flutter Doctor now reports no issues
+Kotlin/Room driver, not a drop-in `sqlite3.h`/cgo dependency. v0.8 H0 now
+compares a checksum-pinned upstream amalgamation control with exact
+`modernc.org/sqlite`/`modernc.org/libc` pins in the Go shared core. The modernc
+probe passed Linux FTS5/JSON/WAL and a C-modernc-C format round trip; it
+cross-built Android executable and NDK `c-shared` artifacts, macOS, and Windows.
+Android runtime remains untested and unsupported upstream, iOS needs an Apple
+link host, and `js/wasm` failed in modernc libc. Exact package/update/options,
+ABI/minSdk, driver semantics/performance, one-engine policy, sandbox/WAL
+lifecycle, and desktop/Android interoperability remain blocking. Flutter Doctor
+now reports no issues
 after `/usr/bin/clang` and `/usr/bin/clang++` PATH resolution was restored;
 Swiftly is reachable but has no selected Swift toolchain. There is still no AVD,
 connected Android device, Flutter/Android build, or device support claim.
@@ -728,9 +734,10 @@ Facts about the development machine that no other document records:
 The scaffold was created in a restricted container. Still-open consequences:
 
 1. The SQLite store uses a small local cgo adapter over system `libsqlite3` on
-   Linux. v0.8 H0 must investigate a pinned upstream amalgamation for the Go
-   Android shared core before implementation; Jetpack's Kotlin driver does not
-   satisfy this C boundary without redesigning database ownership.
+   Linux. v0.8 H0 must compare a pinned C amalgamation with pinned modernc/libc
+   in the Go Android shared core before implementation. The modernc Android
+   build is not runtime/support evidence; Jetpack's Kotlin driver still requires
+   a database-ownership redesign.
 2. The MCP adapter is dependency-free; the official MCP Go SDK can replace it later without changing tool semantics.
 3. J1 matches canonical Joplin first-line titles and CR/LF-only metadata
    parsing, including OCR controls. J2 validates both supplied real exports and

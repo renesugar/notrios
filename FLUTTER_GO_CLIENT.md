@@ -178,17 +178,51 @@ bridge, or risk two engines sharing one database file. Neither is an implicit
 packaging change. The driver also compiles SQLite in multi-thread mode, so its
 connections require a pool or explicit `FULLMUTEX` handling for concurrent use.
 
-The v0.8 H0 investigation therefore starts with a checksum-pinned upstream
-SQLite amalgamation compiled into the Go shared library as its recommended
-default, not as an already approved dependency. H0 must resolve the exact
-version/update cadence and compile flags; minSdk and ABI set; symbol visibility
-and one-engine-per-process policy; sandbox/backup/WAL/crash lifecycle; and
-desktop/Android database compatibility. It must record `sqlite_version()` and
-`PRAGMA compile_options`, execute FTS5 and JSON probes, run store/snapshot/sync
-tests, round-trip a checkpointed database across desktop and Android, measure
-APK/RSS deltas, and prove no second engine opens the canonical file. The
-official SQLite Android bindings are a useful AAR/JNI source example, but they
-also are not a drop-in replacement for the current Go link boundary.
+The v0.8 H0 investigation therefore retains Go database ownership and compares
+two unselected packages: a checksum-pinned upstream SQLite amalgamation as the
+C control, and exact `modernc.org/sqlite`/`modernc.org/libc` pins as the
+CGo-free candidate. H0 must resolve version/update cadence, licenses and compile
+flags; minSdk and ABI set; symbol/one-engine policy; sandbox/backup/WAL/crash
+lifecycle; driver/error/connection semantics; and desktop/Android database
+compatibility. It must record `sqlite_version()` and `PRAGMA compile_options`,
+execute FTS5 and JSON, run store/snapshot/sync tests, round-trip a checkpointed
+database across engines and platforms, measure build/APK/RSS/performance deltas,
+and prove no second engine opens the canonical file. The official SQLite
+Android bindings remain a useful AAR/JNI source example, not a drop-in Go link
+boundary.
+
+### modernc/cznic evaluation (2026-08-26)
+
+`modernc.org/sqlite` v1.57.0 is a BSD-3-Clause, `database/sql`, CGo-free port
+generated from SQLite C sources; it pins `modernc.org/libc` v1.74.4 and reports
+SQLite 3.53.3. On this host its Linux runtime reported `ENABLE_FTS5`, executed
+FTS5 and JSON, used file-backed WAL, and passed `integrity_check`. A disposable
+C 3.45.1 → modernc 3.53.3 → C 3.45.1 WAL/FTS5/JSON round trip also passed. That
+is file-format evidence, not a promise that independent executions produce
+byte-identical database files.
+
+The same disposable module cross-built Linux/amd64, macOS/arm64, and
+Windows/amd64 executables. More importantly, it built an Android/arm64
+executable with CGo disabled and a 9,469,448-byte `c-shared` library with the
+API-35 NDK compiler. Android selects the generated Linux/arm64 port. Upstream's
+published support table nevertheless omits Android and iOS, and zero configured
+AVDs/devices meant the Android artifact could not be loaded. iOS selected the
+Darwin/arm64 sources but the Go target requires Apple external linking, which
+this Linux host cannot validate. These are candidate/build facts, not mobile
+support claims.
+
+The driver is not a Flutter Web solution: `GOOS=js GOARCH=wasm` failed because
+the required `modernc.org/libc` platform packages select no files. Web remains a
+REST client unless a separate browser-local SQLite/Wasm/OPFS store and ownership
+contract is approved.
+
+The maintainer's May 2025 benchmark does not justify “slightly slower” or a
+universal ranking. Against `mattn/go-sqlite3`, modernc was about 3.2–4.8× slower
+in representative Linux/macOS bulk insert cases while often faster in repeated
+or concurrent reads. It used older driver versions, `journal_mode=DELETE`,
+`synchronous=FULL`, and two averaged runs—not Notrios WAL/FTS5/snapshot/sync.
+H0 therefore runs both candidates on one emulator and a production-shaped
+Notrios corpus before choosing mobile or changing the current desktop store.
 
 ## Milestone split
 
@@ -281,3 +315,9 @@ destructive-review boundaries.
 - SQLite amalgamation: <https://www.sqlite.org/amalgamation.html>
 - SQLite FTS5 build contract: <https://www.sqlite.org/fts5.html>
 - SQLite JSON build contract: <https://www.sqlite.org/json1.html>
+- modernc.org/sqlite package and support table: <https://pkg.go.dev/modernc.org/sqlite>
+- cznic SQLite driver benchmark: <https://gitlab.com/cznic/sqlite-bench/-/raw/v1.1.3/README.md>
+- ccgo v4 package: <https://pkg.go.dev/modernc.org/ccgo/v4>
+- SQLite file format: <https://www.sqlite.org/fileformat2.html>
+- SQLite multiple-copy corruption warning: <https://www.sqlite.org/howtocorrupt.html>
+- SQLite Wasm persistence: <https://sqlite.org/wasm/doc/trunk/persistence.md>

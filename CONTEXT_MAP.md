@@ -60,8 +60,8 @@ This file is the codebase atlas. Update it whenever major files or directories a
   canonical/signature/timestamp/ISO prototype, tests, and evidence validator.
 - `performance/v0.7-g18/` — G18's 109-operation service/HTTP audit, finite
   19-capability platform matrix, ABI-major-1 lifecycle/ownership/error/cancel/
-  stream contract, Android SQLite/cgo feasibility finding, exact Mermaid
-  enablement gate, unit tests, and source validator.
+  stream contract, Android SQLite/cgo and modernc/C comparison evidence, exact
+  Mermaid enablement gate, unit tests, and source validator.
 - `performance/v0.7-g0/` — completed G0 threat model, normative protocol
   glossary, thirty misuse/control traces, primary-source dependency/license/
   platform validation, and its structural evidence validator.
@@ -175,6 +175,8 @@ This file is the codebase atlas. Update it whenever major files or directories a
 - `plans/v0.7/031-shared-core-ffi-portability-handoff.md` — G18's completed
   application-facade audit and pre-1.0 C-ABI/platform/Mermaid handoff to v0.8
   and the independent post-1.0 Flutter client.
+- `plans/v0.7/033-modernc-sqlite-evaluation.md` — G18's follow-up evaluation of
+  modernc/cznic for mobile, desktop, and Web and the two-candidate v0.8 H0 gate.
 - `FLUTTER_GO_CLIENT.md` — verified Flutter/Dart FFI and Go build-mode facts,
   the pre-1.0 framework-neutral application facade/C ABI contract, post-1.0
   Flutter client split, memory/stream ownership, platform limits, and the fact

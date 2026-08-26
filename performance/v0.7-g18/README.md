@@ -36,8 +36,13 @@ Evidence files:
   and zero configured AVDs or connected Android devices. Swiftly is on PATH and
   has an installed release, but no Swift toolchain is selected.
 - `ANDROID_SQLITE_FOLLOWUP.json` — the current Go/cgo ownership model, corrected
-  Android NDK/framework/Jetpack distinctions, four packaging approaches,
+  Android NDK/framework/Jetpack distinctions, the packaging candidates,
   blocking v0.8 decisions, and the emulator/interoperability gates.
+- `MODERNC_SQLITE_EVALUATION.json` — pinned modernc/ccgo/libc facts, supplied-
+  claim corrections, native feature and C-file round-trip results, Android/
+  desktop/Web build boundaries, representative upstream C-driver benchmark
+  results, and the two-candidate H0 decision gate. Disposable binaries and the
+  module cache remain outside the repository.
 - `EDITOR_SEARCH_QA.json` — installed editor versions, source/keymap findings,
   and the rendered Ctrl+F case/regexp/whole-word/replace browser result. The
   disposable desktop and narrow screenshots remain outside the repository.

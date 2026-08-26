@@ -24,12 +24,15 @@ the finite outer catalog without rewriting original handoffs. Its host-side
 verifier now gates every future GitHub push. G18 completed the finite 19-
 capability platform matrix, 109-operation facade audit, ABI-major-1 ownership/
 error/cancel/stream proposal, Android SQLite/cgo finding, and exact Mermaid
-enablement gate without implementing or claiming those future products. G18a
-and the remaining source-anchored documentation/Hugo-Ledger work are next and
+enablement gate without implementing or claiming those future products. Its
+follow-up now makes pinned modernc/libc a measured H0 candidate beside the C
+amalgamation control while preserving Go database ownership; neither is
+selected. G18a completed the documentation-anchor investigation. G18b and the
+remaining source-anchored documentation/Hugo-Ledger work are next and
 unapproved. GitHub
 push and physical disc burning remain unauthorized — see [`PLAN.md`](PLAN.md),
 [`ROADMAP.md`](ROADMAP.md), and
-[`plans/v0.7/031-shared-core-ffi-portability-handoff.md`](plans/v0.7/031-shared-core-ffi-portability-handoff.md). The repository is
+[`plans/v0.7/033-modernc-sqlite-evaluation.md`](plans/v0.7/033-modernc-sqlite-evaluation.md). The repository is
 structured so a coding agent can resume safely after usage limits or model
 changes.
 
