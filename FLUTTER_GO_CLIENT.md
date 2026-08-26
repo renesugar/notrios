@@ -1,7 +1,7 @@
 # Flutter/Go client and shared-core contract
 
-Status: planning contract, reviewed 2026-08-11. It does not claim that a C ABI,
-Flutter client, or Mermaid support is implemented.
+Status: v0.7 G18 handoff contract completed 2026-08-25. It does not claim that a
+C ABI, Flutter client, or Mermaid support is implemented.
 
 ## Decision
 
@@ -76,12 +76,13 @@ bulk response      <-    stream handle/read      <-     bounded reader
 cancel/poll/close  ->    opaque handles          ->     jobs/lifecycle
 ```
 
-Prefer caller-owned input buffers that remain valid only for the duration of a
-call. For outputs, compare a size-query/caller-owned-buffer convention with an
-allocation plus `notrios_free`; whichever is selected must have leak, double-
-free, wrong-handle, cancellation, and concurrent-shutdown tests. Never expose a
-pointer to Go-managed memory or a live Store/service object. `runtime/cgo.Handle`
-may back opaque handles internally, subject to Go's cgo pointer rules.
+G18 selects caller-owned input buffers that remain valid only for the duration
+of a call and immutable library-owned output buffers released exactly once with
+`notrios_buffer_release`. Leak, double-release, wrong-instance, cancellation,
+and concurrent-shutdown tests are mandatory. Never expose a pointer to
+Go-managed memory or a live Store/service object. Generation-bearing opaque
+64-bit handles may be backed by `runtime/cgo.Handle`, subject to Go's cgo
+pointer rules; zero is invalid and stale generations are typed refusals.
 
 Serialized JSON is a sensible first compatibility format because Notrios
 already owns JSON REST schemas and most calls are bounded. That is not “zero
@@ -97,10 +98,64 @@ the public C header remains the compatibility surface. Android/iOS compilation
 still needs explicit evidence for the C toolchain, SQLite linkage, native
 library packaging/signing, Go runtime lifecycle, and app sandbox.
 
+## G18 frozen source audit
+
+G18 reconciled 109 normalized non-HEAD OpenAPI operations against 113 registered
+handler patterns: 109 API operations, three `HEAD` aliases, and the presentation-
+only web root. The reusable seams are `store.Store`, the injectable
+`SyncSecretStore`, sidecar interfaces, context-aware operations, durable jobs,
+and bounded resource/export readers. Wails imports occur only in
+`cmd/notrios/gui_wails.go` behind the `gui` build tag.
+
+That is not yet a framework-neutral application facade. `internal/service`
+owns both `*httpapi.Server` and `*http.Server`; 24 production HTTP-adapter files
+use `net/http`, and decoding/orchestration remain interleaved in handlers. v0.8
+must extract an application package used by HTTP and the ABI. Calling those
+handlers over an in-process or loopback HTTP request would retain the coupling
+and is expressly not the selected design.
+
+The G18 candidate is ABI major 1 with 12 symbols: version/capability query,
+instance open/close, asynchronous bounded call start/poll/cancel, result-buffer
+release, event poll, and stream open/read/close. Inputs are caller-owned and
+borrowed only during a call. Outputs are immutable library allocations released
+exactly once. Handles are generation-bearing opaque 64-bit values; zero is
+invalid. No Go pointer crosses C-visible memory, and Go never calls Dart from an
+arbitrary runtime thread. JSON requests/responses are capped at 1 MiB; bulk
+streams read at most 1 MiB per call and events at 256 per poll.
+
+HTTP method/routes become an operation name and payload; path/query values
+become typed fields; status codes become a closed ABI/domain-error taxonomy;
+ETag/If-Match becomes a revision precondition; Range becomes offset/length/
+total/EOF; connection cancellation becomes call cancel/deadline/poll. CSP,
+cookies, Origin, remote address, TLS, web assets, and peer rate limiting remain
+adapter responsibilities. Peer-carrier REST remains an authenticated courier,
+not a privileged local-FFI shortcut.
+
+The complete machine-checked source audit, platform matrix, ABI proposal, and
+test contract are under `performance/v0.7-g18/`.
+
+## G18 platform and build findings
+
+Nineteen finite capabilities cover profiles/config, database/assets,
+projection/Recoll, quarantine/catch-up, shared directories and pickers, secrets,
+TLS/listeners/network, workers, notifications, deep links, web assets, native
+import/export/snapshot paths, logging/crash behavior, and SQLite/cgo. Current
+Linux behavior is recorded separately from Windows/macOS v0.8 gates, one
+pre-1.0 Android-emulator gate, and post-1.0 iOS/physical-device gates.
+
+Linux `c-shared` and `c-archive` probes built from the existing main package and
+dynamically linked host `libsqlite3`, but emitted no C header because there are
+no exported ABI symbols. They are feasibility artifacts, not libraries. An
+Android/arm64 API-35 cgo probe reached the installed NDK compiler and then
+failed at `sqlite3.h`; the NDK contains no matching SQLite development boundary.
+v0.8 therefore needs an explicit Android SQLite build/link/package choice
+before an emulator can load the shared library. No AVD was configured, and G18
+claims no Android or Flutter build.
+
 ## Milestone split
 
-- **v0.7 G18:** audit and write the facade/ABI/platform/Mermaid contract; no ABI
-  implementation.
+- **v0.7 G18 (complete):** audited and froze the facade/ABI/platform/Mermaid
+  contract; no ABI implementation.
 - **v0.8:** investigate the facade seam, implement and test the headless C ABI,
   package desktop libraries, run an Android-emulator host smoke test, and prove
   current Wails/headless behavior remains unchanged. iOS and physical devices
@@ -127,6 +182,14 @@ runtime code/assets from a CDN. Enabling it requires a local pinned dependency,
 no-network evidence, preview sanitization/CSP tests, malformed and oversized
 diagram bounds, browser tests, and a Wails smoke test. Until that slice passes,
 the honest behavior is a fenced code block rather than a diagram.
+
+G18 freezes exact candidate refusal bounds for v0.8: 64 KiB source, 500 nodes,
+1,000 edges, 256 KiB of labels, a two-second render deadline, and a 64 MiB
+browser-heap delta. Boundary-plus-one, malformed syntax, script/handler/unsafe-
+URL payloads, timeout/cleanup, theme, offline cache-disabled, CSP, accessibility,
+and Wails fixtures must pass. Rendering uses strict security mode and sanitizes
+the generated SVG before insertion; every refusal keeps the fenced source
+visible. These are enablement gates, not a claim that rendering works today.
 
 ## Secret storage
 

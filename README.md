@@ -3,7 +3,7 @@
 Notrios (formerly "Notes Companion") is a local-first note-taking, search, import, and publishing system for very large Markdown and document collections.
 It combines a Go REST/MCP service (`notriosd`), a built-in GUI, SQLite/FTS5-backed canonical storage, content-addressed resources, optional Recoll-derived search/extraction, and support for third-party native clients (C++/Qt, Go/Wails, Rust/Tauri) over the same API. A versioned no-GUI C ABI is planned before 1.0, followed by an independent post-1.0 Flutter client; mobile delivery does not depend exclusively on Wails.
 
-The v0.1 through v0.6 milestones are complete. v0.7 G0-G17b are complete through
+The v0.1 through v0.6 milestones are complete. v0.7 G0-G18 are complete through
 the authenticated REST sync data plane and resumable encrypted snapshot
 download. The blocking G14a-G14e archive-scalability sequence is complete:
 G14b selected and G14c implemented a
@@ -21,11 +21,15 @@ up below the floor. The blocking G17a-G17b preservation sequence is complete:
 G17a proved the contract, and G17b sealed 81 curated artifacts, issued and
 independently verified immutable reserve volume `NTR-EV-0001`, and committed
 the finite outer catalog without rewriting original handoffs. Its host-side
-verifier now gates every future GitHub push. G18 and the planned G18a-G18g
-source-anchored documentation/Hugo-Ledger work are next and unapproved. GitHub
+verifier now gates every future GitHub push. G18 completed the finite 19-
+capability platform matrix, 109-operation facade audit, ABI-major-1 ownership/
+error/cancel/stream proposal, Android SQLite/cgo finding, and exact Mermaid
+enablement gate without implementing or claiming those future products. G18a
+and the remaining source-anchored documentation/Hugo-Ledger work are next and
+unapproved. GitHub
 push and physical disc burning remain unauthorized — see [`PLAN.md`](PLAN.md),
 [`ROADMAP.md`](ROADMAP.md), and
-[`plans/v0.7/030-evidence-seals-iso-reserve.md`](plans/v0.7/030-evidence-seals-iso-reserve.md). The repository is
+[`plans/v0.7/031-shared-core-ffi-portability-handoff.md`](plans/v0.7/031-shared-core-ffi-portability-handoff.md). The repository is
 structured so a coding agent can resume safely after usage limits or model
 changes.
 

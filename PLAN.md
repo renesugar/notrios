@@ -1,11 +1,11 @@
 # Plan: v0.7 — Native synchronization
 
-Status: **G0-G17b are complete through 2026-08-25. Product version remains 0.6.0 and
+Status: **G0-G18 are complete through 2026-08-25. Product version remains 0.6.0 and
 the canonical schema is v27. The user resolved G17b's evidence scope, exact
 OpenPGP identity, and RFC-3161 provider order on 2026-08-25, then authorized
 the exact signer/Secret Service workflow, TSA requests, and reserve writes and
-attested offline backup/revocation readiness. G18/G18a-G18g are not
-approved. The G17b pre-push evidence gate is now mandatory; no GitHub push or
+attested offline backup/revocation readiness. G18a-G18g are not approved. The
+G17b pre-push evidence gate is now mandatory; no GitHub push or
 physical optical burn occurred.** The
 former seven-item draft was too coarse: it mixed protocol research, canonical
 write interception, merge semantics, two transports, cryptography, recovery,
@@ -1876,7 +1876,7 @@ not recursively require another release ZIP. No original artifact, secret,
 remote, GitHub branch, or physical medium was modified. Archive:
 `plans/v0.7/030-evidence-seals-iso-reserve.md`.
 
-## G18. Shared-core, FFI, Mermaid, and installation/mobile portability handoff
+## G18. Shared-core, FFI, Mermaid, and installation/mobile portability handoff — complete
 
 **Goal.** End v0.7 with an explicit, testable contract for the separate v0.8
 installation/configuration/shared-core milestone and the independent post-1.0
@@ -1949,6 +1949,27 @@ offline/security test design.
   feature list. Its Markdown fidelity, editor behavior, Mermaid subset,
   sanitization, accessibility, performance, maintenance, and BSD-3-Clause
   dependency tree must pass a post-1.0 spike before adoption.
+
+**Outcome (2026-08-25).** G18 froze a machine-checked 19-capability platform/
+permission matrix and audited all 109 normalized non-HEAD API operations. The
+current reusable seams are `store.Store`, injected secret/sidecar providers,
+contexts, jobs, and bounded readers; the audit truthfully finds that
+`internal/service` still owns HTTP and handler orchestration is not yet a
+framework-neutral facade. The ABI-major-1 proposal has 12 version/lifecycle/
+dispatch/cancel/poll/event/stream/release symbols, generation-bearing opaque
+64-bit handles, a closed typed-error set, caller-borrowed inputs, explicitly
+released immutable outputs, 1 MiB JSON/stream-read bounds, and no callbacks
+from arbitrary Go threads. HTTP status/ETag/Range/cancellation translate to
+typed status/revision/stream/call fields while TLS, CSP, peer auth/rate limits,
+and web assets stay adapters. Linux `c-shared`/`c-archive` feasibility probes
+built against host SQLite but exported no ABI/header; Android/arm64 reached the
+installed NDK compiler and failed honestly at missing `sqlite3.h`, with no AVD
+or Flutter/Android build claimed. Mermaid remains disabled; the v0.8 gate now
+has exact source/node/edge/label/time/heap bounds plus browser/Wails/offline/
+CSP/sanitization/accessibility fixtures and safe source fallback. No production
+code, schema, dependency, installer, ABI, Flutter artifact, Mermaid setting,
+remote, or physical device changed. Archive:
+`plans/v0.7/031-shared-core-ffi-portability-handoff.md`.
 
 ## G18a. Investigation — documentation anchors, truth grades, and review calibration
 
@@ -2403,9 +2424,9 @@ recommendation, blocking status, and consequence.
 | Hosted semantic-review execution | G18f | Open, non-blocking default: maintainer-only recorded command; hosted source upload needs separate approval |
 | Release version/schema bookkeeping | G20 | Open, non-blocking until wrap-up |
 
-G0-G17b are complete and the production physical restore/catch-up, durable
+G0-G18 are complete and the production physical restore/catch-up, durable
 sync-job, local recovery UI, safe-retention, and evidence-preservation design
 contracts are frozen. The G17b host-side evidence gate is mandatory before any
-future GitHub push. G18/G18a-G18g are unapproved and G18 is next.
+future GitHub push. G18a-G18g are unapproved and G18a is next.
 Implementation begins only after an explicit instruction naming
 the item to start and, where stated, authorizing its blocking operations.

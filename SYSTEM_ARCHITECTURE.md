@@ -161,6 +161,15 @@ pointers: it owns instance lifecycle, opaque handles, bounded serialized
 request/response calls, typed errors, cancellation/polling, bulk streams, and
 explicit result-buffer ownership. See `FLUTTER_GO_CLIENT.md`.
 
+G18's completed source audit found that `store.Store`, provider interfaces,
+contexts, jobs, and readers are viable seams, while `internal/service` still
+owns both the HTTP adapter and server and handler orchestration is not yet a
+facade. The frozen ABI-major-1 candidate uses 12 lifecycle/dispatch/poll/stream/
+release symbols, generation-bearing opaque 64-bit handles, 1 MiB JSON and stream
+read bounds, library-owned immutable result buffers, and no callbacks from Go
+runtime threads. Evidence and the 19-capability platform matrix live under
+`performance/v0.7-g18/`; none of this claims an ABI implementation.
+
 The post-1.0 Flutter client uses Dart FFI on Android, iOS, Linux, macOS, and
 Windows. Flutter Web is not a native-FFI target; it stays a REST client unless a
 separate Go-Wasm/JavaScript adapter is approved. Wails mobile remains an option,

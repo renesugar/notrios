@@ -1,0 +1,51 @@
+{
+  "schema": "notrios.g18.source-audit.v1",
+  "captured_at": "2026-08-26T05:44:01Z",
+  "source_commit": "d768dd659c2fed265b29b63ef44e2a3aed6c5cad",
+  "go_toolchain": "go1.27.0",
+  "module_go_version": "1.25.0",
+  "host": {"goos": "linux", "goarch": "amd64", "cgo_enabled": true, "sqlite_version": "3.45.1"},
+  "routes": {
+    "registered_total_including_head_and_web_root": 113,
+    "registered_head": 3,
+    "registered_non_head_including_web_root": 110,
+    "openapi_normalized_non_head": 109,
+    "web_root_excluded_from_openapi": true
+  },
+  "dependencies": {
+    "service_packages": 239,
+    "httpapi_packages": 236,
+    "service_imports_httpapi": true,
+    "httpapi_imports_service": false,
+    "service_or_httpapi_imports_wails": false,
+    "wails_import_files": ["cmd/notrios/gui_wails.go"],
+    "wails_file_build_tag": "gui",
+    "production_httpapi_files_importing_net_http": 24,
+    "service_files_importing_net_http": 1,
+    "store_files_importing_c": 43
+  },
+  "existing_seams": [
+    "store.Store",
+    "httpapi.SyncSecretStore",
+    "httpapi.SidecarSearcher",
+    "httpapi.SidecarStatusProvider",
+    "syncjobs.Manager context cancellation",
+    "store.ExportReader and resource io.ReadCloser streams"
+  ],
+  "facade_gaps": [
+    "service.Service owns the HTTP adapter and returns *http.Server",
+    "transport-neutral request decoding and orchestration remain in HTTP handlers",
+    "profile open and native capability selection are not one lifecycle interface",
+    "bulk streams have HTTP Range semantics but no transport-neutral handle contract",
+    "events and jobs have persistence but no ABI polling envelope",
+    "the shipped secret provider is an owner-only file rather than an OS provider"
+  ],
+  "linux_buildmode_probes": {
+    "c_shared": {"built": true, "bytes": 16881424, "sha256": "9e3d4de4b594a193c36b61d59510fbc64dab6743009f1126a4569d33bb85dd74", "generated_header": false},
+    "c_archive": {"built": true, "bytes": 31837588, "sha256": "4f19e7a3cca33fa1c17972a5cadd713896c3182cf1ad37c2b96c654f51fddc27", "generated_header": false},
+    "dynamic_dependencies": ["libsqlite3.so.0", "libc.so.6", "libm.so.6"],
+    "interpretation": "The Go build modes work on this host, but cmd/notrios exports no C symbols and is not an ABI."
+  },
+  "private_data_read": false,
+  "production_code_changed": false
+}

@@ -1,6 +1,6 @@
 # Plan Status
 
-Updated: 2026-08-25 (G0-G17b complete; G18 next and unapproved)
+Updated: 2026-08-25 (G0-G18 complete; G18a next and unapproved)
 
 ## Active milestone
 
@@ -16,7 +16,7 @@ profiles/local journal, state-vector convergence,
 revision deltas/merge, lazy resources, secure container/catch-up,
 ephemeral-directory and REST transports, jobs/UI/retention, shared-core/FFI/
 Mermaid/mobile handoff, compatibility, and final validation. The user's
-2026-08-11 review resolved every original G0-G17 policy decision. **G0-G17 are
+2026-08-11 review resolved every original G0-G17 policy decision. **G0-G18 are
 complete** and archived under `plans/v0.7/`; the 2026-08-15 planning amendment
 reopened physical snapshot scalability. G14b selected option B from full-corpus
 evidence, G14c implemented the local production representation/verifier, and
@@ -28,7 +28,30 @@ and retirement. G17a-G17b are complete. G17b sealed the curated historical
 handoffs, issued and independently verified immutable reserve volume
 `NTR-EV-0001`, and committed the finite outer catalog. Its host-side evidence
 gate is mandatory before every future GitHub push. No push or physical burn was
-authorized or performed. G18 is next; none of G18 onward is approved.
+authorized or performed. G18 is complete. G18a is next; none of G18a onward is
+approved.
+
+## v0.7 G18 completion — 2026-08-25
+
+- The source audit reconciles all 109 normalized non-HEAD API operations and
+  records the useful `store.Store`, injected-provider, context, job, and bounded-
+  reader seams. Wails remains confined to its `gui`-tagged adapter.
+- The current core is not misrepresented: `internal/service` still owns HTTP
+  and handler orchestration is not yet a framework-neutral facade. v0.8 owns
+  that extraction; loopback HTTP is explicitly not the ABI implementation.
+- ABI-major-1 has 12 version/lifecycle/dispatch/cancel/poll/event/stream/release
+  symbols, generation-bearing opaque 64-bit handles, a closed error taxonomy,
+  caller-borrowed inputs, exactly released immutable outputs, 1 MiB JSON/stream
+  bounds, and no callbacks from arbitrary Go threads.
+- A 19-capability platform matrix separates current Linux, v0.8 Windows/macOS,
+  the pre-1.0 Android-emulator gate, and post-1.0 iOS/physical devices.
+- Linux `c-shared`/`c-archive` probes built against host SQLite but exported no
+  header/ABI. Android/arm64 reached NDK clang and failed at missing `sqlite3.h`;
+  no AVD, Android build, Flutter build, or device support is claimed.
+- Mermaid remains disabled. Exact v0.8 source/node/edge/label/time/heap limits
+  and browser/Wails/offline/CSP/sanitization/accessibility fixtures now gate any
+  enablement. Evidence is under `performance/v0.7-g18/`; archive is
+  `plans/v0.7/031-shared-core-ffi-portability-handoff.md`.
 
 ## v0.7 G17b completion — 2026-08-25
 
@@ -151,7 +174,7 @@ authorized or performed. G18 is next; none of G18 onward is approved.
   volume coverage before the next GitHub push. CI can validate tracked schemas,
   fixtures, and canonicalization but cannot claim to see the external reserve.
   No push or physical optical burn is authorized by the planning amendment.
-- G17a-G17b are complete. G18 is next but unapproved; all later work remains
+- G17a-G18 are complete. G18a is next but unapproved; all later work remains
   separately approval-gated and every future push must pass the G17b gate.
 
 ## 2026-08-24 planning amendment — source-anchored docs and Hugo/Ledger
@@ -2494,5 +2517,5 @@ attempt detail remains append-only in `agent/ATTEMPT_LOG.jsonl`.
 - Long-term SQLite driver choice (current local cgo/libsqlite3 adapter).
 - Official MCP Go SDK adoption/version.
 - Sync and evidence-preservation decisions live in the owning plan items; the
-  register in `PLAN.md` is an index. G0-G17b are complete. G18 and every later
+  register in `PLAN.md` is an index. G0-G18 are complete. G18a and every later
   slice remain approval-gated; the checked-in G17b verifier gates future pushes.

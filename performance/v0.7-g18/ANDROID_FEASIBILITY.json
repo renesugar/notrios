@@ -1,0 +1,39 @@
+{
+  "schema": "notrios.g18.android-feasibility.v1",
+  "captured_at": "2026-08-26T05:44:01Z",
+  "sdk_root_kind": "local Android SDK",
+  "platform": "android-37.0",
+  "adb_version": "1.0.41",
+  "ndk_version": "30.0.15729638",
+  "probe_target": {"goos": "android", "goarch": "arm64", "api_level": 35},
+  "toolchain_present": true,
+  "configured_avds": 0,
+  "emulator_execution_attempted": false,
+  "cross_compile": {
+    "command_shape": "GOOS=android GOARCH=arm64 CGO_ENABLED=1 CC=<NDK aarch64 API-35 clang> go test -c ./internal/store",
+    "passed": false,
+    "first_error": "sqlite_fix.go: fatal error: 'sqlite3.h' file not found",
+    "ndk_sqlite_header_or_library_found": false,
+    "meaning": "The Go/NDK compiler is present; the current pkg-config/system-libsqlite3 adapter is host-only and needs an explicit Android SQLite linkage/package decision."
+  },
+  "flutter_tools_present": true,
+  "flutter_build_claimed": false,
+  "required_v0_8_emulator_gate": [
+    "build and load the versioned shared library for one pinned Android API/ABI",
+    "open and close two isolated instances",
+    "bootstrap SQLite and perform CRUD plus bounded search",
+    "read one resource through a bounded range stream",
+    "cancel and poll one long operation",
+    "query ABI, schema, protocol, and sync capabilities",
+    "prove no Go pointer crosses the C boundary",
+    "record peak RSS and startup/shutdown behavior"
+  ],
+  "deferred_post_1_0": [
+    "physical Android device",
+    "iOS build and device",
+    "scoped-storage and document-picker release behavior",
+    "secure storage migration and backup behavior",
+    "background transfer, battery, notifications, and lifecycle recovery",
+    "pairing, catch-up, encrypted backup, responsive UI, and accessibility"
+  ]
+}

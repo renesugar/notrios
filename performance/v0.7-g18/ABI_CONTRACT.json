@@ -1,0 +1,79 @@
+{
+  "schema": "notrios.g18.abi-contract.v1",
+  "candidate_abi_major": 1,
+  "compatibility_format": "canonical bounded UTF-8 JSON envelopes",
+  "input_ownership": "caller-owned; borrowed only for the duration of the call",
+  "output_ownership": "library-owned immutable byte buffers released exactly once with notrios_buffer_release",
+  "handle_type": "unsigned 64-bit opaque value with generation; zero is invalid",
+  "callbacks_from_go_threads": false,
+  "symbols": [
+    "notrios_abi_version",
+    "notrios_capabilities",
+    "notrios_instance_open",
+    "notrios_instance_close",
+    "notrios_call_start",
+    "notrios_call_poll",
+    "notrios_call_cancel",
+    "notrios_buffer_release",
+    "notrios_event_poll",
+    "notrios_stream_open",
+    "notrios_stream_read",
+    "notrios_stream_close"
+  ],
+  "status_codes": [
+    "ok","invalid_argument","version_mismatch","invalid_handle","stale_handle",
+    "not_found","conflict","precondition_required","forbidden","unavailable",
+    "limit_exceeded","cancelled","end_of_stream","would_block","shutting_down","internal"
+  ],
+  "bounds": {
+    "request_json_bytes": 1048576,
+    "response_json_bytes": 1048576,
+    "stream_read_bytes": 1048576,
+    "events_per_poll": 256,
+    "error_message_bytes": 4096,
+    "operation_name_bytes": 128
+  },
+  "lifecycle": [
+    "open validates one named profile and owns its store, workers, secret provider, and host capabilities",
+    "calls and streams retain an instance reference but never expose one",
+    "close atomically enters shutting_down, refuses new work, cancels calls, closes streams, waits for owned workers, and invalidates the generation",
+    "close is idempotent for the same live generation; stale and foreign handles are typed refusals",
+    "all exported functions catch Go panics and return internal without unwinding through C"
+  ],
+  "request_envelope_fields": ["abi_major","operation","request_id","deadline_milliseconds","payload"],
+  "response_envelope_fields": ["request_id","status","error_code","error_message","result","stream"],
+  "event_fields": ["sequence","kind","instance_handle","operation_handle","job_id","state","progress","summary"],
+  "rest_translation": [
+    {"http":"method and route","abi":"operation plus typed payload","rule":"one dispatch surface, not one C symbol per endpoint"},
+    {"http":"path and query parameters","abi":"named request fields","rule":"validate before facade invocation"},
+    {"http":"status code","abi":"closed status_code plus domain error_code","rule":"never expose raw HTTP status as the ABI error taxonomy"},
+    {"http":"ETag and If-Match","abi":"revision_id precondition and object_hash metadata","rule":"preserve optimistic concurrency"},
+    {"http":"Range, Content-Range, and Accept-Ranges","abi":"stream offset, requested length, total length, and end_of_stream","rule":"bulk bytes never enter the JSON envelope"},
+    {"http":"Content-Type and Content-Disposition","abi":"stream mime_type and safe logical filename","rule":"no filesystem path"},
+    {"http":"request context and connection cancellation","abi":"call handle, deadline, cancel, and poll","rule":"no callback from an arbitrary Go thread"},
+    {"http":"authenticated peer principal and rate limits","abi":"host-supplied capability context or retained HTTP courier","rule":"do not weaken peer authentication by treating local FFI as a remote transport"},
+    {"http":"CSP, cookies, Origin, RemoteAddr, TLS, and web root","abi":"not applicable","rule":"remain HTTP/Wails adapter responsibilities"}
+  ],
+  "facade_families": [
+    {"id":"library_crud_search","classification":"transport_neutral","examples":["documents","revisions","notebooks","tags","search","links","graph"]},
+    {"id":"resource_metadata","classification":"transport_neutral","examples":["resource create/attach/report","lazy intent"]},
+    {"id":"resource_and_archive_bytes","classification":"bounded_stream","examples":["resource content","archive","snapshot","backup"]},
+    {"id":"jobs_events_cancellation","classification":"lifecycle_infrastructure","examples":["job plan/start/status/retry","event poll","call cancel"]},
+    {"id":"sync_review","classification":"transport_neutral","examples":["conflict detail/resolve","retention plan","retirement preview/confirm","catch-up review"]},
+    {"id":"native_paths_and_credentials","classification":"host_capability","examples":["profile open","directory/document picker","secret store","snapshot verification handoff"]},
+    {"id":"peer_carrier_http","classification":"transport_adapter","examples":["signed REST carrier","Range/ETag","TLS","rate limit"]},
+    {"id":"mcp_and_web_ui","classification":"presentation_adapter","examples":["JSON-RPC MCP scopes","CSP/web assets","Wails menu"]}
+  ],
+  "mandatory_tests": [
+    "ABI and capability version mismatch",
+    "open/close and two isolated instances",
+    "wrong, stale, foreign, and zero handles",
+    "request/response and error bounds",
+    "result release, double release, wrong-instance release, and leak accounting",
+    "stream offset, partial read, EOF, close, error, and concurrent shutdown",
+    "call deadline, cancel-before-start, cancel-during-work, poll, and shutdown",
+    "no callback on arbitrary Go threads and no Go pointer in C-visible memory",
+    "secret and path redaction in errors, logs, events, and crash handling",
+    "semantic parity against the equivalent REST application operation"
+  ]
+}

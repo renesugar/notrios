@@ -627,6 +627,14 @@ background, battery, secure-store, notification, pairing, sync, backup, and
 responsive/accessibility validation is a post-1.0 Flutter release gate. Flutter
 Web is not included in native-FFI tests.
 
+G18 freezes the pre-implementation test oracle under `performance/v0.7-g18/`.
+It source-checks 109 non-HEAD API operations, Wails build-tag isolation, 43 cgo
+store files, 19 platform capabilities, closed ABI statuses, ownership and
+handle rules, and the current `noMermaid: true` baseline. The installed Android
+NDK cross-compile probe currently stops at missing `sqlite3.h`; an emulator
+claim requires an explicit SQLite linkage choice and the complete lifecycle/
+CRUD/search/stream/cancel/capability smoke, not merely a successful Go compile.
+
 ### HTML table paste (v0.5 E6b)
 
 Fixtures cover the conversion — header promotion when the source has no `<th>`,

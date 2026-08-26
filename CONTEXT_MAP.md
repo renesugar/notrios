@@ -9,8 +9,8 @@ This file is the codebase atlas. Update it whenever major files or directories a
   independently approvable G0-G20 slices plus the blocking G14a-G14e archive-
   scalability sequence, the blocking G17a-G17b external evidence-preservation
   sequence, and the newly planned G18a-G18g documentation-integrity/Hugo-Ledger
-  sequence. G0-G17b are complete; the G17b verifier gates every future GitHub
-  push. G18 is next but unapproved. The
+  sequence. G0-G18 are complete; the G17b verifier gates every future GitHub
+  push. G18a is next but unapproved. The
   current product remains 0.6.0 at schema v27; v0.6 is archived under
   `plans/v0.6/`; v0.5 and v0.4 are archived under their version directories.
 - `plans/scaffold/SCAFFOLD_CREATION_PLAN.md` — process for creating/refining this scaffold.
@@ -58,6 +58,10 @@ This file is the codebase atlas. Update it whenever major files or directories a
 - `performance/v0.7-g17a/` — G17a's privacy-safe aggregate inventory,
   provenance and recursive-scope findings, TSA assessment, generated-only
   canonical/signature/timestamp/ISO prototype, tests, and evidence validator.
+- `performance/v0.7-g18/` — G18's 109-operation service/HTTP audit, finite
+  19-capability platform matrix, ABI-major-1 lifecycle/ownership/error/cancel/
+  stream contract, Android SQLite/cgo feasibility finding, exact Mermaid
+  enablement gate, unit tests, and source validator.
 - `performance/v0.7-g0/` — completed G0 threat model, normative protocol
   glossary, thirty misuse/control traces, primary-source dependency/license/
   platform validation, and its structural evidence validator.
@@ -149,7 +153,7 @@ This file is the codebase atlas. Update it whenever major files or directories a
 - `internal/profiles/runtime.go` — G3 named runtime-profile creation, redacted
   views, registry/config/database startup binding, path/port/replica collision
   detection, and explicit copied-database adopt/fork handling.
-- `plans/v0.7/` — archived completed v0.7 slices through G17b plus the planning
+- `plans/v0.7/` — archived completed v0.7 slices through G18 plus the planning
   amendments that inserted G1a, the G14a-G14e scalability sequence, the
   G17a-G17b evidence-preservation/ISO sequence, the G18a-G18g documentation
   sequence, and the bundled-dependency maintenance pass.
@@ -168,6 +172,9 @@ This file is the codebase atlas. Update it whenever major files or directories a
   backfill, exact-key signatures, DigiCert RFC 3161 evidence, deterministic
   immutable `NTR-EV-0001`, finite outer-catalog closure, refusal matrix, and
   validation record.
+- `plans/v0.7/031-shared-core-ffi-portability-handoff.md` — G18's completed
+  application-facade audit and pre-1.0 C-ABI/platform/Mermaid handoff to v0.8
+  and the independent post-1.0 Flutter client.
 - `FLUTTER_GO_CLIENT.md` — verified Flutter/Dart FFI and Go build-mode facts,
   the pre-1.0 framework-neutral application facade/C ABI contract, post-1.0
   Flutter client split, memory/stream ownership, platform limits, and the fact

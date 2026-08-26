@@ -16,7 +16,7 @@ G14a-G14e archive-scalability sequence, the newly inserted blocking G17a-G17b
 evidence-preservation sequence, and the newly planned G18a-G18g documentation-
 integrity/Hugo-Ledger sequence. The user's 2026-08-11
 review resolved the policy decisions through G17, including mandatory payload
-encryption and per-replica Ed25519 signatures. **G0-G17 are complete** and
+encryption and per-replica Ed25519 signatures. **G0-G18 are complete** and
 archived under `plans/v0.7/`; their reviewed evidence is under
 `performance/v0.7-g0/`, `performance/v0.7-g1/`, `performance/v0.7-g1a/`,
 `performance/v0.7-g2/`, `performance/v0.7-g4/`, `performance/v0.7-g5/`,
@@ -32,10 +32,11 @@ archived under `plans/v0.7/`; their reviewed evidence is under
 `plans/v0.7/026-peer-retention-gc-repair.md`; G17a and its later decision record
 are `plans/v0.7/028-evidence-preservation-contract.md` and
 `plans/v0.7/029-evidence-handling-decisions.md`. G17b is complete and archived
-as `plans/v0.7/030-evidence-seals-iso-reserve.md`. **G0-G17b are complete.
+as `plans/v0.7/030-evidence-seals-iso-reserve.md`. G18 is complete and archived
+as `plans/v0.7/031-shared-core-ffi-portability-handoff.md`. **G0-G18 are complete.
 The G17b pre-push verifier is mandatory before any future GitHub push; no push
-or physical burn was authorized or performed. G18/G18a-G18g are next and are
-not approved.** G14b selected option B: a
+or physical burn was authorized or performed. G18a/G18b and later items are
+next and are not approved.** G14b selected option B: a
 required compatible same-schema SQLite-image plus bounded packed-assets
 capability for whole-library full backup/catch-up, retaining packed semantic
 archive-v2 for subset, merge, schema-independent interchange, and fallback.
@@ -87,6 +88,19 @@ with explicit retirement confirmation and no retention-apply HTTP route.
 OpenAPI/code parity is 109 operations. Generated full-corpus-scale evidence
 measured 169,906,176 incremental bytes for 382,206 representative operations,
 so the reviewed 90-day default remains.
+
+G18 completes the v0.7 portability handoff without implementing future product
+work. Machine-checked evidence under `performance/v0.7-g18/` reconciles 109 API
+operations and 19 runtime/platform capabilities. It identifies useful Store,
+provider, context, job, and bounded-reader seams while recording that Service
+still owns HTTP and no framework-neutral facade exists yet. The ABI-major-1
+proposal uses 12 version/lifecycle/dispatch/cancel/poll/event/stream/release
+symbols, generation-bearing opaque handles, a closed error taxonomy, explicit
+output release, and 1 MiB JSON/stream-read bounds. Linux Go shared/archive
+build modes work against host SQLite; Android NDK compilation stops at missing
+`sqlite3.h`, with no AVD, Flutter/Android build, or device support claimed.
+Mermaid remains disabled behind `noMermaid: true`; exact browser/Wails/offline/
+CSP/sanitization/accessibility and size/time/heap gates now belong to v0.8.
 
 The 2026-08-24 planning amendment adds G18a-G18g between the portability
 handoff and G19 compatibility bridge. Two investigations first freeze a
@@ -183,9 +197,9 @@ was added. G15-G17b are complete. G17b sealed 81 curated artifacts, produced
 the verified release ZIP and immutable reserve described above, and committed
 the finite outer-catalog closure. The generated DigiCert pilot and all
 production tokens passed policy/nonce/imprint/EKU/time/explicit-chain checks;
-Sectigo was not used. G18 is next but unapproved. Every remaining item requires
-separate item-by-item user approval, and every future push must first pass the
-G17b gate.
+Sectigo was not used. G18 is complete; G18a is next but unapproved. Every
+remaining item requires separate item-by-item user approval, and every future
+push must first pass the G17b gate.
 
 G14b added only investigation/prototype code and aggregate evidence. Its 57
 validated full-corpus phase rows cover equivalent 382,206-document Joplin and

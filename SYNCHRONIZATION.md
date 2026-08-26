@@ -657,11 +657,14 @@ deferred because static corpora contain no repeated binary-edit trace. Android
 limits remain provisional through the v0.8 emulator pass and require post-1.0
 physical-device confirmation.
 
-G18 also records a framework-neutral Go application facade and pre-1.0 C ABI
-handoff. That ABI adds lifecycle, ownership, typed-error, cancellation/event,
-capability, and bounded-stream contracts around the same application semantics;
-it does not add ordinary REST routes or put HTTP inside the shared library. See
-`FLUTTER_GO_CLIENT.md`.
+G18 completed the framework-neutral Go application-facade and pre-1.0 C-ABI
+handoff. Its audit identifies the current service/HTTP coupling rather than
+claiming the facade exists. ABI-major-1 adds lifecycle, explicit result-buffer
+ownership, typed errors, generation-bearing opaque handles, cancellation/event
+polling, capability query, and 1 MiB-bounded JSON/stream reads around the same
+application semantics; it does not add ordinary REST routes or put HTTP inside
+the shared library. The 19-capability platform matrix and Android SQLite/cgo
+finding are under `performance/v0.7-g18/`. See `FLUTTER_GO_CLIENT.md`.
 
 External relay and BLE transport questions are intentionally deferred until the
 REST/directory protocol, threat model, and retention behavior are stable.
