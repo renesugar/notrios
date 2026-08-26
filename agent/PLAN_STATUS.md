@@ -1,7 +1,6 @@
 # Plan Status
 
-Updated: 2026-08-25 (G17a complete; G17b design decisions resolved,
-operational authorization and recovery/revocation readiness still pending)
+Updated: 2026-08-25 (G17a complete; G17b authorized and in progress)
 
 ## Active milestone
 
@@ -26,8 +25,9 @@ passed the production full-scale matrix and froze the format. G15 then added
 the schema-v26 durable sync outbox and bounded local REST/MCP control. G16 adds
 the local Sync Center and password recovery workflow. G17 adds safe retention
 and retirement. G17a is complete. G17b's evidence scope, exact OpenPGP identity,
-and RFC 3161 provider order are resolved. G17b is next but operationally
-unapproved; it blocks G18 and any GitHub push. None of G17b onward is approved.
+and RFC 3161 provider order are resolved. The user authorized G17b operations
+and attested recovery/revocation readiness; G17b is in progress and still
+blocks G18 and any GitHub push. None of G18 onward is approved.
 
 ## v0.7 G17b decision resolution — 2026-08-25
 
@@ -51,11 +51,13 @@ unapproved; it blocks G18 and any GitHub push. None of G17b onward is approved.
   Apache-2.0 implementation candidates, but neither is approved as a dependency.
   Notation supports OCI/blob signatures and RFC 3161 but is not a drop-in
   detached-OpenPGP verifier, so it is not selected.
-- Starting G17b still requires explicit authorization for the exact subkey and
-  non-logging credential use, TSA network requests, and external reserve writes.
-  Before the first production signature, the owner must attest that a restorable
-  full primary backup and revocation certificate exist offline. GitHub push and
-  physical burn remain separately unauthorized.
+- The owner explicitly authorized exact-subkey and non-logging Secret Service
+  use, generated/production DigiCert-or-Sectigo requests, and reserve writes,
+  and attested that the full primary backup and revocation certificate are
+  restorable offline. The generated DigiCert pilot passed policy
+  `2.16.840.1.114412.7.1`, nonce/imprint, critical EKU, `genTime`, and explicit
+  pinned-chain verification; Sectigo was not used. GitHub push and physical burn
+  remain separately unauthorized.
 - Decision archive: `plans/v0.7/029-evidence-handling-decisions.md`.
 
 ## v0.7 G17a completion — 2026-08-24

@@ -352,7 +352,7 @@ HTTP apply route. Generated one-full-corpus-churn evidence measured about 162
 MiB for 382,206 representative operations, so the resolved default remains.
 
 **G17a-G17b are a blocking pre-push evidence-preservation sequence. G17a is
-complete; G17b's design inputs are resolved but implementation is unapproved.** G17a
+complete; G17b is authorized and in progress.** G17a
 freezes the curated external evidence inventory, corrects the proposed
 claims about hashes, OpenPGP signatures, RFC 3161 time evidence, Git history,
 custody, and legal scope, and selects a canonical chained manifest plus
@@ -362,7 +362,8 @@ It recommends per-artifact signatures plus one timestamped signed batch
 checkpoint. The user selected curated top-level scope, exact Ed25519 evidence
 subkey `4ABE…4005`, DigiCert primary, and Sectigo fallback on 2026-08-25;
 operational key/network/reserve permission and offline backup/revocation
-attestation remain required. G17b then backfills every approved original ZIP and screenshot without rewriting it,
+attestation were supplied on 2026-08-25; the generated DigiCert pilot passed.
+G17b backfills every approved original ZIP and screenshot without rewriting it,
 checks the canonical manifest and ISO catalog into Git, places immutable
 numbered ISO images and their verification sets only under
 `/media/renes/SEAGATE2TB/notrios-evidence/`, and adds a host-side pre-push gate.

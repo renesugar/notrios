@@ -10,7 +10,7 @@
 .DEFAULT_GOAL := help
 
 .PHONY: help deps build build-service build-cli web gui docs \
-        test validate smoke serve doctor seed-help \
+        test validate smoke serve doctor seed-help evidence-pre-push \
         clean clobber precheck
 
 help: ## Show this target summary
@@ -51,6 +51,9 @@ validate: ## Run tests plus scaffold/script validation
 
 smoke: web ## Run the end-to-end REST/MCP smoke test
 	bash scripts/mvp_smoke.sh
+
+evidence-pre-push: ## Verify the signed checkpoint and external ISO reserve
+	bash scripts/verify_evidence_pre_push.sh
 
 serve: ## Run the service from source on 127.0.0.1:8080
 	go run ./cmd/notriosd -addr 127.0.0.1:8080

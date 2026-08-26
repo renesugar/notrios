@@ -1,8 +1,9 @@
 # Evidence preservation and optical reserve contract
 
-Status: G17a investigation contract with the 2026-08-25 scope, signer, and TSA
-design decisions resolved. G17b is not approved and no production evidence has
-been sealed.
+Status: G17b is in progress under the owner's 2026-08-25 exact-signer,
+Secret-Service, TSA-network, and external-reserve authorization plus offline
+backup/revocation-readiness attestation. The generated DigiCert pilot passed;
+GitHub push and physical optical burning remain unauthorized.
 
 This document defines an engineering preservation record for Notrios release
 artifacts. It is not legal advice and does not declare any artifact admissible,
@@ -323,11 +324,9 @@ with volume/hash/checkpoint identifiers, and records storage/custody. Multiple
 copies are independently verified. “Read-only” media is not called immutable
 against loss, substitution, degradation, or malicious remastering.
 
-## G17b blocking operational approvals
+## G17b operational authorization
 
-The scope, signer, and provider-order design decisions are resolved. G17b cannot begin
-from this planning update alone. An explicit start instruction must
-authorize all of the following named operations:
+On 2026-08-25 the owner explicitly authorized:
 
 1. use of signing subkey `4ABEB98AF99C8321931BCF282C6A8A4568264005` and
    non-logging Secret Service passphrase retrieval;
@@ -336,6 +335,9 @@ authorize all of the following named operations:
 3. evidence staging and immutable reserve writes below
    `/media/renes/SEAGATE2TB/notrios-evidence/`.
 
-The owner must also attest offline primary-backup and revocation-certificate
-readiness before the first production signature. None of these approvals
-authorizes a GitHub push or physical burn.
+The owner also attested that the full primary-key backup and revocation
+certificate are restorable offline. The generated DigiCert pilot accepted
+policy `2.16.840.1.114412.7.1` and responder certificate SHA-256
+`4aa03fa22cd75c84c55c938f828e676b9caecab33fe36d269aa334f146110a33`
+under the explicit DigiCert Trusted Root G4 chain. Sectigo was not used. None of
+these approvals authorizes a GitHub push or physical burn.

@@ -1,11 +1,10 @@
 # Plan: v0.7 — Native synchronization
 
-Status: **G0-G17a completed through 2026-08-24. Product version remains 0.6.0 and
+Status: **G0-G17a completed through 2026-08-24; G17b is in progress. Product version remains 0.6.0 and
 the canonical schema is v27. The user resolved G17b's evidence scope, exact
-OpenPGP identity, and RFC-3161 provider order on 2026-08-25. G17b is next but is
-not approved to start; production signing, credential retrieval, TSA requests,
-and reserve writes still need explicit operational authorization and the offline
-backup/revocation readiness gate remains open. G18/G18a-G18g are also not
+OpenPGP identity, and RFC-3161 provider order on 2026-08-25, then authorized
+the exact signer/Secret Service workflow, TSA requests, and reserve writes and
+attested offline backup/revocation readiness. G18/G18a-G18g are not
 approved, and any GitHub push remains blocked through G17b.** The
 former seven-item draft was too coarse: it mixed protocol research, canonical
 write interception, merge semantics, two transports, cryptography, recovery,
@@ -1831,25 +1830,22 @@ with no recursive release-ZIP requirement.
 
 **Open decisions**
 
-- **May G17b perform its operational actions? — Blocking start.** This request
-  approved plan text only. Starting G17b requires an explicit instruction that
-  authorizes use of signing subkey
+- **May G17b perform its operational actions? — Resolved 2026-08-25.** The user
+  explicitly authorized use of signing subkey
   `4ABEB98AF99C8321931BCF282C6A8A4568264005`, non-logging Secret Service
   passphrase retrieval, generated and production RFC 3161 requests to the
   selected DigiCert/Sectigo endpoints under the acceptance gate above, and
   writes below `/media/renes/SEAGATE2TB/notrios-evidence/`. It still does not
   authorize a GitHub push or physical burn.
-- **Is offline recovery/revocation ready? — Blocking the first production
-  signature, not implementation or generated pilot work.** The owner must attest
-  that the full primary identity and revocation certificate have restorable
-  offline custody. Do not put their paths, media identifiers, or secret bytes in
-  the repository. If the attestation is unavailable, G17b may build and test
-  tooling but must stop before signing an artifact.
-- **Unexpected TSA pilot result — Non-blocking default.** Pin DigiCert's observed
-  policy/chain only if every stated check passes; otherwise try Sectigo once
-  under its published pacing guidance. If neither passes, stop and reopen the
-  authority decision. Never fall back to local wall-clock time or an implicit CA
-  store.
+- **Is offline recovery/revocation ready? — Resolved 2026-08-25.** The owner
+  attested that the full primary-key backup and revocation certificate are
+  restorable offline. Their paths, media identifiers, and secret bytes are not
+  recorded.
+- **Unexpected TSA pilot result — Resolved for this run.** The generated DigiCert
+  pilot passed the nonce, SHA-256 imprint, policy `2.16.840.1.114412.7.1`,
+  critical timestamping EKU, `genTime` validity, and explicit pinned-chain gates.
+  Sectigo was not contacted. Local wall-clock time and implicit CA stores remain
+  forbidden fallbacks.
 
 ## G18. Shared-core, FFI, Mermaid, and installation/mobile portability handoff
 

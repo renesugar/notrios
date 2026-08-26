@@ -31,10 +31,12 @@ archived under `plans/v0.7/`; their reviewed evidence is under
 `plans/v0.7/025-sync-recovery-ui.md`; G17's archive is
 `plans/v0.7/026-peer-retention-gc-repair.md`; G17a and its later decision record
 are `plans/v0.7/028-evidence-preservation-contract.md` and
-`plans/v0.7/029-evidence-handling-decisions.md`. **G17a is complete. The user
-resolved G17b's curated scope, exact OpenPGP identity, and DigiCert/Sectigo
-provider order on 2026-08-25. G17b is next but is not operationally approved;
-it blocks G18 and every GitHub push. G18/G18a-G18g are also not approved.** G14b selected option B: a
+`plans/v0.7/029-evidence-handling-decisions.md`. **G17a is complete and G17b is
+in progress. The user resolved G17b's curated scope, exact OpenPGP identity,
+and DigiCert/Sectigo provider order, authorized exact-key/Secret-Service use,
+TSA requests and reserve writes, and attested offline recovery/revocation
+readiness on 2026-08-25. G17b still blocks G18 and every GitHub push.
+G18/G18a-G18g are also not approved.** G14b selected option B: a
 required compatible same-schema SQLite-image plus bounded packed-assets
 capability for whole-library full backup/catch-up, retaining packed semantic
 archive-v2 for subset, merge, schema-independent interchange, and fallback.
@@ -173,12 +175,11 @@ generic response ceiling truncating 16 MiB ranges, unconditional whole-library
 reconciliation for a body edit, and quadratic repeated-prefix validation in
 bounded directory publication. Tests cover each boundary; no format, schema,
 compressor, third-party dependency, REST/MCP path surface, or automatic restore
-was added. G15-G17a are now complete; operationally unapproved G17b is next and
-blocks G18 and any GitHub push. Starting it must explicitly authorize the exact
-subkey/credential use, TSA network requests, and external reserve writes; the
-owner must attest offline primary backup and revocation readiness before the
-first production signature. Every remaining item requires separate item-by-item
-user approval.
+was added. G15-G17a are complete and G17b is in progress under the exact
+operational authorization and recovery/revocation attestation recorded above.
+The generated DigiCert pilot passed policy/nonce/imprint/EKU/time/explicit-chain
+checks; Sectigo was not used. G17b still blocks G18 and any GitHub push. Every
+remaining item requires separate item-by-item user approval.
 
 G14b added only investigation/prototype code and aggregate evidence. Its 57
 validated full-corpus phase rows cover equivalent 382,206-document Joplin and

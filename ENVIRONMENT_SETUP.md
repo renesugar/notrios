@@ -20,7 +20,7 @@ Versions match `go.mod` and `.github/workflows/ci.yml`:
 
 For GUI work additionally: `libgtk-3-dev`, `libwebkit2gtk-4.1-dev` (the exact packages CI installs for the GUI compile check).
 
-Optional: `go-task` (the `Taskfile.yml` mirrors the main Make targets), `sqlite3` CLI, `jq`, `zip` (release archives), `xvfb` (running the GUI headless), `recoll` (the optional search sidecar — GPL, always an external process). G17a evaluated GnuPG, OpenSSL's RFC 3161 commands, and xorriso-compatible ISO 9660 tooling with generated fixtures only; they are not application runtime dependencies. G17b's design inputs are resolved but implementation remains unapproved, so no production signing-key use, credential retrieval, network timestamp, ISO-reserve, or optical-media operation is currently authorized.
+Optional: `go-task` (the `Taskfile.yml` mirrors the main Make targets), `sqlite3` CLI, `jq`, `zip` (release archives), `xvfb` (running the GUI headless), `recoll` (the optional search sidecar — GPL, always an external process). GnuPG 2.4.4, OpenSSL 3.0.13, and xorriso 1.5.6 are the recorded external G17b sealing/verifier boundaries; they are not application runtime dependencies. G17b exact-key, credential, TSA, and reserve operations were authorized on 2026-08-25. GitHub push and physical optical burning remain unauthorized.
 
 ```bash
 sudo apt update
