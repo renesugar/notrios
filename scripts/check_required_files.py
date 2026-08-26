@@ -36,6 +36,8 @@ required = [
     'performance/v0.7-g18/ABI_CONTRACT.json',
     'performance/v0.7-g18/MERMAID_CONTRACT.json',
     'performance/v0.7-g18/ANDROID_FEASIBILITY.json',
+    'performance/v0.7-g18/ANDROID_SQLITE_FOLLOWUP.json',
+    'performance/v0.7-g18/EDITOR_SEARCH_QA.json',
     'performance/v0.7-g18/validate_evidence.py',
     'performance/v0.7-g18/test_validate_evidence.py',
     'WORKSPACE_MAINTENANCE.md',

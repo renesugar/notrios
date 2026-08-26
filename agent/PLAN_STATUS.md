@@ -1,6 +1,6 @@
 # Plan Status
 
-Updated: 2026-08-25 (G0-G18 complete; G18a next and unapproved)
+Updated: 2026-08-26 (G0-G18 complete; G18a next and unapproved)
 
 ## Active milestone
 
@@ -56,6 +56,17 @@ approved.
   and browser/Wails/offline/CSP/sanitization/accessibility fixtures now gate any
   enablement. Evidence is under `performance/v0.7-g18/`; archive is
   `plans/v0.7/031-shared-core-ffi-portability-handoff.md`.
+- The 2026-08-26 follow-up corrects the Android premise: SQLite is not a public
+  NDK C API, and Jetpack's bundled Kotlin driver does not satisfy the Go cgo
+  boundary. v0.8 H0 now investigates a checksum-pinned upstream amalgamation as
+  its recommended default, with explicit blocking ownership, version/options,
+  ABI, symbol/concurrency, storage, and compatibility decisions and gates.
+- Ubuntu Clang/Clang++ 18.1.3 resolve normally and Flutter Doctor reports no
+  issues. Swiftly is reachable with Swift 6.3.3 installed but no selected
+  toolchain. Zero AVDs/devices and no Android build remain the honest boundary.
+- Rendered Ctrl+F QA confirms the current editor's case, regexp, by-word,
+  navigation, single-replace, replace-all, and save behavior at desktop and
+  narrow widths with no console warnings. Ctrl/Cmd+H is not a default binding.
 
 ## v0.7 G17b completion — 2026-08-25
 

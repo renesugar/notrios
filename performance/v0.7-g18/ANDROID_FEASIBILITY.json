@@ -1,13 +1,31 @@
 {
   "schema": "notrios.g18.android-feasibility.v1",
   "captured_at": "2026-08-26T05:44:01Z",
-  "amended_at": "2026-08-26T06:24:35Z",
+  "amended_at": "2026-08-26T15:50:05Z",
   "sdk_root_kind": "local Android SDK",
   "platform": "android-37.0",
   "adb_version": "1.0.41",
   "ndk_version": "30.0.15729638",
   "probe_target": {"goos": "android", "goarch": "arm64", "api_level": 35},
   "toolchain_present": true,
+  "host_toolchain_followup": {
+    "clang_path": "/usr/bin/clang",
+    "clang_version": "18.1.3",
+    "clang_target": "x86_64-pc-linux-gnu",
+    "clangxx_path": "/usr/bin/clang++",
+    "swiftly_on_path": true,
+    "swiftly_version": "1.1.2",
+    "swift_release_toolchain_installed": "6.3.3",
+    "swift_toolchain_selected": false,
+    "meaning": "PATH now resolves clang and clang++ to Ubuntu's installed binaries. Swiftly itself is reachable, but `swift` still refuses until a default or project toolchain is selected."
+  },
+  "supplied_clang_reference_accuracy": {
+    "clang_version_and_path_checks": "accurate",
+    "dpkg_package_inventory": "accurate and confirms Ubuntu Clang 18 packages",
+    "swiftly_shim_interference": "accurate when the Swiftly bin directory precedes /usr/bin; its clang and clang++ entries are shims",
+    "current_resolution": "system Clang wins because /usr/bin now precedes the Swiftly shims",
+    "swiftly_use_latest": "valid selector syntax but not executed; --global-default is required when the intent is to set the global default rather than a project selection"
+  },
   "configured_avds": 0,
   "emulator_execution_attempted": false,
   "cross_compile": {
@@ -42,8 +60,9 @@
     "android_platform": "android-37.0",
     "android_licenses_accepted": true,
     "connected_android_devices": 0,
-    "linux_desktop_toolchain_passed": false,
-    "linux_desktop_blocker": "host clang++ is not installed"
+    "linux_desktop_toolchain_passed": true,
+    "linux_desktop_blocker": null,
+    "no_issues_found": true
   },
   "flutter_build_claimed": false,
   "required_v0_8_emulator_gate": [

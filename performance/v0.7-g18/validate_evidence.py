@@ -30,12 +30,18 @@ def main() -> None:
     abi = load("ABI_CONTRACT.json")
     mermaid = load("MERMAID_CONTRACT.json")
     android = load("ANDROID_FEASIBILITY.json")
+    editor_search = load("EDITOR_SEARCH_QA.json")
+    android_sqlite = load("ANDROID_SQLITE_FOLLOWUP.json")
 
     require(audit["schema"] == "notrios.g18.source-audit.v1", "source-audit schema differs")
     require(platform["schema"] == "notrios.g18.platform-matrix.v1", "platform schema differs")
     require(abi["schema"] == "notrios.g18.abi-contract.v1", "ABI schema differs")
     require(mermaid["schema"] == "notrios.g18.mermaid-contract.v1", "Mermaid schema differs")
     require(android["schema"] == "notrios.g18.android-feasibility.v1", "Android schema differs")
+    require(editor_search["schema"] == "notrios.g18.editor-search-qa.v1",
+            "editor-search QA schema differs")
+    require(android_sqlite["schema"] == "notrios.g18.android-sqlite-followup.v1",
+            "Android SQLite follow-up schema differs")
 
     routes: list[tuple[str, str]] = []
     for path in production_go_files(REPO / "internal" / "httpapi"):
@@ -102,13 +108,81 @@ def main() -> None:
     require(doctor["android_toolchain_passed"] is True and doctor["connected_android_devices"] == 0,
             "Flutter Doctor Android/device evidence differs")
     require(android["flutter_build_claimed"] is False, "G18 falsely claims a Flutter build")
+    require(doctor["linux_desktop_toolchain_passed"] is True and
+            doctor["linux_desktop_blocker"] is None and doctor["no_issues_found"] is True,
+            "Flutter Doctor follow-up is not the all-passing result")
+    host_tools = android["host_toolchain_followup"]
+    require(host_tools["clang_path"] == "/usr/bin/clang" and
+            host_tools["clangxx_path"] == "/usr/bin/clang++",
+            "Clang PATH follow-up differs")
+    require(host_tools["swiftly_on_path"] is True and
+            host_tools["swift_toolchain_selected"] is False,
+            "Swiftly PATH/selection finding differs")
 
-    serialized = json.dumps([audit, platform, abi, mermaid, android])
+    package_lock = json.loads((REPO / "web" / "package-lock.json").read_text(encoding="utf-8"))
+    for package, version in editor_search["versions"].items():
+        require(package_lock["packages"][f"node_modules/{package}"]["version"] == version,
+                f"editor-search dependency version drifted: {package}")
+    md_editor_path = (REPO / "web" / "node_modules" / "md-editor-rt" / "lib" / "es" /
+                      "chunks" / "Editor.mjs")
+    cm_search_path = (REPO / "web" / "node_modules" / "@codemirror" / "search" / "dist" /
+                      "index.js")
+    editor_pane_source = (REPO / "web" / "src" / "components" / "EditorPane.tsx").read_text(
+        encoding="utf-8")
+    require("@codemirror/search" in
+            package_lock["packages"]["node_modules/md-editor-rt"]["dependencies"],
+            "md-editor-rt lock entry no longer depends on CodeMirror search")
+    # The Go-only CI job deliberately has no node_modules. Recheck installed
+    # source when available, while the exact lock versions and browser result
+    # remain portable evidence in a clean checkout.
+    if md_editor_path.exists() and cm_search_path.exists():
+        md_editor_source = md_editor_path.read_text(encoding="utf-8")
+        cm_search_source = cm_search_path.read_text(encoding="utf-8")
+        require('from "@codemirror/search"' in md_editor_source,
+                "md-editor-rt no longer imports CodeMirror search")
+        require('{ key: "Mod-f", run: openSearchPanel' in cm_search_source,
+                "CodeMirror default search-open key drifted")
+        require('key: "Mod-h"' not in cm_search_source and 'key: "Mod-H"' not in cm_search_source,
+                "CodeMirror now has a Mod-H binding; refresh the shortcut conclusion")
+        require('button("replaceAll"' in cm_search_source and 'name: "word"' in cm_search_source and
+                'name: "case"' in cm_search_source and 'name: "re"' in cm_search_source,
+                "CodeMirror search-panel controls drifted")
+    require("<MdEditor" in editor_pane_source and "readOnly={!editable}" in editor_pane_source,
+            "Notrios editor integration drifted")
+    qa = editor_search["rendered_browser_qa"]
+    require(qa["ctrl_f_opened_panel"] is True and qa["single_replace_passed"] is True and
+            qa["whole_word_replace_all_passed"] is True and qa["console_errors_or_warnings"] == 0,
+            "rendered editor search/replace QA did not pass")
+
+    sqlite_source = (REPO / "internal" / "store" / "sqlite.go").read_text(encoding="utf-8")
+    require(android_sqlite["current_notrios_store"]["store_files_importing_c"] == len(cgo_files),
+            "Android SQLite follow-up cgo inventory drifted")
+    require("SQLITE_OPEN_FULLMUTEX" in sqlite_source and "PRAGMA journal_mode = WAL" in sqlite_source,
+            "current store connection contract drifted")
+    require("USING fts5" in (REPO / "internal" / "store" / "migrations" /
+                             "0001_initial.sql").read_text(encoding="utf-8"),
+            "FTS5 is no longer a required store feature")
+    require(any("json_valid" in path.read_text(encoding="utf-8")
+                for path in (REPO / "internal" / "store" / "migrations").glob("*.sql")),
+            "JSON SQL functions are no longer a required store feature")
+    approach_fits = {item["id"]: item["fit"] for item in android_sqlite["approaches"]}
+    require(approach_fits["pinned_upstream_amalgamation_in_go_core"] ==
+            "recommended investigation default", "Android SQLite recommendation drifted")
+    require(approach_fits["jetpack_bundled_sqlite_driver"] ==
+            "not a drop-in dependency for the selected Go core",
+            "Jetpack driver is misrepresented as satisfying cgo")
+    require(android_sqlite["android_facts"]["ndk_public_sqlite_c_api"] is False,
+            "evidence falsely claims SQLite is a public NDK C API")
+    require(len(android_sqlite["blocking_v0_8_decisions"]) >= 5 and
+            len(android_sqlite["required_investigation_gates"]) >= 8,
+            "Android SQLite investigation is underspecified")
+
+    serialized = json.dumps([audit, platform, abi, mermaid, android, editor_search, android_sqlite])
     require("/home/" not in serialized and "SEAGATE" not in serialized,
             "portable evidence contains a host-private path")
     require(audit["private_data_read"] is False and audit["production_code_changed"] is False,
             "G18 crossed its investigation/handoff boundary")
-    print("g18 evidence: 109 API operations, 19 platform capabilities, ABI/Mermaid/Android handoff validated")
+    print("g18 evidence: 109 API operations, 19 platform capabilities, ABI/Mermaid/Android/editor follow-up validated")
 
 
 if __name__ == "__main__":

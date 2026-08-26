@@ -81,6 +81,43 @@ capability negotiation, no exposed Go pointer, and recorded RSS/lifecycle.
 Physical storage, secure-store migration, background/battery/notifications,
 pairing/catch-up/backup, responsive UI, accessibility, and iOS remain post-1.0.
 
+## 2026-08-26 Android SQLite and editor-search follow-up
+
+The host toolchain limitation has changed without changing G18's product
+boundary. Ubuntu Clang/Clang++ 18.1.3 now resolve from `/usr/bin`, and Flutter
+Doctor 3.44.9 reports no issues across Android, Chrome, Linux, devices, and
+network. Swiftly 1.1.2 is on PATH and lists Swift 6.3.3, but no Swift toolchain
+is selected. There are still zero configured AVDs and connected Android
+devices, so no build or emulator claim follows from the all-passing Doctor.
+
+The supplied Android SQLite material was only partly accurate. Android exposes
+framework SQLite to Java/Kotlin, but SQLite is not a public NDK C API and this
+installed NDK has no `sqlite3.h`/`libsqlite3` development pair. Jetpack's
+`BundledSQLiteDriver` genuinely packages a compiled native SQLite and gives
+Kotlin/Room a consistent driver; it does not satisfy Notrios's current
+`pkg-config: sqlite3` cgo contract. Canonical storage is owned by the Go shared
+core across 43 C-importing store files, with FULLMUTEX, WAL, FTS5, and JSON
+requirements. Selecting the Jetpack driver for that database would be a
+database-ownership redesign and bridge, not a linkage fix.
+
+The v0.8 H0 investigation now recommends a checksum-pinned upstream SQLite
+amalgamation compiled into the Go shared library as its default hypothesis.
+Implementation remains blocked on the recorded version/update/compile-option,
+minSdk/ABI, symbol/duplicate-engine, Android sandbox/lifecycle, and cross-
+platform database-compatibility decisions. The exact build/load, compile-
+option, FTS5/JSON, store/snapshot/sync, database round-trip, size/RSS, and
+single-engine gates are machine-recorded in
+`performance/v0.7-g18/ANDROID_SQLITE_FOLLOWUP.json`.
+
+The installed editor stack was also tested rather than inferred. md-editor-rt
+6.5.3 installs CodeMirror search 6.7.1. Ctrl+F opened the editable-note search
+panel; case-sensitive, regexp, and whole-word counts, single replace,
+whole-word replace-all, and persistence passed at desktop and narrow viewports
+with zero console warnings/errors. The panel owns replacement controls;
+Ctrl/Cmd+H is not a default CodeMirror binding. Aggregate evidence is in
+`EDITOR_SEARCH_QA.json`; disposable screenshots and the test database remained
+outside the repository.
+
 ## Mermaid baseline and enablement gate
 
 The current React GUI still sets `noMermaid: true`; fenced source is the honest

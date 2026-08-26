@@ -100,9 +100,19 @@ output release, and 1 MiB JSON/stream-read bounds. Linux Go shared/archive
 build modes work against host SQLite. Debian's host `sqlite3.h` and x86-64
 library are installed, but NDK compilation still stops at the absent Android-
 target SQLite boundary; adding `/usr/include` proves invalid because it mixes
-glibc host headers into the Android sysroot. Flutter Doctor passes the Android
-toolchain/Studio/JDK checks, with no AVD, connected Android device, Flutter/
-Android build, or device support claimed.
+glibc host headers into the Android sysroot. A 2026-08-26 follow-up confirms
+that SQLite is not a public NDK C API and Jetpack `BundledSQLiteDriver` is a
+Kotlin/Room driver, not a drop-in `sqlite3.h`/cgo dependency. v0.8 H0 now starts
+from a checksum-pinned upstream amalgamation in the Go shared core as the
+recommended investigation default, with exact version/update/compile flags,
+ABI/minSdk, one-engine symbol policy, sandbox/WAL lifecycle, and desktop/
+Android interoperability still blocking. Flutter Doctor now reports no issues
+after `/usr/bin/clang` and `/usr/bin/clang++` PATH resolution was restored;
+Swiftly is reachable but has no selected Swift toolchain. There is still no AVD,
+connected Android device, Flutter/Android build, or device support claim.
+Rendered browser QA also confirms that the current editable md-editor-rt/
+CodeMirror UI exposes case, regexp, by-word, and replacement controls through
+Ctrl+F; Ctrl/Cmd+H is not a default binding.
 Mermaid remains disabled behind `noMermaid: true`; exact browser/Wails/offline/
 CSP/sanitization/accessibility and size/time/heap gates now belong to v0.8.
 
@@ -699,7 +709,10 @@ Facts about the development machine that no other document records:
 
 The scaffold was created in a restricted container. Still-open consequences:
 
-1. The SQLite store uses a small local cgo adapter over system `libsqlite3`; the long-term driver choice is open.
+1. The SQLite store uses a small local cgo adapter over system `libsqlite3` on
+   Linux. v0.8 H0 must investigate a pinned upstream amalgamation for the Go
+   Android shared core before implementation; Jetpack's Kotlin driver does not
+   satisfy this C boundary without redesigning database ownership.
 2. The MCP adapter is dependency-free; the official MCP Go SDK can replace it later without changing tool semantics.
 3. J1 matches canonical Joplin first-line titles and CR/LF-only metadata
    parsing, including OCR controls. J2 validates both supplied real exports and

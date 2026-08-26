@@ -468,7 +468,20 @@ be smuggled into v0.7 as desktop assumptions.
   ownership, cancellation, threads, packaging, and Android-emulator premises,
   then freeze the minimal versioned contract described in
   `FLUTTER_GO_CLIENT.md`. This investigation comes before a bridge because the
-  desktop, Android, and iOS packaging costs differ materially.
+  desktop, Android, and iOS packaging costs differ materially. Its Android
+  SQLite sub-investigation starts from the measured fact that the NDK exposes
+  no public `sqlite3.h`/`libsqlite3` development contract and Jetpack's bundled
+  Kotlin driver is not a drop-in for Notrios's Go cgo store. The recommended
+  default is a checksum-pinned upstream amalgamation compiled into the Go
+  shared core. Before H1, H0 must resolve the blocking owner/package,
+  version/checksum/update/compile-option, minSdk/ABI, symbol/duplicate-engine,
+  concurrency, sandbox/WAL/crash, and cross-platform image-compatibility
+  decisions recorded inside PLAN G18. Evidence must build/load the selected
+  emulator ABI; record version/compile options; execute FTS5 and JSON; run
+  store/snapshot/sync tests; round-trip a checkpointed desktop/Android database;
+  measure size/RSS; and prove one engine owns the canonical file. H0 does not
+  adopt Jetpack, Room, an amalgamation, or an Android dependency merely by
+  investigating them.
 - **H1 shared core — no-GUI Notrios library.** Extract one transport-neutral
   application facade used by REST and a small `cmd/notrioslib` wrapper. Build a
   C ABI with opaque instance/stream handles, bounded serialized calls, typed

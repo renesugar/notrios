@@ -31,7 +31,33 @@ class G18ContractTests(unittest.TestCase):
         self.assertFalse(host["android_target_usable"])
         self.assertFalse(android["cross_compile"]["host_header_followup"]["passed"])
         self.assertTrue(android["flutter_doctor"]["android_toolchain_passed"])
+        self.assertTrue(android["flutter_doctor"]["linux_desktop_toolchain_passed"])
+        self.assertTrue(android["flutter_doctor"]["no_issues_found"])
+        self.assertIsNone(android["flutter_doctor"]["linux_desktop_blocker"])
         self.assertEqual(android["flutter_doctor"]["connected_android_devices"], 0)
+
+    def test_editor_search_rendered_controls_and_shortcut_are_honest(self) -> None:
+        editor = self.load("EDITOR_SEARCH_QA.json")
+        controls = set(editor["source_findings"]["editable_panel_controls"])
+        self.assertTrue({"Find", "Replace", "match case", "regexp", "by word",
+                         "replace", "replace all"}.issubset(controls))
+        self.assertEqual(editor["source_findings"]["default_open_shortcut"], "Mod-f")
+        self.assertFalse(editor["source_findings"]["ctrl_h_or_mod_h_default_binding"])
+        rendered = editor["rendered_browser_qa"]
+        self.assertTrue(rendered["single_replace_passed"])
+        self.assertTrue(rendered["whole_word_replace_all_passed"])
+        self.assertEqual(rendered["console_errors_or_warnings"], 0)
+
+    def test_android_sqlite_options_preserve_go_database_ownership(self) -> None:
+        followup = self.load("ANDROID_SQLITE_FOLLOWUP.json")
+        approaches = {item["id"]: item for item in followup["approaches"]}
+        self.assertEqual(approaches["pinned_upstream_amalgamation_in_go_core"]["fit"],
+                         "recommended investigation default")
+        self.assertEqual(approaches["jetpack_bundled_sqlite_driver"]["fit"],
+                         "not a drop-in dependency for the selected Go core")
+        self.assertFalse(followup["android_facts"]["ndk_public_sqlite_c_api"])
+        self.assertIn("FTS5", followup["current_notrios_store"]["required_features"])
+        self.assertIn("JSON SQL functions", followup["current_notrios_store"]["required_features"])
 
     def test_mermaid_limits_have_negative_fixtures(self) -> None:
         mermaid = self.load("MERMAID_CONTRACT.json")

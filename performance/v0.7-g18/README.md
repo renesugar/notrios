@@ -31,9 +31,16 @@ Evidence files:
 - `MERMAID_CONTRACT.json` — honest disabled baseline and exact v0.8 fixture/
   security/performance acceptance contract.
 - `ANDROID_FEASIBILITY.json` — installed-tool and cross-compile findings plus
-  the bounded emulator gate. Its amendment records a passing Flutter Android
-  toolchain check, the host/target SQLite distinction, and zero configured AVDs
-  or connected Android devices.
+  the bounded emulator gate. Its amendment records a fully passing Flutter
+  Doctor result after Clang PATH correction, the host/target SQLite distinction,
+  and zero configured AVDs or connected Android devices. Swiftly is on PATH and
+  has an installed release, but no Swift toolchain is selected.
+- `ANDROID_SQLITE_FOLLOWUP.json` — the current Go/cgo ownership model, corrected
+  Android NDK/framework/Jetpack distinctions, four packaging approaches,
+  blocking v0.8 decisions, and the emulator/interoperability gates.
+- `EDITOR_SEARCH_QA.json` — installed editor versions, source/keymap findings,
+  and the rendered Ctrl+F case/regexp/whole-word/replace browser result. The
+  disposable desktop and narrow screenshots remain outside the repository.
 - `validate_evidence.py` and `test_validate_evidence.py` — deterministic source
   and evidence checks. They perform no network access and read no private data.
 

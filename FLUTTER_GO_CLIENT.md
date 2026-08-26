@@ -153,8 +153,42 @@ host files, not Android-arm64 artifacts. A follow-up that forced `/usr/include`
 failed immediately in incompatible glibc/Android sysroot headers. v0.8 therefore
 needs an explicit Android SQLite build/link/package choice before an emulator
 can load the shared library. Flutter Doctor passes the Android SDK, Android
-Studio, bundled-Java, and license checks. No AVD or Android device is configured,
-and G18 claims no Android or Flutter build.
+Studio, bundled-Java, license, Chrome, network, and Linux desktop checks after
+the host PATH was corrected to `/usr/bin/clang` and `/usr/bin/clang++`; it now
+reports no issues. Swiftly is reachable and Swift 6.3.3 is installed, but no
+Swift toolchain is selected, so `swift --version` still refuses. No AVD or
+Android device is configured, and G18 claims no Android or Flutter build.
+
+### Android SQLite follow-up (2026-08-26)
+
+The missing NDK header is not solved by Jetpack's `BundledSQLiteDriver` alone.
+Notrios currently keeps canonical persistence in the Go core: 43 store files
+call SQLite's C API through cgo, the adapter links with `pkg-config: sqlite3`,
+the one connection opens with `SQLITE_OPEN_FULLMUTEX`, and bootstrap requires
+FTS5 plus JSON SQL functions. Android's supported framework surface is
+`android.database.sqlite`; SQLite is not listed among the public NDK native
+libraries, and the installed NDK contains neither a public `sqlite3.h` nor a
+linkable `libsqlite3` development boundary.
+
+Jetpack `androidx.sqlite:sqlite-bundled` does include a native SQLite build and
+offers consistent Kotlin/JVM `SQLiteDriver` connections. It does not provide
+the header/link contract consumed by Go cgo. Making it canonical would move
+database ownership to Kotlin/Room and require a new Go/Kotlin application
+bridge, or risk two engines sharing one database file. Neither is an implicit
+packaging change. The driver also compiles SQLite in multi-thread mode, so its
+connections require a pool or explicit `FULLMUTEX` handling for concurrent use.
+
+The v0.8 H0 investigation therefore starts with a checksum-pinned upstream
+SQLite amalgamation compiled into the Go shared library as its recommended
+default, not as an already approved dependency. H0 must resolve the exact
+version/update cadence and compile flags; minSdk and ABI set; symbol visibility
+and one-engine-per-process policy; sandbox/backup/WAL/crash lifecycle; and
+desktop/Android database compatibility. It must record `sqlite_version()` and
+`PRAGMA compile_options`, execute FTS5 and JSON probes, run store/snapshot/sync
+tests, round-trip a checkpointed database across desktop and Android, measure
+APK/RSS deltas, and prove no second engine opens the canonical file. The
+official SQLite Android bindings are a useful AAR/JNI source example, but they
+also are not a drop-in replacement for the current Go link boundary.
 
 ## Milestone split
 
@@ -195,6 +229,18 @@ and Wails fixtures must pass. Rendering uses strict security mode and sanitizes
 the generated SVG before insertion; every refusal keeps the fenced source
 visible. These are enablement gates, not a claim that rendering works today.
 
+## Current React editor search
+
+Notrios currently pins `md-editor-rt` 6.5.3 with `@codemirror/search` 6.7.1.
+Source inspection shows that md-editor-rt installs CodeMirror's search keymap,
+and the Notrios `MdEditor` integration does not exclude it. A rendered browser
+pass on 2026-08-26 opened the editable-note panel with Ctrl+F and verified
+Find/Replace, next/previous/all, match case, regexp, by word, single replace,
+replace all, persistence after Save, desktop containment, narrow-panel reflow,
+and zero console warnings/errors. CodeMirror's default keymap defines Mod-f,
+F3/Mod-g navigation, and related selection commands; it does not define
+Ctrl/Cmd+H. Replacement is exposed inside the Ctrl/Cmd+F panel.
+
 ## Secret storage
 
 `flutter_secure_storage` is a plausible Flutter-side provider and advertises
@@ -221,3 +267,17 @@ destructive-review boundaries.
 - Go cgo pointer rules: <https://pkg.go.dev/cmd/cgo#hdr-Passing_pointers>
 - Flutter Smooth Markdown package: <https://pub.dev/packages/flutter_smooth_markdown>
 - Flutter Secure Storage package: <https://pub.dev/packages/flutter_secure_storage>
+
+## Follow-up primary references checked 2026-08-26
+
+- CodeMirror search reference: <https://codemirror.net/docs/ref/#search>
+- md-editor-rt source repository: <https://github.com/imzbf/md-editor-rt>
+- Android NDK public native APIs: <https://developer.android.com/ndk/guides/stable_apis>
+- Android framework SQLite guidance: <https://developer.android.com/training/data-storage/sqlite>
+- Jetpack `BundledSQLiteDriver`: <https://developer.android.com/reference/androidx/sqlite/driver/bundled/BundledSQLiteDriver>
+- Jetpack SQLite releases: <https://developer.android.com/jetpack/androidx/releases/sqlite>
+- Kotlin Multiplatform SQLite drivers: <https://developer.android.com/kotlin/multiplatform/sqlite>
+- Official SQLite Android bindings: <https://www.sqlite.org/android/doc/trunk/www/install.wiki>
+- SQLite amalgamation: <https://www.sqlite.org/amalgamation.html>
+- SQLite FTS5 build contract: <https://www.sqlite.org/fts5.html>
+- SQLite JSON build contract: <https://www.sqlite.org/json1.html>

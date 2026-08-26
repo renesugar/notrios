@@ -1950,6 +1950,42 @@ offline/security test design.
   sanitization, accessibility, performance, maintenance, and BSD-3-Clause
   dependency tree must pass a post-1.0 spike before adoption.
 
+**v0.8 Android SQLite investigation input (added 2026-08-26).** This follow-up
+does not reopen G18 or authorize a dependency/Android build. It corrects the
+premise for v0.8 H0: Android framework SQLite is a Java/Kotlin API, not a public
+NDK `sqlite3.h`/`libsqlite3` C development contract. Jetpack's
+`BundledSQLiteDriver` embeds SQLite for Kotlin/Room but does not satisfy the
+current Go cgo adapter. Notrios canonical persistence is owned by the Go core
+across 43 C-importing store files and requires FULLMUTEX/WAL, FTS5, and JSON.
+H0's recommended investigation default is therefore one checksum-pinned
+upstream SQLite amalgamation compiled into the Go shared library.
+
+**Open decisions for v0.8 H0.** These do not block completed G18, but all are
+blocking for H1's Android build. H0 must measure and recommend before H1 starts.
+
+- **Database owner/package.** Choose the pinned amalgamation in the Go core
+  (recommended because it preserves one transport-neutral canonical store), or
+  explicitly approve a Kotlin/Room ownership redesign and new bridge. Android
+  framework SQLite and an implicit dual-engine file share are not candidates.
+- **Version and features.** Pin exact upstream source/checksum, security-update
+  cadence, and compile options. FTS5 and JSON probes are required; any optional
+  extension must be justified by source use and size/security evidence.
+- **Platform contract.** Select minSdk and packaged ABIs, including the actual
+  emulator ABI. Measure per-ABI size/RSS and reject an architecture inferred
+  only from the host or an unconfigured emulator.
+- **Native symbols/concurrency.** Freeze static/shared linkage, symbol
+  visibility or prefixing, one-SQLite-engine-per-process, FULLMUTEX plus Go
+  mutex behavior, and refusal of concurrent canonical-file ownership.
+- **Storage/compatibility.** Freeze sandbox database/assets and backup/no-backup
+  locations, WAL checkpoint/crash behavior, and desktop/Android database image
+  compatibility. Round-trip a checkpointed file in both directions and run
+  integrity, snapshot/restore, CRUD/search, and sync tests.
+
+The same follow-up confirms the current editor behavior: md-editor-rt 6.5.3 and
+CodeMirror search 6.7.1 expose case, regexp, by-word, navigation, single replace,
+and replace-all controls in the Ctrl/Cmd+F panel. Rendered desktop/narrow QA and
+persistence pass without console warnings. Ctrl/Cmd+H is not a default binding.
+
 **Outcome (2026-08-25).** G18 froze a machine-checked 19-capability platform/
 permission matrix and audited all 109 normalized non-HEAD API operations. The
 current reusable seams are `store.Store`, injected secret/sidecar providers,
@@ -1965,9 +2001,12 @@ and web assets stay adapters. Linux `c-shared`/`c-archive` feasibility probes
 built against host SQLite but exported no ABI/header; Android/arm64 reached the
 installed NDK compiler and failed honestly at the missing Android-target
 `sqlite3.h`. Debian's host header/x86-64 library are present but forcing the
-host include root produces incompatible glibc/Android headers. Flutter Doctor
-passes the Android Studio/JDK/toolchain checks, with no AVD, connected Android
-device, or Flutter/Android build claimed. Mermaid remains disabled; the v0.8 gate now
+host include root produces incompatible glibc/Android headers. A 2026-08-26
+follow-up records that Flutter Doctor now passes every check after Clang PATH
+correction; Swiftly has no selected toolchain, and there is still no AVD,
+connected Android device, or Flutter/Android build claim. It also records the
+Android SQLite H0 decisions and rendered editor-search result above. Mermaid
+remains disabled; the v0.8 gate now
 has exact source/node/edge/label/time/heap bounds plus browser/Wails/offline/
 CSP/sanitization/accessibility fixtures and safe source fallback. No production
 code, schema, dependency, installer, ABI, Flutter artifact, Mermaid setting,
