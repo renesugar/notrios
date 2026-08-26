@@ -148,9 +148,13 @@ dynamically linked host `libsqlite3`, but emitted no C header because there are
 no exported ABI symbols. They are feasibility artifacts, not libraries. An
 Android/arm64 API-35 cgo probe reached the installed NDK compiler and then
 failed at `sqlite3.h`; the NDK contains no matching SQLite development boundary.
-v0.8 therefore needs an explicit Android SQLite build/link/package choice
-before an emulator can load the shared library. No AVD was configured, and G18
-claims no Android or Flutter build.
+Debian's `/usr/include/sqlite3.h` and x86-64 library are installed, but they are
+host files, not Android-arm64 artifacts. A follow-up that forced `/usr/include`
+failed immediately in incompatible glibc/Android sysroot headers. v0.8 therefore
+needs an explicit Android SQLite build/link/package choice before an emulator
+can load the shared library. Flutter Doctor passes the Android SDK, Android
+Studio, bundled-Java, and license checks. No AVD or Android device is configured,
+and G18 claims no Android or Flutter build.
 
 ## Milestone split
 

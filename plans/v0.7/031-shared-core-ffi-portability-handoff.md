@@ -66,9 +66,14 @@ The current Linux `c-shared` and `c-archive` probes built and dynamically linked
 host `libsqlite3`. They emitted no header because the current main package has
 no exported ABI symbol; the `/tmp` files are not release libraries. The
 Android/arm64 API-35 probe reached NDK 30's compiler and failed at missing
-`sqlite3.h`; no NDK SQLite header/library was found. This converts the SQLite
-linkage premise into a v0.8 decision/probe rather than hiding it in bridge work.
-There is no configured AVD, and no Android or Flutter build is claimed.
+`sqlite3.h`; no NDK SQLite header/library was found. Debian does provide
+`/usr/include/sqlite3.h` plus an x86-64 library, but these are host artifacts;
+forcing the host include root into the Android/arm64 probe fails in incompatible
+glibc/Android sysroot headers and cannot supply the target library. This
+converts the SQLite linkage premise into a v0.8 decision/probe rather than
+hiding it in bridge work. A follow-up Flutter Doctor run passes the Android SDK,
+Android Studio, bundled-Java, and license checks. There is no configured AVD or
+connected Android device, and no Android or Flutter build is claimed.
 
 The emulator gate requires library load, two isolated instances, SQLite
 bootstrap plus CRUD/search, one bounded resource stream, cancellation/polling,

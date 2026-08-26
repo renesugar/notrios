@@ -46,8 +46,12 @@ approved.
 - A 19-capability platform matrix separates current Linux, v0.8 Windows/macOS,
   the pre-1.0 Android-emulator gate, and post-1.0 iOS/physical devices.
 - Linux `c-shared`/`c-archive` probes built against host SQLite but exported no
-  header/ABI. Android/arm64 reached NDK clang and failed at missing `sqlite3.h`;
-  no AVD, Android build, Flutter build, or device support is claimed.
+  header/ABI. Debian's SQLite header and x86-64 library are installed; they are
+  not an Android-arm64 dependency. NDK clang failed at missing target
+  `sqlite3.h`, and forcing the host include root produced incompatible glibc/
+  Android headers. Flutter Doctor passes its Android toolchain check, using
+  Android Studio's bundled Java, but there is still no AVD, connected Android
+  device, Android/Flutter build, or device-support claim.
 - Mermaid remains disabled. Exact v0.8 source/node/edge/label/time/heap limits
   and browser/Wails/offline/CSP/sanitization/accessibility fixtures now gate any
   enablement. Evidence is under `performance/v0.7-g18/`; archive is

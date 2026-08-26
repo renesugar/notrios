@@ -97,8 +97,12 @@ still owns HTTP and no framework-neutral facade exists yet. The ABI-major-1
 proposal uses 12 version/lifecycle/dispatch/cancel/poll/event/stream/release
 symbols, generation-bearing opaque handles, a closed error taxonomy, explicit
 output release, and 1 MiB JSON/stream-read bounds. Linux Go shared/archive
-build modes work against host SQLite; Android NDK compilation stops at missing
-`sqlite3.h`, with no AVD, Flutter/Android build, or device support claimed.
+build modes work against host SQLite. Debian's host `sqlite3.h` and x86-64
+library are installed, but NDK compilation still stops at the absent Android-
+target SQLite boundary; adding `/usr/include` proves invalid because it mixes
+glibc host headers into the Android sysroot. Flutter Doctor passes the Android
+toolchain/Studio/JDK checks, with no AVD, connected Android device, Flutter/
+Android build, or device support claimed.
 Mermaid remains disabled behind `noMermaid: true`; exact browser/Wails/offline/
 CSP/sanitization/accessibility and size/time/heap gates now belong to v0.8.
 

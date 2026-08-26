@@ -631,9 +631,13 @@ G18 freezes the pre-implementation test oracle under `performance/v0.7-g18/`.
 It source-checks 109 non-HEAD API operations, Wails build-tag isolation, 43 cgo
 store files, 19 platform capabilities, closed ABI statuses, ownership and
 handle rules, and the current `noMermaid: true` baseline. The installed Android
-NDK cross-compile probe currently stops at missing `sqlite3.h`; an emulator
-claim requires an explicit SQLite linkage choice and the complete lifecycle/
-CRUD/search/stream/cancel/capability smoke, not merely a successful Go compile.
+NDK cross-compile probe currently stops at the missing Android-target
+`sqlite3.h`. The installed Debian host header/x86-64 library cannot be imported
+into the Android sysroot; a forced-include probe fails on incompatible glibc/
+Android headers. Flutter Doctor passes the Android toolchain checks, but an
+emulator claim requires an AVD, an explicit target SQLite linkage choice, and
+the complete lifecycle/CRUD/search/stream/cancel/capability smoke—not merely a
+successful Flutter Doctor or Go compile.
 
 ### HTML table paste (v0.5 E6b)
 

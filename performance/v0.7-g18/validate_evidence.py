@@ -93,6 +93,14 @@ def main() -> None:
     require(len(mermaid["fixtures"]) >= 14, "Mermaid fixture contract is incomplete")
     require(android["configured_avds"] == 0 and android["cross_compile"]["passed"] is False,
             "Android evidence overclaims the available environment")
+    host_sqlite = android["cross_compile"]["host_debian_sqlite_development"]
+    require(host_sqlite["header_found"] is True and host_sqlite["android_target_usable"] is False,
+            "host SQLite development files are confused with an Android-target library")
+    require(android["cross_compile"]["host_header_followup"]["passed"] is False,
+            "host-header follow-up result differs")
+    doctor = android["flutter_doctor"]
+    require(doctor["android_toolchain_passed"] is True and doctor["connected_android_devices"] == 0,
+            "Flutter Doctor Android/device evidence differs")
     require(android["flutter_build_claimed"] is False, "G18 falsely claims a Flutter build")
 
     serialized = json.dumps([audit, platform, abi, mermaid, android])

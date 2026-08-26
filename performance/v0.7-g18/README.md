@@ -16,8 +16,11 @@ The audit found useful seams but not a finished application facade:
   application facade.
 - 43 `internal/store` files import C. Linux `c-shared` and `c-archive` probes
   built against the host `libsqlite3`, but the existing main package exports no
-  C symbols and therefore emitted no header. The Android/arm64 cgo probe stopped
-  at `sqlite3.h` because the installed NDK has no SQLite development boundary.
+  C symbols and therefore emitted no header. Debian's `/usr/include/sqlite3.h`
+  and x86-64 library are installed, but they are host development files. The
+  Android/arm64 cgo probe stopped at `sqlite3.h` because the installed NDK has
+  no Android-target SQLite development boundary; forcing `/usr/include` then
+  failed in incompatible glibc/Android sysroot headers.
 
 Evidence files:
 
@@ -28,7 +31,9 @@ Evidence files:
 - `MERMAID_CONTRACT.json` — honest disabled baseline and exact v0.8 fixture/
   security/performance acceptance contract.
 - `ANDROID_FEASIBILITY.json` — installed-tool and cross-compile findings plus
-  the bounded emulator gate.
+  the bounded emulator gate. Its amendment records a passing Flutter Android
+  toolchain check, the host/target SQLite distinction, and zero configured AVDs
+  or connected Android devices.
 - `validate_evidence.py` and `test_validate_evidence.py` — deterministic source
   and evidence checks. They perform no network access and read no private data.
 

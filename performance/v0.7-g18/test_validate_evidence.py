@@ -24,6 +24,15 @@ class G18ContractTests(unittest.TestCase):
             self.assertTrue(set(matrix["platforms"]).issubset(capability))
             self.assertTrue(all(capability[target] in allowed for target in matrix["platforms"]))
 
+    def test_host_sqlite_is_not_android_target_evidence(self) -> None:
+        android = self.load("ANDROID_FEASIBILITY.json")
+        host = android["cross_compile"]["host_debian_sqlite_development"]
+        self.assertTrue(host["header_found"])
+        self.assertFalse(host["android_target_usable"])
+        self.assertFalse(android["cross_compile"]["host_header_followup"]["passed"])
+        self.assertTrue(android["flutter_doctor"]["android_toolchain_passed"])
+        self.assertEqual(android["flutter_doctor"]["connected_android_devices"], 0)
+
     def test_mermaid_limits_have_negative_fixtures(self) -> None:
         mermaid = self.load("MERMAID_CONTRACT.json")
         fixture_ids = {item["id"] for item in mermaid["fixtures"]}

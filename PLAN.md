@@ -1963,8 +1963,11 @@ from arbitrary Go threads. HTTP status/ETag/Range/cancellation translate to
 typed status/revision/stream/call fields while TLS, CSP, peer auth/rate limits,
 and web assets stay adapters. Linux `c-shared`/`c-archive` feasibility probes
 built against host SQLite but exported no ABI/header; Android/arm64 reached the
-installed NDK compiler and failed honestly at missing `sqlite3.h`, with no AVD
-or Flutter/Android build claimed. Mermaid remains disabled; the v0.8 gate now
+installed NDK compiler and failed honestly at the missing Android-target
+`sqlite3.h`. Debian's host header/x86-64 library are present but forcing the
+host include root produces incompatible glibc/Android headers. Flutter Doctor
+passes the Android Studio/JDK/toolchain checks, with no AVD, connected Android
+device, or Flutter/Android build claimed. Mermaid remains disabled; the v0.8 gate now
 has exact source/node/edge/label/time/heap bounds plus browser/Wails/offline/
 CSP/sanitization/accessibility fixtures and safe source fallback. No production
 code, schema, dependency, installer, ABI, Flutter artifact, Mermaid setting,

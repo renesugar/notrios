@@ -1,6 +1,7 @@
 {
   "schema": "notrios.g18.android-feasibility.v1",
   "captured_at": "2026-08-26T05:44:01Z",
+  "amended_at": "2026-08-26T06:24:35Z",
   "sdk_root_kind": "local Android SDK",
   "platform": "android-37.0",
   "adb_version": "1.0.41",
@@ -14,9 +15,36 @@
     "passed": false,
     "first_error": "sqlite_fix.go: fatal error: 'sqlite3.h' file not found",
     "ndk_sqlite_header_or_library_found": false,
-    "meaning": "The Go/NDK compiler is present; the current pkg-config/system-libsqlite3 adapter is host-only and needs an explicit Android SQLite linkage/package decision."
+    "host_debian_sqlite_development": {
+      "header_found": true,
+      "header": "/usr/include/sqlite3.h",
+      "library_architecture": "x86_64-linux-gnu",
+      "android_target_usable": false
+    },
+    "host_header_followup": {
+      "command_shape": "same Android/arm64 probe with CGO_CFLAGS=-I/usr/include",
+      "passed": false,
+      "first_error": "/usr/include/stdint.h conflicts with the Android NDK sysroot",
+      "meaning": "Adding the Debian host include root contaminates the Android sysroot with glibc/x86 host headers and cannot supply an Android-arm64 SQLite library."
+    },
+    "meaning": "The Go/NDK compiler is present and Debian supplies host sqlite3 development files, but the current pkg-config/system-libsqlite3 adapter is host-only and needs an explicit Android-target SQLite linkage/package decision."
   },
   "flutter_tools_present": true,
+  "android_studio_launched": true,
+  "flutter_doctor": {
+    "ran": true,
+    "flutter_version": "3.44.9",
+    "dart_version": "3.12.2",
+    "android_studio_configured": true,
+    "bundled_java_detected": true,
+    "android_toolchain_passed": true,
+    "android_sdk_version": "36.0.0",
+    "android_platform": "android-37.0",
+    "android_licenses_accepted": true,
+    "connected_android_devices": 0,
+    "linux_desktop_toolchain_passed": false,
+    "linux_desktop_blocker": "host clang++ is not installed"
+  },
   "flutter_build_claimed": false,
   "required_v0_8_emulator_gate": [
     "build and load the versioned shared library for one pinned Android API/ABI",
