@@ -20,7 +20,7 @@ Versions match `go.mod` and `.github/workflows/ci.yml`:
 
 For GUI work additionally: `libgtk-3-dev`, `libwebkit2gtk-4.1-dev` (the exact packages CI installs for the GUI compile check).
 
-Optional: `go-task` (the `Taskfile.yml` mirrors the main Make targets), `sqlite3` CLI, `jq`, `zip` (release archives), `xvfb` (running the GUI headless), `recoll` (the optional search sidecar — GPL, always an external process). GnuPG 2.4.4, OpenSSL 3.0.13, and xorriso 1.5.6 are the recorded external G17b sealing/verifier boundaries; they are not application runtime dependencies. G17b exact-key, credential, TSA, and reserve operations were authorized on 2026-08-25. GitHub push and physical optical burning remain unauthorized.
+Optional: `go-task` (the `Taskfile.yml` mirrors the main Make targets), `sqlite3` CLI, `jq`, `zip` (release archives), `xvfb` (running the GUI headless), `recoll` (the optional search sidecar — GPL, always an external process). GnuPG 2.4.4, OpenSSL 3.0.13, and xorriso 1.5.6 are the recorded external G17b sealing/verifier boundaries; they are not application runtime dependencies. G17b completed under its 2026-08-25 exact-key, credential, TSA, and reserve authorization. GitHub push and physical optical burning remain unauthorized. On the owner workstation, run `bash scripts/verify_evidence_pre_push.sh` before every future push.
 
 ```bash
 sudo apt update

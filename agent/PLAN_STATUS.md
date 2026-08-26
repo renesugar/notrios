@@ -1,6 +1,6 @@
 # Plan Status
 
-Updated: 2026-08-25 (G17a complete; G17b authorized and in progress)
+Updated: 2026-08-25 (G0-G17b complete; G18 next and unapproved)
 
 ## Active milestone
 
@@ -24,10 +24,36 @@ G14d integrated encrypted transport plus crash-safe restore/catch-up, and G14e
 passed the production full-scale matrix and froze the format. G15 then added
 the schema-v26 durable sync outbox and bounded local REST/MCP control. G16 adds
 the local Sync Center and password recovery workflow. G17 adds safe retention
-and retirement. G17a is complete. G17b's evidence scope, exact OpenPGP identity,
-and RFC 3161 provider order are resolved. The user authorized G17b operations
-and attested recovery/revocation readiness; G17b is in progress and still
-blocks G18 and any GitHub push. None of G18 onward is approved.
+and retirement. G17a-G17b are complete. G17b sealed the curated historical
+handoffs, issued and independently verified immutable reserve volume
+`NTR-EV-0001`, and committed the finite outer catalog. Its host-side evidence
+gate is mandatory before every future GitHub push. No push or physical burn was
+authorized or performed. G18 is next; none of G18 onward is approved.
+
+## v0.7 G17b completion — 2026-08-25
+
+- The freeze contains 81 curated top-level artifacts totaling 284,012,518
+  bytes. It reproduces the 78-file G17a commitment exactly after removing the
+  three reviewed append ZIPs; all recursive private workspaces remain excluded.
+- Exact signing subkey `4ABEB98AF99C8321931BCF282C6A8A4568264005!`
+  signed every artifact and checkpoint. DigiCert policy
+  `2.16.840.1.114412.7.1` passed the generated pilot and production gates;
+  Sectigo was not used and no secret was logged or committed.
+- Content commit `538b74d9976522f01dea54dfe9dd5d1b38055ca0` anchors
+  manifest SHA-256
+  `683c10aaf2ee114306c799d431d3f33e202d77356d47ee0e237f56a5ab505bac`
+  and checkpoint SHA-256
+  `ed88bbdf9a5875d0a86547f5560101e99cbc9c8256764f399fa785286895a298`.
+- Two clean 179-file builds produced byte-identical ISO bytes. The immutable
+  284,932,096-byte `NTR-EV-0001` SHA-256 is
+  `f4df1e047e3f372efdf5ab3d3a89089f2413c1e91243afaff01012054161258f`.
+  Full clean extraction and offline verification pass from the external reserve.
+- Final outer catalog SHA-256 is
+  `b47f9a7d1879459ee7b0c269aafe852c577e514fadf3369ba6137f5b94a0b1c0`.
+  The corrected seal and its superseded-but-valid first attempt are preserved;
+  the catalog-only closure deliberately does not generate another recursive ZIP.
+- The 14-case refusal matrix and standard Go/frontend/docs/scaffold validation
+  pass. The archive is `plans/v0.7/030-evidence-seals-iso-reserve.md`.
 
 ## v0.7 G17b decision resolution — 2026-08-25
 
@@ -125,8 +151,8 @@ blocks G18 and any GitHub push. None of G18 onward is approved.
   volume coverage before the next GitHub push. CI can validate tracked schemas,
   fixtures, and canonicalization but cannot claim to see the external reserve.
   No push or physical optical burn is authorized by the planning amendment.
-- G17a is complete. G17b is next but operationally unapproved; G18 and
-  all later work remain blocked and separately approval-gated.
+- G17a-G17b are complete. G18 is next but unapproved; all later work remains
+  separately approval-gated and every future push must pass the G17b gate.
 
 ## 2026-08-24 planning amendment — source-anchored docs and Hugo/Ledger
 
@@ -2468,7 +2494,5 @@ attempt detail remains append-only in `agent/ATTEMPT_LOG.jsonl`.
 - Long-term SQLite driver choice (current local cgo/libsqlite3 adapter).
 - Official MCP Go SDK adoption/version.
 - Sync and evidence-preservation decisions live in the owning plan items; the
-  register in `PLAN.md` is an index. G0-G17a are complete; G17b's design inputs
-  are resolved but its credential/network/reserve operations and offline
-  recovery/revocation readiness are not approved. Every later slice remains
-  approval-gated.
+  register in `PLAN.md` is an index. G0-G17b are complete. G18 and every later
+  slice remain approval-gated; the checked-in G17b verifier gates future pushes.

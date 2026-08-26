@@ -1,0 +1,20 @@
+{
+  "passed": 14,
+  "refusals": {
+    "bad_openpgp_key": true,
+    "bad_tsa_ca": true,
+    "catalog_head_mutation": true,
+    "catalog_tamper": true,
+    "checkpoint_signature_tamper": true,
+    "extra_member": true,
+    "iso_hash_tamper": true,
+    "manifest_tamper": true,
+    "missing_member": true,
+    "stale_timestamp_query": true,
+    "swapped_members": true,
+    "timestamp_response_tamper": true,
+    "unavailable_reserve": true,
+    "wrong_timestamp_data": true
+  },
+  "schema": "notrios.evidence.refusal-results.v1"
+}

@@ -23,6 +23,8 @@ required = [
     'EVIDENCE_PRESERVATION.md',
     'evidence/README.md',
     'evidence/verify_evidence.py',
+    'evidence/run_refusal_tests.py',
+    'evidence/REFUSAL_RESULTS.json',
     'evidence/schemas/manifest-entry-v1.schema.json',
     'evidence/schemas/content-checkpoint-v1.schema.json',
     'scripts/g17b_evidence.py',

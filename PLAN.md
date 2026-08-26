@@ -1,11 +1,12 @@
 # Plan: v0.7 — Native synchronization
 
-Status: **G0-G17a completed through 2026-08-24; G17b is in progress. Product version remains 0.6.0 and
+Status: **G0-G17b are complete through 2026-08-25. Product version remains 0.6.0 and
 the canonical schema is v27. The user resolved G17b's evidence scope, exact
 OpenPGP identity, and RFC-3161 provider order on 2026-08-25, then authorized
 the exact signer/Secret Service workflow, TSA requests, and reserve writes and
 attested offline backup/revocation readiness. G18/G18a-G18g are not
-approved, and any GitHub push remains blocked through G17b.** The
+approved. The G17b pre-push evidence gate is now mandatory; no GitHub push or
+physical optical burn occurred.** The
 former seven-item draft was too coarse: it mixed protocol research, canonical
 write interception, merge semantics, two transports, cryptography, recovery,
 UI, retention, and release validation into slices that could not be reviewed or
@@ -1721,7 +1722,7 @@ evidence/reserve directory, signing identity, TSA, ISO, remote, or physical
 medium changed; the generated one-day key and local fixture TSA existed only in
 the disposable `/tmp` self-test.
 
-## G17b. Backfill evidence seals, checked-in manifest, and immutable ISO reserve
+## G17b. Backfill evidence seals, checked-in manifest, and immutable ISO reserve — complete
 
 **Goal.** Apply G17a's approved contract to every frozen historical artifact,
 store verifiable manifests and tooling in Git, reserve burn-ready ISO images on
@@ -1846,6 +1847,34 @@ with no recursive release-ZIP requirement.
   critical timestamping EKU, `genTime` validity, and explicit pinned-chain gates.
   Sectigo was not contacted. Local wall-clock time and implicit CA stores remain
   forbidden fallbacks.
+
+**Outcome (2026-08-25).** The authorized production run froze 81 curated
+top-level artifacts (284,012,518 original bytes), preserving the 78-file G17a
+base plus the verified G17a, decision, and G17b release ZIP appends while
+excluding all three recursive private workspaces. It created 81 exact-subkey
+detached signatures and a 162-entry canonical chain; 76 ZIPs map uniquely to
+Git commits, four screenshots are not applicable, and legacy `notrios.zip`
+remains honestly unresolved. Content commit
+`538b74d9976522f01dea54dfe9dd5d1b38055ca0` anchors manifest SHA-256
+`683c10aaf2ee114306c799d431d3f33e202d77356d47ee0e237f56a5ab505bac`
+and checkpoint SHA-256
+`ed88bbdf9a5875d0a86547f5560101e99cbc9c8256764f399fa785286895a298`.
+DigiCert policy `2.16.840.1.114412.7.1` passed the generated pilot and every
+production verification with the explicit pinned root/responder; Sectigo was
+not used. Two clean 139,127-block builds were byte-identical. The issued
+284,932,096-byte `NTR-EV-0001` has SHA-256
+`f4df1e047e3f372efdf5ab3d3a89089f2413c1e91243afaff01012054161258f`,
+its adjacent signature/timestamp/checksum set is on the designated reserve,
+and extracted offline verification covers all 179 staged files. The corrected
+signed/timestamped outer catalog has SHA-256
+`b47f9a7d1879459ee7b0c269aafe852c577e514fadf3369ba6137f5b94a0b1c0`;
+the verified first catalog seal was preserved as superseded after its
+ISO-signature `genTime` field was found mislabeled as ISO creation time. The
+14-case refusal matrix passes, and the host-side pre-push gate verifies source,
+tracked checkpoint, reserve, and commit ancestry. The catalog-only closure does
+not recursively require another release ZIP. No original artifact, secret,
+remote, GitHub branch, or physical medium was modified. Archive:
+`plans/v0.7/030-evidence-seals-iso-reserve.md`.
 
 ## G18. Shared-core, FFI, Mermaid, and installation/mobile portability handoff
 
@@ -2363,8 +2392,8 @@ recommendation, blocking status, and consequence.
 | Evidence filesystem scope | G17a | Resolved 2026-08-25: curated top-level handoffs at G17b freeze; all recursive private workspaces excluded |
 | Evidence OpenPGP signing identity | G17a | Resolved 2026-08-25: exact full primary/subkey fingerprints are in the owning item; abbreviated IDs must not select keys |
 | Evidence RFC 3161 authority/policy | G17a | Resolved 2026-08-25: DigiCert primary, Sectigo fallback; accept only the explicit policy/chain that passes the generated pilot gate |
-| G17b operational authorization | G17b | Open, blocking start: exact signer/credential use, TSA network requests, and external reserve writes |
-| Evidence key offline recovery/revocation | G17b | Open, blocking first production signature: owner attestation required; no secret paths/bytes recorded |
+| G17b operational authorization | G17b | Resolved 2026-08-25: exact signer/credential use, selected TSA requests, and external reserve writes authorized; no push or burn |
+| Evidence key offline recovery/revocation | G17b | Resolved 2026-08-25: owner attested restorable offline primary backup and revocation certificate; no secret paths/bytes recorded |
 | Shared-core/FFI and Flutter boundary | G18 | Resolved: pre-1.0 ABI; post-1.0 client; no Web FFI |
 | Current-GUI Mermaid baseline | G18 | Resolved fact: upstream-capable but disabled pending offline/security evidence |
 | Cross-language documentation anchor/calibration mechanism | G18a | Investigation; blocking G18c-G18f until one finite mechanism and labelled set are selected |
@@ -2374,9 +2403,9 @@ recommendation, blocking status, and consequence.
 | Hosted semantic-review execution | G18f | Open, non-blocking default: maintainer-only recorded command; hosted source upload needs separate approval |
 | Release version/schema bookkeeping | G20 | Open, non-blocking until wrap-up |
 
-G0-G17a are complete and the production physical restore/catch-up, durable
+G0-G17b are complete and the production physical restore/catch-up, durable
 sync-job, local recovery UI, safe-retention, and evidence-preservation design
-contracts are frozen. G17b's design inputs are resolved; it is next but
-operationally unapproved and blocks G18 and any GitHub push. G18/G18a-G18g are
-also unapproved. Implementation begins only after an explicit instruction naming
+contracts are frozen. The G17b host-side evidence gate is mandatory before any
+future GitHub push. G18/G18a-G18g are unapproved and G18 is next.
+Implementation begins only after an explicit instruction naming
 the item to start and, where stated, authorizing its blocking operations.

@@ -9,9 +9,8 @@ This file is the codebase atlas. Update it whenever major files or directories a
   independently approvable G0-G20 slices plus the blocking G14a-G14e archive-
   scalability sequence, the blocking G17a-G17b external evidence-preservation
   sequence, and the newly planned G18a-G18g documentation-integrity/Hugo-Ledger
-  sequence. G0-G17a are complete; G17b's scope, exact OpenPGP identity, and
-  RFC 3161 provider order are resolved. G17b is next but operationally
-  unapproved and blocks G18 and every GitHub push. The
+  sequence. G0-G17b are complete; the G17b verifier gates every future GitHub
+  push. G18 is next but unapproved. The
   current product remains 0.6.0 at schema v27; v0.6 is archived under
   `plans/v0.6/`; v0.5 and v0.4 are archived under their version directories.
 - `plans/scaffold/SCAFFOLD_CREATION_PLAN.md` — process for creating/refining this scaffold.
@@ -45,9 +44,17 @@ This file is the codebase atlas. Update it whenever major files or directories a
   `performance/v0.7-g17/` — G17's signed peer retirement, snapshot/acknowledgement
   floors, death/tombstone compaction, resource-GC gate, repair plan, safety
   matrix, and generated full-corpus-scale retention-cost evidence.
-- `EVIDENCE_PRESERVATION.md` — G17a's human-readable canonical-manifest,
+- `EVIDENCE_PRESERVATION.md` — G17a-G17b's human-readable canonical-manifest,
   OpenPGP, RFC 3161 checkpoint, deterministic ISO, offline-verification, outer-
-  catalog, and custody contract. It authorizes no production sealing action.
+  catalog, and custody contract plus issued-volume summary.
+- `evidence/` — G17b's public key/TSA trust material, artifact signatures,
+  canonical manifest and checkpoint, final and superseded outer catalog seals,
+  JSON schemas, offline verifier, 14-case refusal harness/results, custody
+  template, and future burn/read-back runbook. No private key or passphrase is
+  stored here.
+- `scripts/g17b_evidence.py` and `scripts/verify_evidence_pre_push.sh` — the
+  production assembly/sealing tool and mandatory host-side tracked/source/
+  reserve/ancestry verification gate.
 - `performance/v0.7-g17a/` — G17a's privacy-safe aggregate inventory,
   provenance and recursive-scope findings, TSA assessment, generated-only
   canonical/signature/timestamp/ISO prototype, tests, and evidence validator.
@@ -142,7 +149,7 @@ This file is the codebase atlas. Update it whenever major files or directories a
 - `internal/profiles/runtime.go` — G3 named runtime-profile creation, redacted
   views, registry/config/database startup binding, path/port/replica collision
   detection, and explicit copied-database adopt/fork handling.
-- `plans/v0.7/` — archived completed v0.7 slices through G17a plus the planning
+- `plans/v0.7/` — archived completed v0.7 slices through G17b plus the planning
   amendments that inserted G1a, the G14a-G14e scalability sequence, the
   G17a-G17b evidence-preservation/ISO sequence, the G18a-G18g documentation
   sequence, and the bundled-dependency maintenance pass.
@@ -156,7 +163,11 @@ This file is the codebase atlas. Update it whenever major files or directories a
   results, and the three design questions later resolved by archive 029.
 - `plans/v0.7/029-evidence-handling-decisions.md` — the post-G17a resolution of
   curated scope, exact OpenPGP fingerprints, DigiCert/Sectigo order, supplied-
-  tool reference accuracy, and the operational approvals still blocking G17b.
+  tool reference accuracy, and the later-satisfied operational approval gate.
+- `plans/v0.7/030-evidence-seals-iso-reserve.md` — G17b's completed curated
+  backfill, exact-key signatures, DigiCert RFC 3161 evidence, deterministic
+  immutable `NTR-EV-0001`, finite outer-catalog closure, refusal matrix, and
+  validation record.
 - `FLUTTER_GO_CLIENT.md` — verified Flutter/Dart FFI and Go build-mode facts,
   the pre-1.0 framework-neutral application facade/C ABI contract, post-1.0
   Flutter client split, memory/stream ownership, platform limits, and the fact

@@ -424,6 +424,12 @@ def extract_iso(iso: Path, destination: Path) -> None:
         mode = path.lstat().st_mode
         if stat.S_ISLNK(mode) or (not stat.S_ISDIR(mode) and not stat.S_ISREG(mode)):
             raise EvidenceError("ISO contains a symlink or special file")
+    # xorriso correctly restores the rationalized read-only directory modes.
+    # Make only temporary extraction directories owner-writable after the type
+    # check so TemporaryDirectory can remove them; file bytes remain untouched.
+    for path in [destination, *destination.rglob("*")]:
+        if path.is_dir():
+            path.chmod(0o755)
 
 
 def load_catalog(path: Path) -> list[dict[str, object]]:
@@ -459,7 +465,8 @@ def verify_reserve(reserve_root: Path, catalog_path: Path, catalog_checkpoint: P
             raise EvidenceError("reserved ISO is absent or differs")
         pvd_result = run(["xorriso", "-no_rc", "-indev", str(iso), "-pvd_info"])
         pvd = (pvd_result.stdout + pvd_result.stderr).decode()
-        volume = re.search(r"^Volume Id\s+: '([^']+)'", pvd, re.MULTILINE)
+        volume = re.search(r"^Volume id\s*:\s*'([^']+)'", pvd,
+                           re.MULTILINE | re.IGNORECASE)
         if not volume or volume.group(1) != payload.get("volume_id"):
             raise EvidenceError("reserved ISO volume identifier differs")
         signature = iso.with_suffix(iso.suffix + ".sig")

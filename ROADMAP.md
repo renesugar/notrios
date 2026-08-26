@@ -200,9 +200,10 @@ implementation groups.
 The user's 2026-08-11 review resolved the G0-G17 policy decisions; no item is
 approved for implementation merely by resolving its decisions.
 Every completed item leaves a verified ZIP in the evidence directory and waits
-for approval before the next begins. G17a-G17b must backfill and then maintain
-the missing signature/timestamp/manifest/ISO custody layer before any GitHub
-push. See `VERSIONING_AND_SYNC_POLICY.md` and `SYNCHRONIZATION.md`.
+for approval before the next begins. G17a-G17b established the missing
+signature/timestamp/manifest/ISO custody layer; its verifier must pass before
+any future GitHub push. See `VERSIONING_AND_SYNC_POLICY.md` and
+`SYNCHRONIZATION.md`.
 
 **G0 completed 2026-08-11.** Its threat model, glossary, thirty-case control
 trace, and primary-source dependency/platform/license validation are under
@@ -301,11 +302,12 @@ object**, while the existing pack fix has never been exercised end to end at
 the supplied full scale.
 
 **The blocking G14a-G14e archive-scalability sequence and G15-G17 sync control,
-recovery UI, and safe retention are complete. G17a has now completed the
-evidence-preservation investigation. G17b's design decisions are resolved; it
-is next but operationally unapproved and blocks G18 and every GitHub push.**
+recovery UI, and safe retention are complete. G17a-G17b have completed the
+evidence-preservation contract, historical backfill, immutable ISO reserve, and
+finite outer-catalog closure. The G17b verifier now gates every future GitHub
+push. G18 is next but unapproved.**
 The 2026-08-24 documentation-integrity amendment adds G18a-G18g after G18 and
-before the compatibility/release slices; none of G17b onward is approved. G14a supplies the resumable, aggregate-only benchmark contract and
+before the compatibility/release slices; none of G18 onward is approved. G14a supplies the resumable, aggregate-only benchmark contract and
 generated 10k/100k calibration. That evidence confirms one-file-per-object
 growth, isolates stored-ZIP overhead from framing, and records a 100k
 incremental-replay memory failure without changing production code. G14b's
@@ -351,8 +353,7 @@ retirement consequences without receiving filesystem paths or exposing an
 HTTP apply route. Generated one-full-corpus-churn evidence measured about 162
 MiB for 382,206 representative operations, so the resolved default remains.
 
-**G17a-G17b are a blocking pre-push evidence-preservation sequence. G17a is
-complete; G17b is authorized and in progress.** G17a
+**G17a-G17b are a complete pre-push evidence-preservation sequence.** G17a
 freezes the curated external evidence inventory, corrects the proposed
 claims about hashes, OpenPGP signatures, RFC 3161 time evidence, Git history,
 custody, and legal scope, and selects a canonical chained manifest plus
@@ -363,8 +364,8 @@ checkpoint. The user selected curated top-level scope, exact Ed25519 evidence
 subkey `4ABE…4005`, DigiCert primary, and Sectigo fallback on 2026-08-25;
 operational key/network/reserve permission and offline backup/revocation
 attestation were supplied on 2026-08-25; the generated DigiCert pilot passed.
-G17b backfills every approved original ZIP and screenshot without rewriting it,
-checks the canonical manifest and ISO catalog into Git, places immutable
+G17b backfilled every approved original ZIP and screenshot without rewriting it,
+checked the canonical manifest and ISO catalog into Git, placed immutable
 numbered ISO images and their verification sets only under
 `/media/renes/SEAGATE2TB/notrios-evidence/`, and adds a host-side pre-push gate.
 Backfilled seals say they are retroactive; a current timestamp never becomes a

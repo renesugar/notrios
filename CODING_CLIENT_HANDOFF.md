@@ -31,12 +31,11 @@ archived under `plans/v0.7/`; their reviewed evidence is under
 `plans/v0.7/025-sync-recovery-ui.md`; G17's archive is
 `plans/v0.7/026-peer-retention-gc-repair.md`; G17a and its later decision record
 are `plans/v0.7/028-evidence-preservation-contract.md` and
-`plans/v0.7/029-evidence-handling-decisions.md`. **G17a is complete and G17b is
-in progress. The user resolved G17b's curated scope, exact OpenPGP identity,
-and DigiCert/Sectigo provider order, authorized exact-key/Secret-Service use,
-TSA requests and reserve writes, and attested offline recovery/revocation
-readiness on 2026-08-25. G17b still blocks G18 and every GitHub push.
-G18/G18a-G18g are also not approved.** G14b selected option B: a
+`plans/v0.7/029-evidence-handling-decisions.md`. G17b is complete and archived
+as `plans/v0.7/030-evidence-seals-iso-reserve.md`. **G0-G17b are complete.
+The G17b pre-push verifier is mandatory before any future GitHub push; no push
+or physical burn was authorized or performed. G18/G18a-G18g are next and are
+not approved.** G14b selected option B: a
 required compatible same-schema SQLite-image plus bounded packed-assets
 capability for whole-library full backup/catch-up, retaining packed semantic
 archive-v2 for subset, merge, schema-independent interchange, and fallback.
@@ -130,11 +129,16 @@ authorized signing. DigiCert `http://timestamp.digicert.com` is primary and
 Sectigo `http://timestamp.sectigo.com` fallback; an authorized generated pilot
 must still pin and verify the actual policy OID and responder chain before any
 production request.
-G17b then backfills without rewriting originals, checks the chained manifest
-and outer ISO catalog into Git, and writes immutable numbered ISO images only
-under `/media/renes/SEAGATE2TB/notrios-evidence/`. Backfilled records are
-explicitly retroactive. ISO images, network timestamp requests, signing-key
-operations, GitHub push, and physical burning remain distinct permissions.
+G17b backfilled without rewriting originals, checked the chained manifest and
+outer ISO catalog into Git, and issued immutable volume `NTR-EV-0001` only under
+`/media/renes/SEAGATE2TB/notrios-evidence/`. The 284,932,096-byte ISO SHA-256 is
+`f4df1e047e3f372efdf5ab3d3a89089f2413c1e91243afaff01012054161258f`;
+the final outer catalog SHA-256 is
+`b47f9a7d1879459ee7b0c269aafe852c577e514fadf3369ba6137f5b94a0b1c0`.
+Backfilled records are explicitly retroactive. The mandatory host-side gate is
+`scripts/verify_evidence_pre_push.sh`. ISO images, network timestamp requests,
+signing-key operations, GitHub push, and physical burning remain distinct
+permissions.
 
 G14c adds production `sqlite-image+packed-assets.v1` creation and read-only
 admission under `internal/snapshotimage/` and
@@ -175,11 +179,13 @@ generic response ceiling truncating 16 MiB ranges, unconditional whole-library
 reconciliation for a body edit, and quadratic repeated-prefix validation in
 bounded directory publication. Tests cover each boundary; no format, schema,
 compressor, third-party dependency, REST/MCP path surface, or automatic restore
-was added. G15-G17a are complete and G17b is in progress under the exact
-operational authorization and recovery/revocation attestation recorded above.
-The generated DigiCert pilot passed policy/nonce/imprint/EKU/time/explicit-chain
-checks; Sectigo was not used. G17b still blocks G18 and any GitHub push. Every
-remaining item requires separate item-by-item user approval.
+was added. G15-G17b are complete. G17b sealed 81 curated artifacts, produced
+the verified release ZIP and immutable reserve described above, and committed
+the finite outer-catalog closure. The generated DigiCert pilot and all
+production tokens passed policy/nonce/imprint/EKU/time/explicit-chain checks;
+Sectigo was not used. G18 is next but unapproved. Every remaining item requires
+separate item-by-item user approval, and every future push must first pass the
+G17b gate.
 
 G14b added only investigation/prototype code and aggregate evidence. Its 57
 validated full-corpus phase rows cover equivalent 382,206-document Joplin and

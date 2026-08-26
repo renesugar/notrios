@@ -14,7 +14,7 @@ python3 -c 'import ast, sys
 for path in sys.argv[1:]:
     with open(path) as fh:
         ast.parse(fh.read(), path)
-' scripts/check_required_files.py scripts/check_plan_loops.py scripts/check_release_zip.py evidence/verify_evidence.py scripts/g17b_evidence.py evidence/test_verify_evidence.py
+' scripts/check_required_files.py scripts/check_plan_loops.py scripts/check_release_zip.py evidence/verify_evidence.py evidence/run_refusal_tests.py scripts/g17b_evidence.py evidence/test_verify_evidence.py
 python3 -m unittest evidence.test_verify_evidence
 
 echo "Scaffold validation passed."

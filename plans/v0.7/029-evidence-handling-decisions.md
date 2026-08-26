@@ -1,6 +1,6 @@
 # v0.7 G17b evidence-handling decision record
 
-**Status:** design decisions resolved; G17b operationally unapproved
+**Status:** complete decision record; G17b subsequently completed
 
 **Date:** 2026-08-25
 
@@ -101,3 +101,13 @@ unauthorized.
   checks, and standard repository tests are recorded in
   `agent/ATTEMPT_LOG.jsonl`. The verified release ZIP is reported after the
   completion commit so its embedded source anchors match that exact tree.
+
+## Post-decision execution
+
+The owner subsequently supplied every blocking operational authorization and
+the offline recovery/revocation attestation on 2026-08-25. G17b completed under
+those exact boundaries; no GitHub push or physical burn occurred. Its production
+outcome and validation are archived in
+`plans/v0.7/030-evidence-seals-iso-reserve.md`. This section preserves the
+historical pre-authorization state above rather than rewriting the decision
+sequence after the fact.

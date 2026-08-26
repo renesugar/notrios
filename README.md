@@ -3,7 +3,7 @@
 Notrios (formerly "Notes Companion") is a local-first note-taking, search, import, and publishing system for very large Markdown and document collections.
 It combines a Go REST/MCP service (`notriosd`), a built-in GUI, SQLite/FTS5-backed canonical storage, content-addressed resources, optional Recoll-derived search/extraction, and support for third-party native clients (C++/Qt, Go/Wails, Rust/Tauri) over the same API. A versioned no-GUI C ABI is planned before 1.0, followed by an independent post-1.0 Flutter client; mobile delivery does not depend exclusively on Wails.
 
-The v0.1 through v0.6 milestones are complete. v0.7 G0-G17a are complete through
+The v0.1 through v0.6 milestones are complete. v0.7 G0-G17b are complete through
 the authenticated REST sync data plane and resumable encrypted snapshot
 download. The blocking G14a-G14e archive-scalability sequence is complete:
 G14b selected and G14c implemented a
@@ -17,21 +17,15 @@ and three-way conflict workflows, and non-persistent password backup review.
 G17 advances schema v27 with signed peer retirement, a configurable 90-day
 history horizon, acknowledgement plus re-verified-snapshot collection floors,
 permanent death identity, sync-aware resource GC, and explicit snapshot catch-
-up below the floor. The newly inserted blocking G17a-G17b preservation sequence
-comes next: it will inventory and cryptographically seal every historical evidence
-file, check the canonical manifest/ISO catalog into Git, and reserve immutable
-CD-sized ISO images on the designated external disk before any GitHub push.
-G17a is complete: it validated the 78 curated top-level artifacts, found three
-recursive private benchmark workspaces that cannot be included silently, and
-proved the generated manifest/signature/timestamp/ISO contract. G17b is in
-progress with curated top-level scope, the exact evidence signing subkey,
-DigiCert primary, and Sectigo fallback. Exact-key/Secret-Service use, TSA
-requests, and reserve writes are authorized and offline recovery/revocation
-readiness is attested. The generated DigiCert pilot passed the strict gate.
-G17b still blocks G18 and the planned G18a-G18g source-anchored documentation/
-Hugo-Ledger work. GitHub push and physical disc burning remain unauthorized — see
-[`PLAN.md`](PLAN.md) and
-[`ROADMAP.md`](ROADMAP.md). The repository is
+up below the floor. The blocking G17a-G17b preservation sequence is complete:
+G17a proved the contract, and G17b sealed 81 curated artifacts, issued and
+independently verified immutable reserve volume `NTR-EV-0001`, and committed
+the finite outer catalog without rewriting original handoffs. Its host-side
+verifier now gates every future GitHub push. G18 and the planned G18a-G18g
+source-anchored documentation/Hugo-Ledger work are next and unapproved. GitHub
+push and physical disc burning remain unauthorized — see [`PLAN.md`](PLAN.md),
+[`ROADMAP.md`](ROADMAP.md), and
+[`plans/v0.7/030-evidence-seals-iso-reserve.md`](plans/v0.7/030-evidence-seals-iso-reserve.md). The repository is
 structured so a coding agent can resume safely after usage limits or model
 changes.
 

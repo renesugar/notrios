@@ -1,9 +1,10 @@
 # Evidence preservation and optical reserve contract
 
-Status: G17b is in progress under the owner's 2026-08-25 exact-signer,
+Status: G17b completed on 2026-08-25 under the owner's exact-signer,
 Secret-Service, TSA-network, and external-reserve authorization plus offline
-backup/revocation-readiness attestation. The generated DigiCert pilot passed;
-GitHub push and physical optical burning remain unauthorized.
+backup/revocation-readiness attestation. The generated DigiCert pilot and
+production seals passed. GitHub push and physical optical burning remain
+unauthorized and did not occur.
 
 This document defines an engineering preservation record for Notrios release
 artifacts. It is not legal advice and does not declare any artifact admissible,
@@ -33,15 +34,15 @@ not an unsigned artifact or an unbound prose timestamp.
 The external root currently has two materially different classes:
 
 1. **Curated handoff artifacts:** top-level release/plan ZIPs and content-free UI
-   screenshots. G17a froze 78 such files at `2026-08-25T03:09:46Z`; subsequent
-   verified G17a and evidence-decision release ZIPs are explained appends.
+   screenshots. G17a froze 78 such files at `2026-08-25T03:09:46Z`; the later
+   verified G17a, evidence-decision, and G17b release ZIPs are explained appends.
 2. **Private benchmark workspaces:** three nested directory trees holding private
    inputs, caches, repositories, logs, diagnostics, and generated artifacts from
    archive-scale investigations. They are not release handoffs and are not safe
    for a public/pre-push manifest or recursive ISO copy.
 
-The user selected the curated-top-level scope on 2026-08-25. G17b re-freezes all
-curated top-level handoffs then present, explains the known post-G17a appends,
+The user selected the curated-top-level scope on 2026-08-25. G17b froze all 81
+curated top-level handoffs then present, explained the three post-G17a appends,
 and refuses any other drift. All recursive workspace content is excluded. A
 whitelist is mandatory; never run a production ISO builder recursively on the
 external evidence root.
@@ -69,9 +70,9 @@ can agree byte-for-byte:
 - duplicate keys, unknown required schemas, and non-canonical encodings are
   refused, not normalized on verification.
 
-The G17a Python prototype is an executable feasibility check, not yet the
-production parser. G17b needs independent golden encoders/decoders or cross-
-implementation fixtures before this profile becomes a release contract.
+The G17a Python prototype established feasibility. G17b's production parser and
+independent fixtures now enforce this profile in `evidence/verify_evidence.py`
+and `evidence/test_verify_evidence.py`.
 
 ## Manifest entry chain
 
@@ -326,6 +327,10 @@ against loss, substitution, degradation, or malicious remastering.
 
 ## G17b operational authorization
 
+At the G17a investigation boundary, **G17b cannot begin** without the exact-key,
+credential, TSA-network, reserve-write, and offline recovery/revocation
+authorizations below. That historical gate was satisfied before production.
+
 On 2026-08-25 the owner explicitly authorized:
 
 1. use of signing subkey `4ABEB98AF99C8321931BCF282C6A8A4568264005` and
@@ -341,3 +346,22 @@ policy `2.16.840.1.114412.7.1` and responder certificate SHA-256
 `4aa03fa22cd75c84c55c938f828e676b9caecab33fe36d269aa334f146110a33`
 under the explicit DigiCert Trusted Root G4 chain. Sectigo was not used. None of
 these approvals authorizes a GitHub push or physical burn.
+
+## G17b issued reserve outcome
+
+G17b signed 81 curated artifacts and a 162-entry canonical manifest using exact
+subkey `4ABEB98AF99C8321931BCF282C6A8A4568264005!`. The content checkpoint is
+anchored by commit `538b74d9976522f01dea54dfe9dd5d1b38055ca0`. DigiCert
+policy `2.16.840.1.114412.7.1` passed all nonce, imprint, EKU, `genTime`, and
+explicit-chain checks; Sectigo was not contacted.
+
+Two clean 179-file builds produced byte-identical immutable volume
+`NTR-EV-0001`, 284,932,096 bytes, SHA-256
+`f4df1e047e3f372efdf5ab3d3a89089f2413c1e91243afaff01012054161258f`,
+under `/media/renes/SEAGATE2TB/notrios-evidence/volume-0001/`. Clean extraction
+and complete offline verification pass. Final outer catalog SHA-256 is
+`b47f9a7d1879459ee7b0c269aafe852c577e514fadf3369ba6137f5b94a0b1c0`.
+The finite catalog-only closure is intentionally outside this volume and does
+not create another recursive ZIP/ISO. See
+`plans/v0.7/030-evidence-seals-iso-reserve.md`; run
+`scripts/verify_evidence_pre_push.sh` before every future push.

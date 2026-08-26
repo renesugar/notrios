@@ -430,6 +430,15 @@ def normalize_tree(root: Path, epoch: int) -> None:
     os.utime(root, (epoch, epoch), follow_symlinks=False)
 
 
+def remove_readonly_tree(root: Path) -> None:
+    if not root.exists():
+        return
+    for path in [root, *root.rglob("*")]:
+        if path.is_dir():
+            path.chmod(0o755)
+    shutil.rmtree(root)
+
+
 def tree_hashes(root: Path) -> dict[str, str]:
     return {path.relative_to(root).as_posix(): ev.sha256_file(path)
             for path in sorted(root.rglob("*")) if path.is_file()}
@@ -553,10 +562,19 @@ def build_reserve(args: argparse.Namespace) -> None:
         raise
     finally:
         if build_root.exists():
-            shutil.rmtree(build_root)
+            remove_readonly_tree(build_root)
     print(json.dumps({"status": "reserved", "volume_id": VOLUME_ID,
                       "relative_path": VOLUME_RELATIVE, "size_bytes": volume_path.stat().st_size,
                       "sha256": ev.sha256_file(volume_path)}, sort_keys=True))
+
+
+def cleanup_workspace(args: argparse.Namespace) -> None:
+    reserve = args.reserve_root.resolve()
+    build_root = reserve / ".g17b-build-0001"
+    if build_root.parent != reserve or build_root.name != ".g17b-build-0001":
+        raise ev.EvidenceError("unexpected cleanup target")
+    remove_readonly_tree(build_root)
+    print(json.dumps({"status": "clean", "workspace": build_root.name}, sort_keys=True))
 
 
 def seal_catalog(args: argparse.Namespace) -> None:
@@ -575,6 +593,34 @@ def seal_catalog(args: argparse.Namespace) -> None:
     binary = shutil.which("xorriso")
     if binary is None:
         raise ev.EvidenceError("xorriso binary disappeared")
+    existing_names = (
+        "outer-iso-catalog.jsonl", "outer-iso-catalog-checkpoint.json",
+        "outer-iso-catalog-checkpoint.json.sig", "outer-iso-catalog-checkpoint.sig.tsq",
+        "outer-iso-catalog-checkpoint.sig.tsr", "outer-iso-catalog-verification.json",
+    )
+    existing = [REPO / "evidence" / name for name in existing_names
+                if (REPO / "evidence" / name).exists()]
+    if existing:
+        if not args.supersede_reason or len(existing) != len(existing_names):
+            raise ev.EvidenceError("existing catalog set requires an explicit complete supersession")
+        archive = REPO / "evidence" / "superseded" / "catalog-attempt-0001"
+        if archive.exists():
+            raise ev.EvidenceError("catalog supersession archive already exists")
+        archive.mkdir(parents=True)
+        archived = []
+        for path in existing:
+            target = archive / path.name
+            shutil.copyfile(path, target)
+            archived.append({"logical_name": path.name, "size_bytes": target.stat().st_size,
+                             "sha256": ev.sha256_file(target)})
+        write_canonical(archive / "SUPERSESSION.json", {
+            "schema": "notrios.evidence.supersession.v1",
+            "reason": args.supersede_reason,
+            "previous_set_verified": True,
+            "materials": archived,
+        })
+    recorded_at = utc(dt.datetime.now(dt.timezone.utc))
+    iso_mtime = utc(dt.datetime.fromtimestamp(iso.stat().st_mtime, dt.timezone.utc))
     payload: dict[str, object] = {
         "record_type": "iso-volume", "volume_id": VOLUME_ID,
         "logical_name": "notrios-evidence-0001.iso",
@@ -588,7 +634,8 @@ def seal_catalog(args: argparse.Namespace) -> None:
         "content_checkpoint_sha256": ev.sha256_file(content_checkpoint),
         "content_manifest_sha256": ev.sha256_file(manifest),
         "content_commit": content_commit,
-        "created_at": verification["timestamp"]["gen_time"],
+        "iso_file_mtime_weak": iso_mtime,
+        "iso_signature_gen_time": verification["timestamp"]["gen_time"],
         "creation_tool": xorriso_version,
         "creation_binary_sha256": ev.sha256_file(Path(binary)),
         "creation_options": iso_options(VOLUME_ID),
@@ -597,7 +644,22 @@ def seal_catalog(args: argparse.Namespace) -> None:
         "clean_builds": 2, "byte_identical": True,
         "printed_blocks": verification["printed_blocks"],
         "budget_bytes": ev.CD_BUDGET_BYTES,
-        "custody_event": "created and verified on designated external reserve",
+        "custody_event": {
+            "schema": "notrios.evidence.custody-event.v1",
+            "event_time_local_clock": recorded_at,
+            "actor_or_opaque_custodian_id": "local-owner-workstation",
+            "action": "create-and-verify-reserve",
+            "source_id": CHECKPOINT_ID,
+            "destination_id": RESERVE_LOCATION_ID,
+            "volume_id": VOLUME_ID,
+            "tool_and_version": xorriso_version,
+            "before_sha256": ev.sha256_file(CURRENT / "CHECKPOINT" / "content-checkpoint.json"),
+            "after_sha256": ev.sha256_file(iso),
+            "result": "two byte-identical builds; extracted content verified",
+            "manual": False,
+            "notes": "Local-clock event; RFC 3161 evidence applies to the signed ISO and catalog checkpoints.",
+            "previous_event_sha256": ev.ZERO_HASH,
+        },
     }
     record = make_record(1, ev.ZERO_HASH, payload, ev.CATALOG_ENTRY_SCHEMA)
     catalog = REPO / "evidence" / "outer-iso-catalog.jsonl"
@@ -659,8 +721,12 @@ def main() -> None:
     reserve.add_argument("--source", type=Path, required=True)
     reserve.add_argument("--reserve-root", type=Path, required=True)
     reserve.set_defaults(function=build_reserve)
+    cleanup = sub.add_parser("cleanup-workspace")
+    cleanup.add_argument("--reserve-root", type=Path, required=True)
+    cleanup.set_defaults(function=cleanup_workspace)
     catalog = sub.add_parser("seal-catalog")
     catalog.add_argument("--reserve-root", type=Path, required=True)
+    catalog.add_argument("--supersede-reason")
     catalog.set_defaults(function=seal_catalog)
     args = parser.parse_args()
     try:
