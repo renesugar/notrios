@@ -1,0 +1,38 @@
+{{- $p := site.Params -}}
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%232563eb'/%3E%3Cpath d='M18 46V18h7l14 17V18h7v28h-7L25 29v17z' fill='white'/%3E%3C/svg%3E">
+<title>{{ if .IsHome }}{{ site.Title }}{{ else }}{{ .Title }} · {{ site.Title }}{{ end }}</title>
+{{- with or .Description .Summary site.Params.description }}
+<meta name="description" content="{{ . | plainify | truncate 160 }}">
+{{- end }}
+<link rel="canonical" href="{{ .Permalink }}">
+<script>
+(function () {
+  var d = document.documentElement;
+  try {
+    var t = localStorage.getItem('ledger:theme');
+    d.setAttribute('data-theme', t || {{ or $p.defaultTheme "light" }});
+    var w = parseInt(localStorage.getItem('ledger:sidebarWidth'), 10);
+    if (w) { d.style.setProperty('--sidebar-width', w + 'px'); }
+  } catch (e) {
+    d.setAttribute('data-theme', {{ or $p.defaultTheme "light" }});
+  }
+})();
+</script>
+{{- if ne $p.googleFonts false }}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+{{- end }}
+{{- $order := slice "css/_tokens.css" "css/_base.css" "css/_header.css" "css/_sidebar.css" "css/_content.css" "css/_prose.css" "css/_post.css" "css/_about.css" "css/_footer.css" }}
+{{- $sheets := slice }}
+{{- range $order }}
+  {{- with resources.Get . }}{{ $sheets = $sheets | append . }}{{ end }}
+{{- end }}
+{{- $css := $sheets | resources.Concat "css/ledger.css" }}
+{{- if hugo.IsProduction }}{{ $css = $css | minify | fingerprint }}{{ end }}
+<link rel="stylesheet" href="{{ $css.RelPermalink }}"{{ with $css.Data.Integrity }} integrity="{{ . }}"{{ end }}>
+{{- range site.Params.extraCSS }}
+<link rel="stylesheet" href="{{ partial "site-url.html" . }}">
+{{- end }}

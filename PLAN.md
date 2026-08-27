@@ -1,10 +1,10 @@
 # Plan: v0.7 — Native synchronization
 
-Status: **G0-G18a are complete through 2026-08-26. Product version remains 0.6.0 and
+Status: **G0-G18b are complete through 2026-08-27. Product version remains 0.6.0 and
 the canonical schema is v27. The user resolved G17b's evidence scope, exact
 OpenPGP identity, and RFC-3161 provider order on 2026-08-25, then authorized
 the exact signer/Secret Service workflow, TSA requests, and reserve writes and
-attested offline backup/revocation readiness. G18b-G18g are not approved. The
+attested offline backup/revocation readiness. G18c-G18g are not approved. The
 G17b pre-push evidence gate is now mandatory; no GitHub push or
 physical optical burn occurred.** The
 former seven-item draft was too coarse: it mixed protocol research, canonical
@@ -2094,7 +2094,7 @@ recognized directives remain in `CommentGroup.List` but are removed from
 honestly starts with all 199 units unverified. No prose moved, generated docs,
 external model output, product behavior, dependency, or schema changed.
 
-## G18b. Investigation — Hugo/Ledger migration and reproducible site contract
+## G18b. Investigation — Hugo/Ledger migration and reproducible site contract — complete
 
 **Goal.** Prove how the existing static documentation and offline Help source
 can use `hugo-theme-ledger` without losing stable URLs, Pagefind search,
@@ -2135,18 +2135,40 @@ mobile, and contrast smoke designs are executable.
 
 **Open decisions**
 
-- **How is the theme pinned? — Non-blocking.** Options are a vendored source
+- **How is the theme pinned? — Resolved 2026-08-27.** Options are a vendored source
   snapshot, Git submodule, or Hugo module. Default/recommendation: vendor the
   minimal upstream source plus LICENSE and commit provenance. It keeps release
   ZIPs and offline/clean builds self-contained; approving G18b approves this
-  default unless the evidence shows an unacceptable maintenance cost.
-- **Does the public URL shape change? — Non-blocking.** Default: preserve the
+  default unless the evidence shows an unacceptable maintenance cost. The
+  default was selected: 44 files/173,947 bytes of exact runtime source plus
+  LICENSE and commit provenance are self-contained; submodule archives omit
+  content, while initial Hugo Module resolution needs network/Go/Git/cache
+  state and its generated vendor tree omitted the upstream LICENSE.
+- **Does the public URL shape change? — Resolved 2026-08-27.** Default: preserve the
   existing `.html` and fragment URLs, adding generated redirects only where
   Hugo cannot emit an exact equivalent. A visual theme migration does not
-  justify breaking saved documentation links.
-- **Which Ledger search backend is used? — Non-blocking.** Default: Pagefind.
+  justify breaking saved documentation links. The default was selected:
+  `uglyURLs=true`, five explicit heading-ID compatibility mappings, and two
+  legacy aliases preserve all 15 routes and all 199 G18a section IDs.
+- **Which Ledger search backend is used? — Resolved 2026-08-27.** Default: Pagefind.
   The documentation corpus is small and static; adding the Bluge service would
-  create deployment and operations scope with no measured benefit.
+  create deployment and operations scope with no measured benefit. The default
+  passed the 15-page/3,191-word scope and `Argon2id` browser query with no
+  third-party runtime request.
+
+**Outcome (2026-08-27).** The investigation is archived under
+`plans/v0.7/035-hugo-ledger-reproducible-site-contract.md`. The pinned
+repository-owned prototype in `performance/v0.7-g18b/` byte-copies the 15
+canonical Markdown files, preserves every current `.html` route and all 199
+G18a section IDs, repairs 32 fragment links already broken by the current
+Marked command, and passes static Pagefind, `/notrios/`, keyboard, mobile,
+contrast-sample, offline-asset, and clean-build checks. Direct minimal
+vendoring is selected over submodule and network Module delivery. Two clean
+builds had byte-identical Hugo output and equivalent Pagefind scope/search;
+Pagefind 1.5.2 varied hashed index shard names, so the contract promises pinned
+inputs and validated behavior rather than a false byte-identical generated
+index. No production workflow/site, `docs/`, Help note, schema, product
+dependency, remote, reserve, or physical medium changed.
 
 ## G18c. Documentation anchor audit and executable-claim registry
 
@@ -2492,15 +2514,15 @@ recommendation, blocking status, and consequence.
 | v0.8 Go-owned SQLite package | G18/H0 | Open, blocking for H1: same-emulator C amalgamation control versus exact modernc/libc candidate; Jetpack ownership and Web reuse rejected without separate redesign |
 | Current-GUI Mermaid baseline | G18 | Resolved fact: upstream-capable but disabled pending offline/security evidence |
 | Cross-language documentation anchor/calibration mechanism | G18a | Resolved 2026-08-26: declaration anchors, one direct-callee hop, four grades, compatibility directives, and an eight-case labelled set |
-| Ledger theme pin/distribution | G18b | Open, non-blocking default: minimal vendored source snapshot with license and upstream commit |
-| Documentation public URL shape | G18b | Open, non-blocking default: preserve `.html`/fragment links or add tested redirects |
-| Documentation search backend | G18b | Open, non-blocking default: static Pagefind; no Bluge service |
+| Ledger theme pin/distribution | G18b | Resolved 2026-08-27: minimal vendored source snapshot with LICENSE, exact commit, and deterministic manifest |
+| Documentation public URL shape | G18b | Resolved 2026-08-27: preserve `.html` routes and G18a fragments with explicit compatibility mappings/aliases |
+| Documentation search backend | G18b | Resolved 2026-08-27: static Pagefind; no Bluge service |
 | Hosted semantic-review execution | G18f | Open, non-blocking default: maintainer-only recorded command; hosted source upload needs separate approval |
 | Release version/schema bookkeeping | G20 | Open, non-blocking until wrap-up |
 
-G0-G18a are complete and the production physical restore/catch-up, durable
+G0-G18b are complete and the production physical restore/catch-up, durable
 sync-job, local recovery UI, safe-retention, and evidence-preservation design
 contracts are frozen. The G17b host-side evidence gate is mandatory before any
-future GitHub push. G18b-G18g are unapproved and G18b is next.
+future GitHub push. G18c-G18g are unapproved and G18c is next.
 Implementation begins only after an explicit instruction naming
 the item to start and, where stated, authorizing its blocking operations.

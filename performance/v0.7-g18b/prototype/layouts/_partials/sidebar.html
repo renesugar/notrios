@@ -1,0 +1,52 @@
+{{- $groups := slice
+  (dict "label" "Start" "pages" (slice
+    (dict "name" "Overview" "url" "/index.html")
+    (dict "name" "Installation" "url" "/installation.html")
+    (dict "name" "Troubleshooting" "url" "/troubleshooting.html")))
+  (dict "label" "Use Notrios" "pages" (slice
+    (dict "name" "Service" "url" "/service.html")
+    (dict "name" "CLI" "url" "/cli.html")
+    (dict "name" "GUI" "url" "/gui.html")
+    (dict "name" "Query language" "url" "/query-language.html")
+    (dict "name" "Import and export" "url" "/import-export.html")
+    (dict "name" "Maintenance" "url" "/operations.html")))
+  (dict "label" "Data and publishing" "pages" (slice
+    (dict "name" "Selection planning" "url" "/selection-planning.html")
+    (dict "name" "Archive v2" "url" "/archive-v2.html")
+    (dict "name" "Stable links" "url" "/stable-links.html")
+    (dict "name" "Publishing" "url" "/publishing.html")))
+  (dict "label" "API" "pages" (slice
+    (dict "name" "REST API" "url" "/api/rest.html")
+    (dict "name" "MCP" "url" "/api/mcp.html")))
+-}}
+<aside class="ledger-sidebar" id="ledger-sidebar" data-scroll
+       aria-label="Documentation" data-ledger-sidebar>
+  <nav class="ledger-drawer-nav" aria-label="Main (drawer)">
+    <a href="{{ partial "site-url.html" "/index.html" }}" data-ledger-drawer-close>Overview</a>
+    <a href="{{ partial "site-url.html" "/search/" }}" data-ledger-drawer-close>Search</a>
+  </nav>
+  {{- range $groups }}
+  <section class="ledger-panel">
+    <h2 class="ledger-panel-heading ledger-docs-heading">{{ .label }}</h2>
+    <div class="ledger-panel-body">
+      <nav class="ledger-term-list" aria-label="{{ .label }}">
+        {{- range .pages }}
+        {{- $url := partial "site-url.html" .url -}}
+        <a class="ledger-term" href="{{ $url }}" data-path="{{ $url }}" data-ledger-drawer-close>
+          <span class="ledger-term-glyph" aria-hidden="true">&#x25B8;</span>
+          <span class="ledger-term-name">{{ .name }}</span>
+        </a>
+        {{- end }}
+      </nav>
+    </div>
+  </section>
+  {{- end }}
+</aside>
+<div class="ledger-backdrop" data-ledger-drawer-close hidden></div>
+<div class="ledger-split" data-ledger-split role="separator" tabindex="0"
+     aria-orientation="vertical" aria-label="Resize sidebar"
+     aria-valuemin="{{ site.Params.sidebar.minWidth }}"
+     aria-valuemax="{{ site.Params.sidebar.maxWidth }}"
+     aria-valuenow="{{ site.Params.sidebar.width }}" title="Drag to resize">
+  <span class="ledger-split-grip" aria-hidden="true"></span>
+</div>

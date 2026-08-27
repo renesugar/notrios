@@ -1,0 +1,47 @@
+{
+  "schema": "notrios.g18b.delivery-options.v1",
+  "as_of": "2026-08-27",
+  "upstream": {
+    "repository": "https://github.com/renesugar/hugo-theme-ledger",
+    "commit": "f9d28ea297427890ecffa31fa74caa9ee385d9f5",
+    "license": "Apache-2.0"
+  },
+  "selected": "minimal-vendored-source",
+  "options": [
+    {
+      "id": "minimal-vendored-source",
+      "decision": "selected",
+      "payload_files": 44,
+      "payload_bytes": 173947,
+      "clean_build_network": false,
+      "source_zip_self_contained_except_tools": true,
+      "license_in_payload": true,
+      "pin": "commit plus deterministic SHA-256 file manifest",
+      "tradeoff": "Upgrades are explicit repository diffs; the snapshot includes only Hugo runtime source, theme metadata, and LICENSE."
+    },
+    {
+      "id": "git-submodule",
+      "decision": "rejected",
+      "clean_build_network": true,
+      "source_zip_self_contained_except_tools": false,
+      "pin": "gitlink f9d28ea297427890ecffa31fa74caa9ee385d9f5",
+      "probe": "git archive produced a 10240-byte tar containing .gitmodules and empty theme directory entries, but no theme files",
+      "tradeoff": "Clone/update must be recursive and release packaging needs a separate materialization step."
+    },
+    {
+      "id": "network-hugo-module",
+      "decision": "rejected",
+      "version": "v0.0.0-20260731032527-f9d28ea29742",
+      "module_sum": "h1:2nWTjFIOrm79Rot74+7dARHq9VtX7i5W8mJWq9GxV3s=",
+      "clean_build_network": true,
+      "source_zip_self_contained_except_tools": false,
+      "probe": "Exact pseudo-version resolution worked. A generated _vendor then built with GOPROXY=off from an empty Hugo cache; it contained 47 files/172528 bytes including modules.txt but omitted the upstream LICENSE.",
+      "tradeoff": "Initial resolution adds Go/Git/cache/network state; vendoring repairs offline builds but still needs an explicit license-copy and offers no advantage over the smaller intentional source surface."
+    }
+  ],
+  "resolved_defaults": {
+    "theme_delivery": "minimal vendored source snapshot with LICENSE and upstream commit",
+    "public_urls": "preserve all existing .html routes and expected fragments; add tested aliases for stale source links",
+    "search": "static Pagefind only; no Bluge service"
+  }
+}

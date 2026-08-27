@@ -1,0 +1,106 @@
+{
+  "schema": "notrios.g18b.site-contract.v1",
+  "as_of": "2026-08-27",
+  "status": "investigation-only; no production site or Help mutation",
+  "base_url": "https://example.github.io/notrios/",
+  "tools": {
+    "hugo": "0.164.0 extended",
+    "pagefind": "1.5.2",
+    "node": "26.3.0"
+  },
+  "content": {
+    "canonical_source": "docs/**/*.md",
+    "page_count": 15,
+    "help_contract": "internal/helpdocs.Seed reads the same docs directory; the prototype stages each Markdown file byte-for-byte and never edits docs or Help notes",
+    "g18a_inventory": "performance/v0.7-g18a/INVENTORY.json",
+    "g18a_sections_required": 199
+  },
+  "urls": {
+    "preserved_routes": [
+      "index.html",
+      "installation.html",
+      "service.html",
+      "cli.html",
+      "query-language.html",
+      "selection-planning.html",
+      "archive-v2.html",
+      "stable-links.html",
+      "publishing.html",
+      "gui.html",
+      "import-export.html",
+      "operations.html",
+      "api/rest.html",
+      "api/mcp.html",
+      "troubleshooting.html"
+    ],
+    "hugo_setting": "uglyURLs = true",
+    "heading_adapter_count": 5,
+    "legacy_fragment_aliases": {
+      "service.html#configuration": "service.html#configuration-reference",
+      "stable-links.html#linking-to-a-block-not-just-a-note": "stable-links.html#linking-to-a-section-or-a-block"
+    },
+    "prototype_missing_routes": 0,
+    "prototype_missing_g18a_sections": 0,
+    "prototype_broken_internal_links": 0,
+    "prototype_markdown_links": 0,
+    "prototype_base_path_escapes": 0,
+    "current_builder_broken_fragment_links": 32,
+    "current_builder_finding": "Marked emits no heading IDs in the current command, so source fragment links do not resolve; this is a measured current-pipeline defect, not a Ledger regression"
+  },
+  "search": {
+    "selected_backend": "pagefind",
+    "service_backend": null,
+    "indexed_pages": 15,
+    "indexed_words": 3191,
+    "excluded_generated_pages": ["api/index.html", "search/index.html"],
+    "scope_marker": "data-pagefind-body",
+    "known_query": "Argon2id",
+    "known_query_result": "pass",
+    "result_links_under_base": true
+  },
+  "runtime_smoke": {
+    "routes_http_ok": 15,
+    "sidebar_links": 15,
+    "theme_prose_contrast_samples": {
+      "light": 15.0,
+      "dark": 15.07,
+      "contrast": 21.0
+    },
+    "mobile_menu_target_px": [44, 44],
+    "mobile_horizontal_overflow_px": 0,
+    "keyboard": "theme controls, mobile drawer open, and Escape close passed",
+    "external_requests": [],
+    "console_errors_or_warnings": 0,
+    "qualification": "Executable smoke samples, not a complete WCAG audit"
+  },
+  "build_measurements": {
+    "host": "local development host; single observed run, not a performance acceptance gate",
+    "current": {
+      "wall_seconds": 39.72,
+      "max_rss_kib": 108164,
+      "files": 46,
+      "bytes": 1109026,
+      "html_bytes": 286522,
+      "pagefind_bytes": 822504
+    },
+    "prototype": {
+      "combined_wall_seconds": 1.44,
+      "combined_max_rss_kib": 82560,
+      "hugo_reported_seconds": 0.319,
+      "pagefind_reported_seconds": 0.395,
+      "files": 52,
+      "bytes_observed": 1372946,
+      "html_bytes": 496194,
+      "pagefind_bytes_observed": 828491,
+      "css_bytes": 22463,
+      "javascript_bytes": 25798
+    },
+    "repeat_build": {
+      "hugo_output_byte_identical": true,
+      "pagefind_semantically_identical": true,
+      "pagefind_byte_identical": false,
+      "finding": "Pagefind 1.5.2 assigned different hashed metadata/index shard names on two builds while both indexed 15 pages and 3191 words and passed the same Argon2id query. Reproducibility therefore means pinned source/tools plus validated routes, scope, counts, and search behavior; it does not claim a byte-for-byte Pagefind tree."
+    },
+    "interpretation": "The current builder invokes npx Marked separately for every page; observed time includes local tool resolution overhead and is not a product benchmark. Prototype size varies by a few bytes with Pagefind's hashed shard partition and remains a small static bundle."
+  }
+}

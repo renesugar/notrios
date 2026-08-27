@@ -10,7 +10,7 @@ This file is the codebase atlas. Update it whenever major files or directories a
   scalability sequence, the blocking G17a-G17b external evidence-preservation
   sequence, and the newly planned G18a-G18g documentation-integrity/Hugo-Ledger
   sequence. G0-G18 are complete; the G17b verifier gates every future GitHub
-  push. G18a is next but unapproved. The
+  push. G18a-G18b are complete; G18c is next but unapproved. The
   current product remains 0.6.0 at schema v27; v0.6 is archived under
   `plans/v0.6/`; v0.5 and v0.4 are archived under their version directories.
 - `plans/scaffold/SCAFFOLD_CREATION_PLAN.md` — process for creating/refining this scaffold.
@@ -63,6 +63,13 @@ This file is the codebase atlas. Update it whenever major files or directories a
   stream contract, Android SQLite/cgo and modernc/C comparison evidence, API 35
   x86_64 emulator runtime/reboot/shared-library evidence, exact Mermaid
   enablement gate, unit tests, and source validator.
+- `performance/v0.7-g18a/` — G18a's frozen 15-page/199-section claim-surface
+  inventory, declaration-anchor rules, compatibility directive grammar,
+  labelled contradiction calibration set, Go probe, and evidence validator.
+- `performance/v0.7-g18b/` — G18b's pinned investigation-only Hugo/Ledger
+  prototype, route/anchor/Pagefind and request contract, three-option delivery
+  comparison, license/provenance records, build/validator, unit tests, and
+  executable browser smoke. Production site generation remains unchanged.
 - `performance/v0.7-g0/` — completed G0 threat model, normative protocol
   glossary, thirty misuse/control traces, primary-source dependency/license/
   platform validation, and its structural evidence validator.

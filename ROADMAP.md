@@ -306,9 +306,10 @@ recovery UI, and safe retention are complete. G17a-G17b have completed the
 evidence-preservation contract, historical backfill, immutable ISO reserve, and
 finite outer-catalog closure. The G17b verifier now gates every future GitHub
 push. G18 completed the shared-core/ABI/platform/Mermaid portability handoff;
-G18a is next but unapproved.**
+G18b is complete; G18c is next but unapproved.**
 The 2026-08-24 documentation-integrity amendment adds G18a-G18g after G18 and
-before the compatibility/release slices; none of G18a onward is approved. G14a supplies the resumable, aggregate-only benchmark contract and
+before the compatibility/release slices; G18a-G18b are complete and G18c onward
+remains approval-gated. G14a supplies the resumable, aggregate-only benchmark contract and
 generated 10k/100k calibration. That evidence confirms one-file-per-object
 growth, isolates stored-ZIP overhead from framing, and records a 100k
 incremental-replay memory failure without changing production code. G14b's

@@ -30,9 +30,11 @@ amalgamation control while preserving Go database ownership; neither is
 selected. A later API 35 x86_64 emulator run passed the disposable candidate's
 FTS5/JSON/WAL/integrity, reboot-persistence, and shared-library-load pre-gates;
 Android arm64 and the production Notrios ABI/store workload remain open. G18a
-completed the documentation-anchor investigation. G18b and the
-remaining source-anchored documentation/Hugo-Ledger work are next and
-unapproved. GitHub
+completed the documentation-anchor investigation. G18b then selected a pinned
+minimal Ledger source snapshot, preserved `.html`/fragment routes, and static
+Pagefind through a repository-owned prototype without switching production.
+G18c and the remaining source-anchored documentation/Hugo-Ledger work are next
+and unapproved. GitHub
 push and physical disc burning remain unauthorized — see [`PLAN.md`](PLAN.md),
 [`ROADMAP.md`](ROADMAP.md), and
 [`plans/v0.7/034-android-emulator-modernc-runtime.md`](plans/v0.7/034-android-emulator-modernc-runtime.md). The repository is
@@ -66,7 +68,7 @@ changes.
 
 ## Documentation
 
-User documentation lives under [`docs/`](docs/index.md) and is published as a GitHub Pages site with PageFind search (`bash scripts/build_docs_site.sh` builds it locally). `notriosctl seed-help` mirrors the same content into the app's built-in read-only Help notebook for offline use. The approved-plan boundary in G18a-G18g will add source-adjacent truth grades and executed examples/journeys, then migrate this site to a pinned `hugo-theme-ledger`; that work is planned, not implemented.
+User documentation lives under [`docs/`](docs/index.md) and is published as a GitHub Pages site with PageFind search (`bash scripts/build_docs_site.sh` builds it locally). `notriosctl seed-help` mirrors the same content into the app's built-in read-only Help notebook for offline use. G18a froze the source-anchor contract and G18b selected/proved the pinned Hugo/Ledger integration under `performance/v0.7-g18b/`; production still uses the current builder. G18c-G18g remain approval-gated for auditing, executed examples/journeys, generation, advisory review, and the eventual site switch.
 
 ## Quick start
 

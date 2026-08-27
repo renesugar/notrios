@@ -15,9 +15,9 @@ The Pages site uses **PageFind** (https://github.com/pagefind/pagefind): a post-
 
 ## Planned documentation-integrity and Hugo migration
 
-`PLAN.md` G18a-G18g now owns a staged replacement for the current bespoke site
-builder and an integrity pipeline shared by the site and Help content. None of
-these slices is implemented or approved yet:
+`PLAN.md` G18a-G18g owns a staged replacement for the current bespoke site
+builder and an integrity pipeline shared by the site and Help content. G18a
+and G18b are complete; G18c-G18g remain unapproved:
 
 - investigate Go/TS/TSX source-adjacent `notrios:` doc anchors and report every
   topic as executed, generated, claimed, or unverified;
@@ -35,9 +35,13 @@ these slices is implemented or approved yet:
   `googleFonts=false`, zero third-party runtime requests, clean release-ZIP
   builds, and the raw Markdown Help source.
 
-The local theme checkout is investigation input, not an undeclared build
-dependency. G18b selects and records the exact pin/integration before G18g may
-change this document's implemented build description.
+G18b selected a repository-owned 44-file/173,947-byte minimal Ledger snapshot
+at commit `f9d28ea297427890ecffa31fa74caa9ee385d9f5`, including its LICENSE and a
+deterministic manifest. Its prototype preserves all 15 `.html` routes, all 199
+G18a section IDs, two legacy aliases, static Pagefind, and zero third-party
+runtime requests. It also records Pagefind 1.5.2's semantically stable but
+non-byte-identical hashed shard output. The local checkout is not a build
+dependency, and production remains unchanged until G18g.
 
 ## Structure (initial)
 

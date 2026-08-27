@@ -1,6 +1,6 @@
 # Plan Status
 
-Updated: 2026-08-26 (G0-G18a complete; G18b next and unapproved)
+Updated: 2026-08-27 (G0-G18b complete; G18c next and unapproved)
 
 ## Active milestone
 
@@ -16,7 +16,7 @@ profiles/local journal, state-vector convergence,
 revision deltas/merge, lazy resources, secure container/catch-up,
 ephemeral-directory and REST transports, jobs/UI/retention, shared-core/FFI/
 Mermaid/mobile handoff, compatibility, and final validation. The user's
-2026-08-11 review resolved every original G0-G17 policy decision. **G0-G18a are
+2026-08-11 review resolved every original G0-G17 policy decision. **G0-G18b are
 complete** and archived under `plans/v0.7/`; the 2026-08-15 planning amendment
 reopened physical snapshot scalability. G14b selected option B from full-corpus
 evidence, G14c implemented the local production representation/verifier, and
@@ -28,8 +28,36 @@ and retirement. G17a-G17b are complete. G17b sealed the curated historical
 handoffs, issued and independently verified immutable reserve volume
 `NTR-EV-0001`, and committed the finite outer catalog. Its host-side evidence
 gate is mandatory before every future GitHub push. No push or physical burn was
-authorized or performed. G18 and G18a are complete. G18b is next; none of G18b
+authorized or performed. G18-G18b are complete. G18c is next; none of G18c
 onward is approved.
+
+## v0.7 G18b completion — 2026-08-27
+
+- The exact Ledger commit
+  `f9d28ea297427890ecffa31fa74caa9ee385d9f5` is captured as a minimal
+  44-file/173,947-byte runtime snapshot with Apache-2.0 LICENSE and deterministic
+  SHA-256 provenance. This is investigation evidence, not the production site.
+- Direct vendoring is selected for G18g. A pinned submodule vanished from an
+  ordinary `git archive`; an exact Hugo Module required initial network/Go/Git/
+  cache state, and Hugo's generated offline vendor tree omitted the upstream
+  LICENSE.
+- The Hugo 0.164/Pagefind 1.5.2 prototype byte-copies all 15 canonical Markdown
+  files, preserves all current `.html` routes and 199 G18a section IDs through
+  five explicit heading mappings and two aliases, and has no broken internal,
+  surviving `.md`, or base-path-escaping links.
+- The current Marked command emits no heading IDs, leaving 32 existing fragment
+  links broken. The prototype repairs that measured current-pipeline defect; it
+  does not count it as a Ledger regression.
+- Pagefind indexes exactly 15 pages/3,191 words, excludes search/API-section
+  furniture, and returns `Argon2id`. Browser smoke passes all routes, theme/
+  keyboard/mobile controls, 44x44 mobile target, sampled contrast, zero
+  overflow, zero third-party requests, and zero console problems.
+- Clean repeat builds had byte-identical Hugo output and semantically identical
+  Pagefind scope/search. Pagefind varied hashed shard names, so no false
+  bit-reproducible index claim is made. Archive:
+  `plans/v0.7/035-hugo-ledger-reproducible-site-contract.md`; evidence:
+  `performance/v0.7-g18b/`. No production workflow/site, docs/Help bytes,
+  product dependency, schema, remote, reserve, or physical medium changed.
 
 ## v0.7 G18a completion — 2026-08-26
 
@@ -219,7 +247,7 @@ onward is approved.
   volume coverage before the next GitHub push. CI can validate tracked schemas,
   fixtures, and canonicalization but cannot claim to see the external reserve.
   No push or physical optical burn is authorized by the planning amendment.
-- G17a-G18a are complete. G18b is next but unapproved; all later work remains
+- G17a-G18b are complete. G18c is next but unapproved; all later work remains
   separately approval-gated and every future push must pass the G17b gate.
 
 ## 2026-08-24 planning amendment — source-anchored docs and Hugo/Ledger
@@ -2562,5 +2590,5 @@ attempt detail remains append-only in `agent/ATTEMPT_LOG.jsonl`.
 - Long-term SQLite driver choice (current local cgo/libsqlite3 adapter).
 - Official MCP Go SDK adoption/version.
 - Sync and evidence-preservation decisions live in the owning plan items; the
-  register in `PLAN.md` is an index. G0-G18a are complete. G18b and every later
+  register in `PLAN.md` is an index. G0-G18b are complete. G18c and every later
   slice remain approval-gated; the checked-in G17b verifier gates future pushes.

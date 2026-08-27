@@ -16,7 +16,7 @@ G14a-G14e archive-scalability sequence, the newly inserted blocking G17a-G17b
 evidence-preservation sequence, and the newly planned G18a-G18g documentation-
 integrity/Hugo-Ledger sequence. The user's 2026-08-11
 review resolved the policy decisions through G17, including mandatory payload
-encryption and per-replica Ed25519 signatures. **G0-G18a are complete** and
+encryption and per-replica Ed25519 signatures. **G0-G18b are complete** and
 archived under `plans/v0.7/`; their reviewed evidence is under
 `performance/v0.7-g0/`, `performance/v0.7-g1/`, `performance/v0.7-g1a/`,
 `performance/v0.7-g2/`, `performance/v0.7-g4/`, `performance/v0.7-g5/`,
@@ -27,7 +27,7 @@ archived under `plans/v0.7/`; their reviewed evidence is under
 `performance/v0.7-g14c/`, `performance/v0.7-g14d/`, and
 `performance/v0.7-g14e/`, `performance/v0.7-g16/`, and
 `performance/v0.7-g17/`, `performance/v0.7-g18/`, and
-`performance/v0.7-g18a/`. G15's archive is
+`performance/v0.7-g18a/`, and `performance/v0.7-g18b/`. G15's archive is
 `plans/v0.7/024-durable-sync-jobs.md`; G16's archive is
 `plans/v0.7/025-sync-recovery-ui.md`; G17's archive is
 `plans/v0.7/026-peer-retention-gc-repair.md`; G17a and its later decision record
@@ -39,15 +39,32 @@ archived as `plans/v0.7/032-documentation-anchor-investigation.md`. The G18
 modernc evaluation amendment is `plans/v0.7/033-modernc-sqlite-evaluation.md`.
 The Android-emulator runtime amendment is
 `plans/v0.7/034-android-emulator-modernc-runtime.md`.
-**G0-G18a are complete.
+G18b is archived as
+`plans/v0.7/035-hugo-ledger-reproducible-site-contract.md`.
+**G0-G18b are complete.
 The G17b pre-push verifier is mandatory before any future GitHub push; no push
-or physical burn was authorized or performed. G18b and later items are next and
+or physical burn was authorized or performed. G18c and later items are next and
 are not approved.** G14b selected option B: a
 required compatible same-schema SQLite-image plus bounded packed-assets
 capability for whole-library full backup/catch-up, retaining packed semantic
 archive-v2 for subset, merge, schema-independent interchange, and fallback.
 G14c implements that exact representation, G14d integrates it, and G14e passed
 the full-scale acceptance matrix and froze the format.
+
+G18b is investigation-only and changes no production documentation pipeline.
+It selected a direct minimal vendor for G18g: exact Ledger commit
+`f9d28ea297427890ecffa31fa74caa9ee385d9f5`, 44 files/173,947 bytes, LICENSE,
+and deterministic provenance under `performance/v0.7-g18b/prototype/`.
+The clean Hugo 0.164/Pagefind 1.5.2 build byte-copies all 15 `docs/` sources,
+preserves every `.html` route and all 199 G18a section IDs through five heading
+mappings/two aliases, indexes 15 pages/3,191 words, and passes the `Argon2id`,
+keyboard, mobile, sampled-contrast, `/notrios/`, and zero-third-party-request
+smokes. The present Marked command already breaks 32 fragments because it emits
+no heading IDs. Submodule archives omit the theme payload; initial Hugo Module
+resolution is network/cache dependent and its generated vendor tree omitted
+LICENSE. Repeat Hugo output is byte-identical; Pagefind varies hashed shard
+names while preserving scope/search, so only semantic reproducibility is
+claimed. G18c is the next incomplete item and remains unapproved.
 
 G15 advances schema v26 with a sync-only durable outbox over the F6 job
 records. `internal/syncjobs/` drains only explicitly queued/due rows; it never
@@ -242,7 +259,7 @@ was added. G15-G17b are complete. G17b sealed 81 curated artifacts, produced
 the verified release ZIP and immutable reserve described above, and committed
 the finite outer-catalog closure. The generated DigiCert pilot and all
 production tokens passed policy/nonce/imprint/EKU/time/explicit-chain checks;
-Sectigo was not used. G18a is complete; G18b is next but unapproved. Every
+Sectigo was not used. G18b is complete; G18c is next but unapproved. Every
 remaining item requires separate item-by-item user approval, and every future
 push must first pass the G17b gate.
 
