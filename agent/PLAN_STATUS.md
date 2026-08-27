@@ -1,6 +1,6 @@
 # Plan Status
 
-Updated: 2026-08-27 (G0-G18b complete; G18c next and unapproved)
+Updated: 2026-08-27 (G0-G18c complete; G18d next and unapproved)
 
 ## Active milestone
 
@@ -16,7 +16,7 @@ profiles/local journal, state-vector convergence,
 revision deltas/merge, lazy resources, secure container/catch-up,
 ephemeral-directory and REST transports, jobs/UI/retention, shared-core/FFI/
 Mermaid/mobile handoff, compatibility, and final validation. The user's
-2026-08-11 review resolved every original G0-G17 policy decision. **G0-G18b are
+2026-08-11 review resolved every original G0-G17 policy decision. **G0-G18c are
 complete** and archived under `plans/v0.7/`; the 2026-08-15 planning amendment
 reopened physical snapshot scalability. G14b selected option B from full-corpus
 evidence, G14c implemented the local production representation/verifier, and
@@ -28,8 +28,32 @@ and retirement. G17a-G17b are complete. G17b sealed the curated historical
 handoffs, issued and independently verified immutable reserve volume
 `NTR-EV-0001`, and committed the finite outer catalog. Its host-side evidence
 gate is mandatory before every future GitHub push. No push or physical burn was
-authorized or performed. G18-G18b are complete. G18c is next; none of G18c
+authorized or performed. G18-G18c are complete. G18d is next; none of G18d
 onward is approved.
+
+## v0.7 G18c completion — 2026-08-27
+
+- `cmd/docaudit` and `internal/docaudit` implement the frozen Go compatibility
+  directive parser, exact Go/TS declaration anchors, Markdown template binding,
+  typed claim/check graph, executable-fence inventory, GUI-journey accounting,
+  and per-topic four-grade report.
+- The first 12 source fragments cover version/schema, config keys/defaults,
+  CLI usage, REST registrations, MCP tools and ordinary/sync scopes, and exact
+  REST/GUI destructive confirmations. Four claim IDs resolve to existing tests.
+- Every one of the 199 manual sections, 131 executable-shaped fences, and nine
+  proposed GUI journeys remains explicit. The checked 351-unit baseline is 0
+  executed, 8 generated, 4 claimed, and 339 unverified; the stale schema-v20
+  prose is not hidden by its adjacent schema-v27 source claim.
+- Twenty Go graph mutations and eight TypeScript resolver cases cover dangling,
+  duplicate, orphan, audience, malformed, missing, ambiguous, and unaccounted
+  edges. Parent review found and returned two TypeScript 7 template-literal
+  scanner defects before integration; real App/EditorPane/SyncCenter anchors
+  now guard them.
+- CI and release packaging validate the exact report after the locked npm
+  workspace is installed. Archive:
+  `plans/v0.7/036-documentation-anchor-audit.md`; evidence:
+  `performance/v0.7-g18c/`. No prose generation/migration, behavior, schema,
+  API, dependency, semantic model, remote, reserve, push, or burn changed.
 
 ## v0.7 G18b completion — 2026-08-27
 
@@ -247,7 +271,7 @@ onward is approved.
   volume coverage before the next GitHub push. CI can validate tracked schemas,
   fixtures, and canonicalization but cannot claim to see the external reserve.
   No push or physical optical burn is authorized by the planning amendment.
-- G17a-G18b are complete. G18c is next but unapproved; all later work remains
+- G17a-G18c are complete. G18d is next but unapproved; all later work remains
   separately approval-gated and every future push must pass the G17b gate.
 
 ## 2026-08-24 planning amendment — source-anchored docs and Hugo/Ledger
@@ -2590,5 +2614,5 @@ attempt detail remains append-only in `agent/ATTEMPT_LOG.jsonl`.
 - Long-term SQLite driver choice (current local cgo/libsqlite3 adapter).
 - Official MCP Go SDK adoption/version.
 - Sync and evidence-preservation decisions live in the owning plan items; the
-  register in `PLAN.md` is an index. G0-G18b are complete. G18c and every later
+  register in `PLAN.md` is an index. G0-G18c are complete. G18d and every later
   slice remain approval-gated; the checked-in G17b verifier gates future pushes.

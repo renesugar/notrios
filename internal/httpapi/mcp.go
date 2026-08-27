@@ -440,6 +440,11 @@ func (s *Server) mcpGetDocumentOutline(r *http.Request, raw json.RawMessage) (mc
 	return mcpStructured(extractDocumentOutline(doc.ID, doc.Body))
 }
 
+// mcpTools is the finite MCP tool registry before scope filtering.
+//
+//notrios:doc user mcp-tool-surface
+//notrios:help api-mcp read-tools
+//notrios:enumerates go:github.com/renesugar/notrios/internal/httpapi#(*Server).mcpTools
 func (s *Server) mcpTools() []mcpTool {
 	tools := []mcpTool{
 		{Name: "list_collections", Description: "List note collections and capabilities.", InputSchema: objectSchema(nil, nil)},

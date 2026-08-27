@@ -13,6 +13,10 @@ import (
 // Config contains the runtime settings used by notriosd and notriosctl.
 // It intentionally avoids third-party YAML dependencies until the project
 // chooses and pins the long-term configuration library.
+//
+//notrios:doc user configuration-keys
+//notrios:help service configuration-reference
+//notrios:enumerates go:github.com/renesugar/notrios/internal/config#Config
 type Config struct {
 	ConfigPath    string              `json:"config_path,omitempty"`
 	Profile       ProfileConfig       `json:"profile"`
@@ -188,7 +192,12 @@ type RemoteMediaConfig struct {
 // MediaActions are the valid policy decisions for domains and DefaultAction.
 var MediaActions = map[string]bool{"allow": true, "block": true, "review": true}
 
-// Default returns a complete local-development configuration.
+// Default returns the canonical local-development defaults for every runtime
+// configuration group.
+//
+//notrios:doc user configuration-defaults
+//notrios:help service configuration-reference
+//notrios:enumerates go:github.com/renesugar/notrios/internal/config#Default
 func Default() Config {
 	return Config{
 		Sync: SyncConfig{Target: "none", REST: SyncRESTConfig{RequireTLS: true}},

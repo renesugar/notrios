@@ -570,6 +570,11 @@ func localizeImportedNotes(ctx context.Context, cfg config.Config, st store.Stor
 		total.localized, total.blocked, total.review, total.failed, len(documentIDs))
 }
 
+// printHelp is the finite command and flag usage registry shown by notriosctl.
+//
+//notrios:doc user cli-usage-forms
+//notrios:help cli the-notriosctl-cli
+//notrios:enumerates go:github.com/renesugar/notrios/cmd/notriosctl#printHelp
 func printHelp() {
 	fmt.Print(`notriosctl - Notrios import/export/maintenance CLI
 

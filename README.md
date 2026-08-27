@@ -33,8 +33,9 @@ Android arm64 and the production Notrios ABI/store workload remain open. G18a
 completed the documentation-anchor investigation. G18b then selected a pinned
 minimal Ledger source snapshot, preserved `.html`/fragment routes, and static
 Pagefind through a repository-owned prototype without switching production.
-G18c and the remaining source-anchored documentation/Hugo-Ledger work are next
-and unapproved. GitHub
+G18c now provides the deterministic cross-language `docaudit` graph, a typed
+claim registry, and an honest 351-unit coverage baseline. G18d and the remaining
+documentation/Hugo-Ledger work are next and unapproved. GitHub
 push and physical disc burning remain unauthorized — see [`PLAN.md`](PLAN.md),
 [`ROADMAP.md`](ROADMAP.md), and
 [`plans/v0.7/034-android-emulator-modernc-runtime.md`](plans/v0.7/034-android-emulator-modernc-runtime.md). The repository is
@@ -68,7 +69,7 @@ changes.
 
 ## Documentation
 
-User documentation lives under [`docs/`](docs/index.md) and is published as a GitHub Pages site with PageFind search (`bash scripts/build_docs_site.sh` builds it locally). `notriosctl seed-help` mirrors the same content into the app's built-in read-only Help notebook for offline use. G18a froze the source-anchor contract and G18b selected/proved the pinned Hugo/Ledger integration under `performance/v0.7-g18b/`; production still uses the current builder. G18c-G18g remain approval-gated for auditing, executed examples/journeys, generation, advisory review, and the eventual site switch.
+User documentation lives under [`docs/`](docs/index.md) and is published as a GitHub Pages site with PageFind search (`bash scripts/build_docs_site.sh` builds it locally). `notriosctl seed-help` mirrors the same content into the app's built-in read-only Help notebook for offline use. G18a froze the source-anchor contract, G18b selected/proved the pinned Hugo/Ledger integration under `performance/v0.7-g18b/`, and G18c implemented `make docaudit`; production still uses the current builder. G18d-G18g remain approval-gated for executed examples/journeys, generation, advisory review, and the eventual site switch.
 
 ## Quick start
 
@@ -223,6 +224,7 @@ The scaffold-era and v0.1-MVP reports (`plans/scaffold/SCAFFOLD_*.md`, `plans/mv
 ```bash
 make validate                 # tests + repository checks
 cd web && npm audit           # advisory gate for the bundled offline modules
+make docaudit                 # documentation/source/claim graph and grades
 make smoke                    # end-to-end REST/MCP smoke test
 bash scripts/run_performance_smoke.sh
 bash scripts/run_large_library_profile.sh 100000 /tmp/notrios-profile.json

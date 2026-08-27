@@ -94,6 +94,10 @@ const (
 // CurrentSchemaVersion is the canonical SQLite schema understood by this
 // build. Archive-v2 manifests record this source schema but never include
 // derived FTS5 or Recoll state.
+//
+//notrios:doc user current-schema-version
+//notrios:help service configuration-reference
+//notrios:claim current-schema-status go:github.com/renesugar/notrios/internal/httpapi#TestStatusReportsConfigurationAndSchema
 const CurrentSchemaVersion = 27
 
 // DatabaseIdentity separates the stable logical synchronization/archive

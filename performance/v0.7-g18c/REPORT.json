@@ -1,0 +1,1845 @@
+{
+  "schema": "notrios.docaudit.report.v1",
+  "counts": {
+    "claimed": 4,
+    "executed": 0,
+    "generated": 8,
+    "unverified": 339
+  },
+  "denominator": 351,
+  "manual_sections": 199,
+  "fragments": 12,
+  "claims": 4,
+  "executables": 131,
+  "journeys": 9,
+  "surfaces": [
+    {
+      "id": "published_markdown",
+      "count": 15,
+      "unit": "pages",
+      "owner": "go:github.com/renesugar/notrios/internal/helpdocs#Seed"
+    },
+    {
+      "id": "help_notebook",
+      "count": 15,
+      "unit": "mirrored notes",
+      "owner": "go:github.com/renesugar/notrios/internal/helpdocs#Seed"
+    },
+    {
+      "id": "cli_help",
+      "count": 55,
+      "unit": "usage forms",
+      "owner": "go:github.com/renesugar/notrios/cmd/notriosctl#printHelp"
+    },
+    {
+      "id": "configuration",
+      "count": 59,
+      "unit": "JSON-tagged keys",
+      "owner": "go:github.com/renesugar/notrios/internal/config#Config"
+    },
+    {
+      "id": "openapi",
+      "count": 109,
+      "unit": "operations",
+      "operation_ids": 0,
+      "owner": "go:github.com/renesugar/notrios/internal/httpapi#NewServerWithOptions",
+      "finding": "No operationId values exist; source-symbol anchors must not depend on them."
+    },
+    {
+      "id": "mcp_tools",
+      "count": 46,
+      "unit": "tools",
+      "owner": "go:github.com/renesugar/notrios/internal/httpapi#(*Server).mcpTools"
+    },
+    {
+      "id": "mcp_resources",
+      "count": 0,
+      "unit": "protocol resources",
+      "owner": "go:github.com/renesugar/notrios/internal/httpapi#(*Server).handleMCP",
+      "finding": "The server advertises tools only; read_resource is a tool, not an MCP resources/read surface."
+    },
+    {
+      "id": "gui_journeys",
+      "count": 9,
+      "unit": "proposed journeys",
+      "owner": "ts:web/src/App.tsx#App",
+      "measurement_state": "proposed_not_executed"
+    }
+  ],
+  "topics": [
+    {
+      "topic": "api-mcp",
+      "path": "docs/api/mcp.md",
+      "counts": {
+        "claimed": 0,
+        "executed": 0,
+        "generated": 4,
+        "unverified": 14
+      },
+      "sections": [
+        {
+          "id": "mcp-endpoint",
+          "grade": "unverified"
+        },
+        {
+          "id": "trying-it-with-curl",
+          "grade": "unverified"
+        },
+        {
+          "id": "connecting-an-mcp-client",
+          "grade": "unverified"
+        },
+        {
+          "id": "tool-scopes",
+          "grade": "unverified"
+        },
+        {
+          "id": "a-scope-is-a-guardrail-not-authorization",
+          "grade": "unverified"
+        },
+        {
+          "id": "read-tools",
+          "grade": "unverified"
+        },
+        {
+          "id": "reading-attachments",
+          "grade": "unverified"
+        },
+        {
+          "id": "write-tools-editor-scope",
+          "grade": "unverified"
+        },
+        {
+          "id": "organizer-tools-organizer-scope",
+          "grade": "unverified"
+        },
+        {
+          "id": "what-mcp-deliberately-does-not-expose",
+          "grade": "unverified"
+        },
+        {
+          "id": "safety-rules",
+          "grade": "unverified"
+        }
+      ],
+      "fragments": [
+        {
+          "id": "mcp-tool-surface",
+          "section": "read-tools",
+          "grade": "generated"
+        },
+        {
+          "id": "mcp-sync-tool-scopes",
+          "section": "tool-scopes",
+          "grade": "generated"
+        },
+        {
+          "id": "mcp-scope-surface",
+          "section": "tool-scopes",
+          "grade": "generated"
+        },
+        {
+          "id": "mcp-tool-scope-assignments",
+          "section": "tool-scopes",
+          "grade": "generated"
+        }
+      ],
+      "examples": [
+        {
+          "id": "api-mcp-connecting-an-mcp-client-example-1",
+          "section": "connecting-an-mcp-client",
+          "grade": "unverified"
+        },
+        {
+          "id": "api-mcp-tool-scopes-example-1",
+          "section": "tool-scopes",
+          "grade": "unverified"
+        },
+        {
+          "id": "api-mcp-trying-it-with-curl-example-1",
+          "section": "trying-it-with-curl",
+          "grade": "unverified"
+        }
+      ]
+    },
+    {
+      "topic": "api-rest",
+      "path": "docs/api/rest.md",
+      "counts": {
+        "claimed": 1,
+        "executed": 0,
+        "generated": 1,
+        "unverified": 56
+      },
+      "sections": [
+        {
+          "id": "rest-api",
+          "grade": "unverified"
+        },
+        {
+          "id": "getting-started",
+          "grade": "unverified"
+        },
+        {
+          "id": "notes-create-read-edit",
+          "grade": "unverified"
+        },
+        {
+          "id": "optimistic-concurrency",
+          "grade": "unverified"
+        },
+        {
+          "id": "surgical-edits-and-note-operations",
+          "grade": "unverified"
+        },
+        {
+          "id": "search-and-pagination",
+          "grade": "unverified"
+        },
+        {
+          "id": "notebooks-tags-search-notebooks-trash",
+          "grade": "unverified"
+        },
+        {
+          "id": "previewing-a-notebook-deletion",
+          "grade": "unverified"
+        },
+        {
+          "id": "renaming-a-tag-hierarchy",
+          "grade": "unverified"
+        },
+        {
+          "id": "resources-attachments",
+          "grade": "unverified"
+        },
+        {
+          "id": "links-graph-revisions",
+          "grade": "unverified"
+        },
+        {
+          "id": "shortest-path-between-two-notes",
+          "grade": "unverified"
+        },
+        {
+          "id": "link-autocomplete-while-typing",
+          "grade": "unverified"
+        },
+        {
+          "id": "checking-the-links-in-an-unsaved-note",
+          "grade": "unverified"
+        },
+        {
+          "id": "orphan-isolate-and-hub-report",
+          "grade": "unverified"
+        },
+        {
+          "id": "writing-the-report-into-the-library",
+          "grade": "unverified"
+        },
+        {
+          "id": "selection-and-privacy-dry-runs",
+          "grade": "unverified"
+        },
+        {
+          "id": "workspace-lint-report",
+          "grade": "unverified"
+        },
+        {
+          "id": "listing-a-note-s-blocks",
+          "grade": "unverified"
+        },
+        {
+          "id": "templates-and-tasks",
+          "grade": "unverified"
+        },
+        {
+          "id": "tasks",
+          "grade": "unverified"
+        },
+        {
+          "id": "batch-organizer-operations",
+          "grade": "unverified"
+        },
+        {
+          "id": "retrying-safely",
+          "grade": "unverified"
+        },
+        {
+          "id": "what-duplicate-copies",
+          "grade": "unverified"
+        },
+        {
+          "id": "running-a-note-s-query-block",
+          "grade": "unverified"
+        },
+        {
+          "id": "resolving-a-stable-link",
+          "grade": "unverified"
+        },
+        {
+          "id": "long-running-jobs",
+          "grade": "unverified"
+        },
+        {
+          "id": "the-peer-sync-surface",
+          "grade": "unverified"
+        },
+        {
+          "id": "the-data-plane",
+          "grade": "unverified"
+        },
+        {
+          "id": "placeholder-endpoints-not-yet-functional",
+          "grade": "unverified"
+        }
+      ],
+      "fragments": [
+        {
+          "id": "rest-operation-surface",
+          "section": "rest-api",
+          "grade": "generated"
+        },
+        {
+          "id": "destructive-rest-confirmations",
+          "section": "resources-attachments",
+          "grade": "claimed"
+        }
+      ],
+      "examples": [
+        {
+          "id": "api-rest-batch-organizer-operations-example-1",
+          "section": "batch-organizer-operations",
+          "grade": "unverified"
+        },
+        {
+          "id": "api-rest-checking-the-links-in-an-unsaved-note-example-1",
+          "section": "checking-the-links-in-an-unsaved-note",
+          "grade": "unverified"
+        },
+        {
+          "id": "api-rest-getting-started-example-1",
+          "section": "getting-started",
+          "grade": "unverified"
+        },
+        {
+          "id": "api-rest-link-autocomplete-while-typing-example-1",
+          "section": "link-autocomplete-while-typing",
+          "grade": "unverified"
+        },
+        {
+          "id": "api-rest-links-graph-revisions-example-1",
+          "section": "links-graph-revisions",
+          "grade": "unverified"
+        },
+        {
+          "id": "api-rest-listing-a-note-s-blocks-example-1",
+          "section": "listing-a-note-s-blocks",
+          "grade": "unverified"
+        },
+        {
+          "id": "api-rest-long-running-jobs-example-1",
+          "section": "long-running-jobs",
+          "grade": "unverified"
+        },
+        {
+          "id": "api-rest-notebooks-tags-search-notebooks-trash-example-1",
+          "section": "notebooks-tags-search-notebooks-trash",
+          "grade": "unverified"
+        },
+        {
+          "id": "api-rest-notes-create-read-edit-example-1",
+          "section": "notes-create-read-edit",
+          "grade": "unverified"
+        },
+        {
+          "id": "api-rest-notes-create-read-edit-example-2",
+          "section": "notes-create-read-edit",
+          "grade": "unverified"
+        },
+        {
+          "id": "api-rest-optimistic-concurrency-example-1",
+          "section": "optimistic-concurrency",
+          "grade": "unverified"
+        },
+        {
+          "id": "api-rest-orphan-isolate-and-hub-report-example-1",
+          "section": "orphan-isolate-and-hub-report",
+          "grade": "unverified"
+        },
+        {
+          "id": "api-rest-previewing-a-notebook-deletion-example-1",
+          "section": "previewing-a-notebook-deletion",
+          "grade": "unverified"
+        },
+        {
+          "id": "api-rest-renaming-a-tag-hierarchy-example-1",
+          "section": "renaming-a-tag-hierarchy",
+          "grade": "unverified"
+        },
+        {
+          "id": "api-rest-resolving-a-stable-link-example-1",
+          "section": "resolving-a-stable-link",
+          "grade": "unverified"
+        },
+        {
+          "id": "api-rest-resources-attachments-example-1",
+          "section": "resources-attachments",
+          "grade": "unverified"
+        },
+        {
+          "id": "api-rest-resources-attachments-example-2",
+          "section": "resources-attachments",
+          "grade": "unverified"
+        },
+        {
+          "id": "api-rest-running-a-note-s-query-block-example-1",
+          "section": "running-a-note-s-query-block",
+          "grade": "unverified"
+        },
+        {
+          "id": "api-rest-search-and-pagination-example-1",
+          "section": "search-and-pagination",
+          "grade": "unverified"
+        },
+        {
+          "id": "api-rest-selection-and-privacy-dry-runs-example-1",
+          "section": "selection-and-privacy-dry-runs",
+          "grade": "unverified"
+        },
+        {
+          "id": "api-rest-shortest-path-between-two-notes-example-1",
+          "section": "shortest-path-between-two-notes",
+          "grade": "unverified"
+        },
+        {
+          "id": "api-rest-surgical-edits-and-note-operations-example-1",
+          "section": "surgical-edits-and-note-operations",
+          "grade": "unverified"
+        },
+        {
+          "id": "api-rest-tasks-example-1",
+          "section": "tasks",
+          "grade": "unverified"
+        },
+        {
+          "id": "api-rest-templates-and-tasks-example-1",
+          "section": "templates-and-tasks",
+          "grade": "unverified"
+        },
+        {
+          "id": "api-rest-workspace-lint-report-example-1",
+          "section": "workspace-lint-report",
+          "grade": "unverified"
+        },
+        {
+          "id": "api-rest-writing-the-report-into-the-library-example-1",
+          "section": "writing-the-report-into-the-library",
+          "grade": "unverified"
+        }
+      ]
+    },
+    {
+      "topic": "archive-v2",
+      "path": "docs/archive-v2.md",
+      "counts": {
+        "claimed": 0,
+        "executed": 0,
+        "generated": 0,
+        "unverified": 10
+      },
+      "sections": [
+        {
+          "id": "native-archive-v2-safety-contract",
+          "grade": "unverified"
+        },
+        {
+          "id": "what-v2-preserves",
+          "grade": "unverified"
+        },
+        {
+          "id": "how-verification-works",
+          "grade": "unverified"
+        },
+        {
+          "id": "restore-choices-are-explicit",
+          "grade": "unverified"
+        },
+        {
+          "id": "writing-an-archive",
+          "grade": "unverified"
+        },
+        {
+          "id": "size",
+          "grade": "unverified"
+        },
+        {
+          "id": "packing",
+          "grade": "unverified"
+        },
+        {
+          "id": "reading-an-archive-back",
+          "grade": "unverified"
+        }
+      ],
+      "examples": [
+        {
+          "id": "archive-v2-reading-an-archive-back-example-1",
+          "section": "reading-an-archive-back",
+          "grade": "unverified"
+        },
+        {
+          "id": "archive-v2-writing-an-archive-example-1",
+          "section": "writing-an-archive",
+          "grade": "unverified"
+        }
+      ]
+    },
+    {
+      "topic": "cli",
+      "path": "docs/cli.md",
+      "counts": {
+        "claimed": 1,
+        "executed": 0,
+        "generated": 1,
+        "unverified": 80
+      },
+      "sections": [
+        {
+          "id": "the-notriosctl-cli",
+          "grade": "unverified"
+        },
+        {
+          "id": "version",
+          "grade": "unverified"
+        },
+        {
+          "id": "doctor",
+          "grade": "unverified"
+        },
+        {
+          "id": "import",
+          "grade": "unverified"
+        },
+        {
+          "id": "import-joplin-raw",
+          "grade": "unverified"
+        },
+        {
+          "id": "import-obsidian",
+          "grade": "unverified"
+        },
+        {
+          "id": "import-twitter",
+          "grade": "unverified"
+        },
+        {
+          "id": "import-chatgpt-import-claude",
+          "grade": "unverified"
+        },
+        {
+          "id": "import-archive",
+          "grade": "unverified"
+        },
+        {
+          "id": "export-archive",
+          "grade": "unverified"
+        },
+        {
+          "id": "export-archive-v2",
+          "grade": "unverified"
+        },
+        {
+          "id": "verify-archive-v2",
+          "grade": "unverified"
+        },
+        {
+          "id": "restore-archive-v2",
+          "grade": "unverified"
+        },
+        {
+          "id": "snapshot-create-snapshot-verify-snapshot-restore",
+          "grade": "unverified"
+        },
+        {
+          "id": "link",
+          "grade": "unverified"
+        },
+        {
+          "id": "open",
+          "grade": "unverified"
+        },
+        {
+          "id": "profile",
+          "grade": "unverified"
+        },
+        {
+          "id": "register-url-handler",
+          "grade": "unverified"
+        },
+        {
+          "id": "publish",
+          "grade": "unverified"
+        },
+        {
+          "id": "lint",
+          "grade": "unverified"
+        },
+        {
+          "id": "fix",
+          "grade": "unverified"
+        },
+        {
+          "id": "tags-rename",
+          "grade": "unverified"
+        },
+        {
+          "id": "notes-move",
+          "grade": "unverified"
+        },
+        {
+          "id": "graph-report",
+          "grade": "unverified"
+        },
+        {
+          "id": "graph-export",
+          "grade": "unverified"
+        },
+        {
+          "id": "jobs",
+          "grade": "unverified"
+        },
+        {
+          "id": "sync",
+          "grade": "unverified"
+        },
+        {
+          "id": "making-the-second-replica",
+          "grade": "unverified"
+        },
+        {
+          "id": "pairing",
+          "grade": "unverified"
+        },
+        {
+          "id": "seeing-and-ending-trust",
+          "grade": "unverified"
+        },
+        {
+          "id": "exchanging-with-a-peer-directly",
+          "grade": "unverified"
+        },
+        {
+          "id": "exchanging-through-a-folder",
+          "grade": "unverified"
+        },
+        {
+          "id": "seeing-who-is-there",
+          "grade": "unverified"
+        },
+        {
+          "id": "keys",
+          "grade": "unverified"
+        },
+        {
+          "id": "seed-help",
+          "grade": "unverified"
+        },
+        {
+          "id": "localize",
+          "grade": "unverified"
+        },
+        {
+          "id": "resources-report",
+          "grade": "unverified"
+        },
+        {
+          "id": "gc",
+          "grade": "unverified"
+        }
+      ],
+      "fragments": [
+        {
+          "id": "cli-usage-forms",
+          "section": "the-notriosctl-cli",
+          "grade": "generated"
+        },
+        {
+          "id": "product-version",
+          "section": "version",
+          "grade": "claimed"
+        }
+      ],
+      "examples": [
+        {
+          "id": "cli-doctor-example-1",
+          "section": "doctor",
+          "grade": "unverified"
+        },
+        {
+          "id": "cli-exchanging-through-a-folder-example-1",
+          "section": "exchanging-through-a-folder",
+          "grade": "unverified"
+        },
+        {
+          "id": "cli-exchanging-with-a-peer-directly-example-1",
+          "section": "exchanging-with-a-peer-directly",
+          "grade": "unverified"
+        },
+        {
+          "id": "cli-exchanging-with-a-peer-directly-example-2",
+          "section": "exchanging-with-a-peer-directly",
+          "grade": "unverified"
+        },
+        {
+          "id": "cli-exchanging-with-a-peer-directly-example-3",
+          "section": "exchanging-with-a-peer-directly",
+          "grade": "unverified"
+        },
+        {
+          "id": "cli-export-archive-example-1",
+          "section": "export-archive",
+          "grade": "unverified"
+        },
+        {
+          "id": "cli-export-archive-v2-example-1",
+          "section": "export-archive-v2",
+          "grade": "unverified"
+        },
+        {
+          "id": "cli-fix-example-1",
+          "section": "fix",
+          "grade": "unverified"
+        },
+        {
+          "id": "cli-gc-example-1",
+          "section": "gc",
+          "grade": "unverified"
+        },
+        {
+          "id": "cli-graph-export-example-1",
+          "section": "graph-export",
+          "grade": "unverified"
+        },
+        {
+          "id": "cli-graph-report-example-1",
+          "section": "graph-report",
+          "grade": "unverified"
+        },
+        {
+          "id": "cli-import-archive-example-1",
+          "section": "import-archive",
+          "grade": "unverified"
+        },
+        {
+          "id": "cli-import-chatgpt-import-claude-example-1",
+          "section": "import-chatgpt-import-claude",
+          "grade": "unverified"
+        },
+        {
+          "id": "cli-import-joplin-raw-example-1",
+          "section": "import-joplin-raw",
+          "grade": "unverified"
+        },
+        {
+          "id": "cli-import-obsidian-example-1",
+          "section": "import-obsidian",
+          "grade": "unverified"
+        },
+        {
+          "id": "cli-import-twitter-example-1",
+          "section": "import-twitter",
+          "grade": "unverified"
+        },
+        {
+          "id": "cli-jobs-example-1",
+          "section": "jobs",
+          "grade": "unverified"
+        },
+        {
+          "id": "cli-jobs-example-2",
+          "section": "jobs",
+          "grade": "unverified"
+        },
+        {
+          "id": "cli-link-example-1",
+          "section": "link",
+          "grade": "unverified"
+        },
+        {
+          "id": "cli-lint-example-1",
+          "section": "lint",
+          "grade": "unverified"
+        },
+        {
+          "id": "cli-localize-example-1",
+          "section": "localize",
+          "grade": "unverified"
+        },
+        {
+          "id": "cli-making-the-second-replica-example-1",
+          "section": "making-the-second-replica",
+          "grade": "unverified"
+        },
+        {
+          "id": "cli-notes-move-example-1",
+          "section": "notes-move",
+          "grade": "unverified"
+        },
+        {
+          "id": "cli-open-example-1",
+          "section": "open",
+          "grade": "unverified"
+        },
+        {
+          "id": "cli-pairing-example-1",
+          "section": "pairing",
+          "grade": "unverified"
+        },
+        {
+          "id": "cli-pairing-example-2",
+          "section": "pairing",
+          "grade": "unverified"
+        },
+        {
+          "id": "cli-pairing-example-3",
+          "section": "pairing",
+          "grade": "unverified"
+        },
+        {
+          "id": "cli-profile-example-1",
+          "section": "profile",
+          "grade": "unverified"
+        },
+        {
+          "id": "cli-publish-example-1",
+          "section": "publish",
+          "grade": "unverified"
+        },
+        {
+          "id": "cli-register-url-handler-example-1",
+          "section": "register-url-handler",
+          "grade": "unverified"
+        },
+        {
+          "id": "cli-resources-report-example-1",
+          "section": "resources-report",
+          "grade": "unverified"
+        },
+        {
+          "id": "cli-restore-archive-v2-example-1",
+          "section": "restore-archive-v2",
+          "grade": "unverified"
+        },
+        {
+          "id": "cli-seed-help-example-1",
+          "section": "seed-help",
+          "grade": "unverified"
+        },
+        {
+          "id": "cli-seeing-and-ending-trust-example-1",
+          "section": "seeing-and-ending-trust",
+          "grade": "unverified"
+        },
+        {
+          "id": "cli-seeing-and-ending-trust-example-2",
+          "section": "seeing-and-ending-trust",
+          "grade": "unverified"
+        },
+        {
+          "id": "cli-seeing-and-ending-trust-example-3",
+          "section": "seeing-and-ending-trust",
+          "grade": "unverified"
+        },
+        {
+          "id": "cli-seeing-who-is-there-example-1",
+          "section": "seeing-who-is-there",
+          "grade": "unverified"
+        },
+        {
+          "id": "cli-snapshot-create-snapshot-verify-snapshot-restore-example-1",
+          "section": "snapshot-create-snapshot-verify-snapshot-restore",
+          "grade": "unverified"
+        },
+        {
+          "id": "cli-sync-example-1",
+          "section": "sync",
+          "grade": "unverified"
+        },
+        {
+          "id": "cli-tags-rename-example-1",
+          "section": "tags-rename",
+          "grade": "unverified"
+        },
+        {
+          "id": "cli-verify-archive-v2-example-1",
+          "section": "verify-archive-v2",
+          "grade": "unverified"
+        },
+        {
+          "id": "cli-version-example-1",
+          "section": "version",
+          "grade": "unverified"
+        }
+      ]
+    },
+    {
+      "topic": "gui",
+      "path": "docs/gui.md",
+      "counts": {
+        "claimed": 1,
+        "executed": 0,
+        "generated": 0,
+        "unverified": 35
+      },
+      "sections": [
+        {
+          "id": "the-built-in-gui",
+          "grade": "unverified"
+        },
+        {
+          "id": "building",
+          "grade": "unverified"
+        },
+        {
+          "id": "modes",
+          "grade": "unverified"
+        },
+        {
+          "id": "first-launch",
+          "grade": "unverified"
+        },
+        {
+          "id": "verifying-the-embedded-service",
+          "grade": "unverified"
+        },
+        {
+          "id": "common-startup-errors",
+          "grade": "unverified"
+        },
+        {
+          "id": "layout",
+          "grade": "unverified"
+        },
+        {
+          "id": "sync-center",
+          "grade": "unverified"
+        },
+        {
+          "id": "link-help-while-you-write",
+          "grade": "unverified"
+        },
+        {
+          "id": "seeing-what-is-around-a-note",
+          "grade": "unverified"
+        },
+        {
+          "id": "the-graph-report",
+          "grade": "unverified"
+        },
+        {
+          "id": "pasting-a-table",
+          "grade": "unverified"
+        },
+        {
+          "id": "live-query-blocks",
+          "grade": "unverified"
+        },
+        {
+          "id": "math-and-code-blocks",
+          "grade": "unverified"
+        },
+        {
+          "id": "resizing-panes",
+          "grade": "unverified"
+        },
+        {
+          "id": "choosing-which-notebook-a-note-goes-in",
+          "grade": "unverified"
+        },
+        {
+          "id": "deleting-and-restoring-notes",
+          "grade": "unverified"
+        },
+        {
+          "id": "deleting-a-notebook",
+          "grade": "unverified"
+        },
+        {
+          "id": "themes",
+          "grade": "unverified"
+        },
+        {
+          "id": "protected-items",
+          "grade": "unverified"
+        }
+      ],
+      "fragments": [
+        {
+          "id": "gui-peer-retirement-confirmation",
+          "section": "sync-center",
+          "grade": "claimed"
+        }
+      ],
+      "examples": [
+        {
+          "id": "gui-building-example-1",
+          "section": "building",
+          "grade": "unverified"
+        },
+        {
+          "id": "gui-choosing-which-notebook-a-note-goes-in-example-1",
+          "section": "choosing-which-notebook-a-note-goes-in",
+          "grade": "unverified"
+        },
+        {
+          "id": "gui-modes-example-1",
+          "section": "modes",
+          "grade": "unverified"
+        },
+        {
+          "id": "gui-the-graph-report-example-1",
+          "section": "the-graph-report",
+          "grade": "unverified"
+        },
+        {
+          "id": "gui-the-graph-report-example-2",
+          "section": "the-graph-report",
+          "grade": "unverified"
+        },
+        {
+          "id": "gui-verifying-the-embedded-service-example-1",
+          "section": "verifying-the-embedded-service",
+          "grade": "unverified"
+        }
+      ],
+      "journeys": [
+        {
+          "id": "search-open",
+          "section": "first-launch",
+          "grade": "unverified"
+        },
+        {
+          "id": "new-note-in-notebook",
+          "section": "choosing-which-notebook-a-note-goes-in",
+          "grade": "unverified"
+        },
+        {
+          "id": "edit-save",
+          "section": "layout",
+          "grade": "unverified"
+        },
+        {
+          "id": "trash-restore",
+          "section": "deleting-and-restoring-notes",
+          "grade": "unverified"
+        },
+        {
+          "id": "delete-notebook-review",
+          "section": "deleting-a-notebook",
+          "grade": "unverified"
+        },
+        {
+          "id": "insert-and-check-link",
+          "section": "link-help-while-you-write",
+          "grade": "unverified"
+        },
+        {
+          "id": "inspect-local-graph",
+          "section": "seeing-what-is-around-a-note",
+          "grade": "unverified"
+        },
+        {
+          "id": "open-sync-center",
+          "section": "sync-center",
+          "grade": "unverified"
+        },
+        {
+          "id": "editor-find-replace",
+          "section": "layout",
+          "grade": "unverified"
+        }
+      ]
+    },
+    {
+      "topic": "import-export",
+      "path": "docs/import-export.md",
+      "counts": {
+        "claimed": 0,
+        "executed": 0,
+        "generated": 0,
+        "unverified": 32
+      },
+      "sections": [
+        {
+          "id": "import-and-export",
+          "grade": "unverified"
+        },
+        {
+          "id": "shared-options",
+          "grade": "unverified"
+        },
+        {
+          "id": "joplin-raw-export",
+          "grade": "unverified"
+        },
+        {
+          "id": "1-create-the-export-in-joplin",
+          "grade": "unverified"
+        },
+        {
+          "id": "2-dry-run",
+          "grade": "unverified"
+        },
+        {
+          "id": "3-import",
+          "grade": "unverified"
+        },
+        {
+          "id": "what-the-report-means",
+          "grade": "unverified"
+        },
+        {
+          "id": "what-is-preserved-transformed-or-lost",
+          "grade": "unverified"
+        },
+        {
+          "id": "edge-cases-implementation-verified",
+          "grade": "unverified"
+        },
+        {
+          "id": "verify-after-importing",
+          "grade": "unverified"
+        },
+        {
+          "id": "obsidian-vault-directory",
+          "grade": "unverified"
+        },
+        {
+          "id": "twitter-x-extracted-archive",
+          "grade": "unverified"
+        },
+        {
+          "id": "chatgpt-data-export",
+          "grade": "unverified"
+        },
+        {
+          "id": "claude-data-export",
+          "grade": "unverified"
+        },
+        {
+          "id": "exporting-a-notrios-archive",
+          "grade": "unverified"
+        },
+        {
+          "id": "exporting-a-native-archive-v2-snapshot",
+          "grade": "unverified"
+        },
+        {
+          "id": "verifying-and-restoring-an-archive-v2-snapshot",
+          "grade": "unverified"
+        },
+        {
+          "id": "fast-same-schema-whole-library-snapshots",
+          "grade": "unverified"
+        },
+        {
+          "id": "importing-a-notrios-archive",
+          "grade": "unverified"
+        },
+        {
+          "id": "trash-rules-recap",
+          "grade": "unverified"
+        }
+      ],
+      "examples": [
+        {
+          "id": "import-export-2-dry-run-example-1",
+          "section": "2-dry-run",
+          "grade": "unverified"
+        },
+        {
+          "id": "import-export-3-import-example-1",
+          "section": "3-import",
+          "grade": "unverified"
+        },
+        {
+          "id": "import-export-chatgpt-data-export-example-1",
+          "section": "chatgpt-data-export",
+          "grade": "unverified"
+        },
+        {
+          "id": "import-export-claude-data-export-example-1",
+          "section": "claude-data-export",
+          "grade": "unverified"
+        },
+        {
+          "id": "import-export-exporting-a-native-archive-v2-snapshot-example-1",
+          "section": "exporting-a-native-archive-v2-snapshot",
+          "grade": "unverified"
+        },
+        {
+          "id": "import-export-exporting-a-notrios-archive-example-1",
+          "section": "exporting-a-notrios-archive",
+          "grade": "unverified"
+        },
+        {
+          "id": "import-export-fast-same-schema-whole-library-snapshots-example-1",
+          "section": "fast-same-schema-whole-library-snapshots",
+          "grade": "unverified"
+        },
+        {
+          "id": "import-export-import-and-export-example-1",
+          "section": "import-and-export",
+          "grade": "unverified"
+        },
+        {
+          "id": "import-export-importing-a-notrios-archive-example-1",
+          "section": "importing-a-notrios-archive",
+          "grade": "unverified"
+        },
+        {
+          "id": "import-export-obsidian-vault-directory-example-1",
+          "section": "obsidian-vault-directory",
+          "grade": "unverified"
+        },
+        {
+          "id": "import-export-twitter-x-extracted-archive-example-1",
+          "section": "twitter-x-extracted-archive",
+          "grade": "unverified"
+        },
+        {
+          "id": "import-export-verifying-and-restoring-an-archive-v2-snapshot-example-1",
+          "section": "verifying-and-restoring-an-archive-v2-snapshot",
+          "grade": "unverified"
+        }
+      ]
+    },
+    {
+      "topic": "index",
+      "path": "docs/index.md",
+      "counts": {
+        "claimed": 0,
+        "executed": 0,
+        "generated": 0,
+        "unverified": 5
+      },
+      "sections": [
+        {
+          "id": "notrios",
+          "grade": "unverified"
+        },
+        {
+          "id": "highlights",
+          "grade": "unverified"
+        },
+        {
+          "id": "getting-started",
+          "grade": "unverified"
+        },
+        {
+          "id": "license",
+          "grade": "unverified"
+        }
+      ],
+      "examples": [
+        {
+          "id": "index-getting-started-example-1",
+          "section": "getting-started",
+          "grade": "unverified"
+        }
+      ]
+    },
+    {
+      "topic": "installation",
+      "path": "docs/installation.md",
+      "counts": {
+        "claimed": 0,
+        "executed": 0,
+        "generated": 0,
+        "unverified": 18
+      },
+      "sections": [
+        {
+          "id": "installation-and-building",
+          "grade": "unverified"
+        },
+        {
+          "id": "prerequisites",
+          "grade": "unverified"
+        },
+        {
+          "id": "clone",
+          "grade": "unverified"
+        },
+        {
+          "id": "build",
+          "grade": "unverified"
+        },
+        {
+          "id": "run",
+          "grade": "unverified"
+        },
+        {
+          "id": "the-two-ways-to-open-the-interface",
+          "grade": "unverified"
+        },
+        {
+          "id": "where-the-interface-files-have-to-be",
+          "grade": "unverified"
+        },
+        {
+          "id": "configuration-paths-resolve-against-the-working-directory-too",
+          "grade": "unverified"
+        },
+        {
+          "id": "optional-local-installation",
+          "grade": "unverified"
+        },
+        {
+          "id": "ways-to-consume-notrios",
+          "grade": "unverified"
+        },
+        {
+          "id": "next-steps",
+          "grade": "unverified"
+        }
+      ],
+      "examples": [
+        {
+          "id": "installation-clone-example-1",
+          "section": "clone",
+          "grade": "unverified"
+        },
+        {
+          "id": "installation-optional-local-installation-example-1",
+          "section": "optional-local-installation",
+          "grade": "unverified"
+        },
+        {
+          "id": "installation-optional-local-installation-example-2",
+          "section": "optional-local-installation",
+          "grade": "unverified"
+        },
+        {
+          "id": "installation-prerequisites-example-1",
+          "section": "prerequisites",
+          "grade": "unverified"
+        },
+        {
+          "id": "installation-run-example-1",
+          "section": "run",
+          "grade": "unverified"
+        },
+        {
+          "id": "installation-run-example-2",
+          "section": "run",
+          "grade": "unverified"
+        },
+        {
+          "id": "installation-where-the-interface-files-have-to-be-example-1",
+          "section": "where-the-interface-files-have-to-be",
+          "grade": "unverified"
+        }
+      ]
+    },
+    {
+      "topic": "operations",
+      "path": "docs/operations.md",
+      "counts": {
+        "claimed": 0,
+        "executed": 0,
+        "generated": 0,
+        "unverified": 41
+      },
+      "sections": [
+        {
+          "id": "data-safety-and-maintenance",
+          "grade": "unverified"
+        },
+        {
+          "id": "finding-what-has-rotted-workspace-lint",
+          "grade": "unverified"
+        },
+        {
+          "id": "fixing-what-can-be-fixed-mechanically",
+          "grade": "unverified"
+        },
+        {
+          "id": "watching-a-long-import-or-export",
+          "grade": "unverified"
+        },
+        {
+          "id": "seeing-the-shape-of-the-link-graph",
+          "grade": "unverified"
+        },
+        {
+          "id": "renaming-a-tag-hierarchy",
+          "grade": "unverified"
+        },
+        {
+          "id": "deleting-a-notebook-without-surprises",
+          "grade": "unverified"
+        },
+        {
+          "id": "localizing-remote-media",
+          "grade": "unverified"
+        },
+        {
+          "id": "inspecting-resource-references",
+          "grade": "unverified"
+        },
+        {
+          "id": "garbage-collection",
+          "grade": "unverified"
+        },
+        {
+          "id": "planning-and-resuming-imports",
+          "grade": "unverified"
+        },
+        {
+          "id": "running-sync-through-a-cloud-folder-or-a-usb-drive",
+          "grade": "unverified"
+        },
+        {
+          "id": "commands-that-are-safe-against-a-carrier",
+          "grade": "unverified"
+        },
+        {
+          "id": "commands-that-must-never-touch-protocol-state",
+          "grade": "unverified"
+        },
+        {
+          "id": "what-a-cloud-provider-actually-does-measured",
+          "grade": "unverified"
+        },
+        {
+          "id": "when-it-goes-wrong",
+          "grade": "unverified"
+        },
+        {
+          "id": "exposing-the-sync-surface-to-a-peer",
+          "grade": "unverified"
+        },
+        {
+          "id": "what-a-peer-credential-is-and-is-not",
+          "grade": "unverified"
+        },
+        {
+          "id": "watching-it",
+          "grade": "unverified"
+        },
+        {
+          "id": "if-a-device-is-lost",
+          "grade": "unverified"
+        },
+        {
+          "id": "monitoring-the-recoll-sidecar",
+          "grade": "unverified"
+        }
+      ],
+      "examples": [
+        {
+          "id": "operations-commands-that-are-safe-against-a-carrier-example-1",
+          "section": "commands-that-are-safe-against-a-carrier",
+          "grade": "unverified"
+        },
+        {
+          "id": "operations-commands-that-must-never-touch-protocol-state-example-1",
+          "section": "commands-that-must-never-touch-protocol-state",
+          "grade": "unverified"
+        },
+        {
+          "id": "operations-deleting-a-notebook-without-surprises-example-1",
+          "section": "deleting-a-notebook-without-surprises",
+          "grade": "unverified"
+        },
+        {
+          "id": "operations-exposing-the-sync-surface-to-a-peer-example-1",
+          "section": "exposing-the-sync-surface-to-a-peer",
+          "grade": "unverified"
+        },
+        {
+          "id": "operations-finding-what-has-rotted-workspace-lint-example-1",
+          "section": "finding-what-has-rotted-workspace-lint",
+          "grade": "unverified"
+        },
+        {
+          "id": "operations-fixing-what-can-be-fixed-mechanically-example-1",
+          "section": "fixing-what-can-be-fixed-mechanically",
+          "grade": "unverified"
+        },
+        {
+          "id": "operations-garbage-collection-example-1",
+          "section": "garbage-collection",
+          "grade": "unverified"
+        },
+        {
+          "id": "operations-garbage-collection-example-2",
+          "section": "garbage-collection",
+          "grade": "unverified"
+        },
+        {
+          "id": "operations-if-a-device-is-lost-example-1",
+          "section": "if-a-device-is-lost",
+          "grade": "unverified"
+        },
+        {
+          "id": "operations-inspecting-resource-references-example-1",
+          "section": "inspecting-resource-references",
+          "grade": "unverified"
+        },
+        {
+          "id": "operations-localizing-remote-media-example-1",
+          "section": "localizing-remote-media",
+          "grade": "unverified"
+        },
+        {
+          "id": "operations-monitoring-the-recoll-sidecar-example-1",
+          "section": "monitoring-the-recoll-sidecar",
+          "grade": "unverified"
+        },
+        {
+          "id": "operations-planning-and-resuming-imports-example-1",
+          "section": "planning-and-resuming-imports",
+          "grade": "unverified"
+        },
+        {
+          "id": "operations-planning-and-resuming-imports-example-2",
+          "section": "planning-and-resuming-imports",
+          "grade": "unverified"
+        },
+        {
+          "id": "operations-planning-and-resuming-imports-example-3",
+          "section": "planning-and-resuming-imports",
+          "grade": "unverified"
+        },
+        {
+          "id": "operations-renaming-a-tag-hierarchy-example-1",
+          "section": "renaming-a-tag-hierarchy",
+          "grade": "unverified"
+        },
+        {
+          "id": "operations-seeing-the-shape-of-the-link-graph-example-1",
+          "section": "seeing-the-shape-of-the-link-graph",
+          "grade": "unverified"
+        },
+        {
+          "id": "operations-seeing-the-shape-of-the-link-graph-example-2",
+          "section": "seeing-the-shape-of-the-link-graph",
+          "grade": "unverified"
+        },
+        {
+          "id": "operations-watching-a-long-import-or-export-example-1",
+          "section": "watching-a-long-import-or-export",
+          "grade": "unverified"
+        },
+        {
+          "id": "operations-watching-it-example-1",
+          "section": "watching-it",
+          "grade": "unverified"
+        }
+      ]
+    },
+    {
+      "topic": "publishing",
+      "path": "docs/publishing.md",
+      "counts": {
+        "claimed": 0,
+        "executed": 0,
+        "generated": 0,
+        "unverified": 10
+      },
+      "sections": [
+        {
+          "id": "publishing-a-subset-of-your-notes",
+          "grade": "unverified"
+        },
+        {
+          "id": "what-a-publication-withholds",
+          "grade": "unverified"
+        },
+        {
+          "id": "what-happens-to-links",
+          "grade": "unverified"
+        },
+        {
+          "id": "saving-a-profile",
+          "grade": "unverified"
+        },
+        {
+          "id": "reviewing-before-publishing",
+          "grade": "unverified"
+        },
+        {
+          "id": "publishing",
+          "grade": "unverified"
+        },
+        {
+          "id": "safety-boundaries",
+          "grade": "unverified"
+        }
+      ],
+      "examples": [
+        {
+          "id": "publishing-publishing-example-1",
+          "section": "publishing",
+          "grade": "unverified"
+        },
+        {
+          "id": "publishing-reviewing-before-publishing-example-1",
+          "section": "reviewing-before-publishing",
+          "grade": "unverified"
+        },
+        {
+          "id": "publishing-saving-a-profile-example-1",
+          "section": "saving-a-profile",
+          "grade": "unverified"
+        }
+      ]
+    },
+    {
+      "topic": "query-language",
+      "path": "docs/query-language.md",
+      "counts": {
+        "claimed": 0,
+        "executed": 0,
+        "generated": 0,
+        "unverified": 2
+      },
+      "sections": [
+        {
+          "id": "search-query-language",
+          "grade": "unverified"
+        },
+        {
+          "id": "using-a-query-inside-a-note",
+          "grade": "unverified"
+        }
+      ]
+    },
+    {
+      "topic": "selection-planning",
+      "path": "docs/selection-planning.md",
+      "counts": {
+        "claimed": 0,
+        "executed": 0,
+        "generated": 0,
+        "unverified": 2
+      },
+      "sections": [
+        {
+          "id": "selection-and-privacy-planning",
+          "grade": "unverified"
+        }
+      ],
+      "examples": [
+        {
+          "id": "selection-planning-selection-and-privacy-planning-example-1",
+          "section": "selection-and-privacy-planning",
+          "grade": "unverified"
+        }
+      ]
+    },
+    {
+      "topic": "service",
+      "path": "docs/service.md",
+      "counts": {
+        "claimed": 1,
+        "executed": 0,
+        "generated": 2,
+        "unverified": 11
+      },
+      "sections": [
+        {
+          "id": "the-notrios-service",
+          "grade": "unverified"
+        },
+        {
+          "id": "command-line-flags",
+          "grade": "unverified"
+        },
+        {
+          "id": "configuration-reference",
+          "grade": "unverified"
+        },
+        {
+          "id": "network-exposure",
+          "grade": "unverified"
+        },
+        {
+          "id": "search-sidecar",
+          "grade": "unverified"
+        },
+        {
+          "id": "data-directories-and-generated-files",
+          "grade": "unverified"
+        },
+        {
+          "id": "backup-and-restore",
+          "grade": "unverified"
+        },
+        {
+          "id": "data-safety-rules-always-on",
+          "grade": "unverified"
+        }
+      ],
+      "fragments": [
+        {
+          "id": "configuration-keys",
+          "section": "configuration-reference",
+          "grade": "generated"
+        },
+        {
+          "id": "configuration-defaults",
+          "section": "configuration-reference",
+          "grade": "generated"
+        },
+        {
+          "id": "current-schema-version",
+          "section": "configuration-reference",
+          "grade": "claimed"
+        }
+      ],
+      "examples": [
+        {
+          "id": "service-backup-and-restore-example-1",
+          "section": "backup-and-restore",
+          "grade": "unverified"
+        },
+        {
+          "id": "service-network-exposure-example-1",
+          "section": "network-exposure",
+          "grade": "unverified"
+        },
+        {
+          "id": "service-the-notrios-service-example-1",
+          "section": "the-notrios-service",
+          "grade": "unverified"
+        }
+      ]
+    },
+    {
+      "topic": "stable-links",
+      "path": "docs/stable-links.md",
+      "counts": {
+        "claimed": 0,
+        "executed": 0,
+        "generated": 0,
+        "unverified": 15
+      },
+      "sections": [
+        {
+          "id": "stable-links-between-notes-and-machines",
+          "grade": "unverified"
+        },
+        {
+          "id": "telling-this-machine-where-your-databases-are",
+          "grade": "unverified"
+        },
+        {
+          "id": "opening-a-link",
+          "grade": "unverified"
+        },
+        {
+          "id": "registering-the-desktop-handler-ubuntu",
+          "grade": "unverified"
+        },
+        {
+          "id": "links-inside-notes",
+          "grade": "unverified"
+        },
+        {
+          "id": "linking-to-a-section-or-a-block",
+          "grade": "unverified"
+        },
+        {
+          "id": "headings",
+          "grade": "unverified"
+        },
+        {
+          "id": "blocks",
+          "grade": "unverified"
+        },
+        {
+          "id": "what-breaks-and-when",
+          "grade": "unverified"
+        },
+        {
+          "id": "what-this-is-not",
+          "grade": "unverified"
+        }
+      ],
+      "examples": [
+        {
+          "id": "stable-links-linking-to-a-section-or-a-block-example-1",
+          "section": "linking-to-a-section-or-a-block",
+          "grade": "unverified"
+        },
+        {
+          "id": "stable-links-opening-a-link-example-1",
+          "section": "opening-a-link",
+          "grade": "unverified"
+        },
+        {
+          "id": "stable-links-registering-the-desktop-handler-ubuntu-example-1",
+          "section": "registering-the-desktop-handler-ubuntu",
+          "grade": "unverified"
+        },
+        {
+          "id": "stable-links-stable-links-between-notes-and-machines-example-1",
+          "section": "stable-links-between-notes-and-machines",
+          "grade": "unverified"
+        },
+        {
+          "id": "stable-links-telling-this-machine-where-your-databases-are-example-1",
+          "section": "telling-this-machine-where-your-databases-are",
+          "grade": "unverified"
+        }
+      ]
+    },
+    {
+      "topic": "troubleshooting",
+      "path": "docs/troubleshooting.md",
+      "counts": {
+        "claimed": 0,
+        "executed": 0,
+        "generated": 0,
+        "unverified": 8
+      },
+      "sections": [
+        {
+          "id": "troubleshooting",
+          "grade": "unverified"
+        },
+        {
+          "id": "building",
+          "grade": "unverified"
+        },
+        {
+          "id": "starting-the-service",
+          "grade": "unverified"
+        },
+        {
+          "id": "search-sidecar-recoll",
+          "grade": "unverified"
+        },
+        {
+          "id": "importing",
+          "grade": "unverified"
+        },
+        {
+          "id": "physical-snapshot-restore",
+          "grade": "unverified"
+        },
+        {
+          "id": "documentation-site",
+          "grade": "unverified"
+        },
+        {
+          "id": "development-validation-commands",
+          "grade": "unverified"
+        }
+      ]
+    }
+  ]
+}

@@ -11,6 +11,7 @@ go test ./...
 python3 scripts/check_required_files.py
 bash scripts/validate-scaffold.sh
 (cd web && npm ci && npm audit && npm run build)
+python3 performance/v0.7-g18c/validate_evidence.py
 
 rm -f "$OUT"
 zip -qr "$OUT" . \

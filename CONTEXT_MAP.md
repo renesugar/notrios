@@ -10,7 +10,7 @@ This file is the codebase atlas. Update it whenever major files or directories a
   scalability sequence, the blocking G17a-G17b external evidence-preservation
   sequence, and the newly planned G18a-G18g documentation-integrity/Hugo-Ledger
   sequence. G0-G18 are complete; the G17b verifier gates every future GitHub
-  push. G18a-G18b are complete; G18c is next but unapproved. The
+  push. G18a-G18c are complete; G18d is next but unapproved. The
   current product remains 0.6.0 at schema v27; v0.6 is archived under
   `plans/v0.6/`; v0.5 and v0.4 are archived under their version directories.
 - `plans/scaffold/SCAFFOLD_CREATION_PLAN.md` — process for creating/refining this scaffold.
@@ -70,6 +70,12 @@ This file is the codebase atlas. Update it whenever major files or directories a
   prototype, route/anchor/Pagefind and request contract, three-option delivery
   comparison, license/provenance records, build/validator, unit tests, and
   executable browser smoke. Production site generation remains unchanged.
+- `cmd/docaudit/`, `internal/docaudit/`, `scripts/docaudit_ts.mjs`, and
+  `docs/docaudit/registry.json` — G18c's repository-only directive/parser,
+  Go and TypeScript declaration resolver, typed claim/check registry,
+  executable-fence and GUI-journey accounting, and four-grade topic report.
+- `performance/v0.7-g18c/` — the exact 351-unit report, 20-case Go mutation
+  matrix, eight-case TypeScript resolver coverage, and freshness validator.
 - `performance/v0.7-g0/` — completed G0 threat model, normative protocol
   glossary, thirty misuse/control traces, primary-source dependency/license/
   platform validation, and its structural evidence validator.

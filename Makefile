@@ -10,7 +10,7 @@
 .DEFAULT_GOAL := help
 
 .PHONY: help deps build build-service build-cli web gui docs \
-        test validate smoke serve doctor seed-help evidence-pre-push \
+        test validate docaudit smoke serve doctor seed-help evidence-pre-push \
         clean clobber precheck
 
 help: ## Show this target summary
@@ -48,6 +48,9 @@ test: ## Run all Go tests
 
 validate: ## Run tests plus scaffold/script validation
 	bash scripts/validate-scaffold.sh
+
+docaudit: web/node_modules ## Audit documentation/source anchors and coverage
+	go run ./cmd/docaudit
 
 smoke: web ## Run the end-to-end REST/MCP smoke test
 	bash scripts/mvp_smoke.sh

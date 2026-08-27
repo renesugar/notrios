@@ -96,6 +96,12 @@ func NewServerWithStore(st store.Store) *Server {
 	return NewServerWithOptions(ServerOptions{Store: st, Config: config.Default()})
 }
 
+// NewServerWithOptions registers the finite REST surface over shared service
+// and store behavior.
+//
+//notrios:doc user rest-operation-surface
+//notrios:help api-rest rest-api
+//notrios:enumerates go:github.com/renesugar/notrios/internal/httpapi#NewServerWithOptions
 func NewServerWithOptions(options ServerOptions) *Server {
 	cfg := options.Config
 	if cfg.Server.ListenAddr == "" {
@@ -1392,6 +1398,12 @@ func toAPIGarbageCollectionCandidates(candidates []store.GarbageCollectionCandid
 	return out
 }
 
+// requireConfirmation refuses destructive resource and purge requests unless
+// the caller repeats the exact object-specific confirmation value.
+//
+//notrios:doc user destructive-rest-confirmations
+//notrios:help api-rest resources-attachments
+//notrios:claim destructive-rest-confirmation-check go:github.com/renesugar/notrios/internal/httpapi#TestResourceHTTPUploadAttachDownloadAndSafeDelete
 func requireConfirmation(w http.ResponseWriter, r *http.Request, expected string) bool {
 	if strings.TrimSpace(r.Header.Get("X-Notrios-Confirmation")) == expected {
 		return true

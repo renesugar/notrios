@@ -16,7 +16,7 @@ G14a-G14e archive-scalability sequence, the newly inserted blocking G17a-G17b
 evidence-preservation sequence, and the newly planned G18a-G18g documentation-
 integrity/Hugo-Ledger sequence. The user's 2026-08-11
 review resolved the policy decisions through G17, including mandatory payload
-encryption and per-replica Ed25519 signatures. **G0-G18b are complete** and
+encryption and per-replica Ed25519 signatures. **G0-G18c are complete** and
 archived under `plans/v0.7/`; their reviewed evidence is under
 `performance/v0.7-g0/`, `performance/v0.7-g1/`, `performance/v0.7-g1a/`,
 `performance/v0.7-g2/`, `performance/v0.7-g4/`, `performance/v0.7-g5/`,
@@ -27,7 +27,8 @@ archived under `plans/v0.7/`; their reviewed evidence is under
 `performance/v0.7-g14c/`, `performance/v0.7-g14d/`, and
 `performance/v0.7-g14e/`, `performance/v0.7-g16/`, and
 `performance/v0.7-g17/`, `performance/v0.7-g18/`, and
-`performance/v0.7-g18a/`, and `performance/v0.7-g18b/`. G15's archive is
+`performance/v0.7-g18a/`, `performance/v0.7-g18b/`, and
+`performance/v0.7-g18c/`. G15's archive is
 `plans/v0.7/024-durable-sync-jobs.md`; G16's archive is
 `plans/v0.7/025-sync-recovery-ui.md`; G17's archive is
 `plans/v0.7/026-peer-retention-gc-repair.md`; G17a and its later decision record
@@ -41,9 +42,10 @@ The Android-emulator runtime amendment is
 `plans/v0.7/034-android-emulator-modernc-runtime.md`.
 G18b is archived as
 `plans/v0.7/035-hugo-ledger-reproducible-site-contract.md`.
-**G0-G18b are complete.
+G18c is archived as `plans/v0.7/036-documentation-anchor-audit.md`.
+**G0-G18c are complete.
 The G17b pre-push verifier is mandatory before any future GitHub push; no push
-or physical burn was authorized or performed. G18c and later items are next and
+or physical burn was authorized or performed. G18d and later items are next and
 are not approved.** G14b selected option B: a
 required compatible same-schema SQLite-image plus bounded packed-assets
 capability for whole-library full backup/catch-up, retaining packed semantic
@@ -64,7 +66,22 @@ no heading IDs. Submodule archives omit the theme payload; initial Hugo Module
 resolution is network/cache dependent and its generated vendor tree omitted
 LICENSE. Repeat Hugo output is byte-identical; Pagefind varies hashed shard
 names while preserving scope/search, so only semantic reproducibility is
-claimed. G18c is the next incomplete item and remains unapproved.
+claimed. G18d is the next incomplete item and remains unapproved.
+
+G18c implements a repository-only `docaudit` command/library over the G18a
+contract. It parses the Go-1.25-compatible no-space directive grammar, resolves
+exact Go and TypeScript declarations, binds fragments to the 15-page/199-
+section Markdown template, validates four typed claim-to-test edges, and
+accounts bidirectionally for 131 executable-shaped fences and nine proposed GUI
+journeys. The first 12 fragments cover version/schema, config keys/defaults,
+CLI usage, REST registrations, MCP tools and ordinary/sync scopes, and exact
+REST/GUI destructive confirmations. The checked 351-unit report is 0 executed,
+8 generated, 4 claimed, and 339 unverified. Existing manual sections—including
+the preserved schema-v20 drift—stay independently unverified. Twenty Go graph
+mutations plus eight TypeScript cases gate dangling, duplicate, orphan,
+audience, and source errors; exact App/EditorPane/SyncCenter regressions protect
+the installed TypeScript 7 fallback. CI and release ZIP assembly validate the
+exact report.
 
 G15 advances schema v26 with a sync-only durable outbox over the F6 job
 records. `internal/syncjobs/` drains only explicitly queued/due rows; it never
@@ -159,7 +176,7 @@ declarations and a bounded one-hop direct-callee slice; path/line, missing, and
 ambiguous anchors fail. One doc group carries one user/API/maintainer audience,
 while rationale is unmarked. Go 1.27 confirms directive stripping from
 `CommentGroup.Text`, but the Go 1.25 minimum predates `ast.ParseDirective`, so
-G18c must use the tested compatibility parser. The eight-case calibration set
+G18c uses the tested compatibility parser. The eight-case calibration set
 preserves the real schema-v20/v27 contradiction, a one-word negation pair,
 rationale, and scope limits. No external model was called and semantic review
 remains a future advisory, never a CI gate.
@@ -259,7 +276,7 @@ was added. G15-G17b are complete. G17b sealed 81 curated artifacts, produced
 the verified release ZIP and immutable reserve described above, and committed
 the finite outer-catalog closure. The generated DigiCert pilot and all
 production tokens passed policy/nonce/imprint/EKU/time/explicit-chain checks;
-Sectigo was not used. G18b is complete; G18c is next but unapproved. Every
+Sectigo was not used. G18c is complete; G18d is next but unapproved. Every
 remaining item requires separate item-by-item user approval, and every future
 push must first pass the G17b gate.
 

@@ -48,6 +48,12 @@ const (
 	MCPSyncControl  = "control"
 )
 
+// mcpSyncToolScopes assigns the orthogonal sync scope required by each sync
+// control-plane tool.
+//
+//notrios:doc user mcp-sync-tool-scopes
+//notrios:help api-mcp tool-scopes
+//notrios:enumerates go:github.com/renesugar/notrios/internal/httpapi#mcpSyncToolScopes
 var mcpSyncToolScopes = map[string]string{
 	"get_sync_status":        MCPSyncStatus,
 	"list_sync_conflicts":    MCPSyncStatus,
@@ -58,7 +64,11 @@ var mcpSyncToolScopes = map[string]string{
 	"cancel_sync_job":        MCPSyncControl,
 }
 
-// MCPScopes lists every scope, narrowest first.
+// MCPScopes lists every MCP scope, narrowest first.
+//
+//notrios:doc user mcp-scope-surface
+//notrios:help api-mcp tool-scopes
+//notrios:enumerates go:github.com/renesugar/notrios/internal/httpapi#MCPScopes
 func MCPScopes() []string {
 	return []string{MCPScopeSearchOnly, MCPScopeReadOnly, MCPScopeEditor, MCPScopeOrganizer}
 }
@@ -83,6 +93,10 @@ func scopeRank(scope string) int {
 // fails if one does not, so a tool cannot be added without someone deciding how
 // much trust it needs. Defaulting an unclassified tool to the narrowest scope
 // would be the dangerous kind of safe: it would ship silently.
+//
+//notrios:doc user mcp-tool-scope-assignments
+//notrios:help api-mcp tool-scopes
+//notrios:enumerates go:github.com/renesugar/notrios/internal/httpapi#mcpToolScopes
 var mcpToolScopes = map[string]string{
 	// search-only: find things, and see the structure needed to search well.
 	// None of these returns a note body.

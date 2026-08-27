@@ -1,10 +1,10 @@
 # Plan: v0.7 — Native synchronization
 
-Status: **G0-G18b are complete through 2026-08-27. Product version remains 0.6.0 and
+Status: **G0-G18c are complete through 2026-08-27. Product version remains 0.6.0 and
 the canonical schema is v27. The user resolved G17b's evidence scope, exact
 OpenPGP identity, and RFC-3161 provider order on 2026-08-25, then authorized
 the exact signer/Secret Service workflow, TSA requests, and reserve writes and
-attested offline backup/revocation readiness. G18c-G18g are not approved. The
+attested offline backup/revocation readiness. G18d-G18g are not approved. The
 G17b pre-push evidence gate is now mandatory; no GitHub push or
 physical optical burn occurred.** The
 former seven-item draft was too coarse: it mixed protocol research, canonical
@@ -2170,7 +2170,7 @@ inputs and validated behavior rather than a false byte-identical generated
 index. No production workflow/site, `docs/`, Help note, schema, product
 dependency, remote, reserve, or physical medium changed.
 
-## G18c. Documentation anchor audit and executable-claim registry
+## G18c. Documentation anchor audit and executable-claim registry — complete
 
 **Goal.** Make documentation drift visible before generating or relocating
 large amounts of prose.
@@ -2211,6 +2211,21 @@ check fails in the expected direction.
 
 - None. G18a freezes the grammar and symbol mechanism before this item may be
   approved.
+
+**Outcome (2026-08-27).** The deterministic `docaudit` command/library is
+archived under `plans/v0.7/036-documentation-anchor-audit.md`. It resolves the
+frozen Go and TypeScript declaration forms, binds 12 initial source fragments
+and four typed test claims to the 199-section template, and accounts for all
+131 executable-shaped fences and nine proposed GUI journeys. The checked
+report contains 351 explicit units: zero executed, eight generated, four
+claimed, and 339 unverified. Twenty Go graph mutations plus eight TypeScript
+resolver cases fail dangling, duplicate, orphan, audience, malformed, missing,
+ambiguous, and unaccounted edges. Existing Markdown remains authoritative and
+unverified—including the preserved schema-v20 drift—so proximity to a claimed
+schema-v27 declaration does not falsely upgrade it. CI and release packaging
+now validate the exact report after installing the locked TypeScript compiler.
+No prose generation/migration, behavior, schema, API, dependency, semantic
+model verdict, remote, reserve, push, or physical medium changed.
 
 ## G18d. Executed CLI, configuration, REST, and MCP documentation examples
 
@@ -2517,12 +2532,13 @@ recommendation, blocking status, and consequence.
 | Ledger theme pin/distribution | G18b | Resolved 2026-08-27: minimal vendored source snapshot with LICENSE, exact commit, and deterministic manifest |
 | Documentation public URL shape | G18b | Resolved 2026-08-27: preserve `.html` routes and G18a fragments with explicit compatibility mappings/aliases |
 | Documentation search backend | G18b | Resolved 2026-08-27: static Pagefind; no Bluge service |
+| Documentation anchor audit | G18c | Resolved 2026-08-27: deterministic Go/TypeScript declaration graph, typed claims, exact executable/journey accounting, and an honest checked four-grade report |
 | Hosted semantic-review execution | G18f | Open, non-blocking default: maintainer-only recorded command; hosted source upload needs separate approval |
 | Release version/schema bookkeeping | G20 | Open, non-blocking until wrap-up |
 
-G0-G18b are complete and the production physical restore/catch-up, durable
+G0-G18c are complete and the production physical restore/catch-up, durable
 sync-job, local recovery UI, safe-retention, and evidence-preservation design
 contracts are frozen. The G17b host-side evidence gate is mandatory before any
-future GitHub push. G18c-G18g are unapproved and G18c is next.
+future GitHub push. G18d-G18g are unapproved and G18d is next.
 Implementation begins only after an explicit instruction naming
 the item to start and, where stated, authorizing its blocking operations.

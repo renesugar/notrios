@@ -1,0 +1,72 @@
+#!/usr/bin/env python3
+"""Validate the checked G18c report and mutation evidence."""
+
+from __future__ import annotations
+
+import json
+import os
+from pathlib import Path
+import subprocess
+import tempfile
+
+
+ROOT = Path(__file__).resolve().parents[2]
+EVIDENCE = ROOT / "performance/v0.7-g18c"
+
+
+def load(name: str):
+    return json.loads((EVIDENCE / name).read_text(encoding="utf-8"))
+
+
+def main() -> None:
+    expected = load("REPORT.json")
+    mutations = load("MUTATION_MATRIX.json")
+    inventory = json.loads(
+        (ROOT / "performance/v0.7-g18a/INVENTORY.json").read_text(encoding="utf-8")
+    )
+    registry = json.loads(
+        (ROOT / "docs/docaudit/registry.json").read_text(encoding="utf-8")
+    )
+
+    manual_sections = sum(len(document["sections"]) for document in inventory["documents"])
+    assert expected["schema"] == "notrios.docaudit.report.v1"
+    assert expected["manual_sections"] == manual_sections == 199
+    assert expected["claims"] == len(registry["claims"]) == 4
+    assert expected["executables"] == len(registry["executables"]) == 131
+    assert expected["journeys"] == len(registry["journeys"]) == 9
+    assert expected["fragments"] == 12
+    assert sum(expected["counts"].values()) == expected["denominator"] == 351
+    assert len(expected["topics"]) == len(inventory["documents"]) == 15
+    surfaces = {surface["id"]: surface for surface in expected["surfaces"]}
+    assert len(surfaces) == len(inventory["surfaces"]) == 8
+    assert surfaces["openapi"]["count"] == 109
+    assert surfaces["openapi"]["operation_ids"] == 0
+    assert surfaces["mcp_tools"]["count"] == 46
+    assert surfaces["mcp_resources"]["count"] == 0
+    assert len(mutations["go_audit_cases"]) == 20
+    assert len(mutations["typescript_cases"]) == 8
+
+    environment = dict(os.environ)
+    environment["GOCACHE"] = str(Path(tempfile.gettempdir()) / "notrios-g18c-gocache")
+    current = subprocess.run(
+        ["go", "run", "./cmd/docaudit"],
+        cwd=ROOT,
+        env=environment,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    actual = json.loads(current.stdout)
+    assert actual == expected, "REPORT.json is stale; rerun docaudit and review the grade delta"
+    print(
+        "G18c evidence valid: "
+        f"{expected['denominator']} units; "
+        f"{expected['counts']['generated']} generated, "
+        f"{expected['counts']['claimed']} claimed, "
+        f"{expected['counts']['executed']} executed, and "
+        f"{expected['counts']['unverified']} unverified."
+    )
+
+
+if __name__ == "__main__":
+    main()

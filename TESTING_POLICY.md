@@ -28,6 +28,12 @@ A task is done only when:
   characters, UTF-8 BOM/invalid input, duplicate/future property keys, and
   delimiter whitespace.
 - REST/MCP service-layer parity.
+- Documentation/source graph: `make docaudit` must resolve every frozen Go and
+  TypeScript declaration, typed claim check, Markdown template slot, executable
+  fence, and GUI journey owner. `performance/v0.7-g18c/REPORT.json` is an exact
+  freshness artifact; manual prose remains separately unverified until moved
+  or generated. Go mutation fixtures cover graph failures, and the web Vitest
+  suite covers the TypeScript compiler-API compatibility path.
 
 ### UI tests
 

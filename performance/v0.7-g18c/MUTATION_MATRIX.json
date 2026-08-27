@@ -1,0 +1,35 @@
+{
+  "schema": "notrios.g18c.mutation-matrix.v1",
+  "go_audit_cases": [
+    {"case": "unknown audience", "expected": "unknown audience"},
+    {"case": "mixed user API", "expected": "mixed user/API"},
+    {"case": "duplicate fragment", "expected": "duplicate fragment"},
+    {"case": "unattached directive", "expected": "not attached to a named declaration"},
+    {"case": "invalid directive", "expected": "invalid notrios directive"},
+    {"case": "missing topic", "expected": "missing topic/section"},
+    {"case": "dangling claim", "expected": "dangling claim"},
+    {"case": "duplicate registered claim", "expected": "duplicate or invalid registered claim"},
+    {"case": "duplicate claim", "expected": "duplicate claim id"},
+    {"case": "orphan registered check", "expected": "orphan registered check"},
+    {"case": "missing enumerated declaration", "expected": "resolved 0 declarations"},
+    {"case": "deleted source anchor", "expected": "resolved 0 declarations"},
+    {"case": "deleted registered check", "expected": "resolved 0 declarations"},
+    {"case": "unaccounted executable", "expected": "unaccounted executable example"},
+    {"case": "duplicate registered executable", "expected": "duplicate registered executable"},
+    {"case": "orphan registered executable", "expected": "orphan registered executable"},
+    {"case": "unaccounted journey", "expected": "unaccounted executable journey"},
+    {"case": "duplicate registered journey", "expected": "duplicate registered journey"},
+    {"case": "orphan registered journey", "expected": "orphan registered journey"},
+    {"case": "unknown source-symbol kind", "expected": "unknown source-symbol"}
+  ],
+  "typescript_cases": [
+    "top-level declaration kinds",
+    "nested declaration refusal",
+    "missing and ambiguous declarations",
+    "malformed and repository-escaping anchors",
+    "anonymous declaration refusal",
+    "malformed CLI arguments",
+    "stable lexical output",
+    "real App EditorPane SyncCenter nested-template regressions"
+  ]
+}

@@ -279,6 +279,12 @@ func (s *Server) handleSyncUIRetirementPreview(w http.ResponseWriter, r *http.Re
 	writeError(w, http.StatusNotFound, "peer_not_found", "no such enrolled peer")
 }
 
+// handleSyncUIRetirePeer requires the GUI review flow to echo the exact peer
+// identity before it records the signed, destructive retirement decision.
+//
+//notrios:doc user gui-peer-retirement-confirmation
+//notrios:help gui sync-center
+//notrios:claim gui-peer-retirement-check go:github.com/renesugar/notrios/internal/httpapi#TestSyncUIPeerRetirementRequiresPreviewAndExactConfirmation
 func (s *Server) handleSyncUIRetirePeer(w http.ResponseWriter, r *http.Request) {
 	if !s.requireLocalSyncUI(w, r) {
 		return

@@ -1,0 +1,1145 @@
+{
+  "schema": "notrios.docaudit.registry.v1",
+  "claims": [
+    {
+      "id": "product-version-current",
+      "check_anchor": "go:github.com/renesugar/notrios/internal/version#TestVersionIsReleaseCandidate"
+    },
+    {
+      "id": "current-schema-status",
+      "check_anchor": "go:github.com/renesugar/notrios/internal/httpapi#TestStatusReportsConfigurationAndSchema"
+    },
+    {
+      "id": "destructive-rest-confirmation-check",
+      "check_anchor": "go:github.com/renesugar/notrios/internal/httpapi#TestResourceHTTPUploadAttachDownloadAndSafeDelete"
+    },
+    {
+      "id": "gui-peer-retirement-check",
+      "check_anchor": "go:github.com/renesugar/notrios/internal/httpapi#TestSyncUIPeerRetirementRequiresPreviewAndExactConfirmation"
+    }
+  ],
+  "executables": [
+    {
+      "id": "api-mcp-connecting-an-mcp-client-example-1",
+      "path": "docs/api/mcp.md",
+      "section": "connecting-an-mcp-client",
+      "language": "sh",
+      "sha256": "658ea4c93940e78143cf911fba591c16b36d5cb3d35a8ff866bcb15d6cf2a18e",
+      "state": "unverified"
+    },
+    {
+      "id": "api-mcp-tool-scopes-example-1",
+      "path": "docs/api/mcp.md",
+      "section": "tool-scopes",
+      "language": "yaml",
+      "sha256": "910484cc35cd281b9d33ae58197d81eeb387c78d5bb2bcfaa38a2b945a6a52a8",
+      "state": "unverified"
+    },
+    {
+      "id": "api-mcp-trying-it-with-curl-example-1",
+      "path": "docs/api/mcp.md",
+      "section": "trying-it-with-curl",
+      "language": "sh",
+      "sha256": "702dc8fdf81dc9b07c9fda1478149b9ea498b869e35938dc00413a54f611c21f",
+      "state": "unverified"
+    },
+    {
+      "id": "api-rest-batch-organizer-operations-example-1",
+      "path": "docs/api/rest.md",
+      "section": "batch-organizer-operations",
+      "language": "sh",
+      "sha256": "c7c98cabe81f8cb35f13ada2ed276c91953cdd9d388db529dc2ab2eb29c98ee5",
+      "state": "unverified"
+    },
+    {
+      "id": "api-rest-checking-the-links-in-an-unsaved-note-example-1",
+      "path": "docs/api/rest.md",
+      "section": "checking-the-links-in-an-unsaved-note",
+      "language": "sh",
+      "sha256": "2fb1bc9147cf5682f9879159366475d47eb1e1761c32446b2b99fc7d480e1433",
+      "state": "unverified"
+    },
+    {
+      "id": "api-rest-getting-started-example-1",
+      "path": "docs/api/rest.md",
+      "section": "getting-started",
+      "language": "sh",
+      "sha256": "c376ea580fe8df2d58449d773467983f081c850f36444c241376239452ca712f",
+      "state": "unverified"
+    },
+    {
+      "id": "api-rest-link-autocomplete-while-typing-example-1",
+      "path": "docs/api/rest.md",
+      "section": "link-autocomplete-while-typing",
+      "language": "sh",
+      "sha256": "df47fcd5830e079aae4bdb4905fe79facea20fa11c49260c10ad61111852b7d5",
+      "state": "unverified"
+    },
+    {
+      "id": "api-rest-links-graph-revisions-example-1",
+      "path": "docs/api/rest.md",
+      "section": "links-graph-revisions",
+      "language": "sh",
+      "sha256": "48e30c6a2e67cee44460ca63f495f6d4664e046841260857b344099ad376a57c",
+      "state": "unverified"
+    },
+    {
+      "id": "api-rest-listing-a-note-s-blocks-example-1",
+      "path": "docs/api/rest.md",
+      "section": "listing-a-note-s-blocks",
+      "language": "sh",
+      "sha256": "ef324471d2a17ab62f4e97f20c31035636cf0107cfe1107f3f59e625cca3e11c",
+      "state": "unverified"
+    },
+    {
+      "id": "api-rest-long-running-jobs-example-1",
+      "path": "docs/api/rest.md",
+      "section": "long-running-jobs",
+      "language": "sh",
+      "sha256": "d694a2e4a2bc44942a8241708b97ede9346a75955a48e3a72a404329b59615bf",
+      "state": "unverified"
+    },
+    {
+      "id": "api-rest-notebooks-tags-search-notebooks-trash-example-1",
+      "path": "docs/api/rest.md",
+      "section": "notebooks-tags-search-notebooks-trash",
+      "language": "sh",
+      "sha256": "4ad40fe16331cfcba9bc9cdf865ae749ecd55730d190c4ca486666013b2666de",
+      "state": "unverified"
+    },
+    {
+      "id": "api-rest-notes-create-read-edit-example-1",
+      "path": "docs/api/rest.md",
+      "section": "notes-create-read-edit",
+      "language": "sh",
+      "sha256": "5b833f007742c91740c7b8a0e6fa820777f4c7fb37c43318d6851bd3b9ac4fe4",
+      "state": "unverified"
+    },
+    {
+      "id": "api-rest-notes-create-read-edit-example-2",
+      "path": "docs/api/rest.md",
+      "section": "notes-create-read-edit",
+      "language": "sh",
+      "sha256": "f736812121885926eb2c7611216ae2c3733ef44bf72f6cf5b99d80e56c31247b",
+      "state": "unverified"
+    },
+    {
+      "id": "api-rest-optimistic-concurrency-example-1",
+      "path": "docs/api/rest.md",
+      "section": "optimistic-concurrency",
+      "language": "sh",
+      "sha256": "c3826c9f12e5f0d13d82ca620d8f8ed0f1c49045ba5fab961efe3d5a493d980f",
+      "state": "unverified"
+    },
+    {
+      "id": "api-rest-orphan-isolate-and-hub-report-example-1",
+      "path": "docs/api/rest.md",
+      "section": "orphan-isolate-and-hub-report",
+      "language": "sh",
+      "sha256": "2f1c63d240d0b08d538da1c79e3800492a0a6fc22ec24a92a2c8c81d127001b8",
+      "state": "unverified"
+    },
+    {
+      "id": "api-rest-previewing-a-notebook-deletion-example-1",
+      "path": "docs/api/rest.md",
+      "section": "previewing-a-notebook-deletion",
+      "language": "sh",
+      "sha256": "fadf018393d97bbd9d0afe70fddbefbb2c563689919f3bbf86decbbbb6950895",
+      "state": "unverified"
+    },
+    {
+      "id": "api-rest-renaming-a-tag-hierarchy-example-1",
+      "path": "docs/api/rest.md",
+      "section": "renaming-a-tag-hierarchy",
+      "language": "sh",
+      "sha256": "8ca652ba06ad70f855ed263b47a202504c95984685e184b66e3bf782b1d5d964",
+      "state": "unverified"
+    },
+    {
+      "id": "api-rest-resolving-a-stable-link-example-1",
+      "path": "docs/api/rest.md",
+      "section": "resolving-a-stable-link",
+      "language": "sh",
+      "sha256": "4a97723d3a5f043e240bbef2f960b47da477762abad2117f8eab26272cd16ad9",
+      "state": "unverified"
+    },
+    {
+      "id": "api-rest-resources-attachments-example-1",
+      "path": "docs/api/rest.md",
+      "section": "resources-attachments",
+      "language": "sh",
+      "sha256": "d7000cd73f78186b467dbe3d1704faa53915c347ea8c5766e04b946b0f38c787",
+      "state": "unverified"
+    },
+    {
+      "id": "api-rest-resources-attachments-example-2",
+      "path": "docs/api/rest.md",
+      "section": "resources-attachments",
+      "language": "sh",
+      "sha256": "aa0c383613442f270860f0e98bcde5e7269ca64d37ab2f2d8c199e1c2ac8d23d",
+      "state": "unverified"
+    },
+    {
+      "id": "api-rest-running-a-note-s-query-block-example-1",
+      "path": "docs/api/rest.md",
+      "section": "running-a-note-s-query-block",
+      "language": "sh",
+      "sha256": "bd32df26dbf9a6139f83c58377502eab65929998d81734efa6852770f249fada",
+      "state": "unverified"
+    },
+    {
+      "id": "api-rest-search-and-pagination-example-1",
+      "path": "docs/api/rest.md",
+      "section": "search-and-pagination",
+      "language": "sh",
+      "sha256": "2a2c6aadd2fc72c973a387c83bd13d112e646f95ac90d4d3d9ff8085bcd5a444",
+      "state": "unverified"
+    },
+    {
+      "id": "api-rest-selection-and-privacy-dry-runs-example-1",
+      "path": "docs/api/rest.md",
+      "section": "selection-and-privacy-dry-runs",
+      "language": "sh",
+      "sha256": "8b40dfd29b2af6d62af1df5fcc0afaf6018d449362e8ee656b5f1a4710a2a85e",
+      "state": "unverified"
+    },
+    {
+      "id": "api-rest-shortest-path-between-two-notes-example-1",
+      "path": "docs/api/rest.md",
+      "section": "shortest-path-between-two-notes",
+      "language": "sh",
+      "sha256": "1739f877ad5946f7b152de3a9993bb45c65205b0d4161c2fa5899574636488ee",
+      "state": "unverified"
+    },
+    {
+      "id": "api-rest-surgical-edits-and-note-operations-example-1",
+      "path": "docs/api/rest.md",
+      "section": "surgical-edits-and-note-operations",
+      "language": "sh",
+      "sha256": "d47f336aae09b119d396d42ae49b61f84238e9233bf611094eb8cdc3c6162ea3",
+      "state": "unverified"
+    },
+    {
+      "id": "api-rest-tasks-example-1",
+      "path": "docs/api/rest.md",
+      "section": "tasks",
+      "language": "sh",
+      "sha256": "82cdce0b4ff8cbbde3e1fb68a7f8f8703728005cf4a4b05ba17853d265697fcc",
+      "state": "unverified"
+    },
+    {
+      "id": "api-rest-templates-and-tasks-example-1",
+      "path": "docs/api/rest.md",
+      "section": "templates-and-tasks",
+      "language": "sh",
+      "sha256": "d74cce03bb8ea3f4eda76582569281b8f410a1f026d20af3d5ca85214e06750e",
+      "state": "unverified"
+    },
+    {
+      "id": "api-rest-workspace-lint-report-example-1",
+      "path": "docs/api/rest.md",
+      "section": "workspace-lint-report",
+      "language": "sh",
+      "sha256": "1d412eb5af7a7966a50b33d13b517186d9b740f3b10b32835efaf98d1bf44aa3",
+      "state": "unverified"
+    },
+    {
+      "id": "api-rest-writing-the-report-into-the-library-example-1",
+      "path": "docs/api/rest.md",
+      "section": "writing-the-report-into-the-library",
+      "language": "sh",
+      "sha256": "51c6756a00a97732d4d442e593bed5fe6355f2981c5f1bae2bda121ada79f113",
+      "state": "unverified"
+    },
+    {
+      "id": "archive-v2-reading-an-archive-back-example-1",
+      "path": "docs/archive-v2.md",
+      "section": "reading-an-archive-back",
+      "language": "bash",
+      "sha256": "e51d2d0c2823f5dd577b889c1ae63c7971e62975ca710a3636e9672feaf388da",
+      "state": "unverified"
+    },
+    {
+      "id": "archive-v2-writing-an-archive-example-1",
+      "path": "docs/archive-v2.md",
+      "section": "writing-an-archive",
+      "language": "bash",
+      "sha256": "10b4142f7774193a972408b6e454ae5d83f9f1e1dcb19a6acf2f930f75588ba8",
+      "state": "unverified"
+    },
+    {
+      "id": "cli-doctor-example-1",
+      "path": "docs/cli.md",
+      "section": "doctor",
+      "language": "sh",
+      "sha256": "dbbe6e0dcfa3b6d5d713a5eb7f8c8ac54d8aa916f217e2fc02531b3a890a864a",
+      "state": "unverified"
+    },
+    {
+      "id": "cli-exchanging-through-a-folder-example-1",
+      "path": "docs/cli.md",
+      "section": "exchanging-through-a-folder",
+      "language": "sh",
+      "sha256": "907e06ab45064b029b801e355d28a01a3175994f56384bb3ca0b3b9e7ad03baa",
+      "state": "unverified"
+    },
+    {
+      "id": "cli-exchanging-with-a-peer-directly-example-1",
+      "path": "docs/cli.md",
+      "section": "exchanging-with-a-peer-directly",
+      "language": "sh",
+      "sha256": "0d6f423374ed352a96b397c62e1b52e9a2c13d6944c54d103af5fa4d9fed7403",
+      "state": "unverified"
+    },
+    {
+      "id": "cli-exchanging-with-a-peer-directly-example-2",
+      "path": "docs/cli.md",
+      "section": "exchanging-with-a-peer-directly",
+      "language": "sh",
+      "sha256": "9427709a52c85d7cea818d32a606aa89e15d2515db46184665ef0cc122cdcf64",
+      "state": "unverified"
+    },
+    {
+      "id": "cli-exchanging-with-a-peer-directly-example-3",
+      "path": "docs/cli.md",
+      "section": "exchanging-with-a-peer-directly",
+      "language": "sh",
+      "sha256": "779c43b4f8d6bafbe9b8a81a1f7face98b7b6ec64b248fe78f78115ba1a0491f",
+      "state": "unverified"
+    },
+    {
+      "id": "cli-export-archive-example-1",
+      "path": "docs/cli.md",
+      "section": "export-archive",
+      "language": "sh",
+      "sha256": "07ed608229d59f13de432e671a121e529c74d172eb6605668675cf197b82f06d",
+      "state": "unverified"
+    },
+    {
+      "id": "cli-export-archive-v2-example-1",
+      "path": "docs/cli.md",
+      "section": "export-archive-v2",
+      "language": "sh",
+      "sha256": "7bba66a5178bd485f4baf5f9fab055333437802f47fdc7655c664633f4a80a2a",
+      "state": "unverified"
+    },
+    {
+      "id": "cli-fix-example-1",
+      "path": "docs/cli.md",
+      "section": "fix",
+      "language": "sh",
+      "sha256": "14e09fb2e56432523345acf1e7164f6c04dbd5a6bde10aabe5c2ef795d6806c2",
+      "state": "unverified"
+    },
+    {
+      "id": "cli-gc-example-1",
+      "path": "docs/cli.md",
+      "section": "gc",
+      "language": "sh",
+      "sha256": "10240eba6cca0d91074f8889af344d91d7413f37c0143609d82521887f437496",
+      "state": "unverified"
+    },
+    {
+      "id": "cli-graph-export-example-1",
+      "path": "docs/cli.md",
+      "section": "graph-export",
+      "language": "sh",
+      "sha256": "8160c1f1105056d9e4877001ad69678f8d2445e31a33a9e35dd3be61226c4d22",
+      "state": "unverified"
+    },
+    {
+      "id": "cli-graph-report-example-1",
+      "path": "docs/cli.md",
+      "section": "graph-report",
+      "language": "sh",
+      "sha256": "cc7bc432d50d8b607905252f40ed0bd3ae1c8dd45c3344724d048b001677990a",
+      "state": "unverified"
+    },
+    {
+      "id": "cli-import-archive-example-1",
+      "path": "docs/cli.md",
+      "section": "import-archive",
+      "language": "sh",
+      "sha256": "59e08a99081c00c3e1396392c38c71a736279418e7a5d66d686901604edb3105",
+      "state": "unverified"
+    },
+    {
+      "id": "cli-import-chatgpt-import-claude-example-1",
+      "path": "docs/cli.md",
+      "section": "import-chatgpt-import-claude",
+      "language": "sh",
+      "sha256": "b259d209397daad98f554562808f09a48914b68e085ed8b65a4bbac7891605fe",
+      "state": "unverified"
+    },
+    {
+      "id": "cli-import-joplin-raw-example-1",
+      "path": "docs/cli.md",
+      "section": "import-joplin-raw",
+      "language": "sh",
+      "sha256": "aa6869fdc9a3b1c74f621e4f0c2159cf8f6ae4f0d17e3cb5888f235bac90f873",
+      "state": "unverified"
+    },
+    {
+      "id": "cli-import-obsidian-example-1",
+      "path": "docs/cli.md",
+      "section": "import-obsidian",
+      "language": "sh",
+      "sha256": "328ed1f63b8fa9aae9450877597b48058b617fb952d4ae1762dbcbfcb8a3d7b0",
+      "state": "unverified"
+    },
+    {
+      "id": "cli-import-twitter-example-1",
+      "path": "docs/cli.md",
+      "section": "import-twitter",
+      "language": "sh",
+      "sha256": "df9abea606a9c2bdf252c397d27e796940fc6ebfaf4740f6f13ee08ad4a8a03f",
+      "state": "unverified"
+    },
+    {
+      "id": "cli-jobs-example-1",
+      "path": "docs/cli.md",
+      "section": "jobs",
+      "language": "sh",
+      "sha256": "b60d7206cee05d06c303223bc88096d45a1da703047e3f92c15727e4d2f994a4",
+      "state": "unverified"
+    },
+    {
+      "id": "cli-jobs-example-2",
+      "path": "docs/cli.md",
+      "section": "jobs",
+      "language": "sh",
+      "sha256": "0b2598c1fd6699936ccb7e48afa6a8732f40a0bd8d5bfa2f3a6051db4d53da26",
+      "state": "unverified"
+    },
+    {
+      "id": "cli-link-example-1",
+      "path": "docs/cli.md",
+      "section": "link",
+      "language": "sh",
+      "sha256": "3a06e9ea7f1ba590d8f525a2754d78de27ff27e776ee583f53c899adba58fe0d",
+      "state": "unverified"
+    },
+    {
+      "id": "cli-lint-example-1",
+      "path": "docs/cli.md",
+      "section": "lint",
+      "language": "sh",
+      "sha256": "936ea2f2f609455eb04dafcc877a32607047a9fa04f21560f1288bb70e02f64b",
+      "state": "unverified"
+    },
+    {
+      "id": "cli-localize-example-1",
+      "path": "docs/cli.md",
+      "section": "localize",
+      "language": "sh",
+      "sha256": "eccb9ff5538a1e642b8e0156fbefa6450a2129aac120a529d27e53565581a6b9",
+      "state": "unverified"
+    },
+    {
+      "id": "cli-making-the-second-replica-example-1",
+      "path": "docs/cli.md",
+      "section": "making-the-second-replica",
+      "language": "sh",
+      "sha256": "1989d90ccb915f8c3134145c27c5ef9e02987d80f477459bd5a9cf35761bba27",
+      "state": "unverified"
+    },
+    {
+      "id": "cli-notes-move-example-1",
+      "path": "docs/cli.md",
+      "section": "notes-move",
+      "language": "sh",
+      "sha256": "4fde59229a4cea095ac76619ef66b11b577c48e2860c915b2d063277bbe3416c",
+      "state": "unverified"
+    },
+    {
+      "id": "cli-open-example-1",
+      "path": "docs/cli.md",
+      "section": "open",
+      "language": "sh",
+      "sha256": "1cafaa3d105adaa364cfb906086938fb9654f512633aa5ea01db1b74fca4948c",
+      "state": "unverified"
+    },
+    {
+      "id": "cli-pairing-example-1",
+      "path": "docs/cli.md",
+      "section": "pairing",
+      "language": "sh",
+      "sha256": "dae4d03f3b0289778682d3ceb295507d8f93d442909007009f943113736a6544",
+      "state": "unverified"
+    },
+    {
+      "id": "cli-pairing-example-2",
+      "path": "docs/cli.md",
+      "section": "pairing",
+      "language": "sh",
+      "sha256": "8c9d58c1f254eae5849025779e78b8e50d23a8887aa24bad7df7c4bf8a2b826f",
+      "state": "unverified"
+    },
+    {
+      "id": "cli-pairing-example-3",
+      "path": "docs/cli.md",
+      "section": "pairing",
+      "language": "sh",
+      "sha256": "75b845e642af3b40e3addb4f8dab91b81cbe34ace9799ebaf48337afdf311488",
+      "state": "unverified"
+    },
+    {
+      "id": "cli-profile-example-1",
+      "path": "docs/cli.md",
+      "section": "profile",
+      "language": "sh",
+      "sha256": "1a5f27d7349df03ee2761a18ee8064b4b71dbbfae796ce0d376bbc3a28c15d41",
+      "state": "unverified"
+    },
+    {
+      "id": "cli-publish-example-1",
+      "path": "docs/cli.md",
+      "section": "publish",
+      "language": "sh",
+      "sha256": "8646042cf18bd4ed14c8b5e8505cc9eafec509a576aacea62ad0de1e438de4aa",
+      "state": "unverified"
+    },
+    {
+      "id": "cli-register-url-handler-example-1",
+      "path": "docs/cli.md",
+      "section": "register-url-handler",
+      "language": "sh",
+      "sha256": "e0b036661155a164e6465ba742631bf6788e4d3f54f0b9a75019ac3ece1bf41a",
+      "state": "unverified"
+    },
+    {
+      "id": "cli-resources-report-example-1",
+      "path": "docs/cli.md",
+      "section": "resources-report",
+      "language": "sh",
+      "sha256": "c3353eeca3832310325c42c5380a2c8cee7d2c42af0aacf08b28eaf453290ff7",
+      "state": "unverified"
+    },
+    {
+      "id": "cli-restore-archive-v2-example-1",
+      "path": "docs/cli.md",
+      "section": "restore-archive-v2",
+      "language": "sh",
+      "sha256": "d3727e354bd564862058c42f3fe91c402af146419c9a0520a65e9faa69b3cb78",
+      "state": "unverified"
+    },
+    {
+      "id": "cli-seed-help-example-1",
+      "path": "docs/cli.md",
+      "section": "seed-help",
+      "language": "sh",
+      "sha256": "d9dc7c98b1b5697a61a930a1d7d0eb661bafc0af48bae3e9454f3a37abac4be8",
+      "state": "unverified"
+    },
+    {
+      "id": "cli-seeing-and-ending-trust-example-1",
+      "path": "docs/cli.md",
+      "section": "seeing-and-ending-trust",
+      "language": "sh",
+      "sha256": "bbf1937ea9b197dc277b231c24f876ab1d522e262fb5fe69f7da1a19fddf8e76",
+      "state": "unverified"
+    },
+    {
+      "id": "cli-seeing-and-ending-trust-example-2",
+      "path": "docs/cli.md",
+      "section": "seeing-and-ending-trust",
+      "language": "sh",
+      "sha256": "7a076094833c38f4816e690a622f19b7af827d2f35755e98d4ece600560147bf",
+      "state": "unverified"
+    },
+    {
+      "id": "cli-seeing-and-ending-trust-example-3",
+      "path": "docs/cli.md",
+      "section": "seeing-and-ending-trust",
+      "language": "sh",
+      "sha256": "37fd05998ba824b3e59dc561b1a8abd9c280dd85f0782450d05881146c6a0033",
+      "state": "unverified"
+    },
+    {
+      "id": "cli-seeing-who-is-there-example-1",
+      "path": "docs/cli.md",
+      "section": "seeing-who-is-there",
+      "language": "sh",
+      "sha256": "181044d39640d7f15f5a4a0dfe93fe88867ebb29bb5fe89b2f35562747c493a1",
+      "state": "unverified"
+    },
+    {
+      "id": "cli-snapshot-create-snapshot-verify-snapshot-restore-example-1",
+      "path": "docs/cli.md",
+      "section": "snapshot-create-snapshot-verify-snapshot-restore",
+      "language": "bash",
+      "sha256": "e6cbe1c68a4eac3f16683c3d540f95e221382672ce21a8e916fb954dca4cd22d",
+      "state": "unverified"
+    },
+    {
+      "id": "cli-sync-example-1",
+      "path": "docs/cli.md",
+      "section": "sync",
+      "language": "sh",
+      "sha256": "d9ae83f4e5a508367377149ced34cae1f60450c73e5efd45e6f0c66fba16d3e9",
+      "state": "unverified"
+    },
+    {
+      "id": "cli-tags-rename-example-1",
+      "path": "docs/cli.md",
+      "section": "tags-rename",
+      "language": "sh",
+      "sha256": "8621b8ab64c8483879df719299512734b9d60bd63056619e1ec1dbaba7cc7e56",
+      "state": "unverified"
+    },
+    {
+      "id": "cli-verify-archive-v2-example-1",
+      "path": "docs/cli.md",
+      "section": "verify-archive-v2",
+      "language": "sh",
+      "sha256": "3244bef5832d7f48e88049e27efba7f5af2550748b375df7d6f656361e246865",
+      "state": "unverified"
+    },
+    {
+      "id": "cli-version-example-1",
+      "path": "docs/cli.md",
+      "section": "version",
+      "language": "sh",
+      "sha256": "b76164182418d400aceeef5a7a5a44ab4c105bcd2176961cb39a110d029c44af",
+      "state": "unverified"
+    },
+    {
+      "id": "gui-building-example-1",
+      "path": "docs/gui.md",
+      "section": "building",
+      "language": "sh",
+      "sha256": "aa0feaa1a224f318bc1eb9e30540cd91a14096e1117ff4cfd6c3ede4896321ca",
+      "state": "unverified"
+    },
+    {
+      "id": "gui-choosing-which-notebook-a-note-goes-in-example-1",
+      "path": "docs/gui.md",
+      "section": "choosing-which-notebook-a-note-goes-in",
+      "language": "sh",
+      "sha256": "7a3980f417716ee5fe84140c8fd06d4457cfbe450041851e65a64ae643d6f574",
+      "state": "unverified"
+    },
+    {
+      "id": "gui-modes-example-1",
+      "path": "docs/gui.md",
+      "section": "modes",
+      "language": "sh",
+      "sha256": "7fb12a51b9d5b329b3c71315cdf287ef4c9af0588974048ad8413b043fb441fb",
+      "state": "unverified"
+    },
+    {
+      "id": "gui-the-graph-report-example-1",
+      "path": "docs/gui.md",
+      "section": "the-graph-report",
+      "language": "sh",
+      "sha256": "b10f26ff3b4151affb3e4d063f70fe18ae53d8e33e44e892def32bfc9a18f98e",
+      "state": "unverified"
+    },
+    {
+      "id": "gui-the-graph-report-example-2",
+      "path": "docs/gui.md",
+      "section": "the-graph-report",
+      "language": "sh",
+      "sha256": "38f2afc017f486c56d45b9f83e79b7213e333f096a0ad05bd6092ccaf5d27c61",
+      "state": "unverified"
+    },
+    {
+      "id": "gui-verifying-the-embedded-service-example-1",
+      "path": "docs/gui.md",
+      "section": "verifying-the-embedded-service",
+      "language": "sh",
+      "sha256": "6067a008cfd095246a808208d88791ca7600eba8603a1e30bc0587a059917034",
+      "state": "unverified"
+    },
+    {
+      "id": "import-export-2-dry-run-example-1",
+      "path": "docs/import-export.md",
+      "section": "2-dry-run",
+      "language": "sh",
+      "sha256": "582877fbe3252260b5540acc44f98000b63a16059c7eead1574094ed1eb59a5d",
+      "state": "unverified"
+    },
+    {
+      "id": "import-export-3-import-example-1",
+      "path": "docs/import-export.md",
+      "section": "3-import",
+      "language": "sh",
+      "sha256": "e563797e6e3141a2e5f292c7e737fd8ee79bf0fead603be23147448ba8919eaf",
+      "state": "unverified"
+    },
+    {
+      "id": "import-export-chatgpt-data-export-example-1",
+      "path": "docs/import-export.md",
+      "section": "chatgpt-data-export",
+      "language": "sh",
+      "sha256": "61e09babcb9621c6ec92d7f3acf3b20f3d02e06d1fe61234134ffd3db2051a71",
+      "state": "unverified"
+    },
+    {
+      "id": "import-export-claude-data-export-example-1",
+      "path": "docs/import-export.md",
+      "section": "claude-data-export",
+      "language": "sh",
+      "sha256": "27618fcd32ef5de537bea210d3f34c403f2457147924150fd45f014da40ccecc",
+      "state": "unverified"
+    },
+    {
+      "id": "import-export-exporting-a-native-archive-v2-snapshot-example-1",
+      "path": "docs/import-export.md",
+      "section": "exporting-a-native-archive-v2-snapshot",
+      "language": "sh",
+      "sha256": "274a9cdc00eaa4eb1eb773229e4ceb1e5ea72fe9f10884df4edec3beb30518a0",
+      "state": "unverified"
+    },
+    {
+      "id": "import-export-exporting-a-notrios-archive-example-1",
+      "path": "docs/import-export.md",
+      "section": "exporting-a-notrios-archive",
+      "language": "sh",
+      "sha256": "71a3bc556d1749a1ec60be8d7d4f7d40635e3a52f8b9e9a4650de80ded7111bb",
+      "state": "unverified"
+    },
+    {
+      "id": "import-export-fast-same-schema-whole-library-snapshots-example-1",
+      "path": "docs/import-export.md",
+      "section": "fast-same-schema-whole-library-snapshots",
+      "language": "bash",
+      "sha256": "d1d3a0c2188cba77d77ab7c749b7790331833eee864377c1f5d3faea1d651d2e",
+      "state": "unverified"
+    },
+    {
+      "id": "import-export-import-and-export-example-1",
+      "path": "docs/import-export.md",
+      "section": "import-and-export",
+      "language": "sh",
+      "sha256": "a24a140e7ba63856fe6471574f178377176961e9e4e5f790da897b2b3de68929",
+      "state": "unverified"
+    },
+    {
+      "id": "import-export-importing-a-notrios-archive-example-1",
+      "path": "docs/import-export.md",
+      "section": "importing-a-notrios-archive",
+      "language": "sh",
+      "sha256": "9f68019eed46837ce996d8c82902f7b917c68730dcf700be0fba299caa059ccf",
+      "state": "unverified"
+    },
+    {
+      "id": "import-export-obsidian-vault-directory-example-1",
+      "path": "docs/import-export.md",
+      "section": "obsidian-vault-directory",
+      "language": "sh",
+      "sha256": "133e4c7606bbe2f78b3ab83fdde47ca067db96bd73ccff65ee970b8252e1ae9b",
+      "state": "unverified"
+    },
+    {
+      "id": "import-export-twitter-x-extracted-archive-example-1",
+      "path": "docs/import-export.md",
+      "section": "twitter-x-extracted-archive",
+      "language": "sh",
+      "sha256": "bca26de1e562c66c0d4aa7c9c59f5fa3cc30d6894c5a5d5135793e7971e556a8",
+      "state": "unverified"
+    },
+    {
+      "id": "import-export-verifying-and-restoring-an-archive-v2-snapshot-example-1",
+      "path": "docs/import-export.md",
+      "section": "verifying-and-restoring-an-archive-v2-snapshot",
+      "language": "sh",
+      "sha256": "d96009a93da9e4676400bdf4d170cef539938a1212902b689a2c8b3786cef721",
+      "state": "unverified"
+    },
+    {
+      "id": "index-getting-started-example-1",
+      "path": "docs/index.md",
+      "section": "getting-started",
+      "language": "bash",
+      "sha256": "7b63d289ef058ba6aaa4c57e08a745f75ce5dd99aff5bf960eda4e3a60e9f738",
+      "state": "unverified"
+    },
+    {
+      "id": "installation-clone-example-1",
+      "path": "docs/installation.md",
+      "section": "clone",
+      "language": "sh",
+      "sha256": "0082574fe1fa66ef6acdbeb6b6893fb03c45fdfeb5fb225ce73a092f81187f99",
+      "state": "unverified"
+    },
+    {
+      "id": "installation-optional-local-installation-example-1",
+      "path": "docs/installation.md",
+      "section": "optional-local-installation",
+      "language": "sh",
+      "sha256": "01137bfb9d32eefd5c5c1e2981c8b23c27b5406b753176a6fb8fd0c363baed95",
+      "state": "unverified"
+    },
+    {
+      "id": "installation-optional-local-installation-example-2",
+      "path": "docs/installation.md",
+      "section": "optional-local-installation",
+      "language": "sh",
+      "sha256": "072ab826598f50776d0111d9a0148f1a66d90fcd03993752599f9f8e50ef23fa",
+      "state": "unverified"
+    },
+    {
+      "id": "installation-prerequisites-example-1",
+      "path": "docs/installation.md",
+      "section": "prerequisites",
+      "language": "sh",
+      "sha256": "3aeb183a876d5aebe6545203e0724fcd0c808bd3685a2fcc3ffabd4a3b137ad7",
+      "state": "unverified"
+    },
+    {
+      "id": "installation-run-example-1",
+      "path": "docs/installation.md",
+      "section": "run",
+      "language": "sh",
+      "sha256": "23bea46a2a16470a97892891041450745d9917377fe9675a21cfe9bc981bae06",
+      "state": "unverified"
+    },
+    {
+      "id": "installation-run-example-2",
+      "path": "docs/installation.md",
+      "section": "run",
+      "language": "sh",
+      "sha256": "5e52d3cdc209ede1ad3d15ac82c62ceb885388ac22036ccdb8850ef5cfd1e288",
+      "state": "unverified"
+    },
+    {
+      "id": "installation-where-the-interface-files-have-to-be-example-1",
+      "path": "docs/installation.md",
+      "section": "where-the-interface-files-have-to-be",
+      "language": "sh",
+      "sha256": "ba334c5af49f724724526df788bf6cebf67d7ff4ff63bbec9b0b87ebbc69e46f",
+      "state": "unverified"
+    },
+    {
+      "id": "operations-commands-that-are-safe-against-a-carrier-example-1",
+      "path": "docs/operations.md",
+      "section": "commands-that-are-safe-against-a-carrier",
+      "language": "sh",
+      "sha256": "1f90411b0f4e15b5982b1c6a29861448d6d3006ff447817a4d9e991b2e33f2c5",
+      "state": "unverified"
+    },
+    {
+      "id": "operations-commands-that-must-never-touch-protocol-state-example-1",
+      "path": "docs/operations.md",
+      "section": "commands-that-must-never-touch-protocol-state",
+      "language": "sh",
+      "sha256": "aad045ada57ced79d5a93f1b32768bf85e51394031c1eb78bbad64d145e2bd94",
+      "state": "unverified"
+    },
+    {
+      "id": "operations-deleting-a-notebook-without-surprises-example-1",
+      "path": "docs/operations.md",
+      "section": "deleting-a-notebook-without-surprises",
+      "language": "sh",
+      "sha256": "fadf018393d97bbd9d0afe70fddbefbb2c563689919f3bbf86decbbbb6950895",
+      "state": "unverified"
+    },
+    {
+      "id": "operations-exposing-the-sync-surface-to-a-peer-example-1",
+      "path": "docs/operations.md",
+      "section": "exposing-the-sync-surface-to-a-peer",
+      "language": "yaml",
+      "sha256": "7a88f24825410a7833d6f4fe48addaaa209df75027a4514423daf6279ad28976",
+      "state": "unverified"
+    },
+    {
+      "id": "operations-finding-what-has-rotted-workspace-lint-example-1",
+      "path": "docs/operations.md",
+      "section": "finding-what-has-rotted-workspace-lint",
+      "language": "sh",
+      "sha256": "5faa3e33c1a4ef7cf2d373435d926ec09ac78592ea4233402c3bddf23b0d132b",
+      "state": "unverified"
+    },
+    {
+      "id": "operations-fixing-what-can-be-fixed-mechanically-example-1",
+      "path": "docs/operations.md",
+      "section": "fixing-what-can-be-fixed-mechanically",
+      "language": "sh",
+      "sha256": "444f930c782ff1fdbd88c34d847f84a4a3bc5e09e134360767fbcdc24158a355",
+      "state": "unverified"
+    },
+    {
+      "id": "operations-garbage-collection-example-1",
+      "path": "docs/operations.md",
+      "section": "garbage-collection",
+      "language": "sh",
+      "sha256": "2b6334c29c39103160a68c1c875164f20cb07728b9c7cfffae4bd07869d287f6",
+      "state": "unverified"
+    },
+    {
+      "id": "operations-garbage-collection-example-2",
+      "path": "docs/operations.md",
+      "section": "garbage-collection",
+      "language": "sh",
+      "sha256": "bde6201e3fe38e88ee8bea7145f199e0a112eec35f65623e80f92b8f8cbbc082",
+      "state": "unverified"
+    },
+    {
+      "id": "operations-if-a-device-is-lost-example-1",
+      "path": "docs/operations.md",
+      "section": "if-a-device-is-lost",
+      "language": "sh",
+      "sha256": "bbf1937ea9b197dc277b231c24f876ab1d522e262fb5fe69f7da1a19fddf8e76",
+      "state": "unverified"
+    },
+    {
+      "id": "operations-inspecting-resource-references-example-1",
+      "path": "docs/operations.md",
+      "section": "inspecting-resource-references",
+      "language": "sh",
+      "sha256": "76dc7bc9947e719d7fbda08c7b50f1d3f4c4098fd05b7745bda36140d49abad6",
+      "state": "unverified"
+    },
+    {
+      "id": "operations-localizing-remote-media-example-1",
+      "path": "docs/operations.md",
+      "section": "localizing-remote-media",
+      "language": "sh",
+      "sha256": "0b45a6f7162a26472df48163085e99fcb1ff8b6f93c5f4aa79ac55c8f38d0ad6",
+      "state": "unverified"
+    },
+    {
+      "id": "operations-monitoring-the-recoll-sidecar-example-1",
+      "path": "docs/operations.md",
+      "section": "monitoring-the-recoll-sidecar",
+      "language": "sh",
+      "sha256": "8f8edcf7325dc424a11ec421c2978da219fefec4cad43d4b51ae10475929dd5c",
+      "state": "unverified"
+    },
+    {
+      "id": "operations-planning-and-resuming-imports-example-1",
+      "path": "docs/operations.md",
+      "section": "planning-and-resuming-imports",
+      "language": "sh",
+      "sha256": "e379d0b6df97f96d2c03ce6e75a9a3ae4da573a31a19d4d6cda1074f52916425",
+      "state": "unverified"
+    },
+    {
+      "id": "operations-planning-and-resuming-imports-example-2",
+      "path": "docs/operations.md",
+      "section": "planning-and-resuming-imports",
+      "language": "sh",
+      "sha256": "4000f906c84f13c91e09dc98a80982086fda29cb3302952de23cecb4fe5de44e",
+      "state": "unverified"
+    },
+    {
+      "id": "operations-planning-and-resuming-imports-example-3",
+      "path": "docs/operations.md",
+      "section": "planning-and-resuming-imports",
+      "language": "sh",
+      "sha256": "481c6c37effeeea55fdebbf1f350f0f55a4ca3adf505739b4df11947489d61dc",
+      "state": "unverified"
+    },
+    {
+      "id": "operations-renaming-a-tag-hierarchy-example-1",
+      "path": "docs/operations.md",
+      "section": "renaming-a-tag-hierarchy",
+      "language": "sh",
+      "sha256": "f2daa81375fe820e974437a9ed5d72bccc3b53867b615124f32f9b3732f3e26e",
+      "state": "unverified"
+    },
+    {
+      "id": "operations-seeing-the-shape-of-the-link-graph-example-1",
+      "path": "docs/operations.md",
+      "section": "seeing-the-shape-of-the-link-graph",
+      "language": "sh",
+      "sha256": "2f1c63d240d0b08d538da1c79e3800492a0a6fc22ec24a92a2c8c81d127001b8",
+      "state": "unverified"
+    },
+    {
+      "id": "operations-seeing-the-shape-of-the-link-graph-example-2",
+      "path": "docs/operations.md",
+      "section": "seeing-the-shape-of-the-link-graph",
+      "language": "sh",
+      "sha256": "b10f26ff3b4151affb3e4d063f70fe18ae53d8e33e44e892def32bfc9a18f98e",
+      "state": "unverified"
+    },
+    {
+      "id": "operations-watching-a-long-import-or-export-example-1",
+      "path": "docs/operations.md",
+      "section": "watching-a-long-import-or-export",
+      "language": "sh",
+      "sha256": "45f4858a169a40ae927e16dc65cc6e7d359c280b2fc42bcbc2d47454f7f68cbc",
+      "state": "unverified"
+    },
+    {
+      "id": "operations-watching-it-example-1",
+      "path": "docs/operations.md",
+      "section": "watching-it",
+      "language": "sh",
+      "sha256": "928cd7d79a63b0b705a74f3d6e1c78011f5e39192b09142bce2d6928d2fa1873",
+      "state": "unverified"
+    },
+    {
+      "id": "publishing-publishing-example-1",
+      "path": "docs/publishing.md",
+      "section": "publishing",
+      "language": "sh",
+      "sha256": "429b225d534917bf323476fad6c532b6097eadf8f25ab727b6afd9c74c2d3111",
+      "state": "unverified"
+    },
+    {
+      "id": "publishing-reviewing-before-publishing-example-1",
+      "path": "docs/publishing.md",
+      "section": "reviewing-before-publishing",
+      "language": "sh",
+      "sha256": "24faeb98c21c5b78a3f855a401fd55dc3f8ee4dd5773f73eaf0917d9050361a3",
+      "state": "unverified"
+    },
+    {
+      "id": "publishing-saving-a-profile-example-1",
+      "path": "docs/publishing.md",
+      "section": "saving-a-profile",
+      "language": "sh",
+      "sha256": "a4fe4fdccb6700cbbee9e4726e28d5f3c4417f76cc7c8a3132470c3181f01826",
+      "state": "unverified"
+    },
+    {
+      "id": "selection-planning-selection-and-privacy-planning-example-1",
+      "path": "docs/selection-planning.md",
+      "section": "selection-and-privacy-planning",
+      "language": "sh",
+      "sha256": "94f5276c5062cd8ce3bca3a147bf14f87872a8ac09f30e7b8420e8c9445ecf56",
+      "state": "unverified"
+    },
+    {
+      "id": "service-backup-and-restore-example-1",
+      "path": "docs/service.md",
+      "section": "backup-and-restore",
+      "language": "sh",
+      "sha256": "1ee5c3b0d1c184634a89a5a2660bd0056e1f172a3147f4455f537dd636c9f6ed",
+      "state": "unverified"
+    },
+    {
+      "id": "service-network-exposure-example-1",
+      "path": "docs/service.md",
+      "section": "network-exposure",
+      "language": "sh",
+      "sha256": "7932c39b3733614382ae0292f83818eee85239f7e527a44442f46d7888a5b21d",
+      "state": "unverified"
+    },
+    {
+      "id": "service-the-notrios-service-example-1",
+      "path": "docs/service.md",
+      "section": "the-notrios-service",
+      "language": "sh",
+      "sha256": "62cfa104748e418b65de81ffd28f7b86998ef44100b7a7f3eca253af66596cf1",
+      "state": "unverified"
+    },
+    {
+      "id": "stable-links-linking-to-a-section-or-a-block-example-1",
+      "path": "docs/stable-links.md",
+      "section": "linking-to-a-section-or-a-block",
+      "language": "sh",
+      "sha256": "42b6ea29a37f3e9b8a8f4171a711f0f8270ba065e239a1f6d8a2ac8246717769",
+      "state": "unverified"
+    },
+    {
+      "id": "stable-links-opening-a-link-example-1",
+      "path": "docs/stable-links.md",
+      "section": "opening-a-link",
+      "language": "sh",
+      "sha256": "0a4ad04ab2a9fa71263a8370083634000bb2d9fc300791b07db3c5716ab0a1ef",
+      "state": "unverified"
+    },
+    {
+      "id": "stable-links-registering-the-desktop-handler-ubuntu-example-1",
+      "path": "docs/stable-links.md",
+      "section": "registering-the-desktop-handler-ubuntu",
+      "language": "sh",
+      "sha256": "39eceedddfc91735eff7985fea0a5e5c8fe1b8ff44dbcb0114d7567e72baaddd",
+      "state": "unverified"
+    },
+    {
+      "id": "stable-links-stable-links-between-notes-and-machines-example-1",
+      "path": "docs/stable-links.md",
+      "section": "stable-links-between-notes-and-machines",
+      "language": "sh",
+      "sha256": "e7b2293944169cf8c99742977b94c3fd46e2ba80a0db2e259a9ca3ba42310800",
+      "state": "unverified"
+    },
+    {
+      "id": "stable-links-telling-this-machine-where-your-databases-are-example-1",
+      "path": "docs/stable-links.md",
+      "section": "telling-this-machine-where-your-databases-are",
+      "language": "sh",
+      "sha256": "4ed030ebe48ea2504db8df93bc8520d8d2e5e6e321b72ccafb35ff09453fd9d4",
+      "state": "unverified"
+    }
+  ],
+  "journeys": [
+    {
+      "id": "search-open",
+      "path": "docs/gui.md",
+      "section": "first-launch",
+      "proposed_actions": 3,
+      "owner": "ts:web/src/App.tsx#App",
+      "state": "unverified"
+    },
+    {
+      "id": "new-note-in-notebook",
+      "path": "docs/gui.md",
+      "section": "choosing-which-notebook-a-note-goes-in",
+      "proposed_actions": 4,
+      "owner": "ts:web/src/components/SearchPane.tsx#SearchPane",
+      "state": "unverified"
+    },
+    {
+      "id": "edit-save",
+      "path": "docs/gui.md",
+      "section": "layout",
+      "proposed_actions": 3,
+      "owner": "ts:web/src/components/EditorPane.tsx#EditorPane",
+      "state": "unverified"
+    },
+    {
+      "id": "trash-restore",
+      "path": "docs/gui.md",
+      "section": "deleting-and-restoring-notes",
+      "proposed_actions": 5,
+      "owner": "ts:web/src/components/EditorPane.tsx#EditorPane",
+      "state": "unverified"
+    },
+    {
+      "id": "delete-notebook-review",
+      "path": "docs/gui.md",
+      "section": "deleting-a-notebook",
+      "proposed_actions": 4,
+      "owner": "ts:web/src/organizer.ts#notebookDeletionPrompt",
+      "state": "unverified"
+    },
+    {
+      "id": "insert-and-check-link",
+      "path": "docs/gui.md",
+      "section": "link-help-while-you-write",
+      "proposed_actions": 4,
+      "owner": "ts:web/src/components/LinkIntelligence.tsx#LinkPicker",
+      "state": "unverified"
+    },
+    {
+      "id": "inspect-local-graph",
+      "path": "docs/gui.md",
+      "section": "seeing-what-is-around-a-note",
+      "proposed_actions": 3,
+      "owner": "ts:web/src/components/LocalGraph.tsx#LocalGraph",
+      "state": "unverified"
+    },
+    {
+      "id": "open-sync-center",
+      "path": "docs/gui.md",
+      "section": "sync-center",
+      "proposed_actions": 3,
+      "owner": "ts:web/src/components/SyncCenter.tsx#SyncCenter",
+      "state": "unverified"
+    },
+    {
+      "id": "editor-find-replace",
+      "path": "docs/gui.md",
+      "section": "layout",
+      "proposed_actions": 4,
+      "owner": "ts:web/src/components/EditorPane.tsx#EditorPane",
+      "state": "unverified"
+    }
+  ]
+}

@@ -17,7 +17,7 @@ The Pages site uses **PageFind** (https://github.com/pagefind/pagefind): a post-
 
 `PLAN.md` G18a-G18g owns a staged replacement for the current bespoke site
 builder and an integrity pipeline shared by the site and Help content. G18a
-and G18b are complete; G18c-G18g remain unapproved:
+through G18c are complete; G18d-G18g remain unapproved:
 
 - investigate Go/TS/TSX source-adjacent `notrios:` doc anchors and report every
   topic as executed, generated, claimed, or unverified;
@@ -42,6 +42,15 @@ G18a section IDs, two legacy aliases, static Pagefind, and zero third-party
 runtime requests. It also records Pagefind 1.5.2's semantically stable but
 non-byte-identical hashed shard output. The local checkout is not a build
 dependency, and production remains unchanged until G18g.
+
+G18c adds `make docaudit`. The repository-only audit resolves the frozen Go and
+TypeScript declaration anchors, checks the typed claim/test registry, binds
+source fragments to the current 15-page/199-section Markdown template, and
+accounts for every executable-shaped fence and proposed GUI journey. The first
+checked report has 351 units: 0 executed, 8 generated, 4 claimed, and 339
+unverified. Manual sections stay independently unverified until a later slice
+moves or generates them; an adjacent source claim never proves stale prose.
+Evidence and the exact checked report are under `performance/v0.7-g18c/`.
 
 ## Structure (initial)
 
