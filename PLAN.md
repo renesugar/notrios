@@ -2009,12 +2009,16 @@ installed NDK compiler and failed honestly at the missing Android-target
 `sqlite3.h`. Debian's host header/x86-64 library are present but forcing the
 host include root produces incompatible glibc/Android headers. A 2026-08-26
 follow-up records that Flutter Doctor now passes every check after Clang PATH
-correction; Swiftly has no selected toolchain, and there is still no AVD,
+correction; Swiftly has no selected toolchain. At that check there was no AVD,
 connected Android device, or Flutter/Android build claim. It also records the
 Android SQLite H0 decisions and rendered editor-search result above. The later
-modernc probe cross-built Android executable/`c-shared` artifacts but could not
-execute them; iOS still requires an Apple external-linking host and `js/wasm`
-failed in modernc libc. Linux FTS5/JSON/WAL and a C-modernc-C round trip passed.
+modernc probe cross-built Android executable/`c-shared` artifacts. A subsequent
+KVM/API-35 x86_64 follow-up executed SQLite 3.53.3 with FTS5/JSON/WAL/integrity,
+proved close/reopen and emulator-reboot persistence, and loaded/unloaded the Go
+shared library; both AVDs remain configured and the emulator was stopped. This
+does not prove arm64, the real ABI/store, or performance. iOS still requires an
+Apple external-linking host and `js/wasm` failed in modernc libc. Linux
+FTS5/JSON/WAL and a C-modernc-C round trip passed.
 Mixed maintainer benchmarks make a same-workload C-versus-modernc comparison
 mandatory instead of supporting a universal “slightly slower” claim. Mermaid
 remains disabled; the v0.8 gate now
@@ -2024,6 +2028,7 @@ code, schema, dependency, installer, ABI, Flutter artifact, Mermaid setting,
 remote, or physical device changed. Archive:
 `plans/v0.7/031-shared-core-ffi-portability-handoff.md`; modernc evaluation
 amendment: `plans/v0.7/033-modernc-sqlite-evaluation.md`.
+Android runtime amendment: `plans/v0.7/034-android-emulator-modernc-runtime.md`.
 
 ## G18a. Investigation — documentation anchors, truth grades, and review calibration — complete
 

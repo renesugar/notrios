@@ -77,7 +77,7 @@
     {
       "id": "pinned_modernc_sqlite_in_go_core",
       "fit": "promising H0 candidate; not selected",
-      "effect": "Replace the direct cgo SQLite adapter with the BSD-3-Clause CGo-free database/sql driver while retaining Go ownership. v1.57.0 built Android/arm64 executable and c-shared artifacts, but Android is absent from the upstream support table and no Android runtime test has passed.",
+      "effect": "Replace the direct cgo SQLite adapter with the BSD-3-Clause CGo-free database/sql driver while retaining Go ownership. v1.57.0 built Android/arm64 artifacts and passed executable, persistence/reboot, and c-shared dlopen feasibility on an API-35 x86_64 emulator, but Android remains absent from the upstream support table and the full Notrios store has not run.",
       "unknowns": [
         "Android runtime, filesystem, locking, WAL, FTS5, and crash behavior on the selected emulator ABI",
         "direct-wrapper versus database/sql semantics, error mapping, cancellation, backup, and connection model",

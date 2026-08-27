@@ -69,9 +69,12 @@ onward is approved.
   header/ABI. Debian's SQLite header and x86-64 library are installed; they are
   not an Android-arm64 dependency. NDK clang failed at missing target
   `sqlite3.h`, and forcing the host include root produced incompatible glibc/
-  Android headers. Flutter Doctor passes its Android toolchain check, using
-  Android Studio's bundled Java, but there is still no AVD, connected Android
-  device, Android/Flutter build, or device-support claim.
+  Android headers. Flutter Doctor passes its Android toolchain check. Two AVDs
+  are now configured, and an API 35 x86_64 emulator executed the disposable
+  modernc probe through FTS5/JSON/WAL/integrity, close/reopen, reboot
+  persistence, and NDK `c-shared` load/unload. The emulator was stopped; no
+  device is connected, no Flutter/Android app was built, and no device-support
+  claim follows.
 - Mermaid remains disabled. Exact v0.8 source/node/edge/label/time/heap limits
   and browser/Wails/offline/CSP/sanitization/accessibility fixtures now gate any
   enablement. Evidence is under `performance/v0.7-g18/`; archive is
@@ -81,13 +84,16 @@ onward is approved.
   boundary. The later modernc evaluation changes H0 to a same-emulator A/B of a
   checksum-pinned C amalgamation control and exact modernc/libc candidate.
   modernc v1.57.0 passed native FTS5/JSON/WAL and C-file interoperability and
-  cross-built Android executable/`c-shared`, macOS, and Windows artifacts, but
-  has no Android runtime/support or iOS evidence and fails `js/wasm` in libc.
+  cross-built Android executable/`c-shared`, macOS, and Windows artifacts. The
+  later API 35 x86_64 emulator amendment supplies runtime and reboot-persistence
+  evidence for the disposable probe, but not upstream support, Android arm64,
+  the Notrios store/ABI, or iOS; `js/wasm` still fails in libc.
   Ownership, versions/options, ABI, driver semantics/performance, symbol/
   concurrency, storage, and compatibility decisions remain explicit gates.
 - Ubuntu Clang/Clang++ 18.1.3 resolve normally and Flutter Doctor reports no
   issues. Swiftly is reachable with Swift 6.3.3 installed but no selected
-  toolchain. Zero AVDs/devices and no Android build remain the honest boundary.
+  toolchain. Two AVDs are configured; no connected device or Android app build
+  remains the honest current boundary.
 - Rendered Ctrl+F QA confirms the current editor's case, regexp, by-word,
   navigation, single-replace, replace-all, and save behavior at desktop and
   narrow widths with no console warnings. Ctrl/Cmd+H is not a default binding.

@@ -206,10 +206,45 @@ Windows/amd64 executables. More importantly, it built an Android/arm64
 executable with CGo disabled and a 9,469,448-byte `c-shared` library with the
 API-35 NDK compiler. Android selects the generated Linux/arm64 port. Upstream's
 published support table nevertheless omits Android and iOS, and zero configured
-AVDs/devices meant the Android artifact could not be loaded. iOS selected the
-Darwin/arm64 sources but the Go target requires Apple external linking, which
-this Linux host cannot validate. These are candidate/build facts, not mobile
-support claims.
+AVDs/devices initially meant the Android artifact could not be loaded. The
+later emulator follow-up below closes that gap for API-35 x86_64 only. iOS
+selected the Darwin/arm64 sources but the Go target requires Apple external
+linking, which this Linux host cannot validate. These are candidate facts, not
+general mobile support claims.
+
+### Android emulator runtime follow-up (2026-08-26)
+
+KVM is installed and usable. Two AVDs now exist and Flutter detects both: the
+modern `android emulator create medium_phone` profile automatically selected an
+Android 16/API-36 Google Play x86_64 image, while `avdmanager` created the exact
+Android 15/API-35 Google APIs x86_64 evidence target. The latter cold-booted
+headlessly, connected through ADB, ran with SELinux enforcing, and was stopped
+after the tests. No further user configuration is required for emulator tests.
+
+The exact modernc/libc probe cross-built for Android/amd64. Go requires external
+linking for that Android target, so the API-35 NDK clang and `CGO_ENABLED=1`
+were required even though `modernc.org/sqlite` and its selected Linux/amd64
+generated port contained zero CGo files. Inside the emulator, SQLite 3.53.3
+reported `ENABLE_FTS5`, `THREADSAFE=1`, and `MUTEX_PTHREADS`; FTS5 MATCH, JSON,
+file-backed WAL, and `integrity_check` passed. Two close/reopen runs and an
+emulator reboot preserved the file and increased the expected FTS5 count from
+one to three. A 9,758,432-byte Android x86_64 Go `c-shared` feasibility library
+also passed `dlopen`/`dlclose`.
+
+This retires only the x86_64 emulator runtime pre-gate. The repository still has
+no Flutter Android application or real versioned Notrios ABI, and the current
+direct-C store still lacks its selected Android SQLite package. H0 must still
+run both complete store candidates, schema-v27, snapshot/sync/failure and
+performance/resource gates; Android/arm64 and physical devices remain open.
+
+The supplied Android CLI reference was partly inaccurate. Command-line tools
+22.0.0 do deprecate `sdkmanager` in favor of `android sdk`, but the new package
+ID is slash-separated, `android sdk --licenses` and `--accept-licenses` are not
+supported, and no documented `.androidrc` license override was used. The
+profile-based `android emulator create` cannot pin an exact image, and official
+`android run` deploys supplied APKs without building them. No `JAVA_HOME`
+override was needed: Android provisioning used the PATH-selected Temurin 21;
+Flutter independently used its configured Android Studio JBR.
 
 The driver is not a Flutter Web solution: `GOOS=js GOARCH=wasm` failed because
 the required `modernc.org/libc` platform packages select no files. Web remains a
@@ -321,3 +356,7 @@ destructive-review boundaries.
 - SQLite file format: <https://www.sqlite.org/fileformat2.html>
 - SQLite multiple-copy corruption warning: <https://www.sqlite.org/howtocorrupt.html>
 - SQLite Wasm persistence: <https://sqlite.org/wasm/doc/trunk/persistence.md>
+- Android CLI reference: <https://developer.android.com/tools/agents/android-cli>
+- Android AVD management: <https://developer.android.com/studio/run/managing-avds>
+- `avdmanager` reference: <https://developer.android.com/studio/command-line/avdmanager>
+- Emulator command line: <https://developer.android.com/studio/run/emulator-commandline>

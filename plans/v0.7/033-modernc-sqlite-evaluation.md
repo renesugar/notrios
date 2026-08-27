@@ -31,7 +31,11 @@ WAL/FTS5/JSON round trip passed. Linux/amd64, macOS/arm64, and Windows/amd64
 executables cross-built. Android/arm64 produced both a CGo-disabled executable
 and a 9,469,448-byte NDK `c-shared` artifact by selecting the generated
 Linux/arm64 sources. This is build feasibility only: upstream does not list
-Android or iOS among supported targets, and no AVD/device existed. iOS still
+Android or iOS among supported targets, and no AVD/device existed during this
+first evaluation. The later API 35 x86_64 runtime amendment is archived as
+`plans/v0.7/034-android-emulator-modernc-runtime.md`; it closes the disposable
+probe pre-gate but does not select the dependency or validate Android arm64 or
+the Notrios store/ABI. iOS still
 requires an Apple external-linking host. `js/wasm` failed at absent
 `modernc.org/libc` platform files, so it is not the Flutter Web adapter.
 
@@ -53,7 +57,8 @@ byte-identical files from different executions.
 
 - Machine record: `performance/v0.7-g18/MODERNC_SQLITE_EVALUATION.json`
 - Updated decision record: `performance/v0.7-g18/ANDROID_SQLITE_FOLLOWUP.json`
-- G18 evidence suite: seven tests and the source validator pass.
+- G18 evidence suite passed at this amendment; the later emulator amendment
+  expands the suite and is recorded separately.
 - Disposable module and all binaries stayed under `/tmp`; root `go.mod` and
   product code are unchanged.
 - Primary sources are recorded in the machine evidence and

@@ -37,6 +37,8 @@ as `plans/v0.7/030-evidence-seals-iso-reserve.md`. G18 is complete and archived
 as `plans/v0.7/031-shared-core-ffi-portability-handoff.md`. G18a is complete and
 archived as `plans/v0.7/032-documentation-anchor-investigation.md`. The G18
 modernc evaluation amendment is `plans/v0.7/033-modernc-sqlite-evaluation.md`.
+The Android-emulator runtime amendment is
+`plans/v0.7/034-android-emulator-modernc-runtime.md`.
 **G0-G18a are complete.
 The G17b pre-push verifier is mandatory before any future GitHub push; no push
 or physical burn was authorized or performed. G18b and later items are next and
@@ -111,14 +113,19 @@ compares a checksum-pinned upstream amalgamation control with exact
 `modernc.org/sqlite`/`modernc.org/libc` pins in the Go shared core. The modernc
 probe passed Linux FTS5/JSON/WAL and a C-modernc-C format round trip; it
 cross-built Android executable and NDK `c-shared` artifacts, macOS, and Windows.
-Android runtime remains untested and unsupported upstream, iOS needs an Apple
-link host, and `js/wasm` failed in modernc libc. Exact package/update/options,
+The exact candidate then ran on an API 35 x86_64 AVD: SQLite 3.53.3,
+FTS5/JSON/WAL, integrity, close/reopen, emulator-reboot persistence, and NDK
+`c-shared` `dlopen`/`dlclose` all passed. This is an H0 pre-gate, not upstream
+Android support or a product selection. Android arm64 and the real ABI/store/
+snapshot/sync workload remain untested; iOS needs an Apple link host, and
+`js/wasm` failed in modernc libc. Exact package/update/options,
 ABI/minSdk, driver semantics/performance, one-engine policy, sandbox/WAL
 lifecycle, and desktop/Android interoperability remain blocking. Flutter Doctor
 now reports no issues
 after `/usr/bin/clang` and `/usr/bin/clang++` PATH resolution was restored;
-Swiftly is reachable but has no selected Swift toolchain. There is still no AVD,
-connected Android device, Flutter/Android build, or device support claim.
+Swiftly is reachable but has no selected Swift toolchain. Two AVDs are now
+configured; the API 35 test emulator was stopped cleanly and no device remains
+connected. There is still no Flutter/Android app build or device-support claim.
 Rendered browser QA also confirms that the current editable md-editor-rt/
 CodeMirror UI exposes case, regexp, by-word, and replacement controls through
 Ctrl+F; Ctrl/Cmd+H is not a default binding.

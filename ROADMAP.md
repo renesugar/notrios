@@ -474,9 +474,11 @@ be smuggled into v0.7 as desktop assumptions.
   Kotlin driver is not a drop-in for Notrios's Go cgo store. H0 must compare a
   checksum-pinned upstream amalgamation control with a pinned
   `modernc.org/sqlite` candidate inside the Go shared core. The latter has
-  Android/arm64 executable and `c-shared` build feasibility but no upstream
-  Android support claim or device/emulator runtime evidence; it is not a Web
-  adapter. Before H1, H0 must resolve the blocking owner/package,
+  Android/arm64 build feasibility plus API-35 x86_64 executable,
+  close/reopen/reboot, FTS5/JSON/WAL/integrity, and `c-shared` load feasibility.
+  It still has no upstream Android support claim, arm64 runtime, real Notrios
+  ABI/store, or performance evidence and is not a Web adapter. Before H1, H0
+  must resolve the blocking owner/package,
   version/checksum/update/compile-option, minSdk/ABI, symbol/duplicate-engine,
   concurrency, sandbox/WAL/crash, and cross-platform image-compatibility
   decisions recorded inside PLAN G18. Evidence must build/load the selected

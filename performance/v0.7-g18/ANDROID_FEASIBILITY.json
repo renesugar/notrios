@@ -2,6 +2,7 @@
   "schema": "notrios.g18.android-feasibility.v1",
   "captured_at": "2026-08-26T05:44:01Z",
   "amended_at": "2026-08-26T15:50:05Z",
+  "emulator_amended_at": "2026-08-26T22:10:08Z",
   "sdk_root_kind": "local Android SDK",
   "platform": "android-37.0",
   "adb_version": "1.0.41",
@@ -26,8 +27,42 @@
     "current_resolution": "system Clang wins because /usr/bin now precedes the Swiftly shims",
     "swiftly_use_latest": "valid selector syntax but not executed; --global-default is required when the intent is to set the global default rather than a project selection"
   },
-  "configured_avds": 0,
-  "emulator_execution_attempted": false,
+  "configured_avds": 2,
+  "configured_avd_details": [
+    {
+      "name": "notrios_api35_x86_64",
+      "android_release": "15",
+      "api_level": 35,
+      "tag": "google_apis",
+      "abi": "x86_64",
+      "creation_tool": "avdmanager with an exact installed image"
+    },
+    {
+      "name": "medium_phone",
+      "android_release": "16",
+      "api_level": 36,
+      "tag": "google_apis_playstore",
+      "abi": "x86_64",
+      "creation_tool": "android emulator create medium_phone"
+    }
+  ],
+  "emulator_execution_attempted": true,
+  "emulator_execution": {
+    "avd": "notrios_api35_x86_64",
+    "headless": true,
+    "kvm_usable": true,
+    "api_level": 35,
+    "android_release": "15",
+    "abi": "x86_64",
+    "selinux": "Enforcing",
+    "cold_boot_completed_ms": 165804,
+    "adb_connected": true,
+    "package_manager_ready": true,
+    "runtime_probe_passed": true,
+    "reboot_persistence_probe_passed": true,
+    "c_shared_dlopen_passed": true,
+    "stopped_after_probe": true
+  },
   "cross_compile": {
     "command_shape": "GOOS=android GOARCH=arm64 CGO_ENABLED=1 CC=<NDK aarch64 API-35 clang> go test -c ./internal/store",
     "passed": false,
@@ -60,6 +95,7 @@
     "android_platform": "android-37.0",
     "android_licenses_accepted": true,
     "connected_android_devices": 0,
+    "available_android_avds": 2,
     "linux_desktop_toolchain_passed": true,
     "linux_desktop_blocker": null,
     "no_issues_found": true

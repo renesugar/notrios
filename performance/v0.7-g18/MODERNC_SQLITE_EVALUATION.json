@@ -1,6 +1,7 @@
 {
   "schema": "notrios.g18.modernc-sqlite-evaluation.v1",
   "captured_at": "2026-08-26T20:56:21Z",
+  "android_runtime_amended_at": "2026-08-26T22:10:08Z",
   "package": {
     "module": "modernc.org/sqlite",
     "canonical_repository": "https://gitlab.com/cznic/sqlite",
@@ -21,7 +22,7 @@
     {
       "claim": "It cross-compiles to Android and iOS out of the box with ordinary GOOS/GOARCH settings.",
       "assessment": "partly demonstrated, not a support claim",
-      "correction": "The pinned version built an Android/arm64 executable with CGO disabled and a c-shared library with the NDK, but upstream does not list Android or iOS as supported. No Android runtime was available; iOS requires external linking and could not be built or run on this Linux host."
+      "correction": "The pinned version built Android/arm64 and Android/x86_64 artifacts. An API-35 x86_64 emulator executed SQLite/FTS5/JSON/WAL and loaded the c-shared library, but upstream still does not list Android or iOS as supported. Android/arm64 remains build-only evidence; iOS requires external linking and could not be built or run on this Linux host."
     },
     {
       "claim": "It is only slightly slower than C SQLite and the difference is negligible for mobile.",
@@ -40,8 +41,8 @@
     },
     {
       "claim": "FTS5 is included without a separate extension.",
-      "assessment": "verified on the supported Linux probe",
-      "correction": "v1.57.0 reported ENABLE_FTS5 and executed an FTS5 create/insert/MATCH probe. Every selected target must still record compile_options and run the real Notrios migration/search suite."
+      "assessment": "verified on Linux and the API-35 x86_64 emulator probe",
+      "correction": "v1.57.0 reported ENABLE_FTS5 and executed FTS5 create/insert/MATCH on Linux and Android x86_64. Every selected production target must still record compile_options and run the real Notrios migration/search suite."
     },
     {
       "claim": "The driver runs the official SQLite suite and therefore perfectly matches upstream semantics.",
@@ -74,8 +75,46 @@
       "c_shared_bytes": 9469448,
       "upstream_documented_support": false,
       "runtime_executed": false,
-      "reason_runtime_not_executed": "zero connected Android devices and zero configured AVDs",
-      "conclusion": "promising build feasibility only; not Android runtime support"
+      "reason_runtime_not_executed": "the configured accelerated emulator ABI is x86_64; no arm64 device or emulator runtime was used",
+      "conclusion": "promising arm64 build feasibility only; not arm64 runtime support"
+    },
+    "android_x86_64_api35": {
+      "go_target": "android/amd64",
+      "build": "passed with CGO_ENABLED=1 solely for Go external linking and the NDK API-35 x86_64 clang",
+      "modernc_package_cgo_files": 0,
+      "selected_generated_target": "linux/amd64",
+      "ordinary_executable_bytes": 9752352,
+      "ordinary_executable_sha256": "823c48cad0ad26430fffbd32ecdc362480977ba6536df1fbe53191ca66d265b8",
+      "c_shared_bytes": 9758432,
+      "c_shared_sha256": "ab0048f1d1290d6eaa846802c072081148fea6105b200cfdb7c6390cc5634f87",
+      "avd": "notrios_api35_x86_64",
+      "android_release": "15",
+      "api_level": 35,
+      "abi": "x86_64",
+      "selinux": "Enforcing",
+      "sqlite_version": "3.53.3",
+      "compile_options_include": [
+        "ENABLE_FTS5",
+        "THREADSAFE=1",
+        "MUTEX_PTHREADS"
+      ],
+      "fts5_create_insert_match": "passed",
+      "json_extract": "passed",
+      "wal_file_mode": "passed",
+      "integrity_check": "ok",
+      "close_reopen_counts": [
+        1,
+        2
+      ],
+      "pre_reboot_database_bytes": 24576,
+      "pre_reboot_database_sha256": "c5974438bd72e6017636e36a0d40347359b4d90c444a36da52ddc64450a38724",
+      "post_reboot_database_sha256_before_write": "c5974438bd72e6017636e36a0d40347359b4d90c444a36da52ddc64450a38724",
+      "post_reboot_fts5_count": 3,
+      "post_reboot_integrity_check": "ok",
+      "c_shared_dlopen": "passed",
+      "c_shared_dlclose": "passed",
+      "upstream_documented_support": false,
+      "conclusion": "Android x86_64 API-35 runtime feasibility passed; this is not arm64, full Notrios store, performance, or upstream support evidence"
     },
     "ios_arm64": {
       "selected_generated_target": "darwin/arm64",
@@ -172,14 +211,14 @@
   "architecture_decision": {
     "canonical_database_owner": "Go shared core",
     "jetpack_canonical_owner_redesign": "rejected unless separately approved as a whole-store redesign",
-    "android_h0": "A/B the pinned C amalgamation control against pinned modernc.org/sqlite; modernc is a promising build-only candidate, not selected.",
+    "android_h0": "A/B the pinned C amalgamation control against pinned modernc.org/sqlite; modernc now has API-35 x86_64 runtime and c-shared load feasibility but is not selected.",
     "desktop_h0": "Keep the existing C store while running the same A/B. Adopt modernc across supported desktop targets only if semantics, file interoperability, failure behavior, size, RSS, and Notrios workload performance pass.",
     "flutter_web": "Do not use modernc.org/sqlite v1.57.0. Keep Web over REST, or plan a separate browser-local SQLite/Wasm/OPFS adapter and ownership contract.",
     "single_owner_rule": "Only one SQLite engine may open the canonical database in a process; Flutter/Jetpack and Go must never concurrently own the same file."
   },
   "blocking_h0_gates": [
     "pin exact modernc.org/sqlite and exact modernc.org/libc versions, licenses, checksums, provenance, update cadence, and generated compile options",
-    "run the modernc Android c-shared library on the selected emulator API/ABI and record sqlite_version plus compile_options",
+    "build and call the real ABI-enabled modernc Android shared library rather than only dlopen a no-export feasibility library",
     "run the pinned C amalgamation control on the same emulator, settings, storage path, and test corpus",
     "execute schema-v27 bootstrap/migrations, CRUD, WAL/checkpoint/crash recovery, FTS5 indexing/search, JSON, snapshot/restore, and synchronization for both candidates",
     "round-trip checkpointed production-shaped databases C-to-modernc-to-C and desktop-to-Android-to-desktop with integrity and FTS5 checks",
@@ -188,6 +227,12 @@
     "validate database/sql connection, busy/locking, cancellation, error-code, DSN, backup, and failure semantics against the current direct C wrapper",
     "prove one SQLite engine owns the canonical file and no Flutter/Jetpack or platform SQLite connection can open it concurrently",
     "run iOS only on a supported macOS/Xcode host and keep it post-1.0 until that gate passes"
+  ],
+  "satisfied_h0_pregates": [
+    "KVM-accelerated Android 15/API-35 x86_64 AVD cold-boots and is visible to ADB and Flutter",
+    "modernc Android/x86_64 executable reports SQLite 3.53.3 and required compile options and passes FTS5, JSON, WAL, and integrity probes",
+    "the same Android database survives close/reopen and an emulator reboot with exact pre-write file hash and increasing FTS5 counts",
+    "an Android/x86_64 Go c-shared feasibility library loads and unloads through dlopen"
   ],
   "references": [
     "https://pkg.go.dev/modernc.org/sqlite",

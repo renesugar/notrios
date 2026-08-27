@@ -87,8 +87,10 @@ The host toolchain limitation has changed without changing G18's product
 boundary. Ubuntu Clang/Clang++ 18.1.3 now resolve from `/usr/bin`, and Flutter
 Doctor 3.44.9 reports no issues across Android, Chrome, Linux, devices, and
 network. Swiftly 1.1.2 is on PATH and lists Swift 6.3.3, but no Swift toolchain
-is selected. There are still zero configured AVDs and connected Android
-devices, so no build or emulator claim follows from the all-passing Doctor.
+is selected. At this first follow-up there were zero configured AVDs and
+connected Android devices, so no build or emulator claim followed from the
+all-passing Doctor. The later runtime amendment below supersedes only that
+environment observation.
 
 The supplied Android SQLite material was only partly accurate. Android exposes
 framework SQLite to Java/Kotlin, but SQLite is not a public NDK C API and this
@@ -116,8 +118,9 @@ Pinned v1.57.0/native evidence proves SQLite 3.53.3 with FTS5/JSON/WAL and a
 C-modernc-C Linux database round trip. Disposable Linux, macOS, and Windows
 executables compiled. Android/arm64 compiled both an ordinary executable and an
 NDK `c-shared` artifact, but Android/iOS are absent from upstream's support
-table and no device/AVD existed to execute the library. iOS remains an Apple-
-host external-linking gate. `js/wasm` failed in the required modernc libc layer.
+table and no device/AVD existed at that evaluation to execute the library. iOS
+remains an Apple-host external-linking gate. `js/wasm` failed in the required
+modernc libc layer.
 
 The maintainer benchmark is mixed rather than “slightly slower”: representative
 bulk inserts were about 3.2–4.8× slower than the CGo driver, while many repeated
@@ -127,6 +130,18 @@ exact modernc/libc candidate on the same emulator and production-shaped
 WAL/FTS5/snapshot/sync corpus. Go retains sole canonical ownership; Jetpack is
 not a query bridge, and Web remains REST or a separately planned browser store.
 Machine evidence: `performance/v0.7-g18/MODERNC_SQLITE_EVALUATION.json`.
+
+## 2026-08-26 Android emulator runtime amendment
+
+The later API 35 x86_64 AVD run closes the disposable probe's first Android
+runtime pre-gate. SQLite 3.53.3, FTS5/JSON/WAL/integrity, close/reopen, and
+emulator-reboot persistence passed, and the NDK `c-shared` artifact passed
+`dlopen`/`dlclose`. Two AVDs remain configured and the test emulator was stopped
+cleanly. This does not establish upstream Android support, Android arm64, the
+planned ABI, production Notrios store/schema/snapshot/sync behavior, Flutter
+integration, physical-device support, or performance parity. Full evidence and
+commands are archived in `plans/v0.7/034-android-emulator-modernc-runtime.md` and
+`performance/v0.7-g18/ANDROID_EMULATOR_FOLLOWUP.json`.
 
 The installed editor stack was also tested rather than inferred. md-editor-rt
 6.5.3 installs CodeMirror search 6.7.1. Ctrl+F opened the editable-note search

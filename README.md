@@ -27,12 +27,15 @@ error/cancel/stream proposal, Android SQLite/cgo finding, and exact Mermaid
 enablement gate without implementing or claiming those future products. Its
 follow-up now makes pinned modernc/libc a measured H0 candidate beside the C
 amalgamation control while preserving Go database ownership; neither is
-selected. G18a completed the documentation-anchor investigation. G18b and the
+selected. A later API 35 x86_64 emulator run passed the disposable candidate's
+FTS5/JSON/WAL/integrity, reboot-persistence, and shared-library-load pre-gates;
+Android arm64 and the production Notrios ABI/store workload remain open. G18a
+completed the documentation-anchor investigation. G18b and the
 remaining source-anchored documentation/Hugo-Ledger work are next and
 unapproved. GitHub
 push and physical disc burning remain unauthorized — see [`PLAN.md`](PLAN.md),
 [`ROADMAP.md`](ROADMAP.md), and
-[`plans/v0.7/033-modernc-sqlite-evaluation.md`](plans/v0.7/033-modernc-sqlite-evaluation.md). The repository is
+[`plans/v0.7/034-android-emulator-modernc-runtime.md`](plans/v0.7/034-android-emulator-modernc-runtime.md). The repository is
 structured so a coding agent can resume safely after usage limits or model
 changes.
 

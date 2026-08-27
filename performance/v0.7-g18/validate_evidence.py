@@ -33,6 +33,7 @@ def main() -> None:
     editor_search = load("EDITOR_SEARCH_QA.json")
     android_sqlite = load("ANDROID_SQLITE_FOLLOWUP.json")
     modernc_sqlite = load("MODERNC_SQLITE_EVALUATION.json")
+    android_emulator = load("ANDROID_EMULATOR_FOLLOWUP.json")
 
     require(audit["schema"] == "notrios.g18.source-audit.v1", "source-audit schema differs")
     require(platform["schema"] == "notrios.g18.platform-matrix.v1", "platform schema differs")
@@ -45,6 +46,8 @@ def main() -> None:
             "Android SQLite follow-up schema differs")
     require(modernc_sqlite["schema"] == "notrios.g18.modernc-sqlite-evaluation.v1",
             "modernc SQLite evaluation schema differs")
+    require(android_emulator["schema"] == "notrios.g18.android-emulator-followup.v1",
+            "Android emulator follow-up schema differs")
 
     routes: list[tuple[str, str]] = []
     for path in production_go_files(REPO / "internal" / "httpapi"):
@@ -100,8 +103,17 @@ def main() -> None:
             "current GUI no longer has the audited Mermaid-disabled baseline")
     require(mermaid["current"]["enabled"] is False, "evidence falsely claims Mermaid enabled")
     require(len(mermaid["fixtures"]) >= 14, "Mermaid fixture contract is incomplete")
-    require(android["configured_avds"] == 0 and android["cross_compile"]["passed"] is False,
-            "Android evidence overclaims the available environment")
+    require(android["configured_avds"] == 2 and android["emulator_execution_attempted"] is True and
+            android["cross_compile"]["passed"] is False,
+            "Android environment/runtime evidence differs")
+    emulator_execution = android["emulator_execution"]
+    require(emulator_execution["api_level"] == 35 and
+            emulator_execution["abi"] == "x86_64" and
+            emulator_execution["runtime_probe_passed"] is True and
+            emulator_execution["reboot_persistence_probe_passed"] is True and
+            emulator_execution["c_shared_dlopen_passed"] is True and
+            emulator_execution["stopped_after_probe"] is True,
+            "Android API-35 runtime probe differs")
     host_sqlite = android["cross_compile"]["host_debian_sqlite_development"]
     require(host_sqlite["header_found"] is True and host_sqlite["android_target_usable"] is False,
             "host SQLite development files are confused with an Android-target library")
@@ -110,6 +122,8 @@ def main() -> None:
     doctor = android["flutter_doctor"]
     require(doctor["android_toolchain_passed"] is True and doctor["connected_android_devices"] == 0,
             "Flutter Doctor Android/device evidence differs")
+    require(doctor["available_android_avds"] == 2,
+            "Flutter AVD inventory differs")
     require(android["flutter_build_claimed"] is False, "G18 falsely claims a Flutter build")
     require(doctor["linux_desktop_toolchain_passed"] is True and
             doctor["linux_desktop_blocker"] is None and doctor["no_issues_found"] is True,
@@ -201,6 +215,16 @@ def main() -> None:
             probe["android_arm64"]["upstream_documented_support"] is False and
             probe["android_arm64"]["runtime_executed"] is False,
             "modernc Android build-only boundary differs")
+    android_x86 = probe["android_x86_64_api35"]
+    require(android_x86["sqlite_version"] == "3.53.3" and
+            android_x86["fts5_create_insert_match"] == "passed" and
+            android_x86["json_extract"] == "passed" and
+            android_x86["wal_file_mode"] == "passed" and
+            android_x86["post_reboot_fts5_count"] == 3 and
+            android_x86["post_reboot_integrity_check"] == "ok" and
+            android_x86["c_shared_dlopen"] == "passed" and
+            android_x86["upstream_documented_support"] is False,
+            "modernc Android x86_64 runtime boundary differs")
     require(probe["browser_js_wasm"]["build"] == "failed" and
             probe["browser_js_wasm"]["upstream_documented_support"] is False,
             "modernc Web conclusion differs")
@@ -208,17 +232,25 @@ def main() -> None:
             "modernc C file round-trip differs")
     require(len(modernc_sqlite["blocking_h0_gates"]) >= 10,
             "modernc H0 comparison is underspecified")
+    require(len(modernc_sqlite["satisfied_h0_pregates"]) == 4,
+            "modernc completed pre-gate inventory differs")
     root_go_mod = (REPO / "go.mod").read_text(encoding="utf-8")
     require("modernc.org/sqlite" not in root_go_mod,
             "modernc was added to the product before H0 selection")
 
+    require(android_emulator["host"]["java_home_overridden"] is False and
+            android_emulator["runtime"]["stopped_after_probe"] is True and
+            android_emulator["modernc_runtime"]["emulator_reboot_persistence"] == "passed" and
+            android_emulator["user_configuration_needed"] == [],
+            "Android emulator follow-up crossed its stated boundary")
+
     serialized = json.dumps([audit, platform, abi, mermaid, android, editor_search,
-                             android_sqlite, modernc_sqlite])
+                             android_sqlite, modernc_sqlite, android_emulator])
     require("/home/" not in serialized and "SEAGATE" not in serialized,
             "portable evidence contains a host-private path")
     require(audit["private_data_read"] is False and audit["production_code_changed"] is False,
             "G18 crossed its investigation/handoff boundary")
-    print("g18 evidence: 109 API operations, 19 platform capabilities, ABI/Mermaid/Android/editor/modernc follow-up validated")
+    print("g18 evidence: 109 API operations, 19 platform capabilities, ABI/Mermaid/Android emulator/editor/modernc follow-up validated")
 
 
 if __name__ == "__main__":

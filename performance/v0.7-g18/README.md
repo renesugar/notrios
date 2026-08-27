@@ -33,16 +33,21 @@ Evidence files:
 - `ANDROID_FEASIBILITY.json` — installed-tool and cross-compile findings plus
   the bounded emulator gate. Its amendment records a fully passing Flutter
   Doctor result after Clang PATH correction, the host/target SQLite distinction,
-  and zero configured AVDs or connected Android devices. Swiftly is on PATH and
-  has an installed release, but no Swift toolchain is selected.
+  two configured AVDs, and the passing API-35 x86_64 runtime/reboot/load probe.
+  The emulator was stopped and no Android device remains connected. Swiftly is
+  on PATH and has an installed release, but no Swift toolchain is selected.
 - `ANDROID_SQLITE_FOLLOWUP.json` — the current Go/cgo ownership model, corrected
   Android NDK/framework/Jetpack distinctions, the packaging candidates,
   blocking v0.8 decisions, and the emulator/interoperability gates.
 - `MODERNC_SQLITE_EVALUATION.json` — pinned modernc/ccgo/libc facts, supplied-
   claim corrections, native feature and C-file round-trip results, Android/
   desktop/Web build boundaries, representative upstream C-driver benchmark
-  results, and the two-candidate H0 decision gate. Disposable binaries and the
-  module cache remain outside the repository.
+  results, API-35 x86_64 runtime/reboot/`dlopen` evidence, and the two-candidate
+  H0 decision gate. Disposable binaries and the module cache remain outside the
+  repository.
+- `ANDROID_EMULATOR_FOLLOWUP.json` — Android CLI/KVM/Java/AVD facts, exact
+  corrections to the supplied CLI/license claims, the API-35 headless runtime
+  and persistence sequence, remaining H0 limits, and the cleanly stopped state.
 - `EDITOR_SEARCH_QA.json` — installed editor versions, source/keymap findings,
   and the rendered Ctrl+F case/regexp/whole-word/replace browser result. The
   disposable desktop and narrow screenshots remain outside the repository.

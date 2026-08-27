@@ -35,6 +35,8 @@ class G18ContractTests(unittest.TestCase):
         self.assertTrue(android["flutter_doctor"]["no_issues_found"])
         self.assertIsNone(android["flutter_doctor"]["linux_desktop_blocker"])
         self.assertEqual(android["flutter_doctor"]["connected_android_devices"], 0)
+        self.assertEqual(android["configured_avds"], 2)
+        self.assertTrue(android["emulator_execution"]["runtime_probe_passed"])
 
     def test_editor_search_rendered_controls_and_shortcut_are_honest(self) -> None:
         editor = self.load("EDITOR_SEARCH_QA.json")
@@ -61,7 +63,7 @@ class G18ContractTests(unittest.TestCase):
         self.assertIn("FTS5", followup["current_notrios_store"]["required_features"])
         self.assertIn("JSON SQL functions", followup["current_notrios_store"]["required_features"])
 
-    def test_modernc_is_build_only_on_android_and_rejected_for_web(self) -> None:
+    def test_modernc_arm64_is_build_only_and_web_is_rejected(self) -> None:
         evaluation = self.load("MODERNC_SQLITE_EVALUATION.json")
         probe = evaluation["disposable_probe"]
         self.assertTrue(probe["android_arm64"]["ordinary_executable_build"].startswith("passed"))
@@ -72,6 +74,26 @@ class G18ContractTests(unittest.TestCase):
         self.assertEqual(evaluation["linux_file_interoperability_probe"]["result"], "passed")
         self.assertEqual(evaluation["architecture_decision"]["canonical_database_owner"],
                          "Go shared core")
+
+    def test_modernc_android_runtime_survives_reopen_and_reboot(self) -> None:
+        evaluation = self.load("MODERNC_SQLITE_EVALUATION.json")
+        runtime = evaluation["disposable_probe"]["android_x86_64_api35"]
+        self.assertEqual(runtime["api_level"], 35)
+        self.assertEqual(runtime["abi"], "x86_64")
+        self.assertEqual(runtime["close_reopen_counts"], [1, 2])
+        self.assertEqual(runtime["post_reboot_fts5_count"], 3)
+        self.assertEqual(runtime["pre_reboot_database_sha256"],
+                         runtime["post_reboot_database_sha256_before_write"])
+        self.assertEqual(runtime["post_reboot_integrity_check"], "ok")
+        self.assertEqual(runtime["c_shared_dlopen"], "passed")
+
+    def test_android_cli_corrections_and_cleanup_are_recorded(self) -> None:
+        followup = self.load("ANDROID_EMULATOR_FOLLOWUP.json")
+        self.assertFalse(followup["host"]["java_home_overridden"])
+        self.assertEqual(followup["host"]["flutter_detected_avds"], 2)
+        self.assertTrue(followup["runtime"]["stopped_after_probe"])
+        self.assertEqual(followup["runtime"]["connected_android_devices_after_stop"], 0)
+        self.assertEqual(followup["user_configuration_needed"], [])
 
     def test_mermaid_limits_have_negative_fixtures(self) -> None:
         mermaid = self.load("MERMAID_CONTRACT.json")
