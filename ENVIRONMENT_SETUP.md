@@ -74,6 +74,30 @@ go run ./cmd/notriosctl doctor                           # environment/config/da
 
 Relative config paths (the example uses `./data/...`) resolve against the working directory. For clean testing, delete `data/notes.sqlite` (plus its `-wal`/`-shm` sidecars) and restart.
 
+## Agent usage preflight
+
+Before starting a long local profile, release package, or multi-pass validation
+from an agent session, inspect the current account windows without making a
+model request:
+
+```bash
+python3 scripts/test_check_agent_usage.py
+python3 scripts/check_agent_usage.py --agent all --minimum-remaining 20
+```
+
+The Codex path uses the installed app-server protocol and reports both the
+five-hour and weekly windows when available. The Claude path reads only an
+explicit local status cache; the current Claude Code 2.1.246 settings do not
+provide one, so `unknown` is expected and is advisory by default. Missing or
+changed telemetry is never reported as 100%.
+
+Set `NOTRIOS_AGENT_USAGE_GUARD=strict` to make unknown telemetry stop a long
+script before it begins, `off` to skip the local probe, and
+`NOTRIOS_AGENT_USAGE_MINIMUM` to override the default 20% floor. Model/effort-
+specific history is optional and stays outside repository evidence. A pause
+means update the repository handoff at the current durable boundary; it does
+not make an interrupted non-checkpointed script resumable.
+
 ## Cleanup and pre-checkin
 
 `make clean` removes disposable outputs and nothing else:

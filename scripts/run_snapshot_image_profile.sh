@@ -9,6 +9,7 @@ if [[ "$OUTPUT" != /* ]]; then
 fi
 
 cd "$ROOT"
+bash scripts/agent_usage_preflight.sh snapshot-image-profile
 NOTRIOS_SNAPSHOT_PROFILE=100000 NOTRIOS_SNAPSHOT_PROFILE_OUTPUT="$OUTPUT" \
   go test -timeout 30m -run '^TestGenerated100KSnapshotProfile$' -count=1 -v ./internal/snapshotimage
 echo "profile written to $OUTPUT"

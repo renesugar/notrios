@@ -16,6 +16,11 @@ This file is the codebase atlas. Update it whenever major files or directories a
 - `plans/scaffold/SCAFFOLD_CREATION_PLAN.md` — process for creating/refining this scaffold.
 - `ROADMAP.md` — product roadmap and future features.
 - `AGENTS.md` — coding-agent instructions (`CLAUDE.md` points here).
+- `scripts/check_agent_usage.py`, `scripts/agent_usage_preflight.sh`, and
+  `skills/agent-usage-preflight/` — model-free Codex rolling-window probe,
+  cache-only Claude probe, adaptive operation reserve, and durable-boundary
+  workflow used before long local profiles. CI tests parsing but never queries
+  a developer account.
 - `CODING_CLIENT_HANDOFF.md` — compressed project state for any coding agent (formerly `CODEX_HANDOFF.md`).
 - `SYSTEM_ARCHITECTURE.md` — architectural blueprint.
 - `API_SPEC.md` — REST/MCP contract notes.

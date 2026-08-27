@@ -5,6 +5,7 @@ ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 # accidentally committed; pass an explicit path to override.
 OUT=${1:-"$ROOT/dist/notrios-src.zip"}
 cd "$ROOT"
+bash scripts/agent_usage_preflight.sh package-release
 mkdir -p "$(dirname "$OUT")"
 
 go test ./...

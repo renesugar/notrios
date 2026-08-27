@@ -39,6 +39,25 @@ class HarnessError(RuntimeError):
     pass
 
 
+def usage_preflight(workspace: Path, operation: str) -> None:
+    """Check remaining agent usage before creating a resumable checkpoint."""
+    repository = Path(__file__).resolve().parents[2]
+    command = [
+        "bash",
+        str(repository / "scripts/agent_usage_preflight.sh"),
+        operation,
+    ]
+    try:
+        completed = subprocess.run(command, text=True, cwd=repository)
+    except OSError as error:
+        raise HarnessError(f"usage preflight failed: {error}") from error
+    if completed.returncode != 0:
+        raise HarnessError(
+            f"usage preflight requests a clean pause before checkpoint "
+            f"(exit {completed.returncode})"
+        )
+
+
 def atomic_json(path: Path, value: Any, replace: bool = False) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name(f".{path.name}.{os.getpid()}.partial")
@@ -325,6 +344,7 @@ def execute_phase(args: argparse.Namespace, phase: str) -> dict[str, Any]:
     result_path = phase_result_path(args.workspace, phase)
     if result_path.exists():
         return json.loads(result_path.read_text())
+    usage_preflight(args.workspace, f"g14e:{phase}")
     checkpoint = args.workspace / "checkpoints" / f"{phase}.json"
     attempts = 1
     if checkpoint.exists():

@@ -131,6 +131,27 @@ If a task has three blocked attempts with no meaningful file changes or no passi
 
 At the start of a session, record the model if known in `agent/MODEL_LOG.jsonl`. If the model appears downgraded or performance changes abruptly, note it. Do not assume the model is stable across sessions.
 
+## Agent usage preflight
+
+At the start of a session that may run long validations or model-backed
+subtasks, verify the installed-client parser before relying on it:
+
+```bash
+python3 scripts/test_check_agent_usage.py
+python3 scripts/check_agent_usage.py --agent all --minimum-remaining 20
+```
+
+Compare the reported client version and fields with the current fixtures. If a
+Codex or Claude Code update makes the result `unknown`, update the probe and
+tests before enabling strict mode; never interpret missing telemetry as 100%.
+Run the preflight before a long agent-managed phase and pause only at a durable
+checkpoint. If it requests a pause, update the handoff and attempt log with the
+exact resume command before stopping. See `skills/agent-usage-preflight/SKILL.md`.
+
+The Codex probe must remain model-free (`account/rateLimits/read` through the
+local app-server), never `codex exec /status`. The Claude probe remains
+local-cache-only and must not invoke `claude -p` merely to estimate quota.
+
 ## Plan archival
 
 Implemented plans must be archived under:

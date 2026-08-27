@@ -18,6 +18,7 @@ if [[ "$OUTPUT" != /* ]]; then
 fi
 
 cd "$ROOT"
+bash scripts/agent_usage_preflight.sh obsidian-import-profile
 NOTRIOS_OBSIDIAN_PROFILE="$PROFILE" NOTRIOS_OBSIDIAN_PROFILE_OUTPUT="$OUTPUT" \
   go test -timeout 30m -run '^TestObsidianImporterProfile$' -count=1 -v ./internal/importers/obsidian
 echo "profile written to $OUTPUT"

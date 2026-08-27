@@ -25,6 +25,7 @@ if [[ "$OUTPUT" != /* ]]; then
 fi
 
 cd "$ROOT"
+bash scripts/agent_usage_preflight.sh archive-export-profile
 NOTRIOS_ARCHIVE_PROFILE="$PROFILE" NOTRIOS_PROFILE_OUTPUT="$OUTPUT" \
   go test -timeout 30m -run '^TestArchiveExportProfile$' -count=1 -v ./internal/archivev2
 echo "profile written to $OUTPUT"

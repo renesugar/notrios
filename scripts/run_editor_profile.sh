@@ -18,6 +18,7 @@ if [[ "$OUTPUT" != /* ]]; then
 fi
 
 cd "$ROOT"
+bash scripts/agent_usage_preflight.sh editor-profile
 command -v google-chrome >/dev/null || { echo "google-chrome is required" >&2; exit 2; }
 
 WORK=$(mktemp -d)

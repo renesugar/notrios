@@ -1,6 +1,6 @@
 # Plan: v0.7 — Native synchronization
 
-Status: **G0-G18c are complete through 2026-08-27. Product version remains 0.6.0 and
+Status: **G0-G18c.1 are complete through 2026-08-27. Product version remains 0.6.0 and
 the canonical schema is v27. The user resolved G17b's evidence scope, exact
 OpenPGP identity, and RFC-3161 provider order on 2026-08-25, then authorized
 the exact signer/Secret Service workflow, TSA requests, and reserve writes and
@@ -2227,6 +2227,83 @@ now validate the exact report after installing the locked TypeScript compiler.
 No prose generation/migration, behavior, schema, API, dependency, semantic
 model verdict, remote, reserve, push, or physical medium changed.
 
+## G18c.1. Agent usage preflight and resumable workflow guard — complete
+
+**Goal.** Let coding agents pause expensive local work at a durable boundary
+when trustworthy account telemetry says the remaining usage window is too
+small, without spending model quota merely to ask for quota or inventing a
+percentage when telemetry is unavailable.
+
+**Scope.** Add one repository-owned, model-free usage probe for installed
+Codex and Claude Code clients. Codex must use its local app-server
+`account/rateLimits/read` protocol and report every available rolling window;
+it must not run `codex exec /status`. Claude may consume an explicitly present
+local status cache, but must not run `claude -p` because that spends usage and
+does not expose a stable numeric quota contract. Output a stable human and JSON
+contract with `active`, `pause`, `unknown`, and `not-running` states, reset
+times, exact client version, and distinct exit codes.
+
+Integrate the guard at durable phase boundaries in the resumable G14b/G14e
+harnesses and as a preflight for repeated long-running profile scripts. Keep
+unavailable telemetry advisory by default; an explicit strict mode may stop on
+`unknown`. Record optional before/after samples outside canonical evidence and
+derive an operation reserve only from matching agent/model/effort/operation
+samples. The required reserve is the greater of the caller's floor and the
+largest matching completed observed drop plus a configurable safety margin.
+Do not transfer estimates across agent, model, or effort combinations.
+
+**Boundaries.** This is developer workflow, not product quota handling. It does
+not alter CI, application sync quotas, schemas, release contents, provider
+credentials, or already-running subprocesses. A low reading never kills work;
+it only refuses to start the next named phase after its predecessor has left a
+valid checkpoint. No percentage may default to 100 when a parser or provider
+is unavailable.
+
+**Dependencies.** Existing G14b/G14e atomic checkpoint boundaries and the
+repository handoff/log conventions.
+
+**Working state.** A maintainer can inspect both Codex rolling windows without
+a model request, see why Claude is unknown when its cache is absent, collect
+matching before/after samples, and have long-running harnesses stop cleanly
+before—not during—the next resumable phase.
+
+**Validation and evidence.** Parser fixtures cover current Codex multi-window
+responses, exhausted/reset states, legacy single-bucket responses, unavailable
+clients, missing/malformed Claude cache, strict/advisory unknown behavior, and
+adaptive reserve isolation by agent/model/effort/operation. Harness tests prove
+that pause occurs before a new checkpoint is marked started and that completed
+phases remain reusable. Run the installed-client probe and record current
+versions plus observed windows without persisting private account metadata.
+
+**Open decisions**
+
+- **Resolved, non-blocking default — unavailable telemetry.** Continue with a
+  visible `unknown` warning unless strict mode is explicitly selected. Treating
+  unknown as 100% would be unsafe; always blocking would make the workflow
+  unusable across client changes.
+- **Resolved, non-blocking default — adaptive reserve.** Use the maximum
+  completed matching observation plus a 5 percentage-point margin, bounded by
+  the caller's explicit minimum. Sparse or cross-model samples do not lower the
+  explicit floor.
+- **Resolved, non-blocking default — CI.** Do not run account-specific local
+  agent probes in CI. CI validates fixtures and the probe's deterministic
+  parsing only.
+
+**Outcome (2026-08-27).** The model-free Codex app-server probe now reports
+all available windows and their installed-client version, while the Claude
+path stays cache-only and distinguishes absent telemetry from an inactive
+client. A shared advisory-by-default wrapper gates the resumable G14b/G14e
+harnesses before their next `started` checkpoint and the repository's repeated
+long profiles before disposable setup. Optional external JSONL samples learn
+only from completed matching agent/model/effort/operation runs, using the
+largest observed drop plus five points without reducing the explicit 20%
+floor. Current and legacy parser fixtures, strict/advisory behavior, adaptive
+isolation, shared-wrapper integration, checkpoint ordering, and live installed-
+client cleanup all pass. No account metadata is checked in, CI never queries a
+developer account, and no product behavior, schema, API, dependency, remote,
+reserve, push, or physical medium changed. Archived under
+`plans/v0.7/037-agent-usage-preflight.md`.
+
 ## G18d. Executed CLI, configuration, REST, and MCP documentation examples
 
 **Goal.** Ensure copyable non-GUI examples both run and do the specific thing
@@ -2533,10 +2610,11 @@ recommendation, blocking status, and consequence.
 | Documentation public URL shape | G18b | Resolved 2026-08-27: preserve `.html` routes and G18a fragments with explicit compatibility mappings/aliases |
 | Documentation search backend | G18b | Resolved 2026-08-27: static Pagefind; no Bluge service |
 | Documentation anchor audit | G18c | Resolved 2026-08-27: deterministic Go/TypeScript declaration graph, typed claims, exact executable/journey accounting, and an honest checked four-grade report |
+| Agent usage preflight | G18c.1 | Resolved 2026-08-27: model-free Codex windows, cache-only Claude telemetry, advisory unknown default, and matching-operation adaptive reserve |
 | Hosted semantic-review execution | G18f | Open, non-blocking default: maintainer-only recorded command; hosted source upload needs separate approval |
 | Release version/schema bookkeeping | G20 | Open, non-blocking until wrap-up |
 
-G0-G18c are complete and the production physical restore/catch-up, durable
+G0-G18c.1 are complete and the production physical restore/catch-up, durable
 sync-job, local recovery UI, safe-retention, and evidence-preservation design
 contracts are frozen. The G17b host-side evidence gate is mandatory before any
 future GitHub push. G18d-G18g are unapproved and G18d is next.

@@ -5,8 +5,10 @@ import importlib.util
 import json
 from pathlib import Path
 import sqlite3
+import subprocess
 import tempfile
 import unittest
+from unittest.mock import patch
 
 
 SPEC = importlib.util.spec_from_file_location("g14b_harness", Path(__file__).with_name("harness.py"))
@@ -16,6 +18,60 @@ SPEC.loader.exec_module(harness)
 
 
 class HarnessTests(unittest.TestCase):
+    def test_usage_preflight_uses_shared_wrapper_and_propagates_pause(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            completed = subprocess.CompletedProcess([], 0)
+            with patch.object(harness.subprocess, "run", return_value=completed) as probe:
+                harness.usage_preflight(Path(temporary), "g14b:w:a:p")
+            command = probe.call_args.args[0]
+            self.assertEqual(command[0], "bash")
+            self.assertTrue(command[1].endswith("scripts/agent_usage_preflight.sh"))
+            self.assertEqual(command[2], "g14b:w:a:p")
+            with patch.object(
+                harness.subprocess,
+                "run",
+                return_value=subprocess.CompletedProcess([], 2),
+            ):
+                with self.assertRaises(harness.HarnessError):
+                    harness.usage_preflight(Path(temporary), "g14b:w:a:q")
+
+    def _runner(self, workspace: Path) -> harness.Runner:
+        args = type("Args", (), {"workspace": str(workspace), "workload": "attachments",
+                                  "adapter": "source", "phase": "inventory",
+                                  "cache_state": "interleaved-first"})()
+        return harness.Runner(args)
+
+    def test_completed_result_skips_usage_guard(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            runner = self._runner(Path(temporary))
+            runner.result_path.parent.mkdir(parents=True)
+            runner.result_path.write_text(json.dumps({"status": "completed"}))
+            with patch.object(harness, "validate_result") as validate, patch.object(harness, "usage_preflight") as guard:
+                result, resumed = runner.run(lambda _: self.fail("completed result must not run work"))
+            self.assertTrue(resumed)
+            self.assertEqual(result["status"], "completed")
+            validate.assert_called_once()
+            guard.assert_not_called()
+
+    def test_usage_pause_prevents_checkpoint_and_work(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            runner = self._runner(Path(temporary))
+            with patch.object(harness, "usage_preflight", side_effect=harness.HarnessError("pause")):
+                with self.assertRaises(harness.HarnessError):
+                    runner.run(lambda _: self.fail("paused phase must not run work"))
+            self.assertFalse(runner.checkpoint_path.exists())
+
+    def test_usage_active_allows_checkpoint_and_work(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            runner = self._runner(Path(temporary))
+            payload = {"metrics": {}, "assertions": {"source_unchanged": True, "arithmetic_valid": True}}
+            with patch.object(harness, "usage_preflight") as guard, patch.object(harness, "validate_result"):
+                result, resumed = runner.run(lambda _: payload)
+            self.assertFalse(resumed)
+            self.assertEqual(result["status"], "completed")
+            self.assertEqual(json.loads(runner.checkpoint_path.read_text())["status"], "completed")
+            guard.assert_called_once()
+
     def test_privacy_rejects_detail_fields_and_paths(self) -> None:
         for value in ({"title": "private"}, {"detail": "/home/person/private"}, {"argv": ["tool"]}):
             with self.assertRaises(harness.HarnessError):

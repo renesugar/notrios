@@ -18,6 +18,7 @@ if [[ "$OUTPUT" != /* ]]; then
 fi
 
 cd "$ROOT"
+bash scripts/agent_usage_preflight.sh large-library-profile
 NOTRIOS_SCALE_PROFILE="$PROFILE" NOTRIOS_PROFILE_OUTPUT="$OUTPUT" \
   go test -timeout 30m -run '^TestLargeLibraryProfile$' -count=1 -v ./internal/store
 echo "profile written to $OUTPUT"

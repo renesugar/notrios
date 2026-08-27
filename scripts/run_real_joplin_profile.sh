@@ -14,6 +14,7 @@ if [[ "$OUTPUT" != /* ]]; then
   OUTPUT="$ROOT/$OUTPUT"
 fi
 
+bash "$ROOT/scripts/agent_usage_preflight.sh" real-joplin-profile
 mkdir -p "$(dirname "$OUTPUT")"
 PROFILE_TIME=$(mktemp)
 PROFILE_JSON=$(mktemp)

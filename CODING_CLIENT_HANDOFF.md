@@ -14,9 +14,9 @@ wrap-up). The thirteen v0.5 slices remain archived under `plans/v0.5/`.
 independently approvable G0-G20 slices plus the newly inserted, blocking
 G14a-G14e archive-scalability sequence, the newly inserted blocking G17a-G17b
 evidence-preservation sequence, and the newly planned G18a-G18g documentation-
-integrity/Hugo-Ledger sequence. The user's 2026-08-11
+integrity/Hugo-Ledger sequence and the G18c.1 agent-workflow amendment. The user's 2026-08-11
 review resolved the policy decisions through G17, including mandatory payload
-encryption and per-replica Ed25519 signatures. **G0-G18c are complete** and
+encryption and per-replica Ed25519 signatures. **G0-G18c.1 are complete** and
 archived under `plans/v0.7/`; their reviewed evidence is under
 `performance/v0.7-g0/`, `performance/v0.7-g1/`, `performance/v0.7-g1a/`,
 `performance/v0.7-g2/`, `performance/v0.7-g4/`, `performance/v0.7-g5/`,
@@ -43,7 +43,8 @@ The Android-emulator runtime amendment is
 G18b is archived as
 `plans/v0.7/035-hugo-ledger-reproducible-site-contract.md`.
 G18c is archived as `plans/v0.7/036-documentation-anchor-audit.md`.
-**G0-G18c are complete.
+G18c.1 is archived as `plans/v0.7/037-agent-usage-preflight.md`.
+**G0-G18c.1 are complete.
 The G17b pre-push verifier is mandatory before any future GitHub push; no push
 or physical burn was authorized or performed. G18d and later items are next and
 are not approved.** G14b selected option B: a
@@ -82,6 +83,20 @@ mutations plus eight TypeScript cases gate dangling, duplicate, orphan,
 audience, and source errors; exact App/EditorPane/SyncCenter regressions protect
 the installed TypeScript 7 fallback. CI and release ZIP assembly validate the
 exact report.
+
+G18c.1 adds developer-workflow protection without changing the product.
+`scripts/check_agent_usage.py` reads Codex rolling windows through the local,
+model-free app-server method and reads Claude only from an explicit local cache
+when Claude is actually running. It never calls `codex exec /status` or
+`claude -p`, and missing telemetry is `unknown`, never 100%. The shared wrapper
+is advisory by default, can be strict or disabled, and runs before G14b/G14e
+durable phase starts and repeated long profiles. Optional before/after history
+must stay outside canonical evidence and is isolated by agent, model, effort,
+operation, run, duration, and reset window. The 20% floor is raised only by the
+largest matching observed drop plus five points. At session start, run the
+fixture suite and a live probe as described in `AGENTS.md`; if a client update
+changes the contract, fix fixtures before relying on strict mode. G18d remains
+the next incomplete item and is not approved.
 
 G15 advances schema v26 with a sync-only durable outbox over the F6 job
 records. `internal/syncjobs/` drains only explicitly queued/due rows; it never
@@ -276,7 +291,7 @@ was added. G15-G17b are complete. G17b sealed 81 curated artifacts, produced
 the verified release ZIP and immutable reserve described above, and committed
 the finite outer-catalog closure. The generated DigiCert pilot and all
 production tokens passed policy/nonce/imprint/EKU/time/explicit-chain checks;
-Sectigo was not used. G18c is complete; G18d is next but unapproved. Every
+Sectigo was not used. G18c.1 is complete; G18d is next but unapproved. Every
 remaining item requires separate item-by-item user approval, and every future
 push must first pass the G17b gate.
 

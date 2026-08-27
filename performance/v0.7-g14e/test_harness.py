@@ -4,6 +4,7 @@ from __future__ import annotations
 import importlib.util
 import json
 from pathlib import Path
+import subprocess
 import tempfile
 from types import SimpleNamespace
 import unittest
@@ -18,6 +19,57 @@ SPEC.loader.exec_module(H)
 
 
 class HarnessTests(unittest.TestCase):
+    def test_usage_preflight_uses_shared_wrapper_and_propagates_pause(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            completed = subprocess.CompletedProcess([], 0)
+            with patch.object(H.subprocess, "run", return_value=completed) as probe:
+                H.usage_preflight(Path(temporary), "g14e:p")
+            command = probe.call_args.args[0]
+            self.assertEqual(command[0], "bash")
+            self.assertTrue(command[1].endswith("scripts/agent_usage_preflight.sh"))
+            self.assertEqual(command[2], "g14e:p")
+            with patch.object(
+                H.subprocess,
+                "run",
+                return_value=subprocess.CompletedProcess([], 2),
+            ):
+                with self.assertRaises(H.HarnessError):
+                    H.usage_preflight(Path(temporary), "g14e:q")
+
+    def _args(self, workspace: Path) -> SimpleNamespace:
+        return SimpleNamespace(workspace=workspace, root=Path("/repo"))
+
+    def test_completed_result_skips_usage_guard(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            workspace = Path(temporary)
+            H.phase_result_path(workspace, "corpus-equivalence").parent.mkdir(parents=True)
+            H.phase_result_path(workspace, "corpus-equivalence").write_text(json.dumps({"status": "completed"}))
+            with patch.object(H, "usage_preflight") as guard:
+                result = H.execute_phase(self._args(workspace), "corpus-equivalence")
+            self.assertEqual(result["status"], "completed")
+            guard.assert_not_called()
+
+    def test_usage_pause_prevents_checkpoint_and_work(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            workspace = Path(temporary)
+            args = self._args(workspace)
+            with patch.object(H, "usage_preflight", side_effect=H.HarnessError("pause")), \
+                    patch.object(H, "corpus_equivalence", side_effect=AssertionError("work ran")):
+                with self.assertRaises(H.HarnessError):
+                    H.execute_phase(args, "corpus-equivalence")
+            self.assertFalse((workspace / "checkpoints/corpus-equivalence.json").exists())
+
+    def test_usage_active_allows_checkpoint_and_work(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            workspace = Path(temporary)
+            args = self._args(workspace)
+            payload = {"assertions": {"completed": True}}
+            with patch.object(H, "usage_preflight") as guard, patch.object(H, "corpus_equivalence", return_value=payload):
+                result = H.execute_phase(args, "corpus-equivalence")
+            self.assertEqual(result["status"], "completed")
+            self.assertEqual(json.loads((workspace / "checkpoints/corpus-equivalence.json").read_text())["status"], "completed")
+            guard.assert_called_once()
+
     def test_phase_matrix_has_no_duplicates(self) -> None:
         self.assertEqual(len(H.PHASES), len(set(H.PHASES)))
         self.assertIn("catchup", H.PHASES)

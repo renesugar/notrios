@@ -43,6 +43,25 @@ class HarnessError(RuntimeError):
     pass
 
 
+def usage_preflight(workspace: Path, operation: str) -> None:
+    """Check remaining agent usage before creating a resumable checkpoint."""
+    repository = Path(__file__).resolve().parents[2]
+    command = [
+        "bash",
+        str(repository / "scripts/agent_usage_preflight.sh"),
+        operation,
+    ]
+    try:
+        completed = subprocess.run(command, text=True, cwd=repository)
+    except OSError as error:
+        raise HarnessError(f"usage preflight failed: {error}") from error
+    if completed.returncode != 0:
+        raise HarnessError(
+            f"usage preflight requests a clean pause before checkpoint "
+            f"(exit {completed.returncode})"
+        )
+
+
 def sha256_file(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as stream:
@@ -317,6 +336,8 @@ class Runner:
             result = json.loads(self.result_path.read_text())
             validate_result(result)
             return result, True
+        usage_preflight(self.workspace,
+                        f"g14b:{self.args.workload}:{self.args.adapter}:{self.args.phase}")
         attempt = 1
         if self.checkpoint_path.exists():
             checkpoint = json.loads(self.checkpoint_path.read_text())

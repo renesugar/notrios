@@ -18,6 +18,7 @@ if [[ "$OUTPUT" != /* ]]; then
 fi
 
 cd "$ROOT"
+bash scripts/agent_usage_preflight.sh recoll-hardening-profile
 NOTRIOS_RECOLL_PROFILE="$PROFILE" NOTRIOS_RECOLL_PROFILE_OUTPUT="$OUTPUT" \
   go test -timeout 30m -run '^TestRecollHardeningProfile$' -count=1 -v ./internal/recoll
 echo "profile written to $OUTPUT"

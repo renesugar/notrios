@@ -823,9 +823,26 @@ published 382,206-document aggregate only and reads no private corpus content.
 - HTML sanitization for Markdown preview.
 - MCP result-size limits.
 
+### Agent-usage preflight (v0.7 G18c.1)
+
+`scripts/check_agent_usage.py` is developer-workflow tooling, not a product or
+CI account check. Its fixtures cover Codex multi-window and legacy app-server
+responses, exhaustion/reset metadata, unavailable clients, Claude cache
+absence/malformed values, strict versus advisory unknown results, and adaptive
+reserve isolation by agent/model/effort/operation and reset window.
+
+Resumable G14b/G14e harness tests must prove the preflight runs after completed-
+result reuse is checked but before a new `started` checkpoint is written. A
+pause therefore leaves the last valid result reusable. Long profile scripts
+run one preflight before disposable setup but gain no resumability claim. CI
+runs deterministic parser/integration tests only and never queries a developer
+account.
+
 ## Current validation commands
 
 ```bash
+python3 scripts/test_check_agent_usage.py
+bash scripts/test_agent_usage_preflight.sh
 go test ./...
 python3 scripts/check_required_files.py
 bash scripts/validate-scaffold.sh

@@ -1,6 +1,6 @@
 # Plan Status
 
-Updated: 2026-08-27 (G0-G18c complete; G18d next and unapproved)
+Updated: 2026-08-27 (G0-G18c.1 complete; G18d next and unapproved)
 
 ## Active milestone
 
@@ -11,12 +11,13 @@ earlier milestones remain under their version directories.
 `PLAN.md` is now the **active v0.7 native synchronization plan**. It contains
 G0, G1, G1a, G2-G14, the blocking G14a-G14e archive-scalability sequence,
 G15-G17, the blocking G17a-G17b evidence-preservation sequence, G18, the newly
-planned G18a-G18g documentation-integrity/site sequence, and G19-G20: evidence,
+planned G18a-G18g documentation-integrity/site sequence, the G18c.1 agent-
+workflow amendment, and G19-G20: evidence,
 profiles/local journal, state-vector convergence,
 revision deltas/merge, lazy resources, secure container/catch-up,
 ephemeral-directory and REST transports, jobs/UI/retention, shared-core/FFI/
 Mermaid/mobile handoff, compatibility, and final validation. The user's
-2026-08-11 review resolved every original G0-G17 policy decision. **G0-G18c are
+2026-08-11 review resolved every original G0-G17 policy decision. **G0-G18c.1 are
 complete** and archived under `plans/v0.7/`; the 2026-08-15 planning amendment
 reopened physical snapshot scalability. G14b selected option B from full-corpus
 evidence, G14c implemented the local production representation/verifier, and
@@ -28,8 +29,32 @@ and retirement. G17a-G17b are complete. G17b sealed the curated historical
 handoffs, issued and independently verified immutable reserve volume
 `NTR-EV-0001`, and committed the finite outer catalog. Its host-side evidence
 gate is mandatory before every future GitHub push. No push or physical burn was
-authorized or performed. G18-G18c are complete. G18d is next; none of G18d
+authorized or performed. G18-G18c.1 are complete. G18d is next; none of G18d
 onward is approved.
+
+## v0.7 G18c.1 completion — 2026-08-27
+
+- `scripts/check_agent_usage.py` uses Codex's model-free local app-server
+  `account/rateLimits/read` method, normalizes every current rolling window,
+  retains legacy fixture coverage, and reports unavailable data as `unknown`
+  rather than 100%. The installed Codex 0.150.1 contract was checked live and
+  the helper process group exits cleanly.
+- Claude is queried only when a Claude process is actually running and only
+  through an explicit local cache. No `claude -p` health prompt is issued; the
+  current absent cache is an honest unknown, not a quota estimate.
+- `scripts/agent_usage_preflight.sh` is advisory by default, supports strict or
+  off modes, and gates G14b/G14e durable phase boundaries plus repeated long
+  profile/release scripts. Account output is not written into evidence
+  workspaces.
+- Optional JSONL samples outside the repository learn a reserve only from a
+  completed run with the same agent/model/effort/operation and reset window.
+  The largest matching drop plus five points can raise, but never lower, the
+  explicit 20% floor.
+- Deterministic probe/wrapper fixtures, 15 G14b tests, 11 G14e tests, full Go
+  and frontend suites, vet/build, scaffold, offline assets, docaudit, and skill
+  validation pass. Archive: `plans/v0.7/037-agent-usage-preflight.md`. No
+  product behavior, schema, API, dependency, remote, reserve, push, or burn
+  changed.
 
 ## v0.7 G18c completion — 2026-08-27
 
@@ -271,7 +296,7 @@ onward is approved.
   volume coverage before the next GitHub push. CI can validate tracked schemas,
   fixtures, and canonicalization but cannot claim to see the external reserve.
   No push or physical optical burn is authorized by the planning amendment.
-- G17a-G18c are complete. G18d is next but unapproved; all later work remains
+- G17a-G18c.1 are complete. G18d is next but unapproved; all later work remains
   separately approval-gated and every future push must pass the G17b gate.
 
 ## 2026-08-24 planning amendment — source-anchored docs and Hugo/Ledger
@@ -2614,5 +2639,5 @@ attempt detail remains append-only in `agent/ATTEMPT_LOG.jsonl`.
 - Long-term SQLite driver choice (current local cgo/libsqlite3 adapter).
 - Official MCP Go SDK adoption/version.
 - Sync and evidence-preservation decisions live in the owning plan items; the
-  register in `PLAN.md` is an index. G0-G18c are complete. G18d and every later
+  register in `PLAN.md` is an index. G0-G18c.1 are complete. G18d and every later
   slice remain approval-gated; the checked-in G17b verifier gates future pushes.
