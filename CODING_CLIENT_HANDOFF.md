@@ -2,24 +2,21 @@
 
 This handoff applies to any coding agent or client continuing this project (Codex, Claude, aider, swival.dev, etc. — formerly `CODEX_HANDOFF.md`). The repository is designed so an agent can continue from repository files alone.
 
-## Immediate resume checkpoint — G18d release ZIP
+## G18d release handoff complete
 
-G18d implementation, archive, logs, and full validation are committed on
-`develop` as `a3c0151`. The required release ZIP is the only remaining handoff
-action. `scripts/package_release.sh` paused before doing work because the
-mandatory agent-usage preflight reported 13% remaining in the active five-hour
-Codex window (20% reserve required; reset reported as 2026-08-28T13:00:13Z).
+G18d implementation and its archive are committed on `develop` as `a3c0151`;
+the durable packaging-resume checkpoint is `a8692d3`. After the active Codex
+window reset, the mandatory usage preflight passed and
+`scripts/package_release.sh` produced
+`dist/notrios-v0.7-g18d-a3c0151.zip` from that clean checkpoint. The archive is
+4,918,236 bytes (1,501 entries) with SHA-256
+`b0cc8029bf497b7cd986836151ba55002b7c219b47fed4a6550e1324a6b74db4`.
 
-After the active window resets, run exactly:
-
-```bash
-bash scripts/package_release.sh dist/notrios-v0.7-g18d-a3c0151.zip
-```
-
-The script reruns the complete validation chain and independently checks the
-ZIP. Then confirm the worktree is clean and report the ZIP path/size/hash before
-asking whether to proceed with the still-unapproved G18e. Do not bypass the
-preflight or start G18e first.
+The packager reran the complete Go/scaffold/frontend/documentation evidence
+chain and its ZIP verifier. An independent verification also found the built
+UI, G18d report, and G18d plan archive present, with no `.git`,
+`web/node_modules`, runtime `data`, or SQLite entries. G18e is the next
+incomplete item and remains unapproved.
 
 Current phase: v0.1 through **v0.6** are complete; product version is **0.6.0**
 and the schema is **v27**. The eight v0.6 slices are archived under
