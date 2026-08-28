@@ -2,6 +2,25 @@
 
 This handoff applies to any coding agent or client continuing this project (Codex, Claude, aider, swival.dev, etc. — formerly `CODEX_HANDOFF.md`). The repository is designed so an agent can continue from repository files alone.
 
+## Immediate resume checkpoint — G18d release ZIP
+
+G18d implementation, archive, logs, and full validation are committed on
+`develop` as `a3c0151`. The required release ZIP is the only remaining handoff
+action. `scripts/package_release.sh` paused before doing work because the
+mandatory agent-usage preflight reported 13% remaining in the active five-hour
+Codex window (20% reserve required; reset reported as 2026-08-28T13:00:13Z).
+
+After the active window resets, run exactly:
+
+```bash
+bash scripts/package_release.sh dist/notrios-v0.7-g18d-a3c0151.zip
+```
+
+The script reruns the complete validation chain and independently checks the
+ZIP. Then confirm the worktree is clean and report the ZIP path/size/hash before
+asking whether to proceed with the still-unapproved G18e. Do not bypass the
+preflight or start G18e first.
+
 Current phase: v0.1 through **v0.6** are complete; product version is **0.6.0**
 and the schema is **v27**. The eight v0.6 slices are archived under
 `plans/v0.6/`: F0 (notebook targeting, landed with v0.5 E10), F1 (batch
