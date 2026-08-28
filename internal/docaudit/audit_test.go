@@ -30,8 +30,8 @@ func TestRepositoryAuditReportsHonestCoverage(t *testing.T) {
 		report.Executables != 131 || report.Journeys != 9 {
 		t.Fatalf("unexpected coverage surface: %+v", report)
 	}
-	if report.Counts[GradeExecuted] != 0 || report.Counts[GradeGenerated] != 8 ||
-		report.Counts[GradeClaimed] != 4 || report.Counts[GradeUnverified] != 339 ||
+	if report.Counts[GradeExecuted] != 63 || report.Counts[GradeGenerated] != 8 ||
+		report.Counts[GradeClaimed] != 4 || report.Counts[GradeUnverified] != 276 ||
 		report.Denominator != 351 {
 		t.Fatalf("coverage counts hide or lose units: counts=%v denominator=%d", report.Counts, report.Denominator)
 	}
@@ -93,10 +93,11 @@ func TestAuditMutationFailures(t *testing.T) {
 			replaceFile(t, root, "docs/service.md", "Body.\n", "Body.\n\n```sh\nnotriosctl version\n```\n")
 		}, "unaccounted executable example"},
 		{"duplicate registered executable", func(_ *testing.T, _ string, registry *Registry, _ *Inventory) {
-			registry.Executables = []RegisteredExample{{ID: "duplicate-example", Path: "docs/service.md", Section: "configuration-reference", Language: "sh", SHA256: "unused", State: GradeUnverified}, {ID: "duplicate-example", Path: "docs/service.md", Section: "configuration-reference", Language: "sh", SHA256: "unused", State: GradeUnverified}}
+			reason := &ExampleUnrun{Code: "illustrative-placeholder", Detail: "fixture"}
+			registry.Executables = []RegisteredExample{{ID: "duplicate-example", Path: "docs/service.md", Section: "configuration-reference", Language: "sh", SHA256: "unused", State: GradeUnverified, Unrun: reason}, {ID: "duplicate-example", Path: "docs/service.md", Section: "configuration-reference", Language: "sh", SHA256: "unused", State: GradeUnverified, Unrun: reason}}
 		}, "duplicate registered executable"},
 		{"orphan registered executable", func(_ *testing.T, _ string, registry *Registry, _ *Inventory) {
-			registry.Executables = append(registry.Executables, RegisteredExample{ID: "orphan-example", Path: "docs/service.md", Section: "configuration-reference", Language: "sh", SHA256: "unused", State: GradeUnverified})
+			registry.Executables = append(registry.Executables, RegisteredExample{ID: "orphan-example", Path: "docs/service.md", Section: "configuration-reference", Language: "sh", SHA256: "unused", State: GradeUnverified, Unrun: &ExampleUnrun{Code: "illustrative-placeholder", Detail: "fixture"}})
 		}, "orphan registered executable"},
 		{"unaccounted journey", func(_ *testing.T, _ string, _ *Registry, inventory *Inventory) {
 			inventory.Surfaces = []InventorySurface{{ID: "gui_journeys", Journeys: []InventoryJourney{{ID: "missing-journey", Owner: "ts:web/src/App.tsx#App", ProposedActions: 1}}}}
@@ -122,6 +123,39 @@ func TestAuditMutationFailures(t *testing.T) {
 			_, err := Audit(Options{Root: root, InventoryPath: "inventory.json", RegistryPath: "registry.json"})
 			if err == nil || !strings.Contains(err.Error(), test.message) {
 				t.Fatalf("error = %v, want substring %q", err, test.message)
+			}
+		})
+	}
+}
+
+func TestValidateExampleExecutionRejectsVacuousContracts(t *testing.T) {
+	valid := RegisteredExample{ID: "example", Execution: &ExampleExecution{
+		Surface: "cli", Fixture: "empty-library", Case: "cli-version",
+		Expected:      ExampleExpected{Kind: "exit", Status: 0},
+		Postcondition: ExamplePostcondition{Kind: "version-output", Detail: "reports a non-empty version"},
+	}}
+	mutations := []struct {
+		name string
+		edit func(*RegisteredExample)
+	}{
+		{"missing execution", func(value *RegisteredExample) { value.Execution = nil }},
+		{"unknown surface", func(value *RegisteredExample) { value.Execution.Surface = "shell" }},
+		{"missing fixture", func(value *RegisteredExample) { value.Execution.Fixture = "" }},
+		{"missing case", func(value *RegisteredExample) { value.Execution.Case = "" }},
+		{"unknown expected kind", func(value *RegisteredExample) { value.Execution.Expected.Kind = "stdout" }},
+		{"missing postcondition", func(value *RegisteredExample) { value.Execution.Postcondition.Detail = "" }},
+		{"duplicate substitution", func(value *RegisteredExample) {
+			value.Execution.Substitutions = []ExampleSubstitution{{Token: "<id>", Source: "seed.note"}, {Token: "<id>", Source: "seed.other"}}
+		}},
+	}
+	for _, mutation := range mutations {
+		t.Run(mutation.name, func(t *testing.T) {
+			value := valid
+			copyExecution := *valid.Execution
+			value.Execution = &copyExecution
+			mutation.edit(&value)
+			if err := validateExampleExecution(value); err == nil {
+				t.Fatal("mutated execution contract passed")
 			}
 		})
 	}

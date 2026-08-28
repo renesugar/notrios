@@ -46,7 +46,8 @@ curl -s -X PUT http://127.0.0.1:8080/api/v1/documents/$DOC \
   -H 'Content-Type: application/json' \
   -d "{\"title\":\"Meeting notes v2\",\"body\":\"updated\",\"base_revision_id\":\"$REV\"}" | jq
 
-# Or with If-Match:
+# Or with If-Match (read the current revision after any preceding write):
+REV=$(curl -s http://127.0.0.1:8080/api/v1/documents/$DOC | jq -r .current_revision_id)
 curl -s -X DELETE http://127.0.0.1:8080/api/v1/documents/$DOC \
   -H "If-Match: \"$REV\""            # 204: moved to Trash
 ```
@@ -190,7 +191,8 @@ curl -s -X POST 'http://127.0.0.1:8080/api/v1/resources?filename=chart.png' \
 curl -s -X POST http://127.0.0.1:8080/api/v1/documents/$DOC/resources/$RES \
   -H 'Content-Type: application/json' -d '{"relation_type":"embedded"}' | jq
 curl -s http://127.0.0.1:8080/api/v1/documents/$DOC/resources | jq
-curl -sOJ 'http://127.0.0.1:8080/api/v1/resources/'$RES'/content?download=1'
+curl -s 'http://127.0.0.1:8080/api/v1/resources/'$RES'/content?download=1' \
+  -o downloaded-chart.png
 
 # Partial reads (v0.6 F3): 206 with Content-Range, or 416 naming the real size
 # when the range cannot be satisfied. Composes with ?download=1 for a resume.

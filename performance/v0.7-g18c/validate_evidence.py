@@ -4,10 +4,7 @@
 from __future__ import annotations
 
 import json
-import os
 from pathlib import Path
-import subprocess
-import tempfile
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -46,18 +43,9 @@ def main() -> None:
     assert len(mutations["go_audit_cases"]) == 20
     assert len(mutations["typescript_cases"]) == 8
 
-    environment = dict(os.environ)
-    environment["GOCACHE"] = str(Path(tempfile.gettempdir()) / "notrios-g18c-gocache")
-    current = subprocess.run(
-        ["go", "run", "./cmd/docaudit"],
-        cwd=ROOT,
-        env=environment,
-        check=True,
-        capture_output=True,
-        text=True,
-    )
-    actual = json.loads(current.stdout)
-    assert actual == expected, "REPORT.json is stale; rerun docaudit and review the grade delta"
+    # REPORT.json is the frozen G18c baseline. G18d deliberately changes the
+    # executable grades while preserving all 131 identities, so current-state
+    # freshness now belongs to performance/v0.7-g18d/validate_evidence.py.
     print(
         "G18c evidence valid: "
         f"{expected['denominator']} units; "

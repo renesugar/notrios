@@ -33,4 +33,6 @@ nested template literals.
 No manual prose was moved or corrected in this slice. In particular,
 `docs/service.md`'s preserved schema-v20 statement remains a visible unverified
 manual unit alongside the separately claimed canonical schema-v27 declaration.
-G18d owns result-bearing execution of the 131 registered examples.
+G18d subsequently upgraded 63 of the 131 registered examples to executed
+contracts. `REPORT.json` remains the frozen G18c before-execution baseline;
+`performance/v0.7-g18d/REPORT.json` is the current result-bearing report.

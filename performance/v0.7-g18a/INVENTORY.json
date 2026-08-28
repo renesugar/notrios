@@ -123,7 +123,7 @@
     },
     {
       "path": "docs/api/rest.md",
-      "sha256": "b541baa66ab7b45a5c7a04bd20fb5e93a4ef41d73f760a354f8fff1f5be49cd8",
+      "sha256": "cf98317cf221f13dee6c4d4761ff650453f5121226d6d1b4ce993a2305ac1ab1",
       "help_note": "doc_help_api_rest",
       "owner": "go:github.com/renesugar/notrios/internal/httpapi#NewServerWithOptions",
       "sections": [
@@ -1115,7 +1115,7 @@
     },
     {
       "path": "docs/import-export.md",
-      "sha256": "5ff689b1162a6d4e91dbc854bac64163a6fcad7f49772d25afea5b6e13e381c3",
+      "sha256": "7aa7637048f23614cc9d2b887905cfbd61309933c4ffccdf25d6cd1044ead4a1",
       "help_note": "doc_help_import_export",
       "owner": "go:github.com/renesugar/notrios/cmd/notriosctl#runImport",
       "sections": [

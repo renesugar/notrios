@@ -16,7 +16,7 @@ G14a-G14e archive-scalability sequence, the newly inserted blocking G17a-G17b
 evidence-preservation sequence, and the newly planned G18a-G18g documentation-
 integrity/Hugo-Ledger sequence and the G18c.1 agent-workflow amendment. The user's 2026-08-11
 review resolved the policy decisions through G17, including mandatory payload
-encryption and per-replica Ed25519 signatures. **G0-G18c.1 are complete** and
+encryption and per-replica Ed25519 signatures. **G0-G18d are complete** and
 archived under `plans/v0.7/`; their reviewed evidence is under
 `performance/v0.7-g0/`, `performance/v0.7-g1/`, `performance/v0.7-g1a/`,
 `performance/v0.7-g2/`, `performance/v0.7-g4/`, `performance/v0.7-g5/`,
@@ -27,8 +27,8 @@ archived under `plans/v0.7/`; their reviewed evidence is under
 `performance/v0.7-g14c/`, `performance/v0.7-g14d/`, and
 `performance/v0.7-g14e/`, `performance/v0.7-g16/`, and
 `performance/v0.7-g17/`, `performance/v0.7-g18/`, and
-`performance/v0.7-g18a/`, `performance/v0.7-g18b/`, and
-`performance/v0.7-g18c/`. G15's archive is
+`performance/v0.7-g18a/`, `performance/v0.7-g18b/`,
+`performance/v0.7-g18c/`, and `performance/v0.7-g18d/`. G15's archive is
 `plans/v0.7/024-durable-sync-jobs.md`; G16's archive is
 `plans/v0.7/025-sync-recovery-ui.md`; G17's archive is
 `plans/v0.7/026-peer-retention-gc-repair.md`; G17a and its later decision record
@@ -44,9 +44,10 @@ G18b is archived as
 `plans/v0.7/035-hugo-ledger-reproducible-site-contract.md`.
 G18c is archived as `plans/v0.7/036-documentation-anchor-audit.md`.
 G18c.1 is archived as `plans/v0.7/037-agent-usage-preflight.md`.
-**G0-G18c.1 are complete.
+G18d is archived as `plans/v0.7/038-executed-documentation-examples.md`.
+**G0-G18d are complete.
 The G17b pre-push verifier is mandatory before any future GitHub push; no push
-or physical burn was authorized or performed. G18d and later items are next and
+or physical burn was authorized or performed. G18e and later items are next and
 are not approved.** G14b selected option B: a
 required compatible same-schema SQLite-image plus bounded packed-assets
 capability for whole-library full backup/catch-up, retaining packed semantic
@@ -67,7 +68,8 @@ no heading IDs. Submodule archives omit the theme payload; initial Hugo Module
 resolution is network/cache dependent and its generated vendor tree omitted
 LICENSE. Repeat Hugo output is byte-identical; Pagefind varies hashed shard
 names while preserving scope/search, so only semantic reproducibility is
-claimed. G18d is the next incomplete item and remains unapproved.
+claimed. G18d is now complete; G18e is the next incomplete item and remains
+unapproved.
 
 G18c implements a repository-only `docaudit` command/library over the G18a
 contract. It parses the Go-1.25-compatible no-space directive grammar, resolves
@@ -95,8 +97,20 @@ must stay outside canonical evidence and is isolated by agent, model, effort,
 operation, run, duration, and reset window. The 20% floor is raised only by the
 largest matching observed drop plus five points. At session start, run the
 fixture suite and a live probe as described in `AGENTS.md`; if a client update
-changes the contract, fix fixtures before relying on strict mode. G18d remains
-the next incomplete item and is not approved.
+changes the contract, fix fixtures before relying on strict mode. G18d is
+complete and G18e remains the next incomplete, unapproved item.
+
+G18d upgrades the strict 131-entry non-GUI example registry to schema v2. The
+real-binary scratch harness executes 63 literal CLI, configuration, REST, and
+MCP examples and leaves 68 entries under six finite reviewed reasons; no
+provisional reason remains. Requests and responses validate against the shipped
+OpenAPI contract, configuration fragments use the production loader, MCP calls
+check schema/scope, and CLI postconditions inspect real SQLite/archive state.
+Minimal synthetic import fixtures replace private exports. The checked report
+and mutation matrix live under `performance/v0.7-g18d/`; its validator reruns
+the entire manifest and owns current execution freshness while the G18c report
+remains the frozen pre-execution baseline. No external network, private corpus,
+push, reserve write, ISO, or burn occurred.
 
 G15 advances schema v26 with a sync-only durable outbox over the F6 job
 records. `internal/syncjobs/` drains only explicitly queued/due rows; it never
@@ -291,7 +305,7 @@ was added. G15-G17b are complete. G17b sealed 81 curated artifacts, produced
 the verified release ZIP and immutable reserve described above, and committed
 the finite outer-catalog closure. The generated DigiCert pilot and all
 production tokens passed policy/nonce/imprint/EKU/time/explicit-chain checks;
-Sectigo was not used. G18c.1 is complete; G18d is next but unapproved. Every
+Sectigo was not used. G18d is complete; G18e is next but unapproved. Every
 remaining item requires separate item-by-item user approval, and every future
 push must first pass the G17b gate.
 

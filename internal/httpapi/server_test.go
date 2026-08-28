@@ -37,6 +37,9 @@ func TestHealth(t *testing.T) {
 	if strings.TrimSpace(rr.Body.String()) != "ok" {
 		t.Fatalf("unexpected body %q", rr.Body.String())
 	}
+	if got := rr.Header().Get("Content-Type"); !strings.HasPrefix(got, "text/plain") {
+		t.Fatalf("health content type = %q", got)
+	}
 }
 
 func TestStatusReportsConfigurationAndSchema(t *testing.T) {

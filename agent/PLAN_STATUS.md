@@ -1,6 +1,6 @@
 # Plan Status
 
-Updated: 2026-08-27 (G0-G18c.1 complete; G18d next and unapproved)
+Updated: 2026-08-28 (G0-G18d complete; G18e next and unapproved)
 
 ## Active milestone
 
@@ -17,7 +17,7 @@ profiles/local journal, state-vector convergence,
 revision deltas/merge, lazy resources, secure container/catch-up,
 ephemeral-directory and REST transports, jobs/UI/retention, shared-core/FFI/
 Mermaid/mobile handoff, compatibility, and final validation. The user's
-2026-08-11 review resolved every original G0-G17 policy decision. **G0-G18c.1 are
+2026-08-11 review resolved every original G0-G17 policy decision. **G0-G18d are
 complete** and archived under `plans/v0.7/`; the 2026-08-15 planning amendment
 reopened physical snapshot scalability. G14b selected option B from full-corpus
 evidence, G14c implemented the local production representation/verifier, and
@@ -29,8 +29,30 @@ and retirement. G17a-G17b are complete. G17b sealed the curated historical
 handoffs, issued and independently verified immutable reserve volume
 `NTR-EV-0001`, and committed the finite outer catalog. Its host-side evidence
 gate is mandatory before every future GitHub push. No push or physical burn was
-authorized or performed. G18-G18c.1 are complete. G18d is next; none of G18d
+authorized or performed. G18-G18d are complete. G18e is next; none of G18e
 onward is approved.
+
+## v0.7 G18d completion — 2026-08-28
+
+- The v2 registry accounts bidirectionally for all 131 detected non-GUI
+  executable fences: 63 run against isolated semantic fixtures and 68 carry a
+  finite reviewed unrun reason. No provisional entry remains.
+- Real CLI/daemon binaries, SQLite stores, loopback REST/MCP services, the
+  production config loader, and the shipped OpenAPI document prove canonical
+  rows, dry-run parity, redaction, confirmation, scope, archive/import output,
+  and cleanup rather than accepting status alone.
+- Minimal Joplin, Obsidian, Twitter, ChatGPT, Claude, and archive fixtures avoid
+  private inputs. Executed topics number 12 of 13; the external clone/index
+  recipe is the reviewed exception.
+- Execution corrected same-directory archive-v1 output, missing Obsidian review
+  config generation, stale REST concurrency revision use, resource download
+  collision, and already-required OpenAPI/server response drift.
+- Checked per-topic evidence and mutations live in `performance/v0.7-g18d/`;
+  CI, scaffold validation, required-file checks, and release packaging rerun
+  the evidence gate. Archive:
+  `plans/v0.7/038-executed-documentation-examples.md`.
+- No private corpus, external network, remote, evidence reserve, push, ISO, or
+  physical burn was used. G18e remains unapproved.
 
 ## v0.7 G18c.1 completion — 2026-08-27
 
@@ -296,7 +318,7 @@ onward is approved.
   volume coverage before the next GitHub push. CI can validate tracked schemas,
   fixtures, and canonicalization but cannot claim to see the external reserve.
   No push or physical optical burn is authorized by the planning amendment.
-- G17a-G18c.1 are complete. G18d is next but unapproved; all later work remains
+- G17a-G18d are complete. G18e is next but unapproved; all later work remains
   separately approval-gated and every future push must pass the G17b gate.
 
 ## 2026-08-24 planning amendment — source-anchored docs and Hugo/Ledger
@@ -2639,5 +2661,5 @@ attempt detail remains append-only in `agent/ATTEMPT_LOG.jsonl`.
 - Long-term SQLite driver choice (current local cgo/libsqlite3 adapter).
 - Official MCP Go SDK adoption/version.
 - Sync and evidence-preservation decisions live in the owning plan items; the
-  register in `PLAN.md` is an index. G0-G18c.1 are complete. G18d and every later
+  register in `PLAN.md` is an index. G0-G18d are complete. G18e and every later
   slice remain approval-gated; the checked-in G17b verifier gates future pushes.

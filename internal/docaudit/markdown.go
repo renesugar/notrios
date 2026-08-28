@@ -74,7 +74,7 @@ func scanExecutableExamples(root string, inventory Inventory) ([]ExampleCandidat
 			candidates = append(candidates, ExampleCandidate{
 				ID:   fmt.Sprintf("%s-%s-example-%d", idBase, section, ordinal[section]),
 				Path: document.Path, Section: section, Language: language,
-				SHA256: hex.EncodeToString(digest[:]),
+				SHA256: hex.EncodeToString(digest[:]), Body: body,
 			})
 		}
 	}

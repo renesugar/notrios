@@ -199,7 +199,8 @@ is merged deliberately and reported as such.
 Point the importer at your vault directory (the folder containing your `.md` files; no export step is needed in Obsidian):
 
 ```sh
-go run ./cmd/notriosctl import obsidian --dry-run "/path/to/vault"
+go run ./cmd/notriosctl import obsidian --dry-run \
+  --write-config "/path/to/vault/.notrios/import-config.json" "/path/to/vault"
 go run ./cmd/notriosctl import obsidian --preserve-source \
   --import-config "/path/to/vault/.notrios/import-config.json" "/path/to/vault"
 ```
@@ -292,7 +293,7 @@ Extra flag: `--notebook` (default `Claude`, created with a ✳️ icon). Message
 
 ```sh
 go run ./cmd/notriosctl export archive ./my-archive                      # everything
-go run ./cmd/notriosctl export archive --query 'tag:todo' ./my-archive  # query-scoped
+go run ./cmd/notriosctl export archive --query 'tag:todo' ./todo-archive # query-scoped
 ```
 
 `--query` accepts the full [query language](query-language.md), so you can export a notebook (`--query 'notebook:"Work"'`), a tag, or any search-notebook query instead of the whole database. Notes in the Trash are excluded.

@@ -10,7 +10,7 @@ This file is the codebase atlas. Update it whenever major files or directories a
   scalability sequence, the blocking G17a-G17b external evidence-preservation
   sequence, and the newly planned G18a-G18g documentation-integrity/Hugo-Ledger
   sequence. G0-G18 are complete; the G17b verifier gates every future GitHub
-  push. G18a-G18c are complete; G18d is next but unapproved. The
+  push. G18a-G18d are complete; G18e is next but unapproved. The
   current product remains 0.6.0 at schema v27; v0.6 is archived under
   `plans/v0.6/`; v0.5 and v0.4 are archived under their version directories.
 - `plans/scaffold/SCAFFOLD_CREATION_PLAN.md` — process for creating/refining this scaffold.

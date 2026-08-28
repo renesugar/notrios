@@ -104,6 +104,9 @@ paths:
         '200': { description: Bounded opaque namespace names }
         '401': { $ref: '#/components/responses/Error' }
   /api/v1/sync/carrier/{segment1}/{segment2}:
+    parameters:
+      - { name: segment1, in: path, required: true, schema: { type: string } }
+      - { name: segment2, in: path, required: true, schema: { type: string } }
     get:
       summary: List opaque artifact names in one namespace/class (v0.7 G14)
       responses:
@@ -130,6 +133,10 @@ paths:
   /api/v1/sync/carrier/{namespace}/{class}/{name}:
     get:
       summary: Read one sync artifact (v0.7 G14)
+      parameters:
+        - { name: namespace, in: path, required: true, schema: { type: string } }
+        - { name: class, in: path, required: true, schema: { type: string } }
+        - { name: name, in: path, required: true, schema: { type: string } }
       description: >
         Returns opaque sealed protocol bytes to an enrolled peer, honouring HTTP
         Range so a large artifact can be fetched in pieces. Publishing and
@@ -158,6 +165,8 @@ paths:
   /api/v1/sync/backups/{backup_id}:
     get:
       summary: Download a produced snapshot, resumably (v0.7 G14)
+      parameters:
+        - { name: backup_id, in: path, required: true, schema: { type: string } }
       description: >
         Serves the sealed snapshot with Range support and an ETag of its hash.
         Only the replica that asked for it may fetch it; every other caller is
@@ -504,6 +513,8 @@ paths:
         content:
           application/octet-stream:
             schema: { type: string, format: binary }
+          image/png:
+            schema: { type: string, format: binary }
       responses:
         '201':
           description: Created resource
@@ -576,8 +587,20 @@ paths:
           content:
             application/octet-stream:
               schema: { type: string, format: binary }
+            image/png:
+              schema: { type: string, format: binary }
         '206':
-          description: Future partial resource stream; range support is not implemented in the MVP Task 4 slice
+          description: Requested partial resource stream
+          content:
+            application/octet-stream:
+              schema: { type: string, format: binary }
+            image/png:
+              schema: { type: string, format: binary }
+        '416':
+          description: Unsatisfiable range with the real resource size
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
   /api/v1/documents/{document_id}/links:
     get:
       summary: List document links and backlinks
@@ -809,7 +832,7 @@ paths:
         template is listed with its error rather than hidden — it is exactly
         the one its author needs to find.
       responses:
-        '200': { description: Templates with prompts, description, and any parse error }
+        '200': { description: "Templates with prompts, description, and any parse error" }
   /api/v1/templates/{document_id}:
     get:
       summary: Read one template's declaration
@@ -831,7 +854,7 @@ paths:
         - { name: document_id, in: path, required: true, schema: { type: string } }
       responses:
         '201': { description: The created note }
-        '400': { description: Malformed template, missing value, or undeclared value }
+        '400': { description: "Malformed template, missing value, or undeclared value" }
   /api/v1/tasks:
     get:
       summary: Extract checkbox list items as tasks
@@ -883,7 +906,7 @@ paths:
         rather than truncated.
       responses:
         '200': { description: Batch report (fresh or replayed) }
-        '400': { description: Unknown operation or mode, no items, over the ceiling, a repeated document, a missing argument, or a reused request key }
+        '400': { description: "Unknown operation or mode, no items, over the ceiling, a repeated document, a missing argument, or a reused request key" }
         '428': { description: trash without base_revision_id on every item }
   /api/v1/tags/rename:
     post:
@@ -899,7 +922,7 @@ paths:
         old name are reported as warnings and never rewritten.
       responses:
         '200': { description: Rename report (dry run or applied) }
-        '400': { description: Invalid destination name, or over the tag ceiling }
+        '400': { description: "Invalid destination name, or over the tag ceiling" }
         '404': { description: No tag with that name }
         '409': { description: Destination name conflict }
   /api/v1/documents/{document_id}/tags:
@@ -2079,9 +2102,10 @@ components:
         deleted_at: { type: string, format: date-time, nullable: true }
     DocumentMutationRequest:
       type: object
-      required: [collection_id, title, body]
+      required: [title, body]
       properties:
-        collection_id: { type: string }
+        collection_id: { type: string, default: default }
+        notebook_id: { type: string, description: Omitted to use the built-in Notes notebook. }
         title: { type: string }
         body: { type: string }
         body_mime_type: { type: string, default: text/markdown }
@@ -2437,7 +2461,7 @@ components:
       properties:
         id: { type: string }
         uri: { type: string }
-        kind: { type: string, description: document, resource, or the link's resolution status for an unresolved target }
+        kind: { type: string, description: "document, resource, or the link's resolution status for an unresolved target" }
         label: { type: string }
         depth: { type: integer, description: hop distance from the nearest root }
     GraphEdge:
@@ -2526,7 +2550,7 @@ components:
         links:
           type: array
           items: { $ref: '#/components/schemas/CheckedLink' }
-        total: { type: integer, description: links in the whole buffer, even when the list was capped }
+        total: { type: integer, description: "links in the whole buffer, even when the list was capped" }
         unresolved: { type: integer }
         truncated: { type: boolean }
     NoteQueryRequest:
@@ -2790,7 +2814,7 @@ components:
       type: object
       properties:
         check: { type: string }
-        count: { type: integer, description: Complete count, unaffected by detail_limit. }
+        count: { type: integer, description: "Complete count, unaffected by detail_limit." }
         findings:
           type: array
           items: { $ref: '#/components/schemas/LintFinding' }

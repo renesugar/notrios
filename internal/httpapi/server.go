@@ -306,6 +306,7 @@ func (s *Server) handleWebApp(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte("ok\n"))
 }
@@ -1374,7 +1375,7 @@ func toAPIGarbageCollectionReport(report store.GarbageCollectionReport) api.Garb
 		ReferencedResourceCount: report.ReferencedResourceCount,
 		BlobsRemoved:            report.BlobsRemoved,
 		BytesRemoved:            report.BytesRemoved,
-		Warnings:                append([]string(nil), report.Warnings...),
+		Warnings:                append([]string{}, report.Warnings...),
 	}
 	return out
 }

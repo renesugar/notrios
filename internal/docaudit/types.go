@@ -24,13 +24,49 @@ type RegisteredClaim struct {
 }
 
 type RegisteredExample struct {
-	ID       string `json:"id"`
-	Path     string `json:"path"`
-	Section  string `json:"section"`
-	Language string `json:"language"`
-	SHA256   string `json:"sha256"`
-	State    Grade  `json:"state"`
-	Check    string `json:"check_anchor,omitempty"`
+	ID        string            `json:"id"`
+	Path      string            `json:"path"`
+	Section   string            `json:"section"`
+	Language  string            `json:"language"`
+	SHA256    string            `json:"sha256"`
+	State     Grade             `json:"state"`
+	Check     string            `json:"check_anchor,omitempty"`
+	Execution *ExampleExecution `json:"execution,omitempty"`
+	Unrun     *ExampleUnrun     `json:"unrun_reason,omitempty"`
+}
+
+// ExampleExecution is the reviewable contract for one literal documentation
+// example. Case selects a closed runner adapter; it is not an arbitrary shell
+// command. The runner resolves substitutions only inside a fresh fixture.
+type ExampleExecution struct {
+	Surface       string                `json:"surface"`
+	Fixture       string                `json:"fixture"`
+	Case          string                `json:"case"`
+	Substitutions []ExampleSubstitution `json:"substitutions"`
+	Expected      ExampleExpected       `json:"expected"`
+	Postcondition ExamplePostcondition  `json:"postcondition"`
+}
+
+type ExampleSubstitution struct {
+	Token  string `json:"token"`
+	Source string `json:"source"`
+}
+
+type ExampleExpected struct {
+	Kind   string `json:"kind"`
+	Status int    `json:"status"`
+}
+
+type ExamplePostcondition struct {
+	Kind   string `json:"kind"`
+	Detail string `json:"detail"`
+}
+
+// ExampleUnrun keeps unsafe or host-dependent examples visible without
+// pretending they earned the executed grade.
+type ExampleUnrun struct {
+	Code   string `json:"code"`
+	Detail string `json:"detail"`
 }
 
 type RegisteredJourney struct {
@@ -97,6 +133,7 @@ type ExampleCandidate struct {
 	Section  string `json:"section"`
 	Language string `json:"language"`
 	SHA256   string `json:"sha256"`
+	Body     string `json:"body,omitempty"`
 }
 
 type TopicReport struct {

@@ -9,7 +9,15 @@ import (
 	"sort"
 )
 
-const RegistrySchema = "notrios.docaudit.registry.v1"
+const RegistrySchema = "notrios.docaudit.registry.v2"
+
+var exampleSurfaces = map[string]bool{"cli": true, "config": true, "rest": true, "mcp": true}
+var exampleExpectedKinds = map[string]bool{"exit": true, "http": true, "mcp": true, "config": true}
+var exampleUnrunCodes = map[string]bool{
+	"external-network": true, "host-installation": true, "privileged-host-change": true,
+	"shared-user-state": true, "interactive-or-long-running": true,
+	"illustrative-placeholder": true, "unsupported-contract": true,
+}
 
 func Audit(options Options) (Report, error) {
 	root, err := filepath.Abs(options.Root)
@@ -102,7 +110,17 @@ func Audit(options Options) (Report, error) {
 			if example.Check == "" {
 				return Report{}, fmt.Errorf("executed example %q has no check", example.ID)
 			}
+			if err := validateExampleExecution(example); err != nil {
+				return Report{}, err
+			}
 			checkAnchors = append(checkAnchors, example.Check)
+		} else {
+			if example.Check != "" || example.Execution != nil || example.Unrun == nil {
+				return Report{}, fmt.Errorf("unverified example %q must have only an unrun reason", example.ID)
+			}
+			if !exampleUnrunCodes[example.Unrun.Code] || example.Unrun.Detail == "" {
+				return Report{}, fmt.Errorf("unverified example %q has invalid unrun reason", example.ID)
+			}
 		}
 		if !templates[topicForPath(example.Path)][example.Section] {
 			return Report{}, fmt.Errorf("executable %q names missing topic/section", example.ID)
@@ -169,6 +187,27 @@ func Audit(options Options) (Report, error) {
 		return Report{}, fmt.Errorf("manual-section denominator %d does not match frozen inventory %d", report.ManualSections, inventory.GradeBaseline.Denominator)
 	}
 	return report, nil
+}
+
+func validateExampleExecution(example RegisteredExample) error {
+	contract := example.Execution
+	if contract == nil || example.Unrun != nil {
+		return fmt.Errorf("executed example %q must have only an execution contract", example.ID)
+	}
+	if !exampleSurfaces[contract.Surface] || contract.Fixture == "" || contract.Case == "" {
+		return fmt.Errorf("executed example %q has invalid surface, fixture, or case", example.ID)
+	}
+	if !exampleExpectedKinds[contract.Expected.Kind] || contract.Expected.Status < 0 || contract.Postcondition.Kind == "" || contract.Postcondition.Detail == "" {
+		return fmt.Errorf("executed example %q has invalid expected result or postcondition", example.ID)
+	}
+	seen := make(map[string]bool)
+	for _, substitution := range contract.Substitutions {
+		if substitution.Token == "" || substitution.Source == "" || seen[substitution.Token] {
+			return fmt.Errorf("executed example %q has invalid substitution", example.ID)
+		}
+		seen[substitution.Token] = true
+	}
+	return nil
 }
 
 func resolveAnchors(root string, anchors []string, includeTests bool, tsResolver func(string, []string) error) error {

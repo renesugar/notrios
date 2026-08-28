@@ -1,10 +1,10 @@
 # Plan: v0.7 — Native synchronization
 
-Status: **G0-G18c.1 are complete through 2026-08-27. Product version remains 0.6.0 and
+Status: **G0-G18d are complete through 2026-08-28. Product version remains 0.6.0 and
 the canonical schema is v27. The user resolved G17b's evidence scope, exact
 OpenPGP identity, and RFC-3161 provider order on 2026-08-25, then authorized
 the exact signer/Secret Service workflow, TSA requests, and reserve writes and
-attested offline backup/revocation readiness. G18d-G18g are not approved. The
+attested offline backup/revocation readiness. G18e-G18g are not approved. The
 G17b pre-push evidence gate is now mandatory; no GitHub push or
 physical optical burn occurred.** The
 former seven-item draft was too coarse: it mixed protocol research, canonical
@@ -2304,7 +2304,7 @@ developer account, and no product behavior, schema, API, dependency, remote,
 reserve, push, or physical medium changed. Archived under
 `plans/v0.7/037-agent-usage-preflight.md`.
 
-## G18d. Executed CLI, configuration, REST, and MCP documentation examples
+## G18d. Executed CLI, configuration, REST, and MCP documentation examples — complete
 
 **Goal.** Ensure copyable non-GUI examples both run and do the specific thing
 the surrounding prose promises.
@@ -2345,6 +2345,14 @@ and rollback/cleanup. Report per-topic executed coverage and runtime.
 
 - None. Examples unsafe to execute are visible manifest entries with reasons,
   not a decision to omit them silently.
+
+**Outcome (2026-08-28).** The strict 131-entry registry now executes 63 literal
+CLI/configuration/REST/MCP examples against isolated semantic fixtures and
+retains 68 finite reviewed unrun reasons, with no provisional entries. The
+OpenAPI-backed loopback harness, import fixtures, mutation gates, per-topic
+runtime report, CI/release integration, and four pinned documentation/contract
+corrections are archived under
+`plans/v0.7/038-executed-documentation-examples.md`.
 
 ## G18e. Executed GUI user journeys and action-length baseline
 
@@ -2614,9 +2622,9 @@ recommendation, blocking status, and consequence.
 | Hosted semantic-review execution | G18f | Open, non-blocking default: maintainer-only recorded command; hosted source upload needs separate approval |
 | Release version/schema bookkeeping | G20 | Open, non-blocking until wrap-up |
 
-G0-G18c.1 are complete and the production physical restore/catch-up, durable
+G0-G18d are complete and the production physical restore/catch-up, durable
 sync-job, local recovery UI, safe-retention, and evidence-preservation design
 contracts are frozen. The G17b host-side evidence gate is mandatory before any
-future GitHub push. G18d-G18g are unapproved and G18d is next.
+future GitHub push. G18e-G18g are unapproved and G18e is next.
 Implementation begins only after an explicit instruction naming
 the item to start and, where stated, authorizing its blocking operations.
