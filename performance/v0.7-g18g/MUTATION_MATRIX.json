@@ -1,0 +1,11 @@
+{
+  "schema": "notrios.g18g.mutation-matrix.v1",
+  "browser_plugin": "absent; Playwright fallback is performance/v0.7-g18g/browser_smoke.mjs",
+  "mutations": [
+    {"id": "theme-pin", "target": "THEME_PROVENANCE.json upstream_commit or manifest_sha256", "expected": "reject"},
+    {"id": "route-fragment", "target": "ROUTES.json preserved route or alias", "expected": "reject"},
+    {"id": "search-scope", "target": "BUILD_CONTRACT.json Pagefind scope/count/exclusion", "expected": "reject"},
+    {"id": "raw-help-equivalence", "target": "BUILD_CONTRACT.json raw_docs_help_contract", "expected": "reject"},
+    {"id": "runtime-offline", "target": "BUILD_CONTRACT.json offline policy", "expected": "reject"}
+  ]
+}

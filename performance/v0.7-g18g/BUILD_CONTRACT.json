@@ -1,0 +1,25 @@
+{
+  "schema": "notrios.g18g.build-contract.v1",
+  "builder": "scripts/build_docs_site.sh",
+  "production_source": "docs-site/",
+  "output_argument": "first positional argument",
+  "tool_pins": {"hugo": "0.164.0 extended", "node": "26.3.0", "pagefind": "1.5.2"},
+  "raw_docs_help_contract": {
+    "source": "docs/**/*.md",
+    "staging": "temporary byte-copy before Hugo publication rendering",
+    "publication_adapter": "generated CLI registry angle-placeholder escaping only",
+    "byte_equivalent": true,
+    "help_id_equivalent": true,
+    "help_content_equivalent": true,
+    "idempotent": true
+  },
+  "search": {"scope_marker": "data-pagefind-body", "indexed_pages": 15, "known_query": "Argon2id", "result_base": "/notrios/", "excluded": ["api/index.html", "search/index.html"]},
+  "offline_policy": {"remote_runtime_assets": false, "remote_fonts": false, "local_pagefind_bundle": true, "csp_external_requests": false},
+  "reproducibility": {
+    "hugo_output_byte_identical": true,
+    "pagefind_semantically_identical": true,
+    "pagefind_byte_identical": false,
+    "qualification": "Pinned source and tools plus executable route, scope, count, and search checks; Pagefind 1.5.2 varies hashed metadata/index shard names as recorded by G18b."
+  },
+  "measurements": {"status": "complete; single observed local production run, not an acceptance limit", "baseline_output_files": 46, "baseline_output_bytes": 1109026, "baseline_html_bytes": 286522, "baseline_pagefind_bytes": 822504}
+}

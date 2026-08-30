@@ -1,0 +1,43 @@
+{{- /* Which top-level nav entry is active. Cheap to compute and the only thing
+       the header varies on, so it doubles as the header's cache key. */ -}}
+{{- $active := "" -}}
+{{- if .IsHome -}}
+  {{- $active = "home" -}}
+{{- else if hasPrefix .RelPermalink (partial "site-url.html" "/tags/") -}}
+  {{- $active = "tags" -}}
+{{- else if hasPrefix .RelPermalink (partial "site-url.html" "/about/") -}}
+  {{- $active = "about" -}}
+{{- else if hasPrefix .RelPermalink (partial "site-url.html" "/search/") -}}
+  {{- $active = "search" -}}
+{{- end -}}
+<!DOCTYPE html>
+<html lang="{{ or site.Language.Locale "en" }}" data-theme="{{ or site.Params.defaultTheme "light" }}">
+<head>
+  {{ partial "head.html" . }}
+</head>
+<body>
+  <a class="ledger-sr-only ledger-skip" href="#ledger-main">Skip to content</a>
+
+  <div class="ledger-shell">
+
+    {{ partialCached "header.html" $active $active }}
+
+    <div class="ledger-body">
+
+      {{ partialCached "sidebar.html" . }}
+
+      <main class="ledger-main" id="ledger-main" data-scroll tabindex="-1">
+        <div class="ledger-content">
+          {{ block "main" . }}{{ end }}
+        </div>
+
+        {{ partialCached "footer.html" . }}
+      </main>
+
+    </div>
+  </div>
+
+  {{ partial "scripts.html" . }}
+  {{ block "scripts" . }}{{ end }}
+</body>
+</html>

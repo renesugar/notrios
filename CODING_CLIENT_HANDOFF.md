@@ -2,6 +2,34 @@
 
 This handoff applies to any coding agent or client continuing this project (Codex, Claude, aider, swival.dev, etc. — formerly `CODEX_HANDOFF.md`). The repository is designed so an agent can continue from repository files alone.
 
+## G18g completion-validation checkpoint — 2026-08-30
+
+G18g implementation and focused acceptance are complete. `docs-site/` contains
+the exact G18b-selected 44-file Ledger snapshot and provenance; the production
+builder/Pages/CI/release path pins Hugo Extended 0.164.0, Node 26.3.0, and
+Pagefind 1.5.2. It preserves 15 routes, 199 G18a sections, two aliases, 15
+Pagefind-scoped articles, local-only runtime assets, and raw Help bytes/IDs.
+The publication-only CLI adapter preserves angle placeholders without mutating
+`docs/` or loosening Goldmark safety.
+
+Focused source/site/mutation/Help checks pass. The Browser plugin was absent,
+so documented Playwright/Chrome fallback passed 1440×960 and 390×844 rendered
+QA with zero console/page/HTTP/CSP/external-request problems. A measured build
+took 2.71 seconds at 82,432 KiB and emitted 53 files/1,419,897 bytes, indexing
+15 pages/3,438 words. Repeat Hugo output is byte-identical; Pagefind retains
+the G18b-qualified hashed-shard variance with identical scope/search behavior.
+Evidence is under `performance/v0.7-g18g/`; the plan archive is
+`plans/v0.7/041-hugo-ledger-production-site.md`.
+
+If interrupted before this section is replaced by the final completion
+handoff, resume with the regular dependency audit/install sequence, then run
+`make g18g-validate`, `go vet ./...`, `go test ./...`, full scaffold/frontend/
+docs checks, commit the coherent G18g slice, and run
+`bash scripts/package_release.sh` plus `scripts/check_release_zip.py`. Record
+the commit, ZIP size/entries/SHA-256 here. Stop any temporary docs HTTP server.
+G19 is next and remains unapproved; no GitHub push, reserve write, ISO, or
+physical burn is authorized.
+
 ## G18f completion handoff — 2026-08-30
 
 G18f is complete and archived as

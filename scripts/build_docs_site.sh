@@ -1,85 +1,74 @@
 #!/usr/bin/env bash
-# Build the GitHub Pages documentation site from docs/ (task R15):
-# Markdown -> HTML via marked, then a PageFind static search index.
+# Build the repository-owned Hugo/Ledger documentation site and local Pagefind index.
 set -euo pipefail
 
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 OUT=${1:-"$ROOT/_site"}
+HUGO=${HUGO:-hugo}
+PAGEFIND=${PAGEFIND:-"$ROOT/docs-site/node_modules/.bin/pagefind"}
 
-rm -rf "$OUT"
-mkdir -p "$OUT"
+export LC_ALL=C.UTF-8
+export TZ=UTC
+export SOURCE_DATE_EPOCH=0
 
-nav='<nav class="site-nav">
-  <a href="/notrios/index.html"><strong>Notrios</strong></a>
-  <a href="/notrios/installation.html">Install</a>
-  <a href="/notrios/service.html">Service</a>
-  <a href="/notrios/cli.html">CLI</a>
-  <a href="/notrios/query-language.html">Query language</a>
-  <a href="/notrios/selection-planning.html">Selection planning</a>
-  <a href="/notrios/archive-v2.html">Archive v2</a>
-  <a href="/notrios/stable-links.html">Stable links</a>
-  <a href="/notrios/publishing.html">Publishing</a>
-  <a href="/notrios/gui.html">GUI</a>
-  <a href="/notrios/import-export.html">Import &amp; export</a>
-  <a href="/notrios/operations.html">Maintenance</a>
-  <a href="/notrios/api/rest.html">REST API</a>
-  <a href="/notrios/api/mcp.html">MCP</a>
-  <a href="/notrios/troubleshooting.html">Troubleshooting</a>
-</nav>
-<div id="search"></div>'
+hugo_version=$("$HUGO" version)
+if [[ ! "$hugo_version" =~ hugo\ v0\.164\.0[^[:space:]]*\+extended ]]; then
+  echo "build_docs_site: Hugo Extended 0.164.0 is required; got: $hugo_version" >&2
+  exit 1
+fi
+node_version=$(node --version)
+if [[ "$node_version" != "v26.3.0" ]]; then
+  echo "build_docs_site: Node 26.3.0 is required; got: $node_version" >&2
+  exit 1
+fi
+if [[ ! -x "$PAGEFIND" ]]; then
+  echo "build_docs_site: local Pagefind missing; run npm ci --prefix docs-site" >&2
+  exit 1
+fi
+pagefind_version=$("$PAGEFIND" --version)
+if [[ "$pagefind_version" != "pagefind 1.5.2" ]]; then
+  echo "build_docs_site: Pagefind 1.5.2 is required; got: $pagefind_version" >&2
+  exit 1
+fi
 
-style='body{font-family:ui-sans-serif,system-ui,sans-serif;max-width:860px;margin:0 auto;padding:24px;line-height:1.6;color:#172033}
-a{color:#2563eb}
-code{background:#eef1f6;padding:1px 5px;border-radius:4px;font-size:0.92em}
-pre{background:#0f172a;color:#e2e8f0;padding:14px;border-radius:10px;overflow-x:auto}
-pre code{background:transparent;padding:0;color:inherit}
-table{border-collapse:collapse}
-td,th{border:1px solid #d9dee7;padding:6px 10px;text-align:left}
-.site-nav{display:flex;gap:14px;flex-wrap:wrap;border-bottom:1px solid #d9dee7;padding-bottom:12px;margin-bottom:8px}
-#search{margin:12px 0 24px}
-@media (prefers-color-scheme: dark){body{background:#0f172a;color:#e2e8f0}code{background:#1e293b}td,th{border-color:#334155}.site-nav{border-color:#334155}a{color:#60a5fa}}'
+mapfile -d '' documents < <(find "$ROOT/docs" -type f -name '*.md' -print0 | sort -z)
+if [[ "${#documents[@]}" -ne 15 ]]; then
+  echo "build_docs_site: expected exactly 15 docs/**/*.md files; got ${#documents[@]}" >&2
+  exit 1
+fi
 
-find "$ROOT/docs" -name '*.md' | while read -r src; do
-  rel=${src#"$ROOT/docs/"}
-  dest="$OUT/${rel%.md}.html"
-  mkdir -p "$(dirname "$dest")"
-  title=$(grep -m1 '^# ' "$src" | sed 's/^# //' || true)
-  body=$(npx --yes marked --gfm < "$src")
-  cat > "$dest" <<HTML
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${title:-Notrios} — Notrios</title>
-<link href="/notrios/pagefind/pagefind-ui.css" rel="stylesheet">
-<script src="/notrios/pagefind/pagefind-ui.js"></script>
-<style>${style}</style>
-</head>
-<body>
-${nav}
-<main data-pagefind-body>
-${body}
-</main>
-<script>
-window.addEventListener('DOMContentLoaded', () => {
-  if (window.PagefindUI) {
-    new PagefindUI({
-        element: '#search',
-        showSubResults: true,
-        bundlePath: "/notrios/pagefind/"
-    });
-  }
-});
-</script>
-</body>
-</html>
-HTML
-  echo "built ${rel%.md}.html"
+destination=$(realpath -m -- "$OUT")
+case "$destination" in
+  /|"$ROOT"|"$ROOT/docs"|"$ROOT/docs-site"|"$ROOT/.git"|"${HOME:-/nonexistent}")
+    echo "build_docs_site: refusing unsafe output directory: $destination" >&2
+    exit 1
+    ;;
+esac
+mkdir -p "$(dirname "$destination")"
+rm -rf -- "$destination"
+mkdir -p "$destination"
+
+temporary=$(mktemp -d "${TMPDIR:-/tmp}/notrios-docs-site.XXXXXX")
+trap 'rm -rf "$temporary"' EXIT
+source="$temporary/site"
+mkdir -p "$source"
+cp -a "$ROOT/docs-site/hugo.toml" "$ROOT/docs-site/layouts" \
+  "$ROOT/docs-site/static" "$ROOT/docs-site/themes" "$source/"
+# The search landing page is reviewed site furniture. Canonical documentation
+# is staged separately from docs/ below and remains byte-for-byte identical.
+mkdir -p "$source/content"
+cp -p "$ROOT/docs-site/content/search.md" "$source/content/search.md"
+for document in "${documents[@]}"; do
+  relative=${document#"$ROOT/docs/"}
+  target_relative=$relative
+  if [[ "$relative" == index.md ]]; then
+    target_relative=_index.md
+  fi
+  target="$source/content/$target_relative"
+  mkdir -p "$(dirname "$target")"
+  cp -p "$document" "$target"
 done
 
-# Internal .md links -> .html
-find "$OUT" -name '*.html' -exec sed -i 's/href="\([^"#]*\)\.md\(#[^"]*\)\?"/href="\1.html\2"/g' {} +
-
-npx --yes pagefind --site "$OUT"
+"$HUGO" --source "$source" --destination "$destination" --cleanDestinationDir --gc --minify --environment production
+"$PAGEFIND" --site "$destination"
 echo "docs site built at $OUT"

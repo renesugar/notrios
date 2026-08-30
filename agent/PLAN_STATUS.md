@@ -1,6 +1,31 @@
 # Plan Status
 
-Updated: 2026-08-30 (G0-G18f complete; G18g next and unapproved)
+Updated: 2026-08-30 (G0-G18g complete; G19 next and unapproved)
+
+## v0.7 G18g completion — 2026-08-30
+
+- The production documentation builder, Pages workflow, CI, and release ZIP
+  now use Hugo Extended 0.164.0, Node 26.3.0, Pagefind 1.5.2, and the exact
+  44-file/173,947-byte Ledger snapshot selected by G18b. The Apache-2.0 LICENSE,
+  upstream commit, and aggregate manifest are mandatory tracked provenance.
+- Temporary staging byte-copies exactly 15 raw `docs/` pages. A publication-
+  only generated-CLI adapter preserves angle placeholders without changing raw
+  Markdown or loosening Goldmark HTML safety. The Help regression test proves
+  deterministic IDs/titles/notebook, byte bodies, and no-change reseeding.
+- Strict evidence preserves 15 routes, all 199 G18a sections, two aliases,
+  exactly 15 Pagefind articles, excluded furniture, and no remote runtime
+  assets. Five mutation classes and the exact production/frozen theme compare
+  pass.
+- The Browser plugin was absent; documented Playwright/Chrome fallback passed
+  desktop 1440×960 and mobile 390×844 route/search/keyboard/theme/drawer checks,
+  visual inspection, sampled contrasts 15.00/15.07/21.00, 44×44 target, zero
+  overflow, and zero console/page/HTTP/CSP/external-request problems.
+- One observed production build took 2.71 seconds at 82,432 KiB and emitted 53
+  files/1,419,897 bytes, indexing 15 pages/3,438 words. Repeat Hugo output was
+  byte-identical; Pagefind's G18b-qualified hashed-shard variation retained
+  identical semantic behavior.
+- Evidence is under `performance/v0.7-g18g/`; the archive is
+  `plans/v0.7/041-hugo-ledger-production-site.md`. G19 is next and unapproved.
 
 ## v0.7 G18f completion — 2026-08-30
 
@@ -57,7 +82,7 @@ profiles/local journal, state-vector convergence,
 revision deltas/merge, lazy resources, secure container/catch-up,
 ephemeral-directory and REST transports, jobs/UI/retention, shared-core/FFI/
 Mermaid/mobile handoff, compatibility, and final validation. The user's
-2026-08-11 review resolved every original G0-G17 policy decision. **G0-G18f are
+2026-08-11 review resolved every original G0-G17 policy decision. **G0-G18g are
 complete** and archived under `plans/v0.7/`; the 2026-08-15 planning amendment
 reopened physical snapshot scalability. G14b selected option B from full-corpus
 evidence, G14c implemented the local production representation/verifier, and
@@ -69,7 +94,7 @@ and retirement. G17a-G17b are complete. G17b sealed the curated historical
 handoffs, issued and independently verified immutable reserve volume
 `NTR-EV-0001`, and committed the finite outer catalog. Its host-side evidence
 gate is mandatory before every future GitHub push. No push or physical burn was
-authorized or performed. G18-G18f are complete. G18g is next and unapproved.
+authorized or performed. G18-G18g are complete. G19 is next and unapproved.
 
 ## v0.7 G18d completion — 2026-08-28
 
@@ -357,7 +382,7 @@ authorized or performed. G18-G18f are complete. G18g is next and unapproved.
   volume coverage before the next GitHub push. CI can validate tracked schemas,
   fixtures, and canonicalization but cannot claim to see the external reserve.
   No push or physical optical burn is authorized by the planning amendment.
-- G17a-G18f are complete. G18g is next but unapproved; all later work remains
+- G17a-G18g are complete. G19 is next but unapproved; all later work remains
   separately approval-gated and every future push must pass the G17b gate.
 
 ## 2026-08-24 planning amendment — source-anchored docs and Hugo/Ledger
@@ -376,7 +401,7 @@ authorized or performed. G18-G18f are complete. G18g is next and unapproved.
   generated user/API subsets with freshness checks, and calibrated advisory
   blind-explanation contradiction/actionability reports. Model output never
   gates CI or rewrites prose.
-- G18g migrates the public docs build to pinned Hugo/Ledger while keeping one
+- G18g migrated the public docs build to pinned Hugo/Ledger while keeping one
   `docs/` Markdown source for the site and protected offline Help. G19 consumes
   the pipeline for the archive contract; G20 runs its full release gate.
 - Initial planning inventory found a useful known-drift case:
@@ -2700,5 +2725,5 @@ attempt detail remains append-only in `agent/ATTEMPT_LOG.jsonl`.
 - Long-term SQLite driver choice (current local cgo/libsqlite3 adapter).
 - Official MCP Go SDK adoption/version.
 - Sync and evidence-preservation decisions live in the owning plan items; the
-  register in `PLAN.md` is an index. G0-G18f are complete. G18g and every later
+  register in `PLAN.md` is an index. G0-G18g are complete. G19 and every later
   slice remain approval-gated; the checked-in G17b verifier gates future pushes.

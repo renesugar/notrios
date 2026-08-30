@@ -16,11 +16,14 @@ Included:
 - Go source (`cmd/`, `internal/`, embedded migrations under `internal/store/migrations/`);
 - React source (`web/src/`) **and** the freshly built `web/dist/` assets;
 - `web/package-lock.json` for reproducible dependency installation;
-- documentation (`docs/`, design documents), plans, skills, prompts, fixtures, and validation scripts.
+- documentation (`docs/`, `docs-site/` without dependencies, design documents),
+  plans, skills, prompts, fixtures, and validation scripts. The packager builds
+  and validates the pinned Hugo/Ledger/Pagefind site before ZIP creation.
 
 Excluded (enforced by both the zip exclusions and `check_release_zip.py`):
 
-- `.git/` history, `web/node_modules/`;
+- `.git/` history, `node_modules/` at any depth (including `web/` and
+  `docs-site/`);
 - runtime `data/` directories, SQLite databases and their WAL/SHM sidecars;
 - build/test/dev artifacts: `bin/`, `dist/`, `_site/`, `.playwright-mcp/`, `__pycache__`/`*.pyc`, coverage output, editor backups, other ZIPs, `.claude/`.
 

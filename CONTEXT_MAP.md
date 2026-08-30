@@ -10,7 +10,7 @@ This file is the codebase atlas. Update it whenever major files or directories a
   scalability sequence, the blocking G17a-G17b external evidence-preservation
   sequence, and the newly planned G18a-G18g documentation-integrity/Hugo-Ledger
   sequence. G0-G18 are complete; the G17b verifier gates every future GitHub
-  push. G18a-G18f are complete; G18g is next but unapproved. The
+  push. G18a-G18g are complete; G19 is next but unapproved. The
   current product remains 0.6.0 at schema v27; v0.6 is archived under
   `plans/v0.6/`; v0.5 and v0.4 are archived under their version directories.
 - `plans/scaffold/SCAFFOLD_CREATION_PLAN.md` — process for creating/refining this scaffold.
@@ -74,7 +74,14 @@ This file is the codebase atlas. Update it whenever major files or directories a
 - `performance/v0.7-g18b/` — G18b's pinned investigation-only Hugo/Ledger
   prototype, route/anchor/Pagefind and request contract, three-option delivery
   comparison, license/provenance records, build/validator, unit tests, and
-  executable browser smoke. Production site generation remains unchanged.
+  executable browser smoke.
+- `docs-site/`, `scripts/build_docs_site.sh`, and `.github/workflows/docs.yml` —
+  G18g's production Hugo/Ledger source, exact Apache-2.0 theme provenance,
+  pinned local Pagefind dependency, temporary raw-doc staging, `/notrios/`
+  route adapters, offline policy, and Pages build.
+- `performance/v0.7-g18g/` and `internal/helpdocs/g18g_docs_test.go` — G18g's
+  exact-theme, route/fragment, search-scope, semantic rendering, offline,
+  measurement, mutation, rendered-browser, and raw Help equivalence gates.
 - `cmd/docaudit/`, `internal/docaudit/`, `scripts/docaudit_ts.mjs`, and
   `docs/docaudit/registry.json` — G18c's repository-only directive/parser,
   Go and TypeScript declaration resolver, typed claim/check registry,
@@ -216,10 +223,9 @@ This file is the codebase atlas. Update it whenever major files or directories a
   compatibility/limits, explicit restore intent, verification rules, P3 export
   staging/resume semantics, the P3a index-chunk container, the optional P3b
   packed layout, and the P4 restore contract.
-- `DOCS_SITE.md` — current Marked/Pagefind GitHub Pages site and Help notebook,
-  plus the approved-plan boundary for G18a-G18g source anchors, executable
-  examples/GUI journeys, generated freshness, advisory prose review, and a
-  pinned Hugo/Ledger migration.
+- `DOCS_SITE.md` — production Hugo/Ledger/Pagefind GitHub Pages site and raw
+  Help-notebook contract, plus G18a-G18g source-anchor, executed-example,
+  journey, generation, advisory-review, and migration evidence.
 - `CODING_STANDARDS.md` — coding style and guardrails.
 - `TESTING_POLICY.md` — definition of done and testing layers.
 - `ENVIRONMENT_SETUP.md` — development setup.
@@ -527,7 +533,8 @@ This file is the codebase atlas. Update it whenever major files or directories a
 ## v0.2 task R15 additions (docs + Help notebook)
 
 - `docs/` — user documentation (published to GitHub Pages and seeded into the Help notebook).
-- `scripts/build_docs_site.sh` — Markdown → HTML with a shared template plus a PageFind static search index.
+- `docs-site/` + `scripts/build_docs_site.sh` — pinned Hugo/Ledger source and
+  temporary raw-Markdown staging followed by a local Pagefind static index.
 - `.github/workflows/docs.yml` — GitHub Pages deployment for the docs site.
 - `internal/helpdocs/` + `notriosctl seed-help` — deterministic Help-notebook seeding (create/update/remove).
 - Help notes are read-only at the REST/MCP layers (`guardHelpNote`).

@@ -24,6 +24,11 @@ required_exact = {
     "cmd/notriosd/main.go",
     "cmd/notriosctl/main.go",
     "web/dist/index.html",
+    "docs-site/hugo.toml",
+    "docs-site/package-lock.json",
+    "docs-site/themes/hugo-theme-ledger/LICENSE",
+    "performance/v0.7-g18g/REPORT.json",
+    "plans/v0.7/041-hugo-ledger-production-site.md",
 }
 # Anchored at the archive root: these directories only ever exist there.
 forbidden_prefixes = (
@@ -43,6 +48,7 @@ forbidden_prefixes = (
 # `data/` this way, which is why git ignored the same directories the archive
 # was shipping.
 forbidden_segments = (
+    "node_modules/",
     "data/",
     "quarantine/",
     "search-index/",

@@ -1,10 +1,10 @@
 # Plan: v0.7 — Native synchronization
 
-Status: **G0-G18f are complete through 2026-08-30. Product version remains 0.6.0 and
+Status: **G0-G18g are complete through 2026-08-30. Product version remains 0.6.0 and
 the canonical schema is v27. The user resolved G17b's evidence scope, exact
 OpenPGP identity, and RFC-3161 provider order on 2026-08-25, then authorized
 the exact signer/Secret Service workflow, TSA requests, and reserve writes and
-attested offline backup/revocation readiness. G18g is not approved. The
+attested offline backup/revocation readiness. G19 is not approved. The
 G17b pre-push evidence gate is now mandatory; no GitHub push or
 physical optical burn occurred.** The
 former seven-item draft was too coarse: it mixed protocol research, canonical
@@ -2470,7 +2470,7 @@ disposition and no prose was automatically rewritten. The known schema-v20
 drift was corrected to v27. Evidence and boundaries are archived under
 `plans/v0.7/040-generated-docs-advisory-review.md`.
 
-## G18g. Migrate the documentation site to pinned Hugo/Ledger
+## G18g. Migrate the documentation site to pinned Hugo/Ledger — complete
 
 **Goal.** Replace the bespoke Marked template with the selected pinned
 `hugo-theme-ledger` integration while retaining one Markdown source for the
@@ -2511,6 +2511,15 @@ and output size recorded against G18b.
 
 - None. G18b resolves the pinning, URL, and search choices before this
   implementation slice may be approved.
+
+**Outcome (2026-08-30).** The production builder, Pages workflow, release ZIP,
+and CI now use the exact pinned Hugo/Ledger/Pagefind site while retaining the
+15 raw Markdown/Help sources, routes, 199 sections, two aliases, static search,
+and offline runtime. Raw Help seed/reseed equivalence, strict source/site and
+mutation gates, clean/repeat builds, measurements, and rendered desktop/mobile
+QA passed. Pagefind's already-recorded hashed-shard variance remains qualified
+as semantic reproducibility. Evidence and boundaries are archived under
+`plans/v0.7/041-hugo-ledger-production-site.md`.
 
 ## G19. Archive-v2 compatibility bridge
 
@@ -2645,9 +2654,9 @@ recommendation, blocking status, and consequence.
 | Hosted semantic-review execution | G18f | Open, non-blocking default: maintainer-only recorded command; hosted source upload needs separate approval |
 | Release version/schema bookkeeping | G20 | Open, non-blocking until wrap-up |
 
-G0-G18f are complete and the production physical restore/catch-up, durable
+G0-G18g are complete and the production physical restore/catch-up, durable
 sync-job, local recovery UI, safe-retention, and evidence-preservation design
 contracts are frozen. The G17b host-side evidence gate is mandatory before any
-future GitHub push. G18g is unapproved and next.
+future GitHub push. G19 is unapproved and next.
 Implementation begins only after an explicit instruction naming
 the item to start and, where stated, authorizing its blocking operations.

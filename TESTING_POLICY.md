@@ -1248,6 +1248,30 @@ closed G18d/G18e fixtures. Every contradicted verdict must have a nonempty human
 disposition. The committed Qwen report scored 7/16 calibration decisions, so
 its disagreements are not evidence of product drift by themselves.
 
+## v0.7 G18g production documentation site
+
+`make g18g-validate` verifies the exact 44-file Ledger snapshot and Apache-2.0
+LICENSE against the frozen G18b manifest, production provenance, the 15 public
+`.html` routes, all 199 G18a sections, two legacy aliases, local-asset policy,
+Pagefind scope/exclusions, semantic CLI/code/table rendering, and completed QA
+evidence. Five mutation classes must reject theme, route, search, raw-Help, and
+offline-policy drift.
+
+`internal/helpdocs/g18g_docs_test.go` seeds the canonical 15 Markdown files in
+an in-memory SQLite store and requires deterministic Help IDs, notebook/title,
+byte-for-byte bodies, and a no-change reseed. Rendered acceptance uses the
+Browser plugin when available; because it was absent at completion, the
+recorded Playwright fallback drove Chrome at 1440×960 and 390×844. It checks
+all routes, keyboard focus, the theme modes and contrast samples, `Argon2id`
+Pagefind results under `/notrios/`, mobile drawer/Escape/44-pixel target/no
+overflow, overlays, console/page/HTTP failures, CSP violations, and external
+requests. Screenshot inspection is transient and never a committed assertion.
+
+Repeat builds require identical Hugo output and identical Pagefind scope,
+counts, and known-query behavior. Pagefind 1.5.2 varies hashed index/metadata
+shards, as already frozen in G18b, so the gate does not claim a byte-identical
+generated Pagefind tree.
+
 ## G17a-G17b evidence-preservation validation
 
 G17a completed generated-only canonical JSONL/entry-chain mutation, correct and

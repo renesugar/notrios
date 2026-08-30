@@ -6,18 +6,17 @@ Implemented in plan task R15.
 
 User and reference documentation for the `notriosd` service, `notriosctl` CLI, REST/MCP API, query language, and the built-in GUI lives as Markdown under `docs/`. It is authored once and consumed twice:
 
-1. **GitHub Pages site** — built from `docs/` by `scripts/build_docs_site.sh` (marked → HTML with a shared template, then a PageFind index) and published by `.github/workflows/docs.yml` on pushes to `main`.
+1. **GitHub Pages site** — built from `docs/` by `scripts/build_docs_site.sh` with pinned Hugo Extended 0.164.0, the exact repository-owned Ledger snapshot, and local Pagefind 1.5.2; `.github/workflows/docs.yml` publishes it on pushes to `main`.
 2. **Built-in "Help" notebook** — `notriosctl seed-help [docs-dir]` mirrors the same Markdown into the protected, read-only Help notebook (deterministic note IDs; updates in place; removes notes whose file disappeared), so documentation is available offline inside the app (`notebook:help` searches it; see `NOTEBOOKS_AND_SEARCH_NOTEBOOKS.md`). REST and MCP mutations of Help notes return 403/errors.
 
 ## Site search
 
 The Pages site uses **PageFind** (https://github.com/pagefind/pagefind): a post-build index step over the generated static HTML, producing a fully static search UI with no server component — consistent with the local-first ethos.
 
-## Planned documentation-integrity and Hugo migration
+## Documentation-integrity and Hugo production pipeline
 
-`PLAN.md` G18a-G18g owns a staged replacement for the current bespoke site
-builder and an integrity pipeline shared by the site and Help content. G18a
-through G18c are complete; G18d-G18g remain unapproved:
+`PLAN.md` G18a-G18g completed the replacement of the bespoke site builder and
+the integrity pipeline shared by the site and Help content:
 
 - investigate Go/TS/TSX source-adjacent `notrios:` doc anchors and report every
   topic as executed, generated, claimed, or unverified;
@@ -41,7 +40,9 @@ deterministic manifest. Its prototype preserves all 15 `.html` routes, all 199
 G18a section IDs, two legacy aliases, static Pagefind, and zero third-party
 runtime requests. It also records Pagefind 1.5.2's semantically stable but
 non-byte-identical hashed shard output. The local checkout is not a build
-dependency, and production remains unchanged until G18g.
+dependency. G18g materialized that exact snapshot under `docs-site/`, wired it
+into production/CI/release packaging, and added strict evidence under
+`performance/v0.7-g18g/`.
 
 G18c adds `make docaudit`. The repository-only audit resolves the frozen Go and
 TypeScript declaration anchors, checks the typed claim/test registry, binds
@@ -52,7 +53,7 @@ unverified. Manual sections stay independently unverified until a later slice
 moves or generates them; an adjacent source claim never proves stale prose.
 Evidence and the exact checked report are under `performance/v0.7-g18c/`.
 
-## Structure (initial)
+## Structure
 
 ```text
 docs/
@@ -73,7 +74,9 @@ docs/
   troubleshooting.md    # verified symptoms and fixes
 ```
 
-The site nav in `scripts/build_docs_site.sh` must list every page (it currently does); the same script prefixes the GitHub Pages project base path (`/notrios/`).
+The site navigation in `docs-site/layouts/` lists every user page. The build
+uses the GitHub Pages project base path (`/notrios/`) and indexes only elements
+marked `data-pagefind-body`, excluding generated API/search furniture.
 
 ## Rules
 

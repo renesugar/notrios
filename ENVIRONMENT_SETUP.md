@@ -14,7 +14,8 @@ Versions match `go.mod` and `.github/workflows/ci.yml`:
 - **Go 1.25 or newer** (`go.mod` declares `go 1.25.0`)
 - A C toolchain and `pkg-config` (the SQLite store is a cgo wrapper over system `libsqlite3`; keep `CGO_ENABLED=1`)
 - `libsqlite3-dev`
-- **Node.js 22** and npm (web UI and docs-site builds; Node ≥ 20.19 may work but 22 is what CI tests)
+- **Node.js 22** and npm for the web UI; the documentation build is pinned to
+  **Node.js 26.3.0**, Hugo Extended 0.164.0, and Pagefind 1.5.2
 - **Python 3** — used only by the repository validation scripts (`scripts/check_required_files.py`, `scripts/check_release_zip.py`, `scripts/check_plan_loops.py`); not needed at runtime
 - Bash, `make`
 
@@ -50,9 +51,10 @@ make build         # bin/notriosd + bin/notriosctl
 make web           # web/dist/ (npm ci runs automatically on first build)
 make gui           # bin/notrios desktop binary
 make serve         # run the service from source on 127.0.0.1:8080
-make docs          # _site/ documentation site (uses npx marked + pagefind)
+make docs          # _site/ pinned Hugo/Ledger + local Pagefind site
 make docgen        # check committed generated documentation (no model)
 make g18f-validate # validate committed G18f evidence (no model)
+make g18g-validate # validate pinned theme, routes, search, Help contract
 make smoke         # end-to-end REST/MCP smoke test on a loopback port
 make doctor        # notriosctl doctor: configuration and environment check
 make seed-help     # mirror docs/ into the Help notebook of the default database
@@ -62,6 +64,10 @@ G18f semantic review is optional and maintainer-local. When the approved local
 Qwen GGUF is available through llama.cpp on `127.0.0.1:8081`, run
 `make doccheck`. The client rejects non-loopback and HTTPS endpoints, uses no
 note/database data, and records an advisory report without changing prose.
+
+Before the first documentation build, install the exact local search package
+with `npm ci --prefix docs-site`. `make docs` then requires Hugo Extended
+0.164.0 and Node 26.3.0 and performs no network access.
 
 To see the interface while working on it, `make serve` and open
 <http://127.0.0.1:8080> — no binary build needed. For the frontend dev server

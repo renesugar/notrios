@@ -12,14 +12,17 @@ go test ./...
 python3 scripts/check_required_files.py
 bash scripts/validate-scaffold.sh
 (cd web && npm ci && npm audit && npm run build)
+(cd docs-site && npm ci && npm audit)
 python3 performance/v0.7-g18c/validate_evidence.py
 python3 performance/v0.7-g18d/validate_evidence.py
 make g18e-validate
 make g18f-validate
+make g18g-validate
 
 rm -f "$OUT"
 zip -qr "$OUT" . \
   -x 'web/node_modules/*' \
+  -x '*/node_modules/*' \
   -x 'data/*' -x 'data/' \
   -x '*/data/*' -x '*/data/' \
   -x '.git/*' \

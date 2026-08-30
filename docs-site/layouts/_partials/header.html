@@ -1,0 +1,58 @@
+{{- $active := . -}}
+{{- $nav := slice
+      (dict "name" "Overview" "url" "/index.html")
+      (dict "name" "Install" "url" "/installation.html")
+      (dict "name" "CLI" "url" "/cli.html")
+      (dict "name" "REST API" "url" "/api/rest.html")
+      (dict "name" "Search" "url" "/search/")
+-}}
+{{- $themes := slice
+      (dict "value" "light" "label" "Light theme")
+      (dict "value" "dark" "label" "Dark theme")
+      (dict "value" "contrast" "label" "High contrast")
+-}}
+<header class="ledger-header">
+  <button type="button" class="ledger-hamburger" data-ledger-drawer-toggle
+          aria-expanded="false" aria-controls="ledger-sidebar">
+    <span></span><span></span><span></span>
+    <span class="ledger-sr-only">Menu</span>
+  </button>
+  <a class="ledger-brand" href="{{ partial "site-url.html" "/index.html" }}">
+    <span class="ledger-brand-mark" aria-hidden="true"></span>
+    <span class="ledger-brand-title">Notrios</span>
+  </a>
+  <nav class="ledger-nav" aria-label="Main">
+    {{- range $nav }}
+    {{- $url := partial "site-url.html" .url -}}
+    <a class="ledger-nav-link" href="{{ $url }}"
+       {{ if eq $active $url }}aria-current="page"{{ end }}>{{ .name }}</a>
+    {{- end }}
+  </nav>
+  <span class="ledger-spacer"></span>
+  <a class="ledger-search-shortcut" id="search" href="{{ partial "site-url.html" "/search/" }}">
+    <span aria-hidden="true">&#x29D6;</span>
+    <span class="ledger-sr-only">Search</span>
+  </a>
+  <div class="ledger-theme" data-ledger-theme>
+    <button type="button" class="ledger-theme-button" data-ledger-theme-button
+            aria-expanded="false" aria-haspopup="true" aria-controls="ledger-theme-menu">
+      <span class="ledger-theme-dot" aria-hidden="true"></span>
+      <span class="ledger-sr-only">Theme</span>
+      {{- range $themes }}
+      <span class="ledger-theme-label" data-for="{{ .value }}">{{ .label }}</span>
+      {{- end }}
+      <span class="ledger-theme-caret" aria-hidden="true">&#x25BC;</span>
+    </button>
+    <div class="ledger-theme-menu" id="ledger-theme-menu" data-card role="menu"
+         aria-label="Colour theme" hidden>
+      {{- range $themes }}
+      <button type="button" class="ledger-theme-option" role="menuitemradio"
+              aria-checked="false" tabindex="-1" data-theme-value="{{ .value }}">
+        <span class="ledger-theme-swatch" aria-hidden="true"></span>
+        <span class="ledger-theme-option-label">{{ .label }}</span>
+        <span class="ledger-theme-check" aria-hidden="true">&#x2713;</span>
+      </button>
+      {{- end }}
+    </div>
+  </div>
+</header>

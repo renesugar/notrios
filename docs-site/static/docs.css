@@ -1,0 +1,16 @@
+.ledger-docs-heading {
+  padding: 0 18px;
+  color: var(--faint);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ledger-prose > :first-child {
+  margin-top: 0;
+}
+
+.ledger-hamburger {
+  min-width: 44px;
+  min-height: 44px;
+}
