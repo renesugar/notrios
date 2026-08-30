@@ -1,4 +1,63 @@
 # The notriosctl CLI
+<!-- notrios:generated:user:the-notriosctl-cli:begin -->
+<!-- source: go:github.com/renesugar/notrios/cmd/notriosctl#printHelp -->
+printHelp is the finite command and flag usage registry shown by notriosctl.
+- notriosctl doctor [--config config.yaml] [--db path] [--asset-store path]
+- notriosctl version
+- notriosctl import joplin-raw [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--batch-size 100] [--preserve-source] [--dry-run] [--write-config path] [--import-config path] [--localize-media] <raw-export-dir>
+- notriosctl import obsidian [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--dry-run] [--localize-media] <vault-dir>
+- notriosctl import twitter [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--notebook Twitter] [--dry-run] <extracted-archive-dir>
+- notriosctl import chatgpt [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--notebook ChatGPT] [--dry-run] <conversations.json|export-dir>
+- notriosctl import claude  [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--notebook Claude] [--dry-run] <conversations.json|export-dir>
+- notriosctl import archive [--db ...] [--dry-run] [--write-config path] [--import-config path] <archive-dir>
+- notriosctl export archive [--db ...] [--query "tag:todo"] <out-dir>
+- notriosctl verify archive-v2 <archive-dir>
+- notriosctl restore archive-v2 --intent replace|adopt|merge|fork [--db ...] [--new-database-id id] <archive-dir>
+- notriosctl export archive-v2 [--db ...] [--target full_archive|subset_transfer] [--notebooks id,id] [--tags a,b] [--query "tag:todo"] [--documents id,id] [--match any|all] [--pack] [--overwrite] [--no-verify] <out-dir>
+- notriosctl snapshot create [--config config.yaml] [--db ...] [--asset-store ...] <out-dir>
+- notriosctl snapshot verify <snapshot-dir>     # full read-only physical snapshot admission
+- notriosctl snapshot restore --intent replace|adopt [--db ...] [--asset-store ...] [--emergency dir] <snapshot-dir>
+- notriosctl seed-help [--db ...] [docs-dir]     # mirror docs/ into the read-only Help notebook
+- notriosctl localize [--config config.yaml] [--db ...] [--dry-run] [--allow-review] [--base-revision rev] <document-id>
+- notriosctl resources report [--config config.yaml] [--db ...] [--asset-store ...]
+- notriosctl gc [--config config.yaml] [--db ...] [--asset-store ...] [--dry-run | --apply]
+- notriosctl lint [--db ...] [--checks a,b] [--detail-limit 100] [--quiet] [--list-checks]
+- notriosctl fix [--db ...] [--kinds a,b] [--document id] [--apply] [--list-kinds]
+- notriosctl tags rename --from <tag> --to <tag> [--db ...] [--include-children] [--apply]
+- notriosctl notes move --document <id> --notebook <id|name> [--db ...]
+- notriosctl graph report [--db ...] [--collection default] [--limit N] [--write-note] [--quiet]
+- notriosctl graph export [--db ...] [--collection default] [--overwrite] <out-dir>
+- notriosctl jobs list [--db ...] [--kind k] [--state s] [--limit 50]
+- notriosctl jobs status [--db ...] [--wait] [--timeout 30m] [--quiet] <job-id>
+- notriosctl jobs show [--db ...] [--command] <job-id>
+- notriosctl jobs cancel [--db ...] <job-id>
+- notriosctl jobs retry [--db ...] [--reset] <sync-job-id>
+- notriosctl sync init|status [--db ...] [--keys path]
+- notriosctl sync invite [--ttl 15m] [--offline --out <file>]
+- notriosctl sync join --url <base-url> --code <code>
+- notriosctl sync accept --invite <file> --code <code> --out <file>
+- notriosctl sync enroll --acceptance <file> --code <code>
+- notriosctl sync peers | sync revoke --key <id> [--advance-epoch]
+- notriosctl sync exchange --url <base-url> [--materialize N]
+- notriosctl sync fetch-backup --url <base-url> --out <dir>
+- notriosctl sync discover [--carrier dir] [--db ...]
+- notriosctl sync once [--carrier dir] [--cleanup] [--materialize N] [--db ...]
+- notriosctl link [--db ...] [--anchor slug|^block] [--list-anchors] <document-id>
+- notriosctl open [--profile name] [--registry path] [--db path] [--launch] <notrios-uri>
+- notriosctl profile create --name <profile> [--listen 127.0.0.1:8080] [--db ...] [--sync-target none|directory|rest]
+- notriosctl profile show --name <profile> [--registry path]
+- notriosctl profile list [--registry path]
+- notriosctl profile validate [--name <profile>] [--registry path]
+- notriosctl profile start --name <profile> [--binary notriosd] [--dry-run]
+- notriosctl profile register --name <profile> [--db ...] [--registry path]
+- notriosctl profile forget --name <profile> [--registry path]
+- notriosctl register-url-handler [--apply] [--binary path] [--dir path]
+- notriosctl publish profile save --name <profile> [--notebooks id,id] [--tags a,b] [--link-action plain_text]
+- notriosctl publish profile list|delete [--name <profile>]
+- notriosctl publish plan --profile <profile>    # read-only privacy review; prints the plan digest
+- notriosctl publish run --profile <profile> --reviewed-plan <sha256> <out-dir>
+- notriosctl sync status
+<!-- notrios:generated:user:the-notriosctl-cli:end -->
 
 `notriosctl` handles imports, exports, diagnostics, and maintenance against the same SQLite database the service uses. Build it with `make build-cli` (output `bin/notriosctl`) or run any command from source with `go run ./cmd/notriosctl <command>`.
 
@@ -10,6 +69,10 @@ General behavior:
 - `notriosctl help` (or any unknown command) prints the full usage summary.
 
 ## version
+<!-- notrios:generated:user:version:begin -->
+<!-- source: go:github.com/renesugar/notrios/internal/version#Version -->
+Version is the product version reported by Notrios binaries.
+<!-- notrios:generated:user:version:end -->
 
 ```sh
 notriosctl version
@@ -39,7 +102,7 @@ Exit `0` when all required checks pass, `1` otherwise. Note that doctor *creates
 
 ```text
 ok    config           config/config.example.yaml
-ok    database         ./data/notes.sqlite (schema version 20)
+ok    database         ./data/notes.sqlite (schema version 27)
 info  web ui           web/dist missing here; run `make web` or serve API-only
 doctor: required checks passed
 ```

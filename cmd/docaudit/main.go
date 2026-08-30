@@ -17,6 +17,7 @@ func main() {
 	root := flag.String("root", ".", "repository root")
 	inventory := flag.String("inventory", "performance/v0.7-g18a/INVENTORY.json", "G18a inventory path")
 	registry := flag.String("registry", "docs/docaudit/registry.json", "claim/executable registry path")
+	templates := flag.String("templates", "docs/docgen/templates.json", "generated-fragment placement template")
 	listExamples := flag.Bool("list-executables", false, "print detected executable fences without auditing")
 	flag.Parse()
 	if *listExamples {
@@ -25,7 +26,7 @@ func main() {
 		return
 	}
 	report, err := docaudit.Audit(docaudit.Options{
-		Root: *root, InventoryPath: *inventory, RegistryPath: *registry,
+		Root: *root, InventoryPath: *inventory, RegistryPath: *registry, TemplatePath: *templates,
 		TSResolver: resolveTypeScript,
 	})
 	finish(report, err)

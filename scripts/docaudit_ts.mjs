@@ -159,6 +159,116 @@ export function resolveTypeScriptAnchor(root, anchor) {
   };
 }
 
+/**
+ * Return one declaration's source without leading source-adjacent comments.
+ * G18f uses this for a claim-blind explanation prompt after ordinary anchor
+ * resolution has already established that the declaration is unique.
+ */
+export function sourceForTypeScriptAnchor(root, anchor) {
+  const parsed = parseTypeScriptAnchor(anchor);
+  const located = repositoryFile(root, parsed.module, anchor);
+  const source = readFileSync(located.modulePath, 'utf8');
+  const scriptKind = extname(located.modulePath) === '.tsx' ? ts.ScriptKind.TSX : ts.ScriptKind.TS;
+  if (typeof ts.createSourceFile !== 'function') {
+    return { anchor, source: scannerDeclarationSource(source, parsed.symbol, scriptKind, anchor) };
+  }
+  const sourceFile = ts.createSourceFile(located.module, source, ts.ScriptTarget.Latest, true, scriptKind);
+  const matches = namedTopLevelDeclarations(sourceFile, parsed.symbol);
+  if (matches.length === 0) fail(`dangling TypeScript source-symbol anchor: ${anchor}`);
+  if (matches.length !== 1) fail(`ambiguous TypeScript source-symbol anchor: ${anchor}`);
+  const declaration = matches[0].node;
+  return {
+    anchor,
+    source: source.slice(declaration.getStart(sourceFile, false), declaration.getEnd()),
+  };
+}
+
+function scannerDeclarationSource(source, symbol, scriptKind, anchor) {
+  const escaped = symbol.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
+  const modifiers = '(?:(?:export|default|declare|abstract|async)\\s+)*';
+  const declaration = new RegExp(
+    `^[ \\t]*${modifiers}(?:(function|class|interface|type|enum)\\s+${escaped}\\b|(const|let|var)\\s+${escaped}\\b)`,
+    'gmu',
+  );
+  const matches = [...source.matchAll(declaration)];
+  if (matches.length === 0) fail(`dangling TypeScript source-symbol anchor: ${anchor}`);
+  if (matches.length !== 1) fail(`ambiguous TypeScript source-symbol anchor: ${anchor}`);
+  const start = matches[0].index;
+  const kind = matches[0][1] || 'variable';
+  const text = source.slice(start);
+  const bodyStart = text.indexOf('{');
+  if (kind !== 'type' && kind !== 'variable' && bodyStart >= 0) {
+    const end = balancedBraceEnd(text, bodyStart);
+    if (end >= 0) return text.slice(0, end);
+  }
+  if (kind === 'type' || kind === 'variable') {
+    const end = topLevelSemicolonEnd(text);
+    if (end >= 0) return text.slice(0, end);
+  }
+  fail(`could not bound TypeScript declaration source: ${anchor}`);
+}
+
+function balancedBraceEnd(text, bodyStart) {
+  let depth = 0;
+  let quote = '';
+  let escaped = false;
+  let lineComment = false;
+  let blockComment = false;
+  for (let index = bodyStart; index < text.length; index += 1) {
+    const char = text[index];
+    const next = text[index + 1] || '';
+    if (lineComment) {
+      if (char === '\n') lineComment = false;
+      continue;
+    }
+    if (blockComment) {
+      if (char === '*' && next === '/') { blockComment = false; index += 1; }
+      continue;
+    }
+    if (quote) {
+      if (escaped) { escaped = false; continue; }
+      if (char === '\\') { escaped = true; continue; }
+      if (char === quote) quote = '';
+      continue;
+    }
+    if (char === '/' && next === '/') { lineComment = true; index += 1; continue; }
+    if (char === '/' && next === '*') { blockComment = true; index += 1; continue; }
+    if (char === "'" || char === '"' || char === '`') { quote = char; continue; }
+    if (char === '{') depth += 1;
+    else if (char === '}') {
+      depth -= 1;
+      if (depth === 0) return index + 1;
+    }
+  }
+  return -1;
+}
+
+function topLevelSemicolonEnd(text) {
+  let braces = 0;
+  let parens = 0;
+  let brackets = 0;
+  let quote = '';
+  let escaped = false;
+  for (let index = 0; index < text.length; index += 1) {
+    const char = text[index];
+    if (quote) {
+      if (escaped) { escaped = false; continue; }
+      if (char === '\\') { escaped = true; continue; }
+      if (char === quote) quote = '';
+      continue;
+    }
+    if (char === "'" || char === '"' || char === '`') { quote = char; continue; }
+    if (char === '{') braces += 1;
+    else if (char === '}') braces = Math.max(0, braces - 1);
+    else if (char === '(') parens += 1;
+    else if (char === ')') parens = Math.max(0, parens - 1);
+    else if (char === '[') brackets += 1;
+    else if (char === ']') brackets = Math.max(0, brackets - 1);
+    else if (char === ';' && braces === 0 && parens === 0 && brackets === 0) return index + 1;
+  }
+  return -1;
+}
+
 function scanTopLevelDeclarations(source, symbol, scriptKind) {
   const scanner = ts.createScanner(
     true,

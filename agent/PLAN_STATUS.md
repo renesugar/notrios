@@ -1,6 +1,24 @@
 # Plan Status
 
-Updated: 2026-08-29 (G0-G18e complete; G18f next and unapproved)
+Updated: 2026-08-30 (G0-G18f complete; G18g next and unapproved)
+
+## v0.7 G18f completion — 2026-08-30
+
+- Explicit templates place 15 separate user/API fragments in five existing
+  pages; closed registry adapters render 412 stable config/CLI/REST/MCP/GUI
+  rows. `TestDocsAreCurrent` and finite parity tests gate committed site/Help
+  Markdown without rewriting manual bytes.
+- Loopback-only `doccheck` produces claim-blind bounded source explanations,
+  decomposed finite verdicts, repeated variance/timing/token evidence, and
+  prose-only action attempts that can match only closed G18d/G18e fixtures.
+- The recorded Qwen 1.5B run scored 7/16 repeated calibration decisions,
+  contradicted 11/13 fragments, and matched zero of 26 action attempts. Every
+  contradiction has human disposition; the model is explicitly non-blocking
+  and made no edit.
+- The known schema-v20 drift was corrected to v27. Evidence and mutations live
+  under `performance/v0.7-g18f/`; the archive is
+  `plans/v0.7/040-generated-docs-advisory-review.md`. G18g is next and remains
+  unapproved.
 
 ## v0.7 G18e completion — 2026-08-29
 
@@ -21,8 +39,8 @@ Updated: 2026-08-29 (G0-G18e complete; G18f next and unapproved)
   organizer claims were corrected in documentation rather than fabricated.
 - Manifest/source-anchor, evidence, no-vacuity, mutation, frontend, full Go,
   documentation/offline, scaffold, CI/release wiring, and browser checks are
-  archived in `plans/v0.7/039-executed-gui-journeys.md`. G18f is next and
-  remains unapproved.
+  archived in `plans/v0.7/039-executed-gui-journeys.md`. G18f has since
+  completed; G18g is next and remains unapproved.
 
 ## Active milestone
 
@@ -39,7 +57,7 @@ profiles/local journal, state-vector convergence,
 revision deltas/merge, lazy resources, secure container/catch-up,
 ephemeral-directory and REST transports, jobs/UI/retention, shared-core/FFI/
 Mermaid/mobile handoff, compatibility, and final validation. The user's
-2026-08-11 review resolved every original G0-G17 policy decision. **G0-G18e are
+2026-08-11 review resolved every original G0-G17 policy decision. **G0-G18f are
 complete** and archived under `plans/v0.7/`; the 2026-08-15 planning amendment
 reopened physical snapshot scalability. G14b selected option B from full-corpus
 evidence, G14c implemented the local production representation/verifier, and
@@ -51,8 +69,7 @@ and retirement. G17a-G17b are complete. G17b sealed the curated historical
 handoffs, issued and independently verified immutable reserve volume
 `NTR-EV-0001`, and committed the finite outer catalog. Its host-side evidence
 gate is mandatory before every future GitHub push. No push or physical burn was
-authorized or performed. G18-G18e are complete. G18f is next; none of G18f
-onward is approved.
+authorized or performed. G18-G18f are complete. G18g is next and unapproved.
 
 ## v0.7 G18d completion — 2026-08-28
 
@@ -74,7 +91,7 @@ onward is approved.
   the evidence gate. Archive:
   `plans/v0.7/038-executed-documentation-examples.md`.
 - No private corpus, external network, remote, evidence reserve, push, ISO, or
-  physical burn was used. G18e has since completed; G18f remains unapproved.
+  physical burn was used. G18f has since completed; G18g remains unapproved.
 
 ## v0.7 G18c.1 completion — 2026-08-27
 
@@ -340,7 +357,7 @@ onward is approved.
   volume coverage before the next GitHub push. CI can validate tracked schemas,
   fixtures, and canonicalization but cannot claim to see the external reserve.
   No push or physical optical burn is authorized by the planning amendment.
-- G17a-G18e are complete. G18f is next but unapproved; all later work remains
+- G17a-G18f are complete. G18g is next but unapproved; all later work remains
   separately approval-gated and every future push must pass the G17b gate.
 
 ## 2026-08-24 planning amendment — source-anchored docs and Hugo/Ledger
@@ -2683,5 +2700,5 @@ attempt detail remains append-only in `agent/ATTEMPT_LOG.jsonl`.
 - Long-term SQLite driver choice (current local cgo/libsqlite3 adapter).
 - Official MCP Go SDK adoption/version.
 - Sync and evidence-preservation decisions live in the owning plan items; the
-  register in `PLAN.md` is an index. G0-G18e are complete. G18f and every later
+  register in `PLAN.md` is an index. G0-G18f are complete. G18g and every later
   slice remain approval-gated; the checked-in G17b verifier gates future pushes.

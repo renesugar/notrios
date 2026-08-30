@@ -51,10 +51,17 @@ make web           # web/dist/ (npm ci runs automatically on first build)
 make gui           # bin/notrios desktop binary
 make serve         # run the service from source on 127.0.0.1:8080
 make docs          # _site/ documentation site (uses npx marked + pagefind)
+make docgen        # check committed generated documentation (no model)
+make g18f-validate # validate committed G18f evidence (no model)
 make smoke         # end-to-end REST/MCP smoke test on a loopback port
 make doctor        # notriosctl doctor: configuration and environment check
 make seed-help     # mirror docs/ into the Help notebook of the default database
 ```
+
+G18f semantic review is optional and maintainer-local. When the approved local
+Qwen GGUF is available through llama.cpp on `127.0.0.1:8081`, run
+`make doccheck`. The client rejects non-loopback and HTTPS endpoints, uses no
+note/database data, and records an advisory report without changing prose.
 
 To see the interface while working on it, `make serve` and open
 <http://127.0.0.1:8080> — no binary build needed. For the frontend dev server

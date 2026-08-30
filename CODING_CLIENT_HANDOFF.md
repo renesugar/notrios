@@ -2,6 +2,31 @@
 
 This handoff applies to any coding agent or client continuing this project (Codex, Claude, aider, swival.dev, etc. — formerly `CODEX_HANDOFF.md`). The repository is designed so an agent can continue from repository files alone.
 
+## G18f completion handoff — 2026-08-30
+
+G18f is complete and archived as
+`plans/v0.7/040-generated-docs-advisory-review.md`. `docgen --user/--api` now
+uses explicit templates to place 15 separate source-adjacent fragments into
+five committed Markdown pages. Closed adapters generate 412 finite config,
+CLI, REST/OpenAPI, MCP, and GUI rows. `TestDocsAreCurrent`, registry parity,
+and `make g18f-validate` are deterministic CI/release gates over the same
+Markdown consumed by the site and Help seeder.
+
+Maintainer-only `doccheck` accepts only loopback HTTP, strips source-adjacent
+claims from bounded declaration/callee views, explains source before revealing
+the claim, repeats each review, and records prompt/source hashes, model, tokens,
+timing, variance, and zero API cost. Its decomposed Qwen 2.5 Coder 1.5B run
+scored 7/16 calibration decisions and contradicted 11/13 fragments. Every
+contradiction has a reviewed disposition tied to deterministic generation or a
+registered claim test. All 26 prose-only action attempts failed exact G18d/G18e
+fixture matching and were rejected; no model output ran or rewrote prose.
+
+The independently known schema-v20 prose and CLI sample were corrected to the
+canonical v27. Evidence is under `performance/v0.7-g18f/`. G18g is the next
+incomplete item and remains unapproved. No external model, private corpus,
+note/database content, reserve write, GitHub push, ISO, or physical burn was
+used.
+
 ## G18e completion handoff — 2026-08-29
 
 G18e is complete and archived as
@@ -36,7 +61,7 @@ states honestly that the current GUI does not expose import/export job control
 or v0.6's batch organizer API. Transient reviewed screenshots are
 `/tmp/notrios-g18e-desktop.png` and
 `/tmp/notrios-g18e-narrow-sync.png`; they are not committed or used as result
-assertions. G18f is the next incomplete item and remains unapproved.
+assertions. G18f has since completed; G18g is next and remains unapproved.
 
 ## G18d release handoff complete
 
@@ -52,7 +77,7 @@ The packager reran the complete Go/scaffold/frontend/documentation evidence
 chain and its ZIP verifier. An independent verification also found the built
 UI, G18d report, and G18d plan archive present, with no `.git`,
 `web/node_modules`, runtime `data`, or SQLite entries. G18e has since completed;
-G18f is the next incomplete item and remains unapproved.
+G18f has since completed; G18g is next and remains unapproved.
 
 Current phase: v0.1 through **v0.6** are complete; product version is **0.6.0**
 and the schema is **v27**. The eight v0.6 slices are archived under
@@ -68,7 +93,7 @@ G14a-G14e archive-scalability sequence, the newly inserted blocking G17a-G17b
 evidence-preservation sequence, and the newly planned G18a-G18g documentation-
 integrity/Hugo-Ledger sequence and the G18c.1 agent-workflow amendment. The user's 2026-08-11
 review resolved the policy decisions through G17, including mandatory payload
-encryption and per-replica Ed25519 signatures. **G0-G18e are complete** and
+encryption and per-replica Ed25519 signatures. **G0-G18f are complete** and
 archived under `plans/v0.7/`; their reviewed evidence is under
 `performance/v0.7-g0/`, `performance/v0.7-g1/`, `performance/v0.7-g1a/`,
 `performance/v0.7-g2/`, `performance/v0.7-g4/`, `performance/v0.7-g5/`,
@@ -99,9 +124,9 @@ G18c is archived as `plans/v0.7/036-documentation-anchor-audit.md`.
 G18c.1 is archived as `plans/v0.7/037-agent-usage-preflight.md`.
 G18d is archived as `plans/v0.7/038-executed-documentation-examples.md`.
 G18e is archived as `plans/v0.7/039-executed-gui-journeys.md`.
-**G0-G18e are complete.
+**G0-G18f are complete.
 The G17b pre-push verifier is mandatory before any future GitHub push; no push
-or physical burn was authorized or performed. G18f and later items are next and
+or physical burn was authorized or performed. G18g and later items are next and
 are not approved.** G14b selected option B: a
 required compatible same-schema SQLite-image plus bounded packed-assets
 capability for whole-library full backup/catch-up, retaining packed semantic
@@ -122,7 +147,7 @@ no heading IDs. Submodule archives omit the theme payload; initial Hugo Module
 resolution is network/cache dependent and its generated vendor tree omitted
 LICENSE. Repeat Hugo output is byte-identical; Pagefind varies hashed shard
 names while preserving scope/search, so only semantic reproducibility is
-claimed. G18e is now complete; G18f is the next incomplete item and remains
+claimed. G18f is now complete; G18g is the next incomplete item and remains
 unapproved.
 
 G18c implements a repository-only `docaudit` command/library over the G18a
@@ -152,7 +177,7 @@ operation, run, duration, and reset window. The 20% floor is raised only by the
 largest matching observed drop plus five points. At session start, run the
 fixture suite and a live probe as described in `AGENTS.md`; if a client update
 changes the contract, fix fixtures before relying on strict mode. G18e is
-complete and G18f remains the next incomplete, unapproved item.
+complete and G18f has since completed; G18g is the next incomplete, unapproved item.
 
 G18d upgrades the strict 131-entry non-GUI example registry to schema v2. The
 real-binary scratch harness executes 63 literal CLI, configuration, REST, and
@@ -359,7 +384,7 @@ was added. G15-G17b are complete. G17b sealed 81 curated artifacts, produced
 the verified release ZIP and immutable reserve described above, and committed
 the finite outer-catalog closure. The generated DigiCert pilot and all
 production tokens passed policy/nonce/imprint/EKU/time/explicit-chain checks;
-Sectigo was not used. G18e is complete; G18f is next but unapproved. Every
+Sectigo was not used. G18f is complete; G18g is next but unapproved. Every
 remaining item requires separate item-by-item user approval, and every future
 push must first pass the G17b gate.
 

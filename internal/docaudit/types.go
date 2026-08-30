@@ -184,5 +184,6 @@ type Options struct {
 	Root          string
 	InventoryPath string
 	RegistryPath  string
+	TemplatePath  string
 	TSResolver    func(root string, anchors []string) error
 }

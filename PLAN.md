@@ -1,10 +1,10 @@
 # Plan: v0.7 — Native synchronization
 
-Status: **G0-G18e are complete through 2026-08-29. Product version remains 0.6.0 and
+Status: **G0-G18f are complete through 2026-08-30. Product version remains 0.6.0 and
 the canonical schema is v27. The user resolved G17b's evidence scope, exact
 OpenPGP identity, and RFC-3161 provider order on 2026-08-25, then authorized
 the exact signer/Secret Service workflow, TSA requests, and reserve writes and
-attested offline backup/revocation readiness. G18f-G18g are not approved. The
+attested offline backup/revocation readiness. G18g is not approved. The
 G17b pre-push evidence gate is now mandatory; no GitHub push or
 physical optical burn occurred.** The
 former seven-item draft was too coarse: it mixed protocol research, canonical
@@ -2404,7 +2404,7 @@ Center close target and made remote preview images inert until server-side
 localization. The result and boundaries are archived under
 `plans/v0.7/039-executed-gui-journeys.md`.
 
-## G18f. Generated documentation subsets, freshness, and advisory prose review
+## G18f. Generated documentation subsets, freshness, and advisory prose review — complete
 
 **Goal.** Make anchored user/API fragments and finite lists impossible to
 silently drift, then use calibrated semantic review to reduce—not disguise—the
@@ -2456,6 +2456,19 @@ prompt, source hash, variance, and cost without committing secrets.
   model may run without network; any hosted-model source upload needs separate
   approval. Approving this item does not approve an external service,
   dependency, or recurring cost.
+
+**Outcome (2026-08-30).** Explicit templates now place 15 separate user/API
+source fragments into five committed Markdown pages, with 412 finite rows
+derived from the config, CLI, REST/OpenAPI, MCP, and GUI registries. In-memory
+freshness and mutation tests are deterministic CI gates. Maintainer-only local
+`doccheck` withholds each claim during source explanation, records repeated
+decomposed classifications, and admits actionability only through exact closed
+G18d/G18e fixtures. The recorded 1.5B Qwen run scored 7/16 on calibration,
+contradicted 11/13 fragments, matched no action fixture, and is retained only
+as a non-blocking disagreement generator; every contradiction has a human
+disposition and no prose was automatically rewritten. The known schema-v20
+drift was corrected to v27. Evidence and boundaries are archived under
+`plans/v0.7/040-generated-docs-advisory-review.md`.
 
 ## G18g. Migrate the documentation site to pinned Hugo/Ledger
 
@@ -2632,9 +2645,9 @@ recommendation, blocking status, and consequence.
 | Hosted semantic-review execution | G18f | Open, non-blocking default: maintainer-only recorded command; hosted source upload needs separate approval |
 | Release version/schema bookkeeping | G20 | Open, non-blocking until wrap-up |
 
-G0-G18e are complete and the production physical restore/catch-up, durable
+G0-G18f are complete and the production physical restore/catch-up, durable
 sync-job, local recovery UI, safe-retention, and evidence-preservation design
 contracts are frozen. The G17b host-side evidence gate is mandatory before any
-future GitHub push. G18f-G18g are unapproved and G18f is next.
+future GitHub push. G18g is unapproved and next.
 Implementation begins only after an explicit instruction naming
 the item to start and, where stated, authorizing its blocking operations.

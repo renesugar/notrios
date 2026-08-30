@@ -1230,6 +1230,24 @@ external requests, and changed unrun reasons. Run the deterministic gates with
 `make g18e-validate`; the real browser pass remains opt-in because it requires
 Chrome, Playwright, loopback listeners, and built `web/dist` assets.
 
+## v0.7 G18f generated documentation and advisory review
+
+`TestDocsAreCurrent` regenerates both user and API audiences in memory from the
+explicit template and compares them with committed Markdown. Repository parity
+tests independently enumerate configuration, defaults, CLI usage, REST/OpenAPI,
+MCP tools/scopes, and G18e journeys. `make docgen` and `make g18f-validate` are
+deterministic CI/release gates; mutation tests break hashes, markers, audience,
+calibration accounting, triage, fixture closure, and policy.
+
+`make doccheck` is maintainer-only and never ordinary CI. It may contact only a
+plain-HTTP loopback llama.cpp endpoint, withholds claims during bounded source
+explanation, records at least two repetitions, and never reads note/database
+content. Model output is advisory, cannot rewrite prose, and cannot run an
+arbitrary action. An action is accepted only by exact match with the already
+closed G18d/G18e fixtures. Every contradicted verdict must have a nonempty human
+disposition. The committed Qwen report scored 7/16 calibration decisions, so
+its disagreements are not evidence of product drift by themselves.
+
 ## G17a-G17b evidence-preservation validation
 
 G17a completed generated-only canonical JSONL/entry-chain mutation, correct and

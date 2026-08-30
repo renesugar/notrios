@@ -25,6 +25,81 @@ claude mcp add --transport http notrios http://127.0.0.1:8080/mcp
 The adapter implements the core JSON-RPC methods rather than the full official SDK surface; if your client requires session negotiation beyond `initialize`, check compatibility first.
 
 ## Tool scopes
+<!-- notrios:generated:user:tool-scopes:begin -->
+<!-- source: go:github.com/renesugar/notrios/internal/httpapi#MCPScopes -->
+MCPScopes lists every MCP scope, narrowest first.
+- search-only
+- read-only
+- editor
+- organizer
+<!-- source: go:github.com/renesugar/notrios/internal/httpapi#mcpToolScopes -->
+mcpToolScopes maps every tool to the narrowest scope that may call it.
+
+Scopes are cumulative: a tool available at `read-only` is available at
+`editor` and `organizer` too. That is what makes the list readable — each
+entry answers "how much trust does this need", not "which tiers include it".
+
+**Every registered tool must appear here.** `TestEveryMCPToolIsClassified`
+fails if one does not, so a tool cannot be added without someone deciding how
+much trust it needs. Defaulting an unclassified tool to the narrowest scope
+would be the dangerous kind of safe: it would ship silently.
+- append_to_note — editor
+- cancel_sync_job — read-only
+- create_from_template — editor
+- create_note — editor
+- delete_note — editor
+- edit_note — editor
+- find_graph_path — read-only
+- get_document — read-only
+- get_document_blocks — read-only
+- get_document_outline — read-only
+- get_documents — read-only
+- get_graph — read-only
+- get_graph_report — read-only
+- get_job — read-only
+- get_lint_report — read-only
+- get_note_line_range — read-only
+- get_notebook_notes — read-only
+- get_notebook_tree — search-only
+- get_sync_status — read-only
+- list_collections — search-only
+- list_document_links — read-only
+- list_document_resources — read-only
+- list_jobs — read-only
+- list_notebooks — search-only
+- list_search_notebooks — search-only
+- list_sync_conflicts — read-only
+- list_tags — search-only
+- list_tasks — read-only
+- list_templates — read-only
+- localize_remote_media — editor
+- move_note_to_notebook — editor
+- plan_selection — read-only
+- plan_sync — read-only
+- prepend_to_note — editor
+- read_resource — read-only
+- request_resource_fetch — read-only
+- retry_sync_job — read-only
+- run_batch — organizer
+- run_note_query — read-only
+- scan_remote_media — read-only
+- search_documents — search-only
+- search_in_note — read-only
+- start_sync — read-only
+- tag_note — editor
+- untag_note — editor
+- update_note — editor
+<!-- source: go:github.com/renesugar/notrios/internal/httpapi#mcpSyncToolScopes -->
+mcpSyncToolScopes assigns the orthogonal sync scope required by each sync
+control-plane tool.
+- cancel_sync_job — control
+- get_sync_status — status
+- list_sync_conflicts — status
+- plan_sync — control
+- request_resource_fetch — control
+- retry_sync_job — control
+- start_sync — control
+<!-- notrios:generated:user:tool-scopes:end -->
 
 A **scope** decides which tools an MCP client sees and may call. There are four,
 narrowest first:
@@ -80,6 +155,108 @@ backup, restore request, peer enrollment/retirement, purge, or reset. Retry and
 cancel apply only to the MCP actor's own incremental/resource jobs.
 
 ## Read tools
+<!-- notrios:generated:user:read-tools:begin -->
+<!-- source: go:github.com/renesugar/notrios/internal/httpapi#(*Server).mcpTools -->
+mcpTools is the finite MCP tool registry before scope filtering.
+- append_to_note
+- cancel_sync_job
+- create_from_template
+- create_note
+- delete_note
+- edit_note
+- find_graph_path
+- get_document
+- get_document_blocks
+- get_document_outline
+- get_documents
+- get_graph
+- get_graph_report
+- get_job
+- get_lint_report
+- get_note_line_range
+- get_notebook_notes
+- get_notebook_tree
+- get_sync_status
+- list_collections
+- list_document_links
+- list_document_resources
+- list_jobs
+- list_notebooks
+- list_search_notebooks
+- list_sync_conflicts
+- list_tags
+- list_tasks
+- list_templates
+- localize_remote_media
+- move_note_to_notebook
+- plan_selection
+- plan_sync
+- prepend_to_note
+- read_resource
+- request_resource_fetch
+- retry_sync_job
+- run_batch
+- run_note_query
+- scan_remote_media
+- search_documents
+- search_in_note
+- start_sync
+- tag_note
+- untag_note
+- update_note
+<!-- notrios:generated:user:read-tools:end -->
+<!-- notrios:generated:api:read-tools:begin -->
+<!-- source: go:github.com/renesugar/notrios/internal/httpapi#mcpTool -->
+mcpTool is one entry in the server's finite tools/list contract. Generated
+API documentation takes names from mcpTools and keeps scope assignment as a
+separately generated registry.
+- append_to_note
+- cancel_sync_job
+- create_from_template
+- create_note
+- delete_note
+- edit_note
+- find_graph_path
+- get_document
+- get_document_blocks
+- get_document_outline
+- get_documents
+- get_graph
+- get_graph_report
+- get_job
+- get_lint_report
+- get_note_line_range
+- get_notebook_notes
+- get_notebook_tree
+- get_sync_status
+- list_collections
+- list_document_links
+- list_document_resources
+- list_jobs
+- list_notebooks
+- list_search_notebooks
+- list_sync_conflicts
+- list_tags
+- list_tasks
+- list_templates
+- localize_remote_media
+- move_note_to_notebook
+- plan_selection
+- plan_sync
+- prepend_to_note
+- read_resource
+- request_resource_fetch
+- retry_sync_job
+- run_batch
+- run_note_query
+- scan_remote_media
+- search_documents
+- search_in_note
+- start_sync
+- tag_note
+- untag_note
+- update_note
+<!-- notrios:generated:api:read-tools:end -->
 
 `search_documents`, `plan_selection`, `get_document`, `get_documents`,
 `list_collections`, `list_notebooks`, `get_notebook_tree`,

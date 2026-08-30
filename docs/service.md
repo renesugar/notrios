@@ -19,6 +19,127 @@ The `notrios` desktop binary embeds the same service; `notrios -no-gui` behaves 
 **Configuration discovery:** with no `-config` flag, the service loads `config/config.example.yaml` if it exists in the working directory (convenient in a source checkout) and otherwise falls back to compiled defaults. **Precedence:** command-line flags override the config file, which overrides the built-in defaults.
 
 ## Configuration reference
+<!-- notrios:generated:user:configuration-reference:begin -->
+<!-- source: go:github.com/renesugar/notrios/internal/store#CurrentSchemaVersion -->
+CurrentSchemaVersion is the canonical SQLite schema understood by this
+build. Archive-v2 manifests record this source schema but never include
+derived FTS5 or Recoll state.
+<!-- source: go:github.com/renesugar/notrios/internal/config#Config -->
+Config contains the runtime settings used by notriosd and notriosctl.
+It intentionally avoids third-party YAML dependencies until the project
+chooses and pins the long-term configuration library.
+- config_path
+- data
+- data.asset_store
+- data.database_path
+- data.directory
+- data.projection_dir
+- mcp
+- mcp.default_profile
+- mcp.default_scope
+- mcp.enabled
+- mcp.max_document_bytes
+- mcp.max_results
+- mcp.sync_scope
+- profile
+- profile.id
+- profile.name
+- profile.registry_path
+- remote_media
+- remote_media.allow_private_networks
+- remote_media.allowed_domains
+- remote_media.blocked_domains
+- remote_media.blocked_schemes
+- remote_media.default_action
+- remote_media.fetch_timeout_seconds
+- remote_media.max_bytes
+- remote_media.max_redirects
+- remote_media.quarantine_dir
+- remote_media.review_domains
+- retention
+- retention.purged_resource_days
+- retention.sync_history_days
+- retention.sync_peer_warning_days
+- retention.unreferenced_resource_days
+- search
+- search.default_limit
+- search.max_limit
+- search_sidecar
+- search_sidecar.binary
+- search_sidecar.enabled
+- search_sidecar.index_dir
+- server
+- server.listen_addr
+- server.public_base_url
+- server.web_dir
+- sync
+- sync.credential_ref
+- sync.directory
+- sync.rest
+- sync.rest.burst
+- sync.rest.enabled
+- sync.rest.failures_per_minute
+- sync.rest.key_file
+- sync.rest.max_body_bytes
+- sync.rest.requests_per_minute
+- sync.rest.require_tls
+- sync.rest.tls_cert_file
+- sync.rest.tls_key_file
+- sync.rest_base_url
+- sync.target
+<!-- source: go:github.com/renesugar/notrios/internal/config#Default -->
+Default returns the canonical local-development defaults for every runtime
+configuration group.
+- config_path = ""
+- data.asset_store = "./data/assets"
+- data.database_path = "./data/notes.sqlite"
+- data.directory = "./data"
+- data.projection_dir = "./data/projections"
+- mcp.default_profile = ""
+- mcp.default_scope = ""
+- mcp.enabled = true
+- mcp.max_document_bytes = 65536
+- mcp.max_results = 10
+- mcp.sync_scope = ""
+- profile.id = ""
+- profile.name = ""
+- profile.registry_path = ""
+- remote_media.allow_private_networks = false
+- remote_media.allowed_domains = null
+- remote_media.blocked_domains = null
+- remote_media.blocked_schemes = ["file","data","javascript","ftp"]
+- remote_media.default_action = "review"
+- remote_media.fetch_timeout_seconds = 30
+- remote_media.max_bytes = {"image":20971520,"pdf":104857600,"video":209715200}
+- remote_media.max_redirects = 5
+- remote_media.quarantine_dir = "./data/quarantine"
+- remote_media.review_domains = null
+- retention.purged_resource_days = 90
+- retention.sync_history_days = 90
+- retention.sync_peer_warning_days = 30
+- retention.unreferenced_resource_days = 30
+- search.default_limit = 20
+- search.max_limit = 100
+- search_sidecar.binary = "recollindex"
+- search_sidecar.enabled = false
+- search_sidecar.index_dir = "./data/search-index"
+- server.listen_addr = "127.0.0.1:8080"
+- server.public_base_url = "http://127.0.0.1:8080"
+- server.web_dir = ""
+- sync.credential_ref = ""
+- sync.directory = ""
+- sync.rest.burst = 0
+- sync.rest.enabled = false
+- sync.rest.failures_per_minute = 0
+- sync.rest.key_file = ""
+- sync.rest.max_body_bytes = 0
+- sync.rest.requests_per_minute = 0
+- sync.rest.require_tls = true
+- sync.rest.tls_cert_file = ""
+- sync.rest.tls_key_file = ""
+- sync.rest_base_url = ""
+- sync.target = "none"
+<!-- notrios:generated:user:configuration-reference:end -->
 
 The authoritative, always-current example is `config/config.example.yaml` in the repository. The parser accepts a deliberately small YAML subset (two-level sections of scalar values); unknown keys are ignored so configs stay forward-compatible.
 
@@ -76,7 +197,7 @@ to delete. Resources referenced by any current or trashed note are protected.
 
 **Automatic creation:** on startup the service creates every configured
 directory and, if absent, the database itself, applying schema migrations to
-older databases automatically. The current schema is version 20.
+older databases automatically. The current schema is version 27.
 `/api/v1/status` reports the active runtime profile name/ID (when managed), resolved paths, database state, schema version,
 capability flags, search limits, remote-media policy, and optional Recoll
 backlog/sync/reconciliation state.

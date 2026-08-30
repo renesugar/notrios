@@ -15,6 +15,7 @@ bash scripts/validate-scaffold.sh
 python3 performance/v0.7-g18c/validate_evidence.py
 python3 performance/v0.7-g18d/validate_evidence.py
 make g18e-validate
+make g18f-validate
 
 rm -f "$OUT"
 zip -qr "$OUT" . \

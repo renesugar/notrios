@@ -10,7 +10,7 @@ This file is the codebase atlas. Update it whenever major files or directories a
   scalability sequence, the blocking G17a-G17b external evidence-preservation
   sequence, and the newly planned G18a-G18g documentation-integrity/Hugo-Ledger
   sequence. G0-G18 are complete; the G17b verifier gates every future GitHub
-  push. G18a-G18d are complete; G18e is next but unapproved. The
+  push. G18a-G18f are complete; G18g is next but unapproved. The
   current product remains 0.6.0 at schema v27; v0.6 is archived under
   `plans/v0.6/`; v0.5 and v0.4 are archived under their version directories.
 - `plans/scaffold/SCAFFOLD_CREATION_PLAN.md` — process for creating/refining this scaffold.
@@ -81,6 +81,15 @@ This file is the codebase atlas. Update it whenever major files or directories a
   executable-fence and GUI-journey accounting, and four-grade topic report.
 - `performance/v0.7-g18c/` — the exact 351-unit report, 20-case Go mutation
   matrix, eight-case TypeScript resolver coverage, and freshness validator.
+- `cmd/docgen/`, `internal/docgen/`, and `docs/docgen/templates.json` — G18f's
+  explicit user/API placement templates, closed finite-registry adapters, and
+  in-memory committed-Markdown freshness gate.
+- `cmd/doccheck/`, `internal/doccheck/`, and `scripts/doccheck_ts.mjs` — G18f's
+  loopback-only local advisory client, bounded claim-blind Go/TypeScript source
+  view, decomposed verdict recording, and exact closed-fixture action matcher.
+- `performance/v0.7-g18f/` — deterministic hashes/counts, the repeated local
+  Qwen advisory report, human dispositions, mutation matrix, and model-free
+  validator. The low calibration score is evidence, not a build oracle.
 - `performance/v0.7-g0/` — completed G0 threat model, normative protocol
   glossary, thirty misuse/control traces, primary-source dependency/license/
   platform validation, and its structural evidence validator.

@@ -68,6 +68,49 @@ own — `make serve` from source, or `./bin/notriosd` — and open
 | `service listener stopped: listen tcp ... address already in use` in the log | another notriosd/notrios owns the port; stop it or change `-addr` (the GUI itself keeps working against its in-process handler) |
 
 ## Layout
+<!-- notrios:generated:user:layout:begin -->
+<!-- source: go:github.com/renesugar/notrios/internal/docjourney#Manifest -->
+Manifest is the finite documented GUI-procedure catalog. Each generated row
+preserves the procedure's reviewed label and whether G18e executed it or
+retained an explicit unverified reason.
+- Open a search result — executed (search-open)
+- Page through search results — executed (search-page)
+- Create a note in a notebook — executed (new-note-in-notebook)
+- Edit and save a note — executed (edit-save)
+- Move a note to another notebook — executed (move-note)
+- Trash and restore a note — executed (trash-restore)
+- Permanently purge a trashed note — executed (purge-note)
+- Review notebook deletion — executed (delete-notebook-review)
+- Respect protected Help items — executed (protected-items)
+- Change the application theme — executed (themes)
+- Insert a stable note link — executed (insert-and-check-link)
+- Open links from preview — executed (preview-links)
+- Upload and attach a resource — executed (upload-resource)
+- Review remote-media policy before localization — executed (localize-remote-media)
+- Inspect the local link graph — executed (inspect-local-graph)
+- Paste a table into the editor — executed (paste-table)
+- Use a live query block — executed (live-query-block)
+- Render math and code blocks — executed (math-and-code)
+- Resize workspace panes — executed (resize-panes)
+- Open Sync Center — executed (open-sync-center)
+- Configure synchronization — executed (sync-setup)
+- Pair a synchronization peer — executed (sync-pairing)
+- Start and monitor a sync job — executed (sync-jobs)
+- Request a lazy resource — executed (sync-lazy-resource)
+- Review and resolve a sync conflict — executed (sync-conflict)
+- Create a password backup — executed (sync-backup-create)
+- Inspect a password backup — executed (sync-backup-inspect)
+- Review sync recovery — executed (sync-recovery-review)
+- Review synchronization retention — executed (sync-retention)
+- Review peer retirement — executed (sync-retirement)
+- Inspect synchronization repairs — executed (sync-repairs)
+- Confirm destructive actions — executed (destructive-confirmations)
+- Run an import/export job in the GUI — unverified (import-export-job-gui)
+- Batch-organize notes in the GUI — unverified (batch-organizer-gui)
+- Find and replace in the editor — unverified (editor-find-replace)
+- Use native shell menu actions — unverified (native-shell-actions)
+- Apply destructive sync restore — unverified (destructive-restore-apply)
+<!-- notrios:generated:user:layout:end -->
 
 Below the menu bar the window is four side-by-side panes, always in this order:
 
@@ -92,6 +135,11 @@ Below the menu bar the window is four side-by-side panes, always in this order:
 Each pane scrolls on its own; the window itself never scrolls.
 
 ### Sync Center
+<!-- notrios:generated:user:sync-center:begin -->
+<!-- source: go:github.com/renesugar/notrios/internal/httpapi#(*Server).handleSyncUIRetirePeer -->
+handleSyncUIRetirePeer requires the GUI review flow to echo the exact peer
+identity before it records the signed, destructive retirement decision.
+<!-- notrios:generated:user:sync-center:end -->
 
 The **↻ Sync** button opens the local Sync Center. Its header always names the
 active profile, logical library, and replica so setup cannot silently target a

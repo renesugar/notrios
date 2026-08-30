@@ -17,7 +17,7 @@ func TestRepositoryAuditReportsHonestCoverage(t *testing.T) {
 	var resolvedTS []string
 	report, err := Audit(Options{
 		Root: root, InventoryPath: "performance/v0.7-g18a/INVENTORY.json",
-		RegistryPath: "docs/docaudit/registry.json",
+		RegistryPath: "docs/docaudit/registry.json", TemplatePath: "docs/docgen/templates.json",
 		TSResolver: func(_ string, anchors []string) error {
 			resolvedTS = append(resolvedTS, anchors...)
 			return nil
@@ -26,13 +26,13 @@ func TestRepositoryAuditReportsHonestCoverage(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if report.ManualSections != 199 || report.Fragments != 12 || report.Claims != 4 ||
+	if report.ManualSections != 199 || report.Fragments != 15 || report.Claims != 4 ||
 		report.Executables != 131 || report.Journeys != 9 {
 		t.Fatalf("unexpected coverage surface: %+v", report)
 	}
-	if report.Counts[GradeExecuted] != 71 || report.Counts[GradeGenerated] != 8 ||
+	if report.Counts[GradeExecuted] != 71 || report.Counts[GradeGenerated] != 11 ||
 		report.Counts[GradeClaimed] != 4 || report.Counts[GradeUnverified] != 268 ||
-		report.Denominator != 351 {
+		report.Denominator != 354 {
 		t.Fatalf("coverage counts hide or lose units: counts=%v denominator=%d", report.Counts, report.Denominator)
 	}
 	if len(resolvedTS) == 0 {

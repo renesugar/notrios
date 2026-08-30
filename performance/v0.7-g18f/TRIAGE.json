@@ -1,0 +1,18 @@
+{
+  "schema": "notrios.doccheck.triage.v1",
+  "dispositions": [
+    {"id":"cli-usage-forms","disposition":"deterministic-source-prevails","note":"The generated list is parsed from printHelp and protected by TestDocsAreCurrent; a contrary advisory verdict is a model false positive."},
+    {"id":"configuration-defaults","disposition":"deterministic-source-prevails","note":"The generated values come from config.Default through the closed repository resolver and exact parity tests."},
+    {"id":"configuration-keys","disposition":"deterministic-source-prevails","note":"The generated keys come from the Config type through reflection and exact finite-registry parity tests."},
+    {"id":"current-schema-version","disposition":"documentation-corrected","note":"CurrentSchemaVersion and its registered claim test establish v27; the independently known stale v20 manual prose and CLI sample were corrected to v27."},
+    {"id":"destructive-rest-confirmations","disposition":"claim-test-prevails","note":"The registered resource HTTP test verifies exact object-specific confirmation; model disagreement does not override that executed check."},
+    {"id":"gui-journey-surface","disposition":"deterministic-source-prevails","note":"The generated rows come from the strict G18e 37-journey manifest and its validator."},
+    {"id":"gui-peer-retirement-confirmation","disposition":"claim-test-prevails","note":"The registered Sync UI retirement test verifies preview and exact peer confirmation."},
+    {"id":"mcp-scope-surface","disposition":"deterministic-source-prevails","note":"The generated finite scope list comes from MCPScopes and repository parity tests."},
+    {"id":"mcp-sync-tool-scopes","disposition":"deterministic-source-prevails","note":"The generated sync-scope assignments come from the closed mcpSyncToolScopes registry."},
+    {"id":"mcp-tool-scope-assignments","disposition":"deterministic-source-prevails","note":"The generated assignments come from mcpToolScopes, with every registered tool classification tested."},
+    {"id":"mcp-tool-surface","disposition":"deterministic-source-prevails","note":"The generated names come from the finite mcpTools registry; unknown or missing entries fail parity checks."},
+    {"id":"product-version","disposition":"claim-test-prevails","note":"The source constant and registered release-candidate test establish the product version."},
+    {"id":"rest-operation-surface","disposition":"deterministic-source-prevails","note":"The generated operation list has exact REST registration and OpenAPI parity; model disagreement is not release evidence."}
+  ]
+}

@@ -32,6 +32,12 @@ type mcpRPCError struct {
 	Message string `json:"message"`
 }
 
+// mcpTool is one entry in the server's finite tools/list contract. Generated
+// API documentation takes names from mcpTools and keeps scope assignment as a
+// separately generated registry.
+//
+//notrios:doc api mcp-api-contract
+//notrios:enumerates go:github.com/renesugar/notrios/internal/httpapi#(*Server).mcpTools
 type mcpTool struct {
 	Name        string         `json:"name"`
 	Description string         `json:"description"`

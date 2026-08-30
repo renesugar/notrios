@@ -1,0 +1,1229 @@
+{
+  "schema": "notrios.doccheck.advisory.v1",
+  "generated_at": "2026-08-30T05:22:24Z",
+  "policy": {
+    "endpoint_scope": "loopback-only",
+    "source_scope": "repository-source-only; no notes or databases",
+    "automatic_edit": false,
+    "build_blocking": false,
+    "cost_usd": 0
+  },
+  "calibration": {
+    "schema": "notrios.g18a.contradiction-calibration.v1",
+    "runs": [
+      {
+        "id": "real-schema-drift",
+        "expected": "contradicted",
+        "runs": [
+          {
+            "repeat": 1,
+            "blind_explanation": "The behavior of the provided code is to define a constant named `CurrentSchemaVersion` with the value `27`. This constant is part of the `store` package within the `notrios` module, which is located in the `github.com/renesugar/notrios/internal` directory. The constant is used to represent the current schema version of the store.",
+            "verdict": "contradicted",
+            "conflict_answer": "yes",
+            "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+            "source_sha256": "bf68a7429ff08ca5e32d8d8e57c0e41edea5116863172abcd5cf96e662549bc3",
+            "explanation_prompt_sha256": "89951e2cded053f661f58e214a610aea4e92551d9ea899c31c86b553463efca5",
+            "verdict_prompt_sha256": "8223a2ea47bd9edee9cfc45bbec28aa493154d5509ccb8f420c3f14cb4e53ca7",
+            "tokens_evaluated": 289,
+            "tokens_predicted": 77,
+            "prompt_ms": 1546.6439999999998,
+            "predicted_ms": 2842.706
+          },
+          {
+            "repeat": 2,
+            "blind_explanation": "The behavior of the provided code is to define a constant named `CurrentSchemaVersion` with the value `27`. This constant is part of the `store` package within the `notrios` module, which is located in the `github.com/renesugar/notrios/internal` directory. The constant is accessible within the same package and its bounded direct same-package callees.",
+            "verdict": "supported",
+            "conflict_answer": "no",
+            "support_answer": "yes",
+            "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+            "source_sha256": "bf68a7429ff08ca5e32d8d8e57c0e41edea5116863172abcd5cf96e662549bc3",
+            "explanation_prompt_sha256": "89951e2cded053f661f58e214a610aea4e92551d9ea899c31c86b553463efca5",
+            "verdict_prompt_sha256": "7563068f837f139da7e9dc78abde33002d1d2e4cdbb300d54b652681e14f9dae",
+            "tokens_evaluated": 465,
+            "tokens_predicted": 82,
+            "prompt_ms": 1368.469,
+            "predicted_ms": 2958.2940000000003
+          }
+        ],
+        "variance": true
+      },
+      {
+        "id": "schema-supported-control",
+        "expected": "supported",
+        "runs": [
+          {
+            "repeat": 1,
+            "blind_explanation": "The behavior of the provided code is to define a constant named `CurrentSchemaVersion` with the value `27`. This constant is part of the `CurrentSchemaVersion` struct within the `store` package of the `notrios` module. The constant is accessible within the same package and is not bound to any other package.",
+            "verdict": "contradicted",
+            "conflict_answer": "yes",
+            "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+            "source_sha256": "bf68a7429ff08ca5e32d8d8e57c0e41edea5116863172abcd5cf96e662549bc3",
+            "explanation_prompt_sha256": "89951e2cded053f661f58e214a610aea4e92551d9ea899c31c86b553463efca5",
+            "verdict_prompt_sha256": "0986d94bca3c32a1a08f50e330bea4b9d3b0a64e085e0fe825571cf5665c0490",
+            "tokens_evaluated": 283,
+            "tokens_predicted": 70,
+            "prompt_ms": 1194.2259999999999,
+            "predicted_ms": 2703.891
+          },
+          {
+            "repeat": 2,
+            "blind_explanation": "The behavior of the provided code is to define a constant `CurrentSchemaVersion` with the value `27`. This constant is used to represent the current schema version of the store. The code is part of a package named `internal/store` within the `notrios` repository. The constant is defined in the `go:github.com/renesugar/notrios/internal/store` package, which is a direct same-package callee.",
+            "verdict": "contradicted",
+            "conflict_answer": "yes",
+            "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+            "source_sha256": "bf68a7429ff08ca5e32d8d8e57c0e41edea5116863172abcd5cf96e662549bc3",
+            "explanation_prompt_sha256": "89951e2cded053f661f58e214a610aea4e92551d9ea899c31c86b553463efca5",
+            "verdict_prompt_sha256": "0cdb59d81ec6d0a3abba30acb981822d8a7c34cee45ed75c809fac6443c36568",
+            "tokens_evaluated": 303,
+            "tokens_predicted": 90,
+            "prompt_ms": 1244.8919999999998,
+            "predicted_ms": 3658.79
+          }
+        ],
+        "variance": true
+      },
+      {
+        "id": "recoll-negated-supported",
+        "expected": "supported",
+        "runs": [
+          {
+            "repeat": 1,
+            "blind_explanation": "The provided declaration defines a Go interface named `Store` that represents a store for documents and resources. The interface includes methods for various operations such as closing the store, bootstrapping the store, listing collections, creating and retrieving documents, managing document revisions, and more. The methods are all declared to return errors, indicating that any operation that might fail will return an error.",
+            "verdict": "contradicted",
+            "conflict_answer": "yes",
+            "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+            "source_sha256": "056b4e948d30bc4f3e913e5f8d0c9a15cc5545597bb3bdd20e4b0d16e39f40e3",
+            "explanation_prompt_sha256": "c9a6b0967d632d6e1cfb3538186b4efd7b8a5c9cb537bab3be5569497108af74",
+            "verdict_prompt_sha256": "bcf205e625130210b39b1aef5189974b6649f594b81583fba2cbaf9c6d84f2a0",
+            "tokens_evaluated": 2743,
+            "tokens_predicted": 78,
+            "prompt_ms": 1741.8110000000001,
+            "predicted_ms": 3511.463
+          },
+          {
+            "repeat": 2,
+            "blind_explanation": "The provided declaration defines a Go interface named `Store` that represents a store for managing documents, resources, and other entities in a system. The interface includes methods for various operations such as closing the store, bootstrapping the store, listing collections, creating and retrieving documents, and managing document revisions. The interface also includes methods for job control plane operations, such as creating and starting jobs, touching jobs, and reporting job progress. The interface also includes methods for managing templates and tasks, as well as for managing documents and resources. The interface is bounded to the same-package callees, meaning that only methods within the same package can call these methods.",
+            "verdict": "contradicted",
+            "conflict_answer": "yes",
+            "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+            "source_sha256": "056b4e948d30bc4f3e913e5f8d0c9a15cc5545597bb3bdd20e4b0d16e39f40e3",
+            "explanation_prompt_sha256": "c9a6b0967d632d6e1cfb3538186b4efd7b8a5c9cb537bab3be5569497108af74",
+            "verdict_prompt_sha256": "cc2b06d4f7e36a4207bee35ef780b8733e96d4f679807da30bb917537546069d",
+            "tokens_evaluated": 2798,
+            "tokens_predicted": 133,
+            "prompt_ms": 2181.837,
+            "predicted_ms": 5633.995000000001
+          }
+        ],
+        "variance": true
+      },
+      {
+        "id": "recoll-negation-mutation",
+        "expected": "contradicted",
+        "runs": [
+          {
+            "repeat": 1,
+            "blind_explanation": "The provided declaration defines a Go interface named `Store` that represents a store for documents and resources. The interface includes methods for various operations such as creating, retrieving, updating, deleting, and managing documents and resources. The methods are designed to be called by other packages within the same package, and they are not bound to any external providers.",
+            "verdict": "contradicted",
+            "conflict_answer": "yes",
+            "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+            "source_sha256": "056b4e948d30bc4f3e913e5f8d0c9a15cc5545597bb3bdd20e4b0d16e39f40e3",
+            "explanation_prompt_sha256": "c9a6b0967d632d6e1cfb3538186b4efd7b8a5c9cb537bab3be5569497108af74",
+            "verdict_prompt_sha256": "09a76cfaa65374a7d80ba1c40cea6919658059c43c0018425d7759db75c3d449",
+            "tokens_evaluated": 2735,
+            "tokens_predicted": 71,
+            "prompt_ms": 1189.335,
+            "predicted_ms": 2985.604
+          },
+          {
+            "repeat": 2,
+            "blind_explanation": "The provided declaration defines a Go interface named `Store` that represents a store in a system. The interface includes methods for various operations such as managing collections, documents, resources, and more. The methods are designed to interact with a database or other storage system. The interface is bounded to the same package, meaning it can only be implemented by types within the same package.",
+            "verdict": "contradicted",
+            "conflict_answer": "yes",
+            "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+            "source_sha256": "056b4e948d30bc4f3e913e5f8d0c9a15cc5545597bb3bdd20e4b0d16e39f40e3",
+            "explanation_prompt_sha256": "c9a6b0967d632d6e1cfb3538186b4efd7b8a5c9cb537bab3be5569497108af74",
+            "verdict_prompt_sha256": "a6fde5576a05f698611a60df345cad2840d5935ff31ec20ecd92f3de5602f307",
+            "tokens_evaluated": 2741,
+            "tokens_predicted": 77,
+            "prompt_ms": 1178.001,
+            "predicted_ms": 3226.333
+          }
+        ],
+        "variance": true
+      },
+      {
+        "id": "trash-is-restorable",
+        "expected": "supported",
+        "runs": [
+          {
+            "repeat": 1,
+            "blind_explanation": "The behavior of the `App` component is established by the provided declaration and bounded direct same-package callees. The `App` component contains two asynchronous functions: `deleteDocument` and `onRestoreDocument`. The `deleteDocument` function is called when the user clicks the \"Move to Trash\" button, and it deletes the selected document from the database. The `onRestoreDocument` function is called when the user clicks the \"Restore\" button, and it restores the selected document from the trash. The `deleteDocument` and `onRestoreDocument` functions are called directly by the `App` component, and they are not called by any other components.",
+            "verdict": "contradicted",
+            "conflict_answer": "yes",
+            "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+            "source_sha256": "57d6d586e729029be8dc0ed212191c87c4e200ea92a924e0a50ee41850fe95bf",
+            "explanation_prompt_sha256": "97f7d1fda30abdce82fcfa5a15d6843171b5cd18516aba228211844558fa2786",
+            "verdict_prompt_sha256": "ddff3b47420fc98298f30bc53c5cd32f029436de68528534eb712be9a17200fe",
+            "tokens_evaluated": 916,
+            "tokens_predicted": 136,
+            "prompt_ms": 1974.645,
+            "predicted_ms": 5465.475
+          },
+          {
+            "repeat": 2,
+            "blind_explanation": "The behavior of the `App` component is established by the provided declaration and bounded direct same-package callees. The `App` component contains two asynchronous functions, `deleteDocument` and `onRestoreDocument`, which are called when the user interacts with the trash. The `deleteDocument` function deletes a document from the trash, while the `onRestoreDocument` function restores a document from the trash. The `deleteDocument` function uses the `deleteDocument` API endpoint, while the `onRestoreDocument` function uses the `restoreTrashedDocument` API endpoint. The `App` component also contains a `setBusy` function that is called before and after each asynchronous function to indicate that the component is busy.",
+            "verdict": "supported",
+            "conflict_answer": "no",
+            "support_answer": "yes",
+            "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+            "source_sha256": "57d6d586e729029be8dc0ed212191c87c4e200ea92a924e0a50ee41850fe95bf",
+            "explanation_prompt_sha256": "97f7d1fda30abdce82fcfa5a15d6843171b5cd18516aba228211844558fa2786",
+            "verdict_prompt_sha256": "5d554e6995c6f8b8bfb63bcd0d958ebcdad653cdc1e286945402c8b69f25d23a",
+            "tokens_evaluated": 1175,
+            "tokens_predicted": 150,
+            "prompt_ms": 2902.6220000000003,
+            "predicted_ms": 5722.576999999999
+          }
+        ],
+        "variance": true
+      },
+      {
+        "id": "trash-immediate-purge-mutation",
+        "expected": "contradicted",
+        "runs": [
+          {
+            "repeat": 1,
+            "blind_explanation": "The behavior of the `deleteDocument` function is established by the provided declaration and bounded direct same-package callees. The function is called from the `App` component when the user confirms moving a document to the Trash. It sends a DELETE request to the `/api/v1/documents` endpoint with the `base_revision_id` parameter. The function handles the response and updates the UI accordingly.",
+            "verdict": "supported",
+            "conflict_answer": "no",
+            "support_answer": "yes",
+            "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+            "source_sha256": "a67316f5ebd3063c2950c18a5fc13126114964673336602929c7684896a234fd",
+            "explanation_prompt_sha256": "962602d9d3f52140623168fff781514ebed2f3ea3a2e00c8b377099c751914ab",
+            "verdict_prompt_sha256": "fa5f27eb78f14998b2279668f25dde6318dda8cea217bc91f310a41be9f9e4ba",
+            "tokens_evaluated": 758,
+            "tokens_predicted": 83,
+            "prompt_ms": 2697.747,
+            "predicted_ms": 2997.919
+          },
+          {
+            "repeat": 2,
+            "blind_explanation": "The behavior of the `deleteDocument` function is established by the provided declaration and bounded direct same-package callees. The function is responsible for deleting a document from the system. It first checks if the document is selected and editable, and if not, it returns. If the user confirms the deletion, it sets the busy state to true, clears any error or message, and attempts to delete the document using the `deleteDocument` function from the `api.ts` module. If the deletion is successful, it removes the hit from the paged object, resets the editor, sets a success message, and refreshes the sidebar. If an error occurs during the deletion, it sets the error message. Finally, it sets the busy state to false.",
+            "verdict": "contradicted",
+            "conflict_answer": "yes",
+            "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+            "source_sha256": "a67316f5ebd3063c2950c18a5fc13126114964673336602929c7684896a234fd",
+            "explanation_prompt_sha256": "962602d9d3f52140623168fff781514ebed2f3ea3a2e00c8b377099c751914ab",
+            "verdict_prompt_sha256": "4f89c497a6f7eaa4d44659235ec014ffffd527bb59b06546ae344df4a983aff4",
+            "tokens_evaluated": 654,
+            "tokens_predicted": 153,
+            "prompt_ms": 1916.393,
+            "predicted_ms": 5670.160000000001
+          }
+        ],
+        "variance": true
+      },
+      {
+        "id": "sqlite-rationale",
+        "expected": "not-determinable",
+        "runs": [
+          {
+            "repeat": 1,
+            "blind_explanation": "The behavior of the provided code is as follows:\n\n1. The `OpenSQLite` function is a public function that takes a string `path` as an argument and returns a pointer to a `SQLiteStore` and an error. It calls the `OpenSQLiteWithAssetStore` function with the same `path` and the result of the `defaultAssetRoot` function.\n\n2. The `OpenSQLiteWithAssetStore` function is a private function that takes a string `path`, a string `assetRoot`, and a boolean `useAssetStore` as arguments. It returns a pointer to a `SQLiteStore` and an error. If `useAssetStore` is true, it calls the `openSQLiteWithAssetStore` function with the same `path`, `assetRoot`, and `false`. If `useAssetStore` is false, it returns an error.\n\n3. The `defaultAssetRoot` function is a private function that takes a string `path` as an argument and returns a string. It checks if the `path` is \":memory:\" or if it is an empty string. If either condition is true, it returns the path to a temporary directory. Otherwise, it returns the path to the directory containing the `assets` directory.\n\n4.",
+            "verdict": "not-determinable",
+            "conflict_answer": "no",
+            "support_answer": "no",
+            "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+            "source_sha256": "b7e9866f555fd048c3c818cd2a0f96f96953b3bce3ea1a79bc7f6be9c295ec74",
+            "explanation_prompt_sha256": "da69749c7e03db30414f88d265a375bbde3b5836cd658830df2a21bb3952fc1a",
+            "verdict_prompt_sha256": "8d6904eb9c00fc4cb25352b300e440302c14ef8fe02bbcf2d047cbbd0beaaefe",
+            "tokens_evaluated": 970,
+            "tokens_predicted": 260,
+            "prompt_ms": 6445.395,
+            "predicted_ms": 9704.496000000001
+          },
+          {
+            "repeat": 2,
+            "blind_explanation": "The behavior of the provided code is as follows:\n\n1. The `OpenSQLite` function is a direct callee of `OpenSQLiteWithAssetStore` and `defaultAssetRoot`.\n2. The `OpenSQLiteWithAssetStore` function is a direct callee of `openSQLiteWithAssetStore`.\n3. The `defaultAssetRoot` function is a direct callee of `OpenSQLiteWithAssetStore`.\n4. The `OpenSQLite` function returns a `*SQLiteStore` and an error.\n5. The `OpenSQLiteWithAssetStore` function returns a `*SQLiteStore` and an error.\n6. The `defaultAssetRoot` function returns a string.\n7. The `OpenSQLite` function uses the `OpenSQLiteWithAssetStore` function to create a `*SQLiteStore` and an error.\n8. The `OpenSQLiteWithAssetStore` function uses the `defaultAssetRoot` function to determine the asset root path.\n9. The `defaultAssetRoot` function uses the `OpenSQLiteWithAssetStore` function to determine the asset root path.\n10. The `OpenSQLite` function uses the `OpenSQLiteWithAssetStore` function to create a `*SQLiteStore` and an error.\n11. The `OpenSQLiteWithAsset",
+            "verdict": "not-determinable",
+            "conflict_answer": "no",
+            "support_answer": "no",
+            "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+            "source_sha256": "b7e9866f555fd048c3c818cd2a0f96f96953b3bce3ea1a79bc7f6be9c295ec74",
+            "explanation_prompt_sha256": "da69749c7e03db30414f88d265a375bbde3b5836cd658830df2a21bb3952fc1a",
+            "verdict_prompt_sha256": "ec47700337b1d2c7bd3699627c9ef6524f090fc87d7c696ed7c768c4d2af110a",
+            "tokens_evaluated": 972,
+            "tokens_predicted": 260,
+            "prompt_ms": 6494.052,
+            "predicted_ms": 9820.979
+          }
+        ],
+        "variance": true
+      },
+      {
+        "id": "transitive-provider-behaviour",
+        "expected": "not-determinable",
+        "runs": [
+          {
+            "repeat": 1,
+            "blind_explanation": "The behavior of the `Round` struct is established by the provided declaration and bounded direct same-package callees. The struct has fields for `replica`, `carrier`, `keys`, `signer`, `verifier`, `objects`, and `options`. The `Round` struct is part of the `internal/synccarrier` package and is used to represent a round of synchronization in a distributed system. The `Round` struct is not directly called by any external package, but it is used by other packages within the same package to perform synchronization tasks.",
+            "verdict": "supported",
+            "conflict_answer": "no",
+            "support_answer": "yes",
+            "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+            "source_sha256": "86402f48f9119dbf47e0f948686b37855599d40a390989d2bb4807b022a5f051",
+            "explanation_prompt_sha256": "873b906a20de1d1d2ecc83ecb8c12c018f12f9759afd54c7457e96cf7d233503",
+            "verdict_prompt_sha256": "2b380ff4a9e7fa88774809cae9520283c930d31b6e316bbbf1dc1c34be96ac06",
+            "tokens_evaluated": 591,
+            "tokens_predicted": 119,
+            "prompt_ms": 4670.767,
+            "predicted_ms": 4507.127
+          },
+          {
+            "repeat": 2,
+            "blind_explanation": "The behavior of the `Round` struct is established by the provided declaration and bounded direct same-package callees. The struct contains fields for a replica, a carrier, a key ring, a signer, a verifier, an object source, and options. The fields are all of the same type and are directly accessible within the same package.",
+            "verdict": "contradicted",
+            "conflict_answer": "yes",
+            "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+            "source_sha256": "86402f48f9119dbf47e0f948686b37855599d40a390989d2bb4807b022a5f051",
+            "explanation_prompt_sha256": "873b906a20de1d1d2ecc83ecb8c12c018f12f9759afd54c7457e96cf7d233503",
+            "verdict_prompt_sha256": "c5343e527f8d84c73ca7e56f69a41a4dd5bc0eaffdd36d14f94c9575646ce72c",
+            "tokens_evaluated": 333,
+            "tokens_predicted": 70,
+            "prompt_ms": 729.651,
+            "predicted_ms": 2868.2999999999997
+          }
+        ],
+        "variance": true
+      }
+    ],
+    "confusion_matrix": {
+      "contradicted": {
+        "contradicted": 4,
+        "not-determinable": 0,
+        "supported": 2
+      },
+      "not-determinable": {
+        "contradicted": 1,
+        "not-determinable": 2,
+        "supported": 1
+      },
+      "supported": {
+        "contradicted": 5,
+        "not-determinable": 0,
+        "supported": 1
+      }
+    },
+    "negation_cases": [
+      "recoll-negated-supported",
+      "recoll-negation-mutation"
+    ],
+    "correct": 7,
+    "total": 16
+  },
+  "reviews": [
+    {
+      "id": "cli-usage-forms",
+      "claim": "printHelp is the finite command and flag usage registry shown by notriosctl.",
+      "anchor": "go:github.com/renesugar/notrios/cmd/notriosctl#printHelp",
+      "evidence_sha256": "d33393d338c61ede056b75151824f4afbd5a73960f7d80631d1aa57ce8bbd742",
+      "runs": [
+        {
+          "repeat": 1,
+          "blind_explanation": "The provided declaration and bounded direct same-package callees do not establish any specific behavior. The source view only provides the documentation for the `printHelp` function in the `notriosctl` package. The function prints a help message for the `notriosctl` CLI, which includes a list of available commands and their usage.",
+          "verdict": "contradicted",
+          "conflict_answer": "yes",
+          "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+          "source_sha256": "483a4da1ec4dadb0b294b79758bf816a87692c41f9bc1dc72c3edac5b01aa278",
+          "explanation_prompt_sha256": "baf7779ba4540ade1f19014b9de3261c98da2a488bc7e9d77618ebda45622e9d",
+          "verdict_prompt_sha256": "e232d724ca1683fce28a7957632249cc0d8ff1ee1004d0f0efe2af572ae032b2",
+          "tokens_evaluated": 2050,
+          "tokens_predicted": 69,
+          "prompt_ms": 1548.975,
+          "predicted_ms": 2923.442
+        },
+        {
+          "repeat": 2,
+          "blind_explanation": "The provided source view declares a function `printHelp` within the package `go:github.com/renesugar/notrios/cmd/notriosctl`. This function prints a help message for the `notriosctl` command-line tool, which is a tool for managing notes and other content in a Notrios environment. The help message includes a list of available commands and their usage.",
+          "verdict": "contradicted",
+          "conflict_answer": "yes",
+          "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+          "source_sha256": "483a4da1ec4dadb0b294b79758bf816a87692c41f9bc1dc72c3edac5b01aa278",
+          "explanation_prompt_sha256": "baf7779ba4540ade1f19014b9de3261c98da2a488bc7e9d77618ebda45622e9d",
+          "verdict_prompt_sha256": "2b546a8888007f5ff3a79a494c0fdc86d4f8183fd0242f1760ac12b981fa96ad",
+          "tokens_evaluated": 2060,
+          "tokens_predicted": 79,
+          "prompt_ms": 1398.123,
+          "predicted_ms": 3183.571
+        }
+      ],
+      "variance": true,
+      "actionability_runs": [
+        {
+          "repeat": 1,
+          "raw_attempt": "command",
+          "surface": "invalid",
+          "attempt": "command",
+          "prompt_sha256": "ab8f8acff0b559b3714a706d3a9dbef970e502f5925e1d0fb40656b632946a4a",
+          "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+          "fixture": {
+            "accepted": false,
+            "reason": "output did not satisfy the closed action format"
+          }
+        },
+        {
+          "repeat": 2,
+          "raw_attempt": "command",
+          "surface": "invalid",
+          "attempt": "command",
+          "prompt_sha256": "ab8f8acff0b559b3714a706d3a9dbef970e502f5925e1d0fb40656b632946a4a",
+          "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+          "fixture": {
+            "accepted": false,
+            "reason": "output did not satisfy the closed action format"
+          }
+        }
+      ],
+      "disposition": {
+        "id": "cli-usage-forms",
+        "disposition": "deterministic-source-prevails",
+        "note": "The generated list is parsed from printHelp and protected by TestDocsAreCurrent; a contrary advisory verdict is a model false positive."
+      }
+    },
+    {
+      "id": "configuration-defaults",
+      "claim": "Default returns the canonical local-development defaults for every runtime\nconfiguration group.",
+      "anchor": "go:github.com/renesugar/notrios/internal/config#Default",
+      "evidence_sha256": "7b7b66539b6a493b3b394df62382a959da02481e41f9fc57ae9e93ce229e63e2",
+      "runs": [
+        {
+          "repeat": 1,
+          "blind_explanation": "The `Default` function in the `go:github.com/renesugar/notrios/internal/config` package returns a `Config` struct with various configuration settings for a system. The `Config` struct includes fields for synchronization, server, data, search, MCP, search sidecar, remote media, and retention. The `Default` function initializes these fields with specific values, such as the target for synchronization, the REST configuration, the listen address for the server, and the default limit for search results.",
+          "verdict": "contradicted",
+          "conflict_answer": "yes",
+          "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+          "source_sha256": "b03c8503975b39699d3c7ee1ade3dbd45cdd11c81380c5a99031b1f2b8730b92",
+          "explanation_prompt_sha256": "cca6a089317a7bc1a2f7189c7b38504e450632174ac1cb19106fbbbe4718111c",
+          "verdict_prompt_sha256": "f5a1772515b60af4854b5312b8a8b428ef664712fc2a65b08af403cd6e15a79a",
+          "tokens_evaluated": 798,
+          "tokens_predicted": 105,
+          "prompt_ms": 1682.606,
+          "predicted_ms": 3991.446
+        },
+        {
+          "repeat": 2,
+          "blind_explanation": "The behavior of the `Default` function in the provided source view is to return a `Config` struct with various configuration settings for different components of a system. The `Config` struct is defined in the `internal/config` package of the `notrios` repository. The `Default` function initializes the `Config` struct with default values for each field, such as the `Sync` configuration with a `Target` of \"none\" and `REST` configuration with `RequireTLS` set to true. The `Server` configuration sets the `ListenAddr` to \"127.0.0.1:8080\" and the `PublicBaseURL` to \"http://127.0.0.1:8080\". The `Data` configuration sets the `Directory` to \"./data\", the `DatabasePath` to \"./data/notes.sqlite\", the `AssetStore` to \"./data/assets\", and the `ProjectionDir` to \"./data/projections\". The `Search` configuration sets the `DefaultLimit` to 20 and the `MaxLimit` to 100. The `MCP` configuration sets the `Enabled` field to true and the `DefaultScope`, `DefaultProfile`, `",
+          "verdict": "contradicted",
+          "conflict_answer": "yes",
+          "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+          "source_sha256": "b03c8503975b39699d3c7ee1ade3dbd45cdd11c81380c5a99031b1f2b8730b92",
+          "explanation_prompt_sha256": "cca6a089317a7bc1a2f7189c7b38504e450632174ac1cb19106fbbbe4718111c",
+          "verdict_prompt_sha256": "0528ee63d7dc13f65fc5e549efb30ca8d16696835aa5fd09849a415eb1d2a706",
+          "tokens_evaluated": 952,
+          "tokens_predicted": 258,
+          "prompt_ms": 3742.136,
+          "predicted_ms": 9907.293000000001
+        }
+      ],
+      "variance": true,
+      "actionability_runs": [
+        {
+          "repeat": 1,
+          "raw_attempt": "api: <literal request>",
+          "surface": "api",
+          "attempt": "<literal request>",
+          "prompt_sha256": "9532448bc9d55a2081b5733f72232139c966aeedec7ce5d4e39b62b981c35d0f",
+          "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+          "fixture": {
+            "accepted": false,
+            "reason": "no exact match in the closed G18d executable catalog; not executed"
+          }
+        },
+        {
+          "repeat": 2,
+          "raw_attempt": "api: <literal request>",
+          "surface": "api",
+          "attempt": "<literal request>",
+          "prompt_sha256": "9532448bc9d55a2081b5733f72232139c966aeedec7ce5d4e39b62b981c35d0f",
+          "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+          "fixture": {
+            "accepted": false,
+            "reason": "no exact match in the closed G18d executable catalog; not executed"
+          }
+        }
+      ],
+      "disposition": {
+        "id": "configuration-defaults",
+        "disposition": "deterministic-source-prevails",
+        "note": "The generated values come from config.Default through the closed repository resolver and exact parity tests."
+      }
+    },
+    {
+      "id": "configuration-keys",
+      "claim": "Config contains the runtime settings used by notriosd and notriosctl.\nIt intentionally avoids third-party YAML dependencies until the project\nchooses and pins the long-term configuration library.",
+      "anchor": "go:github.com/renesugar/notrios/internal/config#Config",
+      "evidence_sha256": "f4ca8cd9310e753ef467ba5e9b19654fa7c8edf28498b39ab8cd7f5cc1731793",
+      "runs": [
+        {
+          "repeat": 1,
+          "blind_explanation": "The provided declaration defines a struct named `Config` within the package `go:github.com/renesugar/notrios/internal/config`. This struct contains several fields, each of which is of a specific type and is annotated with JSON tags for serialization purposes. The fields are as follows:\n\n- `ConfigPath`: A string that represents the path to the configuration file.\n- `Profile`: An instance of the `ProfileConfig` struct.\n- `Server`: An instance of the `ServerConfig` struct.\n- `Data`: An instance of the `DataConfig` struct.\n- `Sync`: An instance of the `SyncConfig` struct.\n- `Search`: An instance of the `SearchConfig` struct.\n- `MCP`: An instance of the `MCPConfig` struct.\n- `SearchSidecar`: An instance of the `SearchSidecarConfig` struct.\n- `RemoteMedia`: An instance of the `RemoteMediaConfig` struct.\n- `Retention`: An instance of the `RetentionConfig` struct.\n\nThe `Config` struct is intended to hold configuration settings for a system, with each field representing a different aspect of the system's configuration. The JSON tags allow the struct to be serialized and deserialized to and from JSON format, making it easy",
+          "verdict": "contradicted",
+          "conflict_answer": "yes",
+          "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+          "source_sha256": "406a358b75b28133ab5d3a13557d925d19536105d247cd89899b66e015b9f787",
+          "explanation_prompt_sha256": "b9a9c6107948a4c15d81068cd80d732fd1e63ef9330bd9b5d875c6cff29cb948",
+          "verdict_prompt_sha256": "7762250d086d9a15b38afcf1c2c8827c77506ad713f16957a844ec1e5330ecf7",
+          "tokens_evaluated": 626,
+          "tokens_predicted": 258,
+          "prompt_ms": 4066.891,
+          "predicted_ms": 10041.619
+        },
+        {
+          "repeat": 2,
+          "blind_explanation": "The provided declaration defines a struct named `Config` within the package `internal/config` of the module `notrios`. The struct contains several fields, each of which is of a specific type and has a corresponding JSON tag. The fields are as follows:\n\n- `ConfigPath`: A string that represents the path to the configuration file.\n- `Profile`: A `ProfileConfig` object that holds configuration settings for the profile.\n- `Server`: A `ServerConfig` object that holds configuration settings for the server.\n- `Data`: A `DataConfig` object that holds configuration settings for the data.\n- `Sync`: A `SyncConfig` object that holds configuration settings for the synchronization.\n- `Search`: A `SearchConfig` object that holds configuration settings for the search.\n- `MCP`: A `MCPConfig` object that holds configuration settings for the MCP.\n- `SearchSidecar`: A `SearchSidecarConfig` object that holds configuration settings for the search sidecar.\n- `RemoteMedia`: A `RemoteMediaConfig` object that holds configuration settings for the remote media.\n- `Retention`: A `RetentionConfig` object that holds configuration settings for the retention.\n\nThe `json:\"config_path,omitempty\"` tag indicates that the `ConfigPath`",
+          "verdict": "contradicted",
+          "conflict_answer": "yes",
+          "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+          "source_sha256": "406a358b75b28133ab5d3a13557d925d19536105d247cd89899b66e015b9f787",
+          "explanation_prompt_sha256": "b9a9c6107948a4c15d81068cd80d732fd1e63ef9330bd9b5d875c6cff29cb948",
+          "verdict_prompt_sha256": "fd2d54eb323d9a7e0dbc993aa64004293f59b95e2609b421516011509ec5c7fb",
+          "tokens_evaluated": 625,
+          "tokens_predicted": 258,
+          "prompt_ms": 3205.185,
+          "predicted_ms": 9702.897
+        }
+      ],
+      "variance": true,
+      "actionability_runs": [
+        {
+          "repeat": 1,
+          "raw_attempt": "not-actionable",
+          "surface": "not-actionable",
+          "attempt": "",
+          "prompt_sha256": "215171969403de4d49204a98a739c67005fd37860df193ed26605a0dc820d9e4",
+          "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+          "fixture": {
+            "accepted": false,
+            "reason": "model found no prose-only action"
+          }
+        },
+        {
+          "repeat": 2,
+          "raw_attempt": "api: <literal request>",
+          "surface": "api",
+          "attempt": "<literal request>",
+          "prompt_sha256": "215171969403de4d49204a98a739c67005fd37860df193ed26605a0dc820d9e4",
+          "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+          "fixture": {
+            "accepted": false,
+            "reason": "no exact match in the closed G18d executable catalog; not executed"
+          }
+        }
+      ],
+      "disposition": {
+        "id": "configuration-keys",
+        "disposition": "deterministic-source-prevails",
+        "note": "The generated keys come from the Config type through reflection and exact finite-registry parity tests."
+      }
+    },
+    {
+      "id": "current-schema-version",
+      "claim": "CurrentSchemaVersion is the canonical SQLite schema understood by this\nbuild. Archive-v2 manifests record this source schema but never include\nderived FTS5 or Recoll state.",
+      "anchor": "go:github.com/renesugar/notrios/internal/store#CurrentSchemaVersion",
+      "evidence_sha256": "e712560177726385f0e1df5e2c0ff308b3583cee63b57be64aa3c73adfca98b8",
+      "runs": [
+        {
+          "repeat": 1,
+          "blind_explanation": "The behavior of the provided code is to define a constant `CurrentSchemaVersion` with the value `27`. This constant is part of the `store` package within the `notrios` module, which is located in the `github.com/renesugar/notrios` repository. The constant is used to represent the current schema version of the store.",
+          "verdict": "contradicted",
+          "conflict_answer": "yes",
+          "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+          "source_sha256": "bf68a7429ff08ca5e32d8d8e57c0e41edea5116863172abcd5cf96e662549bc3",
+          "explanation_prompt_sha256": "89951e2cded053f661f58e214a610aea4e92551d9ea899c31c86b553463efca5",
+          "verdict_prompt_sha256": "993aa4b0815d44a83bba02b78d561a506deb3d5e4d78340ecece3b1998aafebd",
+          "tokens_evaluated": 313,
+          "tokens_predicted": 75,
+          "prompt_ms": 1948.479,
+          "predicted_ms": 2853.848
+        },
+        {
+          "repeat": 2,
+          "blind_explanation": "The behavior of the provided code is to define a constant `CurrentSchemaVersion` with the value `27`. This constant is part of the `store` package within the `notrios` module, which is located in the `github.com/renesugar/notrios` repository. The constant is used to represent the current schema version of the store.",
+          "verdict": "contradicted",
+          "conflict_answer": "yes",
+          "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+          "source_sha256": "bf68a7429ff08ca5e32d8d8e57c0e41edea5116863172abcd5cf96e662549bc3",
+          "explanation_prompt_sha256": "89951e2cded053f661f58e214a610aea4e92551d9ea899c31c86b553463efca5",
+          "verdict_prompt_sha256": "993aa4b0815d44a83bba02b78d561a506deb3d5e4d78340ecece3b1998aafebd",
+          "tokens_evaluated": 313,
+          "tokens_predicted": 75,
+          "prompt_ms": 169.35,
+          "predicted_ms": 2876.2
+        }
+      ],
+      "variance": false,
+      "actionability_runs": [
+        {
+          "repeat": 1,
+          "raw_attempt": "api: <literal request>",
+          "surface": "api",
+          "attempt": "<literal request>",
+          "prompt_sha256": "99cc73bd52bc05cd4662fe5c2ad89172b15f379590f73ac3a98c6dff6f8c7097",
+          "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+          "fixture": {
+            "accepted": false,
+            "reason": "no exact match in the closed G18d executable catalog; not executed"
+          }
+        },
+        {
+          "repeat": 2,
+          "raw_attempt": "api: <literal request>",
+          "surface": "api",
+          "attempt": "<literal request>",
+          "prompt_sha256": "99cc73bd52bc05cd4662fe5c2ad89172b15f379590f73ac3a98c6dff6f8c7097",
+          "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+          "fixture": {
+            "accepted": false,
+            "reason": "no exact match in the closed G18d executable catalog; not executed"
+          }
+        }
+      ],
+      "disposition": {
+        "id": "current-schema-version",
+        "disposition": "documentation-corrected",
+        "note": "CurrentSchemaVersion and its registered claim test establish v27; the independently known stale v20 manual prose and CLI sample were corrected to v27."
+      }
+    },
+    {
+      "id": "destructive-rest-confirmations",
+      "claim": "requireConfirmation refuses destructive resource and purge requests unless\nthe caller repeats the exact object-specific confirmation value.",
+      "anchor": "go:github.com/renesugar/notrios/internal/httpapi#requireConfirmation",
+      "evidence_sha256": "bb4a5cd05a25304f6d9d4637608768e9463ed997095958377909d74d2607f618",
+      "runs": [
+        {
+          "repeat": 1,
+          "blind_explanation": "The behavior of the `requireConfirmation` function is to check if the `X-Notrios-Confirmation` header in the request matches the expected value. If it does, the function returns `true`; otherwise, it writes an error response with a status code of 422 (Precondition Required) and a message indicating that the confirmation is required. The `writeError` function is used to send an error response to the client.",
+          "verdict": "contradicted",
+          "conflict_answer": "yes",
+          "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+          "source_sha256": "d6f626614ac951e0fa9577e6dbbcff402697ea27ac25c00f5d51fce5d3340bdd",
+          "explanation_prompt_sha256": "ad84e509be1af90158cabe3fe3352ecf8025dd543951a17999a7ddc3ed2770c0",
+          "verdict_prompt_sha256": "6a18d0a965e1d715b0c29a78db21133493bec81c32d343988edcd876eaf42d60",
+          "tokens_evaluated": 439,
+          "tokens_predicted": 92,
+          "prompt_ms": 1631.257,
+          "predicted_ms": 3540.132
+        },
+        {
+          "repeat": 2,
+          "blind_explanation": "The behavior of the `requireConfirmation` function is to check if the `X-Notrios-Confirmation` header in the request matches the expected value. If it does, the function returns `true`; otherwise, it writes an error response with a status code of 422 (Precondition Required) and a message indicating that the confirmation is required. The `writeError` function is used to send an error response to the client.",
+          "verdict": "contradicted",
+          "conflict_answer": "yes",
+          "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+          "source_sha256": "d6f626614ac951e0fa9577e6dbbcff402697ea27ac25c00f5d51fce5d3340bdd",
+          "explanation_prompt_sha256": "ad84e509be1af90158cabe3fe3352ecf8025dd543951a17999a7ddc3ed2770c0",
+          "verdict_prompt_sha256": "6a18d0a965e1d715b0c29a78db21133493bec81c32d343988edcd876eaf42d60",
+          "tokens_evaluated": 439,
+          "tokens_predicted": 92,
+          "prompt_ms": 225.514,
+          "predicted_ms": 3602.0009999999997
+        }
+      ],
+      "variance": false,
+      "actionability_runs": [
+        {
+          "repeat": 1,
+          "raw_attempt": "command: <literal command>, configuration: <literal configuration>, api: <literal request>, gui: <literal journey>",
+          "surface": "command",
+          "attempt": "<literal command>, configuration: <literal configuration>, api: <literal request>, gui: <literal journey>",
+          "prompt_sha256": "9c84b83b52c00fd5cf4bdac87aed26d20fc0514dd482bd26fd2610ff896d5b20",
+          "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+          "fixture": {
+            "accepted": false,
+            "reason": "no exact match in the closed G18d executable catalog; not executed"
+          }
+        },
+        {
+          "repeat": 2,
+          "raw_attempt": "command: <literal command>, configuration: <literal configuration>, api: <literal request>, gui: <literal journey>",
+          "surface": "command",
+          "attempt": "<literal command>, configuration: <literal configuration>, api: <literal request>, gui: <literal journey>",
+          "prompt_sha256": "9c84b83b52c00fd5cf4bdac87aed26d20fc0514dd482bd26fd2610ff896d5b20",
+          "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+          "fixture": {
+            "accepted": false,
+            "reason": "no exact match in the closed G18d executable catalog; not executed"
+          }
+        }
+      ],
+      "disposition": {
+        "id": "destructive-rest-confirmations",
+        "disposition": "claim-test-prevails",
+        "note": "The registered resource HTTP test verifies exact object-specific confirmation; model disagreement does not override that executed check."
+      }
+    },
+    {
+      "id": "gui-journey-surface",
+      "claim": "Manifest is the finite documented GUI-procedure catalog. Each generated row\npreserves the procedure's reviewed label and whether G18e executed it or\nretained an explicit unverified reason.",
+      "anchor": "go:github.com/renesugar/notrios/internal/docjourney#Manifest",
+      "evidence_sha256": "053771b70c6d18ae1b361c89e677dcd9174c78e72db870c8d8d15c4679926e6c",
+      "runs": [
+        {
+          "repeat": 1,
+          "blind_explanation": "The provided declaration defines a struct named `Manifest` with the following fields:\n\n- `Schema`: A string that represents the schema of the manifest.\n- `BrowserPolicy`: An instance of the `BrowserPolicy` struct, which likely contains settings related to the browser.\n- `Viewports`: A slice of `Viewport` structs, which likely represent different screen sizes and resolutions.\n- `Journeys`: A slice of `Journey` structs, which likely represent different user journeys or flows.\n\nThe `Manifest` struct is part of the `go:github.com/renesugar/notrios/internal/docjourney` package.",
+          "verdict": "supported",
+          "conflict_answer": "no",
+          "support_answer": "yes",
+          "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+          "source_sha256": "576b9bbb7c123d9d44b0a4bc1eeeea8e458ac6d4343fa88d994295a4edbb82cf",
+          "explanation_prompt_sha256": "2f5287d6ddc5dfbcaf7953796665b4b0f54e9bb3ffb49844a1a980cca8b4dfb2",
+          "verdict_prompt_sha256": "3932fc4f6b188aff8ec8b5b4706f82e93fa7701a363ff7a490012117999993cc",
+          "tokens_evaluated": 668,
+          "tokens_predicted": 131,
+          "prompt_ms": 5355.993,
+          "predicted_ms": 5000.991
+        },
+        {
+          "repeat": 2,
+          "blind_explanation": "The provided declaration defines a struct named `Manifest` in the package `go:github.com/renesugar/notrios/internal/docjourney`. This struct has four fields: `Schema`, `BrowserPolicy`, `Viewports`, and `Journeys`. Each field is of a specific type, such as `string`, `BrowserPolicy`, `[]Viewport`, and `[]Journey`, respectively. The `BrowserPolicy` field is of type `BrowserPolicy`, which is not explicitly defined in the provided code snippet.",
+          "verdict": "not-determinable",
+          "conflict_answer": "no",
+          "support_answer": "no",
+          "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+          "source_sha256": "576b9bbb7c123d9d44b0a4bc1eeeea8e458ac6d4343fa88d994295a4edbb82cf",
+          "explanation_prompt_sha256": "2f5287d6ddc5dfbcaf7953796665b4b0f54e9bb3ffb49844a1a980cca8b4dfb2",
+          "verdict_prompt_sha256": "e9bf5f3d972b56133b07dabb2676c8fcb8f1c0053c08cd77f97f174c88c8097d",
+          "tokens_evaluated": 626,
+          "tokens_predicted": 110,
+          "prompt_ms": 2879.154,
+          "predicted_ms": 4159.597
+        }
+      ],
+      "variance": true,
+      "actionability_runs": [
+        {
+          "repeat": 1,
+          "raw_attempt": "api: <literal request>",
+          "surface": "api",
+          "attempt": "<literal request>",
+          "prompt_sha256": "ff6b782862a4120c583787e6c54d70d920134cd770eb1f3f93b291b1c5f412c4",
+          "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+          "fixture": {
+            "accepted": false,
+            "reason": "no exact match in the closed G18d executable catalog; not executed"
+          }
+        },
+        {
+          "repeat": 2,
+          "raw_attempt": "api: <literal request>",
+          "surface": "api",
+          "attempt": "<literal request>",
+          "prompt_sha256": "ff6b782862a4120c583787e6c54d70d920134cd770eb1f3f93b291b1c5f412c4",
+          "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+          "fixture": {
+            "accepted": false,
+            "reason": "no exact match in the closed G18d executable catalog; not executed"
+          }
+        }
+      ]
+    },
+    {
+      "id": "gui-peer-retirement-confirmation",
+      "claim": "handleSyncUIRetirePeer requires the GUI review flow to echo the exact peer\nidentity before it records the signed, destructive retirement decision.",
+      "anchor": "go:github.com/renesugar/notrios/internal/httpapi#(*Server).handleSyncUIRetirePeer",
+      "evidence_sha256": "73f62d9e7e1d484b2c992abde3246b60b94fe0d7367cef405b35d93ceea0a808",
+      "runs": [
+        {
+          "repeat": 1,
+          "blind_explanation": "The behavior of the `handleSyncUIRetirePeer` function is established by the provided declaration and bounded direct same-package callees. The function checks if the request is from the local application, if the remote address is a loopback address, and if the request body is bounded JSON with only documented fields. If any of these checks fail, the function returns without processing the request. If the checks pass, the function retrieves the SQLite store and the signing keys, and then attempts to retire the specified peer. If the operation is successful, the function writes the result to the response. If any errors occur during the operation, the function writes an error message to the response.",
+          "verdict": "supported",
+          "conflict_answer": "no",
+          "support_answer": "yes",
+          "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+          "source_sha256": "b68d94d48fde892fe5514769bd9c2abf48410e6f0a4847a9afcb99b2608028b8",
+          "explanation_prompt_sha256": "15f37b59441a2364fba5c82d0b37539ef5555b4c89f553939cea5ab345c7df83",
+          "verdict_prompt_sha256": "d7f597ab7076b0890aca15249f5f70a12e20f90e3b2f23a9756206833f7c264f",
+          "tokens_evaluated": 1652,
+          "tokens_predicted": 140,
+          "prompt_ms": 4857.790999999999,
+          "predicted_ms": 5610.375
+        },
+        {
+          "repeat": 2,
+          "blind_explanation": "The behavior of the `handleSyncUIRetirePeer` function is established by the provided declaration and bounded direct same-package callees. The function checks if the request is from the local application, requires local signing keys, and then processes the request to retire a sync peer. The function handles errors and writes appropriate responses to the client.",
+          "verdict": "supported",
+          "conflict_answer": "no",
+          "support_answer": "yes",
+          "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+          "source_sha256": "b68d94d48fde892fe5514769bd9c2abf48410e6f0a4847a9afcb99b2608028b8",
+          "explanation_prompt_sha256": "15f37b59441a2364fba5c82d0b37539ef5555b4c89f553939cea5ab345c7df83",
+          "verdict_prompt_sha256": "ef0ecdd4257687b5a903a727f3e663a3f7094d3f66b21026c0822be259c0a0f2",
+          "tokens_evaluated": 1516,
+          "tokens_predicted": 72,
+          "prompt_ms": 1340.9769999999999,
+          "predicted_ms": 2893.545
+        }
+      ],
+      "variance": true,
+      "actionability_runs": [
+        {
+          "repeat": 1,
+          "raw_attempt": "api: <literal request>",
+          "surface": "api",
+          "attempt": "<literal request>",
+          "prompt_sha256": "097a4ee7fa4991fdd761d4d5d0b0d113d1b647fa5e5149e5a90822e86b00a84d",
+          "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+          "fixture": {
+            "accepted": false,
+            "reason": "no exact match in the closed G18d executable catalog; not executed"
+          }
+        },
+        {
+          "repeat": 2,
+          "raw_attempt": "command: <literal command>",
+          "surface": "command",
+          "attempt": "<literal command>",
+          "prompt_sha256": "097a4ee7fa4991fdd761d4d5d0b0d113d1b647fa5e5149e5a90822e86b00a84d",
+          "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+          "fixture": {
+            "accepted": false,
+            "reason": "no exact match in the closed G18d executable catalog; not executed"
+          }
+        }
+      ]
+    },
+    {
+      "id": "mcp-scope-surface",
+      "claim": "MCPScopes lists every MCP scope, narrowest first.",
+      "anchor": "go:github.com/renesugar/notrios/internal/httpapi#MCPScopes",
+      "evidence_sha256": "66aa128baad66cefe02b19059d1069c52b40423440fcf6a05497047bd1d55a23",
+      "runs": [
+        {
+          "repeat": 1,
+          "blind_explanation": "The behavior of the `MCPScopes` function is established by the provided declaration and bounded direct same-package callees. The function returns a slice of strings representing different scopes for managing content in a system. The function is part of the `internal/httpapi` package and is called from the `MCPScopes` function in the same package. The function does not have any external dependencies or external providers.",
+          "verdict": "contradicted",
+          "conflict_answer": "yes",
+          "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+          "source_sha256": "a2b2eecb628138d71a192ad00eec7ee5276667bb92042ae3b728954df255fcf0",
+          "explanation_prompt_sha256": "df398839a45b8b7e36b27fdc7033e265ba9307815975f98d3ffca55b2c81fa53",
+          "verdict_prompt_sha256": "e221506b3ef8062bed8d6b6ea3619d99a4c75e88569f01c8b248946bf5830dd0",
+          "tokens_evaluated": 330,
+          "tokens_predicted": 86,
+          "prompt_ms": 1988.807,
+          "predicted_ms": 3264.695
+        },
+        {
+          "repeat": 2,
+          "blind_explanation": "The behavior of the function `MCPScopes` is established by the provided declaration and bounded direct same-package callees. The function returns a slice of strings representing different scopes for managing content in a system. The function does not have any external dependencies or external providers.",
+          "verdict": "contradicted",
+          "conflict_answer": "yes",
+          "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+          "source_sha256": "a2b2eecb628138d71a192ad00eec7ee5276667bb92042ae3b728954df255fcf0",
+          "explanation_prompt_sha256": "df398839a45b8b7e36b27fdc7033e265ba9307815975f98d3ffca55b2c81fa53",
+          "verdict_prompt_sha256": "7831599537f1b5b508cfd99bcd1fbc2fcc432d3db7fd30de68d099f3102b2e02",
+          "tokens_evaluated": 301,
+          "tokens_predicted": 57,
+          "prompt_ms": 840.323,
+          "predicted_ms": 2153.0400000000004
+        }
+      ],
+      "variance": true,
+      "actionability_runs": [
+        {
+          "repeat": 1,
+          "raw_attempt": "command: api",
+          "surface": "command",
+          "attempt": "api",
+          "prompt_sha256": "d68d7fd62b74ffef908522174d38279e599e6b3b90f55d3a41d6d3842ea01bce",
+          "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+          "fixture": {
+            "accepted": false,
+            "reason": "no exact match in the closed G18d executable catalog; not executed"
+          }
+        },
+        {
+          "repeat": 2,
+          "raw_attempt": "api: <literal request>",
+          "surface": "api",
+          "attempt": "<literal request>",
+          "prompt_sha256": "d68d7fd62b74ffef908522174d38279e599e6b3b90f55d3a41d6d3842ea01bce",
+          "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+          "fixture": {
+            "accepted": false,
+            "reason": "no exact match in the closed G18d executable catalog; not executed"
+          }
+        }
+      ],
+      "disposition": {
+        "id": "mcp-scope-surface",
+        "disposition": "deterministic-source-prevails",
+        "note": "The generated finite scope list comes from MCPScopes and repository parity tests."
+      }
+    },
+    {
+      "id": "mcp-sync-tool-scopes",
+      "claim": "mcpSyncToolScopes assigns the orthogonal sync scope required by each sync\ncontrol-plane tool.",
+      "anchor": "go:github.com/renesugar/notrios/internal/httpapi#mcpSyncToolScopes",
+      "evidence_sha256": "c589106e729f2089472dd446bd5358452d888c124ac9c23fd001723096ebd515",
+      "runs": [
+        {
+          "repeat": 1,
+          "blind_explanation": "The behavior of the provided code is to define a map named `mcpSyncToolScopes` in the package `go:github.com/renesugar/notrios/internal/httpapi`. The map contains key-value pairs where the keys are strings and the values are either constants (`MCPSyncStatus` and `MCPSyncControl`) or other constants (`MCPSyncStatus`, `MCPSyncControl`, `MCPSyncControl`, `MCPSyncControl`, `MCPSyncControl`, `MCPSyncControl`). The map is initialized with these key-value pairs.",
+          "verdict": "contradicted",
+          "conflict_answer": "yes",
+          "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+          "source_sha256": "a181ad4a9eafeecbaecb161700ed4f6e8b30810eec54b3d90ff2c7026deb20be",
+          "explanation_prompt_sha256": "fae810f2b64df54596c90ac58c2712060475ad0ed75fb1612c0d37f2715af9fc",
+          "verdict_prompt_sha256": "8304f3e5704ab4102e3589a46fd69fcce90ffac1dbc87deb74a604b2cbd8338e",
+          "tokens_evaluated": 440,
+          "tokens_predicted": 120,
+          "prompt_ms": 3346.848,
+          "predicted_ms": 4625.18
+        },
+        {
+          "repeat": 2,
+          "blind_explanation": "The provided code snippet defines a map named `mcpSyncToolScopes` within the package `go:github.com/renesugar/notrios/internal/httpapi`. The map contains key-value pairs where the keys are strings and the values are either strings or integers. The keys represent different operations that can be performed on a synchronization tool, and the values represent the corresponding control functions or status codes.",
+          "verdict": "contradicted",
+          "conflict_answer": "yes",
+          "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+          "source_sha256": "a181ad4a9eafeecbaecb161700ed4f6e8b30810eec54b3d90ff2c7026deb20be",
+          "explanation_prompt_sha256": "fae810f2b64df54596c90ac58c2712060475ad0ed75fb1612c0d37f2715af9fc",
+          "verdict_prompt_sha256": "32a7837e2d2dc3e564a434f4275588a890f4cf93faa6f130e7f646486ee9cab2",
+          "tokens_evaluated": 403,
+          "tokens_predicted": 83,
+          "prompt_ms": 1255.6280000000002,
+          "predicted_ms": 3171.977
+        }
+      ],
+      "variance": true,
+      "actionability_runs": [
+        {
+          "repeat": 1,
+          "raw_attempt": "command: <literal command>",
+          "surface": "command",
+          "attempt": "<literal command>",
+          "prompt_sha256": "61c472f796680cb479d71c78b5f55a20504b7af55597b38898a4c0a9a52683d9",
+          "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+          "fixture": {
+            "accepted": false,
+            "reason": "no exact match in the closed G18d executable catalog; not executed"
+          }
+        },
+        {
+          "repeat": 2,
+          "raw_attempt": "api: <literal request>",
+          "surface": "api",
+          "attempt": "<literal request>",
+          "prompt_sha256": "61c472f796680cb479d71c78b5f55a20504b7af55597b38898a4c0a9a52683d9",
+          "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+          "fixture": {
+            "accepted": false,
+            "reason": "no exact match in the closed G18d executable catalog; not executed"
+          }
+        }
+      ],
+      "disposition": {
+        "id": "mcp-sync-tool-scopes",
+        "disposition": "deterministic-source-prevails",
+        "note": "The generated sync-scope assignments come from the closed mcpSyncToolScopes registry."
+      }
+    },
+    {
+      "id": "mcp-tool-scope-assignments",
+      "claim": "mcpToolScopes maps every tool to the narrowest scope that may call it.\n\nScopes are cumulative: a tool available at `read-only` is available at\n`editor` and `organizer` too. That is what makes the list readable — each\nentry answers \"how much trust does this need\", not \"which tiers include it\".\n\n**Every registered tool must appear here.** `TestEveryMCPToolIsClassified`\nfails if one does not, so a tool cannot be added without someone deciding how\nmuch trust it needs. Defaulting an unclassified tool to the narrowest scope\nwould be the dangerous kind of safe: it would ship silently.",
+      "anchor": "go:github.com/renesugar/notrios/internal/httpapi#mcpToolScopes",
+      "evidence_sha256": "9cecf58b02571019868e4d4ade24b8553870ecfe6d75c12f97b366a17dd5f846",
+      "runs": [
+        {
+          "repeat": 1,
+          "blind_explanation": "The behavior of the `mcpToolScopes` map is established by the provided declaration and bounded direct same-package callees. The map contains key-value pairs where the key is a string representing a tool or feature, and the value is a string representing the scope of access for that tool or feature. The map is defined in the `go:github.com/renesugar/notrios/internal/httpapi` package and is used to define the scopes of access for different tools or features in the application. The map is bounded to the same-package callees, meaning that only functions within the same package can access the map.",
+          "verdict": "contradicted",
+          "conflict_answer": "yes",
+          "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+          "source_sha256": "a36fde28b2a83ad05f3d63b5fcc0769ff8d681eb371b8a4361afffb979345332",
+          "explanation_prompt_sha256": "0c55b329858a7500cbc8aa82240a34fb29f9f8c6444df8e98780ba9f02c7703a",
+          "verdict_prompt_sha256": "1363ad70c025fc65ff0e542485a61b167521bfdb95647e80e4226b2ebb341492",
+          "tokens_evaluated": 1054,
+          "tokens_predicted": 128,
+          "prompt_ms": 3696.716,
+          "predicted_ms": 4946.474
+        },
+        {
+          "repeat": 2,
+          "blind_explanation": "The behavior of the `mcpToolScopes` map is established by the provided declaration and bounded direct same-package callees. The map contains key-value pairs where the key is a string representing a tool or feature, and the value is a string representing the scope of access for that tool or feature. The map is defined in the `internal/httpapi` package of the `notrios` repository. The map is used to define the access control for different tools or features in the application. The map is bounded to the same-package callees, meaning that only functions within the same package can access the map.",
+          "verdict": "contradicted",
+          "conflict_answer": "yes",
+          "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+          "source_sha256": "a36fde28b2a83ad05f3d63b5fcc0769ff8d681eb371b8a4361afffb979345332",
+          "explanation_prompt_sha256": "0c55b329858a7500cbc8aa82240a34fb29f9f8c6444df8e98780ba9f02c7703a",
+          "verdict_prompt_sha256": "6534e280747cc12207a658bea93571a26789da3460e940639b895fc66291697e",
+          "tokens_evaluated": 1052,
+          "tokens_predicted": 126,
+          "prompt_ms": 988.642,
+          "predicted_ms": 5037.449
+        }
+      ],
+      "variance": true,
+      "actionability_runs": [
+        {
+          "repeat": 1,
+          "raw_attempt": "api: <literal request>",
+          "surface": "api",
+          "attempt": "<literal request>",
+          "prompt_sha256": "b20493c6dadbe6e86231ce134d36499eedd0ca2bda6fa9c0bc65c020768a3d3b",
+          "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+          "fixture": {
+            "accepted": false,
+            "reason": "no exact match in the closed G18d executable catalog; not executed"
+          }
+        },
+        {
+          "repeat": 2,
+          "raw_attempt": "api: <literal request>",
+          "surface": "api",
+          "attempt": "<literal request>",
+          "prompt_sha256": "b20493c6dadbe6e86231ce134d36499eedd0ca2bda6fa9c0bc65c020768a3d3b",
+          "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+          "fixture": {
+            "accepted": false,
+            "reason": "no exact match in the closed G18d executable catalog; not executed"
+          }
+        }
+      ],
+      "disposition": {
+        "id": "mcp-tool-scope-assignments",
+        "disposition": "deterministic-source-prevails",
+        "note": "The generated assignments come from mcpToolScopes, with every registered tool classification tested."
+      }
+    },
+    {
+      "id": "mcp-tool-surface",
+      "claim": "mcpTools is the finite MCP tool registry before scope filtering.",
+      "anchor": "go:github.com/renesugar/notrios/internal/httpapi#(*Server).mcpTools",
+      "evidence_sha256": "8ce486d5309f7fefc44f3b91cbf924d2f24e32b3fd574029e570a894637bc036",
+      "runs": [
+        {
+          "repeat": 1,
+          "blind_explanation": "The behavior of the `mcpTools` function is established by the provided declaration and bounded direct same-package callees. The function returns a slice of `mcpTool` objects, which are defined in the same package. The function filters the tools based on the current scope of the server (`s.mcpScopeAllows(tool.Name)`), which is a boolean value indicating whether the tool is allowed based on the current scope. The function also uses the `arraySchema`, `booleanSchema`, `boundedStringSchema`, `enumSchema`, `integerSchema`, `objectSchema`, `selectionPlanMCPSchema`, and `boundedArraySchema` functions to define the schema of the tools and the selection plan.",
+          "verdict": "contradicted",
+          "conflict_answer": "yes",
+          "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+          "source_sha256": "3f086dfa213c2cf18ed11c0f26503c3fb6fd047e49dc6bb23f9bc76989fd8931",
+          "explanation_prompt_sha256": "026fdfdbd64e765c164aa7c2a66d15007d36fbb03b827a9f69f2a78dfd62c2ff",
+          "verdict_prompt_sha256": "282da7b7fa74f012724e381959f0fcd7450b35849e45c69b744a65b5a4353e55",
+          "tokens_evaluated": 4869,
+          "tokens_predicted": 144,
+          "prompt_ms": 3734.308,
+          "predicted_ms": 6537.826
+        },
+        {
+          "repeat": 2,
+          "blind_explanation": "The behavior of the `mcpTools` function is established by the provided declaration and bounded direct same-package callees. The function returns a slice of `mcpTool` objects, which are defined in the same package. The function iterates over the input slice of `mcpTool` objects and checks if each tool's name is allowed by the server's scope using the `mcpScopeAllows` method. If the tool's name is allowed, it is added to the `allowed` slice. The `allowed` slice is then returned as the result of the function.",
+          "verdict": "supported",
+          "conflict_answer": "no",
+          "support_answer": "yes",
+          "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+          "source_sha256": "3f086dfa213c2cf18ed11c0f26503c3fb6fd047e49dc6bb23f9bc76989fd8931",
+          "explanation_prompt_sha256": "026fdfdbd64e765c164aa7c2a66d15007d36fbb03b827a9f69f2a78dfd62c2ff",
+          "verdict_prompt_sha256": "bc7a0c342f8d9b61c000eec2cb5f9d35c98ac67f1f97bb3618977c37004b348f",
+          "tokens_evaluated": 5062,
+          "tokens_predicted": 122,
+          "prompt_ms": 3936.6759999999995,
+          "predicted_ms": 5800.223999999999
+        }
+      ],
+      "variance": true,
+      "actionability_runs": [
+        {
+          "repeat": 1,
+          "raw_attempt": "not-actionable",
+          "surface": "not-actionable",
+          "attempt": "",
+          "prompt_sha256": "d46296ad0009a0b2cbfa62fa2c776870fd21d3be8db2993a8e165cd1b0f14ae1",
+          "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+          "fixture": {
+            "accepted": false,
+            "reason": "model found no prose-only action"
+          }
+        },
+        {
+          "repeat": 2,
+          "raw_attempt": "not-actionable",
+          "surface": "not-actionable",
+          "attempt": "",
+          "prompt_sha256": "d46296ad0009a0b2cbfa62fa2c776870fd21d3be8db2993a8e165cd1b0f14ae1",
+          "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+          "fixture": {
+            "accepted": false,
+            "reason": "model found no prose-only action"
+          }
+        }
+      ],
+      "disposition": {
+        "id": "mcp-tool-surface",
+        "disposition": "deterministic-source-prevails",
+        "note": "The generated names come from the finite mcpTools registry; unknown or missing entries fail parity checks."
+      }
+    },
+    {
+      "id": "product-version",
+      "claim": "Version is the product version reported by Notrios binaries.",
+      "anchor": "go:github.com/renesugar/notrios/internal/version#Version",
+      "evidence_sha256": "cf005cdf5c9586d010182d1e8a16e47e4d2564e8c72d4f05dd6cf993d3302adc",
+      "runs": [
+        {
+          "repeat": 1,
+          "blind_explanation": "The behavior of the provided code is to define a constant named `Version` with the value `\"0.6.0\"`. This constant is part of the `Version` package within the `internal` directory of the `notrios` repository. The constant is accessible within the same package and can be used to represent the version of the software.",
+          "verdict": "contradicted",
+          "conflict_answer": "yes",
+          "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+          "source_sha256": "3ab252872e1f6eae878719ecc3d074f874ab04ef156e40df1627655f62ae4d4f",
+          "explanation_prompt_sha256": "2770d6f29d5a76ab497b8624fbfd8ed6e1829f50f27c87c927e9a9ab075046d0",
+          "verdict_prompt_sha256": "5ed9834fa32dc2d0d35fa5b05a3a820ca43b5b190c59a0baff22597167d57354",
+          "tokens_evaluated": 286,
+          "tokens_predicted": 73,
+          "prompt_ms": 1612.1009999999999,
+          "predicted_ms": 3203.852
+        },
+        {
+          "repeat": 2,
+          "blind_explanation": "The behavior of the provided code is to define a constant named `Version` with the value `\"0.6.0\"`. This constant is part of the package `go:github.com/renesugar/notrios/internal/version`. The constant is declared in the `const` keyword, which is a statement used to declare constants in Go. The value `\"0.6.0\"` is a string literal, which is a sequence of characters enclosed in quotes.",
+          "verdict": "contradicted",
+          "conflict_answer": "yes",
+          "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+          "source_sha256": "3ab252872e1f6eae878719ecc3d074f874ab04ef156e40df1627655f62ae4d4f",
+          "explanation_prompt_sha256": "2770d6f29d5a76ab497b8624fbfd8ed6e1829f50f27c87c927e9a9ab075046d0",
+          "verdict_prompt_sha256": "cd5dce56452a4918be4e1dfaaf785973c7b5f27b79a710dc3b2ddd8f4cda3728",
+          "tokens_evaluated": 309,
+          "tokens_predicted": 96,
+          "prompt_ms": 1071.873,
+          "predicted_ms": 3799.1189999999997
+        }
+      ],
+      "variance": true,
+      "actionability_runs": [
+        {
+          "repeat": 1,
+          "raw_attempt": "command: version",
+          "surface": "command",
+          "attempt": "version",
+          "prompt_sha256": "5b8bba35900940847e87e5fbbeb5e11f95965bc8608e95d15a65cbcc4d97d8b5",
+          "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+          "fixture": {
+            "accepted": false,
+            "reason": "no exact match in the closed G18d executable catalog; not executed"
+          }
+        },
+        {
+          "repeat": 2,
+          "raw_attempt": "api: <literal request>",
+          "surface": "api",
+          "attempt": "<literal request>",
+          "prompt_sha256": "5b8bba35900940847e87e5fbbeb5e11f95965bc8608e95d15a65cbcc4d97d8b5",
+          "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+          "fixture": {
+            "accepted": false,
+            "reason": "no exact match in the closed G18d executable catalog; not executed"
+          }
+        }
+      ],
+      "disposition": {
+        "id": "product-version",
+        "disposition": "claim-test-prevails",
+        "note": "The source constant and registered release-candidate test establish the product version."
+      }
+    },
+    {
+      "id": "rest-operation-surface",
+      "claim": "NewServerWithOptions registers the finite REST surface over shared service\nand store behavior.",
+      "anchor": "go:github.com/renesugar/notrios/internal/httpapi#NewServerWithOptions",
+      "evidence_sha256": "c075dd24495648629d4a6ce2a3fbd0491b56fd631a9d505275ebaa2c55443db3",
+      "runs": [
+        {
+          "repeat": 1,
+          "blind_explanation": "The behavior of the `NewServerWithOptions` function is to create a new HTTP server with the specified options. The `routes` function is called to set up the routes for the server. The `ResolveWebRoot` function is used to resolve the web root directory. The `newMergedSearchCache` function is used to create a new merged search cache.",
+          "verdict": "contradicted",
+          "conflict_answer": "yes",
+          "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+          "source_sha256": "a64585b6dfc6fd8ccac27b540e26e7e25ac2e416d98e93c2865806b609eb87e2",
+          "explanation_prompt_sha256": "e9276ab3fdc2a1d1f6c45cbdaab2217d84c8a428c6eac0f6ea3a2c62dde2735c",
+          "verdict_prompt_sha256": "3e49aa395c04ce6f02387fbbf1e6783b04e5151aaf2f85d711d1c1355d094ba8",
+          "tokens_evaluated": 2472,
+          "tokens_predicted": 76,
+          "prompt_ms": 1953.322,
+          "predicted_ms": 3350.347
+        },
+        {
+          "repeat": 2,
+          "blind_explanation": "The behavior of the `NewServerWithOptions` function is to create a new HTTP server with the specified options. It initializes the server's configuration, mux, store, and other components. The `routes` function is called to set up the server's routes, which handle various HTTP requests such as health checks, status, MCP information, collections, documents, resources, notebooks, tags, templates, tasks, and more. The `ResolveWebRoot` function is used to find the web root directory, and `newMergedSearchCache` is used to create a new merged search cache.",
+          "verdict": "contradicted",
+          "conflict_answer": "yes",
+          "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+          "source_sha256": "a64585b6dfc6fd8ccac27b540e26e7e25ac2e416d98e93c2865806b609eb87e2",
+          "explanation_prompt_sha256": "e9276ab3fdc2a1d1f6c45cbdaab2217d84c8a428c6eac0f6ea3a2c62dde2735c",
+          "verdict_prompt_sha256": "29c571230ca31de259b19e37c63faebf68aa0b96be3f091e487fa2a7f36db54c",
+          "tokens_evaluated": 2517,
+          "tokens_predicted": 121,
+          "prompt_ms": 2183.234,
+          "predicted_ms": 5791.805
+        }
+      ],
+      "variance": true,
+      "actionability_runs": [
+        {
+          "repeat": 1,
+          "raw_attempt": "command: <literal command>",
+          "surface": "command",
+          "attempt": "<literal command>",
+          "prompt_sha256": "e96f20408797568a39cfdf9b97b3da6117748a648823d6990c2e14ef993694b5",
+          "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+          "fixture": {
+            "accepted": false,
+            "reason": "no exact match in the closed G18d executable catalog; not executed"
+          }
+        },
+        {
+          "repeat": 2,
+          "raw_attempt": "api: <literal request>",
+          "surface": "api",
+          "attempt": "<literal request>",
+          "prompt_sha256": "e96f20408797568a39cfdf9b97b3da6117748a648823d6990c2e14ef993694b5",
+          "model": "models/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+          "fixture": {
+            "accepted": false,
+            "reason": "no exact match in the closed G18d executable catalog; not executed"
+          }
+        }
+      ],
+      "disposition": {
+        "id": "rest-operation-surface",
+        "disposition": "deterministic-source-prevails",
+        "note": "The generated operation list has exact REST registration and OpenAPI parity; model disagreement is not release evidence."
+      }
+    }
+  ],
+  "summary": {
+    "fragments": 13,
+    "verdicts": {
+      "contradicted": 21,
+      "not-determinable": 1,
+      "supported": 4
+    },
+    "contradicted": [
+      "cli-usage-forms",
+      "configuration-defaults",
+      "configuration-keys",
+      "current-schema-version",
+      "destructive-rest-confirmations",
+      "mcp-scope-surface",
+      "mcp-sync-tool-scopes",
+      "mcp-tool-scope-assignments",
+      "mcp-tool-surface",
+      "product-version",
+      "rest-operation-surface"
+    ],
+    "missing_dispositions": null,
+    "accepted_fixture_attempts": 0
+  }
+}

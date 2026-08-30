@@ -3,7 +3,7 @@ name: docs
 on:
   push:
     branches: [main]
-    paths: ['docs/**', 'scripts/build_docs_site.sh', '.github/workflows/docs.yml']
+    paths: ['docs/**', 'internal/docgen/**', 'internal/docaudit/**', 'scripts/build_docs_site.sh', '.github/workflows/docs.yml']
   workflow_dispatch:
 
 permissions:
@@ -23,6 +23,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+      - name: Verify generated documentation freshness
+        run: go test ./internal/docgen -run '^TestDocsAreCurrent$'
       - name: Build docs site with PageFind search
         run: bash scripts/build_docs_site.sh _site
       - uses: actions/upload-pages-artifact@v3

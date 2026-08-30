@@ -39,6 +39,11 @@ func Audit(options Options) (Report, error) {
 	if err != nil {
 		return Report{}, err
 	}
+	if options.TemplatePath != "" {
+		if err := applyTemplatePlacements(root, options.TemplatePath, fragments); err != nil {
+			return Report{}, err
+		}
+	}
 	templates := make(map[string]map[string]bool)
 	for _, document := range inventory.Documents {
 		topic := topicForPath(document.Path)
@@ -331,4 +336,77 @@ func DetectExecutableExamples(root, inventoryPath string) ([]ExampleCandidate, e
 		return nil, err
 	}
 	return scanExecutableExamples(root, inventory)
+}
+
+type placementTemplate struct {
+	Schema string `json:"schema"`
+	Pages  []struct {
+		Path     string `json:"path"`
+		Sections []struct {
+			Slug  string `json:"slug"`
+			Slots []struct {
+				ID       string `json:"id"`
+				Audience string `json:"audience"`
+			} `json:"slots"`
+		} `json:"sections"`
+	} `json:"pages"`
+}
+
+func applyTemplatePlacements(root, path string, fragments []Fragment) error {
+	var template placementTemplate
+	if err := readJSON(filepath.Join(root, filepath.FromSlash(path)), &template, true); err != nil {
+		return fmt.Errorf("docgen template: %w", err)
+	}
+	if template.Schema != "notrios.docgen.templates.v1" {
+		return fmt.Errorf("docgen template schema = %q", template.Schema)
+	}
+	byID := make(map[string]*Fragment, len(fragments))
+	for index := range fragments {
+		byID[fragments[index].ID] = &fragments[index]
+	}
+	seen := make(map[string]bool)
+	for _, page := range template.Pages {
+		topic := topicForPath(page.Path)
+		for _, section := range page.Sections {
+			for _, slot := range section.Slots {
+				fragment := byID[slot.ID]
+				if fragment == nil {
+					return fmt.Errorf("docgen template names missing fragment %q", slot.ID)
+				}
+				if seen[slot.ID] {
+					return fmt.Errorf("docgen template duplicates fragment %q", slot.ID)
+				}
+				seen[slot.ID] = true
+				if fragment.Audience != slot.Audience {
+					return fmt.Errorf("docgen template audience mismatch for fragment %q", slot.ID)
+				}
+				if fragment.Topic != "" && (fragment.Topic != topic || fragment.Section != section.Slug) {
+					return fmt.Errorf("docgen template placement mismatch for fragment %q", slot.ID)
+				}
+				fragment.Topic, fragment.Section = topic, section.Slug
+			}
+		}
+	}
+	for _, fragment := range fragments {
+		if !seen[fragment.ID] {
+			return fmt.Errorf("source fragment %q is absent from docgen template", fragment.ID)
+		}
+	}
+	return nil
+}
+
+// ScanFragments returns the source-adjacent documentation fragments using the
+// same frozen directive grammar as Audit. Callers receive a stable ID order so
+// generation and advisory review never depend on filesystem walk ordering.
+func ScanFragments(root string) ([]Fragment, error) {
+	absRoot, err := filepath.Abs(root)
+	if err != nil {
+		return nil, err
+	}
+	fragments, err := scanGoFragments(absRoot)
+	if err != nil {
+		return nil, err
+	}
+	sort.Slice(fragments, func(i, j int) bool { return fragments[i].ID < fragments[j].ID })
+	return fragments, nil
 }

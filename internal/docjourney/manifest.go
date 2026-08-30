@@ -15,6 +15,13 @@ import (
 
 const Schema = "notrios.docjourney.manifest.v1"
 
+// Manifest is the finite documented GUI-procedure catalog. Each generated row
+// preserves the procedure's reviewed label and whether G18e executed it or
+// retained an explicit unverified reason.
+//
+//notrios:doc user gui-journey-surface
+//notrios:help gui layout
+//notrios:enumerates go:github.com/renesugar/notrios/internal/docjourney#LoadAndValidate
 type Manifest struct {
 	Schema        string        `json:"schema"`
 	BrowserPolicy BrowserPolicy `json:"browser_policy"`

@@ -26,6 +26,12 @@ import (
 	"github.com/renesugar/notrios/internal/version"
 )
 
+// Server is the HTTP adapter for the finite REST and MCP contracts. Generated
+// API documentation lists its registered non-HEAD operations only when the
+// same method/path set is present in the checked OpenAPI document.
+//
+//notrios:doc api rest-api-contract
+//notrios:enumerates go:github.com/renesugar/notrios/internal/httpapi#NewServerWithOptions
 type Server struct {
 	mux           *http.ServeMux
 	store         store.Store
