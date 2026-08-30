@@ -107,8 +107,9 @@ saving a note fills them in.
 ## Watching a long import or export
 
 A long import or an archive export records a job, so you can watch it from
-another shell — or from the GUI, or over REST — without holding the terminal
-that started it:
+another shell or over REST without holding the terminal that started it. The
+current GUI's Sync Center deliberately lists sync jobs only; it does not yet
+show or cancel import/export jobs:
 
 ```sh
 notriosctl jobs list

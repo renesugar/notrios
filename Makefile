@@ -11,7 +11,7 @@
 
 .PHONY: help deps build build-service build-cli web gui docs \
         test validate docaudit smoke serve doctor seed-help evidence-pre-push \
-        clean clobber precheck
+        g18e-validate clean clobber precheck
 
 help: ## Show this target summary
 	@grep -E '^[a-zA-Z-]+:.*## ' $(MAKEFILE_LIST) | awk -F ':.*## ' '{printf "  %-14s %s\n", $$1, $$2}'
@@ -57,6 +57,11 @@ smoke: web ## Run the end-to-end REST/MCP smoke test
 
 evidence-pre-push: ## Verify the signed checkpoint and external ISO reserve
 	bash scripts/verify_evidence_pre_push.sh
+
+g18e-validate: ## Validate the G18e GUI journey manifest and evidence
+	python3 -m unittest discover -s performance/v0.7-g18e -p 'test_*.py'
+	python3 performance/v0.7-g18e/validate_evidence.py
+	GOCACHE="$${GOCACHE:-/tmp/notrios-g18e-gocache}" go run ./cmd/docjourney
 
 serve: ## Run the service from source on 127.0.0.1:8080
 	go run ./cmd/notriosd -addr 127.0.0.1:8080

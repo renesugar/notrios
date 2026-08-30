@@ -36,3 +36,7 @@ manual unit alongside the separately claimed canonical schema-v27 declaration.
 G18d subsequently upgraded 63 of the 131 registered examples to executed
 contracts. `REPORT.json` remains the frozen G18c before-execution baseline;
 `performance/v0.7-g18d/REPORT.json` is the current result-bearing report.
+G18e subsequently upgraded eight of the nine frozen GUI journeys to executed
+evidence; editor find/replace remains explicitly unverified under the embedded-
+browser owner. The current aggregate grades are therefore 71 executed, eight
+generated, four claimed, and 268 unverified.

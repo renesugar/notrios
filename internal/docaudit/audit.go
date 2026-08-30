@@ -231,6 +231,12 @@ func resolveAnchors(root string, anchors []string, includeTests bool, tsResolver
 	return nil
 }
 
+// ValidateAnchors exposes the frozen G18a source-symbol resolver to adjacent
+// documentation-integrity tools without duplicating its Go/TypeScript rules.
+func ValidateAnchors(root string, anchors []string, includeTests bool, tsResolver func(string, []string) error) error {
+	return resolveAnchors(root, anchors, includeTests, tsResolver)
+}
+
 func readJSON(path string, target any, strict bool) error {
 	file, err := os.Open(path)
 	if err != nil {

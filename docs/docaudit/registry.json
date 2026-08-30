@@ -2111,7 +2111,8 @@
       "section": "first-launch",
       "proposed_actions": 3,
       "owner": "ts:web/src/App.tsx#App",
-      "state": "unverified"
+      "state": "executed",
+      "check_anchor": "go:github.com/renesugar/notrios/cmd/notriosctl#TestG18eBrowserJourneys"
     },
     {
       "id": "new-note-in-notebook",
@@ -2119,7 +2120,8 @@
       "section": "choosing-which-notebook-a-note-goes-in",
       "proposed_actions": 4,
       "owner": "ts:web/src/components/SearchPane.tsx#SearchPane",
-      "state": "unverified"
+      "state": "executed",
+      "check_anchor": "go:github.com/renesugar/notrios/cmd/notriosctl#TestG18eBrowserJourneys"
     },
     {
       "id": "edit-save",
@@ -2127,7 +2129,8 @@
       "section": "layout",
       "proposed_actions": 3,
       "owner": "ts:web/src/components/EditorPane.tsx#EditorPane",
-      "state": "unverified"
+      "state": "executed",
+      "check_anchor": "go:github.com/renesugar/notrios/cmd/notriosctl#TestG18eBrowserJourneys"
     },
     {
       "id": "trash-restore",
@@ -2135,7 +2138,8 @@
       "section": "deleting-and-restoring-notes",
       "proposed_actions": 5,
       "owner": "ts:web/src/components/EditorPane.tsx#EditorPane",
-      "state": "unverified"
+      "state": "executed",
+      "check_anchor": "go:github.com/renesugar/notrios/cmd/notriosctl#TestG18eBrowserJourneys"
     },
     {
       "id": "delete-notebook-review",
@@ -2143,7 +2147,8 @@
       "section": "deleting-a-notebook",
       "proposed_actions": 4,
       "owner": "ts:web/src/organizer.ts#notebookDeletionPrompt",
-      "state": "unverified"
+      "state": "executed",
+      "check_anchor": "go:github.com/renesugar/notrios/cmd/notriosctl#TestG18eBrowserJourneys"
     },
     {
       "id": "insert-and-check-link",
@@ -2151,7 +2156,8 @@
       "section": "link-help-while-you-write",
       "proposed_actions": 4,
       "owner": "ts:web/src/components/LinkIntelligence.tsx#LinkPicker",
-      "state": "unverified"
+      "state": "executed",
+      "check_anchor": "go:github.com/renesugar/notrios/cmd/notriosctl#TestG18eBrowserJourneys"
     },
     {
       "id": "inspect-local-graph",
@@ -2159,7 +2165,8 @@
       "section": "seeing-what-is-around-a-note",
       "proposed_actions": 3,
       "owner": "ts:web/src/components/LocalGraph.tsx#LocalGraph",
-      "state": "unverified"
+      "state": "executed",
+      "check_anchor": "go:github.com/renesugar/notrios/cmd/notriosctl#TestG18eBrowserJourneys"
     },
     {
       "id": "open-sync-center",
@@ -2167,7 +2174,8 @@
       "section": "sync-center",
       "proposed_actions": 3,
       "owner": "ts:web/src/components/SyncCenter.tsx#SyncCenter",
-      "state": "unverified"
+      "state": "executed",
+      "check_anchor": "go:github.com/renesugar/notrios/cmd/notriosctl#TestG18eBrowserJourneys"
     },
     {
       "id": "editor-find-replace",

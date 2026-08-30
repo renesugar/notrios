@@ -73,6 +73,18 @@ describe('preview link handling', () => {
     expect(html).toContain('data-app-uri="notrios://databases/db_a/documents/doc_b"');
     expect(html).toContain('href="#"');
   });
+
+  it('never lets untrusted note HTML fetch remote image bytes directly', () => {
+    const html = normalizePreviewHTML('<picture><source srcset="http://127.0.0.1/source.png"><img src="http://127.0.0.1/private.png" srcset="http://127.0.0.1/candidate.png 2x" alt="private"></picture>');
+    const host = document.createElement('div');
+    host.innerHTML = html;
+    const image = host.querySelector('img');
+    expect(host.querySelector('source')).toBeNull();
+    expect(image?.getAttribute('src')).toBeNull();
+    expect(image?.getAttribute('srcset')).toBeNull();
+    expect(image?.getAttribute('data-remote-src')).toBe('http://127.0.0.1/private.png');
+    expect(image?.classList.contains('remote-media-placeholder')).toBe(true);
+  });
 });
 
 describe('stableLinkStatusMessage', () => {

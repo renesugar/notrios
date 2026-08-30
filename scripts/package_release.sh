@@ -14,6 +14,7 @@ bash scripts/validate-scaffold.sh
 (cd web && npm ci && npm audit && npm run build)
 python3 performance/v0.7-g18c/validate_evidence.py
 python3 performance/v0.7-g18d/validate_evidence.py
+make g18e-validate
 
 rm -f "$OUT"
 zip -qr "$OUT" . \

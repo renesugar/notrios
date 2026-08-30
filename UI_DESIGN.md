@@ -208,10 +208,11 @@ the application does.
 - Show revision/conflict state using revision IDs or ETags.
 - Sanitize preview HTML.
 - Remote images in preview may show a warning/action but must never be silently localized; localization is a server operation under media policy.
-- Multi-select organizer actions (implemented v0.6 F1): move, duplicate, trash,
-  tag/untag, and copy stable Markdown links. The client calls the bounded batch
-  API and displays per-item/atomic outcomes; query-scoped export is not required
-  merely to organize a selection.
+- The bounded v0.6 F1 batch API implements move, duplicate, trash, tag/untag,
+  and stable-link copy semantics, but the current GUI does not yet expose
+  multi-select organizer controls. A future client surface must display the
+  per-item/atomic outcomes; query-scoped export is not required merely to
+  organize a selection.
 - External `notrios://` links (implemented in v0.4 P5) are routed, never
   followed: the preview hands the URI to `POST /api/v1/links/resolve`, opens the
   note when this database owns it, and otherwise says the link belongs to

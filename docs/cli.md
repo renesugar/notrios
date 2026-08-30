@@ -447,8 +447,10 @@ notriosctl jobs cancel [--db path] <job-id>
 ```
 
 A long import or archive export records a job, so you can watch it from another
-shell, from the GUI, or over REST without holding the terminal that started it.
-Dry runs record nothing: they change nothing and finish quickly.
+shell or over REST without holding the terminal that started it. The current
+GUI's Sync Center lists sync jobs only; it does not show or cancel these
+import/export jobs. Dry runs record nothing: they change nothing and finish
+quickly.
 
 `status` is the shell-legible half, and its exit codes are the reason no
 scheduler is needed — `job-a && job-b` works:

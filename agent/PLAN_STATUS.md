@@ -1,6 +1,28 @@
 # Plan Status
 
-Updated: 2026-08-28 (G0-G18d complete; G18e next and unapproved)
+Updated: 2026-08-29 (G0-G18e complete; G18f next and unapproved)
+
+## v0.7 G18e completion — 2026-08-29
+
+- A strict 37-entry manifest accounts for every documented GUI procedure. The
+  32 executed journeys expand to 44 passing desktop/narrow results; five remain
+  visible with finite unsupported/native/browser-owned/design reasons.
+- Disposable host/joiner daemons prove rendered and canonical/API
+  postconditions for workspace CRUD/recovery, links/resources/preview, and 12
+  Sync Center goals. The baseline records 162 clicks, 34 keypresses, 40 typed-
+  field occurrences, eight branches, modal depth one, and seven recovery steps.
+- The Browser plugin was absent, so the report records the permitted Playwright
+  fallback. Desktop 1440×960 and narrow 390×844 passes have no unexpected
+  warning/error, page error, actual CSP violation, external request, journey
+  failure, or health failure.
+- Execution corrected a 36-pixel Sync Center close target to 44 pixels and
+  prevents untrusted remote preview images from bypassing server-side media
+  quarantine/SSRF policy. The current GUI's unsupported import/export and batch
+  organizer claims were corrected in documentation rather than fabricated.
+- Manifest/source-anchor, evidence, no-vacuity, mutation, frontend, full Go,
+  documentation/offline, scaffold, CI/release wiring, and browser checks are
+  archived in `plans/v0.7/039-executed-gui-journeys.md`. G18f is next and
+  remains unapproved.
 
 ## Active milestone
 
@@ -17,7 +39,7 @@ profiles/local journal, state-vector convergence,
 revision deltas/merge, lazy resources, secure container/catch-up,
 ephemeral-directory and REST transports, jobs/UI/retention, shared-core/FFI/
 Mermaid/mobile handoff, compatibility, and final validation. The user's
-2026-08-11 review resolved every original G0-G17 policy decision. **G0-G18d are
+2026-08-11 review resolved every original G0-G17 policy decision. **G0-G18e are
 complete** and archived under `plans/v0.7/`; the 2026-08-15 planning amendment
 reopened physical snapshot scalability. G14b selected option B from full-corpus
 evidence, G14c implemented the local production representation/verifier, and
@@ -29,7 +51,7 @@ and retirement. G17a-G17b are complete. G17b sealed the curated historical
 handoffs, issued and independently verified immutable reserve volume
 `NTR-EV-0001`, and committed the finite outer catalog. Its host-side evidence
 gate is mandatory before every future GitHub push. No push or physical burn was
-authorized or performed. G18-G18d are complete. G18e is next; none of G18e
+authorized or performed. G18-G18e are complete. G18f is next; none of G18f
 onward is approved.
 
 ## v0.7 G18d completion — 2026-08-28
@@ -52,7 +74,7 @@ onward is approved.
   the evidence gate. Archive:
   `plans/v0.7/038-executed-documentation-examples.md`.
 - No private corpus, external network, remote, evidence reserve, push, ISO, or
-  physical burn was used. G18e remains unapproved.
+  physical burn was used. G18e has since completed; G18f remains unapproved.
 
 ## v0.7 G18c.1 completion — 2026-08-27
 
@@ -318,7 +340,7 @@ onward is approved.
   volume coverage before the next GitHub push. CI can validate tracked schemas,
   fixtures, and canonicalization but cannot claim to see the external reserve.
   No push or physical optical burn is authorized by the planning amendment.
-- G17a-G18d are complete. G18e is next but unapproved; all later work remains
+- G17a-G18e are complete. G18f is next but unapproved; all later work remains
   separately approval-gated and every future push must pass the G17b gate.
 
 ## 2026-08-24 planning amendment — source-anchored docs and Hugo/Ledger
@@ -2661,5 +2683,5 @@ attempt detail remains append-only in `agent/ATTEMPT_LOG.jsonl`.
 - Long-term SQLite driver choice (current local cgo/libsqlite3 adapter).
 - Official MCP Go SDK adoption/version.
 - Sync and evidence-preservation decisions live in the owning plan items; the
-  register in `PLAN.md` is an index. G0-G18d are complete. G18e and every later
+  register in `PLAN.md` is an index. G0-G18e are complete. G18f and every later
   slice remain approval-gated; the checked-in G17b verifier gates future pushes.

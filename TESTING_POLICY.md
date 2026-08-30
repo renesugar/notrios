@@ -1202,6 +1202,34 @@ chooser absence in a browser, password visibility, Escape, 44-pixel touch
 controls, and console/page errors. Screenshots contain only generated Help/
 empty-profile UI and fixture text; no private corpus.
 
+## v0.7 G18e documented GUI journey validation
+
+`performance/v0.7-g18e/JOURNEYS.json` is the finite GUI-procedure contract.
+`go run ./cmd/docjourney` validates its 37 source sections and frozen
+Go/TypeScript declaration anchors. Thirty-two journeys execute through the
+opt-in `TestG18eBrowserJourneys` against disposable host/joiner daemons; their
+declared viewport expansion produces 44 result rows. Five procedures remain
+counted under closed owner/reason records rather than disappearing as passes.
+
+Every passing row requires a recorded user action, a visible rendered
+assertion, and a canonical/API assertion. Metrics count clicks, keypresses,
+typed fields, branches, modal depth, and recovery steps while excluding fixture
+and accessibility mechanics. The runner listens for actual browser
+`securitypolicyviolation` events and records console warnings/errors, page
+errors, CSP violations, and requests outside the disposable loopback origins.
+Only the exact recovered 401 from the deliberate wrong-password branch is
+allowed in raw console health.
+
+The Browser plugin was absent, so the checked run records regular Playwright as
+the fallback. Desktop is 1440×960; the responsive Sync Center is additionally
+run at 390×844 without claiming a mobile application. Keyboard/Escape/focus,
+the 44-pixel close target, destructive cancellation, and narrow dialog layout
+are exercised. Python mutation tests reject changed labels, missing results or
+metrics, vacuous assertions, wrong viewports, duplicate health identities,
+external requests, and changed unrun reasons. Run the deterministic gates with
+`make g18e-validate`; the real browser pass remains opt-in because it requires
+Chrome, Playwright, loopback listeners, and built `web/dist` assets.
+
 ## G17a-G17b evidence-preservation validation
 
 G17a completed generated-only canonical JSONL/entry-chain mutation, correct and

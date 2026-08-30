@@ -519,7 +519,7 @@
     },
     {
       "path": "docs/cli.md",
-      "sha256": "74928a3528d0c3de0e006fc8f8da5b470e7dbf04118ca4e772ba531a9c2710e2",
+      "sha256": "af1a71cc3316a79d66b8fd676fea6fefd1cfefd7929c4add858645c825b98283",
       "help_note": "doc_help_cli",
       "owner": "go:github.com/renesugar/notrios/cmd/notriosctl#printHelp",
       "sections": [
@@ -1489,7 +1489,7 @@
     },
     {
       "path": "docs/operations.md",
-      "sha256": "77bc5a695b53cc2da8daf3ed800602461c8c6bd8b72b8545884595b234f3990d",
+      "sha256": "5d813a963b9d894000b5d9559f8752e5094708a0baba9b6e76dd021ed6f51d80",
       "help_note": "doc_help_operations",
       "owner": "go:github.com/renesugar/notrios/internal/store#(*SQLiteStore).LintWorkspace",
       "sections": [

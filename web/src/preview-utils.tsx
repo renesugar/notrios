@@ -8,7 +8,7 @@ export function normalizePreviewHTML(html: string): string {
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, 'text/html');
 
-  doc.querySelectorAll('script, style, iframe, object, embed, form, input, button, meta, link').forEach((node) => node.remove());
+  doc.querySelectorAll('script, style, iframe, object, embed, form, input, button, meta, link, source').forEach((node) => node.remove());
 
   doc.body.querySelectorAll('*').forEach((element) => {
     for (const attr of Array.from(element.attributes)) {
@@ -46,7 +46,10 @@ export function normalizePreviewHTML(html: string): string {
     anchor.removeAttribute('href');
   });
 
-  doc.querySelectorAll<HTMLImageElement>('img[src]').forEach((image) => {
+  doc.querySelectorAll<HTMLImageElement>('img').forEach((image) => {
+    // A responsive-image candidate can load without src, so never retain a
+    // note-controlled srcset even when the ordinary source is local.
+    image.removeAttribute('srcset');
     const src = image.getAttribute('src') || '';
     if (src.startsWith('resource://')) {
       image.setAttribute('data-app-uri', src);
@@ -54,7 +57,17 @@ export function normalizePreviewHTML(html: string): string {
       if (resourceID) image.setAttribute('src', resourceContentURL(resourceID, false));
       return;
     }
-    if (src.startsWith('http://') || src.startsWith('https://')) return;
+    // Remote note content is untrusted and must never make the browser fetch
+    // around the server-side domain/SSRF/quarantine policy. Keep the source as
+    // inert metadata for inspection; localization later rewrites admitted
+    // bytes to a loadable resource:// URI.
+    if (src.startsWith('http://') || src.startsWith('https://')) {
+      image.setAttribute('data-remote-src', src);
+      image.removeAttribute('src');
+      image.classList.add('remote-media-placeholder');
+      image.setAttribute('title', 'Remote image blocked until it is localized');
+      return;
+    }
     if (src.startsWith('data:image/')) return;
     image.removeAttribute('src');
   });

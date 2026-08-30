@@ -1,0 +1,984 @@
+{
+  "schema": "notrios.docjourney.report.v1",
+  "manifest_counts": {
+    "total": 37,
+    "executed": 32,
+    "unverified": 5
+  },
+  "runtime": {
+    "excluded_from_metrics": true,
+    "sleep_based_success": false
+  },
+  "browser_policy": {
+    "preferred": "browser-plugin",
+    "observed": "absent",
+    "fallback": "playwright",
+    "reason": "The Browser plugin was not available in the execution environment; deterministic local Playwright was used against loopback daemons."
+  },
+  "viewports": [
+    {
+      "id": "desktop",
+      "width": 1440,
+      "height": 960
+    },
+    {
+      "id": "narrow-sync",
+      "width": 390,
+      "height": 844
+    }
+  ],
+  "results": [
+    {
+      "id": "search-open",
+      "viewport": "desktop",
+      "state": "passed",
+      "actions": {
+        "clicks": 1,
+        "keypresses": 1,
+        "typed_fields": [
+          "search-query"
+        ],
+        "branches": 0,
+        "maximum_modal_depth": 0,
+        "recovery_steps": 0
+      },
+      "assertions": {
+        "visible": 2,
+        "canonical": 2
+      },
+      "duration_ms": 728
+    },
+    {
+      "id": "search-page",
+      "viewport": "desktop",
+      "state": "passed",
+      "actions": {
+        "clicks": 0,
+        "keypresses": 1,
+        "typed_fields": [
+          "search-query"
+        ],
+        "branches": 0,
+        "maximum_modal_depth": 0,
+        "recovery_steps": 0
+      },
+      "assertions": {
+        "visible": 1,
+        "canonical": 2
+      },
+      "duration_ms": 208
+    },
+    {
+      "id": "new-note-in-notebook",
+      "viewport": "desktop",
+      "state": "passed",
+      "actions": {
+        "clicks": 4,
+        "keypresses": 1,
+        "typed_fields": [
+          "note-body",
+          "note-title"
+        ],
+        "branches": 0,
+        "maximum_modal_depth": 0,
+        "recovery_steps": 0
+      },
+      "assertions": {
+        "visible": 2,
+        "canonical": 2
+      },
+      "duration_ms": 799
+    },
+    {
+      "id": "edit-save",
+      "viewport": "desktop",
+      "state": "passed",
+      "actions": {
+        "clicks": 4,
+        "keypresses": 3,
+        "typed_fields": [
+          "note-body",
+          "search-query"
+        ],
+        "branches": 0,
+        "maximum_modal_depth": 0,
+        "recovery_steps": 0
+      },
+      "assertions": {
+        "visible": 1,
+        "canonical": 2
+      },
+      "duration_ms": 1709
+    },
+    {
+      "id": "move-note",
+      "viewport": "desktop",
+      "state": "passed",
+      "actions": {
+        "clicks": 3,
+        "keypresses": 1,
+        "typed_fields": [
+          "search-query"
+        ],
+        "branches": 0,
+        "maximum_modal_depth": 0,
+        "recovery_steps": 0
+      },
+      "assertions": {
+        "visible": 2,
+        "canonical": 1
+      },
+      "duration_ms": 895
+    },
+    {
+      "id": "trash-restore",
+      "viewport": "desktop",
+      "state": "passed",
+      "actions": {
+        "clicks": 4,
+        "keypresses": 3,
+        "typed_fields": [
+          "search-query",
+          "trash-search"
+        ],
+        "branches": 1,
+        "maximum_modal_depth": 1,
+        "recovery_steps": 0
+      },
+      "assertions": {
+        "visible": 3,
+        "canonical": 2
+      },
+      "duration_ms": 1057
+    },
+    {
+      "id": "purge-note",
+      "viewport": "desktop",
+      "state": "passed",
+      "actions": {
+        "clicks": 2,
+        "keypresses": 2,
+        "typed_fields": [
+          "trash-search"
+        ],
+        "branches": 1,
+        "maximum_modal_depth": 1,
+        "recovery_steps": 0
+      },
+      "assertions": {
+        "visible": 2,
+        "canonical": 1
+      },
+      "duration_ms": 603
+    },
+    {
+      "id": "delete-notebook-review",
+      "viewport": "desktop",
+      "state": "passed",
+      "actions": {
+        "clicks": 1,
+        "keypresses": 1,
+        "typed_fields": [],
+        "branches": 1,
+        "maximum_modal_depth": 1,
+        "recovery_steps": 0
+      },
+      "assertions": {
+        "visible": 2,
+        "canonical": 3
+      },
+      "duration_ms": 337
+    },
+    {
+      "id": "protected-items",
+      "viewport": "desktop",
+      "state": "passed",
+      "actions": {
+        "clicks": 2,
+        "keypresses": 0,
+        "typed_fields": [],
+        "branches": 0,
+        "maximum_modal_depth": 0,
+        "recovery_steps": 0
+      },
+      "assertions": {
+        "visible": 2,
+        "canonical": 2
+      },
+      "duration_ms": 638
+    },
+    {
+      "id": "themes",
+      "viewport": "desktop",
+      "state": "passed",
+      "actions": {
+        "clicks": 3,
+        "keypresses": 0,
+        "typed_fields": [],
+        "branches": 0,
+        "maximum_modal_depth": 0,
+        "recovery_steps": 0
+      },
+      "assertions": {
+        "visible": 1,
+        "canonical": 2
+      },
+      "duration_ms": 1423
+    },
+    {
+      "id": "insert-and-check-link",
+      "viewport": "desktop",
+      "state": "passed",
+      "actions": {
+        "clicks": 4,
+        "keypresses": 1,
+        "typed_fields": [
+          "link-picker-query",
+          "search-query"
+        ],
+        "branches": 0,
+        "maximum_modal_depth": 0,
+        "recovery_steps": 0
+      },
+      "assertions": {
+        "visible": 2,
+        "canonical": 1
+      },
+      "duration_ms": 1925
+    },
+    {
+      "id": "preview-links",
+      "viewport": "desktop",
+      "state": "passed",
+      "actions": {
+        "clicks": 2,
+        "keypresses": 1,
+        "typed_fields": [
+          "search-query"
+        ],
+        "branches": 0,
+        "maximum_modal_depth": 0,
+        "recovery_steps": 0
+      },
+      "assertions": {
+        "visible": 1,
+        "canonical": 1
+      },
+      "duration_ms": 379
+    },
+    {
+      "id": "upload-resource",
+      "viewport": "desktop",
+      "state": "passed",
+      "actions": {
+        "clicks": 4,
+        "keypresses": 1,
+        "typed_fields": [
+          "resource-file",
+          "search-query"
+        ],
+        "branches": 0,
+        "maximum_modal_depth": 0,
+        "recovery_steps": 0
+      },
+      "assertions": {
+        "visible": 2,
+        "canonical": 1
+      },
+      "duration_ms": 856
+    },
+    {
+      "id": "localize-remote-media",
+      "viewport": "desktop",
+      "state": "passed",
+      "actions": {
+        "clicks": 3,
+        "keypresses": 1,
+        "typed_fields": [
+          "search-query"
+        ],
+        "branches": 0,
+        "maximum_modal_depth": 0,
+        "recovery_steps": 0
+      },
+      "assertions": {
+        "visible": 2,
+        "canonical": 2
+      },
+      "duration_ms": 566
+    },
+    {
+      "id": "inspect-local-graph",
+      "viewport": "desktop",
+      "state": "passed",
+      "actions": {
+        "clicks": 4,
+        "keypresses": 1,
+        "typed_fields": [
+          "search-query"
+        ],
+        "branches": 0,
+        "maximum_modal_depth": 0,
+        "recovery_steps": 0
+      },
+      "assertions": {
+        "visible": 2,
+        "canonical": 1
+      },
+      "duration_ms": 580
+    },
+    {
+      "id": "paste-table",
+      "viewport": "desktop",
+      "state": "passed",
+      "actions": {
+        "clicks": 3,
+        "keypresses": 3,
+        "typed_fields": [
+          "pasted-table",
+          "search-query"
+        ],
+        "branches": 0,
+        "maximum_modal_depth": 0,
+        "recovery_steps": 0
+      },
+      "assertions": {
+        "visible": 1,
+        "canonical": 1
+      },
+      "duration_ms": 741
+    },
+    {
+      "id": "live-query-block",
+      "viewport": "desktop",
+      "state": "passed",
+      "actions": {
+        "clicks": 2,
+        "keypresses": 1,
+        "typed_fields": [
+          "search-query"
+        ],
+        "branches": 0,
+        "maximum_modal_depth": 0,
+        "recovery_steps": 0
+      },
+      "assertions": {
+        "visible": 1,
+        "canonical": 1
+      },
+      "duration_ms": 770
+    },
+    {
+      "id": "math-and-code",
+      "viewport": "desktop",
+      "state": "passed",
+      "actions": {
+        "clicks": 2,
+        "keypresses": 1,
+        "typed_fields": [
+          "search-query"
+        ],
+        "branches": 0,
+        "maximum_modal_depth": 0,
+        "recovery_steps": 0
+      },
+      "assertions": {
+        "visible": 2,
+        "canonical": 1
+      },
+      "duration_ms": 620
+    },
+    {
+      "id": "resize-panes",
+      "viewport": "desktop",
+      "state": "passed",
+      "actions": {
+        "clicks": 0,
+        "keypresses": 3,
+        "typed_fields": [],
+        "branches": 0,
+        "maximum_modal_depth": 0,
+        "recovery_steps": 0
+      },
+      "assertions": {
+        "visible": 2,
+        "canonical": 1
+      },
+      "duration_ms": 201
+    },
+    {
+      "id": "destructive-confirmations",
+      "viewport": "desktop",
+      "state": "passed",
+      "actions": {
+        "clicks": 2,
+        "keypresses": 2,
+        "typed_fields": [
+          "search-query"
+        ],
+        "branches": 1,
+        "maximum_modal_depth": 1,
+        "recovery_steps": 1
+      },
+      "assertions": {
+        "visible": 1,
+        "canonical": 1
+      },
+      "duration_ms": 460
+    },
+    {
+      "id": "open-sync-center",
+      "viewport": "desktop",
+      "state": "passed",
+      "actions": {
+        "clicks": 1,
+        "keypresses": 1,
+        "typed_fields": [],
+        "branches": 0,
+        "maximum_modal_depth": 0,
+        "recovery_steps": 1
+      },
+      "assertions": {
+        "visible": 4,
+        "canonical": 1
+      },
+      "duration_ms": 284
+    },
+    {
+      "id": "sync-setup",
+      "viewport": "desktop",
+      "state": "passed",
+      "actions": {
+        "clicks": 5,
+        "keypresses": 0,
+        "typed_fields": [
+          "peer-address"
+        ],
+        "branches": 0,
+        "maximum_modal_depth": 0,
+        "recovery_steps": 0
+      },
+      "assertions": {
+        "visible": 2,
+        "canonical": 2
+      },
+      "duration_ms": 477
+    },
+    {
+      "id": "sync-pairing",
+      "viewport": "desktop",
+      "state": "passed",
+      "actions": {
+        "clicks": 11,
+        "keypresses": 0,
+        "typed_fields": [
+          "peer-address",
+          "single-use-code"
+        ],
+        "branches": 0,
+        "maximum_modal_depth": 0,
+        "recovery_steps": 0
+      },
+      "assertions": {
+        "visible": 3,
+        "canonical": 3
+      },
+      "duration_ms": 14640
+    },
+    {
+      "id": "sync-jobs",
+      "viewport": "desktop",
+      "state": "passed",
+      "actions": {
+        "clicks": 4,
+        "keypresses": 0,
+        "typed_fields": [],
+        "branches": 0,
+        "maximum_modal_depth": 0,
+        "recovery_steps": 0
+      },
+      "assertions": {
+        "visible": 2,
+        "canonical": 2
+      },
+      "duration_ms": 1101
+    },
+    {
+      "id": "sync-lazy-resource",
+      "viewport": "desktop",
+      "state": "passed",
+      "actions": {
+        "clicks": 4,
+        "keypresses": 0,
+        "typed_fields": [],
+        "branches": 0,
+        "maximum_modal_depth": 0,
+        "recovery_steps": 0
+      },
+      "assertions": {
+        "visible": 2,
+        "canonical": 2
+      },
+      "duration_ms": 722
+    },
+    {
+      "id": "sync-conflict",
+      "viewport": "desktop",
+      "state": "passed",
+      "actions": {
+        "clicks": 5,
+        "keypresses": 0,
+        "typed_fields": [
+          "conflict-resolution"
+        ],
+        "branches": 0,
+        "maximum_modal_depth": 0,
+        "recovery_steps": 0
+      },
+      "assertions": {
+        "visible": 4,
+        "canonical": 2
+      },
+      "duration_ms": 657
+    },
+    {
+      "id": "sync-backup-create",
+      "viewport": "desktop",
+      "state": "passed",
+      "actions": {
+        "clicks": 4,
+        "keypresses": 0,
+        "typed_fields": [
+          "backup-confirm-password",
+          "backup-password"
+        ],
+        "branches": 0,
+        "maximum_modal_depth": 0,
+        "recovery_steps": 0
+      },
+      "assertions": {
+        "visible": 1,
+        "canonical": 2
+      },
+      "duration_ms": 1513
+    },
+    {
+      "id": "sync-backup-inspect",
+      "viewport": "desktop",
+      "state": "passed",
+      "actions": {
+        "clicks": 5,
+        "keypresses": 0,
+        "typed_fields": [
+          "backup-file",
+          "backup-open-password"
+        ],
+        "branches": 0,
+        "maximum_modal_depth": 0,
+        "recovery_steps": 1
+      },
+      "assertions": {
+        "visible": 3,
+        "canonical": 2
+      },
+      "duration_ms": 2253
+    },
+    {
+      "id": "sync-recovery-review",
+      "viewport": "desktop",
+      "state": "passed",
+      "actions": {
+        "clicks": 5,
+        "keypresses": 2,
+        "typed_fields": [],
+        "branches": 2,
+        "maximum_modal_depth": 1,
+        "recovery_steps": 1
+      },
+      "assertions": {
+        "visible": 2,
+        "canonical": 2
+      },
+      "duration_ms": 546
+    },
+    {
+      "id": "sync-retention",
+      "viewport": "desktop",
+      "state": "passed",
+      "actions": {
+        "clicks": 3,
+        "keypresses": 0,
+        "typed_fields": [],
+        "branches": 0,
+        "maximum_modal_depth": 0,
+        "recovery_steps": 0
+      },
+      "assertions": {
+        "visible": 3,
+        "canonical": 1
+      },
+      "duration_ms": 379
+    },
+    {
+      "id": "sync-repairs",
+      "viewport": "desktop",
+      "state": "passed",
+      "actions": {
+        "clicks": 3,
+        "keypresses": 0,
+        "typed_fields": [],
+        "branches": 0,
+        "maximum_modal_depth": 0,
+        "recovery_steps": 0
+      },
+      "assertions": {
+        "visible": 2,
+        "canonical": 1
+      },
+      "duration_ms": 344
+    },
+    {
+      "id": "sync-retirement",
+      "viewport": "desktop",
+      "state": "passed",
+      "actions": {
+        "clicks": 6,
+        "keypresses": 0,
+        "typed_fields": [
+          "retirement-reason"
+        ],
+        "branches": 0,
+        "maximum_modal_depth": 0,
+        "recovery_steps": 0
+      },
+      "assertions": {
+        "visible": 2,
+        "canonical": 1
+      },
+      "duration_ms": 639
+    },
+    {
+      "id": "open-sync-center",
+      "viewport": "narrow-sync",
+      "state": "passed",
+      "actions": {
+        "clicks": 1,
+        "keypresses": 1,
+        "typed_fields": [],
+        "branches": 0,
+        "maximum_modal_depth": 0,
+        "recovery_steps": 1
+      },
+      "assertions": {
+        "visible": 4,
+        "canonical": 1
+      },
+      "duration_ms": 485
+    },
+    {
+      "id": "sync-setup",
+      "viewport": "narrow-sync",
+      "state": "passed",
+      "actions": {
+        "clicks": 5,
+        "keypresses": 0,
+        "typed_fields": [
+          "peer-address"
+        ],
+        "branches": 0,
+        "maximum_modal_depth": 0,
+        "recovery_steps": 0
+      },
+      "assertions": {
+        "visible": 2,
+        "canonical": 2
+      },
+      "duration_ms": 489
+    },
+    {
+      "id": "sync-pairing",
+      "viewport": "narrow-sync",
+      "state": "passed",
+      "actions": {
+        "clicks": 11,
+        "keypresses": 0,
+        "typed_fields": [
+          "peer-address",
+          "single-use-code"
+        ],
+        "branches": 0,
+        "maximum_modal_depth": 0,
+        "recovery_steps": 0
+      },
+      "assertions": {
+        "visible": 3,
+        "canonical": 3
+      },
+      "duration_ms": 14514
+    },
+    {
+      "id": "sync-jobs",
+      "viewport": "narrow-sync",
+      "state": "passed",
+      "actions": {
+        "clicks": 4,
+        "keypresses": 0,
+        "typed_fields": [],
+        "branches": 0,
+        "maximum_modal_depth": 0,
+        "recovery_steps": 0
+      },
+      "assertions": {
+        "visible": 2,
+        "canonical": 2
+      },
+      "duration_ms": 1099
+    },
+    {
+      "id": "sync-lazy-resource",
+      "viewport": "narrow-sync",
+      "state": "passed",
+      "actions": {
+        "clicks": 4,
+        "keypresses": 0,
+        "typed_fields": [],
+        "branches": 0,
+        "maximum_modal_depth": 0,
+        "recovery_steps": 0
+      },
+      "assertions": {
+        "visible": 2,
+        "canonical": 2
+      },
+      "duration_ms": 574
+    },
+    {
+      "id": "sync-conflict",
+      "viewport": "narrow-sync",
+      "state": "passed",
+      "actions": {
+        "clicks": 5,
+        "keypresses": 0,
+        "typed_fields": [
+          "conflict-resolution"
+        ],
+        "branches": 0,
+        "maximum_modal_depth": 0,
+        "recovery_steps": 0
+      },
+      "assertions": {
+        "visible": 4,
+        "canonical": 2
+      },
+      "duration_ms": 574
+    },
+    {
+      "id": "sync-backup-create",
+      "viewport": "narrow-sync",
+      "state": "passed",
+      "actions": {
+        "clicks": 4,
+        "keypresses": 0,
+        "typed_fields": [
+          "backup-confirm-password",
+          "backup-password"
+        ],
+        "branches": 0,
+        "maximum_modal_depth": 0,
+        "recovery_steps": 0
+      },
+      "assertions": {
+        "visible": 1,
+        "canonical": 2
+      },
+      "duration_ms": 1628
+    },
+    {
+      "id": "sync-backup-inspect",
+      "viewport": "narrow-sync",
+      "state": "passed",
+      "actions": {
+        "clicks": 5,
+        "keypresses": 0,
+        "typed_fields": [
+          "backup-file",
+          "backup-open-password"
+        ],
+        "branches": 0,
+        "maximum_modal_depth": 0,
+        "recovery_steps": 1
+      },
+      "assertions": {
+        "visible": 3,
+        "canonical": 2
+      },
+      "duration_ms": 2446
+    },
+    {
+      "id": "sync-recovery-review",
+      "viewport": "narrow-sync",
+      "state": "passed",
+      "actions": {
+        "clicks": 5,
+        "keypresses": 2,
+        "typed_fields": [],
+        "branches": 2,
+        "maximum_modal_depth": 1,
+        "recovery_steps": 1
+      },
+      "assertions": {
+        "visible": 2,
+        "canonical": 2
+      },
+      "duration_ms": 590
+    },
+    {
+      "id": "sync-retention",
+      "viewport": "narrow-sync",
+      "state": "passed",
+      "actions": {
+        "clicks": 3,
+        "keypresses": 0,
+        "typed_fields": [],
+        "branches": 0,
+        "maximum_modal_depth": 0,
+        "recovery_steps": 0
+      },
+      "assertions": {
+        "visible": 3,
+        "canonical": 1
+      },
+      "duration_ms": 393
+    },
+    {
+      "id": "sync-repairs",
+      "viewport": "narrow-sync",
+      "state": "passed",
+      "actions": {
+        "clicks": 3,
+        "keypresses": 0,
+        "typed_fields": [],
+        "branches": 0,
+        "maximum_modal_depth": 0,
+        "recovery_steps": 0
+      },
+      "assertions": {
+        "visible": 2,
+        "canonical": 1
+      },
+      "duration_ms": 342
+    },
+    {
+      "id": "sync-retirement",
+      "viewport": "narrow-sync",
+      "state": "passed",
+      "actions": {
+        "clicks": 6,
+        "keypresses": 0,
+        "typed_fields": [
+          "retirement-reason"
+        ],
+        "branches": 0,
+        "maximum_modal_depth": 0,
+        "recovery_steps": 0
+      },
+      "assertions": {
+        "visible": 2,
+        "canonical": 1
+      },
+      "duration_ms": 601
+    },
+    {
+      "id": "import-export-job-gui",
+      "state": "unrun",
+      "reason": {
+        "code": "unsupported-current",
+        "detail": "The current GUI documents note editing and sync, but does not expose an import/export job workflow.",
+        "owner": "go:github.com/renesugar/notrios/cmd/notriosctl#runJobs"
+      }
+    },
+    {
+      "id": "batch-organizer-gui",
+      "state": "unrun",
+      "reason": {
+        "code": "unsupported-current",
+        "detail": "The current GUI has single-note notebook selection and no batch organizer control.",
+        "owner": "ts:web/src/App.tsx#App"
+      }
+    },
+    {
+      "id": "editor-find-replace",
+      "state": "unrun",
+      "reason": {
+        "code": "browser-owned",
+        "detail": "Find/replace is owned by the browser or editor surface rather than a Notrios action dispatcher.",
+        "owner": "ts:web/src/components/EditorPane.tsx#EditorPane"
+      }
+    },
+    {
+      "id": "native-shell-actions",
+      "state": "unrun",
+      "reason": {
+        "code": "native-shell-only",
+        "detail": "Native Wails menu and window actions are outside the browser journey harness.",
+        "owner": "go:github.com/renesugar/notrios/cmd/notrios#(*NativeUIBridge).ChooseSyncDirectory"
+      }
+    },
+    {
+      "id": "destructive-restore-apply",
+      "state": "unrun",
+      "reason": {
+        "code": "unsupported-by-design",
+        "detail": "The documented journey deliberately stops at review; automated evidence must not apply destructive restore.",
+        "owner": "ts:web/src/components/SyncCenter.tsx#SyncCenter"
+      }
+    }
+  ],
+  "screenshots": [
+    "/tmp/notrios-g18e-desktop.png",
+    "/tmp/notrios-g18e-narrow-sync.png"
+  ],
+  "health": [
+    {
+      "viewport": "desktop",
+      "replica": "host",
+      "console_errors": [],
+      "console_warnings": [],
+      "page_errors": [],
+      "csp_violations": [],
+      "external_requests": []
+    },
+    {
+      "viewport": "desktop",
+      "replica": "joiner",
+      "console_errors": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "console_warnings": [],
+      "page_errors": [],
+      "csp_violations": [],
+      "external_requests": []
+    },
+    {
+      "viewport": "narrow-sync",
+      "replica": "host",
+      "console_errors": [],
+      "console_warnings": [],
+      "page_errors": [],
+      "csp_violations": [],
+      "external_requests": []
+    },
+    {
+      "viewport": "narrow-sync",
+      "replica": "joiner",
+      "console_errors": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "console_warnings": [],
+      "page_errors": [],
+      "csp_violations": [],
+      "external_requests": []
+    }
+  ],
+  "health_failures": []
+}

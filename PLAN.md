@@ -1,10 +1,10 @@
 # Plan: v0.7 — Native synchronization
 
-Status: **G0-G18d are complete through 2026-08-28. Product version remains 0.6.0 and
+Status: **G0-G18e are complete through 2026-08-29. Product version remains 0.6.0 and
 the canonical schema is v27. The user resolved G17b's evidence scope, exact
 OpenPGP identity, and RFC-3161 provider order on 2026-08-25, then authorized
 the exact signer/Secret Service workflow, TSA requests, and reserve writes and
-attested offline backup/revocation readiness. G18e-G18g are not approved. The
+attested offline backup/revocation readiness. G18f-G18g are not approved. The
 G17b pre-push evidence gate is now mandatory; no GitHub push or
 physical optical burn occurred.** The
 former seven-item draft was too coarse: it mixed protocol research, canonical
@@ -2354,7 +2354,7 @@ runtime report, CI/release integration, and four pinned documentation/contract
 corrections are archived under
 `plans/v0.7/038-executed-documentation-examples.md`.
 
-## G18e. Executed GUI user journeys and action-length baseline
+## G18e. Executed GUI user journeys and action-length baseline — complete
 
 **Goal.** Test the menu clicks, buttons, checkboxes, fields, dialogs, and
 keyboard actions that the GUI documentation tells a user to perform, while
@@ -2393,6 +2393,16 @@ fixture mechanics.
 
 - None. Any flow selected for redesign from the measured baseline becomes its
   own approved feature item.
+
+**Outcome (2026-08-29).** A strict 37-journey manifest now accounts for every
+current documented GUI procedure: 32 journeys execute as 44 desktop/narrow
+viewport results and five retain finite owner/reason records. Real loopback
+daemons, rendered assertions, canonical/API postconditions, action metrics,
+source anchors, mutation gates, console/CSP/external-request health, and the
+recorded Playwright fallback all pass. Execution also pinned a 44-pixel Sync
+Center close target and made remote preview images inert until server-side
+localization. The result and boundaries are archived under
+`plans/v0.7/039-executed-gui-journeys.md`.
 
 ## G18f. Generated documentation subsets, freshness, and advisory prose review
 
@@ -2622,9 +2632,9 @@ recommendation, blocking status, and consequence.
 | Hosted semantic-review execution | G18f | Open, non-blocking default: maintainer-only recorded command; hosted source upload needs separate approval |
 | Release version/schema bookkeeping | G20 | Open, non-blocking until wrap-up |
 
-G0-G18d are complete and the production physical restore/catch-up, durable
+G0-G18e are complete and the production physical restore/catch-up, durable
 sync-job, local recovery UI, safe-retention, and evidence-preservation design
 contracts are frozen. The G17b host-side evidence gate is mandatory before any
-future GitHub push. G18e-G18g are unapproved and G18e is next.
+future GitHub push. G18f-G18g are unapproved and G18f is next.
 Implementation begins only after an explicit instruction naming
 the item to start and, where stated, authorizing its blocking operations.
