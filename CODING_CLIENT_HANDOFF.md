@@ -22,10 +22,18 @@ registered claim test. All 26 prose-only action attempts failed exact G18d/G18e
 fixture matching and were rejected; no model output ran or rewrote prose.
 
 The independently known schema-v20 prose and CLI sample were corrected to the
-canonical v27. Evidence is under `performance/v0.7-g18f/`. G18g is the next
-incomplete item and remains unapproved. No external model, private corpus,
-note/database content, reserve write, GitHub push, ISO, or physical burn was
-used.
+canonical v27. Evidence is under `performance/v0.7-g18f/`. The implementation
+commit is `c11277e`. The verified release snapshot is
+`dist/notrios-v0.7-g18f-c11277e.zip`: 5,029,408 bytes, 1,546 entries, and
+SHA-256
+`c0f8249ab6595f2e0ad3249aaa7c773b9c9eb19c599abed4c29f9ce1505f3e11`.
+Independent inventory verification found the built UI, G18f deterministic and
+advisory reports, triage, and plan archive, with no `.git`, `web/node_modules`,
+runtime `data`, or SQLite entries.
+
+G18g is the next incomplete item and remains unapproved. No external model,
+private corpus, note/database content, reserve write, GitHub push, ISO, or
+physical burn was used.
 
 ## G18e completion handoff — 2026-08-29
 
