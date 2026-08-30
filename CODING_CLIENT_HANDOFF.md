@@ -13,6 +13,14 @@ reason records. The Browser plugin was absent, so the checked report records
 the approved deterministic Playwright fallback against disposable loopback
 host/joiner daemons.
 
+The implementation commit is `91dec2c`. The verified handoff archive is
+`dist/notrios-v0.7-g18e-91dec2c.zip`, copied byte-for-byte to
+`/home/renes/evidence/notrios/notrios-v0.7-g18e-91dec2c.zip`. It is 4,961,593
+bytes with 1,518 entries and SHA-256
+`596c7b019863476a0aad84dc82e91351a4b31a3336f8f7d70d146ae6af638c40`.
+Independent inventory verification found the built UI, G18e report, and G18e
+plan archive, with zero `.git`, `web/node_modules`, or SQLite entries.
+
 Every pass contains user-action metrics plus visible and canonical/API
 postconditions. The aggregate is 162 clicks, 34 keypresses, 40 typed-field
 occurrences, eight branches, modal depth one, and seven recovery steps after
