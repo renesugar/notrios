@@ -2,7 +2,7 @@
 
 This handoff applies to any coding agent or client continuing this project (Codex, Claude, aider, swival.dev, etc. — formerly `CODEX_HANDOFF.md`). The repository is designed so an agent can continue from repository files alone.
 
-## G18g completion-validation checkpoint — 2026-08-30
+## G18g completion handoff — 2026-08-30
 
 G18g implementation and focused acceptance are complete. `docs-site/` contains
 the exact G18b-selected 44-file Ledger snapshot and provenance; the production
@@ -21,14 +21,14 @@ the G18b-qualified hashed-shard variance with identical scope/search behavior.
 Evidence is under `performance/v0.7-g18g/`; the plan archive is
 `plans/v0.7/041-hugo-ledger-production-site.md`.
 
-If interrupted before this section is replaced by the final completion
-handoff, resume with the regular dependency audit/install sequence, then run
-`make g18g-validate`, `go vet ./...`, `go test ./...`, full scaffold/frontend/
-docs checks, commit the coherent G18g slice, and run
-`bash scripts/package_release.sh` plus `scripts/check_release_zip.py`. Record
-the commit, ZIP size/entries/SHA-256 here. Stop any temporary docs HTTP server.
-G19 is next and remains unapproved; no GitHub push, reserve write, ISO, or
-physical burn is authorized.
+The implementation commit is `8d81eb3`. The verified release snapshot is
+`dist/notrios-v0.7-g18g-8d81eb3.zip`: 5,137,885 bytes, 1,635 entries, and
+SHA-256
+`c26e1bc16657f16842bb44c14ca959ed0b582481bb50ca32f6ca07cb0f80e9ff`.
+Independent inventory verification found `web/dist/`, all 44 theme files, the
+G18g report and plan archive, with zero `.git`, `node_modules`, runtime data,
+or SQLite entries. No temporary docs server remains. G19 is next and remains
+unapproved; no GitHub push, reserve write, ISO, or physical burn is authorized.
 
 ## G18f completion handoff — 2026-08-30
 

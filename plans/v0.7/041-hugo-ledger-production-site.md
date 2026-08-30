@@ -81,8 +81,12 @@ acceptance limits.
 Focused completion checks passed: G18g source/site validator, four Python
 evidence tests, five mutation classes, production-theme equality, the raw Help
 seed/reseed test, two clean builds, G18b compatibility validator, shell/Node
-syntax, and rendered desktop/mobile browser QA. The final repository gate and
-verified source ZIP are recorded in the completion handoff.
+syntax, and rendered desktop/mobile browser QA. `go vet ./...`, full repository
+and scaffold tests, zero-vulnerability web/docs audits, 172 frontend tests,
+production web/docs builds, and offline-asset Chrome checks passed. The source
+ZIP for implementation commit `8d81eb3` independently verified at 5,137,885
+bytes/1,635 entries with SHA-256
+`c26e1bc16657f16842bb44c14ca959ed0b582481bb50ca32f6ca07cb0f80e9ff`.
 
 No canonical note/database data, private corpus, remote font/CDN, Bluge/Recoll
 linkage, GitHub push, reserve write, ISO, or physical burn was used.
