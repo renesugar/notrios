@@ -8,6 +8,7 @@ import (
 	"io"
 	"mime"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -134,7 +135,43 @@ func NewServerWithOptions(options ServerOptions) *Server {
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if browserMutationIsCrossOrigin(r) {
+		writeError(w, http.StatusForbidden, "cross_origin_forbidden", "cross-origin browser mutations are not allowed")
+		return
+	}
 	s.mux.ServeHTTP(w, r)
+}
+
+const maxOrdinaryJSONBodyBytes int64 = 8 << 20
+
+var errRequestBodyTooLarge = errors.New("request body exceeds its limit")
+
+// browserMutationIsCrossOrigin closes the browser-as-confused-deputy path to
+// the loopback API. Non-browser clients send no Origin and remain compatible;
+// the web UI's exact same origin (and Wails' application origin) remain valid.
+// Fetch Metadata is supporting evidence only and never overrides a mismatched
+// Origin supplied by the browser.
+func browserMutationIsCrossOrigin(r *http.Request) bool {
+	switch r.Method {
+	case http.MethodGet, http.MethodHead, http.MethodOptions:
+		return false
+	}
+	origin := strings.TrimSpace(r.Header.Get("Origin"))
+	if origin == "" {
+		return strings.EqualFold(strings.TrimSpace(r.Header.Get("Sec-Fetch-Site")), "cross-site")
+	}
+	if origin == "wails://wails" {
+		return false
+	}
+	parsed, err := url.Parse(origin)
+	if err != nil || parsed.Host == "" || parsed.User != nil || parsed.Opaque != "" || parsed.Path != "" || parsed.RawQuery != "" || parsed.Fragment != "" {
+		return true
+	}
+	scheme := "http"
+	if r.TLS != nil {
+		scheme = "https"
+	}
+	return !strings.EqualFold(parsed.Scheme, scheme) || !strings.EqualFold(parsed.Host, r.Host)
 }
 
 func (s *Server) routes() {
@@ -877,8 +914,7 @@ func (s *Server) handleDocumentOutline(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleRemoteMediaScan(w http.ResponseWriter, r *http.Request) {
 	var request api.RemoteMediaRequest
 	if r.Body != nil && r.ContentLength != 0 {
-		if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-			writeError(w, http.StatusBadRequest, "invalid_json", err.Error())
+		if !decodeJSON(w, r, &request) {
 			return
 		}
 	}
@@ -923,8 +959,7 @@ func (s *Server) mediaPolicyStatus() *api.MediaPolicyStatus {
 // without touching any document (and without downloading anything).
 func (s *Server) handleMediaPolicyCheckURL(w http.ResponseWriter, r *http.Request) {
 	var request api.RemoteMediaRequest
-	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid_json", err.Error())
+	if !decodeJSON(w, r, &request) {
 		return
 	}
 	if len(request.URLs) == 0 {
@@ -964,8 +999,7 @@ func (s *Server) handleRemoteMediaLocalize(w http.ResponseWriter, r *http.Reques
 	}
 	var request api.RemoteMediaRequest
 	if r.Body != nil && r.ContentLength != 0 {
-		if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-			writeError(w, http.StatusBadRequest, "invalid_json", err.Error())
+		if !decodeJSON(w, r, &request) {
 			return
 		}
 	}
@@ -998,12 +1032,22 @@ func (s *Server) handleCreateResource(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusCreated, api.Resource{ID: "res_scaffold", URI: "resource://default/resources/res_scaffold", CollectionID: collectionID, Filename: filename, MIMEType: mimeType})
 		return
 	}
+	if r.ContentLength > store.MaxResourceContentBytes {
+		writeError(w, http.StatusRequestEntityTooLarge, "body_too_large", "resource exceeds the supported size ceiling")
+		return
+	}
+	r.Body = http.MaxBytesReader(w, r.Body, store.MaxResourceContentBytes)
 	res, err := s.store.CreateResource(r.Context(), store.CreateResourceRequest{
 		CollectionID: collectionID,
 		Filename:     filename,
 		MIMEType:     mimeType,
 		Content:      r.Body,
 	})
+	var maxBytesError *http.MaxBytesError
+	if errors.As(err, &maxBytesError) {
+		writeError(w, http.StatusRequestEntityTooLarge, "body_too_large", "resource exceeds the supported size ceiling")
+		return
+	}
 	if writeStoreError(w, err, "resource_create_failed") {
 		return
 	}
@@ -1167,7 +1211,11 @@ func parseLimit(w http.ResponseWriter, r *http.Request, def, max int) (int, bool
 }
 
 func decodeJSON(w http.ResponseWriter, r *http.Request, v any) bool {
-	if err := json.NewDecoder(r.Body).Decode(v); err != nil {
+	if err := decodeBoundedJSONBody(w, r, v, maxOrdinaryJSONBodyBytes); err != nil {
+		if errors.Is(err, errRequestBodyTooLarge) {
+			writeError(w, http.StatusRequestEntityTooLarge, "body_too_large", "request body exceeds the supported JSON limit")
+			return false
+		}
 		writeError(w, http.StatusBadRequest, "invalid_json", "request body must be valid JSON")
 		return false
 	}
@@ -1175,12 +1223,57 @@ func decodeJSON(w http.ResponseWriter, r *http.Request, v any) bool {
 }
 
 func decodeOptionalJSON(w http.ResponseWriter, r *http.Request, v any) bool {
-	err := json.NewDecoder(r.Body).Decode(v)
-	if err == nil || errors.Is(err, io.EOF) {
+	if r.Body == nil || r.ContentLength == 0 {
 		return true
+	}
+	err := decodeBoundedJSONBody(w, r, v, maxOrdinaryJSONBodyBytes)
+	if err == nil {
+		return true
+	}
+	if errors.Is(err, errRequestBodyTooLarge) {
+		writeError(w, http.StatusRequestEntityTooLarge, "body_too_large", "request body exceeds the supported JSON limit")
+		return false
 	}
 	writeError(w, http.StatusBadRequest, "invalid_json", "request body must be valid JSON")
 	return false
+}
+
+// decodeBoundedJSONBody consumes the whole bounded body and accepts exactly
+// one JSON value. A single valid value followed by megabytes of whitespace or
+// another value must not bypass the transport bound merely because Decode
+// returned after the first value.
+func decodeBoundedJSONBody(w http.ResponseWriter, r *http.Request, target any, limit int64) error {
+	return decodeBoundedJSONBodyWithPolicy(w, r, target, limit, false)
+}
+
+func decodeBoundedJSONBodyWithPolicy(w http.ResponseWriter, r *http.Request, target any, limit int64, disallowUnknownFields bool) error {
+	if r.ContentLength > limit {
+		return errRequestBodyTooLarge
+	}
+	decoder := json.NewDecoder(http.MaxBytesReader(w, r.Body, limit))
+	if disallowUnknownFields {
+		decoder.DisallowUnknownFields()
+	}
+	if err := decoder.Decode(target); err != nil {
+		var maxBytesError *http.MaxBytesError
+		if errors.As(err, &maxBytesError) {
+			return errRequestBodyTooLarge
+		}
+		return err
+	}
+	var trailing any
+	err := decoder.Decode(&trailing)
+	if errors.Is(err, io.EOF) {
+		return nil
+	}
+	var maxBytesError *http.MaxBytesError
+	if errors.As(err, &maxBytesError) {
+		return errRequestBodyTooLarge
+	}
+	if err == nil {
+		return errors.New("request body must contain exactly one JSON value")
+	}
+	return err
 }
 
 func defaultString(value, fallback string) string {

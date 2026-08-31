@@ -15,7 +15,7 @@ python3 -c 'import ast, sys
 for path in sys.argv[1:]:
     with open(path) as fh:
         ast.parse(fh.read(), path)
-' scripts/check_required_files.py scripts/check_plan_loops.py scripts/check_release_zip.py evidence/verify_evidence.py evidence/run_refusal_tests.py scripts/g17b_evidence.py evidence/test_verify_evidence.py performance/v0.7-g18/validate_evidence.py performance/v0.7-g18/test_validate_evidence.py performance/v0.7-g18a/build_inventory.py performance/v0.7-g18a/validate_evidence.py performance/v0.7-g18a/test_validate_evidence.py performance/v0.7-g18b/build_prototype.py performance/v0.7-g18b/validate_evidence.py performance/v0.7-g18b/test_validate_evidence.py performance/v0.7-g18c/validate_evidence.py performance/v0.7-g18d/validate_evidence.py performance/v0.7-g18d/test_validate_evidence.py performance/v0.7-g18e/validate_evidence.py performance/v0.7-g18e/test_validate_evidence.py performance/v0.7-g18f/validate_evidence.py performance/v0.7-g18f/test_validate_evidence.py performance/v0.7-g18g/validate_evidence.py performance/v0.7-g18g/test_validate_evidence.py
+' scripts/check_required_files.py scripts/check_plan_loops.py scripts/check_release_zip.py evidence/verify_evidence.py evidence/run_refusal_tests.py scripts/g17b_evidence.py evidence/test_verify_evidence.py performance/v0.7-g18/validate_evidence.py performance/v0.7-g18/test_validate_evidence.py performance/v0.7-g18a/build_inventory.py performance/v0.7-g18a/validate_evidence.py performance/v0.7-g18a/test_validate_evidence.py performance/v0.7-g18b/build_prototype.py performance/v0.7-g18b/validate_evidence.py performance/v0.7-g18b/test_validate_evidence.py performance/v0.7-g18c/validate_evidence.py performance/v0.7-g18d/validate_evidence.py performance/v0.7-g18d/test_validate_evidence.py performance/v0.7-g18e/validate_evidence.py performance/v0.7-g18e/test_validate_evidence.py performance/v0.7-g18f/validate_evidence.py performance/v0.7-g18f/test_validate_evidence.py performance/v0.7-g18g/validate_evidence.py performance/v0.7-g18g/test_validate_evidence.py performance/v0.7-g20/validate_evidence.py performance/v0.7-g20/test_validate_evidence.py performance/v0.7-g20/check_dependency_licenses.py performance/v0.7-g20/test_check_dependency_licenses.py
 python3 -m unittest evidence.test_verify_evidence
 python3 -m unittest discover -s performance/v0.7-g18 -p 'test_*.py'
 python3 performance/v0.7-g18/validate_evidence.py
@@ -32,5 +32,8 @@ python3 performance/v0.7-g18f/validate_evidence.py
 python3 -m unittest discover -s performance/v0.7-g18g -p 'test_*.py'
 python3 performance/v0.7-g18g/validate_evidence.py
 node --check performance/v0.7-g18g/browser_smoke.mjs
+python3 -m unittest discover -s performance/v0.7-g20 -p 'test_*.py'
+python3 performance/v0.7-g20/check_dependency_licenses.py
+python3 performance/v0.7-g20/validate_evidence.py
 
 echo "Scaffold validation passed."

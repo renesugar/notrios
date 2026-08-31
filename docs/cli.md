@@ -79,7 +79,7 @@ Version is the product version reported by Notrios binaries.
 notriosctl version
 ```
 
-Prints the version string (currently `0.6.0`) and exits 0. No flags.
+Prints the version string (currently `0.7.0`) and exits 0. No flags.
 
 ## doctor
 

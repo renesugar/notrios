@@ -1,5 +1,57 @@
 # Release Checklist
 
+## v0.7.0 — native synchronization
+
+G0-G20 are implemented on `develop`. G20 produces a local source release
+candidate; repository-owner publishing remains a separate authorization.
+
+Release-candidate gates:
+
+- [ ] Product version reports `0.7.0`; fresh and upgraded databases converge on
+      schema v27 after migrations v19-v27.
+- [ ] `go vet ./...`, `go test ./...`, focused three-peer convergence,
+      directory/REST process, catch-up/reset/retention, lazy-resource,
+      conflict/fault, abuse, and upgrade suites.
+- [ ] Required-file, scaffold, OpenAPI/route/MCP parity, documentation-anchor,
+      executable-example, GUI-journey, Hugo/Ledger, offline, and Help-seed
+      checks.
+- [ ] `npm audit` before and after `npm ci`, frontend typecheck/tests, and
+      production build.
+- [ ] Frozen aggregate-only G8/G14e/G17 evidence revalidated without rereading
+      the private corpus: 382,206 equivalent notes, attachment-bearing lazy
+      resources, physical snapshot/catch-up, and retention cost.
+- [ ] Exact dependency inventories pass offline for every Go module and npm
+      lockfile package; all licenses remain compatible with repository policy.
+- [ ] The standard security scan has complete coverage, every validated finding
+      is dispositioned and remediated, the one static bypass-correction cycle is
+      closed, and the derived structural-hardening portfolio validates.
+- [ ] Upgrade/rollback instructions and disaster-recovery boundaries are
+      reconciled with schema v27 and the physical/semantic backup contracts.
+- [ ] `scripts/package_release.sh` and `scripts/check_release_zip.py` produce a
+      versioned source ZIP containing `web/dist/`; its byte count, entries, and
+      SHA-256 are recorded and the exact ZIP is copied to the evidence directory.
+
+What v0.7 adds beyond v0.6:
+
+- protocol-1.0 record synchronization with durable state vectors, HLC merge,
+  revision conflicts, lazy resources, signed/encrypted artifacts, catch-up,
+  retention, repair, and retirement across directory and REST carriers;
+- authenticated per-peer REST sync and a loopback-only Sync Center, without
+  turning peer credentials into user login or exposing ordinary REST/MCP/UI;
+- compatible physical whole-library snapshot/catch-up plus portable semantic
+  archive-v2, with a published strict consumer contract;
+- a frozen shared-core/C-ABI portability handoff and reproducible documentation
+  anchors, executable examples, GUI journeys, and Hugo/Ledger site;
+- evidence preservation, release acceptance, and G20 hardening of listener,
+  browser/body, carrier-root, and legacy-archive boundaries.
+
+Repository-owner publishing steps (not performed by G20):
+
+- [ ] Review and merge/fast-forward `develop` into `main`.
+- [ ] Push reviewed branches and confirm CI/Pages.
+- [ ] Tag and push `v0.7.0` only after accepting the release candidate.
+- [ ] Perform any separately authorized evidence-reserve/ISO/media work.
+
 ## v0.6.0 — MCP and automation expansion
 
 The v0.6 implementation is complete on `develop`. As in earlier milestones, the

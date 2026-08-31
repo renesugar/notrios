@@ -2,6 +2,37 @@
 
 This handoff applies to any coding agent or client continuing this project (Codex, Claude, aider, swival.dev, etc. — formerly `CODEX_HANDOFF.md`). The repository is designed so an agent can continue from repository files alone.
 
+## G20 completion handoff — 2026-08-31
+
+G20 is complete and archived as
+`plans/v0.7/043-full-convergence-release-wrap-up.md`; the complete milestone
+plan is `plans/v0.7/000-v0.7-plan.md`. Product version is 0.7.0 and canonical
+schema is v27 (migrations v19-v27). `PLAN.md` now contains the unstarted v0.8
+H0-H9 plan derived from `ROADMAP.md`; H0 is next and remains unapproved.
+
+The exact convergence, directory/REST process, catch-up/reset/retention,
+lazy-resource, conflict/fault, abuse, and fresh/upgrade selectors pass. The
+focused G20 gate validates the complete service/httpapi/archive/carrier suites,
+37 exact Go-module and 251 exact npm-package licenses, and the frozen
+aggregate-only G8/G14e/G17 evidence without rereading the private corpus.
+
+The standard security scan completed all seven enumerated surfaces and
+validated six findings. G20 centralizes TLS selection and finite remote
+peer-route admission; enforces loopback/local-Host ordinary access,
+same-origin/Wails browser mutations, exactly-one 8 MiB JSON/MCP bodies, and the
+16 GiB resource ceiling; and roots/bounds carrier plus legacy-archive access.
+One allowed static bypass review found five narrower gaps, all closed in one
+correction cycle. The exact scan hashes, dispositions, residual limitations,
+and derived structural-hardening portfolio are under
+`performance/v0.7-g20/`.
+
+At this durable checkpoint the implementation, documentation, plan archive,
+and release integration are ready for the final full packager. Resume with
+`bash scripts/package_release.sh dist/notrios-v0.7-g20-<commit>.zip`, verify the
+ZIP, copy the exact bytes to `/home/renes/evidence/notrios/`, record its size,
+entries, and SHA-256 here, and append the completed attempt-log entry. No push,
+tag, public release, reserve/ISO write, or physical burn is authorized.
+
 ## G19 completion handoff — 2026-08-30
 
 G19 is complete and archived as
@@ -24,8 +55,8 @@ trusts only the exact `notrios-archive-v2` fallback declaration.
 Focused G19, full Go, vet, docs-generation/audit/site, scaffold, web typecheck,
 172 frontend tests, production builds, and dependency-audit gates pass. The
 local MoveNotes audit found no consumer or `notrios2sql.py`, so no external
-repository was modified and no cross-repository test is claimed. G20 is the
-next incomplete item and remains unapproved.
+repository was modified and no cross-repository test is claimed. G20 has since
+completed and closed v0.7.
 
 The implementation commit is `0ec2803`. The verified release snapshot is
 `dist/notrios-v0.7-g19-0ec2803.zip`: 5,196,767 bytes, 1,709 entries, and
@@ -149,7 +180,7 @@ UI, G18d report, and G18d plan archive present, with no `.git`,
 `web/node_modules`, runtime `data`, or SQLite entries. G18e has since completed;
 G18f has since completed; G18g is next and remains unapproved.
 
-Current phase: v0.1 through **v0.6** are complete; product version is **0.6.0**
+Current phase: v0.1 through **v0.7** are complete; product version is **0.7.0**
 and the schema is **v27**. The eight v0.6 slices are archived under
 `plans/v0.6/`: F0 (notebook targeting, landed with v0.5 E10), F1 (batch
 organizer transactions), F2 (MCP tool scopes), F3 (MCP read coverage and HTTP
@@ -157,7 +188,10 @@ organizer transactions), F2 (MCP tool scopes), F3 (MCP read coverage and HTTP
 readable at scale), F6 (job control plane), and F7 (documentation and release
 wrap-up). The thirteen v0.5 slices remain archived under `plans/v0.5/`.
 
-`PLAN.md` now holds the **active v0.7 native synchronization plan** with
+The completed v0.7 plan is archived as `plans/v0.7/000-v0.7-plan.md`.
+`PLAN.md` now holds the **unstarted v0.8 installation, configuration,
+shared-core, and portability plan** with H0-H9 independently approvable items.
+The historical v0.7 plan contained
 independently approvable G0-G20 slices plus the newly inserted, blocking
 G14a-G14e archive-scalability sequence, the newly inserted blocking G17a-G17b
 evidence-preservation sequence, and the newly planned G18a-G18g documentation-
@@ -196,8 +230,8 @@ G18d is archived as `plans/v0.7/038-executed-documentation-examples.md`.
 G18e is archived as `plans/v0.7/039-executed-gui-journeys.md`.
 **G0-G18f are complete.
 The G17b pre-push verifier is mandatory before any future GitHub push; no push
-or physical burn was authorized or performed. G18g and later items are next and
-are not approved.** G14b selected option B: a
+or physical burn was authorized or performed. G18g-G20 have since completed;
+v0.8 H0 is next and unapproved.** G14b selected option B: a
 required compatible same-schema SQLite-image plus bounded packed-assets
 capability for whole-library full backup/catch-up, retaining packed semantic
 archive-v2 for subset, merge, schema-independent interchange, and fallback.

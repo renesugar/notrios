@@ -21,6 +21,7 @@ jobs:
       - run: make g18f-validate
       - run: python3 performance/v0.7-g18g/validate_evidence.py
       - run: make g19-validate
+      - run: make g20-validate
       - run: python3 scripts/check_required_files.py
       - run: bash scripts/validate-scaffold.sh
 

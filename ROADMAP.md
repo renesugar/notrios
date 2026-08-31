@@ -188,7 +188,7 @@ question, and are not on the original list.
   context", holds and is why the first half could not: bulk bytes and bulk paths
   travel the same way. Starting a job stays a CLI act.
 
-## v0.7 — Versioning and synchronization
+## v0.7 — Versioning and synchronization (complete, 0.7.0)
 
 This is the first milestone that merges independently changed canonical state,
 so the replacement `PLAN.md` divides it into independently approvable items
@@ -458,6 +458,16 @@ Research outcomes:
 - Optional go-git/Fossil/Obsidian adapters remain projections/checkpoints, not
   the canonical merge protocol.
 
+**Completion (2026-08-31).** G0-G20 are implemented and archived under
+`plans/v0.7/`. The milestone ships protocol-1.0 encrypted/signed record sync,
+directory and REST carriers, physical catch-up and semantic backup, durable
+jobs, Sync Center, retention/retirement/repair, evidence custody, portability
+and documentation contracts, the archive-v2 consumer bridge, and full-system
+release acceptance at product 0.7.0/schema v27. G20 additionally centralizes
+remote route/TLS admission, bounds browser/JSON/resource bodies, and roots and
+bounds untrusted carrier/legacy-archive access. Publishing/tagging remains an
+owner action; v0.8 is planned but unstarted.
+
 ## v0.8 — Installation, configuration, shared core, and portability
 
 This is deliberately separate from synchronization correctness. Packaging
@@ -626,4 +636,4 @@ job kind names a filesystem path. That is recorded in the bullet rather than the
 bullet being marked done, and it does not move to v0.7 — it is a decision, not
 an omission.
 
-`PLAN.md` now holds the v0.7 plan.
+`PLAN.md` now holds the unstarted v0.8 plan derived from this roadmap.

@@ -3,7 +3,7 @@
 Notrios (formerly "Notes Companion") is a local-first note-taking, search, import, and publishing system for very large Markdown and document collections.
 It combines a Go REST/MCP service (`notriosd`), a built-in GUI, SQLite/FTS5-backed canonical storage, content-addressed resources, optional Recoll-derived search/extraction, and support for third-party native clients (C++/Qt, Go/Wails, Rust/Tauri) over the same API. A versioned no-GUI C ABI is planned before 1.0, followed by an independent post-1.0 Flutter client; mobile delivery does not depend exclusively on Wails.
 
-The v0.1 through v0.6 milestones are complete. v0.7 G0-G19 are complete through
+The v0.1 through v0.7 milestones are complete. v0.7 G0-G20 delivered
 the authenticated REST sync data plane and resumable encrypted snapshot
 download. The blocking G14a-G14e archive-scalability sequence is complete:
 G14b selected and G14c implemented a
@@ -42,7 +42,10 @@ decisions and never blocks builds or rewrites prose. G18g now ships the exact
 pinned Hugo/Ledger source, local Pagefind, preserved public links, and raw Help
 equivalence through the production build. G19 now publishes the frozen
 archive-v2 consumer contract, schemas, deterministic goldens, and compatibility
-preflight. G20 is next and unapproved. GitHub
+preflight. G20 closed the 0.7.0/schema-v27 release matrix, remediated the
+complete standard security scan and one static correction cycle, and archived
+the milestone. `PLAN.md` now holds the unstarted v0.8 installation/shared-core
+plan. GitHub
 push and physical disc burning remain unauthorized — see [`PLAN.md`](PLAN.md),
 [`ROADMAP.md`](ROADMAP.md), and
 [`plans/v0.7/034-android-emulator-modernc-runtime.md`](plans/v0.7/034-android-emulator-modernc-runtime.md). The repository is
@@ -136,7 +139,7 @@ Recoll availability, backlog, sync/index, and reconciliation state.
   tag rename (E8), and the documentation and release wrap-up (E9). All thirteen
   slices are archived under `plans/v0.5/`, including a copy of the plan itself
   at `plans/v0.5/000-v0.5-plan.md`.
-- **v0.6 (current, 0.6.0) — MCP and automation expansion.** Notebook targeting
+- **v0.6 (0.6.0) — MCP and automation expansion.** Notebook targeting
   in the GUI and CLI (F0), bounded batch organizer transactions with an
   idempotency ledger (F1), four cumulative MCP tool scopes enforced at the call
   site (F2), MCP read coverage with bounded resource reads and HTTP `Range`
@@ -146,7 +149,7 @@ Recoll availability, backlog, sync/index, and reconciliation state.
   documentation and release wrap-up (F7). Archived under `plans/v0.6/`. See
   [`PLAN.md`](PLAN.md) for the next milestone and [`ROADMAP.md`](ROADMAP.md) for
   the sequence.
-- **v0.7 (in progress) — native synchronization.** G0-G2 completed the threat,
+- **v0.7 (current, 0.7.0) — native synchronization.** G0-G2 completed the threat,
   revision/delta, pure-Go VCDIFF, envelope, and resource-bound investigations.
   G3 adds named owner-only runtime profiles, explicit database/replica binding,
   isolated paths and loopback ports, copied-database adopt/fork checks, and a
@@ -194,8 +197,16 @@ Recoll availability, backlog, sync/index, and reconciliation state.
   REST/MCP control without adding cron or a workflow scheduler. G16 then adds a
   loopback/native-only Sync Center for setup, pairing, explicit catch-up
   permission, job state, lazy attachments, conflicts, repair reports, and
-  password-protected backup review without silently restoring anything. G17 is
-  next and approval-gated.
+  password-protected backup review without silently restoring anything. G17
+  adds signed retirement, acknowledgement/snapshot-gated retention, repair,
+  and evidence preservation. G18 freezes the shared-core/C-ABI portability
+  handoff and then makes documentation anchors, examples, GUI journeys, the
+  Hugo/Ledger site, and advisory review reproducible. G19 publishes the strict
+  archive-v2 consumer contract. G20 reconciles the full system, hardens remote
+  admission and untrusted filesystem roots, validates schema v27 upgrade and
+  recovery, and ships the 0.7.0 source release candidate. All G0-G20 slices are
+  archived under `plans/v0.7/`; `PLAN.md` now describes the unstarted v0.8
+  milestone.
 - Agent progress/attempt tracking: [`agent/PLAN_STATUS.md`](agent/PLAN_STATUS.md), [`agent/ATTEMPT_LOG.jsonl`](agent/ATTEMPT_LOG.jsonl), and [`agent/MODEL_LOG.jsonl`](agent/MODEL_LOG.jsonl).
 
 ## Contributing

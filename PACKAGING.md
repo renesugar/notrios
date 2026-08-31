@@ -27,7 +27,14 @@ Excluded (enforced by both the zip exclusions and `check_release_zip.py`):
 - runtime `data/` directories, SQLite databases and their WAL/SHM sidecars;
 - build/test/dev artifacts: `bin/`, `dist/`, `_site/`, `.playwright-mcp/`, `__pycache__`/`*.pyc`, coverage output, editor backups, other ZIPs, `.claude/`.
 
-Because tests and the web build run first, a ZIP is only produced from a validated tree. The archive contents are deterministic apart from build-time asset hashes in `web/dist/`.
+Because tests and the web build run first, a ZIP is only produced from a
+validated tree. File selection and exclusions are deterministic and verified;
+byte-for-byte ZIP reproducibility is not claimed because archive timestamps and
+hashed build assets may vary. Each handoff records the exact ZIP SHA-256.
+
+The v0.7 G20 gate also validates the exact Go/npm dependency-license inventory,
+frozen aggregate convergence/recovery evidence, the security finding
+dispositions, and upgrade/rollback notes before packaging.
 
 ## Binary "packaging" today
 

@@ -1,0 +1,7 @@
+flowchart LR
+  Carrier[Hostile carrier tree] --> CRoot[Carrier-owned os.Root policy]
+  Archive[Crafted legacy archive] --> ARoot[Archive-owned os.Root policy]
+  CRoot -->|regular + bounded descriptor| Sync[Sync processing]
+  ARoot -->|preflight then regular + bounded descriptor| Import[Legacy import]
+  Sync --> Canonical[Canonical store]
+  Import --> Canonical

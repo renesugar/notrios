@@ -4,9 +4,9 @@
   "documents": [
     {"path":"docs/api/mcp.md","sha256":"eba66c80ea3ad6cde265c16976f6408f638aec7fd993cb7063323f78049c6a1e"},
     {"path":"docs/api/rest.md","sha256":"49a6c89e814945b9936369852ef69db9e4a606ef4ffdba3b7c860be5a4a15259"},
-    {"path":"docs/cli.md","sha256":"eb98e738e897eef07976b8a83b02a183b7cc33c7a2387bdbb083f603e9556067"},
-    {"path":"docs/gui.md","sha256":"057c731e7d6aa8a6735991c918a3e1aacf380506aeb34f1ff0f7a0fdb5ed07be"},
-    {"path":"docs/service.md","sha256":"d749413219a5f31a0d63480a26524df51fe079d33d70b9dcb2353abbe2b6c44a"}
+    {"path":"docs/cli.md","sha256":"e6c280300221831e203330323e99b71cda187d7797ff77bd6e65a56c7107525e"},
+    {"path":"docs/gui.md","sha256":"0bdf473c3d1b1e49ce9a9ee19e5314b8087c56caa24673dea8310d87ad654d88"},
+    {"path":"docs/service.md","sha256":"2e9845c31f3fa1517e86713ef13f5e60268e728695edeeb320dc1bfcfdab7da2"}
   ],
   "summary": {"fragments":15,"user":13,"api":2,"generated_documents":5,"enumerated_rows":413},
   "enumerations": {

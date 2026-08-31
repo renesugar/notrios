@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 
@@ -75,6 +76,40 @@ func TestG15RESTPlansStartsInspectsRetriesAndNeverReturnsTargetLocation(t *testi
 	reset := doJSON(t, s, http.MethodPost, "/api/v1/jobs/"+jobID+"/reset", "")
 	if reset.Code != http.StatusOK || strings.Contains(reset.Body.String(), "/private") || strings.Contains(reset.Body.String(), "secret") {
 		t.Fatalf("reset: %d %s", reset.Code, reset.Body.String())
+	}
+}
+
+func TestSyncControlAndUIJSONConsumeExactlyOneBoundedValue(t *testing.T) {
+	for _, testCase := range []struct {
+		name       string
+		body       string
+		length     int64
+		wantStatus int
+	}{
+		{name: "second value", body: `{} {}`, length: int64(len(`{} {}`)), wantStatus: http.StatusBadRequest},
+		{name: "oversized declared body", body: `{}`, length: (16 << 10) + 1, wantStatus: http.StatusRequestEntityTooLarge},
+	} {
+		t.Run("sync control "+testCase.name, func(t *testing.T) {
+			request := httptest.NewRequest(http.MethodPost, "/api/v1/jobs/sync/plan", strings.NewReader(testCase.body))
+			request.ContentLength = testCase.length
+			response := httptest.NewRecorder()
+			if _, ok := decodeSyncControl(response, request); ok {
+				t.Fatal("sync-control decoder accepted a body outside its whole-body contract")
+			}
+			if response.Code != testCase.wantStatus {
+				t.Fatalf("status = %d, want %d: %s", response.Code, testCase.wantStatus, response.Body.String())
+			}
+		})
+	}
+
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/sync-ui/configuration", strings.NewReader(`{} {}`))
+	response := httptest.NewRecorder()
+	var target struct{}
+	if decodeBoundedJSON(response, request, 16<<10, &target) {
+		t.Fatal("sync UI decoder accepted a second JSON value")
+	}
+	if response.Code != http.StatusBadRequest {
+		t.Fatalf("sync UI status = %d, want 400: %s", response.Code, response.Body.String())
 	}
 }
 

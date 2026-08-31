@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -42,20 +43,28 @@ func (d *Directory) PublishSnapshotFile(ctx context.Context, name, sourcePath, e
 		return 0, false, err
 	}
 	defer source.Close()
+	root, err := os.OpenRoot(d.root)
+	if err != nil {
+		return 0, false, fmt.Errorf("%w: %v", ErrCarrierUnavailable, err)
+	}
+	defer root.Close()
 	info, err := source.Stat()
 	if err != nil || !info.Mode().IsRegular() || info.Size() <= 0 || info.Size() > MaxSnapshotTransferBytes {
 		return 0, false, fmt.Errorf("%w: snapshot source is not a bounded regular file", ErrTooLarge)
 	}
 	target := d.artifactPath(d.namespace, ClassSnapshot, name)
-	if digest, size, err := hashFile(target); err == nil && size == info.Size() && digest == expectedSHA256 {
+	if digest, size, err := hashRootFile(root, d.rel(target), MaxSnapshotTransferBytes); err == nil && size == info.Size() && digest == expectedSHA256 {
 		return size, true, nil
 	}
 	partial := filepath.Join(d.namespacePath(d.namespace), stagingDir, name+".snapshot.partial")
-	if err := os.MkdirAll(filepath.Dir(partial), 0o700); err != nil {
+	if err := rejectSymlinkAncestors(root, d.rel(filepath.Dir(partial))); err != nil {
+		return 0, false, fmt.Errorf("%w: %v", ErrCarrierUnavailable, err)
+	}
+	if err := root.MkdirAll(d.rel(filepath.Dir(partial)), 0o700); err != nil {
 		return 0, false, err
 	}
 	existing := int64(-1)
-	if staged, statErr := os.Stat(partial); statErr == nil {
+	if staged, statErr := root.Lstat(d.rel(partial)); statErr == nil && staged.Mode().IsRegular() && staged.Size() <= MaxSnapshotTransferBytes {
 		cached, found := d.snapshotPrefixes[partial]
 		if found && cached.sourcePath == sourcePath && cached.expectedSHA256 == expectedSHA256 &&
 			cached.sourceBytes == info.Size() && cached.position == staged.Size() {
@@ -63,7 +72,7 @@ func (d *Directory) PublishSnapshotFile(ctx context.Context, name, sourcePath, e
 		}
 	}
 	if existing < 0 {
-		existing, err = d.verifySnapshotPrefix(source, partial, info.Size())
+		existing, err = d.verifySnapshotPrefix(root, source, d.rel(partial), info.Size())
 		if err != nil {
 			delete(d.snapshotPrefixes, partial)
 			return 0, false, err
@@ -73,7 +82,7 @@ func (d *Directory) PublishSnapshotFile(ctx context.Context, name, sourcePath, e
 	if _, err := source.Seek(existing, io.SeekStart); err != nil {
 		return existing, false, err
 	}
-	output, err := os.OpenFile(partial, os.O_CREATE|os.O_WRONLY, 0o600)
+	output, err := openOrCreateBoundedRegular(root, d.rel(partial), MaxSnapshotTransferBytes, 0o600)
 	if err != nil {
 		return existing, false, err
 	}
@@ -101,14 +110,23 @@ func (d *Directory) PublishSnapshotFile(ctx context.Context, name, sourcePath, e
 	if position < info.Size() {
 		return position, false, nil
 	}
-	digest, size, err := hashFile(partial)
+	digest, size, err := hashRootFile(root, d.rel(partial), MaxSnapshotTransferBytes)
 	if err != nil || size != info.Size() || digest != expectedSHA256 {
 		delete(d.snapshotPrefixes, partial)
 		return position, false, fmt.Errorf("%w: completed snapshot digest mismatch", ErrUnreadable)
 	}
-	if err := d.rename(partial, target); err != nil {
-		delete(d.snapshotPrefixes, partial)
+	var renameErr error
+	if err := rejectSymlinkAncestors(root, d.rel(filepath.Dir(target))); err != nil {
 		return position, false, fmt.Errorf("%w: %v", ErrCarrierUnavailable, err)
+	}
+	if d.rename != nil {
+		renameErr = d.rename(partial, target)
+	} else {
+		renameErr = root.Rename(d.rel(partial), d.rel(target))
+	}
+	if renameErr != nil {
+		delete(d.snapshotPrefixes, partial)
+		return position, false, fmt.Errorf("%w: %v", ErrCarrierUnavailable, renameErr)
 	}
 	delete(d.snapshotPrefixes, partial)
 	return position, true, nil
@@ -125,7 +143,12 @@ func (d *Directory) DownloadSnapshotFile(ctx context.Context, namespace, name, e
 	if !validBlindName(namespace) || !validArtifactName(name) || !validSHA256(expectedSHA256) || expectedBytes <= 0 || expectedBytes > MaxSnapshotTransferBytes {
 		return 0, false, ErrUnreadable
 	}
-	source, err := os.Open(d.artifactPath(namespace, ClassSnapshot, name))
+	root, err := os.OpenRoot(d.root)
+	if err != nil {
+		return 0, false, ErrUnreadable
+	}
+	defer root.Close()
+	source, err := openBoundedRegular(root, d.rel(d.artifactPath(namespace, ClassSnapshot, name)), MaxSnapshotTransferBytes)
 	if err != nil {
 		return 0, false, ErrUnreadable
 	}
@@ -178,8 +201,11 @@ func (d *Directory) DownloadSnapshotFile(ctx context.Context, namespace, name, e
 	return position, true, nil
 }
 
-func verifiedPrefix(source *os.File, partial string, sourceBytes int64) (int64, error) {
-	staged, err := os.OpenFile(partial, os.O_CREATE|os.O_RDWR, 0o600)
+func verifiedPrefixRoot(root *os.Root, source *os.File, partial string, sourceBytes int64) (int64, error) {
+	if existing, err := root.Lstat(partial); err == nil && !existing.Mode().IsRegular() {
+		return 0, ErrUnreadable
+	}
+	staged, err := openOrCreateBoundedRegular(root, partial, MaxSnapshotTransferBytes, 0o600)
 	if err != nil {
 		return 0, err
 	}
@@ -237,6 +263,58 @@ func hashFile(path string) (string, int64, error) {
 		return "", 0, err
 	}
 	return hex.EncodeToString(digest.Sum(nil)), info.Size(), nil
+}
+
+func hashRootFile(root *os.Root, path string, maxBytes int64) (string, int64, error) {
+	file, err := openBoundedRegular(root, path, maxBytes)
+	if err != nil {
+		return "", 0, err
+	}
+	defer file.Close()
+	digest := sha256.New()
+	written, err := io.CopyBuffer(digest, io.LimitReader(file, maxBytes+1), make([]byte, 64<<10))
+	if err != nil {
+		return "", 0, err
+	}
+	if written > maxBytes {
+		return "", 0, ErrTooLarge
+	}
+	return hex.EncodeToString(digest.Sum(nil)), written, nil
+}
+
+// openOrCreateBoundedRegular obtains a root-anchored writable descriptor
+// without ever following a final symlink. An existing object must pass the
+// same Lstat/open/fstat identity check as an untrusted read.
+func openOrCreateBoundedRegular(root *os.Root, path string, maxBytes int64, perm os.FileMode) (*os.File, error) {
+	if err := rejectSymlinkAncestors(root, path); err != nil {
+		return nil, ErrUnreadable
+	}
+	lstat, err := root.Lstat(path)
+	if errors.Is(err, os.ErrNotExist) {
+		file, createErr := root.OpenFile(path, os.O_CREATE|os.O_EXCL|os.O_RDWR, perm)
+		if createErr != nil {
+			return nil, ErrUnreadable
+		}
+		info, statErr := file.Stat()
+		if statErr != nil || !info.Mode().IsRegular() || !singleLink(file, info) {
+			file.Close()
+			return nil, ErrUnreadable
+		}
+		return file, nil
+	}
+	if err != nil || !lstat.Mode().IsRegular() || lstat.Mode()&os.ModeSymlink != 0 || lstat.Size() > maxBytes {
+		return nil, ErrUnreadable
+	}
+	file, err := root.OpenFile(path, os.O_RDWR, perm)
+	if err != nil {
+		return nil, ErrUnreadable
+	}
+	fstat, err := file.Stat()
+	if err != nil || !fstat.Mode().IsRegular() || !os.SameFile(lstat, fstat) || fstat.Size() > maxBytes || !singleLink(file, fstat) {
+		file.Close()
+		return nil, ErrUnreadable
+	}
+	return file, nil
 }
 
 func validSHA256(value string) bool {

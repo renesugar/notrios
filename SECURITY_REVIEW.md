@@ -1,6 +1,6 @@
 # Security Review — Current Local Product and Planned Remote Surfaces
 
-This review reflects the current 0.6.0 repository (schema v20). Notrios is
+This review reflects the v0.7.0 release candidate (schema v27). Notrios is
 local-first but
 its REST/MCP listener, importers, preview, downloaded media, archive files,
 published handoffs, and future sync transports are security boundaries.
@@ -31,7 +31,9 @@ published handoffs, and future sync transports are security boundaries.
   apply. Immediate resource deletion and permanent note purge require
   object-specific confirmation headers.
 
-Remaining: generic upload limits and optional malware-scanner integration.
+Ordinary JSON/MCP bodies are bounded at 8 MiB and must contain exactly one
+value; raw resources use the canonical 16 GiB object ceiling at HTTP and store
+boundaries. Remaining: optional malware-scanner integration.
 Perceptual similarity may suggest review but must never silently identify or
 deduplicate content. v0.7 must replace the local retention gate with
 peer-acknowledgement-aware eligibility.
@@ -75,6 +77,14 @@ and installation requires an explicit `--apply`.
 ### REST and MCP
 
 - Default binding is loopback.
+- Ordinary REST, MCP, and web routes require a loopback connection and a local
+  Host. A non-loopback listener admits only the finite authenticated peer-sync
+  route set; a forwarding header cannot make a remote request local and an
+  unknown sync-prefixed path cannot fall through to the web application.
+- Browser mutations require an exact same-origin request (or the Wails origin);
+  cross-site Fetch Metadata, malformed/null origins, and DNS-rebinding Hosts
+  are refused. Origin checks supplement the loopback boundary and are not user
+  authentication.
 - Raw SQL, arbitrary filesystem access, and direct Recoll mutation are absent.
 - MCP output is bounded and marks note content untrusted.
 - Editor writes are scope-gated and destructive edits use revision
@@ -132,9 +142,11 @@ collection, archive operations, and publication are REST/CLI only. That keeps
 whole-library reads and organizer writes on surfaces a person drives rather than
 ones untrusted model output reaches.
 
-Do not expose Notrios on a LAN/public address until authentication,
-authorization, CSRF/CORS, TLS/reverse-proxy guidance, rate/request quotas, and
-audit logging are implemented and tested.
+Do not expose ordinary Notrios REST, MCP, or GUI routes on a LAN/public address.
+G20 enforces that rule even when the configured listener is non-loopback. Only
+the authenticated peer-sync route set is remotely admitted, under the TLS,
+rate, request-size, and audit controls described below. General remote access
+would require a separately designed authentication and proxy boundary.
 
 The job control plane (v0.6 F6) is the first of those bounded surfaces, and it
 came out narrower than the plan bullet that asked for it. **A job can be watched
@@ -209,7 +221,7 @@ MCP surface accepts an archive path or streams archive bytes.
   keep both notebooks: the first is a backup and must restore faithfully, and
   the second moves notes between the user's own databases.
 
-## Planned synchronization threat boundary
+## Synchronization threat boundary
 
 G4 implements only the local durability portion of this boundary: explicit
 enrollment creates a snapshot floor, canonical writes and monotonic local
@@ -409,11 +421,22 @@ server:
 Current release testing is single-user/local. Public or multi-user deployment
 is not approved by this review.
 
-**One exception exists as of v0.7 G13, and it is narrow.** The peer sync surface
+**One exception exists as of v0.7 G13, and G20 enforces it centrally.** The peer sync surface
 may be reached from another machine when `sync.rest.enabled` is true, and the
 service refuses to start rather than serve it on a non-loopback address without
 TLS. That does not make Notrios a networked application: the only routes reachable
-with a peer credential are `/api/v1/sync/...` for the one database that credential
-belongs to, and every other route keeps the local posture above. Exposing the
+with a peer credential are the registered peer endpoints under
+`/api/v1/sync/...` for the one database that credential belongs to; the prefix
+alone grants nothing. Every other route keeps the local posture above. Exposing the
 service itself — the note API, the GUI, MCP — to a network remains unapproved and
-untested by this review.
+is refused by the listener guard.
+
+The G20 security scan also hardened two filesystem trust boundaries. Carrier
+and legacy-archive descendants are opened relative to a pinned root, regular
+file identity is rechecked, directory iteration and aggregate work are bounded,
+and writable carrier partials must be single-link files. Concurrent hostile
+mutation is not transactional, and identical no-follow/link-count semantics are
+not claimed for unsupported Plan 9 or JavaScript targets. The complete finding
+disposition and structural options are in
+`performance/v0.7-g20/SECURITY_SCAN.md` and
+`performance/v0.7-g20/hardening/`.

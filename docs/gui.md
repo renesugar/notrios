@@ -19,10 +19,16 @@ make gui          # builds web/dist (installing frontend deps on first run) then
 ./bin/notrios                 # GUI + local service
 ./bin/notrios -no-gui         # service only (use any client you like)
 ./bin/notrios -gui-only \
-  -remote http://host:8080    # GUI against a service on another machine
+  -remote http://127.0.0.1:8080  # local service or the local end of a tunnel
 ```
 
-`-gui-only` runs the GUI as a pure REST client — exactly the way a third-party client (C++/Qt, Rust/Tauri, another Wails app) would use the service. Without `-remote` it targets `http://<listen_addr>` from the configuration. Connecting across machines requires the remote service to listen on a reachable address — read the [network exposure notes](service.md#network-exposure) first (there is no authentication).
+`-gui-only` runs the GUI as a pure REST client — exactly the way a third-party
+client (C++/Qt, Rust/Tauri, another Wails app) uses the service. Without
+`-remote` it targets the configured listener. Ordinary GUI/REST routes are
+loopback-only even when the service also listens for authenticated peers; to
+connect across machines, point `-remote` at the local end of an
+access-controlled tunnel. Read the [network exposure
+notes](service.md#network-exposure) first.
 
 ## First launch
 

@@ -1,0 +1,8 @@
+flowchart LR
+  Remote[Remote client] --> Guard[Network admission guard]
+  Local[Loopback CLI / browser] --> Guard
+  Wails[In-process Wails] --> Origin[Origin guard]
+  Guard -->|peer-sync paths only| Peer[Peer auth + bounded sync]
+  Guard -->|loopback peer + local Host| Origin[Origin + body admission]
+  Origin --> Ordinary[Ordinary REST / MCP / web]
+  TLS[Single Service TLS selector] --> Guard

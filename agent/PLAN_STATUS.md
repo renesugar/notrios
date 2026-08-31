@@ -1,6 +1,32 @@
 # Plan Status
 
-Updated: 2026-08-30 (G0-G19 complete; G20 next and unapproved)
+Updated: 2026-08-31 (v0.7 G0-G20 complete; v0.8 H0 next and unapproved)
+
+## v0.7 G20 completion — 2026-08-31
+
+- Product 0.7.0/schema v27 is reconciled across Go, web, CLI, documentation,
+  upgrade/rollback, and the v19-v27 migration sequence.
+- Exact three-peer convergence, directory/REST process, catch-up/reset/
+  retention, lazy-resource, conflict/fault, abuse, and fresh/upgrade selectors
+  pass. `make g20-validate` passes the complete hardened service/httpapi/
+  archive/carrier suites and frozen G8/G14e/G17 aggregate evidence without
+  rereading private corpus data.
+- The sealed standard security scan covers seven surfaces with six validated
+  findings. Listener/TLS/remote admission, browser origin/body limits, carrier
+  roots, and legacy-archive roots/aggregate limits are remediated. One fresh
+  static bypass review found five narrower paths; one correction cycle closed
+  all five. Exact hashes/dispositions and the two-opportunity structural
+  hardening portfolio are under `performance/v0.7-g20/`.
+- `DEPENDENCY_LICENSES.json` accounts for 37 exact Go modules and 251 exact npm
+  packages and validates offline/fail-closed. No incompatible linked or
+  vendored dependency was introduced.
+- G20 is archived as
+  `plans/v0.7/043-full-convergence-release-wrap-up.md`; the completed plan is
+  `plans/v0.7/000-v0.7-plan.md`. `PLAN.md` now contains the unstarted v0.8
+  H0-H9 plan; H0 is next and requires explicit approval.
+- Final source-ZIP packaging/copy is the remaining release handoff operation at
+  this durable checkpoint. No push, tag, public release, reserve/ISO write, or
+  physical burn is authorized.
 
 ## v0.7 G19 completion — 2026-08-30
 
@@ -91,11 +117,14 @@ Updated: 2026-08-30 (G0-G19 complete; G20 next and unapproved)
 
 ## Active milestone
 
-**v0.1 through v0.6 are complete.** Product version is **0.6.0** and the
+**v0.1 through v0.7 are complete.** Product version is **0.7.0** and the
 canonical schema is **v27**. v0.6 F0-F7 are archived under `plans/v0.6/`;
 earlier milestones remain under their version directories.
 
-`PLAN.md` is now the **active v0.7 native synchronization plan**. It contains
+The completed v0.7 plan is `plans/v0.7/000-v0.7-plan.md`. `PLAN.md` is now the
+**unstarted v0.8 installation, configuration, shared-core, and portability
+plan**. Its H0-H9 items are independently approval-gated. Historically, v0.7
+contained
 G0, G1, G1a, G2-G14, the blocking G14a-G14e archive-scalability sequence,
 G15-G17, the blocking G17a-G17b evidence-preservation sequence, G18, the newly
 planned G18a-G18g documentation-integrity/site sequence, the G18c.1 agent-
@@ -116,7 +145,7 @@ and retirement. G17a-G17b are complete. G17b sealed the curated historical
 handoffs, issued and independently verified immutable reserve volume
 `NTR-EV-0001`, and committed the finite outer catalog. Its host-side evidence
 gate is mandatory before every future GitHub push. No push or physical burn was
-authorized or performed. G18-G19 are complete. G20 is next and unapproved.
+authorized or performed. G18-G20 are complete. v0.8 H0 is next and unapproved.
 
 ## v0.7 G18d completion — 2026-08-28
 

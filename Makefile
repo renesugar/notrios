@@ -12,7 +12,7 @@
 
 .PHONY: help deps build build-service build-cli web gui docs \
         test validate docgen docaudit doccheck smoke serve doctor seed-help evidence-pre-push \
-        g18e-validate g18f-validate g18g-validate g19-validate clean clobber precheck
+        g18e-validate g18f-validate g18g-validate g19-validate g20-validate clean clobber precheck
 
 help: ## Show this target summary
 	@grep -E '^[a-zA-Z-]+:.*## ' $(MAKEFILE_LIST) | awk -F ':.*## ' '{printf "  %-14s %s\n", $$1, $$2}'
@@ -86,6 +86,15 @@ g18g-validate: docs-site/node_modules docgen ## Build and validate pinned Hugo/L
 g19-validate: ## Validate published archive-v2 schemas, goldens, and reader matrix
 	GOCACHE="$${GOCACHE:-/tmp/notrios-g19-gocache}" go test ./internal/archivev2 ./cmd/notriosctl -run 'Compatibility|PublicGolden|PhysicalRefusal|DeclarationProbe|PublishedJSON|PublishedContract|PublishedSyncWire' -count=1
 	python3 performance/v0.7-g19/validate_evidence.py
+
+g20-validate: ## Validate v0.7 release identity, security boundaries, evidence, and licenses
+	python3 -m unittest discover -s performance/v0.7-g20 -p 'test_*.py'
+	python3 performance/v0.7-g20/check_dependency_licenses.py
+	python3 performance/v0.7-g20/validate_evidence.py
+	GOCACHE="$${GOCACHE:-/tmp/notrios-g20-gocache}" go test ./internal/service ./internal/httpapi ./internal/archive ./internal/synccarrier -count=1
+	python3 performance/v0.7-g8/validate_evidence.py
+	python3 performance/v0.7-g14e/validate_evidence.py
+	python3 performance/v0.7-g17/validate_evidence.py
 
 serve: ## Run the service from source on 127.0.0.1:8080
 	go run ./cmd/notriosd -addr 127.0.0.1:8080

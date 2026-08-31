@@ -1326,7 +1326,7 @@
       "path": "docs/gui.md",
       "section": "modes",
       "language": "sh",
-      "sha256": "7fb12a51b9d5b329b3c71315cdf287ef4c9af0588974048ad8413b043fb441fb",
+      "sha256": "b4b534b0fd79aef2c50bf4d0331f1caf7e83a2c30d92d8bfd76bb051a4920d80",
       "state": "unverified",
       "unrun_reason": {
         "code": "interactive-or-long-running",

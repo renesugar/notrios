@@ -529,7 +529,7 @@
     },
     {
       "path": "docs/cli.md",
-      "sha256": "eb98e738e897eef07976b8a83b02a183b7cc33c7a2387bdbb083f603e9556067",
+      "sha256": "e6c280300221831e203330323e99b71cda187d7797ff77bd6e65a56c7107525e",
       "help_note": "doc_help_cli",
       "owner": "go:github.com/renesugar/notrios/cmd/notriosctl#printHelp",
       "sections": [
@@ -927,7 +927,7 @@
     },
     {
       "path": "docs/gui.md",
-      "sha256": "057c731e7d6aa8a6735991c918a3e1aacf380506aeb34f1ff0f7a0fdb5ed07be",
+      "sha256": "0bdf473c3d1b1e49ce9a9ee19e5314b8087c56caa24673dea8310d87ad654d88",
       "help_note": "doc_help_gui",
       "owner": "ts:web/src/App.tsx#App",
       "sections": [
@@ -1509,7 +1509,7 @@
     },
     {
       "path": "docs/operations.md",
-      "sha256": "5d813a963b9d894000b5d9559f8752e5094708a0baba9b6e76dd021ed6f51d80",
+      "sha256": "a68da07193cdd7bbb56e3d3277e4068ee8aae83a253e9e36ec74cf96d47d7d11",
       "help_note": "doc_help_operations",
       "owner": "go:github.com/renesugar/notrios/internal/store#(*SQLiteStore).LintWorkspace",
       "sections": [
@@ -1851,7 +1851,7 @@
     },
     {
       "path": "docs/service.md",
-      "sha256": "d749413219a5f31a0d63480a26524df51fe079d33d70b9dcb2353abbe2b6c44a",
+      "sha256": "2e9845c31f3fa1517e86713ef13f5e60268e728695edeeb320dc1bfcfdab7da2",
       "help_note": "doc_help_service",
       "owner": "go:github.com/renesugar/notrios/internal/config#Config",
       "sections": [

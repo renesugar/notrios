@@ -22,7 +22,7 @@ Notrios service (notriosd)
 ├── Archive/backup service
 ├── Publish service
 ├── Media policy service
-├── Sync service (planned; disabled by default)
+├── Sync service (implemented; transport disabled by default)
 └── Recoll adapter (optional sidecar)
         │
         ├── SQLite + FTS5 canonical store
@@ -48,7 +48,7 @@ SQLite is the canonical application database. It stores:
 - media policy decisions;
 - indexing outbox state.
 
-Future sync operation/acknowledgement tables remain canonical local state, but
+Sync operation/acknowledgement tables are canonical local state, but
 transport inbox/outbox files and remote stores do not. See
 `SYNCHRONIZATION.md`.
 
@@ -142,8 +142,11 @@ immutable object/manifest layer.
 The built-in GUI is a Go/Wails v2 application (`notrios`) embedding the
 service; the React frontend hosts inside the Wails window. Modes: default (GUI
 + local service), `-no-gui` (headless service, for users running a different
-client), `-gui-only` (pure REST client, usable against a remote service and for
-testing the API the way a third-party client would). Layout, themes, and
+client), `-gui-only` (pure REST client, usable locally or through an explicit
+loopback tunnel and for testing the API the way a third-party client would).
+Ordinary REST/MCP/web routes are never a remotely admitted service; only the
+finite authenticated peer-sync route set may cross a non-loopback listener.
+Layout, themes, and
 notebook sidebar behavior are specified in `UI_DESIGN.md`.
 
 Wails v3 now documents one desktop/iOS/Android codebase. v3 is beta for desktop
@@ -215,6 +218,15 @@ unrestricted writes. MCP tools should return snippets and resource links first,
 requiring explicit document/resource retrieval for larger content. For archive,
 bulk, and sync jobs, MCP is a bounded control plane returning job IDs/status;
 REST or immutable objects are the bulk-byte data plane.
+
+G20 makes adapter reachability part of the service boundary. The server owns
+TLS selection and rejects partial certificate configuration. A loopback
+connection with a local Host may reach ordinary REST/MCP/web routes; a remote
+connection is dispatched through a separate finite peer-sync mux, so neither a
+credential nor a `/api/v1/sync/` prefix can expose a catch-all handler.
+Browser mutations additionally enforce exact same-origin/Wails admission.
+JSON/MCP bodies are capped at 8 MiB and decoded as exactly one value; raw
+resources retain the canonical 16 GiB stream/store ceiling.
 
 **v0.6 made both halves concrete, and the second one narrower than planned.**
 Tool visibility is four cumulative scopes — `search-only`, `read-only`,

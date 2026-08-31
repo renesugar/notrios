@@ -510,6 +510,13 @@ change. A misconfiguration that starts is one you find out about later.
 Loopback plaintext is allowed — that is how the surface is tested, and the
 traffic never leaves the machine.
 
+The non-loopback listener dispatches through an explicit peer-route table, not
+through the ordinary application mux. Only the registered pairing, handshake,
+carrier, and snapshot/backup endpoints are candidates for peer authentication;
+an unknown sync-prefixed path is a 404. The web UI, MCP, note API, local sync
+status/control, and GUI remain loopback-only. This remains true on a trusted
+LAN and when a request supplies forwarding headers.
+
 ### What a peer credential is, and is not
 
 A peer authenticates by **signing each request** with its Ed25519 key: the

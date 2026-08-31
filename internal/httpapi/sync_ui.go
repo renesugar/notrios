@@ -828,9 +828,11 @@ func (s *Server) handleSyncUIBackupInspect(w http.ResponseWriter, r *http.Reques
 }
 
 func decodeBoundedJSON(w http.ResponseWriter, r *http.Request, limit int64, target any) bool {
-	decoder := json.NewDecoder(http.MaxBytesReader(w, r.Body, limit))
-	decoder.DisallowUnknownFields()
-	if err := decoder.Decode(target); err != nil {
+	if err := decodeBoundedJSONBodyWithPolicy(w, r, target, limit, true); err != nil {
+		if errors.Is(err, errRequestBodyTooLarge) {
+			writeError(w, http.StatusRequestEntityTooLarge, "body_too_large", "request exceeds its JSON limit")
+			return false
+		}
 		writeError(w, http.StatusBadRequest, "validation_failed", "request must be bounded JSON with only documented fields")
 		return false
 	}

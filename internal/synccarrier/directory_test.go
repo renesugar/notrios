@@ -54,9 +54,9 @@ func TestLargeSnapshotUsesTheSameResumableBytesAsREST(t *testing.T) {
 	}
 	verifiedPrefixes := 0
 	verifyPrefix := publisher.verifySnapshotPrefix
-	publisher.verifySnapshotPrefix = func(source *os.File, partial string, sourceBytes int64) (int64, error) {
+	publisher.verifySnapshotPrefix = func(root *os.Root, source *os.File, partial string, sourceBytes int64) (int64, error) {
 		verifiedPrefixes++
-		return verifyPrefix(source, partial, sourceBytes)
+		return verifyPrefix(root, source, partial, sourceBytes)
 	}
 	receiver, err := NewDirectory(root, group, "db_bulk_snapshot", "replica_receiver")
 	if err != nil {
@@ -81,9 +81,9 @@ func TestLargeSnapshotUsesTheSameResumableBytesAsREST(t *testing.T) {
 		t.Fatal(err)
 	}
 	verifyPrefix = publisher.verifySnapshotPrefix
-	publisher.verifySnapshotPrefix = func(source *os.File, partial string, sourceBytes int64) (int64, error) {
+	publisher.verifySnapshotPrefix = func(root *os.Root, source *os.File, partial string, sourceBytes int64) (int64, error) {
 		verifiedPrefixes++
-		return verifyPrefix(source, partial, sourceBytes)
+		return verifyPrefix(root, source, partial, sourceBytes)
 	}
 	for !complete {
 		position, complete, err = publisher.PublishSnapshotFile(ctx, digest, source, digest, 73_000)
@@ -204,6 +204,231 @@ func TestAnOversizedEntryIsRefusedBeforeItIsRead(t *testing.T) {
 	oversized.Close()
 	if _, err := carrier.Read(ctx, carrier.Namespace(), ClassObject, name); !errors.Is(err, ErrTooLarge) {
 		t.Fatalf("an oversized entry produced %v, want ErrTooLarge", err)
+	}
+}
+
+func TestCarrierRejectsSymlinkArtifactsAndOmitsThemFromListing(t *testing.T) {
+	ctx := context.Background()
+	carrier := testDirectory(t, t.TempDir())
+	name := strings.Repeat("ab", 16)
+	base := carrier.classPath(carrier.Namespace(), ClassSnapshot)
+	if err := os.MkdirAll(base, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	target := filepath.Join(t.TempDir(), "outside")
+	if err := os.WriteFile(target, []byte("outside carrier"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	path := carrier.artifactPath(carrier.Namespace(), ClassSnapshot, name)
+	if err := os.Symlink(target, path); err != nil {
+		t.Skipf("symlinks unavailable: %v", err)
+	}
+	if _, err := carrier.Read(ctx, carrier.Namespace(), ClassSnapshot, name); !errors.Is(err, ErrUnreadable) {
+		t.Fatalf("symlink artifact produced %v, want ErrUnreadable", err)
+	}
+	names, err := carrier.List(ctx, carrier.Namespace(), ClassSnapshot)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(names) != 0 {
+		t.Fatalf("listing admitted symlink artifact %v", names)
+	}
+}
+
+func TestCarrierRejectsSymlinkedAncestorWithoutTouchingOutside(t *testing.T) {
+	ctx := context.Background()
+	carrier := testDirectory(t, t.TempDir())
+	name := strings.Repeat("ef", 16)
+	outside := t.TempDir()
+	namespace := carrier.namespacePath(carrier.Namespace())
+	if err := os.RemoveAll(namespace); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(outside, namespace); err != nil {
+		t.Skipf("symlinks unavailable: %v", err)
+	}
+	if _, err := carrier.Publish(ctx, ClassSnapshot, name, []byte("must stay out")); !errors.Is(err, ErrCarrierUnavailable) {
+		t.Fatalf("publish through symlinked namespace produced %v, want carrier error", err)
+	}
+	if entries, err := os.ReadDir(outside); err != nil {
+		t.Fatal(err)
+	} else if len(entries) != 0 {
+		t.Fatalf("publish touched outside directory: %v", entries)
+	}
+	if _, err := carrier.Read(ctx, carrier.Namespace(), ClassSnapshot, name); !errors.Is(err, ErrUnreadable) {
+		t.Fatalf("read through symlinked namespace produced %v, want ErrUnreadable", err)
+	}
+}
+
+func TestCarrierReadBoundsArtifactThatGrowsAfterOpen(t *testing.T) {
+	ctx := context.Background()
+	carrier := testDirectory(t, t.TempDir())
+	name := strings.Repeat("cd", 16)
+	path := carrier.artifactPath(carrier.Namespace(), ClassSnapshot, name)
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	file, err := os.Create(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := file.Write([]byte("small prefix")); err != nil {
+		file.Close()
+		t.Fatal(err)
+	}
+	if err := file.Close(); err != nil {
+		t.Fatal(err)
+	}
+	// The bounded read must remain safe even when the carrier's size changes
+	// after the initial metadata check. A sparse extension keeps this test
+	// cheap while exercising the MaxArtifactBytes+1 guard.
+	if err := os.Truncate(path, MaxArtifactBytes+1); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := carrier.Read(ctx, carrier.Namespace(), ClassSnapshot, name); !errors.Is(err, ErrTooLarge) {
+		t.Fatalf("grown artifact produced %v, want ErrTooLarge", err)
+	}
+}
+
+func TestNonAtomicFallbackDoesNotFollowFinalLinksOrHardLinks(t *testing.T) {
+	for _, kind := range []string{"symlink", "hardlink"} {
+		t.Run(kind, func(t *testing.T) {
+			carrier := testDirectory(t, t.TempDir())
+			name := strings.Repeat("12", 16)
+			outside := filepath.Join(t.TempDir(), "outside")
+			original := []byte("outside must remain unchanged")
+			if err := os.WriteFile(outside, original, 0o600); err != nil {
+				t.Fatal(err)
+			}
+			path := carrier.artifactPath(carrier.Namespace(), ClassSnapshot, name)
+			if kind == "symlink" {
+				if err := os.Symlink(outside, path); err != nil {
+					t.Skipf("symlinks unavailable: %v", err)
+				}
+			} else if err := os.Link(outside, path); err != nil {
+				t.Skipf("hard links unavailable: %v", err)
+			}
+			carrier.rename = func(string, string) error { return errors.New("rename unsupported") }
+			artifact := []byte("replacement stays inside carrier")
+			if _, err := carrier.Publish(context.Background(), ClassSnapshot, name, artifact); err != nil {
+				t.Fatal(err)
+			}
+			got, err := os.ReadFile(outside)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !bytes.Equal(got, original) {
+				t.Fatalf("fallback modified outside %s: %q", kind, got)
+			}
+			got, err = carrier.Read(context.Background(), carrier.Namespace(), ClassSnapshot, name)
+			if err != nil || !bytes.Equal(got, artifact) {
+				t.Fatalf("carrier fallback read %q: %v", got, err)
+			}
+		})
+	}
+}
+
+func TestSnapshotTransferAllowsArtifactLargerThanArtifactEnvelope(t *testing.T) {
+	carrier := testDirectory(t, t.TempDir())
+	payload := bytes.Repeat([]byte("snapshot-byte\n"), int(MaxArtifactBytes/14)+32)
+	digestBytes := sha256.Sum256(payload)
+	digest := hex.EncodeToString(digestBytes[:])
+	source := filepath.Join(t.TempDir(), "source.snapshot")
+	if err := os.WriteFile(source, payload, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	position, complete, err := carrier.PublishSnapshotFile(context.Background(), digest, source, digest, 0)
+	if err != nil || !complete || position != int64(len(payload)) {
+		t.Fatalf("publish large snapshot: position=%d complete=%v err=%v", position, complete, err)
+	}
+	destination := filepath.Join(t.TempDir(), "download.snapshot")
+	position, complete, err = carrier.DownloadSnapshotFile(context.Background(), carrier.Namespace(), digest, digest, destination, int64(len(payload)), 1<<20)
+	for err == nil && !complete {
+		position, complete, err = carrier.DownloadSnapshotFile(context.Background(), carrier.Namespace(), digest, digest, destination, int64(len(payload)), 1<<20)
+	}
+	if err != nil || !complete || position != int64(len(payload)) {
+		t.Fatalf("download large snapshot: position=%d complete=%v err=%v", position, complete, err)
+	}
+	got, err := os.ReadFile(destination)
+	if err != nil || !bytes.Equal(got, payload) {
+		t.Fatalf("downloaded snapshot mismatch: bytes=%d err=%v", len(got), err)
+	}
+}
+
+func TestSnapshotPartialSymlinkCannotModifyOutside(t *testing.T) {
+	carrier := testDirectory(t, t.TempDir())
+	payload := []byte("snapshot content")
+	digestBytes := sha256.Sum256(payload)
+	digest := hex.EncodeToString(digestBytes[:])
+	source := filepath.Join(t.TempDir(), "source.snapshot")
+	if err := os.WriteFile(source, payload, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	outside := filepath.Join(t.TempDir(), "outside")
+	original := []byte("outside partial must remain unchanged")
+	if err := os.WriteFile(outside, original, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	partial := filepath.Join(carrier.namespacePath(carrier.Namespace()), stagingDir, digest+".snapshot.partial")
+	if err := os.Symlink(outside, partial); err != nil {
+		t.Skipf("symlinks unavailable: %v", err)
+	}
+	if _, _, err := carrier.PublishSnapshotFile(context.Background(), digest, source, digest, 0); err == nil {
+		t.Fatal("snapshot publication accepted a symlinked partial")
+	}
+	got, err := os.ReadFile(outside)
+	if err != nil || !bytes.Equal(got, original) {
+		t.Fatalf("partial symlink changed outside file: %q (%v)", got, err)
+	}
+}
+
+func TestSnapshotPartialHardlinkCannotModifyOutside(t *testing.T) {
+	carrier := testDirectory(t, t.TempDir())
+	payload := []byte("snapshot hardlink content")
+	digestBytes := sha256.Sum256(payload)
+	digest := hex.EncodeToString(digestBytes[:])
+	source := filepath.Join(t.TempDir(), "source.snapshot")
+	if err := os.WriteFile(source, payload, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	outside := filepath.Join(t.TempDir(), "outside")
+	original := []byte("outside hardlink must remain unchanged")
+	if err := os.WriteFile(outside, original, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	partial := filepath.Join(carrier.namespacePath(carrier.Namespace()), stagingDir, digest+".snapshot.partial")
+	if err := os.Link(outside, partial); err != nil {
+		t.Skipf("hard links unavailable: %v", err)
+	}
+	if _, _, err := carrier.PublishSnapshotFile(context.Background(), digest, source, digest, 0); err == nil {
+		t.Fatal("snapshot publication accepted a hardlinked partial")
+	}
+	got, err := os.ReadFile(outside)
+	if err != nil || !bytes.Equal(got, original) {
+		t.Fatalf("hardlinked partial changed outside file: %q (%v)", got, err)
+	}
+}
+
+func TestRemoveRejectsSymlinkedAncestorWithoutRemovingOutsideEntry(t *testing.T) {
+	carrier := testDirectory(t, t.TempDir())
+	outside := t.TempDir()
+	name := strings.Repeat("34", 16)
+	outsideEntry := filepath.Join(outside, name+artifactExt)
+	if err := os.WriteFile(outsideEntry, []byte("keep"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	namespace := carrier.namespacePath(carrier.Namespace())
+	if err := os.RemoveAll(namespace); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(outside, namespace); err != nil {
+		t.Skipf("symlinks unavailable: %v", err)
+	}
+	if err := carrier.Remove(context.Background(), ClassSnapshot, name); !errors.Is(err, ErrCarrierUnavailable) {
+		t.Fatalf("remove through symlinked ancestor produced %v", err)
+	}
+	if _, err := os.Stat(outsideEntry); err != nil {
+		t.Fatalf("outside entry was removed: %v", err)
 	}
 }
 

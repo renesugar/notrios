@@ -46,19 +46,13 @@ func main() {
 	} else {
 		log.Printf("notriosd starting without a web interface (REST and MCP still work): %v", err)
 	}
-	certificate, key := svc.TLSFiles()
+	certificate, _ := svc.TLSFiles()
 	scheme := "http"
 	if certificate != "" {
 		scheme = "https"
 	}
 	log.Printf("notriosd listening on %s://%s using db %s", scheme, cfg.Server.ListenAddr, cfg.Data.DatabasePath)
-	server := svc.HTTPServer()
-	serveErr := error(nil)
-	if certificate != "" {
-		serveErr = server.ListenAndServeTLS(certificate, key)
-	} else {
-		serveErr = server.ListenAndServe()
-	}
+	serveErr := svc.ListenAndServe()
 	if serveErr != nil && serveErr != http.ErrServerClosed {
 		log.Fatal(serveErr)
 	}

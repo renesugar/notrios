@@ -790,7 +790,7 @@ not a native receiver gate. Evidence and its privacy validator are under
 `performance/v0.7-g14e/`; exFAT, cloud-provider rerun, Android emulator, and
 physical-mobile claims remain explicitly false.
 
-### Sync model and transport tests (implemented through G17; final G20 matrix remains)
+### Sync model and transport tests (implemented and release-accepted through G20)
 
 - Property/model tests shuffle, duplicate, replay, drop, and eventually deliver
   operations across at least three replicas and assert convergence.

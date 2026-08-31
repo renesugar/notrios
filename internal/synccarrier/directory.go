@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -72,7 +73,7 @@ type Directory struct {
 	// restart, never admit different bytes.
 	snapshotMu           sync.Mutex
 	snapshotPrefixes     map[string]snapshotPrefix
-	verifySnapshotPrefix func(*os.File, string, int64) (int64, error)
+	verifySnapshotPrefix func(*os.Root, *os.File, string, int64) (int64, error)
 }
 
 // NewDirectory binds a carrier root to one database and one local replica.
@@ -96,9 +97,9 @@ func NewDirectory(root string, group syncwire.GroupKey, databaseID, replicaID st
 		database:             syncwire.CarrierName(group, "database", databaseID),
 		namespace:            syncwire.CarrierName(group, "replica", replicaID),
 		group:                group,
-		rename:               os.Rename,
+		rename:               nil,
 		snapshotPrefixes:     map[string]snapshotPrefix{},
-		verifySnapshotPrefix: verifiedPrefix,
+		verifySnapshotPrefix: verifiedPrefixRoot,
 	}, nil
 }
 
@@ -137,12 +138,24 @@ func (d *Directory) Initialize(ctx context.Context) error {
 	if !d.Available() {
 		return fmt.Errorf("%w: %s", ErrCarrierUnavailable, d.root)
 	}
+	root, err := os.OpenRoot(d.root)
+	if err != nil {
+		return fmt.Errorf("%w: %v", ErrCarrierUnavailable, err)
+	}
+	defer root.Close()
 	for _, class := range []Class{ClassAdvertisement, ClassEnvelope, ClassRequest, ClassObject, ClassSnapshot} {
-		if err := os.MkdirAll(d.classPath(d.namespace, class), 0o755); err != nil {
+		if err := rejectSymlinkAncestors(root, d.rel(d.classPath(d.namespace, class))); err != nil {
+			return fmt.Errorf("%w: %v", ErrCarrierUnavailable, err)
+		}
+		if err := root.MkdirAll(d.rel(d.classPath(d.namespace, class)), 0o755); err != nil {
 			return fmt.Errorf("%w: %v", ErrCarrierUnavailable, err)
 		}
 	}
-	if err := os.MkdirAll(filepath.Join(d.namespacePath(d.namespace), stagingDir), 0o700); err != nil {
+	stagingPath := d.rel(filepath.Join(d.namespacePath(d.namespace), stagingDir))
+	if err := rejectSymlinkAncestors(root, stagingPath); err != nil {
+		return fmt.Errorf("%w: %v", ErrCarrierUnavailable, err)
+	}
+	if err := root.MkdirAll(stagingPath, 0o700); err != nil {
 		return fmt.Errorf("%w: %v", ErrCarrierUnavailable, err)
 	}
 	return nil
@@ -194,7 +207,15 @@ func (d *Directory) PublishTo(ctx context.Context, namespace string, class Class
 		return "", fmt.Errorf("synccarrier: refusing to publish under name %q", name)
 	}
 	target := d.artifactPath(namespace, class, name)
-	if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
+	root, err := os.OpenRoot(d.root)
+	if err != nil {
+		return "", fmt.Errorf("%w: %v", ErrCarrierUnavailable, err)
+	}
+	defer root.Close()
+	if err := rejectSymlinkAncestors(root, d.rel(filepath.Dir(target))); err != nil {
+		return "", fmt.Errorf("%w: %v", ErrCarrierUnavailable, err)
+	}
+	if err := root.MkdirAll(d.rel(filepath.Dir(target)), 0o755); err != nil {
 		return "", fmt.Errorf("%w: %v", ErrCarrierUnavailable, err)
 	}
 	// An artifact already published under this name is the same artifact
@@ -203,7 +224,7 @@ func (d *Directory) PublishTo(ctx context.Context, namespace string, class Class
 	// the one place it is entitled to repair. Callers decide whether to
 	// republish by reading what is there first; a write that reaches here
 	// replaces it.
-	if err := d.writeAtomic(namespace, target, artifact); err != nil {
+	if err := d.writeAtomic(root, namespace, target, artifact); err != nil {
 		return "", err
 	}
 	return name, nil
@@ -213,9 +234,12 @@ func (d *Directory) PublishTo(ctx context.Context, namespace string, class Class
 // rename it writes in place instead and records that it did: the protocol does
 // not need atomic rename to be correct, because names commit to contents, and
 // pretending the carrier supports it would be the actual risk.
-func (d *Directory) writeAtomic(namespace, target string, artifact []byte) error {
+func (d *Directory) writeAtomic(root *os.Root, namespace, target string, artifact []byte) error {
 	staging := filepath.Join(d.namespacePath(namespace), stagingDir)
-	if err := os.MkdirAll(staging, 0o700); err != nil {
+	if err := rejectSymlinkAncestors(root, d.rel(staging)); err != nil {
+		return fmt.Errorf("%w: %v", ErrCarrierUnavailable, err)
+	}
+	if err := root.MkdirAll(d.rel(staging), 0o700); err != nil {
 		return fmt.Errorf("%w: %v", ErrCarrierUnavailable, err)
 	}
 	suffix := make([]byte, 8)
@@ -223,31 +247,56 @@ func (d *Directory) writeAtomic(namespace, target string, artifact []byte) error
 		return err
 	}
 	temporary := filepath.Join(staging, hex.EncodeToString(suffix)+tempExt)
-	file, err := os.OpenFile(temporary, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o600)
+	file, err := root.OpenFile(d.rel(temporary), os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o600)
 	if err != nil {
 		return fmt.Errorf("%w: %v", ErrCarrierUnavailable, err)
 	}
 	if _, err := file.Write(artifact); err != nil {
 		file.Close()
-		os.Remove(temporary)
+		_ = root.Remove(d.rel(temporary))
 		return fmt.Errorf("%w: %v", ErrCarrierUnavailable, err)
 	}
 	// Sync failures are not fatal: several network and FUSE filesystems do not
 	// implement it. The reader's hash check is what actually protects us.
 	_ = file.Sync()
 	if err := file.Close(); err != nil {
-		os.Remove(temporary)
+		_ = root.Remove(d.rel(temporary))
 		return fmt.Errorf("%w: %v", ErrCarrierUnavailable, err)
 	}
-	if err := d.rename(temporary, target); err != nil {
-		os.Remove(temporary)
+	var renameErr error
+	if d.rename != nil {
+		renameErr = d.rename(temporary, target)
+	} else {
+		renameErr = root.Rename(d.rel(temporary), d.rel(target))
+	}
+	if renameErr != nil {
+		_ = root.Remove(d.rel(temporary))
 		d.nonAtomic = true
-		if writeErr := os.WriteFile(target, artifact, 0o644); writeErr != nil {
+		targetRel := d.rel(target)
+		// Remove the directory entry before creating the fallback. WriteFile
+		// would follow an existing symlink or truncate a hard-linked inode,
+		// allowing a hostile carrier to modify a file outside this tree.
+		if removeErr := root.Remove(targetRel); removeErr != nil && !errors.Is(removeErr, fs.ErrNotExist) {
+			return fmt.Errorf("%w: %v", ErrCarrierUnavailable, removeErr)
+		}
+		fallback, writeErr := root.OpenFile(targetRel, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o644)
+		if writeErr != nil {
+			return fmt.Errorf("%w: %v", ErrCarrierUnavailable, writeErr)
+		}
+		_, writeErr = fallback.Write(artifact)
+		if writeErr == nil {
+			_ = fallback.Sync()
+		}
+		if closeErr := fallback.Close(); writeErr == nil {
+			writeErr = closeErr
+		}
+		if writeErr != nil {
+			_ = root.Remove(targetRel)
 			return fmt.Errorf("%w: %v", ErrCarrierUnavailable, writeErr)
 		}
 		return nil
 	}
-	if parent, err := os.Open(filepath.Dir(target)); err == nil {
+	if parent, err := root.Open(d.rel(filepath.Dir(target))); err == nil {
 		_ = parent.Sync()
 		parent.Close()
 	}
@@ -261,14 +310,28 @@ func (d *Directory) Namespaces(ctx context.Context) ([]string, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
-	entries, err := os.ReadDir(filepath.Join(d.Root(), replicasDir))
+	root, err := os.OpenRoot(d.root)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %v", ErrCarrierUnavailable, err)
+	}
+	defer root.Close()
+	replicas := d.rel(filepath.Join(d.Root(), replicasDir))
+	if err := rejectSymlinkAncestors(root, replicas); err != nil {
+		return nil, fmt.Errorf("%w: %v", ErrCarrierUnavailable, err)
+	}
+	directory, err := openCarrierDirectory(root, replicas)
 	if err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
 			return nil, nil
 		}
 		return nil, fmt.Errorf("%w: %v", ErrCarrierUnavailable, err)
 	}
-	names := make([]string, 0, len(entries))
+	defer directory.Close()
+	entries, err := readCarrierEntries(directory, MaxScannedDirectoryEntries)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %v", ErrCarrierUnavailable, err)
+	}
+	names := make([]string, 0, MaxEntriesPerClass)
 	for _, entry := range entries {
 		if len(names) >= MaxNamespaces {
 			break
@@ -294,17 +357,30 @@ func (d *Directory) List(ctx context.Context, namespace string, class Class) ([]
 		return nil, nil
 	}
 	base := d.classPath(namespace, class)
+	root, err := os.OpenRoot(d.root)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %v", ErrCarrierUnavailable, err)
+	}
+	defer root.Close()
+	if err := rejectSymlinkAncestors(root, d.rel(base)); err != nil {
+		return nil, nil
+	}
 	if class != ClassObject {
-		return listArtifacts(base)
+		return listArtifacts(root, d.rel(base))
 	}
 	// Objects fan out one level so a large library does not put a hundred
 	// thousand entries in one directory, which several providers list slowly
 	// and some refuse outright.
-	shards, err := os.ReadDir(base)
+	shardDir, err := openCarrierDirectory(root, d.rel(base))
 	if err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
 			return nil, nil
 		}
+		return nil, fmt.Errorf("%w: %v", ErrCarrierUnavailable, err)
+	}
+	defer shardDir.Close()
+	shards, err := readCarrierEntries(shardDir, MaxScannedDirectoryEntries)
+	if err != nil {
 		return nil, fmt.Errorf("%w: %v", ErrCarrierUnavailable, err)
 	}
 	var names []string
@@ -312,7 +388,7 @@ func (d *Directory) List(ctx context.Context, namespace string, class Class) ([]
 		if !shard.IsDir() || len(shard.Name()) != 2 || !lowercaseHex(shard.Name()) {
 			continue
 		}
-		found, err := listArtifacts(filepath.Join(base, shard.Name()))
+		found, err := listArtifacts(root, filepath.Join(d.rel(base), shard.Name()))
 		if err != nil {
 			return nil, err
 		}
@@ -326,30 +402,99 @@ func (d *Directory) List(ctx context.Context, namespace string, class Class) ([]
 	return names, nil
 }
 
-func listArtifacts(base string) ([]string, error) {
-	entries, err := os.ReadDir(base)
+func listArtifacts(root *os.Root, base string) ([]string, error) {
+	directory, err := openCarrierDirectory(root, base)
 	if err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
 			return nil, nil
 		}
 		return nil, fmt.Errorf("%w: %v", ErrCarrierUnavailable, err)
 	}
-	names := make([]string, 0, len(entries))
-	for _, entry := range entries {
-		if len(names) >= MaxEntriesPerClass {
+	defer directory.Close()
+	names := make([]string, 0, MaxEntriesPerClass)
+	for scanned := 0; scanned < MaxScannedDirectoryEntries; {
+		batch, readErr := directory.ReadDir(minInt(MaxDirectoryReadBatch, MaxScannedDirectoryEntries-scanned))
+		scanned += len(batch)
+		for _, entry := range batch {
+			if len(names) >= MaxEntriesPerClass {
+				break
+			}
+			if entry.IsDir() || !strings.HasSuffix(entry.Name(), artifactExt) {
+				continue
+			}
+			name := strings.TrimSuffix(entry.Name(), artifactExt)
+			if !validArtifactName(name) {
+				continue
+			}
+			// The listing is untrusted input too. Lstat/open/fstat closes the
+			// symlink and special-file cases, including a replacement between the
+			// directory read and this check.
+			file, err := openBoundedRegular(root, filepath.Join(base, entry.Name()), MaxArtifactBytes)
+			if err != nil {
+				continue
+			}
+			_ = file.Close()
+			names = append(names, name)
+		}
+		if len(names) >= MaxEntriesPerClass || errors.Is(readErr, io.EOF) {
 			break
 		}
-		if entry.IsDir() || !strings.HasSuffix(entry.Name(), artifactExt) {
-			continue
+		if readErr != nil {
+			return nil, fmt.Errorf("%w: %v", ErrCarrierUnavailable, readErr)
 		}
-		name := strings.TrimSuffix(entry.Name(), artifactExt)
-		if !validArtifactName(name) {
-			continue
-		}
-		names = append(names, name)
 	}
 	sort.Strings(names)
 	return names, nil
+}
+
+const (
+	MaxScannedDirectoryEntries = 16_384
+	MaxDirectoryReadBatch      = 256
+)
+
+func minInt(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+func readCarrierEntries(directory *os.File, limit int) ([]os.DirEntry, error) {
+	entries := make([]os.DirEntry, 0, minInt(limit, MaxDirectoryReadBatch))
+	for len(entries) < limit {
+		batch, err := directory.ReadDir(minInt(MaxDirectoryReadBatch, limit-len(entries)))
+		entries = append(entries, batch...)
+		if errors.Is(err, io.EOF) {
+			return entries, nil
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+	return entries, nil
+}
+
+func openCarrierDirectory(root *os.Root, path string) (*os.File, error) {
+	if err := rejectSymlinkAncestors(root, path); err != nil {
+		return nil, err
+	}
+	lstat, err := root.Lstat(path)
+	if err != nil {
+		return nil, err
+	}
+	if !lstat.IsDir() || lstat.Mode()&os.ModeSymlink != 0 {
+		return nil, ErrUnreadable
+	}
+	directory, err := openRootDirectoryNoFollow(root, path)
+	if err != nil {
+		return nil, err
+	}
+	fstat, err := directory.Stat()
+	if err != nil || !fstat.IsDir() || !os.SameFile(lstat, fstat) {
+		directory.Close()
+		return nil, ErrUnreadable
+	}
+	return directory, nil
 }
 
 // Read returns one artifact's bytes.
@@ -366,19 +511,25 @@ func (d *Directory) Read(ctx context.Context, namespace string, class Class, nam
 		return nil, ErrUnreadable
 	}
 	path := d.artifactPath(namespace, class, name)
-	info, err := os.Stat(path)
+	root, err := os.OpenRoot(d.root)
 	if err != nil {
 		return nil, ErrUnreadable
 	}
-	if info.IsDir() {
-		return nil, ErrUnreadable
+	defer root.Close()
+	file, err := openBoundedRegular(root, d.rel(path), MaxArtifactBytes)
+	if err != nil {
+		return nil, err
 	}
-	if info.Size() > MaxArtifactBytes {
-		return nil, fmt.Errorf("%w: %d bytes", ErrTooLarge, info.Size())
-	}
-	artifact, err := os.ReadFile(path)
+	defer file.Close()
+	// The size check in openBoundedRegular is a fast rejection. The limited
+	// read is still required: a carrier can grow after fstat, and ReadFile
+	// would otherwise make the bound advisory.
+	artifact, err := io.ReadAll(io.LimitReader(file, MaxArtifactBytes+1))
 	if err != nil {
 		return nil, ErrUnreadable
+	}
+	if int64(len(artifact)) > MaxArtifactBytes {
+		return nil, fmt.Errorf("%w: more than %d bytes", ErrTooLarge, MaxArtifactBytes)
 	}
 	if len(name) == 2*sha256.Size {
 		digest := sha256.Sum256(artifact)
@@ -387,6 +538,41 @@ func (d *Directory) Read(ctx context.Context, namespace string, class Class, nam
 		}
 	}
 	return artifact, nil
+}
+
+// openBoundedRegular performs the carrier trust boundary in descriptor order:
+// Lstat rejects links without following them, open obtains the object, and
+// fstat/SameFile proves that the path was not swapped during that transition.
+// The returned descriptor is the one subsequently consumed by Read.
+func openBoundedRegular(root *os.Root, path string, maxBytes int64) (*os.File, error) {
+	if err := rejectSymlinkAncestors(root, path); err != nil {
+		return nil, ErrUnreadable
+	}
+	lstat, err := root.Lstat(path)
+	if err != nil {
+		return nil, ErrUnreadable
+	}
+	if !lstat.Mode().IsRegular() || lstat.Mode()&os.ModeSymlink != 0 {
+		return nil, ErrUnreadable
+	}
+	file, err := root.Open(path)
+	if err != nil {
+		return nil, ErrUnreadable
+	}
+	fstat, err := file.Stat()
+	if err != nil {
+		file.Close()
+		return nil, ErrUnreadable
+	}
+	if !fstat.Mode().IsRegular() || !os.SameFile(lstat, fstat) {
+		file.Close()
+		return nil, ErrUnreadable
+	}
+	if fstat.Size() > maxBytes {
+		file.Close()
+		return nil, fmt.Errorf("%w: %d bytes", ErrTooLarge, fstat.Size())
+	}
+	return file, nil
 }
 
 // Remove deletes one of this replica's own artifacts, and refuses every other
@@ -406,7 +592,16 @@ func (d *Directory) RemoveFrom(ctx context.Context, namespace string, class Clas
 	if !classes[class] || !validArtifactName(name) || !validBlindName(namespace) {
 		return ErrNotOwned
 	}
-	if err := os.Remove(d.artifactPath(namespace, class, name)); err != nil && !errors.Is(err, fs.ErrNotExist) {
+	root, err := os.OpenRoot(d.root)
+	if err != nil {
+		return fmt.Errorf("%w: %v", ErrCarrierUnavailable, err)
+	}
+	defer root.Close()
+	target := d.rel(d.artifactPath(namespace, class, name))
+	if err := rejectSymlinkAncestors(root, filepath.Dir(target)); err != nil {
+		return fmt.Errorf("%w: %v", ErrCarrierUnavailable, err)
+	}
+	if err := root.Remove(target); err != nil && !errors.Is(err, fs.ErrNotExist) {
 		return fmt.Errorf("%w: %v", ErrCarrierUnavailable, err)
 	}
 	return nil
@@ -420,6 +615,42 @@ func (d *Directory) artifactPath(namespace string, class Class, name string) str
 		base = filepath.Join(base, name[:2])
 	}
 	return filepath.Join(base, name+artifactExt)
+}
+
+func (d *Directory) rel(path string) string {
+	relative, err := filepath.Rel(d.root, path)
+	if err != nil || relative == ".." || strings.HasPrefix(relative, ".."+string(filepath.Separator)) {
+		return ""
+	}
+	return filepath.ToSlash(relative)
+}
+
+// rejectSymlinkAncestors prevents os.Root's intentional in-root symlink
+// following from making carrier layout aliases ambiguous. Missing trailing
+// components are allowed because callers may be creating them.
+func rejectSymlinkAncestors(root *os.Root, path string) error {
+	path = filepath.ToSlash(filepath.Clean(path))
+	if path == "." || path == "" || strings.HasPrefix(path, "../") {
+		return ErrUnreadable
+	}
+	parts := strings.Split(path, "/")
+	for index := 1; index <= len(parts); index++ {
+		prefix := strings.Join(parts[:index], "/")
+		info, err := root.Lstat(prefix)
+		if errors.Is(err, fs.ErrNotExist) {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		if info.Mode()&os.ModeSymlink != 0 {
+			return errors.New("synccarrier: symlink in carrier path")
+		}
+		if index < len(parts) && !info.IsDir() {
+			return errors.New("synccarrier: non-directory in carrier path")
+		}
+	}
+	return nil
 }
 
 // validArtifactName accepts the two name shapes the protocol produces: a

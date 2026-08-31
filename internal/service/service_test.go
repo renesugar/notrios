@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/renesugar/notrios/internal/api"
@@ -85,6 +86,109 @@ func TestNonNoneSyncTargetEstablishesLocalJournalBoundary(t *testing.T) {
 	operations, err := svc.Store.ListLocalOperations(context.Background(), 0, 10)
 	if err != nil || len(operations) != 2 || operations[0].RecordID != doc.ID {
 		t.Fatalf("operations=%+v err=%v", operations, err)
+	}
+}
+
+func TestNonLoopbackListenerExposesOnlyPeerSyncToRemoteClients(t *testing.T) {
+	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	})
+	handler := restrictRemoteRequests(next)
+
+	for _, testCase := range []struct {
+		name       string
+		path       string
+		remoteAddr string
+		forwarded  string
+		want       int
+	}{
+		{name: "remote ordinary REST", path: "/api/v1/documents/doc", remoteAddr: "192.0.2.8:42000", want: http.StatusForbidden},
+		{name: "remote MCP", path: "/mcp", remoteAddr: "192.0.2.8:42000", want: http.StatusForbidden},
+		{name: "remote web", path: "/", remoteAddr: "192.0.2.8:42000", want: http.StatusForbidden},
+		{name: "remote local sync UI", path: "/api/v1/sync-ui", remoteAddr: "192.0.2.8:42000", want: http.StatusForbidden},
+		{name: "remote peer sync", path: "/api/v1/sync/handshake", remoteAddr: "192.0.2.8:42000", want: http.StatusNoContent},
+		{name: "unknown sync prefix does not reach web fallback", path: "/api/v1/sync/not-a-route", remoteAddr: "192.0.2.8:42000", want: http.StatusNotFound},
+		{name: "loopback ordinary REST", path: "/api/v1/documents/doc", remoteAddr: "127.0.0.1:42000", want: http.StatusNoContent},
+		{name: "DNS rebinding host", path: "/api/v1/documents/doc", remoteAddr: "127.0.0.1:42000", forwarded: "host=evil.example", want: http.StatusForbidden},
+		{name: "forwarded header cannot forge loopback", path: "/api/v1/documents/doc", remoteAddr: "192.0.2.8:42000", forwarded: "127.0.0.1", want: http.StatusForbidden},
+	} {
+		t.Run(testCase.name, func(t *testing.T) {
+			request := httptest.NewRequest(http.MethodGet, testCase.path, nil)
+			request.RemoteAddr = testCase.remoteAddr
+			request.Host = "127.0.0.1:8443"
+			if strings.HasPrefix(testCase.forwarded, "host=") {
+				request.Host = strings.TrimPrefix(testCase.forwarded, "host=")
+			} else {
+				request.Header.Set("X-Forwarded-For", testCase.forwarded)
+			}
+			response := httptest.NewRecorder()
+			handler.ServeHTTP(response, request)
+			if response.Code != testCase.want {
+				t.Fatalf("status = %d, want %d: %s", response.Code, testCase.want, response.Body.String())
+			}
+		})
+	}
+}
+
+func TestLoopbackListenerKeepsTheOrdinaryAPI(t *testing.T) {
+	next := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusNoContent) })
+	handler := restrictRemoteRequests(next)
+	request := httptest.NewRequest(http.MethodGet, "/api/v1/documents/doc", nil)
+	request.RemoteAddr = "127.0.0.1:42000"
+	request.Host = "localhost:8080"
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+	if response.Code != http.StatusNoContent {
+		t.Fatalf("loopback listener changed ordinary API behavior: %d", response.Code)
+	}
+}
+
+type servingHTTPServerProbe struct {
+	plain int
+	tls   int
+	cert  string
+	key   string
+}
+
+func (p *servingHTTPServerProbe) ListenAndServe() error {
+	p.plain++
+	return nil
+}
+
+func (p *servingHTTPServerProbe) ListenAndServeTLS(certificate, key string) error {
+	p.tls++
+	p.cert, p.key = certificate, key
+	return nil
+}
+
+func TestSharedServingPathConsumesTLSConfiguration(t *testing.T) {
+	tlsProbe := &servingHTTPServerProbe{}
+	if err := listenAndServe(tlsProbe, "/cert.pem", "/key.pem"); err != nil {
+		t.Fatal(err)
+	}
+	if tlsProbe.tls != 1 || tlsProbe.plain != 0 || tlsProbe.cert != "/cert.pem" || tlsProbe.key != "/key.pem" {
+		t.Fatalf("TLS serving selection = %+v", tlsProbe)
+	}
+	plainProbe := &servingHTTPServerProbe{}
+	if err := listenAndServe(plainProbe, "", ""); err != nil {
+		t.Fatal(err)
+	}
+	if plainProbe.plain != 1 || plainProbe.tls != 0 {
+		t.Fatalf("plaintext loopback selection = %+v", plainProbe)
+	}
+	partialProbe := &servingHTTPServerProbe{}
+	if err := listenAndServe(partialProbe, "", "/key.pem"); err == nil {
+		t.Fatal("a lone TLS key selected plaintext serving")
+	}
+	if partialProbe.plain != 0 || partialProbe.tls != 0 {
+		t.Fatalf("partial TLS configuration started a listener: %+v", partialProbe)
+	}
+	spaceProbe := &servingHTTPServerProbe{}
+	if err := listenAndServe(spaceProbe, "  ", "\t"); err != nil {
+		t.Fatal(err)
+	}
+	if spaceProbe.plain != 1 || spaceProbe.tls != 0 {
+		t.Fatalf("whitespace-only TLS configuration did not select plaintext: %+v", spaceProbe)
 	}
 }
 

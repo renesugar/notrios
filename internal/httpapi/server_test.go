@@ -42,6 +42,106 @@ func TestHealth(t *testing.T) {
 	}
 }
 
+func TestBrowserMutationsRequireTheExactApplicationOrigin(t *testing.T) {
+	st, err := store.OpenSQLite(":memory:")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = st.Close() })
+	if err := st.Bootstrap(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	server := NewServerWithStore(st)
+
+	for _, testCase := range []struct {
+		name       string
+		origin     string
+		fetchSite  string
+		wantStatus int
+	}{
+		{name: "cross-origin website", origin: "https://evil.example", wantStatus: http.StatusForbidden},
+		{name: "opaque origin", origin: "null", wantStatus: http.StatusForbidden},
+		{name: "malformed origin", origin: "://broken", wantStatus: http.StatusForbidden},
+		{name: "origin with a path", origin: "http://127.0.0.1:8080/not-an-origin", wantStatus: http.StatusForbidden},
+		{name: "cross-site metadata without origin", fetchSite: "cross-site", wantStatus: http.StatusForbidden},
+		{name: "same HTTP origin", origin: "http://127.0.0.1:8080", wantStatus: http.StatusCreated},
+		{name: "non-browser client", wantStatus: http.StatusCreated},
+		{name: "Wails application origin", origin: "wails://wails", wantStatus: http.StatusCreated},
+		{name: "Wails HTTP origin", origin: "http://wails.localhost", wantStatus: http.StatusCreated},
+	} {
+		t.Run(testCase.name, func(t *testing.T) {
+			request := httptest.NewRequest(http.MethodPost, "/api/v1/documents", strings.NewReader(`{"title":"origin control","body":"body"}`))
+			request.Host = "127.0.0.1:8080"
+			if testCase.origin == "http://wails.localhost" {
+				request.Host = "wails.localhost"
+			}
+			request.Header.Set("Origin", testCase.origin)
+			request.Header.Set("Sec-Fetch-Site", testCase.fetchSite)
+			response := httptest.NewRecorder()
+			server.ServeHTTP(response, request)
+			if response.Code != testCase.wantStatus {
+				t.Fatalf("status = %d, want %d: %s", response.Code, testCase.wantStatus, response.Body.String())
+			}
+		})
+	}
+}
+
+func TestOrdinaryRequestBodiesAreBoundedBeforeAdmission(t *testing.T) {
+	st, err := store.OpenSQLiteWithAssetStore(":memory:", t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = st.Close() })
+	if err := st.Bootstrap(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	cfg := config.Default()
+	cfg.MCP.Enabled = true
+	server := NewServerWithOptions(ServerOptions{Store: st, Config: cfg})
+
+	oversizedJSON := `{"title":"large","body":"` + strings.Repeat("x", int(maxOrdinaryJSONBodyBytes)) + `"}`
+	for _, testCase := range []struct {
+		name string
+		path string
+		body string
+	}{
+		{name: "ordinary JSON", path: "/api/v1/documents", body: oversizedJSON},
+		{name: "valid JSON with oversized trailing whitespace", path: "/api/v1/documents", body: `{"title":"small"}` + strings.Repeat(" ", int(maxOrdinaryJSONBodyBytes))},
+		{name: "MCP JSON-RPC", path: "/mcp", body: `{"jsonrpc":"2.0","method":"tools/call","padding":"` + strings.Repeat("x", int(maxOrdinaryJSONBodyBytes)) + `"}`},
+	} {
+		t.Run(testCase.name, func(t *testing.T) {
+			request := httptest.NewRequest(http.MethodPost, testCase.path, strings.NewReader(testCase.body))
+			response := httptest.NewRecorder()
+			server.ServeHTTP(response, request)
+			if response.Code != http.StatusRequestEntityTooLarge {
+				t.Fatalf("status = %d, want 413: %s", response.Code, response.Body.String())
+			}
+		})
+	}
+
+	resource := httptest.NewRequest(http.MethodPost, "/api/v1/resources?filename=large.bin", strings.NewReader("small transport body"))
+	resource.ContentLength = store.MaxResourceContentBytes + 1
+	response := httptest.NewRecorder()
+	server.ServeHTTP(response, resource)
+	if response.Code != http.StatusRequestEntityTooLarge {
+		t.Fatalf("resource status = %d, want 413: %s", response.Code, response.Body.String())
+	}
+
+	// One sync-supported 1 MiB note can expand to roughly 6 MiB of JSON when
+	// every byte needs escaping. The transport bound must preserve that valid
+	// product limit rather than treating encoded size as decoded text size.
+	escaped, err := json.Marshal(map[string]string{"title": "escaped", "body": strings.Repeat("\x00", 1<<20)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/documents", bytes.NewReader(escaped))
+	accepted := httptest.NewRecorder()
+	var decoded map[string]string
+	if !decodeJSON(accepted, request, &decoded) || len(decoded["body"]) != 1<<20 {
+		t.Fatalf("escaped 1 MiB JSON was refused or changed: status=%d bytes=%d body=%s", accepted.Code, len(decoded["body"]), accepted.Body.String())
+	}
+}
+
 func TestStatusReportsConfigurationAndSchema(t *testing.T) {
 	st, err := store.OpenSQLite(":memory:")
 	if err != nil {

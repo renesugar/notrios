@@ -1494,7 +1494,7 @@ func (s *SQLiteStore) writeBlob(ctx context.Context, content io.Reader, mimeType
 	tmpName := tmp.Name()
 	cleanup := func() { _ = os.Remove(tmpName) }
 	h := sha256.New()
-	written, copyErr := copyWithContext(ctx, io.MultiWriter(tmp, h), content)
+	written, copyErr := copyWithContext(ctx, io.MultiWriter(tmp, h), io.LimitReader(content, MaxResourceContentBytes+1))
 	closeErr := tmp.Close()
 	if copyErr != nil {
 		cleanup()
@@ -1503,6 +1503,10 @@ func (s *SQLiteStore) writeBlob(ctx context.Context, content io.Reader, mimeType
 	if closeErr != nil {
 		cleanup()
 		return storedBlob{}, nil, closeErr
+	}
+	if written > MaxResourceContentBytes {
+		cleanup()
+		return storedBlob{}, nil, fmt.Errorf("%w: resource content exceeds %d bytes", ErrInvalidInput, MaxResourceContentBytes)
 	}
 	shaHex := hex.EncodeToString(h.Sum(nil))
 	if strings.TrimSpace(mimeType) == "" || strings.EqualFold(mimeType, "application/octet-stream") {

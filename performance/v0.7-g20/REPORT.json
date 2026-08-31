@@ -1,0 +1,62 @@
+{
+  "schema": "notrios.g20.release-acceptance.v1",
+  "release": {
+    "product_version": "0.7.0",
+    "database_schema_version": 27,
+    "v07_schema_steps": [19, 20, 21, 22, 23, 24, 25, 26, 27],
+    "private_corpus_read": false
+  },
+  "aggregate_evidence": {
+    "full_scale": {
+      "path": "performance/v0.7-g14e/FULL_SCALE_ACCEPTANCE.json",
+      "sha256": "655e776c95ca3fca6d7b24761666974f80597d6b67315d928ad097c24e18adfa",
+      "equivalent_documents_per_view": 382206,
+      "attachment_documents": 103349,
+      "attachment_resources": 758,
+      "attachment_blobs": 731
+    },
+    "retention": {
+      "path": "performance/v0.7-g17/RETENTION_COST.json",
+      "sha256": "54b53647026223cc939323787f0c1663b038b31021aec00f88d1731389aeead5",
+      "generated_operations": 382206,
+      "source_private_data_read": false
+    },
+    "lazy_resources": {
+      "path": "performance/v0.7-g8/materialization-results.json",
+      "sha256": "b98d0ed0a25d6c967ea5281ef81dfbcf056aab53dacddf75c924b09e009f6dc3",
+      "sizes_bytes": [65536, 1048576, 4194304, 16777216],
+      "attachments_per_size": 8
+    }
+  },
+  "gates": [
+    {"id": "randomized-three-peer-convergence", "command": "go test ./internal/syncstate ./internal/syncmerge ./internal/syncbody ./internal/store -run 'ThreeReplica|Randomized|ThreeReplicasShuffle' -count=1", "status": "required"},
+    {"id": "directory-and-rest-processes", "command": "go test ./cmd/notriosctl ./internal/synccarrier ./internal/syncrest -run 'TwoProcessesConverge|ThreeReplicasConverge|DeletingTheDirectory|ConvergeOverREST|DirectoryTranscript' -count=1", "status": "required"},
+    {"id": "catchup-reset-retention", "command": "go test ./internal/store ./internal/synccatchup ./internal/syncjobs -run 'Catchup|CatchUp|SnapshotFloor|SnapshotSource|Retention|FullResync|PeerRetirement' -count=1", "status": "required"},
+    {"id": "lazy-attachment-carriers", "command": "go test ./internal/store ./internal/synccarrier ./internal/syncassets -run 'Lazy|Materializ|AttachmentBytesTravel|AttachmentMetadata' -count=1", "status": "required"},
+    {"id": "conflict-and-admission-faults", "command": "go test ./internal/store ./internal/syncmerge ./internal/syncbody -run 'Conflict|Randomized|PreCommitFailure|Ambiguity|Exhaustion' -count=1", "status": "required"},
+    {"id": "security-abuse", "command": "go test ./internal/syncwire ./internal/syncrest ./internal/synccarrier ./internal/httpapi -run 'Tamper|Cannot|Reject|Truncated|Namespace|Replay|Traversal|Credential|Pairing|Abuse' -count=1", "status": "required"},
+    {"id": "fresh-and-upgrade-schema", "command": "go test ./internal/store -run 'Bootstrap|SchemaV(18|19|21|22|23|24|25|26)|SecuritySurfaceSurvivesSchemaV27' -count=1", "status": "required"},
+    {"id": "aggregate-profiles", "command": "python3 performance/v0.7-g8/validate_evidence.py && python3 performance/v0.7-g14e/validate_evidence.py && python3 performance/v0.7-g17/validate_evidence.py", "status": "required"},
+    {"id": "documentation-and-contracts", "command": "bash scripts/validate-scaffold.sh && make g18e-validate g18f-validate g18g-validate g19-validate", "status": "required"},
+    {"id": "dependency-licenses", "command": "python3 performance/v0.7-g20/check_dependency_licenses.py", "status": "required"},
+    {"id": "release-package", "command": "bash scripts/package_release.sh <versioned-output.zip> && python3 scripts/check_release_zip.py <versioned-output.zip>", "status": "final-only"}
+  ],
+  "advisory_review": {
+    "path": "performance/v0.7-g18f/ADVISORY_REPORT.json",
+    "sha256": "480ba4ab5b0bd7715b7e1759181f03d26ab276e0e30bc1460077b43f6037eab3",
+    "policy": "Every non-supported advisory verdict has a committed disposition; deterministic executed evidence prevails."
+  },
+  "security_scan": {
+    "scan_id": "a8529c1e-bc60-472a-ae36-de6067741fdd",
+    "target_revision": "a3cea5a39f9c0bfe20e80c7615b503ac09967cce",
+    "manifest_sha256": "061c5d52f17208dcd1ec2ebff9f0c2b0abb8048e9c47f5064fe265f71861f661",
+    "findings_sha256": "0e84855ae4f18d528d23a2965d88643351a0748ecfa363b5d8f1b78136eaf7ba",
+    "coverage_sha256": "f9ac37f7b978fd43e42234cf7de278ca06b9da10c52f64049e2249663ca9b840",
+    "report_path": "performance/v0.7-g20/SECURITY_SCAN.md",
+    "finding_count": 6,
+    "remediations_verified": 6,
+    "correction_cycle_completed": true,
+    "hardening_analysis": "performance/v0.7-g20/hardening/hardening.json"
+  },
+  "operations_not_authorized": ["git-push", "git-tag", "public-release", "evidence-reserve-write", "physical-media-burn"]
+}

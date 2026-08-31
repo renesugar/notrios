@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/renesugar/notrios/internal/syncassets"
 	"github.com/renesugar/notrios/internal/syncstate"
 )
 
@@ -99,6 +100,11 @@ const (
 //notrios:help service configuration-reference
 //notrios:claim current-schema-status go:github.com/renesugar/notrios/internal/httpapi#TestStatusReportsConfigurationAndSchema
 const CurrentSchemaVersion = 27
+
+// MaxResourceContentBytes is the canonical whole-resource ceiling shared by
+// local admission and G8's synchronization manifests. HTTP adapters enforce it
+// before streaming into the content-addressed asset store.
+const MaxResourceContentBytes = syncassets.MaxObjectBytes
 
 // DatabaseIdentity separates the stable logical synchronization/archive
 // universe from one writable database copy. Copy/restore workflows preserve

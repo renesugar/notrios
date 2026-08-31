@@ -1,7 +1,6 @@
 package httpapi
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -133,10 +132,12 @@ func (s *Server) requireSyncJobs(w http.ResponseWriter) bool {
 
 func decodeSyncControl(w http.ResponseWriter, r *http.Request) (syncControlRequest, bool) {
 	req := syncControlRequest{}
-	decoder := json.NewDecoder(http.MaxBytesReader(w, r.Body, 16<<10))
-	decoder.DisallowUnknownFields()
 	if r.ContentLength != 0 {
-		if err := decoder.Decode(&req); err != nil {
+		if err := decodeBoundedJSONBodyWithPolicy(w, r, &req, 16<<10, true); err != nil {
+			if errors.Is(err, errRequestBodyTooLarge) {
+				writeError(w, http.StatusRequestEntityTooLarge, "body_too_large", "sync-control request exceeds its JSON limit")
+				return syncControlRequest{}, false
+			}
 			writeError(w, http.StatusBadRequest, "validation_failed", "request must be bounded sync-control JSON")
 			return syncControlRequest{}, false
 		}

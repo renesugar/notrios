@@ -3,6 +3,7 @@ package httpapi
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -86,7 +87,11 @@ func (s *Server) handleMCP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var req mcpRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := decodeBoundedJSONBody(w, r, &req, maxOrdinaryJSONBodyBytes); err != nil {
+		if errors.Is(err, errRequestBodyTooLarge) {
+			writeError(w, http.StatusRequestEntityTooLarge, "body_too_large", "MCP request exceeds the supported JSON limit")
+			return
+		}
 		writeJSON(w, http.StatusOK, mcpError(nil, -32700, "request body must be valid JSON-RPC"))
 		return
 	}

@@ -33,7 +33,9 @@ The REST persistence slice is implemented for managed Markdown documents:
 - `POST /api/v1/selection/plan` returns the read-only selection/privacy plan.
 - `POST /api/v1/links/resolve` resolves an external `notrios://` link against
   this database.
-- job start APIs, REST profile management, and sync remain planned. G3 local
+- General job start APIs and REST profile management remain deliberately local.
+  Peer sync, bounded sync-job control, and the loopback Sync Center are live.
+  G3 local
   runtime profiles are live through CLI/config and active-profile status only. Addressable block
   indexing, bounded batch organizer transactions, and job watch/cancel are
   live. Document/resource/search/notebook/tag/trash, link-listing,
@@ -56,6 +58,9 @@ The API must support many hundreds of thousands of notes/resources while remaini
 
 - Versioned under `/api/v1` except `/healthz` and `/mcp`.
 - JSON request/response bodies except resource content streams.
+- JSON and MCP request bodies are capped at 8 MiB and must contain exactly one
+  value. Raw resource bodies are streaming and capped at the canonical 16 GiB
+  object limit; an oversized request returns `413`.
 - Stable opaque IDs and URI fields; do not expose search-index row IDs (Recoll/Xapian docids) as public identity.
 - Optimistic concurrency for mutations through `If-Match` or request-body `base_revision_id`.
 - Cursor pagination for deep navigation. `k2` tokens are query/sort-bound
@@ -80,7 +85,7 @@ The API must support many hundreds of thousands of notes/resources while remaini
 }
 ```
 
-Common codes: `invalid_json`, `validation_failed`, `not_found`, `precondition_required`, `revision_conflict`, `forbidden`, `limit_too_large`, `cursor_invalid`, `unsupported_media_type`, `media_policy_blocked`, `job_failed`, `internal_error`.
+Common codes: `invalid_json`, `validation_failed`, `not_found`, `precondition_required`, `revision_conflict`, `forbidden`, `limit_too_large`, `cursor_invalid`, `unsupported_media_type`, `media_policy_blocked`, `job_failed`, `internal_error`. HTTP `413` is used when a declared or streamed request exceeds its body/object ceiling.
 
 ## Core REST endpoints
 
@@ -532,7 +537,7 @@ download chunk without widening the ordinary 8 MiB response ceiling.
 ```text
 POST   /api/v1/batch                            # live bounded organizer transaction
 
-# Conceptual v0.7 sync data plane; exact routes wait for G13/G14 approval.
+# Historical conceptual sketch; the OpenAPI/route registry is authoritative.
 POST   /api/v1/sync/handshake
 POST   /api/v1/sync/plans
 GET    /api/v1/sync/objects/{sha256}            # resumable/range data plane
@@ -543,12 +548,14 @@ POST   /api/v1/sync/snapshots/requests
 GET    /api/v1/sync/snapshots/{artifact_id}     # authorized encrypted range download
 ```
 
-G5 does not make any of these routes live. Its protocol-1.0 handshake,
+G5 did not make any of these routes live. Its protocol-1.0 handshake,
 state-vector/missing-range planner, and operation admission APIs are internal
 Go/store seams for local fixtures only. They carry no authentication,
 encryption, or transport authority, and cannot be reached through REST or MCP.
-G9/G13 must add authenticated enrollment/framing before G12/G14 can expose a
-data plane.
+G9/G13 subsequently added authenticated enrollment/framing and G14 exposed the
+bounded encrypted data plane. G20 restricts a non-loopback connection to the
+finite registered peer-sync route set; the `/api/v1/sync/` prefix alone grants
+no reachability.
 
 `POST /api/v1/batch` implements the bounded batch contract (v0.6 F1): `move`,
 `add_tags`, `remove_tags`, `trash`, `restore`, and `duplicate` over an explicit
@@ -746,6 +753,10 @@ For large collections, do not list every document through `resources/list`; retu
 
 ## Security rules
 
+- Ordinary REST/MCP/web routes require a loopback connection and local Host;
+  only registered authenticated peer-sync routes may be remotely admitted.
+- Browser mutations require an exact same-origin request or the Wails origin;
+  cross-site Fetch Metadata and malformed/null origins are refused.
 - No raw SQL MCP tool in normal profiles.
 - No arbitrary filesystem path tool.
 - No direct search-index (Recoll/Xapian) mutation through the public API.
@@ -870,5 +881,7 @@ interrupted, which only `--intent replace` can recover.
 
 Resource content responses set `X-Content-Type-Options: nosniff` and generate
 `Content-Disposition` with sanitized filenames. Remote-media download policy is
-implemented through v0.3 H4; generic upload limits, HTTP range support, and
-perceptual hooks remain separate hardening items.
+implemented through v0.3 H4. Bounded uploads, HTTP range support, and the
+disabled-by-default perceptual review hook are also implemented. G20
+additionally requires exactly-one bounded JSON, a finite remote peer mux, and
+rooted/bounded carrier and legacy-archive reads; see `SECURITY_REVIEW.md`.

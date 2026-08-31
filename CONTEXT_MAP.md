@@ -5,14 +5,12 @@ This file is the codebase atlas. Update it whenever major files or directories a
 ## Root documents
 
 - `README.md` — project overview and quick start.
-- `PLAN.md` — the **active v0.7 native synchronization plan**, divided into
-  independently approvable G0-G20 slices plus the blocking G14a-G14e archive-
-  scalability sequence, the blocking G17a-G17b external evidence-preservation
-  sequence, and the newly planned G18a-G18g documentation-integrity/Hugo-Ledger
-  sequence. G0-G18 are complete; the G17b verifier gates every future GitHub
-  push. G18a-G18g are complete; G19 is next but unapproved. The
-  current product remains 0.6.0 at schema v27; v0.6 is archived under
-  `plans/v0.6/`; v0.5 and v0.4 are archived under their version directories.
+- `PLAN.md` — the **active but unstarted v0.8 installation, configuration,
+  shared-core, and portability plan**, divided into H0-H9 investigation and
+  implementation slices. H0 is next and unapproved. v0.7 G0-G20 are complete
+  at product 0.7.0/schema v27 and archived under `plans/v0.7/`, including
+  `plans/v0.7/000-v0.7-plan.md`; the G17b verifier still gates every future
+  GitHub push. Earlier milestones remain under their version directories.
 - `plans/scaffold/SCAFFOLD_CREATION_PLAN.md` — process for creating/refining this scaffold.
 - `ROADMAP.md` — product roadmap and future features.
 - `AGENTS.md` — coding-agent instructions (`CLAUDE.md` points here).

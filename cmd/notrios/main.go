@@ -73,7 +73,11 @@ func main() {
 	case *guiOnly:
 		base := strings.TrimSpace(*remote)
 		if base == "" {
-			base = "http://" + cfg.Server.ListenAddr
+			scheme := "http"
+			if strings.TrimSpace(cfg.Sync.REST.TLSCertFile) != "" {
+				scheme = "https"
+			}
+			base = scheme + "://" + cfg.Server.ListenAddr
 		}
 		target, err := url.Parse(base)
 		if err != nil || target.Host == "" {
@@ -91,8 +95,8 @@ func main() {
 			log.Fatal(err)
 		}
 		defer svc.Close()
-		log.Printf("notrios (no-gui) listening on http://%s using db %s", cfg.Server.ListenAddr, cfg.Data.DatabasePath)
-		if err := svc.HTTPServer().ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		log.Printf("notrios (no-gui) listening on %s://%s using db %s", serviceScheme(svc), cfg.Server.ListenAddr, cfg.Data.DatabasePath)
+		if err := svc.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatal(err)
 		}
 
@@ -105,8 +109,8 @@ func main() {
 		// The service also listens on its TCP address so MCP clients and
 		// third-party GUIs can connect while the built-in GUI is open.
 		go func() {
-			log.Printf("notrios service listening on http://%s using db %s", cfg.Server.ListenAddr, cfg.Data.DatabasePath)
-			if err := svc.HTTPServer().ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Printf("notrios service listening on %s://%s using db %s", serviceScheme(svc), cfg.Server.ListenAddr, cfg.Data.DatabasePath)
+			if err := svc.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 				log.Printf("service listener stopped: %v", err)
 			}
 		}()
@@ -114,6 +118,14 @@ func main() {
 			log.Fatal(err)
 		}
 	}
+}
+
+func serviceScheme(svc *service.Service) string {
+	certificate, _ := svc.TLSFiles()
+	if certificate != "" {
+		return "https"
+	}
+	return "http"
 }
 
 func loadRuntimeConfig(path string) (config.Config, error) {

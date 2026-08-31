@@ -19,6 +19,7 @@ make g18e-validate
 make g18f-validate
 make g18g-validate
 make g19-validate
+make g20-validate
 
 rm -f "$OUT"
 zip -qr "$OUT" . \

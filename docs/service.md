@@ -213,11 +213,26 @@ planning](selection-planning.md).
 
 ## Network exposure
 
-The default bind address is loopback-only. The service has **no authentication layer** — anyone who can reach the port can read and modify notes. If you bind to a non-loopback address (for example so `notrios -gui-only -remote ...` on another machine can connect), do it only on a trusted network, or keep the loopback bind and tunnel with SSH:
+The default bind address is loopback-only. Ordinary REST, MCP, and the web UI
+have **no user-authentication layer**, so the service admits them only from a
+loopback connection carrying a local Host. Binding to a non-loopback address
+does not publish those routes: it admits only the finite authenticated
+peer-sync endpoints when that surface is enabled. Forwarding headers and an
+unknown `/api/v1/sync/` path do not widen the set.
+
+To use `-gui-only` or another ordinary client across machines, keep the service
+on loopback and use an access-controlled tunnel such as SSH:
 
 ```sh
 ssh -L 8080:127.0.0.1:8080 your-server   # then use http://127.0.0.1:8080 locally
 ```
+
+Browser mutation requests must also be exact same-origin (or originate from
+the Wails shell). JSON/MCP requests are limited to 8 MiB and exactly one JSON
+value; raw resource uploads use the 16 GiB object ceiling. These request checks
+are containment controls, not accounts or authorization. The separately
+authenticated/TLS peer surface is documented in
+[Data safety and maintenance](operations.md#exposing-the-sync-surface-to-a-peer).
 
 ## Search sidecar
 

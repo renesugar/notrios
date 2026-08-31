@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -336,12 +337,107 @@ func attachSyncSecurity(cfg config.Config, st *store.SQLiteStore, handler *httpa
 func (s *Service) HTTPServer() *http.Server {
 	return &http.Server{
 		Addr:              s.Config.Server.ListenAddr,
-		Handler:           s.Handler,
+		Handler:           restrictRemoteRequests(s.Handler),
 		ReadHeaderTimeout: 10 * time.Second,
 		ReadTimeout:       30 * time.Second,
 		WriteTimeout:      30 * time.Second,
 		IdleTimeout:       120 * time.Second,
 	}
+}
+
+// ListenAndServe is the single serving path for every Notrios executable.
+// Configuration validation and transport selection must not be split between
+// binaries: accepting TLS material and then serving plaintext is worse than a
+// startup refusal because the operator has no visible indication of the loss.
+func (s *Service) ListenAndServe() error {
+	server := s.HTTPServer()
+	certificate, key := s.TLSFiles()
+	return listenAndServe(server, certificate, key)
+}
+
+type servingHTTPServer interface {
+	ListenAndServe() error
+	ListenAndServeTLS(string, string) error
+}
+
+func listenAndServe(server servingHTTPServer, certificate, key string) error {
+	certificate = strings.TrimSpace(certificate)
+	key = strings.TrimSpace(key)
+	if (certificate == "") != (key == "") {
+		return errors.New("service TLS configuration requires both a certificate and key")
+	}
+	if certificate != "" {
+		return server.ListenAndServeTLS(certificate, key)
+	}
+	return server.ListenAndServe()
+}
+
+// restrictRemoteRequests preserves the v0.7 boundary on a shared listener:
+// only peer-authenticated sync routes may be reached from another machine.
+// Ordinary REST, MCP, web, and local sync-administration routes remain usable
+// through loopback even when the socket is bound to 0.0.0.0 for peer sync.
+func restrictRemoteRequests(next http.Handler) http.Handler {
+	remotePeer := http.NewServeMux()
+	for _, pattern := range []string{
+		"POST /api/v1/sync/pair",
+		"GET /api/v1/sync/handshake",
+		"GET /api/v1/sync/carrier/namespaces",
+		"GET /api/v1/sync/carrier/{namespace}/{class}",
+		"GET /api/v1/sync/carrier/{namespace}/{class}/{name}",
+		"HEAD /api/v1/sync/carrier/{namespace}/{class}/{name}",
+		"PUT /api/v1/sync/carrier/{class}/{name}",
+		"DELETE /api/v1/sync/carrier/{class}/{name}",
+		"POST /api/v1/sync/backups",
+		"GET /api/v1/sync/backups/{backup_id}",
+		"HEAD /api/v1/sync/backups/{backup_id}",
+	} {
+		remotePeer.Handle(pattern, next)
+	}
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if remoteAddressIsLoopback(r.RemoteAddr) && requestHostIsLocal(r.Host) {
+			next.ServeHTTP(w, r)
+			return
+		}
+		if strings.HasPrefix(r.URL.Path, "/api/v1/sync/") {
+			// A finite method/path mux is the remote authority. An unknown
+			// sync-looking path must not fall through the application's GET /
+			// handler and receive the web UI.
+			remotePeer.ServeHTTP(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		w.WriteHeader(http.StatusForbidden)
+		_, _ = w.Write([]byte(`{"error":{"code":"loopback_only","message":"ordinary Notrios APIs are available only on loopback"}}` + "\n"))
+	})
+}
+
+func requestHostIsLocal(hostport string) bool {
+	host := strings.TrimSpace(hostport)
+	if parsedHost, _, err := net.SplitHostPort(host); err == nil {
+		host = parsedHost
+	} else {
+		// A Host header without a port is valid. A colon that failed parsing is
+		// neither a hostname nor a safe unbracketed IPv6 representation.
+		if strings.Contains(host, ":") {
+			return false
+		}
+	}
+	host = strings.Trim(host, "[]")
+	if strings.EqualFold(host, "localhost") || strings.EqualFold(host, "wails.localhost") {
+		return true
+	}
+	address := net.ParseIP(host)
+	return address != nil && address.IsLoopback()
+}
+
+func remoteAddressIsLoopback(remoteAddr string) bool {
+	host, _, err := net.SplitHostPort(strings.TrimSpace(remoteAddr))
+	if err != nil {
+		return false
+	}
+	address := net.ParseIP(host)
+	return address != nil && address.IsLoopback()
 }
 
 // TLSFiles returns the certificate and key the service should serve with, or
