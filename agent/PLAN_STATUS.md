@@ -1,6 +1,29 @@
 # Plan Status
 
-Updated: 2026-08-31 (v0.7 G0-G20 complete; v0.8 H0 next and unapproved)
+Updated: 2026-08-31 (v0.8 installation plan amended; H0 next and unapproved)
+
+## v0.8 installation planning amendment — 2026-08-31
+
+- `PLAN.md` now has H0-H13 independently approval-gated items. H3-H8 split
+  installed/XDG paths, runtime migration, safe Make lifecycle, package-tool
+  investigation, Ubuntu-priority packaging, Windows/macOS native GitHub
+  workflows, and the installed integration harness into coherent slices.
+- `make install`/`uninstall`/`purge` requirements now specify GNU staging
+  variables, exact manifests, XDG overrides, `DRYRUN=1`, `FORCE=1`, and
+  `NO_BACKUP=1`; verified backup precedes purge by default, uninstall preserves
+  user state, external profile roots are not automatically deleted, and
+  development-only `clean`/`clobber` stay separate.
+- H12 delays the first v0.8 GitHub push until native Windows/macOS runners are
+  needed, then opens a `develop`-to-`main` PR. H13 requires separate merge
+  authorization and back-synchronizes `develop` without force-pushing.
+- `ROADMAP.md` now carries internal installer evidence through v0.9 signing,
+  supply-chain, migration, lifecycle, and clean-native hardening to a v1.0
+  GitHub installation requiring no source or development toolchain. Ubuntu is
+  the minimum priority; Windows/macOS remain native-evidence-dependent.
+- Primary-source checks and the planning-time branch audit are archived at
+  `plans/v0.8/001-installation-delivery-plan-amendment.md`. No implementation,
+  push, PR, merge, tag, release, installer upload, reserve/ISO write, or burn
+  occurred. H0 remains next and requires explicit approval.
 
 ## v0.7 G20 completion — 2026-08-31
 
@@ -23,7 +46,7 @@ Updated: 2026-08-31 (v0.7 G0-G20 complete; v0.8 H0 next and unapproved)
 - G20 is archived as
   `plans/v0.7/043-full-convergence-release-wrap-up.md`; the completed plan is
   `plans/v0.7/000-v0.7-plan.md`. `PLAN.md` now contains the unstarted v0.8
-  H0-H9 plan; H0 is next and requires explicit approval.
+  H0-H13 plan; H0 is next and requires explicit approval.
 - The full packager reran the Go/scaffold/frontend/docs/G18-G20 gates, clean npm
   installs, and zero-vulnerability audits. It produced
   `dist/notrios-v0.7-g20-4bc2577.zip` from the clean packaging checkpoint:
@@ -128,7 +151,7 @@ earlier milestones remain under their version directories.
 
 The completed v0.7 plan is `plans/v0.7/000-v0.7-plan.md`. `PLAN.md` is now the
 **unstarted v0.8 installation, configuration, shared-core, and portability
-plan**. Its H0-H9 items are independently approval-gated. Historically, v0.7
+plan**. Its H0-H13 items are independently approval-gated. Historically, v0.7
 contained
 G0, G1, G1a, G2-G14, the blocking G14a-G14e archive-scalability sequence,
 G15-G17, the blocking G17a-G17b evidence-preservation sequence, G18, the newly

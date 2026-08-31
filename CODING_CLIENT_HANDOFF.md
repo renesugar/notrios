@@ -2,13 +2,44 @@
 
 This handoff applies to any coding agent or client continuing this project (Codex, Claude, aider, swival.dev, etc. — formerly `CODEX_HANDOFF.md`). The repository is designed so an agent can continue from repository files alone.
 
+## v0.8 installation planning handoff — 2026-08-31
+
+The unstarted v0.8 plan now has H0-H13 independently approvable items. The
+installation amendment is archived at
+`plans/v0.8/001-installation-delivery-plan-amendment.md`; it adds a central
+installed/XDG path investigation and implementation, safe end-user-location
+Make lifecycle, Ubuntu-priority packaging, evidence-gated Windows/macOS native
+GitHub jobs, installed integration, and delayed `develop`-to-`main` PR and
+branch synchronization. `ROADMAP.md` now carries the installation path through
+v0.9 hardening to a v1.0 GitHub download that requires no source repository or
+developer toolchain.
+
+The safety contract is explicit: uninstall removes only manifest-owned
+installed artifacts and leaves user state; purge backs up and verifies
+config/data/state before bounded deletion by default; `DRYRUN=1` is an exact
+zero-mutation preview; `FORCE=1` suppresses only the prompt; and
+`NO_BACKUP=1` takes the deep-warning path and skips backup. External profile
+paths are not automatically deleted. `clean`/`clobber` remain development-only.
+
+Read-only branch checks found remote
+`main=265ef4ef84ea90f0e325522a3a4308a5804f122c`, remote
+`develop=26b0925c21b3ecc264c370936e42d4b973548b8d`, and pre-amendment local
+`develop=fd2192d1e830833fcf74b191bfc01851a61ed8bd`. Remote `main` is an
+ancestor of local `develop`, which was 133 commits ahead of remote `develop`.
+H12 must re-fetch/recheck and delays the first v0.8 push until native GitHub
+runners are needed. No push, PR, merge, tag, release, installer upload,
+reserve/ISO write, or burn occurred.
+
+This was planning only. No lifecycle target, runtime path, migration, installer,
+or workflow was implemented. H0 remains next and unapproved.
+
 ## G20 completion handoff — 2026-08-31
 
 G20 is complete and archived as
 `plans/v0.7/043-full-convergence-release-wrap-up.md`; the complete milestone
 plan is `plans/v0.7/000-v0.7-plan.md`. Product version is 0.7.0 and canonical
 schema is v27 (migrations v19-v27). `PLAN.md` now contains the unstarted v0.8
-H0-H9 plan derived from `ROADMAP.md`; H0 is next and remains unapproved.
+H0-H13 plan; H0 is next and remains unapproved.
 
 The exact convergence, directory/REST process, catch-up/reset/retention,
 lazy-resource, conflict/fault, abuse, and fresh/upgrade selectors pass. The
@@ -195,7 +226,7 @@ wrap-up). The thirteen v0.5 slices remain archived under `plans/v0.5/`.
 
 The completed v0.7 plan is archived as `plans/v0.7/000-v0.7-plan.md`.
 `PLAN.md` now holds the **unstarted v0.8 installation, configuration,
-shared-core, and portability plan** with H0-H9 independently approvable items.
+shared-core, and portability plan** with H0-H13 independently approvable items.
 The historical v0.7 plan contained
 independently approvable G0-G20 slices plus the newly inserted, blocking
 G14a-G14e archive-scalability sequence, the newly inserted blocking G17a-G17b

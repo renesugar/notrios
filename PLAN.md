@@ -180,174 +180,407 @@ bundle/time/RSS comparison to H2a, full frontend/Go/docs gates, and rollback.
   implied; if H2a recommends remaining disabled, close or replan H2 instead of
   introducing a different renderer mid-item.
 
-## H3. Installed-path, migration, and permission investigation
+## H3. Installed-path, XDG, migration, and destructive-lifecycle investigation
 
-**Goal.** Select self-contained config/data/cache/log/runtime locations and a
-lossless migration contract for Linux, Windows, and macOS.
+**Goal.** Freeze a cross-platform installed-path contract and a fail-closed
+end-user lifecycle before any runtime default or destructive Make target is
+implemented.
 
-**Scope.** Inventory current relative/source-checkout defaults and every path
-consumer; compare native directory conventions and permission/backup behavior;
-design installed versus portable/source modes, profile registry discovery,
-first-run migration, collision/refusal, rollback, uninstall preservation, and
-diagnostics. Include database/assets, projections, Recoll, quarantine,
-snapshots, logs, web assets, and credentials references.
+**Scope.** Inventory every checkout-relative, executable-relative, profile, and
+user-directory consumer. Define separate immutable program assets and mutable
+config, data, state, cache, and runtime roots for Linux, Windows, and macOS.
+On Linux, cover `XDG_CONFIG_HOME`, `XDG_DATA_HOME`, `XDG_STATE_HOME`,
+`XDG_CACHE_HOME`, and `XDG_RUNTIME_DIR`, their standard fallbacks, absolute-path
+requirement, and invocation-time overrides. Include the profile registry,
+generated profile configs, databases/assets, projections, Recoll config/index,
+quarantine, publication profiles, sync keys, catch-up/carrier/backup staging,
+logs, snapshots, packaged web assets, deep-link registration, and paths named
+inside profiles that live outside standard roots.
 
-**Boundaries.** Investigation only; do not move user data or change defaults.
-No unrestricted filesystem API, silent cross-volume copy, automatic deletion,
-or credential migration without an owning credential-store item.
+Design source, installed, and explicitly portable modes; first-run migration;
+collision/interruption/rollback behavior; a machine-readable installed-artifact
+manifest; GNU `prefix`, `exec_prefix`, `bindir`, `datarootdir`, `datadir`, and
+`DESTDIR` staging semantics; and the complete `install`/`uninstall`/`purge`
+contract. The purge design must inventory exact roots, stop or refuse live
+processes, create and verify an owner-only restorable backup outside every
+purge root by default, and delete only after backup success. It must separately
+define config/data/state backup, cache/runtime disposal, symlinks, mount
+boundaries, missing paths, external profile paths, and repeated/idempotent runs.
 
-**Dependencies.** H0 may run in parallel, but H3 must consume the v0.7 profile
-and backup/restore contracts.
+**Boundaries.** Investigation only: no path default changes, data movement,
+Make lifecycle targets, installer dependency, Unix-domain-socket migration, or
+deletion. `DESTDIR` stages immutable installed artifacts; it is not silently
+prepended to a user's XDG runtime roots. Invalid, empty, relative, root, home,
+or overly broad deletion targets must fail closed.
 
-**Working state.** A per-OS path matrix and atomic/resumable migration design
-name detection, preflight space/permissions, backup, interruption, idempotence,
-rollback, uninstall, and support diagnostics.
+**Dependencies.** H0 may run in parallel. Consume the v0.7 profile,
+backup/restore, secret-reference, evidence, and multi-instance contracts.
 
-**Validation and evidence.** Disposable old/new layouts, permission and
-collision fault injection, interrupted/resumed migration model, profile
-discovery matrix, backup/restore proof, and no-user-data-loss oracle.
+**Working state.** A source-audited per-OS path matrix and state machine specify
+resolution precedence, ownership, permissions, migration, backup verification,
+restore, uninstall preservation, purge confirmation, dry-run output, refusal,
+and diagnostics. The report maps each existing path consumer to an owning H4
+change or an explicit compatibility exception.
+
+**Validation and evidence.** Disposable old/new layouts; exact path-resolution
+tables; relative-XDG refusal/fallback; permission, disk-full, symlink, mount,
+collision, and interrupted-backup models; external-profile fixtures; backup
+restore proof; and a no-user-data-loss/no-broad-delete oracle.
 
 **Open decisions**
 
-- **Installed versus portable-mode precedence — Non-blocking for H3; blocking
-  for H4.** Recommended default: explicit CLI/config overrides first, explicit
+- **Installed versus portable precedence — Non-blocking for H3; blocking for
+  H4.** Recommended default: explicit CLI/config paths first, an explicit
   portable marker second, native installed locations otherwise; never infer
-  portability from a writable current directory. H3 must show compatibility
-  and migration consequences before approval.
+  portable mode from the current directory or its writability.
+- **Default `make install` destination — Non-blocking for H3; blocking for
+  H5.** Recommended default: an unprivileged user-local layout compatible with
+  `$HOME/.local`, while retaining lowercase GNU directory-variable overrides
+  and `DESTDIR` for package staging. Immutable assets follow install variables;
+  mutable data follows native/XDG resolution at runtime and is not created by
+  package staging.
+- **Purge treatment of external profile paths — Non-blocking for H3; blocking
+  for H5.** Recommended default: enumerate and back up eligible app-owned
+  external paths but refuse to delete them automatically. A later explicit
+  opt-in may be designed only with containment, ownership, and per-path
+  confirmation; approval of H3 does not authorize deletion outside Notrios's
+  standard roots.
 
-## H4. Installed application layout and upgrade/uninstall behavior
+## H4. Installed runtime paths, assets, and migration
 
-**Goal.** Implement H3's accepted path and migration contract and package the
-built web UI plus required SQLite/runtime dependencies with the application.
+**Goal.** Implement H3's accepted location and migration contract so binaries
+operate outside a source checkout without changing explicit-path behavior.
 
-**Scope.** Add explicit installed/source/portable discovery, safe first-run
-migration, packaged asset lookup, versioned upgrade/rollback, profile discovery,
-and uninstall-preserves-data behavior. Produce internal Linux, Windows, and
-macOS package layouts using reproducible build inputs where the host toolchains
-permit.
+**Scope.** Add one tested platform-path resolver for config/data/state/cache/
+runtime and immutable assets; preserve explicit CLI/config precedence; add
+installed/source/portable detection; resolve packaged `web/dist` and other
+read-only assets; provide redacted path diagnostics; and implement explicit,
+atomic, resumable migration from checkout-relative layouts with verified backup
+and rollback. Update profile registry, generated profiles, sync keys,
+publication profiles, Recoll, and transient service paths through the central
+contract rather than scattered environment reads.
 
-**Boundaries.** Internal prerelease artifacts only; no public upload, signing,
-notarization, app-store package, auto-update service, or unsupported platform
-claim. Never delete canonical data during uninstall.
+**Boundaries.** No implicit migration, current-directory portability guess,
+unrestricted filesystem surface, credential-byte migration, automatic external
+profile deletion, server transport change, package build, or destructive Make
+target. Existing explicit absolute configs remain valid.
 
-**Dependencies.** H1 and H3 complete; H3 precedence/migration decision approved.
+**Dependencies.** H1 and H3 complete; all H3 blocking decisions resolved in H3
+and restated here.
 
-**Working state.** Installed binaries find packaged web/runtime assets without
-the source tree, create native private locations, discover profiles, migrate a
-source layout once, restart cleanly, roll back from a verified backup, and
-leave user data on uninstall.
+**Working state.** A binary copied into an installed layout finds its immutable
+UI/runtime assets, creates private native user roots on first use, reports
+resolved paths without secrets, discovers isolated profiles, migrates only
+after explicit review, survives interruption, and rolls back to a verified
+restorable state.
 
-**Validation and evidence.** Clean install, upgrade, interrupted migration,
-rollback, uninstall/reinstall, missing/tampered asset, permissions, and package
-inventory/license tests on each honestly supported build host.
+**Validation and evidence.** Linux XDG override matrix in temporary roots;
+Windows/macOS resolver unit fixtures; installed versus source/portable
+precedence; clean start, migration, restart, interruption, collision,
+permissions, missing/tampered assets, profile isolation, backup/restore, and
+no-current-working-directory-dependency tests.
 
 **Open decisions**
 
-- **Package formats per desktop OS — Non-blocking until H4 planning; blocking
-  before artifact writes.** Recommended initial internal set: native Linux
-  package plus unpacked verified Windows/macOS layouts when signing/toolchains
-  are unavailable. H4 must record which formats are real installs versus
-  layout evidence and must not label an unexecuted artifact supported.
+- **H3 path and migration selections — Blocking.** Do not start H4 until H3
+  records the selected per-platform roots, precedence, ownership, migration
+  trigger, backup format, external-path policy, and rollback.
 
-## H5. Installed multi-profile and native-integration matrix
+## H5. Safe Make install, uninstall, and purge lifecycle
 
-**Goal.** Prove installed instances preserve profile isolation and interact
-safely with OS networking, deep links, shared directories, and native pickers.
+**Goal.** Provide end-user-location dogfooding targets that are auditable,
+automation-safe, and unmistakably separate from development cleanup.
 
-**Scope.** Exercise multiple profiles/servers, port conflicts, URL-handler
-registration, shared-carrier paths, firewall prompts, file/directory pickers,
-GUI/service modes, restart, upgrade, and concurrent isolation in installed
-Linux, Windows, and macOS environments available to the project.
+**Scope.** Add `.PHONY` `install`, `uninstall`, and `purge` targets and document
+them beside `clean`/`clobber`. `install` deploys the GUI, daemon, CLI, immutable
+web/assets, desktop metadata, and an ownership manifest to H3's user-local
+layout, with GNU directory-variable and package-staging overrides.
+`uninstall` reads the manifest and removes only artifacts installed by that
+layout/version, leaving all user config, profiles, databases, assets, state,
+backups, cache, runtime state, and external paths intact.
+
+`purge` performs `uninstall` semantics plus H3's bounded mutable-state cleanup.
+By default it shows the exact backup and deletion plan, requires an affirmative
+interactive confirmation, creates an owner-only timestamped backup outside the
+purge roots, verifies its manifest/hashes and offline restoration, and only
+then deletes approved roots. `DRYRUN=1` is a non-interactive, zero-mutation
+preview that lists exact installed files, mutable roots, exclusions, external
+refusals, backup destination, and ordered actions for uninstall and purge;
+GNU Make's `-n` alone is not sufficient evidence. `FORCE=1` suppresses the
+prompt for headless automation but never bypasses validation or backup.
+`NO_BACKUP=1` skips backup, emits a deep irreversible-loss warning naming
+databases/assets/config/profiles/keys/state, and still prompts unless
+`FORCE=1` is also set. Accept only the exact unset or `1` forms of these flags
+and reject ambiguous values.
+
+**Boundaries.** `clean` and `clobber` remain source-tree-only and never touch
+installed/user data; lifecycle targets never clean the checkout. No raw
+unresolved or broad recursive deletion, wildcard target, symlink traversal,
+home/root deletion, credential disclosure, automatic external-path deletion,
+package-manager database mutation, or network access. `FORCE=1` is not
+`NO_BACKUP=1`. A non-interactive purge without `FORCE=1` fails closed rather
+than hanging or reporting success.
+
+**Dependencies.** H3 and H4 complete; H3 install-layout, backup, and external-
+path decisions approved.
+
+**Working state.** From a checkout, an isolated XDG user can install and use
+Notrios outside the development tree, safely uninstall and reinstall without
+data loss, preview every removal, purge with a verified backup, deliberately
+skip backup only under the exact warning contract, and repeat every operation
+idempotently.
+
+**Validation and evidence.** Shell/Make fixture tests in disposable
+`HOME`/XDG/`DESTDIR` roots; exact manifest inventory; install-use-uninstall-
+reinstall; `DRYRUN=1` no-write/no-prompt proof; interactive accept/decline/EOF;
+`FORCE=1` with and without `NO_BACKUP=1`; invalid flag values; failed/partial/
+disk-full backup; offline restore; modified installed file; symlink/mount/
+root/home/external-path refusal; concurrent process; repeated lifecycle; and
+source-tree `clobber` separation.
+
+**Open decisions**
+
+- **Install-manifest ownership policy — Non-blocking default.** Default: remove
+  only exact manifest-listed paths under validated install roots; preserve and
+  report a user-modified or foreign-owned artifact rather than overwriting or
+  deleting it silently.
+- **Backup container and destination — Blocking before H5 implementation.**
+  H3 must choose a restorable owner-only format and a default destination
+  outside all purge roots, including behavior when the configured backup
+  directory is unsafe, lacks capacity, or resolves through a symlink.
+
+## H6a. Desktop installer and GitHub-native build investigation
+
+**Goal.** Select the smallest maintainable installer toolchain and honest
+support gates for Ubuntu, Windows, and macOS before adding package workflows.
+
+**Scope.** Compare current Wails v2 native packaging, nFPM/GoReleaser, and
+minimal platform-specific packaging for one GUI plus daemon/CLI. On Ubuntu,
+prototype `.deb` contents, dependency declarations, desktop metadata, and
+upgrade/remove behavior. For Windows, assess a native GitHub-hosted runner and
+Wails/NSIS installer. For macOS, assess a native GitHub-hosted runner, `.app`
+bundle and candidate `.dmg`/package creation. Record exact versions, licenses,
+toolchain/runtime prerequisites, cgo/SQLite and WebView dependencies, output
+reproducibility, unsigned-artifact behavior, secret/signing boundaries, GitHub
+artifact retention, and runner cost. Verify current upstream documentation
+rather than treating the references supplied with this plan as executable fact.
+
+**Boundaries.** Investigation only. No production packaging dependency,
+workflow push, installer upload, GitHub Release, signing/notarization secret,
+support claim, Wails v3 adoption, or local attempt to emulate Apple hardware.
+Cross-compilation or structural inspection is not native runtime evidence.
+
+**Dependencies.** H3's layout contract; H4 may proceed after H3 while this
+investigation runs.
+
+**Working state.** A decision report selects Ubuntu packaging and either
+selects a native-runner path for Windows/macOS or records a precise blocker and
+postponement. It defines a four-level claim ladder: generated, structurally
+inspected, natively installed/executed, and supported.
+
+**Validation and evidence.** Exact primary-source/tool/license provenance;
+minimal local Ubuntu package prototype; file/dependency/script inventory;
+repeated-build comparison; candidate native-runner YAML validation; projected
+minutes/storage; threat review for pull-request workflows and secrets; and
+rollback/removal mapping to H5.
+
+**Open decisions**
+
+- **Package formats and orchestration — Non-blocking for H6a; blocking for
+  H6/H7.** Starting candidates are Ubuntu `.deb`, Windows NSIS `.exe`, and a
+  macOS `.app` inside an appropriate native distribution container. H6a may
+  change or reject any candidate from evidence. Prefer platform-native Wails v2
+  tooling plus a small Linux packager over adding a universal orchestrator
+  unless one configuration demonstrably reduces risk.
+- **Unsigned Windows/macOS artifacts in v0.8 — Non-blocking default.** They may
+  be retained only as clearly labelled internal candidates after native
+  execution. They are not end-user releases and do not imply v1.0 support.
+
+## H6. Ubuntu-priority installer package
+
+**Goal.** Produce and execute an internal Ubuntu installer that needs no source
+checkout, Go, Node, npm, Wails CLI, compiler, or development headers at runtime.
+
+**Scope.** Implement H6a's selected `.deb`-class package with the GUI, daemon,
+CLI, immutable web assets, icon/desktop metadata, license/notices, runtime
+dependency declarations, version metadata, and remove/upgrade scripts. Reuse
+H4's path resolver and H5's preservation contract; do not create mutable user
+data during package staging. An optional user service must remain disabled
+until explicitly enabled and must not widen network access.
+
+**Boundaries.** Internal prerelease only: no public upload, apt repository,
+automatic service enablement, root-owned user data, signing claim, or broad
+Linux support. Package removal leaves user data; destructive cleanup remains
+the explicit H5 purge operation.
+
+**Dependencies.** H4, H5, and H6a complete; H6a's Linux format/tool decision
+resolved.
+
+**Working state.** On a clean supported Ubuntu environment, a user installs the
+package, launches the GUI and CLI without the repository or developer
+toolchain, creates and reopens data, upgrades, removes, reinstalls, and retains
+the data. Package inventory and runtime dependencies are exact.
+
+**Validation and evidence.** Lint/package inspection; clean native install and
+GUI/daemon/CLI smoke; offline post-download runtime; desktop entry/icon;
+loopback-only listener; multi-profile; upgrade/downgrade refusal; package
+remove/reinstall; H5 purge interoperability; dependency/license/SBOM inventory;
+tamper and missing-runtime errors; and artifact hash.
+
+**Open decisions**
+
+- **Minimum Ubuntu versions/architectures — Non-blocking default.** Default:
+  test the repository's current Ubuntu host plus the exact GitHub Ubuntu runner
+  selected by H6a, initially amd64. Do not claim another release or
+  architecture from build-only evidence.
+
+## H7. Windows and macOS installer workflow implementation
+
+**Goal.** Implement H6a-approved native GitHub workflows and package candidates
+without pretending unavailable hardware was tested locally.
+
+**Scope.** Add least-privilege, pinned GitHub Actions jobs on Windows and macOS
+native hosted runners. Build GUI/daemon/CLI and immutable assets, produce the
+selected installer/package, inspect contents, install into a disposable
+account/context, launch native GUI plus CLI/daemon smoke, exercise user paths,
+upgrade/remove/reinstall, verify data preservation, and upload only bounded
+internal workflow artifacts. Keep platform-specific scripts small and share
+closed manifest and behavioral assertions with Ubuntu.
+
+**Boundaries.** Local implementation and static validation occur before any
+push. Native execution waits for H12's delayed external step. No signing/
+notarization secrets, release publication, mutable floating action pins,
+workflow execution from untrusted fork code with write permissions, support
+claim from compilation alone, or local macOS/Windows fabrication. If H6a
+records an infeasible platform, close or replan this item for that platform
+instead of creating a decorative installer.
+
+**Dependencies.** H4-H6a complete; H12 supplies the first authorized remote
+execution and result readback.
+
+**Working state.** Locally, deterministic workflow/package definitions and
+native test harnesses are ready and Ubuntu-equivalent assertions pass where
+portable. After H12, each feasible platform has native result-bearing install
+evidence; any postponed platform names its exact blocker, owner, and next gate.
+
+**Validation and evidence.** Workflow policy/static checks; pinned action and
+tool provenance; native build/install/launch/upgrade/remove/reinstall logs;
+artifact inventories/hashes; no-source/no-toolchain runtime assertion; user-
+data preservation; secret/log scan; cleanup/process audit; and honest support
+matrix. H7 is not complete merely because YAML was committed.
+
+**Open decisions**
+
+- **Feasible platform set — Blocking.** Adopt H6a's per-platform decision.
+  Windows/macOS may be postponed if the native build, runtime, packaging, or
+  licensing gate cannot pass; Ubuntu priority is not permission to lower their
+  evidence threshold.
+
+## H8. Installed integration harness and Ubuntu baseline
+
+**Goal.** Prove installed instances preserve profile isolation and native
+integration, and create one reusable matrix for H12's Windows/macOS execution.
+
+**Scope.** Exercise multiple profiles/servers, loopback port conflicts, URL
+handler registration, shared-carrier paths, firewall behavior, file/directory
+pickers, GUI/service modes, restart, package upgrade/removal, concurrent
+isolation, and H5 lifecycle behavior. Execute all applicable rows on Ubuntu and
+encode platform-specific Windows/macOS rows for native execution in H12.
 
 **Boundaries.** No general remote API exposure, automatic firewall widening,
-silent handler takeover, or fabricated result for an unavailable OS. Native
-pickers return capabilities/selected paths only to approved local operations.
+silent handler takeover, fabricated result for an unavailable OS, or support
+claim from a skipped row. Native pickers return capabilities/selected paths
+only to approved local operations.
 
-**Dependencies.** H4 complete; H1 for shared-core lifecycle parity.
+**Dependencies.** H4-H7 local implementation; H1 for shared-core lifecycle
+parity. H12 provides remote native rows.
 
-**Working state.** Every available platform has a result-bearing matrix;
-unavailable combinations remain explicit with owner/reason. Profile/database/
-replica/path/port isolation and deep-link ambiguity refusal remain intact.
+**Working state.** Ubuntu has a complete result-bearing installed matrix.
+Windows/macOS rows are either executable in H12 or explicitly postponed by
+H6a/H7. Profile/database/replica/path/port isolation and deep-link ambiguity
+refusal remain intact.
 
 **Validation and evidence.** Multi-instance process tests, collision/fault
 fixtures, handler install/remove/readback, shared-drive removal, picker cancel/
-permission tests, firewall observation, desktop GUI smoke, and cleanup audit.
+permission, firewall observation, desktop GUI smoke, lifecycle target parity,
+no-development-toolchain assertion, and cleanup audit.
 
 **Open decisions**
 
-- **Minimum OS matrix required to call H5 complete — Non-blocking default.**
-  Default: real Ubuntu execution plus available Windows/macOS CI or VM execution;
-  any unavailable native interaction is reported unverified and blocks a broad
-  support claim, not the evidence slice itself. Approving H5 approves that
-  honest-coverage default.
+- **Minimum matrix for a support claim — Non-blocking default.** A platform is
+  supported only after a native clean install, launch/use, upgrade, removal,
+  reinstall, data-preservation, and cleanup pass. An unavailable row may close
+  this evidence slice as postponed but blocks the platform support claim.
 
-## H6. Native credential-store selection and integration
+## H9. Native credential-store selection and integration
 
-**Goal.** Replace the warned `0600` development secret file in installed
-profiles with native credential-store providers while retaining an explicit
-development fallback for source/test use.
+**Goal.** Replace the warned `0600` development secret file in supported
+installed profiles with native credential-store providers while retaining an
+explicit development fallback for source/test use.
 
 **Scope.** Investigate then pin providers for supported Linux, Windows, and
 macOS installations; define reference format, create/read/update/delete,
 locked/unavailable/headless behavior, migration, backup exclusion, revocation,
-and profile isolation. Evaluate Android only for H8 feasibility; do not use a
-Flutter-side store as the Go core's hidden owner.
+purge interaction, and profile isolation. Evaluate Android only for H11
+feasibility; do not use a Flutter-side store as the Go core's hidden owner.
 
-**Boundaries.** Never log, export, commit, or place secret bytes in evidence;
-never silently fall back from an installed native store to plaintext; no
-credential-management REST/MCP surface. `zalando/go-keyring` is a desktop
-candidate, not an assumed Android answer.
+**Boundaries.** Never log, export, commit, include in a purge backup, or place
+secret bytes in evidence; never silently fall back from an installed native
+store to plaintext; no credential-management REST/MCP surface.
+`zalando/go-keyring` is a desktop candidate, not an assumed Android answer.
 
-**Dependencies.** H1 provider interface and H3/H4 installed-mode identity.
+**Dependencies.** H1 provider interface and H3-H5 installed identity/lifecycle.
 
 **Working state.** Supported installed profiles resolve opaque credential
 references through the selected native store, fail closed when locked or
 unavailable, and migrate only with explicit confirmation. Source/test mode
 continues to label the owner-only file provider as development-only.
 
-**Validation and evidence.** Exact dependencies/licenses, mocked contract
-suite, native readback/delete/lock/session tests on available OSes, migration
-and refusal fixtures, log/repository scans for secret material, and rollback.
+**Validation and evidence.** Exact dependencies/licenses; mocked contract
+suite; native readback/delete/lock/session tests on available OSes; migration,
+backup/purge, and refusal fixtures; log/repository/artifact scans for secret
+material; and rollback.
 
 **Open decisions**
 
-- **Provider per supported OS — Blocking before implementation.** The item may
-  perform a bounded comparison first, but no provider is adopted until its
-  availability, headless behavior, license, maintenance, packaging, and
-  rollback are recorded. Android may remain unresolved for v0.8 if H8 uses a
-  test-only injected secret provider and makes no mobile-release claim.
+- **Provider per supported OS — Blocking before implementation.** No provider
+  is adopted until its availability, headless behavior, license, maintenance,
+  packaging, backup/purge semantics, and rollback are recorded. Android may
+  remain unresolved if H11 uses a test-only injected provider and makes no
+  mobile-release claim.
 
-## H7. Wails v3 migration spike
+## H10. Wails v3 migration spike
 
 **Goal.** Determine whether Wails v3 can replace v2 later without risking the
-v0.8 desktop product.
+v0.8 desktop product or installer schedule.
 
 **Scope.** In an isolated prototype, compare dependency/license state, desktop
 builds, bindings, menus/dialogs, web assets, deep links, lifecycle, multiple
-profiles, packaging, and rollback. Record upstream beta/experimental status and
-Android/iOS limitations current at execution time.
+profiles, installer packaging, and rollback. Record upstream status and mobile
+limitations current at execution time.
 
 **Boundaries.** Investigation only and separately approved. Do not migrate the
-production shell, remove Wails v2, or claim mobile support.
+production shell, remove Wails v2, make H6/H7 depend on v3, or claim mobile
+support.
 
-**Dependencies.** H4/H5 contracts provide the desktop baseline; the spike may
-be scheduled later if current upstream maturity makes it low value.
+**Dependencies.** H6-H8 provide the Wails v2 installed baseline; the spike may
+be deferred if current upstream maturity makes it low value.
 
 **Working state.** A disposable, reproducible prototype and decision report
-recommend migrate, defer, or reject. Production remains Wails v2.
+recommend migrate later, defer, or reject. Production remains Wails v2.
 
-**Validation and evidence.** Exact upstream/dependency provenance, build and
-desktop regression matrix, package/RSS/startup comparison, native-integration
-gaps, rollback rehearsal, and no-production-diff check.
+**Validation and evidence.** Exact upstream/dependency provenance; build and
+desktop regression matrix; package/RSS/startup comparison; native-integration
+gaps; rollback rehearsal; and no-production-diff check.
 
 **Open decisions**
 
-- **When is the spike worth running? — Non-blocking default.** Default: run
-  only after H5 establishes the v2 installed baseline and only on explicit user
-  approval. If upstream remains beta or required desktop features regress,
-  recommend deferral without a migration item.
+- **When is the spike worth running? — Non-blocking default.** Run only after
+  H8 establishes the v2 installed baseline and only on explicit user approval.
+  If upstream maturity or required desktop features do not pass, recommend
+  deferral without a migration item.
 
-## H8. Android-emulator shared-core acceptance
+## H11. Android-emulator shared-core acceptance
 
 **Goal.** Prove the H1 library is a viable backend on one Android emulator
 without presenting an Android or Flutter product.
@@ -358,69 +591,134 @@ bounded resource stream, cancellation/polling, sync capability negotiation,
 WAL/integrity, crash/restart, and desktop/emulator checkpoint interchange.
 
 **Boundaries.** No physical device, iOS, UI, app-store artifact, background/
-battery claim, production secure-store claim, or Flutter client. No second
-SQLite engine may open the canonical file.
+battery claim, production secure-store claim, Flutter client, or desktop
+installer support inference. No second SQLite engine may open the canonical
+file.
 
-**Dependencies.** H0 decisions and H1 complete; H3 path contract applied to an
-emulator sandbox. H6 Android provider may remain a documented gap if secrets
-are injected only by the test host.
+**Dependencies.** H0 decisions and H1 complete; H3/H4 path contract applied to
+an emulator sandbox. H9 Android provider may remain a documented gap if
+secrets are injected only by the test host.
 
 **Working state.** The exact emulator/API/ABI loads the shared library and all
-bounded lifecycle/storage/search/stream/cancel/sync probes pass or produce typed
-failures. Unsupported ABIs/platforms remain explicit.
+bounded lifecycle/storage/search/stream/cancel/sync probes pass or produce
+typed failures. Unsupported ABIs/platforms remain explicit.
 
-**Validation and evidence.** Clean/cold/reboot runs, ABI/symbol and package
-inventory, SQLite version/options, FTS5/JSON/WAL/integrity, crash injection,
-desktop round-trip, timing/RSS/package-size measurements, adb cleanup, and
+**Validation and evidence.** Clean/cold/reboot runs; ABI/symbol and package
+inventory; SQLite version/options; FTS5/JSON/WAL/integrity; crash injection;
+desktop round-trip; timing/RSS/package-size measurements; adb cleanup; and
 leftover-process audit.
 
 **Open decisions**
 
-- **Runtime ABI beyond the H0 default — Non-blocking default.** Default: require
-  the existing API-35 x86_64 runtime and an Android/arm64 build-only artifact.
+- **Runtime ABI beyond the H0 default — Non-blocking default.** Require the
+  existing API-35 x86_64 runtime and an Android/arm64 build-only artifact.
   A physical/arm64 runtime remains post-1.0 unless separately authorized; this
-  limits the support claim rather than weakening the x86_64 acceptance gate.
+  limits the support claim rather than weakening x86_64 acceptance.
 
-## H9. v0.8 installation and portability release wrap-up
+## H12. Delayed GitHub native validation and develop-to-main pull request
 
-**Goal.** Reconcile every approved v0.8 promise and produce internal installable
-prerelease artifacts plus a verified source snapshot.
+**Goal.** At the latest practical point, obtain native Windows/macOS evidence
+and place the complete v0.8 change set under review without bypassing the
+`develop` workflow.
 
-**Scope.** Run full repository, ABI, installed-path/migration, package,
-multi-profile/native-integration, credential-store, Mermaid (if approved), and
-Android-emulator gates. Reconcile product/version/schema/docs/API/dependency
-licenses, security posture, upgrade/rollback/uninstall, supported-platform
-claims, and archive the milestone.
+**Scope.** Immediately before the first external write, fetch and re-audit
+remote `main`/`develop`; merge current `main` into local `develop` only if it
+is no longer an ancestor, resolve and rerun all local gates, and run the
+mandatory evidence pre-push verifier. Push `develop`, create a `develop` to
+`main` pull request with `gh`, and read back the exact head/base hashes,
+workflow permissions, checks, and artifacts. Execute H7/H8 native hosted-runner
+jobs, retrieve bounded artifacts/evidence, and make only the minimum follow-up
+commit/push needed to record reviewed results and correct defects.
 
-**Boundaries.** No public GitHub release, push, tag, signing/notarization,
-app-store upload, physical mobile artifact, evidence reserve/ISO write, or burn
-without separate authorization. Fix only defects in approved v0.8 contracts;
-new features return to planning.
+The planning-time read-only audit on 2026-08-31 found remote
+`main=265ef4ef84ea90f0e325522a3a4308a5804f122c`, remote
+`develop=26b0925c21b3ecc264c370936e42d4b973548b8d`, and local
+`develop=fd2192d1e830833fcf74b191bfc01851a61ed8bd`; remote `main` is an
+ancestor of local `develop`, which is 133 commits ahead of remote `develop`.
+This is evidence for why synchronization is needed, not permission to assume
+the state remains unchanged at H12.
 
-**Dependencies.** H0-H8 as applicable; a deferred H2/H7 must have an explicit
-closed disposition rather than an invented result.
+**Boundaries.** This is the first planned GitHub push for v0.8. No force-push,
+direct `main` commit, tag, GitHub Release, installer publication, secret-bearing
+artifact, mutable action pin, or PR merge. Do not expose reserve/private
+evidence. Every external write and artifact remains attributable and read back.
 
-**Working state.** Product/docs/packages agree, every claimed platform has real
-evidence, unsupported combinations are explicit, internal artifacts verify,
-the v0.8 plan is archived, and the next plan is derived from `ROADMAP.md` only
-after user review.
+**Dependencies.** All locally executable H0-H11 work complete or explicitly
+closed/deferred; H7 workflow definitions and H8 Ubuntu baseline pass.
 
-**Validation and evidence.** Full Go/frontend/docs/security/dependency gates;
-ABI/header and emulator matrices; clean install/upgrade/rollback/uninstall;
-artifact inventories and hashes; source ZIP through
-`scripts/package_release.sh`/`check_release_zip.py`; release checklist and
-handoff updates.
+**Working state.** The PR contains the reviewed v0.8 work, all required local
+and GitHub checks are result-bearing, feasible Windows/macOS installer rows are
+closed with native evidence, postponed rows are honest, and no uncommitted
+result exists only on a runner or workstation.
+
+**Validation and evidence.** Fresh ancestry/divergence report; clean tree;
+`scripts/verify_evidence_pre_push.sh` before each push; exact PR/base/head
+readback; least-privilege workflow audit; native job logs/artifact hashes;
+downloaded artifact verification; support-matrix reconciliation; and no
+release/tag check.
 
 **Open decisions**
 
-- **v0.8 product/schema number — Non-blocking until H9.** Default: product
+- **Remote drift at H12 — Non-blocking default.** If `main` advanced, merge it
+  into `develop` without rewriting published history and revalidate before the
+  first push. If the merge changes an approved contract, stop and ask rather
+  than resolving policy implicitly.
+- **PR merge authorization — Blocking for H13's branch synchronization.** H12
+  opens and validates the PR but does not merge it. The owner must separately
+  authorize the merge after reviewing the final checks and support claims.
+
+## H13. v0.8 release wrap-up and branch synchronization
+
+**Goal.** Reconcile every approved v0.8 promise, produce internal installable
+prerelease artifacts and a verified source snapshot, then synchronize
+`main`/`develop` through the reviewed PR.
+
+**Scope.** Run full repository, ABI, installed-path/migration, lifecycle,
+package, native-integration, credential-store, Mermaid (if approved), and
+Android-emulator gates. Reconcile product/version/schema/docs/API/dependency
+licenses, security posture, backup/restore, upgrade/uninstall/purge, and
+supported-platform claims. Archive the milestone and build the source ZIP via
+the repository packager. After the H12 PR is green and merge is explicitly
+authorized, make the final minimal `develop` push, merge through the PR, fetch
+the result, update local `main`, bring the merge result back into `develop`
+without rewriting history, push that synchronization if necessary, and verify
+no content divergence.
+
+**Boundaries.** No public GitHub Release, tag, signing/notarization claim,
+app-store upload, physical mobile artifact, evidence reserve/ISO write, or burn
+without separate authorization. Do not merge a failing/unreviewed PR or commit
+directly to `main`. Fix only approved-contract defects; new features return to
+planning.
+
+**Dependencies.** H0-H12 as applicable; deferred H2/H7/H10 work must have an
+explicit closed disposition. H12's merge authorization is resolved.
+
+**Working state.** Product/docs/packages agree; every claimed platform has
+native evidence; unsupported combinations are explicit; internal artifacts and
+source snapshot verify; the v0.8 plan is archived; the merged `main` tree and
+back-synchronized `develop` tree have no content difference; and the next plan
+is derived from `ROADMAP.md` only after user review.
+
+**Validation and evidence.** Full Go/frontend/docs/security/dependency gates;
+ABI/header and emulator matrices; clean install/upgrade/rollback/uninstall/
+purge with backup restore; native package inventories/hashes; source ZIP via
+`scripts/package_release.sh` and `scripts/check_release_zip.py`; final PR/check/
+merge/branch readback; release checklist; and handoff updates.
+
+**Open decisions**
+
+- **v0.8 product/schema number — Non-blocking until H13.** Default: product
   `0.8.0`; change schema only for a canonical migration actually required by an
-  approved item. The completion report must list every schema step rather than
-  incrementing for packaging alone.
-- **Which internal artifacts are retained and where? — Non-blocking default.**
-  Default: retain only verified, non-secret prerelease artifacts in the local
-  evidence directory; no reserve/ISO/media write. Any external publication or
-  custody action requires separate approval.
+  approved item. List every schema step rather than incrementing for packaging.
+- **Internal artifact custody — Non-blocking default.** Retain only verified,
+  non-secret prerelease artifacts in the local evidence directory and bounded
+  GitHub workflow artifacts required for native review. No GitHub Release,
+  reserve/ISO/media write, or installer publication is implied.
+- **PR merge method and final synchronization — Blocking before merge.** The
+  owner selects the permitted GitHub merge method. After merge, require
+  `main` to be an ancestor of `develop` and a zero content diff; never force
+  branches to identical commit IDs when the chosen merge method legitimately
+  creates a merge commit.
 
 ## Decisions register
 
@@ -430,14 +728,18 @@ This is an index only; each decision is owned and explained inside its item.
 |---|---|---|
 | Shared-core SQLite owner/version/checksum | H0/H1 | Open; H0 investigation, blocking H1 |
 | Application facade package owner | H0/H1 | Open; H0 investigation, blocking H1 |
-| Emulator ABI/minSdk acceptance | H0/H8 | Open with API-35 x86_64 default |
+| Emulator ABI/minSdk acceptance | H0/H11 | Open with API-35 x86_64 default |
 | Mermaid renderer/containment | H2a/H2 | Open; H2a investigation, blocking H2 |
 | Installed/portable path precedence | H3/H4 | Open with explicit-override/native default |
-| Desktop package formats/support claims | H4/H5 | Open; evidence-dependent |
-| Native credential providers | H6 | Open and blocking implementation |
-| Wails v3 spike timing/outcome | H7 | Explicit approval required; production stays v2 |
-| v0.8 product/schema number | H9 | Open with product 0.8.0/no gratuitous schema default |
-| Internal artifact custody | H9 | Local evidence-only default; external actions separately authorized |
+| User-local/GNU install layout | H3/H5 | Open with `$HOME/.local` default |
+| Purge external-path and backup policy | H3/H5 | Open; safe refusal and verified-backup defaults |
+| Desktop package formats/toolchain | H6a/H6/H7 | Open; evidence-dependent |
+| Windows/macOS feasibility and support | H6a/H7/H12 | Open; native execution required |
+| Native credential providers | H9 | Open and blocking implementation |
+| Wails v3 spike timing/outcome | H10 | Explicit approval required; production stays v2 |
+| GitHub PR merge and branch synchronization | H12/H13 | PR planned late; merge separately authorized |
+| v0.8 product/schema number | H13 | Open with product 0.8.0/no gratuitous schema default |
+| Internal artifact custody | H13 | Local/internal-only default; public release separately authorized |
 
 H0 is the next incomplete item and remains unapproved. Do not begin it until the
 user explicitly says to proceed with H0.

@@ -475,97 +475,117 @@ changes which directories, credentials, ports, background work, deep links, and
 file pickers an installed application may use, and those permissions must not
 be smuggled into v0.7 as desktop assumptions.
 
-- **H0 investigation — application facade and C ABI.** Audit the existing
-  `internal/service`/HTTP split, validate `c-shared`/`c-archive`, SQLite/cgo,
-  ownership, cancellation, threads, packaging, and Android-emulator premises,
-  then freeze the minimal versioned contract described in
-  `FLUTTER_GO_CLIENT.md`. This investigation comes before a bridge because the
-  desktop, Android, and iOS packaging costs differ materially. Its Android
-  SQLite sub-investigation starts from the measured fact that the NDK exposes
-  no public `sqlite3.h`/`libsqlite3` development contract and Jetpack's bundled
-  Kotlin driver is not a drop-in for Notrios's Go cgo store. H0 must compare a
-  checksum-pinned upstream amalgamation control with a pinned
-  `modernc.org/sqlite` candidate inside the Go shared core. The latter has
-  Android/arm64 build feasibility plus API-35 x86_64 executable,
-  close/reopen/reboot, FTS5/JSON/WAL/integrity, and `c-shared` load feasibility.
-  It still has no upstream Android support claim, arm64 runtime, real Notrios
-  ABI/store, or performance evidence and is not a Web adapter. Before H1, H0
-  must resolve the blocking owner/package,
-  version/checksum/update/compile-option, minSdk/ABI, symbol/duplicate-engine,
-  concurrency, sandbox/WAL/crash, and cross-platform image-compatibility
-  decisions recorded inside PLAN G18. Evidence must build/load the selected
-  emulator ABI; record version/compile options; execute FTS5 and JSON; run
-  store/snapshot/sync tests; round-trip a checkpointed desktop/Android database;
-  measure performance/build/package size/RSS for both; and prove one engine
-  owns the canonical file. H0 does not adopt Jetpack, Room, an amalgamation,
-  modernc, or an Android dependency merely by investigating them.
-- **H1 shared core — no-GUI Notrios library.** Extract one transport-neutral
-  application facade used by REST and a small `cmd/notrioslib` wrapper. Build a
-  C ABI with opaque instance/stream handles, bounded serialized calls, typed
-  errors, cancellation/polling, capability/version query, and explicit buffer
-  ownership. Keep bulk data on bounded stream/range paths. Validate desktop
-  libraries and one Android-emulator host; document unsupported platforms
-  honestly. The pre-1.0 artifact is a backend/library, not a Flutter app.
-- **H2 current-GUI Mermaid evidence and enablement.** Start from the measured
-  fact that Notrios sets `noMermaid: true`. Pin and bundle the optional renderer
-  locally, preserve CSP/sanitization and zero-CDN behavior, bound malformed and
-  oversized diagrams, and test fixtures in a browser and Wails before changing
-  the feature status. Keep fenced source visible on failure.
-- Select self-contained application-data/config/cache locations per OS and
-  migrate source-checkout defaults without losing data.
-- Package the built web UI and required SQLite/runtime dependencies with the
-  application; define upgrade, uninstall, and profile discovery behavior.
-- Validate multiple profiles/server instances, loopback ports, URL handlers,
-  shared-directory access, firewall prompts, and native file/directory pickers
-  in installed Linux, Windows, and macOS builds.
-- Select and test native credential-store implementations behind v0.7's secret
-  interface. `zalando/go-keyring` currently documents macOS, Linux/BSD, and
-  Windows only and is not the Android answer. Record `flutter_secure_storage`
-  only as a post-1.0 Flutter-side candidate with platform-specific prerequisites.
-- Run a separately approved Wails v3 migration spike. Wails v3 is currently
-  beta for desktop; Android/iOS support is explicitly experimental. Preserve
-  Wails v2 until desktop regression, dependency/license, and rollback gates
-  pass.
-- Before 1.0, mobile work stops at an Android emulator: compile/load the shared
-  library and smoke instance lifecycle, SQLite, CRUD/search, a bounded resource
-  stream, cancellation, and sync capability negotiation. This is architecture
-  evidence, not a supported mobile release or a battery/background claim.
-- Physical Android and all iOS client validation follow after 1.0. Record the
-  scoped-storage/Storage Access Framework, sandbox/database/assets, secure
-  storage, lifecycle/background transfer, notification, memory/disk/battery,
-  pairing, catch-up, incremental-sync, and encrypted-backup gates now.
-- Produce installable prerelease artifacts for internal evidence, not a public
-  GitHub release.
+- **Shared core and bounded GUI enablement.** Complete H0's
+  facade/SQLite/C-ABI investigation, H1's transport-neutral library, and the
+  separately gated H2a/H2 offline Mermaid work. The Android acceptance target
+  remains an emulator/backend result, not a mobile product.
+- **Installed-path and migration contract.** Centralize immutable assets and
+  native config/data/state/cache/runtime paths. Linux follows the XDG base
+  directory contract, including absolute override validation; Windows/macOS use
+  native equivalents. Preserve explicit paths, require explicit portable mode,
+  migrate checkout-relative data only through reviewed backup/rollback, and
+  account for profiles whose data lives outside standard roots.
+- **End-user-location Make lifecycle.** Add `make install`, `make uninstall`,
+  and `make purge` without changing development-only `clean`/`clobber`.
+  Support GNU install variables and `DESTDIR`, isolated XDG overrides, exact
+  ownership manifests, `DRYRUN=1`, headless `FORCE=1`, and deliberately
+  destructive `NO_BACKUP=1`. Uninstall leaves every user-owned file; purge
+  backs up and verifies config/data/state before bounded deletion unless the
+  user explicitly chooses the deep-warning no-backup path.
+- **Ubuntu-priority native installer.** Investigate and pin a minimal
+  Apache-2.0/MIT-compatible packaging toolchain, then create and natively test
+  an internal Ubuntu package containing the GUI, daemon, CLI, immutable web
+  assets, desktop metadata, notices, and exact runtime dependencies. A user
+  must be able to install and run it without source, Go, Node, Wails, compiler,
+  or development headers.
+- **Windows/macOS installer candidates on GitHub.** Use native GitHub-hosted
+  runners only after a bounded tool/format investigation. Compilation is not
+  acceptance: each claimed candidate must install, launch, use native paths,
+  upgrade, remove, reinstall, preserve data, and clean up on its own OS. If a
+  native Wails v2 build/package/runtime gate cannot pass, postpone that platform
+  explicitly rather than publishing or supporting an unexecuted artifact.
+- **Installed integration and credentials.** Exercise multiple profiles,
+  loopback ports, URL handlers, shared directories, firewall behavior, native
+  pickers, upgrade/removal, and lifecycle targets. Select native credential
+  providers per supported desktop OS; installed mode never silently falls back
+  to plaintext and purge backups never contain native-store secret bytes.
+- **Framework/mobile boundaries.** Run Wails v3 only as a separately approved
+  spike after the Wails v2 installer baseline. Before 1.0, mobile work stops at
+  one Android-emulator shared-core acceptance; physical Android and all iOS
+  client validation remain post-1.0.
+- **Delayed GitHub integration.** Keep all local implementation and validation
+  on `develop`; delay the first push until native runners are actually needed.
+  Re-audit `main`, merge it into `develop` only if required, run the evidence
+  pre-push gate, push `develop`, and open a `develop`-to-`main` PR. Merge only
+  after final review/authorization, then bring the merged result back into
+  `develop` and verify no content divergence.
+- **Internal artifacts only.** v0.8 may retain verified unsigned prerelease
+  installers as explicitly internal evidence. It does not create a tag,
+  GitHub Release, public installer, signing/notarization claim, app-store
+  upload, or unsupported-platform claim.
 
 ## v0.9 — Release-candidate hardening
 
-- Cross-platform upgrades and profile/data migration from source builds and
-  earlier prereleases.
-- Installer signing/notarization policy, SBOM and dependency/license/security
-  audit, reproducible artifact metadata, rollback and disaster-recovery drills.
-- Long-running directory/REST/mobile soak tests, compatibility matrix, support
-  bundle/redaction, crash reporting policy, and release documentation.
-- Freeze REST, MCP, archive, sync, configuration, installer, and shared C ABI
-  compatibility candidates for 1.0. Run ABI ownership/leak/double-free,
-  wrong-handle, concurrent-shutdown, cancellation, and stream-limit tests.
+- Promote the v0.8 Ubuntu installer and every feasible Windows/macOS candidate
+  through clean native environment matrices. Rehearse fresh install, source-
+  layout migration, upgrade across prereleases, downgrade refusal/rollback,
+  remove/reinstall, profile discovery, and no-source/no-development-toolchain
+  runtime operation.
+- Harden `install`/`uninstall`/`purge` and package-manager interoperability:
+  backup capacity and corruption faults, restore drills, process/mount/symlink
+  races, external profile roots, modified installed artifacts, unattended
+  execution, and proof that uninstall never deletes user data.
+- Resolve production signing/notarization and timestamping policy per supported
+  platform. Keep certificates, tokens, and passphrases out of pull-request
+  jobs, logs, artifacts, backups, and the repository; document what remains
+  blocked when an owner account or native trust service is unavailable.
+- Generate and verify checksums, SBOM, dependency/license/security reports,
+  provenance/attestations, reproducible metadata, installer inventories, and
+  pinned least-privilege GitHub workflows. Exercise a non-public release
+  candidate/draft flow without making v0.9 an end-user GitHub release.
+- Run long-lived installed directory/REST/emulator soak tests, native
+  integration and cleanup matrices, support-bundle redaction, crash-reporting
+  policy, and disaster-recovery drills. Freeze the exact desktop support matrix;
+  a postponed platform remains absent from release claims.
+- Freeze REST, MCP, archive, sync, configuration, installer, Make lifecycle,
+  and shared C ABI compatibility candidates for 1.0. Run ABI ownership/leak/
+  double-free, wrong-handle, concurrent-shutdown, cancellation, and stream-
+  limit tests.
+- Write release-grade installation, upgrade, rollback, backup/restore,
+  uninstall, purge, troubleshooting, and artifact-verification documentation
+  for a user who has neither the repository nor a development environment.
 
 ## v1.0 — Feature-complete local product
 
 - Stable REST API.
 - Stable MCP tool/resource schemas.
 - Large-scale performance tests with hundreds of thousands of documents/resources.
-- Installable signed artifacts for supported desktop platforms, with an
-  explicitly documented mobile support level.
+- Publish a user-authorized GitHub Release from reviewed `main` so an end user
+  can download, verify, install, launch, upgrade, uninstall/reinstall, and
+  restore Notrios without source code, Go, Node/npm, Wails, a compiler, or
+  development headers.
+- Ship a signed, checksummed, SBOM/provenance-bearing Ubuntu installer as the
+  minimum supported desktop artifact. Ship Windows and/or macOS installers only
+  if their v0.8-v0.9 native build/install/runtime, signing/notarization,
+  upgrade/removal, data-preservation, and cleanup gates pass; otherwise mark
+  them postponed and do not present their build outputs as supported downloads.
+- Keep end-user configuration/data/state in documented native locations;
+  preserve it on ordinary uninstall; provide exact dry-run and verified-backup
+  purge behavior; and publish migration, rollback, disaster-recovery, and
+  artifact-authenticity instructions.
 - Versioned no-GUI Notrios library/header artifacts for the pre-1.0 supported
   platform matrix, with lifecycle, ownership, threading, error, stream, and
   compatibility examples. An Android-emulator result is not labelled physical
   Android support; unsupported iOS artifacts are not implied.
 - Backup/export/restore/sync compatibility and disaster-recovery validation.
 - Security review for remote media and MCP.
-- Usable documentation for Gitea/GitHub public release.
-- Create a user-authorized GitHub release for `github.com/renesugar/notrios`:
-  version tag, checksums, signatures, SBOM/provenance, release notes, upgrade and
-  rollback instructions, installable artifacts, and readback verification.
+- Usable installation and support documentation on the documentation site and
+  in the GitHub Release, with exact supported OS/architecture/runtime rows.
+- Create the user-authorized release for `github.com/renesugar/notrios` only
+  after `develop`/`main` synchronization, required CI, installer readback, and
+  pre-push evidence gates pass. Verify the version tag, release notes,
+  installers, checksums, signatures, SBOM/provenance, upgrade/rollback
+  instructions, and downloaded bytes after publication.
 - Desktop remains on stable Wails v2 until a separately approved Wails v3
   migration spike passes desktop regression; any physical Android claim waits
   for the post-1.0 device gate. Wails v3

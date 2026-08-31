@@ -6,11 +6,16 @@ This file is the codebase atlas. Update it whenever major files or directories a
 
 - `README.md` — project overview and quick start.
 - `PLAN.md` — the **active but unstarted v0.8 installation, configuration,
-  shared-core, and portability plan**, divided into H0-H9 investigation and
+  shared-core, and portability plan**, divided into H0-H13 investigation and
   implementation slices. H0 is next and unapproved. v0.7 G0-G20 are complete
   at product 0.7.0/schema v27 and archived under `plans/v0.7/`, including
   `plans/v0.7/000-v0.7-plan.md`; the G17b verifier still gates every future
   GitHub push. Earlier milestones remain under their version directories.
+- `plans/v0.8/001-installation-delivery-plan-amendment.md` — primary-source
+  checked planning record for XDG/native paths, safe Make lifecycle, Ubuntu-
+  priority installers, GitHub-native Windows/macOS evidence, delayed PR/branch
+  synchronization, and the v0.8-v1.0 end-user delivery sequence. It implements
+  no product behavior.
 - `plans/scaffold/SCAFFOLD_CREATION_PLAN.md` — process for creating/refining this scaffold.
 - `ROADMAP.md` — product roadmap and future features.
 - `AGENTS.md` — coding-agent instructions (`CLAUDE.md` points here).
