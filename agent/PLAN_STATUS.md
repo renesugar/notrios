@@ -25,8 +25,12 @@ Updated: 2026-08-31 (v0.7 G0-G20 complete; v0.8 H0 next and unapproved)
   `plans/v0.7/000-v0.7-plan.md`. `PLAN.md` now contains the unstarted v0.8
   H0-H9 plan; H0 is next and requires explicit approval.
 - Final source-ZIP packaging/copy is the remaining release handoff operation at
-  this durable checkpoint. No push, tag, public release, reserve/ISO write, or
-  physical burn is authorized.
+  implementation commit `c1127f1`. The 2026-08-31T14:50:36Z preflight paused
+  at 19% five-hour/56% weekly remaining against the 20% floor. Resume with
+  `python3 scripts/check_agent_usage.py --agent all --minimum-remaining 20`,
+  then `bash scripts/package_release.sh
+  dist/notrios-v0.7-g20-c1127f1.zip`. No push, tag, public release, reserve/ISO
+  write, or physical burn is authorized.
 
 ## v0.7 G19 completion — 2026-08-30
 

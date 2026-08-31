@@ -27,8 +27,11 @@ and derived structural-hardening portfolio are under
 `performance/v0.7-g20/`.
 
 At this durable checkpoint the implementation, documentation, plan archive,
-and release integration are ready for the final full packager. Resume with
-`bash scripts/package_release.sh dist/notrios-v0.7-g20-<commit>.zip`, verify the
+and release integration are committed as `c1127f1` and ready for the final full
+packager. The 2026-08-31T14:50:36Z preflight paused at 19% five-hour remaining
+(56% weekly) against the 20% floor. After the window recovers, resume with
+`python3 scripts/check_agent_usage.py --agent all --minimum-remaining 20`, then
+`bash scripts/package_release.sh dist/notrios-v0.7-g20-c1127f1.zip`; verify the
 ZIP, copy the exact bytes to `/home/renes/evidence/notrios/`, record its size,
 entries, and SHA-256 here, and append the completed attempt-log entry. No push,
 tag, public release, reserve/ISO write, or physical burn is authorized.
