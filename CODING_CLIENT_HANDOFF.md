@@ -25,8 +25,16 @@ Focused G19, full Go, vet, docs-generation/audit/site, scaffold, web typecheck,
 172 frontend tests, production builds, and dependency-audit gates pass. The
 local MoveNotes audit found no consumer or `notrios2sql.py`, so no external
 repository was modified and no cross-repository test is claimed. G20 is the
-next incomplete item and remains unapproved. No push, evidence-reserve write,
-ISO, or physical burn was authorized or performed.
+next incomplete item and remains unapproved.
+
+The implementation commit is `0ec2803`. The verified release snapshot is
+`dist/notrios-v0.7-g19-0ec2803.zip`: 5,196,767 bytes, 1,709 entries, and
+SHA-256
+`ba5a004a1a7d46860360038caa9fd9223362a6de81620905216f97d8d3c71396`.
+Independent inventory verification found `web/dist/`, the published contract,
+G19 report, and plan archive, with zero `.git`, `node_modules`, runtime data,
+or SQLite entries. No push, evidence-reserve write, ISO, or physical burn was
+authorized or performed.
 
 ## G18g completion handoff — 2026-08-30
 
