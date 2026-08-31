@@ -24,6 +24,12 @@ Updated: 2026-08-31 (v0.8 installation plan amended; H0 next and unapproved)
   `plans/v0.8/001-installation-delivery-plan-amendment.md`. No implementation,
   push, PR, merge, tag, release, installer upload, reserve/ISO write, or burn
   occurred. H0 remains next and requires explicit approval.
+- Planning commit `9c9e511` and packaging checkpoint `6140292` are complete.
+  `dist/notrios-v0.8-installation-plan-6140292.zip` independently verifies at
+  5,283,894 bytes/1,742 entries with SHA-256
+  `e47bd6622e97fcab0e08f94e55fc04680867907f14dd0f3f3f9a2655b1e22818`;
+  it contains the built UI and planning archive and excludes `.git`,
+  `node_modules`, runtime data, and SQLite files.
 
 ## v0.7 G20 completion — 2026-08-31
 

@@ -30,6 +30,15 @@ H12 must re-fetch/recheck and delays the first v0.8 push until native GitHub
 runners are needed. No push, PR, merge, tag, release, installer upload,
 reserve/ISO write, or burn occurred.
 
+The planning commit is `9c9e511`; the clean packaging checkpoint is `6140292`.
+The verified local source snapshot is
+`dist/notrios-v0.8-installation-plan-6140292.zip`: 5,283,894 bytes, 1,742
+entries, SHA-256
+`e47bd6622e97fcab0e08f94e55fc04680867907f14dd0f3f3f9a2655b1e22818`.
+Independent inventory found `PLAN.md`, `ROADMAP.md`, `web/dist/index.html`, and
+the v0.8 planning archive, with no `.git`, `node_modules`, runtime `data`, or
+SQLite database entries.
+
 This was planning only. No lifecycle target, runtime path, migration, installer,
 or workflow was implemented. H0 remains next and unapproved.
 
