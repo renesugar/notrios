@@ -54,6 +54,10 @@ source="$temporary/site"
 mkdir -p "$source"
 cp -a "$ROOT/docs-site/hugo.toml" "$ROOT/docs-site/layouts" \
   "$ROOT/docs-site/static" "$ROOT/docs-site/themes" "$source/"
+# Publish the external archive contract byte-for-byte alongside the rendered
+# guides. These are downloadable schemas/fixtures, not Hugo content pages.
+mkdir -p "$source/static/contracts"
+cp -a "$ROOT/contracts/archive-v2" "$source/static/contracts/archive-v2"
 # The search landing page is reviewed site furniture. Canonical documentation
 # is staged separately from docs/ below and remains byte-for-byte identical.
 mkdir -p "$source/content"

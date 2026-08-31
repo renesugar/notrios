@@ -15,7 +15,7 @@ restore. This replaced G14's loose-object stored-ZIP producer without changing
 archive-v2. G14e passed the production full-scale acceptance and freezes
 `sqlite-image+packed-assets.v1` as the compatible whole-library default.
 Archive-v2 remains the portable subset/merge/fork/interchange/fallback contract;
-G15 scheduler/retry work is next and separately approval-gated.
+G19 publishes that external contract after the sync-era format freeze.
 
 G14a's generated 100k calibration confirmed the physical issue while preserving
 the semantic contract: loose export produced 100,093 files; stored ZIP added
@@ -43,6 +43,45 @@ schema/application compatibility for whole-library replacement/catch-up. An
 incompatible reader must refuse it and direct the user to archive-v2. Subset,
 merge, publication, and schema-independent interchange remain archive-v2
 operations.
+
+## Published consumer contract and compatibility preflight
+
+The machine-readable external contract lives under `contracts/archive-v2/` and
+is copied to `/contracts/archive-v2/` by the documentation-site build. It
+contains strict Draft 2020-12 schemas for manifests, index entries, all twelve
+record payloads, pack trailers, and physical-manifest identification; a
+capability/limit registry; and sanitized deterministic loose, packed, and
+schema-27 sync-era goldens. The three positive goldens are independently
+generated rather than exported and must pass the production verifier.
+
+Run declaration-level admission before opening archive objects:
+
+```sh
+notriosctl compatibility archive-v2 --reader current-v2 ./archive
+notriosctl compatibility archive-v2 --reader previous-loose-v2 ./archive
+```
+
+The command emits JSON and exits 0 only when the selected frozen reader profile
+supports the declared archive format, schema minimum, and every required
+capability. A refusal is also emitted as JSON and exits 1. Unknown required
+capabilities refuse; unknown bounded optional capabilities do not. The
+historical `previous-loose-v2` profile is a frozen capability set at commit
+`5ae93df8e14880a6f83cf20014bddcb4e9079f1a`, not a claim that an old binary was
+executed.
+
+Compatibility acceptance is not integrity verification. It deliberately opens
+no index, pack, blob, record, or SQLite image. A consumer must still run its
+complete archive-v2 verifier (or `notriosctl verify archive-v2`) before import
+or restore. JSON Schema likewise proves structure, not duplicate-key safety,
+global ordering, hash chains, path safety, cross-record references, totals, or
+filesystem completeness.
+
+`notrios-sqlite-image` v1 always produces a portable-consumer refusal with the
+declared `notrios-archive-v2` fallback. It is not an archive-v2 capability and
+must never be opened as archive-v3. G9's NCB1/NEV1/NAR1 protocol-1.0 wire
+formats are separate again; the schema-27 golden proves the sync era did not
+add sync-wire records to archive-v2. Production NAR1 sealing uses fresh entropy,
+so only G9's independent NCB1/NEV1 vectors are published as deterministic.
 
 Export, verification, and restore are local CLI operations. No REST or MCP
 surface accepts an archive path, streams archive bytes, or performs canonical

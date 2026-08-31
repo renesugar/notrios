@@ -3,7 +3,7 @@
 Notrios (formerly "Notes Companion") is a local-first note-taking, search, import, and publishing system for very large Markdown and document collections.
 It combines a Go REST/MCP service (`notriosd`), a built-in GUI, SQLite/FTS5-backed canonical storage, content-addressed resources, optional Recoll-derived search/extraction, and support for third-party native clients (C++/Qt, Go/Wails, Rust/Tauri) over the same API. A versioned no-GUI C ABI is planned before 1.0, followed by an independent post-1.0 Flutter client; mobile delivery does not depend exclusively on Wails.
 
-The v0.1 through v0.6 milestones are complete. v0.7 G0-G18 are complete through
+The v0.1 through v0.6 milestones are complete. v0.7 G0-G19 are complete through
 the authenticated REST sync data plane and resumable encrypted snapshot
 download. The blocking G14a-G14e archive-scalability sequence is complete:
 G14b selected and G14c implemented a
@@ -36,11 +36,13 @@ Pagefind through a repository-owned prototype without switching production.
 G18c provides the deterministic cross-language `docaudit` graph and typed
 claim registry; G18d executes the closed non-GUI example set, and G18e executes
 the finite GUI journey set. G18f now generates 15 source-anchored user/API
-fragments and 412 finite registry rows with a deterministic freshness gate.
+fragments and 413 finite registry rows with a deterministic freshness gate.
 Its local advisory Qwen run is preserved honestly at 7/16 calibration
 decisions and never blocks builds or rewrites prose. G18g now ships the exact
 pinned Hugo/Ledger source, local Pagefind, preserved public links, and raw Help
-equivalence through the production build. G19 is next and unapproved. GitHub
+equivalence through the production build. G19 now publishes the frozen
+archive-v2 consumer contract, schemas, deterministic goldens, and compatibility
+preflight. G20 is next and unapproved. GitHub
 push and physical disc burning remain unauthorized — see [`PLAN.md`](PLAN.md),
 [`ROADMAP.md`](ROADMAP.md), and
 [`plans/v0.7/034-android-emulator-modernc-runtime.md`](plans/v0.7/034-android-emulator-modernc-runtime.md). The repository is
@@ -121,8 +123,9 @@ Recoll availability, backlog, sync/index, and reconciliation state.
   verification, and restore under mandatory replace/adopt/merge/fork intent),
   portable `notrios://` links with an explicit local profile registry and an
   Ubuntu protocol handler, and reviewed publication profiles that emit a
-  sanitized subset handoff. P6, the movenotes-v3 compatibility bridge, is
-  deferred to v0.7.
+  sanitized subset handoff. The deferred P6 external contract is now completed
+  by v0.7 G19 with published schemas, deterministic goldens, and bounded
+  compatibility admission; no MoveNotes consumer currently exists.
 - **v0.5 (0.5.0) — better editing, blocks, and graph UX.** Addressable
   blocks (E1), heading anchors in stable links (E1a), scheme-scoped anchor
   decoding (E1b), workspace lint (E2), workspace fix (E3), bounded graph

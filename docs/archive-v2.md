@@ -10,11 +10,12 @@
 > Archive v2 remains the semantic subset, merge,
 > schema-independent interchange, and fallback format.
 
-Notrios archive v2 is the lossless backup and transfer format. Three commands
+Notrios archive v2 is the lossless backup and transfer format. Four commands
 use it: `notriosctl export archive-v2` writes a snapshot,
+`notriosctl compatibility archive-v2` checks a bounded capability declaration,
 `notriosctl verify archive-v2` reads one back read-only, and
 `notriosctl restore archive-v2` admits one into a database under an explicit
-intent. All three are local filesystem commands with no REST or MCP equivalent.
+intent. All four are local filesystem commands with no REST or MCP equivalent.
 
 ## What v2 preserves
 
@@ -117,6 +118,30 @@ the object tree and uses about 11% less disk. Reach for `--pack` when the
 archive will be *moved* — copied to a remote, synchronized, or shipped — where
 the number of files matters far more than the number of bytes. An interrupted
 packed export restarts rather than resuming.
+
+## Checking consumer compatibility
+
+Use `notriosctl compatibility archive-v2 /backups/notrios-2026-08-05` for
+declaration-only admission with the current reader. Add `--reader
+previous-loose-v2` before the path to reproduce the frozen reader matrix
+without claiming an old binary ran.
+
+The command emits a machine-readable accept/refuse decision. It reads only the
+bounded manifest: it never opens index/object bytes or a physical SQLite image.
+Exit 0 means the selected profile supports the declaration and that full
+verification is still required; refusal exits 1 with a stable reason code.
+Unknown required capabilities refuse, while unknown bounded optional
+capabilities may be ignored.
+
+The published [archive-v2 contract](contracts/archive-v2/contract.json),
+[manifest JSON Schema](contracts/archive-v2/schemas/manifest.schema.json), and
+[sanitized deterministic fixture matrix](contracts/archive-v2/fixtures/fixture-matrix.json) are the
+consumer-facing reference. Loose schema-12, packed schema-12, and packed
+schema-27 sync-era fixtures are complete and independently generated. The
+physical refusal fixture contains a real manifest shape with invented hashes
+but no `notes.sqlite` or pack bytes. A portable consumer must identify
+`notrios-sqlite-image` v1, refuse it, and report its `notrios-archive-v2`
+semantic fallback rather than treating it as archive-v3.
 
 ## Reading an archive back
 

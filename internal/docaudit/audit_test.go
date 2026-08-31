@@ -26,13 +26,13 @@ func TestRepositoryAuditReportsHonestCoverage(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if report.ManualSections != 199 || report.Fragments != 15 || report.Claims != 4 ||
+	if report.ManualSections != 201 || report.Fragments != 15 || report.Claims != 4 ||
 		report.Executables != 131 || report.Journeys != 9 {
 		t.Fatalf("unexpected coverage surface: %+v", report)
 	}
 	if report.Counts[GradeExecuted] != 71 || report.Counts[GradeGenerated] != 11 ||
-		report.Counts[GradeClaimed] != 4 || report.Counts[GradeUnverified] != 268 ||
-		report.Denominator != 354 {
+		report.Counts[GradeClaimed] != 4 || report.Counts[GradeUnverified] != 270 ||
+		report.Denominator != 356 {
 		t.Fatalf("coverage counts hide or lose units: counts=%v denominator=%d", report.Counts, report.Denominator)
 	}
 	if len(resolvedTS) == 0 {

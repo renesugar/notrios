@@ -1,6 +1,28 @@
 # Plan Status
 
-Updated: 2026-08-30 (G0-G18g complete; G19 next and unapproved)
+Updated: 2026-08-30 (G0-G19 complete; G20 next and unapproved)
+
+## v0.7 G19 completion — 2026-08-30
+
+- `contracts/archive-v2/` publishes the archive-v2 capability/version/limit
+  registry, five strict Draft 2020-12 schemas, three complete independently
+  generated loose/packed/schema-27 goldens, narrow refusal probes, and a
+  12-case current/previous reader matrix. All positive goldens fully verify.
+- `notriosctl compatibility archive-v2` performs bounded manifest-only
+  admission against `current-v2` or `previous-loose-v2`, returns structured
+  JSON/finite exits, refuses unknown required capabilities, permits bounded
+  unknown optional capabilities, and never substitutes for full verification.
+- The production-shaped physical fixture has fake descriptors and no payload.
+  Portable readers identify/refuse `notrios-sqlite-image` v1 and report only
+  the exact trusted `notrios-archive-v2` fallback; it is not archive-v3.
+- G9 NCB1/NEV1 vectors are byte-identical and remain separate protocol-1.0
+  evidence. All 27 contract files publish byte-for-byte through the pinned
+  Hugo/Ledger site under `/notrios/contracts/archive-v2/`.
+- Local MoveNotes source/history inspection found no Notrios consumer or
+  `notrios2sql.py`; neither external repository was edited and no external test
+  is claimed. Evidence is `performance/v0.7-g19/`; archive:
+  `plans/v0.7/042-archive-v2-compatibility-bridge.md`. G20 is next and remains
+  unapproved.
 
 ## v0.7 G18g completion — 2026-08-30
 
@@ -82,7 +104,7 @@ profiles/local journal, state-vector convergence,
 revision deltas/merge, lazy resources, secure container/catch-up,
 ephemeral-directory and REST transports, jobs/UI/retention, shared-core/FFI/
 Mermaid/mobile handoff, compatibility, and final validation. The user's
-2026-08-11 review resolved every original G0-G17 policy decision. **G0-G18g are
+2026-08-11 review resolved every original G0-G17 policy decision. **G0-G19 are
 complete** and archived under `plans/v0.7/`; the 2026-08-15 planning amendment
 reopened physical snapshot scalability. G14b selected option B from full-corpus
 evidence, G14c implemented the local production representation/verifier, and
@@ -94,7 +116,7 @@ and retirement. G17a-G17b are complete. G17b sealed the curated historical
 handoffs, issued and independently verified immutable reserve volume
 `NTR-EV-0001`, and committed the finite outer catalog. Its host-side evidence
 gate is mandatory before every future GitHub push. No push or physical burn was
-authorized or performed. G18-G18g are complete. G19 is next and unapproved.
+authorized or performed. G18-G19 are complete. G20 is next and unapproved.
 
 ## v0.7 G18d completion — 2026-08-28
 
@@ -382,7 +404,7 @@ authorized or performed. G18-G18g are complete. G19 is next and unapproved.
   volume coverage before the next GitHub push. CI can validate tracked schemas,
   fixtures, and canonicalization but cannot claim to see the external reserve.
   No push or physical optical burn is authorized by the planning amendment.
-- G17a-G18g are complete. G19 is next but unapproved; all later work remains
+- G17a-G19 are complete. G20 is next but unapproved; all later work remains
   separately approval-gated and every future push must pass the G17b gate.
 
 ## 2026-08-24 planning amendment — source-anchored docs and Hugo/Ledger
@@ -2725,5 +2747,5 @@ attempt detail remains append-only in `agent/ATTEMPT_LOG.jsonl`.
 - Long-term SQLite driver choice (current local cgo/libsqlite3 adapter).
 - Official MCP Go SDK adoption/version.
 - Sync and evidence-preservation decisions live in the owning plan items; the
-  register in `PLAN.md` is an index. G0-G18g are complete. G19 and every later
+  register in `PLAN.md` is an index. G0-G19 are complete. G20 and every later
   slice remain approval-gated; the checked-in G17b verifier gates future pushes.

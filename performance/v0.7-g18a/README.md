@@ -26,7 +26,7 @@ go test ./performance/v0.7-g18a/go_probe
   mixed. Rationale remains ordinary unmarked commentary.
 - Grades form a strongest-evidence ladder: executed, generated, claimed, then
   unverified. The current manual has no fragment/check links, so every one of
-  its 199 non-fenced section units honestly starts unverified. Existing independent tests
+  its 201 non-fenced section units honestly starts unverified. Existing independent tests
   do not silently upgrade prose that never names them.
 - The calibration set includes an actual contradiction (`docs/service.md`
   still describes schema v20 while `CurrentSchemaVersion` is 27), a one-word

@@ -2,6 +2,32 @@
 
 This handoff applies to any coding agent or client continuing this project (Codex, Claude, aider, swival.dev, etc. — formerly `CODEX_HANDOFF.md`). The repository is designed so an agent can continue from repository files alone.
 
+## G19 completion handoff — 2026-08-30
+
+G19 is complete and archived as
+`plans/v0.7/042-archive-v2-compatibility-bridge.md`. The external consumer
+contract under `contracts/archive-v2/` now contains a production-derived
+capability/version/limit registry, five strict Draft 2020-12 schemas, three
+complete independently generated and fully verified loose/packed/schema-27
+goldens, current/previous reader matrix probes, a production-shaped manifest-
+only physical refusal, and byte-identical separately labelled G9 NCB1/NEV1
+vectors. The pinned docs builder publishes all 27 files byte-for-byte at
+`/notrios/contracts/archive-v2/`.
+
+`notriosctl compatibility archive-v2 [--reader
+current-v2|previous-loose-v2] <archive-dir|manifest.json>` performs bounded
+declaration-only admission and emits structured JSON. Acceptance exits 0 and
+still requires `verify archive-v2`; format/capability refusal exits 1; usage
+errors exit 2. It refuses physical SQLite images without opening payloads and
+trusts only the exact `notrios-archive-v2` fallback declaration.
+
+Focused G19, full Go, vet, docs-generation/audit/site, scaffold, web typecheck,
+172 frontend tests, production builds, and dependency-audit gates pass. The
+local MoveNotes audit found no consumer or `notrios2sql.py`, so no external
+repository was modified and no cross-repository test is claimed. G20 is the
+next incomplete item and remains unapproved. No push, evidence-reserve write,
+ISO, or physical burn was authorized or performed.
+
 ## G18g completion handoff — 2026-08-30
 
 G18g implementation and focused acceptance are complete. `docs-site/` contains

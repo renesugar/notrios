@@ -18,6 +18,7 @@ python3 performance/v0.7-g18d/validate_evidence.py
 make g18e-validate
 make g18f-validate
 make g18g-validate
+make g19-validate
 
 rm -f "$OUT"
 zip -qr "$OUT" . \

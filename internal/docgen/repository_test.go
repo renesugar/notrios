@@ -16,7 +16,7 @@ func TestRepositoryEnumerationsMatchFiniteRegistries(t *testing.T) {
 	}{
 		{configAnchor, 59},
 		{defaultAnchor, 49},
-		{cliHelpAnchor, 55},
+		{cliHelpAnchor, 56},
 		{restAnchor, 109},
 		{mcpToolsAnchor, 46},
 		{mcpSyncScopeAnchor, 7},

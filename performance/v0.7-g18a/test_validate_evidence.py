@@ -14,7 +14,7 @@ class G18aEvidenceTests(unittest.TestCase):
     def test_checked_evidence(self):
         inventory = evidence.validate_inventory()
         evidence.validate_calibration()
-        self.assertEqual(inventory["grade_baseline"]["denominator"], 199)
+        self.assertEqual(inventory["grade_baseline"]["denominator"], 201)
 
     def test_duplicate_fragment_is_rejected(self):
         source = """// A.\n//notrios:doc user same\nfunc A() {}\n// B.\n//notrios:doc user same\nfunc B() {}\n"""

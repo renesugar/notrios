@@ -3,7 +3,7 @@ name: docs
 on:
   push:
     branches: [main]
-    paths: ['docs/**', 'docs-site/**', 'internal/docgen/**', 'internal/docaudit/**', 'performance/v0.7-g18g/**', 'scripts/build_docs_site.sh', '.github/workflows/docs.yml']
+    paths: ['docs/**', 'docs-site/**', 'contracts/archive-v2/**', 'internal/docgen/**', 'internal/docaudit/**', 'performance/v0.7-g18g/**', 'scripts/build_docs_site.sh', '.github/workflows/docs.yml']
   workflow_dispatch:
 
 permissions:

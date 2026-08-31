@@ -1,0 +1,15 @@
+{
+  "schema": "notrios.g19.report.v1",
+  "task": "v0.7-g19",
+  "status": "passed",
+  "portable_contract": {"format":"notrios-archive","version":2,"minimum_schema_version":12,"current_schema_version":27},
+  "published_schemas": {"draft":"2020-12","count":5,"compiled":5,"structural_samples_valid":true,"semantic_verification_separate":true},
+  "positive_goldens": {"count":3,"names":["loose-schema12","packed-schema12","sync-era-schema27-packed"],"independent_of_export":true,"verify_directory_passed":3},
+  "reader_matrix": {"profiles":["current-v2","previous-loose-v2"],"historical_profile_commit":"5ae93df8e14880a6f83cf20014bddcb4e9079f1a","cases":12,"unknown_required_refused":true,"unknown_optional_accepted":true},
+  "physical_refusal": {"format":"notrios-sqlite-image","version":1,"decision":"refuse","semantic_fallback_format":"notrios-archive-v2","manifest_only":true,"sqlite_images":0,"pack_payloads":0},
+  "sync_separation": {"protocol":"1.0","magics":["NCB1","NEV1","NAR1"],"published_vectors_byte_equal_g9":true,"nar1_claimed_deterministic":false,"archive_v3_created":false},
+  "compatibility_command": {"declaration_only":true,"accepted_exit":0,"refused_exit":1,"usage_exit":2,"structured_json":true,"opens_objects":false},
+  "site_publication": {"files":27,"byte_exact":true,"base_path":"/notrios/contracts/archive-v2/"},
+  "external_consumer": {"status":"absent","cross_repository_test":"not_applicable","external_writes":0},
+  "private_data": false
+}

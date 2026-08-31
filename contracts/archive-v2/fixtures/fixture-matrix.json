@@ -1,0 +1,19 @@
+{
+  "contract": "notrios-archive-v2",
+  "fixture_policy": "sanitized-deterministic-complete-positive-and-manifest-focused-refusal",
+  "positive_full_archive_requirement": "The three positive golden archives pass VerifyDirectory. Manifest-focused admission/refusal probes do not claim to be complete archives.",
+  "profiles": {
+    "current-v2": {"reader_version": 2, "schema_version": 27, "supports_packed_objects": true},
+    "previous-loose-v2": {"reader_version": 2, "schema_version": 27, "supports_packed_objects": false, "historical_commit": "5ae93df8e14880a6f83cf20014bddcb4e9079f1a"}
+  },
+  "fixtures": [
+    {"name":"loose-schema12","path":"loose-schema12","kind":"complete-golden","current-v2":"accept-and-verify","previous-loose-v2":"accept","requires":"full verification before consumption"},
+    {"name":"packed-schema12","path":"packed-schema12","kind":"complete-golden","current-v2":"accept-and-verify","previous-loose-v2":"refuse:unsupported_required_capability:objects.pack.v1","requires":"full verification before consumption"},
+    {"name":"sync-era-schema27-packed","path":"sync-era-schema27-packed","kind":"complete-golden","current-v2":"accept-and-verify","previous-loose-v2":"refuse:unsupported_required_capability:objects.pack.v1","requires":"archive-v2 remains schema-forward; full verification before consumption"},
+    {"name":"previous-explicit-zero-record-counts","path":"previous-explicit-zero-record-counts/index-entry.json","kind":"index-compatibility-probe","current-v2":"accept","previous-loose-v2":"accept","requires":"index chunk context"},
+    {"name":"unknown-required-capability","path":"unknown-required-capability/manifest.json","kind":"refusal-probe","current-v2":"refuse:unsupported_required_capability","previous-loose-v2":"refuse:unsupported_required_capability","requires":"unknown required capabilities are never ignored"},
+    {"name":"unknown-optional-capability","path":"unknown-optional-capability/manifest.json","kind":"declaration-probe","current-v2":"accept-declaration-only","previous-loose-v2":"accept-declaration-only","requires":"unknown optional capabilities may be ignored; fixture is not a complete archive"},
+    {"name":"physical-refusal","path":"physical-refusal/manifest.json","kind":"cross-format-refusal-probe","current-v2":"refuse:physical_snapshot_requires_semantic_fallback","previous-loose-v2":"refuse:physical_snapshot_requires_semantic_fallback","requires":"never open sqlite image as archive-v2; fake hashes and no payload"}
+  ],
+  "separate_sync_wire_evidence": {"protocol":"1.0","magics":["NCB1","NEV1","NAR1"],"deterministic_vectors":"../sync-wire/goldens.json","inputs":"../sync-wire/golden-inputs.json","source":"performance/v0.7-g9","note":"NCB1/NEV1 vectors are deterministic; production NAR1 sealing uses fresh entropy."}
+}

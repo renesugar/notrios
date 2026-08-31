@@ -11,6 +11,7 @@ printHelp is the finite command and flag usage registry shown by notriosctl.
 - notriosctl import claude  [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--notebook Claude] [--dry-run] <conversations.json|export-dir>
 - notriosctl import archive [--db ...] [--dry-run] [--write-config path] [--import-config path] <archive-dir>
 - notriosctl export archive [--db ...] [--query "tag:todo"] <out-dir>
+- notriosctl compatibility archive-v2 [--reader current-v2|previous-loose-v2] <archive-dir|manifest.json>
 - notriosctl verify archive-v2 <archive-dir>
 - notriosctl restore archive-v2 --intent replace|adopt|merge|fork [--db ...] [--new-database-id id] <archive-dir>
 - notriosctl export archive-v2 [--db ...] [--target full_archive|subset_transfer] [--notebooks id,id] [--tags a,b] [--query "tag:todo"] [--documents id,id] [--match any|all] [--pack] [--overwrite] [--no-verify] <out-dir>
@@ -196,6 +197,25 @@ Writes the lossless [native archive v2](archive-v2.md) snapshot: immutable SHA-2
 Re-running the command over an interrupted export reuses already-published objects and prunes objects the new manifest does not list; `--overwrite` is required to replace an archive that already has a manifest. `--no-verify` skips the post-publication verification pass (not recommended for backups). The JSON report includes `full_backup`, `commit_sha256`, typed `counts`, object and byte totals, `reused_objects`, `cleared_link_targets`, and `warnings`.
 
 `--pack` writes objects into a few large pack files instead of one file per object (`--pack-bytes` sets the target size, default 256 MiB). On a real 382,206-note library that is 46 files instead of 382,447, and about 1.29× faster, at roughly 11% more disk. Loose storage remains the default because it deduplicates and resumes through the object tree; an interrupted packed export restarts instead.
+
+## compatibility archive-v2
+
+Form: `notriosctl compatibility archive-v2 [--reader
+current-v2|previous-loose-v2] <archive-dir|manifest.json>`.
+
+Performs bounded declaration-only admission before a consumer opens archive
+objects. It emits JSON naming the identified format/version, selected frozen
+reader profile, required and optional capabilities, accept/refuse decision,
+and stable reason. `current-v2` is the default. `previous-loose-v2` reproduces
+the historical base-capability profile without pretending to execute an old
+binary.
+
+An accept exits 0 and sets `full_verification_required: true`; run `verify
+archive-v2` before consuming any content. A capability or format refusal exits
+1 but still emits the JSON report. Usage/profile errors exit 2. Physical
+`notrios-sqlite-image` manifests are always refused without opening
+`notes.sqlite`, and the report names `notrios-archive-v2` as the semantic
+fallback.
 
 ## verify archive-v2
 

@@ -27,7 +27,8 @@ def main() -> None:
 
     manual_sections = sum(len(document["sections"]) for document in inventory["documents"])
     assert expected["schema"] == "notrios.docaudit.report.v1"
-    assert expected["manual_sections"] == manual_sections == 199
+    assert expected["manual_sections"] == 199
+    assert manual_sections >= expected["manual_sections"]
     assert expected["claims"] == len(registry["claims"]) == 4
     assert expected["executables"] == len(registry["executables"]) == 131
     assert expected["journeys"] == len(registry["journeys"]) == 9
@@ -43,9 +44,11 @@ def main() -> None:
     assert len(mutations["go_audit_cases"]) == 20
     assert len(mutations["typescript_cases"]) == 8
 
-    # REPORT.json is the frozen G18c baseline. G18d deliberately changes the
-    # executable grades while preserving all 131 identities, so current-state
-    # freshness now belongs to performance/v0.7-g18d/validate_evidence.py.
+    # REPORT.json is the frozen G18c baseline. Later slices may add documented
+    # sections, and G18d deliberately changes executable grades while
+    # preserving all 131 identities. Current-state freshness belongs to the
+    # inventory plus later validators; the baseline must remain a covered
+    # subset rather than being rewritten as if G18c measured future sections.
     print(
         "G18c evidence valid: "
         f"{expected['denominator']} units; "

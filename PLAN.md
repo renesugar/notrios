@@ -1,10 +1,10 @@
 # Plan: v0.7 — Native synchronization
 
-Status: **G0-G18g are complete through 2026-08-30. Product version remains 0.6.0 and
+Status: **G0-G19 are complete through 2026-08-30. Product version remains 0.6.0 and
 the canonical schema is v27. The user resolved G17b's evidence scope, exact
 OpenPGP identity, and RFC-3161 provider order on 2026-08-25, then authorized
 the exact signer/Secret Service workflow, TSA requests, and reserve writes and
-attested offline backup/revocation readiness. G19 is not approved. The
+attested offline backup/revocation readiness. G20 is not approved. The
 G17b pre-push evidence gate is now mandatory; no GitHub push or
 physical optical burn occurred.** The
 former seven-item draft was too coarse: it mixed protocol research, canonical
@@ -2521,7 +2521,7 @@ QA passed. Pagefind's already-recorded hashed-shard variance remains qualified
 as semantic reproducibility. Evidence and boundaries are archived under
 `plans/v0.7/041-hugo-ledger-production-site.md`.
 
-## G19. Archive-v2 compatibility bridge
+## G19. Archive-v2 compatibility bridge — complete
 
 **Goal.** Publish the external archive contract deferred from v0.4 only after
 the sync-era container capabilities are stable.
@@ -2554,6 +2554,33 @@ consumer test or explicit evidence that it remains absent.
 
 - None unless the external importer has selected an incompatible contract; in
   that case add an investigation item rather than bending the format silently.
+
+**Implementation choices (2026-08-30).** The compatibility command is a
+bounded, read-only manifest classifier: it reports the identified format,
+declared version/capabilities, selected frozen reader profile, accept/refuse
+decision, and stable reason before any object is opened. Acceptance means only
+that the declaration is supported; `verify archive-v2` remains the required
+hash, ordering, framing, reference, and filesystem validation. The previous
+reader is represented by a published frozen loose-v2 capability profile rather
+than an invented historical binary. The physical refusal fixture contains only
+sanitized fake manifest metadata and descriptors, never SQLite or pack bytes,
+and must report the declared archive-v2 semantic fallback. The local
+`movenotes-v3` and predecessor repositories have no `notrios2sql.py`, Notrios
+format reference, or locally reachable historical consumer, so this slice will
+record explicit external-consumer absence and will not modify either repository
+or fabricate a cross-repository test.
+
+**Outcome (2026-08-30).** Complete, archived as
+`plans/v0.7/042-archive-v2-compatibility-bridge.md`. The repository and
+Hugo/Ledger site now publish a machine-readable capability/limit registry,
+five strict Draft 2020-12 schemas, three independently generated and fully
+verified loose/packed/schema-27 goldens, refusal probes, and the frozen
+current/previous reader matrix. `notriosctl compatibility archive-v2` performs
+bounded declaration-only JSON admission and safely refuses unknown required
+capabilities and the separate physical format while requiring full verification
+after acceptance. G9 wire vectors remain byte-identical and explicitly
+separate. The audited local MoveNotes repositories still contain no external
+consumer, so no external edit or invented cross-repository test was made.
 
 ## G20. Full convergence, disaster recovery, security, and release wrap-up
 
@@ -2654,9 +2681,9 @@ recommendation, blocking status, and consequence.
 | Hosted semantic-review execution | G18f | Open, non-blocking default: maintainer-only recorded command; hosted source upload needs separate approval |
 | Release version/schema bookkeeping | G20 | Open, non-blocking until wrap-up |
 
-G0-G18g are complete and the production physical restore/catch-up, durable
+G0-G19 are complete and the production physical restore/catch-up, durable
 sync-job, local recovery UI, safe-retention, and evidence-preservation design
 contracts are frozen. The G17b host-side evidence gate is mandatory before any
-future GitHub push. G19 is unapproved and next.
+future GitHub push. G20 is unapproved and next.
 Implementation begins only after an explicit instruction naming
 the item to start and, where stated, authorizing its blocking operations.

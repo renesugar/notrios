@@ -1,0 +1,11 @@
+{
+  "task": "v0.7-g19",
+  "checked_at": "2026-08-31T00:33:22Z",
+  "paths": [
+    {"path":"/home/renes/projects/movenotes-v3","branch":"develop","head":"659aa41594b00e1c9d1152b34b227b00cdc28b34","worktree":"clean","notrios2sql_py":false,"notrios_archive_reference":false},
+    {"path":"/home/renes/projects/movenotes","branch":"develop","worktree":"clean","notrios2sql_py":false,"notrios_archive_reference":false}
+  ],
+  "method": "Local source, branch, and history inspection; no network lookup and no external repository writes.",
+  "result": "No external MoveNotes consumer or notrios2sql.py was found. No cross-version consumer test was added because no importer exists in the checked paths.",
+  "contract_safety": "sqlite-image+packed-assets.v1 is not treated as archive-v2 and must be refused; semantic fallback is notrios-archive-v2."
+}

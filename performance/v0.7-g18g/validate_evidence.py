@@ -103,7 +103,9 @@ def validate_site(site):
         for section in item["sections"]:
             seen += 1
             if section["id"] not in parsed[route].ids: errors.append(f"missing section {route}#{section['id']}")
-    if seen != 199: errors.append(f"G18a section inventory count {seen} != 199")
+    expected_sections=sum(len(item["sections"]) for item in inv["documents"])
+    if seen != expected_sections: errors.append(f"G18a section inventory count {seen} != {expected_sections}")
+    if expected_sections < 199: errors.append(f"G18a section inventory regressed below frozen baseline: {expected_sections}")
     for old,new in ALIASES.items():
         route,frag=old.split("#",1); _,target=new.split("#",1)
         if route not in parsed or frag not in parsed[route].ids or target not in parsed[route].ids: errors.append(f"missing alias {old}")

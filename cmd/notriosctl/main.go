@@ -53,6 +53,8 @@ func main() {
 		runGarbageCollection(os.Args[2:])
 	case "verify":
 		runVerify(os.Args[2:])
+	case "compatibility":
+		runCompatibility(os.Args[2:])
 	case "restore":
 		runRestore(os.Args[2:])
 	case "profile":
@@ -588,6 +590,8 @@ Usage:
   notriosctl import claude  [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--notebook Claude] [--dry-run] <conversations.json|export-dir>
   notriosctl import archive [--db ...] [--dry-run] [--write-config path] [--import-config path] <archive-dir>
   notriosctl export archive [--db ...] [--query "tag:todo"] <out-dir>
+  notriosctl compatibility archive-v2 [--reader current-v2|previous-loose-v2] <archive-dir|manifest.json>
+                                                 # bounded declaration-only admission; full verification remains separate
   notriosctl verify archive-v2 <archive-dir>
   notriosctl restore archive-v2 --intent replace|adopt|merge|fork [--db ...] [--new-database-id id] <archive-dir>
   notriosctl export archive-v2 [--db ...] [--target full_archive|subset_transfer] [--notebooks id,id] [--tags a,b] [--query "tag:todo"] [--documents id,id] [--match any|all] [--pack] [--overwrite] [--no-verify] <out-dir>
@@ -1038,6 +1042,40 @@ func runVerify(args []string) {
 		os.Exit(1)
 	}
 	printJSON(report)
+}
+
+// runCompatibility identifies a manifest and evaluates only its declared
+// version/schema/capabilities. It never opens archive objects or a physical
+// SQLite image; accepted archive-v2 declarations still require runVerify.
+func runCompatibility(args []string) {
+	if len(args) == 0 || args[0] != "archive-v2" {
+		fmt.Fprintln(os.Stderr, "usage: notriosctl compatibility archive-v2 [--reader current-v2|previous-loose-v2] <archive-dir|manifest.json>")
+		os.Exit(2)
+	}
+	fs := flag.NewFlagSet("notriosctl compatibility archive-v2", flag.ExitOnError)
+	reader := fs.String("reader", archivev2.ReaderProfileCurrent, "frozen reader capability profile")
+	if err := fs.Parse(args[1:]); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(2)
+	}
+	if fs.NArg() != 1 {
+		fmt.Fprintln(os.Stderr, "usage: notriosctl compatibility archive-v2 [--reader current-v2|previous-loose-v2] <archive-dir|manifest.json>")
+		os.Exit(2)
+	}
+	profile, err := archivev2.ReaderProfileByName(*reader)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(2)
+	}
+	report, err := archivev2.EvaluateCompatibility(fs.Arg(0), profile, archivev2.DefaultLimits())
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	printJSON(report)
+	if report.Decision != "accept" {
+		os.Exit(1)
+	}
 }
 
 func runSnapshot(args []string) {

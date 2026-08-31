@@ -222,7 +222,11 @@ This file is the codebase atlas. Update it whenever major files or directories a
 - `NATIVE_ARCHIVE_V2.md` — v2 identity, manifest-last object/record contract,
   compatibility/limits, explicit restore intent, verification rules, P3 export
   staging/resume semantics, the P3a index-chunk container, the optional P3b
-  packed layout, and the P4 restore contract.
+  packed layout, the P4 restore contract, and G19's published compatibility
+  preflight/current-previous reader profiles.
+- `contracts/archive-v2/` — G19's machine-readable capability/limit registry,
+  strict Draft 2020-12 schemas, complete independently generated loose/packed/
+  schema-27 goldens, narrow refusal probes, and reader matrix.
 - `DOCS_SITE.md` — production Hugo/Ledger/Pagefind GitHub Pages site and raw
   Help-notebook contract, plus G18a-G18g source-anchor, executed-example,
   journey, generation, advisory-review, and migration evidence.
@@ -262,7 +266,9 @@ This file is the codebase atlas. Update it whenever major files or directories a
   layout (`pack.go`), the manifest-last streaming exporter (`export.go`), the
   verify-first restore reader (`restore.go`), the publication projection
   (`publish.go`), a generator-built synthetic golden fixture, and generated
-  scale profiles.
+  scale profiles, plus bounded declaration-only compatibility classification.
+- `performance/v0.7-g19/` — external MoveNotes-consumer absence audit and G19
+  validation evidence; no external repository was modified.
 - `internal/snapshotimage/`, `internal/store/sqlite_snapshot.go`, and
   `internal/store/sync_snapshot_activate.go` — G14c/G14d's
   exact-schema SQLite Online Backup image, deterministic bounded external

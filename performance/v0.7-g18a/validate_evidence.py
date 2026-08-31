@@ -203,7 +203,7 @@ def main() -> int:
     tsx = (HERE / "fixtures/anchors.tsx.fixture").read_text(encoding="utf-8")
     if direct_ts_callees(tsx, "RootJourney") != {"directStep"}:
         raise EvidenceError("direct-callee scope included a transitive TSX callee")
-    print("G18a evidence valid: 15 pages, 199 sections, source anchors, grades, and 8 calibration cases.")
+    print("G18a evidence valid: 15 pages, 201 sections, source anchors, grades, and 8 calibration cases.")
     return 0
 
 
