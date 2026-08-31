@@ -7,27 +7,27 @@ candidate; repository-owner publishing remains a separate authorization.
 
 Release-candidate gates:
 
-- [ ] Product version reports `0.7.0`; fresh and upgraded databases converge on
+- [x] Product version reports `0.7.0`; fresh and upgraded databases converge on
       schema v27 after migrations v19-v27.
-- [ ] `go vet ./...`, `go test ./...`, focused three-peer convergence,
+- [x] `go vet ./...`, `go test ./...`, focused three-peer convergence,
       directory/REST process, catch-up/reset/retention, lazy-resource,
       conflict/fault, abuse, and upgrade suites.
-- [ ] Required-file, scaffold, OpenAPI/route/MCP parity, documentation-anchor,
+- [x] Required-file, scaffold, OpenAPI/route/MCP parity, documentation-anchor,
       executable-example, GUI-journey, Hugo/Ledger, offline, and Help-seed
       checks.
-- [ ] `npm audit` before and after `npm ci`, frontend typecheck/tests, and
+- [x] `npm audit` before and after `npm ci`, frontend typecheck/tests, and
       production build.
-- [ ] Frozen aggregate-only G8/G14e/G17 evidence revalidated without rereading
+- [x] Frozen aggregate-only G8/G14e/G17 evidence revalidated without rereading
       the private corpus: 382,206 equivalent notes, attachment-bearing lazy
       resources, physical snapshot/catch-up, and retention cost.
-- [ ] Exact dependency inventories pass offline for every Go module and npm
+- [x] Exact dependency inventories pass offline for every Go module and npm
       lockfile package; all licenses remain compatible with repository policy.
-- [ ] The standard security scan has complete coverage, every validated finding
+- [x] The standard security scan has complete coverage, every validated finding
       is dispositioned and remediated, the one static bypass-correction cycle is
       closed, and the derived structural-hardening portfolio validates.
-- [ ] Upgrade/rollback instructions and disaster-recovery boundaries are
+- [x] Upgrade/rollback instructions and disaster-recovery boundaries are
       reconciled with schema v27 and the physical/semantic backup contracts.
-- [ ] `scripts/package_release.sh` and `scripts/check_release_zip.py` produce a
+- [x] `scripts/package_release.sh` and `scripts/check_release_zip.py` produce a
       versioned source ZIP containing `web/dist/`; its byte count, entries, and
       SHA-256 are recorded and the exact ZIP is copied to the evidence directory.
 

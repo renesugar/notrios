@@ -26,15 +26,17 @@ correction cycle. The exact scan hashes, dispositions, residual limitations,
 and derived structural-hardening portfolio are under
 `performance/v0.7-g20/`.
 
-At this durable checkpoint the implementation, documentation, plan archive,
-and release integration are committed as `c1127f1` and ready for the final full
-packager. The 2026-08-31T14:50:36Z preflight paused at 19% five-hour remaining
-(56% weekly) against the 20% floor. After the window recovers, resume with
-`python3 scripts/check_agent_usage.py --agent all --minimum-remaining 20`, then
-`bash scripts/package_release.sh dist/notrios-v0.7-g20-c1127f1.zip`; verify the
-ZIP, copy the exact bytes to `/home/renes/evidence/notrios/`, record its size,
-entries, and SHA-256 here, and append the completed attempt-log entry. No push,
-tag, public release, reserve/ISO write, or physical burn is authorized.
+Implementation commit `c1127f1` and durable packaging checkpoint `4bc2577` are
+complete. The verified release snapshot is
+`dist/notrios-v0.7-g20-4bc2577.zip`: 5,270,098 bytes, 1,740 entries, and SHA-256
+`0710217d9fa98dff34ac7d9f0e697fffd7d956230cd95506211c8a2b0660513d`.
+It was copied byte-for-byte to
+`/home/renes/evidence/notrios/notrios-v0.7-g20-4bc2577.zip`; source and
+destination hashes and sizes match. Independent inventory verification found
+`web/dist/index.html`, the G20 report/security/hardening evidence, both v0.7
+plan archives, and the new unstarted v0.8 `PLAN.md`, with no `.git`,
+`node_modules`, runtime data, or SQLite entries. No push, tag, public release,
+reserve/ISO write, or physical burn was performed or authorized.
 
 ## G19 completion handoff — 2026-08-30
 

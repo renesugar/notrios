@@ -127,6 +127,17 @@ unsafe cross-machine GUI example was corrected to a loopback tunnel; its
 registry digest was updated and both `internal/docaudit` and
 `internal/docexec` then passed.
 
+The final packager ran from clean checkpoint commit `4bc2577` after the
+model-free preflight reported 99% five-hour and 55% weekly remaining. It reran
+the full Go/scaffold chain, clean web/docs npm installs with zero
+vulnerabilities, production web/site builds, and G18c-G20 evidence gates.
+`scripts/check_release_zip.py` and an independent inventory check accepted
+`dist/notrios-v0.7-g20-4bc2577.zip`: 5,270,098 bytes, 1,740 entries, SHA-256
+`0710217d9fa98dff34ac7d9f0e697fffd7d956230cd95506211c8a2b0660513d`.
+The exact bytes were copied to `/home/renes/evidence/notrios/`; source and
+destination hashes match. Required G20/security/plan/UI files are present and
+`.git`, dependency trees, runtime data, and SQLite files are absent.
+
 ## Outcome
 
 **Outcome (2026-08-31).** Complete, archived as
