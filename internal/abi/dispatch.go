@@ -266,11 +266,23 @@ func (s *Session) invoke(ctx context.Context, parsed request) (Status, any, erro
 // decode parses an operation payload. A missing payload is an empty object
 // rather than an error, so an operation with all-optional fields can be called
 // with no payload at all.
+//
+// A parse failure is returned as a facade invalid-input error, not as a bare
+// json error. dispatch classifies every failure through statusForError, and an
+// unclassified error becomes StatusInternal — which would tell a host that sent
+// a malformed payload that the library broke, when the caller made the mistake.
 func decode(raw json.RawMessage, target any) error {
 	if len(raw) == 0 {
 		return nil
 	}
-	return json.Unmarshal(raw, target)
+	if err := json.Unmarshal(raw, target); err != nil {
+		return &application.Error{
+			Kind:    application.KindInvalidInput,
+			Op:      "decode_payload",
+			Message: err.Error(),
+		}
+	}
+	return nil
 }
 
 func noteJSON(note application.Note) map[string]any {

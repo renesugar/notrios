@@ -2,7 +2,6 @@ package abi
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/renesugar/notrios/internal/application"
 	"github.com/renesugar/notrios/internal/store"
@@ -73,9 +72,3 @@ func LookupSession(handle Handle) (*Session, Status) {
 // LiveInstances reports how many sessions are open. Used by tests and by the
 // abi.info operation; a host that leaks instances can see it.
 func LiveInstances() int { return sessions.len() }
-
-// describeOwnerConflict is used in tests and diagnostics to explain a refusal
-// without exposing the lock internals.
-func describeOwnerConflict(path string) string {
-	return fmt.Sprintf("another owner holds %s", path)
-}

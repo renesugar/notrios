@@ -559,3 +559,172 @@ func seedResource(t *testing.T, profile, payload string) string {
 	}
 	return resource.ID
 }
+
+// Every dispatch operation is exercised. An operation nobody calls in a test
+// is an operation whose payload shape is a guess, and a host that guesses
+// wrong across an FFI boundary gets an unhelpful invalid_argument.
+func TestEveryOperationRoundTrips(t *testing.T) {
+	session, _ := openTestSession(t)
+
+	status, created := call(t, session, `{"op":"note.create","payload":{"collection_id":"default","title":"Ops","body":"first","mime_type":"text/markdown"}}`)
+	if status != StatusOK {
+		t.Fatalf("create: %v (%s)", status, created.Message)
+	}
+	var note struct {
+		ID         string `json:"id"`
+		RevisionID string `json:"revision_id"`
+	}
+	if err := json.Unmarshal(created.Result, &note); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+
+	status, updated := call(t, session,
+		`{"op":"note.update","payload":{"id":"`+note.ID+`","revision_id":"`+note.RevisionID+`","title":"Ops","body":"second","mime_type":"text/markdown"}}`)
+	if status != StatusOK {
+		t.Fatalf("update: %v (%s)", status, updated.Message)
+	}
+	if !strings.Contains(string(updated.Result), "second") {
+		t.Errorf("update did not take: %s", updated.Result)
+	}
+	var updatedNote struct {
+		RevisionID string `json:"revision_id"`
+	}
+	if err := json.Unmarshal(updated.Result, &updatedNote); err != nil {
+		t.Fatalf("decode update: %v", err)
+	}
+
+	status, revisions := call(t, session, `{"op":"note.revisions","payload":{"id":"`+note.ID+`"}}`)
+	if status != StatusOK {
+		t.Fatalf("revisions: %v (%s)", status, revisions.Message)
+	}
+	var revisionPage struct {
+		Revisions []struct {
+			ID     string `json:"id"`
+			NoteID string `json:"note_id"`
+		} `json:"revisions"`
+	}
+	if err := json.Unmarshal(revisions.Result, &revisionPage); err != nil {
+		t.Fatalf("decode revisions: %v", err)
+	}
+	if len(revisionPage.Revisions) < 2 {
+		t.Errorf("got %d revisions, want at least 2", len(revisionPage.Revisions))
+	}
+
+	status, searched := call(t, session, `{"op":"search","payload":{"collection_id":"default","query":"second","limit":5}}`)
+	if status != StatusOK {
+		t.Fatalf("search: %v (%s)", status, searched.Message)
+	}
+	if !strings.Contains(string(searched.Result), note.ID) {
+		t.Errorf("search did not find the note: %s", searched.Result)
+	}
+
+	// A stale revision must surface as conflict, not as a generic failure.
+	status, _ = call(t, session,
+		`{"op":"note.update","payload":{"id":"`+note.ID+`","revision_id":"`+note.RevisionID+`","title":"Ops","body":"third","mime_type":"text/markdown"}}`)
+	if status != StatusConflict {
+		t.Errorf("stale revision update: %v, want conflict", status)
+	}
+
+	status, _ = call(t, session,
+		`{"op":"note.delete","payload":{"id":"`+note.ID+`","revision_id":"`+updatedNote.RevisionID+`"}}`)
+	if status != StatusOK {
+		t.Fatalf("delete: %v", status)
+	}
+	// A trashed note is gone from the plain read but recoverable.
+	if status, _ := call(t, session, `{"op":"note.get","payload":{"id":"`+note.ID+`"}}`); status != StatusNotFound {
+		t.Errorf("trashed note still readable: %v", status)
+	}
+	status, recovered := call(t, session, `{"op":"note.get","payload":{"id":"`+note.ID+`","include_trashed":true}}`)
+	if status != StatusOK {
+		t.Fatalf("trashed read: %v", status)
+	}
+	if !strings.Contains(string(recovered.Result), `"trashed":true`) {
+		t.Errorf("recovered note does not report itself trashed: %s", recovered.Result)
+	}
+}
+
+func TestResourceMetadataOperation(t *testing.T) {
+	profile := testProfile(t)
+	resourceID := seedResource(t, profile, "metadata bytes")
+	instance, status := OpenInstance(profile)
+	if status != StatusOK {
+		t.Fatalf("open: %v", status)
+	}
+	defer CloseInstance(instance)
+	session, _ := LookupSession(instance)
+
+	status, decoded := call(t, session, `{"op":"resource.get","payload":{"id":"`+resourceID+`"}}`)
+	if status != StatusOK {
+		t.Fatalf("resource.get: %v (%s)", status, decoded.Message)
+	}
+	var resource struct {
+		SizeBytes int64  `json:"size_bytes"`
+		SHA256    string `json:"sha256"`
+	}
+	if err := json.Unmarshal(decoded.Result, &resource); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if resource.SizeBytes != int64(len("metadata bytes")) || resource.SHA256 == "" {
+		t.Errorf("unexpected metadata: %+v", resource)
+	}
+	// Metadata only: the bytes must not ride along in a JSON result.
+	if strings.Contains(string(decoded.Result), "metadata bytes") {
+		t.Error("resource content leaked into a JSON result; blobs belong in a stream")
+	}
+}
+
+func TestOperationPayloadsAreValidated(t *testing.T) {
+	session, _ := openTestSession(t)
+	for _, body := range []string{
+		`{"op":"note.get","payload":{"id":42}}`,
+		`{"op":"search","payload":{"limit":"many"}}`,
+		`{"op":"note.create","payload":[]}`,
+	} {
+		if status, _ := call(t, session, body); status != StatusInvalidArgument {
+			t.Errorf("%s: %v, want invalid argument", body, status)
+		}
+	}
+	// A missing payload is legal where every field is optional.
+	if status, _ := call(t, session, `{"op":"abi.info"}`); status != StatusOK {
+		t.Error("abi.info requires a payload it should not need")
+	}
+	// An empty operation name is a caller mistake, not an unknown operation.
+	if status, _ := call(t, session, `{"op":""}`); status != StatusInvalidArgument {
+		t.Error("empty operation name was not rejected")
+	}
+}
+
+func TestLiveInstancesTracksOpenSessions(t *testing.T) {
+	before := LiveInstances()
+	handle, status := OpenInstance(testProfile(t))
+	if status != StatusOK {
+		t.Fatalf("open: %v", status)
+	}
+	if LiveInstances() != before+1 {
+		t.Errorf("LiveInstances = %d, want %d", LiveInstances(), before+1)
+	}
+	CloseInstance(handle)
+	if LiveInstances() != before {
+		t.Errorf("LiveInstances after close = %d, want %d", LiveInstances(), before)
+	}
+}
+
+// The retired-handle table is bounded, so a host that churns handles cannot
+// grow it without limit. Beyond the bound a stale handle may report invalid
+// instead, which is the safe direction.
+func TestRetiredHandleMemoryIsBounded(t *testing.T) {
+	table := newTable[int]()
+	for i := 0; i < retiredLimit*2; i++ {
+		handle := table.insert(i)
+		table.remove(handle)
+	}
+	table.mu.Lock()
+	retained := len(table.retired)
+	table.mu.Unlock()
+	if retained > retiredLimit {
+		t.Errorf("retired handles = %d, want at most %d", retained, retiredLimit)
+	}
+	if table.len() != 0 {
+		t.Errorf("live entries = %d, want 0", table.len())
+	}
+}
