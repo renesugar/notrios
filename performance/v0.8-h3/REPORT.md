@@ -97,8 +97,8 @@ for source mode and only for source mode.
 
 Every derived artifact is created owner-only: sync carrier spools, sync
 backups, backup staging, restore review, the catch-up inbox, the profile
-registry, generated profile configs, sync keys, snapshot images — 20 sites at
-`0700`/`0600`.
+registry, generated profile configs, sync keys, snapshot images — 33 sites:
+20 directories at `0700` and 13 files at `0600`.
 
 `config.EnsureDirectories` creates the primary roots at `0755`: the directory
 holding the database, the asset store, the projections, the search index, and

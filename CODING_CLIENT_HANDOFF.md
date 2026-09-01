@@ -29,8 +29,8 @@ two of them**:
   working directory ahead of the executable. The second matters most: it is a
   content-injection path into the application's own window, gated on where the
   user was standing when they launched it.
-- Twenty derived-artifact sites create `0700`/`0600`; `EnsureDirectories`
-  creates the primary roots `0755`. The encrypted backup of a user's notes is
+- Thirty-three derived-artifact sites are owner-only (20 directories `0700`,
+  13 files `0600`); `EnsureDirectories` creates the primary roots `0755`. The encrypted backup of a user's notes is
   owner-only and the notes are world-readable.
 
 **`PATH_CONSUMERS.json` will fail when H4 edits a consumer, and that is

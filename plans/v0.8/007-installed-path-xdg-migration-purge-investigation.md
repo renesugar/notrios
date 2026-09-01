@@ -50,9 +50,10 @@ application window come from wherever the user was standing. Both are right in a
 checkout and wrong once installed; the second is the sharper one, because it is
 a content-injection path into the application's own window.
 
-**The backups are protected and the originals are not.** Twenty sites create
-derived artifacts — carrier spools, sync backups, staging, the catch-up inbox,
-the registry, sync keys, snapshot images — at `0700`/`0600`.
+**The backups are protected and the originals are not.** Thirty-three sites
+create derived artifacts — carrier spools, sync backups, staging, the catch-up
+inbox, the registry, sync keys, snapshot images — 20 directories at `0700` and
+13 files at `0600`.
 `config.EnsureDirectories` creates the primary roots at `0755`. On a shared
 machine the encrypted backup of a user's notes is owner-only and the notes are
 world-readable.
