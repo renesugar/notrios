@@ -2,6 +2,41 @@
 
 This handoff applies to any coding agent or client continuing this project (Codex, Claude, aider, swival.dev, etc. — formerly `CODEX_HANDOFF.md`). The repository is designed so an agent can continue from repository files alone.
 
+## v0.8 package snapshots — 2026-09-01
+
+Every v0.8 slice now has a handoff ZIP in `dist/` and a byte-identical copy in
+`/home/renes/evidence/notrios`:
+
+| Slice | Commit | Bytes | Entries | SHA-256 (first 16) |
+| --- | --- | --- | --- | --- |
+| H2a | `2b9f00b` | 15,317,960 | 1,840 | `66801f665130d811` |
+| H2b | `9043a4d` | 15,327,601 | 1,843 | `9933f0f07a3bd671` |
+| H2 | `27de1d1` | 16,253,582 | 1,949 | `403dd225e6d34d14` |
+| H3 | `37cadac` | 16,311,386 | 1,974 | `d9b3ff0f76b467e2` |
+
+The H2a, H2b and H2 archives were built **retroactively**, on 2026-09-01, after
+the omission was noticed during H3: those three slices completed without the
+packaging step. Each was packaged from its own close-out commit in a disposable
+`git worktree`, so the live checkout was never touched and each archive reflects
+the repository as it stood when that slice finished. Every archive passed
+`scripts/check_release_zip.py`, and every tracked file in each was verified
+byte-identical to its commit's tree — 1,365, 1,368, 1,376 and 1,974 files
+respectively, zero mismatches.
+
+H2a is packaged at `2b9f00b` rather than `c457fb8`, where its archive first
+landed, because `1a19a85` and `2b9f00b` both revised H2a's own archive
+afterwards. `2b9f00b` is the state in which H2a's conclusions were final.
+
+**One deliberate exclusion.** The `node_modules/.vite/vitest/...` cache file was
+tracked from `9043a4d` until `6ab6aa6`, so the H2b and H2 trees contain it and
+their historical packaging would have failed `check_release_zip.py` — correctly.
+It was removed from each worktree before packaging rather than the script being
+patched, which leaves the historical validation running unchanged and produces
+the archive each would have produced had the artifact never been committed. The
+only difference between the historical `package_release.sh` and the current one
+is the added `node_modules/*` exclusion; `check_release_zip.py` is byte-identical
+at all four commits.
+
 ## v0.8 H3 completion handoff — 2026-09-01
 
 H3 is complete and archived as
