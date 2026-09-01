@@ -203,11 +203,6 @@
       "source": "web/dist/"
     },
     {
-      "path": "$(datadir)/notrios/migrations/",
-      "kind": "tree",
-      "source": "migrations/"
-    },
-    {
       "path": "$(datadir)/notrios/docs/",
       "kind": "tree",
       "source": "docs/"
@@ -243,6 +238,20 @@
       "sha256",
       "mode",
       "size"
+    ]
+  },
+  "embedded_not_installed": {
+    "note": "Read from the binary via //go:embed, so they are deliberately absent from installed_artifacts. Installing them would ship files nothing reads and invite a stale copy to diverge from the compiled one.",
+    "entries": [
+      {
+        "what": "SQL migrations",
+        "anchor": "internal/store/sqlite.go //go:embed migrations/*.sql"
+      },
+      {
+        "what": "the Recoll Markdown handler script",
+        "anchor": "internal/recoll/recoll.go //go:embed notrios_md_handler.py",
+        "note": "Embedded, then written into the generated Recoll config directory at runtime, which is why it is cache rather than an installed artifact."
+      }
     ]
   }
 }

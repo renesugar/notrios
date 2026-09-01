@@ -2868,7 +2868,7 @@ added with H3 so the file is not silently a milestone behind.
 
 - Investigation only. No path default changed; `performance/v0.8-h3/validate_evidence.py`
   asserts `internal/config`'s `./data` defaults are untouched.
-- Notrios has no path resolver: 23 consumers each decide something about
+- Notrios has no path resolver: 24 consumers each decide something about
   location. `internal/profiles` and `internal/synckeys` disagree about the
   config root — the hand-rolled lookup accepts a relative `XDG_CONFIG_HOME`
   that `os.UserConfigDir` refuses, and with no `HOME` the registry becomes the

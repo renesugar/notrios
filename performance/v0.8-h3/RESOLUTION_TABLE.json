@@ -104,7 +104,7 @@
           "XDG_RUNTIME_DIR": "/run/shared"
         },
         "os_name": "linux",
-        "runtime_dir_is_private": "<function run_cases.<locals>.<lambda> at 0x7c7b425f25c0>"
+        "runtime_dir_is_private": "<function run_cases.<locals>.<lambda> at 0x70887b71a5c0>"
       },
       "mode": "installed",
       "roots": {

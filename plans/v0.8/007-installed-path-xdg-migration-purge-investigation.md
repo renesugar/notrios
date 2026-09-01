@@ -18,7 +18,7 @@ Evidence: `performance/v0.8-h3/`.
 
 ## What the audit actually found
 
-Notrios has no path resolver. It has 23 places that each decide something about
+Notrios has no path resolver. It has 24 places that each decide something about
 location, and every defect worth reporting is a **disagreement between two of
 them** rather than a mistake inside one.
 
@@ -63,6 +63,24 @@ Two smaller ones by source audit: the `:memory:` asset root is a single fixed
 splits on `"/"` rather than using `filepath.Dir`, so a Windows database path
 would put its asset store in the working directory.
 
+## Two things the first pass got wrong
+
+Recorded because an audit's completeness is a claim like any other.
+
+**SQL migrations are `//go:embed`ded.** An earlier draft of `LAYOUT.json` listed
+`$(datadir)/notrios/migrations/` as an installed artifact, which would have
+shipped files nothing reads and invited a stale on-disk copy to diverge from the
+compiled one. Removed, and recorded under `embedded_not_installed` so it is not
+re-added. The Recoll Markdown handler is embedded the same way and then written
+*out* at runtime, which is why it is cache rather than an installed artifact.
+
+**One consumer was missed.** `notriosctl seed-help` defaults its documentation
+source to the bare relative path `docs`, so seeding the Help notebook from an
+installed binary reads whatever `docs` directory the user is standing next to.
+It is consumer 24, owned by H4-A1. Found by sweeping for `//go:embed` rather
+than by the original grep for path literals — the two sweeps disagree, and the
+disagreement is what surfaced it.
+
 ## What was built to prove it
 
 Three executable artifacts, each checked against a deliberate regression before
@@ -80,7 +98,7 @@ being trusted:
   real temporary filesystem so symlink and containment rules are decided by the
   kernel rather than by string comparison.
 
-`PATH_CONSUMERS.json` anchors all 23 consumers to exact source substrings that
+`PATH_CONSUMERS.json` anchors all 24 consumers to exact source substrings that
 must occur **exactly once**. When H4 changes a consumer the inventory breaks,
 rather than quietly describing code that no longer exists.
 
@@ -168,7 +186,7 @@ go test ./performance/v0.8-h3/pathprobe/          7 characterization tests
 python3 -m unittest discover -s performance/v0.8-h3 -p 'test_*.py'
                                                   4 tests, 30 purge fixtures,
                                                   14 resolution scenarios
-python3 performance/v0.8-h3/validate_evidence.py  23 consumers, 6 roots,
+python3 performance/v0.8-h3/validate_evidence.py  24 consumers, 6 roots,
                                                   9 owning changes
 ```
 

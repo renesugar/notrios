@@ -308,6 +308,20 @@
       "owner": "H4-A1"
     },
     {
+      "id": "help-docs",
+      "name": "Help notebook seed source",
+      "category": "program_assets",
+      "file": "cmd/notriosctl/main.go",
+      "anchor": "docsDir := \"docs\"",
+      "current": "the first positional argument, else the literal \"docs\" relative to the current working directory",
+      "defects": [
+        "cwd-relative-default"
+      ],
+      "target": "<program_assets>/docs; the working-directory default only in source mode",
+      "migration": "none",
+      "owner": "H4-A1"
+    },
+    {
       "id": "desktop-entry",
       "name": "notrios:// URL handler desktop entry",
       "category": "external",

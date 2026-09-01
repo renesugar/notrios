@@ -14,7 +14,7 @@ come from them:
 | `resolve_model.py` + `test_resolve_model.py` | Runs the proposed rules, generating `RESOLUTION_TABLE.json` |
 | `purge_oracle.py` + `test_purge_oracle.py` | Runs the proposed deletion rules against a real temporary filesystem |
 
-`PATH_CONSUMERS.json` anchors all 23 consumers to exact source substrings, and
+`PATH_CONSUMERS.json` anchors all 24 consumers to exact source substrings, and
 `validate_evidence.py` re-checks every anchor. When H4 changes a consumer, the
 inventory breaks instead of quietly describing code that no longer exists.
 
@@ -22,7 +22,7 @@ inventory breaks instead of quietly describing code that no longer exists.
 
 ## 1. What the audit found
 
-Notrios has no path resolver. It has twenty-three places that each decide
+Notrios has no path resolver. It has twenty-four places that each decide
 something about location, and the interesting defects are all disagreements
 between them rather than mistakes inside any one.
 
@@ -78,7 +78,8 @@ the listen address, the public base URL, and the remote-media policy including
 `allow_private_networks`.
 
 `WebRootCandidates` similarly puts `web/dist` relative to the working directory
-*ahead of* the executable's own directory. The HTML, CSS and JavaScript loaded
+*ahead of* the executable's own directory, and `notriosctl seed-help` defaults
+its documentation source to the bare relative path `docs`. The HTML, CSS and JavaScript loaded
 into the application window are taken from the current directory in preference
 to the assets shipped with the binary.
 
@@ -125,6 +126,23 @@ working directory. Nothing exercises this today because no Windows build runs;
 it is recorded so H4 does not discover it later.
 
 ---
+
+### 1.6 One consumer and one artifact the first pass got wrong
+
+Recorded because the audit's own completeness is a claim like any other.
+
+A sweep for embedded assets found that **SQL migrations are `//go:embed`ded**,
+so an earlier draft of `LAYOUT.json` listing `$(datadir)/notrios/migrations/` as
+an installed artifact would have shipped files nothing reads — and invited a
+stale on-disk copy to diverge from the compiled one. Removed, and recorded under
+`embedded_not_installed` so it is not re-added. The Recoll Markdown handler is
+embedded the same way and then *written out* into the generated Recoll config
+directory at runtime, which is why it is cache rather than an installed artifact.
+
+The same sweep found a consumer the first pass missed: `notriosctl seed-help`
+defaults its documentation source to the bare relative path `docs`, so seeding
+the Help notebook from an installed binary reads whatever `docs` directory the
+user was standing next to. It is consumer 24, owned by H4-A1.
 
 ## 2. The proposed layout
 
@@ -310,7 +328,7 @@ new root added without a policy must not be silently disposed of.
 
 ## 8. Consumer to owning change
 
-23 consumers, each mapped in `PATH_CONSUMERS.json` to one H4 change or an
+24 consumers, each mapped in `PATH_CONSUMERS.json` to one H4 change or an
 explicit exception.
 
 | Change | Consumers | Work |
@@ -322,7 +340,7 @@ explicit exception.
 | H4-S1 | carrier, backups, catch-up inbox, quarantine, media fetch | Move to `<state>`, create `0700` |
 | H4-K1 | projections, search index, Recoll config | Move to `<cache>`; rebuild, never migrate |
 | H4-R1 | backup staging, restore review | Move to `<runtime>` with a `<state>` fallback |
-| H4-A1 | built web interface | Installed datadir ahead of the working directory |
+| H4-A1 | built web interface, Help seed docs | Installed datadir ahead of the working directory |
 | H4-X1 | desktop entry | Honour `XDG_DATA_HOME` |
 
 **One exception.** The ABI database owner lock stays beside the database it
