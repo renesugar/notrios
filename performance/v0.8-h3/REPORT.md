@@ -424,6 +424,43 @@ somewhere else.
 
 ---
 
+## 9a. Amended by H4 (2026-09-01)
+
+`RESOLUTION_TABLE.json` was regenerated during H4 slice A. Three corrections,
+recorded here rather than applied quietly, because this file is the contract H4
+is bound to reproduce.
+
+**The resolver emitted paths the purge oracle refuses.** `resolve_model.py`
+joined without cleaning, so portable mode produced roots like
+`/media/stick/notrios/bin/../notrios-data/cache` and the macOS bundle produced
+`…/Contents/MacOS/../Resources`. `purge_oracle.decide` rejects exactly that
+shape under its `normal-form` rule. Two artifacts of this same investigation
+disagreed, and had H4 implemented the table literally, a portable installation
+could never have been purged — `make purge` would have refused its own roots.
+That is the defect class H3 was written about, reproduced inside H3's own
+evidence.
+
+Joining now cleans, in the model and in `internal/paths`. `test_resolve_model.py`
+additionally asserts that **every root it resolves is accepted by the purge
+oracle**, for POSIX targets in installed and portable modes, so the two cannot
+drift apart again. Adding that check immediately caught a second instance: the
+macOS branch bypassed the join helper entirely and kept its `..` after the first
+fix. All fourteen constructions now go through one helper, so cleaning is not
+something a branch can forget.
+
+**Notices carry codes.** Comparing Python and Go notice prose fails on quoting
+convention alone — `repr` uses `'`, `%q` uses `"` — while saying nothing about
+behaviour. Each notice is now `{code, message}`, and the cross-implementation
+test compares codes.
+
+**Scenarios record their effective inputs.** The table omitted arguments the
+model had defaulted, so another implementation would have had to guess
+`executable_dir` to reproduce a row. Defaults are now bound and recorded. One
+scenario was also incoherent — a POSIX `executable_dir` on a Windows target —
+and now uses a Windows path.
+
+Fifteen scenarios, up from fourteen; source mode gained coverage.
+
 ## 10. Not verified
 
 - **No Windows or macOS execution.** The Windows and macOS rows of the matrix

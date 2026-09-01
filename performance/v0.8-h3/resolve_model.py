@@ -26,23 +26,54 @@ class ResolutionError(ValueError):
     """Raised when no root can be determined. Failing closed is the point."""
 
 
+XDG_RELATIVE_IGNORED = "xdg_relative_ignored"
+XDG_IGNORED_ON_PLATFORM = "xdg_ignored_on_platform"
+RUNTIME_DIR_UNSET = "runtime_dir_unset"
+RUNTIME_DIR_RELATIVE = "runtime_dir_relative"
+RUNTIME_DIR_NOT_PRIVATE = "runtime_dir_not_private"
+PORTABLE_SELECTED = "portable_selected"
+SOURCE_SELECTED = "source_selected"
+EXPLICIT_OVERRIDE = "explicit_override"
+
+
 @dataclass
 class Resolution:
     roots: dict[str, str] = field(default_factory=dict)
-    notices: list[str] = field(default_factory=list)
+    notices: list[dict] = field(default_factory=list)
     mode: str = "installed"
+
+    def note(self, code: str, message: str) -> None:
+        self.notices.append({"code": code, "message": message})
+
+    def codes(self) -> list[str]:
+        return [n["code"] for n in self.notices]
 
 
 def _join(os_name: str, *parts: str) -> str:
     joiner = ntpath.join if os_name == WINDOWS else posixpath.join
-    return joiner(*[p for p in parts if p])
+    return _clean(os_name, joiner(*[p for p in parts if p]))
+
+
+def _clean(os_name: str, path: str) -> str:
+    """Resolve "." and ".." lexically.
+
+    H4 found that omitting this was a real defect rather than cosmetic: joining
+    without cleaning produced roots like
+    /media/stick/notrios/bin/../notrios-data/cache, and purge_oracle.decide
+    refuses exactly that shape under its normal-form rule. The resolver and the
+    oracle -- two artifacts of the same investigation -- disagreed, so a
+    portable installation could not have been purged. test_resolve_model.py now
+    asserts every resolved root is accepted by the oracle's normal-form rule.
+    """
+    module = ntpath if os_name == WINDOWS else posixpath
+    return module.normpath(path)
 
 
 def _is_abs(os_name: str, path: str) -> bool:
     return ntpath.isabs(path) if os_name == WINDOWS else posixpath.isabs(path)
 
 
-def _xdg(env: dict, os_name: str, variable: str, default: str, notices: list[str]) -> str:
+def _xdg(env: dict, os_name: str, variable: str, default: str, result: "Resolution") -> str:
     """Apply the XDG rules to one variable.
 
     Empty is unset. Relative is invalid: the specification says to ignore it,
@@ -54,9 +85,10 @@ def _xdg(env: dict, os_name: str, variable: str, default: str, notices: list[str
     if not raw:
         return default
     if not _is_abs(os_name, raw):
-        notices.append(
+        result.note(
+            XDG_RELATIVE_IGNORED,
             f"{variable} is {raw!r}, which is relative; the specification requires an "
-            f"absolute path, so it was ignored and {default} used instead"
+            f"absolute path, so it was ignored and {default} used instead",
         )
         return default
     return raw
@@ -80,13 +112,13 @@ def resolve(env: dict, os_name: str = LINUX, *,
         for name in ROOT_NAMES:
             result.roots[name] = _join(os_name, base, name)
         result.roots["program_assets"] = _join(os_name, executable_dir, "..", "share", "notrios")
-        result.notices.append(f"portable mode: selected by the marker file beside {executable_dir}")
+        result.note(PORTABLE_SELECTED, f"portable mode: selected by the notrios-portable.txt marker beside {executable_dir}")
     elif source_checkout:
         result.mode = "source"
         result.roots = {name: _join(os_name, ".", "data", name) for name in ROOT_NAMES}
         result.roots["config"] = _join(os_name, ".", "config")
         result.roots["program_assets"] = _join(os_name, ".", "web", "dist")
-        result.notices.append("source mode: a checkout was detected beside the executable")
+        result.note(SOURCE_SELECTED, "source mode: a checkout was detected beside the executable")
     else:
         if not home:
             raise ResolutionError(
@@ -94,54 +126,56 @@ def resolve(env: dict, os_name: str = LINUX, *,
                 "pass explicit paths rather than falling back to the working directory"
             )
         if os_name == LINUX:
-            result.roots["config"] = _join(os_name, _xdg(env, os_name, "XDG_CONFIG_HOME", _join(os_name, home, ".config"), result.notices), "notrios")
-            result.roots["data"] = _join(os_name, _xdg(env, os_name, "XDG_DATA_HOME", _join(os_name, home, ".local", "share"), result.notices), "notrios")
-            result.roots["state"] = _join(os_name, _xdg(env, os_name, "XDG_STATE_HOME", _join(os_name, home, ".local", "state"), result.notices), "notrios")
-            result.roots["cache"] = _join(os_name, _xdg(env, os_name, "XDG_CACHE_HOME", _join(os_name, home, ".cache"), result.notices), "notrios")
+            result.roots["config"] = _join(os_name, _xdg(env, os_name, "XDG_CONFIG_HOME", _join(os_name, home, ".config"), result), "notrios")
+            result.roots["data"] = _join(os_name, _xdg(env, os_name, "XDG_DATA_HOME", _join(os_name, home, ".local", "share"), result), "notrios")
+            result.roots["state"] = _join(os_name, _xdg(env, os_name, "XDG_STATE_HOME", _join(os_name, home, ".local", "state"), result), "notrios")
+            result.roots["cache"] = _join(os_name, _xdg(env, os_name, "XDG_CACHE_HOME", _join(os_name, home, ".cache"), result), "notrios")
             result.roots["program_assets"] = "/usr/local/share/notrios"
 
             runtime = (env.get("XDG_RUNTIME_DIR") or "").strip()
             fallback = _join(os_name, result.roots["state"], "runtime")
             if not runtime:
                 result.roots["runtime"] = fallback
-                result.notices.append(
+                result.note(
+                    RUNTIME_DIR_UNSET,
                     "XDG_RUNTIME_DIR is not set and the specification names no fallback; "
-                    f"using {fallback} rather than a shared temporary directory"
+                    f"using {fallback} rather than a shared temporary directory",
                 )
             elif not _is_abs(os_name, runtime):
                 result.roots["runtime"] = fallback
-                result.notices.append(f"XDG_RUNTIME_DIR is {runtime!r}, which is relative; using {fallback}")
+                result.note(RUNTIME_DIR_RELATIVE, f"XDG_RUNTIME_DIR is {runtime!r}, which is relative; using {fallback}")
             elif runtime_dir_is_private is not None and not runtime_dir_is_private(runtime):
                 result.roots["runtime"] = fallback
-                result.notices.append(
-                    f"{runtime} is not owner-only, so staged backup material would be readable by others; using {fallback}"
+                result.note(
+                    RUNTIME_DIR_NOT_PRIVATE,
+                    f"{runtime} is not owner-only, so staged backup material would be readable by others; using {fallback}",
                 )
             else:
                 result.roots["runtime"] = _join(os_name, runtime, "notrios")
 
         elif os_name == WINDOWS:
-            roaming = (env.get("APPDATA") or "").strip() or ntpath.join(home, "AppData", "Roaming")
-            local = (env.get("LOCALAPPDATA") or "").strip() or ntpath.join(home, "AppData", "Local")
+            roaming = (env.get("APPDATA") or "").strip() or _join(os_name, home, "AppData", "Roaming")
+            local = (env.get("LOCALAPPDATA") or "").strip() or _join(os_name, home, "AppData", "Local")
             if any((env.get(v) or "").strip() for v in ("XDG_CONFIG_HOME", "XDG_DATA_HOME", "XDG_STATE_HOME", "XDG_CACHE_HOME")):
-                result.notices.append("XDG_* variables are ignored on Windows; the native locations are authoritative")
-            result.roots["config"] = ntpath.join(roaming, "Notrios", "Config")
-            result.roots["data"] = ntpath.join(local, "Notrios", "Data")
-            result.roots["state"] = ntpath.join(local, "Notrios", "State")
-            result.roots["cache"] = ntpath.join(local, "Notrios", "Cache")
-            result.roots["runtime"] = ntpath.join(local, "Notrios", "Runtime")
+                result.note(XDG_IGNORED_ON_PLATFORM, "XDG_* variables are ignored on Windows; the native locations are authoritative")
+            result.roots["config"] = _join(os_name, roaming, "Notrios", "Config")
+            result.roots["data"] = _join(os_name, local, "Notrios", "Data")
+            result.roots["state"] = _join(os_name, local, "Notrios", "State")
+            result.roots["cache"] = _join(os_name, local, "Notrios", "Cache")
+            result.roots["runtime"] = _join(os_name, local, "Notrios", "Runtime")
             result.roots["program_assets"] = executable_dir
 
         elif os_name == MACOS:
-            support = posixpath.join(home, "Library", "Application Support")
+            support = _join(os_name, home, "Library", "Application Support")
             if any((env.get(v) or "").strip() for v in ("XDG_CONFIG_HOME", "XDG_DATA_HOME", "XDG_STATE_HOME", "XDG_CACHE_HOME")):
-                result.notices.append("XDG_* variables are ignored on macOS; the native locations are authoritative")
-            result.roots["config"] = posixpath.join(support, "Notrios", "Config")
-            result.roots["data"] = posixpath.join(support, "Notrios", "Data")
-            result.roots["state"] = posixpath.join(support, "Notrios", "State")
-            result.roots["cache"] = posixpath.join(home, "Library", "Caches", "Notrios")
+                result.note(XDG_IGNORED_ON_PLATFORM, "XDG_* variables are ignored on macOS; the native locations are authoritative")
+            result.roots["config"] = _join(os_name, support, "Notrios", "Config")
+            result.roots["data"] = _join(os_name, support, "Notrios", "Data")
+            result.roots["state"] = _join(os_name, support, "Notrios", "State")
+            result.roots["cache"] = _join(os_name, home, "Library", "Caches", "Notrios")
             tmp = (env.get("TMPDIR") or "").strip()
-            result.roots["runtime"] = posixpath.join(tmp or posixpath.join(home, "Library", "Caches"), "Notrios", "Runtime")
-            result.roots["program_assets"] = posixpath.join(executable_dir, "..", "Resources")
+            result.roots["runtime"] = _join(os_name, tmp or _join(os_name, home, "Library", "Caches"), "Notrios", "Runtime")
+            result.roots["program_assets"] = _join(os_name, executable_dir, "..", "Resources")
 
         else:
             raise ResolutionError(f"unsupported operating system {os_name!r}")
@@ -159,6 +193,6 @@ def resolve(env: dict, os_name: str = LINUX, *,
                 "is never resolved against the working directory"
             )
         result.roots[name] = value
-        result.notices.append(f"{name} was given explicitly as {value}")
+        result.note(EXPLICIT_OVERRIDE, f"{name} was given explicitly as {value}")
 
     return result

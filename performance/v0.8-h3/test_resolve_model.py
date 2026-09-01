@@ -13,17 +13,19 @@ from __future__ import annotations
 import json
 import os
 import sys
+import inspect
 import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+from purge_oracle import Environment, decide
 from resolve_model import LINUX, MACOS, WINDOWS, ResolutionError, resolve
 
 SCENARIOS = []
 FAILURES = []
 
 
-def scenario(name, *, expect_roots=None, expect_notice=None, expect_error=None, **kwargs):
+def scenario(name, *, expect_roots=None, expect_code=None, expect_error=None, **kwargs):
     # A callable's repr carries its memory address, which would make this file
     # differ on every run. Injected callables are recorded as what they are.
     def describe(value):
@@ -31,7 +33,13 @@ def scenario(name, *, expect_roots=None, expect_notice=None, expect_error=None, 
             return "<injected>"
         return value if isinstance(value, (str, bool, dict, type(None))) else str(value)
 
-    entry = {"scenario": name, "inputs": {k: describe(v) for k, v in kwargs.items()}}
+    # Record the *effective* inputs, defaults included. A table that omits an
+    # argument the model defaulted is not reproducible by another
+    # implementation: it would have to guess the default, and a guess that
+    # happens to match is not the same as a contract.
+    bound = inspect.signature(resolve).bind(**kwargs)
+    bound.apply_defaults()
+    entry = {"scenario": name, "inputs": {k: describe(v) for k, v in bound.arguments.items()}}
     try:
         result = resolve(**kwargs)
     except ResolutionError as err:
@@ -46,14 +54,35 @@ def scenario(name, *, expect_roots=None, expect_notice=None, expect_error=None, 
         return
     entry["mode"] = result.mode
     entry["roots"] = result.roots
+    entry["notice_codes"] = result.codes()
     entry["notices"] = result.notices
     if expect_error is not None:
         FAILURES.append(f"{name}: expected a refusal mentioning {expect_error!r}, got {result.roots}")
     for root, expected in (expect_roots or {}).items():
         if result.roots.get(root) != expected:
             FAILURES.append(f"{name}: {root} = {result.roots.get(root)!r}, expected {expected!r}")
-    if expect_notice and not any(expect_notice in n for n in result.notices):
-        FAILURES.append(f"{name}: expected a notice mentioning {expect_notice!r}, got {result.notices}")
+    if expect_code and expect_code not in result.codes():
+        FAILURES.append(f"{name}: expected notice code {expect_code!r}, got {result.codes()}")
+
+    # Every root the resolver produces must be a path the purge oracle will
+    # accept as well-formed. These are two artifacts of one investigation, and
+    # H4 found them disagreeing: the resolver emitted ".." segments that the
+    # oracle refuses under its normal-form rule, so a portable installation
+    # could not have been purged. Checking it here means they cannot drift
+    # apart again.
+    # Scoped to what the oracle actually governs: it is a POSIX tool, and
+    # source-mode roots are working-directory-relative by design because a
+    # checkout is where that is the correct answer. Purge operates on installed
+    # and portable layouts.
+    posix_target = kwargs.get("os_name", LINUX) in (LINUX, MACOS)
+    if posix_target and result.mode in ("installed", "portable"):
+        for root_name, root in result.roots.items():
+            verdict = decide(root, Environment(owned_roots=[root], home="/home/u"))
+            if verdict.rule in ("normal-form", "absolute", "non-empty"):
+                FAILURES.append(
+                    f"{name}: resolved {root_name}={root!r} is malformed by the purge "
+                    f"oracle's own rules ({verdict.rule}): {verdict.reason}"
+                )
     SCENARIOS.append(entry)
 
 
@@ -67,7 +96,7 @@ def run_cases() -> None:
                            "state": "/home/u/.local/state/notrios",
                            "cache": "/home/u/.cache/notrios",
                            "runtime": "/home/u/.local/state/notrios/runtime"},
-             expect_notice="XDG_RUNTIME_DIR is not set")
+             expect_code="runtime_dir_unset")
 
     scenario("linux, all XDG variables absolute",
              env={"HOME": home, "XDG_CONFIG_HOME": "/x/cfg", "XDG_DATA_HOME": "/x/dat",
@@ -81,7 +110,7 @@ def run_cases() -> None:
     scenario("linux, XDG_CONFIG_HOME is relative",
              env={"HOME": home, "XDG_CONFIG_HOME": "relative/config"}, os_name=LINUX,
              expect_roots={"config": "/home/u/.config/notrios"},
-             expect_notice="which is relative")
+             expect_code="xdg_relative_ignored")
 
     scenario("linux, XDG_DATA_HOME is whitespace only",
              env={"HOME": home, "XDG_DATA_HOME": "   "}, os_name=LINUX,
@@ -91,7 +120,7 @@ def run_cases() -> None:
              env={"HOME": home, "XDG_RUNTIME_DIR": "/run/shared"}, os_name=LINUX,
              runtime_dir_is_private=lambda path: False,
              expect_roots={"runtime": "/home/u/.local/state/notrios/runtime"},
-             expect_notice="not owner-only")
+             expect_code="runtime_dir_not_private")
 
     scenario("linux, no HOME at all",
              env={}, os_name=LINUX,
@@ -108,37 +137,45 @@ def run_cases() -> None:
     scenario("windows ignores XDG_CONFIG_HOME",
              env={"USERPROFILE": "C:\\Users\\u", "APPDATA": "C:\\Users\\u\\AppData\\Roaming",
                   "LOCALAPPDATA": "C:\\Users\\u\\AppData\\Local", "XDG_CONFIG_HOME": "C:\\xdg"},
-             os_name=WINDOWS,
+             os_name=WINDOWS, executable_dir="C:\\Program Files\\Notrios",
              expect_roots={"config": "C:\\Users\\u\\AppData\\Roaming\\Notrios\\Config"},
-             expect_notice="ignored on Windows")
+             expect_code="xdg_ignored_on_platform")
 
     scenario("macos, native locations",
              env={"HOME": "/Users/u"}, os_name=MACOS,
              executable_dir="/Applications/Notrios.app/Contents/MacOS",
              expect_roots={"config": "/Users/u/Library/Application Support/Notrios/Config",
-                           "cache": "/Users/u/Library/Caches/Notrios"})
+                           "cache": "/Users/u/Library/Caches/Notrios",
+                           "program_assets": "/Applications/Notrios.app/Contents/Resources"})
 
     scenario("macos ignores XDG_CACHE_HOME",
              env={"HOME": "/Users/u", "XDG_CACHE_HOME": "/Users/u/xdgcache"}, os_name=MACOS,
              expect_roots={"cache": "/Users/u/Library/Caches/Notrios"},
-             expect_notice="ignored on macOS")
+             expect_code="xdg_ignored_on_platform")
 
     scenario("portable mode, selected by the marker file",
              env={"HOME": home}, os_name=LINUX, portable_marker=True,
              executable_dir="/media/stick/notrios/bin",
-             expect_roots={"data": "/media/stick/notrios/bin/../notrios-data/data"},
-             expect_notice="portable mode")
+             expect_roots={"data": "/media/stick/notrios/notrios-data/data",
+                           "program_assets": "/media/stick/notrios/share/notrios"},
+             expect_code="portable_selected")
 
     scenario("portable mode is not selected by a writable working directory",
              env={"HOME": home}, os_name=LINUX, portable_marker=False,
              expect_roots={"data": "/home/u/.local/share/notrios"})
+
+    scenario("source mode, a checkout beside the executable",
+             env={"HOME": home}, os_name=LINUX, source_checkout=True,
+             expect_roots={"config": "config", "data": "data/data",
+                           "program_assets": "web/dist"},
+             expect_code="source_selected")
 
     scenario("explicit paths win over the installed layout",
              env={"HOME": home}, os_name=LINUX,
              explicit={"data": "/srv/notrios/library"},
              expect_roots={"data": "/srv/notrios/library",
                            "config": "/home/u/.config/notrios"},
-             expect_notice="was given explicitly")
+             expect_code="explicit_override")
 
     scenario("an explicit relative path is refused rather than resolved",
              env={"HOME": home}, os_name=LINUX,
@@ -179,7 +216,7 @@ class ResolutionScenarios(unittest.TestCase):
         self.assertEqual(FAILURES, [], "\n".join(FAILURES))
 
     def test_enough_scenarios_ran_to_be_worth_trusting(self) -> None:
-        self.assertGreaterEqual(len(SCENARIOS), 12)
+        self.assertGreaterEqual(len(SCENARIOS), 15)
 
 
 def main() -> int:
