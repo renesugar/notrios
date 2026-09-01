@@ -253,5 +253,9 @@
         "note": "Embedded, then written into the generated Recoll config directory at runtime, which is why it is cache rather than an installed artifact."
       }
     ]
+  },
+  "no_path_consumer": {
+    "logs": "Notrios writes no log file. Every diagnostic goes to stderr through the standard library logger, so the process's supervisor decides where it lands -- journald under a systemd unit, the terminal otherwise. The plan lists logs in scope; the audit's answer is that there is nothing to place, and adding a log root would be inventing a consumer rather than relocating one.",
+    "snapshot_images": "The snapshot output root is fully caller-supplied with no default, and is recorded as an external consumer rather than a root."
   }
 }

@@ -15,7 +15,7 @@ come from them:
 | `purge_oracle.py` + `test_purge_oracle.py` | Runs the proposed deletion rules against a real temporary filesystem |
 | `test_backup_restore.py` | Builds, verifies, deletes through the oracle, and restores, in a sandbox |
 
-`PATH_CONSUMERS.json` anchors all 24 consumers to exact source substrings, and
+`PATH_CONSUMERS.json` anchors all 25 consumers to exact source substrings, and
 `validate_evidence.py` re-checks every anchor. When H4 changes a consumer, the
 inventory breaks instead of quietly describing code that no longer exists.
 
@@ -23,7 +23,7 @@ inventory breaks instead of quietly describing code that no longer exists.
 
 ## 1. What the audit found
 
-Notrios has no path resolver. It has twenty-four places that each decide
+Notrios has no path resolver. It has twenty-five places that each decide
 something about location, and the interesting defects are all disagreements
 between them rather than mistakes inside any one.
 
@@ -135,7 +135,23 @@ it is recorded so H4 does not discover it later.
 
 ---
 
-### 1.6 One consumer and one artifact the first pass got wrong
+### 1.6 Two things in scope that turn out not to exist
+
+The plan lists **logs** among the paths to place. Notrios writes no log file:
+every diagnostic goes to stderr through the standard library logger, so the
+supervisor decides where it lands — journald under a systemd unit, the terminal
+otherwise. The audit's answer is that there is nothing to relocate, and adding a
+log root would be inventing a consumer rather than placing one. Recorded in
+`LAYOUT.json` under `no_path_consumer` so a later reader does not conclude it
+was overlooked.
+
+**Snapshot image output** is fully caller-supplied with no default, and it is
+already careful: it refuses a destination overlapping the asset store, a
+symlink, a non-directory, or an existing complete snapshot, and creates `0700`.
+It is inventoried as an external consumer with an exception rather than given a
+root — the user naming the destination is the point of a portable snapshot.
+
+### 1.7 One consumer and one artifact the first pass got wrong
 
 Recorded because the audit's own completeness is a claim like any other.
 
@@ -355,7 +371,7 @@ new root added without a policy must not be silently disposed of.
 
 ## 8. Consumer to owning change
 
-24 consumers, each mapped in `PATH_CONSUMERS.json` to one H4 change or an
+25 consumers, each mapped in `PATH_CONSUMERS.json` to one H4 change or an
 explicit exception.
 
 | Change | Consumers | Work |
@@ -370,10 +386,11 @@ explicit exception.
 | H4-A1 | built web interface, Help seed docs | Installed datadir ahead of the working directory |
 | H4-X1 | desktop entry | Honour `XDG_DATA_HOME` |
 
-**One exception.** The ABI database owner lock stays beside the database it
+**Two exceptions.** The ABI database owner lock stays beside the database it
 guards. It is not a user-facing path; moving it to a standard root would break
 the thing it exists to do, which is let a second process on the *same database*
-find the same lock.
+find the same lock. And the snapshot image output root is named by the user,
+which is the point of a portable snapshot.
 
 ---
 

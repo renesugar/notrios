@@ -20,7 +20,7 @@ python3 performance/v0.8-h3/validate_evidence.py     # cross-checks all of it
 | File | What it is |
 | --- | --- |
 | `REPORT.md` | The findings, the proposed contract, and what is not verified |
-| `PATH_CONSUMERS.json` | 24 path consumers, each anchored to an exact source substring |
+| `PATH_CONSUMERS.json` | 25 path consumers, each anchored to an exact source substring |
 | `LAYOUT.json` | The proposed per-OS root matrix, precedence, install variables, manifest schema |
 | `RESOLUTION_TABLE.json` | Generated: 14 environments resolved through the proposed rules |
 | `PURGE_ORACLE_FIXTURES.json` | Generated: 30 purge decisions |

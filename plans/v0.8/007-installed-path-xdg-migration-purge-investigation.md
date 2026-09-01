@@ -18,7 +18,7 @@ Evidence: `performance/v0.8-h3/`.
 
 ## What the audit actually found
 
-Notrios has no path resolver. It has 24 places that each decide something about
+Notrios has no path resolver. It has 25 places that each decide something about
 location, and every defect worth reporting is a **disagreement between two of
 them** rather than a mistake inside one.
 
@@ -65,6 +65,21 @@ Two smaller ones by source audit: the `:memory:` asset root is a single fixed
 splits on `"/"` rather than using `filepath.Dir`, so a Windows database path
 would put its asset store in the working directory.
 
+## Two things in scope that turn out not to exist
+
+The plan lists **logs** among the paths to place. Notrios writes no log file:
+everything goes to stderr through the standard library logger, so the
+supervisor decides where it lands. There is nothing to relocate, and adding a
+log root would be inventing a consumer rather than placing one. Recorded in
+`LAYOUT.json` under `no_path_consumer` so a later reader does not conclude it
+was overlooked.
+
+**Snapshot image output** has no default at all — the caller names it, which is
+the point of a portable snapshot — and is already careful, refusing a
+destination overlapping the asset store, a symlink, a non-directory, or an
+existing complete snapshot. Inventoried as an external consumer with an
+exception rather than given a root.
+
 ## Two things the first pass got wrong
 
 Recorded because an audit's completeness is a claim like any other.
@@ -107,7 +122,7 @@ being trusted:
   tried and the manifest caught it, which is exactly the failure that would let
   purge delete data it had not backed up.
 
-`PATH_CONSUMERS.json` anchors all 24 consumers to exact source substrings that
+`PATH_CONSUMERS.json` anchors all 25 consumers to exact source substrings that
 must occur **exactly once**. When H4 changes a consumer the inventory breaks,
 rather than quietly describing code that no longer exists.
 
@@ -199,7 +214,7 @@ python3 -m unittest discover -s performance/v0.8-h3 -p 'test_*.py'
                                                   10 tests: 30 purge fixtures,
                                                   14 resolution scenarios,
                                                   6 backup/restore cases
-python3 performance/v0.8-h3/validate_evidence.py  24 consumers, 6 roots,
+python3 performance/v0.8-h3/validate_evidence.py  25 consumers, 6 roots,
                                                   9 owning changes
 ```
 

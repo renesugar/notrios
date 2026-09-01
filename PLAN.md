@@ -384,7 +384,7 @@ construction, refusing rather than relocating when that destination is unsafe.
 
 **Outcome (2026-09-01).** Complete. Archived as
 `plans/v0.8/007-installed-path-xdg-migration-purge-investigation.md`; evidence
-under `performance/v0.8-h3/`. Twenty-four path consumers inventoried and
+under `performance/v0.8-h3/`. Twenty-five path consumers inventoried and
 anchored to exact source substrings, a six-root per-OS contract proposed in
 `LAYOUT.json`, a 14-scenario resolution table generated from an executable
 resolver model, and a purge oracle with 30 fixtures run against a real

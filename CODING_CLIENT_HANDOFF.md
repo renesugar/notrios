@@ -10,7 +10,7 @@ H3 is complete and archived as
 target was added, nothing was deleted. Evidence is under `performance/v0.8-h3/`
 and runs from `make validate`. H4 is next and remains unapproved.
 
-Notrios has no path resolver — it has 24 places that each decide something
+Notrios has no path resolver — it has 25 places that each decide something
 about location, and every defect worth reporting is a **disagreement between
 two of them**:
 
@@ -37,7 +37,7 @@ two of them**:
   owner-only and the notes are world-readable.
 
 **`PATH_CONSUMERS.json` will fail when H4 edits a consumer, and that is
-deliberate.** Each of the 24 entries is anchored to a source substring that must
+deliberate.** Each of the 25 entries is anchored to a source substring that must
 occur exactly once; `validate_evidence.py` re-checks them, so a changed consumer
 breaks the inventory instead of leaving it describing code that no longer
 exists. Update the entry as part of the change.

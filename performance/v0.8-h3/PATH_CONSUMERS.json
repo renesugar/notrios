@@ -334,6 +334,18 @@
       "target": "$XDG_DATA_HOME/applications/notrios-url-handler.desktop",
       "migration": "regenerate",
       "owner": "H4-X1"
+    },
+    {
+      "id": "snapshot-output",
+      "name": "Physical snapshot image output root",
+      "category": "external",
+      "file": "internal/snapshotimage/create.go",
+      "anchor": "if err := os.MkdirAll(root, 0o700); err != nil {",
+      "current": "fully caller-supplied; no default. Refuses a path overlapping the asset store, a symlink, a non-directory, and an existing complete snapshot; creates 0700",
+      "defects": [],
+      "target": "unchanged: the user names the destination, which is the point of a portable snapshot",
+      "migration": "none",
+      "owner": "exception:user-names-the-destination"
     }
   ]
 }
