@@ -19,6 +19,7 @@
     "highlight.js": "11.11.1",
     "katex": "0.16.47",
     "md-editor-rt": "latest",
+    "mermaid": "11.17.2",
     "react": "latest",
     "react-dom": "latest",
     "typescript": "latest",

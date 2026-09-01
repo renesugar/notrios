@@ -40,7 +40,11 @@ export const disabledEditorExtensions = {
   // identity is content-derived, so a reformat would remint every anchor in the
   // note (`PROJECT_DECISIONS.md` 17).
   noPrettier: true,
-  // Already off before this change.
+  // Diagrams are rendered by `mermaid-render.ts` in a post-pass over the
+  // preview, not by the editor (v0.8 H2). Leaving this on is deliberate: it is
+  // what guarantees the editor never inserts an unsanitised diagram, and it
+  // keeps the source visible until our own renderer has produced something
+  // that passed sanitisation.
   noMermaid: true,
 } as const;
 

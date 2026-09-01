@@ -12,6 +12,7 @@ import { isStableLink, parseStableLink } from '../stable-links';
 import { disabledEditorExtensions, installEditorAssets } from '../editor-assets';
 import { renderNoteQueryBlocks } from '../note-query';
 import { openExternalURL } from '../desktop';
+import { renderMermaidBlocks } from '../mermaid-render';
 
 installEditorAssets();
 
@@ -85,7 +86,15 @@ export function PreviewPane({ body, themeBase, onOpenDocument, onOpenStableLink,
       // into a preview that has since moved to another note.
       useEffect(() => {
         if (!containerRef.current) return;
-        return renderNoteQueryBlocks(containerRef.current);
+        const stopQueries = renderNoteQueryBlocks(containerRef.current);
+        // Diagrams are drawn in the same post-pass, for the same reason: the
+        // note renders first and a diagram replaces its fenced source only on
+        // success, so a failure leaves the reader with what they typed.
+        const stopDiagrams = renderMermaidBlocks(containerRef.current);
+        return () => {
+          stopQueries();
+          stopDiagrams();
+        };
       }, [sanitized]);
       return <div ref={containerRef} id={id} className={className} onClick={onPreviewClick} dangerouslySetInnerHTML={{ __html: sanitized }} />;
     };

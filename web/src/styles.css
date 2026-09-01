@@ -1483,3 +1483,42 @@ button.sync-list-row:hover { border-color: var(--accent); }
   font-size: 0.85rem;
   margin-left: 0.5rem;
 }
+
+/* Mermaid diagrams (v0.8 H2). The source stays reachable under every diagram,
+   and a failed diagram keeps its fenced block with a status line above it. */
+.mermaid-diagram {
+  margin: 1rem 0;
+}
+
+.mermaid-diagram-svg {
+  /* A wide diagram scrolls inside its own figure rather than pushing the note
+     sideways; the sanitiser already sets width="100%" on the svg. */
+  overflow-x: auto;
+}
+
+.mermaid-diagram-svg svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.mermaid-diagram-source {
+  margin-top: 0.35rem;
+}
+
+.mermaid-diagram-source summary {
+  cursor: pointer;
+  font-size: 0.85em;
+  opacity: 0.75;
+}
+
+.mermaid-diagram-source pre {
+  margin-top: 0.35rem;
+}
+
+/* Shown above a block that stayed as source, so the reader is told why rather
+   than left wondering whether the diagram is still loading. */
+.mermaid-diagram-note {
+  margin: 0.5rem 0 0.25rem;
+  font-size: 0.9em;
+  opacity: 0.85;
+}
