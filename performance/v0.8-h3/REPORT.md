@@ -13,6 +13,7 @@ come from them:
 | `pathprobe/` (Go tests) | Characterizes current behavior against the real packages |
 | `resolve_model.py` + `test_resolve_model.py` | Runs the proposed rules, generating `RESOLUTION_TABLE.json` |
 | `purge_oracle.py` + `test_purge_oracle.py` | Runs the proposed deletion rules against a real temporary filesystem |
+| `test_backup_restore.py` | Builds, verifies, deletes through the oracle, and restores, in a sandbox |
 
 `PATH_CONSUMERS.json` anchors all 24 consumers to exact source substrings, and
 `validate_evidence.py` re-checks every anchor. When H4 changes a consumer, the
@@ -256,8 +257,8 @@ lost library.
 
 ## 5. Failure models
 
-Modelled, not executed — H4 and H5 own the tests. Recorded here so they are
-designed rather than discovered.
+Modelled unless marked executed — H4 and H5 own the rest. Recorded here so they
+are designed rather than discovered.
 
 | Failure | Behavior |
 | --- | --- |
@@ -266,7 +267,7 @@ designed rather than discovered.
 | Root is a symlink | Resolve and report; refuse if it leaves the user's own tree |
 | Root crosses a mount boundary | Permitted for a *configured* root; refused as a purge target (§7) |
 | Path missing | Not an error for purge (`ALLOW_ABSENT`); an error for migration source |
-| Backup interrupted | The backup is incomplete, so verification fails, so nothing is deleted |
+| Backup interrupted | The backup is incomplete, so verification fails, so nothing is deleted — **executed**, `test_backup_restore.py` |
 | Concurrent process | The existing `flock` owner lock refuses; lifecycle operations refuse rather than wait |
 | External profile path | Enumerated and backed up, never deleted automatically |
 
@@ -324,6 +325,25 @@ depth looks like when it works.
 
 The mount-boundary rule is **modelled**: the device lookup is injectable because
 a test cannot mount a filesystem.
+
+### The backup restore proof
+
+`test_backup_restore.py` executes the sequence rather than specifying it: build
+the proposed container in a sandbox, verify it, delete the source roots
+**through the purge oracle**, restore offline, and compare every byte and mode
+back. Six cases.
+
+It proves the ordering guarantee that makes purge safe. A truncated archive
+fails verification, and a failed verification is the only thing standing between
+the user and deletion — so the test asserts that nothing was deleted while
+verification failed. Omitting a whole root from the backup was tried, and the
+manifest caught it (`data/data.bin is recorded but not in the archive`); that is
+precisely the failure that would otherwise let purge delete data it had not
+backed up.
+
+It also checks that the backup destination is itself **refused** by the oracle,
+so the container cannot land somewhere purge would later remove, and that cache
+does not reappear on restore — it is disposed of, not preserved.
 
 Backup policy by category, also fixtured: config, data and state are backed up
 and the backup verified before anything is removed; cache and runtime are
@@ -393,7 +413,9 @@ somewhere else.
   and the `parentDir` separator defect are reasoned from Go's documented
   behavior and read from source. `os.UserConfigDir` was executed on Linux only.
 - **The mount-boundary rule is modelled**, not executed against a real mount.
-- **The failure models in §5 are designs**, not tests. H4 and H5 own them.
+- **Most failure models in §5 are designs**, not tests: permission,
+  disk-full, mount, collision and concurrency. H4 and H5 own them. The
+  interrupted-backup row is executed in `test_backup_restore.py`.
 - **No migration was performed.** The state machine is specified and unexecuted;
   there is no migration code to test yet.
 - **The resolver model is Python.** H4 implements it in Go and must reproduce

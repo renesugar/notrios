@@ -99,6 +99,13 @@ being trusted:
 - **`purge_oracle.py`** — the deletion decision procedure, 30 fixtures against a
   real temporary filesystem so symlink and containment rules are decided by the
   kernel rather than by string comparison.
+- **`test_backup_restore.py`** — the restore proof, executed rather than
+  specified: build the container, verify it, delete the source roots *through
+  the oracle*, restore offline, compare every byte and mode back. It asserts the
+  ordering guarantee — a truncated archive fails verification, and nothing is
+  deleted while verification fails. Omitting a whole root from the backup was
+  tried and the manifest caught it, which is exactly the failure that would let
+  purge delete data it had not backed up.
 
 `PATH_CONSUMERS.json` anchors all 24 consumers to exact source substrings that
 must occur **exactly once**. When H4 changes a consumer the inventory breaks,
@@ -173,7 +180,10 @@ destination is unsafe.
   `os.UserConfigDir` was executed on Linux only.
 - **The mount-boundary rule is modelled**, not run against a real mount; the
   device lookup is injected.
-- **The failure models are designs**, not tests. H4 and H5 own them.
+- **Most failure models are designs**, not tests: permission, disk-full,
+  mount, collision and concurrency. H4 and H5 own them. The
+  interrupted-backup case is the exception — it is executed, because it is the
+  failure most likely to happen and the one deletion waits behind.
 - **No migration was performed** — there is no migration code to test yet.
 - **The resolver model is Python.** H4 implements it in Go and must reproduce
   the table; the two agreeing is not yet demonstrated, because one side does not
@@ -186,8 +196,9 @@ go test ./...                                     all packages pass
 make validate                                     scaffold validation passes
 go test ./performance/v0.8-h3/pathprobe/          8 characterization tests
 python3 -m unittest discover -s performance/v0.8-h3 -p 'test_*.py'
-                                                  4 tests, 30 purge fixtures,
-                                                  14 resolution scenarios
+                                                  10 tests: 30 purge fixtures,
+                                                  14 resolution scenarios,
+                                                  6 backup/restore cases
 python3 performance/v0.8-h3/validate_evidence.py  24 consumers, 6 roots,
                                                   9 owning changes
 ```

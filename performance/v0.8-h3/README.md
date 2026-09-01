@@ -11,6 +11,7 @@ Read [`REPORT.md`](REPORT.md) first.
 go test ./performance/v0.8-h3/pathprobe/     # characterizes current behavior
 python3 performance/v0.8-h3/test_resolve_model.py    # regenerates RESOLUTION_TABLE.json
 python3 performance/v0.8-h3/test_purge_oracle.py     # regenerates PURGE_ORACLE_FIXTURES.json
+python3 performance/v0.8-h3/test_backup_restore.py   # backup/restore proof, sandboxed
 python3 performance/v0.8-h3/validate_evidence.py     # cross-checks all of it
 ```
 
@@ -25,6 +26,7 @@ python3 performance/v0.8-h3/validate_evidence.py     # cross-checks all of it
 | `PURGE_ORACLE_FIXTURES.json` | Generated: 30 purge decisions |
 | `resolve_model.py` | Executable model of the proposed resolver |
 | `purge_oracle.py` | Reference decision procedure for "may Notrios delete this?" |
+| `test_backup_restore.py` | Backup, verify, delete through the oracle, restore, compare |
 | `pathprobe/` | Go tests characterizing today's behavior |
 | `validate_evidence.py` | Re-checks anchors and cross-checks the documents |
 

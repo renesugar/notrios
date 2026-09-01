@@ -155,12 +155,19 @@ def validate() -> dict:
     require(resolution["failed"] == 0, f"{resolution['failed']} resolution scenarios failed")
     require(resolution["total"] >= 12, f"only {resolution['total']} resolution scenarios")
 
-    # 5. The investigation boundary: H3 must not have changed a default.
+    # 5. The backup restore proof must exist and be cited. The plan asks for a
+    # restore proof, and a specified container format is not one.
+    proof = os.path.join(HERE, "test_backup_restore.py")
+    require(os.path.exists(proof), "the backup restore proof is missing")
+    require("test_backup_restore.py" in report,
+            "REPORT.md does not reference the backup restore proof")
+
+    # 6. The investigation boundary: H3 must not have changed a default.
     defaults = open(os.path.join(REPO, "internal/config/config.go"), encoding="utf-8").read()
     require('Directory:     "./data",' in defaults,
             "the ./data default has changed; H3 is investigation-only and H4 owns that change")
 
-    # 6. Claims marked observed must correspond to a probe test that exists.
+    # 7. Claims marked observed must correspond to a probe test that exists.
     probe_dir = os.path.join(HERE, "pathprobe")
     probe_source = "".join(
         open(os.path.join(probe_dir, name), encoding="utf-8").read()

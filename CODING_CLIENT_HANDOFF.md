@@ -57,6 +57,11 @@ in `/tmp` would put staged plaintext backups somewhere world-traversable, so the
 fallback is `<state>/runtime` at `0700`, and a runtime directory that exists but
 is not owner-only is refused.
 
+`test_backup_restore.py` executes the backup sequence rather than specifying
+it: build, verify, delete *through the oracle*, restore, compare bytes and
+modes. The ordering guarantee is the point — a truncated archive fails
+verification, and nothing is deleted while verification fails.
+
 The purge oracle decides containment on the **resolved** path so a symlink
 cannot look contained while pointing out. Replacing `realpath` with textual
 normalization was tried; the fixtures caught it, two of them via the separate
