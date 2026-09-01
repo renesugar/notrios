@@ -1,32 +1,56 @@
 {
-  "schema": "notrios.g18f.deterministic.v1",
-  "generated_at": "2026-08-30T00:00:00Z",
   "documents": [
-    {"path":"docs/api/mcp.md","sha256":"eba66c80ea3ad6cde265c16976f6408f638aec7fd993cb7063323f78049c6a1e"},
-    {"path":"docs/api/rest.md","sha256":"49a6c89e814945b9936369852ef69db9e4a606ef4ffdba3b7c860be5a4a15259"},
-    {"path":"docs/cli.md","sha256":"e6c280300221831e203330323e99b71cda187d7797ff77bd6e65a56c7107525e"},
-    {"path":"docs/gui.md","sha256":"0bdf473c3d1b1e49ce9a9ee19e5314b8087c56caa24673dea8310d87ad654d88"},
-    {"path":"docs/service.md","sha256":"2e9845c31f3fa1517e86713ef13f5e60268e728695edeeb320dc1bfcfdab7da2"}
+    {
+      "path": "docs/api/mcp.md",
+      "sha256": "eba66c80ea3ad6cde265c16976f6408f638aec7fd993cb7063323f78049c6a1e"
+    },
+    {
+      "path": "docs/api/rest.md",
+      "sha256": "49a6c89e814945b9936369852ef69db9e4a606ef4ffdba3b7c860be5a4a15259"
+    },
+    {
+      "path": "docs/cli.md",
+      "sha256": "e6c280300221831e203330323e99b71cda187d7797ff77bd6e65a56c7107525e"
+    },
+    {
+      "path": "docs/gui.md",
+      "sha256": "dfa8c99e1a510734d9274214711ed83efee5caa30f6db302a85b074493f235b3"
+    },
+    {
+      "path": "docs/service.md",
+      "sha256": "2e9845c31f3fa1517e86713ef13f5e60268e728695edeeb320dc1bfcfdab7da2"
+    }
   ],
-  "summary": {"fragments":15,"user":13,"api":2,"generated_documents":5,"enumerated_rows":413},
   "enumerations": {
-    "configuration_keys":59,
-    "configuration_defaults":49,
-    "cli_usage_forms":56,
-    "rest_openapi_operations":109,
-    "mcp_tools":46,
-    "mcp_sync_scope_assignments":7,
-    "mcp_scopes":4,
-    "mcp_tool_scope_assignments":46,
-    "gui_journeys":37
-  },
-  "freshness": {
-    "test":"go:github.com/renesugar/notrios/internal/docgen#TestDocsAreCurrent",
-    "mutation_test":"go:github.com/renesugar/notrios/internal/docgen#TestAudienceSeparationAndFreshness"
+    "cli_usage_forms": 56,
+    "configuration_defaults": 49,
+    "configuration_keys": 59,
+    "gui_journeys": 37,
+    "mcp_scopes": 4,
+    "mcp_sync_scope_assignments": 7,
+    "mcp_tool_scope_assignments": 46,
+    "mcp_tools": 46,
+    "rest_openapi_operations": 109
   },
   "fixtures": {
-    "g18d":"63/131 examples executed; 68 finite unverified reasons; validator passed",
-    "g18e":"32/37 journeys executed across 44 viewport results; 5 finite unverified reasons"
+    "g18d": "63/131 examples executed; 68 finite unverified reasons; validator passed",
+    "g18e": "32/37 journeys executed across 44 viewport results; 5 finite unverified reasons"
   },
-  "models": ["gpt-5", "qwen2.5-coder-1.5b-instruct-q4_k_m.gguf"]
+  "freshness": {
+    "mutation_test": "go:github.com/renesugar/notrios/internal/docgen#TestAudienceSeparationAndFreshness",
+    "test": "go:github.com/renesugar/notrios/internal/docgen#TestDocsAreCurrent"
+  },
+  "generated_at": "2026-08-30T00:00:00Z",
+  "models": [
+    "gpt-5",
+    "qwen2.5-coder-1.5b-instruct-q4_k_m.gguf"
+  ],
+  "schema": "notrios.g18f.deterministic.v1",
+  "summary": {
+    "api": 2,
+    "enumerated_rows": 413,
+    "fragments": 15,
+    "generated_documents": 5,
+    "user": 13
+  }
 }

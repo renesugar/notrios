@@ -11,6 +11,7 @@ import { resourceContentURL } from '../api';
 import { isStableLink, parseStableLink } from '../stable-links';
 import { disabledEditorExtensions, installEditorAssets } from '../editor-assets';
 import { renderNoteQueryBlocks } from '../note-query';
+import { openExternalURL } from '../desktop';
 
 installEditorAssets();
 
@@ -61,6 +62,19 @@ export function PreviewPane({ body, themeBase, onOpenDocument, onOpenStableLink,
           return;
         }
         window.location.assign(resourceContentURL(resourceID, true));
+        return;
+      }
+      // A remote link leaves the application. In a browser the anchor's own
+      // `target="_blank"` already opens a tab, so this does nothing and the
+      // default runs. In the Wails webview nothing handles a `_blank` click,
+      // so the URL is handed to the system browser instead of being silently
+      // swallowed — the alternative is the user copying it out by hand.
+      //
+      // Suppressing the default matters as much as opening the browser: a
+      // webview that followed the link in place would replace the running
+      // application with a website.
+      if (openExternalURL(appURI)) {
+        event.preventDefault();
       }
     }
     return function PreviewRenderer({ html, id, className }: PreviewRendererProps) {

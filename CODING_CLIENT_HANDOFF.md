@@ -2,6 +2,39 @@
 
 This handoff applies to any coding agent or client continuing this project (Codex, Claude, aider, swival.dev, etc. — formerly `CODEX_HANDOFF.md`). The repository is designed so an agent can continue from repository files alone.
 
+## v0.8 H2b completion handoff — 2026-09-01
+
+H2b is complete and archived as
+`plans/v0.8/005-desktop-external-link-opening.md`. A remote `http`, `https`, or
+`mailto:` link in a note now opens the system browser from the Wails desktop
+window; previously the click was silently swallowed. The browser-tab path is
+unchanged.
+
+`web/src/desktop.ts` feature-detects `window.runtime.BrowserOpenURL` and admits
+exactly the three schemes `normalizePreviewHTML` already keeps on an anchor.
+`PreviewPane`'s existing click handler gained one branch and suppresses the
+default only when the desktop shell took the link — a webview that followed the
+link in place would replace the running application with a website, and a test
+asserts `defaultPrevented` in both directions.
+
+184 frontend tests, up from 172. Both guards were verified to fail against
+deliberate regressions. The Go leg was verified by shadowing `xdg-open` on
+`PATH`. **No click in a running GUI was observed**: the chain is proven at both
+ends and read from Wails source in the middle. The archive records the manual
+check to run on a machine with a display.
+
+Worth knowing when debugging: the hand-off runs `xdg-open`, so the browser is
+the desktop's configured URL handler and **not** `$BROWSER`, which `pkg/browser`
+ignores on Linux.
+
+Adding a section to `docs/gui.md` moved three pinned counts, each updated with
+its reason: the docaudit expectation (201 to 202 manual sections), the G18a
+grade baseline, and the G18f content hash for that one page.
+
+This closes the dependency H2a recorded for its diagram link policy. H2 is next
+and remains unapproved. No push, PR, merge, tag, release/upload,
+evidence-reserve write, ISO, or physical burn was performed.
+
 ## v0.8 H2a completion handoff — 2026-09-01
 
 H2a is complete and archived as

@@ -229,7 +229,7 @@ bundle/time/RSS comparison to H2a, full frontend/Go/docs gates, and rollback.
   implied; if H2a recommends remaining disabled, close or replan H2 instead of
   introducing a different renderer mid-item.
 
-## H2b. Desktop external-link opening
+## H2b. Desktop external-link opening — complete
 
 **Goal.** Make a remote link in a note open the user's browser from the Wails
 desktop window, as it already does in the loopback web UI.
@@ -275,6 +275,21 @@ because the behaviour being fixed is webview-specific.
   prompt would be an inconsistency rather than a protection. The default is to
   open directly. If a confirmation is wanted later, the natural form is a
   preference, not a per-click dialog. Approving this item approves the default.
+  **Taken 2026-09-01: no prompt.**
+
+**Outcome (2026-09-01).** `web/src/desktop.ts` feature-detects
+`window.runtime.BrowserOpenURL` and hands `http`, `https`, and `mailto:` links
+to the system browser; `PreviewPane`'s existing click handler gained one branch
+and suppresses the default only when the desktop shell took the link. The
+browser-tab path is untouched. Twelve new frontend tests, 172 to 184 overall,
+both guards proven to fail against deliberate regressions, and the Go leg
+verified end to end by shadowing `xdg-open`. **No click in a running GUI was
+observed** — driving one inside a WebKitGTK webview is not scriptable here, so
+the chain is proven at both ends and read from source in the middle, and the
+archive records a manual check to run on a machine with a display. Nothing was
+widened: the same three schemes the sanitiser already permits, refused again by
+`isExternalLink` and a third time by Wails. Archived as
+`plans/v0.8/005-desktop-external-link-opening.md`.
 
 ## H3. Installed-path, XDG, migration, and destructive-lifecycle investigation
 
@@ -825,7 +840,7 @@ This is an index only; each decision is owned and explained inside its item.
 | Shared-core SQLite owner/version/checksum | H0/H1 | Resolved and implemented in H1: vendored amalgamation 3.53.4, static hidden linkage |
 | Application facade package owner | H0/H1 | Resolved and implemented in H1: `internal/application` |
 | Emulator ABI/minSdk acceptance | H0/H11 | Resolved for H1: API-35 x86_64 runtime; arm64-v8a build-only |
-| Desktop external-link opening | H2b | Open with a no-prompt default; found by H2a and independent of it |
+| Desktop external-link opening | H2b | Resolved and implemented: no prompt; the browser-tab path is unchanged |
 | Mermaid renderer/containment | H2a/H2 | Recommended by H2a: Mermaid 11.17.2, strict security, `htmlLabels: false`, `notrios`-only link allowlist; H2 approval also accepts the bundle cost and three licence-gate decisions |
 | Installed/portable path precedence | H3/H4 | Open with explicit-override/native default |
 | User-local/GNU install layout | H3/H5 | Open with `$HOME/.local` default |
@@ -838,5 +853,6 @@ This is an index only; each decision is owned and explained inside its item.
 | v0.8 product/schema number | H13 | Open with product 0.8.0/no gratuitous schema default |
 | Internal artifact custody | H13 | Local/internal-only default; public release separately authorized |
 
-H1 and H2a completed on 2026-09-01. H2 is the next incomplete item and remains
-unapproved. Do not begin it until the user explicitly says to proceed with H2.
+H1, H2a, and H2b completed on 2026-09-01. H2 is the next incomplete item and
+remains unapproved. Do not begin it until the user explicitly says to proceed
+with H2.

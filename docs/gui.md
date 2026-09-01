@@ -58,6 +58,23 @@ If the window opens but shows a JSON error, the build predates v0.5 E11; current
 builds refuse to start and print the directories they searched. Run `make web`
 and launch from the checkout root, or pass `--web-dir`.
 
+## Links that leave Notrios
+
+A remote `http`/`https` link (and `mailto:`) in a note opens in your normal
+browser. In a browser tab the link opens a new tab by itself; in the desktop
+window Notrios hands the URL to the system browser, because a webview does not
+open new windows on its own and the click would otherwise do nothing.
+
+The desktop hand-off runs `xdg-open`, so the browser you get is the one your
+desktop is configured to use for URLs — not the `BROWSER` environment variable.
+If a link appears to do nothing in the desktop window, check that `xdg-open`
+opens a URL from your terminal.
+
+Links to your own notes (`notrios://`), documents, and attachments are always
+resolved inside Notrios and never handed to a browser. `javascript:`, `data:`,
+and `file:` links are refused outright, both when the note is rendered and again
+before anything is opened.
+
 To use the interface in a browser instead of a window, run the service on its
 own — `make serve` from source, or `./bin/notriosd` — and open
 `http://127.0.0.1:8080`.

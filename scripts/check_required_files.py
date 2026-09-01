@@ -32,6 +32,7 @@ required = [
     'scripts/check_agent_usage.py',
     'scripts/claude_statusline_usage.py',
     'scripts/check_sqlite_provenance.py',
+    'web/src/desktop.ts',
     'performance/v0.8-h2a/REPORT.json',
     'performance/v0.8-h2a/validate_evidence.py',
     'performance/v0.8-h2a/README.md',

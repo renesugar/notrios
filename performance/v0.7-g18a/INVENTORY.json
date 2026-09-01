@@ -927,7 +927,7 @@
     },
     {
       "path": "docs/gui.md",
-      "sha256": "0bdf473c3d1b1e49ce9a9ee19e5314b8087c56caa24673dea8310d87ad654d88",
+      "sha256": "dfa8c99e1a510734d9274214711ed83efee5caa30f6db302a85b074493f235b3",
       "help_note": "doc_help_gui",
       "owner": "ts:web/src/App.tsx#App",
       "sections": [
@@ -975,6 +975,16 @@
           "id": "verifying-the-embedded-service",
           "level": 2,
           "title": "Verifying the embedded service",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "ts:web/src/App.tsx#App",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        },
+        {
+          "id": "links-that-leave-notrios",
+          "level": 2,
+          "title": "Links that leave Notrios",
           "audience": "user",
           "kind": "actionable_or_reference",
           "owner": "ts:web/src/App.tsx#App",
@@ -2139,14 +2149,14 @@
       "id": "published_markdown",
       "count": 15,
       "unit": "pages",
-      "sections": 201,
+      "sections": 202,
       "owner": "go:github.com/renesugar/notrios/internal/helpdocs#Seed"
     },
     {
       "id": "help_notebook",
       "count": 15,
       "unit": "mirrored notes",
-      "sections": 201,
+      "sections": 202,
       "owner": "go:github.com/renesugar/notrios/internal/helpdocs#Seed"
     },
     {
@@ -2243,9 +2253,9 @@
       "executed": 0,
       "generated": 0,
       "claimed": 0,
-      "unverified": 201
+      "unverified": 202
     },
-    "denominator": 201,
+    "denominator": 202,
     "reconciles": true,
     "finding": "The manual does not yet name directive fragments or executable checks, so all current section units are unverified even where independent tests exist."
   },

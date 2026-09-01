@@ -172,7 +172,7 @@ Checked in a real browser against a note containing each case:
 | Input | Result |
 |---|---|
 | `[text](document://…)` | `<a data-app-uri="document://…" href="#">`, click intercepted and routed |
-| `[text](https://…)` | `<a target="_blank" rel="noreferrer">` |
+| `[text](https://…)` | `<a target="_blank" rel="noreferrer">`; in a browser the tab opens itself, and in the desktop window the click is handed to the system browser through `window.runtime.BrowserOpenURL` (v0.8 H2b) because a Wails webview swallows a `_blank` click |
 | Markdown pipe table | rendered as a `<table>` |
 | Pasted raw `<table>` HTML | rendered as a `<table>` — raw HTML is enabled. Since v0.5 E6b a simple pasted table is converted to a Markdown table in the source instead, so it is only raw HTML when the converter refused it. |
 | `<script>`, `onerror=`, `style=` | removed |

@@ -14,7 +14,11 @@ class G18aEvidenceTests(unittest.TestCase):
     def test_checked_evidence(self):
         inventory = evidence.validate_inventory()
         evidence.validate_calibration()
-        self.assertEqual(inventory["grade_baseline"]["denominator"], 201)
+        # 202 since v0.8 H2b added "Links that leave Notrios" to docs/gui.md.
+        # The baseline tracks the documentation surface, so a new section moves
+        # it by one; the number is asserted rather than computed so that an
+        # unnoticed section appearing or vanishing still fails here.
+        self.assertEqual(inventory["grade_baseline"]["denominator"], 202)
 
     def test_duplicate_fragment_is_rejected(self):
         source = """// A.\n//notrios:doc user same\nfunc A() {}\n// B.\n//notrios:doc user same\nfunc B() {}\n"""
