@@ -1,0 +1,248 @@
+{
+  "schema": "notrios.installed-layout/1",
+  "milestone": "v0.8",
+  "item": "H3",
+  "status": "proposed",
+  "note": "H3 proposes this contract and changes nothing. H4 implements it.",
+  "roots": {
+    "config": {
+      "holds": "user-authored settings: the service config file, the profile registry, generated profile configs, sync key material",
+      "linux": {
+        "env": "XDG_CONFIG_HOME",
+        "default": "$HOME/.config",
+        "suffix": "notrios"
+      },
+      "windows": {
+        "env": "APPDATA",
+        "default": "%USERPROFILE%\\AppData\\Roaming",
+        "suffix": "Notrios\\Config"
+      },
+      "macos": {
+        "env": "",
+        "default": "$HOME/Library/Application Support",
+        "suffix": "Notrios/Config"
+      },
+      "mode": "0700",
+      "backup_policy": "backup_and_verify"
+    },
+    "data": {
+      "holds": "the library itself: the SQLite database, the asset store, publication profiles",
+      "linux": {
+        "env": "XDG_DATA_HOME",
+        "default": "$HOME/.local/share",
+        "suffix": "notrios"
+      },
+      "windows": {
+        "env": "LOCALAPPDATA",
+        "default": "%USERPROFILE%\\AppData\\Local",
+        "suffix": "Notrios\\Data"
+      },
+      "macos": {
+        "env": "",
+        "default": "$HOME/Library/Application Support",
+        "suffix": "Notrios/Data"
+      },
+      "mode": "0700",
+      "backup_policy": "backup_and_verify"
+    },
+    "state": {
+      "holds": "things Notrios must remember across runs but the user did not write: sync carrier spools, sync backups, the catch-up inbox, the remote-media quarantine",
+      "linux": {
+        "env": "XDG_STATE_HOME",
+        "default": "$HOME/.local/state",
+        "suffix": "notrios"
+      },
+      "windows": {
+        "env": "LOCALAPPDATA",
+        "default": "%USERPROFILE%\\AppData\\Local",
+        "suffix": "Notrios\\State"
+      },
+      "macos": {
+        "env": "",
+        "default": "$HOME/Library/Application Support",
+        "suffix": "Notrios/State"
+      },
+      "mode": "0700",
+      "backup_policy": "backup_and_verify"
+    },
+    "cache": {
+      "holds": "anything reproducible from the library: projections, the Recoll index, the generated Recoll configuration",
+      "linux": {
+        "env": "XDG_CACHE_HOME",
+        "default": "$HOME/.cache",
+        "suffix": "notrios"
+      },
+      "windows": {
+        "env": "LOCALAPPDATA",
+        "default": "%USERPROFILE%\\AppData\\Local",
+        "suffix": "Notrios\\Cache"
+      },
+      "macos": {
+        "env": "",
+        "default": "$HOME/Library/Caches",
+        "suffix": "Notrios"
+      },
+      "mode": "0700",
+      "backup_policy": "dispose"
+    },
+    "runtime": {
+      "holds": "work in flight that must not survive a reboot: backup staging, restore review, per-process temporary asset roots",
+      "linux": {
+        "env": "XDG_RUNTIME_DIR",
+        "default": "",
+        "suffix": "notrios",
+        "no_default_behavior": "XDG names no fallback for a missing XDG_RUNTIME_DIR, and inventing one in /tmp would put staged plaintext backups in a world-traversable directory. Notrios falls back to <state>/runtime, created 0700, and reports that it did."
+      },
+      "windows": {
+        "env": "LOCALAPPDATA",
+        "default": "%USERPROFILE%\\AppData\\Local",
+        "suffix": "Notrios\\Runtime"
+      },
+      "macos": {
+        "env": "TMPDIR",
+        "default": "$HOME/Library/Caches",
+        "suffix": "Notrios/Runtime",
+        "note": "macOS TMPDIR is already per-user and per-session."
+      },
+      "mode": "0700",
+      "backup_policy": "dispose"
+    },
+    "program_assets": {
+      "holds": "immutable files shipped with the build: the web interface, migrations, seed help content, desktop metadata",
+      "linux": {
+        "env": "",
+        "default": "$datadir",
+        "suffix": "notrios"
+      },
+      "windows": {
+        "env": "",
+        "default": "<directory of the executable>",
+        "suffix": ""
+      },
+      "macos": {
+        "env": "",
+        "default": "<Notrios.app>/Contents/Resources",
+        "suffix": ""
+      },
+      "mode": "0755",
+      "backup_policy": "uninstall_manifest_only"
+    }
+  },
+  "external_categories": {
+    "external": {
+      "holds": "paths Notrios writes that are not under any Notrios root: the notrios:// URL handler desktop entry in the XDG applications directory, and any path a user's profile points at outside the standard roots",
+      "linux": {
+        "env": "XDG_DATA_HOME",
+        "default": "$HOME/.local/share",
+        "suffix": "applications"
+      },
+      "windows": {
+        "env": "",
+        "default": "the registry, via the URL protocol handler key",
+        "suffix": ""
+      },
+      "macos": {
+        "env": "",
+        "default": "the Launch Services database, via the app bundle's CFBundleURLTypes",
+        "suffix": ""
+      },
+      "mode": "0644",
+      "backup_policy": "backup_never_delete",
+      "note": "Not a Notrios root. It is written into territory shared with other applications, so uninstall removes only the exact file it installed and purge never deletes a user profile path that lives here."
+    }
+  },
+  "xdg_rules": {
+    "absolute_required": "A relative value in any XDG_* variable is invalid. The variable is ignored and the specified default is used, and the substitution is reported once at startup. It is never resolved against the working directory.",
+    "empty_is_unset": "An empty or whitespace-only value is treated as unset, per the specification.",
+    "linux_only": "XDG variables are honoured on Linux and other Unix systems that are not macOS. On macOS and Windows the native locations are authoritative and XDG_* is ignored, because a user who exports XDG_CONFIG_HOME for another tool has not asked Notrios to leave ~/Library.",
+    "runtime_dir_ownership": "XDG_RUNTIME_DIR must be owner-only and owned by the user. If it exists but fails that check, Notrios refuses it and falls back to <state>/runtime rather than staging plaintext there."
+  },
+  "mode_precedence": {
+    "order": [
+      "explicit: a path given on the command line or in an explicitly named config file",
+      "portable: a marker file named notrios-portable.txt beside the executable, whose presence selects a layout rooted at the executable's directory",
+      "installed: the native per-OS roots above",
+      "source: a checkout, detected by go.mod plus the module path beside the executable or working directory"
+    ],
+    "never": "Portable mode is never inferred from the current directory, from the directory being writable, or from the absence of installed roots. Guessing portability from writability is how a USB stick and a home directory become the same decision.",
+    "source_mode_only": [
+      "reading config/config.example.yaml relative to the working directory",
+      "resolving web/dist relative to the working directory",
+      "the ./data default layout"
+    ]
+  },
+  "install_variables": {
+    "prefix": "/usr/local for a system install; $HOME/.local is the recommended default for make install",
+    "exec_prefix": "$(prefix)",
+    "bindir": "$(exec_prefix)/bin",
+    "datarootdir": "$(prefix)/share",
+    "datadir": "$(datarootdir)",
+    "DESTDIR": "Staging prefix for packaging. It is prepended to installed artifact paths only. It is never prepended to a user's config, data, state, cache, or runtime roots, and package staging creates none of them.",
+    "recommended_default_prefix": "$HOME/.local",
+    "rationale": "An unprivileged user-local install is the dogfooding case, needs no sudo, and matches where the desktop entry already goes."
+  },
+  "installed_artifacts": [
+    {
+      "path": "$(bindir)/notrios",
+      "kind": "executable",
+      "source": "bin/notrios"
+    },
+    {
+      "path": "$(bindir)/notriosd",
+      "kind": "executable",
+      "source": "bin/notriosd"
+    },
+    {
+      "path": "$(bindir)/notriosctl",
+      "kind": "executable",
+      "source": "bin/notriosctl"
+    },
+    {
+      "path": "$(datadir)/notrios/web/",
+      "kind": "tree",
+      "source": "web/dist/"
+    },
+    {
+      "path": "$(datadir)/notrios/migrations/",
+      "kind": "tree",
+      "source": "migrations/"
+    },
+    {
+      "path": "$(datadir)/notrios/docs/",
+      "kind": "tree",
+      "source": "docs/"
+    },
+    {
+      "path": "$(datarootdir)/applications/notrios.desktop",
+      "kind": "file",
+      "source": "generated"
+    },
+    {
+      "path": "$(datadir)/notrios/MANIFEST.json",
+      "kind": "file",
+      "source": "generated"
+    }
+  ],
+  "manifest": {
+    "schema": "notrios.install-manifest/1",
+    "note": "Written by install, read by uninstall. Uninstall removes only paths listed here, under a validated install root, whose recorded hash still matches. A modified or foreign-owned artifact is preserved and reported.",
+    "fields": [
+      "schema",
+      "version",
+      "installed_at",
+      "prefix",
+      "exec_prefix",
+      "bindir",
+      "datarootdir",
+      "datadir",
+      "entries"
+    ],
+    "entry_fields": [
+      "path",
+      "kind",
+      "sha256",
+      "mode",
+      "size"
+    ]
+  }
+}

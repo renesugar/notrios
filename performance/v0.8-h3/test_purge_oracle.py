@@ -1,0 +1,190 @@
+#!/usr/bin/env python3
+"""Fixtures for the H3 purge oracle.
+
+Every case runs against a real temporary filesystem, so symlink and containment
+rules are decided by the kernel rather than by string comparison. The one
+exception is the mount-boundary case, which injects a device lookup because a
+test cannot mount a filesystem; REPORT.md records that rule as modelled.
+
+Run: python3 performance/v0.8-h3/test_purge_oracle.py
+"""
+
+from __future__ import annotations
+
+import json
+import os
+import shutil
+import sys
+import tempfile
+import unittest
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+from purge_oracle import ALLOW, ALLOW_ABSENT, REFUSE, Environment, backup_policy, decide
+
+RESULTS: list[dict] = []
+FAILURES: list[str] = []
+
+
+def check(name: str, decision, expected_verdict: str, expected_rule: str, note: str = "") -> None:
+    ok = decision.verdict == expected_verdict and decision.rule == expected_rule
+    RESULTS.append(
+        dict(case=name, expected=f"{expected_verdict}/{expected_rule}",
+             actual=f"{decision.verdict}/{decision.rule}", reason=decision.reason,
+             passed=ok, note=note)
+    )
+    if not ok:
+        FAILURES.append(f"{name}: expected {expected_verdict}/{expected_rule}, got {decision}")
+
+
+def run_cases() -> None:
+    sandbox = tempfile.mkdtemp(prefix="h3-purge-")
+    try:
+        home = os.path.join(sandbox, "home", "user")
+        state = os.path.join(home, ".local", "state", "notrios")
+        cache = os.path.join(home, ".cache", "notrios")
+        outside = os.path.join(sandbox, "elsewhere")
+        external_parent = os.path.join(sandbox, "mounted-volume")
+        external = os.path.join(external_parent, "external-library")
+        for path in (state, cache, outside, external):
+            os.makedirs(path, exist_ok=True)
+
+        env = Environment(owned_roots=[state, cache], home=home,
+                          external_profile_paths=[external])
+
+        # --- the refusals that matter most -------------------------------
+        check("empty target", decide("", env), REFUSE, "non-empty")
+        check("whitespace target", decide("   ", env), REFUSE, "non-empty")
+        check("relative target", decide("data/notes", env), REFUSE, "absolute")
+        check("filesystem root", decide("/", env), REFUSE, "system-root")
+        check("system root /usr", decide("/usr", env), REFUSE, "system-root")
+        check("system root /etc", decide("/etc", env), REFUSE, "system-root")
+        check("home itself", decide(home, env), REFUSE, "home")
+        check("ancestor of home", decide(os.path.dirname(home), env), REFUSE, "home-ancestor")
+        check("dot-dot traversal", decide(os.path.join(state, "..", "..", ".."), env),
+              REFUSE, "normal-form")
+        check("outside every owned root", decide(outside, env), REFUSE, "owned-root")
+        check("external profile path", decide(external, env), REFUSE, "external-profile-path")
+        # Asking to purge a directory that merely *contains* an external
+        # profile path is refused too. A containment rule that only looked
+        # downward would delete the profile as collateral.
+        check("parent of an external profile path", decide(external_parent, env),
+              REFUSE, "external-profile-path")
+        check("no owned roots declared",
+              decide(os.path.join(state, "spool"), Environment(owned_roots=[], home=home)),
+              REFUSE, "owned-root")
+
+        # --- symlinks ------------------------------------------------------
+        link = os.path.join(state, "link-to-outside")
+        os.symlink(outside, link)
+        check("symlink out of an owned root", decide(link, env), REFUSE, "owned-root",
+              "containment is decided on the resolved path, so the link does not look contained")
+
+        inner = os.path.join(state, "spool")
+        os.makedirs(inner, exist_ok=True)
+        inner_link = os.path.join(state, "link-to-inside")
+        os.symlink(inner, inner_link)
+        check("symlink within an owned root", decide(inner_link, env), REFUSE, "symlink",
+              "even a link that stays inside is removed deliberately, not followed")
+
+        root_alias = os.path.join(state, "alias-to-root")
+        os.symlink(state, root_alias)
+        check("symlink onto the owned root", decide(root_alias, env), REFUSE, "root-aliasing")
+
+        # --- the allowances ------------------------------------------------
+        check("directory inside an owned root", decide(inner, env), ALLOW, "owned")
+        check("the owned root itself", decide(cache, env), ALLOW, "owned",
+              "purge removes whole roots; that is the point")
+
+        absent = os.path.join(cache, "search-index")
+        check("path that is not there", decide(absent, env), ALLOW_ABSENT, "absent",
+              "a repeated purge is a no-op rather than an error")
+
+        # Idempotency: remove it, ask again, get the same non-error answer.
+        os.makedirs(absent, exist_ok=True)
+        first = decide(absent, env)
+        shutil.rmtree(absent)
+        second = decide(absent, env)
+        check("repeated purge, first pass", first, ALLOW, "owned")
+        check("repeated purge, second pass", second, ALLOW_ABSENT, "absent")
+
+        # --- mount boundary (modelled) -------------------------------------
+        crossing = Environment(owned_roots=[state], home=home)
+        crossing.device_of = lambda path: 1 if path == state else 2
+        check("target on another filesystem", decide(inner, crossing), REFUSE, "mount-boundary",
+              "modelled: the device lookup is injected because a test cannot mount a filesystem")
+
+        # --- backup policy --------------------------------------------------
+        policy_expected = {
+            "config": "backup_and_verify",
+            "data": "backup_and_verify",
+            "state": "backup_and_verify",
+            "cache": "dispose",
+            "runtime": "dispose",
+            "program_assets": "uninstall_manifest_only",
+            "external": "backup_never_delete",
+            "a-category-nobody-classified": "backup_and_verify",
+        }
+        for category, expected in policy_expected.items():
+            actual = backup_policy(category)
+            ok = actual == expected
+            RESULTS.append(dict(case=f"backup policy for {category}", expected=expected,
+                                actual=actual, reason="", passed=ok, note=""))
+            if not ok:
+                FAILURES.append(f"backup policy for {category}: expected {expected}, got {actual}")
+    finally:
+        shutil.rmtree(sandbox, ignore_errors=True)
+
+    _write_report()
+
+
+def _write_report() -> None:
+    report = dict(
+        schema="notrios.purge-oracle-fixtures/1",
+        milestone="v0.8",
+        item="H3",
+        total=len(RESULTS),
+        passed=sum(1 for r in RESULTS if r["passed"]),
+        failed=len(FAILURES),
+        cases=RESULTS,
+    )
+    destination = os.path.join(os.path.dirname(os.path.abspath(__file__)), "PURGE_ORACLE_FIXTURES.json")
+    with open(destination, "w", encoding="utf-8") as handle:
+        json.dump(report, handle, indent=2)
+        handle.write("\n")
+
+
+class PurgeOracleFixtures(unittest.TestCase):
+    """Wrapped as unittest so `unittest discover` runs these rather than
+    importing the module, finding no TestCase, and reporting success."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        RESULTS.clear()
+        FAILURES.clear()
+        run_cases()
+
+    def test_every_case_reached_the_expected_verdict(self) -> None:
+        self.assertTrue(RESULTS, "no purge-oracle cases ran")
+        for result in RESULTS:
+            with self.subTest(case=result["case"]):
+                self.assertTrue(
+                    result["passed"],
+                    f"expected {result['expected']}, got {result['actual']}: {result['reason']}",
+                )
+
+    def test_enough_cases_ran_to_be_worth_trusting(self) -> None:
+        self.assertGreaterEqual(len(RESULTS), 25)
+
+
+def main() -> int:
+    run_cases()
+    for failure in FAILURES:
+        print("FAIL:", failure)
+    passed = sum(1 for r in RESULTS if r["passed"])
+    print(f"{passed}/{len(RESULTS)} purge-oracle cases passed")
+    return 1 if FAILURES else 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

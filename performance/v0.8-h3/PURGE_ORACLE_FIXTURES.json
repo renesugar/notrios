@@ -1,0 +1,250 @@
+{
+  "schema": "notrios.purge-oracle-fixtures/1",
+  "milestone": "v0.8",
+  "item": "H3",
+  "total": 30,
+  "passed": 30,
+  "failed": 0,
+  "cases": [
+    {
+      "case": "empty target",
+      "expected": "REFUSE/non-empty",
+      "actual": "REFUSE/non-empty",
+      "reason": "the purge target is empty",
+      "passed": true,
+      "note": ""
+    },
+    {
+      "case": "whitespace target",
+      "expected": "REFUSE/non-empty",
+      "actual": "REFUSE/non-empty",
+      "reason": "the purge target is empty",
+      "passed": true,
+      "note": ""
+    },
+    {
+      "case": "relative target",
+      "expected": "REFUSE/absolute",
+      "actual": "REFUSE/absolute",
+      "reason": "'data/notes' is relative; a purge target must be absolute",
+      "passed": true,
+      "note": ""
+    },
+    {
+      "case": "filesystem root",
+      "expected": "REFUSE/system-root",
+      "actual": "REFUSE/system-root",
+      "reason": "/ is a system root and is never a purge target",
+      "passed": true,
+      "note": ""
+    },
+    {
+      "case": "system root /usr",
+      "expected": "REFUSE/system-root",
+      "actual": "REFUSE/system-root",
+      "reason": "/usr is a system root and is never a purge target",
+      "passed": true,
+      "note": ""
+    },
+    {
+      "case": "system root /etc",
+      "expected": "REFUSE/system-root",
+      "actual": "REFUSE/system-root",
+      "reason": "/etc is a system root and is never a purge target",
+      "passed": true,
+      "note": ""
+    },
+    {
+      "case": "home itself",
+      "expected": "REFUSE/home",
+      "actual": "REFUSE/home",
+      "reason": "the purge target is the home directory itself",
+      "passed": true,
+      "note": ""
+    },
+    {
+      "case": "ancestor of home",
+      "expected": "REFUSE/home-ancestor",
+      "actual": "REFUSE/home-ancestor",
+      "reason": "/tmp/h3-purge-9k58kxav/home contains the home directory /tmp/h3-purge-9k58kxav/home/user",
+      "passed": true,
+      "note": ""
+    },
+    {
+      "case": "dot-dot traversal",
+      "expected": "REFUSE/normal-form",
+      "actual": "REFUSE/normal-form",
+      "reason": "'/tmp/h3-purge-9k58kxav/home/user/.local/state/notrios/../../..' is not in normal form; state the path plainly rather than through '..' or '.'",
+      "passed": true,
+      "note": ""
+    },
+    {
+      "case": "outside every owned root",
+      "expected": "REFUSE/owned-root",
+      "actual": "REFUSE/owned-root",
+      "reason": "/tmp/h3-purge-9k58kxav/elsewhere resolves to /tmp/h3-purge-9k58kxav/elsewhere, which is outside every root Notrios owns",
+      "passed": true,
+      "note": ""
+    },
+    {
+      "case": "external profile path",
+      "expected": "REFUSE/external-profile-path",
+      "actual": "REFUSE/external-profile-path",
+      "reason": "/tmp/h3-purge-9k58kxav/mounted-volume/external-library is or contains the external profile path /tmp/h3-purge-9k58kxav/mounted-volume/external-library; it is enumerated and backed up, never deleted automatically",
+      "passed": true,
+      "note": ""
+    },
+    {
+      "case": "parent of an external profile path",
+      "expected": "REFUSE/external-profile-path",
+      "actual": "REFUSE/external-profile-path",
+      "reason": "/tmp/h3-purge-9k58kxav/mounted-volume is or contains the external profile path /tmp/h3-purge-9k58kxav/mounted-volume/external-library; it is enumerated and backed up, never deleted automatically",
+      "passed": true,
+      "note": ""
+    },
+    {
+      "case": "no owned roots declared",
+      "expected": "REFUSE/owned-root",
+      "actual": "REFUSE/owned-root",
+      "reason": "no owned roots were declared, so nothing can be identified as ours",
+      "passed": true,
+      "note": ""
+    },
+    {
+      "case": "symlink out of an owned root",
+      "expected": "REFUSE/owned-root",
+      "actual": "REFUSE/owned-root",
+      "reason": "/tmp/h3-purge-9k58kxav/home/user/.local/state/notrios/link-to-outside resolves to /tmp/h3-purge-9k58kxav/elsewhere, which is outside every root Notrios owns",
+      "passed": true,
+      "note": "containment is decided on the resolved path, so the link does not look contained"
+    },
+    {
+      "case": "symlink within an owned root",
+      "expected": "REFUSE/symlink",
+      "actual": "REFUSE/symlink",
+      "reason": "/tmp/h3-purge-9k58kxav/home/user/.local/state/notrios/link-to-inside is a symlink; remove the link deliberately rather than following it",
+      "passed": true,
+      "note": "even a link that stays inside is removed deliberately, not followed"
+    },
+    {
+      "case": "symlink onto the owned root",
+      "expected": "REFUSE/root-aliasing",
+      "actual": "REFUSE/root-aliasing",
+      "reason": "/tmp/h3-purge-9k58kxav/home/user/.local/state/notrios/alias-to-root resolves onto the owned root /tmp/h3-purge-9k58kxav/home/user/.local/state/notrios itself rather than a path within it",
+      "passed": true,
+      "note": ""
+    },
+    {
+      "case": "directory inside an owned root",
+      "expected": "ALLOW/owned",
+      "actual": "ALLOW/owned",
+      "reason": "/tmp/h3-purge-9k58kxav/home/user/.local/state/notrios/spool is inside /tmp/h3-purge-9k58kxav/home/user/.local/state/notrios and safe to remove",
+      "passed": true,
+      "note": ""
+    },
+    {
+      "case": "the owned root itself",
+      "expected": "ALLOW/owned",
+      "actual": "ALLOW/owned",
+      "reason": "/tmp/h3-purge-9k58kxav/home/user/.cache/notrios is inside /tmp/h3-purge-9k58kxav/home/user/.cache/notrios and safe to remove",
+      "passed": true,
+      "note": "purge removes whole roots; that is the point"
+    },
+    {
+      "case": "path that is not there",
+      "expected": "ALLOW_ABSENT/absent",
+      "actual": "ALLOW_ABSENT/absent",
+      "reason": "/tmp/h3-purge-9k58kxav/home/user/.cache/notrios/search-index does not exist; nothing to remove",
+      "passed": true,
+      "note": "a repeated purge is a no-op rather than an error"
+    },
+    {
+      "case": "repeated purge, first pass",
+      "expected": "ALLOW/owned",
+      "actual": "ALLOW/owned",
+      "reason": "/tmp/h3-purge-9k58kxav/home/user/.cache/notrios/search-index is inside /tmp/h3-purge-9k58kxav/home/user/.cache/notrios and safe to remove",
+      "passed": true,
+      "note": ""
+    },
+    {
+      "case": "repeated purge, second pass",
+      "expected": "ALLOW_ABSENT/absent",
+      "actual": "ALLOW_ABSENT/absent",
+      "reason": "/tmp/h3-purge-9k58kxav/home/user/.cache/notrios/search-index does not exist; nothing to remove",
+      "passed": true,
+      "note": ""
+    },
+    {
+      "case": "target on another filesystem",
+      "expected": "REFUSE/mount-boundary",
+      "actual": "REFUSE/mount-boundary",
+      "reason": "/tmp/h3-purge-9k58kxav/home/user/.local/state/notrios/spool is on a different filesystem from its root /tmp/h3-purge-9k58kxav/home/user/.local/state/notrios; a purge does not cross a mount boundary",
+      "passed": true,
+      "note": "modelled: the device lookup is injected because a test cannot mount a filesystem"
+    },
+    {
+      "case": "backup policy for config",
+      "expected": "backup_and_verify",
+      "actual": "backup_and_verify",
+      "reason": "",
+      "passed": true,
+      "note": ""
+    },
+    {
+      "case": "backup policy for data",
+      "expected": "backup_and_verify",
+      "actual": "backup_and_verify",
+      "reason": "",
+      "passed": true,
+      "note": ""
+    },
+    {
+      "case": "backup policy for state",
+      "expected": "backup_and_verify",
+      "actual": "backup_and_verify",
+      "reason": "",
+      "passed": true,
+      "note": ""
+    },
+    {
+      "case": "backup policy for cache",
+      "expected": "dispose",
+      "actual": "dispose",
+      "reason": "",
+      "passed": true,
+      "note": ""
+    },
+    {
+      "case": "backup policy for runtime",
+      "expected": "dispose",
+      "actual": "dispose",
+      "reason": "",
+      "passed": true,
+      "note": ""
+    },
+    {
+      "case": "backup policy for program_assets",
+      "expected": "uninstall_manifest_only",
+      "actual": "uninstall_manifest_only",
+      "reason": "",
+      "passed": true,
+      "note": ""
+    },
+    {
+      "case": "backup policy for external",
+      "expected": "backup_never_delete",
+      "actual": "backup_never_delete",
+      "reason": "",
+      "passed": true,
+      "note": ""
+    },
+    {
+      "case": "backup policy for a-category-nobody-classified",
+      "expected": "backup_and_verify",
+      "actual": "backup_and_verify",
+      "reason": "",
+      "passed": true,
+      "note": ""
+    }
+  ]
+}
