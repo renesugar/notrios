@@ -19,6 +19,34 @@ from typing import Any, Callable, Sequence
 WINDOW_NAMES = {"primary", "secondary", "weekly", "fiveHour", "five_hour"}
 HISTORY_MATCH_FIELDS = ("agent", "model", "effort", "operation")
 
+# Claude Code keeps rate limits in memory and hands them to the configured
+# statusLine command; it writes no usage file of its own. scripts/
+# claude_statusline_usage.py records that payload here so this probe stays
+# local-cache-only and never spends quota to measure quota.
+CLAUDE_USAGE_CACHE = "~/.claude/usage-cache.json"
+CLAUDE_MAX_AGE_MINUTES = 30.0
+
+CLAUDE_WINDOW_MINUTES = {
+    "5h": 300,
+    "5hour": 300,
+    "5_hour": 300,
+    "five_hour": 300,
+    "fivehour": 300,
+    "session": 300,
+    "primary": 300,
+    "7d": 10080,
+    "7day": 10080,
+    "7_day": 10080,
+    "seven_day": 10080,
+    "week": 10080,
+    "weekly": 10080,
+    "secondary": 10080,
+    "30d": 43200,
+    "month": 43200,
+    "monthly": 43200,
+    "opus_weekly": 10080,
+}
+
 
 def _percentage(value: Any) -> float | None:
     try:
@@ -28,14 +56,47 @@ def _percentage(value: Any) -> float | None:
     return number if 0 <= number <= 100 else None
 
 
+def _epoch(value: Any) -> float | None:
+    """Return POSIX seconds for an epoch number, epoch string, or ISO timestamp."""
+    if value is None or isinstance(value, bool):
+        return None
+    number: float | None = None
+    if isinstance(value, (int, float)):
+        number = float(value)
+    elif isinstance(value, str):
+        text = value.strip()
+        if not text:
+            return None
+        try:
+            number = float(text)
+        except ValueError:
+            try:
+                parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+            except ValueError:
+                return None
+            if parsed.tzinfo is None:
+                parsed = parsed.replace(tzinfo=timezone.utc)
+            return parsed.timestamp()
+    if number is None:
+        return None
+    # Clients differ on units; anything past the year 5138 in seconds is
+    # milliseconds, so treat it as such rather than emitting an absurd date.
+    if abs(number) > 1e11:
+        number /= 1000.0
+    return number
+
+
 def _reset_utc(value: Any) -> str | None:
     if value is None:
         return None
     if isinstance(value, (int, float)) or (
-        isinstance(value, str) and value.isdigit()
+        isinstance(value, str) and value.strip().isdigit()
     ):
+        seconds = _epoch(value)
+        if seconds is None:
+            return str(value)
         return (
-            datetime.fromtimestamp(float(value), timezone.utc)
+            datetime.fromtimestamp(seconds, timezone.utc)
             .isoformat()
             .replace("+00:00", "Z")
         )
@@ -364,8 +425,12 @@ def _text_percentage(value: Any) -> tuple[float, bool] | None:
         return number, (match.group(2) or "used").lower() == "used"
     if isinstance(value, dict):
         for key in (
+            "remaining_percentage",
+            "remainingPercentage",
             "remainingPercent",
             "remaining_percent",
+            "used_percentage",
+            "usedPercentage",
             "usedPercent",
             "used_percent",
             "percent",
@@ -374,53 +439,237 @@ def _text_percentage(value: Any) -> tuple[float, bool] | None:
                 continue
             parsed = _text_percentage(value[key])
             if parsed is not None:
-                return parsed[0], key.startswith("used")
+                return parsed[0], key.lower().startswith("used")
     return None
+
+
+def _claude_window_minutes(name: Any) -> float | None:
+    key = re.sub(r"[^a-z0-9_]", "", str(name).lower())
+    if key in CLAUDE_WINDOW_MINUTES:
+        return CLAUDE_WINDOW_MINUTES[key]
+    match = re.fullmatch(r"(\d+)(m|h|d|w)", key)
+    if match:
+        scale = {"m": 1, "h": 60, "d": 1440, "w": 10080}[match.group(2)]
+        return float(match.group(1)) * scale
+    return None
+
+
+def _claude_bucket(
+    name: Any,
+    value: Any,
+    *,
+    version: str | None,
+    now: float,
+) -> dict[str, Any] | None:
+    """Normalize one status-line rate-limit window.
+
+    Entries that carry no percentage (`spend_limit` expressed in dollars, for
+    example) return None so they never bind the reserve check.
+    """
+    parsed = _text_percentage(value)
+    if parsed is None:
+        return None
+    percentage, is_used = parsed
+    used = percentage if is_used else 100 - percentage
+    reset_raw: Any = None
+    duration: Any = None
+    if isinstance(value, dict):
+        for key in ("resets_at", "resetsAt", "reset_at", "resetAt", "reset"):
+            if value.get(key) is not None:
+                reset_raw = value[key]
+                break
+        for key in (
+            "window_duration_mins",
+            "windowDurationMins",
+            "window_minutes",
+            "duration_minutes",
+        ):
+            if value.get(key) is not None:
+                duration = value[key]
+                break
+    if duration is None:
+        duration = _claude_window_minutes(name)
+    reset_epoch = _epoch(reset_raw)
+    bucket: dict[str, Any] = {
+        "name": str(name),
+        "used_percent": used,
+        "remaining_percent": 100 - used,
+        "reset_utc": _reset_utc(reset_raw),
+        "duration_minutes": duration,
+        "exhausted": used >= 100,
+        # A window past its reset has already refilled, and the client is known
+        # to keep reporting the pre-reset percentage while a session sits idle
+        # (fixed upstream, but the cache on disk can predate the fix). Such a
+        # window is excluded from binding instead of being trusted.
+        "expired": reset_epoch is not None and reset_epoch <= now,
+    }
+    if version is not None:
+        bucket["version"] = version
+    return bucket
+
+
+def parse_claude_rate_limits(
+    rate_limits: Any,
+    version: str | None = None,
+    now: float | None = None,
+) -> list[dict[str, Any]]:
+    """Normalize a Claude Code status-line `rate_limits` payload."""
+    now = time.time() if now is None else now
+    entries: list[tuple[Any, Any]] = []
+    if isinstance(rate_limits, dict):
+        entries = list(rate_limits.items())
+    elif isinstance(rate_limits, list):
+        for index, item in enumerate(rate_limits):
+            if isinstance(item, dict):
+                label = item.get("name") or item.get("window") or item.get("id")
+                entries.append((label if label is not None else index, item))
+    buckets: list[dict[str, Any]] = []
+    for name, value in entries:
+        bucket = _claude_bucket(name, value, version=version, now=now)
+        if bucket is not None:
+            buckets.append(bucket)
+    return buckets
+
+
+def _claude_cache_path(
+    cache_path: str | None, settings_path: str | None
+) -> str:
+    """Resolve the usage cache: explicit, then settings sibling, then env, then default."""
+    if cache_path:
+        return os.path.expanduser(cache_path)
+    if settings_path:
+        directory = os.path.dirname(os.path.abspath(os.path.expanduser(settings_path)))
+        return os.path.join(directory, "usage-cache.json")
+    return os.path.expanduser(
+        os.environ.get("NOTRIOS_CLAUDE_USAGE_CACHE") or CLAUDE_USAGE_CACHE
+    )
+
+
+def _read_claude_cache(path: str) -> tuple[dict[str, Any] | None, str | None]:
+    try:
+        with open(path, encoding="utf-8") as stream:
+            data = json.load(stream)
+    except FileNotFoundError:
+        return None, (
+            f"no status-line usage cache at {path}; install "
+            "scripts/claude_statusline_usage.py as the statusLine command"
+        )
+    except OSError as error:
+        return None, f"cannot read {path}: {error}"
+    except ValueError:
+        return None, f"{path} is not valid JSON"
+    if not isinstance(data, dict):
+        return None, f"{path} does not contain a JSON object"
+    return data, None
+
+
+def _claude_legacy_buckets(
+    settings_path: str | None, version: str | None
+) -> list[dict[str, Any]]:
+    """Read the older `statusline_cache` block kept inside settings.json."""
+    path = os.path.expanduser(settings_path or "~/.claude/settings.json")
+    try:
+        with open(path, encoding="utf-8") as stream:
+            settings = json.load(stream)
+    except (OSError, ValueError):
+        return []
+    cache = settings.get("statusline_cache") if isinstance(settings, dict) else None
+    if not isinstance(cache, dict):
+        return []
+    buckets: list[dict[str, Any]] = []
+    for name, value in cache.items():
+        lowered = name.lower()
+        if "usage" not in lowered and "limit" not in lowered:
+            continue
+        parsed = _text_percentage(value)
+        if parsed is None:
+            continue
+        percentage, is_used = parsed
+        raw = (
+            value
+            if isinstance(value, dict)
+            else {"usedPercent": percentage if is_used else 100 - percentage}
+        )
+        bucket = _bucket(name, raw, version=version)
+        if bucket is not None:
+            buckets.append(bucket)
+    return buckets
 
 
 def probe_claude(
     settings_path: str | None = None,
     process_detector: Callable[[], bool] | None = None,
     version: str | None = None,
+    cache_path: str | None = None,
+    max_age_minutes: float | None = CLAUDE_MAX_AGE_MINUTES,
+    now: float | None = None,
 ) -> dict[str, Any]:
+    """Report Claude usage from local files only; never spend quota to measure it."""
     if not (process_detector or _claude_running)():
         return {
             "agent": "claude",
             "state": "not-running",
             "buckets": [],
             "client_version": None,
+            "source": None,
         }
 
+    now = time.time() if now is None else now
     resolved_version = version or _client_version(("claude",))
-    path = os.path.expanduser(settings_path or "~/.claude/settings.json")
-    try:
-        with open(path, encoding="utf-8") as stream:
-            settings = json.load(stream)
-    except (OSError, ValueError):
-        return summarize("claude", [], resolved_version)
+    path = _claude_cache_path(cache_path, settings_path)
+    cache, error = _read_claude_cache(path)
 
-    cache = settings.get("statusline_cache") if isinstance(settings, dict) else None
     buckets: list[dict[str, Any]] = []
-    if isinstance(cache, dict):
-        for name, value in cache.items():
-            lowered = name.lower()
-            if "usage" not in lowered and "limit" not in lowered:
-                continue
-            parsed = _text_percentage(value)
-            if parsed is None:
-                continue
-            percentage, is_used = parsed
-            raw = (
-                value
-                if isinstance(value, dict)
-                else {
-                    "usedPercent": percentage if is_used else 100 - percentage,
-                }
+    source: str | None = None
+    age_minutes: float | None = None
+    if cache is not None:
+        source = path
+        buckets = parse_claude_rate_limits(
+            cache.get("rate_limits"), resolved_version, now
+        )
+        captured = _epoch(cache.get("captured_at"))
+        if captured is not None:
+            age_minutes = max(0.0, (now - captured) / 60.0)
+        if not buckets:
+            error = (
+                f"{path} carries no usable rate-limit window; the client may "
+                "predate the status-line rate_limits field or may not be on a "
+                "plan that reports limits"
             )
-            bucket = _bucket(name, raw, version=resolved_version)
-            if bucket is not None:
-                buckets.append(bucket)
-    return summarize("claude", buckets, resolved_version)
+
+    if not buckets:
+        legacy = _claude_legacy_buckets(settings_path, resolved_version)
+        if legacy:
+            buckets = legacy
+            source = f"{os.path.expanduser(settings_path or '~/.claude/settings.json')}"
+            source += " (legacy statusline_cache)"
+            error = None
+            age_minutes = None
+
+    live = [item for item in buckets if not item.get("expired")]
+    too_old = (
+        age_minutes is not None
+        and max_age_minutes is not None
+        and age_minutes > max_age_minutes
+    )
+    stale = bool(buckets) and (not live or too_old)
+
+    result = summarize(
+        "claude", [] if stale else live, resolved_version, error
+    )
+    result["buckets"] = buckets
+    result["source"] = source
+    if age_minutes is not None:
+        result["cache_age_minutes"] = round(age_minutes, 3)
+    if stale:
+        result["state"] = "stale"
+        result["error"] = (
+            f"usage cache is {age_minutes:.1f} minutes old, over the "
+            f"{max_age_minutes:g}-minute limit"
+            if too_old
+            else "every reported rate-limit window is past its reset time"
+        )
+    return result
 
 
 def _history(path: str | None) -> list[dict[str, Any]]:
@@ -511,6 +760,10 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--json", action="store_true", dest="as_json")
     parser.add_argument("--timeout", type=float, default=10)
     parser.add_argument("--settings")
+    parser.add_argument("--claude-usage-cache")
+    parser.add_argument(
+        "--claude-max-age-minutes", type=float, default=CLAUDE_MAX_AGE_MINUTES
+    )
     parser.add_argument("--history")
     parser.add_argument("--operation", default="")
     parser.add_argument("--model", default="")
@@ -530,12 +783,17 @@ def _print_human(results: list[dict[str, Any]]) -> None:
             f"version={result.get('client_version') or 'unknown'} "
             f"error={result.get('error', '')}"
         )
+        if result.get("source"):
+            age = result.get("cache_age_minutes")
+            suffix = f" age_minutes={age}" if age is not None else ""
+            print(f"  source={result['source']}{suffix}")
         for bucket in result.get("buckets", []):
             print(
                 f"  {bucket['name']}: remaining={bucket['remaining_percent']} "
                 f"used={bucket['used_percent']} "
                 f"duration_minutes={bucket.get('duration_minutes')} "
                 f"reset={bucket.get('reset_utc')}"
+                + (" expired=true" if bucket.get("expired") else "")
             )
 
 
@@ -549,6 +807,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 1
     if arguments.timeout <= 0:
         print("error: --timeout must be positive", file=sys.stderr)
+        return 1
+    if arguments.claude_max_age_minutes <= 0:
+        print(
+            "error: --claude-max-age-minutes must be positive",
+            file=sys.stderr,
+        )
         return 1
     if arguments.sample and not all(
         (
@@ -566,12 +830,19 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
         return 1
 
+    def claude() -> dict[str, Any]:
+        return probe_claude(
+            arguments.settings,
+            cache_path=arguments.claude_usage_cache,
+            max_age_minutes=arguments.claude_max_age_minutes,
+        )
+
     if arguments.agent == "codex":
         results = [probe_codex(arguments.timeout)]
     elif arguments.agent == "claude":
-        results = [probe_claude(arguments.settings)]
+        results = [claude()]
     else:
-        results = [probe_codex(arguments.timeout), probe_claude(arguments.settings)]
+        results = [probe_codex(arguments.timeout), claude()]
 
     records = _history(arguments.history)
     base_fields = {
@@ -611,7 +882,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             arguments.margin,
         )
 
-    unknown = any(result["state"] == "unknown" for result in results)
+    unknown = any(result["state"] in ("unknown", "stale") for result in results)
     pause = any(
         result["state"] == "pause"
         or (

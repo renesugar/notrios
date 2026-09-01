@@ -30,6 +30,7 @@ required = [
     'scripts/g17b_evidence.py',
     'scripts/verify_evidence_pre_push.sh',
     'scripts/check_agent_usage.py',
+    'scripts/claude_statusline_usage.py',
     'scripts/agent_usage_preflight.sh',
     'scripts/test_check_agent_usage.py',
     'scripts/test_agent_usage_preflight.sh',

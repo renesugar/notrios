@@ -831,6 +831,15 @@ responses, exhaustion/reset metadata, unavailable clients, Claude cache
 absence/malformed values, strict versus advisory unknown results, and adaptive
 reserve isolation by agent/model/effort/operation and reset window.
 
+The Claude fixtures also cover the status-line `rate_limits` contract written by
+`scripts/claude_statusline_usage.py`: binding on the tightest window, ignoring a
+dollar-denominated `spend_limit` that carries no percentage, epoch and ISO
+`resets_at` forms, `used_percentage` and `remaining_percentage`, a cache older
+than the age limit, and a window past its reset. Both of those last two report
+`stale`, which never yields a binding percentage and gates like `unknown`. A
+cache that exists but carries no window stays `unknown` and is never read as
+full quota.
+
 Resumable G14b/G14e harness tests must prove the preflight runs after completed-
 result reuse is checked but before a new `started` checkpoint is written. A
 pause therefore leaves the last valid result reusable. Long profile scripts

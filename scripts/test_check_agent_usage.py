@@ -171,6 +171,155 @@ class UsageTests(unittest.TestCase):
             got = usage.probe_claude(path, lambda: True)
         self.assertEqual(got["binding_remaining_percent"], 82)
 
+    def _write_cache(self, directory: str, document: dict) -> str:
+        path = os.path.join(directory, "usage-cache.json")
+        with open(path, "w", encoding="utf-8") as stream:
+            json.dump(document, stream)
+        return path
+
+    def test_claude_status_line_rate_limits_bind_on_the_tightest_window(self) -> None:
+        now = 1_800_000_000.0
+        document = {
+            "captured_at": now - 60,
+            "rate_limits": {
+                "5h": {"used_percentage": 18, "resets_at": now + 3600},
+                "7d": {"used_percentage": 73, "resets_at": now + 200000},
+                "spend_limit": {"used_usd": 4, "limit_usd": 50},
+            },
+        }
+        with tempfile.TemporaryDirectory() as directory, \
+                mock.patch.object(usage, "_client_version", return_value="claude-test"):
+            path = self._write_cache(directory, document)
+            got = usage.probe_claude(
+                None, lambda: True, cache_path=path, now=now
+            )
+        self.assertEqual(got["state"], "active")
+        # The 7-day window is tighter, and the dollar-denominated spend limit
+        # carries no percentage so it must never become the binding constraint.
+        self.assertEqual(got["binding_remaining_percent"], 27)
+        self.assertEqual(got["binding_duration_minutes"], 10080)
+        self.assertEqual([item["name"] for item in got["buckets"]], ["5h", "7d"])
+        self.assertEqual(got["cache_age_minutes"], 1.0)
+
+    def test_claude_missing_cache_is_unknown_and_names_the_fix(self) -> None:
+        with tempfile.TemporaryDirectory() as directory, \
+                mock.patch.object(usage, "_client_version", return_value="claude-test"):
+            got = usage.probe_claude(
+                None,
+                lambda: True,
+                cache_path=os.path.join(directory, "usage-cache.json"),
+            )
+        self.assertEqual(got["state"], "unknown")
+        self.assertIsNone(got.get("binding_remaining_percent"))
+        self.assertIn("claude_statusline_usage.py", got["error"])
+
+    def test_claude_cache_without_rate_limits_is_unknown_not_full(self) -> None:
+        with tempfile.TemporaryDirectory() as directory, \
+                mock.patch.object(usage, "_client_version", return_value="claude-test"):
+            path = self._write_cache(directory, {"captured_at": 1_800_000_000.0})
+            got = usage.probe_claude(
+                None, lambda: True, cache_path=path, now=1_800_000_000.0
+            )
+        self.assertEqual(got["state"], "unknown")
+        self.assertIsNone(got.get("binding_remaining_percent"))
+
+    def test_claude_stale_cache_does_not_bind(self) -> None:
+        now = 1_800_000_000.0
+        document = {
+            "captured_at": now - 7200,
+            "rate_limits": {"5h": {"used_percentage": 5, "resets_at": now + 600}},
+        }
+        with tempfile.TemporaryDirectory() as directory, \
+                mock.patch.object(usage, "_client_version", return_value="claude-test"):
+            path = self._write_cache(directory, document)
+            got = usage.probe_claude(
+                None, lambda: True, cache_path=path, max_age_minutes=30, now=now
+            )
+        self.assertEqual(got["state"], "stale")
+        # A two-hour-old 95%-remaining reading must not authorize a long run.
+        self.assertIsNone(got.get("binding_remaining_percent"))
+        self.assertIn("120.0 minutes old", got["error"])
+
+    def test_claude_window_past_its_reset_is_excluded(self) -> None:
+        now = 1_800_000_000.0
+        document = {
+            "captured_at": now - 60,
+            "rate_limits": {
+                "5h": {"used_percentage": 99, "resets_at": now - 10},
+                "7d": {"used_percentage": 40, "resets_at": now + 200000},
+            },
+        }
+        with tempfile.TemporaryDirectory() as directory, \
+                mock.patch.object(usage, "_client_version", return_value="claude-test"):
+            path = self._write_cache(directory, document)
+            got = usage.probe_claude(
+                None, lambda: True, cache_path=path, now=now
+            )
+        self.assertEqual(got["state"], "active")
+        self.assertEqual(got["binding_remaining_percent"], 60)
+        self.assertTrue(got["buckets"][0]["expired"])
+
+    def test_claude_all_windows_expired_is_stale(self) -> None:
+        now = 1_800_000_000.0
+        document = {
+            "captured_at": now - 60,
+            "rate_limits": {"5h": {"used_percentage": 99, "resets_at": now - 10}},
+        }
+        with tempfile.TemporaryDirectory() as directory, \
+                mock.patch.object(usage, "_client_version", return_value="claude-test"):
+            path = self._write_cache(directory, document)
+            got = usage.probe_claude(None, lambda: True, cache_path=path, now=now)
+        self.assertEqual(got["state"], "stale")
+        self.assertIn("past its reset", got["error"])
+
+    def test_claude_accepts_iso_resets_and_remaining_percentage(self) -> None:
+        document = {
+            "captured_at": "2027-01-15T08:00:00Z",
+            "rate_limits": [
+                {
+                    "name": "weekly",
+                    "remaining_percentage": 12,
+                    "resets_at": "2027-01-20T08:00:00Z",
+                }
+            ],
+        }
+        captured = 1_800_000_000.0
+        with tempfile.TemporaryDirectory() as directory, \
+                mock.patch.object(usage, "_client_version", return_value="claude-test"):
+            path = self._write_cache(directory, document)
+            got = usage.probe_claude(
+                None, lambda: True, cache_path=path, now=captured, max_age_minutes=None
+            )
+        self.assertEqual(got["state"], "active")
+        self.assertEqual(got["binding_remaining_percent"], 12)
+        self.assertEqual(got["buckets"][0]["duration_minutes"], 10080)
+
+    def test_claude_stale_pauses_strict_mode_but_not_the_default_gate(self) -> None:
+        stale = {
+            "agent": "claude",
+            "state": "stale",
+            "buckets": [],
+            "client_version": "claude-test",
+            "error": "cache is old",
+        }
+        with mock.patch.object(usage, "probe_claude", return_value=stale):
+            self.assertEqual(usage.main(["--agent", "claude"]), 0)
+            self.assertEqual(usage.main(["--agent", "claude", "--strict"]), 3)
+
+    def test_claude_max_age_flag_is_validated(self) -> None:
+        self.assertEqual(
+            usage.main(["--agent", "claude", "--claude-max-age-minutes", "0"]), 1
+        )
+
+    def test_epoch_handles_milliseconds_and_iso(self) -> None:
+        self.assertEqual(usage._epoch(1_800_000_000_000), 1_800_000_000.0)
+        self.assertEqual(usage._epoch("1800000000"), 1_800_000_000.0)
+        self.assertIsNone(usage._epoch("reset"))
+        self.assertEqual(usage._reset_utc("reset"), "reset")
+        self.assertEqual(
+            usage._reset_utc(1_800_000_000_000), usage._reset_utc(1_800_000_000)
+        )
+
     def test_claude_not_running_is_neutral_in_strict_mode(self) -> None:
         not_running = {
             "agent": "claude",

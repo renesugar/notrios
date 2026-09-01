@@ -352,7 +352,10 @@ G18c.1 adds developer-workflow protection without changing the product.
 `scripts/check_agent_usage.py` reads Codex rolling windows through the local,
 model-free app-server method and reads Claude only from an explicit local cache
 when Claude is actually running. It never calls `codex exec /status` or
-`claude -p`, and missing telemetry is `unknown`, never 100%. The shared wrapper
+`claude -p`, and missing telemetry is `unknown`, never 100%. Claude Code writes
+no usage file of its own, so that cache is produced by installing
+`scripts/claude_statusline_usage.py` as the `statusLine` command in
+`~/.claude/settings.json`; without it the Claude side is permanently `unknown`. The shared wrapper
 is advisory by default, can be strict or disabled, and runs before G14b/G14e
 durable phase starts and repeated long profiles. Optional before/after history
 must stay outside canonical evidence and is isolated by agent, model, effort,

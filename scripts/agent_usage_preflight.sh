@@ -49,6 +49,9 @@ case $status in
     if [[ $output == *'"state": "unknown"'* || $output == *'"state":"unknown"'* ]]; then
       echo "warning: agent usage telemetry unavailable; continuing operation: $operation" >&2
     fi
+    if [[ $output == *'"state": "stale"'* || $output == *'"state":"stale"'* ]]; then
+      echo "warning: agent usage telemetry is stale and was not trusted; continuing operation: $operation" >&2
+    fi
     exit 0
     ;;
   2)

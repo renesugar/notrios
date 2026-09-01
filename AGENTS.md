@@ -152,6 +152,15 @@ The Codex probe must remain model-free (`account/rateLimits/read` through the
 local app-server), never `codex exec /status`. The Claude probe remains
 local-cache-only and must not invoke `claude -p` merely to estimate quota.
 
+The Claude side needs one machine-local setup step, because Claude Code keeps
+rate limits in memory and only hands them to the configured `statusLine`
+command. Install `scripts/claude_statusline_usage.py` as that command in
+`~/.claude/settings.json`; it records `~/.claude/usage-cache.json` for the
+probe to read. Without it the probe reports `unknown` and cannot gate a long
+run. A cache older than `--claude-max-age-minutes` (default 30), or one whose
+windows are all past `resets_at`, reports `stale` and is treated like `unknown`
+rather than trusted.
+
 ## Plan archival
 
 Implemented plans must be archived under:
