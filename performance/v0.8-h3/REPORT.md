@@ -106,7 +106,14 @@ holding the database, the asset store, the projections, the search index, and
 the quarantine of untrusted downloads.
 
 So on a shared machine the encrypted backup of a user's notes is owner-only and
-the notes themselves are world-readable. The test sets the umask to zero so it
+the notes themselves are world-readable.
+
+It is sharper than two constants in two packages: **two code paths create the
+same directory with different modes.** `config.EnsureDirectories` creates the
+data directory `0755` at startup; `publish.File.Save` creates it `0700` on its
+way to writing `publish-profiles.json`. Whichever runs first on a given machine
+decides, nothing reconciles them afterwards, and neither is wrong on its own
+terms. `TestTheDataDirectoryGetsDifferentModesDependingOnWhoCreatesIt`. The test sets the umask to zero so it
 observes the mode the program *asked for* rather than the mode this machine's
 umask happened to allow — a umask of `077` masks this without fixing it, which
 is exactly why the requested mode is the thing worth asserting.

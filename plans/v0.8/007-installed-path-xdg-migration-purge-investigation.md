@@ -56,7 +56,9 @@ inbox, the registry, sync keys, snapshot images — 20 directories at `0700` and
 13 files at `0600`.
 `config.EnsureDirectories` creates the primary roots at `0755`. On a shared
 machine the encrypted backup of a user's notes is owner-only and the notes are
-world-readable.
+world-readable. Sharper still: `config.EnsureDirectories` creates the data
+directory `0755` and `publish.File.Save` creates the same directory `0700`, so
+its permissions depend on which code path ran first.
 
 Two smaller ones by source audit: the `:memory:` asset root is a single fixed
 `os.TempDir()/notrios-assets` shared by every user and instance, and `parentDir`
@@ -182,7 +184,7 @@ destination is unsafe.
 ```
 go test ./...                                     all packages pass
 make validate                                     scaffold validation passes
-go test ./performance/v0.8-h3/pathprobe/          7 characterization tests
+go test ./performance/v0.8-h3/pathprobe/          8 characterization tests
 python3 -m unittest discover -s performance/v0.8-h3 -p 'test_*.py'
                                                   4 tests, 30 purge fixtures,
                                                   14 resolution scenarios
