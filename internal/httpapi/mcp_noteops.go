@@ -69,7 +69,7 @@ func (s *Server) mcpSearchInNote(r *http.Request, raw json.RawMessage) (mcpToolR
 	if err != nil {
 		return mcpToolResult{}, err
 	}
-	return mcpStructured(searchInNote(doc, args.Pattern))
+	return mcpStructured(searchInNote(doc.ID, doc.Body, args.Pattern))
 }
 
 func (s *Server) mcpGetNotebookNotes(r *http.Request, raw json.RawMessage) (mcpToolResult, error) {

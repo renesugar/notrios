@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/renesugar/notrios/internal/api"
+	"github.com/renesugar/notrios/internal/application"
 	"github.com/renesugar/notrios/internal/config"
 	"github.com/renesugar/notrios/internal/localize"
 	"github.com/renesugar/notrios/internal/media"
@@ -34,8 +35,13 @@ import (
 //notrios:doc api rest-api-contract
 //notrios:enumerates go:github.com/renesugar/notrios/internal/httpapi#NewServerWithOptions
 type Server struct {
-	mux           *http.ServeMux
-	store         store.Store
+	mux   *http.ServeMux
+	store store.Store
+	// app is the transport-neutral application facade (v0.8 H1). Handlers use
+	// it in preference to store for the operations it covers, so REST and the
+	// coming C ABI share one set of application semantics. It is nil in
+	// scaffold mode, exactly when store is nil.
+	app           *application.Application
 	config        config.Config
 	sidecar       SidecarSearcher
 	sidecarStatus SidecarStatusProvider
@@ -122,6 +128,7 @@ func NewServerWithOptions(options ServerOptions) *Server {
 		searchCache: newMergedSearchCache(),
 	}
 	if options.Store != nil {
+		s.app = application.New(options.Store)
 		// Lazy fetcher inside: no filesystem side effects until first use.
 		s.localizer = localize.New(cfg.RemoteMedia, options.Store)
 	}
@@ -595,20 +602,23 @@ func (s *Server) handleCreateDocument(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-	doc, err := s.store.CreateDocument(r.Context(), store.CreateDocumentRequest{
+	note, err := s.app.CreateNote(r.Context(), application.CreateNoteInput{
 		CollectionID: req.CollectionID,
 		NotebookID:   req.NotebookID,
 		Title:        req.Title,
 		Body:         req.Body,
-		BodyMIMEType: req.BodyMIMEType,
+		MIMEType:     req.BodyMIMEType,
 		Message:      req.Message,
 	})
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "document_create_failed", err.Error())
+		// Create has always answered 500 for any store failure rather than
+		// classifying it. Preserved deliberately; changing it belongs in a
+		// slice that can regenerate the API documentation with it.
+		writeError(w, http.StatusInternalServerError, "document_create_failed", applicationMessage(err))
 		return
 	}
-	setRevisionETag(w, doc.CurrentRevisionID)
-	writeJSON(w, http.StatusCreated, toAPIDocument(doc))
+	setRevisionETag(w, note.RevisionID)
+	writeJSON(w, http.StatusCreated, apiDocumentFromNote(note))
 }
 
 func (s *Server) handleDocument(w http.ResponseWriter, r *http.Request) {
@@ -635,12 +645,12 @@ func (s *Server) handleGetDocument(w http.ResponseWriter, r *http.Request, docID
 	// before deciding what to restore, and a stable link resolving to
 	// `trashed` has to open something. Every write path still stops at the
 	// Trash, and the agent-facing surfaces keep the plain GetDocument.
-	doc, err := s.store.GetDocumentIncludingTrashed(r.Context(), docID)
-	if writeStoreError(w, err, "document_read_failed") {
+	note, err := s.app.GetNoteIncludingTrashed(r.Context(), docID)
+	if writeApplicationError(w, err, "document_read_failed") {
 		return
 	}
-	setRevisionETag(w, doc.CurrentRevisionID)
-	writeJSON(w, http.StatusOK, toAPIDocument(doc))
+	setRevisionETag(w, note.RevisionID)
+	writeJSON(w, http.StatusOK, apiDocumentFromNote(note))
 }
 
 func (s *Server) handlePutDocument(w http.ResponseWriter, r *http.Request, docID string) {
@@ -663,19 +673,19 @@ func (s *Server) handlePutDocument(w http.ResponseWriter, r *http.Request, docID
 		writeJSON(w, http.StatusOK, doc)
 		return
 	}
-	doc, err := s.store.UpdateDocument(r.Context(), store.UpdateDocumentRequest{
-		ID:             docID,
-		Title:          req.Title,
-		Body:           req.Body,
-		BodyMIMEType:   req.BodyMIMEType,
-		BaseRevisionID: baseRevisionID,
-		Message:        req.Message,
+	note, err := s.app.UpdateNote(r.Context(), application.UpdateNoteInput{
+		ID:         docID,
+		Title:      req.Title,
+		Body:       req.Body,
+		MIMEType:   req.BodyMIMEType,
+		RevisionID: baseRevisionID,
+		Message:    req.Message,
 	})
-	if writeStoreError(w, err, "document_update_failed") {
+	if writeApplicationError(w, err, "document_update_failed") {
 		return
 	}
-	setRevisionETag(w, doc.CurrentRevisionID)
-	writeJSON(w, http.StatusOK, toAPIDocument(doc))
+	setRevisionETag(w, note.RevisionID)
+	writeJSON(w, http.StatusOK, apiDocumentFromNote(note))
 }
 
 func (s *Server) handlePatchDocument(w http.ResponseWriter, r *http.Request, docID string) {
@@ -695,8 +705,8 @@ func (s *Server) handlePatchDocument(w http.ResponseWriter, r *http.Request, doc
 		writeJSON(w, http.StatusOK, placeholderDocument(docID))
 		return
 	}
-	current, err := s.store.GetDocument(r.Context(), docID)
-	if writeStoreError(w, err, "document_read_failed") {
+	current, err := s.app.GetNote(r.Context(), docID)
+	if writeApplicationError(w, err, "document_read_failed") {
 		return
 	}
 	title := current.Title
@@ -711,22 +721,22 @@ func (s *Server) handlePatchDocument(w http.ResponseWriter, r *http.Request, doc
 	if req.DryRun {
 		current.Title = title
 		current.Body = body
-		writeJSON(w, http.StatusOK, toAPIDocument(current))
+		writeJSON(w, http.StatusOK, apiDocumentFromNote(current))
 		return
 	}
-	doc, err := s.store.UpdateDocument(r.Context(), store.UpdateDocumentRequest{
-		ID:             docID,
-		Title:          title,
-		Body:           body,
-		BodyMIMEType:   current.BodyMIMEType,
-		BaseRevisionID: baseRevisionID,
-		Message:        "patch",
+	note, err := s.app.UpdateNote(r.Context(), application.UpdateNoteInput{
+		ID:         docID,
+		Title:      title,
+		Body:       body,
+		MIMEType:   current.MIMEType,
+		RevisionID: baseRevisionID,
+		Message:    "patch",
 	})
-	if writeStoreError(w, err, "document_patch_failed") {
+	if writeApplicationError(w, err, "document_patch_failed") {
 		return
 	}
-	setRevisionETag(w, doc.CurrentRevisionID)
-	writeJSON(w, http.StatusOK, toAPIDocument(doc))
+	setRevisionETag(w, note.RevisionID)
+	writeJSON(w, http.StatusOK, apiDocumentFromNote(note))
 }
 
 func (s *Server) handleDeleteDocument(w http.ResponseWriter, r *http.Request, docID string) {
@@ -742,8 +752,8 @@ func (s *Server) handleDeleteDocument(w http.ResponseWriter, r *http.Request, do
 		w.WriteHeader(http.StatusNoContent)
 		return
 	}
-	err := s.store.DeleteDocument(r.Context(), store.DeleteDocumentRequest{ID: docID, BaseRevisionID: baseRevisionID})
-	if writeStoreError(w, err, "document_delete_failed") {
+	err := s.app.DeleteNote(r.Context(), application.DeleteNoteInput{ID: docID, RevisionID: baseRevisionID})
+	if writeApplicationError(w, err, "document_delete_failed") {
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
@@ -755,12 +765,12 @@ func (s *Server) handleDocumentBody(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte("# Scaffold document\n\nPersistence is not wired yet.\n"))
 		return
 	}
-	doc, err := s.store.GetDocument(r.Context(), r.PathValue("document_id"))
-	if writeStoreError(w, err, "document_read_failed") {
+	note, err := s.app.GetNote(r.Context(), r.PathValue("document_id"))
+	if writeApplicationError(w, err, "document_read_failed") {
 		return
 	}
-	setRevisionETag(w, doc.CurrentRevisionID)
-	_, _ = w.Write([]byte(doc.Body))
+	setRevisionETag(w, note.RevisionID)
+	_, _ = w.Write([]byte(note.Body))
 }
 
 func (s *Server) handleDocumentRevisions(w http.ResponseWriter, r *http.Request) {
@@ -768,13 +778,13 @@ func (s *Server) handleDocumentRevisions(w http.ResponseWriter, r *http.Request)
 		writeJSON(w, http.StatusOK, api.RevisionPage{Revisions: []api.DocumentRevision{}})
 		return
 	}
-	revisions, err := s.store.ListDocumentRevisions(r.Context(), r.PathValue("document_id"))
-	if writeStoreError(w, err, "revision_list_failed") {
+	revisions, err := s.app.ListRevisions(r.Context(), r.PathValue("document_id"))
+	if writeApplicationError(w, err, "revision_list_failed") {
 		return
 	}
 	out := make([]api.DocumentRevision, 0, len(revisions))
 	for _, revision := range revisions {
-		apiRevision := toAPIRevision(revision)
+		apiRevision := apiRevisionFromRevision(revision)
 		apiRevision.Body = ""
 		out = append(out, apiRevision)
 	}
@@ -786,11 +796,11 @@ func (s *Server) handleDocumentRevision(w http.ResponseWriter, r *http.Request) 
 		writeJSON(w, http.StatusOK, api.DocumentRevision{ID: r.PathValue("revision_id"), DocumentID: r.PathValue("document_id"), Title: "Scaffold revision"})
 		return
 	}
-	revision, err := s.store.GetDocumentRevision(r.Context(), r.PathValue("document_id"), r.PathValue("revision_id"))
-	if writeStoreError(w, err, "revision_read_failed") {
+	revision, err := s.app.GetRevision(r.Context(), r.PathValue("document_id"), r.PathValue("revision_id"))
+	if writeApplicationError(w, err, "revision_read_failed") {
 		return
 	}
-	writeJSON(w, http.StatusOK, toAPIRevision(revision))
+	writeJSON(w, http.StatusOK, apiRevisionFromRevision(revision))
 }
 
 func (s *Server) handleRestoreRevision(w http.ResponseWriter, r *http.Request) {
@@ -807,17 +817,17 @@ func (s *Server) handleRestoreRevision(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, placeholderDocument(r.PathValue("document_id")))
 		return
 	}
-	doc, err := s.store.RestoreDocumentRevision(r.Context(), store.RestoreRevisionRequest{
-		DocumentID:     r.PathValue("document_id"),
+	note, err := s.app.RestoreRevision(r.Context(), application.RestoreRevisionInput{
+		NoteID:         r.PathValue("document_id"),
 		RevisionID:     r.PathValue("revision_id"),
 		BaseRevisionID: baseRevisionID,
 		Message:        req.Message,
 	})
-	if writeStoreError(w, err, "revision_restore_failed") {
+	if writeApplicationError(w, err, "revision_restore_failed") {
 		return
 	}
-	setRevisionETag(w, doc.CurrentRevisionID)
-	writeJSON(w, http.StatusOK, toAPIDocument(doc))
+	setRevisionETag(w, note.RevisionID)
+	writeJSON(w, http.StatusOK, apiDocumentFromNote(note))
 }
 
 func (s *Server) handleDocumentResources(w http.ResponseWriter, r *http.Request) {
@@ -900,8 +910,8 @@ func (s *Server) handleDocumentOutline(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, api.DocumentOutline{DocumentID: docID, Headings: []api.DocumentHeading{}})
 		return
 	}
-	doc, err := s.store.GetDocument(r.Context(), docID)
-	if writeStoreError(w, err, "document_read_failed") {
+	doc, err := s.app.GetNote(r.Context(), docID)
+	if writeApplicationError(w, err, "document_read_failed") {
 		return
 	}
 	writeJSON(w, http.StatusOK, extractDocumentOutline(doc.ID, doc.Body))
@@ -927,8 +937,8 @@ func (s *Server) handleRemoteMediaScan(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	documentID := r.PathValue("document_id")
-	doc, err := s.store.GetDocument(r.Context(), documentID)
-	if writeStoreError(w, err, "document_read_failed") {
+	doc, err := s.app.GetNote(r.Context(), documentID)
+	if writeApplicationError(w, err, "document_read_failed") {
 		return
 	}
 	writeJSON(w, http.StatusOK, scanResultFromDecisions(doc.ID, s.mediaPolicy.ScanBody(doc.Body)))
@@ -1080,11 +1090,11 @@ func (s *Server) handleResourceHead(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		return
 	}
-	res, err := s.store.GetResource(r.Context(), r.PathValue("resource_id"))
-	if writeStoreError(w, err, "resource_read_failed") {
+	res, err := s.app.GetResource(r.Context(), r.PathValue("resource_id"))
+	if writeApplicationError(w, err, "resource_read_failed") {
 		return
 	}
-	setResourceHeaders(w, res, false)
+	writeResourceHeaders(w, res.MIMEType, res.SizeBytes, res.Filename, false)
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -1106,11 +1116,11 @@ func (s *Server) handleResource(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, api.Resource{ID: resourceID, URI: "resource://default/resources/" + resourceID, CollectionID: "default", MIMEType: "application/octet-stream"})
 		return
 	}
-	res, err := s.store.GetResource(r.Context(), resourceID)
-	if writeStoreError(w, err, "resource_read_failed") {
+	res, err := s.app.GetResource(r.Context(), resourceID)
+	if writeApplicationError(w, err, "resource_read_failed") {
 		return
 	}
-	writeJSON(w, http.StatusOK, toAPIResource(res))
+	writeJSON(w, http.StatusOK, apiResourceFromResource(res))
 }
 
 func (s *Server) handleGarbageCollectionReport(w http.ResponseWriter, r *http.Request) {
@@ -1135,6 +1145,13 @@ func (s *Server) handleResourceContent(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte("scaffold resource content\n"))
 		return
 	}
+	// This handler deliberately stays on the store rather than moving to
+	// application.OpenResource. The facade's ResourceStream is a bounded
+	// forward-only reader built for the ABI's chunked pull model, and wrapping
+	// the source hides the io.ReadSeeker that http.ServeContent needs for HTTP
+	// Range. Routing this through the facade as it stands would silently drop
+	// range support; reconciling the two access shapes is an ABI-slice design
+	// question, not something to paper over here.
 	res, content, err := s.store.OpenResourceContent(r.Context(), r.PathValue("resource_id"))
 	if writeStoreError(w, err, "resource_content_failed") {
 		return
@@ -1549,18 +1566,25 @@ func toAPILinks(links []store.DocumentLink) []api.DocumentLink {
 }
 
 func setResourceHeaders(w http.ResponseWriter, resource store.Resource, download bool) {
-	contentType := defaultString(resource.MIMEType, "application/octet-stream")
+	writeResourceHeaders(w, resource.MIMEType, resource.SizeBytes, resource.Filename, download)
+}
+
+// writeResourceHeaders is the one implementation, shared by the store-backed
+// content handler and the facade-backed metadata handlers so the two cannot
+// drift into emitting different headers for the same attachment.
+func writeResourceHeaders(w http.ResponseWriter, mimeType string, sizeBytes int64, filename string, download bool) {
+	contentType := defaultString(mimeType, "application/octet-stream")
 	w.Header().Set("Content-Type", contentType)
 	w.Header().Set("X-Content-Type-Options", "nosniff")
-	if resource.SizeBytes > 0 {
-		w.Header().Set("Content-Length", strconv.FormatInt(resource.SizeBytes, 10))
+	if sizeBytes > 0 {
+		w.Header().Set("Content-Length", strconv.FormatInt(sizeBytes, 10))
 	}
-	if resource.Filename != "" {
+	if filename != "" {
 		disposition := "inline"
 		if download {
 			disposition = "attachment"
 		}
-		w.Header().Set("Content-Disposition", mime.FormatMediaType(disposition, map[string]string{"filename": safeDownloadFilename(resource.Filename)}))
+		w.Header().Set("Content-Disposition", mime.FormatMediaType(disposition, map[string]string{"filename": safeDownloadFilename(filename)}))
 	}
 }
 

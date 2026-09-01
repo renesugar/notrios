@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/renesugar/notrios/internal/api"
+	"github.com/renesugar/notrios/internal/application"
 	"github.com/renesugar/notrios/internal/store"
 )
 
@@ -20,7 +21,7 @@ import (
 // rather than naming a notebook, so a later generated notebook is protected the
 // day it is added instead of the day someone remembers this line.
 func (s *Server) guardReadOnlyNote(w http.ResponseWriter, r *http.Request, docID string) bool {
-	doc, err := s.store.GetDocument(r.Context(), docID)
+	doc, err := s.app.GetNote(r.Context(), docID)
 	if err != nil {
 		return false // let the handler produce its own not-found/error
 	}
@@ -63,41 +64,41 @@ func (s *Server) handleAppendOrPrepend(w http.ResponseWriter, r *http.Request, p
 	if baseRevisionID == "" {
 		attempts = 2
 	}
-	var doc store.Document
+	var note application.Note
 	for attempt := 0; attempt < attempts; attempt++ {
-		current, err := s.store.GetDocument(r.Context(), docID)
-		if writeStoreError(w, err, "document_read_failed") {
+		current, err := s.app.GetNote(r.Context(), docID)
+		if writeApplicationError(w, err, "document_read_failed") {
 			return
 		}
 		base := baseRevisionID
 		if base == "" {
-			base = current.CurrentRevisionID
+			base = current.RevisionID
 		}
 		body := joinNoteText(current.Body, req.Text, prepend)
 		message := "append"
 		if prepend {
 			message = "prepend"
 		}
-		doc, err = s.store.UpdateDocument(r.Context(), store.UpdateDocumentRequest{
-			ID:             docID,
-			Title:          current.Title,
-			Body:           body,
-			BodyMIMEType:   current.BodyMIMEType,
-			BaseRevisionID: base,
-			Message:        message,
+		note, err = s.app.UpdateNote(r.Context(), application.UpdateNoteInput{
+			ID:         docID,
+			Title:      current.Title,
+			Body:       body,
+			MIMEType:   current.MIMEType,
+			RevisionID: base,
+			Message:    message,
 		})
 		if err == nil {
 			break
 		}
-		if errors.Is(err, store.ErrConflict) && baseRevisionID == "" && attempt+1 < attempts {
+		if errors.Is(err, application.ErrConflict) && baseRevisionID == "" && attempt+1 < attempts {
 			continue
 		}
-		if writeStoreError(w, err, "document_update_failed") {
+		if writeApplicationError(w, err, "document_update_failed") {
 			return
 		}
 	}
-	setRevisionETag(w, doc.CurrentRevisionID)
-	writeJSON(w, http.StatusOK, toAPIDocument(doc))
+	setRevisionETag(w, note.RevisionID)
+	writeJSON(w, http.StatusOK, apiDocumentFromNote(note))
 }
 
 func joinNoteText(body, text string, prepend bool) string {
@@ -124,8 +125,8 @@ func (s *Server) handleDocumentLines(w http.ResponseWriter, r *http.Request) {
 	if !s.requireStore(w) {
 		return
 	}
-	doc, err := s.store.GetDocument(r.Context(), r.PathValue("document_id"))
-	if writeStoreError(w, err, "document_read_failed") {
+	doc, err := s.app.GetNote(r.Context(), r.PathValue("document_id"))
+	if writeApplicationError(w, err, "document_read_failed") {
 		return
 	}
 	lines := strings.Split(doc.Body, "\n")
@@ -160,15 +161,19 @@ func (s *Server) handleDocumentSearchIn(w http.ResponseWriter, r *http.Request) 
 		writeError(w, http.StatusBadRequest, "validation_failed", "pattern is required")
 		return
 	}
-	doc, err := s.store.GetDocument(r.Context(), r.PathValue("document_id"))
-	if writeStoreError(w, err, "document_read_failed") {
+	doc, err := s.app.GetNote(r.Context(), r.PathValue("document_id"))
+	if writeApplicationError(w, err, "document_read_failed") {
 		return
 	}
-	writeJSON(w, http.StatusOK, searchInNote(doc, pattern))
+	writeJSON(w, http.StatusOK, searchInNote(doc.ID, doc.Body, pattern))
 }
 
-func searchInNote(doc store.Document, pattern string) api.NoteSearchResponse {
-	lines := strings.Split(doc.Body, "\n")
+// searchInNote takes the identifier and body rather than a note type: it is
+// shared by the REST and MCP adapters, which are migrating to the application
+// facade at different times, and neither should have to convert a value just
+// to run a substring search.
+func searchInNote(documentID, documentBody, pattern string) api.NoteSearchResponse {
+	lines := strings.Split(documentBody, "\n")
 	needle := strings.ToLower(pattern)
 	matches := []api.NoteSearchMatch{}
 	for i, line := range lines {
@@ -186,7 +191,7 @@ func searchInNote(doc store.Document, pattern string) api.NoteSearchResponse {
 			break
 		}
 	}
-	return api.NoteSearchResponse{DocumentID: doc.ID, Pattern: pattern, Matches: matches}
+	return api.NoteSearchResponse{DocumentID: documentID, Pattern: pattern, Matches: matches}
 }
 
 func max(a, b int) int {

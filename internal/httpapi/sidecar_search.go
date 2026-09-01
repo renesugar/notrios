@@ -50,6 +50,13 @@ func newMergedSearchCache() *mergedSearchCache {
 // optional sidecar contributes results, it builds a bounded immutable merged
 // snapshot so sidecar-only hits remain stable on every page. OFFSET exists
 // only inside this explicitly bounded in-memory snapshot, never in SQLite.
+// This orchestration deliberately stays on the store in v0.8 H1 slice B.
+// Routing it through application.Search would convert every hit twice per page
+// while the merge, cursor, and snapshot code around it still works in store
+// types, and moving the merge itself into the facade would make the facade own
+// the optional Recoll sidecar and the query parser. That is a design decision
+// about where sidecar search belongs, not a mechanical migration, so it gets
+// its own slice rather than a fork inside this one.
 func (s *Server) searchMerged(ctx context.Context, req store.SearchRequest) (store.SearchResponse, error) {
 	req = store.NormalizeSearchRequest(req)
 	parsed, err := query.Parse(req.Query, time.Now())
