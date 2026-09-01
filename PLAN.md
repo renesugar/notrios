@@ -143,7 +143,7 @@ semantics, schema, and platform-support claims are unchanged. `handleResourceCon
 with its reason recorded; the Android emulator matrix stays with H11. Archived
 as `plans/v0.8/003-shared-application-facade-abi-library.md`.
 
-## H2a. Mermaid renderer and security investigation
+## H2a. Mermaid renderer and security investigation — complete
 
 **Goal.** Determine whether and how the current GUI can enable Mermaid without
 weakening offline, CSP, sanitization, or responsiveness guarantees.
@@ -169,10 +169,30 @@ fixtures, narrow-layout/accessibility review, and zero-network proof.
 **Open decisions**
 
 - **Which renderer and containment design should H2 implement? — Non-blocking
-  for H2a; blocking for H2.** Default investigation recommendation criteria are
-  local-only assets, MIT/Apache compatibility, no CSP widening, bounded abort,
-  source-visible failure, and acceptable measured bundle/runtime cost. H2a may
-  also recommend keeping Mermaid disabled.
+  for H2a; blocking for H2. Answered 2026-09-01:** Mermaid 11.17.2, pinned and
+  locally bundled, with `securityLevel: 'strict'`, `htmlLabels: false`
+  everywhere, lowered `maxEdges`/`maxTextSize`, post-render SVG sanitisation
+  that strips every `href`, catch-all failure to visible fenced source, and
+  dynamic import so it loads only when a diagram is present. H2a considered
+  recommending that Mermaid stay disabled and did not.
+
+**Outcome (2026-09-01).** Measured against the disabled baseline in Chromium
+under the application's verbatim production CSP: **zero CSP violations and no
+`unsafe-eval` needed**, because the two `new Function` sites in the dependency
+tree are unreachable from Mermaid and do not survive the Vite bundle. Mermaid's
+**default** configuration is not acceptable — a diagram label fetched a remote
+image, and every diagram emitted the `foreignObject` the G18 contract asks to
+refuse — but `htmlLabels: false` with strict security gave zero `foreignObject`,
+zero cross-origin requests, and no script execution. One residual vector
+remains: a `click` directive's remote href survives and H2 must strip it. Cost
+is roughly a doubled bundle (0.85 MB to about 1.75 MB gzipped), softened by code
+splitting to 772 KiB for one flowchart. Enablement also needs three reviewed
+licence-gate decisions, none a genuine licence problem. The 2000 ms render
+deadline was **not** validated, because Mermaid's own `maxEdges` guard refuses
+large graphs before layout; the Wails webview smoke, worker cancellation, and
+accessibility review also remain undone and are recorded as such. Archived as
+`plans/v0.8/004-mermaid-renderer-security-investigation.md`; Mermaid remains
+disabled and no production file changed.
 
 ## H2. Bounded offline Mermaid enablement
 
@@ -753,7 +773,7 @@ This is an index only; each decision is owned and explained inside its item.
 | Shared-core SQLite owner/version/checksum | H0/H1 | Resolved and implemented in H1: vendored amalgamation 3.53.4, static hidden linkage |
 | Application facade package owner | H0/H1 | Resolved and implemented in H1: `internal/application` |
 | Emulator ABI/minSdk acceptance | H0/H11 | Resolved for H1: API-35 x86_64 runtime; arm64-v8a build-only |
-| Mermaid renderer/containment | H2a/H2 | Open; H2a investigation, blocking H2 |
+| Mermaid renderer/containment | H2a/H2 | Recommended by H2a: Mermaid 11.17.2 with strict security and `htmlLabels: false`; H2 approval also accepts the bundle cost and three licence-gate decisions |
 | Installed/portable path precedence | H3/H4 | Open with explicit-override/native default |
 | User-local/GNU install layout | H3/H5 | Open with `$HOME/.local` default |
 | Purge external-path and backup policy | H3/H5 | Open; safe refusal and verified-backup defaults |
@@ -765,5 +785,5 @@ This is an index only; each decision is owned and explained inside its item.
 | v0.8 product/schema number | H13 | Open with product 0.8.0/no gratuitous schema default |
 | Internal artifact custody | H13 | Local/internal-only default; public release separately authorized |
 
-H1 completed on 2026-09-01. H2a is the next incomplete item and remains
-unapproved. Do not begin it until the user explicitly says to proceed with H2a.
+H1 and H2a completed on 2026-09-01. H2 is the next incomplete item and remains
+unapproved. Do not begin it until the user explicitly says to proceed with H2.

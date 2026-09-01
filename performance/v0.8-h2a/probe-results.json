@@ -1,0 +1,141 @@
+{
+  "csp_violations": [],
+  "console_errors": [],
+  "page_errors": [],
+  "total_requests": 27,
+  "cross_origin_requests": [],
+  "script_execution_detected": false,
+  "fixtures": {
+    "flowchart_basic": {
+      "rendered": true,
+      "timed_out": false,
+      "ms": 400,
+      "svg_bytes": 14668,
+      "error": null,
+      "audit": {
+        "scripts": 0,
+        "iframes": 0,
+        "foreignObjects": 0,
+        "eventHandlerAttrs": [],
+        "hrefs": [],
+        "remoteImages": []
+      }
+    },
+    "foreign_object_html": {
+      "rendered": true,
+      "timed_out": false,
+      "ms": 82,
+      "svg_bytes": 10661,
+      "error": null,
+      "audit": {
+        "scripts": 0,
+        "iframes": 0,
+        "foreignObjects": 0,
+        "eventHandlerAttrs": [],
+        "hrefs": [],
+        "remoteImages": []
+      }
+    },
+    "html_script_handler": {
+      "rendered": true,
+      "timed_out": false,
+      "ms": 113,
+      "svg_bytes": 12071,
+      "error": null,
+      "audit": {
+        "scripts": 0,
+        "iframes": 0,
+        "foreignObjects": 0,
+        "eventHandlerAttrs": [],
+        "hrefs": [],
+        "remoteImages": []
+      }
+    },
+    "javascript_and_remote_url": {
+      "rendered": true,
+      "timed_out": false,
+      "ms": 93,
+      "svg_bytes": 12798,
+      "error": null,
+      "audit": {
+        "scripts": 0,
+        "iframes": 0,
+        "foreignObjects": 0,
+        "eventHandlerAttrs": [],
+        "hrefs": [
+          "https://example.invalid/pwn"
+        ],
+        "remoteImages": []
+      }
+    },
+    "malformed_syntax": {
+      "rendered": false,
+      "timed_out": false,
+      "ms": 20,
+      "svg_bytes": 0,
+      "error": "Parse error on line 2:\nflowchart TD  A[[[[unclosed --> ???\n-----------------^\nExpecting 'TAGEND', 'STR', 'MD_STR', 'UNICODE_TEXT', 'TEXT', 'TAGSTART', got 'SUBROUTINESTART'",
+      "audit": null
+    },
+    "node_limit_plus_one": {
+      "rendered": false,
+      "timed_out": false,
+      "ms": 2043,
+      "svg_bytes": 0,
+      "error": "Edge limit exceeded. 500 edges found, but the limit is 500.\n\nInitialize mermaid with maxEdges set to a higher number to allow more edges.\nYou cannot set this config via configuration inside the diagra",
+      "audit": null
+    },
+    "remote_image": {
+      "rendered": true,
+      "timed_out": false,
+      "ms": 126,
+      "svg_bytes": 10527,
+      "error": null,
+      "audit": {
+        "scripts": 0,
+        "iframes": 0,
+        "foreignObjects": 0,
+        "eventHandlerAttrs": [],
+        "hrefs": [],
+        "remoteImages": []
+      }
+    },
+    "render_deadline": {
+      "rendered": false,
+      "timed_out": false,
+      "ms": 147,
+      "svg_bytes": 0,
+      "error": "Edge limit exceeded. 500 edges found, but the limit is 500.\n\nInitialize mermaid with maxEdges set to a higher number to allow more edges.\nYou cannot set this config via configuration inside the diagra",
+      "audit": null
+    },
+    "sequence_basic": {
+      "rendered": true,
+      "timed_out": false,
+      "ms": 132,
+      "svg_bytes": 23097,
+      "error": null,
+      "audit": {
+        "scripts": 0,
+        "iframes": 0,
+        "foreignObjects": 0,
+        "eventHandlerAttrs": [],
+        "hrefs": [],
+        "remoteImages": []
+      }
+    },
+    "source_byte_limit_plus_one": {
+      "rendered": true,
+      "timed_out": false,
+      "ms": 67,
+      "svg_bytes": 11835,
+      "error": null,
+      "audit": {
+        "scripts": 0,
+        "iframes": 0,
+        "foreignObjects": 0,
+        "eventHandlerAttrs": [],
+        "hrefs": [],
+        "remoteImages": []
+      }
+    }
+  }
+}

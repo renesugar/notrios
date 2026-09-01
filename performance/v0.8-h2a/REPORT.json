@@ -1,0 +1,296 @@
+{
+  "baseline": {
+    "fallback": "visible fenced Mermaid source",
+    "literal": "noMermaid: true",
+    "mermaid_enabled": false,
+    "source": "web/src/editor-assets.ts"
+  },
+  "builtin_guards": {
+    "default_securityLevel": "strict",
+    "maxEdges": 500,
+    "maxTextSize": 50000,
+    "note": "mermaid refuses over-limit graphs itself with a clear message; H2 lowers these rather than building complexity limits from scratch",
+    "overridable_from_diagram_source": false
+  },
+  "candidate": {
+    "license": "MIT",
+    "license_histogram": {
+      "(MPL-2.0 OR Apache-2.0)": 1,
+      "Apache-2.0": 1,
+      "BSD-3-Clause": 6,
+      "ISC": 33,
+      "MIT": 70,
+      "UNKNOWN": 1,
+      "Unlicense": 1
+    },
+    "package": "mermaid",
+    "transitive_packages": 113,
+    "version": "11.17.2"
+  },
+  "containment": {
+    "configuration": {
+      "flowchart.htmlLabels": false,
+      "htmlLabels": false,
+      "securityLevel": "strict",
+      "suppressErrorRendering": true
+    },
+    "with_html_labels_default": {
+      "cross_origin_requests": 2,
+      "foreign_objects_emitted": true,
+      "remote_image_fetched": "https://example.invalid/track.png",
+      "verdict": "unacceptable: a diagram label can fetch a remote tracking pixel, and foreignObject is the construct the G18 contract asks to refuse"
+    },
+    "with_html_labels_disabled": {
+      "cross_origin_requests": 0,
+      "event_handler_attributes": 0,
+      "foreign_objects_emitted": false,
+      "iframes": 0,
+      "javascript_url_neutralised": true,
+      "residual_vector": "a click directive's remote https href survives in the SVG and must be stripped after render",
+      "script_execution": false,
+      "verdict": "acceptable with the residual vector closed by post-render sanitisation"
+    }
+  },
+  "cost": {
+    "current_bundle": {
+      "chunks": 114,
+      "gzip_mb": 0.85,
+      "raw_mb": 2.45
+    },
+    "first_diagram_transfer": {
+      "after_one_flowchart_kib": 772,
+      "chunks_fetched": 25,
+      "compression": "uncompressed over the probe server",
+      "module_graph_kib": 662
+    },
+    "mermaid_bundle": {
+      "chunks": 91,
+      "gzip_mb": 0.9,
+      "raw_mb": 3.21
+    },
+    "note": "mermaid code-splits per diagram type, so the whole 3.21 MB never loads for one diagram; the gzip total still roughly doubles the shipped bundle"
+  },
+  "csp": {
+    "dynamic_code_in_sources": {
+      "d3-dsv": "new Function row accessor in csvParse",
+      "es-toolkit/compat/string/template": "lodash-style template compiler",
+      "reachable_from_mermaid": false
+    },
+    "finding": "mermaid renders under script-src 'self' with no CSP widening; both dynamic-code sites are tree-shaken out of the production bundle",
+    "new_function_surviving_vite_bundle": 0,
+    "policy_under_test": "verbatim internal/httpapi/server.go webAppCSP",
+    "unsafe_eval_required": false,
+    "violations": 0
+  },
+  "date": "2026-09-01",
+  "fixtures": {
+    "flowchart_basic": {
+      "audit": {
+        "eventHandlerAttrs": [],
+        "foreignObjects": 0,
+        "hrefs": [],
+        "iframes": 0,
+        "remoteImages": [],
+        "scripts": 0
+      },
+      "error": null,
+      "ms": 400,
+      "rendered": true,
+      "svg_bytes": 14668,
+      "timed_out": false
+    },
+    "foreign_object_html": {
+      "audit": {
+        "eventHandlerAttrs": [],
+        "foreignObjects": 0,
+        "hrefs": [],
+        "iframes": 0,
+        "remoteImages": [],
+        "scripts": 0
+      },
+      "error": null,
+      "ms": 82,
+      "rendered": true,
+      "svg_bytes": 10661,
+      "timed_out": false
+    },
+    "html_script_handler": {
+      "audit": {
+        "eventHandlerAttrs": [],
+        "foreignObjects": 0,
+        "hrefs": [],
+        "iframes": 0,
+        "remoteImages": [],
+        "scripts": 0
+      },
+      "error": null,
+      "ms": 113,
+      "rendered": true,
+      "svg_bytes": 12071,
+      "timed_out": false
+    },
+    "javascript_and_remote_url": {
+      "audit": {
+        "eventHandlerAttrs": [],
+        "foreignObjects": 0,
+        "hrefs": [
+          "https://example.invalid/pwn"
+        ],
+        "iframes": 0,
+        "remoteImages": [],
+        "scripts": 0
+      },
+      "error": null,
+      "ms": 93,
+      "rendered": true,
+      "svg_bytes": 12798,
+      "timed_out": false
+    },
+    "malformed_syntax": {
+      "audit": null,
+      "error": "Parse error on line 2:\nflowchart TD  A[[[[unclosed --> ???\n-----------------^\nExpecting 'TAGEND', 'STR', 'MD_STR', 'UNICODE_TEXT', 'TEXT', 'TAGSTART', got 'SUBROUTINESTART'",
+      "ms": 20,
+      "rendered": false,
+      "svg_bytes": 0,
+      "timed_out": false
+    },
+    "node_limit_plus_one": {
+      "audit": null,
+      "error": "Edge limit exceeded. 500 edges found, but the limit is 500.\n\nInitialize mermaid with maxEdges set to a higher number to allow more edges.\nYou cannot set this config via configuration inside the diagra",
+      "ms": 2043,
+      "rendered": false,
+      "svg_bytes": 0,
+      "timed_out": false
+    },
+    "remote_image": {
+      "audit": {
+        "eventHandlerAttrs": [],
+        "foreignObjects": 0,
+        "hrefs": [],
+        "iframes": 0,
+        "remoteImages": [],
+        "scripts": 0
+      },
+      "error": null,
+      "ms": 126,
+      "rendered": true,
+      "svg_bytes": 10527,
+      "timed_out": false
+    },
+    "render_deadline": {
+      "audit": null,
+      "error": "Edge limit exceeded. 500 edges found, but the limit is 500.\n\nInitialize mermaid with maxEdges set to a higher number to allow more edges.\nYou cannot set this config via configuration inside the diagra",
+      "ms": 147,
+      "rendered": false,
+      "svg_bytes": 0,
+      "timed_out": false
+    },
+    "sequence_basic": {
+      "audit": {
+        "eventHandlerAttrs": [],
+        "foreignObjects": 0,
+        "hrefs": [],
+        "iframes": 0,
+        "remoteImages": [],
+        "scripts": 0
+      },
+      "error": null,
+      "ms": 132,
+      "rendered": true,
+      "svg_bytes": 23097,
+      "timed_out": false
+    },
+    "source_byte_limit_plus_one": {
+      "audit": {
+        "eventHandlerAttrs": [],
+        "foreignObjects": 0,
+        "hrefs": [],
+        "iframes": 0,
+        "remoteImages": [],
+        "scripts": 0
+      },
+      "error": null,
+      "ms": 67,
+      "rendered": true,
+      "svg_bytes": 11835,
+      "timed_out": false
+    }
+  },
+  "license_gate_blockers": [
+    {
+      "actual": "MIT per its bundled license file",
+      "declared": "UNKNOWN",
+      "fix": "record a reviewed override keyed to the license file hash",
+      "package": "khroma@2.1.0",
+      "problem": "package.json omits the license field, so a metadata-driven scanner reports UNKNOWN and the fail-closed G20 gate refuses it",
+      "sha256_of_license_file": "66b333b0f66759a0b710459e03f7029abe17f4358114a128d2c972e642961b49"
+    },
+    {
+      "declared": "(MPL-2.0 OR Apache-2.0)",
+      "fix": "teach check_dependency_licenses.py to resolve a disjunction when every branch is allowed",
+      "package": "dompurify@3.4.14",
+      "problem": "an SPDX OR expression; both halves are individually allowed but the gate does exact set membership"
+    },
+    {
+      "declared": "Unlicense",
+      "fix": "add Unlicense to the allowed set as a reviewed decision",
+      "package": "robust-predicates@3.0.3",
+      "problem": "public-domain equivalent and not in the allowed set, though the project already accepts public domain for SQLite"
+    }
+  ],
+  "recommendation": {
+    "bundle_budget": "load mermaid only when a diagram is present, via dynamic import",
+    "failure_presentation": "always show the fenced Mermaid source; never an empty box",
+    "renderer": "mermaid 11.17.2, pinned exactly and bundled locally",
+    "required_configuration": [
+      "securityLevel: strict",
+      "htmlLabels: false everywhere",
+      "startOnLoad: false",
+      "suppressErrorRendering: true",
+      "maxEdges lowered to the product bound",
+      "maxTextSize lowered to the product bound"
+    ],
+    "required_post_processing": [
+      "sanitise the produced SVG before insertion",
+      "strip or neutralise every href and xlink:href",
+      "refuse script, iframe, foreignObject, and on* attributes",
+      "catch every throw, including internal TypeErrors, and fall back to fenced source"
+    ],
+    "rollback": "restore noMermaid: true in web/src/editor-assets.ts; no data or schema is involved",
+    "verdict": "enable in H2, with the containment design below"
+  },
+  "schema": "notrios.v0.8.h2a.mermaid-investigation.v1",
+  "status": "complete investigation; recommendation issued, no production change",
+  "supplementary": {
+    "narrow_390": {
+      "overflowsViewport": false,
+      "renderedWidth": 114,
+      "style": "max-width: 114.3515625px;",
+      "svgWidthAttr": "100%"
+    },
+    "slow_dense_graph": {
+      "error": "TypeError: Cannot read properties of undefined (reading 'length')",
+      "exceeds_2000ms_deadline": false,
+      "ms": 693,
+      "ok": false
+    },
+    "theme_dark": {
+      "bytes": 14296,
+      "hasDarkFill": true,
+      "ms": 425,
+      "ok": true
+    },
+    "theme_default": {
+      "bytes": 14086,
+      "hasDarkFill": true,
+      "ms": 412.30000001192093,
+      "ok": true
+    }
+  },
+  "untested": [
+    "Wails v2 webview smoke: needs a GUI build and a display; not run in this pass",
+    "the 2000 ms render deadline was never exercised by a genuinely slow successful render, because mermaid's own maxEdges guard refuses large graphs first",
+    "worker-based rendering and cancellation were not prototyped",
+    "keyboard and screen-reader accessibility of the rendered preview was not assessed"
+  ]
+}

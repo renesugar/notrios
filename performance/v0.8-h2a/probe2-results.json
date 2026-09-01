@@ -1,0 +1,26 @@
+{
+  "slow_dense_graph": {
+    "ok": false,
+    "ms": 693,
+    "error": "TypeError: Cannot read properties of undefined (reading 'length')",
+    "exceeds_2000ms_deadline": false
+  },
+  "theme_default": {
+    "ok": true,
+    "ms": 412.30000001192093,
+    "bytes": 14086,
+    "hasDarkFill": true
+  },
+  "theme_dark": {
+    "ok": true,
+    "ms": 425,
+    "bytes": 14296,
+    "hasDarkFill": true
+  },
+  "narrow_390": {
+    "svgWidthAttr": "100%",
+    "style": "max-width: 114.3515625px;",
+    "renderedWidth": 114,
+    "overflowsViewport": false
+  }
+}

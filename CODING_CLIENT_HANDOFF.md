@@ -2,6 +2,49 @@
 
 This handoff applies to any coding agent or client continuing this project (Codex, Claude, aider, swival.dev, etc. — formerly `CODEX_HANDOFF.md`). The repository is designed so an agent can continue from repository files alone.
 
+## v0.8 H2a completion handoff — 2026-09-01
+
+H2a is complete and archived as
+`plans/v0.8/004-mermaid-renderer-security-investigation.md`. It is an
+investigation: **Mermaid remains disabled**, `web/package.json` and
+`web/src/editor-assets.ts` are untouched, and every install happened in a
+disposable directory outside `web/`. H2 is next and remains unapproved.
+
+The recommendation is to enable Mermaid 11.17.2 under a specific containment
+design. Measured in Chromium under the application's verbatim production CSP:
+zero violations and no `unsafe-eval`, because the two `new Function` sites in
+the dependency tree are unreachable from Mermaid and do not survive the Vite
+bundle.
+
+Mermaid's **default** configuration is not acceptable. A diagram label fetched a
+remote image — the CSP permits `img-src https:` on purpose and the remote-media
+policy covers Markdown images, not diagram labels — and every diagram emitted
+the `foreignObject` the G18 contract asks to refuse. `htmlLabels: false` with
+`securityLevel: 'strict'` gave zero `foreignObject`, zero cross-origin requests,
+and no script execution. **One vector survives**: a `click` directive's remote
+`href` stays in the SVG and H2 must strip it.
+
+Cost is roughly a doubled bundle (0.85 MB to about 1.75 MB gzipped), softened by
+code splitting to 772 KiB uncompressed for one flowchart. Enablement also needs
+three reviewed licence-gate decisions — `khroma` declares no licence in metadata
+though it ships MIT, `dompurify` uses an SPDX `OR` expression the checker cannot
+resolve, and `robust-predicates` is `Unlicense` — none a genuine licence
+problem, all fail-closed today.
+
+Approving H2 means accepting the bundle cost and those three decisions.
+
+**Not validated, and recorded as such:** the 2000 ms render deadline was never
+exercised by a genuinely slow successful render, because Mermaid's own
+`maxEdges: 500` guard refuses large graphs before layout. The Wails v2 webview
+smoke that the G18 contract requires before `noMermaid` changes, a worker
+cancellation prototype, and an accessibility review also remain undone.
+
+Evidence is under `performance/v0.8-h2a/`;
+`python3 performance/v0.8-h2a/validate_evidence.py` is in the scaffold gate and
+was verified to fail both on a falsified CSP claim and on a quietly deleted
+caveat. No push, PR, merge, tag, release/upload, evidence-reserve write, ISO, or
+physical burn was performed.
+
 ## v0.8 H1 completion handoff — 2026-09-01
 
 H1 is complete and archived as
