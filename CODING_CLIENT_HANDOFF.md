@@ -28,6 +28,14 @@ and no H0 process remains. H1 is next and separately approval-gated. No push,
 PR, merge, tag, release/upload, evidence-reserve write, ISO, or physical burn
 was performed.
 
+The H0 implementation/evidence commit and clean packaging source is `e164aeb`.
+The verified local source snapshot is
+`dist/notrios-v0.8-h0-e164aeb.zip`: 5,334,539 bytes, 1,778 entries, SHA-256
+`5b131883de2376bdeb6ec809742524c237b3e0bbd6a5621b501903ff28b9bf2f`.
+The release checker and independent member check found `web/dist/index.html`,
+`performance/v0.8-h0/REPORT.json`, and the H0 archive; packaging exclusions
+cover `.git`, `node_modules`, runtime data, and SQLite databases.
+
 ## v0.8 installation planning handoff — 2026-08-31
 
 The unstarted v0.8 plan now has H0-H13 independently approvable items. The

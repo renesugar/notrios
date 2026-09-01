@@ -22,6 +22,12 @@ Updated: 2026-08-31 (v0.8 H0 complete; H1 next and unapproved)
   `plans/v0.8/002-application-facade-c-abi-sqlite-ownership-investigation.md`.
   H0 changed no production facade, driver, dependency, schema, API, or support
   claim. H1 is next and remains separately approval-gated.
+- Commit `e164aeb` is the clean package source. The verified local snapshot
+  `dist/notrios-v0.8-h0-e164aeb.zip` contains 1,778 entries in 5,334,539 bytes
+  with SHA-256
+  `5b131883de2376bdeb6ec809742524c237b3e0bbd6a5621b501903ff28b9bf2f`;
+  it includes the built UI, H0 report, and archive and excludes `.git`,
+  `node_modules`, runtime data, and SQLite databases.
 
 ## v0.8 installation planning amendment — 2026-08-31
 
