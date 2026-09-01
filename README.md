@@ -44,8 +44,8 @@ equivalence through the production build. G19 now publishes the frozen
 archive-v2 consumer contract, schemas, deterministic goldens, and compatibility
 preflight. G20 closed the 0.7.0/schema-v27 release matrix, remediated the
 complete standard security scan and one static correction cycle, and archived
-the milestone. `PLAN.md` now holds the unstarted v0.8 installation/shared-core
-plan. GitHub
+the milestone. v0.8 H0 then selected the application/ABI/SQLite portability
+foundation without changing production; H1 is next and unapproved. GitHub
 push and physical disc burning remain unauthorized — see [`PLAN.md`](PLAN.md),
 [`ROADMAP.md`](ROADMAP.md), and
 [`plans/v0.7/034-android-emulator-modernc-runtime.md`](plans/v0.7/034-android-emulator-modernc-runtime.md). The repository is
@@ -205,8 +205,8 @@ Recoll availability, backlog, sync/index, and reconciliation state.
   archive-v2 consumer contract. G20 reconciles the full system, hardens remote
   admission and untrusted filesystem roots, validates schema v27 upgrade and
   recovery, and ships the 0.7.0 source release candidate. All G0-G20 slices are
-  archived under `plans/v0.7/`; `PLAN.md` now describes the unstarted v0.8
-  milestone.
+  archived under `plans/v0.7/`; `PLAN.md` now describes the active v0.8
+  milestone, with H0 complete and H1 next.
 - Agent progress/attempt tracking: [`agent/PLAN_STATUS.md`](agent/PLAN_STATUS.md), [`agent/ATTEMPT_LOG.jsonl`](agent/ATTEMPT_LOG.jsonl), and [`agent/MODEL_LOG.jsonl`](agent/MODEL_LOG.jsonl).
 
 ## Contributing

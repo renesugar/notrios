@@ -2,6 +2,32 @@
 
 This handoff applies to any coding agent or client continuing this project (Codex, Claude, aider, swival.dev, etc. — formerly `CODEX_HANDOFF.md`). The repository is designed so an agent can continue from repository files alone.
 
+## v0.8 H0 completion handoff — 2026-08-31
+
+H0 is complete and archived as
+`plans/v0.8/002-application-facade-c-abi-sqlite-ownership-investigation.md`.
+It selects a new `internal/application` facade owner, official SQLite 3.53.4
+amalgamation with exact SHA3/SHA-256 provenance and hidden static cgo linkage,
+the frozen ABI-major-1 12-symbol polling/stream contract, and API-35 x86_64 as
+the only runtime-qualified Android target. Android arm64-v8a is build-only.
+
+The unchanged schema-v27 store/snapshot/sync code passed against the pin on
+Linux and the API-35 emulator. A real-store shared library bootstrapped schema
+v27 with no dynamic SQLite dependency or exported `sqlite3_*` symbol. The
+separate ABI harness passed c-shared/c-archive headers, exact symbols, C-memory
+ownership, generation handles, cancel/poll/events, streams, and concurrent
+shutdown on Linux and Android. A checkpointed desktop-C database crossed to
+Android modernc 3.53.3 and back to desktop C with matching pulled SHA-256,
+integrity, WAL, 1,001 rows, and the exact new row.
+
+`performance/v0.8-h0/REPORT.json` is the machine-checked decision and cost
+record; its validator and disposable source/facade/ABI/store-link/SQLite probes
+live beside it. No downloaded amalgamation, binary, database, cache, or private
+content is tracked. The emulator directory was removed, the emulator stopped,
+and no H0 process remains. H1 is next and separately approval-gated. No push,
+PR, merge, tag, release/upload, evidence-reserve write, ISO, or physical burn
+was performed.
+
 ## v0.8 installation planning handoff — 2026-08-31
 
 The unstarted v0.8 plan now has H0-H13 independently approvable items. The

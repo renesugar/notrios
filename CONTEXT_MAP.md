@@ -5,9 +5,9 @@ This file is the codebase atlas. Update it whenever major files or directories a
 ## Root documents
 
 - `README.md` — project overview and quick start.
-- `PLAN.md` — the **active but unstarted v0.8 installation, configuration,
-  shared-core, and portability plan**, divided into H0-H13 investigation and
-  implementation slices. H0 is next and unapproved. v0.7 G0-G20 are complete
+- `PLAN.md` — the **active v0.8 installation, configuration, shared-core, and
+  portability plan**, divided into H0-H13 investigation and implementation
+  slices. H0 is complete; H1 is next and unapproved. v0.7 G0-G20 are complete
   at product 0.7.0/schema v27 and archived under `plans/v0.7/`, including
   `plans/v0.7/000-v0.7-plan.md`; the G17b verifier still gates every future
   GitHub push. Earlier milestones remain under their version directories.
@@ -16,6 +16,12 @@ This file is the codebase atlas. Update it whenever major files or directories a
   priority installers, GitHub-native Windows/macOS evidence, delayed PR/branch
   synchronization, and the v0.8-v1.0 end-user delivery sequence. It implements
   no product behavior.
+- `plans/v0.8/002-application-facade-c-abi-sqlite-ownership-investigation.md`
+  and `performance/v0.8-h0/` — H0's selected application owner, exact SQLite
+  3.53.4 provenance/update policy, ABI-major-1 lifecycle/ownership form,
+  desktop/API-35 store and cost matrix, arm64 build-only artifacts,
+  cross-engine checkpointed round-trip, single-engine probe, limitations, and
+  validator.
 - `plans/scaffold/SCAFFOLD_CREATION_PLAN.md` — process for creating/refining this scaffold.
 - `ROADMAP.md` — product roadmap and future features.
 - `AGENTS.md` — coding-agent instructions (`CLAUDE.md` points here).

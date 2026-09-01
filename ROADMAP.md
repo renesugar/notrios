@@ -656,4 +656,5 @@ job kind names a filesystem path. That is recorded in the bullet rather than the
 bullet being marked done, and it does not move to v0.7 — it is a decision, not
 an omission.
 
-`PLAN.md` now holds the unstarted v0.8 plan derived from this roadmap.
+`PLAN.md` now holds the active v0.8 plan derived from this roadmap. H0 is
+complete; H1 is the next separately approval-gated item.

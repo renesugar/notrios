@@ -1,6 +1,27 @@
 # Plan Status
 
-Updated: 2026-08-31 (v0.8 installation plan amended; H0 next and unapproved)
+Updated: 2026-08-31 (v0.8 H0 complete; H1 next and unapproved)
+
+## v0.8 H0 completion — 2026-08-31
+
+- Selected a new `internal/application` facade owner, official checksum-pinned
+  SQLite 3.53.4 amalgamation with hidden static cgo linkage, ABI major 1's
+  frozen 12-symbol polling/stream contract, and API-35 x86_64 runtime evidence;
+  arm64-v8a remains build-only.
+- Current-source audit has zero G18 numeric drift: 113 routes, 109 handlers,
+  24 HTTP files, 128 server-store calls, 20 concrete sync-store calls, four
+  concrete SQLite type sites, 124 store methods, and 43 direct-C store files.
+- The unchanged schema-v27 store/snapshot/sync matrix passed on Linux and the
+  emulator. Real-store c-shared probes have one hidden static SQLite engine.
+  ABI lifecycle tests passed on Linux and Android.
+- Desktop-C → Android-modernc → desktop-C checkpointed database compatibility
+  passed with integrity, WAL, 1,001 rows, the exact modernc row, and matching
+  pulled SHA-256. The C control used less runtime/RSS/artifact size; modernc had
+  the faster measured cold build but no real-store adapter.
+- Evidence is under `performance/v0.8-h0/`; archive:
+  `plans/v0.8/002-application-facade-c-abi-sqlite-ownership-investigation.md`.
+  H0 changed no production facade, driver, dependency, schema, API, or support
+  claim. H1 is next and remains separately approval-gated.
 
 ## v0.8 installation planning amendment — 2026-08-31
 

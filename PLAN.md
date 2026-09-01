@@ -32,7 +32,7 @@ Not in v0.8:
 - evidence-reserve/ISO writes, physical-media burns, pushes, or tags without
   their separate operational authorization.
 
-## H0. Application-facade, C-ABI, and SQLite ownership investigation
+## H0. Application-facade, C-ABI, and SQLite ownership investigation — complete
 
 **Goal.** Resolve the premises and blocking choices needed to build one
 framework-neutral Go application core on desktop and an Android emulator.
@@ -65,23 +65,31 @@ dependency/license provenance, package/RSS/timing tables, cross-engine database
 round-trip and integrity results, negative dual-owner test, source-audit drift
 check, and an archived decision report.
 
-**Open decisions**
+**Open decisions — resolved 2026-08-31**
 
-- **Which SQLite implementation owns the v0.8 shared core? — Non-blocking for
-  H0; blocking for H1.** Options: checksum-pinned upstream amalgamation with
-  cgo, or exact modernc/libc pins. H0 must recommend one from emulator/runtime,
-  compatibility, size, performance, maintenance, license, and platform
-  evidence. Approving H0 approves only the comparison, not the winner's
-  production adoption.
-- **Where does the transport-neutral facade live? — Non-blocking for H0;
-  blocking for H1.** Options: a new `internal/application` owner (recommended
-  starting hypothesis because HTTP remains an adapter), or a narrowed
-  `internal/service` package. The report must quantify dependency direction and
-  migration cost before selection.
-- **Which emulator ABI/minSdk is the v0.8 acceptance target? — Non-blocking for
-  H0; blocking for H1/H8.** Default evidence target: the existing API-35
-  x86_64 AVD plus an Android/arm64 build-only artifact, with no arm64 runtime
-  claim. H0 must state what changes if a second runtime ABI is required.
+- **Which SQLite implementation owns the v0.8 shared core? — Resolved:**
+  checksum-pinned official SQLite 3.53.4 amalgamation with cgo and hidden
+  static linkage. Exact modernc/libc remained compatible but lost on real-store
+  migration, runtime-support, size, RSS, and measured execution evidence.
+- **Where does the transport-neutral facade live? — Resolved:** a new
+  `internal/application` owner. `internal/service` remains an HTTP-coupled
+  composition/lifecycle package and is not the application contract.
+- **Which emulator ABI/minSdk is the v0.8 acceptance target? — Resolved for
+  H1:** API-35 x86_64 is runtime-qualified; Android arm64-v8a is build-only
+  until H8 repeats the full runtime matrix. No lower API or arm64 runtime claim
+  is implied.
+
+**Outcome (2026-08-31).** Selected a new `internal/application` facade owner,
+the checksum-pinned official SQLite 3.53.4 amalgamation with cgo/hidden static
+linkage, ABI major 1's frozen 12-symbol polling/stream contract, and API-35
+x86_64 as the only runtime-qualified Android target; arm64-v8a is build-only.
+The unchanged schema-v27 store/snapshot/sync code passed on Linux and the
+emulator, the C-modernc-C desktop/Android round-trip passed, and measured
+costs, ownership/WAL/crash policy, update/rollback, exact provenance, and
+limitations are archived in
+`plans/v0.8/002-application-facade-c-abi-sqlite-ownership-investigation.md`.
+No production facade, driver, ABI, dependency, schema, or support claim was
+landed.
 
 ## H1. Shared application facade and ABI-major-1 library
 
@@ -112,12 +120,15 @@ release/stale-handle/concurrent-close tests, REST-versus-ABI parity fixtures,
 resource stream/range tests, full Go/web/docs gates, desktop library inspection,
 and emulator load smoke.
 
-**Open decisions**
+**Open decisions — resolved by H0 on 2026-08-31**
 
-- **H0's facade and SQLite selections — Blocking.** Do not start H1 until H0
-  records the selected options, exact pins/checksums, affected build targets,
-  and rollback. No default is taken here because the choices change source
-  ownership and every packaged binary.
+- **H0's facade and SQLite selections — Resolved.** H1 uses a new
+  `internal/application` owner and official SQLite amalgamation 3.53.4 with
+  archive SHA3-256
+  `628a44cfe82c66aed1ccbbe85a562d2e33ebe64b3288981ed76285612227934e`,
+  hidden static cgo linkage, API-35 x86_64 runtime acceptance, and arm64-v8a
+  build-only status. Exact compile/owner/WAL/ABI/update/rollback policy lives in
+  H0's outcome archive. H1 remains separately approval-gated.
 
 ## H2a. Mermaid renderer and security investigation
 
@@ -726,9 +737,9 @@ This is an index only; each decision is owned and explained inside its item.
 
 | Decision | Owner | Status |
 |---|---|---|
-| Shared-core SQLite owner/version/checksum | H0/H1 | Open; H0 investigation, blocking H1 |
-| Application facade package owner | H0/H1 | Open; H0 investigation, blocking H1 |
-| Emulator ABI/minSdk acceptance | H0/H11 | Open with API-35 x86_64 default |
+| Shared-core SQLite owner/version/checksum | H0/H1 | Resolved: official amalgamation 3.53.4, exact H0 hashes/policy |
+| Application facade package owner | H0/H1 | Resolved: new `internal/application` |
+| Emulator ABI/minSdk acceptance | H0/H11 | Resolved for H1: API-35 x86_64 runtime; arm64-v8a build-only |
 | Mermaid renderer/containment | H2a/H2 | Open; H2a investigation, blocking H2 |
 | Installed/portable path precedence | H3/H4 | Open with explicit-override/native default |
 | User-local/GNU install layout | H3/H5 | Open with `$HOME/.local` default |
@@ -741,5 +752,5 @@ This is an index only; each decision is owned and explained inside its item.
 | v0.8 product/schema number | H13 | Open with product 0.8.0/no gratuitous schema default |
 | Internal artifact custody | H13 | Local/internal-only default; public release separately authorized |
 
-H0 is the next incomplete item and remains unapproved. Do not begin it until the
-user explicitly says to proceed with H0.
+H1 is the next incomplete item and remains unapproved. Do not begin it until the
+user explicitly says to proceed with H1.

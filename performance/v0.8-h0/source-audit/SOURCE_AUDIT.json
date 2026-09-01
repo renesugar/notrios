@@ -1,0 +1,341 @@
+{
+  "audited_source_sha256": "5011459cba904284258cdc24e7a9aa67430303a0a41fade617cd965d5bc622c4",
+  "baseline": {
+    "path": "performance/v0.7-g18/SOURCE_AUDIT.json",
+    "schema": "notrios.g18.source-audit.v1"
+  },
+  "coupling": {
+    "httpapi_imports_service": false,
+    "internal_import_graph": {
+      "internal/api": [],
+      "internal/archive": [
+        "github.com/renesugar/notrios/internal/store"
+      ],
+      "internal/archivev2": [
+        "github.com/renesugar/notrios/internal/store"
+      ],
+      "internal/config": [],
+      "internal/docaudit": [],
+      "internal/doccheck": [
+        "github.com/renesugar/notrios/internal/docaudit"
+      ],
+      "internal/docexec": [
+        "github.com/renesugar/notrios/internal/docaudit"
+      ],
+      "internal/docgen": [
+        "github.com/renesugar/notrios/internal/config",
+        "github.com/renesugar/notrios/internal/docaudit",
+        "github.com/renesugar/notrios/internal/docjourney"
+      ],
+      "internal/docjourney": [],
+      "internal/helpdocs": [
+        "github.com/renesugar/notrios/internal/store"
+      ],
+      "internal/httpapi": [
+        "github.com/renesugar/notrios/internal/api",
+        "github.com/renesugar/notrios/internal/config",
+        "github.com/renesugar/notrios/internal/localize",
+        "github.com/renesugar/notrios/internal/media",
+        "github.com/renesugar/notrios/internal/profiles",
+        "github.com/renesugar/notrios/internal/query",
+        "github.com/renesugar/notrios/internal/recoll",
+        "github.com/renesugar/notrios/internal/snapshotimage",
+        "github.com/renesugar/notrios/internal/stablelink",
+        "github.com/renesugar/notrios/internal/store",
+        "github.com/renesugar/notrios/internal/syncauth",
+        "github.com/renesugar/notrios/internal/syncbackup",
+        "github.com/renesugar/notrios/internal/synccarrier",
+        "github.com/renesugar/notrios/internal/synccatchup",
+        "github.com/renesugar/notrios/internal/syncjobs",
+        "github.com/renesugar/notrios/internal/syncstate",
+        "github.com/renesugar/notrios/internal/syncwire",
+        "github.com/renesugar/notrios/internal/version"
+      ],
+      "internal/importers/chatgpt": [
+        "github.com/renesugar/notrios/internal/store"
+      ],
+      "internal/importers/claude": [
+        "github.com/renesugar/notrios/internal/store"
+      ],
+      "internal/importers/joplinraw": [
+        "github.com/renesugar/notrios/internal/store"
+      ],
+      "internal/importers/obsidian": [
+        "github.com/renesugar/notrios/internal/markdownlinks",
+        "github.com/renesugar/notrios/internal/store"
+      ],
+      "internal/importers/twitter": [
+        "github.com/renesugar/notrios/internal/store"
+      ],
+      "internal/jobs": [
+        "github.com/renesugar/notrios/internal/store"
+      ],
+      "internal/localize": [
+        "github.com/renesugar/notrios/internal/api",
+        "github.com/renesugar/notrios/internal/config",
+        "github.com/renesugar/notrios/internal/media",
+        "github.com/renesugar/notrios/internal/store"
+      ],
+      "internal/markdownblocks": [],
+      "internal/markdownlinks": [],
+      "internal/media": [
+        "github.com/renesugar/notrios/internal/config",
+        "github.com/renesugar/notrios/internal/markdownlinks"
+      ],
+      "internal/profiles": [
+        "github.com/renesugar/notrios/internal/config",
+        "github.com/renesugar/notrios/internal/store"
+      ],
+      "internal/projection": [
+        "github.com/renesugar/notrios/internal/store"
+      ],
+      "internal/publish": [
+        "github.com/renesugar/notrios/internal/store"
+      ],
+      "internal/query": [],
+      "internal/recoll": [
+        "github.com/renesugar/notrios/internal/projection",
+        "github.com/renesugar/notrios/internal/query"
+      ],
+      "internal/service": [
+        "github.com/renesugar/notrios/internal/config",
+        "github.com/renesugar/notrios/internal/httpapi",
+        "github.com/renesugar/notrios/internal/profiles",
+        "github.com/renesugar/notrios/internal/projection",
+        "github.com/renesugar/notrios/internal/recoll",
+        "github.com/renesugar/notrios/internal/store",
+        "github.com/renesugar/notrios/internal/syncauth",
+        "github.com/renesugar/notrios/internal/synccarrier",
+        "github.com/renesugar/notrios/internal/syncjobs",
+        "github.com/renesugar/notrios/internal/synckeys",
+        "github.com/renesugar/notrios/internal/syncrest",
+        "github.com/renesugar/notrios/internal/syncwire"
+      ],
+      "internal/snapshotimage": [
+        "github.com/renesugar/notrios/internal/store",
+        "github.com/renesugar/notrios/internal/syncstate",
+        "github.com/renesugar/notrios/internal/version"
+      ],
+      "internal/stablelink": [],
+      "internal/store": [
+        "github.com/renesugar/notrios/internal/markdownblocks",
+        "github.com/renesugar/notrios/internal/markdownlinks",
+        "github.com/renesugar/notrios/internal/query",
+        "github.com/renesugar/notrios/internal/stablelink",
+        "github.com/renesugar/notrios/internal/syncassets",
+        "github.com/renesugar/notrios/internal/syncbody",
+        "github.com/renesugar/notrios/internal/synccatchup",
+        "github.com/renesugar/notrios/internal/syncdelta",
+        "github.com/renesugar/notrios/internal/syncmerge",
+        "github.com/renesugar/notrios/internal/syncstate",
+        "github.com/renesugar/notrios/internal/syncwire"
+      ],
+      "internal/syncassets": [],
+      "internal/syncauth": [],
+      "internal/syncbackup": [
+        "github.com/renesugar/notrios/internal/snapshotimage",
+        "github.com/renesugar/notrios/internal/store",
+        "github.com/renesugar/notrios/internal/synccatchup"
+      ],
+      "internal/syncbody": [],
+      "internal/synccarrier": [
+        "github.com/renesugar/notrios/internal/store",
+        "github.com/renesugar/notrios/internal/syncassets",
+        "github.com/renesugar/notrios/internal/syncstate",
+        "github.com/renesugar/notrios/internal/syncwire"
+      ],
+      "internal/synccatchup": [
+        "github.com/renesugar/notrios/internal/syncstate",
+        "github.com/renesugar/notrios/internal/syncwire"
+      ],
+      "internal/syncdelta": [],
+      "internal/syncjobs": [
+        "github.com/renesugar/notrios/internal/store",
+        "github.com/renesugar/notrios/internal/synccarrier"
+      ],
+      "internal/synckeys": [
+        "github.com/renesugar/notrios/internal/syncstate",
+        "github.com/renesugar/notrios/internal/syncwire"
+      ],
+      "internal/syncmerge": [
+        "github.com/renesugar/notrios/internal/syncstate"
+      ],
+      "internal/syncrest": [
+        "github.com/renesugar/notrios/internal/snapshotimage",
+        "github.com/renesugar/notrios/internal/syncauth",
+        "github.com/renesugar/notrios/internal/syncbackup",
+        "github.com/renesugar/notrios/internal/synccarrier",
+        "github.com/renesugar/notrios/internal/syncstate",
+        "github.com/renesugar/notrios/internal/syncwire"
+      ],
+      "internal/syncstate": [],
+      "internal/syncwire": [
+        "github.com/renesugar/notrios/internal/syncstate"
+      ],
+      "internal/version": []
+    },
+    "service_direct_store_reference_files": 1,
+    "service_files_importing_net_http": 1,
+    "service_imports_httpapi": true,
+    "service_production_files": 1,
+    "wails_build_tagged_files": [
+      "cmd/notrios/gui_stub.go",
+      "cmd/notrios/gui_wails.go"
+    ],
+    "wails_files": [
+      "cmd/notrios/gui_wails.go"
+    ],
+    "wails_isolated_from_service_and_httpapi": true
+  },
+  "dependencies": {
+    "httpapi_imports_service": false,
+    "httpapi_packages": 236,
+    "production_httpapi_files_importing_net_http": 24,
+    "service_files_importing_net_http": 1,
+    "service_imports_httpapi": true,
+    "service_or_httpapi_imports_wails": false,
+    "service_packages": 239,
+    "store_files_importing_c": 43
+  },
+  "drift": [
+    {
+      "baseline": 236,
+      "current": 236,
+      "delta": 0,
+      "path": "dependencies.httpapi_packages"
+    },
+    {
+      "baseline": 24,
+      "current": 24,
+      "delta": 0,
+      "path": "dependencies.production_httpapi_files_importing_net_http"
+    },
+    {
+      "baseline": 1,
+      "current": 1,
+      "delta": 0,
+      "path": "dependencies.service_files_importing_net_http"
+    },
+    {
+      "baseline": 239,
+      "current": 239,
+      "delta": 0,
+      "path": "dependencies.service_packages"
+    },
+    {
+      "baseline": 43,
+      "current": 43,
+      "delta": 0,
+      "path": "dependencies.store_files_importing_c"
+    },
+    {
+      "baseline": 109,
+      "current": 109,
+      "delta": 0,
+      "path": "routes.openapi_normalized_non_head"
+    },
+    {
+      "baseline": 3,
+      "current": 3,
+      "delta": 0,
+      "path": "routes.registered_head"
+    },
+    {
+      "baseline": 110,
+      "current": 110,
+      "delta": 0,
+      "path": "routes.registered_non_head_including_web_root"
+    },
+    {
+      "baseline": 113,
+      "current": 113,
+      "delta": 0,
+      "path": "routes.registered_total_including_head_and_web_root"
+    }
+  ],
+  "facade_migration_inputs": {
+    "httpapi_files_with_store_refs": [
+      "internal/httpapi/batch.go",
+      "internal/httpapi/blocks.go",
+      "internal/httpapi/editorlinks.go",
+      "internal/httpapi/graph.go",
+      "internal/httpapi/jobs.go",
+      "internal/httpapi/jobs_sync.go",
+      "internal/httpapi/lint.go",
+      "internal/httpapi/mcp.go",
+      "internal/httpapi/mcp_batch.go",
+      "internal/httpapi/mcp_jobs.go",
+      "internal/httpapi/mcp_noteops.go",
+      "internal/httpapi/mcp_reads.go",
+      "internal/httpapi/mcp_sync_jobs.go",
+      "internal/httpapi/mcp_templates.go",
+      "internal/httpapi/notebooks.go",
+      "internal/httpapi/noteops.go",
+      "internal/httpapi/notequery.go",
+      "internal/httpapi/selection.go",
+      "internal/httpapi/server.go",
+      "internal/httpapi/sidecar_search.go",
+      "internal/httpapi/stablelinks.go",
+      "internal/httpapi/sync_ui.go",
+      "internal/httpapi/templates.go"
+    ],
+    "httpapi_route_files": [
+      "internal/httpapi/server.go",
+      "internal/httpapi/sync.go",
+      "internal/httpapi/sync_data.go",
+      "internal/httpapi/sync_ui.go"
+    ],
+    "service_files_with_httpapi_refs": [
+      "internal/service/service.go"
+    ]
+  },
+  "go_toolchain": "go version go1.27.0 linux/amd64",
+  "httpapi": {
+    "concrete_sqlite_type_sites": 4,
+    "decode_json_calls": 24,
+    "direct_store_reference_files": 23,
+    "direct_store_reference_sites": 128,
+    "files_importing_net_http": 24,
+    "handler_methods": 109,
+    "production_files": 27,
+    "raw_json_files": 12,
+    "raw_json_sites": 46,
+    "sync_concrete_store_reference_sites": 20
+  },
+  "private_data_read": false,
+  "production_code_changed": false,
+  "routes": {
+    "openapi_normalized_non_head": 109,
+    "registered_head": 3,
+    "registered_non_head_including_web_root": 110,
+    "registered_total_including_head_and_web_root": 113,
+    "route_declaration_files": [
+      "internal/httpapi/server.go",
+      "internal/httpapi/sync.go",
+      "internal/httpapi/sync_data.go",
+      "internal/httpapi/sync_ui.go"
+    ],
+    "web_root_excluded_from_openapi": true
+  },
+  "schema": "notrios.h0.source-audit.v1",
+  "scope": {
+    "production_go_files": 183,
+    "tests_excluded": true
+  },
+  "sqlite_assertions": {
+    "busy_timeout": true,
+    "fts5": true,
+    "fullmutex": true,
+    "integrity_check": true,
+    "json": true,
+    "migration_files_or_symbols": 71,
+    "wal": true
+  },
+  "store": {
+    "current_schema_version": 27,
+    "direct_sqlite_c_files": 43,
+    "files_importing_c": 43,
+    "production_files": 63,
+    "store_interface_methods": 124
+  }
+}
