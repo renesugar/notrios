@@ -132,5 +132,5 @@ func loadRuntimeConfig(path string) (config.Config, error) {
 	if strings.TrimSpace(path) != "" {
 		return config.Load(path)
 	}
-	return config.LoadDefaultOrExample()
+	return config.LoadDefault()
 }

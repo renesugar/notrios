@@ -1,5 +1,17 @@
 package pathprobe
 
+// Retired by H4 slice B, which routed both consumers through internal/paths:
+//
+//   - TestRelativeXDGConfigHomeIsAcceptedByProfilesAndRefusedByTheStandardLibrary
+//   - TestProfileRegistryFallsBackToACurrentDirectoryRelativePath
+//
+// Both characterized the two config-root resolvers disagreeing. There is one
+// resolver now, so there is nothing left to disagree. The behaviour they
+// asserted is inverted and kept as regression tests in internal/profiles:
+// TestDefaultPathIgnoresARelativeConfigHome and
+// TestDefaultPathRefusesRatherThanInventingAPath, plus
+// TestProfilesAndSyncKeysAgreeOnTheConfigRoot.
+
 import (
 	"os"
 	"path/filepath"
@@ -7,64 +19,7 @@ import (
 	"testing"
 
 	"github.com/renesugar/notrios/internal/profiles"
-	"github.com/renesugar/notrios/internal/synckeys"
 )
-
-// Notrios resolves "the user's config root" twice, in two packages, by two
-// different rules. That is invisible until the environment is unusual, and
-// then the two answers disagree about where a user's own files are.
-//
-// The XDG base directory specification says a relative XDG_CONFIG_HOME is
-// invalid and must be ignored. Go's os.UserConfigDir implements that by
-// refusing. internal/profiles hand-rolls the lookup and accepts it, which
-// resolves the registry against the current working directory instead.
-//
-// H4 should delete the hand-rolled lookup in favour of one resolver. When it
-// does, this test fails, which is the intent.
-func TestRelativeXDGConfigHomeIsAcceptedByProfilesAndRefusedByTheStandardLibrary(t *testing.T) {
-	t.Setenv("XDG_CONFIG_HOME", "relative/config")
-	t.Setenv("NOTRIOS_PROFILE_REGISTRY", "")
-
-	registry := profiles.DefaultPath()
-	if filepath.IsAbs(registry) {
-		t.Fatalf("H4 may have landed: profiles.DefaultPath returned an absolute path %q for a relative XDG_CONFIG_HOME", registry)
-	}
-	if registry != filepath.Join("relative", "config", "notrios", "profiles.json") {
-		t.Fatalf("unexpected registry path %q", registry)
-	}
-
-	// The same environment, asked through the standard library, fails closed.
-	if _, err := os.UserConfigDir(); err == nil {
-		t.Fatal("expected os.UserConfigDir to refuse a relative XDG_CONFIG_HOME")
-	} else if !strings.Contains(err.Error(), "relative") {
-		t.Fatalf("unexpected error from os.UserConfigDir: %v", err)
-	}
-
-	// synckeys goes through os.UserConfigDir, so in this environment Notrios
-	// cannot find its sync keys but will happily invent a registry location.
-	if _, err := synckeys.DefaultPath("db_probe"); err == nil {
-		t.Fatal("expected synckeys.DefaultPath to fail where os.UserConfigDir fails")
-	}
-}
-
-// With no HOME at all the registry becomes a bare relative path, so the
-// profile registry a stable link resolves through depends on the directory the
-// process happens to have been started in. Two invocations of notriosctl from
-// two directories are then two different machines as far as link routing is
-// concerned.
-func TestProfileRegistryFallsBackToACurrentDirectoryRelativePath(t *testing.T) {
-	t.Setenv("XDG_CONFIG_HOME", "")
-	t.Setenv("NOTRIOS_PROFILE_REGISTRY", "")
-	t.Setenv("HOME", "")
-
-	registry := profiles.DefaultPath()
-	if filepath.IsAbs(registry) {
-		t.Fatalf("H4 may have landed: expected a relative fallback, got %q", registry)
-	}
-	if registry != filepath.Join(".notrios", "profiles.json") {
-		t.Fatalf("unexpected fallback registry path %q", registry)
-	}
-}
 
 // The config root is also where profile *data* ends up. A generated runtime
 // profile puts its database, assets, projections, search index and quarantine

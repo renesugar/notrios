@@ -24,6 +24,7 @@ import (
 	"path/filepath"
 	"sort"
 
+	"github.com/renesugar/notrios/internal/paths"
 	"github.com/renesugar/notrios/internal/syncstate"
 	"github.com/renesugar/notrios/internal/syncwire"
 )
@@ -73,7 +74,11 @@ type KeyFile struct {
 // library, because a database copied to another machine must not carry the
 // keys that decrypt its traffic.
 func DefaultPath(databaseID string) (string, error) {
-	home, err := os.UserConfigDir()
+	// The config root comes from internal/paths so this and the profile
+	// registry cannot disagree about where it is; before H4 this asked
+	// os.UserConfigDir and internal/profiles hand-rolled the same lookup, and
+	// they gave different answers for a relative XDG_CONFIG_HOME.
+	root, err := paths.ConfigRoot()
 	if err != nil {
 		return "", err
 	}
@@ -81,7 +86,7 @@ func DefaultPath(databaseID string) (string, error) {
 	if databaseID != "" {
 		name = fmt.Sprintf("sync-keys-%s.json", databaseID)
 	}
-	return filepath.Join(home, "notrios", name), nil
+	return filepath.Join(root, name), nil
 }
 
 // Create writes new key material: one fresh group key at epoch one, and one

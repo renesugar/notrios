@@ -160,7 +160,9 @@ func Resolve(options Options) (Resolution, error) {
 	case options.PortableMarker:
 		resolvePortable(goos, options, &result)
 	case options.SourceCheckout:
-		resolveSource(goos, &result)
+		if err := resolveSource(goos, options, &result); err != nil {
+			return Resolution{}, err
+		}
 	default:
 		if err := resolveInstalled(goos, options, &result); err != nil {
 			return Resolution{}, err
@@ -189,14 +191,32 @@ func resolvePortable(goos string, options Options, result *Resolution) {
 		"portable mode: selected by the %s marker beside %s", PortableMarkerName, executable)
 }
 
-func resolveSource(goos string, result *Resolution) {
+// resolveSource is a checkout: a developer's working copy.
+//
+// Source mode moves the program's own files and the developer's scratch data
+// into the checkout. It deliberately does *not* move the config root.
+//
+// That distinction was a correction: the first version overrode config too, and
+// the profile registry promptly relocated into the checkout's config/
+// directory. A checkout is not a different user. The registry and sync keys are
+// the developer's identity across every build they run, they have always lived
+// in the user config root, and writing them into the source tree would put a
+// file naming every local database path one `git add -A` away from being
+// committed. NOTRIOS_PROFILE_REGISTRY already exists for anyone who does want
+// an isolated registry.
+func resolveSource(goos string, options Options, result *Resolution) error {
+	// The native roots are resolved first because config is taken from them.
+	if err := resolveInstalled(goos, options, result); err != nil {
+		return err
+	}
 	result.Mode = ModeSource
-	for _, name := range RootNames {
+	for _, name := range []string{RootData, RootState, RootCache, RootRuntime} {
 		result.Roots[name] = Join(goos, ".", "data", name)
 	}
-	result.Roots[RootConfig] = Join(goos, ".", "config")
 	result.Roots[RootProgramAssets] = Join(goos, ".", "web", "dist")
-	result.note(NoticeSourceSelected, "source mode: a checkout was detected beside the executable")
+	result.note(NoticeSourceSelected,
+		"source mode: a checkout was detected, so data and assets are checkout-relative; config stays in the user config root")
+	return nil
 }
 
 // xdg applies the XDG rules to one variable.

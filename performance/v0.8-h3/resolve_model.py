@@ -94,6 +94,71 @@ def _xdg(env: dict, os_name: str, variable: str, default: str, result: "Resoluti
     return raw
 
 
+def _resolve_installed(env: dict, os_name: str, executable_dir: str, result: "Resolution",
+                       runtime_dir_is_private=None) -> None:
+    """The native per-OS roots. Source mode calls this too, for config."""
+    home = (env.get("HOME") or env.get("USERPROFILE") or "").strip()
+    if not home:
+        raise ResolutionError(
+            "no home directory is set, so no user root can be resolved; "
+            "pass explicit paths rather than falling back to the working directory"
+        )
+    if os_name == LINUX:
+        result.roots["config"] = _join(os_name, _xdg(env, os_name, "XDG_CONFIG_HOME", _join(os_name, home, ".config"), result), "notrios")
+        result.roots["data"] = _join(os_name, _xdg(env, os_name, "XDG_DATA_HOME", _join(os_name, home, ".local", "share"), result), "notrios")
+        result.roots["state"] = _join(os_name, _xdg(env, os_name, "XDG_STATE_HOME", _join(os_name, home, ".local", "state"), result), "notrios")
+        result.roots["cache"] = _join(os_name, _xdg(env, os_name, "XDG_CACHE_HOME", _join(os_name, home, ".cache"), result), "notrios")
+        result.roots["program_assets"] = "/usr/local/share/notrios"
+
+        runtime = (env.get("XDG_RUNTIME_DIR") or "").strip()
+        fallback = _join(os_name, result.roots["state"], "runtime")
+        if not runtime:
+            result.roots["runtime"] = fallback
+            result.note(
+                RUNTIME_DIR_UNSET,
+                "XDG_RUNTIME_DIR is not set and the specification names no fallback; "
+                f"using {fallback} rather than a shared temporary directory",
+            )
+        elif not _is_abs(os_name, runtime):
+            result.roots["runtime"] = fallback
+            result.note(RUNTIME_DIR_RELATIVE, f"XDG_RUNTIME_DIR is {runtime!r}, which is relative; using {fallback}")
+        elif runtime_dir_is_private is not None and not runtime_dir_is_private(runtime):
+            result.roots["runtime"] = fallback
+            result.note(
+                RUNTIME_DIR_NOT_PRIVATE,
+                f"{runtime} is not owner-only, so staged backup material would be readable by others; using {fallback}",
+            )
+        else:
+            result.roots["runtime"] = _join(os_name, runtime, "notrios")
+
+    elif os_name == WINDOWS:
+        roaming = (env.get("APPDATA") or "").strip() or _join(os_name, home, "AppData", "Roaming")
+        local = (env.get("LOCALAPPDATA") or "").strip() or _join(os_name, home, "AppData", "Local")
+        if any((env.get(v) or "").strip() for v in ("XDG_CONFIG_HOME", "XDG_DATA_HOME", "XDG_STATE_HOME", "XDG_CACHE_HOME")):
+            result.note(XDG_IGNORED_ON_PLATFORM, "XDG_* variables are ignored on Windows; the native locations are authoritative")
+        result.roots["config"] = _join(os_name, roaming, "Notrios", "Config")
+        result.roots["data"] = _join(os_name, local, "Notrios", "Data")
+        result.roots["state"] = _join(os_name, local, "Notrios", "State")
+        result.roots["cache"] = _join(os_name, local, "Notrios", "Cache")
+        result.roots["runtime"] = _join(os_name, local, "Notrios", "Runtime")
+        result.roots["program_assets"] = executable_dir
+
+    elif os_name == MACOS:
+        support = _join(os_name, home, "Library", "Application Support")
+        if any((env.get(v) or "").strip() for v in ("XDG_CONFIG_HOME", "XDG_DATA_HOME", "XDG_STATE_HOME", "XDG_CACHE_HOME")):
+            result.note(XDG_IGNORED_ON_PLATFORM, "XDG_* variables are ignored on macOS; the native locations are authoritative")
+        result.roots["config"] = _join(os_name, support, "Notrios", "Config")
+        result.roots["data"] = _join(os_name, support, "Notrios", "Data")
+        result.roots["state"] = _join(os_name, support, "Notrios", "State")
+        result.roots["cache"] = _join(os_name, home, "Library", "Caches", "Notrios")
+        tmp = (env.get("TMPDIR") or "").strip()
+        result.roots["runtime"] = _join(os_name, tmp or _join(os_name, home, "Library", "Caches"), "Notrios", "Runtime")
+        result.roots["program_assets"] = _join(os_name, executable_dir, "..", "Resources")
+
+    else:
+        raise ResolutionError(f"unsupported operating system {os_name!r}")
+
+
 def resolve(env: dict, os_name: str = LINUX, *,
             executable_dir: str = "/opt/notrios/bin",
             portable_marker: bool = False,
@@ -114,71 +179,26 @@ def resolve(env: dict, os_name: str = LINUX, *,
         result.roots["program_assets"] = _join(os_name, executable_dir, "..", "share", "notrios")
         result.note(PORTABLE_SELECTED, f"portable mode: selected by the notrios-portable.txt marker beside {executable_dir}")
     elif source_checkout:
+        # Source mode moves the program's own files and a developer's scratch
+        # data into the checkout, and deliberately leaves the config root alone.
+        # H4 corrected this: overriding config relocated the profile registry
+        # into the checkout's config/ directory, and a checkout is not a
+        # different user. The registry and sync keys are the developer's
+        # identity across every build, and writing them into the source tree
+        # puts a file naming every local database path one `git add -A` away
+        # from being committed.
+        _resolve_installed(env, os_name, executable_dir, result, runtime_dir_is_private)
         result.mode = "source"
-        result.roots = {name: _join(os_name, ".", "data", name) for name in ROOT_NAMES}
-        result.roots["config"] = _join(os_name, ".", "config")
+        for name in ("data", "state", "cache", "runtime"):
+            result.roots[name] = _join(os_name, ".", "data", name)
         result.roots["program_assets"] = _join(os_name, ".", "web", "dist")
-        result.note(SOURCE_SELECTED, "source mode: a checkout was detected beside the executable")
+        result.note(
+            SOURCE_SELECTED,
+            "source mode: a checkout was detected, so data and assets are checkout-relative; "
+            "config stays in the user config root",
+        )
     else:
-        if not home:
-            raise ResolutionError(
-                "no home directory is set, so no user root can be resolved; "
-                "pass explicit paths rather than falling back to the working directory"
-            )
-        if os_name == LINUX:
-            result.roots["config"] = _join(os_name, _xdg(env, os_name, "XDG_CONFIG_HOME", _join(os_name, home, ".config"), result), "notrios")
-            result.roots["data"] = _join(os_name, _xdg(env, os_name, "XDG_DATA_HOME", _join(os_name, home, ".local", "share"), result), "notrios")
-            result.roots["state"] = _join(os_name, _xdg(env, os_name, "XDG_STATE_HOME", _join(os_name, home, ".local", "state"), result), "notrios")
-            result.roots["cache"] = _join(os_name, _xdg(env, os_name, "XDG_CACHE_HOME", _join(os_name, home, ".cache"), result), "notrios")
-            result.roots["program_assets"] = "/usr/local/share/notrios"
-
-            runtime = (env.get("XDG_RUNTIME_DIR") or "").strip()
-            fallback = _join(os_name, result.roots["state"], "runtime")
-            if not runtime:
-                result.roots["runtime"] = fallback
-                result.note(
-                    RUNTIME_DIR_UNSET,
-                    "XDG_RUNTIME_DIR is not set and the specification names no fallback; "
-                    f"using {fallback} rather than a shared temporary directory",
-                )
-            elif not _is_abs(os_name, runtime):
-                result.roots["runtime"] = fallback
-                result.note(RUNTIME_DIR_RELATIVE, f"XDG_RUNTIME_DIR is {runtime!r}, which is relative; using {fallback}")
-            elif runtime_dir_is_private is not None and not runtime_dir_is_private(runtime):
-                result.roots["runtime"] = fallback
-                result.note(
-                    RUNTIME_DIR_NOT_PRIVATE,
-                    f"{runtime} is not owner-only, so staged backup material would be readable by others; using {fallback}",
-                )
-            else:
-                result.roots["runtime"] = _join(os_name, runtime, "notrios")
-
-        elif os_name == WINDOWS:
-            roaming = (env.get("APPDATA") or "").strip() or _join(os_name, home, "AppData", "Roaming")
-            local = (env.get("LOCALAPPDATA") or "").strip() or _join(os_name, home, "AppData", "Local")
-            if any((env.get(v) or "").strip() for v in ("XDG_CONFIG_HOME", "XDG_DATA_HOME", "XDG_STATE_HOME", "XDG_CACHE_HOME")):
-                result.note(XDG_IGNORED_ON_PLATFORM, "XDG_* variables are ignored on Windows; the native locations are authoritative")
-            result.roots["config"] = _join(os_name, roaming, "Notrios", "Config")
-            result.roots["data"] = _join(os_name, local, "Notrios", "Data")
-            result.roots["state"] = _join(os_name, local, "Notrios", "State")
-            result.roots["cache"] = _join(os_name, local, "Notrios", "Cache")
-            result.roots["runtime"] = _join(os_name, local, "Notrios", "Runtime")
-            result.roots["program_assets"] = executable_dir
-
-        elif os_name == MACOS:
-            support = _join(os_name, home, "Library", "Application Support")
-            if any((env.get(v) or "").strip() for v in ("XDG_CONFIG_HOME", "XDG_DATA_HOME", "XDG_STATE_HOME", "XDG_CACHE_HOME")):
-                result.note(XDG_IGNORED_ON_PLATFORM, "XDG_* variables are ignored on macOS; the native locations are authoritative")
-            result.roots["config"] = _join(os_name, support, "Notrios", "Config")
-            result.roots["data"] = _join(os_name, support, "Notrios", "Data")
-            result.roots["state"] = _join(os_name, support, "Notrios", "State")
-            result.roots["cache"] = _join(os_name, home, "Library", "Caches", "Notrios")
-            tmp = (env.get("TMPDIR") or "").strip()
-            result.roots["runtime"] = _join(os_name, tmp or _join(os_name, home, "Library", "Caches"), "Notrios", "Runtime")
-            result.roots["program_assets"] = _join(os_name, executable_dir, "..", "Resources")
-
-        else:
-            raise ResolutionError(f"unsupported operating system {os_name!r}")
+        _resolve_installed(env, os_name, executable_dir, result, runtime_dir_is_private)
 
     # 2. Explicit paths win over everything, including portable and source mode.
     for name, value in explicit.items():

@@ -8,6 +8,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/renesugar/notrios/internal/paths"
 )
 
 // Config contains the runtime settings used by notriosd and notriosctl.
@@ -315,15 +317,56 @@ func Load(path string) (Config, error) {
 	return cfg, nil
 }
 
-// LoadDefaultOrExample loads config/config.example.yaml when it exists. This is
-// useful for the source checkout while still allowing installed binaries to run
-// with compiled defaults when the example file is absent.
-func LoadDefaultOrExample() (Config, error) {
-	const examplePath = "config/config.example.yaml"
-	if _, err := os.Stat(examplePath); err == nil {
-		return Load(examplePath)
-	} else if err != nil && !os.IsNotExist(err) {
-		return Config{}, err
+// ExampleRelativePath is the checkout's sample configuration, read only in
+// source mode.
+const ExampleRelativePath = "config/config.example.yaml"
+
+// LoadDefault loads the configuration for a process that was given no --config.
+//
+// The order is: the user's own <config>/config.yaml, then -- in a source
+// checkout only -- the checkout's config/config.example.yaml, then compiled
+// defaults.
+//
+// The source-mode restriction is the point of the change. This function used to
+// stat config/config.example.yaml relative to the process working directory,
+// which is right in a checkout and wrong once the binary is installed: the file
+// that decides the database path, the listen address, the public base URL and
+// the remote-media policy, including whether private networks may be fetched,
+// was taken from whatever directory the user happened to be standing in.
+//
+// A missing or unreadable user config is not an error; a *malformed* one is.
+// Falling back to compiled defaults because a file failed to parse would start
+// the service with a policy the user did not choose and did not know about.
+func LoadDefault() (Config, error) {
+	if root, err := paths.ConfigRoot(); err == nil {
+		candidate := filepath.Join(root, "config.yaml")
+		if _, statErr := os.Stat(candidate); statErr == nil {
+			return Load(candidate)
+		} else if !os.IsNotExist(statErr) {
+			return Config{}, fmt.Errorf("read %s: %w", candidate, statErr)
+		}
+	}
+
+	if executableDir, err := paths.ExecutableDir(); err == nil {
+		if root, ok := paths.FindSourceCheckout(executableDir); ok {
+			return loadExampleFrom(root)
+		}
+	}
+	if workingDir, err := os.Getwd(); err == nil {
+		if root, ok := paths.FindSourceCheckout(workingDir); ok {
+			return loadExampleFrom(root)
+		}
+	}
+
+	return Default(), nil
+}
+
+func loadExampleFrom(checkoutRoot string) (Config, error) {
+	candidate := filepath.Join(checkoutRoot, ExampleRelativePath)
+	if _, err := os.Stat(candidate); err == nil {
+		return Load(candidate)
+	} else if !os.IsNotExist(err) {
+		return Config{}, fmt.Errorf("read %s: %w", candidate, err)
 	}
 	return Default(), nil
 }

@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/renesugar/notrios/internal/synckeys"
 )
 
 func sampleProfile(name, databaseID, path string) Profile {
@@ -181,12 +183,122 @@ func TestCorruptRegistryIsRefusedRatherThanRepaired(t *testing.T) {
 
 func TestDefaultPathPrefersTheExplicitOverride(t *testing.T) {
 	t.Setenv("NOTRIOS_PROFILE_REGISTRY", "/tmp/explicit.json")
-	if got := DefaultPath(); got != "/tmp/explicit.json" {
+	got, err := DefaultPath()
+	if err != nil {
+		t.Fatalf("DefaultPath: %v", err)
+	}
+	if got != "/tmp/explicit.json" {
 		t.Fatalf("DefaultPath: %q", got)
 	}
+
 	t.Setenv("NOTRIOS_PROFILE_REGISTRY", "")
 	t.Setenv("XDG_CONFIG_HOME", "/tmp/config")
-	if got := DefaultPath(); got != filepath.Join("/tmp/config", "notrios", "profiles.json") {
-		t.Fatalf("DefaultPath: %q", got)
+	got, err = DefaultPath()
+	if err != nil {
+		t.Fatalf("DefaultPath: %v", err)
+	}
+	if want := filepath.Join("/tmp/config", "notrios", "profiles.json"); got != want {
+		t.Fatalf("DefaultPath = %q, want %q", got, want)
+	}
+}
+
+// The two defects H3 found, now inverted: a relative XDG_CONFIG_HOME is ignored
+// rather than resolved against the working directory, and an unresolvable
+// config root is refused rather than replaced with a relative path.
+//
+// The second matters most. A registry at .notrios/profiles.json means the
+// database a notrios:// link resolves to depends on the directory the process
+// was started in, so two invocations from two directories are two different
+// machines as far as link routing is concerned.
+func TestDefaultPathIgnoresARelativeConfigHome(t *testing.T) {
+	t.Setenv("NOTRIOS_PROFILE_REGISTRY", "")
+	t.Setenv("XDG_CONFIG_HOME", "relative/config")
+	t.Setenv("HOME", "/home/probe")
+
+	got, err := DefaultPath()
+	if err != nil {
+		t.Fatalf("DefaultPath: %v", err)
+	}
+	if !filepath.IsAbs(got) {
+		t.Fatalf("a relative XDG_CONFIG_HOME produced the relative registry path %q", got)
+	}
+	if want := filepath.Join("/home/probe", ".config", "notrios", "profiles.json"); got != want {
+		t.Fatalf("DefaultPath = %q, want the specified fallback %q", got, want)
+	}
+}
+
+func TestDefaultPathRefusesRatherThanInventingAPath(t *testing.T) {
+	t.Setenv("NOTRIOS_PROFILE_REGISTRY", "")
+	t.Setenv("XDG_CONFIG_HOME", "")
+	t.Setenv("HOME", "")
+	t.Setenv("USERPROFILE", "")
+
+	got, err := DefaultPath()
+	if err == nil {
+		t.Fatalf("expected a refusal, got %q", got)
+	}
+	if got != "" {
+		t.Fatalf("a refusal must not also return a path, got %q", got)
+	}
+}
+
+// The defect H3 found was not that either resolver was wrong on its own terms.
+// It was that there were two of them, and they disagreed: given a relative
+// XDG_CONFIG_HOME, internal/synckeys refused as the specification requires and
+// internal/profiles invented a location under the working directory. Two halves
+// of one application disagreed about where the user's own files were.
+//
+// This asserts the property that replaced them, rather than the implementation
+// detail that both happen to call the same function.
+func TestProfilesAndSyncKeysAgreeOnTheConfigRoot(t *testing.T) {
+	environments := []struct {
+		name                       string
+		configHome, home, expectIn string
+	}{
+		{"absolute XDG_CONFIG_HOME", "/tmp/h4-config", "/home/probe", "/tmp/h4-config/notrios"},
+		{"relative XDG_CONFIG_HOME is ignored", "relative/config", "/home/probe", "/home/probe/.config/notrios"},
+		{"no XDG_CONFIG_HOME", "", "/home/probe", "/home/probe/.config/notrios"},
+	}
+	for _, environment := range environments {
+		t.Run(environment.name, func(t *testing.T) {
+			t.Setenv("NOTRIOS_PROFILE_REGISTRY", "")
+			t.Setenv("XDG_CONFIG_HOME", environment.configHome)
+			t.Setenv("HOME", environment.home)
+
+			registry, registryErr := DefaultPath()
+			keys, keysErr := synckeys.DefaultPath("db_agreement")
+
+			if (registryErr == nil) != (keysErr == nil) {
+				t.Fatalf("one resolver succeeded and the other did not: registry=%v keys=%v", registryErr, keysErr)
+			}
+			if registryErr != nil {
+				return
+			}
+			if got := filepath.Dir(registry); got != environment.expectIn {
+				t.Errorf("registry is in %q, want %q", got, environment.expectIn)
+			}
+			if got := filepath.Dir(keys); got != environment.expectIn {
+				t.Errorf("sync keys are in %q, want %q", got, environment.expectIn)
+			}
+			if filepath.Dir(registry) != filepath.Dir(keys) {
+				t.Errorf("the two consumers disagree: %q vs %q", filepath.Dir(registry), filepath.Dir(keys))
+			}
+		})
+	}
+}
+
+// Both must fail together, too. A registry that resolves while the sync keys
+// beside it do not is the same split-brain in a different disguise.
+func TestProfilesAndSyncKeysRefuseTogether(t *testing.T) {
+	t.Setenv("NOTRIOS_PROFILE_REGISTRY", "")
+	t.Setenv("XDG_CONFIG_HOME", "")
+	t.Setenv("HOME", "")
+	t.Setenv("USERPROFILE", "")
+
+	if _, err := DefaultPath(); err == nil {
+		t.Error("the profile registry resolved with no config root")
+	}
+	if _, err := synckeys.DefaultPath("db_agreement"); err == nil {
+		t.Error("sync keys resolved with no config root")
 	}
 }

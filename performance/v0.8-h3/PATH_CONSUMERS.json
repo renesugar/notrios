@@ -10,8 +10,8 @@
       "name": "Profile registry",
       "category": "config",
       "file": "internal/profiles/profiles.go",
-      "anchor": "if configHome := strings.TrimSpace(os.Getenv(\"XDG_CONFIG_HOME\")); configHome != \"\"",
-      "current": "NOTRIOS_PROFILE_REGISTRY, else $XDG_CONFIG_HOME/notrios/profiles.json, else $HOME/.config/notrios/profiles.json, else the relative path .notrios/profiles.json",
+      "anchor": "root, err := paths.ConfigRoot()",
+      "current": "NOTRIOS_PROFILE_REGISTRY, else <config>/profiles.json from internal/paths; refuses rather than inventing a path when no config root can be resolved",
       "defects": [
         "relative-xdg-accepted",
         "cwd-relative-fallback",
@@ -20,7 +20,9 @@
       ],
       "target": "<config>/profiles.json",
       "migration": "move",
-      "owner": "H4-C1"
+      "owner": "H4-C1",
+      "status": "resolved",
+      "resolved_by": "H4-C1"
     },
     {
       "id": "generated-profile-config",
@@ -28,39 +30,45 @@
       "category": "config",
       "file": "internal/profiles/runtime.go",
       "anchor": "configPath := filepath.Join(filepath.Dir(registryPath), \"profiles\", profileID+\".yaml\")",
-      "current": "<dir of registry>/profiles/<profile_id>.yaml",
+      "current": "<dir of registry>/profiles/<profile_id>.yaml; the registry now lands in the config root by construction",
       "defects": [],
       "target": "<config>/profiles/<profile_id>.yaml",
       "migration": "move",
-      "owner": "H4-C1"
+      "owner": "H4-C1",
+      "status": "resolved",
+      "resolved_by": "H4-C1"
     },
     {
       "id": "sync-keys",
       "name": "Sync key material",
       "category": "config",
       "file": "internal/synckeys/keys.go",
-      "anchor": "home, err := os.UserConfigDir()",
-      "current": "os.UserConfigDir()/notrios/sync-keys[-<database_id>].json",
+      "anchor": "root, err := paths.ConfigRoot()",
+      "current": "<config>/sync-keys[-<database_id>].json, from the same resolver as the profile registry",
       "defects": [
         "second-config-root-resolver"
       ],
       "target": "<config>/sync-keys[-<database_id>].json",
       "migration": "move",
-      "owner": "H4-C1"
+      "owner": "H4-C1",
+      "status": "resolved",
+      "resolved_by": "H4-C1"
     },
     {
       "id": "service-config-file",
       "name": "Service configuration file",
       "category": "config",
       "file": "internal/config/config.go",
-      "anchor": "const examplePath = \"config/config.example.yaml\"",
-      "current": "--config when given, else config/config.example.yaml relative to the current working directory, else compiled defaults",
+      "anchor": "func LoadDefault() (Config, error) {",
+      "current": "--config when given, else <config>/config.yaml, else the checkout's config/config.example.yaml in source mode only, else compiled defaults",
       "defects": [
         "cwd-relative-config-load"
       ],
       "target": "--config, else <config>/config.yaml, else compiled defaults; the checkout example is read only in source mode",
       "migration": "regenerate",
-      "owner": "H4-C2"
+      "owner": "H4-C2",
+      "status": "resolved",
+      "resolved_by": "H4-C2"
     },
     {
       "id": "data-directory",

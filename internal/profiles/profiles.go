@@ -24,6 +24,8 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/renesugar/notrios/internal/paths"
 )
 
 // Format version of the registry file. A reader that does not recognize the
@@ -89,18 +91,27 @@ func (e *AmbiguityError) Unwrap() error { return ErrAmbiguousDatabase }
 
 // DefaultPath returns the registry location. NOTRIOS_PROFILE_REGISTRY wins so
 // tests and alternative setups never touch the user's real registry.
-func DefaultPath() string {
+//
+// The config root comes from internal/paths rather than being derived here.
+// This function used to hand-roll the lookup, and H3 found that it disagreed
+// with internal/synckeys, which asks the standard library: given a relative
+// XDG_CONFIG_HOME, synckeys refused as the specification requires and this
+// invented a location under the working directory. Two halves of one
+// application disagreed about where the user's own files were.
+//
+// It now returns an error rather than a path it made up. A registry resolved
+// against the current directory means a notrios:// link routes to a different
+// database depending on where the process was started, which is worse than
+// being told the location cannot be determined.
+func DefaultPath() (string, error) {
 	if explicit := strings.TrimSpace(os.Getenv("NOTRIOS_PROFILE_REGISTRY")); explicit != "" {
-		return explicit
+		return explicit, nil
 	}
-	if configHome := strings.TrimSpace(os.Getenv("XDG_CONFIG_HOME")); configHome != "" {
-		return filepath.Join(configHome, "notrios", "profiles.json")
+	root, err := paths.ConfigRoot()
+	if err != nil {
+		return "", fmt.Errorf("the profile registry location could not be resolved: %w", err)
 	}
-	home, err := os.UserHomeDir()
-	if err != nil || strings.TrimSpace(home) == "" {
-		return filepath.Join(".notrios", "profiles.json")
-	}
-	return filepath.Join(home, ".config", "notrios", "profiles.json")
+	return filepath.Join(root, "profiles.json"), nil
 }
 
 // Load reads the registry. A missing file is an empty registry, not an error:

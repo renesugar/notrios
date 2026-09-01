@@ -16,7 +16,11 @@ The `notrios` desktop binary embeds the same service; `notrios -no-gui` behaves 
 | `-addr host:port` | overrides `server.listen_addr` |
 | `-db <path>` | overrides `data.database_path` (`:memory:` gives a throwaway database) |
 
-**Configuration discovery:** with no `-config` flag, the service loads `config/config.example.yaml` if it exists in the working directory (convenient in a source checkout) and otherwise falls back to compiled defaults. **Precedence:** command-line flags override the config file, which overrides the built-in defaults.
+**Configuration discovery:** with no `-config` flag, the service looks for your own `config.yaml` in the Notrios config directory (`$XDG_CONFIG_HOME/notrios` on Linux, defaulting to `~/.config/notrios`). If there is none, and the binary is running from a source checkout, it reads that checkout's `config/config.example.yaml`. Otherwise it uses compiled defaults.
+
+An installed binary never reads a configuration file from the directory it happens to be launched in. That file decides the database location, the listen address, the public base URL, and the remote-media policy, so taking it from the current directory made those depend on where you were standing. A malformed config file is an error rather than a silent fall back to defaults: starting with a policy you did not choose is worse than not starting.
+
+**Precedence:** command-line flags override the config file, which overrides the built-in defaults.
 
 ## Configuration reference
 <!-- notrios:generated:user:configuration-reference:begin -->

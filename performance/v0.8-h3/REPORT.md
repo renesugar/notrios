@@ -42,13 +42,15 @@ The hand-rolled version accepts it, so with `XDG_CONFIG_HOME=relative/config`:
   resolved against whatever directory the process was started in.
 
 One half of the application fails closed and the other invents a location, in
-the same process, for the same user. `TestRelativeXDGConfigHomeIsAcceptedByProfilesAndRefusedByTheStandardLibrary`.
+the same process, for the same user. `TestRelativeXDGConfigHomeIsAcceptedByProfilesAndRefusedByTheStandardLibrary`
+(retired by H4 slice B; see §9a).
 
 With no `HOME` at all it degrades further: the registry becomes the bare
 relative path `.notrios/profiles.json`, so the registry a `notrios://` link
 resolves through depends on the current directory. Two invocations of
 `notriosctl` from two directories are two different machines as far as link
-routing is concerned. `TestProfileRegistryFallsBackToACurrentDirectoryRelativePath`.
+routing is concerned. `TestProfileRegistryFallsBackToACurrentDirectoryRelativePath`
+(retired by H4 slice B; see §9a).
 
 ### 1.2 The library lives in the config root — observed
 
@@ -92,8 +94,8 @@ explains why the working directory comes first — "a developer running from a
 checkout means the checkout they are standing in" — and that reasoning is right
 for source mode and only for source mode.
 
-`TestDefaultConfigurationIsReadFromTheCurrentWorkingDirectory`,
-`TestWebRootPrefersTheWorkingDirectoryOverTheExecutable`.
+`TestDefaultConfigurationIsReadFromTheCurrentWorkingDirectory` (retired by H4
+slice B; see §9a), `TestWebRootPrefersTheWorkingDirectoryOverTheExecutable`.
 
 ### 1.4 The backups are protected and the originals are not — observed
 
@@ -459,7 +461,25 @@ model had defaulted, so another implementation would have had to guess
 scenario was also incoherent — a POSIX `executable_dir` on a Windows target —
 and now uses a Windows path.
 
-Fifteen scenarios, up from fourteen; source mode gained coverage.
+Sixteen scenarios, up from fourteen; source mode gained coverage.
+
+**Source mode no longer overrides the config root.** The first version did, and
+wiring the profile registry through the resolver promptly relocated it into the
+checkout's `config/` directory. A checkout is not a different user: the registry
+and sync keys are a developer's identity across every build they run, they have
+always lived in the user config root, and writing them into the source tree
+would leave a file naming every local database path one `git add -A` from being
+committed. Source mode now moves data, state, cache, runtime and program assets
+into the checkout, and leaves config alone. `NOTRIOS_PROFILE_REGISTRY` already
+exists for anyone who wants an isolated registry.
+
+**Probes retired by H4 slice B**, their subjects being fixed:
+`TestRelativeXDGConfigHomeIsAcceptedByProfilesAndRefusedByTheStandardLibrary`,
+`TestProfileRegistryFallsBackToACurrentDirectoryRelativePath`, and
+`TestDefaultConfigurationIsReadFromTheCurrentWorkingDirectory`. Each is listed
+in `pathprobe/`'s retirement note naming the inverted regression test that
+replaced it — in `internal/profiles` and `internal/config` respectively, beside
+the code rather than in the evidence directory.
 
 ## 10. Not verified
 

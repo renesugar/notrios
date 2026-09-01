@@ -120,6 +120,19 @@ def validate() -> dict:
             require(defect in DEFECT_EXPLANATIONS,
                     f"{cid}: defect {defect!r} is not explained anywhere in the report")
 
+        # A consumer H4 has rewired keeps its defects list -- that records what
+        # was found, which is the historical fact the report explains -- and
+        # gains a status saying what happened to it. Without this, "current"
+        # and "defects" would contradict each other the moment a fix landed.
+        status = consumer.get("status", "open")
+        require(status in ("open", "resolved"), f"{cid}: unknown status {status!r}")
+        if status == "resolved":
+            resolved_by = consumer.get("resolved_by", "")
+            require(resolved_by in KNOWN_CHANGES,
+                    f"{cid}: status resolved but resolved_by {resolved_by!r} is not a known change")
+            require(resolved_by == consumer["owner"],
+                    f"{cid}: resolved by {resolved_by} but owned by {consumer['owner']}")
+
     # Every declared change must actually own something. A change nobody needs
     # is a change H4 would implement for no reason.
     owned = {c["owner"] for c in consumers}
@@ -173,16 +186,27 @@ def validate() -> dict:
         open(os.path.join(probe_dir, name), encoding="utf-8").read()
         for name in sorted(os.listdir(probe_dir)) if name.endswith("_test.go")
     )
+    # A cited probe must either still exist, or be listed as retired in the
+    # probe package's own retirement note. The retirement note is the record
+    # that a characterization test was removed deliberately when its subject was
+    # fixed, rather than deleted because it had become inconvenient.
+    retired = set(re.findall(r"^//   - (Test[A-Za-z0-9_]+)$", probe_source, re.M))
     for named in re.findall(r"`(Test[A-Za-z0-9_]+)`", report):
-        require(f"func {named}(" in probe_source,
-                f"REPORT.md cites {named}, which does not exist in pathprobe/")
+        if f"func {named}(" in probe_source:
+            continue
+        require(named in retired,
+                f"REPORT.md cites {named}, which is neither in pathprobe/ nor listed as retired there")
+
+    resolved = sum(1 for c in consumers if c.get("status") == "resolved")
 
     return {
         "consumers": len(consumers),
+        "resolved": resolved,
         "roots": len(layout["roots"]),
         "purge_fixtures": fixtures["total"],
         "resolution_scenarios": resolution["total"],
         "owning_changes": len(KNOWN_CHANGES),
+        "retired_probes": len(retired),
     }
 
 

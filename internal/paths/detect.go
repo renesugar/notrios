@@ -1,6 +1,7 @@
 package paths
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -126,3 +127,24 @@ func ForProcess(explicit map[string]string) (Resolution, error) {
 		RuntimeDirIsPrivate: RuntimeDirIsPrivate,
 	})
 }
+
+// Root resolves one root for the running process.
+//
+// Consumers call this rather than reading environment variables themselves.
+// That is the whole point of the package: before H4, internal/profiles and
+// internal/synckeys each derived the config root by their own rules and
+// disagreed about the answer whenever XDG_CONFIG_HOME was relative.
+func Root(name string) (string, error) {
+	if !isRootName(name) {
+		return "", fmt.Errorf("unknown root %q", name)
+	}
+	resolution, err := ForProcess(nil)
+	if err != nil {
+		return "", err
+	}
+	return resolution.Root(name), nil
+}
+
+// ConfigRoot is the directory holding user-authored settings: the service
+// configuration, the profile registry, generated profile configs, sync keys.
+func ConfigRoot() (string, error) { return Root(RootConfig) }

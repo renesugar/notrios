@@ -1871,7 +1871,7 @@
     },
     {
       "path": "docs/service.md",
-      "sha256": "2e9845c31f3fa1517e86713ef13f5e60268e728695edeeb320dc1bfcfdab7da2",
+      "sha256": "72f1ccdd423ce87baac569ad3bdcde0c93a6edb4c3c43ff9bfac2ace0fe13d76",
       "help_note": "doc_help_service",
       "owner": "go:github.com/renesugar/notrios/internal/config#Config",
       "sections": [

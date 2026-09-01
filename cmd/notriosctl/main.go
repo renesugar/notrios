@@ -1311,7 +1311,7 @@ func runDoctor(args []string) {
 	if *configPath != "" {
 		cfg, err = config.Load(*configPath)
 	} else {
-		cfg, err = config.LoadDefaultOrExample()
+		cfg, err = config.LoadDefault()
 	}
 	if err != nil {
 		report(false, true, "config", err.Error())

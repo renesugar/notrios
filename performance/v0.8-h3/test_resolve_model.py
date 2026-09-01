@@ -164,11 +164,21 @@ def run_cases() -> None:
              env={"HOME": home}, os_name=LINUX, portable_marker=False,
              expect_roots={"data": "/home/u/.local/share/notrios"})
 
+    # Source mode moves the program's files and a developer's scratch data into
+    # the checkout and leaves config where it is. A checkout is not a different
+    # user: the registry and sync keys are the developer's identity across every
+    # build they run.
     scenario("source mode, a checkout beside the executable",
              env={"HOME": home}, os_name=LINUX, source_checkout=True,
-             expect_roots={"config": "config", "data": "data/data",
+             expect_roots={"config": "/home/u/.config/notrios",
+                           "data": "data/data",
+                           "state": "data/state",
                            "program_assets": "web/dist"},
              expect_code="source_selected")
+
+    scenario("source mode still refuses when there is no home for config",
+             env={}, os_name=LINUX, source_checkout=True,
+             expect_error="no home directory is set")
 
     scenario("explicit paths win over the installed layout",
              env={"HOME": home}, os_name=LINUX,
@@ -216,7 +226,7 @@ class ResolutionScenarios(unittest.TestCase):
         self.assertEqual(FAILURES, [], "\n".join(FAILURES))
 
     def test_enough_scenarios_ran_to_be_worth_trusting(self) -> None:
-        self.assertGreaterEqual(len(SCENARIOS), 15)
+        self.assertGreaterEqual(len(SCENARIOS), 16)
 
 
 def main() -> int:

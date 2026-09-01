@@ -542,11 +542,24 @@ func localNoteURL(configPath, documentID, anchor string) string {
 	return url
 }
 
+// registryPathOrDefault resolves --registry, falling back to the user registry.
+//
+// It exits rather than returning an error because there is nothing sensible to
+// do without a registry location, and the alternative -- what this code did
+// before H4 -- was to invent a working-directory-relative path, which routes a
+// notrios:// link to a different database depending on where the command was
+// run from.
 func registryPathOrDefault(explicit string) string {
 	if trimmed := strings.TrimSpace(explicit); trimmed != "" {
 		return trimmed
 	}
-	return profiles.DefaultPath()
+	path, err := profiles.DefaultPath()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		fmt.Fprintln(os.Stderr, "pass --registry with an absolute path to say where the registry is")
+		os.Exit(1)
+	}
+	return path
 }
 
 func loadConfigForProfile(configPath, dbPath, assetStore string) config.Config {
