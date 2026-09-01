@@ -2847,6 +2847,48 @@ attempt detail remains append-only in `agent/ATTEMPT_LOG.jsonl`.
   sidecar into the facade).
 - Gates added: `python3 scripts/check_sqlite_provenance.py` and `make abi`.
 
+## v0.8 H2a, H2b, H2 (complete, 2026-09-01)
+
+These three were completed and archived but never recorded here; the entry is
+added with H3 so the file is not silently a milestone behind.
+
+- H2a investigated Mermaid and recommended enabling it under containment
+  (`plans/v0.8/004-...`). No CSP widening was needed: zero `new Function`
+  survives the bundle.
+- H2b made a remote `http`/`https`/`mailto:` link in a note open the system
+  browser from the Wails window; the click was previously swallowed
+  (`plans/v0.8/005-...`).
+- H2 enabled Mermaid: `mermaid@11.17.2`, rendered by `web/src/mermaid-render.ts`
+  in a post-pass over the preview, not by `md-editor-rt` (`noMermaid: true`
+  stays). Mermaid drops a `notrios://` href before the sanitiser sees it, so
+  note links are reattached from the diagram source and routed as
+  `data-app-uri` (`plans/v0.8/006-...`).
+
+## v0.8 H3 (complete, 2026-09-01)
+
+- Investigation only. No path default changed; `performance/v0.8-h3/validate_evidence.py`
+  asserts `internal/config`'s `./data` defaults are untouched.
+- Notrios has no path resolver: 23 consumers each decide something about
+  location. `internal/profiles` and `internal/synckeys` disagree about the
+  config root — the hand-rolled lookup accepts a relative `XDG_CONFIG_HOME`
+  that `os.UserConfigDir` refuses, and with no `HOME` the registry becomes the
+  relative path `.notrios/profiles.json`.
+- Generated profile data (database, assets, projections, index, quarantine)
+  currently lives under the **config** root. That is the one consumer needing
+  migration rather than a new default.
+- `config/config.example.yaml` and `web/dist` are resolved from the working
+  directory ahead of the executable; primary data roots are created `0755`
+  while every derived artifact is `0700`.
+- Proposed contract in `performance/v0.8-h3/LAYOUT.json`: six roots
+  (config/data/state/cache/runtime/program assets), every mutable one `0700`,
+  XDG honoured on Linux only, portable mode never inferred.
+- `PATH_CONSUMERS.json` anchors each consumer to a source substring that must
+  occur exactly once, so an H4 change breaks the inventory rather than
+  outdating it. `pathprobe/` characterizes today's behavior and is meant to
+  fail when H4 lands.
+- Gate added: `make validate` now runs the H3 unittest suite and evidence
+  validator.
+
 ## Open implementation blockers
 
 - Official MCP Go SDK adoption/version.

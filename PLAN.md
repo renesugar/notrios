@@ -309,7 +309,7 @@ widened: the same three schemes the sanitiser already permits, refused again by
 `isExternalLink` and a third time by Wails. Archived as
 `plans/v0.8/005-desktop-external-link-opening.md`.
 
-## H3. Installed-path, XDG, migration, and destructive-lifecycle investigation
+## H3. Installed-path, XDG, migration, and destructive-lifecycle investigation — complete
 
 **Goal.** Freeze a cross-platform installed-path contract and a fail-closed
 end-user lifecycle before any runtime default or destructive Make target is
@@ -369,11 +369,32 @@ restore proof; and a no-user-data-loss/no-broad-delete oracle.
   mutable data follows native/XDG resolution at runtime and is not created by
   package staging.
 - **Purge treatment of external profile paths — Non-blocking for H3; blocking
-  for H5.** Recommended default: enumerate and back up eligible app-owned
-  external paths but refuse to delete them automatically. A later explicit
-  opt-in may be designed only with containment, ownership, and per-path
-  confirmation; approval of H3 does not authorize deletion outside Notrios's
-  standard roots.
+  for H5. Resolved in H3 as recommended.** Enumerate and back up eligible
+  app-owned external paths but refuse to delete them automatically. Fixtured in
+  both directions: a target that is an external path, and a target that
+  contains one. A later explicit opt-in may be designed only with containment,
+  ownership, and per-path confirmation; approval of H3 does not authorize
+  deletion outside Notrios's standard roots.
+
+All three decisions above were resolved in H3 as recommended, and H4 and H5
+must restate the ones that bind them. H5 additionally needs a backup container
+and destination decision; H3 recommends one owner-only tar with a per-file
+SHA-256 manifest, written under `$XDG_STATE_HOME` outside every purge root by
+construction, refusing rather than relocating when that destination is unsafe.
+
+**Outcome (2026-09-01).** Complete. Archived as
+`plans/v0.8/007-installed-path-xdg-migration-purge-investigation.md`; evidence
+under `performance/v0.8-h3/`. Twenty-three path consumers inventoried and
+anchored to exact source substrings, a six-root per-OS contract proposed in
+`LAYOUT.json`, a 14-scenario resolution table generated from an executable
+resolver model, and a purge oracle with 30 fixtures run against a real
+temporary filesystem. No path default changed, no data moved, no Make target
+added, nothing deleted — `validate_evidence.py` asserts the `./data` defaults
+are untouched. Four findings drive H4: two disagreeing config-root resolvers,
+of which the hand-rolled one accepts a relative `XDG_CONFIG_HOME` that the
+standard library refuses; profile data placed under the config root; config and
+`web/dist` resolved from the working directory ahead of the executable; and
+primary data roots created `0755` while every derived artifact is `0700`.
 
 ## H4. Installed runtime paths, assets, and migration
 
@@ -411,9 +432,17 @@ no-current-working-directory-dependency tests.
 
 **Open decisions**
 
-- **H3 path and migration selections — Blocking.** Do not start H4 until H3
-  records the selected per-platform roots, precedence, ownership, migration
-  trigger, backup format, external-path policy, and rollback.
+- **H3 path and migration selections — Blocking. Satisfied by H3.** H3 records
+  the per-platform roots, precedence, ownership and permissions in
+  `performance/v0.8-h3/LAYOUT.json`; the resolution rules and their generated
+  table in `RESOLUTION_TABLE.json`; and the migration trigger, copy-verify-
+  journal-commit sequence, per-category treatment, collision refusal and
+  rollback in `REPORT.md` section 4. H4 must restate the precedence decision it
+  is bound by, reproduce `RESOLUTION_TABLE.json` from its Go resolver, and
+  revisit `PATH_CONSUMERS.json` for every consumer it changes — the inventory's
+  source anchors are asserted, so a changed consumer fails
+  `performance/v0.8-h3/validate_evidence.py` until the entry is updated.
+  The purge backup container remains open and belongs to H5.
 
 ## H5. Safe Make install, uninstall, and purge lifecycle
 
@@ -860,9 +889,9 @@ This is an index only; each decision is owned and explained inside its item.
 | Emulator ABI/minSdk acceptance | H0/H11 | Resolved for H1: API-35 x86_64 runtime; arm64-v8a build-only |
 | Desktop external-link opening | H2b | Resolved and implemented: no prompt; the browser-tab path is unchanged |
 | Mermaid renderer/containment | H2a/H2 | Resolved and implemented in H2: Mermaid 11.17.2, strict security, `htmlLabels: false`, `notrios`-only links reattached from source |
-| Installed/portable path precedence | H3/H4 | Open with explicit-override/native default |
-| User-local/GNU install layout | H3/H5 | Open with `$HOME/.local` default |
-| Purge external-path and backup policy | H3/H5 | Open; safe refusal and verified-backup defaults |
+| Installed/portable path precedence | H3/H4 | Resolved in H3: explicit, then explicit portable marker, then native; never inferred |
+| User-local/GNU install layout | H3/H5 | Resolved in H3: `$HOME/.local`, GNU directory variables and `DESTDIR` retained |
+| Purge external-path and backup policy | H3/H5 | Resolved in H3: enumerate and back up, refuse to delete; container choice remains for H5 |
 | Desktop package formats/toolchain | H6a/H6/H7 | Open; evidence-dependent |
 | Windows/macOS feasibility and support | H6a/H7/H12 | Open; native execution required |
 | Native credential providers | H9 | Open and blocking implementation |
@@ -871,6 +900,6 @@ This is an index only; each decision is owned and explained inside its item.
 | v0.8 product/schema number | H13 | Open with product 0.8.0/no gratuitous schema default |
 | Internal artifact custody | H13 | Local/internal-only default; public release separately authorized |
 
-H1, H2a, H2b, and H2 completed on 2026-09-01. H3 is the next incomplete item and
-remains unapproved. Do not begin it until the user explicitly says to proceed
-with H3.
+H1, H2a, H2b, H2, and H3 completed on 2026-09-01. H4 is the next incomplete
+item and remains unapproved. Do not begin it until the user explicitly says to
+proceed with H4.

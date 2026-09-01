@@ -2,6 +2,74 @@
 
 This handoff applies to any coding agent or client continuing this project (Codex, Claude, aider, swival.dev, etc. — formerly `CODEX_HANDOFF.md`). The repository is designed so an agent can continue from repository files alone.
 
+## v0.8 H3 completion handoff — 2026-09-01
+
+H3 is complete and archived as
+`plans/v0.8/007-installed-path-xdg-migration-purge-investigation.md`. It is an
+**investigation**: no path default changed, no data moved, no Make lifecycle
+target was added, nothing was deleted. Evidence is under `performance/v0.8-h3/`
+and runs from `make validate`. H4 is next and remains unapproved.
+
+Notrios has no path resolver — it has 23 places that each decide something
+about location, and every defect worth reporting is a **disagreement between
+two of them**:
+
+- `internal/synckeys` asks `os.UserConfigDir()`, which refuses a relative
+  `XDG_CONFIG_HOME` as the specification requires. `internal/profiles`
+  hand-rolls the lookup and accepts it, resolving the registry against the
+  working directory. With no `HOME` the registry becomes the bare relative path
+  `.notrios/profiles.json`, so which database a `notrios://` link resolves to
+  depends on the current directory.
+- A generated profile puts the database, assets, projections, index and
+  quarantine under the **config** root:
+  `~/.config/notrios/profiles/<id>/data/notes.sqlite`. Observed against a real
+  profile. This is the only consumer needing migration rather than a new
+  default.
+- `config/config.example.yaml` and `web/dist` are both resolved from the
+  working directory ahead of the executable. The second matters most: it is a
+  content-injection path into the application's own window, gated on where the
+  user was standing when they launched it.
+- Twenty derived-artifact sites create `0700`/`0600`; `EnsureDirectories`
+  creates the primary roots `0755`. The encrypted backup of a user's notes is
+  owner-only and the notes are world-readable.
+
+**`PATH_CONSUMERS.json` will fail when H4 edits a consumer, and that is
+deliberate.** Each of the 23 entries is anchored to a source substring that must
+occur exactly once; `validate_evidence.py` re-checks them, so a changed consumer
+breaks the inventory instead of leaving it describing code that no longer
+exists. Update the entry as part of the change.
+
+**`pathprobe/` asserts what is true today, including what H3 wants changed.**
+Each such test names the H4 change that should break it and says so in its
+failure message. When H4 lands, delete or invert them alongside the fix — the
+failure is the reminder, not a regression. Flipping `EnsureDirectories` to
+`0700` was tried and does exactly that.
+
+Two classifications in `LAYOUT.json` are judgements, not conventions, and are
+worth not silently reversing. **Quarantine is state, not cache** — it is the
+record of what a note tried to fetch and the only copy of media a user may have
+approved without localizing, and calling it cache would let `purge` delete it
+without backup. **`XDG_RUNTIME_DIR` has no specified fallback**; inventing one
+in `/tmp` would put staged plaintext backups somewhere world-traversable, so the
+fallback is `<state>/runtime` at `0700`, and a runtime directory that exists but
+is not owner-only is refused.
+
+The purge oracle decides containment on the **resolved** path so a symlink
+cannot look contained while pointing out. Replacing `realpath` with textual
+normalization was tried; the fixtures caught it, two of them via the separate
+symlink rule. An unclassified backup category defaults to `backup_and_verify`,
+so a root added later without a policy is never silently disposed of.
+
+The two Python fixture files are `unittest`-based, not plain scripts: the other
+`test_*.py` files here are run by `unittest discover`, and a module with no
+`TestCase` would have been discovered, found empty, and reported as passing.
+
+**Not verified:** no Windows or macOS execution (those matrix rows and the
+`parentDir` separator defect are read from source); the mount-boundary rule is
+modelled with an injected device lookup; the §5 failure models are designs, not
+tests; no migration was performed; and the resolver model is Python, so H4's Go
+implementation reproducing `RESOLUTION_TABLE.json` is not yet demonstrated.
+
 ## v0.8 H2 completion handoff — 2026-09-01
 
 H2 is complete and archived as
