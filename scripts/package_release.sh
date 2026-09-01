@@ -23,6 +23,7 @@ make g20-validate
 
 rm -f "$OUT"
 zip -qr "$OUT" . \
+  -x 'node_modules/*' \
   -x 'web/node_modules/*' \
   -x '*/node_modules/*' \
   -x 'data/*' -x 'data/' \
