@@ -470,7 +470,10 @@ def _claude_bucket(
     if parsed is None:
         return None
     percentage, is_used = parsed
-    used = percentage if is_used else 100 - percentage
+    # The client computes these and can emit float noise such as
+    # 28.000000000000004. Four decimal places keeps any precision anyone could
+    # act on and stops the noise reaching the human-readable gate output.
+    used = round(percentage if is_used else 100 - percentage, 4)
     reset_raw: Any = None
     duration: Any = None
     if isinstance(value, dict):
@@ -493,7 +496,7 @@ def _claude_bucket(
     bucket: dict[str, Any] = {
         "name": str(name),
         "used_percent": used,
-        "remaining_percent": 100 - used,
+        "remaining_percent": round(100 - used, 4),
         "reset_utc": _reset_utc(reset_raw),
         "duration_minutes": duration,
         "exhausted": used >= 100,

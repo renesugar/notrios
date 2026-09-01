@@ -201,6 +201,21 @@ class UsageTests(unittest.TestCase):
         self.assertEqual([item["name"] for item in got["buckets"]], ["5h", "7d"])
         self.assertEqual(got["cache_age_minutes"], 1.0)
 
+    def test_claude_float_noise_is_rounded_for_display(self) -> None:
+        now = 1_800_000_000.0
+        document = {
+            "captured_at": now,
+            # The client really does emit this; it computes the percentage.
+            "rate_limits": {"5h": {"used_percentage": 28.000000000000004,
+                                   "resets_at": now + 3600}},
+        }
+        with tempfile.TemporaryDirectory() as directory, \
+                mock.patch.object(usage, "_client_version", return_value="claude-test"):
+            path = self._write_cache(directory, document)
+            got = usage.probe_claude(None, lambda: True, cache_path=path, now=now)
+        self.assertEqual(got["buckets"][0]["used_percent"], 28.0)
+        self.assertEqual(got["binding_remaining_percent"], 72.0)
+
     def test_claude_missing_cache_is_unknown_and_names_the_fix(self) -> None:
         with tempfile.TemporaryDirectory() as directory, \
                 mock.patch.object(usage, "_client_version", return_value="claude-test"):
