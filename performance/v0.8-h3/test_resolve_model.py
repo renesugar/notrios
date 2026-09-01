@@ -24,8 +24,14 @@ FAILURES = []
 
 
 def scenario(name, *, expect_roots=None, expect_notice=None, expect_error=None, **kwargs):
-    entry = {"scenario": name, "inputs": {k: (v if isinstance(v, (str, bool, dict, type(None))) else str(v))
-                                          for k, v in kwargs.items()}}
+    # A callable's repr carries its memory address, which would make this file
+    # differ on every run. Injected callables are recorded as what they are.
+    def describe(value):
+        if callable(value):
+            return "<injected>"
+        return value if isinstance(value, (str, bool, dict, type(None))) else str(value)
+
+    entry = {"scenario": name, "inputs": {k: describe(v) for k, v in kwargs.items()}}
     try:
         result = resolve(**kwargs)
     except ResolutionError as err:
