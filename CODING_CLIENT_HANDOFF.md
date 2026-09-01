@@ -42,9 +42,27 @@ that command in `~/.claude/settings.json` or the probe reports `unknown` and
 cannot gate a long run. A cache older than 30 minutes, or one whose windows are
 all past `resets_at`, reports `stale` and is treated like `unknown`.
 
-The verified local source snapshot is recorded at the end of this section once
-packaging completes. No push, PR, merge, tag, release/upload, evidence-reserve
-write, ISO, or physical burn was performed.
+The H1 close-out and clean packaging commit is `0bee555`. The verified local
+source snapshot is `dist/notrios-v0.8-h1-0bee555.zip`: 15,269,890 bytes, 1,815
+entries, SHA-256
+`4b156a19cf500031676b377545435e8966e3eabff7f2a1baa0bd0607cbf0b538`. It was
+copied byte-for-byte to
+`/home/renes/evidence/notrios/notrios-v0.8-h1-0bee555.zip`; source and
+destination hashes, sizes, and a `cmp` all match.
+
+`scripts/package_release.sh` reran the full gate set and
+`python3 scripts/check_release_zip.py` passed independently. An independent
+member check found `web/dist/index.html`, the H1 plan archive, the vendored
+`csqlite/` sources with `NOTICE` and `PROVENANCE.json`, the cgo build owner and
+shim, `cmd/notrioslib` with its frozen header and C host test,
+`internal/application`, `internal/abi`, both new scripts, and `PLAN.md`, with
+zero `.git`, `node_modules`, runtime data, or SQLite database entries. The
+vendored `sqlite3.c` and `sqlite3.h` inside the ZIP still hash to the pinned
+`b1dd5d74…b28189` and `919e7f2e…5910e1d`.
+
+The snapshot grew from roughly 5.3 MB to 15.3 MB because the vendored
+amalgamation is now tracked source. No push, PR, merge, tag, release/upload,
+evidence-reserve write, ISO, or physical burn was performed.
 
 ## v0.8 H0 completion handoff — 2026-08-31
 
