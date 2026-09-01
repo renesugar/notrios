@@ -45,6 +45,11 @@ gui: web ## Build the desktop GUI binary bin/notrios (needs libgtk-3-dev + libwe
 	mkdir -p bin
 	go build -tags "gui desktop production webkit2_41" -o bin/notrios ./cmd/notrios
 
+.PHONY: abi
+## abi: build the version-1 C ABI shared library and run the C host acceptance test
+abi:
+	sh cmd/notrioslib/run_host_test.sh
+
 docs: docs-site/node_modules ## Build the pinned offline Hugo/Ledger site into _site/
 	bash scripts/build_docs_site.sh
 
