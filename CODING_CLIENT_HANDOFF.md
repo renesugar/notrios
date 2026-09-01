@@ -2,6 +2,49 @@
 
 This handoff applies to any coding agent or client continuing this project (Codex, Claude, aider, swival.dev, etc. — formerly `CODEX_HANDOFF.md`). The repository is designed so an agent can continue from repository files alone.
 
+## v0.8 H2 completion handoff — 2026-09-01
+
+H2 is complete and archived as
+`plans/v0.8/006-bounded-offline-mermaid-enablement.md`. **Mermaid is now
+enabled.** `mermaid@11.17.2` is pinned and bundled; diagrams are rendered by
+`web/src/mermaid-render.ts` in a post-pass over the preview, not by
+`md-editor-rt`, which keeps `noMermaid: true`. H3 is next and remains
+unapproved.
+
+The fenced source is what is already on the page, so a diagram replaces it only
+on success and every failure — malformed, oversized, timed out, sanitised to
+nothing, or an internal crash — leaves the reader what they typed with a status
+line saying why. Configured `securityLevel: 'strict'` with `htmlLabels: false`,
+bounded at 20 diagrams per note, 65,536 source bytes, 500 edges, and 2,000 ms,
+and the output is sanitised regardless of configuration.
+
+**Two things a future change could easily re-break:**
+
+`sanitizeDiagramSVG` removes media elements *before* stripping attributes.
+Reversing that leaves an empty `<image>` behind, because the media pass judges
+an element by where it points and the attribute pass has already removed it.
+
+Mermaid drops a `notrios://` href before the sanitiser ever sees the SVG, while
+keeping a remote `https` one. Note links are therefore reattached from the
+diagram source — `click <node> "<uri>"`, only when the URI *parses* as a stable
+link — and routed as `data-app-uri` with `href="#"`, the same in-app routing
+every other note link uses. A DOMPurify hook does not reach mermaid's pass; this
+was tried.
+
+**Mermaid cannot render under jsdom.** The renderer is injectable and the unit
+tests use a stub, so each fallback test distinguishes outcomes instead of
+passing because everything fails. Real rendering is verified in Chromium under
+the verbatim production CSP: zero violations, zero cross-origin requests, no
+script execution. Evidence and the harness are under `performance/v0.8-h2/`.
+
+The licence gate now carries the three H2a decisions, with the `khroma`
+exemption pinned to a licence-file hash the gate re-verifies. npm packages went
+251 to 361; the bundle 0.85 to 1.68 MB gzipped.
+
+**Not verified:** no Wails webview smoke (the G18 contract asks for one before
+desktop support is claimed), no worker cancellation, no screen-reader
+assessment. Each is recorded in the archive.
+
 ## v0.8 H2b completion handoff — 2026-09-01
 
 H2b is complete and archived as

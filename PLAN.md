@@ -199,7 +199,7 @@ accessibility review also remain undone and are recorded as such. Archived as
 `plans/v0.8/004-mermaid-renderer-security-investigation.md`; Mermaid remains
 disabled and no production file changed.
 
-## H2. Bounded offline Mermaid enablement
+## H2. Bounded offline Mermaid enablement — complete
 
 **Goal.** Implement H2a's accepted renderer/containment option in the existing
 GUI while preserving fenced source on every failure.
@@ -225,9 +225,27 @@ bundle/time/RSS comparison to H2a, full frontend/Go/docs gates, and rollback.
 
 **Open decisions**
 
-- **H2a renderer/containment recommendation — Blocking.** No fallback is
-  implied; if H2a recommends remaining disabled, close or replan H2 instead of
-  introducing a different renderer mid-item.
+- **H2a renderer/containment recommendation — Blocking. Satisfied 2026-09-01:**
+  H2a recommended enabling, and H2 implemented that recommendation unchanged.
+
+**Outcome (2026-09-01).** `mermaid@11.17.2` is pinned and bundled; diagrams
+render in a preview post-pass in `web/src/mermaid-render.ts` rather than through
+`md-editor-rt`, which keeps `noMermaid: true`, so the fenced source is what is
+already on the page and every failure leaves it there. Configured strictly with
+HTML labels off and bounded at 20 diagrams, 65,536 source bytes, 500 edges and
+2,000 ms; the output is sanitised regardless. A browser probe under the verbatim
+production CSP records zero violations, zero cross-origin requests, no script
+execution, and no `foreignObject`. Two defects were found and fixed: sanitiser
+ordering left an empty `<image>` behind, and mermaid drops a `notrios://` href
+before the sanitiser sees it while keeping a remote `https` one, so note links
+are now reattached from the source and routed as `data-app-uri`. Mermaid cannot
+render under jsdom, so the renderer is injectable and unit tests use a stub
+rather than passing because everything fails. The three H2a licence decisions
+are implemented and recorded, with the `khroma` exemption pinned to a re-checked
+file hash. 211 frontend tests, bundle 0.85 to 1.68 MB gzipped. **No Wails
+webview smoke, no worker cancellation, and no screen-reader assessment** — each
+recorded. Archived as
+`plans/v0.8/006-bounded-offline-mermaid-enablement.md`.
 
 ## H2b. Desktop external-link opening — complete
 
@@ -841,7 +859,7 @@ This is an index only; each decision is owned and explained inside its item.
 | Application facade package owner | H0/H1 | Resolved and implemented in H1: `internal/application` |
 | Emulator ABI/minSdk acceptance | H0/H11 | Resolved for H1: API-35 x86_64 runtime; arm64-v8a build-only |
 | Desktop external-link opening | H2b | Resolved and implemented: no prompt; the browser-tab path is unchanged |
-| Mermaid renderer/containment | H2a/H2 | Recommended by H2a: Mermaid 11.17.2, strict security, `htmlLabels: false`, `notrios`-only link allowlist; H2 approval also accepts the bundle cost and three licence-gate decisions |
+| Mermaid renderer/containment | H2a/H2 | Resolved and implemented in H2: Mermaid 11.17.2, strict security, `htmlLabels: false`, `notrios`-only links reattached from source |
 | Installed/portable path precedence | H3/H4 | Open with explicit-override/native default |
 | User-local/GNU install layout | H3/H5 | Open with `$HOME/.local` default |
 | Purge external-path and backup policy | H3/H5 | Open; safe refusal and verified-backup defaults |
@@ -853,6 +871,6 @@ This is an index only; each decision is owned and explained inside its item.
 | v0.8 product/schema number | H13 | Open with product 0.8.0/no gratuitous schema default |
 | Internal artifact custody | H13 | Local/internal-only default; public release separately authorized |
 
-H1, H2a, and H2b completed on 2026-09-01. H2 is the next incomplete item and
+H1, H2a, H2b, and H2 completed on 2026-09-01. H3 is the next incomplete item and
 remains unapproved. Do not begin it until the user explicitly says to proceed
-with H2.
+with H3.

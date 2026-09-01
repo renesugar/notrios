@@ -67,7 +67,7 @@ This matrix keeps the long conversation compressed into implementation-sized fea
 |---|---:|---|---|
 | React + Vite built-in UI | MVP | web UI | Basic browser client embedded in the service; becomes the Wails webview frontend. |
 | Go/Wails v2 built-in GUI (`-no-gui`/`-gui-only`, themes) | Implemented | GUI | Desktop release shell. |
-| Mermaid diagrams in current GUI | Planned v0.8 | GUI | `md-editor-rt` is capable, but Notrios currently sets `noMermaid: true` after the offline-assets hardening. Requires a pinned local renderer plus CSP, sanitization, size/error, browser, and Wails evidence before enablement. |
+| Mermaid diagrams in current GUI | Shipped v0.8 | GUI | Rendered by `web/src/mermaid-render.ts` in a preview post-pass, not by `md-editor-rt`, which keeps `noMermaid: true`. Strict security, HTML labels off, bounded source/edges/time, output sanitised, and the fenced source kept on every failure. A `click` directive may link to a `notrios://` note; remote links are deliberately not clickable inside a diagram. See `plans/v0.8/006-bounded-offline-mermaid-enablement.md`. |
 | `md-editor-rt` editor/preview | MVP | web UI | Initial polished editor; wrap behind an adapter. |
 | Preview link interception | MVP | web UI | `document://` opens note; `resource://` opens/downloads resource. |
 | Resource upload/paste | MVP | web UI + REST | Images/PDFs become local resources, not inline base64. |

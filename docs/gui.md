@@ -58,6 +58,29 @@ If the window opens but shows a JSON error, the build predates v0.5 E11; current
 builds refuse to start and print the directories they searched. Run `make web`
 and launch from the checkout root, or pass `--web-dir`.
 
+## Diagrams
+
+A fenced ```mermaid block is drawn as a diagram. The source stays available
+under every diagram behind a "Diagram source" disclosure, and if a diagram
+cannot be drawn the block keeps its source with a line above it saying why —
+malformed, too large, too slow, or too many diagrams in one note.
+
+Diagrams are drawn locally. Nothing is fetched while one renders, and a diagram
+cannot run script, embed a page, or load a remote image, whatever its source
+says.
+
+A `click` directive may link a node to one of your own notes:
+
+```
+flowchart LR
+    A[Design notes] --> B[Open questions]
+    click A "notrios://databases/db_abc/documents/doc_xyz"
+```
+
+Links to remote sites are deliberately not clickable inside a diagram. Put the
+URL in the note itself, where you can read it before deciding to follow it, and
+where it opens in your browser.
+
 ## Links that leave Notrios
 
 A remote `http`/`https` link (and `mailto:`) in a note opens in your normal

@@ -26,17 +26,18 @@ func TestRepositoryAuditReportsHonestCoverage(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// 202 manual sections: v0.8 H2b added "Links that leave Notrios" to
-	// docs/gui.md. It counts as unverified prose, which is the honest grade —
-	// the desktop hand-off was traced through Wails source and proven as far as
-	// xdg-open, but no click in a running GUI was observed.
-	if report.ManualSections != 202 || report.Fragments != 15 || report.Claims != 4 ||
+	// 203 manual sections: v0.8 H2b added "Links that leave Notrios" and H2
+	// added "Diagrams" to docs/gui.md. Both count as unverified prose, which is
+	// the honest grade — the desktop hand-off was proven as far as xdg-open but
+	// not observed in a running GUI, and diagram rendering is verified in
+	// Chromium but not in the Wails webview.
+	if report.ManualSections != 203 || report.Fragments != 15 || report.Claims != 4 ||
 		report.Executables != 131 || report.Journeys != 9 {
 		t.Fatalf("unexpected coverage surface: %+v", report)
 	}
 	if report.Counts[GradeExecuted] != 71 || report.Counts[GradeGenerated] != 11 ||
-		report.Counts[GradeClaimed] != 4 || report.Counts[GradeUnverified] != 271 ||
-		report.Denominator != 357 {
+		report.Counts[GradeClaimed] != 4 || report.Counts[GradeUnverified] != 272 ||
+		report.Denominator != 358 {
 		t.Fatalf("coverage counts hide or lose units: counts=%v denominator=%d", report.Counts, report.Denominator)
 	}
 	if len(resolvedTS) == 0 {
