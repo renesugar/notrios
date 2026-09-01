@@ -2,6 +2,50 @@
 
 This handoff applies to any coding agent or client continuing this project (Codex, Claude, aider, swival.dev, etc. — formerly `CODEX_HANDOFF.md`). The repository is designed so an agent can continue from repository files alone.
 
+## v0.8 H1 completion handoff — 2026-09-01
+
+H1 is complete and archived as
+`plans/v0.8/003-shared-application-facade-abi-library.md`. It was delivered in
+four separately committed slices so an interruption could not land mid-rewrite:
+`7810dc9` facade, `e1ba989` REST migration, `ba18209` SQLite vendoring, and
+`6d57d8e` plus `5b2b215` the C ABI. H2a is next and remains unapproved.
+
+`internal/application` is now the transport-neutral application contract, with a
+`Kind`/`Error` model, a narrow eleven-method `Repository` seam, and an AST guard
+that fails on any store-typed export other than that seam. Nineteen REST call
+sites in `server.go` and `noteops.go` use it; response parity is enforced by a
+test that drives the old and new error writers with the same errors and requires
+byte-identical output.
+
+The store now statically links the vendored SQLite 3.53.4 amalgamation under
+`internal/store/csqlite/` with hidden visibility. **`libsqlite3-dev` and
+`pkg-config` are no longer needed to build**, and a cold `internal/store` build
+takes roughly 3m40s while 9.5 MB of C compiles. `python3
+scripts/check_sqlite_provenance.py` is in the scaffold gate and enforces the
+hashes, the compile options, and the absence of any system SQLite include.
+
+`cmd/notrioslib` builds as `c-shared` and `c-archive` and exports exactly the 12
+frozen ABI symbols with zero exported `sqlite3_*` and no dynamic SQLite. `make
+abi` builds it and runs the C host acceptance test.
+
+Deliberately unchanged, each with its reason recorded in code: the MCP adapter
+still calls the store directly; `handleResourceContent` stays on the store
+because the facade's bounded stream hides the `io.ReadSeeker` that HTTP Range
+needs; and `searchMerged` stays because moving it would make the facade own the
+Recoll sidecar. Android was not exercised — H0's API-35 evidence stands and H11
+owns the emulator run.
+
+Separately, the Claude side of the agent-usage preflight was repaired (`17939bb`).
+Claude Code writes no usage file; it hands rate limits to the configured
+`statusLine` command. `scripts/claude_statusline_usage.py` must be installed as
+that command in `~/.claude/settings.json` or the probe reports `unknown` and
+cannot gate a long run. A cache older than 30 minutes, or one whose windows are
+all past `resets_at`, reports `stale` and is treated like `unknown`.
+
+The verified local source snapshot is recorded at the end of this section once
+packaging completes. No push, PR, merge, tag, release/upload, evidence-reserve
+write, ISO, or physical burn was performed.
+
 ## v0.8 H0 completion handoff — 2026-08-31
 
 H0 is complete and archived as

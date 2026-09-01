@@ -2832,9 +2832,23 @@ attempt detail remains append-only in `agent/ATTEMPT_LOG.jsonl`.
   `--profiles` or `NOTRIOS_PUBLISH_PROFILES`), written `0600`.
 - No GitHub push is authorized for this review.
 
+## v0.8 H1 (complete, 2026-09-01)
+
+- `internal/application` is the transport-neutral application contract. REST is
+  an adapter over it; `internal/service` remains HTTP-coupled composition and is
+  not the application contract.
+- The store statically links the vendored SQLite 3.53.4 amalgamation
+  (`internal/store/csqlite/`). No `libsqlite3-dev` or `pkg-config` is required.
+- `cmd/notrioslib` is the ABI-major-1 C library: exactly 12 exported symbols,
+  no exported `sqlite3_*`, generation-bearing handles, database ownership
+  enforced by both an in-process registry and a non-blocking exclusive lock.
+- Still on the store by decision: the MCP adapter, `handleResourceContent`
+  (HTTP Range needs a seeker), and `searchMerged` (would pull the Recoll
+  sidecar into the facade).
+- Gates added: `python3 scripts/check_sqlite_provenance.py` and `make abi`.
+
 ## Open implementation blockers
 
-- Long-term SQLite driver choice (current local cgo/libsqlite3 adapter).
 - Official MCP Go SDK adoption/version.
 - Sync and evidence-preservation decisions live in the owning plan items; the
   register in `PLAN.md` is an index. G0-G19 are complete. G20 and every later

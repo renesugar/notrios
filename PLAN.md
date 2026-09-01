@@ -91,7 +91,7 @@ limitations are archived in
 No production facade, driver, ABI, dependency, schema, or support claim was
 landed.
 
-## H1. Shared application facade and ABI-major-1 library
+## H1. Shared application facade and ABI-major-1 library — complete
 
 **Goal.** Extract one transport-neutral application facade used by REST and a
 small `cmd/notrioslib` C-ABI wrapper without changing business semantics.
@@ -129,6 +129,19 @@ and emulator load smoke.
   hidden static cgo linkage, API-35 x86_64 runtime acceptance, and arm64-v8a
   build-only status. Exact compile/owner/WAL/ABI/update/rollback policy lives in
   H0's outcome archive. H1 remains separately approval-gated.
+
+**Outcome (2026-09-01).** Delivered in four separately committed slices:
+`internal/application` with a typed error model and AST-enforced neutrality
+guards; nineteen REST call sites migrated with byte-identical response parity
+proven by test; the H0-pinned SQLite 3.53.4 amalgamation vendored with static
+hidden linkage, zero exportable `sqlite3_*` symbols, and a provenance verifier
+in the scaffold gate; and `cmd/notrioslib` exposing exactly the frozen twelve
+symbols over the same facade, with generation-bearing handles, double-enforced
+database ownership, and a C host acceptance test. REST behavior, business
+semantics, schema, and platform-support claims are unchanged. `handleResourceContent`,
+`searchMerged`, and the whole MCP adapter deliberately remain on the store, each
+with its reason recorded; the Android emulator matrix stays with H11. Archived
+as `plans/v0.8/003-shared-application-facade-abi-library.md`.
 
 ## H2a. Mermaid renderer and security investigation
 
@@ -737,8 +750,8 @@ This is an index only; each decision is owned and explained inside its item.
 
 | Decision | Owner | Status |
 |---|---|---|
-| Shared-core SQLite owner/version/checksum | H0/H1 | Resolved: official amalgamation 3.53.4, exact H0 hashes/policy |
-| Application facade package owner | H0/H1 | Resolved: new `internal/application` |
+| Shared-core SQLite owner/version/checksum | H0/H1 | Resolved and implemented in H1: vendored amalgamation 3.53.4, static hidden linkage |
+| Application facade package owner | H0/H1 | Resolved and implemented in H1: `internal/application` |
 | Emulator ABI/minSdk acceptance | H0/H11 | Resolved for H1: API-35 x86_64 runtime; arm64-v8a build-only |
 | Mermaid renderer/containment | H2a/H2 | Open; H2a investigation, blocking H2 |
 | Installed/portable path precedence | H3/H4 | Open with explicit-override/native default |
@@ -752,5 +765,5 @@ This is an index only; each decision is owned and explained inside its item.
 | v0.8 product/schema number | H13 | Open with product 0.8.0/no gratuitous schema default |
 | Internal artifact custody | H13 | Local/internal-only default; public release separately authorized |
 
-H1 is the next incomplete item and remains unapproved. Do not begin it until the
-user explicitly says to proceed with H1.
+H1 completed on 2026-09-01. H2a is the next incomplete item and remains
+unapproved. Do not begin it until the user explicitly says to proceed with H2a.
