@@ -229,6 +229,53 @@ bundle/time/RSS comparison to H2a, full frontend/Go/docs gates, and rollback.
   implied; if H2a recommends remaining disabled, close or replan H2 instead of
   introducing a different renderer mid-item.
 
+## H2b. Desktop external-link opening
+
+**Goal.** Make a remote link in a note open the user's browser from the Wails
+desktop window, as it already does in the loopback web UI.
+
+**Why it sits here.** It was found while investigating H2a's link policy and is
+that policy's dependency, so a reader meeting one should meet the other. It is
+**not a Mermaid item**: it is a standalone desktop defect, it is approvable and
+implementable without H2a or H2, and it must not wait on a Mermaid decision.
+
+**Scope.** Intercept clicks on `http` and `https` anchors in the desktop shell
+and route them through `window.runtime.BrowserOpenURL`. The preview already
+routes `document://`, `resource://`, and `notrios://` through a `data-app-uri`
+attribute and an onClick handler, so this extends an existing seam rather than
+adding one. Keep the browser UI's `target="_blank"` path unchanged. Cover
+`mailto:` as the same class of hand-off.
+
+**Boundaries.** No change to what the sanitiser admits: this changes how an
+already-permitted link is followed, never which links exist. No new outbound
+request from the application itself — the browser makes the request, not
+Notrios. No change to remote-media policy, image loading, or quarantine. No
+Wails version change.
+
+**Dependencies.** None. H2a recorded the finding; nothing blocks the fix.
+
+**Working state.** Clicking a remote link in a note opens the system browser
+from the desktop window and does nothing unexpected in a browser tab. The
+window itself never navigates away from the application, which is the failure
+this must not introduce: a webview that follows the link in place would replace
+the running app with a website.
+
+**Validation and evidence.** A GUI run confirming a click reaches the system
+browser; a check that the webview did not navigate; a frontend test over the
+click handler's routing decisions for remote, `mailto:`, in-app, and
+unsupported schemes; and confirmation that the browser UI path is unchanged.
+Record which desktop environment and WebKitGTK version the manual check ran on,
+because the behaviour being fixed is webview-specific.
+
+**Open decisions**
+
+- **Should leaving the application be confirmed first? — Non-blocking; default
+  is no prompt.** A remote link in a note is content the user wrote or imported,
+  and the browser UI already follows it without asking, so a desktop-only
+  prompt would be an inconsistency rather than a protection. The default is to
+  open directly. If a confirmation is wanted later, the natural form is a
+  preference, not a per-click dialog. Approving this item approves the default.
+
 ## H3. Installed-path, XDG, migration, and destructive-lifecycle investigation
 
 **Goal.** Freeze a cross-platform installed-path contract and a fail-closed
@@ -778,6 +825,7 @@ This is an index only; each decision is owned and explained inside its item.
 | Shared-core SQLite owner/version/checksum | H0/H1 | Resolved and implemented in H1: vendored amalgamation 3.53.4, static hidden linkage |
 | Application facade package owner | H0/H1 | Resolved and implemented in H1: `internal/application` |
 | Emulator ABI/minSdk acceptance | H0/H11 | Resolved for H1: API-35 x86_64 runtime; arm64-v8a build-only |
+| Desktop external-link opening | H2b | Open with a no-prompt default; found by H2a and independent of it |
 | Mermaid renderer/containment | H2a/H2 | Recommended by H2a: Mermaid 11.17.2, strict security, `htmlLabels: false`, `notrios`-only link allowlist; H2 approval also accepts the bundle cost and three licence-gate decisions |
 | Installed/portable path precedence | H3/H4 | Open with explicit-override/native default |
 | User-local/GNU install layout | H3/H5 | Open with `$HOME/.local` default |

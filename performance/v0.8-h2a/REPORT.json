@@ -240,6 +240,16 @@
   ],
   "link_navigation": {
     "answer": "yes, and it needs a deliberate configuration change because the stock behaviour is inverted",
+    "dependency_on_note_link_behaviour": {
+      "available_mechanism": "window.runtime.BrowserOpenURL(url) is present in the wails desktop JS runtime and is implemented in Go through github.com/pkg/browser",
+      "browser_ui": "works: preview-utils.tsx gives remote anchors target=_blank and rel=noreferrer, so a click opens a new tab",
+      "confidence": "read from the wails module source and the compiled desktop runtime; not confirmed by clicking a link in a running GUI, which needs a make gui build and a display",
+      "consequence_if_unfixed": "de-linking a remote URL in a diagram would put it two hops from the reader instead of one, because the note link does not open either",
+      "finding": "the recommended diagram link policy assumes a remote URL is reachable from the note that contains it; on the Wails desktop shell it currently is not",
+      "no_browseropenurl_call_in_repository": true,
+      "tracked_as": "PLAN.md H2b",
+      "wails_desktop": "does nothing: wails v2.13.0's linux webview connects script-message, context-menu, button, load-changed, drag and delete signals but neither create nor decide-policy, so a target=_blank click is swallowed by WebKitGTK's default handler, and cmd/notrios/gui_wails.go adds no link handling of its own"
+    },
     "html_anchor_label_method": {
       "anchors_emitted_with_html_labels_disabled": 0,
       "finding": "the documented <a href> inside a node label needs htmlLabels true; under the recommended configuration it produces no anchor at all, which also closes the remote-image vector"
@@ -441,6 +451,7 @@
     "the 2000 ms render deadline was never exercised by a genuinely slow successful render, because mermaid's own maxEdges guard refuses large graphs first",
     "worker-based rendering and cancellation were not prototyped",
     "keyboard and screen-reader accessibility of the rendered preview was not assessed",
-    "the revised link policy was verified at the sanitiser level and in the rendered SVG, but no in-app notrios:// click was driven end to end through the stable-link resolver"
+    "the revised link policy was verified at the sanitiser level and in the rendered SVG, but no in-app notrios:// click was driven end to end through the stable-link resolver",
+    "the desktop external-link behaviour was traced through wails source rather than observed in a running GUI"
   ]
 }

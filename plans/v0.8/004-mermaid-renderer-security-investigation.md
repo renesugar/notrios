@@ -99,6 +99,34 @@ This supersedes an earlier draft of the recommendation that said to strip every
 nothing useful in their place, and it misattributed the stripping to the wrong
 layer.
 
+### The policy depends on note links working, and today they do not
+
+De-linking a remote URL in a diagram is only reasonable because the reader can
+reach it from the note that contains it, where they see it in context first.
+That flow assumes clicking a remote link in a note opens a browser. It does in
+the loopback web UI, where `preview-utils.tsx` sets `target="_blank"` and
+`rel="noreferrer"`. **It does not in the Wails desktop window.**
+
+Wails v2.13.0's Linux webview connects signals for script messages, context
+menu, button press and release, load-changed, drag, and window delete, but
+neither `create` nor `decide-policy`. WebKitGTK emits `create` for a
+`target="_blank"` click; with no handler its default returns NULL and the click
+is silently swallowed. `cmd/notrios/gui_wails.go` adds no link handling of its
+own, and no `BrowserOpenURL` call exists anywhere in the repository.
+
+The mechanism is available: `window.runtime.BrowserOpenURL(url)` is present in
+the Wails desktop JS runtime and is implemented in Go through
+`github.com/pkg/browser`.
+
+This was traced through the Wails module source and the compiled desktop
+runtime, **not** observed in a running GUI, which would need a `make gui` build
+and a display.
+
+If it stays unfixed, H2's link policy puts a remote URL two hops from the reader
+rather than one, because neither the diagram link nor the note link opens. It is
+a desktop defect independent of Mermaid and is tracked separately as `PLAN.md`
+H2b, so the fix is not hostage to Mermaid approval.
+
 ## Built-in guards
 
 Mermaid enforces `maxEdges: 500` and `maxTextSize: 50000` itself, refuses
@@ -191,6 +219,8 @@ dropped:
 - The revised link policy was verified at the sanitiser level and in the
   rendered SVG, but no in-app `notrios://` click was driven end to end through
   the stable-link resolver.
+- The desktop external-link finding was traced through Wails source rather than
+  observed in a running GUI.
 
 ## Open decision, resolved
 

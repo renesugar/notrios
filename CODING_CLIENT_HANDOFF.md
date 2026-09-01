@@ -49,6 +49,18 @@ exercised by a genuinely slow successful render, because Mermaid's own
 smoke that the G18 contract requires before `noMermaid` changes, a worker
 cancellation prototype, and an accessibility review also remain undone.
 
+H2a also found a defect outside its own scope, now tracked as `PLAN.md` **H2b**:
+a remote link in a note opens a new tab in the loopback web UI but **does
+nothing in the Wails desktop window**. Wails v2.13.0's Linux webview connects
+neither the `create` nor the `decide-policy` signal, so a `target="_blank"`
+click is swallowed by WebKitGTK's default handler, and the repository makes no
+`BrowserOpenURL` call. The mechanism exists —
+`window.runtime.BrowserOpenURL(url)` is in the desktop JS runtime — so the fix
+is small. This was traced through Wails source, not observed in a running GUI.
+H2's link policy depends on it: de-linking a remote URL in a diagram assumes the
+reader can reach it from the note, which on the desktop they currently cannot.
+H2b is independent of Mermaid and must not wait on H2 approval.
+
 Evidence is under `performance/v0.8-h2a/`;
 `python3 performance/v0.8-h2a/validate_evidence.py` is in the scaffold gate and
 was verified to fail both on a falsified CSP claim and on a quietly deleted

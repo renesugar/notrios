@@ -96,6 +96,18 @@ def validate() -> dict:
     require(report["recommendation"].get("superseded_note"),
             "the superseded strip-every-href draft must stay recorded")
 
+    # The diagram link policy sends a reader to the note to reach a remote URL.
+    # That is only coherent if a note link opens, which on the desktop shell it
+    # currently does not, so the dependency must stay visible next to the
+    # policy that relies on it.
+    dependency = links["dependency_on_note_link_behaviour"]
+    require(dependency["no_browseropenurl_call_in_repository"] is True,
+            "the missing desktop link handling must stay recorded")
+    require("desktop" in dependency["tracked_as"].lower() or dependency["tracked_as"],
+            "the dependency must name where it is tracked")
+    require("not confirmed" in dependency["confidence"],
+            "the confidence caveat on the desktop finding must stay recorded")
+
     # Adversarial fixtures must be present and must have been exercised.
     fixture_dir = os.path.join(HERE, "fixtures")
     on_disk = {name[:-4] for name in os.listdir(fixture_dir) if name.endswith(".mmd")}
