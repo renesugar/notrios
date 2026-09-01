@@ -238,9 +238,154 @@
       "problem": "public-domain equivalent and not in the allowed set, though the project already accepts public domain for SQLite"
     }
   ],
+  "link_navigation": {
+    "answer": "yes, and it needs a deliberate configuration change because the stock behaviour is inverted",
+    "html_anchor_label_method": {
+      "anchors_emitted_with_html_labels_disabled": 0,
+      "finding": "the documented <a href> inside a node label needs htmlLabels true; under the recommended configuration it produces no anchor at all, which also closes the remote-image vector"
+    },
+    "measured_loose": {
+      "finding": "loose restores custom schemes but also re-admits javascript: URLs into the href, so it is not usable",
+      "https_href": "https://example.invalid/remote",
+      "javascript_href": "javascript:window.__pwned=3",
+      "notrios_scheme_href": "notrios://databases/db_abc/documents/doc_xyz",
+      "target_attribute_emitted": true
+    },
+    "measured_strict": {
+      "finding": "securityLevel strict strips the user's own local note link and keeps the remote one, which is backwards for this product",
+      "https_href": "https://example.invalid/remote",
+      "javascript_href": null,
+      "notrios_scheme_href": null,
+      "target_attribute_emitted": false
+    },
+    "question": "may a click directive reach a notrios:// note link, so a diagram navigates to the user's own notes and the user decides about any remote URL from there",
+    "raw_results": {
+      "loose": {
+        "click_blank_target": {
+          "clickableNodes": 2,
+          "hasForeignObject": 0,
+          "links": [
+            {
+              "href": "notrios://databases/db_abc/documents/doc_one",
+              "rel": null,
+              "target": "_blank"
+            },
+            {
+              "href": "https://example.invalid/x",
+              "rel": null,
+              "target": "_self"
+            }
+          ],
+          "ok": true,
+          "svgSample": ""
+        },
+        "click_schemes": {
+          "clickableNodes": 4,
+          "hasForeignObject": 0,
+          "links": [
+            {
+              "href": "notrios://databases/db_abc/documents/doc_xyz",
+              "rel": null,
+              "target": null
+            },
+            {
+              "href": "https://example.invalid/remote",
+              "rel": null,
+              "target": null
+            },
+            {
+              "href": "notrios://databases/db_abc/documents/doc_two#heading-one",
+              "rel": null,
+              "target": null
+            },
+            {
+              "href": "javascript:window.__pwned=3",
+              "rel": null,
+              "target": null
+            }
+          ],
+          "ok": true,
+          "svgSample": ""
+        },
+        "cross_origin": [],
+        "html_anchor_in_label": {
+          "clickableNodes": 0,
+          "hasForeignObject": 0,
+          "links": [],
+          "ok": true,
+          "svgSample": ""
+        }
+      },
+      "strict": {
+        "click_blank_target": {
+          "clickableNodes": 2,
+          "hasForeignObject": 0,
+          "links": [
+            {
+              "href": null,
+              "rel": null,
+              "target": null
+            },
+            {
+              "href": "https://example.invalid/x",
+              "rel": null,
+              "target": null
+            }
+          ],
+          "ok": true,
+          "svgSample": ""
+        },
+        "click_schemes": {
+          "clickableNodes": 4,
+          "hasForeignObject": 0,
+          "links": [
+            {
+              "href": null,
+              "rel": null,
+              "target": null
+            },
+            {
+              "href": "https://example.invalid/remote",
+              "rel": null,
+              "target": null
+            },
+            {
+              "href": null,
+              "rel": null,
+              "target": null
+            },
+            {
+              "href": null,
+              "rel": null,
+              "target": null
+            }
+          ],
+          "ok": true,
+          "svgSample": ""
+        },
+        "cross_origin": [],
+        "html_anchor_in_label": {
+          "clickableNodes": 0,
+          "hasForeignObject": 0,
+          "links": [],
+          "ok": true,
+          "svgSample": ""
+        }
+      }
+    },
+    "root_cause": {
+      "component": "dompurify",
+      "mechanism": "the default ALLOWED_URI_REGEXP permits http, https, mailto, tel and similar but no custom scheme, so notrios:// is dropped while https:// is kept",
+      "mermaid_own_sanitizer_is_not_the_cause": true,
+      "sanitize_url_result_for_javascript": "about:blank",
+      "sanitize_url_result_for_notrios": "notrios://databases/db_a/documents/doc_b (passed through unchanged)",
+      "verified_fix": "adding notrios to ALLOWED_URI_REGEXP restores the href; javascript: stays blocked with and without the change"
+    }
+  },
   "recommendation": {
     "bundle_budget": "load mermaid only when a diagram is present, via dynamic import",
     "failure_presentation": "always show the fenced Mermaid source; never an empty box",
+    "link_policy": "allowlist the notrios scheme, neutralise remote schemes, keep javascript and data refused; securityLevel stays strict and htmlLabels stays false",
     "renderer": "mermaid 11.17.2, pinned exactly and bundled locally",
     "required_configuration": [
       "securityLevel: strict",
@@ -252,11 +397,15 @@
     ],
     "required_post_processing": [
       "sanitise the produced SVG before insertion",
-      "strip or neutralise every href and xlink:href",
+      "extend the sanitiser's ALLOWED_URI_REGEXP to admit the notrios scheme, so a diagram can link to the user's own notes",
+      "drop or de-link every remote href and xlink:href, so a diagram cannot navigate off the machine; the user reaches a remote URL from the note it is written in, where they can read it first",
+      "keep javascript: and data: refused by both the URL sanitiser and the DOM sanitiser",
+      "resolve a notrios:// click through the in-app stable-link resolver rather than browser navigation",
       "refuse script, iframe, foreignObject, and on* attributes",
       "catch every throw, including internal TypeErrors, and fall back to fenced source"
     ],
     "rollback": "restore noMermaid: true in web/src/editor-assets.ts; no data or schema is involved",
+    "superseded_note": "an earlier draft of this recommendation said to strip every href. That would have removed the product's own note links while leaving nothing useful, and it misread which layer was dropping them.",
     "verdict": "enable in H2, with the containment design below"
   },
   "schema": "notrios.v0.8.h2a.mermaid-investigation.v1",
@@ -291,6 +440,7 @@
     "Wails v2 webview smoke: needs a GUI build and a display; not run in this pass",
     "the 2000 ms render deadline was never exercised by a genuinely slow successful render, because mermaid's own maxEdges guard refuses large graphs first",
     "worker-based rendering and cancellation were not prototyped",
-    "keyboard and screen-reader accessibility of the rendered preview was not assessed"
+    "keyboard and screen-reader accessibility of the rendered preview was not assessed",
+    "the revised link policy was verified at the sanitiser level and in the rendered SVG, but no in-app notrios:// click was driven end to end through the stable-link resolver"
   ]
 }

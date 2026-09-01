@@ -22,7 +22,17 @@ policy covers Markdown images, not diagram labels — and every diagram emitted
 the `foreignObject` the G18 contract asks to refuse. `htmlLabels: false` with
 `securityLevel: 'strict'` gave zero `foreignObject`, zero cross-origin requests,
 and no script execution. **One vector survives**: a `click` directive's remote
-`href` stays in the SVG and H2 must strip it.
+`href` stays in the SVG.
+
+Link navigation is inverted by default, which is the finding most likely to be
+re-broken. Under `strict`, a `notrios://` note link is **stripped** and a remote
+`https://` link is **kept**; the cause is DOMPurify's default
+`ALLOWED_URI_REGEXP`, which admits no custom scheme, not Mermaid's own URL
+sanitiser. `loose` restores custom schemes but also re-admits `javascript:`
+URLs into a clickable href. H2 must allowlist the `notrios` scheme, neutralise
+remote hrefs, and resolve a note link through the existing in-app stable-link
+resolver, so a diagram navigates to the user's own notes and a remote URL is
+reached from the note that contains it.
 
 Cost is roughly a doubled bundle (0.85 MB to about 1.75 MB gzipped), softened by
 code splitting to 772 KiB uncompressed for one flowchart. Enablement also needs

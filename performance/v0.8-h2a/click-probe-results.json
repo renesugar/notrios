@@ -1,0 +1,114 @@
+{
+  "strict": {
+    "click_schemes": {
+      "ok": true,
+      "links": [
+        {
+          "href": null,
+          "target": null,
+          "rel": null
+        },
+        {
+          "href": "https://example.invalid/remote",
+          "target": null,
+          "rel": null
+        },
+        {
+          "href": null,
+          "target": null,
+          "rel": null
+        },
+        {
+          "href": null,
+          "target": null,
+          "rel": null
+        }
+      ],
+      "clickableNodes": 4,
+      "hasForeignObject": 0,
+      "svgSample": ""
+    },
+    "click_blank_target": {
+      "ok": true,
+      "links": [
+        {
+          "href": null,
+          "target": null,
+          "rel": null
+        },
+        {
+          "href": "https://example.invalid/x",
+          "target": null,
+          "rel": null
+        }
+      ],
+      "clickableNodes": 2,
+      "hasForeignObject": 0,
+      "svgSample": ""
+    },
+    "html_anchor_in_label": {
+      "ok": true,
+      "links": [],
+      "clickableNodes": 0,
+      "hasForeignObject": 0,
+      "svgSample": ""
+    },
+    "cross_origin": []
+  },
+  "loose": {
+    "click_schemes": {
+      "ok": true,
+      "links": [
+        {
+          "href": "notrios://databases/db_abc/documents/doc_xyz",
+          "target": null,
+          "rel": null
+        },
+        {
+          "href": "https://example.invalid/remote",
+          "target": null,
+          "rel": null
+        },
+        {
+          "href": "notrios://databases/db_abc/documents/doc_two#heading-one",
+          "target": null,
+          "rel": null
+        },
+        {
+          "href": "javascript:window.__pwned=3",
+          "target": null,
+          "rel": null
+        }
+      ],
+      "clickableNodes": 4,
+      "hasForeignObject": 0,
+      "svgSample": ""
+    },
+    "click_blank_target": {
+      "ok": true,
+      "links": [
+        {
+          "href": "notrios://databases/db_abc/documents/doc_one",
+          "target": "_blank",
+          "rel": null
+        },
+        {
+          "href": "https://example.invalid/x",
+          "target": "_self",
+          "rel": null
+        }
+      ],
+      "clickableNodes": 2,
+      "hasForeignObject": 0,
+      "svgSample": ""
+    },
+    "html_anchor_in_label": {
+      "ok": true,
+      "links": [],
+      "clickableNodes": 0,
+      "hasForeignObject": 0,
+      "svgSample": ""
+    },
+    "cross_origin": []
+  }
+}

@@ -53,12 +53,51 @@ event-handler attributes, no iframes. Labels become SVG `<text>`.
 
 **One vector survives.** A `click` directive's remote `https` href stays in the
 rendered SVG. `javascript:` URLs are already neutralised by Mermaid's bundled
-`@braintree/sanitize-url`, but a remote href is not, so H2 must strip or
-neutralise every `href` and `xlink:href` after rendering.
+`@braintree/sanitize-url`, but a remote href is not. See the link-navigation
+section below for what H2 should do about it, which is not what an earlier draft
+of this document said.
 
 Mermaid also crashed with an internal `TypeError` on one dense graph rather
 than raising a clean error. The integration must therefore catch **any** throw
 and fall back to source, not merely handle known error types.
+
+## Link navigation: the stock behaviour is inverted
+
+A follow-up question asked whether a `click` directive may reach a `notrios://`
+note link, so that a diagram navigates to one of the user's own notes and the
+user decides about any remote URL from there, having read it in context. The
+answer is yes, and finding out why took measuring rather than reasoning.
+
+Under the recommended `securityLevel: 'strict'`:
+
+| `click` target | Result |
+|---|---|
+| `notrios://databases/…/documents/…` | **href stripped** |
+| `https://example.invalid/remote` | **href kept** |
+| `javascript:…` | stripped |
+
+Strict mode removes the product's own note links and preserves the remote ones,
+which is backwards for a local-first application. Under `securityLevel: 'loose'`
+all three survive, including `javascript:window.__pwned=3` sitting in a
+clickable href, so `loose` is not usable.
+
+**The cause is DOMPurify, not Mermaid.** Mermaid's own URL sanitiser,
+`@braintree/sanitize-url`, passes `notrios://` through unchanged and maps
+`javascript:` and `data:` to `about:blank`. DOMPurify's default
+`ALLOWED_URI_REGEXP` admits `http`, `https`, `mailto`, `tel` and similar but no
+custom scheme, so it is what drops `notrios://` while keeping `https://`.
+Adding `notrios` to that expression restores the link, and `javascript:` stays
+refused with and without the change. Both behaviours were verified directly
+against the sanitisers as well as in the rendered SVG.
+
+The documented alternative of putting an `<a href>` inside a node label needs
+`htmlLabels: true`. Under the recommended configuration it emits **no anchor at
+all**, which is the same setting that closes the remote-image vector.
+
+This supersedes an earlier draft of the recommendation that said to strip every
+`href`. That would have deleted the product's own note links while leaving
+nothing useful in their place, and it misattributed the stripping to the wrong
+layer.
 
 ## Built-in guards
 
@@ -107,7 +146,15 @@ plus the three above.
   `startOnLoad: false`, `suppressErrorRendering: true`, and lowered `maxEdges`
   and `maxTextSize`.
 - Sanitise the produced SVG before insertion; refuse `script`, `iframe`,
-  `foreignObject`, and `on*` attributes; strip every `href` and `xlink:href`.
+  `foreignObject`, and `on*` attributes.
+- **Link policy:** extend the DOM sanitiser's `ALLOWED_URI_REGEXP` to admit the
+  `notrios` scheme so a diagram can link to the user's own notes; drop or
+  de-link every remote `href` and `xlink:href` so a diagram cannot navigate off
+  the machine; keep `javascript:` and `data:` refused by both the URL sanitiser
+  and the DOM sanitiser. A remote URL is then reached from the note it is
+  written in, where the reader can see it before following it.
+- Resolve a `notrios://` click through the in-app stable-link resolver that
+  `web/src/api.ts` and `web/src/App.tsx` already use, not browser navigation.
 - Catch every throw, including internal `TypeError`s, and always fall back to
   the visible fenced source. Never an empty box.
 - Load Mermaid by dynamic import only when a diagram is present.
@@ -141,6 +188,9 @@ dropped:
 - No worker-based rendering or cancellation prototype, so the abort story is
   designed but unproven.
 - No keyboard or screen-reader assessment of the rendered preview.
+- The revised link policy was verified at the sanitiser level and in the
+  rendered SVG, but no in-app `notrios://` click was driven end to end through
+  the stable-link resolver.
 
 ## Open decision, resolved
 
@@ -150,3 +200,8 @@ dropped:
   that Mermaid stay disabled and did not, because the measured configuration
   meets the offline, CSP, and sanitisation guarantees. Approving H2 also means
   accepting the roughly doubled bundle and the three licence-gate decisions.
+- **May a diagram link to a note? — Answered 2026-09-01, after the first draft.**
+  Yes: allowlist the `notrios` scheme in the DOM sanitiser and neutralise remote
+  schemes, rather than stripping every link. The stock strict behaviour does the
+  opposite of what this product wants, so this is a deliberate configuration
+  choice H2 must implement and test, not a default it inherits.

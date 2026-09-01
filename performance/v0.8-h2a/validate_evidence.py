@@ -72,12 +72,41 @@ def validate() -> dict:
     require(any("href" in step for step in report["recommendation"]["required_post_processing"]),
             "the recommendation must require href neutralisation")
 
+    # The link-navigation finding is the reason the recommendation changed, and
+    # it is counter-intuitive enough that losing it would invite the original
+    # mistake again: stock strict mode keeps remote links and drops the
+    # product's own note links.
+    links = report["link_navigation"]
+    require(links["measured_strict"]["notrios_scheme_href"] is None,
+            "the finding that strict drops notrios:// links must stay recorded")
+    require(links["measured_strict"]["https_href"],
+            "the finding that strict keeps remote links must stay recorded")
+    require(links["measured_loose"]["javascript_href"],
+            "the finding that loose re-admits javascript: URLs must stay recorded")
+    require(links["root_cause"]["component"] == "dompurify",
+            "the root cause must remain attributed to the DOM sanitiser")
+    require(links["root_cause"]["mermaid_own_sanitizer_is_not_the_cause"] is True,
+            "the sanitize-url exoneration must stay recorded")
+    require(links["html_anchor_label_method"]["anchors_emitted_with_html_labels_disabled"] == 0,
+            "the html anchor label finding must stay recorded")
+    require(any("notrios" in step for step in report["recommendation"]["required_post_processing"]),
+            "the recommendation must allowlist the notrios scheme")
+    require(any("remote" in step for step in report["recommendation"]["required_post_processing"]),
+            "the recommendation must neutralise remote hrefs")
+    require(report["recommendation"].get("superseded_note"),
+            "the superseded strip-every-href draft must stay recorded")
+
     # Adversarial fixtures must be present and must have been exercised.
     fixture_dir = os.path.join(HERE, "fixtures")
     on_disk = {name[:-4] for name in os.listdir(fixture_dir) if name.endswith(".mmd")}
     for required in ("malformed_syntax", "html_script_handler",
-                     "javascript_and_remote_url", "node_limit_plus_one"):
+                     "javascript_and_remote_url", "node_limit_plus_one",
+                     "click_schemes", "html_anchor_in_label"):
         require(required in on_disk, f"missing fixture {required}")
+        if required in ("click_schemes", "html_anchor_in_label"):
+            require(required in links["raw_results"]["strict"],
+                    f"fixture {required} was not exercised under strict")
+            continue
         require(required in report["fixtures"], f"fixture {required} was not exercised")
 
     require(report["fixtures"]["malformed_syntax"]["rendered"] is False,
@@ -97,6 +126,8 @@ def validate() -> dict:
             "the untested render-deadline gap must stay recorded")
     require(any("Wails" in item for item in report["untested"]),
             "the untested Wails smoke must stay recorded")
+    require(any("end to end" in item for item in report["untested"]),
+            "the untested end-to-end notrios:// click must stay recorded")
 
     require(supplementary["narrow_390"]["overflowsViewport"] is False,
             "narrow-layout rendering overflowed")

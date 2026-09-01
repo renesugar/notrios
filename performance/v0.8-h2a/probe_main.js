@@ -29,3 +29,9 @@ window.__renderThemed = async (theme, id, source) => {
                        flowchart: { htmlLabels: false }, theme, suppressErrorRendering: true });
   return mermaid.render(id, source);
 };
+
+window.__renderLevel = async (securityLevel, id, source) => {
+  mermaid.initialize({ startOnLoad: false, securityLevel, htmlLabels: false,
+                       flowchart: { htmlLabels: false }, suppressErrorRendering: true });
+  return mermaid.render(id, source);
+};

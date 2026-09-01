@@ -172,9 +172,10 @@ fixtures, narrow-layout/accessibility review, and zero-network proof.
   for H2a; blocking for H2. Answered 2026-09-01:** Mermaid 11.17.2, pinned and
   locally bundled, with `securityLevel: 'strict'`, `htmlLabels: false`
   everywhere, lowered `maxEdges`/`maxTextSize`, post-render SVG sanitisation
-  that strips every `href`, catch-all failure to visible fenced source, and
-  dynamic import so it loads only when a diagram is present. H2a considered
-  recommending that Mermaid stay disabled and did not.
+  that allowlists the `notrios` scheme and neutralises remote hrefs, catch-all
+  failure to visible fenced source, and dynamic import so it loads only when a
+  diagram is present. H2a considered recommending that Mermaid stay disabled
+  and did not.
 
 **Outcome (2026-09-01).** Measured against the disabled baseline in Chromium
 under the application's verbatim production CSP: **zero CSP violations and no
@@ -183,8 +184,12 @@ tree are unreachable from Mermaid and do not survive the Vite bundle. Mermaid's
 **default** configuration is not acceptable — a diagram label fetched a remote
 image, and every diagram emitted the `foreignObject` the G18 contract asks to
 refuse — but `htmlLabels: false` with strict security gave zero `foreignObject`,
-zero cross-origin requests, and no script execution. One residual vector
-remains: a `click` directive's remote href survives and H2 must strip it. Cost
+zero cross-origin requests, and no script execution. Link navigation is inverted by
+default: strict strips a `notrios://` note link and keeps a remote `https://`
+one, because DOMPurify's URI allowlist admits no custom scheme, while `loose`
+re-admits `javascript:` URLs. H2 must allowlist the `notrios` scheme and
+neutralise remote hrefs, so a diagram reaches the user's own notes and a remote
+URL is reached from the note that contains it. Cost
 is roughly a doubled bundle (0.85 MB to about 1.75 MB gzipped), softened by code
 splitting to 772 KiB for one flowchart. Enablement also needs three reviewed
 licence-gate decisions, none a genuine licence problem. The 2000 ms render
@@ -773,7 +778,7 @@ This is an index only; each decision is owned and explained inside its item.
 | Shared-core SQLite owner/version/checksum | H0/H1 | Resolved and implemented in H1: vendored amalgamation 3.53.4, static hidden linkage |
 | Application facade package owner | H0/H1 | Resolved and implemented in H1: `internal/application` |
 | Emulator ABI/minSdk acceptance | H0/H11 | Resolved for H1: API-35 x86_64 runtime; arm64-v8a build-only |
-| Mermaid renderer/containment | H2a/H2 | Recommended by H2a: Mermaid 11.17.2 with strict security and `htmlLabels: false`; H2 approval also accepts the bundle cost and three licence-gate decisions |
+| Mermaid renderer/containment | H2a/H2 | Recommended by H2a: Mermaid 11.17.2, strict security, `htmlLabels: false`, `notrios`-only link allowlist; H2 approval also accepts the bundle cost and three licence-gate decisions |
 | Installed/portable path precedence | H3/H4 | Open with explicit-override/native default |
 | User-local/GNU install layout | H3/H5 | Open with `$HOME/.local` default |
 | Purge external-path and backup policy | H3/H5 | Open; safe refusal and verified-backup defaults |
