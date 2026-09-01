@@ -7,8 +7,7 @@ Notrios is currently **source-only**: there are no official prebuilt binaries, O
 | Requirement | Version | Needed for |
 |---|---|---|
 | Go | 1.25 or newer (`go.mod` says `go 1.25.0`; CI uses 1.25) | everything |
-| C toolchain + `pkg-config` | Ubuntu `build-essential`, `pkg-config` | the SQLite store is a cgo wrapper over the system `libsqlite3` |
-| `libsqlite3-dev` | Ubuntu package | service, CLI, GUI, tests |
+| C toolchain | Ubuntu `build-essential` | the SQLite store is a cgo wrapper over the vendored SQLite amalgamation, compiled from source into the binary |
 | Node.js + npm | Node 22 (CI-tested); Node ≥ 20.19 may work | building the web UI and the documentation site |
 | `libgtk-3-dev`, `libwebkit2gtk-4.1-dev` | Ubuntu packages | **GUI builds only** (`make gui`) |
 | Python 3 | Ubuntu `python3` | repository validation scripts only (not needed at runtime) |

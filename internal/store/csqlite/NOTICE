@@ -1,0 +1,29 @@
+SQLite — public domain
+======================
+
+This directory contains the unmodified SQLite amalgamation, version 3.53.4,
+obtained from https://www.sqlite.org/2026/sqlite-amalgamation-3530400.zip.
+
+SQLite is in the public domain. The upstream blessing, reproduced from the
+source files themselves:
+
+    The author disclaims copyright to this source code.  In place of
+    a legal notice, here is a blessing:
+
+        May you do good and not evil.
+        May you find forgiveness for yourself and forgive others.
+        May you share freely, never taking more than you give.
+
+Public-domain material imposes no conditions and is compatible with this
+project's Apache-2.0 license.
+
+Only sqlite3.c and sqlite3.h are vendored. shell.c and sqlite3ext.h were
+present in the upstream archive and are deliberately not included: the project
+ships no SQLite shell and loads no extensions (the build defines
+SQLITE_OMIT_LOAD_EXTENSION).
+
+These files are third-party sources and are not modified. Build options are
+applied from ../sqlite_cgo.go, never by editing the amalgamation. Verify the
+tree against PROVENANCE.json with:
+
+    python3 scripts/check_sqlite_provenance.py

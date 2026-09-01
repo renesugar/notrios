@@ -1,8 +1,7 @@
 package store
 
 /*
-#cgo pkg-config: sqlite3
-#include <sqlite3.h>
+#include "csqlite/sqlite3.h"
 #include <stdlib.h>
 
 static int notes_sqlite_bind_text(sqlite3_stmt *stmt, int idx, char *value) {

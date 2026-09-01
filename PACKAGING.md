@@ -41,7 +41,12 @@ dispositions, and upgrade/rollback notes before packaging.
 `make build` and `make gui` produce local binaries under `bin/` (see [docs/installation.md](docs/installation.md)). Two runtime facts matter for anyone redistributing them informally:
 
 - the browser UI is served from `web/dist/` relative to the working directory, so a bare binary without that directory serves the API only;
-- the SQLite store links against the system `libsqlite3` (cgo), so binaries are tied to a compatible glibc/libsqlite3.
+- the SQLite store statically links the vendored SQLite amalgamation
+  (v0.8 H1 slice C), so a binary carries its own engine and depends only on a
+  compatible glibc, not on any installed `libsqlite3`. The exact version,
+  hashes, compile options, and update policy are in
+  `internal/store/csqlite/PROVENANCE.json`, enforced by
+  `python3 scripts/check_sqlite_provenance.py`.
 
 A real installer/package story (self-contained assets, installed data/config
 locations, permissions, native credential stores, per-OS packages, upgrades,
@@ -67,3 +72,11 @@ bash scripts/package_release.sh
 ```
 
 The project license is Apache-2.0 (`LICENSE`); dependency license audits are recorded in `RELEASE_CHECKLIST.md`.
+
+One dependency is vendored rather than resolved by a package manager, so it
+appears in neither the Go-module nor the npm inventory: the SQLite amalgamation
+under `internal/store/csqlite/`. SQLite is public domain, which imposes no
+conditions and is compatible with Apache-2.0; the upstream blessing is
+reproduced in `internal/store/csqlite/NOTICE` and redistributed with the
+source. A release audit should read that notice alongside the generated
+inventories, because no dependency scanner will find it for you.

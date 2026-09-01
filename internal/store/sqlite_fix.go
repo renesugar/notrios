@@ -1,8 +1,7 @@
 package store
 
 /*
-#cgo pkg-config: sqlite3
-#include <sqlite3.h>
+#include "csqlite/sqlite3.h"
 */
 import "C"
 

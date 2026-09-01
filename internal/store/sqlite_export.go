@@ -1,7 +1,7 @@
 package store
 
 /*
-#include <sqlite3.h>
+#include "csqlite/sqlite3.h"
 */
 import "C"
 

@@ -71,10 +71,21 @@ def main() -> None:
     wails_source = (REPO / wails_files[0]).read_text(encoding="utf-8")
     require(wails_source.startswith("//go:build gui\n"), "Wails adapter lost its gui build tag")
 
+    # G18 recorded 43 store files that directly use the SQLite C API. v0.8 H1
+    # slice C added internal/store/sqlite_cgo.go, which imports "C" solely to
+    # carry the #cgo build directives for the vendored amalgamation and calls
+    # no SQLite function. The recorded finding is unchanged, so the file is
+    # excluded here rather than the frozen evidence being rewritten. Any other
+    # new cgo file still fails this check.
+    build_owner = "sqlite_cgo.go"
     cgo_files = [path for path in (REPO / "internal" / "store").glob("*.go")
                  if re.search(r'^import "C"', path.read_text(encoding="utf-8"), re.MULTILINE)]
-    require(len(cgo_files) == audit["dependencies"]["store_files_importing_c"],
+    api_users = [path for path in cgo_files if path.name != build_owner]
+    require(len(api_users) == audit["dependencies"]["store_files_importing_c"],
             "store cgo file count differs")
+    owner = REPO / "internal" / "store" / build_owner
+    require(owner.exists() and "C.sqlite3_" not in owner.read_text(encoding="utf-8"),
+            "the cgo build owner started calling the SQLite API; it must only carry directives")
     service = (REPO / "internal" / "service" / "service.go").read_text(encoding="utf-8")
     require("*httpapi.Server" in service and "*http.Server" in service,
             "service/HTTP coupling finding no longer holds; rerun the facade audit")
@@ -172,7 +183,11 @@ def main() -> None:
             "rendered editor search/replace QA did not pass")
 
     sqlite_source = (REPO / "internal" / "store" / "sqlite.go").read_text(encoding="utf-8")
-    require(android_sqlite["current_notrios_store"]["store_files_importing_c"] == len(cgo_files),
+    # Same 43 SQLite-API files as above; the build owner is excluded for the
+    # reason given there. This record's link_contract field still reads
+    # "pkg-config: sqlite3" because it is a frozen G18 snapshot of the
+    # pre-vendoring state, which v0.8 H1 slice C deliberately replaced.
+    require(android_sqlite["current_notrios_store"]["store_files_importing_c"] == len(api_users),
             "Android SQLite follow-up cgo inventory drifted")
     require("SQLITE_OPEN_FULLMUTEX" in sqlite_source and "PRAGMA journal_mode = WAL" in sqlite_source,
             "current store connection contract drifted")

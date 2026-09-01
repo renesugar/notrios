@@ -1068,7 +1068,7 @@ Facts about the development machine that no other document records:
 
 The scaffold was created in a restricted container. Still-open consequences:
 
-1. The SQLite store uses a small local cgo adapter over system `libsqlite3` on
+1. The SQLite store uses a small local cgo adapter over the vendored SQLite amalgamation (v0.8 H1 slice C; previously system `libsqlite3`) on
    Linux. v0.8 H0 must compare a pinned C amalgamation with pinned modernc/libc
    in the Go Android shared core before implementation. The modernc Android
    build is not runtime/support evidence; Jetpack's Kotlin driver still requires

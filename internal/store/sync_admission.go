@@ -1,7 +1,7 @@
 package store
 
 /*
-#include <sqlite3.h>
+#include "csqlite/sqlite3.h"
 #include <stdlib.h>
 
 static int notes_sync_bind_blob(sqlite3_stmt *stmt, int idx, void *value, int size) {

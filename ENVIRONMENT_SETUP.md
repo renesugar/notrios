@@ -12,8 +12,7 @@ Versions match `go.mod` and `.github/workflows/ci.yml`:
 
 - Git
 - **Go 1.25 or newer** (`go.mod` declares `go 1.25.0`)
-- A C toolchain and `pkg-config` (the SQLite store is a cgo wrapper over system `libsqlite3`; keep `CGO_ENABLED=1`)
-- `libsqlite3-dev`
+- A C toolchain (the SQLite store is a cgo wrapper over the SQLite amalgamation vendored at `internal/store/csqlite/`, compiled from source into the binary; keep `CGO_ENABLED=1`). No `libsqlite3-dev` or `pkg-config` is needed, and the first build after a clean checkout compiles roughly 9.5 MB of C, so it takes a few minutes before the Go build cache warms.
 - **Node.js 22** and npm for the web UI; the documentation build is pinned to
   **Node.js 26.3.0**, Hugo Extended 0.164.0, and Pagefind 1.5.2
 - **Python 3** — used only by the repository validation scripts (`scripts/check_required_files.py`, `scripts/check_release_zip.py`, `scripts/check_plan_loops.py`); not needed at runtime
@@ -25,7 +24,7 @@ Optional: `go-task` (the `Taskfile.yml` mirrors the main Make targets), `sqlite3
 
 ```bash
 sudo apt update
-sudo apt install -y git build-essential pkg-config libsqlite3-dev python3 make zip jq sqlite3
+sudo apt install -y git build-essential python3 make zip jq sqlite3
 sudo apt install -y nodejs npm            # or Node 22 from nodesource/a version manager
 sudo apt install -y libgtk-3-dev libwebkit2gtk-4.1-dev   # GUI work only
 ```
