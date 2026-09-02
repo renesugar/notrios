@@ -76,6 +76,13 @@ for path in sys.argv[1:]:
 ' scripts/check_required_files.py scripts/check_sqlite_provenance.py performance/v0.8-h2a/validate_evidence.py scripts/check_plan_loops.py scripts/check_release_zip.py evidence/verify_evidence.py evidence/run_refusal_tests.py scripts/g17b_evidence.py evidence/test_verify_evidence.py performance/v0.7-g18/validate_evidence.py performance/v0.7-g18/test_validate_evidence.py performance/v0.7-g18a/build_inventory.py performance/v0.7-g18a/validate_evidence.py performance/v0.7-g18a/test_validate_evidence.py performance/v0.7-g18b/build_prototype.py performance/v0.7-g18b/validate_evidence.py performance/v0.7-g18b/test_validate_evidence.py performance/v0.7-g18c/validate_evidence.py performance/v0.7-g18d/validate_evidence.py performance/v0.7-g18d/test_validate_evidence.py performance/v0.7-g18e/validate_evidence.py performance/v0.7-g18e/test_validate_evidence.py performance/v0.7-g18f/validate_evidence.py performance/v0.7-g18f/test_validate_evidence.py performance/v0.7-g18g/validate_evidence.py performance/v0.7-g18g/test_validate_evidence.py performance/v0.7-g20/validate_evidence.py performance/v0.7-g20/test_validate_evidence.py performance/v0.7-g20/check_dependency_licenses.py performance/v0.7-g20/test_check_dependency_licenses.py performance/v0.8-h3/validate_evidence.py performance/v0.8-h3/purge_oracle.py performance/v0.8-h3/resolve_model.py performance/v0.8-h3/test_purge_oracle.py performance/v0.8-h3/test_resolve_model.py performance/v0.8-h3/test_backup_restore.py performance/v0.8-h4a/validate_evidence.py
 python3 -m unittest evidence.test_verify_evidence
 python3 -m unittest discover -s performance/v0.7-g18 -p 'test_*.py'
+# G18c is run here, not only from package_release.sh.
+#
+# It was release-only, and its registry assertion went stale for two commits
+# without anything noticing: the failure appeared when the release gate ran,
+# long after the change that caused it. A gate nobody runs until release is a
+# gate that fails at the worst moment.
+python3 performance/v0.7-g18c/validate_evidence.py
 python3 performance/v0.7-g18/validate_evidence.py
 python3 -m unittest discover -s performance/v0.7-g18a -p 'test_*.py'
 python3 performance/v0.7-g18a/validate_evidence.py

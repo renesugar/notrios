@@ -30,7 +30,19 @@ def main() -> None:
     assert expected["manual_sections"] == 199
     assert manual_sections >= expected["manual_sections"]
     assert expected["claims"] == len(registry["claims"]) == 4
-    assert expected["executables"] == len(registry["executables"]) == 131
+    # The frozen report records 131 executable-shaped fences, which is what
+    # G18c found. The live registry only has to still contain them: pinning it
+    # to exactly 131 made this assertion unsurvivable, because every documented
+    # example added afterwards moves the live count and none of them invalidate
+    # the evidence. `manual_sections` above already takes that view, and this
+    # now matches it -- a shrinking registry is still caught.
+    #
+    # It went stale for two commits without anyone noticing because
+    # validate-scaffold.sh only syntax-checks this file; package_release.sh was
+    # the only thing that ran it, so the failure surfaced at release time. It is
+    # run by `make validate` now.
+    assert expected["executables"] == 131
+    assert len(registry["executables"]) >= expected["executables"]
     assert expected["journeys"] == len(registry["journeys"]) == 9
     assert expected["fragments"] == 12
     assert sum(expected["counts"].values()) == expected["denominator"] == 351
