@@ -828,7 +828,7 @@ was listed in `check_required_files.py`, which asserts a file exists rather than
 that it passes. `make validate` now discovers and runs `scripts/test_*.py`,
 which picks up those 28 tests as well as the 23 new lifecycle ones.
 
-## H6a. Desktop installer and GitHub-native build investigation
+## H6a. Desktop installer and GitHub-native build investigation — complete
 
 **Goal.** Select the smallest maintainable installer toolchain and honest
 support gates for Ubuntu, Windows, and macOS before adding package workflows.
@@ -874,6 +874,57 @@ rollback/removal mapping to H5.
 - **Unsigned Windows/macOS artifacts in v0.8 — Non-blocking default.** They may
   be retained only as clearly labelled internal candidates after native
   execution. They are not end-user releases and do not imply v1.0 support.
+
+**Outcome (2026-09-02).** Complete. Evidence under `performance/v0.8-h6a/`,
+validated from `make validate`. Investigation only: no packaging dependency was
+added, no workflow pushed, no artifact uploaded, and the validator asserts the
+Makefile and release script still contain no reference to a packaging tool.
+
+**Everything follows from one measured fact: `CGO_ENABLED=0` does not build.**
+Not "builds without SQLite" -- `internal/store` declares its exported types
+inside the cgo file, so the package fails to typecheck. Any packaging option
+therefore needs a C toolchain for every target it claims.
+
+With only the host compiler GoReleaser built 1 of 6 targets; the rest died in
+`runtime/cgo` (`gcc_arm64.S: no such instruction`). With `gcc-aarch64-linux-gnu`
+installed and `CC` set, `linux/arm64` produced a genuine aarch64 ELF and an
+`arm64` `.deb`, and the vendored amalgamation needed no extra flags. That binary
+**cannot be executed on this machine**, so it stays at level 2. One Ubuntu
+runner can therefore *produce* both architectures cheaply; only an arm64 machine
+can say whether the result works, and the claim ladder keeps those apart.
+
+**The prototype `.deb` builds and is not a policy-compliant package.** `lintian`
+reports 3 errors and 297 warnings: no copyright file (for an Apache-2.0
+project), no changelog, an empty extended description, and
+`undeclared-elf-prerequisites` -- it declares **no `Depends` at all** while
+linking `libc` and `libm`, because nFPM does no shared-library dependency
+resolution. The control archive holds only `control` and `md5sums`, so nothing
+registers the `notrios://` handler on install. Its layout does match H5's
+program-assets derivation, so a distro package finds its interface and help for
+free.
+
+Two operational findings: builds are **not reproducible by default** --
+GoReleaser injects `-X main.date=<timestamp>`, recorded in Go build info even
+though `main.date` does not exist here -- and `goreleaser --clean` empties
+`dist/`, which this repository already uses for source release ZIPs. It removed
+them during the investigation; nothing was lost only because each ZIP had
+already been copied to the evidence directory.
+
+**Recommendation.** For Ubuntu, GoReleaser plus nFPM is a reasonable selection,
+with the `.deb` treated as a starting point rather than a package; H6 should
+consider generating it from the layout `scripts/lifecycle.py` already installs
+and records, so the install contract has one definition rather than two.
+For Windows and macOS **no toolchain can be selected from this machine**:
+`makensis` and the Wails CLI are present and could generate a Windows installer
+at level 1, and macOS cannot be assessed here at all. The decision is between
+provisioning native runners and postponing both platforms, and this
+investigation deliberately does not pretend to settle it.
+
+**Not verified, recorded rather than assumed:** GitHub-hosted runner
+availability, cost and artifact retention were not checked against upstream
+documentation in this pass, so no projection is offered; whether the arm64
+`.deb` installs or runs on an arm64 machine; and Wails v2 native packaging
+output on either platform.
 
 ## H6. Ubuntu-priority installer package
 
@@ -1431,6 +1482,8 @@ This is an index only; each decision is owned and explained inside its item.
 | Desktop external-link opening | H2b | Resolved and implemented: no prompt; the browser-tab path is unchanged |
 | Mermaid renderer/containment | H2a/H2 | Resolved and implemented in H2: Mermaid 11.17.2, strict security, `htmlLabels: false`, `notrios`-only links reattached from source |
 | Installed/portable path precedence | H3/H4 | Resolved in H3: explicit, then explicit portable marker, then native; never inferred |
+| Ubuntu packaging toolchain | H6a/H6 | H6a recommends GoReleaser plus nFPM, with the .deb treated as a starting point: 3 lintian errors, no declared dependencies, no maintainer scripts |
+| Windows and macOS toolchain | H6a/H7 | Open; no toolchain is selectable without native runners, and H6a records that rather than guessing |
 | Development versus installed default port | H4a | Resolved in H4a: checkout 8099 from the example config, installed 8080 from the compiled default |
 | Pre-migration backup location and retention | H4b | Resolved in H4b: `pre-migration-backups/` beside the database, newest kept, no new root |
 | Migration trigger narrowed from H3 section 4 | H4 slice E | Resolved; slice D removed the two-instance case, so the trigger is a pre-0.8 layout in the working directory that is not the library in use |

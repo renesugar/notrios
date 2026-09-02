@@ -1,0 +1,49 @@
+# H6a probe configuration. Not a production packaging dependency: it exists to
+# find out what GoReleaser can and cannot do with a project whose store is a cgo
+# wrapper over a vendored SQLite amalgamation.
+version: 2
+project_name: notrios
+# A scratch dist: the repository already uses dist/ for source release ZIPs, and
+#  empties whatever it is pointed at.
+dist: /tmp/claude-1000/-home-renes-projects-notrios/a7048936-0986-4f36-bdd8-4499487b47c6/scratchpad/dist-deb
+
+builds:
+  - id: notriosd
+    main: ./cmd/notriosd
+    binary: notriosd
+    env:
+      - CGO_ENABLED=1
+    goos: [linux]
+    goarch: [amd64]
+  - id: notriosctl
+    main: ./cmd/notriosctl
+    binary: notriosctl
+    env:
+      - CGO_ENABLED=1
+    goos: [linux]
+    goarch: [amd64]
+
+archives:
+  - id: default
+    ids: [notriosd, notriosctl]
+    formats: [tar.gz]
+
+nfpms:
+  - id: deb
+    ids: [notriosd, notriosctl]
+    package_name: notrios
+    vendor: Notrios
+    homepage: https://github.com/renesugar/notrios
+    maintainer: Rene Sugar <rene.sugar@gmail.com>
+    description: Local-first note application.
+    license: Apache-2.0
+    formats: [deb]
+    bindir: /usr/bin
+    contents:
+      - src: web/dist
+        dst: /usr/share/notrios/web
+      - src: docs
+        dst: /usr/share/notrios/docs
+
+checksum:
+  name_template: checksums.txt
