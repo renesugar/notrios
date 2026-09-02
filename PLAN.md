@@ -1095,6 +1095,157 @@ release/tag check.
   opens and validates the PR but does not merge it. The owner must separately
   authorize the merge after reviewing the final checks and support claims.
 
+## H14. Documentation actionability investigation (opencode, free models, zvec-grep)
+
+**Ordering.** Independent of the H5-H11 installer chain and can run at any
+point. If it succeeds and the follow-up evaluation is approved, that evaluation
+should land before H12, because documentation quality is part of what a release
+claims.
+
+**Goal.** Decide whether hosted free models driven by `opencode`, with local
+semantic search from `zg` (zvec-grep), can answer a question the repository
+currently cannot: **can a reader act on this page?** Concretely -- given only the
+prose for one task, can a model produce a command line that actually runs and
+does the thing? A page whose reader cannot take an action is a page that needs
+work, however fresh, hashed and internally consistent it is.
+
+**Why the existing machinery does not answer it.** Every documentation gate in
+this repository checks *consistency*: docgen regenerates fragments, docaudit
+anchors sections to source, G18a freezes an inventory, G18f hashes content and
+counts enumerations, G18d executes registered examples. All of them can be green
+while a page fails its reader, and that is not hypothetical -- H4 slice D found
+`docs/installation.md` documenting a superseded asset search order, and slice E
+found it again on another page, both with every gate passing. The gates check
+that documentation is generated consistently and hashed, not that it is still
+true or that anyone can use it.
+
+**The known defect this must find, verified by hand.** Ask the documentation how
+to create, edit or delete a tag on a note:
+
+- `docs/cli.md` documents exactly one tag-mutating command, `notriosctl tags
+  rename`. Tags otherwise appear only as filters (`--tags a,b`, `tag:todo`).
+- `docs/gui.md` shows tags only as sidebar navigation with note counts and
+  "click anything to search it".
+- Yet the capability exists: REST has `POST` and `DELETE
+  /api/v1/documents/{document_id}/tags/{tag}`, and MCP has `tag_note` and
+  `untag_note` in the editor scope.
+
+So a reader of either the CLI or the GUI guide cannot learn to tag a note, and
+neither page points at the surface that can. This is a ready-made positive
+control: a method that cannot find it is not worth adopting. It also raises a
+separate product question recorded below -- whether the CLI is *meant* to have no
+add/remove-tag command.
+
+**Scope.** Stand up `opencode` and `zg` locally; index the repository with a
+**local** embedding; reuse the existing 8-case, 16-run contradiction calibration
+in `performance/v0.7-g18f/ADVISORY_REPORT.json` to score candidate free models
+against the recorded Qwen 2.5 Coder 1.5B baseline of 7/16; then build a small
+task-to-command harness over a handful of pages and measure whether generated
+command lines run in a sandbox. Report a recommendation with evidence, change no
+prose, and add no build gate.
+
+**The experiment must control for the model's own knowledge, and this is the
+design point everything else depends on.** A capable model can produce a
+plausible `notriosctl` invocation from familiarity with command-line conventions
+alone, never having read the page. Scoring "did the command work?" would then
+measure the model and report it as documentation quality. Every task therefore
+needs three arms:
+
+1. **prose-only** -- the page section and the task name;
+2. **no-prose** -- the task name alone;
+3. **misleading-prose** -- the section with one detail mutated, such as a renamed
+   flag or an inverted default.
+
+A page earns credit only when arm 1 succeeds *and* arm 2 fails. Arm 3 catches a
+model that is ignoring the text it was given. Without arm 2 the whole exercise is
+unfalsifiable.
+
+**Why an executed command beats a label.** G18f's advisory asks a model to
+choose among `supported`, `contradicted` and `not-determinable`, and the
+recorded run scored 7/16 with both negation cases wrong -- the failure the
+proposal names, where prose and its negation sit close together in the vector
+space. An executed command sidesteps that entirely: nothing has to distinguish
+"do X" from "do not do X" in an embedding, because the command either does X or
+it does not. Scoring becomes deterministic, which is also what makes cheap models
+usable -- they are being asked to draft, not to judge.
+
+**Reuse the sandbox rather than build a second one.** `internal/docexec` already
+runs 63 of 137 registered examples against a seeded loopback fixture with
+substitutions for the base URL, binaries, seeded ids and scratch directories. The
+difference here is only the source of the command: docexec runs commands
+*transcribed from* the docs, this runs commands *synthesised from* the prose. The
+gap between those two is exactly the thing being measured, so the fixture,
+adapters and substitution machinery should be shared.
+
+**Boundaries.** No prose is rewritten automatically, no model output is executed
+outside the existing sandbox, no probabilistic result becomes a build gate, and
+nothing is added to `make validate`. No paid model, no subscription, no recurring
+charge. `zg` uses a local embedding model and its remote-data path stays off.
+Notes, databases, evidence archives and anything under `data/` are never sent
+anywhere. No change to docgen, docaudit, or any G18 gate.
+
+**Dependencies.** None in this milestone. It reads the frozen G18a inventory,
+the docaudit registry and the G18f calibration, all of which are already
+committed.
+
+**Working state.** A recorded run over a small page sample, with per-model
+calibration scores, per-task three-arm results, the exact prompts and their
+hashes, and a written recommendation on whether to proceed -- including "no" as
+an acceptable outcome.
+
+**Validation and evidence.** Calibration scores for each candidate model on the
+same 16 runs the Qwen baseline used, so the comparison is like-for-like; the
+three-arm results per task; every generated command with its exit status and
+what it did; prompt and source hashes for reproducibility; and the tags case as
+a positive control that the method must flag. Evidence under
+`performance/v0.8-h14/`, validated the way other evidence directories are.
+
+**Open decisions**
+
+- **Sending repository documentation to a hosted model -- Blocking.** G18f's
+  recorded policy is `endpoint_scope: loopback-only`,
+  `source_scope: repository-source-only; no notes or databases`, `cost_usd: 0`.
+  Using hosted free models changes the first of those. The documentation is
+  Apache-2.0 and written to be published, so the exposure is small, but it is a
+  policy change and must be recorded as one rather than assumed. Recommended:
+  permit hosted calls for `docs/` prose and generated command text only, keep
+  everything else loopback, and record the endpoint used per run.
+- **Which free models -- Non-blocking, and not decidable from a list.** The
+  supplied recommendations describe capabilities that appear to be inferred from
+  the model names rather than measured -- a `-fin` suffix read as "financial", a
+  `-reasoning` suffix read as "a dedicated internal reasoning token track", a
+  vendor read as "purpose-built for software engineering". Several named models
+  cannot be verified from here at all. This is exactly what the calibration set
+  is for: run the candidates on the same 16 runs and let the score decide.
+  Recommended starting order by plausible capacity, not by claim: the largest
+  general instruction models first, then the code-specialised ones, then the
+  small ones as a cost control. Exclude the content-safety model, whose name at
+  least is unambiguous.
+- **Rate limits and spreading work -- Non-blocking.** Free tiers throttle. The
+  harness must be resumable, cache by prompt hash the way the existing advisory
+  report already records `explanation_prompt_sha256`, and record which model
+  answered which task so a mixed run stays attributable.
+- **Whether the CLI is meant to have no add/remove-tag command -- Blocking for
+  the follow-up, not for this investigation.** REST and MCP can tag a note and
+  the CLI cannot. If that is deliberate the CLI guide should say so and point at
+  the surfaces that can; if it is an oversight it is a product gap rather than a
+  documentation one. The investigation records the question; it does not answer
+  it.
+
+**Exit criteria.** The method is worth adopting only if all of these hold: at
+least one free model scores materially better than the 7/16 baseline on the
+existing calibration; the three-arm ablation separates arm 1 from arm 2 on a page
+known to be good, so the test can tell prose from prior knowledge; and the tags
+case is flagged. Failing any of them, the recommendation is to stop, and the
+investigation is still worth having done.
+
+**If it succeeds.** Add a follow-up plan item to evaluate the documentation with
+the method: a full pass over the user-facing pages, a ranked list of task topics
+a reader cannot act on, and prose fixes for the worst of them -- with the
+evaluation itself staying advisory and out of `make validate`. That item is not
+written yet, deliberately: it should be scoped by what the investigation actually
+finds rather than by what it is hoped to find.
+
 ## H13. v0.8 release wrap-up and branch synchronization
 
 **Goal.** Reconcile every approved v0.8 promise, produce internal installable
@@ -1165,6 +1316,9 @@ This is an index only; each decision is owned and explained inside its item.
 | Migration trigger narrowed from H3 section 4 | H4 slice E | Resolved; slice D removed the two-instance case, so the trigger is a pre-0.8 layout in the working directory that is not the library in use |
 | User-local/GNU install layout | H3/H5 | Resolved in H3: `$HOME/.local`, GNU directory variables and `DESTDIR` retained |
 | Purge external-path and backup policy | H3/H5 | Resolved in H3: enumerate and back up, refuse to delete; container choice remains for H5 |
+| Hosted free models reading repository documentation | H14 | Open; G18f recorded loopback-only, so this is a policy change and must be decided explicitly |
+| Free-model choice for documentation evaluation | H14 | Open; supplied recommendations look name-inferred, so the existing 16-run calibration decides |
+| CLI has no add/remove-tag command while REST and MCP do | H14 | Open; deliberate omission to document, or a product gap |
 | Desktop package formats/toolchain | H6a/H6/H7 | Open; evidence-dependent |
 | Windows/macOS feasibility and support | H6a/H7/H12 | Open; native execution required |
 | Native credential providers | H9 | Open and blocking implementation |
