@@ -279,7 +279,19 @@ func resolveInstalled(goos string, options Options, result *Resolution) error {
 		result.Roots[RootData] = Join(goos, xdg(goos, options, "XDG_DATA_HOME", Join(goos, home, ".local", "share"), result), "notrios")
 		result.Roots[RootState] = Join(goos, xdg(goos, options, "XDG_STATE_HOME", Join(goos, home, ".local", "state"), result), "notrios")
 		result.Roots[RootCache] = Join(goos, xdg(goos, options, "XDG_CACHE_HOME", Join(goos, home, ".cache"), result), "notrios")
-		result.Roots[RootProgramAssets] = "/usr/local/share/notrios"
+		// The program's own files sit beside the binary in the GNU layout:
+		// <prefix>/bin/notriosd and <prefix>/share/notrios. Deriving the root
+		// from the executable therefore lands on /usr/local/share/notrios for a
+		// /usr/local install, /usr/share/notrios for a distribution package, and
+		// ~/.local/share/notrios for the user-local install H3 recommends as the
+		// default -- which the previous hardcoded /usr/local/share/notrios got
+		// wrong. `make install` wrote the interface and help to ~/.local and an
+		// installed instance looked for them under /usr/local, so it started
+		// with no interface and no help and said the assets were missing.
+		//
+		// Windows and macOS already derived this from the executable. Linux was
+		// the odd one out, and only because a single prefix was assumed.
+		result.Roots[RootProgramAssets] = Join(goos, options.ExecutableDir, "..", "share", "notrios")
 		resolveLinuxRuntime(goos, options, result)
 
 	case Windows:

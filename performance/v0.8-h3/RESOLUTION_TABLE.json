@@ -25,7 +25,7 @@
         "data": "/home/u/.local/share/notrios",
         "state": "/home/u/.local/state/notrios",
         "cache": "/home/u/.cache/notrios",
-        "program_assets": "/usr/local/share/notrios",
+        "program_assets": "/opt/notrios/share/notrios",
         "runtime": "/home/u/.local/state/notrios/runtime"
       },
       "notice_codes": [
@@ -62,7 +62,7 @@
         "data": "/x/dat/notrios",
         "state": "/x/st/notrios",
         "cache": "/x/ca/notrios",
-        "program_assets": "/usr/local/share/notrios",
+        "program_assets": "/opt/notrios/share/notrios",
         "runtime": "/run/user/1000/notrios"
       },
       "notice_codes": [],
@@ -88,7 +88,7 @@
         "data": "/home/u/.local/share/notrios",
         "state": "/home/u/.local/state/notrios",
         "cache": "/home/u/.cache/notrios",
-        "program_assets": "/usr/local/share/notrios",
+        "program_assets": "/opt/notrios/share/notrios",
         "runtime": "/home/u/.local/state/notrios/runtime"
       },
       "notice_codes": [
@@ -126,7 +126,7 @@
         "data": "/home/u/.local/share/notrios",
         "state": "/home/u/.local/state/notrios",
         "cache": "/home/u/.cache/notrios",
-        "program_assets": "/usr/local/share/notrios",
+        "program_assets": "/opt/notrios/share/notrios",
         "runtime": "/home/u/.local/state/notrios/runtime"
       },
       "notice_codes": [
@@ -159,7 +159,7 @@
         "data": "/home/u/.local/share/notrios",
         "state": "/home/u/.local/state/notrios",
         "cache": "/home/u/.cache/notrios",
-        "program_assets": "/usr/local/share/notrios",
+        "program_assets": "/opt/notrios/share/notrios",
         "runtime": "/home/u/.local/state/notrios/runtime"
       },
       "notice_codes": [
@@ -358,7 +358,7 @@
         "data": "/home/u/.local/share/notrios",
         "state": "/home/u/.local/state/notrios",
         "cache": "/home/u/.cache/notrios",
-        "program_assets": "/usr/local/share/notrios",
+        "program_assets": "/opt/notrios/share/notrios",
         "runtime": "/home/u/.local/state/notrios/runtime"
       },
       "notice_codes": [
@@ -454,7 +454,7 @@
         "data": "/srv/notrios/library",
         "state": "/home/u/.local/state/notrios",
         "cache": "/home/u/.cache/notrios",
-        "program_assets": "/usr/local/share/notrios",
+        "program_assets": "/opt/notrios/share/notrios",
         "runtime": "/home/u/.local/state/notrios/runtime"
       },
       "notice_codes": [

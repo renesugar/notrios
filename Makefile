@@ -12,7 +12,8 @@
 
 .PHONY: help deps build build-service build-cli web gui docs \
         test validate docgen docaudit doccheck smoke serve doctor seed-help evidence-pre-push \
-        g18e-validate g18f-validate g18g-validate g19-validate g20-validate clean clobber precheck
+        g18e-validate g18f-validate g18g-validate g19-validate g20-validate \
+        install install-dry-run uninstall uninstall-dry-run clean clobber precheck
 
 help: ## Show this target summary
 	@grep -E '^[a-zA-Z-]+:.*## ' $(MAKEFILE_LIST) | awk -F ':.*## ' '{printf "  %-14s %s\n", $$1, $$2}'
@@ -109,6 +110,18 @@ doctor: ## Run notriosctl doctor
 
 seed-help: ## Mirror docs/ into the built-in Help notebook (default database)
 	go run ./cmd/notriosctl seed-help docs
+
+install: build web ## Install to an end-user location (prefix=$HOME/.local by default)
+	python3 scripts/lifecycle.py install
+
+install-dry-run: build web ## Show exactly what install would write, and write nothing
+	python3 scripts/lifecycle.py install --dry-run
+
+uninstall: ## Remove what install recorded installing; never touches user data
+	python3 scripts/lifecycle.py uninstall
+
+uninstall-dry-run: ## Show exactly what uninstall would remove, and remove nothing
+	python3 scripts/lifecycle.py uninstall --dry-run
 
 clean: ## Remove build/test/docs/release output (never user data in data/)
 	rm -rf bin/ dist/ _site/ web/dist/ .playwright-mcp/

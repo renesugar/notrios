@@ -108,7 +108,13 @@ def _resolve_installed(env: dict, os_name: str, executable_dir: str, result: "Re
         result.roots["data"] = _join(os_name, _xdg(env, os_name, "XDG_DATA_HOME", _join(os_name, home, ".local", "share"), result), "notrios")
         result.roots["state"] = _join(os_name, _xdg(env, os_name, "XDG_STATE_HOME", _join(os_name, home, ".local", "state"), result), "notrios")
         result.roots["cache"] = _join(os_name, _xdg(env, os_name, "XDG_CACHE_HOME", _join(os_name, home, ".cache"), result), "notrios")
-        result.roots["program_assets"] = "/usr/local/share/notrios"
+        # Amended by H5 (2026-09-02): derived from the executable, as Windows
+        # and macOS already were. <prefix>/bin/notriosd sits beside
+        # <prefix>/share/notrios, so this gives /usr/local/share/notrios for a
+        # /usr/local install and ~/.local/share/notrios for the user-local
+        # install this investigation recommends as the default. The previous
+        # constant assumed one prefix and broke that recommendation.
+        result.roots["program_assets"] = _join(os_name, executable_dir, "..", "share", "notrios")
 
         runtime = (env.get("XDG_RUNTIME_DIR") or "").strip()
         fallback = _join(os_name, result.roots["state"], "runtime")
