@@ -50,7 +50,13 @@ GUI_JOURNEYS = [
 
 
 def slug(value: str) -> str:
-    value = re.sub(r"[^a-z0-9]+", "-", value.lower()).strip("-")
+    # Dots are removed rather than turned into separators, because that is what
+    # the documentation site does: Hugo renders "Upgrading from before 0.8" as
+    # `upgrading-from-before-08`, and this used to produce
+    # `upgrading-from-before-0-8`. The two rules agreed on every heading until
+    # one contained a dot between digits, and then G18g failed at release time
+    # against a site anchor that had never existed.
+    value = re.sub(r"[^a-z0-9]+", "-", value.lower().replace(".", "")).strip("-")
     return value or "section"
 
 

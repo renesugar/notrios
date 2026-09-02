@@ -1546,7 +1546,7 @@
           "grade": "unverified"
         },
         {
-          "id": "upgrading-from-before-0-8",
+          "id": "upgrading-from-before-08",
           "level": 3,
           "title": "Upgrading from before 0.8",
           "audience": "user",

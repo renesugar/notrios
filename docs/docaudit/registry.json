@@ -2093,9 +2093,9 @@
       }
     },
     {
-      "id": "installation-upgrading-from-before-0-8-example-1",
+      "id": "installation-upgrading-from-before-08-example-1",
       "path": "docs/installation.md",
-      "section": "upgrading-from-before-0-8",
+      "section": "upgrading-from-before-08",
       "language": "sh",
       "sha256": "bac2a55ba52aab2aa41e5c034a35f4d816d12f0d2ea79f742403ec3c6fd4eb68",
       "state": "unverified",

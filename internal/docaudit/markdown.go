@@ -18,8 +18,21 @@ func topicForPath(path string) string {
 	return strings.ReplaceAll(value, "/", "-")
 }
 
+// slug turns a heading into the anchor the documentation site will publish.
+//
+// The site is the authority here: a reader clicks the anchor Hugo rendered, so
+// an id computed any other way is wrong however reasonable it looks. Hugo
+// *removes* a dot rather than treating it as a separator, so "Upgrading from
+// before 0.8" is `upgrading-from-before-08`.
+//
+// Three rules used to compute this -- here, in
+// performance/v0.7-g18a/build_inventory.py, and in Hugo -- and the first two
+// agreed with each other but not with the site. Nothing noticed until a heading
+// contained a dot between digits, and then G18g failed at release time against
+// an anchor that had never existed. All three agree now.
 func slug(value string) string {
 	value = strings.ToLower(value)
+	value = strings.ReplaceAll(value, ".", "")
 	var out strings.Builder
 	dash := false
 	for _, char := range value {
