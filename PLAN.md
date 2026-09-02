@@ -490,6 +490,79 @@ about path resolution would have hidden the change that mattered. Until this
 lands, the second instance to start fails to bind with a message naming the
 likely cause and the flag to fix it.
 
+## H4b. Verified backup before a startup schema migration
+
+**Goal.** Make an automatic schema migration recoverable. Today `Bootstrap`
+migrates a user's only copy in place, with no backup and no notice, on every
+open by every binary.
+
+**Scope.** Before applying any migration that would raise `user_version`, copy
+the database and its `-wal`/`-shm` sidecars to a named location, verify the copy
+by SHA-256, and only then migrate. On success, report where the backup is and
+retain it under a stated policy. On failure, leave the original untouched and
+name the backup in the error. Log one line at startup when a migration happens
+at all -- a user whose schema was upgraded should not have to infer it.
+
+The migration must hold the existing database owner lock for its whole
+duration, so a second process cannot open the database mid-migration.
+
+**This needs no new root, and that is the finding.** A schema migration touches
+only the database file; assets, projections and the index are untouched, so the
+backup is the `.sqlite` plus sidecars, not a whole-library image. It belongs
+**beside the database**, under the data root, for a reason that rules the other
+roots out: the copy must land on the same filesystem as its source. A user may
+point `data.directory` at another disk, so `<state>` is not guaranteed to be the
+same device -- which would make the free-space check meaningless, the copy able
+to fail part-way across devices, and rollback a copy rather than a rename.
+`<cache>` is excluded outright: purge disposes of it without backing it up.
+
+What it *does* need is a **named, discoverable** location rather than a
+temporary directory. Recovery depends on a user finding the backup after a crash
+or a refusal, so the path must be stable, reported by `notriosctl paths`, and
+named in any failure message. Recommended
+`<database directory>/pre-migration-backups/<from>-to-<to>-<timestamp>/`.
+
+**Boundaries.** No change to the migration SQL, the forward-only ordering, or
+`CurrentSchemaVersion`. No new root, no configuration key beyond an optional
+override for the backup location, and no interactive prompt: this runs at
+startup and must stay non-interactive. Not a whole-library snapshot --
+`notriosctl snapshot create` already exists for that and is heavier than this
+needs.
+
+**Dependencies.** H4 slices A-D complete. Independent of H4 slice E: that
+relocates a library between roots, this protects an in-place schema change, and
+the two share only the copy-verify-commit shape.
+
+**Working state.** Opening a library whose schema is older produces a verified
+backup, a migrated database, and a startup line naming both. A migration that
+fails leaves the original database exactly as it was and names the backup. An
+open with insufficient free space refuses before touching anything.
+
+**Validation and evidence.** Old database migrated with the backup verified
+byte-for-byte; failed migration leaves the original unchanged; insufficient
+space refuses before the first statement; a second process is refused during
+migration; repeated opens after a successful migration do not re-backup; backup
+permissions are owner-only; and the reported path exists and is what
+`notriosctl paths` says.
+
+**Open decisions**
+
+- **Retention of the backup after success -- Non-blocking.** Recommended
+  default: keep the most recent one and report it, delete older ones. Deleting
+  immediately makes the safety net useless the moment a problem surfaces later
+  than the migration; keeping every one grows without bound on a library that
+  migrates often.
+- **Behaviour when the backup cannot be made -- Blocking for implementation.**
+  Recommended default: refuse to migrate and refuse to open, naming the reason.
+  Migrating anyway would be the current behaviour with an extra log line, which
+  is the thing this item exists to remove.
+
+**Why this is separate.** It was found while answering whether a reinstall
+migrates an end user's schema. It does -- and the same investigation found that
+an *older* binary silently rewrote a newer database's version downward, which is
+fixed. The remaining gap is that the forward path, which works correctly, works
+on the user's only copy.
+
 ## H5. Safe Make install, uninstall, and purge lifecycle
 
 **Goal.** Provide end-user-location dogfooding targets that are auditable,
@@ -937,6 +1010,7 @@ This is an index only; each decision is owned and explained inside its item.
 | Mermaid renderer/containment | H2a/H2 | Resolved and implemented in H2: Mermaid 11.17.2, strict security, `htmlLabels: false`, `notrios`-only links reattached from source |
 | Installed/portable path precedence | H3/H4 | Resolved in H3: explicit, then explicit portable marker, then native; never inferred |
 | Development versus installed default port | H4a | Open; 8080 shared today, bind failure explains it |
+| Pre-migration backup location and retention | H4b | Open; beside the database recommended, no new root needed |
 | User-local/GNU install layout | H3/H5 | Resolved in H3: `$HOME/.local`, GNU directory variables and `DESTDIR` retained |
 | Purge external-path and backup policy | H3/H5 | Resolved in H3: enumerate and back up, refuse to delete; container choice remains for H5 |
 | Desktop package formats/toolchain | H6a/H6/H7 | Open; evidence-dependent |
