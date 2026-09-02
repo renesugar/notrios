@@ -51,6 +51,15 @@ current history:
 | `e755321` | `d935c0f` |
 | `e989ea6` | `14ac437` |
 
+**The pre-rewrite history is preserved** as
+`/home/renes/evidence/notrios/notrios-v0.8-develop-before-notrioslib-rewrite.bundle`
+(14,301,956 bytes, SHA-256 `4e6cd6591baf4bf2818f9b5b690b9d68f259ae15be74e8ce15f3275cce285417`).
+It is a complete, verified git bundle: cloning it restores all 197 commits at
+their original SHAs, with the 11 MB binary present at the H1 ABI commit
+`6d57d8e`. That commit is `623814a` in the current history and no longer
+carries it. The bundle is the only remaining copy of the original SHAs, so the
+mapping table above is how the archives stay addressable without it.
+
 **The gap that let it ship is closed.** `scripts/check_release_zip.py` used to
 forbid entries named `notrios`, `notriosd` and `notriosctl` — a list somebody
 has to remember to extend. It now rejects any entry beginning with the ELF magic
