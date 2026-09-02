@@ -1103,7 +1103,7 @@ no-development-toolchain assertion, and cleanup audit.
 
 **Open decisions**
 
-- **Minimum matrix for a support claim — Resolved in H8.** Ubuntu passes eleven
+- **Minimum matrix for a support claim — Resolved in H8.** Ubuntu passes thirteen
   executed rows; Windows and macOS pass none and are recorded as postponed, so
   neither is claimed. `validate_evidence.py` enforces it: a row marked
   `passed` for a platform this harness cannot execute is rejected, and a
@@ -1114,7 +1114,7 @@ no-development-toolchain assertion, and cleanup audit.
 against a *packaged* installation in a disposable HOME; evidence under
 `performance/v0.8-h8/`, validated from `make validate`.
 
-Eleven rows execute and pass: the installed CLI runs with no Go, Node, npm or
+Thirteen rows execute and pass: the installed CLI runs with no Go, Node, npm or
 compiler on PATH; the service binds loopback and never a wildcard; a second
 instance on a taken port refuses, names the cause, and does not recommend the
 development port; two profiles keep separate databases and a duplicate listen
@@ -1122,7 +1122,8 @@ address is refused; the `notrios://` entry declares the scheme and an icon; a
 note created through REST is linked and resolved with the documented 0/1/2 exit
 codes; restarting preserves the library; uninstall removes the program and
 leaves the library byte-identical; the desktop binary serves under `xvfb`; and
-purge removes the roots while its verified backup survives outside them.
+purge removes the roots while its verified backup survives outside them; and
+seeded help pages are found by search like any other note.
 
 Five rows are defined and postponed, each naming what it needs rather than being
 silently absent: firewall observation needs root and this harness runs
@@ -1139,14 +1140,31 @@ parsed as a line, a document search that returns nothing over a CLI-seeded
 library, and a CSV column read in the wrong case. Each was read before it was
 believed; none were reported as defects.
 
-Two observations came out of it and are recorded rather than chased. Running an
-installed binary with the checkout as its working directory resolves *source*
-mode -- which is correct and documented, and is how a stray `profile register`
-landed in the checkout's registry during debugging before being removed with
-`profile forget`. And in a packaged install, `POST /api/v1/search` returns no
-hits for any query over a library seeded by `notriosctl seed-help`, while
-`/api/v1/notebooks` lists the notebooks; whether CLI-seeded notes are indexed is
-outside H8 and worth a look.
+One observation is recorded rather than chased: running an installed binary with
+the checkout as its working directory resolves *source* mode, which is correct
+and documented, and is how a stray `profile register` landed in the checkout's
+registry during debugging before being removed with `profile forget`.
+
+**A second observation was withdrawn as a false alarm, and a test was added
+because of it.** H8 first reported that `POST /api/v1/search` returned no hits
+over a library seeded by `notriosctl seed-help`. It does not. The cause was the
+same working-directory mistake as above: `seed-help` had been run from the
+checkout, so an installed binary resolved source mode and wrote the help notes
+into the *checkout's* library, while the service under test correctly searched
+the sandbox's. Two databases, and search honestly reporting nothing about the
+one it was asked about. On a clean packaged install the seeded pages are found --
+`Recoll` 5 hits, `troubleshooting` 4, `notriosctl` 5.
+
+The claim was wrong and the gap it pointed at was real: help is seeded into a
+read-only notebook in the user's own database precisely so it can be searched
+like any other note, and nothing tested that. `help-notes-searchable` now does,
+and `service-cli-same-library` guards the mistake that produced the false
+alarm: `GET /api/v1/status` reports the open database path and its logical
+`database_id`, so a test never has to infer which library it is talking to. The
+harness asserts it on *every* service start, not only in that row, because the
+failure is silent and its symptoms point at the feature rather than the setup.
+The matrix is thirteen executed rows. Confirmed by mutation -- searching
+for a term that appears in no page fails the row.
 
 ## H9. Native credential-store selection and integration
 

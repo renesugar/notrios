@@ -11,7 +11,7 @@
         "linux"
       ],
       "status": "passed",
-      "detail": "ran with PATH=/tmp/notrios-h8-bn0o2w7q/opt/bin only; reported 0.7.0",
+      "detail": "ran with PATH=/tmp/notrios-h8-v8z9isd5/opt/bin only; reported 0.7.0",
       "seconds": 0.0
     },
     {
@@ -21,8 +21,8 @@
         "linux"
       ],
       "status": "passed",
-      "detail": "local address 127.0.0.1:38073; loopback only, 1 socket(s)",
-      "seconds": 0.4
+      "detail": "local address 127.0.0.1:41701; loopback only, 1 socket(s)",
+      "seconds": 0.5
     },
     {
       "id": "port-collision-refusal",
@@ -32,7 +32,7 @@
       ],
       "status": "passed",
       "detail": "second instance refused, named the cause and a non-default port",
-      "seconds": 0.3
+      "seconds": 0.4
     },
     {
       "id": "multi-profile-isolation",
@@ -42,7 +42,7 @@
       ],
       "status": "passed",
       "detail": "two profiles, 2 distinct databases, both listed",
-      "seconds": 0.6
+      "seconds": 0.7
     },
     {
       "id": "profile-collision-refusal",
@@ -52,7 +52,7 @@
       ],
       "status": "passed",
       "detail": "duplicate listen address refused (exit 1)",
-      "seconds": 0.4
+      "seconds": 0.5
     },
     {
       "id": "url-handler-lifecycle",
@@ -72,7 +72,27 @@
       ],
       "status": "passed",
       "detail": "created a note, linked it, resolved it (0); unknown is 1, malformed is 2",
-      "seconds": 0.6
+      "seconds": 0.7
+    },
+    {
+      "id": "service-cli-same-library",
+      "area": "install",
+      "platforms": [
+        "linux"
+      ],
+      "status": "passed",
+      "detail": "both resolve notes.sqlite (db_igewbsnf7cre6...), CLI origin resolved",
+      "seconds": 0.4
+    },
+    {
+      "id": "help-notes-searchable",
+      "area": "search",
+      "platforms": [
+        "linux"
+      ],
+      "status": "passed",
+      "detail": "seeded 15 pages; search finds them: {'Recoll': 5, 'notriosctl': 5, 'troubleshooting': 4}",
+      "seconds": 1.5
     },
     {
       "id": "service-restart",
@@ -82,7 +102,7 @@
       ],
       "status": "passed",
       "detail": "two start/stop cycles; the library is intact and doctor passes",
-      "seconds": 1.3
+      "seconds": 0.8
     },
     {
       "id": "lifecycle-uninstall-parity",
@@ -92,7 +112,7 @@
       ],
       "status": "passed",
       "detail": "uninstall removed the program and left the library byte-identical",
-      "seconds": 3.8
+      "seconds": 5.0
     },
     {
       "id": "gui-headless-start",
@@ -101,7 +121,7 @@
         "linux"
       ],
       "status": "passed",
-      "detail": "the desktop binary served on 127.0.0.1:44163 under xvfb",
+      "detail": "the desktop binary served on 127.0.0.1:37067 under xvfb",
       "seconds": 6.0
     },
     {
@@ -112,7 +132,7 @@
       ],
       "status": "passed",
       "detail": "roots removed; the verified backup survives outside them",
-      "seconds": 3.4
+      "seconds": 4.1
     },
     {
       "id": "firewall-observation",
@@ -161,7 +181,7 @@
     }
   ],
   "totals": {
-    "passed": 11,
+    "passed": 13,
     "failed": 0,
     "postponed": 5
   }

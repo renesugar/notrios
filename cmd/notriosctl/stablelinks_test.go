@@ -2,12 +2,14 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"net"
 	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 )
@@ -51,32 +53,59 @@ func TestLocalNoteURLCarriesTheDocumentAndAnchor(t *testing.T) {
 
 // buildCLI compiles notriosctl once so the exit-code contract can be tested
 // the way an OS protocol handler experiences it.
-func buildCLI(t *testing.T) string {
+// The test binaries are built once for the whole package, not once per test.
+//
+// buildCLI has forty callers and buildDaemon five, and each used to run its own
+// `go build` into its own temporary directory: forty-five links of a cgo binary
+// carrying the SQLite amalgamation, for one package's tests. That is almost the
+// entire runtime of this package, which reached 583s against Go's 600s default
+// timeout -- under three per cent of headroom, and it had already failed at 611s
+// once when the machine was busy. A suite that close to its limit fails for
+// whoever has the slower machine, and it fails looking like a flaky product
+// test rather than a slow one.
+//
+// The binaries are immutable for the run, so sharing them changes nothing a
+// test can observe: each still gets its own HOME, its own database and its own
+// sandbox. Only the compilation is shared.
+var (
+	sharedBinaries  sync.Once
+	sharedBinaryDir string
+	sharedBinaryErr error
+)
+
+func buildSharedBinaries() {
+	sharedBinaryDir, sharedBinaryErr = os.MkdirTemp("", "notrios-test-bin-")
+	if sharedBinaryErr != nil {
+		return
+	}
+	for name, pkg := range map[string]string{"notriosctl": ".", "notriosd": "../notriosd"} {
+		build := exec.Command("go", "build", "-o", filepath.Join(sharedBinaryDir, name), pkg)
+		build.Stderr = os.Stderr
+		if err := build.Run(); err != nil {
+			sharedBinaryErr = fmt.Errorf("build %s: %w", name, err)
+			return
+		}
+	}
+}
+
+func sharedBinary(t *testing.T, name string) string {
 	t.Helper()
 	if testing.Short() {
-		t.Skip("skipping CLI build in short mode")
+		t.Skip("skipping binary build in short mode")
 	}
-	binary := filepath.Join(t.TempDir(), "notriosctl")
-	build := exec.Command("go", "build", "-o", binary, ".")
-	build.Stderr = os.Stderr
-	if err := build.Run(); err != nil {
-		t.Fatalf("build notriosctl: %v", err)
+	sharedBinaries.Do(buildSharedBinaries)
+	if sharedBinaryErr != nil {
+		t.Fatalf("build test binaries: %v", sharedBinaryErr)
 	}
-	return binary
+	return filepath.Join(sharedBinaryDir, name)
+}
+
+func buildCLI(t *testing.T) string {
+	return sharedBinary(t, "notriosctl")
 }
 
 func buildDaemon(t *testing.T) string {
-	t.Helper()
-	if testing.Short() {
-		t.Skip("skipping daemon build in short mode")
-	}
-	binary := filepath.Join(t.TempDir(), "notriosd")
-	build := exec.Command("go", "build", "-o", binary, "../notriosd")
-	build.Stderr = os.Stderr
-	if err := build.Run(); err != nil {
-		t.Fatalf("build notriosd: %v", err)
-	}
-	return binary
+	return sharedBinary(t, "notriosd")
 }
 
 func unusedLoopbackAddress(t *testing.T) string {

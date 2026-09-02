@@ -105,12 +105,43 @@ class Harness:
         for _ in range(80):
             try:
                 with socket.create_connection(("127.0.0.1", port), timeout=0.25):
+                    self.assert_serving_this_library(port)
                     return process
             except OSError:
                 if process.poll() is not None:
                     return process
                 time.sleep(0.25)
         return process
+
+    def assert_serving_this_library(self, port: int) -> None:
+        """Confirm the service opened *this* sandbox's database.
+
+        Every row that starts a service gets this, because the failure it
+        prevents is silent and convincing. Twice while building this matrix a
+        command was run with the checkout as its working directory, so an
+        installed binary resolved source mode and used the checkout's library
+        while the service under test used the sandbox's -- and search then
+        honestly reported nothing about a library nobody had written to. It read
+        as a product defect and was reported as one.
+
+        GET /api/v1/status answers it directly: it reports the open database path
+        and its logical database_id, so a test never has to infer which library
+        it is talking to.
+        """
+        response = subprocess.run(
+            ["curl", "-s", f"http://127.0.0.1:{port}/api/v1/status"],
+            capture_output=True, text=True, timeout=30).stdout
+        try:
+            status = json.loads(response)
+        except json.JSONDecodeError as error:
+            raise AssertionError(f"status did not return JSON: {response[:200]}") from error
+        served = status.get("storage", {}).get("database_path", "")
+        expected = os.path.realpath(os.path.join(self.home, ".local", "share", "notrios"))
+        assert os.path.realpath(served).startswith(expected), (
+            f"the service opened {served}, which is outside this harness's HOME "
+            f"({expected}). A row that writes through the CLI and reads through this "
+            "service would be comparing two different libraries.")
+        self.database_id = status.get("database_info", {}).get("database_id", "")
 
     @staticmethod
     def stop(process) -> str:
@@ -270,6 +301,91 @@ def row_deep_link_resolution(h: Harness) -> str:
     return "created a note, linked it, resolved it (0); unknown is 1, malformed is 2"
 
 
+def row_service_and_cli_agree_on_the_library(h: Harness) -> str:
+    """The service and the CLI must resolve the same database.
+
+    This is the property whose absence produced two false defect reports while
+    this matrix was written. It is cheap to check and the failure it catches is
+    otherwise indistinguishable from the feature being broken: writes land in
+    one library and reads come from another, and every symptom points at the
+    wrong place.
+    """
+    port = h.free_port()
+    service = h.serve(port)          # serve() already asserts the path is ours
+    try:
+        response = subprocess.run(
+            ["curl", "-s", f"http://127.0.0.1:{port}/api/v1/status"],
+            capture_output=True, text=True, timeout=30).stdout
+        status = json.loads(response)
+    finally:
+        h.stop(service)
+
+    served = status["storage"]["database_path"]
+    served_id = status["database_info"]["database_id"]
+
+    # `config show --json` reports settings as a list of {key, origin, value},
+    # not a mapping. The origin is worth carrying into the message: "resolved"
+    # and "file" fail differently, and knowing which one a mismatch came from
+    # says whether a configuration or the resolver is at fault.
+    configured = json.loads(h.cli("config", "show", "--json", "--no-redact", expect=0).stdout)
+    setting = next((entry for entry in configured.get("settings", [])
+                    if entry.get("key") == "data.database_path"), None)
+    assert setting, f"config show reported no data.database_path: {configured.get('settings')}"
+    cli_path, origin = setting.get("value", ""), setting.get("origin", "?")
+    assert cli_path, f"data.database_path is empty: {setting}"
+    assert os.path.realpath(cli_path) == os.path.realpath(served), (
+        f"the CLI resolves {cli_path} and the service opened {served}; a test writing "
+        "through one and reading through the other would compare two libraries")
+    return (f"both resolve {os.path.basename(served)} ({served_id[:16]}...), "
+            f"CLI origin {origin}")
+
+
+def row_help_notes_are_searchable(h: Harness) -> str:
+    """Help is a notebook in the user's own library, so it must be searchable.
+
+    That is the whole reason the documentation is seeded into a read-only
+    notebook rather than shipped as a separate viewer: a user looks for help the
+    way they look for anything else. Nothing tested it, and a change to seeding,
+    projection or the FTS index could have taken it away silently.
+
+    This row exists because of a false alarm rather than a defect. During H8 the
+    behaviour looked broken, and the cause was the harness: `seed-help` had been
+    run with the checkout as the working directory, so an installed binary
+    resolved source mode and wrote the notes into the checkout's library, while
+    the service under test correctly searched the sandbox's. Two databases, and
+    search honestly reporting nothing in the one it was asked about. The test is
+    worth having anyway -- the promise is real and was unguarded.
+    """
+    seeded = json.loads(h.cli("seed-help", expect=0, timeout=300).stdout)
+    assert seeded["files_seen"] > 0, f"nothing was seeded: {seeded}"
+
+    port = h.free_port()
+    service = h.serve(port)
+    try:
+        assert service.poll() is None, "the service did not start"
+        found = {}
+        # Terms that appear in the shipped documentation and nowhere else in an
+        # empty library, so a hit means the help notes are genuinely indexed.
+        for term in ("Recoll", "notriosctl", "troubleshooting"):
+            response = subprocess.run(
+                ["curl", "-s", "-X", "POST", f"http://127.0.0.1:{port}/api/v1/search",
+                 "-H", "Content-Type: application/json",
+                 "-d", json.dumps({"query": term, "limit": 5})],
+                capture_output=True, text=True, timeout=30).stdout
+            try:
+                hits = json.loads(response).get("hits", [])
+            except json.JSONDecodeError as error:
+                raise AssertionError(f"search for {term!r} returned {response[:200]}") from error
+            found[term] = len(hits)
+        missing = [term for term, count in found.items() if count == 0]
+        assert not missing, (
+            f"help notes are not searchable for {missing}: {found}. They live in the "
+            "user's own database precisely so help is searchable like any other note.")
+        return f"seeded {seeded['files_seen']} pages; search finds them: {found}"
+    finally:
+        h.stop(service)
+
+
 def row_service_restart_preserves_data(h: Harness) -> str:
     h.cli("seed-help", expect=0, timeout=300)
     database = os.path.join(h.home, ".local", "share", "notrios", "notes.sqlite")
@@ -358,6 +474,10 @@ MATRIX = [
         runner=row_url_handler_lifecycle),
     Row("deep-link-resolution", "desktop", "malformed and unresolved links exit 2 and 1",
         runner=row_deep_link_resolution),
+    Row("service-cli-same-library", "install", "the service and the CLI resolve the same database",
+        runner=row_service_and_cli_agree_on_the_library),
+    Row("help-notes-searchable", "search", "seeded help notes are found by search like any other note",
+        runner=row_help_notes_are_searchable),
     Row("service-restart", "lifecycle", "restarting the service preserves the library",
         runner=row_service_restart_preserves_data),
     Row("lifecycle-uninstall-parity", "lifecycle", "uninstall removes the program and keeps data",
