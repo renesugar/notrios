@@ -2,11 +2,11 @@
   "documents": [
     {
       "path": "docs/api/mcp.md",
-      "sha256": "eba66c80ea3ad6cde265c16976f6408f638aec7fd993cb7063323f78049c6a1e"
+      "sha256": "d257afe5932dc7efee03dd7a5ee56f96b2fb2da82fb5a0a7f15115904170e213"
     },
     {
       "path": "docs/api/rest.md",
-      "sha256": "49a6c89e814945b9936369852ef69db9e4a606ef4ffdba3b7c860be5a4a15259"
+      "sha256": "1edb83a4d6c3fbc477a9f0bc9d3d8a826e875dcb1044808ec125246b70eb0fac"
     },
     {
       "path": "docs/cli.md",
@@ -14,11 +14,11 @@
     },
     {
       "path": "docs/gui.md",
-      "sha256": "79278cea56ca96c477e60216bd7bfbb6f80681c61e2553ac50b5bbfa254f0119"
+      "sha256": "54845ba9b1304baaf6311471be8ae75064b405166775ec73215b5e6c4158f516"
     },
     {
       "path": "docs/service.md",
-      "sha256": "285d4770f6322255364909b7082ada06e4221d1a7b5f9bcebca4fb5d9040c5cb"
+      "sha256": "6036214b2b01d17242845ff2bb0334ad16284e36531d974409cb091433ffdc91"
     }
   ],
   "enumerations": {

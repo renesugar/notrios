@@ -233,7 +233,9 @@ Everything the GUI does goes through the REST API; a third-party client can impl
 
 ## Getting started
 
-Start the service (`make build && ./bin/notriosd -config config/config.example.yaml`, or `go run ./cmd/notriosd ...`). The base URL is `http://<server.listen_addr>` — `http://127.0.0.1:8080` by default. There is no authentication; see [network exposure](../service.md#network-exposure).
+Start the service (`make build && ./bin/notriosd`, or `go run ./cmd/notriosd ...`). The base URL is `http://<server.listen_addr>`, and there are [two defaults](../service.md#the-two-default-addresses): an installed Notrios uses `http://127.0.0.1:8080`, and a source checkout uses `http://127.0.0.1:8099`. There is no authentication; see [network exposure](../service.md#network-exposure).
+
+**The examples below all use `http://127.0.0.1:8080`.** Substitute your own base URL if you are running from a checkout or have set `server.listen_addr` yourself.
 
 ```sh
 curl http://127.0.0.1:8080/healthz              # -> ok

@@ -99,8 +99,10 @@ and `file:` links are refused outright, both when the note is rendered and again
 before anything is opened.
 
 To use the interface in a browser instead of a window, run the service on its
-own — `make serve` from source, or `./bin/notriosd` — and open
-`http://127.0.0.1:8080`.
+own — `make serve` from source, or `./bin/notriosd` — and open it. **Which
+address depends on which instance you started:** from a checkout that is
+`http://127.0.0.1:8099`, and an installed Notrios uses `http://127.0.0.1:8080`.
+See [the two default addresses](service.md#the-two-default-addresses).
 
 ## Common startup errors
 

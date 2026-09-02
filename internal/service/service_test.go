@@ -271,10 +271,14 @@ func TestLiveSidecarStartupRepairsDamageAndReportsStatus(t *testing.T) {
 	}
 }
 
-// Two Notrios instances on one machine is a supported arrangement, and both
-// default to 127.0.0.1:8080, so the common first encounter with it is a bind
-// failure. A bare "address already in use" does not say another Notrios is the
-// likely cause or what to do about it.
+// Two Notrios instances on one machine is a supported arrangement, and a bare
+// "address already in use" does not say another Notrios is the likely cause or
+// what to do about it.
+//
+// After H4a the advice must not name either default address. Recommending
+// 127.0.0.1:8099 to an installed instance would move it onto the port a
+// development checkout expects to own, which is the collision this message
+// exists to resolve rather than create.
 func TestBindFailureExplainsThatAnotherInstanceMayBeRunning(t *testing.T) {
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
@@ -301,6 +305,9 @@ func TestBindFailureExplainsThatAnotherInstanceMayBeRunning(t *testing.T) {
 		if !strings.Contains(message, want) {
 			t.Errorf("the bind failure does not mention %q:\n%s", want, message)
 		}
+	}
+	if strings.Contains(message, "-addr 127.0.0.1:8099") || strings.Contains(message, "-addr 127.0.0.1:8080") {
+		t.Errorf("the advice recommends a default address, which just moves the collision:\n%s", message)
 	}
 	// The original error survives, so callers matching on it still can.
 	if !errors.Is(err, syscall.EADDRINUSE) {

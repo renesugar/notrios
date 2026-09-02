@@ -1,6 +1,11 @@
 server:
-  listen_addr: "127.0.0.1:8080"
-  public_base_url: "http://127.0.0.1:8080"
+  # 8099 is the development address, and it is deliberately not the compiled
+  # default. This file is read only from a source checkout, so a checkout and an
+  # installed Notrios -- which keeps the built-in 127.0.0.1:8080 -- can run at
+  # the same time without either being reconfigured. Their libraries are already
+  # separate; this is what stops them fighting over the port.
+  listen_addr: "127.0.0.1:8099"
+  public_base_url: "http://127.0.0.1:8099"
   # Directory holding the built web interface (the one containing index.html).
   # Leave it unset to search web/dist under the working directory, then under
   # the executable's own directory and its parent — which covers running

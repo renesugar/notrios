@@ -46,7 +46,7 @@ Notrios is built from source on Ubuntu Linux (the only tested platform); there a
 git clone https://github.com/renesugar/notrios.git
 cd notrios
 make build web
-./bin/notriosd -config config/config.example.yaml   # http://127.0.0.1:8080
+./bin/notriosd -config config/config.example.yaml   # http://127.0.0.1:8099
 
 make gui && ./bin/notrios                           # desktop GUI
 ```

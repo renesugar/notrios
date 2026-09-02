@@ -102,6 +102,53 @@ only difference between the historical `package_release.sh` and the current one
 is the added `node_modules/*` exclusion; `check_release_zip.py` is byte-identical
 at all four commits.
 
+## v0.8 H4a completion handoff — 2026-09-02
+
+A source checkout now defaults to `127.0.0.1:8099` and an installed Notrios
+keeps the compiled `127.0.0.1:8080`, so the two run together with no flags.
+Evidence under `performance/v0.8-h4a/`, wired into `make validate`.
+
+**The plan called this "a documentation project with a one-line code change".
+It was four code changes.** Only the first was anticipated:
+
+- `config/config.example.yaml` -> 8099. It is read only from a checkout, so
+  only a checkout is affected.
+- `make serve` passed `-addr 127.0.0.1:8080` **explicitly**. The target that
+  exists to run a checkout was the one thing forcing the collision, and the
+  example config alone would not have fixed it.
+- `web/vite.config.ts` proxies `/api` and `/healthz` to this checkout's service.
+  Left at 8080, `npm run dev` would have proxied a developer's requests to
+  whatever else held the port -- possibly an installed Notrios, so a different
+  library. Only `npm run dev` uses it; the built dist does not.
+- `explainBindFailure` recommended `-addr 127.0.0.1:8099`. That advice was
+  written in slice D when 8099 was a free suggestion; a day later it is the
+  checkout's own port, so following it would move an installed instance directly
+  onto it. It now recommends 8081.
+
+**If you add a port mention, the rule is written down.** A mention changes when
+the prose tells the reader to start or open a *source checkout*. It stays at
+8080 when it states the compiled default, describes an installed or remote
+instance, or is a **docexec substitution token** inside an executed example.
+That last case keeps 55 literals in `docs/api/rest.md`: each executed example
+declares `http://127.0.0.1:8080` as a token docexec swaps for the live fixture
+URL, so the literal is a placeholder, not a claim about the reader's instance.
+Rewriting them would churn about thirty registry entries for no reader benefit.
+
+**The invariant is guarded twice, and neither guard is decorative.**
+`TestTheExampleConfigAndTheCompiledDefaultUseDifferentPorts` asserts the two
+addresses differ and that `public_base_url` follows `listen_addr`. Nothing else
+would catch a regression -- both values are valid and every other test passes
+with them equal, because the failure only shows when two instances run at once.
+`performance/v0.8-h4a/validate_evidence.py` re-checks it from outside Go and
+asserts every count in `PORT_MENTIONS.json` still matches the tree, so the
+page-by-page reading cannot quietly go stale. Both were confirmed by mutation.
+
+**A limitation worth knowing before you re-run the evidence.** An unrelated
+process on this machine holds `*:8080`, so the installed instance could not be
+exercised on its own default; 8081 stood in and the transcript says so. That a
+non-Notrios program had taken the port is itself the argument for the change,
+and it is why the bind message now names one as a likely cause.
+
 ## v0.8 H4 completion handoff — 2026-09-02
 
 H4 is complete in five slices: A the resolver (`internal/paths`), B the

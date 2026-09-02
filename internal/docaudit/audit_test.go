@@ -40,7 +40,10 @@ func TestRepositoryAuditReportsHonestCoverage(t *testing.T) {
 	// docs/troubleshooting.md gained "Finding your notes". Four examples are
 	// registered against them, and one uninstall example in
 	// docs/installation.md shifted index when a new block was added above it.
-	if report.ManualSections != 210 || report.Fragments != 15 || report.Claims != 4 ||
+	// 210 -> 211 manual sections and 371 -> 372 denominator in v0.8 H4a: the
+	// "two default addresses" section in docs/service.md, which is the one
+	// place both defaults are stated together.
+	if report.ManualSections != 211 || report.Fragments != 15 || report.Claims != 4 ||
 		report.Executables != 137 || report.Journeys != 9 {
 		t.Fatalf("unexpected coverage surface: %+v", report)
 	}
@@ -51,8 +54,9 @@ func TestRepositoryAuditReportsHonestCoverage(t *testing.T) {
 		// new registered examples, every one of them unverified prose or an
 		// example that changes this user's state and so is covered by
 		// sandboxed Go tests instead.
-		report.Counts[GradeClaimed] != 4 || report.Counts[GradeUnverified] != 285 ||
-		report.Denominator != 371 {
+		// 285 -> 286 unverified in v0.8 H4a: the new section is prose.
+		report.Counts[GradeClaimed] != 4 || report.Counts[GradeUnverified] != 286 ||
+		report.Denominator != 372 {
 		t.Fatalf("coverage counts hide or lose units: counts=%v denominator=%d", report.Counts, report.Denominator)
 	}
 	if len(resolvedTS) == 0 {

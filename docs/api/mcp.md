@@ -16,7 +16,7 @@ curl -s -X POST http://127.0.0.1:8080/mcp \
 
 ## Connecting an MCP client
 
-For clients that speak HTTP-based MCP, point them at `http://127.0.0.1:8080/mcp`. For example, with Claude Code:
+For clients that speak HTTP-based MCP, point them at `http://<server.listen_addr>/mcp` — `http://127.0.0.1:8080/mcp` for an installed Notrios, or `http://127.0.0.1:8099/mcp` from a source checkout ([two defaults](../service.md#the-two-default-addresses)). For example, with Claude Code:
 
 ```sh
 claude mcp add --transport http notrios http://127.0.0.1:8080/mcp

@@ -360,11 +360,17 @@ func (s *Service) ListenAndServe() error {
 //
 // Two Notrios instances on one machine is a supported arrangement -- a
 // development checkout and an installed instance, or several profiles -- and
-// they are kept apart by having different databases and different ports. The
-// databases are separated automatically; the ports are not, because both
-// default to 127.0.0.1:8080. So the common first encounter with running two
-// instances is this error, and a bare "bind: address already in use" does not
-// say that another Notrios is the likely cause or what to do about it.
+// they are kept apart by having different databases and different ports.
+//
+// H4a removed the commonest collision: a checkout now defaults to
+// 127.0.0.1:8099 and an installed instance to 127.0.0.1:8080, so those two no
+// longer fight. What remains is profiles, which all default to the installed
+// address until given their own, and programs that are not Notrios at all --
+// 8080 is a popular port.
+//
+// The advice must not name either default. Recommending 8099 to an installed
+// instance, as this message did before H4a, moves it straight onto the port a
+// checkout expects to own.
 func explainBindFailure(err error, listenAddr string) error {
 	if err == nil || !errors.Is(err, syscall.EADDRINUSE) {
 		return err
@@ -374,10 +380,13 @@ func explainBindFailure(err error, listenAddr string) error {
 		listenAddr = "the configured address"
 	}
 	return fmt.Errorf("%w\n\n"+
-		"%s is already in use. Another Notrios instance is the usual reason: an\n"+
-		"installed instance and a development checkout both default to this address,\n"+
-		"and so does every profile that has not been given its own.\n\n"+
-		"Give this one a different port with -addr 127.0.0.1:8099, or set\n"+
+		"%s is already in use. Another Notrios instance is the usual reason: every\n"+
+		"profile defaults to the installed address until it is given its own. A\n"+
+		"program that is not Notrios is the other -- 127.0.0.1:8080 is a popular port.\n\n"+
+		"A development checkout and an installed instance no longer collide by\n"+
+		"themselves: a checkout defaults to 127.0.0.1:8099 and an installed instance\n"+
+		"to 127.0.0.1:8080.\n\n"+
+		"Give this one a port that is neither, with -addr 127.0.0.1:8081, or set\n"+
 		"server.listen_addr in its configuration. `notriosctl profile list` shows the\n"+
 		"address each profile will bind.", err, listenAddr)
 }

@@ -6,8 +6,11 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      '/api': 'http://127.0.0.1:8080',
-      '/healthz': 'http://127.0.0.1:8080'
+      // The development address, matching config/config.example.yaml and
+      // `make serve`. An installed Notrios keeps 8080; this proxy only ever
+      // talks to the service running from this checkout.
+      '/api': 'http://127.0.0.1:8099',
+      '/healthz': 'http://127.0.0.1:8099'
     }
   },
   test: {

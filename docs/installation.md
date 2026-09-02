@@ -59,7 +59,7 @@ paths are git-ignored. **Network** marks the targets that reach the network.
 | `make test` | all Go tests | — | |
 | `make validate` | tests plus scaffold and script checks | — | |
 | `make smoke` | end-to-end REST/MCP smoke test on a loopback port | — | |
-| `make serve` | **run the service from source** on `127.0.0.1:8080`, for opening the UI in a browser | — | |
+| `make serve` | **run the service from source** on `127.0.0.1:8099`, for opening the UI in a browser | — | |
 | `make doctor` | check the configuration and environment (`notriosctl doctor`) | — | |
 | `make seed-help` | mirror `docs/` into the built-in Help notebook of the default database | — | |
 | `make clean` | remove build/test/docs/release output — **never** `data/` and **never** `web/node_modules/` | — | |
@@ -78,7 +78,7 @@ dependencies gone too.
 From the repository root:
 
 ```sh
-# Headless service (REST + MCP + web UI at http://127.0.0.1:8080)
+# Headless service (REST + MCP + web UI at http://127.0.0.1:8099)
 ./bin/notriosd -config config/config.example.yaml
 
 # Desktop GUI (contains the service; see the GUI guide for -no-gui / -gui-only)
@@ -101,7 +101,7 @@ go run ./cmd/notriosctl doctor
 one process. Build it with `make gui` first.
 
 **In a browser.** Start the service and visit it — `make serve` runs it from
-source on `http://127.0.0.1:8080` without building any binaries, which is the
+source on `http://127.0.0.1:8099` without building any binaries, which is the
 quickest loop while developing. `./bin/notriosd` does the same from a built
 binary. Both serve the identical interface the desktop window renders; the
 desktop binary is a webview around it.

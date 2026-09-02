@@ -537,6 +537,45 @@ deliberately left.
   clearly not a default anyone would pick by accident, adjacent enough to 8080
   to read as related, and outside the range a user is likely to have taken.
 
+**Outcome (2026-09-02).** Complete. Evidence under `performance/v0.8-h4a/`,
+validated from `make validate`. A checkout defaults to `127.0.0.1:8099` and an
+installed instance keeps the compiled `127.0.0.1:8080`; both were started
+together and each answered on its own address from its own database.
+
+**It was four functional changes, not the one the scope anticipated.** Three
+couplings only surfaced on contact:
+
+- `make serve` passed `-addr 127.0.0.1:8080` *explicitly*, so the target whose
+  whole purpose is running a checkout was itself forcing the collision. The
+  example config alone would not have fixed it.
+- `web/vite.config.ts` proxies `/api` and `/healthz` to the service running from
+  this checkout. Left at 8080, `npm run dev` would have proxied a developer's
+  requests to whatever else held that port -- possibly an installed Notrios, and
+  therefore a different library.
+- The bind-failure message added in H4 slice D recommended
+  `-addr 127.0.0.1:8099`, which after this change is the port a checkout expects
+  to own. The advice would have created the collision it exists to resolve. It
+  now recommends 8081 and says the two defaults no longer clash.
+
+The documentation rule was: a mention changes when the surrounding prose tells
+the reader to start or open a source checkout; it stays at 8080 when it states
+the compiled default, describes an installed or remote instance, or is a docexec
+substitution token inside an executed example. That last case is why
+`docs/api/rest.md` keeps 55 literals -- docexec replaces the token with the live
+fixture URL, so the literal is a placeholder rather than a claim -- while its
+prose did change, having told the reader to start from the checkout's example
+config and then curl 8080.
+
+`TestTheExampleConfigAndTheCompiledDefaultUseDifferentPorts` guards the
+invariant. Nothing else would: both values are valid addresses and every other
+test passes with them equal, because the failure only appears when two instances
+run at once.
+
+**One limitation recorded rather than papered over.** An unrelated process on
+the development machine already holds `*:8080`, so the installed instance could
+not be exercised on its own default; 8081 stood in. That the port was taken by
+something that is not Notrios is itself the argument for the change.
+
 **Why this is separate from H4.** H4 slice D closed the data-safety half of the
 problem -- a checkout can no longer open an installed instance's library -- and
 that fix stands alone. The port clash that remains is a documentation project
@@ -1064,7 +1103,7 @@ This is an index only; each decision is owned and explained inside its item.
 | Desktop external-link opening | H2b | Resolved and implemented: no prompt; the browser-tab path is unchanged |
 | Mermaid renderer/containment | H2a/H2 | Resolved and implemented in H2: Mermaid 11.17.2, strict security, `htmlLabels: false`, `notrios`-only links reattached from source |
 | Installed/portable path precedence | H3/H4 | Resolved in H3: explicit, then explicit portable marker, then native; never inferred |
-| Development versus installed default port | H4a | Open; 8080 shared today, bind failure explains it |
+| Development versus installed default port | H4a | Resolved in H4a: checkout 8099 from the example config, installed 8080 from the compiled default |
 | Pre-migration backup location and retention | H4b | Open; beside the database recommended, no new root needed |
 | Migration trigger narrowed from H3 section 4 | H4 slice E | Resolved; slice D removed the two-instance case, so the trigger is a pre-0.8 layout in the working directory that is not the library in use |
 | User-local/GNU install layout | H3/H5 | Resolved in H3: `$HOME/.local`, GNU directory variables and `DESTDIR` retained |

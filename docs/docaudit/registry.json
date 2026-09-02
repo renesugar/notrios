@@ -1981,7 +1981,7 @@
       "path": "docs/index.md",
       "section": "getting-started",
       "language": "bash",
-      "sha256": "7b63d289ef058ba6aaa4c57e08a745f75ce5dd99aff5bf960eda4e3a60e9f738",
+      "sha256": "e6df19684b227daefef3c351408b670782279715b06a188cb03f3d91a489ad31",
       "state": "unverified",
       "unrun_reason": {
         "code": "external-network",
@@ -2053,7 +2053,7 @@
       "path": "docs/installation.md",
       "section": "run",
       "language": "sh",
-      "sha256": "23bea46a2a16470a97892891041450745d9917377fe9675a21cfe9bc981bae06",
+      "sha256": "fb9c0b3da24b0266c4ea068e6bd83a0811712179456203de772dbf58571e4a2a",
       "state": "unverified",
       "unrun_reason": {
         "code": "interactive-or-long-running",

@@ -26,6 +26,21 @@ An installed binary never reads a configuration file from the directory it happe
 
 Their compiled default is empty, which means *resolved at startup* rather than *unset*: on Linux they become `$XDG_STATE_HOME/notrios`, `$XDG_CACHE_HOME/notrios` and `$XDG_RUNTIME_DIR/notrios`, with the documented fallbacks. Two rules keep existing setups working. Any path you state is used exactly as written and never relocated. And if you state `data.directory` and nothing else, the other roots are placed *under it* — one directory means one directory — so a configuration written before these keys existed keeps every file where it already was.
 
+## The two default addresses
+
+Notrios has two default listen addresses, and which one you get depends on which
+instance you started rather than on anything you configure:
+
+| You are running | Address | Where it comes from |
+|---|---|---|
+| an **installed** Notrios, or any binary with no configuration file | `127.0.0.1:8080` | the compiled default |
+| a **source checkout** — `make serve`, or a binary that finds the checkout's example config | `127.0.0.1:8099` | `server.listen_addr` in `config/config.example.yaml` |
+
+They differ on purpose. A checkout is a [separate instance](installation.md#where-your-files-go) with its own library, so a developer can run one alongside an installed Notrios; sharing a port would mean the second one to start simply fails to bind. The compiled default stays `8080`, so nothing about an installed instance changed.
+
+Anything you set yourself wins over both. `-addr` on the command line, or
+`server.listen_addr` in your own configuration file, is used exactly as written.
+
 ## Configuration reference
 <!-- notrios:generated:user:configuration-reference:begin -->
 <!-- source: go:github.com/renesugar/notrios/internal/store#CurrentSchemaVersion -->

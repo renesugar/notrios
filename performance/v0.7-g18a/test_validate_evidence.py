@@ -24,7 +24,9 @@ class G18aEvidenceTests(unittest.TestCase):
         # 205 -> 210 in v0.8 H4 slice E: `migrate` and its two subsections in
         # docs/cli.md, "Upgrading from before 0.8" in docs/installation.md, and
         # "Finding your notes" in docs/troubleshooting.md.
-        self.assertEqual(inventory["grade_baseline"]["denominator"], 210)
+        # 210 -> 211 in v0.8 H4a: "The two default addresses" in
+        # docs/service.md.
+        self.assertEqual(inventory["grade_baseline"]["denominator"], 211)
 
     def test_duplicate_fragment_is_rejected(self):
         source = """// A.\n//notrios:doc user same\nfunc A() {}\n// B.\n//notrios:doc user same\nfunc B() {}\n"""

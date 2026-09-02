@@ -299,3 +299,35 @@ func TestWriteProfileFileRoundTripIsOwnerOnly(t *testing.T) {
 		t.Fatalf("generated profile did not round trip: %+v", loaded)
 	}
 }
+
+// The checkout's example config and the compiled default must not name the same
+// address. That difference is the whole of H4a: a checkout is a separate
+// instance with its own library, so a developer runs one alongside an installed
+// Notrios, and sharing a port means the second to start simply fails to bind.
+//
+// Nothing else would catch a regression here. Both values are valid addresses
+// and every test passes with them equal -- the failure only appears when two
+// instances are running at once, which no unit test does.
+func TestTheExampleConfigAndTheCompiledDefaultUseDifferentPorts(t *testing.T) {
+	example, err := Load(filepath.Join("..", "..", "config", "config.example.yaml"))
+	if err != nil {
+		t.Fatalf("Load example config: %v", err)
+	}
+	compiled := Default()
+
+	if compiled.Server.ListenAddr != "127.0.0.1:8080" {
+		t.Fatalf("the compiled default is the installed instance's address and must stay 127.0.0.1:8080, got %q",
+			compiled.Server.ListenAddr)
+	}
+	if example.Server.ListenAddr == compiled.Server.ListenAddr {
+		t.Fatalf("the checkout example and the compiled default both listen on %q; "+
+			"a checkout and an installed Notrios could not run at the same time",
+			example.Server.ListenAddr)
+	}
+	// public_base_url has to follow listen_addr, or links the checkout hands
+	// out point at the installed instance -- which is the wrong library.
+	if want := "http://" + example.Server.ListenAddr; example.Server.PublicBaseURL != want {
+		t.Fatalf("example public_base_url = %q, want %q so advertised links reach this instance",
+			example.Server.PublicBaseURL, want)
+	}
+}

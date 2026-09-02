@@ -101,8 +101,8 @@ g20-validate: ## Validate v0.7 release identity, security boundaries, evidence, 
 	python3 performance/v0.7-g14e/validate_evidence.py
 	python3 performance/v0.7-g17/validate_evidence.py
 
-serve: ## Run the service from source on 127.0.0.1:8080
-	go run ./cmd/notriosd -addr 127.0.0.1:8080
+serve: ## Run the service from source on 127.0.0.1:8099 (the development address)
+	go run ./cmd/notriosd -addr 127.0.0.1:8099
 
 doctor: ## Run notriosctl doctor
 	go run ./cmd/notriosctl doctor

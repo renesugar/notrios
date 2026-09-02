@@ -18,7 +18,8 @@ Verified symptoms and fixes, grouped by activity. `notriosctl doctor` diagnoses 
 
 | Symptom | Fix |
 |---|---|
-| `listen tcp 127.0.0.1:8080: bind: address already in use` | another instance owns the port — stop it, or pass `-addr 127.0.0.1:8081` |
+| `listen tcp 127.0.0.1:8080: bind: address already in use` | another instance owns the port — stop it, or pass `-addr 127.0.0.1:8081`. A checkout and an installed Notrios no longer collide by default: they use [two different addresses](service.md#the-two-default-addresses) |
+| the browser shows the *other* instance's notes, or an empty library | check the address. A checkout serves `127.0.0.1:8099` and an installed Notrios `127.0.0.1:8080` — they are [separate instances](service.md#the-two-default-addresses) with separate libraries. `notriosctl paths` prints which one a given binary resolved |
 | `create directory ...: permission denied` | the configured `data` paths aren't writable from this directory; run somewhere writable or point the config at absolute, writable paths |
 | `open sqlite: unable to open database file` | the database's parent directory doesn't exist or isn't writable; check `data.database_path` and remember relative paths resolve against the working directory |
 | `sqlite exec: ...` errors during startup migration | the database file may be corrupt or written by an incompatible tool — restore from backup ([backup guide](service.md#backup-and-restore)); migrations themselves are automatic and additive |

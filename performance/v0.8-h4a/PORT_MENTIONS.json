@@ -1,0 +1,123 @@
+{
+  "schema": "notrios.h4a.port-mentions.v1",
+  "milestone": "v0.8",
+  "item": "H4a",
+  "development_address": "127.0.0.1:8099",
+  "installed_address": "127.0.0.1:8080",
+  "rule": "A mention is changed when the surrounding prose tells the reader to start or open a source checkout. It is left at 8080 when it states the compiled default, describes an installed or remote instance, or is a docexec substitution token inside an executed example.",
+  "functional_changes": [
+    {
+      "path": "config/config.example.yaml",
+      "detail": "server.listen_addr and server.public_base_url -> 8099. Read only from a source checkout, so only a checkout is affected."
+    },
+    {
+      "path": "Makefile",
+      "detail": "`make serve` passed -addr 127.0.0.1:8080 explicitly, which would have overridden the example config back onto the installed address."
+    },
+    {
+      "path": "web/vite.config.ts",
+      "detail": "The dev-server proxy targets the service running from this checkout, so it follows to 8099. Only `npm run dev` uses it; the built dist does not."
+    },
+    {
+      "path": "internal/service/service.go",
+      "detail": "The bind-failure advice recommended -addr 127.0.0.1:8099, which after this change moves an installed instance onto the port a checkout expects to own. It now recommends 8081 and states that the two defaults no longer collide."
+    }
+  ],
+  "unchanged_by_boundary": [
+    {
+      "path": "internal/config/config.go",
+      "detail": "The compiled default stays 127.0.0.1:8080."
+    },
+    {
+      "path": "internal/profiles/runtime.go",
+      "detail": "Profile creation default is unchanged by the plan's boundary."
+    },
+    {
+      "path": "cmd/notriosctl/stablelinks.go",
+      "detail": "The notrios:// handler targets an installed instance."
+    },
+    {
+      "path": "scripts/mvp_smoke.sh",
+      "detail": "Already uses its own port (18080)."
+    }
+  ],
+  "pages": [
+    {
+      "path": "docs/index.md",
+      "disposition": "changed",
+      "installed_mentions": 0,
+      "development_mentions": 1,
+      "reason": "The quick-start runs the checkout's example config, so its comment now names the development address."
+    },
+    {
+      "path": "docs/installation.md",
+      "disposition": "changed",
+      "installed_mentions": 0,
+      "development_mentions": 3,
+      "reason": "Every mention described running from a checkout: the `make serve` row, the headless-service comment, and the browser paragraph."
+    },
+    {
+      "path": "docs/service.md",
+      "disposition": "both",
+      "installed_mentions": 9,
+      "development_mentions": 1,
+      "reason": "The seven remaining mentions are the compiled default -- the generated defaults listing, the configuration-reference table, and an SSH tunnel to a remote installed server -- and are correct as 8080. The new 'two default addresses' section names both."
+    },
+    {
+      "path": "docs/gui.md",
+      "disposition": "both",
+      "installed_mentions": 5,
+      "development_mentions": 1,
+      "reason": "Kept: the `-gui-only -remote` example and the stated `server.listen_addr` default, both the compiled default; and two executed curl examples whose 8080 is a docexec substitution token. Changed: the browser paragraph, which told a `make serve` reader to open 8080."
+    },
+    {
+      "path": "docs/cli.md",
+      "disposition": "unchanged",
+      "installed_mentions": 3,
+      "development_mentions": 0,
+      "reason": "All three are the compiled default and out of scope by the plan's boundary: two `profile create --listen` synopses (profile creation is unchanged) and one `config show` sample output whose whole point is the origin column reading `compiled`."
+    },
+    {
+      "path": "docs/operations.md",
+      "disposition": "unchanged",
+      "installed_mentions": 5,
+      "development_mentions": 0,
+      "reason": "All five are curl examples against a running service; four are executed by docexec with `http://127.0.0.1:8080` as a substitution token replaced by the live fixture URL."
+    },
+    {
+      "path": "docs/import-export.md",
+      "disposition": "unchanged",
+      "installed_mentions": 1,
+      "development_mentions": 0,
+      "reason": "One curl example against a running service."
+    },
+    {
+      "path": "docs/selection-planning.md",
+      "disposition": "unchanged",
+      "installed_mentions": 1,
+      "development_mentions": 0,
+      "reason": "One executed curl example; its 8080 is a docexec substitution token."
+    },
+    {
+      "path": "docs/troubleshooting.md",
+      "disposition": "both",
+      "installed_mentions": 3,
+      "development_mentions": 1,
+      "reason": "Kept: the bind-failure symptom (the message quotes the installed address) and two curl examples. Added: a row for reading the wrong instance, naming both addresses."
+    },
+    {
+      "path": "docs/api/rest.md",
+      "disposition": "both",
+      "installed_mentions": 56,
+      "development_mentions": 1,
+      "reason": "The 55 example literals stay: each executed example declares `http://127.0.0.1:8080` as a substitution token that docexec replaces with the live fixture URL, so the literal is a placeholder rather than a claim about which instance the reader runs. The 'Getting started' prose changed -- it told the reader to start from the checkout's example config and then curl 8080 -- and now states both defaults and says which the examples use."
+    },
+    {
+      "path": "docs/api/mcp.md",
+      "disposition": "both",
+      "installed_mentions": 4,
+      "development_mentions": 1,
+      "reason": "Kept: three literals in examples, including the `claude mcp add` line registered as an unverified example. Changed: the sentence telling clients which URL to point at, which now names both."
+    }
+  ]
+}

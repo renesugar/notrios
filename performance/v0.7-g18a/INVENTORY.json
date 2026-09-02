@@ -5,7 +5,7 @@
   "documents": [
     {
       "path": "docs/api/mcp.md",
-      "sha256": "eba66c80ea3ad6cde265c16976f6408f638aec7fd993cb7063323f78049c6a1e",
+      "sha256": "d257afe5932dc7efee03dd7a5ee56f96b2fb2da82fb5a0a7f15115904170e213",
       "help_note": "doc_help_api_mcp",
       "owner": "go:github.com/renesugar/notrios/internal/httpapi#(*Server).mcpTools",
       "sections": [
@@ -123,7 +123,7 @@
     },
     {
       "path": "docs/api/rest.md",
-      "sha256": "49a6c89e814945b9936369852ef69db9e4a606ef4ffdba3b7c860be5a4a15259",
+      "sha256": "1edb83a4d6c3fbc477a9f0bc9d3d8a826e875dcb1044808ec125246b70eb0fac",
       "help_note": "doc_help_api_rest",
       "owner": "go:github.com/renesugar/notrios/internal/httpapi#NewServerWithOptions",
       "sections": [
@@ -977,7 +977,7 @@
     },
     {
       "path": "docs/gui.md",
-      "sha256": "79278cea56ca96c477e60216bd7bfbb6f80681c61e2553ac50b5bbfa254f0119",
+      "sha256": "54845ba9b1304baaf6311471be8ae75064b405166775ec73215b5e6c4158f516",
       "help_note": "doc_help_gui",
       "owner": "ts:web/src/App.tsx#App",
       "sections": [
@@ -1413,7 +1413,7 @@
     },
     {
       "path": "docs/index.md",
-      "sha256": "60b8a0d3524c0ff77bc446a3dab337fdc9b371f0e45f7d3b45deca6a61661af5",
+      "sha256": "ca7a3e663d33e3b916d5464b12c7b24f9f701fda939c1c864cd71fefce02ca22",
       "help_note": "doc_help_index",
       "owner": "go:github.com/renesugar/notrios/internal/helpdocs#Seed",
       "sections": [
@@ -1461,7 +1461,7 @@
     },
     {
       "path": "docs/installation.md",
-      "sha256": "0802d343a5a3da4d81634db2f8bf977510e174cd31e657845821d5ca3b0b8843",
+      "sha256": "bcfd9e1fccc960d1de8a9f7e06210b08bb1261cf4a638b840f6ed6bdb4251ad5",
       "help_note": "doc_help_installation",
       "owner": "go:github.com/renesugar/notrios/cmd/notriosd#main",
       "sections": [
@@ -1931,7 +1931,7 @@
     },
     {
       "path": "docs/service.md",
-      "sha256": "285d4770f6322255364909b7082ada06e4221d1a7b5f9bcebca4fb5d9040c5cb",
+      "sha256": "6036214b2b01d17242845ff2bb0334ad16284e36531d974409cb091433ffdc91",
       "help_note": "doc_help_service",
       "owner": "go:github.com/renesugar/notrios/internal/config#Config",
       "sections": [
@@ -1949,6 +1949,16 @@
           "id": "command-line-flags",
           "level": 2,
           "title": "Command-line flags",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/internal/config#Config",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        },
+        {
+          "id": "the-two-default-addresses",
+          "level": 2,
+          "title": "The two default addresses",
           "audience": "user",
           "kind": "actionable_or_reference",
           "owner": "go:github.com/renesugar/notrios/internal/config#Config",
@@ -2127,7 +2137,7 @@
     },
     {
       "path": "docs/troubleshooting.md",
-      "sha256": "80fd585b1dd08a1682d08953b537c77b3182de0d5c57dcafab0ee529d81cb8f6",
+      "sha256": "5bb8302500ac80ca73293ee4892d8be53bae8b09f931ed3f189e4f9cebf5d106",
       "help_note": "doc_help_troubleshooting",
       "owner": "go:github.com/renesugar/notrios/internal/config#Load",
       "sections": [
@@ -2229,14 +2239,14 @@
       "id": "published_markdown",
       "count": 15,
       "unit": "pages",
-      "sections": 210,
+      "sections": 211,
       "owner": "go:github.com/renesugar/notrios/internal/helpdocs#Seed"
     },
     {
       "id": "help_notebook",
       "count": 15,
       "unit": "mirrored notes",
-      "sections": 210,
+      "sections": 211,
       "owner": "go:github.com/renesugar/notrios/internal/helpdocs#Seed"
     },
     {
@@ -2333,9 +2343,9 @@
       "executed": 0,
       "generated": 0,
       "claimed": 0,
-      "unverified": 210
+      "unverified": 211
     },
-    "denominator": 210,
+    "denominator": 211,
     "reconciles": true,
     "finding": "The manual does not yet name directive fragments or executable checks, so all current section units are unverified even where independent tests exist."
   },
