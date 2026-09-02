@@ -1070,7 +1070,7 @@ matrix. H7 is not complete merely because YAML was committed.
   licensing gate cannot pass; Ubuntu priority is not permission to lower their
   evidence threshold.
 
-## H8. Installed integration harness and Ubuntu baseline
+## H8. Installed integration harness and Ubuntu baseline — complete
 
 **Goal.** Prove installed instances preserve profile isolation and native
 integration, and create one reusable matrix for H12's Windows/macOS execution.
@@ -1103,10 +1103,50 @@ no-development-toolchain assertion, and cleanup audit.
 
 **Open decisions**
 
-- **Minimum matrix for a support claim — Non-blocking default.** A platform is
-  supported only after a native clean install, launch/use, upgrade, removal,
-  reinstall, data-preservation, and cleanup pass. An unavailable row may close
-  this evidence slice as postponed but blocks the platform support claim.
+- **Minimum matrix for a support claim — Resolved in H8.** Ubuntu passes eleven
+  executed rows; Windows and macOS pass none and are recorded as postponed, so
+  neither is claimed. `validate_evidence.py` enforces it: a row marked
+  `passed` for a platform this harness cannot execute is rejected, and a
+  postponed row without a reason is rejected as indistinguishable from a
+  forgotten one.
+
+**Outcome (2026-09-02).** Complete. `make integration-matrix` runs sixteen rows
+against a *packaged* installation in a disposable HOME; evidence under
+`performance/v0.8-h8/`, validated from `make validate`.
+
+Eleven rows execute and pass: the installed CLI runs with no Go, Node, npm or
+compiler on PATH; the service binds loopback and never a wildcard; a second
+instance on a taken port refuses, names the cause, and does not recommend the
+development port; two profiles keep separate databases and a duplicate listen
+address is refused; the `notrios://` entry declares the scheme and an icon; a
+note created through REST is linked and resolved with the documented 0/1/2 exit
+codes; restarting preserves the library; uninstall removes the program and
+leaves the library byte-identical; the desktop binary serves under `xvfb`; and
+purge removes the roots while its verified backup survives outside them.
+
+Five rows are defined and postponed, each naming what it needs rather than being
+silently absent: firewall observation needs root and this harness runs
+unprivileged; the native file picker is a dialog a person drives; package
+upgrade and removal was executed in H6 rather than repeated; and Windows and
+macOS need the hardware H7 is deferred for.
+
+**Every failure this produced was in the harness, not the product.** Nine of
+them: `ss` peer and local columns confused, a helper that waited for a socket
+already held by the first instance, the desktop entry looked for under HOME
+rather than datarootdir, a URI shape the documentation contradicts, waiting for
+a service process to exit, a listing endpoint that does not exist, a JSON report
+parsed as a line, a document search that returns nothing over a CLI-seeded
+library, and a CSV column read in the wrong case. Each was read before it was
+believed; none were reported as defects.
+
+Two observations came out of it and are recorded rather than chased. Running an
+installed binary with the checkout as its working directory resolves *source*
+mode -- which is correct and documented, and is how a stray `profile register`
+landed in the checkout's registry during debugging before being removed with
+`profile forget`. And in a packaged install, `POST /api/v1/search` returns no
+hits for any query over a library seeded by `notriosctl seed-help`, while
+`/api/v1/notebooks` lists the notebooks; whether CLI-seeded notes are indexed is
+outside H8 and worth a look.
 
 ## H9. Native credential-store selection and integration
 

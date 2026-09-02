@@ -13,7 +13,7 @@
 .PHONY: help deps build build-service build-cli web gui docs \
         test validate docgen docaudit doccheck smoke serve doctor seed-help evidence-pre-push \
         g18e-validate g18f-validate g18g-validate g19-validate g20-validate \
-        install install-dry-run icons deb uninstall uninstall-dry-run purge clean clobber precheck
+        install install-dry-run icons deb integration-matrix uninstall uninstall-dry-run purge clean clobber precheck
 
 help: ## Show this target summary
 	@grep -E '^[a-zA-Z-]+:.*## ' $(MAKEFILE_LIST) | awk -F ':.*## ' '{printf "  %-14s %s\n", $$1, $$2}'
@@ -116,6 +116,9 @@ install: build web ## Install to an end-user location (prefix=$HOME/.local by de
 
 install-dry-run: build web ## Show exactly what install would write, and write nothing
 	python3 scripts/lifecycle.py install --dry-run
+
+integration-matrix: build web ## Run the installed-integration matrix (H8) and record results
+	python3 scripts/integration_matrix.py
 
 icons: ## Regenerate the desktop and web icons from assets/notrios.png
 	python3 scripts/build_icons.py
