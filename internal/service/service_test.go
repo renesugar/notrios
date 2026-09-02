@@ -3,12 +3,15 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"testing"
 
 	"github.com/renesugar/notrios/internal/api"
@@ -265,5 +268,42 @@ func TestLiveSidecarStartupRepairsDamageAndReportsStatus(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(notesDir, "orphan.md")); !os.IsNotExist(err) {
 		t.Fatalf("orphan survived startup reconciliation: %v", err)
+	}
+}
+
+// Two Notrios instances on one machine is a supported arrangement, and both
+// default to 127.0.0.1:8080, so the common first encounter with it is a bind
+// failure. A bare "address already in use" does not say another Notrios is the
+// likely cause or what to do about it.
+func TestBindFailureExplainsThatAnotherInstanceMayBeRunning(t *testing.T) {
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer listener.Close()
+	taken := listener.Addr().String()
+
+	cfg := config.Default()
+	config.UseDataDirectory(&cfg, t.TempDir(), nil)
+	cfg.Server.ListenAddr = taken
+	svc, err := New(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer svc.Close()
+
+	err = svc.ListenAndServe()
+	if err == nil {
+		t.Fatal("expected a bind failure on an address already in use")
+	}
+	message := err.Error()
+	for _, want := range []string{taken, "Another Notrios instance", "-addr", "profile list"} {
+		if !strings.Contains(message, want) {
+			t.Errorf("the bind failure does not mention %q:\n%s", want, message)
+		}
+	}
+	// The original error survives, so callers matching on it still can.
+	if !errors.Is(err, syscall.EADDRINUSE) {
+		t.Error("the underlying EADDRINUSE was lost")
 	}
 }

@@ -187,8 +187,15 @@ def resolve(env: dict, os_name: str = LINUX, *,
         # identity across every build, and writing them into the source tree
         # puts a file naming every local database path one `git add -A` away
         # from being committed.
-        _resolve_installed(env, os_name, executable_dir, result, runtime_dir_is_private)
+        # A checkout is a separate instance and every root is checkout-local,
+        # including config. Keeping config native was tried and reverted in H4
+        # slice D: a developer who also has Notrios installed shared one config
+        # root with it, so their real installed configuration was found first
+        # and running the checkout build opened their production library.
+        # The config root sits under ./data rather than ./config because ./data
+        # is gitignored and ./config is tracked.
         result.mode = "source"
+        result.roots["config"] = _join(os_name, ".", "data", "config")
         # All four mutable roots collapse onto the checkout's ./data. The
         # four-way split exists for user installations -- XDG separates them,
         # purge treats them differently, only some are backed up -- and a

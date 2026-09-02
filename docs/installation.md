@@ -134,12 +134,21 @@ REST, MCP, and the importers do not need an interface — and `/` then answers
 `-gui-only` needs no local interface at all: it renders whatever the remote
 service serves.
 
-### Configuration paths resolve against the working directory too
+### Where your files go
 
-The example config uses `./data/...`, so the database and asset store appear
-under wherever you launched the binary. Use absolute paths in your config file
-for anything you run outside the checkout. See the [service
-guide](service.md#configuration).
+Run `notriosctl paths` to see exactly where this instance keeps things, and
+which layout it selected.
+
+An installed binary uses the native per-OS locations: on Linux
+`$XDG_DATA_HOME/notrios` for the library, with separate config, state, cache and
+runtime roots. A binary run from a checkout is a *separate instance* — every
+root is checkout-local, under `./data`, so a development build cannot read or
+write the library of an installed one.
+
+Paths you state yourself are used exactly as written and never relocated. The
+checkout's example config uses relative `./data/...` paths, which resolve
+against the directory you launched from; use absolute paths in any config you
+run outside a checkout. See the [service guide](service.md#configuration).
 
 ## Optional local installation
 

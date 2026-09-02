@@ -191,6 +191,7 @@ func TestDefaultPathPrefersTheExplicitOverride(t *testing.T) {
 		t.Fatalf("DefaultPath: %q", got)
 	}
 
+	t.Chdir(t.TempDir())
 	t.Setenv("NOTRIOS_PROFILE_REGISTRY", "")
 	t.Setenv("XDG_CONFIG_HOME", "/tmp/config")
 	got, err = DefaultPath()
@@ -211,6 +212,7 @@ func TestDefaultPathPrefersTheExplicitOverride(t *testing.T) {
 // was started in, so two invocations from two directories are two different
 // machines as far as link routing is concerned.
 func TestDefaultPathIgnoresARelativeConfigHome(t *testing.T) {
+	t.Chdir(t.TempDir())
 	t.Setenv("NOTRIOS_PROFILE_REGISTRY", "")
 	t.Setenv("XDG_CONFIG_HOME", "relative/config")
 	t.Setenv("HOME", "/home/probe")
@@ -228,6 +230,7 @@ func TestDefaultPathIgnoresARelativeConfigHome(t *testing.T) {
 }
 
 func TestDefaultPathRefusesRatherThanInventingAPath(t *testing.T) {
+	t.Chdir(t.TempDir())
 	t.Setenv("NOTRIOS_PROFILE_REGISTRY", "")
 	t.Setenv("XDG_CONFIG_HOME", "")
 	t.Setenv("HOME", "")
@@ -261,6 +264,10 @@ func TestProfilesAndSyncKeysAgreeOnTheConfigRoot(t *testing.T) {
 	}
 	for _, environment := range environments {
 		t.Run(environment.name, func(t *testing.T) {
+			// Out of the checkout: inside one this is source mode, where the
+			// config root is checkout-local by design and the XDG variables are
+			// deliberately not consulted.
+			t.Chdir(t.TempDir())
 			t.Setenv("NOTRIOS_PROFILE_REGISTRY", "")
 			t.Setenv("XDG_CONFIG_HOME", environment.configHome)
 			t.Setenv("HOME", environment.home)
@@ -290,6 +297,9 @@ func TestProfilesAndSyncKeysAgreeOnTheConfigRoot(t *testing.T) {
 // Both must fail together, too. A registry that resolves while the sync keys
 // beside it do not is the same split-brain in a different disguise.
 func TestProfilesAndSyncKeysRefuseTogether(t *testing.T) {
+	// Installed mode: a checkout resolves its own roots and needs no home at
+	// all, which is the isolation property, not a refusal.
+	t.Chdir(t.TempDir())
 	t.Setenv("NOTRIOS_PROFILE_REGISTRY", "")
 	t.Setenv("XDG_CONFIG_HOME", "")
 	t.Setenv("HOME", "")

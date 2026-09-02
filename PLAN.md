@@ -444,6 +444,52 @@ no-current-working-directory-dependency tests.
   `performance/v0.8-h3/validate_evidence.py` until the entry is updated.
   The purge backup container remains open and belongs to H5.
 
+## H4a. Distinct development and installed default ports in the documentation
+
+**Goal.** Let a development checkout and an installed instance run at the same
+time without either being reconfigured, and make the documentation say which
+address belongs to which.
+
+**Scope.** Change the checkout's `config/config.example.yaml` to a development
+port (recommended `127.0.0.1:8099`, with `public_base_url` to match) and leave
+the compiled default -- the installed instance's address -- at
+`127.0.0.1:8080`. Then reconcile the documentation: `8080` appears 25 times
+across 9 pages in `docs/`, and each mention has to be read to decide whether it
+describes running from a checkout or an installed instance. Update the G18a
+inventory, the G18f content hashes, and any pinned counts that move.
+
+**Boundaries.** No change to the compiled default, the resolver, profile
+creation, or the port-collision refusal. This is a documentation and example
+change, not a behaviour change: a user who has set `server.listen_addr`
+explicitly is unaffected.
+
+**Dependencies.** H4 slice D complete. The instance isolation it introduced is
+what makes two simultaneous instances safe at all -- their databases are already
+separate, and this only removes the port clash.
+
+**Working state.** `make serve` in a checkout and an installed `notriosd` run
+concurrently with no flags and no edits. Every documented URL matches the
+instance the surrounding prose is describing.
+
+**Validation and evidence.** Both instances started together, each reachable on
+its own address and reading its own database; `docgen`, `docaudit`, G18a and
+G18f green; a page-by-page record of which mentions were changed and which were
+deliberately left.
+
+**Open decisions**
+
+- **Development port number -- Non-blocking.** Recommended default `8099`:
+  clearly not a default anyone would pick by accident, adjacent enough to 8080
+  to read as related, and outside the range a user is likely to have taken.
+
+**Why this is separate from H4.** H4 slice D closed the data-safety half of the
+problem -- a checkout can no longer open an installed instance's library -- and
+that fix stands alone. The port clash that remains is a documentation project
+with a one-line code change attached, and bundling 25 prose edits into a slice
+about path resolution would have hidden the change that mattered. Until this
+lands, the second instance to start fails to bind with a message naming the
+likely cause and the flag to fix it.
+
 ## H5. Safe Make install, uninstall, and purge lifecycle
 
 **Goal.** Provide end-user-location dogfooding targets that are auditable,
@@ -890,6 +936,7 @@ This is an index only; each decision is owned and explained inside its item.
 | Desktop external-link opening | H2b | Resolved and implemented: no prompt; the browser-tab path is unchanged |
 | Mermaid renderer/containment | H2a/H2 | Resolved and implemented in H2: Mermaid 11.17.2, strict security, `htmlLabels: false`, `notrios`-only links reattached from source |
 | Installed/portable path precedence | H3/H4 | Resolved in H3: explicit, then explicit portable marker, then native; never inferred |
+| Development versus installed default port | H4a | Open; 8080 shared today, bind failure explains it |
 | User-local/GNU install layout | H3/H5 | Resolved in H3: `$HOME/.local`, GNU directory variables and `DESTDIR` retained |
 | Purge external-path and backup policy | H3/H5 | Resolved in H3: enumerate and back up, refuse to delete; container choice remains for H5 |
 | Desktop package formats/toolchain | H6a/H6/H7 | Open; evidence-dependent |

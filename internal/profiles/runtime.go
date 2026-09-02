@@ -277,6 +277,65 @@ func Show(registryPath, name string) (View, error) {
 	}, nil
 }
 
+// Summary is one row of `profile list`: enough to pick a profile and see which
+// port it will use, without opening its database.
+type Summary struct {
+	Name         string `json:"name"`
+	ProfileID    string `json:"profile_id,omitempty"`
+	DatabaseID   string `json:"database_id,omitempty"`
+	DatabasePath string `json:"database_path,omitempty"`
+	ConfigPath   string `json:"config_path,omitempty"`
+	ListenAddr   string `json:"listen_addr,omitempty"`
+	SyncTarget   string `json:"sync_target,omitempty"`
+	// Kind is "runtime" for a full profile or "routing" for a legacy
+	// stable-link entry that has no config and cannot be started.
+	Kind string `json:"kind"`
+	// Problem explains why this row is missing its details, when it is. A
+	// listing is the first thing a user runs, so one unreadable profile
+	// reports itself rather than hiding the other nine behind an error.
+	Problem string `json:"problem,omitempty"`
+}
+
+// List summarizes every registered profile.
+//
+// The listen address is read from each profile's own config rather than stored
+// in the registry: the config file is the thing that decides the port, and a
+// second copy in the registry would be free to disagree with it the moment
+// somebody edited the file.
+func List(registryPath string) ([]Summary, error) {
+	registry, err := Load(registryPath)
+	if err != nil {
+		return nil, err
+	}
+	summaries := make([]Summary, 0, len(registry.Profiles))
+	for _, profile := range registry.Profiles {
+		summary := Summary{
+			Name: profile.Name, ProfileID: profile.ProfileID,
+			DatabaseID: profile.DatabaseID, DatabasePath: profile.DatabasePath,
+			ConfigPath: profile.ConfigPath, Kind: "runtime",
+		}
+		if strings.TrimSpace(profile.ConfigPath) == "" {
+			summary.Kind = "routing"
+			summary.Problem = "legacy stable-link routing entry: no runtime config, cannot be started"
+			summaries = append(summaries, summary)
+			continue
+		}
+		cfg, err := config.Load(profile.ConfigPath)
+		if err != nil {
+			summary.Problem = fmt.Sprintf("config could not be read: %v", err)
+			summaries = append(summaries, summary)
+			continue
+		}
+		summary.ListenAddr = cfg.Server.ListenAddr
+		summary.SyncTarget = cfg.Sync.Target
+		if cfg.Data.DatabasePath != "" {
+			summary.DatabasePath = cfg.Data.DatabasePath
+		}
+		summaries = append(summaries, summary)
+	}
+	return summaries, nil
+}
+
 // Validate checks explicit registry/config/database bindings only. It never
 // scans for unregistered databases or opens an arbitrary discovered path.
 func Validate(ctx context.Context, registryPath, onlyName string) ValidationReport {

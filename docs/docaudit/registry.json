@@ -39,7 +39,20 @@
       "sha256": "910484cc35cd281b9d33ae58197d81eeb387c78d5bb2bcfaa38a2b945a6a52a8",
       "state": "executed",
       "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
-      "execution": {"surface":"config","fixture":"config-fragment","case":"config-fragment","substitutions":[],"expected":{"kind":"config","status":0},"postcondition":{"kind":"mcp-scope","detail":"read-only content scope and disabled sync scope override defaults"}}
+      "execution": {
+        "surface": "config",
+        "fixture": "config-fragment",
+        "case": "config-fragment",
+        "substitutions": [],
+        "expected": {
+          "kind": "config",
+          "status": 0
+        },
+        "postcondition": {
+          "kind": "mcp-scope",
+          "detail": "read-only content scope and disabled sync scope override defaults"
+        }
+      }
     },
     {
       "id": "api-mcp-trying-it-with-curl-example-1",
@@ -49,72 +62,90 @@
       "sha256": "702dc8fdf81dc9b07c9fda1478149b9ea498b869e35938dc00413a54f611c21f",
       "state": "executed",
       "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
-      "execution": {"surface":"mcp","fixture":"seeded-loopback","case":"loopback-shell","substitutions":[{"token":"http://127.0.0.1:8080","source":"loopback.base_url"}],"expected":{"kind":"mcp","status":200},"postcondition":{"kind":"mcp-schema-scope","detail":"tools/list schemas and read-only search result are bounded"}}
+      "execution": {
+        "surface": "mcp",
+        "fixture": "seeded-loopback",
+        "case": "loopback-shell",
+        "substitutions": [
+          {
+            "token": "http://127.0.0.1:8080",
+            "source": "loopback.base_url"
+          }
+        ],
+        "expected": {
+          "kind": "mcp",
+          "status": 200
+        },
+        "postcondition": {
+          "kind": "mcp-schema-scope",
+          "detail": "tools/list schemas and read-only search result are bounded"
+        }
+      }
     },
-  {
-    "id": "api-rest-batch-organizer-operations-example-1",
-    "path": "docs/api/rest.md",
-    "section": "batch-organizer-operations",
-    "language": "sh",
-    "sha256": "c7c98cabe81f8cb35f13ada2ed276c91953cdd9d388db529dc2ab2eb29c98ee5",
-    "state": "executed",
-    "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
-    "execution": {
-      "surface": "rest",
-      "fixture": "seeded-loopback",
-      "case": "loopback-shell",
-      "substitutions": [
-        {
-          "token": "http://127.0.0.1:8080",
-          "source": "loopback.base_url"
+    {
+      "id": "api-rest-batch-organizer-operations-example-1",
+      "path": "docs/api/rest.md",
+      "section": "batch-organizer-operations",
+      "language": "sh",
+      "sha256": "c7c98cabe81f8cb35f13ada2ed276c91953cdd9d388db529dc2ab2eb29c98ee5",
+      "state": "executed",
+      "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
+      "execution": {
+        "surface": "rest",
+        "fixture": "seeded-loopback",
+        "case": "loopback-shell",
+        "substitutions": [
+          {
+            "token": "http://127.0.0.1:8080",
+            "source": "loopback.base_url"
+          },
+          {
+            "token": "$NB",
+            "source": "seed.notebook_id"
+          }
+        ],
+        "expected": {
+          "kind": "http",
+          "status": 200
         },
-        {
-          "token": "$NB",
-          "source": "seed.notebook_id"
+        "postcondition": {
+          "kind": "rest-batch",
+          "detail": "response accounts for both seeded documents and they move to the requested notebook"
         }
-      ],
-      "expected": {
-        "kind": "http",
-        "status": 200
-      },
-      "postcondition": {
-        "kind": "rest-batch",
-        "detail": "response accounts for both seeded documents and they move to the requested notebook"
       }
-    }
-  },
-  {
-    "id": "api-rest-checking-the-links-in-an-unsaved-note-example-1",
-    "path": "docs/api/rest.md",
-    "section": "checking-the-links-in-an-unsaved-note",
-    "language": "sh",
-    "sha256": "2fb1bc9147cf5682f9879159366475d47eb1e1761c32446b2b99fc7d480e1433",
-    "state": "executed",
-    "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
-    "execution": {
-      "surface": "rest",
-      "fixture": "seeded-loopback",
-      "case": "loopback-shell",
-      "substitutions": [
-        {
-          "token": "http://127.0.0.1:8080",
-          "source": "loopback.base_url"
+    },
+    {
+      "id": "api-rest-checking-the-links-in-an-unsaved-note-example-1",
+      "path": "docs/api/rest.md",
+      "section": "checking-the-links-in-an-unsaved-note",
+      "language": "sh",
+      "sha256": "2fb1bc9147cf5682f9879159366475d47eb1e1761c32446b2b99fc7d480e1433",
+      "state": "executed",
+      "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
+      "execution": {
+        "surface": "rest",
+        "fixture": "seeded-loopback",
+        "case": "loopback-shell",
+        "substitutions": [
+          {
+            "token": "http://127.0.0.1:8080",
+            "source": "loopback.base_url"
+          },
+          {
+            "token": "$DOC",
+            "source": "seed.document_id"
+          }
+        ],
+        "expected": {
+          "kind": "http",
+          "status": 200
         },
-        {
-          "token": "$DOC",
-          "source": "seed.document_id"
+        "postcondition": {
+          "kind": "rest-link-check",
+          "detail": "response classifies both resolvable and missing links without writing the note"
         }
-      ],
-      "expected": {
-        "kind": "http",
-        "status": 200
-      },
-      "postcondition": {
-        "kind": "rest-link-check",
-        "detail": "response classifies both resolvable and missing links without writing the note"
       }
-    }
-  },
+    },
     {
       "id": "api-rest-getting-started-example-1",
       "path": "docs/api/rest.md",
@@ -123,144 +154,162 @@
       "sha256": "c376ea580fe8df2d58449d773467983f081c850f36444c241376239452ca712f",
       "state": "executed",
       "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
-      "execution": {"surface":"rest","fixture":"seeded-loopback","case":"loopback-shell","substitutions":[{"token":"http://127.0.0.1:8080","source":"loopback.base_url"}],"expected":{"kind":"http","status":200},"postcondition":{"kind":"status-redacted","detail":"health and status expose schema/capabilities and only scratch storage paths, never credentials"}}
+      "execution": {
+        "surface": "rest",
+        "fixture": "seeded-loopback",
+        "case": "loopback-shell",
+        "substitutions": [
+          {
+            "token": "http://127.0.0.1:8080",
+            "source": "loopback.base_url"
+          }
+        ],
+        "expected": {
+          "kind": "http",
+          "status": 200
+        },
+        "postcondition": {
+          "kind": "status-redacted",
+          "detail": "health and status expose schema/capabilities and only scratch storage paths, never credentials"
+        }
+      }
     },
-  {
-    "id": "api-rest-link-autocomplete-while-typing-example-1",
-    "path": "docs/api/rest.md",
-    "section": "link-autocomplete-while-typing",
-    "language": "sh",
-    "sha256": "df47fcd5830e079aae4bdb4905fe79facea20fa11c49260c10ad61111852b7d5",
-    "state": "executed",
-    "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
-    "execution": {
-      "surface": "rest",
-      "fixture": "seeded-loopback",
-      "case": "loopback-shell",
-      "substitutions": [
-        {
-          "token": "http://127.0.0.1:8080",
-          "source": "loopback.base_url"
-        }
-      ],
-      "expected": {
-        "kind": "http",
-        "status": 200
-      },
-      "postcondition": {
-        "kind": "rest-suggest",
-        "detail": "seeded Kitchen note is suggested"
-      }
-    }
-  },
-  {
-    "id": "api-rest-links-graph-revisions-example-1",
-    "path": "docs/api/rest.md",
-    "section": "links-graph-revisions",
-    "language": "sh",
-    "sha256": "48e30c6a2e67cee44460ca63f495f6d4664e046841260857b344099ad376a57c",
-    "state": "executed",
-    "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
-    "execution": {
-      "surface": "rest",
-      "fixture": "seeded-loopback",
-      "case": "loopback-shell",
-      "substitutions": [
-        {
-          "token": "http://127.0.0.1:8080",
-          "source": "loopback.base_url"
+    {
+      "id": "api-rest-link-autocomplete-while-typing-example-1",
+      "path": "docs/api/rest.md",
+      "section": "link-autocomplete-while-typing",
+      "language": "sh",
+      "sha256": "df47fcd5830e079aae4bdb4905fe79facea20fa11c49260c10ad61111852b7d5",
+      "state": "executed",
+      "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
+      "execution": {
+        "surface": "rest",
+        "fixture": "seeded-loopback",
+        "case": "loopback-shell",
+        "substitutions": [
+          {
+            "token": "http://127.0.0.1:8080",
+            "source": "loopback.base_url"
+          }
+        ],
+        "expected": {
+          "kind": "http",
+          "status": 200
         },
-        {
-          "token": "$DOC",
-          "source": "seed.document_id"
+        "postcondition": {
+          "kind": "rest-suggest",
+          "detail": "seeded Kitchen note is suggested"
         }
-      ],
-      "expected": {
-        "kind": "http",
-        "status": 200
-      },
-      "postcondition": {
-        "kind": "rest-links",
-        "detail": "links, bounded graph, and revisions all contain seeded data"
       }
-    }
-  },
-  {
-    "id": "api-rest-listing-a-note-s-blocks-example-1",
-    "path": "docs/api/rest.md",
-    "section": "listing-a-note-s-blocks",
-    "language": "sh",
-    "sha256": "ef324471d2a17ab62f4e97f20c31035636cf0107cfe1107f3f59e625cca3e11c",
-    "state": "executed",
-    "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
-    "execution": {
-      "surface": "rest",
-      "fixture": "seeded-loopback",
-      "case": "loopback-shell",
-      "substitutions": [
-        {
-          "token": "http://127.0.0.1:8080",
-          "source": "loopback.base_url"
+    },
+    {
+      "id": "api-rest-links-graph-revisions-example-1",
+      "path": "docs/api/rest.md",
+      "section": "links-graph-revisions",
+      "language": "sh",
+      "sha256": "48e30c6a2e67cee44460ca63f495f6d4664e046841260857b344099ad376a57c",
+      "state": "executed",
+      "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
+      "execution": {
+        "surface": "rest",
+        "fixture": "seeded-loopback",
+        "case": "loopback-shell",
+        "substitutions": [
+          {
+            "token": "http://127.0.0.1:8080",
+            "source": "loopback.base_url"
+          },
+          {
+            "token": "$DOC",
+            "source": "seed.document_id"
+          }
+        ],
+        "expected": {
+          "kind": "http",
+          "status": 200
         },
-        {
-          "token": "doc_01H...",
-          "source": "seed.document_id"
+        "postcondition": {
+          "kind": "rest-links",
+          "detail": "links, bounded graph, and revisions all contain seeded data"
         }
-      ],
-      "expected": {
-        "kind": "http",
-        "status": 200
-      },
-      "postcondition": {
-        "kind": "rest-blocks",
-        "detail": "seeded headings and blocks are returned"
       }
-    }
-  },
-  {
-    "id": "api-rest-long-running-jobs-example-1",
-    "path": "docs/api/rest.md",
-    "section": "long-running-jobs",
-    "language": "sh",
-    "sha256": "d694a2e4a2bc44942a8241708b97ede9346a75955a48e3a72a404329b59615bf",
-    "state": "executed",
-    "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
-    "execution": {
-      "surface": "rest",
-      "fixture": "seeded-loopback",
-      "case": "loopback-shell",
-      "substitutions": [
-        {
-          "token": "http://127.0.0.1:8080",
-          "source": "loopback.base_url"
+    },
+    {
+      "id": "api-rest-listing-a-note-s-blocks-example-1",
+      "path": "docs/api/rest.md",
+      "section": "listing-a-note-s-blocks",
+      "language": "sh",
+      "sha256": "ef324471d2a17ab62f4e97f20c31035636cf0107cfe1107f3f59e625cca3e11c",
+      "state": "executed",
+      "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
+      "execution": {
+        "surface": "rest",
+        "fixture": "seeded-loopback",
+        "case": "loopback-shell",
+        "substitutions": [
+          {
+            "token": "http://127.0.0.1:8080",
+            "source": "loopback.base_url"
+          },
+          {
+            "token": "doc_01H...",
+            "source": "seed.document_id"
+          }
+        ],
+        "expected": {
+          "kind": "http",
+          "status": 200
         },
-        {
-          "token": "$JOB",
-          "source": "seed.job_id"
+        "postcondition": {
+          "kind": "rest-blocks",
+          "detail": "seeded headings and blocks are returned"
         }
-      ],
-      "expected": {
-        "kind": "http",
-        "status": 200
-      },
-      "postcondition": {
-        "kind": "rest-job",
-        "detail": "seeded job lists, reads, and records cancellation"
       }
-    }
-  },
-  {
-    "id": "api-rest-notebooks-tags-search-notebooks-trash-example-1",
-    "path": "docs/api/rest.md",
-    "section": "notebooks-tags-search-notebooks-trash",
-    "language": "sh",
-    "sha256": "4ad40fe16331cfcba9bc9cdf865ae749ecd55730d190c4ca486666013b2666de",
-    "state": "unverified",
-    "unrun_reason": {
-      "code": "illustrative-placeholder",
-      "detail": "final illustrative-placeholder: one literal $DOC is required in both active and trashed prerequisite states, which are incompatible in a single scratch fixture"
-    }
-  },
+    },
+    {
+      "id": "api-rest-long-running-jobs-example-1",
+      "path": "docs/api/rest.md",
+      "section": "long-running-jobs",
+      "language": "sh",
+      "sha256": "d694a2e4a2bc44942a8241708b97ede9346a75955a48e3a72a404329b59615bf",
+      "state": "executed",
+      "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
+      "execution": {
+        "surface": "rest",
+        "fixture": "seeded-loopback",
+        "case": "loopback-shell",
+        "substitutions": [
+          {
+            "token": "http://127.0.0.1:8080",
+            "source": "loopback.base_url"
+          },
+          {
+            "token": "$JOB",
+            "source": "seed.job_id"
+          }
+        ],
+        "expected": {
+          "kind": "http",
+          "status": 200
+        },
+        "postcondition": {
+          "kind": "rest-job",
+          "detail": "seeded job lists, reads, and records cancellation"
+        }
+      }
+    },
+    {
+      "id": "api-rest-notebooks-tags-search-notebooks-trash-example-1",
+      "path": "docs/api/rest.md",
+      "section": "notebooks-tags-search-notebooks-trash",
+      "language": "sh",
+      "sha256": "4ad40fe16331cfcba9bc9cdf865ae749ecd55730d190c4ca486666013b2666de",
+      "state": "unverified",
+      "unrun_reason": {
+        "code": "illustrative-placeholder",
+        "detail": "final illustrative-placeholder: one literal $DOC is required in both active and trashed prerequisite states, which are incompatible in a single scratch fixture"
+      }
+    },
     {
       "id": "api-rest-notes-create-read-edit-example-1",
       "path": "docs/api/rest.md",
@@ -269,292 +318,310 @@
       "sha256": "5b833f007742c91740c7b8a0e6fa820777f4c7fb37c43318d6851bd3b9ac4fe4",
       "state": "executed",
       "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
-      "execution": {"surface":"rest","fixture":"seeded-loopback","case":"loopback-shell","substitutions":[{"token":"http://127.0.0.1:8080","source":"loopback.base_url"}],"expected":{"kind":"http","status":201},"postcondition":{"kind":"document-created","detail":"exactly one meeting note is added to scratch state"}}
+      "execution": {
+        "surface": "rest",
+        "fixture": "seeded-loopback",
+        "case": "loopback-shell",
+        "substitutions": [
+          {
+            "token": "http://127.0.0.1:8080",
+            "source": "loopback.base_url"
+          }
+        ],
+        "expected": {
+          "kind": "http",
+          "status": 201
+        },
+        "postcondition": {
+          "kind": "document-created",
+          "detail": "exactly one meeting note is added to scratch state"
+        }
+      }
     },
-  {
-    "id": "api-rest-notes-create-read-edit-example-2",
-    "path": "docs/api/rest.md",
-    "section": "notes-create-read-edit",
-    "language": "sh",
-    "sha256": "f736812121885926eb2c7611216ae2c3733ef44bf72f6cf5b99d80e56c31247b",
-    "state": "executed",
-    "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
-    "execution": {
-      "surface": "rest",
-      "fixture": "seeded-loopback",
-      "case": "loopback-shell",
-      "substitutions": [
-        {
-          "token": "http://127.0.0.1:8080",
-          "source": "loopback.base_url"
+    {
+      "id": "api-rest-notes-create-read-edit-example-2",
+      "path": "docs/api/rest.md",
+      "section": "notes-create-read-edit",
+      "language": "sh",
+      "sha256": "f736812121885926eb2c7611216ae2c3733ef44bf72f6cf5b99d80e56c31247b",
+      "state": "executed",
+      "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
+      "execution": {
+        "surface": "rest",
+        "fixture": "seeded-loopback",
+        "case": "loopback-shell",
+        "substitutions": [
+          {
+            "token": "http://127.0.0.1:8080",
+            "source": "loopback.base_url"
+          },
+          {
+            "token": "$DOC",
+            "source": "seed.document_id"
+          }
+        ],
+        "expected": {
+          "kind": "http",
+          "status": 200
         },
-        {
-          "token": "$DOC",
-          "source": "seed.document_id"
+        "postcondition": {
+          "kind": "rest-note-read",
+          "detail": "JSON metadata and raw Markdown agree on the seeded note"
         }
-      ],
-      "expected": {
-        "kind": "http",
-        "status": 200
-      },
-      "postcondition": {
-        "kind": "rest-note-read",
-        "detail": "JSON metadata and raw Markdown agree on the seeded note"
       }
-    }
-  },
-  {
-    "id": "api-rest-optimistic-concurrency-example-1",
-    "path": "docs/api/rest.md",
-    "section": "optimistic-concurrency",
-    "language": "sh",
+    },
+    {
+      "id": "api-rest-optimistic-concurrency-example-1",
+      "path": "docs/api/rest.md",
+      "section": "optimistic-concurrency",
+      "language": "sh",
       "sha256": "cd776397b15d0bc21c331a2fc9c658a28e3b1865ee0d2713e5cd27cbfb4e437c",
-    "state": "executed",
-    "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
-    "execution": {
-      "surface": "rest",
-      "fixture": "seeded-loopback",
-      "case": "loopback-shell",
-      "substitutions": [
-        {
-          "token": "http://127.0.0.1:8080",
-          "source": "loopback.base_url"
+      "state": "executed",
+      "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
+      "execution": {
+        "surface": "rest",
+        "fixture": "seeded-loopback",
+        "case": "loopback-shell",
+        "substitutions": [
+          {
+            "token": "http://127.0.0.1:8080",
+            "source": "loopback.base_url"
+          },
+          {
+            "token": "$DOC",
+            "source": "seed.document_id"
+          }
+        ],
+        "expected": {
+          "kind": "http",
+          "status": 204
         },
-        {
-          "token": "$DOC",
-          "source": "seed.document_id"
+        "postcondition": {
+          "kind": "rest-concurrency",
+          "detail": "revision-guarded update succeeds and delete moves the note to Trash"
         }
-      ],
-      "expected": {
-        "kind": "http",
-        "status": 204
-      },
-      "postcondition": {
-        "kind": "rest-concurrency",
-        "detail": "revision-guarded update succeeds and delete moves the note to Trash"
       }
-    }
-  },
-  {
-    "id": "api-rest-orphan-isolate-and-hub-report-example-1",
-    "path": "docs/api/rest.md",
-    "section": "orphan-isolate-and-hub-report",
-    "language": "sh",
-    "sha256": "2f1c63d240d0b08d538da1c79e3800492a0a6fc22ec24a92a2c8c81d127001b8",
-    "state": "executed",
-    "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
-    "execution": {
-      "surface": "rest",
-      "fixture": "seeded-loopback",
-      "case": "loopback-shell",
-      "substitutions": [
-        {
-          "token": "http://127.0.0.1:8080",
-          "source": "loopback.base_url"
-        }
-      ],
-      "expected": {
-        "kind": "http",
-        "status": 200
-      },
-      "postcondition": {
-        "kind": "rest-graph-report",
-        "detail": "non-vacuous seeded graph counts and bounded details return"
-      }
-    }
-  },
-  {
-    "id": "api-rest-previewing-a-notebook-deletion-example-1",
-    "path": "docs/api/rest.md",
-    "section": "previewing-a-notebook-deletion",
-    "language": "sh",
-    "sha256": "fadf018393d97bbd9d0afe70fddbefbb2c563689919f3bbf86decbbbb6950895",
-    "state": "executed",
-    "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
-    "execution": {
-      "surface": "rest",
-      "fixture": "seeded-loopback",
-      "case": "loopback-shell",
-      "substitutions": [
-        {
-          "token": "http://127.0.0.1:8080",
-          "source": "loopback.base_url"
+    },
+    {
+      "id": "api-rest-orphan-isolate-and-hub-report-example-1",
+      "path": "docs/api/rest.md",
+      "section": "orphan-isolate-and-hub-report",
+      "language": "sh",
+      "sha256": "2f1c63d240d0b08d538da1c79e3800492a0a6fc22ec24a92a2c8c81d127001b8",
+      "state": "executed",
+      "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
+      "execution": {
+        "surface": "rest",
+        "fixture": "seeded-loopback",
+        "case": "loopback-shell",
+        "substitutions": [
+          {
+            "token": "http://127.0.0.1:8080",
+            "source": "loopback.base_url"
+          }
+        ],
+        "expected": {
+          "kind": "http",
+          "status": 200
         },
-        {
-          "token": "$NB",
-          "source": "seed.notebook_id"
+        "postcondition": {
+          "kind": "rest-graph-report",
+          "detail": "non-vacuous seeded graph counts and bounded details return"
         }
-      ],
-      "expected": {
-        "kind": "http",
-        "status": 200
-      },
-      "postcondition": {
-        "kind": "rest-notebook-preview",
-        "detail": "preview reports the seeded notebook impact without changing it"
       }
-    }
-  },
-  {
-    "id": "api-rest-renaming-a-tag-hierarchy-example-1",
-    "path": "docs/api/rest.md",
-    "section": "renaming-a-tag-hierarchy",
-    "language": "sh",
-    "sha256": "8ca652ba06ad70f855ed263b47a202504c95984685e184b66e3bf782b1d5d964",
-    "state": "executed",
-    "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
-    "execution": {
-      "surface": "rest",
-      "fixture": "seeded-loopback",
-      "case": "loopback-shell",
-      "substitutions": [
-        {
-          "token": "http://127.0.0.1:8080",
-          "source": "loopback.base_url"
-        }
-      ],
-      "expected": {
-        "kind": "http",
-        "status": 200
-      },
-      "postcondition": {
-        "kind": "rest-tag-rename",
-        "detail": "default dry run previews project and child renames while seeded tags remain unchanged"
-      }
-    }
-  },
-  {
-    "id": "api-rest-resolving-a-stable-link-example-1",
-    "path": "docs/api/rest.md",
-    "section": "resolving-a-stable-link",
-    "language": "sh",
-    "sha256": "4a97723d3a5f043e240bbef2f960b47da477762abad2117f8eab26272cd16ad9",
-    "state": "executed",
-    "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
-    "execution": {
-      "surface": "rest",
-      "fixture": "seeded-loopback",
-      "case": "loopback-shell",
-      "substitutions": [
-        {
-          "token": "http://127.0.0.1:8080",
-          "source": "loopback.base_url"
+    },
+    {
+      "id": "api-rest-previewing-a-notebook-deletion-example-1",
+      "path": "docs/api/rest.md",
+      "section": "previewing-a-notebook-deletion",
+      "language": "sh",
+      "sha256": "fadf018393d97bbd9d0afe70fddbefbb2c563689919f3bbf86decbbbb6950895",
+      "state": "executed",
+      "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
+      "execution": {
+        "surface": "rest",
+        "fixture": "seeded-loopback",
+        "case": "loopback-shell",
+        "substitutions": [
+          {
+            "token": "http://127.0.0.1:8080",
+            "source": "loopback.base_url"
+          },
+          {
+            "token": "$NB",
+            "source": "seed.notebook_id"
+          }
+        ],
+        "expected": {
+          "kind": "http",
+          "status": 200
         },
-        {
-          "token": "db_qz...",
-          "source": "seed.database_id"
-        },
-        {
-          "token": "doc_01H...",
-          "source": "seed.document_id"
+        "postcondition": {
+          "kind": "rest-notebook-preview",
+          "detail": "preview reports the seeded notebook impact without changing it"
         }
-      ],
-      "expected": {
-        "kind": "http",
-        "status": 200
-      },
-      "postcondition": {
-        "kind": "rest-link-resolve",
-        "detail": "stable URI resolves to the seeded local note"
       }
-    }
-  },
-  {
-    "id": "api-rest-resources-attachments-example-1",
-    "path": "docs/api/rest.md",
-    "section": "resources-attachments",
-    "language": "sh",
+    },
+    {
+      "id": "api-rest-renaming-a-tag-hierarchy-example-1",
+      "path": "docs/api/rest.md",
+      "section": "renaming-a-tag-hierarchy",
+      "language": "sh",
+      "sha256": "8ca652ba06ad70f855ed263b47a202504c95984685e184b66e3bf782b1d5d964",
+      "state": "executed",
+      "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
+      "execution": {
+        "surface": "rest",
+        "fixture": "seeded-loopback",
+        "case": "loopback-shell",
+        "substitutions": [
+          {
+            "token": "http://127.0.0.1:8080",
+            "source": "loopback.base_url"
+          }
+        ],
+        "expected": {
+          "kind": "http",
+          "status": 200
+        },
+        "postcondition": {
+          "kind": "rest-tag-rename",
+          "detail": "default dry run previews project and child renames while seeded tags remain unchanged"
+        }
+      }
+    },
+    {
+      "id": "api-rest-resolving-a-stable-link-example-1",
+      "path": "docs/api/rest.md",
+      "section": "resolving-a-stable-link",
+      "language": "sh",
+      "sha256": "4a97723d3a5f043e240bbef2f960b47da477762abad2117f8eab26272cd16ad9",
+      "state": "executed",
+      "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
+      "execution": {
+        "surface": "rest",
+        "fixture": "seeded-loopback",
+        "case": "loopback-shell",
+        "substitutions": [
+          {
+            "token": "http://127.0.0.1:8080",
+            "source": "loopback.base_url"
+          },
+          {
+            "token": "db_qz...",
+            "source": "seed.database_id"
+          },
+          {
+            "token": "doc_01H...",
+            "source": "seed.document_id"
+          }
+        ],
+        "expected": {
+          "kind": "http",
+          "status": 200
+        },
+        "postcondition": {
+          "kind": "rest-link-resolve",
+          "detail": "stable URI resolves to the seeded local note"
+        }
+      }
+    },
+    {
+      "id": "api-rest-resources-attachments-example-1",
+      "path": "docs/api/rest.md",
+      "section": "resources-attachments",
+      "language": "sh",
       "sha256": "6d2b5c34303698d71c62a3ade3c16c4a8aa5ca9110ee94724da0e5336999b9ab",
-    "state": "executed",
-    "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
-    "execution": {
-      "surface": "rest",
-      "fixture": "seeded-loopback",
-      "case": "loopback-shell",
-      "substitutions": [
-        {
-          "token": "http://127.0.0.1:8080",
-          "source": "loopback.base_url"
+      "state": "executed",
+      "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
+      "execution": {
+        "surface": "rest",
+        "fixture": "seeded-loopback",
+        "case": "loopback-shell",
+        "substitutions": [
+          {
+            "token": "http://127.0.0.1:8080",
+            "source": "loopback.base_url"
+          },
+          {
+            "token": "$DOC",
+            "source": "seed.document_id"
+          },
+          {
+            "token": "$RES",
+            "source": "seed.resource_id"
+          }
+        ],
+        "expected": {
+          "kind": "http",
+          "status": 200
         },
-        {
-          "token": "$DOC",
-          "source": "seed.document_id"
+        "postcondition": {
+          "kind": "rest-resources",
+          "detail": "upload, attach/list/download/range/reference/GC reports are non-vacuous and bounded"
+        }
+      }
+    },
+    {
+      "id": "api-rest-resources-attachments-example-2",
+      "path": "docs/api/rest.md",
+      "section": "resources-attachments",
+      "language": "sh",
+      "sha256": "aa0c383613442f270860f0e98bcde5e7269ca64d37ab2f2d8c199e1c2ac8d23d",
+      "state": "executed",
+      "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
+      "execution": {
+        "surface": "rest",
+        "fixture": "seeded-loopback",
+        "case": "loopback-shell",
+        "substitutions": [
+          {
+            "token": "http://127.0.0.1:8080",
+            "source": "loopback.base_url"
+          },
+          {
+            "token": "$RES",
+            "source": "seed.resource_id"
+          }
+        ],
+        "expected": {
+          "kind": "http",
+          "status": 204
         },
-        {
-          "token": "$RES",
-          "source": "seed.resource_id"
+        "postcondition": {
+          "kind": "rest-resource-delete",
+          "detail": "exact confirmation permanently removes only the seeded scratch resource"
         }
-      ],
-      "expected": {
-        "kind": "http",
-        "status": 200
-      },
-      "postcondition": {
-        "kind": "rest-resources",
-        "detail": "upload, attach/list/download/range/reference/GC reports are non-vacuous and bounded"
       }
-    }
-  },
-  {
-    "id": "api-rest-resources-attachments-example-2",
-    "path": "docs/api/rest.md",
-    "section": "resources-attachments",
-    "language": "sh",
-    "sha256": "aa0c383613442f270860f0e98bcde5e7269ca64d37ab2f2d8c199e1c2ac8d23d",
-    "state": "executed",
-    "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
-    "execution": {
-      "surface": "rest",
-      "fixture": "seeded-loopback",
-      "case": "loopback-shell",
-      "substitutions": [
-        {
-          "token": "http://127.0.0.1:8080",
-          "source": "loopback.base_url"
+    },
+    {
+      "id": "api-rest-running-a-note-s-query-block-example-1",
+      "path": "docs/api/rest.md",
+      "section": "running-a-note-s-query-block",
+      "language": "sh",
+      "sha256": "bd32df26dbf9a6139f83c58377502eab65929998d81734efa6852770f249fada",
+      "state": "executed",
+      "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
+      "execution": {
+        "surface": "rest",
+        "fixture": "seeded-loopback",
+        "case": "loopback-shell",
+        "substitutions": [
+          {
+            "token": "http://127.0.0.1:8080",
+            "source": "loopback.base_url"
+          }
+        ],
+        "expected": {
+          "kind": "http",
+          "status": 200
         },
-        {
-          "token": "$RES",
-          "source": "seed.resource_id"
+        "postcondition": {
+          "kind": "rest-note-query",
+          "detail": "query block returns the seeded todo note and excludes done/private state"
         }
-      ],
-      "expected": {
-        "kind": "http",
-        "status": 204
-      },
-      "postcondition": {
-        "kind": "rest-resource-delete",
-        "detail": "exact confirmation permanently removes only the seeded scratch resource"
       }
-    }
-  },
-  {
-    "id": "api-rest-running-a-note-s-query-block-example-1",
-    "path": "docs/api/rest.md",
-    "section": "running-a-note-s-query-block",
-    "language": "sh",
-    "sha256": "bd32df26dbf9a6139f83c58377502eab65929998d81734efa6852770f249fada",
-    "state": "executed",
-    "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
-    "execution": {
-      "surface": "rest",
-      "fixture": "seeded-loopback",
-      "case": "loopback-shell",
-      "substitutions": [
-        {
-          "token": "http://127.0.0.1:8080",
-          "source": "loopback.base_url"
-        }
-      ],
-      "expected": {
-        "kind": "http",
-        "status": 200
-      },
-      "postcondition": {
-        "kind": "rest-note-query",
-        "detail": "query block returns the seeded todo note and excludes done/private state"
-      }
-    }
-  },
+    },
     {
       "id": "api-rest-search-and-pagination-example-1",
       "path": "docs/api/rest.md",
@@ -563,7 +630,25 @@
       "sha256": "2a2c6aadd2fc72c973a387c83bd13d112e646f95ac90d4d3d9ff8085bcd5a444",
       "state": "executed",
       "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
-      "execution": {"surface":"rest","fixture":"seeded-loopback","case":"loopback-shell","substitutions":[{"token":"http://127.0.0.1:8080","source":"loopback.base_url"}],"expected":{"kind":"http","status":200},"postcondition":{"kind":"seeded-search","detail":"seeded matching note is returned without private note"}}
+      "execution": {
+        "surface": "rest",
+        "fixture": "seeded-loopback",
+        "case": "loopback-shell",
+        "substitutions": [
+          {
+            "token": "http://127.0.0.1:8080",
+            "source": "loopback.base_url"
+          }
+        ],
+        "expected": {
+          "kind": "http",
+          "status": 200
+        },
+        "postcondition": {
+          "kind": "seeded-search",
+          "detail": "seeded matching note is returned without private note"
+        }
+      }
     },
     {
       "id": "api-rest-selection-and-privacy-dry-runs-example-1",
@@ -573,200 +658,218 @@
       "sha256": "8b40dfd29b2af6d62af1df5fcc0afaf6018d449362e8ee656b5f1a4710a2a85e",
       "state": "executed",
       "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
-      "execution": {"surface":"rest","fixture":"seeded-loopback","case":"loopback-shell","substitutions":[{"token":"http://127.0.0.1:8080","source":"loopback.base_url"}],"expected":{"kind":"http","status":200},"postcondition":{"kind":"dry-run-unchanged","detail":"selection result is bounded and canonical rows are unchanged"}}
+      "execution": {
+        "surface": "rest",
+        "fixture": "seeded-loopback",
+        "case": "loopback-shell",
+        "substitutions": [
+          {
+            "token": "http://127.0.0.1:8080",
+            "source": "loopback.base_url"
+          }
+        ],
+        "expected": {
+          "kind": "http",
+          "status": 200
+        },
+        "postcondition": {
+          "kind": "dry-run-unchanged",
+          "detail": "selection result is bounded and canonical rows are unchanged"
+        }
+      }
     },
-  {
-    "id": "api-rest-shortest-path-between-two-notes-example-1",
-    "path": "docs/api/rest.md",
-    "section": "shortest-path-between-two-notes",
-    "language": "sh",
-    "sha256": "1739f877ad5946f7b152de3a9993bb45c65205b0d4161c2fa5899574636488ee",
-    "state": "executed",
-    "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
-    "execution": {
-      "surface": "rest",
-      "fixture": "seeded-loopback",
-      "case": "loopback-shell",
-      "substitutions": [
-        {
-          "token": "http://127.0.0.1:8080",
-          "source": "loopback.base_url"
+    {
+      "id": "api-rest-shortest-path-between-two-notes-example-1",
+      "path": "docs/api/rest.md",
+      "section": "shortest-path-between-two-notes",
+      "language": "sh",
+      "sha256": "1739f877ad5946f7b152de3a9993bb45c65205b0d4161c2fa5899574636488ee",
+      "state": "executed",
+      "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
+      "execution": {
+        "surface": "rest",
+        "fixture": "seeded-loopback",
+        "case": "loopback-shell",
+        "substitutions": [
+          {
+            "token": "http://127.0.0.1:8080",
+            "source": "loopback.base_url"
+          },
+          {
+            "token": "$DOC",
+            "source": "seed.document_id"
+          },
+          {
+            "token": "$OTHER",
+            "source": "seed.other_document_id"
+          }
+        ],
+        "expected": {
+          "kind": "http",
+          "status": 200
         },
-        {
-          "token": "$DOC",
-          "source": "seed.document_id"
+        "postcondition": {
+          "kind": "rest-graph-path",
+          "detail": "shortest path finds the seeded link"
+        }
+      }
+    },
+    {
+      "id": "api-rest-surgical-edits-and-note-operations-example-1",
+      "path": "docs/api/rest.md",
+      "section": "surgical-edits-and-note-operations",
+      "language": "sh",
+      "sha256": "d47f336aae09b119d396d42ae49b61f84238e9233bf611094eb8cdc3c6162ea3",
+      "state": "executed",
+      "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
+      "execution": {
+        "surface": "rest",
+        "fixture": "seeded-loopback",
+        "case": "loopback-shell",
+        "substitutions": [
+          {
+            "token": "http://127.0.0.1:8080",
+            "source": "loopback.base_url"
+          },
+          {
+            "token": "$DOC",
+            "source": "seed.document_id"
+          },
+          {
+            "token": "$REV",
+            "source": "seed.revision_id"
+          }
+        ],
+        "expected": {
+          "kind": "http",
+          "status": 200
         },
-        {
-          "token": "$OTHER",
-          "source": "seed.other_document_id"
+        "postcondition": {
+          "kind": "rest-note-edits",
+          "detail": "dry run leaves body unchanged and append writes only the requested line"
         }
-      ],
-      "expected": {
-        "kind": "http",
-        "status": 200
-      },
-      "postcondition": {
-        "kind": "rest-graph-path",
-        "detail": "shortest path finds the seeded link"
       }
-    }
-  },
-  {
-    "id": "api-rest-surgical-edits-and-note-operations-example-1",
-    "path": "docs/api/rest.md",
-    "section": "surgical-edits-and-note-operations",
-    "language": "sh",
-    "sha256": "d47f336aae09b119d396d42ae49b61f84238e9233bf611094eb8cdc3c6162ea3",
-    "state": "executed",
-    "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
-    "execution": {
-      "surface": "rest",
-      "fixture": "seeded-loopback",
-      "case": "loopback-shell",
-      "substitutions": [
-        {
-          "token": "http://127.0.0.1:8080",
-          "source": "loopback.base_url"
+    },
+    {
+      "id": "api-rest-tasks-example-1",
+      "path": "docs/api/rest.md",
+      "section": "tasks",
+      "language": "sh",
+      "sha256": "82cdce0b4ff8cbbde3e1fb68a7f8f8703728005cf4a4b05ba17853d265697fcc",
+      "state": "executed",
+      "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
+      "execution": {
+        "surface": "rest",
+        "fixture": "seeded-loopback",
+        "case": "loopback-shell",
+        "substitutions": [
+          {
+            "token": "http://127.0.0.1:8080",
+            "source": "loopback.base_url"
+          },
+          {
+            "token": "$DOC",
+            "source": "seed.document_id"
+          }
+        ],
+        "expected": {
+          "kind": "http",
+          "status": 200
         },
-        {
-          "token": "$DOC",
-          "source": "seed.document_id"
+        "postcondition": {
+          "kind": "rest-tasks",
+          "detail": "open and document-filtered task views include the seeded task"
+        }
+      }
+    },
+    {
+      "id": "api-rest-templates-and-tasks-example-1",
+      "path": "docs/api/rest.md",
+      "section": "templates-and-tasks",
+      "language": "sh",
+      "sha256": "d74cce03bb8ea3f4eda76582569281b8f410a1f026d20af3d5ca85214e06750e",
+      "state": "executed",
+      "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
+      "execution": {
+        "surface": "rest",
+        "fixture": "seeded-loopback",
+        "case": "loopback-shell",
+        "substitutions": [
+          {
+            "token": "http://127.0.0.1:8080",
+            "source": "loopback.base_url"
+          },
+          {
+            "token": "$DOC",
+            "source": "seed.template_id"
+          }
+        ],
+        "expected": {
+          "kind": "http",
+          "status": 201
         },
-        {
-          "token": "$REV",
-          "source": "seed.revision_id"
+        "postcondition": {
+          "kind": "rest-template",
+          "detail": "template list exposes prompts and creation writes one substituted note"
         }
-      ],
-      "expected": {
-        "kind": "http",
-        "status": 200
-      },
-      "postcondition": {
-        "kind": "rest-note-edits",
-        "detail": "dry run leaves body unchanged and append writes only the requested line"
       }
-    }
-  },
-  {
-    "id": "api-rest-tasks-example-1",
-    "path": "docs/api/rest.md",
-    "section": "tasks",
-    "language": "sh",
-    "sha256": "82cdce0b4ff8cbbde3e1fb68a7f8f8703728005cf4a4b05ba17853d265697fcc",
-    "state": "executed",
-    "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
-    "execution": {
-      "surface": "rest",
-      "fixture": "seeded-loopback",
-      "case": "loopback-shell",
-      "substitutions": [
-        {
-          "token": "http://127.0.0.1:8080",
-          "source": "loopback.base_url"
+    },
+    {
+      "id": "api-rest-workspace-lint-report-example-1",
+      "path": "docs/api/rest.md",
+      "section": "workspace-lint-report",
+      "language": "sh",
+      "sha256": "1d412eb5af7a7966a50b33d13b517186d9b740f3b10b32835efaf98d1bf44aa3",
+      "state": "executed",
+      "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
+      "execution": {
+        "surface": "rest",
+        "fixture": "seeded-loopback",
+        "case": "loopback-shell",
+        "substitutions": [
+          {
+            "token": "http://127.0.0.1:8080",
+            "source": "loopback.base_url"
+          }
+        ],
+        "expected": {
+          "kind": "http",
+          "status": 200
         },
-        {
-          "token": "$DOC",
-          "source": "seed.document_id"
+        "postcondition": {
+          "kind": "rest-lint",
+          "detail": "bounded lint report names checks without leaking note bodies"
         }
-      ],
-      "expected": {
-        "kind": "http",
-        "status": 200
-      },
-      "postcondition": {
-        "kind": "rest-tasks",
-        "detail": "open and document-filtered task views include the seeded task"
       }
-    }
-  },
-  {
-    "id": "api-rest-templates-and-tasks-example-1",
-    "path": "docs/api/rest.md",
-    "section": "templates-and-tasks",
-    "language": "sh",
-    "sha256": "d74cce03bb8ea3f4eda76582569281b8f410a1f026d20af3d5ca85214e06750e",
-    "state": "executed",
-    "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
-    "execution": {
-      "surface": "rest",
-      "fixture": "seeded-loopback",
-      "case": "loopback-shell",
-      "substitutions": [
-        {
-          "token": "http://127.0.0.1:8080",
-          "source": "loopback.base_url"
+    },
+    {
+      "id": "api-rest-writing-the-report-into-the-library-example-1",
+      "path": "docs/api/rest.md",
+      "section": "writing-the-report-into-the-library",
+      "language": "sh",
+      "sha256": "51c6756a00a97732d4d442e593bed5fe6355f2981c5f1bae2bda121ada79f113",
+      "state": "executed",
+      "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
+      "execution": {
+        "surface": "rest",
+        "fixture": "seeded-loopback",
+        "case": "loopback-shell",
+        "substitutions": [
+          {
+            "token": "http://127.0.0.1:8080",
+            "source": "loopback.base_url"
+          }
+        ],
+        "expected": {
+          "kind": "http",
+          "status": 200
         },
-        {
-          "token": "$DOC",
-          "source": "seed.template_id"
+        "postcondition": {
+          "kind": "rest-graph-note",
+          "detail": "graph report note is created and linked to the returned URI"
         }
-      ],
-      "expected": {
-        "kind": "http",
-        "status": 201
-      },
-      "postcondition": {
-        "kind": "rest-template",
-        "detail": "template list exposes prompts and creation writes one substituted note"
       }
-    }
-  },
-  {
-    "id": "api-rest-workspace-lint-report-example-1",
-    "path": "docs/api/rest.md",
-    "section": "workspace-lint-report",
-    "language": "sh",
-    "sha256": "1d412eb5af7a7966a50b33d13b517186d9b740f3b10b32835efaf98d1bf44aa3",
-    "state": "executed",
-    "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
-    "execution": {
-      "surface": "rest",
-      "fixture": "seeded-loopback",
-      "case": "loopback-shell",
-      "substitutions": [
-        {
-          "token": "http://127.0.0.1:8080",
-          "source": "loopback.base_url"
-        }
-      ],
-      "expected": {
-        "kind": "http",
-        "status": 200
-      },
-      "postcondition": {
-        "kind": "rest-lint",
-        "detail": "bounded lint report names checks without leaking note bodies"
-      }
-    }
-  },
-  {
-    "id": "api-rest-writing-the-report-into-the-library-example-1",
-    "path": "docs/api/rest.md",
-    "section": "writing-the-report-into-the-library",
-    "language": "sh",
-    "sha256": "51c6756a00a97732d4d442e593bed5fe6355f2981c5f1bae2bda121ada79f113",
-    "state": "executed",
-    "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
-    "execution": {
-      "surface": "rest",
-      "fixture": "seeded-loopback",
-      "case": "loopback-shell",
-      "substitutions": [
-        {
-          "token": "http://127.0.0.1:8080",
-          "source": "loopback.base_url"
-        }
-      ],
-      "expected": {
-        "kind": "http",
-        "status": 200
-      },
-      "postcondition": {
-        "kind": "rest-graph-note",
-        "detail": "graph report note is created and linked to the returned URI"
-      }
-    }
-  },
+    },
     {
       "id": "archive-v2-reading-an-archive-back-example-1",
       "path": "docs/archive-v2.md",
@@ -787,7 +890,41 @@
       "sha256": "10b4142f7774193a972408b6e454ae5d83f9f1e1dcb19a6acf2f930f75588ba8",
       "state": "executed",
       "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
-      "execution": {"surface":"cli","fixture":"seeded-cli","case":"cli-shell","substitutions":[{"token":"/backups/notrios-2026-08-04","source":"archive.full_dir"},{"token":"/transfer/research","source":"archive.subset_dir"}],"expected":{"kind":"exit","status":0},"postcondition":{"kind":"archive-created","detail":"full and subset archives are created and verify against seeded state"}}
+      "execution": {
+        "surface": "cli",
+        "fixture": "seeded-cli",
+        "case": "cli-shell",
+        "substitutions": [
+          {
+            "token": "/backups/notrios-2026-08-04",
+            "source": "archive.full_dir"
+          },
+          {
+            "token": "/transfer/research",
+            "source": "archive.subset_dir"
+          }
+        ],
+        "expected": {
+          "kind": "exit",
+          "status": 0
+        },
+        "postcondition": {
+          "kind": "archive-created",
+          "detail": "full and subset archives are created and verify against seeded state"
+        }
+      }
+    },
+    {
+      "id": "cli-config-show-example-1",
+      "path": "docs/cli.md",
+      "section": "config-show",
+      "language": "sh",
+      "sha256": "0be77f5f5ffd28c7ef99eecb71aea79d45e3fe1800203e926648c1d672178838",
+      "state": "unverified",
+      "unrun_reason": {
+        "code": "illustrative-placeholder",
+        "detail": "Non-literal command synopsis: bracketed flags are optional-argument notation. The command itself is covered by executed tests in go:github.com/renesugar/notrios/cmd/notriosctl (TestPathsReportsEveryRootAndTheMode, TestPathsReportsWhyAVariableWasIgnored, TestConfigShowReportsValuesWithTheirOrigin); no executed concrete CLI example is registered for the synopsis form."
+      }
     },
     {
       "id": "cli-doctor-example-1",
@@ -1002,10 +1139,23 @@
       "state": "executed",
       "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
       "execution": {
-        "surface": "cli", "fixture": "seeded-cli", "case": "cli-edge",
-        "substitutions": [{"token": "job_01H...", "source": "seed.job_id"}],
-        "expected": {"kind": "exit", "status": 0},
-        "postcondition": {"kind": "cli-job-command", "detail": "typed local parameters reproduce the exact documented shell command"}
+        "surface": "cli",
+        "fixture": "seeded-cli",
+        "case": "cli-edge",
+        "substitutions": [
+          {
+            "token": "job_01H...",
+            "source": "seed.job_id"
+          }
+        ],
+        "expected": {
+          "kind": "exit",
+          "status": 0
+        },
+        "postcondition": {
+          "kind": "cli-job-command",
+          "detail": "typed local parameters reproduce the exact documented shell command"
+        }
       }
     },
     {
@@ -1114,6 +1264,18 @@
       "unrun_reason": {
         "code": "external-network",
         "detail": "Literal body requires a remote Git/HTTPS/SSH/rclone peer: notriosctl sync handshake --url https://desktop.local:8443"
+      }
+    },
+    {
+      "id": "cli-paths-example-1",
+      "path": "docs/cli.md",
+      "section": "paths",
+      "language": "sh",
+      "sha256": "347073415c6054108ee21bd085c11e840ae9debf94a3c103fc21e6cb9b37c450",
+      "state": "unverified",
+      "unrun_reason": {
+        "code": "illustrative-placeholder",
+        "detail": "Non-literal command synopsis: bracketed flags are optional-argument notation. The command itself is covered by executed tests in go:github.com/renesugar/notrios/cmd/notriosctl (TestPathsReportsEveryRootAndTheMode, TestPathsReportsWhyAVariableWasIgnored, TestConfigShowReportsValuesWithTheirOrigin); no executed concrete CLI example is registered for the synopsis form."
       }
     },
     {
@@ -1292,7 +1454,20 @@
       "sha256": "b76164182418d400aceeef5a7a5a44ab4c105bcd2176961cb39a110d029c44af",
       "state": "executed",
       "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
-      "execution": {"surface":"cli","fixture":"seeded-cli","case":"cli-shell","substitutions":[],"expected":{"kind":"exit","status":0},"postcondition":{"kind":"version-output","detail":"compiled CLI reports a non-empty version"}}
+      "execution": {
+        "surface": "cli",
+        "fixture": "seeded-cli",
+        "case": "cli-shell",
+        "substitutions": [],
+        "expected": {
+          "kind": "exit",
+          "status": 0
+        },
+        "postcondition": {
+          "kind": "version-output",
+          "detail": "compiled CLI reports a non-empty version"
+        }
+      }
     },
     {
       "id": "gui-building-example-1",
@@ -1315,10 +1490,27 @@
       "state": "executed",
       "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
       "execution": {
-        "surface": "cli", "fixture": "seeded-cli", "case": "cli-shell",
-        "substitutions": [{"token": "doc_01H...", "source": "seed.document_id"}, {"token": "nb_01H...", "source": "seed.notebook_id"}],
-        "expected": {"kind": "exit", "status": 0},
-        "postcondition": {"kind": "note-moved", "detail": "seeded note moves to the exact scratch notebook"}
+        "surface": "cli",
+        "fixture": "seeded-cli",
+        "case": "cli-shell",
+        "substitutions": [
+          {
+            "token": "doc_01H...",
+            "source": "seed.document_id"
+          },
+          {
+            "token": "nb_01H...",
+            "source": "seed.notebook_id"
+          }
+        ],
+        "expected": {
+          "kind": "exit",
+          "status": 0
+        },
+        "postcondition": {
+          "kind": "note-moved",
+          "detail": "seeded note moves to the exact scratch notebook"
+        }
       }
     },
     {
@@ -1342,9 +1534,18 @@
       "state": "executed",
       "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
       "execution": {
-        "surface": "cli", "fixture": "seeded-cli", "case": "cli-shell", "substitutions": [],
-        "expected": {"kind": "exit", "status": 0},
-        "postcondition": {"kind": "cli-graph-note", "detail": "write-note creates the canonical read-only graph report"}
+        "surface": "cli",
+        "fixture": "seeded-cli",
+        "case": "cli-shell",
+        "substitutions": [],
+        "expected": {
+          "kind": "exit",
+          "status": 0
+        },
+        "postcondition": {
+          "kind": "cli-graph-note",
+          "detail": "write-note creates the canonical read-only graph report"
+        }
       }
     },
     {
@@ -1356,10 +1557,23 @@
       "state": "executed",
       "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
       "execution": {
-        "surface": "cli", "fixture": "seeded-cli", "case": "cli-shell",
-        "substitutions": [{"token": "~/graph", "source": "graph.output_dir"}],
-        "expected": {"kind": "exit", "status": 0},
-        "postcondition": {"kind": "cli-graph-export", "detail": "nodes.csv and edges.csv are created from non-vacuous seeded graph state"}
+        "surface": "cli",
+        "fixture": "seeded-cli",
+        "case": "cli-shell",
+        "substitutions": [
+          {
+            "token": "~/graph",
+            "source": "graph.output_dir"
+          }
+        ],
+        "expected": {
+          "kind": "exit",
+          "status": 0
+        },
+        "postcondition": {
+          "kind": "cli-graph-export",
+          "detail": "nodes.csv and edges.csv are created from non-vacuous seeded graph state"
+        }
       }
     },
     {
@@ -1370,7 +1584,25 @@
       "sha256": "6067a008cfd095246a808208d88791ca7600eba8603a1e30bc0587a059917034",
       "state": "executed",
       "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
-      "execution": {"surface":"rest","fixture":"seeded-loopback","case":"loopback-shell","substitutions":[{"token":"http://127.0.0.1:8080","source":"loopback.base_url"}],"expected":{"kind":"http","status":200},"postcondition":{"kind":"status-redacted","detail":"embedded health and status are live with only scratch storage paths and no credentials"}}
+      "execution": {
+        "surface": "rest",
+        "fixture": "seeded-loopback",
+        "case": "loopback-shell",
+        "substitutions": [
+          {
+            "token": "http://127.0.0.1:8080",
+            "source": "loopback.base_url"
+          }
+        ],
+        "expected": {
+          "kind": "http",
+          "status": 200
+        },
+        "postcondition": {
+          "kind": "status-redacted",
+          "detail": "embedded health and status are live with only scratch storage paths and no credentials"
+        }
+      }
     },
     {
       "id": "import-export-2-dry-run-example-1",
@@ -1380,7 +1612,29 @@
       "sha256": "582877fbe3252260b5540acc44f98000b63a16059c7eead1574094ed1eb59a5d",
       "state": "executed",
       "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
-      "execution": {"surface":"cli","fixture":"seeded-cli","case":"cli-shell","substitutions":[{"token":"go run ./cmd/notriosctl","source":"cli.binary"},{"token":"/path/to/joplin-export","source":"import.joplin_dir"}],"expected":{"kind":"exit","status":0},"postcondition":{"kind":"dry-run-unchanged","detail":"dry run reports import candidates and leaves canonical rows unchanged"}}
+      "execution": {
+        "surface": "cli",
+        "fixture": "seeded-cli",
+        "case": "cli-shell",
+        "substitutions": [
+          {
+            "token": "go run ./cmd/notriosctl",
+            "source": "cli.binary"
+          },
+          {
+            "token": "/path/to/joplin-export",
+            "source": "import.joplin_dir"
+          }
+        ],
+        "expected": {
+          "kind": "exit",
+          "status": 0
+        },
+        "postcondition": {
+          "kind": "dry-run-unchanged",
+          "detail": "dry run reports import candidates and leaves canonical rows unchanged"
+        }
+      }
     },
     {
       "id": "import-export-3-import-example-1",
@@ -1391,13 +1645,27 @@
       "state": "executed",
       "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
       "execution": {
-        "surface": "cli", "fixture": "seeded-cli", "case": "cli-shell",
+        "surface": "cli",
+        "fixture": "seeded-cli",
+        "case": "cli-shell",
         "substitutions": [
-          {"token": "go run ./cmd/notriosctl", "source": "cli.binary"},
-          {"token": "/path/to/joplin-export", "source": "import.joplin_dir"}
+          {
+            "token": "go run ./cmd/notriosctl",
+            "source": "cli.binary"
+          },
+          {
+            "token": "/path/to/joplin-export",
+            "source": "import.joplin_dir"
+          }
         ],
-        "expected": {"kind": "exit", "status": 0},
-        "postcondition": {"kind": "cli-import-joplin-apply", "detail": "reviewed config drives a bounded real import into the scratch library"}
+        "expected": {
+          "kind": "exit",
+          "status": 0
+        },
+        "postcondition": {
+          "kind": "cli-import-joplin-apply",
+          "detail": "reviewed config drives a bounded real import into the scratch library"
+        }
       }
     },
     {
@@ -1409,14 +1677,31 @@
       "state": "executed",
       "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
       "execution": {
-        "surface": "cli", "fixture": "seeded-cli", "case": "cli-shell",
+        "surface": "cli",
+        "fixture": "seeded-cli",
+        "case": "cli-shell",
         "substitutions": [
-          {"token": "go run ./cmd/notriosctl", "source": "cli.binary"},
-          {"token": "/path/to/export/conversations.json", "source": "import.chatgpt_file"},
-          {"token": "/path/to/export-dir", "source": "import.chatgpt_dir"}
+          {
+            "token": "go run ./cmd/notriosctl",
+            "source": "cli.binary"
+          },
+          {
+            "token": "/path/to/export/conversations.json",
+            "source": "import.chatgpt_file"
+          },
+          {
+            "token": "/path/to/export-dir",
+            "source": "import.chatgpt_dir"
+          }
         ],
-        "expected": {"kind": "exit", "status": 0},
-        "postcondition": {"kind": "cli-import-chatgpt", "detail": "dry run and apply parse the same bounded conversation fixture and create one searchable note"}
+        "expected": {
+          "kind": "exit",
+          "status": 0
+        },
+        "postcondition": {
+          "kind": "cli-import-chatgpt",
+          "detail": "dry run and apply parse the same bounded conversation fixture and create one searchable note"
+        }
       }
     },
     {
@@ -1428,14 +1713,31 @@
       "state": "executed",
       "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
       "execution": {
-        "surface": "cli", "fixture": "seeded-cli", "case": "cli-shell",
+        "surface": "cli",
+        "fixture": "seeded-cli",
+        "case": "cli-shell",
         "substitutions": [
-          {"token": "go run ./cmd/notriosctl", "source": "cli.binary"},
-          {"token": "/path/to/conversations.json", "source": "import.claude_file"},
-          {"token": "/path/to/export-dir", "source": "import.claude_dir"}
+          {
+            "token": "go run ./cmd/notriosctl",
+            "source": "cli.binary"
+          },
+          {
+            "token": "/path/to/conversations.json",
+            "source": "import.claude_file"
+          },
+          {
+            "token": "/path/to/export-dir",
+            "source": "import.claude_dir"
+          }
         ],
-        "expected": {"kind": "exit", "status": 0},
-        "postcondition": {"kind": "cli-import-claude", "detail": "dry run and apply parse the bounded Claude export and create one searchable note"}
+        "expected": {
+          "kind": "exit",
+          "status": 0
+        },
+        "postcondition": {
+          "kind": "cli-import-claude",
+          "detail": "dry run and apply parse the bounded Claude export and create one searchable note"
+        }
       }
     },
     {
@@ -1459,10 +1761,23 @@
       "state": "executed",
       "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
       "execution": {
-        "surface": "cli", "fixture": "seeded-cli", "case": "cli-shell",
-        "substitutions": [{"token": "go run ./cmd/notriosctl", "source": "cli.binary"}],
-        "expected": {"kind": "exit", "status": 0},
-        "postcondition": {"kind": "cli-archive-v1", "detail": "full and query-scoped archive directories contain manifests and notes"}
+        "surface": "cli",
+        "fixture": "seeded-cli",
+        "case": "cli-shell",
+        "substitutions": [
+          {
+            "token": "go run ./cmd/notriosctl",
+            "source": "cli.binary"
+          }
+        ],
+        "expected": {
+          "kind": "exit",
+          "status": 0
+        },
+        "postcondition": {
+          "kind": "cli-archive-v1",
+          "detail": "full and query-scoped archive directories contain manifests and notes"
+        }
       }
     },
     {
@@ -1474,10 +1789,23 @@
       "state": "executed",
       "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
       "execution": {
-        "surface": "cli", "fixture": "seeded-cli", "case": "cli-shell",
-        "substitutions": [{"token": "go run ./cmd/notriosctl", "source": "cli.binary"}],
-        "expected": {"kind": "exit", "status": 0},
-        "postcondition": {"kind": "cli-snapshot-roundtrip", "detail": "create and verify succeed and restore preserves the seeded document identity"}
+        "surface": "cli",
+        "fixture": "seeded-cli",
+        "case": "cli-shell",
+        "substitutions": [
+          {
+            "token": "go run ./cmd/notriosctl",
+            "source": "cli.binary"
+          }
+        ],
+        "expected": {
+          "kind": "exit",
+          "status": 0
+        },
+        "postcondition": {
+          "kind": "cli-snapshot-roundtrip",
+          "detail": "create and verify succeed and restore preserves the seeded document identity"
+        }
       }
     },
     {
@@ -1489,14 +1817,31 @@
       "state": "executed",
       "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
       "execution": {
-        "surface": "cli", "fixture": "seeded-cli", "case": "cli-shell",
+        "surface": "cli",
+        "fixture": "seeded-cli",
+        "case": "cli-shell",
         "substitutions": [
-          {"token": "go run ./cmd/notriosctl", "source": "cli.binary"},
-          {"token": "./bin/notriosctl", "source": "cli.binary"},
-          {"token": "/path/to/export dir", "source": "import.joplin_dir"}
+          {
+            "token": "go run ./cmd/notriosctl",
+            "source": "cli.binary"
+          },
+          {
+            "token": "./bin/notriosctl",
+            "source": "cli.binary"
+          },
+          {
+            "token": "/path/to/export dir",
+            "source": "import.joplin_dir"
+          }
         ],
-        "expected": {"kind": "exit", "status": 0},
-        "postcondition": {"kind": "cli-import-dual-dry", "detail": "source and built-binary forms report the same fixture without canonical writes"}
+        "expected": {
+          "kind": "exit",
+          "status": 0
+        },
+        "postcondition": {
+          "kind": "cli-import-dual-dry",
+          "detail": "source and built-binary forms report the same fixture without canonical writes"
+        }
       }
     },
     {
@@ -1508,13 +1853,27 @@
       "state": "executed",
       "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
       "execution": {
-        "surface": "cli", "fixture": "seeded-cli", "case": "cli-shell",
+        "surface": "cli",
+        "fixture": "seeded-cli",
+        "case": "cli-shell",
         "substitutions": [
-          {"token": "go run ./cmd/notriosctl", "source": "cli.binary"},
-          {"token": "./my-archive", "source": "import.archive_v1_dir"}
+          {
+            "token": "go run ./cmd/notriosctl",
+            "source": "cli.binary"
+          },
+          {
+            "token": "./my-archive",
+            "source": "import.archive_v1_dir"
+          }
         ],
-        "expected": {"kind": "exit", "status": 0},
-        "postcondition": {"kind": "cli-import-archive-v1", "detail": "review then apply imports the bounded archive-v1 note into scratch state"}
+        "expected": {
+          "kind": "exit",
+          "status": 0
+        },
+        "postcondition": {
+          "kind": "cli-import-archive-v1",
+          "detail": "review then apply imports the bounded archive-v1 note into scratch state"
+        }
       }
     },
     {
@@ -1526,13 +1885,27 @@
       "state": "executed",
       "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
       "execution": {
-        "surface": "cli", "fixture": "seeded-cli", "case": "cli-shell",
+        "surface": "cli",
+        "fixture": "seeded-cli",
+        "case": "cli-shell",
         "substitutions": [
-          {"token": "go run ./cmd/notriosctl", "source": "cli.binary"},
-          {"token": "/path/to/vault", "source": "import.obsidian_dir"}
+          {
+            "token": "go run ./cmd/notriosctl",
+            "source": "cli.binary"
+          },
+          {
+            "token": "/path/to/vault",
+            "source": "import.obsidian_dir"
+          }
         ],
-        "expected": {"kind": "exit", "status": 0},
-        "postcondition": {"kind": "cli-import-obsidian", "detail": "explicit review config feeds a source-preserving real vault import"}
+        "expected": {
+          "kind": "exit",
+          "status": 0
+        },
+        "postcondition": {
+          "kind": "cli-import-obsidian",
+          "detail": "explicit review config feeds a source-preserving real vault import"
+        }
       }
     },
     {
@@ -1544,13 +1917,27 @@
       "state": "executed",
       "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
       "execution": {
-        "surface": "cli", "fixture": "seeded-cli", "case": "cli-shell",
+        "surface": "cli",
+        "fixture": "seeded-cli",
+        "case": "cli-shell",
         "substitutions": [
-          {"token": "go run ./cmd/notriosctl", "source": "cli.binary"},
-          {"token": "/path/to/twitter-archive", "source": "import.twitter_dir"}
+          {
+            "token": "go run ./cmd/notriosctl",
+            "source": "cli.binary"
+          },
+          {
+            "token": "/path/to/twitter-archive",
+            "source": "import.twitter_dir"
+          }
         ],
-        "expected": {"kind": "exit", "status": 0},
-        "postcondition": {"kind": "cli-import-twitter", "detail": "dry run and apply parse one bounded extracted tweet into a searchable note"}
+        "expected": {
+          "kind": "exit",
+          "status": 0
+        },
+        "postcondition": {
+          "kind": "cli-import-twitter",
+          "detail": "dry run and apply parse one bounded extracted tweet into a searchable note"
+        }
       }
     },
     {
@@ -1645,7 +2032,29 @@
       "sha256": "5e52d3cdc209ede1ad3d15ac82c62ceb885388ac22036ccdb8850ef5cfd1e288",
       "state": "executed",
       "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
-      "execution": {"surface":"cli","fixture":"daemon-scratch","case":"daemon-lifecycle","substitutions":[{"token":"go run ./cmd/notriosd","source":"daemon.binary"},{"token":"go run ./cmd/notriosctl","source":"cli.binary"}],"expected":{"kind":"exit","status":0},"postcondition":{"kind":"daemon-health","detail":"loopback daemon honors config, serves health, and is terminated cleanly"}}
+      "execution": {
+        "surface": "cli",
+        "fixture": "daemon-scratch",
+        "case": "daemon-lifecycle",
+        "substitutions": [
+          {
+            "token": "go run ./cmd/notriosd",
+            "source": "daemon.binary"
+          },
+          {
+            "token": "go run ./cmd/notriosctl",
+            "source": "cli.binary"
+          }
+        ],
+        "expected": {
+          "kind": "exit",
+          "status": 0
+        },
+        "postcondition": {
+          "kind": "daemon-health",
+          "detail": "loopback daemon honors config, serves health, and is terminated cleanly"
+        }
+      }
     },
     {
       "id": "installation-where-the-interface-files-have-to-be-example-1",
@@ -1683,38 +2092,38 @@
         "detail": "Literal body requires a remote Git/HTTPS/SSH/rclone peer: rclone sync      # mirrors deletions: can destroy another replica's only envelope"
       }
     },
-  {
-    "id": "operations-deleting-a-notebook-without-surprises-example-1",
-    "path": "docs/operations.md",
-    "section": "deleting-a-notebook-without-surprises",
-    "language": "sh",
-    "sha256": "fadf018393d97bbd9d0afe70fddbefbb2c563689919f3bbf86decbbbb6950895",
-    "state": "executed",
-    "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
-    "execution": {
-      "surface": "rest",
-      "fixture": "seeded-loopback",
-      "case": "loopback-shell",
-      "substitutions": [
-        {
-          "token": "http://127.0.0.1:8080",
-          "source": "loopback.base_url"
+    {
+      "id": "operations-deleting-a-notebook-without-surprises-example-1",
+      "path": "docs/operations.md",
+      "section": "deleting-a-notebook-without-surprises",
+      "language": "sh",
+      "sha256": "fadf018393d97bbd9d0afe70fddbefbb2c563689919f3bbf86decbbbb6950895",
+      "state": "executed",
+      "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
+      "execution": {
+        "surface": "rest",
+        "fixture": "seeded-loopback",
+        "case": "loopback-shell",
+        "substitutions": [
+          {
+            "token": "http://127.0.0.1:8080",
+            "source": "loopback.base_url"
+          },
+          {
+            "token": "$NB",
+            "source": "seed.notebook_id"
+          }
+        ],
+        "expected": {
+          "kind": "http",
+          "status": 200
         },
-        {
-          "token": "$NB",
-          "source": "seed.notebook_id"
+        "postcondition": {
+          "kind": "rest-notebook-preview",
+          "detail": "preview reports the seeded notebook impact without changing it"
         }
-      ],
-      "expected": {
-        "kind": "http",
-        "status": 200
-      },
-      "postcondition": {
-        "kind": "rest-notebook-preview",
-        "detail": "preview reports the seeded notebook impact without changing it"
       }
-    }
-  },
+    },
     {
       "id": "operations-exposing-the-sync-surface-to-a-peer-example-1",
       "path": "docs/operations.md",
@@ -1723,7 +2132,20 @@
       "sha256": "7a88f24825410a7833d6f4fe48addaaa209df75027a4514423daf6279ad28976",
       "state": "executed",
       "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
-      "execution": {"surface":"config","fixture":"config-fragment","case":"config-fragment","substitutions":[],"expected":{"kind":"config","status":0},"postcondition":{"kind":"sync-rest-policy","detail":"REST sync is explicitly enabled with TLS and bounded request policy"}}
+      "execution": {
+        "surface": "config",
+        "fixture": "config-fragment",
+        "case": "config-fragment",
+        "substitutions": [],
+        "expected": {
+          "kind": "config",
+          "status": 0
+        },
+        "postcondition": {
+          "kind": "sync-rest-policy",
+          "detail": "REST sync is explicitly enabled with TLS and bounded request policy"
+        }
+      }
     },
     {
       "id": "operations-finding-what-has-rotted-workspace-lint-example-1",
@@ -1734,10 +2156,18 @@
       "state": "executed",
       "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
       "execution": {
-        "surface": "cli", "fixture": "seeded-cli", "case": "cli-edge",
+        "surface": "cli",
+        "fixture": "seeded-cli",
+        "case": "cli-edge",
         "substitutions": [],
-        "expected": {"kind": "exit", "status": 1},
-        "postcondition": {"kind": "cli-lint", "detail": "all report forms remain bounded while findings use the documented exit code and do not mutate notes"}
+        "expected": {
+          "kind": "exit",
+          "status": 1
+        },
+        "postcondition": {
+          "kind": "cli-lint",
+          "detail": "all report forms remain bounded while findings use the documented exit code and do not mutate notes"
+        }
       }
     },
     {
@@ -1749,9 +2179,18 @@
       "state": "executed",
       "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
       "execution": {
-        "surface": "cli", "fixture": "seeded-cli", "case": "cli-shell", "substitutions": [],
-        "expected": {"kind": "exit", "status": 0},
-        "postcondition": {"kind": "cli-fix-parity", "detail": "list, dry-run, and apply complete and dry-run does not mutate before apply"}
+        "surface": "cli",
+        "fixture": "seeded-cli",
+        "case": "cli-shell",
+        "substitutions": [],
+        "expected": {
+          "kind": "exit",
+          "status": 0
+        },
+        "postcondition": {
+          "kind": "cli-fix-parity",
+          "detail": "list, dry-run, and apply complete and dry-run does not mutate before apply"
+        }
       }
     },
     {
@@ -1799,10 +2238,23 @@
       "state": "executed",
       "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
       "execution": {
-        "surface": "rest", "fixture": "seeded-loopback", "case": "loopback-shell",
-        "substitutions": [{"token": "http://127.0.0.1:8080", "source": "loopback.base_url"}],
-        "expected": {"kind": "http", "status": 200},
-        "postcondition": {"kind": "mixed-resource-report", "detail": "CLI and REST reports both account for the seeded resource without bytes or paths"}
+        "surface": "rest",
+        "fixture": "seeded-loopback",
+        "case": "loopback-shell",
+        "substitutions": [
+          {
+            "token": "http://127.0.0.1:8080",
+            "source": "loopback.base_url"
+          }
+        ],
+        "expected": {
+          "kind": "http",
+          "status": 200
+        },
+        "postcondition": {
+          "kind": "mixed-resource-report",
+          "detail": "CLI and REST reports both account for the seeded resource without bytes or paths"
+        }
       }
     },
     {
@@ -1817,34 +2269,34 @@
         "detail": "Non-literal command synopsis/transcript: the fence contains a report-only instruction followed by the <document-id> metavariable; no executed concrete CLI example is currently registered."
       }
     },
-  {
-    "id": "operations-monitoring-the-recoll-sidecar-example-1",
-    "path": "docs/operations.md",
-    "section": "monitoring-the-recoll-sidecar",
-    "language": "sh",
-    "sha256": "8f8edcf7325dc424a11ec421c2978da219fefec4cad43d4b51ae10475929dd5c",
-    "state": "executed",
-    "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
-    "execution": {
-      "surface": "rest",
-      "fixture": "seeded-loopback",
-      "case": "loopback-shell",
-      "substitutions": [
-        {
-          "token": "http://127.0.0.1:8080",
-          "source": "loopback.base_url"
+    {
+      "id": "operations-monitoring-the-recoll-sidecar-example-1",
+      "path": "docs/operations.md",
+      "section": "monitoring-the-recoll-sidecar",
+      "language": "sh",
+      "sha256": "8f8edcf7325dc424a11ec421c2978da219fefec4cad43d4b51ae10475929dd5c",
+      "state": "executed",
+      "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
+      "execution": {
+        "surface": "rest",
+        "fixture": "seeded-loopback",
+        "case": "loopback-shell",
+        "substitutions": [
+          {
+            "token": "http://127.0.0.1:8080",
+            "source": "loopback.base_url"
+          }
+        ],
+        "expected": {
+          "kind": "http",
+          "status": 200
+        },
+        "postcondition": {
+          "kind": "rest-sidecar",
+          "detail": "status reports the explicitly disabled sidecar without credentials"
         }
-      ],
-      "expected": {
-        "kind": "http",
-        "status": 200
-      },
-      "postcondition": {
-        "kind": "rest-sidecar",
-        "detail": "status reports the explicitly disabled sidecar without credentials"
       }
-    }
-  },
+    },
     {
       "id": "operations-planning-and-resuming-imports-example-1",
       "path": "docs/operations.md",
@@ -1854,15 +2306,35 @@
       "state": "executed",
       "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
       "execution": {
-        "surface": "cli", "fixture": "seeded-cli", "case": "cli-shell",
+        "surface": "cli",
+        "fixture": "seeded-cli",
+        "case": "cli-shell",
         "substitutions": [
-          {"token": "/tmp/joplin-plan.json", "source": "import.joplin_plan"},
-          {"token": "/tmp/obsidian-plan.json", "source": "import.obsidian_plan"},
-          {"token": "/path/to/raw", "source": "import.joplin_dir"},
-          {"token": "/path/to/vault", "source": "import.obsidian_dir"}
+          {
+            "token": "/tmp/joplin-plan.json",
+            "source": "import.joplin_plan"
+          },
+          {
+            "token": "/tmp/obsidian-plan.json",
+            "source": "import.obsidian_plan"
+          },
+          {
+            "token": "/path/to/raw",
+            "source": "import.joplin_dir"
+          },
+          {
+            "token": "/path/to/vault",
+            "source": "import.obsidian_dir"
+          }
         ],
-        "expected": {"kind": "exit", "status": 0},
-        "postcondition": {"kind": "cli-import-plans", "detail": "both dry runs write explicit reviewed plans and leave canonical state unchanged"}
+        "expected": {
+          "kind": "exit",
+          "status": 0
+        },
+        "postcondition": {
+          "kind": "cli-import-plans",
+          "detail": "both dry runs write explicit reviewed plans and leave canonical state unchanged"
+        }
       }
     },
     {
@@ -1874,15 +2346,35 @@
       "state": "executed",
       "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
       "execution": {
-        "surface": "cli", "fixture": "seeded-cli", "case": "cli-shell",
+        "surface": "cli",
+        "fixture": "seeded-cli",
+        "case": "cli-shell",
         "substitutions": [
-          {"token": "/tmp/joplin-plan.json", "source": "import.joplin_plan"},
-          {"token": "/tmp/obsidian-plan.json", "source": "import.obsidian_plan"},
-          {"token": "/path/to/raw", "source": "import.joplin_dir"},
-          {"token": "/path/to/vault", "source": "import.obsidian_dir"}
+          {
+            "token": "/tmp/joplin-plan.json",
+            "source": "import.joplin_plan"
+          },
+          {
+            "token": "/tmp/obsidian-plan.json",
+            "source": "import.obsidian_plan"
+          },
+          {
+            "token": "/path/to/raw",
+            "source": "import.joplin_dir"
+          },
+          {
+            "token": "/path/to/vault",
+            "source": "import.obsidian_dir"
+          }
         ],
-        "expected": {"kind": "exit", "status": 0},
-        "postcondition": {"kind": "cli-import-preserve", "detail": "reviewed plans drive bounded source-preserving imports for both fixture formats"}
+        "expected": {
+          "kind": "exit",
+          "status": 0
+        },
+        "postcondition": {
+          "kind": "cli-import-preserve",
+          "detail": "reviewed plans drive bounded source-preserving imports for both fixture formats"
+        }
       }
     },
     {
@@ -1906,9 +2398,18 @@
       "state": "executed",
       "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
       "execution": {
-        "surface": "cli", "fixture": "seeded-cli", "case": "cli-shell", "substitutions": [],
-        "expected": {"kind": "exit", "status": 0},
-        "postcondition": {"kind": "cli-tag-rename", "detail": "two dry runs leave tags unchanged and apply renames parent and child tags"}
+        "surface": "cli",
+        "fixture": "seeded-cli",
+        "case": "cli-shell",
+        "substitutions": [],
+        "expected": {
+          "kind": "exit",
+          "status": 0
+        },
+        "postcondition": {
+          "kind": "cli-tag-rename",
+          "detail": "two dry runs leave tags unchanged and apply renames parent and child tags"
+        }
       }
     },
     {
@@ -1919,7 +2420,25 @@
       "sha256": "2f1c63d240d0b08d538da1c79e3800492a0a6fc22ec24a92a2c8c81d127001b8",
       "state": "executed",
       "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
-      "execution": {"surface":"rest","fixture":"seeded-loopback","case":"loopback-shell","substitutions":[{"token":"http://127.0.0.1:8080","source":"loopback.base_url"}],"expected":{"kind":"http","status":200},"postcondition":{"kind":"graph-report","detail":"seeded link graph report is non-vacuous"}}
+      "execution": {
+        "surface": "rest",
+        "fixture": "seeded-loopback",
+        "case": "loopback-shell",
+        "substitutions": [
+          {
+            "token": "http://127.0.0.1:8080",
+            "source": "loopback.base_url"
+          }
+        ],
+        "expected": {
+          "kind": "http",
+          "status": 200
+        },
+        "postcondition": {
+          "kind": "graph-report",
+          "detail": "seeded link graph report is non-vacuous"
+        }
+      }
     },
     {
       "id": "operations-seeing-the-shape-of-the-link-graph-example-2",
@@ -1930,9 +2449,18 @@
       "state": "executed",
       "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
       "execution": {
-        "surface": "cli", "fixture": "seeded-cli", "case": "cli-shell", "substitutions": [],
-        "expected": {"kind": "exit", "status": 0},
-        "postcondition": {"kind": "cli-graph-note", "detail": "write-note creates canonical graph report from non-vacuous seeded links"}
+        "surface": "cli",
+        "fixture": "seeded-cli",
+        "case": "cli-shell",
+        "substitutions": [],
+        "expected": {
+          "kind": "exit",
+          "status": 0
+        },
+        "postcondition": {
+          "kind": "cli-graph-note",
+          "detail": "write-note creates canonical graph report from non-vacuous seeded links"
+        }
       }
     },
     {
@@ -1980,9 +2508,18 @@
       "state": "executed",
       "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
       "execution": {
-        "surface": "cli", "fixture": "seeded-cli", "case": "cli-shell", "substitutions": [],
-        "expected": {"kind": "exit", "status": 0},
-        "postcondition": {"kind": "cli-publish-plan", "detail": "prepared scratch profile produces a bounded reviewed manifest and changes no notes"}
+        "surface": "cli",
+        "fixture": "seeded-cli",
+        "case": "cli-shell",
+        "substitutions": [],
+        "expected": {
+          "kind": "exit",
+          "status": 0
+        },
+        "postcondition": {
+          "kind": "cli-publish-plan",
+          "detail": "prepared scratch profile produces a bounded reviewed manifest and changes no notes"
+        }
       }
     },
     {
@@ -1993,7 +2530,20 @@
       "sha256": "a4fe4fdccb6700cbbee9e4726e28d5f3c4417f76cc7c8a3132470c3181f01826",
       "state": "executed",
       "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
-      "execution": {"surface":"cli","fixture":"seeded-cli","case":"cli-shell","substitutions":[],"expected":{"kind":"exit","status":0},"postcondition":{"kind":"profile-roundtrip","detail":"saved profile is listed then deleted only inside scratch state"}}
+      "execution": {
+        "surface": "cli",
+        "fixture": "seeded-cli",
+        "case": "cli-shell",
+        "substitutions": [],
+        "expected": {
+          "kind": "exit",
+          "status": 0
+        },
+        "postcondition": {
+          "kind": "profile-roundtrip",
+          "detail": "saved profile is listed then deleted only inside scratch state"
+        }
+      }
     },
     {
       "id": "selection-planning-selection-and-privacy-planning-example-1",
@@ -2003,7 +2553,25 @@
       "sha256": "94f5276c5062cd8ce3bca3a147bf14f87872a8ac09f30e7b8420e8c9445ecf56",
       "state": "executed",
       "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
-      "execution": {"surface":"rest","fixture":"seeded-loopback","case":"loopback-shell","substitutions":[{"token":"http://127.0.0.1:8080","source":"loopback.base_url"}],"expected":{"kind":"http","status":200},"postcondition":{"kind":"dry-run-unchanged","detail":"public selection is bounded and canonical rows are unchanged"}}
+      "execution": {
+        "surface": "rest",
+        "fixture": "seeded-loopback",
+        "case": "loopback-shell",
+        "substitutions": [
+          {
+            "token": "http://127.0.0.1:8080",
+            "source": "loopback.base_url"
+          }
+        ],
+        "expected": {
+          "kind": "http",
+          "status": 200
+        },
+        "postcondition": {
+          "kind": "dry-run-unchanged",
+          "detail": "public selection is bounded and canonical rows are unchanged"
+        }
+      }
     },
     {
       "id": "service-backup-and-restore-example-1",
@@ -2037,7 +2605,25 @@
       "sha256": "62cfa104748e418b65de81ffd28f7b86998ef44100b7a7f3eca253af66596cf1",
       "state": "executed",
       "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
-      "execution": {"surface":"cli","fixture":"daemon-scratch","case":"daemon-lifecycle","substitutions":[{"token":"go run ./cmd/notriosd","source":"daemon.binary"}],"expected":{"kind":"exit","status":0},"postcondition":{"kind":"daemon-health","detail":"loopback daemon honors config, serves health, and is terminated cleanly"}}
+      "execution": {
+        "surface": "cli",
+        "fixture": "daemon-scratch",
+        "case": "daemon-lifecycle",
+        "substitutions": [
+          {
+            "token": "go run ./cmd/notriosd",
+            "source": "daemon.binary"
+          }
+        ],
+        "expected": {
+          "kind": "exit",
+          "status": 0
+        },
+        "postcondition": {
+          "kind": "daemon-health",
+          "detail": "loopback daemon honors config, serves health, and is terminated cleanly"
+        }
+      }
     },
     {
       "id": "stable-links-linking-to-a-section-or-a-block-example-1",
@@ -2048,10 +2634,23 @@
       "state": "executed",
       "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
       "execution": {
-        "surface": "cli", "fixture": "seeded-cli", "case": "cli-shell",
-        "substitutions": [{"token": "doc_01H...", "source": "seed.document_id"}],
-        "expected": {"kind": "exit", "status": 0},
-        "postcondition": {"kind": "cli-link-anchors", "detail": "list plus heading/text/block anchors all preserve seeded document identity"}
+        "surface": "cli",
+        "fixture": "seeded-cli",
+        "case": "cli-shell",
+        "substitutions": [
+          {
+            "token": "doc_01H...",
+            "source": "seed.document_id"
+          }
+        ],
+        "expected": {
+          "kind": "exit",
+          "status": 0
+        },
+        "postcondition": {
+          "kind": "cli-link-anchors",
+          "detail": "list plus heading/text/block anchors all preserve seeded document identity"
+        }
       }
     },
     {
@@ -2063,10 +2662,27 @@
       "state": "executed",
       "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
       "execution": {
-        "surface": "cli", "fixture": "seeded-cli", "case": "cli-shell",
-        "substitutions": [{"token": "db_qz...", "source": "seed.database_id"}, {"token": "doc_01H...", "source": "seed.document_id"}],
-        "expected": {"kind": "exit", "status": 0},
-        "postcondition": {"kind": "cli-open", "detail": "local stable URI resolves to the scratch note without launching an external application"}
+        "surface": "cli",
+        "fixture": "seeded-cli",
+        "case": "cli-shell",
+        "substitutions": [
+          {
+            "token": "db_qz...",
+            "source": "seed.database_id"
+          },
+          {
+            "token": "doc_01H...",
+            "source": "seed.document_id"
+          }
+        ],
+        "expected": {
+          "kind": "exit",
+          "status": 0
+        },
+        "postcondition": {
+          "kind": "cli-open",
+          "detail": "local stable URI resolves to the scratch note without launching an external application"
+        }
       }
     },
     {
@@ -2089,7 +2705,25 @@
       "sha256": "e7b2293944169cf8c99742977b94c3fd46e2ba80a0db2e259a9ca3ba42310800",
       "state": "executed",
       "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
-      "execution": {"surface":"cli","fixture":"seeded-cli","case":"cli-shell","substitutions":[{"token":"doc_01H...","source":"seed.document_id"}],"expected":{"kind":"exit","status":0},"postcondition":{"kind":"stable-link","detail":"output carries the seeded database and document identity"}}
+      "execution": {
+        "surface": "cli",
+        "fixture": "seeded-cli",
+        "case": "cli-shell",
+        "substitutions": [
+          {
+            "token": "doc_01H...",
+            "source": "seed.document_id"
+          }
+        ],
+        "expected": {
+          "kind": "exit",
+          "status": 0
+        },
+        "postcondition": {
+          "kind": "stable-link",
+          "detail": "output carries the seeded database and document identity"
+        }
+      }
     },
     {
       "id": "stable-links-telling-this-machine-where-your-databases-are-example-1",

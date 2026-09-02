@@ -529,7 +529,7 @@
     },
     {
       "path": "docs/cli.md",
-      "sha256": "e6c280300221831e203330323e99b71cda187d7797ff77bd6e65a56c7107525e",
+      "sha256": "7185b973cf995957013a8656d5704bf7a26d0d61efb3a3fd9c72f99e310039bc",
       "help_note": "doc_help_cli",
       "owner": "go:github.com/renesugar/notrios/cmd/notriosctl#printHelp",
       "sections": [
@@ -557,6 +557,26 @@
           "id": "doctor",
           "level": 2,
           "title": "doctor",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/cmd/notriosctl#printHelp",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        },
+        {
+          "id": "paths",
+          "level": 2,
+          "title": "paths",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/cmd/notriosctl#printHelp",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        },
+        {
+          "id": "config-show",
+          "level": 2,
+          "title": "config show",
           "audience": "user",
           "kind": "actionable_or_reference",
           "owner": "go:github.com/renesugar/notrios/cmd/notriosctl#printHelp",
@@ -1411,7 +1431,7 @@
     },
     {
       "path": "docs/installation.md",
-      "sha256": "5598068614d68fb14e1a34027561be20300b4b0309fc2e624b579eed6b2ed1a0",
+      "sha256": "4078fd91c6ee2761479b2afba434a2f7caf38cf6a6deb6a3d3f226af108cdd33",
       "help_note": "doc_help_installation",
       "owner": "go:github.com/renesugar/notrios/cmd/notriosd#main",
       "sections": [
@@ -1486,9 +1506,9 @@
           "grade": "unverified"
         },
         {
-          "id": "configuration-paths-resolve-against-the-working-directory-too",
+          "id": "where-your-files-go",
           "level": 3,
-          "title": "Configuration paths resolve against the working directory too",
+          "title": "Where your files go",
           "audience": "user",
           "kind": "actionable_or_reference",
           "owner": "go:github.com/renesugar/notrios/cmd/notriosd#main",
@@ -2159,19 +2179,19 @@
       "id": "published_markdown",
       "count": 15,
       "unit": "pages",
-      "sections": 203,
+      "sections": 205,
       "owner": "go:github.com/renesugar/notrios/internal/helpdocs#Seed"
     },
     {
       "id": "help_notebook",
       "count": 15,
       "unit": "mirrored notes",
-      "sections": 203,
+      "sections": 205,
       "owner": "go:github.com/renesugar/notrios/internal/helpdocs#Seed"
     },
     {
       "id": "cli_help",
-      "count": 56,
+      "count": 58,
       "unit": "usage forms",
       "owner": "go:github.com/renesugar/notrios/cmd/notriosctl#printHelp"
     },
@@ -2263,9 +2283,9 @@
       "executed": 0,
       "generated": 0,
       "claimed": 0,
-      "unverified": 203
+      "unverified": 205
     },
-    "denominator": 203,
+    "denominator": 205,
     "reconciles": true,
     "finding": "The manual does not yet name directive fragments or executable checks, so all current section units are unverified even where independent tests exist."
   },

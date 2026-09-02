@@ -3,6 +3,8 @@
 <!-- source: go:github.com/renesugar/notrios/cmd/notriosctl#printHelp -->
 printHelp is the finite command and flag usage registry shown by notriosctl.
 - notriosctl doctor [--config config.yaml] [--db path] [--asset-store path]
+- notriosctl paths [--json] [--no-redact]
+- notriosctl config show [--config config.yaml] [--json] [--no-redact]
 - notriosctl version
 - notriosctl import joplin-raw [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--batch-size 100] [--preserve-source] [--dry-run] [--write-config path] [--import-config path] [--localize-media] <raw-export-dir>
 - notriosctl import obsidian [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--dry-run] [--localize-media] <vault-dir>
@@ -107,6 +109,73 @@ ok    database         ./data/notes.sqlite (schema version 27)
 info  web ui           web/dist missing here; run `make web` or serve API-only
 doctor: required checks passed
 ```
+
+## paths
+
+```sh
+notriosctl paths [--json] [--no-redact]
+```
+
+Where this instance keeps things, and how it decided. This is the first thing to
+run when Notrios cannot find your notes, or when you are not sure which library
+a command is about to touch.
+
+```text
+mode: installed
+  cache           ~/.cache/notrios
+  config          ~/.config/notrios
+  data            ~/.local/share/notrios
+  program_assets  /usr/local/share/notrios
+  runtime         ~/.local/state/notrios/runtime
+  state           ~/.local/state/notrios
+notices:
+  [runtime_dir_unset] XDG_RUNTIME_DIR is not set and the specification names no fallback; using ~/.local/state/notrios/runtime rather than a shared temporary directory
+```
+
+`mode` is the layout that was selected:
+
+| Mode | Meaning |
+|---|---|
+| `installed` | The native per-OS locations. This is a normal installation. |
+| `portable` | A `notrios-portable.txt` marker sits beside the executable, so every root is under the executable's own tree. Nothing else selects portable mode — never the current directory, and never that directory being writable. |
+| `source` | The binary is running from a Notrios checkout. Every root is checkout-local, so a development build cannot read or write an installed instance's library. |
+
+`notices` explain any decision you did not make yourself: a variable that was
+ignored and why, or a fallback that was substituted. Each carries a stable code
+so it can be matched in scripts.
+
+The home directory is shown as `~` by default, because this output gets pasted
+into issue reports. `--no-redact` prints it in full. `--json` emits the same
+information as `{"mode", "roots", "notices", "redacted"}`.
+
+## config show
+
+```sh
+notriosctl config show [--config config.yaml] [--json] [--no-redact]
+```
+
+The configuration this instance actually resolved, and where each value came
+from. `doctor` tells you *which file* loaded; this tells you what is in effect.
+
+```text
+source: ~/.config/notrios/config.yaml
+
+  data.directory                       ~/lib                    file
+  data.database_path                   ~/lib/notes.sqlite       resolved
+  data.state_dir                       ~/lib                    resolved
+  remote_media.default_action          block                    file
+  server.listen_addr                   127.0.0.1:8080           compiled
+
+origin: file = stated in the configuration file, resolved = resolved from the platform roots, compiled = built-in default
+```
+
+The origin column is the useful part. `file` means you wrote it. `resolved`
+means nothing said otherwise, so it was derived from the platform roots — which
+is why `data.database_path` above sits under a `data.directory` you did set.
+`compiled` means the built-in default is still in force.
+
+No secret is printed. `sync.credential_ref` is shown because it is a *reference*
+to an entry in a native credential store, never a credential.
 
 ## import
 

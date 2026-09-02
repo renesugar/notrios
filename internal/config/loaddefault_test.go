@@ -86,15 +86,47 @@ func TestLoadDefaultReadsTheCheckoutExampleInSourceMode(t *testing.T) {
 	}
 }
 
-// The user's own config outranks the checkout example, so a developer who has
-// written one gets theirs rather than the sample.
-func TestLoadDefaultPrefersTheUserConfigOverTheCheckoutExample(t *testing.T) {
+// A checkout is a separate instance and never reads the installed instance's
+// configuration.
+//
+// This is a regression guard for a real defect. An earlier version of H4 kept
+// the config root native in source mode, so a developer who also had Notrios
+// installed shared one config root with it: <config>/config.yaml -- their real,
+// installed configuration -- was found first, and running the checkout build
+// with no flags opened their production library and would have written notes to
+// it. Instance isolation, not user identity, is the property that matters.
+func TestACheckoutNeverReadsTheInstalledInstanceConfiguration(t *testing.T) {
+	installedHome := t.TempDir()
+	t.Setenv("HOME", installedHome)
+	t.Setenv("XDG_CONFIG_HOME", filepath.Join(installedHome, ".config"))
+	writeConfig(t, filepath.Join(installedHome, ".config", "notrios", "config.yaml"),
+		"data:\n  database_path: /the/end/users/library.sqlite\n")
+
+	checkout := t.TempDir()
+	writeConfig(t, filepath.Join(checkout, "go.mod"), "module github.com/renesugar/notrios\n")
+	writeConfig(t, filepath.Join(checkout, "PLAN.md"), "# plan\n")
+	writeConfig(t, filepath.Join(checkout, "AGENTS.md"), "# agents\n")
+	writeConfig(t, filepath.Join(checkout, config.ExampleRelativePath),
+		"data:\n  database_path: ./data/notes.sqlite\n")
+	t.Chdir(checkout)
+
+	loaded, err := config.LoadDefault()
+	if err != nil {
+		t.Fatalf("load: %v", err)
+	}
+	if loaded.Data.DatabasePath == "/the/end/users/library.sqlite" {
+		t.Fatal("the checkout opened the installed instance's library")
+	}
+	if loaded.Data.DatabasePath != "./data/notes.sqlite" {
+		t.Fatalf("expected the checkout's own database, got %q", loaded.Data.DatabasePath)
+	}
+}
+
+// Within a checkout, a developer's own config outranks the committed example.
+func TestACheckoutLocalConfigOutranksTheCommittedExample(t *testing.T) {
 	home := t.TempDir()
-	configHome := filepath.Join(home, ".config")
 	t.Setenv("HOME", home)
-	t.Setenv("XDG_CONFIG_HOME", configHome)
-	writeConfig(t, filepath.Join(configHome, "notrios", "config.yaml"),
-		"server:\n  listen_addr: 127.0.0.1:57777\n")
+	t.Setenv("XDG_CONFIG_HOME", filepath.Join(home, ".config"))
 
 	checkout := t.TempDir()
 	writeConfig(t, filepath.Join(checkout, "go.mod"), "module github.com/renesugar/notrios\n")
@@ -102,6 +134,10 @@ func TestLoadDefaultPrefersTheUserConfigOverTheCheckoutExample(t *testing.T) {
 	writeConfig(t, filepath.Join(checkout, "AGENTS.md"), "# agents\n")
 	writeConfig(t, filepath.Join(checkout, config.ExampleRelativePath),
 		"server:\n  listen_addr: 127.0.0.1:58888\n")
+	// The checkout-local config root lives under ./data, which is gitignored,
+	// so a registry naming every local database path cannot be committed.
+	writeConfig(t, filepath.Join(checkout, "data", "config", "config.yaml"),
+		"server:\n  listen_addr: 127.0.0.1:57777\n")
 	t.Chdir(checkout)
 
 	loaded, err := config.LoadDefault()
@@ -109,7 +145,7 @@ func TestLoadDefaultPrefersTheUserConfigOverTheCheckoutExample(t *testing.T) {
 		t.Fatalf("load: %v", err)
 	}
 	if loaded.Server.ListenAddr != "127.0.0.1:57777" {
-		t.Fatalf("the user's own config did not win: %q", loaded.Server.ListenAddr)
+		t.Fatalf("the checkout-local config did not win: %q", loaded.Server.ListenAddr)
 	}
 }
 

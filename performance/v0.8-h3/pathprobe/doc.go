@@ -41,6 +41,24 @@
 // A generated profile's database, assets, projections, index and quarantine no
 // longer default inside ~/.config. The inverse is
 // TestGeneratedProfileDataGoesUnderTheDataRoot in internal/profiles.
+// Retired by H4 slice B:
+//
+//   - TestDefaultConfigurationIsReadFromTheCurrentWorkingDirectory
+//
+// config.LoadDefaultOrExample became config.LoadDefault, which reads a
+// checkout's example only in source mode. Its inverses live in internal/config.
+//
+// Retired by H4 slice D:
+//
+//   - TestWebRootPrefersTheWorkingDirectoryOverTheExecutable
+//   - TestExplicitWebRootIsTheOnlyCandidate
+//
+// The installed program-assets root now precedes the executable's tree, and the
+// working directory is consulted only in a checkout. The inverses live in
+// internal/httpapi as TestResolveWebRootUsesTheWorkingDirectoryInACheckout and
+// TestResolveWebRootIgnoresTheWorkingDirectoryWhenInstalled, beside
+// TestResolveWebRootExplicitPathDoesNotFallThrough which already covered the
+// explicit case.
 //
 // The package holds only _test.go files, so it contributes nothing to a build.
 package pathprobe

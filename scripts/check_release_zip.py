@@ -59,6 +59,28 @@ forbidden_segments = (
 def has_forbidden_segment(name: str) -> bool:
     return any(("/" + name).find("/" + segment) >= 0 for segment in forbidden_segments)
 
+
+# An ELF header. Compiled binaries do not belong in a source archive, whatever
+# they are called.
+#
+# The exclusion list used to name notrios, notriosd and notriosctl, which is a
+# list somebody has to remember to extend. Nobody did: `go build ./cmd/notrioslib`
+# with no -o wrote an 11 MB executable into the repository root, it was committed
+# in v0.8 H1, and it shipped in every release archive after that because its name
+# was not on the list. Checking what a file *is* needs no maintenance.
+ELF_MAGIC = b"\x7fELF"
+
+
+def is_compiled_binary(zf: zipfile.ZipFile, name: str) -> bool:
+    if name.endswith("/"):
+        return False
+    info = zf.getinfo(name)
+    if info.file_size < len(ELF_MAGIC):
+        return False
+    # Source files this size are normal; only read the first bytes.
+    with zf.open(name) as handle:
+        return handle.read(len(ELF_MAGIC)) == ELF_MAGIC
+
 with zipfile.ZipFile(zip_path) as zf:
     names = set(zf.namelist())
     missing = sorted(required_exact - names)
@@ -77,6 +99,7 @@ with zipfile.ZipFile(zip_path) as zf:
         or has_forbidden_segment(name)
         or "__pycache__/" in name
         or name.endswith((".pyc", ".sqlite", ".zip", "~"))
+        or is_compiled_binary(zf, name)
     )
     if forbidden:
         print("forbidden zip entries present:")

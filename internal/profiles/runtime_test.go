@@ -282,3 +282,87 @@ func isolateRoots(t *testing.T) string {
 	t.Setenv("XDG_CACHE_HOME", filepath.Join(home, ".cache"))
 	return home
 }
+
+// `profile list` is the command a user runs to find a profile name for the
+// command line, so it reports the port each profile will bind. The port is read
+// from the profile's own config rather than duplicated into the registry, where
+// a second copy would be free to disagree the moment somebody edited the file.
+func TestListReportsThePortFromEachProfileConfig(t *testing.T) {
+	home := isolateRoots(t)
+	registry := filepath.Join(home, ".config", "notrios", "profiles.json")
+	t.Setenv("NOTRIOS_PROFILE_REGISTRY", registry)
+
+	wanted := map[string]string{
+		"personal_notes": "127.0.0.1:18201",
+		"work_notes":     "127.0.0.1:18202",
+		"website_notes":  "127.0.0.1:18203",
+	}
+	for name, listen := range wanted {
+		if _, err := Create(t.Context(), CreateOptions{
+			Name: name, RegistryPath: registry, ListenAddr: listen, SyncTarget: SyncNone,
+		}); err != nil {
+			t.Fatalf("create %s: %v", name, err)
+		}
+	}
+
+	summaries, err := List(registry)
+	if err != nil {
+		t.Fatalf("list: %v", err)
+	}
+	if len(summaries) != len(wanted) {
+		t.Fatalf("listed %d profiles, want %d", len(summaries), len(wanted))
+	}
+	for _, summary := range summaries {
+		if summary.Kind != "runtime" {
+			t.Errorf("%s: kind = %q", summary.Name, summary.Kind)
+		}
+		if summary.Problem != "" {
+			t.Errorf("%s: unexpected problem %q", summary.Name, summary.Problem)
+		}
+		if got := summary.ListenAddr; got != wanted[summary.Name] {
+			t.Errorf("%s: listen = %q, want %q", summary.Name, got, wanted[summary.Name])
+		}
+	}
+}
+
+// One unreadable profile reports itself rather than hiding the others. A
+// listing is the first thing a user runs; failing the whole command because one
+// config file went missing would tell them nothing about the nine that are fine.
+func TestListSurvivesOneUnreadableProfile(t *testing.T) {
+	home := isolateRoots(t)
+	registry := filepath.Join(home, ".config", "notrios", "profiles.json")
+	t.Setenv("NOTRIOS_PROFILE_REGISTRY", registry)
+
+	for name, listen := range map[string]string{"good": "127.0.0.1:18211", "broken": "127.0.0.1:18212"} {
+		if _, err := Create(t.Context(), CreateOptions{
+			Name: name, RegistryPath: registry, ListenAddr: listen, SyncTarget: SyncNone,
+		}); err != nil {
+			t.Fatalf("create %s: %v", name, err)
+		}
+	}
+	broken, err := Show(registry, "broken")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Remove(broken.ConfigPath); err != nil {
+		t.Fatal(err)
+	}
+
+	summaries, err := List(registry)
+	if err != nil {
+		t.Fatalf("list must not fail because one profile is unreadable: %v", err)
+	}
+	byName := map[string]Summary{}
+	for _, summary := range summaries {
+		byName[summary.Name] = summary
+	}
+	if got := byName["good"].ListenAddr; got != "127.0.0.1:18211" {
+		t.Errorf("the healthy profile lost its port: %q", got)
+	}
+	if byName["broken"].Problem == "" {
+		t.Error("the unreadable profile did not report why")
+	}
+	if byName["broken"].ListenAddr != "" {
+		t.Error("the unreadable profile reported a port it could not have read")
+	}
+}

@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/renesugar/notrios/internal/config"
@@ -352,7 +353,33 @@ func (s *Service) HTTPServer() *http.Server {
 func (s *Service) ListenAndServe() error {
 	server := s.HTTPServer()
 	certificate, key := s.TLSFiles()
-	return listenAndServe(server, certificate, key)
+	return explainBindFailure(listenAndServe(server, certificate, key), s.Config.Server.ListenAddr)
+}
+
+// explainBindFailure turns "address already in use" into advice.
+//
+// Two Notrios instances on one machine is a supported arrangement -- a
+// development checkout and an installed instance, or several profiles -- and
+// they are kept apart by having different databases and different ports. The
+// databases are separated automatically; the ports are not, because both
+// default to 127.0.0.1:8080. So the common first encounter with running two
+// instances is this error, and a bare "bind: address already in use" does not
+// say that another Notrios is the likely cause or what to do about it.
+func explainBindFailure(err error, listenAddr string) error {
+	if err == nil || !errors.Is(err, syscall.EADDRINUSE) {
+		return err
+	}
+	listenAddr = strings.TrimSpace(listenAddr)
+	if listenAddr == "" {
+		listenAddr = "the configured address"
+	}
+	return fmt.Errorf("%w\n\n"+
+		"%s is already in use. Another Notrios instance is the usual reason: an\n"+
+		"installed instance and a development checkout both default to this address,\n"+
+		"and so does every profile that has not been given its own.\n\n"+
+		"Give this one a different port with -addr 127.0.0.1:8099, or set\n"+
+		"server.listen_addr in its configuration. `notriosctl profile list` shows the\n"+
+		"address each profile will bind.", err, listenAddr)
 }
 
 type servingHTTPServer interface {

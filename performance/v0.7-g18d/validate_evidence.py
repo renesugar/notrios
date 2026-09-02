@@ -37,12 +37,15 @@ def without_runtime(report: dict) -> dict:
 def validate_registry(registry: dict, report: dict) -> None:
     assert registry["schema"] == "notrios.docaudit.registry.v2"
     examples = registry["executables"]
-    assert len(examples) == report["entries"] == 131
-    assert len({item["id"] for item in examples}) == 131
+    # 131 -> 133 in v0.8 H4 slice D: the `paths` and `config show` synopses.
+    assert len(examples) == report["entries"] == 133
+    assert len({item["id"] for item in examples}) == 133
     executed = [item for item in examples if item["state"] == "executed"]
     unverified = [item for item in examples if item["state"] == "unverified"]
     assert len(executed) == report["executed"] == 63
-    assert len(unverified) == report["unverified"] == 68
+    # 68 -> 70: both new synopses are bracketed-optional forms, registered as
+    # illustrative placeholders like every other synopsis in that document.
+    assert len(unverified) == report["unverified"] == 70
     assert {item["execution"]["surface"] for item in executed} == {
         "cli", "config", "rest", "mcp"
     }

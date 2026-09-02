@@ -19,7 +19,9 @@ class G18aEvidenceTests(unittest.TestCase):
         # The baseline tracks the documentation surface, so a new section moves
         # it by one; the number is asserted rather than computed so that an
         # unnoticed section appearing or vanishing still fails here.
-        self.assertEqual(inventory["grade_baseline"]["denominator"], 203)
+        # 203 -> 205 in v0.8 H4 slice D: the `paths` and `config show`
+        # sections in docs/cli.md.
+        self.assertEqual(inventory["grade_baseline"]["denominator"], 205)
 
     def test_duplicate_fragment_is_rejected(self):
         source = """// A.\n//notrios:doc user same\nfunc A() {}\n// B.\n//notrios:doc user same\nfunc B() {}\n"""

@@ -21,6 +21,7 @@ coverage.*
 /notrios
 /notriosd
 /notriosctl
+/notrioslib
 
 # Python bytecode caches (scripts/ helpers)
 __pycache__/

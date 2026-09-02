@@ -31,13 +31,18 @@ func TestRepositoryAuditReportsHonestCoverage(t *testing.T) {
 	// the honest grade — the desktop hand-off was proven as far as xdg-open but
 	// not observed in a running GUI, and diagram rendering is verified in
 	// Chromium but not in the Wails webview.
-	if report.ManualSections != 203 || report.Fragments != 15 || report.Claims != 4 ||
-		report.Executables != 131 || report.Journeys != 9 {
+	// 203 -> 205 manual sections and 358 -> 362 denominator in v0.8 H4 slice D:
+	// the `paths` and `config show` sections in docs/cli.md, each contributing a
+	// section and a registered example.
+	if report.ManualSections != 205 || report.Fragments != 15 || report.Claims != 4 ||
+		report.Executables != 133 || report.Journeys != 9 {
 		t.Fatalf("unexpected coverage surface: %+v", report)
 	}
 	if report.Counts[GradeExecuted] != 71 || report.Counts[GradeGenerated] != 11 ||
-		report.Counts[GradeClaimed] != 4 || report.Counts[GradeUnverified] != 272 ||
-		report.Denominator != 358 {
+		// 272 -> 276 unverified in v0.8 H4 slice D: two new docs/cli.md
+		// sections and their two registered synopsis examples.
+		report.Counts[GradeClaimed] != 4 || report.Counts[GradeUnverified] != 276 ||
+		report.Denominator != 362 {
 		t.Fatalf("coverage counts hide or lose units: counts=%v denominator=%d", report.Counts, report.Denominator)
 	}
 	if len(resolvedTS) == 0 {

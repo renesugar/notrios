@@ -23,6 +23,7 @@ import (
 	"github.com/renesugar/notrios/internal/importers/obsidian"
 	"github.com/renesugar/notrios/internal/importers/twitter"
 	"github.com/renesugar/notrios/internal/localize"
+	"github.com/renesugar/notrios/internal/paths"
 	"github.com/renesugar/notrios/internal/snapshotimage"
 	"github.com/renesugar/notrios/internal/store"
 	"github.com/renesugar/notrios/internal/version"
@@ -39,6 +40,10 @@ func main() {
 		fmt.Println(version.Version)
 	case "doctor":
 		runDoctor(os.Args[2:])
+	case "paths":
+		runPaths(os.Args[2:])
+	case "config":
+		runConfig(os.Args[2:])
 	case "import":
 		runImport(os.Args[2:])
 	case "export":
@@ -582,6 +587,10 @@ func printHelp() {
 
 Usage:
   notriosctl doctor [--config config.yaml] [--db path] [--asset-store path]
+  notriosctl paths [--json] [--no-redact]
+                                                 # resolved mode and roots (config, data, state, cache, runtime, assets)
+  notriosctl config show [--config config.yaml] [--json] [--no-redact]
+                                                 # resolved configuration and where each value came from
   notriosctl version
   notriosctl import joplin-raw [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--batch-size 100] [--preserve-source] [--dry-run] [--write-config path] [--import-config path] [--localize-media] <raw-export-dir>
   notriosctl import obsidian [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--dry-run] [--localize-media] <vault-dir>
@@ -1270,9 +1279,16 @@ func runSeedHelp(args []string) {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(2)
 	}
-	docsDir := "docs"
+	// The positional argument wins. Otherwise the documentation ships with the
+	// program, so it comes from the installed assets root; the bare relative
+	// "docs" is a checkout convenience and is used only in a checkout, where it
+	// is what a developer means.
+	docsDir := ""
 	if fs.NArg() == 1 {
 		docsDir = fs.Arg(0)
+	}
+	if docsDir == "" {
+		docsDir = defaultHelpDocsDir()
 	}
 	st := openStoreFromFlags(*configPath, *dbPath, *assetStore)
 	defer st.Close()
@@ -1394,4 +1410,37 @@ func firstNonEmptyString(values ...string) string {
 		}
 	}
 	return ""
+}
+
+// defaultHelpDocsDir locates the documentation shipped with this build.
+func defaultHelpDocsDir() string {
+	resolution, err := paths.ForProcess(nil)
+	if err != nil {
+		return "docs"
+	}
+	if resolution.Mode == paths.ModeSource {
+		return "docs"
+	}
+	if assets := strings.TrimSpace(resolution.Root(paths.RootProgramAssets)); assets != "" {
+		return filepath.Join(assets, "docs")
+	}
+	return "docs"
+}
+
+// runConfig dispatches the config subcommands. `show` is the only one: reading
+// the resolved configuration is a diagnostic, and writing it is what the
+// configuration file and the flags are for.
+func runConfig(args []string) {
+	if len(args) == 0 {
+		fmt.Fprintln(os.Stderr, "usage: notriosctl config show [--config config.yaml] [--json] [--no-redact]")
+		os.Exit(2)
+	}
+	switch args[0] {
+	case "show":
+		runConfigShow(args[1:])
+	default:
+		fmt.Fprintf(os.Stderr, "unknown config command %q\n", args[0])
+		fmt.Fprintln(os.Stderr, "usage: notriosctl config show [--config config.yaml] [--json] [--no-redact]")
+		os.Exit(2)
+	}
 }

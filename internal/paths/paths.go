@@ -205,11 +205,23 @@ func resolvePortable(goos string, options Options, result *Resolution) {
 // committed. NOTRIOS_PROFILE_REGISTRY already exists for anyone who does want
 // an isolated registry.
 func resolveSource(goos string, options Options, result *Resolution) error {
-	// The native roots are resolved first because config is taken from them.
-	if err := resolveInstalled(goos, options, result); err != nil {
-		return err
-	}
+	result.Roots[RootProgramAssets] = Join(goos, ".", "web", "dist")
 	result.Mode = ModeSource
+	// A checkout is a separate *instance*, and every root is checkout-local.
+	//
+	// An earlier version kept the config root native, reasoning that a checkout
+	// is not a different user. True, and the wrong question. A developer who
+	// also has Notrios installed shares one config root with it, so
+	// <config>/config.yaml -- their real, installed configuration -- was found
+	// first and `make serve` in the checkout opened their production library
+	// and would have written notes to it. Instance isolation, not user
+	// identity, is the property that matters.
+	//
+	// The config root lives under ./data rather than ./config so a registry
+	// naming every local database path cannot be committed by a stray
+	// `git add -A`: ./data is ignored and ./config is tracked.
+	result.Roots[RootConfig] = Join(goos, ".", "data", "config")
+
 	// All four mutable roots collapse onto the checkout's ./data.
 	//
 	// The four-way split exists for user installations: XDG separates them,
@@ -222,9 +234,8 @@ func resolveSource(goos string, options Options, result *Resolution) error {
 	for _, name := range []string{RootData, RootState, RootCache, RootRuntime} {
 		result.Roots[name] = Join(goos, ".", "data")
 	}
-	result.Roots[RootProgramAssets] = Join(goos, ".", "web", "dist")
 	result.note(NoticeSourceSelected,
-		"source mode: a checkout was detected, so data and assets are checkout-relative; config stays in the user config root")
+		"source mode: a checkout was detected, so every root is checkout-local and the installed instance is untouched")
 	return nil
 }
 

@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/renesugar/notrios/internal/paths"
 )
 
 // Finding the built web interface.
@@ -33,19 +35,43 @@ func WebRootCandidates(explicit string) []string {
 	if trimmed := strings.TrimSpace(explicit); trimmed != "" {
 		return []string{filepath.Clean(trimmed)}
 	}
-	candidates := []string{filepath.Clean("web/dist")}
-	executable, err := os.Executable()
-	if err != nil {
-		return candidates
+
+	// The installed assets first, then the executable's own tree, and the
+	// working directory only in a checkout.
+	//
+	// The working directory used to come first, unconditionally. That is right
+	// for a developer standing in a checkout and wrong once the binary is
+	// installed: the HTML, CSS and JavaScript loaded into the application's own
+	// window were taken from a web/dist beside wherever the user happened to
+	// be, which is a content-injection path gated on nothing but the current
+	// directory.
+	resolution, err := paths.ForProcess(nil)
+	sourceMode := err == nil && resolution.Mode == paths.ModeSource
+
+	candidates := []string{}
+	if err == nil && !sourceMode {
+		// In an installed layout the program assets root holds the interface
+		// in a web/ subdirectory. In source mode that root *is* web/dist, and
+		// is added below as the working-directory candidate instead.
+		if assets := strings.TrimSpace(resolution.Root(paths.RootProgramAssets)); assets != "" {
+			candidates = append(candidates, filepath.Join(assets, "web"))
+		}
 	}
-	if resolved, err := filepath.EvalSymlinks(executable); err == nil {
-		executable = resolved
+
+	if executable, err := os.Executable(); err == nil {
+		if resolved, err := filepath.EvalSymlinks(executable); err == nil {
+			executable = resolved
+		}
+		dir := filepath.Dir(executable)
+		candidates = append(candidates,
+			filepath.Join(dir, "web", "dist"),
+			filepath.Join(filepath.Dir(dir), "web", "dist"),
+		)
 	}
-	dir := filepath.Dir(executable)
-	candidates = append(candidates,
-		filepath.Join(dir, "web", "dist"),
-		filepath.Join(filepath.Dir(dir), "web", "dist"),
-	)
+
+	if sourceMode {
+		candidates = append(candidates, filepath.Clean("web/dist"))
+	}
 	return candidates
 }
 

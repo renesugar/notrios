@@ -43,5 +43,5 @@ zip -qr "$OUT" . \
   -x '.claude/*' \
   -x 'notrios-*.zip' \
   -x 'coverage.*' \
-  -x 'notrios' -x 'notriosd' -x 'notriosctl'
+  -x 'notrios' -x 'notriosd' -x 'notriosctl' -x 'notrioslib'
 python3 scripts/check_release_zip.py "$OUT"

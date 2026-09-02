@@ -338,42 +338,48 @@
       "name": "Built web interface",
       "category": "program_assets",
       "file": "internal/httpapi/webassets.go",
-      "anchor": "candidates := []string{filepath.Clean(\"web/dist\")}",
-      "current": "--web-dir when set, else web/dist relative to the working directory, then <exe dir>/web/dist, then <exe parent>/web/dist",
+      "anchor": "candidates = append(candidates, filepath.Join(assets, \"web\"))",
+      "current": "--web-dir when set, else <program_assets>/web, then the executable's directory and its parent, and the working directory only in a checkout",
       "defects": [
         "cwd-precedes-executable"
       ],
       "target": "--web-dir, else <datadir>/notrios/web, else executable-relative; the working directory only in source mode",
       "migration": "none",
-      "owner": "H4-A1"
+      "owner": "H4-A1",
+      "status": "resolved",
+      "resolved_by": "H4-A1"
     },
     {
       "id": "help-docs",
       "name": "Help notebook seed source",
       "category": "program_assets",
       "file": "cmd/notriosctl/main.go",
-      "anchor": "docsDir := \"docs\"",
-      "current": "the first positional argument, else the literal \"docs\" relative to the current working directory",
+      "anchor": "docsDir = defaultHelpDocsDir()",
+      "current": "the positional argument, else <program_assets>/docs; the bare relative \"docs\" only in a checkout",
       "defects": [
         "cwd-relative-default"
       ],
       "target": "<program_assets>/docs; the working-directory default only in source mode",
       "migration": "none",
-      "owner": "H4-A1"
+      "owner": "H4-A1",
+      "status": "resolved",
+      "resolved_by": "H4-A1"
     },
     {
       "id": "desktop-entry",
       "name": "notrios:// URL handler desktop entry",
       "category": "external",
       "file": "cmd/notriosctl/stablelinks.go",
-      "anchor": "directory = filepath.Join(home, \".local\", \"share\", \"applications\")",
-      "current": "--dir, else $HOME/.local/share/applications/notrios-url-handler.desktop, plus update-desktop-database and xdg-mime",
+      "anchor": "directory = filepath.Join(filepath.Dir(dataRoot), \"applications\")",
+      "current": "--dir, else $XDG_DATA_HOME/applications/notrios-url-handler.desktop",
       "defects": [
         "ignores-xdg-data-home"
       ],
       "target": "$XDG_DATA_HOME/applications/notrios-url-handler.desktop",
       "migration": "regenerate",
-      "owner": "H4-X1"
+      "owner": "H4-X1",
+      "status": "resolved",
+      "resolved_by": "H4-X1"
     },
     {
       "id": "snapshot-output",

@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/renesugar/notrios/internal/config"
+	"github.com/renesugar/notrios/internal/paths"
 	"github.com/renesugar/notrios/internal/profiles"
 	"github.com/renesugar/notrios/internal/stablelink"
 	"github.com/renesugar/notrios/internal/store"
@@ -258,12 +259,12 @@ func runProfileList(args []string) {
 		os.Exit(2)
 	}
 	path := registryPathOrDefault(*registryPath)
-	registry, err := profiles.Load(path)
+	summaries, err := profiles.List(path)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
-	printJSON(map[string]any{"registry": path, "profiles": registry.Profiles})
+	printJSON(map[string]any{"registry": path, "profiles": summaries})
 }
 
 // runProfileForget removes a registry entry. It never touches the database the
@@ -639,12 +640,17 @@ func runRegisterURLHandler(args []string) {
 	}
 	directory := strings.TrimSpace(*dir)
 	if directory == "" {
-		home, err := os.UserHomeDir()
+		// $XDG_DATA_HOME/applications, not a hardcoded ~/.local/share. A user
+		// who has moved their data home had this written somewhere they did not
+		// choose, and the desktop database would not have looked there.
+		dataRoot, err := paths.Root(paths.RootData)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
 		}
-		directory = filepath.Join(home, ".local", "share", "applications")
+		// The data root is <XDG_DATA_HOME>/notrios; the applications directory
+		// is its sibling, shared with every other desktop application.
+		directory = filepath.Join(filepath.Dir(dataRoot), "applications")
 	}
 	entryPath := filepath.Join(directory, "notrios-url-handler.desktop")
 	embeddedConfig := strings.TrimSpace(*configPath)

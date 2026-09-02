@@ -95,7 +95,12 @@ func TestRepositoryExamples(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if report.Executed != 63 || report.Entries != 131 || len(report.Topics) != 13 {
+	// 131 -> 133 entries in v0.8 H4 slice D: the `paths` and `config show`
+	// synopses in docs/cli.md. Executed is unchanged at 63 -- both are
+	// bracketed-optional synopses, registered as illustrative placeholders like
+	// every other one in that document, and the commands themselves are covered
+	// by executed tests in cmd/notriosctl.
+	if report.Executed != 63 || report.Entries != 133 || len(report.Topics) != 13 {
 		t.Fatalf("unexpected G18d coverage: %+v", report)
 	}
 	executedTopics := 0

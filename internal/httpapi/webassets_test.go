@@ -37,11 +37,19 @@ func chdir(t *testing.T, dir string) {
 	t.Cleanup(func() { _ = os.Chdir(previous) })
 }
 
-// The working directory wins, because a developer running from a checkout means
-// the checkout they are standing in.
-func TestResolveWebRootPrefersTheWorkingDirectory(t *testing.T) {
+// The working directory is consulted in a checkout, because a developer running
+// from one means the checkout they are standing in.
+func TestResolveWebRootUsesTheWorkingDirectoryInACheckout(t *testing.T) {
 	workspace := t.TempDir()
 	buildWebRoot(t, filepath.Join(workspace, "web", "dist"))
+	// Make it a checkout, which is what admits the working directory at all.
+	for name, body := range map[string]string{
+		"go.mod": "module github.com/renesugar/notrios\n", "PLAN.md": "#\n", "AGENTS.md": "#\n",
+	} {
+		if err := os.WriteFile(filepath.Join(workspace, name), []byte(body), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
 	chdir(t, workspace)
 
 	root, err := ResolveWebRoot("")
@@ -50,6 +58,23 @@ func TestResolveWebRootPrefersTheWorkingDirectory(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(root, "index.html")); err != nil {
 		t.Fatalf("resolved root has no index.html: %v", err)
+	}
+}
+
+// An installed binary ignores a web/dist beside wherever it was launched.
+//
+// This is the inverse of what the code used to do, and the reason it changed:
+// the interface loaded into the application's own window must not come from the
+// current directory. H3 observed the old behaviour as a finding.
+func TestResolveWebRootIgnoresTheWorkingDirectoryWhenInstalled(t *testing.T) {
+	workspace := t.TempDir()
+	buildWebRoot(t, filepath.Join(workspace, "web", "dist"))
+	// No checkout markers: this is somewhere a user happened to be standing.
+	chdir(t, workspace)
+	t.Setenv("HOME", t.TempDir())
+
+	if _, err := ResolveWebRoot(""); err == nil {
+		t.Fatal("an installed binary used a web/dist from the working directory")
 	}
 }
 

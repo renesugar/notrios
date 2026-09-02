@@ -272,6 +272,13 @@ func Default() Config {
 // breaking older binaries. A production implementation may replace this with a
 // pinned YAML/TOML library after dependency policy is settled.
 func Load(path string) (Config, error) {
+	cfg, err := load(path, map[string]bool{}, map[string]bool{})
+	return cfg, err
+}
+
+// load is Load with the bookkeeping LoadWithOrigins needs: which keys the file
+// stated, and which the resolver filled.
+func load(path string, provided, assigned map[string]bool) (Config, error) {
 	path = strings.TrimSpace(path)
 	if path == "" {
 		// An empty path means "the caller was given no --config", which is the
@@ -280,7 +287,7 @@ func Load(path string) (Config, error) {
 		// `doctor` called LoadDefault and every other subcommand called
 		// Load(""), so they disagreed about which database they were talking
 		// about. One rule for everyone.
-		return LoadDefault()
+		return loadDefault(provided, assigned)
 	}
 	cfg := Default()
 	file, err := os.Open(path)
@@ -293,8 +300,6 @@ func Load(path string) (Config, error) {
 	scanner := bufio.NewScanner(file)
 	section := ""
 	subsection := ""
-	// Path keys this file states explicitly. Resolved roots fill the rest.
-	provided := map[string]bool{}
 	// Tracks which config lists have received their first dash item, so a
 	// configured list replaces the compiled default instead of appending.
 	seenLists := map[string]bool{}
@@ -334,10 +339,48 @@ func Load(path string) (Config, error) {
 	if err := scanner.Err(); err != nil {
 		return Config{}, fmt.Errorf("read config %q: %w", path, err)
 	}
-	if err := ApplyResolvedRoots(&cfg, provided); err != nil {
+	if err := applyResolvedRoots(&cfg, provided, assigned); err != nil {
 		return Config{}, err
 	}
 	return cfg, nil
+}
+
+// Origin says where a setting's value came from. `config show` reports it,
+// because "the database is /srv/x" is far less useful than "the database is
+// /srv/x, and your config file at ~/.config/notrios/config.yaml says so".
+const (
+	OriginFile     = "file"
+	OriginResolved = "resolved"
+	OriginCompiled = "compiled"
+)
+
+// LoadWithOrigins loads a configuration and reports where each path setting
+// came from.
+//
+// It is a separate entry point rather than a field on Config so the documented
+// configuration shape does not gain a key that is not a setting.
+func LoadWithOrigins(path string) (Config, map[string]string, error) {
+	provided := map[string]bool{}
+	assigned := map[string]bool{}
+	cfg, err := load(path, provided, assigned)
+	if err != nil {
+		return Config{}, nil, err
+	}
+	origins := map[string]string{}
+	for _, entry := range resolvedRootDefaults {
+		switch {
+		case provided[entry.key]:
+			origins[entry.key] = OriginFile
+		case assigned[entry.key]:
+			origins[entry.key] = OriginResolved
+		default:
+			origins[entry.key] = OriginCompiled
+		}
+	}
+	for key := range provided {
+		origins[key] = OriginFile
+	}
+	return cfg, origins, nil
 }
 
 // resolvedRootDefaults maps each path setting to the root it belongs under and
@@ -405,6 +448,10 @@ func UseDataDirectory(cfg *Config, dir string, provided map[string]bool) {
 // true: an installed binary meeting an old checkout-relative config file still
 // reads and writes the old locations.
 func ApplyResolvedRoots(cfg *Config, provided map[string]bool) error {
+	return applyResolvedRoots(cfg, provided, map[string]bool{})
+}
+
+func applyResolvedRoots(cfg *Config, provided, assigned map[string]bool) error {
 	// A stated data directory keeps everything under it. One directory means
 	// one directory: a configuration that says `directory: /srv/notes` and
 	// nothing else must not have its sync spools and quarantine resolved to the
@@ -418,6 +465,11 @@ func ApplyResolvedRoots(cfg *Config, provided map[string]bool) error {
 	// was supposed to contain everything. Two end-to-end tests found this.
 	if provided["data.directory"] && strings.TrimSpace(cfg.Data.Directory) != "" {
 		UseDataDirectory(cfg, cfg.Data.Directory, provided)
+		for _, entry := range resolvedRootDefaults {
+			if !provided[entry.key] {
+				assigned[entry.key] = true
+			}
+		}
 		return nil
 	}
 
@@ -438,6 +490,7 @@ func ApplyResolvedRoots(cfg *Config, provided map[string]bool) error {
 		}
 		parts := append([]string{root}, entry.relative...)
 		entry.assign(cfg, filepath.Join(parts...))
+		assigned[entry.key] = true
 	}
 	return nil
 }
@@ -463,47 +516,69 @@ const ExampleRelativePath = "config/config.example.yaml"
 // Falling back to compiled defaults because a file failed to parse would start
 // the service with a policy the user did not choose and did not know about.
 func LoadDefault() (Config, error) {
-	if root, err := paths.ConfigRoot(); err == nil {
+	return loadDefault(map[string]bool{}, map[string]bool{})
+}
+
+func loadDefault(provided, assigned map[string]bool) (Config, error) {
+	// The config root is resolved for whichever instance this is. In a source
+	// checkout that is <checkout>/data/config, so nothing below can reach an
+	// installed instance's configuration: a developer who also has Notrios
+	// installed must not have `make serve` open their production library.
+	root, rootErr := paths.ConfigRoot()
+	if rootErr == nil {
 		candidate := filepath.Join(root, "config.yaml")
 		if _, statErr := os.Stat(candidate); statErr == nil {
-			return Load(candidate)
+			return load(candidate, provided, assigned)
 		} else if !os.IsNotExist(statErr) {
 			return Config{}, fmt.Errorf("read %s: %w", candidate, statErr)
 		}
 	}
 
+	// Then the checkout's committed example, which is the developer default.
+	if checkout, ok := sourceCheckoutRoot(); ok {
+		return loadExampleFrom(checkout, provided, assigned)
+	}
+
+	return defaultsWithResolvedRootsRecording(assigned)
+}
+
+// sourceCheckoutRoot finds the checkout this process belongs to, if any.
+func sourceCheckoutRoot() (string, bool) {
 	if executableDir, err := paths.ExecutableDir(); err == nil {
 		if root, ok := paths.FindSourceCheckout(executableDir); ok {
-			return loadExampleFrom(root)
+			return root, true
 		}
 	}
 	if workingDir, err := os.Getwd(); err == nil {
 		if root, ok := paths.FindSourceCheckout(workingDir); ok {
-			return loadExampleFrom(root)
+			return root, true
 		}
 	}
-
-	return defaultsWithResolvedRoots()
+	return "", false
 }
 
 // defaultsWithResolvedRoots is the compiled defaults with every unstated path
 // filled from the resolver. It is the bottom of the discovery order.
 func defaultsWithResolvedRoots() (Config, error) {
+	return defaultsWithResolvedRootsRecording(map[string]bool{})
+}
+
+func defaultsWithResolvedRootsRecording(assigned map[string]bool) (Config, error) {
 	cfg := Default()
-	if err := ApplyResolvedRoots(&cfg, nil); err != nil {
+	if err := applyResolvedRoots(&cfg, nil, assigned); err != nil {
 		return Config{}, err
 	}
 	return cfg, nil
 }
 
-func loadExampleFrom(checkoutRoot string) (Config, error) {
+func loadExampleFrom(checkoutRoot string, provided, assigned map[string]bool) (Config, error) {
 	candidate := filepath.Join(checkoutRoot, ExampleRelativePath)
 	if _, err := os.Stat(candidate); err == nil {
-		return Load(candidate)
+		return load(candidate, provided, assigned)
 	} else if !os.IsNotExist(err) {
 		return Config{}, fmt.Errorf("read %s: %w", candidate, err)
 	}
-	return defaultsWithResolvedRoots()
+	return defaultsWithResolvedRootsRecording(assigned)
 }
 
 // EnsureDirectories creates the local storage roots required by the MVP service.

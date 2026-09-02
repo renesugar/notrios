@@ -480,6 +480,20 @@ directory. As first modelled, source mode would have moved every existing
 developer's database from `./data/notes.sqlite` to `./data/data/notes.sqlite` to
 satisfy a distinction that does not apply there.
 
+**Probes retired by H4 slice D**, the web-root order having been inverted:
+`TestWebRootPrefersTheWorkingDirectoryOverTheExecutable` and
+`TestExplicitWebRootIsTheOnlyCandidate`. Their inverses live in
+`internal/httpapi`.
+
+**Source mode became a full instance boundary** (H4 slice D). Slice B kept the
+config root native in a checkout, reasoning that a checkout is not a different
+user. True, and the wrong question: a checkout is a different *instance*. A
+developer who also had Notrios installed shared one config root with it, so
+their real installed configuration was found first and running the checkout
+build with no flags opened their production library. Every root is now
+checkout-local, under `./data` rather than `./config` because the former is
+gitignored and a registry names every local database path.
+
 **Probes retired by H4 slice B**, their subjects being fixed:
 `TestRelativeXDGConfigHomeIsAcceptedByProfilesAndRefusedByTheStandardLibrary`,
 `TestProfileRegistryFallsBackToACurrentDirectoryRelativePath`, and

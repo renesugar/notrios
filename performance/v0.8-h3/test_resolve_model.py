@@ -170,15 +170,19 @@ def run_cases() -> None:
     # build they run.
     scenario("source mode, a checkout beside the executable",
              env={"HOME": home}, os_name=LINUX, source_checkout=True,
-             expect_roots={"config": "/home/u/.config/notrios",
+             expect_roots={"config": "data/config",
                            "data": "data", "state": "data",
                            "cache": "data", "runtime": "data",
                            "program_assets": "web/dist"},
              expect_code="source_selected")
 
-    scenario("source mode still refuses when there is no home for config",
+    # A checkout needs no home directory at all, which is the isolation
+    # property stated as a resolution: nothing about a source-mode run can
+    # reach an installed instance's config, registry or library.
+    scenario("source mode needs no home and cannot reach an installed instance",
              env={}, os_name=LINUX, source_checkout=True,
-             expect_error="no home directory is set")
+             expect_roots={"config": "data/config", "data": "data"},
+             expect_code="source_selected")
 
     scenario("explicit paths win over the installed layout",
              env={"HOME": home}, os_name=LINUX,

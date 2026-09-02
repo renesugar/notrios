@@ -386,22 +386,17 @@
       },
       "mode": "source",
       "roots": {
-        "config": "/home/u/.config/notrios",
+        "config": "data/config",
         "data": "data",
         "state": "data",
         "cache": "data",
-        "program_assets": "web/dist",
-        "runtime": "data"
+        "runtime": "data",
+        "program_assets": "web/dist"
       },
       "notice_codes": [
-        "runtime_dir_unset",
         "source_selected"
       ],
       "notices": [
-        {
-          "code": "runtime_dir_unset",
-          "message": "XDG_RUNTIME_DIR is not set and the specification names no fallback; using /home/u/.local/state/notrios/runtime rather than a shared temporary directory"
-        },
         {
           "code": "source_selected",
           "message": "source mode: a checkout was detected, so data and assets are checkout-relative; config stays in the user config root"
@@ -409,7 +404,7 @@
       ]
     },
     {
-      "scenario": "source mode still refuses when there is no home for config",
+      "scenario": "source mode needs no home and cannot reach an installed instance",
       "inputs": {
         "env": {},
         "os_name": "linux",
@@ -419,9 +414,24 @@
         "runtime_dir_is_private": null,
         "source_checkout": true
       },
-      "error": "no home directory is set, so no user root can be resolved; pass explicit paths rather than falling back to the working directory",
-      "roots": {},
-      "notices": []
+      "mode": "source",
+      "roots": {
+        "config": "data/config",
+        "data": "data",
+        "state": "data",
+        "cache": "data",
+        "runtime": "data",
+        "program_assets": "web/dist"
+      },
+      "notice_codes": [
+        "source_selected"
+      ],
+      "notices": [
+        {
+          "code": "source_selected",
+          "message": "source mode: a checkout was detected, so data and assets are checkout-relative; config stays in the user config root"
+        }
+      ]
     },
     {
       "scenario": "explicit paths win over the installed layout",

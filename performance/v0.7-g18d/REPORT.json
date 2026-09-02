@@ -1,12 +1,12 @@
 {
   "schema": "notrios.docexec.report.v1",
-  "entries": 131,
+  "entries": 133,
   "executed": 63,
-  "unverified": 68,
+  "unverified": 70,
   "unrun_reasons": {
     "external-network": 10,
     "host-installation": 8,
-    "illustrative-placeholder": 32,
+    "illustrative-placeholder": 34,
     "interactive-or-long-running": 8,
     "privileged-host-change": 2,
     "shared-user-state": 8
@@ -41,7 +41,7 @@
       "topic": "cli",
       "counts": {
         "executed": 2,
-        "unverified": 40
+        "unverified": 42
       },
       "runtime_ms": 290
     },

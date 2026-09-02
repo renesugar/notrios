@@ -19,7 +19,9 @@ func TestRepositoryEnumerationsMatchFiniteRegistries(t *testing.T) {
 		// backup treat differently.
 		{configAnchor, 62},
 		{defaultAnchor, 52},
-		{cliHelpAnchor, 56},
+		// 56 -> 58 in v0.8 H4 slice D: `notriosctl paths` and
+		// `notriosctl config show`.
+		{cliHelpAnchor, 58},
 		{restAnchor, 109},
 		{mcpToolsAnchor, 46},
 		{mcpSyncScopeAnchor, 7},
