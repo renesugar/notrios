@@ -498,12 +498,15 @@ be smuggled into v0.7 as desktop assumptions.
   assets, desktop metadata, notices, and exact runtime dependencies. A user
   must be able to install and run it without source, Go, Node, Wails, compiler,
   or development headers.
-- **Windows/macOS installer candidates on GitHub.** Use native GitHub-hosted
-  runners only after a bounded tool/format investigation. Compilation is not
-  acceptance: each claimed candidate must install, launch, use native paths,
-  upgrade, remove, reinstall, preserve data, and clean up on its own OS. If a
-  native Wails v2 build/package/runtime gate cannot pass, postpone that platform
-  explicitly rather than publishing or supporting an unexecuted artifact.
+- **Windows and macOS installers are deferred to post-v1.0.** The H6a
+  investigation established that no toolchain can be selected for either
+  platform from a Linux development machine: compilation is not acceptance, and
+  each claimed candidate must install, launch, use native paths, upgrade,
+  remove, reinstall, preserve data and clean up **on its own OS**. That needs
+  Windows and Apple hardware, or hosted runners standing in for them, and
+  neither is available. Postponing explicitly is what the original entry asked
+  for when the gate could not pass; v0.8 ships Ubuntu only and claims nothing
+  else.
 - **Installed integration and credentials.** Exercise multiple profiles,
   loopback ports, URL handlers, shared directories, firewall behavior, native
   pickers, upgrade/removal, and lifecycle targets. Select native credential
@@ -519,15 +522,18 @@ be smuggled into v0.7 as desktop assumptions.
   pre-push gate, push `develop`, and open a `develop`-to-`main` PR. Merge only
   after final review/authorization, then bring the merged result back into
   `develop` and verify no content divergence.
-- **Internal artifacts only.** v0.8 may retain verified unsigned prerelease
-  installers as explicitly internal evidence. It does not create a tag,
+- **Internal artifacts only.** v0.8 may retain the verified unsigned Ubuntu
+  prerelease installer as explicitly internal evidence; it is the only platform
+  v0.8 packages at all. It does not create a tag,
   GitHub Release, public installer, signing/notarization claim, app-store
   upload, or unsupported-platform claim.
 
 ## v0.9 — Release-candidate hardening
 
-- Promote the v0.8 Ubuntu installer and every feasible Windows/macOS candidate
-  through clean native environment matrices. Rehearse fresh install, source-
+- Promote the v0.8 Ubuntu installer through clean native environment matrices.
+  Windows and macOS are deferred to post-v1.0 with the hardware they need, so
+  there is no feasible candidate to promote here; v1.0 already provides for
+  marking them postponed rather than shipping unexecuted build output. Rehearse fresh install, source-
   layout migration, upgrade across prereleases, downgrade refusal/rollback,
   remove/reinstall, profile discovery, and no-source/no-development-toolchain
   runtime operation.
@@ -612,6 +618,31 @@ be smuggled into v0.7 as desktop assumptions.
   requires its own approved Go-Wasm/JavaScript-interoperability investigation.
 - Wails mobile remains an alternative if it reaches production quality; the
   two clients share the core contracts rather than making either UI canonical.
+
+## Post-v1.0 — Windows and macOS installers
+
+Moved here from v0.8 (H7) because it cannot be implemented until hardware is
+available. This is a scheduling decision rather than a change of intent: the
+requirements below are the ones H7 already carried.
+
+- Native GitHub-hosted runners, or physical Windows and Apple hardware, are a
+  prerequisite rather than an optimisation. H6a measured why: `CGO_ENABLED=0`
+  does not build this project, so every target needs its own C toolchain, and a
+  cross-built artifact that has never run is not evidence that the platform
+  works.
+- Windows: a Wails v2 or NSIS installer that installs, launches, resolves the
+  native per-OS roots from H3, upgrades, removes, reinstalls and preserves the
+  user's library. `makensis` exists on Linux and can produce an installer that
+  nothing here can execute; that artifact is not acceptance.
+- macOS: an `.app` bundle in a native distribution container, with the same
+  install/launch/upgrade/remove/preserve gate. Nothing about macOS can be
+  established without Apple hardware, and emulating it locally is out of scope.
+- Unsigned artifacts stay clearly labelled internal candidates until each
+  platform passes natively. Signing and notarisation are separate decisions with
+  their own secret-handling boundaries.
+- The four-level claim ladder from H6a applies unchanged: generated,
+  structurally inspected, natively installed and executed, supported. Neither
+  platform may be described above the level its evidence reaches.
 
 ## Future candidates
 

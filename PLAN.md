@@ -1012,7 +1012,23 @@ one -- that is the drift again -- but to do the half purge owns: it deletes the
 data, leaves the program, and says the package manager owns it. Three tests
 cover it.
 
-## H7. Windows and macOS installer workflow implementation
+## H7. Windows and macOS installer workflow implementation — deferred to post-v1.0
+
+**Deferred (2026-09-02).** Moved to `ROADMAP.md` under "Post-v1.0 — Windows and
+macOS installers". It cannot be implemented until Windows and Apple hardware, or
+hosted runners standing in for them, are available.
+
+This is a scheduling decision, not a reduction in scope: the requirements below
+are unchanged and travel with it. H6a measured why the wait is unavoidable --
+`CGO_ENABLED=0` does not build this project, so every target needs its own C
+toolchain, and a cross-built artifact that has never run is not evidence that
+the platform works. `makensis` and the Wails CLI are installed on this machine
+and could generate a Windows installer today; it would sit at claim level 1 and
+nothing here could execute it, which is the situation the original scope already
+told us to postpone explicitly rather than paper over.
+
+v0.8 therefore ships Ubuntu only, and claims nothing for Windows or macOS.
+
 
 **Goal.** Implement H6a-approved native GitHub workflows and package candidates
 without pretending unavailable hardware was tested locally.
@@ -1070,12 +1086,14 @@ silent handler takeover, fabricated result for an unavailable OS, or support
 claim from a skipped row. Native pickers return capabilities/selected paths
 only to approved local operations.
 
-**Dependencies.** H4-H7 local implementation; H1 for shared-core lifecycle
-parity. H12 provides remote native rows.
+**Dependencies.** H4-H6 local implementation; H1 for shared-core lifecycle
+parity. H12 provides remote native rows. H7 is deferred to post-v1.0, so the
+Windows and macOS rows are postponed rather than pending -- an empty row with a
+recorded reason, not a gap waiting to be filled this milestone.
 
 **Working state.** Ubuntu has a complete result-bearing installed matrix.
-Windows/macOS rows are either executable in H12 or explicitly postponed by
-H6a/H7. Profile/database/replica/path/port isolation and deep-link ambiguity
+Windows/macOS rows are explicitly postponed with H6a's measurement as the
+reason, and are not presented as pending work. Profile/database/replica/path/port isolation and deep-link ambiguity
 refusal remain intact.
 
 **Validation and evidence.** Multi-instance process tests, collision/fault
@@ -1204,7 +1222,7 @@ remote `main`/`develop`; merge current `main` into local `develop` only if it
 is no longer an ancestor, resolve and rerun all local gates, and run the
 mandatory evidence pre-push verifier. Push `develop`, create a `develop` to
 `main` pull request with `gh`, and read back the exact head/base hashes,
-workflow permissions, checks, and artifacts. Execute H7/H8 native hosted-runner
+workflow permissions, checks, and artifacts. Execute H8 native hosted-runner
 jobs, retrieve bounded artifacts/evidence, and make only the minimum follow-up
 commit/push needed to record reviewed results and correct defects.
 
@@ -1222,7 +1240,8 @@ artifact, mutable action pin, or PR merge. Do not expose reserve/private
 evidence. Every external write and artifact remains attributable and read back.
 
 **Dependencies.** All locally executable H0-H11 work complete or explicitly
-closed/deferred; H7 workflow definitions and H8 Ubuntu baseline pass.
+closed/deferred; H8 Ubuntu baseline passes. H7 is deferred to post-v1.0 and
+contributes no workflow definitions to this milestone.
 
 **Working state.** The PR contains the reviewed v0.8 work, all required local
 and GitHub checks are result-bearing, feasible Windows/macOS installer rows are
@@ -1531,7 +1550,7 @@ This is an index only; each decision is owned and explained inside its item.
 | Mermaid renderer/containment | H2a/H2 | Resolved and implemented in H2: Mermaid 11.17.2, strict security, `htmlLabels: false`, `notrios`-only links reattached from source |
 | Installed/portable path precedence | H3/H4 | Resolved in H3: explicit, then explicit portable marker, then native; never inferred |
 | Ubuntu packaging toolchain | H6a/H6 | Resolved in H6: dpkg-deb with dpkg-shlibdeps, staged from lifecycle.py, adding no build dependency; 0 lintian errors |
-| Windows and macOS toolchain | H6a/H7 | Open; no toolchain is selectable without native runners, and H6a records that rather than guessing |
+| Windows and macOS toolchain | H6a/H7 | Deferred to post-v1.0: no toolchain is selectable without native runners, and the hardware is not available |
 | Development versus installed default port | H4a | Resolved in H4a: checkout 8099 from the example config, installed 8080 from the compiled default |
 | Pre-migration backup location and retention | H4b | Resolved in H4b: `pre-migration-backups/` beside the database, newest kept, no new root |
 | Migration trigger narrowed from H3 section 4 | H4 slice E | Resolved; slice D removed the two-instance case, so the trigger is a pre-0.8 layout in the working directory that is not the library in use |
@@ -1543,8 +1562,8 @@ This is an index only; each decision is owned and explained inside its item.
 | Context given to the model under test | H14 | Resolved in planning: one page section only, identical for every model. Feeding the repository would score the codebase while appearing to score the documentation |
 | Oracle for a generated command | H14 | Resolved in planning: the observed state change, not the exit status, with "did the opposite" scored separately from "did nothing" |
 | CLI has no add/remove-tag command while REST and MCP do | H14 | Open; deliberate omission to document, or a product gap |
-| Desktop package formats/toolchain | H6a/H6/H7 | Open; evidence-dependent |
-| Windows/macOS feasibility and support | H6a/H7/H12 | Open; native execution required |
+| Desktop package formats/toolchain | H6a/H6/H7 | Ubuntu resolved in H6 (dpkg-deb, 0 lintian errors); Windows and macOS deferred to post-v1.0 with the hardware |
+| Windows/macOS feasibility and support | H6a/H7/H12 | Deferred to post-v1.0; native execution required and the hardware is not available |
 | Native credential providers | H9 | Open and blocking implementation |
 | Wails v3 spike timing/outcome | H10 | Explicit approval required; production stays v2 |
 | GitHub PR merge and branch synchronization | H12/H13 | PR planned late; merge separately authorized |
