@@ -103,7 +103,9 @@ func NewFetcher(cfg config.RemoteMediaConfig, recorder AttemptRecorder) (*Fetche
 	if dir == "" {
 		return nil, fmt.Errorf("remote_media.quarantine_dir is not configured")
 	}
-	if err := os.MkdirAll(dir, 0o755); err != nil {
+	// Owner-only: this sits under the quarantine, which holds untrusted
+	// downloaded bytes and the record of what a note tried to fetch.
+	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return nil, fmt.Errorf("create quarantine dir %q: %w", dir, err)
 	}
 	f := &Fetcher{

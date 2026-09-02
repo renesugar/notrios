@@ -22,6 +22,10 @@ An installed binary never reads a configuration file from the directory it happe
 
 **Precedence:** command-line flags override the config file, which overrides the built-in defaults.
 
+**Storage roots.** `data.directory` holds the library itself. Three further roots separate what a purge and a backup treat differently: `data.state_dir` for things Notrios must remember but you did not write (sync spools, backups, the catch-up inbox, the remote-media quarantine), `data.cache_dir` for anything rebuildable from the library (projections, the search index), and `data.runtime_dir` for work in flight that need not survive a reboot (backup staging, restore review).
+
+Their compiled default is empty, which means *resolved at startup* rather than *unset*: on Linux they become `$XDG_STATE_HOME/notrios`, `$XDG_CACHE_HOME/notrios` and `$XDG_RUNTIME_DIR/notrios`, with the documented fallbacks. Two rules keep existing setups working. Any path you state is used exactly as written and never relocated. And if you state `data.directory` and nothing else, the other roots are placed *under it* — one directory means one directory — so a configuration written before these keys existed keeps every file where it already was.
+
 ## Configuration reference
 <!-- notrios:generated:user:configuration-reference:begin -->
 <!-- source: go:github.com/renesugar/notrios/internal/store#CurrentSchemaVersion -->
@@ -35,9 +39,12 @@ chooses and pins the long-term configuration library.
 - config_path
 - data
 - data.asset_store
+- data.cache_dir
 - data.database_path
 - data.directory
 - data.projection_dir
+- data.runtime_dir
+- data.state_dir
 - mcp
 - mcp.default_profile
 - mcp.default_scope
@@ -96,9 +103,12 @@ Default returns the canonical local-development defaults for every runtime
 configuration group.
 - config_path = ""
 - data.asset_store = "./data/assets"
+- data.cache_dir = ""
 - data.database_path = "./data/notes.sqlite"
 - data.directory = "./data"
 - data.projection_dir = "./data/projections"
+- data.runtime_dir = ""
+- data.state_dir = ""
 - mcp.default_profile = ""
 - mcp.default_scope = ""
 - mcp.enabled = true

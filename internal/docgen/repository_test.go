@@ -14,8 +14,11 @@ func TestRepositoryEnumerationsMatchFiniteRegistries(t *testing.T) {
 		anchor string
 		count  int
 	}{
-		{configAnchor, 59},
-		{defaultAnchor, 49},
+		// 59 -> 62 and 49 -> 52 in v0.8 H4 slice C: data.state_dir,
+		// data.cache_dir and data.runtime_dir separate what a purge and a
+		// backup treat differently.
+		{configAnchor, 62},
+		{defaultAnchor, 52},
 		{cliHelpAnchor, 56},
 		{restAnchor, 109},
 		{mcpToolsAnchor, 46},

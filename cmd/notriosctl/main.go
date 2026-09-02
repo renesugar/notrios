@@ -797,6 +797,14 @@ func openStoreFromFlags(configPath, dbPath, assetStore string) *store.SQLiteStor
 		os.Exit(1)
 	}
 	if dbPath != "" {
+		// An explicit --db names where the library is, so the roots derived
+		// from it follow it. Otherwise `notriosctl lint --db /tmp/x/notes.sqlite`
+		// would create ./data/quarantine and ./data/search-index in whatever
+		// directory the command was run from -- unrelated to the database it
+		// was told to open.
+		if dbPath != ":memory:" {
+			config.UseDataDirectory(&cfg, filepath.Dir(dbPath), nil)
+		}
 		cfg.Data.DatabasePath = dbPath
 	}
 	if assetStore != "" {

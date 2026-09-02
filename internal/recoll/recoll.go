@@ -117,7 +117,10 @@ func (s *Sidecar) Available() bool {
 // the publishedts integer range slot, mimeconf wiring text/markdown to the
 // from-scratch front-matter handler, and the handler script itself.
 func (s *Sidecar) EnsureConfig() error {
-	if err := os.MkdirAll(s.ConfDir, 0o755); err != nil {
+	// Owner-only. This directory is regenerated, never user-authored, and the
+	// recoll.conf inside it names the projection directory holding the user's
+	// note text.
+	if err := os.MkdirAll(s.ConfDir, 0o700); err != nil {
 		return err
 	}
 	handlerPath := filepath.Join(s.ConfDir, "notrios_md_handler.py")

@@ -7,7 +7,12 @@ import (
 
 func TestCompatibilityCommandEmitsMachineReadableAdmissionAndRefusal(t *testing.T) {
 	binary := buildCLI(t)
-	fixtures := filepath.Join("..", "..", "contracts", "archive-v2", "fixtures")
+	// Absolute: runCLI runs the binary in its own sandbox directory, so a path
+	// relative to this package would resolve against the sandbox instead.
+	fixtures, err := filepath.Abs(filepath.Join("..", "..", "contracts", "archive-v2", "fixtures"))
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	accepted := runCLI(t, binary, "compatibility", "archive-v2", filepath.Join(fixtures, "loose-schema12"))
 	if accepted.exitCode != 0 {

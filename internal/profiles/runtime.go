@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/renesugar/notrios/internal/config"
+	"github.com/renesugar/notrios/internal/paths"
 	"github.com/renesugar/notrios/internal/store"
 )
 
@@ -92,10 +93,32 @@ func Create(ctx context.Context, options CreateOptions) (Profile, error) {
 	if err != nil {
 		return Profile{}, err
 	}
+	// The generated config sits beside the registry, which is correct: it is a
+	// config file and the registry is in the config root.
 	configPath := filepath.Join(filepath.Dir(registryPath), "profiles", profileID+".yaml")
+
+	// The profile's *data* does not. It used to default to
+	// <config>/profiles/<id>/data, which put a user's database, asset store,
+	// projections, search index and quarantine inside ~/.config -- the one root
+	// they are most likely to sync with a dotfile manager or commit to a
+	// repository. It now defaults under the resolved data root.
+	//
+	// An explicit --data-dir still wins, and an existing profile is untouched:
+	// its paths are recorded in the registry and read from there, so this
+	// changes where the *next* profile is created and moves nothing.
+	// Deriving this from an explicit --db was tried and reverted: two profiles
+	// whose databases sit in one directory would then share every derived root,
+	// and the collision check correctly refused them. A profile's cache and
+	// state are per-profile by design, keyed by profile ID under the user's
+	// roots, which is what the backup and purge categories want.
 	dataDir := strings.TrimSpace(options.DataDirectory)
+	explicitLocation := dataDir != ""
 	if dataDir == "" {
-		dataDir = filepath.Join(filepath.Dir(configPath), profileID, "data")
+		dataRoot, err := paths.Root(paths.RootData)
+		if err != nil {
+			return Profile{}, fmt.Errorf("the profile data location could not be resolved: %w", err)
+		}
+		dataDir = filepath.Join(dataRoot, "profiles", profileID)
 	}
 	dataDir, err = absoluteClean(dataDir)
 	if err != nil {
@@ -134,9 +157,31 @@ func Create(ctx context.Context, options CreateOptions) (Profile, error) {
 	cfg.Data.Directory = dataDir
 	cfg.Data.DatabasePath = databasePath
 	cfg.Data.AssetStore = assetStore
-	cfg.Data.ProjectionDir = filepath.Join(dataDir, "projections")
-	cfg.SearchSidecar.IndexDir = filepath.Join(dataDir, "search-index")
-	cfg.RemoteMedia.QuarantineDir = filepath.Join(dataDir, "quarantine")
+	// Derived roots follow H3's categories rather than all hanging off the data
+	// directory: projections and the search index are rebuildable, so they are
+	// cache; the quarantine and the sync spools are state. An explicit
+	// --data-dir keeps everything together under it, because a caller who named
+	// one directory meant one directory.
+	stateDir, cacheDir := dataDir, dataDir
+	if !explicitLocation {
+		if resolved, err := paths.Root(paths.RootState); err == nil && resolved != "" {
+			stateDir, err = absoluteClean(filepath.Join(resolved, "profiles", profileID))
+			if err != nil {
+				return Profile{}, err
+			}
+		}
+		if resolved, err := paths.Root(paths.RootCache); err == nil && resolved != "" {
+			cacheDir, err = absoluteClean(filepath.Join(resolved, "profiles", profileID))
+			if err != nil {
+				return Profile{}, err
+			}
+		}
+	}
+	cfg.Data.StateDir = stateDir
+	cfg.Data.CacheDir = cacheDir
+	cfg.Data.ProjectionDir = filepath.Join(cacheDir, "projections")
+	cfg.SearchSidecar.IndexDir = filepath.Join(cacheDir, "search-index")
+	cfg.RemoteMedia.QuarantineDir = filepath.Join(stateDir, "quarantine")
 	cfg.Sync = config.SyncConfig{
 		Target:        defaultString(strings.ToLower(strings.TrimSpace(options.SyncTarget)), SyncNone),
 		Directory:     strings.TrimSpace(options.SyncDirectory),

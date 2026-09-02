@@ -94,11 +94,13 @@ func openSQLiteWithAssetStore(path, assetRoot string, allowRestore bool) (*SQLit
 		} else if err != nil && !errors.Is(err, os.ErrNotExist) {
 			return nil, err
 		}
-		if err := os.MkdirAll(parentDir(path), 0o755); err != nil {
+		// Owner-only: this directory holds the user's library. It used to be
+		// 0755 while every backup of the same data was 0700.
+		if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 			return nil, err
 		}
 	}
-	if err := os.MkdirAll(assetRoot, 0o755); err != nil {
+	if err := os.MkdirAll(assetRoot, 0o700); err != nil {
 		return nil, err
 	}
 	cpath := C.CString(path)
@@ -129,22 +131,25 @@ func contextOrBackground(ctx context.Context) context.Context {
 	return ctx
 }
 
+// defaultAssetRoot places the asset store beside the database.
+//
+// The :memory: case used to return one fixed os.TempDir()/notrios-assets,
+// shared by every user and every instance on the machine: two instances
+// collided, and on a multi-user machine the name was guessable and the
+// directory belonged to whoever created it first. It is now a private
+// per-process directory, owner-only, which is what a database that exists only
+// for the life of this process should have.
 func defaultAssetRoot(path string) string {
 	if path == ":memory:" || strings.TrimSpace(path) == "" {
-		return filepath.Join(os.TempDir(), "notrios-assets")
+		root, err := os.MkdirTemp("", "notrios-assets-")
+		if err != nil {
+			// Falling back to the shared name is worse than failing loudly
+			// later; an unwritable temp directory will surface on first use.
+			return filepath.Join(os.TempDir(), "notrios-assets")
+		}
+		return root
 	}
-	return filepath.Join(parentDir(path), "assets")
-}
-
-func parentDir(path string) string {
-	idx := strings.LastIndex(path, "/")
-	if idx < 0 {
-		return "."
-	}
-	if idx == 0 {
-		return "/"
-	}
-	return path[:idx]
+	return filepath.Join(filepath.Dir(path), "assets")
 }
 
 func (s *SQLiteStore) Close() error {

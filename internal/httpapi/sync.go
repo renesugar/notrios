@@ -103,7 +103,19 @@ func (s *Server) AttachSyncSecurity(canonical *store.SQLiteStore, keys SyncKeys,
 	// are derived from the configured data directory rather than from anything
 	// a request says, which is what keeps "no arbitrary path parameters" true
 	// at the only place it could stop being true.
-	if root := strings.TrimSpace(s.config.Data.Directory); root != "" {
+	// The state root, not the data root: carrier spools and sync backups are
+	// things Notrios must remember across runs but the user did not write.
+	// They are backed up before a purge and are not the library itself.
+	root := strings.TrimSpace(s.config.Data.StateDir)
+	if root == "" {
+		root = strings.TrimSpace(s.config.Data.Directory)
+	}
+	// Only when the peer surface is actually on. The spools belong to the REST
+	// data plane, and creating them for a service with sync switched off makes
+	// directories nothing will ever use -- which, with the compiled default
+	// data root, meant every test that built a Config by hand created
+	// ./data/sync-carrier wherever it happened to be running.
+	if root != "" && s.config.Sync.REST.Enabled {
 		// Both are created here rather than on first use. They are this
 		// service's own directories under its own data root — not a mount point
 		// somebody might not have plugged in — so a missing one is a directory

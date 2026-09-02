@@ -235,6 +235,14 @@ func (h *repositoryExamples) ensureFixture(entry ManifestEntry) *repositoryFixtu
 		h.seed(fixture)
 		if entry.Registered.Execution.Fixture == "seeded-loopback" {
 			fixture.server = httptest.NewServer(h.schemaHandler(fixture, fixture.svc.Handler))
+		} else {
+			// The CLI examples need to be pointed at the seeded library. They
+			// used to find it by accident: the compiled default was ./data
+			// relative to the working directory, and the sandbox ran the shell
+			// there. H4 removed that working-directory dependence, so the
+			// fixture now states where the library is, like a real user's
+			// configuration does.
+			writeDaemonConfig(h.t, fixture.root, "127.0.0.1:0")
 		}
 	case "daemon-scratch":
 		writeDaemonConfig(h.t, fixture.root, "127.0.0.1:0")
@@ -252,6 +260,13 @@ func (h *repositoryExamples) seed(fixture *repositoryFixture) {
 	cfg.Data.AssetStore = filepath.Join(cfg.Data.Directory, "assets")
 	cfg.Data.ProjectionDir = filepath.Join(cfg.Data.Directory, "projections")
 	cfg.RemoteMedia.QuarantineDir = filepath.Join(cfg.Data.Directory, "quarantine")
+	cfg.Data.StateDir = cfg.Data.Directory
+	cfg.Data.CacheDir = cfg.Data.Directory
+	cfg.Data.RuntimeDir = cfg.Data.Directory
+	// Left at the compiled default, this resolved to ./data/search-index
+	// relative to the test process, creating internal/docexec/data in the
+	// source tree on every run.
+	cfg.SearchSidecar.IndexDir = filepath.Join(cfg.Data.Directory, "search-index")
 	svc, err := service.New(cfg)
 	if err != nil {
 		h.t.Fatal(err)
@@ -772,15 +787,32 @@ func runnableLines(body string) []string {
 	return lines
 }
 
+// writeDaemonConfig gives the sandbox a configuration the examples will find.
+//
+// It writes two copies. <root>/.config/notrios/config.yaml is where an
+// installed binary looks, and the sandbox already runs with HOME=<root>, so
+// this is the fixture behaving like a user who has a config rather than like a
+// checkout. <root>/config/config.example.yaml stays because some documented
+// examples name that path literally on the command line.
+//
+// Before H4 only the second existed and the CLI found it by looking in the
+// working directory. That is the behaviour slice B removed -- an installed
+// binary must not take its database path, listen address and remote-media
+// policy from wherever it was launched -- so a fixture relying on it stopped
+// working, and the examples silently ran against a different, empty database.
 func writeDaemonConfig(t *testing.T, root, address string) {
 	t.Helper()
-	path := filepath.Join(root, "config", "config.example.yaml")
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-		t.Fatal(err)
-	}
 	value := fmt.Sprintf("server:\n  listen_addr: %q\ndata:\n  directory: %q\n  database_path: %q\n  asset_store: %q\n  projection_dir: %q\nsync:\n  target: none\n", address, filepath.Join(root, "data"), filepath.Join(root, "data", "notes.sqlite"), filepath.Join(root, "data", "assets"), filepath.Join(root, "data", "projections"))
-	if err := os.WriteFile(path, []byte(value), 0o600); err != nil {
-		t.Fatal(err)
+	for _, path := range []string{
+		filepath.Join(root, ".config", "notrios", "config.yaml"),
+		filepath.Join(root, "config", "config.example.yaml"),
+	} {
+		if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, []byte(value), 0o600); err != nil {
+			t.Fatal(err)
+		}
 	}
 }
 

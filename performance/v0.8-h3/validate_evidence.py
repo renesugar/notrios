@@ -182,9 +182,11 @@ def validate() -> dict:
 
     # 7. Claims marked observed must correspond to a probe test that exists.
     probe_dir = os.path.join(HERE, "pathprobe")
+    # Every .go file, not only _test.go: a retirement note for the last test in
+    # a file belongs in the package doc once the file itself is gone.
     probe_source = "".join(
         open(os.path.join(probe_dir, name), encoding="utf-8").read()
-        for name in sorted(os.listdir(probe_dir)) if name.endswith("_test.go")
+        for name in sorted(os.listdir(probe_dir)) if name.endswith(".go")
     )
     # A cited probe must either still exist, or be listed as retired in the
     # probe package's own retirement note. The retirement note is the record

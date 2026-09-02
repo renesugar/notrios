@@ -171,8 +171,8 @@ def run_cases() -> None:
     scenario("source mode, a checkout beside the executable",
              env={"HOME": home}, os_name=LINUX, source_checkout=True,
              expect_roots={"config": "/home/u/.config/notrios",
-                           "data": "data/data",
-                           "state": "data/state",
+                           "data": "data", "state": "data",
+                           "cache": "data", "runtime": "data",
                            "program_assets": "web/dist"},
              expect_code="source_selected")
 

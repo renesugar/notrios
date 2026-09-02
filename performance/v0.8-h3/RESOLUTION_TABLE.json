@@ -387,11 +387,11 @@
       "mode": "source",
       "roots": {
         "config": "/home/u/.config/notrios",
-        "data": "data/data",
-        "state": "data/state",
-        "cache": "data/cache",
+        "data": "data",
+        "state": "data",
+        "cache": "data",
         "program_assets": "web/dist",
-        "runtime": "data/runtime"
+        "runtime": "data"
       },
       "notice_codes": [
         "runtime_dir_unset",

@@ -260,7 +260,7 @@ func (s *Service) runRESTCatchup(ctx context.Context, client *syncauth.Client, k
 	if backup.SealedBytes > byteBudget {
 		return nil, synccarrier.ErrByteBudget
 	}
-	root := filepath.Join(s.Config.Data.Directory, "catchup-inbox", backup.ID)
+	root := filepath.Join(s.stateRoot(), "catchup-inbox", backup.ID)
 	if err := os.MkdirAll(root, 0o700); err != nil {
 		return nil, err
 	}
@@ -559,4 +559,15 @@ func (s *Service) recordSidecarQueue(sidecar *recoll.Sidecar) {
 		return
 	}
 	sidecar.RecordQueue(queue.Pending, queue.Failed)
+}
+
+// stateRoot is where the catch-up inbox lives: a downloaded peer snapshot is
+// state, not the library, and it is backed up before a purge.
+func (s *Service) stateRoot() string {
+	for _, candidate := range []string{s.Config.Data.StateDir, s.Config.Data.Directory} {
+		if trimmed := strings.TrimSpace(candidate); trimmed != "" {
+			return trimmed
+		}
+	}
+	return "."
 }

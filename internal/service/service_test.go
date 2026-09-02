@@ -20,6 +20,7 @@ func TestUnavailableSidecarReportsStateAndFTSServiceStarts(t *testing.T) {
 	dir := t.TempDir()
 	cfg := config.Default()
 	cfg.Data.Directory = dir
+	config.UseDataDirectory(&cfg, dir, nil)
 	cfg.Data.DatabasePath = filepath.Join(dir, "notes.sqlite")
 	cfg.Data.AssetStore = filepath.Join(dir, "assets")
 	cfg.Data.ProjectionDir = filepath.Join(dir, "projections")
@@ -61,6 +62,7 @@ func TestNonNoneSyncTargetEstablishesLocalJournalBoundary(t *testing.T) {
 	dir := t.TempDir()
 	cfg := config.Default()
 	cfg.Data.Directory = dir
+	config.UseDataDirectory(&cfg, dir, nil)
 	cfg.Data.DatabasePath = filepath.Join(dir, "notes.sqlite")
 	cfg.Data.AssetStore = filepath.Join(dir, "assets")
 	cfg.Data.ProjectionDir = filepath.Join(dir, "projections")
@@ -207,6 +209,7 @@ func TestLiveSidecarStartupRepairsDamageAndReportsStatus(t *testing.T) {
 	}
 	cfg := config.Default()
 	cfg.Data.Directory = dir
+	config.UseDataDirectory(&cfg, dir, nil)
 	cfg.Data.DatabasePath = filepath.Join(dir, "notes.sqlite")
 	cfg.Data.AssetStore = filepath.Join(dir, "assets")
 	cfg.Data.ProjectionDir = filepath.Join(dir, "projections")

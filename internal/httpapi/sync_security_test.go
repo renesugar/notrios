@@ -67,6 +67,11 @@ func newSecurityFixture(t *testing.T) *securityFixture {
 	}
 
 	cfg := config.Default()
+	// Put every root in this test's own directory. Left at the compiled
+	// default, the sync spools would be created under ./data relative to the
+	// package, which is source-tree pollution and a test not exercising the
+	// layout it claims.
+	config.UseDataDirectory(&cfg, t.TempDir(), nil)
 	cfg.Sync.REST.Enabled = true
 	server := NewServerWithOptions(ServerOptions{Store: st, Config: cfg})
 

@@ -101,6 +101,23 @@ type cliResult struct {
 func runCLI(t *testing.T, binary string, args ...string) cliResult {
 	t.Helper()
 	cmd := exec.Command(binary, args...)
+	// Run the binary somewhere of its own, with its own home.
+	//
+	// Inheriting this package's directory put the CLI in source mode, so every
+	// invocation resolved its roots to ./data and created
+	// cmd/notriosctl/data/{profiles,projections,quarantine,search-index} in the
+	// source tree. Inheriting the real environment also meant the CLI under
+	// test could see the developer's own config and profile registry, which a
+	// test has no business reading.
+	sandbox := t.TempDir()
+	cmd.Dir = sandbox
+	cmd.Env = append(os.Environ(),
+		"HOME="+sandbox,
+		"XDG_CONFIG_HOME="+filepath.Join(sandbox, "config"),
+		"XDG_DATA_HOME="+filepath.Join(sandbox, "share"),
+		"XDG_STATE_HOME="+filepath.Join(sandbox, "state"),
+		"XDG_CACHE_HOME="+filepath.Join(sandbox, "cache"),
+	)
 	var stdout, stderr strings.Builder
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr

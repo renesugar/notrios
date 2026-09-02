@@ -189,8 +189,15 @@ def resolve(env: dict, os_name: str = LINUX, *,
         # from being committed.
         _resolve_installed(env, os_name, executable_dir, result, runtime_dir_is_private)
         result.mode = "source"
+        # All four mutable roots collapse onto the checkout's ./data. The
+        # four-way split exists for user installations -- XDG separates them,
+        # purge treats them differently, only some are backed up -- and a
+        # checkout has one scratch directory. Splitting it would move every
+        # existing developer's database from ./data/notes.sqlite to
+        # ./data/data/notes.sqlite to satisfy a distinction that does not
+        # apply here.
         for name in ("data", "state", "cache", "runtime"):
-            result.roots[name] = _join(os_name, ".", "data", name)
+            result.roots[name] = _join(os_name, ".", "data")
         result.roots["program_assets"] = _join(os_name, ".", "web", "dist")
         result.note(
             SOURCE_SELECTED,

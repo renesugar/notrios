@@ -737,7 +737,7 @@ func (s *Server) handleSyncUIBackupCreate(w http.ResponseWriter, r *http.Request
 		writeError(w, http.StatusBadRequest, "validation_failed", "use a backup password between 8 and 4096 characters")
 		return
 	}
-	base := filepath.Join(s.config.Data.Directory, "backup-staging")
+	base := filepath.Join(s.runtimeRoot(), "backup-staging")
 	if err := os.MkdirAll(base, 0o700); err != nil {
 		writeError(w, http.StatusInternalServerError, "backup_failed", "backup staging could not be prepared")
 		return
@@ -786,7 +786,7 @@ func (s *Server) handleSyncUIBackupInspect(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	defer file.Close()
-	base := filepath.Join(s.config.Data.Directory, "restore-review")
+	base := filepath.Join(s.runtimeRoot(), "restore-review")
 	if err := os.MkdirAll(base, 0o700); err != nil {
 		writeError(w, http.StatusInternalServerError, "backup_review_failed", "restore review staging could not be prepared")
 		return
@@ -848,4 +848,21 @@ func normalizedSyncTarget(value string) string {
 	default:
 		return profiles.SyncNone
 	}
+}
+
+// runtimeRoot is where work in flight goes: backup staging and restore review,
+// which briefly hold decrypted library contents.
+//
+// It falls back to the state root and then the data root rather than failing.
+// XDG names no fallback for a missing XDG_RUNTIME_DIR, and inventing one under
+// /tmp would put those decrypted contents in a world-traversable directory --
+// so when there is no runtime root, staging goes somewhere Notrios already owns
+// and already creates owner-only.
+func (s *Server) runtimeRoot() string {
+	for _, candidate := range []string{s.config.Data.RuntimeDir, s.config.Data.StateDir, s.config.Data.Directory} {
+		if trimmed := strings.TrimSpace(candidate); trimmed != "" {
+			return trimmed
+		}
+	}
+	return "."
 }

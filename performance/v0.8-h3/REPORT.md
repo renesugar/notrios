@@ -473,6 +473,13 @@ committed. Source mode now moves data, state, cache, runtime and program assets
 into the checkout, and leaves config alone. `NOTRIOS_PROFILE_REGISTRY` already
 exists for anyone who wants an isolated registry.
 
+**Source mode collapses its four mutable roots onto `./data`** (H4 slice C).
+The four-way split exists for user installations: XDG separates them, purge
+treats them differently, and only some are backed up. A checkout has one scratch
+directory. As first modelled, source mode would have moved every existing
+developer's database from `./data/notes.sqlite` to `./data/data/notes.sqlite` to
+satisfy a distinction that does not apply there.
+
 **Probes retired by H4 slice B**, their subjects being fixed:
 `TestRelativeXDGConfigHomeIsAcceptedByProfilesAndRefusedByTheStandardLibrary`,
 `TestProfileRegistryFallsBackToACurrentDirectoryRelativePath`, and

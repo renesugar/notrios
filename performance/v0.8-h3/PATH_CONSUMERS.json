@@ -75,71 +75,81 @@
       "name": "Data directory root",
       "category": "data",
       "file": "internal/config/config.go",
-      "anchor": "Directory:     \"./data\",",
-      "current": "./data, relative to the current working directory",
+      "anchor": "{\"data.directory\", paths.RootData, nil, func(c *Config, v string) { c.Data.Directory = v }},",
+      "current": "<data> when the configuration does not state it; a stated path is never relocated",
       "defects": [
         "cwd-relative-default"
       ],
       "target": "<data>",
       "migration": "move",
-      "owner": "H4-D1"
+      "owner": "H4-D1",
+      "status": "resolved",
+      "resolved_by": "H4-D1"
     },
     {
       "id": "database",
       "name": "SQLite database",
       "category": "data",
       "file": "internal/config/config.go",
-      "anchor": "DatabasePath:  \"./data/notes.sqlite\",",
-      "current": "./data/notes.sqlite",
+      "anchor": "{\"data.database_path\", paths.RootData, []string{\"notes.sqlite\"}, func(c *Config, v string) { c.Data.DatabasePath = v }},",
+      "current": "<data>/notes.sqlite when unstated",
       "defects": [
         "cwd-relative-default"
       ],
       "target": "<data>/notes.sqlite",
       "migration": "move",
-      "owner": "H4-D1"
+      "owner": "H4-D1",
+      "status": "resolved",
+      "resolved_by": "H4-D1"
     },
     {
       "id": "asset-store",
       "name": "Asset store",
       "category": "data",
       "file": "internal/config/config.go",
-      "anchor": "AssetStore:    \"./data/assets\",",
-      "current": "./data/assets",
+      "anchor": "{\"data.asset_store\", paths.RootData, []string{\"assets\"}, func(c *Config, v string) { c.Data.AssetStore = v }},",
+      "current": "<data>/assets when unstated",
       "defects": [
         "cwd-relative-default"
       ],
       "target": "<data>/assets",
       "migration": "move",
-      "owner": "H4-D1"
+      "owner": "H4-D1",
+      "status": "resolved",
+      "resolved_by": "H4-D1"
     },
     {
       "id": "asset-store-derived",
       "name": "Asset store derived from a database path",
       "category": "data",
       "file": "internal/store/sqlite.go",
-      "anchor": "return filepath.Join(parentDir(path), \"assets\")",
-      "current": "<parent of database>/assets, where parent is computed by splitting on '/' only",
+      "anchor": "return filepath.Join(filepath.Dir(path), \"assets\")",
+      "current": "<parent of database>/assets using filepath.Dir, so a Windows path no longer yields the working directory",
       "defects": [
         "posix-only-separator"
       ],
       "target": "<parent of database>/assets, using filepath.Dir",
       "migration": "none",
-      "owner": "H4-D2"
+      "owner": "H4-D2",
+      "status": "resolved",
+      "resolved_by": "H4-D2"
     },
     {
       "id": "asset-store-memory",
       "name": "Asset store for :memory: databases",
       "category": "data",
       "file": "internal/store/sqlite.go",
-      "anchor": "return filepath.Join(os.TempDir(), \"notrios-assets\")",
-      "current": "os.TempDir()/notrios-assets, one fixed name shared by every user and every instance on the machine",
+      "anchor": "root, err := os.MkdirTemp(\"\", \"notrios-assets-\")",
+      "current": "a private per-process directory from os.MkdirTemp, not one fixed name shared by every user and instance",
       "defects": [
         "shared-predictable-temp-path",
         "multi-instance-collision"
       ],
       "target": "a per-process directory created with os.MkdirTemp under <runtime>, removed on close",
       "migration": "none",
-      "owner": "H4-D2"
+      "owner": "H4-D2",
+      "status": "resolved",
+      "resolved_by": "H4-D2"
     },
     {
       "id": "publish-profiles",
@@ -147,13 +157,15 @@
       "category": "data",
       "file": "internal/publish/profiles.go",
       "anchor": "return filepath.Join(dataDirectory, \"publish-profiles.json\")",
-      "current": "NOTRIOS_PUBLISH_PROFILES, else <data directory>/publish-profiles.json, else ./publish-profiles.json when the data directory is empty",
+      "current": "NOTRIOS_PUBLISH_PROFILES, else <data directory>/publish-profiles.json; the data directory is now resolved rather than defaulting to the working directory",
       "defects": [
         "cwd-relative-fallback"
       ],
       "target": "<data>/publish-profiles.json; refuse rather than fall back to the working directory",
       "migration": "move",
-      "owner": "H4-D1"
+      "owner": "H4-D1",
+      "status": "resolved",
+      "resolved_by": "H4-D1"
     },
     {
       "id": "sync-carrier",
@@ -161,11 +173,13 @@
       "category": "state",
       "file": "internal/httpapi/sync.go",
       "anchor": "carrierRoot := filepath.Join(root, \"sync-carrier\")",
-      "current": "<data directory>/sync-carrier",
+      "current": "<state>/sync-carrier, falling back to the data directory",
       "defects": [],
       "target": "<state>/sync-carrier",
       "migration": "move",
-      "owner": "H4-S1"
+      "owner": "H4-S1",
+      "status": "resolved",
+      "resolved_by": "H4-S1"
     },
     {
       "id": "sync-backups",
@@ -173,121 +187,139 @@
       "category": "state",
       "file": "internal/httpapi/sync.go",
       "anchor": "backupRoot := filepath.Join(root, \"sync-backups\")",
-      "current": "<data directory>/sync-backups",
+      "current": "<state>/sync-backups, falling back to the data directory",
       "defects": [],
       "target": "<state>/sync-backups",
       "migration": "move",
-      "owner": "H4-S1"
+      "owner": "H4-S1",
+      "status": "resolved",
+      "resolved_by": "H4-S1"
     },
     {
       "id": "catchup-inbox",
       "name": "REST catch-up inbox",
       "category": "state",
       "file": "internal/service/service.go",
-      "anchor": "root := filepath.Join(s.Config.Data.Directory, \"catchup-inbox\", backup.ID)",
-      "current": "<data directory>/catchup-inbox/<backup id>",
+      "anchor": "root := filepath.Join(s.stateRoot(), \"catchup-inbox\", backup.ID)",
+      "current": "<state>/catchup-inbox/<backup id>",
       "defects": [],
       "target": "<state>/catchup-inbox/<backup id>",
       "migration": "move",
-      "owner": "H4-S1"
+      "owner": "H4-S1",
+      "status": "resolved",
+      "resolved_by": "H4-S1"
     },
     {
       "id": "quarantine",
       "name": "Remote-media quarantine",
       "category": "state",
       "file": "internal/config/config.go",
-      "anchor": "QuarantineDir: \"./data/quarantine\",",
-      "current": "./data/quarantine",
+      "anchor": "{\"remote_media.quarantine_dir\", paths.RootState, []string{\"quarantine\"}, func(c *Config, v string) { c.RemoteMedia.QuarantineDir = v }},",
+      "current": "<state>/quarantine when unstated; state rather than cache because it records what a note tried to fetch",
       "defects": [
         "cwd-relative-default",
         "world-readable-root"
       ],
       "target": "<state>/quarantine",
       "migration": "move",
-      "owner": "H4-S1"
+      "owner": "H4-S1",
+      "status": "resolved",
+      "resolved_by": "H4-S1"
     },
     {
       "id": "projections",
       "name": "Projection export directory",
       "category": "cache",
       "file": "internal/config/config.go",
-      "anchor": "ProjectionDir: \"./data/projections\",",
-      "current": "./data/projections",
+      "anchor": "{\"data.projection_dir\", paths.RootCache, []string{\"projections\"}, func(c *Config, v string) { c.Data.ProjectionDir = v }},",
+      "current": "<cache>/projections when unstated",
       "defects": [
         "cwd-relative-default",
         "world-readable-root"
       ],
       "target": "<cache>/projections",
       "migration": "rebuild",
-      "owner": "H4-K1"
+      "owner": "H4-K1",
+      "status": "resolved",
+      "resolved_by": "H4-K1"
     },
     {
       "id": "search-index",
       "name": "Recoll search index",
       "category": "cache",
       "file": "internal/config/config.go",
-      "anchor": "IndexDir: \"./data/search-index\",",
-      "current": "./data/search-index",
+      "anchor": "{\"search_sidecar.index_dir\", paths.RootCache, []string{\"search-index\"}, func(c *Config, v string) { c.SearchSidecar.IndexDir = v }},",
+      "current": "<cache>/search-index when unstated",
       "defects": [
         "cwd-relative-default",
         "world-readable-root"
       ],
       "target": "<cache>/search-index",
       "migration": "rebuild",
-      "owner": "H4-K1"
+      "owner": "H4-K1",
+      "status": "resolved",
+      "resolved_by": "H4-K1"
     },
     {
       "id": "recoll-config",
       "name": "Generated Recoll configuration directory",
       "category": "cache",
       "file": "internal/recoll/recoll.go",
-      "anchor": "if err := os.MkdirAll(s.ConfDir, 0o755); err != nil {",
-      "current": "a caller-supplied directory, created 0755, holding recoll.conf, fields, mimeconf and an executable handler script",
+      "anchor": "if err := os.MkdirAll(s.ConfDir, 0o700); err != nil {",
+      "current": "a caller-supplied directory under <cache>, created 0700; fully regenerated",
       "defects": [
         "world-readable-root",
         "regenerated-not-user-authored"
       ],
       "target": "<cache>/recoll; fully regenerated, never migrated",
       "migration": "rebuild",
-      "owner": "H4-K1"
+      "owner": "H4-K1",
+      "status": "resolved",
+      "resolved_by": "H4-K1"
     },
     {
       "id": "media-cache",
       "name": "Remote media fetch directory",
       "category": "cache",
       "file": "internal/media/fetch.go",
-      "anchor": "if err := os.MkdirAll(dir, 0o755); err != nil {",
-      "current": "a caller-supplied directory derived from the quarantine root, created 0755",
+      "anchor": "if err := os.MkdirAll(dir, 0o700); err != nil {",
+      "current": "under <state>/quarantine, created 0700",
       "defects": [
         "world-readable-root"
       ],
       "target": "under <state>/quarantine, created 0700",
       "migration": "move",
-      "owner": "H4-S1"
+      "owner": "H4-S1",
+      "status": "resolved",
+      "resolved_by": "H4-S1"
     },
     {
       "id": "backup-staging",
       "name": "Portable backup staging",
       "category": "runtime",
       "file": "internal/httpapi/sync_ui.go",
-      "anchor": "base := filepath.Join(s.config.Data.Directory, \"backup-staging\")",
-      "current": "<data directory>/backup-staging/portable-*",
+      "anchor": "base := filepath.Join(s.runtimeRoot(), \"backup-staging\")",
+      "current": "<runtime>/backup-staging, falling back to state then data",
       "defects": [],
       "target": "<runtime>/backup-staging; falls back to <state> when no runtime root exists",
       "migration": "none",
-      "owner": "H4-R1"
+      "owner": "H4-R1",
+      "status": "resolved",
+      "resolved_by": "H4-R1"
     },
     {
       "id": "restore-review",
       "name": "Restore review staging",
       "category": "runtime",
       "file": "internal/httpapi/sync_ui.go",
-      "anchor": "base := filepath.Join(s.config.Data.Directory, \"restore-review\")",
-      "current": "<data directory>/restore-review/review-*, removed after the request",
+      "anchor": "base := filepath.Join(s.runtimeRoot(), \"restore-review\")",
+      "current": "<runtime>/restore-review, falling back to state then data",
       "defects": [],
       "target": "<runtime>/restore-review; falls back to <state> when no runtime root exists",
       "migration": "none",
-      "owner": "H4-R1"
+      "owner": "H4-R1",
+      "status": "resolved",
+      "resolved_by": "H4-R1"
     },
     {
       "id": "abi-owner-lock",

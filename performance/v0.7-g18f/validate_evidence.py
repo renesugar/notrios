@@ -110,10 +110,14 @@ def validate_generated(template, slots, root=ROOT):
 def validate_report(root=ROOT, here=HERE):
     report = load_json(here / "REPORT.json")
     require(report.get("schema") == "notrios.g18f.deterministic.v1", "wrong deterministic report schema")
-    expected_summary = {"fragments": 15, "user": 13, "api": 2, "generated_documents": 5, "enumerated_rows": 413}
+    # 413 -> 419 in v0.8 H4 slice C: data.state_dir, data.cache_dir and
+    # data.runtime_dir each add a row to the Config listing and a row to the
+    # Default listing.
+    expected_summary = {"fragments": 15, "user": 13, "api": 2, "generated_documents": 5, "enumerated_rows": 419}
     require(report.get("summary") == expected_summary, "wrong deterministic summary")
     expected_enumerations = {
-        "configuration_keys": 59, "configuration_defaults": 49, "cli_usage_forms": 56,
+        # 59 -> 62 and 49 -> 52 for the same three keys.
+        "configuration_keys": 62, "configuration_defaults": 52, "cli_usage_forms": 56,
         "rest_openapi_operations": 109, "mcp_tools": 46, "mcp_sync_scope_assignments": 7,
         "mcp_scopes": 4, "mcp_tool_scope_assignments": 46, "gui_journeys": 37,
     }
@@ -232,9 +236,19 @@ def validate_advisory(slots, root=ROOT, here=HERE):
 def main(root=ROOT, here=HERE):
     template, slots = validate_templates(root)
     validate_generated(template, slots, root)
-    validate_report(root, here)
+    deterministic = validate_report(root, here)
     advisory = validate_advisory(slots, root, here)
-    print(f"G18f evidence valid: 15 fragments, 413 generated rows, {advisory['calibration']['correct']}/{advisory['calibration']['total']} calibration decisions, 13 advisory reviews")
+    # Every number here is read back from what was just validated. Three of
+    # them used to be literals, and the line printed "413 generated rows" while
+    # validating 419 -- a success message that can disagree with its own
+    # evidence is worse than no message.
+    summary = deterministic["summary"]
+    print(
+        f"G18f evidence valid: {summary['fragments']} fragments, "
+        f"{summary['enumerated_rows']} generated rows, "
+        f"{advisory['calibration']['correct']}/{advisory['calibration']['total']} calibration decisions, "
+        f"{advisory['summary']['fragments']} advisory reviews"
+    )
 
 
 if __name__ == "__main__":

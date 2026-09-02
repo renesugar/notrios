@@ -97,6 +97,18 @@ type DataConfig struct {
 	DatabasePath  string `json:"database_path"`
 	AssetStore    string `json:"asset_store"`
 	ProjectionDir string `json:"projection_dir"`
+	// StateDir holds what Notrios must remember across runs but the user did
+	// not write: sync carrier spools, sync backups, the catch-up inbox, and the
+	// remote-media quarantine. It is backed up before a purge.
+	StateDir string `json:"state_dir"`
+	// CacheDir holds what can be rebuilt from the library: projections and the
+	// search index. A purge disposes of it without backing it up, so nothing
+	// irreplaceable may live here.
+	CacheDir string `json:"cache_dir"`
+	// RuntimeDir holds work in flight that must not survive a reboot: backup
+	// staging and restore review, which briefly hold decrypted library
+	// contents.
+	RuntimeDir string `json:"runtime_dir"`
 }
 
 type SearchConfig struct {
@@ -260,11 +272,17 @@ func Default() Config {
 // breaking older binaries. A production implementation may replace this with a
 // pinned YAML/TOML library after dependency policy is settled.
 func Load(path string) (Config, error) {
-	cfg := Default()
 	path = strings.TrimSpace(path)
 	if path == "" {
-		return cfg, nil
+		// An empty path means "the caller was given no --config", which is the
+		// same question LoadDefault answers. Answering it here separately is
+		// how notriosctl came to ignore the user's own configuration file:
+		// `doctor` called LoadDefault and every other subcommand called
+		// Load(""), so they disagreed about which database they were talking
+		// about. One rule for everyone.
+		return LoadDefault()
 	}
+	cfg := Default()
 	file, err := os.Open(path)
 	if err != nil {
 		return Config{}, fmt.Errorf("open config %q: %w", path, err)
@@ -275,6 +293,8 @@ func Load(path string) (Config, error) {
 	scanner := bufio.NewScanner(file)
 	section := ""
 	subsection := ""
+	// Path keys this file states explicitly. Resolved roots fill the rest.
+	provided := map[string]bool{}
 	// Tracks which config lists have received their first dash item, so a
 	// configured list replaces the compiled default instead of appending.
 	seenLists := map[string]bool{}
@@ -309,12 +329,117 @@ func Load(path string) (Config, error) {
 		if indent <= 2 {
 			subsection = ""
 		}
-		applyScalar(&cfg, section, subsection, key, parseScalar(value))
+		applyScalar(&cfg, section, subsection, key, parseScalar(value), provided)
 	}
 	if err := scanner.Err(); err != nil {
 		return Config{}, fmt.Errorf("read config %q: %w", path, err)
 	}
+	if err := ApplyResolvedRoots(&cfg, provided); err != nil {
+		return Config{}, err
+	}
 	return cfg, nil
+}
+
+// resolvedRootDefaults maps each path setting to the root it belongs under and
+// the name it takes there. The table is the contract; nothing else decides.
+//
+// The categories are H3's, and two are judgements rather than conventions.
+// Projections and the search index are cache: both are rebuilt from the library
+// and a purge disposes of them without a backup. The quarantine is state, not
+// cache -- it holds untrusted downloaded bytes, which sounds disposable, but it
+// is also the record of what a note tried to fetch and the only copy of media a
+// user may have approved without localizing.
+var resolvedRootDefaults = []struct {
+	key      string
+	root     string
+	relative []string
+	assign   func(*Config, string)
+}{
+	{"data.directory", paths.RootData, nil, func(c *Config, v string) { c.Data.Directory = v }},
+	{"data.database_path", paths.RootData, []string{"notes.sqlite"}, func(c *Config, v string) { c.Data.DatabasePath = v }},
+	{"data.asset_store", paths.RootData, []string{"assets"}, func(c *Config, v string) { c.Data.AssetStore = v }},
+	{"data.state_dir", paths.RootState, nil, func(c *Config, v string) { c.Data.StateDir = v }},
+	{"data.cache_dir", paths.RootCache, nil, func(c *Config, v string) { c.Data.CacheDir = v }},
+	{"data.runtime_dir", paths.RootRuntime, nil, func(c *Config, v string) { c.Data.RuntimeDir = v }},
+	{"data.projection_dir", paths.RootCache, []string{"projections"}, func(c *Config, v string) { c.Data.ProjectionDir = v }},
+	{"search_sidecar.index_dir", paths.RootCache, []string{"search-index"}, func(c *Config, v string) { c.SearchSidecar.IndexDir = v }},
+	{"remote_media.quarantine_dir", paths.RootState, []string{"quarantine"}, func(c *Config, v string) { c.RemoteMedia.QuarantineDir = v }},
+}
+
+// UseDataDirectory places every storage root under one directory.
+//
+// This is the "one directory means one directory" rule, exported because tests
+// and callers that build a Config by hand need it too. Leaving it implicit is
+// how several tests came to set Data.Directory and silently keep the compiled
+// ./data defaults for the search index and quarantine, creating directories in
+// the source tree relative to whatever their working directory was.
+//
+// Keys listed in provided are left alone, so a caller that stated a path keeps
+// it. Pass nil to place everything.
+func UseDataDirectory(cfg *Config, dir string, provided map[string]bool) {
+	for key, assign := range map[string]func(string){
+		"data.state_dir":              func(v string) { cfg.Data.StateDir = v },
+		"data.cache_dir":              func(v string) { cfg.Data.CacheDir = v },
+		"data.runtime_dir":            func(v string) { cfg.Data.RuntimeDir = v },
+		"data.database_path":          func(v string) { cfg.Data.DatabasePath = filepath.Join(v, "notes.sqlite") },
+		"data.asset_store":            func(v string) { cfg.Data.AssetStore = filepath.Join(v, "assets") },
+		"data.projection_dir":         func(v string) { cfg.Data.ProjectionDir = filepath.Join(v, "projections") },
+		"search_sidecar.index_dir":    func(v string) { cfg.SearchSidecar.IndexDir = filepath.Join(v, "search-index") },
+		"remote_media.quarantine_dir": func(v string) { cfg.RemoteMedia.QuarantineDir = filepath.Join(v, "quarantine") },
+	} {
+		if !provided[key] {
+			assign(dir)
+		}
+	}
+	cfg.Data.Directory = dir
+}
+
+// ApplyResolvedRoots fills every path setting the configuration did not state.
+//
+// In a source checkout the four mutable roots all resolve to ./data, so this
+// reproduces the historical layout exactly and a developer sees no change. In
+// an installed layout it produces the native per-OS roots.
+//
+// It never moves anything. A configuration naming a path keeps it, which is
+// what makes "no implicit migration" true at the only place it could stop being
+// true: an installed binary meeting an old checkout-relative config file still
+// reads and writes the old locations.
+func ApplyResolvedRoots(cfg *Config, provided map[string]bool) error {
+	// A stated data directory keeps everything under it. One directory means
+	// one directory: a configuration that says `directory: /srv/notes` and
+	// nothing else must not have its sync spools and quarantine resolved to the
+	// native state root somewhere else entirely.
+	//
+	// This is also what keeps every configuration written before H4 behaving
+	// exactly as it did. Without it, an existing config naming ./data kept its
+	// database there and silently moved its carrier spools, backups and
+	// catch-up inbox into ~/.local/state -- a surprise for a user, and for an
+	// isolated test or a sandboxed deployment an escape from the directory that
+	// was supposed to contain everything. Two end-to-end tests found this.
+	if provided["data.directory"] && strings.TrimSpace(cfg.Data.Directory) != "" {
+		UseDataDirectory(cfg, cfg.Data.Directory, provided)
+		return nil
+	}
+
+	resolution, err := paths.ForProcess(nil)
+	if err != nil {
+		// Not fatal here. A machine with no resolvable home can still run with
+		// explicit paths, and the caller that actually needs a root will say so
+		// with a better message than this one could.
+		return nil
+	}
+	for _, entry := range resolvedRootDefaults {
+		if provided[entry.key] {
+			continue
+		}
+		root := resolution.Root(entry.root)
+		if strings.TrimSpace(root) == "" {
+			continue
+		}
+		parts := append([]string{root}, entry.relative...)
+		entry.assign(cfg, filepath.Join(parts...))
+	}
+	return nil
 }
 
 // ExampleRelativePath is the checkout's sample configuration, read only in
@@ -358,7 +483,17 @@ func LoadDefault() (Config, error) {
 		}
 	}
 
-	return Default(), nil
+	return defaultsWithResolvedRoots()
+}
+
+// defaultsWithResolvedRoots is the compiled defaults with every unstated path
+// filled from the resolver. It is the bottom of the discovery order.
+func defaultsWithResolvedRoots() (Config, error) {
+	cfg := Default()
+	if err := ApplyResolvedRoots(&cfg, nil); err != nil {
+		return Config{}, err
+	}
+	return cfg, nil
 }
 
 func loadExampleFrom(checkoutRoot string) (Config, error) {
@@ -368,27 +503,39 @@ func loadExampleFrom(checkoutRoot string) (Config, error) {
 	} else if !os.IsNotExist(err) {
 		return Config{}, fmt.Errorf("read %s: %w", candidate, err)
 	}
-	return Default(), nil
+	return defaultsWithResolvedRoots()
 }
 
 // EnsureDirectories creates the local storage roots required by the MVP service.
+// EnsureDirectories creates the local storage roots, owner-only.
+//
+// The mode used to be 0755 here while every derived artifact -- sync backups,
+// carrier spools, staging, the registry, sync keys, snapshot images -- was
+// created 0700. On a shared machine that made the encrypted backup of a user's
+// notes owner-only and the notes themselves world-readable. It was also
+// inconsistent within its own subject: publish.File.Save creates the same data
+// directory 0700, so which mode a user's data directory ended up with depended
+// on which code path happened to run first.
 func EnsureDirectories(cfg Config) error {
-	paths := []string{
+	roots := []string{
 		cfg.Data.Directory,
 		filepath.Dir(cfg.Data.DatabasePath),
 		cfg.Data.AssetStore,
+		cfg.Data.StateDir,
+		cfg.Data.CacheDir,
+		cfg.Data.RuntimeDir,
 		cfg.Data.ProjectionDir,
 		cfg.SearchSidecar.IndexDir,
 		cfg.RemoteMedia.QuarantineDir,
 	}
 	seen := map[string]bool{}
-	for _, path := range paths {
+	for _, path := range roots {
 		path = strings.TrimSpace(path)
 		if path == "" || path == ":memory:" || seen[path] {
 			continue
 		}
 		seen[path] = true
-		if err := os.MkdirAll(path, 0o755); err != nil {
+		if err := os.MkdirAll(path, 0o700); err != nil {
 			return fmt.Errorf("create directory %q: %w", path, err)
 		}
 	}
@@ -432,7 +579,17 @@ func parseScalar(value string) string {
 	return value
 }
 
-func applyScalar(cfg *Config, section, subsection, key, value string) {
+// applyScalar applies one key and records that the file stated it.
+//
+// The record matters because resolved roots fill only what the configuration
+// left unsaid. Comparing the loaded value against the compiled default would
+// not do: a user who deliberately writes `directory: ./data` means it, and
+// silently relocating their library because their choice happened to equal the
+// default would be exactly the implicit migration H4 is forbidden from doing.
+func applyScalar(cfg *Config, section, subsection, key, value string, provided map[string]bool) {
+	if provided != nil {
+		provided[section+"."+key] = true
+	}
 	switch section {
 	case "server":
 		applyServer(&cfg.Server, key, value)
@@ -642,6 +799,12 @@ func applyData(cfg *DataConfig, key, value string) {
 	switch key {
 	case "directory":
 		cfg.Directory = value
+	case "state_dir":
+		cfg.StateDir = value
+	case "cache_dir":
+		cfg.CacheDir = value
+	case "runtime_dir":
+		cfg.RuntimeDir = value
 	case "database_path":
 		cfg.DatabasePath = value
 	case "asset_store":

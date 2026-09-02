@@ -2,6 +2,22 @@
 set -euo pipefail
 
 go test ./...
+
+# Tests must not write a data directory into the source tree. This is invisible
+# to `git status` because data/ is ignored, and it happened: H4 resolved profile
+# data from the data root, and tests that had been relying on it landing beside
+# their temp registry started creating internal/profiles/data instead. A test
+# that pollutes the checkout is also a test not exercising the layout it claims.
+stray_data="$(find . -mindepth 2 -type d -name data \
+  -not -path './.git/*' -not -path './web/node_modules/*' \
+  -not -path './node_modules/*' -not -path './docs-site/*' \
+  -not -path './testdata/*' -not -path './performance/*' 2>/dev/null || true)"
+if test -n "$stray_data"; then
+  echo "tests left a data directory inside the source tree:"
+  echo "$stray_data"
+  echo "isolate the test (see isolateRoots in internal/profiles) rather than deleting this by hand"
+  exit 1
+fi
 python3 scripts/check_required_files.py
 python3 scripts/check_sqlite_provenance.py
 python3 performance/v0.8-h2a/validate_evidence.py

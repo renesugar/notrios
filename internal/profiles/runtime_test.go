@@ -26,6 +26,7 @@ func createRuntimeProfile(t *testing.T, registry, name, db, assets, listen strin
 }
 
 func TestRuntimeProfilesAreIsolatedOwnerOnlyAndRedacted(t *testing.T) {
+	isolateRoots(t)
 	root := t.TempDir()
 	registry := filepath.Join(root, "profiles.json")
 	first := createRuntimeProfile(t, registry, "work", filepath.Join(root, "work.sqlite"), filepath.Join(root, "work-assets"), "127.0.0.1:18121", func(options *CreateOptions) {
@@ -64,6 +65,7 @@ func TestRuntimeProfilesAreIsolatedOwnerOnlyAndRedacted(t *testing.T) {
 }
 
 func TestRuntimeProfileRefusesPathAndPortCollisions(t *testing.T) {
+	isolateRoots(t)
 	root := t.TempDir()
 	registry := filepath.Join(root, "profiles.json")
 	sharedDB := filepath.Join(root, "one.sqlite")
@@ -80,6 +82,7 @@ func TestRuntimeProfileRefusesPathAndPortCollisions(t *testing.T) {
 }
 
 func TestCopiedDatabaseRequiresExplicitAdoptOrFork(t *testing.T) {
+	isolateRoots(t)
 	root := t.TempDir()
 	registry := filepath.Join(root, "profiles.json")
 	original := createRuntimeProfile(t, registry, "original", filepath.Join(root, "original.sqlite"), filepath.Join(root, "original-assets"), "127.0.0.1:18141", nil)
@@ -129,6 +132,7 @@ func TestCopiedDatabaseRequiresExplicitAdoptOrFork(t *testing.T) {
 }
 
 func TestRuntimeProfileValidationFindsStaleConfigAndIdentity(t *testing.T) {
+	isolateRoots(t)
 	root := t.TempDir()
 	registry := filepath.Join(root, "profiles.json")
 	profile := createRuntimeProfile(t, registry, "stale", filepath.Join(root, "stale.sqlite"), filepath.Join(root, "stale-assets"), "127.0.0.1:18151", nil)
@@ -154,6 +158,7 @@ func TestRuntimeProfileValidationFindsStaleConfigAndIdentity(t *testing.T) {
 }
 
 func TestRuntimeProfileStartupRefusesChangedDatabaseIdentity(t *testing.T) {
+	isolateRoots(t)
 	root := t.TempDir()
 	registry := filepath.Join(root, "profiles.json")
 	profile := createRuntimeProfile(t, registry, "changed", filepath.Join(root, "changed.sqlite"), filepath.Join(root, "changed-assets"), "127.0.0.1:18161", nil)
@@ -188,4 +193,92 @@ func hasIssue(report ValidationReport, code string) bool {
 		}
 	}
 	return false
+}
+
+// H3's largest finding, inverted: a generated profile's database, asset store,
+// projections, search index and quarantine used to default to
+// <config>/profiles/<id>/data -- a user's entire library inside ~/.config, the
+// one root they are most likely to sync with a dotfile manager or commit to a
+// repository.
+//
+// The generated .yaml stays in the config root, because it is a config file.
+func TestGeneratedProfileDataGoesUnderTheDataRoot(t *testing.T) {
+	home := isolateRoots(t)
+	configHome := filepath.Join(home, ".config")
+	dataHome := filepath.Join(home, ".local", "share")
+
+	registry := filepath.Join(configHome, "notrios", "profiles.json")
+	t.Setenv("NOTRIOS_PROFILE_REGISTRY", registry)
+
+	profile, err := Create(t.Context(), CreateOptions{
+		Name: "h4slicec", RegistryPath: registry,
+		ListenAddr: "127.0.0.1:8080", SyncTarget: SyncNone,
+	})
+	if err != nil {
+		t.Fatalf("create profile: %v", err)
+	}
+
+	configRoot := filepath.Join(configHome, "notrios")
+	if strings.HasPrefix(profile.DatabasePath, configRoot) {
+		t.Errorf("the database is still inside the config root: %s", profile.DatabasePath)
+	}
+	if strings.HasPrefix(profile.AssetStore, configRoot) {
+		t.Errorf("the asset store is still inside the config root: %s", profile.AssetStore)
+	}
+	if want := filepath.Join(dataHome, "notrios"); !strings.HasPrefix(profile.DatabasePath, want) {
+		t.Errorf("database %q is not under the data root %q", profile.DatabasePath, want)
+	}
+
+	// The generated config file is a config file and stays where those live.
+	if !strings.HasPrefix(profile.ConfigPath, configRoot) {
+		t.Errorf("the generated profile config left the config root: %s", profile.ConfigPath)
+	}
+}
+
+// An explicit --data-dir still wins, and keeps everything together under it: a
+// caller who named one directory meant one directory.
+func TestAnExplicitProfileDataDirectoryIsRespected(t *testing.T) {
+	home := isolateRoots(t)
+	registry := filepath.Join(home, ".config", "notrios", "profiles.json")
+	t.Setenv("NOTRIOS_PROFILE_REGISTRY", registry)
+
+	chosen := filepath.Join(t.TempDir(), "my-library")
+	profile, err := Create(t.Context(), CreateOptions{
+		Name: "explicit", RegistryPath: registry, DataDirectory: chosen,
+		ListenAddr: "127.0.0.1:8080", SyncTarget: SyncNone,
+	})
+	if err != nil {
+		t.Fatalf("create profile: %v", err)
+	}
+	if !strings.HasPrefix(profile.DatabasePath, chosen) {
+		t.Errorf("database %q is not under the chosen directory %q", profile.DatabasePath, chosen)
+	}
+	if !strings.HasPrefix(profile.AssetStore, chosen) {
+		t.Errorf("asset store %q is not under the chosen directory %q", profile.AssetStore, chosen)
+	}
+}
+
+// isolateRoots points every resolved root at a temporary directory.
+//
+// These tests used to get their data directory beside the registry they had
+// already placed in a temp directory, so isolation came for free from the
+// defect H4 removed. With profile data resolved from the data root, a test that
+// says nothing would write into the checkout's ./data -- so it has to say
+// something.
+func isolateRoots(t *testing.T) string {
+	t.Helper()
+	// Out of the checkout as well as into a temp home. Mode detection is
+	// filesystem-based: a process whose working directory is inside a checkout
+	// is in source mode, where the data root is ./data and the XDG variables
+	// are deliberately not consulted. Without this the tests wrote
+	// internal/profiles/data into the source tree, which is both pollution and
+	// a test that was not exercising the layout it claimed to.
+	t.Chdir(t.TempDir())
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	t.Setenv("XDG_CONFIG_HOME", filepath.Join(home, ".config"))
+	t.Setenv("XDG_DATA_HOME", filepath.Join(home, ".local", "share"))
+	t.Setenv("XDG_STATE_HOME", filepath.Join(home, ".local", "state"))
+	t.Setenv("XDG_CACHE_HOME", filepath.Join(home, ".cache"))
+	return home
 }

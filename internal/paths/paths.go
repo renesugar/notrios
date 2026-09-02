@@ -210,8 +210,17 @@ func resolveSource(goos string, options Options, result *Resolution) error {
 		return err
 	}
 	result.Mode = ModeSource
+	// All four mutable roots collapse onto the checkout's ./data.
+	//
+	// The four-way split exists for user installations: XDG separates them,
+	// purge treats them differently, and only some are backed up. A checkout
+	// has one scratch directory, and splitting it would move every existing
+	// developer's database from ./data/notes.sqlite to ./data/data/notes.sqlite
+	// for no benefit -- orphaning their data to satisfy a distinction that does
+	// not apply here. `make clean` already refuses to touch ./data, and purge
+	// does not operate on source mode at all.
 	for _, name := range []string{RootData, RootState, RootCache, RootRuntime} {
-		result.Roots[name] = Join(goos, ".", "data", name)
+		result.Roots[name] = Join(goos, ".", "data")
 	}
 	result.Roots[RootProgramAssets] = Join(goos, ".", "web", "dist")
 	result.note(NoticeSourceSelected,
