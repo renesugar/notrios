@@ -58,6 +58,13 @@ if test -n "$stray_memory"; then
   echo "the caller should treat \":memory:\" as transient rather than as a filename"
   exit 1
 fi
+# The tests for scripts/ are run here.
+#
+# scripts/test_check_agent_usage.py existed and nothing ran it: it was listed in
+# check_required_files.py, which asserts the file is present, not that it
+# passes. A test nobody runs is a comment with a confusing filename, and the
+# lifecycle tests being added beside it delete directories for a living.
+python3 -m unittest discover -s scripts -p 'test_*.py'
 python3 scripts/check_required_files.py
 python3 scripts/check_sqlite_provenance.py
 python3 performance/v0.8-h2a/validate_evidence.py

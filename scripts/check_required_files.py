@@ -57,6 +57,8 @@ required = [
     'internal/store/sqlite3_amalgamation.c',
     'scripts/agent_usage_preflight.sh',
     'scripts/test_check_agent_usage.py',
+    'scripts/lifecycle.py',
+    'scripts/test_lifecycle.py',
     'scripts/test_agent_usage_preflight.sh',
     'skills/agent-usage-preflight/SKILL.md',
     'plans/v0.7/037-agent-usage-preflight.md',

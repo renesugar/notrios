@@ -13,7 +13,7 @@
 .PHONY: help deps build build-service build-cli web gui docs \
         test validate docgen docaudit doccheck smoke serve doctor seed-help evidence-pre-push \
         g18e-validate g18f-validate g18g-validate g19-validate g20-validate \
-        install install-dry-run uninstall uninstall-dry-run clean clobber precheck
+        install install-dry-run uninstall uninstall-dry-run purge clean clobber precheck
 
 help: ## Show this target summary
 	@grep -E '^[a-zA-Z-]+:.*## ' $(MAKEFILE_LIST) | awk -F ':.*## ' '{printf "  %-14s %s\n", $$1, $$2}'
@@ -122,6 +122,9 @@ uninstall: ## Remove what install recorded installing; never touches user data
 
 uninstall-dry-run: ## Show exactly what uninstall would remove, and remove nothing
 	python3 scripts/lifecycle.py uninstall --dry-run
+
+purge: ## Uninstall AND delete this user's Notrios data, after a verified backup
+	python3 scripts/lifecycle.py purge
 
 clean: ## Remove build/test/docs/release output (never user data in data/)
 	rm -rf bin/ dist/ _site/ web/dist/ .playwright-mcp/

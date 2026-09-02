@@ -772,10 +772,61 @@ source-tree `clobber` separation.
   only exact manifest-listed paths under validated install roots; preserve and
   report a user-modified or foreign-owned artifact rather than overwriting or
   deleting it silently.
-- **Backup container and destination — Blocking before H5 implementation.**
-  H3 must choose a restorable owner-only format and a default destination
-  outside all purge roots, including behavior when the configured backup
-  directory is unsafe, lacks capacity, or resolves through a symlink.
+- **Backup container and destination — Resolved in H5.** H3 had already built
+  and proven the container in `test_backup_restore.py`: one owner-only
+  `backup.tar` plus a `MANIFEST.json` carrying a per-file SHA-256 inventory and
+  a hash of the archive itself, created `0600` from the start rather than
+  chmod-ed afterwards. H5 adopts it unchanged. The destination is
+  `<state parent>/notrios-purge-backups/<timestamp>/` -- a sibling of the state
+  root, so it is outside every root purge removes by construction, and each run
+  asserts that the oracle itself refuses that path before writing anything. An
+  unsafe destination is refused rather than relocated.
+
+**Outcome (2026-09-02).** Complete, in four slices: A install and the ownership
+manifest, B uninstall, C purge, D tests and documentation.
+
+**A hardcoded program-assets root made the recommended install unusable, and
+implementing H5 is what found it.** `internal/paths` returned
+`/usr/local/share/notrios` for every installed Linux instance while H3
+recommends `$HOME/.local` as the default prefix precisely because it needs no
+`sudo`, so `make install` wrote the interface and help to `~/.local` and the
+installed binary looked for them under `/usr/local`. It is now derived from the
+executable, as Windows and macOS already were; the derivation subsumes the
+constant, so `/usr/local/bin` still yields `/usr/local/share/notrios` and a
+system-wide install is unaffected. H3's `resolve_model.py` was amended in step
+and `RESOLUTION_TABLE.json` regenerated.
+
+**Three defects were found by running the thing rather than reading it.**
+Install copied a stale `bin/notriosctl` built before H4 slice D, so the
+installed CLI had no `paths` command; install now depends on `build`. Uninstall
+reported a symlink as "outside every install root", which is true because
+`realpath` resolves it away, but sends the reader hunting for a prefix problem;
+the symlink check now runs first and both rules still catch it. And purge asked
+the *wrong instance* where the notes were: `make purge` runs from the checkout,
+so the installed binary inherited the checkout as its working directory and
+resolved source mode, reporting `data` and `web/dist`. The oracle refused them
+for being relative and the backup destination would have landed in the
+repository -- two rules caught it -- but a purge that asks the wrong instance
+has already failed before anything protects it. Roots are now resolved from
+outside the checkout.
+
+**The backup container was world-readable.** `os.makedirs(mode=...)` applies its
+mode to the last component only, so the parent took the umask while the archive
+inside was correctly `0600`. Contents were never exposed, but a readable parent
+publishes that a user has backups and when they were taken. Both levels are
+owner-only now.
+
+**H3's layout puts installed artifacts inside the user's data root** when the
+recommended prefix is used: `$(datadir)/notrios` is `~/.local/share/notrios`,
+which is also `$XDG_DATA_HOME/notrios`. The manifest removes the installed files
+and the data step removes what is left, so nothing is missed or deleted twice,
+and the purge plan names the overlap rather than printing two lines about one
+path.
+
+**Script tests were not being run at all.** `scripts/test_check_agent_usage.py`
+was listed in `check_required_files.py`, which asserts a file exists rather than
+that it passes. `make validate` now discovers and runs `scripts/test_*.py`,
+which picks up those 28 tests as well as the 23 new lifecycle ones.
 
 ## H6a. Desktop installer and GitHub-native build investigation
 
@@ -1384,7 +1435,8 @@ This is an index only; each decision is owned and explained inside its item.
 | Pre-migration backup location and retention | H4b | Resolved in H4b: `pre-migration-backups/` beside the database, newest kept, no new root |
 | Migration trigger narrowed from H3 section 4 | H4 slice E | Resolved; slice D removed the two-instance case, so the trigger is a pre-0.8 layout in the working directory that is not the library in use |
 | User-local/GNU install layout | H3/H5 | Resolved in H3: `$HOME/.local`, GNU directory variables and `DESTDIR` retained |
-| Purge external-path and backup policy | H3/H5 | Resolved in H3: enumerate and back up, refuse to delete; container choice remains for H5 |
+| Purge external-path and backup policy | H3/H5 | Resolved: enumerate and back up, refuse to delete; H5 adopts H3's proven tar-plus-manifest container beside the state root |
+| Installed program-assets root | H4/H5 | Resolved in H5: derived from the executable, so the GNU prefix decides it and a user-local install finds its own assets |
 | Hosted free models reading repository documentation | H14 | Open; G18f recorded loopback-only, so this is a policy change and must be decided explicitly |
 | Free-model choice for documentation evaluation | H14 | Open; supplied recommendations look name-inferred, so the existing 16-run calibration decides across an eight-model roster led by `glm-5.2:free` |
 | Context given to the model under test | H14 | Resolved in planning: one page section only, identical for every model. Feeding the repository would score the codebase while appearing to score the documentation |

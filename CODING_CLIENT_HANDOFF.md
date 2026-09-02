@@ -102,6 +102,65 @@ only difference between the historical `package_release.sh` and the current one
 is the added `node_modules/*` exclusion; `check_release_zip.py` is byte-identical
 at all four commits.
 
+## v0.8 H5 completion handoff — 2026-09-02
+
+`make install`, `make uninstall` and `make purge` exist, implemented in
+`scripts/lifecycle.py` with `make install-dry-run` / `make uninstall-dry-run` /
+`DRYRUN=1 make purge` previews. 23 tests in `scripts/test_lifecycle.py` run them
+against a disposable HOME and a fixture source tree.
+
+**Read this before touching purge.** It imports H3's `purge_oracle` rather than
+reimplementing the rules. That decision procedure says whether a directory of
+someone's notes may be deleted, and its 30 fixtures already catch what a second
+copy would get wrong -- textual containment instead of `realpath`, a symlink that
+looks contained while pointing out, a target across a mount. The import from an
+evidence directory is odd; a divergent copy on that path would be worse.
+
+`NOTRIOS_LIFECYCLE_SOURCE` overrides the tree artifacts are copied *from*. It
+deliberately does not move the oracle, which is always found relative to
+`lifecycle.py` -- letting the override relocate the rules that decide what may be
+deleted is exactly the wrong knob to expose, and the tests found it by failing
+to import at all.
+
+**Purge must ask the installed binary where the roots are, from outside the
+checkout.** `make purge` runs with the repository as the working directory, and
+Notrios treats a checkout it is standing in as a source instance -- so the first
+version asked the installed binary and got the *checkout's* `./data` roots back.
+The oracle refused them for being relative, which is how it surfaced, but a
+purge that asks the wrong instance has already failed before anything protects
+it. `resolved_roots` runs the subprocess with `cwd` set outside the checkout.
+
+**The ordering is the safety property.** Backup, then verify, then delete. A
+failed verification stops the deletion and names the partial archive; there is a
+test that truncates the archive between writing and verifying and asserts
+nothing was removed. The backup goes beside the state root, outside every root
+purge removes, and each run asserts the oracle refuses that destination before
+writing to it.
+
+**Flags take `1` or nothing.** `NO_BACKUP=0`, `FORCE=no` and `DRYRUN=true` are
+refused, not interpreted. A purge that cannot ask -- no terminal, no `FORCE=1` --
+stops rather than proceeding or hanging. `FORCE=1` skips the question, never the
+backup.
+
+**A hardcoded `/usr/local/share/notrios` broke the recommended install.** H3
+recommends `$HOME/.local` because it needs no `sudo`, and an instance installed
+there looked for its interface and help under `/usr/local`. It is now derived
+from the executable like Windows and macOS already were, which subsumes the old
+constant: `/usr/local/bin` still gives `/usr/local/share/notrios`. H3's
+`resolve_model.py` is amended and `RESOLUTION_TABLE.json` regenerated; the
+binding table test still passes.
+
+**Two things that will bite you again.** `os.makedirs(mode=...)` sets the mode on
+the last component only -- the backup's parent was `0775` from the umask while
+the archive was correctly `0600`. And `os.walk`'s directory list is captured
+before its children are visited, so a parent still looks occupied after they are
+removed; read the directory again at the moment of the decision.
+
+**`scripts/test_*.py` are now run by `make validate`.**
+`scripts/test_check_agent_usage.py` existed and nothing ran it: it was listed in
+`check_required_files.py`, which asserts presence rather than passing. Those 28
+tests were green, but nobody knew.
+
 ## v0.8 H4b completion handoff — 2026-09-02
 
 `Bootstrap` no longer migrates a user's only copy in place with no backup and no

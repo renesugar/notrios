@@ -62,6 +62,9 @@ paths are git-ignored. **Network** marks the targets that reach the network.
 | `make serve` | **run the service from source** on `127.0.0.1:8099`, for opening the UI in a browser | — | |
 | `make doctor` | check the configuration and environment (`notriosctl doctor`) | — | |
 | `make seed-help` | mirror `docs/` into the built-in Help notebook of the default database | — | |
+| `make install` | install to an end-user location (`prefix=$HOME/.local` by default) | `~/.local/...` | |
+| `make uninstall` | remove exactly what `install` recorded installing | — | |
+| `make purge` | uninstall **and** delete this user's data, after a verified backup | — | |
 | `make clean` | remove build/test/docs/release output — **never** `data/` and **never** `web/node_modules/` | — | |
 | `make clobber` | `clean` plus remove `web/node_modules/` | — | |
 | `make precheck` | fail if the tree has uncommitted changes or tracked ignored files | — | |
@@ -185,29 +188,99 @@ See [`notriosctl migrate`](cli.md#migrate) for the full contract.
 used exactly as written and were never relocated — or if you run from a
 checkout, whose roots are already `./data`.
 
-## Optional local installation
+## Installing to an end-user location
 
-If you want the binaries on your `PATH`:
-
-```sh
-make build gui
-install -m 0755 bin/notriosd bin/notriosctl bin/notrios ~/.local/bin/
-```
-
-Copy the built interface somewhere the binaries will find it — the program-assets root, or beside the executable:
+`make install` puts Notrios where an end user would have it — outside the
+checkout — so you can run it the way they will:
 
 ```sh
-sudo mkdir -p /usr/local/share/notrios
-sudo cp -r web/dist /usr/local/share/notrios/web
+make install
 ```
 
-Without that step an installed binary has no interface to serve unless you pass `--web-dir`; the headless service still runs, and REST, MCP and the importers do not need one. Run `notriosctl paths` to see which roots the installed copy resolved.
+It installs to `$HOME/.local` by default, which needs no `sudo`: the binaries go
+to `~/.local/bin`, the built interface and the help docs to
+`~/.local/share/notrios`, and the `notrios://` desktop entry to
+`~/.local/share/applications`. Add `~/.local/bin` to your `PATH` if it is not
+there already. Nothing is written to any config, data, state, cache or runtime
+root — an installed Notrios creates those itself, on first use.
 
-Uninstall by deleting the copies:
+Use the GNU directory variables to put it elsewhere, and `DESTDIR` to stage it
+for packaging:
 
 ```sh
-rm -f ~/.local/bin/notriosd ~/.local/bin/notriosctl ~/.local/bin/notrios
+make install prefix=/usr/local            # system-wide; needs write access
+make install DESTDIR=/tmp/stage           # stage for a package, touching no real root
+make install-dry-run                      # print every path, write nothing
 ```
+
+`DESTDIR` is prepended to installed files and to nothing else. It never creates
+a user's roots, because a package built on one machine must not ship that
+machine's idea of a home directory.
+
+### Uninstalling
+
+```sh
+make uninstall            # remove what install recorded installing
+make uninstall-dry-run    # list what that would be, remove nothing
+```
+
+Install records every file it wrote — path, SHA-256, mode and size — in
+`~/.local/share/notrios/MANIFEST.json`, and uninstall removes **only** what that
+manifest lists. Anything else is left alone:
+
+- a file you edited is kept and reported, because its hash no longer matches;
+- a path that has become a symbolic link is kept and never followed, because
+  deleting through it would remove whatever it points at;
+- anything resolving outside the manifest's own install roots is refused.
+
+**Your notes, configuration, profiles, sync keys, state and cache are never
+touched.** Uninstall is about the program; the library outlives it, and
+reinstalling picks it straight back up.
+
+### Removing your data as well
+
+`make purge` is uninstall **plus** deleting this user's Notrios data. It is the
+only target here that destroys anything you made, so it is deliberately hard to
+do by accident:
+
+```sh
+make purge                   # shows the plan, then asks; type PURGE to confirm
+DRYRUN=1 make purge          # print the whole plan and stop; asks nothing
+FORCE=1 make purge           # skip the question, for headless automation
+```
+
+Before deleting anything it copies your config, data and state roots into an
+owner-only archive beside your state root
+(`~/.local/state/notrios-purge-backups/<timestamp>/`), verifies that archive
+against a per-file SHA-256 manifest, and only then removes anything. **If the
+backup cannot be verified, nothing is deleted** and the message names the
+partial archive. The backup is outside every root purge removes, so it survives
+the purge that wrote it, and nothing deletes it for you afterwards.
+
+The cache and runtime roots are deleted without a backup: they are rebuilt from
+the library and hold nothing you wrote.
+
+`FORCE=1` skips the confirmation, never the backup. If you genuinely want
+neither:
+
+```sh
+NO_BACKUP=1 make purge       # still asks, and warns in detail first
+```
+
+`NO_BACKUP=1` prints exactly what is about to be destroyed with no copy — your
+notes database, attachments, configuration, profile registry, sync key material,
+sync spools and backups, the catch-up inbox and the quarantine — and still asks
+unless `FORCE=1` is also set.
+
+These flags accept `1` or nothing at all. `NO_BACKUP=0`, `FORCE=no` and
+`DRYRUN=true` are refused rather than interpreted: each reads to a person as
+something specific, and guessing wrong here deletes a library. A purge that
+cannot ask — no terminal, no `FORCE=1` — stops rather than proceeding or
+hanging.
+
+**`clean` and `clobber` never touch any of this**, and `install`, `uninstall`
+and `purge` never touch the checkout. They are separate concerns with separate
+targets.
 
 ## Ways to consume Notrios
 

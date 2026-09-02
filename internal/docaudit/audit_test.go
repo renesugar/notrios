@@ -45,8 +45,13 @@ func TestRepositoryAuditReportsHonestCoverage(t *testing.T) {
 	// place both defaults are stated together.
 	// 211 -> 212 manual sections and 372 -> 373 denominator in v0.8 H4b: the
 	// "schema migrations and their backup" section in docs/service.md.
-	if report.ManualSections != 212 || report.Fragments != 15 || report.Claims != 4 ||
-		report.Executables != 137 || report.Journeys != 9 {
+	// 212 -> 214 manual sections, 137 -> 139 executables and 373 -> 377
+	// denominator in v0.8 H5: docs/installation.md replaced one hand-rolled
+	// "optional local installation" section with three describing make install,
+	// uninstall and purge -- so three arrive and one retires, not three net.
+	// Three examples retired with the old section and five arrived.
+	if report.ManualSections != 214 || report.Fragments != 15 || report.Claims != 4 ||
+		report.Executables != 139 || report.Journeys != 9 {
 		t.Fatalf("unexpected coverage surface: %+v", report)
 	}
 	if report.Counts[GradeExecuted] != 71 || report.Counts[GradeGenerated] != 11 ||
@@ -58,8 +63,13 @@ func TestRepositoryAuditReportsHonestCoverage(t *testing.T) {
 		// sandboxed Go tests instead.
 		// 285 -> 286 unverified in v0.8 H4a: the new section is prose.
 		// 286 -> 287 unverified in v0.8 H4b: the new section is prose.
-		report.Counts[GradeClaimed] != 4 || report.Counts[GradeUnverified] != 287 ||
-		report.Denominator != 373 {
+		// 287 -> 291 unverified in v0.8 H5: three new prose sections and five
+		// registered examples, less the three that retired with the old one.
+		// Each new example either installs into this user's home or deletes
+		// their library, so all five are reviewed unrun reasons covered by
+		// executed tests in scripts/test_lifecycle.py.
+		report.Counts[GradeClaimed] != 4 || report.Counts[GradeUnverified] != 291 ||
+		report.Denominator != 377 {
 		t.Fatalf("coverage counts hide or lose units: counts=%v denominator=%d", report.Counts, report.Denominator)
 	}
 	if len(resolvedTS) == 0 {

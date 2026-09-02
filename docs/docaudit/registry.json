@@ -2001,39 +2001,27 @@
       }
     },
     {
-      "id": "installation-optional-local-installation-example-1",
+      "id": "installation-installing-to-an-end-user-location-example-1",
       "path": "docs/installation.md",
-      "section": "optional-local-installation",
+      "section": "installing-to-an-end-user-location",
       "language": "sh",
-      "sha256": "01137bfb9d32eefd5c5c1e2981c8b23c27b5406b753176a6fb8fd0c363baed95",
+      "sha256": "d731793e684e47e90ce49cd6fbeacbeb29aaa02b65089288f96583563c15084f",
       "state": "unverified",
       "unrun_reason": {
         "code": "host-installation",
-        "detail": "Literal body builds, installs, uninstalls, or performs a host backup: make build gui"
+        "detail": "Literal body installs Notrios into this user's home: make install writes to ~/.local. Covered by executed tests in py:scripts/test_lifecycle.py (InstallTests), which run it against a disposable HOME."
       }
     },
     {
-      "id": "installation-optional-local-installation-example-2",
+      "id": "installation-installing-to-an-end-user-location-example-2",
       "path": "docs/installation.md",
-      "section": "optional-local-installation",
+      "section": "installing-to-an-end-user-location",
       "language": "sh",
-      "sha256": "77647dde520411f1e68d0e564b2965247174c6bedbbd27060ac0962b9d6a986e",
-      "state": "unverified",
-      "unrun_reason": {
-        "code": "privileged-host-change",
-        "detail": "Literal body writes to a system directory as root: sudo mkdir -p /usr/local/share/notrios"
-      }
-    },
-    {
-      "id": "installation-optional-local-installation-example-3",
-      "path": "docs/installation.md",
-      "section": "optional-local-installation",
-      "language": "sh",
-      "sha256": "072ab826598f50776d0111d9a0148f1a66d90fcd03993752599f9f8e50ef23fa",
+      "sha256": "64891c45441147bff8f906c73af9c9bc6169bf84ee03218d6a4e04f0bb04f471",
       "state": "unverified",
       "unrun_reason": {
         "code": "host-installation",
-        "detail": "Literal body builds, installs, uninstalls, or performs a host backup: rm -f ~/.local/bin/notriosd ~/.local/bin/notriosctl ~/.local/bin/notrios"
+        "detail": "Literal body installs into /usr/local and stages into /tmp. Covered by executed tests in py:scripts/test_lifecycle.py (InstallTests.test_destdir_stages_artifacts_and_creates_no_user_roots)."
       }
     },
     {
@@ -2046,6 +2034,30 @@
       "unrun_reason": {
         "code": "privileged-host-change",
         "detail": "Literal body invokes privileged/package/root host change: # Service + CLI + tests"
+      }
+    },
+    {
+      "id": "installation-removing-your-data-as-well-example-1",
+      "path": "docs/installation.md",
+      "section": "removing-your-data-as-well",
+      "language": "sh",
+      "sha256": "48046971d32a4e8cf9fe68e8e7bb193a6276cd58d73ac10b81f550258a6521fe",
+      "state": "unverified",
+      "unrun_reason": {
+        "code": "shared-user-state",
+        "detail": "Literal body deletes this user's notes, configuration, profiles and sync keys. Covered by executed tests in py:scripts/test_lifecycle.py (PurgeExecutionTests), which run it against a disposable HOME."
+      }
+    },
+    {
+      "id": "installation-removing-your-data-as-well-example-2",
+      "path": "docs/installation.md",
+      "section": "removing-your-data-as-well",
+      "language": "sh",
+      "sha256": "01e6f4a0d7d56aa666a464931affc4fb10c6211e225c4c13bb91b6ebbfa024d1",
+      "state": "unverified",
+      "unrun_reason": {
+        "code": "shared-user-state",
+        "detail": "Literal body deletes this user's library with no backup at all. Covered by executed tests in py:scripts/test_lifecycle.py (PurgeFlagTests, PurgeExecutionTests.test_no_backup_with_force_deletes_and_writes_no_backup)."
       }
     },
     {
@@ -2090,6 +2102,18 @@
           "kind": "daemon-health",
           "detail": "loopback daemon honors config, serves health, and is terminated cleanly"
         }
+      }
+    },
+    {
+      "id": "installation-uninstalling-example-1",
+      "path": "docs/installation.md",
+      "section": "uninstalling",
+      "language": "sh",
+      "sha256": "e1281f798e82a5314cdd74fdef6c48bfa53731c159548d33d95d66d5b1db1977",
+      "state": "unverified",
+      "unrun_reason": {
+        "code": "host-installation",
+        "detail": "Literal body removes an installation from this user's home. Covered by executed tests in py:scripts/test_lifecycle.py (UninstallTests)."
       }
     },
     {

@@ -107,7 +107,13 @@ func TestRepositoryExamples(t *testing.T) {
 	// library or writes to a system directory as root, so all four are
 	// reviewed unrun reasons, and the command is covered by executed tests in
 	// cmd/notriosctl instead.
-	if report.Executed != 63 || report.Entries != 137 || len(report.Topics) != 13 {
+	// 137 -> 139 entries in v0.8 H5: docs/installation.md replaced its
+	// hand-rolled install recipe with make install, uninstall and purge --
+	// five new examples, three retired. Executed is unchanged at 63: each one
+	// either installs into this user's home or deletes their library, so all
+	// five are reviewed unrun reasons, covered by executed tests in
+	// scripts/test_lifecycle.py which run them against a disposable HOME.
+	if report.Executed != 63 || report.Entries != 139 || len(report.Topics) != 13 {
 		t.Fatalf("unexpected G18d coverage: %+v", report)
 	}
 	executedTopics := 0

@@ -36,8 +36,19 @@ import sys
 import time
 from dataclasses import dataclass, field
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, os.path.join(ROOT, "performance", "v0.8-h3"))
+# The tree artifacts are copied *from*. It is the checkout this script lives in,
+# unless NOTRIOS_LIFECYCLE_SOURCE names another one -- which lets a packager
+# build in one tree and install from another, and lets the tests install from a
+# fixture instead of requiring a built checkout. It changes only what is read;
+# where things are written is still decided by the directory variables.
+CHECKOUT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ROOT = os.environ.get("NOTRIOS_LIFECYCLE_SOURCE", "").strip() or CHECKOUT
+
+# The oracle is part of this tool, so it is always found relative to this file
+# rather than to ROOT. Resolving it through the override let a caller point the
+# tool that deletes directories at a different copy of the rules deciding what
+# may be deleted -- or, as the tests found first, at no copy at all.
+sys.path.insert(0, os.path.join(CHECKOUT, "performance", "v0.8-h3"))
 import purge_oracle  # noqa: E402
 
 MANIFEST_SCHEMA = "notrios.install-manifest/1"
@@ -416,6 +427,393 @@ def run_uninstall(dirs: Directories, dry_run: bool) -> dict:
             "pruned": pruned, "manifest": manifest}
 
 
+# ---------------------------------------------------------------------- purge
+
+
+PURGE_BACKUP_DIRNAME = "notrios-purge-backups"
+
+
+def flag(name: str, environ: dict[str, str]) -> bool:
+    """Read a lifecycle flag, accepting only unset or exactly "1".
+
+    Anything else is refused rather than guessed at. `NO_BACKUP=0`, `FORCE=no`
+    and `DRYRUN=true` all read to a human as "off", "off" and "on", and a
+    deletion that turns on because a value was interpreted generously is the one
+    mistake this whole target is built to avoid.
+    """
+    raw = environ.get(name)
+    if raw is None or raw == "":
+        return False
+    if raw == "1":
+        return True
+    raise LifecycleError(
+        f"{name}={raw!r} is not a value this understands. Use {name}=1 to turn it on,\n"
+        f"or leave it unset. It is refused rather than guessed at because guessing wrong\n"
+        "here deletes a library."
+    )
+
+
+def environ_home() -> str:
+    home = os.environ.get("HOME", "").strip()
+    return home if home and os.path.isdir(home) else ""
+
+
+def resolved_roots(dirs: Directories) -> dict[str, str]:
+    """Ask the installed Notrios where its roots are.
+
+    Not computed here. H3's first finding was two disagreeing resolvers, and
+    adding a third -- in Python, in the tool that deletes things -- is how the
+    purge target comes to remove a directory the application never used. The
+    installed binary is the authority on its own layout.
+    """
+    binary = os.path.join(dirs.bindir, "notriosctl")
+    if not os.path.isfile(binary):
+        raise LifecycleError(
+            f"{binary} is not there, so nothing can say which roots this installation uses.\n"
+            "Purge refuses rather than resolving them itself: a second opinion about where\n"
+            "your notes live is exactly what must not decide a deletion.\n"
+            "Install first, or purge with the prefix you installed to."
+        )
+    import subprocess  # local: nothing else here shells out
+
+    # Run it from outside the checkout. `make purge` runs with the repository as
+    # the working directory, and Notrios treats a checkout it is standing in as a
+    # source instance -- so asking the installed binary from here answered with
+    # the *checkout's* ./data roots rather than the user's. The oracle refused
+    # them for being relative, which is how this was found, but a purge that asks
+    # the wrong instance where the notes are has already failed by the time
+    # anything protects it.
+    elsewhere = environ_home() or os.sep
+    completed = subprocess.run(
+        [binary, "paths", "--json", "--no-redact"],
+        capture_output=True, text=True, check=False, cwd=elsewhere,
+    )
+    if completed.returncode != 0:
+        raise LifecycleError(
+            f"{binary} could not report its paths:\n{completed.stderr.strip()}"
+        )
+    payload = json.loads(completed.stdout)
+    return {name: value for name, value in payload.get("roots", {}).items() if value}
+
+
+@dataclass
+class PurgeStep:
+    """One root and what purge decided to do with it."""
+
+    category: str
+    path: str
+    policy: str
+    action: str      # backup_then_delete | dispose | keep | refuse
+    reason: str = ""
+    bytes: int = 0
+    files: int = 0
+
+
+def measure_tree(path: str) -> tuple[int, int]:
+    files = 0
+    total = 0
+    for walk_root, _, names in os.walk(path):
+        for name in names:
+            full = os.path.join(walk_root, name)
+            try:
+                total += os.lstat(full).st_size
+                files += 1
+            except OSError:
+                continue
+    return files, total
+
+
+def plan_purge(dirs: Directories, environ: dict[str, str]) -> list[PurgeStep]:
+    """Decide, for every resolved root, what purge would do.
+
+    Every deletion candidate goes through H3's oracle. Nothing is deleted
+    because this file thinks it looks like a Notrios directory.
+    """
+    roots = resolved_roots(dirs)
+    owned = [os.path.realpath(path) for path in roots.values()]
+    env = purge_oracle.Environment(
+        owned_roots=owned,
+        home=environ.get("HOME", ""),
+        external_profile_paths=[],
+    )
+
+    steps: list[PurgeStep] = []
+    for category in sorted(roots):
+        path = roots[category]
+        policy = purge_oracle.backup_policy(category)
+
+        if category == "program_assets":
+            # With H3's recommended prefix the installed artifacts land in
+            # $(datadir)/notrios, which on Linux is the same directory as the
+            # XDG data root. That overlap is worth naming rather than leaving
+            # for a reader to notice two lines about one path: the manifest
+            # removes the installed files, and the data step removes what is
+            # left, so nothing is missed and nothing is deleted twice.
+            overlapping = [name for name, other in roots.items()
+                           if name != category and os.path.realpath(other) == os.path.realpath(path)]
+            reason = "removed by the install manifest, not as a root"
+            if overlapping:
+                reason += f"; shares a directory with the {', '.join(sorted(overlapping))} root"
+            steps.append(PurgeStep(category, path, policy, "keep", reason))
+            continue
+
+        decision = purge_oracle.decide(path, env)
+        if decision.verdict == purge_oracle.REFUSE:
+            steps.append(PurgeStep(category, path, policy, "refuse",
+                                   f"{decision.reason} [{decision.rule}]"))
+            continue
+
+        files, total = (0, 0)
+        if decision.verdict == purge_oracle.ALLOW:
+            files, total = measure_tree(path)
+
+        action = "dispose" if policy == "dispose" else "backup_then_delete"
+        reason = "" if decision.verdict == purge_oracle.ALLOW else "already absent"
+        steps.append(PurgeStep(category, path, policy, action, reason, total, files))
+    return steps
+
+
+def backup_destination(roots: dict[str, str], now: float) -> str:
+    """Where the purge backup goes.
+
+    Beside the state root rather than inside any root purge removes. H3 proved
+    this container and asserted the destination is itself refused by the oracle,
+    so the backup cannot land somewhere the same run would delete.
+    """
+    state = roots.get("state", "")
+    if not state:
+        raise LifecycleError("no state root resolved, so there is nowhere safe to put a backup")
+    parent = os.path.dirname(os.path.realpath(state))
+    stamp = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime(now))
+    return os.path.join(parent, PURGE_BACKUP_DIRNAME, stamp)
+
+
+def create_purge_backup(steps: list[PurgeStep], destination: str) -> dict:
+    """One owner-only tar plus a manifest, written before anything is deleted.
+
+    The format is H3's, proven by its restore test: a per-file SHA-256 inventory
+    and a hash of the archive itself, both created 0600 from the start rather
+    than chmod-ed afterwards, because a file that is briefly world-readable
+    while it holds someone's notes was briefly wrong.
+    """
+    import tarfile  # local: only purge needs it
+
+    # makedirs applies its mode to the last component only, so the parent would
+    # be created with whatever the umask allows -- 0775 here. The archive inside
+    # is 0600 and so its contents were never exposed, but a readable parent still
+    # publishes that this user has backups and when they were taken. Both levels
+    # are created owner-only, and an existing parent is tightened.
+    container = os.path.dirname(destination)
+    os.makedirs(container, mode=0o700, exist_ok=True)
+    os.chmod(container, 0o700)
+    os.makedirs(destination, mode=0o700, exist_ok=True)
+    os.chmod(destination, 0o700)
+    archive = os.path.join(destination, "backup.tar")
+    inventory: list[dict] = []
+
+    handle = os.open(archive, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    with os.fdopen(handle, "wb") as raw, tarfile.open(fileobj=raw, mode="w") as tar:
+        for step in steps:
+            if step.action != "backup_then_delete" or not os.path.isdir(step.path):
+                continue
+            tar.add(step.path, arcname=step.category)
+            for walk_root, _, names in os.walk(step.path):
+                for name in sorted(names):
+                    full = os.path.join(walk_root, name)
+                    if not os.path.isfile(full) or os.path.islink(full):
+                        continue
+                    relative = os.path.relpath(full, step.path)
+                    inventory.append({
+                        "category": step.category,
+                        "member": os.path.join(step.category, relative),
+                        "sha256": sha256_file(full),
+                        "size": os.lstat(full).st_size,
+                    })
+
+    manifest = {
+        "schema": "notrios.purge-backup/1",
+        "created_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "categories": sorted({item["category"] for item in inventory}),
+        "entries": inventory,
+        "archive_sha256": sha256_file(archive),
+    }
+    manifest_path = os.path.join(destination, "MANIFEST.json")
+    handle = os.open(manifest_path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    with os.fdopen(handle, "w", encoding="utf-8") as stream:
+        json.dump(manifest, stream, indent=2)
+        stream.write("\n")
+    return manifest
+
+
+def verify_purge_backup(destination: str) -> tuple[bool, str]:
+    """Confirm the backup before anything is deleted.
+
+    A failed verification is the only thing standing between the user and the
+    deletion, so it checks the archive's own hash, that every recorded file is
+    actually a member, and that the archive opens.
+    """
+    import tarfile
+
+    archive = os.path.join(destination, "backup.tar")
+    manifest_path = os.path.join(destination, "MANIFEST.json")
+    if not os.path.isfile(archive) or not os.path.isfile(manifest_path):
+        return False, "the backup is incomplete"
+    with open(manifest_path, encoding="utf-8") as stream:
+        manifest = json.load(stream)
+    if sha256_file(archive) != manifest.get("archive_sha256"):
+        return False, "the archive does not match the hash recorded when it was written"
+    try:
+        with tarfile.open(archive) as tar:
+            members = {member.name for member in tar.getmembers()}
+    except tarfile.TarError as error:
+        return False, f"the archive cannot be read: {error}"
+    for entry in manifest["entries"]:
+        if entry["member"] not in members:
+            return False, f"{entry['member']} is recorded but not in the archive"
+    return True, f"{len(manifest['entries'])} files verified"
+
+
+def confirm_purge(prompt: str, environ: dict[str, str], force: bool) -> bool:
+    """Ask before deleting, and fail closed when nobody can answer.
+
+    A non-interactive purge without FORCE=1 refuses. It does not hang waiting
+    for a terminal that is not there, and it does not proceed on the grounds
+    that silence is agreement -- either would turn an unattended script into an
+    accidental deletion.
+    """
+    if force:
+        return True
+    if not sys.stdin.isatty():
+        raise LifecycleError(
+            "purge needs an affirmative answer and there is no terminal to ask.\n"
+            "Nothing was deleted. Run it interactively, or pass FORCE=1 if you are\n"
+            "automating it deliberately -- FORCE=1 skips the question, never the backup."
+        )
+    print(prompt, end="", flush=True)
+    try:
+        answer = sys.stdin.readline()
+    except KeyboardInterrupt:
+        return False
+    if answer == "":
+        # EOF rather than an answer.
+        raise LifecycleError("purge saw end-of-input instead of an answer. Nothing was deleted.")
+    return answer.strip() == "PURGE"
+
+
+def describe_plan(steps: list[PurgeStep], uninstall_result: dict, destination: str,
+                  no_backup: bool) -> None:
+    print("Installed files (removed by manifest):")
+    dispositions = uninstall_result["dispositions"]
+    removable = sum(1 for d in dispositions if d.action == "remove")
+    print(f"  {removable} files listed in {uninstall_result['manifest_path']}")
+    for disposition in dispositions:
+        if disposition.action in ("preserve", "refuse"):
+            print(f"  {disposition.action.upper():8} {disposition.path}: {disposition.reason}")
+
+    print("\nMutable roots:")
+    for step in steps:
+        if step.action == "backup_then_delete":
+            detail = f"{step.files} files, {step.bytes} bytes"
+            print(f"  BACK UP AND DELETE  {step.path}  ({step.category}; {detail})")
+        elif step.action == "dispose":
+            print(f"  DELETE WITHOUT BACKUP  {step.path}  ({step.category}; rebuildable)")
+        elif step.action == "keep":
+            print(f"  KEEP    {step.path}  ({step.category}; {step.reason})")
+        else:
+            print(f"  REFUSED {step.path}  ({step.category}; {step.reason})")
+
+    print("\nBackup:")
+    if no_backup:
+        print("  NONE. NO_BACKUP=1 was set.")
+    else:
+        print(f"  {destination}")
+        print("  written and verified before anything is deleted")
+
+
+def irreversible_warning(steps: list[PurgeStep]) -> str:
+    categories = ", ".join(step.category for step in steps
+                           if step.action == "backup_then_delete") or "none"
+    return (
+        "\n"
+        "!! NO_BACKUP=1: nothing will be copied anywhere before it is deleted.\n"
+        "!!\n"
+        f"!! This permanently destroys the {categories} roots, which hold your notes\n"
+        "!! database, your attachments, your configuration, your profile registry and\n"
+        "!! generated profile configs, your sync key material, your sync spools and\n"
+        "!! backups, the catch-up inbox, and the remote-media quarantine.\n"
+        "!!\n"
+        "!! There is no undo and no copy to restore from. If you want one, run this\n"
+        "!! again without NO_BACKUP=1.\n"
+    )
+
+
+def run_purge(dirs: Directories, environ: dict[str, str]) -> int:
+    dry_run = flag("DRYRUN", environ)
+    force = flag("FORCE", environ)
+    no_backup = flag("NO_BACKUP", environ)
+
+    roots = resolved_roots(dirs)
+    steps = plan_purge(dirs, environ)
+    destination = backup_destination(roots, time.time())
+
+    # The backup must not land anywhere this same run would delete. H3 proved
+    # the property; this asserts it every time rather than trusting the layout.
+    guard = purge_oracle.Environment(
+        owned_roots=[os.path.realpath(path) for path in roots.values()],
+        home=environ.get("HOME", ""),
+    )
+    verdict = purge_oracle.decide(destination, guard)
+    if verdict.verdict != purge_oracle.REFUSE:
+        raise LifecycleError(
+            f"the backup destination {destination} is not refused by the purge oracle\n"
+            f"({verdict}), which means this run could delete its own backup. Refusing."
+        )
+
+    uninstall_result = run_uninstall(dirs, dry_run=True)
+    describe_plan(steps, uninstall_result, destination, no_backup)
+
+    if dry_run:
+        print("\nDRYRUN=1: nothing was written, nothing was deleted, nothing was asked.")
+        return 0
+
+    if no_backup:
+        print(irreversible_warning(steps))
+
+    prompt = ("\nType PURGE to delete the roots listed above"
+              + (" WITHOUT A BACKUP" if no_backup else "")
+              + ": ")
+    if not confirm_purge(prompt, environ, force):
+        print("Nothing was deleted.")
+        return 1
+
+    if not no_backup:
+        print(f"\nwriting backup to {destination}")
+        create_purge_backup(steps, destination)
+        ok, detail = verify_purge_backup(destination)
+        if not ok:
+            raise LifecycleError(
+                f"the backup could not be verified: {detail}.\n"
+                "Nothing was deleted. The partial backup is left at\n"
+                f"  {destination}\n"
+                "so you can see what it did contain."
+            )
+        print(f"backup verified: {detail}")
+
+    run_uninstall(dirs, dry_run=False)
+
+    for step in steps:
+        if step.action not in ("backup_then_delete", "dispose"):
+            continue
+        if not os.path.isdir(step.path):
+            continue
+        shutil.rmtree(step.path)
+        print(f"deleted {step.path}")
+
+    if not no_backup:
+        print(f"\nYour data is in {destination} until you remove it. Nothing deletes it for you.")
+    return 0
+
+
 # ----------------------------------------------------------------------- main
 
 
@@ -453,7 +851,7 @@ def report_uninstall(result: dict, dry_run: bool) -> int:
 
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description="Notrios install lifecycle")
-    parser.add_argument("action", choices=["install", "uninstall", "manifest-path"])
+    parser.add_argument("action", choices=["install", "uninstall", "purge", "manifest-path"])
     parser.add_argument("--dry-run", action="store_true",
                         help="print the exact actions and write nothing")
     arguments = parser.parse_args(argv)
@@ -475,6 +873,9 @@ def main(argv: list[str]) -> int:
                       f"manifest {result['manifest_path']}")
                 print(f"add {dirs.bindir} to PATH if it is not already there")
             return 0
+
+        if arguments.action == "purge":
+            return run_purge(dirs, dict(os.environ))
 
         return report_uninstall(run_uninstall(dirs, arguments.dry_run), arguments.dry_run)
     except LifecycleError as error:

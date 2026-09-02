@@ -1461,7 +1461,7 @@
     },
     {
       "path": "docs/installation.md",
-      "sha256": "bcfd9e1fccc960d1de8a9f7e06210b08bb1261cf4a638b840f6ed6bdb4251ad5",
+      "sha256": "d37484cf83e3b289757f0b2bf157d68bf7e547b16c672f8586b97c83874fe3a8",
       "help_note": "doc_help_installation",
       "owner": "go:github.com/renesugar/notrios/cmd/notriosd#main",
       "sections": [
@@ -1556,9 +1556,29 @@
           "grade": "unverified"
         },
         {
-          "id": "optional-local-installation",
+          "id": "installing-to-an-end-user-location",
           "level": 2,
-          "title": "Optional local installation",
+          "title": "Installing to an end-user location",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/cmd/notriosd#main",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        },
+        {
+          "id": "uninstalling",
+          "level": 3,
+          "title": "Uninstalling",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/cmd/notriosd#main",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        },
+        {
+          "id": "removing-your-data-as-well",
+          "level": 3,
+          "title": "Removing your data as well",
           "audience": "user",
           "kind": "actionable_or_reference",
           "owner": "go:github.com/renesugar/notrios/cmd/notriosd#main",
@@ -2249,14 +2269,14 @@
       "id": "published_markdown",
       "count": 15,
       "unit": "pages",
-      "sections": 212,
+      "sections": 214,
       "owner": "go:github.com/renesugar/notrios/internal/helpdocs#Seed"
     },
     {
       "id": "help_notebook",
       "count": 15,
       "unit": "mirrored notes",
-      "sections": 212,
+      "sections": 214,
       "owner": "go:github.com/renesugar/notrios/internal/helpdocs#Seed"
     },
     {
@@ -2353,9 +2373,9 @@
       "executed": 0,
       "generated": 0,
       "claimed": 0,
-      "unverified": 212
+      "unverified": 214
     },
-    "denominator": 212,
+    "denominator": 214,
     "reconciles": true,
     "finding": "The manual does not yet name directive fragments or executable checks, so all current section units are unverified even where independent tests exist."
   },

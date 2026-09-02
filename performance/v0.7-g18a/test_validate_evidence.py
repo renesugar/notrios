@@ -28,7 +28,10 @@ class G18aEvidenceTests(unittest.TestCase):
         # docs/service.md.
         # 211 -> 212 in v0.8 H4b: "Schema migrations and their backup" in
         # docs/service.md.
-        self.assertEqual(inventory["grade_baseline"]["denominator"], 212)
+        # 212 -> 214 in v0.8 H5: docs/installation.md gained "Installing to an
+        # end-user location", "Uninstalling" and "Removing your data as well",
+        # and lost "Optional local installation" that they replace.
+        self.assertEqual(inventory["grade_baseline"]["denominator"], 214)
 
     def test_duplicate_fragment_is_rejected(self):
         source = """// A.\n//notrios:doc user same\nfunc A() {}\n// B.\n//notrios:doc user same\nfunc B() {}\n"""
