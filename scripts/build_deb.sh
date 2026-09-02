@@ -46,6 +46,7 @@ mkdir -p "$SRC/bin"
 ln -s "$ROOT/web" "$SRC/web"
 ln -s "$ROOT/docs" "$SRC/docs"
 ln -s "$ROOT/internal" "$SRC/internal"
+ln -s "$ROOT/assets" "$SRC/assets"
 
 PACKAGE_FLAGS=(-trimpath -buildmode=pie -ldflags "-s -w")
 ( cd "$ROOT" && go build "${PACKAGE_FLAGS[@]}" -o "$SRC/bin/notriosd" ./cmd/notriosd )
@@ -197,6 +198,23 @@ find "$STAGE/usr" -type f -exec chmod 0644 {} +
 for name in notriosd notriosctl notrios; do
   test -f "$STAGE/usr/bin/$name" && chmod 0755 "$STAGE/usr/bin/$name"
 done
+
+# 8. Check what optional artifacts actually made it in.
+#
+#    The icon theme is optional in lifecycle.py, which is right for a checkout
+#    that has not generated it -- and wrong to trust here. The first packaged
+#    build shipped no icons at all: the staging tree symlinks the directories it
+#    copies from, assets/ was not among them, and an optional artifact that is
+#    missing is skipped without complaint. Silence is exactly what an optional
+#    artifact gives you, so the package build asserts instead of assuming.
+if test -d "$ROOT/assets/icons"; then
+  ICON_COUNT=$(find "$STAGE/usr/share/icons/hicolor" -name 'notrios.png' 2>/dev/null | wc -l)
+  if test "$ICON_COUNT" -eq 0; then
+    echo "the checkout has assets/icons but the package staged none; refusing to ship an iconless package" >&2
+    exit 1
+  fi
+  echo "  staged $ICON_COUNT icon sizes"
+fi
 
 mkdir -p "$OUT"
 PACKAGE="$OUT/notrios_${VERSION}-${REVISION}_${ARCH}.deb"

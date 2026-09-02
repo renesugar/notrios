@@ -4,6 +4,16 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Notrios</title>
+    <!-- Two favicons rather than one. The brand tile is #132965, which has
+         13.7:1 contrast on a white page and 1.03:1 on a dark browser tab strip
+         -- on the latter the tile silhouette disappears and the mark reads as a
+         white N floating in nothing. The dark variant adds a faint rim to
+         restore the outline without altering the brand colour. -->
+    <link rel="icon" type="image/png" href="/notrios-32.png" media="(prefers-color-scheme: light)" />
+    <link rel="icon" type="image/png" href="/notrios-dark-32.png" media="(prefers-color-scheme: dark)" />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="apple-touch-icon" href="/notrios-180.png" />
+    <link rel="manifest" href="/site.webmanifest" />
   </head>
   <body>
     <div id="root"></div>

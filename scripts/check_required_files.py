@@ -63,6 +63,8 @@ required = [
     'performance/v0.8-h6a/FINDINGS.json',
     'performance/v0.8-h6a/validate_evidence.py',
     'scripts/build_deb.sh',
+    'scripts/build_icons.py',
+    'assets/notrios.png',
     'performance/v0.8-h6/PACKAGE.json',
     'performance/v0.8-h6/validate_evidence.py',
     'scripts/test_agent_usage_preflight.sh',

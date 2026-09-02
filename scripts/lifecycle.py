@@ -137,6 +137,10 @@ def planned_artifacts(dirs: Directories) -> list[Artifact]:
         Artifact(os.path.join(share, "docs"), "tree", "docs"),
         Artifact(os.path.join(dirs.datarootdir, "applications", "notrios.desktop"),
                  "file", "generated", generator="desktop"),
+        # The icon theme, one tree rather than one file per size: hicolor wants
+        # <size>x<size>/apps/notrios.png and a desktop picks the size it needs.
+        Artifact(os.path.join(dirs.datarootdir, "icons", "hicolor"),
+                 "icon-theme", "assets/icons", required=False),
     ]
 
 
@@ -152,6 +156,10 @@ def desktop_entry(bindir: str) -> str:
         "Type=Application\n"
         "Name=Notrios stable link handler\n"
         "Comment=Open notrios:// links in Notrios\n"
+        # A bare name, not a path: the icon theme resolves it across sizes from
+        # hicolor, so the entry does not have to guess which size a desktop
+        # wants or where the theme lives.
+        "Icon=notrios\n"
         f"Exec={command} %u\n"
         "Terminal=false\n"
         "NoDisplay=true\n"
@@ -236,6 +244,20 @@ def run_install(dirs: Directories, dry_run: bool) -> dict:
                     "Build first: make build web"
                 )
             actions.append(f"skip {target} ({artifact.source} not built)")
+            continue
+
+        if artifact.kind == "icon-theme":
+            # assets/icons/<size>x<size>/notrios.png becomes
+            # hicolor/<size>x<size>/apps/notrios.png.
+            actions.append(f"install icon theme {source}/ -> {target}/")
+            if not dry_run:
+                for entry in sorted(os.listdir(source)):
+                    icon = os.path.join(source, entry, "notrios.png")
+                    if not os.path.isfile(icon):
+                        continue
+                    placed = os.path.join(target, entry, "apps", "notrios.png")
+                    copy_file(icon, placed, 0o644)
+                    entries.append(entry_for(placed, "file"))
             continue
 
         if artifact.kind == "tree":

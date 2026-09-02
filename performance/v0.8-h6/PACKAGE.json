@@ -48,7 +48,8 @@
     "upgrade 0.7.0-1 to 0.7.0-2 in place, library byte-identical",
     "package contains no user-root paths, so staging created no mutable data",
     "user service unit ships installed and not enabled; postinst makes no enable call",
-    "H5 purge works against a packaged install, deleting data and leaving the program"
+    "H5 purge works against a packaged install, deleting data and leaving the program",
+    "ships a hicolor icon theme in seven sizes, referenced by Icon=notrios in the desktop entry"
   ],
   "accepted_gaps": [
     {
@@ -58,10 +59,6 @@
     {
       "tag": "initial-upload-closes-no-bugs",
       "reason": "Only meaningful for a Debian archive upload, which this is explicitly not."
-    },
-    {
-      "tag": "desktop-entry-has-no-icon",
-      "reason": "The repository contains no icon asset. Inventing one is a design decision rather than a packaging one, so the gap is recorded instead."
     }
   ],
   "not_claimed": [
