@@ -1169,6 +1169,29 @@ space. An executed command sidesteps that entirely: nothing has to distinguish
 it does not. Scoring becomes deterministic, which is also what makes cheap models
 usable -- they are being asked to draft, not to judge.
 
+**Exit status is not the oracle; the observed state change is.** A command can
+exit zero having done nothing, and -- the case that matters -- it can exit zero
+having done the *opposite* of what the page described. Restoring a note and
+purging it are both successful commands. So every task declares the state it
+expects, and the sandbox database is inspected before and after, giving three
+outcomes rather than two:
+
+| Outcome | What it says about the page |
+|---|---|
+| the intended change happened | the prose is actionable |
+| nothing happened, or the command failed | the prose is unclear or incomplete |
+| the opposite or another destructive change happened | the prose actively misleads |
+
+The third is the most valuable result and the one a pass/fail oracle would
+record as a plain failure, indistinguishable from a typo. It is also where the
+negation weakness resurfaces on the *documentation* side rather than the model
+side: a page that reads as "notes in Trash are removed after 30 days" and a page
+that reads as "notes in Trash are removed immediately" produce different commands
+with different observable effects, and only the state check tells them apart.
+`internal/docexec` already models this -- its registered examples carry a
+`postcondition` describing what must be true afterwards, not merely an expected
+exit status -- so the shape exists and needs reusing rather than inventing.
+
 **Reuse the sandbox rather than build a second one.** `internal/docexec` already
 runs 63 of 137 registered examples against a seeded loopback fixture with
 substitutions for the base URL, binaries, seeded ids and scratch directories. The
@@ -1217,14 +1240,60 @@ a positive control that the method must flag. Evidence under
   vendor read as "purpose-built for software engineering". Several named models
   cannot be verified from here at all. This is exactly what the calibration set
   is for: run the candidates on the same 16 runs and let the score decide.
-  Recommended starting order by plausible capacity, not by claim: the largest
-  general instruction models first, then the code-specialised ones, then the
-  small ones as a cost control. Exclude the content-safety model, whose name at
-  least is unambiguous.
+
+  **Trial roster, in this order.** Order is a guess at capacity and nothing
+  more; the calibration score replaces it as soon as there is one.
+
+  1. `openrouter/z-ai/glm-5.2:free`
+  2. `openrouter/nvidia/nemotron-3-ultra-550b-a55b:free`
+  3. `openrouter/google/gemma-4-31b-it:free`
+  4. `openrouter/nvidia/nemotron-3-super-120b-a12b:free`
+  5. `openrouter/google/gemma-4-26b-a4b-it:free`
+  6. `openrouter/minimax/minimax-m3:free`
+  7. `openrouter/cohere/north-mini-code:free`
+  8. `openrouter/thinkingmachines/inkling:free`
+
+  Every one of them runs the same 16 calibration runs and the same three-arm
+  tasks, so a claim about any of them is answered by a number. Exclude
+  `openrouter/nvidia/nemotron-3.5-content-safety:free`, whose name at least is
+  unambiguous. A model that cannot beat 7/16 is dropped rather than tuned.
+
+- **Every model gets the same, deliberately small context -- Blocking for the
+  harness design.** One task, one page section, no repository access, and no
+  `zg` retrieval into the answering prompt. `zg` selects which sections to test
+  and helps a human read the results; it does not enrich the prompt under test.
+
+  This is a property of the measurement, not a limitation being worked around.
+  The question is whether **the prose alone** is sufficient to act, so a model
+  that has also read `cmd/notriosctl` will produce a correct command whether the
+  page is any good or not -- scoring the codebase while appearing to score the
+  documentation. That is the "measures the model, not the docs" failure the
+  no-prose arm exists to catch, arriving through the context window instead of
+  through the model's memory.
+
+  It follows that context capacity is irrelevant here, and a model recommended on
+  the strength of it earns no credit for that. Feeding a repository to a large
+  context to cross-reference code against prose is a sound technique for a
+  different question -- "does the documentation match the code?" -- which the
+  existing anchored inventory and generated fragments already answer
+  deterministically and for free.
 - **Rate limits and spreading work -- Non-blocking.** Free tiers throttle. The
   harness must be resumable, cache by prompt hash the way the existing advisory
   report already records `explanation_prompt_sha256`, and record which model
-  answered which task so a mixed run stays attributable.
+  answered which task so a mixed run stays attributable. The supplied material
+  predicts that the GLM free endpoint in particular returns 429 under sustained
+  sequential use while the Gemma endpoints are steadier. That is a testable
+  claim, so record observed throttling per model as a result rather than
+  designing around it in advance: a model that cannot complete a run is unusable
+  here however well it scores on the runs it does complete.
+
+- **Whether GLM-5.2 is actually free at the tier used -- Blocking before
+  relying on it.** The supplied material contradicts itself, tabulating GLM-5.2
+  as "Paid (~$0.49/M input)" in one comparison and describing a working
+  `:free` endpoint in another. The constraint on this whole item is zero cost,
+  so the endpoint must be confirmed free at the point of use, and the run
+  aborted if any call would be billed. `cost_usd: 0` stays a recorded property
+  of the evidence, as it is in G18f.
 - **Whether the CLI is meant to have no add/remove-tag command -- Blocking for
   the follow-up, not for this investigation.** REST and MCP can tag a note and
   the CLI cannot. If that is deliberate the CLI guide should say so and point at
@@ -1317,7 +1386,9 @@ This is an index only; each decision is owned and explained inside its item.
 | User-local/GNU install layout | H3/H5 | Resolved in H3: `$HOME/.local`, GNU directory variables and `DESTDIR` retained |
 | Purge external-path and backup policy | H3/H5 | Resolved in H3: enumerate and back up, refuse to delete; container choice remains for H5 |
 | Hosted free models reading repository documentation | H14 | Open; G18f recorded loopback-only, so this is a policy change and must be decided explicitly |
-| Free-model choice for documentation evaluation | H14 | Open; supplied recommendations look name-inferred, so the existing 16-run calibration decides |
+| Free-model choice for documentation evaluation | H14 | Open; supplied recommendations look name-inferred, so the existing 16-run calibration decides across an eight-model roster led by `glm-5.2:free` |
+| Context given to the model under test | H14 | Resolved in planning: one page section only, identical for every model. Feeding the repository would score the codebase while appearing to score the documentation |
+| Oracle for a generated command | H14 | Resolved in planning: the observed state change, not the exit status, with "did the opposite" scored separately from "did nothing" |
 | CLI has no add/remove-tag command while REST and MCP do | H14 | Open; deliberate omission to document, or a product gap |
 | Desktop package formats/toolchain | H6a/H6/H7 | Open; evidence-dependent |
 | Windows/macOS feasibility and support | H6a/H7/H12 | Open; native execution required |
