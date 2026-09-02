@@ -232,4 +232,4 @@ physical burn was performed.
 
 ## Commits
 
-- `6e0f617` investigate installed paths, XDG, migration, and purge (v0.8 H3)
+- `2216483` investigate installed paths, XDG, migration, and purge (v0.8 H3)

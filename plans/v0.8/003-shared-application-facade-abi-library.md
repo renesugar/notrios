@@ -23,7 +23,7 @@ land mid-rewrite.
 | A | `7810dc9` | `internal/application` facade, typed error model, guards |
 | B | `e1ba989` | REST orchestration migrated onto the facade |
 | C | `ba18209` | Vendored SQLite 3.53.4, static hidden linkage |
-| D | `6d57d8e`, `5b2b215` | `cmd/notrioslib` ABI-major-1 C library |
+| D | `623814a`, `85ce573` | `cmd/notrioslib` ABI-major-1 C library |
 
 ## Slice A — the facade
 

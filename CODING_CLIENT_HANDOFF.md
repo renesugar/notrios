@@ -2,6 +2,62 @@
 
 This handoff applies to any coding agent or client continuing this project (Codex, Claude, aider, swival.dev, etc. — formerly `CODEX_HANDOFF.md`). The repository is designed so an agent can continue from repository files alone.
 
+## History rewrite — 2026-09-01
+
+`notrioslib`, an 11 MB compiled ELF executable, was committed by accident in the
+v0.8 H1 ABI slice: `go build ./cmd/notrioslib` with no `-o` writes the binary
+into the working directory, and a `git add -A` swept it up. It was referenced by
+no Makefile target, script or document. It has been **removed from git history**
+at the user's direction.
+
+Every commit from the H1 ABI slice onward therefore has a new SHA. The rewrite
+was local only — `origin/develop` was 167 commits behind and never contained it,
+so no force-push was needed and nothing on GitHub changed. Verified afterwards:
+197 commits before and after with identical subjects in order, and at the commit
+that introduced the binary exactly one path differs, every other blob hash being
+unchanged. `.git` is now 7.4 MB.
+
+**The five contaminated evidence archives were deliberately left as they are.**
+`notrios-v0.8-{h1,h2a,h2b,h2,h3}-*.zip` each contain the 11 MB binary and are
+named after commits that no longer exist. They remain accurate records of the
+tree as it stood when each slice completed. Use this table to relate them to the
+current history:
+
+| Archive / old SHA | Current SHA |
+| --- | --- |
+| `09dfbfe` | `e28abfd` |
+| `0bee555` | `fa3803c` |
+| `1a19a85` | `be6cb8f` |
+| `27de1d1` | `e69419c` |
+| `2b9f00b` | `af37c4c` |
+| `2c939d6` | `0196596` |
+| `37cadac` | `97652f1` |
+| `3a851a3` | `fdd9ddc` |
+| `3ace3af` | `e8e69c5` |
+| `4811d0b` | `c457445` |
+| `49f0fe7` | `55eed4d` |
+| `5808176` | `771326d` |
+| `5b2b215` | `85ce573` |
+| `5e7cab9` | `e014bf8` |
+| `6448c9b` | `6e4831b` |
+| `6ab6aa6` | `8a28b5d` |
+| `6d57d8e` | `623814a` |
+| `6e0f617` | `2216483` |
+| `9043a4d` | `e4f4432` |
+| `c457fb8` | `f4b8c27` |
+| `c7cca80` | `102df1c` |
+| `cce64d5` | `5ebcb57` |
+| `ce378d8` | `d61c524` |
+| `e755321` | `d935c0f` |
+| `e989ea6` | `14ac437` |
+
+**The gap that let it ship is closed.** `scripts/check_release_zip.py` used to
+forbid entries named `notrios`, `notriosd` and `notriosctl` — a list somebody
+has to remember to extend. It now rejects any entry beginning with the ELF magic
+bytes, which needs no maintenance. Run against the already-shipped H3 archive it
+reports the binary immediately. `.gitignore` and `package_release.sh` also name
+`/notrioslib` explicitly.
+
 ## v0.8 package snapshots — 2026-09-01
 
 Every v0.8 slice now has a handoff ZIP in `dist/` and a byte-identical copy in
@@ -9,10 +65,10 @@ Every v0.8 slice now has a handoff ZIP in `dist/` and a byte-identical copy in
 
 | Slice | Commit | Bytes | Entries | SHA-256 (first 16) |
 | --- | --- | --- | --- | --- |
-| H2a | `2b9f00b` | 15,317,960 | 1,840 | `66801f665130d811` |
-| H2b | `9043a4d` | 15,327,601 | 1,843 | `9933f0f07a3bd671` |
-| H2 | `27de1d1` | 16,253,582 | 1,949 | `403dd225e6d34d14` |
-| H3 | `37cadac` | 16,311,386 | 1,974 | `d9b3ff0f76b467e2` |
+| H2a | `af37c4c` | 15,317,960 | 1,840 | `66801f665130d811` |
+| H2b | `e4f4432` | 15,327,601 | 1,843 | `9933f0f07a3bd671` |
+| H2 | `e69419c` | 16,253,582 | 1,949 | `403dd225e6d34d14` |
+| H3 | `97652f1` | 16,311,386 | 1,974 | `d9b3ff0f76b467e2` |
 
 The H2a, H2b and H2 archives were built **retroactively**, on 2026-09-01, after
 the omission was noticed during H3: those three slices completed without the
@@ -23,12 +79,12 @@ the repository as it stood when that slice finished. Every archive passed
 byte-identical to its commit's tree — 1,365, 1,368, 1,376 and 1,974 files
 respectively, zero mismatches.
 
-H2a is packaged at `2b9f00b` rather than `c457fb8`, where its archive first
-landed, because `1a19a85` and `2b9f00b` both revised H2a's own archive
-afterwards. `2b9f00b` is the state in which H2a's conclusions were final.
+H2a is packaged at `af37c4c` rather than `f4b8c27`, where its archive first
+landed, because `be6cb8f` and `af37c4c` both revised H2a's own archive
+afterwards. `af37c4c` is the state in which H2a's conclusions were final.
 
 **One deliberate exclusion.** The `node_modules/.vite/vitest/...` cache file was
-tracked from `9043a4d` until `6ab6aa6`, so the H2b and H2 trees contain it and
+tracked from `e4f4432` until `8a28b5d`, so the H2b and H2 trees contain it and
 their historical packaging would have failed `check_release_zip.py` — correctly.
 It was removed from each worktree before packaging rather than the script being
 patched, which leaves the historical validation running unchanged and produces
@@ -260,7 +316,7 @@ H1 is complete and archived as
 `plans/v0.8/003-shared-application-facade-abi-library.md`. It was delivered in
 four separately committed slices so an interruption could not land mid-rewrite:
 `7810dc9` facade, `e1ba989` REST migration, `ba18209` SQLite vendoring, and
-`6d57d8e` plus `5b2b215` the C ABI. H2a is next and remains unapproved.
+`623814a` plus `85ce573` the C ABI. H2a is next and remains unapproved.
 
 `internal/application` is now the transport-neutral application contract, with a
 `Kind`/`Error` model, a narrow eleven-method `Repository` seam, and an AST guard
@@ -294,12 +350,12 @@ that command in `~/.claude/settings.json` or the probe reports `unknown` and
 cannot gate a long run. A cache older than 30 minutes, or one whose windows are
 all past `resets_at`, reports `stale` and is treated like `unknown`.
 
-The H1 close-out and clean packaging commit is `0bee555`. The verified local
-source snapshot is `dist/notrios-v0.8-h1-0bee555.zip`: 15,269,890 bytes, 1,815
+The H1 close-out and clean packaging commit is `fa3803c`. The verified local
+source snapshot is `dist/notrios-v0.8-h1-fa3803c.zip`: 15,269,890 bytes, 1,815
 entries, SHA-256
 `4b156a19cf500031676b377545435e8966e3eabff7f2a1baa0bd0607cbf0b538`. It was
 copied byte-for-byte to
-`/home/renes/evidence/notrios/notrios-v0.8-h1-0bee555.zip`; source and
+`/home/renes/evidence/notrios/notrios-v0.8-h1-fa3803c.zip`; source and
 destination hashes, sizes, and a `cmp` all match.
 
 `scripts/package_release.sh` reran the full gate set and
