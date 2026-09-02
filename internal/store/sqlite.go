@@ -165,8 +165,46 @@ func (s *SQLiteStore) Close() error {
 	return nil
 }
 
+// ErrSchemaTooNew means the database was written by a newer Notrios than this
+// one. Opening it would be destructive, so it is refused.
+var ErrSchemaTooNew = errors.New("database schema is newer than this build supports")
+
 func (s *SQLiteStore) Bootstrap(ctx context.Context) error {
 	ctx = contextOrBackground(ctx)
+
+	// Refuse a database from the future before touching it.
+	//
+	// Migrations are forward-only and mostly idempotent, so meeting an older
+	// database is routine: every ensureSchemaVn step brings it forward. Meeting
+	// a *newer* one is not, and the failure was silent and destructive.
+	// ensureSchemaV4 through V18 are unguarded -- they run unconditionally and
+	// end with `PRAGMA user_version = n` -- so an older binary opening a newer
+	// database re-ran fifteen old migrations against a schema it did not
+	// understand and then rewrote the recorded version *downward*, destroying
+	// the evidence that the database had ever been newer. It reported success.
+	//
+	// That is harmless today only because those old steps are all
+	// CREATE ... IF NOT EXISTS. It stops being harmless the first time a
+	// migration renames or drops something an old step assumes, and by then the
+	// version rewrite means the next run cannot detect what happened.
+	//
+	// The check reads the version once, before any step runs. A fresh database
+	// reports 0 and is unaffected.
+	s.mu.Lock()
+	existing, versionErr := s.pragmaUserVersionLocked()
+	s.mu.Unlock()
+	if versionErr != nil {
+		return versionErr
+	}
+	if existing > CurrentSchemaVersion {
+		return fmt.Errorf(
+			"%w: the database records schema version %d and this build supports %d.\n"+
+				"It was written by a newer Notrios. Upgrade Notrios rather than opening it with this build:\n"+
+				"continuing would re-run old migrations against a schema this build does not understand\n"+
+				"and record the wrong version, which would hide that it ever happened.",
+			ErrSchemaTooNew, existing, CurrentSchemaVersion)
+	}
+
 	migration, err := migrationFS.ReadFile("migrations/0001_initial.sql")
 	if err != nil {
 		return fmt.Errorf("read migration: %w", err)
