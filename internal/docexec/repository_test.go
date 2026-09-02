@@ -113,7 +113,7 @@ func TestRepositoryExamples(t *testing.T) {
 	// either installs into this user's home or deletes their library, so all
 	// five are reviewed unrun reasons, covered by executed tests in
 	// scripts/test_lifecycle.py which run them against a disposable HOME.
-	if report.Executed != 63 || report.Entries != 139 || len(report.Topics) != 13 {
+	if report.Executed != 63 || report.Entries != 141 || len(report.Topics) != 13 {
 		t.Fatalf("unexpected G18d coverage: %+v", report)
 	}
 	executedTopics := 0

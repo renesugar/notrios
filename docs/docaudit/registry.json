@@ -2001,6 +2001,30 @@
       }
     },
     {
+      "id": "installation-installing-from-a-package-example-1",
+      "path": "docs/installation.md",
+      "section": "installing-from-a-package",
+      "language": "sh",
+      "sha256": "a252ef4f7a47637db8a8354082e682cee69dfd4111cd2e0ddb2565324b5a6324",
+      "state": "unverified",
+      "unrun_reason": {
+        "code": "host-installation",
+        "detail": "Literal body builds a Debian package and installs it system-wide with sudo apt. Covered by evidence in performance/v0.8-h6/, where the package was built and installed with dpkg into a sandbox root rather than onto the build machine."
+      }
+    },
+    {
+      "id": "installation-installing-from-a-package-example-2",
+      "path": "docs/installation.md",
+      "section": "installing-from-a-package",
+      "language": "sh",
+      "sha256": "b1a0f4db2b8e602e7ffa92a568cd33c82e65d26d2b6a651d3e022eb8f266face",
+      "state": "unverified",
+      "unrun_reason": {
+        "code": "shared-user-state",
+        "detail": "Literal body enables a systemd user service, which changes what starts on this user's login. The unit ships installed and disabled by design; enabling it is the explicit act this line describes."
+      }
+    },
+    {
       "id": "installation-installing-to-an-end-user-location-example-1",
       "path": "docs/installation.md",
       "section": "installing-to-an-end-user-location",

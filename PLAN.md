@@ -926,7 +926,7 @@ documentation in this pass, so no projection is offered; whether the arm64
 `.deb` installs or runs on an arm64 machine; and Wails v2 native packaging
 output on either platform.
 
-## H6. Ubuntu-priority installer package
+## H6. Ubuntu-priority installer package — complete
 
 **Goal.** Produce and execute an internal Ubuntu installer that needs no source
 checkout, Go, Node, npm, Wails CLI, compiler, or development headers at runtime.
@@ -959,10 +959,58 @@ tamper and missing-runtime errors; and artifact hash.
 
 **Open decisions**
 
-- **Minimum Ubuntu versions/architectures — Non-blocking default.** Default:
-  test the repository's current Ubuntu host plus the exact GitHub Ubuntu runner
-  selected by H6a, initially amd64. Do not claim another release or
-  architecture from build-only evidence.
+- **Minimum Ubuntu versions/architectures — Resolved in H6.** Only this build
+  host and only amd64 are claimed. H6a's arm64 cross-build is available and is
+  deliberately not packaged: it has never been executed, and packaging it would
+  invite exactly the build-only claim this decision forbids.
+
+**Outcome (2026-09-02).** Complete. `make deb` builds an internal Ubuntu
+package; evidence under `performance/v0.8-h6/`, validated from `make validate`.
+
+**The toolchain selection was narrowed from H6a's, on H6a's own evidence.**
+H6a called GoReleaser plus nFPM reasonable and then measured four gaps -- no
+declared dependencies, no maintainer scripts, no copyright, source file modes.
+Every one of them is something nFPM does not do and dpkg tooling does, and
+`dpkg-deb`/`dpkg-shlibdeps` are present on every Ubuntu build host, so this adds
+no dependency at all -- which is what H6a's "smallest maintainable toolchain"
+goal actually asked for. Returning to nFPM later is configuration, not a
+rewrite. The reasoning is recorded in `scripts/build_deb.sh` itself.
+
+**The package is built from `scripts/lifecycle.py`'s layout, staged through
+`DESTDIR`,** so `make install` and the package cannot disagree about where
+anything goes. It deliberately ships **no install manifest**: dpkg owns the file
+list for a packaged install and records its own md5sums, and a second ownership
+record in the same tree is the drift H6a warned about.
+
+**lintian went from 3 errors and 297 warnings to 0 errors and 4 warnings.**
+Dependencies are computed by `dpkg-shlibdeps` from the ELF rather than written
+by hand, giving seven entries where nFPM declared none. `libsqlite3-0` appears
+only through WebKit for the desktop binary; `notriosd` and `notriosctl` link no
+system SQLite, so the vendored-amalgamation provenance is unaffected. The four
+remaining warnings are recorded as accepted gaps with reasons rather than
+silenced with overrides.
+
+**It was installed and executed, not inspected.** Real `dpkg`, with maintainer
+scripts, upgrade and removal, into a sandbox root rather than onto the
+development machine -- so the package mechanics are genuine while the prefix is
+not `/usr`, and the evidence says so. Verified: the CLI runs with no checkout or
+toolchain; the service serves the packaged interface on loopback with HTTP 200;
+removal leaves the library byte-identical; reinstall finds it at schema 27;
+upgrade `0.7.0-1` to `0.7.0-2` in place keeps it byte-identical; the package
+contains no user-root paths; and the user service ships installed and not
+enabled, with no `enable` call in `postinst`.
+
+That verification is only possible because of H5's program-assets fix: the
+binaries resolve their assets relative to the executable, so a package installed
+under a sandbox prefix finds its own interface. Under the previous hardcoded
+`/usr/local/share/notrios` this could not have been checked without modifying
+the machine.
+
+**H5 purge interoperability was a real gap and is fixed.** Purge refused to run
+against a packaged install because there was no manifest. The fix is not to ship
+one -- that is the drift again -- but to do the half purge owns: it deletes the
+data, leaves the program, and says the package manager owns it. Three tests
+cover it.
 
 ## H7. Windows and macOS installer workflow implementation
 
@@ -1482,7 +1530,7 @@ This is an index only; each decision is owned and explained inside its item.
 | Desktop external-link opening | H2b | Resolved and implemented: no prompt; the browser-tab path is unchanged |
 | Mermaid renderer/containment | H2a/H2 | Resolved and implemented in H2: Mermaid 11.17.2, strict security, `htmlLabels: false`, `notrios`-only links reattached from source |
 | Installed/portable path precedence | H3/H4 | Resolved in H3: explicit, then explicit portable marker, then native; never inferred |
-| Ubuntu packaging toolchain | H6a/H6 | H6a recommends GoReleaser plus nFPM, with the .deb treated as a starting point: 3 lintian errors, no declared dependencies, no maintainer scripts |
+| Ubuntu packaging toolchain | H6a/H6 | Resolved in H6: dpkg-deb with dpkg-shlibdeps, staged from lifecycle.py, adding no build dependency; 0 lintian errors |
 | Windows and macOS toolchain | H6a/H7 | Open; no toolchain is selectable without native runners, and H6a records that rather than guessing |
 | Development versus installed default port | H4a | Resolved in H4a: checkout 8099 from the example config, installed 8080 from the compiled default |
 | Pre-migration backup location and retention | H4b | Resolved in H4b: `pre-migration-backups/` beside the database, newest kept, no new root |

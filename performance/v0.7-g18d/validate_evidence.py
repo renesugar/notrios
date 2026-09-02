@@ -43,8 +43,8 @@ def validate_registry(registry: dict, report: dict) -> None:
     # asset-installation block added to the same page.
     # 137 -> 139 in v0.8 H5: the make install/uninstall/purge examples in
     # docs/installation.md, less the three hand-rolled ones they replace.
-    assert len(examples) == report["entries"] == 139
-    assert len({item["id"] for item in examples}) == 139
+    assert len(examples) == report["entries"] == 141
+    assert len({item["id"] for item in examples}) == 141
     executed = [item for item in examples if item["state"] == "executed"]
     unverified = [item for item in examples if item["state"] == "unverified"]
     assert len(executed) == report["executed"] == 63
@@ -56,7 +56,7 @@ def validate_registry(registry: dict, report: dict) -> None:
     # is covered by executed tests in cmd/notriosctl.
     # 74 -> 76 in v0.8 H5. Executed stays 63: every new example installs into
     # this user's home or deletes their library.
-    assert len(unverified) == report["unverified"] == 76
+    assert len(unverified) == report["unverified"] == 78
     assert {item["execution"]["surface"] for item in executed} == {
         "cli", "config", "rest", "mcp"
     }

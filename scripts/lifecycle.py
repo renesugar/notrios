@@ -551,7 +551,7 @@ def plan_purge(dirs: Directories, environ: dict[str, str]) -> list[PurgeStep]:
             # left, so nothing is missed and nothing is deleted twice.
             overlapping = [name for name, other in roots.items()
                            if name != category and os.path.realpath(other) == os.path.realpath(path)]
-            reason = "removed by the install manifest, not as a root"
+            reason = "not a data root; removed by whatever installed it"
             if overlapping:
                 reason += f"; shares a directory with the {', '.join(sorted(overlapping))} root"
             steps.append(PurgeStep(category, path, policy, "keep", reason))
@@ -700,15 +700,18 @@ def confirm_purge(prompt: str, environ: dict[str, str], force: bool) -> bool:
     return answer.strip() == "PURGE"
 
 
-def describe_plan(steps: list[PurgeStep], uninstall_result: dict, destination: str,
+def describe_plan(steps: list[PurgeStep], uninstall_result: dict | None, destination: str,
                   no_backup: bool) -> None:
-    print("Installed files (removed by manifest):")
-    dispositions = uninstall_result["dispositions"]
-    removable = sum(1 for d in dispositions if d.action == "remove")
-    print(f"  {removable} files listed in {uninstall_result['manifest_path']}")
-    for disposition in dispositions:
-        if disposition.action in ("preserve", "refuse"):
-            print(f"  {disposition.action.upper():8} {disposition.path}: {disposition.reason}")
+    print("Installed files:")
+    if uninstall_result is None:
+        print("  none removed here; the program is owned by your package manager")
+    else:
+        dispositions = uninstall_result["dispositions"]
+        removable = sum(1 for d in dispositions if d.action == "remove")
+        print(f"  {removable} files listed in {uninstall_result['manifest_path']}")
+        for disposition in dispositions:
+            if disposition.action in ("preserve", "refuse"):
+                print(f"  {disposition.action.upper():8} {disposition.path}: {disposition.reason}")
 
     print("\nMutable roots:")
     for step in steps:
@@ -769,7 +772,21 @@ def run_purge(dirs: Directories, environ: dict[str, str]) -> int:
             f"({verdict}), which means this run could delete its own backup. Refusing."
         )
 
-    uninstall_result = run_uninstall(dirs, dry_run=True)
+    # A packaged install has no manifest, and that is correct rather than
+    # broken: dpkg owns the file list for a package and records its own
+    # md5sums, so shipping a second ownership record would be the drift H6a
+    # warned about. Purge still has a job here -- the data half -- so it does
+    # that half and says who owns the other one.
+    uninstall_result = None
+    try:
+        uninstall_result = run_uninstall(dirs, dry_run=True)
+    except LifecycleError as error:
+        if "no install manifest" not in str(error):
+            raise
+        print("No install manifest here, so this is a packaged install or was never\n"
+              "installed by `make install`. Purge will remove your data and leave the\n"
+              "program alone; remove the program with your package manager.\n")
+
     describe_plan(steps, uninstall_result, destination, no_backup)
 
     if dry_run:
@@ -799,7 +816,8 @@ def run_purge(dirs: Directories, environ: dict[str, str]) -> int:
             )
         print(f"backup verified: {detail}")
 
-    run_uninstall(dirs, dry_run=False)
+    if uninstall_result is not None:
+        run_uninstall(dirs, dry_run=False)
 
     for step in steps:
         if step.action not in ("backup_then_delete", "dispose"):

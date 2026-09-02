@@ -50,8 +50,11 @@ func TestRepositoryAuditReportsHonestCoverage(t *testing.T) {
 	// "optional local installation" section with three describing make install,
 	// uninstall and purge -- so three arrive and one retires, not three net.
 	// Three examples retired with the old section and five arrived.
-	if report.ManualSections != 214 || report.Fragments != 15 || report.Claims != 4 ||
-		report.Executables != 139 || report.Journeys != 9 {
+	// 214 -> 215 manual sections, 139 -> 141 executables and 377 -> 380
+	// denominator in v0.8 H6: docs/installation.md gained "Installing from a
+	// package" with two examples.
+	if report.ManualSections != 215 || report.Fragments != 15 || report.Claims != 4 ||
+		report.Executables != 141 || report.Journeys != 9 {
 		t.Fatalf("unexpected coverage surface: %+v", report)
 	}
 	if report.Counts[GradeExecuted] != 71 || report.Counts[GradeGenerated] != 11 ||
@@ -68,8 +71,8 @@ func TestRepositoryAuditReportsHonestCoverage(t *testing.T) {
 		// Each new example either installs into this user's home or deletes
 		// their library, so all five are reviewed unrun reasons covered by
 		// executed tests in scripts/test_lifecycle.py.
-		report.Counts[GradeClaimed] != 4 || report.Counts[GradeUnverified] != 291 ||
-		report.Denominator != 377 {
+		report.Counts[GradeClaimed] != 4 || report.Counts[GradeUnverified] != 294 ||
+		report.Denominator != 380 {
 		t.Fatalf("coverage counts hide or lose units: counts=%v denominator=%d", report.Counts, report.Denominator)
 	}
 	if len(resolvedTS) == 0 {

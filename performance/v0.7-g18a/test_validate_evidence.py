@@ -31,7 +31,8 @@ class G18aEvidenceTests(unittest.TestCase):
         # 212 -> 214 in v0.8 H5: docs/installation.md gained "Installing to an
         # end-user location", "Uninstalling" and "Removing your data as well",
         # and lost "Optional local installation" that they replace.
-        self.assertEqual(inventory["grade_baseline"]["denominator"], 214)
+        # 214 -> 215 in v0.8 H6: "Installing from a package".
+        self.assertEqual(inventory["grade_baseline"]["denominator"], 215)
 
     def test_duplicate_fragment_is_rejected(self):
         source = """// A.\n//notrios:doc user same\nfunc A() {}\n// B.\n//notrios:doc user same\nfunc B() {}\n"""

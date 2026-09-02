@@ -362,3 +362,46 @@ class SourceTreeSeparationTests(LifecycleTestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class PackagedInstallTests(LifecycleTestCase):
+    """A package manager owns the program; purge owns the data.
+
+    A .deb deliberately ships no install manifest, because dpkg already records
+    the file list and its own md5sums, and a second ownership record in the same
+    tree is drift waiting to happen. Purge still has a job in that case -- the
+    data half -- and refusing to do it because the manifest is absent would
+    leave a user with no supported way to delete their own library.
+    """
+
+    def install_without_a_manifest(self) -> None:
+        self.run_lifecycle("install")
+        os.remove(os.path.join(self.roots["data"], "MANIFEST.json"))
+
+    def test_purge_works_without_a_manifest_and_says_who_owns_the_program(self) -> None:
+        self.install_without_a_manifest()
+        self.seed_user_data()
+        result = self.run_lifecycle("purge", DRYRUN="1")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("package manager", result.stdout)
+        self.assertIn("BACK UP AND DELETE", result.stdout)
+
+    def test_purge_without_a_manifest_still_deletes_the_data(self) -> None:
+        self.install_without_a_manifest()
+        self.seed_user_data()
+        result = self.run_lifecycle("purge", FORCE="1")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        for category in ("config", "data", "state", "cache"):
+            self.assertFalse(os.path.exists(self.roots[category]),
+                             f"the {category} root survived a purge")
+        # And the backup was still written and verified first.
+        self.assertIn("backup verified", result.stdout)
+
+    def test_purge_without_a_manifest_leaves_the_installed_binaries(self) -> None:
+        self.install_without_a_manifest()
+        self.seed_user_data()
+        binary = os.path.join(self.home, ".local", "bin", "notriosd")
+        self.assertTrue(os.path.isfile(binary))
+        self.run_lifecycle("purge", FORCE="1")
+        self.assertTrue(os.path.isfile(binary),
+                        "purge removed a program file it does not own")

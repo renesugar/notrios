@@ -65,6 +65,7 @@ paths are git-ignored. **Network** marks the targets that reach the network.
 | `make install` | install to an end-user location (`prefix=$HOME/.local` by default) | `~/.local/...` | |
 | `make uninstall` | remove exactly what `install` recorded installing | — | |
 | `make purge` | uninstall **and** delete this user's data, after a verified backup | — | |
+| `make deb` | build the internal Ubuntu package (needs `dpkg-dev`) | `dist/deb/` | |
 | `make clean` | remove build/test/docs/release output — **never** `data/` and **never** `web/node_modules/` | — | |
 | `make clobber` | `clean` plus remove `web/node_modules/` | — | |
 | `make precheck` | fail if the tree has uncommitted changes or tracked ignored files | — | |
@@ -236,6 +237,35 @@ manifest lists. Anything else is left alone:
 **Your notes, configuration, profiles, sync keys, state and cache are never
 touched.** Uninstall is about the program; the library outlives it, and
 reinstalling picks it straight back up.
+
+### Installing from a package
+
+There is an internal Ubuntu package. It is **not published anywhere** and is not
+a supported release; it exists so the application can be installed and used the
+way an end user would, without a checkout.
+
+```sh
+make deb
+sudo apt install ./dist/deb/notrios_*.deb
+```
+
+It installs `/usr/bin/{notrios,notriosd,notriosctl}`, the built interface and
+help under `/usr/share/notrios`, the `notrios://` desktop entry, and a **user
+service that is installed and not enabled**. Nothing starts on its own; turn it
+on yourself if you want it:
+
+```sh
+systemctl --user enable --now notrios
+```
+
+The service binds loopback, exactly as it does everywhere else.
+
+Dependencies are computed from the binaries with `dpkg-shlibdeps` rather than
+written by hand, so `apt` installs what the program actually needs. Removing the
+package with `apt remove` deletes every file it installed and **leaves your
+notes, configuration, profiles, keys, state and cache alone** — deleting those
+is `make purge`, which asks first. `make purge` works on a packaged install too:
+it removes your data and leaves the program to your package manager.
 
 ### Removing your data as well
 

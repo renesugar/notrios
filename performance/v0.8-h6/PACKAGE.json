@@ -1,0 +1,73 @@
+{
+  "schema": "notrios.h6.package.v1",
+  "milestone": "v0.8",
+  "item": "H6",
+  "claim_level": 3,
+  "claim_note": "Level 3 on H6a's ladder for linux/amd64: installed and executed with real dpkg, including maintainer scripts, upgrade and removal. The install used dpkg --instdir into a sandbox rather than modifying the development machine, so the package mechanics are genuine while the prefix is not /usr. No claim is made for any other architecture or Ubuntu release.",
+  "package": {
+    "name": "notrios",
+    "version": "0.7.0-2",
+    "architecture": "amd64",
+    "section": "utils",
+    "installed_size_kb": 53076,
+    "sha256": "646ff476ca11039a67e2dbf3afb92f6ec87edc20edfbc8e9e5dc2c55bc73912d",
+    "size_bytes": 17438422
+  },
+  "depends": [
+    "libc6 (>= 2.34)",
+    "libgdk-pixbuf-2.0-0 (>= 2.22.0)",
+    "libglib2.0-0t64 (>= 2.16.0)",
+    "libgtk-3-0t64 (>= 3.21.4)",
+    "libjavascriptcoregtk-4.1-0",
+    "libsoup-3.0-0 (>= 2.4.0)",
+    "libwebkit2gtk-4.1-0 (>= 2.39.91)"
+  ],
+  "depends_note": "Computed by dpkg-shlibdeps from the ELF against the system shlibs database, not written by hand. libsqlite3-0 enters only through WebKit for the desktop binary: notriosd and notriosctl link no system SQLite, so the vendored amalgamation provenance is unaffected.",
+  "top_level_paths": [
+    "./usr/",
+    "./usr/bin/",
+    "./usr/bin/notrios",
+    "./usr/bin/notriosctl",
+    "./usr/bin/notriosd",
+    "./usr/lib/",
+    "./usr/lib/systemd",
+    "./usr/share/",
+    "./usr/share/applications",
+    "./usr/share/doc",
+    "./usr/share/notrios"
+  ],
+  "file_count": 313,
+  "verified": [
+    "installs with dpkg and runs its maintainer script",
+    "CLI runs with no checkout, Go, Node, npm, Wails CLI or compiler present",
+    "resolves program assets to the packaged location",
+    "creates a library and seeds 15 help notes",
+    "service serves the packaged web interface, HTTP 200, on loopback",
+    "removal deletes every package file and leaves the library byte-identical",
+    "reinstall finds the library intact at schema 27",
+    "upgrade 0.7.0-1 to 0.7.0-2 in place, library byte-identical",
+    "package contains no user-root paths, so staging created no mutable data",
+    "user service unit ships installed and not enabled; postinst makes no enable call",
+    "H5 purge works against a packaged install, deleting data and leaving the program"
+  ],
+  "accepted_gaps": [
+    {
+      "tag": "no-manual-page",
+      "reason": "Three man pages are content this project does not have. `notriosctl --help` and the installed /usr/share/notrios/docs cover the same ground, and an internal prerelease is not an archive upload."
+    },
+    {
+      "tag": "initial-upload-closes-no-bugs",
+      "reason": "Only meaningful for a Debian archive upload, which this is explicitly not."
+    },
+    {
+      "tag": "desktop-entry-has-no-icon",
+      "reason": "The repository contains no icon asset. Inventing one is a design decision rather than a packaging one, so the gap is recorded instead."
+    }
+  ],
+  "not_claimed": [
+    "any architecture other than amd64",
+    "any Ubuntu release other than this build host",
+    "installation into a real /usr on a clean machine",
+    "signing, notarisation or public distribution"
+  ]
+}
