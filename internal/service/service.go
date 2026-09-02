@@ -62,6 +62,14 @@ func New(cfg config.Config) (*Service, error) {
 		_ = st.Close()
 		return nil, err
 	}
+	// Say so when the schema was upgraded. A migration rewrites the user's
+	// library, and until H4b it happened with no backup and no notice at all --
+	// the only sign was the absence of a complaint. The backup is named here
+	// because a user who later needs it has to be able to find it.
+	if report, migrated := st.LastMigration(); migrated {
+		log.Printf("notriosd migrated this database from schema %d to %d; a verified copy of it as it was is in %s",
+			report.FromVersion, report.ToVersion, report.BackupDir)
+	}
 	// A configured non-none target is the explicit enrollment boundary from
 	// G4. Enrollment creates durable local journal state only; transport remains
 	// unimplemented and changing an already enrolled profile back to none does

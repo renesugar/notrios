@@ -171,10 +171,7 @@ func runImportJoplinRaw(args []string) {
 	}
 	defer st.Close()
 	ctx := context.Background()
-	if err := st.Bootstrap(ctx); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
+	bootstrapOrExit(st, ctx)
 	sourceDir := fs.Arg(0)
 	options := joplinraw.Options{
 		CollectionID:   *collectionID,
@@ -302,10 +299,7 @@ func runImportObsidian(args []string) {
 	}
 	defer st.Close()
 	ctx := context.Background()
-	if err := st.Bootstrap(ctx); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
+	bootstrapOrExit(st, ctx)
 	sourceDir := fs.Arg(0)
 	options := obsidian.Options{
 		CollectionID:   *collectionID,
@@ -415,10 +409,7 @@ func runLocalize(args []string) {
 	}
 	defer st.Close()
 	ctx := context.Background()
-	if err := st.Bootstrap(ctx); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
+	bootstrapOrExit(st, ctx)
 
 	result, err := localize.New(cfg.RemoteMedia, st).LocalizeDocument(ctx, localize.Options{
 		DocumentID:     fs.Arg(0),
@@ -505,10 +496,7 @@ func runGarbageCollection(args []string) {
 	}
 	defer st.Close()
 	ctx := context.Background()
-	if err := st.Bootstrap(ctx); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
+	bootstrapOrExit(st, ctx)
 	var gate store.RetentionGate
 	if journal, journalErr := st.JournalStatus(ctx); journalErr == nil && journal.Enabled {
 		if strings.TrimSpace(*snapshotPath) == "" {
@@ -722,10 +710,7 @@ func runImportTwitter(args []string) {
 	}
 	defer st.Close()
 	ctx := context.Background()
-	if err := st.Bootstrap(ctx); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
+	bootstrapOrExit(st, ctx)
 	report, err := twitter.Import(ctx, st, fs.Arg(0), twitter.Options{CollectionID: *collectionID, NotebookName: *notebookName, DryRun: *dryRun})
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -780,10 +765,7 @@ func runImportConversations(args []string, kind string) {
 	}
 	defer st.Close()
 	ctx := context.Background()
-	if err := st.Bootstrap(ctx); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
+	bootstrapOrExit(st, ctx)
 
 	var report any
 	switch kind {
@@ -833,10 +815,7 @@ func openStoreFromFlags(configPath, dbPath, assetStore string) *store.SQLiteStor
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
-	if err := st.Bootstrap(context.Background()); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
+	bootstrapOrExit(st, context.Background())
 	return st
 }
 
@@ -1155,10 +1134,7 @@ func runSnapshotCreate(args []string) {
 		os.Exit(1)
 	}
 	defer st.Close()
-	if err := st.Bootstrap(context.Background()); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
+	bootstrapOrExit(st, context.Background())
 	runner, jobCtx := startTrackedJob(st, store.JobKindSnapshotImage, []store.JobParameter{
 		{Name: "_out-dir", Value: fs.Arg(0), Path: true},
 	})
@@ -1375,6 +1351,12 @@ func runDoctor(args []string) {
 			report(false, true, "database", err.Error())
 		} else {
 			report(true, true, "database", fmt.Sprintf("%s (schema version %d)", cfg.Data.DatabasePath, status.SchemaVersion))
+			// doctor is where a user looks after an upgrade, so it is the most
+			// likely place for the migration notice to actually be read.
+			if migration, migrated := st.LastMigration(); migrated {
+				report(true, false, "schema migration", fmt.Sprintf("migrated %d -> %d; a verified copy of the database as it was is in %s",
+					migration.FromVersion, migration.ToVersion, migration.BackupDir))
+			}
 		}
 	}
 
@@ -1460,5 +1442,26 @@ func runConfig(args []string) {
 		fmt.Fprintf(os.Stderr, "unknown config command %q\n", args[0])
 		fmt.Fprintln(os.Stderr, "usage: notriosctl config show [--config config.yaml] [--json] [--no-redact]")
 		os.Exit(2)
+	}
+}
+
+// bootstrapOrExit bootstraps a store and reports a schema migration if one
+// happened.
+//
+// Every subcommand did this inline, which was fine until a migration became
+// something a user should be told about. A migration rewrites their library; it
+// used to happen with no backup and no notice, and the only sign was the
+// absence of a complaint. The notice goes to stderr so it cannot corrupt the
+// output of a command being piped somewhere.
+func bootstrapOrExit(st *store.SQLiteStore, ctx context.Context) {
+	if err := st.Bootstrap(ctx); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	if report, migrated := st.LastMigration(); migrated {
+		fmt.Fprintf(os.Stderr,
+			"notriosctl migrated this database from schema %d to %d.\n"+
+				"A verified copy of it as it was is in %s\n",
+			report.FromVersion, report.ToVersion, report.BackupDir)
 	}
 }

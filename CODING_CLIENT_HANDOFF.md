@@ -102,6 +102,89 @@ only difference between the historical `package_release.sh` and the current one
 is the added `node_modules/*` exclusion; `check_release_zip.py` is byte-identical
 at all four commits.
 
+## v0.8 H4b completion handoff — 2026-09-02
+
+`Bootstrap` no longer migrates a user's only copy in place with no backup and no
+notice. Before any migration that would raise `user_version`, the database and
+its `-wal`/`-shm` sidecars are copied beside it to
+`pre-migration-backups/<from>-to-<to>-<timestamp>/`, verified with SHA-256, and
+recorded in a `MANIFEST.json`. Only then does the migration run.
+
+**Read this before changing `Bootstrap`.** It is now three functions:
+`Bootstrap` gates on the recorded version, `migrateUnderLock` handles a database
+that is behind, and `applySchema` runs the forward steps. The gate is
+`existing > 0 && existing < CurrentSchemaVersion` -- a fresh database is 0 and is
+deliberately skipped, or every new library would get a directory of nothing
+beside it.
+
+**Two things the plan asked for that were not possible as written.**
+
+*There is no "existing database owner lock" to hold.* The `flock` owner lock is
+in `internal/abi` and is taken **only by `cmd/notrioslib`**; `notriosd`,
+`notriosctl` and the GUI never take it. Reusing it would have deadlocked the one
+caller that has it -- flock claims belong to an open file description, so a
+second descriptor on the same file in the same process conflicts with the first.
+So there is a separate `<db>.migrating` flock, held across backup **and**
+migration, non-blocking because startup must not hang. If you ever unify these,
+that deadlock is the thing to check.
+
+*A failed migration restores automatically -- at the **next** start.* The first
+implementation refused to, on the grounds that writing over a database the
+process still holds open is a worse risk than the one it fixes. That was true
+and the conclusion was still wrong: it assumed the repair had to happen in the
+failing process.
+
+`<db>.migration-incomplete` is written (and fsynced) before the first migration
+statement and removed after the last. `openSQLiteWithAssetStore` checks for it
+**before** `sqlite3_open_v2` -- the same place the physical-restore marker is
+checked -- restores the copy it names, clears it, and returns
+`ErrMigrationRolledBack` so the caller stops and explains. Nothing holds the
+file at that moment, which is the entire reason it is safe.
+
+**Three details you must not lose if you touch this.** The backup's hashes are
+verified against the marker before anything is written, and a mismatch refuses
+with both copies intact -- replacing a partly migrated database with a corrupt
+copy would turn a recoverable situation into a lost library. A `-wal` left by
+the failed attempt is deleted, or SQLite replays the failed migration straight
+back over the restored database. And the marker is removed **last**, because it
+is the record that the undo is still owed.
+
+**The subtle correctness bit.** `migrateUnderLock` re-reads `user_version` after
+taking the lock. Without that, a process that lost the race backs up and
+migrates a database another process has already finished with -- confirmed by
+mutation: removing the re-read makes
+`TestAProcessThatLosesTheRaceDoesNotBackUpAgain` fail.
+
+**Where it is surfaced.** `store.LastMigration()` returns the report; `Bootstrap`
+keeps its `error`-only signature because it has more than thirty callers. The
+service logs a line, `notriosctl` prints one to stderr via the new
+`bootstrapOrExit` helper (which replaced eight identical inline blocks), and
+`doctor` reports it. `notriosctl paths` prints the backup root and how many are
+kept, because the whole value of that backup is being findable.
+
+**Recovery messages are guarded against stale commands, in three directions.**
+`store.RecoveryCommands()` is the registry; `cmd/notriosctl/recoverycommands_test.go`
+asserts every registered command still appears in `printHelp`, every registered
+command appears in a rendered message, and -- the one that matters -- every
+`notriosctl ...` found in a rendered message is registered. Without the third, a
+newly added command escapes the guard and is free to go stale. If you add a
+command to a recovery message, add it to `RecoveryCommands()`; the test will
+tell you if you forget.
+
+**A warning about mutation-testing this package.** `internal/store` is cgo plus
+the SQLite amalgamation and slow to build. A same-length edit written in the
+same timestamp tick as a previous restore was **not rebuilt** by the Go build
+cache, so the test ran against the old binary and passed -- which nearly got
+recorded as "guard confirmed" on evidence that proved nothing. Use a
+different-length edit and `touch` the file. A stale build can only produce a
+false pass, never a false failure.
+
+**Two things worth reusing.** `internal/paths.FreeBytes` now holds the
+free-space probe slice E had kept private -- two callers needed it. And
+`performance/v0.7-g18a/build_inventory.py --write` regenerates the G18a
+inventory including new sections and hashes; I hand-edited it twice in earlier
+items before noticing, and the diff is small enough to review.
+
 ## v0.8 H4a completion handoff — 2026-09-02
 
 A source checkout now defaults to `127.0.0.1:8099` and an installed Notrios

@@ -529,7 +529,7 @@
     },
     {
       "path": "docs/cli.md",
-      "sha256": "456f63d31adf0bf3efa737208bdaa6e20e22614519606db173966387b1ecea9f",
+      "sha256": "2c4b19d9d29d7dc321a9844c8073f99f7ba5461ed128280b0a55a5f1e4782875",
       "help_note": "doc_help_cli",
       "owner": "go:github.com/renesugar/notrios/cmd/notriosctl#printHelp",
       "sections": [
@@ -1931,7 +1931,7 @@
     },
     {
       "path": "docs/service.md",
-      "sha256": "6036214b2b01d17242845ff2bb0334ad16284e36531d974409cb091433ffdc91",
+      "sha256": "92829a526a0e37bb7a3e7294a81ee5c73ab1661868a38295e4fa7e1543dbe51e",
       "help_note": "doc_help_service",
       "owner": "go:github.com/renesugar/notrios/internal/config#Config",
       "sections": [
@@ -1999,6 +1999,16 @@
           "id": "data-directories-and-generated-files",
           "level": 2,
           "title": "Data directories and generated files",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/internal/config#Config",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        },
+        {
+          "id": "schema-migrations-and-their-backup",
+          "level": 2,
+          "title": "Schema migrations and their backup",
           "audience": "user",
           "kind": "actionable_or_reference",
           "owner": "go:github.com/renesugar/notrios/internal/config#Config",
@@ -2137,7 +2147,7 @@
     },
     {
       "path": "docs/troubleshooting.md",
-      "sha256": "5bb8302500ac80ca73293ee4892d8be53bae8b09f931ed3f189e4f9cebf5d106",
+      "sha256": "9876af234e03a2bcef512f9e6ef6859eea454766b3c1055e398d20386a794a7a",
       "help_note": "doc_help_troubleshooting",
       "owner": "go:github.com/renesugar/notrios/internal/config#Load",
       "sections": [
@@ -2239,14 +2249,14 @@
       "id": "published_markdown",
       "count": 15,
       "unit": "pages",
-      "sections": 211,
+      "sections": 212,
       "owner": "go:github.com/renesugar/notrios/internal/helpdocs#Seed"
     },
     {
       "id": "help_notebook",
       "count": 15,
       "unit": "mirrored notes",
-      "sections": 211,
+      "sections": 212,
       "owner": "go:github.com/renesugar/notrios/internal/helpdocs#Seed"
     },
     {
@@ -2343,9 +2353,9 @@
       "executed": 0,
       "generated": 0,
       "claimed": 0,
-      "unverified": 211
+      "unverified": 212
     },
-    "denominator": 211,
+    "denominator": 212,
     "reconciles": true,
     "finding": "The manual does not yet name directive fragments or executable checks, so all current section units are unverified even where independent tests exist."
   },

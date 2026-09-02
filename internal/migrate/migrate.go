@@ -243,7 +243,7 @@ func BuildPlan(candidate Candidate, resolution paths.Resolution, now time.Time) 
 
 	sort.SliceStable(plan.Items, func(i, j int) bool { return plan.Items[i].Source < plan.Items[j].Source })
 
-	free, err := freeBytes(candidate.ResolvedRoot)
+	free, err := paths.FreeBytes(candidate.ResolvedRoot)
 	if err != nil {
 		return Plan{}, err
 	}

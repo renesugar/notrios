@@ -26,7 +26,9 @@ class G18aEvidenceTests(unittest.TestCase):
         # "Finding your notes" in docs/troubleshooting.md.
         # 210 -> 211 in v0.8 H4a: "The two default addresses" in
         # docs/service.md.
-        self.assertEqual(inventory["grade_baseline"]["denominator"], 211)
+        # 211 -> 212 in v0.8 H4b: "Schema migrations and their backup" in
+        # docs/service.md.
+        self.assertEqual(inventory["grade_baseline"]["denominator"], 212)
 
     def test_duplicate_fragment_is_rejected(self):
         source = """// A.\n//notrios:doc user same\nfunc A() {}\n// B.\n//notrios:doc user same\nfunc B() {}\n"""

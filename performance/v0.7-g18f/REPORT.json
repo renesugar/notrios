@@ -10,7 +10,7 @@
     },
     {
       "path": "docs/cli.md",
-      "sha256": "456f63d31adf0bf3efa737208bdaa6e20e22614519606db173966387b1ecea9f"
+      "sha256": "2c4b19d9d29d7dc321a9844c8073f99f7ba5461ed128280b0a55a5f1e4782875"
     },
     {
       "path": "docs/gui.md",
@@ -18,7 +18,7 @@
     },
     {
       "path": "docs/service.md",
-      "sha256": "6036214b2b01d17242845ff2bb0334ad16284e36531d974409cb091433ffdc91"
+      "sha256": "92829a526a0e37bb7a3e7294a81ee5c73ab1661868a38295e4fa7e1543dbe51e"
     }
   ],
   "enumerations": {

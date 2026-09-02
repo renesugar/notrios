@@ -18,6 +18,46 @@ if test -n "$stray_data"; then
   echo "isolate the test (see isolateRoots in internal/profiles) rather than deleting this by hand"
   exit 1
 fi
+# A compiled binary left in the repository root.
+#
+# `go build ./cmd/notriosctl` without -o writes its executable to the working
+# directory, and .gitignore hides the result -- so `git status` stays clean while
+# an 11 MB binary sits in the tree. That is exactly how notrioslib came to be
+# committed in v0.8 H1 and to ship in five release archives. The release gate now
+# rejects an archive containing one, but nothing noticed the working tree, and
+# the same litter has appeared three times since.
+#
+# ELF magic rather than a list of names: a guard that has to be told each new
+# binary's name is a guard someone has to remember to update.
+stray_binaries=""
+for candidate in ./*; do
+  test -f "$candidate" || continue
+  test -x "$candidate" || continue
+  if head -c 4 "$candidate" 2>/dev/null | grep -q "^.ELF"; then
+    stray_binaries="$stray_binaries $candidate"
+  fi
+done
+if test -n "$stray_binaries"; then
+  echo "a compiled binary is in the repository root:$stray_binaries"
+  echo "build with an explicit destination instead: go build -o bin/<name> ./cmd/<name>"
+  exit 1
+fi
+# A literal ":memory:" file anywhere in the tree.
+#
+# ":memory:" is SQLite's name for a database that has no file, so a file called
+# that is never intentional: it means code derived a path from it -- a lock, a
+# marker, a sidecar -- instead of recognising it as transient. One appeared in
+# internal/store while H4b was being built, and `make validate` passed with it
+# sitting there, because the stray-directory check above only looks for
+# directories named data.
+stray_memory="$(find . -name ':memory:*' -not -path './.git/*' \
+  -not -path './web/node_modules/*' -not -path './node_modules/*' 2>/dev/null || true)"
+if test -n "$stray_memory"; then
+  echo "a path was derived from the in-memory database name:"
+  echo "$stray_memory"
+  echo "the caller should treat \":memory:\" as transient rather than as a filename"
+  exit 1
+fi
 python3 scripts/check_required_files.py
 python3 scripts/check_sqlite_provenance.py
 python3 performance/v0.8-h2a/validate_evidence.py

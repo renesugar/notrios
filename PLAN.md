@@ -636,8 +636,11 @@ open with insufficient free space refuses before touching anything.
 byte-for-byte; failed migration leaves the original unchanged; insufficient
 space refuses before the first statement; a second process is refused during
 migration; repeated opens after a successful migration do not re-backup; backup
-permissions are owner-only; and the reported path exists and is what
-`notriosctl paths` says.
+permissions are owner-only; the reported path exists and is what
+`notriosctl paths` says; an interrupted migration is undone at the next start
+and the marker cleared; a rollback whose backup no longer matches is refused
+with both copies intact; and a `-wal` left by the failed attempt does not
+survive the rollback.
 
 **Open decisions**
 
@@ -650,6 +653,60 @@ permissions are owner-only; and the reported path exists and is what
   Recommended default: refuse to migrate and refuse to open, naming the reason.
   Migrating anyway would be the current behaviour with an extra log line, which
   is the thing this item exists to remove.
+
+**Outcome (2026-09-02).** Complete. Before any migration that would raise
+`user_version`, the database and its `-wal`/`-shm` sidecars are copied to
+`<database directory>/pre-migration-backups/<from>-to-<to>-<timestamp>/`, each
+file hashed and read back to confirm what is on the disk rather than what went
+towards it, and a `MANIFEST.json` written. The service, `notriosctl` and
+`doctor` each report a migration and name the backup. Retention keeps the newest
+and removes the rest, after success only. A fresh database (version 0) is
+skipped: there is nothing yet to lose, and backing one up would leave a
+directory of nothing beside every new library.
+
+**Two deviations from the scope, both deliberate.**
+
+*The lock.* The scope says to hold "the existing database owner lock". There is
+no such lock on this path: the `flock` owner lock lives in `internal/abi` and is
+taken only by `cmd/notrioslib`, never by `notriosd`, `notriosctl` or the GUI.
+Reusing it would have deadlocked the one caller that does hold it, because flock
+claims belong to an open file description, so a second descriptor on the same
+file in the same process conflicts with the first. A separate `<db>.migrating`
+flock is held across backup and migration together, non-blocking because startup
+must not hang. The version is re-read once the lock is held: a process that lost
+the race would otherwise back up and migrate a database another process had
+already finished with.
+
+*Failure auto-restores at the next start, which is better than the scope asked
+for.* The first implementation refused to auto-restore, reasoning that writing
+over a database the process still holds open, unattended, is a worse risk than
+the one it fixes. That reasoning was sound and the conclusion was wrong, because
+it assumed the repair had to happen in the failing process. It does not.
+
+A marker file is written beside the database before the first migration
+statement and removed after the last, so finding one means a migration did not
+finish. The **next** open restores the copy the marker names, before the
+database is opened at all -- no handle is held, no write-ahead log is being
+replayed -- then clears the marker and stops with a message naming the versions,
+the backup and the export/import route if the upgrade keeps failing. It follows
+the same shape as the existing physical-restore marker.
+
+Three details make it safe rather than merely automatic: the copy's hashes are
+checked against what was recorded when it was taken, and a mismatch refuses and
+leaves both files; a `-wal` left by the failed attempt is removed, or SQLite
+would replay the failed migration back over the restored database; and the
+marker is deleted last, so an interruption mid-restore simply repeats it.
+
+Commands named in recovery messages are guarded against going stale in three
+directions: every registered command must appear in `notriosctl help`, every
+registered command must appear in a message, and every `notriosctl ...` found in
+a rendered message must be registered. The third is what stops a new command
+escaping the guard entirely. A recovery message naming a renamed command is
+worse than none: it is read when the user has least room to improvise.
+
+`internal/paths.FreeBytes` now holds the free-space probe that H4 slice E had
+introduced privately, because two callers needed it and a platform probe that
+exists twice eventually disagrees with itself.
 
 **Why this is separate.** It was found while answering whether a reinstall
 migrates an end user's schema. It does -- and the same investigation found that
@@ -1104,7 +1161,7 @@ This is an index only; each decision is owned and explained inside its item.
 | Mermaid renderer/containment | H2a/H2 | Resolved and implemented in H2: Mermaid 11.17.2, strict security, `htmlLabels: false`, `notrios`-only links reattached from source |
 | Installed/portable path precedence | H3/H4 | Resolved in H3: explicit, then explicit portable marker, then native; never inferred |
 | Development versus installed default port | H4a | Resolved in H4a: checkout 8099 from the example config, installed 8080 from the compiled default |
-| Pre-migration backup location and retention | H4b | Open; beside the database recommended, no new root needed |
+| Pre-migration backup location and retention | H4b | Resolved in H4b: `pre-migration-backups/` beside the database, newest kept, no new root |
 | Migration trigger narrowed from H3 section 4 | H4 slice E | Resolved; slice D removed the two-instance case, so the trigger is a pre-0.8 layout in the working directory that is not the library in use |
 | User-local/GNU install layout | H3/H5 | Resolved in H3: `$HOME/.local`, GNU directory variables and `DESTDIR` retained |
 | Purge external-path and backup policy | H3/H5 | Resolved in H3: enumerate and back up, refuse to delete; container choice remains for H5 |

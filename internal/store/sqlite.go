@@ -62,6 +62,9 @@ type SQLiteStore struct {
 	// a config read so a replica that intends to be a complete copy can say so
 	// without a config file, and it is normalized on use.
 	assetPolicy string
+	// lastMigration records a schema migration performed by this open, so a
+	// caller can tell the user it happened. Nil when nothing was migrated.
+	lastMigration *MigrationReport
 }
 
 // AssetRoot returns the configured local store root for internal bulk
@@ -93,6 +96,19 @@ func openSQLiteWithAssetStore(path, assetRoot string, allowRestore bool) (*SQLit
 			return nil, fmt.Errorf("%w: run the same local restore command to resume", ErrPhysicalRestoreInProgress)
 		} else if err != nil && !errors.Is(err, os.ErrNotExist) {
 			return nil, err
+		}
+		// Undo an unfinished migration before anything opens the database.
+		//
+		// This is the only point where putting the old file back is safe: no
+		// handle is held, no write-ahead log is being replayed, and the copy
+		// being restored was verified when it was made.
+		if marker, found, err := readMigrationMarker(path); err != nil {
+			return nil, err
+		} else if found {
+			if _, err := rollBackIncompleteMigration(path); err != nil {
+				return nil, err
+			}
+			return nil, migrationRolledBackError(marker, path)
 		}
 		// Owner-only: this directory holds the user's library. It used to be
 		// 0755 while every backup of the same data was 0700.
@@ -197,14 +213,120 @@ func (s *SQLiteStore) Bootstrap(ctx context.Context) error {
 		return versionErr
 	}
 	if existing > CurrentSchemaVersion {
-		return fmt.Errorf(
-			"%w: the database records schema version %d and this build supports %d.\n"+
-				"It was written by a newer Notrios. Upgrade Notrios rather than opening it with this build:\n"+
-				"continuing would re-run old migrations against a schema this build does not understand\n"+
-				"and record the wrong version, which would hide that it ever happened.",
-			ErrSchemaTooNew, existing, CurrentSchemaVersion)
+		return schemaTooNewError(existing)
 	}
 
+	// An existing database that is behind is about to be rewritten in place, on
+	// what is very likely the user's only copy. Back it up first, under a lock,
+	// so a second process cannot open it mid-migration.
+	//
+	// A fresh database reports 0 and is skipped: there is nothing yet to lose,
+	// and backing up an empty file would leave a directory of nothing beside
+	// every new library.
+	if existing > 0 && existing < CurrentSchemaVersion && !s.isTransient() {
+		return s.migrateUnderLock(ctx, existing)
+	}
+
+	return s.applySchema(ctx)
+}
+
+// isTransient reports a database that cannot be a user's library.
+//
+// An in-memory database exists only for the life of the process: there is
+// nothing to lose, nowhere beside it to keep a copy, and no second process that
+// could open it. Backing one up is not merely wasteful, it is impossible, and
+// refusing to migrate it would make every in-memory store unusable the moment
+// its recorded version was behind.
+func (s *SQLiteStore) isTransient() bool {
+	return strings.TrimSpace(s.path) == "" || s.path == ":memory:"
+}
+
+func schemaTooNewError(existing int) error {
+	return fmt.Errorf(
+		"%w: the database records schema version %d and this build supports %d.\n"+
+			"It was written by a newer Notrios. Upgrade Notrios rather than opening it with this build:\n"+
+			"continuing would re-run old migrations against a schema this build does not understand\n"+
+			"and record the wrong version, which would hide that it ever happened.",
+		ErrSchemaTooNew, existing, CurrentSchemaVersion)
+}
+
+// migrateUnderLock backs the database up, then migrates it, holding the
+// migration lock for both.
+func (s *SQLiteStore) migrateUnderLock(ctx context.Context, existing int) error {
+	lock, err := acquireMigrationLock(s.path)
+	if err != nil {
+		return err
+	}
+	defer lock.release()
+
+	// Re-read the version now the lock is held. Another process may have
+	// finished migrating between our first read and this claim, and migrating
+	// again -- or worse, backing up again -- on the strength of a stale reading
+	// is exactly what the lock is for.
+	s.mu.Lock()
+	current, versionErr := s.pragmaUserVersionLocked()
+	s.mu.Unlock()
+	if versionErr != nil {
+		return versionErr
+	}
+	if current > CurrentSchemaVersion {
+		return schemaTooNewError(current)
+	}
+	if current >= CurrentSchemaVersion {
+		// Someone else did it. Nothing will be raised, so nothing is backed up.
+		return s.applySchema(ctx)
+	}
+
+	report, err := s.backupBeforeMigration(ctx, current, CurrentSchemaVersion, time.Now())
+	if err != nil {
+		return err
+	}
+
+	// Record that a migration is owed *before* the first statement runs. If
+	// this process dies part-way, the next open finds the marker and undoes the
+	// migration from the copy it names -- at a moment when nothing holds the
+	// database open, which is what makes an automatic undo safe at all.
+	marker := MigrationMarker{
+		FromVersion: current,
+		ToVersion:   CurrentSchemaVersion,
+		Database:    s.path,
+		BackupDir:   report.BackupDir,
+		SHA256:      report.SHA256,
+		StartedAt:   report.At,
+	}
+	if err := writeMigrationMarker(s.path, marker); err != nil {
+		return fmt.Errorf("%w: recording the migration in %s: %v",
+			ErrBackupFailed, MigrationMarkerPath(s.path), err)
+	}
+
+	if err := s.applySchema(ctx); err != nil {
+		// The marker is deliberately left behind. It is the instruction to the
+		// next open to put this database back, and removing it here -- in the
+		// process that has just failed, with the database still open -- is
+		// exactly the unsafe repair this design avoids.
+		return fmt.Errorf("%w: migrating from schema %d to %d: %v\n\n"+
+			"The database may be partly migrated. A verified copy of it as it was before\n"+
+			"this attempt is in %s.\n"+
+			"Start Notrios again and it will put that copy back automatically before\n"+
+			"opening anything.",
+			ErrMigrationFailed, current, CurrentSchemaVersion, err, report.BackupDir)
+	}
+
+	// Migration finished, so the undo is no longer owed.
+	if err := clearMigrationMarker(s.path); err != nil {
+		return err
+	}
+
+	s.mu.Lock()
+	s.lastMigration = &report
+	s.mu.Unlock()
+	pruneOldBackups(PreMigrationBackupRoot(s.path), report.BackupDir)
+	return nil
+}
+
+// applySchema runs every forward step. It is idempotent: a database already at
+// the current version passes through it unchanged.
+func (s *SQLiteStore) applySchema(ctx context.Context) error {
 	migration, err := migrationFS.ReadFile("migrations/0001_initial.sql")
 	if err != nil {
 		return fmt.Errorf("read migration: %w", err)

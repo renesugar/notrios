@@ -5,10 +5,12 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/renesugar/notrios/internal/config"
 	"github.com/renesugar/notrios/internal/migrate"
 	"github.com/renesugar/notrios/internal/paths"
+	"github.com/renesugar/notrios/internal/store"
 )
 
 // `notriosctl paths` answers "where is this instance keeping things?".
@@ -64,6 +66,9 @@ func runPaths(args []string) {
 			"mode": string(resolution.Mode), "roots": roots, "notices": notices,
 			"redacted": home != "",
 		}
+		if backups := preMigrationBackupRoot(); backups != "" {
+			payload["pre_migration_backups"] = paths.Redact(backups, home)
+		}
 		if candidate, found := detectLegacyLayout(resolution); found {
 			payload["legacy_layout"] = map[string]any{
 				"root":     paths.Redact(candidate.Root, home),
@@ -79,7 +84,36 @@ func runPaths(args []string) {
 	}
 
 	fmt.Print(resolution.Diagnostics(home))
+	printPreMigrationBackupRoot(home)
 	printLegacyLayoutNotice(resolution, home)
+}
+
+// preMigrationBackupRoot is where a schema migration keeps its copy of the
+// database.
+//
+// It is reported here because the whole value of that backup is being findable.
+// A user needs it after a migration went wrong or was refused, which is exactly
+// when they are least able to go looking through the source for a path.
+func preMigrationBackupRoot() string {
+	database := configuredDatabasePath()
+	if strings.TrimSpace(database) == "" {
+		return ""
+	}
+	return store.PreMigrationBackupRoot(database)
+}
+
+func printPreMigrationBackupRoot(home string) {
+	root := preMigrationBackupRoot()
+	if root == "" {
+		return
+	}
+	fmt.Println("pre-migration backups:")
+	fmt.Printf("  %s\n", paths.Redact(root, home))
+	if entries, err := os.ReadDir(root); err == nil && len(entries) > 0 {
+		fmt.Printf("  %d kept\n", len(entries))
+	} else {
+		fmt.Println("  none yet; one is written before any schema migration")
+	}
 }
 
 // detectLegacyLayout looks for a pre-0.8 library beside the process.

@@ -149,6 +149,11 @@ The home directory is shown as `~` by default, because this output gets pasted
 into issue reports. `--no-redact` prints it in full. `--json` emits the same
 information as `{"mode", "roots", "notices", "redacted"}`.
 
+`paths` also reports where a schema migration keeps its copy of the database
+(`pre-migration-backups/` beside it) and how many are kept. The value of that
+backup is being findable, which matters most exactly when something has gone
+wrong; see [schema migrations](service.md#schema-migrations-and-their-backup).
+
 ## config show
 
 ```sh
