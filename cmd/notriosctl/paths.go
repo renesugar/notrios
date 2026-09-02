@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/renesugar/notrios/internal/config"
+	"github.com/renesugar/notrios/internal/migrate"
 	"github.com/renesugar/notrios/internal/paths"
 )
 
@@ -58,10 +60,18 @@ func runPaths(args []string) {
 		}
 		encoder := json.NewEncoder(os.Stdout)
 		encoder.SetIndent("", "  ")
-		if err := encoder.Encode(map[string]any{
+		payload := map[string]any{
 			"mode": string(resolution.Mode), "roots": roots, "notices": notices,
 			"redacted": home != "",
-		}); err != nil {
+		}
+		if candidate, found := detectLegacyLayout(resolution); found {
+			payload["legacy_layout"] = map[string]any{
+				"root":     paths.Redact(candidate.Root, home),
+				"database": paths.Redact(candidate.DatabasePath, home),
+				"occupied": candidate.Occupied,
+			}
+		}
+		if err := encoder.Encode(payload); err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
 		}
@@ -69,4 +79,57 @@ func runPaths(args []string) {
 	}
 
 	fmt.Print(resolution.Diagnostics(home))
+	printLegacyLayoutNotice(resolution, home)
+}
+
+// detectLegacyLayout looks for a pre-0.8 library beside the process.
+//
+// The working directory is the only place worth looking, and it is not a guess:
+// the pre-0.8 defaults were relative to it, so a user standing where they
+// always stood is standing on their library. Nothing is read from it and
+// nothing is loaded from it -- it is noticed and named.
+func detectLegacyLayout(resolution paths.Resolution) (migrate.Candidate, bool) {
+	working, err := os.Getwd()
+	if err != nil {
+		return migrate.Candidate{}, false
+	}
+	return migrate.Detect(working, resolution, configuredDatabasePath())
+}
+
+// configuredDatabasePath is the database this process would actually open.
+//
+// It is what stops the notice firing on a library that is in use. A
+// configuration saying `directory: ./data` resolves against the working
+// directory, so without this the command would tell a user their own current
+// library was stranded and offer to move it out from under the configuration
+// naming it. An unreadable configuration returns "", which reports rather than
+// suppresses: being unable to read a config is not evidence that a library is
+// in use.
+func configuredDatabasePath() string {
+	cfg, err := config.LoadDefault()
+	if err != nil {
+		return ""
+	}
+	return cfg.Data.DatabasePath
+}
+
+// printLegacyLayoutNotice tells a user their notes are where they left them.
+//
+// Without this the failure is silent in the worst way: `paths` prints an
+// impeccable list of empty native roots while the library sits in the directory
+// the command was run from, and the user concludes their notes are gone.
+func printLegacyLayoutNotice(resolution paths.Resolution, home string) {
+	candidate, found := detectLegacyLayout(resolution)
+	if !found {
+		return
+	}
+	fmt.Println("pre-0.8 layout:")
+	fmt.Printf("  a database from an older Notrios is at %s\n", paths.Redact(candidate.DatabasePath, home))
+	fmt.Println("  this instance is not using it; the roots above are what it reads and writes")
+	if candidate.Occupied {
+		fmt.Println("  the resolved location already holds a database, so migration would be a merge and is refused")
+		fmt.Println("  open either one explicitly with --db")
+		return
+	}
+	fmt.Println("  run `notriosctl migrate --dry-run` to see what moving it would do")
 }

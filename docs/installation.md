@@ -111,14 +111,25 @@ desktop binary is a webview around it.
 The built interface is `web/dist/`, produced by `make web` (and by `make gui`,
 which implies it). A binary looks for it in this order and uses the first hit:
 
-1. the path given by `--web-dir`;
-2. `server.web_dir` in the configuration file;
-3. `web/dist` under the **working directory**;
-4. `web/dist` under the **executable's own directory**;
-5. `web/dist` under the executable's **parent** directory.
+1. the path given by `--web-dir`, or `server.web_dir` in the configuration file
+   — when either is set it is the **only** candidate, because an explicit answer
+   that is wrong should fail loudly rather than fall through to a directory that
+   happens to work;
+2. `web/` under the program-assets root (`/usr/local/share/notrios/web` on
+   Linux) — installed layouts only;
+3. `web/dist` under the **executable's own directory**;
+4. `web/dist` under the executable's **parent** directory;
+5. `web/dist` under the **working directory** — *source checkouts only*.
 
-The last two are what make `bin/notrios` work whether you run it as
+Items 3 and 4 are what make `bin/notrios` work whether you run it as
 `./bin/notrios` from the repository root or as `./notrios` from inside `bin/`.
+
+The working directory comes **last and only in a checkout**. It used to come
+first, unconditionally, which is right for a developer standing in a checkout
+and wrong once the binary is installed: the HTML, CSS and JavaScript loaded into
+the application's own window were taken from whichever `web/dist` sat beside
+wherever the user happened to be.
+
 If you move a binary somewhere else, copy `web/dist/` alongside it or pass
 `--web-dir`:
 
@@ -150,6 +161,30 @@ checkout's example config uses relative `./data/...` paths, which resolve
 against the directory you launched from; use absolute paths in any config you
 run outside a checkout. See the [service guide](service.md#configuration).
 
+### Upgrading from before 0.8
+
+Before 0.8 the built-in defaults were relative to the working directory: a
+binary run with **no configuration file** kept its library in `./data`, under
+whichever directory you launched from. An 0.8 binary resolves the native roots
+instead, so it will find them empty and open a new, empty library. Your notes
+are not gone — they are still in that directory.
+
+`notriosctl paths` notices a pre-0.8 library in the directory you are standing
+in and names it. Moving it is a single explicit command:
+
+```sh
+notriosctl migrate --dry-run   # show what would move
+notriosctl migrate             # copy, verify, and retire the old directory
+```
+
+Nothing is moved for you, the original is copied rather than moved, every file
+is verified with SHA-256, and the old directory is renamed rather than deleted.
+See [`notriosctl migrate`](cli.md#migrate) for the full contract.
+
+**You do not need this** if your configuration file states its paths — those are
+used exactly as written and were never relocated — or if you run from a
+checkout, whose roots are already `./data`.
+
 ## Optional local installation
 
 If you want the binaries on your `PATH`:
@@ -159,7 +194,14 @@ make build gui
 install -m 0755 bin/notriosd bin/notriosctl bin/notrios ~/.local/bin/
 ```
 
-Then run them with an explicit config that uses absolute paths, e.g. `notriosd -config ~/.config/notrios/config.yaml`. Because of working-directory rule 1 above, an installed `notriosd`/`notrios` only serves the browser/GUI interface when started from a directory containing `web/dist/` — the simplest arrangement today is to keep launching from the checkout.
+Copy the built interface somewhere the binaries will find it — the program-assets root, or beside the executable:
+
+```sh
+sudo mkdir -p /usr/local/share/notrios
+sudo cp -r web/dist /usr/local/share/notrios/web
+```
+
+Without that step an installed binary has no interface to serve unless you pass `--web-dir`; the headless service still runs, and REST, MCP and the importers do not need one. Run `notriosctl paths` to see which roots the installed copy resolved.
 
 Uninstall by deleting the copies:
 

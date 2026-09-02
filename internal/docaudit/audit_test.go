@@ -34,15 +34,25 @@ func TestRepositoryAuditReportsHonestCoverage(t *testing.T) {
 	// 203 -> 205 manual sections and 358 -> 362 denominator in v0.8 H4 slice D:
 	// the `paths` and `config show` sections in docs/cli.md, each contributing a
 	// section and a registered example.
-	if report.ManualSections != 205 || report.Fragments != 15 || report.Claims != 4 ||
-		report.Executables != 133 || report.Journeys != 9 {
+	// 205 -> 210 manual sections, 133 -> 137 executables and 362 -> 371
+	// denominator in v0.8 H4 slice E: docs/cli.md gained `migrate` and its two
+	// subsections, docs/installation.md gained "Upgrading from before 0.8", and
+	// docs/troubleshooting.md gained "Finding your notes". Four examples are
+	// registered against them, and one uninstall example in
+	// docs/installation.md shifted index when a new block was added above it.
+	if report.ManualSections != 210 || report.Fragments != 15 || report.Claims != 4 ||
+		report.Executables != 137 || report.Journeys != 9 {
 		t.Fatalf("unexpected coverage surface: %+v", report)
 	}
 	if report.Counts[GradeExecuted] != 71 || report.Counts[GradeGenerated] != 11 ||
 		// 272 -> 276 unverified in v0.8 H4 slice D: two new docs/cli.md
 		// sections and their two registered synopsis examples.
-		report.Counts[GradeClaimed] != 4 || report.Counts[GradeUnverified] != 276 ||
-		report.Denominator != 362 {
+		// 276 -> 285 unverified in v0.8 H4 slice E: five new sections and four
+		// new registered examples, every one of them unverified prose or an
+		// example that changes this user's state and so is covered by
+		// sandboxed Go tests instead.
+		report.Counts[GradeClaimed] != 4 || report.Counts[GradeUnverified] != 285 ||
+		report.Denominator != 371 {
 		t.Fatalf("coverage counts hide or lose units: counts=%v denominator=%d", report.Counts, report.Denominator)
 	}
 	if len(resolvedTS) == 0 {

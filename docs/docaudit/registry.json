@@ -1207,6 +1207,30 @@
       }
     },
     {
+      "id": "cli-migrate-example-1",
+      "path": "docs/cli.md",
+      "section": "migrate",
+      "language": "sh",
+      "sha256": "185e694db60d4159081bacec29639092990bf4ba489c09301d4294191bd89395",
+      "state": "unverified",
+      "unrun_reason": {
+        "code": "illustrative-placeholder",
+        "detail": "Non-literal command synopsis: bracketed flags are optional-argument notation. The command itself is covered by executed tests in go:github.com/renesugar/notrios/cmd/notriosctl (TestMigrateDryRunThenMigrateMovesTheLibrary, TestMigrateRefusesToMergeAndSaysWhy, TestMigrateSaysThereIsNothingToDo); no executed concrete CLI example is registered for the synopsis form."
+      }
+    },
+    {
+      "id": "cli-migrate-example-2",
+      "path": "docs/cli.md",
+      "section": "migrate",
+      "language": "sh",
+      "sha256": "7dbc70292a9111f112a466d015ebb389062bf220717a31d762246402f1f2c46a",
+      "state": "unverified",
+      "unrun_reason": {
+        "code": "shared-user-state",
+        "detail": "Literal body inspects and writes this user's resolved state root: notriosctl migrate --dry-run writes <state>/migration/plan.json. Covered by executed tests in go:github.com/renesugar/notrios/cmd/notriosctl (TestMigrateDryRunThenMigrateMovesTheLibrary) which run it in a sandboxed HOME."
+      }
+    },
+    {
       "id": "cli-notes-move-example-1",
       "path": "docs/cli.md",
       "section": "notes-move",
@@ -1993,6 +2017,18 @@
       "path": "docs/installation.md",
       "section": "optional-local-installation",
       "language": "sh",
+      "sha256": "77647dde520411f1e68d0e564b2965247174c6bedbbd27060ac0962b9d6a986e",
+      "state": "unverified",
+      "unrun_reason": {
+        "code": "privileged-host-change",
+        "detail": "Literal body writes to a system directory as root: sudo mkdir -p /usr/local/share/notrios"
+      }
+    },
+    {
+      "id": "installation-optional-local-installation-example-3",
+      "path": "docs/installation.md",
+      "section": "optional-local-installation",
+      "language": "sh",
       "sha256": "072ab826598f50776d0111d9a0148f1a66d90fcd03993752599f9f8e50ef23fa",
       "state": "unverified",
       "unrun_reason": {
@@ -2054,6 +2090,18 @@
           "kind": "daemon-health",
           "detail": "loopback daemon honors config, serves health, and is terminated cleanly"
         }
+      }
+    },
+    {
+      "id": "installation-upgrading-from-before-0-8-example-1",
+      "path": "docs/installation.md",
+      "section": "upgrading-from-before-0-8",
+      "language": "sh",
+      "sha256": "bac2a55ba52aab2aa41e5c034a35f4d816d12f0d2ea79f742403ec3c6fd4eb68",
+      "state": "unverified",
+      "unrun_reason": {
+        "code": "shared-user-state",
+        "detail": "Literal body relocates this user's library: notriosctl migrate copies into the resolved roots and retires the old directory. Covered by executed tests in go:github.com/renesugar/notrios/cmd/notriosctl (TestMigrateDryRunThenMigrateMovesTheLibrary) which run it in a sandboxed HOME."
       }
     },
     {

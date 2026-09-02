@@ -444,6 +444,61 @@ no-current-working-directory-dependency tests.
   `performance/v0.8-h3/validate_evidence.py` until the entry is updated.
   The purge backup container remains open and belongs to H5.
 
+**Outcome (2026-09-02).** Complete, in five slices: A the resolver, B the
+config-root consumers, C the data/state/cache/runtime roots, D instance
+isolation, assets and diagnostics, E migration.
+
+**Slice E is narrower than H3 section 4 specified, and the reason is slice D.**
+H3 described an installed binary meeting a checkout-relative layout and
+reconciling two instances. Slice D made a checkout a genuinely separate
+instance, so that case no longer exists: a checkout's roots already are
+`./data`, and migration concerns one instance moving rather than two merging.
+Reading the surface again against the shipped code, three of the four
+situations H3 worried about need nothing:
+
+- a configuration that states a path keeps it, absolute or relative, because
+  `applyResolvedRoots` fills only keys the file left unsaid;
+- a binary run from a checkout is in source mode, where every mutable root
+  resolves to `./data` as before;
+- an installed binary meeting an old config file reads the old locations, which
+  is the "no implicit migration" boundary already asserted in
+  `internal/config`.
+
+One case does move: a pre-0.8 binary run with **no configuration file** kept its
+library in `./data` relative to whatever directory it was launched from. Nothing
+recorded that directory, so nothing can look it up -- but it can be noticed when
+the user is standing in it again, which is what `notriosctl paths`, `doctor` and
+`notriosctl migrate` now do. H3's copy-verify-journal-commit-retire sequence,
+free-space refusal, collision refusal and per-category treatment are implemented
+as specified; only the trigger changed, from "an old layout exists" to "an old
+layout exists here and is not the one in use".
+
+The plan is generated from `config.ResolvedPathMappings()` rather than a list of
+its own, so a path added to Notrios cannot be silently left behind by migration.
+Migration copies bytes and never opens the source database: opening it would run
+the schema migrations against the user's only copy before any copy of it exists,
+which is the defect H4b exists to remove.
+
+H3 named one further consumer as "the only one needing migration rather than a
+new default": a generated profile keeping its database under the *config* root
+at `~/.config/notrios/profiles/<id>/data/notes.sqlite`. It needs no migration
+either, and the reason is structural rather than lucky. A generated profile
+writes its own configuration file stating every path absolutely, and the
+registry additionally requires `database_path` to be absolute and refuses a
+relative one. Both are `provided` keys, so `applyResolvedRoots` leaves them
+alone. Slice C changed the default for *new* profiles only. Verified against a
+synthesised pre-slice-C profile: `notriosctl config show` reports every path
+with origin `file`, unchanged.
+
+Two defects were found and fixed while building it. Documentation still
+described the pre-slice-D asset search order, so `docs/installation.md` told
+installed users the working directory is searched when slice D had deliberately
+stopped searching it. And the first detection implementation fired on a library
+that was *in use* -- a configuration saying `directory: ./data` resolves against
+the working directory -- which would have told a user their current library was
+stranded and offered to move it out from under the configuration naming it.
+`Detect` now takes the database the process would actually open.
+
 ## H4a. Distinct development and installed default ports in the documentation
 
 **Goal.** Let a development checkout and an installed instance run at the same
@@ -1011,6 +1066,7 @@ This is an index only; each decision is owned and explained inside its item.
 | Installed/portable path precedence | H3/H4 | Resolved in H3: explicit, then explicit portable marker, then native; never inferred |
 | Development versus installed default port | H4a | Open; 8080 shared today, bind failure explains it |
 | Pre-migration backup location and retention | H4b | Open; beside the database recommended, no new root needed |
+| Migration trigger narrowed from H3 section 4 | H4 slice E | Resolved; slice D removed the two-instance case, so the trigger is a pre-0.8 layout in the working directory that is not the library in use |
 | User-local/GNU install layout | H3/H5 | Resolved in H3: `$HOME/.local`, GNU directory variables and `DESTDIR` retained |
 | Purge external-path and backup policy | H3/H5 | Resolved in H3: enumerate and back up, refuse to delete; container choice remains for H5 |
 | Desktop package formats/toolchain | H6a/H6/H7 | Open; evidence-dependent |

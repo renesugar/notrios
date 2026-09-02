@@ -10,7 +10,7 @@
     },
     {
       "path": "docs/cli.md",
-      "sha256": "7185b973cf995957013a8656d5704bf7a26d0d61efb3a3fd9c72f99e310039bc"
+      "sha256": "456f63d31adf0bf3efa737208bdaa6e20e22614519606db173966387b1ecea9f"
     },
     {
       "path": "docs/gui.md",
@@ -22,7 +22,7 @@
     }
   ],
   "enumerations": {
-    "cli_usage_forms": 58,
+    "cli_usage_forms": 59,
     "configuration_defaults": 52,
     "configuration_keys": 62,
     "gui_journeys": 37,
@@ -48,7 +48,7 @@
   "schema": "notrios.g18f.deterministic.v1",
   "summary": {
     "api": 2,
-    "enumerated_rows": 421,
+    "enumerated_rows": 422,
     "fragments": 15,
     "generated_documents": 5,
     "user": 13

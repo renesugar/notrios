@@ -5,6 +5,7 @@ printHelp is the finite command and flag usage registry shown by notriosctl.
 - notriosctl doctor [--config config.yaml] [--db path] [--asset-store path]
 - notriosctl paths [--json] [--no-redact]
 - notriosctl config show [--config config.yaml] [--json] [--no-redact]
+- notriosctl migrate [--from dir] [--dry-run] [--json]
 - notriosctl version
 - notriosctl import joplin-raw [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--batch-size 100] [--preserve-source] [--dry-run] [--write-config path] [--import-config path] [--localize-media] <raw-export-dir>
 - notriosctl import obsidian [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--dry-run] [--localize-media] <vault-dir>
@@ -176,6 +177,98 @@ is why `data.database_path` above sits under a `data.directory` you did set.
 
 No secret is printed. `sync.credential_ref` is shown because it is a *reference*
 to an entry in a native credential store, never a credential.
+
+## migrate
+
+```sh
+notriosctl migrate [--from dir] [--dry-run] [--json]
+```
+
+Moves a library left behind by a pre-0.8 Notrios into the resolved roots.
+
+**Most installations need this and do not know it.** Before 0.8 the built-in
+defaults were relative to the working directory, so a binary run with no
+configuration file wrote its library to `./data` — under whichever directory you
+happened to launch from. An 0.8 binary resolves the native roots instead, finds
+them empty, and opens a new empty library. Your notes are not gone; they are
+where you left them.
+
+Nothing looks that place up, because nothing recorded it. What `notriosctl
+paths` does is notice a pre-0.8 library in the directory you are standing in and
+say so:
+
+```text
+pre-0.8 layout:
+  a database from an older Notrios is at ~/notes/data/notes.sqlite
+  this instance is not using it; the roots above are what it reads and writes
+  run `notriosctl migrate --dry-run` to see what moving it would do
+```
+
+Always look before you move:
+
+```sh
+notriosctl migrate --dry-run
+```
+
+```text
+Plan for ~/notes/data (nothing was copied):
+  copy     ~/notes/data/assets -> ~/.local/share/notrios/assets (412 file(s), 88118 bytes)
+  copy     ~/notes/data/notes.sqlite -> ~/.local/share/notrios/notes.sqlite (1 file(s), 4014080 bytes)
+  copy     ~/notes/data/quarantine -> ~/.local/state/notrios/quarantine (3 file(s), 51221 bytes)
+  rebuild  ~/notes/data/search-index is derived data and regenerates; it is not copied
+  4153419 bytes to copy; 28324495360 bytes free
+```
+
+Then run it without `--dry-run`.
+
+### What it guarantees
+
+**Your library is never moved for you.** An 0.8 binary that relocated a library
+because it recognised the shape of a directory would be making an irreversible
+decision on the evidence of where it was launched from. Detection reports; you
+decide.
+
+**The original is copied, never moved,** and every copied file is checked with
+SHA-256 against its source before anything is committed. If verification fails,
+the migration stops and the original is untouched.
+
+**The old directory is renamed, not deleted** — to `data.migrated-<timestamp>`,
+and the command tells you where. It is a complete copy of what you had, so it is
+also your backup if the first open migrates the schema. Delete it yourself once
+you are satisfied.
+
+**An interruption is resumable.** A journal under `<state>/migration/` records
+each category before and after; running the same command again continues from
+the last incomplete one. Because the source is intact until the final rename,
+the worst outcome of a crash is wasted disk.
+
+**A merge is refused.** If the resolved location already holds a database *with
+notes in it*, migration stops and names both paths. Combining two libraries is a
+decision, not a copy. If the file there cannot be read as a database at all,
+migration also refuses rather than assuming it is empty — a corrupted library is
+a recovery problem, not a migration one.
+
+**An empty library at the destination is set aside, not treated as a merge.**
+This is the ordinary case rather than a corner: you discover your notes are
+missing by running the new binary, and `doctor` (or the service) creates an
+empty library at the resolved path in the act of looking. Migration renames it
+to `notes.sqlite.unused-<timestamp>` and says so, then continues. As everywhere
+else here, it is renamed rather than deleted.
+
+**Derived data is rebuilt rather than carried.** Projections and the search
+index regenerate from the library, and a search index copied to a new path would
+hold stale absolute paths inside it. The quarantine *is* carried: it is the
+record of what a note tried to fetch, which nothing can regenerate.
+
+### When you do not need it
+
+- **You have a configuration file that states its paths.** They are used exactly
+  as written and never relocated, so nothing moved and nothing needs to move.
+- **You run from a checkout.** A checkout is a separate instance whose roots are
+  already `./data`. `migrate` says so and does nothing.
+
+If your library is somewhere other than the directory you are standing in, name
+it: `notriosctl migrate --from ~/old-notes`.
 
 ## import
 

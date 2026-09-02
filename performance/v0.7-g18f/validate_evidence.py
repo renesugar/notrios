@@ -113,11 +113,14 @@ def validate_report(root=ROOT, here=HERE):
     # 413 -> 419 in v0.8 H4 slice C: data.state_dir, data.cache_dir and
     # data.runtime_dir each add a row to the Config listing and a row to the
     # Default listing.
-    expected_summary = {"fragments": 15, "user": 13, "api": 2, "generated_documents": 5, "enumerated_rows": 421}
+    # 421 -> 422 in v0.8 H4 slice E: `notriosctl migrate` adds one row to the
+    # CLI usage-form listing.
+    expected_summary = {"fragments": 15, "user": 13, "api": 2, "generated_documents": 5, "enumerated_rows": 422}
     require(report.get("summary") == expected_summary, "wrong deterministic summary")
     expected_enumerations = {
         # 59 -> 62 and 49 -> 52 for the same three keys.
-        "configuration_keys": 62, "configuration_defaults": 52, "cli_usage_forms": 58,
+        # 58 -> 59 in v0.8 H4 slice E: `notriosctl migrate`.
+        "configuration_keys": 62, "configuration_defaults": 52, "cli_usage_forms": 59,
         "rest_openapi_operations": 109, "mcp_tools": 46, "mcp_sync_scope_assignments": 7,
         "mcp_scopes": 4, "mcp_tool_scope_assignments": 46, "gui_journeys": 37,
     }

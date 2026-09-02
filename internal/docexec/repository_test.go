@@ -100,7 +100,14 @@ func TestRepositoryExamples(t *testing.T) {
 	// bracketed-optional synopses, registered as illustrative placeholders like
 	// every other one in that document, and the commands themselves are covered
 	// by executed tests in cmd/notriosctl.
-	if report.Executed != 63 || report.Entries != 133 || len(report.Topics) != 13 {
+	// 133 -> 137 entries in v0.8 H4 slice E: the `migrate` synopsis and its
+	// dry-run example in docs/cli.md, the upgrade recipe in
+	// docs/installation.md, and the asset-installation block added to the same
+	// page. Executed is unchanged at 63: each one either relocates this user's
+	// library or writes to a system directory as root, so all four are
+	// reviewed unrun reasons, and the command is covered by executed tests in
+	// cmd/notriosctl instead.
+	if report.Executed != 63 || report.Entries != 137 || len(report.Topics) != 13 {
 		t.Fatalf("unexpected G18d coverage: %+v", report)
 	}
 	executedTopics := 0

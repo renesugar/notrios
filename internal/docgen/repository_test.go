@@ -21,7 +21,8 @@ func TestRepositoryEnumerationsMatchFiniteRegistries(t *testing.T) {
 		{defaultAnchor, 52},
 		// 56 -> 58 in v0.8 H4 slice D: `notriosctl paths` and
 		// `notriosctl config show`.
-		{cliHelpAnchor, 58},
+		// 58 -> 59 in v0.8 H4 slice E: `notriosctl migrate`.
+		{cliHelpAnchor, 59},
 		{restAnchor, 109},
 		{mcpToolsAnchor, 46},
 		{mcpSyncScopeAnchor, 7},

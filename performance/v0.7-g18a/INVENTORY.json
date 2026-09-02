@@ -529,7 +529,7 @@
     },
     {
       "path": "docs/cli.md",
-      "sha256": "7185b973cf995957013a8656d5704bf7a26d0d61efb3a3fd9c72f99e310039bc",
+      "sha256": "456f63d31adf0bf3efa737208bdaa6e20e22614519606db173966387b1ecea9f",
       "help_note": "doc_help_cli",
       "owner": "go:github.com/renesugar/notrios/cmd/notriosctl#printHelp",
       "sections": [
@@ -577,6 +577,36 @@
           "id": "config-show",
           "level": 2,
           "title": "config show",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/cmd/notriosctl#printHelp",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        },
+        {
+          "id": "migrate",
+          "level": 2,
+          "title": "migrate",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/cmd/notriosctl#printHelp",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        },
+        {
+          "id": "what-it-guarantees",
+          "level": 3,
+          "title": "What it guarantees",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/cmd/notriosctl#printHelp",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        },
+        {
+          "id": "when-you-do-not-need-it",
+          "level": 3,
+          "title": "When you do not need it",
           "audience": "user",
           "kind": "actionable_or_reference",
           "owner": "go:github.com/renesugar/notrios/cmd/notriosctl#printHelp",
@@ -1431,7 +1461,7 @@
     },
     {
       "path": "docs/installation.md",
-      "sha256": "4078fd91c6ee2761479b2afba434a2f7caf38cf6a6deb6a3d3f226af108cdd33",
+      "sha256": "0802d343a5a3da4d81634db2f8bf977510e174cd31e657845821d5ca3b0b8843",
       "help_note": "doc_help_installation",
       "owner": "go:github.com/renesugar/notrios/cmd/notriosd#main",
       "sections": [
@@ -1509,6 +1539,16 @@
           "id": "where-your-files-go",
           "level": 3,
           "title": "Where your files go",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/cmd/notriosd#main",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        },
+        {
+          "id": "upgrading-from-before-0-8",
+          "level": 3,
+          "title": "Upgrading from before 0.8",
           "audience": "user",
           "kind": "actionable_or_reference",
           "owner": "go:github.com/renesugar/notrios/cmd/notriosd#main",
@@ -2087,7 +2127,7 @@
     },
     {
       "path": "docs/troubleshooting.md",
-      "sha256": "e230e642aca115a1d2c2b38c1271e6bc05a5129cb882ddb00bb3c0073246c5f2",
+      "sha256": "80fd585b1dd08a1682d08953b537c77b3182de0d5c57dcafab0ee529d81cb8f6",
       "help_note": "doc_help_troubleshooting",
       "owner": "go:github.com/renesugar/notrios/internal/config#Load",
       "sections": [
@@ -2115,6 +2155,16 @@
           "id": "starting-the-service",
           "level": 2,
           "title": "Starting the service",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/internal/config#Load",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        },
+        {
+          "id": "finding-your-notes",
+          "level": 2,
+          "title": "Finding your notes",
           "audience": "user",
           "kind": "actionable_or_reference",
           "owner": "go:github.com/renesugar/notrios/internal/config#Load",
@@ -2179,19 +2229,19 @@
       "id": "published_markdown",
       "count": 15,
       "unit": "pages",
-      "sections": 205,
+      "sections": 210,
       "owner": "go:github.com/renesugar/notrios/internal/helpdocs#Seed"
     },
     {
       "id": "help_notebook",
       "count": 15,
       "unit": "mirrored notes",
-      "sections": 205,
+      "sections": 210,
       "owner": "go:github.com/renesugar/notrios/internal/helpdocs#Seed"
     },
     {
       "id": "cli_help",
-      "count": 58,
+      "count": 59,
       "unit": "usage forms",
       "owner": "go:github.com/renesugar/notrios/cmd/notriosctl#printHelp"
     },
@@ -2283,9 +2333,9 @@
       "executed": 0,
       "generated": 0,
       "claimed": 0,
-      "unverified": 205
+      "unverified": 210
     },
-    "denominator": 205,
+    "denominator": 210,
     "reconciles": true,
     "finding": "The manual does not yet name directive fragments or executable checks, so all current section units are unverified even where independent tests exist."
   },

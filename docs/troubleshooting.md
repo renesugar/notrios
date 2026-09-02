@@ -22,8 +22,19 @@ Verified symptoms and fixes, grouped by activity. `notriosctl doctor` diagnoses 
 | `create directory ...: permission denied` | the configured `data` paths aren't writable from this directory; run somewhere writable or point the config at absolute, writable paths |
 | `open sqlite: unable to open database file` | the database's parent directory doesn't exist or isn't writable; check `data.database_path` and remember relative paths resolve against the working directory |
 | `sqlite exec: ...` errors during startup migration | the database file may be corrupt or written by an incompatible tool — restore from backup ([backup guide](service.md#backup-and-restore)); migrations themselves are automatic and additive |
-| `/` returns `web_ui_not_built` | run `make web` and start the service from the checkout root (the UI is served from `web/dist/` relative to the working directory); the API works regardless |
+| `database schema is newer than this build supports` | the library was written by a **newer** Notrios; upgrade rather than opening it with this build. Continuing would re-run old migrations against a schema this build does not understand and record the wrong version, hiding that it happened. The database is left untouched |
+| `/` returns `web_ui_not_built` or `web_ui_not_found` | from a checkout, run `make web` and start from the checkout root; for an installed binary the working directory is not searched — copy `web/dist` to the program-assets root or pass `--web-dir` ([where the interface files have to be](installation.md#where-the-interface-files-have-to-be)). The API works regardless |
 | `database is locked` during simultaneous CLI + service writes | rare thanks to WAL + a 5s lock timeout; if it persists, stop the service, re-run the CLI command (imports are idempotent), restart |
+
+## Finding your notes
+
+| Symptom | Fix |
+|---|---|
+| after upgrading to 0.8 the library is **empty** and the notes are gone | they are not gone. Before 0.8 a binary with no configuration file kept its library in `./data`, relative to the directory you launched from; 0.8 resolves the native roots instead. Run `notriosctl paths` from that directory — it names any pre-0.8 library it finds — then `notriosctl migrate --dry-run` and `notriosctl migrate` ([full contract](cli.md#migrate)) |
+| `notriosctl paths` reports a pre-0.8 layout but your notes are somewhere else | `notriosctl migrate --from <that directory>` |
+| `migrate` refuses: *the resolved location already holds a database* | you have two libraries, and combining them is a decision rather than a copy. Open each with `--db` and move what you want across; nothing was touched |
+| a development checkout and an installed copy disagree about which notes exist | that is deliberate. A checkout is a *separate instance* with checkout-local roots under `./data`, so it cannot read or write an installed library. `notriosctl paths` prints which mode each one resolved |
+| unsure which database a command will open | `notriosctl paths` for the roots and the mode; `notriosctl config show` for the effective values and where each came from |
 
 ## Search sidecar (Recoll)
 

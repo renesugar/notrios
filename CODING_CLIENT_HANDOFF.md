@@ -102,6 +102,84 @@ only difference between the historical `package_release.sh` and the current one
 is the added `node_modules/*` exclusion; `check_release_zip.py` is byte-identical
 at all four commits.
 
+## v0.8 H4 completion handoff — 2026-09-02
+
+H4 is complete in five slices: A the resolver (`internal/paths`), B the
+config-root consumers, C the data/state/cache/runtime roots, D instance
+isolation, assets and diagnostics, E migration (`internal/migrate`,
+`notriosctl migrate`). H4a and H4b are planned and unapproved; H5 is next.
+
+**Slice E turned out much smaller than H3 section 4 specified, because slice D
+had already removed most of the problem.** H3 imagined an installed binary
+meeting a checkout-relative layout and reconciling two instances. After slice D
+a checkout *is* a separate instance whose roots are already `./data`, so that
+case is gone. Read against the shipped code, three of four situations need
+nothing at all:
+
+- a configuration that states a path keeps it, absolute or relative
+  (`applyResolvedRoots` fills only what the file left unsaid);
+- a checkout is source mode, where every mutable root is `./data` as before;
+- an installed binary meeting an old config file reads the old locations.
+
+**What actually strands a library:** a pre-0.8 binary run with *no configuration
+file*. The compiled defaults were relative to the working directory, so the
+library went to `<wherever they launched from>/data`. Nothing recorded that
+directory, so nothing can look it up — but it can be **noticed** when the user
+is standing in it again, which is the common case for anyone with a habitual
+directory. `notriosctl paths` and `doctor` now name it, and `notriosctl migrate`
+moves it on request.
+
+`doctor` was the most misleading surface here and is worth understanding: it
+*creates* the database at the resolved path, so before this it reported a
+healthy library at "schema version 27" — a brand-new empty one — while the
+user's real notes sat in the directory they ran it from.
+
+**H3's "only consumer needing migration" needs none.** H3 flagged generated
+profiles keeping their database under the config root
+(`~/.config/notrios/profiles/<id>/data/notes.sqlite`). A generated profile
+writes its own config file stating every path absolutely, and the registry
+refuses a relative `database_path`; both make them `provided` keys that
+`applyResolvedRoots` never touches. Slice C changed the default for *new*
+profiles only. Confirmed against a synthesised pre-slice-C profile —
+`notriosctl config show` reports every path with origin `file`.
+
+Two things are worth carrying forward:
+
+- **The plan is generated from `config.ResolvedPathMappings()`,** not from a
+  list inside `internal/migrate`. A path added to Notrios therefore cannot be
+  silently left behind by migration. If you add a path setting, add it to
+  `resolvedRootDefaults` and migration sees it.
+- **Migration copies bytes and never opens the source database.** Opening it
+  would run the schema migrations against the user's only copy before any copy
+  exists — precisely the defect H4b is planned to remove.
+
+**Two defects found while building it, both worth remembering:**
+
+*Documentation drifted from slice D without any gate noticing.*
+`docs/installation.md` still documented the pre-slice-D asset search order —
+telling installed users the working directory is searched, when slice D had
+deliberately stopped searching it for content-injection reasons. docgen,
+docaudit, G18a and G18f all passed throughout: they check that documentation is
+generated consistently and hashed, not that its prose is still true. This is the
+second time in two slices that a stale-prose defect surfaced only because
+someone read the page.
+
+*The first detection implementation fired on a library that was in use.* A
+configuration saying `directory: ./data` resolves against the working directory,
+so `paths` told the user their current library was stranded and `migrate` would
+have copied it into the resolved roots and renamed the original — out from under
+the configuration naming it. `migrate.Detect` now takes the database the process
+would actually open, and refuses to report it. Both a package test and a CLI
+test cover it, and both were confirmed by mutation.
+
+**Guard tests were confirmed by mutation, and one needed fixing.**
+`TestDetectIgnoresASourceCheckout` initially passed for the wrong reason: the
+fixture gave source mode an absolute data root, so the same-directory check
+caught it and the mode guard was never exercised. The real resolver returns
+*relative* roots in source mode, and with that fixture the test fails properly
+when the guard is removed. This is the third such case in this milestone — a
+guard test is not evidence until it has been seen to fail.
+
 ## v0.8 H3 completion handoff — 2026-09-01
 
 H3 is complete and archived as

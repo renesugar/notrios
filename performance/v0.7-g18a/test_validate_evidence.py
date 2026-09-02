@@ -21,7 +21,10 @@ class G18aEvidenceTests(unittest.TestCase):
         # unnoticed section appearing or vanishing still fails here.
         # 203 -> 205 in v0.8 H4 slice D: the `paths` and `config show`
         # sections in docs/cli.md.
-        self.assertEqual(inventory["grade_baseline"]["denominator"], 205)
+        # 205 -> 210 in v0.8 H4 slice E: `migrate` and its two subsections in
+        # docs/cli.md, "Upgrading from before 0.8" in docs/installation.md, and
+        # "Finding your notes" in docs/troubleshooting.md.
+        self.assertEqual(inventory["grade_baseline"]["denominator"], 210)
 
     def test_duplicate_fragment_is_rejected(self):
         source = """// A.\n//notrios:doc user same\nfunc A() {}\n// B.\n//notrios:doc user same\nfunc B() {}\n"""

@@ -38,14 +38,21 @@ def validate_registry(registry: dict, report: dict) -> None:
     assert registry["schema"] == "notrios.docaudit.registry.v2"
     examples = registry["executables"]
     # 131 -> 133 in v0.8 H4 slice D: the `paths` and `config show` synopses.
-    assert len(examples) == report["entries"] == 133
-    assert len({item["id"] for item in examples}) == 133
+    # 133 -> 137 in v0.8 H4 slice E: the `migrate` synopsis and its dry-run
+    # example, the upgrade recipe in docs/installation.md, and the
+    # asset-installation block added to the same page.
+    assert len(examples) == report["entries"] == 137
+    assert len({item["id"] for item in examples}) == 137
     executed = [item for item in examples if item["state"] == "executed"]
     unverified = [item for item in examples if item["state"] == "unverified"]
     assert len(executed) == report["executed"] == 63
     # 68 -> 70: both new synopses are bracketed-optional forms, registered as
     # illustrative placeholders like every other synopsis in that document.
-    assert len(unverified) == report["unverified"] == 70
+    # 70 -> 74 in slice E. Executed stays 63: one is a bracketed synopsis, two
+    # relocate this user's library, and one writes to a system directory as
+    # root, so all four are reviewed unrun reasons. The migrate command itself
+    # is covered by executed tests in cmd/notriosctl.
+    assert len(unverified) == report["unverified"] == 74
     assert {item["execution"]["surface"] for item in executed} == {
         "cli", "config", "rest", "mcp"
     }

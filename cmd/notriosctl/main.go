@@ -23,6 +23,7 @@ import (
 	"github.com/renesugar/notrios/internal/importers/obsidian"
 	"github.com/renesugar/notrios/internal/importers/twitter"
 	"github.com/renesugar/notrios/internal/localize"
+	"github.com/renesugar/notrios/internal/migrate"
 	"github.com/renesugar/notrios/internal/paths"
 	"github.com/renesugar/notrios/internal/snapshotimage"
 	"github.com/renesugar/notrios/internal/store"
@@ -44,6 +45,8 @@ func main() {
 		runPaths(os.Args[2:])
 	case "config":
 		runConfig(os.Args[2:])
+	case "migrate":
+		runMigrate(os.Args[2:])
 	case "import":
 		runImport(os.Args[2:])
 	case "export":
@@ -591,6 +594,8 @@ Usage:
                                                  # resolved mode and roots (config, data, state, cache, runtime, assets)
   notriosctl config show [--config config.yaml] [--json] [--no-redact]
                                                  # resolved configuration and where each value came from
+  notriosctl migrate [--from dir] [--dry-run] [--json]
+                                                 # move a pre-0.8 ./data library into the resolved roots
   notriosctl version
   notriosctl import joplin-raw [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--batch-size 100] [--preserve-source] [--dry-run] [--write-config path] [--import-config path] [--localize-media] <raw-export-dir>
   notriosctl import obsidian [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--dry-run] [--localize-media] <vault-dir>
@@ -1370,6 +1375,19 @@ func runDoctor(args []string) {
 			report(false, true, "database", err.Error())
 		} else {
 			report(true, true, "database", fmt.Sprintf("%s (schema version %d)", cfg.Data.DatabasePath, status.SchemaVersion))
+		}
+	}
+
+	// A pre-0.8 library in the working directory is worth saying out loud here
+	// above all: doctor *creates* the database at the resolved path, so without
+	// this it cheerfully reports a healthy, empty library at schema version 27
+	// while the user's real notes sit in the directory they ran it from.
+	if resolution, err := paths.ForProcess(nil); err == nil {
+		if working, err := os.Getwd(); err == nil {
+			if candidate, found := migrate.Detect(working, resolution, cfg.Data.DatabasePath); found {
+				report(false, false, "pre-0.8 layout",
+					candidate.DatabasePath+" is not in use; run `notriosctl migrate --dry-run`")
+			}
 		}
 	}
 

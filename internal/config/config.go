@@ -950,3 +950,30 @@ func parseBool(value string, fallback bool) bool {
 	}
 	return parsed
 }
+
+// ResolvedPathMapping describes where one path setting lives under the
+// resolved roots: the root it belongs to, and the name it takes there.
+type ResolvedPathMapping struct {
+	Key      string
+	Root     string
+	Relative []string
+}
+
+// ResolvedPathMappings exposes the resolved-root table to callers that have to
+// reason about the same layout from outside.
+//
+// Migration is the caller that matters. A migration built from its own list of
+// directories would drift the first time a path is added here, and the drift
+// would be silent -- a new category simply would not be carried across, and the
+// user would find it missing rather than be told. Generating the move from this
+// table means a path cannot be added to Notrios without migration seeing it.
+//
+// The slice is rebuilt per call so a caller cannot mutate the table.
+func ResolvedPathMappings() []ResolvedPathMapping {
+	out := make([]ResolvedPathMapping, 0, len(resolvedRootDefaults))
+	for _, entry := range resolvedRootDefaults {
+		relative := append([]string(nil), entry.relative...)
+		out = append(out, ResolvedPathMapping{Key: entry.key, Root: entry.root, Relative: relative})
+	}
+	return out
+}
