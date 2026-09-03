@@ -619,6 +619,34 @@ be smuggled into v0.7 as desktop assumptions.
 - Wails mobile remains an alternative if it reaches production quality; the
   two clients share the core contracts rather than making either UI canonical.
 
+## Post-v1.0 — Headless and remote-server credential storage
+
+Moved here from v0.8 (H9) because Notrios is initially an end-user application
+driven by a UI, and a remote server deployment is a future goal. This is a
+scheduling decision, not a change of intent.
+
+- A server or SSH install has no Secret Service, no unlocked keychain and no
+  pinentry, so it cannot use the desktop credential provider. Measured during
+  H9: `gopass` generates a passphrase-protected `age` identity and then fails
+  with `pinentry: gnome3.isatty` when there is no tty, and the working headless
+  path costs a plaintext private key at `0600` readable by the service account.
+- Four decisions were recorded and deferred with this work: whether headless is
+  a provider tier or a provider parameter, whether machine-scope or root-scope
+  storage is admissible, which Windows logon types count as supported, and
+  whether the protection guarantee is stated per platform. Headless Windows
+  under a service logon may be *stronger* than headless Linux, so one blanket
+  statement will not do.
+- `99designs/keyring` was evaluated for this and is the likely starting point:
+  it carries `keyctl`, `pass` and `file` backends and can address a named macOS
+  keychain, which `zalando/go-keyring` cannot. Porting it to `godbus/dbus/v5`
+  was measured as a pure import rewrite with no code changes, and the tree is
+  1,708 non-comment lines. Its `Open` walks a backend order and continues past
+  failures, which must be replaced with fail-closed selection before adoption.
+- What v0.8 ships instead is the refusal, not silence: `doctor` reports whether
+  a native store is reachable and enrolment refuses with that reason. The
+  condition is reachable on a desktop install through `loginctl enable-linger`
+  or an SSH login, so the refusal is not hypothetical.
+
 ## Post-v1.0 — Windows and macOS installers
 
 Moved here from v0.8 (H7) because it cannot be implemented until hardware is

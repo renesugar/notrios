@@ -1513,8 +1513,9 @@ PersistLocalMachine`, so a Windows credential survives logoff and reboot rather
 than evaporating with the logon session. Everything else below is documented
 behaviour that cannot be tested on this machine, and is marked as such.
 
-- **Is "headless" a provider tier or a provider parameter — Blocking, and it
-  shapes the interface.** On Linux headless needs a genuinely different provider,
+- *(The four decisions below are deferred to post-v1.0 with the headless
+  provider, and are retained because the work will need them.)*
+- **Is "headless" a provider tier or a provider parameter — Deferred.** On Linux headless needs a genuinely different provider,
   because Secret Service is absent. On Windows it probably needs none: under a
   service logon the DPAPI user keys are available and `PersistLocalMachine`
   keeps the credential across restarts, so the desktop provider should serve
@@ -1524,23 +1525,22 @@ behaviour that cannot be tested on this machine, and is marked as such.
   another, and a parameter on a third. Deciding this before writing the provider
   contract matters, because the tier shape leaks into the interface.
 - **Whether machine-scope or root-scope storage is admissible at all —
-  Blocking.** The Linux headless tier is user-scope: an `age` identity at `0600`.
+  Deferred.** The Linux headless tier is user-scope: an `age` identity at `0600`.
   The macOS System keychain is root-scope, and a Windows service running as
   LocalSystem would be machine-scope. Both mean any administrator on the box
   reads the credential, which is a different threat model from "the service
   account reads it". A uniform user-scope-only rule is defensible and would
   forbid both, at the cost of constraining how the service may be installed.
   This constraint does not exist in the plan today.
-- **Which Windows logon types count as supported headless — Blocking for the
-  Windows row.** A service logon and a network logon are not the same condition:
+- **Which Windows logon types count as supported headless — Deferred.** A service logon and a network logon are not the same condition:
   DPAPI user keys are available to the former and not, in general, to the latter,
   so a Notrios reached over SSH or WinRM may be unable to open a credential that
   the same account can open as a service. "Headless Windows" is therefore at
   least two matrix rows, and one of them may be unsupportable. Recommended:
   support the service logon, refuse with a typed reason on the other, and say so
   before enrolment rather than at first sync.
-- **Whether the guarantee is stated per platform — Blocking, because this item
-  requires telling the user what they have.** The three headless guarantees are
+- **Whether the guarantee is stated per platform — Deferred for the headless
+  case; for v0.8 it is one sentence about an interactive desktop session.** The three headless guarantees are
   genuinely different: a plaintext key at `0600` on Linux, real user-scope DPAPI
   on Windows under a service logon, root-scope on macOS if the System keychain is
   used. Headless Windows may well be *stronger* than headless Linux. One
@@ -1668,6 +1668,54 @@ headless unlock is a property of the platforms rather than of any Go package. No
 amount of library selection changes it; only the four decisions recorded above
 do.
 
+**Deferred 2026-09-03: the headless *provider* moves to post-v1.0; the headless
+*refusal* does not.** Notrios is an end-user application driven by a UI, and a
+remote server deployment is a future goal rather than a v0.8 one. Scoping
+headless out is a scheduling decision and it unblocks nearly everything above.
+Two things must be said about it plainly, because one of them is a trap.
+
+*The condition can still arise on an ordinary desktop install, so detection
+stays in scope.* H6 installs a systemd **user** service, `WantedBy=default.target`
+and not enabled. If a user runs `loginctl enable-linger`, or logs in over SSH and
+the service starts there, that user manager runs with no graphical session and
+no unlocked keyring -- without anyone having deployed anything "headless". So
+what is deferred is the provider that would work in that state. What is not
+deferred, and is cheap, is noticing it: `doctor` reports whether a native store
+is reachable, enrolment refuses with that reason rather than proceeding, and the
+refusal is asserted by a test. Deferring the detection as well would leave the
+shipped configuration with undefined behaviour in a state it can reach on its
+own, which is this item's fail-closed boundary broken by omission rather than by
+decision.
+
+*Deferring headless reverses the library choice, which is worth stating because
+it is not obvious.* The case for `99designs/keyring` rested entirely on headless:
+its named-keychain support existed to escape the login keychain that is locked
+*before login*, and `keyctl`, `pass` and `file` are headless backends. With a
+logged-in UI user, the login keychain is the correct store and those backends
+have no purpose. So `zalando/go-keyring` becomes the better answer again -- it is
+maintained to 2026-03-23 against v1.2.2's 2022-12-19, is pure Go, needs no
+vendoring and no CVE ownership, and costs one `godbus/dbus/v5` bump from v5.1.0
+to v5.2.2 rather than a second D-Bus major. It is 623 lines to audit instead of
+1,708 to own. The `99designs` evaluation above is kept because the deferral is a
+scheduling decision, and the headless work will want it back.
+
+*What this unblocks.* Provider per supported OS becomes decidable now: Secret
+Service on Linux, Credential Manager on Windows, the login Keychain on macOS,
+all through `go-keyring`, all user-scope, all interactive-session-only. The
+own-or-import decision resolves to import. Vendoring becomes moot. Of the four
+headless decisions, tier-or-parameter and machine-versus-user-scope and the
+Windows logon-type question all become moot for v0.8, and the per-platform
+guarantee statement collapses to one sentence about an interactive desktop
+session. Only hardware-blocked verification remains, which H7 already governs.
+
+*A correction this deferral forces.* The note above claimed H1 "cannot be
+considered complete without" a credential-supply ABI operation. That was too
+strong. The G18 ABI candidate is a bounded-call dispatch surface -- an operation
+name plus a payload -- rather than one C function per route, so a credential
+operation can be added later under a new operation name without breaking
+compatibility. Since the Flutter client is post-1.0 and H11 injects test-only
+secrets, the host-supplied contract can be designed when a real client exists.
+
 **Open decisions**
 
 - **Provider per supported OS — Blocking before implementation.** No provider
@@ -1719,8 +1767,10 @@ do.
   provider swap rather than a redesign, and decide only when H10 and H11 have
   said which clients are real. The headless tier lands in the owned layer either
   way, because no library provides it.
-- **Vendor `99designs/keyring` or depend on it — Blocking, and it now leans
-  towards vendoring.** The port to `godbus/v5` is proven mechanical, the tree is
+- **Vendor `99designs/keyring` or depend on it — Moot for v0.8, reopened with
+  the headless work.** With headless deferred, `zalando/go-keyring` is adopted
+  and nothing is vendored. The analysis below stands for when headless returns.
+  Superseded reasoning, kept deliberately: The port to `godbus/v5` is proven mechanical, the tree is
   1,708 lines, the repository already vendors pinned third-party source, and the
   fail-closed selection this item requires is a permanent divergence from
   upstream's design rather than a fix upstream would accept. Against that,
@@ -2173,7 +2223,7 @@ This is an index only; each decision is owned and explained inside its item.
 | Mermaid renderer/containment | H2a/H2 | Resolved and implemented in H2: Mermaid 11.17.2, strict security, `htmlLabels: false`, `notrios`-only links reattached from source |
 | Installed/portable path precedence | H3/H4 | Resolved in H3: explicit, then explicit portable marker, then native; never inferred |
 | Ubuntu packaging toolchain | H6a/H6 | Resolved in H6: dpkg-deb with dpkg-shlibdeps, staged from lifecycle.py, adding no build dependency; 0 lintian errors |
-| Native credential store on a headless install | H9 | Open; go-keyring needs a session-bus Secret Service. A `pass`/`age` tier is now investigated and executable on this machine, so the Linux answer is an opt-in tier with a documented weaker guarantee rather than a refusal -- but headless is not a Linux-only condition and the Windows service-account and locked-macOS-Keychain cases are still unexamined |
+| Native credential store on a headless install | H9 (post-v1.0) | Open; go-keyring needs a session-bus Secret Service. A `pass`/`age` tier is now investigated and executable on this machine, so the Linux answer is an opt-in tier with a documented weaker guarantee rather than a refusal -- but headless is not a Linux-only condition and the Windows service-account and locked-macOS-Keychain cases are still unexamined |
 | Windows and macOS toolchain | H6a/H7 | Deferred to post-v1.0: no toolchain is selectable without native runners, and the hardware is not available |
 | Development versus installed default port | H4a | Resolved in H4a: checkout 8099 from the example config, installed 8080 from the compiled default |
 | Pre-migration backup location and retention | H4b | Resolved in H4b: `pre-migration-backups/` beside the database, newest kept, no new root |
