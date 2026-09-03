@@ -1195,6 +1195,64 @@ suite; native readback/delete/lock/session tests on available OSes; migration,
 backup/purge, and refusal fixtures; log/repository/artifact scans for secret
 material; and rollback.
 
+**Candidate combination under consideration (2026-09-02).** `zalando/go-keyring`
+for every desktop client -- Wails today, a Flutter desktop client later -- and
+`flutter_secure_storage` on iOS and Android only, fetching the secret at boot and
+passing it to the Go core in memory across the Dart FFI bridge.
+
+**It covers the platforms, and it is admissible only in one shape.** This item
+already forbids a Flutter-side store as the Go core's *hidden* owner, and the
+mobile half of the proposal is a Flutter-side store. The distinction that makes
+it acceptable is explicitness: the core keeps a provider interface in which
+"supplied by the host" is a first-class implementation with its own contract,
+rather than the core reaching for a secret it cannot see or reason about. The
+core must still fail closed when the host supplies nothing, must never treat a
+host-supplied secret as more trustworthy than one it fetched itself, and must
+not acquire a compile-time dependency on any Flutter component. Written that
+way, mobile is one provider among several and the boundary holds.
+
+**Verified locally rather than taken from the references.** Modules resolved
+through the Go proxy, licences read from the module cache:
+
+| Module | Version | Licence | Notes |
+|---|---|---|---|
+| `zalando/go-keyring` | v0.2.8 | MIT | no cgo; Linux via D-Bus Secret Service, Windows via `wincred` |
+| `99designs/keyring` | v1.2.2 | MIT | alternative with encrypted-file fallbacks |
+| `billgraziano/dpapi` | v0.5.0 | MIT | Windows DPAPI only |
+| `keybase/go-keychain` | v0.0.1 | -- | Apple only |
+| `ella-to/vault` | v0.0.4 | MIT | exists; its mobile claims are unverified |
+
+All are licence-compatible. `go-keyring` genuinely uses no cgo, which is worth
+noting mostly because this project already requires cgo, so it adds no new
+toolchain burden either way.
+
+**Three findings the supplied references do not cover, and they shape the
+work.**
+
+*Headless Linux has no Secret Service.* `go-keyring` reaches
+`org.freedesktop.secrets` over the session bus. A desktop session has one; a
+server, a container, or an SSH session does not. H6 ships a **user service** that
+can run in exactly those conditions, and this item's own boundary forbids
+falling back to plaintext -- so such an installation simply cannot hold sync
+credentials, and that has to be a stated outcome rather than a runtime surprise.
+
+*Windows would split the two clients.* `flutter_secure_storage` uses DPAPI and
+`go-keyring` uses Credential Manager. Both are encrypted at rest by the OS, and
+they are different stores: a Flutter desktop client and a Wails client on the
+same Windows machine would not see each other's secrets. The roadmap has both,
+so this is a real incompatibility to decide rather than discover.
+
+*The Linux provider is testable here, unlike H7's platforms.* This machine has
+`gnome-keyring-daemon`, `kwalletd5`, and `org.freedesktop.secrets` on the
+session bus, so the Linux provider can reach "natively installed and executed"
+on H6a's ladder rather than stopping at inspection. The H8 matrix is the natural
+home for the row.
+
+**Not verified, and recorded as such.** `flutter_secure_storage`'s platform
+claims -- there is no Flutter toolchain on this machine; `ella-to/vault`'s mobile
+behaviour; and the claim that macOS Keychain entries can be shared between a
+Flutter client and a Go client given the same service name and app group.
+
 **Open decisions**
 
 - **Provider per supported OS — Blocking before implementation.** No provider
@@ -1202,6 +1260,20 @@ material; and rollback.
   packaging, backup/purge semantics, and rollback are recorded. Android may
   remain unresolved if H11 uses a test-only injected provider and makes no
   mobile-release claim.
+- **Behaviour on a Linux install with no Secret Service — Blocking.** Failing
+  closed is required and is not the whole answer: the user needs to be told why
+  before they enrol, not when a sync first runs. Recommended: `notriosctl
+  doctor` reports whether a native store is reachable, enrolment refuses with
+  that reason, and the documentation says a headless install cannot hold sync
+  credentials. `go-keyring` also needs `godbus/dbus/v5` v5.2.2 while this
+  project already carries v5.1.0 indirectly through Wails, so the bump is part
+  of the decision.
+- **Whether Windows clients must share one store — Non-blocking, decide before
+  a Flutter desktop client exists.** DPAPI and Credential Manager are different
+  stores. Recommended: treat each client as owning its own credential and
+  re-enrolling, rather than engineering a shared store, because pairing is
+  already per-replica and a shared secret across two clients is a weaker
+  boundary than two secrets.
 
 ## H10. Wails v3 migration spike
 
@@ -1608,6 +1680,7 @@ This is an index only; each decision is owned and explained inside its item.
 | Mermaid renderer/containment | H2a/H2 | Resolved and implemented in H2: Mermaid 11.17.2, strict security, `htmlLabels: false`, `notrios`-only links reattached from source |
 | Installed/portable path precedence | H3/H4 | Resolved in H3: explicit, then explicit portable marker, then native; never inferred |
 | Ubuntu packaging toolchain | H6a/H6 | Resolved in H6: dpkg-deb with dpkg-shlibdeps, staged from lifecycle.py, adding no build dependency; 0 lintian errors |
+| Native credential store on a headless Linux install | H9 | Open; go-keyring needs a session-bus Secret Service, so a headless install cannot hold sync credentials and must say so before enrolment |
 | Windows and macOS toolchain | H6a/H7 | Deferred to post-v1.0: no toolchain is selectable without native runners, and the hardware is not available |
 | Development versus installed default port | H4a | Resolved in H4a: checkout 8099 from the example config, installed 8080 from the compiled default |
 | Pre-migration backup location and retention | H4b | Resolved in H4b: `pre-migration-backups/` beside the database, newest kept, no new root |
