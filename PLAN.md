@@ -1614,6 +1614,60 @@ configuration. It leaves the machine-versus-user-scope and Windows-logon-type
 decisions untouched, because those are properties of the platforms rather than
 of any library.
 
+**Tested 2026-09-03: vendoring `99designs/keyring` and owning the patches, and
+whether a cleaner package exists.** Both questions were answered by building,
+not by reading.
+
+*The staleness is real and it is worse than "hasn't been updated in a while".*
+Release dates from the proxy: `99designs/keyring` v1.2.2 **2022-12-19**;
+its `godbus/dbus` pin **2019-07-26**; `gsterjov/go-libsecret` **2016-10-01**.
+Against that, `zalando/go-keyring` v0.2.8 is **2026-03-23** and
+`docker/docker-credential-helpers` v0.9.9 is **2026-08-26**, eight days old.
+
+*The port is mechanical, which settles the vendoring question.* Copying
+`99designs/keyring` and `go-libsecret` into one tree and rewriting the imports
+from `github.com/godbus/dbus` to `github.com/godbus/dbus/v5` -- a `sed`, with
+**no code changes at all** -- compiles clean for `linux/amd64`, `windows/amd64`
+and `darwin/arm64`. The old D-Bus module disappears entirely, so the project
+carries one godbus major rather than two, which was the principal objection to
+adopting the library at all. The ported tree is **1,708 non-comment lines**
+(1,407 keyring, 301 libsecret). The `go-libsecret` D-Bus surface is ten
+identifiers, all unchanged in v5, which is why nothing needed rewriting.
+
+*The strongest argument for owning it is not the dependencies -- it is the
+fallback.* `Open`'s walk down `backendOrder`, continuing past each failure with
+only a `debugf`, is not a bug to report upstream; it is a deliberate design that
+is simply wrong for this item's policy. Vendoring lets that be replaced with
+fail-closed selection rather than worked around by every caller, and a patch a
+project intends to keep forever is exactly the kind that belongs in-tree. This
+repository already vendors third-party source under a pinned checksum --
+`internal/store/sqlite3_amalgamation.c` -- so the pattern and its gates exist.
+
+*The costs of vendoring, stated plainly.* Owning the tree means owning CVE
+response for 1,708 lines of credential-handling code with no upstream to
+inherit fixes from; the vendored MIT source must be recorded in G20's licence
+inventory and the copyright file; and the copy needs its own gate -- it builds
+on the supported targets, and the fail-closed selection is asserted by a test
+rather than assumed.
+
+*No package avoids these problems, and the reason is structural.* Each candidate
+trades one for another. `zalando/go-keyring` is maintained and pure Go, but
+addresses no named keychain, offers no backend choice, and has no headless story.
+`99designs/keyring` has the coverage -- named keychain, `keyctl`, `pass`, `file`
+-- and is three and a half years stale. `docker/docker-credential-helpers` is the
+freshest and leanest, requiring only a current `wincred` v1.2.3, `keybase/
+go-keychain` and `x/sys`, but **both its `secretservice` and `osxkeychain`
+backends are cgo**: the Linux one links `libsecret`, which adds an LGPL C library
+and a build dependency this project does not have today, and it ships no `file`
+or `keyctl` backend, so it has no headless answer beyond `pass`. Its shape is
+also Docker's helper protocol rather than a library interface.
+
+*And none of them solves headless, which is the through-line.* `gopass` did not,
+`99designs/keyring` does not, and `docker-credential-helpers` does not, because
+headless unlock is a property of the platforms rather than of any Go package. No
+amount of library selection changes it; only the four decisions recorded above
+do.
+
 **Open decisions**
 
 - **Provider per supported OS — Blocking before implementation.** No provider
@@ -1665,6 +1719,16 @@ of any library.
   provider swap rather than a redesign, and decide only when H10 and H11 have
   said which clients are real. The headless tier lands in the owned layer either
   way, because no library provides it.
+- **Vendor `99designs/keyring` or depend on it — Blocking, and it now leans
+  towards vendoring.** The port to `godbus/v5` is proven mechanical, the tree is
+  1,708 lines, the repository already vendors pinned third-party source, and the
+  fail-closed selection this item requires is a permanent divergence from
+  upstream's design rather than a fix upstream would accept. Against that,
+  vendoring transfers CVE response for credential-handling code onto this
+  project. Recommended: vendor, with a pinned upstream revision recorded the way
+  the SQLite amalgamation is, a licence-inventory entry, and a gate asserting
+  both that it builds and that an unavailable backend refuses rather than
+  substitutes.
 - **The host-supplied provider contract, and the guard that keeps it honest —
   Blocking before any mobile work.** The contract needs: when the host may
   supply a credential and what happens to calls that arrive before it does;
