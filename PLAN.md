@@ -1917,6 +1917,44 @@ it now pins the development file, as do the shared sync harnesses, which are
 about the protocol rather than the store. The suite now leaves the keyring
 exactly as it found it, and that is checked rather than assumed.
 
+**Slice E complete 2026-09-03: the boundaries, enforced rather than stated.**
+
+*Key material never reaches a purge backup, and that is checked three ways.*
+The key file lives in the config root, whose policy is `backup_and_verify`, so
+until now a purge copied a library's sync keys into an ordinary tar in a
+directory chosen for convenience -- the password beside the lock. `lifecycle.py`
+now filters it out of the archive and the inventory, names every excluded file
+in the plan **before** the confirmation so a user who wants their sync identity
+has a chance to copy it, records what was left out in the manifest, and says
+that a data key in the operating system's store is not removed by purge. The
+sealed form is excluded too: alone it is ciphertext, but the data key survives a
+purge, so the pair would be recoverable. `verify_purge_backup` then checks the
+archive itself, which is what makes this a boundary rather than an intention --
+with the filter removed the purge **halts before deleting anything**, reporting
+that the backup could not be verified.
+
+*An existing test asserted the opposite and was reversed rather than deleted.*
+`test_the_notes_can_be_restored_offline` required the sync keys to be in the
+backup, which was right before this item and is exactly what its boundary
+forbids. The assertion is inverted with the reason beside it, so the change is
+visible to whoever reads it next.
+
+*Nothing prints key material, and a scan says so rather than a review.* Six
+commands -- `sync init`, `sync status`, `sync peers`, `doctor`, `paths
+--no-redact`, `config show` -- are searched for three secrets in three
+encodings, along with the sealed file itself. The risk is not that someone
+deliberately prints a key; it is that a report gains a field. Adding a
+`signing_key` entry to `Redacted()` is caught in two commands at once.
+
+*Evidence: `performance/v0.8-h9/`, validated and wired into the scaffold.* 22
+behaviours executed, 2 inspected, 12 mutations, 5 defects, 3 deferrals. Its
+validator enforces this item's own boundary on itself -- any base64-shaped run
+of 40 characters or more is refused, so the file cannot come to carry a key --
+and refuses a behaviour that claims execution on Windows or macOS, since neither
+has a host here. It also cross-checks the adopted module and its two companions
+against G20's licence inventory, so this record cannot drift from what ships.
+Both checks were confirmed by mutation.
+
 **Open decisions**
 
 - **Whether installed profiles default to the native store — Resolved and

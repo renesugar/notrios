@@ -610,6 +610,27 @@ def backup_destination(roots: dict[str, str], now: float) -> str:
     return os.path.join(parent, PURGE_BACKUP_DIRNAME, stamp)
 
 
+# Sync key material is the one thing a purge backup must not contain. The
+# backup is an ordinary tar in a place chosen for convenience, and this file is
+# the password to a library's synchronized traffic -- copying it there would put
+# the key beside the lock. The sealed form is excluded too: on its own it is
+# ciphertext, but the data key that opens it lives in the operating system's
+# store and survives a purge, so the pair would be recoverable.
+SYNC_KEY_FILENAMES = ("sync-keys.json",)
+SYNC_KEY_PREFIX = "sync-keys-"
+
+
+def is_sync_key_material(name: str) -> bool:
+    """Whether a file name is a library's sync key material.
+
+    Matched by name rather than by reading the file: an unreadable or
+    unrecognised file that is named like key material is still excluded, which
+    is the safe direction to be wrong in.
+    """
+    base = os.path.basename(name)
+    return base in SYNC_KEY_FILENAMES or (base.startswith(SYNC_KEY_PREFIX) and base.endswith(".json"))
+
+
 def create_purge_backup(steps: list[PurgeStep], destination: str) -> dict:
     """One owner-only tar plus a manifest, written before anything is deleted.
 
@@ -633,16 +654,26 @@ def create_purge_backup(steps: list[PurgeStep], destination: str) -> dict:
     archive = os.path.join(destination, "backup.tar")
     inventory: list[dict] = []
 
+    excluded: list[str] = []
+
+    def without_key_material(info):
+        if is_sync_key_material(info.name):
+            excluded.append(info.name)
+            return None
+        return info
+
     handle = os.open(archive, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
     with os.fdopen(handle, "wb") as raw, tarfile.open(fileobj=raw, mode="w") as tar:
         for step in steps:
             if step.action != "backup_then_delete" or not os.path.isdir(step.path):
                 continue
-            tar.add(step.path, arcname=step.category)
+            tar.add(step.path, arcname=step.category, filter=without_key_material)
             for walk_root, _, names in os.walk(step.path):
                 for name in sorted(names):
                     full = os.path.join(walk_root, name)
                     if not os.path.isfile(full) or os.path.islink(full):
+                        continue
+                    if is_sync_key_material(full):
                         continue
                     relative = os.path.relpath(full, step.path)
                     inventory.append({
@@ -657,6 +688,10 @@ def create_purge_backup(steps: list[PurgeStep], destination: str) -> dict:
         "created_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "categories": sorted({item["category"] for item in inventory}),
         "entries": inventory,
+        # Named rather than merely counted: a user who wanted to keep their sync
+        # identity needs to know exactly what was left out, and a file name is
+        # not secret material. What it held is.
+        "excluded_key_material": sorted(excluded),
         "archive_sha256": sha256_file(archive),
     }
     manifest_path = os.path.join(destination, "MANIFEST.json")
@@ -692,7 +727,18 @@ def verify_purge_backup(destination: str) -> tuple[bool, str]:
     for entry in manifest["entries"]:
         if entry["member"] not in members:
             return False, f"{entry['member']} is recorded but not in the archive"
-    return True, f"{len(manifest['entries'])} files verified"
+    # Checked against the archive itself rather than trusting that the filter
+    # ran. An exclusion nothing verifies is an intention, and this one is a
+    # boundary: sync key material must never reach a purge backup.
+    leaked = sorted(name for name in members if is_sync_key_material(name))
+    if leaked:
+        return False, ("the archive contains sync key material, which must never be backed up: "
+                       + ", ".join(leaked))
+    detail = f"{len(manifest['entries'])} files verified"
+    excluded = manifest.get("excluded_key_material") or []
+    if excluded:
+        detail += f"; {len(excluded)} sync key file(s) deliberately excluded"
+    return True, detail
 
 
 def confirm_purge(prompt: str, environ: dict[str, str], force: bool) -> bool:
@@ -753,6 +799,36 @@ def describe_plan(steps: list[PurgeStep], uninstall_result: dict | None, destina
     else:
         print(f"  {destination}")
         print("  written and verified before anything is deleted")
+
+    # Said before the confirmation rather than after the deletion. A user who
+    # wants to keep their sync identity has exactly one chance to copy it, and
+    # it is now.
+    key_files = sorted(find_sync_key_material(steps))
+    print("\nSync keys:")
+    if not key_files:
+        print("  none found; this library has no sync key material")
+    else:
+        for path in key_files:
+            print(f"  NOT BACKED UP, THEN DELETED  {path}")
+        print("  Sync key material is never copied into a backup: the backup is an ordinary")
+        print("  archive, and this is the password to your synchronized traffic. Copy it")
+        print("  somewhere you trust first if you want this library's sync identity back.")
+        print("  A data key held by your operating system's credential store is not removed")
+        print("  by purge; remove it there if you want nothing left behind.")
+
+
+def find_sync_key_material(steps: list[PurgeStep]) -> list[str]:
+    """Every sync key file inside the roots this purge would remove."""
+    found: list[str] = []
+    for step in steps:
+        if step.action not in ("backup_then_delete", "dispose") or not os.path.isdir(step.path):
+            continue
+        for walk_root, _, names in os.walk(step.path):
+            for name in names:
+                full = os.path.join(walk_root, name)
+                if os.path.isfile(full) and not os.path.islink(full) and is_sync_key_material(full):
+                    found.append(full)
+    return found
 
 
 def irreversible_warning(steps: list[PurgeStep]) -> str:

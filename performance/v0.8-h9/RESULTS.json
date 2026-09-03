@@ -1,0 +1,108 @@
+{
+  "schema": "notrios.h9.credential-store.v1",
+  "item": "v0.8 H9 native credential-store selection and integration",
+  "recorded_at": "2026-09-03",
+  "host": {
+    "platform": "Ubuntu 24.04.4 LTS",
+    "credential_store": "Secret Service over the session bus",
+    "note": "Windows and macOS are inspected rather than executed here; H7 governs the hardware."
+  },
+  "adopted": {
+    "module": "github.com/zalando/go-keyring",
+    "version": "v0.2.8",
+    "license": "MIT",
+    "brought_in": [
+      {"module": "github.com/danieljoos/wincred", "version": "v1.2.3", "license": "MIT"},
+      {"module": "github.com/godbus/dbus/v5", "version": "v5.2.2", "license": "BSD-2-Clause",
+       "note": "bumped from v5.1.0, which Wails supplies indirectly"}
+    ],
+    "rejected": [
+      {"module": "github.com/99designs/keyring", "version": "v1.2.2",
+       "reason": "its value was headless-only, and headless moved to post-v1.0; it is also three and a half years stale and needs an unversioned 2019 godbus"},
+      {"module": "github.com/gopasspw/gopass", "version": "v1.17.0",
+       "reason": "24 modules and 16.3 MB for a library that forces the godbus bump anyway"}
+    ]
+  },
+  "design_measurements": [
+    {
+      "id": "key-file-growth",
+      "question": "Can the sync key material be stored in the native store directly?",
+      "answer": "No.",
+      "measured": {"fresh_bytes": 262, "ten_peers_bytes": 1640, "twenty_peers_bytes": 3010,
+                   "forty_peers_twenty_epochs_bytes": 6844, "windows_credential_manager_cap_bytes": 2560},
+      "consequence": "Envelope encryption: a 32-byte data key in the store, the material sealed on disk. MaxSecretBytes is 2048 so the constraint is enforced rather than remembered."
+    },
+    {
+      "id": "mobile-cross-build",
+      "question": "Does excluding the desktop provider from mobile builds need an explicit negation?",
+      "answer": "Yes.",
+      "measured": {"linux_amd64_packages": 3, "windows_amd64_packages": 1, "darwin_arm64_packages": 2,
+                   "android_arm64_packages": 0, "js_wasm_packages": 0, "android_zalando_symbols": 0},
+      "consequence": "android implies linux and ios implies darwin, so the constraint is (linux || windows || darwin) && !android && !ios. Asserted by a cross-build gate that needs no emulator."
+    }
+  ],
+  "behaviours": [
+    {"id": "provider-contract-memory", "state": "executed", "detail": "The shared contract suite against the in-process provider."},
+    {"id": "provider-contract-native", "state": "executed", "detail": "The same suite against this machine's Secret Service, including that a returned slice does not alias stored material."},
+    {"id": "select-refuses-not-substitutes", "state": "executed", "detail": "An unavailable store yields ErrUnavailable naming the reason, and no provider."},
+    {"id": "sealed-round-trip", "state": "executed", "detail": "Create, reopen, mutate and reopen under a data key."},
+    {"id": "sealed-holds-no-key-material", "state": "executed", "detail": "Neither signing key, group key nor data key appears in the sealed file, raw or base64; mode 0600."},
+    {"id": "sealed-refuses-wrong-key-and-tampering", "state": "executed", "detail": "Wrong key, short key and one flipped ciphertext byte all give ErrSealMismatch."},
+    {"id": "sealed-fresh-nonce-per-save", "state": "executed", "detail": "Eight successive saves, eight distinct nonces."},
+    {"id": "sealed-and-plaintext-refuse-each-other", "state": "executed", "detail": "ErrSealRequired and ErrNotSealed, by name."},
+    {"id": "create-leaves-no-unopenable-file", "state": "executed", "detail": "A store that refuses the write leaves no sealed file behind."},
+    {"id": "doctor-reports-the-store", "state": "executed", "detail": "Reachability for a configured native store, and a failed check for an unknown one."},
+    {"id": "enrolment-refuses-with-a-reason", "state": "executed", "detail": "sync init refuses before enrolling and names the store; nothing is created."},
+    {"id": "cli-and-service-agree", "state": "executed", "detail": "One resolver for the key file path and the store; the CLI honours sync.rest.key_file, which it previously ignored."},
+    {"id": "native-end-to-end", "state": "executed", "detail": "The compiled CLI seals a file and a second process reads the data key back out of the keyring and opens it."},
+    {"id": "migration-round-trip", "state": "executed", "detail": "Development file to keychain and back, with the signing key, group key, epoch and key id verified unchanged."},
+    {"id": "migration-requires-confirmation", "state": "executed", "detail": "--dry-run writes nothing; without --confirm the command refuses."},
+    {"id": "migration-refuses-an-occupied-slot", "state": "executed", "detail": "An existing data key is never overwritten."},
+    {"id": "migration-verifies-before-replacing", "state": "executed", "detail": "Material that did not survive the copy is caught by the command's own check, and the original is left in place."},
+    {"id": "installed-default-is-native", "state": "executed", "detail": "A fresh installed profile seals; a source checkout keeps the development file."},
+    {"id": "upgrade-keeps-existing-keys", "state": "executed", "detail": "A library holding plaintext material keeps it and is told to migrate by doctor, init and status."},
+    {"id": "purge-excludes-key-material", "state": "executed", "detail": "Named in the plan before the confirmation, absent from archive and inventory, and the backup verification refuses an archive that holds it."},
+    {"id": "no-command-prints-secret-material", "state": "executed", "detail": "init, status, peers, doctor, paths --no-redact and config show scanned for three secrets in three encodings."},
+    {"id": "no-desktop-provider-in-mobile-builds", "state": "executed", "detail": "android/arm64 and ios/arm64 link no credential package."},
+    {"id": "windows-credential-manager", "state": "inspected", "detail": "wincred writes with Persist = PersistLocalMachine, so a credential survives logoff and reboot. No Windows host here; H7 governs."},
+    {"id": "macos-keychain", "state": "inspected", "detail": "go-keyring runs security add-generic-password with no keychain argument, so it uses the default login keychain and cannot address another. No Apple host here; H7 governs."}
+  ],
+  "boundaries": [
+    {"id": "never-in-a-purge-backup", "held_by": "lifecycle.py excludes it, names it in the plan, and verify_purge_backup refuses an archive containing it"},
+    {"id": "never-printed-or-logged", "held_by": "TestNoCommandPrintsSecretMaterial scans six commands for three secrets in three encodings"},
+    {"id": "never-in-evidence", "held_by": "this file records counts, sizes and identifiers only; every probe that created a secret deleted it"},
+    {"id": "never-a-silent-fallback", "held_by": "Select returns ErrUnavailable rather than another provider, asserted against a stub because a developer keyring always answers"},
+    {"id": "no-credential-rest-or-mcp-surface", "held_by": "the sync-ui routes report a provider name, a warning and a reason; SyncLocalKeys cannot reveal a key"}
+  ],
+  "mutations": [
+    {"guard": "mobile build exclusion", "mutation": "drop !android from the constraint", "caught_by": "android/arm64 and ios/arm64 link zalando/go-keyring"},
+    {"guard": "fail closed", "mutation": "return the unavailable provider anyway", "caught_by": "a refused selection must return no provider"},
+    {"guard": "sealing", "mutation": "skip the seal in save", "caught_by": "signing and group keys appear base64-encoded in the file"},
+    {"guard": "nonce freshness", "mutation": "fix the nonce at creation", "caught_by": "nonce repeated after one save"},
+    {"guard": "orphan cleanup", "mutation": "keep the file when the data key cannot be stored", "caught_by": "a key file was left behind that no data key can open"},
+    {"guard": "enrolment refusal", "mutation": "drop the pre-enrolment check", "caught_by": "enrolling against an unknown store must fail"},
+    {"guard": "migration verification", "mutation": "mint fresh material instead of copying it", "caught_by": "the command's own check: the migrated key material has a different signing key"},
+    {"guard": "occupied slot", "mutation": "allow overwriting an existing data key", "caught_by": "migrating onto an occupied data key must fail"},
+    {"guard": "upgrade default", "mutation": "ignore existing plaintext material", "caught_by": "the upgraded profile was not told to migrate"},
+    {"guard": "purge exclusion", "mutation": "stop filtering key material out of the tar", "caught_by": "the purge halts: the backup could not be verified"},
+    {"guard": "purge verification", "mutation": "drop the archive check", "caught_by": "verification accepted an archive holding key material"},
+    {"guard": "no secret in output", "mutation": "add a signing-key field to the redacted report", "caught_by": "sync init and sync status printed the signing private key"}
+  ],
+  "defects_found": [
+    {"id": "credential-reference-not-unique", "found_by": "the installed default, which made two replicas of one library both use the keychain",
+     "detail": "The account was the database identity, but a second replica adopts the first's database identity, so two replicas shared one entry and the second stranded the first's sealed file. The absolute key-file path is now folded in."},
+    {"id": "default-depended-on-the-process", "found_by": "a daemon started from a checkout against a library a sandboxed CLI had sealed",
+     "detail": "Asking whether this process is installed made a service and a command disagree about one library. The library's own state now answers first."},
+    {"id": "cli-ignored-the-configured-key-file", "found_by": "writing the enrolment refusal",
+     "detail": "notriosctl sync resolved key material from its own flag or the default path and ignored sync.rest.key_file, which the service honours."},
+    {"id": "config-key-unreachable-from-a-file", "found_by": "a refusal test that failed for the right reason",
+     "detail": "Configuration is parsed by an explicit key switch, and credential_store was added to the struct without the parser case."},
+    {"id": "test-wrote-into-the-developer-keyring", "found_by": "checking the keyring after a full suite run",
+     "detail": "A path-honouring test configured a key file and nothing else, so the new default sent it to the keychain and left an entry. It now pins the development file, as do the shared sync harnesses."}
+  ],
+  "deferred": [
+    {"id": "headless", "to": "post-v1.0", "reason": "Notrios is an end-user application driven by a UI; a remote server deployment is a future goal. The refusal ships now, the provider does not."},
+    {"id": "windows-and-macos-execution", "to": "post-v1.0 with H7", "reason": "no native hardware or runners here, so both stay inspected"},
+    {"id": "mobile-host-supplied-contract", "to": "when a real client exists", "reason": "the Flutter client is post-1.0 and H11 injects test-only secrets"}
+  ]
+}

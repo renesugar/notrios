@@ -14,6 +14,7 @@ two-minute build.
 
 from __future__ import annotations
 
+import importlib.util
 import json
 import os
 import shutil
@@ -26,6 +27,16 @@ import unittest
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 LIFECYCLE = os.path.join(HERE, "lifecycle.py")
+
+# Most of these tests drive the script as a subprocess, which is what makes them
+# evidence about the command a user runs. Two of them check a function directly
+# because they need to hand it an archive no command would produce.
+_spec = importlib.util.spec_from_file_location("lifecycle", LIFECYCLE)
+lifecycle = importlib.util.module_from_spec(_spec)
+# Registered before execution because lifecycle.py defines dataclasses, and
+# dataclass field resolution looks the defining module up in sys.modules.
+sys.modules["lifecycle"] = lifecycle
+_spec.loader.exec_module(lifecycle)
 
 
 def build_fixture_source(root: str, roots_json: dict) -> None:
@@ -305,8 +316,64 @@ class PurgeExecutionTests(LifecycleTestCase):
         with open(notes) as stream:
             self.assertEqual(stream.read(), planted[
                 os.path.join(self.roots["data"], "notes.sqlite")])
+        # The sync keys are deliberately absent. Until v0.8 H9 they were backed
+        # up like any other config file; that item's boundary forbids it,
+        # because a purge backup is an ordinary archive in a place chosen for
+        # convenience and this file is the password to a library's synchronized
+        # traffic. The expectation is reversed rather than deleted so the change
+        # is visible to whoever reads this next.
         keys = os.path.join(restored, "config", "sync-keys.json")
-        self.assertTrue(os.path.isfile(keys), "the sync keys are not in the backup")
+        self.assertFalse(os.path.isfile(keys), "sync key material was copied into the backup")
+
+    def test_sync_key_material_is_excluded_named_and_verified(self) -> None:
+        self.run_lifecycle("install")
+        self.seed_user_data()
+        result = self.run_lifecycle("purge", FORCE="1")
+
+        # The user is told before the confirmation, not after the deletion.
+        self.assertIn("NOT BACKED UP, THEN DELETED", result.stdout)
+        self.assertIn("credential store is not removed", result.stdout)
+
+        with open(os.path.join(self.backup_directory(), "MANIFEST.json"), encoding="utf-8") as stream:
+            manifest = json.load(stream)
+        excluded = manifest.get("excluded_key_material") or []
+        self.assertTrue(any(name.endswith("sync-keys.json") for name in excluded),
+                        f"the manifest does not name what it left out: {excluded}")
+        for entry in manifest["entries"]:
+            self.assertFalse(entry["member"].endswith("sync-keys.json"),
+                             "key material is recorded in the manifest inventory")
+
+        with tarfile.open(os.path.join(self.backup_directory(), "backup.tar")) as tar:
+            members = [member.name for member in tar.getmembers()]
+        self.assertFalse([name for name in members if "sync-keys" in name],
+                         f"key material reached the archive: {members}")
+
+    def test_verification_refuses_an_archive_holding_key_material(self) -> None:
+        """The exclusion is checked against the archive, not assumed.
+
+        A filter that silently stopped running would otherwise leave the
+        boundary intact only by luck, and nothing would say so.
+        """
+        self.run_lifecycle("install")
+        self.seed_user_data()
+        self.run_lifecycle("purge", FORCE="1")
+        directory = self.backup_directory()
+        archive = os.path.join(directory, "backup.tar")
+
+        with tarfile.open(archive, "a") as tar:
+            planted = os.path.join(self.sandbox, "sync-keys.json")
+            with open(planted, "w", encoding="utf-8") as stream:
+                stream.write("{}\n")
+            tar.add(planted, arcname="config/sync-keys.json")
+        with open(os.path.join(directory, "MANIFEST.json"), encoding="utf-8") as stream:
+            manifest = json.load(stream)
+        manifest["archive_sha256"] = lifecycle.sha256_file(archive)
+        with open(os.path.join(directory, "MANIFEST.json"), "w", encoding="utf-8") as stream:
+            json.dump(manifest, stream, indent=2)
+
+        ok, detail = lifecycle.verify_purge_backup(directory)
+        self.assertFalse(ok, "verification accepted an archive holding key material")
+        self.assertIn("must never be backed up", detail)
 
     def test_cache_is_disposed_of_rather_than_backed_up(self) -> None:
         self.run_lifecycle("install")
