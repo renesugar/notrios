@@ -1253,6 +1253,84 @@ claims -- there is no Flutter toolchain on this machine; `ella-to/vault`'s mobil
 behaviour; and the claim that macOS Keychain entries can be shared between a
 Flutter client and a Go client given the same service name and app group.
 
+**Investigated 2026-09-02: `gopass`/`pass` for headless Linux.** The proposal was
+to build a headless `secret-tool` equivalent on top of `gopass`, a GPG- or
+age-encrypted file store backed by git, so that a server with no session bus can
+still hold sync credentials. It is worth pursuing, but not in the shape the
+supplied references describe, and not as a peer of the native stores.
+
+*Mechanically it does clear the D-Bus obstacle.* `gopass` and `pass` are file
+stores. They need no `org.freedesktop.secrets`, no session bus, and no desktop
+session, so they work over SSH, in a container, and under the H6 user service --
+exactly the conditions in which `go-keyring` cannot work at all.
+
+*It does not make a headless install as safe as a desktop one, and the plan must
+say so.* The secret is encrypted to a private key, and on an unattended server
+that key must itself be openable without a human. Either it has no passphrase --
+in which case the key is a `0600` file readable by the same account, and an
+attacker who can read the credential file can read the key, which is the threat
+model of the development file provider this item exists to replace -- or the
+passphrase arrives at service start from a TPM-sealed systemd credential or an
+operator, which does raise the bar but ends unattended startup. What `gopass`
+buys unconditionally is protection against *offline* exposure: a stolen disk, a
+backup, an accidental archive, a synced git remote. That is a real gain and a
+different one from what a desktop keyring gives. So the honest outcome is a
+third provider tier with a weaker, documented guarantee -- not a headless
+equivalent of the native store, and never an automatic substitution, which would
+be the silent downgrade this item's boundary forbids.
+
+*Importing `gopass` as a library is strictly worse than the `go-keyring` it was
+meant to avoid.* Measured here against v1.17.0 (MIT) by building a `main` whose
+only statement is `api.New`: **24 modules, 108 non-stdlib packages, 18.6 MB**
+against a 2.3 MB empty-Go-binary baseline -- a 16.3 MB addition, comparable to
+the whole of the current 19.2 MB `notriosctl`. Six of those modules are already
+in this project's 52-entry `go.sum`, so **18 are new**, against the 37 Go modules
+G20 currently licence-audits. Among the six already present is
+`godbus/dbus/v5`, which `gopass` needs at **v5.2.2** while this project carries
+v5.1.0 -- so this route does not dodge the godbus bump recorded above, it forces
+it -- and among the 18 new ones is `zalando/go-keyring` v0.2.8 itself. Licences
+of all 24 were read from the module cache and are compatible, but
+`hashicorp/golang-lru/v2` is **MPL-2.0**, a weak-copyleft class this project does
+not otherwise carry, and `filippo.io/age` is BSD-3-Clause.
+
+*Calling the binary instead costs no Go modules, and that generalises.* The
+`secret-tool` finding already pointed at a provider that execs a helper; `pass`
+and `gopass` fit the same shape, as does macOS `security`. One subprocess
+provider contract therefore covers desktop Linux, headless Linux, and macOS, and
+the difference between them becomes configuration rather than code. This is the
+strongest argument yet for owning the provider layer rather than importing one.
+
+*The packaging cost is the same undeclared-dependency class H6a measured.* On
+this machine `pass` 1.7.4-6 is installed only because `docker-desktop` depends
+on it -- not manually, not by default -- exactly as `libsecret-tools` was
+manually installed with no reverse dependencies. A `.deb` would need an explicit
+`Depends:` that `dpkg-shlibdeps` cannot derive, because a helper process is not
+a linked library. Ubuntu 24.04 also ships `gopass` **1.5.0** against upstream's
+1.17.0, so the references' `sudo apt install -y gopass` does not get the API
+they describe; `age` 1.1.1 and `pass` 1.7.4 are current enough.
+
+*The GPG identity already on this machine cannot serve as the backend.* The
+evidence-signing key is `sec#` -- the primary secret key is offline -- and it has
+a signing subkey but no `[E]` encryption subkey, so it cannot decrypt. A
+headless provider would need its own encryption key or age identity, which is
+onboarding work rather than a detail.
+
+*Three concrete errors in the supplied reference implementation, found by
+compiling and running it.* First, it does not build: `gp.Set(ctx, path,
+secretBytes)` passes a `[]byte` where the API takes a `gopass.Byter`, and
+`[]byte` has no `Bytes()` method. Second -- and this one would have shipped --
+`fmt.Fscan(os.Stdin, &secretBytes)` compiles and returns no error, but scanning
+stops at the first whitespace: `"correct horse battery staple"` is stored as
+`"correct"`, silently, and every later lookup succeeds and returns the truncated
+value. Third, the walkthrough initialises with `--storage fs` and then claims the
+git driver commits each change; `fs` is the non-git backend, `gitfs` is the git
+one. The reference also pins `urfave/cli/v2` while `gopass` v1.17.0 itself uses
+v3, so following it puts two major versions of one CLI library in a single
+binary. Separately, the attribute-to-path scheme writes attribute names and
+values as directory names, so a store pushed to a git remote publishes that
+metadata in cleartext -- which for a notes application is a disclosure to weigh,
+not a detail.
+
 **Open decisions**
 
 - **Provider per supported OS — Blocking before implementation.** No provider
@@ -1264,16 +1342,40 @@ Flutter client and a Go client given the same service name and app group.
   closed is required and is not the whole answer: the user needs to be told why
   before they enrol, not when a sync first runs. Recommended: `notriosctl
   doctor` reports whether a native store is reachable, enrolment refuses with
-  that reason, and the documentation says a headless install cannot hold sync
-  credentials. `go-keyring` also needs `godbus/dbus/v5` v5.2.2 while this
+  that reason, and the documentation states the guarantee the installation
+  actually has. `go-keyring` also needs `godbus/dbus/v5` v5.2.2 while this
   project already carries v5.1.0 indirectly through Wails, so the bump is part
-  of the decision.
+  of the decision. The 2026-09-02 investigation above changes what the refusal
+  can offer: a `pass`/`gopass` helper is a genuine third option rather than a
+  dead end, so the decision is now whether to ship it. Recommended: ship it as
+  an opt-in tier the operator selects explicitly, never as an automatic
+  fallback; state in `doctor`, at enrolment, and in the documentation that its
+  protection is against offline exposure and not against compromise of the
+  account that runs the service; and refuse rather than downgrade when the
+  operator has selected nothing.
 - **Whether Windows clients must share one store — Non-blocking, decide before
   a Flutter desktop client exists.** DPAPI and Credential Manager are different
   stores. Recommended: treat each client as owning its own credential and
   re-enrolling, rather than engineering a shared store, because pairing is
   already per-replica and a shared secret across two clients is a weaker
   boundary than two secrets.
+- **Whether to own the provider layer or import one — Blocking before
+  implementation.** Measured, non-test, non-comment Go lines: `zalando/go-keyring`
+  623, `danieljoos/wincred` 347, `godbus/dbus/v5` 6,338; importing `gopass`
+  instead costs 18 new modules and 16.3 MB. A provider layer written here would exec
+  `/usr/bin/security` on macOS, `secret-tool` or `pass`/`gopass` on Linux, and
+  call DPAPI through `golang.org/x/sys/windows`, which this project already
+  carries indirectly -- roughly 300 lines and no new Go modules. It also owns
+  both ends on Windows, which is the only route to sharing a container with a
+  Flutter client, since matching `flutter_secure_storage`'s DPAPI layout means
+  binding to an undocumented implementation detail of a third party. The cost is
+  that every Linux and macOS path becomes a runtime binary dependency the
+  packaging gates cannot derive, and that the edge cases `go-keyring` has
+  absorbed become ours. Recommended: keep the H1 provider interface narrow
+  enough -- get, set, delete over an opaque reference -- that either answer is a
+  provider swap rather than a redesign, and decide only when H10 and H11 have
+  said which clients are real. The headless tier lands in the owned layer either
+  way, because no library provides it.
 
 ## H10. Wails v3 migration spike
 
