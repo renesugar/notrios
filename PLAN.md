@@ -2469,17 +2469,35 @@ validated the way other evidence directories are.
   Hand-placed coordinates are refused outright: they are a second description of
   the interface, and a second description is a thing that disagrees with the
   first.
-- **Where the screenshots live -- Blocking before any are produced.** They are
-  generated artifacts, and this repository does not commit those; they also churn
-  on every interface change, and a journey catalogue could carry a hundred of
-  them. Against that, a screenshot that is not committed does not appear when
-  someone reads `docs/gui.md` on a git host, which is where most readers are.
-  Recommended: do not commit them. Generate them into the documentation-site
-  build, record a manifest of step ids, locators and image hashes that *is*
-  committed, and let the gate compare the manifest rather than the pixels -- so
-  staleness is detectable without carrying binaries. If they must be committed,
-  cap the count and the dimensions deliberately rather than discovering the repo
-  size afterwards.
+- **Where the screenshots live -- Resolved 2026-09-03: `docs/images/journeys/`,
+  committed.** They are generated artifacts, which this repository does not
+  normally commit, and they churn on every interface change. The earlier
+  recommendation here was not to commit them at all. That is revised, because
+  checking the alternatives showed the objection was weaker than it looked and
+  the cost of not committing was higher.
+
+  **Not `data/assets`.** That is a user's asset store: `data/` is gitignored,
+  the `data` root is `backup_and_verify`, and a purge deletes it. Documentation
+  images living there would be backed up as though they were somebody's notes,
+  destroyed by a purge, and in an installed profile would be written into the
+  user's real library. The whole point of H3's six roots is that product content
+  and user content are not the same thing.
+
+  **Not `assets/` either, though it is the right *kind* of place.** It is
+  committed, already holds `assets/icons/*/notrios.png`, and is staged into
+  `program_assets` by the packaging -- but `build_deb.sh` stages `assets/icons`
+  specifically rather than the directory wholesale, so putting journey images
+  there would be relying on that narrowness to avoid shipping them.
+
+  So `docs/images/journeys/`: committed, beside the pages that reference them,
+  outside the path the packaging stages. A screenshot that is not committed does
+  not appear when someone reads `docs/gui.md` on a git host, which is where most
+  readers are, and that was the cost the earlier recommendation accepted too
+  readily. The manifest survives the change of home and still earns its place:
+  step id, locator and image hash are committed alongside, so a stale screenshot
+  fails the gate rather than quietly misleading. Bound it deliberately -- one
+  fixed viewport width, a cap on count and dimensions -- rather than discovering
+  the repository size afterwards.
 - **How much the new pages move the pinned counts -- Non-blocking but noisy.**
   One section and one example moved five pinned counts in H9 slice D. A features
   page plus two journey catalogues is a large multiple of that, across G18a's
