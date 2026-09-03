@@ -1392,6 +1392,89 @@ values as directory names, so a store pushed to a git remote publishes that
 metadata in cleartext -- which for a notes application is a disclosure to weigh,
 not a detail.
 
+**Directive 2026-09-03: credential ownership is conditional on the platform,
+and one method for all platforms is not viable.** The instruction is that
+`Notrios` must not manage credentials on mobile at all. Instead the core exposes
+a call through which the mobile frontend -- Flutter, or Tauri v2 -- supplies the
+credential before the core needs it, and the core never reaches for a mobile
+store itself. This is not a new provider so much as a promotion: the "supplied
+by the host" implementation this item already admitted becomes the *only* mobile
+shape rather than a tolerated one, and the reason is a build argument rather
+than a security one. A Go package that carries iOS or Android implementations
+drags Xcode and the NDK into the core's build matrix, and H7 is already deferred
+past v1.0 precisely because that hardware is not available.
+
+*Measured, and the real hazard is worse than the directive states.* The concern
+is not only that a mobile-capable Go package would add toolchain dependencies.
+It is that `zalando/go-keyring`, which supports no mobile platform whatsoever,
+**compiles cleanly for them anyway**. Cross-built here with `CGO_ENABLED=0`
+against v0.2.8:
+
+| Target | Result | Why it matters |
+|---|---|---|
+| `linux/amd64` | builds | intended |
+| `windows/amd64` | builds | intended |
+| `darwin/arm64` | builds | intended |
+| `android/arm64` | **builds** | `android` implies `linux`, so `keyring_unix.go` compiles and the binary reaches for `org.freedesktop.secrets` on a platform that has no D-Bus Secret Service |
+| `js/wasm` | **builds** | falls through to `keyring_fallback.go` and returns `ErrUnsupportedPlatform` -- typed, but still only at runtime |
+| `ios/arm64` | fails | only because cgo is disabled; that is a Go toolchain rule, not a `go-keyring` guard |
+
+So the build emits no signal at all on Android, and by inference none on iOS
+either, where `ios` implies `darwin` and `keyring_darwin.go` would compile and
+then try to exec `/usr/bin/security`, which iOS neither ships nor permits. That
+inference is not verified here and cannot be until H7's hardware exists. The
+consequence for this item is direct: an accidental mobile build of the core
+would satisfy every compile-time check and then fail exactly where "fail closed"
+is least debuggable. The host-supplied architecture is therefore not merely
+tidier, it is the only shape that can be *guarded*, and the guard has to be
+explicit -- a build constraint that excludes every desktop provider from a
+mobile build, and a cross-build gate that fails if one is linked in. Without
+that, the architecture is a convention rather than a boundary.
+
+*Four tiers, and each already has a different owner.*
+
+- **Desktop** -- the core owns the credential through a native provider
+  (Secret Service, Credential Manager, Keychain) and fails closed when it is
+  locked or absent. Unchanged by this directive.
+- **Headless** -- the core owns it through the opt-in `pass`/`age` tier
+  recorded above, with its documented weaker guarantee.
+- **Web** -- the browser never holds a sync credential; the service does, using
+  whichever of the two tiers above its own host supports. This is already the
+  shipped design and it is worth stating rather than rediscovering: the
+  `sync-ui` routes are gated by `requireLocalSyncUI`, and `SyncLocalKeys` is
+  commented "neither this interface nor any response can reveal one". Web needs
+  no new surface, which is fortunate, because this item's boundary forbids the
+  credential-management REST surface a browser would otherwise need.
+- **Mobile** -- the host owns it. Flutter or Tauri v2 fetches from
+  `flutter_secure_storage` or the Tauri equivalent and passes it in before first
+  use; the core holds it in memory, treats it as no more trustworthy than one it
+  fetched itself, and fails closed when the host supplies nothing.
+
+*This dissolves the Windows question rather than answering it.* The third open
+decision below asked whether a Flutter client and a Wails client on one Windows
+machine must share a store, given that `flutter_secure_storage` uses DPAPI and
+`go-keyring` uses Credential Manager. Under host-supplied credentials the
+question does not arise: whichever client owns the secret supplies it, so the
+two stores never need to agree. The directive's own framing covers the mobile
+case -- a Flutter mobile client and a `go-keyring` desktop install are different
+platforms and were never sharing anything -- and the same mechanism happens to
+settle the Flutter-desktop case too, for the different reason that ownership
+moves to the client. The decision is marked resolved on that basis.
+
+*Tauri v2 is a genuine second candidate here, not a paper one.* Rust 1.97.0 and
+cargo are installed on this machine, so a Tauri client could be built and its
+mobile credential plugin exercised without new hardware. The `tauri` CLI is not
+installed and none of its mobile claims -- including that its mobile support is
+more established than Wails v3 -- has been checked. Recorded as a candidate to
+verify, not a comparison already made.
+
+*One consequence lands outside this item.* The credential-supply call is an ABI
+operation, and `FLUTTER_GO_CLIENT.md`'s frozen G18 candidate is 12 symbols with
+no such operation among them. Whether it becomes a thirteenth symbol or an
+operation name inside the existing bounded-call dispatch is an H1 decision, but
+H1 cannot be considered complete without it, and the frozen handoff contract is
+not the place to change unilaterally.
+
 **Open decisions**
 
 - **Provider per supported OS — Blocking before implementation.** No provider
@@ -1419,12 +1502,13 @@ not a detail.
   operator has selected nothing. Prefer `pass` over `gopass` as the backend:
   `gopass` names two different programs on Debian and Ubuntu, and the helper
   must be pinned by absolute path or verified by identity in either case.
-- **Whether Windows clients must share one store — Non-blocking, decide before
-  a Flutter desktop client exists.** DPAPI and Credential Manager are different
-  stores. Recommended: treat each client as owning its own credential and
-  re-enrolling, rather than engineering a shared store, because pairing is
-  already per-replica and a shared secret across two clients is a weaker
-  boundary than two secrets.
+- **Whether Windows clients must share one store — Resolved 2026-09-03 by the
+  platform-conditional directive.** DPAPI and Credential Manager are different
+  stores, and under host-supplied credentials they never have to agree: the
+  client that owns the secret supplies it. This lands where the earlier
+  recommendation pointed anyway -- each client owns its own credential and
+  re-enrols -- but by removing the question rather than choosing a side.
+  Pairing is already per-replica, so this is also the stronger boundary.
 - **Whether to own the provider layer or import one — Blocking before
   implementation.** Measured, non-test, non-comment Go lines: `zalando/go-keyring`
   623, `danieljoos/wincred` 347, `godbus/dbus/v5` 6,338; importing `gopass`
@@ -1442,6 +1526,20 @@ not a detail.
   provider swap rather than a redesign, and decide only when H10 and H11 have
   said which clients are real. The headless tier lands in the owned layer either
   way, because no library provides it.
+- **The host-supplied provider contract, and the guard that keeps it honest —
+  Blocking before any mobile work.** The contract needs: when the host may
+  supply a credential and what happens to calls that arrive before it does;
+  whether a supplied credential can be replaced or revoked mid-session; its
+  lifetime in core memory and where it is zeroed; that it is never written to
+  the core's own store, a log, a purge backup, or evidence; and that supplying
+  nothing is a typed refusal rather than a fallback. Recommended: model it on
+  the existing `SyncSecretStore` seam, whose `AdoptGroupKey(keyID, epoch, key)`
+  is already an inbound key path, so the host provider becomes another
+  implementation rather than a parallel mechanism. The guard is the part that
+  must not be deferred: a build constraint excluding every desktop provider from
+  a mobile build, plus a cross-build gate that fails if one links in. The
+  `android/arm64` result above is the reason -- without the gate, the mistake
+  this architecture exists to prevent compiles silently.
 
 ## H10. Wails v3 migration spike
 
