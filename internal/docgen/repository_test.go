@@ -17,8 +17,11 @@ func TestRepositoryEnumerationsMatchFiniteRegistries(t *testing.T) {
 		// 59 -> 62 and 49 -> 52 in v0.8 H4 slice C: data.state_dir,
 		// data.cache_dir and data.runtime_dir separate what a purge and a
 		// backup treat differently.
-		{configAnchor, 62},
-		{defaultAnchor, 52},
+		// 62 -> 63 and 52 -> 53 in v0.8 H9 slice B:
+		// sync.rest.credential_store names where the secret protecting the
+		// key material lives.
+		{configAnchor, 63},
+		{defaultAnchor, 53},
 		// 56 -> 58 in v0.8 H4 slice D: `notriosctl paths` and
 		// `notriosctl config show`.
 		// 58 -> 59 in v0.8 H4 slice E: `notriosctl migrate`.

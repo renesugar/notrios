@@ -1754,6 +1754,44 @@ note above said `ios/arm64` could not be checked without cgo, which is true of
 v5.2.2. Both are in the allowed set, so nothing was admitted that should not
 have been, but the entry was wrong and is now corrected.
 
+**Slice B complete 2026-09-03: envelope encryption, wired but not yet
+default.** `synckeys` gained a sealed form -- AES-256-GCM under a 32-byte data
+key, a fresh nonce on every save, and authenticated data binding the ciphertext
+to its own version and algorithm so an edited header cannot change the rules the
+reader applies. `internal/service` gained `nativeSyncSecretStore`, which keeps
+the data key in the operating system's store and the sealed material on disk,
+and `sync.rest.credential_store` selects between it and the development file.
+
+*The default is deliberately unchanged.* An installed profile still uses the
+warned `0600` file, because switching an existing library to the keychain
+without moving its material would strand it. The default flips in the migration
+slice, not before, which is what keeps this slice a capability rather than a
+break.
+
+*Four behaviours are asserted rather than assumed.* A sealed file contains
+neither the signing key, the group key nor the data key -- verbatim or
+base64-encoded -- and is mode `0600`. A wrong data key, a short one, or a single
+flipped ciphertext byte all produce `ErrSealMismatch` rather than altered
+material. Sealed and plaintext files refuse each other by name, `ErrSealRequired`
+and `ErrNotSealed`, because a migration that guessed would be a migration that
+destroyed key material. And `Create` removes the sealed file it just wrote if
+the data key cannot be stored, since the alternative is a file nothing can open
+that makes every later `Create` refuse.
+
+*Three of those were confirmed by mutation.* Skipping the seal in `save` makes
+the no-key-material test report the signing and group keys appearing
+base64-encoded; fixing the nonce instead of drawing a fresh one makes the nonce
+test fail after a single save; and keeping the orphaned file instead of removing
+it makes the cleanup test fail. The native path was exercised end to end against
+this machine's real Secret Service, including reopening through a second
+provider instance to prove the data key genuinely came back out of the keychain.
+
+*The gates did their job on the way through.* Adding one config key moved
+G18a's pinned key count 62 to 63 and `Default` 52 to 53, made `docs/service.md`
+stale until regenerated, and then required the G18f generated hash to be
+refreshed. All three are recorded here because a config key that could be added
+without any of them firing would mean the doc gates had stopped watching.
+
 **Open decisions**
 
 - **Provider per supported OS — Blocking before implementation.** No provider

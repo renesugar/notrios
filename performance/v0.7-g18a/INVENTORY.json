@@ -1961,7 +1961,7 @@
     },
     {
       "path": "docs/service.md",
-      "sha256": "92829a526a0e37bb7a3e7294a81ee5c73ab1661868a38295e4fa7e1543dbe51e",
+      "sha256": "37dd5979ac63bcbbb4f2a55e1da5d0015fb2b05814034d3b5f62d1e774ff47cd",
       "help_note": "doc_help_service",
       "owner": "go:github.com/renesugar/notrios/internal/config#Config",
       "sections": [
@@ -2297,7 +2297,7 @@
     },
     {
       "id": "configuration",
-      "count": 62,
+      "count": 63,
       "unit": "JSON-tagged keys",
       "owner": "go:github.com/renesugar/notrios/internal/config#Config"
     },

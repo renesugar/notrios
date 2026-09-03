@@ -67,6 +67,10 @@ type KeyFile struct {
 	// peer, so a second adoption in one session is refused for the same reason
 	// a second one across sessions is.
 	paired bool
+	// seal is the data key this file is encrypted under, held by a native
+	// credential store. Nil means the plaintext development file, which is
+	// still the v0.7 behaviour and is still labelled as such.
+	seal []byte
 }
 
 // DefaultPath is where key material lives when a config does not say
@@ -97,6 +101,21 @@ func Create(path string) (*KeyFile, error) {
 	if _, err := os.Stat(path); err == nil {
 		return nil, fmt.Errorf("sync key file already exists: %s", path)
 	}
+	file, err := newKeyMaterial(path)
+	if err != nil {
+		return nil, err
+	}
+	if err := file.save(); err != nil {
+		return nil, err
+	}
+	return file, nil
+}
+
+// newKeyMaterial mints one fresh group key at epoch one and one fresh replica
+// signing key, without writing anything. Create and CreateSealed differ only
+// in how the result is persisted, and sharing this keeps them from drifting
+// into generating subtly different material.
+func newKeyMaterial(path string) (*KeyFile, error) {
 	public, private, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {
 		return nil, err
@@ -120,14 +139,35 @@ func Create(path string) (*KeyFile, error) {
 		private: private,
 	}
 	_ = public
-	if err := file.save(); err != nil {
-		return nil, err
-	}
 	return file, nil
 }
 
 // Open reads existing key material and refuses a file other users can read.
 func Open(path string) (*KeyFile, error) {
+	contents, err := readKeyFileBytes(path)
+	if err != nil {
+		return nil, err
+	}
+	// A sealed file is refused by name rather than by a parse failure. The
+	// caller has to fetch a data key from the credential store, and telling it
+	// so is the difference between a recoverable state and a corrupt one.
+	var probe envelope
+	if err := json.Unmarshal(contents, &probe); err == nil && probe.Sealed != "" {
+		return nil, fmt.Errorf("%w: %s", ErrSealRequired, path)
+	}
+	file := &KeyFile{path: path}
+	if err := file.decode(contents); err != nil {
+		return nil, err
+	}
+	return file, nil
+}
+
+// readKeyFileBytes performs the checks that apply however a file is encrypted:
+// that it exists, and that no other user can read it. The permission check
+// stays for a sealed file too. It is not load-bearing there -- the contents are
+// ciphertext -- but a key file that became world-readable is evidence about the
+// system it lives on, and silently accepting it would throw that away.
+func readKeyFileBytes(path string) ([]byte, error) {
 	info, err := os.Stat(path)
 	if errors.Is(err, os.ErrNotExist) {
 		return nil, fmt.Errorf("%w: %s", ErrNoKeyFile, path)
@@ -138,26 +178,27 @@ func Open(path string) (*KeyFile, error) {
 	if info.Mode().Perm()&0o077 != 0 {
 		return nil, fmt.Errorf("%w: %s is mode %#o", ErrInsecurePermissions, path, info.Mode().Perm())
 	}
-	contents, err := os.ReadFile(path)
-	if err != nil {
-		return nil, err
+	return os.ReadFile(path)
+}
+
+// decode parses key material, whether it came straight off disk or out of a
+// sealed envelope.
+func (f *KeyFile) decode(contents []byte) error {
+	if err := json.Unmarshal(contents, &f.data); err != nil {
+		return fmt.Errorf("%w: %v", ErrUnknownFormat, err)
 	}
-	file := &KeyFile{path: path}
-	if err := json.Unmarshal(contents, &file.data); err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrUnknownFormat, err)
+	if f.data.Version != FileVersion || f.data.KeyID == "" || f.data.SigningKey == "" {
+		return fmt.Errorf("%w: version %d", ErrUnknownFormat, f.data.Version)
 	}
-	if file.data.Version != FileVersion || file.data.KeyID == "" || file.data.SigningKey == "" {
-		return nil, fmt.Errorf("%w: version %d", ErrUnknownFormat, file.data.Version)
-	}
-	raw, err := base64.StdEncoding.DecodeString(file.data.SigningKey)
+	raw, err := base64.StdEncoding.DecodeString(f.data.SigningKey)
 	if err != nil || len(raw) != ed25519.PrivateKeySize {
-		return nil, fmt.Errorf("%w: signing key is not an Ed25519 private key", ErrUnknownFormat)
+		return fmt.Errorf("%w: signing key is not an Ed25519 private key", ErrUnknownFormat)
 	}
-	file.private = ed25519.PrivateKey(raw)
-	if file.data.Peers == nil {
-		file.data.Peers = map[string]peerKey{}
+	f.private = ed25519.PrivateKey(raw)
+	if f.data.Peers == nil {
+		f.data.Peers = map[string]peerKey{}
 	}
-	return file, nil
+	return nil
 }
 
 func (f *KeyFile) save() error {
@@ -167,6 +208,11 @@ func (f *KeyFile) save() error {
 	contents, err := json.MarshalIndent(f.data, "", "  ")
 	if err != nil {
 		return err
+	}
+	if f.seal != nil {
+		if contents, err = f.sealBytes(contents); err != nil {
+			return err
+		}
 	}
 	// Written 0600 from the first byte rather than chmodded afterwards: a
 	// window in which a private key is world-readable is not a small one when

@@ -103,6 +103,7 @@ chooses and pins the long-term configuration library.
 - sync.directory
 - sync.rest
 - sync.rest.burst
+- sync.rest.credential_store
 - sync.rest.enabled
 - sync.rest.failures_per_minute
 - sync.rest.key_file
@@ -158,6 +159,7 @@ configuration group.
 - sync.credential_ref = ""
 - sync.directory = ""
 - sync.rest.burst = 0
+- sync.rest.credential_store = ""
 - sync.rest.enabled = false
 - sync.rest.failures_per_minute = 0
 - sync.rest.key_file = ""

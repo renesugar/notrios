@@ -42,7 +42,7 @@ type Service struct {
 	closeOnce sync.Once
 	closeErr  error
 	workers   sync.WaitGroup
-	syncKeys  *fileSyncSecretStore
+	syncKeys  syncSecretProvider
 }
 
 // New creates storage directories, opens and bootstraps the store, builds the
@@ -81,10 +81,14 @@ func New(cfg config.Config) (*Service, error) {
 		}
 	}
 	handler := httpapi.NewServerWithOptions(httpapi.ServerOptions{Store: st, Config: cfg})
-	provider, providerErr := newFileSyncSecretStore(cfg, st)
+	provider, providerErr := newSyncSecretStore(cfg, st)
 	if providerErr == nil {
 		handler.AttachSyncSecretStore(provider)
 	} else {
+		// A nil interface rather than a nil pointer inside one: the checks
+		// downstream compare against nil, and a typed nil would pass them and
+		// then panic on the first call.
+		provider = nil
 		log.Printf("local sync secret provider is unavailable: %v", providerErr)
 	}
 	if err := attachSyncSecurity(cfg, st, handler, provider); err != nil {
@@ -125,7 +129,7 @@ func (s *Service) startSyncJobs() error {
 		log.Printf("sync target configured but the local secret provider is unavailable")
 		return nil
 	}
-	keys, err := s.syncKeys.openFile()
+	keys, err := s.syncKeys.openKeyFile()
 	if err != nil {
 		log.Printf("sync target configured but durable jobs are unavailable until `notriosctl sync init` creates usable key material: %v", err)
 		return nil
@@ -209,26 +213,26 @@ type fileSyncSecretStore struct {
 	keys *synckeys.KeyFile
 }
 
-func newFileSyncSecretStore(cfg config.Config, st *store.SQLiteStore) (*fileSyncSecretStore, error) {
+// resolveKeyFilePath is where key material lives, whichever store protects
+// it. Both providers use it so that turning on the keychain never also moves
+// the file.
+func resolveKeyFilePath(cfg config.Config, st *store.SQLiteStore) (string, error) {
 	path := strings.TrimSpace(cfg.Sync.REST.KeyFile)
-	if path == "" {
-		identity, err := st.GetDatabaseIdentity(context.Background())
-		if err != nil {
-			return nil, err
-		}
-		path, err = synckeys.DefaultPath(identity.DatabaseID)
-		if err != nil {
-			return nil, err
-		}
+	if path != "" {
+		return path, nil
 	}
-	return &fileSyncSecretStore{path: path}, nil
+	identity, err := st.GetDatabaseIdentity(context.Background())
+	if err != nil {
+		return "", err
+	}
+	return synckeys.DefaultPath(identity.DatabaseID)
 }
 
 func (p *fileSyncSecretStore) ProviderName() string { return "locked-file-development" }
 func (p *fileSyncSecretStore) Warning() string {
 	return "Sync keys use an owner-only 0600 development file, not an operating-system keychain. Treat it like the password to this library."
 }
-func (p *fileSyncSecretStore) openFile() (*synckeys.KeyFile, error) {
+func (p *fileSyncSecretStore) openKeyFile() (*synckeys.KeyFile, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	if p.keys != nil {
@@ -242,7 +246,7 @@ func (p *fileSyncSecretStore) openFile() (*synckeys.KeyFile, error) {
 	return keys, nil
 }
 
-func (p *fileSyncSecretStore) Open() (httpapi.SyncLocalKeys, error) { return p.openFile() }
+func (p *fileSyncSecretStore) Open() (httpapi.SyncLocalKeys, error) { return p.openKeyFile() }
 func (p *fileSyncSecretStore) Create() (httpapi.SyncLocalKeys, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -311,7 +315,7 @@ func (s *Service) runRESTCatchup(ctx context.Context, client *syncauth.Client, k
 // it cannot complete. Both are configuration mistakes that are invisible until
 // something is already exposed, so they are startup failures with an
 // explanation rather than warnings in a log nobody reads.
-func attachSyncSecurity(cfg config.Config, st *store.SQLiteStore, handler *httpapi.Server, provider *fileSyncSecretStore) error {
+func attachSyncSecurity(cfg config.Config, st *store.SQLiteStore, handler *httpapi.Server, provider syncSecretProvider) error {
 	if !cfg.Sync.REST.Enabled {
 		return nil
 	}
@@ -325,7 +329,7 @@ func attachSyncSecurity(cfg config.Config, st *store.SQLiteStore, handler *httpa
 	if provider == nil {
 		return errors.New("sync rest is enabled but its secret provider is unavailable")
 	}
-	keys, err := provider.openFile()
+	keys, err := provider.openKeyFile()
 	if err != nil {
 		return fmt.Errorf("sync rest is enabled but its key material is unusable: %w", err)
 	}

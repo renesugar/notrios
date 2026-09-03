@@ -80,7 +80,23 @@ type SyncRESTConfig struct {
 	FailuresPerMinute int `json:"failures_per_minute,omitempty"`
 	// KeyFile is the local sync key material. Empty uses the default path.
 	KeyFile string `json:"key_file,omitempty"`
+	// CredentialStore names where the secret that protects KeyFile lives.
+	// Empty means the development file, which is v0.7 behaviour and stays the
+	// default until a migration exists: switching an installed profile to the
+	// keychain without moving its existing material would strand it.
+	CredentialStore string `json:"credential_store,omitempty"`
 }
+
+// The credential stores a profile may name. There is deliberately no
+// "automatic" value: which store holds a library's keys is a decision a user
+// or an installer records, not something resolved by whatever answers first.
+const (
+	// CredentialStoreDevelopmentFile is the warned owner-only 0600 file.
+	CredentialStoreDevelopmentFile = "development-file"
+	// CredentialStoreNative is the operating system's own credential store,
+	// holding a data key that seals the key material on disk.
+	CredentialStoreNative = "native"
+)
 
 type ServerConfig struct {
 	ListenAddr    string `json:"listen_addr"`
