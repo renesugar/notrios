@@ -1541,6 +1541,30 @@ not the place to change unilaterally.
   `android/arm64` result above is the reason -- without the gate, the mistake
   this architecture exists to prevent compiles silently.
 
+  *Verified 2026-09-03 that conditional linking does work, and that the obvious
+  way to write it does not.* Tagging the desktop provider `//go:build linux ||
+  windows || darwin` is wrong: on `android/arm64` that file compiles **as well
+  as** the mobile one, because `android` implies `linux`. In the probe a
+  duplicate `newProvider` declaration caught it, which is luck -- a provider
+  selected any other way would have linked `go-keyring` into the Android binary
+  silently. The constraint that holds is:
+
+  ```go
+  //go:build (linux || windows || darwin) && !android && !ios   // desktop provider
+  //go:build android || ios || js                               // host-supplied provider
+  ```
+
+  With those, all five targets build, and the linked package set is exactly
+  right: `linux/amd64` links 3 keyring/D-Bus packages, `windows/amd64` 1,
+  `darwin/arm64` 2, while `android/arm64` and `js/wasm` link **0** and the
+  Android binary contains **0** `zalando` symbols by `go tool nm`. The
+  dependency still appears in `go.mod` -- `go mod tidy` considers every build
+  configuration -- so it stays inside G20's licence inventory, but it is never
+  compiled for a mobile target and so drags in no NDK or Xcode requirement,
+  which is the whole point of the directive. The gate is therefore cheap and
+  needs no emulator: for each mobile target, assert that
+  `GOOS=... go list -deps ./...` names no desktop credential package.
+
 ## H10. Wails v3 migration spike
 
 **Goal.** Determine whether Wails v3 can replace v2 later without risking the
