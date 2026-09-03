@@ -1475,6 +1475,32 @@ operation name inside the existing bounded-call dispatch is an H1 decision, but
 H1 cannot be considered complete without it, and the frozen handoff contract is
 not the place to change unilaterally.
 
+**Where the architecture stands per platform, as of 2026-09-03.** Ownership is
+settled everywhere; provider selection and verification are not.
+
+| Platform | Who owns the credential | Settled? |
+|---|---|---|
+| Linux desktop | core, via Secret Service | ownership yes; provider blocked on the own-or-import decision |
+| Linux headless | core, via the opt-in `pass`/`age` tier | shape yes, and executable here; shipping it is still an open recommendation |
+| Windows desktop | core, via Credential Manager or DPAPI | ownership yes; which of the two follows from the own-or-import decision |
+| macOS desktop | core, via Keychain | ownership yes; unverifiable here -- no Apple hardware, H7 deferred |
+| Android | host supplies it | ownership yes, and the build guard is verified; the host-side provider is untested |
+| iOS | host supplies it | ownership yes; the compile-time inference behind it is untested and stays that way until H7 |
+
+*Three things remain genuinely open, and one of them is a gap rather than a
+decision.* The two decisions are recorded below: whether to own the provider
+layer or import one, and whether to ship the headless tier. The third is the
+host-supplied contract, also below. The gap is this item's own Scope, which asks
+for "locked/unavailable/headless behavior" across Linux, Windows and macOS,
+while every headless finding recorded here is Linux-only. Headless is not a
+Linux condition. A Windows service account has no interactive session and its
+per-user Credential Manager store may not be reachable the way an interactive
+logon's is; a macOS launch daemon running before any login faces a login
+keychain that is still locked. Both mirror the Secret Service problem exactly,
+neither has been examined, and neither can be examined on this machine. They are
+recorded here so that "headless" is not quietly read as "Linux" when the Windows
+and macOS providers are chosen.
+
 **Open decisions**
 
 - **Provider per supported OS — Blocking before implementation.** No provider
@@ -1970,7 +1996,7 @@ This is an index only; each decision is owned and explained inside its item.
 | Mermaid renderer/containment | H2a/H2 | Resolved and implemented in H2: Mermaid 11.17.2, strict security, `htmlLabels: false`, `notrios`-only links reattached from source |
 | Installed/portable path precedence | H3/H4 | Resolved in H3: explicit, then explicit portable marker, then native; never inferred |
 | Ubuntu packaging toolchain | H6a/H6 | Resolved in H6: dpkg-deb with dpkg-shlibdeps, staged from lifecycle.py, adding no build dependency; 0 lintian errors |
-| Native credential store on a headless Linux install | H9 | Open; go-keyring needs a session-bus Secret Service, so a headless install cannot hold sync credentials and must say so before enrolment |
+| Native credential store on a headless install | H9 | Open; go-keyring needs a session-bus Secret Service. A `pass`/`age` tier is now investigated and executable on this machine, so the Linux answer is an opt-in tier with a documented weaker guarantee rather than a refusal -- but headless is not a Linux-only condition and the Windows service-account and locked-macOS-Keychain cases are still unexamined |
 | Windows and macOS toolchain | H6a/H7 | Deferred to post-v1.0: no toolchain is selectable without native runners, and the hardware is not available |
 | Development versus installed default port | H4a | Resolved in H4a: checkout 8099 from the example config, installed 8080 from the compiled default |
 | Pre-migration backup location and retention | H4b | Resolved in H4b: `pre-migration-backups/` beside the database, newest kept, no new root |
