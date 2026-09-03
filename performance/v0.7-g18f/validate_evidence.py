@@ -56,8 +56,10 @@ def validate_templates(root=ROOT):
                 require(audience in ("user", "api"), "invalid slot audience")
                 slot_ids.add(ident)
                 slots.append((ident, audience, path, slug))
-    require(len(slots) == 15, "expected 15 slots")
-    require(sum(item[1] == "user" for item in slots) == 13 and sum(item[1] == "api" for item in slots) == 2, "expected 13 user/2 api slots")
+    # 15 -> 16 in v0.8 H14 slice B: the feature-surface slot on docs/features.md.
+    require(len(slots) == 16, "expected 16 slots")
+    # 13 -> 14 user slots in v0.8 H14 slice B: the feature list is user-facing.
+    require(sum(item[1] == "user" for item in slots) == 14 and sum(item[1] == "api" for item in slots) == 2, "expected 14 user/2 api slots")
     return template, slots
 
 
@@ -67,7 +69,9 @@ def source_fragments(root=ROOT):
         if path.name.endswith("_test.go") or any(part in (".git", "node_modules", "dist") for part in path.parts):
             continue
         found.extend((match.group(2), match.group(1)) for match in DIRECTIVE.finditer(path.read_text(encoding="utf-8")))
-    require(len(found) == 15 and len({item[0] for item in found}) == 15, "expected 15 unique production source fragments")
+    # 15 -> 16 in v0.8 H14 slice B: the feature-surface fragment on
+    # internal/docfeatures#Registry.
+    require(len(found) == 16 and len({item[0] for item in found}) == 16, "expected 16 unique production source fragments")
     return dict(found)
 
 
@@ -198,7 +202,21 @@ def validate_advisory(slots, root=ROOT, here=HERE):
 
     user_ids = {ident for ident, audience, _, _ in slots if audience == "user"}
     reviews = report.get("reviews")
-    require(isinstance(reviews, list) and {item.get("id") for item in reviews} == user_ids and len(reviews) == 13, "user review coverage mismatch")
+    # The reviews are a frozen record of an actual advisory model run, so this
+    # is a subset check rather than an identity one. A fragment added after that
+    # run has not been through it, and writing an entry for it would mean
+    # inventing model output that never existed. What is still enforced is the
+    # direction that matters: every recorded review must name a user slot that
+    # still exists, so a review outliving its fragment is caught.
+    #
+    # 13 reviews cover the 13 user slots that existed at the v0.7 G18f run.
+    # v0.8 H14 slice B added feature-surface, which is unreviewed and recorded
+    # as such rather than assumed to have passed.
+    require(isinstance(reviews, list) and len(reviews) == 13, "recorded review count drift")
+    reviewed = {item.get("id") for item in reviews}
+    require(reviewed <= user_ids, "a recorded review names a fragment that no longer exists")
+    unreviewed = sorted(user_ids - reviewed)
+    require(unreviewed == ["feature-surface"], f"unreviewed user fragments changed: {unreviewed}")
     example_states, journey_states = fixture_ids(root)
     verdict_counts = {key: 0 for key in VERDICTS}
     contradicted, accepted = [], 0

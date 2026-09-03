@@ -986,6 +986,54 @@
       ]
     },
     {
+      "path": "docs/features.md",
+      "sha256": "c00087ac836b6f534415d5e8c40cec3769fda21fb1b46165d0ed8de4418a1d8f",
+      "help_note": "doc_help_features",
+      "owner": "go:github.com/renesugar/notrios/internal/docfeatures#Registry",
+      "sections": [
+        {
+          "id": "what-notrios-can-do",
+          "level": 1,
+          "title": "What Notrios can do",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/internal/docfeatures#Registry",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        },
+        {
+          "id": "not-every-capability-is-on-every-surface",
+          "level": 2,
+          "title": "Not every capability is on every surface",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/internal/docfeatures#Registry",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        },
+        {
+          "id": "what-you-can-do",
+          "level": 2,
+          "title": "What you can do",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/internal/docfeatures#Registry",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        },
+        {
+          "id": "how-this-page-is-kept-honest",
+          "level": 2,
+          "title": "How this page is kept honest",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/internal/docfeatures#Registry",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        }
+      ]
+    },
+    {
       "path": "docs/gui.md",
       "sha256": "54845ba9b1304baaf6311471be8ae75064b405166775ec73215b5e6c4158f516",
       "help_note": "doc_help_gui",
@@ -2287,16 +2335,16 @@
   "surfaces": [
     {
       "id": "published_markdown",
-      "count": 15,
+      "count": 16,
       "unit": "pages",
-      "sections": 216,
+      "sections": 220,
       "owner": "go:github.com/renesugar/notrios/internal/helpdocs#Seed"
     },
     {
       "id": "help_notebook",
-      "count": 15,
+      "count": 16,
       "unit": "mirrored notes",
-      "sections": 216,
+      "sections": 220,
       "owner": "go:github.com/renesugar/notrios/internal/helpdocs#Seed"
     },
     {
@@ -2393,9 +2441,9 @@
       "executed": 0,
       "generated": 0,
       "claimed": 0,
-      "unverified": 216
+      "unverified": 220
     },
-    "denominator": 216,
+    "denominator": 220,
     "reconciles": true,
     "finding": "The manual does not yet name directive fragments or executable checks, so all current section units are unverified even where independent tests exist."
   },

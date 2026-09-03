@@ -56,11 +56,13 @@ func TestRepositoryAuditReportsHonestCoverage(t *testing.T) {
 	// 215 -> 216 manual sections, 141 -> 142 executables and 380 -> 382
 	// denominator in v0.8 H9 slice D: docs/cli.md gained "Where the key
 	// material is kept" with one example.
-	if report.ManualSections != 216 || report.Fragments != 15 || report.Claims != 4 ||
+	// 216 -> 220 manual sections and 15 -> 16 fragments in v0.8 H14 slice B:
+	// docs/features.md, four sections, one generated feature list.
+	if report.ManualSections != 220 || report.Fragments != 16 || report.Claims != 4 ||
 		report.Executables != 142 || report.Journeys != 9 {
 		t.Fatalf("unexpected coverage surface: %+v", report)
 	}
-	if report.Counts[GradeExecuted] != 71 || report.Counts[GradeGenerated] != 11 ||
+	if report.Counts[GradeExecuted] != 71 ||
 		// 272 -> 276 unverified in v0.8 H4 slice D: two new docs/cli.md
 		// sections and their two registered synopsis examples.
 		// 276 -> 285 unverified in v0.8 H4 slice E: five new sections and four
@@ -79,8 +81,11 @@ func TestRepositoryAuditReportsHonestCoverage(t *testing.T) {
 		// user's real credential store, so it carries a reviewed
 		// shared-user-state reason and is executed against a sandboxed library
 		// by cmd/notriosctl TestMigrateCredentialsRoundTrip instead.
-		report.Counts[GradeClaimed] != 4 || report.Counts[GradeUnverified] != 296 ||
-		report.Denominator != 382 {
+		// 296 -> 300 unverified and 382 -> 387 denominator in v0.8 H14 slice B:
+		// four new prose sections and one generated fragment.
+		report.Counts[GradeGenerated] != 12 ||
+		report.Counts[GradeClaimed] != 4 || report.Counts[GradeUnverified] != 300 ||
+		report.Denominator != 387 {
 		t.Fatalf("coverage counts hide or lose units: counts=%v denominator=%d", report.Counts, report.Denominator)
 	}
 	if len(resolvedTS) == 0 {

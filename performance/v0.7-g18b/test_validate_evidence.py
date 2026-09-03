@@ -22,7 +22,8 @@ class G18bEvidenceTest(unittest.TestCase):
     def test_staging_preserves_all_canonical_doc_bytes(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             pairs = build_prototype.stage_source(Path(temporary) / "site")
-            self.assertEqual(len(pairs), 15)
+            # 15 -> 16 in v0.8 H14 slice B: docs/features.md.
+            self.assertEqual(len(pairs), 16)
             for source, target in pairs:
                 self.assertEqual(source.read_bytes(), target.read_bytes())
 

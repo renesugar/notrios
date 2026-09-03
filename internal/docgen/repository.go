@@ -3,6 +3,7 @@ package docgen
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/renesugar/notrios/internal/docfeatures"
 	"go/ast"
 	"go/parser"
 	"go/token"
@@ -29,6 +30,7 @@ const (
 	mcpScopesAnchor    = "go:github.com/renesugar/notrios/internal/httpapi#MCPScopes"
 	mcpToolScopeAnchor = "go:github.com/renesugar/notrios/internal/httpapi#mcpToolScopes"
 	guiJourneyAnchor   = "go:github.com/renesugar/notrios/internal/docjourney#LoadAndValidate"
+	featureAnchor      = "go:github.com/renesugar/notrios/internal/docfeatures#Registry"
 )
 
 // RepositoryResolver returns the closed enumeration adapters for the source
@@ -55,6 +57,12 @@ func RepositoryResolver(root string) Resolver {
 			return sourceMapAssignments(filepath.Join(root, "internal/httpapi/mcp_scopes.go"), "mcpToolScopes")
 		case guiJourneyAnchor:
 			return guiJourneys(root)
+		case featureAnchor:
+			registry, err := docfeatures.Load(filepath.Join(root, "docs", "docfeatures", "FEATURES.json"))
+			if err != nil {
+				return nil, err
+			}
+			return registry.Lines(), nil
 		default:
 			return nil, fmt.Errorf("no repository enumeration adapter for %q", anchor)
 		}

@@ -1,9 +1,12 @@
-package docfeatures
+// External test package: docgen now imports docfeatures to render the
+// generated fragment, so an in-package test importing docgen would be a cycle.
+package docfeatures_test
 
 import (
 	"path/filepath"
 	"testing"
 
+	"github.com/renesugar/notrios/internal/docfeatures"
 	"github.com/renesugar/notrios/internal/docgen"
 )
 
@@ -25,18 +28,18 @@ var unclaimedBaseline = map[string]int{
 	"mcp":  0,
 }
 
-func repositoryReport(t *testing.T) Report {
+func repositoryReport(t *testing.T) docfeatures.Report {
 	t.Helper()
 	root := filepath.Join("..", "..")
 	surfaces, err := docgen.Surfaces(root)
 	if err != nil {
 		t.Fatalf("reading the repository surfaces: %v", err)
 	}
-	registry, err := Load(filepath.Join(root, "docs", "docfeatures", "FEATURES.json"))
+	registry, err := docfeatures.Load(filepath.Join(root, "docs", "docfeatures", "FEATURES.json"))
 	if err != nil {
 		t.Fatalf("loading the features registry: %v", err)
 	}
-	return Check(registry, RepositorySurfaces(surfaces))
+	return docfeatures.Check(registry, docfeatures.RepositorySurfaces(surfaces))
 }
 
 func TestUnclaimedSurfacesDoNotGrow(t *testing.T) {

@@ -46,7 +46,13 @@ def main() -> None:
     assert expected["journeys"] == len(registry["journeys"]) == 9
     assert expected["fragments"] == 12
     assert sum(expected["counts"].values()) == expected["denominator"] == 351
-    assert len(expected["topics"]) == len(inventory["documents"]) == 15
+    # The frozen record has 15 topics because that is what v0.7 documented. The
+    # inventory may hold more -- v0.8 H14 added docs/features.md -- so this is a
+    # floor, the same shape as the executables assertion above. Pinning it by
+    # identity would mean a new page could not be written without editing a
+    # frozen v0.7 record to claim it had always been there.
+    assert len(expected["topics"]) == 15
+    assert len(inventory["documents"]) >= len(expected["topics"])
     surfaces = {surface["id"]: surface for surface in expected["surfaces"]}
     assert len(surfaces) == len(inventory["surfaces"]) == 8
     assert surfaces["openapi"]["count"] == 109

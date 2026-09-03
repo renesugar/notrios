@@ -43,9 +43,44 @@ type Feature struct {
 	SurfaceNote string `json:"surface_note,omitempty"`
 }
 
+// Registry is the feature catalogue: what a person can do with Notrios, and
+// which surfaces offer each capability.
+//
+//notrios:doc user feature-surface
+//notrios:help features what-you-can-do
+//notrios:enumerates go:github.com/renesugar/notrios/internal/docfeatures#Registry
 type Registry struct {
 	Schema   string    `json:"schema"`
 	Features []Feature `json:"features"`
+}
+
+// Lines renders the catalogue for the generated fragment: one line per
+// feature, naming the surfaces that offer it.
+//
+// The surfaces are listed rather than described because they are the checked
+// half -- a reader who wants to know whether something is available at the
+// command line should be reading a fact, not a claim someone typed. The titles
+// and summaries beside them are written by a person, because "what can I do
+// with this?" is not answerable by listing flags.
+func (r Registry) Lines() []string {
+	lines := make([]string, 0, len(r.Features))
+	for _, feature := range r.Features {
+		available := []string{}
+		for _, pair := range []struct {
+			name  string
+			items []string
+		}{{"CLI", feature.CLI}, {"REST", feature.REST}, {"MCP", feature.MCP}, {"GUI", feature.GUI}} {
+			if len(pair.items) > 0 {
+				available = append(available, fmt.Sprintf("%s %d", pair.name, len(pair.items)))
+			}
+		}
+		line := fmt.Sprintf("%s — %s (%s)", feature.Title, feature.Summary, strings.Join(available, ", "))
+		if feature.SurfaceNote != "" {
+			line += " " + feature.SurfaceNote
+		}
+		lines = append(lines, line)
+	}
+	return lines
 }
 
 // Asymmetry is a capability that some surfaces offer and others do not.

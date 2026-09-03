@@ -154,8 +154,12 @@ def validate_inventory() -> dict:
     expected = build()
     if actual != expected:
         raise EvidenceError("INVENTORY.json is stale; run build_inventory.py --write and review the diff")
-    if len(actual["documents"]) != 15:
-        raise EvidenceError("published/Help page count is not 15")
+    # 15 -> 16 in v0.8 H14 slice B: docs/features.md. Pinned by identity rather
+    # than as a floor, because a page arriving or leaving without anyone saying
+    # so is exactly what this count exists to catch -- helpdocs seeds every
+    # Markdown file under docs/, so a stray file becomes a Help note.
+    if len(actual["documents"]) != 16:
+        raise EvidenceError("published/Help page count is not 16")
     grades = actual["grade_baseline"]
     if not grades["reconciles"] or sum(grades["totals"].values()) != grades["denominator"]:
         raise EvidenceError("grade totals do not reconcile")

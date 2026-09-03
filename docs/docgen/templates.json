@@ -7,16 +7,31 @@
         {
           "slug": "read-tools",
           "slots": [
-            {"id": "mcp-tool-surface", "audience": "user"},
-            {"id": "mcp-api-contract", "audience": "api"}
+            {
+              "id": "mcp-tool-surface",
+              "audience": "user"
+            },
+            {
+              "id": "mcp-api-contract",
+              "audience": "api"
+            }
           ]
         },
         {
           "slug": "tool-scopes",
           "slots": [
-            {"id": "mcp-scope-surface", "audience": "user"},
-            {"id": "mcp-tool-scope-assignments", "audience": "user"},
-            {"id": "mcp-sync-tool-scopes", "audience": "user"}
+            {
+              "id": "mcp-scope-surface",
+              "audience": "user"
+            },
+            {
+              "id": "mcp-tool-scope-assignments",
+              "audience": "user"
+            },
+            {
+              "id": "mcp-sync-tool-scopes",
+              "audience": "user"
+            }
           ]
         }
       ]
@@ -27,14 +42,23 @@
         {
           "slug": "rest-api",
           "slots": [
-            {"id": "rest-operation-surface", "audience": "user"},
-            {"id": "rest-api-contract", "audience": "api"}
+            {
+              "id": "rest-operation-surface",
+              "audience": "user"
+            },
+            {
+              "id": "rest-api-contract",
+              "audience": "api"
+            }
           ]
         },
         {
           "slug": "resources-attachments",
           "slots": [
-            {"id": "destructive-rest-confirmations", "audience": "user"}
+            {
+              "id": "destructive-rest-confirmations",
+              "audience": "user"
+            }
           ]
         }
       ]
@@ -45,13 +69,33 @@
         {
           "slug": "version",
           "slots": [
-            {"id": "product-version", "audience": "user"}
+            {
+              "id": "product-version",
+              "audience": "user"
+            }
           ]
         },
         {
           "slug": "the-notriosctl-cli",
           "slots": [
-            {"id": "cli-usage-forms", "audience": "user"}
+            {
+              "id": "cli-usage-forms",
+              "audience": "user"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "docs/features.md",
+      "sections": [
+        {
+          "slug": "what-you-can-do",
+          "slots": [
+            {
+              "id": "feature-surface",
+              "audience": "user"
+            }
           ]
         }
       ]
@@ -62,13 +106,19 @@
         {
           "slug": "layout",
           "slots": [
-            {"id": "gui-journey-surface", "audience": "user"}
+            {
+              "id": "gui-journey-surface",
+              "audience": "user"
+            }
           ]
         },
         {
           "slug": "sync-center",
           "slots": [
-            {"id": "gui-peer-retirement-confirmation", "audience": "user"}
+            {
+              "id": "gui-peer-retirement-confirmation",
+              "audience": "user"
+            }
           ]
         }
       ]
@@ -79,9 +129,18 @@
         {
           "slug": "configuration-reference",
           "slots": [
-            {"id": "current-schema-version", "audience": "user"},
-            {"id": "configuration-keys", "audience": "user"},
-            {"id": "configuration-defaults", "audience": "user"}
+            {
+              "id": "current-schema-version",
+              "audience": "user"
+            },
+            {
+              "id": "configuration-keys",
+              "audience": "user"
+            },
+            {
+              "id": "configuration-defaults",
+              "audience": "user"
+            }
           ]
         }
       ]

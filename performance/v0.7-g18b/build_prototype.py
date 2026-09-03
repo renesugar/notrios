@@ -42,8 +42,9 @@ def stage_source(destination: Path) -> list[tuple[Path, Path]]:
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(source.read_bytes())
         copied.append((source, target))
-    if len(copied) != 15:
-        raise RuntimeError(f"expected 15 documentation pages, got {len(copied)}")
+    # 15 -> 16 in v0.8 H14 slice B: docs/features.md.
+    if len(copied) != 16:
+        raise RuntimeError(f"expected 16 documentation pages, got {len(copied)}")
     return copied
 
 

@@ -2523,6 +2523,37 @@ migration is command line only because this milestone forbids a credential REST
 surface. The one with no note is `tag-a-note`, which is the gap rather than a
 decision, and the test that guards it says so.
 
+**Slice B complete 2026-09-03: `docs/features.md`, and what one page costs.**
+The page is written and its capability list is generated from the registry, so
+the surfaces a reader is told about are the checked ones. It says plainly that
+the four surfaces are not equivalent and why -- the command line owns anything
+touching this machine, the GUI owns writing, REST and MCP are for other programs
+-- and it names the one asymmetry that is a gap rather than a design.
+
+*The page moved eleven pinned counts, and that is the finding.* G18a's document
+count and grade denominator, the docs-site staging count and its test, G18b's
+prototype builder, docaudit's manual sections, fragments, generated and
+unverified counts and its denominator, G18f's slot count, its user/api split and
+its unique-fragment count, G18g's repository-file count and its idempotency
+assertion, and helpdocs' seed counts -- because `helpdocs` seeds every Markdown
+file under `docs/`, so a new page becomes a new Help note automatically. Nothing
+here was wrong; every one of those is a gate noticing a real change. But it is
+worth recording what a documentation page costs in this repository before the
+journey catalogues add several more.
+
+*Two frozen v0.7 records had to be relaxed, and both relaxations are narrower
+than they look.* G18c pinned `len(topics) == len(documents) == 15`; a frozen
+v0.7 record cannot be edited to claim it always knew about a page written in
+v0.8, so the document count became a floor -- the same shape the executables
+assertion beside it already used. G18f asserted that its recorded advisory
+reviews exactly matched the user fragments; those reviews are a record of an
+actual Qwen run, and writing an entry for a new fragment would mean **inventing
+model output that never existed**. So it became a subset check with the
+direction that matters kept -- a recorded review naming a fragment that no
+longer exists still fails -- plus an explicit assertion that `feature-surface`
+is the one unreviewed fragment. It is recorded as unreviewed rather than assumed
+to have passed, which is the same shape H8 uses for a row it cannot execute.
+
 - **How the click marker is positioned -- Resolved before implementation:
   derived from the element, never written down.** Each step captures the
   bounding box of the locator it is about to click and draws the marker there,
