@@ -335,3 +335,37 @@ func guiJourneys(root string) ([]string, error) {
 	}
 	return values, nil
 }
+
+// RepositorySurfaces is the exported view of the four surface inventories,
+// for the features registry to check itself against.
+//
+// It reuses the same extractors the generated fragments and the pinned counts
+// already use, rather than reading the sources again. A second extraction would
+// be a second opinion about what exists, and the whole value of a coverage
+// check is that there is only one.
+type RepositorySurfaces struct {
+	CLI  []string
+	REST []string
+	MCP  []string
+	GUI  []string
+}
+
+func Surfaces(root string) (RepositorySurfaces, error) {
+	cli, err := cliUsageForms(root)
+	if err != nil {
+		return RepositorySurfaces{}, err
+	}
+	rest, err := restOperations(root)
+	if err != nil {
+		return RepositorySurfaces{}, err
+	}
+	mcp, err := mcpTools(root)
+	if err != nil {
+		return RepositorySurfaces{}, err
+	}
+	gui, err := guiJourneys(root)
+	if err != nil {
+		return RepositorySurfaces{}, err
+	}
+	return RepositorySurfaces{CLI: cli, REST: rest, MCP: mcp, GUI: gui}, nil
+}

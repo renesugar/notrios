@@ -2454,6 +2454,42 @@ validated the way other evidence directories are.
 
 **Open decisions**
 
+**Slice A complete 2026-09-03: the coverage check, and it found the control by
+itself.** `internal/docfeatures` loads `docs/docfeatures/FEATURES.json` and
+compares it against the four surface inventories, which it gets from a new
+`docgen.Surfaces` rather than reading the sources again -- the same extractors
+that already produce the pinned counts of 59 CLI usage forms, 109 REST
+operations, 46 MCP tools and 37 GUI journeys. A second extraction would be a
+second opinion about what exists, and the value of a coverage check is that
+there is only one.
+
+*It reproduces the tags defect mechanically.* Run against the repository with a
+registry containing one feature, it reports `asymmetry tag-a-note has=[rest mcp]
+missing=[cli gui]`. That gap was found by reading pages by hand; it is now found
+by the build, with no model involved. `TestTheTagsAsymmetryIsStillReported`
+fails if it stops being reported, and says which of the two possible reasons the
+reader should check.
+
+*It checks both directions, and only one of them is ratcheted.* An unclaimed
+surface is a capability no reader can discover; there are 210 of them today, so
+that check is a **ratchet** -- the backlog may exist and may not grow. A gate
+demanding zero on the day it was written would have been red immediately and
+switched off within a week. A phantom claim, a feature naming a surface that no
+longer exists, is absolute: there is no backlog of those, and a page describing
+something that was removed is a defect from the moment it happens. It is also
+exactly what a consistency check cannot see, because such prose is perfectly
+consistent with itself.
+
+*Both were confirmed by mutation.* Dropping a claim pushes REST from 107 to 109
+unclaimed and fails the ratchet; adding a claim on a nonexistent tool is
+reported by name. The ratchet also fails when a count goes **down** without the
+baseline being lowered, so an improvement is locked in rather than left as slack
+for the next regression to spend.
+
+*What slice A does not do.* The registry holds one feature. Writing the other
+capability entries -- the editorial half, which is the part no generator can do
+-- is the next slice, and each one lowers a baseline.
+
 - **How the click marker is positioned -- Resolved before implementation:
   derived from the element, never written down.** Each step captures the
   bounding box of the locator it is about to click and draws the marker there,

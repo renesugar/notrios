@@ -1,0 +1,15 @@
+{
+  "schema": "notrios.docfeatures.registry.v1",
+  "features": [
+    {
+      "id": "tag-a-note",
+      "title": "Tag a note",
+      "summary": "Attach and remove tags on an existing note.",
+      "rest": [
+        "POST /api/v1/documents/{document_id}/tags/{tag}",
+        "DELETE /api/v1/documents/{document_id}/tags/{tag}"
+      ],
+      "mcp": ["tag_note", "untag_note"]
+    }
+  ]
+}
