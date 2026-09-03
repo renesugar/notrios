@@ -1895,7 +1895,18 @@ than chosen here.
   is not a silent fallback, because nothing changes underneath the user and
   every surface says what is happening; but it is a judgement about how loud is
   loud enough, and it is worth confirming rather than assuming.
-- **Provider per supported OS — Blocking before implementation.** No provider
+- **Provider per supported OS — Discharged for desktop except backup and
+  purge, which slice E owes.** The rule stands: no provider is adopted until
+  its availability, headless behavior, license, maintenance, packaging,
+  backup/purge semantics, and rollback are recorded. As of slice D most of that
+  exists -- `zalando/go-keyring` is adopted and probed for availability, its
+  licence and those of `danieljoos/wincred` and the `godbus/dbus/v5` bump are in
+  G20's 39-module inventory, headless behaviour is a typed refusal, and rollback
+  is `migrate-credentials --to development-file`. What is still missing is the
+  backup and purge semantics of a sealed key file and a stored data key, which
+  is slice E. Windows and macOS remain inspected rather than executed, which H7
+  governs and this item cannot fix. The original rule text follows.
+  No provider
   is adopted until its availability, headless behavior, license, maintenance,
   packaging, backup/purge semantics, and rollback are recorded. Android may
   remain unresolved if H11 uses a test-only injected provider and makes no
@@ -1903,7 +1914,17 @@ than chosen here.
   rather than a limit of this machine, because the Flutter and Android
   toolchains and the API-35 emulator are all present and could answer the
   `flutter_secure_storage` questions directly.
-- **Behaviour on a Linux install with no Secret Service — Blocking.** Failing
+- **Behaviour on a Linux install with no Secret Service — Resolved for
+  desktop in slice C; the tier itself is deferred.** What was blocking here was
+  telling the user before they enrol, and that shipped: `doctor` reports whether
+  the configured store is reachable and fails the check when it is not, `sync
+  init` refuses before enrolling with the reason, and the `sync-ui` surface
+  carries the reason instead of a generic unavailability. The `godbus/dbus/v5`
+  bump to v5.2.2 happened in slice A with the full suite and the Wails `gui`
+  build unchanged. What remains is whether to ship the `pass`/`age` tier at all,
+  and that moved to post-v1.0 with the rest of the headless work. The original
+  analysis follows.
+  Failing
   closed is required and is not the whole answer: the user needs to be told why
   before they enrol, not when a sync first runs. Recommended: `notriosctl
   doctor` reports whether a native store is reachable, enrolment refuses with
@@ -1927,8 +1948,17 @@ than chosen here.
   recommendation pointed anyway -- each client owns its own credential and
   re-enrols -- but by removing the question rather than choosing a side.
   Pairing is already per-replica, so this is also the stronger boundary.
-- **Whether to own the provider layer or import one — Blocking before
-  implementation.** Measured, non-test, non-comment Go lines: `zalando/go-keyring`
+- **Whether to own the provider layer or import one — Resolved for desktop
+  2026-09-03: import.** Deferring headless removed every reason to write the
+  layer here, since `keyctl`, `pass` and named-keychain selection were what a
+  hand-written provider would have been for. `zalando/go-keyring` is adopted
+  behind this item's own narrow interface, so the answer stays a provider swap
+  if the headless work reopens it. The mobile half of the original argument --
+  owning both ends on Windows to share a container with a Flutter client -- is
+  moot under the platform-conditional directive, because the host supplies the
+  credential there and the two stores never have to agree. The measurements that
+  informed it follow.
+  Measured, non-test, non-comment Go lines: `zalando/go-keyring`
   623, `danieljoos/wincred` 347, `godbus/dbus/v5` 6,338; importing `gopass`
   instead costs 18 new modules and 16.3 MB. A provider layer written here would exec
   `/usr/bin/security` on macOS, `secret-tool` or `pass`/`gopass` on Linux, and
