@@ -16,6 +16,7 @@ import (
 	"github.com/renesugar/notrios/internal/archive"
 	"github.com/renesugar/notrios/internal/archivev2"
 	"github.com/renesugar/notrios/internal/config"
+	"github.com/renesugar/notrios/internal/credentials"
 	"github.com/renesugar/notrios/internal/helpdocs"
 	"github.com/renesugar/notrios/internal/importers/chatgpt"
 	claudeimport "github.com/renesugar/notrios/internal/importers/claude"
@@ -1379,6 +1380,26 @@ func runDoctor(args []string) {
 	} else {
 		_ = os.Remove(probe)
 		report(true, true, "asset store", cfg.Data.AssetStore+" is writable")
+	}
+
+	// Which store holds this library's sync credential, and whether it can be
+	// reached. This is here because the alternative is discovering it when a
+	// sync first runs: by then the user has already paired, and the failure
+	// looks like a network problem rather than a machine that has no keyring.
+	switch kind := strings.TrimSpace(cfg.Sync.REST.CredentialStore); kind {
+	case "", config.CredentialStoreDevelopmentFile:
+		report(true, false, "credential store",
+			"development file: sync keys are protected by file permissions only, not by a keychain")
+	case config.CredentialStoreNative:
+		if provider, err := credentials.Select(credentials.KindNative); err != nil {
+			// Required: the profile asked for a store that is not there, and
+			// nothing else will be substituted for it.
+			report(false, true, "credential store", err.Error())
+		} else {
+			report(true, true, "credential store", provider.Name()+" is reachable")
+		}
+	default:
+		report(false, true, "credential store", "unknown credential store "+strconv.Quote(kind))
 	}
 
 	if _, err := os.Stat(filepath.Join("web", "dist", "index.html")); err == nil {

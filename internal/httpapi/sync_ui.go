@@ -25,8 +25,6 @@ import (
 	"github.com/renesugar/notrios/internal/syncstate"
 )
 
-const developmentSecretWarning = "Sync keys use an owner-only 0600 development file, not an operating-system keychain. Treat it like the password to this library."
-
 // SyncLocalKeys is deliberately provider-neutral. Pairing can adopt a group
 // key, but neither this interface nor any response can reveal one.
 type SyncLocalKeys interface {
@@ -45,6 +43,21 @@ type SyncSecretStore interface {
 }
 
 func (s *Server) AttachSyncSecretStore(provider SyncSecretStore) { s.syncSecrets = provider }
+
+// SetSyncSecretUnavailable records why no secret store could be attached. The
+// reason is carried rather than logged because the person who needs it is at
+// the enrolment screen, not reading the service log: "this machine has no
+// keyring" and "the database could not be opened" both otherwise arrive as the
+// same unexplained refusal.
+func (s *Server) SetSyncSecretUnavailable(reason string) { s.syncSecretsReason = reason }
+
+// syncSecretUnavailableReason is what to tell a caller that cannot enrol.
+func (s *Server) syncSecretUnavailableReason() string {
+	if s.syncSecretsReason != "" {
+		return s.syncSecretsReason
+	}
+	return "local synchronization setup is not available"
+}
 
 func (s *Server) syncUIRoutes() {
 	s.mux.HandleFunc("GET /api/v1/sync-ui", s.handleSyncUIStatus)
@@ -190,10 +203,11 @@ func (s *Server) handleSyncUIStatus(w http.ResponseWriter, r *http.Request) {
 	resources, resourceTruncated, _ := st.ListSyncResourceStatus(ctx, 50)
 	repairs, repairTruncated, _ := st.ListSyncRepairEvents(ctx, 50)
 	provider := map[string]any{"available": s.syncSecrets != nil, "configured": false,
-		"name": "unavailable", "warning": developmentSecretWarning}
+		"name": "unavailable", "warning": "", "reason": s.syncSecretUnavailableReason()}
 	if s.syncSecrets != nil {
 		provider["name"] = s.syncSecrets.ProviderName()
 		provider["warning"] = s.syncSecrets.Warning()
+		delete(provider, "reason")
 		if _, openErr := s.syncSecrets.Open(); openErr == nil {
 			provider["configured"] = true
 		}
@@ -350,7 +364,7 @@ func (s *Server) handleSyncUIInitialize(w http.ResponseWriter, r *http.Request) 
 	}
 	st, ok := s.sqliteStore()
 	if !ok || s.syncSecrets == nil {
-		writeError(w, http.StatusServiceUnavailable, "sync_setup_unavailable", "local synchronization setup is not available")
+		writeError(w, http.StatusServiceUnavailable, "sync_setup_unavailable", s.syncSecretUnavailableReason())
 		return
 	}
 	s.syncUIMu.Lock()

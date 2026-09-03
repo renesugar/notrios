@@ -1792,6 +1792,43 @@ stale until regenerated, and then required the G18f generated hash to be
 refreshed. All three are recorded here because a config key that could be added
 without any of them firing would mean the doc gates had stopped watching.
 
+**Slice C complete 2026-09-03: the refusal, and two divergences it exposed.**
+`notriosctl doctor` now reports which store a profile uses and whether it can be
+reached -- required for a configured native store, informational for the
+development file, which it names as protected by permissions rather than a
+keychain. `sync init` refuses before enrolling rather than after, and the
+`sync-ui` surface carries the reason instead of a generic
+`sync_setup_unavailable`, so the person at the enrolment screen learns that this
+machine has no keyring rather than reading it in a service log.
+
+*Writing that found the CLI and the service disagreeing about where the secret
+lives -- twice.* Every `notriosctl sync` command resolved key material through
+its own `keyPath`, which honoured the `--keys` flag and then the default path
+and **ignored `sync.rest.key_file` entirely**, while the service honours it. A
+profile that set it therefore had the command and the service reading different
+files, both reporting success. Worse, the CLI called `synckeys.Open` and
+`Create` directly, so a profile configured for the keychain would have had
+`sync init` write a plaintext key file while the service expected a sealed one.
+That is the same class as the defect the H8 matrix found -- a command and a
+service addressing different libraries -- and slice B's new configuration is
+what would have made it reachable. Both are fixed by routing every call site
+through one `syncKeyStore` resolver, and `keyPath` is deleted rather than left
+beside it, since a second copy of the resolution is how the first divergence
+happened.
+
+*And a third, found by a test that failed for the right reason.* The refusal
+test passed a config naming an unknown store and the CLI enrolled anyway,
+because configuration is parsed by an explicit key switch and slice B added the
+struct field without the parser case. The key was unreachable from a config file
+for one whole slice. It now parses and round-trips through the profile writer.
+
+*Guards.* Dropping the pre-enrolment refusal makes the refusal test fail. A
+refused enrolment is asserted to leave no key material behind. And an end-to-end
+test drives the compiled CLI against this machine's real credential store,
+reads the data key back out with a second process, and confirms it opens the
+sealed file the CLI wrote -- the only test here that could not pass against an
+in-memory stand-in.
+
 **Open decisions**
 
 - **Provider per supported OS — Blocking before implementation.** No provider

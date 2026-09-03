@@ -63,7 +63,9 @@ type Server struct {
 	// G16 UI. The shipped implementation is the explicitly warned owner-only
 	// development file; the web layer sees only redacted provider state.
 	syncSecrets SyncSecretStore
-	syncUIMu    sync.Mutex
+	// syncSecretsReason explains an absent syncSecrets to the person enrolling.
+	syncSecretsReason string
+	syncUIMu          sync.Mutex
 }
 
 // AttachSyncJobs enables the local REST/MCP sync control plane for the one

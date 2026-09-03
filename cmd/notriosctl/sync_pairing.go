@@ -71,7 +71,7 @@ func runSyncInvite(args []string) {
 	st, status, databaseID := flags.openSyncStore()
 	defer st.Close()
 	requireEnrolled(status)
-	keys := mustOpenKeys(flags.keyPath(databaseID))
+	keys := flags.keyStore(databaseID).mustOpen()
 
 	secret, err := syncauth.NewPairingSecret()
 	if err != nil {
@@ -137,7 +137,7 @@ func runSyncJoin(args []string) {
 	st, status, databaseID := flags.openSyncStore()
 	defer st.Close()
 	requireEnrolled(status)
-	keys := mustOpenKeys(flags.keyPath(databaseID))
+	keys := flags.keyStore(databaseID).mustOpen()
 
 	request := syncauth.PairingRequest{
 		InvitationID: store.InvitationID(secret), DatabaseID: "",
@@ -201,7 +201,7 @@ func runSyncAccept(args []string) {
 	st, status, databaseID := flags.openSyncStore()
 	defer st.Close()
 	requireEnrolled(status)
-	keys := mustOpenKeys(flags.keyPath(databaseID))
+	keys := flags.keyStore(databaseID).mustOpen()
 
 	adopt(st, keys, databaseID, invite.DatabaseID, invite.ReplicaID, invite.PublicKey,
 		invite.KeyID, invite.Epoch, invite.WrappedGroup, secret, invite.SchemaVerson)
@@ -368,7 +368,7 @@ func runSyncRevoke(args []string) {
 		// half of the answer and deliberately a separate decision: it costs
 		// every remaining peer a re-key, and the old epoch stays readable so
 		// the library keeps its own history.
-		keys := mustOpenKeys(flags.keyPath(databaseID))
+		keys := flags.keyStore(databaseID).mustOpen()
 		epoch, err := keys.AdvanceEpoch()
 		if err != nil {
 			exit(err)

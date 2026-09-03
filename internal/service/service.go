@@ -89,6 +89,7 @@ func New(cfg config.Config) (*Service, error) {
 		// downstream compare against nil, and a typed nil would pass them and
 		// then panic on the first call.
 		provider = nil
+		handler.SetSyncSecretUnavailable(providerErr.Error())
 		log.Printf("local sync secret provider is unavailable: %v", providerErr)
 	}
 	if err := attachSyncSecurity(cfg, st, handler, provider); err != nil {

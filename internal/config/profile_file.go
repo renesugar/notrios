@@ -43,6 +43,9 @@ func WriteProfileFile(path string, cfg Config) error {
 	if cfg.Sync.REST.KeyFile != "" {
 		fmt.Fprintf(&b, "    key_file: %s\n", q(cfg.Sync.REST.KeyFile))
 	}
+	if cfg.Sync.REST.CredentialStore != "" {
+		fmt.Fprintf(&b, "    credential_store: %s\n", q(cfg.Sync.REST.CredentialStore))
+	}
 	fmt.Fprintf(&b, "\nsearch_sidecar:\n  enabled: %t\n  binary: %s\n  index_dir: %s\n\n",
 		cfg.SearchSidecar.Enabled, q(cfg.SearchSidecar.Binary), q(cfg.SearchSidecar.IndexDir))
 	fmt.Fprintf(&b, "remote_media:\n  quarantine_dir: %s\n", q(cfg.RemoteMedia.QuarantineDir))

@@ -743,6 +743,8 @@ func applySyncREST(cfg *SyncRESTConfig, key, value string) {
 		cfg.TLSKeyFile = value
 	case "key_file":
 		cfg.KeyFile = value
+	case "credential_store":
+		cfg.CredentialStore = strings.ToLower(strings.TrimSpace(value))
 	case "max_body_bytes":
 		if size, ok := parseByteSize(value); ok {
 			cfg.MaxBodyBytes = size

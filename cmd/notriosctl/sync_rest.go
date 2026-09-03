@@ -43,7 +43,7 @@ func runSyncPush(args []string) {
 	st, status, databaseID := flags.openSyncStore()
 	defer st.Close()
 	requireEnrolled(status)
-	keys := mustOpenKeys(flags.keyPath(databaseID))
+	keys := flags.keyStore(databaseID).mustOpen()
 	group, err := keys.Current()
 	if err != nil {
 		exit(err)
@@ -93,7 +93,7 @@ func runSyncFetchBackup(args []string) {
 	}
 	assetRoot := st.AssetRoot()
 	requireEnrolled(status)
-	keys := mustOpenKeys(flags.keyPath(databaseID))
+	keys := flags.keyStore(databaseID).mustOpen()
 	client := peerClient(st, keys, status, databaseID, *peerURL)
 	ctx := context.Background()
 

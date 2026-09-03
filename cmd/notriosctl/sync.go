@@ -111,7 +111,7 @@ func runSyncRetire(args []string) {
 			"confirmation": expected, "consequences": []string{"the peer stops holding the retention watermark open", "old credentials cannot re-enroll", "the device must reset and pair as a new replica"}})
 		return
 	}
-	keys := mustOpenKeys(flags.keyPath(databaseID))
+	keys := flags.keyStore(databaseID).mustOpen()
 	result, err := st.RetireSyncPeer(context.Background(), store.RetireSyncPeerRequest{
 		ReplicaID: *peerID, Reason: *reason, Signer: keys,
 	})
@@ -266,18 +266,6 @@ func (f *syncFlags) openSyncStore() (*store.SQLiteStore, store.SyncJournalStatus
 	return st, status, identity.DatabaseID
 }
 
-func (f *syncFlags) keyPath(databaseID string) string {
-	if strings.TrimSpace(*f.keysPath) != "" {
-		return *f.keysPath
-	}
-	path, err := synckeys.DefaultPath(databaseID)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
-	return path
-}
-
 func (f *syncFlags) carrierDirectory() string {
 	if strings.TrimSpace(*f.carrier) != "" {
 		return *f.carrier
@@ -312,21 +300,32 @@ func runSyncInit(args []string) {
 		}
 		status = enrolled
 	}
-	path := flags.keyPath(databaseID)
-	keys, err := synckeys.Open(path)
+	keyStore := flags.keyStore(databaseID)
+	// The refusal comes before enrolment does any more work. A user whose
+	// profile names a credential store this machine cannot reach needs to hear
+	// that now, while nothing has been created, rather than when a sync first
+	// runs against key material that was never protected the way they asked.
+	if keyStore.unavailable != nil {
+		fmt.Fprintf(os.Stderr, "cannot enrol: %v\n", keyStore.unavailable)
+		os.Exit(1)
+	}
+	keys, err := keyStore.open()
 	if err != nil {
-		keys, err = synckeys.Create(path)
+		keys, err = keyStore.create()
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
 		}
 	}
-	fmt.Fprintln(os.Stderr, developmentKeyWarning)
+	if warning := keyStore.warning(); warning != "" {
+		fmt.Fprintln(os.Stderr, warning)
+	}
 	printJSON(map[string]any{
-		"database_id": databaseID,
-		"replica_id":  status.ReplicaID,
-		"enrolled":    true,
-		"keys":        keys.Redacted(),
+		"database_id":      databaseID,
+		"replica_id":       status.ReplicaID,
+		"enrolled":         true,
+		"credential_store": keyStore.describe(),
+		"keys":             keys.Redacted(),
 	})
 }
 
@@ -345,7 +344,7 @@ func runSyncHandshake(args []string) {
 	st, status, databaseID := flags.openSyncStore()
 	defer st.Close()
 	requireEnrolled(status)
-	keys := mustOpenKeys(flags.keyPath(databaseID))
+	keys := flags.keyStore(databaseID).mustOpen()
 	client := &syncauth.Client{
 		BaseURL: *peerURL, DatabaseID: databaseID, ReplicaID: status.ReplicaID,
 		SignerKeyID: keys.SignerKeyID(), Private: keys.PrivateSigningKey(),
@@ -390,7 +389,7 @@ func runSyncStatus(args []string) {
 		}
 		report["state_vector"] = vector
 		report["peers"] = acknowledged
-		if keys, err := synckeys.Open(flags.keyPath(databaseID)); err == nil {
+		if keys, err := flags.keyStore(databaseID).open(); err == nil {
 			report["keys"] = keys.Redacted()
 		} else {
 			report["keys"] = map[string]any{"error": err.Error()}
@@ -448,7 +447,7 @@ func mustBuildRound(flags *syncFlags, options synccarrier.Options) (*store.SQLit
 		fmt.Fprintln(os.Stderr, "this library is not enrolled for sync: run `notriosctl sync init` first")
 		os.Exit(2)
 	}
-	keys := mustOpenKeys(flags.keyPath(databaseID))
+	keys := flags.keyStore(databaseID).mustOpen()
 	group, err := keys.Current()
 	if err != nil {
 		st.Close()
@@ -473,13 +472,4 @@ func mustBuildRound(flags *syncFlags, options synccarrier.Options) (*store.SQLit
 	round := synccarrier.NewRound(synccarrier.NewStoreReplica(st), carrier, keys, keys, verifier,
 		store.NewLocalObjectProvider(st), options)
 	return st, keys, round
-}
-
-func mustOpenKeys(path string) *synckeys.KeyFile {
-	keys, err := synckeys.Open(path)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
-	return keys
 }
