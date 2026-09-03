@@ -1553,6 +1553,67 @@ here is settled precedent: H8's validator already asserts that no non-Linux row
 claims execution, so these arrive as inspection-level rows under the existing
 rule rather than as a new choice.
 
+**Evaluated 2026-09-03: `99designs/keyring` v1.2.2 replaces `zalando/go-keyring`
+as the desktop candidate, with one mandatory condition.** It is the better
+choice, though not because it solves headless -- it does not -- and it carries a
+dependency regression that has to be accepted knowingly.
+
+*What it actually gives, measured.* Backends are `wincred`, `keychain`
+(`darwin && cgo`), `secretservice`, `kwallet`, `keyctl` (all `linux`), `pass`
+(`!windows`), `file`, and `array`. Three of those matter here. **`KeychainName`
+lets it address a named macOS keychain** -- `keychain.go` sets `kc.path =
+cfg.KeychainName + ".keychain"` -- where `zalando/go-keyring` passes no keychain
+argument at all and is therefore stuck with the locked login keychain; that was
+the macOS blocker in the headless decisions above. **`keyctl`** is a headless
+Linux option needing neither D-Bus nor GPG. And a single interface with explicit
+backend selection turns the "tier or parameter" question into configuration
+rather than architecture. Licences are MIT except `godbus/dbus`, which is BSD;
+all compatible.
+
+*It does not dissolve the headless problem, and the plan should not say it
+does.* The `file` backend takes a `FilePasswordFunc`; the supplied
+`TerminalPrompt` needs a tty a headless service does not have, and
+`FixedStringPrompt` means the application itself holds the passphrase. The
+`pass` backend reaches GPG and lands on the passphrase-less-key result already
+demonstrated with `age`. `keyctl` lives in the kernel keyring, and the source
+notes possession is lost above the session keyring, so it does not survive a
+reboot. The physics are unchanged: on an unattended host the unlock secret must
+still come from somewhere, and every option is a variation on that one problem.
+What changes is that the variations are now selectable behind one interface.
+
+*The mandatory condition: `AllowedBackends` must be pinned, per platform, to
+exactly one backend.* `Open` sets `cfg.AllowedBackends = AvailableBackends()`
+when it is nil, then walks `backendOrder` -- wincred, keychain, secretservice,
+kwallet, keyctl, pass, **file** -- and on any failure `continue`s to the next,
+recording it only through `debugf`. So the library's default behaviour on a
+Linux box with no Secret Service is to walk down and open a passphrase-protected
+file instead, quietly. That is precisely this item's central boundary -- never
+silently fall back from an installed native store to plaintext -- violated by the
+default. Adoption therefore means one pinned backend per platform, a typed
+refusal when it is unavailable, and a test that asserts the refusal rather than
+a substitution. Pinned that way it is strictly better than the alternative;
+unpinned it is worse than what is shipped today.
+
+*The cost is a dependency regression, and it is real.* It requires
+`github.com/godbus/dbus` at an unversioned 2019 pin -- not `/v5` -- while this
+project already carries `godbus/dbus/v5 v5.1.0` through Wails, so the binary
+would hold two D-Bus majors, one of them unmaintained for six years. It also
+pins `gsterjov/go-libsecret` at a 2016 revision. `zalando/go-keyring` by
+contrast uses a maintained `godbus/dbus/v5 v5.2.2`. Five new modules against
+this project's 52-entry `go.sum`, so the size is not the issue; the staleness
+is. Separately, the macOS Keychain backend is behind `darwin && cgo`, so a
+`CGO_ENABLED=0` build drops it from `supportedBackends` silently; this project
+uses cgo regardless, but the gate must assert the backend is present rather than
+assume it.
+
+*Consequences for the decisions above.* This narrows the own-or-import decision
+towards importing, because a written-here provider layer would now have to
+reimplement named-keychain selection, `keyctl`, and `pass` to match. It answers
+the tier-or-parameter question as *parameter*, since backend choice is already
+configuration. It leaves the machine-versus-user-scope and Windows-logon-type
+decisions untouched, because those are properties of the platforms rather than
+of any library.
+
 **Open decisions**
 
 - **Provider per supported OS — Blocking before implementation.** No provider
