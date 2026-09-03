@@ -34,7 +34,7 @@ class G18aEvidenceTests(unittest.TestCase):
         # 214 -> 215 in v0.8 H6: "Installing from a package".
         # 215 -> 216 in v0.8 H9 slice D: "Where the key material is kept".
         # 216 -> 220 in v0.8 H14 slice B: docs/features.md and its four sections.
-        self.assertEqual(inventory["grade_baseline"]["denominator"], 224)
+        self.assertEqual(inventory["grade_baseline"]["denominator"], 228)
 
     def test_duplicate_fragment_is_rejected(self):
         source = """// A.\n//notrios:doc user same\nfunc A() {}\n// B.\n//notrios:doc user same\nfunc B() {}\n"""

@@ -114,10 +114,15 @@ func TestRepositoryExamples(t *testing.T) {
 	// five are reviewed unrun reasons, covered by executed tests in
 	// scripts/test_lifecycle.py which run them against a disposable HOME.
 	// 141 -> 142 entries in v0.8 H9 slice D: the migrate-credentials example.
+	// 13 -> 14 topics too: docs/journeys-gui.md is a new topic with one
+	// example and nothing executed, which is why executedTopics stays 12.
+	// 142 -> 143 in v0.8 H14 slice D: the GUI screenshot regenerate command,
+	// which launches a browser and rewrites committed images, so it is a
+	// reviewed unrun reason rather than something a test run should do.
 	// Executed is unchanged at 63: it writes into this user's real credential
 	// store, so it is a reviewed shared-user-state reason covered by executed
 	// tests in cmd/notriosctl that run it against a sandboxed library.
-	if report.Executed != 63 || report.Entries != 142 || len(report.Topics) != 13 {
+	if report.Executed != 63 || report.Entries != 143 || len(report.Topics) != 14 {
 		t.Fatalf("unexpected G18d coverage: %+v", report)
 	}
 	executedTopics := 0

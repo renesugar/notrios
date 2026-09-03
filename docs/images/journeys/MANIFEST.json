@@ -1,0 +1,54 @@
+{
+  "schema": "notrios.docjourneys.gui-images.v1",
+  "viewport": {
+    "width": 1280,
+    "height": 800
+  },
+  "images": [
+    {
+      "journey": "choose-a-notebook",
+      "step": "new-note",
+      "image": "images/journeys/choose-a-notebook-new-note.png",
+      "locator": {
+        "testid": "new-note-button"
+      },
+      "sha256": "4c8006c954d254b5186099b1581c6d87f3494a2eb54f95c8c3e70baaf770a7be"
+    },
+    {
+      "journey": "choose-a-notebook",
+      "step": "notebook-picker",
+      "image": "images/journeys/choose-a-notebook-notebook-picker.png",
+      "locator": {
+        "testid": "notebook-picker-trigger"
+      },
+      "sha256": "030b2a4974cd795e5132ac33065c5abdc5236c5b256dfeafd685ea461da69623"
+    },
+    {
+      "journey": "find-your-way-around",
+      "step": "the-sidebar",
+      "image": "images/journeys/find-your-way-around-the-sidebar.png",
+      "locator": {
+        "testid": "sidebar-row-nb_help"
+      },
+      "sha256": "a539d3f963f440722b4ab9f4d14c7cebdba392447208494dcf0a7569080c8c31"
+    },
+    {
+      "journey": "write-a-note",
+      "step": "new-note",
+      "image": "images/journeys/write-a-note-new-note.png",
+      "locator": {
+        "testid": "new-note-button"
+      },
+      "sha256": "4c8006c954d254b5186099b1581c6d87f3494a2eb54f95c8c3e70baaf770a7be"
+    },
+    {
+      "journey": "write-a-note",
+      "step": "the-editor",
+      "image": "images/journeys/write-a-note-the-editor.png",
+      "locator": {
+        "css": ".cm-content"
+      },
+      "sha256": "423770486c75f66c7ccafc2b2cfb4ab7f56d7930c651612a7054bbf6cec75d98"
+    }
+  ]
+}

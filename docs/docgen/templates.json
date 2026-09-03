@@ -138,6 +138,20 @@
       ]
     },
     {
+      "path": "docs/journeys-gui.md",
+      "sections": [
+        {
+          "slug": "the-journeys",
+          "slots": [
+            {
+              "id": "gui-journey-catalogue",
+              "audience": "user"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "path": "docs/service.md",
       "sections": [
         {

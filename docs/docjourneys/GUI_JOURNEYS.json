@@ -1,0 +1,92 @@
+{
+  "schema": "notrios.docjourneys.gui.v1",
+  "viewport": {
+    "width": 1280,
+    "height": 800
+  },
+  "journeys": [
+    {
+      "id": "find-your-way-around",
+      "title": "Find your way around",
+      "goal": "See what the interface is made of before changing anything in it.",
+      "feature": "read-notes",
+      "steps": [
+        {
+          "id": "the-sidebar",
+          "narrative": "The sidebar on the left lists your notebooks. Help is one of them: the documentation is seeded into your library as ordinary read-only notes, so you can search it alongside everything else.",
+          "locator": {
+            "testid": "sidebar-row-nb_help"
+          },
+          "action": "screenshot_only"
+        }
+      ],
+      "postcondition": {
+        "narrative": "the Help notebook is present in the sidebar",
+        "locator": {
+          "testid": "sidebar-row-nb_help"
+        }
+      }
+    },
+    {
+      "id": "write-a-note",
+      "title": "Write a note",
+      "goal": "Create a note and get something into it.",
+      "feature": "write-notes",
+      "steps": [
+        {
+          "id": "new-note",
+          "narrative": "Click New note. The note is created immediately and opens for editing; there is no dialog to fill in first.",
+          "locator": {
+            "testid": "new-note-button"
+          },
+          "action": "click"
+        },
+        {
+          "id": "the-editor",
+          "narrative": "Type into the editor. What you write is Markdown, and the preview beside it renders as you go.",
+          "locator": {
+            "css": ".cm-content"
+          },
+          "action": "fill",
+          "value": "# Reed beds\n\nSeen at dusk.\n"
+        }
+      ],
+      "postcondition": {
+        "narrative": "the editor is open with the note in it",
+        "locator": {
+          "css": ".cm-content"
+        }
+      }
+    },
+    {
+      "id": "choose-a-notebook",
+      "title": "Choose which notebook a note goes in",
+      "goal": "File a note somewhere other than where it landed.",
+      "feature": "organise-notebooks",
+      "steps": [
+        {
+          "id": "new-note",
+          "narrative": "Start from a new note.",
+          "locator": {
+            "testid": "new-note-button"
+          },
+          "action": "click"
+        },
+        {
+          "id": "notebook-picker",
+          "narrative": "Open the notebook picker. It sits with the note rather than in a menu, because which notebook a note belongs to is part of the note.",
+          "locator": {
+            "testid": "notebook-picker-trigger"
+          },
+          "action": "click"
+        }
+      ],
+      "postcondition": {
+        "narrative": "the notebook picker is open and offering somewhere to file the note",
+        "locator": {
+          "testid": "notebook-picker-trigger"
+        }
+      }
+    }
+  ]
+}

@@ -1724,6 +1724,54 @@
       ]
     },
     {
+      "path": "docs/journeys-gui.md",
+      "sha256": "9990e975f57954f377f83967b2654db255aeab67ea2b97ff28031f26ab8f4bf8",
+      "help_note": "doc_help_journeys_gui",
+      "owner": "go:github.com/renesugar/notrios/internal/docjourneys#GUICatalogue",
+      "sections": [
+        {
+          "id": "interface-journeys",
+          "level": 1,
+          "title": "Interface journeys",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/internal/docjourneys#GUICatalogue",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        },
+        {
+          "id": "what-the-marks-mean",
+          "level": 2,
+          "title": "What the marks mean",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/internal/docjourneys#GUICatalogue",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        },
+        {
+          "id": "the-journeys",
+          "level": 2,
+          "title": "The journeys",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/internal/docjourneys#GUICatalogue",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        },
+        {
+          "id": "how-this-page-is-kept-honest",
+          "level": 2,
+          "title": "How this page is kept honest",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/internal/docjourneys#GUICatalogue",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        }
+      ]
+    },
+    {
       "path": "docs/operations.md",
       "sha256": "a68da07193cdd7bbb56e3d3277e4068ee8aae83a253e9e36ec74cf96d47d7d11",
       "help_note": "doc_help_operations",
@@ -2383,16 +2431,16 @@
   "surfaces": [
     {
       "id": "published_markdown",
-      "count": 17,
+      "count": 18,
       "unit": "pages",
-      "sections": 224,
+      "sections": 228,
       "owner": "go:github.com/renesugar/notrios/internal/helpdocs#Seed"
     },
     {
       "id": "help_notebook",
-      "count": 17,
+      "count": 18,
       "unit": "mirrored notes",
-      "sections": 224,
+      "sections": 228,
       "owner": "go:github.com/renesugar/notrios/internal/helpdocs#Seed"
     },
     {
@@ -2489,9 +2537,9 @@
       "executed": 0,
       "generated": 0,
       "claimed": 0,
-      "unverified": 224
+      "unverified": 228
     },
-    "denominator": 224,
+    "denominator": 228,
     "reconciles": true,
     "finding": "The manual does not yet name directive fragments or executable checks, so all current section units are unverified even where independent tests exist."
   },

@@ -2625,6 +2625,48 @@ surface and the usage-form count moves 60 to 61.
   Hand-placed coordinates are refused outright: they are a second description of
   the interface, and a second description is a thing that disagrees with the
   first.
+**Slice D complete 2026-09-03: three GUI journeys, five annotated screenshots,
+and the failure the design was written to prevent -- caught, at last, by an
+accident.** `performance/v0.8-h14/gui_journeys.mjs` drives the real interface,
+resolves each step's locator, draws the marker from that element's bounding box,
+photographs it, then acts. `docs/journeys-gui.md` is generated from the same
+catalogue, so the sentence beside a picture is the string the runner used when
+it took it.
+
+*The marker function silently did nothing, and nothing noticed.* It was passed
+to `page.evaluate` as a **string**, which evaluates the expression, constructs
+the arrow function, ignores the argument and never calls it. Five screenshots
+came out with no marker on them, no error anywhere, and every gate green -- a
+confident picture of nothing, which is precisely the failure the derived-marker
+decision was recorded to prevent. What caught it was two steps pointing at
+different elements producing byte-identical files. That comparison is now a
+check rather than a coincidence: **two steps with different locators may not
+produce identical images**, because if the marker stops being drawn every step
+in the same app state photographs the same way.
+
+*The first working marker was also wrong, and visibly so.* Sized to the element,
+it drew a 244-pixel ring over a full-width sidebar row: it swallowed five rows
+and pointed at nothing. The fix separates two claims that had been conflated --
+a thin outline for the element, which is how much of the screen is clickable,
+and a fixed 40-pixel circle at its centre, which is where the click actually
+goes. Both derived from the same box. It took looking at the picture to see
+this, which is worth recording: the hash check proved the marker existed, and
+only a person could tell it was useless.
+
+*The gate runs without a browser.* Capture is opt-in behind
+`NOTRIOS_GUI_JOURNEYS=1`, but a missing screenshot, a stale one, or a step that
+starts pointing at a different element all fail an ordinary `go test` run, by
+comparing committed images against the hashes recorded when they were taken.
+Both halves were confirmed by mutation. Five images total 708 KB, well inside
+the bound the decision below asked for.
+
+*One dependency finding.* The Playwright browser journeys do not run from a
+clean checkout: `playwright` is not a dependency of this repository, and the
+runner resolves it from a sibling project through `PLAYWRIGHT_MODULE`. The
+browsers are in the shared cache, so this machine works and a fresh one would
+not. Recorded rather than fixed, because pinning a browser automation stack is a
+dependency decision rather than a documentation one.
+
 - **Where the screenshots live -- Resolved 2026-09-03: `docs/images/journeys/`,
   committed.** They are generated artifacts, which this repository does not
   normally commit, and they churn on every interface change. The earlier

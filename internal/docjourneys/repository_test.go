@@ -73,3 +73,47 @@ func TestFeaturesWithoutAJourneyAreTracked(t *testing.T) {
 			len(uncovered), baseline)
 	}
 }
+
+// TestGUIScreenshotsMatchTheirSteps runs without a browser, which is the point:
+// the expensive capture is opt-in, but a stale or missing screenshot fails an
+// ordinary test run.
+//
+// A picture that no longer matches the interface is worse than no picture. It
+// is a confident claim, and nothing about a stale PNG announces itself.
+func TestGUIScreenshotsMatchTheirSteps(t *testing.T) {
+	root := filepath.Join("..", "..")
+	catalogue, err := docjourneys.LoadGUI(filepath.Join(root, "docs", "docjourneys", "GUI_JOURNEYS.json"))
+	if err != nil {
+		t.Fatalf("loading the GUI journey catalogue: %v", err)
+	}
+	manifest, err := docjourneys.LoadImages(filepath.Join(root, "docs", "images", "journeys", "MANIFEST.json"))
+	if err != nil {
+		t.Fatalf("loading the screenshot manifest: %v", err)
+	}
+	for _, problem := range docjourneys.VerifyImages(filepath.Join(root, "docs"), catalogue, manifest) {
+		t.Errorf("%s\n\nregenerate with: NOTRIOS_GUI_JOURNEYS=1 go test ./cmd/notriosctl -run TestGUIJourneyCapture", problem)
+	}
+}
+
+// TestEveryGUIJourneyNamesARealFeature is the same tie as the command-line
+// catalogue has, for the same reason.
+func TestEveryGUIJourneyNamesARealFeature(t *testing.T) {
+	root := filepath.Join("..", "..")
+	catalogue, err := docjourneys.LoadGUI(filepath.Join(root, "docs", "docjourneys", "GUI_JOURNEYS.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	registry, err := docfeatures.Load(filepath.Join(root, "docs", "docfeatures", "FEATURES.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	known := map[string]bool{}
+	for _, feature := range registry.Features {
+		known[feature.ID] = true
+	}
+	for _, journey := range catalogue.Journeys {
+		if !known[journey.Feature] {
+			t.Errorf("GUI journey %q names feature %q, which is not in the registry", journey.ID, journey.Feature)
+		}
+	}
+}

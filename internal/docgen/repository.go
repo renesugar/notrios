@@ -33,6 +33,7 @@ const (
 	guiJourneyAnchor   = "go:github.com/renesugar/notrios/internal/docjourney#LoadAndValidate"
 	featureAnchor      = "go:github.com/renesugar/notrios/internal/docfeatures#Registry"
 	cliJourneyAnchor   = "go:github.com/renesugar/notrios/internal/docjourneys#Catalogue"
+	guiCatalogueAnchor = "go:github.com/renesugar/notrios/internal/docjourneys#GUICatalogue"
 )
 
 // RepositoryResolver returns the closed enumeration adapters for the source
@@ -71,6 +72,12 @@ func RepositoryResolver(root string) Resolver {
 				return nil, err
 			}
 			return catalogue.Lines(), nil
+		case guiCatalogueAnchor:
+			catalogue, err := docjourneys.LoadGUI(filepath.Join(root, "docs", "docjourneys", "GUI_JOURNEYS.json"))
+			if err != nil {
+				return nil, err
+			}
+			return catalogue.GUILines(), nil
 		default:
 			return nil, fmt.Errorf("no repository enumeration adapter for %q", anchor)
 		}

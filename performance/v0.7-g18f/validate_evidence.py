@@ -57,9 +57,9 @@ def validate_templates(root=ROOT):
                 slot_ids.add(ident)
                 slots.append((ident, audience, path, slug))
     # 15 -> 16 in v0.8 H14 slice B: the feature-surface slot on docs/features.md.
-    require(len(slots) == 17, "expected 17 slots")
+    require(len(slots) == 18, "expected 18 slots")
     # 13 -> 14 user slots in v0.8 H14 slice B: the feature list is user-facing.
-    require(sum(item[1] == "user" for item in slots) == 15 and sum(item[1] == "api" for item in slots) == 2, "expected 15 user/2 api slots")
+    require(sum(item[1] == "user" for item in slots) == 16 and sum(item[1] == "api" for item in slots) == 2, "expected 16 user/2 api slots")
     return template, slots
 
 
@@ -71,7 +71,7 @@ def source_fragments(root=ROOT):
         found.extend((match.group(2), match.group(1)) for match in DIRECTIVE.finditer(path.read_text(encoding="utf-8")))
     # 15 -> 16 in v0.8 H14 slice B: the feature-surface fragment on
     # internal/docfeatures#Registry.
-    require(len(found) == 17 and len({item[0] for item in found}) == 17, "expected 17 unique production source fragments")
+    require(len(found) == 18 and len({item[0] for item in found}) == 18, "expected 18 unique production source fragments")
     return dict(found)
 
 
@@ -216,7 +216,7 @@ def validate_advisory(slots, root=ROOT, here=HERE):
     reviewed = {item.get("id") for item in reviews}
     require(reviewed <= user_ids, "a recorded review names a fragment that no longer exists")
     unreviewed = sorted(user_ids - reviewed)
-    require(unreviewed == ["cli-journey-surface", "feature-surface"], f"unreviewed user fragments changed: {unreviewed}")
+    require(unreviewed == ["cli-journey-surface", "feature-surface", "gui-journey-catalogue"], f"unreviewed user fragments changed: {unreviewed}")
     example_states, journey_states = fixture_ids(root)
     verdict_counts = {key: 0 for key in VERDICTS}
     contradicted, accepted = [], 0

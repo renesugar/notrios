@@ -59,8 +59,10 @@ func TestRepositoryAuditReportsHonestCoverage(t *testing.T) {
 	// 216 -> 220 manual sections and 15 -> 16 fragments in v0.8 H14 slice B:
 	// docs/features.md, four sections, one generated feature list.
 	// 220 -> 224 and 16 -> 17 in v0.8 H14 slice C: docs/journeys-cli.md.
-	if report.ManualSections != 224 || report.Fragments != 17 || report.Claims != 4 ||
-		report.Executables != 142 || report.Journeys != 9 {
+	// 224 -> 228 and 17 -> 18 in v0.8 H14 slice D: docs/journeys-gui.md and
+	// its regenerate example.
+	if report.ManualSections != 228 || report.Fragments != 18 || report.Claims != 4 ||
+		report.Executables != 143 || report.Journeys != 9 {
 		t.Fatalf("unexpected coverage surface: %+v", report)
 	}
 	if report.Counts[GradeExecuted] != 71 ||
@@ -84,9 +86,9 @@ func TestRepositoryAuditReportsHonestCoverage(t *testing.T) {
 		// by cmd/notriosctl TestMigrateCredentialsRoundTrip instead.
 		// 296 -> 300 unverified and 382 -> 387 denominator in v0.8 H14 slice B:
 		// four new prose sections and one generated fragment.
-		report.Counts[GradeGenerated] != 13 ||
-		report.Counts[GradeClaimed] != 4 || report.Counts[GradeUnverified] != 304 ||
-		report.Denominator != 392 {
+		report.Counts[GradeGenerated] != 14 ||
+		report.Counts[GradeClaimed] != 4 || report.Counts[GradeUnverified] != 309 ||
+		report.Denominator != 398 {
 		t.Fatalf("coverage counts hide or lose units: counts=%v denominator=%d", report.Counts, report.Denominator)
 	}
 	if len(resolvedTS) == 0 {

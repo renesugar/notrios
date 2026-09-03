@@ -25,6 +25,7 @@ DOC_OWNERS = {
     "docs/cli.md": "go:github.com/renesugar/notrios/cmd/notriosctl#printHelp",
     "docs/features.md": "go:github.com/renesugar/notrios/internal/docfeatures#Registry",
     "docs/journeys-cli.md": "go:github.com/renesugar/notrios/internal/docjourneys#Catalogue",
+    "docs/journeys-gui.md": "go:github.com/renesugar/notrios/internal/docjourneys#GUICatalogue",
     "docs/gui.md": "ts:web/src/App.tsx#App",
     "docs/import-export.md": "go:github.com/renesugar/notrios/cmd/notriosctl#runImport",
     "docs/index.md": "go:github.com/renesugar/notrios/internal/helpdocs#Seed",
