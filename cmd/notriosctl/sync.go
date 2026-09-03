@@ -63,6 +63,8 @@ func runSync(args []string) {
 		runSyncOnce(args[1:])
 	case "start":
 		runSyncStart(args[1:])
+	case "migrate-credentials":
+		runSyncMigrateCredentials(args[1:])
 	default:
 		fmt.Fprintf(os.Stderr, "unknown sync subcommand %q\n", args[0])
 		printSyncUsage()
@@ -73,6 +75,7 @@ func runSync(args []string) {
 func printSyncUsage() {
 	fmt.Fprint(os.Stderr, `usage:
   notriosctl sync init     [--db ...] [--keys path]
+  notriosctl sync migrate-credentials --to native|development-file [--dry-run] [--confirm]
   notriosctl sync invite   [--ttl 15m] [--label ...] [--offline --out <file>]
   notriosctl sync join     --url <base-url> --code <code>
   notriosctl sync accept   --invite <file> --code <code> --out <file>

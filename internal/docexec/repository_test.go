@@ -113,7 +113,11 @@ func TestRepositoryExamples(t *testing.T) {
 	// either installs into this user's home or deletes their library, so all
 	// five are reviewed unrun reasons, covered by executed tests in
 	// scripts/test_lifecycle.py which run them against a disposable HOME.
-	if report.Executed != 63 || report.Entries != 141 || len(report.Topics) != 13 {
+	// 141 -> 142 entries in v0.8 H9 slice D: the migrate-credentials example.
+	// Executed is unchanged at 63: it writes into this user's real credential
+	// store, so it is a reviewed shared-user-state reason covered by executed
+	// tests in cmd/notriosctl that run it against a sandboxed library.
+	if report.Executed != 63 || report.Entries != 142 || len(report.Topics) != 13 {
 		t.Fatalf("unexpected G18d coverage: %+v", report)
 	}
 	executedTopics := 0

@@ -529,7 +529,7 @@
     },
     {
       "path": "docs/cli.md",
-      "sha256": "2c4b19d9d29d7dc321a9844c8073f99f7ba5461ed128280b0a55a5f1e4782875",
+      "sha256": "1120d2b8a9754eebc89ccfdecaeea9b0d409ff1de89f1a8e114d5a56de2a85f3",
       "help_note": "doc_help_cli",
       "owner": "go:github.com/renesugar/notrios/cmd/notriosctl#printHelp",
       "sections": [
@@ -857,6 +857,16 @@
           "id": "sync",
           "level": 2,
           "title": "sync",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/cmd/notriosctl#printHelp",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        },
+        {
+          "id": "where-the-key-material-is-kept",
+          "level": 3,
+          "title": "Where the key material is kept",
           "audience": "user",
           "kind": "actionable_or_reference",
           "owner": "go:github.com/renesugar/notrios/cmd/notriosctl#printHelp",
@@ -2279,14 +2289,14 @@
       "id": "published_markdown",
       "count": 15,
       "unit": "pages",
-      "sections": 215,
+      "sections": 216,
       "owner": "go:github.com/renesugar/notrios/internal/helpdocs#Seed"
     },
     {
       "id": "help_notebook",
       "count": 15,
       "unit": "mirrored notes",
-      "sections": 215,
+      "sections": 216,
       "owner": "go:github.com/renesugar/notrios/internal/helpdocs#Seed"
     },
     {
@@ -2383,9 +2393,9 @@
       "executed": 0,
       "generated": 0,
       "claimed": 0,
-      "unverified": 215
+      "unverified": 216
     },
-    "denominator": 215,
+    "denominator": 216,
     "reconciles": true,
     "finding": "The manual does not yet name directive fragments or executable checks, so all current section units are unverified even where independent tests exist."
   },

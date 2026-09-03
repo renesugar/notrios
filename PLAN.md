@@ -1829,8 +1829,72 @@ reads the data key back out with a second process, and confirms it opens the
 sealed file the CLI wrote -- the only test here that could not pass against an
 in-memory stand-in.
 
+**Slice D complete 2026-09-03: migration, in both directions.**
+`notriosctl sync migrate-credentials --to native|development-file` moves
+existing key material between the development file and the operating system's
+store. It is a command rather than something a configuration change does,
+because the failure is silent and permanent: key material cannot be regenerated
+-- peers have already published artifacts the current group key decrypts -- so a
+profile that switched stores by itself and then could not find its keys would be
+indistinguishable from one that never had any.
+
+*The ordering is the design.* The new copy is written to a staging path, then
+reopened and checked -- signing key, private key bytes, group key, epoch and key
+id -- and only then does the data key get stored and the file get renamed into
+place. Every failure path leaves the material readable by the store it started
+in: a staging write that fails removes the staging file, a data-key store that
+fails removes it too, and a rename that fails deletes the data key that would
+otherwise point at material the user does not have. `ReplaceMaterial` copies
+retired epochs and paired peers along with the keys, because a migration that
+dropped a peer would silently break verification of that peer's next artifact.
+
+*Refusals.* `--confirm` is required and is a flag rather than a prompt, so the
+same command works in a script and the record of what was agreed to is in the
+user's shell history; `--dry-run` prints the plan and writes nothing. Migrating
+to the store already in use is refused by name. An occupied data-key slot is
+refused rather than overwritten, because the key already there opens material
+somewhere and replacing it would strand that material forever.
+
+*Verified by mutation, and the best result came from the product rather than the
+test.* Making the migration mint fresh material instead of copying it did not
+merely fail an assertion -- the command's own verification caught it, printed
+"the migrated key material has a different signing key", and left the original
+untouched. Removing the occupied-slot refusal makes that test fail. The round
+trip runs against this machine's real credential store and back again, which is
+also the rollback this item's validation asks for.
+
+*Documentation, and what the gates asked for.* `docs/cli.md` gained "Where the
+key material is kept", which explains that changing the setting does not move
+the keys and why. That one section moved five pinned counts: G18a's manual
+sections 215 to 216 and its inventory, the docaudit surface to 142 executables
+and 296 unverified against a 382 denominator, G18d's registry to 142 entries and
+79 unverified, and the G18f generated hash. The new example is registered
+`shared-user-state` rather than `illustrative-placeholder`, because its commands
+are literal and would write into the reader's own keychain; it is executed
+against a sandboxed library by the Go tests instead, and the reason says so.
+
+*Deliberately not done in this slice: the default is still the development
+file.* Making an installed profile default to the native store is a behaviour
+change for libraries that already exist, and the safe shape for it is not
+obvious -- an installed profile holding a plaintext key file would either break
+on upgrade or quietly keep using the weaker store, and this item's boundary has
+something to say about the second. It is recorded as an open decision rather
+than chosen here.
+
 **Open decisions**
 
+- **Whether installed profiles default to the native store — Blocking before
+  H9 can be called complete.** The capability, the refusal, and the migration
+  all exist; what is unresolved is what an *existing* installed profile does on
+  upgrade. Flipping the default strands a library whose key material is still in
+  the development file, and keeping the old file when the default says native is
+  the silent downgrade this item's boundary forbids. Recommended: the installed
+  default becomes native for a profile with no key material yet, while a profile
+  that already has a development file keeps using it and is told -- by `doctor`,
+  by the sync UI, and once at startup -- to run `sync migrate-credentials`. That
+  is not a silent fallback, because nothing changes underneath the user and
+  every surface says what is happening; but it is a judgement about how loud is
+  loud enough, and it is worth confirming rather than assuming.
 - **Provider per supported OS — Blocking before implementation.** No provider
   is adopted until its availability, headless behavior, license, maintenance,
   packaging, backup/purge semantics, and rollback are recorded. Android may

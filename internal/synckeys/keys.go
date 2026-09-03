@@ -454,3 +454,27 @@ func (f *KeyFile) Redacted() map[string]any {
 		"enrolled_peers": f.EnrolledPeers(),
 	}
 }
+
+// ReplaceMaterial overwrites this file's key material with another's and
+// persists it. It exists for one caller: the migration that moves a library's
+// keys between the development file and a native credential store.
+//
+// Migration cannot mint new material -- a fresh group key would make every
+// artifact a peer has already published unreadable -- so the same keys have to
+// be written under a different protection. Everything is copied, including
+// retired epochs and paired peers, because a migration that dropped a peer
+// would silently break verification of that peer's next artifact.
+func (f *KeyFile) ReplaceMaterial(source *KeyFile) error {
+	f.data = source.data
+	f.data.Epochs = make(map[string]string, len(source.data.Epochs))
+	for epoch, key := range source.data.Epochs {
+		f.data.Epochs[epoch] = key
+	}
+	f.data.Peers = make(map[string]peerKey, len(source.data.Peers))
+	for id, peer := range source.data.Peers {
+		f.data.Peers[id] = peer
+	}
+	f.data.Retired = append([]uint32(nil), source.data.Retired...)
+	f.private = source.private
+	return f.save()
+}

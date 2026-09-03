@@ -758,6 +758,7 @@ notriosctl sync retention --snapshot <retained-snapshot-dir> [--apply --confirm-
 notriosctl sync status    [--db path] [--keys path]
 notriosctl sync discover  [--carrier dir]
 notriosctl sync once      [--carrier dir] [--cleanup] [--materialize N]
+notriosctl sync migrate-credentials --to native|development-file [--dry-run] [--confirm]
 ```
 
 Synchronizes two of *your own* libraries — through a folder you both can reach,
@@ -767,6 +768,34 @@ library that published it, so deleting the folder loses nothing.
 
 Sync is off until you turn it on. `init` enrols this library's journal and
 creates its key material; nothing before that point writes a single sync record.
+
+### Where the key material is kept
+
+By default it is a `0600` file, protected by nothing but its permissions —
+`init` says so, and `doctor` repeats it. Set `sync.rest.credential_store` to
+`native` and the file is instead encrypted, with the key that opens it held by
+your operating system's own store: GNOME Keyring or KWallet on Linux, Windows
+Credential Manager, or the macOS Keychain.
+
+Changing that setting does not move existing keys, and nothing moves them for
+you. Key material cannot be regenerated — peers have already published
+artifacts your current group key decrypts — so a library that switched stores
+automatically and then could not find its keys would be indistinguishable from
+one that never had any. Move them deliberately:
+
+```sh
+notriosctl sync migrate-credentials --to native --dry-run
+notriosctl sync migrate-credentials --to native --confirm
+```
+
+The dry run reports the plan and writes nothing. The real run writes the new
+copy, reopens it, checks that the signing key and the group key came through
+unchanged, and only then removes the old one — so an interruption at any point
+leaves the keys readable where they started. `--to development-file` reverses
+it, which is the way back if a machine loses access to its keychain.
+
+If the store you name cannot be reached, `init` refuses before enrolling rather
+than failing at the first sync, and `doctor` reports it as a failed check.
 
 ### Making the second replica
 

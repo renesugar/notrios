@@ -1439,7 +1439,7 @@
       "path": "docs/cli.md",
       "section": "sync",
       "language": "sh",
-      "sha256": "d9ae83f4e5a508367377149ced34cae1f60450c73e5efd45e6f0c66fba16d3e9",
+      "sha256": "d4bd3c8ccb22755251c7f1da7ccd31f6fbf59f6ff69f6ca3575fbd004c3382bf",
       "state": "unverified",
       "unrun_reason": {
         "code": "illustrative-placeholder",
@@ -1491,6 +1491,18 @@
           "kind": "version-output",
           "detail": "compiled CLI reports a non-empty version"
         }
+      }
+    },
+    {
+      "id": "cli-where-the-key-material-is-kept-example-1",
+      "path": "docs/cli.md",
+      "section": "where-the-key-material-is-kept",
+      "language": "sh",
+      "sha256": "48afb3d6c78ba93f534e5910dfa7d7874bded15986cb5f0814c3b949a545cee3",
+      "state": "unverified",
+      "unrun_reason": {
+        "code": "shared-user-state",
+        "detail": "Literal body moves this library's sync key material into the operating system's credential store, which is shared user state. Both commands are executed against a sandboxed library by cmd/notriosctl TestMigrateCredentialsRoundTrip and TestMigrateCredentialsRequiresConfirmation."
       }
     },
     {
