@@ -1249,9 +1249,32 @@ on H6a's ladder rather than stopping at inspection. The H8 matrix is the natural
 home for the row.
 
 **Not verified, and recorded as such.** `flutter_secure_storage`'s platform
-claims -- there is no Flutter toolchain on this machine; `ella-to/vault`'s mobile
-behaviour; and the claim that macOS Keychain entries can be shared between a
-Flutter client and a Go client given the same service name and app group.
+claims; `ella-to/vault`'s mobile behaviour; and the claim that macOS Keychain
+entries can be shared between a Flutter client and a Go client given the same
+service name and app group. The first of those is now testable here rather than
+unreachable -- see the toolchain note below -- so it stays on this list only
+until someone runs it.
+
+**Correction 2026-09-03.** The entry above previously justified the
+`flutter_secure_storage` gap with "there is no Flutter toolchain on this
+machine". That was wrong when it was written, and `FLUTTER_GO_CLIENT.md` --
+item 1 on the `AGENTS.md` reading list -- already said so: its 2026-08-26
+follow-up records Flutter Doctor passing every check, two working AVDs, and a
+headless API-35 cold boot. Confirmed directly today: Flutter **3.44.9** stable
+with Dart 3.12.2 at `~/flutter`, Android SDK **36.0.0** at `~/Android/Sdk` with
+platform android-37.0 and all licences accepted, and Android Studio at
+`/opt/android-studio` supplying the JBR. The practical consequence is that the
+mobile half of the candidate combination stops being an argument from
+documentation: `flutter_secure_storage` can be built, run on the existing API-35
+emulator, and have its Android backup and migration behaviour observed, which is
+the part this item called security-relevant. Nothing here has been run yet, and
+this note claims availability only.
+
+**`gopass` and `age` are now installed, so the headless tier is executable
+here.** `gopass` **1.16.1** and `age` **1.1.1**, both at `/usr/bin`. On H6a's
+ladder the headless provider can therefore reach "natively installed and
+executed" rather than stopping at inspection, and the H8 matrix is the natural
+home for the row, exactly as the Secret Service provider already is.
 
 **Investigated 2026-09-02: `gopass`/`pass` for headless Linux.** The proposal was
 to build a headless `secret-tool` equivalent on top of `gopass`, a GPG- or
@@ -1278,6 +1301,21 @@ different one from what a desktop keyring gives. So the honest outcome is a
 third provider tier with a weaker, documented guarantee -- not a headless
 equivalent of the native store, and never an automatic substitution, which would
 be the silent downgrade this item's boundary forbids.
+
+*Demonstrated on 2026-09-03 rather than argued, once `gopass` was installed.*
+`gopass setup --crypto age --storage fs`, run in an isolated `GOPASS_HOMEDIR`
+with `DBUS_SESSION_BUS_ADDRESS`, `DISPLAY`, and `XDG_RUNTIME_DIR` unset and no
+tty, generates a passphrase-protected age identity by default -- the identities
+file's own header reads `age-encryption.org/v1 -> scrypt` -- and then fails to
+unlock it: `pinentry error: unexpected response: "S ERROR gnome3.isatty"`. So
+gopass *out of the box* dies on a headless host at the same point `go-keyring`
+does; the blocker is merely pinentry rather than D-Bus. The same environment
+then round-tripped `age -e` and `age -d` successfully against a passphrase-less
+`age-keygen` identity at mode `0600`. That is the whole finding in two commands:
+the headless path exists, and its price is a plaintext private key readable by
+the service account. The tier must therefore be described by what it defends
+against -- offline copies -- and never as equivalent protection. Probe removed;
+no secret material retained.
 
 *Importing `gopass` as a library is strictly worse than the `go-keyring` it was
 meant to avoid.* Measured here against v1.17.0 (MIT) by building a `main` whose
@@ -1314,7 +1352,11 @@ a linked library.
 archive's `gopass` 1.5.0 is `github.com/aviau/gopass`, a different project by a
 different author; its own package description says "This package is not
 gopass.pw (similar project with the same name)", and upstream's README warns
-against installing it. So the references' `sudo apt install -y gopass` does not
+against installing it. Installing the real one made the collision visible in a
+single command rather than theoretical: `apt-cache policy gopass` now lists
+1.16.1 from `packages.gopass.pw` at pin priority 900 *and* Ubuntu's 1.5.0 at
+500, two different upstreams answering to one package name, with only the pin
+ordering separating them. So the references' `sudo apt install -y gopass` does not
 install an older gopass, it installs an unrelated one -- and because both are
 `pass`-compatible GPG stores their command surfaces overlap, so the wrong binary
 would appear to work rather than fail cleanly. That is the worst failure shape
@@ -1356,7 +1398,10 @@ not a detail.
   is adopted until its availability, headless behavior, license, maintenance,
   packaging, backup/purge semantics, and rollback are recorded. Android may
   remain unresolved if H11 uses a test-only injected provider and makes no
-  mobile-release claim.
+  mobile-release claim -- but as of 2026-09-03 that is a choice about scope
+  rather than a limit of this machine, because the Flutter and Android
+  toolchains and the API-35 emulator are all present and could answer the
+  `flutter_secure_storage` questions directly.
 - **Behaviour on a Linux install with no Secret Service — Blocking.** Failing
   closed is required and is not the whole answer: the user needs to be told why
   before they enrol, not when a sync first runs. Recommended: `notriosctl
