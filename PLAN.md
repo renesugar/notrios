@@ -1501,6 +1501,58 @@ neither has been examined, and neither can be examined on this machine. They are
 recorded here so that "headless" is not quietly read as "Linux" when the Windows
 and macOS providers are chosen.
 
+**Adding headless Windows and headless macOS to the matrix raises four new
+decisions, and they are not the Linux one repeated.** Two facts read from the
+candidate sources on 2026-09-03 shape all four. `go-keyring`'s macOS path runs
+`/usr/bin/security add-generic-password` with **no keychain argument**, so it
+always lands in the default keychain -- the user's login keychain, which is
+exactly the one still locked before anyone logs in; it cannot express
+`/Library/Keychains/System.keychain`, which is the keychain a daemon could
+actually use. And `wincred.NewGenericCredential` sets `Persist =
+PersistLocalMachine`, so a Windows credential survives logoff and reboot rather
+than evaporating with the logon session. Everything else below is documented
+behaviour that cannot be tested on this machine, and is marked as such.
+
+- **Is "headless" a provider tier or a provider parameter — Blocking, and it
+  shapes the interface.** On Linux headless needs a genuinely different provider,
+  because Secret Service is absent. On Windows it probably needs none: under a
+  service logon the DPAPI user keys are available and `PersistLocalMachine`
+  keeps the credential across restarts, so the desktop provider should serve
+  unchanged. On macOS it needs the same binary pointed at a different keychain
+  -- which `go-keyring` cannot do. So modelling headless as one cross-platform
+  tier is probably wrong; it is a distinct provider on one platform, a no-op on
+  another, and a parameter on a third. Deciding this before writing the provider
+  contract matters, because the tier shape leaks into the interface.
+- **Whether machine-scope or root-scope storage is admissible at all —
+  Blocking.** The Linux headless tier is user-scope: an `age` identity at `0600`.
+  The macOS System keychain is root-scope, and a Windows service running as
+  LocalSystem would be machine-scope. Both mean any administrator on the box
+  reads the credential, which is a different threat model from "the service
+  account reads it". A uniform user-scope-only rule is defensible and would
+  forbid both, at the cost of constraining how the service may be installed.
+  This constraint does not exist in the plan today.
+- **Which Windows logon types count as supported headless — Blocking for the
+  Windows row.** A service logon and a network logon are not the same condition:
+  DPAPI user keys are available to the former and not, in general, to the latter,
+  so a Notrios reached over SSH or WinRM may be unable to open a credential that
+  the same account can open as a service. "Headless Windows" is therefore at
+  least two matrix rows, and one of them may be unsupportable. Recommended:
+  support the service logon, refuse with a typed reason on the other, and say so
+  before enrolment rather than at first sync.
+- **Whether the guarantee is stated per platform — Blocking, because this item
+  requires telling the user what they have.** The three headless guarantees are
+  genuinely different: a plaintext key at `0600` on Linux, real user-scope DPAPI
+  on Windows under a service logon, root-scope on macOS if the System keychain is
+  used. Headless Windows may well be *stronger* than headless Linux. One
+  sentence saying "headless protection is weaker" would therefore be false on at
+  least one platform, and this item forbids overclaiming in either direction.
+  Recommended: `doctor` and enrolment name the actual scope per platform.
+
+*Not a new decision.* Whether the matrix may carry rows that cannot be executed
+here is settled precedent: H8's validator already asserts that no non-Linux row
+claims execution, so these arrive as inspection-level rows under the existing
+rule rather than as a new choice.
+
 **Open decisions**
 
 - **Provider per supported OS — Blocking before implementation.** No provider
