@@ -2454,6 +2454,21 @@ validated the way other evidence directories are.
 
 **Open decisions**
 
+- **How the click marker is positioned -- Resolved before implementation:
+  derived from the element, never written down.** Each step captures the
+  bounding box of the locator it is about to click and draws the marker there,
+  as an overlay injected into the page before the screenshot rather than
+  composited afterwards. Three consequences follow and all three are the reason.
+  A moved button moves the circle, so the picture cannot drift from the
+  interface while still looking authoritative. A locator that stops matching
+  fails the journey instead of producing a confident image of the wrong place --
+  the failure is loud rather than silent, which is the property a screenshot in
+  documentation otherwise lacks entirely. And drawing in-page keeps the marker
+  in the element's own coordinate space at the page's device pixel ratio, so no
+  second imaging toolchain is involved and no scaling arithmetic can be wrong.
+  Hand-placed coordinates are refused outright: they are a second description of
+  the interface, and a second description is a thing that disagrees with the
+  first.
 - **Where the screenshots live -- Blocking before any are produced.** They are
   generated artifacts, and this repository does not commit those; they also churn
   on every interface change, and a journey catalogue could carry a hundred of
