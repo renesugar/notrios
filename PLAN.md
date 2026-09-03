@@ -2266,13 +2266,26 @@ control: a method that cannot find it is not worth adopting. It also raises a
 separate product question recorded below -- whether the CLI is *meant* to have no
 add/remove-tag command.
 
-**Scope.** Stand up `opencode` and `zg` locally; index the repository with a
-**local** embedding; reuse the existing 8-case, 16-run contradiction calibration
-in `performance/v0.7-g18f/ADVISORY_REPORT.json` to score candidate free models
+**Scope, in two parts.** *First*, write the documentation topics the repository
+does not have: a features page answering "what can I do with this?", and from it
+a catalogue of user journeys for the command line and then for the GUI, the GUI
+ones illustrated with annotated screenshots. *Second*, stand up `opencode` and
+`zg` locally; index the repository with a **local** embedding; reuse the
+existing 8-case, 16-run contradiction calibration in
+`performance/v0.7-g18f/ADVISORY_REPORT.json` to score candidate free models
 against the recorded Qwen 2.5 Coder 1.5B baseline of 7/16; then build a small
-task-to-command harness over a handful of pages and measure whether generated
-command lines run in a sandbox. Report a recommendation with evidence, change no
-prose, and add no build gate.
+task-to-command harness and measure whether generated command lines run in a
+sandbox. The evaluation runs over the new pages as well as the existing ones,
+which is the point of the ordering: a quality pass over documentation that does
+not yet exist measures nothing.
+
+*This reverses one of the item's own boundaries and that is deliberate.* H14
+previously said "change no prose", because an investigation that rewrites what
+it is measuring cannot report on it. That still holds for the evaluation: it
+proposes, and a person decides. It does not hold for the generation, which is
+now the first half of the item. The two are kept apart -- new prose is written
+and reviewed before any model scores it, and no model output is committed as
+documentation.
 
 **The experiment must control for the model's own knowledge, and this is the
 design point everything else depends on.** A capable model can produce a
@@ -2330,9 +2343,86 @@ difference here is only the source of the command: docexec runs commands
 gap between those two is exactly the thing being measured, so the fixture,
 adapters and substitution machinery should be shared.
 
+**The features page should be half generated, and the generated half is what
+makes it trustworthy.** A features list is usually written by hand and quietly
+goes stale. This repository already carries four anchored, counted surface
+registries -- 59 CLI usage forms behind `printHelp`, 63 configuration keys, 109
+REST operations and 46 MCP tools -- each with an owner anchor and a pinned count
+that fails when it moves. So the inventory of *what exists* can be generated the
+way every other fragment is, and only the description of *what it is for* is
+written by a person.
+
+That split buys a check nothing currently performs: **every anchored surface
+must be claimed by at least one feature entry, and an unclaimed surface fails.**
+A capability that no feature names is by definition a capability no reader can
+discover, which is precisely the tags defect recorded above -- REST and MCP can
+tag a note, and neither the CLI guide nor the GUI guide says so. Today that was
+found by hand. With a coverage gate it would have been found by the build. This
+is the most valuable thing in the item and it does not need a model at all.
+
+*Flags are not features, and the mapping is the editorial work.* Reading
+`cmd/notriosctl` yields switches, not answers to "what can I do with this?".
+`--materialize N` is a flag; "sync two of your own libraries through a folder
+you both can reach" is a feature. The generator produces the surface inventory
+and the coverage obligation; a person writes the capability prose against it.
+Any attempt to generate the prose from flag names would produce a second copy of
+the reference documentation and call it a features page.
+
+**Journeys: the command line first, and it is the specification.** The
+instruction to start with the command line is right for a reason worth
+recording: a CLI journey can be *executed*, deterministically, against a seeded
+library, and `internal/docexec` already does exactly that for 63 registered
+examples with postconditions describing what must be true afterwards. A GUI
+journey needs a browser and is slower, flakier and harder to assert. So the CLI
+journey is written and executed first, and it becomes the statement of what the
+task *is*; the GUI journey is then checked against it rather than invented
+beside it.
+
+The starting catalogue, which is a floor rather than a ceiling: create, update
+and delete a note in a named notebook; search, demonstrating every query-language
+feature with a worked example; notebooks defined by a query; import from Joplin;
+import from Obsidian; export the library; create a profile such as
+`personal_notes` or `work_notes`; synchronize with a replica on another drive,
+including a cloud folder mapped locally; back up and restore the library; and
+how Recoll is used. Tagging a note is deliberately on the list too, because at
+the time of writing the command line cannot do it -- the journey is the thing
+that makes that visible instead of arguable.
+
+**Comparing the two catalogues is a defect finder, not a formatting exercise.**
+Each GUI journey is compared to its command-line counterpart, and the comparison
+has three possible outcomes, all of which are findings: the GUI can do something
+the CLI cannot, the CLI can do something the GUI cannot, or the two do the same
+thing by different names. The tags case is already a worked example of the
+second, and it generalises -- this comparison is the systematic version of the
+hand-found positive control. Every difference is recorded as either a documented
+deliberate asymmetry or a product gap, and the investigation does not decide
+which; it presents them.
+
+**Screenshots: reuse the runner, and derive the marker from the click.** The
+machinery is largely present. `performance/v0.7-g18e/browser_journeys.mjs`
+already launches headless Chromium through Playwright, drives journeys with
+`getByRole` and `locator` and **already takes screenshots** -- it simply writes
+them to `/tmp` and records the paths, one per viewport, at the end of a run.
+What is missing is per-step capture, annotation, and a place for them to live.
+
+The annotation should be drawn from the locator that is about to be clicked,
+using its bounding box, rather than placed at coordinates written down by hand.
+A hand-placed circle is a second description of the interface that drifts the
+moment a button moves; a circle derived from the element is correct by
+construction, and if the locator stops matching, the journey fails rather than
+producing a confident picture of the wrong place. Draw it by injecting an
+overlay into the page before the capture rather than compositing afterwards:
+that renders at the page's own device pixel ratio, needs no second imaging
+toolchain, and keeps the marker in the same coordinate space as the element.
+Each step then carries the screenshot and a sentence saying what the user is
+doing and why -- the descriptive text is the documentation, and the picture
+supports it.
+
 **Boundaries.** No prose is rewritten automatically, no model output is executed
 outside the existing sandbox, no probabilistic result becomes a build gate, and
-nothing is added to `make validate`. No paid model, no subscription, no recurring
+nothing is added to `make validate`. No screenshot is ever taken of a real
+library: every capture comes from the seeded fixture, because a screenshot of a
+GUI is a picture of somebody's notes and this repository does not carry those. No paid model, no subscription, no recurring
 charge. `zg` uses a local embedding model and its remote-data path stays off.
 Notes, databases, evidence archives and anything under `data/` are never sent
 anywhere. No change to docgen, docaudit, or any G18 gate.
@@ -2341,19 +2431,62 @@ anywhere. No change to docgen, docaudit, or any G18 gate.
 the docaudit registry and the G18f calibration, all of which are already
 committed.
 
-**Working state.** A recorded run over a small page sample, with per-model
-calibration scores, per-task three-arm results, the exact prompts and their
-hashes, and a written recommendation on whether to proceed -- including "no" as
-an acceptable outcome.
+**Working state.** A features page whose surface inventory is generated and
+whose capability prose is written, with every anchored surface claimed; a
+command-line journey catalogue whose steps execute against a seeded library; a
+GUI journey catalogue with annotated per-step screenshots; a recorded comparison
+of the two catalogues naming every asymmetry; and then a recorded model run over
+a page sample, with per-model calibration scores, per-task three-arm results,
+the exact prompts and their hashes, and a written recommendation on whether to
+proceed -- including "no" as an acceptable outcome.
 
-**Validation and evidence.** Calibration scores for each candidate model on the
-same 16 runs the Qwen baseline used, so the comparison is like-for-like; the
-three-arm results per task; every generated command with its exit status and
-what it did; prompt and source hashes for reproducibility; and the tags case as
-a positive control that the method must flag. Evidence under
-`performance/v0.8-h14/`, validated the way other evidence directories are.
+**Validation and evidence.** For the generation half: the surface-coverage
+check, failing on any anchored surface no feature claims; every command-line
+journey executed with its postcondition asserted; every GUI journey run in the
+browser with its screenshots produced from locators that still match; and the
+catalogue comparison, with each asymmetry classified as deliberate or a gap. For
+the evaluation half: calibration scores for each candidate model on the same 16
+runs the Qwen baseline used, so the comparison is like-for-like; the three-arm
+results per task; every generated command with its exit status and what it did;
+prompt and source hashes for reproducibility; and the tags case as a positive
+control that the method must flag. Evidence under `performance/v0.8-h14/`,
+validated the way other evidence directories are.
 
 **Open decisions**
+
+- **Where the screenshots live -- Blocking before any are produced.** They are
+  generated artifacts, and this repository does not commit those; they also churn
+  on every interface change, and a journey catalogue could carry a hundred of
+  them. Against that, a screenshot that is not committed does not appear when
+  someone reads `docs/gui.md` on a git host, which is where most readers are.
+  Recommended: do not commit them. Generate them into the documentation-site
+  build, record a manifest of step ids, locators and image hashes that *is*
+  committed, and let the gate compare the manifest rather than the pixels -- so
+  staleness is detectable without carrying binaries. If they must be committed,
+  cap the count and the dimensions deliberately rather than discovering the repo
+  size afterwards.
+- **How much the new pages move the pinned counts -- Non-blocking but noisy.**
+  One section and one example moved five pinned counts in H9 slice D. A features
+  page plus two journey catalogues is a large multiple of that, across G18a's
+  inventory and denominator, the docaudit surface, G18d's registry and the G18f
+  hashes. Recommended: land the generation in slices, one catalogue at a time,
+  and re-pin each time rather than once at the end, so a count that moves for the
+  wrong reason is still findable.
+- **Whether the journey catalogues are new pages or new sections -- Non-blocking,
+  decide before writing.** `docs/cli.md` and `docs/gui.md` are already long, and
+  every section in them is anchored to an owner. Recommended: separate pages,
+  `docs/features.md` and two journey pages, because a journey catalogue has a
+  different shape from a command reference and mixing them makes both worse --
+  and because a separate page can be regenerated without re-hashing a reference
+  page nobody changed.
+- **Whether an executed GUI journey is required, or only an executed CLI one --
+  Blocking for the gate design.** The browser journeys are opt-in today,
+  behind `NOTRIOS_G18E_BROWSER=1`, because they need Playwright and a real
+  browser. Making illustrated GUI journeys a committed claim while their
+  execution stays optional would mean shipping pictures nothing verifies.
+  Recommended: keep browser execution opt-in for `make validate`, but require it
+  for the evidence bundle, so the claim is only made when it has been run --
+  the same shape H8 uses for rows it cannot execute everywhere.
 
 - **Sending repository documentation to a hosted model -- Blocking.** G18f's
   recorded policy is `endpoint_scope: loopback-only`,
@@ -2431,7 +2564,13 @@ a positive control that the method must flag. Evidence under
   documentation one. The investigation records the question; it does not answer
   it.
 
-**Exit criteria.** The method is worth adopting only if all of these hold: at
+**Exit criteria.** The generation half stands on its own and is not conditional
+on the model work: the features page, the two journey catalogues and the
+comparison are worth having whether or not any model turns out to be usable, and
+the surface-coverage check is worth having whether or not the pages are ever
+scored. If the evaluation half is abandoned, the generation half still ships.
+
+The evaluation method is worth adopting only if all of these hold: at
 least one free model scores materially better than the 7/16 baseline on the
 existing calibration; the three-arm ablation separates arm 1 from arm 2 on a page
 known to be good, so the test can tell prose from prior knowledge; and the tags
