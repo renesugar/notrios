@@ -644,6 +644,9 @@ Usage:
   notriosctl sync once [--carrier dir] [--cleanup] [--materialize N] [--db ...]
                                                  # one exchange through a shared directory; polling or manual runs are
                                                  # the mechanism, and no filesystem watcher is required for correctness
+  notriosctl sync migrate-credentials --to native|development-file [--dry-run] [--confirm]
+                                                 # move existing sync key material between the operating system's
+                                                 # credential store and the owner-only development file
   notriosctl link [--db ...] [--anchor slug|^block] [--list-anchors] <document-id>
                                                  # print the stable notrios:// link for a note or one of its sections
   notriosctl open [--profile name] [--registry path] [--db path] [--launch] <notrios-uri>

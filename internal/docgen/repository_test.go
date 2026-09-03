@@ -25,7 +25,11 @@ func TestRepositoryEnumerationsMatchFiniteRegistries(t *testing.T) {
 		// 56 -> 58 in v0.8 H4 slice D: `notriosctl paths` and
 		// `notriosctl config show`.
 		// 58 -> 59 in v0.8 H4 slice E: `notriosctl migrate`.
-		{cliHelpAnchor, 59},
+		// 59 -> 60 in v0.8 H14 slice B: `notriosctl sync migrate-credentials`,
+		// which H9 slice D added to printSyncUsage and docs/cli.md but not to
+		// this registry, so `notriosctl --help` never mentioned it. The
+		// features coverage work found it.
+		{cliHelpAnchor, 60},
 		{restAnchor, 109},
 		{mcpToolsAnchor, 46},
 		{mcpSyncScopeAnchor, 7},

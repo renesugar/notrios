@@ -20,9 +20,9 @@ import (
 // Every number here should only ever move down. Lowering one is the point of
 // the work; raising one needs a reason written beside it.
 var unclaimedBaseline = map[string]int{
-	"cli":  59,
-	"rest": 107,
-	"mcp":  44,
+	"cli":  0,
+	"rest": 0,
+	"mcp":  0,
 }
 
 func repositoryReport(t *testing.T) Report {

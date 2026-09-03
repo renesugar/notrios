@@ -529,7 +529,7 @@
     },
     {
       "path": "docs/cli.md",
-      "sha256": "26a07e5026341539b0db681f6f6a3ad0f8550be5fff03a1a845e5bb7297c8c65",
+      "sha256": "6a81905076f9a47b6ea9287a7e025ca2fb367b461e7a4eb447a4c1a136521ead",
       "help_note": "doc_help_cli",
       "owner": "go:github.com/renesugar/notrios/cmd/notriosctl#printHelp",
       "sections": [
@@ -2301,7 +2301,7 @@
     },
     {
       "id": "cli_help",
-      "count": 59,
+      "count": 60,
       "unit": "usage forms",
       "owner": "go:github.com/renesugar/notrios/cmd/notriosctl#printHelp"
     },

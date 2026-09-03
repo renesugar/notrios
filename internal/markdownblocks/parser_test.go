@@ -185,15 +185,15 @@ func byText(blocks []Block) map[string]Block {
 
 func TestSlugifyFollowsTheOrdinaryMarkdownRules(t *testing.T) {
 	cases := map[string]string{
-		"Section Title":            "section-title",
-		"  Padded  Heading  ":      "padded-heading",
-		"Punctuation: it's here!":  "punctuation-its-here",
-		"Already-Hyphenated":       "already-hyphenated",
-		"snake_case_heading":       "snake-case-heading",
-		"Multiple   Spaces":        "multiple-spaces",
-		"Ünïcode Ström":            "ünïcode-ström",
-		"日本語 見出し":                  "日本語-見出し",
-		"2026 Plans":               "2026-plans",
+		"Section Title":             "section-title",
+		"  Padded  Heading  ":       "padded-heading",
+		"Punctuation: it's here!":   "punctuation-its-here",
+		"Already-Hyphenated":        "already-hyphenated",
+		"snake_case_heading":        "snake-case-heading",
+		"Multiple   Spaces":         "multiple-spaces",
+		"Ünïcode Ström":             "ünïcode-ström",
+		"日本語 見出し":                   "日本語-見出し",
+		"2026 Plans":                "2026-plans",
 		"-- leading and trailing -": "leading-and-trailing",
 	}
 	for text, want := range cases {

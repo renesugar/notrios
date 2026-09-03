@@ -2490,6 +2490,39 @@ for the next regression to spend.
 capability entries -- the editorial half, which is the part no generator can do
 -- is the next slice, and each one lowers a baseline.
 
+**Slice B, first half, complete 2026-09-03: the registry is written and the
+ratchet is now a gate.** All 29 features are recorded and every one of the 214
+surfaces is claimed -- 60 CLI usage forms, 109 REST operations, 46 MCP tools.
+The baselines are zero, which turns the ratchet into an absolute gate: a new
+command, operation or tool added without a feature entry now fails, rather than
+being tolerated as backlog. Clearing it in one slice was possible because the
+grouping is editorial rather than laborious; twenty-nine capabilities cover a
+surface area that reads as much larger when listed as flags.
+
+*It found a defect I had introduced myself, three commits earlier.* `notriosctl
+sync migrate-credentials`, added in H9 slice D, went into `printSyncUsage` and
+`docs/cli.md` but never into `printHelp` -- which is the anchored, counted
+registry. `notriosctl --help` did not mention it, the count stayed at 59, and no
+gate fired, because nothing was inconsistent: the command simply was not
+claimed anywhere the machinery looks. That is precisely the class of defect this
+item exists to find, and it found one on its author. Registering it moved the
+pinned count 59 to 60.
+
+*And it caught three endpoints that do not exist.* Writing the registry, I
+claimed `GET /api/v1/resources`, `GET /api/v1/selection/plan` and `GET
+/api/v1/documents` -- all plausible, none real. The phantom check named all
+three by feature. This is the direction a consistency gate cannot see, and the
+first time it ran against real prose it caught the author inventing API.
+
+*The asymmetry report is now a document in its own right.* Fourteen features
+offer a capability on some surfaces and not others, each carrying a
+`surface_note` saying whether that is deliberate. Most are: importing reads
+directories on this machine, so it is command line only; profiles are about this
+machine, so a service answering for one must not reach another; credential
+migration is command line only because this milestone forbids a credential REST
+surface. The one with no note is `tag-a-note`, which is the gap rather than a
+decision, and the test that guards it says so.
+
 - **How the click marker is positioned -- Resolved before implementation:
   derived from the element, never written down.** Each step captures the
   bounding box of the locator it is about to click and draws the marker there,

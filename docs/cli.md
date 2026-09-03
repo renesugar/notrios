@@ -46,6 +46,7 @@ printHelp is the finite command and flag usage registry shown by notriosctl.
 - notriosctl sync fetch-backup --url <base-url> --out <dir>
 - notriosctl sync discover [--carrier dir] [--db ...]
 - notriosctl sync once [--carrier dir] [--cleanup] [--materialize N] [--db ...]
+- notriosctl sync migrate-credentials --to native|development-file [--dry-run] [--confirm]
 - notriosctl link [--db ...] [--anchor slug|^block] [--list-anchors] <document-id>
 - notriosctl open [--profile name] [--registry path] [--db path] [--launch] <notrios-uri>
 - notriosctl profile create --name <profile> [--listen 127.0.0.1:8080] [--db ...] [--sync-target none|directory|rest]
