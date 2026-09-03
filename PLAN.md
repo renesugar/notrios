@@ -1299,15 +1299,34 @@ and `gopass` fit the same shape, as does macOS `security`. One subprocess
 provider contract therefore covers desktop Linux, headless Linux, and macOS, and
 the difference between them becomes configuration rather than code. This is the
 strongest argument yet for owning the provider layer rather than importing one.
+It also inherits one obligation from the packaging finding below: a provider that
+resolves its helper by name has to prove which program it found before trusting
+it with a secret.
 
 *The packaging cost is the same undeclared-dependency class H6a measured.* On
 this machine `pass` 1.7.4-6 is installed only because `docker-desktop` depends
 on it -- not manually, not by default -- exactly as `libsecret-tools` was
 manually installed with no reverse dependencies. A `.deb` would need an explicit
 `Depends:` that `dpkg-shlibdeps` cannot derive, because a helper process is not
-a linked library. Ubuntu 24.04 also ships `gopass` **1.5.0** against upstream's
-1.17.0, so the references' `sudo apt install -y gopass` does not get the API
-they describe; `age` 1.1.1 and `pass` 1.7.4 are current enough.
+a linked library.
+
+*And on Debian and Ubuntu the name `gopass` does not identify a program.* The
+archive's `gopass` 1.5.0 is `github.com/aviau/gopass`, a different project by a
+different author; its own package description says "This package is not
+gopass.pw (similar project with the same name)", and upstream's README warns
+against installing it. So the references' `sudo apt install -y gopass` does not
+install an older gopass, it installs an unrelated one -- and because both are
+`pass`-compatible GPG stores their command surfaces overlap, so the wrong binary
+would appear to work rather than fail cleanly. That is the worst failure shape
+for a credential store, and it lands squarely on the subprocess provider, whose
+whole premise is resolving a helper by name on `$PATH`. Consequences for the
+design: the provider must never trust the name alone -- it takes a configured
+absolute path, or verifies the binary's identity before first use, and refuses
+rather than guesses; and installing the real gopass means adding a third-party
+apt repository and signing key, which is a trust decision the Ubuntu archive
+does not cover. This is the reason to prefer **`pass`** as the headless backend:
+`pass` 1.7.4 is in the archive, is the reference implementation, and its name is
+unambiguous. `age` 1.1.1 is likewise current in the archive.
 
 *The GPG identity already on this machine cannot serve as the backend.* The
 evidence-signing key is `sec#` -- the primary secret key is offline -- and it has
@@ -1352,7 +1371,9 @@ not a detail.
   fallback; state in `doctor`, at enrolment, and in the documentation that its
   protection is against offline exposure and not against compromise of the
   account that runs the service; and refuse rather than downgrade when the
-  operator has selected nothing.
+  operator has selected nothing. Prefer `pass` over `gopass` as the backend:
+  `gopass` names two different programs on Debian and Ubuntu, and the helper
+  must be pinned by absolute path or verified by identity in either case.
 - **Whether Windows clients must share one store — Non-blocking, decide before
   a Flutter desktop client exists.** DPAPI and Credential Manager are different
   stores. Recommended: treat each client as owning its own credential and
