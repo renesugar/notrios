@@ -30,7 +30,11 @@ func newCredentialFixture(t *testing.T) *credentialFixture {
 	f := &credentialFixture{binary: sharedBinary(t, "notriosctl"), sandbox: t.TempDir()}
 	f.keyFile = filepath.Join(f.sandbox, "sync-keys.json")
 	f.configPath = filepath.Join(f.sandbox, "notrios.yaml")
-	if err := os.WriteFile(f.configPath, []byte("sync:\n  rest:\n    key_file: "+f.keyFile+"\n"), 0o600); err != nil {
+	// The development file is named explicitly: an unconfigured installed
+	// profile now defaults to the keychain, and this fixture exists to set up
+	// the migration away from the file.
+	if err := os.WriteFile(f.configPath,
+		[]byte("sync:\n  rest:\n    key_file: "+f.keyFile+"\n    credential_store: development-file\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	result := f.run(t, "init")
@@ -42,7 +46,7 @@ func newCredentialFixture(t *testing.T) *credentialFixture {
 	if f.databaseID == "" {
 		t.Fatalf("no database_id in %q", result.stdout)
 	}
-	f.ref = credentials.Reference{Service: "notrios-sync", Account: f.databaseID}
+	f.ref = credentials.SyncReference(f.databaseID, f.keyFile)
 	provider, err := credentials.Select(credentials.KindNative)
 	if err != nil {
 		t.Fatal(err)

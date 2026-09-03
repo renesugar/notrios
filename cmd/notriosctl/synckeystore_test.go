@@ -49,27 +49,103 @@ func TestSyncInitRefusesAnUnreachableStore(t *testing.T) {
 	}
 }
 
-// TestSyncInitReportsTheDevelopmentStore pins the default: unchanged
-// behaviour, and the warning still printed.
-func TestSyncInitReportsTheDevelopmentStore(t *testing.T) {
+// TestSyncInitStoreDefaults covers what an unconfigured profile does. These
+// tests run a binary from a temp directory, which resolves as an installed
+// profile rather than a source checkout -- the distinction the default turns
+// on.
+func TestSyncInitStoreDefaults(t *testing.T) {
 	binary := sharedBinary(t, "notriosctl")
-	sandbox := t.TempDir()
-	result := runCLIIn(t, sandbox, binary,
-		"sync", "init",
+
+	t.Run("a fresh installed profile defaults to the keychain", func(t *testing.T) {
+		if _, err := credentials.Select(credentials.KindNative); err != nil {
+			t.Skipf("no native credential store here: %v", err)
+		}
+		sandbox := t.TempDir()
+		keyFile := filepath.Join(sandbox, "sync-keys.json")
+		result := runCLIIn(t, sandbox, binary, "sync", "init", "--keys", keyFile,
+			"--db", filepath.Join(sandbox, "notes.sqlite"),
+			"--asset-store", filepath.Join(sandbox, "assets"))
+		if result.exitCode != 0 {
+			t.Fatalf("sync init failed: %s", result.stderr)
+		}
+		var decoded map[string]any
+		if err := json.Unmarshal([]byte(result.stdout), &decoded); err != nil {
+			t.Fatalf("%v in %q", err, result.stdout)
+		}
+		databaseID, _ := decoded["database_id"].(string)
+		provider, err := credentials.Select(credentials.KindNative)
+		if err != nil {
+			t.Fatal(err)
+		}
+		ref := credentials.SyncReference(databaseID, keyFile)
+		t.Cleanup(func() { _ = provider.Delete(ref) })
+
+		if got := decoded["credential_store"]; got == "locked-file-development" {
+			t.Fatalf("a fresh installed profile still defaulted to the development file")
+		}
+		if strings.Contains(result.stderr, "not an OS keychain") {
+			t.Fatalf("the development warning must not appear for a keychain profile: %q", result.stderr)
+		}
+		if sealed, err := synckeys.IsSealed(keyFile); err != nil || !sealed {
+			t.Fatalf("the default did not seal the key file: %v %v", sealed, err)
+		}
+	})
+
+	t.Run("an explicit development file is honoured and warned about", func(t *testing.T) {
+		sandbox, configPath := writeCredentialConfig(t, "development-file")
+		result := runCLIIn(t, sandbox, binary, "sync", "init", "--config", configPath,
+			"--keys", filepath.Join(sandbox, "sync-keys.json"),
+			"--db", filepath.Join(sandbox, "notes.sqlite"),
+			"--asset-store", filepath.Join(sandbox, "assets"))
+		if result.exitCode != 0 {
+			t.Fatalf("sync init failed: %s", result.stderr)
+		}
+		var decoded map[string]any
+		if err := json.Unmarshal([]byte(result.stdout), &decoded); err != nil {
+			t.Fatalf("%v in %q", err, result.stdout)
+		}
+		if got := decoded["credential_store"]; got != "locked-file-development" {
+			t.Fatalf("credential_store = %v, want locked-file-development", got)
+		}
+		if !strings.Contains(result.stderr, "not an OS keychain") {
+			t.Fatalf("the development warning must still be printed; got %q", result.stderr)
+		}
+		// An explicit choice is a decision, not a state to nag about.
+		if strings.Contains(result.stderr, "migrate-credentials") {
+			t.Fatalf("an explicitly chosen store must not be advised against: %q", result.stderr)
+		}
+	})
+}
+
+// TestUpgradedProfileKeepsItsKeysAndIsTold is the case the default turns on. A
+// library whose keys predate this milestone must keep reading them -- pointing
+// it at a keychain that does not hold them would strand it -- and must be told,
+// because continuing silently is the downgrade this milestone forbids.
+func TestUpgradedProfileKeepsItsKeysAndIsTold(t *testing.T) {
+	binary := sharedBinary(t, "notriosctl")
+	sandbox, configPath := writeCredentialConfig(t, "development-file")
+	keyFile := filepath.Join(sandbox, "sync-keys.json")
+	args := []string{"--config", configPath, "--keys", keyFile,
 		"--db", filepath.Join(sandbox, "notes.sqlite"),
-		"--asset-store", filepath.Join(sandbox, "assets"))
-	if result.exitCode != 0 {
+		"--asset-store", filepath.Join(sandbox, "assets")}
+	if result := runCLIIn(t, sandbox, binary, append([]string{"sync", "init"}, args...)...); result.exitCode != 0 {
 		t.Fatalf("sync init failed: %s", result.stderr)
 	}
-	var decoded map[string]any
-	if err := json.Unmarshal([]byte(result.stdout), &decoded); err != nil {
-		t.Fatalf("%v in %q", err, result.stdout)
+
+	// Drop the setting, as an upgrade to a build with the new default does.
+	if err := os.WriteFile(configPath, []byte("sync:\n  rest:\n    key_file: "+keyFile+"\n"), 0o600); err != nil {
+		t.Fatal(err)
 	}
-	if got := decoded["credential_store"]; got != "locked-file-development" {
-		t.Fatalf("credential_store = %v, want locked-file-development", got)
+
+	status := runCLIIn(t, sandbox, binary, append([]string{"sync", "status"}, args...)...)
+	if status.exitCode != 0 {
+		t.Fatalf("an upgraded profile must still read its keys: %s", status.stderr)
 	}
-	if !strings.Contains(result.stderr, "not an OS keychain") {
-		t.Fatalf("the development warning must still be printed; got %q", result.stderr)
+	if !strings.Contains(status.stderr, "migrate-credentials") {
+		t.Fatalf("the upgraded profile was not told to migrate; stderr: %q", status.stderr)
+	}
+	if sealed, err := synckeys.IsSealed(keyFile); err != nil || sealed {
+		t.Fatalf("an upgrade must not seal existing key material: %v %v", sealed, err)
 	}
 }
 
@@ -86,7 +162,10 @@ func TestCLIHonoursTheConfiguredKeyFile(t *testing.T) {
 		t.Fatal(err)
 	}
 	configPath := filepath.Join(sandbox, "notrios.yaml")
-	body := "sync:\n  rest:\n    key_file: " + configured + "\n"
+	// The store is pinned because this test is about the path, not the store:
+	// left unset, an installed profile defaults to the keychain and this would
+	// write a data key into the keyring of whoever runs the suite.
+	body := "sync:\n  rest:\n    key_file: " + configured + "\n    credential_store: development-file\n"
 	if err := os.WriteFile(configPath, []byte(body), 0o600); err != nil {
 		t.Fatal(err)
 	}
@@ -107,9 +186,9 @@ func TestCLIHonoursTheConfiguredKeyFile(t *testing.T) {
 func TestDoctorReportsTheCredentialStore(t *testing.T) {
 	binary := sharedBinary(t, "notriosctl")
 
-	t.Run("development file by default", func(t *testing.T) {
-		sandbox := t.TempDir()
-		result := runCLIIn(t, sandbox, binary, "doctor",
+	t.Run("an explicit development file is named as such", func(t *testing.T) {
+		sandbox, configPath := writeCredentialConfig(t, "development-file")
+		result := runCLIIn(t, sandbox, binary, "doctor", "--config", configPath,
 			"--db", filepath.Join(sandbox, "notes.sqlite"),
 			"--asset-store", filepath.Join(sandbox, "assets"))
 		if !strings.Contains(result.stdout, "credential store") {
@@ -117,6 +196,19 @@ func TestDoctorReportsTheCredentialStore(t *testing.T) {
 		}
 		if !strings.Contains(result.stdout, "not by a keychain") {
 			t.Fatalf("doctor must say the development file is not a keychain:\n%s", result.stdout)
+		}
+	})
+
+	t.Run("a fresh installed profile reports the keychain", func(t *testing.T) {
+		if _, err := credentials.Select(credentials.KindNative); err != nil {
+			t.Skipf("no native credential store here: %v", err)
+		}
+		sandbox := t.TempDir()
+		result := runCLIIn(t, sandbox, binary, "doctor",
+			"--db", filepath.Join(sandbox, "notes.sqlite"),
+			"--asset-store", filepath.Join(sandbox, "assets"))
+		if !strings.Contains(result.stdout, "is reachable") {
+			t.Fatalf("doctor must report the default keychain as reachable:\n%s", result.stdout)
 		}
 	})
 
@@ -160,7 +252,7 @@ func TestSyncInitUsesTheNativeStoreEndToEnd(t *testing.T) {
 	if databaseID == "" {
 		t.Fatalf("no database_id in %q", result.stdout)
 	}
-	ref := credentials.Reference{Service: "notrios-sync", Account: databaseID}
+	ref := credentials.SyncReference(databaseID, keyFile)
 	provider, err := credentials.Select(credentials.KindNative)
 	if err != nil {
 		t.Fatal(err)

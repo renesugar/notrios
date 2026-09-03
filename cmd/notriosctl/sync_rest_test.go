@@ -33,6 +33,7 @@ sync:
     enabled: true
     require_tls: true
     key_file: %q
+    credential_store: development-file
 `, address, "http://"+address, root, replica.db, replica.assets, replica.keys)
 	if err := os.WriteFile(path, []byte(contents), 0o600); err != nil {
 		t.Fatal(err)
@@ -187,6 +188,7 @@ sync:
     enabled: true
     require_tls: true
     key_file: %q
+    credential_store: development-file
 `, root, replica.db, replica.assets, replica.keys)
 	if err := os.WriteFile(configPath, []byte(contents), 0o600); err != nil {
 		t.Fatal(err)

@@ -8,6 +8,7 @@ import (
 
 	"github.com/renesugar/notrios/internal/config"
 	"github.com/renesugar/notrios/internal/credentials"
+	"github.com/renesugar/notrios/internal/paths"
 	"github.com/renesugar/notrios/internal/synckeys"
 )
 
@@ -19,6 +20,9 @@ import (
 // use the keychain would be the same mistake with worse consequences.
 type syncKeyStore struct {
 	path string
+	// advisory is set when this installed profile is on the development file
+	// only because it already had key material there.
+	advisory string
 	// provider is nil for the development file, which is protected only by
 	// its mode and says so.
 	provider credentials.Provider
@@ -50,8 +54,16 @@ func (f *syncFlags) keyStore(databaseID string) *syncKeyStore {
 		path = resolved
 	}
 	store := &syncKeyStore{path: path}
-	switch kind := strings.TrimSpace(cfg.Sync.REST.CredentialStore); kind {
-	case "", config.CredentialStoreDevelopmentFile:
+	installed := false
+	if resolution, err := paths.ForProcess(nil); err == nil {
+		installed = resolution.Mode != paths.ModeSource
+	}
+	resolved := config.ResolveCredentialStore(
+		strings.ToLower(strings.TrimSpace(cfg.Sync.REST.CredentialStore)), installed,
+		synckeys.HasPlaintextMaterial(path), synckeys.HasSealedMaterial(path))
+	store.advisory = resolved.Advisory
+	switch kind := resolved.Kind; kind {
+	case config.CredentialStoreDevelopmentFile:
 		return store
 	case config.CredentialStoreNative:
 		provider, err := credentials.Select(credentials.KindNative)
@@ -60,7 +72,7 @@ func (f *syncFlags) keyStore(databaseID string) *syncKeyStore {
 			return store
 		}
 		store.provider = provider
-		store.ref = credentials.Reference{Service: "notrios-sync", Account: databaseID}
+		store.ref = credentials.SyncReference(databaseID, path)
 		return store
 	default:
 		store.unavailable = fmt.Errorf("unknown sync credential store %q", kind)
@@ -71,10 +83,13 @@ func (f *syncFlags) keyStore(databaseID string) *syncKeyStore {
 // warning is what a user should be told about this store, or empty when there
 // is nothing to say.
 func (s *syncKeyStore) warning() string {
-	if s.provider == nil && s.unavailable == nil {
-		return developmentKeyWarning
+	if s.provider != nil || s.unavailable != nil {
+		return ""
 	}
-	return ""
+	if s.advisory != "" {
+		return developmentKeyWarning + "\n" + s.advisory
+	}
+	return developmentKeyWarning
 }
 
 func (s *syncKeyStore) describe() string {
@@ -142,4 +157,25 @@ func (s *syncKeyStore) mustOpen() *synckeys.KeyFile {
 		os.Exit(1)
 	}
 	return keys
+}
+
+// resolveDoctorCredentialStore answers the same question the service and the
+// sync commands ask, from the same inputs. `doctor` reaches it through its own
+// helper only because it has no syncFlags to hang it off.
+func resolveDoctorCredentialStore(cfg config.Config) config.CredentialStoreResolution {
+	installed := false
+	if resolution, err := paths.ForProcess(nil); err == nil {
+		installed = resolution.Mode != paths.ModeSource
+	}
+	path := strings.TrimSpace(cfg.Sync.REST.KeyFile)
+	if path == "" {
+		// Without a database there is no per-library default path to inspect,
+		// so the shared default is the honest thing to test: a profile with no
+		// key material anywhere reads as fresh, which it is.
+		path, _ = synckeys.DefaultPath("")
+	}
+	return config.ResolveCredentialStore(
+		strings.ToLower(strings.TrimSpace(cfg.Sync.REST.CredentialStore)), installed,
+		path != "" && synckeys.HasPlaintextMaterial(path),
+		path != "" && synckeys.HasSealedMaterial(path))
 }

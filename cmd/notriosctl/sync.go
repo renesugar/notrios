@@ -392,10 +392,18 @@ func runSyncStatus(args []string) {
 		}
 		report["state_vector"] = vector
 		report["peers"] = acknowledged
-		if keys, err := flags.keyStore(databaseID).open(); err == nil {
+		keyStore := flags.keyStore(databaseID)
+		report["credential_store"] = keyStore.describe()
+		if keys, err := keyStore.open(); err == nil {
 			report["keys"] = keys.Redacted()
 		} else {
 			report["keys"] = map[string]any{"error": err.Error()}
+		}
+		// The advisory goes to stderr rather than into the report, so that a
+		// script parsing this JSON is unaffected while a person running the
+		// command still sees it.
+		if keyStore.advisory != "" {
+			fmt.Fprintln(os.Stderr, keyStore.advisory)
 		}
 	}
 	printJSON(report)

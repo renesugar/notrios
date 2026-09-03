@@ -771,13 +771,21 @@ creates its key material; nothing before that point writes a single sync record.
 
 ### Where the key material is kept
 
-By default it is a `0600` file, protected by nothing but its permissions —
-`init` says so, and `doctor` repeats it. Set `sync.rest.credential_store` to
-`native` and the file is instead encrypted, with the key that opens it held by
-your operating system's own store: GNOME Keyring or KWallet on Linux, Windows
-Credential Manager, or the macOS Keychain.
+An installed Notrios keeps it in your operating system's own store — GNOME
+Keyring or KWallet on Linux, Windows Credential Manager, or the macOS Keychain.
+The key file stays where it is and is encrypted; only the key that opens it goes
+into the store. Running from a source checkout keeps a plain `0600` file
+instead, so a developer's throwaway libraries never land in their real keychain.
+`sync.rest.credential_store` overrides both, with `native` or
+`development-file`.
 
-Changing that setting does not move existing keys, and nothing moves them for
+A library that already has keys keeps using whatever holds them, whichever way
+that setting would otherwise fall. That matters on upgrade: a library enrolled
+before this existed has its keys in a `0600` file, and pointing it at a keychain
+that does not hold them would strand it. So it carries on, and `init`, `status`
+and `doctor` all tell you to move them.
+
+Changing the setting does not move existing keys, and nothing moves them for
 you. Key material cannot be regenerated — peers have already published
 artifacts your current group key decrypts — so a library that switched stores
 automatically and then could not find its keys would be indistinguishable from

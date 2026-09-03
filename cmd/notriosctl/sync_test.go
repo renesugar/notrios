@@ -18,23 +18,35 @@ type syncReplica struct {
 	assets  string
 	keys    string
 	carrier string
+	// config pins the development file. These tests are about the sync
+	// protocol, and an unconfigured installed profile now defaults to the
+	// operating system's keychain -- so without this they would write a data
+	// key into the keyring of whoever runs the suite and leave it there.
+	config string
 }
 
 func newSyncReplica(t *testing.T, binary, name, carrier string) *syncReplica {
 	t.Helper()
 	root := t.TempDir()
-	return &syncReplica{
+	replica := &syncReplica{
 		name: name, binary: binary,
 		db:      filepath.Join(root, "notes.sqlite"),
 		assets:  filepath.Join(root, "assets"),
 		keys:    filepath.Join(root, "sync-keys.json"),
 		carrier: carrier,
+		config:  filepath.Join(root, "replica.yaml"),
 	}
+	if err := os.WriteFile(replica.config,
+		[]byte("sync:\n  rest:\n    credential_store: development-file\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	return replica
 }
 
 func (r *syncReplica) run(t *testing.T, args ...string) cliResult {
 	t.Helper()
-	full := append([]string{"sync", args[0], "--db", r.db, "--asset-store", r.assets, "--keys", r.keys}, args[1:]...)
+	full := append([]string{"sync", args[0], "--config", r.config,
+		"--db", r.db, "--asset-store", r.assets, "--keys", r.keys}, args[1:]...)
 	result := runCLI(t, r.binary, full...)
 	if result.exitCode != 0 {
 		t.Fatalf("%s: notriosctl %s exited %d\nstdout: %s\nstderr: %s",

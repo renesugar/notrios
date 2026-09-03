@@ -1386,10 +1386,18 @@ func runDoctor(args []string) {
 	// reached. This is here because the alternative is discovering it when a
 	// sync first runs: by then the user has already paired, and the failure
 	// looks like a network problem rather than a machine that has no keyring.
-	switch kind := strings.TrimSpace(cfg.Sync.REST.CredentialStore); kind {
-	case "", config.CredentialStoreDevelopmentFile:
-		report(true, false, "credential store",
-			"development file: sync keys are protected by file permissions only, not by a keychain")
+	credentialStore := resolveDoctorCredentialStore(cfg)
+	switch kind := credentialStore.Kind; kind {
+	case config.CredentialStoreDevelopmentFile:
+		detail := "development file: sync keys are protected by file permissions only, not by a keychain"
+		if credentialStore.Advisory != "" {
+			// Reported as a failed check rather than a note. An installed
+			// profile that no longer defaults to this store is in a state the
+			// user has to act on, and doctor is where they look.
+			report(false, false, "credential store", credentialStore.Advisory)
+		} else {
+			report(true, false, "credential store", detail)
+		}
 	case config.CredentialStoreNative:
 		if provider, err := credentials.Select(credentials.KindNative); err != nil {
 			// Required: the profile asked for a store that is not there, and

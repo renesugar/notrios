@@ -1881,10 +1881,53 @@ on upgrade or quietly keep using the weaker store, and this item's boundary has
 something to say about the second. It is recorded as an open decision rather
 than chosen here.
 
+**The default flip, 2026-09-03, and the two defects it exposed.** The rule is
+the one recommended: an explicit setting always wins; a library that already has
+key material keeps the store that holds it; otherwise an installed profile gets
+the keychain and a source checkout gets the development file. Enforcing it in
+one function that all three callers share was the lesson from slice C, and it
+paid twice.
+
+*The credential reference was not unique per key file, and the flip made that
+reachable.* The account was the database identity, which sounds like profile
+isolation and is not: a second replica is made by adopting the first's database
+identity, so two replicas of one library on one machine share a database id and
+hold different key material in different files. With both defaulting to the
+keychain, the second replica's enrolment overwrote the first's data key and
+stranded a sealed file nothing could open. The sync tests failed with "sync key
+file did not open with the supplied data key", which is exactly what that is.
+`credentials.SyncReference` now folds a hash of the absolute key-file path into
+the account.
+
+*The default depended on the process rather than the library.* The first rule
+asked whether *this process* was installed, and a service started from a
+checkout and a command run from a sandbox resolve different modes while
+addressing the same library -- so they disagreed about where its keys lived, and
+the daemon refused to start against a file the CLI had just sealed. The rule now
+asks the library first: sealed material means the keychain, plaintext material
+means the file, and only a library with no material at all falls through to the
+process's mode. That is both a fix and a better rule, because the library is
+what the answer is actually about.
+
+*A test of mine was writing into the developer's real keyring and leaving it
+there.* The full suite left one entry behind on every run. It was
+`TestCLIHonoursTheConfiguredKeyFile` from slice C, which configures a key file
+and nothing else, so the new default sent it to the keychain. Bisecting found it;
+it now pins the development file, as do the shared sync harnesses, which are
+about the protocol rather than the store. The suite now leaves the keyring
+exactly as it found it, and that is checked rather than assumed.
+
 **Open decisions**
 
-- **Whether installed profiles default to the native store — Blocking before
-  H9 can be called complete.** The capability, the refusal, and the migration
+- **Whether installed profiles default to the native store — Resolved and
+  implemented 2026-09-03, as recommended.** An installed profile defaults to the
+  native store; a source checkout keeps the development file, so a developer's
+  throwaway libraries never reach their real keychain; and a library that
+  already holds key material keeps whatever holds it, with `doctor`, `sync
+  init`, `sync status`, the sync UI and one startup line all naming
+  `migrate-credentials`. Implementing it exposed two real defects, recorded
+  below. The original framing follows.
+- **(superseded) Whether installed profiles default to the native store.** The capability, the refusal, and the migration
   all exist; what is unresolved is what an *existing* installed profile does on
   upgrade. Flipping the default strands a library whose key material is still in
   the development file, and keeping the old file when the default says native is

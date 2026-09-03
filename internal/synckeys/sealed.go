@@ -173,3 +173,20 @@ func (f *KeyFile) sealBytes(plaintext []byte) ([]byte, error) {
 		Ciphertext: base64.StdEncoding.EncodeToString(ciphertext),
 	}, "", "  ")
 }
+
+// HasPlaintextMaterial reports whether path holds key material this version
+// can read without a data key. It is how callers tell an upgraded library --
+// one whose keys predate the credential store -- from a fresh one, and it
+// answers false for a missing file, an unreadable one, or a sealed one.
+func HasPlaintextMaterial(path string) bool {
+	sealed, err := IsSealed(path)
+	return err == nil && !sealed
+}
+
+// HasSealedMaterial reports whether path holds key material that needs a data
+// key. Together with HasPlaintextMaterial it lets a caller ask the library
+// which store it is already using, rather than inferring it from the process.
+func HasSealedMaterial(path string) bool {
+	sealed, err := IsSealed(path)
+	return err == nil && sealed
+}

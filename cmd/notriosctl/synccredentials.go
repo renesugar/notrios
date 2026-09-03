@@ -104,7 +104,7 @@ func planCredentialMigration(source *syncKeyStore, destination, databaseID strin
 	plan := &credentialMigration{
 		from: source.describe(), path: source.path, keys: keys,
 		provider: provider, toNative: toNative,
-		ref: credentials.Reference{Service: "notrios-sync", Account: databaseID},
+		ref: credentials.SyncReference(databaseID, source.path),
 	}
 	plan.to = "locked-file-development"
 	if toNative {

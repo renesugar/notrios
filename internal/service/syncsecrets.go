@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"strings"
 	"sync"
 
 	"github.com/renesugar/notrios/internal/config"
@@ -34,9 +33,10 @@ func newSyncSecretStore(cfg config.Config, st *store.SQLiteStore) (syncSecretPro
 	if err != nil {
 		return nil, err
 	}
-	switch kind := strings.TrimSpace(cfg.Sync.REST.CredentialStore); kind {
-	case "", config.CredentialStoreDevelopmentFile:
-		return &fileSyncSecretStore{path: path}, nil
+	resolution := resolveCredentialStore(cfg, path)
+	switch kind := resolution.Kind; kind {
+	case config.CredentialStoreDevelopmentFile:
+		return &fileSyncSecretStore{path: path, advisory: resolution.Advisory}, nil
 	case config.CredentialStoreNative:
 		provider, err := credentials.Select(credentials.KindNative)
 		if err != nil {
@@ -49,19 +49,12 @@ func newSyncSecretStore(cfg config.Config, st *store.SQLiteStore) (syncSecretPro
 		return &nativeSyncSecretStore{
 			path:     path,
 			provider: provider,
-			// The account is the database identity so two profiles on one
-			// machine hold separate credentials, which is what makes profile
-			// isolation true of the secrets and not only of the files.
-			ref: credentials.Reference{Service: nativeCredentialService, Account: identity.DatabaseID},
+			ref:      credentials.SyncReference(identity.DatabaseID, path),
 		}, nil
 	default:
 		return nil, fmt.Errorf("unknown sync credential store %q", kind)
 	}
 }
-
-// nativeCredentialService groups this application's secrets inside whichever
-// operating-system store is in use.
-const nativeCredentialService = "notrios-sync"
 
 // nativeSyncSecretStore keeps the key material sealed on disk and only the
 // data key that opens it in the operating system's store. The split is

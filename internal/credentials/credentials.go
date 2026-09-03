@@ -5,8 +5,11 @@
 package credentials
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
+	"path/filepath"
 )
 
 var (
@@ -109,4 +112,30 @@ func selectProvider(provider Provider) (Provider, error) {
 			ErrUnavailable, provider.Name(), availability.Reason)
 	}
 	return provider, nil
+}
+
+// SyncService groups a library's sync secrets inside whichever operating-system
+// store is in use.
+const SyncService = "notrios-sync"
+
+// SyncReference names the entry holding the data key for one key file.
+//
+// The database id alone is not enough, and that is not a theoretical concern:
+// a second replica is made by adopting the first's database identity, so two
+// replicas of one library on one machine share a database id while holding
+// different key material in different files. Keyed by database alone, the
+// second replica's enrolment overwrites the first's data key and strands a
+// sealed file nothing can open. The path is what actually distinguishes them,
+// so it is folded in -- shortened to a hash so the account name stays a
+// readable identifier rather than a filesystem path in a keychain listing.
+func SyncReference(databaseID, keyFilePath string) Reference {
+	absolute, err := filepath.Abs(keyFilePath)
+	if err != nil {
+		absolute = keyFilePath
+	}
+	digest := sha256.Sum256([]byte(absolute))
+	return Reference{
+		Service: SyncService,
+		Account: fmt.Sprintf("%s-%s", databaseID, hex.EncodeToString(digest[:])[:16]),
+	}
 }

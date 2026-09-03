@@ -84,6 +84,13 @@ func New(cfg config.Config) (*Service, error) {
 	provider, providerErr := newSyncSecretStore(cfg, st)
 	if providerErr == nil {
 		handler.AttachSyncSecretStore(provider)
+		// Said once at startup rather than on every sync: an installed profile
+		// still holding its keys in the development file is a state the user
+		// has to act on, and it is not visible anywhere they would otherwise
+		// look.
+		if file, ok := provider.(*fileSyncSecretStore); ok && file.advisory != "" {
+			log.Printf("sync credentials: %s", file.advisory)
+		}
 	} else {
 		// A nil interface rather than a nil pointer inside one: the checks
 		// downstream compare against nil, and a typed nil would pass them and
@@ -210,8 +217,12 @@ func (s *Service) startSyncJobs() error {
 
 type fileSyncSecretStore struct {
 	path string
-	mu   sync.Mutex
-	keys *synckeys.KeyFile
+	// advisory is set when an installed profile is still on this file only
+	// because it already had key material here. It is carried into Warning so
+	// that every surface showing the provider also shows what to do about it.
+	advisory string
+	mu       sync.Mutex
+	keys     *synckeys.KeyFile
 }
 
 // resolveKeyFilePath is where key material lives, whichever store protects
@@ -231,7 +242,11 @@ func resolveKeyFilePath(cfg config.Config, st *store.SQLiteStore) (string, error
 
 func (p *fileSyncSecretStore) ProviderName() string { return "locked-file-development" }
 func (p *fileSyncSecretStore) Warning() string {
-	return "Sync keys use an owner-only 0600 development file, not an operating-system keychain. Treat it like the password to this library."
+	warning := "Sync keys use an owner-only 0600 development file, not an operating-system keychain. Treat it like the password to this library."
+	if p.advisory != "" {
+		warning += " " + p.advisory
+	}
+	return warning
 }
 func (p *fileSyncSecretStore) openKeyFile() (*synckeys.KeyFile, error) {
 	p.mu.Lock()
