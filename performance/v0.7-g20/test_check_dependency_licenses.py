@@ -9,9 +9,12 @@ v = importlib.util.module_from_spec(spec); spec.loader.exec_module(v)
 class DependencyLicenseTests(unittest.TestCase):
     def test_inventory_passes(self):
         # 361 npm packages since v0.8 H2 added mermaid@11.17.2 and its 110
-        # transitive dependencies. The count is asserted rather than computed
-        # so that an unexplained dependency arriving still fails here.
-        self.assertEqual(v.validate(), (37, 361))
+        # transitive dependencies. 39 Go modules since v0.8 H9 adopted
+        # zalando/go-keyring, which brought danieljoos/wincred and bumped
+        # godbus/dbus/v5 from v5.1.0 to v5.2.2. The count is asserted rather
+        # than computed so that an unexplained dependency arriving still fails
+        # here.
+        self.assertEqual(v.validate(), (39, 361))
 
     def test_missing_go_dependency_fails_closed(self):
         declared = v.go_modules()

@@ -1716,6 +1716,44 @@ operation can be added later under a new operation name without breaking
 compatibility. Since the Flutter client is post-1.0 and H11 injects test-only
 secrets, the host-supplied contract can be designed when a real client exists.
 
+**Slice A complete 2026-09-03: the provider seam, the native provider, and the
+two guards.** `internal/credentials` holds a `Provider` interface -- name,
+availability, get, set, delete over an opaque `Reference` -- with a native
+implementation over `zalando/go-keyring`, a process-memory implementation for
+tests and for a host that supplies a secret across the ABI, and a `Select` that
+refuses rather than substitutes. `godbus/dbus/v5` moved v5.1.0 to v5.2.2 as
+expected; the full suite and the Wails `gui` build are unchanged by it. G20 now
+inventories 39 Go modules.
+
+*A measurement decided the storage design before any code was written.* The
+question was whether to put the sync key material in the native store directly.
+Measured by growing a real `synckeys.KeyFile`: 262 bytes fresh, 1,640 at ten
+peers, **3,010 at twenty**, 6,844 at forty peers and twenty epochs. Windows
+Credential Manager caps a blob at 2,560 bytes, so the document crosses the limit
+at roughly eighteen peers -- meaning the direct approach would pass every test
+written today and fail in the field once a user had paired enough replicas. The
+design is therefore envelope encryption: a fixed 32-byte data key in the native
+store, the key file encrypted at rest beside the profile registry where H4's
+backup and purge semantics already know to find it. `MaxSecretBytes` is set to
+2,048 and refuses anything larger, so the constraint is enforced rather than
+remembered.
+
+*Both guards were verified by mutation, not by being written.* Removing
+`!android` from the desktop provider's build constraint makes the cross-build
+gate fail with `android/arm64 links zalando/go-keyring`, and making `Select`
+return an unavailable provider instead of refusing makes the fail-closed test
+fail. The refusal test runs against a stub rather than the real store, because
+on any developer desktop the keyring always answers and the one branch this item
+exists to guarantee would otherwise be exercised nowhere.
+
+*Two corrections.* The cross-build gate covers **iOS as well as Android**: the
+note above said `ios/arm64` could not be checked without cgo, which is true of
+`go build` but not of `go list -deps`, and the mutated run reported
+`ios/arm64 links zalando/go-keyring` alongside the Android row. And G20 recorded
+`godbus/dbus/v5` as MIT; its licence file is **BSD-2-Clause** at both v5.1.0 and
+v5.2.2. Both are in the allowed set, so nothing was admitted that should not
+have been, but the entry was wrong and is now corrected.
+
 **Open decisions**
 
 - **Provider per supported OS — Blocking before implementation.** No provider
