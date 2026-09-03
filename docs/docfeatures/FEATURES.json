@@ -5,6 +5,9 @@
       "id": "write-notes",
       "title": "Write and edit notes",
       "summary": "Create a note, change it, add to either end of it, and delete it. Deleting moves a note to Trash, and Trash is a place you can look in and take things back out of, not a countdown.",
+      "cli": [
+        "notriosctl notes create"
+      ],
       "rest": [
         "POST /api/v1/documents",
         "PUT /api/v1/documents/{document_id}",
@@ -30,7 +33,7 @@
         "Edit and save a note — executed (edit-save)",
         "Restore a note from Trash — executed (trash-restore)"
       ],
-      "surface_note": "No command line: notriosctl imports and maintains a library rather than authoring in it. Writing happens in the GUI or over REST/MCP."
+      "surface_note": "The command line writes a note and files it, and does no more than that: editing, appending and deleting happen in the GUI or over REST/MCP. `notes create` exists so a note can be the end of a pipeline."
     },
     {
       "id": "read-notes",

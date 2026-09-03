@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
@@ -13,16 +14,113 @@ import (
 // runNotes dispatches the note subcommands.
 func runNotes(args []string) {
 	if len(args) == 0 {
-		fmt.Fprintln(os.Stderr, "usage: notriosctl notes move --document <id> --notebook <id|name>")
+		printNotesUsage()
 		os.Exit(2)
 	}
 	switch args[0] {
+	case "create":
+		runNoteCreate(args[1:])
 	case "move":
 		runNoteMove(args[1:])
 	default:
 		fmt.Fprintf(os.Stderr, "unknown notes subcommand %q\n", args[0])
+		printNotesUsage()
 		os.Exit(2)
 	}
+}
+
+func printNotesUsage() {
+	fmt.Fprint(os.Stderr, `usage:
+  notriosctl notes create --title <title> [--notebook <id|name>] [--body-file path | --body text]
+  notriosctl notes move --document <id> --notebook <id|name>
+`)
+}
+
+// runNoteCreate writes one note.
+//
+// It exists for the same reason `notes move` does, and the case is if anything
+// plainer: creating a note was reachable from the store, REST and MCP and from
+// neither the command line nor a script. The absence had already been worked
+// around rather than noticed -- this repository's own sync tests make a note by
+// writing a Markdown file and importing it as a one-file Obsidian vault, with a
+// comment explaining that the CLI cannot do it -- and the v0.8 H14 journey
+// catalogue hit the same wall when it tried to document the task.
+//
+// The body comes from a file, an argument, or standard input. Standard input is
+// the one that matters: it makes a note the end of a pipeline rather than
+// something that has to be staged on disk first.
+func runNoteCreate(args []string) {
+	fs := flag.NewFlagSet("notriosctl notes create", flag.ExitOnError)
+	configPath := fs.String("config", "", "optional config file")
+	dbPath := fs.String("db", "", "SQLite database path override")
+	assetStore := fs.String("asset-store", "", "asset store directory override")
+	title := fs.String("title", "", "note title")
+	notebook := fs.String("notebook", "", "notebook ID, or its name when unambiguous")
+	bodyFile := fs.String("body-file", "", "read the note body from a file, or - for standard input")
+	body := fs.String("body", "", "the note body as an argument")
+	if err := fs.Parse(args); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(2)
+	}
+	if fs.NArg() != 0 || strings.TrimSpace(*title) == "" {
+		printNotesUsage()
+		fs.PrintDefaults()
+		os.Exit(2)
+	}
+	if strings.TrimSpace(*bodyFile) != "" && *body != "" {
+		fmt.Fprintln(os.Stderr, "pass --body or --body-file, not both")
+		os.Exit(2)
+	}
+
+	contents := *body
+	if path := strings.TrimSpace(*bodyFile); path != "" {
+		var (
+			raw []byte
+			err error
+		)
+		if path == "-" {
+			raw, err = io.ReadAll(os.Stdin)
+		} else {
+			raw, err = os.ReadFile(path)
+		}
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		contents = string(raw)
+	}
+
+	st := openStoreFromFlags(*configPath, *dbPath, *assetStore)
+	defer st.Close()
+	ctx := context.Background()
+
+	request := store.CreateDocumentRequest{
+		Title:   strings.TrimSpace(*title),
+		Body:    contents,
+		Message: "notriosctl notes create",
+	}
+	if ref := strings.TrimSpace(*notebook); ref != "" {
+		// Resolved before the write, and refused rather than guessed: filing a
+		// note into whichever notebook matched first is the silent mistake
+		// `notes move` exists to correct, and creating one wrongly is the same
+		// mistake a step earlier.
+		notebookID, err := resolveNotebookRef(ctx, st, ref)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		request.NotebookID = notebookID
+	}
+	doc, err := st.CreateDocument(ctx, request)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	printJSON(map[string]any{
+		"document_id": doc.ID,
+		"title":       doc.Title,
+		"notebook_id": doc.NotebookID,
+	})
 }
 
 // runNoteMove files one note into another notebook.

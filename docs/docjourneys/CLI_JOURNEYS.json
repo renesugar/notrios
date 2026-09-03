@@ -41,47 +41,64 @@
     },
     {
       "id": "create-a-note-in-a-notebook",
-      "title": "Put a note into the library from the command line",
-      "goal": "Get a note in, when the command line is all you have.",
-      "feature": "import-notes",
-      "note": "Three things this journey cannot do, recorded rather than worked around. There is no `notriosctl` command that writes a note, so a note arrives by import. The Obsidian importer has no `--notebook` flag, so the notebook cannot be chosen here. And `--collection` only accepts a collection that already exists: naming a new one fails with a raw `FOREIGN KEY constraint failed` rather than either creating it or refusing clearly.",
+      "title": "Write a note from the command line",
+      "goal": "Create a note, file it in a notebook, and confirm it is there.",
+      "feature": "write-notes",
+      "note": "`notes create` was added in v0.8 H14 because this journey could not be written without it: the task went through a one-file Obsidian import, which is what the test suite had been doing for the same reason.",
       "steps": [
         {
-          "narrative": "Write the note as an ordinary Markdown file in a directory of its own. This step is yours, not Notrios': a directory of Markdown files is an Obsidian vault as far as the importer is concerned, and one file makes the import exactly this note.",
-          "manual": true
-        },
-        {
-          "narrative": "Dry-run the import first. Every importer reports what it would do before it does it, and reading that report is cheaper than undoing an import.",
+          "narrative": "Write the note. The body can be an argument, a file, or standard input -- so a note can be the end of a pipeline rather than something staged on disk first.",
           "command": [
-            "import",
-            "obsidian",
+            "notes",
+            "create",
             "--db",
             "{db}",
             "--asset-store",
             "{assets}",
-            "--collection",
-            "default",
-            "--dry-run",
-            "{vault}"
+            "--title",
+            "Reed beds",
+            "--body",
+            "Seen at dusk."
           ]
         },
         {
-          "narrative": "Run it for real, leaving it in the default collection.",
+          "narrative": "File it in a notebook by name. A name that matches more than one notebook is refused rather than guessed, because notebook names are unique only among siblings.",
           "command": [
-            "import",
-            "obsidian",
+            "notes",
+            "create",
             "--db",
             "{db}",
             "--asset-store",
             "{assets}",
-            "--collection",
-            "default",
-            "{vault}"
+            "--title",
+            "Heron",
+            "--notebook",
+            "nb_notes",
+            "--body",
+            "Still there."
           ]
+        },
+        {
+          "narrative": "Ask for a notebook that does not exist, to see the refusal. It names what you asked for, which is the difference between a refusal and a stack trace.",
+          "command": [
+            "notes",
+            "create",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--title",
+            "Nowhere",
+            "--notebook",
+            "Nowhere",
+            "--body",
+            "x"
+          ],
+          "allow_failure": true
         }
       ],
       "postcondition": {
-        "narrative": "exporting everything produces an archive that contains the imported note",
+        "narrative": "the two created notes appear in an export of the whole library",
         "command": [
           "export",
           "archive",
@@ -92,7 +109,7 @@
           "{out}"
         ],
         "contains": [
-          "1"
+          "2"
         ]
       }
     },

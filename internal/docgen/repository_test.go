@@ -29,7 +29,9 @@ func TestRepositoryEnumerationsMatchFiniteRegistries(t *testing.T) {
 		// which H9 slice D added to printSyncUsage and docs/cli.md but not to
 		// this registry, so `notriosctl --help` never mentioned it. The
 		// features coverage work found it.
-		{cliHelpAnchor, 60},
+		// 60 -> 61 in v0.8 H14: `notriosctl notes create`, added because the
+		// journey catalogue could not document writing a note without it.
+		{cliHelpAnchor, 61},
 		{restAnchor, 109},
 		{mcpToolsAnchor, 46},
 		{mcpSyncScopeAnchor, 7},

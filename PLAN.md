@@ -2588,6 +2588,28 @@ does them, the runner does not, and they appear in the page. A catalogue that
 could only describe steps it can run would leave out the parts a reader is most
 likely to get stuck on.
 
+**`notriosctl notes create` added 2026-09-03, closing the gap slice C could not
+document around.** The case for it was made by evidence rather than argument:
+this repository's own sync tests already created notes by writing a Markdown
+file and importing it as a one-file Obsidian vault, with a comment saying the
+CLI could not do it; the features registry recorded `write-notes` as having no
+command-line surface; and the journey catalogue hit the same wall when it tried
+to write the task down. `runNoteMove` had already been added for exactly this
+shape of gap -- reachable from the store, REST and MCP and from neither surface
+a person uses -- so there was precedent as well.
+
+The body comes from an argument, a file, or standard input, and standard input
+is the one that matters: it makes a note the end of a pipeline rather than
+something staged on disk first. A notebook is resolved before the write and
+refused rather than guessed when the name is ambiguous, for the reason `notes
+move` gives: notebook names are unique only among siblings. The refusal names
+what the user asked for -- which is the contrast slice C found, where `import
+--collection` fails the same case with a raw `FOREIGN KEY constraint failed`.
+
+The journey is now a real one: create a note, file it by notebook, see the
+refusal, and confirm both notes in an export. `write-notes` gains a command-line
+surface and the usage-form count moves 60 to 61.
+
 - **How the click marker is positioned -- Resolved before implementation:
   derived from the element, never written down.** Each step captures the
   bounding box of the locator it is about to click and draws the marker there,

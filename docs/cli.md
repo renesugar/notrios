@@ -28,6 +28,7 @@ printHelp is the finite command and flag usage registry shown by notriosctl.
 - notriosctl lint [--db ...] [--checks a,b] [--detail-limit 100] [--quiet] [--list-checks]
 - notriosctl fix [--db ...] [--kinds a,b] [--document id] [--apply] [--list-kinds]
 - notriosctl tags rename --from <tag> --to <tag> [--db ...] [--include-children] [--apply]
+- notriosctl notes create --title <title> [--notebook <id|name>] [--body-file path|-] [--body text]
 - notriosctl notes move --document <id> --notebook <id|name> [--db ...]
 - notriosctl graph report [--db ...] [--collection default] [--limit N] [--write-note] [--quiet]
 - notriosctl graph export [--db ...] [--collection default] [--overwrite] <out-dir>

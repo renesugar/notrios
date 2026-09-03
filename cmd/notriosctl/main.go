@@ -616,6 +616,9 @@ Usage:
                                                  # repair the mechanically safe findings; dry run is the default
   notriosctl tags rename --from <tag> --to <tag> [--db ...] [--include-children] [--apply]
                                                  # hierarchical tag rename; dry run is the default and reports every tag and count
+  notriosctl notes create --title <title> [--notebook <id|name>] [--body-file path|-] [--body text]
+                                                 # write one note; the body may come from a file, an argument
+                                                 # or standard input, so a note can end a pipeline
   notriosctl notes move --document <id> --notebook <id|name> [--db ...]
                                                  # file one note into another notebook; a name is refused when it matches more than one
   notriosctl graph report [--db ...] [--collection default] [--limit N] [--write-note] [--quiet]
