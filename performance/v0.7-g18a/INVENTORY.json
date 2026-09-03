@@ -1676,6 +1676,54 @@
       ]
     },
     {
+      "path": "docs/journeys-cli.md",
+      "sha256": "a595831bbf69b70b5c6116057404f703d4524f5b4ce3f45ddc785f89e02262cf",
+      "help_note": "doc_help_journeys_cli",
+      "owner": "go:github.com/renesugar/notrios/internal/docjourneys#Catalogue",
+      "sections": [
+        {
+          "id": "command-line-journeys",
+          "level": 1,
+          "title": "Command-line journeys",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/internal/docjourneys#Catalogue",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        },
+        {
+          "id": "what-the-command-line-will-not-do-for-you",
+          "level": 2,
+          "title": "What the command line will not do for you",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/internal/docjourneys#Catalogue",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        },
+        {
+          "id": "the-journeys",
+          "level": 2,
+          "title": "The journeys",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/internal/docjourneys#Catalogue",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        },
+        {
+          "id": "how-this-page-is-kept-honest",
+          "level": 2,
+          "title": "How this page is kept honest",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/internal/docjourneys#Catalogue",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        }
+      ]
+    },
+    {
       "path": "docs/operations.md",
       "sha256": "a68da07193cdd7bbb56e3d3277e4068ee8aae83a253e9e36ec74cf96d47d7d11",
       "help_note": "doc_help_operations",
@@ -2335,16 +2383,16 @@
   "surfaces": [
     {
       "id": "published_markdown",
-      "count": 16,
+      "count": 17,
       "unit": "pages",
-      "sections": 220,
+      "sections": 224,
       "owner": "go:github.com/renesugar/notrios/internal/helpdocs#Seed"
     },
     {
       "id": "help_notebook",
-      "count": 16,
+      "count": 17,
       "unit": "mirrored notes",
-      "sections": 220,
+      "sections": 224,
       "owner": "go:github.com/renesugar/notrios/internal/helpdocs#Seed"
     },
     {
@@ -2441,9 +2489,9 @@
       "executed": 0,
       "generated": 0,
       "claimed": 0,
-      "unverified": 220
+      "unverified": 224
     },
-    "denominator": 220,
+    "denominator": 224,
     "reconciles": true,
     "finding": "The manual does not yet name directive fragments or executable checks, so all current section units are unverified even where independent tests exist."
   },

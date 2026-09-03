@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/renesugar/notrios/internal/docfeatures"
+	"github.com/renesugar/notrios/internal/docjourneys"
 	"go/ast"
 	"go/parser"
 	"go/token"
@@ -31,6 +32,7 @@ const (
 	mcpToolScopeAnchor = "go:github.com/renesugar/notrios/internal/httpapi#mcpToolScopes"
 	guiJourneyAnchor   = "go:github.com/renesugar/notrios/internal/docjourney#LoadAndValidate"
 	featureAnchor      = "go:github.com/renesugar/notrios/internal/docfeatures#Registry"
+	cliJourneyAnchor   = "go:github.com/renesugar/notrios/internal/docjourneys#Catalogue"
 )
 
 // RepositoryResolver returns the closed enumeration adapters for the source
@@ -63,6 +65,12 @@ func RepositoryResolver(root string) Resolver {
 				return nil, err
 			}
 			return registry.Lines(), nil
+		case cliJourneyAnchor:
+			catalogue, err := docjourneys.Load(filepath.Join(root, "docs", "docjourneys", "CLI_JOURNEYS.json"))
+			if err != nil {
+				return nil, err
+			}
+			return catalogue.Lines(), nil
 		default:
 			return nil, fmt.Errorf("no repository enumeration adapter for %q", anchor)
 		}

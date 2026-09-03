@@ -63,8 +63,8 @@ func TestG18gRepositoryDocsAreSeededByteForByte(t *testing.T) {
 		t.Fatalf("collect repository docs: %v", err)
 	}
 	sort.Strings(paths)
-	if len(paths) != 16 {
-		t.Fatalf("expected exactly 16 repository Markdown files, got %d (%v)", len(paths), paths)
+	if len(paths) != 17 {
+		t.Fatalf("expected exactly 17 repository Markdown files, got %d (%v)", len(paths), paths)
 	}
 
 	ctx := context.Background()
@@ -81,7 +81,7 @@ func TestG18gRepositoryDocsAreSeededByteForByte(t *testing.T) {
 	if err != nil {
 		t.Fatalf("first Seed: %v", err)
 	}
-	if first.FilesSeen != 16 || first.NotesCreated != 16 || first.NotesUpdated != 0 || first.NotesRemoved != 0 {
+	if first.FilesSeen != 17 || first.NotesCreated != 17 || first.NotesUpdated != 0 || first.NotesRemoved != 0 {
 		t.Fatalf("unexpected first seed report: %+v", first)
 	}
 
@@ -89,8 +89,8 @@ func TestG18gRepositoryDocsAreSeededByteForByte(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ListNotebookDocuments: %v", err)
 	}
-	if len(page.Documents) != 16 {
-		t.Fatalf("expected 16 Help notes, got %d", len(page.Documents))
+	if len(page.Documents) != 17 {
+		t.Fatalf("expected 17 Help notes, got %d", len(page.Documents))
 	}
 	for _, rel := range paths {
 		doc, err := st.GetDocument(ctx, helpNoteID(rel))
@@ -113,7 +113,7 @@ func TestG18gRepositoryDocsAreSeededByteForByte(t *testing.T) {
 	if err != nil {
 		t.Fatalf("second Seed: %v", err)
 	}
-	if second.FilesSeen != 16 || second.NotesKept != 16 || second.NotesCreated != 0 || second.NotesUpdated != 0 || second.NotesRemoved != 0 {
+	if second.FilesSeen != 17 || second.NotesKept != 17 || second.NotesCreated != 0 || second.NotesUpdated != 0 || second.NotesRemoved != 0 {
 		t.Fatalf("non-idempotent second seed report: %+v", second)
 	}
 }

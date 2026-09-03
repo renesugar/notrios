@@ -2554,6 +2554,40 @@ longer exists still fails -- plus an explicit assertion that `feature-surface`
 is the one unreviewed fragment. It is recorded as unreviewed rather than assumed
 to have passed, which is the same shape H8 uses for a row it cannot execute.
 
+**Slice C complete 2026-09-03: eight executed command-line journeys, and five
+defects found by running them.** `docs/docjourneys/CLI_JOURNEYS.json` holds each
+journey's steps and the postcondition that confirms it; a test runs all eight
+against disposable libraries and checks the state afterwards, not the exit
+status. `docs/journeys-cli.md` is generated from the same catalogue, so the page
+and the execution cannot drift. Every journey names a feature, and the count of
+features with no journey is its own ratchet -- 24 today, allowed to shrink and
+not to grow. That is a different gap from an unclaimed surface: one is a
+capability nobody can discover, the other is one someone can find but has not
+been shown how to use.
+
+*Two flags I documented do not exist.* `paths --db` and `import obsidian
+--notebook` were both written down from memory of neighbouring commands rather
+than from the usage message, and both exit 2. That is precisely the failure mode
+the executed-journey design exists to catch, arriving on the first run, in prose
+written by someone who had just read the whole CLI surface to build the features
+registry.
+
+*And three product gaps, one of which is a defect rather than a design.* There
+is no `notriosctl` command that writes a note, so a command-line note arrives by
+import -- the test suite already worked around this, with a comment saying so.
+The Obsidian importer cannot choose a notebook. And **`--collection` will not
+create a collection**: naming one that does not exist fails with `FOREIGN KEY
+constraint failed`, which is SQLite talking, not Notrios. A plausible user
+action producing an internal error message is a defect, and it is recorded here
+rather than smoothed over in the prose.
+
+*A schema change the catalogue forced.* Requiring every step to be a
+`notriosctl` command made "write a Markdown file" into a placeholder, which is
+dishonest about what a task involves. Steps can now be marked manual: the reader
+does them, the runner does not, and they appear in the page. A catalogue that
+could only describe steps it can run would leave out the parts a reader is most
+likely to get stuck on.
+
 - **How the click marker is positioned -- Resolved before implementation:
   derived from the element, never written down.** Each step captures the
   bounding box of the locator it is about to click and draws the marker there,

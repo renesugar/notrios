@@ -1,0 +1,339 @@
+{
+  "schema": "notrios.docjourneys.cli.v1",
+  "journeys": [
+    {
+      "id": "find-your-library",
+      "title": "Find out where your notes actually live",
+      "goal": "See which library this installation is using before doing anything to it.",
+      "feature": "maintenance",
+      "steps": [
+        {
+          "narrative": "Ask Notrios where it resolved its directories. This is the first thing to run when notes seem to have gone missing: more often than not they are in a different library from the one the command you just ran was talking to.",
+          "command": [
+            "paths"
+          ]
+        },
+        {
+          "narrative": "Check the installation itself. doctor creates the database if it is not there yet, so running it also tells you the library is usable.",
+          "command": [
+            "doctor",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}"
+          ]
+        }
+      ],
+      "postcondition": {
+        "narrative": "doctor reports that the required checks passed and names the database it used",
+        "command": [
+          "doctor",
+          "--db",
+          "{db}",
+          "--asset-store",
+          "{assets}"
+        ],
+        "contains": [
+          "doctor: required checks passed",
+          "database"
+        ]
+      }
+    },
+    {
+      "id": "create-a-note-in-a-notebook",
+      "title": "Put a note into the library from the command line",
+      "goal": "Get a note in, when the command line is all you have.",
+      "feature": "import-notes",
+      "note": "Three things this journey cannot do, recorded rather than worked around. There is no `notriosctl` command that writes a note, so a note arrives by import. The Obsidian importer has no `--notebook` flag, so the notebook cannot be chosen here. And `--collection` only accepts a collection that already exists: naming a new one fails with a raw `FOREIGN KEY constraint failed` rather than either creating it or refusing clearly.",
+      "steps": [
+        {
+          "narrative": "Write the note as an ordinary Markdown file in a directory of its own. This step is yours, not Notrios': a directory of Markdown files is an Obsidian vault as far as the importer is concerned, and one file makes the import exactly this note.",
+          "manual": true
+        },
+        {
+          "narrative": "Dry-run the import first. Every importer reports what it would do before it does it, and reading that report is cheaper than undoing an import.",
+          "command": [
+            "import",
+            "obsidian",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--collection",
+            "default",
+            "--dry-run",
+            "{vault}"
+          ]
+        },
+        {
+          "narrative": "Run it for real, leaving it in the default collection.",
+          "command": [
+            "import",
+            "obsidian",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--collection",
+            "default",
+            "{vault}"
+          ]
+        }
+      ],
+      "postcondition": {
+        "narrative": "exporting everything produces an archive that contains the imported note",
+        "command": [
+          "export",
+          "archive",
+          "--db",
+          "{db}",
+          "--asset-store",
+          "{assets}",
+          "{out}"
+        ],
+        "contains": [
+          "1"
+        ]
+      }
+    },
+    {
+      "id": "search-with-the-query-language",
+      "title": "Find notes with the query language",
+      "goal": "Select a subset of notes by tag, notebook or text, and see exactly which ones matched.",
+      "feature": "export-and-archive",
+      "note": "The command line has no search command; it applies the same query language to an export instead, which is how you see a result set as files.",
+      "steps": [
+        {
+          "narrative": "Export only the notes a query matches. The query language is the same one the GUI search box takes.",
+          "command": [
+            "export",
+            "archive",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--query",
+            "tag:field",
+            "{out}"
+          ]
+        }
+      ],
+      "postcondition": {
+        "narrative": "the export reports a smaller set than the whole library, so the query actually filtered",
+        "command": [
+          "export",
+          "archive",
+          "--db",
+          "{db}",
+          "--asset-store",
+          "{assets}",
+          "--query",
+          "tag:nothing-matches-this",
+          "{out2}"
+        ],
+        "contains": [
+          "0"
+        ]
+      }
+    },
+    {
+      "id": "export-and-verify-an-archive",
+      "title": "Export the library and check the export is sound",
+      "goal": "Write a portable copy of everything and confirm it is complete before trusting it.",
+      "feature": "export-and-archive",
+      "steps": [
+        {
+          "narrative": "Write a native archive. This is the format that preserves identity, revisions and attachments rather than just the text.",
+          "command": [
+            "export",
+            "archive-v2",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "{out}"
+          ]
+        },
+        {
+          "narrative": "Verify it. An export you have not verified is a backup you are guessing about.",
+          "command": [
+            "verify",
+            "archive-v2",
+            "{out}"
+          ]
+        }
+      ],
+      "postcondition": {
+        "narrative": "the archive's manifest exists on disk after the export",
+        "file_exists": "{out}/manifest.json"
+      }
+    },
+    {
+      "id": "keep-separate-libraries",
+      "title": "Keep work notes and personal notes apart",
+      "goal": "Run more than one library on this machine, each with its own database and settings.",
+      "feature": "profiles",
+      "steps": [
+        {
+          "narrative": "Create a profile. It gets its own database, its own configuration and its own address, so nothing in it can reach anything in another.",
+          "command": [
+            "profile",
+            "create",
+            "--name",
+            "work_notes"
+          ]
+        },
+        {
+          "narrative": "List what this machine now knows about.",
+          "command": [
+            "profile",
+            "list"
+          ]
+        }
+      ],
+      "postcondition": {
+        "narrative": "the profile registry lists the profile that was just created",
+        "command": [
+          "profile",
+          "list"
+        ],
+        "contains": [
+          "work_notes"
+        ]
+      }
+    },
+    {
+      "id": "enrol-for-sync",
+      "title": "Prepare a library to synchronize",
+      "goal": "Turn on synchronization for a library and see where its keys are kept.",
+      "feature": "sync-pairing",
+      "steps": [
+        {
+          "narrative": "Enrol the library. Nothing before this point writes a single sync record, and the command tells you which store holds the key material.",
+          "command": [
+            "sync",
+            "init",
+            "--config",
+            "{config}",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--keys",
+            "{keys}"
+          ]
+        },
+        {
+          "narrative": "Check what it reports afterwards.",
+          "command": [
+            "sync",
+            "status",
+            "--config",
+            "{config}",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--keys",
+            "{keys}"
+          ]
+        }
+      ],
+      "postcondition": {
+        "narrative": "status reports the library as enrolled and names the store holding its keys",
+        "command": [
+          "sync",
+          "status",
+          "--config",
+          "{config}",
+          "--db",
+          "{db}",
+          "--asset-store",
+          "{assets}",
+          "--keys",
+          "{keys}"
+        ],
+        "contains": [
+          "credential_store"
+        ]
+      }
+    },
+    {
+      "id": "find-what-has-rotted",
+      "title": "Find what has gone stale in a library",
+      "goal": "See broken links, orphaned attachments and other rot, and fix what can be fixed mechanically.",
+      "feature": "maintenance",
+      "steps": [
+        {
+          "narrative": "Run the workspace lint. It reports rather than changes anything.",
+          "command": [
+            "lint",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}"
+          ],
+          "allow_failure": true
+        },
+        {
+          "narrative": "See what a mechanical fix would do. `fix` dry-runs by default, which is the safe order: read the plan, then apply it.",
+          "command": [
+            "fix",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}"
+          ],
+          "allow_failure": true
+        }
+      ],
+      "postcondition": {
+        "narrative": "lint produces a report rather than changing the library",
+        "command": [
+          "lint",
+          "--db",
+          "{db}",
+          "--asset-store",
+          "{assets}"
+        ],
+        "contains": [
+          "findings"
+        ]
+      }
+    },
+    {
+      "id": "read-the-built-in-help",
+      "title": "Read the documentation inside your own library",
+      "goal": "Get the Notrios guides into the library as notes, so they are searchable like anything else.",
+      "feature": "maintenance",
+      "steps": [
+        {
+          "narrative": "Seed the Help notebook. The pages become ordinary read-only notes, which is the point: help you can search alongside your own notes rather than a separate place to go.",
+          "command": [
+            "seed-help",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "{docs}"
+          ]
+        }
+      ],
+      "postcondition": {
+        "narrative": "the seed reports how many documentation files became notes in the library",
+        "command": [
+          "seed-help",
+          "--db",
+          "{db}",
+          "--asset-store",
+          "{assets}",
+          "{docs}"
+        ],
+        "contains": [
+          "notes_created",
+          "files_seen"
+        ]
+      }
+    }
+  ]
+}

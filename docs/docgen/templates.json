@@ -124,6 +124,20 @@
       ]
     },
     {
+      "path": "docs/journeys-cli.md",
+      "sections": [
+        {
+          "slug": "the-journeys",
+          "slots": [
+            {
+              "id": "cli-journey-surface",
+              "audience": "user"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "path": "docs/service.md",
       "sections": [
         {
