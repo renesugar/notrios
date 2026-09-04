@@ -3347,7 +3347,7 @@ six, job handling in five") counted tests and stylesheets. In source alone it is
 about ten, five and two. They were used to argue the gaps were false, which they
 were, but the argument was padded.
 
-The validator pins 52 controls and 16 states, requires each state that was added
+The validator pins 53 controls and 16 states, requires each state that was added
 for a specific control to actually contain it, and requires every state that is
 not a recorded empty one to show something the opening state does not. Eight
 mutations were checked and all eight failed the validator: a silently unreached
@@ -3359,10 +3359,13 @@ library with no conflicts and no missing resources has nothing to show there.
 That is a limit of what is seeded, written down rather than left to be
 rediscovered.
 
-*Four are file-picker work, and they are one job wearing four hats.* Importing
-from a Joplin RAW directory, importing an Obsidian vault, exporting a library,
-and taking or restoring a snapshot all need the same thing: a directory chosen,
-a dry run shown before anything is applied, and a report afterwards.
+*Five are file-picker work, and they are one job wearing five hats.* Importing
+from a Joplin RAW directory, importing an Obsidian vault, **importing from
+another Notrios library**, exporting a library, and taking a snapshot all need
+the same thing: a directory chosen, a look before anything is applied, and a
+report afterwards. The Notrios import was missing from the first version of this
+list, which was an odd omission given that the group already contained the
+export: an export nothing can read back is half a feature.
 
 The picker is already built, and the earlier draft of this section was wrong to
 plan it as new work. Wails v2 exposes `runtime.OpenDirectoryDialog`, and
@@ -3392,6 +3395,54 @@ runtime by exactly the check `SyncCenter` already makes -- whether
 `window.go.main.NativeUIBridge` is bound -- and the correct behaviour there is to
 grey the affected menu items and controls out with a short reason. Detect the
 mode; do not lower the desktop app to the browser's ceiling.
+
+**Import and export built 2026-09-04.** Five operations behind one control:
+import from Joplin, from Obsidian and from another Notrios library; export this
+library; take a snapshot. They reach the core through `NativeUIBridge` in
+`cmd/notrios/gui_transfer.go` rather than over HTTP, because no REST route
+starts them, and the bridge is bound only when this process owns the store --
+`runGUI(svc.Handler, svc)` against `runGUI(proxy, nil)`. That makes the browser
+case structural: no bridge, no methods, and the header control renders disabled
+with the reason instead of disappearing.
+
+*Three narrowings, each made deliberately and commented where it was made.* The
+GUI exports the **whole** library, because choosing a subset by notebook, tag or
+query means seeing what it selects first, and blank selector fields next to a
+folder chooser would produce exports nobody can predict. The Obsidian dry run
+writes **no** import configuration into the vault, unlike the command line's,
+because silently writing a file into somebody's vault in exchange for looking at
+it is a poor trade. And importing from Notrios offers **merge only**:
+`archivev2` has four restore intents and three of them are database-universe
+surgery -- replace overwrites this library with the archive's identity, adopt
+requires an empty target, fork mints a new database -- so a dropdown offering
+all four beside a folder chooser would let somebody replace their library while
+believing they were adding to it. Merge keeps this library's identity and admits
+the archive's records as foreign, which is what "import from another Notrios
+library" sounds like it means.
+
+*The Notrios import is also the best-behaved of the five.* Its look-before-you-
+apply step is `archivev2.VerifyDirectory`, which opens no database at all, where
+the importers' dry runs simulate a write. `Restore` runs the same verification
+again before its first write and refuses on failure, so declining to look first
+is safe: looking is for the person, not for the machine.
+
+*Six mutations were checked and all six failed a test.* The header control
+hidden rather than disabled; verification swapped for the merge it exists to
+precede; the dry-run flag flipped from true to false; the chooser handed the
+wrong purpose. That last one caught a real defect rather than a hypothetical:
+generalising `ChooseSyncDirectory` into `ChooseDirectory(purpose)` left
+`SyncCenter` calling a method that no longer existed, and its test passed anyway
+because the test mocked the old name. The sync test now asserts the purpose and
+not merely the call.
+
+*One limit, recorded rather than left to be found.* The crawl is a browser, so it
+can see the Import/Export control and cannot open what is behind it. The
+inventory now records whether each control was ever found enabled, and the
+validator requires this one never to be -- an enabled one would mean the bridge
+gate had broken open and a browser was being offered an operation it cannot
+perform. The modal's own controls are covered by the frontend tests, which
+render it directly. Twelve capabilities now have no GUI surface, down from
+eighteen.
 
 *Two are the query language appearing where it already belongs.* A **search
 notebook** is a saved query, and the GUI already has the box that takes that

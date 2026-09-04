@@ -84,6 +84,7 @@ import { SearchPane } from './components/SearchPane';
 import { EditorPane } from './components/EditorPane';
 import { PreviewPane } from './components/PreviewPane';
 import { SyncCenter } from './components/SyncCenter';
+import { LibraryTransfer, transferBridge } from './components/LibraryTransfer';
 
 const defaultBody = `# New note\n\nWrite Markdown here. Link other notes with:\n\n[Related note](document://default/documents/<document-id>)\n`;
 
@@ -121,6 +122,11 @@ export function App() {
   // the creation target from `activeQuery` would file into the wrong one.
   const [selectedRow, setSelectedRow] = useState<SidebarRow | null>(null);
   const [showSyncCenter, setShowSyncCenter] = useState(false);
+  const [showTransfer, setShowTransfer] = useState(false);
+  // Read once, at mount: the bridge is bound before the frontend loads or it is
+  // not bound at all, so re-checking it on every render would only make the
+  // control flicker on nothing.
+  const [transferAvailable] = useState(() => transferBridge() !== undefined);
 
   const paged = usePagedSearch(25);
 
@@ -715,6 +721,19 @@ export function App() {
           <button type="button" className="sync-header-button" title="Open synchronization, pairing, backup, and recovery" onClick={() => setShowSyncCenter(true)}>
             <span aria-hidden="true">↻</span> Sync
           </button>
+          {/* Shown always and disabled without the native bridge, rather than
+              hidden. Importing, exporting and snapshots name a folder on the
+              machine running the library, which a browser window cannot choose
+              and no REST route accepts; saying so is more useful than a feature
+              that appears not to exist. */}
+          <button type="button" className="sync-header-button" data-testid="transfer-header-button"
+            disabled={!transferAvailable}
+            title={transferAvailable
+              ? 'Import from Joplin, Obsidian or Notrios; export; take a snapshot'
+              : 'Importing, exporting and snapshots need the desktop app: they name a folder on the machine running this library'}
+            onClick={() => setShowTransfer(true)}>
+            <span aria-hidden="true">⇄</span> Import/Export
+          </button>
           <button type="button" className="icon-button" title="Toggle light/dark theme" aria-label="Toggle light/dark theme" onClick={toggleMode}>
             {mode === 'light' ? '🌙' : '☀️'}
           </button>
@@ -725,6 +744,8 @@ export function App() {
       </header>
 
       {showSyncCenter ? <SyncCenter onClose={() => setShowSyncCenter(false)} /> : null}
+
+      {showTransfer ? <LibraryTransfer onClose={() => setShowTransfer(false)} /> : null}
 
       {showThemes && (
         <section className="theme-panel" aria-label="Theme settings">

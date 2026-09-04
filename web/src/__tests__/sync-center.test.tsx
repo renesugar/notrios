@@ -87,14 +87,18 @@ describe('SyncCenter', () => {
 
   it('uses the native directory chooser only when the local desktop bridge is present', async () => {
     const choose = vi.fn(async () => '/tmp/notrios-carrier');
-    Object.defineProperty(window, 'go', { configurable: true, value: { main: { NativeUIBridge: { ChooseSyncDirectory: choose } } } });
+    Object.defineProperty(window, 'go', { configurable: true, value: { main: { NativeUIBridge: { ChooseDirectory: choose } } } });
     mockFetch();
     render(<SyncCenter onClose={() => undefined} />);
     await screen.findByText('Needs attention');
     await userEvent.click(screen.getByRole('button', { name: 'Setup' }));
     await userEvent.click(screen.getByRole('radio', { name: 'Shared directory' }));
     await userEvent.click(screen.getByRole('button', { name: 'Choose folder…' }));
-    expect(choose).toHaveBeenCalledOnce();
+    // The purpose is asserted, not just the call. One chooser now serves five
+    // callers, and a wrong purpose would open a dialog titled for somebody
+    // else's folder while still returning a usable path -- a mistake nothing
+    // else here could see.
+    expect(choose).toHaveBeenCalledExactlyOnceWith('sync');
     expect(await screen.findByDisplayValue('/tmp/notrios-carrier')).toBeInTheDocument();
     Reflect.deleteProperty(window, 'go');
   });

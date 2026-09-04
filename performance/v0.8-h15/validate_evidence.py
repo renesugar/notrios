@@ -39,7 +39,8 @@ HERE = pathlib.Path(__file__).resolve().parent
 # added to the interface to cause that: 23 controls were always there and were
 # never looked at, including delete, restore, purge, localize, the attachment
 # upload field, and everything on seven of the sync centre's eight tabs.
-EXPECTED_CONTROLS = 52
+# 52 -> 53 when the GUI gained the Import/Export control.
+EXPECTED_CONTROLS = 53
 EXPECTED_STATES = 16
 
 # Why each state was added, as something that can fail. A state that is reached
@@ -61,6 +62,16 @@ STATE_EVIDENCE = {
 # emptiness is a known fact rather than a silent one. Seeding a conflict is a
 # larger job than seeding a note and belongs with the work that needs it.
 KNOWN_EMPTY_STATES = {"sync-retention", "sync-attachments", "sync-conflicts", "sync-repairs"}
+
+# Controls that must never come back enabled, because this crawl is a browser.
+# Importing, exporting and taking snapshots name a folder on the machine running
+# the library, and they reach the core through the Wails bridge, which is bound
+# only when the window's own process owns the store. The decision was to render
+# the control and disable it with the reason rather than hide it, so the crawl
+# should find it every time and find it disabled every time. An enabled one here
+# would mean the gate had broken open and a browser was being offered an
+# operation it cannot perform.
+MUST_BE_DISABLED_IN_A_BROWSER = {"testid:transfer-header-button"}
 
 # Reached, and showing nothing the opening state does not. These are four of the
 # six *views* the earlier crawl was built from, and this is the plainest
@@ -102,6 +113,14 @@ def main() -> None:
         identities.add(control["id"])
         require(control.get("instances", 0) > 0, f"{control['id']} was recorded with no instances")
         require(control.get("states"), f"{control['id']} appears in no state")
+
+    for control_id in MUST_BE_DISABLED_IN_A_BROWSER:
+        control = next((item for item in controls if item["id"] == control_id), None)
+        require(control is not None,
+                f"{control_id} is gone; it should be present and disabled, not missing")
+        require(control.get("always_disabled"),
+                f"{control_id} was found enabled in a browser, where the native bridge it needs "
+                "is not bound")
 
     reached = {state["id"] for state in states}
     for state_id, control_id in STATE_EVIDENCE.items():

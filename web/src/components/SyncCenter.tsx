@@ -223,7 +223,11 @@ function Setup({ status, busy, act }: SectionProps) {
   const [directory, setDirectory] = useState(status.configuration.directory ?? '');
   const [restURL, setRestURL] = useState(status.configuration.rest_base_url ?? '');
   const [restInboundEnabled, setRESTInboundEnabled] = useState(status.configuration.rest_inbound_enabled);
-  const nativeChooser = (window as Window & { go?: { main?: { NativeUIBridge?: { ChooseSyncDirectory?: () => Promise<string> } } } }).go?.main?.NativeUIBridge?.ChooseSyncDirectory;
+  // One chooser serves every folder the interface asks for, and it takes the
+  // purpose rather than a title so that no two callers can name the same dialog
+  // differently. See cmd/notrios/gui_transfer.go.
+  const bridge = (window as Window & { go?: { main?: { NativeUIBridge?: { ChooseDirectory?: (purpose: string) => Promise<string> } } } }).go?.main?.NativeUIBridge;
+  const nativeChooser = bridge?.ChooseDirectory ? () => bridge.ChooseDirectory!('sync') : undefined;
   const activeProfile = status.profiles.find((profile) => profile.active);
   return (
     <div className="sync-section sync-form-section">

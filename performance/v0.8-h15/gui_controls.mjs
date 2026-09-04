@@ -187,10 +187,16 @@ try {
       const id = identify(control);
       if (!controls.has(id)) {
         controls.set(id, { id, tag: control.tag, role: control.role, testid: control.testid,
-          examples: [], instances: 0, states: [] });
+          examples: [], instances: 0, enabled_instances: 0, states: [] });
       }
       const record = controls.get(id);
       record.instances++;
+      // Counted, not just observed. A control the crawl only ever finds
+      // disabled is a real fact about this mode -- the crawl is a browser, so
+      // anything gated on the native bridge must be disabled every time it is
+      // seen, and a control that came back enabled would mean that gate had
+      // broken open.
+      if (!control.disabled) record.enabled_instances++;
       // A few labels are kept as examples of what this control says, which is
       // what makes an entry legible without turning content into identity.
       if (control.label && record.examples.length < 3 && !record.examples.includes(control.label)) {
@@ -205,7 +211,9 @@ try {
   await browser.close();
 }
 
-const inventory = [...controls.values()].sort((a, b) => a.id.localeCompare(b.id));
+const inventory = [...controls.values()]
+  .map((control) => ({ ...control, always_disabled: control.enabled_instances === 0 }))
+  .sort((a, b) => a.id.localeCompare(b.id));
 await fs.writeFile(outPath, JSON.stringify({
   schema: 'notrios.h15.gui-controls.v2',
   states,

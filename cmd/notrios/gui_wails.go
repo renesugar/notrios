@@ -7,6 +7,7 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/renesugar/notrios/internal/service"
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/menu"
 	"github.com/wailsapp/wails/v2/pkg/menu/keys"
@@ -20,25 +21,31 @@ import (
 // the in-process service in the default mode, or a reverse proxy to a remote
 // service in -gui-only mode. The frontend therefore behaves identically to a
 // browser pointed at notriosd.
+// NativeUIBridge is the part of the interface that does not go over HTTP.
+//
+// It is bound only when this process owns the service, which is the whole of
+// its access control: in -gui-only mode the window may be showing a service on
+// another machine, where a directory chosen here would name the wrong
+// filesystem, so `local` is nil, nothing is bound, and the frontend finds no
+// bridge at all. See gui_transfer.go for why import, export and snapshots have
+// to come this way rather than over REST.
 type NativeUIBridge struct {
-	ctx context.Context
+	ctx   context.Context
+	local *service.Service
 }
 
-// ChooseSyncDirectory is deliberately available only in the native app that
-// owns the local service. GUI-only mode may point at another machine, where a
-// local path selected here would name the wrong filesystem.
-func (b *NativeUIBridge) ChooseSyncDirectory() (string, error) {
+func (b *NativeUIBridge) chooseDirectory(title string) (string, error) {
 	if b == nil || b.ctx == nil {
 		return "", errors.New("the native window is not ready")
 	}
-	return runtime.OpenDirectoryDialog(b.ctx, runtime.OpenDialogOptions{
-		Title: "Choose a Notrios synchronization folder",
-	})
+	return runtime.OpenDirectoryDialog(b.ctx, runtime.OpenDialogOptions{Title: title})
 }
 
-func runGUI(handler http.Handler, allowLocalDirectoryChooser bool) error {
+// runGUI opens the window. A non-nil local service means this process owns the
+// store, and is what binds the native bridge.
+func runGUI(handler http.Handler, local *service.Service) error {
 	var appCtx context.Context
-	bridge := &NativeUIBridge{}
+	bridge := &NativeUIBridge{local: local}
 
 	appMenu := menu.NewMenu()
 	fileMenu := appMenu.AddSubmenu("File")
@@ -88,7 +95,7 @@ func runGUI(handler http.Handler, allowLocalDirectoryChooser bool) error {
 			bridge.ctx = ctx
 		},
 	}
-	if allowLocalDirectoryChooser {
+	if local != nil {
 		app.Bind = []interface{}{bridge}
 	}
 	return wails.Run(app)

@@ -85,7 +85,7 @@ func main() {
 		}
 		log.Printf("notrios GUI connecting to %s (gui-only mode)", target)
 		proxy := httputil.NewSingleHostReverseProxy(target)
-		if err := runGUI(proxy, false); err != nil {
+		if err := runGUI(proxy, nil); err != nil {
 			log.Fatal(err)
 		}
 
@@ -114,7 +114,7 @@ func main() {
 				log.Printf("service listener stopped: %v", err)
 			}
 		}()
-		if err := runGUI(svc.Handler, true); err != nil {
+		if err := runGUI(svc.Handler, svc); err != nil {
 			log.Fatal(err)
 		}
 	}

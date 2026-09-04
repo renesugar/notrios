@@ -335,7 +335,12 @@
         "notriosctl import claude",
         "notriosctl import archive"
       ],
-      "surface_note": "Not in the GUI yet. The constraint is the *browser* mode, which cannot read arbitrary local paths; the desktop app can, and native directory pickers are part of the planned client architecture. This is a gap rather than a boundary."
+      "surface_note": "In the desktop app only, through the native bridge: these operations name a folder on the machine running the library, and no REST route starts them. In a browser the Import/Export control is shown and disabled with that reason rather than hidden. Joplin and Obsidian can be scanned first without writing. Importing from Notrios verifies the archive without opening a database, and merges only: replace, fork and adopt stay on the command line because they change which library this is. Twitter, ChatGPT and Claude imports remain command line only.",
+      "gui": [
+        "Import from Joplin",
+        "Import from Obsidian",
+        "Import from Notrios"
+      ]
     },
     {
       "id": "export-and-archive",
@@ -348,7 +353,11 @@
         "notriosctl restore archive-v2",
         "notriosctl compatibility archive-v2"
       ],
-      "surface_note": "Not in the GUI yet. The constraint is the *browser* mode, which cannot read arbitrary local paths; the desktop app can, and native directory pickers are part of the planned client architecture. This is a gap rather than a boundary."
+      "surface_note": "In the desktop app only, through the native bridge: these operations name a folder on the machine running the library, and no REST route starts them. In a browser the Import/Export control is shown and disabled with that reason rather than hidden. The GUI writes a complete archive; exporting a subset by notebook, tag or query stays on the command line, because choosing a subset means seeing what it selects first.",
+      "gui": [
+        "Export this library",
+        "Verify the archive"
+      ]
     },
     {
       "id": "snapshots",
@@ -359,7 +368,10 @@
         "notriosctl snapshot verify",
         "notriosctl snapshot restore"
       ],
-      "surface_note": "Not in the GUI yet. The constraint is the *browser* mode, which cannot read arbitrary local paths; the desktop app can, and native directory pickers are part of the planned client architecture. This is a gap rather than a boundary."
+      "surface_note": "In the desktop app only, through the native bridge: these operations name a folder on the machine running the library, and no REST route starts them. In a browser the Import/Export control is shown and disabled with that reason rather than hidden. Creating a snapshot is in the GUI; restoring one is not, because a restore replaces the library the window is showing.",
+      "gui": [
+        "Take a snapshot"
+      ]
     },
     {
       "id": "sync-pairing",

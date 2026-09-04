@@ -4,13 +4,13 @@
     {
       "id": "start",
       "reached": true,
-      "controls": 80,
+      "controls": 81,
       "steps": []
     },
     {
       "id": "all-notes",
       "reached": true,
-      "controls": 80,
+      "controls": 81,
       "steps": [
         "testid=sidebar-row-snb_all_notes"
       ]
@@ -18,7 +18,7 @@
     {
       "id": "help",
       "reached": true,
-      "controls": 78,
+      "controls": 79,
       "steps": [
         "testid=sidebar-row-nb_help"
       ]
@@ -26,7 +26,7 @@
     {
       "id": "trash",
       "reached": true,
-      "controls": 61,
+      "controls": 62,
       "steps": [
         "testid=sidebar-row-snb_trash"
       ]
@@ -34,7 +34,7 @@
     {
       "id": "new-note",
       "reached": true,
-      "controls": 80,
+      "controls": 81,
       "steps": [
         "testid=new-note-button"
       ]
@@ -42,7 +42,7 @@
     {
       "id": "note-open",
       "reached": true,
-      "controls": 84,
+      "controls": 85,
       "steps": [
         "testid=sidebar-row-snb_all_notes",
         "css=.result-card text~Crawl fixture note#0"
@@ -51,7 +51,7 @@
     {
       "id": "note-trashed",
       "reached": true,
-      "controls": 60,
+      "controls": 61,
       "steps": [
         "testid=sidebar-row-snb_trash",
         "css=.result-card text~Trashed fixture note#0"
@@ -60,7 +60,7 @@
     {
       "id": "note-remote-media",
       "reached": true,
-      "controls": 86,
+      "controls": 87,
       "steps": [
         "testid=sidebar-row-snb_all_notes",
         "css=.result-card text~Remote media fixture#0"
@@ -69,7 +69,7 @@
     {
       "id": "sync-overview",
       "reached": true,
-      "controls": 94,
+      "controls": 95,
       "steps": [
         "css=.sync-header-button#0"
       ]
@@ -77,7 +77,7 @@
     {
       "id": "sync-setup",
       "reached": true,
-      "controls": 95,
+      "controls": 96,
       "steps": [
         "css=.sync-header-button#0",
         "button=^Setup"
@@ -86,7 +86,7 @@
     {
       "id": "sync-peers",
       "reached": true,
-      "controls": 95,
+      "controls": 96,
       "steps": [
         "css=.sync-header-button#0",
         "button=^Peers"
@@ -95,7 +95,7 @@
     {
       "id": "sync-retention",
       "reached": true,
-      "controls": 89,
+      "controls": 90,
       "steps": [
         "css=.sync-header-button#0",
         "button=^Retention"
@@ -104,7 +104,7 @@
     {
       "id": "sync-attachments",
       "reached": true,
-      "controls": 89,
+      "controls": 90,
       "steps": [
         "css=.sync-header-button#0",
         "button=^Attachments"
@@ -113,7 +113,7 @@
     {
       "id": "sync-conflicts",
       "reached": true,
-      "controls": 89,
+      "controls": 90,
       "steps": [
         "css=.sync-header-button#0",
         "button=^Conflicts"
@@ -122,7 +122,7 @@
     {
       "id": "sync-backup",
       "reached": true,
-      "controls": 100,
+      "controls": 101,
       "steps": [
         "css=.sync-header-button#0",
         "button=^Backup"
@@ -131,7 +131,7 @@
     {
       "id": "sync-repairs",
       "reached": true,
-      "controls": 89,
+      "controls": 90,
       "steps": [
         "css=.sync-header-button#0",
         "button=^Repairs"
@@ -148,6 +148,7 @@
         "Related note"
       ],
       "instances": 14,
+      "enabled_instances": 14,
       "states": [
         "start",
         "all-notes",
@@ -163,7 +164,8 @@
         "sync-conflicts",
         "sync-backup",
         "sync-repairs"
-      ]
+      ],
+      "always_disabled": false
     },
     {
       "id": "shape:button|||password-row",
@@ -174,9 +176,11 @@
         "Show"
       ],
       "instances": 2,
+      "enabled_instances": 2,
       "states": [
         "sync-backup"
-      ]
+      ],
+      "always_disabled": false
     },
     {
       "id": "shape:button|||row-actions",
@@ -188,9 +192,11 @@
         "Request catch-up"
       ],
       "instances": 2,
+      "enabled_instances": 2,
       "states": [
         "sync-backup"
-      ]
+      ],
+      "always_disabled": false
     },
     {
       "id": "shape:button|||search-row",
@@ -201,6 +207,7 @@
         "Search"
       ],
       "instances": 16,
+      "enabled_instances": 16,
       "states": [
         "start",
         "all-notes",
@@ -218,7 +225,8 @@
         "sync-conflicts",
         "sync-backup",
         "sync-repairs"
-      ]
+      ],
+      "always_disabled": false
     },
     {
       "id": "shape:button|||sync-card",
@@ -229,9 +237,11 @@
         "Create 15-minute code"
       ],
       "instances": 1,
+      "enabled_instances": 1,
       "states": [
         "sync-peers"
-      ]
+      ],
+      "always_disabled": false
     },
     {
       "id": "shape:button|||sync-metric-grid",
@@ -242,9 +252,11 @@
         "0"
       ],
       "instances": 4,
+      "enabled_instances": 4,
       "states": [
         "sync-overview"
-      ]
+      ],
+      "always_disabled": false
     },
     {
       "id": "shape:button|||sync-section",
@@ -255,9 +267,11 @@
         "Discover on configured carrier"
       ],
       "instances": 1,
+      "enabled_instances": 1,
       "states": [
         "sync-peers"
-      ]
+      ],
+      "always_disabled": false
     },
     {
       "id": "shape:button|||sync-tabs",
@@ -270,6 +284,7 @@
         "Retention"
       ],
       "instances": 56,
+      "enabled_instances": 56,
       "states": [
         "sync-overview",
         "sync-setup",
@@ -279,7 +294,8 @@
         "sync-conflicts",
         "sync-backup",
         "sync-repairs"
-      ]
+      ],
+      "always_disabled": false
     },
     {
       "id": "shape:button||active.result-card|pane-scroll.result-list",
@@ -292,11 +308,13 @@
         "Remote media fixture"
       ],
       "instances": 3,
+      "enabled_instances": 3,
       "states": [
         "note-open",
         "note-trashed",
         "note-remote-media"
-      ]
+      ],
+      "always_disabled": false
     },
     {
       "id": "shape:button||active|sync-tabs",
@@ -309,6 +327,7 @@
         "Peers"
       ],
       "instances": 8,
+      "enabled_instances": 8,
       "states": [
         "sync-overview",
         "sync-setup",
@@ -318,7 +337,8 @@
         "sync-conflicts",
         "sync-backup",
         "sync-repairs"
-      ]
+      ],
+      "always_disabled": false
     },
     {
       "id": "shape:button||danger-button|row-actions",
@@ -329,9 +349,11 @@
         "Request reset review"
       ],
       "instances": 1,
+      "enabled_instances": 1,
       "states": [
         "sync-backup"
-      ]
+      ],
+      "always_disabled": false
     },
     {
       "id": "shape:button||icon-button.sync-close|sync-center-header",
@@ -342,6 +364,7 @@
         "Close sync center"
       ],
       "instances": 8,
+      "enabled_instances": 8,
       "states": [
         "sync-overview",
         "sync-setup",
@@ -351,7 +374,8 @@
         "sync-conflicts",
         "sync-backup",
         "sync-repairs"
-      ]
+      ],
+      "always_disabled": false
     },
     {
       "id": "shape:button||icon-button|header-actions",
@@ -363,6 +387,7 @@
         "Theme settings"
       ],
       "instances": 32,
+      "enabled_instances": 32,
       "states": [
         "start",
         "all-notes",
@@ -380,7 +405,8 @@
         "sync-conflicts",
         "sync-backup",
         "sync-repairs"
-      ]
+      ],
+      "always_disabled": false
     },
     {
       "id": "shape:button||md-editor-disabled.md-editor-toolbar-item|md-editor-toolbar-left",
@@ -391,9 +417,11 @@
         "Notebook: Notes"
       ],
       "instances": 1,
+      "enabled_instances": 0,
       "states": [
         "note-trashed"
-      ]
+      ],
+      "always_disabled": true
     },
     {
       "id": "shape:button||md-editor-toolbar-item|md-editor-toolbar-left",
@@ -406,6 +434,7 @@
         "bold"
       ],
       "instances": 351,
+      "enabled_instances": 351,
       "states": [
         "start",
         "all-notes",
@@ -423,7 +452,8 @@
         "sync-conflicts",
         "sync-backup",
         "sync-repairs"
-      ]
+      ],
+      "always_disabled": false
     },
     {
       "id": "shape:button||primary-button|row-actions",
@@ -434,9 +464,11 @@
         "Verify for review"
       ],
       "instances": 1,
+      "enabled_instances": 0,
       "states": [
         "sync-backup"
-      ]
+      ],
+      "always_disabled": true
     },
     {
       "id": "shape:button||primary-button|sync-card",
@@ -448,10 +480,12 @@
         "Create and download"
       ],
       "instances": 2,
+      "enabled_instances": 0,
       "states": [
         "sync-peers",
         "sync-backup"
-      ]
+      ],
+      "always_disabled": true
     },
     {
       "id": "shape:button||primary-button|sync-form-section.sync-section",
@@ -462,9 +496,11 @@
         "Save transport"
       ],
       "instances": 1,
+      "enabled_instances": 1,
       "states": [
         "sync-setup"
-      ]
+      ],
+      "always_disabled": false
     },
     {
       "id": "shape:button||primary-button|sync-hero-row",
@@ -475,9 +511,11 @@
         "Sync now"
       ],
       "instances": 1,
+      "enabled_instances": 1,
       "states": [
         "sync-overview"
-      ]
+      ],
+      "always_disabled": false
     },
     {
       "id": "shape:button||result-card|pane-scroll.result-list",
@@ -485,11 +523,12 @@
       "role": "",
       "testid": "",
       "examples": [
-        "Remote media fixture",
-        "Crawl fixture note",
-        "🔒 Troubleshooting"
+        "🔒 Troubleshooting",
+        "🔒 Stable links between notes and machines",
+        "🔒 The Notrios service"
       ],
       "instances": 277,
+      "enabled_instances": 277,
       "states": [
         "start",
         "all-notes",
@@ -506,7 +545,8 @@
         "sync-conflicts",
         "sync-backup",
         "sync-repairs"
-      ]
+      ],
+      "always_disabled": false
     },
     {
       "id": "shape:button||sync-header-button|header-actions",
@@ -517,6 +557,7 @@
         "Open synchronization, pairing, backup, and recovery"
       ],
       "instances": 16,
+      "enabled_instances": 16,
       "states": [
         "start",
         "all-notes",
@@ -534,7 +575,8 @@
         "sync-conflicts",
         "sync-backup",
         "sync-repairs"
-      ]
+      ],
+      "always_disabled": false
     },
     {
       "id": "shape:input|||",
@@ -546,10 +588,12 @@
         "http://127.0.0.1:8081"
       ],
       "instances": 5,
+      "enabled_instances": 5,
       "states": [
         "sync-peers",
         "sync-backup"
-      ]
+      ],
+      "always_disabled": false
     },
     {
       "id": "shape:input|||directory-picker",
@@ -560,9 +604,11 @@
         "/absolute/path/to/shared-folder"
       ],
       "instances": 1,
+      "enabled_instances": 1,
       "states": [
         "sync-setup"
-      ]
+      ],
+      "always_disabled": false
     },
     {
       "id": "shape:input|||link-picker-field",
@@ -573,10 +619,12 @@
         "Search notes to link"
       ],
       "instances": 2,
+      "enabled_instances": 2,
       "states": [
         "note-open",
         "note-remote-media"
-      ]
+      ],
+      "always_disabled": false
     },
     {
       "id": "shape:input|||password-row",
@@ -585,9 +633,11 @@
       "testid": "",
       "examples": [],
       "instances": 2,
+      "enabled_instances": 2,
       "states": [
         "sync-backup"
-      ]
+      ],
+      "always_disabled": false
     },
     {
       "id": "shape:input|||radio-row",
@@ -598,9 +648,11 @@
         "sync-target"
       ],
       "instances": 3,
+      "enabled_instances": 3,
       "states": [
         "sync-setup"
-      ]
+      ],
+      "always_disabled": false
     },
     {
       "id": "shape:input|||resource-upload",
@@ -609,10 +661,12 @@
       "testid": "",
       "examples": [],
       "instances": 2,
+      "enabled_instances": 2,
       "states": [
         "note-open",
         "note-remote-media"
-      ]
+      ],
+      "always_disabled": false
     },
     {
       "id": "shape:input|||search-row",
@@ -623,6 +677,7 @@
         "Search query"
       ],
       "instances": 16,
+      "enabled_instances": 16,
       "states": [
         "start",
         "all-notes",
@@ -640,7 +695,8 @@
         "sync-conflicts",
         "sync-backup",
         "sync-repairs"
-      ]
+      ],
+      "always_disabled": false
     },
     {
       "id": "shape:input||title-input|editor-toolbar-title",
@@ -651,6 +707,7 @@
         "Note title"
       ],
       "instances": 16,
+      "enabled_instances": 16,
       "states": [
         "start",
         "all-notes",
@@ -668,7 +725,8 @@
         "sync-conflicts",
         "sync-backup",
         "sync-repairs"
-      ]
+      ],
+      "always_disabled": false
     },
     {
       "id": "shape:li|menuitem|md-editor-menu-item.md-editor-menu-item-image|md-editor-menu",
@@ -677,6 +735,7 @@
       "testid": "",
       "examples": [],
       "instances": 45,
+      "enabled_instances": 45,
       "states": [
         "start",
         "all-notes",
@@ -693,7 +752,8 @@
         "sync-conflicts",
         "sync-backup",
         "sync-repairs"
-      ]
+      ],
+      "always_disabled": false
     },
     {
       "id": "shape:li|menuitem|md-editor-menu-item.md-editor-menu-item-katex|md-editor-menu",
@@ -702,6 +762,7 @@
       "testid": "",
       "examples": [],
       "instances": 32,
+      "enabled_instances": 32,
       "states": [
         "start",
         "all-notes",
@@ -719,7 +780,8 @@
         "sync-conflicts",
         "sync-backup",
         "sync-repairs"
-      ]
+      ],
+      "always_disabled": false
     },
     {
       "id": "shape:li|menuitem|md-editor-menu-item.md-editor-menu-item-mermaid|md-editor-menu",
@@ -728,6 +790,7 @@
       "testid": "",
       "examples": [],
       "instances": 128,
+      "enabled_instances": 128,
       "states": [
         "start",
         "all-notes",
@@ -745,7 +808,8 @@
         "sync-conflicts",
         "sync-backup",
         "sync-repairs"
-      ]
+      ],
+      "always_disabled": false
     },
     {
       "id": "shape:li|menuitem|md-editor-menu-item.md-editor-menu-item-title|md-editor-menu",
@@ -754,6 +818,7 @@
       "testid": "",
       "examples": [],
       "instances": 96,
+      "enabled_instances": 96,
       "states": [
         "start",
         "all-notes",
@@ -771,7 +836,8 @@
         "sync-conflicts",
         "sync-backup",
         "sync-repairs"
-      ]
+      ],
+      "always_disabled": false
     },
     {
       "id": "shape:select|||",
@@ -782,9 +848,11 @@
         "Default — active"
       ],
       "instances": 1,
+      "enabled_instances": 1,
       "states": [
         "sync-setup"
-      ]
+      ],
+      "always_disabled": false
     },
     {
       "id": "shape:select|||local-graph-depth",
@@ -795,11 +863,13 @@
         "Hops from this note"
       ],
       "instances": 3,
+      "enabled_instances": 3,
       "states": [
         "note-open",
         "note-trashed",
         "note-remote-media"
-      ]
+      ],
+      "always_disabled": false
     },
     {
       "id": "shape:summary|||note-inspector",
@@ -810,11 +880,13 @@
         "Note info"
       ],
       "instances": 3,
+      "enabled_instances": 3,
       "states": [
         "note-open",
         "note-trashed",
         "note-remote-media"
-      ]
+      ],
+      "always_disabled": false
     },
     {
       "id": "testid:delete-button",
@@ -825,10 +897,12 @@
         "Move this note to the Trash; it can be restored from there"
       ],
       "instances": 2,
+      "enabled_instances": 2,
       "states": [
         "note-open",
         "note-remote-media"
-      ]
+      ],
+      "always_disabled": false
     },
     {
       "id": "testid:localize-button",
@@ -839,9 +913,11 @@
         "Download allowed remote media through the quarantine pipeline and rewrite this n"
       ],
       "instances": 1,
+      "enabled_instances": 1,
       "states": [
         "note-remote-media"
-      ]
+      ],
+      "always_disabled": false
     },
     {
       "id": "testid:new-note-button",
@@ -852,6 +928,7 @@
         "Start a new note in “Notes”"
       ],
       "instances": 16,
+      "enabled_instances": 16,
       "states": [
         "start",
         "all-notes",
@@ -869,7 +946,8 @@
         "sync-conflicts",
         "sync-backup",
         "sync-repairs"
-      ]
+      ],
+      "always_disabled": false
     },
     {
       "id": "testid:notebook-option-nb_notes",
@@ -878,6 +956,7 @@
       "testid": "notebook-option-nb_notes",
       "examples": [],
       "instances": 16,
+      "enabled_instances": 16,
       "states": [
         "start",
         "all-notes",
@@ -895,7 +974,8 @@
         "sync-conflicts",
         "sync-backup",
         "sync-repairs"
-      ]
+      ],
+      "always_disabled": false
     },
     {
       "id": "testid:purge-button",
@@ -906,9 +986,11 @@
         "Permanently delete this note and its revisions"
       ],
       "instances": 1,
+      "enabled_instances": 1,
       "states": [
         "note-trashed"
-      ]
+      ],
+      "always_disabled": false
     },
     {
       "id": "testid:restore-button",
@@ -919,9 +1001,11 @@
         "Restore"
       ],
       "instances": 1,
+      "enabled_instances": 1,
       "states": [
         "note-trashed"
-      ]
+      ],
+      "always_disabled": false
     },
     {
       "id": "testid:save-button",
@@ -933,6 +1017,7 @@
         "Save revision"
       ],
       "instances": 15,
+      "enabled_instances": 15,
       "states": [
         "start",
         "all-notes",
@@ -949,7 +1034,8 @@
         "sync-conflicts",
         "sync-backup",
         "sync-repairs"
-      ]
+      ],
+      "always_disabled": false
     },
     {
       "id": "testid:sidebar-row-nb_help",
@@ -960,6 +1046,7 @@
         "Help"
       ],
       "instances": 16,
+      "enabled_instances": 16,
       "states": [
         "start",
         "all-notes",
@@ -977,7 +1064,8 @@
         "sync-conflicts",
         "sync-backup",
         "sync-repairs"
-      ]
+      ],
+      "always_disabled": false
     },
     {
       "id": "testid:sidebar-row-nb_notes",
@@ -988,6 +1076,7 @@
         "Notes"
       ],
       "instances": 16,
+      "enabled_instances": 16,
       "states": [
         "start",
         "all-notes",
@@ -1005,7 +1094,8 @@
         "sync-conflicts",
         "sync-backup",
         "sync-repairs"
-      ]
+      ],
+      "always_disabled": false
     },
     {
       "id": "testid:sidebar-row-nb_recovered",
@@ -1016,6 +1106,7 @@
         "Recovered"
       ],
       "instances": 16,
+      "enabled_instances": 16,
       "states": [
         "start",
         "all-notes",
@@ -1033,7 +1124,8 @@
         "sync-conflicts",
         "sync-backup",
         "sync-repairs"
-      ]
+      ],
+      "always_disabled": false
     },
     {
       "id": "testid:sidebar-row-nb_reports",
@@ -1044,6 +1136,7 @@
         "Reports"
       ],
       "instances": 16,
+      "enabled_instances": 16,
       "states": [
         "start",
         "all-notes",
@@ -1061,7 +1154,8 @@
         "sync-conflicts",
         "sync-backup",
         "sync-repairs"
-      ]
+      ],
+      "always_disabled": false
     },
     {
       "id": "testid:sidebar-row-snb_all_notes",
@@ -1072,6 +1166,7 @@
         "All notes"
       ],
       "instances": 16,
+      "enabled_instances": 16,
       "states": [
         "start",
         "all-notes",
@@ -1089,7 +1184,8 @@
         "sync-conflicts",
         "sync-backup",
         "sync-repairs"
-      ]
+      ],
+      "always_disabled": false
     },
     {
       "id": "testid:sidebar-row-snb_trash",
@@ -1100,6 +1196,7 @@
         "Trash"
       ],
       "instances": 16,
+      "enabled_instances": 16,
       "states": [
         "start",
         "all-notes",
@@ -1117,7 +1214,8 @@
         "sync-conflicts",
         "sync-backup",
         "sync-repairs"
-      ]
+      ],
+      "always_disabled": false
     },
     {
       "id": "testid:tag-editor-add",
@@ -1126,6 +1224,7 @@
       "testid": "tag-editor-add",
       "examples": [],
       "instances": 16,
+      "enabled_instances": 0,
       "states": [
         "start",
         "all-notes",
@@ -1143,7 +1242,8 @@
         "sync-conflicts",
         "sync-backup",
         "sync-repairs"
-      ]
+      ],
+      "always_disabled": true
     },
     {
       "id": "testid:tag-editor-input",
@@ -1154,6 +1254,7 @@
         "Add a tag"
       ],
       "instances": 16,
+      "enabled_instances": 15,
       "states": [
         "start",
         "all-notes",
@@ -1171,7 +1272,8 @@
         "sync-conflicts",
         "sync-backup",
         "sync-repairs"
-      ]
+      ],
+      "always_disabled": false
     },
     {
       "id": "testid:tag-editor-trigger",
@@ -1182,6 +1284,7 @@
         "Tags"
       ],
       "instances": 16,
+      "enabled_instances": 15,
       "states": [
         "start",
         "all-notes",
@@ -1199,7 +1302,38 @@
         "sync-conflicts",
         "sync-backup",
         "sync-repairs"
-      ]
+      ],
+      "always_disabled": false
+    },
+    {
+      "id": "testid:transfer-header-button",
+      "tag": "button",
+      "role": "",
+      "testid": "transfer-header-button",
+      "examples": [
+        "Importing, exporting and snapshots need the desktop app: they name a folder on t"
+      ],
+      "instances": 16,
+      "enabled_instances": 0,
+      "states": [
+        "start",
+        "all-notes",
+        "help",
+        "trash",
+        "new-note",
+        "note-open",
+        "note-trashed",
+        "note-remote-media",
+        "sync-overview",
+        "sync-setup",
+        "sync-peers",
+        "sync-retention",
+        "sync-attachments",
+        "sync-conflicts",
+        "sync-backup",
+        "sync-repairs"
+      ],
+      "always_disabled": true
     }
   ]
 }
