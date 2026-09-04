@@ -3301,6 +3301,57 @@ than by exploring one. And a crawler must not click everything: delete, purge an
 retire are all reachable, so it enumerates and describes rather than activating,
 and anything destructive is recorded from its label and left alone.
 
+**The remaining GUI gaps, enumerated 2026-09-04.** Eighteen of twenty-nine
+capabilities have no recorded GUI surface. They are not one job, and grouping
+them by what the work actually is matters more than listing them.
+
+*Three are probably not gaps at all, and the measurement cannot yet say.* The
+registry records no GUI support for **attachments**, **remote media** or
+**jobs**, while `web/src` carries resource handling in fifteen files,
+localization in six and job handling in five. The control crawl visits six views
+and none of them is where those controls live, so the inventory does not contain
+them and the column stays wrong. **Widening the crawl is the first task**, before
+any of it is built: writing a feature that already exists would be the most
+wasteful possible outcome of a bad measurement.
+
+*Four are file-picker work, and they are one job wearing four hats.* Importing
+from a Joplin RAW directory, importing an Obsidian vault, exporting a library,
+and taking or restoring a snapshot all need the same thing: a native directory
+chooser, a dry run shown before anything is applied, and a report afterwards.
+Build the picker once. The desktop app can open one; the browser mode cannot,
+which is the real boundary and belongs in the interface rather than in a
+document -- the control should be visibly unavailable in a browser and say why,
+not silently missing.
+
+*Two are the query language appearing where it already belongs.* A **search
+notebook** is a saved query, and the GUI already has the box that takes that
+query. Creating one should be an action on a search that ran -- "keep this as a
+notebook" -- rather than a separate form, because a query someone has just seen
+work is the one they want to keep. **Live query blocks** are the same language a
+third time, inside a note.
+
+*Four are ordinary editing surfaces the GUI simply lacks.* Renaming a tag
+hierarchy, managing collections, templates and tasks, and batch organiser
+operations. Each has a REST surface and no interface.
+
+*Two are reporting rather than doing.* **Keeping a library healthy** -- lint and
+garbage-collection reports -- and **publishing**, whose review step is the whole
+point and is better suited to a screen than to a terminal.
+
+*Two are genuine boundaries and should be recorded as such rather than built.*
+`notriosctl migrate` relocates the directories the running program is serving,
+which a program cannot sensibly do to itself. **Choosing where sync keys are
+kept** stays command line only because H9 forbids a credential REST surface, and
+the Wails GUI reaches the core over exactly that surface -- so this is a
+boundary for the GUI *as currently built*, and would stop being one if the GUI
+reached the core through the C ABI instead. Worth saying plainly, because it is
+the first case where the shared-library work would change what a surface can do.
+
+*One is not a capability a GUI hosts.* **Letting an AI assistant use your
+library** is the MCP endpoint. A GUI can show that it is on, and which scopes are
+granted, and that is worth doing -- but the endpoint is not something the GUI
+offers a person.
+
 **Scope.** Add tag add and remove to the interface, with a journey and captured
 screenshots. Add `notes delete` and `notes restore` to the command line. Write
 the missing journeys on both surfaces for the twelve tasks, including a query
@@ -3400,6 +3451,18 @@ interfaces. All eighteen uses now say "GUI", which is the term the product's own
   text, tags, notebooks, dates, negation, grouping -- because a reader looking up
   how to exclude a tag should not have to read eleven other examples first, and
   because each becomes separately executable.
+- **Whether a picker-bearing control is hidden or disabled in browser mode --
+  Blocking before the first one is built.** Importing, exporting and snapshots
+  need a native directory chooser, which the desktop app has and the browser
+  mode does not. Recommended: show the control and disable it with the reason,
+  never hide it. A reader who cannot find a feature concludes it is missing;
+  one who finds it greyed out with "needs the desktop app" learns something
+  true. It also keeps one interface rather than two.
+- **Whether creating a search notebook is an action on a search or a form --
+  Non-blocking, decide before building it.** Recommended: an action on a search
+  that has just run. The query someone wants to keep is the one they have
+  watched work, and a separate form asks them to retype it and to be right the
+  second time without feedback.
 - **Whether the control crawl becomes a gate or stays a report -- Blocking
   before it is wired in.** A crawler that fails a build when the interface gains
   an undocumented button is the point of building it. A crawler that is flaky
