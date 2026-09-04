@@ -1687,7 +1687,7 @@
     },
     {
       "path": "docs/journeys-cli.md",
-      "sha256": "409fe63611682b3a0b88c923f53955026408f6e33e325985eb5114e6bbfe272e",
+      "sha256": "3c68918e32db363cccbcf65166af91fb36f4aed459a164ddab6de2c53685318b",
       "help_note": "doc_help_journeys_cli",
       "owner": "go:github.com/renesugar/notrios/internal/docjourneys#Catalogue",
       "sections": [
@@ -1702,9 +1702,9 @@
           "grade": "unverified"
         },
         {
-          "id": "what-the-command-line-will-not-do-for-you",
+          "id": "what-the-command-line-does-not-do",
           "level": 2,
-          "title": "What the command line will not do for you",
+          "title": "What the command line does not do",
           "audience": "user",
           "kind": "actionable_or_reference",
           "owner": "go:github.com/renesugar/notrios/internal/docjourneys#Catalogue",
@@ -1722,9 +1722,9 @@
           "grade": "unverified"
         },
         {
-          "id": "how-this-page-is-kept-honest",
+          "id": "where-these-come-from",
           "level": 2,
-          "title": "How this page is kept honest",
+          "title": "Where these come from",
           "audience": "user",
           "kind": "actionable_or_reference",
           "owner": "go:github.com/renesugar/notrios/internal/docjourneys#Catalogue",
@@ -1735,7 +1735,7 @@
     },
     {
       "path": "docs/journeys-gui.md",
-      "sha256": "9990e975f57954f377f83967b2654db255aeab67ea2b97ff28031f26ab8f4bf8",
+      "sha256": "24546f425feb9dcd9cb34708d2de2ef30cab661381df852d586640ab4628c226",
       "help_note": "doc_help_journeys_gui",
       "owner": "go:github.com/renesugar/notrios/internal/docjourneys#GUICatalogue",
       "sections": [
@@ -1750,9 +1750,19 @@
           "grade": "unverified"
         },
         {
-          "id": "what-the-marks-mean",
+          "id": "reading-the-pictures",
           "level": 2,
-          "title": "What the marks mean",
+          "title": "Reading the pictures",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/internal/docjourneys#GUICatalogue",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        },
+        {
+          "id": "what-the-interface-does-not-do",
+          "level": 2,
+          "title": "What the interface does not do",
           "audience": "user",
           "kind": "actionable_or_reference",
           "owner": "go:github.com/renesugar/notrios/internal/docjourneys#GUICatalogue",
@@ -1770,9 +1780,9 @@
           "grade": "unverified"
         },
         {
-          "id": "how-this-page-is-kept-honest",
+          "id": "where-these-come-from",
           "level": 2,
-          "title": "How this page is kept honest",
+          "title": "Where these come from",
           "audience": "user",
           "kind": "actionable_or_reference",
           "owner": "go:github.com/renesugar/notrios/internal/docjourneys#GUICatalogue",
@@ -2443,14 +2453,14 @@
       "id": "published_markdown",
       "count": 18,
       "unit": "pages",
-      "sections": 229,
+      "sections": 230,
       "owner": "go:github.com/renesugar/notrios/internal/helpdocs#Seed"
     },
     {
       "id": "help_notebook",
       "count": 18,
       "unit": "mirrored notes",
-      "sections": 229,
+      "sections": 230,
       "owner": "go:github.com/renesugar/notrios/internal/helpdocs#Seed"
     },
     {
@@ -2547,9 +2557,9 @@
       "executed": 0,
       "generated": 0,
       "claimed": 0,
-      "unverified": 229
+      "unverified": 230
     },
-    "denominator": 229,
+    "denominator": 230,
     "reconciles": true,
     "finding": "The manual does not yet name directive fragments or executable checks, so all current section units are unverified even where independent tests exist."
   },

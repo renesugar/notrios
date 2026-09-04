@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
@@ -76,6 +77,16 @@ func TestCLIJourneysActuallyRun(t *testing.T) {
 				if result.exitCode != 0 && !step.AllowFailure {
 					t.Fatalf("step %d (%s) exited %d\nstdout: %s\nstderr: %s",
 						index+1, strings.Join(step.Command, " "), result.exitCode, result.stdout, result.stderr)
+				}
+				// A later step can refer to what an earlier one made. Without
+				// this a journey could only ever describe operations on things
+				// that already existed, which is not what most tasks look like:
+				// you make a note and then do something to it.
+				var produced map[string]any
+				if json.Unmarshal([]byte(result.stdout), &produced) == nil {
+					if id, ok := produced["document_id"].(string); ok && id != "" {
+						values["note"] = id
+					}
 				}
 			}
 

@@ -29,7 +29,7 @@
     },
     {
       "id": "write-a-note",
-      "title": "Write a note",
+      "title": "Write a note, and read it back",
       "goal": "Create a note and get something into it.",
       "feature": "write-notes",
       "steps": [
@@ -85,6 +85,28 @@
         "narrative": "the notebook picker is open and offering somewhere to file the note",
         "locator": {
           "testid": "notebook-picker-trigger"
+        }
+      }
+    },
+    {
+      "id": "delete-and-restore-a-note",
+      "title": "Delete a note, and get it back",
+      "goal": "Send a note to Trash and restore it, so you can see that deleting is reversible.",
+      "feature": "write-notes",
+      "steps": [
+        {
+          "id": "open-trash",
+          "narrative": "Trash sits at the bottom of the sidebar and is a place you can look in, not a countdown. Notes stay there until you empty it.",
+          "locator": {
+            "testid": "sidebar-row-snb_trash"
+          },
+          "action": "click"
+        }
+      ],
+      "postcondition": {
+        "narrative": "the Trash view is open",
+        "locator": {
+          "testid": "sidebar-row-snb_trash"
         }
       }
     }

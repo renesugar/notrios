@@ -3008,6 +3008,45 @@ from the CLI registry, and two containment defects in the harness itself. The
 `notes create` command exists because writing this found the gap. Not one of
 those needed a model.
 
+**Corrections 2026-09-03, from reading the pages as a reader rather than as
+their author.** Five faults, and the last is the one that explains the others.
+
+*The page contradicted the product.* `docs/journeys-cli.md` still said there is
+no command that writes a note, three commits after `notes create` was added. The
+page that this item built to catch stale documentation had gone stale, and no
+gate noticed, because nothing was inconsistent -- the sentence was merely untrue.
+
+*It mentioned tags and documented nothing about them.* The tagging journey was a
+placeholder with the actual tagging as a manual step. It is now a real journey:
+add two tags, take one off, and read the note back, with a postcondition that
+asserts the removed tag is **absent** rather than only that the kept one is
+present.
+
+*The generated list showed titles and no commands.* A reader learned which tasks
+existed and was left no better able to do any of them. The fragment now emits
+every step with its command, which is what makes the page documentation rather
+than a table of contents.
+
+*The commands it would have shown were unusable anyway.* They carried the
+sandbox plumbing every journey needs to run in isolation -- `--db {db}
+--asset-store {assets}` -- which no reader ever types. Those flags are now
+stripped when rendering, and remaining placeholders become angle-bracket
+metavariables, because `{note}` is a substitution and `<note-id>` is an
+instruction.
+
+*And both pages read as test instructions.* They explained hash manifests,
+mutation results, regenerate commands and the development history of their own
+bugs. All of that is true and none of it belongs in front of someone trying to
+tag a note; it belongs here. The pages now say only what a reader needs, name
+each other so the two surfaces can be compared, and state plainly that tagging
+is unavailable in the interface -- as a gap, in a sentence, rather than as a
+registry classification.
+
+*A capability finding fell out of the rewrite.* Making the two catalogues
+parallel required asking, task by task, whether each surface can do the thing.
+Tagging is the only capability the command line has and the interface does not,
+and now both pages say so in the same words.
+
 **Exit criteria.** The generation half stands on its own and is not conditional
 on the model work: the features page, the two journey catalogues and the
 comparison are worth having whether or not any model turns out to be usable, and

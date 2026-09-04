@@ -1,66 +1,77 @@
 # Command-line journeys
 
 The [CLI reference](cli.md) tells you what each command and flag does. This page
-is the other document: a set of tasks someone actually sets out to do, with the
-steps that do them and — the part that matters — how you can tell it worked.
+is the other half: tasks people actually set out to do, with the steps that do
+them and how you can tell each one worked.
 
-Every journey here is executed. A test runs each one against a disposable
-library and then checks the state afterwards, so what you read below is a
-recording rather than a description. That check is deliberately not "did the
-command exit zero": a command can exit zero having done nothing, and it can exit
-zero having done the opposite of what a page said. Only looking at what changed
-afterwards tells those apart.
+The same tasks are shown for the interface in [Interface journeys](journeys-gui.md).
+Where a task can only be done on one of the two, both pages say so.
 
 Some steps are yours rather than Notrios' — writing a file, plugging in a drive.
-Those are marked and not executed, because a catalogue that only described steps
-it could run would leave out the parts you are most likely to get stuck on.
+Those are marked, because a list that skipped them would make a task look
+shorter than it is.
 
-## What the command line will not do for you
+## What the command line does not do
 
-Three gaps are worth knowing before you start, and they are recorded here rather
-than smoothed over.
+`notriosctl` writes, reads and maintains a library. It is not an editor: there
+is no interactive editing session, no preview, and no live search. Long-form
+writing belongs in the [interface](gui.md).
 
-**There is no command that writes a note.** `notriosctl` imports and maintains a
-library; it does not author in one. From the command line a note arrives by
-import. Writing happens in the GUI or over the API.
+Two narrower limits are worth knowing before you start.
 
 **The Obsidian importer cannot choose a notebook.** It takes `--collection`, not
-`--notebook`, so a note imported this way lands wherever the importer puts it.
+`--notebook`, so notes imported that way land where the importer puts them and
+have to be moved afterwards with `notes move`.
 
 **`--collection` will not create a collection.** Naming one that does not exist
 fails with `FOREIGN KEY constraint failed`, which is the database talking rather
-than Notrios. Use `default`, or a collection that is already there.
+than Notrios. Use `default`, or a collection that already exists.
 
 ## The journeys
 <!-- notrios:generated:user:the-journeys:begin -->
 <!-- source: go:github.com/renesugar/notrios/internal/docjourneys#(Catalogue).Lines -->
 Lines renders the catalogue for the generated fragment.
-- Find out where your notes actually live — See which library this installation is using before doing anything to it. (2 steps, verified by: doctor reports that the required checks passed and names the database it used)
-- Write a note from the command line — Create a note, file it in a notebook, and confirm it is there. (3 steps, verified by: the two created notes appear in an export of the whole library) `notes create` was added in v0.8 H14 because this journey could not be written without it: the task went through a one-file Obsidian import, which is what the test suite had been doing for the same reason.
-- Find notes with the query language — Select a subset of notes by tag, notebook or text, and see exactly which ones matched. (1 steps, verified by: the export reports a smaller set than the whole library, so the query actually filtered) The command line has no search command; it applies the same query language to an export instead, which is how you see a result set as files.
-- Export the library and check the export is sound — Write a portable copy of everything and confirm it is complete before trusting it. (2 steps, verified by: the archive's manifest exists on disk after the export)
-- Keep work notes and personal notes apart — Run more than one library on this machine, each with its own database and settings. (2 steps, verified by: the profile registry lists the profile that was just created)
-- Prepare a library to synchronize — Turn on synchronization for a library and see where its keys are kept. (2 steps, verified by: status reports the library as enrolled and names the store holding its keys)
-- Find what has gone stale in a library — See broken links, orphaned attachments and other rot, and fix what can be fixed mechanically. (2 steps, verified by: lint produces a report rather than changing the library)
-- Read the documentation inside your own library — Get the Notrios guides into the library as notes, so they are searchable like anything else. (1 steps, verified by: the seed reports how many documentation files became notes in the library)
-- Move sync keys into the operating system's keychain — Take key material out of the development file and put it where the OS keeps secrets. (2 steps, verified by: the dry run reports the plan and says nothing was moved) Nothing about this command is guessable: the subcommand name, the direction flag and the confirmation are all specific to Notrios, which is what makes it able to measure a page.
-- Tag a note, and check the tag is there — Attach a tag to a note and confirm it from the same place you attached it. (3 steps, verified by: the library lists the tags it now holds) This journey could not be written until v0.8 H14 added `tags add`, `tags remove` and `tags list`. Before that, tagging a note was reachable over REST and MCP and from neither surface a person uses.
+- **Write a note, read it back, and change it** — Create a note, see what it holds, and edit it without losing the rest.
+- Write the note. The body can be an argument, a file, or standard input, so a note can be the end of a pipeline. `notriosctl notes create --title "Reed beds" --body "Seen at dusk."`
+- Read it back. `notes show` reports the title, notebook, tags, revision and timestamps; add `--body` when you want the text as well, which is left out by default because a note can be long. `notriosctl notes show --document <note>`
+- Change the title. Anything you do not pass keeps its current value, so editing a title never empties a body, and the edit is recorded as a new revision. `notriosctl notes edit --document <note> --title "Reed beds at dusk"`
+- **Add, change and remove a note's tags** — Put tags on a note, swap one for another, and take one off. Tags are hierarchical: `field/dusk` sits under `field`, and renaming `field` with `tags rename --include-children` carries it along.
+- Make a note to tag. `notriosctl notes create --title "Reed beds" --body "Seen at dusk."`
+- Add a tag. The command prints the note's tags afterwards, so you can see the result without running anything else. `notriosctl tags add --document <note> --tag field/dusk`
+- Add a second one. A note carries as many tags as you give it. `notriosctl tags add --document <note> --tag birds`
+- Change a tag by taking the old one off. There is no rename-on-one-note: `tags rename` changes a tag everywhere, which is a different thing from correcting one note. `notriosctl tags remove --document <note> --tag field/dusk`
+- Check what the note carries now. Asking for a note that does not exist is refused rather than answered with an empty list. `notriosctl tags list --document <note>`
+- **Find out where your notes actually live** — See which library this installation is using before doing anything to it.
+- Ask Notrios where it resolved its directories. This is the first thing to run when notes seem to have gone missing: more often than not they are in a different library from the one the command you just ran was talking to. `notriosctl paths`
+- Check the installation itself. doctor creates the database if it is not there yet, so running it also tells you the library is usable. `notriosctl doctor`
+- **Find notes with the query language** — Select a subset of notes by tag, notebook or text, and see exactly which ones matched. The command line has no search command; it applies the same query language to an export instead, which is how you see a result set as files.
+- Export only the notes a query matches. The query language is the same one the GUI search box takes. `notriosctl export archive --query tag:field <out>`
+- **Export the library and check the export is sound** — Write a portable copy of everything and confirm it is complete before trusting it.
+- Write a native archive. This is the format that preserves identity, revisions and attachments rather than just the text. `notriosctl export archive-v2 <out>`
+- Verify it. An export you have not verified is a backup you are guessing about. `notriosctl verify archive-v2 <out>`
+- **Keep work notes and personal notes apart** — Run more than one library on this machine, each with its own database and settings.
+- Create a profile. It gets its own database, its own configuration and its own address, so nothing in it can reach anything in another. `notriosctl profile create --name work_notes`
+- List what this machine now knows about. `notriosctl profile list`
+- **Prepare a library to synchronize** — Turn on synchronization for a library and see where its keys are kept.
+- Enrol the library. Nothing before this point writes a single sync record, and the command tells you which store holds the key material. `notriosctl sync init`
+- Check what it reports afterwards. `notriosctl sync status`
+- **Find what has gone stale in a library** — See broken links, orphaned attachments and other rot, and fix what can be fixed mechanically.
+- Run the workspace lint. It reports rather than changes anything. `notriosctl lint`
+- See what a mechanical fix would do. `fix` dry-runs by default, which is the safe order: read the plan, then apply it. `notriosctl fix`
+- **Read the documentation inside your own library** — Get the Notrios guides into the library as notes, so they are searchable like anything else.
+- Seed the Help notebook. The pages become ordinary read-only notes, which is the point: help you can search alongside your own notes rather than a separate place to go. `notriosctl seed-help <docs>`
+- **Move sync keys into the operating system's keychain** — Take key material out of the development file and put it where the OS keeps secrets. Nothing about this command is guessable: the subcommand name, the direction flag and the confirmation are all specific to Notrios, which is what makes it able to measure a page.
+- Enrol the library first, choosing the development file so there is something to move. `notriosctl sync init`
+- See the plan without moving anything. The command reports which store holds the keys now and which would hold them afterwards, and writes nothing. `notriosctl sync migrate-credentials --to native --dry-run`
 <!-- notrios:generated:user:the-journeys:end -->
 
 
-## How this page is kept honest
+## Where these come from
 
-The list above is generated from `docs/docjourneys/CLI_JOURNEYS.json`, which
-holds each journey's steps and the postcondition that confirms it. Three checks
-run against it.
+Each journey above is run against a throwaway library before this page is
+published, and checked by looking at what changed rather than at whether the
+command exited cleanly. A command can succeed and do nothing, and it can succeed
+and do the opposite of what a page said.
 
-Every journey executes, and its postcondition must hold afterwards. Every
-journey names a capability from the [features page](features.md), so a task
-cannot exist for something the product does not claim to do. And the number of
-features with no journey yet is tracked, so that backlog can shrink but not
-grow.
-
-Writing this catalogue found the three gaps above, and two flags that do not
-exist — `paths --db` and `import obsidian --notebook` — both of which had been
-written down from memory of other commands rather than from the usage message.
-That is the whole argument for executing a journey rather than describing one.
+If a step here does not work for you, that is a bug in Notrios or in this page,
+and worth reporting either way.

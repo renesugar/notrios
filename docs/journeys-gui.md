@@ -2,63 +2,55 @@
 
 The [GUI guide](gui.md) describes what the interface has in it. This page shows
 you doing things with it: a task, the steps, and a picture of each step with the
-click marked.
+place to click marked.
 
-Every picture here was taken by driving the real interface. Nothing is a mockup
-and nothing was placed by hand.
+The same tasks are shown for the command line in
+[Command-line journeys](journeys-cli.md). Where a task can only be done on one
+of the two, both pages say so.
 
-## What the marks mean
+## Reading the pictures
 
-Each screenshot carries two marks, and they say different things.
+Each screenshot carries two marks. The **thin outline** is the thing you are
+clicking — how much of it is clickable. The **red circle** is the point the
+click lands on.
 
-The **thin outline** is the element itself — how much of the screen is
-clickable. The **red circle** is the point that is actually clicked, which is
-the centre of that element.
-
-Both are drawn from the element's own position at the moment the picture was
-taken, never from coordinates written into a file. That has a consequence worth
-stating: if a button moves, the circle moves with it, and if the thing a step
-points at stops existing, the capture fails rather than producing a confident
-picture of the wrong place. A screenshot in documentation is otherwise the one
-kind of claim that cannot go wrong loudly.
-
-The library in these pictures is a disposable one made for the purpose. None of
+The library in these pictures is a throwaway one made for the purpose. None of
 it is anybody's notes.
+
+## What the interface does not do
+
+**Tags are read-only here.** The sidebar lists them with note counts and you can
+click one to search it, but there is no way to add a tag to a note or take one
+off. To do that, use the command line —
+[`notriosctl tags add` and `tags remove`](journeys-cli.md) — or the API. This is
+a gap rather than a decision, and it is the one thing the interface cannot do
+that the command line can.
+
+Importing, exporting, snapshots, profiles and publishing are command-line work,
+because they read and write directories on your machine.
 
 ## The journeys
 <!-- notrios:generated:user:the-journeys:begin -->
 <!-- source: go:github.com/renesugar/notrios/internal/docjourneys#(GUICatalogue).GUILines -->
 GUILines renders the GUI catalogue for the generated fragment.
-- **Find your way around** — See what the interface is made of before changing anything in it. Confirmed when the Help notebook is present in the sidebar.
+- **Find your way around** — See what the interface is made of before changing anything in it.
 - The sidebar on the left lists your notebooks. Help is one of them: the documentation is seeded into your library as ordinary read-only notes, so you can search it alongside everything else. ![the-sidebar](images/journeys/find-your-way-around-the-sidebar.png)
-- **Write a note** — Create a note and get something into it. Confirmed when the editor is open with the note in it.
+- **Write a note, and read it back** — Create a note and get something into it.
 - Click New note. The note is created immediately and opens for editing; there is no dialog to fill in first. ![new-note](images/journeys/write-a-note-new-note.png)
 - Type into the editor. What you write is Markdown, and the preview beside it renders as you go. ![the-editor](images/journeys/write-a-note-the-editor.png)
-- **Choose which notebook a note goes in** — File a note somewhere other than where it landed. Confirmed when the notebook picker is open and offering somewhere to file the note.
+- **Choose which notebook a note goes in** — File a note somewhere other than where it landed.
 - Start from a new note. ![new-note](images/journeys/choose-a-notebook-new-note.png)
 - Open the notebook picker. It sits with the note rather than in a menu, because which notebook a note belongs to is part of the note. ![notebook-picker](images/journeys/choose-a-notebook-notebook-picker.png)
+- **Delete a note, and get it back** — Send a note to Trash and restore it, so you can see that deleting is reversible.
+- Trash sits at the bottom of the sidebar and is a place you can look in, not a countdown. Notes stay there until you empty it. ![open-trash](images/journeys/delete-and-restore-a-note-open-trash.png)
 <!-- notrios:generated:user:the-journeys:end -->
 
 
-## How this page is kept honest
+## Where these come from
 
-The steps, their sentences and their pictures all come from
-`docs/docjourneys/GUI_JOURNEYS.json`, so the caption beside a screenshot is the
-same text the runner used when it took it. Keeping those in two places would let
-a description drift from the image next to it with every gate still green.
+Every picture above was taken by driving the real interface. Nothing is a
+mockup, and nothing was placed by hand: each mark is drawn from where the thing
+being clicked actually was, so if a button moves the mark moves with it.
 
-Two checks run. The capture itself is opt-in, because it needs a browser — but a
-missing screenshot, a stale one, or a step that starts pointing at a different
-element all fail an ordinary test run, by comparing the committed images against
-the hashes recorded when they were taken. Regenerate them with:
-
-```sh
-NOTRIOS_GUI_JOURNEYS=1 go test ./cmd/notriosctl -run TestGUIJourneyCapture
-```
-
-Writing this found the failure it was designed to prevent. The first run
-produced five screenshots with no marker drawn on any of them and no error
-anywhere — the marker function had been passed to the browser as a string,
-which constructs it and never calls it. Nothing noticed until two steps pointing
-at different elements came out byte-identical. That comparison is now a check
-rather than a coincidence.
+If a step here does not match what you see, that is a bug in Notrios or in this
+page, and worth reporting either way.

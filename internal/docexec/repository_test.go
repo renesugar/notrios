@@ -122,7 +122,7 @@ func TestRepositoryExamples(t *testing.T) {
 	// Executed is unchanged at 63: it writes into this user's real credential
 	// store, so it is a reviewed shared-user-state reason covered by executed
 	// tests in cmd/notriosctl that run it against a sandboxed library.
-	if report.Executed != 63 || report.Entries != 143 || len(report.Topics) != 14 {
+	if report.Executed != 63 || report.Entries != 142 || len(report.Topics) != 13 {
 		t.Fatalf("unexpected G18d coverage: %+v", report)
 	}
 	executedTopics := 0

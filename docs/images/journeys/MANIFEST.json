@@ -24,6 +24,15 @@
       "sha256": "030b2a4974cd795e5132ac33065c5abdc5236c5b256dfeafd685ea461da69623"
     },
     {
+      "journey": "delete-and-restore-a-note",
+      "step": "open-trash",
+      "image": "images/journeys/delete-and-restore-a-note-open-trash.png",
+      "locator": {
+        "testid": "sidebar-row-snb_trash"
+      },
+      "sha256": "6f34bfdeb01b936080bbfcf414890fbdc9a16bf1d4632cf56a71417ffe086cdb"
+    },
+    {
       "journey": "find-your-way-around",
       "step": "the-sidebar",
       "image": "images/journeys/find-your-way-around-the-sidebar.png",

@@ -17,6 +17,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -158,14 +159,26 @@ func (c Catalogue) validate() error {
 //notrios:help journeys-cli the-journeys
 //notrios:enumerates go:github.com/renesugar/notrios/internal/docjourneys#Catalogue
 func (c Catalogue) Lines() []string {
-	lines := make([]string, 0, len(c.Journeys))
+	// Steps and their commands are emitted, not just journey titles. A list of
+	// titles tells a reader which tasks exist and leaves them no better able to
+	// do any of them, which is what this page was for. The commands come from
+	// the same catalogue the runner executes, so what is printed here is what
+	// was run.
+	lines := []string{}
 	for _, journey := range c.Journeys {
-		line := fmt.Sprintf("%s — %s (%d steps, verified by: %s)",
-			journey.Title, journey.Goal, len(journey.Steps), journey.Postcondition.Narrative)
+		heading := fmt.Sprintf("**%s** — %s", journey.Title, journey.Goal)
 		if journey.Note != "" {
-			line += " " + journey.Note
+			heading += " " + journey.Note
 		}
-		lines = append(lines, line)
+		lines = append(lines, heading)
+		for _, step := range journey.Steps {
+			if step.Manual {
+				lines = append(lines, step.Narrative+" *(you do this yourself)*")
+				continue
+			}
+			lines = append(lines, fmt.Sprintf("%s `notriosctl %s`",
+				step.Narrative, readableCommand(step.Command)))
+		}
 	}
 	return lines
 }
@@ -176,4 +189,38 @@ func Substitute(values map[string]string, argument string) string {
 		argument = strings.ReplaceAll(argument, "{"+name+"}", value)
 	}
 	return argument
+}
+
+// readableCommand renders a step as a reader would type it.
+//
+// The catalogue carries the sandbox plumbing a test needs -- an explicit
+// database and asset store per run, so journeys cannot touch each other or
+// anybody's real library. None of that belongs on a documentation page: a
+// reader has one library, configured, and typing --db every time is not how the
+// tool is used. Leaving it in was the single clearest way this page read as
+// test instructions rather than documentation.
+//
+// What remains of a placeholder becomes an angle-bracket metavariable, because
+// `{note}` is a substitution and `<note-id>` is an instruction.
+func readableCommand(command []string) string {
+	plumbing := map[string]bool{"--db": true, "--asset-store": true, "--config": true, "--keys": true}
+	rendered, skip := []string{}, false
+	for _, argument := range command {
+		if skip {
+			skip = false
+			continue
+		}
+		if plumbing[argument] {
+			skip = true
+			continue
+		}
+		if strings.HasPrefix(argument, "{") && strings.HasSuffix(argument, "}") {
+			argument = "<" + strings.ReplaceAll(strings.Trim(argument, "{}"), "_", "-") + ">"
+		}
+		if strings.ContainsAny(argument, " ") {
+			argument = strconv.Quote(argument)
+		}
+		rendered = append(rendered, argument)
+	}
+	return strings.Join(rendered, " ")
 }

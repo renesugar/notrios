@@ -165,15 +165,13 @@ func sha256Sum(contents []byte) []byte {
 //notrios:help journeys-gui the-journeys
 //notrios:enumerates go:github.com/renesugar/notrios/internal/docjourneys#GUICatalogue
 func (c GUICatalogue) GUILines() []string {
-	// The steps and their pictures are emitted here rather than written into
-	// the page, so that the sentence a reader sees beside a screenshot is the
-	// same string the runner used when it took it. Keeping them in two places
-	// would mean a narrative could describe one thing while the image beside it
-	// showed another, with every gate still green.
+	// Steps, their sentences and their pictures are emitted here rather than
+	// written into the page, so the caption beside a screenshot is the same
+	// string the runner used when it took it. Keeping them in two places would
+	// let a description drift from the image next to it.
 	lines := []string{}
 	for _, journey := range c.Journeys {
-		lines = append(lines, fmt.Sprintf("**%s** — %s Confirmed when %s.",
-			journey.Title, journey.Goal, journey.Postcondition.Narrative))
+		lines = append(lines, fmt.Sprintf("**%s** — %s", journey.Title, journey.Goal))
 		for _, step := range journey.Steps {
 			lines = append(lines, fmt.Sprintf("%s ![%s](images/journeys/%s-%s.png)",
 				step.Narrative, step.ID, journey.ID, step.ID))

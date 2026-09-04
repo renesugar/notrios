@@ -63,8 +63,11 @@ func TestRepositoryAuditReportsHonestCoverage(t *testing.T) {
 	// its regenerate example.
 	// 228 -> 229 and 18 -> 19 in v0.8 H14 slice E: the computed surface
 	// comparison, one section on docs/features.md.
-	if report.ManualSections != 229 || report.Fragments != 19 || report.Claims != 4 ||
-		report.Executables != 143 || report.Journeys != 9 {
+	// 229 -> 230 sections and 143 -> 142 executables when the journey pages
+	// were rewritten as user documentation: the meta sections describing
+	// hashes and regenerate commands went, taking one example with them.
+	if report.ManualSections != 230 || report.Fragments != 19 || report.Claims != 4 ||
+		report.Executables != 142 || report.Journeys != 9 {
 		t.Fatalf("unexpected coverage surface: %+v", report)
 	}
 	if report.Counts[GradeExecuted] != 71 ||

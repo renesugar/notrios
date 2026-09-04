@@ -2177,18 +2177,6 @@
       }
     },
     {
-      "id": "journeys-gui-how-this-page-is-kept-honest-example-1",
-      "path": "docs/journeys-gui.md",
-      "section": "how-this-page-is-kept-honest",
-      "language": "sh",
-      "sha256": "f70c308674e85c8b0fadc5e4447d61fa604801b6b40eba09acaa362cd1f41a7a",
-      "state": "unverified",
-      "unrun_reason": {
-        "code": "interactive-or-long-running",
-        "detail": "Launches a real browser through Playwright, drives the interface and rewrites the committed screenshots. It is the command that regenerates evidence rather than one that checks it, and it is run deliberately; cmd/notriosctl TestGUIJourneyCapture is the same work behind an environment variable."
-      }
-    },
-    {
       "id": "operations-commands-that-are-safe-against-a-carrier-example-1",
       "path": "docs/operations.md",
       "section": "commands-that-are-safe-against-a-carrier",

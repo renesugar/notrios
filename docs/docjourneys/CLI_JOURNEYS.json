@@ -2,6 +2,178 @@
   "schema": "notrios.docjourneys.cli.v1",
   "journeys": [
     {
+      "id": "write-read-and-change-a-note",
+      "title": "Write a note, read it back, and change it",
+      "goal": "Create a note, see what it holds, and edit it without losing the rest.",
+      "feature": "write-notes",
+      "guessability": "conventional",
+      "steps": [
+        {
+          "narrative": "Write the note. The body can be an argument, a file, or standard input, so a note can be the end of a pipeline.",
+          "command": [
+            "notes",
+            "create",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--title",
+            "Reed beds",
+            "--body",
+            "Seen at dusk."
+          ]
+        },
+        {
+          "narrative": "Read it back. `notes show` reports the title, notebook, tags, revision and timestamps; add `--body` when you want the text as well, which is left out by default because a note can be long.",
+          "command": [
+            "notes",
+            "show",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--document",
+            "{note}"
+          ]
+        },
+        {
+          "narrative": "Change the title. Anything you do not pass keeps its current value, so editing a title never empties a body, and the edit is recorded as a new revision.",
+          "command": [
+            "notes",
+            "edit",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--document",
+            "{note}",
+            "--title",
+            "Reed beds at dusk"
+          ]
+        }
+      ],
+      "postcondition": {
+        "narrative": "the note shows the new title and still holds its body",
+        "command": [
+          "notes",
+          "show",
+          "--db",
+          "{db}",
+          "--asset-store",
+          "{assets}",
+          "--document",
+          "{note}",
+          "--body"
+        ],
+        "contains": [
+          "Reed beds at dusk",
+          "Seen at dusk."
+        ]
+      }
+    },
+    {
+      "id": "tag-a-note",
+      "title": "Add, change and remove a note's tags",
+      "goal": "Put tags on a note, swap one for another, and take one off.",
+      "feature": "tag-a-note",
+      "guessability": "notrios-specific",
+      "note": "Tags are hierarchical: `field/dusk` sits under `field`, and renaming `field` with `tags rename --include-children` carries it along.",
+      "steps": [
+        {
+          "narrative": "Make a note to tag.",
+          "command": [
+            "notes",
+            "create",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--title",
+            "Reed beds",
+            "--body",
+            "Seen at dusk."
+          ]
+        },
+        {
+          "narrative": "Add a tag. The command prints the note's tags afterwards, so you can see the result without running anything else.",
+          "command": [
+            "tags",
+            "add",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--document",
+            "{note}",
+            "--tag",
+            "field/dusk"
+          ]
+        },
+        {
+          "narrative": "Add a second one. A note carries as many tags as you give it.",
+          "command": [
+            "tags",
+            "add",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--document",
+            "{note}",
+            "--tag",
+            "birds"
+          ]
+        },
+        {
+          "narrative": "Change a tag by taking the old one off. There is no rename-on-one-note: `tags rename` changes a tag everywhere, which is a different thing from correcting one note.",
+          "command": [
+            "tags",
+            "remove",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--document",
+            "{note}",
+            "--tag",
+            "field/dusk"
+          ]
+        },
+        {
+          "narrative": "Check what the note carries now. Asking for a note that does not exist is refused rather than answered with an empty list.",
+          "command": [
+            "tags",
+            "list",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--document",
+            "{note}"
+          ]
+        }
+      ],
+      "postcondition": {
+        "narrative": "the note carries the tag that was kept and not the one that was removed",
+        "command": [
+          "notes",
+          "show",
+          "--db",
+          "{db}",
+          "--asset-store",
+          "{assets}",
+          "--document",
+          "{note}"
+        ],
+        "contains": [
+          "birds"
+        ],
+        "absent": [
+          "field/dusk"
+        ]
+      }
+    },
+    {
       "id": "find-your-library",
       "title": "Find out where your notes actually live",
       "goal": "See which library this installation is using before doing anything to it.",
@@ -36,81 +208,6 @@
         "contains": [
           "doctor: required checks passed",
           "database"
-        ]
-      },
-      "guessability": "conventional"
-    },
-    {
-      "id": "create-a-note-in-a-notebook",
-      "title": "Write a note from the command line",
-      "goal": "Create a note, file it in a notebook, and confirm it is there.",
-      "feature": "write-notes",
-      "note": "`notes create` was added in v0.8 H14 because this journey could not be written without it: the task went through a one-file Obsidian import, which is what the test suite had been doing for the same reason.",
-      "steps": [
-        {
-          "narrative": "Write the note. The body can be an argument, a file, or standard input -- so a note can be the end of a pipeline rather than something staged on disk first.",
-          "command": [
-            "notes",
-            "create",
-            "--db",
-            "{db}",
-            "--asset-store",
-            "{assets}",
-            "--title",
-            "Reed beds",
-            "--body",
-            "Seen at dusk."
-          ]
-        },
-        {
-          "narrative": "File it in a notebook by name. A name that matches more than one notebook is refused rather than guessed, because notebook names are unique only among siblings.",
-          "command": [
-            "notes",
-            "create",
-            "--db",
-            "{db}",
-            "--asset-store",
-            "{assets}",
-            "--title",
-            "Heron",
-            "--notebook",
-            "nb_notes",
-            "--body",
-            "Still there."
-          ]
-        },
-        {
-          "narrative": "Ask for a notebook that does not exist, to see the refusal. It names what you asked for, which is the difference between a refusal and a stack trace.",
-          "command": [
-            "notes",
-            "create",
-            "--db",
-            "{db}",
-            "--asset-store",
-            "{assets}",
-            "--title",
-            "Nowhere",
-            "--notebook",
-            "Nowhere",
-            "--body",
-            "x"
-          ],
-          "allow_failure": true
-        }
-      ],
-      "postcondition": {
-        "narrative": "the two created notes appear in an export of the whole library",
-        "command": [
-          "export",
-          "archive",
-          "--db",
-          "{db}",
-          "--asset-store",
-          "{assets}",
-          "{out}"
-        ],
-        "contains": [
-          "2"
         ]
       },
       "guessability": "conventional"
@@ -422,60 +519,6 @@
         ],
         "contains": [
           "dry run"
-        ]
-      }
-    },
-    {
-      "id": "tag-a-note-and-check-it",
-      "title": "Tag a note, and check the tag is there",
-      "goal": "Attach a tag to a note and confirm it from the same place you attached it.",
-      "feature": "tag-a-note",
-      "guessability": "notrios-specific",
-      "note": "This journey could not be written until v0.8 H14 added `tags add`, `tags remove` and `tags list`. Before that, tagging a note was reachable over REST and MCP and from neither surface a person uses.",
-      "steps": [
-        {
-          "narrative": "Make a note to tag. Keep the id it prints; every tag command names the note by id.",
-          "command": [
-            "notes",
-            "create",
-            "--db",
-            "{db}",
-            "--asset-store",
-            "{assets}",
-            "--title",
-            "Reed beds",
-            "--body",
-            "Seen at dusk."
-          ]
-        },
-        {
-          "narrative": "Attach a tag with `notriosctl tags add --document <id> --tag field/dusk`. Tags are hierarchical, so `field/dusk` sits under `field`. The command prints the note's tags afterwards, so the change is visible without a second command.",
-          "manual": true
-        },
-        {
-          "narrative": "Check the library's tags. `tags list` without --document reports every tag and how many notes carry it; with --document it reports one note's tags, and refuses if there is no such note rather than reporting that it has none.",
-          "command": [
-            "tags",
-            "list",
-            "--db",
-            "{db}",
-            "--asset-store",
-            "{assets}"
-          ]
-        }
-      ],
-      "postcondition": {
-        "narrative": "the library lists the tags it now holds",
-        "command": [
-          "tags",
-          "list",
-          "--db",
-          "{db}",
-          "--asset-store",
-          "{assets}"
-        ],
-        "contains": [
-          "tags"
         ]
       }
     }
