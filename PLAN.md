@@ -3444,6 +3444,32 @@ perform. The modal's own controls are covered by the frontend tests, which
 render it directly. Twelve capabilities now have no GUI surface, down from
 eighteen.
 
+**The publication handoff has no consumer, tracked 2026-09-04.** Notrios can
+produce a publication and nothing can read it. `PUBLISHING_POLICY.md` divides
+the work deliberately -- Notrios owns selection, private and draft exclusion,
+resource reachability, link rewriting for withheld targets, metadata stripping
+and a checksum-verified handoff; the separately maintained MIT-licensed
+`movenotes-v3` owns the projections, "Obsidian vault output for interoperability
+and Quartz", Hugo/Ledger, Pagefind and Bluge -- and it names `notrios2sql.py` as
+the consumer. That script was never written.
+
+The rest of that pipeline was. `movenotes-v3` already has `joplin2sql.py`,
+`obsidian2sql.py`, `sql2obsidian.py` and `obsidian2site.py`, with tests: every
+stage after the first. So the gap is one adapter, not a missing capability, and
+the boundary this repository documents does not need changing to close it.
+
+*Why not emit an Obsidian vault from here instead.* It was raised, and the
+motivation is sound -- more tools publish from vaults than from anything
+Notrios emits. Against it: it duplicates `sql2obsidian.py`, obliges this
+repository to own wikilink rewriting and frontmatter mapping permanently, and
+weakens the one guarantee publishing has. `publish run` binds a publication to
+the digest somebody reviewed, re-planning and refusing on a mismatch, then
+checking the written manifest against it. A vault has no archive-v2 manifest, so
+a direct emitter would need a weaker integrity story for the single output that
+rewrites note content. `movenotes-v3/NOTRIOS_IMPORT_PLAN.md` records the work
+and its decisions; this entry exists so the dependency is visible from here
+rather than only from there.
+
 *Two are the query language appearing where it already belongs.* A **search
 notebook** is a saved query, and the GUI already has the box that takes that
 query. Creating one should be an action on a search that ran -- "keep this as a
