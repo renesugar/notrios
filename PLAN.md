@@ -3205,8 +3205,36 @@ elements clicked; the control inventory with its count and the list of unclaimed
 controls; and the coverage table above, regenerated rather than retyped, so it
 cannot drift from the catalogues. Evidence under `performance/v0.8-h15/`.
 
+**Progress 2026-09-03: the command-line gaps, and a bug they exposed.**
+`notriosctl notes delete` and `notes restore` exist, closing the third row of
+the table above. Delete prints the exact line that undoes it, so a person who
+changes their mind does not have to go and find out how. There is no
+confirmation flag: this is not a purge, the note goes to Trash and stays there
+until Trash is emptied, and asking someone to confirm a reversible act teaches
+them to confirm without reading.
+
+*It exposed a bug in a command written three commits earlier.* `notes show`
+used `GetDocument`, which excludes notes in Trash, so a just-deleted note
+reported as **"no note"** -- the same conflation `tags list` had already been
+fixed for, and worse here, because it is the answer someone gets seconds after
+deleting while trying to confirm what happened and find the id to restore. The
+`trashed_at` field that command already printed was dead code until now. It
+looks in Trash as well, and the journey asserts a trashed note is still
+readable.
+
+*Two journeys added, and a fact for readers found by writing one.* Delete and
+restore, and importing an Obsidian vault -- which showed that **front-matter
+tags do not become Notrios tags**. The documented tag handling concerns Joplin
+RAW, which carries explicit tag files, so this is recorded as something a reader
+needs to know rather than claimed as a defect: the journey says to add them
+afterwards with `tags add`. Twelve command-line journeys now, and the
+features-without-a-journey ratchet drops to 21.
+
 **Open decisions**
 
+- **(resolved 2026-09-03) Whether the command line gets `notes delete`.** Added,
+  with `notes restore`, for the reason recommended: a delete whose undo lives on
+  another surface is a poor boundary.
 - **Whether the command line gets `notes delete` -- Blocking for one journey.**
   Deleting is reachable from REST, MCP and the interface and not the command
   line. Recommended: add `notes delete` and `notes restore`, because "delete a

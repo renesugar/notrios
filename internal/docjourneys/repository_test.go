@@ -54,7 +54,8 @@ func TestFeaturesWithoutAJourneyAreTracked(t *testing.T) {
 	// because the pilot showed a guessable command cannot measure a page.
 	// 23 -> 22 in v0.8 H14: the tagging journey, which could not be written
 	// until the command line could tag a note.
-	const baseline = 22
+	// 22 -> 21 in v0.8 H15: the Obsidian import journey.
+	const baseline = 21
 
 	catalogue, registry := load(t)
 	covered := map[string]bool{}

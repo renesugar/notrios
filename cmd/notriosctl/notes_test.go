@@ -140,3 +140,59 @@ func TestNoteCreateRefusals(t *testing.T) {
 		t.Errorf("the refusal must name the notebook the user asked for; got %q", result.stderr)
 	}
 }
+
+// TestNoteDeleteAndRestore covers the pair v0.8 H15 found missing: deleting was
+// reachable from the store, REST, MCP and the interface and from not the
+// command line.
+func TestNoteDeleteAndRestore(t *testing.T) {
+	binary := sharedBinary(t, "notriosctl")
+	sandbox := t.TempDir()
+	roots := []string{"--db", filepath.Join(sandbox, "notes.sqlite"), "--asset-store", filepath.Join(sandbox, "assets")}
+
+	created := runCLIIn(t, sandbox, binary, append([]string{"notes", "create", "--title", "Reed beds", "--body", "dusk"}, roots...)...)
+	var note map[string]any
+	if err := json.Unmarshal([]byte(created.stdout), &note); err != nil {
+		t.Fatal(err)
+	}
+	id, _ := note["document_id"].(string)
+
+	deleted := runCLIIn(t, sandbox, binary, append([]string{"notes", "delete", "--document", id}, roots...)...)
+	if deleted.exitCode != 0 {
+		t.Fatalf("notes delete: %s", deleted.stderr)
+	}
+	// The undo is printed with the delete, so a person who changes their mind
+	// does not have to go and find out how.
+	if !strings.Contains(deleted.stdout, "notes restore --document "+id) {
+		t.Errorf("delete does not say how to undo itself: %s", deleted.stdout)
+	}
+
+	// A trashed note must still be visible. Reporting "no note" here would be
+	// the answer someone gets immediately after deleting, while trying to
+	// confirm what happened.
+	shown := runCLIIn(t, sandbox, binary, append([]string{"notes", "show", "--document", id}, roots...)...)
+	if shown.exitCode != 0 {
+		t.Fatalf("a note in Trash must still be visible: %s", shown.stderr)
+	}
+	if !strings.Contains(shown.stdout, "trashed_at") {
+		t.Errorf("show does not report that the note is in Trash: %s", shown.stdout)
+	}
+
+	restored := runCLIIn(t, sandbox, binary, append([]string{"notes", "restore", "--document", id}, roots...)...)
+	if restored.exitCode != 0 {
+		t.Fatalf("notes restore: %s", restored.stderr)
+	}
+	after := runCLIIn(t, sandbox, binary, append([]string{"notes", "show", "--document", id}, roots...)...)
+	if strings.Contains(after.stdout, "trashed_at") {
+		t.Errorf("the note is still marked trashed after restore: %s", after.stdout)
+	}
+
+	// Restoring something that is not in Trash is refused by name rather than
+	// quietly succeeding.
+	again := runCLIIn(t, sandbox, binary, append([]string{"notes", "restore", "--document", id}, roots...)...)
+	if again.exitCode == 0 {
+		t.Errorf("restoring a note that is not in Trash must be refused")
+	}
+	if !strings.Contains(again.stderr, id) {
+		t.Errorf("the refusal must name the note: %q", again.stderr)
+	}
+}

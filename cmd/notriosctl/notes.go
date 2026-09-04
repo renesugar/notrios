@@ -25,6 +25,10 @@ func runNotes(args []string) {
 		runNoteShow(args[1:])
 	case "edit":
 		runNoteEdit(args[1:])
+	case "delete":
+		runNoteDelete(args[1:])
+	case "restore":
+		runNoteRestore(args[1:])
 	case "move":
 		runNoteMove(args[1:])
 	default:
@@ -39,8 +43,100 @@ func printNotesUsage() {
   notriosctl notes create --title <title> [--notebook <id|name>] [--body-file path | --body text]
   notriosctl notes show --document <id> [--body]
   notriosctl notes edit --document <id> [--title <title>] [--body-file path | --body text]
+  notriosctl notes delete --document <id>
+  notriosctl notes restore --document <id>
   notriosctl notes move --document <id> --notebook <id|name>
 `)
+}
+
+// runNoteDelete moves one note to Trash.
+//
+// Deleting was reachable from the store, REST, MCP and the interface and from
+// not the command line, which is the shape v0.8 H14 found twice already. It is
+// added with `restore` rather than alone: a delete whose undo lives on a
+// different surface is a poor boundary, and a person working at a terminal
+// should not have to open a browser to change their mind.
+//
+// There is no confirmation flag. This is not a purge -- the note goes to Trash,
+// where it stays until someone empties it, and `notes restore` brings it back.
+// Asking a person to type a confirmation for a reversible act teaches them to
+// type confirmations without reading them.
+func runNoteDelete(args []string) {
+	flags := newDocumentFlags("delete")
+	flags.parse(args)
+	documentID := flags.requireDocument()
+
+	st := openStoreFromFlags(*flags.configPath, *flags.dbPath, *flags.assetStore)
+	defer st.Close()
+	ctx := context.Background()
+
+	current, err := st.GetDocument(ctx, documentID)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "no note %q\n", documentID)
+		os.Exit(1)
+	}
+	if err := st.DeleteDocument(ctx, store.DeleteDocumentRequest{
+		ID: current.ID, BaseRevisionID: current.CurrentRevisionID, Message: "notriosctl notes delete",
+	}); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	printJSON(map[string]any{
+		"document_id": current.ID, "title": current.Title, "trashed": true,
+		"restore_with": "notriosctl notes restore --document " + current.ID,
+	})
+}
+
+// runNoteRestore brings a note back out of Trash.
+func runNoteRestore(args []string) {
+	flags := newDocumentFlags("restore")
+	flags.parse(args)
+	documentID := flags.requireDocument()
+
+	st := openStoreFromFlags(*flags.configPath, *flags.dbPath, *flags.assetStore)
+	defer st.Close()
+	ctx := context.Background()
+
+	doc, err := st.RestoreDocument(ctx, documentID)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "cannot restore %q: no such note, or it is not in Trash\n", documentID)
+		os.Exit(1)
+	}
+	printJSON(map[string]any{"document_id": doc.ID, "title": doc.Title, "trashed": false})
+}
+
+// documentFlags is the shape of a command that acts on one note by id.
+type documentFlags struct {
+	set                            *flag.FlagSet
+	configPath, dbPath, assetStore *string
+	document                       *string
+}
+
+func newDocumentFlags(name string) *documentFlags {
+	set := flag.NewFlagSet("notriosctl notes "+name, flag.ExitOnError)
+	return &documentFlags{
+		set:        set,
+		configPath: set.String("config", "", "optional config file"),
+		dbPath:     set.String("db", "", "SQLite database path override"),
+		assetStore: set.String("asset-store", "", "asset store directory override"),
+		document:   set.String("document", "", "note to act on"),
+	}
+}
+
+func (f *documentFlags) parse(args []string) {
+	if err := f.set.Parse(args); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(2)
+	}
+}
+
+func (f *documentFlags) requireDocument() string {
+	id := strings.TrimSpace(*f.document)
+	if f.set.NArg() != 0 || id == "" {
+		printNotesUsage()
+		os.Exit(2)
+	}
+	return id
 }
 
 // runNoteShow reports one note's properties.
@@ -73,10 +169,20 @@ func runNoteShow(args []string) {
 	defer st.Close()
 	ctx := context.Background()
 
-	doc, err := st.GetDocument(ctx, strings.TrimSpace(*documentID))
+	wanted := strings.TrimSpace(*documentID)
+	doc, err := st.GetDocument(ctx, wanted)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "no note %q\n", strings.TrimSpace(*documentID))
-		os.Exit(1)
+		// GetDocument excludes notes in Trash, so a deleted note would report
+		// as "no such note" -- which is the conflation `tags list` was already
+		// fixed for, and worse here: it is the answer someone gets immediately
+		// after deleting, when they are trying to confirm what happened and
+		// find the id to restore.
+		found, lookupErr := findTrashedDocument(ctx, st, wanted)
+		if lookupErr != nil || found.ID == "" {
+			fmt.Fprintf(os.Stderr, "no note %q\n", wanted)
+			os.Exit(1)
+		}
+		doc = found
 	}
 	tags, err := st.ListDocumentTags(ctx, doc.ID)
 	if err != nil {
@@ -105,6 +211,25 @@ func runNoteShow(args []string) {
 		report["body"] = doc.Body
 	}
 	printJSON(report)
+}
+
+// findTrashedDocument looks for a note among the deleted ones.
+//
+// Trash is paged rather than addressable by id, so this walks it. That is
+// acceptable because Trash is bounded by what one person deleted and because
+// the alternative -- telling someone their note does not exist seconds after
+// they deleted it -- is worse than a scan.
+func findTrashedDocument(ctx context.Context, st *store.SQLiteStore, id string) (store.Document, error) {
+	page, err := st.ListTrash(ctx, store.DocumentPageRequest{Limit: 500})
+	if err != nil {
+		return store.Document{}, err
+	}
+	for _, candidate := range page.Documents {
+		if candidate.ID == id {
+			return candidate, nil
+		}
+	}
+	return store.Document{}, nil
 }
 
 // runNoteEdit changes a note's title or body.

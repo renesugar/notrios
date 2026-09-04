@@ -108,6 +108,27 @@ Each task below lists the steps that do it, in order.
   - See the plan without moving anything. The command reports which store holds the keys now and which would hold them afterwards, and writes nothing.
 
     `notriosctl sync migrate-credentials --to native --dry-run`
+- **Delete a note, and change your mind** — Send a note to Trash and bring it back. Deleting moves a note to Trash. Nothing is destroyed until Trash is emptied, and the note stays visible in the meantime.
+  - Make a note to delete.
+
+    `notriosctl notes create --title "Reed beds" --body "Seen at dusk."`
+  - Delete it. The command prints the exact line that undoes it, so you do not have to go and look that up.
+
+    `notriosctl notes delete --document <note>`
+  - Look at it anyway. A note in Trash is still there and still readable; `notes show` reports when it was trashed.
+
+    `notriosctl notes show --document <note>`
+  - Bring it back.
+
+    `notriosctl notes restore --document <note>`
+- **Bring in an Obsidian vault** — Import a folder of Markdown notes without finding out afterwards what it did. Joplin, Twitter, ChatGPT and Claude exports import the same way, with `import joplin-raw`, `import twitter`, `import chatgpt` and `import claude`. Note that tags written in a vault's front matter do not become Notrios tags: add them afterwards with `tags add`.
+  - Point the importer at your vault directory. A directory of Markdown files is all an Obsidian vault is, as far as this is concerned. *(you do this yourself)*
+  - Dry-run first. Every importer reports what it would do before doing it, and reading that is cheaper than undoing an import.
+
+    `notriosctl import obsidian --dry-run <vault>`
+  - Run it for real.
+
+    `notriosctl import obsidian <vault>`
 <!-- notrios:generated:user:the-journeys:end -->
 
 
