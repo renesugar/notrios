@@ -3339,6 +3339,15 @@ bound in the same mode, with the dry run and the report rendered from the job
 record the existing endpoints already return. The open decision below records
 why that is the right shape rather than a workaround.
 
+None of that is a reason to leave the feature unbuilt. Running as a desktop app,
+the Wails window has the same filesystem access any other desktop program has,
+and that is the mode nearly everyone will use. Build it there in full: chooser,
+dry run, apply, report. The browser is the narrower case, it is detectable at
+runtime by exactly the check `SyncCenter` already makes -- whether
+`window.go.main.NativeUIBridge` is bound -- and the correct behaviour there is to
+grey the affected menu items and controls out with a short reason. Detect the
+mode; do not lower the desktop app to the browser's ceiling.
+
 *Two are the query language appearing where it already belongs.* A **search
 notebook** is a saved query, and the GUI already has the box that takes that
 query. Creating one should be an action on a search that ran -- "keep this as a
@@ -3362,14 +3371,6 @@ the Wails GUI reaches the core over exactly that surface -- so this is a
 boundary for the GUI *as currently built*, and would stop being one if the GUI
 reached the core through the C ABI instead. Worth saying plainly, because it is
 the first case where the shared-library work would change what a surface can do.
-
-It is no longer the only one. Import, export and snapshot are the same shape:
-REST has no operation that starts those jobs, so a browser cannot reach them
-however the interface is drawn. The difference is that the desktop app has a
-second route to the core -- the bound Wails bridge, running in the process that
-owns the service -- and can use it today, where the sync-key case has no such
-route because H9 forbids the surface rather than merely omitting it. Both are
-arguments for the C ABI; only one of them has to wait for it.
 
 *One is not a capability a GUI hosts.* **Letting an AI assistant use your
 library** is the MCP endpoint. A GUI can show that it is on, and which scopes are
