@@ -3121,22 +3121,22 @@ makes the gaps countable.
 **Coverage today, measured rather than remembered.** Against the twelve tasks
 named at the start of H14:
 
-| Task | Command line | Interface |
+| Task | Command line | Wails GUI |
 |---|---|---|
-| create a note in a named notebook | covered | partial: opens the picker, does not finish |
+| create a note in a named notebook | covered | partial: opens the notebook chooser, does not finish |
 | update a note in a named notebook | covered | none |
 | delete a note in a named notebook | covered | partial: opens Trash only |
 | search, demonstrating every query-language feature | covered: two journeys, tags and exclusion, titles and dates | none |
 | notebooks defined by a query | covered | listed but not created |
-| import from Joplin | covered | gap: the desktop app could offer a picker |
-| import from Obsidian | covered | gap: the desktop app could offer a picker |
+| import from Joplin | covered | gap: no import screen; the directory chooser it needs exists |
+| import from Obsidian | covered | gap: same |
 | export the library | covered | gap: same |
 | create a profile | covered | gap: same |
 | synchronize with a replica on another drive | covered | none |
 | back up and restore the library | covered: snapshot and verify; restore described | none |
 | how Recoll is used | covered | none |
 
-All twelve covered on the command line. None on the interface, which is the next
+All twelve covered on the command line. None in the Wails GUI, which is the next
 half of the work.
 
 *A claim withdrawn.* Importing from Joplin was recorded as needing "an export
@@ -3316,12 +3316,20 @@ wasteful possible outcome of a bad measurement.
 
 *Four are file-picker work, and they are one job wearing four hats.* Importing
 from a Joplin RAW directory, importing an Obsidian vault, exporting a library,
-and taking or restoring a snapshot all need the same thing: a native directory
-chooser, a dry run shown before anything is applied, and a report afterwards.
-Build the picker once. The desktop app can open one; the browser mode cannot,
-which is the real boundary and belongs in the interface rather than in a
-document -- the control should be visibly unavailable in a browser and say why,
-not silently missing.
+and taking or restoring a snapshot all need the same thing: a directory chosen,
+a dry run shown before anything is applied, and a report afterwards.
+
+The picker is already built, and the earlier draft of this section was wrong to
+plan it as new work. Wails v2 exposes `runtime.OpenDirectoryDialog`, and
+`cmd/notrios/gui_wails.go` already calls it: `NativeUIBridge.ChooseSyncDirectory`
+opens a native directory dialog, the bridge is bound only in the mode where this
+process owns the service (`runGUI(svc.Handler, true)`, against
+`runGUI(proxy, false)` for `-gui-only`), and `web/src/components/SyncCenter.tsx`
+consumes it through `window.go.main.NativeUIBridge`. The work is therefore to
+generalise one existing method -- a chooser that takes the dialog title and the
+caller's purpose -- and to wire four call sites onto it, not to build a picker.
+That is a materially smaller task than this section first claimed, and it is the
+third time in H15 that an unmeasured "missing" turned out to be present.
 
 *Two are the query language appearing where it already belongs.* A **search
 notebook** is a saved query, and the GUI already has the box that takes that
@@ -3451,13 +3459,22 @@ interfaces. All eighteen uses now say "GUI", which is the term the product's own
   text, tags, notebooks, dates, negation, grouping -- because a reader looking up
   how to exclude a tag should not have to read eleven other examples first, and
   because each becomes separately executable.
-- **Whether a picker-bearing control is hidden or disabled in browser mode --
-  Blocking before the first one is built.** Importing, exporting and snapshots
-  need a native directory chooser, which the desktop app has and the browser
-  mode does not. Recommended: show the control and disable it with the reason,
-  never hide it. A reader who cannot find a feature concludes it is missing;
-  one who finds it greyed out with "needs the desktop app" learns something
-  true. It also keeps one interface rather than two.
+- **What a picker-bearing control does without a picker -- Resolved by
+  precedent; recorded because the earlier recommendation here was wrong.** The
+  first draft recommended disabling the control and explaining why. The existing
+  code already answers it better: `SyncCenter` renders a path text field always
+  and the "Choose folder..." button only when the bridge is present, so losing
+  the picker costs the convenience and never the capability. Adopt that pattern
+  for all four call sites.
+
+  The reason is stronger than "a browser cannot open a native dialog". In
+  `-gui-only` mode the window renders a service that may be running on another
+  machine, so a path chosen by a dialog on *this* computer names the wrong
+  filesystem, while a typed path is unambiguously a path on the host that will
+  read it -- exactly what the same argument to the CLI would mean. A disabled
+  button would therefore have advertised a capability as unavailable when it is
+  merely typed rather than clicked. The field's label should say whose
+  filesystem it refers to when the service is remote.
 - **Whether creating a search notebook is an action on a search or a form --
   Non-blocking, decide before building it.** Recommended: an action on a search
   that has just run. The query someone wants to keep is the one they have
