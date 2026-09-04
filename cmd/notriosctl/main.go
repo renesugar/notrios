@@ -82,6 +82,8 @@ func main() {
 		runFix(os.Args[2:])
 	case "tags":
 		runTags(os.Args[2:])
+	case "notebooks":
+		runNotebooks(os.Args[2:])
 	case "notes":
 		runNotes(os.Args[2:])
 	case "graph":
@@ -622,6 +624,9 @@ Usage:
                                                  # a note's tags, or every tag in the library with note counts
   notriosctl tags rename --from <tag> --to <tag> [--db ...] [--include-children] [--apply]
                                                  # hierarchical tag rename; dry run is the default and reports every tag and count
+  notriosctl notebooks create --name <name> [--parent <id|name>] [--icon <emoji>] [--query <query>]
+                                                 # a notebook, or one whose contents are whatever a query matches
+  notriosctl notebooks list [--db ...]           # notebooks and query notebooks, as the sidebar shows them
   notriosctl notes create --title <title> [--notebook <id|name>] [--body-file path|-] [--body text]
                                                  # write one note; the body may come from a file, an argument
                                                  # or standard input, so a note can end a pipeline

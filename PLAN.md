@@ -3123,11 +3123,11 @@ named at the start of H14:
 
 | Task | Command line | Interface |
 |---|---|---|
-| create a note in a named notebook | partial: creates and files, but cannot make a notebook | partial: opens the picker, does not finish |
+| create a note in a named notebook | covered | partial: opens the picker, does not finish |
 | update a note in a named notebook | covered | none |
 | delete a note in a named notebook | covered | partial: opens Trash only |
 | search, demonstrating every query-language feature | covered: two journeys, tags and exclusion, titles and dates | none |
-| notebooks defined by a query | **impossible on both: made over REST or MCP only** | **impossible: listed but not created** |
+| notebooks defined by a query | covered | listed but not created |
 | import from Joplin | described in the Obsidian journey | not applicable |
 | import from Obsidian | covered | not applicable |
 | export the library | covered | not applicable |
@@ -3136,15 +3136,43 @@ named at the start of H14:
 | back up and restore the library | covered: snapshot and verify; restore described | none |
 | how Recoll is used | covered | none |
 
-Nine of twelve covered on the command line, two impossible there and recorded as
-such, one partial. None on the interface, which is the next half of the work.
+Eleven of twelve covered on the command line; the twelfth, importing from
+Joplin, is described inside the Obsidian journey because it needs an export
+fixture this repository does not carry. None on the interface, which is the next
+half of the work.
 
-*Two more capabilities the command line does not have, found by the audit.* It
-cannot **create a notebook** -- `notes create --notebook` accepts only one that
-already exists -- and it cannot **create a saved search**. Both are made over
-REST or MCP, and the interface makes notebooks but not saved searches either.
-Recorded as `surface_note` entries so the comparison reports them as explained
-asymmetries rather than as silence.
+**A framing error, corrected 2026-09-03, and it changes how absences are read.**
+The audit found the command line could not create a notebook or a saved search,
+and both were recorded as explained asymmetries with a `surface_note`. That was
+wrong, and the reason matters more than the two commands it cost.
+
+An asymmetry is *explained* when a surface genuinely cannot do a thing.
+Importing reads directories on this machine and a browser cannot; a profile
+registry is about this machine and a service answering for one profile must not
+reach another. Those are properties of the transport.
+
+Creating a notebook has no such property. The capability lives once, in the
+store, and REST, MCP, the interface and the command line are four adapters onto
+it -- which is the whole premise of the shared-core work
+`FLUTTER_GO_CLIENT.md` describes, where a future client reaches the same
+application facade over a C ABI. **An absent adapter is work not done, and
+writing `surface_note` beside it dresses that up as a decision.** A note in the
+registry saying "the command line cannot do this" is not an explanation; it is
+the gap restated in a tone that discourages fixing it.
+
+So `notriosctl notebooks create` and `notebooks list` exist, and a saved search
+follows immediately from them -- `notebooks create --query "tag:todo"` -- because
+a query notebook is a notebook whose contents are whatever matches. They are one
+command rather than two, because that distinction is one the storage draws and
+the sidebar does not.
+
+*The correction applies beyond these two.* Every remaining `surface_note` was
+re-read against the test "could this surface do it, if someone wrote the
+adapter?". The ones that survive are transport-constrained: importing and
+exporting read local directories, snapshots name local paths, profiles are
+machine-local, and credential migration is forbidden a REST surface by H9's own
+boundary. Tagging in the interface remains what it always was -- a gap, recorded
+as a gap.
 
 **A missing command, found by the audit.** `notriosctl notes` has `create`,
 `show`, `edit` and `move` and no `delete`. Deleting a note is reachable from

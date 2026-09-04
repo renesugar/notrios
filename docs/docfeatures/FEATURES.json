@@ -90,13 +90,18 @@
       "mcp": [
         "list_search_notebooks"
       ],
-      "surface_note": "Neither the command line nor the interface creates one directly: they are made over REST or MCP, and the interface then lists them in the sidebar alongside ordinary notebooks."
+      "surface_note": "Made with `notebooks create --query`, since a query notebook is a notebook whose contents are whatever matches. The interface lists them in the sidebar and does not create them yet.",
+      "cli": [
+        "notriosctl notebooks create"
+      ]
     },
     {
       "id": "organise-notebooks",
       "title": "Organise notes into notebooks",
       "summary": "Make notebooks, nest them, move notes between them, and see what a notebook deletion would take with it before agreeing to it.",
       "cli": [
+        "notriosctl notebooks create",
+        "notriosctl notebooks list",
         "notriosctl notes move"
       ],
       "rest": [
@@ -119,8 +124,7 @@
       "gui": [
         "Choose a notebook for a new note — executed (new-note-in-notebook)",
         "Review a notebook deletion — executed (delete-notebook-review)"
-      ],
-      "surface_note": "The command line can move a note between notebooks but cannot create one. Making a notebook happens in the interface, or over REST or MCP, which is why `notes create --notebook` only accepts one that already exists."
+      ]
     },
     {
       "id": "tag-a-note",

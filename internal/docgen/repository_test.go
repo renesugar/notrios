@@ -34,7 +34,10 @@ func TestRepositoryEnumerationsMatchFiniteRegistries(t *testing.T) {
 		// 61 -> 64 in v0.8 H14: `tags add`, `tags remove` and `tags list`,
 		// which close the command-line half of the tagging gap this milestone
 		// opened with.
-		{cliHelpAnchor, 64},
+		// 64 -> 66 in v0.8 H15: `notebooks create` and `notebooks list`, added
+		// once it was clear the command line's inability to make a notebook was
+		// a missing adapter rather than a boundary.
+		{cliHelpAnchor, 66},
 		{restAnchor, 109},
 		{mcpToolsAnchor, 46},
 		{mcpSyncScopeAnchor, 7},

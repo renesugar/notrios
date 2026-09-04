@@ -529,7 +529,7 @@
     },
     {
       "path": "docs/cli.md",
-      "sha256": "afd0adf78cf51a8e9b423a8c5707bfb2f07c61c4a0b2f428e951761cff381534",
+      "sha256": "377729cf7bd6279c05c1f79805129e425a3be49fe763253e78fcf07f9c65fc82",
       "help_note": "doc_help_cli",
       "owner": "go:github.com/renesugar/notrios/cmd/notriosctl#printHelp",
       "sections": [
@@ -987,7 +987,7 @@
     },
     {
       "path": "docs/features.md",
-      "sha256": "530c4395f56c2baee8163b6a86ead7469df008c8a341c695c0418218b450f9bc",
+      "sha256": "92b935ec49d6ff619ed98edba66061fab037531e55bdc0c8ca477291da001ced",
       "help_note": "doc_help_features",
       "owner": "go:github.com/renesugar/notrios/internal/docfeatures#Registry",
       "sections": [
@@ -1687,7 +1687,7 @@
     },
     {
       "path": "docs/journeys-cli.md",
-      "sha256": "b7dbac732636cfcab840413b369c309b702056e8fc62f54b0bd3aea88dc3642c",
+      "sha256": "109624bdab30064e9dd8fa1094d54e6d19278b22fe0d8d05d63a92dfb7dfe9a4",
       "help_note": "doc_help_journeys_cli",
       "owner": "go:github.com/renesugar/notrios/internal/docjourneys#Catalogue",
       "sections": [
@@ -2465,7 +2465,7 @@
     },
     {
       "id": "cli_help",
-      "count": 64,
+      "count": 66,
       "unit": "usage forms",
       "owner": "go:github.com/renesugar/notrios/cmd/notriosctl#printHelp"
     },

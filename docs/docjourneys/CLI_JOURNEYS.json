@@ -967,6 +967,95 @@
           "state_vector"
         ]
       }
+    },
+    {
+      "id": "make-a-notebook",
+      "title": "Make a notebook, and one that fills itself",
+      "goal": "Create a notebook, file a note into it, and make a notebook whose contents come from a query.",
+      "feature": "organise-notebooks",
+      "guessability": "conventional",
+      "note": "A query notebook has no parent: what is in it is decided by the query rather than by where you put things.",
+      "steps": [
+        {
+          "narrative": "Make a notebook. An emoji is optional and shows before the name in the sidebar.",
+          "command": [
+            "notebooks",
+            "create",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--name",
+            "Field notes",
+            "--icon",
+            "🌿"
+          ]
+        },
+        {
+          "narrative": "Nest another inside it, naming the parent. A name that matches more than one notebook is refused rather than guessed, because names are unique only among siblings.",
+          "command": [
+            "notebooks",
+            "create",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--name",
+            "Dusk",
+            "--parent",
+            "Field notes"
+          ]
+        },
+        {
+          "narrative": "File a note into it by name.",
+          "command": [
+            "notes",
+            "create",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--title",
+            "Reed beds",
+            "--body",
+            "Seen at dusk.",
+            "--notebook",
+            "Field notes"
+          ]
+        },
+        {
+          "narrative": "Make a notebook that fills itself. Anything matching the query appears in it; nothing is filed there by hand.",
+          "command": [
+            "notebooks",
+            "create",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--name",
+            "Todo",
+            "--query",
+            "tag:todo"
+          ]
+        }
+      ],
+      "postcondition": {
+        "narrative": "both kinds of notebook are listed, the way the sidebar shows them together",
+        "command": [
+          "notebooks",
+          "list",
+          "--db",
+          "{db}",
+          "--asset-store",
+          "{assets}"
+        ],
+        "contains": [
+          "Field notes",
+          "Dusk",
+          "Todo",
+          "query_notebooks"
+        ]
+      }
     }
   ]
 }

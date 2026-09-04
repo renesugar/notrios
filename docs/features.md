@@ -43,8 +43,8 @@ which surfaces offer each capability.
 - Write and edit notes — Create a note, change it, add to either end of it, and delete it. Deleting moves a note to Trash, and Trash is a place you can look in and take things back out of, not a countdown. (CLI 1, REST 10, MCP 6, GUI 3) The command line writes a note and files it, and does no more than that: editing, appending and deleting happen in the GUI or over REST/MCP. `notes create` exists so a note can be the end of a pipeline.
 - Read a note and its structure — Fetch a note whole, or just its body, its outline, its blocks, a line range, or an earlier revision. The structured views exist so a tool can work on part of a note without re-parsing all of it. (REST 7, MCP 5, GUI 1) No command line: reading a note is what the GUI and the API are for.
 - Search your notes — Find notes by text, tag, notebook, date and the rest of the query language, across the library or within one note. (REST 3, MCP 2, GUI 1) No command line search command; `notriosctl export archive --query` applies the same language to an export instead.
-- Notebooks that are really saved searches — Save a query as a notebook, so a view that would otherwise be retyped becomes something you open. (REST 3, MCP 1) Neither the command line nor the interface creates one directly: they are made over REST or MCP, and the interface then lists them in the sidebar alongside ordinary notebooks.
-- Organise notes into notebooks — Make notebooks, nest them, move notes between them, and see what a notebook deletion would take with it before agreeing to it. (CLI 1, REST 9, MCP 4, GUI 2) The command line can move a note between notebooks but cannot create one. Making a notebook happens in the interface, or over REST or MCP, which is why `notes create --notebook` only accepts one that already exists.
+- Notebooks that are really saved searches — Save a query as a notebook, so a view that would otherwise be retyped becomes something you open. (CLI 1, REST 3, MCP 1) Made with `notebooks create --query`, since a query notebook is a notebook whose contents are whatever matches. The interface lists them in the sidebar and does not create them yet.
+- Organise notes into notebooks — Make notebooks, nest them, move notes between them, and see what a notebook deletion would take with it before agreeing to it. (CLI 3, REST 9, MCP 4, GUI 2)
 - Tag and untag a note — Attach a tag to a note, take one off, and see what a note carries. Tags are hierarchical: `field/dusk` sits under `field`. (CLI 3, REST 2, MCP 2) The GUI still shows tags only as sidebar navigation and cannot add or remove one. That half of the gap v0.8 H14 found is open.
 - See and rename tags — List the tags in a library, see a note's tags, and rename a whole tag hierarchy at once. (CLI 1, REST 3, MCP 1) The GUI shows tags as sidebar navigation and does not rename them.
 - Group libraries into collections — Collections sit above notebooks and are how an import keeps its material together. (REST 4, MCP 1) No command line or GUI journey; imports set the collection with --collection.
@@ -81,7 +81,6 @@ Each capability below is offered on some surfaces and not others.
 - Group libraries into collections — neither the command line nor the interface; reachable only over REST or MCP. No command line or GUI journey; imports set the collection with --collection.
 - Let an AI assistant use your library — neither the command line nor the interface; reachable only over REST or MCP. The endpoint itself has no command line or GUI; the tools it exposes are listed against the features above.
 - Live query blocks inside a note — neither the command line nor the interface; reachable only over REST or MCP. No command line; the GUI renders them in place.
-- Notebooks that are really saved searches — neither the command line nor the interface; reachable only over REST or MCP. Neither the command line nor the interface creates one directly: they are made over REST or MCP, and the interface then lists them in the sidebar alongside ordinary notebooks.
 - Templates and tasks — neither the command line nor the interface; reachable only over REST or MCP. No command line or GUI journey.
 - Attach and manage files — command line only. No GUI journey for attachment management yet.
 - See and rename tags — command line only. The GUI shows tags as sidebar navigation and does not rename them.
@@ -92,6 +91,7 @@ Each capability below is offered on some surfaces and not others.
 - Keep separate libraries — command line only. Command line only by design: a profile registry is about this machine, and a service answering for one profile should not be able to reach another.
 - Publish a subset of your notes — command line only. No GUI journey; publishing is reviewed at the command line.
 - Bring remote images into the library — command line only. No GUI journey; localizing is a maintenance action rather than an editing one.
+- Notebooks that are really saved searches — command line only. Made with `notebooks create --query`, since a query notebook is a notebook whose contents are whatever matches. The interface lists them in the sidebar and does not create them yet.
 - Back up and restore the whole library — command line only. Command line only: a snapshot names paths on this machine, which is native-host work rather than a web request.
 - Choose where sync keys are kept — command line only. Deliberately command line only: this item forbids a credential-management REST or MCP surface.
 - Synchronize with a replica — command line only. No GUI journey runs an exchange; the sync center configures and reports rather than transferring.
@@ -104,7 +104,6 @@ Each capability below is offered on some surfaces and not others.
 - See the shape of the link graph — both surfaces, and neither journey is written yet
 - Link notes to each other — both surfaces, and neither journey is written yet
 - Pair two of your own libraries — both surfaces, but only the command-line journey is written
-- Organise notes into notebooks — both surfaces, but only the interface journey is written
 <!-- notrios:generated:user:where-the-surfaces-disagree:end -->
 
 This list is computed, not written. It compares what each capability claims

@@ -56,7 +56,8 @@ func TestFeaturesWithoutAJourneyAreTracked(t *testing.T) {
 	// until the command line could tag a note.
 	// 22 -> 21 in v0.8 H15: the Obsidian import journey.
 	// 21 -> 19 in v0.8 H15: snapshots and sync-exchange gained journeys.
-	const baseline = 19
+	// 19 -> 18 in v0.8 H15: the notebook journey.
+	const baseline = 18
 
 	catalogue, registry := load(t)
 	covered := map[string]bool{}

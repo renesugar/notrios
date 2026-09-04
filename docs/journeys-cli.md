@@ -174,6 +174,19 @@ Each task below lists the steps that do it, in order.
   - Run one exchange against the folder. Polling or running this by hand is the mechanism; no filesystem watcher is needed for correctness.
 
     `notriosctl sync once --carrier <carrier>`
+- **Make a notebook, and one that fills itself** — Create a notebook, file a note into it, and make a notebook whose contents come from a query. A query notebook has no parent: what is in it is decided by the query rather than by where you put things.
+  - Make a notebook. An emoji is optional and shows before the name in the sidebar.
+
+    `notriosctl notebooks create --name "Field notes" --icon 🌿`
+  - Nest another inside it, naming the parent. A name that matches more than one notebook is refused rather than guessed, because names are unique only among siblings.
+
+    `notriosctl notebooks create --name Dusk --parent "Field notes"`
+  - File a note into it by name.
+
+    `notriosctl notes create --title "Reed beds" --body "Seen at dusk." --notebook "Field notes"`
+  - Make a notebook that fills itself. Anything matching the query appears in it; nothing is filed there by hand.
+
+    `notriosctl notebooks create --name Todo --query tag:todo`
 <!-- notrios:generated:user:the-journeys:end -->
 
 
