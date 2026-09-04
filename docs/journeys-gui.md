@@ -1,6 +1,6 @@
-# Interface journeys
+# GUI journeys
 
-The [GUI guide](gui.md) describes what the interface has in it. This page shows
+The [GUI guide](gui.md) describes what the GUI has in it. This page shows
 you doing things with it: a task, the steps, and a picture of each step with the
 place to click marked.
 
@@ -17,24 +17,26 @@ click lands on.
 The library in these pictures is a throwaway one made for the purpose. None of
 it is anybody's notes.
 
-## What the interface does not do
+## What the GUI does not do
 
 **Tags are read-only here.** The sidebar lists them with note counts and you can
 click one to search it, but there is no way to add a tag to a note or take one
 off. To do that, use the command line —
 [`notriosctl tags add` and `tags remove`](journeys-cli.md) — or the API. This is
-a gap rather than a decision, and it is the one thing the interface cannot do
+a gap rather than a decision, and it is the one thing the GUI cannot do
 that the command line can.
 
-Importing, exporting, snapshots, profiles and publishing are command-line work,
-because they read and write directories on your machine.
+Importing, exporting, snapshots, profiles and publishing are command-line work
+today. That is a gap rather than a rule: the desktop app runs on your machine
+and could offer a directory picker for any of them. What genuinely cannot is the
+browser mode, which has no access to arbitrary local paths.
 
 ## The journeys
 <!-- notrios:generated:user:the-journeys:begin -->
 <!-- source: go:github.com/renesugar/notrios/internal/docjourneys#(GUICatalogue).GUILines -->
 Each task below lists its steps, with a picture of every one.
 
-- **Find your way around** — See what the interface is made of before changing anything in it.
+- **Find your way around** — See what the GUI is made of before changing anything in it.
   - The sidebar on the left lists your notebooks. Help is one of them: the documentation is seeded into your library as ordinary read-only notes, so you can search it alongside everything else.
 
     ![the-sidebar](images/journeys/find-your-way-around-the-sidebar.png)
@@ -61,7 +63,7 @@ Each task below lists its steps, with a picture of every one.
 
 ## Where these come from
 
-Every picture above was taken by driving the real interface. Nothing is a
+Every picture above was taken by driving the real GUI. Nothing is a
 mockup, and nothing was placed by hand: each mark is drawn from where the thing
 being clicked actually was, so if a button moves the mark moves with it.
 

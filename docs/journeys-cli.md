@@ -4,7 +4,7 @@ The [CLI reference](cli.md) tells you what each command and flag does. This page
 is the other half: tasks people actually set out to do, with the steps that do
 them and how you can tell each one worked.
 
-The same tasks are shown for the interface in [Interface journeys](journeys-gui.md).
+The same tasks are shown for the GUI in [GUI journeys](journeys-gui.md).
 Where a task can only be done on one of the two, both pages say so.
 
 Some steps are yours rather than Notrios' — writing a file, plugging in a drive.
@@ -15,7 +15,7 @@ shorter than it is.
 
 `notriosctl` writes, reads and maintains a library. It is not an editor: there
 is no interactive editing session, no preview, and no live search. Long-form
-writing belongs in the [interface](gui.md).
+writing belongs in the [GUI](gui.md).
 
 Two narrower limits are worth knowing before you start.
 

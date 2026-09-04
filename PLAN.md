@@ -3128,10 +3128,10 @@ named at the start of H14:
 | delete a note in a named notebook | covered | partial: opens Trash only |
 | search, demonstrating every query-language feature | covered: two journeys, tags and exclusion, titles and dates | none |
 | notebooks defined by a query | covered | listed but not created |
-| import from Joplin | covered | not applicable |
-| import from Obsidian | covered | not applicable |
-| export the library | covered | not applicable |
-| create a profile | covered | not applicable |
+| import from Joplin | covered | gap: the desktop app could offer a picker |
+| import from Obsidian | covered | gap: the desktop app could offer a picker |
+| export the library | covered | gap: same |
+| create a profile | covered | gap: same |
 | synchronize with a replica on another drive | covered | none |
 | back up and restore the library | covered: snapshot and verify; restore described | none |
 | how Recoll is used | covered | none |
@@ -3272,6 +3272,34 @@ RAW, which carries explicit tag files, so this is recorded as something a reader
 needs to know rather than claimed as a defect: the journey says to add them
 afterwards with `tags add`. Twelve command-line journeys now, and the
 features-without-a-journey ratchet drops to 21.
+
+**The same framing error again, and a more useful boundary in its place
+(2026-09-03).** Importing was recorded as command line only, with the
+justification that it "reads directories on this machine, which a browser cannot
+do and an API should not". That reasoning describes the **browser** mode. The
+GUI is a Wails desktop application -- `./bin/notrios` is the app and its local
+service together -- and a desktop application can open a native directory
+picker. `FLUTTER_GO_CLIENT.md` says as much: "shared directories and pickers"
+and "file-picker handoff" are capabilities the planned ABI must expose.
+
+So importing from Joplin, exporting, snapshots, profiles and publishing are all
+**gaps in the GUI rather than boundaries of it**. What is genuinely constrained
+is the browser mode, and that is a property of a delivery mode rather than of a
+surface. Every one of those notes now says so.
+
+*What this leaves as a real boundary.* Almost nothing, which is the honest
+answer. `notriosctl migrate` stays command line only for a reason that survives
+the test: it relocates the directories the running program is using, and a
+program cannot sensibly do that to itself while serving them. Credential
+migration stays command line only because H9's boundary forbids the surface, not
+because the GUI could not host it. Everything else is work.
+
+*Terminology, corrected at the same time.* These pages used "the interface" to
+mean the GUI, in a product with four surfaces, producing sentences like
+"neither the command line nor the interface; reachable only over REST or MCP" --
+which says a capability is not reachable from an interface, only from two other
+interfaces. All eighteen uses now say "GUI", which is the term the product's own
+`docs/gui.md` uses.
 
 **Open decisions**
 

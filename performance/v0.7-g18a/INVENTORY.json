@@ -987,7 +987,7 @@
     },
     {
       "path": "docs/features.md",
-      "sha256": "92b935ec49d6ff619ed98edba66061fab037531e55bdc0c8ca477291da001ced",
+      "sha256": "404c17929eb024e633c098ba20b07e4b60a7c06d558fca823707eb725a14a33e",
       "help_note": "doc_help_features",
       "owner": "go:github.com/renesugar/notrios/internal/docfeatures#Registry",
       "sections": [
@@ -1687,7 +1687,7 @@
     },
     {
       "path": "docs/journeys-cli.md",
-      "sha256": "66ecd0197fa2fce8eaba0ee3040e34bf641fbf767336044f8e35f34c76be37be",
+      "sha256": "cec142df04297472a2ab46d66b6ae96abd1c7c27d53703025640b46111e64259",
       "help_note": "doc_help_journeys_cli",
       "owner": "go:github.com/renesugar/notrios/internal/docjourneys#Catalogue",
       "sections": [
@@ -1735,14 +1735,14 @@
     },
     {
       "path": "docs/journeys-gui.md",
-      "sha256": "f4c974097eddb5b99499386bc257e5e3e47e0ff2f47e6ffb679c84db31a8021d",
+      "sha256": "8756c53b9220767bd9f92053963b6f47b89508856b58aaa3ffcc10f085d5e410",
       "help_note": "doc_help_journeys_gui",
       "owner": "go:github.com/renesugar/notrios/internal/docjourneys#GUICatalogue",
       "sections": [
         {
-          "id": "interface-journeys",
+          "id": "gui-journeys",
           "level": 1,
-          "title": "Interface journeys",
+          "title": "GUI journeys",
           "audience": "user",
           "kind": "actionable_or_reference",
           "owner": "go:github.com/renesugar/notrios/internal/docjourneys#GUICatalogue",
@@ -1760,9 +1760,9 @@
           "grade": "unverified"
         },
         {
-          "id": "what-the-interface-does-not-do",
+          "id": "what-the-gui-does-not-do",
           "level": 2,
-          "title": "What the interface does not do",
+          "title": "What the GUI does not do",
           "audience": "user",
           "kind": "actionable_or_reference",
           "owner": "go:github.com/renesugar/notrios/internal/docjourneys#GUICatalogue",

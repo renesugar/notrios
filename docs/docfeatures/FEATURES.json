@@ -90,7 +90,7 @@
       "mcp": [
         "list_search_notebooks"
       ],
-      "surface_note": "Made with `notebooks create --query`, since a query notebook is a notebook whose contents are whatever matches. The interface lists them in the sidebar and does not create them yet.",
+      "surface_note": "Made with `notebooks create --query`, since a query notebook is a notebook whose contents are whatever matches. The GUI lists them in the sidebar and does not create them yet.",
       "cli": [
         "notriosctl notebooks create"
       ]
@@ -318,7 +318,7 @@
         "notriosctl import claude",
         "notriosctl import archive"
       ],
-      "surface_note": "Importing is command line only: it reads directories on this machine, which a browser cannot do and an API should not."
+      "surface_note": "Not in the GUI yet. The constraint is the *browser* mode, which cannot read arbitrary local paths; the desktop app can, and native directory pickers are part of the planned client architecture. This is a gap rather than a boundary."
     },
     {
       "id": "export-and-archive",
@@ -331,7 +331,7 @@
         "notriosctl restore archive-v2",
         "notriosctl compatibility archive-v2"
       ],
-      "surface_note": "Command line only, for the same reason as importing."
+      "surface_note": "Not in the GUI yet. The constraint is the *browser* mode, which cannot read arbitrary local paths; the desktop app can, and native directory pickers are part of the planned client architecture. This is a gap rather than a boundary."
     },
     {
       "id": "snapshots",
@@ -342,7 +342,7 @@
         "notriosctl snapshot verify",
         "notriosctl snapshot restore"
       ],
-      "surface_note": "Command line only: a snapshot names paths on this machine, which is native-host work rather than a web request."
+      "surface_note": "Not in the GUI yet. The constraint is the *browser* mode, which cannot read arbitrary local paths; the desktop app can, and native directory pickers are part of the planned client architecture. This is a gap rather than a boundary."
     },
     {
       "id": "sync-pairing",
@@ -483,7 +483,7 @@
         "notriosctl profile start",
         "notriosctl profile validate"
       ],
-      "surface_note": "Command line only by design: a profile registry is about this machine, and a service answering for one profile should not be able to reach another."
+      "surface_note": "Not in the GUI yet. A profile registry is about this machine, which the desktop app also runs on, so this is a gap rather than a boundary; the browser mode is the part that genuinely cannot manage it."
     },
     {
       "id": "publishing",
@@ -501,7 +501,7 @@
       "mcp": [
         "plan_selection"
       ],
-      "surface_note": "No GUI journey; publishing is reviewed at the command line."
+      "surface_note": "Not in the GUI yet. Publishing writes to a local directory, so the desktop app could do it and the browser mode could not."
     },
     {
       "id": "maintenance",
@@ -535,7 +535,7 @@
       "cli": [
         "notriosctl migrate"
       ],
-      "surface_note": "Command line only: it moves directories on this machine, and it reports rather than deciding for you."
+      "surface_note": "Command line only, and genuinely so: it relocates the directories the running program uses, which is not something the program can sensibly do to itself while serving them."
     },
     {
       "id": "mcp-endpoint",

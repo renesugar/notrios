@@ -43,7 +43,7 @@ which surfaces offer each capability.
 - Write and edit notes — Create a note, change it, add to either end of it, and delete it. Deleting moves a note to Trash, and Trash is a place you can look in and take things back out of, not a countdown. (CLI 1, REST 10, MCP 6, GUI 3) The command line writes a note and files it, and does no more than that: editing, appending and deleting happen in the GUI or over REST/MCP. `notes create` exists so a note can be the end of a pipeline.
 - Read a note and its structure — Fetch a note whole, or just its body, its outline, its blocks, a line range, or an earlier revision. The structured views exist so a tool can work on part of a note without re-parsing all of it. (REST 7, MCP 5, GUI 1) No command line: reading a note is what the GUI and the API are for.
 - Search your notes — Find notes by text, tag, notebook, date and the rest of the query language, across the library or within one note. (REST 3, MCP 2, GUI 1) No command line search command; `notriosctl export archive --query` applies the same language to an export instead.
-- Notebooks that are really saved searches — Save a query as a notebook, so a view that would otherwise be retyped becomes something you open. (CLI 1, REST 3, MCP 1) Made with `notebooks create --query`, since a query notebook is a notebook whose contents are whatever matches. The interface lists them in the sidebar and does not create them yet.
+- Notebooks that are really saved searches — Save a query as a notebook, so a view that would otherwise be retyped becomes something you open. (CLI 1, REST 3, MCP 1) Made with `notebooks create --query`, since a query notebook is a notebook whose contents are whatever matches. The GUI lists them in the sidebar and does not create them yet.
 - Organise notes into notebooks — Make notebooks, nest them, move notes between them, and see what a notebook deletion would take with it before agreeing to it. (CLI 3, REST 9, MCP 4, GUI 2)
 - Tag and untag a note — Attach a tag to a note, take one off, and see what a note carries. Tags are hierarchical: `field/dusk` sits under `field`. (CLI 3, REST 2, MCP 2) The GUI still shows tags only as sidebar navigation and cannot add or remove one. That half of the gap v0.8 H14 found is open.
 - See and rename tags — List the tags in a library, see a note's tags, and rename a whole tag hierarchy at once. (CLI 1, REST 3, MCP 1) The GUI shows tags as sidebar navigation and does not rename them.
@@ -55,19 +55,19 @@ which surfaces offer each capability.
 - Templates and tasks — Keep note templates and make new notes from them, and see the tasks across a library. (REST 4, MCP 3) No command line or GUI journey.
 - Live query blocks inside a note — Put a query in a note and have its results render where it sits. (REST 1, MCP 1) No command line; the GUI renders them in place.
 - Do many organiser operations at once — Send a batch of moves, tags and notebook changes as one request, so a large reorganisation is one reviewable action. (REST 1, MCP 1) No command line or GUI journey; batching is for tools.
-- Import from another application — Bring in a Joplin raw export, an Obsidian vault, a Twitter or X archive, a ChatGPT or Claude export, or a Notrios archive. Every importer dry-runs first. (CLI 6) Importing is command line only: it reads directories on this machine, which a browser cannot do and an API should not.
-- Export your library — Write a portable archive of everything or a chosen subset, check one for compatibility, verify one, and restore one with an explicit intent. (CLI 5) Command line only, for the same reason as importing.
-- Back up and restore the whole library — Take a physical snapshot of the database and its attachments, verify it, and restore it — replacing this library or adopting the snapshot as a new replica. (CLI 3) Command line only: a snapshot names paths on this machine, which is native-host work rather than a web request.
+- Import from another application — Bring in a Joplin raw export, an Obsidian vault, a Twitter or X archive, a ChatGPT or Claude export, or a Notrios archive. Every importer dry-runs first. (CLI 6) Not in the GUI yet. The constraint is the *browser* mode, which cannot read arbitrary local paths; the desktop app can, and native directory pickers are part of the planned client architecture. This is a gap rather than a boundary.
+- Export your library — Write a portable archive of everything or a chosen subset, check one for compatibility, verify one, and restore one with an explicit intent. (CLI 5) Not in the GUI yet. The constraint is the *browser* mode, which cannot read arbitrary local paths; the desktop app can, and native directory pickers are part of the planned client architecture. This is a gap rather than a boundary.
+- Back up and restore the whole library — Take a physical snapshot of the database and its attachments, verify it, and restore it — replacing this library or adopting the snapshot as a new replica. (CLI 3) Not in the GUI yet. The constraint is the *browser* mode, which cannot read arbitrary local paths; the desktop app can, and native directory pickers are part of the planned client architecture. This is a gap rather than a boundary.
 - Pair two of your own libraries — Enrol a library for synchronization, issue a single-use code, and spend it from the other side so the two learn each other's keys. (CLI 6, REST 8, GUI 1)
 - Synchronize with a replica — Exchange changes with a paired replica, directly over an authenticated connection or through a folder you both can reach — a second drive, or a cloud folder mapped locally. (CLI 3, REST 9, MCP 3) No GUI journey runs an exchange; the sync center configures and reports rather than transferring.
 - See and end trust between replicas — List the replicas a library trusts, revoke one's key, and retire a peer after reviewing exactly what retiring it means. (CLI 1, REST 4) The GUI shows peers in the sync center; retirement is reviewed there but has no registered journey yet.
 - Recover a replica and resolve conflicts — Fetch a peer-verified backup, inspect one without installing it, work through sync conflicts, and decide what a shared attachment should do. (CLI 1, REST 9, MCP 1) No registered GUI journey; the sync center presents conflicts.
 - Choose where sync keys are kept — An installed Notrios keeps the key that protects your sync material in the operating system's credential store. Move existing keys between that and the owner-only development file, in either direction. (CLI 1) Deliberately command line only: this item forbids a credential-management REST or MCP surface.
 - Watch and steer long-running work — Imports, exports and syncs run as jobs you can list, inspect, cancel, retry and reset. (CLI 5, REST 5, MCP 4) No GUI journey; progress appears inline where the work was started.
-- Keep separate libraries — Run more than one library on a machine — personal notes, work notes, a blog — each with its own database, its own settings and its own address. (CLI 7) Command line only by design: a profile registry is about this machine, and a service answering for one profile should not be able to reach another.
-- Publish a subset of your notes — Choose what leaves the library, review exactly what a publication would include and withhold, save that choice as a profile, and publish only after agreeing to the reviewed plan. (CLI 4, REST 1, MCP 1) No GUI journey; publishing is reviewed at the command line.
+- Keep separate libraries — Run more than one library on a machine — personal notes, work notes, a blog — each with its own database, its own settings and its own address. (CLI 7) Not in the GUI yet. A profile registry is about this machine, which the desktop app also runs on, so this is a gap rather than a boundary; the browser mode is the part that genuinely cannot manage it.
+- Publish a subset of your notes — Choose what leaves the library, review exactly what a publication would include and withhold, save that choice as a profile, and publish only after agreeing to the reviewed plan. (CLI 4, REST 1, MCP 1) Not in the GUI yet. Publishing writes to a local directory, so the desktop app could do it and the browser mode could not.
 - Keep a library healthy — Find what has rotted, fix what can be fixed mechanically, reclaim space, and check that this installation is set up the way you think it is. (CLI 8, REST 4, MCP 1) No GUI journey; maintenance is command line work.
-- Move a pre-0.8 library into place — A library that lived in ./data next to the program is relocated into the directories an installed Notrios uses, after showing you the plan. (CLI 1) Command line only: it moves directories on this machine, and it reports rather than deciding for you.
+- Move a pre-0.8 library into place — A library that lived in ./data next to the program is relocated into the directories an installed Notrios uses, after showing you the plan. (CLI 1) Command line only, and genuinely so: it relocates the directories the running program uses, which is not something the program can sensibly do to itself while serving them.
 - Let an AI assistant use your library — Notrios speaks MCP, so an assistant can read and, within a scope you grant, change your notes. (REST 2) The endpoint itself has no command line or GUI; the tools it exposes are listed against the features above.
 <!-- notrios:generated:user:what-you-can-do:end -->
 
@@ -77,33 +77,33 @@ which surfaces offer each capability.
 <!-- source: go:github.com/renesugar/notrios/internal/doccompare#Lines -->
 Each capability below is offered on some surfaces and not others.
 
-- Do many organiser operations at once — neither the command line nor the interface; reachable only over REST or MCP. No command line or GUI journey; batching is for tools.
-- Group libraries into collections — neither the command line nor the interface; reachable only over REST or MCP. No command line or GUI journey; imports set the collection with --collection.
-- Let an AI assistant use your library — neither the command line nor the interface; reachable only over REST or MCP. The endpoint itself has no command line or GUI; the tools it exposes are listed against the features above.
-- Live query blocks inside a note — neither the command line nor the interface; reachable only over REST or MCP. No command line; the GUI renders them in place.
-- Templates and tasks — neither the command line nor the interface; reachable only over REST or MCP. No command line or GUI journey.
+- Do many organiser operations at once — neither the command line nor the GUI; reachable only over REST or MCP. No command line or GUI journey; batching is for tools.
+- Group libraries into collections — neither the command line nor the GUI; reachable only over REST or MCP. No command line or GUI journey; imports set the collection with --collection.
+- Let an AI assistant use your library — neither the command line nor the GUI; reachable only over REST or MCP. The endpoint itself has no command line or GUI; the tools it exposes are listed against the features above.
+- Live query blocks inside a note — neither the command line nor the GUI; reachable only over REST or MCP. No command line; the GUI renders them in place.
+- Templates and tasks — neither the command line nor the GUI; reachable only over REST or MCP. No command line or GUI journey.
 - Attach and manage files — command line only. No GUI journey for attachment management yet.
 - See and rename tags — command line only. The GUI shows tags as sidebar navigation and does not rename them.
-- Export your library — command line only. Command line only, for the same reason as importing.
-- Import from another application — command line only. Importing is command line only: it reads directories on this machine, which a browser cannot do and an API should not.
+- Export your library — command line only. Not in the GUI yet. The constraint is the *browser* mode, which cannot read arbitrary local paths; the desktop app can, and native directory pickers are part of the planned client architecture. This is a gap rather than a boundary.
+- Import from another application — command line only. Not in the GUI yet. The constraint is the *browser* mode, which cannot read arbitrary local paths; the desktop app can, and native directory pickers are part of the planned client architecture. This is a gap rather than a boundary.
 - Watch and steer long-running work — command line only. No GUI journey; progress appears inline where the work was started.
 - Keep a library healthy — command line only. No GUI journey; maintenance is command line work.
-- Keep separate libraries — command line only. Command line only by design: a profile registry is about this machine, and a service answering for one profile should not be able to reach another.
-- Publish a subset of your notes — command line only. No GUI journey; publishing is reviewed at the command line.
+- Keep separate libraries — command line only. Not in the GUI yet. A profile registry is about this machine, which the desktop app also runs on, so this is a gap rather than a boundary; the browser mode is the part that genuinely cannot manage it.
+- Publish a subset of your notes — command line only. Not in the GUI yet. Publishing writes to a local directory, so the desktop app could do it and the browser mode could not.
 - Bring remote images into the library — command line only. No GUI journey; localizing is a maintenance action rather than an editing one.
-- Notebooks that are really saved searches — command line only. Made with `notebooks create --query`, since a query notebook is a notebook whose contents are whatever matches. The interface lists them in the sidebar and does not create them yet.
-- Back up and restore the whole library — command line only. Command line only: a snapshot names paths on this machine, which is native-host work rather than a web request.
+- Notebooks that are really saved searches — command line only. Made with `notebooks create --query`, since a query notebook is a notebook whose contents are whatever matches. The GUI lists them in the sidebar and does not create them yet.
+- Back up and restore the whole library — command line only. Not in the GUI yet. The constraint is the *browser* mode, which cannot read arbitrary local paths; the desktop app can, and native directory pickers are part of the planned client architecture. This is a gap rather than a boundary.
 - Choose where sync keys are kept — command line only. Deliberately command line only: this item forbids a credential-management REST or MCP surface.
 - Synchronize with a replica — command line only. No GUI journey runs an exchange; the sync center configures and reports rather than transferring.
 - See and end trust between replicas — command line only. The GUI shows peers in the sync center; retirement is reviewed there but has no registered journey yet.
 - Recover a replica and resolve conflicts — command line only. No registered GUI journey; the sync center presents conflicts.
 - Tag and untag a note — command line only. The GUI still shows tags only as sidebar navigation and cannot add or remove one. That half of the gap v0.8 H14 found is open.
-- Move a pre-0.8 library into place — command line only. Command line only: it moves directories on this machine, and it reports rather than deciding for you.
-- Read a note and its structure — interface only. No command line: reading a note is what the GUI and the API are for.
-- Search your notes — interface only. No command line search command; `notriosctl export archive --query` applies the same language to an export instead.
+- Move a pre-0.8 library into place — command line only. Command line only, and genuinely so: it relocates the directories the running program uses, which is not something the program can sensibly do to itself while serving them.
+- Read a note and its structure — GUI only. No command line: reading a note is what the GUI and the API are for.
+- Search your notes — GUI only. No command line search command; `notriosctl export archive --query` applies the same language to an export instead.
 - See the shape of the link graph — both surfaces, and neither journey is written yet
 - Link notes to each other — both surfaces, and neither journey is written yet
-- Pair two of your own libraries — both surfaces, but only the command-line journey is written
+- Pair two of your own libraries — both, but only the command-line journey is written
 <!-- notrios:generated:user:where-the-surfaces-disagree:end -->
 
 This list is computed, not written. It compares what each capability claims
@@ -112,7 +112,7 @@ against which journeys exist, and reports two different kinds of disagreement.
 A **capability** difference is a thing one surface can do and the other cannot.
 Most are deliberate and say why beside them. One is not, and it is called out in
 bold: tagging a note is reachable over REST and MCP and from neither the command
-line nor the interface — the capability exists and you cannot reach it without
+line nor the GUI — the capability exists and you cannot reach it without
 writing a program.
 
 A **documentation** difference is a capability both surfaces offer where only

@@ -8,6 +8,10 @@
 //
 // Two kinds of disagreement come out, and they are not the same problem.
 //
+// "GUI" is used rather than "interface" throughout, because REST and MCP are
+// interfaces too and a sentence reading "neither the command line nor the
+// interface, only REST or MCP" says nothing at all.
+//
 // A *capability* difference is a thing one surface can do and the other cannot.
 // Some of those are deliberate -- importing reads directories on this machine,
 // so it is command line only -- and the registry records the reason beside them.
@@ -128,10 +132,10 @@ func Unexplained(differences []Difference) []Difference {
 
 var descriptions = map[Kind]string{
 	CapabilityOnlyCLI: "command line only",
-	CapabilityOnlyGUI: "interface only",
-	CapabilityNeither: "neither the command line nor the interface; reachable only over REST or MCP",
-	DocumentedOnlyCLI: "both surfaces, but only the command-line journey is written",
-	DocumentedOnlyGUI: "both surfaces, but only the interface journey is written",
+	CapabilityOnlyGUI: "GUI only",
+	CapabilityNeither: "neither the command line nor the GUI; reachable only over REST or MCP",
+	DocumentedOnlyCLI: "both, but only the command-line journey is written",
+	DocumentedOnlyGUI: "both, but only the GUI journey is written",
 	DocumentedNeither: "both surfaces, and neither journey is written yet",
 }
 

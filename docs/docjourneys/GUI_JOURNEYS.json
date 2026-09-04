@@ -8,7 +8,7 @@
     {
       "id": "find-your-way-around",
       "title": "Find your way around",
-      "goal": "See what the interface is made of before changing anything in it.",
+      "goal": "See what the GUI is made of before changing anything in it.",
       "feature": "read-notes",
       "steps": [
         {
