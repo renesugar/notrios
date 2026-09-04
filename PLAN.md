@@ -3211,6 +3211,42 @@ built from the registry today must say which columns are measured and which are
 merely recorded -- and this is the strongest argument yet for the control crawl
 below, which turns the GUI column from an assertion into a measurement.
 
+**Measured 2026-09-03: 26 distinct controls across six views, and the table was
+wrong.** `performance/v0.8-h15/gui_controls.mjs` drives the GUI headlessly,
+visits six views and records every interactive element. It enumerates and never
+activates: delete, purge, retire and empty-trash are all reachable here, and a
+crawler that clicked what it found would eventually find one of them.
+
+*Identity had to come from structure, not from text, and the first run showed
+why.* Keyed on labels, the crawl reported 67 "controls" -- of which nineteen
+were note titles, because a list of search results renders one button per note.
+That count would have grown with the library rather than described the
+interface. Keyed on tag, role, classes and parent, those nineteen collapse into
+one control seen 36 times, and the inventory drops to 26.
+
+*It corrected five rows of the capability table immediately.* The registry
+recorded no GUI support for synchronizing, peers, recovery, the graph report or
+reading notes. The crawl found **Sync now**, **Peers**, **Retention**,
+**Conflicts**, **Backup & recovery**, a **Reports** notebook and **All notes**
+with a search field. Each correction now names the control that evidences it, so
+the claim can be checked against the inventory rather than believed.
+
+*Two limits, stated because the number will be quoted.* The crawl measures what
+the interface **presents**, not what it can do -- a Peers tab proves peers are
+shown, not that one can be retired -- so the mapping from control to capability
+stays editorial and the crawl only bounds the GUI column from below. And
+collapsing by shape can over-merge: four groups of unlabelled `li/menuitem`
+elements are almost certainly several editor menus counted as four controls.
+
+*Two bugs in the crawler itself, both mine and both instructive.* It passed its
+collector to `page.evaluate` as a **string**, which constructs the function and
+never calls it -- the identical mistake the journey capture made with its marker,
+already found, already fixed and already commented, repeated within the day. And
+a locator failed because I read a test id from my own truncated terminal output:
+`sidebar-row-snb_all_note` for `sidebar-row-snb_all_notes`. The first cost a run;
+the second silently dropped a whole view from the inventory until the validator
+was written to refuse exactly that.
+
 **Give the GUI a real inventory, by clicking it.** Every other surface can be
 enumerated from source and is: 61 command-line usage forms, 63 configuration
 keys, 109 REST operations, 46 MCP tools, each with a pinned count that fails when

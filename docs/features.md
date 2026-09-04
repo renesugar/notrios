@@ -41,7 +41,7 @@ Registry is the feature catalogue: what a person can do with Notrios, and
 which surfaces offer each capability.
 
 - Write and edit notes — Create a note, change it, add to either end of it, and delete it. Deleting moves a note to Trash, and Trash is a place you can look in and take things back out of, not a countdown. (CLI 1, REST 10, MCP 6, GUI 3) The command line writes a note and files it, and does no more than that: editing, appending and deleting happen in the GUI or over REST/MCP. `notes create` exists so a note can be the end of a pipeline.
-- Read a note and its structure — Fetch a note whole, or just its body, its outline, its blocks, a line range, or an earlier revision. The structured views exist so a tool can work on part of a note without re-parsing all of it. (REST 7, MCP 5, GUI 1) No command line: reading a note is what the GUI and the API are for.
+- Read a note and its structure — Fetch a note whole, or just its body, its outline, its blocks, a line range, or an earlier revision. The structured views exist so a tool can work on part of a note without re-parsing all of it. (REST 7, MCP 5, GUI 2) No command line: reading a note is what the GUI and the API are for.
 - Search your notes — Find notes by text, tag, notebook, date and the rest of the query language, across the library or within one note. (REST 3, MCP 2, GUI 1) No command line search command; `notriosctl export archive --query` applies the same language to an export instead.
 - Notebooks that are really saved searches — Save a query as a notebook, so a view that would otherwise be retyped becomes something you open. (CLI 1, REST 3, MCP 1) Made with `notebooks create --query`, since a query notebook is a notebook whose contents are whatever matches. The GUI lists them in the sidebar and does not create them yet.
 - Organise notes into notebooks — Make notebooks, nest them, move notes between them, and see what a notebook deletion would take with it before agreeing to it. (CLI 3, REST 9, MCP 4, GUI 2)
@@ -59,9 +59,9 @@ which surfaces offer each capability.
 - Export your library — Write a portable archive of everything or a chosen subset, check one for compatibility, verify one, and restore one with an explicit intent. (CLI 5) Not in the GUI yet. The constraint is the *browser* mode, which cannot read arbitrary local paths; the desktop app can, and native directory pickers are part of the planned client architecture. This is a gap rather than a boundary.
 - Back up and restore the whole library — Take a physical snapshot of the database and its attachments, verify it, and restore it — replacing this library or adopting the snapshot as a new replica. (CLI 3) Not in the GUI yet. The constraint is the *browser* mode, which cannot read arbitrary local paths; the desktop app can, and native directory pickers are part of the planned client architecture. This is a gap rather than a boundary.
 - Pair two of your own libraries — Enrol a library for synchronization, issue a single-use code, and spend it from the other side so the two learn each other's keys. (CLI 6, REST 8, GUI 1)
-- Synchronize with a replica — Exchange changes with a paired replica, directly over an authenticated connection or through a folder you both can reach — a second drive, or a cloud folder mapped locally. (CLI 3, REST 9, MCP 3) No GUI journey runs an exchange; the sync center configures and reports rather than transferring.
-- See and end trust between replicas — List the replicas a library trusts, revoke one's key, and retire a peer after reviewing exactly what retiring it means. (CLI 1, REST 4) The GUI shows peers in the sync center; retirement is reviewed there but has no registered journey yet.
-- Recover a replica and resolve conflicts — Fetch a peer-verified backup, inspect one without installing it, work through sync conflicts, and decide what a shared attachment should do. (CLI 1, REST 9, MCP 1) No registered GUI journey; the sync center presents conflicts.
+- Synchronize with a replica — Exchange changes with a paired replica, directly over an authenticated connection or through a folder you both can reach — a second drive, or a cloud folder mapped locally. (CLI 3, REST 9, MCP 3, GUI 1)
+- See and end trust between replicas — List the replicas a library trusts, revoke one's key, and retire a peer after reviewing exactly what retiring it means. (CLI 1, REST 4, GUI 2)
+- Recover a replica and resolve conflicts — Fetch a peer-verified backup, inspect one without installing it, work through sync conflicts, and decide what a shared attachment should do. (CLI 1, REST 9, MCP 1, GUI 2)
 - Choose where sync keys are kept — An installed Notrios keeps the key that protects your sync material in the operating system's credential store. Move existing keys between that and the owner-only development file, in either direction. (CLI 1) Deliberately command line only: this item forbids a credential-management REST or MCP surface.
 - Watch and steer long-running work — Imports, exports and syncs run as jobs you can list, inspect, cancel, retry and reset. (CLI 5, REST 5, MCP 4) No GUI journey; progress appears inline where the work was started.
 - Keep separate libraries — Run more than one library on a machine — personal notes, work notes, a blog — each with its own database, its own settings and its own address. (CLI 7) Not in the GUI yet. A profile registry is about this machine, which the desktop app also runs on, so this is a gap rather than a boundary; the browser mode is the part that genuinely cannot manage it.
@@ -94,15 +94,15 @@ Each capability below is offered on some surfaces and not others.
 - Notebooks that are really saved searches — command line only. Made with `notebooks create --query`, since a query notebook is a notebook whose contents are whatever matches. The GUI lists them in the sidebar and does not create them yet.
 - Back up and restore the whole library — command line only. Not in the GUI yet. The constraint is the *browser* mode, which cannot read arbitrary local paths; the desktop app can, and native directory pickers are part of the planned client architecture. This is a gap rather than a boundary.
 - Choose where sync keys are kept — command line only. Deliberately command line only: this item forbids a credential-management REST or MCP surface.
-- Synchronize with a replica — command line only. No GUI journey runs an exchange; the sync center configures and reports rather than transferring.
-- See and end trust between replicas — command line only. The GUI shows peers in the sync center; retirement is reviewed there but has no registered journey yet.
-- Recover a replica and resolve conflicts — command line only. No registered GUI journey; the sync center presents conflicts.
 - Tag and untag a note — command line only. The GUI still shows tags only as sidebar navigation and cannot add or remove one. That half of the gap v0.8 H14 found is open.
 - Move a pre-0.8 library into place — command line only. Command line only, and genuinely so: it relocates the directories the running program uses, which is not something the program can sensibly do to itself while serving them.
 - Read a note and its structure — GUI only. No command line: reading a note is what the GUI and the API are for.
 - Search your notes — GUI only. No command line search command; `notriosctl export archive --query` applies the same language to an export instead.
 - See the shape of the link graph — both surfaces, and neither journey is written yet
 - Link notes to each other — both surfaces, and neither journey is written yet
+- See and end trust between replicas — both surfaces, and neither journey is written yet
+- Recover a replica and resolve conflicts — both surfaces, and neither journey is written yet
+- Synchronize with a replica — both, but only the command-line journey is written
 - Pair two of your own libraries — both, but only the command-line journey is written
 <!-- notrios:generated:user:where-the-surfaces-disagree:end -->
 

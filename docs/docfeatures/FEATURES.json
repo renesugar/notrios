@@ -56,7 +56,8 @@
         "get_note_line_range"
       ],
       "gui": [
-        "Open a search result — executed (search-open)"
+        "All notes",
+        "Search query"
       ],
       "surface_note": "No command line: reading a note is what the GUI and the API are for."
     },
@@ -262,7 +263,7 @@
         "find_graph_path"
       ],
       "gui": [
-        "Inspect the local graph — executed (inspect-local-graph)"
+        "Reports"
       ]
     },
     {
@@ -395,7 +396,9 @@
         "plan_sync",
         "get_sync_status"
       ],
-      "surface_note": "No GUI journey runs an exchange; the sync center configures and reports rather than transferring."
+      "gui": [
+        "Sync now"
+      ]
     },
     {
       "id": "sync-peers",
@@ -410,7 +413,10 @@
         "POST /api/v1/sync-ui/peers/{replica_id}/snapshot-permission",
         "GET /api/v1/sync-ui/retention"
       ],
-      "surface_note": "The GUI shows peers in the sync center; retirement is reviewed there but has no registered journey yet."
+      "gui": [
+        "Peers",
+        "Retention"
+      ]
     },
     {
       "id": "sync-recovery",
@@ -433,7 +439,10 @@
       "mcp": [
         "list_sync_conflicts"
       ],
-      "surface_note": "No registered GUI journey; the sync center presents conflicts."
+      "gui": [
+        "Conflicts",
+        "Backup & recovery"
+      ]
     },
     {
       "id": "sync-credentials",

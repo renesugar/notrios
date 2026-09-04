@@ -1,0 +1,474 @@
+{
+  "schema": "notrios.h15.gui-controls.v1",
+  "views": [
+    {
+      "id": "start",
+      "reached": true,
+      "controls": 74
+    },
+    {
+      "id": "all-notes",
+      "reached": true,
+      "controls": 74
+    },
+    {
+      "id": "help",
+      "reached": true,
+      "controls": 74
+    },
+    {
+      "id": "trash",
+      "reached": true,
+      "controls": 56
+    },
+    {
+      "id": "new-note",
+      "reached": true,
+      "controls": 56
+    },
+    {
+      "id": "sync-center",
+      "reached": true,
+      "controls": 70
+    }
+  ],
+  "controls": [
+    {
+      "id": "shape:a|||",
+      "tag": "a",
+      "role": "",
+      "testid": "",
+      "examples": [
+        "Related note"
+      ],
+      "instances": 6,
+      "views": [
+        "start",
+        "all-notes",
+        "help",
+        "trash",
+        "new-note",
+        "sync-center"
+      ]
+    },
+    {
+      "id": "shape:button|||search-row",
+      "tag": "button",
+      "role": "",
+      "testid": "",
+      "examples": [
+        "Search"
+      ],
+      "instances": 6,
+      "views": [
+        "start",
+        "all-notes",
+        "help",
+        "trash",
+        "new-note",
+        "sync-center"
+      ]
+    },
+    {
+      "id": "shape:button|||sync-metric-grid",
+      "tag": "button",
+      "role": "",
+      "testid": "",
+      "examples": [
+        "0"
+      ],
+      "instances": 4,
+      "views": [
+        "sync-center"
+      ]
+    },
+    {
+      "id": "shape:button|||sync-tabs",
+      "tag": "button",
+      "role": "",
+      "testid": "",
+      "examples": [
+        "Setup",
+        "Peers",
+        "Retention"
+      ],
+      "instances": 7,
+      "views": [
+        "sync-center"
+      ]
+    },
+    {
+      "id": "shape:button||active|sync-tabs",
+      "tag": "button",
+      "role": "",
+      "testid": "",
+      "examples": [
+        "Overview"
+      ],
+      "instances": 1,
+      "views": [
+        "sync-center"
+      ]
+    },
+    {
+      "id": "shape:button||icon-button.sync-close|sync-center-header",
+      "tag": "button",
+      "role": "",
+      "testid": "",
+      "examples": [
+        "Close sync center"
+      ],
+      "instances": 1,
+      "views": [
+        "sync-center"
+      ]
+    },
+    {
+      "id": "shape:button||icon-button|header-actions",
+      "tag": "button",
+      "role": "",
+      "testid": "",
+      "examples": [
+        "Toggle light/dark theme",
+        "Theme settings"
+      ],
+      "instances": 12,
+      "views": [
+        "start",
+        "all-notes",
+        "help",
+        "trash",
+        "new-note",
+        "sync-center"
+      ]
+    },
+    {
+      "id": "shape:button||md-editor-toolbar-item|md-editor-toolbar-left",
+      "tag": "button",
+      "role": "",
+      "testid": "",
+      "examples": [
+        "Notebook: Notes — click to file this note elsewhere",
+        "bold",
+        "underline"
+      ],
+      "instances": 126,
+      "views": [
+        "start",
+        "all-notes",
+        "help",
+        "trash",
+        "new-note",
+        "sync-center"
+      ]
+    },
+    {
+      "id": "shape:button||primary-button|sync-hero-row",
+      "tag": "button",
+      "role": "",
+      "testid": "",
+      "examples": [
+        "Sync now"
+      ],
+      "instances": 1,
+      "views": [
+        "sync-center"
+      ]
+    },
+    {
+      "id": "shape:button||result-card|pane-scroll.result-list",
+      "tag": "button",
+      "role": "",
+      "testid": "",
+      "examples": [
+        "🔒 Troubleshooting",
+        "🔒 Stable links between notes and machines",
+        "🔒 The Notrios service"
+      ],
+      "instances": 54,
+      "views": [
+        "start",
+        "all-notes",
+        "help"
+      ]
+    },
+    {
+      "id": "shape:button||sync-header-button|header-actions",
+      "tag": "button",
+      "role": "",
+      "testid": "",
+      "examples": [
+        "Open synchronization, pairing, backup, and recovery"
+      ],
+      "instances": 6,
+      "views": [
+        "start",
+        "all-notes",
+        "help",
+        "trash",
+        "new-note",
+        "sync-center"
+      ]
+    },
+    {
+      "id": "shape:input|||search-row",
+      "tag": "input",
+      "role": "",
+      "testid": "",
+      "examples": [
+        "Search query"
+      ],
+      "instances": 6,
+      "views": [
+        "start",
+        "all-notes",
+        "help",
+        "trash",
+        "new-note",
+        "sync-center"
+      ]
+    },
+    {
+      "id": "shape:input||title-input|editor-toolbar-title",
+      "tag": "input",
+      "role": "",
+      "testid": "",
+      "examples": [
+        "Note title"
+      ],
+      "instances": 6,
+      "views": [
+        "start",
+        "all-notes",
+        "help",
+        "trash",
+        "new-note",
+        "sync-center"
+      ]
+    },
+    {
+      "id": "shape:li|menuitem|md-editor-menu-item.md-editor-menu-item-image|md-editor-menu",
+      "tag": "li",
+      "role": "menuitem",
+      "testid": "",
+      "examples": [],
+      "instances": 18,
+      "views": [
+        "start",
+        "all-notes",
+        "help",
+        "trash",
+        "new-note",
+        "sync-center"
+      ]
+    },
+    {
+      "id": "shape:li|menuitem|md-editor-menu-item.md-editor-menu-item-katex|md-editor-menu",
+      "tag": "li",
+      "role": "menuitem",
+      "testid": "",
+      "examples": [],
+      "instances": 12,
+      "views": [
+        "start",
+        "all-notes",
+        "help",
+        "trash",
+        "new-note",
+        "sync-center"
+      ]
+    },
+    {
+      "id": "shape:li|menuitem|md-editor-menu-item.md-editor-menu-item-mermaid|md-editor-menu",
+      "tag": "li",
+      "role": "menuitem",
+      "testid": "",
+      "examples": [],
+      "instances": 48,
+      "views": [
+        "start",
+        "all-notes",
+        "help",
+        "trash",
+        "new-note",
+        "sync-center"
+      ]
+    },
+    {
+      "id": "shape:li|menuitem|md-editor-menu-item.md-editor-menu-item-title|md-editor-menu",
+      "tag": "li",
+      "role": "menuitem",
+      "testid": "",
+      "examples": [],
+      "instances": 36,
+      "views": [
+        "start",
+        "all-notes",
+        "help",
+        "trash",
+        "new-note",
+        "sync-center"
+      ]
+    },
+    {
+      "id": "testid:new-note-button",
+      "tag": "button",
+      "role": "",
+      "testid": "new-note-button",
+      "examples": [
+        "Start a new note in “Notes”"
+      ],
+      "instances": 6,
+      "views": [
+        "start",
+        "all-notes",
+        "help",
+        "trash",
+        "new-note",
+        "sync-center"
+      ]
+    },
+    {
+      "id": "testid:notebook-option-nb_notes",
+      "tag": "button",
+      "role": "option",
+      "testid": "notebook-option-nb_notes",
+      "examples": [],
+      "instances": 6,
+      "views": [
+        "start",
+        "all-notes",
+        "help",
+        "trash",
+        "new-note",
+        "sync-center"
+      ]
+    },
+    {
+      "id": "testid:save-button",
+      "tag": "button",
+      "role": "",
+      "testid": "save-button",
+      "examples": [
+        "Create note"
+      ],
+      "instances": 6,
+      "views": [
+        "start",
+        "all-notes",
+        "help",
+        "trash",
+        "new-note",
+        "sync-center"
+      ]
+    },
+    {
+      "id": "testid:sidebar-row-nb_help",
+      "tag": "button",
+      "role": "",
+      "testid": "sidebar-row-nb_help",
+      "examples": [
+        "Help"
+      ],
+      "instances": 6,
+      "views": [
+        "start",
+        "all-notes",
+        "help",
+        "trash",
+        "new-note",
+        "sync-center"
+      ]
+    },
+    {
+      "id": "testid:sidebar-row-nb_notes",
+      "tag": "button",
+      "role": "",
+      "testid": "sidebar-row-nb_notes",
+      "examples": [
+        "Notes"
+      ],
+      "instances": 6,
+      "views": [
+        "start",
+        "all-notes",
+        "help",
+        "trash",
+        "new-note",
+        "sync-center"
+      ]
+    },
+    {
+      "id": "testid:sidebar-row-nb_recovered",
+      "tag": "button",
+      "role": "",
+      "testid": "sidebar-row-nb_recovered",
+      "examples": [
+        "Recovered"
+      ],
+      "instances": 6,
+      "views": [
+        "start",
+        "all-notes",
+        "help",
+        "trash",
+        "new-note",
+        "sync-center"
+      ]
+    },
+    {
+      "id": "testid:sidebar-row-nb_reports",
+      "tag": "button",
+      "role": "",
+      "testid": "sidebar-row-nb_reports",
+      "examples": [
+        "Reports"
+      ],
+      "instances": 6,
+      "views": [
+        "start",
+        "all-notes",
+        "help",
+        "trash",
+        "new-note",
+        "sync-center"
+      ]
+    },
+    {
+      "id": "testid:sidebar-row-snb_all_notes",
+      "tag": "button",
+      "role": "",
+      "testid": "sidebar-row-snb_all_notes",
+      "examples": [
+        "All notes"
+      ],
+      "instances": 6,
+      "views": [
+        "start",
+        "all-notes",
+        "help",
+        "trash",
+        "new-note",
+        "sync-center"
+      ]
+    },
+    {
+      "id": "testid:sidebar-row-snb_trash",
+      "tag": "button",
+      "role": "",
+      "testid": "sidebar-row-snb_trash",
+      "examples": [
+        "Trash"
+      ],
+      "instances": 6,
+      "views": [
+        "start",
+        "all-notes",
+        "help",
+        "trash",
+        "new-note",
+        "sync-center"
+      ]
+    }
+  ]
+}
