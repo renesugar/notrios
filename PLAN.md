@@ -3128,7 +3128,7 @@ named at the start of H14:
 | delete a note in a named notebook | covered | partial: opens Trash only |
 | search, demonstrating every query-language feature | covered: two journeys, tags and exclusion, titles and dates | none |
 | notebooks defined by a query | covered | listed but not created |
-| import from Joplin | described in the Obsidian journey | not applicable |
+| import from Joplin | covered | not applicable |
 | import from Obsidian | covered | not applicable |
 | export the library | covered | not applicable |
 | create a profile | covered | not applicable |
@@ -3136,10 +3136,18 @@ named at the start of H14:
 | back up and restore the library | covered: snapshot and verify; restore described | none |
 | how Recoll is used | covered | none |
 
-Eleven of twelve covered on the command line; the twelfth, importing from
-Joplin, is described inside the Obsidian journey because it needs an export
-fixture this repository does not carry. None on the interface, which is the next
+All twelve covered on the command line. None on the interface, which is the next
 half of the work.
+
+*A claim withdrawn.* Importing from Joplin was recorded as needing "an export
+fixture this repository does not carry". It carries one:
+`internal/docexec.SeedDocumentationImportFixtures` builds a minimal valid RAW
+export -- one folder item and one note item, each a Markdown file whose trailing
+lines hold the Joplin metadata -- and `docs/import-export.md` already documents
+the import with command-line examples that G18d executes against it. The
+limitation was asserted rather than checked, in an item whose entire subject is
+documentation claims that nobody verified. The journey now uses the same fixture
+shape and runs.
 
 **A framing error, corrected 2026-09-03, and it changes how absences are read.**
 The audit found the command line could not create a notebook or a saved search,

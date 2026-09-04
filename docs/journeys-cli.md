@@ -121,7 +121,7 @@ Each task below lists the steps that do it, in order.
   - Bring it back.
 
     `notriosctl notes restore --document <note>`
-- **Bring in an Obsidian vault** — Import a folder of Markdown notes without finding out afterwards what it did. Joplin, Twitter, ChatGPT and Claude exports import the same way, with `import joplin-raw`, `import twitter`, `import chatgpt` and `import claude`. Note that tags written in a vault's front matter do not become Notrios tags: add them afterwards with `tags add`.
+- **Bring in an Obsidian vault** — Import a folder of Markdown notes without finding out afterwards what it did. Twitter, ChatGPT and Claude exports import the same way, with `import twitter`, `import chatgpt` and `import claude`. Joplin has its own journey below. Note that tags written in a vault's front matter do not become Notrios tags: add them afterwards with `tags add`.
   - Point the importer at your vault directory. A directory of Markdown files is all an Obsidian vault is, as far as this is concerned. *(you do this yourself)*
   - Dry-run first. Every importer reports what it would do before doing it, and reading that is cheaper than undoing an import.
 
@@ -187,6 +187,14 @@ Each task below lists the steps that do it, in order.
   - Make a notebook that fills itself. Anything matching the query appears in it; nothing is filed there by hand.
 
     `notriosctl notebooks create --name Todo --query tag:todo`
+- **Bring in a Joplin library** — Import a Joplin RAW export, after seeing what it would do. It must be a RAW export, not a `.jex` file -- JEX is a tar archive. Point it at the export directory, never at Joplin's profile directory or its synchronization target. Unlike an Obsidian vault, a RAW export carries notebooks and tags as items of their own, so those come across.
+  - In the Joplin desktop app, use File and export in the RAW format. You want the directory it produces, which holds one Markdown file per item and a `resources/` folder for attachments. *(you do this yourself)*
+  - Dry-run it. The dry run uses the same inventory and planner as the real import and reports what it found, what it could not read, and what it would create. It writes nothing to your library.
+
+    `notriosctl import joplin-raw --dry-run <joplin>`
+  - Import it.
+
+    `notriosctl import joplin-raw <joplin>`
 <!-- notrios:generated:user:the-journeys:end -->
 
 

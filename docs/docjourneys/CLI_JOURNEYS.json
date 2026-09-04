@@ -611,7 +611,7 @@
       "goal": "Import a folder of Markdown notes without finding out afterwards what it did.",
       "feature": "import-notes",
       "guessability": "notrios-specific",
-      "note": "Joplin, Twitter, ChatGPT and Claude exports import the same way, with `import joplin-raw`, `import twitter`, `import chatgpt` and `import claude`. Note that tags written in a vault's front matter do not become Notrios tags: add them afterwards with `tags add`.",
+      "note": "Twitter, ChatGPT and Claude exports import the same way, with `import twitter`, `import chatgpt` and `import claude`. Joplin has its own journey below. Note that tags written in a vault's front matter do not become Notrios tags: add them afterwards with `tags add`.",
       "steps": [
         {
           "narrative": "Point the importer at your vault directory. A directory of Markdown files is all an Obsidian vault is, as far as this is concerned.",
@@ -1054,6 +1054,59 @@
           "Dusk",
           "Todo",
           "query_notebooks"
+        ]
+      }
+    },
+    {
+      "id": "import-from-joplin",
+      "title": "Bring in a Joplin library",
+      "goal": "Import a Joplin RAW export, after seeing what it would do.",
+      "feature": "import-notes",
+      "guessability": "notrios-specific",
+      "note": "It must be a RAW export, not a `.jex` file -- JEX is a tar archive. Point it at the export directory, never at Joplin's profile directory or its synchronization target. Unlike an Obsidian vault, a RAW export carries notebooks and tags as items of their own, so those come across.",
+      "steps": [
+        {
+          "narrative": "In the Joplin desktop app, use File and export in the RAW format. You want the directory it produces, which holds one Markdown file per item and a `resources/` folder for attachments.",
+          "manual": true
+        },
+        {
+          "narrative": "Dry-run it. The dry run uses the same inventory and planner as the real import and reports what it found, what it could not read, and what it would create. It writes nothing to your library.",
+          "command": [
+            "import",
+            "joplin-raw",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--dry-run",
+            "{joplin}"
+          ]
+        },
+        {
+          "narrative": "Import it.",
+          "command": [
+            "import",
+            "joplin-raw",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "{joplin}"
+          ]
+        }
+      ],
+      "postcondition": {
+        "narrative": "the notebook the export carried is now in the library",
+        "command": [
+          "notebooks",
+          "list",
+          "--db",
+          "{db}",
+          "--asset-store",
+          "{assets}"
+        ],
+        "contains": [
+          "Imported Notes"
         ]
       }
     }

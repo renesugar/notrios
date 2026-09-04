@@ -38,6 +38,22 @@ func TestCLIJourneysActuallyRun(t *testing.T) {
 			if err := os.MkdirAll(filepath.Join(sandbox, "carrier"), 0o755); err != nil {
 				t.Fatal(err)
 			}
+			// A minimal Joplin RAW export, the same shape
+			// internal/docexec.SeedDocumentationImportFixtures builds for the
+			// documentation examples: one folder item and one note item, each a
+			// Markdown file whose trailing lines carry the Joplin metadata.
+			joplin := filepath.Join(sandbox, "joplin-export")
+			if err := os.MkdirAll(joplin, 0o755); err != nil {
+				t.Fatal(err)
+			}
+			for name, body := range map[string]string{
+				"folder.md": "Imported Notes\n\nid: folder-fixture\ntype_: 2\n",
+				"note.md":   "Joplin Fixture\n\nA searchable imported note.\n\nid: joplin-fixture\nparent_id: folder-fixture\ntype_: 1\n",
+			} {
+				if err := os.WriteFile(filepath.Join(joplin, name), []byte(body), 0o644); err != nil {
+					t.Fatal(err)
+				}
+			}
 			// The manual step of the note journey, performed for it. A journey
 			// that says "write a Markdown file" needs one to exist.
 			if err := os.WriteFile(filepath.Join(vault, "Reed beds.md"),
@@ -64,6 +80,7 @@ func TestCLIJourneysActuallyRun(t *testing.T) {
 				"sandbox": sandbox,
 				"docs":    docsDir,
 				"carrier": filepath.Join(sandbox, "carrier"),
+				"joplin":  joplin,
 			}
 			expand := func(command []string) []string {
 				expanded := make([]string, 0, len(command))
