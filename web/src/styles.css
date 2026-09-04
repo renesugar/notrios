@@ -222,6 +222,27 @@ body.splitter-dragging {
   box-shadow: 0 24px 80px rgba(15, 23, 42, 0.32);
 }
 
+/* The dialog shell is a two-column grid: a 190px rail for the section tabs and
+   the body beside it. A dialog with no tabs -- import and export is one -- must
+   say so, or its body lands in the rail and renders in a 190px column with an
+   invisible text field. That is exactly what happened, and neither the unit
+   tests nor the browser crawl could see it: jsdom has no layout engine, and the
+   control that opens this dialog is correctly disabled in a browser. It took
+   driving the real desktop application to find. */
+.sync-center-single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* Every other use of .sync-section shows one section per tab, so it never
+   needed to separate from a sibling. This dialog stacks five, and without a
+   rule they run together: the next heading sits directly under the previous
+   section's buttons. */
+.sync-center-single .sync-section + .sync-section {
+  margin-top: 26px;
+  padding-top: 22px;
+  border-top: 1px solid var(--border-strong);
+}
+
 .sync-center-header {
   grid-column: 1 / -1;
   display: flex;
@@ -1556,7 +1577,7 @@ button.sync-list-row:hover { border-color: var(--accent); }
   background: var(--panel-bg);
   border: 1px solid var(--border);
   border-radius: 6px;
-  box-shadow: var(--shadow);
+  box-shadow: 0 6px 18px var(--shadow);
 }
 
 .tag-editor-list {
@@ -1632,4 +1653,31 @@ button.sync-list-row:hover { border-color: var(--accent); }
 .tag-editor-submit:disabled {
   color: var(--muted);
   cursor: default;
+}
+
+/* About is a small dialog rather than a workspace-sized one: it holds a dozen
+   lines and two buttons, and sizing it like the sync centre would make a short
+   report look like a missing page. */
+.about-dialog {
+  width: min(560px, 100%);
+  display: grid;
+  gap: 14px;
+  padding: 22px;
+  border: 1px solid var(--border-strong);
+  border-radius: 18px;
+  background: var(--panel-bg);
+  box-shadow: 0 6px 18px var(--shadow);
+}
+
+.about-report {
+  margin: 0;
+  padding: 12px 14px;
+  overflow-x: auto;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  background: var(--chip-bg);
+  color: var(--text);
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: pre;
 }

@@ -21,6 +21,25 @@ interface TransferBridge {
   CreateSnapshot(path: string): Promise<TransferReport>;
 }
 
+/**
+ * Records what the interface did, where the desktop application can keep it.
+ *
+ * Deliberately never given a note title, a query, a tag or anything a person
+ * wrote: what is recorded is which operation was asked for, against which
+ * folder, and how it ended. In a browser there is nowhere to write it and this
+ * does nothing, which is why every call ignores the result.
+ */
+function logAction(category: string, detail: string): void {
+  const bound = (window as Window & {
+    go?: { main?: { NativeUIBridge?: { LogAction?: (category: string, detail: string) => void } } };
+  }).go?.main?.NativeUIBridge;
+  try {
+    bound?.LogAction?.(category, detail);
+  } catch {
+    // A transcript is never worth failing the operation it describes.
+  }
+}
+
 interface TransferReport {
   kind: string;
   dry_run: boolean;
@@ -119,17 +138,32 @@ export function LibraryTransfer({ onClose }: { onClose: () => void }) {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const closeRef = useRef<HTMLButtonElement>(null);
 
-  useEffect(() => { closeRef.current?.focus(); }, []);
+  useEffect(() => {
+    closeRef.current?.focus();
+    logAction('transfer', 'the import and export dialog opened');
+  }, []);
+  // Escape closes, which is what a person expects of any dialog and what this
+  // one previously did not do. Bound on the document because focus may be
+  // anywhere inside by the time it is pressed.
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [onClose]);
 
   const run = useCallback(async (operation: OperationID, key: string, work: (path: string) => Promise<TransferReport>) => {
     const path = (paths[operation] ?? '').trim();
     setBusy(key);
     setErrors((current) => ({ ...current, [operation]: '' }));
+    logAction('transfer', `${key} requested for ${path}`);
+    const started = Date.now();
     try {
       const report = await work(path);
       setReports((current) => ({ ...current, [operation]: summarise(report) }));
+      logAction('transfer', `${key} finished in ${Date.now() - started}ms — ${summarise(report)}`);
     } catch (error) {
       setErrors((current) => ({ ...current, [operation]: errorMessage(error) }));
+      logAction('transfer', `${key} failed after ${Date.now() - started}ms — ${errorMessage(error)}`);
     } finally {
       setBusy('');
     }
@@ -138,6 +172,7 @@ export function LibraryTransfer({ onClose }: { onClose: () => void }) {
   const choose = useCallback(async (operation: OperationID) => {
     if (!bridge) return;
     const chosen = await bridge.ChooseDirectory(operation === 'archive' ? 'export' : operation);
+    logAction('transfer', chosen ? `chose ${chosen} for ${operation}` : `cancelled the chooser for ${operation}`);
     if (chosen) setPaths((current) => ({ ...current, [operation]: chosen }));
   }, [bridge]);
 
@@ -164,8 +199,10 @@ export function LibraryTransfer({ onClose }: { onClose: () => void }) {
     <div className="sync-center-backdrop" role="presentation" onMouseDown={(event) => {
       if (event.target === event.currentTarget) onClose();
     }}>
-      <section className="sync-center" role="dialog" aria-modal="true" aria-labelledby="library-transfer-title"
-        data-testid="library-transfer">
+      {/* sync-center-single because this dialog has no section rail; without it
+          the body is laid into the 190px tab column. */}
+      <section className="sync-center sync-center-single" role="dialog" aria-modal="true"
+        aria-labelledby="library-transfer-title" data-testid="library-transfer">
         <header className="sync-center-header">
           <div>
             <p className="eyebrow">This machine</p>

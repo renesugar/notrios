@@ -92,4 +92,35 @@ describe('import and export', () => {
     render(<App />);
     expect(screen.getByTestId('transfer-header-button')).toBeEnabled();
   });
+
+  it('closes on Escape', async () => {
+    bindBridge();
+    const onClose = vi.fn();
+    render(<LibraryTransfer onClose={onClose} />);
+    await userEvent.keyboard('{Escape}');
+    expect(onClose).toHaveBeenCalledOnce();
+  });
+
+  // The native File menu reaches the frontend through a custom event, and an
+  // automated desktop run drives that menu by accelerator rather than by
+  // clicking a pixel. If the listener stops answering, the desktop harness
+  // fails with a screenshot of an unopened dialog and no explanation; this
+  // fails with the reason.
+  it('opens from the native menu event', async () => {
+    bindBridge();
+    render(<App />);
+    expect(screen.queryByTestId('library-transfer')).toBeNull();
+    window.dispatchEvent(new CustomEvent('notrios:open-transfer'));
+    expect(await screen.findByTestId('library-transfer')).toBeInTheDocument();
+  });
+
+  // The same choice made before React mounted must not be lost, which is why
+  // the menu sets a flag as well as dispatching.
+  it('honours a menu choice made before it mounted', async () => {
+    bindBridge();
+    window.__notriosOpenTransfer = Date.now();
+    render(<App />);
+    expect(await screen.findByTestId('library-transfer')).toBeInTheDocument();
+    expect(window.__notriosOpenTransfer).toBeUndefined();
+  });
 });

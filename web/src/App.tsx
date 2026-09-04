@@ -85,12 +85,15 @@ import { EditorPane } from './components/EditorPane';
 import { PreviewPane } from './components/PreviewPane';
 import { SyncCenter } from './components/SyncCenter';
 import { LibraryTransfer, transferBridge } from './components/LibraryTransfer';
+import { AboutDialog } from './components/AboutDialog';
 
 const defaultBody = `# New note\n\nWrite Markdown here. Link other notes with:\n\n[Related note](document://default/documents/<document-id>)\n`;
 
 declare global {
   interface Window {
     __notriosOpenHelp?: number;
+    __notriosOpenTransfer?: number;
+    __notriosOpenAbout?: number;
   }
 }
 
@@ -123,6 +126,7 @@ export function App() {
   const [selectedRow, setSelectedRow] = useState<SidebarRow | null>(null);
   const [showSyncCenter, setShowSyncCenter] = useState(false);
   const [showTransfer, setShowTransfer] = useState(false);
+  const [showAbout, setShowAbout] = useState(false);
   // Read once, at mount: the bridge is bound before the frontend loads or it is
   // not bound at all, so re-checking it on every render would only make the
   // control flicker on nothing.
@@ -240,10 +244,27 @@ export function App() {
     // and opens the local UI at `#document=<id>`, so honour that on startup.
     const deepLink = parseDeepLinkHash(window.location.hash);
     if (deepLink) void openDocumentByID(deepLink.documentID);
+    // The native File menu opens import and export the same way, and sets the
+    // same kind of flag first so a menu choice made before React mounts is
+    // honoured rather than dropped.
+    const openTransfer = () => setShowTransfer(true);
+    if (window.__notriosOpenTransfer) {
+      delete window.__notriosOpenTransfer;
+      openTransfer();
+    }
+    const openAbout = () => setShowAbout(true);
+    if (window.__notriosOpenAbout) {
+      delete window.__notriosOpenAbout;
+      openAbout();
+    }
     window.addEventListener('notrios:open-help', openHelp);
+    window.addEventListener('notrios:open-transfer', openTransfer);
+    window.addEventListener('notrios:open-about', openAbout);
     return () => {
       window.clearInterval(statusInterval);
       window.removeEventListener('notrios:open-help', openHelp);
+      window.removeEventListener('notrios:open-transfer', openTransfer);
+      window.removeEventListener('notrios:open-about', openAbout);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -746,6 +767,8 @@ export function App() {
       {showSyncCenter ? <SyncCenter onClose={() => setShowSyncCenter(false)} /> : null}
 
       {showTransfer ? <LibraryTransfer onClose={() => setShowTransfer(false)} /> : null}
+
+      {showAbout ? <AboutDialog status={status} onClose={() => setShowAbout(false)} /> : null}
 
       {showThemes && (
         <section className="theme-panel" aria-label="Theme settings">
