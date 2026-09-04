@@ -299,3 +299,125 @@ func TestSearchKeysetsChronologicalAndRelevanceResults(t *testing.T) {
 		t.Fatalf("chronological cursor must not replay as relevance cursor: %v", err)
 	}
 }
+
+// Searching by where a note came from, which nothing could ask before:
+// `category:` is an alias for `notebook:`, so filing was addressable and
+// provenance was not.
+func TestSearchByCollection(t *testing.T) {
+	ctx := context.Background()
+	st := newOrganizerTestStore(t)
+	if _, err := st.CreateCollection(ctx, Collection{
+		ID: "joplin-raw-2026-07", Name: "Joplin, July 2026",
+	}); err != nil {
+		t.Fatalf("CreateCollection: %v", err)
+	}
+	mine, err := st.CreateDocument(ctx, CreateDocumentRequest{Title: "Reed beds", Body: "harriers at dusk"})
+	if err != nil {
+		t.Fatalf("CreateDocument: %v", err)
+	}
+	imported, err := st.CreateDocument(ctx, CreateDocumentRequest{
+		CollectionID: "joplin-raw-2026-07", Title: "Old note", Body: "harriers at dusk",
+	})
+	if err != nil {
+		t.Fatalf("CreateDocument: %v", err)
+	}
+
+	// Both notes say the same thing, so only the collection distinguishes them.
+	only, err := st.Search(ctx, SearchRequest{Query: `harriers collection:"joplin-raw-2026-07"`})
+	if err != nil {
+		t.Fatalf("Search: %v", err)
+	}
+	if len(only.Hits) != 1 || only.Hits[0].ID != imported.ID {
+		t.Fatalf("expected only the imported note: %+v", only.Hits)
+	}
+
+	// Case-insensitive, because a person types the id.
+	shouted, err := st.Search(ctx, SearchRequest{Query: `collection:"JOPLIN-RAW-2026-07"`})
+	if err != nil {
+		t.Fatalf("Search: %v", err)
+	}
+	if len(shouted.Hits) != 1 {
+		t.Fatalf("collection ids match case-insensitively: %+v", shouted.Hits)
+	}
+
+	// Exact, never a prefix. Collection ids are dated by convention, and a
+	// prefix match would answer a question about July with August's notes.
+	prefix, err := st.Search(ctx, SearchRequest{Query: `collection:"joplin-raw-2026"`})
+	if err != nil {
+		t.Fatalf("Search: %v", err)
+	}
+	if len(prefix.Hits) != 0 {
+		t.Fatalf("a shorter id is a different collection: %+v", prefix.Hits)
+	}
+
+	// And the default collection is addressable the same way.
+	def, err := st.Search(ctx, SearchRequest{Query: `harriers collection:"default"`})
+	if err != nil {
+		t.Fatalf("Search: %v", err)
+	}
+	if len(def.Hits) != 1 || def.Hits[0].ID != mine.ID {
+		t.Fatalf("expected only my own note: %+v", def.Hits)
+	}
+}
+
+// Creating a provenance, and refusing to create it twice.
+func TestCreateCollectionRefusesDuplicatesAndNamesItself(t *testing.T) {
+	ctx := context.Background()
+	st := newOrganizerTestStore(t)
+
+	// A blank name becomes the id: an import that says where notes came from
+	// should not have to say it twice, and an empty name is worse than a
+	// redundant one.
+	created, err := st.CreateCollection(ctx, Collection{ID: "twitter-archive"})
+	if err != nil {
+		t.Fatalf("CreateCollection: %v", err)
+	}
+	if created.Name != "twitter-archive" {
+		t.Fatalf("a blank name defaults to the id: %+v", created)
+	}
+
+	if _, err := st.CreateCollection(ctx, Collection{ID: "twitter-archive", Name: "Again"}); !errors.Is(err, ErrConflict) {
+		t.Fatalf("creating one twice is a conflict, not a silent overwrite: %v", err)
+	}
+	// And the first name survived the refusal.
+	read, err := st.Collection(ctx, "twitter-archive")
+	if err != nil || read.Name != "twitter-archive" {
+		t.Fatalf("the refused create must not have changed anything: %+v %v", read, err)
+	}
+
+	if _, err := st.Collection(ctx, "never-made"); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("an unknown collection is not found: %v", err)
+	}
+	if _, err := st.CreateCollection(ctx, Collection{ID: "  "}); !errors.Is(err, ErrInvalidInput) {
+		t.Fatalf("a collection needs an id: %v", err)
+	}
+}
+
+// EnsureCollection is what the importers use, and is the reason --collection
+// works at all: documents.collection_id is a foreign key, so a note naming a
+// collection nobody created failed on the constraint.
+func TestEnsureCollectionIsCreateOrAdopt(t *testing.T) {
+	ctx := context.Background()
+	st := newOrganizerTestStore(t)
+
+	first, err := st.EnsureCollection(ctx, "joplin-raw-2026-07", "Joplin, July 2026")
+	if err != nil {
+		t.Fatalf("EnsureCollection: %v", err)
+	}
+	// Called again it adopts rather than fails or renames: an importer run
+	// twice is an ordinary thing to do.
+	second, err := st.EnsureCollection(ctx, "joplin-raw-2026-07", "A different name")
+	if err != nil {
+		t.Fatalf("EnsureCollection again: %v", err)
+	}
+	if second.ID != first.ID || second.Name != first.Name {
+		t.Fatalf("ensuring an existing collection must not rename it: %+v then %+v", first, second)
+	}
+
+	// And a note can now name it, which is the whole point.
+	if _, err := st.CreateDocument(ctx, CreateDocumentRequest{
+		CollectionID: "joplin-raw-2026-07", Title: "Imported", Body: "body",
+	}); err != nil {
+		t.Fatalf("a note could not name the ensured collection: %v", err)
+	}
+}

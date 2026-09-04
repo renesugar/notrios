@@ -48,12 +48,16 @@ const (
 	FieldText     Field = "text"
 	FieldTitle    Field = "title"
 	FieldNotebook Field = "notebook"
-	FieldTag      Field = "tag"
-	FieldAuthor   Field = "author"
-	FieldAuthorID Field = "authorid"
-	FieldSince    Field = "since"
-	FieldUntil    Field = "until"
-	FieldTrashed  Field = "trashed"
+	// FieldCollection matches a note's provenance rather than its filing.
+	// `category:` is an alias for `notebook:` and always has been, so it is
+	// not available for this and a separate name is the honest one.
+	FieldCollection Field = "collection"
+	FieldTag        Field = "tag"
+	FieldAuthor     Field = "author"
+	FieldAuthorID   Field = "authorid"
+	FieldSince      Field = "since"
+	FieldUntil      Field = "until"
+	FieldTrashed    Field = "trashed"
 )
 
 // Term is one typed expression leaf. UnixValue is used by since:/until:.
@@ -408,6 +412,11 @@ func (p *parser) parseLeaf(raw string) (*Expr, error) {
 			return &Expr{Op: OpMatchAll}, nil
 		}
 		term.Field = FieldNotebook
+	case "collection":
+		// Exact, and never a prefix: collection IDs are chosen at import time
+		// and a prefix match would silently pull in `joplin-raw-2026-08` when
+		// somebody asked for `joplin-raw-2026-07`.
+		term.Field = FieldCollection
 	case "tag":
 		term.Field = FieldTag
 	case "author":

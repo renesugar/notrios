@@ -600,6 +600,10 @@ func compileTerm(term query.Term) (string, error) {
 		return "title:" + quote(term.Text), nil
 	case query.FieldNotebook:
 		return "notebook:" + quote(term.Text), nil
+	case query.FieldCollection:
+		// The projection must carry the field or this matches nothing: see
+		// internal/projection, which writes it into the front matter.
+		return "collection:" + quote(term.Text), nil
 	case query.FieldTag:
 		return "tag:" + quote(term.Text), nil
 	case query.FieldAuthor:

@@ -151,7 +151,10 @@ func (s *Server) searchMerged(ctx context.Context, req store.SearchRequest) (sto
 			break
 		}
 		doc, exists := documents[hit.DocumentID]
-		if !exists || doc.CollectionID != req.CollectionID {
+		// Only when the caller asked for one collection. Comparing
+		// unconditionally discarded every Recoll hit outside it, which with an
+		// empty request collection meant discarding all of them.
+		if !exists || (req.CollectionID != "" && doc.CollectionID != req.CollectionID) {
 			continue
 		}
 		sidecarContributed = true

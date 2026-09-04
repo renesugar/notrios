@@ -53,7 +53,8 @@ func (s *SQLiteStore) ListTasks(ctx context.Context, req TaskListRequest) (TaskL
 	// A checkbox is `[` plus a space or an x plus `]`, so a LIKE prefilter
 	// removes the notes that cannot possibly contain one before any body is
 	// parsed. It is a filter, never the answer: the parser still decides.
-	docs, err := s.taskCandidateDocuments(collectionID, strings.TrimSpace(req.DocumentID), strings.TrimSpace(req.NotebookID))
+	docs, err := s.taskCandidateDocuments(collectionID, strings.TrimSpace(req.DocumentID),
+		strings.TrimSpace(req.NotebookID), req.Untagged)
 	if err != nil {
 		return TaskList{}, err
 	}
@@ -112,7 +113,7 @@ func (s *SQLiteStore) ListTasks(ctx context.Context, req TaskListRequest) (TaskL
 }
 
 // taskCandidateDocuments returns the notes that might contain a checkbox.
-func (s *SQLiteStore) taskCandidateDocuments(collectionID, documentID, notebookID string) ([]Document, error) {
+func (s *SQLiteStore) taskCandidateDocuments(collectionID, documentID, notebookID string, untagged bool) ([]Document, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -128,6 +129,22 @@ func (s *SQLiteStore) taskCandidateDocuments(collectionID, documentID, notebookI
 	}
 	// Cheap prefilter. `[` is not a full-text token, so FTS cannot help here.
 	where += ` AND (r.body LIKE '%[ ]%' OR r.body LIKE '%[x]%' OR r.body LIKE '%[X]%')`
+	if !untagged {
+		// Only notes their author marked as carrying tasks. This is a
+		// correctness rule first -- a checkbox in a quoted example is not work
+		// somebody owes -- and it bounds the scan as a consequence, since the
+		// tagged set is a small fraction of a library and note_tags_tag_idx
+		// covers the lookup.
+		//
+		// The hierarchy is included: `todo/survey` is a task tag, because a tag
+		// tree that stops meaning what its root means would be a surprise
+		// nowhere else in this library.
+		where += ` AND EXISTS (SELECT 1 FROM note_tags nt JOIN tags t ON t.id = nt.tag_id
+			WHERE nt.document_id = d.id AND (` + taskTagPredicate() + `))`
+		for _, tag := range TaskTags {
+			args = append(args, tag, tag+TagHierarchySeparator+"%")
+		}
+	}
 	return s.documentsWhereLocked(where, args)
 }
 
@@ -175,4 +192,13 @@ func (s *SQLiteStore) documentsWhereLocked(where string, args []string) ([]Docum
 			return nil, s.stepErrLocked(rc)
 		}
 	}
+}
+
+// taskTagPredicate matches a task tag or anything beneath it, case-insensitively.
+func taskTagPredicate() string {
+	clauses := make([]string, 0, len(TaskTags))
+	for range TaskTags {
+		clauses = append(clauses, "t.name = ? COLLATE NOCASE OR t.name LIKE ? ESCAPE '\\'")
+	}
+	return strings.Join(clauses, " OR ")
 }

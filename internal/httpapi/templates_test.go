@@ -55,9 +55,22 @@ func TestTemplateRESTLifecycle(t *testing.T) {
 	}
 }
 
+// seedTaskNote is seedTemplateNote plus the tag that makes its boxes tasks.
+// Separate rather than folded in, because a template is not a task note and
+// tagging every seeded note would make the template tests say something they
+// do not mean.
+func seedTaskNote(t *testing.T, s *Server, title, body string) string {
+	t.Helper()
+	id := seedTemplateNote(t, s, title, body)
+	if _, err := s.store.AddDocumentTag(context.Background(), id, "task"); err != nil {
+		t.Fatalf("AddDocumentTag: %v", err)
+	}
+	return id
+}
+
 func TestTaskRESTReportsCountsAndFilters(t *testing.T) {
 	s := newNotebookServer(t)
-	seedTemplateNote(t, s, "Chores", "- [ ] buy milk\n- [x] pay rent\n")
+	seedTaskNote(t, s, "Chores", "- [ ] buy milk\n- [x] pay rent\n")
 
 	rr := doJSON(t, s, http.MethodGet, "/api/v1/tasks", "")
 	if rr.Code != http.StatusOK {
@@ -94,7 +107,7 @@ func TestTaskRESTReportsCountsAndFilters(t *testing.T) {
 func TestTaskAnchorResolves(t *testing.T) {
 	s := newNotebookServer(t)
 	ctx := context.Background()
-	docID := seedTemplateNote(t, s, "Chores", "- [ ] buy milk ^milk\n")
+	docID := seedTaskNote(t, s, "Chores", "- [ ] buy milk ^milk\n")
 
 	tasks, err := s.store.ListTasks(ctx, store.TaskListRequest{DocumentID: docID})
 	if err != nil {

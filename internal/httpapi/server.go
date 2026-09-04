@@ -515,16 +515,50 @@ func (s *Server) handleCreateCollection(w http.ResponseWriter, r *http.Request) 
 	if req.Kind == "" {
 		req.Kind = "managed"
 	}
-	writeJSON(w, http.StatusCreated, api.Collection{ID: req.ID, Name: req.Name, Kind: req.Kind, Description: req.Description})
+	// Previously this validated the request and echoed it back as 201 without
+	// touching the store, so every caller was told a collection existed that
+	// did not. `documents.collection_id` is a foreign key, so the first import
+	// naming it failed on the constraint instead -- which is where this was
+	// found. Nothing caught it because no test read a collection back after
+	// creating one.
+	if !s.requireStore(w) {
+		return
+	}
+	created, err := s.store.CreateCollection(r.Context(), store.Collection{
+		ID: req.ID, Name: req.Name, Description: req.Description,
+	})
+	if writeStoreError(w, err, "collection_create_failed") {
+		return
+	}
+	writeJSON(w, http.StatusCreated, api.Collection{
+		ID: created.ID, Name: created.Name, Kind: req.Kind, Description: created.Description,
+	})
 }
 
 func (s *Server) handleCollection(w http.ResponseWriter, r *http.Request) {
-	id := r.PathValue("collection_id")
-	if id == "default" {
-		writeJSON(w, http.StatusOK, defaultCollection())
+	// This answered `default` from a hard-coded placeholder and 404'd everything
+	// else as "not available in scaffold server", which meant a collection that
+	// genuinely existed could not be read and the placeholder's description
+	// ("Placeholder collection for scaffold validation") was served to real
+	// clients as though it were the library's own.
+	if !s.requireStore(w) {
 		return
 	}
-	writeError(w, http.StatusNotFound, "not_found", "collection is not available in scaffold server")
+	collection, err := s.store.Collection(r.Context(), r.PathValue("collection_id"))
+	if writeStoreError(w, err, "collection_read_failed") {
+		return
+	}
+	writeJSON(w, http.StatusOK, api.Collection{
+		ID:   collection.ID,
+		Name: collection.Name,
+		// `kind` is in the API and not in the schema: the collections table
+		// holds an id, a name and a description. Reporting the only kind this
+		// store can hold is honest; inventing per-row kinds it does not record
+		// would not be.
+		Kind:         "managed",
+		Description:  collection.Description,
+		Capabilities: collection.Capabilities,
+	})
 }
 
 func (s *Server) handleSearchGET(w http.ResponseWriter, r *http.Request) {

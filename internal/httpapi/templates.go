@@ -72,6 +72,10 @@ func (s *Server) handleListTasks(w http.ResponseWriter, r *http.Request) {
 		NotebookID:   query.Get("notebook_id"),
 		State:        query.Get("state"),
 		Limit:        queryLimit(r),
+		// Off unless asked for: a checkbox in a quoted example is not work
+		// somebody owes, and a task list that counted them would report on the
+		// library's punctuation.
+		Untagged: query.Get("untagged") == "true",
 	})
 	if writeStoreError(w, err, "task_list_failed") {
 		return

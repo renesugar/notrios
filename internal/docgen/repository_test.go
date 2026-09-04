@@ -37,7 +37,12 @@ func TestRepositoryEnumerationsMatchFiniteRegistries(t *testing.T) {
 		// 64 -> 66 in v0.8 H15: `notebooks create` and `notebooks list`, added
 		// once it was clear the command line's inability to make a notebook was
 		// a missing adapter rather than a boundary.
-		{cliHelpAnchor, 66},
+		// 66 -> 69 in v0.8 H15: `tasks list`, `templates list` and `templates
+		// create`. Only the last is a write. Nothing creates a task, because
+		// writing `- [ ]` into a note is how one comes to exist and
+		// `notes create` already does that; what was missing was asking what
+		// remains, and instantiating the template that shapes the note.
+		{cliHelpAnchor, 69},
 		{restAnchor, 109},
 		{mcpToolsAnchor, 46},
 		{mcpSyncScopeAnchor, 7},

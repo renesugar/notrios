@@ -14,6 +14,7 @@ Notrios exposes one user-facing query language across the GUI search box, REST s
 | `tag:toys`, `tag:"shopping mall"` | tag match | `note_tags` join | custom `tag` field |
 | `notebook:"name"` | limit to a notebook and its sub-notebooks (case-insensitive; same-named notebooks all match) | notebook join | projected notebook + ancestors |
 | `category:"name"` | exact alias for `notebook:` | notebook join | projected notebook + ancestors |
+| `collection:"id"` | limit to one collection: where a note came from, not where it is filed (case-insensitive, exact, never a prefix) | `documents.collection_id` | projected `collection` field |
 | `since:2026-07-01` | on/after start of that date | timestamp filter | `publishedts:<epoch>..` |
 | `until:2026-07-31` | through end of that date (23:59:59) | timestamp filter | `publishedts:..<epoch>` |
 

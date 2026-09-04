@@ -36,8 +36,22 @@ func (s *SQLiteStore) Search(ctx context.Context, req SearchRequest) (SearchResp
 }
 
 func (s *SQLiteStore) searchQueryLocked(req SearchRequest, q query.Query) (SearchResponse, error) {
-	where := []string{"d.collection_id = ?"}
-	args := []string{req.CollectionID}
+	// A search spans every collection unless the query narrows it. This used to
+	// pin every search to one collection chosen by the caller, defaulted to
+	// `default`, which made a note imported under any other provenance
+	// unfindable from the search box and made `collection:` meaningless: the
+	// two predicates were ANDed, so naming any collection but the caller's
+	// matched nothing at all.
+	//
+	// CollectionID remains as an optional narrowing for callers that genuinely
+	// mean one collection -- an MCP tool given a `collection` argument -- and
+	// empty now means all of them rather than `default`.
+	where := []string{}
+	args := []string{}
+	if collection := strings.TrimSpace(req.CollectionID); collection != "" {
+		where = append(where, "d.collection_id = ?")
+		args = append(args, collection)
+	}
 	if q.Trashed {
 		where = append(where, "d.deleted_at IS NOT NULL")
 	} else {
@@ -249,6 +263,12 @@ func (s *SQLiteStore) compileSQLTermLocked(term query.Term, trashed bool) (strin
 			return "0", nil, nil
 		}
 		return "d.notebook_id IN (" + placeholders(len(ids)) + ")", ids, nil
+	case query.FieldCollection:
+		// A column on the document, not a join: every note carries exactly one
+		// collection, which is the whole difference between provenance and a
+		// tag. Matched case-insensitively for the same reason notebook names
+		// are, since a collection ID is typed by a person at import time.
+		return "d.collection_id = ? COLLATE NOCASE", []string{term.Text}, nil
 	case query.FieldTag:
 		return `d.id IN (
 			SELECT qnt.document_id FROM note_tags qnt

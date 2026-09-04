@@ -80,7 +80,7 @@
       "gui": [
         "Page through search results \u2014 executed (search-page)"
       ],
-      "surface_note": "No command line search command; `notriosctl export archive --query` applies the same language to an export instead."
+      "surface_note": "No command line search command; `notriosctl export archive --query` applies the same language to an export instead. A search now spans every collection; `collection:\"id\"` narrows it to one provenance."
     },
     {
       "id": "saved-searches",
@@ -193,7 +193,11 @@
       "mcp": [
         "list_collections"
       ],
-      "surface_note": "No command line or GUI journey; imports set the collection with --collection."
+      "surface_note": "A collection is provenance, not a place notes live: notes are imported into a notebook, which is what a person browses, and carry a collection identifier saying where they came from. Search spans every collection and `collection:` narrows it -- it used to be pinned to one collection chosen by the caller and defaulted to `default`, which made imported notes unfindable and the field meaningless. The inspector names the collection only when it is not `default`, since a row saying so on every note written here would say nothing. Creating and reconfiguring collections stays on the command line and over REST; H16 decides what a collection's `kind` and capabilities mean, because the schema records neither.",
+      "gui": [
+        "Collection \u2014 shown in the note inspector when a note came from somewhere",
+        "collection: in the search box"
+      ]
     },
     {
       "id": "attachments",
@@ -306,7 +310,12 @@
         "create_from_template",
         "list_tasks"
       ],
-      "surface_note": "No command line or GUI journey."
+      "surface_note": "A template is an ordinary note carrying a note-template block, and a task is a checkbox line in a note tagged `task` or `todo`; neither is a table, and both are read back from the Markdown. So nothing creates a task -- writing `- [ ] chase the permit` into a note is how one comes to exist, which `notes create` already does -- and the command line covers the other half: asking what remains, and instantiating a template, which is the repeatable version of the same workflow. A missing placeholder is refused rather than left blank, so a template that gains a field fails the scripts that do not know about it. The tag is required because a checkbox is ordinary Markdown and appears in quoted examples; `--untagged` asks for those too. No GUI journey yet.",
+      "cli": [
+        "notriosctl tasks list",
+        "notriosctl templates list",
+        "notriosctl templates create"
+      ]
     },
     {
       "id": "query-blocks",

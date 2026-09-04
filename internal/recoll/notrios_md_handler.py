@@ -40,6 +40,10 @@ FIELD_MAP = {
     "reply_to": "replyto",
     "id": "noteid",
     "notebook": "notebook",
+    # Provenance rather than filing. A single-valued field, because a note
+    # belongs to exactly one collection -- which is what distinguishes it from
+    # a tag and why it is not in LIST_FIELDS below.
+    "collection": "collection",
     "source_url": "sourceurl",
 }
 

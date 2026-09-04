@@ -867,6 +867,13 @@ type Store interface {
 	Close() error
 	Bootstrap(ctx context.Context) error
 	ListCollections(ctx context.Context) ([]Collection, error)
+	// Collection reads one, and CreateCollection records a provenance. A note
+	// carries a collection identifier and lives in a notebook; these describe
+	// the identifier, and exist because documents.collection_id is a foreign
+	// key that nothing but bootstrap, sync and restore could satisfy.
+	Collection(ctx context.Context, id string) (Collection, error)
+	CreateCollection(ctx context.Context, collection Collection) (Collection, error)
+	EnsureCollection(ctx context.Context, id, name string) (Collection, error)
 	CreateDocument(ctx context.Context, req CreateDocumentRequest) (Document, error)
 	GetDocument(ctx context.Context, id string) (Document, error)
 	// GetDocumentIncludingTrashed reads a note whether or not it is trashed.
@@ -1038,6 +1045,10 @@ type ProjectionQueueStatus struct {
 
 func NormalizeCreateRequest(req CreateDocumentRequest) CreateDocumentRequest {
 	req.PreferredID = strings.TrimSpace(req.PreferredID)
+	// A new note must name a collection: collection_id is NOT NULL with a
+	// foreign key, and a note written by a person rather than by an import
+	// belongs to the default provenance. This is the opposite of the search
+	// side, where an empty collection means every collection.
 	req.CollectionID = strings.TrimSpace(req.CollectionID)
 	if req.CollectionID == "" {
 		req.CollectionID = "default"
@@ -1093,6 +1104,10 @@ func NormalizeRestoreRevisionRequest(req RestoreRevisionRequest) RestoreRevision
 
 func NormalizeCreateResourceRequest(req CreateResourceRequest) CreateResourceRequest {
 	req.PreferredID = strings.TrimSpace(req.PreferredID)
+	// A resource names a collection for the same reason a note does: the column
+	// is NOT NULL with a foreign key. This default was removed by accident and
+	// restored; nothing caught it, because the tests that create resources do
+	// not create them in a named collection.
 	req.CollectionID = strings.TrimSpace(req.CollectionID)
 	if req.CollectionID == "" {
 		req.CollectionID = "default"
@@ -1120,10 +1135,11 @@ func NormalizeAttachResourceRequest(req AttachResourceRequest) AttachResourceReq
 }
 
 func NormalizeSearchRequest(req SearchRequest) SearchRequest {
+	// Deliberately not defaulted. An empty collection means every collection:
+	// notes imported under a provenance were otherwise invisible to search
+	// unless the caller already knew to ask for that provenance by name, which
+	// is the opposite of how somebody looks for a note they cannot place.
 	req.CollectionID = strings.TrimSpace(req.CollectionID)
-	if req.CollectionID == "" {
-		req.CollectionID = "default"
-	}
 	if req.Limit <= 0 {
 		req.Limit = 10
 	}

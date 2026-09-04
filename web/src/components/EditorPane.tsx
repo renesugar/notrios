@@ -314,6 +314,17 @@ export function EditorPane(props: EditorPaneProps) {
                 <dt>Revision</dt>
                 <dd>{selectedDocument.current_revision_id}</dd>
               </div>
+              {/* Where the note came from, shown only when it came from
+                  somewhere. Every note written here is in `default`, so
+                  printing that on all of them would be a row of noise that
+                  says nothing; a note carrying an import's provenance is the
+                  case worth answering. */}
+              {selectedDocument.collection_id && selectedDocument.collection_id !== 'default' && (
+                <div>
+                  <dt>Collection</dt>
+                  <dd data-testid="note-collection">{selectedDocument.collection_id}</dd>
+                </div>
+              )}
             </dl>
             {editable && (
               <label className="resource-upload">

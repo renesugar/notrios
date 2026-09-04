@@ -3485,6 +3485,37 @@ operations. Each has a REST surface and no interface.
 garbage-collection reports -- and **publishing**, whose review step is the whole
 point and is better suited to a screen than to a terminal.
 
+**Collections: show the origin, and let a search ask for it. Added 2026-09-04.**
+A collection is a note's provenance -- `joplin-raw-2026-07`, `twitter-archive`,
+`research-pdfs` -- and the place where `write`, `resources`, `publishing`,
+`graph`, `remote media` and `mcp` capabilities are declared. Two things are
+missing, and only one of them is interface work.
+
+*The note does not say where it came from.* The inspector shows an ID and a
+revision. Adding the collection beside them is small and is most of what a
+person wants from this capability: a note that has been silent about its origin
+starts answering.
+
+*No surface can filter by it.* `category:` is an alias for `notebook:`, not for
+collection, so "show me what I imported from Joplin" is unanswerable from the
+search box, the command line, REST and MCP alike. `collection:"..."` has to
+agree across `SEARCH_QUERY_LANGUAGE.md`, the parser, the SQLite join and the
+Recoll compiler, and the front-matter projection needs the field or a Recoll
+hit cannot match on it. That is the substantial half and it is not GUI work at
+all.
+
+*Not a tag, and the reason matters.* Using a tag to mark provenance was
+considered and rejected. A note has exactly one collection and many tags, so a
+tag permits two provenances, which means nothing. Tags are editable, so
+provenance would become something a person can rewrite by typing, when the
+whole value of "this came from a Twitter archive" is that the note cannot say
+otherwise. And a tag carries no capabilities, so it would describe the same
+notes while enforcing none of the rules that are the point.
+
+*Creating and reconfiguring collections stays on the command line*, with the
+other writes, and the sidebar gains nothing: most libraries hold exactly one
+collection, and a permanent heading listing one item is clutter.
+
 *Two are genuine boundaries and should be recorded as such rather than built.*
 `notriosctl migrate` relocates the directories the running program is serving,
 which a program cannot sensibly do to itself. **Choosing where sync keys are
@@ -3654,6 +3685,78 @@ interfaces. All eighteen uses now say "GUI", which is the term the product's own
   the command-line journey rather than staying silent, because a reader who
   cannot find a task does not conclude it is command line only; they conclude it
   is missing.
+
+## H16. Reconcile the collection model with what is actually stored
+
+**Goal.** Decide what a collection is, then make the schema, the API, the
+documentation and the code agree. Everything below was found while making
+`--collection` work and is deliberately left for a decision rather than patched
+in passing.
+
+**Why a step of its own.** H15 fixed a bug: `documents.collection_id` is a
+foreign key, nothing but bootstrap, sync and restore ever inserted a collection,
+and so every importer's `--collection` flag failed on the constraint with
+`sqlite step rc=19: FOREIGN KEY constraint failed` for any value but `default`.
+That is now fixed, and fixing it surfaced a set of disagreements that are not
+bugs so much as unmade decisions.
+
+**The model, as clarified during H15.** Notes are imported into a *notebook*,
+which is what a person browses and searches. A collection is provenance: a note
+carries at most a collection identifier, and the collection row is information
+about that identifier. The two are not alternatives, and the earlier reading of
+collections as somewhere notes live was wrong.
+
+### What disagrees
+
+*The schema is smaller than its documentation.* `DATABASE_SCHEMA.md` describes
+`kind` (`managed`, `external`, `imported`, `sidecar_indexed`, `projection`),
+`capabilities_json` and `settings_json`. The migration has `id`, `name`,
+`description` and `created_at`. Three documented fields do not exist.
+
+*So the API reports fields the store cannot hold.* `api.Collection` carries
+`kind` and `capabilities`. `kind` is answered `managed` for every row because
+that is the only honest answer available, and `capabilities` is a hard-coded
+list in `ListCollections` -- `documents, search, resources, links, graph` --
+identical for every collection. A client cannot distinguish a read-only archive
+from a managed library, which is the distinction the field exists for.
+
+*Two REST handlers were stubs and nothing noticed.* `POST /api/v1/collections`
+validated its input and echoed it back as 201 without touching the store, and
+`GET /api/v1/collections/{id}` answered `default` from a placeholder whose
+description read "Placeholder collection for scaffold validation" and 404'd
+everything else as "not available in scaffold server". Both are fixed. The
+reason they survived is worth keeping: no test read a collection back after
+creating one, so a handler that echoed its input looked exactly like one that
+worked.
+
+*Capabilities are declared nowhere and enforced nowhere.* The capability list is
+the reason the concept earns its place -- an imported archive that is searchable
+and linkable but not writable -- and no code consults it. Nothing refuses a
+write because a collection says it is read-only.
+
+### Decisions to make
+
+- **Whether `kind` and capabilities become real.** Adding the columns is small;
+  deciding what enforces them is not. A capability nothing checks is a comment
+  in a database. If they stay unenforced, the honest move may be removing them
+  from the API rather than storing them.
+- **Whether `external` and `sidecar_indexed` collections are ever built.** They
+  describe material Notrios indexes without owning -- a folder of PDFs browsable
+  as read-only notes. Nothing populates one today. Either they are a plan or
+  they are vocabulary, and the schema documentation should not imply the former
+  while the code does the latter.
+- **Whether a collection should be deletable or renameable**, and what happens
+  to the notes that name it. There is no delete, and the foreign key means the
+  answer cannot be "nothing".
+- **Whether `--collection` should exist on `fix` and `export archive-v2`.** Both
+  take it as a scope, which is coherent, but it is worth confirming that scoping
+  by provenance is what a person wants there rather than scoping by notebook.
+
+### Depends on H15
+
+`collection:` querying and the note-inspector display land in H15. This step is
+what decides whether a collection is a label or a contract; the display is
+honest either way, because it shows what the note records.
 
 ## H13. v0.8 release wrap-up and branch synchronization
 

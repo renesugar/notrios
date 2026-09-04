@@ -53,6 +53,11 @@ func renderNoteWithAncestors(doc store.Document, source store.DocumentSource, ta
 	writeScalar(&b, "id", doc.ID)
 	writeScalar(&b, "title", doc.Title)
 	writeScalar(&b, "notebook", notebookName)
+	// Provenance, so `collection:` can be answered by Recoll as well as by
+	// SQLite. Without this the field compiles to a Recoll query that matches
+	// nothing, and a search would quietly return fewer results whenever the
+	// sidecar contributed.
+	writeScalar(&b, "collection", doc.CollectionID)
 	if len(notebookAncestors) > 0 {
 		b.WriteString("notebook_ancestors:\n")
 		for _, ancestor := range notebookAncestors {

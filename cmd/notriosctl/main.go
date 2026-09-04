@@ -82,6 +82,10 @@ func main() {
 		runFix(os.Args[2:])
 	case "tags":
 		runTags(os.Args[2:])
+	case "tasks":
+		runTasks(os.Args[2:])
+	case "templates":
+		runTemplates(os.Args[2:])
 	case "notebooks":
 		runNotebooks(os.Args[2:])
 	case "notes":
@@ -175,6 +179,7 @@ func runImportJoplinRaw(args []string) {
 	defer st.Close()
 	ctx := context.Background()
 	bootstrapOrExit(st, ctx)
+	ensureCollectionOrExit(st, ctx, *collectionID)
 	sourceDir := fs.Arg(0)
 	options := joplinraw.Options{
 		CollectionID:   *collectionID,
@@ -303,6 +308,7 @@ func runImportObsidian(args []string) {
 	defer st.Close()
 	ctx := context.Background()
 	bootstrapOrExit(st, ctx)
+	ensureCollectionOrExit(st, ctx, *collectionID)
 	sourceDir := fs.Arg(0)
 	options := obsidian.Options{
 		CollectionID:   *collectionID,
@@ -624,6 +630,12 @@ Usage:
                                                  # a note's tags, or every tag in the library with note counts
   notriosctl tags rename --from <tag> --to <tag> [--db ...] [--include-children] [--apply]
                                                  # hierarchical tag rename; dry run is the default and reports every tag and count
+  notriosctl tasks list [--document <id>] [--notebook <id>] [--state open|done] [--untagged]
+                                                 # checkbox items from notes tagged task or todo, with open/done counts
+  notriosctl templates list [--db ...]
+                                                 # notes carrying a note-template block, with their placeholders
+  notriosctl templates create --template <id> --title <title> [--notebook <id|name>] [--set name=value ...]
+                                                 # a new note from a template; a missing placeholder is refused, not blanked
   notriosctl notebooks create --name <name> [--parent <id|name>] [--icon <emoji>] [--query <query>]
                                                  # a notebook, or one whose contents are whatever a query matches
   notriosctl notebooks list [--db ...]           # notebooks and query notebooks, as the sidebar shows them
@@ -729,6 +741,7 @@ func runImportTwitter(args []string) {
 	defer st.Close()
 	ctx := context.Background()
 	bootstrapOrExit(st, ctx)
+	ensureCollectionOrExit(st, ctx, *collectionID)
 	report, err := twitter.Import(ctx, st, fs.Arg(0), twitter.Options{CollectionID: *collectionID, NotebookName: *notebookName, DryRun: *dryRun})
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -784,6 +797,7 @@ func runImportConversations(args []string, kind string) {
 	defer st.Close()
 	ctx := context.Background()
 	bootstrapOrExit(st, ctx)
+	ensureCollectionOrExit(st, ctx, *collectionID)
 
 	var report any
 	switch kind {
@@ -1499,6 +1513,28 @@ func runConfig(args []string) {
 // used to happen with no backup and no notice, and the only sign was the
 // absence of a complaint. The notice goes to stderr so it cannot corrupt the
 // output of a command being piped somewhere.
+// ensureCollectionOrExit records the provenance an import is labelling.
+//
+// documents.collection_id is a foreign key, so naming a collection that does
+// not exist fails on the constraint rather than on anything a reader could act
+// on: `sqlite step rc=19: FOREIGN KEY constraint failed`, after the notebooks
+// had already been written. Every importer offers --collection and nothing
+// created the row, so the flag was unusable with any value but the default.
+//
+// Created rather than refused, because the flag exists to label where notes
+// came from and requiring a separate command first would only move a typo one
+// step earlier.
+func ensureCollectionOrExit(st *store.SQLiteStore, ctx context.Context, collectionID string) {
+	id := strings.TrimSpace(collectionID)
+	if id == "" || id == "default" {
+		return
+	}
+	if _, err := st.EnsureCollection(ctx, id, id); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+}
+
 func bootstrapOrExit(st *store.SQLiteStore, ctx context.Context) {
 	if err := st.Bootstrap(ctx); err != nil {
 		fmt.Fprintln(os.Stderr, err)

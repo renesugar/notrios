@@ -868,14 +868,28 @@ paths:
         the identity that survives ticking.
 
 
-        Counts are complete even when the row list is capped. Restrict with
-        document_id or notebook_id to avoid a whole-library read.
+        Only notes tagged `task` or `todo`, or beneath either, carry tasks. A
+        checkbox is ordinary Markdown and appears in quoted text, in code
+        samples, and in notes about writing checklists; tagging is how an author
+        says the boxes in a note are theirs. `untagged=true` asks for the rest,
+        for the opposite failure of work written down and then invisible because
+        a tag was forgotten. The tag also bounds the read, since the tagged set
+        is a small fraction of a library.
+
+
+        Counts are complete even when the row list is capped, and count only
+        what the same rule admits. Restrict with document_id or notebook_id to
+        avoid a whole-library read.
       parameters:
         - { name: collection_id, in: query, schema: { type: string } }
         - { name: document_id, in: query, schema: { type: string } }
         - { name: notebook_id, in: query, schema: { type: string } }
         - { name: state, in: query, schema: { type: string, enum: [open, done] } }
         - { name: limit, in: query, schema: { type: integer } }
+        - name: untagged
+          in: query
+          description: Include notes carrying no task tag.
+          schema: { type: boolean, default: false }
       responses:
         '200': { description: Tasks with complete open/done counts }
         '400': { description: Unknown state }

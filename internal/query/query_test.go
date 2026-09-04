@@ -151,3 +151,16 @@ func TestCanonicalExpressionIsStable(t *testing.T) {
 		t.Fatal("text in one OR branch cannot anchor the whole expression")
 	}
 }
+
+// `collection:` is provenance, and `category:` is not an alias for it: that
+// alias belongs to `notebook:` and always has, which is why the new field
+// needed a name of its own rather than the one that looked available.
+func TestCollectionIsItsOwnFieldAndNotCategory(t *testing.T) {
+	got := terms(mustParse(t, `collection:"joplin-raw-2026-07" category:Archive`))
+	if len(got) != 2 || got[0].Field != FieldCollection || got[1].Field != FieldNotebook {
+		t.Fatalf("collection and category are different fields: %+v", got)
+	}
+	if got[0].Text != "joplin-raw-2026-07" {
+		t.Fatalf("the collection id is the whole value: %+v", got[0])
+	}
+}

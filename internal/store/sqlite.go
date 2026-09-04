@@ -990,6 +990,86 @@ func (s *SQLiteStore) pragmaUserVersionLocked() (int, error) {
 	return int(C.sqlite3_column_int(stmt, 0)), nil
 }
 
+// CreateCollection records a provenance: where a body of notes came from.
+//
+// A collection is not a place notes live. Notes live in notebooks, which is
+// what a person browses and searches; a note carries at most a collection
+// identifier, and this row is the information about that identifier. The
+// distinction matters because `documents.collection_id` is a foreign key, so
+// until this row exists no note can name the collection at all -- which is
+// exactly what `--collection` on the importers ran into.
+func (s *SQLiteStore) CreateCollection(ctx context.Context, collection Collection) (Collection, error) {
+	ctx = contextOrBackground(ctx)
+	if err := ctx.Err(); err != nil {
+		return Collection{}, err
+	}
+	id := strings.TrimSpace(collection.ID)
+	if id == "" {
+		return Collection{}, fmt.Errorf("%w: a collection needs an id", ErrInvalidInput)
+	}
+	name := strings.TrimSpace(collection.Name)
+	if name == "" {
+		// The id is a reasonable name and a blank one is not. An import that
+		// only says where notes came from should not have to say it twice.
+		name = id
+	}
+	existing, err := s.Collection(ctx, id)
+	if err == nil {
+		return existing, fmt.Errorf("%w: collection %q already exists", ErrConflict, id)
+	} else if !errors.Is(err, ErrNotFound) {
+		return Collection{}, err
+	}
+	if err := func() error {
+		s.mu.Lock()
+		defer s.mu.Unlock()
+		return s.execPreparedLocked(`INSERT INTO collections(id, name, description) VALUES(?, ?, ?)`,
+			id, name, strings.TrimSpace(collection.Description))
+	}(); err != nil {
+		return Collection{}, err
+	}
+	return s.Collection(ctx, id)
+}
+
+// EnsureCollection creates a collection when it is missing, and is what the
+// importers use.
+//
+// Creating on demand rather than refusing: the flag exists to label an import's
+// provenance, and making somebody create the row first would add a step whose
+// only effect is that a typo happens one command earlier.
+func (s *SQLiteStore) EnsureCollection(ctx context.Context, id, name string) (Collection, error) {
+	existing, err := s.Collection(ctx, strings.TrimSpace(id))
+	if err == nil {
+		return existing, nil
+	}
+	if !errors.Is(err, ErrNotFound) {
+		return Collection{}, err
+	}
+	created, err := s.CreateCollection(ctx, Collection{ID: id, Name: name})
+	if errors.Is(err, ErrConflict) {
+		// Lost a race with another writer, which is a success for this call.
+		return s.Collection(ctx, strings.TrimSpace(id))
+	}
+	return created, err
+}
+
+// Collection reads one collection.
+func (s *SQLiteStore) Collection(ctx context.Context, id string) (Collection, error) {
+	ctx = contextOrBackground(ctx)
+	if err := ctx.Err(); err != nil {
+		return Collection{}, err
+	}
+	all, err := s.ListCollections(ctx)
+	if err != nil {
+		return Collection{}, err
+	}
+	for _, collection := range all {
+		if collection.ID == strings.TrimSpace(id) {
+			return collection, nil
+		}
+	}
+	return Collection{}, fmt.Errorf("%w: collection %q", ErrNotFound, id)
+}
+
 func (s *SQLiteStore) ListCollections(ctx context.Context) ([]Collection, error) {
 	ctx = contextOrBackground(ctx)
 	if err := ctx.Err(); err != nil {

@@ -7,7 +7,23 @@ import (
 	"testing"
 )
 
+// taskNote creates a note and marks it as carrying tasks.
+//
+// The tag is what makes a checkbox a task. These tests are about extraction,
+// identity and bounds, so they tag and move on; the gate itself is tested
+// below, where it is the subject rather than a precondition.
 func taskNote(t *testing.T, st *SQLiteStore, title, body string) Document {
+	t.Helper()
+	doc := untaggedNote(t, st, title, body)
+	if _, err := st.AddDocumentTag(context.Background(), doc.ID, "task"); err != nil {
+		t.Fatalf("AddDocumentTag(%q): %v", title, err)
+	}
+	return doc
+}
+
+// untaggedNote is the same note without the tag, for the cases that are about
+// notes nobody marked.
+func untaggedNote(t *testing.T, st *SQLiteStore, title, body string) Document {
 	t.Helper()
 	doc, err := st.CreateDocument(context.Background(), CreateDocumentRequest{Title: title, Body: body})
 	if err != nil {
@@ -178,5 +194,77 @@ func TestListTasksSkipsTrashedNotes(t *testing.T) {
 	}
 	if len(result.Tasks) != 0 || result.OpenCount != 0 {
 		t.Fatalf("a trashed note's tasks must not appear: %+v", result)
+	}
+}
+
+// A checkbox is ordinary Markdown. It appears in quoted text, in code samples,
+// in a note explaining how to write a checklist. Treating every one as work
+// somebody owes turns the task list into a report on the library's
+// punctuation, so a note has to say that its boxes are tasks.
+func TestTasksComeOnlyFromNotesMarkedAsCarryingThem(t *testing.T) {
+	ctx := context.Background()
+	st := newOrganizerTestStore(t)
+	untaggedNote(t, st, "Notes on Markdown", "You write a checklist like this:\n\n- [ ] an example\n")
+	taskNote(t, st, "Chores", "- [ ] buy milk\n")
+
+	list, err := st.ListTasks(ctx, TaskListRequest{})
+	if err != nil {
+		t.Fatalf("ListTasks: %v", err)
+	}
+	if len(list.Tasks) != 1 || list.Tasks[0].Text != "buy milk" {
+		t.Fatalf("only the marked note carries tasks: %+v", list.Tasks)
+	}
+	// The counts describe what was found, so they must not count the example
+	// either: a progress figure inflated by somebody's documentation is worse
+	// than no figure.
+	if list.OpenCount != 1 {
+		t.Fatalf("the unmarked note was counted: %+v", list)
+	}
+}
+
+// The opposite failure is work written down and then invisible because a tag
+// was forgotten. Asking for everything is one flag.
+func TestUntaggedTasksCanBeAskedFor(t *testing.T) {
+	ctx := context.Background()
+	st := newOrganizerTestStore(t)
+	untaggedNote(t, st, "Notes on Markdown", "- [ ] an example\n")
+	taskNote(t, st, "Chores", "- [ ] buy milk\n")
+
+	list, err := st.ListTasks(ctx, TaskListRequest{Untagged: true})
+	if err != nil {
+		t.Fatalf("ListTasks: %v", err)
+	}
+	if list.OpenCount != 2 {
+		t.Fatalf("asking for everything should find both: %+v", list)
+	}
+}
+
+// A tag tree that stopped meaning what its root means would be a surprise
+// found nowhere else in this library.
+func TestTaskTagsIncludeTheirHierarchyAndIgnoreCase(t *testing.T) {
+	ctx := context.Background()
+	st := newOrganizerTestStore(t)
+	for name, tag := range map[string]string{
+		"Survey":  "todo/survey",
+		"Shouted": "TASK",
+		"Plain":   "todo",
+	} {
+		doc := untaggedNote(t, st, name, "- [ ] "+strings.ToLower(name)+"\n")
+		if _, err := st.AddDocumentTag(ctx, doc.ID, tag); err != nil {
+			t.Fatalf("AddDocumentTag(%q): %v", tag, err)
+		}
+	}
+	// And one tagged something that merely starts with the same letters.
+	nearMiss := untaggedNote(t, st, "Tasking", "- [ ] not a task tag\n")
+	if _, err := st.AddDocumentTag(ctx, nearMiss.ID, "tasking"); err != nil {
+		t.Fatalf("AddDocumentTag: %v", err)
+	}
+
+	list, err := st.ListTasks(ctx, TaskListRequest{})
+	if err != nil {
+		t.Fatalf("ListTasks: %v", err)
+	}
+	if list.OpenCount != 3 {
+		t.Fatalf("expected the three task-tagged notes and not `tasking`: %+v", list)
 	}
 }

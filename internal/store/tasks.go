@@ -60,7 +60,27 @@ type TaskListRequest struct {
 	// State is "open", "done", or empty for both.
 	State string `json:"state,omitempty"`
 	Limit int    `json:"limit,omitempty"`
+	// Untagged includes notes that carry no task tag.
+	//
+	// Off by default, because a checkbox is ordinary Markdown: it appears in
+	// quoted text, in code samples, in a note about how to write a checklist.
+	// Treating every one of them as work turns the task list into a report on
+	// the library's punctuation. Tagging a note says "the boxes in here are
+	// mine", which is a decision only its author can make.
+	//
+	// The escape hatch exists because the opposite failure is worse in a
+	// different way: work written down and then invisible because a tag was
+	// forgotten. Asking for everything is one flag, and the counts say how much
+	// more it found.
+	Untagged bool `json:"untagged,omitempty"`
 }
+
+// TaskTags are the tags that mark a note as carrying tasks.
+//
+// Two rather than one because both are in common use and neither is obviously
+// the right one; matching is case-insensitive, as tag names are throughout.
+// Hierarchy counts: a note tagged `todo/survey` is tagged for tasks.
+var TaskTags = []string{"task", "todo"}
 
 // TaskList is the report.
 type TaskList struct {
