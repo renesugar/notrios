@@ -285,7 +285,19 @@ func (g Generator) renderSection(document string, section Section, audience stri
 				if len(vals) == 0 {
 					return "", fmt.Errorf("enumeration %q returned no values", f.Enumeration)
 				}
+				// A blank line before the list, because Markdown otherwise
+				// folds the prose sentence and every item into one paragraph.
+				// Short enumerations survived that; a catalogue of journeys
+				// rendered as an unbroken wall of text.
+				b.WriteString("\n")
 				for _, v := range vals {
+					// A value that already carries its own marker is written
+					// as it is, which is what lets a resolver nest items. Any
+					// other value gets the top-level marker it always got.
+					if strings.HasPrefix(v, "-") || strings.HasPrefix(v, " ") {
+						b.WriteString(v + "\n")
+						continue
+					}
 					b.WriteString("- " + v + "\n")
 				}
 			}

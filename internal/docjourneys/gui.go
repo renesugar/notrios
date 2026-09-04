@@ -159,7 +159,7 @@ func sha256Sum(contents []byte) []byte {
 	return sum[:]
 }
 
-// GUILines renders the GUI catalogue for the generated fragment.
+// Each task below lists its steps, with a picture of every one.
 //
 //notrios:doc user gui-journey-catalogue
 //notrios:help journeys-gui the-journeys
@@ -173,7 +173,7 @@ func (c GUICatalogue) GUILines() []string {
 	for _, journey := range c.Journeys {
 		lines = append(lines, fmt.Sprintf("**%s** — %s", journey.Title, journey.Goal))
 		for _, step := range journey.Steps {
-			lines = append(lines, fmt.Sprintf("%s ![%s](images/journeys/%s-%s.png)",
+			lines = append(lines, fmt.Sprintf("  - %s\n\n    ![%s](images/journeys/%s-%s.png)",
 				step.Narrative, step.ID, journey.ID, step.ID))
 		}
 	}

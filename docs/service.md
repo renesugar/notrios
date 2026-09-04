@@ -51,6 +51,7 @@ derived FTS5 or Recoll state.
 Config contains the runtime settings used by notriosd and notriosctl.
 It intentionally avoids third-party YAML dependencies until the project
 chooses and pins the long-term configuration library.
+
 - config_path
 - data
 - data.asset_store
@@ -117,6 +118,7 @@ chooses and pins the long-term configuration library.
 <!-- source: go:github.com/renesugar/notrios/internal/config#Default -->
 Default returns the canonical local-development defaults for every runtime
 configuration group.
+
 - config_path = ""
 - data.asset_store = "./data/assets"
 - data.cache_dir = ""

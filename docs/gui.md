@@ -121,6 +121,7 @@ See [the two default addresses](service.md#the-two-default-addresses).
 Manifest is the finite documented GUI-procedure catalog. Each generated row
 preserves the procedure's reviewed label and whether G18e executed it or
 retained an explicit unverified reason.
+
 - Open a search result — executed (search-open)
 - Page through search results — executed (search-page)
 - Create a note in a notebook — executed (new-note-in-notebook)

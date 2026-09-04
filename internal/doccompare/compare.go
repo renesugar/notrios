@@ -135,7 +135,7 @@ var descriptions = map[Kind]string{
 	DocumentedNeither: "both surfaces, and neither journey is written yet",
 }
 
-// Lines renders the comparison for the generated fragment.
+// Each capability below is offered on some surfaces and not others.
 //
 //notrios:doc user surface-comparison
 //notrios:help features where-the-surfaces-disagree

@@ -39,6 +39,7 @@ rather than a design, and it is why this page exists in the form it does.
 <!-- source: go:github.com/renesugar/notrios/internal/docfeatures#Registry -->
 Registry is the feature catalogue: what a person can do with Notrios, and
 which surfaces offer each capability.
+
 - Write and edit notes — Create a note, change it, add to either end of it, and delete it. Deleting moves a note to Trash, and Trash is a place you can look in and take things back out of, not a countdown. (CLI 1, REST 10, MCP 6, GUI 3) The command line writes a note and files it, and does no more than that: editing, appending and deleting happen in the GUI or over REST/MCP. `notes create` exists so a note can be the end of a pipeline.
 - Read a note and its structure — Fetch a note whole, or just its body, its outline, its blocks, a line range, or an earlier revision. The structured views exist so a tool can work on part of a note without re-parsing all of it. (REST 7, MCP 5, GUI 1) No command line: reading a note is what the GUI and the API are for.
 - Search your notes — Find notes by text, tag, notebook, date and the rest of the query language, across the library or within one note. (REST 3, MCP 2, GUI 1) No command line search command; `notriosctl export archive --query` applies the same language to an export instead.
@@ -74,7 +75,8 @@ which surfaces offer each capability.
 ## Where the surfaces disagree
 <!-- notrios:generated:user:where-the-surfaces-disagree:begin -->
 <!-- source: go:github.com/renesugar/notrios/internal/doccompare#Lines -->
-Lines renders the comparison for the generated fragment.
+Each capability below is offered on some surfaces and not others.
+
 - Do many organiser operations at once — neither the command line nor the interface; reachable only over REST or MCP. No command line or GUI journey; batching is for tools.
 - Group libraries into collections — neither the command line nor the interface; reachable only over REST or MCP. No command line or GUI journey; imports set the collection with --collection.
 - Let an AI assistant use your library — neither the command line nor the interface; reachable only over REST or MCP. The endpoint itself has no command line or GUI; the tools it exposes are listed against the features above.

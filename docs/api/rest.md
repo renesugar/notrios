@@ -3,6 +3,7 @@
 <!-- source: go:github.com/renesugar/notrios/internal/httpapi#NewServerWithOptions -->
 NewServerWithOptions registers the finite REST surface over shared service
 and store behavior.
+
 - DELETE /api/v1/documents/{document_id}
 - DELETE /api/v1/documents/{document_id}/resources/{resource_id}
 - DELETE /api/v1/documents/{document_id}/tags/{tag}
@@ -118,6 +119,7 @@ and store behavior.
 Server is the HTTP adapter for the finite REST and MCP contracts. Generated
 API documentation lists its registered non-HEAD operations only when the
 same method/path set is present in the checked OpenAPI document.
+
 - DELETE /api/v1/documents/{document_id}
 - DELETE /api/v1/documents/{document_id}/resources/{resource_id}
 - DELETE /api/v1/documents/{document_id}/tags/{tag}

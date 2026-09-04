@@ -28,6 +28,7 @@ The adapter implements the core JSON-RPC methods rather than the full official S
 <!-- notrios:generated:user:tool-scopes:begin -->
 <!-- source: go:github.com/renesugar/notrios/internal/httpapi#MCPScopes -->
 MCPScopes lists every MCP scope, narrowest first.
+
 - search-only
 - read-only
 - editor
@@ -43,6 +44,7 @@ entry answers "how much trust does this need", not "which tiers include it".
 fails if one does not, so a tool cannot be added without someone deciding how
 much trust it needs. Defaulting an unclassified tool to the narrowest scope
 would be the dangerous kind of safe: it would ship silently.
+
 - append_to_note — editor
 - cancel_sync_job — read-only
 - create_from_template — editor
@@ -92,6 +94,7 @@ would be the dangerous kind of safe: it would ship silently.
 <!-- source: go:github.com/renesugar/notrios/internal/httpapi#mcpSyncToolScopes -->
 mcpSyncToolScopes assigns the orthogonal sync scope required by each sync
 control-plane tool.
+
 - cancel_sync_job — control
 - get_sync_status — status
 - list_sync_conflicts — status
@@ -158,6 +161,7 @@ cancel apply only to the MCP actor's own incremental/resource jobs.
 <!-- notrios:generated:user:read-tools:begin -->
 <!-- source: go:github.com/renesugar/notrios/internal/httpapi#(*Server).mcpTools -->
 mcpTools is the finite MCP tool registry before scope filtering.
+
 - append_to_note
 - cancel_sync_job
 - create_from_template
@@ -210,6 +214,7 @@ mcpTools is the finite MCP tool registry before scope filtering.
 mcpTool is one entry in the server's finite tools/list contract. Generated
 API documentation takes names from mcpTools and keeps scope assignment as a
 separately generated registry.
+
 - append_to_note
 - cancel_sync_job
 - create_from_template

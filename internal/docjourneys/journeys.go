@@ -153,7 +153,7 @@ func (c Catalogue) validate() error {
 	return nil
 }
 
-// Lines renders the catalogue for the generated fragment.
+// Each task below lists the steps that do it, in order.
 //
 //notrios:doc user cli-journey-surface
 //notrios:help journeys-cli the-journeys
@@ -172,11 +172,20 @@ func (c Catalogue) Lines() []string {
 		}
 		lines = append(lines, heading)
 		for _, step := range journey.Steps {
+			// Indented, so the steps nest under their task instead of sitting
+			// beside it. A flat list gave a reader no way to see where one task
+			// ended and the next began.
 			if step.Manual {
-				lines = append(lines, step.Narrative+" *(you do this yourself)*")
+				lines = append(lines, "  - "+step.Narrative+" *(you do this yourself)*")
 				continue
 			}
-			lines = append(lines, fmt.Sprintf("%s `notriosctl %s`",
+			// A code span on its own line rather than a fenced block. A fence
+			// inside a generated section is detected as an executable example
+			// and needs a registry entry per step, whose hash would change
+			// every time a narrative was reworded -- churn with no reader
+			// benefit, since the command is already executed by the journey
+			// runner.
+			lines = append(lines, fmt.Sprintf("  - %s\n\n    `notriosctl %s`",
 				step.Narrative, readableCommand(step.Command)))
 		}
 	}

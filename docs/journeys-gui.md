@@ -32,17 +32,30 @@ because they read and write directories on your machine.
 ## The journeys
 <!-- notrios:generated:user:the-journeys:begin -->
 <!-- source: go:github.com/renesugar/notrios/internal/docjourneys#(GUICatalogue).GUILines -->
-GUILines renders the GUI catalogue for the generated fragment.
+Each task below lists its steps, with a picture of every one.
+
 - **Find your way around** — See what the interface is made of before changing anything in it.
-- The sidebar on the left lists your notebooks. Help is one of them: the documentation is seeded into your library as ordinary read-only notes, so you can search it alongside everything else. ![the-sidebar](images/journeys/find-your-way-around-the-sidebar.png)
+  - The sidebar on the left lists your notebooks. Help is one of them: the documentation is seeded into your library as ordinary read-only notes, so you can search it alongside everything else.
+
+    ![the-sidebar](images/journeys/find-your-way-around-the-sidebar.png)
 - **Write a note, and read it back** — Create a note and get something into it.
-- Click New note. The note is created immediately and opens for editing; there is no dialog to fill in first. ![new-note](images/journeys/write-a-note-new-note.png)
-- Type into the editor. What you write is Markdown, and the preview beside it renders as you go. ![the-editor](images/journeys/write-a-note-the-editor.png)
+  - Click New note. The note is created immediately and opens for editing; there is no dialog to fill in first.
+
+    ![new-note](images/journeys/write-a-note-new-note.png)
+  - Type into the editor. What you write is Markdown, and the preview beside it renders as you go.
+
+    ![the-editor](images/journeys/write-a-note-the-editor.png)
 - **Choose which notebook a note goes in** — File a note somewhere other than where it landed.
-- Start from a new note. ![new-note](images/journeys/choose-a-notebook-new-note.png)
-- Open the notebook picker. It sits with the note rather than in a menu, because which notebook a note belongs to is part of the note. ![notebook-picker](images/journeys/choose-a-notebook-notebook-picker.png)
+  - Start from a new note.
+
+    ![new-note](images/journeys/choose-a-notebook-new-note.png)
+  - Open the notebook picker. It sits with the note rather than in a menu, because which notebook a note belongs to is part of the note.
+
+    ![notebook-picker](images/journeys/choose-a-notebook-notebook-picker.png)
 - **Delete a note, and get it back** — Send a note to Trash and restore it, so you can see that deleting is reversible.
-- Trash sits at the bottom of the sidebar and is a place you can look in, not a countdown. Notes stay there until you empty it. ![open-trash](images/journeys/delete-and-restore-a-note-open-trash.png)
+  - Trash sits at the bottom of the sidebar and is a place you can look in, not a countdown. Notes stay there until you empty it.
+
+    ![open-trash](images/journeys/delete-and-restore-a-note-open-trash.png)
 <!-- notrios:generated:user:the-journeys:end -->
 
 

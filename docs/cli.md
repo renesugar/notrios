@@ -2,6 +2,7 @@
 <!-- notrios:generated:user:the-notriosctl-cli:begin -->
 <!-- source: go:github.com/renesugar/notrios/cmd/notriosctl#printHelp -->
 printHelp is the finite command and flag usage registry shown by notriosctl.
+
 - notriosctl doctor [--config config.yaml] [--db path] [--asset-store path]
 - notriosctl paths [--json] [--no-redact]
 - notriosctl config show [--config config.yaml] [--json] [--no-redact]

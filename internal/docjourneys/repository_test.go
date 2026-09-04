@@ -121,3 +121,41 @@ func TestEveryGUIJourneyNamesARealFeature(t *testing.T) {
 		}
 	}
 }
+
+// TestTaggingGainsAGUIJourneyWhenTheInterfaceCanTag is a standing instruction
+// rather than a note to remember.
+//
+// The interface cannot add or remove a tag today, so there is no interface
+// journey for it and there should not be one -- a journey for something the
+// surface cannot do would be a lie with pictures. When that changes, whoever
+// adds the capability will record a `gui` surface on the feature, and this
+// fails until the journey exists to match.
+//
+// It is written this way because "add the journey later" is the kind of
+// intention that survives in a plan and not in a repository.
+func TestTaggingGainsAGUIJourneyWhenTheInterfaceCanTag(t *testing.T) {
+	root := filepath.Join("..", "..")
+	registry, err := docfeatures.Load(filepath.Join(root, "docs", "docfeatures", "FEATURES.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	catalogue, err := docjourneys.LoadGUI(filepath.Join(root, "docs", "docjourneys", "GUI_JOURNEYS.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, feature := range registry.Features {
+		if feature.ID != "tag-a-note" {
+			continue
+		}
+		if len(feature.GUI) == 0 {
+			return // still command-line only; nothing to document in the interface
+		}
+		for _, journey := range catalogue.Journeys {
+			if journey.Feature == "tag-a-note" {
+				return
+			}
+		}
+		t.Fatal("the interface can tag a note now, so docs/journeys-gui.md needs a journey for it; " +
+			"add one to GUI_JOURNEYS.json and capture it with NOTRIOS_GUI_JOURNEYS=1")
+	}
+}

@@ -3047,6 +3047,42 @@ parallel required asking, task by task, whether each surface can do the thing.
 Tagging is the only capability the command line has and the interface does not,
 and now both pages say so in the same words.
 
+**Formatting corrections 2026-09-03, from looking at the rendered page.** The
+journey catalogue rendered as an unbroken wall of text, and three separate
+faults were behind it -- none visible in the Markdown source, all obvious in a
+reader.
+
+*No blank line before the list.* `docgen` wrote a fragment's prose sentence and
+then its items with nothing between, so Markdown folded the sentence and every
+bullet into one paragraph. Short enumerations survived that; a catalogue of ten
+tasks with five steps each did not. Fixed in the renderer, so every generated
+fragment benefits.
+
+*Every item was forced to the same level.* The renderer prefixed `- ` to each
+value unconditionally, so tasks and their steps sat side by side and a reader
+could not see where one task ended. A value that already carries its own marker
+is now written as it is, which is what lets a resolver nest.
+
+*The published sentence was written for the wrong reader.* A fragment's opening
+line comes from the Go doc comment, and all three catalogue comments began
+"Lines renders the catalogue for the generated fragment" -- an accurate
+description of a function, printed to someone trying to tag a note. They now
+read "Each task below lists the steps that do it, in order."
+
+*One thing was tried and rejected.* Putting each command in a fenced `sh` block
+looked better and made every step a registered executable example, whose hash
+would change whenever a narrative was reworded. That is churn with no reader
+benefit, since the journey runner already executes those commands. An indented
+code span reads the same and costs nothing.
+
+**The interface tagging journey is a standing check rather than a note.**
+`docs/journeys-gui.md` has no tagging journey because the interface cannot tag,
+and a journey for something a surface cannot do would be a lie with pictures.
+`TestTaggingGainsAGUIJourneyWhenTheInterfaceCanTag` fails the moment the feature
+records a `gui` surface without a matching journey, and says what to add and how
+to capture it. "Add the journey later" is the kind of intention that survives in
+a plan and not in a repository.
+
 **Exit criteria.** The generation half stands on its own and is not conditional
 on the model work: the features page, the two journey catalogues and the
 comparison are worth having whether or not any model turns out to be usable, and
