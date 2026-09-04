@@ -3189,6 +3189,36 @@ the tagging gap, found the same way, and it means the third task above cannot be
 written as a command-line journey until the command exists. Restoring from Trash
 has the same gap.
 
+**Built 2026-09-03: the GUI can tag a note.** A control in the editor toolbar,
+beside the notebook control and for the same reason -- both answer where this
+note belongs, and both belong where the typing is. Tags render as chips with
+their own remove buttons rather than as a comma-separated field, because editing
+a list by careful deletion is how a stray comma becomes a tag nobody asked for.
+Three REST calls behind it, the same ones MCP and the command line use.
+
+*Two defects the work found in itself.* The tag panel photographed with the note
+text showing through it: `md-editor-rt`'s dropdown supplies no background, and
+the first capture is what revealed it -- a screenshot is a poor test of most
+things and a very good test of whether something is legible. And the trigger was
+a bare `<span>`, which the control crawl could not see. That was the crawl
+finding an **accessibility defect**, since a screen reader would not have seen it
+either; the fix was to make the element announce itself rather than to teach the
+crawler to look for spans. Inventory 26 to 29.
+
+*One background failure made quieter.* Reading a note's tags reported to the
+shared error banner, so opening a note whose tags could not be loaded replaced
+"Filed this note in Work" with a fetch error. A read the user did not ask for
+should not overwrite feedback about something they did; it now fails silently
+and shows no tags, while add and remove still report properly.
+
+*The guard from H14 slice A has been retired, as it asked to be.* It watched the
+tags asymmetry and said that if it ever stopped reporting, either the gap had
+been closed -- delete it and say so -- or the check had broken. It was closed, so
+it is deleted with that note in its place. Nothing is unguarded by the removal:
+`doccompare`'s unexplained-gap list is pinned empty, so a capability one surface
+has and another lacks cannot reappear without a written reason or a failing
+test.
+
 **Tagging in the interface.** Tags are read-only there: the sidebar lists them
 with counts and clicking one searches it. Adding and removing need a control on
 the note, the REST calls already exist, and

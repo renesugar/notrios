@@ -12,7 +12,7 @@
       "locator": {
         "testid": "new-note-button"
       },
-      "sha256": "4c8006c954d254b5186099b1581c6d87f3494a2eb54f95c8c3e70baaf770a7be"
+      "sha256": "b957b3534021454d5954c29b5c8600c051426e06a7f6e5e46efd5d9edd169172"
     },
     {
       "journey": "choose-a-notebook",
@@ -21,7 +21,7 @@
       "locator": {
         "testid": "notebook-picker-trigger"
       },
-      "sha256": "030b2a4974cd795e5132ac33065c5abdc5236c5b256dfeafd685ea461da69623"
+      "sha256": "bb37bf811401905849f95886690cf320469b4eee2946e85d85579c8508efb84c"
     },
     {
       "journey": "delete-and-restore-a-note",
@@ -30,7 +30,7 @@
       "locator": {
         "testid": "sidebar-row-snb_trash"
       },
-      "sha256": "6f34bfdeb01b936080bbfcf414890fbdc9a16bf1d4632cf56a71417ffe086cdb"
+      "sha256": "40f4ce98dec9e98a3cb9a8fa38c757111641739797da848ad78bc37f44ddf7a3"
     },
     {
       "journey": "find-your-way-around",
@@ -39,7 +39,43 @@
       "locator": {
         "testid": "sidebar-row-nb_help"
       },
-      "sha256": "a539d3f963f440722b4ab9f4d14c7cebdba392447208494dcf0a7569080c8c31"
+      "sha256": "b43a966b44955ae11a23813d446f290544a4b72d152bb22bfa63b10afebfb611"
+    },
+    {
+      "journey": "tag-a-note",
+      "step": "add-it",
+      "image": "images/journeys/tag-a-note-add-it.png",
+      "locator": {
+        "testid": "tag-editor-add"
+      },
+      "sha256": "bd96034b1100778435dbece7bc9923796780d5b9e95a709a7b7cdf5a45214d29"
+    },
+    {
+      "journey": "tag-a-note",
+      "step": "new-note",
+      "image": "images/journeys/tag-a-note-new-note.png",
+      "locator": {
+        "testid": "new-note-button"
+      },
+      "sha256": "b957b3534021454d5954c29b5c8600c051426e06a7f6e5e46efd5d9edd169172"
+    },
+    {
+      "journey": "tag-a-note",
+      "step": "open-tags",
+      "image": "images/journeys/tag-a-note-open-tags.png",
+      "locator": {
+        "testid": "tag-editor-trigger"
+      },
+      "sha256": "543638946aeca21c5e9e3268e09f8046e5b64d3beb610a8dbc3e7e162cdcd50f"
+    },
+    {
+      "journey": "tag-a-note",
+      "step": "type-a-tag",
+      "image": "images/journeys/tag-a-note-type-a-tag.png",
+      "locator": {
+        "testid": "tag-editor-input"
+      },
+      "sha256": "e36f5337f26e4ebeda581f26ba0d1f95c27151e1cd228567c72f5ac2e2f6190b"
     },
     {
       "journey": "write-a-note",
@@ -48,7 +84,7 @@
       "locator": {
         "testid": "new-note-button"
       },
-      "sha256": "4c8006c954d254b5186099b1581c6d87f3494a2eb54f95c8c3e70baaf770a7be"
+      "sha256": "b957b3534021454d5954c29b5c8600c051426e06a7f6e5e46efd5d9edd169172"
     },
     {
       "journey": "write-a-note",
@@ -57,7 +93,7 @@
       "locator": {
         "css": ".cm-content"
       },
-      "sha256": "423770486c75f66c7ccafc2b2cfb4ab7f56d7930c651612a7054bbf6cec75d98"
+      "sha256": "f8f2cda24b5b3e47eb3825e311e54afbe40c42d72bb241a16dd9be26167e7a52"
     }
   ]
 }

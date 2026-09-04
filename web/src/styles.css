@@ -1522,3 +1522,114 @@ button.sync-list-row:hover { border-color: var(--accent); }
   font-size: 0.9em;
   opacity: 0.85;
 }
+
+/* The tag control in the editor toolbar.
+ *
+ * It sits beside the notebook control and is styled to match it, because the
+ * two answer the same kind of question about the note in front of you. The
+ * overlay carries its own background: md-editor-rt's dropdown does not supply
+ * one, and the first capture of this control photographed the note body showing
+ * through the panel. */
+.tag-editor-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 6px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  white-space: nowrap;
+}
+
+.md-editor-toolbar-item-disabled .tag-editor-trigger,
+.tag-editor-trigger[aria-disabled='true'] {
+  color: var(--muted);
+  border-style: dashed;
+  background: transparent;
+}
+
+.tag-editor {
+  min-width: 220px;
+  max-width: 320px;
+  padding: 8px;
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: var(--shadow);
+}
+
+.tag-editor-list {
+  list-style: none;
+  margin: 0 0 8px;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  max-height: 160px;
+  overflow-y: auto;
+}
+
+/* A chip per tag, each with its own remove button. A comma-separated text field
+ * would make removing one tag an exercise in careful deletion, and would turn a
+ * stray comma into a tag nobody asked for. */
+.tag-editor-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 4px 1px 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 0.8rem;
+  background: var(--chip-bg);
+}
+
+.tag-editor-remove {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.95rem;
+  line-height: 1;
+  padding: 0 2px;
+}
+
+.tag-editor-remove:hover {
+  color: var(--danger);
+}
+
+.tag-editor-empty {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.tag-editor-add {
+  display: flex;
+  gap: 4px;
+}
+
+.tag-editor-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 3px 6px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: inherit;
+  font-size: 0.85rem;
+}
+
+.tag-editor-submit {
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: inherit;
+  padding: 3px 10px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.tag-editor-submit:disabled {
+  color: var(--muted);
+  cursor: default;
+}

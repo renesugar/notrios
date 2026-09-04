@@ -58,6 +58,19 @@ Each task below lists its steps, with a picture of every one.
   - Trash sits at the bottom of the sidebar and is a place you can look in, not a countdown. Notes stay there until you empty it.
 
     ![open-trash](images/journeys/delete-and-restore-a-note-open-trash.png)
+- **Tag a note** — Put a tag on the note you are writing, and take one off.
+  - Start from a note. Tags belong to a note, so there has to be one open.
+
+    ![new-note](images/journeys/tag-a-note-new-note.png)
+  - Open the tag control. It sits in the editor toolbar beside the notebook control, because both answer where this note belongs and both belong where you are typing. The label shows how many tags the note carries.
+
+    ![open-tags](images/journeys/tag-a-note-open-tags.png)
+  - Type the tag. Tags are hierarchical, so `field/dusk` sits under `field`. Press Enter or use Add.
+
+    ![type-a-tag](images/journeys/tag-a-note-type-a-tag.png)
+  - Add it. Each tag then appears as a chip with its own remove button, rather than as a comma-separated line you have to edit carefully.
+
+    ![add-it](images/journeys/tag-a-note-add-it.png)
 <!-- notrios:generated:user:the-journeys:end -->
 
 

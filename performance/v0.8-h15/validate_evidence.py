@@ -23,7 +23,10 @@ HERE = pathlib.Path(__file__).resolve().parent
 # exists and from the element's shape otherwise, never from its text: a list of
 # search results renders one control per note, and keying on the label would
 # make this number grow with the library rather than describe the interface.
-EXPECTED_CONTROLS = 26
+# 26 -> 29 when the GUI gained tagging: the trigger, the input and the add
+# button. The trigger only appeared once it was given role="button" -- the crawl
+# could not see a bare span, for the same reason a screen reader could not.
+EXPECTED_CONTROLS = 29
 EXPECTED_VIEWS = 6
 
 

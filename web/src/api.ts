@@ -311,6 +311,39 @@ export async function listTags(): Promise<TagRecord[]> {
   return payload.tags ?? [];
 }
 
+// The three calls behind the editor's tag control.
+//
+// Tagging was reachable over REST and MCP and from neither surface a person
+// uses -- the gap v0.8 H14 opened with, found by reading the documentation and
+// then again by comparing the two surfaces mechanically. The command line
+// gained `tags add`, `tags remove` and `tags list`; these are the other half.
+export async function listDocumentTags(documentID: string): Promise<string[]> {
+  const response = await fetch(`/api/v1/documents/${encodeURIComponent(documentID)}/tags`);
+  const payload = await parseJSON<{ tags: TagRecord[] }>(response);
+  return (payload.tags ?? []).map((tag) => tag.name);
+}
+
+export async function addDocumentTag(documentID: string, tag: string): Promise<void> {
+  const response = await fetch(
+    `/api/v1/documents/${encodeURIComponent(documentID)}/tags/${encodeURIComponent(tag)}`,
+    { method: 'POST' },
+  );
+  await parseJSON<unknown>(response);
+}
+
+export async function removeDocumentTag(documentID: string, tag: string): Promise<void> {
+  const response = await fetch(
+    `/api/v1/documents/${encodeURIComponent(documentID)}/tags/${encodeURIComponent(tag)}`,
+    { method: 'DELETE' },
+  );
+  // A tag the note does not carry answers 404, and that is not an error worth
+  // showing: the control only offers removal of tags it is displaying, so a
+  // 404 here means somebody else got there first and the end state is the one
+  // the user wanted.
+  if (response.status === 404) return;
+  await parseJSON<unknown>(response);
+}
+
 export async function uploadResource(file: File, collectionID = 'default'): Promise<ResourceRecord> {
   const params = new URLSearchParams({ collection_id: collectionID, filename: file.name });
   const response = await fetch(`/api/v1/resources?${params.toString()}`, {

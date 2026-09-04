@@ -25,6 +25,7 @@ import {
 import { spansToEditorRanges } from '../editor-offsets';
 import { disabledEditorExtensions, installEditorAssets } from '../editor-assets';
 import { NotebookPicker } from './NotebookPicker';
+import { TagEditor } from './TagEditor';
 import type { NotebookOption } from '../sidebar';
 
 // Point md-editor-rt at the bundled KaTeX/highlight.js/cropper before the
@@ -70,6 +71,10 @@ export interface EditorPaneProps {
   trashed: boolean;
   /** Destinations for the toolbar's notebook control, in sidebar order. */
   notebookOptions: NotebookOption[];
+  /** The note's current tags, and the two ways to change them. */
+  tags: string[];
+  onAddTag: (tag: string) => void;
+  onRemoveTag: (tag: string) => void;
   /**
    * The notebook the control shows. For an open note this is the note's own
    * notebook, not the sidebar's selection — otherwise reaching a note from
@@ -113,6 +118,9 @@ export function EditorPane(props: EditorPaneProps) {
     onOpenDocument,
     trashed,
     notebookOptions,
+    tags,
+    onAddTag,
+    onRemoveTag,
     notebookID,
     notebookLabel,
     onSelectNotebook,
@@ -185,7 +193,19 @@ export function EditorPane(props: EditorPaneProps) {
       onSelect={onSelectNotebook}
     />
   );
-  const toolbars = useMemo<ToolbarNames[]>(() => [0, '-', ...allToolbar], []);
+  // Beside the notebook control and for the same reason: both answer "where
+  // does this note belong?", and both belong where the typing is.
+  const tagEditor = (
+    <TagEditor
+      key="notrios-tags"
+      documentID={selectedDocument?.id ?? null}
+      tags={tags}
+      disabled={busy || !editable}
+      onAdd={onAddTag}
+      onRemove={onRemoveTag}
+    />
+  );
+  const toolbars = useMemo<ToolbarNames[]>(() => [0, 1, '-', ...allToolbar], []);
 
   return (
     <section className="pane editor-pane" aria-label="Markdown editor" data-testid="pane-editor">
@@ -272,7 +292,7 @@ export function EditorPane(props: EditorPaneProps) {
             onEditorUploadImages(files, callback);
           }}
           toolbars={toolbars}
-          defToolbars={[notebookPicker]}
+          defToolbars={[notebookPicker, tagEditor]}
           toolbarsExclude={['preview', 'previewOnly', 'htmlPreview', 'catalog', 'github', 'fullscreen', 'pageFullscreen', 'save']}
           language="en-US"
           theme={themeBase}

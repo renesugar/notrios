@@ -70,6 +70,9 @@ function renderPane(overrides: Partial<EditorPaneProps>) {
     onLocalizeRemoteMedia: vi.fn(),
     onOpenDocument: vi.fn(),
     trashed: false,
+    tags: [],
+    onAddTag: vi.fn(),
+    onRemoveTag: vi.fn(),
     notebookOptions: [
       { id: 'nb_notes', name: 'Notes', depth: 0 },
       { id: 'nb_work', name: 'Work', depth: 0 },

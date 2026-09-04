@@ -4,32 +4,32 @@
     {
       "id": "start",
       "reached": true,
-      "controls": 74
+      "controls": 78
     },
     {
       "id": "all-notes",
       "reached": true,
-      "controls": 74
+      "controls": 78
     },
     {
       "id": "help",
       "reached": true,
-      "controls": 74
+      "controls": 78
     },
     {
       "id": "trash",
       "reached": true,
-      "controls": 56
+      "controls": 60
     },
     {
       "id": "new-note",
       "reached": true,
-      "controls": 56
+      "controls": 60
     },
     {
       "id": "sync-center",
       "reached": true,
-      "controls": 70
+      "controls": 74
     }
   ],
   "controls": [
@@ -149,10 +149,10 @@
       "testid": "",
       "examples": [
         "Notebook: Notes — click to file this note elsewhere",
-        "bold",
-        "underline"
+        "Tags — click to add or remove",
+        "bold"
       ],
-      "instances": 126,
+      "instances": 132,
       "views": [
         "start",
         "all-notes",
@@ -459,6 +459,58 @@
       "testid": "sidebar-row-snb_trash",
       "examples": [
         "Trash"
+      ],
+      "instances": 6,
+      "views": [
+        "start",
+        "all-notes",
+        "help",
+        "trash",
+        "new-note",
+        "sync-center"
+      ]
+    },
+    {
+      "id": "testid:tag-editor-add",
+      "tag": "button",
+      "role": "",
+      "testid": "tag-editor-add",
+      "examples": [],
+      "instances": 6,
+      "views": [
+        "start",
+        "all-notes",
+        "help",
+        "trash",
+        "new-note",
+        "sync-center"
+      ]
+    },
+    {
+      "id": "testid:tag-editor-input",
+      "tag": "input",
+      "role": "",
+      "testid": "tag-editor-input",
+      "examples": [
+        "Add a tag"
+      ],
+      "instances": 6,
+      "views": [
+        "start",
+        "all-notes",
+        "help",
+        "trash",
+        "new-note",
+        "sync-center"
+      ]
+    },
+    {
+      "id": "testid:tag-editor-trigger",
+      "tag": "span",
+      "role": "button",
+      "testid": "tag-editor-trigger",
+      "examples": [
+        "Tags"
       ],
       "instances": 6,
       "views": [

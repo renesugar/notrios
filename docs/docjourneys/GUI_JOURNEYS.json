@@ -109,6 +109,53 @@
           "testid": "sidebar-row-snb_trash"
         }
       }
+    },
+    {
+      "id": "tag-a-note",
+      "title": "Tag a note",
+      "goal": "Put a tag on the note you are writing, and take one off.",
+      "feature": "tag-a-note",
+      "steps": [
+        {
+          "id": "new-note",
+          "narrative": "Start from a note. Tags belong to a note, so there has to be one open.",
+          "locator": {
+            "testid": "new-note-button"
+          },
+          "action": "click"
+        },
+        {
+          "id": "open-tags",
+          "narrative": "Open the tag control. It sits in the editor toolbar beside the notebook control, because both answer where this note belongs and both belong where you are typing. The label shows how many tags the note carries.",
+          "locator": {
+            "testid": "tag-editor-trigger"
+          },
+          "action": "click"
+        },
+        {
+          "id": "type-a-tag",
+          "narrative": "Type the tag. Tags are hierarchical, so `field/dusk` sits under `field`. Press Enter or use Add.",
+          "locator": {
+            "testid": "tag-editor-input"
+          },
+          "action": "fill",
+          "value": "field/dusk"
+        },
+        {
+          "id": "add-it",
+          "narrative": "Add it. Each tag then appears as a chip with its own remove button, rather than as a comma-separated line you have to edit carefully.",
+          "locator": {
+            "testid": "tag-editor-add"
+          },
+          "action": "click"
+        }
+      ],
+      "postcondition": {
+        "narrative": "the tag control is showing the note's tags",
+        "locator": {
+          "testid": "tag-editor-list"
+        }
+      }
     }
   ]
 }

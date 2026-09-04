@@ -24,8 +24,11 @@ vi.mock('md-editor-rt', () => ({
   ),
   MdPreview: ({ value }: { value: string }) => <div data-testid="preview-stub">{value}</div>,
   config: () => {},
-  DropdownToolbar: ({ children, overlay, disabled }: { children?: React.ReactNode; overlay?: React.ReactNode; disabled?: boolean }) => (
-    <div data-testid="dropdown-toolbar" data-disabled={disabled ? 'true' : 'false'}>
+  DropdownToolbar: ({ children, overlay, disabled, title }: { children?: React.ReactNode; overlay?: React.ReactNode; disabled?: boolean; title?: string }) => (
+    <div
+      data-testid={String(title).startsWith('Tags') ? 'dropdown-toolbar-tags' : 'dropdown-toolbar'}
+      data-disabled={disabled ? 'true' : 'false'}
+    >
       {children}
       {overlay}
     </div>
@@ -76,6 +79,9 @@ function renderPane(overrides: Partial<EditorPaneProps> = {}) {
     onLocalizeRemoteMedia: vi.fn(),
     onOpenDocument: vi.fn(),
     trashed: false,
+    tags: [],
+    onAddTag: vi.fn(),
+    onRemoveTag: vi.fn(),
     notebookOptions: choices,
     notebookID: 'nb_work',
     notebookLabel: 'Work',

@@ -18,6 +18,9 @@ import {
   listDocumentResources,
   listSearchNotebooks,
   listTags,
+  listDocumentTags,
+  addDocumentTag,
+  removeDocumentTag,
   localizeRemoteMedia,
   moveDocumentToNotebook,
   previewNotebookDeletion,
@@ -98,6 +101,11 @@ export function App() {
   const [title, setTitle] = useState('New note');
   const [body, setBody] = useState(defaultBody);
   const [resources, setResources] = useState<ResourceReference[]>([]);
+  // The open note's tags. Held here rather than inside the toolbar control
+  // because the same list is what a later sidebar count would read, and two
+  // components asking the server separately would disagree the moment one of
+  // them changed something.
+  const [documentTags, setDocumentTags] = useState<string[]>([]);
   const [links, setLinks] = useState<DocumentLink[]>([]);
   const [backlinks, setBacklinks] = useState<DocumentLink[]>([]);
   const [remoteMedia, setRemoteMedia] = useState<RemoteMediaDecision[]>([]);
@@ -273,6 +281,54 @@ export function App() {
   }, [status]);
 
   const editable = selectedDocument ? selectedDocument.editable !== false : true;
+
+  // Tag changes are applied and then re-read rather than assumed. The server
+  // decides what a tag is called -- it normalises and it may already hold the
+  // tag under another case -- so echoing the typed string into local state
+  // would show the user something the library does not contain.
+  const refreshDocumentTags = useCallback(async (documentID: string | null) => {
+    if (!documentID) {
+      setDocumentTags([]);
+      return;
+    }
+    try {
+      setDocumentTags(await listDocumentTags(documentID));
+    } catch {
+      // Deliberately silent. This runs whenever a note is opened, and the
+      // shared error banner is where the result of something the user just did
+      // is shown -- a background read that fails should not replace "Filed
+      // this note in Work" with a fetch error. The control shows no tags,
+      // which is the honest thing for it to show, and any attempt to add or
+      // remove one reports properly because the user asked for that.
+      setDocumentTags([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    void refreshDocumentTags(selectedDocument?.id ?? null);
+  }, [selectedDocument?.id, refreshDocumentTags]);
+
+  const handleAddTag = useCallback(async (tag: string) => {
+    const documentID = selectedDocument?.id;
+    if (!documentID) return;
+    try {
+      await addDocumentTag(documentID, tag);
+      await refreshDocumentTags(documentID);
+    } catch (error) {
+      setError(errorMessage(error));
+    }
+  }, [selectedDocument?.id, refreshDocumentTags]);
+
+  const handleRemoveTag = useCallback(async (tag: string) => {
+    const documentID = selectedDocument?.id;
+    if (!documentID) return;
+    try {
+      await removeDocumentTag(documentID, tag);
+      await refreshDocumentTags(documentID);
+    } catch (error) {
+      setError(errorMessage(error));
+    }
+  }, [selectedDocument?.id, refreshDocumentTags]);
   // Trashed is not the same as uneditable: a Help note is permanently
   // read-only, a trashed note is one click from being editable again.
   const trashed = Boolean(selectedDocument?.deleted_at);
@@ -786,6 +842,9 @@ export function App() {
           onOpenDocument={(id) => void openDocumentByID(id)}
           trashed={trashed}
           notebookOptions={notebookChoices}
+          tags={documentTags}
+          onAddTag={handleAddTag}
+          onRemoveTag={handleRemoveTag}
           notebookID={toolbarNotebookID}
           notebookLabel={toolbarNotebookLabel}
           onSelectNotebook={(id) => void onSelectNotebook(id)}

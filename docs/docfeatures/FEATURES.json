@@ -144,7 +144,12 @@
         "tag_note",
         "untag_note"
       ],
-      "surface_note": "The GUI still shows tags only as sidebar navigation and cannot add or remove one. That half of the gap v0.8 H14 found is open."
+      "gui": [
+        "tag-editor-trigger",
+        "tag-editor-input",
+        "tag-editor-add",
+        "tag-editor-list"
+      ]
     },
     {
       "id": "browse-and-rename-tags",
@@ -161,7 +166,7 @@
       "mcp": [
         "list_tags"
       ],
-      "surface_note": "The GUI shows tags as sidebar navigation and does not rename them."
+      "surface_note": "The GUI shows tags in the sidebar and on the note, and does not rename a hierarchy; `tags rename` is command line only."
     },
     {
       "id": "collections",

@@ -45,8 +45,8 @@ which surfaces offer each capability.
 - Search your notes — Find notes by text, tag, notebook, date and the rest of the query language, across the library or within one note. (REST 3, MCP 2, GUI 1) No command line search command; `notriosctl export archive --query` applies the same language to an export instead.
 - Notebooks that are really saved searches — Save a query as a notebook, so a view that would otherwise be retyped becomes something you open. (CLI 1, REST 3, MCP 1) Made with `notebooks create --query`, since a query notebook is a notebook whose contents are whatever matches. The GUI lists them in the sidebar and does not create them yet.
 - Organise notes into notebooks — Make notebooks, nest them, move notes between them, and see what a notebook deletion would take with it before agreeing to it. (CLI 3, REST 9, MCP 4, GUI 2)
-- Tag and untag a note — Attach a tag to a note, take one off, and see what a note carries. Tags are hierarchical: `field/dusk` sits under `field`. (CLI 3, REST 2, MCP 2) The GUI still shows tags only as sidebar navigation and cannot add or remove one. That half of the gap v0.8 H14 found is open.
-- See and rename tags — List the tags in a library, see a note's tags, and rename a whole tag hierarchy at once. (CLI 1, REST 3, MCP 1) The GUI shows tags as sidebar navigation and does not rename them.
+- Tag and untag a note — Attach a tag to a note, take one off, and see what a note carries. Tags are hierarchical: `field/dusk` sits under `field`. (CLI 3, REST 2, MCP 2, GUI 4)
+- See and rename tags — List the tags in a library, see a note's tags, and rename a whole tag hierarchy at once. (CLI 1, REST 3, MCP 1) The GUI shows tags in the sidebar and on the note, and does not rename a hierarchy; `tags rename` is command line only.
 - Group libraries into collections — Collections sit above notebooks and are how an import keeps its material together. (REST 4, MCP 1) No command line or GUI journey; imports set the collection with --collection.
 - Attach and manage files — Add files to notes, read them back, see what references what, and find attachments nothing points at any more. (CLI 1, REST 8, MCP 2) No GUI journey for attachment management yet.
 - Bring remote images into the library — Find images a note points at on the web, check them against the domain policy, and copy the allowed ones in so the note stops depending on somebody else's server. (CLI 1, REST 4, MCP 3) No GUI journey; localizing is a maintenance action rather than an editing one.
@@ -83,7 +83,7 @@ Each capability below is offered on some surfaces and not others.
 - Live query blocks inside a note — neither the command line nor the GUI; reachable only over REST or MCP. No command line; the GUI renders them in place.
 - Templates and tasks — neither the command line nor the GUI; reachable only over REST or MCP. No command line or GUI journey.
 - Attach and manage files — command line only. No GUI journey for attachment management yet.
-- See and rename tags — command line only. The GUI shows tags as sidebar navigation and does not rename them.
+- See and rename tags — command line only. The GUI shows tags in the sidebar and on the note, and does not rename a hierarchy; `tags rename` is command line only.
 - Export your library — command line only. Not in the GUI yet. The constraint is the *browser* mode, which cannot read arbitrary local paths; the desktop app can, and native directory pickers are part of the planned client architecture. This is a gap rather than a boundary.
 - Import from another application — command line only. Not in the GUI yet. The constraint is the *browser* mode, which cannot read arbitrary local paths; the desktop app can, and native directory pickers are part of the planned client architecture. This is a gap rather than a boundary.
 - Watch and steer long-running work — command line only. No GUI journey; progress appears inline where the work was started.
@@ -94,7 +94,6 @@ Each capability below is offered on some surfaces and not others.
 - Notebooks that are really saved searches — command line only. Made with `notebooks create --query`, since a query notebook is a notebook whose contents are whatever matches. The GUI lists them in the sidebar and does not create them yet.
 - Back up and restore the whole library — command line only. Not in the GUI yet. The constraint is the *browser* mode, which cannot read arbitrary local paths; the desktop app can, and native directory pickers are part of the planned client architecture. This is a gap rather than a boundary.
 - Choose where sync keys are kept — command line only. Deliberately command line only: this item forbids a credential-management REST or MCP surface.
-- Tag and untag a note — command line only. The GUI still shows tags only as sidebar navigation and cannot add or remove one. That half of the gap v0.8 H14 found is open.
 - Move a pre-0.8 library into place — command line only. Command line only, and genuinely so: it relocates the directories the running program uses, which is not something the program can sensibly do to itself while serving them.
 - Read a note and its structure — GUI only. No command line: reading a note is what the GUI and the API are for.
 - Search your notes — GUI only. No command line search command; `notriosctl export archive --query` applies the same language to an export instead.
