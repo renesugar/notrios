@@ -114,6 +114,7 @@ func (b *NativeUIBridge) ChooseDirectory(purpose string) (string, error) {
 		"obsidian": "Choose the Obsidian vault to import",
 		"export":   "Choose where to write the exported archive",
 		"snapshot": "Choose where to write the snapshot",
+		"publish":  "Choose where to write the publication",
 	}
 	title, known := titles[purpose]
 	if !known {

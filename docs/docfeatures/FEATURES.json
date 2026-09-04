@@ -347,7 +347,7 @@
         "notriosctl import claude",
         "notriosctl import archive"
       ],
-      "surface_note": "In the desktop app only, through the native bridge: these operations name a folder on the machine running the library, and no REST route starts them. In a browser the Import/Export control is shown and disabled with that reason rather than hidden. Joplin and Obsidian can be scanned first without writing. Importing from Notrios verifies the archive without opening a database, and merges only: replace, fork and adopt stay on the command line because they change which library this is. Twitter, ChatGPT and Claude imports remain command line only.",
+      "surface_note": "In the desktop app only, through the native bridge: these operations name a folder on the machine running the library, and no REST route starts them. In a browser the Import/Export control is shown and disabled with that reason rather than hidden. Joplin and Obsidian can be scanned first without writing. Importing from Notrios verifies the archive without opening a database, and merges only: replace, fork and adopt stay on the command line because they change which library this is. Twitter, ChatGPT and Claude imports remain command line only. No GUI journey, and not for want of writing one: the journey capture drives a browser, where the Import/Export dialog this lives in is correctly disabled, so the panel cannot be reached to photograph. Import and export share the limitation. Driving them would mean extending the desktop harness in cmd/notriosctl/gui_desktop_test.go, which reaches the real application under Xvfb, to capture as well as assert.",
       "gui": [
         "Import from Joplin",
         "Import from Obsidian",
@@ -365,7 +365,7 @@
         "notriosctl restore archive-v2",
         "notriosctl compatibility archive-v2"
       ],
-      "surface_note": "In the desktop app only, through the native bridge: these operations name a folder on the machine running the library, and no REST route starts them. In a browser the Import/Export control is shown and disabled with that reason rather than hidden. The GUI writes a complete archive; exporting a subset by notebook, tag or query stays on the command line, because choosing a subset means seeing what it selects first.",
+      "surface_note": "In the desktop app only, through the native bridge: these operations name a folder on the machine running the library, and no REST route starts them. In a browser the Import/Export control is shown and disabled with that reason rather than hidden. The GUI writes a complete archive; exporting a subset by notebook, tag or query stays on the command line, because choosing a subset means seeing what it selects first. No GUI journey, and not for want of writing one: the journey capture drives a browser, where the Import/Export dialog this lives in is correctly disabled, so the panel cannot be reached to photograph. Import and export share the limitation. Driving them would mean extending the desktop harness in cmd/notriosctl/gui_desktop_test.go, which reaches the real application under Xvfb, to capture as well as assert.",
       "gui": [
         "Export this library",
         "Verify the archive"
@@ -380,7 +380,7 @@
         "notriosctl snapshot verify",
         "notriosctl snapshot restore"
       ],
-      "surface_note": "In the desktop app only, through the native bridge: these operations name a folder on the machine running the library, and no REST route starts them. In a browser the Import/Export control is shown and disabled with that reason rather than hidden. Creating a snapshot is in the GUI; restoring one is not, because a restore replaces the library the window is showing.",
+      "surface_note": "In the desktop app only, through the native bridge: these operations name a folder on the machine running the library, and no REST route starts them. In a browser the Import/Export control is shown and disabled with that reason rather than hidden. Creating a snapshot is in the GUI; restoring one is not, because a restore replaces the library the window is showing. No GUI journey, and not for want of writing one: the journey capture drives a browser, where the Import/Export dialog this lives in is correctly disabled, so the panel cannot be reached to photograph. Import and export share the limitation. Driving them would mean extending the desktop harness in cmd/notriosctl/gui_desktop_test.go, which reaches the real application under Xvfb, to capture as well as assert.",
       "gui": [
         "Take a snapshot"
       ]
@@ -558,7 +558,12 @@
       "mcp": [
         "plan_selection"
       ],
-      "surface_note": "Not in the GUI yet. Publishing writes to a local directory, so the desktop app could do it and the browser mode could not."
+      "surface_note": "The review is in the GUI, because reading what a publication lets out is the point of the feature rather than a step before it: the counts lead with what is withheld and which links get rewritten, not with what is sent. Planning goes through the native bridge rather than over REST for a correctness reason, not a path one -- `publish run` re-plans and refuses unless the digest matches what was reviewed, so the plan shown must be the plan the run recomputes, and an equivalent selection rebuilt over REST would match only by luck. Profiles are read and never written here: a profile carries a target, a selection and a privacy policy, and a form that quietly defaulted one is how something private gets published, so authoring stays `notriosctl publish profile save`. No GUI journey, and not for want of writing one: the journey capture drives a browser, where the Import/Export dialog this lives in is correctly disabled, so the panel cannot be reached to photograph. Import and export share the limitation. Driving them would mean extending the desktop harness in cmd/notriosctl/gui_desktop_test.go, which reaches the real application under Xvfb, to capture as well as assert.",
+      "gui": [
+        "Publish a subset of your notes \u2014 choosing a saved profile",
+        "Review what this would publish",
+        "Publish this review \u2014 in the desktop application only"
+      ]
     },
     {
       "id": "maintenance",

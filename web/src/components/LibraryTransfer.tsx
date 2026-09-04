@@ -9,10 +9,32 @@
 // find a feature concludes it is missing, while one who finds it disabled with
 // a reason learns something true.
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { PublishPanel } from './PublishPanel';
 
 /** The half of the native bridge this component uses. */
+interface PublishProfile { name: string; description: string; target: string }
+
+interface PublicationPlan {
+  profile: string;
+  target: string;
+  manifest_sha256: string;
+  counts: Record<string, number>;
+  exclusions: Array<{ kind: string; id: string; reason: string }>;
+  warnings: string[];
+  truncated: boolean;
+  /** The same run as a command line, digest included. */
+  command: string;
+}
+
+interface PublicationResult {
+  profile: string; directory: string; documents: number; objects: number; manifest_sha256: string;
+}
+
 interface TransferBridge {
   ChooseDirectory(purpose: string): Promise<string>;
+  PublishProfiles?: () => Promise<PublishProfile[] | null>;
+  PlanPublication?: (name: string) => Promise<PublicationPlan>;
+  Publish?: (name: string, reviewedDigest: string, path: string) => Promise<PublicationResult>;
   ImportJoplinRaw(path: string, dryRun: boolean): Promise<TransferReport>;
   ImportObsidian(path: string, dryRun: boolean): Promise<TransferReport>;
   VerifyArchive(path: string): Promise<TransferReport>;
@@ -256,6 +278,10 @@ export function LibraryTransfer({ onClose }: { onClose: () => void }) {
               ) : null}
             </div>
           ))}
+          {/* Publishing sits with the other operations that move data out of
+              the library, but it is the only one that rewrites what it emits,
+              so it carries its own review rather than a dry run. */}
+          <PublishPanel bridge={bridge} />
         </div>
       </section>
     </div>

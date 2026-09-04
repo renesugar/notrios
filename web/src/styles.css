@@ -1767,3 +1767,14 @@ button.sync-list-row:hover { border-color: var(--accent); }
   gap: 4px;
   font-size: 13px;
 }
+
+/* The reviewed digest and the equivalent command. Small, monospaced and
+   selectable: somebody who would rather publish from a terminal needs to copy
+   the digest exactly, and retyping a sha256 is not a reasonable ask. */
+.publish-digest,
+.publish-command {
+  margin: 8px 0 0;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+  user-select: text;
+}
