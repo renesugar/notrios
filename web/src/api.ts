@@ -305,6 +305,23 @@ export async function listSearchNotebooks(): Promise<SearchNotebook[]> {
   return payload.search_notebooks ?? [];
 }
 
+/**
+ * Saves a query as a search notebook.
+ *
+ * The query is passed in rather than read from the search box, because the two
+ * can differ: somebody types, searches, then types again while reading the
+ * results. Saving what is in the box would produce a notebook whose contents
+ * are not the results they were looking at when they decided to keep them.
+ */
+export async function createSearchNotebook(name: string, query: string): Promise<SearchNotebook> {
+  const response = await fetch('/api/v1/search-notebooks', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, query }),
+  });
+  return parseJSON<SearchNotebook>(response);
+}
+
 export async function listTags(): Promise<TagRecord[]> {
   const response = await fetch('/api/v1/tags');
   const payload = await parseJSON<{ tags: TagRecord[] }>(response);

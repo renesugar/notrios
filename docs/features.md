@@ -43,7 +43,7 @@ which surfaces offer each capability.
 - Write and edit notes — Create a note, change it, add to either end of it, and delete it. Deleting moves a note to Trash, and Trash is a place you can look in and take things back out of, not a countdown. (CLI 1, REST 10, MCP 6, GUI 6) The command line writes a note and files it, and does no more than that: editing, appending and deleting happen in the GUI or over REST/MCP. `notes create` exists so a note can be the end of a pipeline.
 - Read a note and its structure — Fetch a note whole, or just its body, its outline, its blocks, a line range, or an earlier revision. The structured views exist so a tool can work on part of a note without re-parsing all of it. (REST 7, MCP 5, GUI 2) No command line: reading a note is what the GUI and the API are for.
 - Search your notes — Find notes by text, tag, notebook, date and the rest of the query language, across the library or within one note. (REST 3, MCP 2, GUI 1) No command line search command; `notriosctl export archive --query` applies the same language to an export instead.
-- Notebooks that are really saved searches — Save a query as a notebook, so a view that would otherwise be retyped becomes something you open. (CLI 1, REST 3, MCP 1) Made with `notebooks create --query`, since a query notebook is a notebook whose contents are whatever matches. The GUI lists them in the sidebar and does not create them yet.
+- Notebooks that are really saved searches — Save a query as a notebook, so a view that would otherwise be retyped becomes something you open. (CLI 1, REST 3, MCP 1, GUI 1) Made with `notebooks create --query` at the command line. In the GUI it is an action on a search that has already run and returned something, rather than a form: the query is one you have watched work, and a notebook made from an unrun query opens empty as easily as it opens right. The query is shown when keeping it and is not editable there, which is what keeps this from being a query form in another place.
 - Organise notes into notebooks — Make notebooks, nest them, move notes between them, and see what a notebook deletion would take with it before agreeing to it. (CLI 3, REST 9, MCP 4, GUI 2)
 - Tag and untag a note — Attach a tag to a note, take one off, and see what a note carries. Tags are hierarchical: `field/dusk` sits under `field`. (CLI 3, REST 2, MCP 2, GUI 4)
 - See and rename tags — List the tags in a library, see a note's tags, and rename a whole tag hierarchy at once. (CLI 1, REST 3, MCP 1) The GUI shows tags in the sidebar and on the note, and does not rename a hierarchy; `tags rename` is command line only.
@@ -86,7 +86,6 @@ Each capability below is offered on some surfaces and not others.
 - Watch and steer long-running work — command line only. No GUI journey; progress appears inline where the work was started. Not settled by the H15 crawl either: job rows only render once a job exists and nothing seeded one, so this row is unmeasured rather than known absent.
 - Keep a library healthy — command line only. No GUI journey; maintenance is command line work.
 - Publish a subset of your notes — command line only. Not in the GUI yet. Publishing writes to a local directory, so the desktop app could do it and the browser mode could not.
-- Notebooks that are really saved searches — command line only. Made with `notebooks create --query`, since a query notebook is a notebook whose contents are whatever matches. The GUI lists them in the sidebar and does not create them yet.
 - Choose where sync keys are kept — command line only. Deliberately command line only: this item forbids a credential-management REST or MCP surface.
 - Move a pre-0.8 library into place — command line only. Command line only, and genuinely so: it relocates the directories the running program uses, which is not something the program can sensibly do to itself while serving them.
 - Read a note and its structure — GUI only. No command line: reading a note is what the GUI and the API are for.
@@ -103,6 +102,7 @@ Each capability below is offered on some surfaces and not others.
 - Back up and restore the whole library — both, but only the command-line journey is written
 - Synchronize with a replica — both, but only the command-line journey is written
 - Pair two of your own libraries — both, but only the command-line journey is written
+- Notebooks that are really saved searches — both, but only the GUI journey is written
 <!-- notrios:generated:user:where-the-surfaces-disagree:end -->
 
 This list is computed, not written. It compares what each capability claims

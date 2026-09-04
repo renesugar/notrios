@@ -23,7 +23,6 @@ it is anybody's notes.
 Everything here is command-line or API work today. Where a capability is
 absent for a reason rather than for want of doing it, the reason is given.
 
-- **Notebooks that are really saved searches** — Save a query as a notebook, so a view that would otherwise be retyped becomes something you open. Made with `notebooks create --query`, since a query notebook is a notebook whose contents are whatever matches. The GUI lists them in the sidebar and does not create them yet.
 - **See and rename tags** — List the tags in a library, see a note's tags, and rename a whole tag hierarchy at once. The GUI shows tags in the sidebar and on the note, and does not rename a hierarchy; `tags rename` is command line only.
 - **Group libraries into collections** — Collections sit above notebooks and are how an import keeps its material together. No command line or GUI journey; imports set the collection with --collection.
 - **Templates and tasks** — Keep note templates and make new notes from them, and see the tasks across a library. No command line or GUI journey.
@@ -134,6 +133,22 @@ Each task below lists its steps, with a picture of every one.
   - The same box runs it. Every query-language feature works here exactly as it does in notriosctl search, because it is the same parser.
 
     ![run-it](images/journeys/search-by-tag-and-exclude-run-it.png)
+- **Keep a search as a notebook** — Turn a search you have just watched work into a notebook in the sidebar.
+  - Search for whatever you want the notebook to hold. Any query works: this is the same language the rest of the interface takes.
+
+    ![run-a-search](images/journeys/keep-a-search-as-a-notebook-run-a-search.png)
+  - Run it and read the results. This is the point of keeping a search here rather than typing one into a form: you are deciding about a query you have watched work, not one you hope is right.
+
+    ![see-it-work](images/journeys/keep-a-search-as-a-notebook-see-it-work.png)
+  - Keep this search appears once a search has returned something. A query that found nothing is not offered, because a notebook made from it would open empty.
+
+    ![keep-it](images/journeys/keep-a-search-as-a-notebook-keep-it.png)
+  - The query is suggested as the name and is usually not what you want to read in a sidebar. The query itself is shown below the field but cannot be edited here.
+
+    ![name-it](images/journeys/keep-a-search-as-a-notebook-name-it.png)
+  - Keeping it adds a notebook to the sidebar whose contents are whatever the query matches, now and later.
+
+    ![save-it](images/journeys/keep-a-search-as-a-notebook-save-it.png)
 <!-- notrios:generated:user:the-journeys:end -->
 
 

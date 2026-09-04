@@ -193,6 +193,8 @@ describe('"New note" is not an action on the open note', () => {
       selectedDocumentID: null,
       busy: false,
       onNewNote,
+      ranQuery: '',
+      onKeepSearch: vi.fn(),
       newNoteNotebookName: 'Work',
     };
     render(<SearchPane {...props} />);

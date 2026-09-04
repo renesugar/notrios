@@ -21,6 +21,7 @@ import {
   listDocumentTags,
   addDocumentTag,
   removeDocumentTag,
+  createSearchNotebook,
   localizeRemoteMedia,
   moveDocumentToNotebook,
   previewNotebookDeletion,
@@ -733,6 +734,20 @@ export function App() {
 
   const onOpenHit = useCallback((hit: SearchHit) => void openDocumentByID(hit.id), [openDocumentByID]);
 
+  /**
+   * Saves the search that ran as a notebook, and refreshes the sidebar so the
+   * new one appears where the person will look for it.
+   *
+   * The error is rethrown rather than swallowed into the page-level notice: the
+   * name conflict this most often produces belongs beside the field somebody
+   * just typed into, not at the top of the window.
+   */
+  const onKeepSearch = useCallback(async (name: string) => {
+    const saved = await createSearchNotebook(name, activeQuery);
+    await refreshSidebar();
+    setMessage(`Kept “${saved.name}” in the sidebar.`);
+  }, [activeQuery, refreshSidebar]);
+
   return (
     <main className="app-shell">
       <header className="app-header">
@@ -858,6 +873,8 @@ export function App() {
           busy={busy}
           onNewNote={resetEditor}
           newNoteNotebookName={creationNotebookName}
+          ranQuery={activeQuery}
+          onKeepSearch={onKeepSearch}
         />
         <PaneSplitter
           label="Resize search results"

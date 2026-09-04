@@ -83,6 +83,14 @@ func seedJourneyFixtures(t *testing.T, cli string, replica *syncReplica) {
 		return created.DocumentID
 	}
 
+	// One note per journey that changes something. The journeys run in registry
+	// order against one library, so a journey that renames a note can break a
+	// later journey's postcondition -- and did: the update journey renamed the
+	// note the search journeys assert on, and they only kept passing because
+	// :has-text matches substrings. That is luck, not a design, so the note
+	// that gets renamed is not the note anything else looks for.
+	create("Notes from the eastern hide", "A first draft, waiting to be given a better title.\n")
+
 	reed := create("Reed beds at dusk", "Seen from the eastern hide. Two marsh harriers.\n")
 	if tagged := runCLI(t, cli, "tags", "add", "--db", replica.db, "--asset-store", replica.assets,
 		"--document", reed, "--tag", "field/dusk"); tagged.exitCode != 0 {

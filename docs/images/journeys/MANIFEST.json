@@ -12,7 +12,7 @@
       "locator": {
         "testid": "new-note-button"
       },
-      "sha256": "834a872e70ef8968c8f3057401d2c128ff6af3f52e38f46242b235d9a1586f80"
+      "sha256": "68ef69cffdee1acbaeb78ae667df720cd0a995250f78d8ed4a4f2f8cf5f18c46"
     },
     {
       "journey": "choose-a-notebook",
@@ -21,7 +21,7 @@
       "locator": {
         "testid": "notebook-picker-trigger"
       },
-      "sha256": "b4b6f9405eb17526ae84b2496bb79e98d4498cd1f6e21d231c18c3e262bfb8c9"
+      "sha256": "4ff32ad259edb630879a65b094a9f263c5931d77692a47c6c158faf12eb959b2"
     },
     {
       "journey": "delete-a-note",
@@ -30,7 +30,7 @@
       "locator": {
         "testid": "delete-button"
       },
-      "sha256": "0e02d6b85528e717622c8dc9946dc6fbe9a55476375ff1715302e28b9f76f40b"
+      "sha256": "e7556a36ce255a32e48d6dd2c9c3b98b79b6a39f2f1fdbb0bffdc21d8a1b9972"
     },
     {
       "journey": "delete-a-note",
@@ -39,7 +39,7 @@
       "locator": {
         "testid": "sidebar-row-snb_trash"
       },
-      "sha256": "6ed9b41cd0e893bf8f665da96a2912d3b5e2ff969a8355ecda33630c25206e6e"
+      "sha256": "bff1a7f18dfbe171955fe1577897c3fe3a92692ac9fef5ea5fe9ceba32b64b1a"
     },
     {
       "journey": "delete-a-note",
@@ -48,7 +48,7 @@
       "locator": {
         "testid": "sidebar-row-snb_all_notes"
       },
-      "sha256": "9de0278d988606628910251fe245787bf5c979f4fe4504602953e77d82b78479"
+      "sha256": "c7428bc5425d32a11958e8bae084ec3331e5a94981acd3a10b8c80e8d6306556"
     },
     {
       "journey": "delete-a-note",
@@ -57,7 +57,7 @@
       "locator": {
         "css": ".result-card:has-text(\"Old shopping list\")"
       },
-      "sha256": "6128be047ddb680d1317cce3b763480e904adda62011ea521e1ca126c9dd4b22"
+      "sha256": "15f7e95d4fd6403b50fe4ffff4ef8dafe5fc0158742cbab27d9f7399243e66c9"
     },
     {
       "journey": "find-your-way-around",
@@ -66,7 +66,53 @@
       "locator": {
         "testid": "sidebar-row-nb_help"
       },
-      "sha256": "af64e91dcba0d68c9f53ef962baa686365c49c79a59e5072d9123f35f78e7c64"
+      "sha256": "c85b9a09efad890673bc71d6fe00086315bdcd09742bf934088798eec739764a"
+    },
+    {
+      "journey": "keep-a-search-as-a-notebook",
+      "step": "keep-it",
+      "image": "images/journeys/keep-a-search-as-a-notebook-keep-it.png",
+      "locator": {
+        "testid": "keep-search"
+      },
+      "sha256": "ebe6fb54694b8cc3843442facfc0c51992912cad668c8d477e5e961d8708f0be"
+    },
+    {
+      "journey": "keep-a-search-as-a-notebook",
+      "step": "name-it",
+      "image": "images/journeys/keep-a-search-as-a-notebook-name-it.png",
+      "locator": {
+        "testid": "keep-search-name"
+      },
+      "sha256": "63d31d0810196372e4a842250b0a049627225801373e918fe2a0e8f1b6a34b62"
+    },
+    {
+      "journey": "keep-a-search-as-a-notebook",
+      "step": "run-a-search",
+      "image": "images/journeys/keep-a-search-as-a-notebook-run-a-search.png",
+      "locator": {
+        "css": ".search-row input"
+      },
+      "sha256": "ee1520cd95e7d2f53bdff4491cf1bd8c58998f4ab20a129c0ac019b151837a18"
+    },
+    {
+      "journey": "keep-a-search-as-a-notebook",
+      "step": "save-it",
+      "image": "images/journeys/keep-a-search-as-a-notebook-save-it.png",
+      "locator": {
+        "testid": "keep-search-save"
+      },
+      "sha256": "762bcd6fddf1d3fc6b36e51ce776bd4b52d772c556f0801cc6211788e3850764"
+    },
+    {
+      "journey": "keep-a-search-as-a-notebook",
+      "step": "see-it-work",
+      "image": "images/journeys/keep-a-search-as-a-notebook-see-it-work.png",
+      "locator": {
+        "role": "button",
+        "name": "Search"
+      },
+      "sha256": "4f9eff830ce46593403e0e29b0536f7a780ae2af15942d570d6ce35742140ba9"
     },
     {
       "journey": "restore-a-note",
@@ -75,7 +121,7 @@
       "locator": {
         "testid": "sidebar-row-snb_all_notes"
       },
-      "sha256": "8edde16fb9a9e30a950c6bf49f73a3312260be74e728fb1676139db7df80ae55"
+      "sha256": "ac9d8e452ea93f097798e9f3d662167e8eca415bede2bb9801562fa2ad72dc03"
     },
     {
       "journey": "restore-a-note",
@@ -84,7 +130,7 @@
       "locator": {
         "testid": "sidebar-row-snb_trash"
       },
-      "sha256": "e624c1a961f24ea50bf8b72a8d9ba62561302eaddc62d70407e61d206581083a"
+      "sha256": "142e866b92505edbbe0fda4bb63592ce31fcf20abf5f4df1e546a58979cdd817"
     },
     {
       "journey": "restore-a-note",
@@ -93,7 +139,7 @@
       "locator": {
         "css": ".result-card:has-text(\"Recipe I still want\")"
       },
-      "sha256": "d4a943f99b7b818c26a613014dfee0ae6e8b07a35dda023b512cd7f437ed2e19"
+      "sha256": "0ea9cef2a329513fb63eaaee7a7aca7b02d7bf920dd69e483c51100e41b4b540"
     },
     {
       "journey": "restore-a-note",
@@ -102,7 +148,7 @@
       "locator": {
         "testid": "restore-button"
       },
-      "sha256": "01bbe9e17b59d0341d60d1e475282cf0e4b6078017c5e0ca14246a26e507e1bc"
+      "sha256": "bc26af82e3e72dc007ffd003506bde420c5259358bf3e2d9ae0ee61e534dc8f4"
     },
     {
       "journey": "search-by-tag-and-exclude",
@@ -112,7 +158,7 @@
         "role": "button",
         "name": "Search"
       },
-      "sha256": "d19ce5dd1ce693d1aa526966cf70175760dd56ef367a8db36fc6f6c05e8deb16"
+      "sha256": "8a31e77aff68da7d506de2017a6b4c53c0c2831b3a2d4cb9476cf3aba7fe8c89"
     },
     {
       "journey": "search-by-tag-and-exclude",
@@ -121,7 +167,7 @@
       "locator": {
         "css": ".search-row input"
       },
-      "sha256": "a8b1eaa9f4d5d54e3aa35d3a955da242fce8f9480835d108a154316729c5083d"
+      "sha256": "ee1520cd95e7d2f53bdff4491cf1bd8c58998f4ab20a129c0ac019b151837a18"
     },
     {
       "journey": "search-your-notes",
@@ -131,7 +177,7 @@
         "role": "button",
         "name": "Search"
       },
-      "sha256": "30b8a9f586191f3f43c384a82bce8630df0b3bffc295e50f809d758669a51a8e"
+      "sha256": "a31db1338f0be793b166925489504489bf3dc300ad6f1e0e60d184c68467520a"
     },
     {
       "journey": "search-your-notes",
@@ -140,7 +186,7 @@
       "locator": {
         "css": ".search-row input"
       },
-      "sha256": "a8b1eaa9f4d5d54e3aa35d3a955da242fce8f9480835d108a154316729c5083d"
+      "sha256": "ee1520cd95e7d2f53bdff4491cf1bd8c58998f4ab20a129c0ac019b151837a18"
     },
     {
       "journey": "tag-a-note",
@@ -149,7 +195,7 @@
       "locator": {
         "testid": "tag-editor-add"
       },
-      "sha256": "8d99174c40b5ba23b08a79347c3bf3921caea87014f602178e171808cd340f86"
+      "sha256": "1d2d6ee65e27644322bbfcdee6fd5d42c8518345192176039a6e52f70ef7a241"
     },
     {
       "journey": "tag-a-note",
@@ -158,7 +204,7 @@
       "locator": {
         "testid": "new-note-button"
       },
-      "sha256": "686dc15269c8d35a029b90a2b57ed2eef52009ded20f391449c1506a02cfc4d5"
+      "sha256": "4ec1787e44080865d4e8b41fc474c6f797ce5f81075189d64aefcee42075599b"
     },
     {
       "journey": "tag-a-note",
@@ -167,7 +213,7 @@
       "locator": {
         "testid": "tag-editor-trigger"
       },
-      "sha256": "fefc48ba41040d3ed33c1309cfaa424c32006fb1cf15211e2b8097c1e4ac1106"
+      "sha256": "7c52eb420fe8623d6068dbe06ad8d107eeae2268553bd1fb586f6ecd2fbd7e4d"
     },
     {
       "journey": "tag-a-note",
@@ -176,7 +222,7 @@
       "locator": {
         "testid": "tag-editor-input"
       },
-      "sha256": "d668f9762a3f7feeb066a20afba1ca694a6ba63b72fd8d6071166ff614718289"
+      "sha256": "c2371258b2b12d411724c585f19d94cedc507f41465fb2b88b7cbe72e01b1756"
     },
     {
       "journey": "update-a-note",
@@ -185,7 +231,7 @@
       "locator": {
         "css": "input.title-input"
       },
-      "sha256": "99ea179a3113425193102919c2bc8290acbc136ba9fcf5139c805d8e2d743595"
+      "sha256": "5d34b003f1aac257571879f55eed7eb5b93d6bff9bcf603d08952dc4a16298d3"
     },
     {
       "journey": "update-a-note",
@@ -194,16 +240,16 @@
       "locator": {
         "testid": "sidebar-row-snb_all_notes"
       },
-      "sha256": "f510338f92837560b1a6e130ee7a739dd5fa2efdd52cc88a73da80c7dfec71a2"
+      "sha256": "50f2e9285a7d488f3ce144a6595d2cd85dfaef5ca7d2253ad9e466a726dd3f0d"
     },
     {
       "journey": "update-a-note",
       "step": "open-the-note",
       "image": "images/journeys/update-a-note-open-the-note.png",
       "locator": {
-        "css": ".result-card:has-text(\"Reed beds at dusk\")"
+        "css": ".result-card:has-text(\"Notes from the eastern hide\")"
       },
-      "sha256": "e817b5b84b020ddba9e07467bb0db89c5dbd6381fcc1f6b4278800c2903660c4"
+      "sha256": "92599b688b687c3d3ff6154aa5da4483e0a3ffdfcebb0970232daead4c81bdaf"
     },
     {
       "journey": "update-a-note",
@@ -212,7 +258,7 @@
       "locator": {
         "testid": "save-button"
       },
-      "sha256": "4ebad74b7626e892222dd561cb0413ab946a4a4007451b7706be7336370077e9"
+      "sha256": "290194fc6497d5d3b573c67f12ee27fdbd8b45b8b9b105cede22e86456f148ae"
     },
     {
       "journey": "write-a-note",
@@ -221,7 +267,7 @@
       "locator": {
         "testid": "new-note-button"
       },
-      "sha256": "686dc15269c8d35a029b90a2b57ed2eef52009ded20f391449c1506a02cfc4d5"
+      "sha256": "4ec1787e44080865d4e8b41fc474c6f797ce5f81075189d64aefcee42075599b"
     },
     {
       "journey": "write-a-note",
@@ -230,7 +276,7 @@
       "locator": {
         "css": ".cm-content"
       },
-      "sha256": "8e655c181fe0fdad54f299436de743b2c2f06410acd7753c9c700115f1b66f28"
+      "sha256": "ae37e792969a8e551b3e791046a137c97d3afdfc42bfb514be38dcdccc34fb5d"
     }
   ]
 }

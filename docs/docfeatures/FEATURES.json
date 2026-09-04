@@ -94,9 +94,12 @@
       "mcp": [
         "list_search_notebooks"
       ],
-      "surface_note": "Made with `notebooks create --query`, since a query notebook is a notebook whose contents are whatever matches. The GUI lists them in the sidebar and does not create them yet.",
+      "surface_note": "Made with `notebooks create --query` at the command line. In the GUI it is an action on a search that has already run and returned something, rather than a form: the query is one you have watched work, and a notebook made from an unrun query opens empty as easily as it opens right. The query is shown when keeping it and is not editable there, which is what keeps this from being a query form in another place.",
       "cli": [
         "notriosctl notebooks create"
+      ],
+      "gui": [
+        "Keep this search \u2014 an action on a search that has run"
       ]
     },
     {

@@ -1681,3 +1681,45 @@ button.sync-list-row:hover { border-color: var(--accent); }
   line-height: 1.6;
   white-space: pre;
 }
+
+/* Keeping a search sits between the results and the query that produced them,
+   because that is where the decision is made: the results are on screen, and
+   the query has been watched working. */
+.keep-search-button {
+  margin: 0 0 8px;
+  padding: 6px 10px;
+  border: 1px dashed var(--border-strong);
+  border-radius: 8px;
+  color: var(--muted);
+  background: transparent;
+  cursor: pointer;
+  font-size: 12px;
+  text-align: left;
+}
+
+.keep-search-button:hover {
+  color: var(--text);
+  border-style: solid;
+}
+
+.keep-search-form {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 10px;
+  padding: 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  background: var(--panel-bg);
+}
+
+.keep-search-form label {
+  display: grid;
+  gap: 4px;
+  font-size: 12px;
+}
+
+.keep-search-query {
+  margin: 0;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}

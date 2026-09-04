@@ -153,7 +153,7 @@
           "id": "open-the-note",
           "narrative": "Click a note in the results list to open it. The editor fills with the note as it stands; nothing is changed by opening it.",
           "locator": {
-            "css": ".result-card:has-text(\"Reed beds at dusk\")"
+            "css": ".result-card:has-text(\"Notes from the eastern hide\")"
           },
           "action": "click"
         },
@@ -164,7 +164,7 @@
             "css": "input.title-input"
           },
           "action": "fill",
-          "value": "Reed beds at dusk, revised"
+          "value": "Reed bed survey, 14 September"
         },
         {
           "id": "save-it",
@@ -336,6 +336,63 @@
         "narrative": "only the tagged note outside the Help notebook is listed",
         "locator": {
           "css": ".result-card:has-text(\"Reed beds at dusk\")"
+        }
+      }
+    },
+    {
+      "id": "keep-a-search-as-a-notebook",
+      "title": "Keep a search as a notebook",
+      "goal": "Turn a search you have just watched work into a notebook in the sidebar.",
+      "feature": "saved-searches",
+      "steps": [
+        {
+          "id": "run-a-search",
+          "narrative": "Search for whatever you want the notebook to hold. Any query works: this is the same language the rest of the interface takes.",
+          "locator": {
+            "css": ".search-row input"
+          },
+          "action": "fill",
+          "value": "tag:field/dusk"
+        },
+        {
+          "id": "see-it-work",
+          "narrative": "Run it and read the results. This is the point of keeping a search here rather than typing one into a form: you are deciding about a query you have watched work, not one you hope is right.",
+          "locator": {
+            "role": "button",
+            "name": "Search"
+          },
+          "action": "click"
+        },
+        {
+          "id": "keep-it",
+          "narrative": "Keep this search appears once a search has returned something. A query that found nothing is not offered, because a notebook made from it would open empty.",
+          "locator": {
+            "testid": "keep-search"
+          },
+          "action": "click"
+        },
+        {
+          "id": "name-it",
+          "narrative": "The query is suggested as the name and is usually not what you want to read in a sidebar. The query itself is shown below the field but cannot be edited here.",
+          "locator": {
+            "testid": "keep-search-name"
+          },
+          "action": "fill",
+          "value": "Dusk field notes"
+        },
+        {
+          "id": "save-it",
+          "narrative": "Keeping it adds a notebook to the sidebar whose contents are whatever the query matches, now and later.",
+          "locator": {
+            "testid": "keep-search-save"
+          },
+          "action": "click"
+        }
+      ],
+      "postcondition": {
+        "narrative": "the kept search is listed in the sidebar as a notebook",
+        "locator": {
+          "css": ".sidebar-row:has-text(\"Dusk field notes\")"
         }
       }
     }
