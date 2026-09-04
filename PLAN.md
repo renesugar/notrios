@@ -3686,6 +3686,120 @@ interfaces. All eighteen uses now say "GUI", which is the term the product's own
   cannot find a task does not conclude it is command line only; they conclude it
   is missing.
 
+### Saving stays explicit, and the unsaved draft is protected -- Done
+
+Joplin autosaves and has no save button, and the obvious question is why this
+does not. The answer is in the store rather than in taste: every save writes a
+`document_revisions` row, revisions replicate (`sync_revisions.go`,
+`sync_revision_apply.go`), and nothing prunes them -- the only statement that
+removes them is the purge. Autosaving here would turn a morning of typing into
+a hundred synced revisions of the same note, on every device. So the button
+stays, and it correctly reads "Save revision".
+
+That choice creates the obligation this step discharges: if work can be
+unsaved, the interface has to protect it rather than let a click throw it away.
+
+- **It says so.** An "Unsaved changes" chip sits beside the save button
+  whenever the editor differs from the note as it was loaded. A read-only note
+  can never be dirty, so the chip cannot appear on one.
+- **Nothing replaces the editor without asking.** Opening another note,
+  starting a new one, and reloading a note the service rewrote all go through
+  one guard that names the note and says what is discarded. A refusal reaches
+  the service not at all -- the same rule the Trash confirmations follow. The
+  two confirmations that destroy a note say that unsaved changes go with it.
+- **A reload finds the work again.** The draft is written to `localStorage`
+  under `notrios.draft.v1`, and restored on start: if it belongs to a saved
+  note, that note is loaded first, so the restored text saves as a revision of
+  it rather than as a second note with the same words in it. A draft outranks a
+  startup deep link, because the link names something safely in the store and
+  the draft exists nowhere else.
+- **It does not promise what it cannot do.** A draft too large for browser
+  storage, or storage that refuses the write, changes the chip's tooltip
+  instead of being silently dropped.
+
+The draft is the reader's own note text, kept in their own browser, sent
+nowhere, and removed the moment it is saved or discarded.
+
+Covered by `web/src/__tests__/draft.test.ts` (storage, damage, refusal) and
+`web/src/__tests__/draft-protection.test.tsx` (the three properties above, in
+the app shell). One consequence for the journeys: each runs in a fresh browser
+context, so a dirty editor in one cannot silently decline a click in the next.
+
+## H17. Act on many notes at once, from the search results and from a query
+
+**Goal.** Make `batch` reachable by a person and by a script. The capability
+exists on REST as `POST /api/v1/batch` and on MCP as `run_batch` under the
+organizer scope; neither the interface nor the command line can call it, and
+each needs a different missing piece first.
+
+**What batch already is.** Move, add_tags, remove_tags, trash, restore and
+duplicate over an explicit list of notes, bounded at 500 and refused rather
+than truncated. Every item reports `applied`, `skipped`, `failed` or
+`rolled_back`; `mode` changes what a failure does and never what the report
+says. A run that happened is a 200 even when every item failed, because
+per-item failure is the report's content rather than the request's fate.
+`request_key` makes a retry safe, and a key reused with different arguments is
+refused rather than answered from the earlier run.
+
+### The interface needs multi-select, not a batch screen
+
+Batch is what the feature calls, not what it is. The missing primitive is
+selecting more than one note: `SearchPane` tracks a single `selectedDocumentID`
+and renders each hit as a button that opens it.
+
+The shape to follow is Joplin's, which is well understood by anyone migrating.
+Selecting several results replaces the editor and preview with a panel of the
+operations that apply to a set -- tag, move to a notebook chosen from a
+dropdown, duplicate, delete, copy links -- rather than opening a note nobody
+asked to read.
+
+*One driver does not carry over.* In Joplin, bulk move is partly repair: the
+interface can leave you in a different notebook than you think, so notes land
+in the wrong place and are moved in a batch afterwards. This interface already
+guards against that specific failure -- the notebook control shows the open
+note's own notebook rather than the sidebar's selection, deliberately. Bulk
+move here is ordinary reorganisation, not a workaround, which lowers its
+urgency without removing the need.
+
+*What selection means for the editor -- half settled.* Selecting notes and
+having the note you were reading disappear is abrupt if it was unsaved. The
+unsaved half is now handled everywhere else in the editor: one guard asks
+before anything replaces its contents, and the draft survives a reload. The
+multi-select panel must go through that same guard rather than around it, which
+leaves one question of its own -- whether leaving the selection returns to the
+note that was open, or to an empty editor.
+
+### The command line needs a way to name a set
+
+A batch over an explicit list of ids is unusable from a terminal, because
+nothing at the command line produces ids: there is no `notriosctl search`, by
+an existing decision that reading is what the interface and the API are for.
+
+So the useful form is a query rather than a list: select with the same query
+language the search box takes, then act. That keeps one language across
+surfaces and avoids adding a general search command as a side effect.
+
+It must show the selection first. Every destructive or wide-reaching command
+here already works that way -- `tags rename` dry-runs by default, the importers
+scan before writing, `publish run` refuses unless the reviewed digest still
+matches -- and a batch that moved forty notes because a query matched more than
+its author expected is exactly the failure that pattern exists to prevent.
+
+### Open decisions
+
+- **Whether the command line grows `notriosctl batch` or the operations grow a
+  `--query`.** One command with a `--query` and an operation argument keeps the
+  vocabulary in one place; `notes move --query` spreads it across the commands
+  that already exist and reads more naturally for each one.
+- **Whether the interface uses `request_key` at all.** It matters for a client
+  that can be interrupted and retried. A window that has just issued one
+  request and is waiting for its report may not need it, and a key generated
+  per click is a key that never gets reused.
+- **Whether `export` belongs in the panel.** Joplin offers it. Exporting a
+  selection here means a publication or an archive subset, both of which name a
+  folder and are therefore desktop-only, so it would be the one item in the
+  panel that is sometimes absent.
+
 ## H16. Reconcile the collection model with what is actually stored
 
 **Goal.** Decide what a collection is, then make the schema, the API, the

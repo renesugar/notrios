@@ -23,6 +23,7 @@ function paneProps(selectedDocument: DocumentRecord): EditorPaneProps {
     title: selectedDocument.title, onTitleChange: vi.fn(),
     body: selectedDocument.body ?? '', onBodyChange: vi.fn(),
     selectedDocument, editable: true, busy: false, themeBase: 'light',
+    unsaved: false, draftKept: true,
     onSave: vi.fn(), onUploadAndAttach: vi.fn(), onEditorUploadImages: vi.fn(),
     links: [], backlinks: [], resources: [], remoteMedia: [],
     onLocalizeRemoteMedia: vi.fn(), onOpenDocument: vi.fn(), trashed: false,

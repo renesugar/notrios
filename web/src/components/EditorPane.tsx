@@ -55,6 +55,10 @@ export interface EditorPaneProps {
   selectedDocument: DocumentRecord | null;
   editable: boolean;
   busy: boolean;
+  /** The editor holds changes the store does not have yet. */
+  unsaved: boolean;
+  /** The unsaved draft is stored in this browser, so a reload will not lose it. */
+  draftKept: boolean;
   themeBase: ThemeMode;
   onSave: () => void;
   onUploadAndAttach: (file: File | null) => void;
@@ -108,6 +112,8 @@ export function EditorPane(props: EditorPaneProps) {
     busy,
     themeBase,
     onSave,
+    unsaved,
+    draftKept,
     onUploadAndAttach,
     onEditorUploadImages,
     links,
@@ -249,6 +255,21 @@ export function EditorPane(props: EditorPaneProps) {
           {!editable && !trashed && (
             <span className="readonly-badge" data-testid="readonly-badge" role="status">
               Read-only {notebookLabel || 'system'} note
+            </span>
+          )}
+          {/* Saving is deliberate here, so the one thing the reader cannot see
+              -- that this note differs from what is stored -- is said out
+              loud, next to the button that resolves it. */}
+          {editable && unsaved && (
+            <span
+              className="unsaved-badge"
+              data-testid="unsaved-badge"
+              role="status"
+              title={draftKept
+                ? 'Kept in this browser until you save or discard it'
+                : 'Too large to keep in this browser: save it to keep it'}
+            >
+              Unsaved changes
             </span>
           )}
           {editable && (

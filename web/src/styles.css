@@ -1119,6 +1119,19 @@ button.sync-list-row:hover { border-color: var(--accent); }
   white-space: nowrap;
 }
 
+/* Same chip shape as the read-only badge, in the accent colour: it reports a
+   state the reader can act on rather than one they cannot change. */
+.unsaved-badge {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid currentColor;
+  border-radius: 10px;
+  padding: 2px 10px;
+  white-space: nowrap;
+}
+
 .editor-host {
   flex: 1;
   min-height: 0;

@@ -50,6 +50,8 @@ function renderPane(overrides: Partial<EditorPaneProps>) {
     selectedDocument: doc(),
     editable: true,
     busy: false,
+    unsaved: false,
+    draftKept: true,
     themeBase: 'light',
     onSave: vi.fn(),
     onUploadAndAttach: vi.fn(),

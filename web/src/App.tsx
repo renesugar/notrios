@@ -42,6 +42,7 @@ import {
   type TagRecord,
 } from './api';
 import { parseDeepLinkHash, stableLinkStatusMessage } from './stable-links';
+import { clearDraft, discardPrompt, draftDiffers, loadDraft, saveDraft, type Draft } from './draft';
 import {
   allThemes,
   applyTheme,
@@ -91,6 +92,9 @@ import { AboutDialog } from './components/AboutDialog';
 import { TagRename } from './components/TagRename';
 import { LibraryHealth } from './components/LibraryHealth';
 
+// What an untouched new note holds. Named because the draft check compares
+// against it: an editor still showing the template is not unsaved work.
+const NEW_NOTE_TITLE = 'New note';
 const defaultBody = `# New note\n\nWrite Markdown here. Link other notes with:\n\n[Related note](document://default/documents/<document-id>)\n`;
 
 declare global {
@@ -106,7 +110,7 @@ export function App() {
   const [query, setQuery] = useState('');
   const [activeQuery, setActiveQuery] = useState('');
   const [selectedDocument, setSelectedDocument] = useState<DocumentRecord | null>(null);
-  const [title, setTitle] = useState('New note');
+  const [title, setTitle] = useState(NEW_NOTE_TITLE);
   const [body, setBody] = useState(defaultBody);
   const [resources, setResources] = useState<ResourceReference[]>([]);
   // The open note's tags. Held here rather than inside the toolbar control
@@ -252,7 +256,12 @@ export function App() {
     // The desktop protocol handler resolves a notrios:// link to a document ID
     // and opens the local UI at `#document=<id>`, so honour that on startup.
     const deepLink = parseDeepLinkHash(window.location.hash);
-    if (deepLink) void openDocumentByID(deepLink.documentID);
+    // A draft outranks a startup link. The link names a note that is safely in
+    // the store and can be opened at any time; the draft exists nowhere else,
+    // so opening the link over it would be the one irreversible choice here.
+    const draft = loadDraft();
+    if (draft) restoreDraft(draft, Boolean(deepLink));
+    else if (deepLink) void openDocumentByID(deepLink.documentID);
     // The native File menu opens import and export the same way, and sets the
     // same kind of flag first so a menu choice made before React mounts is
     // honoured rather than dropped.
@@ -317,6 +326,104 @@ export function App() {
   }, [status]);
 
   const editable = selectedDocument ? selectedDocument.editable !== false : true;
+
+  // ----- The unsaved draft -----
+  //
+  // Notrios saves on purpose rather than continuously, because every save
+  // writes a revision that is replicated and never pruned (see `draft.ts`).
+  // Two obligations follow, and both belong here rather than in the editor
+  // pane: nothing may replace what is in the editor without asking, and what
+  // is in the editor has to survive the window being reloaded.
+  const draftBaseline = useMemo(
+    () => (selectedDocument
+      ? { title: selectedDocument.title, body: selectedDocument.body ?? '' }
+      : { title: NEW_NOTE_TITLE, body: defaultBody }),
+    [selectedDocument],
+  );
+  // A read-only note cannot be dirty: its fields refuse edits, so a difference
+  // here would be one this code invented rather than one the reader typed.
+  const draftIsDirty = editable && draftDiffers(draftBaseline, { title, body });
+  // False when the draft is too large for the browser's storage, or storage is
+  // unavailable. The badge says so rather than promising work is being kept.
+  const [draftKept, setDraftKept] = useState(true);
+  // Appended to the two confirmations that destroy a note: what is unsaved
+  // in the editor goes with it, and the question should say so.
+  const unsavedChangesGoToo = draftIsDirty ? '\n\nYour unsaved changes to it are discarded.' : '';
+
+  useEffect(() => {
+    if (!draftIsDirty) {
+      clearDraft();
+      setDraftKept(true);
+      return undefined;
+    }
+    // On a short delay rather than on every keystroke. The draft only has to
+    // survive the window going away, and serialising a long note once per
+    // character is a cost paid while somebody is typing. What the delay could
+    // lose -- the last few characters -- is written by the unload handler
+    // below before the window is allowed to go.
+    const timer = window.setTimeout(() => {
+      setDraftKept(saveDraft({ documentID: selectedDocument?.id ?? null, title, body }));
+    }, 300);
+    return () => window.clearTimeout(timer);
+  }, [draftIsDirty, selectedDocument?.id, title, body]);
+
+  // Reload, or a browser tab closed with unsaved work. The draft is stored
+  // either way; this is what keeps the reload from happening unremarked. A
+  // Wails window closed from its own title bar is the app's decision and not
+  // this handler's, which is why the stored copy matters more than the prompt.
+  useEffect(() => {
+    if (!draftIsDirty) return undefined;
+    const warn = (event: BeforeUnloadEvent) => {
+      // Flush first: this is the moment the debounced write exists for.
+      const draftState = draftStateRef.current;
+      saveDraft({ documentID: draftState.documentID, title: draftState.title, body: draftState.body });
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [draftIsDirty]);
+
+  // Read through a ref so the guard keeps one identity for the life of the
+  // app: it is a dependency of `openDocumentByID`, which is a dependency of
+  // the search pane's row handler, and a guard that changed on every
+  // keystroke would re-render the result list on every keystroke.
+  const draftStateRef = useRef<{ dirty: boolean; title: string; body: string; documentID: string | null }>({
+    dirty: false, title: '', body: '', documentID: null,
+  });
+  draftStateRef.current = { dirty: draftIsDirty, title, body, documentID: selectedDocument?.id ?? null };
+
+  /**
+   * confirmDiscard guards everything that replaces the editor's contents.
+   * `action` completes "Discard them and …" so the question reads as one
+   * sentence and names what is about to happen, like the Trash confirmations.
+   */
+  const confirmDiscard = useCallback((action: string) => {
+    const draftState = draftStateRef.current;
+    if (!draftState.dirty) return true;
+    return window.confirm(discardPrompt(draftState.title, action));
+  }, []);
+
+  /**
+   * restoreDraft puts a stored draft back in the editor after a reload. When
+   * the draft belongs to a saved note that note is loaded first, so the
+   * restored text saves as a revision of it rather than as a second note.
+   */
+  function restoreDraft(draft: Draft, linkNotFollowed: boolean) {
+    const when = draft.savedAt ? new Date(draft.savedAt).toLocaleString() : '';
+    const apply = () => {
+      setTitle(draft.title);
+      setBody(draft.body);
+      setMessage(
+        `Restored unsaved changes${when ? ` from ${when}` : ''}. Save them, or start a new note to discard them.`
+        + (linkNotFollowed ? ' The link this window was opened at was not followed, so the changes were not replaced.' : ''),
+      );
+    };
+    // Applied after the load either way: if the note has since been deleted
+    // the load reports that, and the text is still the reader's to save.
+    if (draft.documentID) void openDocumentByID(draft.documentID).then(apply);
+    else apply();
+  }
 
   // Tag changes are applied and then re-read rather than assumed. The server
   // decides what a tag is called -- it normalises and it may already hold the
@@ -393,7 +500,8 @@ export function App() {
     }
   }
 
-  const openDocumentByID = useCallback(async (documentID: string) => {
+  const openDocumentByID = useCallback(async (documentID: string, discardAction = 'open the other note') => {
+    if (!confirmDiscard(discardAction)) return;
     setBusy(true);
     setError(null);
     setMessage(null);
@@ -408,7 +516,7 @@ export function App() {
     } finally {
       setBusy(false);
     }
-  }, []);
+  }, [confirmDiscard]);
 
   // A stable link is resolved by the service, which answers only for the
   // database it has open. A link belonging to another library is reported, not
@@ -528,7 +636,7 @@ export function App() {
       setMessage(`Remote media: ${parts.join(', ')}.`);
       // The note body (and revision) changed; reload it, which also
       // refreshes the remote-media scan.
-      await openDocumentByID(selectedDocument.id);
+      await openDocumentByID(selectedDocument.id, 'reload the note as the service rewrote it');
     } catch (err) {
       setError(errorMessage(err));
     } finally {
@@ -546,7 +654,7 @@ export function App() {
 
   async function onDeleteDocument() {
     if (!selectedDocument || !editable) return;
-    if (!window.confirm(`Move “${selectedDocument.title}” to the Trash?\n\nIt stays in the Trash until you restore it or delete it permanently.`)) return;
+    if (!window.confirm(`Move “${selectedDocument.title}” to the Trash?\n\nIt stays in the Trash until you restore it or delete it permanently.${unsavedChangesGoToo}`)) return;
     setBusy(true);
     setError(null);
     setMessage(null);
@@ -554,7 +662,7 @@ export function App() {
     try {
       await deleteDocument(id, selectedDocument.current_revision_id);
       paged.removeHit(id);
-      resetEditor();
+      clearEditor();
       setMessage(`Moved “${deletedTitle}” to the Trash.`);
       void refreshSidebar();
     } catch (err) {
@@ -589,7 +697,7 @@ export function App() {
 
   async function onPurgeDocument() {
     if (!selectedDocument) return;
-    if (!window.confirm(`Permanently delete “${selectedDocument.title}”?\n\nThe note and every revision of it are removed. This cannot be undone.`)) return;
+    if (!window.confirm(`Permanently delete “${selectedDocument.title}”?\n\nThe note and every revision of it are removed. This cannot be undone.${unsavedChangesGoToo}`)) return;
     setBusy(true);
     setError(null);
     setMessage(null);
@@ -597,7 +705,7 @@ export function App() {
     try {
       await purgeDocument(id);
       paged.removeHit(id);
-      resetEditor();
+      clearEditor();
       setMessage(`Permanently deleted “${purgedTitle}”.`);
       void refreshSidebar();
     } catch (err) {
@@ -689,9 +797,11 @@ export function App() {
     runSearch(nextQuery);
   }
 
-  function resetEditor() {
+  // Raw: it throws away whatever is in the editor. Every path that reaches it
+  // has either asked first or has just deleted the note the draft belonged to.
+  function clearEditor() {
     setSelectedDocument(null);
-    setTitle('New note');
+    setTitle(NEW_NOTE_TITLE);
     setBody(defaultBody);
     setResources([]);
     setLinks([]);
@@ -699,6 +809,11 @@ export function App() {
     setRemoteMedia([]);
     setMessage(null);
     setError(null);
+  }
+
+  function onNewNote() {
+    if (!confirmDiscard('start a new note')) return;
+    clearEditor();
   }
 
   // ----- Theme controls -----
@@ -905,7 +1020,7 @@ export function App() {
           onOpenHit={onOpenHit}
           selectedDocumentID={selectedDocument?.id ?? null}
           busy={busy}
-          onNewNote={resetEditor}
+          onNewNote={onNewNote}
           newNoteNotebookName={creationNotebookName}
           ranQuery={activeQuery}
           onKeepSearch={onKeepSearch}
@@ -925,6 +1040,8 @@ export function App() {
           selectedDocument={selectedDocument}
           editable={editable}
           busy={busy}
+          unsaved={draftIsDirty}
+          draftKept={draftKept}
           themeBase={activeTheme.base}
           onSave={() => void onSaveDocument()}
           onUploadAndAttach={(file) => void onUploadAndAttachResource(file)}
