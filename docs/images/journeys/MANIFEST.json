@@ -12,7 +12,7 @@
       "locator": {
         "testid": "new-note-button"
       },
-      "sha256": "b957b3534021454d5954c29b5c8600c051426e06a7f6e5e46efd5d9edd169172"
+      "sha256": "834a872e70ef8968c8f3057401d2c128ff6af3f52e38f46242b235d9a1586f80"
     },
     {
       "journey": "choose-a-notebook",
@@ -21,16 +21,43 @@
       "locator": {
         "testid": "notebook-picker-trigger"
       },
-      "sha256": "bb37bf811401905849f95886690cf320469b4eee2946e85d85579c8508efb84c"
+      "sha256": "b4b6f9405eb17526ae84b2496bb79e98d4498cd1f6e21d231c18c3e262bfb8c9"
     },
     {
-      "journey": "delete-and-restore-a-note",
-      "step": "open-trash",
-      "image": "images/journeys/delete-and-restore-a-note-open-trash.png",
+      "journey": "delete-a-note",
+      "step": "delete-it",
+      "image": "images/journeys/delete-a-note-delete-it.png",
+      "locator": {
+        "testid": "delete-button"
+      },
+      "sha256": "0e02d6b85528e717622c8dc9946dc6fbe9a55476375ff1715302e28b9f76f40b"
+    },
+    {
+      "journey": "delete-a-note",
+      "step": "look-in-the-trash",
+      "image": "images/journeys/delete-a-note-look-in-the-trash.png",
       "locator": {
         "testid": "sidebar-row-snb_trash"
       },
-      "sha256": "40f4ce98dec9e98a3cb9a8fa38c757111641739797da848ad78bc37f44ddf7a3"
+      "sha256": "6ed9b41cd0e893bf8f665da96a2912d3b5e2ff969a8355ecda33630c25206e6e"
+    },
+    {
+      "journey": "delete-a-note",
+      "step": "open-all-notes",
+      "image": "images/journeys/delete-a-note-open-all-notes.png",
+      "locator": {
+        "testid": "sidebar-row-snb_all_notes"
+      },
+      "sha256": "9de0278d988606628910251fe245787bf5c979f4fe4504602953e77d82b78479"
+    },
+    {
+      "journey": "delete-a-note",
+      "step": "open-the-note",
+      "image": "images/journeys/delete-a-note-open-the-note.png",
+      "locator": {
+        "css": ".result-card:has-text(\"Old shopping list\")"
+      },
+      "sha256": "6128be047ddb680d1317cce3b763480e904adda62011ea521e1ca126c9dd4b22"
     },
     {
       "journey": "find-your-way-around",
@@ -39,7 +66,81 @@
       "locator": {
         "testid": "sidebar-row-nb_help"
       },
-      "sha256": "b43a966b44955ae11a23813d446f290544a4b72d152bb22bfa63b10afebfb611"
+      "sha256": "af64e91dcba0d68c9f53ef962baa686365c49c79a59e5072d9123f35f78e7c64"
+    },
+    {
+      "journey": "restore-a-note",
+      "step": "back-to-all-notes",
+      "image": "images/journeys/restore-a-note-back-to-all-notes.png",
+      "locator": {
+        "testid": "sidebar-row-snb_all_notes"
+      },
+      "sha256": "8edde16fb9a9e30a950c6bf49f73a3312260be74e728fb1676139db7df80ae55"
+    },
+    {
+      "journey": "restore-a-note",
+      "step": "open-the-trash",
+      "image": "images/journeys/restore-a-note-open-the-trash.png",
+      "locator": {
+        "testid": "sidebar-row-snb_trash"
+      },
+      "sha256": "e624c1a961f24ea50bf8b72a8d9ba62561302eaddc62d70407e61d206581083a"
+    },
+    {
+      "journey": "restore-a-note",
+      "step": "open-the-trashed-note",
+      "image": "images/journeys/restore-a-note-open-the-trashed-note.png",
+      "locator": {
+        "css": ".result-card:has-text(\"Recipe I still want\")"
+      },
+      "sha256": "d4a943f99b7b818c26a613014dfee0ae6e8b07a35dda023b512cd7f437ed2e19"
+    },
+    {
+      "journey": "restore-a-note",
+      "step": "restore-it",
+      "image": "images/journeys/restore-a-note-restore-it.png",
+      "locator": {
+        "testid": "restore-button"
+      },
+      "sha256": "01bbe9e17b59d0341d60d1e475282cf0e4b6078017c5e0ca14246a26e507e1bc"
+    },
+    {
+      "journey": "search-by-tag-and-exclude",
+      "step": "run-it",
+      "image": "images/journeys/search-by-tag-and-exclude-run-it.png",
+      "locator": {
+        "role": "button",
+        "name": "Search"
+      },
+      "sha256": "d19ce5dd1ce693d1aa526966cf70175760dd56ef367a8db36fc6f6c05e8deb16"
+    },
+    {
+      "journey": "search-by-tag-and-exclude",
+      "step": "type-a-field-query",
+      "image": "images/journeys/search-by-tag-and-exclude-type-a-field-query.png",
+      "locator": {
+        "css": ".search-row input"
+      },
+      "sha256": "a8b1eaa9f4d5d54e3aa35d3a955da242fce8f9480835d108a154316729c5083d"
+    },
+    {
+      "journey": "search-your-notes",
+      "step": "run-it",
+      "image": "images/journeys/search-your-notes-run-it.png",
+      "locator": {
+        "role": "button",
+        "name": "Search"
+      },
+      "sha256": "30b8a9f586191f3f43c384a82bce8630df0b3bffc295e50f809d758669a51a8e"
+    },
+    {
+      "journey": "search-your-notes",
+      "step": "type-a-query",
+      "image": "images/journeys/search-your-notes-type-a-query.png",
+      "locator": {
+        "css": ".search-row input"
+      },
+      "sha256": "a8b1eaa9f4d5d54e3aa35d3a955da242fce8f9480835d108a154316729c5083d"
     },
     {
       "journey": "tag-a-note",
@@ -48,7 +149,7 @@
       "locator": {
         "testid": "tag-editor-add"
       },
-      "sha256": "bd96034b1100778435dbece7bc9923796780d5b9e95a709a7b7cdf5a45214d29"
+      "sha256": "8d99174c40b5ba23b08a79347c3bf3921caea87014f602178e171808cd340f86"
     },
     {
       "journey": "tag-a-note",
@@ -57,7 +158,7 @@
       "locator": {
         "testid": "new-note-button"
       },
-      "sha256": "b957b3534021454d5954c29b5c8600c051426e06a7f6e5e46efd5d9edd169172"
+      "sha256": "686dc15269c8d35a029b90a2b57ed2eef52009ded20f391449c1506a02cfc4d5"
     },
     {
       "journey": "tag-a-note",
@@ -66,7 +167,7 @@
       "locator": {
         "testid": "tag-editor-trigger"
       },
-      "sha256": "543638946aeca21c5e9e3268e09f8046e5b64d3beb610a8dbc3e7e162cdcd50f"
+      "sha256": "fefc48ba41040d3ed33c1309cfaa424c32006fb1cf15211e2b8097c1e4ac1106"
     },
     {
       "journey": "tag-a-note",
@@ -75,7 +176,43 @@
       "locator": {
         "testid": "tag-editor-input"
       },
-      "sha256": "e36f5337f26e4ebeda581f26ba0d1f95c27151e1cd228567c72f5ac2e2f6190b"
+      "sha256": "d668f9762a3f7feeb066a20afba1ca694a6ba63b72fd8d6071166ff614718289"
+    },
+    {
+      "journey": "update-a-note",
+      "step": "change-the-title",
+      "image": "images/journeys/update-a-note-change-the-title.png",
+      "locator": {
+        "css": "input.title-input"
+      },
+      "sha256": "99ea179a3113425193102919c2bc8290acbc136ba9fcf5139c805d8e2d743595"
+    },
+    {
+      "journey": "update-a-note",
+      "step": "open-all-notes",
+      "image": "images/journeys/update-a-note-open-all-notes.png",
+      "locator": {
+        "testid": "sidebar-row-snb_all_notes"
+      },
+      "sha256": "f510338f92837560b1a6e130ee7a739dd5fa2efdd52cc88a73da80c7dfec71a2"
+    },
+    {
+      "journey": "update-a-note",
+      "step": "open-the-note",
+      "image": "images/journeys/update-a-note-open-the-note.png",
+      "locator": {
+        "css": ".result-card:has-text(\"Reed beds at dusk\")"
+      },
+      "sha256": "e817b5b84b020ddba9e07467bb0db89c5dbd6381fcc1f6b4278800c2903660c4"
+    },
+    {
+      "journey": "update-a-note",
+      "step": "save-it",
+      "image": "images/journeys/update-a-note-save-it.png",
+      "locator": {
+        "testid": "save-button"
+      },
+      "sha256": "4ebad74b7626e892222dd561cb0413ab946a4a4007451b7706be7336370077e9"
     },
     {
       "journey": "write-a-note",
@@ -84,7 +221,7 @@
       "locator": {
         "testid": "new-note-button"
       },
-      "sha256": "b957b3534021454d5954c29b5c8600c051426e06a7f6e5e46efd5d9edd169172"
+      "sha256": "686dc15269c8d35a029b90a2b57ed2eef52009ded20f391449c1506a02cfc4d5"
     },
     {
       "journey": "write-a-note",
@@ -93,7 +230,7 @@
       "locator": {
         "css": ".cm-content"
       },
-      "sha256": "f8f2cda24b5b3e47eb3825e311e54afbe40c42d72bb241a16dd9be26167e7a52"
+      "sha256": "8e655c181fe0fdad54f299436de743b2c2f06410acd7753c9c700115f1b66f28"
     }
   ]
 }

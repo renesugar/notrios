@@ -135,6 +135,13 @@ try {
           sha256: crypto.createHash('sha256').update(await fs.readFile(absolute)).digest('hex'),
         });
 
+        // Playwright dismisses dialogs unless told otherwise, so a step that
+        // clicks a control guarded by window.confirm did nothing at all and
+        // reported success: the delete journey clicked Move to Trash, the
+        // confirmation was declined for it, and the note was still there. A
+        // step must say that it answers a confirmation, and only that step's
+        // dialog is accepted.
+        if (step.confirm) page.once('dialog', (dialog) => void dialog.accept());
         if (step.action === 'click') await target.click();
         else if (step.action === 'fill') await target.fill(step.value ?? '');
       }

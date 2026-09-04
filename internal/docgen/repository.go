@@ -33,6 +33,12 @@ const (
 	mcpToolScopeAnchor = "go:github.com/renesugar/notrios/internal/httpapi#mcpToolScopes"
 	guiJourneyAnchor   = "go:github.com/renesugar/notrios/internal/docjourney#LoadAndValidate"
 	featureAnchor      = "go:github.com/renesugar/notrios/internal/docfeatures#Registry"
+	// Distinct from featureAnchor on purpose: the dispatch below is keyed by
+	// the enumerates anchor, so two fragments that name the same symbol render
+	// the same list. This one was written with #Registry and silently produced
+	// the whole catalogue where it meant to produce the part of it with no
+	// interface.
+	guiAbsentAnchor    = "go:github.com/renesugar/notrios/internal/docfeatures#(Registry).WithoutGUILines"
 	cliJourneyAnchor   = "go:github.com/renesugar/notrios/internal/docjourneys#Catalogue"
 	guiCatalogueAnchor = "go:github.com/renesugar/notrios/internal/docjourneys#GUICatalogue"
 	compareAnchor      = "go:github.com/renesugar/notrios/internal/doccompare#Difference"
@@ -68,6 +74,12 @@ func RepositoryResolver(root string) Resolver {
 				return nil, err
 			}
 			return registry.Lines(), nil
+		case guiAbsentAnchor:
+			registry, err := docfeatures.Load(filepath.Join(root, "docs", "docfeatures", "FEATURES.json"))
+			if err != nil {
+				return nil, err
+			}
+			return registry.WithoutGUILines(), nil
 		case cliJourneyAnchor:
 			catalogue, err := docjourneys.Load(filepath.Join(root, "docs", "docjourneys", "CLI_JOURNEYS.json"))
 			if err != nil {

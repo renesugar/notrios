@@ -54,6 +54,34 @@ type Registry struct {
 	Features []Feature `json:"features"`
 }
 
+// Everything here is command-line or API work today. Where a capability is
+// absent for a reason rather than for want of doing it, the reason is given.
+//
+//notrios:doc user gui-absent-capabilities
+//notrios:help journeys-gui what-the-gui-does-not-do
+//notrios:enumerates go:github.com/renesugar/notrios/internal/docfeatures#(Registry).WithoutGUILines
+func (r Registry) WithoutGUILines() []string {
+	// This section used to be a paragraph somebody kept up to date by hand, and
+	// it stopped being true twice in one day: it still said tags were read-only
+	// in the interface after tagging was built, and still said importing was
+	// command-line work after the desktop app grew an import dialog. The
+	// coverage gates could not see either, because prose is not a claim they
+	// check. Deriving the list from the same registry the rest of the page uses
+	// means the page cannot say the interface lacks something it has.
+	lines := []string{}
+	for _, feature := range r.Features {
+		if len(feature.GUI) > 0 {
+			continue
+		}
+		line := fmt.Sprintf("**%s** — %s", feature.Title, feature.Summary)
+		if feature.SurfaceNote != "" {
+			line += " " + feature.SurfaceNote
+		}
+		lines = append(lines, line)
+	}
+	return lines
+}
+
 // Lines renders the catalogue for the generated fragment: one line per
 // feature, naming the surfaces that offer it.
 //

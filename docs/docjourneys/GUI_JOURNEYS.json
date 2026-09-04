@@ -89,28 +89,6 @@
       }
     },
     {
-      "id": "delete-and-restore-a-note",
-      "title": "Delete a note, and get it back",
-      "goal": "Send a note to Trash and restore it, so you can see that deleting is reversible.",
-      "feature": "write-notes",
-      "steps": [
-        {
-          "id": "open-trash",
-          "narrative": "Trash sits at the bottom of the sidebar and is a place you can look in, not a countdown. Notes stay there until you empty it.",
-          "locator": {
-            "testid": "sidebar-row-snb_trash"
-          },
-          "action": "click"
-        }
-      ],
-      "postcondition": {
-        "narrative": "the Trash view is open",
-        "locator": {
-          "testid": "sidebar-row-snb_trash"
-        }
-      }
-    },
-    {
       "id": "tag-a-note",
       "title": "Tag a note",
       "goal": "Put a tag on the note you are writing, and take one off.",
@@ -154,6 +132,210 @@
         "narrative": "the tag control is showing the note's tags",
         "locator": {
           "testid": "tag-editor-list"
+        }
+      }
+    },
+    {
+      "id": "update-a-note",
+      "title": "Change a note you already wrote",
+      "goal": "Open an existing note, change it, and save the change.",
+      "feature": "write-notes",
+      "steps": [
+        {
+          "id": "open-all-notes",
+          "narrative": "All notes is every note in the library, whichever notebook it is filed in. Start here when you know what a note is called but not where you put it.",
+          "locator": {
+            "testid": "sidebar-row-snb_all_notes"
+          },
+          "action": "click"
+        },
+        {
+          "id": "open-the-note",
+          "narrative": "Click a note in the results list to open it. The editor fills with the note as it stands; nothing is changed by opening it.",
+          "locator": {
+            "css": ".result-card:has-text(\"Reed beds at dusk\")"
+          },
+          "action": "click"
+        },
+        {
+          "id": "change-the-title",
+          "narrative": "The title is an ordinary field at the top of the editor. Change it the way you would change any text.",
+          "locator": {
+            "css": "input.title-input"
+          },
+          "action": "fill",
+          "value": "Reed beds at dusk, revised"
+        },
+        {
+          "id": "save-it",
+          "narrative": "Saving writes a new revision rather than overwriting the old one, so the version you just replaced is still there.",
+          "locator": {
+            "testid": "save-button"
+          },
+          "action": "click"
+        }
+      ],
+      "postcondition": {
+        "narrative": "the note is open with its new title, saved as a fresh revision",
+        "locator": {
+          "testid": "note-inspector"
+        }
+      }
+    },
+    {
+      "id": "delete-a-note",
+      "title": "Delete a note",
+      "goal": "Move a note to the Trash and confirm it arrived there.",
+      "feature": "write-notes",
+      "steps": [
+        {
+          "id": "open-all-notes",
+          "narrative": "Find the note first. Deleting is something you do to an open note, not to a row in a list, so that it is always clear which note is about to go.",
+          "locator": {
+            "testid": "sidebar-row-snb_all_notes"
+          },
+          "action": "click"
+        },
+        {
+          "id": "open-the-note",
+          "narrative": "Open the note you mean to delete and read it once. This is the last screen on which its text is in front of you.",
+          "locator": {
+            "css": ".result-card:has-text(\"Old shopping list\")"
+          },
+          "action": "click"
+        },
+        {
+          "id": "delete-it",
+          "narrative": "Deleting asks you to confirm, and names the note it is about to move so that a mis-clicked row cannot become a deleted note. Deleting moves it to the Trash; it is not destroyed, and nothing here empties the Trash on a timer.",
+          "locator": {
+            "testid": "delete-button"
+          },
+          "action": "click",
+          "confirm": true
+        },
+        {
+          "id": "look-in-the-trash",
+          "narrative": "Trash is a place you can open and look inside, not a countdown. The note is in it.",
+          "locator": {
+            "testid": "sidebar-row-snb_trash"
+          },
+          "action": "click"
+        }
+      ],
+      "postcondition": {
+        "narrative": "the deleted note is listed in the Trash",
+        "locator": {
+          "css": ".result-card:has-text(\"Old shopping list\")"
+        }
+      }
+    },
+    {
+      "id": "restore-a-note",
+      "title": "Take a note back out of the Trash",
+      "goal": "Restore a deleted note and confirm it is back among your notes.",
+      "feature": "write-notes",
+      "steps": [
+        {
+          "id": "open-the-trash",
+          "narrative": "Open the Trash to see what is in it. Everything here was deleted and none of it is gone.",
+          "locator": {
+            "testid": "sidebar-row-snb_trash"
+          },
+          "action": "click"
+        },
+        {
+          "id": "open-the-trashed-note",
+          "narrative": "Open the note you want back. A trashed note opens read-only, with a badge saying why.",
+          "locator": {
+            "css": ".result-card:has-text(\"Recipe I still want\")"
+          },
+          "action": "click"
+        },
+        {
+          "id": "restore-it",
+          "narrative": "Restoring returns the note to the notebook it was filed in, not to some general inbox.",
+          "locator": {
+            "testid": "restore-button"
+          },
+          "action": "click"
+        },
+        {
+          "id": "back-to-all-notes",
+          "narrative": "All notes again, to see it where it belongs.",
+          "locator": {
+            "testid": "sidebar-row-snb_all_notes"
+          },
+          "action": "click"
+        }
+      ],
+      "postcondition": {
+        "narrative": "the restored note is listed among the notes again",
+        "locator": {
+          "css": ".result-card:has-text(\"Recipe I still want\")"
+        }
+      }
+    },
+    {
+      "id": "search-your-notes",
+      "title": "Search for a note",
+      "goal": "Find notes by what they say, using the same query language the command line takes.",
+      "feature": "search-notes",
+      "steps": [
+        {
+          "id": "type-a-query",
+          "narrative": "The search box takes the query language, not just a word. Bare words are combined with an implicit AND; an uppercase OR widens the search instead.",
+          "locator": {
+            "css": ".search-row input"
+          },
+          "action": "fill",
+          "value": "harriers OR trowel"
+        },
+        {
+          "id": "run-it",
+          "narrative": "Run the search. Results are ordered by relevance and page as you scroll, so a large library does not have to be loaded to be searched.",
+          "locator": {
+            "role": "button",
+            "name": "Search"
+          },
+          "action": "click"
+        }
+      ],
+      "postcondition": {
+        "narrative": "notes matching either side of the OR are listed",
+        "locator": {
+          "css": ".result-card:has-text(\"Reed beds at dusk\")"
+        }
+      }
+    },
+    {
+      "id": "search-by-tag-and-exclude",
+      "title": "Narrow a search by tag, and exclude what you do not want",
+      "goal": "Use a field query and a negation together, which is what most real searches turn out to be.",
+      "feature": "search-notes",
+      "steps": [
+        {
+          "id": "type-a-field-query",
+          "narrative": "tag: matches a tag rather than the note's text, and a leading minus excludes. Here that is everything tagged field/dusk except the documentation.",
+          "locator": {
+            "css": ".search-row input"
+          },
+          "action": "fill",
+          "value": "tag:field/dusk -notebook:\"Help\""
+        },
+        {
+          "id": "run-it",
+          "narrative": "The same box runs it. Every query-language feature works here exactly as it does in notriosctl search, because it is the same parser.",
+          "locator": {
+            "role": "button",
+            "name": "Search"
+          },
+          "action": "click"
+        }
+      ],
+      "postcondition": {
+        "narrative": "only the tagged note outside the Help notebook is listed",
+        "locator": {
+          "css": ".result-card:has-text(\"Reed beds at dusk\")"
         }
       }
     }

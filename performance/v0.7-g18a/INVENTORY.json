@@ -1735,7 +1735,7 @@
     },
     {
       "path": "docs/journeys-gui.md",
-      "sha256": "ecaa8344f6baf9b3ae7a05bbd5b97550884785b1a998186b601941c3c4367a34",
+      "sha256": "3d99526907e689745568672fa266d033ecc1de74d533ba6ebfcefc738a515d14",
       "help_note": "doc_help_journeys_gui",
       "owner": "go:github.com/renesugar/notrios/internal/docjourneys#GUICatalogue",
       "sections": [

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -40,6 +41,7 @@ func TestGUIJourneyCapture(t *testing.T) {
 		filepath.Join(repoRoot, "docs")); seed.exitCode != 0 {
 		t.Fatalf("seed-help exited %d: %s", seed.exitCode, seed.stderr)
 	}
+	seedJourneyFixtures(t, cli, replica)
 	address := unusedLoopbackAddress(t)
 	startDaemon(t, daemon, g18eConfig(t, replica, address, "", true, webDir), address)
 
@@ -51,4 +53,49 @@ func TestGUIJourneyCapture(t *testing.T) {
 		t.Fatalf("GUI journey capture failed: %v\n%s", err, output)
 	}
 	t.Logf("GUI journey capture:\n%s", output)
+}
+
+// seedJourneyFixtures creates the notes the update, delete, restore and search
+// journeys act on.
+//
+// The Help notebook alone is not enough for them: its notes are read only, so
+// an update journey pointed at one would photograph a disabled editor, and a
+// delete journey would have nothing it is allowed to delete. These are ordinary
+// writable notes with titles a reader can follow through a screenshot, which is
+// the whole reason they are named rather than generated.
+//
+// Nothing here is anybody's real note. A screenshot of this interface is a
+// picture of whatever is in it, so what is in it is disposable by construction.
+func seedJourneyFixtures(t *testing.T, cli string, replica *syncReplica) {
+	t.Helper()
+	create := func(title, body string) string {
+		result := runCLI(t, cli, "notes", "create", "--db", replica.db, "--asset-store", replica.assets,
+			"--title", title, "--body", body)
+		if result.exitCode != 0 {
+			t.Fatalf("notes create %q exited %d: %s", title, result.exitCode, result.stderr)
+		}
+		var created struct {
+			DocumentID string `json:"document_id"`
+		}
+		if err := json.Unmarshal([]byte(result.stdout), &created); err != nil {
+			t.Fatalf("notes create %q printed unreadable JSON: %v\n%s", title, err, result.stdout)
+		}
+		return created.DocumentID
+	}
+
+	reed := create("Reed beds at dusk", "Seen from the eastern hide. Two marsh harriers.\n")
+	if tagged := runCLI(t, cli, "tags", "add", "--db", replica.db, "--asset-store", replica.assets,
+		"--document", reed, "--tag", "field/dusk"); tagged.exitCode != 0 {
+		t.Fatalf("tags add exited %d: %s", tagged.exitCode, tagged.stderr)
+	}
+	create("Old shopping list", "Oats, tinned tomatoes, a new trowel.\n")
+
+	// Already in the Trash, because a restore journey has to start from a note
+	// that is in there. Creating and deleting it inside the journey would spend
+	// four screenshots re-photographing the delete journey.
+	recipe := create("Recipe I still want", "The one with brown butter and sage.\n")
+	if deleted := runCLI(t, cli, "notes", "delete", "--db", replica.db, "--asset-store", replica.assets,
+		"--document", recipe); deleted.exitCode != 0 {
+		t.Fatalf("notes delete exited %d: %s", deleted.exitCode, deleted.stderr)
+	}
 }

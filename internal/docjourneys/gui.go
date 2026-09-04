@@ -29,6 +29,12 @@ type GUIStep struct {
 	Locator   GUILocator `json:"locator"`
 	Action    string     `json:"action"`
 	Value     string     `json:"value,omitempty"`
+	// Confirm marks a step whose control asks the person to confirm before it
+	// acts. It is declared per step rather than accepted for every step,
+	// because a capture that silently agreed to every dialog would be a
+	// capture that could delete something no journey meant to touch -- and
+	// because the confirmation is part of what the journey has to show.
+	Confirm bool `json:"confirm,omitempty"`
 }
 
 type GUIJourney struct {

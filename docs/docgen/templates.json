@@ -150,6 +150,15 @@
       "path": "docs/journeys-gui.md",
       "sections": [
         {
+          "slug": "what-the-gui-does-not-do",
+          "slots": [
+            {
+              "id": "gui-absent-capabilities",
+              "audience": "user"
+            }
+          ]
+        },
+        {
           "slug": "the-journeys",
           "slots": [
             {

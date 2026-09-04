@@ -57,9 +57,13 @@ def validate_templates(root=ROOT):
                 slot_ids.add(ident)
                 slots.append((ident, audience, path, slug))
     # 15 -> 16 in v0.8 H14 slice B: the feature-surface slot on docs/features.md.
-    require(len(slots) == 19, "expected 19 slots")
+    # 19 -> 20 in v0.8 H15: the gui-absent-capabilities slot on
+    # docs/journeys-gui.md, which replaced a hand-kept paragraph that had gone
+    # wrong twice without any gate noticing.
+    require(len(slots) == 20, "expected 20 slots")
     # 13 -> 14 user slots in v0.8 H14 slice B: the feature list is user-facing.
-    require(sum(item[1] == "user" for item in slots) == 17 and sum(item[1] == "api" for item in slots) == 2, "expected 17 user/2 api slots")
+    # 17 -> 18 user slots in v0.8 H15: so is the list of what the GUI lacks.
+    require(sum(item[1] == "user" for item in slots) == 18 and sum(item[1] == "api" for item in slots) == 2, "expected 18 user/2 api slots")
     return template, slots
 
 
@@ -71,7 +75,12 @@ def source_fragments(root=ROOT):
         found.extend((match.group(2), match.group(1)) for match in DIRECTIVE.finditer(path.read_text(encoding="utf-8")))
     # 15 -> 16 in v0.8 H14 slice B: the feature-surface fragment on
     # internal/docfeatures#Registry.
-    require(len(found) == 19 and len({item[0] for item in found}) == 19, "expected 19 unique production source fragments")
+    # 19 -> 20 in v0.8 H15: the gui-absent-capabilities fragment on
+    # (Registry).WithoutGUILines. Its enumerates anchor names the method rather
+    # than the type, because the generator dispatches on that anchor and two
+    # fragments naming one symbol render the same list -- which is exactly what
+    # happened first, silently.
+    require(len(found) == 20 and len({item[0] for item in found}) == 20, "expected 20 unique production source fragments")
     return dict(found)
 
 
@@ -216,7 +225,12 @@ def validate_advisory(slots, root=ROOT, here=HERE):
     reviewed = {item.get("id") for item in reviews}
     require(reviewed <= user_ids, "a recorded review names a fragment that no longer exists")
     unreviewed = sorted(user_ids - reviewed)
-    require(unreviewed == ["cli-journey-surface", "feature-surface", "gui-journey-catalogue", "surface-comparison"], f"unreviewed user fragments changed: {unreviewed}")
+    # v0.8 H15 added gui-absent-capabilities, also after that run and also
+    # recorded as unreviewed rather than assumed to have passed. Writing a
+    # review entry for it would mean inventing model output that never existed.
+    require(unreviewed == ["cli-journey-surface", "feature-surface", "gui-absent-capabilities",
+                           "gui-journey-catalogue", "surface-comparison"],
+            f"unreviewed user fragments changed: {unreviewed}")
     example_states, journey_states = fixture_ids(root)
     verdict_counts = {key: 0 for key in VERDICTS}
     contradicted, accepted = [], 0

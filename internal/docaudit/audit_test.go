@@ -66,7 +66,15 @@ func TestRepositoryAuditReportsHonestCoverage(t *testing.T) {
 	// 229 -> 230 sections and 143 -> 142 executables when the journey pages
 	// were rewritten as user documentation: the meta sections describing
 	// hashes and regenerate commands went, taking one example with them.
-	if report.ManualSections != 230 || report.Fragments != 19 || report.Claims != 4 ||
+	// 19 -> 20 fragments in v0.8 H15: "What the GUI does not do" on
+	// docs/journeys-gui.md became generated. It had been a hand-kept paragraph
+	// and it was wrong twice -- still calling tags read-only after tagging was
+	// built, still calling importing command-line work after the desktop app
+	// grew an import dialog. Neither was caught, because prose is not a claim
+	// any gate checks; deriving the list from the registry is what makes it
+	// one. The section count does not move: the section is still there, and now
+	// carries a fragment.
+	if report.ManualSections != 230 || report.Fragments != 20 || report.Claims != 4 ||
 		report.Executables != 142 || report.Journeys != 9 {
 		t.Fatalf("unexpected coverage surface: %+v", report)
 	}
@@ -91,9 +99,13 @@ func TestRepositoryAuditReportsHonestCoverage(t *testing.T) {
 		// by cmd/notriosctl TestMigrateCredentialsRoundTrip instead.
 		// 296 -> 300 unverified and 382 -> 387 denominator in v0.8 H14 slice B:
 		// four new prose sections and one generated fragment.
-		report.Counts[GradeGenerated] != 15 ||
+		// 15 -> 16 generated and 400 -> 401 denominator in v0.8 H15: the
+		// generated "What the GUI does not do" list. One unit arrives and none
+		// leaves, because the prose it replaced was inside a section that is
+		// still counted.
+		report.Counts[GradeGenerated] != 16 ||
 		report.Counts[GradeClaimed] != 4 || report.Counts[GradeUnverified] != 310 ||
-		report.Denominator != 400 {
+		report.Denominator != 401 {
 		t.Fatalf("coverage counts hide or lose units: counts=%v denominator=%d", report.Counts, report.Denominator)
 	}
 	if len(resolvedTS) == 0 {
