@@ -15,6 +15,17 @@
 // found would eventually find one of them. Navigation that only changes which
 // view is showing is performed, because most controls do not exist until you
 // are somewhere; anything else is read from its label and left alone.
+//
+// The first version of this file crawled six *views* and concluded that the GUI
+// had no attachment, remote-media or job controls. That was wrong, and wrong in
+// the way a measurement is worst: it produced a number that looked like an
+// answer. Those controls are not in other places, they are in other *states* --
+// the sync centre has eight tabs and the crawl only ever saw the one it opens
+// on; the localize button needs a note that has remote media in it; restore and
+// purge need a note that is in the Trash. So this crawls states, each one a
+// short sequence of steps from a freshly loaded page, and the seeding that
+// makes those states reachable is part of the harness rather than an accident
+// of whatever the library happened to contain.
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
@@ -28,18 +39,65 @@ const outPath = process.env.NOTRIOS_GUI_CONTROLS
   || path.join(root, 'performance/v0.8-h15/GUI_CONTROLS.json');
 const chromePath = process.env.CHROME_PATH || '/usr/bin/google-chrome';
 
-const VIEWS = [
-  { id: 'start', open: null },
-  { id: 'all-notes', open: { testid: 'sidebar-row-snb_all_notes' } },
-  { id: 'help', open: { testid: 'sidebar-row-nb_help' } },
-  { id: 'trash', open: { testid: 'sidebar-row-snb_trash' } },
-  { id: 'new-note', open: { testid: 'new-note-button' } },
-  { id: 'sync-center', open: { role: 'button', name: 'Sync$' } },
+// A state is a name and the steps that reach it. Steps are deliberately small
+// and declarative -- a test id, an accessible role and name, or a CSS selector
+// with an index -- so that a state is readable as a claim about the interface
+// ("open the sync centre, then the Attachments tab") rather than as a script.
+const SIDEBAR_ALL = { testid: 'sidebar-row-snb_all_notes' };
+const SIDEBAR_TRASH = { testid: 'sidebar-row-snb_trash' };
+// Located by class, not by name. Its descriptive string is a `title`
+// attribute and its glyph span is aria-hidden, so the accessible name is the
+// bare word "Sync" -- and a role+name step written from the label the earlier
+// inventory displayed silently failed all eight sync states.
+const OPEN_SYNC = { css: '.sync-header-button' };
+const syncTab = (label) => ({ role: 'button', name: `^${label}` });
+
+const STATES = [
+  { id: 'start', steps: [] },
+  { id: 'all-notes', steps: [SIDEBAR_ALL] },
+  { id: 'help', steps: [{ testid: 'sidebar-row-nb_help' }] },
+  { id: 'trash', steps: [SIDEBAR_TRASH] },
+  { id: 'new-note', steps: [{ testid: 'new-note-button' }] },
+
+  // A note has to be *open* before the controls that act on one exist. The
+  // six-view crawl clicked into a notebook and stopped there, which is why it
+  // recorded no delete button in an interface that has had one throughout.
+  // Named fixtures rather than "whatever is first". The first card in All
+  // notes is a Help note, which is read only, so an index-based click would
+  // have gone on missing the controls that only a writable note has.
+  { id: 'note-open', steps: [SIDEBAR_ALL, { css: '.result-card', match: 'Crawl fixture note' }] },
+  { id: 'note-trashed', steps: [SIDEBAR_TRASH, { css: '.result-card', match: 'Trashed fixture note' }] },
+
+  // Seeded with a note whose body carries an image on an allowed domain. The
+  // scan that produces this list is server-side policy only; nothing is
+  // fetched, here or by the crawl.
+  { id: 'note-remote-media', steps: [SIDEBAR_ALL, { css: '.result-card', match: 'Remote media fixture' }] },
+
+  // Eight tabs, of which the earlier crawl saw one. Attachments and Backup are
+  // where two of the three "missing" capabilities actually live.
+  { id: 'sync-overview', steps: [OPEN_SYNC] },
+  { id: 'sync-setup', steps: [OPEN_SYNC, syncTab('Setup')] },
+  { id: 'sync-peers', steps: [OPEN_SYNC, syncTab('Peers')] },
+  { id: 'sync-retention', steps: [OPEN_SYNC, syncTab('Retention')] },
+  { id: 'sync-attachments', steps: [OPEN_SYNC, syncTab('Attachments')] },
+  { id: 'sync-conflicts', steps: [OPEN_SYNC, syncTab('Conflicts')] },
+  { id: 'sync-backup', steps: [OPEN_SYNC, syncTab('Backup')] },
+  { id: 'sync-repairs', steps: [OPEN_SYNC, syncTab('Repairs')] },
 ];
 
-function resolve(page, locator) {
-  if (locator.testid) return page.getByTestId(locator.testid);
-  return page.getByRole(locator.role, { name: new RegExp(locator.name, 'i') });
+function resolve(page, step) {
+  if (step.testid) return page.getByTestId(step.testid);
+  if (step.css) {
+    const all = step.match ? page.locator(step.css).filter({ hasText: step.match }) : page.locator(step.css);
+    return all.nth(step.nth || 0);
+  }
+  return page.getByRole(step.role, { name: new RegExp(step.name, 'i') });
+}
+
+function describe(step) {
+  if (step.testid) return `testid=${step.testid}`;
+  if (step.css) return `css=${step.css}${step.match ? ` text~${step.match}` : ''}#${step.nth || 0}`;
+  return `${step.role}=${step.name}`;
 }
 
 // A real function, not a string. Passing a string to page.evaluate evaluates it
@@ -93,32 +151,43 @@ function identify(control) {
 }
 
 const controls = new Map();
-const views = [];
+const states = [];
 const browser = await chromium.launch({ headless: true, executablePath: chromePath });
 try {
   const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
   const page = await context.newPage();
-  await page.goto(baseURL, { waitUntil: 'domcontentloaded' });
-  await page.locator('main.app-shell').waitFor();
 
-  for (const view of VIEWS) {
-    if (view.open) {
-      const target = resolve(page, view.open).first();
+  for (const state of STATES) {
+    // Each state starts from a fresh load. The earlier crawl accumulated clicks
+    // across its whole run, which happened to work when the only modal was
+    // opened last; with sixteen states one left-open dialog would silently
+    // change everything measured after it.
+    await page.goto(baseURL, { waitUntil: 'domcontentloaded' });
+    await page.locator('main.app-shell').waitFor();
+
+    let failed = null;
+    for (const step of state.steps) {
+      const target = resolve(page, step);
       try {
         await target.waitFor({ state: 'visible', timeout: 5000 });
         await target.click();
         await page.waitForTimeout(400);
       } catch (error) {
-        views.push({ id: view.id, reached: false, error: String(error).slice(0, 120) });
-        continue;
+        failed = `${describe(step)}: ${String(error).slice(0, 100)}`;
+        break;
       }
     }
+    if (failed) {
+      states.push({ id: state.id, reached: false, error: failed });
+      continue;
+    }
+
     const found = await page.evaluate(collectControls);
     for (const control of found) {
       const id = identify(control);
       if (!controls.has(id)) {
         controls.set(id, { id, tag: control.tag, role: control.role, testid: control.testid,
-          examples: [], instances: 0, views: [] });
+          examples: [], instances: 0, states: [] });
       }
       const record = controls.get(id);
       record.instances++;
@@ -127,9 +196,9 @@ try {
       if (control.label && record.examples.length < 3 && !record.examples.includes(control.label)) {
         record.examples.push(control.label);
       }
-      if (!record.views.includes(view.id)) record.views.push(view.id);
+      if (!record.states.includes(state.id)) record.states.push(state.id);
     }
-    views.push({ id: view.id, reached: true, controls: found.length });
+    states.push({ id: state.id, reached: true, controls: found.length, steps: state.steps.map(describe) });
   }
   await context.close();
 } finally {
@@ -138,8 +207,20 @@ try {
 
 const inventory = [...controls.values()].sort((a, b) => a.id.localeCompare(b.id));
 await fs.writeFile(outPath, JSON.stringify({
-  schema: 'notrios.h15.gui-controls.v1',
-  views,
+  schema: 'notrios.h15.gui-controls.v2',
+  states,
   controls: inventory,
 }, null, 2) + '\n');
-console.log(JSON.stringify({ views, controls: inventory.length }, null, 2));
+console.log(JSON.stringify({ states, controls: inventory.length }, null, 2));
+
+// An unreached state is a failure, not a note in the output. The first run of
+// the sixteen-state crawl reached eight of them -- one locator was written from
+// a `title` attribute that is not the accessible name -- and the Go test around
+// it passed, because the crawl exited 0 and reported a smaller inventory. A
+// measurement that quietly shrinks is worse than one that stops, so it stops.
+const unreached = states.filter((state) => !state.reached);
+if (unreached.length > 0) {
+  console.error(`${unreached.length} of ${states.length} states were never reached:`);
+  for (const state of unreached) console.error(`  ${state.id}: ${state.error}`);
+  process.exitCode = 1;
+}

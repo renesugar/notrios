@@ -1,35 +1,141 @@
 {
-  "schema": "notrios.h15.gui-controls.v1",
-  "views": [
+  "schema": "notrios.h15.gui-controls.v2",
+  "states": [
     {
       "id": "start",
       "reached": true,
-      "controls": 78
+      "controls": 80,
+      "steps": []
     },
     {
       "id": "all-notes",
       "reached": true,
-      "controls": 78
+      "controls": 80,
+      "steps": [
+        "testid=sidebar-row-snb_all_notes"
+      ]
     },
     {
       "id": "help",
       "reached": true,
-      "controls": 78
+      "controls": 78,
+      "steps": [
+        "testid=sidebar-row-nb_help"
+      ]
     },
     {
       "id": "trash",
       "reached": true,
-      "controls": 60
+      "controls": 61,
+      "steps": [
+        "testid=sidebar-row-snb_trash"
+      ]
     },
     {
       "id": "new-note",
       "reached": true,
-      "controls": 60
+      "controls": 80,
+      "steps": [
+        "testid=new-note-button"
+      ]
     },
     {
-      "id": "sync-center",
+      "id": "note-open",
       "reached": true,
-      "controls": 74
+      "controls": 84,
+      "steps": [
+        "testid=sidebar-row-snb_all_notes",
+        "css=.result-card text~Crawl fixture note#0"
+      ]
+    },
+    {
+      "id": "note-trashed",
+      "reached": true,
+      "controls": 60,
+      "steps": [
+        "testid=sidebar-row-snb_trash",
+        "css=.result-card text~Trashed fixture note#0"
+      ]
+    },
+    {
+      "id": "note-remote-media",
+      "reached": true,
+      "controls": 86,
+      "steps": [
+        "testid=sidebar-row-snb_all_notes",
+        "css=.result-card text~Remote media fixture#0"
+      ]
+    },
+    {
+      "id": "sync-overview",
+      "reached": true,
+      "controls": 94,
+      "steps": [
+        "css=.sync-header-button#0"
+      ]
+    },
+    {
+      "id": "sync-setup",
+      "reached": true,
+      "controls": 95,
+      "steps": [
+        "css=.sync-header-button#0",
+        "button=^Setup"
+      ]
+    },
+    {
+      "id": "sync-peers",
+      "reached": true,
+      "controls": 95,
+      "steps": [
+        "css=.sync-header-button#0",
+        "button=^Peers"
+      ]
+    },
+    {
+      "id": "sync-retention",
+      "reached": true,
+      "controls": 89,
+      "steps": [
+        "css=.sync-header-button#0",
+        "button=^Retention"
+      ]
+    },
+    {
+      "id": "sync-attachments",
+      "reached": true,
+      "controls": 89,
+      "steps": [
+        "css=.sync-header-button#0",
+        "button=^Attachments"
+      ]
+    },
+    {
+      "id": "sync-conflicts",
+      "reached": true,
+      "controls": 89,
+      "steps": [
+        "css=.sync-header-button#0",
+        "button=^Conflicts"
+      ]
+    },
+    {
+      "id": "sync-backup",
+      "reached": true,
+      "controls": 100,
+      "steps": [
+        "css=.sync-header-button#0",
+        "button=^Backup"
+      ]
+    },
+    {
+      "id": "sync-repairs",
+      "reached": true,
+      "controls": 89,
+      "steps": [
+        "css=.sync-header-button#0",
+        "button=^Repairs"
+      ]
     }
   ],
   "controls": [
@@ -41,14 +147,49 @@
       "examples": [
         "Related note"
       ],
-      "instances": 6,
-      "views": [
+      "instances": 14,
+      "states": [
         "start",
         "all-notes",
         "help",
         "trash",
         "new-note",
-        "sync-center"
+        "note-remote-media",
+        "sync-overview",
+        "sync-setup",
+        "sync-peers",
+        "sync-retention",
+        "sync-attachments",
+        "sync-conflicts",
+        "sync-backup",
+        "sync-repairs"
+      ]
+    },
+    {
+      "id": "shape:button|||password-row",
+      "tag": "button",
+      "role": "",
+      "testid": "",
+      "examples": [
+        "Show"
+      ],
+      "instances": 2,
+      "states": [
+        "sync-backup"
+      ]
+    },
+    {
+      "id": "shape:button|||row-actions",
+      "tag": "button",
+      "role": "",
+      "testid": "",
+      "examples": [
+        "Cancel",
+        "Request catch-up"
+      ],
+      "instances": 2,
+      "states": [
+        "sync-backup"
       ]
     },
     {
@@ -59,14 +200,37 @@
       "examples": [
         "Search"
       ],
-      "instances": 6,
-      "views": [
+      "instances": 16,
+      "states": [
         "start",
         "all-notes",
         "help",
         "trash",
         "new-note",
-        "sync-center"
+        "note-open",
+        "note-trashed",
+        "note-remote-media",
+        "sync-overview",
+        "sync-setup",
+        "sync-peers",
+        "sync-retention",
+        "sync-attachments",
+        "sync-conflicts",
+        "sync-backup",
+        "sync-repairs"
+      ]
+    },
+    {
+      "id": "shape:button|||sync-card",
+      "tag": "button",
+      "role": "",
+      "testid": "",
+      "examples": [
+        "Create 15-minute code"
+      ],
+      "instances": 1,
+      "states": [
+        "sync-peers"
       ]
     },
     {
@@ -78,8 +242,21 @@
         "0"
       ],
       "instances": 4,
-      "views": [
-        "sync-center"
+      "states": [
+        "sync-overview"
+      ]
+    },
+    {
+      "id": "shape:button|||sync-section",
+      "tag": "button",
+      "role": "",
+      "testid": "",
+      "examples": [
+        "Discover on configured carrier"
+      ],
+      "instances": 1,
+      "states": [
+        "sync-peers"
       ]
     },
     {
@@ -92,9 +269,33 @@
         "Peers",
         "Retention"
       ],
-      "instances": 7,
-      "views": [
-        "sync-center"
+      "instances": 56,
+      "states": [
+        "sync-overview",
+        "sync-setup",
+        "sync-peers",
+        "sync-retention",
+        "sync-attachments",
+        "sync-conflicts",
+        "sync-backup",
+        "sync-repairs"
+      ]
+    },
+    {
+      "id": "shape:button||active.result-card|pane-scroll.result-list",
+      "tag": "button",
+      "role": "",
+      "testid": "",
+      "examples": [
+        "Crawl fixture note",
+        "Trashed fixture note",
+        "Remote media fixture"
+      ],
+      "instances": 3,
+      "states": [
+        "note-open",
+        "note-trashed",
+        "note-remote-media"
       ]
     },
     {
@@ -103,11 +304,33 @@
       "role": "",
       "testid": "",
       "examples": [
-        "Overview"
+        "Overview",
+        "Setup",
+        "Peers"
+      ],
+      "instances": 8,
+      "states": [
+        "sync-overview",
+        "sync-setup",
+        "sync-peers",
+        "sync-retention",
+        "sync-attachments",
+        "sync-conflicts",
+        "sync-backup",
+        "sync-repairs"
+      ]
+    },
+    {
+      "id": "shape:button||danger-button|row-actions",
+      "tag": "button",
+      "role": "",
+      "testid": "",
+      "examples": [
+        "Request reset review"
       ],
       "instances": 1,
-      "views": [
-        "sync-center"
+      "states": [
+        "sync-backup"
       ]
     },
     {
@@ -118,9 +341,16 @@
       "examples": [
         "Close sync center"
       ],
-      "instances": 1,
-      "views": [
-        "sync-center"
+      "instances": 8,
+      "states": [
+        "sync-overview",
+        "sync-setup",
+        "sync-peers",
+        "sync-retention",
+        "sync-attachments",
+        "sync-conflicts",
+        "sync-backup",
+        "sync-repairs"
       ]
     },
     {
@@ -132,14 +362,37 @@
         "Toggle light/dark theme",
         "Theme settings"
       ],
-      "instances": 12,
-      "views": [
+      "instances": 32,
+      "states": [
         "start",
         "all-notes",
         "help",
         "trash",
         "new-note",
-        "sync-center"
+        "note-open",
+        "note-trashed",
+        "note-remote-media",
+        "sync-overview",
+        "sync-setup",
+        "sync-peers",
+        "sync-retention",
+        "sync-attachments",
+        "sync-conflicts",
+        "sync-backup",
+        "sync-repairs"
+      ]
+    },
+    {
+      "id": "shape:button||md-editor-disabled.md-editor-toolbar-item|md-editor-toolbar-left",
+      "tag": "button",
+      "role": "",
+      "testid": "",
+      "examples": [
+        "Notebook: Notes"
+      ],
+      "instances": 1,
+      "states": [
+        "note-trashed"
       ]
     },
     {
@@ -152,14 +405,65 @@
         "Tags — click to add or remove",
         "bold"
       ],
-      "instances": 132,
-      "views": [
+      "instances": 351,
+      "states": [
         "start",
         "all-notes",
         "help",
         "trash",
         "new-note",
-        "sync-center"
+        "note-open",
+        "note-trashed",
+        "note-remote-media",
+        "sync-overview",
+        "sync-setup",
+        "sync-peers",
+        "sync-retention",
+        "sync-attachments",
+        "sync-conflicts",
+        "sync-backup",
+        "sync-repairs"
+      ]
+    },
+    {
+      "id": "shape:button||primary-button|row-actions",
+      "tag": "button",
+      "role": "",
+      "testid": "",
+      "examples": [
+        "Verify for review"
+      ],
+      "instances": 1,
+      "states": [
+        "sync-backup"
+      ]
+    },
+    {
+      "id": "shape:button||primary-button|sync-card",
+      "tag": "button",
+      "role": "",
+      "testid": "",
+      "examples": [
+        "Pair explicitly",
+        "Create and download"
+      ],
+      "instances": 2,
+      "states": [
+        "sync-peers",
+        "sync-backup"
+      ]
+    },
+    {
+      "id": "shape:button||primary-button|sync-form-section.sync-section",
+      "tag": "button",
+      "role": "",
+      "testid": "",
+      "examples": [
+        "Save transport"
+      ],
+      "instances": 1,
+      "states": [
+        "sync-setup"
       ]
     },
     {
@@ -171,8 +475,8 @@
         "Sync now"
       ],
       "instances": 1,
-      "views": [
-        "sync-center"
+      "states": [
+        "sync-overview"
       ]
     },
     {
@@ -181,15 +485,27 @@
       "role": "",
       "testid": "",
       "examples": [
-        "🔒 Troubleshooting",
-        "🔒 Stable links between notes and machines",
-        "🔒 The Notrios service"
+        "Remote media fixture",
+        "Crawl fixture note",
+        "🔒 Troubleshooting"
       ],
-      "instances": 54,
-      "views": [
+      "instances": 277,
+      "states": [
         "start",
         "all-notes",
-        "help"
+        "help",
+        "trash",
+        "new-note",
+        "note-open",
+        "note-remote-media",
+        "sync-overview",
+        "sync-setup",
+        "sync-peers",
+        "sync-retention",
+        "sync-attachments",
+        "sync-conflicts",
+        "sync-backup",
+        "sync-repairs"
       ]
     },
     {
@@ -200,14 +516,102 @@
       "examples": [
         "Open synchronization, pairing, backup, and recovery"
       ],
-      "instances": 6,
-      "views": [
+      "instances": 16,
+      "states": [
         "start",
         "all-notes",
         "help",
         "trash",
         "new-note",
-        "sync-center"
+        "note-open",
+        "note-trashed",
+        "note-remote-media",
+        "sync-overview",
+        "sync-setup",
+        "sync-peers",
+        "sync-retention",
+        "sync-attachments",
+        "sync-conflicts",
+        "sync-backup",
+        "sync-repairs"
+      ]
+    },
+    {
+      "id": "shape:input|||",
+      "tag": "input",
+      "role": "",
+      "testid": "",
+      "examples": [
+        "Laptop",
+        "http://127.0.0.1:8081"
+      ],
+      "instances": 5,
+      "states": [
+        "sync-peers",
+        "sync-backup"
+      ]
+    },
+    {
+      "id": "shape:input|||directory-picker",
+      "tag": "input",
+      "role": "",
+      "testid": "",
+      "examples": [
+        "/absolute/path/to/shared-folder"
+      ],
+      "instances": 1,
+      "states": [
+        "sync-setup"
+      ]
+    },
+    {
+      "id": "shape:input|||link-picker-field",
+      "tag": "input",
+      "role": "",
+      "testid": "",
+      "examples": [
+        "Search notes to link"
+      ],
+      "instances": 2,
+      "states": [
+        "note-open",
+        "note-remote-media"
+      ]
+    },
+    {
+      "id": "shape:input|||password-row",
+      "tag": "input",
+      "role": "",
+      "testid": "",
+      "examples": [],
+      "instances": 2,
+      "states": [
+        "sync-backup"
+      ]
+    },
+    {
+      "id": "shape:input|||radio-row",
+      "tag": "input",
+      "role": "",
+      "testid": "",
+      "examples": [
+        "sync-target"
+      ],
+      "instances": 3,
+      "states": [
+        "sync-setup"
+      ]
+    },
+    {
+      "id": "shape:input|||resource-upload",
+      "tag": "input",
+      "role": "",
+      "testid": "",
+      "examples": [],
+      "instances": 2,
+      "states": [
+        "note-open",
+        "note-remote-media"
       ]
     },
     {
@@ -218,14 +622,24 @@
       "examples": [
         "Search query"
       ],
-      "instances": 6,
-      "views": [
+      "instances": 16,
+      "states": [
         "start",
         "all-notes",
         "help",
         "trash",
         "new-note",
-        "sync-center"
+        "note-open",
+        "note-trashed",
+        "note-remote-media",
+        "sync-overview",
+        "sync-setup",
+        "sync-peers",
+        "sync-retention",
+        "sync-attachments",
+        "sync-conflicts",
+        "sync-backup",
+        "sync-repairs"
       ]
     },
     {
@@ -236,14 +650,24 @@
       "examples": [
         "Note title"
       ],
-      "instances": 6,
-      "views": [
+      "instances": 16,
+      "states": [
         "start",
         "all-notes",
         "help",
         "trash",
         "new-note",
-        "sync-center"
+        "note-open",
+        "note-trashed",
+        "note-remote-media",
+        "sync-overview",
+        "sync-setup",
+        "sync-peers",
+        "sync-retention",
+        "sync-attachments",
+        "sync-conflicts",
+        "sync-backup",
+        "sync-repairs"
       ]
     },
     {
@@ -252,14 +676,23 @@
       "role": "menuitem",
       "testid": "",
       "examples": [],
-      "instances": 18,
-      "views": [
+      "instances": 45,
+      "states": [
         "start",
         "all-notes",
         "help",
         "trash",
         "new-note",
-        "sync-center"
+        "note-open",
+        "note-remote-media",
+        "sync-overview",
+        "sync-setup",
+        "sync-peers",
+        "sync-retention",
+        "sync-attachments",
+        "sync-conflicts",
+        "sync-backup",
+        "sync-repairs"
       ]
     },
     {
@@ -268,14 +701,24 @@
       "role": "menuitem",
       "testid": "",
       "examples": [],
-      "instances": 12,
-      "views": [
+      "instances": 32,
+      "states": [
         "start",
         "all-notes",
         "help",
         "trash",
         "new-note",
-        "sync-center"
+        "note-open",
+        "note-trashed",
+        "note-remote-media",
+        "sync-overview",
+        "sync-setup",
+        "sync-peers",
+        "sync-retention",
+        "sync-attachments",
+        "sync-conflicts",
+        "sync-backup",
+        "sync-repairs"
       ]
     },
     {
@@ -284,14 +727,24 @@
       "role": "menuitem",
       "testid": "",
       "examples": [],
-      "instances": 48,
-      "views": [
+      "instances": 128,
+      "states": [
         "start",
         "all-notes",
         "help",
         "trash",
         "new-note",
-        "sync-center"
+        "note-open",
+        "note-trashed",
+        "note-remote-media",
+        "sync-overview",
+        "sync-setup",
+        "sync-peers",
+        "sync-retention",
+        "sync-attachments",
+        "sync-conflicts",
+        "sync-backup",
+        "sync-repairs"
       ]
     },
     {
@@ -300,14 +753,94 @@
       "role": "menuitem",
       "testid": "",
       "examples": [],
-      "instances": 36,
-      "views": [
+      "instances": 96,
+      "states": [
         "start",
         "all-notes",
         "help",
         "trash",
         "new-note",
-        "sync-center"
+        "note-open",
+        "note-trashed",
+        "note-remote-media",
+        "sync-overview",
+        "sync-setup",
+        "sync-peers",
+        "sync-retention",
+        "sync-attachments",
+        "sync-conflicts",
+        "sync-backup",
+        "sync-repairs"
+      ]
+    },
+    {
+      "id": "shape:select|||",
+      "tag": "select",
+      "role": "",
+      "testid": "",
+      "examples": [
+        "Default — active"
+      ],
+      "instances": 1,
+      "states": [
+        "sync-setup"
+      ]
+    },
+    {
+      "id": "shape:select|||local-graph-depth",
+      "tag": "select",
+      "role": "",
+      "testid": "",
+      "examples": [
+        "Hops from this note"
+      ],
+      "instances": 3,
+      "states": [
+        "note-open",
+        "note-trashed",
+        "note-remote-media"
+      ]
+    },
+    {
+      "id": "shape:summary|||note-inspector",
+      "tag": "summary",
+      "role": "",
+      "testid": "",
+      "examples": [
+        "Note info"
+      ],
+      "instances": 3,
+      "states": [
+        "note-open",
+        "note-trashed",
+        "note-remote-media"
+      ]
+    },
+    {
+      "id": "testid:delete-button",
+      "tag": "button",
+      "role": "",
+      "testid": "delete-button",
+      "examples": [
+        "Move this note to the Trash; it can be restored from there"
+      ],
+      "instances": 2,
+      "states": [
+        "note-open",
+        "note-remote-media"
+      ]
+    },
+    {
+      "id": "testid:localize-button",
+      "tag": "button",
+      "role": "",
+      "testid": "localize-button",
+      "examples": [
+        "Download allowed remote media through the quarantine pipeline and rewrite this n"
+      ],
+      "instances": 1,
+      "states": [
+        "note-remote-media"
       ]
     },
     {
@@ -318,14 +851,24 @@
       "examples": [
         "Start a new note in “Notes”"
       ],
-      "instances": 6,
-      "views": [
+      "instances": 16,
+      "states": [
         "start",
         "all-notes",
         "help",
         "trash",
         "new-note",
-        "sync-center"
+        "note-open",
+        "note-trashed",
+        "note-remote-media",
+        "sync-overview",
+        "sync-setup",
+        "sync-peers",
+        "sync-retention",
+        "sync-attachments",
+        "sync-conflicts",
+        "sync-backup",
+        "sync-repairs"
       ]
     },
     {
@@ -334,14 +877,50 @@
       "role": "option",
       "testid": "notebook-option-nb_notes",
       "examples": [],
-      "instances": 6,
-      "views": [
+      "instances": 16,
+      "states": [
         "start",
         "all-notes",
         "help",
         "trash",
         "new-note",
-        "sync-center"
+        "note-open",
+        "note-trashed",
+        "note-remote-media",
+        "sync-overview",
+        "sync-setup",
+        "sync-peers",
+        "sync-retention",
+        "sync-attachments",
+        "sync-conflicts",
+        "sync-backup",
+        "sync-repairs"
+      ]
+    },
+    {
+      "id": "testid:purge-button",
+      "tag": "button",
+      "role": "",
+      "testid": "purge-button",
+      "examples": [
+        "Permanently delete this note and its revisions"
+      ],
+      "instances": 1,
+      "states": [
+        "note-trashed"
+      ]
+    },
+    {
+      "id": "testid:restore-button",
+      "tag": "button",
+      "role": "",
+      "testid": "restore-button",
+      "examples": [
+        "Restore"
+      ],
+      "instances": 1,
+      "states": [
+        "note-trashed"
       ]
     },
     {
@@ -350,16 +929,26 @@
       "role": "",
       "testid": "save-button",
       "examples": [
-        "Create note"
+        "Create note",
+        "Save revision"
       ],
-      "instances": 6,
-      "views": [
+      "instances": 15,
+      "states": [
         "start",
         "all-notes",
         "help",
         "trash",
         "new-note",
-        "sync-center"
+        "note-open",
+        "note-remote-media",
+        "sync-overview",
+        "sync-setup",
+        "sync-peers",
+        "sync-retention",
+        "sync-attachments",
+        "sync-conflicts",
+        "sync-backup",
+        "sync-repairs"
       ]
     },
     {
@@ -370,14 +959,24 @@
       "examples": [
         "Help"
       ],
-      "instances": 6,
-      "views": [
+      "instances": 16,
+      "states": [
         "start",
         "all-notes",
         "help",
         "trash",
         "new-note",
-        "sync-center"
+        "note-open",
+        "note-trashed",
+        "note-remote-media",
+        "sync-overview",
+        "sync-setup",
+        "sync-peers",
+        "sync-retention",
+        "sync-attachments",
+        "sync-conflicts",
+        "sync-backup",
+        "sync-repairs"
       ]
     },
     {
@@ -388,14 +987,24 @@
       "examples": [
         "Notes"
       ],
-      "instances": 6,
-      "views": [
+      "instances": 16,
+      "states": [
         "start",
         "all-notes",
         "help",
         "trash",
         "new-note",
-        "sync-center"
+        "note-open",
+        "note-trashed",
+        "note-remote-media",
+        "sync-overview",
+        "sync-setup",
+        "sync-peers",
+        "sync-retention",
+        "sync-attachments",
+        "sync-conflicts",
+        "sync-backup",
+        "sync-repairs"
       ]
     },
     {
@@ -406,14 +1015,24 @@
       "examples": [
         "Recovered"
       ],
-      "instances": 6,
-      "views": [
+      "instances": 16,
+      "states": [
         "start",
         "all-notes",
         "help",
         "trash",
         "new-note",
-        "sync-center"
+        "note-open",
+        "note-trashed",
+        "note-remote-media",
+        "sync-overview",
+        "sync-setup",
+        "sync-peers",
+        "sync-retention",
+        "sync-attachments",
+        "sync-conflicts",
+        "sync-backup",
+        "sync-repairs"
       ]
     },
     {
@@ -424,14 +1043,24 @@
       "examples": [
         "Reports"
       ],
-      "instances": 6,
-      "views": [
+      "instances": 16,
+      "states": [
         "start",
         "all-notes",
         "help",
         "trash",
         "new-note",
-        "sync-center"
+        "note-open",
+        "note-trashed",
+        "note-remote-media",
+        "sync-overview",
+        "sync-setup",
+        "sync-peers",
+        "sync-retention",
+        "sync-attachments",
+        "sync-conflicts",
+        "sync-backup",
+        "sync-repairs"
       ]
     },
     {
@@ -442,14 +1071,24 @@
       "examples": [
         "All notes"
       ],
-      "instances": 6,
-      "views": [
+      "instances": 16,
+      "states": [
         "start",
         "all-notes",
         "help",
         "trash",
         "new-note",
-        "sync-center"
+        "note-open",
+        "note-trashed",
+        "note-remote-media",
+        "sync-overview",
+        "sync-setup",
+        "sync-peers",
+        "sync-retention",
+        "sync-attachments",
+        "sync-conflicts",
+        "sync-backup",
+        "sync-repairs"
       ]
     },
     {
@@ -460,14 +1099,24 @@
       "examples": [
         "Trash"
       ],
-      "instances": 6,
-      "views": [
+      "instances": 16,
+      "states": [
         "start",
         "all-notes",
         "help",
         "trash",
         "new-note",
-        "sync-center"
+        "note-open",
+        "note-trashed",
+        "note-remote-media",
+        "sync-overview",
+        "sync-setup",
+        "sync-peers",
+        "sync-retention",
+        "sync-attachments",
+        "sync-conflicts",
+        "sync-backup",
+        "sync-repairs"
       ]
     },
     {
@@ -476,14 +1125,24 @@
       "role": "",
       "testid": "tag-editor-add",
       "examples": [],
-      "instances": 6,
-      "views": [
+      "instances": 16,
+      "states": [
         "start",
         "all-notes",
         "help",
         "trash",
         "new-note",
-        "sync-center"
+        "note-open",
+        "note-trashed",
+        "note-remote-media",
+        "sync-overview",
+        "sync-setup",
+        "sync-peers",
+        "sync-retention",
+        "sync-attachments",
+        "sync-conflicts",
+        "sync-backup",
+        "sync-repairs"
       ]
     },
     {
@@ -494,14 +1153,24 @@
       "examples": [
         "Add a tag"
       ],
-      "instances": 6,
-      "views": [
+      "instances": 16,
+      "states": [
         "start",
         "all-notes",
         "help",
         "trash",
         "new-note",
-        "sync-center"
+        "note-open",
+        "note-trashed",
+        "note-remote-media",
+        "sync-overview",
+        "sync-setup",
+        "sync-peers",
+        "sync-retention",
+        "sync-attachments",
+        "sync-conflicts",
+        "sync-backup",
+        "sync-repairs"
       ]
     },
     {
@@ -512,14 +1181,24 @@
       "examples": [
         "Tags"
       ],
-      "instances": 6,
-      "views": [
+      "instances": 16,
+      "states": [
         "start",
         "all-notes",
         "help",
         "trash",
         "new-note",
-        "sync-center"
+        "note-open",
+        "note-trashed",
+        "note-remote-media",
+        "sync-overview",
+        "sync-setup",
+        "sync-peers",
+        "sync-retention",
+        "sync-attachments",
+        "sync-conflicts",
+        "sync-backup",
+        "sync-repairs"
       ]
     }
   ]

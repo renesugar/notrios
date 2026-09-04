@@ -3301,18 +3301,63 @@ than by exploring one. And a crawler must not click everything: delete, purge an
 retire are all reachable, so it enumerates and describes rather than activating,
 and anything destructive is recorded from its label and left alone.
 
-**The remaining GUI gaps, enumerated 2026-09-04.** Eighteen of twenty-nine
-capabilities have no recorded GUI surface. They are not one job, and grouping
-them by what the work actually is matters more than listing them.
+**The remaining GUI gaps, enumerated 2026-09-04, then measured.** The
+enumeration said eighteen of twenty-nine capabilities had no recorded GUI
+surface. After widening the crawl it is fifteen, and the three that moved were
+moved by looking rather than by building anything.
 
-*Three are probably not gaps at all, and the measurement cannot yet say.* The
-registry records no GUI support for **attachments**, **remote media** or
-**jobs**, while `web/src` carries resource handling in fifteen files,
-localization in six and job handling in five. The control crawl visits six views
-and none of them is where those controls live, so the inventory does not contain
-them and the column stays wrong. **Widening the crawl is the first task**, before
-any of it is built: writing a feature that already exists would be the most
-wasteful possible outcome of a bad measurement.
+*The crawl was widened first, and it changed the answer.* The registry recorded
+no GUI support for **attachments**, **remote media** or **jobs**, and the
+suspicion written here was that the six-view crawl simply did not go where those
+controls live. That was right about the conclusion and wrong about the reason.
+They are not in other *places*. They are in other **states**: a note open rather
+than a notebook listed, a note in the Trash, a note that actually points at a
+remote image, the sync centre on a tab other than the one it opens on. Moving
+between notebooks changes which notes are listed and not which controls exist,
+which is why four of the original six views turn out to measure the same shell.
+
+So the crawl now visits sixteen states, each a short sequence of steps from a
+freshly loaded page, with the notes those states need seeded by the harness and
+matched by title. The inventory went from 29 controls to 52. Nothing was added
+to the interface: **23 controls were there the whole time and had never been
+looked at**, including `delete-button`, `restore-button`, `purge-button`,
+`localize-button`, the "Upload image/PDF/resource" field in the note inspector,
+and every control on seven of the sync centre's eight tabs -- pairing codes,
+carrier discovery, transport setup, the profile selector, snapshot creation and
+download, catch-up and reset review.
+
+Corrected in `FEATURES.json` on that evidence: **attachments** and **remote
+media** have GUI surfaces and their notes saying otherwise were wrong; note
+deletion, restore and purge join **write-notes**; profile *switching* is in the
+GUI while creating and forgetting profiles is not. **Jobs** is left as it was,
+because the crawl does not settle it either -- job rows render only once a job
+exists and nothing seeded one, so that row is unmeasured rather than known
+absent, and it now says so.
+
+*Two findings about the measurement itself, which matter more than the count.*
+The first widened run reached eight of its sixteen states and the Go test around
+it passed: a locator had been written from a `title` attribute that is not the
+button's accessible name, so all eight sync states timed out, the crawl exited 0,
+and the inventory was simply smaller. That is the identical failure to the one
+this whole exercise exists to correct -- a measurement that quietly shrinks looks
+exactly like an interface with fewer controls -- so the crawl now exits non-zero
+on any unreached state and names each one. The second: the figures quoted in the
+paragraph this replaces ("resource handling in fifteen files, localization in
+six, job handling in five") counted tests and stylesheets. In source alone it is
+about ten, five and two. They were used to argue the gaps were false, which they
+were, but the argument was padded.
+
+The validator pins 52 controls and 16 states, requires each state that was added
+for a specific control to actually contain it, and requires every state that is
+not a recorded empty one to show something the opening state does not. Eight
+mutations were checked and all eight failed the validator: a silently unreached
+state, a control leaving the state added to reveal it, a control disappearing
+entirely, a state's controls moving elsewhere, a duplicate, a drift of one in
+either direction, and a reverted schema. Four sync tabs -- retention,
+attachments, conflicts, repairs -- are recorded as reached and empty, because a
+library with no conflicts and no missing resources has nothing to show there.
+That is a limit of what is seeded, written down rather than left to be
+rediscovered.
 
 *Four are file-picker work, and they are one job wearing four hats.* Importing
 from a Joplin RAW directory, importing an Obsidian vault, exporting a library,

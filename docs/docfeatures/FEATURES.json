@@ -29,9 +29,12 @@
         "delete_note"
       ],
       "gui": [
-        "Create a note in a notebook — executed (new-note-in-notebook)",
-        "Edit and save a note — executed (edit-save)",
-        "Restore a note from Trash — executed (trash-restore)"
+        "Create a note in a notebook \u2014 executed (new-note-in-notebook)",
+        "Edit and save a note \u2014 executed (edit-save)",
+        "Restore a note from Trash \u2014 executed (trash-restore)",
+        "Move this note to the Trash",
+        "Restore",
+        "Permanently delete this note and its revisions"
       ],
       "surface_note": "The command line writes a note and files it, and does no more than that: editing, appending and deleting happen in the GUI or over REST/MCP. `notes create` exists so a note can be the end of a pipeline."
     },
@@ -75,7 +78,7 @@
         "search_in_note"
       ],
       "gui": [
-        "Page through search results — executed (search-page)"
+        "Page through search results \u2014 executed (search-page)"
       ],
       "surface_note": "No command line search command; `notriosctl export archive --query` applies the same language to an export instead."
     },
@@ -123,8 +126,8 @@
         "move_note_to_notebook"
       ],
       "gui": [
-        "Choose a notebook for a new note — executed (new-note-in-notebook)",
-        "Review a notebook deletion — executed (delete-notebook-review)"
+        "Choose a notebook for a new note \u2014 executed (new-note-in-notebook)",
+        "Review a notebook deletion \u2014 executed (delete-notebook-review)"
       ]
     },
     {
@@ -204,7 +207,11 @@
         "list_document_resources",
         "read_resource"
       ],
-      "surface_note": "No GUI journey for attachment management yet."
+      "surface_note": "Measured by the H15 control crawl, which found the upload field in the note inspector and the Attachments tab. This was recorded as absent from the GUI until the crawl opened a note; no journey covers it yet.",
+      "gui": [
+        "Upload image/PDF/resource \u2014 the file field in the note inspector",
+        "Attachments \u2014 a sync centre tab"
+      ]
     },
     {
       "id": "remote-media",
@@ -224,7 +231,11 @@
         "localize_remote_media",
         "request_resource_fetch"
       ],
-      "surface_note": "No GUI journey; localizing is a maintenance action rather than an editing one."
+      "surface_note": "Measured by the H15 control crawl on a note seeded with an image on an allowed domain. The earlier note here said localizing was a maintenance action rather than an editing one; it is in the editor.",
+      "gui": [
+        "Remote media list \u2014 shown on a note that points at images on the web",
+        "Localize allowed media"
+      ]
     },
     {
       "id": "links-between-notes",
@@ -245,7 +256,7 @@
         "list_document_links"
       ],
       "gui": [
-        "Insert a link and check it — executed (insert-and-check-link)"
+        "Insert a link and check it \u2014 executed (insert-and-check-link)"
       ]
     },
     {
@@ -342,7 +353,7 @@
     {
       "id": "snapshots",
       "title": "Back up and restore the whole library",
-      "summary": "Take a physical snapshot of the database and its attachments, verify it, and restore it — replacing this library or adopting the snapshot as a new replica.",
+      "summary": "Take a physical snapshot of the database and its attachments, verify it, and restore it \u2014 replacing this library or adopting the snapshot as a new replica.",
       "cli": [
         "notriosctl snapshot create",
         "notriosctl snapshot verify",
@@ -373,13 +384,13 @@
         "POST /api/v1/sync/pair"
       ],
       "gui": [
-        "Open the sync center — executed (open-sync-center)"
+        "Open the sync center \u2014 executed (open-sync-center)"
       ]
     },
     {
       "id": "sync-exchange",
       "title": "Synchronize with a replica",
-      "summary": "Exchange changes with a paired replica, directly over an authenticated connection or through a folder you both can reach — a second drive, or a cloud folder mapped locally.",
+      "summary": "Exchange changes with a paired replica, directly over an authenticated connection or through a folder you both can reach \u2014 a second drive, or a cloud folder mapped locally.",
       "cli": [
         "notriosctl sync exchange",
         "notriosctl sync once",
@@ -482,12 +493,12 @@
         "cancel_sync_job",
         "retry_sync_job"
       ],
-      "surface_note": "No GUI journey; progress appears inline where the work was started."
+      "surface_note": "No GUI journey; progress appears inline where the work was started. Not settled by the H15 crawl either: job rows only render once a job exists and nothing seeded one, so this row is unmeasured rather than known absent."
     },
     {
       "id": "profiles",
       "title": "Keep separate libraries",
-      "summary": "Run more than one library on a machine — personal notes, work notes, a blog — each with its own database, its own settings and its own address.",
+      "summary": "Run more than one library on a machine \u2014 personal notes, work notes, a blog \u2014 each with its own database, its own settings and its own address.",
       "cli": [
         "notriosctl profile create",
         "notriosctl profile list",
@@ -497,7 +508,10 @@
         "notriosctl profile start",
         "notriosctl profile validate"
       ],
-      "surface_note": "Not in the GUI yet. A profile registry is about this machine, which the desktop app also runs on, so this is a gap rather than a boundary; the browser mode is the part that genuinely cannot manage it."
+      "surface_note": "Switching between profiles is in the GUI; creating, registering and forgetting them is not. A profile registry is about this machine, which the desktop app also runs on, so the rest is a gap rather than a boundary; the browser mode is the part that genuinely cannot manage it.",
+      "gui": [
+        "Active profile \u2014 the selector in the sync centre's Setup tab"
+      ]
     },
     {
       "id": "publishing",
