@@ -3103,6 +3103,137 @@ evaluation itself staying advisory and out of `make validate`. That item is not
 written yet, deliberately: it should be scoped by what the investigation actually
 finds rather than by what it is hoped to find.
 
+## H15. Complete the journey catalogues, and give the GUI an inventory
+
+**Ordering.** After H14, which built the machinery this fills in. Independent of
+the installer chain. The GUI tagging work is a product change and can proceed on
+its own; the rest is documentation.
+
+**Goal.** Cover the tasks a person actually arrives with, on both surfaces, and
+stop relying on someone remembering what the GUI can do.
+
+**Why this is a separate item.** H14 built the catalogues, the coverage gate,
+the comparison and the capture, and proved them by finding eight defects. It did
+not fill them in. Ten command-line journeys and four interface journeys is a
+demonstration, not a manual, and the difference matters because the machinery now
+makes the gaps countable.
+
+**Coverage today, measured rather than remembered.** Against the twelve tasks
+named at the start of H14:
+
+| Task | Command line | Interface |
+|---|---|---|
+| create a note in a named notebook | partial: creates, does not choose a notebook | partial: opens the picker, does not finish |
+| update a note in a named notebook | partial: edits title and body | none |
+| delete a note in a named notebook | **impossible: there is no delete command** | partial: opens Trash only |
+| search, demonstrating every query-language feature | partial: one `--query tag:field` | none |
+| notebooks defined by a query | none | none |
+| import from Joplin | none | not applicable |
+| import from Obsidian | none | not applicable |
+| export the library | covered | not applicable |
+| create a profile | covered | not applicable |
+| synchronize with a replica on another drive | partial: enrols only, no exchange | none |
+| back up and restore the library | partial: export and verify, no restore | none |
+| how Recoll is used | none | none |
+
+Two of twelve are covered on the command line and none on the interface. That is
+the honest state and it is what this item exists to change.
+
+**A missing command, found by the audit.** `notriosctl notes` has `create`,
+`show`, `edit` and `move` and no `delete`. Deleting a note is reachable from
+REST, MCP and the interface and from not the command line -- the same shape as
+the tagging gap, found the same way, and it means the third task above cannot be
+written as a command-line journey until the command exists. Restoring from Trash
+has the same gap.
+
+**Tagging in the interface.** Tags are read-only there: the sidebar lists them
+with counts and clicking one searches it. Adding and removing need a control on
+the note, the REST calls already exist, and
+`TestTaggingGainsAGUIJourneyWhenTheInterfaceCanTag` already fails the moment the
+capability is recorded without a journey to match. That test was written as a
+standing instruction and this item is the work it was waiting for.
+
+**Give the GUI a real inventory, by clicking it.** Every other surface can be
+enumerated from source and is: 61 command-line usage forms, 63 configuration
+keys, 109 REST operations, 46 MCP tools, each with a pinned count that fails when
+it moves. The interface has none of that. G18a records it as nine *proposed*
+journeys with `measurement_state: proposed_not_executed` -- a hand-written list
+of things somebody thought the GUI did, not a measurement of what it offers.
+
+So the proposal is right, and it is worth being precise about why: driving the
+interface with Playwright to enumerate its menus, buttons and controls would give
+the one surface that has no machine-derived inventory the same footing as the
+other four. The features page could then be held to the same coverage rule on the
+interface that it already meets on the other three, and a control nobody
+documented would fail a build rather than wait to be noticed.
+
+*Three limits, so the technique is adopted for what it does rather than what it
+seems to promise.* It discovers **controls, not capabilities** -- the same
+distinction that makes a features page more than a list of flags, and the
+mapping from one to the other stays editorial. It cannot discover what is
+**absent**: no amount of clicking reveals that tagging is missing, because
+absence is not a control, and that gap was found by comparing surfaces rather
+than by exploring one. And a crawler must not click everything: delete, purge and
+retire are all reachable, so it enumerates and describes rather than activating,
+and anything destructive is recorded from its label and left alone.
+
+**Scope.** Add tag add and remove to the interface, with a journey and captured
+screenshots. Add `notes delete` and `notes restore` to the command line. Write
+the missing journeys on both surfaces for the twelve tasks, including a query
+journey that demonstrates each query-language feature with a worked example.
+Build a Playwright control crawl that enumerates the interface and reports
+controls no feature claims. Record, for every feature, whether each surface
+supports it -- which the registry already holds and the comparison already
+prints, so this is filling it in rather than inventing it.
+
+**Boundaries.** No journey is written for something a surface cannot do. The
+crawler enumerates and does not activate anything destructive. Screenshots come
+from the seeded fixture and never from a real library. No prose is generated by a
+model; H14 recommended against that and the recommendation stands.
+
+**Dependencies.** H14's catalogues, coverage gate, comparison and capture. The
+GUI tagging work depends on nothing else.
+
+**Working state.** Every task above is covered on both surfaces or recorded as
+impossible on one with the reason; the interface can tag; the crawler produces a
+control inventory with a pinned count; and the features page claims every control
+the crawler finds.
+
+**Validation and evidence.** Every command-line journey executed with its
+postcondition; every interface journey captured with markers derived from the
+elements clicked; the control inventory with its count and the list of unclaimed
+controls; and the coverage table above, regenerated rather than retyped, so it
+cannot drift from the catalogues. Evidence under `performance/v0.8-h15/`.
+
+**Open decisions**
+
+- **Whether the command line gets `notes delete` -- Blocking for one journey.**
+  Deleting is reachable from REST, MCP and the interface and not the command
+  line. Recommended: add `notes delete` and `notes restore`, because "delete a
+  note in a notebook" is one of the tasks this item exists to document and
+  because a delete that can only be undone through a different surface is a poor
+  boundary. The Trash semantics are already careful; the command inherits them
+  rather than inventing anything.
+- **How much of the query language one journey should demonstrate --
+  Non-blocking.** "Demonstrate all query language features" could be one journey
+  with a dozen steps or a dozen journeys. Recommended: one journey per idea --
+  text, tags, notebooks, dates, negation, grouping -- because a reader looking up
+  how to exclude a tag should not have to read eleven other examples first, and
+  because each becomes separately executable.
+- **Whether the control crawl becomes a gate or stays a report -- Blocking
+  before it is wired in.** A crawler that fails a build when the interface gains
+  an undocumented button is the point of building it. A crawler that is flaky
+  fails builds for unrelated reasons and gets switched off. Recommended: land it
+  as a report with a pinned control count first, the way the GUI capture landed
+  opt-in, and promote it to a coverage gate only once the count has held steady
+  across a few interface changes.
+- **Whether interface journeys should cover command-line-only tasks by pointing
+  at them -- Non-blocking.** Importing, exporting, snapshots and profiles have no
+  interface equivalent. Recommended: the interface page names them and links to
+  the command-line journey rather than staying silent, because a reader who
+  cannot find a task does not conclude it is command line only; they conclude it
+  is missing.
+
 ## H13. v0.8 release wrap-up and branch synchronization
 
 **Goal.** Reconcile every approved v0.8 promise, produce internal installable
