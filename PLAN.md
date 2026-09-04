@@ -3123,21 +3123,28 @@ named at the start of H14:
 
 | Task | Command line | Interface |
 |---|---|---|
-| create a note in a named notebook | partial: creates, does not choose a notebook | partial: opens the picker, does not finish |
-| update a note in a named notebook | partial: edits title and body | none |
-| delete a note in a named notebook | **impossible: there is no delete command** | partial: opens Trash only |
-| search, demonstrating every query-language feature | partial: one `--query tag:field` | none |
-| notebooks defined by a query | none | none |
-| import from Joplin | none | not applicable |
-| import from Obsidian | none | not applicable |
+| create a note in a named notebook | partial: creates and files, but cannot make a notebook | partial: opens the picker, does not finish |
+| update a note in a named notebook | covered | none |
+| delete a note in a named notebook | covered | partial: opens Trash only |
+| search, demonstrating every query-language feature | covered: two journeys, tags and exclusion, titles and dates | none |
+| notebooks defined by a query | **impossible on both: made over REST or MCP only** | **impossible: listed but not created** |
+| import from Joplin | described in the Obsidian journey | not applicable |
+| import from Obsidian | covered | not applicable |
 | export the library | covered | not applicable |
 | create a profile | covered | not applicable |
-| synchronize with a replica on another drive | partial: enrols only, no exchange | none |
-| back up and restore the library | partial: export and verify, no restore | none |
-| how Recoll is used | none | none |
+| synchronize with a replica on another drive | covered | none |
+| back up and restore the library | covered: snapshot and verify; restore described | none |
+| how Recoll is used | covered | none |
 
-Two of twelve are covered on the command line and none on the interface. That is
-the honest state and it is what this item exists to change.
+Nine of twelve covered on the command line, two impossible there and recorded as
+such, one partial. None on the interface, which is the next half of the work.
+
+*Two more capabilities the command line does not have, found by the audit.* It
+cannot **create a notebook** -- `notes create --notebook` accepts only one that
+already exists -- and it cannot **create a saved search**. Both are made over
+REST or MCP, and the interface makes notebooks but not saved searches either.
+Recorded as `surface_note` entries so the comparison reports them as explained
+asymmetries rather than as silence.
 
 **A missing command, found by the audit.** `notriosctl notes` has `create`,
 `show`, `edit` and `move` and no `delete`. Deleting a note is reachable from

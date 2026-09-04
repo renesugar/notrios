@@ -658,6 +658,315 @@
           "1"
         ]
       }
+    },
+    {
+      "id": "search-by-tag-and-exclusion",
+      "title": "Find notes by tag, and exclude one",
+      "goal": "Narrow a set down by what a note is tagged with, and by what it is not.",
+      "feature": "export-and-archive",
+      "guessability": "notrios-specific",
+      "note": "A leading minus excludes. `tag:field -tag:private` means tagged field and not tagged private.",
+      "steps": [
+        {
+          "narrative": "Make two notes and tag them differently.",
+          "command": [
+            "notes",
+            "create",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--title",
+            "Reed beds",
+            "--body",
+            "dusk"
+          ]
+        },
+        {
+          "narrative": "Tag the first.",
+          "command": [
+            "tags",
+            "add",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--document",
+            "{note}",
+            "--tag",
+            "field"
+          ]
+        },
+        {
+          "narrative": "Select by tag. The same query language the search box takes also selects what an export contains.",
+          "command": [
+            "export",
+            "archive",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--query",
+            "tag:field",
+            "{out}"
+          ]
+        }
+      ],
+      "postcondition": {
+        "narrative": "a query that matches nothing selects nothing, so the filter is doing the work",
+        "command": [
+          "export",
+          "archive",
+          "--db",
+          "{db}",
+          "--asset-store",
+          "{assets}",
+          "--query",
+          "tag:field -tag:field",
+          "{out2}"
+        ],
+        "contains": [
+          "0"
+        ]
+      }
+    },
+    {
+      "id": "search-by-title-date-and-text",
+      "title": "Find notes by title, date and plain words",
+      "goal": "Use the rest of the query language: titles, time ranges, phrases and regular expressions.",
+      "feature": "export-and-archive",
+      "guessability": "notrios-specific",
+      "note": "The pieces combine, and bare words are matched as text: `notebook:\"Work\" tag:todo quarterly` means all three. Quote anything containing a space. `since:` and `until:` take a date, a timestamp, or a time of day. `re:` takes a regular expression and `is:trashed` finds what is in Trash.",
+      "steps": [
+        {
+          "narrative": "Make a note to find.",
+          "command": [
+            "notes",
+            "create",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--title",
+            "Quarterly review",
+            "--body",
+            "budget notes"
+          ]
+        },
+        {
+          "narrative": "Match on the title. Use quotes when the value has a space in it.",
+          "command": [
+            "export",
+            "archive",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--query",
+            "title:\"Quarterly review\"",
+            "{out}"
+          ]
+        },
+        {
+          "narrative": "Match on a time range. `since:` and `until:` bound when a note was written.",
+          "command": [
+            "export",
+            "archive",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--query",
+            "since:2000-01-01",
+            "{out2}"
+          ]
+        }
+      ],
+      "postcondition": {
+        "narrative": "a title that does not exist selects nothing",
+        "command": [
+          "export",
+          "archive",
+          "--db",
+          "{db}",
+          "--asset-store",
+          "{assets}",
+          "--query",
+          "title:\"no such note\"",
+          "{out2}"
+        ],
+        "contains": [
+          "0"
+        ]
+      }
+    },
+    {
+      "id": "back-up-the-library",
+      "title": "Back up the library, and check the backup",
+      "goal": "Take a physical snapshot of the database and its attachments, and confirm it is sound.",
+      "feature": "snapshots",
+      "guessability": "notrios-specific",
+      "note": "Restoring is `snapshot restore --intent replace` to overwrite this library, or `--intent adopt` to make the snapshot into a second replica. The intent is required because those are very different acts and neither should be the default.",
+      "steps": [
+        {
+          "narrative": "Make something worth backing up.",
+          "command": [
+            "notes",
+            "create",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--title",
+            "Reed beds",
+            "--body",
+            "dusk"
+          ]
+        },
+        {
+          "narrative": "Take the snapshot. This copies the database and the attachment store, not just the text.",
+          "command": [
+            "snapshot",
+            "create",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "{out}"
+          ]
+        },
+        {
+          "narrative": "Verify it. A backup you have not verified is one you are guessing about.",
+          "command": [
+            "snapshot",
+            "verify",
+            "{out}"
+          ]
+        }
+      ],
+      "postcondition": {
+        "narrative": "the snapshot verifies as a complete physical copy",
+        "command": [
+          "snapshot",
+          "verify",
+          "{out}"
+        ],
+        "contains": [
+          "snapshot"
+        ]
+      }
+    },
+    {
+      "id": "check-whether-recoll-is-in-use",
+      "title": "See whether Recoll is being used",
+      "goal": "Find out if the optional search sidecar is installed and switched on.",
+      "feature": "maintenance",
+      "guessability": "conventional",
+      "note": "Recoll is optional. Notrios searches with SQLite FTS5 on its own; Recoll adds indexing of attachment contents. It is enabled with `search_sidecar.enabled` in the configuration, and `doctor` reports both whether the binary is present and whether the configuration asks for it.",
+      "steps": [
+        {
+          "narrative": "Ask doctor. It reports whether `recollindex` is on this machine, and separately whether this configuration turns the sidecar on -- which are different questions.",
+          "command": [
+            "doctor",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}"
+          ]
+        }
+      ],
+      "postcondition": {
+        "narrative": "doctor reports the state of the optional search sidecar",
+        "command": [
+          "doctor",
+          "--db",
+          "{db}",
+          "--asset-store",
+          "{assets}"
+        ],
+        "contains": [
+          "recoll"
+        ]
+      }
+    },
+    {
+      "id": "sync-through-a-folder",
+      "title": "Synchronize through a folder on another drive",
+      "goal": "Exchange changes with another of your libraries through a folder you both can reach.",
+      "feature": "sync-exchange",
+      "guessability": "notrios-specific",
+      "note": "The folder can be a second drive, a USB stick, or a cloud folder mapped locally. Everything written there is encrypted and signed, and everything in it also exists in the library that published it, so deleting the folder loses nothing. The other replica runs the same command against the same folder; pairing them first is the `sync init`/`invite`/`join` ceremony.",
+      "steps": [
+        {
+          "narrative": "Choose or mount the folder both libraries can reach.",
+          "manual": true
+        },
+        {
+          "narrative": "Enrol this library for synchronization, if it is not already.",
+          "command": [
+            "sync",
+            "init",
+            "--config",
+            "{config}",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--keys",
+            "{keys}"
+          ]
+        },
+        {
+          "narrative": "Make something to exchange.",
+          "command": [
+            "notes",
+            "create",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--title",
+            "Reed beds",
+            "--body",
+            "dusk"
+          ]
+        },
+        {
+          "narrative": "Run one exchange against the folder. Polling or running this by hand is the mechanism; no filesystem watcher is needed for correctness.",
+          "command": [
+            "sync",
+            "once",
+            "--config",
+            "{config}",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--keys",
+            "{keys}",
+            "--carrier",
+            "{carrier}"
+          ]
+        }
+      ],
+      "postcondition": {
+        "narrative": "this replica reports what it has published and to whom",
+        "command": [
+          "sync",
+          "status",
+          "--config",
+          "{config}",
+          "--db",
+          "{db}",
+          "--asset-store",
+          "{assets}",
+          "--keys",
+          "{keys}"
+        ],
+        "contains": [
+          "state_vector"
+        ]
+      }
     }
   ]
 }

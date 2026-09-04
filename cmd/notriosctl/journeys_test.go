@@ -35,6 +35,9 @@ func TestCLIJourneysActuallyRun(t *testing.T) {
 			if err := os.MkdirAll(vault, 0o755); err != nil {
 				t.Fatal(err)
 			}
+			if err := os.MkdirAll(filepath.Join(sandbox, "carrier"), 0o755); err != nil {
+				t.Fatal(err)
+			}
 			// The manual step of the note journey, performed for it. A journey
 			// that says "write a Markdown file" needs one to exist.
 			if err := os.WriteFile(filepath.Join(vault, "Reed beds.md"),
@@ -60,6 +63,7 @@ func TestCLIJourneysActuallyRun(t *testing.T) {
 				"config":  config,
 				"sandbox": sandbox,
 				"docs":    docsDir,
+				"carrier": filepath.Join(sandbox, "carrier"),
 			}
 			expand := func(command []string) []string {
 				expanded := make([]string, 0, len(command))

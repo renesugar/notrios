@@ -90,7 +90,7 @@
       "mcp": [
         "list_search_notebooks"
       ],
-      "surface_note": "No command line and no dedicated GUI journey yet; the sidebar lists them alongside ordinary notebooks."
+      "surface_note": "Neither the command line nor the interface creates one directly: they are made over REST or MCP, and the interface then lists them in the sidebar alongside ordinary notebooks."
     },
     {
       "id": "organise-notebooks",
@@ -119,7 +119,8 @@
       "gui": [
         "Choose a notebook for a new note — executed (new-note-in-notebook)",
         "Review a notebook deletion — executed (delete-notebook-review)"
-      ]
+      ],
+      "surface_note": "The command line can move a note between notebooks but cannot create one. Making a notebook happens in the interface, or over REST or MCP, which is why `notes create --notebook` only accepts one that already exists."
     },
     {
       "id": "tag-a-note",

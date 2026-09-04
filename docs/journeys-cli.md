@@ -129,6 +129,51 @@ Each task below lists the steps that do it, in order.
   - Run it for real.
 
     `notriosctl import obsidian <vault>`
+- **Find notes by tag, and exclude one** — Narrow a set down by what a note is tagged with, and by what it is not. A leading minus excludes. `tag:field -tag:private` means tagged field and not tagged private.
+  - Make two notes and tag them differently.
+
+    `notriosctl notes create --title "Reed beds" --body dusk`
+  - Tag the first.
+
+    `notriosctl tags add --document <note> --tag field`
+  - Select by tag. The same query language the search box takes also selects what an export contains.
+
+    `notriosctl export archive --query tag:field <out>`
+- **Find notes by title, date and plain words** — Use the rest of the query language: titles, time ranges, phrases and regular expressions. The pieces combine, and bare words are matched as text: `notebook:"Work" tag:todo quarterly` means all three. Quote anything containing a space. `since:` and `until:` take a date, a timestamp, or a time of day. `re:` takes a regular expression and `is:trashed` finds what is in Trash.
+  - Make a note to find.
+
+    `notriosctl notes create --title "Quarterly review" --body "budget notes"`
+  - Match on the title. Use quotes when the value has a space in it.
+
+    `notriosctl export archive --query "title:\"Quarterly review\"" <out>`
+  - Match on a time range. `since:` and `until:` bound when a note was written.
+
+    `notriosctl export archive --query since:2000-01-01 <out2>`
+- **Back up the library, and check the backup** — Take a physical snapshot of the database and its attachments, and confirm it is sound. Restoring is `snapshot restore --intent replace` to overwrite this library, or `--intent adopt` to make the snapshot into a second replica. The intent is required because those are very different acts and neither should be the default.
+  - Make something worth backing up.
+
+    `notriosctl notes create --title "Reed beds" --body dusk`
+  - Take the snapshot. This copies the database and the attachment store, not just the text.
+
+    `notriosctl snapshot create <out>`
+  - Verify it. A backup you have not verified is one you are guessing about.
+
+    `notriosctl snapshot verify <out>`
+- **See whether Recoll is being used** — Find out if the optional search sidecar is installed and switched on. Recoll is optional. Notrios searches with SQLite FTS5 on its own; Recoll adds indexing of attachment contents. It is enabled with `search_sidecar.enabled` in the configuration, and `doctor` reports both whether the binary is present and whether the configuration asks for it.
+  - Ask doctor. It reports whether `recollindex` is on this machine, and separately whether this configuration turns the sidecar on -- which are different questions.
+
+    `notriosctl doctor`
+- **Synchronize through a folder on another drive** — Exchange changes with another of your libraries through a folder you both can reach. The folder can be a second drive, a USB stick, or a cloud folder mapped locally. Everything written there is encrypted and signed, and everything in it also exists in the library that published it, so deleting the folder loses nothing. The other replica runs the same command against the same folder; pairing them first is the `sync init`/`invite`/`join` ceremony.
+  - Choose or mount the folder both libraries can reach. *(you do this yourself)*
+  - Enrol this library for synchronization, if it is not already.
+
+    `notriosctl sync init`
+  - Make something to exchange.
+
+    `notriosctl notes create --title "Reed beds" --body dusk`
+  - Run one exchange against the folder. Polling or running this by hand is the mechanism; no filesystem watcher is needed for correctness.
+
+    `notriosctl sync once --carrier <carrier>`
 <!-- notrios:generated:user:the-journeys:end -->
 
 
