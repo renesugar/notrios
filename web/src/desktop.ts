@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 // Desktop-shell integration.
 //
 // The application runs in two places: a browser tab against the loopback
@@ -65,4 +66,44 @@ export function openExternalURL(href: string): boolean {
   if (!runtime?.BrowserOpenURL) return false;
   runtime.BrowserOpenURL(href);
   return true;
+}
+
+/**
+ * Returns true once the native bridge exists, re-rendering when it appears.
+ *
+ * The bridge is not there when the page loads. Wails injects `window.go` after
+ * the webview starts, so a frontend that reads it once at mount can mount
+ * first and conclude it is running in a browser -- and never look again. The
+ * cost of that is not theoretical: the Import/Export control stays disabled in
+ * the desktop application, and About reports "Mode: browser" while running as
+ * a desktop program. Both were observed, intermittently, which is the worst
+ * way for a wrong assumption to present itself.
+ *
+ * Polling rather than an event, because the injection is not announced by one
+ * the frontend can rely on. It stops as soon as the bridge appears, and gives
+ * up after a few seconds: a browser genuinely has no bridge, and an interval
+ * that ran forever would be a timer burning in every tab.
+ */
+export function useNativeBridgeReady(): boolean {
+  const [ready, setReady] = useState(() => nativeBridge() !== undefined);
+  useEffect(() => {
+    if (ready) return undefined;
+    const startedAt = Date.now();
+    const timer = window.setInterval(() => {
+      if (nativeBridge() !== undefined) {
+        setReady(true);
+        window.clearInterval(timer);
+      } else if (Date.now() - startedAt > 5000) {
+        window.clearInterval(timer);
+      }
+    }, 150);
+    return () => window.clearInterval(timer);
+  }, [ready]);
+  return ready;
+}
+
+/** The bound bridge object, or undefined in a browser. */
+export function nativeBridge(): Record<string, unknown> | undefined {
+  return (window as Window & { go?: { main?: { NativeUIBridge?: Record<string, unknown> } } })
+    .go?.main?.NativeUIBridge;
 }

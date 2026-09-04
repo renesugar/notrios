@@ -5,6 +5,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/renesugar/notrios/internal/archivev2"
 	"github.com/renesugar/notrios/internal/config"
@@ -135,6 +136,19 @@ func (b *NativeUIBridge) Publish(name, reviewedDigest, path string) (Publication
 	if err != nil {
 		return PublicationResult{}, err
 	}
+	// Refuse a folder that already holds something else, and say why in terms
+	// of the thing being asked for.
+	//
+	// archivev2.Export checks this too and refuses correctly, but it answers in
+	// its own vocabulary: 'is not an archive-v2 directory (unexpected entry
+	// ".~lock...#")'. That is accurate and tells a person nothing about what to
+	// do next. Somebody pointed the folder chooser at their Downloads folder and
+	// got exactly that. The export's check remains the real guard; this one
+	// exists to be understood.
+	if err := requireEmptyOrArchive(destination); err != nil {
+		return PublicationResult{}, err
+	}
+
 	ctx := context.Background()
 	plan, err := b.local.Store.PlanSelection(ctx, profile.PlanRequest(1))
 	if err != nil {
@@ -165,4 +179,27 @@ func (b *NativeUIBridge) Publish(name, reviewedDigest, path string) (Publication
 		Documents: report.SelectedDocuments, Objects: report.Objects,
 		ManifestSHA256: report.SelectionManifestSHA256,
 	}, nil
+}
+
+// requireEmptyOrArchive rejects a destination that holds unrelated files.
+//
+// A publication is a directory of its own: an empty folder, or one holding a
+// previous publication to replace. Writing into a folder of somebody's
+// documents would scatter archive objects among them, and the mistake is easy
+// to make with a folder chooser open.
+func requireEmptyOrArchive(destination string) error {
+	entries, err := os.ReadDir(destination)
+	if err != nil {
+		return err
+	}
+	if len(entries) == 0 {
+		return nil
+	}
+	for _, entry := range entries {
+		if entry.Name() == "manifest.json" {
+			return nil
+		}
+	}
+	return fmt.Errorf("%s already contains other files. Publishing writes an archive into a folder of "+
+		"its own: choose an empty folder, or one holding a publication to replace", destination)
 }

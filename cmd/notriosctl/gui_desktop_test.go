@@ -542,3 +542,36 @@ func (l *liveLog) waitFor(t *testing.T, phrase, complaint string) {
 		time.Sleep(500 * time.Millisecond)
 	}
 }
+
+// TestDesktopPublishThroughTheWindow is not implemented, and the reason is
+// measured rather than assumed.
+//
+// Publishing is the one capability the browser journey capture cannot reach:
+// its panel lives in the Import/Export dialog, which a browser correctly
+// refuses to open. The desktop harness was extended to close that gap, and got
+// as far as opening the dialog and loading the publication profile in the real
+// window. Reaching the panel's controls is where it stopped.
+//
+// The panel is the last section of a scrolling dialog, so a keyboard walk is
+// the natural route. Under xdotool it is not available: synthetic Tab moves
+// focus -- focusin fires, and the focus ring visibly steps through the page --
+// but no DOM keydown reaches the document, so nothing in the page can observe
+// or intercept it. Character keys and Return do reach the DOM, which is why the
+// import test drives fine; Tab specifically does not. Whether a real hardware
+// Tab behaves the same way is untested here and should not be assumed.
+//
+// Two consequences follow. The harness cannot walk to the panel by keyboard,
+// and cannot rely on the dialog's focus trap while driving. Clicking the
+// controls directly would work, but the panel is below the fold and the dialog
+// would have to be scrolled first, which is a further piece of work rather than
+// an adjustment.
+//
+// What the attempt did produce is in the tree: the Wails bridge-injection race
+// that could leave the desktop application believing it was a browser, the
+// dialog focus trap and then its incompleteness for focus outside the dialog,
+// and the profile-path mismatch. Those were the point of driving the real
+// window, and they are kept. This is what is left.
+func TestDesktopPublishThroughTheWindow(t *testing.T) {
+	t.Skip("the publish panel cannot be reached by keyboard under xdotool: synthetic Tab moves focus " +
+		"without dispatching a DOM keydown. Driving it needs scroll-and-click, which is not written.")
+}

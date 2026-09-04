@@ -9,6 +9,25 @@
 // between is refused rather than published.
 import { useCallback, useEffect, useState } from 'react';
 
+/**
+ * Records what the panel did, where the desktop application can keep it.
+ *
+ * Publishing is the operation most worth having an account of afterwards, and
+ * it is the one a keyboard-driven test cannot otherwise observe: these lines
+ * are how the desktop harness knows which control it has reached rather than
+ * counting keystrokes and hoping. Names and digests only; never note content.
+ */
+function logAction(detail: string): void {
+  const bound = (window as Window & {
+    go?: { main?: { NativeUIBridge?: { LogAction?: (category: string, detail: string) => void } } };
+  }).go?.main?.NativeUIBridge;
+  try {
+    bound?.LogAction?.('publish', detail);
+  } catch {
+    // A transcript is never worth failing the operation it describes.
+  }
+}
+
 interface PublishProfile { name: string; description: string; target: string }
 
 interface PublicationPlan {
@@ -65,7 +84,14 @@ export function PublishPanel({ bridge }: { bridge: PublishBridge | undefined }) 
         // dialog broke.
         const found = list ?? [];
         setProfiles(found);
-        if (found.length === 1) setChosen(found[0].name);
+        logAction(`${found.length} publication ${found.length === 1 ? 'profile' : 'profiles'} available`);
+        // One profile is not a choice, so it is made here -- but it is still a
+        // choice the interface made, and a choice nobody recorded is one nobody
+        // can account for afterwards.
+        if (found.length === 1) {
+          setChosen(found[0].name);
+          logAction(`profile chosen: ${found[0].name}`);
+        }
       })
       .catch(() => setProfiles([]));
   }, [bridge]);
@@ -74,6 +100,7 @@ export function PublishPanel({ bridge }: { bridge: PublishBridge | undefined }) 
   // profile, and offering to publish a review of a different one is exactly
   // what the reviewed-plan check exists to prevent.
   const choose = useCallback((name: string) => {
+    logAction(name === '' ? 'profile cleared' : `profile chosen: ${name}`);
     setChosen(name);
     setPlan(null);
     setResult(null);
@@ -84,10 +111,15 @@ export function PublishPanel({ bridge }: { bridge: PublishBridge | undefined }) 
     if (!bridge?.PlanPublication || chosen === '') return;
     setBusy(true);
     setError('');
+    logAction(`review requested for ${chosen}`);
     try {
-      setPlan(await bridge.PlanPublication(chosen));
+      const reviewed = await bridge.PlanPublication(chosen);
+      setPlan(reviewed);
+      logAction(`review ready for ${chosen}: ${reviewed.counts.selected_documents ?? 0} published, `
+        + `${reviewed.counts.excluded_documents ?? 0} withheld, plan ${reviewed.manifest_sha256.slice(0, 12)}`);
     } catch (caught) {
       setError(errorMessage(caught));
+      logAction(`review failed: ${errorMessage(caught)}`);
     } finally {
       setBusy(false);
     }
@@ -97,10 +129,14 @@ export function PublishPanel({ bridge }: { bridge: PublishBridge | undefined }) 
     if (!bridge?.Publish || plan === null) return;
     setBusy(true);
     setError('');
+    logAction(`publish requested for ${plan.profile} against plan ${plan.manifest_sha256.slice(0, 12)}`);
     try {
-      setResult(await bridge.Publish(plan.profile, plan.manifest_sha256, directory.trim()));
+      const published = await bridge.Publish(plan.profile, plan.manifest_sha256, directory.trim());
+      setResult(published);
+      logAction(`publish finished: ${published.documents} notes into ${published.directory}`);
     } catch (caught) {
       setError(errorMessage(caught));
+      logAction(`publish failed: ${errorMessage(caught)}`);
     } finally {
       setBusy(false);
     }

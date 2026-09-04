@@ -86,6 +86,7 @@ import { EditorPane } from './components/EditorPane';
 import { PreviewPane } from './components/PreviewPane';
 import { SyncCenter } from './components/SyncCenter';
 import { LibraryTransfer, transferBridge } from './components/LibraryTransfer';
+import { useNativeBridgeReady } from './desktop';
 import { AboutDialog } from './components/AboutDialog';
 import { TagRename } from './components/TagRename';
 import { LibraryHealth } from './components/LibraryHealth';
@@ -132,10 +133,13 @@ export function App() {
   const [showAbout, setShowAbout] = useState(false);
   const [renamingTag, setRenamingTag] = useState<string | null>(null);
   const [showHealth, setShowHealth] = useState(false);
-  // Read once, at mount: the bridge is bound before the frontend loads or it is
-  // not bound at all, so re-checking it on every render would only make the
-  // control flicker on nothing.
-  const [transferAvailable] = useState(() => transferBridge() !== undefined);
+  // Not read once. Wails injects the bridge after the webview starts, so a
+  // check at mount can run first and conclude this is a browser -- leaving the
+  // control disabled in the desktop application until the window is reopened.
+  // That was observed intermittently, which is the worst way to find out an
+  // assumption was wrong.
+  const bridgeReady = useNativeBridgeReady();
+  const transferAvailable = bridgeReady && transferBridge() !== undefined;
 
   const paged = usePagedSearch(25);
 

@@ -164,10 +164,53 @@ export function LibraryTransfer({ onClose }: { onClose: () => void }) {
   const [reports, setReports] = useState<Record<string, string>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const closeRef = useRef<HTMLButtonElement>(null);
+  const dialogRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     closeRef.current?.focus();
     logAction('transfer', 'the import and export dialog opened');
+  }, []);
+
+  // Keep focus inside. Without this, Shift+Tab from the close button lands on
+  // the workspace behind the dialog: a keyboard user is silently returned to a
+  // page they cannot see, and anything driving this by keyboard cannot know
+  // where it is. Measured before it was written, not assumed.
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== 'Tab' || !dialogRef.current) return;
+      const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href]');
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      // Focus outside the dialog entirely, which is where it sits after a click
+      // on the dialog's own heading: the click focuses nothing, so activeElement
+      // is the body, and tabbing from there walks the page behind the modal.
+      // A trap that only guards its two ends does not trap anything in that
+      // case, which is exactly what was observed -- Shift+Tab from an open
+      // dialog landed on a header button the dialog was covering.
+      // Focus, and then make sure it can be seen. This dialog scrolls, and its
+      // last control is several sections below the fold: wrapping focus onto it
+      // moved the ring somewhere the reader could not see, so Shift+Tab looked
+      // like it had done nothing at all. Confirmed by hand in the real window,
+      // where the trap was working and the focus was simply off-screen.
+      const move = (target: HTMLElement) => {
+        event.preventDefault();
+        target.focus();
+        target.scrollIntoView({ block: 'nearest' });
+      };
+      if (!dialogRef.current.contains(document.activeElement)) {
+        move(event.shiftKey ? last : first);
+        return;
+      }
+      if (event.shiftKey && document.activeElement === first) {
+        move(last);
+      } else if (!event.shiftKey && document.activeElement === last) {
+        move(first);
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
   }, []);
   // Escape closes, which is what a person expects of any dialog and what this
   // one previously did not do. Bound on the document because focus may be
@@ -228,7 +271,7 @@ export function LibraryTransfer({ onClose }: { onClose: () => void }) {
     }}>
       {/* sync-center-single because this dialog has no section rail; without it
           the body is laid into the 190px tab column. */}
-      <section className="sync-center sync-center-single" role="dialog" aria-modal="true"
+      <section ref={dialogRef} className="sync-center sync-center-single" role="dialog" aria-modal="true"
         aria-labelledby="library-transfer-title" data-testid="library-transfer">
         <header className="sync-center-header">
           <div>

@@ -10,6 +10,7 @@
 // showing a service on another machine whose binary it knows nothing about, so
 // those lines say so instead of guessing.
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useNativeBridgeReady } from '../desktop';
 import type { StatusResponse } from '../api';
 
 interface BuildInfo {
@@ -111,14 +112,19 @@ export function AboutDialog({ status, onClose }: { status: StatusResponse | null
   // single key. An automated desktop run relies on the same placement.
   const copyRef = useRef<HTMLButtonElement>(null);
 
+  const bridgeReady = useNativeBridgeReady();
+
   useEffect(() => {
-    const bridge = aboutBridge();
+    // Re-runs when the bridge appears. Reporting "Mode: browser" from inside
+    // the desktop application is exactly the wrong answer for a dialog whose
+    // job is saying which build this is.
+    const bridge = bridgeReady ? aboutBridge() : undefined;
     if (bridge) {
       void bridge.About().then(setBuild).catch(() => setBuild(null));
       void bridge.RecentActions?.().then((list) => setActions(list ?? [])).catch(() => setActions([]));
     }
     copyRef.current?.focus();
-  }, []);
+  }, [bridgeReady]);
   // Escape closes, which is what a person expects of any dialog and what this
   // one previously did not do. Bound on the document because focus may be
   // anywhere inside by the time it is pressed.
