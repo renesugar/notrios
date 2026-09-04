@@ -28,7 +28,6 @@ absent for a reason rather than for want of doing it, the reason is given.
 - **Do many organiser operations at once** — Send a batch of moves, tags and notebook changes as one request, so a large reorganisation is one reviewable action. No command line or GUI journey; batching is for tools.
 - **Choose where sync keys are kept** — An installed Notrios keeps the key that protects your sync material in the operating system's credential store. Move existing keys between that and the owner-only development file, in either direction. Deliberately command line only: this item forbids a credential-management REST or MCP surface.
 - **Publish a subset of your notes** — Choose what leaves the library, review exactly what a publication would include and withhold, save that choice as a profile, and publish only after agreeing to the reviewed plan. Not in the GUI yet. Publishing writes to a local directory, so the desktop app could do it and the browser mode could not.
-- **Keep a library healthy** — Find what has rotted, fix what can be fixed mechanically, reclaim space, and check that this installation is set up the way you think it is. No GUI journey; maintenance is command line work.
 - **Move a pre-0.8 library into place** — A library that lived in ./data next to the program is relocated into the directories an installed Notrios uses, after showing you the plan. Command line only, and genuinely so: it relocates the directories the running program uses, which is not something the program can sensibly do to itself while serving them.
 - **Let an AI assistant use your library** — Notrios speaks MCP, so an assistant can read and, within a scope you grant, change your notes. The endpoint itself has no command line or GUI; the tools it exposes are listed against the features above.
 <!-- notrios:generated:user:what-the-gui-does-not-do:end -->
@@ -159,6 +158,19 @@ Each task below lists its steps, with a picture of every one.
   - Rename applies exactly what the report described. Editing the name or the children option first withdraws the report, so you cannot agree to one rename and apply another.
 
     ![agree-to-it](images/journeys/rename-a-tag-agree-to-it.png)
+- **Check what has rotted, and repair what can be** — See the library's problems, repair the mechanical ones, and know why the rest are commands.
+  - Health reads two reports about this library. Nothing on the screen changes anything: both reports are read-only, and one of them says so in the API itself.
+
+    ![open-health](images/journeys/check-library-health-open-health.png)
+  - Lint finds broken links, unresolved anchors, notes without titles, remote media nobody has localized, attachments nothing points at. Counts are for the whole library; where a list is capped it says so, because a capped list read as the whole problem undercounts it.
+
+    ![what-has-rotted](images/journeys/check-library-health-what-has-rotted.png)
+  - The collector plans, and never deletes. Deleting is notriosctl gc --apply, and the absence of a button here is deliberate: reclaiming space should be an explicit local act rather than something a window does.
+
+    ![what-could-be-reclaimed](images/journeys/check-library-health-what-could-be-reclaimed.png)
+  - Some findings can be corrected without judgement. Planning shows how many edits across how many notes and changes nothing; repairing applies them, each against the revision it was computed from, so a note you edited in the meantime refuses rather than being repaired against text nobody read. Collecting unreferenced attachments is not offered here: it deletes, and a repair only writes a new revision.
+
+    ![what-can-be-repaired](images/journeys/check-library-health-what-can-be-repaired.png)
 <!-- notrios:generated:user:the-journeys:end -->
 
 

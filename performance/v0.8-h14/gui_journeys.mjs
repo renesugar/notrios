@@ -49,7 +49,7 @@ function resolve(page, locator) {
 // failure this whole design exists to prevent -- a confident picture of the
 // wrong place. It was caught by two steps pointing at different elements coming
 // out byte-identical, and that is now a check rather than a coincidence.
-function drawMarker(box) {
+function drawMarker({ box, pointing }) {
   for (const id of ['notrios-journey-marker', 'notrios-journey-outline']) {
     document.getElementById(id)?.remove();
   }
@@ -76,6 +76,12 @@ function drawMarker(box) {
     zIndex: '2147483646',
   });
   document.body.appendChild(outline);
+
+  // Only where there is something to press. A screenshot_only step is "look at
+  // this", and a click marker on one points at a place nobody should press --
+  // it appeared in the middle of a read-only report, over blank space, looking
+  // like an instruction.
+  if (!pointing) return;
 
   const diameter = 40;
   const marker = document.createElement('div');
@@ -117,7 +123,7 @@ try {
         const box = await target.boundingBox();
         if (!box) throw new Error(`${journey.id}/${step.id}: the element has no box to point at`);
 
-        await page.evaluate(drawMarker, box);
+        await page.evaluate(drawMarker, { box, pointing: step.action === 'click' || step.action === 'fill' });
         const file = `${journey.id}-${step.id}.png`;
         const absolute = path.join(imageDir, file);
         await page.screenshot({ path: absolute, fullPage: false });

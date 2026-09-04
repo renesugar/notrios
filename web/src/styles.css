@@ -1745,3 +1745,25 @@ button.sync-list-row:hover { border-color: var(--accent); }
   border-top: 1px solid var(--border-strong);
   color: var(--muted);
 }
+
+/* Warnings about a report, not findings inside it. Borrowing the rename
+   dialog's indented list put them under the last check, where they read as one
+   more finding of that check rather than as a note on the whole thing. */
+.report-warnings {
+  margin: 10px 0 0;
+  padding: 8px 10px;
+  list-style: none;
+  border-left: 3px solid var(--accent);
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* The lint summary: one line per check that found something, count first,
+   because the count is what decides whether it is worth looking at. */
+.health-checks {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 4px;
+  font-size: 13px;
+}

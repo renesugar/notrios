@@ -369,6 +369,67 @@ export async function renameTag(
   return parseJSON<TagRenameResult>(response);
 }
 
+/**
+ * One thing lint found. Deliberately content-free: a finding locates a problem
+ * without quoting a note, and the offending target is a fingerprint rather than
+ * the value itself.
+ */
+export interface LintFinding {
+  check: string;
+  document_id?: string;
+  resource_id?: string;
+  line?: number;
+  column?: number;
+  target_sha256?: string;
+  detail?: string;
+}
+
+export interface LintCheckResult {
+  check: string;
+  /** The complete count, unaffected by the detail cap. */
+  count: number;
+  findings: LintFinding[];
+  truncated: boolean;
+}
+
+export interface LintReport {
+  version: number;
+  collection_id: string;
+  detail_limit: number;
+  checks: LintCheckResult[];
+  total_findings: number;
+  /** Covers every finding, including those the detail cap hid. */
+  report_sha256: string;
+  warnings: string[];
+}
+
+export interface GarbageCollectionReport {
+  dry_run: boolean;
+  as_of: string;
+  eligible: unknown[];
+  retained: unknown[];
+  removed: unknown[];
+  referenced_resource_count: number;
+  blobs_removed: number;
+  bytes_removed: number;
+  warnings: string[];
+}
+
+/** Reads the lint report. There is no apply: fixing is a command-line action. */
+export async function getLintReport(): Promise<LintReport> {
+  return parseJSON<LintReport>(await fetch('/api/v1/admin/lint/report'));
+}
+
+/**
+ * Reads what garbage collection would reclaim.
+ *
+ * Always a plan and never a deletion: the service has intentionally no REST
+ * apply, so nothing this returns has been removed.
+ */
+export async function getGarbageReport(): Promise<GarbageCollectionReport> {
+  return parseJSON<GarbageCollectionReport>(await fetch('/api/v1/admin/gc/report'));
+}
+
 export async function listTags(): Promise<TagRecord[]> {
   const response = await fetch('/api/v1/tags');
   const payload = await parseJSON<{ tags: TagRecord[] }>(response);

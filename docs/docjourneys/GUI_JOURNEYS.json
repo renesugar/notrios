@@ -442,6 +442,52 @@
           "testid": "tag-rename-places/eastern-hide"
         }
       }
+    },
+    {
+      "id": "check-library-health",
+      "title": "Check what has rotted, and repair what can be",
+      "goal": "See the library's problems, repair the mechanical ones, and know why the rest are commands.",
+      "feature": "maintenance",
+      "steps": [
+        {
+          "id": "open-health",
+          "narrative": "Health reads two reports about this library. Nothing on the screen changes anything: both reports are read-only, and one of them says so in the API itself.",
+          "locator": {
+            "testid": "health-header-button"
+          },
+          "action": "click"
+        },
+        {
+          "id": "what-has-rotted",
+          "narrative": "Lint finds broken links, unresolved anchors, notes without titles, remote media nobody has localized, attachments nothing points at. Counts are for the whole library; where a list is capped it says so, because a capped list read as the whole problem undercounts it.",
+          "locator": {
+            "testid": "library-health-lint"
+          },
+          "action": "screenshot_only"
+        },
+        {
+          "id": "what-could-be-reclaimed",
+          "narrative": "The collector plans, and never deletes. Deleting is notriosctl gc --apply, and the absence of a button here is deliberate: reclaiming space should be an explicit local act rather than something a window does.",
+          "locator": {
+            "testid": "library-health-gc"
+          },
+          "action": "screenshot_only"
+        },
+        {
+          "id": "what-can-be-repaired",
+          "narrative": "Some findings can be corrected without judgement. Planning shows how many edits across how many notes and changes nothing; repairing applies them, each against the revision it was computed from, so a note you edited in the meantime refuses rather than being repaired against text nobody read. Collecting unreferenced attachments is not offered here: it deletes, and a repair only writes a new revision.",
+          "locator": {
+            "testid": "library-health-repairs"
+          },
+          "action": "screenshot_only"
+        }
+      ],
+      "postcondition": {
+        "narrative": "both reports are on screen and nothing has been changed",
+        "locator": {
+          "testid": "library-health-gc"
+        }
+      }
     }
   ]
 }

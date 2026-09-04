@@ -88,6 +88,7 @@ import { SyncCenter } from './components/SyncCenter';
 import { LibraryTransfer, transferBridge } from './components/LibraryTransfer';
 import { AboutDialog } from './components/AboutDialog';
 import { TagRename } from './components/TagRename';
+import { LibraryHealth } from './components/LibraryHealth';
 
 const defaultBody = `# New note\n\nWrite Markdown here. Link other notes with:\n\n[Related note](document://default/documents/<document-id>)\n`;
 
@@ -130,6 +131,7 @@ export function App() {
   const [showTransfer, setShowTransfer] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [renamingTag, setRenamingTag] = useState<string | null>(null);
+  const [showHealth, setShowHealth] = useState(false);
   // Read once, at mount: the bridge is bound before the frontend loads or it is
   // not bound at all, so re-checking it on every render would only make the
   // control flicker on nothing.
@@ -764,6 +766,13 @@ export function App() {
               machine running the library, which a browser window cannot choose
               and no REST route accepts; saying so is more useful than a feature
               that appears not to exist. */}
+          {/* Read-only, and available in both modes: unlike import and export
+              this needs no local path, so a browser can ask for it too. */}
+          <button type="button" className="sync-header-button" data-testid="health-header-button"
+            title="What has rotted in this library, and what could be reclaimed"
+            onClick={() => setShowHealth(true)}>
+            <span aria-hidden="true">✚</span> Health
+          </button>
           <button type="button" className="sync-header-button" data-testid="transfer-header-button"
             disabled={!transferAvailable}
             title={transferAvailable
@@ -786,6 +795,8 @@ export function App() {
       {showTransfer ? <LibraryTransfer onClose={() => setShowTransfer(false)} /> : null}
 
       {showAbout ? <AboutDialog status={status} onClose={() => setShowAbout(false)} /> : null}
+
+      {showHealth ? <LibraryHealth onClose={() => setShowHealth(false)} /> : null}
 
       {renamingTag ? (
         <TagRename

@@ -48,9 +48,14 @@ interface TransferReport {
 }
 
 /**
- * Returns the native bridge, or undefined when this window is a browser or is
- * showing a service on another machine. Undefined is the whole of the
- * availability check; there is no flag to get out of step with it.
+ * Returns the native bridge, or undefined when this window does not own the
+ * library: a browser, or a -gui-only window rendering a separate notriosd.
+ * Undefined is the whole of the availability check; there is no flag to get out
+ * of step with it.
+ *
+ * Note that a -gui-only window is normally pointed at 127.0.0.1, so this is not
+ * about the service being far away. It is about the store belonging to another
+ * program.
  */
 export function transferBridge(): TransferBridge | undefined {
   const bound = (window as Window & { go?: { main?: { NativeUIBridge?: Partial<TransferBridge> } } })

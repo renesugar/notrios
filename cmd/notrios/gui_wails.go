@@ -24,11 +24,19 @@ import (
 // NativeUIBridge is the part of the interface that does not go over HTTP.
 //
 // It is bound only when this process owns the service, which is the whole of
-// its access control: in -gui-only mode the window may be showing a service on
-// another machine, where a directory chosen here would name the wrong
-// filesystem, so `local` is nil, nothing is bound, and the frontend finds no
-// bridge at all. See gui_transfer.go for why import, export and snapshots have
-// to come this way rather than over REST.
+// its access control.
+//
+// The usual case is that it does: the default mode starts the service in this
+// process and the window and the store are the same program. -gui-only is the
+// exception, and even it points at 127.0.0.1 unless -remote says otherwise --
+// so "the service might be on another machine" is the exception to the
+// exception and not the reason this matters.
+//
+// The reason is that in -gui-only mode this process has no store. It is a
+// window and a reverse proxy; the library belongs to a separate notriosd.
+// Everything below acts on the store directly, so pointing the same window at a
+// local service would not help: the work has to happen in the program that owns
+// the database. See gui_transfer.go for why it cannot go over REST instead.
 type NativeUIBridge struct {
 	ctx     context.Context
 	local   *service.Service

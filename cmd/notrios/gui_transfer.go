@@ -33,7 +33,9 @@ import (
 // That is also what makes the browser case honest rather than cosmetic. The
 // bridge is bound only when this process owns the service, so in -gui-only mode
 // none of these methods exists and the frontend greys the controls out because
-// the capability is genuinely absent, not because it was hidden.
+// the capability is genuinely absent, not because it was hidden. That holds
+// whether the service being shown is across the network or on this machine:
+// what is missing is the store, not the filesystem.
 
 // TransferReport is what one of these operations tells the interface.
 //
@@ -47,7 +49,10 @@ type TransferReport struct {
 	Summary any    `json:"summary"`
 }
 
-var errNoLocalService = errors.New("this window is showing a service on another machine, so it cannot reach a directory here")
+// Not "the service is remote": in -gui-only mode it is usually on this very
+// machine. The problem is that it is a different program, and importing acts on
+// the store rather than over the wire.
+var errNoLocalService = errors.New("this window does not own the library, so it cannot import, export or take a snapshot here")
 
 // directory checks the caller's path before any of it is used.
 //

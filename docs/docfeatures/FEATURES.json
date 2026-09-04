@@ -583,7 +583,12 @@
       "mcp": [
         "get_lint_report"
       ],
-      "surface_note": "No GUI journey; maintenance is command line work."
+      "surface_note": "The GUI reports both, and repairs. Repairing goes through the native bridge because the lint surface is deliberately read-only over REST -- that is a remote, programmatic surface an agent reaches, and repairs to somebody's notes should not be one call away from one -- which says nothing about a person pressing a button in the program that owns the library. Each repair writes a revision against a required base revision, so a note edited since the plan refuses rather than being repaired against text nobody read, and refusals are reported per note. Collecting stays `notriosctl gc --apply`: it deletes blobs, and there is no revision to go back to. doctor, paths, config show and seed-help remain command line.",
+      "gui": [
+        "Health \u2014 the lint report and the collection plan",
+        "Show me what would be repaired",
+        "Repair them \u2014 in the desktop application only"
+      ]
     },
     {
       "id": "upgrade-layout",
