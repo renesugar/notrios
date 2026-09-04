@@ -387,6 +387,39 @@ command refuses the name and asks for the ID rather than guessing.
 
 Moving several notes at once is not available yet.
 
+## Saving, and what happens to unsaved changes
+
+Notrios saves when you ask it to. There is no autosave, and that is deliberate:
+every save writes a revision, revisions are replicated to your other devices,
+and nothing deletes them. A note saved on every keystroke would become a
+thousand revisions of itself on every machine you own.
+
+So the interface looks after what you have typed but not yet saved:
+
+- An **Unsaved changes** chip appears next to the Save button as soon as the
+  note differs from the version in your library.
+- Anything that would replace what is in the editor — opening another note,
+  starting a new one — asks first, and says which note the changes belong to.
+  Declining leaves everything exactly as it was.
+- Closing the window asks too. The desktop app puts up its own dialog, because
+  a window closing is not something the page can intervene in; answering it
+  with anything other than yes leaves the window open.
+- If the window goes away anyway — a reload, a closed tab, a crash, a power
+  cut — your unsaved text is there when you start again. It is kept in the
+  app's own storage on this machine, restored into the note it belongs to, and
+  removed as soon as you save it or start a different note. A restored draft
+  says so at the top of the window, and saving it writes one revision of its
+  note, exactly as if you had never been interrupted.
+
+This is why the desktop app's close dialog says the changes will be waiting
+rather than offering to discard them: closing the window does not throw
+anything away.
+
+**One limit, measured rather than assumed.** The draft is written a moment
+after you stop typing, and the app then has to get it to the disk. A machine
+that dies in that first moment can lose the last few words. Everything older
+than that survives.
+
 ## Deleting and restoring notes
 
 Deleting a note in Notrios moves it to the **Trash**. Nothing is lost at that

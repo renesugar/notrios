@@ -87,7 +87,7 @@ import { EditorPane } from './components/EditorPane';
 import { PreviewPane } from './components/PreviewPane';
 import { SyncCenter } from './components/SyncCenter';
 import { LibraryTransfer, transferBridge } from './components/LibraryTransfer';
-import { useNativeBridgeReady } from './desktop';
+import { reportUnsavedChanges, useNativeBridgeReady } from './desktop';
 import { AboutDialog } from './components/AboutDialog';
 import { TagRename } from './components/TagRename';
 import { LibraryHealth } from './components/LibraryHealth';
@@ -382,6 +382,13 @@ export function App() {
     };
     window.addEventListener('beforeunload', warn);
     return () => window.removeEventListener('beforeunload', warn);
+  }, [draftIsDirty]);
+
+  // The window's close button is not the frontend's to intercept: it does not
+  // go through `beforeunload`, so the desktop shell asks instead and has to be
+  // told what to ask about. See cmd/notrios/gui_window_state.go.
+  useEffect(() => {
+    reportUnsavedChanges(draftIsDirty);
   }, [draftIsDirty]);
 
   // Read through a ref so the guard keeps one identity for the life of the

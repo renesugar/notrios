@@ -74,7 +74,12 @@ func TestRepositoryAuditReportsHonestCoverage(t *testing.T) {
 	// any gate checks; deriving the list from the registry is what makes it
 	// one. The section count does not move: the section is still there, and now
 	// carries a fragment.
-	if report.ManualSections != 230 || report.Fragments != 20 || report.Claims != 4 ||
+	// 230 -> 231 sections in v0.8 H15: docs/gui.md gained "Saving, and what
+	// happens to unsaved changes". Prose, with no example and no fragment --
+	// the behaviour it describes is covered by the web suite and by the three
+	// desktop tests that drive the real close dialog, neither of which this
+	// page can register as a runnable example.
+	if report.ManualSections != 231 || report.Fragments != 20 || report.Claims != 4 ||
 		report.Executables != 142 || report.Journeys != 9 {
 		t.Fatalf("unexpected coverage surface: %+v", report)
 	}
@@ -104,8 +109,10 @@ func TestRepositoryAuditReportsHonestCoverage(t *testing.T) {
 		// leaves, because the prose it replaced was inside a section that is
 		// still counted.
 		report.Counts[GradeGenerated] != 16 ||
-		report.Counts[GradeClaimed] != 4 || report.Counts[GradeUnverified] != 310 ||
-		report.Denominator != 401 {
+		// 310 -> 311 unverified and 401 -> 402 denominator in v0.8 H15: the new
+		// prose section on docs/gui.md. One unit arrives and none leaves.
+		report.Counts[GradeClaimed] != 4 || report.Counts[GradeUnverified] != 311 ||
+		report.Denominator != 402 {
 		t.Fatalf("coverage counts hide or lose units: counts=%v denominator=%d", report.Counts, report.Denominator)
 	}
 	if len(resolvedTS) == 0 {

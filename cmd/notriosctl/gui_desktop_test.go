@@ -575,3 +575,329 @@ func TestDesktopPublishThroughTheWindow(t *testing.T) {
 	t.Skip("the publish panel cannot be reached by keyboard under xdotool: synthetic Tab moves focus " +
 		"without dispatching a DOM keydown. Driving it needs scroll-and-click, which is not written.")
 }
+
+// TestDesktopCloseAsksBeforeDiscardingUnsavedWork drives the one path the
+// frontend cannot protect.
+//
+// Saving in Notrios is deliberate rather than continuous, because every save
+// writes a revision that replicates and is never pruned. The editor can
+// therefore hold text that is in no store, and the interface asks before
+// anything replaces it -- except the window's own close button, which does not
+// go through `beforeunload` at all. `OnBeforeClose` is where that question has
+// to be asked, in Go, which means the window has to have told Go what it is
+// holding (cmd/notrios/gui_window_state.go).
+//
+// None of that is observable from a browser: there is no window to close, no
+// binding to receive the report, and no native dialog to answer. This drives
+// the real GTK close request with xdotool and reads the application's own
+// transcript for what it decided, rather than inferring it from pixels.
+func TestDesktopCloseAsksBeforeDiscardingUnsavedWork(t *testing.T) {
+	app := launchDesktopApp(t, "gui-close")
+
+	app.typeIntoTheEditor(t, "unsaved words")
+
+	// A named event rather than a percentage of changed pixels: the window
+	// itself says it told the shell, which is the fact under test. If this line
+	// never arrives the binding was never injected or never called, and no
+	// amount of screen comparison would have said which.
+	app.transcript.waitFor(t, "editor: unsaved changes present",
+		"the window never told the shell it was holding unsaved work")
+
+	// The title bar's close button, as a person would use it. Alt+F4 is
+	// openbox's Close, which sends WM_DELETE_WINDOW -- the GTK delete-event
+	// Wails turns into its quit message. Not xdotool's `windowclose`, which
+	// destroys the window behind the client's back: the first run of this test
+	// used it and got "GdkWindow unexpectedly destroyed" and no dialog, because
+	// nothing had asked the application anything.
+	xdo(t, app.display, "key", "--clearmodifiers", "alt+F4")
+
+	dialog := waitForWindow(t, app.display, "Unsaved changes")
+	t.Logf("the shell asked before closing: dialog window %s", dialog)
+	capture(t, app.display, filepath.Join(app.shots, "close-dialog.png"))
+
+	// Escape dismisses a GTK message dialog without answering it, which is the
+	// case that must fail closed: an unanswered question is not permission to
+	// throw the work away.
+	xdo(t, app.display, "windowactivate", "--sync", dialog)
+	xdo(t, app.display, "key", "--clearmodifiers", "Escape")
+	app.transcript.waitFor(t, "close refused: unsaved changes",
+		"the window closed, or refused to close without saying so")
+	assertWindowStillThere(t, app.display, "Notrios",
+		"the application closed while it was holding unsaved work")
+
+	// The other half, and the one a regression here would break most rudely: a
+	// window with nothing unsaved must close without asking anything. Undo puts
+	// the note back to what it was loaded with, which is what the frontend
+	// compares against, and the transcript says when that has happened.
+	xdo(t, app.display, "windowactivate", "--sync", app.window)
+	app.clickIntoTheEditor(t)
+	undoUntilClean(t, app.display, app.transcript)
+
+	// Through File -> Quit's accelerator this time, which is the other way into
+	// the same handler: openbox's Close arrives as the delete-event, and this
+	// arrives through runtime.Quit. A guard that only covered one of them would
+	// leave the other able to discard the work.
+	xdo(t, app.display, "key", "--clearmodifiers", "ctrl+q")
+	waitForWindowGone(t, app.display, "Notrios")
+}
+
+// TestDesktopCloseProceedsWhenAskedTo drives the answer the other test does not.
+//
+// A guard that can refuse but never accept is worse than no guard: the window
+// becomes impossible to close while it holds unsaved work, with no way out but
+// killing the process. The answer comes back from GTK as a string, so what
+// counts as yes is a fact about the toolkit rather than a choice this code
+// gets to make -- which is exactly the kind of assumption that has to be run
+// rather than read.
+//
+// The dialog promises the changes will be waiting next time rather than
+// offering to discard them, because that is what the storage does;
+// TestDesktopKeepsTheDraftAcrossACrash is where that promise is checked.
+func TestDesktopCloseProceedsWhenAskedTo(t *testing.T) {
+	app := launchDesktopApp(t, "gui-close-yes")
+	app.typeIntoTheEditor(t, "work that outlives the window")
+	app.transcript.waitFor(t, "editor: unsaved changes present",
+		"the window never told the shell it was holding unsaved work")
+
+	xdo(t, app.display, "key", "--clearmodifiers", "alt+F4")
+	dialog := waitForWindow(t, app.display, "Unsaved changes")
+
+	// Alt+Y is the mnemonic on GTK's stock Yes button. Pressing Return instead
+	// would depend on which button the dialog gave focus to, which is a
+	// property of the theme rather than of anything under test.
+	xdo(t, app.display, "windowactivate", "--sync", dialog)
+	xdo(t, app.display, "key", "--clearmodifiers", "alt+y")
+
+	waitForWindowGone(t, app.display, "Notrios")
+	if !app.transcript.contains("closed with unsaved changes, kept for the next start") {
+		t.Fatalf("the window closed without recording that it was asked to. It said:\n%s",
+			app.transcript.String())
+	}
+}
+
+// TestDesktopKeepsTheDraftAcrossACrash checks the promise the manual makes.
+//
+// docs/gui.md tells the reader that if the application or the machine goes away
+// without asking, the text they had not saved is there when they start again.
+// That rests on the webview's storage surviving a restart, which is a property
+// of WebKitGTK's default web context rather than of anything in this codebase
+// -- exactly the kind of thing that should be run rather than read. The
+// application is killed outright, with no chance to save anything on the way
+// out, and started again against the same library and the same storage.
+//
+// The signal is the window reporting unsaved work moments after a cold start.
+// Nothing else makes a fresh window dirty: it opens on the new-note template,
+// which is what the draft check compares against.
+func TestDesktopKeepsTheDraftAcrossACrash(t *testing.T) {
+	app := launchDesktopApp(t, "gui-draft-crash")
+	app.typeIntoTheEditor(t, "notes typed but never saved")
+	app.transcript.waitFor(t, "editor: unsaved changes present",
+		"the window never told the shell it was holding unsaved work")
+
+	// Killing the moment the window reports the change tests nothing about
+	// recovery: the draft is written on a short delay and WebKit flushes its
+	// storage on its own schedule, so the first version of this test killed the
+	// application before the text had ever been written and concluded that
+	// nothing survives. What has to be true before a kill is that the draft is
+	// on the disk, so that is what is waited for -- not a duration somebody
+	// guessed.
+	waitForDraftOnDisk(t, app)
+
+	app.crash(t)
+	app.start(t)
+
+	app.transcript.waitFor(t, "editor: unsaved changes present",
+		"the unsaved note did not come back after the application was killed")
+	capture(t, app.display, filepath.Join(app.shots, "restored-draft.png"))
+}
+
+// waitForDraftOnDisk blocks until the webview has written the draft out.
+//
+// WebKitGTK keeps localStorage in a SQLite database under the data directory.
+// This looks for the key's bytes in that file and its write-ahead log rather
+// than opening it: the question is only whether the write has left the
+// process, and a reader that understood the format would be a second thing to
+// keep right for no more answer than this gives.
+func waitForDraftOnDisk(t *testing.T, app *desktopApp) {
+	t.Helper()
+	storage := filepath.Join(app.dataHome, "notrios", "localstorage")
+	deadline := time.Now().Add(60 * time.Second)
+	for {
+		entries, _ := filepath.Glob(filepath.Join(storage, "*.localstorage*"))
+		for _, entry := range entries {
+			content, err := os.ReadFile(entry)
+			if err == nil && strings.Contains(string(content), "notrios.draft.v1") {
+				t.Logf("the draft reached %s", entry)
+				return
+			}
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("the draft never reached the webview storage under %s", storage)
+		}
+		time.Sleep(500 * time.Millisecond)
+	}
+}
+
+// desktopApp is a running Wails application on a virtual display.
+type desktopApp struct {
+	display    string
+	window     string
+	shots      string
+	transcript *liveLog
+	binary     string
+	config     string
+	// The webview's own storage, which is where the unsaved draft lives.
+	// WebKitGTK's default context keeps website data under the user's data
+	// directory, so a test that reads or writes a draft would otherwise share
+	// -- and change -- the storage of the person running it.
+	dataHome string
+	process  *exec.Cmd
+}
+
+// launchDesktopApp starts the real application on its own display and waits
+// until it has painted. Every check that made the import test trustworthy is
+// here: the tools, the built binary, the built assets, and a window that has
+// actually drawn something rather than one that merely exists.
+func launchDesktopApp(t *testing.T, name string) *desktopApp {
+	t.Helper()
+	if os.Getenv("NOTRIOS_GUI_DESKTOP_RUN") != "1" {
+		t.Skip("set NOTRIOS_GUI_DESKTOP_RUN=1 to drive the desktop application under Xvfb")
+	}
+	for _, tool := range []string{"Xvfb", "openbox", "xdotool", "scrot"} {
+		if _, err := exec.LookPath(tool); err != nil {
+			t.Skipf("%s is required to drive the desktop application: %v", tool, err)
+		}
+	}
+	repoRoot, err := filepath.Abs(filepath.Join("..", ".."))
+	if err != nil {
+		t.Fatal(err)
+	}
+	desktop := filepath.Join(repoRoot, "bin", "notrios")
+	if _, err := os.Stat(desktop); err != nil {
+		t.Fatalf("build the desktop binary first with `make gui`: %v", err)
+	}
+	webDir := filepath.Join(repoRoot, "web", "dist")
+	if _, err := os.Stat(filepath.Join(webDir, "index.html")); err != nil {
+		t.Fatalf("the desktop application serves built web assets from %s: %v", webDir, err)
+	}
+
+	cli := buildCLI(t)
+	replica := newSyncReplica(t, cli, name, t.TempDir())
+	replica.run(t, "init")
+	app := &desktopApp{
+		binary:   desktop,
+		config:   g18eConfig(t, replica, unusedLoopbackAddress(t), "", true, webDir),
+		display:  startVirtualDisplay(t),
+		shots:    t.TempDir(),
+		dataHome: t.TempDir(),
+	}
+	app.start(t)
+	return app
+}
+
+// start runs the application and waits until its window has drawn something.
+// The window exists long before the webview has painted, and under software
+// rendering the gap is around ten seconds: the first run of the import test
+// typed into a blank window and waited ninety seconds for something that had
+// never been asked for.
+func (a *desktopApp) start(t *testing.T) {
+	t.Helper()
+	application := exec.Command(a.binary, "-config", a.config)
+	application.Env = append(os.Environ(), "DISPLAY="+a.display, "NOTRIOS_UI_LOG=1",
+		"XDG_DATA_HOME="+a.dataHome,
+		"WEBKIT_DISABLE_COMPOSITING_MODE=1", "WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS=1")
+	// A transcript per run. Reusing one would make a line from before a restart
+	// answer a question asked after it, which is the same mistake as asserting
+	// on a screenshot taken too early.
+	a.transcript = &liveLog{}
+	application.Stdout = io.MultiWriter(os.Stderr, a.transcript)
+	application.Stderr = application.Stdout
+	if err := application.Start(); err != nil {
+		t.Fatal(err)
+	}
+	a.process = application
+	t.Cleanup(func() {
+		_ = application.Process.Kill()
+		_, _ = application.Process.Wait()
+	})
+
+	a.window = waitForWindow(t, a.display, "Notrios")
+	xdo(t, a.display, "windowactivate", "--sync", a.window)
+	waitForPaintedWindow(t, a.display, a.shots)
+}
+
+// crash kills the application the way a power cut or an OOM would: without
+// giving it a chance to run anything on the way out. Nothing that follows may
+// depend on the application having been asked to stop.
+func (a *desktopApp) crash(t *testing.T) {
+	t.Helper()
+	if err := a.process.Process.Kill(); err != nil {
+		t.Fatalf("could not stop the application: %v", err)
+	}
+	_, _ = a.process.Process.Wait()
+	waitForWindowGone(t, a.display, "Notrios")
+}
+
+// clickIntoTheEditor puts the caret in the Markdown editor, which is the third
+// of the four panes. Clicked rather than reached by keyboard because synthetic
+// Tab does not dispatch a DOM keydown under xdotool -- see
+// TestDesktopPublishThroughTheWindow. The point is well inside the pane and
+// below its toolbar, so it lands in the text area at any of the widths the
+// layout settles on.
+func (a *desktopApp) clickIntoTheEditor(t *testing.T) {
+	t.Helper()
+	xdo(t, a.display, "mousemove", "--sync", "760", "520")
+	xdo(t, a.display, "click", "1")
+}
+
+func (a *desktopApp) typeIntoTheEditor(t *testing.T, text string) {
+	t.Helper()
+	a.clickIntoTheEditor(t)
+	xdo(t, a.display, "type", "--delay", "30", text)
+}
+
+// undoUntilClean presses undo until the window reports nothing is unsaved.
+//
+// A count of undos would be a guess: an editor may group a typed phrase into
+// one history entry or into several, and the number is a property of
+// CodeMirror's history rather than of anything this test is about. The window
+// says when it is clean, so that is what is waited for.
+func undoUntilClean(t *testing.T, display string, transcript *liveLog) {
+	t.Helper()
+	for attempt := 0; attempt < 40; attempt++ {
+		if transcript.contains("editor: no unsaved changes") {
+			return
+		}
+		xdo(t, display, "key", "--clearmodifiers", "ctrl+z")
+		time.Sleep(250 * time.Millisecond)
+	}
+	t.Fatalf("the editor never returned to its saved state after 40 undos. The application said:\n%s",
+		transcript.String())
+}
+
+func assertWindowStillThere(t *testing.T, display, name, complaint string) {
+	t.Helper()
+	search := exec.Command("xdotool", "search", "--onlyvisible", "--name", name)
+	search.Env = append(os.Environ(), "DISPLAY="+display)
+	out, err := search.Output()
+	if err != nil || len(strings.Fields(string(out))) == 0 {
+		t.Fatal(complaint)
+	}
+}
+
+func waitForWindowGone(t *testing.T, display, name string) {
+	t.Helper()
+	deadline := time.Now().Add(30 * time.Second)
+	for {
+		search := exec.Command("xdotool", "search", "--onlyvisible", "--name", name)
+		search.Env = append(os.Environ(), "DISPLAY="+display)
+		out, err := search.Output()
+		if err != nil || len(strings.Fields(string(out))) == 0 {
+			return
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("the %q window was still open 30s after a close request with nothing unsaved", name)
+		}
+		time.Sleep(500 * time.Millisecond)
+	}
+}

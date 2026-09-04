@@ -34,7 +34,10 @@ class G18aEvidenceTests(unittest.TestCase):
         # 214 -> 215 in v0.8 H6: "Installing from a package".
         # 215 -> 216 in v0.8 H9 slice D: "Where the key material is kept".
         # 216 -> 220 in v0.8 H14 slice B: docs/features.md and its four sections.
-        self.assertEqual(inventory["grade_baseline"]["denominator"], 230)
+        # 230 -> 231 in v0.8 H15: "Saving, and what happens to unsaved changes"
+        # in docs/gui.md, which is where explicit saving and the protection of
+        # an unsaved draft are explained to the reader.
+        self.assertEqual(inventory["grade_baseline"]["denominator"], 231)
 
     def test_duplicate_fragment_is_rejected(self):
         source = """// A.\n//notrios:doc user same\nfunc A() {}\n// B.\n//notrios:doc user same\nfunc B() {}\n"""

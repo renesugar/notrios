@@ -3720,6 +3720,51 @@ unsaved, the interface has to protect it rather than let a click throw it away.
 The draft is the reader's own note text, kept in their own browser, sent
 nowhere, and removed the moment it is saved or discarded.
 
+**The window's own close button.** `beforeunload` covers a reload and a closed
+browser tab. It does not cover the desktop window: on Linux the title bar's
+close is a GTK delete-event that Wails turns straight into a quit, and File →
+Quit takes the same route. `OnBeforeClose` is the only place that question can
+be asked, and it is answered in Go -- so Go has to be told, which is what the
+`WindowState` binding is for. It carries one boolean and nothing the person
+wrote, and it is bound in *both* modes rather than only where this process owns
+the store: a `-gui-only` window edits notes too and its close button is just as
+final, and the object reaches no store, no filesystem and no network.
+
+An unanswered dialog fails closed -- an error showing it, or an Escape, keeps
+the window open, because the cost of that is a second click and the cost of the
+other choice is the person's work. The dialog names no note, which keeps
+content out of that layer and avoids a hazard worth recording: on Linux Wails
+passes the message to `gtk_message_dialog_new` as the *format* string, so a note
+titled "50% done" would make GTK read an argument nobody passed.
+
+Driven for real by three tests against the running application, which read its
+own transcript for what it decided rather than inferring it from pixels:
+`TestDesktopCloseAsksBeforeDiscardingUnsavedWork` types, asks the window
+manager to close (openbox's Alt+F4, a true WM_DELETE_WINDOW), waits for the
+native dialog, dismisses it, and checks the application is still there -- then
+undoes the work and closes with Ctrl+Q, because a guard that could refuse but
+never accept would trap somebody in a window they cannot close.
+`TestDesktopCloseProceedsWhenAskedTo` answers the dialog yes and checks the
+window goes: what counts as "yes" is a string GTK chooses, not this code.
+
+**What the dialog may promise, measured.** The first wording offered to discard
+the work. That was wrong, and finding out why was the useful part.
+`TestDesktopKeepsTheDraftAcrossACrash` kills the application outright and
+starts it again: the draft comes back, because WebKitGTK keeps localStorage in
+a SQLite database under the data directory and that survives a killed process.
+So closing the window discards nothing, and the dialog now says the changes
+will be waiting -- which also avoids a race that had no good answer, since
+clearing the draft from `OnBeforeClose` would be a message to a webview whose
+process is already leaving.
+
+That test failed first, and its failure was the harness rather than the
+product: it killed the application milliseconds after the window reported the
+change, before the debounced write had happened at all. It now waits for the
+draft's key to appear in the webview's storage file before killing anything --
+the precondition stated as itself rather than as a duration somebody guessed.
+The residue is a real limit and is documented: a machine that dies in the first
+moment after a keystroke can lose the last few words.
+
 Covered by `web/src/__tests__/draft.test.ts` (storage, damage, refusal) and
 `web/src/__tests__/draft-protection.test.tsx` (the three properties above, in
 the app shell). One consequence for the journeys: each runs in a fresh browser

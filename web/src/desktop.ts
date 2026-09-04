@@ -107,3 +107,57 @@ export function nativeBridge(): Record<string, unknown> | undefined {
   return (window as Window & { go?: { main?: { NativeUIBridge?: Record<string, unknown> } } })
     .go?.main?.NativeUIBridge;
 }
+
+/**
+ * The window-state binding.
+ *
+ * Bound in both desktop modes, unlike `NativeUIBridge` -- see
+ * `cmd/notrios/gui_window_state.go` for why that is not a hole in that
+ * object's access control. It carries one boolean and no note content.
+ */
+interface WindowStateBridge {
+  SetUnsavedChanges?: (unsaved: boolean) => Promise<void>;
+}
+
+function windowStateBridge(): WindowStateBridge | undefined {
+  return (window as Window & { go?: { main?: { WindowState?: WindowStateBridge } } }).go?.main?.WindowState;
+}
+
+let pendingUnsaved: boolean | null = null;
+let unsavedTimer: number | undefined;
+
+function deliverUnsavedChanges(): boolean {
+  const bridge = windowStateBridge();
+  if (pendingUnsaved === null || typeof bridge?.SetUnsavedChanges !== 'function') return false;
+  const value = pendingUnsaved;
+  pendingUnsaved = null;
+  // Best effort. A report that fails must not interrupt typing, and the next
+  // change re-sends: the value is the current state rather than an increment,
+  // so a lost one is corrected by the one after it.
+  void Promise.resolve(bridge.SetUnsavedChanges(value)).catch(() => {});
+  return true;
+}
+
+/**
+ * Tells the desktop shell whether the editor is holding unsaved work, so that
+ * closing the window can ask before discarding it.
+ *
+ * The window's own close button does not go through `beforeunload`; the shell
+ * asks instead, in Go, and can only do that if it has been told. Retried until
+ * the binding appears for the same reason `useNativeBridgeReady` polls: Wails
+ * injects `window.go` after the webview starts, and a report sent once at the
+ * moment the state changed would be dropped if it arrived first. It gives up
+ * after a few seconds, because in a browser there is nothing to tell.
+ */
+export function reportUnsavedChanges(unsaved: boolean): void {
+  pendingUnsaved = unsaved;
+  if (deliverUnsavedChanges()) return;
+  if (unsavedTimer !== undefined) return;
+  const startedAt = Date.now();
+  unsavedTimer = window.setInterval(() => {
+    if (deliverUnsavedChanges() || Date.now() - startedAt > 5000) {
+      window.clearInterval(unsavedTimer);
+      unsavedTimer = undefined;
+    }
+  }, 150);
+}

@@ -1045,7 +1045,7 @@
     },
     {
       "path": "docs/gui.md",
-      "sha256": "729180b3e9dd7282db4fcb0884d6a824251a2afb2b7a826b28bd263bcc731589",
+      "sha256": "6dffb0a3b66c121d1455f2d14296f6924f6a1da6f3976e38668c2e9682aae3d3",
       "help_note": "doc_help_gui",
       "owner": "ts:web/src/App.tsx#App",
       "sections": [
@@ -1223,6 +1223,16 @@
           "id": "choosing-which-notebook-a-note-goes-in",
           "level": 2,
           "title": "Choosing which notebook a note goes in",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "ts:web/src/App.tsx#App",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        },
+        {
+          "id": "saving-and-what-happens-to-unsaved-changes",
+          "level": 2,
+          "title": "Saving, and what happens to unsaved changes",
           "audience": "user",
           "kind": "actionable_or_reference",
           "owner": "ts:web/src/App.tsx#App",
@@ -2453,14 +2463,14 @@
       "id": "published_markdown",
       "count": 18,
       "unit": "pages",
-      "sections": 230,
+      "sections": 231,
       "owner": "go:github.com/renesugar/notrios/internal/helpdocs#Seed"
     },
     {
       "id": "help_notebook",
       "count": 18,
       "unit": "mirrored notes",
-      "sections": 230,
+      "sections": 231,
       "owner": "go:github.com/renesugar/notrios/internal/helpdocs#Seed"
     },
     {
@@ -2557,9 +2567,9 @@
       "executed": 0,
       "generated": 0,
       "claimed": 0,
-      "unverified": 230
+      "unverified": 231
     },
-    "denominator": 230,
+    "denominator": 231,
     "reconciles": true,
     "finding": "The manual does not yet name directive fragments or executable checks, so all current section units are unverified even where independent tests exist."
   },

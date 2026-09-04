@@ -58,7 +58,11 @@ func runGUI(handler http.Handler, local *service.Service) error {
 	// asked for. Collecting it unconditionally is what makes it useful after
 	// the fact: a log somebody has to switch on before reproducing a problem is
 	// a log that is empty when the problem first happens.
-	bridge := &NativeUIBridge{local: local, actions: &actionLog{enabled: verboseUILog()}}
+	actions := &actionLog{enabled: verboseUILog()}
+	bridge := &NativeUIBridge{local: local, actions: actions}
+	// Bound in both modes; see gui_window_state.go for why that is not a hole
+	// in the rule above it.
+	unsavedWork := &WindowState{actions: actions}
 
 	appMenu := menu.NewMenu()
 	fileMenu := appMenu.AddSubmenu("File")
@@ -130,9 +134,54 @@ func runGUI(handler http.Handler, local *service.Service) error {
 			appCtx = ctx
 			bridge.ctx = ctx
 		},
+		// The last thing standing between unsaved work and a closed window.
+		//
+		// Saving here is deliberate rather than continuous (see web/src/draft.ts),
+		// so the editor can hold text that is in no store, and the interface asks
+		// before anything replaces it. Closing the window is the one path the
+		// frontend cannot intercept: `beforeunload` covers a reload and a browser
+		// tab, and neither the title bar nor File → Quit goes through it.
+		//
+		// Both of those paths do go through here -- the GTK delete-event becomes
+		// the "Q" message, and runtime.Quit calls the same frontend method -- and
+		// both call this from a goroutine, which is what makes it safe to block on
+		// a dialog: doing so on the GTK main thread would deadlock against the
+		// thread that has to run it.
+		OnBeforeClose: func(ctx context.Context) bool {
+			if !unsavedWork.hasUnsavedChanges() {
+				return false
+			}
+			// A question dialog on Linux is GTK's Yes/No pair: Wails' Buttons
+			// option is not used by that implementation, so the message has to
+			// be a question those two words answer.
+			//
+			// It does not offer to discard the work, because that is not what
+			// happens. The draft is kept in the webview's storage, and that
+			// storage was measured surviving a killed process, so a window
+			// closed here opens again holding the same text. Saying "discard"
+			// would be a lie the next start would expose -- and clearing the
+			// draft from here would be a race against a process on its way out.
+			answer, err := runtime.MessageDialog(ctx, runtime.MessageDialogOptions{
+				Type:  runtime.QuestionDialog,
+				Title: "Unsaved changes",
+				Message: "This note has changes that have not been saved.\n\n" +
+					"Close Notrios anyway? The changes will be waiting when you open it again.",
+			})
+			// Fail closed. If the dialog could not be shown or was dismissed
+			// without an answer, the window stays open: the cost of that is a
+			// second click, and the cost of the other choice is the person's
+			// work.
+			if err != nil || answer != "Yes" {
+				actions.record("window", "close refused: unsaved changes")
+				return true
+			}
+			actions.record("window", "closed with unsaved changes, kept for the next start")
+			return false
+		},
 	}
+	app.Bind = []interface{}{unsavedWork}
 	if local != nil {
-		app.Bind = []interface{}{bridge}
+		app.Bind = append(app.Bind, bridge)
 	}
 	return wails.Run(app)
 }

@@ -155,6 +155,23 @@ describe('an editor holding unsaved work', () => {
   });
 });
 
+describe('the desktop shell', () => {
+  it('is told what the editor is holding, because closing the window is not the frontend\'s to intercept', async () => {
+    const reported: boolean[] = [];
+    (window as unknown as { go: unknown }).go = {
+      main: { WindowState: { SetUnsavedChanges: (unsaved: boolean) => { reported.push(unsaved); return Promise.resolve(); } } },
+    };
+    try {
+      await openAndType();
+      await waitFor(() => expect(reported).toContain(true));
+      fireEvent.click(screen.getByTestId('save-button'));
+      await waitFor(() => expect(reported[reported.length - 1]).toBe(false));
+    } finally {
+      delete (window as unknown as { go?: unknown }).go;
+    }
+  });
+});
+
 describe('a window that is reloaded with unsaved work', () => {
   it('reopens the note and puts the typed text back, ready to save as a revision', async () => {
     await openAndType();
