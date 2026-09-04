@@ -3196,6 +3196,21 @@ the note, the REST calls already exist, and
 capability is recorded without a journey to match. That test was written as a
 standing instruction and this item is the work it was waiting for.
 
+**The registry's GUI column is not an inventory, and that is a defect worth
+naming (2026-09-03).** Asked for a capability-by-adapter table, the registry
+answers for the command line, REST and MCP from anchored enumerations, and for
+the GUI from **whatever GUI journeys happen to have been written**. It therefore
+understates: it records no GUI support for attachments, remote media or jobs,
+while `web/src` carries resource handling in fifteen files, localization in six
+and job handling in five.
+
+The coverage gate never caught this, and could not: it enforces that every
+*surface* is claimed by a feature, and the GUI is the one surface with nothing
+to enumerate. So the gate is green while a whole column is wrong. Any table
+built from the registry today must say which columns are measured and which are
+merely recorded -- and this is the strongest argument yet for the control crawl
+below, which turns the GUI column from an assertion into a measurement.
+
 **Give the GUI a real inventory, by clicking it.** Every other surface can be
 enumerated from source and is: 61 command-line usage forms, 63 configuration
 keys, 109 REST operations, 46 MCP tools, each with a pinned count that fails when
