@@ -40,7 +40,11 @@ HERE = pathlib.Path(__file__).resolve().parent
 # never looked at, including delete, restore, purge, localize, the attachment
 # upload field, and everything on seven of the sync centre's eight tabs.
 # 52 -> 53 when the GUI gained the Import/Export control.
-EXPECTED_CONTROLS = 53
+# 53 -> 58 when jobs and a kept search were seeded: Retry on a cancelled sync
+# job, Cancel on one still queued, the keep-search control, and three controls
+# belonging to the notebook a seeded import created. Only one of those five is
+# a new feature; the rest were always there and had nothing to render for.
+EXPECTED_CONTROLS = 58
 EXPECTED_STATES = 16
 
 # Why each state was added, as something that can fail. A state that is reached
@@ -53,6 +57,11 @@ STATE_EVIDENCE = {
     "note-open": "testid:delete-button",
     "note-trashed": "testid:restore-button",
     "note-remote-media": "testid:localize-button",
+    # Retry renders only on a failed or cancelled job, so this entry is really
+    # a guard on the seeding: if nothing arranges a cancelled sync job, the
+    # control vanishes and the jobs row goes back to looking absent. It was
+    # recorded as unmeasured for exactly that reason until one was seeded.
+    "sync-overview": "shape:button|||sync-list-row",
 }
 
 # Reached, and deliberately expected to contribute nothing of their own. These

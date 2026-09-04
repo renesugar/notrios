@@ -4,13 +4,13 @@
     {
       "id": "start",
       "reached": true,
-      "controls": 81,
+      "controls": 86,
       "steps": []
     },
     {
       "id": "all-notes",
       "reached": true,
-      "controls": 81,
+      "controls": 86,
       "steps": [
         "testid=sidebar-row-snb_all_notes"
       ]
@@ -18,7 +18,7 @@
     {
       "id": "help",
       "reached": true,
-      "controls": 79,
+      "controls": 83,
       "steps": [
         "testid=sidebar-row-nb_help"
       ]
@@ -26,7 +26,7 @@
     {
       "id": "trash",
       "reached": true,
-      "controls": 62,
+      "controls": 66,
       "steps": [
         "testid=sidebar-row-snb_trash"
       ]
@@ -34,7 +34,7 @@
     {
       "id": "new-note",
       "reached": true,
-      "controls": 81,
+      "controls": 86,
       "steps": [
         "testid=new-note-button"
       ]
@@ -42,7 +42,7 @@
     {
       "id": "note-open",
       "reached": true,
-      "controls": 85,
+      "controls": 90,
       "steps": [
         "testid=sidebar-row-snb_all_notes",
         "css=.result-card text~Crawl fixture note#0"
@@ -51,7 +51,7 @@
     {
       "id": "note-trashed",
       "reached": true,
-      "controls": 61,
+      "controls": 65,
       "steps": [
         "testid=sidebar-row-snb_trash",
         "css=.result-card text~Trashed fixture note#0"
@@ -60,7 +60,7 @@
     {
       "id": "note-remote-media",
       "reached": true,
-      "controls": 87,
+      "controls": 92,
       "steps": [
         "testid=sidebar-row-snb_all_notes",
         "css=.result-card text~Remote media fixture#0"
@@ -69,7 +69,7 @@
     {
       "id": "sync-overview",
       "reached": true,
-      "controls": 95,
+      "controls": 102,
       "steps": [
         "css=.sync-header-button#0"
       ]
@@ -77,7 +77,7 @@
     {
       "id": "sync-setup",
       "reached": true,
-      "controls": 96,
+      "controls": 101,
       "steps": [
         "css=.sync-header-button#0",
         "button=^Setup"
@@ -86,7 +86,7 @@
     {
       "id": "sync-peers",
       "reached": true,
-      "controls": 96,
+      "controls": 101,
       "steps": [
         "css=.sync-header-button#0",
         "button=^Peers"
@@ -95,7 +95,7 @@
     {
       "id": "sync-retention",
       "reached": true,
-      "controls": 90,
+      "controls": 95,
       "steps": [
         "css=.sync-header-button#0",
         "button=^Retention"
@@ -104,7 +104,7 @@
     {
       "id": "sync-attachments",
       "reached": true,
-      "controls": 90,
+      "controls": 95,
       "steps": [
         "css=.sync-header-button#0",
         "button=^Attachments"
@@ -113,7 +113,7 @@
     {
       "id": "sync-conflicts",
       "reached": true,
-      "controls": 90,
+      "controls": 95,
       "steps": [
         "css=.sync-header-button#0",
         "button=^Conflicts"
@@ -122,7 +122,7 @@
     {
       "id": "sync-backup",
       "reached": true,
-      "controls": 101,
+      "controls": 106,
       "steps": [
         "css=.sync-header-button#0",
         "button=^Backup"
@@ -131,7 +131,7 @@
     {
       "id": "sync-repairs",
       "reached": true,
-      "controls": 90,
+      "controls": 95,
       "steps": [
         "css=.sync-header-button#0",
         "button=^Repairs"
@@ -234,12 +234,29 @@
       "role": "",
       "testid": "",
       "examples": [
+        "Cancel",
         "Create 15-minute code"
+      ],
+      "instances": 2,
+      "enabled_instances": 2,
+      "states": [
+        "sync-overview",
+        "sync-peers"
+      ],
+      "always_disabled": false
+    },
+    {
+      "id": "shape:button|||sync-list-row",
+      "tag": "button",
+      "role": "",
+      "testid": "",
+      "examples": [
+        "Retry"
       ],
       "instances": 1,
       "enabled_instances": 1,
       "states": [
-        "sync-peers"
+        "sync-overview"
       ],
       "always_disabled": false
     },
@@ -523,12 +540,12 @@
       "role": "",
       "testid": "",
       "examples": [
-        "🔒 Troubleshooting",
-        "🔒 Stable links between notes and machines",
-        "🔒 The Notrios service"
+        "Job fixture note",
+        "Written after the drive went away",
+        "Remote media fixture"
       ],
-      "instances": 277,
-      "enabled_instances": 277,
+      "instances": 303,
+      "enabled_instances": 303,
       "states": [
         "start",
         "all-notes",
@@ -905,6 +922,23 @@
       "always_disabled": false
     },
     {
+      "id": "testid:keep-search",
+      "tag": "button",
+      "role": "",
+      "testid": "keep-search",
+      "examples": [
+        "Save this search as a notebook in the sidebar"
+      ],
+      "instances": 3,
+      "enabled_instances": 3,
+      "states": [
+        "help",
+        "trash",
+        "note-trashed"
+      ],
+      "always_disabled": false
+    },
+    {
       "id": "testid:localize-button",
       "tag": "button",
       "role": "",
@@ -927,6 +961,34 @@
       "examples": [
         "Start a new note in “Notes”"
       ],
+      "instances": 16,
+      "enabled_instances": 16,
+      "states": [
+        "start",
+        "all-notes",
+        "help",
+        "trash",
+        "new-note",
+        "note-open",
+        "note-trashed",
+        "note-remote-media",
+        "sync-overview",
+        "sync-setup",
+        "sync-peers",
+        "sync-retention",
+        "sync-attachments",
+        "sync-conflicts",
+        "sync-backup",
+        "sync-repairs"
+      ],
+      "always_disabled": false
+    },
+    {
+      "id": "testid:notebook-option-nb_joplin_jobs-folder",
+      "tag": "button",
+      "role": "option",
+      "testid": "notebook-option-nb_joplin_jobs-folder",
+      "examples": [],
       "instances": 16,
       "enabled_instances": 16,
       "states": [
@@ -1038,12 +1100,72 @@
       "always_disabled": false
     },
     {
+      "id": "testid:sidebar-delete-nb_joplin_jobs-folder",
+      "tag": "button",
+      "role": "",
+      "testid": "sidebar-delete-nb_joplin_jobs-folder",
+      "examples": [
+        "Delete the notebook Imported Notes"
+      ],
+      "instances": 16,
+      "enabled_instances": 16,
+      "states": [
+        "start",
+        "all-notes",
+        "help",
+        "trash",
+        "new-note",
+        "note-open",
+        "note-trashed",
+        "note-remote-media",
+        "sync-overview",
+        "sync-setup",
+        "sync-peers",
+        "sync-retention",
+        "sync-attachments",
+        "sync-conflicts",
+        "sync-backup",
+        "sync-repairs"
+      ],
+      "always_disabled": false
+    },
+    {
       "id": "testid:sidebar-row-nb_help",
       "tag": "button",
       "role": "",
       "testid": "sidebar-row-nb_help",
       "examples": [
         "Help"
+      ],
+      "instances": 16,
+      "enabled_instances": 16,
+      "states": [
+        "start",
+        "all-notes",
+        "help",
+        "trash",
+        "new-note",
+        "note-open",
+        "note-trashed",
+        "note-remote-media",
+        "sync-overview",
+        "sync-setup",
+        "sync-peers",
+        "sync-retention",
+        "sync-attachments",
+        "sync-conflicts",
+        "sync-backup",
+        "sync-repairs"
+      ],
+      "always_disabled": false
+    },
+    {
+      "id": "testid:sidebar-row-nb_joplin_jobs-folder",
+      "tag": "button",
+      "role": "",
+      "testid": "sidebar-row-nb_joplin_jobs-folder",
+      "examples": [
+        "Imported Notes"
       ],
       "instances": 16,
       "enabled_instances": 16,

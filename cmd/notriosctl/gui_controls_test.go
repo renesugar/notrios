@@ -3,11 +3,13 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 // TestGUIControlInventory measures what the Wails GUI presents.
@@ -45,6 +47,7 @@ func TestGUIControlInventory(t *testing.T) {
 	config := g18eConfig(t, replica, address, "", true, webDir)
 	allowRemoteMediaDomain(t, config, "images.example.org")
 	startDaemon(t, daemon, config, address)
+	seedJobRecords(t, cli, replica, "http://"+address)
 
 	runner := exec.Command("node", filepath.Join(repoRoot, "performance", "v0.8-h15", "gui_controls.mjs"))
 	runner.Dir = repoRoot
@@ -125,4 +128,114 @@ func allowRemoteMediaDomain(t *testing.T, configPath, domain string) {
 	if err := os.WriteFile(configPath, append(contents, policy...), 0o600); err != nil {
 		t.Fatal(err)
 	}
+}
+
+// seedJobRecords makes sure there is work for the interface to show.
+//
+// The jobs row in the capability table was recorded as "no GUI journey" and
+// then, when the control crawl could not find a job control either, as
+// unmeasured rather than absent -- because job rows render only once a job
+// exists, and nothing had ever created one. This creates both kinds so the
+// crawl can answer the question properly.
+//
+// The two are not the same question. The sync centre lists the four sync job
+// kinds and only those (internal/httpapi.syncUIJobs), so a sync job should
+// appear. An import job is a job by the same definition -- it has a record, a
+// state and a kind, and `notriosctl jobs list` shows it -- and if it does not
+// appear anywhere in the interface, that is a real gap rather than a seeding
+// accident. Seeding both is what makes the difference between those two
+// answers visible.
+func seedJobRecords(t *testing.T, cli string, replica *syncReplica, baseURL string) {
+	t.Helper()
+
+	// An import, which writes a job record of kind import_joplin_raw.
+	source := t.TempDir()
+	for name, body := range map[string]string{
+		"folder.md": "Imported Notes\n\nid: jobs-folder\ntype_: 2\n",
+		"note.md":   "Job fixture note\n\nA note that exists so a job record does.\n\nid: jobs-note\nparent_id: jobs-folder\ntype_: 1\n",
+	} {
+		if err := os.WriteFile(filepath.Join(source, name), []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if imported := runCLI(t, cli, "import", "joplin-raw", "--db", replica.db,
+		"--asset-store", replica.assets, source); imported.exitCode != 0 {
+		t.Fatalf("import joplin-raw exited %d: %s", imported.exitCode, imported.stderr)
+	}
+
+	// And sync jobs, queued through the surface the interface itself uses
+	// rather than written into the store, so what the crawl sees is what
+	// pressing "Sync now" would produce.
+	queueAndWaitSync(t, baseURL, "incremental")
+
+	// Two more, because every job control in this interface is gated on state.
+	// Cancel renders only while a job is running or queued, Retry only on one
+	// that failed or was cancelled, and a job that succeeded is a row of text
+	// with no control on it at all. Seeding only the happy path measured an
+	// interface with no job controls, which would have been read as their
+	// absence.
+	//
+	// Replacing the carrier with a file is what a person meets when a removable
+	// drive is not mounted, and the worker treats that as offline rather than
+	// as a failure: the job stays queued with a retry pending and never
+	// settles. That is the product behaving sensibly, and it is also why the
+	// first attempt at seeding a failed job waited a minute for one that was
+	// never coming. It does give a job parked in a known state, which makes
+	// cancelling it exact rather than a race against a job that might finish
+	// first.
+	carrier := filepath.Join(filepath.Dir(replica.db), "sync-carrier")
+	if err := os.RemoveAll(carrier); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(carrier, []byte("not a directory"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	// Something for them to carry: a sync with nothing to send settles without
+	// ever reaching the carrier.
+	if note := runCLI(t, cli, "notes", "create", "--db", replica.db, "--asset-store", replica.assets,
+		"--title", "Written after the drive went away",
+		"--body", "So the next synchronization has something to carry.\n"); note.exitCode != 0 {
+		t.Fatalf("notes create exited %d: %s", note.exitCode, note.stderr)
+	}
+
+	// One left waiting, so the interface has a job to offer Cancel on.
+	waiting := queueSyncJob(t, baseURL)
+	waitForSyncJobState(t, baseURL, waiting, "queued", "running")
+
+	// And one cancelled, so it has a job to offer Retry on.
+	cancelled := queueSyncJob(t, baseURL)
+	uiRequest(t, http.MethodPost, baseURL+"/api/v1/jobs/"+cancelled+"/cancel", nil, "", http.StatusOK)
+	waitForSyncJobState(t, baseURL, cancelled, "cancelled")
+}
+
+// queueSyncJob asks for a synchronization the way the interface does.
+func queueSyncJob(t *testing.T, baseURL string) string {
+	t.Helper()
+	started := uiJSON(t, http.MethodPost, baseURL+"/api/v1/jobs/sync/start",
+		`{"kind":"incremental"}`, http.StatusAccepted)
+	return stringField(t, mapField(t, started["job"]), "id")
+}
+
+// waitForSyncJobState waits for a job to reach any of the given states.
+//
+// queueAndWaitSync fails on anything but success, which is right for its other
+// callers and wrong here: what is being arranged is a job that does not
+// succeed. The failure message names the state the job was actually in,
+// because "never settled" on its own sent the previous round of this into
+// guesswork -- the answer, once the job said it, was "sync retry pending:
+// offline", which no amount of reasoning about carriers had produced.
+func waitForSyncJobState(t *testing.T, baseURL, id string, want ...string) {
+	t.Helper()
+	deadline := time.Now().Add(60 * time.Second)
+	for time.Now().Before(deadline) {
+		job := uiRequest(t, http.MethodGet, baseURL+"/api/v1/jobs/"+id, nil, "", http.StatusOK)
+		for _, state := range want {
+			if job["state"] == state {
+				return
+			}
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
+	final := uiRequest(t, http.MethodGet, baseURL+"/api/v1/jobs/"+id, nil, "", http.StatusOK)
+	t.Fatalf("the sync job never reached %v; it was last seen as %v", want, final)
 }

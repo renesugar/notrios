@@ -4,11 +4,19 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Notrios</title>
-    <!-- Two favicons rather than one. The brand tile is #132965, which has
-         13.7:1 contrast on a white page and 1.03:1 on a dark browser tab strip
-         -- on the latter the tile silhouette disappears and the mark reads as a
-         white N floating in nothing. The dark variant adds a faint rim to
-         restore the outline without altering the brand colour. -->
+    <!-- The brand tile is #132965, which has 13.7:1 contrast on a white page
+         and 1.03:1 on a dark browser tab strip: on the latter the silhouette
+         disappears and the mark reads as a white N floating in nothing. The
+         dark variants add a faint rim to restore the outline without altering
+         the brand colour.
+
+         Three tiers, because no single format covers everything. The SVG is
+         one file that handles both schemes itself, through a
+         prefers-color-scheme rule inside it, and stays sharp at any size. The
+         two PNGs do the same job for browsers that do not take an SVG icon,
+         and .ico covers the oldest. apple-touch-icon and the manifest icons
+         must be PNG regardless, so the raster set is not going anywhere. -->
+    <link rel="icon" type="image/svg+xml" href="/notrios.svg" />
     <link rel="icon" type="image/png" href="/notrios-32.png" media="(prefers-color-scheme: light)" />
     <link rel="icon" type="image/png" href="/notrios-dark-32.png" media="(prefers-color-scheme: dark)" />
     <link rel="icon" href="/favicon.ico" sizes="any" />

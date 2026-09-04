@@ -312,7 +312,10 @@
       "mcp": [
         "run_note_query"
       ],
-      "surface_note": "No command line; the GUI renders them in place."
+      "surface_note": "No command line. The GUI renders them where they sit: the preview finds each ```note-query block, runs it through the same parser the search box uses, and fills the block with the result. This row read as a gap for as long as the control crawl was the only measurement, and the crawl cannot see it and never could -- a query block renders content, not a control, and the crawl enumerates interactive elements. Its evidence is web/src/note-query.ts and its tests instead.",
+      "gui": [
+        "Query blocks render in the preview, in place"
+      ]
     },
     {
       "id": "batch-operations",
@@ -508,7 +511,12 @@
         "cancel_sync_job",
         "retry_sync_job"
       ],
-      "surface_note": "No GUI journey; progress appears inline where the work was started. Not settled by the H15 crawl either: job rows only render once a job exists and nothing seeded one, so this row is unmeasured rather than known absent."
+      "surface_note": "Measured by the H15 control crawl once jobs were seeded, which is what the row had been waiting for: every job control is gated on state, so an interface holding only completed jobs shows none of them. What the GUI has is the sync centre's list of recent *sync* jobs, with Cancel on one still running or queued and Retry on one that failed or was cancelled. Import, export and snapshot jobs appear nowhere: the sync centre lists four sync kinds and only those, and the import dialog shows a final report rather than a job. There is no general job list, no inspect and no reset.",
+      "gui": [
+        "Recent synchronization jobs \u2014 kind, state and progress",
+        "Cancel \u2014 while a sync job is running or queued",
+        "Retry \u2014 on a sync job that failed or was cancelled"
+      ]
     },
     {
       "id": "profiles",
