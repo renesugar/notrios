@@ -52,7 +52,9 @@ func TestEveryJourneyNamesARealFeature(t *testing.T) {
 func TestFeaturesWithoutAJourneyAreTracked(t *testing.T) {
 	// 24 -> 23 in v0.8 H14 slice F: the migrate-credentials journey, added
 	// because the pilot showed a guessable command cannot measure a page.
-	const baseline = 23
+	// 23 -> 22 in v0.8 H14: the tagging journey, which could not be written
+	// until the command line could tag a note.
+	const baseline = 22
 
 	catalogue, registry := load(t)
 	covered := map[string]bool{}

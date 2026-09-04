@@ -1,8 +1,11 @@
 package main
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
+	"sort"
+	"strings"
 	"testing"
 )
 
@@ -98,5 +101,112 @@ func TestTagRenameCLIExitsNonZeroOnPlannedMerge(t *testing.T) {
 	changes := report["changes"].([]any)
 	if len(changes) != 1 || changes[0].(map[string]any)["action"] != "merge" {
 		t.Fatalf("expected a reported merge: %s", merge.stdout)
+	}
+}
+
+// TestTagAddRemoveAndList covers the commands that close v0.8 H14's running
+// example: tagging a note was reachable from the store, REST and MCP and from
+// neither surface a person uses.
+func TestTagAddRemoveAndList(t *testing.T) {
+	binary := sharedBinary(t, "notriosctl")
+	sandbox := t.TempDir()
+	roots := []string{"--db", filepath.Join(sandbox, "notes.sqlite"), "--asset-store", filepath.Join(sandbox, "assets")}
+
+	created := runCLIIn(t, sandbox, binary, append([]string{"notes", "create", "--title", "Reed beds", "--body", "dusk"}, roots...)...)
+	if created.exitCode != 0 {
+		t.Fatalf("notes create: %s", created.stderr)
+	}
+	var note map[string]any
+	if err := json.Unmarshal([]byte(created.stdout), &note); err != nil {
+		t.Fatal(err)
+	}
+	id, _ := note["document_id"].(string)
+
+	tagsOf := func(result cliResult) []string {
+		t.Helper()
+		var decoded map[string]any
+		if err := json.Unmarshal([]byte(result.stdout), &decoded); err != nil {
+			t.Fatalf("%v in %q", err, result.stdout)
+		}
+		names := []string{}
+		for _, item := range decoded["tags"].([]any) {
+			names = append(names, item.(string))
+		}
+		sort.Strings(names)
+		return names
+	}
+
+	// A hierarchical tag, because that is the shape `tags rename` already works
+	// in and the one most likely to be mishandled.
+	added := runCLIIn(t, sandbox, binary, append([]string{"tags", "add", "--document", id, "--tag", "field/dusk"}, roots...)...)
+	if added.exitCode != 0 {
+		t.Fatalf("tags add: %s", added.stderr)
+	}
+	if got := tagsOf(added); len(got) != 1 || got[0] != "field/dusk" {
+		t.Fatalf("after add, tags are %v", got)
+	}
+
+	second := runCLIIn(t, sandbox, binary, append([]string{"tags", "add", "--document", id, "--tag", "birds"}, roots...)...)
+	if got := tagsOf(second); len(got) != 2 {
+		t.Fatalf("after a second add, tags are %v", got)
+	}
+
+	// The change is verifiable from the same surface that made it, which is the
+	// point of `tags list`: a command that changes something and offers no way
+	// to see the change asks its caller to take it on trust.
+	listed := runCLIIn(t, sandbox, binary, append([]string{"tags", "list", "--document", id}, roots...)...)
+	if got := tagsOf(listed); len(got) != 2 || got[0] != "birds" || got[1] != "field/dusk" {
+		t.Fatalf("tags list reports %v", got)
+	}
+
+	removed := runCLIIn(t, sandbox, binary, append([]string{"tags", "remove", "--document", id, "--tag", "field/dusk"}, roots...)...)
+	if removed.exitCode != 0 {
+		t.Fatalf("tags remove: %s", removed.stderr)
+	}
+	if got := tagsOf(removed); len(got) != 1 || got[0] != "birds" {
+		t.Fatalf("after remove, tags are %v", got)
+	}
+
+	all := runCLIIn(t, sandbox, binary, append([]string{"tags", "list"}, roots...)...)
+	if !strings.Contains(all.stdout, "birds") {
+		t.Fatalf("the library tag list does not mention the remaining tag: %s", all.stdout)
+	}
+}
+
+// TestTagRefusalsNameWhatWasAsked holds these commands to the standard the
+// journey catalogue found `import --collection` failing: a refusal must say
+// what the user asked for, not what the database said.
+func TestTagRefusalsNameWhatWasAsked(t *testing.T) {
+	binary := sharedBinary(t, "notriosctl")
+	sandbox := t.TempDir()
+	roots := []string{"--db", filepath.Join(sandbox, "notes.sqlite"), "--asset-store", filepath.Join(sandbox, "assets")}
+
+	created := runCLIIn(t, sandbox, binary, append([]string{"notes", "create", "--title", "t", "--body", "b"}, roots...)...)
+	var note map[string]any
+	if err := json.Unmarshal([]byte(created.stdout), &note); err != nil {
+		t.Fatal(err)
+	}
+	id, _ := note["document_id"].(string)
+
+	absent := runCLIIn(t, sandbox, binary, append([]string{"tags", "remove", "--document", id, "--tag", "never-applied"}, roots...)...)
+	if absent.exitCode == 0 {
+		t.Errorf("removing a tag the note does not carry must fail")
+	}
+	if !strings.Contains(absent.stderr, "never-applied") {
+		t.Errorf("the refusal must name the tag: %q", absent.stderr)
+	}
+
+	// "This note has no tags" and "there is no such note" are different answers,
+	// and a command whose job is verifying an edit must not conflate them.
+	missing := runCLIIn(t, sandbox, binary, append([]string{"tags", "list", "--document", "doc_nope"}, roots...)...)
+	if missing.exitCode == 0 {
+		t.Errorf("listing tags for a note that does not exist must fail, not report zero tags")
+	}
+	if !strings.Contains(missing.stderr, "doc_nope") {
+		t.Errorf("the refusal must name the note: %q", missing.stderr)
+	}
+
+	if result := runCLIIn(t, sandbox, binary, append([]string{"tags", "add", "--document", id}, roots...)...); result.exitCode == 0 {
+		t.Errorf("adding with no --tag must be refused")
 	}
 }

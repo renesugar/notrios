@@ -44,6 +44,7 @@ Lines renders the catalogue for the generated fragment.
 - Find what has gone stale in a library — See broken links, orphaned attachments and other rot, and fix what can be fixed mechanically. (2 steps, verified by: lint produces a report rather than changing the library)
 - Read the documentation inside your own library — Get the Notrios guides into the library as notes, so they are searchable like anything else. (1 steps, verified by: the seed reports how many documentation files became notes in the library)
 - Move sync keys into the operating system's keychain — Take key material out of the development file and put it where the OS keeps secrets. (2 steps, verified by: the dry run reports the plan and says nothing was moved) Nothing about this command is guessable: the subcommand name, the direction flag and the confirmation are all specific to Notrios, which is what makes it able to measure a page.
+- Tag a note, and check the tag is there — Attach a tag to a note and confirm it from the same place you attached it. (3 steps, verified by: the library lists the tags it now holds) This journey could not be written until v0.8 H14 added `tags add`, `tags remove` and `tags list`. Before that, tagging a note was reachable over REST and MCP and from neither surface a person uses.
 <!-- notrios:generated:user:the-journeys:end -->
 
 

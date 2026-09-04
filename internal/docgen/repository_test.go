@@ -31,7 +31,10 @@ func TestRepositoryEnumerationsMatchFiniteRegistries(t *testing.T) {
 		// features coverage work found it.
 		// 60 -> 61 in v0.8 H14: `notriosctl notes create`, added because the
 		// journey catalogue could not document writing a note without it.
-		{cliHelpAnchor, 61},
+		// 61 -> 64 in v0.8 H14: `tags add`, `tags remove` and `tags list`,
+		// which close the command-line half of the tagging gap this milestone
+		// opened with.
+		{cliHelpAnchor, 64},
 		{restAnchor, 109},
 		{mcpToolsAnchor, 46},
 		{mcpSyncScopeAnchor, 7},

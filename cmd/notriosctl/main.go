@@ -614,6 +614,12 @@ Usage:
                                                  # read-only workspace report; exit 1 when findings exist
   notriosctl fix [--db ...] [--kinds a,b] [--document id] [--apply] [--list-kinds]
                                                  # repair the mechanically safe findings; dry run is the default
+  notriosctl tags add --document <id> --tag <tag>
+                                                 # attach a tag to a note; prints the note's tags afterwards
+  notriosctl tags remove --document <id> --tag <tag>
+                                                 # take a tag off a note; prints the note's tags afterwards
+  notriosctl tags list [--document <id>] [--db ...]
+                                                 # a note's tags, or every tag in the library with note counts
   notriosctl tags rename --from <tag> --to <tag> [--db ...] [--include-children] [--apply]
                                                  # hierarchical tag rename; dry run is the default and reports every tag and count
   notriosctl notes create --title <title> [--notebook <id|name>] [--body-file path|-] [--body text]

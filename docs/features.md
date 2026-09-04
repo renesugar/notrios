@@ -44,7 +44,7 @@ which surfaces offer each capability.
 - Search your notes — Find notes by text, tag, notebook, date and the rest of the query language, across the library or within one note. (REST 3, MCP 2, GUI 1) No command line search command; `notriosctl export archive --query` applies the same language to an export instead.
 - Notebooks that are really saved searches — Save a query as a notebook, so a view that would otherwise be retyped becomes something you open. (REST 3, MCP 1) No command line and no dedicated GUI journey yet; the sidebar lists them alongside ordinary notebooks.
 - Organise notes into notebooks — Make notebooks, nest them, move notes between them, and see what a notebook deletion would take with it before agreeing to it. (CLI 1, REST 9, MCP 4, GUI 2)
-- Tag and untag a note — Attach a tag to a note, or take one off. (REST 2, MCP 2)
+- Tag and untag a note — Attach a tag to a note, take one off, and see what a note carries. Tags are hierarchical: `field/dusk` sits under `field`. (CLI 3, REST 2, MCP 2) The GUI still shows tags only as sidebar navigation and cannot add or remove one. That half of the gap v0.8 H14 found is open.
 - See and rename tags — List the tags in a library, see a note's tags, and rename a whole tag hierarchy at once. (CLI 1, REST 3, MCP 1) The GUI shows tags as sidebar navigation and does not rename them.
 - Group libraries into collections — Collections sit above notebooks and are how an import keeps its material together. (REST 4, MCP 1) No command line or GUI journey; imports set the collection with --collection.
 - Attach and manage files — Add files to notes, read them back, see what references what, and find attachments nothing points at any more. (CLI 1, REST 8, MCP 2) No GUI journey for attachment management yet.
@@ -80,7 +80,6 @@ Lines renders the comparison for the generated fragment.
 - Let an AI assistant use your library — neither the command line nor the interface; reachable only over REST or MCP. The endpoint itself has no command line or GUI; the tools it exposes are listed against the features above.
 - Live query blocks inside a note — neither the command line nor the interface; reachable only over REST or MCP. No command line; the GUI renders them in place.
 - Notebooks that are really saved searches — neither the command line nor the interface; reachable only over REST or MCP. No command line and no dedicated GUI journey yet; the sidebar lists them alongside ordinary notebooks.
-- Tag and untag a note — neither the command line nor the interface; reachable only over REST or MCP. **No reason is recorded for this, so it is a gap rather than a decision.**
 - Templates and tasks — neither the command line nor the interface; reachable only over REST or MCP. No command line or GUI journey.
 - Attach and manage files — command line only. No GUI journey for attachment management yet.
 - See and rename tags — command line only. The GUI shows tags as sidebar navigation and does not rename them.
@@ -96,6 +95,7 @@ Lines renders the comparison for the generated fragment.
 - Synchronize with a replica — command line only. No GUI journey runs an exchange; the sync center configures and reports rather than transferring.
 - See and end trust between replicas — command line only. The GUI shows peers in the sync center; retirement is reviewed there but has no registered journey yet.
 - Recover a replica and resolve conflicts — command line only. No registered GUI journey; the sync center presents conflicts.
+- Tag and untag a note — command line only. The GUI still shows tags only as sidebar navigation and cannot add or remove one. That half of the gap v0.8 H14 found is open.
 - Move a pre-0.8 library into place — command line only. Command line only: it moves directories on this machine, and it reports rather than deciding for you.
 - Read a note and its structure — interface only. No command line: reading a note is what the GUI and the API are for.
 - Search your notes — interface only. No command line search command; `notriosctl export archive --query` applies the same language to an export instead.

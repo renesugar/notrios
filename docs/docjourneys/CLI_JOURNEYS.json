@@ -424,6 +424,60 @@
           "dry run"
         ]
       }
+    },
+    {
+      "id": "tag-a-note-and-check-it",
+      "title": "Tag a note, and check the tag is there",
+      "goal": "Attach a tag to a note and confirm it from the same place you attached it.",
+      "feature": "tag-a-note",
+      "guessability": "notrios-specific",
+      "note": "This journey could not be written until v0.8 H14 added `tags add`, `tags remove` and `tags list`. Before that, tagging a note was reachable over REST and MCP and from neither surface a person uses.",
+      "steps": [
+        {
+          "narrative": "Make a note to tag. Keep the id it prints; every tag command names the note by id.",
+          "command": [
+            "notes",
+            "create",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--title",
+            "Reed beds",
+            "--body",
+            "Seen at dusk."
+          ]
+        },
+        {
+          "narrative": "Attach a tag with `notriosctl tags add --document <id> --tag field/dusk`. Tags are hierarchical, so `field/dusk` sits under `field`. The command prints the note's tags afterwards, so the change is visible without a second command.",
+          "manual": true
+        },
+        {
+          "narrative": "Check the library's tags. `tags list` without --document reports every tag and how many notes carry it; with --document it reports one note's tags, and refuses if there is no such note rather than reporting that it has none.",
+          "command": [
+            "tags",
+            "list",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}"
+          ]
+        }
+      ],
+      "postcondition": {
+        "narrative": "the library lists the tags it now holds",
+        "command": [
+          "tags",
+          "list",
+          "--db",
+          "{db}",
+          "--asset-store",
+          "{assets}"
+        ],
+        "contains": [
+          "tags"
+        ]
+      }
     }
   ]
 }

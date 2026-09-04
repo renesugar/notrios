@@ -124,7 +124,12 @@
     {
       "id": "tag-a-note",
       "title": "Tag and untag a note",
-      "summary": "Attach a tag to a note, or take one off.",
+      "summary": "Attach a tag to a note, take one off, and see what a note carries. Tags are hierarchical: `field/dusk` sits under `field`.",
+      "cli": [
+        "notriosctl tags add",
+        "notriosctl tags remove",
+        "notriosctl tags list"
+      ],
       "rest": [
         "POST /api/v1/documents/{document_id}/tags/{tag}",
         "DELETE /api/v1/documents/{document_id}/tags/{tag}"
@@ -132,7 +137,8 @@
       "mcp": [
         "tag_note",
         "untag_note"
-      ]
+      ],
+      "surface_note": "The GUI still shows tags only as sidebar navigation and cannot add or remove one. That half of the gap v0.8 H14 found is open."
     },
     {
       "id": "browse-and-rename-tags",

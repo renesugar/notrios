@@ -42,7 +42,15 @@ func differences(t *testing.T) []doccompare.Difference {
 // closed -- lower it and say so -- or a new one arrived, which is the case
 // worth failing over.
 func TestOnlyKnownCapabilityGapsAreUnexplained(t *testing.T) {
-	want := []string{"tag-a-note"}
+	// Was ["tag-a-note"] until v0.8 H14 added `tags add`, `tags remove` and
+	// `tags list`, which closed the command-line half of the gap this item
+	// opened with. The GUI half is open and is now an *explained* asymmetry --
+	// the feature says so -- rather than an unaccounted one, which is the
+	// distinction this check exists to keep.
+	//
+	// Empty is the strongest state this can be in: every capability that one
+	// surface has and another lacks now carries a written reason.
+	want := []string{}
 
 	got := []string{}
 	for _, difference := range doccompare.Unexplained(differences(t)) {

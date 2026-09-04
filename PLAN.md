@@ -2845,8 +2845,34 @@ cannot arrive quietly.
   so the endpoint must be confirmed free at the point of use, and the run
   aborted if any call would be billed. `cost_usd: 0` stays a recorded property
   of the evidence, as it is in G18f.
-- **Whether the CLI is meant to have no add/remove-tag command -- Blocking for
-  the follow-up, not for this investigation.** REST and MCP can tag a note and
+- **Whether the CLI is meant to have no add/remove-tag command -- Answered
+  2026-09-03 by adding one.** `notriosctl tags add`, `tags remove` and `tags
+  list` close the command-line half of the gap this item opened with. `tags
+  list` exists because the other two would otherwise be unverifiable from the
+  surface that performs them: a command that changes something and offers no way
+  to see the change asks its caller to take it on trust.
+
+  Two refusals were written to the standard this milestone criticised elsewhere.
+  The store answers a missing note and a missing tag with the same bare "not
+  found", so the commands name what the user asked for instead -- the same
+  failing that made `import --collection` report a raw `FOREIGN KEY constraint
+  failed`. And `ListDocumentTags` returns an empty list for a note that does not
+  exist, so `tags list --document` checks the note first: "this note has no
+  tags" and "there is no such note" are different answers, and a command whose
+  job is verifying an edit must not conflate them.
+
+  The gates moved as they should. `doccompare`'s unexplained-gap list is now
+  **empty** -- every capability one surface has and another lacks carries a
+  written reason -- and the ratchet demanded that be locked in rather than left
+  as slack. The features registry records the GUI half as still open, so it is
+  an explained asymmetry rather than an unaccounted one. The slice A guard was
+  narrowed rather than deleted, exactly as its own comment instructed a future
+  reader to do. And the tagging journey, which could not be written before, now
+  exists and executes.
+
+  **The GUI half is still open**: tags remain sidebar navigation with note
+  counts, and there is no control that adds or removes one.
+- **(superseded) Whether the CLI is meant to have no add/remove-tag command.** REST and MCP can tag a note and
   the CLI cannot. If that is deliberate the CLI guide should say so and point at
   the surfaces that can; if it is an oversight it is a product gap rather than a
   documentation one. The investigation records the question; it does not answer

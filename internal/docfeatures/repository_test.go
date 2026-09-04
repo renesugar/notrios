@@ -72,9 +72,9 @@ func TestNoFeatureClaimsASurfaceThatIsGone(t *testing.T) {
 }
 
 // TestTheTagsAsymmetryIsStillReported is the positive control this whole item
-// turns on. Tagging a note is reachable through REST and MCP and through
+// turns on. Tagging a note was reachable through REST and MCP and through
 // neither the command line nor the GUI, and it was found by reading the
-// documentation by hand. If this stops being reported, either the gap was
+// documentation by hand. Half of it is now closed and half is not. If this stops being reported, either the gap was
 // closed -- in which case delete this test and say so -- or the check stopped
 // working, which is the case worth failing over.
 func TestTheTagsAsymmetryIsStillReported(t *testing.T) {
@@ -87,8 +87,16 @@ func TestTheTagsAsymmetryIsStillReported(t *testing.T) {
 		for _, name := range asymmetry.Missing {
 			missing[name] = true
 		}
-		if !missing["cli"] || !missing["gui"] {
-			t.Fatalf("tagging is no longer missing from cli and gui: %v", asymmetry.Missing)
+		// Was cli and gui. v0.8 H14 added `tags add`, `tags remove` and
+		// `tags list`, so the command-line half is closed and this now guards
+		// the half that is not: the GUI still shows tags as navigation only.
+		// The test is narrowed rather than deleted, because the remaining gap
+		// is the same gap and deserves the same guard.
+		if missing["cli"] {
+			t.Fatalf("the command line can tag a note now; this guard should no longer expect it missing")
+		}
+		if !missing["gui"] {
+			t.Fatalf("tagging is no longer missing from the GUI: %v", asymmetry.Missing)
 		}
 		if asymmetry.Note != "" {
 			t.Logf("the asymmetry now carries a note, so it is documented rather than a gap: %s", asymmetry.Note)

@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/renesugar/notrios/internal/store"
 )
@@ -12,16 +13,196 @@ import (
 // runTags dispatches the tag subcommands.
 func runTags(args []string) {
 	if len(args) == 0 {
-		fmt.Fprintln(os.Stderr, "usage: notriosctl tags rename --from <tag> --to <tag> [--include-children] [--apply]")
+		printTagsUsage()
 		os.Exit(2)
 	}
 	switch args[0] {
+	case "add":
+		runTagAdd(args[1:])
+	case "remove":
+		runTagRemove(args[1:])
+	case "list":
+		runTagList(args[1:])
 	case "rename":
 		runTagRename(args[1:])
 	default:
 		fmt.Fprintf(os.Stderr, "unknown tags subcommand %q\n", args[0])
+		printTagsUsage()
 		os.Exit(2)
 	}
+}
+
+func printTagsUsage() {
+	fmt.Fprint(os.Stderr, `usage:
+  notriosctl tags add --document <id> --tag <tag>
+  notriosctl tags remove --document <id> --tag <tag>
+  notriosctl tags list [--document <id>]
+  notriosctl tags rename --from <tag> --to <tag> [--include-children] [--apply]
+`)
+}
+
+// tagFlags is the shared shape of the three note-level tag commands.
+type tagFlags struct {
+	set                            *flag.FlagSet
+	configPath, dbPath, assetStore *string
+	document, tag                  *string
+}
+
+func newTagFlags(name string) *tagFlags {
+	set := flag.NewFlagSet("notriosctl tags "+name, flag.ExitOnError)
+	return &tagFlags{
+		set:        set,
+		configPath: set.String("config", "", "optional config file"),
+		dbPath:     set.String("db", "", "SQLite database path override"),
+		assetStore: set.String("asset-store", "", "asset store directory override"),
+		document:   set.String("document", "", "note to act on"),
+		tag:        set.String("tag", "", "tag name"),
+	}
+}
+
+func (f *tagFlags) parse(args []string) {
+	if err := f.set.Parse(args); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(2)
+	}
+}
+
+// runTagAdd attaches one tag to one note.
+//
+// Adding and removing a tag were reachable from the store, REST and MCP and
+// from neither the command line nor the GUI. v0.8 H14 found that by reading the
+// documentation, then again by comparing the two surfaces mechanically; this
+// closes the command-line half.
+//
+// There is no dry run, for the reason `notes move` gives: adding a tag is not
+// destructive and not lossy, and the way to undo it is `tags remove` with the
+// same arguments. A confirmation step would be ceremony rather than safety.
+func runTagAdd(args []string) {
+	flags := newTagFlags("add")
+	flags.parse(args)
+	documentID, tag := requireTagTarget(flags)
+
+	st := openStoreFromFlags(*flags.configPath, *flags.dbPath, *flags.assetStore)
+	defer st.Close()
+	ctx := context.Background()
+
+	if _, err := st.AddDocumentTag(ctx, documentID, tag); err != nil {
+		exitTagError(err, documentID, tag, "add")
+	}
+	// The note's tags are printed back rather than a bare confirmation, because
+	// the question a caller actually has is what the note carries now, and a
+	// script that has to run a second command to find out is a script that will
+	// not bother.
+	printDocumentTags(ctx, st, documentID, "added", tag)
+}
+
+// runTagRemove takes one tag off one note.
+//
+// Removing a tag a note does not have is reported as an error rather than
+// passed over: a script that misspells a tag and is told nothing happened has
+// been told the truth, and a script told nothing at all has not.
+func runTagRemove(args []string) {
+	flags := newTagFlags("remove")
+	flags.parse(args)
+	documentID, tag := requireTagTarget(flags)
+
+	st := openStoreFromFlags(*flags.configPath, *flags.dbPath, *flags.assetStore)
+	defer st.Close()
+	ctx := context.Background()
+
+	if err := st.RemoveDocumentTag(ctx, documentID, tag); err != nil {
+		exitTagError(err, documentID, tag, "remove")
+	}
+	printDocumentTags(ctx, st, documentID, "removed", tag)
+}
+
+// runTagList reports the tags on one note, or every tag in the library.
+//
+// It exists so that adding and removing are verifiable from the same surface
+// that performs them. A command that changes something and offers no way to see
+// the change asks its caller to take it on trust.
+func runTagList(args []string) {
+	flags := newTagFlags("list")
+	flags.parse(args)
+	if flags.set.NArg() != 0 {
+		printTagsUsage()
+		os.Exit(2)
+	}
+
+	st := openStoreFromFlags(*flags.configPath, *flags.dbPath, *flags.assetStore)
+	defer st.Close()
+	ctx := context.Background()
+
+	if documentID := strings.TrimSpace(*flags.document); documentID != "" {
+		printDocumentTags(ctx, st, documentID, "", "")
+		return
+	}
+	tags, err := st.ListTags(ctx)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	rows := make([]map[string]any, 0, len(tags))
+	for _, tag := range tags {
+		rows = append(rows, map[string]any{"tag": tag.Name, "notes": tag.NoteCount})
+	}
+	printJSON(map[string]any{"tags": rows})
+}
+
+// exitTagError names what the user asked for.
+//
+// The store answers a missing note and a missing tag with the same bare "not
+// found", which tells a caller nothing about which of the two they got wrong.
+// That is the failure this milestone criticised elsewhere -- `import
+// --collection` reporting a raw `FOREIGN KEY constraint failed` for a
+// collection that does not exist -- and it would be poor to reproduce it in the
+// command written to close that class of gap.
+func exitTagError(err error, documentID, tag, action string) {
+	if strings.Contains(strings.ToLower(err.Error()), "not found") {
+		fmt.Fprintf(os.Stderr, "cannot %s tag %q: no note %q, or it does not carry that tag\n",
+			action, tag, documentID)
+		os.Exit(1)
+	}
+	fmt.Fprintln(os.Stderr, err)
+	os.Exit(1)
+}
+
+func requireTagTarget(flags *tagFlags) (string, string) {
+	documentID := strings.TrimSpace(*flags.document)
+	tag := strings.TrimSpace(*flags.tag)
+	if flags.set.NArg() != 0 || documentID == "" || tag == "" {
+		printTagsUsage()
+		flags.set.PrintDefaults()
+		os.Exit(2)
+	}
+	return documentID, tag
+}
+
+// printDocumentTags reports what the note carries now.
+func printDocumentTags(ctx context.Context, st *store.SQLiteStore, documentID, action, tag string) {
+	// Checked first, because ListDocumentTags answers a note that does not
+	// exist with an empty list. "This note has no tags" and "there is no such
+	// note" are different answers, and a command whose job is verifying an
+	// edit must not report the first when the second is true.
+	if _, err := st.GetDocument(ctx, documentID); err != nil {
+		fmt.Fprintf(os.Stderr, "no note %q\n", documentID)
+		os.Exit(1)
+	}
+	tags, err := st.ListDocumentTags(ctx, documentID)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	names := make([]string, 0, len(tags))
+	for _, item := range tags {
+		names = append(names, item.Name)
+	}
+	report := map[string]any{"document_id": documentID, "tags": names}
+	if action != "" {
+		report["action"] = action
+		report["tag"] = tag
+	}
+	printJSON(report)
 }
 
 // runTagRename renames a tag hierarchy.
