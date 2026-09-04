@@ -2749,7 +2749,13 @@ cannot arrive quietly.
   for the evidence bundle, so the claim is only made when it has been run --
   the same shape H8 uses for rows it cannot execute everywhere.
 
-- **Sending repository documentation to a hosted model -- Blocking.** G18f's
+- **Sending repository documentation to a hosted model -- Resolved 2026-09-03:
+  permitted for `docs/` prose and generated command text.** The user authorised
+  it on the terms recommended below. Everything else stays loopback, and the
+  endpoint is recorded per run. The exposure was always small -- the
+  documentation is Apache-2.0 and written to be published -- but it is a change
+  to G18f's recorded `endpoint_scope: loopback-only` and is recorded as one.
+- **(superseded) Sending repository documentation to a hosted model.** G18f's
   recorded policy is `endpoint_scope: loopback-only`,
   `source_scope: repository-source-only; no notes or databases`, `cost_usd: 0`.
   Using hosted free models changes the first of those. The documentation is
@@ -2811,8 +2817,16 @@ cannot arrive quietly.
   designing around it in advance: a model that cannot complete a run is unusable
   here however well it scores on the runs it does complete.
 
-- **Whether GLM-5.2 is actually free at the tier used -- Blocking before
-  relying on it.** The supplied material contradicts itself, tabulating GLM-5.2
+- **Whether GLM-5.2 is actually free at the tier used -- Resolved 2026-09-03,
+  and the rule generalises.** A model is free when its slug contains `free`;
+  the paid GLM-5.2 is a different slug without it. `opencode models` lists
+  every model, so the free set is a filter rather than a judgement, and the
+  harness refuses any `--model` whose slug does not contain `free` rather than
+  trusting the caller. The account does not pay for overage automatically, so an
+  accidental paid call fails rather than bills -- which makes this a checkable
+  property rather than a promise. `cost_usd: 0` stays a recorded property of the
+  evidence.
+- **(superseded) Whether GLM-5.2 is actually free at the tier used.** The supplied material contradicts itself, tabulating GLM-5.2
   as "Paid (~$0.49/M input)" in one comparison and describing a working
   `:free` endpoint in another. The constraint on this whole item is zero cost,
   so the endpoint must be confirmed free at the point of use, and the run
@@ -2824,6 +2838,73 @@ cannot arrive quietly.
   the surfaces that can; if it is an oversight it is a product gap rather than a
   documentation one. The investigation records the question; it does not answer
   it.
+
+**Slice F, pilot complete 2026-09-03: the harness works, and the first complete
+task failed the ablation.** `performance/v0.8-h14/actionability.py` builds the
+three arms from the journey catalogue -- which already holds a task, its prose
+and its postcondition -- asks a free model for one command, and runs it against
+a disposable library. It refuses any `--model` whose slug does not contain
+`free`, refuses to execute an argument vector containing anything a shell would
+interpret, and replaces whatever paths the model names with the sandbox's own,
+so the model does not choose which library it touches.
+
+*The result that matters.* On `find-your-library`: the prose arm produced
+`notriosctl paths` and the postcondition held; the **no-prose arm produced the
+same command and the same result**. Under this item's own rule -- a page earns
+credit only when the prose arm succeeds and the no-prose arm fails -- the task
+scores **zero**, and correctly so: the model did not need the documentation, it
+guessed a conventional command name. A two-arm version of this method would have
+reported that page as actionable on the strength of a model that never read it.
+That is the failure the ablation exists to catch and it caught it on the first
+complete task, which is the most useful thing the pilot could have done.
+
+*One run per arm is not enough, demonstrated by accident.* A manual no-prose
+call to the same model on the same task returned `notriosctl config`, which does
+not exist; the harness's returned `notriosctl paths`, which does. Same model,
+same arm, opposite outcomes. The existing G18f calibration used two repeats per
+case for this reason, and any real run of this method needs repeats before a
+single result is read as a fact.
+
+*Findings about the instrument, which is the other half of what a pilot is
+for.* `opencode run` is an agentic CLI rather than a completion endpoint. Its
+permission configuration asks before touching an external directory, every
+sandbox is external, and a non-interactive run cannot answer -- so the call
+**hangs until the timeout instead of failing**, which cost three arms before it
+was diagnosed. `--pure --auto` is therefore required rather than preferred, and
+the isolation this item depends on ("no repository access") rests on the sandbox
+being empty rather than on the tool refusing. `opencode` also exits **zero** on
+an upstream rate limit, so the harness reads the text rather than the status.
+
+*Free endpoints throttle, as predicted, and it is a result rather than an
+obstacle.* `openrouter/z-ai/glm-5.2:free` and
+`openrouter/google/gemma-4-31b-it:free` were rate-limited upstream on first
+contact; `opencode/nemotron-3-ultra-free` and
+`openrouter/nvidia/nemotron-3-super-120b-a12b:free` answered. Latency ran 71 to
+377 seconds per call, so the full roster over eight journeys and three arms is
+several hours of wall clock -- which is why this is a pilot of one task and says
+so.
+
+*`zg` was indexed locally and used for selection, not for answering.* `zg index
+--embedding local/potion-retrieval-32m` over a copy of `docs/` alone; no notes,
+no database, no remote embedding. Querying it for "how do I add a tag to a note"
+returns the features page, the registry and "Renaming a tag hierarchy" -- and
+nothing that answers the question, because nothing does. The retrieval
+corroborates the tags gap from a reader's angle, independently of the comparison
+in slice E.
+
+*Against the exit criteria, the honest reading is: not yet.* The criteria
+require the ablation to separate arm 1 from arm 2 on a page known to be good,
+and on the one task run it did not separate at all. That is a result about the
+task rather than about the method -- `notriosctl paths` is guessable and a task
+whose command is guessable cannot measure a page -- but the criteria are not met
+and no amount of further running changes that for this task. Recommended before
+any full evaluation: choose tasks whose commands are *not* conventional, repeat
+each arm at least twice, and treat a task where no-prose succeeds as evidence
+about the task rather than the documentation. If those do not produce
+separation, the recommendation is to stop, and the investigation will still have
+been worth doing -- it has already produced a features coverage gate, three
+executed catalogues and five product defects without a model being involved at
+all.
 
 **Exit criteria.** The generation half stands on its own and is not conditional
 on the model work: the features page, the two journey catalogues and the

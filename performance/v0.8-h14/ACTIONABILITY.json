@@ -1,0 +1,33 @@
+{
+  "schema": "notrios.h14.actionability.v1",
+  "runs": [
+    {
+      "model": "opencode/nemotron-3-ultra-free",
+      "journey": "find-your-library",
+      "arm": "prose",
+      "prompt_sha256": "2f25db7c83d811224f9ca35809e9ace34da2a95ed73712c95fbf16df03110627",
+      "seconds": 377.3,
+      "command": "paths",
+      "exit": 2,
+      "outcome": "acted"
+    },
+    {
+      "model": "opencode/nemotron-3-ultra-free",
+      "journey": "find-your-library",
+      "arm": "no-prose",
+      "prompt_sha256": "13883ea61ebef2abe51c7f778bff45340271b3785795f81d9eecc81c1fa3c557",
+      "seconds": 244.1,
+      "command": "paths",
+      "exit": 2,
+      "outcome": "acted"
+    },
+    {
+      "model": "opencode/nemotron-3-ultra-free",
+      "journey": "find-your-library",
+      "arm": "misleading",
+      "prompt_sha256": "c110b73e9bf2c055f3acc669ff20da3da16d7e3a9a63ea9cc5d5a79e9d2e6976",
+      "seconds": 400.2,
+      "outcome": "timeout"
+    }
+  ]
+}
