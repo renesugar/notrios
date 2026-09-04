@@ -3327,9 +3327,17 @@ process owns the service (`runGUI(svc.Handler, true)`, against
 `runGUI(proxy, false)` for `-gui-only`), and `web/src/components/SyncCenter.tsx`
 consumes it through `window.go.main.NativeUIBridge`. The work is therefore to
 generalise one existing method -- a chooser that takes the dialog title and the
-caller's purpose -- and to wire four call sites onto it, not to build a picker.
-That is a materially smaller task than this section first claimed, and it is the
-third time in H15 that an unmeasured "missing" turned out to be present.
+caller's purpose -- not to build a picker. That is the third time in H15 that an
+unmeasured "missing" turned out to be present.
+
+The chooser is the smaller half. A chosen directory has nowhere to go: REST
+exposes no operation that starts an `import_joplin_raw`, `import_obsidian`,
+`export_archive_v2` or `snapshot_image` job, only listing, reading, cancel,
+retry and reset, and the one start route it does have is the closed, path-free
+sync one. The bridge must therefore carry the job start as well as the chooser,
+bound in the same mode, with the dry run and the report rendered from the job
+record the existing endpoints already return. The open decision below records
+why that is the right shape rather than a workaround.
 
 *Two are the query language appearing where it already belongs.* A **search
 notebook** is a saved query, and the GUI already has the box that takes that
@@ -3354,6 +3362,14 @@ the Wails GUI reaches the core over exactly that surface -- so this is a
 boundary for the GUI *as currently built*, and would stop being one if the GUI
 reached the core through the C ABI instead. Worth saying plainly, because it is
 the first case where the shared-library work would change what a surface can do.
+
+It is no longer the only one. Import, export and snapshot are the same shape:
+REST has no operation that starts those jobs, so a browser cannot reach them
+however the interface is drawn. The difference is that the desktop app has a
+second route to the core -- the bound Wails bridge, running in the process that
+owns the service -- and can use it today, where the sync-key case has no such
+route because H9 forbids the surface rather than merely omitting it. Both are
+arguments for the C ABI; only one of them has to wait for it.
 
 *One is not a capability a GUI hosts.* **Letting an AI assistant use your
 library** is the MCP endpoint. A GUI can show that it is on, and which scopes are
@@ -3459,22 +3475,44 @@ interfaces. All eighteen uses now say "GUI", which is the term the product's own
   text, tags, notebooks, dates, negation, grouping -- because a reader looking up
   how to exclude a tag should not have to read eleven other examples first, and
   because each becomes separately executable.
-- **What a picker-bearing control does without a picker -- Resolved by
-  precedent; recorded because the earlier recommendation here was wrong.** The
-  first draft recommended disabling the control and explaining why. The existing
-  code already answers it better: `SyncCenter` renders a path text field always
-  and the "Choose folder..." button only when the bridge is present, so losing
-  the picker costs the convenience and never the capability. Adopt that pattern
-  for all four call sites.
+- **What an import, export or snapshot control does in a browser -- Decided:
+  greyed out with the reason.** This entry has been wrong twice, so it records
+  what was checked rather than what seemed reasonable.
 
-  The reason is stronger than "a browser cannot open a native dialog". In
-  `-gui-only` mode the window renders a service that may be running on another
-  machine, so a path chosen by a dialog on *this* computer names the wrong
-  filesystem, while a typed path is unambiguously a path on the host that will
-  read it -- exactly what the same argument to the CLI would mean. A disabled
-  button would therefore have advertised a capability as unavailable when it is
-  merely typed rather than clicked. The field's label should say whose
-  filesystem it refers to when the service is remote.
+  The first draft recommended greying out because a browser cannot open a native
+  dialog. The second flipped to "render the path field anyway", reasoning from
+  `SyncCenter` that a typed path costs nothing. Both arguments were about paths,
+  and paths are not what settles it: **the REST surface has no operation that
+  starts an import, export or snapshot job at all.** `api/openapi.yaml` exposes
+  `/api/v1/jobs` for listing, `{job_id}` for reading, and cancel, retry and reset
+  -- and one start, `/api/v1/jobs/sync/start`, whose description names it "the
+  exception to watching-only" precisely because its controls are closed and
+  path-free. The four job kinds in question (`import_joplin_raw`,
+  `import_obsidian`, `export_archive_v2`, `snapshot_image`) have no start route,
+  and the listing endpoint deliberately never returns their parameters because
+  those "may name places on the local machine".
+
+  So the control is not unavailable in a browser as a matter of taste. The
+  capability is genuinely unreachable over the only surface a browser has, and
+  offering a path field would mean *adding* the path-accepting HTTP surface the
+  API has deliberately declined to have -- the same class of decision as H9's
+  refusal of a credential REST surface. Grey it out and say why.
+
+  `SyncCenter` is not a counter-example. It does accept a directory over HTTP,
+  and `internal/httpapi/sync_ui.go:83-94` gates that whole surface on the caller
+  being loopback, answering 403 `loopback_only` otherwise. The existing rule is
+  therefore that a path-accepting surface is restricted to a caller on the same
+  machine -- which is the rule to follow if any of this is ever exposed over
+  HTTP, not an argument that it already is.
+
+  **Consequence for the build, and it is the larger half.** Generalising
+  `ChooseSyncDirectory` gets a chosen directory and nothing to do with it: the
+  desktop app must also *start the job*, and cannot do so over REST. The bridge
+  therefore gains both -- a chooser and a job start -- bound only in the mode
+  where this process owns the service, exactly as `ChooseSyncDirectory` already
+  is. That is what makes the greying-out structural rather than cosmetic: in
+  browser mode neither method is bound, so the capability is absent rather than
+  merely hidden.
 - **Whether creating a search notebook is an action on a search or a form --
   Non-blocking, decide before building it.** Recommended: an action on a search
   that has just run. The query someone wants to keep is the one they have
