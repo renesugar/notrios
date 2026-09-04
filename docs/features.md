@@ -71,6 +71,54 @@ which surfaces offer each capability.
 <!-- notrios:generated:user:what-you-can-do:end -->
 
 
+## Where the surfaces disagree
+<!-- notrios:generated:user:where-the-surfaces-disagree:begin -->
+<!-- source: go:github.com/renesugar/notrios/internal/doccompare#Lines -->
+Lines renders the comparison for the generated fragment.
+- Do many organiser operations at once — neither the command line nor the interface; reachable only over REST or MCP. No command line or GUI journey; batching is for tools.
+- Group libraries into collections — neither the command line nor the interface; reachable only over REST or MCP. No command line or GUI journey; imports set the collection with --collection.
+- Let an AI assistant use your library — neither the command line nor the interface; reachable only over REST or MCP. The endpoint itself has no command line or GUI; the tools it exposes are listed against the features above.
+- Live query blocks inside a note — neither the command line nor the interface; reachable only over REST or MCP. No command line; the GUI renders them in place.
+- Notebooks that are really saved searches — neither the command line nor the interface; reachable only over REST or MCP. No command line and no dedicated GUI journey yet; the sidebar lists them alongside ordinary notebooks.
+- Tag and untag a note — neither the command line nor the interface; reachable only over REST or MCP. **No reason is recorded for this, so it is a gap rather than a decision.**
+- Templates and tasks — neither the command line nor the interface; reachable only over REST or MCP. No command line or GUI journey.
+- Attach and manage files — command line only. No GUI journey for attachment management yet.
+- See and rename tags — command line only. The GUI shows tags as sidebar navigation and does not rename them.
+- Export your library — command line only. Command line only, for the same reason as importing.
+- Import from another application — command line only. Importing is command line only: it reads directories on this machine, which a browser cannot do and an API should not.
+- Watch and steer long-running work — command line only. No GUI journey; progress appears inline where the work was started.
+- Keep a library healthy — command line only. No GUI journey; maintenance is command line work.
+- Keep separate libraries — command line only. Command line only by design: a profile registry is about this machine, and a service answering for one profile should not be able to reach another.
+- Publish a subset of your notes — command line only. No GUI journey; publishing is reviewed at the command line.
+- Bring remote images into the library — command line only. No GUI journey; localizing is a maintenance action rather than an editing one.
+- Back up and restore the whole library — command line only. Command line only: a snapshot names paths on this machine, which is native-host work rather than a web request.
+- Choose where sync keys are kept — command line only. Deliberately command line only: this item forbids a credential-management REST or MCP surface.
+- Synchronize with a replica — command line only. No GUI journey runs an exchange; the sync center configures and reports rather than transferring.
+- See and end trust between replicas — command line only. The GUI shows peers in the sync center; retirement is reviewed there but has no registered journey yet.
+- Recover a replica and resolve conflicts — command line only. No registered GUI journey; the sync center presents conflicts.
+- Move a pre-0.8 library into place — command line only. Command line only: it moves directories on this machine, and it reports rather than deciding for you.
+- Read a note and its structure — interface only. No command line: reading a note is what the GUI and the API are for.
+- Search your notes — interface only. No command line search command; `notriosctl export archive --query` applies the same language to an export instead.
+- See the shape of the link graph — both surfaces, and neither journey is written yet
+- Link notes to each other — both surfaces, and neither journey is written yet
+- Pair two of your own libraries — both surfaces, but only the command-line journey is written
+- Organise notes into notebooks — both surfaces, but only the interface journey is written
+<!-- notrios:generated:user:where-the-surfaces-disagree:end -->
+
+This list is computed, not written. It compares what each capability claims
+against which journeys exist, and reports two different kinds of disagreement.
+
+A **capability** difference is a thing one surface can do and the other cannot.
+Most are deliberate and say why beside them. One is not, and it is called out in
+bold: tagging a note is reachable over REST and MCP and from neither the command
+line nor the interface — the capability exists and you cannot reach it without
+writing a program.
+
+A **documentation** difference is a capability both surfaces offer where only
+one has a journey written. Nothing is missing from Notrios there; something is
+missing from these pages.
+
+
 ## How this page is kept honest
 
 The list above is generated from `docs/docfeatures/FEATURES.json`, which records

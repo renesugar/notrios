@@ -2667,6 +2667,36 @@ browsers are in the shared cache, so this machine works and a fresh one would
 not. Recorded rather than fixed, because pinning a browser automation stack is a
 dependency decision rather than a documentation one.
 
+**Slice E complete 2026-09-03: the comparison, computed, and it finds the
+control on its own.** `internal/doccompare` puts the two surfaces side by side
+from three things that already exist -- which surfaces each capability claims,
+which have a command-line journey, which have an interface journey -- and
+reports 28 differences over 29 features. It is computed rather than written,
+because a hand-maintained list of differences is a list that stops being true.
+
+*Two kinds of disagreement, and they are not the same problem.* A **capability**
+difference is something one surface can do and the other cannot: 15 command-line
+only, 2 interface only, 7 reachable from neither. A **documentation** difference
+is a capability both surfaces offer where only one journey is written: 4 of
+those. The first is about the product, the second about these pages, and
+conflating them would let a missing journey look like a design decision. The
+comparison deliberately drops a feature's `surface_note` when the difference is
+documentary, for exactly that reason.
+
+*Exactly one difference is unexplained, and it is the one the item named at the
+start.* Tagging a note is reachable over REST and MCP and from neither the
+command line nor the interface, and no `surface_note` accounts for it. Every
+other capability difference carries its reason -- importing reads directories on
+this machine, profiles are about this machine, credential migration is forbidden
+a REST surface by H9. That gap was found in this item's opening paragraph by
+reading pages by hand; it is now produced by comparing two catalogues, and the
+generated page prints it in bold as a gap rather than a decision.
+
+*It is a ratchet, and it bites.* Removing the explanation from `profiles` makes
+the unexplained list `[profiles tag-a-note]` and fails. So a capability that
+stops reaching a surface must either gain a reason or be recorded as a gap; it
+cannot arrive quietly.
+
 - **Where the screenshots live -- Resolved 2026-09-03: `docs/images/journeys/`,
   committed.** They are generated artifacts, which this repository does not
   normally commit, and they churn on every interface change. The earlier

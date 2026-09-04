@@ -3,6 +3,7 @@ package docgen
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/renesugar/notrios/internal/doccompare"
 	"github.com/renesugar/notrios/internal/docfeatures"
 	"github.com/renesugar/notrios/internal/docjourneys"
 	"go/ast"
@@ -34,6 +35,7 @@ const (
 	featureAnchor      = "go:github.com/renesugar/notrios/internal/docfeatures#Registry"
 	cliJourneyAnchor   = "go:github.com/renesugar/notrios/internal/docjourneys#Catalogue"
 	guiCatalogueAnchor = "go:github.com/renesugar/notrios/internal/docjourneys#GUICatalogue"
+	compareAnchor      = "go:github.com/renesugar/notrios/internal/doccompare#Difference"
 )
 
 // RepositoryResolver returns the closed enumeration adapters for the source
@@ -78,6 +80,20 @@ func RepositoryResolver(root string) Resolver {
 				return nil, err
 			}
 			return catalogue.GUILines(), nil
+		case compareAnchor:
+			registry, err := docfeatures.Load(filepath.Join(root, "docs", "docfeatures", "FEATURES.json"))
+			if err != nil {
+				return nil, err
+			}
+			cli, err := docjourneys.Load(filepath.Join(root, "docs", "docjourneys", "CLI_JOURNEYS.json"))
+			if err != nil {
+				return nil, err
+			}
+			gui, err := docjourneys.LoadGUI(filepath.Join(root, "docs", "docjourneys", "GUI_JOURNEYS.json"))
+			if err != nil {
+				return nil, err
+			}
+			return doccompare.Lines(doccompare.Compare(registry, cli, gui)), nil
 		default:
 			return nil, fmt.Errorf("no repository enumeration adapter for %q", anchor)
 		}

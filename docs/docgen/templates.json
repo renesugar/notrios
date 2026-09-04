@@ -97,6 +97,15 @@
               "audience": "user"
             }
           ]
+        },
+        {
+          "slug": "where-the-surfaces-disagree",
+          "slots": [
+            {
+              "id": "surface-comparison",
+              "audience": "user"
+            }
+          ]
         }
       ]
     },

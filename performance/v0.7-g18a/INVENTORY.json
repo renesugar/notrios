@@ -987,7 +987,7 @@
     },
     {
       "path": "docs/features.md",
-      "sha256": "f9a20b3d5da2fb2d25d5210dbb4790af9819606eb1dddf7f166cb7d101bfdec3",
+      "sha256": "75f0a3c3765659f0dbf7457d4ff5d64e8db978e63d2988d76d7cb47b72677d01",
       "help_note": "doc_help_features",
       "owner": "go:github.com/renesugar/notrios/internal/docfeatures#Registry",
       "sections": [
@@ -1015,6 +1015,16 @@
           "id": "what-you-can-do",
           "level": 2,
           "title": "What you can do",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/internal/docfeatures#Registry",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        },
+        {
+          "id": "where-the-surfaces-disagree",
+          "level": 2,
+          "title": "Where the surfaces disagree",
           "audience": "user",
           "kind": "actionable_or_reference",
           "owner": "go:github.com/renesugar/notrios/internal/docfeatures#Registry",
@@ -2433,14 +2443,14 @@
       "id": "published_markdown",
       "count": 18,
       "unit": "pages",
-      "sections": 228,
+      "sections": 229,
       "owner": "go:github.com/renesugar/notrios/internal/helpdocs#Seed"
     },
     {
       "id": "help_notebook",
       "count": 18,
       "unit": "mirrored notes",
-      "sections": 228,
+      "sections": 229,
       "owner": "go:github.com/renesugar/notrios/internal/helpdocs#Seed"
     },
     {
@@ -2537,9 +2547,9 @@
       "executed": 0,
       "generated": 0,
       "claimed": 0,
-      "unverified": 228
+      "unverified": 229
     },
-    "denominator": 228,
+    "denominator": 229,
     "reconciles": true,
     "finding": "The manual does not yet name directive fragments or executable checks, so all current section units are unverified even where independent tests exist."
   },
