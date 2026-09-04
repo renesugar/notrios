@@ -395,6 +395,53 @@
           "css": ".sidebar-row:has-text(\"Dusk field notes\")"
         }
       }
+    },
+    {
+      "id": "rename-a-tag",
+      "title": "Rename a tag, and everything under it",
+      "goal": "Change a tag's name across every note that carries it, after seeing what that will do.",
+      "feature": "browse-and-rename-tags",
+      "steps": [
+        {
+          "id": "find-the-tag",
+          "narrative": "Tags are listed in the sidebar with the number of notes carrying each one. The pencil beside a tag renames it; the name itself still runs a search for it.",
+          "locator": {
+            "testid": "tag-rename-place/hide"
+          },
+          "action": "click"
+        },
+        {
+          "id": "type-the-new-name",
+          "narrative": "A rename reaches every note carrying the tag. Leaving \u201crename everything under it\u201d ticked also moves the tags nested below this one.",
+          "locator": {
+            "testid": "tag-rename-to"
+          },
+          "action": "fill",
+          "value": "places/eastern-hide"
+        },
+        {
+          "id": "see-what-changes",
+          "narrative": "Nothing has changed yet. The report is not a guess: the service performs the rename inside a transaction and rolls it back, so what you are reading and what applying would do cannot disagree. A change described as a merge means the destination already exists and the two tags become one.",
+          "locator": {
+            "testid": "tag-rename-preview"
+          },
+          "action": "click"
+        },
+        {
+          "id": "agree-to-it",
+          "narrative": "Rename applies exactly what the report described. Editing the name or the children option first withdraws the report, so you cannot agree to one rename and apply another.",
+          "locator": {
+            "testid": "tag-rename-apply"
+          },
+          "action": "click"
+        }
+      ],
+      "postcondition": {
+        "narrative": "the renamed tag is listed in the sidebar under its new name",
+        "locator": {
+          "testid": "tag-rename-places/eastern-hide"
+        }
+      }
     }
   ]
 }

@@ -322,6 +322,53 @@ export async function createSearchNotebook(name: string, query: string): Promise
   return parseJSON<SearchNotebook>(response);
 }
 
+/** One tag the rename would change, and what it would do to it. */
+export interface TagRenameChange {
+  tag_id: string;
+  from: string;
+  to: string;
+  action: string;
+  merged_into_tag_id?: string;
+  notes: number;
+  /** How many of those notes do not already carry the destination tag. */
+  notes_gained: number;
+}
+
+export interface TagRenameResult {
+  from: string;
+  to: string;
+  include_children: boolean;
+  dry_run: boolean;
+  changes: TagRenameChange[];
+  notes: number;
+  warnings: string[];
+}
+
+/**
+ * Renames a tag, and by default only says what that would do.
+ *
+ * `dry_run` is sent explicitly rather than left to the service's default,
+ * because the difference between looking and changing every note carrying a tag
+ * should be visible at the call site rather than in a document.
+ *
+ * The report is not a prediction: the service performs the rename in a
+ * transaction and rolls it back for a dry run, so what is shown and what would
+ * happen cannot drift apart.
+ */
+export async function renameTag(
+  from: string,
+  to: string,
+  includeChildren: boolean,
+  dryRun: boolean,
+): Promise<TagRenameResult> {
+  const response = await fetch('/api/v1/tags/rename', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ from, to, include_children: includeChildren, dry_run: dryRun }),
+  });
+  return parseJSON<TagRenameResult>(response);
+}
+
 export async function listTags(): Promise<TagRecord[]> {
   const response = await fetch('/api/v1/tags');
   const payload = await parseJSON<{ tags: TagRecord[] }>(response);

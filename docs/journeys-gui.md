@@ -23,7 +23,6 @@ it is anybody's notes.
 Everything here is command-line or API work today. Where a capability is
 absent for a reason rather than for want of doing it, the reason is given.
 
-- **See and rename tags** — List the tags in a library, see a note's tags, and rename a whole tag hierarchy at once. The GUI shows tags in the sidebar and on the note, and does not rename a hierarchy; `tags rename` is command line only.
 - **Group libraries into collections** — Collections sit above notebooks and are how an import keeps its material together. No command line or GUI journey; imports set the collection with --collection.
 - **Templates and tasks** — Keep note templates and make new notes from them, and see the tasks across a library. No command line or GUI journey.
 - **Do many organiser operations at once** — Send a batch of moves, tags and notebook changes as one request, so a large reorganisation is one reviewable action. No command line or GUI journey; batching is for tools.
@@ -147,6 +146,19 @@ Each task below lists its steps, with a picture of every one.
   - Keeping it adds a notebook to the sidebar whose contents are whatever the query matches, now and later.
 
     ![save-it](images/journeys/keep-a-search-as-a-notebook-save-it.png)
+- **Rename a tag, and everything under it** — Change a tag's name across every note that carries it, after seeing what that will do.
+  - Tags are listed in the sidebar with the number of notes carrying each one. The pencil beside a tag renames it; the name itself still runs a search for it.
+
+    ![find-the-tag](images/journeys/rename-a-tag-find-the-tag.png)
+  - A rename reaches every note carrying the tag. Leaving “rename everything under it” ticked also moves the tags nested below this one.
+
+    ![type-the-new-name](images/journeys/rename-a-tag-type-the-new-name.png)
+  - Nothing has changed yet. The report is not a guess: the service performs the rename inside a transaction and rolls it back, so what you are reading and what applying would do cannot disagree. A change described as a merge means the destination already exists and the two tags become one.
+
+    ![see-what-changes](images/journeys/rename-a-tag-see-what-changes.png)
+  - Rename applies exactly what the report described. Editing the name or the children option first withdraws the report, so you cannot agree to one rename and apply another.
+
+    ![agree-to-it](images/journeys/rename-a-tag-agree-to-it.png)
 <!-- notrios:generated:user:the-journeys:end -->
 
 

@@ -152,6 +152,7 @@ describe('notebook deletion in the sidebar', () => {
         onSelectRow={vi.fn()}
         onSelectQuery={vi.fn()}
         onDeleteNotebook={onDeleteNotebook}
+        onRenameTag={vi.fn()}
       />,
     );
     expect(screen.queryByTestId('sidebar-delete-nb_notes')).toBeNull();

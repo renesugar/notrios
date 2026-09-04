@@ -87,6 +87,7 @@ import { PreviewPane } from './components/PreviewPane';
 import { SyncCenter } from './components/SyncCenter';
 import { LibraryTransfer, transferBridge } from './components/LibraryTransfer';
 import { AboutDialog } from './components/AboutDialog';
+import { TagRename } from './components/TagRename';
 
 const defaultBody = `# New note\n\nWrite Markdown here. Link other notes with:\n\n[Related note](document://default/documents/<document-id>)\n`;
 
@@ -128,6 +129,7 @@ export function App() {
   const [showSyncCenter, setShowSyncCenter] = useState(false);
   const [showTransfer, setShowTransfer] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
+  const [renamingTag, setRenamingTag] = useState<string | null>(null);
   // Read once, at mount: the bridge is bound before the frontend loads or it is
   // not bound at all, so re-checking it on every render would only make the
   // control flicker on nothing.
@@ -785,6 +787,22 @@ export function App() {
 
       {showAbout ? <AboutDialog status={status} onClose={() => setShowAbout(false)} /> : null}
 
+      {renamingTag ? (
+        <TagRename
+          tag={renamingTag}
+          onClose={() => setRenamingTag(null)}
+          onRenamed={(result) => {
+            setRenamingTag(null);
+            // The sidebar counts and the open search both refer to tags by
+            // name, so both are stale the moment one is renamed.
+            void refreshSidebar();
+            if (activeQuery !== '') void paged.start(activeQuery);
+            setMessage(`Renamed ${result.changes.length === 1 ? 'the tag' : `${result.changes.length} tags`}, `
+              + `touching ${result.notes} ${result.notes === 1 ? 'note' : 'notes'}.`);
+          }}
+        />
+      ) : null}
+
       {showThemes && (
         <section className="theme-panel" aria-label="Theme settings">
           <div className="theme-selects">
@@ -855,6 +873,7 @@ export function App() {
           onSelectRow={onSelectRow}
           onSelectQuery={onSelectTagQuery}
           onDeleteNotebook={(row) => void onDeleteNotebookRow(row)}
+          onRenameTag={setRenamingTag}
         />
         <PaneSplitter
           label="Resize sidebar"

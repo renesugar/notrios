@@ -46,7 +46,7 @@ which surfaces offer each capability.
 - Notebooks that are really saved searches — Save a query as a notebook, so a view that would otherwise be retyped becomes something you open. (CLI 1, REST 3, MCP 1, GUI 1) Made with `notebooks create --query` at the command line. In the GUI it is an action on a search that has already run and returned something, rather than a form: the query is one you have watched work, and a notebook made from an unrun query opens empty as easily as it opens right. The query is shown when keeping it and is not editable there, which is what keeps this from being a query form in another place.
 - Organise notes into notebooks — Make notebooks, nest them, move notes between them, and see what a notebook deletion would take with it before agreeing to it. (CLI 3, REST 9, MCP 4, GUI 2)
 - Tag and untag a note — Attach a tag to a note, take one off, and see what a note carries. Tags are hierarchical: `field/dusk` sits under `field`. (CLI 3, REST 2, MCP 2, GUI 4)
-- See and rename tags — List the tags in a library, see a note's tags, and rename a whole tag hierarchy at once. (CLI 1, REST 3, MCP 1) The GUI shows tags in the sidebar and on the note, and does not rename a hierarchy; `tags rename` is command line only.
+- See and rename tags — List the tags in a library, see a note's tags, and rename a whole tag hierarchy at once. (CLI 1, REST 3, MCP 1, GUI 4) Renaming is offered beside the tag, because it is decided while looking at the tag and the count next to it is half the reason for deciding. The dry run is not a prediction: the service performs the rename in a transaction and rolls it back, so the report and the apply cannot disagree. Applying is unreachable until a report of that exact rename has been shown, and editing the name or the children option withdraws it.
 - Group libraries into collections — Collections sit above notebooks and are how an import keeps its material together. (REST 4, MCP 1) No command line or GUI journey; imports set the collection with --collection.
 - Attach and manage files — Add files to notes, read them back, see what references what, and find attachments nothing points at any more. (CLI 1, REST 8, MCP 2, GUI 2) Measured by the H15 control crawl, which found the upload field in the note inspector and the Attachments tab. This was recorded as absent from the GUI until the crawl opened a note; no journey covers it yet.
 - Bring remote images into the library — Find images a note points at on the web, check them against the domain policy, and copy the allowed ones in so the note stops depending on somebody else's server. (CLI 1, REST 4, MCP 3, GUI 2) Measured by the H15 control crawl on a note seeded with an image on an allowed domain. The earlier note here said localizing was a maintenance action rather than an editing one; it is in the editor.
@@ -81,7 +81,6 @@ Each capability below is offered on some surfaces and not others.
 - Group libraries into collections — neither the command line nor the GUI; reachable only over REST or MCP. No command line or GUI journey; imports set the collection with --collection.
 - Let an AI assistant use your library — neither the command line nor the GUI; reachable only over REST or MCP. The endpoint itself has no command line or GUI; the tools it exposes are listed against the features above.
 - Templates and tasks — neither the command line nor the GUI; reachable only over REST or MCP. No command line or GUI journey.
-- See and rename tags — command line only. The GUI shows tags in the sidebar and on the note, and does not rename a hierarchy; `tags rename` is command line only.
 - Keep a library healthy — command line only. No GUI journey; maintenance is command line work.
 - Publish a subset of your notes — command line only. Not in the GUI yet. Publishing writes to a local directory, so the desktop app could do it and the browser mode could not.
 - Choose where sync keys are kept — command line only. Deliberately command line only: this item forbids a credential-management REST or MCP surface.
@@ -102,6 +101,7 @@ Each capability below is offered on some surfaces and not others.
 - Back up and restore the whole library — both, but only the command-line journey is written
 - Synchronize with a replica — both, but only the command-line journey is written
 - Pair two of your own libraries — both, but only the command-line journey is written
+- See and rename tags — both, but only the GUI journey is written
 - Notebooks that are really saved searches — both, but only the GUI journey is written
 <!-- notrios:generated:user:where-the-surfaces-disagree:end -->
 

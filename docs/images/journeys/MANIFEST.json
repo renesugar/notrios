@@ -12,7 +12,7 @@
       "locator": {
         "testid": "new-note-button"
       },
-      "sha256": "68ef69cffdee1acbaeb78ae667df720cd0a995250f78d8ed4a4f2f8cf5f18c46"
+      "sha256": "b1dd9dca26e2481064e825727800070febeb06f8810cc386b3f4ec0f927e319a"
     },
     {
       "journey": "choose-a-notebook",
@@ -21,7 +21,7 @@
       "locator": {
         "testid": "notebook-picker-trigger"
       },
-      "sha256": "4ff32ad259edb630879a65b094a9f263c5931d77692a47c6c158faf12eb959b2"
+      "sha256": "1cc0407118482c5c9b2632f3bac8d12f16047d9a9ba5fb91e511ccc56e45a502"
     },
     {
       "journey": "delete-a-note",
@@ -30,7 +30,7 @@
       "locator": {
         "testid": "delete-button"
       },
-      "sha256": "e7556a36ce255a32e48d6dd2c9c3b98b79b6a39f2f1fdbb0bffdc21d8a1b9972"
+      "sha256": "58c429997be671ce67cbe2f53e0adf3ec41ed28b1c3835f880c1e163726c5ebc"
     },
     {
       "journey": "delete-a-note",
@@ -39,7 +39,7 @@
       "locator": {
         "testid": "sidebar-row-snb_trash"
       },
-      "sha256": "bff1a7f18dfbe171955fe1577897c3fe3a92692ac9fef5ea5fe9ceba32b64b1a"
+      "sha256": "5ca07be7ca4bd4f8549b2fdd5b11239bce7b233ca39099f186f15e461056b5e9"
     },
     {
       "journey": "delete-a-note",
@@ -48,7 +48,7 @@
       "locator": {
         "testid": "sidebar-row-snb_all_notes"
       },
-      "sha256": "c7428bc5425d32a11958e8bae084ec3331e5a94981acd3a10b8c80e8d6306556"
+      "sha256": "6ef8328a59f97b5307434128c2eba7dcaa151a97bcb91716e9fd8dabb30ffe9b"
     },
     {
       "journey": "delete-a-note",
@@ -57,7 +57,7 @@
       "locator": {
         "css": ".result-card:has-text(\"Old shopping list\")"
       },
-      "sha256": "15f7e95d4fd6403b50fe4ffff4ef8dafe5fc0158742cbab27d9f7399243e66c9"
+      "sha256": "3712aed10d218436227369eb20c10e0b0c3f3d6624ece15893d0bab0bf8d6f2f"
     },
     {
       "journey": "find-your-way-around",
@@ -66,7 +66,7 @@
       "locator": {
         "testid": "sidebar-row-nb_help"
       },
-      "sha256": "c85b9a09efad890673bc71d6fe00086315bdcd09742bf934088798eec739764a"
+      "sha256": "2a250a6f00f8e32148203b04f364601cc601163564a8d20a22d6687ebb6a81cc"
     },
     {
       "journey": "keep-a-search-as-a-notebook",
@@ -75,7 +75,7 @@
       "locator": {
         "testid": "keep-search"
       },
-      "sha256": "ebe6fb54694b8cc3843442facfc0c51992912cad668c8d477e5e961d8708f0be"
+      "sha256": "328cbd9f9b75fd6519901d67a90d9df64299f4892c084a1734751c095b09bae0"
     },
     {
       "journey": "keep-a-search-as-a-notebook",
@@ -84,7 +84,7 @@
       "locator": {
         "testid": "keep-search-name"
       },
-      "sha256": "63d31d0810196372e4a842250b0a049627225801373e918fe2a0e8f1b6a34b62"
+      "sha256": "00f52c5bc4e9dab0f9d45bff7567125b6e86d9fa54eb2cbc64b8067f9e6c2764"
     },
     {
       "journey": "keep-a-search-as-a-notebook",
@@ -93,7 +93,7 @@
       "locator": {
         "css": ".search-row input"
       },
-      "sha256": "ee1520cd95e7d2f53bdff4491cf1bd8c58998f4ab20a129c0ac019b151837a18"
+      "sha256": "fc742c441d58c1e28390a6796b4dd7477383fd0e34da92cb18429a19d418c93a"
     },
     {
       "journey": "keep-a-search-as-a-notebook",
@@ -102,7 +102,7 @@
       "locator": {
         "testid": "keep-search-save"
       },
-      "sha256": "762bcd6fddf1d3fc6b36e51ce776bd4b52d772c556f0801cc6211788e3850764"
+      "sha256": "5e5a4305d2502e5be33d682c96d02f11a0af2a40e947de7bfd47b99be1dcce8a"
     },
     {
       "journey": "keep-a-search-as-a-notebook",
@@ -112,7 +112,43 @@
         "role": "button",
         "name": "Search"
       },
-      "sha256": "4f9eff830ce46593403e0e29b0536f7a780ae2af15942d570d6ce35742140ba9"
+      "sha256": "2ba9d25f543f06e098bff4934d87bf7559dacca74f3446460ef058fd8134256e"
+    },
+    {
+      "journey": "rename-a-tag",
+      "step": "agree-to-it",
+      "image": "images/journeys/rename-a-tag-agree-to-it.png",
+      "locator": {
+        "testid": "tag-rename-apply"
+      },
+      "sha256": "c0af34546c4dfd7681dde3cfa68733bc7dcac5a245d7053e528333f152bdfa49"
+    },
+    {
+      "journey": "rename-a-tag",
+      "step": "find-the-tag",
+      "image": "images/journeys/rename-a-tag-find-the-tag.png",
+      "locator": {
+        "testid": "tag-rename-place/hide"
+      },
+      "sha256": "e36c88736e0671dc31fcd95beb43c77bf606d47bb55f2f0a243a9e956d72c7bb"
+    },
+    {
+      "journey": "rename-a-tag",
+      "step": "see-what-changes",
+      "image": "images/journeys/rename-a-tag-see-what-changes.png",
+      "locator": {
+        "testid": "tag-rename-preview"
+      },
+      "sha256": "27701f82ad480bc621449df2ccc42d53ede5264ec05a42a42fd1e63bb59976a8"
+    },
+    {
+      "journey": "rename-a-tag",
+      "step": "type-the-new-name",
+      "image": "images/journeys/rename-a-tag-type-the-new-name.png",
+      "locator": {
+        "testid": "tag-rename-to"
+      },
+      "sha256": "39d5223d4750b79ee4ff9376666bfe91487ab3d666e5b372ff2bce42205e53bb"
     },
     {
       "journey": "restore-a-note",
@@ -121,7 +157,7 @@
       "locator": {
         "testid": "sidebar-row-snb_all_notes"
       },
-      "sha256": "ac9d8e452ea93f097798e9f3d662167e8eca415bede2bb9801562fa2ad72dc03"
+      "sha256": "cedb7dcea3f77c70c8a83a0560879ef1fe3be9a877122399eed104ae7e08af71"
     },
     {
       "journey": "restore-a-note",
@@ -130,7 +166,7 @@
       "locator": {
         "testid": "sidebar-row-snb_trash"
       },
-      "sha256": "142e866b92505edbbe0fda4bb63592ce31fcf20abf5f4df1e546a58979cdd817"
+      "sha256": "34856203cb7e29526482c2c2aaf164c3e5beb71f2dc82b5519fbdbb8040a833f"
     },
     {
       "journey": "restore-a-note",
@@ -139,7 +175,7 @@
       "locator": {
         "css": ".result-card:has-text(\"Recipe I still want\")"
       },
-      "sha256": "0ea9cef2a329513fb63eaaee7a7aca7b02d7bf920dd69e483c51100e41b4b540"
+      "sha256": "b0975a059816c94651f395b333c90399132cdc2021b8a39852ac50f18069e336"
     },
     {
       "journey": "restore-a-note",
@@ -148,7 +184,7 @@
       "locator": {
         "testid": "restore-button"
       },
-      "sha256": "bc26af82e3e72dc007ffd003506bde420c5259358bf3e2d9ae0ee61e534dc8f4"
+      "sha256": "51a971e0865f4b7c300dee3a03418dcf08a387e5d6935779b8ac1e156f3a6d1c"
     },
     {
       "journey": "search-by-tag-and-exclude",
@@ -158,7 +194,7 @@
         "role": "button",
         "name": "Search"
       },
-      "sha256": "8a31e77aff68da7d506de2017a6b4c53c0c2831b3a2d4cb9476cf3aba7fe8c89"
+      "sha256": "1de93e93295e5c908e65a625ff60b4b6fb0e51aab45a84b1992d54c1a2bc3f04"
     },
     {
       "journey": "search-by-tag-and-exclude",
@@ -167,7 +203,7 @@
       "locator": {
         "css": ".search-row input"
       },
-      "sha256": "ee1520cd95e7d2f53bdff4491cf1bd8c58998f4ab20a129c0ac019b151837a18"
+      "sha256": "fc742c441d58c1e28390a6796b4dd7477383fd0e34da92cb18429a19d418c93a"
     },
     {
       "journey": "search-your-notes",
@@ -177,7 +213,7 @@
         "role": "button",
         "name": "Search"
       },
-      "sha256": "a31db1338f0be793b166925489504489bf3dc300ad6f1e0e60d184c68467520a"
+      "sha256": "be63fa0787ebcf75bfeb5e8de07444f8b6c8be35a4aa8701475e089a8169ac07"
     },
     {
       "journey": "search-your-notes",
@@ -186,7 +222,7 @@
       "locator": {
         "css": ".search-row input"
       },
-      "sha256": "ee1520cd95e7d2f53bdff4491cf1bd8c58998f4ab20a129c0ac019b151837a18"
+      "sha256": "fc742c441d58c1e28390a6796b4dd7477383fd0e34da92cb18429a19d418c93a"
     },
     {
       "journey": "tag-a-note",
@@ -195,7 +231,7 @@
       "locator": {
         "testid": "tag-editor-add"
       },
-      "sha256": "1d2d6ee65e27644322bbfcdee6fd5d42c8518345192176039a6e52f70ef7a241"
+      "sha256": "747528e83d8d48b955070f2c44ab0fe5868bb427c02fbbf4113e9e484c867f2b"
     },
     {
       "journey": "tag-a-note",
@@ -204,7 +240,7 @@
       "locator": {
         "testid": "new-note-button"
       },
-      "sha256": "4ec1787e44080865d4e8b41fc474c6f797ce5f81075189d64aefcee42075599b"
+      "sha256": "b1dd9dca26e2481064e825727800070febeb06f8810cc386b3f4ec0f927e319a"
     },
     {
       "journey": "tag-a-note",
@@ -213,7 +249,7 @@
       "locator": {
         "testid": "tag-editor-trigger"
       },
-      "sha256": "7c52eb420fe8623d6068dbe06ad8d107eeae2268553bd1fb586f6ecd2fbd7e4d"
+      "sha256": "d50711c26373ba4ad3e2d64580cba70c8f2c1973b6e2f437320279ebca9f10b4"
     },
     {
       "journey": "tag-a-note",
@@ -222,7 +258,7 @@
       "locator": {
         "testid": "tag-editor-input"
       },
-      "sha256": "c2371258b2b12d411724c585f19d94cedc507f41465fb2b88b7cbe72e01b1756"
+      "sha256": "afcb11a645f70e3aca51a02844b45f7c4ee91922850db01afa05866752e6df78"
     },
     {
       "journey": "update-a-note",
@@ -231,7 +267,7 @@
       "locator": {
         "css": "input.title-input"
       },
-      "sha256": "5d34b003f1aac257571879f55eed7eb5b93d6bff9bcf603d08952dc4a16298d3"
+      "sha256": "5c103ba6c16262874fb2bfa90e6d0dc651c8a48a43dcfd50ab99302858ed6f19"
     },
     {
       "journey": "update-a-note",
@@ -240,7 +276,7 @@
       "locator": {
         "testid": "sidebar-row-snb_all_notes"
       },
-      "sha256": "50f2e9285a7d488f3ce144a6595d2cd85dfaef5ca7d2253ad9e466a726dd3f0d"
+      "sha256": "c4a41cd179623b33fa8c23fd30b63d6ac3e7ca514e78d233cac46238dc48716c"
     },
     {
       "journey": "update-a-note",
@@ -249,7 +285,7 @@
       "locator": {
         "css": ".result-card:has-text(\"Notes from the eastern hide\")"
       },
-      "sha256": "92599b688b687c3d3ff6154aa5da4483e0a3ffdfcebb0970232daead4c81bdaf"
+      "sha256": "a271f017684cc765cfae605e14ed7553ded0211a5a9717022ff15091ba3d37b5"
     },
     {
       "journey": "update-a-note",
@@ -258,7 +294,7 @@
       "locator": {
         "testid": "save-button"
       },
-      "sha256": "290194fc6497d5d3b573c67f12ee27fdbd8b45b8b9b105cede22e86456f148ae"
+      "sha256": "b04e9c243a69bbf37ae362e15837d10f163c045b89ded5dc91845af3ce68f3f9"
     },
     {
       "journey": "write-a-note",
@@ -267,7 +303,7 @@
       "locator": {
         "testid": "new-note-button"
       },
-      "sha256": "4ec1787e44080865d4e8b41fc474c6f797ce5f81075189d64aefcee42075599b"
+      "sha256": "9ec5c9c7e364556378c2d40bb50ed591bdd452ab31971edc6669dd622ad79c77"
     },
     {
       "journey": "write-a-note",
@@ -276,7 +312,7 @@
       "locator": {
         "css": ".cm-content"
       },
-      "sha256": "ae37e792969a8e551b3e791046a137c97d3afdfc42bfb514be38dcdccc34fb5d"
+      "sha256": "8fac45a7fd14693ed3f3c48b8d17f8cd2a87830809d3dbe688b491220e6d0fae"
     }
   ]
 }

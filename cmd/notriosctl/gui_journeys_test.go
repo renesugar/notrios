@@ -98,6 +98,16 @@ func seedJourneyFixtures(t *testing.T, cli string, replica *syncReplica) {
 	}
 	create("Old shopping list", "Oats, tinned tomatoes, a new trowel.\n")
 
+	// A tag of its own for the rename journey, for the same reason the update
+	// journey has a note of its own: renaming field/dusk would pull the tag the
+	// search journeys query out from under them, and that only passes today
+	// because rename happens to run last.
+	hide := create("Eastern hide, first visit", "Two teal and a water rail heard.\n")
+	if tagged := runCLI(t, cli, "tags", "add", "--db", replica.db, "--asset-store", replica.assets,
+		"--document", hide, "--tag", "place/hide"); tagged.exitCode != 0 {
+		t.Fatalf("tags add exited %d: %s", tagged.exitCode, tagged.stderr)
+	}
+
 	// Already in the Trash, because a restore journey has to start from a note
 	// that is in there. Creating and deleting it inside the journey would spend
 	// four screenshots re-photographing the delete journey.

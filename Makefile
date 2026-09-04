@@ -120,7 +120,7 @@ install-dry-run: build web ## Show exactly what install would write, and write n
 integration-matrix: build web ## Run the installed-integration matrix (H8) and record results
 	python3 scripts/integration_matrix.py
 
-icons: ## Regenerate the desktop and web icons from assets/notrios.png
+icons: ## Regenerate the desktop and web icons from assets/notrios.png and assets/notrios.svg
 	python3 scripts/build_icons.py
 
 deb: build web ## Build the internal Ubuntu package into dist/deb (needs dpkg-dev)

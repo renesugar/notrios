@@ -16,11 +16,13 @@ export interface SidebarPaneProps {
   selectedRowID: string | null;
   onSelectRow: (row: SidebarRow) => void;
   onSelectQuery: (query: string) => void;
+  /** Opens the rename dialog for one tag hierarchy. */
+  onRenameTag: (tag: string) => void;
   /** Delete a notebook; the caller previews and confirms before doing it. */
   onDeleteNotebook: (row: SidebarRow) => void;
 }
 
-export function SidebarPane({ rows, tags, activeQuery, selectedRowID, onSelectRow, onSelectQuery, onDeleteNotebook }: SidebarPaneProps) {
+export function SidebarPane({ rows, tags, activeQuery, selectedRowID, onSelectRow, onSelectQuery, onDeleteNotebook, onRenameTag }: SidebarPaneProps) {
   return (
     <nav className="pane sidebar-pane" aria-label="Notebooks and tags" data-testid="pane-sidebar">
       <div className="pane-scroll">
@@ -68,8 +70,21 @@ export function SidebarPane({ rows, tags, activeQuery, selectedRowID, onSelectRo
                     aria-current={activeQuery === `tag:"${tag.name}"` ? 'true' : undefined}
                     onClick={() => onSelectQuery(`tag:"${tag.name}"`)}
                   >
-                    <span className="sidebar-label">{tag.name}</span>
+                      <span className="sidebar-label">{tag.name}</span>
                     <span className="tag-count">{tag.note_count}</span>
+                  </button>
+                  {/* Beside the tag rather than in a settings screen: renaming
+                      one is something you decide while looking at it, and the
+                      count next to it is half the reason you decide. */}
+                  <button
+                    type="button"
+                    className="sidebar-action"
+                    data-testid={`tag-rename-${tag.name}`}
+                    title={`Rename the tag “${tag.name}”`}
+                    aria-label={`Rename the tag ${tag.name}`}
+                    onClick={() => onRenameTag(tag.name)}
+                  >
+                    ✎
                   </button>
                 </li>
               ))}

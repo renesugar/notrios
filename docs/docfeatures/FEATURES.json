@@ -172,7 +172,13 @@
       "mcp": [
         "list_tags"
       ],
-      "surface_note": "The GUI shows tags in the sidebar and on the note, and does not rename a hierarchy; `tags rename` is command line only."
+      "surface_note": "Renaming is offered beside the tag, because it is decided while looking at the tag and the count next to it is half the reason for deciding. The dry run is not a prediction: the service performs the rename in a transaction and rolls it back, so the report and the apply cannot disagree. Applying is unreachable until a report of that exact rename has been shown, and editing the name or the children option withdraws it.",
+      "gui": [
+        "Tags in the sidebar with note counts",
+        "Rename the tag \u2014 beside each tag",
+        "Show me what changes \u2014 the dry run",
+        "Rename \u2014 applies what the report described"
+      ]
     },
     {
       "id": "collections",

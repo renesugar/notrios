@@ -1723,3 +1723,25 @@ button.sync-list-row:hover { border-color: var(--accent); }
   font-size: 12px;
   overflow-wrap: anywhere;
 }
+
+/* The rename report. Merges are called out because a merge is not a rename:
+   the destination already exists and afterwards the two tags are one. */
+.tag-rename-report {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  background: var(--chip-bg);
+  font-size: 12px;
+}
+
+.tag-rename-report p { margin: 0 0 6px; }
+.tag-rename-report ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+.tag-rename-merge { color: var(--accent); font-weight: 600; }
+
+.tag-rename-warnings {
+  margin-top: 8px !important;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-strong);
+  color: var(--muted);
+}
