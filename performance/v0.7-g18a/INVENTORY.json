@@ -1687,7 +1687,7 @@
     },
     {
       "path": "docs/journeys-cli.md",
-      "sha256": "36ce893a0f806f770854161fd1621f0c7b0742e756486b7f295366b080fd175e",
+      "sha256": "e2298979b12115810ea07cf72b8f2e2e435686c1b7f12109f8006d686f119bfe",
       "help_note": "doc_help_journeys_cli",
       "owner": "go:github.com/renesugar/notrios/internal/docjourneys#Catalogue",
       "sections": [

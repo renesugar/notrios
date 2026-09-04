@@ -2422,8 +2422,21 @@ supports it.
 outside the existing sandbox, no probabilistic result becomes a build gate, and
 nothing is added to `make validate`. No screenshot is ever taken of a real
 library: every capture comes from the seeded fixture, because a screenshot of a
-GUI is a picture of somebody's notes and this repository does not carry those. No paid model, no subscription, no recurring
-charge. `zg` uses a local embedding model and its remote-data path stays off.
+GUI is a picture of somebody's notes and this repository does not carry those. No subscription and no recurring charge.
+
+*The zero-cost boundary was relaxed on 2026-09-03, deliberately and with
+numbers.* Free endpoints proved too slow and too throttled to run a matrix: 71
+to 377 seconds a call where they answered at all, and two of the four tried were
+rate-limited on contact. The user authorised `openrouter/z-ai/glm-5.3-flash` at
+$0.075 in and $0.25 out per million, which answers in 18 seconds. Cost is not
+the constraint at any plausible multiplier. The whole documentation corpus is
+293,267 characters -- roughly 55,000 to 73,000 tokens -- but the harness sends
+one task's prose per call, so a full pass over every journey and arm is about
+3,250 tokens of prompt, and a run with repeats stays under a cent even allowing
+an order of magnitude for the agent's own system prompt and tool round-trips.
+The harness still refuses a slug without `free` unless `--allow-paid` is given
+**with a written reason**, and that reason is recorded in the evidence, so a
+paid run cannot happen by accident or without saying why. `zg` uses a local embedding model and its remote-data path stays off.
 Notes, databases, evidence archives and anything under `data/` are never sent
 anywhere. No change to docgen, docaudit, or any G18 gate.
 
@@ -2905,6 +2918,69 @@ separation, the recommendation is to stop, and the investigation will still have
 been worth doing -- it has already produced a features coverage gate, three
 executed catalogues and five product defects without a model being involved at
 all.
+
+**Slice F, full run 2026-09-03: repeats, deliberately unguessable tasks, a
+faster model -- and still nothing separates. That is the answer.** 24 runs: four
+journeys marked `notrios-specific`, three arms, two repeats each, on
+`openrouter/z-ai/glm-5.3-flash` at 18 to 30 seconds a call against the free
+models' 71 to 377. **Zero of four tasks credited.**
+
+| task | prose | no-prose |
+|---|---|---|
+| search with the query language | acted, acted | refused, **acted** |
+| export and verify an archive | no-change, no-change | no-change, no-change |
+| read the built-in help | acted, unavailable | **acted, acted** |
+| move sync keys to the keychain | no-change, no-change | no-change, no-change |
+
+*The no-prose arm keeps winning, and marking tasks "unguessable" did not stop
+it.* The model produced `seed-help` twice with no documentation at all, and
+`export archive --query` once. Guessability was recorded in the catalogue
+precisely to remove this, and it did not, which points at something the pilot
+did not show: **the task statement itself paraphrases the command.** Every arm
+receives the journey's title and goal, and "Get the Notrios guides into the
+library as notes" is very nearly a definition of `seed-help`. The no-prose arm
+is therefore not a clean control -- it is the prose arm with the steps removed
+but the answer still in the framing. That is the method's real limit, and it was
+invisible until tasks chosen to defeat guessing failed to defeat it.
+
+*Two tasks failed on the prose arm for reasons that are mine, not the pages'.*
+`export archive-v2` produced the right command with the model's own output path,
+and the postcondition checks a path the harness chose, so it recorded
+`no-change` for a command that worked. A postcondition that depends on a path
+the model picks cannot be written this way. The keychain task saw the model emit
+a literal `{config}` placeholder it invented, which the harness stripped, leaving
+a command that could not do the thing. Both are harness defects surfaced by
+running it, and both are recorded rather than tuned away.
+
+*A containment gap the run found in the harness itself.* One run produced
+`export archive-v2 /backups/notrios-2026-08-04` -- a **positional path outside
+the sandbox**, which the harness passed straight through. It failed only because
+`/backups` does not exist; a model naming `/tmp` or a path under the user's home
+would have been written to. Root flags were being stripped and positional paths
+were not. Any argument that looks like a path is now redirected under the
+sandbox, keeping its base name. Separately confirmed: `notriosctl` is not on
+`PATH`, so the agent could not have read the usage text, and the no-prose
+successes are genuine guesses rather than tool-assisted discovery -- which
+matters, because that would have invalidated every result here.
+
+*Recommendation: stop, and keep what the item already produced.* The exit
+criteria require the ablation to separate arm 1 from arm 2 on a page known to be
+good. With repeats, with tasks chosen to be unguessable, and with a model fast
+enough to run a matrix, it separated on nothing. Making the no-prose arm a real
+control needs task statements that convey a user's intent without paraphrasing
+the command, and it is not obvious that such a statement exists for most tasks --
+a task named without its own vocabulary may not be a task a reader would
+recognise either. That is a research problem, not a documentation one.
+
+The investigation was still worth doing, and not as consolation. Its
+model-free half produced a features page with a coverage gate at zero backlog,
+three catalogues -- nine executed command-line journeys, three photographed
+interface journeys -- a computed surface comparison, and eight defects: two
+documented flags that do not exist, three product gaps including a raw
+`FOREIGN KEY constraint failed` on a plausible user action, a command missing
+from the CLI registry, and two containment defects in the harness itself. The
+`notes create` command exists because writing this found the gap. Not one of
+those needed a model.
 
 **Exit criteria.** The generation half stands on its own and is not conditional
 on the model work: the features page, the two journey catalogues and the

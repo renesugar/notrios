@@ -37,7 +37,8 @@
           "doctor: required checks passed",
           "database"
         ]
-      }
+      },
+      "guessability": "conventional"
     },
     {
       "id": "create-a-note-in-a-notebook",
@@ -111,7 +112,8 @@
         "contains": [
           "2"
         ]
-      }
+      },
+      "guessability": "conventional"
     },
     {
       "id": "search-with-the-query-language",
@@ -151,7 +153,8 @@
         "contains": [
           "0"
         ]
-      }
+      },
+      "guessability": "notrios-specific"
     },
     {
       "id": "export-and-verify-an-archive",
@@ -183,7 +186,8 @@
       "postcondition": {
         "narrative": "the archive's manifest exists on disk after the export",
         "file_exists": "{out}/manifest.json"
-      }
+      },
+      "guessability": "notrios-specific"
     },
     {
       "id": "keep-separate-libraries",
@@ -217,7 +221,8 @@
         "contains": [
           "work_notes"
         ]
-      }
+      },
+      "guessability": "conventional"
     },
     {
       "id": "enrol-for-sync",
@@ -273,7 +278,8 @@
         "contains": [
           "credential_store"
         ]
-      }
+      },
+      "guessability": "conventional"
     },
     {
       "id": "find-what-has-rotted",
@@ -316,7 +322,8 @@
         "contains": [
           "findings"
         ]
-      }
+      },
+      "guessability": "conventional"
     },
     {
       "id": "read-the-built-in-help",
@@ -349,6 +356,72 @@
         "contains": [
           "notes_created",
           "files_seen"
+        ]
+      },
+      "guessability": "notrios-specific"
+    },
+    {
+      "id": "move-sync-keys-to-the-keychain",
+      "title": "Move sync keys into the operating system's keychain",
+      "goal": "Take key material out of the development file and put it where the OS keeps secrets.",
+      "feature": "sync-credentials",
+      "guessability": "notrios-specific",
+      "note": "Nothing about this command is guessable: the subcommand name, the direction flag and the confirmation are all specific to Notrios, which is what makes it able to measure a page.",
+      "steps": [
+        {
+          "narrative": "Enrol the library first, choosing the development file so there is something to move.",
+          "command": [
+            "sync",
+            "init",
+            "--config",
+            "{config}",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--keys",
+            "{keys}"
+          ]
+        },
+        {
+          "narrative": "See the plan without moving anything. The command reports which store holds the keys now and which would hold them afterwards, and writes nothing.",
+          "command": [
+            "sync",
+            "migrate-credentials",
+            "--to",
+            "native",
+            "--dry-run",
+            "--config",
+            "{config}",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--keys",
+            "{keys}"
+          ],
+          "allow_failure": true
+        }
+      ],
+      "postcondition": {
+        "narrative": "the dry run reports the plan and says nothing was moved",
+        "command": [
+          "sync",
+          "migrate-credentials",
+          "--to",
+          "native",
+          "--dry-run",
+          "--config",
+          "{config}",
+          "--db",
+          "{db}",
+          "--asset-store",
+          "{assets}",
+          "--keys",
+          "{keys}"
+        ],
+        "contains": [
+          "dry run"
         ]
       }
     }

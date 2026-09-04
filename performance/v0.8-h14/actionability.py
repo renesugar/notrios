@@ -153,8 +153,16 @@ def run_task(binary: str, journey: dict, argv: list[str]) -> dict:
                 out.append(argument)
             return out
 
-        # The model does not choose which library it touches: whatever paths it
-        # names are replaced by the sandbox's own.
+        # The model does not choose which library it touches, and it does not
+        # choose where output goes either.
+        #
+        # Stripping the root flags was not enough: a run produced
+        # `export archive-v2 /backups/notrios-2026-08-04`, a positional path
+        # outside the sandbox that the harness passed straight through. That one
+        # failed only because /backups does not exist. A model naming /tmp or a
+        # path under the user's home would have been written to. So any argument
+        # that looks like a filesystem path is redirected under the sandbox,
+        # keeping its base name so the command still means what it meant.
         cleaned, skip = [], False
         for argument in argv:
             if skip:
@@ -163,6 +171,8 @@ def run_task(binary: str, journey: dict, argv: list[str]) -> dict:
             if argument in ("--db", "--asset-store", "--keys", "--config"):
                 skip = True
                 continue
+            if not argument.startswith("-") and ("/" in argument or argument.startswith("~")):
+                argument = os.path.join(sandbox, "model-chose-" + os.path.basename(argument.rstrip("/")))
             cleaned.append(argument)
         vector = [binary, *cleaned, "--db", values["db"], "--asset-store", values["assets"]]
         try:
@@ -190,22 +200,38 @@ def main() -> int:
     parser.add_argument("--model", action="append", required=True)
     parser.add_argument("--out", required=True)
     parser.add_argument("--timeout", type=int, default=240)
+    parser.add_argument("--repeats", type=int, default=2,
+                        help="runs per arm; one is not enough, because the same model on the "
+                             "same arm has already returned both a real command and one that "
+                             "does not exist")
+    parser.add_argument("--allow-paid", metavar="REASON",
+                        help="permit a model slug without 'free'. The whole item is constrained "
+                             "to zero cost, so a paid run is a deliberate act that records why.")
     parser.add_argument("--journey", action="append", default=[])
+    parser.add_argument("--guessability", choices=["conventional", "notrios-specific", "any"],
+                        default="notrios-specific",
+                        help="which journeys to run. Defaults to notrios-specific, because a task "
+                             "whose command follows convention measures the model rather than the "
+                             "page -- the pilot proved that on `notriosctl paths`.")
     options = parser.parse_args()
 
     for model in options.model:
-        if "free" not in model:
-            print(f"refusing {model}: only slugs containing 'free' are used", file=sys.stderr)
+        if "free" not in model and not options.allow_paid:
+            print(f"refusing {model}: only slugs containing 'free' are used, and no --allow-paid "
+                  "reason was given", file=sys.stderr)
             return 2
 
     catalogue = json.loads(JOURNEYS.read_text())
     journeys = [j for j in catalogue["journeys"]
                 if not options.journey or j["id"] in options.journey]
+    if options.guessability != "any":
+        journeys = [j for j in journeys if j.get("guessability") == options.guessability]
 
     results = []
     for model in options.model:
         for journey in journeys:
-            for arm in ("prose", "no-prose", "misleading"):
+            for arm, repeat in [(a, r) for a in ("prose", "no-prose", "misleading")
+                                for r in range(1, options.repeats + 1)]:
                 prompt = prompt_for(journey, arm)
                 started = time.time()
                 text, failure = ask(model, prompt, options.timeout)
@@ -213,6 +239,7 @@ def main() -> int:
                     "model": model,
                     "journey": journey["id"],
                     "arm": arm,
+                    "repeat": repeat,
                     "prompt_sha256": hashlib.sha256(prompt.encode()).hexdigest(),
                     "seconds": round(time.time() - started, 1),
                 }
@@ -241,6 +268,8 @@ def main() -> int:
 
     Path(options.out).write_text(json.dumps({
         "schema": "notrios.h14.actionability.v1",
+        "repeats": options.repeats,
+        "paid_reason": options.allow_paid,
         "runs": results,
     }, indent=2) + "\n")
     return 0

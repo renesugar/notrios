@@ -50,7 +50,9 @@ func TestEveryJourneyNamesARealFeature(t *testing.T) {
 // A feature with no journey is a capability someone can find but has not been
 // shown how to use, which is a milder failure and a longer job.
 func TestFeaturesWithoutAJourneyAreTracked(t *testing.T) {
-	const baseline = 24
+	// 24 -> 23 in v0.8 H14 slice F: the migrate-credentials journey, added
+	// because the pilot showed a guessable command cannot measure a page.
+	const baseline = 23
 
 	catalogue, registry := load(t)
 	covered := map[string]bool{}

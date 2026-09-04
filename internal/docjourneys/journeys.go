@@ -74,6 +74,16 @@ type Journey struct {
 	// Note records something a reader should know that the steps cannot show,
 	// most often a capability the command line does not have.
 	Note string `json:"note,omitempty"`
+	// Guessability says whether this journey's command could be produced from
+	// command-line convention alone, without reading anything.
+	//
+	// It is recorded because it decides whether a journey can measure a page at
+	// all. `notriosctl paths` is conventional, and the H14 pilot confirmed it:
+	// a model with no documentation produced it correctly, so the task scored
+	// nothing and could never have scored anything. A task whose command is
+	// guessable measures the model. Only "notrios-specific" journeys are worth
+	// putting through the three arms.
+	Guessability string `json:"guessability"`
 }
 
 type Catalogue struct {
@@ -111,6 +121,8 @@ func (c Catalogue) validate() error {
 			return fmt.Errorf("%s has no title or goal", journey.ID)
 		case journey.Feature == "":
 			return fmt.Errorf("%s names no feature", journey.ID)
+		case journey.Guessability != "conventional" && journey.Guessability != "notrios-specific":
+			return fmt.Errorf("%s must record guessability as conventional or notrios-specific", journey.ID)
 		case len(journey.Steps) == 0:
 			return fmt.Errorf("%s has no steps", journey.ID)
 		}

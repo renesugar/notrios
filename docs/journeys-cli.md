@@ -43,6 +43,7 @@ Lines renders the catalogue for the generated fragment.
 - Prepare a library to synchronize — Turn on synchronization for a library and see where its keys are kept. (2 steps, verified by: status reports the library as enrolled and names the store holding its keys)
 - Find what has gone stale in a library — See broken links, orphaned attachments and other rot, and fix what can be fixed mechanically. (2 steps, verified by: lint produces a report rather than changing the library)
 - Read the documentation inside your own library — Get the Notrios guides into the library as notes, so they are searchable like anything else. (1 steps, verified by: the seed reports how many documentation files became notes in the library)
+- Move sync keys into the operating system's keychain — Take key material out of the development file and put it where the OS keeps secrets. (2 steps, verified by: the dry run reports the plan and says nothing was moved) Nothing about this command is guessable: the subcommand name, the direction flag and the confirmation are all specific to Notrios, which is what makes it able to measure a page.
 <!-- notrios:generated:user:the-journeys:end -->
 
 

@@ -39,21 +39,35 @@ def main() -> None:
     require(runs, "no runs recorded")
 
     by_task = {}
+    # A paid model is permitted only when the run recorded why. The harness
+    # enforces the same rule at the point of the call; this enforces it on the
+    # evidence, so a paid run cannot be read later as though it had been free.
+    paid_reason = report.get("paid_reason")
     for run in runs:
-        require("free" in run["model"], f"{run['model']} is not a free model slug")
+        if "free" not in run["model"]:
+            require(paid_reason, f"{run['model']} is not a free slug and no reason was recorded")
+            require(len(paid_reason) > 40, "the reason for a paid run must actually explain it")
         require(run["arm"] in ARMS, f"unknown arm {run['arm']!r}")
         require(run["outcome"] in OUTCOMES, f"unknown outcome {run['outcome']!r}")
         require(run.get("prompt_sha256"), "a run records no prompt hash")
-        by_task.setdefault((run["model"], run["journey"]), {})[run["arm"]] = run["outcome"]
+        by_task.setdefault((run["model"], run["journey"]), {}).setdefault(run["arm"], []).append(run["outcome"])
 
     credited = 0
     for (model, journey), arms in by_task.items():
         require(ARMS <= set(arms), f"{model}/{journey} is missing an arm: {sorted(arms)}")
-        if arms["prose"] == "acted" and arms["no-prose"] != "acted":
+        # Credit is conservative on purpose. The prose arm need only work once,
+        # because a model that can follow the page sometimes proves the page can
+        # be followed. The no-prose arm must fail *every* time, because one
+        # success proves the command was guessable and the task cannot measure
+        # the page at all. The pilot showed the same model returning a real
+        # command on one no-prose run and a nonexistent one on another, so a
+        # single run either way settles nothing.
+        if "acted" in arms["prose"] and "acted" not in arms["no-prose"]:
             credited += 1
 
+    cost = "free models only" if not paid_reason else "includes a paid model, with a recorded reason"
     print(f"H14 actionability evidence valid: {len(runs)} runs, {len(by_task)} task/model pairs, "
-          f"{credited} credited (prose acted and no-prose did not).")
+          f"{credited} credited (prose acted and no-prose did not); {cost}.")
 
 
 if __name__ == "__main__":
