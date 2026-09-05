@@ -10,9 +10,16 @@ of the two, both pages say so.
 
 ## Reading the pictures
 
-Each screenshot carries two marks. The **thin outline** is the thing you are
+Most screenshots carry two marks. The **thin outline** is the thing you are
 clicking — how much of it is clickable. The **red circle** is the point the
 click lands on.
+
+The journeys marked **desktop app only** have neither, and not by oversight:
+they are driven from the keyboard, and a keystroke has no place on the screen to
+point at. They also cannot be photographed in a browser at all — importing,
+exporting, snapshots and publishing name a folder on the computer running the
+library, so those controls are disabled there — which is why the pictures for
+them come from the real application instead.
 
 The library in these pictures is a throwaway one made for the purpose. None of
 it is anybody's notes.
@@ -169,6 +176,49 @@ Each task below lists its steps, with a picture of every one.
   - Some findings can be corrected without judgement. Planning shows how many edits across how many notes and changes nothing; repairing applies them, each against the revision it was computed from, so a note you edited in the meantime refuses rather than being repaired against text nobody read. Collecting unreferenced attachments is not offered here: it deletes, and a repair only writes a new revision.
 
     ![what-can-be-repaired](images/journeys/check-library-health-what-can-be-repaired.png)
+- **Import a Joplin export (desktop app only)** — Bring a Joplin RAW export into this library from the desktop app.
+  - Open **File ▸ Import and export…**, or press Ctrl+I. Everything that reads or writes a folder on this machine is here, and it is here only in the desktop app: a browser cannot open a folder, so these controls are shown there and disabled with that reason rather than hidden.
+
+    ![open-import-and-export](images/journeys/import-from-joplin-in-the-app-open-import-and-export.png)
+  - Name the Joplin RAW export folder — the one Joplin wrote, with a Markdown file per note. **Choose folder…** opens a directory chooser if you would rather point at it. Nothing below is available until a folder is named.
+
+    ![name-the-folder](images/journeys/import-from-joplin-in-the-app-name-the-folder.png)
+  - Press **Import**, and the report says what arrived. **Scan without importing** sits beside it and writes nothing, which is the safer first move on an export you have not opened. Imported notes are ordinary editable notes: a migration, not a read-only attachment.
+
+    ![the-report](images/journeys/import-from-joplin-in-the-app-the-report.png)
+- **Export the whole library (desktop app only)** — Write a portable archive of everything, from the desktop app.
+  - Open **File ▸ Import and export…**, or press Ctrl+I. Everything that reads or writes a folder on this machine is here, and it is here only in the desktop app: a browser cannot open a folder, so these controls are shown there and disabled with that reason rather than hidden.
+
+    ![open-import-and-export](images/journeys/export-this-library-open-import-and-export.png)
+  - Name the folder to write the archive into, and let it be an empty one: an archive is a directory of files rather than a single file.
+
+    ![name-the-destination](images/journeys/export-this-library-name-the-destination.png)
+  - Press **Export everything**, and the report names what was written. Exporting a subset — by notebook, tag or query — stays on the command line, because choosing a subset means seeing what it selects before it is written. The same dialog reads an archive back: **Import from Notrios** verifies one without opening a database.
+
+    ![the-archive](images/journeys/export-this-library-the-archive.png)
+- **Take a snapshot of the library (desktop app only)** — Write a verified snapshot image you can restore from.
+  - Open **File ▸ Import and export…**, or press Ctrl+I. Everything that reads or writes a folder on this machine is here, and it is here only in the desktop app: a browser cannot open a folder, so these controls are shown there and disabled with that reason rather than hidden.
+
+    ![open-import-and-export](images/journeys/take-a-snapshot-open-import-and-export.png)
+  - Name the folder to write the snapshot into. A snapshot is the whole library at one moment, and it is the fastest way to copy one that is going back into the same schema.
+
+    ![name-the-destination](images/journeys/take-a-snapshot-name-the-destination.png)
+  - Press **Create snapshot**. The image is verified as it is written, and one that fails verification is never recorded as a snapshot. Restoring one is a command-line operation, because a restore replaces the library this window is showing.
+
+    ![the-snapshot](images/journeys/take-a-snapshot-the-snapshot.png)
+- **Publish a subset of your notes (desktop app only)** — Review exactly what a publication would let out, then write it.
+  - Open **File ▸ Import and export…**, or press Ctrl+I. Publishing is at the bottom, under the operations that read and write whole libraries, because it is the one that hands notes to somebody else.
+
+    ![open-import-and-export](images/journeys/publish-a-subset-open-import-and-export.png)
+  - Choose a saved profile and press **Review what this would publish**. The counts lead with what is withheld and which links are rewritten, because that is the question — a publication carries current versions only, no trashed notes, no history and no provenance. Profiles are made with `notriosctl publish profile save` and only read here: a form that quietly defaulted a privacy choice is how something private gets published.
+
+    ![review-it](images/journeys/publish-a-subset-review-it.png)
+  - Name an empty folder — the caret is already in the field, because naming one is what the review just asked for — and press **Publish this review**. The run re-plans and refuses unless the plan still hashes to the one on screen, so what is published is what was read, not something rebuilt a moment later from the same profile.
+
+    ![publish-it](images/journeys/publish-a-subset-publish-it.png)
+  - The report names how many notes were written and where. A publication is not a backup: restoring from one is not a thing you can do, which is why the archive above exists.
+
+    ![the-publication](images/journeys/publish-a-subset-the-publication.png)
 <!-- notrios:generated:user:the-journeys:end -->
 
 

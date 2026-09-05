@@ -3686,6 +3686,66 @@ interfaces. All eighteen uses now say "GUI", which is the term the product's own
   cannot find a task does not conclude it is command line only; they conclude it
   is missing.
 
+### The desktop harness captures as well as asserts -- Done
+
+**What was blocked, and by what.** Four capabilities had a GUI surface and no
+GUI journey: importing, exporting, snapshots and publishing. The recorded reason
+was not laziness -- the journey capture drives a browser, and in a browser those
+controls are correctly disabled, because every one of them names a folder on the
+machine that owns the library and no REST route starts them. The panel could not
+be reached to photograph. The desktop harness could already drive the real
+application under Xvfb; it could only assert. Now it captures.
+
+**How a desktop journey stays falsifiable without a DOM.** A browser journey
+points at a locator, and a locator that stops matching fails the run rather than
+producing a confident picture of the wrong place. There is no DOM to query from
+xdotool, so that property is obtained another way: every desktop step declares
+the lines it expects in the application's own transcript, and those lines name
+the operation *and* the path it ran against. A Tab that stops one control short
+cannot satisfy `joplin-apply requested for /tmp/...`, so the journey fails
+instead of photographing the wrong panel. The catalogue marks these journeys
+`driver: "desktop"`, the Playwright runner skips them and keeps their rows, and
+the page labels them "desktop app only" -- a reader in a browser cannot do them.
+
+**Three faults the pictures found, none of which a passing test would have
+shown.**
+
+*The first pictures were of the state before each step.* Three journeys that
+open the same dialog produced the same photograph three times, byte for byte,
+because a picture taken before the keystroke shows the state you left rather
+than the one the step produces. Desktop steps are now photographed after they
+act and after the application says the act finished. The manifest merge had the
+same shape of bug: keyed by step, it left a row behind whenever a journey lost
+one, so the file claimed a screenshot that no longer existed. It replaces by
+journey now.
+
+*The export report read `documents: 0`.* The capture library was empty, so the
+picture showed the feature working on nothing. It seeds the same fixtures the
+browser capture uses, and the report now reads `documents: 23 · objects: 24`.
+
+*Publishing was not reachable, and the reason was a defect in the product.*
+After **Review what this would publish**, the review replaces the button that
+had focus, focus falls back to the body, and the next Tab starts again at the
+dialog's close button -- so somebody working by keyboard is thrown back past
+every other operation in the dialog to reach the one field the review has just
+asked them for. The folder typed after a review went nowhere at all, which is
+how it was found. The panel now leaves the caret in the destination field when a
+plan arrives, and `publish-panel.test.tsx` fails without that. The earlier record
+said the panel could not be reached by keyboard at all under xdotool; the
+narrower truth is that it could, and what stopped it was this.
+
+Twelve images, four journeys, `docs/journeys-gui.md` regenerated, and four
+`surface_note` entries corrected -- they said no journey could be written, and
+that is no longer true. `TestDesktopPublishThroughTheWindow` remains skipped:
+its subject was asserting rather than capturing, and what it wanted is now done
+by the capture instead.
+
+*One thing the pictures show that is worth a second look.* The snapshot report
+reads `objects: 0` beside an export reading `objects: 24` -- both are correct
+(a snapshot counts asset-store objects, of which the fixture has none), but a
+reader comparing the two panels has no way to know that. Recorded rather than
+adjusted.
+
 ### Saving stays explicit, and the unsaved draft is protected -- Done
 
 Joplin autosaves and has no save button, and the obvious question is why this

@@ -106,6 +106,16 @@ const manifest = [];
 const browser = await chromium.launch({ headless: true, executablePath: chromePath });
 try {
   for (const journey of catalogue.journeys) {
+    // A desktop journey is not this runner's to perform, and skipping it is
+    // not the same as ignoring it: importing, exporting, snapshots and
+    // publishing name a folder on the machine running the library, so their
+    // controls are correctly disabled here. Driving them needs the real
+    // application, which cmd/notriosctl TestDesktopJourneyCapture does under
+    // Xvfb. Its images stay in the manifest below rather than being dropped.
+    if (journey.driver === 'desktop') {
+      results.push({ id: journey.id, state: 'desktop', error: 'driven by the desktop harness' });
+      continue;
+    }
     const context = await browser.newContext({
       viewport: { width: catalogue.viewport.width, height: catalogue.viewport.height },
       deviceScaleFactor: 1,
@@ -182,6 +192,21 @@ for (const image of manifest) {
   if (!same) byHash.set(image.sha256, image);
 }
 
+// Keep what the desktop harness captured. Writing this file from one runner
+// while the other owns half its rows would delete those rows on every run, and
+// the deletion would look exactly like a journey that had never been captured.
+const desktopJourneys = new Set(
+  catalogue.journeys.filter((journey) => journey.driver === 'desktop').map((journey) => journey.id));
+let existing = { images: [] };
+try {
+  existing = JSON.parse(await fs.readFile(manifestPath, 'utf8'));
+} catch {
+  // A first run has nothing to keep.
+}
+for (const image of existing.images ?? []) {
+  if (desktopJourneys.has(image.journey)) manifest.push(image);
+}
+
 manifest.sort((left, right) =>
   left.journey.localeCompare(right.journey) || left.step.localeCompare(right.step));
 await fs.writeFile(manifestPath, JSON.stringify({
@@ -190,6 +215,6 @@ await fs.writeFile(manifestPath, JSON.stringify({
   images: manifest,
 }, null, 2) + '\n');
 
-const failed = results.filter((item) => item.state !== 'executed');
+const failed = results.filter((item) => item.state !== 'executed' && item.state !== 'desktop');
 console.log(JSON.stringify({ results, images: manifest.length }, null, 2));
 if (failed.length) process.exit(1);

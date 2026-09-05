@@ -12,15 +12,31 @@ import (
 const GUISchema = "notrios.docjourneys.gui.v1"
 const ImageSchema = "notrios.docjourneys.gui-images.v1"
 
-// GUILocator names an element. Only these three kinds are allowed: a role and
-// an accessible name, a test id, or a CSS selector. Anything looser -- an
-// nth-child path, a coordinate -- would describe today's markup rather than the
-// thing being pointed at, and would go stale silently.
+// GUILocator names an element. For a browser-driven journey only three kinds
+// are allowed: a role and an accessible name, a test id, or a CSS selector.
+// Anything looser -- an nth-child path, a coordinate -- would describe today's
+// markup rather than the thing being pointed at, and would go stale silently.
+//
+// Native is the fourth kind and it exists for the journeys a browser cannot
+// reach at all. Importing, exporting, taking a snapshot and publishing name a
+// folder on this machine, so they live behind the native bridge and their
+// controls are correctly disabled in a browser -- which is what stopped them
+// being photographed until the desktop harness could do it. There is no DOM to
+// query from xdotool, so a desktop step names the thing a person would name
+// ("the File menu's Import and export…") and is driven by keystrokes.
+//
+// That would be a weaker claim on its own, and it is not left as one: every
+// desktop step that acts declares the line it expects in the application's own
+// transcript, so a keystroke that lands somewhere else fails the journey
+// instead of producing a confident picture of the wrong place. That is the
+// property the DOM locator provides for the browser half, obtained a different
+// way for the half that has no DOM.
 type GUILocator struct {
 	Role   string `json:"role,omitempty"`
 	Name   string `json:"name,omitempty"`
 	TestID string `json:"testid,omitempty"`
 	CSS    string `json:"css,omitempty"`
+	Native string `json:"native,omitempty"`
 }
 
 type GUIStep struct {
@@ -29,6 +45,21 @@ type GUIStep struct {
 	Locator   GUILocator `json:"locator"`
 	Action    string     `json:"action"`
 	Value     string     `json:"value,omitempty"`
+	// Keys is the key sequence a desktop step sends before typing Value, as
+	// xdotool names them and separated by spaces ("Tab Tab Return").
+	Keys string `json:"keys,omitempty"`
+	// Expect lists phrases that must appear, in order, in the application's
+	// transcript after this step acts. It is what makes a keyboard-driven step
+	// falsifiable: the interface says what it did, rather than the harness
+	// inferring it from how much of the screen changed. The phrases name the
+	// operation *and* the path it ran against, so a keystroke that lands in
+	// the wrong field cannot satisfy them.
+	//
+	// They are also the shutter release. A desktop step is photographed after
+	// it acts and after the application says the act finished, because the
+	// picture worth printing beside "type the folder here" is the one with the
+	// folder in it.
+	Expect []string `json:"expect,omitempty"`
 	// Confirm marks a step whose control asks the person to confirm before it
 	// acts. It is declared per step rather than accepted for every step,
 	// because a capture that silently agreed to every dialog would be a
@@ -38,10 +69,13 @@ type GUIStep struct {
 }
 
 type GUIJourney struct {
-	ID            string    `json:"id"`
-	Title         string    `json:"title"`
-	Goal          string    `json:"goal"`
-	Feature       string    `json:"feature"`
+	ID      string `json:"id"`
+	Title   string `json:"title"`
+	Goal    string `json:"goal"`
+	Feature string `json:"feature"`
+	// Driver is "browser" (the default, and what the Playwright capture runs)
+	// or "desktop" for a journey only the real application can perform.
+	Driver        string    `json:"driver,omitempty"`
 	Steps         []GUIStep `json:"steps"`
 	Postcondition struct {
 		Narrative string     `json:"narrative"`
@@ -89,6 +123,9 @@ func LoadGUI(path string) (GUICatalogue, error) {
 		if journey.ID == "" || journey.Title == "" || journey.Goal == "" || journey.Feature == "" {
 			return GUICatalogue{}, fmt.Errorf("GUI journey %q is incomplete", journey.ID)
 		}
+		if !journey.browser() && journey.Driver != DesktopDriver {
+			return GUICatalogue{}, fmt.Errorf("%s names an unknown driver %q", journey.ID, journey.Driver)
+		}
 		for _, step := range journey.Steps {
 			if step.ID == "" || step.Narrative == "" {
 				return GUICatalogue{}, fmt.Errorf("%s has a step with no id or narrative", journey.ID)
@@ -96,10 +133,44 @@ func LoadGUI(path string) (GUICatalogue, error) {
 			if step.Locator == (GUILocator{}) {
 				return GUICatalogue{}, fmt.Errorf("%s/%s has no locator", journey.ID, step.ID)
 			}
+			// The two halves may not borrow each other's vocabulary. A native
+			// locator in a browser journey would never be looked up, and a DOM
+			// locator in a desktop one would claim a precision the keyboard
+			// does not have -- both would read as checked and be nothing of
+			// the kind.
+			if journey.browser() && step.Locator.Native != "" {
+				return GUICatalogue{}, fmt.Errorf("%s/%s is browser-driven and cannot use a native locator", journey.ID, step.ID)
+			}
+			if !journey.browser() {
+				if step.Locator.Native == "" {
+					return GUICatalogue{}, fmt.Errorf("%s/%s is desktop-driven and must name what it drives natively", journey.ID, step.ID)
+				}
+				if step.Action != "drive" {
+					return GUICatalogue{}, fmt.Errorf("%s/%s has action %q; every desktop step drives something", journey.ID, step.ID, step.Action)
+				}
+				// A step with nothing to press and nothing to type would
+				// photograph whatever the window happened to be showing, which
+				// is the one thing a documentation screenshot must never be.
+				if step.Keys == "" && step.Value == "" {
+					return GUICatalogue{}, fmt.Errorf("%s/%s drives nothing", journey.ID, step.ID)
+				}
+			}
 		}
 	}
 	return catalogue, nil
 }
+
+// DesktopDriver marks a journey the real application performs, rather than a
+// browser pointed at the same service.
+const DesktopDriver = "desktop"
+
+// browser reports whether this journey is the Playwright capture's to run. An
+// empty driver means browser, so every journey written before the desktop half
+// existed keeps its meaning.
+func (j GUIJourney) browser() bool { return j.Driver == "" || j.Driver == "browser" }
+
+// Desktop reports whether the real application has to perform this journey.
+func (j GUIJourney) Desktop() bool { return !j.browser() }
 
 func LoadImages(path string) (ImageManifest, error) {
 	contents, err := os.ReadFile(path)
@@ -177,7 +248,13 @@ func (c GUICatalogue) GUILines() []string {
 	// let a description drift from the image next to it.
 	lines := []string{}
 	for _, journey := range c.Journeys {
-		lines = append(lines, fmt.Sprintf("**%s** — %s", journey.Title, journey.Goal))
+		title := journey.Title
+		if journey.Desktop() {
+			// Said in the catalogue rather than in a paragraph above it,
+			// because a reader arrives at one task and not at the list.
+			title += " (desktop app only)"
+		}
+		lines = append(lines, fmt.Sprintf("**%s** — %s", title, journey.Goal))
 		for _, step := range journey.Steps {
 			lines = append(lines, fmt.Sprintf("  - %s\n\n    ![%s](images/journeys/%s-%s.png)",
 				step.Narrative, step.ID, journey.ID, step.ID))

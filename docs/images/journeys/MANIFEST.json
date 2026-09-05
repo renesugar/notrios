@@ -96,6 +96,33 @@
       "sha256": "60cd9ef59c9e3634e3ce40d4b262bc84645bf2a047ebdda06b9875c5761e422e"
     },
     {
+      "journey": "export-this-library",
+      "step": "name-the-destination",
+      "image": "images/journeys/export-this-library-name-the-destination.png",
+      "locator": {
+        "native": "the “Folder to write the archive into” field"
+      },
+      "sha256": "94e0f100e667e751f4d1dc8972dfc1f7cc0d410a369d1129777485d5e811b9e9"
+    },
+    {
+      "journey": "export-this-library",
+      "step": "open-import-and-export",
+      "image": "images/journeys/export-this-library-open-import-and-export.png",
+      "locator": {
+        "native": "the File menu's “Import and export…” item"
+      },
+      "sha256": "84ed121285b639192194c250d9b50e403d9ce3365e560e7a75821bf8f0dd9be0"
+    },
+    {
+      "journey": "export-this-library",
+      "step": "the-archive",
+      "image": "images/journeys/export-this-library-the-archive.png",
+      "locator": {
+        "native": "the “Export everything” button"
+      },
+      "sha256": "7e3dbeef83e1ba332152295db565d67a5c8f54202341be5b2772939404224652"
+    },
+    {
       "journey": "find-your-way-around",
       "step": "the-sidebar",
       "image": "images/journeys/find-your-way-around-the-sidebar.png",
@@ -103,6 +130,33 @@
         "testid": "sidebar-row-nb_help"
       },
       "sha256": "1378b68668a9c80990bac1a557adeb919cb0e18761941dcc22aaf977f6b309b6"
+    },
+    {
+      "journey": "import-from-joplin-in-the-app",
+      "step": "name-the-folder",
+      "image": "images/journeys/import-from-joplin-in-the-app-name-the-folder.png",
+      "locator": {
+        "native": "the “Joplin RAW export folder” field"
+      },
+      "sha256": "3be77cb0b5dee7f2f4c5a019cb8c951d7c7b235a8e92880aba80bc6106d7188d"
+    },
+    {
+      "journey": "import-from-joplin-in-the-app",
+      "step": "open-import-and-export",
+      "image": "images/journeys/import-from-joplin-in-the-app-open-import-and-export.png",
+      "locator": {
+        "native": "the File menu's “Import and export…” item"
+      },
+      "sha256": "9a9cb7bbba87e7f3aff36148bc581f54aa2053c4f03ace8e499279899c019a74"
+    },
+    {
+      "journey": "import-from-joplin-in-the-app",
+      "step": "the-report",
+      "image": "images/journeys/import-from-joplin-in-the-app-the-report.png",
+      "locator": {
+        "native": "the “Import” button in the Joplin section"
+      },
+      "sha256": "b66395f16464c1bb91e9d628b87205a5e9557e5c06212650b4ce0a32f33a4bb7"
     },
     {
       "journey": "keep-a-search-as-a-notebook",
@@ -149,6 +203,42 @@
         "name": "Search"
       },
       "sha256": "7ab0ef97733d1caef7bdb0e788c0d2a46fb33cbe1146c6f10d44ea15d31632de"
+    },
+    {
+      "journey": "publish-a-subset",
+      "step": "open-import-and-export",
+      "image": "images/journeys/publish-a-subset-open-import-and-export.png",
+      "locator": {
+        "native": "the File menu's “Import and export…” item"
+      },
+      "sha256": "4fe8788dac42773d6d02d88516fd58cc42fe62484902ad47f04a7fa8e0ab56d9"
+    },
+    {
+      "journey": "publish-a-subset",
+      "step": "publish-it",
+      "image": "images/journeys/publish-a-subset-publish-it.png",
+      "locator": {
+        "native": "the “Publish this review” button"
+      },
+      "sha256": "df6558256b91326d3668bcec2f84285de7739aeab8dad868ccfc7a42f7b8c299"
+    },
+    {
+      "journey": "publish-a-subset",
+      "step": "review-it",
+      "image": "images/journeys/publish-a-subset-review-it.png",
+      "locator": {
+        "native": "the “Review what this would publish” button"
+      },
+      "sha256": "c9825bef381edfe5635434c470c17f3c688388e14c946a1a6d34d404d3e8fa53"
+    },
+    {
+      "journey": "publish-a-subset",
+      "step": "the-publication",
+      "image": "images/journeys/publish-a-subset-the-publication.png",
+      "locator": {
+        "native": "the publish section's report line"
+      },
+      "sha256": "d8ac4d323d63d2e87977f341bf2004a1d530b1617d6dd453fae90cad9d6a1b8d"
     },
     {
       "journey": "rename-a-tag",
@@ -295,6 +385,33 @@
         "testid": "tag-editor-input"
       },
       "sha256": "261d56cf48ee2b426d39fef32967465525d78969535a0675b58b7e492c6fe9f2"
+    },
+    {
+      "journey": "take-a-snapshot",
+      "step": "name-the-destination",
+      "image": "images/journeys/take-a-snapshot-name-the-destination.png",
+      "locator": {
+        "native": "the “Folder to write the snapshot into” field"
+      },
+      "sha256": "a3ff48370b7a35d6a39b264edc9aefaac060d50d4364566a36f12e69c311958c"
+    },
+    {
+      "journey": "take-a-snapshot",
+      "step": "open-import-and-export",
+      "image": "images/journeys/take-a-snapshot-open-import-and-export.png",
+      "locator": {
+        "native": "the File menu's “Import and export…” item"
+      },
+      "sha256": "fe2bd256b115713ca305f811f881583688a5a881e2cd762b5fa7117673f7b071"
+    },
+    {
+      "journey": "take-a-snapshot",
+      "step": "the-snapshot",
+      "image": "images/journeys/take-a-snapshot-the-snapshot.png",
+      "locator": {
+        "native": "the “Create snapshot” button"
+      },
+      "sha256": "db6dd9a8302992857bd20b0b79d3e31178ac82b8494dd7c789017efc2783bddf"
     },
     {
       "journey": "update-a-note",

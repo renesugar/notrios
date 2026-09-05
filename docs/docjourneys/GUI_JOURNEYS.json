@@ -412,7 +412,7 @@
         },
         {
           "id": "type-the-new-name",
-          "narrative": "A rename reaches every note carrying the tag. Leaving \u201crename everything under it\u201d ticked also moves the tags nested below this one.",
+          "narrative": "A rename reaches every note carrying the tag. Leaving “rename everything under it” ticked also moves the tags nested below this one.",
           "locator": {
             "testid": "tag-rename-to"
           },
@@ -486,6 +486,218 @@
         "narrative": "both reports are on screen and nothing has been changed",
         "locator": {
           "testid": "library-health-gc"
+        }
+      }
+    },
+    {
+      "id": "import-from-joplin-in-the-app",
+      "title": "Import a Joplin export",
+      "goal": "Bring a Joplin RAW export into this library from the desktop app.",
+      "feature": "import-notes",
+      "driver": "desktop",
+      "steps": [
+        {
+          "id": "open-import-and-export",
+          "narrative": "Open **File ▸ Import and export…**, or press Ctrl+I. Everything that reads or writes a folder on this machine is here, and it is here only in the desktop app: a browser cannot open a folder, so these controls are shown there and disabled with that reason rather than hidden.",
+          "locator": {
+            "native": "the File menu's “Import and export…” item"
+          },
+          "action": "drive",
+          "keys": "ctrl+i",
+          "expect": [
+            "the import and export dialog opened"
+          ]
+        },
+        {
+          "id": "name-the-folder",
+          "narrative": "Name the Joplin RAW export folder — the one Joplin wrote, with a Markdown file per note. **Choose folder…** opens a directory chooser if you would rather point at it. Nothing below is available until a folder is named.",
+          "locator": {
+            "native": "the “Joplin RAW export folder” field"
+          },
+          "action": "drive",
+          "value": "{joplin}",
+          "keys": "Tab"
+        },
+        {
+          "id": "the-report",
+          "narrative": "Press **Import**, and the report says what arrived. **Scan without importing** sits beside it and writes nothing, which is the safer first move on an export you have not opened. Imported notes are ordinary editable notes: a migration, not a read-only attachment.",
+          "locator": {
+            "native": "the “Import” button in the Joplin section"
+          },
+          "action": "drive",
+          "keys": "Tab Tab Tab Return",
+          "expect": [
+            "joplin-apply requested for {joplin}",
+            "joplin-apply finished"
+          ]
+        }
+      ],
+      "postcondition": {
+        "narrative": "the imported notes are in the library",
+        "locator": {
+          "native": "the Joplin section's report line"
+        }
+      }
+    },
+    {
+      "id": "export-this-library",
+      "title": "Export the whole library",
+      "goal": "Write a portable archive of everything, from the desktop app.",
+      "feature": "export-and-archive",
+      "driver": "desktop",
+      "steps": [
+        {
+          "id": "open-import-and-export",
+          "narrative": "Open **File ▸ Import and export…**, or press Ctrl+I. Everything that reads or writes a folder on this machine is here, and it is here only in the desktop app: a browser cannot open a folder, so these controls are shown there and disabled with that reason rather than hidden.",
+          "locator": {
+            "native": "the File menu's “Import and export…” item"
+          },
+          "action": "drive",
+          "keys": "ctrl+i",
+          "expect": [
+            "the import and export dialog opened"
+          ]
+        },
+        {
+          "id": "name-the-destination",
+          "narrative": "Name the folder to write the archive into, and let it be an empty one: an archive is a directory of files rather than a single file.",
+          "locator": {
+            "native": "the “Folder to write the archive into” field"
+          },
+          "action": "drive",
+          "value": "{empty}",
+          "keys": "Tab Tab Tab Tab Tab Tab Tab"
+        },
+        {
+          "id": "the-archive",
+          "narrative": "Press **Export everything**, and the report names what was written. Exporting a subset — by notebook, tag or query — stays on the command line, because choosing a subset means seeing what it selects before it is written. The same dialog reads an archive back: **Import from Notrios** verifies one without opening a database.",
+          "locator": {
+            "native": "the “Export everything” button"
+          },
+          "action": "drive",
+          "keys": "Tab Tab Return",
+          "expect": [
+            "export-apply requested for {empty}",
+            "export-apply finished"
+          ]
+        }
+      ],
+      "postcondition": {
+        "narrative": "the archive is written and the report says so",
+        "locator": {
+          "native": "the export section's report line"
+        }
+      }
+    },
+    {
+      "id": "take-a-snapshot",
+      "title": "Take a snapshot of the library",
+      "goal": "Write a verified snapshot image you can restore from.",
+      "feature": "snapshots",
+      "driver": "desktop",
+      "steps": [
+        {
+          "id": "open-import-and-export",
+          "narrative": "Open **File ▸ Import and export…**, or press Ctrl+I. Everything that reads or writes a folder on this machine is here, and it is here only in the desktop app: a browser cannot open a folder, so these controls are shown there and disabled with that reason rather than hidden.",
+          "locator": {
+            "native": "the File menu's “Import and export…” item"
+          },
+          "action": "drive",
+          "keys": "ctrl+i",
+          "expect": [
+            "the import and export dialog opened"
+          ]
+        },
+        {
+          "id": "name-the-destination",
+          "narrative": "Name the folder to write the snapshot into. A snapshot is the whole library at one moment, and it is the fastest way to copy one that is going back into the same schema.",
+          "locator": {
+            "native": "the “Folder to write the snapshot into” field"
+          },
+          "action": "drive",
+          "value": "{empty}",
+          "keys": "Tab Tab Tab Tab Tab Tab Tab Tab Tab"
+        },
+        {
+          "id": "the-snapshot",
+          "narrative": "Press **Create snapshot**. The image is verified as it is written, and one that fails verification is never recorded as a snapshot. Restoring one is a command-line operation, because a restore replaces the library this window is showing.",
+          "locator": {
+            "native": "the “Create snapshot” button"
+          },
+          "action": "drive",
+          "keys": "Tab Tab Return",
+          "expect": [
+            "snapshot-apply requested for {empty}",
+            "snapshot-apply finished"
+          ]
+        }
+      ],
+      "postcondition": {
+        "narrative": "the snapshot is written and verified",
+        "locator": {
+          "native": "the snapshot section's report line"
+        }
+      }
+    },
+    {
+      "id": "publish-a-subset",
+      "title": "Publish a subset of your notes",
+      "goal": "Review exactly what a publication would let out, then write it.",
+      "feature": "publishing",
+      "driver": "desktop",
+      "steps": [
+        {
+          "id": "open-import-and-export",
+          "narrative": "Open **File ▸ Import and export…**, or press Ctrl+I. Publishing is at the bottom, under the operations that read and write whole libraries, because it is the one that hands notes to somebody else.",
+          "locator": {
+            "native": "the File menu's “Import and export…” item"
+          },
+          "action": "drive",
+          "keys": "ctrl+i",
+          "expect": [
+            "the import and export dialog opened"
+          ]
+        },
+        {
+          "id": "review-it",
+          "narrative": "Choose a saved profile and press **Review what this would publish**. The counts lead with what is withheld and which links are rewritten, because that is the question — a publication carries current versions only, no trashed notes, no history and no provenance. Profiles are made with `notriosctl publish profile save` and only read here: a form that quietly defaulted a privacy choice is how something private gets published.",
+          "locator": {
+            "native": "the “Review what this would publish” button"
+          },
+          "action": "drive",
+          "keys": "Tab Tab Tab Tab Tab Tab Tab Tab Tab Tab Tab Tab Return",
+          "expect": [
+            "review requested for Field notes",
+            "review ready for Field notes"
+          ]
+        },
+        {
+          "id": "publish-it",
+          "narrative": "Name an empty folder — the caret is already in the field, because naming one is what the review just asked for — and press **Publish this review**. The run re-plans and refuses unless the plan still hashes to the one on screen, so what is published is what was read, not something rebuilt a moment later from the same profile.",
+          "locator": {
+            "native": "the “Publish this review” button"
+          },
+          "action": "drive",
+          "value": "{empty}"
+        },
+        {
+          "id": "the-publication",
+          "narrative": "The report names how many notes were written and where. A publication is not a backup: restoring from one is not a thing you can do, which is why the archive above exists.",
+          "locator": {
+            "native": "the publish section's report line"
+          },
+          "action": "drive",
+          "keys": "Tab Tab Return",
+          "expect": [
+            "publish requested for Field notes",
+            "publish finished:"
+          ]
+        }
+      ],
+      "postcondition": {
+        "narrative": "the publication is written and the report says how many notes went",
+        "locator": {
+          "native": "the publish section's report line"
         }
       }
     }

@@ -396,8 +396,14 @@ func capture(t *testing.T, display, path string) {
 // never takes focus, and every keystroke below would go nowhere.
 func startVirtualDisplay(t *testing.T) string {
 	t.Helper()
+	return startVirtualDisplaySized(t, 1400, 900)
+}
+
+func startVirtualDisplaySized(t *testing.T, width, height int) string {
+	t.Helper()
 	display := fmt.Sprintf(":%d", 90+os.Getpid()%9)
-	server := exec.Command("Xvfb", display, "-screen", "0", "1400x900x24", "-nolisten", "tcp")
+	server := exec.Command("Xvfb", display, "-screen", "0",
+		fmt.Sprintf("%dx%dx24", width, height), "-nolisten", "tcp")
 	if err := server.Start(); err != nil {
 		t.Fatalf("Xvfb would not start: %v", err)
 	}
@@ -751,6 +757,11 @@ type desktopApp struct {
 	// directory, so a test that reads or writes a draft would otherwise share
 	// -- and change -- the storage of the person running it.
 	dataHome string
+	// Extra environment the application is started with, for state that lives
+	// outside the library. Publication profiles are the case: they are a file
+	// beside the library rather than rows in it, and a journey that photographs
+	// the publish panel needs one to exist.
+	extraEnv []string
 	process  *exec.Cmd
 }
 
@@ -759,6 +770,16 @@ type desktopApp struct {
 // here: the tools, the built binary, the built assets, and a window that has
 // actually drawn something rather than one that merely exists.
 func launchDesktopApp(t *testing.T, name string) *desktopApp {
+	t.Helper()
+	return launchDesktopAppOn(t, name, 1400, 900, false)
+}
+
+// launchDesktopAppOn is the same with the screen size named and the library
+// optionally filled. The journey capture wants both: the same width as a
+// browser picture, and something in the library -- an export report reading
+// "documents: 0" is a photograph of the feature working on nothing, which is
+// how this argument came to exist.
+func launchDesktopAppOn(t *testing.T, name string, width, height int, seed bool) *desktopApp {
 	t.Helper()
 	if os.Getenv("NOTRIOS_GUI_DESKTOP_RUN") != "1" {
 		t.Skip("set NOTRIOS_GUI_DESKTOP_RUN=1 to drive the desktop application under Xvfb")
@@ -784,12 +805,35 @@ func launchDesktopApp(t *testing.T, name string) *desktopApp {
 	cli := buildCLI(t)
 	replica := newSyncReplica(t, cli, name, t.TempDir())
 	replica.run(t, "init")
+	if seed {
+		// The same notes the browser capture uses, so a reader moving between
+		// the two halves of the catalogue sees one library rather than two.
+		if help := runCLI(t, cli, "seed-help", "--db", replica.db, "--asset-store", replica.assets,
+			filepath.Join(repositoryRoot(t), "docs")); help.exitCode != 0 {
+			t.Fatalf("seed-help exited %d: %s", help.exitCode, help.stderr)
+		}
+		seedJourneyFixtures(t, cli, replica)
+	}
 	app := &desktopApp{
 		binary:   desktop,
 		config:   g18eConfig(t, replica, unusedLoopbackAddress(t), "", true, webDir),
-		display:  startVirtualDisplay(t),
+		display:  startVirtualDisplaySized(t, width, height),
 		shots:    t.TempDir(),
 		dataHome: t.TempDir(),
+	}
+	if seed {
+		// One profile, so the panel chooses it and the journey does not have to
+		// drive a dropdown by keystroke. Its selection is a tag the fixtures
+		// use, so the review has something to count and something to withhold.
+		profiles := filepath.Join(t.TempDir(), "publication-profiles.json")
+		saved := runCLIInEnv(t, t.TempDir(), cli, []string{"NOTRIOS_PUBLISH_PROFILES=" + profiles},
+			"publish", "profile", "save", "--name", "Field notes",
+			"--tags", "field/dusk", "--private-tags", "place/hide",
+			"--description", "Dusk field notes, without the hide locations.")
+		if saved.exitCode != 0 {
+			t.Fatalf("publish profile save exited %d: %s", saved.exitCode, saved.stderr)
+		}
+		app.extraEnv = append(app.extraEnv, "NOTRIOS_PUBLISH_PROFILES="+profiles)
 	}
 	app.start(t)
 	return app
@@ -806,6 +850,7 @@ func (a *desktopApp) start(t *testing.T) {
 	application.Env = append(os.Environ(), "DISPLAY="+a.display, "NOTRIOS_UI_LOG=1",
 		"XDG_DATA_HOME="+a.dataHome,
 		"WEBKIT_DISABLE_COMPOSITING_MODE=1", "WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS=1")
+	application.Env = append(application.Env, a.extraEnv...)
 	// A transcript per run. Reusing one would make a line from before a restart
 	// answer a question asked after it, which is the same mistake as asserting
 	// on a screenshot taken too early.

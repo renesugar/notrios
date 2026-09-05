@@ -29,9 +29,9 @@
         "delete_note"
       ],
       "gui": [
-        "Create a note in a notebook \u2014 executed (new-note-in-notebook)",
-        "Edit and save a note \u2014 executed (edit-save)",
-        "Restore a note from Trash \u2014 executed (trash-restore)",
+        "Create a note in a notebook — executed (new-note-in-notebook)",
+        "Edit and save a note — executed (edit-save)",
+        "Restore a note from Trash — executed (trash-restore)",
         "Move this note to the Trash",
         "Restore",
         "Permanently delete this note and its revisions"
@@ -78,7 +78,7 @@
         "search_in_note"
       ],
       "gui": [
-        "Page through search results \u2014 executed (search-page)"
+        "Page through search results — executed (search-page)"
       ],
       "surface_note": "No command line search command; `notriosctl export archive --query` applies the same language to an export instead. A search now spans every collection; `collection:\"id\"` narrows it to one provenance."
     },
@@ -99,7 +99,7 @@
         "notriosctl notebooks create"
       ],
       "gui": [
-        "Keep this search \u2014 an action on a search that has run"
+        "Keep this search — an action on a search that has run"
       ]
     },
     {
@@ -129,8 +129,8 @@
         "move_note_to_notebook"
       ],
       "gui": [
-        "Choose a notebook for a new note \u2014 executed (new-note-in-notebook)",
-        "Review a notebook deletion \u2014 executed (delete-notebook-review)"
+        "Choose a notebook for a new note — executed (new-note-in-notebook)",
+        "Review a notebook deletion — executed (delete-notebook-review)"
       ]
     },
     {
@@ -175,9 +175,9 @@
       "surface_note": "Renaming is offered beside the tag, because it is decided while looking at the tag and the count next to it is half the reason for deciding. The dry run is not a prediction: the service performs the rename in a transaction and rolls it back, so the report and the apply cannot disagree. Applying is unreachable until a report of that exact rename has been shown, and editing the name or the children option withdraws it.",
       "gui": [
         "Tags in the sidebar with note counts",
-        "Rename the tag \u2014 beside each tag",
-        "Show me what changes \u2014 the dry run",
-        "Rename \u2014 applies what the report described"
+        "Rename the tag — beside each tag",
+        "Show me what changes — the dry run",
+        "Rename — applies what the report described"
       ]
     },
     {
@@ -195,7 +195,7 @@
       ],
       "surface_note": "A collection is provenance, not a place notes live: notes are imported into a notebook, which is what a person browses, and carry a collection identifier saying where they came from. Search spans every collection and `collection:` narrows it -- it used to be pinned to one collection chosen by the caller and defaulted to `default`, which made imported notes unfindable and the field meaningless. The inspector names the collection only when it is not `default`, since a row saying so on every note written here would say nothing. Creating and reconfiguring collections stays on the command line and over REST; H16 decides what a collection's `kind` and capabilities mean, because the schema records neither.",
       "gui": [
-        "Collection \u2014 shown in the note inspector when a note came from somewhere",
+        "Collection — shown in the note inspector when a note came from somewhere",
         "collection: in the search box"
       ]
     },
@@ -222,8 +222,8 @@
       ],
       "surface_note": "Measured by the H15 control crawl, which found the upload field in the note inspector and the Attachments tab. This was recorded as absent from the GUI until the crawl opened a note; no journey covers it yet.",
       "gui": [
-        "Upload image/PDF/resource \u2014 the file field in the note inspector",
-        "Attachments \u2014 a sync centre tab"
+        "Upload image/PDF/resource — the file field in the note inspector",
+        "Attachments — a sync centre tab"
       ]
     },
     {
@@ -246,7 +246,7 @@
       ],
       "surface_note": "Measured by the H15 control crawl on a note seeded with an image on an allowed domain. The earlier note here said localizing was a maintenance action rather than an editing one; it is in the editor.",
       "gui": [
-        "Remote media list \u2014 shown on a note that points at images on the web",
+        "Remote media list — shown on a note that points at images on the web",
         "Localize allowed media"
       ]
     },
@@ -269,7 +269,7 @@
         "list_document_links"
       ],
       "gui": [
-        "Insert a link and check it \u2014 executed (insert-and-check-link)"
+        "Insert a link and check it — executed (insert-and-check-link)"
       ]
     },
     {
@@ -356,7 +356,7 @@
         "notriosctl import claude",
         "notriosctl import archive"
       ],
-      "surface_note": "In the desktop app only, through the native bridge: these operations name a folder on the machine running the library, and no REST route starts them. In a browser the Import/Export control is shown and disabled with that reason rather than hidden. Joplin and Obsidian can be scanned first without writing. Importing from Notrios verifies the archive without opening a database, and merges only: replace, fork and adopt stay on the command line because they change which library this is. Twitter, ChatGPT and Claude imports remain command line only. No GUI journey, and not for want of writing one: the journey capture drives a browser, where the Import/Export dialog this lives in is correctly disabled, so the panel cannot be reached to photograph. Import and export share the limitation. Driving them would mean extending the desktop harness in cmd/notriosctl/gui_desktop_test.go, which reaches the real application under Xvfb, to capture as well as assert.",
+      "surface_note": "In the desktop app only, through the native bridge: these operations name a folder on the machine running the library, and no REST route starts them. In a browser the Import/Export control is shown and disabled with that reason rather than hidden. Joplin and Obsidian can be scanned first without writing. Importing from Notrios verifies the archive without opening a database, and merges only: replace, fork and adopt stay on the command line because they change which library this is. Twitter, ChatGPT and Claude imports remain command line only. The journey is photographed by the desktop harness rather than by the browser capture, because the dialog it lives in is correctly disabled in a browser: the real application is driven under Xvfb, and each step declares the line it expects in the application's own transcript, so a keystroke that lands elsewhere fails the capture instead of producing a confident picture of the wrong thing.",
       "gui": [
         "Import from Joplin",
         "Import from Obsidian",
@@ -374,7 +374,7 @@
         "notriosctl restore archive-v2",
         "notriosctl compatibility archive-v2"
       ],
-      "surface_note": "In the desktop app only, through the native bridge: these operations name a folder on the machine running the library, and no REST route starts them. In a browser the Import/Export control is shown and disabled with that reason rather than hidden. The GUI writes a complete archive; exporting a subset by notebook, tag or query stays on the command line, because choosing a subset means seeing what it selects first. No GUI journey, and not for want of writing one: the journey capture drives a browser, where the Import/Export dialog this lives in is correctly disabled, so the panel cannot be reached to photograph. Import and export share the limitation. Driving them would mean extending the desktop harness in cmd/notriosctl/gui_desktop_test.go, which reaches the real application under Xvfb, to capture as well as assert.",
+      "surface_note": "In the desktop app only, through the native bridge: these operations name a folder on the machine running the library, and no REST route starts them. In a browser the Import/Export control is shown and disabled with that reason rather than hidden. The GUI writes a complete archive; exporting a subset by notebook, tag or query stays on the command line, because choosing a subset means seeing what it selects first. The journey is photographed by the desktop harness rather than by the browser capture, because the dialog it lives in is correctly disabled in a browser: the real application is driven under Xvfb, and each step declares the line it expects in the application's own transcript, so a keystroke that lands elsewhere fails the capture instead of producing a confident picture of the wrong thing.",
       "gui": [
         "Export this library",
         "Verify the archive"
@@ -383,13 +383,13 @@
     {
       "id": "snapshots",
       "title": "Back up and restore the whole library",
-      "summary": "Take a physical snapshot of the database and its attachments, verify it, and restore it \u2014 replacing this library or adopting the snapshot as a new replica.",
+      "summary": "Take a physical snapshot of the database and its attachments, verify it, and restore it — replacing this library or adopting the snapshot as a new replica.",
       "cli": [
         "notriosctl snapshot create",
         "notriosctl snapshot verify",
         "notriosctl snapshot restore"
       ],
-      "surface_note": "In the desktop app only, through the native bridge: these operations name a folder on the machine running the library, and no REST route starts them. In a browser the Import/Export control is shown and disabled with that reason rather than hidden. Creating a snapshot is in the GUI; restoring one is not, because a restore replaces the library the window is showing. No GUI journey, and not for want of writing one: the journey capture drives a browser, where the Import/Export dialog this lives in is correctly disabled, so the panel cannot be reached to photograph. Import and export share the limitation. Driving them would mean extending the desktop harness in cmd/notriosctl/gui_desktop_test.go, which reaches the real application under Xvfb, to capture as well as assert.",
+      "surface_note": "In the desktop app only, through the native bridge: these operations name a folder on the machine running the library, and no REST route starts them. In a browser the Import/Export control is shown and disabled with that reason rather than hidden. Creating a snapshot is in the GUI; restoring one is not, because a restore replaces the library the window is showing. The journey is photographed by the desktop harness rather than by the browser capture, because the dialog it lives in is correctly disabled in a browser: the real application is driven under Xvfb, and each step declares the line it expects in the application's own transcript, so a keystroke that lands elsewhere fails the capture instead of producing a confident picture of the wrong thing.",
       "gui": [
         "Take a snapshot"
       ]
@@ -417,13 +417,13 @@
         "POST /api/v1/sync/pair"
       ],
       "gui": [
-        "Open the sync center \u2014 executed (open-sync-center)"
+        "Open the sync center — executed (open-sync-center)"
       ]
     },
     {
       "id": "sync-exchange",
       "title": "Synchronize with a replica",
-      "summary": "Exchange changes with a paired replica, directly over an authenticated connection or through a folder you both can reach \u2014 a second drive, or a cloud folder mapped locally.",
+      "summary": "Exchange changes with a paired replica, directly over an authenticated connection or through a folder you both can reach — a second drive, or a cloud folder mapped locally.",
       "cli": [
         "notriosctl sync exchange",
         "notriosctl sync once",
@@ -528,15 +528,15 @@
       ],
       "surface_note": "Measured by the H15 control crawl once jobs were seeded, which is what the row had been waiting for: every job control is gated on state, so an interface holding only completed jobs shows none of them. What the GUI has is the sync centre's list of recent *sync* jobs, with Cancel on one still running or queued and Retry on one that failed or was cancelled. Import, export and snapshot jobs appear nowhere: the sync centre lists four sync kinds and only those, and the import dialog shows a final report rather than a job. There is no general job list, no inspect and no reset.",
       "gui": [
-        "Recent synchronization jobs \u2014 kind, state and progress",
-        "Cancel \u2014 while a sync job is running or queued",
-        "Retry \u2014 on a sync job that failed or was cancelled"
+        "Recent synchronization jobs — kind, state and progress",
+        "Cancel — while a sync job is running or queued",
+        "Retry — on a sync job that failed or was cancelled"
       ]
     },
     {
       "id": "profiles",
       "title": "Keep separate libraries",
-      "summary": "Run more than one library on a machine \u2014 personal notes, work notes, a blog \u2014 each with its own database, its own settings and its own address.",
+      "summary": "Run more than one library on a machine — personal notes, work notes, a blog — each with its own database, its own settings and its own address.",
       "cli": [
         "notriosctl profile create",
         "notriosctl profile list",
@@ -548,7 +548,7 @@
       ],
       "surface_note": "Switching between profiles is in the GUI; creating, registering and forgetting them is not. A profile registry is about this machine, which the desktop app also runs on, so the rest is a gap rather than a boundary; the browser mode is the part that genuinely cannot manage it.",
       "gui": [
-        "Active profile \u2014 the selector in the sync centre's Setup tab"
+        "Active profile — the selector in the sync centre's Setup tab"
       ]
     },
     {
@@ -567,11 +567,11 @@
       "mcp": [
         "plan_selection"
       ],
-      "surface_note": "The review is in the GUI, because reading what a publication lets out is the point of the feature rather than a step before it: the counts lead with what is withheld and which links get rewritten, not with what is sent. Planning goes through the native bridge rather than over REST for a correctness reason, not a path one -- `publish run` re-plans and refuses unless the digest matches what was reviewed, so the plan shown must be the plan the run recomputes, and an equivalent selection rebuilt over REST would match only by luck. Profiles are read and never written here: a profile carries a target, a selection and a privacy policy, and a form that quietly defaulted one is how something private gets published, so authoring stays `notriosctl publish profile save`. No GUI journey, and not for want of writing one: the journey capture drives a browser, where the Import/Export dialog this lives in is correctly disabled, so the panel cannot be reached to photograph. Import and export share the limitation. Driving them would mean extending the desktop harness in cmd/notriosctl/gui_desktop_test.go, which reaches the real application under Xvfb, to capture as well as assert.",
+      "surface_note": "The review is in the GUI, because reading what a publication lets out is the point of the feature rather than a step before it: the counts lead with what is withheld and which links get rewritten, not with what is sent. Planning goes through the native bridge rather than over REST for a correctness reason, not a path one -- `publish run` re-plans and refuses unless the digest matches what was reviewed, so the plan shown must be the plan the run recomputes, and an equivalent selection rebuilt over REST would match only by luck. Profiles are read and never written here: a profile carries a target, a selection and a privacy policy, and a form that quietly defaulted one is how something private gets published, so authoring stays `notriosctl publish profile save`. The journey is photographed by the desktop harness rather than by the browser capture, because the dialog it lives in is correctly disabled in a browser: the real application is driven under Xvfb, and each step declares the line it expects in the application's own transcript, so a keystroke that lands elsewhere fails the capture instead of producing a confident picture of the wrong thing.",
       "gui": [
-        "Publish a subset of your notes \u2014 choosing a saved profile",
+        "Publish a subset of your notes — choosing a saved profile",
         "Review what this would publish",
-        "Publish this review \u2014 in the desktop application only"
+        "Publish this review — in the desktop application only"
       ]
     },
     {
@@ -599,9 +599,9 @@
       ],
       "surface_note": "The GUI reports both, and repairs. Repairing goes through the native bridge because the lint surface is deliberately read-only over REST -- that is a remote, programmatic surface an agent reaches, and repairs to somebody's notes should not be one call away from one -- which says nothing about a person pressing a button in the program that owns the library. Each repair writes a revision against a required base revision, so a note edited since the plan refuses rather than being repaired against text nobody read, and refusals are reported per note. Collecting stays `notriosctl gc --apply`: it deletes blobs, and there is no revision to go back to. doctor, paths, config show and seed-help remain command line.",
       "gui": [
-        "Health \u2014 the lint report and the collection plan",
+        "Health — the lint report and the collection plan",
         "Show me what would be repaired",
-        "Repair them \u2014 in the desktop application only"
+        "Repair them — in the desktop application only"
       ]
     },
     {

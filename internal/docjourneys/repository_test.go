@@ -98,7 +98,11 @@ func TestGUIScreenshotsMatchTheirSteps(t *testing.T) {
 		t.Fatalf("loading the screenshot manifest: %v", err)
 	}
 	for _, problem := range docjourneys.VerifyImages(filepath.Join(root, "docs"), catalogue, manifest) {
-		t.Errorf("%s\n\nregenerate with: NOTRIOS_GUI_JOURNEYS=1 go test ./cmd/notriosctl -run TestGUIJourneyCapture", problem)
+		// Two runners, two commands: a browser journey is photographed by
+		// Playwright, and a desktop-only one -- import, export, snapshots --
+		// by the harness that drives the real application under Xvfb.
+		t.Errorf("%s\n\nregenerate with: NOTRIOS_GUI_JOURNEYS=1 go test ./cmd/notriosctl -run TestGUIJourneyCapture\n"+
+			"or, for a desktop-driven journey: NOTRIOS_GUI_DESKTOP_RUN=1 go test ./cmd/notriosctl -run TestDesktopJourneyCapture", problem)
 	}
 }
 

@@ -7,7 +7,7 @@
 // feature, and the run is bound to it: the digest shown here is checked against
 // a plan recomputed at the moment of publishing, and a library edited in
 // between is refused rather than published.
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 /**
  * Records what the panel did, where the desktop application can keep it.
@@ -106,6 +106,25 @@ export function PublishPanel({ bridge }: { bridge: PublishBridge | undefined }) 
     setResult(null);
     setError('');
   }, []);
+
+  // Where the keyboard goes once a review arrives.
+  //
+  // It went to the top of the dialog, and that is not a cosmetic complaint: the
+  // review replaces the button that had focus, focus falls back to the body,
+  // and the next Tab starts again at the Close button -- so somebody working by
+  // keyboard reviews a publication and is then thrown back past every other
+  // operation in the dialog to reach the one field the review just asked them
+  // for. Found by driving the real window, where the folder typed after a
+  // review went nowhere at all.
+  //
+  // The plan is also the only thing that can ask for this. Focusing the field
+  // when the panel mounts would steal the caret from whatever somebody was
+  // doing; focusing it when a plan exists follows the one step that has just
+  // happened.
+  const directoryRef = useRef<HTMLInputElement | null>(null);
+  useEffect(() => {
+    if (plan !== null) directoryRef.current?.focus();
+  }, [plan]);
 
   const review = useCallback(async () => {
     if (!bridge?.PlanPublication || chosen === '') return;
@@ -223,7 +242,7 @@ export function PublishPanel({ bridge }: { bridge: PublishBridge | undefined }) 
 
           <label>Folder to publish into
             <span className="directory-picker">
-              <input value={directory} data-testid="publish-directory"
+              <input ref={directoryRef} value={directory} data-testid="publish-directory"
                 onChange={(event) => setDirectory(event.target.value)}
                 placeholder="/absolute/path/to/folder" autoComplete="off" />
               <button type="button" data-testid="publish-choose" disabled={busy}

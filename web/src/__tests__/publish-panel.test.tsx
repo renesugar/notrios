@@ -1,5 +1,5 @@
 // Publishing: the review is the feature, and the digest binds it to the run.
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { PublishPanel, type PublishBridge } from '../components/PublishPanel';
@@ -52,6 +52,17 @@ describe('publishing', () => {
     render(<PublishPanel bridge={bridge()} />);
     await userEvent.type(await screen.findByTestId('publish-directory'), '/tmp/out');
     expect(screen.getByTestId('publish-run')).toBeDisabled();
+  });
+
+  // Found by driving the real window: the folder typed after a review went
+  // nowhere, because the review replaced the button that had focus and the next
+  // Tab started again at the dialog's close button. Somebody working by
+  // keyboard was thrown back past every other operation in the dialog to reach
+  // the one field the review had just asked them for.
+  it('leaves the caret in the destination field once a review arrives', async () => {
+    render(<PublishPanel bridge={bridge()} />);
+    await userEvent.click(await screen.findByTestId('publish-review'));
+    await waitFor(() => expect(screen.getByTestId('publish-directory')).toHaveFocus());
   });
 
   // What is withheld and what is rewritten matters more than what is sent:
