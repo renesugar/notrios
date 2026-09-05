@@ -22,10 +22,9 @@ func (s *SQLiteStore) PlanWorkspaceFix(ctx context.Context, req FixRequest) (Fix
 	if err := ctx.Err(); err != nil {
 		return FixPlan{}, err
 	}
+	// Empty means every collection; see store.CollectionScopeSQL. A repair that
+	// cannot reach a note is the same defect as a lint that cannot see it.
 	collectionID := strings.TrimSpace(req.CollectionID)
-	if collectionID == "" {
-		collectionID = "default"
-	}
 	kinds, err := normalizeFixKinds(req.Kinds)
 	if err != nil {
 		return FixPlan{}, err
@@ -303,7 +302,7 @@ func (s *SQLiteStore) fixCandidatesLocked(collectionID, documentID string, kinds
 	query := `SELECT DISTINCT l.source_document_id
 		FROM document_links l
 		JOIN documents d ON d.id = l.source_document_id
-		WHERE d.collection_id = ? AND d.deleted_at IS NULL
+		WHERE ` + CollectionScopeSQL("d") + ` AND d.deleted_at IS NULL
 			AND l.source_format = 'markdown'
 			AND (` + strings.Join(conditions, " OR ") + `)`
 	args := []string{collectionID}

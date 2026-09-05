@@ -45,10 +45,8 @@ func (s *SQLiteStore) ListTasks(ctx context.Context, req TaskListRequest) (TaskL
 	if req.Limit > MaxTaskRows {
 		req.Limit = MaxTaskRows
 	}
+	// Empty means every collection; see CollectionScopeSQL.
 	collectionID := strings.TrimSpace(req.CollectionID)
-	if collectionID == "" {
-		collectionID = "default"
-	}
 
 	// A checkbox is `[` plus a space or an x plus `]`, so a LIKE prefilter
 	// removes the notes that cannot possibly contain one before any body is
@@ -117,7 +115,7 @@ func (s *SQLiteStore) taskCandidateDocuments(collectionID, documentID, notebookI
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	where := `d.collection_id = ? AND d.deleted_at IS NULL`
+	where := CollectionScopeSQL("d") + ` AND d.deleted_at IS NULL`
 	args := []string{collectionID}
 	if documentID != "" {
 		where += ` AND d.id = ?`
@@ -151,7 +149,7 @@ func (s *SQLiteStore) taskCandidateDocuments(collectionID, documentID, notebookI
 // documentsMatchingBodyLocked finds notes whose body matches a LIKE pattern.
 func (s *SQLiteStore) documentsMatchingBodyLocked(collectionID, pattern string) ([]Document, error) {
 	return s.documentsWhereLocked(
-		`d.collection_id = ? AND d.deleted_at IS NULL AND r.body LIKE ? ESCAPE '\'`,
+		CollectionScopeSQL("d")+` AND d.deleted_at IS NULL AND r.body LIKE ? ESCAPE '\'`,
 		[]string{collectionID, pattern})
 }
 

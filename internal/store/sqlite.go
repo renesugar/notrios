@@ -2348,12 +2348,20 @@ func resourceIDFromURI(uri string) string {
 	return strings.TrimSpace(id)
 }
 
+// findDocumentByTitleLocked resolves `[the plan](Kitchen)` to a note.
+//
+// An empty collection searches every one of them, which is what somebody who
+// migrated wants: a link written by name in a note from Joplin should find the
+// note it names. The LIMIT 2 ambiguity rule then means something wider than it
+// used to -- the same title in two collections is now ambiguous rather than
+// quietly resolving to this library's copy -- and refusing to guess is the
+// behaviour to want there.
 func (s *SQLiteStore) findDocumentByTitleLocked(collectionID, target string) (string, bool, error) {
 	name := normalizeLinkName(target)
 	if name == "" {
 		return "", false, nil
 	}
-	stmt, err := s.prepareLocked(`SELECT id FROM documents WHERE collection_id = ? AND deleted_at IS NULL AND title = ? COLLATE NOCASE ORDER BY id LIMIT 2`)
+	stmt, err := s.prepareLocked(`SELECT id FROM documents WHERE ` + CollectionScopeSQL("") + ` AND deleted_at IS NULL AND title = ? COLLATE NOCASE ORDER BY id LIMIT 2`)
 	if err != nil {
 		return "", false, err
 	}
@@ -2384,7 +2392,7 @@ func (s *SQLiteStore) findResourceByFilenameLocked(collectionID, target string) 
 		return "", false, nil
 	}
 	name = strings.TrimPrefix(filepath.Base(name), "/")
-	stmt, err := s.prepareLocked(`SELECT id FROM resources WHERE collection_id = ? AND filename = ? COLLATE NOCASE ORDER BY id LIMIT 2`)
+	stmt, err := s.prepareLocked(`SELECT id FROM resources WHERE ` + CollectionScopeSQL("") + ` AND filename = ? COLLATE NOCASE ORDER BY id LIMIT 2`)
 	if err != nil {
 		return "", false, err
 	}

@@ -100,7 +100,7 @@ var linkLintSQL = `SELECT l.source_document_id, l.source_line, l.source_column,
 		COALESCE(l.target_document_id, '')
 	FROM document_links l
 	JOIN documents d ON d.id = l.source_document_id
-	WHERE d.collection_id = ? AND d.deleted_at IS NULL AND ` + notSystemAuthoredSQL("d") + ` AND (
+	WHERE ` + CollectionScopeSQL("d") + ` AND d.deleted_at IS NULL AND ` + notSystemAuthoredSQL("d") + ` AND (
 		l.resolution_status IN ('unresolved', 'invalid', 'target_deleted', 'ambiguous')
 		OR (l.anchor_type IN ('block', 'heading') AND COALESCE(l.anchor_value, '') != '' AND l.target_document_id IS NOT NULL)
 		OR (l.relation_type IN ('image', 'embed') AND (l.raw_target LIKE 'http://%' OR l.raw_target LIKE 'https://%'))

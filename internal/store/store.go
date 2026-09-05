@@ -1171,3 +1171,25 @@ func DocumentURI(collectionID, documentID string) string {
 	}
 	return fmt.Sprintf("document://%s/documents/%s", collectionID, documentID)
 }
+
+// CollectionScopeSQL renders the collection predicate for a read.
+//
+// An unspecified collection means *every* collection. That is the opposite of
+// the create side a few hundred lines above, where an unspecified collection
+// means `default`, and the asymmetry is the whole model: a note created here
+// has this library's provenance, while a question asked of the library is a
+// question about all of it. Someone who migrated from Joplin has notes whose
+// collection says Joplin, and they are still their notes -- lint should report
+// on them, fix should repair them, and an archive should contain them.
+//
+// The parameter stays in the statement either way, so no caller's argument list
+// changes with the scope: NULLIF turns an empty string into NULL, COALESCE then
+// compares the column with itself, and every row satisfies that because
+// `collection_id` is NOT NULL in every table that has one.
+func CollectionScopeSQL(alias string) string {
+	column := "collection_id"
+	if alias != "" {
+		column = alias + ".collection_id"
+	}
+	return column + " = COALESCE(NULLIF(?, ''), " + column + ")"
+}

@@ -138,10 +138,9 @@ type CheckLinksResponse struct {
 }
 
 func (r *DocumentSuggestionRequest) validate() error {
+	// Empty means every collection; see CollectionScopeSQL. Somebody linking to
+	// a note they migrated should be offered it.
 	r.CollectionID = strings.TrimSpace(r.CollectionID)
-	if r.CollectionID == "" {
-		r.CollectionID = "default"
-	}
 	r.Query = strings.TrimSpace(r.Query)
 	if len(r.Query) < MinSuggestionQueryBytes {
 		return fmt.Errorf("%w: query must be at least %d characters", ErrInvalidInput, MinSuggestionQueryBytes)
@@ -162,10 +161,9 @@ func (r *DocumentSuggestionRequest) validate() error {
 }
 
 func (r *CheckLinksRequest) validate() error {
+	// Empty means every collection; see CollectionScopeSQL. Somebody linking to
+	// a note they migrated should be offered it.
 	r.CollectionID = strings.TrimSpace(r.CollectionID)
-	if r.CollectionID == "" {
-		r.CollectionID = "default"
-	}
 	r.DocumentID = strings.TrimSpace(r.DocumentID)
 	if len(r.Body) > MaxCheckBodyBytes {
 		return fmt.Errorf("%w: body exceeds %d bytes", ErrInvalidInput, MaxCheckBodyBytes)

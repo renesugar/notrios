@@ -21,7 +21,7 @@ func runLint(args []string) {
 	configPath := fs.String("config", "", "optional config file")
 	dbPath := fs.String("db", "", "SQLite database path override")
 	assetStore := fs.String("asset-store", "", "asset store directory override")
-	collectionID := fs.String("collection", "default", "collection ID")
+	collectionID := fs.String("collection", "", "narrow to one collection (default: every collection)")
 	checks := fs.String("checks", "", "comma-separated checks (default: all)")
 	detailLimit := fs.Int("detail-limit", 0, "maximum examples per check (0 = default 100)")
 	quiet := fs.Bool("quiet", false, "print nothing; report findings through the exit code only")

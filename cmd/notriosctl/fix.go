@@ -30,7 +30,6 @@ func runFix(args []string) {
 	configPath := fs.String("config", "", "optional config file")
 	dbPath := fs.String("db", "", "SQLite database path override")
 	assetStore := fs.String("asset-store", "", "asset store directory override")
-	collectionID := fs.String("collection", "default", "collection ID")
 	kinds := fs.String("kinds", "", "comma-separated fix kinds (default: non_canonical_link_target)")
 	documentID := fs.String("document", "", "restrict the run to one note")
 	maxDocuments := fs.Int("max-documents", 0, "maximum notes per run (0 = default 1000)")
@@ -68,7 +67,6 @@ func runFix(args []string) {
 	report := map[string]any{"apply": *apply}
 	if len(storeKinds) > 0 || len(requested) == 0 {
 		plan, err := st.PlanWorkspaceFix(ctx, store.FixRequest{
-			CollectionID: strings.TrimSpace(*collectionID),
 			Kinds:        storeKinds,
 			DocumentID:   strings.TrimSpace(*documentID),
 			MaxDocuments: *maxDocuments,

@@ -43,7 +43,7 @@ func runGraphReport(args []string) {
 	configPath := fs.String("config", "", "optional config file")
 	dbPath := fs.String("db", "", "SQLite database path override")
 	assetStore := fs.String("asset-store", "", "asset store directory override")
-	collectionID := fs.String("collection", "default", "collection ID")
+	collectionID := fs.String("collection", "", "narrow to one collection (default: every collection)")
 	limit := fs.Int("limit", 0, "entries per list (0 = 20 with --write-note, 100 otherwise)")
 	writeNote := fs.Bool("write-note", false, "overwrite the read-only report note in the Reports notebook")
 	quiet := fs.Bool("quiet", false, "print nothing; useful with --write-note")
@@ -88,7 +88,7 @@ func runGraphExport(args []string) {
 	configPath := fs.String("config", "", "optional config file")
 	dbPath := fs.String("db", "", "SQLite database path override")
 	assetStore := fs.String("asset-store", "", "asset store directory override")
-	collectionID := fs.String("collection", "default", "collection ID")
+	collectionID := fs.String("collection", "", "narrow to one collection (default: every collection)")
 	overwrite := fs.Bool("overwrite", false, "replace nodes.csv and edges.csv if they already exist")
 	if err := fs.Parse(args); err != nil {
 		fmt.Fprintln(os.Stderr, err)

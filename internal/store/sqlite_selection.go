@@ -56,10 +56,10 @@ func normalizeSelectionPlanRequest(req SelectionPlanRequest) (normalizedSelectio
 	default:
 		return normalizedSelectionRequest{}, fmt.Errorf("%w: target must be full_archive, subset_transfer, or publication_handoff", ErrInvalidInput)
 	}
+	// Empty means every collection; see store.CollectionScopeSQL. A
+	// `full_archive` that silently omitted every imported note was the worst of
+	// these, because the word for what it produced is "backup".
 	req.Selection.CollectionID = strings.TrimSpace(req.Selection.CollectionID)
-	if req.Selection.CollectionID == "" {
-		req.Selection.CollectionID = "default"
-	}
 	req.Selection.Match = strings.ToLower(strings.TrimSpace(req.Selection.Match))
 	if req.Selection.Match == "" {
 		req.Selection.Match = "any"
@@ -495,7 +495,7 @@ func (s *SQLiteStore) selectDocumentIDsWithTrashScopeLocked(ctx context.Context,
 
 func (s *SQLiteStore) selectDocumentIDsInScopeLocked(ctx context.Context, collectionID, deletedScope, predicate string, args []string, limit int) ([]string, error) {
 	sql := `SELECT d.id FROM documents d JOIN document_revisions r ON r.id = d.current_revision_id
-		WHERE d.collection_id = ? AND ` + deletedScope + ` AND (` + predicate + `)
+		WHERE ` + CollectionScopeSQL("d") + ` AND ` + deletedScope + ` AND (` + predicate + `)
 		ORDER BY d.id LIMIT ` + itoa(limit+1)
 	values := append([]string{collectionID}, args...)
 	ids, err := s.readIDQueryLocked(ctx, sql, values)
@@ -539,7 +539,7 @@ func (s *SQLiteStore) selectExplicitDocumentIDsLocked(ctx context.Context, colle
 	for start := 0; start < len(requested); start += selectionReadBatch {
 		end := min(start+selectionReadBatch, len(requested))
 		batch := requested[start:end]
-		stmt, prepErr := s.prepareLocked(`SELECT id, deleted_at IS NOT NULL FROM documents WHERE collection_id = ? AND id IN (` + lookupPlaceholders(len(batch)) + `) ORDER BY id`)
+		stmt, prepErr := s.prepareLocked(`SELECT id, deleted_at IS NOT NULL FROM documents WHERE ` + CollectionScopeSQL("") + ` AND id IN (` + lookupPlaceholders(len(batch)) + `) ORDER BY id`)
 		if prepErr != nil {
 			return nil, nil, nil, prepErr
 		}

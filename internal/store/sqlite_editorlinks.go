@@ -81,7 +81,7 @@ func (s *SQLiteStore) SuggestDocuments(ctx context.Context, req DocumentSuggesti
 func (s *SQLiteStore) suggestByTitlePrefixLocked(req DocumentSuggestionRequest, seen map[string]bool) ([]DocumentSuggestion, error) {
 	stmt, err := s.prepareLocked(`SELECT id, title, COALESCE(notebook_id, '')
 		FROM documents
-		WHERE collection_id = ? AND deleted_at IS NULL AND title LIKE ? ESCAPE '\'
+		WHERE ` + CollectionScopeSQL("") + ` AND deleted_at IS NULL AND title LIKE ? ESCAPE '\'
 		ORDER BY title COLLATE NOCASE, id
 		LIMIT ?`)
 	if err != nil {
@@ -129,7 +129,7 @@ func (s *SQLiteStore) suggestByTitleWordLocked(req DocumentSuggestionRequest, se
 	stmt, err := s.prepareLocked(`SELECT f.document_id, d.title, COALESCE(d.notebook_id, '')
 		FROM documents_fts f
 		JOIN documents d ON d.id = f.document_id AND d.deleted_at IS NULL
-		WHERE documents_fts MATCH ? AND f.collection_id = ?
+		WHERE documents_fts MATCH ? AND ` + CollectionScopeSQL("f") + `
 		LIMIT ?`)
 	if err != nil {
 		return nil, false, err

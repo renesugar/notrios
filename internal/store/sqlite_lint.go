@@ -29,10 +29,11 @@ func (s *SQLiteStore) LintWorkspace(ctx context.Context, req LintRequest) (LintR
 	if err := ctx.Err(); err != nil {
 		return LintReport{}, err
 	}
+	// Empty means every collection; see store.CollectionScopeSQL. Lint that
+	// reported on one provenance while another rotted was the defect, and it
+	// was invisible because the report says which collection it looked at as
+	// though that had been asked for.
 	collectionID := strings.TrimSpace(req.CollectionID)
-	if collectionID == "" {
-		collectionID = "default"
-	}
 	limit := req.DetailLimit
 	if limit <= 0 {
 		limit = DefaultLintDetailItems
@@ -176,7 +177,7 @@ func lintQueryFor(check, collectionID string) lintQuery {
 			sql: `SELECT s.document_id, 0, 0, s.source_system || ':' || s.external_id, 'duplicate external identity'
 				FROM document_sources s
 				JOIN documents d ON d.id = s.document_id
-				WHERE d.collection_id = ? AND d.deleted_at IS NULL AND ` + notSystemAuthoredSQL("d") + `
+				WHERE ` + CollectionScopeSQL("d") + ` AND d.deleted_at IS NULL AND ` + notSystemAuthoredSQL("d") + `
 					AND EXISTS (
 						SELECT 1 FROM document_sources o
 						JOIN documents od ON od.id = o.document_id
@@ -190,7 +191,7 @@ func lintQueryFor(check, collectionID string) lintQuery {
 	case LintMissingTitle:
 		return lintQuery{
 			sql: `SELECT id, 0, 0, '', 'empty title' FROM documents d
-				WHERE collection_id = ? AND deleted_at IS NULL AND ` + notSystemAuthoredSQL("d") + `
+				WHERE ` + CollectionScopeSQL("") + ` AND deleted_at IS NULL AND ` + notSystemAuthoredSQL("d") + `
 					AND TRIM(COALESCE(title, '')) = ''
 				ORDER BY id`,
 			args: append([]string{collectionID}, readOnlyNotebookArgs()...),
@@ -200,7 +201,7 @@ func lintQueryFor(check, collectionID string) lintQuery {
 		return lintQuery{
 			sql: `SELECT '', 0, 0, r.id, 'no document references this resource'
 				FROM resources r
-				WHERE r.collection_id = ?
+				WHERE ` + CollectionScopeSQL("r") + `
 					AND NOT EXISTS (SELECT 1 FROM document_resource_refs ref WHERE ref.resource_id = r.id)
 				ORDER BY r.id`,
 			args: []string{collectionID},

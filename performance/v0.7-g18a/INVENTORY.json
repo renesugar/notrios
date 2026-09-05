@@ -529,7 +529,7 @@
     },
     {
       "path": "docs/cli.md",
-      "sha256": "6103ab84451c0f8a027cda4be77c438e4113022fd951cda35c9709b40bf8b5ac",
+      "sha256": "2e14f9dacd30bdf42aa1adcb269d09f69354ea407b53551e793bf1be3bed72f1",
       "help_note": "doc_help_cli",
       "owner": "go:github.com/renesugar/notrios/cmd/notriosctl#printHelp",
       "sections": [
@@ -2021,7 +2021,7 @@
     },
     {
       "path": "docs/publishing.md",
-      "sha256": "f7ca0dcf8d9607dc4699f67b825b79bcf69dc00f775e23624be409c0e0d8606b",
+      "sha256": "ca18c737e54bf3751ac33eefe51d87df2701551f45b84512bbb93d54a40ec24d",
       "help_note": "doc_help_publishing",
       "owner": "go:github.com/renesugar/notrios/internal/publish#(Profile).PlanRequest",
       "sections": [

@@ -28,9 +28,8 @@ func (s *SQLiteStore) ListTemplates(ctx context.Context, collectionID string) ([
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
-	if strings.TrimSpace(collectionID) == "" {
-		collectionID = "default"
-	}
+	// Empty means every collection; see CollectionScopeSQL.
+	collectionID = strings.TrimSpace(collectionID)
 	docs, err := s.documentsContainingLocked(ctx, collectionID, "%```note-template%")
 	if err != nil {
 		return nil, err

@@ -52,10 +52,8 @@ func (s *SQLiteStore) ExportGraphCSV(ctx context.Context, req ExportGraphRequest
 	if err := ctx.Err(); err != nil {
 		return ExportGraphSummary{}, err
 	}
+	// Empty means every collection; see CollectionScopeSQL.
 	collectionID := req.CollectionID
-	if collectionID == "" {
-		collectionID = "default"
-	}
 	summary := ExportGraphSummary{CollectionID: collectionID}
 
 	s.mu.Lock()
@@ -89,7 +87,7 @@ func (s *SQLiteStore) exportGraphNodesLocked(ctx context.Context, collectionID s
 				JOIN documents tgt ON tgt.id = lo.target_document_id
 				WHERE lo.source_document_id = d.id AND ` + measuredDocumentSQL("tgt") + `)
 		FROM documents d
-		WHERE d.collection_id = ? AND ` + measuredDocumentSQL("d") + `
+		WHERE ` + CollectionScopeSQL("d") + ` AND ` + measuredDocumentSQL("d") + `
 		ORDER BY d.id`)
 	if err != nil {
 		return 0, err
@@ -147,7 +145,7 @@ func (s *SQLiteStore) exportGraphEdgesLocked(ctx context.Context, collectionID s
 		FROM document_links l
 		JOIN documents src ON src.id = l.source_document_id
 		JOIN documents tgt ON tgt.id = l.target_document_id
-		WHERE src.collection_id = ? AND ` + measuredDocumentSQL("src") + ` AND ` + measuredDocumentSQL("tgt") + `
+		WHERE ` + CollectionScopeSQL("src") + ` AND ` + measuredDocumentSQL("src") + ` AND ` + measuredDocumentSQL("tgt") + `
 		ORDER BY l.source_document_id, l.target_document_id, l.id`)
 	if err != nil {
 		return 0, err

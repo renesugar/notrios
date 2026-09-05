@@ -61,6 +61,15 @@ afterwards. Profiles live in `<data-dir>/publish-profiles.json` (override with
 `--profiles` or `NOTRIOS_PUBLISH_PROFILES`) and are written owner-only, because
 a profile says which of your notes are private.
 
+A profile's selectors reach every collection unless one names a collection. A
+note you migrated in is a note you own, so `--query 'notebook:"Public"'` matches
+it wherever it came from; if provenance is what you mean to select on, say so
+with a `collection:` term or the profile's own collection field. This is worth
+knowing when reading a review: a selector written before Notrios spanned
+collections may now match more than it did, which is exactly what the review is
+for — the counts are shown before anything is written, and publishing refuses
+unless the plan you read is still the plan.
+
 `--target full_archive` is refused: a full archive carries trashed notes, every
 revision, provenance, and exact source bundles, and it should never be reachable
 by a name that sounds like publishing. Use `notriosctl export archive-v2` when

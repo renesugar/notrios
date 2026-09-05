@@ -300,10 +300,8 @@ func (r *GraphPathRequest) validate() error {
 }
 
 func (r *GraphReportRequest) validate() error {
+	// Empty means every collection; see CollectionScopeSQL.
 	r.CollectionID = strings.TrimSpace(r.CollectionID)
-	if r.CollectionID == "" {
-		r.CollectionID = "default"
-	}
 	if r.Limit < 0 {
 		return fmt.Errorf("%w: limit must not be negative", ErrInvalidInput)
 	}

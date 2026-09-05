@@ -39,8 +39,8 @@ printHelp is the finite command and flag usage registry shown by notriosctl.
 - notriosctl notebooks list [--db ...]           # notebooks and query notebooks, as the sidebar shows them
 - notriosctl notes create --title <title> [--notebook <id|name>] [--body-file path|-] [--body text]
 - notriosctl notes move --document <id> --notebook <id|name> [--db ...]
-- notriosctl graph report [--db ...] [--collection default] [--limit N] [--write-note] [--quiet]
-- notriosctl graph export [--db ...] [--collection default] [--overwrite] <out-dir>
+- notriosctl graph report [--db ...] [--collection id] [--limit N] [--write-note] [--quiet]
+- notriosctl graph export [--db ...] [--collection id] [--overwrite] <out-dir>
 - notriosctl jobs list [--db ...] [--kind k] [--state s] [--limit 50]
 - notriosctl jobs status [--db ...] [--wait] [--timeout 30m] [--quiet] <job-id>
 - notriosctl jobs show [--db ...] [--command] <job-id>
@@ -568,7 +568,7 @@ or `NOTRIOS_PUBLISH_PROFILES`) and are written owner-only.
 ## lint
 
 ```sh
-notriosctl lint [--config config.yaml] [--db path] [--asset-store path] [--collection default]
+notriosctl lint [--config config.yaml] [--db path] [--asset-store path] [--collection id]
     [--checks a,b] [--detail-limit 100] [--quiet] [--list-checks]
 ```
 
@@ -583,6 +583,14 @@ printed per check, never the counts, and `report_sha256` covers every finding �
 the same library produces the same digest. Nothing is written; fixing is a
 separate operation.
 
+Every collection is read. A library you migrated into is one library: notes
+that carry a `joplin-…` collection are yours, and a lint that reported the rest
+of the library as clean while they rotted was wrong. `--collection` narrows to
+one provenance when that is what you want, which is the only thing it does now —
+it used to be assumed, and the report said `default` as though you had asked.
+The same applies to `fix`, to `graph report` and `graph export`, and to what a
+`full_archive` contains.
+
 Since v0.6, content checks skip notes in the read-only builtin notebooks — Help
 and Reports. `notriosctl fix` structurally cannot repair them and you cannot
 edit them either, so a finding there was noise rather than information. **On a
@@ -594,7 +602,7 @@ index is behind rather than that a note needs editing.
 ## fix
 
 ```sh
-notriosctl fix [--config config.yaml] [--db path] [--asset-store path] [--collection default]
+notriosctl fix [--config config.yaml] [--db path] [--asset-store path]
     [--kinds a,b] [--document id] [--max-documents 1000] [--apply] [--allow-review] [--list-kinds]
 ```
 
@@ -655,13 +663,14 @@ unintended is exactly what this command exists to correct.
 ## graph report
 
 ```sh
-notriosctl graph report [--config config.yaml] [--db path] [--asset-store path] [--collection default]
+notriosctl graph report [--config config.yaml] [--db path] [--asset-store path] [--collection id]
     [--limit N] [--write-note] [--quiet]
 ```
 
 The shape of the link graph: totals, the most-linked notes by in-degree, the
 orphans, and the isolates. `--limit` caps the example lists only; the counts
-always describe the whole collection.
+always describe everything the report covers, which is every collection unless
+`--collection` names one.
 
 `--write-note` also renders it as a note in the builtin **Reports** notebook,
 with a stable ID, overwritten in place, carrying the time it was generated. The

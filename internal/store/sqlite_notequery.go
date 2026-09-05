@@ -20,10 +20,8 @@ func (s *SQLiteStore) RunNoteQuery(ctx context.Context, req NoteQueryRequest) (N
 	if err := ctx.Err(); err != nil {
 		return NoteQueryResult{}, err
 	}
+	// Empty means every collection; see CollectionScopeSQL.
 	collectionID := strings.TrimSpace(req.CollectionID)
-	if collectionID == "" {
-		collectionID = "default"
-	}
 
 	spec, err := parseNoteQueryBlock(req.Block)
 	if err != nil {

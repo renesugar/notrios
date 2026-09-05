@@ -828,7 +828,7 @@ func (s *SQLiteStore) GraphReport(ctx context.Context, req GraphReportRequest) (
 				JOIN documents tgt ON tgt.id = lo.target_document_id
 				WHERE lo.source_document_id = d.id AND ` + measuredTarget + `)
 		FROM documents d
-		WHERE d.collection_id = ? AND ` + measuredDocumentSQL("d") + `
+		WHERE ` + CollectionScopeSQL("d") + ` AND ` + measuredDocumentSQL("d") + `
 		ORDER BY d.id`)
 	if err != nil {
 		return GraphReport{}, err

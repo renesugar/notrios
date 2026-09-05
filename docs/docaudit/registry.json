@@ -1015,7 +1015,7 @@
       "path": "docs/cli.md",
       "section": "fix",
       "language": "sh",
-      "sha256": "14e09fb2e56432523345acf1e7164f6c04dbd5a6bde10aabe5c2ef795d6806c2",
+      "sha256": "0281bc4443b6add0797075ecbf027b6f3fe48df11d235a1f676b66ad22c6b159",
       "state": "unverified",
       "unrun_reason": {
         "code": "illustrative-placeholder",
@@ -1051,7 +1051,7 @@
       "path": "docs/cli.md",
       "section": "graph-report",
       "language": "sh",
-      "sha256": "cc7bc432d50d8b607905252f40ed0bd3ae1c8dd45c3344724d048b001677990a",
+      "sha256": "0e68ceb357c4359daecc2b2b259bbfc47f4ceb3e81c3929dae88417461b9ce4f",
       "state": "unverified",
       "unrun_reason": {
         "code": "illustrative-placeholder",
@@ -1175,7 +1175,7 @@
       "path": "docs/cli.md",
       "section": "lint",
       "language": "sh",
-      "sha256": "936ea2f2f609455eb04dafcc877a32607047a9fa04f21560f1288bb70e02f64b",
+      "sha256": "2a2f4c8ee46beab854b290c1e41b172896517344a5df49de4275727a4c6931f3",
       "state": "unverified",
       "unrun_reason": {
         "code": "illustrative-placeholder",

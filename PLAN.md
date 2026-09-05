@@ -4101,17 +4101,47 @@ re-read afterwards -- which is the more useful finding: the bug was never
 
 ### Open decisions that follow
 
-- **Whether "no collection named" means every collection in `lint`, `fix`,
-  selection and publication -- and whether publication takes that widening
-  automatically.** For lint, fix and archiving the answer looks forced: a repair
-  that cannot see a note, and a backup that omits one, are both wrong in the
-  same way. Publication is the one to decide deliberately, because publication
-  is what leaves the machine: a profile selecting `tag:public` would begin
-  matching notes from collections it never matched before. The safety net is
-  real -- `publish run` re-plans and refuses unless the reviewed digest still
-  matches, so the counts are read before anything is written -- but a change
-  that widens what can be published should be a decision somebody made rather
-  than a default that moved.
+- **Whether "no collection named" means every collection -- Decided
+  2026-09-04, including publication, and built.** Someone who migrated from
+  Joplin would want lint, fix and selection to work on their notes even though
+  the collection says the notes came from Joplin. That is the whole answer: the
+  collection records where a note came from, not whether the tools apply to it,
+  and a migrated library is one library.
+
+  Publication takes the same widening rather than an exception. A profile's
+  selectors are what limit a publication, and they say notebooks, tags and
+  queries -- not provenance; a profile that means provenance can say
+  `collection:` and be read literally. The safety net stands where it was:
+  `publish run` re-plans and refuses unless the reviewed digest still matches,
+  so the counts are read before anything is written. `docs/publishing.md` now
+  says a selector written earlier may match more than it did, because that is
+  the sentence somebody needs before their next review.
+
+  *An unspecified collection is now every collection wherever a read is
+  scoped*, which turned out to be more places than the four this item found:
+  lint, fix, selection, graph report, graph export, tasks, templates, live
+  query blocks, link suggestions, link checking, and the title and filename
+  lookups that resolve `[the plan](Kitchen)`. The last two were found by the
+  test suite rather than by reading -- widening the editor's link checking
+  without them turned a resolvable link into an unresolved one, which is the
+  kind of half-done change that a mechanical edit produces and only a test
+  catches. Creating still defaults to `default`: a note made here has this
+  library's provenance, and that asymmetry is the model rather than an
+  inconsistency.
+
+  One behaviour changed beyond the scope rule, and it is worth stating: a
+  link written by name now resolves across collections, so the same title in two
+  of them is *ambiguous* rather than quietly resolving to this library's copy.
+  Refusing to guess is the behaviour to want there.
+
+  `--collection` is gone from `fix` and `export archive-v2` per the answer
+  above, and on `lint`, `graph report`, `graph export` and `export archive` it
+  narrows rather than presumes. The five importers keep theirs: an import writes
+  a collection, and that is a different verb.
+
+  Covered by `internal/store/collection_scope_test.go` -- one migrated library,
+  four questions: lint sees the note, fix reaches it, a full archive contains
+  it, and asking for one collection still narrows.
 - **Whether a dangling collection identifier is repaired by adopting the note
   into `default` or by recreating the missing collection row.** The answer above
   says adopt, and that is in tension with "where a note originated does not

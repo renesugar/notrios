@@ -644,9 +644,9 @@ Usage:
                                                  # or standard input, so a note can end a pipeline
   notriosctl notes move --document <id> --notebook <id|name> [--db ...]
                                                  # file one note into another notebook; a name is refused when it matches more than one
-  notriosctl graph report [--db ...] [--collection default] [--limit N] [--write-note] [--quiet]
+  notriosctl graph report [--db ...] [--collection id] [--limit N] [--write-note] [--quiet]
                                                  # link-graph shape; --write-note overwrites the read-only note in Reports
-  notriosctl graph export [--db ...] [--collection default] [--overwrite] <out-dir>
+  notriosctl graph export [--db ...] [--collection id] [--overwrite] <out-dir>
                                                  # nodes.csv and edges.csv for Gephi, Cytoscape, NetworkX or igraph
   notriosctl jobs list [--db ...] [--kind k] [--state s] [--limit 50]
   notriosctl jobs status [--db ...] [--wait] [--timeout 30m] [--quiet] <job-id>
@@ -885,7 +885,6 @@ func runExportArchiveV2(args []string) {
 	configPath := fs.String("config", "", "optional config file")
 	dbPath := fs.String("db", "", "SQLite database path override")
 	assetStore := fs.String("asset-store", "", "asset store directory override")
-	collectionID := fs.String("collection", "default", "collection ID")
 	target := fs.String("target", "full_archive", "full_archive (complete backup) or subset_transfer")
 	notebooks := fs.String("notebooks", "", "comma-separated notebook IDs (recursive) for a subset transfer")
 	tags := fs.String("tags", "", "comma-separated tag names for a subset transfer")
@@ -911,13 +910,16 @@ func runExportArchiveV2(args []string) {
 	defer st.Close()
 	options := archivev2.ExportOptions{
 		Target: *target,
+		// No collection selector. Every note goes into the archive with the
+		// identifier it has, and a `full_archive` that could omit a provenance
+		// would not be one -- which is what it did, silently, for as long as
+		// the selector defaulted to `default`.
 		Selection: store.SelectionSpec{
-			CollectionID: *collectionID,
-			NotebookIDs:  splitCommaList(*notebooks),
-			Tags:         splitCommaList(*tags),
-			Query:        *query,
-			DocumentIDs:  splitCommaList(*documents),
-			Match:        *match,
+			NotebookIDs: splitCommaList(*notebooks),
+			Tags:        splitCommaList(*tags),
+			Query:       *query,
+			DocumentIDs: splitCommaList(*documents),
+			Match:       *match,
 		},
 		MaxDocuments:     *maxDocuments,
 		RecordsPerObject: *recordsPerObject,
@@ -931,7 +933,6 @@ func runExportArchiveV2(args []string) {
 	// and because the manifest is written last and is the completion marker, a
 	// stopped export leaves nothing that could pass as a complete archive.
 	runner, jobCtx := startTrackedJob(st, store.JobKindExportArchiveV2, []store.JobParameter{
-		{Name: "collection", Value: *collectionID},
 		{Name: "target", Value: *target},
 		{Name: "notebooks", Value: *notebooks},
 		{Name: "tags", Value: *tags},
@@ -972,7 +973,7 @@ func runExportArchiveV1(args []string) {
 	configPath := fs.String("config", "", "optional config file")
 	dbPath := fs.String("db", "", "SQLite database path override")
 	assetStore := fs.String("asset-store", "", "asset store directory override")
-	collectionID := fs.String("collection", "default", "collection ID")
+	collectionID := fs.String("collection", "", "narrow to one collection (default: every collection)")
 	query := fs.String("query", "", "query-language scope (empty = all notes)")
 	if err := fs.Parse(args[1:]); err != nil {
 		fmt.Fprintln(os.Stderr, err)
