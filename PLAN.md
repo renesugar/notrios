@@ -4030,23 +4030,129 @@ the reason the concept earns its place -- an imported archive that is searchable
 and linkable but not writable -- and no code consults it. Nothing refuses a
 write because a collection says it is read-only.
 
-### Decisions to make
+### Decisions, answered 2026-09-04
 
-- **Whether `kind` and capabilities become real.** Adding the columns is small;
-  deciding what enforces them is not. A capability nothing checks is a comment
-  in a database. If they stay unenforced, the honest move may be removing them
-  from the API rather than storing them.
-- **Whether `external` and `sidecar_indexed` collections are ever built.** They
-  describe material Notrios indexes without owning -- a folder of PDFs browsable
-  as read-only notes. Nothing populates one today. Either they are a plan or
-  they are vocabulary, and the schema documentation should not imply the former
-  while the code does the latter.
-- **Whether a collection should be deletable or renameable**, and what happens
-  to the notes that name it. There is no delete, and the foreign key means the
-  answer cannot be "nothing".
-- **Whether `--collection` should exist on `fix` and `export archive-v2`.** Both
-  take it as a scope, which is coherent, but it is worth confirming that scoping
-  by provenance is what a person wants there rather than scoping by notebook.
+**`kind` and capabilities are removed from the API rather than stored.** A
+capability nothing checks is a comment in a database, and this one is worse than
+that: `kind` is answered `managed` for every row and `capabilities` is a
+hard-coded list identical for every collection, so both fields are ceremony that
+reads as a contract. They go from `api.Collection`, from the OpenAPI schema
+(where `kind` and `capabilities` are currently *required*), and from MCP's
+`list_collections`; the documented columns that never existed go from
+`DATABASE_SCHEMA.md`. A collection keeps `id`, `name`, `description`,
+`created_at` -- which is all the store has ever held.
+
+**`external` and `sidecar_indexed` are vocabulary, and stop being written down
+as a plan.** Checked rather than assumed: the Recoll sidecar indexes exactly one
+directory, and it is the projection of this library's own notes
+(`internal/recoll/recoll.go` writes `topdirs = <projectionDir>`). Recoll is a
+different way to *search Notrios notes*, not a way to browse foreign material as
+notes. Nothing else indexes anything Notrios does not own, so no code will ever
+produce a collection of either kind, and the enumeration listing them
+disappears with `kind` itself.
+
+**A collection is neither deletable nor renameable in the sense that matters:
+where a note originated does not change.** The identifier a note carries is a
+statement about the past, and the past is not editable; the foreign key that
+made this question unavoidable is right to exist. What follows is that there is
+no `DELETE /api/v1/collections/{id}` to write and no identifier rewrite to
+support -- not that the feature is missing.
+
+**`--collection` stops being a scope on `fix`, and stops being a scope on
+`export archive-v2`.** Two different reasons.
+
+*On `fix`, a collection is not a scope but a repair.* The only safe change a
+repair can make to a collection identifier is to resolve one that no longer
+names anything, and the answer for a note whose provenance is unusable is to put
+it where Notrios can act on it -- `default` -- having first ensured the note
+satisfies the schema Notrios requires of its own notes.
+
+*On `export archive-v2`, the collection is carried, not selected on.* Every note
+goes into the archive with the identifier it has, and a note with none came from
+Notrios. The format already does this: each document, resource and source bundle
+record carries its own `collection_id` (`internal/archivev2/export.go`), and the
+manifest lists the collections the records actually used.
+
+### What answering them exposed, and it is larger than the questions
+
+Verifying the fourth answer against the code found the same defect in four
+places, and only one of them had ever been noticed.
+
+**An unspecified collection silently means `default`, and then filters.** Not in
+one path -- in every path that selects notes other than search:
+
+| Path | Where | What it means today |
+|---|---|---|
+| `lint` | `sqlite_lint.go:32-34` | reports on default-collection notes only |
+| `fix` | `sqlite_fix.go:25-27` | repairs default-collection notes only |
+| selection (`export archive-v2`, publication) | `sqlite_selection.go:59-61` | `--target full_archive` archives default-collection notes only |
+| search | fixed in H15 | now spans every collection |
+
+So a library with any imported collection has a **"complete backup" that is not
+complete**, a workspace lint that reports a clean library while another
+collection rots, and a repair that cannot reach the notes that need it. The
+Library Health panel in the interface inherits all of it, because it calls lint
+and fix through the bridge. Nothing warns; the flag defaults to `default` and
+the report says `collection_id: default` as though that had been asked for.
+
+This is the same defect the search fix removed in H15, in the paths nobody
+re-read afterwards -- which is the more useful finding: the bug was never
+*about* search.
+
+### Open decisions that follow
+
+- **Whether "no collection named" means every collection in `lint`, `fix`,
+  selection and publication -- and whether publication takes that widening
+  automatically.** For lint, fix and archiving the answer looks forced: a repair
+  that cannot see a note, and a backup that omits one, are both wrong in the
+  same way. Publication is the one to decide deliberately, because publication
+  is what leaves the machine: a profile selecting `tag:public` would begin
+  matching notes from collections it never matched before. The safety net is
+  real -- `publish run` re-plans and refuses unless the reviewed digest still
+  matches, so the counts are read before anything is written -- but a change
+  that widens what can be published should be a decision somebody made rather
+  than a default that moved.
+- **Whether a dangling collection identifier is repaired by adopting the note
+  into `default` or by recreating the missing collection row.** The answer above
+  says adopt, and that is in tension with "where a note originated does not
+  change": adopting rewrites provenance, where recreating the row preserves the
+  identifier and admits only that the description of it was lost. Recreating
+  looks better on that principle; adopting is simpler and is what a person
+  actually wants if the identifier is meaningless. Worth settling before either
+  is written, because both are one-way.
+- **What "the necessary schema for Notrios" means as a precondition of that
+  repair**, and whether the repair runs by default or only when asked for. Every
+  other `fix` kind is mechanical and reversible in effect; this one changes what
+  a note says about where it came from.
+- **Whether removing `kind` and `capabilities` ships in v0.8.** They are
+  `required` in the OpenAPI response schema, so removing them is a breaking
+  change to a documented shape. Pre-1.0, with no consumer that reads either
+  field, removing them now is the honest move and is recommended; the
+  alternative is keeping them as deprecated constants until a major boundary,
+  which preserves a promise nobody is relying on.
+- **Whether a collection's `name` and `description` stay editable.** The
+  identifier is immutable and the row undeletable, but correcting a label is not
+  a change to where a note came from. If they are editable there is a
+  `PATCH /api/v1/collections/{id}` to write, and if they are not, the row is
+  written exactly once and only an import can write it.
+
+### Scope, now that the answers are known
+
+1. Remove `kind` and `capabilities` from `api.Collection`, the OpenAPI schema
+   and MCP's `list_collections`; remove the three columns that never existed
+   from `DATABASE_SCHEMA.md`.
+2. Make an unspecified collection mean every collection in `lint`, `fix` and
+   selection, as it already does in search -- subject to the publication
+   decision above -- and drop `--collection` as a scope from `fix` and
+   `export archive-v2`.
+3. Add the dangling-identifier repair to `fix`, in whichever of the two forms
+   the decision above settles on.
+4. Keep the collection row write-once, or add the label edit, per the last
+   decision above.
+
+A test for each of the four selection paths that a note in a second collection
+is seen: that is the property none of them had, and a count that only ever ran
+against a single-collection library could not have shown it.
 
 ### Depends on H15
 
