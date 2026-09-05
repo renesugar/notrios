@@ -28,6 +28,7 @@
 // of whatever the library happened to contain.
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import crypto from 'node:crypto';
 import process from 'node:process';
 
 const { chromium } = await import(process.env.PLAYWRIGHT_MODULE || 'playwright');
@@ -211,11 +212,51 @@ try {
   await browser.close();
 }
 
+
+// The signature of everything that decides what this crawl would find: test
+// ids, interactive elements, and the roles that make a non-element behave as
+// one. Recorded here, at the moment of measurement, and checked by
+// validate_evidence.py without a browser -- which is what stops a control being
+// added while the committed inventory keeps passing. Prose, styling and
+// comments do not move it, so an ordinary edit does not force a re-crawl.
+//
+// Kept identical to interface_signature.py by hand. That duplication is the
+// price of not putting a browser in `make validate`, and its failure mode is
+// safe: an implementation that drifts produces a mismatch, which asks for a
+// crawl rather than passing quietly.
+const SIGNATURE_TOKENS = /data-testid\s*=\s*(?:"[^"]*"|'[^']*'|\{[^}]*\})|<button|<input|<select|<textarea|<a\s|role="button"|role="tab"/g;
+
+async function interfaceFiles(directory) {
+  const found = [];
+  for (const entry of await fs.readdir(directory, { withFileTypes: true })) {
+    const full = path.join(directory, entry.name);
+    if (entry.isDirectory()) {
+      if (entry.name === '__tests__') continue;
+      found.push(...await interfaceFiles(full));
+    } else if (entry.name.endsWith('.ts') || entry.name.endsWith('.tsx')) {
+      found.push(full);
+    }
+  }
+  return found;
+}
+
+async function interfaceSignature(webSrc) {
+  const files = (await interfaceFiles(webSrc)).sort();
+  const lines = [];
+  for (const file of files) {
+    const text = await fs.readFile(file, 'utf8');
+    const relative = path.relative(root, file).split(path.sep).join('/');
+    lines.push(relative + '|' + (text.match(SIGNATURE_TOKENS) ?? []).join('|'));
+  }
+  return crypto.createHash('sha256').update(lines.join('\n')).digest('hex');
+}
+
 const inventory = [...controls.values()]
   .map((control) => ({ ...control, always_disabled: control.enabled_instances === 0 }))
   .sort((a, b) => a.id.localeCompare(b.id));
 await fs.writeFile(outPath, JSON.stringify({
   schema: 'notrios.h15.gui-controls.v2',
+  interface_signature: await interfaceSignature(path.join(root, 'web/src')),
   states,
   controls: inventory,
 }, null, 2) + '\n');

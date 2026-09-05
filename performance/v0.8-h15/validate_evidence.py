@@ -25,6 +25,8 @@ import json
 import pathlib
 import sys
 
+from interface_signature import interface_signature
+
 HERE = pathlib.Path(__file__).resolve().parent
 
 # Pinned by measurement, not by expectation. Identity comes from a test id where
@@ -44,7 +46,12 @@ HERE = pathlib.Path(__file__).resolve().parent
 # job, Cancel on one still queued, the keep-search control, and three controls
 # belonging to the notebook a seeded import created. Only one of those five is
 # a new feature; the rest were always there and had nothing to render for.
-EXPECTED_CONTROLS = 58
+# 58 -> 59: the library-health button in the header. It was added in the same
+# item as this count and the crawl was never re-run, so the pinned inventory
+# went on passing at 58 while the interface had 59 -- found the first time the
+# interface signature below was checked, which is the whole argument for having
+# it. A number nobody re-measures describes the interface it was taken from.
+EXPECTED_CONTROLS = 59
 EXPECTED_STATES = 16
 
 # Why each state was added, as something that can fail. A state that is reached
@@ -104,6 +111,23 @@ def require(condition, message):
 def main() -> None:
     report = json.loads((HERE / "GUI_CONTROLS.json").read_text(encoding="utf-8"))
     require(report["schema"] == "notrios.h15.gui-controls.v2", "wrong control inventory schema")
+
+    # The crawl is a report rather than a build gate, and this is what keeps
+    # that from being a hole. The inventory is a committed file describing an
+    # interface that can move without it: a control added and never crawled
+    # would leave every check below passing against a measurement of something
+    # that no longer exists. The signature is of the things that decide what the
+    # crawl would find, so prose and styling do not trip it and a new control
+    # does. It cannot say what changed -- only the crawl can -- so it says to
+    # run the crawl.
+    recorded = report.get("interface_signature", "")
+    require(recorded, "the inventory records no interface signature; re-run the crawl to add one")
+    current = interface_signature(HERE.parents[1] / "web" / "src")
+    require(recorded == current,
+            "the interface has changed since its controls were counted "
+            f"(recorded {recorded[:12]}, now {current[:12]}). Re-run the crawl with "
+            "NOTRIOS_GUI_CONTROLS_RUN=1 go test ./cmd/notriosctl -run TestGUIControlInventory, "
+            "and update EXPECTED_CONTROLS with what was added or removed.")
 
     states = report["states"]
     require(len(states) == EXPECTED_STATES, f"{len(states)} states crawled, expected {EXPECTED_STATES}")

@@ -27,7 +27,16 @@ import (
 //
 // What is different about a desktop journey, and it is not a shortcut. There is
 // no DOM to query from xdotool, so no locator is looked up and no click marker
-// is drawn -- and there is nothing for a marker to point at, because every step
+// is drawn. Nor can a step be reached by walking the page: synthetic Tab moves
+// focus -- focusin fires and the ring visibly steps -- but no DOM keydown
+// reaches the document, so nothing in the page can observe or intercept it.
+// Character keys and Return do reach it, which is why typing works. What that
+// leaves is a keyboard walk that the page cannot help with, which is why every
+// step below counts its Tabs and why the transcript, not the count, is what
+// says it landed correctly.
+//
+// This supersedes a placeholder test that recorded the same limitation and
+// stopped at it -- and there is nothing for a marker to point at, because every step
 // here is a keystroke rather than a place. The falsifiability that a locator
 // provides in the browser half is obtained instead from the application's own
 // transcript: each acting step declares the line it expects, and those lines

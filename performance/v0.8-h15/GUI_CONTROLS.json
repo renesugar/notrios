@@ -1,16 +1,17 @@
 {
   "schema": "notrios.h15.gui-controls.v2",
+  "interface_signature": "1ce70adec03a0051e5f7ae482037e6d24456b63b464e2e39cedf5c839bdc96e6",
   "states": [
     {
       "id": "start",
       "reached": true,
-      "controls": 86,
+      "controls": 87,
       "steps": []
     },
     {
       "id": "all-notes",
       "reached": true,
-      "controls": 86,
+      "controls": 87,
       "steps": [
         "testid=sidebar-row-snb_all_notes"
       ]
@@ -18,7 +19,7 @@
     {
       "id": "help",
       "reached": true,
-      "controls": 83,
+      "controls": 84,
       "steps": [
         "testid=sidebar-row-nb_help"
       ]
@@ -26,7 +27,7 @@
     {
       "id": "trash",
       "reached": true,
-      "controls": 66,
+      "controls": 67,
       "steps": [
         "testid=sidebar-row-snb_trash"
       ]
@@ -34,7 +35,7 @@
     {
       "id": "new-note",
       "reached": true,
-      "controls": 86,
+      "controls": 87,
       "steps": [
         "testid=new-note-button"
       ]
@@ -42,7 +43,7 @@
     {
       "id": "note-open",
       "reached": true,
-      "controls": 90,
+      "controls": 91,
       "steps": [
         "testid=sidebar-row-snb_all_notes",
         "css=.result-card text~Crawl fixture note#0"
@@ -51,7 +52,7 @@
     {
       "id": "note-trashed",
       "reached": true,
-      "controls": 65,
+      "controls": 66,
       "steps": [
         "testid=sidebar-row-snb_trash",
         "css=.result-card text~Trashed fixture note#0"
@@ -60,7 +61,7 @@
     {
       "id": "note-remote-media",
       "reached": true,
-      "controls": 92,
+      "controls": 93,
       "steps": [
         "testid=sidebar-row-snb_all_notes",
         "css=.result-card text~Remote media fixture#0"
@@ -69,7 +70,7 @@
     {
       "id": "sync-overview",
       "reached": true,
-      "controls": 102,
+      "controls": 103,
       "steps": [
         "css=.sync-header-button#0"
       ]
@@ -77,7 +78,7 @@
     {
       "id": "sync-setup",
       "reached": true,
-      "controls": 101,
+      "controls": 102,
       "steps": [
         "css=.sync-header-button#0",
         "button=^Setup"
@@ -86,7 +87,7 @@
     {
       "id": "sync-peers",
       "reached": true,
-      "controls": 101,
+      "controls": 102,
       "steps": [
         "css=.sync-header-button#0",
         "button=^Peers"
@@ -95,7 +96,7 @@
     {
       "id": "sync-retention",
       "reached": true,
-      "controls": 95,
+      "controls": 96,
       "steps": [
         "css=.sync-header-button#0",
         "button=^Retention"
@@ -104,7 +105,7 @@
     {
       "id": "sync-attachments",
       "reached": true,
-      "controls": 95,
+      "controls": 96,
       "steps": [
         "css=.sync-header-button#0",
         "button=^Attachments"
@@ -113,7 +114,7 @@
     {
       "id": "sync-conflicts",
       "reached": true,
-      "controls": 95,
+      "controls": 96,
       "steps": [
         "css=.sync-header-button#0",
         "button=^Conflicts"
@@ -122,7 +123,7 @@
     {
       "id": "sync-backup",
       "reached": true,
-      "controls": 106,
+      "controls": 107,
       "steps": [
         "css=.sync-header-button#0",
         "button=^Backup"
@@ -131,7 +132,7 @@
     {
       "id": "sync-repairs",
       "reached": true,
-      "controls": 95,
+      "controls": 96,
       "steps": [
         "css=.sync-header-button#0",
         "button=^Repairs"
@@ -542,7 +543,7 @@
       "examples": [
         "Job fixture note",
         "Written after the drive went away",
-        "Remote media fixture"
+        "Crawl fixture note"
       ],
       "instances": 303,
       "enabled_instances": 303,
@@ -918,6 +919,36 @@
       "states": [
         "note-open",
         "note-remote-media"
+      ],
+      "always_disabled": false
+    },
+    {
+      "id": "testid:health-header-button",
+      "tag": "button",
+      "role": "",
+      "testid": "health-header-button",
+      "examples": [
+        "What has rotted in this library, and what could be reclaimed"
+      ],
+      "instances": 16,
+      "enabled_instances": 16,
+      "states": [
+        "start",
+        "all-notes",
+        "help",
+        "trash",
+        "new-note",
+        "note-open",
+        "note-trashed",
+        "note-remote-media",
+        "sync-overview",
+        "sync-setup",
+        "sync-peers",
+        "sync-retention",
+        "sync-attachments",
+        "sync-conflicts",
+        "sync-backup",
+        "sync-repairs"
       ],
       "always_disabled": false
     },

@@ -2225,7 +2225,7 @@ release/tag check.
   opens and validates the PR but does not merge it. The owner must separately
   authorize the merge after reviewing the final checks and support claims.
 
-## H14. Documentation actionability investigation (opencode, free models, zvec-grep)
+## H14. Documentation actionability investigation (opencode, free models, zvec-grep) — complete
 
 **Ordering.** Independent of the H5-H11 installer chain and can run at any
 point. If it succeeds and the follow-up evaluation is approved, that evaluation
@@ -2870,8 +2870,12 @@ cannot arrive quietly.
   reader to do. And the tagging journey, which could not be written before, now
   exists and executes.
 
-  **The GUI half is still open**: tags remain sidebar navigation with note
-  counts, and there is no control that adds or removes one.
+  **The GUI half was still open when this was written, and was closed in H15**:
+  the editor toolbar has a tag control beside the notebook control, and
+  `tag-a-note` is a captured interface journey. The sentence that stood here
+  said tags were sidebar navigation with no way to add or remove one, and it
+  stayed after that stopped being true -- in the item whose subject is prose
+  that no gate can catch, which is the joke and also the point.
 - **(superseded) Whether the CLI is meant to have no add/remove-tag command.** REST and MCP can tag a note and
   the CLI cannot. If that is deliberate the CLI guide should say so and point at
   the surfaces that can; if it is an oversight it is a product gap rather than a
@@ -3103,6 +3107,43 @@ evaluation itself staying advisory and out of `make validate`. That item is not
 written yet, deliberately: it should be scoped by what the investigation actually
 finds rather than by what it is hoped to find.
 
+**Outcome (2026-09-04).** Complete, and the two halves ended differently.
+
+*The generation half shipped and stands on its own*, as the exit criteria said
+it would whatever the models did: `docs/features.md` with a coverage gate at
+zero backlog, three catalogues, a computed surface comparison, and eight defects
+found by writing them -- two documented flags that did not exist, three product
+gaps including a raw `FOREIGN KEY constraint failed` on a plausible user action,
+a command missing from the CLI registry, and two containment defects in the
+harness itself. `notriosctl notes create` exists because writing the catalogue
+found the gap. None of that needed a model.
+
+*The evaluation half is stopped, on its own criteria.* Those criteria are
+conjunctive, and the ablation failed outright: with repeats, with tasks chosen
+to be unguessable, and with a model fast enough to run a matrix, **zero of four
+tasks were credited** -- the no-prose arm kept succeeding, because the task
+statement paraphrases the command it is asking for. The tags case was flagged,
+so that criterion held. The first criterion -- a free model beating the recorded
+7/16 on the existing calibration -- was never run, and this says so rather than
+leaving it looking pending: it could not change the verdict, because the
+criteria are conjunctive and one had already failed, and running a roster at 71
+to 377 seconds a call to confirm a conclusion already reached would have been
+spending hours to learn nothing.
+
+*So the "If it succeeds" clause does not fire, and no follow-up evaluation item
+is written.* Making the no-prose arm a real control needs task statements that
+convey intent without the command's own vocabulary, and it is not obvious such a
+statement exists for most tasks -- a task named without its vocabulary may not
+be a task a reader would recognise either. That is a research problem rather
+than a documentation one, and a faster or stronger model makes it worse rather
+than better: a better guesser satisfies the control arm more often, so fewer
+pages earn credit.
+
+Evidence under `performance/v0.8-h14/`: `ACTIONABILITY.json` (24 runs, three
+arms, two repeats, one paid model with its authorisation recorded), the harness
+that produced it, and the journey capture. Nothing here is a build gate and
+nothing was added to `make validate`, as this item required of itself.
+
 ## H15. Complete the journey catalogues, and give the GUI an inventory
 
 **Ordering.** After H14, which built the machinery this fills in. Independent of
@@ -3301,10 +3342,16 @@ than by exploring one. And a crawler must not click everything: delete, purge an
 retire are all reachable, so it enumerates and describes rather than activating,
 and anything destructive is recorded from its label and left alone.
 
-**The remaining GUI gaps, enumerated 2026-09-04, then measured.** The
-enumeration said eighteen of twenty-nine capabilities had no recorded GUI
-surface. After widening the crawl it is fifteen, and the three that moved were
-moved by looking rather than by building anything.
+**The remaining GUI gaps, enumerated 2026-09-04, then measured, then built.**
+The enumeration said eighteen of twenty-nine capabilities had no recorded GUI
+surface. Widening the crawl took it to fifteen, and the three that moved were
+moved by looking rather than by building anything. Building the rest of this
+item took it to **five**: templates and tasks, batch operations, sync
+credentials, the pre-0.8 layout move, and the MCP endpoint itself. Two of those
+are transport-constrained and say so in the registry; the other three are
+adapters nobody has written, recorded as such rather than dressed up as
+decisions. Twenty-four features have a GUI surface; twelve of them now
+have a captured journey, which is the next backlog rather than this one.
 
 *The crawl was widened first, and it changed the answer.* The registry recorded
 no GUI support for **attachments**, **remote media** or **jobs**, and the
@@ -3347,7 +3394,7 @@ six, job handling in five") counted tests and stylesheets. In source alone it is
 about ten, five and two. They were used to argue the gaps were false, which they
 were, but the argument was padded.
 
-The validator pins 53 controls and 16 states, requires each state that was added
+The validator pins the control count and 16 states, requires each state that was added
 for a specific control to actually contain it, and requires every state that is
 not a recorded empty one to show something the opening state does not. Eight
 mutations were checked and all eight failed the validator: a silently unreached
@@ -3672,13 +3719,39 @@ interfaces. All eighteen uses now say "GUI", which is the term the product's own
   that has just run. The query someone wants to keep is the one they have
   watched work, and a separate form asks them to retype it and to be right the
   second time without feedback.
-- **Whether the control crawl becomes a gate or stays a report -- Blocking
-  before it is wired in.** A crawler that fails a build when the interface gains
-  an undocumented button is the point of building it. A crawler that is flaky
-  fails builds for unrelated reasons and gets switched off. Recommended: land it
-  as a report with a pinned control count first, the way the GUI capture landed
-  opt-in, and promote it to a coverage gate only once the count has held steady
-  across a few interface changes.
+- **Whether the control crawl becomes a gate or stays a report -- Decided
+  2026-09-04: the crawl stays a report, and the *inventory* became the gate.**
+
+  Running the crawl in `make validate` is refused, and the reason is not
+  flakiness. It needs Playwright, a browser, built web assets and a service
+  seeded with particular notes; on this machine Playwright is not even a
+  dependency of this repository -- it is borrowed from another checkout's
+  `node_modules` through `PLAYWRIGHT_MODULE`. `make validate` has to stay
+  runnable offline and cheaply, and a gate that needs all of that is a gate
+  somebody switches off.
+
+  That decision leaves exactly one hole, and it is the hole the crawl exists to
+  close: the inventory is a committed file describing an interface that can move
+  without it. Somebody adds a button, never runs the crawl, and every check
+  keeps passing against a measurement of something that no longer exists. So the
+  inventory now records an **interface signature** -- a digest of the things
+  that decide what the crawl would find: test ids, interactive elements, and the
+  roles that make a non-element behave as one. The validator recomputes it from
+  source with no browser. Prose, styling and comments do not move it; adding,
+  removing or renaming a control does, and the build then says to run the crawl.
+  Checked both ways: an added `<button>` fails it, a comment does not.
+
+  *It found something on its first run, which is the argument for it.* The
+  library-health button in the header was added in this same item, in a commit
+  after the last crawl, and the pinned count went on passing at 58 while the
+  interface had 59 controls. Nothing could have noticed. The count is 59 now,
+  and the signature is what will notice the next one.
+
+  The duplication -- the signature is computed in Python for the validator and
+  in JavaScript for the crawl -- is deliberate and its failure mode is safe: two
+  implementations that drift produce a mismatch, which stops the build and asks
+  for a crawl, rather than passing quietly. Both were run against this tree and
+  agree byte for byte.
 - **Whether interface journeys should cover command-line-only tasks by pointing
   at them -- Non-blocking.** Importing, exporting, snapshots and profiles have no
   interface equivalent. Recommended: the interface page names them and links to
@@ -3736,9 +3809,13 @@ narrower truth is that it could, and what stopped it was this.
 
 Twelve images, four journeys, `docs/journeys-gui.md` regenerated, and four
 `surface_note` entries corrected -- they said no journey could be written, and
-that is no longer true. `TestDesktopPublishThroughTheWindow` remains skipped:
-its subject was asserting rather than capturing, and what it wanted is now done
-by the capture instead.
+that is no longer true. `TestDesktopPublishThroughTheWindow` is deleted rather
+than left skipped: it existed to drive publishing through the window, the
+capture now does exactly that, and a permanently skipped placeholder beside
+working code reads as an absence that nobody has got to. What it actually knew
+-- that synthetic Tab moves focus without dispatching a DOM keydown, so the page
+cannot help a keyboard walk -- is recorded where that constraint is now lived
+with, in the capture itself.
 
 *One thing the pictures show that is worth a second look.* The snapshot report
 reads `objects: 0` beside an export reading `objects: 24` -- both are correct
