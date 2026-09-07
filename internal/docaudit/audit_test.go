@@ -79,7 +79,14 @@ func TestRepositoryAuditReportsHonestCoverage(t *testing.T) {
 	// the behaviour it describes is covered by the web suite and by the three
 	// desktop tests that drive the real close dialog, neither of which this
 	// page can register as a runnable example.
-	if report.ManualSections != 231 || report.Fragments != 20 || report.Claims != 4 ||
+	// 231 -> 261 sections and 20 -> 21 fragments in v0.8 H18: docs/features.md
+	// stopped being a bullet list. The capability catalogue renders one `###`
+	// section per capability -- twenty-nine of them -- plus one hand-written
+	// section introducing the new generated surface table, which is the extra
+	// fragment. The twenty-nine are graded `generated` rather than
+	// `unverified`, because a heading a generator emitted is the fragment's
+	// claim counted twice, not prose somebody has to go and check.
+	if report.ManualSections != 261 || report.Fragments != 21 || report.Claims != 4 ||
 		report.Executables != 142 || report.Journeys != 9 {
 		t.Fatalf("unexpected coverage surface: %+v", report)
 	}
@@ -108,11 +115,16 @@ func TestRepositoryAuditReportsHonestCoverage(t *testing.T) {
 		// generated "What the GUI does not do" list. One unit arrives and none
 		// leaves, because the prose it replaced was inside a section that is
 		// still counted.
-		report.Counts[GradeGenerated] != 16 ||
+		// 16 -> 46 generated in v0.8 H18: the twenty-nine capability sections
+		// the features page now renders, plus the surface table's fragment.
+		report.Counts[GradeGenerated] != 46 ||
 		// 310 -> 311 unverified and 401 -> 402 denominator in v0.8 H15: the new
 		// prose section on docs/gui.md. One unit arrives and none leaves.
-		report.Counts[GradeClaimed] != 4 || report.Counts[GradeUnverified] != 311 ||
-		report.Denominator != 402 {
+		// 311 -> 312 unverified and 402 -> 433 denominator in v0.8 H18: one new
+		// hand-written section, and thirty new units of which twenty-nine are
+		// generated.
+		report.Counts[GradeClaimed] != 4 || report.Counts[GradeUnverified] != 312 ||
+		report.Denominator != 433 {
 		t.Fatalf("coverage counts hide or lose units: counts=%v denominator=%d", report.Counts, report.Denominator)
 	}
 	if len(resolvedTS) == 0 {

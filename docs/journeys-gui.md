@@ -30,11 +30,11 @@ it is anybody's notes.
 Everything here is command-line or API work today. Where a capability is
 absent for a reason rather than for want of doing it, the reason is given.
 
-- **Templates and tasks** — Keep note templates and make new notes from them, and see the tasks across a library. A template is an ordinary note carrying a note-template block, and a task is a checkbox line in a note tagged `task` or `todo`; neither is a table, and both are read back from the Markdown. So nothing creates a task -- writing `- [ ] chase the permit` into a note is how one comes to exist, which `notes create` already does -- and the command line covers the other half: asking what remains, and instantiating a template, which is the repeatable version of the same workflow. A missing placeholder is refused rather than left blank, so a template that gains a field fails the scripts that do not know about it. The tag is required because a checkbox is ordinary Markdown and appears in quoted examples; `--untagged` asks for those too. No GUI journey yet.
-- **Do many organiser operations at once** — Send a batch of moves, tags and notebook changes as one request, so a large reorganisation is one reviewable action. No command line or GUI journey; batching is for tools.
-- **Choose where sync keys are kept** — An installed Notrios keeps the key that protects your sync material in the operating system's credential store. Move existing keys between that and the owner-only development file, in either direction. Deliberately command line only: this item forbids a credential-management REST or MCP surface.
-- **Move a pre-0.8 library into place** — A library that lived in ./data next to the program is relocated into the directories an installed Notrios uses, after showing you the plan. Command line only, and genuinely so: it relocates the directories the running program uses, which is not something the program can sensibly do to itself while serving them.
-- **Let an AI assistant use your library** — Notrios speaks MCP, so an assistant can read and, within a scope you grant, change your notes. The endpoint itself has no command line or GUI; the tools it exposes are listed against the features above.
+**Templates and tasks** — Keep note templates and make new notes from them, and see the tasks across a library. A template is an ordinary note carrying a note-template block, and a task is a checkbox line in a note tagged `task` or `todo`; neither is a table, and both are read back from the Markdown. So nothing creates a task -- writing `- [ ] chase the permit` into a note is how one comes to exist, which `notes create` already does -- and the command line covers the other half: asking what remains, and instantiating a template, which is the repeatable version of the same workflow. A missing placeholder is refused rather than left blank, so a template that gains a field fails the scripts that do not know about it. The tag is required because a checkbox is ordinary Markdown and appears in quoted examples; `--untagged` asks for those too. No GUI journey yet.
+**Do many organiser operations at once** — Send a batch of moves, tags and notebook changes as one request, so a large reorganisation is one reviewable action. No command line or GUI journey; batching is for tools.
+**Choose where sync keys are kept** — An installed Notrios keeps the key that protects your sync material in the operating system's credential store. Move existing keys between that and the owner-only development file, in either direction. Deliberately command line only: this item forbids a credential-management REST or MCP surface.
+**Move a pre-0.8 library into place** — A library that lived in ./data next to the program is relocated into the directories an installed Notrios uses, after showing you the plan. Command line only, and genuinely so: it relocates the directories the running program uses, which is not something the program can sensibly do to itself while serving them.
+**Let an AI assistant use your library** — Notrios speaks MCP, so an assistant can read and, within a scope you grant, change your notes. The endpoint itself has no command line or GUI; the tools it exposes are listed against the features above.
 <!-- notrios:generated:user:what-the-gui-does-not-do:end -->
 
 This list is derived from the capability registry rather than written out, so
@@ -50,25 +50,25 @@ because prose is not a claim the gates check.
 <!-- source: go:github.com/renesugar/notrios/internal/docjourneys#(GUICatalogue).GUILines -->
 Each task below lists its steps, with a picture of every one.
 
-- **Find your way around** — See what the GUI is made of before changing anything in it.
+**Find your way around** — See what the GUI is made of before changing anything in it.
   - The sidebar on the left lists your notebooks. Help is one of them: the documentation is seeded into your library as ordinary read-only notes, so you can search it alongside everything else.
 
     ![the-sidebar](images/journeys/find-your-way-around-the-sidebar.png)
-- **Write a note, and read it back** — Create a note and get something into it.
+**Write a note, and read it back** — Create a note and get something into it.
   - Click New note. The note is created immediately and opens for editing; there is no dialog to fill in first.
 
     ![new-note](images/journeys/write-a-note-new-note.png)
   - Type into the editor. What you write is Markdown, and the preview beside it renders as you go.
 
     ![the-editor](images/journeys/write-a-note-the-editor.png)
-- **Choose which notebook a note goes in** — File a note somewhere other than where it landed.
+**Choose which notebook a note goes in** — File a note somewhere other than where it landed.
   - Start from a new note.
 
     ![new-note](images/journeys/choose-a-notebook-new-note.png)
   - Open the notebook picker. It sits with the note rather than in a menu, because which notebook a note belongs to is part of the note.
 
     ![notebook-picker](images/journeys/choose-a-notebook-notebook-picker.png)
-- **Tag a note** — Put a tag on the note you are writing, and take one off.
+**Tag a note** — Put a tag on the note you are writing, and take one off.
   - Start from a note. Tags belong to a note, so there has to be one open.
 
     ![new-note](images/journeys/tag-a-note-new-note.png)
@@ -81,7 +81,7 @@ Each task below lists its steps, with a picture of every one.
   - Add it. Each tag then appears as a chip with its own remove button, rather than as a comma-separated line you have to edit carefully.
 
     ![add-it](images/journeys/tag-a-note-add-it.png)
-- **Change a note you already wrote** — Open an existing note, change it, and save the change.
+**Change a note you already wrote** — Open an existing note, change it, and save the change.
   - All notes is every note in the library, whichever notebook it is filed in. Start here when you know what a note is called but not where you put it.
 
     ![open-all-notes](images/journeys/update-a-note-open-all-notes.png)
@@ -94,7 +94,7 @@ Each task below lists its steps, with a picture of every one.
   - Saving writes a new revision rather than overwriting the old one, so the version you just replaced is still there.
 
     ![save-it](images/journeys/update-a-note-save-it.png)
-- **Delete a note** — Move a note to the Trash and confirm it arrived there.
+**Delete a note** — Move a note to the Trash and confirm it arrived there.
   - Find the note first. Deleting is something you do to an open note, not to a row in a list, so that it is always clear which note is about to go.
 
     ![open-all-notes](images/journeys/delete-a-note-open-all-notes.png)
@@ -107,7 +107,7 @@ Each task below lists its steps, with a picture of every one.
   - Trash is a place you can open and look inside, not a countdown. The note is in it.
 
     ![look-in-the-trash](images/journeys/delete-a-note-look-in-the-trash.png)
-- **Take a note back out of the Trash** — Restore a deleted note and confirm it is back among your notes.
+**Take a note back out of the Trash** — Restore a deleted note and confirm it is back among your notes.
   - Open the Trash to see what is in it. Everything here was deleted and none of it is gone.
 
     ![open-the-trash](images/journeys/restore-a-note-open-the-trash.png)
@@ -120,21 +120,21 @@ Each task below lists its steps, with a picture of every one.
   - All notes again, to see it where it belongs.
 
     ![back-to-all-notes](images/journeys/restore-a-note-back-to-all-notes.png)
-- **Search for a note** — Find notes by what they say, using the same query language the command line takes.
+**Search for a note** — Find notes by what they say, using the same query language the command line takes.
   - The search box takes the query language, not just a word. Bare words are combined with an implicit AND; an uppercase OR widens the search instead.
 
     ![type-a-query](images/journeys/search-your-notes-type-a-query.png)
   - Run the search. Results are ordered by relevance and page as you scroll, so a large library does not have to be loaded to be searched.
 
     ![run-it](images/journeys/search-your-notes-run-it.png)
-- **Narrow a search by tag, and exclude what you do not want** — Use a field query and a negation together, which is what most real searches turn out to be.
+**Narrow a search by tag, and exclude what you do not want** — Use a field query and a negation together, which is what most real searches turn out to be.
   - tag: matches a tag rather than the note's text, and a leading minus excludes. Here that is everything tagged field/dusk except the documentation.
 
     ![type-a-field-query](images/journeys/search-by-tag-and-exclude-type-a-field-query.png)
   - The same box runs it. Every query-language feature works here exactly as it does in notriosctl search, because it is the same parser.
 
     ![run-it](images/journeys/search-by-tag-and-exclude-run-it.png)
-- **Keep a search as a notebook** — Turn a search you have just watched work into a notebook in the sidebar.
+**Keep a search as a notebook** — Turn a search you have just watched work into a notebook in the sidebar.
   - Search for whatever you want the notebook to hold. Any query works: this is the same language the rest of the interface takes.
 
     ![run-a-search](images/journeys/keep-a-search-as-a-notebook-run-a-search.png)
@@ -150,7 +150,7 @@ Each task below lists its steps, with a picture of every one.
   - Keeping it adds a notebook to the sidebar whose contents are whatever the query matches, now and later.
 
     ![save-it](images/journeys/keep-a-search-as-a-notebook-save-it.png)
-- **Rename a tag, and everything under it** — Change a tag's name across every note that carries it, after seeing what that will do.
+**Rename a tag, and everything under it** — Change a tag's name across every note that carries it, after seeing what that will do.
   - Tags are listed in the sidebar with the number of notes carrying each one. The pencil beside a tag renames it; the name itself still runs a search for it.
 
     ![find-the-tag](images/journeys/rename-a-tag-find-the-tag.png)
@@ -163,7 +163,7 @@ Each task below lists its steps, with a picture of every one.
   - Rename applies exactly what the report described. Editing the name or the children option first withdraws the report, so you cannot agree to one rename and apply another.
 
     ![agree-to-it](images/journeys/rename-a-tag-agree-to-it.png)
-- **Check what has rotted, and repair what can be** — See the library's problems, repair the mechanical ones, and know why the rest are commands.
+**Check what has rotted, and repair what can be** — See the library's problems, repair the mechanical ones, and know why the rest are commands.
   - Health reads two reports about this library. Nothing on the screen changes anything: both reports are read-only, and one of them says so in the API itself.
 
     ![open-health](images/journeys/check-library-health-open-health.png)
@@ -176,7 +176,7 @@ Each task below lists its steps, with a picture of every one.
   - Some findings can be corrected without judgement. Planning shows how many edits across how many notes and changes nothing; repairing applies them, each against the revision it was computed from, so a note you edited in the meantime refuses rather than being repaired against text nobody read. Collecting unreferenced attachments is not offered here: it deletes, and a repair only writes a new revision.
 
     ![what-can-be-repaired](images/journeys/check-library-health-what-can-be-repaired.png)
-- **Import a Joplin export (desktop app only)** — Bring a Joplin RAW export into this library from the desktop app.
+**Import a Joplin export (desktop app only)** — Bring a Joplin RAW export into this library from the desktop app.
   - Open **File ▸ Import and export…**, or press Ctrl+I. Everything that reads or writes a folder on this machine is here, and it is here only in the desktop app: a browser cannot open a folder, so these controls are shown there and disabled with that reason rather than hidden.
 
     ![open-import-and-export](images/journeys/import-from-joplin-in-the-app-open-import-and-export.png)
@@ -186,7 +186,7 @@ Each task below lists its steps, with a picture of every one.
   - Press **Import**, and the report says what arrived. **Scan without importing** sits beside it and writes nothing, which is the safer first move on an export you have not opened. Imported notes are ordinary editable notes: a migration, not a read-only attachment.
 
     ![the-report](images/journeys/import-from-joplin-in-the-app-the-report.png)
-- **Export the whole library (desktop app only)** — Write a portable archive of everything, from the desktop app.
+**Export the whole library (desktop app only)** — Write a portable archive of everything, from the desktop app.
   - Open **File ▸ Import and export…**, or press Ctrl+I. Everything that reads or writes a folder on this machine is here, and it is here only in the desktop app: a browser cannot open a folder, so these controls are shown there and disabled with that reason rather than hidden.
 
     ![open-import-and-export](images/journeys/export-this-library-open-import-and-export.png)
@@ -196,7 +196,7 @@ Each task below lists its steps, with a picture of every one.
   - Press **Export everything**, and the report names what was written. Exporting a subset — by notebook, tag or query — stays on the command line, because choosing a subset means seeing what it selects before it is written. The same dialog reads an archive back: **Import from Notrios** verifies one without opening a database.
 
     ![the-archive](images/journeys/export-this-library-the-archive.png)
-- **Take a snapshot of the library (desktop app only)** — Write a verified snapshot image you can restore from.
+**Take a snapshot of the library (desktop app only)** — Write a verified snapshot image you can restore from.
   - Open **File ▸ Import and export…**, or press Ctrl+I. Everything that reads or writes a folder on this machine is here, and it is here only in the desktop app: a browser cannot open a folder, so these controls are shown there and disabled with that reason rather than hidden.
 
     ![open-import-and-export](images/journeys/take-a-snapshot-open-import-and-export.png)
@@ -206,7 +206,7 @@ Each task below lists its steps, with a picture of every one.
   - Press **Create snapshot**. The image is verified as it is written, and one that fails verification is never recorded as a snapshot. Restoring one is a command-line operation, because a restore replaces the library this window is showing.
 
     ![the-snapshot](images/journeys/take-a-snapshot-the-snapshot.png)
-- **Publish a subset of your notes (desktop app only)** — Review exactly what a publication would let out, then write it.
+**Publish a subset of your notes (desktop app only)** — Review exactly what a publication would let out, then write it.
   - Open **File ▸ Import and export…**, or press Ctrl+I. Publishing is at the bottom, under the operations that read and write whole libraries, because it is the one that hands notes to somebody else.
 
     ![open-import-and-export](images/journeys/publish-a-subset-open-import-and-export.png)

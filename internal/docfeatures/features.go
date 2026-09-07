@@ -38,6 +38,13 @@ type Feature struct {
 	REST []string `json:"rest,omitempty"`
 	MCP  []string `json:"mcp,omitempty"`
 	GUI  []string `json:"gui,omitempty"`
+	// Library is the shared C-ABI surface a future client links against. It is
+	// empty on every feature today and is rendered as such: the library exists
+	// (H1), but nothing in it is claimed as a way to perform one of these
+	// capabilities, and a column of hopeful ticks would be the one thing this
+	// page must never contain. Check refuses a claim here until a repository
+	// inventory of that surface exists to validate it against.
+	Library []string `json:"library,omitempty"`
 	// SurfaceNote explains an asymmetry the author decided is deliberate. A
 	// feature missing a surface without one is reported as a gap.
 	SurfaceNote string `json:"surface_note,omitempty"`
@@ -93,22 +100,84 @@ func (r Registry) WithoutGUILines() []string {
 func (r Registry) Lines() []string {
 	lines := make([]string, 0, len(r.Features))
 	for _, feature := range r.Features {
-		available := []string{}
-		for _, pair := range []struct {
-			name  string
-			items []string
-		}{{"CLI", feature.CLI}, {"REST", feature.REST}, {"MCP", feature.MCP}, {"GUI", feature.GUI}} {
-			if len(pair.items) > 0 {
-				available = append(available, fmt.Sprintf("%s %d", pair.name, len(pair.items)))
-			}
-		}
-		line := fmt.Sprintf("%s — %s (%s)", feature.Title, feature.Summary, strings.Join(available, ", "))
+		// One block per capability: a heading somebody can link to, the
+		// summary as its opening sentence, and the surface note as the
+		// paragraph that says where it is and why it is not everywhere.
+		// Written as one value with newlines in it, which the generator
+		// passes through because it begins with Markdown of its own.
+		block := "### " + feature.Title + "\n\n" + feature.Summary
 		if feature.SurfaceNote != "" {
-			line += " " + feature.SurfaceNote
+			block += "\n\n" + feature.SurfaceNote
 		}
-		lines = append(lines, line)
+		block += "\n\n" + surfaceSentence(feature)
+		lines = append(lines, block, "")
 	}
 	return lines
+}
+
+// surfaceSentence says where a capability can be reached, in the page's own
+// words rather than as a count in brackets.
+//
+// The counts it replaces ("CLI 3, REST 9, MCP 4, GUI 2") measured the API and
+// read as a score. What a reader wants is whether the thing they are holding
+// can do it, which is a list of surfaces; the exact operation counts live in
+// the table further down, where a column is the right shape for a number.
+func surfaceSentence(feature Feature) string {
+	where := []string{}
+	for _, pair := range []struct {
+		name  string
+		items []string
+	}{
+		{"the desktop app", feature.GUI},
+		{"the command line", feature.CLI},
+		{"the REST API", feature.REST},
+		{"MCP", feature.MCP},
+		{"the shared library", feature.Library},
+	} {
+		if len(pair.items) > 0 {
+			where = append(where, pair.name)
+		}
+	}
+	switch len(where) {
+	case 0:
+		return "*Not reachable from any surface yet.*"
+	case 1:
+		return "*Available on " + where[0] + ".*"
+	default:
+		return "*Available on " + strings.Join(where[:len(where)-1], ", ") + " and " + where[len(where)-1] + ".*"
+	}
+}
+
+// SurfaceTable is the capability-by-adapter table: one row per capability, one
+// column per surface, and a number saying how many operations that surface
+// spends on it.
+//
+// It answers a question the prose above cannot answer quickly -- "can I do this
+// from the command line?" -- and it is generated from the same registry, so it
+// cannot drift from the sentences beside it. An empty cell is not an oversight;
+// it is a capability that surface does not offer, and the reason is in that
+// capability's own section.
+//
+//notrios:doc user feature-surface-table
+//notrios:help features where-each-capability-lives
+//notrios:enumerates go:github.com/renesugar/notrios/internal/docfeatures#(Registry).SurfaceTable
+func (r Registry) SurfaceTable() []string {
+	rows := []string{
+		"| Capability | Desktop app | Command line | REST | MCP | Shared library |",
+		"|---|---|---|---|---|---|",
+	}
+	for _, feature := range r.Features {
+		cell := func(items []string) string {
+			if len(items) == 0 {
+				return "—"
+			}
+			return fmt.Sprintf("%d", len(items))
+		}
+		rows = append(rows, fmt.Sprintf("| %s | %s | %s | %s | %s | %s |",
+			feature.Title, cell(feature.GUI), cell(feature.CLI),
+			cell(feature.REST), cell(feature.MCP), cell(feature.Library)))
+	}
+	return rows
 }
 
 // Asymmetry is a capability that some surfaces offer and others do not.
@@ -164,6 +233,17 @@ func Check(registry Registry, surfaces RepositorySurfaces) Report {
 		Claimed:   map[string]int{},
 		Unclaimed: map[string][]string{},
 		Phantom:   map[string][]string{},
+	}
+
+	// The shared library has no repository inventory to check a claim against,
+	// so a claim there cannot be verified and is refused rather than believed.
+	// The column exists in the table because the surface exists; the day the
+	// ABI publishes what it offers, this becomes a check like the others.
+	for _, feature := range registry.Features {
+		if len(feature.Library) > 0 {
+			report.Phantom["library"] = append(report.Phantom["library"],
+				fmt.Sprintf("%s: the shared library publishes no inventory to verify a claim against", feature.ID))
+		}
 	}
 
 	claimedCLI := map[string]bool{}

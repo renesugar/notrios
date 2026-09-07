@@ -39,6 +39,7 @@ const (
 	// the whole catalogue where it meant to produce the part of it with no
 	// interface.
 	guiAbsentAnchor    = "go:github.com/renesugar/notrios/internal/docfeatures#(Registry).WithoutGUILines"
+	featureTableAnchor = "go:github.com/renesugar/notrios/internal/docfeatures#(Registry).SurfaceTable"
 	cliJourneyAnchor   = "go:github.com/renesugar/notrios/internal/docjourneys#Catalogue"
 	guiCatalogueAnchor = "go:github.com/renesugar/notrios/internal/docjourneys#GUICatalogue"
 	compareAnchor      = "go:github.com/renesugar/notrios/internal/doccompare#Difference"
@@ -74,6 +75,12 @@ func RepositoryResolver(root string) Resolver {
 				return nil, err
 			}
 			return registry.Lines(), nil
+		case featureTableAnchor:
+			registry, err := docfeatures.Load(filepath.Join(root, "docs", "docfeatures", "FEATURES.json"))
+			if err != nil {
+				return nil, err
+			}
+			return registry.SurfaceTable(), nil
 		case guiAbsentAnchor:
 			registry, err := docfeatures.Load(filepath.Join(root, "docs", "docfeatures", "FEATURES.json"))
 			if err != nil {

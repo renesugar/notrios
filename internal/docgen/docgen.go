@@ -91,7 +91,7 @@ func (g Generator) Generate(root, audience string) (map[string][]byte, error) {
 			return nil, err
 		}
 		for _, s := range p.Sections {
-			rendered, err := g.renderSection(string(b), s, audience, byID)
+			rendered, err := g.renderSection(string(b), s, p.Sections, audience, byID)
 			if err != nil {
 				return nil, fmt.Errorf("%s/%s: %w", p.Path, s.Slug, err)
 			}
@@ -225,22 +225,41 @@ type generatedBlock struct {
 	bytes string
 }
 
-func (g Generator) renderSection(document string, section Section, audience string, frags map[string]docaudit.Fragment) (string, error) {
+func (g Generator) renderSection(document string, section Section, siblings []Section, audience string, frags map[string]docaudit.Fragment) (string, error) {
 	lines := strings.SplitAfter(document, "\n")
-	start, end := -1, -1
+	start, end, level := -1, -1, 0
 	for i, l := range lines {
 		m := headingRE.FindStringSubmatch(strings.TrimSuffix(l, "\n"))
 		if m != nil && slug(m[2]) == section.Slug {
-			start = i
+			start, level = i, len(m[1])
 			break
 		}
 	}
 	if start < 0 {
 		return "", fmt.Errorf("missing section")
 	}
+	// A section ends at the next heading of its own level or higher, or at any
+	// heading that is another configured section of this page. A deeper
+	// heading that nobody configured is part of this section, which is what
+	// lets a generated block contain subsections: the features page renders
+	// one `###` per capability, and ending the section at the first of them
+	// put the block's begin marker inside the section and its end marker
+	// outside it. The second half of the rule is why the level test alone is
+	// not enough -- docs/cli.md configures a `#` title and `##` sections
+	// beneath it, and a level test swallowed every one of them.
+	configured := map[string]bool{}
+	for _, sibling := range siblings {
+		if sibling.Slug != section.Slug {
+			configured[sibling.Slug] = true
+		}
+	}
 	end = len(lines)
 	for i := start + 1; i < len(lines); i++ {
-		if m := headingRE.FindStringSubmatch(strings.TrimSuffix(lines[i], "\n")); m != nil {
+		m := headingRE.FindStringSubmatch(strings.TrimSuffix(lines[i], "\n"))
+		if m == nil {
+			continue
+		}
+		if len(m[1]) <= level || configured[slug(m[2])] {
 			end = i
 			break
 		}
@@ -291,10 +310,17 @@ func (g Generator) renderSection(document string, section Section, audience stri
 				// rendered as an unbroken wall of text.
 				b.WriteString("\n")
 				for _, v := range vals {
-					// A value that already carries its own marker is written
-					// as it is, which is what lets a resolver nest items. Any
-					// other value gets the top-level marker it always got.
-					if strings.HasPrefix(v, "-") || strings.HasPrefix(v, " ") {
+					// A value that already carries its own Markdown is written
+					// as it is. That started as nesting -- a value beginning
+					// with a marker or an indent -- and now covers block
+					// Markdown too, so a resolver can emit a heading, a
+					// paragraph under it, or a table row rather than only a
+					// bullet. The features page is the reason: a catalogue of
+					// capabilities reads as prose sections and not as forty
+					// bullets, and it has to stay generated to stay true.
+					// Anything else is a bare phrase and gets the top-level
+					// marker it always got.
+					if isOwnMarkdown(v) {
 						b.WriteString(v + "\n")
 						continue
 					}
@@ -362,4 +388,25 @@ func splitGeneratedBlocks(body, section string) (map[string]generatedBlock, stri
 	}
 	manual.WriteString(body[position:])
 	return blocks, manual.String(), nil
+}
+
+// isOwnMarkdown reports whether an enumerated value is already Markdown that
+// stands on its own, rather than a phrase waiting for a bullet.
+//
+// A multi-line value is one block: the check looks at its first line, because
+// that is what decides how Markdown reads the whole of it.
+func isOwnMarkdown(value string) bool {
+	first := value
+	if index := strings.IndexByte(first, '\n'); index >= 0 {
+		first = first[:index]
+	}
+	if strings.TrimSpace(first) == "" {
+		return true
+	}
+	for _, prefix := range []string{"-", " ", "#", "|", ">", "`", "*", "1."} {
+		if strings.HasPrefix(first, prefix) {
+			return true
+		}
+	}
+	return false
 }

@@ -288,10 +288,20 @@ func buildReport(inventory Inventory, fragments []Fragment, registry Registry) R
 		topic := topicForPath(document.Path)
 		topicReport := TopicReport{Topic: topic, Path: document.Path, Counts: map[Grade]int{GradeExecuted: 0, GradeGenerated: 0, GradeClaimed: 0, GradeUnverified: 0}}
 		for _, section := range document.Sections {
-			topicReport.Sections = append(topicReport.Sections, SectionGrade{ID: section.ID, Grade: GradeUnverified})
-			topicReport.Counts[GradeUnverified]++
-			report.Counts[GradeUnverified]++
+			// The inventory grades a section the generator produced; everything
+			// else is prose a person wrote and nothing has checked.
+			grade := GradeUnverified
+			if section.Grade == GradeGenerated {
+				grade = GradeGenerated
+			}
+			topicReport.Sections = append(topicReport.Sections, SectionGrade{ID: section.ID, Grade: grade})
+			topicReport.Counts[grade]++
+			report.Counts[grade]++
 			report.Denominator++
+			// Counted whatever its grade: "manual sections" is every section in
+			// the manual, which is what the frozen inventory's denominator is
+			// reconciled against. The grade says who wrote it, not whether it
+			// is there.
 			report.ManualSections++
 		}
 		topicIndex[topic] = len(report.TopicReports)

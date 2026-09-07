@@ -64,10 +64,25 @@ def slug(value: str) -> str:
 
 
 def headings(path: Path) -> list[dict[str, object]]:
+    """Sections of one page, with the ones inside a generated block marked.
+
+    A heading that a generator emitted is not prose somebody has to verify: it
+    is the same claim as the fragment that produced it, counted once already.
+    The features page renders one heading per capability, and counting those
+    twenty-nine as unverified manual sections would have grown the backlog by a
+    third while nobody wrote a word.
+    """
     result = []
     seen: dict[str, int] = {}
     fence: str | None = None
+    generated = False
     for line in path.read_text(encoding="utf-8").splitlines():
+        if re.search(r"<!--\s*notrios:generated:[^:]+:[^:]+:begin\s*-->", line):
+            generated = True
+            continue
+        if re.search(r"<!--\s*notrios:generated:[^:]+:[^:]+:end\s*-->", line):
+            generated = False
+            continue
         marker = re.match(r"^\s*(`{3,}|~{3,})", line)
         if marker:
             token = marker.group(1)[0]
@@ -82,7 +97,8 @@ def headings(path: Path) -> list[dict[str, object]]:
         base = slug(title)
         seen[base] = seen.get(base, 0) + 1
         suffix = "" if seen[base] == 1 else f"-{seen[base]}"
-        result.append({"id": base + suffix, "level": len(match.group(1)), "title": title})
+        result.append({"id": base + suffix, "level": len(match.group(1)), "title": title,
+                       "generated": generated})
     return result
 
 
@@ -119,14 +135,15 @@ def build() -> dict[str, object]:
         path = ROOT / rel
         units = headings(path)
         for unit in units:
+            grade = "generated" if unit.pop("generated", False) else "unverified"
             unit.update({
                 "audience": "user",
                 "kind": "actionable_or_reference",
                 "owner": owner,
                 "owner_role": "review_root_candidate",
-                "grade": "unverified",
+                "grade": grade,
             })
-            grade_totals["unverified"] += 1
+            grade_totals[grade] += 1
         section_total += len(units)
         documents.append({
             "path": rel,

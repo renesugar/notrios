@@ -60,10 +60,14 @@ def validate_templates(root=ROOT):
     # 19 -> 20 in v0.8 H15: the gui-absent-capabilities slot on
     # docs/journeys-gui.md, which replaced a hand-kept paragraph that had gone
     # wrong twice without any gate noticing.
-    require(len(slots) == 20, "expected 20 slots")
+    # 20 -> 21 in v0.8 H18: the feature-surface-table slot on docs/features.md,
+    # which renders the capability-by-surface table from the same registry as
+    # the sections above it, so the summary cannot drift from the prose.
+    require(len(slots) == 21, "expected 21 slots")
     # 13 -> 14 user slots in v0.8 H14 slice B: the feature list is user-facing.
     # 17 -> 18 user slots in v0.8 H15: so is the list of what the GUI lacks.
-    require(sum(item[1] == "user" for item in slots) == 18 and sum(item[1] == "api" for item in slots) == 2, "expected 18 user/2 api slots")
+    # 18 -> 19 user slots in v0.8 H18: the surface table is user-facing too.
+    require(sum(item[1] == "user" for item in slots) == 19 and sum(item[1] == "api" for item in slots) == 2, "expected 19 user/2 api slots")
     return template, slots
 
 
@@ -80,18 +84,37 @@ def source_fragments(root=ROOT):
     # than the type, because the generator dispatches on that anchor and two
     # fragments naming one symbol render the same list -- which is exactly what
     # happened first, silently.
-    require(len(found) == 20 and len({item[0] for item in found}) == 20, "expected 20 unique production source fragments")
+    require(len(found) == 21 and len({item[0] for item in found}) == 21, "expected 21 unique production source fragments")
     return dict(found)
 
 
-def section_body(markdown, slug):
+def section_body(markdown, slug, declared=()):
+    """The body of one declared section, subsections included.
+
+    A section ends at the next heading of its own level or higher, or at any
+    heading that is another declared section of the same page. A deeper heading
+    nobody declared belongs to it -- docs/features.md renders one `###` per
+    capability inside a generated block, and ending the section at the first of
+    them put the block's begin marker inside and its end marker outside. This
+    mirrors the rule in internal/docgen, which produced those blocks; two
+    readers of the same file disagreeing about where a section stops is how a
+    generated page passes one gate and fails the next.
+    """
     heading = re.compile(r"^(#{1,3})\s+(.+?)\s*$", re.MULTILINE)
     matches = list(heading.finditer(markdown))
+    others = {name for name in declared if name != slug}
     for index, match in enumerate(matches):
         title_slug = re.sub(r"[^a-z0-9]+", "-", match.group(2).lower()).strip("-")
-        if title_slug == slug:
-            end = matches[index + 1].start() if index + 1 < len(matches) else len(markdown)
-            return markdown[match.end():end]
+        if title_slug != slug:
+            continue
+        level = len(match.group(1))
+        end = len(markdown)
+        for following in matches[index + 1:]:
+            following_slug = re.sub(r"[^a-z0-9]+", "-", following.group(2).lower()).strip("-")
+            if len(following.group(1)) <= level or following_slug in others:
+                end = following.start()
+                break
+        return markdown[match.end():end]
     raise EvidenceError(f"missing generated section {slug}")
 
 
@@ -105,7 +128,7 @@ def validate_generated(template, slots, root=ROOT):
     for page in template["pages"]:
         text = (root / page["path"]).read_text(encoding="utf-8")
         for section in page["sections"]:
-            body = section_body(text, section["slug"])
+            body = section_body(text, section["slug"], [s["slug"] for s in page["sections"]])
             for audience in ("user", "api"):
                 expected = grouped.get((page["path"], section["slug"], audience), [])
                 begin = f"<!-- notrios:generated:{audience}:{section['slug']}:begin -->"
@@ -236,8 +259,11 @@ def validate_advisory(slots, root=ROOT, here=HERE):
     # v0.8 H15 added gui-absent-capabilities, also after that run and also
     # recorded as unreviewed rather than assumed to have passed. Writing a
     # review entry for it would mean inventing model output that never existed.
-    require(unreviewed == ["cli-journey-surface", "feature-surface", "gui-absent-capabilities",
-                           "gui-journey-catalogue", "surface-comparison"],
+    # v0.8 H18 added feature-surface-table on the same terms: it was written
+    # after the advisory run and no model has reviewed it, which is recorded
+    # rather than assumed.
+    require(unreviewed == ["cli-journey-surface", "feature-surface", "feature-surface-table",
+                           "gui-absent-capabilities", "gui-journey-catalogue", "surface-comparison"],
             f"unreviewed user fragments changed: {unreviewed}")
     example_states, journey_states = fixture_ids(root)
     verdict_counts = {key: 0 for key in VERDICTS}

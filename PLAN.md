@@ -4190,6 +4190,117 @@ against a single-collection library could not have shown it.
 what decides whether a collection is a label or a contract; the display is
 honest either way, because it shows what the note records.
 
+## H18. Make the features page usable, and generate the table under it
+
+**Ordering.** After H15, whose registry and coverage gates this builds on.
+Independent of the installer chain and of H16.
+
+**Goal.** Turn `docs/features.md` from a machine-checked list into a page a
+person can read, and generate the capability-by-surface summary from the same
+registry so it cannot drift from the prose beside it.
+
+**Why it needed a step.** The page's guarantees were about *existence*: every
+command, REST operation and MCP tool is claimed by some capability, and a
+capability may not claim a surface that is not there. Both are worth having and
+neither says anything about whether the page is any good. It rendered as
+twenty-nine bullets, each a title, a summary, a bracketed score (`CLI 3, REST 9,
+MCP 4, GUI 2`) and a paragraph of caveats -- a format that answers "does this
+exist" and defeats reading. And its hand-written opening said tagging was
+reachable from neither the command line nor the interface, months after both
+were built: the failure this page exists to prevent, on the page itself.
+
+**What was done 2026-09-04.**
+
+*Seven drafts, one canonical list.* `docs/features.md` was rewritten against
+seven independently generated feature inventories (`opencode`, one per model,
+from a shared prompt). They were scored by mapping each draft's sections onto a
+canonical list of 48 end-user capabilities -- the registry's 29 plus the
+nineteen the drafts evidence that the registry does not carry as its own row
+(the local-first premise, run modes, draft protection, revision history, paste
+as Markdown, protected items, link help, the URL handler, external links,
+Recoll, the Help notebook, themes, the REST API, configuration, install
+lifecycle, archive verification, and paste/table handling among them). The
+mapping is a judgement and is recorded as one; the ranking it produced is in the
+commit message rather than in the documentation, because a model leaderboard is
+not a fact about Notrios.
+
+*The generated half now reads as prose.* `(Registry).Lines` renders one `###`
+section per capability -- title, summary, the surface note as its own paragraph,
+and a sentence saying where it can be reached -- instead of a bullet with a
+bracketed score. Three things had to change to allow it: the generator now
+passes through a value that is already block Markdown rather than prefixing a
+bullet, a section now ends at the next heading of its own level *or* at another
+configured section rather than at any heading at all, and the counts moved from
+brackets in the prose to a column in a table, which is the shape a number
+belongs in.
+
+*The table is the answer to "can I do this from here?".* A new
+`(Registry).SurfaceTable` fragment renders one row per capability and one column
+per surface -- desktop app, command line, REST, MCP, and the shared library --
+with the number of operations each spends on it. It is generated from
+`FEATURES.json`, so it cannot disagree with the sections above it.
+
+*The shared-library column is empty, and is checked to stay honest.* The C ABI
+exists (H1), and nothing in the registry claims it as a way to perform a
+capability. The column is rendered as dashes and `Check` **refuses** a claim
+there, because that surface publishes no inventory to verify one against -- the
+column can only be filled the day the ABI says what it offers. A column of
+hopeful ticks is the one thing this page must never contain.
+
+**What the table exposed.** Searching a library is the only everyday capability
+with no command line at all: `Search your notes` reads `GUI 1, REST 3, MCP 2`
+and a dash. That is H19.
+
+**Still open.** The prose in `FEATURES.json` is per-capability and was written
+against the surfaces rather than for a reader; the drafts are better at leading
+with the user's goal ("I use Notrios to ..."). A pass over the 29 summaries and
+surface notes in that voice is worth doing, and is deliberately not done here
+because rewriting twenty-nine paragraphs in the same sitting as the machinery
+that renders them makes both harder to review.
+
+## H19. `notriosctl search`
+
+**Ordering.** After H18, which found the gap. Independent of everything else.
+
+**Goal.** Make a library searchable from a script: the same query language the
+interface uses, results as JSON carrying each note's stable link, and the paging
+a program needs.
+
+**Why.** Every other everyday capability has a command line. Search does not,
+and the consequence is sharper than a missing convenience: nothing at the
+command line produces note identifiers, so `notes show`, `notes move`, `tags
+add` and the rest can only be used on an id somebody already has. The workaround
+in the documentation today is `export archive --query`, which applies the query
+language to a *file export* -- an answer to a different question. H17's
+query-driven batch work needs this for the same reason.
+
+**Shape.**
+
+- `notriosctl search [--db …] "<query>"` -- the query language exactly as the
+  search box parses it, including `collection:` and `notebook:` terms.
+- `--json` -- an array of hits, each with the note id, title, notebook,
+  collection, updated time, and the `document://` URI that is its stable link.
+  Human output stays the default; JSON is what a pipeline asks for.
+- `--limit N` -- how many hits to return, bounded by the same ceiling the API
+  uses, with `next_cursor` reported so a caller can continue.
+- `--count` -- the number of matches rather than the matches. **This one is not
+  free**: `store.SearchResponse` carries hits, a cursor and a truncation flag
+  and no total, so `--count` needs either a counting query in the store or an
+  honest refusal to guess. Paging the whole result set to count it would be a
+  lie about cost on a large library. Decide before building.
+- `--links` -- emit `notrios://` links rather than `document://` ones, for
+  pasting into another machine's library; `notriosctl link` already produces
+  that form for one note.
+
+**Boundaries.** Read-only. It prints what a search returns and changes nothing,
+which is what lets it be safe in a pipe. Trash stays out unless `is:trashed`
+asks for it, exactly as elsewhere.
+
+**Working state.** `notriosctl search "tag:todo" --json --limit 5` prints five
+hits with their stable links; the features table shows a command-line column for
+`Search your notes`; and a command-line journey demonstrates finding a note and
+acting on it with the id the search returned.
+
 ## H13. v0.8 release wrap-up and branch synchronization
 
 **Goal.** Reconcile every approved v0.8 promise, produce internal installable

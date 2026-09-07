@@ -37,7 +37,12 @@ class G18aEvidenceTests(unittest.TestCase):
         # 230 -> 231 in v0.8 H15: "Saving, and what happens to unsaved changes"
         # in docs/gui.md, which is where explicit saving and the protection of
         # an unsaved draft are explained to the reader.
-        self.assertEqual(inventory["grade_baseline"]["denominator"], 231)
+        # 231 -> 261 in v0.8 H18: docs/features.md renders one section per
+        # capability instead of one bullet, and gained a hand-written section
+        # introducing the generated surface table. Twenty-nine of the thirty
+        # are graded `generated`, so the unverified backlog grew by one rather
+        # than by thirty.
+        self.assertEqual(inventory["grade_baseline"]["denominator"], 261)
 
     def test_duplicate_fragment_is_rejected(self):
         source = """// A.\n//notrios:doc user same\nfunc A() {}\n// B.\n//notrios:doc user same\nfunc B() {}\n"""

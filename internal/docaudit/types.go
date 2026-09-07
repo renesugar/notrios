@@ -96,6 +96,11 @@ type InventoryDocument struct {
 type InventorySection struct {
 	ID    string `json:"id"`
 	Title string `json:"title"`
+	// Grade is what the inventory recorded for this section. A section a
+	// generator emitted is graded there and honoured here: counting it as
+	// unverified prose would say somebody has to go and check twenty-nine
+	// headings that no person wrote.
+	Grade Grade `json:"grade,omitempty"`
 }
 
 type InventorySurface struct {

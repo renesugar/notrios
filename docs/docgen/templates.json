@@ -106,6 +106,15 @@
               "audience": "user"
             }
           ]
+        },
+        {
+          "slug": "where-each-capability-lives",
+          "slots": [
+            {
+              "id": "feature-surface-table",
+              "audience": "user"
+            }
+          ]
         }
       ]
     },

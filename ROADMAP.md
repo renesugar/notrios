@@ -522,6 +522,18 @@ be smuggled into v0.7 as desktop assumptions.
   pre-push gate, push `develop`, and open a `develop`-to-`main` PR. Merge only
   after final review/authorization, then bring the merged result back into
   `develop` and verify no content divergence.
+- **A features page a reader can use, and a searchable command line.** The
+  capability catalogue is generated, so it cannot claim a surface that does not
+  exist -- but its prose is written by hand and has been wrong while every gate
+  was green. Review it as a reader would: one section per capability, in
+  language somebody who has never read the code can act on, with the
+  capability-by-surface table generated from the same registry so the summary
+  cannot drift from the sentences beside it. That table exposed a gap worth
+  closing on its own: **searching a library is the one everyday capability with
+  no command line at all**, so notes cannot be found from a script or a pipe.
+  Add `notriosctl search`, with the query language the interface uses, JSON
+  output carrying each hit's stable link, and the paging and counting a script
+  needs.
 - **Internal artifacts only.** v0.8 may retain the verified unsigned Ubuntu
   prerelease installer as explicitly internal evidence; it is the only platform
   v0.8 packages at all. It does not create a tag,
