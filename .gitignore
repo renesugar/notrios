@@ -44,6 +44,9 @@ __pycache__/
 private-testdata/
 exports/
 
+# Local semantic-search index (zvec-grep); rebuilt per machine, never shared
+.zvec-grep/
+
 # Claude Code local session settings
 .claude/settings.local.json
 .claude/*.tmp.*
