@@ -7,6 +7,8 @@ Use the relevant Google style guide as the default unless this project overrides
 - C++: https://google.github.io/styleguide/cppguide.html
 - Python: https://google.github.io/styleguide/pyguide.html
 
+**How to keep this document current is in [`AGENTS.md`](AGENTS.md)** — under "Keeping the reference documents current".
+
 ## General rules
 
 - Prefer boring, maintainable code over clever abstractions.
@@ -46,4 +48,8 @@ Use the relevant Google style guide as the default unless this project overrides
 
 - Keep root docs concise and actionable.
 - Put deeper topic docs under `docs/` when they grow.
-- Update `CONTEXT_MAP.md` when adding major files or packages.
+- Which root document owns which fact, and what to do when code changes one, is
+  in `AGENTS.md` under "Keeping the reference documents current". It is there
+  rather than here because it outlives any one coding standard, and because the
+  one rule this section used to carry — update `CONTEXT_MAP.md` when adding a
+  package — went unenforced for eleven packages.

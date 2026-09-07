@@ -2,6 +2,8 @@
 
 The service must not depend on Git, Fossil, Recoll, or any external projection/index as the authoritative note store.
 
+**How to keep this document current is in [`AGENTS.md`](AGENTS.md)** — under "Keeping the reference documents current".
+
 ## Canonical revision model
 
 SQLite stores durable saved revisions. Restoring an old revision creates a new revision rather than destructively rewriting history.

@@ -1,5 +1,7 @@
 # Release Checklist
 
+**How to keep this document current is in [`AGENTS.md`](AGENTS.md)** — under "Keeping the reference documents current".
+
 ## v0.7.0 — native synchronization
 
 G0-G20 are implemented on `develop`. G20 produces a local source release

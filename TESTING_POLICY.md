@@ -1,5 +1,7 @@
 # Testing Policy
 
+**How to keep this document current is in [`AGENTS.md`](AGENTS.md)** — under "Keeping the reference documents current".
+
 ## Definition of done
 
 A task is done only when:

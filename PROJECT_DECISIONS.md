@@ -1,5 +1,7 @@
 # Project Decisions
 
+**How to keep this document current is in [`AGENTS.md`](AGENTS.md)** — under "Keeping the reference documents current".
+
 ## Accepted baseline decisions
 
 1. Use Go for the companion REST/MCP service initially.

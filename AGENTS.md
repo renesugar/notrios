@@ -12,7 +12,7 @@ Start with the handoff: `CODING_CLIENT_HANDOFF.md` is the current compressed sta
 
 
 1. Read `CODING_CLIENT_HANDOFF.md`, `README.md`, `PLAN.md`, `ROADMAP.md`, `SYSTEM_ARCHITECTURE.md`, `SYNCHRONIZATION.md`, `FLUTTER_GO_CLIENT.md`, `API_SPEC.md`, `DATABASE_SCHEMA.md`, `NOTEBOOKS_AND_SEARCH_NOTEBOOKS.md`, `SEARCH_QUERY_LANGUAGE.md`, `RECOLL_INTEGRATION.md`, `CODING_STANDARDS.md`, `TESTING_POLICY.md`, `ENVIRONMENT_SETUP.md`, and `CONTEXT_MAP.md`.
-2. Read `agent/PLAN_STATUS.md`, `agent/ATTEMPT_LOG.jsonl`, and `agent/MODEL_LOG.jsonl`.
+2. Read `agent/PLAN_STATUS.md`, `agent/OPEN_QUESTIONS.md`, `agent/ATTEMPT_LOG.jsonl`, and `agent/MODEL_LOG.jsonl`.
 3. Identify the next incomplete task in `PLAN.md`.
 4. If the task is ambiguous, write the question into `agent/OPEN_QUESTIONS.md` and ask the user before implementing.
 
@@ -277,6 +277,109 @@ checked rather than trusted -- `internal/docplan` fails when the progress
 section does not name `AGENTS.md` -- because an instruction that only exists in
 the document it is about disappears with it, which is how this rule came to be
 missing in the first place.
+
+## Keeping the reference documents current
+
+Every root document is the home for one kind of fact. A document that copies a
+fact whose home is another document is right on the day it is written and wrong
+afterwards, and nothing notices, because prose has no gate. That is not a
+hypothetical: `ROADMAP.md` and `CONTEXT_MAP.md` carried the same sentence --
+"H0 is complete; H1 is next" -- for a month after fourteen items had finished,
+and `PROMPT.md` carried a second copy of this file's reading list that had
+drifted from the original.
+
+So the inventory below is data, in `docs/docrules/DOCUMENTS.json`, and:
+
+- **Change the code, change the document that is its home, in the same commit.**
+  Not afterwards. A document updated in a later pass is a document that records
+  what somebody remembered, and the memory is the part that decays.
+- **Do not copy a fact whose home is elsewhere.** Link to it. If a document
+  genuinely must repeat one -- the roadmap needs a sentence about the plan --
+  generate that sentence between markers instead of typing it.
+- **Say when you are describing a moment.** A `snapshot` document is dated and
+  superseded, never quietly edited into describing a newer product.
+- **A new root document joins the inventory in the commit that creates it**,
+  either with a home or with a reason it needs none. `go test ./internal/docrules/`
+  fails on a root document that is in neither list, which is the only part of
+  this that cannot be forgotten.
+- **`go run ./cmd/docrules --write`** regenerates the table below. The pointer
+  each document carries is generated from the same registry, so its wording
+  cannot drift document by document.
+
+<!-- notrios:generated:agents:documents:begin -->
+**25 root documents have a home here, 23 of them carrying a pointer back; 9 more are exempt.**
+
+| Document | The home for | Not here |
+|---|---|---|
+| `AGENTS.md` | how a coding agent works here, including how every other document is kept current | anything a document can hold itself; a rule lands here only when it must outlive the document it governs |
+| `CLAUDE.md` | one line telling Claude where the real instructions are | instructions; a second copy of AGENTS.md is a second thing to keep current |
+| `PLAN.md` *(Keeping the plan current)* | the active plan: what each item is for, and what happened | what is left, stated in prose; that is generated from the slice ledger |
+| `ROADMAP.md` *(Keeping the roadmap current)* | what a version means, as a feature inventory and planning source | per-item status for the active plan; the one status sentence is generated |
+| `README.md` | what Notrios is and what it can do today, for somebody who has not seen it | the milestone-by-milestone story, which belongs to ROADMAP.md |
+| `CODING_CLIENT_HANDOFF.md` | the compressed current state and the recommended next task, for an agent starting cold | the working record of a finished item; link the archive under plans/ instead |
+| `CONTEXT_MAP.md` | where things live: the root documents, the packages, and what each is for | how far along the plan is; the map said "H0 is complete; H1 is next" for a month |
+| `SYSTEM_ARCHITECTURE.md` | how the parts fit together and why they are separated that way | the file-by-file inventory, which is CONTEXT_MAP.md |
+| `API_SPEC.md` | the REST and MCP contract in prose: what each surface is for and what it refuses | an endpoint api/openapi.yaml does not define; the two change in one commit |
+| `DATABASE_SCHEMA.md` | why the schema is shaped the way it is, table by table | the schema itself; migrations/ is what the database actually has |
+| `UI_DESIGN.md` | what the built-in GUI is meant to be and how it is built | what the GUI currently has; the control inventory counts that from the running app |
+| `FEATURE_MATRIX.md` | triage: whether a feature is in scope, which milestone owns it, and how far it got | what a feature does for a user; docs/docfeatures/FEATURES.json is the registry for that |
+| `WORKSPACE_MAINTENANCE.md` | the networked-notes maintenance features and which of them Notrios took | a feature's user-facing behaviour once it ships; that is FEATURES.json and docs/ |
+| `DOCS_SITE.md` | how documentation is authored once and consumed twice, as a site and as the Help notebook | audit totals; make docaudit prints the current ones and they move every slice |
+| `ENVIRONMENT_SETUP.md` | how a contributor gets a machine that can build, test and run this | a command nobody has run since it was written |
+| `PACKAGING.md` | what a release artifact contains, how it is produced, and how it is checked | the release gates themselves, which are RELEASE_CHECKLIST.md |
+| `RELEASE_CHECKLIST.md` | the gates a version must pass, kept per version | a tick that nobody performed; an unticked box on a shipped version says why it stayed open |
+| `TESTING_POLICY.md` | the definition of done and what counts as evidence for it | the results of any particular run; those live under performance/ and evidence/ |
+| `CODING_STANDARDS.md` | how code is written here, and where this project departs from the Google style guides | rules about documents; those outlive any one standard and belong in AGENTS.md |
+| `PUBLISHING_POLICY.md` | what a publication may contain and what it must strip | how the publishing code is structured, which is SYSTEM_ARCHITECTURE.md |
+| `VERSIONING_AND_SYNC_POLICY.md` | what is canonical, how revisions are kept, and what may never become the store of record | the sync protocol, which is SYNCHRONIZATION.md |
+| `EVIDENCE_PRESERVATION.md` | the preservation contract: what is sealed, by whom, and how it is verified | the catalogue of what has been sealed; that is under evidence/ |
+| `PROJECT_DECISIONS.md` | decisions that have been accepted, and the reason each was accepted | a rewritten decision; a decision that changed is superseded in place, with both visible |
+| `PROMPT.md` | the cold-start prompt handed to an agent that has no history | the reading list and constraints themselves; it points at AGENTS.md, which has them |
+| `SECURITY_REVIEW.md` | what the security posture was at a named release, and what was still open | edits that quietly make an old review describe a newer product; date it and supersede it |
+
+Exempt, because each is the contract for one feature rather than for the project:
+
+- `FLUTTER_GO_CLIENT.md` — feature contract: the shared-core and client handoff
+- `IMPORT_EXPORT_POLICY.md` — feature contract: import, export and publishing behaviour
+- `NATIVE_ARCHIVE_V2.md` — feature contract: the archive-v2 format and identity rules
+- `NOTEBOOKS_AND_SEARCH_NOTEBOOKS.md` — feature contract: the notebook and tag model
+- `RECOLL_INTEGRATION.md` — feature contract: the derived Recoll sidecar
+- `SEARCH_QUERY_LANGUAGE.md` — feature contract: the user-facing query language
+- `SECURITY_AND_MEDIA_POLICY.md` — feature contract: remote-media localization
+- `SELECTION_AND_PRIVACY_PLANNER.md` — feature contract: the selection and privacy planner
+- `SYNCHRONIZATION.md` — feature contract: the synchronization architecture
+<!-- notrios:generated:agents:documents:end -->
+
+## Keeping the search index current
+
+The workspace has a local semantic index under `.zvec-grep/`, queried with
+`zg query` (and by agents over MCP). Two things about it are worth knowing
+before relying on it:
+
+- **It is local and disposable.** The embedding model runs on this machine, so
+  nothing indexed leaves it, and the index is rebuilt from the working tree
+  rather than shared. `.zvec-grep/` is in `.gitignore` and must stay there; a
+  `git add -A` once committed 81 MB of it.
+- **Its scope is `.gitignore`.** `zg` follows the repository's ignore rules, so
+  the ignore file is one statement of what may be read, by git and by the
+  indexer alike. Anything that must not be indexed -- runtime `data/`,
+  `private-testdata/`, `exports/` -- must be ignored rather than merely
+  uncommitted.
+
+Refresh is not automatic in the way it looks. The daemon watches the tree and
+reconciles hourly, but only while it is running, and it runs only while an
+agent or a `zg server on` keeps it up. After a session that had no daemon --
+or a rebase, a branch switch, or a large generated-file pass -- the index is
+behind and says nothing about it.
+
+- Run `zg status` before trusting a semantic result; it reports coverage and
+  the pending queue.
+- Run `zg index` to catch up. It is incremental and reuses the stored embedding
+  and file selection, so it needs no arguments.
+- Use `zg query --refresh wait` when one answer has to be current.
+- **Do not create, rebuild (`--rebuild`) or drop (`--drop`) an index without
+  asking.** Rebuilding is minutes of embedding; dropping is not recoverable
+  from the repository.
 
 ## Git workflow
 

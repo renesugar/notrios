@@ -2,6 +2,8 @@
 
 These features come from the Foam/Obsidian/networked-notes design space and are not required for the first MVP unless explicitly pulled into `PLAN.md`.
 
+**How to keep this document current is in [`AGENTS.md`](AGENTS.md)** — under "Keeping the reference documents current".
+
 ## Embedded query blocks
 
 Implemented in v0.5 E7. A fenced block declares a Q1 query plus a typed

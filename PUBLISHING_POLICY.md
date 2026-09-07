@@ -2,6 +2,8 @@
 
 Publishing is not backup/export. Publishing produces a sanitized public subset of the note database. Backup/export preserves enough information to restore private application state.
 
+**How to keep this document current is in [`AGENTS.md`](AGENTS.md)** — under "Keeping the reference documents current".
+
 ## Shared publish planner
 
 Every handoff target consumes one neutral, deterministic plan containing selected note

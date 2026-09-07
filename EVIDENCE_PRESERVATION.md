@@ -6,6 +6,8 @@ backup/revocation-readiness attestation. The generated DigiCert pilot and
 production seals passed. GitHub push and physical optical burning remain
 unauthorized and did not occur.
 
+**How to keep this document current is in [`AGENTS.md`](AGENTS.md)** — under "Keeping the reference documents current".
+
 This document defines an engineering preservation record for Notrios release
 artifacts. It is not legal advice and does not declare any artifact admissible,
 independently created, clean-room, original, or authored by a particular person.

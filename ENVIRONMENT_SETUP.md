@@ -2,6 +2,8 @@
 
 This guide sets up a development environment for working on the existing Notrios repository. End users should start with the friendlier [docs/installation.md](docs/installation.md); this file adds contributor-specific workflow, validation, and cleanup detail.
 
+**How to keep this document current is in [`AGENTS.md`](AGENTS.md)** — under "Keeping the reference documents current".
+
 ## Platform
 
 Development and CI target **Ubuntu Linux**. Other platforms are untested.

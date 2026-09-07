@@ -2,6 +2,8 @@
 
 This handoff applies to any coding agent or client continuing this project (Codex, Claude, aider, swival.dev, etc. — formerly `CODEX_HANDOFF.md`). The repository is designed so an agent can continue from repository files alone.
 
+**How to keep this document current is in [`AGENTS.md`](AGENTS.md)** — under "Keeping the reference documents current".
+
 ## History rewrite — 2026-09-01
 
 `notrioslib`, an 11 MB compiled ELF executable, was committed by accident in the

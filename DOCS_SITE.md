@@ -2,6 +2,8 @@
 
 Implemented in plan task R15.
 
+**How to keep this document current is in [`AGENTS.md`](AGENTS.md)** — under "Keeping the reference documents current".
+
 ## Content
 
 User and reference documentation for the `notriosd` service, `notriosctl` CLI, REST/MCP API, query language, and the built-in GUI lives as Markdown under `docs/`. It is authored once and consumed twice:
@@ -46,12 +48,17 @@ into production/CI/release packaging, and added strict evidence under
 
 G18c adds `make docaudit`. The repository-only audit resolves the frozen Go and
 TypeScript declaration anchors, checks the typed claim/test registry, binds
-source fragments to the current 15-page/199-section Markdown template, and
-accounts for every executable-shaped fence and proposed GUI journey. The first
-checked report has 351 units: 0 executed, 8 generated, 4 claimed, and 339
-unverified. Manual sections stay independently unverified until a later slice
-moves or generates them; an adjacent source claim never proves stale prose.
-Evidence and the exact checked report are under `performance/v0.7-g18c/`.
+source fragments to the Markdown template, and accounts for every
+executable-shaped fence and proposed GUI journey. Every unit is graded
+executed, generated, claimed, or unverified. Manual sections stay independently
+unverified until a later slice moves or generates them; an adjacent source
+claim never proves stale prose.
+
+**Run `make docaudit` for the current totals.** They are not written down here:
+this paragraph carried G18c's first report — 351 units, none executed — long
+after later slices had made seventy-one of them executed. G18c's own frozen
+report stays under `performance/v0.7-g18c/`, where a number that describes one
+moment belongs.
 
 ## Structure
 

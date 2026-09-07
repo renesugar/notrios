@@ -7,6 +7,8 @@ builds include a stub so headless/CI builds need no GUI system libraries),
 shipped in the first released version. It is not the only client: the REST/MCP
 API must stay complete enough for third-party native clients.
 
+**How to keep this document current is in [`AGENTS.md`](AGENTS.md)** — under "Keeping the reference documents current".
+
 ## Executable modes
 
 One executable contains the GUI and the service:

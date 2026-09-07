@@ -2,6 +2,8 @@
 
 This matrix keeps the long conversation compressed into implementation-sized features. Use it when creating new plans from `ROADMAP.md`.
 
+**How to keep this document current is in [`AGENTS.md`](AGENTS.md)** — under "Keeping the reference documents current".
+
 ## Status legend
 
 - **Implemented** — present in the repository (may still have a named

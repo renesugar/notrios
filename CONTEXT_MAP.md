@@ -1,16 +1,19 @@
 # Context Map
 
-This file is the codebase atlas. Update it whenever major files or directories are added.
+This file is the codebase atlas: where things live, and what each thing is for.
+
+**How to keep this document current is in [`AGENTS.md`](AGENTS.md)** — under "Keeping the reference documents current".
 
 ## Root documents
 
 - `README.md` — project overview and quick start.
 - `PLAN.md` — the **active v0.8 installation, configuration, shared-core, and
-  portability plan**, divided into H0-H13 investigation and implementation
-  slices. H0 is complete; H1 is next and unapproved. v0.7 G0-G20 are complete
-  at product 0.7.0/schema v27 and archived under `plans/v0.7/`, including
-  `plans/v0.7/000-v0.7-plan.md`; the G17b verifier still gates every future
-  GitHub push. Earlier milestones remain under their version directories.
+  portability plan**. How far along it is belongs to the plan's own generated
+  progress log, not here; this entry once said "H0 is complete; H1 is next" for
+  a month after fourteen items had finished. v0.7 G0-G20 are archived under
+  `plans/v0.7/`, including `plans/v0.7/000-v0.7-plan.md`; the G17b verifier
+  still gates every future GitHub push. Earlier milestones remain under their
+  version directories.
 - `plans/v0.8/001-installation-delivery-plan-amendment.md` — primary-source
   checked planning record for XDG/native paths, safe Make lifecycle, Ubuntu-
   priority installers, GitHub-native Windows/macOS evidence, delayed PR/branch
@@ -562,3 +565,41 @@ This file is the codebase atlas. Update it whenever major files or directories a
   nav and deterministic Help seed.
 - Rewritten: `ENVIRONMENT_SETUP.md` (contributor guide incl. cleanup/precheck workflow), `PACKAGING.md`, `docs/cli.md` (full subcommand reference), `docs/service.md` (config reference + backup/restore), expanded `docs/import-export.md` (per-source workflows incl. the detailed Joplin RAW procedure) and API guides (curl examples, placeholder-endpoint labeling).
 - `notriosctl doctor` performs real diagnostics; importers gained trashed-note re-import guards (Joplin/Obsidian); SQLite opens with a 5s busy timeout; Makefile has full build/clean/precheck targets.
+
+## v0.8 additions (documentation gates, portability, credentials)
+
+Fourteen v0.8 items are complete and this section records the packages they
+added; the items themselves are in `PLAN.md`.
+
+- `cmd/notrioslib/`, `internal/abi/`, and `cmd/notrioslib/hosttest/` — H0's
+  shared C ABI: the versioned no-GUI library, handle and session ownership,
+  status codes, dispatch, and a C host test that links it.
+- `internal/migrate/` — moving a library between machines and layouts by
+  copying files. It never opens the source database, because migrating a
+  library must leave the library the user already had.
+- `internal/credentials/` — where a secret lives, and the refusal to guess: a
+  configured native store that is unavailable is an error, never a silent
+  fallback to plaintext.
+- `internal/localize/` — remote-media localization behind the domain policy,
+  quarantine, exact-hash and dry-run rules in `SECURITY_AND_MEDIA_POLICY.md`.
+- `internal/docexec/` and `internal/docjourneys/` — G18d/H15's executed
+  documentation: a documented command is run against a real library and its
+  postcondition checked, so a copyable example that no longer works fails a
+  build rather than a reader.
+- `cmd/docjourney/` and `internal/docjourney/` — the GUI journey manifest and
+  its source and test anchors, for the documented steps a browser can reach.
+- `internal/doccompare/` — what the pages say against what the surfaces offer.
+  It reports differences and does not decide which to close.
+- `internal/docfeatures/` and `docs/docfeatures/FEATURES.json` — H18's feature
+  registry, and the coverage ratchet that asks whether every surface the code
+  offers is claimed by a feature a reader could find.
+- `cmd/docplan/`, `internal/docplan/`, and `docs/docplan/PLAN_SLICES.json` —
+  the plan's slice ledger, the generated progress log in `PLAN.md`, and the
+  generated status sentence in `ROADMAP.md`.
+- `cmd/docrules/`, `internal/docrules/`, and `docs/docrules/DOCUMENTS.json` —
+  the root-document inventory: what each document is the home for, the pointer
+  each carries to `AGENTS.md`, and the check that a new root document declares
+  itself.
+- `web/src/draft.ts` and `cmd/notrios/gui_window_state.go` — the unsaved-draft
+  store behind explicit save, and the window state that lets the desktop app
+  ask before closing over unsaved work.

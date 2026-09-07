@@ -2,6 +2,8 @@
 
 Notrios currently ships as **source only**. The packaging workflow produces a source-first ZIP for archiving or importing into another repository host — it is not a binary distribution and not an OS installer, and no prebuilt binaries are published.
 
+**How to keep this document current is in [`AGENTS.md`](AGENTS.md)** — under "Keeping the reference documents current".
+
 ## The source release ZIP
 
 ```bash

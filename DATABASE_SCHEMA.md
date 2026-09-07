@@ -12,6 +12,8 @@ relationships, link graphs, media-policy decisions, import state, and jobs.
 Recoll is the optional derived index for front-matter field search, extraction,
 and broad filesystem search (see `RECOLL_INTEGRATION.md`).
 
+**How to keep this document current is in [`AGENTS.md`](AGENTS.md)** — under "Keeping the reference documents current".
+
 ## Schema principles
 
 - Keep application identity stable with opaque IDs; do not expose rowids or search-index IDs as public identities.

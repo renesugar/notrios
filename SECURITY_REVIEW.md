@@ -5,6 +5,8 @@ local-first but
 its REST/MCP listener, importers, preview, downloaded media, archive files,
 published handoffs, and future sync transports are security boundaries.
 
+**How to keep this document current is in [`AGENTS.md`](AGENTS.md)** — under "Keeping the reference documents current".
+
 ## Current controls
 
 ### Resources and remote media
