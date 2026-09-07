@@ -40,7 +40,9 @@ func main() {
 	if err != nil {
 		fail(err)
 	}
-	if problems := docplan.Check(*root, ledger, headings); len(problems) > 0 {
+	problems := docplan.Check(*root, ledger, headings)
+	problems = append(problems, docplan.CheckPlanPointer(filepath.Join(*root, planPath))...)
+	if len(problems) > 0 {
 		for _, problem := range problems {
 			fmt.Fprintln(os.Stderr, "plan ledger:", problem)
 		}

@@ -280,3 +280,36 @@ func testExists(root, name string) (bool, error) {
 	})
 	return found, err
 }
+
+// CheckPlanPointer reports whether the plan tells its reader where the rules
+// that govern it live.
+//
+// The rules are in AGENTS.md because they outlive any one plan; a plan that
+// does not name them leaves the next author with a generated block, a ledger
+// and a build gate that nobody explained. This is checked rather than
+// instructed for the same reason the ledger is: the instruction to write the
+// pointer would otherwise live only in the document the pointer is in, and
+// would go when it goes -- which is exactly how it came to be missing.
+func CheckPlanPointer(planPath string) []string {
+	contents, err := os.ReadFile(planPath)
+	if err != nil {
+		return []string{fmt.Sprintf("cannot read %s: %v", planPath, err)}
+	}
+	body := string(contents)
+	const heading = "## Progress"
+	const marker = "<!-- notrios:generated:plan:progress:begin -->"
+	start, generated := strings.Index(body, heading), strings.Index(body, marker)
+	switch {
+	case start < 0:
+		return []string{"PLAN.md has no `## Progress` section"}
+	case generated < 0:
+		return []string{"PLAN.md has no progress-log markers"}
+	case generated < start:
+		return []string{"PLAN.md's progress markers are not inside its Progress section"}
+	}
+	if !strings.Contains(body[start:generated], "AGENTS.md") {
+		return []string{"PLAN.md's Progress section does not point at AGENTS.md, " +
+			"so the next reader is left with a generated block and no rules"}
+	}
+	return nil
+}

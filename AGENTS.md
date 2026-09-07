@@ -227,16 +227,29 @@ where, or the record is lost to the next reader -- H0 and H1 were archived and
 unlinked for a month.
 
 After the current `PLAN.md` completes, create a new `PLAN.md` from `ROADMAP.md`
-and ask the user before starting it. A new plan needs two things to keep
-working: the progress-log markers
+and ask the user before starting it. A new plan needs a `## Progress` section
+that carries the generated block **and points back here**, because these rules
+outlive the plan and the plan's own copy of them does not:
 
-```text
+```markdown
+## Progress
+
+Generated from `docs/docplan/PLAN_SLICES.json` by
+`go run ./cmd/docplan --write`, and checked by `internal/docplan`.
+
+**The rules for keeping it current are in [`AGENTS.md`](AGENTS.md)** — under
+"Writing plan items", "Keeping the plan current" and "Plan archival".
+
 <!-- notrios:generated:plan:progress:begin -->
 <!-- notrios:generated:plan:progress:end -->
 ```
 
-and a fresh `docs/docplan/PLAN_SLICES.json` seeded with its items. Archive the
-finished ledger alongside the plan it belonged to.
+It also needs a fresh `docs/docplan/PLAN_SLICES.json` seeded with its items;
+archive the finished ledger alongside the plan it belonged to. The pointer is
+checked rather than trusted -- `internal/docplan` fails when the progress
+section does not name `AGENTS.md` -- because an instruction that only exists in
+the document it is about disappears with it, which is how this rule came to be
+missing in the first place.
 
 ## Git workflow
 

@@ -34,7 +34,9 @@ func TestPlanLedgerAgreesWithThePlan(t *testing.T) {
 	if err != nil {
 		t.Fatalf("reading PLAN.md: %v", err)
 	}
-	for _, problem := range Check(root, ledger, headings) {
+	problems := Check(root, ledger, headings)
+	problems = append(problems, CheckPlanPointer(filepath.Join(root, "PLAN.md"))...)
+	for _, problem := range problems {
 		t.Errorf("%s\n\nfix the ledger or the plan, then run: go run ./cmd/docplan --write", problem)
 	}
 }
