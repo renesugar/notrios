@@ -34,30 +34,16 @@ Not in v0.8:
 
 ## Progress
 
-This section is generated from `docs/docplan/PLAN_SLICES.json` by
-`go run ./cmd/docplan --write`, and `internal/docplan` fails the build when it
-disagrees with the plan.
+Generated from `docs/docplan/PLAN_SLICES.json` by
+`go run ./cmd/docplan --write`, and checked by `internal/docplan`, which fails
+the build when the ledger, this document and the repository disagree.
 
-*Why a ledger rather than better prose.* This document is a journal: it records
-what happened, in the order it happened, and it does that well. But the question
-asked of a plan is "what is left", and answering it meant reading four thousand
-lines written in nine different status notations and then checking the answer
-against the code, because the plan could not be trusted to know. Two thirds of
-the text under items that are still open describes work already finished.
+**The rules for keeping it current are in [`AGENTS.md`](AGENTS.md)** — under
+"Writing plan items", "Keeping the plan current" and "Plan archival" — because
+this section is archived when the plan completes and the rules are not.
 
-*What the ledger promises.* Every item below has an entry and every entry names
-an item; a slice recorded as done must name evidence that resolves -- a Go
-symbol, a path, or a test function -- and unfinished work may not name any; a
-blocked slice must say what would unblock it; and an item may not call itself
-complete with slices outstanding, in progress with none, or unstarted with work
-done. The first run of that check found four items whose Outcome block said
-Complete while their heading did not.
-
-*What it deliberately does not do.* It does not summarise the narrative. Each
-item's own text remains the record of what happened and why, which is a
-different question from what is left, and the two do not belong in one list.
-Slices are declared for items that are open; the finished ones carry no slices,
-because their Outcome block already says what they came to.
+What follows is what is left. Each item's own text below is the record of what
+happened, which is a different question.
 
 <!-- notrios:generated:plan:progress:begin -->
 **25 items: 14 complete, 4 in progress, 6 not started, 1 deferred.**

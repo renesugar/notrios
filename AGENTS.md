@@ -44,6 +44,19 @@ and the task was approved without them being seen.)
 Every item states its goal, its scope boundaries, and its working state. Beyond
 that:
 
+**Declare the item's work as slices, in `docs/docplan/PLAN_SLICES.json`.** A
+slice is one implementable piece: small enough to finish in a sitting, large
+enough to be worth naming, and stated as an outcome rather than an activity
+("the command line can delete and restore a note", not "work on deletion").
+Give each one an id prefixed by the item (`H15-C`), a statement, and a state.
+
+Declare them **before** the work, and keep them current as it proceeds. Items
+have been written up in slices after the fact -- H4, H9 and H14 all did -- and a
+slice named once it is finished is a changelog entry, not a plan: it tells the
+next reader what happened and nothing about what is left. That is the failure
+this file exists to prevent, so the ledger is checked rather than trusted (see
+"Keeping the plan current").
+
 **An item with an unresolved decision carries an `Open decisions` subsection,
 inside the item.** List each decision, what the options are, which one you
 recommend and why, and what changes depending on the answer. Say plainly whether
@@ -161,6 +174,37 @@ run. A cache older than `--claude-max-age-minutes` (default 30), or one whose
 windows are all past `resets_at`, reports `stale` and is treated like `unknown`
 rather than trusted.
 
+## Keeping the plan current
+
+`PLAN.md` is a journal: it records what happened, in the order it happened. The
+question asked of a plan is *what is left*, and prose cannot be relied on to
+answer it -- this plan reached four thousand lines in nine different status
+notations, two thirds of the open items' text describing finished work, and
+answering "what is unfinished?" meant reading all of it and then checking the
+answer against the code. So what is left is declared as data and checked.
+
+When you start a slice, set it `in-progress`. When you finish one:
+
+1. set it `done` and name evidence that resolves -- `go:<import path>#Symbol`,
+   `file:<path>`, or `test:<TestName>`;
+2. run `go run ./cmd/docplan --write` to regenerate the progress log in
+   `PLAN.md`, and commit that with the work;
+3. update the item's own narrative with what happened and why, which is a
+   different question from what is left. Do not let one become the other.
+
+The rules the ledger enforces, and `go test ./...` fails on:
+
+- every plan item has a ledger entry and every entry a plan item;
+- a slice marked done names evidence that exists; unfinished work names none,
+  because evidence on unfinished work is how a plan starts describing
+  intentions as achievements;
+- a blocked slice says what would unblock it -- otherwise it is "not started"
+  with a better excuse;
+- an item may not call itself complete with slices outstanding, in progress
+  with none, or unstarted with work done. The heading and the ledger must agree
+  about whether an item is finished; the first run of this check found four
+  items whose outcome said complete while their heading did not.
+
 ## Plan archival
 
 Implemented plans must be archived under:
@@ -169,7 +213,30 @@ Implemented plans must be archived under:
 plans/v<major>.<minor>/<NNN>-<slug>.md
 ```
 
-Use the active product version/milestone. Include validation evidence and the models used. After the current `PLAN.md` completes, create a new `PLAN.md` from `ROADMAP.md` and ask the user before starting it.
+Use the active product version/milestone. Include validation evidence and the models used.
+
+**Archive an item when the record of executing it has outgrown the plan.**
+`PLAN.md` keeps the item's specification and its outcome and links to the
+archive; the archive keeps the working record **verbatim**, because a summary of
+a finding is not the finding. The test is length and kind rather than age: an
+item that is a specification plus a paragraph of outcome reads fine where it is,
+while one that has accumulated slice reports, corrections and findings is
+describing finished work in a document somebody reads to learn what is left.
+H14 was nine hundred lines of it. Say in the plan that the item is archived and
+where, or the record is lost to the next reader -- H0 and H1 were archived and
+unlinked for a month.
+
+After the current `PLAN.md` completes, create a new `PLAN.md` from `ROADMAP.md`
+and ask the user before starting it. A new plan needs two things to keep
+working: the progress-log markers
+
+```text
+<!-- notrios:generated:plan:progress:begin -->
+<!-- notrios:generated:plan:progress:end -->
+```
+
+and a fresh `docs/docplan/PLAN_SLICES.json` seeded with its items. Archive the
+finished ledger alongside the plan it belonged to.
 
 ## Git workflow
 
