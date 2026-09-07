@@ -1,6 +1,13 @@
 # Roadmap
 
-This roadmap is a feature inventory and planning source. `PLAN.md` should contain only the active implementation plan.
+This roadmap is a feature inventory and planning source: it says what a version
+*means*. How far along the active one is belongs to `PLAN.md`, which is checked;
+the status line below is generated from the plan's ledger rather than kept by
+hand, because the sentence it replaced claimed "H0 is complete; H1 is the next
+separately approval-gated item" for a month after fourteen items had finished.
+
+**The rules for keeping this document current are in [`AGENTS.md`](AGENTS.md)**,
+under "Keeping the roadmap current" — where they outlive any one version.
 
 ## v0.1 — Minimum viable product
 
@@ -708,6 +715,12 @@ requirements below are the ones H7 already carried.
 
 The scaffold handoff is complete; see `CODING_CLIENT_HANDOFF.md`. Future roadmap planning should be driven from `ROADMAP.md`, but each active implementation cycle should create a small `PLAN.md` slice and archive it under `plans/` when complete.
 
+<!-- notrios:generated:roadmap:status:begin -->
+`PLAN.md` holds the active plan derived from this roadmap: 25 items, 14 complete, 4 in progress, 6 not started, 1 deferred.
+
+Started and unfinished: H9, H15, H16, H18. What remains in each is in the plan's own Progress section.
+<!-- notrios:generated:roadmap:status:end -->
+
 
 ## v0.1 completion note
 
@@ -727,5 +740,6 @@ job kind names a filesystem path. That is recorded in the bullet rather than the
 bullet being marked done, and it does not move to v0.7 — it is a decision, not
 an omission.
 
-`PLAN.md` now holds the active v0.8 plan derived from this roadmap. H0 is
-complete; H1 is the next separately approval-gated item.
+The active plan's state is generated into the "Agent handoff status" section
+above rather than written here, which is where the sentence that used to stand
+in this place went wrong.

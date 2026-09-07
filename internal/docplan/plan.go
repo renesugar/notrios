@@ -313,3 +313,22 @@ func CheckPlanPointer(planPath string) []string {
 	}
 	return nil
 }
+
+// CheckRoadmapPointer holds the roadmap to the same bargain as the plan: it may
+// point at the rules that govern it, or it may drift, and it has drifted.
+func CheckRoadmapPointer(roadmapPath string) []string {
+	contents, err := os.ReadFile(roadmapPath)
+	if err != nil {
+		return []string{fmt.Sprintf("cannot read %s: %v", roadmapPath, err)}
+	}
+	body := string(contents)
+	const marker = "<!-- notrios:generated:roadmap:status:begin -->"
+	if !strings.Contains(body, marker) {
+		return []string{"ROADMAP.md has no active-plan status markers"}
+	}
+	if !strings.Contains(body, "AGENTS.md") {
+		return []string{"ROADMAP.md does not point at AGENTS.md, " +
+			"so the rules for keeping it current are findable only by accident"}
+	}
+	return nil
+}

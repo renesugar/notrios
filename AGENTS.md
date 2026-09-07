@@ -205,6 +205,33 @@ The rules the ledger enforces, and `go test ./...` fails on:
   about whether an item is finished; the first run of this check found four
   items whose outcome said complete while their heading did not.
 
+## Keeping the roadmap current
+
+`ROADMAP.md` is the feature inventory and the planning source: it says what a
+version *means*, and `PLAN.md` says how far along the active one is. Keep that
+line, because the roadmap has crossed it and rotted -- it claimed "H0 is
+complete; H1 is the next separately approval-gated item" for a month after
+fourteen items had finished.
+
+- **The roadmap does not carry per-item status for the active plan.** The one
+  status sentence it needs is generated from the same ledger as the plan's
+  progress log, between the markers in its "Agent handoff status" section, and
+  `go run ./cmd/docplan --write` writes both.
+- **A version's own heading is where its completion is recorded**, with a
+  completion note reconciling every bullet against the code -- as v0.5, v0.6 and
+  v0.7 do. A bullet that shipped only half says so in the bullet rather than
+  being marked done.
+- **Scope that moves between versions says where it came from**, in the version
+  it moved to: "Moved here from v0.8 (H9) because ...". A bullet that simply
+  disappears from one version and appears in another loses the reason, which is
+  the only part worth keeping.
+- **New work is added to the roadmap when it is added to the plan**, not
+  afterwards. The two disagreeing is how a plan item comes to exist that no
+  version claims.
+
+`ROADMAP.md` points back here for these rules, and `internal/docplan` fails when
+it does not -- for the same reason the plan does.
+
 ## Plan archival
 
 Implemented plans must be archived under:

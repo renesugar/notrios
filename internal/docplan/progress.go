@@ -91,3 +91,35 @@ func (i Item) counts() (done, outstanding int) {
 	}
 	return done, outstanding
 }
+
+// RoadmapStatusLines is the one sentence the roadmap needs about the active
+// plan, generated so it cannot rot.
+//
+// The sentence it replaces said "H0 is complete; H1 is the next separately
+// approval-gated item" for a month after fourteen items had finished. A
+// roadmap says what a version means; how far along it is belongs to the plan,
+// and the roadmap should quote it rather than keep its own copy.
+func (l Ledger) RoadmapStatusLines() []string {
+	counts := map[ItemState]int{}
+	for _, item := range l.Items {
+		counts[item.State]++
+	}
+	next := []string{}
+	for _, item := range l.Items {
+		if item.State == ItemInProgress {
+			next = append(next, item.ID)
+		}
+	}
+	lines := []string{
+		fmt.Sprintf("`PLAN.md` holds the active plan derived from this roadmap: %d items, "+
+			"%d complete, %d in progress, %d not started, %d deferred.",
+			len(l.Items), counts[ItemComplete], counts[ItemInProgress],
+			counts[ItemNotStarted], counts[ItemDeferred]),
+	}
+	if len(next) > 0 {
+		lines = append(lines, "",
+			"Started and unfinished: "+strings.Join(next, ", ")+
+				". What remains in each is in the plan's own Progress section.")
+	}
+	return lines
+}

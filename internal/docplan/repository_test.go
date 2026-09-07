@@ -36,6 +36,7 @@ func TestPlanLedgerAgreesWithThePlan(t *testing.T) {
 	}
 	problems := Check(root, ledger, headings)
 	problems = append(problems, CheckPlanPointer(filepath.Join(root, "PLAN.md"))...)
+	problems = append(problems, CheckRoadmapPointer(filepath.Join(root, "ROADMAP.md"))...)
 	for _, problem := range problems {
 		t.Errorf("%s\n\nfix the ledger or the plan, then run: go run ./cmd/docplan --write", problem)
 	}
@@ -64,5 +65,24 @@ func TestProgressLogIsCurrent(t *testing.T) {
 	want := strings.TrimSpace(strings.Join(ledger.ProgressLines(), "\n"))
 	if got != want {
 		t.Error("the progress log in PLAN.md is stale; run: go run ./cmd/docplan --write")
+	}
+
+	// The roadmap quotes the same ledger, so it can go stale the same way --
+	// and did, for a month, which is why it is generated now.
+	roadmap, err := os.ReadFile(filepath.Join(root, "ROADMAP.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	body = string(roadmap)
+	const roadBegin = "<!-- notrios:generated:roadmap:status:begin -->"
+	const roadFinish = "<!-- notrios:generated:roadmap:status:end -->"
+	start, end = strings.Index(body, roadBegin), strings.Index(body, roadFinish)
+	if start < 0 || end < start {
+		t.Fatal("ROADMAP.md has no active-plan status markers")
+	}
+	got = strings.TrimSpace(body[start+len(roadBegin) : end])
+	want = strings.TrimSpace(strings.Join(ledger.RoadmapStatusLines(), "\n"))
+	if got != want {
+		t.Error("the active-plan status in ROADMAP.md is stale; run: go run ./cmd/docplan --write")
 	}
 }

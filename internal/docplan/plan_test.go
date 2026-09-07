@@ -130,3 +130,28 @@ func TestCheckPlanPointerRefusesAPlanThatExplainsNothing(t *testing.T) {
 		t.Fatalf("a plan that points at the rules should pass: %v", problems)
 	}
 }
+
+func TestCheckRoadmapPointerRefusesADriftingRoadmap(t *testing.T) {
+	const markers = "<!-- notrios:generated:roadmap:status:begin -->\n<!-- notrios:generated:roadmap:status:end -->\n"
+	for _, tc := range []struct{ name, body, want string }{
+		{"no status markers", "# Roadmap\n\nRules: AGENTS.md.\n", "no active-plan status markers"},
+		{"markers but no rules", "# Roadmap\n\n" + markers, "does not point at AGENTS.md"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			path := filepath.Join(t.TempDir(), "ROADMAP.md")
+			if err := os.WriteFile(path, []byte(tc.body), 0o644); err != nil {
+				t.Fatal(err)
+			}
+			if problems := strings.Join(CheckRoadmapPointer(path), "\n"); !strings.Contains(problems, tc.want) {
+				t.Fatalf("expected a problem containing %q, got %q", tc.want, problems)
+			}
+		})
+	}
+	good := filepath.Join(t.TempDir(), "ROADMAP.md")
+	if err := os.WriteFile(good, []byte("# Roadmap\n\nRules: [`AGENTS.md`](AGENTS.md).\n\n"+markers), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if problems := CheckRoadmapPointer(good); len(problems) > 0 {
+		t.Fatalf("a roadmap that points at the rules should pass: %v", problems)
+	}
+}
