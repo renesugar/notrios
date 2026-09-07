@@ -4,6 +4,46 @@ This handoff applies to any coding agent or client continuing this project (Code
 
 **How to keep this document current is in [`AGENTS.md`](AGENTS.md)** — under "Keeping the reference documents current".
 
+## History rewrite — 2026-09-07
+
+`.zvec-grep/`, the workspace's local semantic-search index, was committed by
+accident: it is a generated store of RocksDB segments and vector data that no
+`.gitignore` rule covered, and a `git add -A` swept 97 of its files, 81 MB, into
+one commit. Every later commit carried them forward, and every incremental
+refresh of the index would have rewritten them.
+
+This is the second time `git add -A` has done this, after `notrioslib` on
+2026-09-01. Both times the file was generated, unreferenced by any target or
+document, and invisible in the commit message. `.gitignore` now covers
+`.zvec-grep/`; the durable rule is in `AGENTS.md` under "Keeping the search
+index current".
+
+The blobs have been **removed from git history** at the user's direction. The
+rewrite was local only: `origin/develop` was 259 commits behind and never
+contained them, so no force-push was needed and nothing on GitHub changed.
+Verified afterwards: the working tree at `HEAD` has the same tree hash as before
+the rewrite (`c1e59e5`), `git fsck` is clean, 288 commits before and after with
+identical subjects in order, and `.git` fell from 86 MB to 29 MB — the largest
+remaining blob is the vendored SQLite amalgamation, as it should be.
+
+No evidence archive names any of the rewritten commits; the most recent,
+`notrios-v0.8-h4-693b672.zip`, predates them. Eight commits changed SHA:
+
+| Old SHA | Current SHA |
+| --- | --- |
+| `6c04b48` | `3b6f7a5` |
+| `2e214cd` | `cc68bb1` |
+| `85d34d0` | `76f0339` |
+| `7734d8c` | `a04bdab` |
+| `21f03b4` | `bee15c1` |
+| `d01375f` | `2cfd3fc` |
+| `f725456` | `1827168` |
+| `a08534d` | `7ec86c8` |
+
+One commit message changed with them: the commit that added the ignore rule
+described the accident by naming the commit that caused it, and that commit no
+longer exists. It now points here instead.
+
 ## History rewrite — 2026-09-01
 
 `notrioslib`, an 11 MB compiled ELF executable, was committed by accident in the

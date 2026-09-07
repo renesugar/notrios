@@ -541,6 +541,14 @@ be smuggled into v0.7 as desktop assumptions.
   Add `notriosctl search`, with the query language the interface uses, JSON
   output carrying each hit's stable link, and the paging and counting a script
   needs.
+- **Documents that cannot quietly go stale.** The plan, the roadmap and the
+  root reference documents each state one kind of fact and say where the rules
+  for keeping them current live, with the pointer and the inventory checked
+  rather than trusted. The one document this did not finish is the codebase
+  atlas: it is organised by when work arrived rather than by where things are,
+  which is why eleven packages were missing from it. Reorganise it around
+  location, generate its root-document list from the same registry, and fail a
+  build when a package has no entry.
 - **Internal artifacts only.** v0.8 may retain the verified unsigned Ubuntu
   prerelease installer as explicitly internal evidence; it is the only platform
   v0.8 packages at all. It does not create a tag,
@@ -716,7 +724,7 @@ requirements below are the ones H7 already carried.
 The scaffold handoff is complete; see `CODING_CLIENT_HANDOFF.md`. Future roadmap planning should be driven from `ROADMAP.md`, but each active implementation cycle should create a small `PLAN.md` slice and archive it under `plans/` when complete.
 
 <!-- notrios:generated:roadmap:status:begin -->
-`PLAN.md` holds the active plan derived from this roadmap: 25 items, 14 complete, 4 in progress, 6 not started, 1 deferred.
+`PLAN.md` holds the active plan derived from this roadmap: 26 items, 14 complete, 4 in progress, 7 not started, 1 deferred.
 
 Started and unfinished: H9, H15, H16, H18. What remains in each is in the plan's own Progress section.
 <!-- notrios:generated:roadmap:status:end -->

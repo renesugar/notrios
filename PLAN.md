@@ -46,7 +46,7 @@ What follows is what is left. Each item's own text below is the record of what
 happened, which is a different question.
 
 <!-- notrios:generated:plan:progress:begin -->
-**25 items: 14 complete, 4 in progress, 6 not started, 1 deferred.**
+**26 items: 14 complete, 4 in progress, 7 not started, 1 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -75,6 +75,7 @@ happened, which is a different question.
 | H18. Make the features page usable, and generate the table under it | in-progress | 3/4 | 1 |
 | H19. notriosctl search | not-started | 0/4 | 4 |
 | H13. v0.8 release wrap-up and branch synchronization | not-started | 0/2 | 2 |
+| H20. Bring the atlas current, and stop it drifting again | not-started | 0/4 | 4 |
 
 ### Started and not finished
 
@@ -104,7 +105,7 @@ happened, which is a different question.
 
 ### Not started
 
-Written and not begun: H10, H11, H12, H17, H19, H13. Their slices are listed under each item.
+Written and not begun: H10, H11, H12, H17, H19, H13, H20. Their slices are listed under each item.
 <!-- notrios:generated:plan:progress:end -->
 
 ## H0. Application-facade, C-ABI, and SQLite ownership investigation — complete
@@ -3598,6 +3599,77 @@ hits with their stable links; the features table shows a command-line column for
 `Search your notes`; and a command-line journey demonstrates finding a note and
 acting on it with the id the search returned.
 
+## H20. Bring the atlas current, and stop it drifting again
+
+**Ordering.** After the root-document inventory, which found the drift.
+Independent of everything else; it touches one document and adds one check.
+
+**Goal.** Make `CONTEXT_MAP.md` answer the question it exists for -- "where does
+this live, and what is it for?" -- for the code as it is now, and make the parts
+of that answer that can be checked, checked.
+
+**Why.** The atlas had rotted in three separate ways at once, and each is a
+different kind of failure. It carried a copied fact (`H0 is complete; H1 is
+next`, a month stale). It was missing eleven packages, including every
+documentation gate that now fails builds, despite `CODING_STANDARDS.md`
+carrying a rule to add them -- a rule in a document nobody consults while adding
+a package. And its newest section is dated 2026-07-16, so fourteen finished v0.8
+items left no trace in the map of the codebase they changed. The copied fact and
+the missing package names are fixed. What is left is the part that needs more
+than an edit: a hundred lines of chronological "task R__ additions" sections
+that record *when* something arrived rather than *where it is*, which is why
+adding to the map feels like appending to a changelog and is why nobody did.
+
+**Shape.**
+
+- **The v0.8 items get real entries.** Fourteen complete items, described the way
+  the rest of the atlas describes work -- what the package is for, not what the
+  slice was called.
+- **A gate for the thing that actually goes missing.** Every directory under
+  `internal/` and `cmd/` appears in the atlas, checked in `internal/docrules`
+  alongside the pointer checks. This is the mechanical half of the rule that
+  `CODING_STANDARDS.md` used to state and nothing enforced: eleven packages
+  slipped past it. A package is a durable, enumerable thing, so it can be
+  checked; "major files or directories" cannot.
+- **The root-documents list is generated.** The atlas opens by listing the root
+  documents and what each is for, which is exactly what
+  `docs/docrules/DOCUMENTS.json` now holds. Generate that section from the
+  registry rather than keeping a second copy that can disagree with the first.
+- **The chronological sections are resolved**, one way or the other -- see the
+  decision below.
+
+**Boundaries.** The atlas describes; it does not become a second architecture
+document, and it does not acquire status. Nothing here regenerates prose about
+what a package *does* from its doc comment: a one-line hand-written purpose is
+the point of the map, and a generated one would restate the code to a reader who
+is looking for orientation. No change to any package.
+
+**Open decisions.**
+
+*What happens to the twenty-one chronological "additions" sections.*
+Non-blocking; the default below is taken if no answer comes.
+
+- **Reorganise by location (default).** Merge them into the existing
+  location-shaped sections, so the map has one entry per thing and a reader
+  looks up a path. History is not lost -- it is in the archived plans, which is
+  its home.
+- *Keep them, and append a v0.8 section.* Cheaper, and preserves the record of
+  what arrived when, but leaves the map answering two questions badly and makes
+  the package gate awkward: a package could satisfy it from a 2026 section that
+  no longer describes it.
+- *Split the document.* A location map plus a separate chronology. Rejected in
+  advance unless asked: two documents where one is stale is worse than one.
+
+The recommendation is the default. What makes the atlas rot is that adding to it
+means choosing a section by date, and the correct date section is always the one
+that does not exist yet.
+
+**Working state.** `go test ./internal/docrules/` fails when a new package under
+`internal/` or `cmd/` has no entry, and passes with all of them present;
+`CONTEXT_MAP.md` names every current package and every root document, with the
+document list generated; and adding a package to the repository without touching
+the atlas fails a build rather than a review.
+
 ## H13. v0.8 release wrap-up and branch synchronization
 
 **Goal.** Reconcile every approved v0.8 promise, produce internal installable
@@ -3685,6 +3757,7 @@ This is an index only; each decision is owned and explained inside its item.
 | v0.8 product/schema number | H13 | Open with product 0.8.0/no gratuitous schema default |
 | Internal artifact custody | H13 | Local/internal-only default; public release separately authorized |
 
-H1, H2a, H2b, H2, and H3 completed on 2026-09-01. H4 is the next incomplete
-item and remains unapproved. Do not begin it until the user explicitly says to
-proceed with H4.
+Which items are complete, and which is next, is in the generated progress log
+above and in `docs/docplan/PLAN_SLICES.json`. It is not restated here: this
+paragraph said "H4 is the next incomplete item" for nine days after H4 finished.
+No unapproved item begins until the user says to proceed with it.

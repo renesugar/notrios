@@ -377,6 +377,33 @@
           "blocked_on": "H12, which needs authorisation"
         }
       ]
+    },
+    {
+      "id": "H20",
+      "title": "Bring the atlas current, and stop it drifting again",
+      "state": "not-started",
+      "slices": [
+        {
+          "id": "H20-A",
+          "statement": "The atlas describes what each complete v0.8 item added, in the terms the rest of the map uses",
+          "state": "not-started"
+        },
+        {
+          "id": "H20-B",
+          "statement": "A package under internal/ or cmd/ with no atlas entry fails a build",
+          "state": "not-started"
+        },
+        {
+          "id": "H20-C",
+          "statement": "The atlas's root-document list is generated from the document registry rather than kept in parallel",
+          "state": "not-started"
+        },
+        {
+          "id": "H20-D",
+          "statement": "The chronological additions sections are resolved, so a reader looks up a path rather than a date",
+          "state": "not-started"
+        }
+      ]
     }
   ]
 }
