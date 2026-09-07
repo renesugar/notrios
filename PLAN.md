@@ -32,6 +32,95 @@ Not in v0.8:
 - evidence-reserve/ISO writes, physical-media burns, pushes, or tags without
   their separate operational authorization.
 
+## Progress
+
+This section is generated from `docs/docplan/PLAN_SLICES.json` by
+`go run ./cmd/docplan --write`, and `internal/docplan` fails the build when it
+disagrees with the plan.
+
+*Why a ledger rather than better prose.* This document is a journal: it records
+what happened, in the order it happened, and it does that well. But the question
+asked of a plan is "what is left", and answering it meant reading four thousand
+lines written in nine different status notations and then checking the answer
+against the code, because the plan could not be trusted to know. Two thirds of
+the text under items that are still open describes work already finished.
+
+*What the ledger promises.* Every item below has an entry and every entry names
+an item; a slice recorded as done must name evidence that resolves -- a Go
+symbol, a path, or a test function -- and unfinished work may not name any; a
+blocked slice must say what would unblock it; and an item may not call itself
+complete with slices outstanding, in progress with none, or unstarted with work
+done. The first run of that check found four items whose Outcome block said
+Complete while their heading did not.
+
+*What it deliberately does not do.* It does not summarise the narrative. Each
+item's own text remains the record of what happened and why, which is a
+different question from what is left, and the two do not belong in one list.
+Slices are declared for items that are open; the finished ones carry no slices,
+because their Outcome block already says what they came to.
+
+<!-- notrios:generated:plan:progress:begin -->
+**25 items: 14 complete, 4 in progress, 6 not started, 1 deferred.**
+
+| Item | State | Slices done | Outstanding |
+|---|---|---|---|
+| H0. Application-facade, C-ABI, and SQLite ownership investigation | complete | 0/0 | — |
+| H1. Shared application facade and ABI-major-1 library | complete | 0/0 | — |
+| H2a. Mermaid renderer and security investigation | complete | 0/0 | — |
+| H2. Bounded offline Mermaid enablement | complete | 0/0 | — |
+| H2b. Desktop external-link opening | complete | 0/0 | — |
+| H3. Installed-path, XDG, migration, and destructive-lifecycle investigation | complete | 0/0 | — |
+| H4. Installed runtime paths, assets, and migration | complete | 0/0 | — |
+| H4a. Distinct development and installed default ports in the documentation | complete | 0/0 | — |
+| H4b. Verified backup before a startup schema migration | complete | 0/0 | — |
+| H5. Safe Make install, uninstall, and purge lifecycle | complete | 0/0 | — |
+| H6a. Desktop installer and GitHub-native build investigation | complete | 0/0 | — |
+| H6. Ubuntu-priority installer package | complete | 0/0 | — |
+| H8. Installed integration harness and Ubuntu baseline | complete | 0/0 | — |
+| H14. Documentation actionability investigation | complete | 0/0 | — |
+| H7. Windows and macOS installer workflow implementation | deferred | 0/0 | — |
+| H9. Native credential-store selection and integration | in-progress | 2/6 | 4 |
+| H10. Wails v3 migration spike | not-started | 0/2 | 2 |
+| H11. Android-emulator shared-core acceptance | not-started | 0/2 | 2 |
+| H12. Delayed GitHub native validation and develop-to-main pull request | not-started | 0/2 | 2 |
+| H15. Complete the journey catalogues, and give the GUI an inventory | in-progress | 6/9 | 3 |
+| H16. Reconcile the collection model with what is actually stored | in-progress | 2/6 | 4 |
+| H17. Act on many notes at once, from the search results and from a query | not-started | 0/3 | 3 |
+| H18. Make the features page usable, and generate the table under it | in-progress | 3/4 | 1 |
+| H19. notriosctl search | not-started | 0/4 | 4 |
+| H13. v0.8 release wrap-up and branch synchronization | not-started | 0/2 | 2 |
+
+### Started and not finished
+
+**H15. Complete the journey catalogues, and give the GUI an inventory**
+
+- `H15-G` Write GUI journeys for the twelve features that have an interface surface and none: collections, attachments, remote media, links, graph, query blocks, sync pairing, sync exchange, sync peers, sync recovery, jobs and profiles — *not-started*
+- `H15-H` Work down the eighteen features with no command-line journey, which the ratchet tracks — *not-started*
+- `H15-I` Decide how much of the query language one journey should demonstrate, and whether interface journeys should point at command-line-only tasks — *not-started*
+
+**H16. Reconcile the collection model with what is actually stored**
+
+- `H16-C` Remove kind and capabilities from api.Collection, the OpenAPI schema and MCP list_collections, and the three columns that never existed from DATABASE_SCHEMA.md — *not-started*
+- `H16-D` Decide whether a dangling collection identifier is repaired by adopting the note into default or by recreating the missing row, and what schema precondition that repair requires — *not-started*
+- `H16-E` Decide whether a collection's name and description stay editable, and write the route if they do — *not-started*
+- `H16-F` Decide whether the breaking response-shape change ships in v0.8 — *not-started*
+
+**H18. Make the features page usable, and generate the table under it**
+
+- `H18-D` Rewrite the twenty-nine summaries and surface notes in FEATURES.json for a reader rather than against the surfaces — *not-started*
+
+**H9. Native credential-store selection and integration**
+
+- `H9-C` Decide whether to own the provider layer or import one (zalando/go-keyring today, 99designs/keyring evaluated, vendoring tested) — *not-started*
+- `H9-D` Ship or reject the headless Linux tier over pass/age, which is executable here and recommended but not shipped — *not-started*
+- `H9-E` Write the host-supplied credential contract for Android, iOS and wasm, where the provider returns ErrUnsupportedPlatform today — *not-started*
+- `H9-F` Establish locked/unavailable behaviour for headless Windows and headless macOS, which this item's scope asks for and no finding covers — *blocked* (blocked on: Windows and Apple hardware, or hosted runners standing in for them)
+
+### Not started
+
+Written and not begun: H10, H11, H12, H17, H19, H13. Their slices are listed under each item.
+<!-- notrios:generated:plan:progress:end -->
+
 ## H0. Application-facade, C-ABI, and SQLite ownership investigation — complete
 
 **Goal.** Resolve the premises and blocking choices needed to build one
@@ -396,7 +485,7 @@ standard library refuses; profile data placed under the config root; config and
 `web/dist` resolved from the working directory ahead of the executable; and
 primary data roots created `0755` while every derived artifact is `0700`.
 
-## H4. Installed runtime paths, assets, and migration
+## H4. Installed runtime paths, assets, and migration — complete
 
 **Goal.** Implement H3's accepted location and migration contract so binaries
 operate outside a source checkout without changing explicit-path behavior.
@@ -499,7 +588,7 @@ the working directory -- which would have told a user their current library was
 stranded and offered to move it out from under the configuration naming it.
 `Detect` now takes the database the process would actually open.
 
-## H4a. Distinct development and installed default ports in the documentation
+## H4a. Distinct development and installed default ports in the documentation — complete
 
 **Goal.** Let a development checkout and an installed instance run at the same
 time without either being reconfigured, and make the documentation say which
@@ -584,7 +673,7 @@ about path resolution would have hidden the change that mattered. Until this
 lands, the second instance to start fails to bind with a message naming the
 likely cause and the flag to fix it.
 
-## H4b. Verified backup before a startup schema migration
+## H4b. Verified backup before a startup schema migration — complete
 
 **Goal.** Make an automatic schema migration recoverable. Today `Bootstrap`
 migrates a user's only copy in place, with no backup and no notice, on every
@@ -714,7 +803,7 @@ an *older* binary silently rewrote a newer database's version downward, which is
 fixed. The remaining gap is that the forward path, which works correctly, works
 on the user's only copy.
 
-## H5. Safe Make install, uninstall, and purge lifecycle
+## H5. Safe Make install, uninstall, and purge lifecycle — complete
 
 **Goal.** Provide end-user-location dogfooding targets that are auditable,
 automation-safe, and unmistakably separate from development cleanup.

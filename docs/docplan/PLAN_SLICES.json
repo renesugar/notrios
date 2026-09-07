@@ -1,0 +1,382 @@
+{
+  "schema": "notrios.docplan.slices.v1",
+  "items": [
+    {
+      "id": "H0",
+      "title": "Application-facade, C-ABI, and SQLite ownership investigation",
+      "state": "complete",
+      "slices": []
+    },
+    {
+      "id": "H1",
+      "title": "Shared application facade and ABI-major-1 library",
+      "state": "complete",
+      "slices": []
+    },
+    {
+      "id": "H2a",
+      "title": "Mermaid renderer and security investigation",
+      "state": "complete",
+      "slices": []
+    },
+    {
+      "id": "H2",
+      "title": "Bounded offline Mermaid enablement",
+      "state": "complete",
+      "slices": []
+    },
+    {
+      "id": "H2b",
+      "title": "Desktop external-link opening",
+      "state": "complete",
+      "slices": []
+    },
+    {
+      "id": "H3",
+      "title": "Installed-path, XDG, migration, and destructive-lifecycle investigation",
+      "state": "complete",
+      "slices": []
+    },
+    {
+      "id": "H4",
+      "title": "Installed runtime paths, assets, and migration",
+      "state": "complete",
+      "slices": []
+    },
+    {
+      "id": "H4a",
+      "title": "Distinct development and installed default ports in the documentation",
+      "state": "complete",
+      "slices": []
+    },
+    {
+      "id": "H4b",
+      "title": "Verified backup before a startup schema migration",
+      "state": "complete",
+      "slices": []
+    },
+    {
+      "id": "H5",
+      "title": "Safe Make install, uninstall, and purge lifecycle",
+      "state": "complete",
+      "slices": []
+    },
+    {
+      "id": "H6a",
+      "title": "Desktop installer and GitHub-native build investigation",
+      "state": "complete",
+      "slices": []
+    },
+    {
+      "id": "H6",
+      "title": "Ubuntu-priority installer package",
+      "state": "complete",
+      "slices": []
+    },
+    {
+      "id": "H8",
+      "title": "Installed integration harness and Ubuntu baseline",
+      "state": "complete",
+      "slices": []
+    },
+    {
+      "id": "H14",
+      "title": "Documentation actionability investigation",
+      "state": "complete",
+      "slices": []
+    },
+    {
+      "id": "H7",
+      "title": "Windows and macOS installer workflow implementation",
+      "state": "deferred",
+      "slices": []
+    },
+    {
+      "id": "H9",
+      "title": "Native credential-store selection and integration",
+      "state": "in-progress",
+      "slices": [
+        {
+          "id": "H9-A",
+          "statement": "An installed profile resolves sync credentials through the operating system's store, and a mobile target links none of it",
+          "state": "done",
+          "evidence": "go:github.com/renesugar/notrios/internal/credentials#Select"
+        },
+        {
+          "id": "H9-B",
+          "statement": "Existing keys move between the native store and the owner-only development file in either direction",
+          "state": "done",
+          "evidence": "file:cmd/notriosctl/synccredentials.go"
+        },
+        {
+          "id": "H9-C",
+          "statement": "Decide whether to own the provider layer or import one (zalando/go-keyring today, 99designs/keyring evaluated, vendoring tested)",
+          "state": "not-started"
+        },
+        {
+          "id": "H9-D",
+          "statement": "Ship or reject the headless Linux tier over pass/age, which is executable here and recommended but not shipped",
+          "state": "not-started"
+        },
+        {
+          "id": "H9-E",
+          "statement": "Write the host-supplied credential contract for Android, iOS and wasm, where the provider returns ErrUnsupportedPlatform today",
+          "state": "not-started"
+        },
+        {
+          "id": "H9-F",
+          "statement": "Establish locked/unavailable behaviour for headless Windows and headless macOS, which this item's scope asks for and no finding covers",
+          "state": "blocked",
+          "blocked_on": "Windows and Apple hardware, or hosted runners standing in for them"
+        }
+      ]
+    },
+    {
+      "id": "H10",
+      "title": "Wails v3 migration spike",
+      "state": "not-started",
+      "slices": [
+        {
+          "id": "H10-A",
+          "statement": "A disposable v3 prototype compares dependencies, builds, bindings, menus, deep links, lifecycle, profiles and packaging against the v2 baseline",
+          "state": "not-started"
+        },
+        {
+          "id": "H10-B",
+          "statement": "A decision report recommends migrate later, defer, or reject, with upstream status current at execution time",
+          "state": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "H11",
+      "title": "Android-emulator shared-core acceptance",
+      "state": "not-started",
+      "slices": [
+        {
+          "id": "H11-A",
+          "statement": "The shared core builds for android/arm64 and runs against an emulator, with the credential provider host-supplied",
+          "state": "not-started"
+        },
+        {
+          "id": "H11-B",
+          "statement": "An acceptance record states what was proven on the emulator and what remains a physical-device claim",
+          "state": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "H12",
+      "title": "Delayed GitHub native validation and develop-to-main pull request",
+      "state": "not-started",
+      "slices": [
+        {
+          "id": "H12-A",
+          "statement": "Re-audit main, run the evidence pre-push gate, and push develop",
+          "state": "blocked",
+          "blocked_on": "explicit authorisation: no push, PR or merge without it"
+        },
+        {
+          "id": "H12-B",
+          "statement": "Open the develop-to-main pull request and merge only after review",
+          "state": "blocked",
+          "blocked_on": "explicit authorisation"
+        }
+      ]
+    },
+    {
+      "id": "H15",
+      "title": "Complete the journey catalogues, and give the GUI an inventory",
+      "state": "in-progress",
+      "slices": [
+        {
+          "id": "H15-A",
+          "statement": "The interface can tag and untag a note, with a captured journey",
+          "state": "done",
+          "evidence": "file:docs/images/journeys/tag-a-note-add-it.png"
+        },
+        {
+          "id": "H15-B",
+          "statement": "The command line can delete and restore a note",
+          "state": "done",
+          "evidence": "go:github.com/renesugar/notrios/cmd/notriosctl#runNotes"
+        },
+        {
+          "id": "H15-C",
+          "statement": "A control crawl enumerates the interface by state and pins what it finds",
+          "state": "done",
+          "evidence": "file:performance/v0.8-h15/GUI_CONTROLS.json"
+        },
+        {
+          "id": "H15-D",
+          "statement": "The pinned inventory cannot go stale unnoticed: an interface signature fails validation when a control is added without re-crawling",
+          "state": "done",
+          "evidence": "file:performance/v0.8-h15/interface_signature.py"
+        },
+        {
+          "id": "H15-E",
+          "statement": "The desktop harness captures the four journeys a browser cannot reach",
+          "state": "done",
+          "evidence": "test:TestDesktopJourneyCapture"
+        },
+        {
+          "id": "H15-F",
+          "statement": "Saving stays explicit and the unsaved draft is protected, including when the window closes",
+          "state": "done",
+          "evidence": "file:web/src/draft.ts"
+        },
+        {
+          "id": "H15-G",
+          "statement": "Write GUI journeys for the twelve features that have an interface surface and none: collections, attachments, remote media, links, graph, query blocks, sync pairing, sync exchange, sync peers, sync recovery, jobs and profiles",
+          "state": "not-started"
+        },
+        {
+          "id": "H15-H",
+          "statement": "Work down the eighteen features with no command-line journey, which the ratchet tracks",
+          "state": "not-started"
+        },
+        {
+          "id": "H15-I",
+          "statement": "Decide how much of the query language one journey should demonstrate, and whether interface journeys should point at command-line-only tasks",
+          "state": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "H16",
+      "title": "Reconcile the collection model with what is actually stored",
+      "state": "in-progress",
+      "slices": [
+        {
+          "id": "H16-A",
+          "statement": "Answer what a collection is, and what kind, capabilities, deletion and --collection mean",
+          "state": "done",
+          "evidence": "file:PLAN.md"
+        },
+        {
+          "id": "H16-B",
+          "statement": "An unspecified collection means every collection wherever a read is scoped, and --collection narrows rather than presumes",
+          "state": "done",
+          "evidence": "go:github.com/renesugar/notrios/internal/store#CollectionScopeSQL"
+        },
+        {
+          "id": "H16-C",
+          "statement": "Remove kind and capabilities from api.Collection, the OpenAPI schema and MCP list_collections, and the three columns that never existed from DATABASE_SCHEMA.md",
+          "state": "not-started"
+        },
+        {
+          "id": "H16-D",
+          "statement": "Decide whether a dangling collection identifier is repaired by adopting the note into default or by recreating the missing row, and what schema precondition that repair requires",
+          "state": "not-started"
+        },
+        {
+          "id": "H16-E",
+          "statement": "Decide whether a collection's name and description stay editable, and write the route if they do",
+          "state": "not-started"
+        },
+        {
+          "id": "H16-F",
+          "statement": "Decide whether the breaking response-shape change ships in v0.8",
+          "state": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "H17",
+      "title": "Act on many notes at once, from the search results and from a query",
+      "state": "not-started",
+      "slices": [
+        {
+          "id": "H17-A",
+          "statement": "The interface selects more than one search result and offers the operations that apply to a set",
+          "state": "not-started"
+        },
+        {
+          "id": "H17-B",
+          "statement": "The command line names a set by query, shows the selection, and then acts on it",
+          "state": "not-started"
+        },
+        {
+          "id": "H17-C",
+          "statement": "Decide whether the command grows notriosctl batch or the existing commands grow --query, and whether the interface uses request_key",
+          "state": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "H18",
+      "title": "Make the features page usable, and generate the table under it",
+      "state": "in-progress",
+      "slices": [
+        {
+          "id": "H18-A",
+          "statement": "The capability catalogue renders as prose sections rather than as bullets with bracketed scores",
+          "state": "done",
+          "evidence": "go:github.com/renesugar/notrios/internal/docfeatures#Registry"
+        },
+        {
+          "id": "H18-B",
+          "statement": "A capability-by-surface table is generated from the same registry, with the shared-library column refused a claim it cannot verify",
+          "state": "done",
+          "evidence": "go:github.com/renesugar/notrios/internal/docfeatures#(Registry).SurfaceTable"
+        },
+        {
+          "id": "H18-C",
+          "statement": "A heading a generator emitted is graded generated rather than unverified, in the inventory and in the audit",
+          "state": "done",
+          "evidence": "file:performance/v0.7-g18a/build_inventory.py"
+        },
+        {
+          "id": "H18-D",
+          "statement": "Rewrite the twenty-nine summaries and surface notes in FEATURES.json for a reader rather than against the surfaces",
+          "state": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "H19",
+      "title": "notriosctl search",
+      "state": "not-started",
+      "slices": [
+        {
+          "id": "H19-A",
+          "statement": "A read-only search command takes the query language and prints hits a person can read",
+          "state": "not-started"
+        },
+        {
+          "id": "H19-B",
+          "statement": "--json emits each hit with its stable link, and --limit reports the cursor for the next page",
+          "state": "not-started"
+        },
+        {
+          "id": "H19-C",
+          "statement": "Decide what --count does, given that the store returns hits and a cursor and no total",
+          "state": "not-started"
+        },
+        {
+          "id": "H19-D",
+          "statement": "A command-line journey finds a note and acts on the id the search returned",
+          "state": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "H13",
+      "title": "v0.8 release wrap-up and branch synchronization",
+      "state": "not-started",
+      "slices": [
+        {
+          "id": "H13-A",
+          "statement": "Reconcile every v0.8 item's evidence and archive the completed ones",
+          "state": "not-started"
+        },
+        {
+          "id": "H13-B",
+          "statement": "Synchronise develop and main and record the release state",
+          "state": "blocked",
+          "blocked_on": "H12, which needs authorisation"
+        }
+      ]
+    }
+  ]
+}

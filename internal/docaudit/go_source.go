@@ -221,6 +221,15 @@ func specName(spec ast.Spec) string {
 	return ""
 }
 
+// ResolveGoAnchor reports whether a `go:` anchor names something that exists in
+// this repository.
+//
+// Exported for the plan ledger, which checks the evidence a finished slice
+// names. One resolver rather than two: an anchor that the documentation gates
+// accept and the plan gates reject would be a disagreement about what "exists"
+// means, and the first thing anybody would do is stop believing one of them.
+func ResolveGoAnchor(root, anchor string) error { return resolveGoAnchor(root, anchor, true) }
+
 func resolveGoAnchor(root, anchor string, includeTests bool) error {
 	const prefix = "go:"
 	if !strings.HasPrefix(anchor, prefix) {
