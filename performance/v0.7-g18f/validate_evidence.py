@@ -160,10 +160,11 @@ def validate_report(root=ROOT, here=HERE):
         # compares the record against itself: neither side is recomputed from
         # the tree, so a CLI that grows does not move them. The document hashes
         # below are the half that is recomputed, and they caught this change.
-        # docs/cli.md carries 69 usage forms as of v0.8 H15 -- `tasks list`,
-        # `templates list` and `templates create` -- which is not the same
-        # figure as the 59 recorded here, because the two count different
-        # things and only one of them is live.
+        # docs/cli.md carries 79 usage forms as of v0.8 H23, which replaced the
+        # printHelp string literal with internal/clispec and so made the guide
+        # list eight commands that existed and were named in no help text. That
+        # is not the same figure as the 59 recorded here, because the two count
+        # different things and only one of them is live.
         "configuration_keys": 62, "configuration_defaults": 52, "cli_usage_forms": 59,
         "rest_openapi_operations": 109, "mcp_tools": 46, "mcp_sync_scope_assignments": 7,
         "mcp_scopes": 4, "mcp_tool_scope_assignments": 46, "gui_journeys": 37,

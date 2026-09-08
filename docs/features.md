@@ -63,7 +63,7 @@ which surfaces offer each capability.
 
 Create a note, change it, add to either end of it, and delete it. Deleting moves a note to Trash, and Trash is a place you can look in and take things back out of, not a countdown.
 
-The command line writes a note and files it, and does no more than that: editing, appending and deleting happen in the GUI or over REST/MCP. `notes create` exists so a note can be the end of a pipeline.
+The command line writes, edits, files, trashes and restores a note; appending and prepending to one stay on REST and MCP. `notes create` exists so a note can be the end of a pipeline, and `notes delete` ships with `notes restore` because a delete whose undo lives on another surface is a poor boundary. This entry said editing and deleting happened only in the GUI or over REST/MCP for five days after both commands shipped, because neither appeared in `notriosctl help` and the coverage check reads the help.
 
 *Available on the desktop app, the command line, the REST API and MCP.*
 
@@ -71,9 +71,9 @@ The command line writes a note and files it, and does no more than that: editing
 
 Fetch a note whole, or just its body, its outline, its blocks, a line range, or an earlier revision. The structured views exist so a tool can work on part of a note without re-parsing all of it.
 
-No command line: reading a note is what the GUI and the API are for.
+The command line reads a note's metadata, and its body with `--body`. It reads no more than that yet: the outline, blocks, line ranges, attachments and links a note is made of are reachable over REST and MCP only, and v0.8 H21 adds them. This entry previously read "No command line: reading a note is what the GUI and the API are for", which was wrong twice -- `notes show` already existed, and nobody had decided a terminal should not read. An absent adapter tends to acquire a justification.
 
-*Available on the desktop app, the REST API and MCP.*
+*Available on the desktop app, the command line, the REST API and MCP.*
 
 ### Search your notes
 
@@ -292,8 +292,8 @@ capability's own section.
 
 | Capability | Desktop app | Command line | REST | MCP | Shared library |
 |---|---|---|---|---|---|
-| Write and edit notes | 6 | 1 | 10 | 6 | — |
-| Read a note and its structure | 2 | — | 7 | 5 | — |
+| Write and edit notes | 6 | 4 | 10 | 6 | — |
+| Read a note and its structure | 2 | 1 | 7 | 5 | — |
 | Search your notes | 1 | — | 3 | 2 | — |
 | Notebooks that are really saved searches | 1 | 1 | 3 | 1 | — |
 | Organise notes into notebooks | 2 | 3 | 9 | 4 | — |
@@ -310,14 +310,14 @@ capability's own section.
 | Import from another application | 3 | 6 | — | — | — |
 | Export your library | 2 | 5 | — | — | — |
 | Back up and restore the whole library | 1 | 3 | — | — | — |
-| Pair two of your own libraries | 1 | 6 | 8 | — | — |
-| Synchronize with a replica | 1 | 3 | 9 | 3 | — |
-| See and end trust between replicas | 2 | 1 | 4 | — | — |
+| Pair two of your own libraries | 1 | 7 | 8 | — | — |
+| Synchronize with a replica | 1 | 5 | 9 | 3 | — |
+| See and end trust between replicas | 2 | 3 | 4 | — | — |
 | Recover a replica and resolve conflicts | 2 | 1 | 9 | 1 | — |
 | Choose where sync keys are kept | — | 1 | — | — | — |
 | Watch and steer long-running work | 3 | 5 | 5 | 4 | — |
 | Keep separate libraries | 1 | 7 | — | — | — |
-| Publish a subset of your notes | 3 | 4 | 1 | 1 | — |
+| Publish a subset of your notes | 3 | 5 | 1 | 1 | — |
 | Keep a library healthy | 3 | 8 | 4 | 1 | — |
 | Move a pre-0.8 library into place | — | 1 | — | — | — |
 | Let an AI assistant use your library | — | — | 2 | — | — |
@@ -341,7 +341,6 @@ Each capability below is offered on some surfaces and not others.
 - Move a pre-0.8 library into place — command line only. Command line only, and genuinely so: it relocates the directories the running program uses, which is not something the program can sensibly do to itself while serving them.
 - Group libraries into collections — GUI only. A collection is provenance, not a place notes live: notes are imported into a notebook, which is what a person browses, and carry a collection identifier saying where they came from. Search spans every collection and `collection:` narrows it -- it used to be pinned to one collection chosen by the caller and defaulted to `default`, which made imported notes unfindable and the field meaningless. The inspector names the collection only when it is not `default`, since a row saying so on every note written here would say nothing. Creating and reconfiguring collections stays on the command line and over REST; H16 decides what a collection's `kind` and capabilities mean, because the schema records neither.
 - Live query blocks inside a note — GUI only. No command line. The GUI renders them where they sit: the preview finds each ```note-query block, runs it through the same parser the search box uses, and fills the block with the result. This row read as a gap for as long as the control crawl was the only measurement, and the crawl cannot see it and never could -- a query block renders content, not a control, and the crawl enumerates interactive elements. Its evidence is web/src/note-query.ts and its tests instead.
-- Read a note and its structure — GUI only. No command line: reading a note is what the GUI and the API are for.
 - Search your notes — GUI only. No command line search command; `notriosctl export archive --query` applies the same language to an export instead. A search now spans every collection; `collection:"id"` narrows it to one provenance.
 - Attach and manage files — both surfaces, and neither journey is written yet
 - See the shape of the link graph — both surfaces, and neither journey is written yet
@@ -355,6 +354,7 @@ Each capability below is offered on some surfaces and not others.
 - Pair two of your own libraries — both, but only the command-line journey is written
 - See and rename tags — both, but only the GUI journey is written
 - Publish a subset of your notes — both, but only the GUI journey is written
+- Read a note and its structure — both, but only the GUI journey is written
 - Notebooks that are really saved searches — both, but only the GUI journey is written
 <!-- notrios:generated:user:where-the-surfaces-disagree:end -->
 

@@ -15,6 +15,7 @@ import (
 
 	"github.com/renesugar/notrios/internal/archive"
 	"github.com/renesugar/notrios/internal/archivev2"
+	"github.com/renesugar/notrios/internal/clispec"
 	"github.com/renesugar/notrios/internal/config"
 	"github.com/renesugar/notrios/internal/credentials"
 	"github.com/renesugar/notrios/internal/helpdocs"
@@ -35,6 +36,10 @@ func main() {
 	cmd := "help"
 	if len(os.Args) > 1 {
 		cmd = os.Args[1]
+	}
+
+	if len(os.Args) > 1 && helpAsked(os.Args[1:]) {
+		return
 	}
 
 	switch cmd {
@@ -99,6 +104,9 @@ func main() {
 	case "snapshot":
 		runSnapshot(os.Args[2:])
 	case "help", "-h", "--help":
+		if len(os.Args) > 2 && helpFor(os.Args[2:]...) {
+			return
+		}
 		printHelp()
 	default:
 		fmt.Fprintf(os.Stderr, "unknown command %q\n", cmd)
@@ -579,124 +587,70 @@ func localizeImportedNotes(ctx context.Context, cfg config.Config, st store.Stor
 
 // printHelp is the finite command and flag usage registry shown by notriosctl.
 //
+// printHelp renders the whole command line from internal/clispec.
+//
+// It used to be a string literal that this program, docs/cli.md, the Help
+// notebook and the documentation coverage gate all depended on, and that
+// nothing checked against the dispatcher. Eight commands were missing from it.
+//
 //notrios:doc user cli-usage-forms
 //notrios:help cli the-notriosctl-cli
 //notrios:enumerates go:github.com/renesugar/notrios/cmd/notriosctl#printHelp
 func printHelp() {
-	fmt.Print(`notriosctl - Notrios import/export/maintenance CLI
+	commandSpec().Help(os.Stdout)
+}
 
-Usage:
-  notriosctl doctor [--config config.yaml] [--db path] [--asset-store path]
-  notriosctl paths [--json] [--no-redact]
-                                                 # resolved mode and roots (config, data, state, cache, runtime, assets)
-  notriosctl config show [--config config.yaml] [--json] [--no-redact]
-                                                 # resolved configuration and where each value came from
-  notriosctl migrate [--from dir] [--dry-run] [--json]
-                                                 # move a pre-0.8 ./data library into the resolved roots
-  notriosctl version
-  notriosctl import joplin-raw [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--batch-size 100] [--preserve-source] [--dry-run] [--write-config path] [--import-config path] [--localize-media] <raw-export-dir>
-  notriosctl import obsidian [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--dry-run] [--localize-media] <vault-dir>
-  notriosctl import twitter [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--notebook Twitter] [--dry-run] <extracted-archive-dir>
-  notriosctl import chatgpt [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--notebook ChatGPT] [--dry-run] <conversations.json|export-dir>
-  notriosctl import claude  [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--notebook Claude] [--dry-run] <conversations.json|export-dir>
-  notriosctl import archive [--db ...] [--dry-run] [--write-config path] [--import-config path] <archive-dir>
-  notriosctl export archive [--db ...] [--query "tag:todo"] <out-dir>
-  notriosctl compatibility archive-v2 [--reader current-v2|previous-loose-v2] <archive-dir|manifest.json>
-                                                 # bounded declaration-only admission; full verification remains separate
-  notriosctl verify archive-v2 <archive-dir>
-  notriosctl restore archive-v2 --intent replace|adopt|merge|fork [--db ...] [--new-database-id id] <archive-dir>
-  notriosctl export archive-v2 [--db ...] [--target full_archive|subset_transfer] [--notebooks id,id] [--tags a,b] [--query "tag:todo"] [--documents id,id] [--match any|all] [--pack] [--overwrite] [--no-verify] <out-dir>
-  notriosctl snapshot create [--config config.yaml] [--db ...] [--asset-store ...] <out-dir>
-                                                 # same-schema whole-library SQLite image plus deterministic bounded asset packs
-  notriosctl snapshot verify <snapshot-dir>     # full read-only physical snapshot admission
-  notriosctl snapshot restore --intent replace|adopt [--db ...] [--asset-store ...] [--emergency dir] <snapshot-dir>
-                                                 # stopped-service, emergency-first, crash-resumable physical cutover
-  notriosctl seed-help [--db ...] [docs-dir]     # mirror docs/ into the read-only Help notebook
-  notriosctl localize [--config config.yaml] [--db ...] [--dry-run] [--allow-review] [--base-revision rev] <document-id>
-                                                 # download policy-allowed remote media and rewrite the note to resource:// URIs
-  notriosctl resources report [--config config.yaml] [--db ...] [--asset-store ...]
-                                                 # exact duplicates, unreferenced blobs, notebook usage, and review-only perceptual signals
-  notriosctl gc [--config config.yaml] [--db ...] [--asset-store ...] [--dry-run | --apply]
-                                                 # retention-aware resource GC; dry-run is the default
-  notriosctl lint [--db ...] [--checks a,b] [--detail-limit 100] [--quiet] [--list-checks]
-                                                 # read-only workspace report; exit 1 when findings exist
-  notriosctl fix [--db ...] [--kinds a,b] [--document id] [--apply] [--list-kinds]
-                                                 # repair the mechanically safe findings; dry run is the default
-  notriosctl tags add --document <id> --tag <tag>
-                                                 # attach a tag to a note; prints the note's tags afterwards
-  notriosctl tags remove --document <id> --tag <tag>
-                                                 # take a tag off a note; prints the note's tags afterwards
-  notriosctl tags list [--document <id>] [--db ...]
-                                                 # a note's tags, or every tag in the library with note counts
-  notriosctl tags rename --from <tag> --to <tag> [--db ...] [--include-children] [--apply]
-                                                 # hierarchical tag rename; dry run is the default and reports every tag and count
-  notriosctl tasks list [--document <id>] [--notebook <id>] [--state open|done] [--untagged]
-                                                 # checkbox items from notes tagged task or todo, with open/done counts
-  notriosctl templates list [--db ...]
-                                                 # notes carrying a note-template block, with their placeholders
-  notriosctl templates create --template <id> --title <title> [--notebook <id|name>] [--set name=value ...]
-                                                 # a new note from a template; a missing placeholder is refused, not blanked
-  notriosctl notebooks create --name <name> [--parent <id|name>] [--icon <emoji>] [--query <query>]
-                                                 # a notebook, or one whose contents are whatever a query matches
-  notriosctl notebooks list [--db ...]           # notebooks and query notebooks, as the sidebar shows them
-  notriosctl notes create --title <title> [--notebook <id|name>] [--body-file path|-] [--body text]
-                                                 # write one note; the body may come from a file, an argument
-                                                 # or standard input, so a note can end a pipeline
-  notriosctl notes move --document <id> --notebook <id|name> [--db ...]
-                                                 # file one note into another notebook; a name is refused when it matches more than one
-  notriosctl graph report [--db ...] [--collection id] [--limit N] [--write-note] [--quiet]
-                                                 # link-graph shape; --write-note overwrites the read-only note in Reports
-  notriosctl graph export [--db ...] [--collection id] [--overwrite] <out-dir>
-                                                 # nodes.csv and edges.csv for Gephi, Cytoscape, NetworkX or igraph
-  notriosctl jobs list [--db ...] [--kind k] [--state s] [--limit 50]
-  notriosctl jobs status [--db ...] [--wait] [--timeout 30m] [--quiet] <job-id>
-  notriosctl jobs show [--db ...] [--command] <job-id>
-  notriosctl jobs cancel [--db ...] <job-id>
-  notriosctl jobs retry [--db ...] [--reset] <sync-job-id>
-                                                 # long imports and exports record a job; status exits 0 succeeded,
-                                                 # 1 failed, 3 running, 4 cancelled, 5 no such job, 6 interrupted
-  notriosctl sync init|status [--db ...] [--keys path]
-  notriosctl sync invite [--ttl 15m] [--offline --out <file>]
-                                                 # one-use, short-lived pairing code; the file half is useless without it
-  notriosctl sync join --url <base-url> --code <code>
-  notriosctl sync accept --invite <file> --code <code> --out <file>
-  notriosctl sync enroll --acceptance <file> --code <code>
-  notriosctl sync peers | sync revoke --key <id> [--advance-epoch]
-  notriosctl sync exchange --url <base-url> [--materialize N]
-                                                 # one exchange over a peer's authenticated surface
-  notriosctl sync fetch-backup --url <base-url> --out <dir>
-                                                 # resumable encrypted snapshot download, verified as archive-v2
-  notriosctl sync discover [--carrier dir] [--db ...]
-  notriosctl sync once [--carrier dir] [--cleanup] [--materialize N] [--db ...]
-                                                 # one exchange through a shared directory; polling or manual runs are
-                                                 # the mechanism, and no filesystem watcher is required for correctness
-  notriosctl sync migrate-credentials --to native|development-file [--dry-run] [--confirm]
-                                                 # move existing sync key material between the operating system's
-                                                 # credential store and the owner-only development file
-  notriosctl link [--db ...] [--anchor slug|^block] [--list-anchors] <document-id>
-                                                 # print the stable notrios:// link for a note or one of its sections
-  notriosctl open [--profile name] [--registry path] [--db path] [--launch] <notrios-uri>
-                                                 # resolve a stable link on this machine (exit 1 unresolved, 2 malformed)
-  notriosctl profile create --name <profile> [--listen 127.0.0.1:8080] [--db ...] [--sync-target none|directory|rest]
-  notriosctl profile show --name <profile> [--registry path]
-  notriosctl profile list [--registry path]
-  notriosctl profile validate [--name <profile>] [--registry path]
-  notriosctl profile start --name <profile> [--binary notriosd] [--dry-run]
-                                                 # owner-only config, identity/path/port checks, and secret-free startup
-  notriosctl profile register --name <profile> [--db ...] [--registry path]
-  notriosctl profile forget --name <profile> [--registry path]
-                                                 # legacy stable-link routing entry; ambiguity remains explicit
-  notriosctl register-url-handler [--apply] [--binary path] [--dir path]
-                                                 # Ubuntu/XDG notrios:// protocol handler; prints unless --apply
-  notriosctl publish profile save --name <profile> [--notebooks id,id] [--tags a,b] [--link-action plain_text]
-  notriosctl publish profile list|delete [--name <profile>]
-  notriosctl publish plan --profile <profile>    # read-only privacy review; prints the plan digest
-  notriosctl publish run --profile <profile> --reviewed-plan <sha256> <out-dir>
-                                                 # scoped sanitized archive-v2 handoff; refuses a stale review
+// helpFor answers a request for help at any level and reports whether it could.
+func helpFor(path ...string) bool {
+	return commandSpec().Help(os.Stdout, path...)
+}
 
-Future commands:
-  notriosctl sync status
-`)
+// commandSpec is the compiled-in description of this command line.
+func commandSpec() clispec.Registry {
+	return clispec.Must()
+}
+
+// helpAsked answers a request for help at whatever depth it was asked, and
+// reports whether it did. It runs before any dispatcher, so one rule decides
+// what asking for help means at every level of the command line.
+//
+// Two behaviours it replaces: a command group answered `unknown notes
+// subcommand "--help"` and exited 2, and a leaf command fell through to the
+// flag package, whose dump names flags `-body` where the documentation says
+// `--body` and never mentions positional arguments at all.
+func helpAsked(args []string) bool {
+	if len(args) == 0 {
+		return false
+	}
+	// `notriosctl help notes show` names its subject after the word, so the
+	// walk starts past it and the request needs no second marker.
+	asked := args[0] == "help"
+	if asked {
+		args = args[1:]
+	}
+	spec := commandSpec()
+	path, rest := []string{}, args
+	for len(rest) > 0 {
+		candidate := append(append([]string{}, path...), rest[0])
+		_, isCommand := spec.Lookup(candidate...)
+		if !isCommand && len(spec.Children(candidate...)) == 0 {
+			break
+		}
+		path, rest = candidate, rest[1:]
+	}
+	if !asked && !clispec.HelpRequested(rest) {
+		return false
+	}
+	for _, argument := range rest {
+		if argument == "--json" {
+			if err := spec.JSON(os.Stdout, path...); err != nil {
+				fmt.Fprintln(os.Stderr, err)
+				os.Exit(1)
+			}
+			return true
+		}
+	}
+	return spec.Help(os.Stdout, path...)
 }
 
 func runImportTwitter(args []string) {

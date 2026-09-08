@@ -3,75 +3,91 @@
 <!-- source: go:github.com/renesugar/notrios/cmd/notriosctl#printHelp -->
 printHelp is the finite command and flag usage registry shown by notriosctl.
 
-- notriosctl doctor [--config config.yaml] [--db path] [--asset-store path]
-- notriosctl paths [--json] [--no-redact]
+printHelp renders the whole command line from internal/clispec.
+
+It used to be a string literal that this program, docs/cli.md, the Help
+notebook and the documentation coverage gate all depended on, and that
+nothing checked against the dispatcher. Eight commands were missing from it.
+
+- notriosctl compatibility archive-v2 [--reader current-v2|previous-loose-v2] <archive-dir|manifest.json>
 - notriosctl config show [--config config.yaml] [--json] [--no-redact]
-- notriosctl migrate [--from dir] [--dry-run] [--json]
-- notriosctl version
+- notriosctl doctor [--config config.yaml] [--db path] [--asset-store path]
+- notriosctl export archive [--db ...] [--query "tag:todo"] <out-dir>
+- notriosctl export archive-v2 [--db ...] [--target full_archive|subset_transfer] [--notebooks id,id] [--tags a,b] [--query "tag:todo"] [--documents id,id] [--match any|all] [--pack] [--overwrite] [--no-verify] <out-dir>
+- notriosctl fix [--db ...] [--kinds a,b] [--document id] [--apply] [--list-kinds]
+- notriosctl gc [--config config.yaml] [--db ...] [--asset-store ...] [--dry-run | --apply]
+- notriosctl graph export [--db ...] [--collection id] [--overwrite] <out-dir>
+- notriosctl graph report [--db ...] [--collection id] [--limit N] [--write-note] [--quiet]
+- notriosctl import archive [--db ...] [--dry-run] [--write-config path] [--import-config path] <archive-dir>
+- notriosctl import chatgpt [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--notebook ChatGPT] [--dry-run] <conversations.json|export-dir>
+- notriosctl import claude [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--notebook Claude] [--dry-run] <conversations.json|export-dir>
 - notriosctl import joplin-raw [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--batch-size 100] [--preserve-source] [--dry-run] [--write-config path] [--import-config path] [--localize-media] <raw-export-dir>
 - notriosctl import obsidian [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--dry-run] [--localize-media] <vault-dir>
 - notriosctl import twitter [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--notebook Twitter] [--dry-run] <extracted-archive-dir>
-- notriosctl import chatgpt [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--notebook ChatGPT] [--dry-run] <conversations.json|export-dir>
-- notriosctl import claude  [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--notebook Claude] [--dry-run] <conversations.json|export-dir>
-- notriosctl import archive [--db ...] [--dry-run] [--write-config path] [--import-config path] <archive-dir>
-- notriosctl export archive [--db ...] [--query "tag:todo"] <out-dir>
-- notriosctl compatibility archive-v2 [--reader current-v2|previous-loose-v2] <archive-dir|manifest.json>
-- notriosctl verify archive-v2 <archive-dir>
-- notriosctl restore archive-v2 --intent replace|adopt|merge|fork [--db ...] [--new-database-id id] <archive-dir>
-- notriosctl export archive-v2 [--db ...] [--target full_archive|subset_transfer] [--notebooks id,id] [--tags a,b] [--query "tag:todo"] [--documents id,id] [--match any|all] [--pack] [--overwrite] [--no-verify] <out-dir>
-- notriosctl snapshot create [--config config.yaml] [--db ...] [--asset-store ...] <out-dir>
-- notriosctl snapshot verify <snapshot-dir>     # full read-only physical snapshot admission
-- notriosctl snapshot restore --intent replace|adopt [--db ...] [--asset-store ...] [--emergency dir] <snapshot-dir>
-- notriosctl seed-help [--db ...] [docs-dir]     # mirror docs/ into the read-only Help notebook
-- notriosctl localize [--config config.yaml] [--db ...] [--dry-run] [--allow-review] [--base-revision rev] <document-id>
-- notriosctl resources report [--config config.yaml] [--db ...] [--asset-store ...]
-- notriosctl gc [--config config.yaml] [--db ...] [--asset-store ...] [--dry-run | --apply]
-- notriosctl lint [--db ...] [--checks a,b] [--detail-limit 100] [--quiet] [--list-checks]
-- notriosctl fix [--db ...] [--kinds a,b] [--document id] [--apply] [--list-kinds]
-- notriosctl tags add --document <id> --tag <tag>
-- notriosctl tags remove --document <id> --tag <tag>
-- notriosctl tags list [--document <id>] [--db ...]
-- notriosctl tags rename --from <tag> --to <tag> [--db ...] [--include-children] [--apply]
-- notriosctl tasks list [--document <id>] [--notebook <id>] [--state open|done] [--untagged]
-- notriosctl templates list [--db ...]
-- notriosctl templates create --template <id> --title <title> [--notebook <id|name>] [--set name=value ...]
-- notriosctl notebooks create --name <name> [--parent <id|name>] [--icon <emoji>] [--query <query>]
-- notriosctl notebooks list [--db ...]           # notebooks and query notebooks, as the sidebar shows them
-- notriosctl notes create --title <title> [--notebook <id|name>] [--body-file path|-] [--body text]
-- notriosctl notes move --document <id> --notebook <id|name> [--db ...]
-- notriosctl graph report [--db ...] [--collection id] [--limit N] [--write-note] [--quiet]
-- notriosctl graph export [--db ...] [--collection id] [--overwrite] <out-dir>
-- notriosctl jobs list [--db ...] [--kind k] [--state s] [--limit 50]
-- notriosctl jobs status [--db ...] [--wait] [--timeout 30m] [--quiet] <job-id>
-- notriosctl jobs show [--db ...] [--command] <job-id>
 - notriosctl jobs cancel [--db ...] <job-id>
+- notriosctl jobs list [--db ...] [--kind k] [--state s] [--limit 50]
 - notriosctl jobs retry [--db ...] [--reset] <sync-job-id>
-- notriosctl sync init|status [--db ...] [--keys path]
-- notriosctl sync invite [--ttl 15m] [--offline --out <file>]
-- notriosctl sync join --url <base-url> --code <code>
+- notriosctl jobs show [--db ...] [--command] <job-id>
+- notriosctl jobs status [--db ...] [--wait] [--timeout 30m] [--quiet] <job-id>
+- notriosctl link [--db ...] [--anchor slug|^block] [--list-anchors] <document-id>
+- notriosctl lint [--db ...] [--checks a,b] [--detail-limit 100] [--quiet] [--list-checks]
+- notriosctl localize [--config config.yaml] [--db ...] [--dry-run] [--allow-review] [--base-revision rev] <document-id>
+- notriosctl migrate [--from dir] [--dry-run] [--json]
+- notriosctl notebooks create --name <name> [--parent <id|name>] [--icon <emoji>] [--query <query>]
+- notriosctl notebooks list [--db ...]
+- notriosctl notes create --title <title> [--notebook <id|name>] [--body-file path|-] [--body text]
+- notriosctl notes delete --document <id> [--db ...]
+- notriosctl notes edit --document <id> [--title <title>] [--body-file path | --body text] [--message <why>]
+- notriosctl notes move --document <id> --notebook <id|name> [--db ...]
+- notriosctl notes restore --document <id> [--db ...]
+- notriosctl notes show --document <id> [--body] [--db ...]
+- notriosctl open [--profile name] [--registry path] [--db path] [--launch] <notrios-uri>
+- notriosctl paths [--json] [--no-redact]
+- notriosctl profile create --name <profile> [--listen 127.0.0.1:8080] [--db ...] [--sync-target none|directory|rest]
+- notriosctl profile forget --name <profile> [--registry path]
+- notriosctl profile list [--registry path]
+- notriosctl profile register --name <profile> [--db ...] [--registry path]
+- notriosctl profile show --name <profile> [--registry path]
+- notriosctl profile start --name <profile> [--binary notriosd] [--dry-run]
+- notriosctl profile validate [--name <profile>] [--registry path]
+- notriosctl publish plan --profile <profile>
+- notriosctl publish profile delete [--name <profile>]
+- notriosctl publish profile list [--name <profile>]
+- notriosctl publish profile save --name <profile> [--notebooks id,id] [--tags a,b] [--link-action plain_text]
+- notriosctl publish run --profile <profile> --reviewed-plan <sha256> <out-dir>
+- notriosctl register-url-handler [--apply] [--binary path] [--dir path]
+- notriosctl resources report [--config config.yaml] [--db ...] [--asset-store ...]
+- notriosctl restore archive-v2 --intent replace|adopt|merge|fork [--db ...] [--new-database-id id] <archive-dir>
+- notriosctl seed-help [--db ...] [docs-dir]
+- notriosctl snapshot create [--config config.yaml] [--db ...] [--asset-store ...] <out-dir>
+- notriosctl snapshot restore --intent replace|adopt [--db ...] [--asset-store ...] [--emergency dir] <snapshot-dir>
+- notriosctl snapshot verify <snapshot-dir>
 - notriosctl sync accept --invite <file> --code <code> --out <file>
+- notriosctl sync discover [--carrier dir] [--db ...]
 - notriosctl sync enroll --acceptance <file> --code <code>
-- notriosctl sync peers | sync revoke --key <id> [--advance-epoch]
 - notriosctl sync exchange --url <base-url> [--materialize N]
 - notriosctl sync fetch-backup --url <base-url> --out <dir>
-- notriosctl sync discover [--carrier dir] [--db ...]
-- notriosctl sync once [--carrier dir] [--cleanup] [--materialize N] [--db ...]
+- notriosctl sync handshake --url <base-url> [--db ...]
+- notriosctl sync init [--db ...] [--keys path]
+- notriosctl sync invite [--ttl 15m] [--offline --out <file>]
+- notriosctl sync join --url <base-url> --code <code>
 - notriosctl sync migrate-credentials --to native|development-file [--dry-run] [--confirm]
-- notriosctl link [--db ...] [--anchor slug|^block] [--list-anchors] <document-id>
-- notriosctl open [--profile name] [--registry path] [--db path] [--launch] <notrios-uri>
-- notriosctl profile create --name <profile> [--listen 127.0.0.1:8080] [--db ...] [--sync-target none|directory|rest]
-- notriosctl profile show --name <profile> [--registry path]
-- notriosctl profile list [--registry path]
-- notriosctl profile validate [--name <profile>] [--registry path]
-- notriosctl profile start --name <profile> [--binary notriosd] [--dry-run]
-- notriosctl profile register --name <profile> [--db ...] [--registry path]
-- notriosctl profile forget --name <profile> [--registry path]
-- notriosctl register-url-handler [--apply] [--binary path] [--dir path]
-- notriosctl publish profile save --name <profile> [--notebooks id,id] [--tags a,b] [--link-action plain_text]
-- notriosctl publish profile list|delete [--name <profile>]
-- notriosctl publish plan --profile <profile>    # read-only privacy review; prints the plan digest
-- notriosctl publish run --profile <profile> --reviewed-plan <sha256> <out-dir>
-- notriosctl sync status
+- notriosctl sync once [--carrier dir] [--cleanup] [--materialize N] [--db ...]
+- notriosctl sync peers [--db ...]
+- notriosctl sync retention --snapshot <retained-snapshot-dir> [--apply --confirm-digest <dry-run-digest>]
+- notriosctl sync retire --peer <replica-id> [--reason ...] [--confirm retire-peer:<replica-id>]
+- notriosctl sync revoke --key <id> [--advance-epoch]
+- notriosctl sync start [--carrier dir] [--resource-fetch] [--byte-budget N] [--max-attempts N] [--db ...]
+- notriosctl sync status [--db ...] [--keys path]
+- notriosctl tags add --document <id> --tag <tag>
+- notriosctl tags list [--document <id>] [--db ...]
+- notriosctl tags remove --document <id> --tag <tag>
+- notriosctl tags rename --from <tag> --to <tag> [--db ...] [--include-children] [--apply]
+- notriosctl tasks list [--document <id>] [--notebook <id>] [--state open|done] [--untagged]
+- notriosctl templates create --template <id> --title <title> [--notebook <id|name>] [--set name=value ...]
+- notriosctl templates list [--db ...]
+- notriosctl verify archive-v2 <archive-dir>
+- notriosctl version
 <!-- notrios:generated:user:the-notriosctl-cli:end -->
 
 `notriosctl` handles imports, exports, diagnostics, and maintenance against the same SQLite database the service uses. Build it with `make build-cli` (output `bin/notriosctl`) or run any command from source with `go run ./cmd/notriosctl <command>`.

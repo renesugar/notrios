@@ -46,7 +46,7 @@ What follows is what is left. Each item's own text below is the record of what
 happened, which is a different question.
 
 <!-- notrios:generated:plan:progress:begin -->
-**29 items: 14 complete, 4 in progress, 10 not started, 1 deferred.**
+**29 items: 15 complete, 4 in progress, 9 not started, 1 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -78,7 +78,7 @@ happened, which is a different question.
 | H20. Bring the atlas current, and stop it drifting again | not-started | 0/4 | 4 |
 | H21. Read a note and its structure, from the command line | not-started | 0/4 | 4 |
 | H22. Discover the values a query can name | not-started | 0/3 | 3 |
-| H23. One description of the command line, and --help everywhere | not-started | 0/6 | 6 |
+| H23. One description of the command line, and --help everywhere | complete | 6/6 | — |
 
 ### Started and not finished
 
@@ -108,7 +108,7 @@ happened, which is a different question.
 
 ### Not started
 
-Written and not begun: H10, H11, H12, H17, H19, H13, H20, H21, H22, H23. Their slices are listed under each item.
+Written and not begun: H10, H11, H12, H17, H19, H13, H20, H21, H22. Their slices are listed under each item.
 <!-- notrios:generated:plan:progress:end -->
 
 ## H0. Application-facade, C-ABI, and SQLite ownership investigation — complete
@@ -3827,7 +3827,7 @@ library imported from Joplin and from Obsidian; `notriosctl notebooks list
 command-line column for `Group libraries into collections`; and both registry
 entries describe the surfaces that exist rather than the ones assumed.
 
-## H23. One description of the command line, and `--help` everywhere
+## H23. One description of the command line, and `--help` everywhere — complete
 
 **Ordering.** First of the three. It is the source the other two are checked
 against, and until it is done a command added by H21 or H22 can be invisible to
@@ -3934,6 +3934,65 @@ every dispatched command; `go test ./...` fails when a dispatched subcommand is
 missing from the registry or when a registry entry names a command that is not
 dispatched; `docs/cli.md` and the Help notebook list all of them; and the
 unclaimed-CLI baseline describes the command line rather than its help text.
+
+**Outcome (2026-09-08).** Done, and it found more than it set out to.
+
+`internal/clispec` is the description: 79 commands, each with a purpose, a usage
+form and its notes, embedded in the binary so an installed package describes
+itself. `printHelp` renders it, `docs/cli.md` is generated from it, and
+`internal/docgen` reads it instead of parsing a string literal -- so the surface
+inventory went from 69 forms to 79 and became a fact about the command line.
+
+One rule decides what asking for help means, in `helpAsked`, ahead of every
+dispatcher. `notriosctl notes --help` lists the note subcommands and exits 0
+where it used to print `unknown notes subcommand "--help"` and exit 2;
+`notriosctl notes show --help` prints the documented `--document` and `--body`
+rather than the flag package's `-body`; `notriosctl import obsidian --help`
+names `<vault-dir>`, which no `--help` had ever mentioned. `help <command>`,
+`<command> --help`, `-h` and `<command> help` all answer, because all four are
+things people type. Thirteen per-group guards were written first and then
+removed: they were a second copy of one rule, which is the fault being fixed.
+
+`cmd/notriosctl/commands_test.go` walks the dispatch from `main` and compares it
+to the registry in both directions. Writing it found a second dispatch shape --
+five groups with one subcommand guard it with `if args[0] != "archive-v2"`
+rather than a switch -- which a switch-only walker would have called a leaf while
+quietly agreeing with a registry that disagreed with the program.
+
+Two combined help lines were hiding commands behind a pipe: `sync init|status`
+and `publish profile list|delete`. Split, they are four.
+
+**Three false claims were in `docs/docfeatures/FEATURES.json`, and the mechanism
+that let them stand is the point.** `read-notes` said "No command line: reading a
+note is what the GUI and the API are for" while `notes show` existed;
+`write-notes` said editing and deleting "happen in the GUI or over REST/MCP"
+five days after `notes edit` and `notes delete` shipped. The coverage ratchet
+read `"cli": 0` throughout, because it counted the help text and those commands
+were not in it. Making the inventory real turned 13 surfaces unclaimed at once;
+all 13 are now claimed, and the baseline is 0 again against a denominator that
+means something.
+
+A correction to this item's own work, recorded because it is the failure this
+item exists to prevent: the first draft of the registry invented flags for
+`sync retire`, `sync retention`, `sync handshake` and `sync start` rather than
+reading them, and `notes edit --message` was missed. `docs/cli.md` disagreed with
+itself in the same commit -- the generated list said `sync retire --key <id>` and
+the hand-written section below said `--peer <replica-id>`. Corrected from each
+command's own usage string. A description written from memory is the thing being
+replaced.
+
+A fourth reader of the literal surfaced during validation:
+`performance/v0.7-g18a/build_inventory.py` parsed the same raw string with a
+regex to count usage forms. It now counts the registry. Two frozen records moved
+with it -- G18a's inventory count from 69 to 79, and G18f's recorded hash of
+`docs/cli.md` -- because both recompute from the tree rather than from
+themselves, which is why they noticed.
+
+**Not done here:** the registry describes flags and does not construct them, as
+the recorded decision said. A test that each command's `FlagSet` matches its
+registry entry would close the remaining gap between the two, and is worth an
+item rather than a footnote. The four `sync` subcommands are documented rather
+than exempted; none looked internal once read.
 
 ## H13. v0.8 release wrap-up and branch synchronization
 

@@ -103,11 +103,12 @@ def headings(path: Path) -> list[dict[str, object]]:
 
 
 def count_cli_usage() -> int:
-    text = (ROOT / "cmd/notriosctl/main.go").read_text(encoding="utf-8")
-    body = re.search(r"func printHelp\(\) \{\s*fmt\.Print\(`(.*?)`\)\s*\}", text, re.S)
-    if not body:
-        raise ValueError("printHelp raw string was not found")
-    return sum(line.startswith("  notriosctl ") for line in body.group(1).splitlines())
+    # This counted the raw string inside printHelp until v0.8 H23, which is the
+    # fourth place that string was read from. The command line is now described
+    # once, in internal/clispec, and printHelp renders it; counting the
+    # description counts the command line rather than one rendering of it.
+    registry = json.loads((ROOT / "internal/clispec/commands.json").read_text(encoding="utf-8"))
+    return sum(1 for command in registry["commands"] if not command.get("exempt"))
 
 
 def count_config_keys() -> int:

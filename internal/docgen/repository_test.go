@@ -42,7 +42,16 @@ func TestRepositoryEnumerationsMatchFiniteRegistries(t *testing.T) {
 		// writing `- [ ]` into a note is how one comes to exist and
 		// `notes create` already does that; what was missing was asking what
 		// remains, and instantiating the template that shapes the note.
-		{cliHelpAnchor, 69},
+		// 69 -> 79 in v0.8 H23. Eight commands existed and were named in no
+		// help text -- `notes show`, `notes edit`, `notes delete`,
+		// `notes restore`, `sync handshake`, `sync retention`, `sync retire`
+		// and `sync start` -- and two combined lines (`sync init|status`,
+		// `publish profile list|delete`) hid two more behind a pipe. The
+		// inventory now comes from internal/clispec and is checked against the
+		// dispatcher, so this count measures the command line rather than a
+		// string literal. The anchor still names printHelp because that is
+		// where a reader arrives; printHelp renders the registry.
+		{cliHelpAnchor, 79},
 		{restAnchor, 109},
 		{mcpToolsAnchor, 46},
 		{mcpSyncScopeAnchor, 7},

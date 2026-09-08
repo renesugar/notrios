@@ -22,6 +22,12 @@ import (
 //
 // Every number here should only ever move down. Lowering one is the point of
 // the work; raising one needs a reason written beside it.
+// v0.8 H23 did not move these numbers and did change what they mean. The
+// command-line inventory came from the printHelp literal, so it counted 69
+// forms and could not see eight commands that existed; it now comes from
+// internal/clispec, counts 79, and is checked against the dispatcher. The
+// thirteen surfaces that became visible were claimed rather than allowed to
+// raise the baseline.
 var unclaimedBaseline = map[string]int{
 	"cli":  0,
 	"rest": 0,

@@ -457,37 +457,43 @@
     {
       "id": "H23",
       "title": "One description of the command line, and --help everywhere",
-      "state": "not-started",
+      "state": "complete",
       "slices": [
         {
           "id": "H23-A",
           "statement": "One registry in code declares every command, its purpose, its flags and its arguments, and the dispatcher reads it",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:internal/clispec/commands.json"
         },
         {
           "id": "H23-B",
           "statement": "--help and -h work at the top level, on a command group and on a subcommand, print the same shape, and exit 0",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "test:TestEveryLevelAnswersARequestForHelp"
         },
         {
           "id": "H23-C",
           "statement": "A dispatched subcommand missing from the registry fails a build, or is exempt with a stated reason",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "test:TestEveryDispatchedCommandIsDescribed"
         },
         {
           "id": "H23-D",
           "statement": "The surface inventory and the published CLI guide are derived from the registry rather than from a help string literal",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "go:github.com/renesugar/notrios/internal/docgen#Surfaces"
         },
         {
           "id": "H23-E",
           "statement": "Tools can discover the command line as data through notriosctl help --json",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "go:github.com/renesugar/notrios/internal/clispec#Registry"
         },
         {
           "id": "H23-F",
           "statement": "The unclaimed-surface baseline and the features registry reflect the real command line",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "test:TestUnclaimedSurfacesDoNotGrow"
         }
       ]
     }

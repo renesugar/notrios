@@ -6,7 +6,10 @@
       "title": "Write and edit notes",
       "summary": "Create a note, change it, add to either end of it, and delete it. Deleting moves a note to Trash, and Trash is a place you can look in and take things back out of, not a countdown.",
       "cli": [
-        "notriosctl notes create"
+        "notriosctl notes create",
+        "notriosctl notes edit",
+        "notriosctl notes delete",
+        "notriosctl notes restore"
       ],
       "rest": [
         "POST /api/v1/documents",
@@ -36,7 +39,7 @@
         "Restore",
         "Permanently delete this note and its revisions"
       ],
-      "surface_note": "The command line writes a note and files it, and does no more than that: editing, appending and deleting happen in the GUI or over REST/MCP. `notes create` exists so a note can be the end of a pipeline."
+      "surface_note": "The command line writes, edits, files, trashes and restores a note; appending and prepending to one stay on REST and MCP. `notes create` exists so a note can be the end of a pipeline, and `notes delete` ships with `notes restore` because a delete whose undo lives on another surface is a poor boundary. This entry said editing and deleting happened only in the GUI or over REST/MCP for five days after both commands shipped, because neither appeared in `notriosctl help` and the coverage check reads the help."
     },
     {
       "id": "read-notes",
@@ -62,7 +65,10 @@
         "All notes",
         "Search query"
       ],
-      "surface_note": "No command line: reading a note is what the GUI and the API are for."
+      "surface_note": "The command line reads a note's metadata, and its body with `--body`. It reads no more than that yet: the outline, blocks, line ranges, attachments and links a note is made of are reachable over REST and MCP only, and v0.8 H21 adds them. This entry previously read \"No command line: reading a note is what the GUI and the API are for\", which was wrong twice -- `notes show` already existed, and nobody had decided a terminal should not read. An absent adapter tends to acquire a justification.",
+      "cli": [
+        "notriosctl notes show"
+      ]
     },
     {
       "id": "search-notes",
@@ -399,12 +405,13 @@
       "title": "Pair two of your own libraries",
       "summary": "Enrol a library for synchronization, issue a single-use code, and spend it from the other side so the two learn each other's keys.",
       "cli": [
-        "notriosctl sync init|status",
+        "notriosctl sync init",
         "notriosctl sync invite",
         "notriosctl sync join",
         "notriosctl sync accept",
         "notriosctl sync enroll",
-        "notriosctl sync discover"
+        "notriosctl sync discover",
+        "notriosctl sync handshake"
       ],
       "rest": [
         "GET /api/v1/sync-ui",
@@ -427,7 +434,9 @@
       "cli": [
         "notriosctl sync exchange",
         "notriosctl sync once",
-        "notriosctl sync status"
+        "notriosctl sync status",
+        "notriosctl sync start",
+        "notriosctl sync retention"
       ],
       "rest": [
         "GET /api/v1/sync/status",
@@ -454,7 +463,9 @@
       "title": "See and end trust between replicas",
       "summary": "List the replicas a library trusts, revoke one's key, and retire a peer after reviewing exactly what retiring it means.",
       "cli": [
-        "notriosctl sync peers | sync revoke"
+        "notriosctl sync peers",
+        "notriosctl sync revoke",
+        "notriosctl sync retire"
       ],
       "rest": [
         "POST /api/v1/sync-ui/peers/{replica_id}/retire",
@@ -559,7 +570,8 @@
         "notriosctl publish plan",
         "notriosctl publish run",
         "notriosctl publish profile save",
-        "notriosctl publish profile list|delete"
+        "notriosctl publish profile list",
+        "notriosctl publish profile delete"
       ],
       "rest": [
         "POST /api/v1/selection/plan"

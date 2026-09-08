@@ -6,9 +6,6 @@ import (
 	"github.com/renesugar/notrios/internal/doccompare"
 	"github.com/renesugar/notrios/internal/docfeatures"
 	"github.com/renesugar/notrios/internal/docjourneys"
-	"go/ast"
-	"go/parser"
-	"go/token"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -18,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/renesugar/notrios/internal/clispec"
 	"github.com/renesugar/notrios/internal/config"
 	"github.com/renesugar/notrios/internal/docjourney"
 )
@@ -182,46 +180,21 @@ func formatConfigValue(value reflect.Value) string {
 	return string(encoded)
 }
 
+// cliUsageForms is the command-line surface inventory.
+//
+// It used to parse the usage literal in printHelp, which made the inventory a
+// fact about a string rather than about the command line: eight commands
+// existed, worked, and were absent from that literal, so they were absent from
+// docs/cli.md, from the features coverage check, from doccompare, and from the
+// unclaimed ratchet -- which read zero because it could not see them. The
+// description now lives in internal/clispec, is checked against the dispatcher
+// by cmd/notriosctl, and is read here.
 func cliUsageForms(root string) ([]string, error) {
-	path := filepath.Join(root, "cmd/notriosctl/main.go")
-	fset := token.NewFileSet()
-	file, err := parser.ParseFile(fset, path, nil, 0)
+	registry, err := clispec.Load()
 	if err != nil {
 		return nil, err
 	}
-	for _, declaration := range file.Decls {
-		function, ok := declaration.(*ast.FuncDecl)
-		if !ok || function.Name.Name != "printHelp" || function.Body == nil {
-			continue
-		}
-		var literal string
-		ast.Inspect(function.Body, func(node ast.Node) bool {
-			call, ok := node.(*ast.CallExpr)
-			if !ok || len(call.Args) != 1 {
-				return true
-			}
-			selector, ok := call.Fun.(*ast.SelectorExpr)
-			if !ok || selector.Sel.Name != "Print" {
-				return true
-			}
-			value, ok := call.Args[0].(*ast.BasicLit)
-			if ok && value.Kind == token.STRING {
-				literal, _ = strconv.Unquote(value.Value)
-			}
-			return true
-		})
-		if literal == "" {
-			break
-		}
-		var values []string
-		for _, line := range strings.Split(literal, "\n") {
-			if strings.HasPrefix(line, "  notriosctl ") {
-				values = append(values, strings.TrimSpace(line))
-			}
-		}
-		return values, nil
-	}
-	return nil, fmt.Errorf("printHelp usage literal was not found")
+	return registry.UsageForms(), nil
 }
 
 var routePattern = regexp.MustCompile(`HandleFunc\("(GET|POST|PUT|PATCH|DELETE|HEAD) ([^"]+)"`)
