@@ -34,12 +34,17 @@ type RestoreReport struct {
 	RestoreID         string `json:"restore_id"`
 	SnapshotID        string `json:"snapshot_id"`
 	EmergencySnapshot string `json:"emergency_snapshot"`
-	DatabaseID        string `json:"database_id"`
-	OldReplicaID      string `json:"old_replica_id"`
-	NewReplicaID      string `json:"new_replica_id"`
-	DerivedDocuments  int64  `json:"derived_documents"`
-	Stage             string `json:"stage"`
-	Resumed           bool   `json:"resumed"`
+	// EmergencySkipped says why no emergency snapshot was taken, and is empty
+	// whenever one was. A safety step that is skipped silently is worse than
+	// one that fails: the caller has to be able to see that nothing was
+	// protected, and why that was the right answer.
+	EmergencySkipped string `json:"emergency_snapshot_skipped,omitempty"`
+	DatabaseID       string `json:"database_id"`
+	OldReplicaID     string `json:"old_replica_id"`
+	NewReplicaID     string `json:"new_replica_id"`
+	DerivedDocuments int64  `json:"derived_documents"`
+	Stage            string `json:"stage"`
+	Resumed          bool   `json:"resumed"`
 }
 
 type restorePlan struct {
@@ -114,21 +119,39 @@ func Restore(ctx context.Context, snapshotRoot string, options RestoreOptions) (
 		return nil
 	}
 
+	emergencySkipped := ""
 	if plan.Stage == "initialized" {
-		live, err := store.OpenSQLiteWithAssetStore(targetDB, targetAssets)
+		// The emergency snapshot exists to protect the library this restore is
+		// about to replace. When the target holds no library there is nothing
+		// to protect, and taking one meant creating an empty database and
+		// photographing it -- which failed with `no such table:
+		// database_identity`, an internal error for a situation that is not an
+		// error at all. Restoring into a fresh path is the documented way to
+		// make a second replica, and is what `fetch-backup` tells a person to
+		// do next.
+		reason, err := targetLibraryAbsent(targetDB)
 		if err != nil {
 			return RestoreReport{}, err
 		}
-		_, createErr := Create(ctx, live, targetAssets, plan.EmergencySnapshot, CreateOptions{})
-		closeErr := live.Close()
-		if createErr != nil {
-			return RestoreReport{}, fmt.Errorf("create emergency snapshot: %w", createErr)
-		}
-		if closeErr != nil {
-			return RestoreReport{}, closeErr
-		}
-		if _, err := VerifyDirectory(ctx, plan.EmergencySnapshot, DefaultLimits()); err != nil {
-			return RestoreReport{}, fmt.Errorf("verify emergency snapshot: %w", err)
+		if reason != "" {
+			emergencySkipped = reason
+			plan.EmergencySnapshot = ""
+		} else {
+			live, err := store.OpenSQLiteWithAssetStore(targetDB, targetAssets)
+			if err != nil {
+				return RestoreReport{}, err
+			}
+			_, createErr := Create(ctx, live, targetAssets, plan.EmergencySnapshot, CreateOptions{})
+			closeErr := live.Close()
+			if createErr != nil {
+				return RestoreReport{}, fmt.Errorf("create emergency snapshot: %w", createErr)
+			}
+			if closeErr != nil {
+				return RestoreReport{}, closeErr
+			}
+			if _, err := VerifyDirectory(ctx, plan.EmergencySnapshot, DefaultLimits()); err != nil {
+				return RestoreReport{}, fmt.Errorf("verify emergency snapshot: %w", err)
+			}
 		}
 		if err := advance("emergency_verified"); err != nil {
 			return RestoreReport{}, err
@@ -247,7 +270,7 @@ func Restore(ctx context.Context, snapshotRoot string, options RestoreOptions) (
 	}
 	result := RestoreReport{
 		RestoreID: plan.RestoreID, SnapshotID: plan.SnapshotID,
-		EmergencySnapshot: plan.EmergencySnapshot, DatabaseID: plan.DatabaseID,
+		EmergencySnapshot: plan.EmergencySnapshot, EmergencySkipped: emergencySkipped, DatabaseID: plan.DatabaseID,
 		OldReplicaID: plan.OldReplicaID, NewReplicaID: plan.NewReplicaID,
 		DerivedDocuments: plan.DerivedDocuments, Stage: plan.Stage, Resumed: resumed,
 	}
@@ -273,20 +296,39 @@ func loadOrCreateRestorePlan(ctx context.Context, planPath, snapshotRoot, target
 	} else if !errors.Is(err, os.ErrNotExist) {
 		return restorePlan{}, false, err
 	}
-	live, err := store.OpenSQLiteWithAssetStore(targetDB, targetAssets)
+	// A target that holds no library has no identity to compare, and that is
+	// the ordinary case rather than a failure: restoring into a fresh path is
+	// how a second replica is made, and is what `sync fetch-backup` tells a
+	// person to do next. This used to read the identity regardless and report
+	// `no such table: database_identity`, an internal error for a situation
+	// that is not an error at all.
+	absent, err := targetLibraryAbsent(targetDB)
 	if err != nil {
 		return restorePlan{}, false, err
 	}
-	identity, identityErr := live.GetDatabaseIdentity(ctx)
-	closeErr := live.Close()
-	if identityErr != nil {
-		return restorePlan{}, false, identityErr
-	}
-	if closeErr != nil {
-		return restorePlan{}, false, closeErr
-	}
-	if options.Intent == "replace" && identity.DatabaseID != report.DatabaseID {
-		return restorePlan{}, false, fmt.Errorf("replace requires the same database id; use semantic archive-v2 or explicit adopt")
+	identity := store.DatabaseIdentity{}
+	if absent != "" {
+		if options.Intent == "replace" {
+			return restorePlan{}, false, fmt.Errorf(
+				"replace needs a library to replace, and %s holds none; use --intent adopt to make a replica there", targetDB)
+		}
+	} else {
+		live, err := store.OpenSQLiteWithAssetStore(targetDB, targetAssets)
+		if err != nil {
+			return restorePlan{}, false, err
+		}
+		var identityErr error
+		identity, identityErr = live.GetDatabaseIdentity(ctx)
+		closeErr := live.Close()
+		if identityErr != nil {
+			return restorePlan{}, false, identityErr
+		}
+		if closeErr != nil {
+			return restorePlan{}, false, closeErr
+		}
+		if options.Intent == "replace" && identity.DatabaseID != report.DatabaseID {
+			return restorePlan{}, false, fmt.Errorf("replace requires the same database id; use semantic archive-v2 or explicit adopt")
+		}
 	}
 	id, err := store.NewID("restore")
 	if err != nil {
@@ -492,4 +534,36 @@ func syncParent(path string) error {
 	}
 	defer directory.Close()
 	return directory.Sync()
+}
+
+// targetLibraryAbsent reports why the target holds no library, or "" when it
+// holds one. It decides both whether there is an identity to compare and
+// whether there is anything for an emergency snapshot to protect, because those
+// are the same question and answering it twice is how the two come to disagree.
+//
+// It refuses rather than guesses on a file it does not recognise. An existing
+// file with bytes in it that is not a Notrios library is somebody's data, and
+// overwriting it because a probe failed would be the worst outcome this
+// function could have.
+func targetLibraryAbsent(targetDB string) (string, error) {
+	info, err := os.Stat(targetDB)
+	switch {
+	case errors.Is(err, os.ErrNotExist):
+		return "the target held no library to protect", nil
+	case err != nil:
+		return "", err
+	case info.Size() == 0:
+		// An earlier failed run leaves an empty file behind, so this is the
+		// second attempt at the same fresh restore rather than a library.
+		return "the target held no library to protect", nil
+	}
+	live, err := store.OpenSQLiteWithAssetStore(targetDB, filepath.Dir(targetDB))
+	if err != nil {
+		return "", fmt.Errorf("open the target library at %s: %w", targetDB, err)
+	}
+	defer live.Close()
+	if _, err := live.GetDatabaseIdentity(context.Background()); err != nil {
+		return "", fmt.Errorf("%s exists and is not a Notrios library, so it will not be replaced: %w", targetDB, err)
+	}
+	return "", nil
 }

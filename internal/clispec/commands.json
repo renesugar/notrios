@@ -613,7 +613,10 @@
         "snapshot",
         "restore"
       ],
-      "notes": [],
+      "notes": [
+        "adopt into a path with no library makes a new replica there; replace needs one to replace",
+        "the emergency snapshot is skipped, and says so, when there is no library to protect"
+      ],
       "purpose": "stopped-service, emergency-first, crash-resumable physical cutover",
       "usage": "--intent replace|adopt [--db ...] [--asset-store ...] [--emergency dir] <snapshot-dir>"
     },

@@ -1167,6 +1167,12 @@ notriosctl snapshot restore --intent adopt --db second/notes.sqlite \
 What a restore does to a library is a decision with an intent, not something a
 download should make for you.
 
+`--intent adopt` works into a path that holds no library yet -- that is how a
+second replica is made -- and reports `emergency_snapshot_skipped` saying there
+was nothing to protect. `--intent replace` needs a library to replace and
+refuses a fresh path, naming `adopt` as the intent that would work. A file that
+exists and is not a Notrios library is refused rather than overwritten.
+
 On a stopped service, `fetch-backup` can perform that same explicit restore
 after verification with `--intent replace|adopt [--emergency dir]`. It never
 chooses an intent automatically. Re-enroll the fresh replica identity, then run
