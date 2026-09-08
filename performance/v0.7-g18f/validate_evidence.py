@@ -160,7 +160,7 @@ def validate_report(root=ROOT, here=HERE):
         # compares the record against itself: neither side is recomputed from
         # the tree, so a CLI that grows does not move them. The document hashes
         # below are the half that is recomputed, and they caught this change.
-        # docs/cli.md carries 79 usage forms as of v0.8 H23, which replaced the
+        # docs/cli.md carries 81 usage forms as of v0.8 H22, which replaced the
         # printHelp string literal with internal/clispec and so made the guide
         # list eight commands that existed and were named in no help text. That
         # is not the same figure as the 59 recorded here, because the two count

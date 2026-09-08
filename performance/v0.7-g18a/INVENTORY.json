@@ -529,7 +529,7 @@
     },
     {
       "path": "docs/cli.md",
-      "sha256": "0320475ea5ce2a1c51019296fdd634b63dffc450a1ca68b8d3383af6964d1841",
+      "sha256": "48cf6aa27aa4b4e5e1f8cdc745da86a032a60a8f302c6054653581ecf28f1c52",
       "help_note": "doc_help_cli",
       "owner": "go:github.com/renesugar/notrios/cmd/notriosctl#printHelp",
       "sections": [
@@ -814,6 +814,16 @@
           "grade": "unverified"
         },
         {
+          "id": "collections-list-collections-show",
+          "level": 2,
+          "title": "collections list / collections show",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/cmd/notriosctl#printHelp",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        },
+        {
           "id": "notes-move",
           "level": 2,
           "title": "notes move",
@@ -987,7 +997,7 @@
     },
     {
       "path": "docs/features.md",
-      "sha256": "0f827433def5851b53f97d5f0731aec49716110d9355dd0d80a6718605eb479d",
+      "sha256": "524707cc303357475cd76eca16cbfee0bd1c71c853c3414d92007bf71c59f356",
       "help_note": "doc_help_features",
       "owner": "go:github.com/renesugar/notrios/internal/docfeatures#Registry",
       "sections": [
@@ -1997,7 +2007,7 @@
     },
     {
       "path": "docs/journeys-cli.md",
-      "sha256": "a1303c4630b559981e09d0cd95da712cdc3bdc08b660d57734570d2fc5d80d83",
+      "sha256": "bf35233a84ea17acbbb38087f3a5a9e205478e3fe2d5a3b6dd50be0dbc79737a",
       "help_note": "doc_help_journeys_cli",
       "owner": "go:github.com/renesugar/notrios/internal/docjourneys#Catalogue",
       "sections": [
@@ -2399,7 +2409,7 @@
     },
     {
       "path": "docs/query-language.md",
-      "sha256": "662ee3069a52d1fb49d5d63fb83dd2235a0ed9431ec5bc92eb363b23bea80b67",
+      "sha256": "31d2bd54536d299d350f9036c2d73062ead518f8702939df4f7f150d5a3701a2",
       "help_note": "doc_help_query_language",
       "owner": "go:github.com/renesugar/notrios/internal/query#Parse",
       "sections": [
@@ -2763,19 +2773,19 @@
       "id": "published_markdown",
       "count": 18,
       "unit": "pages",
-      "sections": 261,
+      "sections": 262,
       "owner": "go:github.com/renesugar/notrios/internal/helpdocs#Seed"
     },
     {
       "id": "help_notebook",
       "count": 18,
       "unit": "mirrored notes",
-      "sections": 261,
+      "sections": 262,
       "owner": "go:github.com/renesugar/notrios/internal/helpdocs#Seed"
     },
     {
       "id": "cli_help",
-      "count": 79,
+      "count": 81,
       "unit": "usage forms",
       "owner": "go:github.com/renesugar/notrios/cmd/notriosctl#printHelp"
     },
@@ -2867,9 +2877,9 @@
       "executed": 0,
       "generated": 29,
       "claimed": 0,
-      "unverified": 232
+      "unverified": 233
     },
-    "denominator": 261,
+    "denominator": 262,
     "reconciles": true,
     "finding": "The manual does not yet name directive fragments or executable checks, so all current section units are unverified even where independent tests exist."
   },

@@ -1103,6 +1103,42 @@ func (s *SQLiteStore) ListCollections(ctx context.Context) ([]Collection, error)
 	}
 }
 
+// CollectionNoteCounts reports how many live notes name each collection.
+//
+// A collection is provenance rather than a place, so the count is the only
+// thing that says whether an import actually landed anywhere. It counts
+// documents rather than rows in `collections`: a collection with no notes is
+// the interesting one after an import, and it is invisible without this.
+//
+// Trashed notes are excluded, for the same reason a search excludes them.
+func (s *SQLiteStore) CollectionNoteCounts(ctx context.Context) (map[string]int, error) {
+	ctx = contextOrBackground(ctx)
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	stmt, err := s.prepareLocked(
+		`SELECT collection_id, COUNT(*) FROM documents WHERE deleted_at IS NULL GROUP BY collection_id`)
+	if err != nil {
+		return nil, err
+	}
+	defer C.sqlite3_finalize(stmt)
+
+	counts := map[string]int{}
+	for {
+		switch rc := C.sqlite3_step(stmt); rc {
+		case C.SQLITE_ROW:
+			counts[columnText(stmt, 0)] = int(C.sqlite3_column_int(stmt, 1))
+		case C.SQLITE_DONE:
+			return counts, nil
+		default:
+			return nil, s.stepErrLocked(rc)
+		}
+	}
+}
+
 func (s *SQLiteStore) CreateDocument(ctx context.Context, req CreateDocumentRequest) (Document, error) {
 	ctx = contextOrBackground(ctx)
 	if err := ctx.Err(); err != nil {

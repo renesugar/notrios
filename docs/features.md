@@ -95,6 +95,8 @@ Made with `notebooks create --query` at the command line. In the GUI it is an ac
 
 Make notebooks, nest them, move notes between them, and see what a notebook deletion would take with it before agreeing to it.
 
+`notebooks list` prints a table of ids and names, with `--json` for the structured form. It printed JSON only until v0.8 H22, which is the right answer for a script and the wrong one for the person the command exists to help: a query names a notebook by id, and finding the id meant reading a JSON object at a terminal.
+
 *Available on the desktop app, the command line, the REST API and MCP.*
 
 ### Tag and untag a note
@@ -115,9 +117,9 @@ Renaming is offered beside the tag, because it is decided while looking at the t
 
 Collections sit above notebooks and are how an import keeps its material together.
 
-A collection is provenance, not a place notes live: notes are imported into a notebook, which is what a person browses, and carry a collection identifier saying where they came from. Search spans every collection and `collection:` narrows it -- it used to be pinned to one collection chosen by the caller and defaulted to `default`, which made imported notes unfindable and the field meaningless. The inspector names the collection only when it is not `default`, since a row saying so on every note written here would say nothing. Creating and reconfiguring collections stays on the command line and over REST; H16 decides what a collection's `kind` and capabilities mean, because the schema records neither.
+A collection is provenance, not a place notes live: notes are imported into a notebook, which is what a person browses, and carry a collection identifier saying where they came from. Search spans every collection and `collection:` narrows it -- it used to be pinned to one collection chosen by the caller and defaulted to `default`, which made imported notes unfindable and the field meaningless. The inspector names the collection only when it is not `default`, since a row saying so on every note written here would say nothing. The command line lists collections and shows one, with how many notes name each; REST and MCP list them without that count, which H16 should decide about along with the rest of the collection shape. Creating and reconfiguring a collection is still not on the command line: an import creates one silently when `--collection` names a new id, and this entry claimed the opposite for months. H16 decides what a collection's `kind` and capabilities mean, because the schema records neither, so neither is printed here.
 
-*Available on the desktop app, the REST API and MCP.*
+*Available on the desktop app, the command line, the REST API and MCP.*
 
 ### Attach and manage files
 
@@ -299,7 +301,7 @@ capability's own section.
 | Organise notes into notebooks | 2 | 3 | 9 | 4 | — |
 | Tag and untag a note | 4 | 3 | 2 | 2 | — |
 | See and rename tags | 4 | 1 | 3 | 1 | — |
-| Group libraries into collections | 2 | — | 4 | 1 | — |
+| Group libraries into collections | 2 | 2 | 4 | 1 | — |
 | Attach and manage files | 2 | 1 | 8 | 2 | — |
 | Bring remote images into the library | 2 | 1 | 4 | 3 | — |
 | Link notes to each other | 1 | 3 | 4 | 1 | — |
@@ -339,7 +341,6 @@ Each capability below is offered on some surfaces and not others.
 - Choose where sync keys are kept — command line only. Deliberately command line only: this item forbids a credential-management REST or MCP surface.
 - Templates and tasks — command line only. A template is an ordinary note carrying a note-template block, and a task is a checkbox line in a note tagged `task` or `todo`; neither is a table, and both are read back from the Markdown. So nothing creates a task -- writing `- [ ] chase the permit` into a note is how one comes to exist, which `notes create` already does -- and the command line covers the other half: asking what remains, and instantiating a template, which is the repeatable version of the same workflow. A missing placeholder is refused rather than left blank, so a template that gains a field fails the scripts that do not know about it. The tag is required because a checkbox is ordinary Markdown and appears in quoted examples; `--untagged` asks for those too. No GUI journey yet.
 - Move a pre-0.8 library into place — command line only. Command line only, and genuinely so: it relocates the directories the running program uses, which is not something the program can sensibly do to itself while serving them.
-- Group libraries into collections — GUI only. A collection is provenance, not a place notes live: notes are imported into a notebook, which is what a person browses, and carry a collection identifier saying where they came from. Search spans every collection and `collection:` narrows it -- it used to be pinned to one collection chosen by the caller and defaulted to `default`, which made imported notes unfindable and the field meaningless. The inspector names the collection only when it is not `default`, since a row saying so on every note written here would say nothing. Creating and reconfiguring collections stays on the command line and over REST; H16 decides what a collection's `kind` and capabilities mean, because the schema records neither.
 - Live query blocks inside a note — GUI only. No command line. The GUI renders them where they sit: the preview finds each ```note-query block, runs it through the same parser the search box uses, and fills the block with the result. This row read as a gap for as long as the control crawl was the only measurement, and the crawl cannot see it and never could -- a query block renders content, not a control, and the crawl enumerates interactive elements. Its evidence is web/src/note-query.ts and its tests instead.
 - Search your notes — GUI only. No command line search command; `notriosctl export archive --query` applies the same language to an export instead. A search now spans every collection; `collection:"id"` narrows it to one provenance.
 - Attach and manage files — both surfaces, and neither journey is written yet
@@ -349,6 +350,7 @@ Each capability below is offered on some surfaces and not others.
 - Bring remote images into the library — both surfaces, and neither journey is written yet
 - See and end trust between replicas — both surfaces, and neither journey is written yet
 - Recover a replica and resolve conflicts — both surfaces, and neither journey is written yet
+- Group libraries into collections — both, but only the command-line journey is written
 - Keep separate libraries — both, but only the command-line journey is written
 - Synchronize with a replica — both, but only the command-line journey is written
 - Pair two of your own libraries — both, but only the command-line journey is written

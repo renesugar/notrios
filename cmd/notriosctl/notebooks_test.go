@@ -56,10 +56,20 @@ func TestNotebookCreateAndList(t *testing.T) {
 		t.Errorf("the query notebook does not record its query: %s", query.stdout)
 	}
 
+	// Both forms are a contract: the table is what a person reads, and the id
+	// beside the name is the part a query needs. `--json` is what a script
+	// reads, and was the only form until v0.8 H22.
 	listed := runCLIIn(t, sandbox, binary, append([]string{"notebooks", "list"}, roots...)...)
-	for _, want := range []string{"Field notes", "Dusk", "Todo", "query_notebooks"} {
+	for _, want := range []string{"Field notes", "Dusk", "Todo", "query: tag:todo", "nb_"} {
 		if !strings.Contains(listed.stdout, want) {
 			t.Errorf("notebooks list omits %q: %s", want, listed.stdout)
+		}
+	}
+
+	structured := runCLIIn(t, sandbox, binary, append([]string{"notebooks", "list", "--json"}, roots...)...)
+	for _, want := range []string{"query_notebooks", "notebook_id", "Field notes"} {
+		if !strings.Contains(structured.stdout, want) {
+			t.Errorf("notebooks list --json omits %q: %s", want, structured.stdout)
 		}
 	}
 }

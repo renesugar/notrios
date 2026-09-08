@@ -122,7 +122,13 @@ func TestRepositoryExamples(t *testing.T) {
 	// Executed is unchanged at 63: it writes into this user's real credential
 	// store, so it is a reviewed shared-user-state reason covered by executed
 	// tests in cmd/notriosctl that run it against a sandboxed library.
-	if report.Executed != 63 || report.Entries != 142 || len(report.Topics) != 13 {
+	// 142 -> 144 entries and 63 -> 64 executed in v0.8 H22, and one new topic:
+	// the collections synopsis in docs/cli.md is a bracketed-flag form and joins
+	// the illustrative set, while the two discovery commands in
+	// docs/query-language.md are literal and run -- the command line could
+	// create a collection through an import and could not name one back, so
+	// there was nothing to document until now.
+	if report.Executed != 64 || report.Entries != 144 || len(report.Topics) != 14 {
 		t.Fatalf("unexpected G18d coverage: %+v", report)
 	}
 	executedTopics := 0
@@ -133,8 +139,13 @@ func TestRepositoryExamples(t *testing.T) {
 	}
 	// Index is an external clone/build/GUI recipe and therefore has a reviewed
 	// host/network reason. Every other command-bearing topic has a scratch run.
-	if executedTopics != 12 {
-		t.Fatalf("executed topic coverage = %d, want 12 plus reviewed index exception: %+v", executedTopics, report.Topics)
+	//
+	// 12 -> 13 in v0.8 H22: query-language gained one. It had no executed
+	// example because it had nothing runnable to show -- the page documented
+	// terms that name a notebook or a collection and no way to find out which
+	// ones exist.
+	if executedTopics != 13 {
+		t.Fatalf("executed topic coverage = %d, want 13 plus reviewed index exception: %+v", executedTopics, report.Topics)
 	}
 	assertRepositoryCoverageContracts(t, manifest)
 	writeRepositoryReport(t, report)
@@ -624,6 +635,12 @@ func (h *repositoryExamples) cliShell(ctx context.Context, invocation Invocation
 	switch invocation.Entry.Registered.Execution.Postcondition.Kind {
 	case "version-output":
 		ok = strings.TrimSpace(output) != ""
+	case "discovery-listing":
+		// The documented point of these two commands is that they hand back
+		// identifiers a query can name, so the check is that identifiers came
+		// back -- not that a table was printed.
+		ok = strings.Contains(output, "COLLECTION") && strings.Contains(output, "NOTEBOOK") &&
+			strings.Contains(output, "default") && strings.Contains(output, "nb_")
 	case "archive-created":
 		ok = fileExists(filepath.Join(fixture.root, "backups", "full", "manifest.json")) && fileExists(filepath.Join(fixture.root, "transfer", "research", "manifest.json"))
 	case "dry-run-unchanged":

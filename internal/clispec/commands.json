@@ -4,6 +4,10 @@
   "tagline": "Notrios import/export/maintenance CLI",
   "groups": [
     {
+      "name": "collections",
+      "purpose": "See which collections a query can name"
+    },
+    {
       "name": "compatibility",
       "purpose": "Check whether an archive would be admitted"
     },
@@ -77,6 +81,24 @@
     }
   ],
   "commands": [
+    {
+      "path": [
+        "collections",
+        "list"
+      ],
+      "usage": "[--json] [--db ...]",
+      "notes": [],
+      "purpose": "list the collections in this library, with how many notes name each"
+    },
+    {
+      "path": [
+        "collections",
+        "show"
+      ],
+      "usage": "--collection <id> [--json] [--db ...]",
+      "notes": [],
+      "purpose": "show one collection"
+    },
     {
       "path": [
         "compatibility",
@@ -303,8 +325,8 @@
         "list"
       ],
       "notes": [],
-      "purpose": "notebooks and query notebooks, as the sidebar shows them",
-      "usage": "[--db ...]"
+      "purpose": "list notebooks and query notebooks with their ids, as the sidebar shows them",
+      "usage": "[--json] [--db ...]"
     },
     {
       "path": [

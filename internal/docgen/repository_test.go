@@ -51,7 +51,10 @@ func TestRepositoryEnumerationsMatchFiniteRegistries(t *testing.T) {
 		// dispatcher, so this count measures the command line rather than a
 		// string literal. The anchor still names printHelp because that is
 		// where a reader arrives; printHelp renders the registry.
-		{cliHelpAnchor, 79},
+		// 79 -> 81 in v0.8 H22: `collections list` and `collections show`. The
+		// command line could create a collection as a side effect of an import
+		// and could not name one back to the person who made it.
+		{cliHelpAnchor, 81},
 		{restAnchor, 109},
 		{mcpToolsAnchor, 46},
 		{mcpSyncScopeAnchor, 7},

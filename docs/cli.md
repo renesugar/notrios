@@ -9,6 +9,8 @@ It used to be a string literal that this program, docs/cli.md, the Help
 notebook and the documentation coverage gate all depended on, and that
 nothing checked against the dispatcher. Eight commands were missing from it.
 
+- notriosctl collections list [--json] [--db ...]
+- notriosctl collections show --collection <id> [--json] [--db ...]
 - notriosctl compatibility archive-v2 [--reader current-v2|previous-loose-v2] <archive-dir|manifest.json>
 - notriosctl config show [--config config.yaml] [--json] [--no-redact]
 - notriosctl doctor [--config config.yaml] [--db path] [--asset-store path]
@@ -34,7 +36,7 @@ nothing checked against the dispatcher. Eight commands were missing from it.
 - notriosctl localize [--config config.yaml] [--db ...] [--dry-run] [--allow-review] [--base-revision rev] <document-id>
 - notriosctl migrate [--from dir] [--dry-run] [--json]
 - notriosctl notebooks create --name <name> [--parent <id|name>] [--icon <emoji>] [--query <query>]
-- notriosctl notebooks list [--db ...]
+- notriosctl notebooks list [--json] [--db ...]
 - notriosctl notes create --title <title> [--notebook <id|name>] [--body-file path|-] [--body text]
 - notriosctl notes delete --document <id> [--db ...]
 - notriosctl notes edit --document <id> [--title <title>] [--body-file path | --body text] [--message <why>]
@@ -97,7 +99,10 @@ General behavior:
 - successful commands exit `0`; runtime failures print to stderr and exit `1`; usage mistakes (unknown command/flag, wrong argument count) print usage and exit `2`;
 - commands that touch the database accept `--config`, `--db`, and `--asset-store` (overrides win over the config file, which wins over built-in defaults; relative paths resolve against your working directory);
 - importers and `export archive` print a JSON report to stdout;
-- `notriosctl help` (or any unknown command) prints the full usage summary.
+- `notriosctl help` prints the full usage summary; `--help`, `-h` and `help` also work on any
+  command or command group (`notriosctl notes --help`, `notriosctl help notes show`), and
+  `notriosctl help --json` prints the same command list as data. An unknown command prints
+  the summary and exits 2.
 
 ## version
 <!-- notrios:generated:user:version:begin -->
@@ -654,6 +659,38 @@ exist, the destination name is invalid, the rename would touch more than 500
 tags — or when a **dry run's plan contains a merge**. That last one is the
 useful case in a script: renaming onto a name that already exists combines two
 hierarchies, and it should not happen because nobody read the plan.
+
+## collections list / collections show
+
+```sh
+notriosctl collections list [--json] [--db ...]
+notriosctl collections show --collection <id> [--json] [--db ...]
+```
+
+A collection records where a body of notes came from. Notes written in Notrios
+are in `default`; an import puts its notes in whichever collection
+`--collection` named, creating it if the identifier is new.
+
+`collections list` prints one row per collection with the number of notes that
+name it, which is how you tell whether an import landed:
+
+```text
+COLLECTION  NOTES  NAME
+default        18  Default
+joplin        412  Joplin
+obsidian        0  Obsidian
+```
+
+A collection with no notes, as `obsidian` is above, means the import did not
+finish or was pointed somewhere else.
+
+Use an identifier to narrow a search: `collection:"joplin"`. A search covers
+every collection unless a `collection:` term says otherwise. See
+[the query language](query-language.md).
+
+Listing and showing is all the command line does with collections. Renaming and
+deleting are not available on any surface, because what should happen to notes
+that name a collection has not been decided.
 
 ## notes move
 

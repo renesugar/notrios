@@ -14,6 +14,7 @@ One query language works everywhere: the GUI search box, the REST/MCP search API
 | `notebook:"Work"` | limit to a notebook **and its sub-notebooks** (case-insensitive) |
 | `category:"Work"` | exact alias for `notebook:` |
 | `category:"All notes"` | all current notes; removes that notebook constraint |
+| `collection:"joplin"` | limit to notes that came from one place (their provenance) |
 | `tag:toys`, `tag:"shopping mall"` | notes with a tag |
 | `author:"Alice Smith"` | imported notes by display name |
 | `authorid:@alice` | imported notes by canonical account |
@@ -21,6 +22,18 @@ One query language works everywhere: the GUI search box, the REST/MCP search API
 | `until:2026-07-31` | through the **end** of that day |
 | `since:2026-07-13T18:42:07Z` | timestamps to the second |
 | `since:14:30` | today at that time |
+
+**Finding the values.** `notebook:` and `collection:` take identifiers, and you
+have to know which ones exist before you can narrow anything with them:
+
+```sh
+notriosctl notebooks list      # ids and names; --json for a script
+notriosctl collections list    # ids, names, and how many notes name each
+```
+
+A search spans every collection unless a `collection:` term narrows it. A note
+written in Notrios is in `default`; a note that arrived from somewhere else
+carries the identifier its import was given.
 
 Details worth knowing:
 

@@ -435,22 +435,25 @@
     {
       "id": "H22",
       "title": "Discover the values a query can name",
-      "state": "not-started",
+      "state": "complete",
       "slices": [
         {
           "id": "H22-A",
           "statement": "The command line lists and shows collections, which today can only be created as a side effect of an import",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:cmd/notriosctl/collections.go"
         },
         {
           "id": "H22-B",
           "statement": "The command line's notebook listing gives the ids a query takes, in JSON as well as for a reader",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "test:TestNotebookCreateAndList"
         },
         {
           "id": "H22-C",
           "statement": "The documentation says how to find a notebook or collection and then scope a search with it, and names the REST and MCP equivalents",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "test:TestCLIJourneysActuallyRun"
         }
       ]
     },

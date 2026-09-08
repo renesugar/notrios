@@ -119,11 +119,18 @@ func runNotebookCreate(args []string) {
 
 // runNotebookList reports the notebooks and the query notebooks together,
 // which is how the sidebar shows them.
+//
+// It printed JSON and nothing else until v0.8 H22. That is the right answer for
+// a script and the wrong one for the person this command exists to help: a
+// query can say `notebook:"<id>"`, and finding the id meant reading a JSON
+// object at a terminal. The reader gets a table now and `--json` keeps the
+// structured form, which is the shape every listing here should have.
 func runNotebookList(args []string) {
 	fs := flag.NewFlagSet("notriosctl notebooks list", flag.ExitOnError)
 	configPath := fs.String("config", "", "optional config file")
 	dbPath := fs.String("db", "", "SQLite database path override")
 	assetStore := fs.String("asset-store", "", "asset store directory override")
+	asJSON := fs.Bool("json", false, "print the structured form instead of a table")
 	if err := fs.Parse(args); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(2)
@@ -154,5 +161,50 @@ func runNotebookList(args []string) {
 			"search_notebook_id": search.ID, "name": search.Name, "query": search.Query,
 		})
 	}
-	printJSON(map[string]any{"notebooks": rows, "query_notebooks": queries})
+	if *asJSON {
+		printJSON(map[string]any{"notebooks": rows, "query_notebooks": queries})
+		return
+	}
+	printNotebookTable(notebooks, searches)
+}
+
+// printNotebookTable shows the id beside the name, because the name is what a
+// person recognises and the id is what a query takes.
+func printNotebookTable(notebooks []store.Notebook, searches []store.SearchNotebook) {
+	if len(notebooks) == 0 && len(searches) == 0 {
+		fmt.Println("no notebooks")
+		return
+	}
+	width := len("NOTEBOOK")
+	for _, notebook := range notebooks {
+		if len(notebook.ID) > width {
+			width = len(notebook.ID)
+		}
+	}
+	for _, search := range searches {
+		if len(search.ID) > width {
+			width = len(search.ID)
+		}
+	}
+	fmt.Printf("%-*s  %s\n", width, "NOTEBOOK", "NAME")
+	for _, notebook := range notebooks {
+		name := notebook.Name
+		if notebook.ParentID != "" {
+			// Nesting is shown rather than reconstructed by the reader; the
+			// parent id is in the JSON form for anything that needs the tree.
+			name = "  " + name
+		}
+		fmt.Printf("%-*s  %s\n", width, notebook.ID, name)
+	}
+	for _, search := range searches {
+		name := search.Name
+		if query := strings.TrimSpace(search.Query); query != "" {
+			name += "  (query: " + query + ")"
+		}
+		fmt.Printf("%-*s  %s\n", width, search.ID, name)
+	}
+	// The hint names the query term rather than a command. `notriosctl search`
+	// is H19 and does not exist yet, and a hint that tells someone to run a
+	// command the program will reject is worse than no hint.
+	fmt.Println("\nName one in a query: notebook:\"<id>\"")
 }

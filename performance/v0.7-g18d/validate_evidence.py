@@ -43,11 +43,15 @@ def validate_registry(registry: dict, report: dict) -> None:
     # asset-installation block added to the same page.
     # 137 -> 139 in v0.8 H5: the make install/uninstall/purge examples in
     # docs/installation.md, less the three hand-rolled ones they replace.
-    assert len(examples) == report["entries"] == 142
-    assert len({item["id"] for item in examples}) == 142
+    # 142 -> 144 in v0.8 H22: the collections synopsis in docs/cli.md and the
+    # discovery block in docs/query-language.md.
+    assert len(examples) == report["entries"] == 144
+    assert len({item["id"] for item in examples}) == 144
     executed = [item for item in examples if item["state"] == "executed"]
     unverified = [item for item in examples if item["state"] == "unverified"]
-    assert len(executed) == report["executed"] == 63
+    # 63 -> 64 in v0.8 H22: the two discovery commands are literal and run in
+    # the seeded CLI fixture, which is what the page exists to teach.
+    assert len(executed) == report["executed"] == 64
     # 68 -> 70: both new synopses are bracketed-optional forms, registered as
     # illustrative placeholders like every other synopsis in that document.
     # 70 -> 74 in slice E. Executed stays 63: one is a bracketed synopsis, two
@@ -61,7 +65,9 @@ def validate_registry(registry: dict, report: dict) -> None:
     # store; cmd/notriosctl runs both of its commands against a sandboxed
     # library instead.
     # 79 -> 80 in v0.8 H14 slice D: the GUI screenshot regenerate command.
-    assert len(unverified) == report["unverified"] == 79
+    # 79 -> 80 in v0.8 H22: the collections synopsis, a bracketed-optional form
+    # like every other synopsis in that document.
+    assert len(unverified) == report["unverified"] == 80
     assert {item["execution"]["surface"] for item in executed} == {
         "cli", "config", "rest", "mcp"
     }
@@ -73,7 +79,10 @@ def validate_registry(registry: dict, report: dict) -> None:
     for item in unverified:
         counts[item["unrun_reason"]["code"]] += 1
     assert {key: value for key, value in counts.items() if value} == report["unrun_reasons"]
-    assert sum(1 for topic in report["topics"] if topic["counts"].get("executed", 0)) == 12
+    # 12 -> 13 in v0.8 H22: query-language gained an executed example. It had
+    # none because it documented terms naming a notebook or a collection and no
+    # way to find out which ones exist.
+    assert sum(1 for topic in report["topics"] if topic["counts"].get("executed", 0)) == 13
 
 
 def main() -> None:

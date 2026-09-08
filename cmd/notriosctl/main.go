@@ -93,6 +93,8 @@ func main() {
 		runTemplates(os.Args[2:])
 	case "notebooks":
 		runNotebooks(os.Args[2:])
+	case "collections":
+		runCollections(os.Args[2:])
 	case "notes":
 		runNotes(os.Args[2:])
 	case "graph":

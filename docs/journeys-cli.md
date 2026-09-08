@@ -195,6 +195,19 @@ Each task below lists the steps that do it, in order.
   - Import it.
 
     `notriosctl import joplin-raw <joplin>`
+**Find the notebooks and collections a query can name** — Discover the identifiers `notebook:` and `collection:` take, before writing a query that uses one. A search spans every collection unless a `collection:` term narrows it. Notes written here are in `default`; notes that arrived from somewhere else carry the identifier their import was given.
+  - Import something, so the library has more than one provenance. `--collection` names where the notes came from, and creates that collection if the identifier is new.
+
+    `notriosctl import joplin-raw --collection joplin <joplin>`
+  - List the collections. The count is how you tell whether an import landed anywhere: a collection with no notes did not.
+
+    `notriosctl collections list`
+  - Look at one on its own.
+
+    `notriosctl collections show --collection joplin`
+  - List the notebooks. The identifier is what a query takes; the name is what you recognise. Add `--json` when a script needs to read this.
+
+    `notriosctl notebooks list`
 <!-- notrios:generated:user:the-journeys:end -->
 
 

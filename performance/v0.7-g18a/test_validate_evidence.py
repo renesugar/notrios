@@ -42,7 +42,10 @@ class G18aEvidenceTests(unittest.TestCase):
         # introducing the generated surface table. Twenty-nine of the thirty
         # are graded `generated`, so the unverified backlog grew by one rather
         # than by thirty.
-        self.assertEqual(inventory["grade_baseline"]["denominator"], 261)
+        # 261 -> 262 in v0.8 H22: the collections section in docs/cli.md. The
+        # command line could create a collection through an import and could not
+        # list one, so there was nothing to document until there was.
+        self.assertEqual(inventory["grade_baseline"]["denominator"], 262)
 
     def test_duplicate_fragment_is_rejected(self):
         source = """// A.\n//notrios:doc user same\nfunc A() {}\n// B.\n//notrios:doc user same\nfunc B() {}\n"""

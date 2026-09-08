@@ -915,6 +915,18 @@
       }
     },
     {
+      "id": "cli-collections-list-collections-show-example-1",
+      "path": "docs/cli.md",
+      "section": "collections-list-collections-show",
+      "language": "sh",
+      "sha256": "729d48046bfff2fe6a0d4efad2500c7998b994dfec6e7e517b900c85a8f23594",
+      "state": "unverified",
+      "unrun_reason": {
+        "code": "illustrative-placeholder",
+        "detail": "Non-literal command synopsis: bracketed flags are optional-argument notation. The command itself is covered by executed tests in go:github.com/renesugar/notrios/cmd/notriosctl (TestCollectionRowsCountTheNotesThatNameEachCollection, TestATrashedNoteDoesNotInflateACollectionCount, TestTheCollectionsCommandIsDescribedAndReachable); no executed concrete CLI example is registered for the synopsis form."
+      }
+    },
+    {
       "id": "cli-config-show-example-1",
       "path": "docs/cli.md",
       "section": "config-show",
@@ -2650,6 +2662,29 @@
         "postcondition": {
           "kind": "profile-roundtrip",
           "detail": "saved profile is listed then deleted only inside scratch state"
+        }
+      }
+    },
+    {
+      "id": "query-language-search-query-language-example-1",
+      "path": "docs/query-language.md",
+      "section": "search-query-language",
+      "language": "sh",
+      "sha256": "7091f5384484c5e74556a8d02e0414aca1e0f753ea0d7dd49dad92e8655286bd",
+      "state": "executed",
+      "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
+      "execution": {
+        "surface": "cli",
+        "fixture": "seeded-cli",
+        "case": "cli-shell",
+        "substitutions": [],
+        "expected": {
+          "kind": "exit",
+          "status": 0
+        },
+        "postcondition": {
+          "kind": "discovery-listing",
+          "detail": "both listings name identifiers a query can take: a collection and a notebook"
         }
       }
     },

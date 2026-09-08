@@ -1053,7 +1053,7 @@
           "Field notes",
           "Dusk",
           "Todo",
-          "query_notebooks"
+          "query: tag:todo"
         ]
       }
     },
@@ -1107,6 +1107,82 @@
         ],
         "contains": [
           "Imported Notes"
+        ]
+      }
+    },
+    {
+      "id": "find-what-a-query-can-name",
+      "title": "Find the notebooks and collections a query can name",
+      "goal": "Discover the identifiers `notebook:` and `collection:` take, before writing a query that uses one.",
+      "feature": "collections",
+      "guessability": "conventional",
+      "note": "A search spans every collection unless a `collection:` term narrows it. Notes written here are in `default`; notes that arrived from somewhere else carry the identifier their import was given.",
+      "steps": [
+        {
+          "narrative": "Import something, so the library has more than one provenance. `--collection` names where the notes came from, and creates that collection if the identifier is new.",
+          "command": [
+            "import",
+            "joplin-raw",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--collection",
+            "joplin",
+            "{joplin}"
+          ]
+        },
+        {
+          "narrative": "List the collections. The count is how you tell whether an import landed anywhere: a collection with no notes did not.",
+          "command": [
+            "collections",
+            "list",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}"
+          ]
+        },
+        {
+          "narrative": "Look at one on its own.",
+          "command": [
+            "collections",
+            "show",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--collection",
+            "joplin"
+          ]
+        },
+        {
+          "narrative": "List the notebooks. The identifier is what a query takes; the name is what you recognise. Add `--json` when a script needs to read this.",
+          "command": [
+            "notebooks",
+            "list",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}"
+          ]
+        }
+      ],
+      "postcondition": {
+        "narrative": "the imported collection is listed with the notes that name it, so a query can narrow to it",
+        "command": [
+          "collections",
+          "list",
+          "--db",
+          "{db}",
+          "--asset-store",
+          "{assets}",
+          "--json"
+        ],
+        "contains": [
+          "\"collection_id\": \"joplin\"",
+          "\"collection_id\": \"default\"",
+          "\"notes\":"
         ]
       }
     }

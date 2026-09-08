@@ -46,7 +46,7 @@ What follows is what is left. Each item's own text below is the record of what
 happened, which is a different question.
 
 <!-- notrios:generated:plan:progress:begin -->
-**29 items: 15 complete, 4 in progress, 9 not started, 1 deferred.**
+**29 items: 16 complete, 4 in progress, 8 not started, 1 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -77,7 +77,7 @@ happened, which is a different question.
 | H13. v0.8 release wrap-up and branch synchronization | not-started | 0/2 | 2 |
 | H20. Bring the atlas current, and stop it drifting again | not-started | 0/4 | 4 |
 | H21. Read a note and its structure, from the command line | not-started | 0/4 | 4 |
-| H22. Discover the values a query can name | not-started | 0/3 | 3 |
+| H22. Discover the values a query can name | complete | 3/3 | — |
 | H23. One description of the command line, and --help everywhere | complete | 6/6 | — |
 
 ### Started and not finished
@@ -108,7 +108,7 @@ happened, which is a different question.
 
 ### Not started
 
-Written and not begun: H10, H11, H12, H17, H19, H13, H20, H21, H22. Their slices are listed under each item.
+Written and not begun: H10, H11, H12, H17, H19, H13, H20, H21. Their slices are listed under each item.
 <!-- notrios:generated:plan:progress:end -->
 
 ## H0. Application-facade, C-ABI, and SQLite ownership investigation — complete
@@ -3775,7 +3775,7 @@ the features table shows a command-line column for `Read a note and its
 structure`; and the registry's claim that reading has no command line is gone,
 replaced by what each surface actually offers.
 
-## H22. Discover the values a query can name
+## H22. Discover the values a query can name — complete
 
 **Ordering.** Before H19, which needs it: a query can name a notebook or a
 collection, and nothing at the command line says which ones exist.
@@ -3826,6 +3826,48 @@ library imported from Joplin and from Obsidian; `notriosctl notebooks list
 --json` gives ids a script can put into a query; the features table shows a
 command-line column for `Group libraries into collections`; and both registry
 entries describe the surfaces that exist rather than the ones assumed.
+
+**Outcome (2026-09-08).** Done. `notriosctl collections list` and
+`collections show` exist, `notebooks list` prints a table with `--json` beside
+it, and both guides say how to get from a listing to a query.
+
+The count turned out to be the part worth having. A collection is provenance
+rather than a place, so the only thing that says whether an import landed is how
+many notes name it -- `store.CollectionNoteCounts` groups live documents by
+collection, excluding Trash, and a test proves the exclusion by removing it and
+watching the number lie.
+
+Two documentation defects were found rather than assumed. The `collections`
+entry in the features registry claimed that "creating and reconfiguring
+collections stays on the command line and over REST"; on the command line a
+collection could only be created as a silent side effect of
+`import --collection <new-id>` through `ensureCollectionOrExit`, and could not
+be listed, named or shown at all -- a surface that wrote and could not read.
+And `docs/query-language.md` documented `notebook:` and never mentioned
+`collection:`, three weeks after H16 made a search span every collection so that
+`collection:` would mean something.
+
+A correction to this item's own plan text: it said `notebooks list` "prints the
+sidebar's view" and needed ids adding. It already printed ids -- in JSON, and
+only in JSON. The real gap was the reader, not the data, so the change is a
+table by default rather than new fields. Both forms are now asserted, because
+both are contracts.
+
+`collection:"<id>"` is offered as a query term rather than as a command. The
+first draft printed `notriosctl search 'collection:"default"'`, which names a
+command H19 has not built yet: a hint that tells someone to run something the
+program will reject is worse than no hint.
+
+**What this deliberately did not do.** No `collections create`, `rename` or
+`delete`: H16 owns what a collection's identity means and what happens to notes
+that name one. `kind` and `capabilities` are not printed either -- the store
+hard-codes the capability list and records no kind, so printing them would hand
+the reader a constant dressed as a fact about their library.
+
+**An asymmetry recorded rather than hidden:** the command line reports the note
+count and REST and MCP do not. The count is derived and the underlying listing
+is symmetric across all three, but H16 should decide whether it belongs in the
+API rather than leaving the difference to be discovered.
 
 ## H23. One description of the command line, and `--help` everywhere — complete
 

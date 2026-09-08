@@ -137,7 +137,8 @@
       "gui": [
         "Choose a notebook for a new note — executed (new-note-in-notebook)",
         "Review a notebook deletion — executed (delete-notebook-review)"
-      ]
+      ],
+      "surface_note": "`notebooks list` prints a table of ids and names, with `--json` for the structured form. It printed JSON only until v0.8 H22, which is the right answer for a script and the wrong one for the person the command exists to help: a query names a notebook by id, and finding the id meant reading a JSON object at a terminal."
     },
     {
       "id": "tag-a-note",
@@ -199,10 +200,14 @@
       "mcp": [
         "list_collections"
       ],
-      "surface_note": "A collection is provenance, not a place notes live: notes are imported into a notebook, which is what a person browses, and carry a collection identifier saying where they came from. Search spans every collection and `collection:` narrows it -- it used to be pinned to one collection chosen by the caller and defaulted to `default`, which made imported notes unfindable and the field meaningless. The inspector names the collection only when it is not `default`, since a row saying so on every note written here would say nothing. Creating and reconfiguring collections stays on the command line and over REST; H16 decides what a collection's `kind` and capabilities mean, because the schema records neither.",
+      "surface_note": "A collection is provenance, not a place notes live: notes are imported into a notebook, which is what a person browses, and carry a collection identifier saying where they came from. Search spans every collection and `collection:` narrows it -- it used to be pinned to one collection chosen by the caller and defaulted to `default`, which made imported notes unfindable and the field meaningless. The inspector names the collection only when it is not `default`, since a row saying so on every note written here would say nothing. The command line lists collections and shows one, with how many notes name each; REST and MCP list them without that count, which H16 should decide about along with the rest of the collection shape. Creating and reconfiguring a collection is still not on the command line: an import creates one silently when `--collection` names a new id, and this entry claimed the opposite for months. H16 decides what a collection's `kind` and capabilities mean, because the schema records neither, so neither is printed here.",
       "gui": [
         "Collection — shown in the note inspector when a note came from somewhere",
         "collection: in the search box"
+      ],
+      "cli": [
+        "notriosctl collections list",
+        "notriosctl collections show"
       ]
     },
     {
