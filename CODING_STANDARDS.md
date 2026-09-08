@@ -52,4 +52,6 @@ Use the relevant Google style guide as the default unless this project overrides
   in `AGENTS.md` under "Keeping the reference documents current". It is there
   rather than here because it outlives any one coding standard, and because the
   one rule this section used to carry — update `CONTEXT_MAP.md` when adding a
-  package — went unenforced for eleven packages.
+  package — went unenforced for eleven packages. It is a build failure now:
+  `go test ./internal/docrules/` fails when a package under `internal/` or
+  `cmd/` has no entry in the atlas.

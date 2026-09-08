@@ -35,12 +35,17 @@ func main() {
 		if err := writeTable(*root, registry); err != nil {
 			fail(err)
 		}
+		if err := writeAtlas(*root, registry); err != nil {
+			fail(err)
+		}
 		fmt.Printf("documents inventory written: %d documents, %d pointers added\n", len(registry.Documents), written)
 		return
 	}
 
 	problems := docrules.Check(*root)
 	problems = append(problems, docrules.CheckTable(*root)...)
+	problems = append(problems, docrules.CheckAtlasBlock(*root)...)
+	problems = append(problems, docrules.CheckAtlas(*root)...)
 	if len(problems) > 0 {
 		for _, problem := range problems {
 			fmt.Fprintln(os.Stderr, "documents:", problem)
@@ -122,6 +127,14 @@ func insertPointer(body, pointer string) (string, error) {
 	inserted = append(inserted, "", pointer, "")
 	inserted = append(inserted, after...)
 	return strings.Join(inserted, "\n"), nil
+}
+
+func writeAtlas(root string, registry docrules.Registry) error {
+	rendered, err := registry.RenderAtlas(root)
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(filepath.Join(root, registry.Atlas.Document), []byte(rendered), 0o644)
 }
 
 func writeTable(root string, registry docrules.Registry) error {

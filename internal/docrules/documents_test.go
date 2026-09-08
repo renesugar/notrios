@@ -222,3 +222,89 @@ func TestAChangedRegistryMakesTheTableStale(t *testing.T) {
 		t.Fatal("a registry change left the generated table looking current")
 	}
 }
+
+// TestTheAtlasRecordsEveryPackage is the rule CODING_STANDARDS.md carried as a
+// sentence -- "Update CONTEXT_MAP.md when adding major files or packages" --
+// which nothing enforced, so eleven packages went unrecorded.
+func TestTheAtlasRecordsEveryPackage(t *testing.T) {
+	if problems := docrules.CheckAtlas(repositoryRoot(t)); len(problems) > 0 {
+		for _, problem := range problems {
+			t.Errorf("atlas: %s", problem)
+		}
+	}
+}
+
+func TestANewPackageMustBeRecordedInTheAtlas(t *testing.T) {
+	root := t.TempDir()
+	copyRepositoryDocuments(t, root)
+	copyAtlasTree(t, root)
+
+	if problems := docrules.CheckAtlas(root); len(problems) > 0 {
+		t.Fatalf("the copy should start clean: %v", problems)
+	}
+	if err := os.MkdirAll(filepath.Join(root, "internal", "newthing"), 0o755); err != nil {
+		t.Fatalf("creating a package: %v", err)
+	}
+	problems := docrules.CheckAtlas(root)
+	if len(problems) == 0 {
+		t.Fatal("a package the atlas does not record was accepted")
+	}
+	if !strings.Contains(strings.Join(problems, "\n"), "internal/newthing") {
+		t.Errorf("the failure does not name the package: %v", problems)
+	}
+}
+
+// TestAPackageNameIsNotMatchedAsAWord guards the check itself. A grep for bare
+// names reported one missing package where there were six, because `paths` and
+// `media` are ordinary words that appear in prose.
+func TestAPackageNameIsNotMatchedAsAWord(t *testing.T) {
+	root := t.TempDir()
+	copyRepositoryDocuments(t, root)
+	copyAtlasTree(t, root)
+
+	atlas := filepath.Join(root, "CONTEXT_MAP.md")
+	body, err := os.ReadFile(atlas)
+	if err != nil {
+		t.Fatalf("reading the atlas: %v", err)
+	}
+	// Remove the entry and leave the word behind in a sentence.
+	stripped := strings.ReplaceAll(string(body), "`internal/paths/`", "the paths package")
+	write(t, atlas, stripped)
+
+	problems := docrules.CheckAtlas(root)
+	if len(problems) == 0 {
+		t.Fatal("a package mentioned only as a word was counted as recorded")
+	}
+}
+
+func TestTheAtlasRootDocumentListIsGenerated(t *testing.T) {
+	if problems := docrules.CheckAtlasBlock(repositoryRoot(t)); len(problems) > 0 {
+		for _, problem := range problems {
+			t.Errorf("atlas list: %s", problem)
+		}
+	}
+}
+
+// copyAtlasTree reproduces the package directories the atlas has to account for.
+func copyAtlasTree(t *testing.T, into string) {
+	t.Helper()
+	root := repositoryRoot(t)
+	registry, err := docrules.Load(root)
+	if err != nil {
+		t.Fatalf("loading the inventory: %v", err)
+	}
+	for _, parent := range registry.Atlas.Roots {
+		entries, err := os.ReadDir(filepath.Join(root, parent))
+		if err != nil {
+			t.Fatalf("reading %s: %v", parent, err)
+		}
+		for _, entry := range entries {
+			if !entry.IsDir() {
+				continue
+			}
+			if err := os.MkdirAll(filepath.Join(into, parent, entry.Name()), 0o755); err != nil {
+				t.Fatalf("creating %s: %v", entry.Name(), err)
+			}
+		}
+	}
+}

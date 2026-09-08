@@ -71,6 +71,9 @@ type Registry struct {
 	Section   string      `json:"section"`
 	Documents []Document  `json:"documents"`
 	Exempt    []Exemption `json:"exempt"`
+	// Atlas is the separate promise CONTEXT_MAP.md makes: that it records where
+	// the code lives, not only which documents exist.
+	Atlas Atlas `json:"atlas"`
 }
 
 // RegistryPath is where the inventory lives, relative to the repository root.

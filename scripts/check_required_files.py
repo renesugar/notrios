@@ -140,6 +140,7 @@ required = [
     'internal/clispec/help.go',
     'cmd/notriosctl/commands_test.go',
     'docs/docrules/DOCUMENTS.json',
+    'internal/docrules/atlas.go',
     'internal/docrules/documents.go',
     'internal/docrules/documents_test.go',
     'cmd/docrules/main.go',

@@ -46,7 +46,7 @@ What follows is what is left. Each item's own text below is the record of what
 happened, which is a different question.
 
 <!-- notrios:generated:plan:progress:begin -->
-**32 items: 21 complete, 4 in progress, 6 not started, 1 deferred.**
+**32 items: 22 complete, 4 in progress, 5 not started, 1 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -75,7 +75,7 @@ happened, which is a different question.
 | H18. Make the features page usable, and generate the table under it | in-progress | 3/4 | 1 |
 | H19. notriosctl search | complete | 4/4 | — |
 | H13. v0.8 release wrap-up and branch synchronization | not-started | 0/2 | 2 |
-| H20. Bring the atlas current, and stop it drifting again | not-started | 0/4 | 4 |
+| H20. Bring the atlas current, and stop it drifting again | complete | 4/4 | — |
 | H21. Read a note and its structure, from the command line | complete | 4/4 | — |
 | H22. Discover the values a query can name | complete | 3/3 | — |
 | H23. One description of the command line, and --help everywhere | complete | 6/6 | — |
@@ -111,7 +111,7 @@ happened, which is a different question.
 
 ### Not started
 
-Written and not begun: H10, H11, H12, H17, H13, H20. Their slices are listed under each item.
+Written and not begun: H10, H11, H12, H17, H13. Their slices are listed under each item.
 <!-- notrios:generated:plan:progress:end -->
 
 ## H0. Application-facade, C-ABI, and SQLite ownership investigation — complete
@@ -3653,7 +3653,7 @@ malformed query is reported as a query problem with a pointer to the language
 reference, because the parser's own message gives no indication that the thing
 at fault is what the person typed.
 
-## H20. Bring the atlas current, and stop it drifting again
+## H20. Bring the atlas current, and stop it drifting again — complete
 
 **Ordering.** After the root-document inventory, which found the drift.
 Independent of everything else; it touches one document and adds one check.
@@ -3723,6 +3723,37 @@ that does not exist yet.
 `CONTEXT_MAP.md` names every current package and every root document, with the
 document list generated; and adding a package to the repository without touching
 the atlas fails a build rather than a review.
+
+**Outcome (2026-09-08).** Done, and the check found more than the reorganisation
+did.
+
+The atlas is organised by location now: nine sections named after where things
+are, replacing twenty-two named after the task that added them. Every one of the
+176 path entries was moved verbatim rather than rewritten, so nothing was lost
+in the reshuffle and nothing was quietly reworded. Twelve prose bullets that
+were changelog rather than atlas -- "Git repository initialized", "Rewritten:
+ENVIRONMENT_SETUP.md" -- were dropped, because what arrived when is in the
+archived plans, which is its home.
+
+**The gate found five missing packages where a grep found one.** `internal/`
+and `cmd/` are enumerated and matched against backticked paths in the document,
+and the difference matters: `paths`, `media` and `jobs` are ordinary words that
+appear in prose, so a search for bare names reported them as recorded when they
+were not. `internal/application`, `internal/clispec`, `internal/jobs`,
+`internal/media` and `internal/paths` now have entries; four of the five predate
+v0.8 entirely. There is a test for the word-matching failure specifically,
+because a gate that can be satisfied by coincidence is worse than none.
+
+The root-document list is generated from `docs/docrules/DOCUMENTS.json` -- the
+same registry that decides what each document is the home for. The atlas and the
+inventory were two lists of the same thing, and the hand-written one had drifted.
+
+The rule this replaces was one sentence in `CODING_STANDARDS.md`: "Update
+`CONTEXT_MAP.md` when adding major files or packages." What is checked is
+narrower than what that promised -- packages, not "major files or directories" --
+because a package is a durable, enumerable thing and "major" is a judgement
+nobody can automate. A narrower promise that is kept beats a broader one that
+eleven packages walked past.
 
 ## H21. Read a note and its structure, from the command line — complete
 

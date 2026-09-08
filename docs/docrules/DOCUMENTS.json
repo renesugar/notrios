@@ -156,14 +156,49 @@
     }
   ],
   "exempt": [
-    {"path": "FLUTTER_GO_CLIENT.md", "reason": "feature contract: the shared-core and client handoff"},
-    {"path": "IMPORT_EXPORT_POLICY.md", "reason": "feature contract: import, export and publishing behaviour"},
-    {"path": "NATIVE_ARCHIVE_V2.md", "reason": "feature contract: the archive-v2 format and identity rules"},
-    {"path": "NOTEBOOKS_AND_SEARCH_NOTEBOOKS.md", "reason": "feature contract: the notebook and tag model"},
-    {"path": "RECOLL_INTEGRATION.md", "reason": "feature contract: the derived Recoll sidecar"},
-    {"path": "SEARCH_QUERY_LANGUAGE.md", "reason": "feature contract: the user-facing query language"},
-    {"path": "SECURITY_AND_MEDIA_POLICY.md", "reason": "feature contract: remote-media localization"},
-    {"path": "SELECTION_AND_PRIVACY_PLANNER.md", "reason": "feature contract: the selection and privacy planner"},
-    {"path": "SYNCHRONIZATION.md", "reason": "feature contract: the synchronization architecture"}
-  ]
+    {
+      "path": "FLUTTER_GO_CLIENT.md",
+      "reason": "feature contract: the shared-core and client handoff"
+    },
+    {
+      "path": "IMPORT_EXPORT_POLICY.md",
+      "reason": "feature contract: import, export and publishing behaviour"
+    },
+    {
+      "path": "NATIVE_ARCHIVE_V2.md",
+      "reason": "feature contract: the archive-v2 format and identity rules"
+    },
+    {
+      "path": "NOTEBOOKS_AND_SEARCH_NOTEBOOKS.md",
+      "reason": "feature contract: the notebook and tag model"
+    },
+    {
+      "path": "RECOLL_INTEGRATION.md",
+      "reason": "feature contract: the derived Recoll sidecar"
+    },
+    {
+      "path": "SEARCH_QUERY_LANGUAGE.md",
+      "reason": "feature contract: the user-facing query language"
+    },
+    {
+      "path": "SECURITY_AND_MEDIA_POLICY.md",
+      "reason": "feature contract: remote-media localization"
+    },
+    {
+      "path": "SELECTION_AND_PRIVACY_PLANNER.md",
+      "reason": "feature contract: the selection and privacy planner"
+    },
+    {
+      "path": "SYNCHRONIZATION.md",
+      "reason": "feature contract: the synchronization architecture"
+    }
+  ],
+  "atlas": {
+    "document": "CONTEXT_MAP.md",
+    "roots": [
+      "internal",
+      "cmd"
+    ],
+    "exempt": []
+  }
 }
