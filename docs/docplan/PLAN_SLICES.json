@@ -293,14 +293,9 @@
     },
     {
       "id": "H17",
-      "title": "Act on many notes at once, from the search results and from a query",
+      "title": "Act on many notes at once, named by a query",
       "state": "not-started",
       "slices": [
-        {
-          "id": "H17-A",
-          "statement": "The interface selects more than one search result and offers the operations that apply to a set",
-          "state": "not-started"
-        },
         {
           "id": "H17-B",
           "statement": "The command line names a set by query, shows the selection, and then acts on it",
@@ -308,7 +303,7 @@
         },
         {
           "id": "H17-C",
-          "statement": "Decide whether the command grows notriosctl batch or the existing commands grow --query, and whether the interface uses request_key",
+          "statement": "Decide whether the command grows notriosctl batch or the existing commands grow --query",
           "state": "not-started"
         }
       ]
@@ -646,6 +641,28 @@
         {
           "id": "H28-C",
           "statement": "One GUI journey is written and captured against the newly named controls, proving the rest can follow",
+          "state": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "H29",
+      "title": "Select more than one note in the interface",
+      "state": "not-started",
+      "slices": [
+        {
+          "id": "H29-A",
+          "statement": "The search results can select more than one note, and the editor is replaced by the operations that apply to a set",
+          "state": "not-started"
+        },
+        {
+          "id": "H29-B",
+          "statement": "Replacing the editor asks the unsaved-draft guard rather than going around it",
+          "state": "not-started"
+        },
+        {
+          "id": "H29-C",
+          "statement": "A captured GUI journey covers selecting notes, acting on them, and leaving the selection",
           "state": "not-started"
         }
       ]

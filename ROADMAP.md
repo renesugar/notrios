@@ -541,6 +541,15 @@ be smuggled into v0.7 as desktop assumptions.
   Add `notriosctl search`, with the query language the interface uses, JSON
   output carrying each hit's stable link, and the paging and counting a script
   needs.
+- **Acting on many notes at once.** `POST /api/v1/batch` and `run_batch` move,
+  tag, untag, trash, restore and duplicate over a set, and neither the command
+  line nor the interface can call them. The command line needed something that
+  produces identifiers and now has it, so it names a set with the query language
+  and acts on it, showing what matched first the way every other wide-reaching
+  command here does. The interface needs a selection primitive it does not have
+  -- `SearchPane` tracks one note -- so that half is planned separately and with
+  the naming work below, rather than holding a finished command line behind a
+  browser.
 - **An interface its own documentation can point at.** Twelve capabilities have
   a GUI surface and no documented journey, and the obstacle is not effort:
   eleven of them are reached through controls with no stable name, so a journey
@@ -798,7 +807,7 @@ requirements below are the ones H7 already carried.
 The scaffold handoff is complete; see `CODING_CLIENT_HANDOFF.md`. Future roadmap planning should be driven from `ROADMAP.md`, but each active implementation cycle should create a small `PLAN.md` slice and archive it under `plans/` when complete.
 
 <!-- notrios:generated:roadmap:status:begin -->
-`PLAN.md` holds the active plan derived from this roadmap: 34 items, 25 complete, 2 in progress, 6 not started, 1 deferred.
+`PLAN.md` holds the active plan derived from this roadmap: 35 items, 25 complete, 2 in progress, 7 not started, 1 deferred.
 
 Started and unfinished: H15, H18. What remains in each is in the plan's own Progress section.
 <!-- notrios:generated:roadmap:status:end -->

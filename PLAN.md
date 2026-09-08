@@ -46,7 +46,7 @@ What follows is what is left. Each item's own text below is the record of what
 happened, which is a different question.
 
 <!-- notrios:generated:plan:progress:begin -->
-**34 items: 25 complete, 2 in progress, 6 not started, 1 deferred.**
+**35 items: 25 complete, 2 in progress, 7 not started, 1 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -71,7 +71,7 @@ happened, which is a different question.
 | H12. Delayed GitHub native validation and develop-to-main pull request | not-started | 0/2 | 2 |
 | H15. Complete the journey catalogues, and give the GUI an inventory | in-progress | 8/9 | 1 |
 | H16. Reconcile the collection model with what is actually stored | complete | 7/7 | — |
-| H17. Act on many notes at once, from the search results and from a query | not-started | 0/3 | 3 |
+| H17. Act on many notes at once, named by a query | not-started | 0/2 | 2 |
 | H18. Make the features page usable, and generate the table under it | in-progress | 3/4 | 1 |
 | H19. notriosctl search | complete | 4/4 | — |
 | H13. v0.8 release wrap-up and branch synchronization | not-started | 0/2 | 2 |
@@ -84,6 +84,7 @@ happened, which is a different question.
 | H26. Ask about one tag without fetching them all | complete | 4/4 | — |
 | H27. Attach a file from the command line, without guessing where the link goes | complete | 5/5 | — |
 | H28. Make the interface addressable, so its journeys can be written | not-started | 0/3 | 3 |
+| H29. Select more than one note in the interface | not-started | 0/3 | 3 |
 
 ### Started and not finished
 
@@ -97,7 +98,7 @@ happened, which is a different question.
 
 ### Not started
 
-Written and not begun: H10, H11, H12, H17, H13, H28. Their slices are listed under each item.
+Written and not begun: H10, H11, H12, H17, H13, H28, H29. Their slices are listed under each item.
 <!-- notrios:generated:plan:progress:end -->
 
 ## H0. Application-facade, C-ABI, and SQLite ownership investigation — complete
@@ -3340,12 +3341,19 @@ Covered by `web/src/__tests__/draft.test.ts` (storage, damage, refusal) and
 the app shell). One consequence for the journeys: each runs in a fresh browser
 context, so a dirty editor in one cannot silently decline a click in the next.
 
-## H17. Act on many notes at once, from the search results and from a query
+## H17. Act on many notes at once, named by a query
 
-**Goal.** Make `batch` reachable by a person and by a script. The capability
-exists on REST as `POST /api/v1/batch` and on MCP as `run_batch` under the
-organizer scope; neither the interface nor the command line can call it, and
-each needs a different missing piece first.
+**Goal.** Make `batch` reachable from a terminal. The capability exists on REST
+as `POST /api/v1/batch` and on MCP as `run_batch` under the organizer scope, and
+the command line cannot call it.
+
+**Split on 2026-09-08.** This item asked for the interface half and the command
+line half together, and they need different missing pieces: the command line
+needed something that produces identifiers, and the interface needs multi-select
+in `SearchPane`. The first exists now. **The interface half moved to H29**,
+which is ordered with H28 because both are interface work and H28 will already
+have the controls named. Splitting them means this item ships rather than
+waiting on a browser.
 
 **What batch already is.** Move, add_tags, remove_tags, trash, restore and
 duplicate over an explicit list of notes, bounded at 500 and refused rather
@@ -3355,34 +3363,6 @@ says. A run that happened is a 200 even when every item failed, because
 per-item failure is the report's content rather than the request's fate.
 `request_key` makes a retry safe, and a key reused with different arguments is
 refused rather than answered from the earlier run.
-
-### The interface needs multi-select, not a batch screen
-
-Batch is what the feature calls, not what it is. The missing primitive is
-selecting more than one note: `SearchPane` tracks a single `selectedDocumentID`
-and renders each hit as a button that opens it.
-
-The shape to follow is Joplin's, which is well understood by anyone migrating.
-Selecting several results replaces the editor and preview with a panel of the
-operations that apply to a set -- tag, move to a notebook chosen from a
-dropdown, duplicate, delete, copy links -- rather than opening a note nobody
-asked to read.
-
-*One driver does not carry over.* In Joplin, bulk move is partly repair: the
-interface can leave you in a different notebook than you think, so notes land
-in the wrong place and are moved in a batch afterwards. This interface already
-guards against that specific failure -- the notebook control shows the open
-note's own notebook rather than the sidebar's selection, deliberately. Bulk
-move here is ordinary reorganisation, not a workaround, which lowers its
-urgency without removing the need.
-
-*What selection means for the editor -- half settled.* Selecting notes and
-having the note you were reading disappear is abrupt if it was unsaved. The
-unsaved half is now handled everywhere else in the editor: one guard asks
-before anything replaces its contents, and the draft survives a reload. The
-multi-select panel must go through that same guard rather than around it, which
-leaves one question of its own -- whether leaving the selection returns to the
-note that was open, or to an empty editor.
 
 ### The command line needs a way to name a set
 
@@ -3415,14 +3395,14 @@ its author expected is exactly the failure that pattern exists to prevent.
   `--query`.** One command with a `--query` and an operation argument keeps the
   vocabulary in one place; `notes move --query` spreads it across the commands
   that already exist and reads more naturally for each one.
-- **Whether the interface uses `request_key` at all.** It matters for a client
-  that can be interrupted and retried. A window that has just issued one
-  request and is waiting for its report may not need it, and a key generated
-  per click is a key that never gets reused.
-- **Whether `export` belongs in the panel.** Joplin offers it. Exporting a
-  selection here means a publication or an archive subset, both of which name a
-  folder and are therefore desktop-only, so it would be the one item in the
-  panel that is sometimes absent.
+*Two decisions moved to H29 with the interface half: whether the interface sends
+`request_key`, and whether `export` belongs in the selection panel. Both are
+about a panel this item no longer builds.*
+
+**Working state.** `notriosctl search 'tag:todo'` names a set and a batch acts
+on it, showing what it matched before it acts; a run reports per-item outcomes
+the way REST does; and `batch-operations` has the command-line journey it could
+not have, taking H15-H's floor from five to four.
 
 ## H16. Reconcile the collection model with what is actually stored — complete
 
@@ -4851,6 +4831,80 @@ it here.
 crawl records the count and the signature check fails when it falls; and H15-G
 is unblocked, with `remote-media` -- the one feature already addressable through
 `localize-button` -- written first as the proof that the rest can follow.
+
+## H29. Select more than one note in the interface
+
+**Ordering.** With H28, and after it in practice: both are interface work, and a
+journey covering multi-select needs the controls H28 names. Depends on H17 only
+for the operations it calls, which already exist on REST.
+
+**Moved here from H17 on 2026-09-08.** H17 asked for the interface half and the
+command-line half of batch together. They needed different missing pieces -- the
+command line needed something that produces identifiers, which H19 built, and
+the interface needs a selection primitive that does not exist. Keeping them
+together would have held a finished command line behind a browser.
+
+**Goal.** Make the interface able to act on a set of notes rather than one.
+
+**Why a primitive rather than a screen.** Batch is what the feature calls, not
+what it is. The missing piece is selecting more than one note: `SearchPane`
+tracks a single `selectedDocumentID` and renders each hit as a button that opens
+it.
+
+Batch is what the feature calls, not what it is. The missing primitive is
+selecting more than one note: `SearchPane` tracks a single `selectedDocumentID`
+and renders each hit as a button that opens it.
+
+The shape to follow is Joplin's, which is well understood by anyone migrating.
+Selecting several results replaces the editor and preview with a panel of the
+operations that apply to a set -- tag, move to a notebook chosen from a
+dropdown, duplicate, delete, copy links -- rather than opening a note nobody
+asked to read.
+
+*One driver does not carry over.* In Joplin, bulk move is partly repair: the
+interface can leave you in a different notebook than you think, so notes land
+in the wrong place and are moved in a batch afterwards. This interface already
+guards against that specific failure -- the notebook control shows the open
+note's own notebook rather than the sidebar's selection, deliberately. Bulk
+move here is ordinary reorganisation, not a workaround, which lowers its
+urgency without removing the need.
+
+*What selection means for the editor -- half settled.* Selecting notes and
+having the note you were reading disappear is abrupt if it was unsaved. The
+unsaved half is now handled everywhere else in the editor: one guard asks
+before anything replaces its contents, and the draft survives a reload. The
+multi-select panel must go through that same guard rather than around it, which
+leaves one question of its own -- whether leaving the selection returns to the
+note that was open, or to an empty editor.
+
+**Boundaries.** The operations are `POST /api/v1/batch`'s, unchanged: move, add
+and remove tags, trash, restore, duplicate, bounded at 500 and refused rather
+than truncated. This item adds no operation and changes no semantics; it adds
+the selection that lets a person name a set.
+
+**Open decisions.**
+
+- **Whether leaving a selection returns to the note that was open, or to an
+  empty editor -- Non-blocking.** Recommended: return to the note. Selecting
+  several results and then dropping the selection is a change of mind, and
+  landing somewhere other than where you were is a second surprise after the
+  first.
+- **Whether the interface sends `request_key` -- Non-blocking.** Recommended:
+  yes. A person who clicks twice because nothing appeared to happen is exactly
+  the case the key exists for, and it costs one field.
+- **Whether `export` belongs in the panel -- Non-blocking.** Joplin offers it.
+  Exporting a selection here means a publication or an archive subset, both of
+  which name a folder and are therefore desktop-only, so it would be the one
+  item in the panel that is sometimes absent. Recommended: leave it out for now
+  and revisit with the desktop bridge, because a panel item that disappears in a
+  browser needs the greyed-out-with-a-reason treatment the import and export
+  controls already have, and that is a fourth thing to build rather than a
+  fourth button.
+
+**Working state.** Selecting several search results replaces the editor with the
+operations that apply to a set; the unsaved-draft guard is asked before the
+editor is replaced, rather than worked around; a run reports per-item outcomes;
+and a captured GUI journey covers selecting, acting and returning.
 
 ## H13. v0.8 release wrap-up and branch synchronization
 
