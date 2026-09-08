@@ -676,6 +676,21 @@ be smuggled into v0.7 as desktop assumptions.
   accessibility, lifecycle/background behavior, file pickers, secure storage,
   deep links, pairing, catch-up, sync, conflict resolution, and encrypted
   backup are release gates.
+- **The C ABI has no sync surface at all, and that is a gap rather than a
+  decision.** `internal/abi` dispatches `abi.info`, `note.get`, `note.create`,
+  `note.update`, `note.delete`, `note.revisions`, `search` and `resource.get`
+  — nothing for pairing, enrollment, exchange, peer trust, conflicts or
+  backup. The release gates above name pairing, catch-up, sync, conflict
+  resolution and encrypted backup as things to validate, which reads as though
+  the surface exists and needs testing; it has to be designed and built first.
+  A phone therefore cannot pair with a library today by any route: MCP
+  deliberately excludes enrollment and peer retirement (`SYNCHRONIZATION.md`),
+  REST carries the data plane rather than the pairing ceremony a person drives,
+  and the ABI carries neither. The sync core was deliberately built with "no
+  dependency on the Notrios HTTP, Wails, MCP, Recoll, or UI packages", so
+  nothing in the design prevents this — nobody has scoped it. Decide the ABI's
+  sync operation set, and what a pairing ceremony looks like when both ends are
+  the same person holding two devices, before the Flutter client assumes one.
 - Flutter Web is not covered by `dart:ffi`. A web build continues over REST or
   requires its own approved Go-Wasm/JavaScript-interoperability investigation.
 - Wails mobile remains an alternative if it reaches production quality; the
