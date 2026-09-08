@@ -60,7 +60,9 @@ func TestFeaturesWithoutAJourneyAreTracked(t *testing.T) {
 	// 18 -> 17 in v0.8 H22: finding the notebooks and collections a query can
 	// name. Collections had no journey because the command line could not list
 	// them, which is the shape of most of what is left on this list.
-	const baseline = 17
+	// 17 -> 16 in v0.8 H19: finding a note and acting on the id the search
+	// returned. Searching had no journey because it had no command.
+	const baseline = 16
 
 	catalogue, registry := load(t)
 	covered := map[string]bool{}

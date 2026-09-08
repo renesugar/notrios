@@ -208,6 +208,22 @@ Each task below lists the steps that do it, in order.
   - List the notebooks. The identifier is what a query takes; the name is what you recognise. Add `--json` when a script needs to read this.
 
     `notriosctl notebooks list`
+**Find a note, then act on the id the search returned** — Search for a note and use the identifier it hands back with the commands that take one. This is the loop the command line could not close before v0.8 H19: nothing at a terminal produced note identifiers, so every command that takes one could only be used on an id somebody already had.
+  - Write a note to find.
+
+    `notriosctl notes create --title "Reed beds" --body "Seen at dusk."`
+  - Search for it. The query language is the one the search box parses, so `tag:`, `notebook:` and `collection:` mean here what they mean there.
+
+    `notriosctl search dusk`
+  - Ask how many notes match rather than which ones. This is a counting query over the same predicate, not the hits fetched and tallied.
+
+    `notriosctl search --count dusk`
+  - Read the note the search found, using the identifier it returned.
+
+    `notriosctl notes show --document <note>`
+  - Tag it, with the same identifier.
+
+    `notriosctl tags add --document <note> --tag wetland`
 <!-- notrios:generated:user:the-journeys:end -->
 
 

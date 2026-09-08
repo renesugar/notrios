@@ -51,7 +51,9 @@ class G18aEvidenceTests(unittest.TestCase):
         # command line half of a capability REST and MCP already had.
         # 264 -> 265 in v0.8 H26: the tags show section, which documents the
         # capability none of the three surfaces had.
-        self.assertEqual(inventory["grade_baseline"]["denominator"], 265)
+        # 265 -> 266 in v0.8 H19: the search section, for the one everyday
+        # capability that had no command at all.
+        self.assertEqual(inventory["grade_baseline"]["denominator"], 266)
 
     def test_duplicate_fragment_is_rejected(self):
         source = """// A.\n//notrios:doc user same\nfunc A() {}\n// B.\n//notrios:doc user same\nfunc B() {}\n"""

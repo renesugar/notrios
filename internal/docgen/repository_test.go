@@ -61,7 +61,10 @@ func TestRepositoryEnumerationsMatchFiniteRegistries(t *testing.T) {
 		// 85 -> 86 in v0.8 H26: `tags show`. Asking whether one tag exists meant
 		// fetching every tag, on every surface, and the flag that looked like
 		// the answer was accepted and ignored.
-		{cliHelpAnchor, 86},
+		// 86 -> 87 in v0.8 H19: `notriosctl search`. Searching a library was the
+		// one everyday capability with no command at all, which meant nothing at
+		// a terminal produced the note identifiers every other command takes.
+		{cliHelpAnchor, 87},
 		{restAnchor, 109},
 		{mcpToolsAnchor, 46},
 		{mcpSyncScopeAnchor, 7},

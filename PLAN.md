@@ -46,7 +46,7 @@ What follows is what is left. Each item's own text below is the record of what
 happened, which is a different question.
 
 <!-- notrios:generated:plan:progress:begin -->
-**32 items: 20 complete, 4 in progress, 7 not started, 1 deferred.**
+**32 items: 21 complete, 4 in progress, 6 not started, 1 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -73,7 +73,7 @@ happened, which is a different question.
 | H16. Reconcile the collection model with what is actually stored | in-progress | 2/6 | 4 |
 | H17. Act on many notes at once, from the search results and from a query | not-started | 0/3 | 3 |
 | H18. Make the features page usable, and generate the table under it | in-progress | 3/4 | 1 |
-| H19. notriosctl search | not-started | 0/4 | 4 |
+| H19. notriosctl search | complete | 4/4 | — |
 | H13. v0.8 release wrap-up and branch synchronization | not-started | 0/2 | 2 |
 | H20. Bring the atlas current, and stop it drifting again | not-started | 0/4 | 4 |
 | H21. Read a note and its structure, from the command line | complete | 4/4 | — |
@@ -111,7 +111,7 @@ happened, which is a different question.
 
 ### Not started
 
-Written and not begun: H10, H11, H12, H17, H19, H13, H20. Their slices are listed under each item.
+Written and not begun: H10, H11, H12, H17, H13, H20. Their slices are listed under each item.
 <!-- notrios:generated:plan:progress:end -->
 
 ## H0. Application-facade, C-ABI, and SQLite ownership investigation — complete
@@ -3569,7 +3569,7 @@ surface notes in that voice is worth doing, and is deliberately not done here
 because rewriting twenty-nine paragraphs in the same sitting as the machinery
 that renders them makes both harder to review.
 
-## H19. `notriosctl search`
+## H19. `notriosctl search` — complete
 
 **Ordering.** After H18, which found the gap, and after H22, which supplies the
 values `notebook:` and `collection:` can name -- a query language nobody can
@@ -3613,6 +3613,45 @@ asks for it, exactly as elsewhere.
 hits with their stable links; the features table shows a command-line column for
 `Search your notes`; and a command-line journey demonstrates finding a note and
 acting on it with the id the search returned.
+
+**Outcome (2026-09-08).** Done. The loop the command line could not close is
+closed: a search returns note identifiers, and the identifiers are what every
+other command takes. A journey runs that loop end to end -- write, search,
+count, read, tag -- and a test checks the round trip directly, because "the id a
+search returns is one another command accepts" is the whole point and worth
+asserting rather than assuming.
+
+**The `--count` decision, which the item said to make before building: a
+counting query.** The refusal it was weighed against would have been defensible
+only if counting meant paging everything, and it does not. Both search paths
+already compile the query into a `WHERE` clause and arguments -- the FTS-anchored
+one and the predicate one -- so the same compiled predicate is counted instead of
+paged, through joins that mirror each select shape exactly. A count over
+different joins would answer a different question while looking like the same
+one.
+
+`TestSearchCountAgreesWithPaging` is the check that matters: for three queries
+across both paths, `--count` must equal what paging actually returns. Breaking
+it by one made all three fail, which is what a second answer to the same
+question looks like when it drifts.
+
+`--count` refuses `--limit`, `--cursor` and `--links` rather than ignoring them.
+They are about the hits and a count returns none; accepting input that changes
+nothing is what H25 spent its time removing.
+
+**A change to the item as written.** It said human output stays the default with
+`--json` beside it. H24 has since decided the opposite for this command line --
+one output format, rendered by a template when a person wants a table -- and a
+new command with two forms would contradict the decision recorded three items
+ago. So `search` prints JSON, like the other seventy-nine, and `docs/cli.md`
+shows the gomplate pipeline for anyone who wants a table.
+
+Two smaller decisions worth recording. `--links` resolves each hit through
+`StableDocumentURI` rather than assembling a link locally, so a search prints
+the same link `notriosctl link` prints, and a test compares the two. And a
+malformed query is reported as a query problem with a pointer to the language
+reference, because the parser's own message gives no indication that the thing
+at fault is what the person typed.
 
 ## H20. Bring the atlas current, and stop it drifting again
 

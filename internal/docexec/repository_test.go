@@ -137,7 +137,10 @@ func TestRepositoryExamples(t *testing.T) {
 	// 148 -> 150 entries and 64 -> 65 executed in v0.8 H26: the tags show
 	// synopsis, and the shell existence check beside it, which runs against a
 	// tag put on a note first so that finding it means something.
-	if report.Executed != 65 || report.Entries != 150 || len(report.Topics) != 14 {
+	// 150 -> 151 entries in v0.8 H19: the search synopsis in docs/cli.md, a
+	// bracketed-flag form whose command is covered by executed tests and by an
+	// executed journey.
+	if report.Executed != 65 || report.Entries != 151 || len(report.Topics) != 14 {
 		t.Fatalf("unexpected G18d coverage: %+v", report)
 	}
 	executedTopics := 0

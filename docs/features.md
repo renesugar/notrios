@@ -79,9 +79,9 @@ The command line prints a note as Markdown with the front matter the Recoll proj
 
 Find notes by text, tag, notebook, date and the rest of the query language, across the library or within one note.
 
-No command line search command; `notriosctl export archive --query` applies the same language to an export instead. A search now spans every collection; `collection:"id"` narrows it to one provenance.
+The command line searches with the same query language the search box parses, and returns each hit's identifier -- which is what makes every other command usable from a terminal: nothing at a terminal produced note ids before v0.8 H19, so `notes show`, `notes move` and `tags add` could only be used on an id somebody already had. `--count` runs a counting query over the same compiled predicate rather than paging the results and tallying them, and `--links` gives the notrios:// form for pasting into another machine's library. A search spans every collection; `collection:` narrows it to one provenance, and `notriosctl collections list` says which ones exist. Trash is excluded unless the query says `is:trashed`. The documented workaround used to be `export archive --query`, which applies the query language to a file export -- an answer to a different question.
 
-*Available on the desktop app, the REST API and MCP.*
+*Available on the desktop app, the command line, the REST API and MCP.*
 
 ### Notebooks that are really saved searches
 
@@ -300,7 +300,7 @@ capability's own section.
 |---|---|---|---|---|---|
 | Write and edit notes | 6 | 4 | 10 | 6 | — |
 | Read a note and its structure | 2 | 4 | 7 | 5 | — |
-| Search your notes | 1 | — | 3 | 2 | — |
+| Search your notes | 1 | 1 | 3 | 2 | — |
 | Notebooks that are really saved searches | 1 | 1 | 3 | 1 | — |
 | Organise notes into notebooks | 2 | 3 | 9 | 4 | — |
 | Tag and untag a note | 4 | 3 | 2 | 2 | — |
@@ -346,7 +346,6 @@ Each capability below is offered on some surfaces and not others.
 - Templates and tasks — command line only. A template is an ordinary note carrying a note-template block, and a task is a checkbox line in a note tagged `task` or `todo`; neither is a table, and both are read back from the Markdown. So nothing creates a task -- writing `- [ ] chase the permit` into a note is how one comes to exist, which `notes create` already does -- and the command line covers the other half: asking what remains, and instantiating a template, which is the repeatable version of the same workflow. A missing placeholder is refused rather than left blank, so a template that gains a field fails the scripts that do not know about it. The tag is required because a checkbox is ordinary Markdown and appears in quoted examples; `--untagged` asks for those too. No GUI journey yet.
 - Move a pre-0.8 library into place — command line only. Command line only, and genuinely so: it relocates the directories the running program uses, which is not something the program can sensibly do to itself while serving them.
 - Live query blocks inside a note — GUI only. No command line. The GUI renders them where they sit: the preview finds each ```note-query block, runs it through the same parser the search box uses, and fills the block with the result. This row read as a gap for as long as the control crawl was the only measurement, and the crawl cannot see it and never could -- a query block renders content, not a control, and the crawl enumerates interactive elements. Its evidence is web/src/note-query.ts and its tests instead.
-- Search your notes — GUI only. No command line search command; `notriosctl export archive --query` applies the same language to an export instead. A search now spans every collection; `collection:"id"` narrows it to one provenance.
 - Attach and manage files — both surfaces, and neither journey is written yet
 - See the shape of the link graph — both surfaces, and neither journey is written yet
 - Watch and steer long-running work — both surfaces, and neither journey is written yet

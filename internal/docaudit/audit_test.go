@@ -96,8 +96,10 @@ func TestRepositoryAuditReportsHonestCoverage(t *testing.T) {
 	// note-reading section in docs/cli.md and its synopsis.
 	// 264 -> 265 sections and 148 -> 150 executables in v0.8 H26: the tags show
 	// section in docs/cli.md and its two examples.
-	if report.ManualSections != 265 || report.Fragments != 21 || report.Claims != 4 ||
-		report.Executables != 150 || report.Journeys != 9 {
+	// 265 -> 266 sections and 150 -> 151 executables in v0.8 H19: the search
+	// section in docs/cli.md and its synopsis.
+	if report.ManualSections != 266 || report.Fragments != 21 || report.Claims != 4 ||
+		report.Executables != 151 || report.Journeys != 9 {
 		t.Fatalf("unexpected coverage surface: %+v", report)
 	}
 	// 71 -> 72 executed in v0.8 H22: the two discovery commands in
@@ -145,8 +147,9 @@ func TestRepositoryAuditReportsHonestCoverage(t *testing.T) {
 		// gomplate is not a dependency of this repository.
 		// 318 -> 320 unverified and 440 -> 442 denominator in v0.8 H21.
 		// 320 -> 322 unverified and 442 -> 445 denominator in v0.8 H26.
-		report.Counts[GradeClaimed] != 4 || report.Counts[GradeUnverified] != 322 ||
-		report.Denominator != 445 {
+		// 322 -> 324 unverified and 445 -> 447 denominator in v0.8 H19.
+		report.Counts[GradeClaimed] != 4 || report.Counts[GradeUnverified] != 324 ||
+		report.Denominator != 447 {
 		t.Fatalf("coverage counts hide or lose units: counts=%v denominator=%d", report.Counts, report.Denominator)
 	}
 	if len(resolvedTS) == 0 {

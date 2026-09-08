@@ -64,6 +64,7 @@ nothing checked against the dispatcher. Eight commands were missing from it.
 - notriosctl resources get --resource <id> [--output <file>] [--db ...]
 - notriosctl resources report [--config config.yaml] [--db ...] [--asset-store ...]
 - notriosctl restore archive-v2 --intent replace|adopt|merge|fork [--db ...] [--new-database-id id] <archive-dir>
+- notriosctl search [--limit N] [--cursor c] [--count] [--links] [--output <file>] [--db ...] "<query>"
 - notriosctl seed-help [--db ...] [docs-dir]
 - notriosctl snapshot create [--config config.yaml] [--db ...] [--asset-store ...] <out-dir>
 - notriosctl snapshot restore --intent replace|adopt [--db ...] [--asset-store ...] [--emergency dir] <snapshot-dir>
@@ -805,6 +806,52 @@ every collection unless a `collection:` term says otherwise. See
 Listing and showing is all the command line does with collections. Renaming and
 deleting are not available on any surface, because what should happen to notes
 that name a collection has not been decided.
+
+## search
+
+```sh
+notriosctl search [--limit N] [--cursor c] [--count] [--links] "<query>"
+```
+
+Find notes with the query language the search box parses — `tag:`, `notebook:`,
+`collection:`, dates, phrases, `OR`, negation and the rest, exactly as
+[the query language](query-language.md) describes them.
+
+Each hit carries the note's identifier, which is what the rest of the command
+line takes:
+
+```json
+{ "query": "dusk",
+  "hits": [ { "document_id": "doc_hahbr6t…", "title": "Reed beds 2",
+              "notebook_id": "nb_notes", "collection_id": "default",
+              "updated_at": "2026-09-08T18:51:55Z",
+              "uri": "document://default/documents/doc_hahbr6t…",
+              "snippet": "Seen at <mark>dusk</mark>, note 2." } ] }
+```
+
+`--limit N` bounds a page, up to the API's ceiling of 100, and the response
+carries `next_cursor` when there is more; pass it back with `--cursor`.
+
+`--count` answers how many notes match instead of which ones. It is a counting
+query over the same compiled predicate — not the hits fetched and tallied, which
+would be a lie about cost on a large library.
+
+`--links` reports `notrios://` links rather than `document://` URIs, for pasting
+into another machine's library. They are the links `notriosctl link` prints for
+the same note.
+
+A search spans every collection unless the query narrows it, and Trash is
+excluded unless the query says `is:trashed`. Read-only: it prints what a search
+returns and changes nothing, which is what makes it safe in a pipe.
+
+Before this command existed, nothing at a terminal produced note identifiers, so
+`notes show`, `notes move` and `tags add` could only be used on an id somebody
+already had. The documented workaround was `export archive --query`, which
+applies the query language to a *file export* — an answer to a different
+question.
+
+**Also on REST and MCP:** `GET|POST /api/v1/search` and the `search_documents`
+tool, with the same language.
 
 ## notes show / notes outline / notes resources / notes links
 

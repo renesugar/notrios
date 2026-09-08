@@ -128,6 +128,18 @@ func (s *SQLiteStore) searchQueryLocked(req SearchRequest, q query.Query) (Searc
 			WHERE ` + strings.Join(where, " AND ") +
 			" ORDER BY d.updated_at DESC, d.id DESC"
 	}
+	if req.countOnly {
+		// The same predicate, counted rather than paged. A count built from a
+		// second compilation of the query would be a second answer to the same
+		// question, and the two would eventually disagree; paging the whole
+		// result set to count it would be honest and slow, which on a large
+		// library is its own kind of wrong.
+		counted, err := s.countSearchLocked(useFTSRelevance, where, args)
+		if err != nil {
+			return SearchResponse{}, err
+		}
+		return SearchResponse{Total: counted, Counted: true}, nil
+	}
 	sql += " LIMIT " + itoa(req.Limit+1)
 
 	stmt, err := s.prepareLocked(sql)
@@ -152,6 +164,39 @@ func (s *SQLiteStore) searchQueryLocked(req SearchRequest, q query.Query) (Searc
 		}
 	}
 	return resp, nil
+}
+
+// countSearchLocked counts the rows the compiled predicate matches.
+//
+// The joins mirror the two select shapes exactly: an FTS-anchored search counts
+// through documents_fts, and a predicate search counts through documents. A
+// count over different joins than the listing would answer a different question
+// while looking like the same one.
+func (s *SQLiteStore) countSearchLocked(useFTS bool, where, args []string) (int64, error) {
+	from := `FROM documents d
+			JOIN document_revisions r ON r.id = d.current_revision_id`
+	if useFTS {
+		from = `FROM documents_fts
+			JOIN documents d ON d.id = documents_fts.document_id
+			JOIN document_revisions r ON r.id = d.current_revision_id`
+	}
+	sql := "SELECT COUNT(*) " + from + " WHERE " + strings.Join(where, " AND ")
+	stmt, err := s.prepareLocked(sql)
+	if err != nil {
+		return 0, err
+	}
+	defer C.sqlite3_finalize(stmt)
+	if err := bindAll(stmt, args); err != nil {
+		return 0, err
+	}
+	switch rc := C.sqlite3_step(stmt); rc {
+	case C.SQLITE_ROW:
+		return int64(C.sqlite3_column_int64(stmt, 0)), nil
+	case C.SQLITE_DONE:
+		return 0, nil
+	default:
+		return 0, s.stepErrLocked(rc)
+	}
 }
 
 func splitFTSAnchor(q query.Query) (anchor, remainder *query.Expr) {

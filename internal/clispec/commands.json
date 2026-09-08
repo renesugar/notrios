@@ -593,6 +593,18 @@
     },
     {
       "path": [
+        "search"
+      ],
+      "usage": "[--limit N] [--cursor c] [--count] [--links] [--output <file>] [--db ...] \"<query>\"",
+      "purpose": "find notes with the query language the search box uses",
+      "notes": [
+        "--count returns how many match rather than the matches",
+        "--links reports notrios:// links for pasting into another machine's library",
+        "Trash is excluded unless the query says is:trashed"
+      ]
+    },
+    {
+      "path": [
         "seed-help"
       ],
       "notes": [],

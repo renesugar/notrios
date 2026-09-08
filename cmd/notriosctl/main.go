@@ -95,6 +95,8 @@ func main() {
 		runNotebooks(os.Args[2:])
 	case "collections":
 		runCollections(os.Args[2:])
+	case "search":
+		runSearch(os.Args[2:])
 	case "notes":
 		runNotes(os.Args[2:])
 	case "graph":

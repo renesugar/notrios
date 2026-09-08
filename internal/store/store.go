@@ -844,6 +844,26 @@ type SearchRequest struct {
 	// for "newest first" and get it rather than get relevance and be told it
 	// asked for something else.
 	Sort string
+	// countOnly is set by SearchCount. It is unexported so a count is asked for
+	// through a method that says so, rather than by a caller setting a field
+	// and receiving a response whose Hits are empty for a reason it has to
+	// remember.
+	countOnly bool
+}
+
+// SearchCount reports how many notes a query matches.
+//
+// It exists because SearchResponse carries hits, a cursor and a truncation flag
+// and no total, so "how many notes have this tag?" could only be answered by
+// paging the whole result set -- a lie about cost on a large library. The count
+// runs the same compiled predicate the listing does.
+func SearchCount(ctx context.Context, st Store, req SearchRequest) (int64, error) {
+	req.countOnly = true
+	resp, err := st.Search(ctx, req)
+	if err != nil {
+		return 0, err
+	}
+	return resp.Total, nil
 }
 
 // Explicit search orders. An empty Sort keeps the query-shape default.
@@ -871,6 +891,11 @@ type SearchResponse struct {
 	Hits       []SearchHit
 	NextCursor string
 	Truncated  bool
+	// Total is how many notes the query matches, and Counted says the count was
+	// asked for. They are separate because zero is a real answer: a response
+	// with Total 0 and Counted false has not counted anything.
+	Total   int64
+	Counted bool
 }
 
 type DocumentPageRequest struct {

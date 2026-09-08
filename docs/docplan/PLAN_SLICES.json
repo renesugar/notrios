@@ -336,27 +336,31 @@
     {
       "id": "H19",
       "title": "notriosctl search",
-      "state": "not-started",
+      "state": "complete",
       "slices": [
         {
           "id": "H19-A",
           "statement": "A read-only search command takes the query language and prints hits a person can read",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "test:TestSearchFindsNotesAndReturnsIdsToActOn"
         },
         {
           "id": "H19-B",
           "statement": "--json emits each hit with its stable link, and --limit reports the cursor for the next page",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "test:TestSearchLinksAreTheOnesLinkPrints"
         },
         {
           "id": "H19-C",
           "statement": "Decide what --count does, given that the store returns hits and a cursor and no total",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "test:TestSearchCountAgreesWithPaging"
         },
         {
           "id": "H19-D",
           "statement": "A command-line journey finds a note and acts on the id the search returned",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "test:TestCLIJourneysActuallyRun"
         }
       ]
     },

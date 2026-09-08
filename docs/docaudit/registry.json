@@ -1423,6 +1423,18 @@
       }
     },
     {
+      "id": "cli-search-example-1",
+      "path": "docs/cli.md",
+      "section": "search",
+      "language": "sh",
+      "sha256": "0864af7137e8ba0ba20e261a0255d95984a2304bfed68afa3fc31c8c6c731410",
+      "state": "unverified",
+      "unrun_reason": {
+        "code": "illustrative-placeholder",
+        "detail": "Non-literal command synopsis: bracketed flags are optional-argument notation and <query> is a placeholder. The command is covered by executed tests in go:github.com/renesugar/notrios/cmd/notriosctl (TestSearchFindsNotesAndReturnsIdsToActOn, TestSearchCountAgreesWithPaging, TestSearchLinksAreTheOnesLinkPrints, TestSearchExcludesTrashUnlessAsked) and by the executed CLI journey find-a-note-and-act-on-it; no executed concrete CLI example is registered for the synopsis form."
+      }
+    },
+    {
       "id": "cli-seed-help-example-1",
       "path": "docs/cli.md",
       "section": "seed-help",
