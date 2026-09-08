@@ -128,7 +128,11 @@ func TestRepositoryExamples(t *testing.T) {
 	// docs/query-language.md are literal and run -- the command line could
 	// create a collection through an import and could not name one back, so
 	// there was nothing to document until now.
-	if report.Executed != 64 || report.Entries != 144 || len(report.Topics) != 14 {
+	// 144 -> 147 entries in v0.8 H24: three gomplate pipelines in docs/cli.md.
+	// Executed stays 64 -- gomplate is a host tool Notrios does not ship or
+	// require, and running them would make an external installation a build
+	// dependency of the documentation gate.
+	if report.Executed != 64 || report.Entries != 147 || len(report.Topics) != 14 {
 		t.Fatalf("unexpected G18d coverage: %+v", report)
 	}
 	executedTopics := 0

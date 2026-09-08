@@ -1339,6 +1339,42 @@
       }
     },
     {
+      "id": "cli-reading-json-output-example-1",
+      "path": "docs/cli.md",
+      "section": "reading-json-output",
+      "language": "sh",
+      "sha256": "f556eaed083b2022b019816f3ad4c752ab89adb2325046ce3572cc95e8f17841",
+      "state": "unverified",
+      "unrun_reason": {
+        "code": "host-installation",
+        "detail": "Literal body pipes notriosctl output into gomplate, a host tool Notrios does not ship, require or invoke; running it here would make an external installation a build dependency. The notriosctl half is executed by the query-language and collections examples. All three pipelines were run by hand against a seeded library with gomplate 5.2.0 on 2026-09-08 and produced the output the page shows -- this one renders a listing as an aligned table."
+      }
+    },
+    {
+      "id": "cli-reading-json-output-example-2",
+      "path": "docs/cli.md",
+      "section": "reading-json-output",
+      "language": "sh",
+      "sha256": "f79f1c3511a5bb9bc4001ddbfcf2795b54bf42e0a187b64161193d0b70eccf8c",
+      "state": "unverified",
+      "unrun_reason": {
+        "code": "host-installation",
+        "detail": "Literal body pipes notriosctl output into gomplate, a host tool Notrios does not ship, require or invoke; running it here would make an external installation a build dependency. The notriosctl half is executed by the query-language and collections examples. All three pipelines were run by hand against a seeded library with gomplate 5.2.0 on 2026-09-08 and produced the output the page shows -- this one pulls one field out for a shell variable."
+      }
+    },
+    {
+      "id": "cli-reading-json-output-example-3",
+      "path": "docs/cli.md",
+      "section": "reading-json-output",
+      "language": "sh",
+      "sha256": "0f2805ecfd7238e9c76101c1f7156328604aca46f328ddf32d7485b32e70d7c1",
+      "state": "unverified",
+      "unrun_reason": {
+        "code": "host-installation",
+        "detail": "Literal body pipes notriosctl output into gomplate, a host tool Notrios does not ship, require or invoke; running it here would make an external installation a build dependency. The notriosctl half is executed by the query-language and collections examples. All three pipelines were run by hand against a seeded library with gomplate 5.2.0 on 2026-09-08 and produced the output the page shows -- this one filters to the query notebooks and prints each query."
+      }
+    },
+    {
       "id": "cli-register-url-handler-example-1",
       "path": "docs/cli.md",
       "section": "register-url-handler",

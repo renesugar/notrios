@@ -46,7 +46,7 @@ What follows is what is left. Each item's own text below is the record of what
 happened, which is a different question.
 
 <!-- notrios:generated:plan:progress:begin -->
-**31 items: 16 complete, 4 in progress, 10 not started, 1 deferred.**
+**31 items: 16 complete, 5 in progress, 9 not started, 1 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -79,7 +79,7 @@ happened, which is a different question.
 | H21. Read a note and its structure, from the command line | not-started | 0/4 | 4 |
 | H22. Discover the values a query can name | complete | 3/3 | — |
 | H23. One description of the command line, and --help everywhere | complete | 6/6 | — |
-| H24. One output contract: a form for a person, a form for a program | not-started | 0/4 | 4 |
+| H24. JSON is the output; a template makes it readable | in-progress | 1/2 | 1 |
 | H25. Hold each command's flags to its description | not-started | 0/2 | 2 |
 
 ### Started and not finished
@@ -101,6 +101,10 @@ happened, which is a different question.
 
 - `H18-D` Rewrite the twenty-nine summaries and surface notes in FEATURES.json for a reader rather than against the surfaces — *not-started*
 
+**H24. JSON is the output; a template makes it readable**
+
+- `H24-B` doctor reports as JSON as well as prose, so a script can read the one command only a person could — *not-started*
+
 **H9. Native credential-store selection and integration**
 
 - `H9-C` Decide whether to own the provider layer or import one (zalando/go-keyring today, 99designs/keyring evaluated, vendoring tested) — *not-started*
@@ -110,7 +114,7 @@ happened, which is a different question.
 
 ### Not started
 
-Written and not begun: H10, H11, H12, H17, H19, H13, H20, H21, H24, H25. Their slices are listed under each item.
+Written and not begun: H10, H11, H12, H17, H19, H13, H20, H21, H25. Their slices are listed under each item.
 <!-- notrios:generated:plan:progress:end -->
 
 ## H0. Application-facade, C-ABI, and SQLite ownership investigation — complete
@@ -4040,78 +4044,65 @@ the recorded decision said. A test that each command's `FlagSet` matches its
 registry entry closes the remaining gap between the two; it is H25. The four `sync` subcommands are documented rather
 than exempted; none looked internal once read.
 
-## H24. One output contract: a form for a person, a form for a program
+## H24. JSON is the output; a template makes it readable
 
-**Ordering.** After H23, which gave the command line one description, and beside
-H21, which applies this pattern to `notes show`. H21 does that one command; this
-does the rest.
+**Ordering.** After H23. Independent of H21 and H25.
 
-**Goal.** Every command that prints anything offers both forms: something a
-person can read, and `--json` for something a program can parse.
+**Goal.** Keep one output format and document how to render it for a person,
+rather than maintaining a second rendering inside every command.
 
-**Why.** The premise this started from was that listings lack `--json`. Counting
-them inverted it. Of 81 commands, **six** offer both forms -- `paths`, `migrate`,
-`config show`, `notebooks list`, `collections list`, `collections show`, all
-added during v0.8. Around forty-five print JSON and nothing else, one prints
-prose and nothing else (`doctor`), and the rest share flag helpers this count
-could not resolve without running them.
+**Why.** The question this item started from was whether listing commands offer
+`--json`. Counting inverted it: of 81 commands, six offer both forms -- `paths`,
+`migrate`, `config show`, `notebooks list`, `collections list`,
+`collections show`, every one added during v0.8 -- about forty-five print JSON
+and nothing else, and `doctor` prints prose and nothing else. So a program can
+already parse nearly everything, and the missing half was the human form.
 
-So the gap is mostly the opposite of the one expected: a program can already
-parse almost everything, and a person reading `notriosctl tags list` at a
-terminal gets a JSON object. `notes show` prints seven fields of JSON to answer
-"what is in this note?". Neither audience is served by a command that guesses
-which one is asking.
+**Decided (2026-09-08, by the user): the output stays as it is.** A second
+rendering in every command is a second thing to keep current, and this milestone
+exists because of what happens to things that must be kept current by hand. JSON
+is the interchange format; a person who wants a table pipes it through a
+template. `gomplate` does this in one line and is not a dependency of anything
+here -- Notrios neither ships it, requires it, nor knows about it.
 
-The rule is worth stating once because it has been decided three times
-separately -- for `paths`, for `collections list`, and for `notes show` in H21 --
-and each time from scratch.
+That also settles the risk the earlier draft was blocking on: no default
+changes, so no script breaks.
 
 **Shape.**
 
-- **`--json` is accepted by every command that prints anything**, including the
-  ones whose default output is already JSON. A script that passes `--json` today
-  should keep working tomorrow whatever the default becomes, and the flag is how
-  it says what it wants rather than relying on a default it did not choose.
-- **The default is the human form wherever a person is the likely reader**: the
-  listings, `show` commands, reports, and status. A table or a short block, ids
-  included, because an id is what the next command takes.
-- **The default stays JSON where the output is a machine record**: importer and
-  export reports, job records, and anything a pipeline consumes. `docs/cli.md`
-  already documents that importers print a JSON report, so those are a contract
-  rather than an accident.
-- **Every command's entry in `internal/clispec` says which**, so the choice is
-  data and the guide can state it per command rather than a reader discovering
-  it by running things.
-- `doctor` gains `--json`, being the one command a person can read and a
-  monitoring script cannot.
+- **Document it, with examples that run.** A section in `docs/cli.md` showing a
+  listing rendered as an aligned table, a field pulled out for a shell variable,
+  and a filter -- each executed by the documentation gates rather than written
+  from memory, since a template that does not run is worse than no example.
+- **`doctor` gains `--json`.** It is the one command a person can read and a
+  script cannot parse, which is the wrong way round under a JSON-first contract:
+  the whole point of the decision is that machine-readable output is the thing
+  that always exists.
+- **No new human forms, and no defaults flipped.**
 
-**Boundaries.** No new information: this is about the shape of output, not its
-content. Nothing here adds a field, and a command that prints one line keeps
-printing one line.
+**Boundaries.** No command's existing output changes. `gomplate` is named in the
+documentation as one tool that works; nothing in the build, the packaging, or
+the tests requires it, and no code path invokes it.
 
 **Open decisions.**
 
-- **Whether flipping a default is a break we take -- Blocking for the commands
-  whose default changes.** Around forty-five commands print JSON today. Changing
-  a default silently turns a script's parsed output into a table, which fails at
-  the worst moment: not at the call, but wherever the parsed value is used.
-  - *Flip only where the command is unlisted or new (recommended).* A command
-    absent from `notriosctl help` until H23 had no documented contract, which is
-    the argument already accepted for `notes show`. Everything else keeps its
-    default and gains `--json` as an explicit opt-in, and a later version flips
-    them together with a release note.
-  - *Flip everything now, and say so loudly.* One consistent rule a version
-    earlier, and one migration for anybody scripting v0.7.
-  - *Flip nothing; add `--human` instead.* No break at all, and the wrong
-    default forever: the reader who needs help most is the one who typed the
-    command by hand.
-  - Do not start until this is answered. The recommendation is the first, and
-    the list of which commands are in it should be reviewed rather than derived.
+- **What to do about the five commands that already have both forms --
+  Non-blocking; the default below is taken if no answer comes.** `paths`,
+  `config show`, `migrate`, `notebooks list` and `collections list`/`show`
+  default to a human form with `--json` beside it, which is now the exception
+  rather than the rule.
+  - *Leave them (default).* They exist, are tested, and every one offers
+    `--json`, so nothing is unparseable. Removing them would change output,
+    which is the thing this decision says not to do, and the two listings exist
+    precisely so somebody can read an id at a glance.
+  - *Make JSON their default too, for one rule with no exceptions.* Tidier, and
+    it breaks the scripts H22 shipped this week.
+  - The recommendation is to leave them and say in the guide which commands have
+    a human default, so the exception is documented rather than discovered.
 
-**Working state.** `notriosctl --help` says which commands take `--json`; every
-command that prints anything accepts it; `doctor --json` reports what `doctor`
-prints; and a test enumerates the registry and fails when a command that prints
-output offers neither form.
+**Working state.** `docs/cli.md` shows a working `gomplate` pipeline for a
+listing, executed by the documentation gates; `doctor --json` reports what
+`doctor` prints; and no other command's output has changed.
 
 ## H25. Hold each command's flags to its description
 

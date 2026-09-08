@@ -529,7 +529,7 @@
     },
     {
       "path": "docs/cli.md",
-      "sha256": "8dce13f585b617803100faaa1df7eb82bddfd0be4a6de16bd9730500da2a6b52",
+      "sha256": "3cbea9bb0b0c887322329bed711cf62aaf70f05e87120d2df1a3aaf5a8133171",
       "help_note": "doc_help_cli",
       "owner": "go:github.com/renesugar/notrios/cmd/notriosctl#printHelp",
       "sections": [
@@ -807,6 +807,16 @@
           "id": "tags-rename",
           "level": 2,
           "title": "tags rename",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/cmd/notriosctl#printHelp",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        },
+        {
+          "id": "reading-json-output",
+          "level": 2,
+          "title": "Reading JSON output",
           "audience": "user",
           "kind": "actionable_or_reference",
           "owner": "go:github.com/renesugar/notrios/cmd/notriosctl#printHelp",
@@ -2773,14 +2783,14 @@
       "id": "published_markdown",
       "count": 18,
       "unit": "pages",
-      "sections": 262,
+      "sections": 263,
       "owner": "go:github.com/renesugar/notrios/internal/helpdocs#Seed"
     },
     {
       "id": "help_notebook",
       "count": 18,
       "unit": "mirrored notes",
-      "sections": 262,
+      "sections": 263,
       "owner": "go:github.com/renesugar/notrios/internal/helpdocs#Seed"
     },
     {
@@ -2877,9 +2887,9 @@
       "executed": 0,
       "generated": 29,
       "claimed": 0,
-      "unverified": 233
+      "unverified": 234
     },
-    "denominator": 262,
+    "denominator": 263,
     "reconciles": true,
     "finding": "The manual does not yet name directive fragments or executable checks, so all current section units are unverified even where independent tests exist."
   },

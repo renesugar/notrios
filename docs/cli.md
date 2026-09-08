@@ -662,6 +662,62 @@ tags — or when a **dry run's plan contains a merge**. That last one is the
 useful case in a script: renaming onto a name that already exists combines two
 hierarchies, and it should not happen because nobody read the plan.
 
+## Reading JSON output
+
+Most commands print JSON. That is deliberate: one output format is one thing to
+keep correct, and anything that can parse JSON can consume it. When you want a
+table, render it with a template tool rather than asking Notrios for a second
+format.
+
+[gomplate](https://docs.gomplate.ca/usage/) does this in one line. It is not
+required by Notrios and nothing here invokes it; any tool that reads JSON works
+the same way.
+
+An aligned table from a listing:
+
+```sh
+notriosctl collections list --json |
+  gomplate -d 'c=stdin:?type=application/json' \
+    -i '{{ printf "%-14s %5s  %s" "COLLECTION" "NOTES" "NAME" }}
+{{ range (ds "c").collections }}{{ printf "%-14s %5v  %s" .collection_id .notes .name }}
+{{ end }}'
+```
+
+```text
+COLLECTION     NOTES  NAME
+default            1  Default
+joplin           412  Joplin
+```
+
+Use `%v` rather than `%d` or `%f` for numbers: a JSON number arrives as whatever
+the decoder made of it, and `%v` prints it either way.
+
+One field, for a shell variable:
+
+```sh
+notriosctl notebooks list --json |
+  gomplate -d 'nb=stdin:?type=application/json' \
+    -i '{{ (index (ds "nb").notebooks 0).notebook_id }}'
+```
+
+A filter -- here, the notebooks that are really saved searches, with the query
+each one runs:
+
+```sh
+notriosctl notebooks list --json |
+  gomplate -d 'nb=stdin:?type=application/json' \
+    -i '{{ range (ds "nb").query_notebooks }}{{ .search_notebook_id }} -> {{ .query }}
+{{ end }}'
+```
+
+For a one-off, `jq` and a short Python script do the same job; the point is that
+the rendering lives with the person who wants it rather than in every command.
+
+**The exceptions.** `paths`, `config show`, `migrate`, `notebooks list`,
+`collections list` and `collections show` print a human form by default and take
+`--json` for the structured one. Every other command prints JSON, and passing
+`--json` to a command that does not offer it is an error rather than a no-op.
+
 ## collections list / collections show
 
 ```sh

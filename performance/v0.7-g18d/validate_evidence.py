@@ -45,8 +45,9 @@ def validate_registry(registry: dict, report: dict) -> None:
     # docs/installation.md, less the three hand-rolled ones they replace.
     # 142 -> 144 in v0.8 H22: the collections synopsis in docs/cli.md and the
     # discovery block in docs/query-language.md.
-    assert len(examples) == report["entries"] == 144
-    assert len({item["id"] for item in examples}) == 144
+    # 144 -> 147 in v0.8 H24: three gomplate pipelines in docs/cli.md.
+    assert len(examples) == report["entries"] == 147
+    assert len({item["id"] for item in examples}) == 147
     executed = [item for item in examples if item["state"] == "executed"]
     unverified = [item for item in examples if item["state"] == "unverified"]
     # 63 -> 64 in v0.8 H22: the two discovery commands are literal and run in
@@ -67,7 +68,9 @@ def validate_registry(registry: dict, report: dict) -> None:
     # 79 -> 80 in v0.8 H14 slice D: the GUI screenshot regenerate command.
     # 79 -> 80 in v0.8 H22: the collections synopsis, a bracketed-optional form
     # like every other synopsis in that document.
-    assert len(unverified) == report["unverified"] == 80
+    # 80 -> 83 in v0.8 H24: the gomplate pipelines, reviewed and run by hand
+    # but not run here, because gomplate is not a dependency of this repository.
+    assert len(unverified) == report["unverified"] == 83
     assert {item["execution"]["surface"] for item in executed} == {
         "cli", "config", "rest", "mcp"
     }

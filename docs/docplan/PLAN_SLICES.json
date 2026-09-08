@@ -502,27 +502,18 @@
     },
     {
       "id": "H24",
-      "title": "One output contract: a form for a person, a form for a program",
-      "state": "not-started",
+      "title": "JSON is the output; a template makes it readable",
+      "state": "in-progress",
       "slices": [
         {
           "id": "H24-A",
-          "statement": "Every command that prints anything accepts --json, including the ones that already print JSON",
-          "state": "not-started"
+          "statement": "The CLI guide shows how to render JSON output for a person with a template tool, with pipelines run against a real library and recorded as reviewed rather than made a build dependency",
+          "state": "done",
+          "evidence": "file:docs/cli.md"
         },
         {
           "id": "H24-B",
-          "statement": "The registry says which form each command defaults to, and the guide states it per command",
-          "state": "not-started"
-        },
-        {
-          "id": "H24-C",
-          "statement": "Commands whose reader is a person default to a form a person can read, ids included",
-          "state": "not-started"
-        },
-        {
-          "id": "H24-D",
-          "statement": "A command that prints output and offers neither form fails a build",
+          "statement": "doctor reports as JSON as well as prose, so a script can read the one command only a person could",
           "state": "not-started"
         }
       ]
