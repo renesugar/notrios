@@ -46,7 +46,7 @@ What follows is what is left. Each item's own text below is the record of what
 happened, which is a different question.
 
 <!-- notrios:generated:plan:progress:begin -->
-**32 items: 23 complete, 3 in progress, 5 not started, 1 deferred.**
+**32 items: 24 complete, 2 in progress, 5 not started, 1 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -65,7 +65,7 @@ happened, which is a different question.
 | H8. Installed integration harness and Ubuntu baseline | complete | 0/0 | — |
 | H14. Documentation actionability investigation | complete | 0/0 | — |
 | H7. Windows and macOS installer workflow implementation | deferred | 0/0 | — |
-| H9. Native credential-store selection and integration | in-progress | 4/6 | 2 |
+| H9. Native credential-store selection and integration | complete | 5/5 | — |
 | H10. Wails v3 migration spike | not-started | 0/2 | 2 |
 | H11. Android-emulator shared-core acceptance | not-started | 0/2 | 2 |
 | H12. Delayed GitHub native validation and develop-to-main pull request | not-started | 0/2 | 2 |
@@ -94,11 +94,6 @@ happened, which is a different question.
 **H18. Make the features page usable, and generate the table under it**
 
 - `H18-D` Rewrite the twenty-nine summaries and surface notes in FEATURES.json for a reader rather than against the surfaces — *not-started*
-
-**H9. Native credential-store selection and integration**
-
-- `H9-E` Write the host-supplied credential contract for Android, iOS and wasm, where the provider returns ErrUnsupportedPlatform today — *not-started*
-- `H9-F` Establish locked/unavailable behaviour for headless Windows and headless macOS, which this item's scope asks for and no finding covers — *blocked* (blocked on: Windows and Apple hardware, or hosted runners standing in for them)
 
 ### Not started
 
@@ -1241,7 +1236,7 @@ failure is silent and its symptoms point at the feature rather than the setup.
 The matrix is thirteen executed rows. Confirmed by mutation -- searching
 for a term that appears in no page fails the row.
 
-## H9. Native credential-store selection and integration
+## H9. Native credential-store selection and integration — complete
 
 **Goal.** Replace the warned `0600` development secret file in supported
 installed profiles with native credential-store providers while retaining an
@@ -1505,6 +1500,40 @@ tidier, it is the only shape that can be *guarded*, and the guard has to be
 explicit -- a build constraint that excludes every desktop provider from a
 mobile build, and a cross-build gate that fails if one is linked in. Without
 that, the architecture is a convention rather than a boundary.
+
+**Outcome (2026-09-08).** Complete. An installed profile resolves sync
+credentials through the operating system's store and refuses rather than
+substitutes when it cannot; keys move between that store and the owner-only
+development file in either direction; the provider layer is imported rather than
+owned (`zalando/go-keyring`, MIT, with `99designs/keyring` rejected on recorded
+grounds); the headless Linux tier is deferred to post-v1.0; and the
+host-supplied credential contract is written in `FLUTTER_GO_CLIENT.md`.
+
+Two of those were decided and evidenced long before the ledger said so -- the
+provider choice in `performance/v0.8-h9/RESULTS.json`, the headless deferral in
+`ROADMAP.md` -- and the ledger read `not-started` for both. That is the drift
+this milestone keeps finding, this time in the plan's own bookkeeping.
+
+**Writing the contract found that it needs no new FFI surface.** The reference
+designs for host-supplied credentials reach for a bespoke protobuf channel or an
+in-memory gRPC pipe; the ABI already carries both directions --
+`notrios_call_start`/`poll` for host to core, `notrios_event_poll` for core to
+host -- so the contract is two operations and one event rather than a transport.
+A second mechanism for one kind of payload would be a second set of buffer
+ownership rules beside `notrios_buffer_release`.
+
+The recommendation inside it is on-demand supply rather than at-open, for a
+reason the desktop case does not show: on iOS a host often cannot read its own
+store without a user gesture, so a secret demanded at open would fail on a
+locked device where an on-demand one merely waits.
+
+**H9-F moved to post-v1.0** rather than staying blocked. Establishing locked and
+unavailable behaviour for headless Windows and headless macOS needs hardware
+that does not exist here, and the v1.0 priority is desktop GUI Notrios on
+Ubuntu, which needs none of it. The boundary is unchanged on every platform --
+a store that cannot be reached is refused, never substituted -- and what is
+unestablished is only what "cannot be reached" looks like on those two. The
+roadmap's headless section says so and says where it came from.
 
 *Three questions asked of this design on 2026-09-08, and their answers.*
 

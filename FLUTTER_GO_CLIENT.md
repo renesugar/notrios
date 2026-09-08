@@ -327,6 +327,98 @@ client must supply its own validated credential provider and native directory/
 document pickers while preserving the same no-password-persistence and
 destructive-review boundaries.
 
+## The host-supplied credential contract (v0.8 H9-E)
+
+Written for the mobile clients this document is about, and settled now so the
+ABI does not acquire an assumption while nobody is looking. Nothing here ships
+in v0.8: desktop GUI Notrios on Ubuntu is the v1.0 priority, and every mobile
+part of this waits for the hardware and the Flutter spike.
+
+### Who owns the secret, per target
+
+| Target | Owner | Mechanism |
+|---|---|---|
+| Ubuntu, Windows, macOS desktop | the core | `internal/credentials` native provider, failing closed when the store is locked or absent |
+| Headless Linux | the core | the opt-in `pass`/`age` tier, deferred to post-v1.0 with its weaker guarantee documented |
+| Browser | the service, not the browser | already the shipped design: a browser never holds a sync credential |
+| Android, iOS | **the host** | supplied across the ABI, as below |
+| `js/wasm` core | **the host** | same contract; the provider already returns a typed refusal there |
+
+The core is never the owner on a target whose platform store it cannot reach.
+That is not a preference: `go-keyring` compiles for `android/arm64` because Go
+sets the `linux` tag, and would reach for a D-Bus Secret Service that is not
+there — a runtime failure on the platform where "fail closed" is least
+debuggable. `TestNoDesktopProviderInMobileBuilds` is what keeps that a boundary
+rather than a convention, by asserting the linked package set for two mobile
+targets.
+
+### It needs no new FFI surface
+
+The reference designs for this problem reach for a bespoke protobuf channel or
+an in-memory gRPC pipe. Neither is necessary, because the ABI already has both
+directions:
+
+- **host → core** is `notrios_call_start` / `notrios_call_poll`, carrying the
+  existing `{"op":…,"payload":…}` envelope.
+- **core → host** is `notrios_event_poll`, which is the return channel a
+  credential request needs.
+
+A second mechanism for one kind of payload would be a second thing to keep
+correct, with its own buffer ownership rules beside `notrios_buffer_release`.
+The contract is therefore two operations and one event, not a transport.
+
+### The two directions
+
+**Supplying an existing secret.** The host reads its platform store — Keystore
+on Android, Keychain on iOS, `flutter_secure_storage` or whatever the spike
+pins — and supplies the bytes. Two shapes are possible and the choice is left
+open deliberately, because the Flutter spike is what should decide it:
+
+- *at open*, as part of the `notrios_instance_open` configuration, so the
+  secret is present before any operation needs it; or
+- *on demand*, where the core emits a `credential.request` event naming a
+  reference and the host answers with a `credential.supply` call.
+
+At-open is simpler and bounds the exposure to one session. On-demand keeps the
+secret out of core memory until something needs it, and is the only shape that
+works if the host cannot read its store without a user gesture — which is the
+normal case on iOS when the device is locked. **Recommendation: on-demand**, for
+that reason, with at-open as an optimisation the host may choose.
+
+**Handing back a newly minted secret.** Enrolment mints key material inside the
+core. The core emits `credential.store` naming a reference and carrying the
+bytes; the host writes them to its platform store and acknowledges. Until it
+acknowledges, enrolment is not complete — an enrolment that reported success
+while the key existed nowhere durable would be the worst outcome available here.
+
+### What each side promises
+
+The core:
+
+- holds a supplied secret in memory for the session and **never persists it**;
+- never writes it to a log, an export, an evidence file, a purge backup, or a
+  crash report — the four boundaries H9 already holds and tests;
+- refuses rather than substitutes when the host supplies nothing. There is no
+  fallback: `ErrUnavailable` reaches the caller, because a credential that
+  silently moved to a weaker place is worse than one that could not be read;
+- bounds a secret at `credentials.MaxSecretBytes` (2048), below the smallest
+  supported store's limit, on the supply path as well as the store path.
+
+The host:
+
+- uses its platform's own store and never a plaintext file;
+- re-supplies on each session rather than assuming the core kept anything;
+- is free to refuse — a locked device is a legitimate answer, and the core's
+  behaviour on refusal is the same as a locked desktop keychain.
+
+### What is deliberately unanswered
+
+The wire encoding of the event payload. The ABI's envelopes are JSON today, and
+JSON carrying key material means base64 and a byte slice the garbage collector
+may copy. Whether credential events should use a different encoding for that
+reason is a real question, and it is the Flutter spike's to answer with a
+measurement rather than this document's to guess.
+
 ## Primary references checked 2026-08-11
 
 - Dart C interop: <https://dart.dev/interop/c-interop>

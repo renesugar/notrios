@@ -94,7 +94,7 @@
     {
       "id": "H9",
       "title": "Native credential-store selection and integration",
-      "state": "in-progress",
+      "state": "complete",
       "slices": [
         {
           "id": "H9-A",
@@ -123,13 +123,8 @@
         {
           "id": "H9-E",
           "statement": "Write the host-supplied credential contract for Android, iOS and wasm, where the provider returns ErrUnsupportedPlatform today",
-          "state": "not-started"
-        },
-        {
-          "id": "H9-F",
-          "statement": "Establish locked/unavailable behaviour for headless Windows and headless macOS, which this item's scope asks for and no finding covers",
-          "state": "blocked",
-          "blocked_on": "Windows and Apple hardware, or hosted runners standing in for them"
+          "state": "done",
+          "evidence": "file:FLUTTER_GO_CLIENT.md"
         }
       ]
     },

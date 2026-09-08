@@ -713,6 +713,14 @@ scheduling decision, not a change of intent.
   whether the protection guarantee is stated per platform. Headless Windows
   under a service logon may be *stronger* than headless Linux, so one blanket
   statement will not do.
+- **Establishing locked and unavailable behaviour for headless Windows and
+  headless macOS moved here from v0.8 (H9-F) on 2026-09-08.** It needs Windows
+  and Apple hardware, or hosted runners standing in for them, and neither is
+  available; and the v1.0 priority is desktop GUI Notrios on Ubuntu, which needs
+  none of it. Nothing about the boundary changes: a store that cannot be reached
+  is refused rather than substituted, on every platform. What is unestablished
+  is what "cannot be reached" *looks like* on those two, which is a question only
+  those machines can answer.
 - `99designs/keyring` was evaluated for this and is the likely starting point:
   it carries `keyctl`, `pass` and `file` backends and can address a named macOS
   keychain, which `zalando/go-keyring` cannot. Porting it to `godbus/dbus/v5`
@@ -774,9 +782,9 @@ requirements below are the ones H7 already carried.
 The scaffold handoff is complete; see `CODING_CLIENT_HANDOFF.md`. Future roadmap planning should be driven from `ROADMAP.md`, but each active implementation cycle should create a small `PLAN.md` slice and archive it under `plans/` when complete.
 
 <!-- notrios:generated:roadmap:status:begin -->
-`PLAN.md` holds the active plan derived from this roadmap: 32 items, 23 complete, 3 in progress, 5 not started, 1 deferred.
+`PLAN.md` holds the active plan derived from this roadmap: 32 items, 24 complete, 2 in progress, 5 not started, 1 deferred.
 
-Started and unfinished: H9, H15, H18. What remains in each is in the plan's own Progress section.
+Started and unfinished: H15, H18. What remains in each is in the plan's own Progress section.
 <!-- notrios:generated:roadmap:status:end -->
 
 
