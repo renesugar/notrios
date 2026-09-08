@@ -1017,7 +1017,7 @@
     },
     {
       "path": "docs/features.md",
-      "sha256": "b5dcaf3b9cbca7b8e4576bc29ed05407e818a53a6667f07d9d28e4b02d1ac339",
+      "sha256": "87af0bbd53dc5ec5653734d80914e844e991aa9fad566ceb2f8fc0c88a063f0d",
       "help_note": "doc_help_features",
       "owner": "go:github.com/renesugar/notrios/internal/docfeatures#Registry",
       "sections": [

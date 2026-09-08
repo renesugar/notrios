@@ -437,7 +437,7 @@
       "gui": [
         "Open the sync center — executed (open-sync-center)"
       ],
-      "surface_note": "No MCP tools, and that is the line rather than an omission: MCP has the running of sync -- `start_sync`, `plan_sync`, `get_sync_status`, `retry_sync_job`, `cancel_sync_job` -- and none of the establishing of trust. Deciding which replica to pair with, and holding the one-use code that proves it, is a person's decision on a machine they are sitting at; a model that could enrol a peer could enrol the wrong one. `sync accept` and `sync enroll` also read and write files the caller names, which is the same reason import and export have no REST route."
+      "surface_note": "No MCP tools, by a decision recorded in `SYNCHRONIZATION.md`: \"Enrollment, peer retirement, purge, backup export/restore, destructive recovery, and cancelling another actor's catch-up remain outside MCP\", and MCP sync authority is separately configured as `disabled|status|control` and \"never reaches catch-up/restore preparation, enrollment, keys, backup/restore, retirement, purge, or reset\". So MCP has the running of sync -- `start_sync`, `plan_sync`, `get_sync_status`, `retry_sync_job`, `cancel_sync_job` -- and none of the establishing of trust. `sync accept` and `sync enroll` also read and write files the caller names, which is why import and export have no REST route either. A mobile client does not want these as MCP tools: it is a client of the shared C ABI, whose operation set is `abi.info`, `note.*`, `search` and `resource.get` and carries no sync at all. Pairing from a phone is an ABI question, not an MCP one, and is unanswered."
     },
     {
       "id": "sync-exchange",
@@ -489,7 +489,7 @@
         "Peers",
         "Retention"
       ],
-      "surface_note": "No MCP tools, for the reason pairing has none: an assistant can watch a sync and cannot decide who is trusted. Revoking a key or retiring a peer is irreversible for that replica -- retirement is a permanent identity decision recorded with a signature -- and `sync revoke --advance-epoch` changes what every other replica will accept."
+      "surface_note": "No MCP tools, under the same recorded decision as pairing: `SYNCHRONIZATION.md` places retirement and revocation outside MCP whatever the configured sync authority. An assistant can watch a sync and cannot decide who is trusted. Retiring a peer is a permanent identity decision recorded with a signature, and `sync revoke --advance-epoch` changes what every other replica will accept."
     },
     {
       "id": "sync-recovery",
