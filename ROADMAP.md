@@ -541,6 +541,14 @@ be smuggled into v0.7 as desktop assumptions.
   Add `notriosctl search`, with the query language the interface uses, JSON
   output carrying each hit's stable link, and the paging and counting a script
   needs.
+- **An interface its own documentation can point at.** Twelve capabilities have
+  a GUI surface and no documented journey, and the obstacle is not effort:
+  eleven of them are reached through controls with no stable name, so a journey
+  could only find them by shape and would break on a layout change that broke
+  nothing. The control crawl counts 59 controls and 22 names, and the named ones
+  are mostly the furniture every state shares. Name what the sync tabs, the
+  attachment field, the graph, the job list and the profile switcher are for,
+  and let the crawl keep the count so it cannot quietly fall.
 - **Putting a file in from a terminal.** The command line reads attachments and
   cannot add one, which was recorded as a boundary on the reasoning that
   attaching means placing a link where only the author knows. That is right
@@ -790,7 +798,7 @@ requirements below are the ones H7 already carried.
 The scaffold handoff is complete; see `CODING_CLIENT_HANDOFF.md`. Future roadmap planning should be driven from `ROADMAP.md`, but each active implementation cycle should create a small `PLAN.md` slice and archive it under `plans/` when complete.
 
 <!-- notrios:generated:roadmap:status:begin -->
-`PLAN.md` holds the active plan derived from this roadmap: 33 items, 25 complete, 2 in progress, 5 not started, 1 deferred.
+`PLAN.md` holds the active plan derived from this roadmap: 34 items, 25 complete, 2 in progress, 6 not started, 1 deferred.
 
 Started and unfinished: H15, H18. What remains in each is in the plan's own Progress section.
 <!-- notrios:generated:roadmap:status:end -->

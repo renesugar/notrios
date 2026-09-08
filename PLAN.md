@@ -46,7 +46,7 @@ What follows is what is left. Each item's own text below is the record of what
 happened, which is a different question.
 
 <!-- notrios:generated:plan:progress:begin -->
-**33 items: 25 complete, 2 in progress, 5 not started, 1 deferred.**
+**34 items: 25 complete, 2 in progress, 6 not started, 1 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -83,12 +83,13 @@ happened, which is a different question.
 | H25. Hold each command's flags to its description | complete | 2/2 | — |
 | H26. Ask about one tag without fetching them all | complete | 4/4 | — |
 | H27. Attach a file from the command line, without guessing where the link goes | complete | 5/5 | — |
+| H28. Make the interface addressable, so its journeys can be written | not-started | 0/3 | 3 |
 
 ### Started and not finished
 
 **H15. Complete the journey catalogues, and give the GUI an inventory**
 
-- `H15-G` Write GUI journeys for the twelve features that have an interface surface and none: collections, attachments, remote media, links, graph, query blocks, sync pairing, sync exchange, sync peers, sync recovery, jobs and profiles — *blocked* (blocked on: eleven of the twelve target surfaces carry no data-testid, so a journey could only locate them by shape; making them addressable in web/src is the prerequisite and is GUI work rather than journey writing)
+- `H15-G` Write GUI journeys for the twelve features that have an interface surface and none: collections, attachments, remote media, links, graph, query blocks, sync pairing, sync exchange, sync peers, sync recovery, jobs and profiles — *blocked* (blocked on: H28, which gives the eleven unaddressable surfaces a data-testid. Eleven of the twelve target surfaces carry none, so a journey could only locate them by shape)
 
 **H18. Make the features page usable, and generate the table under it**
 
@@ -96,7 +97,7 @@ happened, which is a different question.
 
 ### Not started
 
-Written and not begun: H10, H11, H12, H17, H13. Their slices are listed under each item.
+Written and not begun: H10, H11, H12, H17, H13, H28. Their slices are listed under each item.
 <!-- notrios:generated:plan:progress:end -->
 
 ## H0. Application-facade, C-ABI, and SQLite ownership investigation — complete
@@ -4791,6 +4792,65 @@ command line was about to become the second.
 **This closed the `attachments` gap in H15.** The ratchet's floor drops from six
 to five, and the comment says why attachments left the list rather than only
 that it did.
+
+## H28. Make the interface addressable, so its journeys can be written
+
+**Ordering.** Before H15-G, which is blocked on it. Independent of everything
+else.
+
+**Goal.** Give the interface's controls stable names, so a journey can say which
+control it means without describing what it looks like.
+
+**Why.** H15-G asks for GUI journeys covering twelve features that have an
+interface surface and none. It is blocked, and not on effort: **eleven of the
+twelve target surfaces carry no `data-testid` anywhere in the H15 control
+crawl.** The crawl pinned 59 distinct controls across 16 states and only 22
+carry one, and those 22 are largely the furniture -- sidebar rows, the header
+buttons -- that appears in every state. The controls that make a state *that*
+state are mostly in the other 37:
+
+| State | addressable | not |
+|---|---|---|
+| `sync-backup` | 17 | 22 |
+| `sync-overview`, `sync-setup`, `sync-peers` | 17 | 19 |
+| `note-remote-media` | 19 | 17 |
+| `note-open` | 18 | 16 |
+| `sync-retention`, `sync-attachments`, `sync-conflicts`, `sync-repairs` | 17 | 15 |
+
+A journey against an unaddressable control has to find it by shape -- the
+nth `button` inside the third `div` -- which is the form this catalogue avoids
+because it breaks on a layout change that broke nothing. And a journey added
+without being captured under `NOTRIOS_GUI_JOURNEYS=1` is a claim with no
+evidence behind it, which is the failure this milestone exists to stop. So the
+blocker is real and it is upstream: the interface has to be nameable before its
+behaviour can be documented.
+
+**Shape.**
+
+- Add `data-testid` to the controls the twelve features are reached through:
+  the collection row in the note inspector, the attachment field and the
+  Attachments tab, the graph view, the link insert and check controls, query
+  blocks, the job list, the profile switcher, and the four sync tabs --
+  pairing, exchange, peers and recovery.
+- **Name them after what they do, not where they are.** `sync-peer-revoke` is a
+  name that survives a redesign; `sidebar-button-3` is the thing being replaced.
+- Re-run the control crawl and let the inventory record the improvement, so
+  "how much of the interface can be addressed" stays a measured number rather
+  than an impression.
+- **Raise the floor.** The crawl's pinned inventory is already checked by an
+  interface signature; add the addressable count to what it pins, so a control
+  added without a name fails the way a command added without a description does.
+
+**Boundaries.** No behaviour changes and no redesign. A `data-testid` is a name
+for something that already exists, and this item adds names to controls rather
+than controls to the interface. If a surface turns out to need restructuring to
+be nameable, that is a finding to report rather than a licence to restructure
+it here.
+
+**Working state.** Every control a GUI journey needs is addressable by name; the
+crawl records the count and the signature check fails when it falls; and H15-G
+is unblocked, with `remote-media` -- the one feature already addressable through
+`localize-button` -- written first as the proof that the rest can follow.
 
 ## H13. v0.8 release wrap-up and branch synchronization
 

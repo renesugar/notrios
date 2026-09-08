@@ -226,7 +226,7 @@
           "id": "H15-G",
           "statement": "Write GUI journeys for the twelve features that have an interface surface and none: collections, attachments, remote media, links, graph, query blocks, sync pairing, sync exchange, sync peers, sync recovery, jobs and profiles",
           "state": "blocked",
-          "blocked_on": "eleven of the twelve target surfaces carry no data-testid, so a journey could only locate them by shape; making them addressable in web/src is the prerequisite and is GUI work rather than journey writing"
+          "blocked_on": "H28, which gives the eleven unaddressable surfaces a data-testid. Eleven of the twelve target surfaces carry none, so a journey could only locate them by shape"
         },
         {
           "id": "H15-H",
@@ -625,6 +625,28 @@
           "statement": "A journey adds a file, lists it on the note, reads its bytes back and places the link",
           "state": "done",
           "evidence": "test:TestCLIJourneysActuallyRun"
+        }
+      ]
+    },
+    {
+      "id": "H28",
+      "title": "Make the interface addressable, so its journeys can be written",
+      "state": "not-started",
+      "slices": [
+        {
+          "id": "H28-A",
+          "statement": "Every control the twelve unjourneyed features are reached through carries a data-testid named for what it does",
+          "state": "not-started"
+        },
+        {
+          "id": "H28-B",
+          "statement": "The control crawl records how much of the interface is addressable, and the signature check fails when that falls",
+          "state": "not-started"
+        },
+        {
+          "id": "H28-C",
+          "statement": "One GUI journey is written and captured against the newly named controls, proving the rest can follow",
+          "state": "not-started"
         }
       ]
     }
