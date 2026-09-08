@@ -111,12 +111,14 @@
         {
           "id": "H9-C",
           "statement": "Decide whether to own the provider layer or import one (zalando/go-keyring today, 99designs/keyring evaluated, vendoring tested)",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v0.8-h9/RESULTS.json"
         },
         {
           "id": "H9-D",
           "statement": "Ship or reject the headless Linux tier over pass/age, which is executable here and recommended but not shipped",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:ROADMAP.md"
         },
         {
           "id": "H9-E",

@@ -65,7 +65,7 @@ happened, which is a different question.
 | H8. Installed integration harness and Ubuntu baseline | complete | 0/0 | — |
 | H14. Documentation actionability investigation | complete | 0/0 | — |
 | H7. Windows and macOS installer workflow implementation | deferred | 0/0 | — |
-| H9. Native credential-store selection and integration | in-progress | 2/6 | 4 |
+| H9. Native credential-store selection and integration | in-progress | 4/6 | 2 |
 | H10. Wails v3 migration spike | not-started | 0/2 | 2 |
 | H11. Android-emulator shared-core acceptance | not-started | 0/2 | 2 |
 | H12. Delayed GitHub native validation and develop-to-main pull request | not-started | 0/2 | 2 |
@@ -97,8 +97,6 @@ happened, which is a different question.
 
 **H9. Native credential-store selection and integration**
 
-- `H9-C` Decide whether to own the provider layer or import one (zalando/go-keyring today, 99designs/keyring evaluated, vendoring tested) — *not-started*
-- `H9-D` Ship or reject the headless Linux tier over pass/age, which is executable here and recommended but not shipped — *not-started*
 - `H9-E` Write the host-supplied credential contract for Android, iOS and wasm, where the provider returns ErrUnsupportedPlatform today — *not-started*
 - `H9-F` Establish locked/unavailable behaviour for headless Windows and headless macOS, which this item's scope asks for and no finding covers — *blocked* (blocked on: Windows and Apple hardware, or hosted runners standing in for them)
 
@@ -1507,6 +1505,38 @@ tidier, it is the only shape that can be *guarded*, and the guard has to be
 explicit -- a build constraint that excludes every desktop provider from a
 mobile build, and a cross-build gate that fails if one is linked in. Without
 that, the architecture is a convention rather than a boundary.
+
+*Three questions asked of this design on 2026-09-08, and their answers.*
+
+**Can the credential-store code be isolated to the GUI for v1.0.0? No.**
+`internal/credentials` is reached by `cmd/notriosctl` -- `sync init` mints key
+material, `sync migrate-credentials` moves it -- and by `internal/service`,
+which the daemon runs. Isolating it to the GUI would mean a headless or
+command-line install could not sync at all, and this item's own boundary
+forbids the alternative: there is **no credential REST or MCP surface**, so the
+command line is the only non-GUI way by design. Removing it from the CLI would
+not relocate the capability, it would delete it.
+
+What *is* separable, and already is, is the part worth separating: the port
+(`internal/credentials`) from the adapter that knows a platform
+(`native_desktop.go`) and the refusal that knows it is not one
+(`native_unsupported.go`). "Which store" is isolated; "who needs a secret" is
+not, and cannot be.
+
+**Must the C ABI be free of any credential store? It already is.** Nothing in
+`internal/abi` or `cmd/notrioslib` references credentials, and
+`native_unsupported.go` states the intent in its own comment: on mobile the host
+supplies the credential across the ABI and the core is never the owner. What is
+missing is not the isolation but the *contract* -- which is this slice.
+
+**Will Flutter Mobile and Flutter Desktop use different stores? Yes, and that
+is the design constraint the contract has to answer.** A single Flutter codebase
+targeting both would otherwise carry two credential paths: on desktop the core
+can own the secret through `native_desktop.go`, on mobile it cannot. The
+contract should therefore make host-supplied the shape *both* can use, with the
+desktop core owning it only where no host offers to. One path that works
+everywhere beats two that differ by target, because the difference would live in
+the client rather than in the core, where nothing here can test it.
 
 *Four tiers, and each already has a different owner.*
 
