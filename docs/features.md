@@ -201,6 +201,8 @@ In the desktop app only, through the native bridge: these operations name a fold
 
 Enrol a library for synchronization, issue a single-use code, and spend it from the other side so the two learn each other's keys.
 
+No MCP tools, and that is the line rather than an omission: MCP has the running of sync -- `start_sync`, `plan_sync`, `get_sync_status`, `retry_sync_job`, `cancel_sync_job` -- and none of the establishing of trust. Deciding which replica to pair with, and holding the one-use code that proves it, is a person's decision on a machine they are sitting at; a model that could enrol a peer could enrol the wrong one. `sync accept` and `sync enroll` also read and write files the caller names, which is the same reason import and export have no REST route.
+
 *Available on the desktop app, the command line and the REST API.*
 
 ### Synchronize with a replica
@@ -212,6 +214,8 @@ Exchange changes with a paired replica, directly over an authenticated connectio
 ### See and end trust between replicas
 
 List the replicas a library trusts, revoke one's key, and retire a peer after reviewing exactly what retiring it means.
+
+No MCP tools, for the reason pairing has none: an assistant can watch a sync and cannot decide who is trusted. Revoking a key or retiring a peer is irreversible for that replica -- retirement is a permanent identity decision recorded with a signature -- and `sync revoke --advance-epoch` changes what every other replica will accept.
 
 *Available on the desktop app, the command line and the REST API.*
 
@@ -241,7 +245,7 @@ Measured by the H15 control crawl once jobs were seeded, which is what the row h
 
 Run more than one library on a machine — personal notes, work notes, a blog — each with its own database, its own settings and its own address.
 
-Switching between profiles is in the GUI; creating, registering and forgetting them is not. A profile registry is about this machine, which the desktop app also runs on, so the rest is a gap rather than a boundary; the browser mode is the part that genuinely cannot manage it.
+Switching between profiles is in the GUI; creating, registering and forgetting them is not. A profile registry is about this machine, which the desktop app also runs on, so the rest is a gap in the GUI rather than a boundary; the browser mode is the part that genuinely cannot manage it. The absence from REST and MCP is a boundary, and a firmer one than the GUI's: `profile create` takes `--data-dir`, `--registry` and `--public-url`, and `profile start` launches a binary. A route that accepted those would let a caller point the service at a directory of their choosing and start a process -- strictly worse than the local paths import and export already refuse to accept over HTTP.
 
 *Available on the desktop app and the command line.*
 
