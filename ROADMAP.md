@@ -560,7 +560,13 @@ be smuggled into v0.7 as desktop assumptions.
   exits 2, while a subcommand prints a bare flag dump with no positional
   arguments. Give the command line one description that the dispatcher, the
   help, the guide and the gates all read, make `--help` work the same way at
-  every level, and let tools discover it as data.
+  every level, and let tools discover it as data -- including as JSON, so a
+  wrapper or a completion can read the command line rather than parse its prose.
+  Then finish the contract the same tooling exposes: six commands of eighty-one
+  offer both a form a person can read and `--json` for a program, and the rest
+  guess which audience is asking. Give every command both, default to whichever
+  its reader actually is, and fail a build when a command's described flags and
+  its accepted flags disagree.
 - **Documents that cannot quietly go stale.** The plan, the roadmap and the
   root reference documents each state one kind of fact and say where the rules
   for keeping them current live, with the pointer and the inventory checked
@@ -744,7 +750,7 @@ requirements below are the ones H7 already carried.
 The scaffold handoff is complete; see `CODING_CLIENT_HANDOFF.md`. Future roadmap planning should be driven from `ROADMAP.md`, but each active implementation cycle should create a small `PLAN.md` slice and archive it under `plans/` when complete.
 
 <!-- notrios:generated:roadmap:status:begin -->
-`PLAN.md` holds the active plan derived from this roadmap: 29 items, 16 complete, 4 in progress, 8 not started, 1 deferred.
+`PLAN.md` holds the active plan derived from this roadmap: 31 items, 16 complete, 4 in progress, 10 not started, 1 deferred.
 
 Started and unfinished: H9, H15, H16, H18. What remains in each is in the plan's own Progress section.
 <!-- notrios:generated:roadmap:status:end -->

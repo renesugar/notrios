@@ -46,7 +46,7 @@ What follows is what is left. Each item's own text below is the record of what
 happened, which is a different question.
 
 <!-- notrios:generated:plan:progress:begin -->
-**29 items: 16 complete, 4 in progress, 8 not started, 1 deferred.**
+**31 items: 16 complete, 4 in progress, 10 not started, 1 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -79,6 +79,8 @@ happened, which is a different question.
 | H21. Read a note and its structure, from the command line | not-started | 0/4 | 4 |
 | H22. Discover the values a query can name | complete | 3/3 | — |
 | H23. One description of the command line, and --help everywhere | complete | 6/6 | — |
+| H24. One output contract: a form for a person, a form for a program | not-started | 0/4 | 4 |
+| H25. Hold each command's flags to its description | not-started | 0/2 | 2 |
 
 ### Started and not finished
 
@@ -108,7 +110,7 @@ happened, which is a different question.
 
 ### Not started
 
-Written and not begun: H10, H11, H12, H17, H19, H13, H20, H21. Their slices are listed under each item.
+Written and not begun: H10, H11, H12, H17, H19, H13, H20, H21, H24, H25. Their slices are listed under each item.
 <!-- notrios:generated:plan:progress:end -->
 
 ## H0. Application-facade, C-ABI, and SQLite ownership investigation — complete
@@ -3737,7 +3739,10 @@ the item's first job is to say so in the documentation:
 - `notriosctl resources get --resource <id> --output <file>` -- the bytes.
   Retrieval belongs to `resources`, which already exists, and listing belongs to
   `notes`, because "what is attached to this note?" is a question about the note.
-- Every listing takes `--json`; the human form stays the default.
+- Every listing takes `--json`; the human form stays the default. This item
+  settles `notes show` and the commands it adds; H24 applies the same rule to
+  the rest of the command line, where six commands of eighty-one offer both
+  forms today.
 - Every new command is declared in H23's command registry, which is what makes
   it appear in `notriosctl help`, in `docs/cli.md`, and in the coverage gate.
   A command added without it is a command the documentation cannot see.
@@ -4032,9 +4037,123 @@ themselves, which is why they noticed.
 
 **Not done here:** the registry describes flags and does not construct them, as
 the recorded decision said. A test that each command's `FlagSet` matches its
-registry entry would close the remaining gap between the two, and is worth an
-item rather than a footnote. The four `sync` subcommands are documented rather
+registry entry closes the remaining gap between the two; it is H25. The four `sync` subcommands are documented rather
 than exempted; none looked internal once read.
+
+## H24. One output contract: a form for a person, a form for a program
+
+**Ordering.** After H23, which gave the command line one description, and beside
+H21, which applies this pattern to `notes show`. H21 does that one command; this
+does the rest.
+
+**Goal.** Every command that prints anything offers both forms: something a
+person can read, and `--json` for something a program can parse.
+
+**Why.** The premise this started from was that listings lack `--json`. Counting
+them inverted it. Of 81 commands, **six** offer both forms -- `paths`, `migrate`,
+`config show`, `notebooks list`, `collections list`, `collections show`, all
+added during v0.8. Around forty-five print JSON and nothing else, one prints
+prose and nothing else (`doctor`), and the rest share flag helpers this count
+could not resolve without running them.
+
+So the gap is mostly the opposite of the one expected: a program can already
+parse almost everything, and a person reading `notriosctl tags list` at a
+terminal gets a JSON object. `notes show` prints seven fields of JSON to answer
+"what is in this note?". Neither audience is served by a command that guesses
+which one is asking.
+
+The rule is worth stating once because it has been decided three times
+separately -- for `paths`, for `collections list`, and for `notes show` in H21 --
+and each time from scratch.
+
+**Shape.**
+
+- **`--json` is accepted by every command that prints anything**, including the
+  ones whose default output is already JSON. A script that passes `--json` today
+  should keep working tomorrow whatever the default becomes, and the flag is how
+  it says what it wants rather than relying on a default it did not choose.
+- **The default is the human form wherever a person is the likely reader**: the
+  listings, `show` commands, reports, and status. A table or a short block, ids
+  included, because an id is what the next command takes.
+- **The default stays JSON where the output is a machine record**: importer and
+  export reports, job records, and anything a pipeline consumes. `docs/cli.md`
+  already documents that importers print a JSON report, so those are a contract
+  rather than an accident.
+- **Every command's entry in `internal/clispec` says which**, so the choice is
+  data and the guide can state it per command rather than a reader discovering
+  it by running things.
+- `doctor` gains `--json`, being the one command a person can read and a
+  monitoring script cannot.
+
+**Boundaries.** No new information: this is about the shape of output, not its
+content. Nothing here adds a field, and a command that prints one line keeps
+printing one line.
+
+**Open decisions.**
+
+- **Whether flipping a default is a break we take -- Blocking for the commands
+  whose default changes.** Around forty-five commands print JSON today. Changing
+  a default silently turns a script's parsed output into a table, which fails at
+  the worst moment: not at the call, but wherever the parsed value is used.
+  - *Flip only where the command is unlisted or new (recommended).* A command
+    absent from `notriosctl help` until H23 had no documented contract, which is
+    the argument already accepted for `notes show`. Everything else keeps its
+    default and gains `--json` as an explicit opt-in, and a later version flips
+    them together with a release note.
+  - *Flip everything now, and say so loudly.* One consistent rule a version
+    earlier, and one migration for anybody scripting v0.7.
+  - *Flip nothing; add `--human` instead.* No break at all, and the wrong
+    default forever: the reader who needs help most is the one who typed the
+    command by hand.
+  - Do not start until this is answered. The recommendation is the first, and
+    the list of which commands are in it should be reviewed rather than derived.
+
+**Working state.** `notriosctl --help` says which commands take `--json`; every
+command that prints anything accepts it; `doctor --json` reports what `doctor`
+prints; and a test enumerates the registry and fails when a command that prints
+output offers neither form.
+
+## H25. Hold each command's flags to its description
+
+**Ordering.** After H23, which is where the gap it closes was left open.
+
+**Goal.** A flag named in a command's description exists, a flag the command
+accepts is described, and neither can drift from the other.
+
+**Why.** H23 made the command line describe itself once and stopped one level
+short: `internal/clispec` describes each command's flags as a usage string and
+`flag.FlagSet` declares them separately, and nothing compares the two. The
+recorded decision was to describe rather than construct, which was right for the
+size of that change and leaves this open.
+
+It is not hypothetical. Writing H23's registry, four `sync` commands got flags
+that were invented rather than read -- `sync retire --key <id>` where the command
+takes `--peer <replica-id>` -- and `notes edit --message` was missed entirely.
+The generated `docs/cli.md` disagreed with its own hand-written section in the
+same commit, which is how it was caught: by a human reading a diff, which is the
+mechanism this milestone keeps trying to replace.
+
+**Shape.**
+
+- Parse each command's flag declarations from `cmd/notriosctl` and compare them
+  with the `--flag` tokens in its registry usage string.
+- A described flag the command does not accept fails. A flag the command accepts
+  and the description omits fails, unless it is a common flag the registry
+  declares once -- `--config`, `--db`, `--asset-store` appear on nearly every
+  command and repeating them in every usage string would make the descriptions
+  unreadable.
+- The check names both the command and the flag, since the fix differs: correct
+  the description, or admit the flag was undocumented.
+
+**Boundaries.** Still describe, not construct. Each command keeps its own
+`FlagSet`; this makes disagreement fail instead of removing the possibility. If
+that turns out to be the wrong line, constructing the FlagSet from the registry
+is a separate item with its own risk.
+
+**Working state.** `go test ./...` fails when a command's usage string names a
+flag it does not accept, or accepts an uncommon flag it does not name; the four
+`sync` commands and `notes edit` pass because they were corrected by hand, and
+breaking one of them on purpose fails the build.
 
 ## H13. v0.8 release wrap-up and branch synchronization
 

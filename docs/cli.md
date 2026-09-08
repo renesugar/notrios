@@ -100,9 +100,11 @@ General behavior:
 - commands that touch the database accept `--config`, `--db`, and `--asset-store` (overrides win over the config file, which wins over built-in defaults; relative paths resolve against your working directory);
 - importers and `export archive` print a JSON report to stdout;
 - `notriosctl help` prints the full usage summary; `--help`, `-h` and `help` also work on any
-  command or command group (`notriosctl notes --help`, `notriosctl help notes show`), and
-  `notriosctl help --json` prints the same command list as data. An unknown command prints
-  the summary and exits 2.
+  command or command group (`notriosctl notes --help`, `notriosctl help notes show`). Adding
+  `--json` to any of those prints that command's description as data instead of prose --
+  `notriosctl help --json` for everything, `notriosctl notes --help --json` for one group,
+  `notriosctl notes show --help --json` for one command. An unknown command prints the
+  summary and exits 2.
 
 ## version
 <!-- notrios:generated:user:version:begin -->
