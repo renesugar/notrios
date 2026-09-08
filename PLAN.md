@@ -46,7 +46,7 @@ What follows is what is left. Each item's own text below is the record of what
 happened, which is a different question.
 
 <!-- notrios:generated:plan:progress:begin -->
-**32 items: 19 complete, 4 in progress, 8 not started, 1 deferred.**
+**32 items: 20 complete, 4 in progress, 7 not started, 1 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -81,7 +81,7 @@ happened, which is a different question.
 | H23. One description of the command line, and --help everywhere | complete | 6/6 | — |
 | H24. JSON is the output; a template makes it readable | complete | 2/2 | — |
 | H25. Hold each command's flags to its description | complete | 2/2 | — |
-| H26. Ask about one tag without fetching them all | not-started | 0/4 | 4 |
+| H26. Ask about one tag without fetching them all | complete | 4/4 | — |
 
 ### Started and not finished
 
@@ -111,7 +111,7 @@ happened, which is a different question.
 
 ### Not started
 
-Written and not begun: H10, H11, H12, H17, H19, H13, H20, H26. Their slices are listed under each item.
+Written and not begun: H10, H11, H12, H17, H19, H13, H20. Their slices are listed under each item.
 <!-- notrios:generated:plan:progress:end -->
 
 ## H0. Application-facade, C-ABI, and SQLite ownership investigation — complete
@@ -4271,7 +4271,7 @@ take, so the exemption cannot become a hiding place.
 A branch would leave the gate guessing about what the command accepts, and a
 gate that guesses reports problems nobody can act on.
 
-## H26. Ask about one tag without fetching them all
+## H26. Ask about one tag without fetching them all — complete
 
 **Ordering.** After H25. Independent of H19, though a library with
 `notriosctl search` makes the counts here more useful.
@@ -4353,6 +4353,44 @@ count and exits 0; the same for a tag that does not exist exits 1 and says so;
 reports that it truncated; `GET /api/v1/tags?prefix=` and `list_tags` narrow the
 same way; and the features table shows the capability on all three surfaces
 rather than on one.
+
+**Outcome (2026-09-08).** Done, on all three surfaces in one change, which is
+what a capability gap asks for and a missing adapter does not.
+
+`store.TagQuery` grew the parameters rather than gaining a second query beside
+`ListTags`, so there is one place that knows how a tag listing narrows.
+`tags show --tag <name>` exits 1 when the tag is absent; `GET /api/v1/tags?name=`
+returns 404 for the same reason -- a lookup that finds nothing is not an empty
+list, and returning one would make "no such tag" and "a tag with nothing on it"
+the same answer, which is the distinction the caller asked for. `list_tags`
+takes the same `name`, `prefix` and `limit`.
+
+**A prefix is a branch, not a string match.** `shopping` contains
+`shopping/mall` and does not contain `shoppingcart`, because the separator is
+part of what a branch means. The wildcard case is the one worth having written a
+test for: a tag named `50%` must be a prefix of its own children and not of
+everything in the library, so the prefix is escaped for `LIKE` and a test tags a
+note `50%`, `50%/off` and `500` and checks that only the first two come back.
+
+`Truncated` is carried on the page rather than left to the caller to infer from
+a row count. The query asks for one row more than the limit so the flag is
+observed, and the boundary is tested: a limit exactly equal to the number of
+tags is not a truncation, and an off-by-one there would report one on every full
+page.
+
+The shell example in `docs/cli.md` is executed rather than illustrated, against
+a tag that the fixture puts on a note first -- running the idiom against a
+library with no such tag would exercise the shell and prove nothing.
+
+**The non-blocking decisions were taken as recommended.** `tags show` reports
+the count and its children and not the notes: listing the notes carrying a tag
+is `tag:todo`, a search, and H19 is the command for running one. A missing tag
+exits 1, matching `notes show` and `collections show`.
+
+Changing `ListTags`'s signature reached eight call sites across the store, the
+HTTP layer, the Joplin importer and their tests. That is the cost of one query
+path, and it is the right cost: a second narrowing query beside the first is how
+two answers to the same question come to disagree.
 
 ## H13. v0.8 release wrap-up and branch synchronization
 

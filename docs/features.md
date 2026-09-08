@@ -109,7 +109,7 @@ Attach a tag to a note, take one off, and see what a note carries. Tags are hier
 
 List the tags in a library, see a note's tags, and rename a whole tag hierarchy at once.
 
-Renaming is offered beside the tag, because it is decided while looking at the tag and the count next to it is half the reason for deciding. The dry run is not a prediction: the service performs the rename in a transaction and rolls it back, so the report and the apply cannot disagree. Applying is unreachable until a report of that exact rename has been shown, and editing the name or the children option withdraws it.
+Asking about one tag used to mean fetching every tag: listing returned the whole vocabulary with no filter and no limit on all three surfaces, and `tags list --tag <name>` was accepted and ignored, returning everything. v0.8 H26 added narrowing to the command line, REST and MCP together, because no surface had it -- `tags show` exits 1 when a tag does not exist so a script can test for one without parsing anything, `--prefix` takes a branch of the hierarchy, and a bounded answer says whether it truncated. Listing the notes carrying a tag is a search, `tag:todo`, rather than a second thing this reports.
 
 *Available on the desktop app, the command line, the REST API and MCP.*
 
@@ -304,7 +304,7 @@ capability's own section.
 | Notebooks that are really saved searches | 1 | 1 | 3 | 1 | — |
 | Organise notes into notebooks | 2 | 3 | 9 | 4 | — |
 | Tag and untag a note | 4 | 3 | 2 | 2 | — |
-| See and rename tags | 4 | 1 | 3 | 1 | — |
+| See and rename tags | 4 | 3 | 3 | 1 | — |
 | Group libraries into collections | 2 | 2 | 4 | 1 | — |
 | Attach and manage files | 2 | 3 | 8 | 2 | — |
 | Bring remote images into the library | 2 | 1 | 4 | 3 | — |

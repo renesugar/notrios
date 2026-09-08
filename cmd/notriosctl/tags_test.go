@@ -210,3 +210,93 @@ func TestTagRefusalsNameWhatWasAsked(t *testing.T) {
 		t.Errorf("adding with no --tag must be refused")
 	}
 }
+
+// TestTagShowAnswersExistenceInTheExitCode is the point of the command: a
+// script can test for a tag without parsing anything. Before it, asking meant
+// fetching every tag in the library and searching the result -- and
+// `tags list --tag <name>` looked like the answer while returning all of them.
+func TestTagShowAnswersExistenceInTheExitCode(t *testing.T) {
+	binary := sharedBinary(t, "notriosctl")
+	sandbox := t.TempDir()
+	roots := []string{
+		"--db", filepath.Join(sandbox, "notes.sqlite"),
+		"--asset-store", filepath.Join(sandbox, "assets"),
+	}
+	created := runCLIIn(t, sandbox, binary, append([]string{"notes", "create", "--title", "T", "--body", "b"}, roots...)...)
+	var note struct {
+		DocumentID string `json:"document_id"`
+	}
+	if err := json.Unmarshal([]byte(created.stdout), &note); err != nil {
+		t.Fatalf("reading the note id: %v", err)
+	}
+	for _, name := range []string{"todo", "shopping", "shopping/mall", "shoppingcart"} {
+		if added := runCLIIn(t, sandbox, binary, append([]string{
+			"tags", "add", "--document", note.DocumentID, "--tag", name}, roots...)...); added.exitCode != 0 {
+			t.Fatalf("tagging %q: %s", name, added.stderr)
+		}
+	}
+
+	present := runCLIIn(t, sandbox, binary, append([]string{"tags", "show", "--tag", "todo"}, roots...)...)
+	if present.exitCode != 0 {
+		t.Errorf("an existing tag exited %d: %s", present.exitCode, present.stderr)
+	}
+	if !strings.Contains(present.stdout, `"notes": 1`) {
+		t.Errorf("the count is missing: %s", present.stdout)
+	}
+
+	absent := runCLIIn(t, sandbox, binary, append([]string{"tags", "show", "--tag", "nope"}, roots...)...)
+	if absent.exitCode != 1 {
+		t.Errorf("a tag that does not exist exited %d, want 1", absent.exitCode)
+	}
+	if strings.TrimSpace(absent.stdout) != "" {
+		t.Errorf("a refusal wrote to standard output: %q", absent.stdout)
+	}
+
+	// A branch reports its children, which is part of what "how much is on this
+	// tag" means when tags nest.
+	branch := runCLIIn(t, sandbox, binary, append([]string{"tags", "show", "--tag", "shopping"}, roots...)...)
+	if !strings.Contains(branch.stdout, "shopping/mall") {
+		t.Errorf("the branch does not report its child: %s", branch.stdout)
+	}
+	if strings.Contains(branch.stdout, "shoppingcart") {
+		t.Errorf("a tag that merely starts with the same letters was reported as a child: %s", branch.stdout)
+	}
+}
+
+// TestTagListNarrowsToABranchAndReportsTruncation covers the listing half.
+func TestTagListNarrowsToABranchAndReportsTruncation(t *testing.T) {
+	binary := sharedBinary(t, "notriosctl")
+	sandbox := t.TempDir()
+	roots := []string{
+		"--db", filepath.Join(sandbox, "notes.sqlite"),
+		"--asset-store", filepath.Join(sandbox, "assets"),
+	}
+	created := runCLIIn(t, sandbox, binary, append([]string{"notes", "create", "--title", "T", "--body", "b"}, roots...)...)
+	var note struct {
+		DocumentID string `json:"document_id"`
+	}
+	if err := json.Unmarshal([]byte(created.stdout), &note); err != nil {
+		t.Fatalf("reading the note id: %v", err)
+	}
+	for _, name := range []string{"todo", "shopping", "shopping/mall", "shoppingcart"} {
+		runCLIIn(t, sandbox, binary, append([]string{
+			"tags", "add", "--document", note.DocumentID, "--tag", name}, roots...)...)
+	}
+
+	branch := runCLIIn(t, sandbox, binary, append([]string{"tags", "list", "--prefix", "shopping"}, roots...)...)
+	if strings.Contains(branch.stdout, "shoppingcart") || strings.Contains(branch.stdout, "todo") {
+		t.Errorf("the branch listing is not a branch: %s", branch.stdout)
+	}
+	if !strings.Contains(branch.stdout, "shopping/mall") {
+		t.Errorf("the branch listing omits a child: %s", branch.stdout)
+	}
+
+	bounded := runCLIIn(t, sandbox, binary, append([]string{"tags", "list", "--limit", "2"}, roots...)...)
+	if !strings.Contains(bounded.stdout, `"truncated": true`) {
+		t.Errorf("a limit that cut the answer short did not say so: %s", bounded.stdout)
+	}
+	whole := runCLIIn(t, sandbox, binary, append([]string{"tags", "list"}, roots...)...)
+	if !strings.Contains(whole.stdout, `"truncated": false`) {
+		t.Errorf("an unbounded listing did not report truncated=false: %s", whole.stdout)
+	}
+}

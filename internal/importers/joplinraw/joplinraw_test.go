@@ -323,11 +323,11 @@ func TestH8HierarchyTagsAndExactSourceBundle(t *testing.T) {
 	if len(tags) != 1 || tags[0].Name != "research" {
 		t.Fatalf("real note tags = %#v", tags)
 	}
-	allTags, err := st.ListTags(ctx)
+	allTags, err := st.ListTags(ctx, store.TagQuery{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(allTags) != 2 {
+	if len(allTags.Tags) != 2 {
 		t.Fatalf("unassigned source tag was not preserved: %#v", allTags)
 	}
 	item, reader, err := st.OpenSourceBundleItem(ctx, sourceSystem, report.SourceKey, "default", "1:exact-note:exact-note.md")
@@ -369,8 +369,8 @@ func TestH8HierarchyTagsAndExactSourceBundle(t *testing.T) {
 	if err != nil || len(tags) != 0 || removed.TagsRemoved != 1 {
 		t.Fatalf("source tag relation removal failed: report=%#v tags=%#v err=%v", removed, tags, err)
 	}
-	allTags, err = st.ListTags(ctx)
-	if err != nil || len(allTags) != 2 {
+	allTags, err = st.ListTags(ctx, store.TagQuery{})
+	if err != nil || len(allTags.Tags) != 2 {
 		t.Fatalf("unassigned source tags must remain: tags=%#v err=%v", allTags, err)
 	}
 }
@@ -396,7 +396,7 @@ func TestH8DryRunMatchesRealImportActions(t *testing.T) {
 	if _, err := st.GetNotebook(ctx, "nb_joplin_work"); !errors.Is(err, store.ErrNotFound) {
 		t.Fatalf("dry run wrote a notebook: %v", err)
 	}
-	if tags, err := st.ListTags(ctx); err != nil || len(tags) != 0 {
+	if tags, err := st.ListTags(ctx, store.TagQuery{}); err != nil || len(tags.Tags) != 0 {
 		t.Fatalf("dry run wrote tags: tags=%#v err=%v", tags, err)
 	}
 	if _, err := st.GetSourceBundleItem(ctx, sourceSystem, filepath.Clean(dir), "default", "1:note1:note.md"); !errors.Is(err, store.ErrNotFound) {

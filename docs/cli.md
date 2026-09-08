@@ -86,9 +86,10 @@ nothing checked against the dispatcher. Eight commands were missing from it.
 - notriosctl sync start [--carrier dir] [--resource-fetch] [--byte-budget N] [--max-attempts N] [--db ...]
 - notriosctl sync status [--db ...] [--keys path]
 - notriosctl tags add --document <id> --tag <tag>
-- notriosctl tags list [--document <id>] [--db ...]
+- notriosctl tags list [--document <id>] [--prefix <branch>] [--limit N] [--db ...]
 - notriosctl tags remove --document <id> --tag <tag>
 - notriosctl tags rename --from <tag> --to <tag> [--db ...] [--include-children] [--apply]
+- notriosctl tags show --tag <name> [--db ...]
 - notriosctl tasks list [--document <id>] [--notebook <id>] [--state open|done] [--untagged]
 - notriosctl templates create --template <id> --title <title> [--notebook <id|name>] [--set name=value ...]
 - notriosctl templates list [--db ...]
@@ -664,6 +665,36 @@ fails while the rest proceed. Every fix writes an ordinary revision.
 description, the second because it reaches the network (through the full media
 policy, exactly as `notriosctl localize` does). Findings outside this set stay
 reported and unfixed rather than guessed at.
+
+## tags show
+
+```sh
+notriosctl tags show --tag <name> [--db ...]
+```
+
+One tag, its live note count, and its children. **It exits 1 when no such tag
+exists**, so a script can test for a tag without parsing anything:
+
+```sh
+if notriosctl tags show --tag todo >/dev/null 2>&1; then
+  echo "the tag exists"
+fi
+```
+
+Tags nest with `/`, and a branch reports what is under it:
+
+```text
+{ "tag": "shopping", "notes": 4,
+  "children": [ { "tag": "shopping/mall", "notes": 2 } ] }
+```
+
+Listing the *notes* carrying a tag is a search — `tag:todo` — rather than
+something this reports, so there is one place that pages and orders results
+instead of two.
+
+Narrowing exists on the other surfaces too: `GET /api/v1/tags?name=todo` returns
+404 when there is no such tag, and the `list_tags` tool takes the same `name`,
+`prefix` and `limit`.
 
 ## tags rename
 

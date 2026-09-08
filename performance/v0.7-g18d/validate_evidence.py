@@ -47,13 +47,15 @@ def validate_registry(registry: dict, report: dict) -> None:
     # discovery block in docs/query-language.md.
     # 144 -> 147 in v0.8 H24: three gomplate pipelines in docs/cli.md.
     # 147 -> 148 in v0.8 H21: the note-reading synopsis in docs/cli.md.
-    assert len(examples) == report["entries"] == 148
-    assert len({item["id"] for item in examples}) == 148
+    # 148 -> 150 in v0.8 H26: the tags show synopsis and its shell example.
+    assert len(examples) == report["entries"] == 150
+    assert len({item["id"] for item in examples}) == 150
     executed = [item for item in examples if item["state"] == "executed"]
     unverified = [item for item in examples if item["state"] == "unverified"]
     # 63 -> 64 in v0.8 H22: the two discovery commands are literal and run in
     # the seeded CLI fixture, which is what the page exists to teach.
-    assert len(executed) == report["executed"] == 64
+    # 64 -> 65 in v0.8 H26: testing for a tag in a shell is literal and runs.
+    assert len(executed) == report["executed"] == 65
     # 68 -> 70: both new synopses are bracketed-optional forms, registered as
     # illustrative placeholders like every other synopsis in that document.
     # 70 -> 74 in slice E. Executed stays 63: one is a bracketed synopsis, two
@@ -73,7 +75,8 @@ def validate_registry(registry: dict, report: dict) -> None:
     # but not run here, because gomplate is not a dependency of this repository.
     # 83 -> 84 in v0.8 H21: the note-reading synopsis, illustrative like every
     # other synopsis on that page.
-    assert len(unverified) == report["unverified"] == 84
+    # 84 -> 85 in v0.8 H26: the tags show synopsis, illustrative like the rest.
+    assert len(unverified) == report["unverified"] == 85
     assert {item["execution"]["surface"] for item in executed} == {
         "cli", "config", "rest", "mcp"
     }

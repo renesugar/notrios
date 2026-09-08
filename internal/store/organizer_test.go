@@ -31,12 +31,12 @@ func tagNote(t *testing.T, st *SQLiteStore, title string, tags ...string) Docume
 
 func tagNames(t *testing.T, st *SQLiteStore) []string {
 	t.Helper()
-	tags, err := st.ListTags(context.Background())
+	tags, err := st.ListTags(context.Background(), TagQuery{})
 	if err != nil {
 		t.Fatalf("ListTags: %v", err)
 	}
-	names := make([]string, 0, len(tags))
-	for _, tag := range tags {
+	names := make([]string, 0, len(tags.Tags))
+	for _, tag := range tags.Tags {
 		names = append(names, tag.Name)
 	}
 	sort.Strings(names)

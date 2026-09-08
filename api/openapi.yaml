@@ -818,8 +818,23 @@ paths:
   /api/v1/tags:
     get:
       summary: List tags with live note counts
+      parameters:
+        - name: name
+          in: query
+          schema: { type: string }
+          description: One tag, matched case-insensitively. 404 when no such tag exists.
+        - name: prefix
+          in: query
+          schema: { type: string }
+          description: One branch of the hierarchy - the tag itself and everything under it.
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1 }
+          description: Bound the answer; the response reports whether it truncated.
       responses:
         '200': { description: Tags }
+        '400': { description: 'name and prefix ask different questions, or limit is not positive' }
+        '404': { description: 'No tag with that name' }
   /api/v1/templates:
     get:
       summary: List note templates and the values each asks for
@@ -937,7 +952,7 @@ paths:
       responses:
         '200': { description: Rename report (dry run or applied) }
         '400': { description: "Invalid destination name, or over the tag ceiling" }
-        '404': { description: No tag with that name }
+        '404': { description: 'No tag with that name' }
         '409': { description: Destination name conflict }
   /api/v1/documents/{document_id}/tags:
     get:

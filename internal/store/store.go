@@ -350,6 +350,35 @@ type Tag struct {
 	NoteCount int64
 }
 
+// TagQuery narrows a tag listing.
+//
+// It exists because there was no way to ask about one tag: listing returned the
+// whole vocabulary with no filter and no limit on every surface, so testing
+// whether `todo` exists meant fetching all of them. `tags list --tag <name>`
+// looked like this and was accepted and ignored, which is worse -- it returned
+// every tag, reading as a filter that found everything.
+type TagQuery struct {
+	// Name matches exactly one tag, case-insensitively, as tagging already
+	// does when it decides whether to create one.
+	Name string
+	// Prefix matches a branch: the tag itself and everything beneath it.
+	// "shopping" matches "shopping" and "shopping/mall" and never
+	// "shoppingcart", because the separator is part of what a branch means.
+	Prefix string
+	// Limit bounds the answer; zero returns every match.
+	Limit int
+}
+
+// TagPage is a tag listing and whether a limit cut it short.
+//
+// Truncated is carried rather than left to the caller to infer from the row
+// count, because a listing that silently stops is a listing that lies about the
+// size of a library.
+type TagPage struct {
+	Tags      []Tag
+	Truncated bool
+}
+
 // SearchNotebook is a query-backed virtual notebook. Deleting one never
 // deletes notes. SortAnchor is "first" (All notes), "normal", or "last" (Trash).
 type SearchNotebook struct {
@@ -967,7 +996,7 @@ type Store interface {
 	UpsertTag(ctx context.Context, preferredID, tagName string) (Tag, string, error)
 	RemoveDocumentTag(ctx context.Context, documentID, tagName string) error
 	ListDocumentTags(ctx context.Context, documentID string) ([]Tag, error)
-	ListTags(ctx context.Context) ([]Tag, error)
+	ListTags(ctx context.Context, query TagQuery) (TagPage, error)
 	RenameTag(ctx context.Context, req TagRenameRequest) (TagRenameResult, error)
 	// RunBatch applies one bounded organizer transaction over an explicit list
 	// of notes, atomically or best-effort, reporting every item either way.

@@ -1519,6 +1519,41 @@
       }
     },
     {
+      "id": "cli-tags-show-example-1",
+      "path": "docs/cli.md",
+      "section": "tags-show",
+      "language": "sh",
+      "sha256": "7208270db4d7ee8ebf3663e7df32a454b39c8342aa216fa9f8455c634c78590c",
+      "state": "unverified",
+      "unrun_reason": {
+        "code": "illustrative-placeholder",
+        "detail": "Non-literal command synopsis: bracketed flags are optional-argument notation and <name> is a placeholder. The command is covered by executed tests in go:github.com/renesugar/notrios/cmd/notriosctl (TestTagShowAnswersExistenceInTheExitCode) and by the executed shell example in the same section."
+      }
+    },
+    {
+      "id": "cli-tags-show-example-2",
+      "path": "docs/cli.md",
+      "section": "tags-show",
+      "language": "sh",
+      "sha256": "3aed6451585ea5273538f23bcf2db980fed89d24064f97a484d6a59ea76016da",
+      "state": "executed",
+      "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
+      "execution": {
+        "surface": "cli",
+        "fixture": "seeded-cli",
+        "case": "cli-shell",
+        "substitutions": [],
+        "expected": {
+          "kind": "exit",
+          "status": 0
+        },
+        "postcondition": {
+          "kind": "tag-exists",
+          "detail": "the shell test finds a tag that was put on a note first, and says so"
+        }
+      }
+    },
+    {
       "id": "cli-verify-archive-v2-example-1",
       "path": "docs/cli.md",
       "section": "verify-archive-v2",
@@ -2718,7 +2753,7 @@
       "path": "docs/query-language.md",
       "section": "search-query-language",
       "language": "sh",
-      "sha256": "7091f5384484c5e74556a8d02e0414aca1e0f753ea0d7dd49dad92e8655286bd",
+      "sha256": "c4d32fc1149ee71073d5b8e720bff21f017f2047f6285efb3188e575a8cf5257",
       "state": "executed",
       "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
       "execution": {
@@ -2732,7 +2767,7 @@
         },
         "postcondition": {
           "kind": "discovery-listing",
-          "detail": "both listings name identifiers a query can take: a collection and a notebook"
+          "detail": "all three listings name identifiers a query can take: a collection, a notebook and a tag"
         }
       }
     },

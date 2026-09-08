@@ -49,7 +49,9 @@ class G18aEvidenceTests(unittest.TestCase):
         # documents rendering rather than adding a second output format.
         # 263 -> 264 in v0.8 H21: the note-reading section, which documents the
         # command line half of a capability REST and MCP already had.
-        self.assertEqual(inventory["grade_baseline"]["denominator"], 264)
+        # 264 -> 265 in v0.8 H26: the tags show section, which documents the
+        # capability none of the three surfaces had.
+        self.assertEqual(inventory["grade_baseline"]["denominator"], 265)
 
     def test_duplicate_fragment_is_rejected(self):
         source = """// A.\n//notrios:doc user same\nfunc A() {}\n// B.\n//notrios:doc user same\nfunc B() {}\n"""

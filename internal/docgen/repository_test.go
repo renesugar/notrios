@@ -58,7 +58,10 @@ func TestRepositoryEnumerationsMatchFiniteRegistries(t *testing.T) {
 		// and `resources get`. Reading what a note is made of was reachable over
 		// REST and MCP and nowhere else, and the features registry recorded that
 		// as a decision rather than as a gap.
-		{cliHelpAnchor, 85},
+		// 85 -> 86 in v0.8 H26: `tags show`. Asking whether one tag exists meant
+		// fetching every tag, on every surface, and the flag that looked like
+		// the answer was accepted and ignored.
+		{cliHelpAnchor, 86},
 		{restAnchor, 109},
 		{mcpToolsAnchor, 46},
 		{mcpSyncScopeAnchor, 7},

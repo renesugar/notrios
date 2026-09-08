@@ -998,13 +998,13 @@ func (run *importRun) processTags(write bool, nextPhase string) error {
 	if run.nextIndex > 0 {
 		return nil
 	}
-	existing, err := run.st.ListTags(run.ctx)
+	existing, err := run.st.ListTags(run.ctx, store.TagQuery{})
 	if err != nil {
 		return err
 	}
 	byID := map[string]store.Tag{}
 	byName := map[string]store.Tag{}
-	for _, tag := range existing {
+	for _, tag := range existing.Tags {
 		byID[tag.ID] = tag
 		byName[strings.ToLower(tag.Name)] = tag
 	}

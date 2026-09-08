@@ -271,8 +271,8 @@ func TestTrashRestoreAndPurge(t *testing.T) {
 			t.Fatalf("revisions should be purged, got %d", len(revs))
 		}
 	}
-	tags, _ := st.ListTags(ctx)
-	if len(tags) != 0 {
+	tags, _ := st.ListTags(ctx, TagQuery{})
+	if len(tags.Tags) != 0 {
 		t.Fatalf("orphaned tags should be removed after purge, got %+v", tags)
 	}
 }
@@ -296,8 +296,8 @@ func TestTagsAddListRemoveCounts(t *testing.T) {
 		t.Fatalf("tag reuse mismatch: %+v", tag)
 	}
 
-	all, err := st.ListTags(ctx)
-	if err != nil || len(all) != 1 || all[0].NoteCount != 2 {
+	all, err := st.ListTags(ctx, TagQuery{})
+	if err != nil || len(all.Tags) != 1 || all.Tags[0].NoteCount != 2 {
 		t.Fatalf("ListTags: %+v err=%v", all, err)
 	}
 	docTags, err := st.ListDocumentTags(ctx, doc1.ID)
@@ -308,15 +308,15 @@ func TestTagsAddListRemoveCounts(t *testing.T) {
 	if err := st.RemoveDocumentTag(ctx, doc1.ID, "SHOPPING MALL"); err != nil {
 		t.Fatalf("RemoveDocumentTag: %v", err)
 	}
-	all, _ = st.ListTags(ctx)
-	if len(all) != 1 || all[0].NoteCount != 1 {
+	all, _ = st.ListTags(ctx, TagQuery{})
+	if len(all.Tags) != 1 || all.Tags[0].NoteCount != 1 {
 		t.Fatalf("count after removal: %+v", all)
 	}
 	if err := st.RemoveDocumentTag(ctx, doc2.ID, "shopping mall"); err != nil {
 		t.Fatalf("RemoveDocumentTag: %v", err)
 	}
-	all, _ = st.ListTags(ctx)
-	if len(all) != 0 {
+	all, _ = st.ListTags(ctx, TagQuery{})
+	if len(all.Tags) != 0 {
 		t.Fatalf("unreferenced tag should be deleted: %+v", all)
 	}
 }

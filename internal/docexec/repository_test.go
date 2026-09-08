@@ -134,7 +134,10 @@ func TestRepositoryExamples(t *testing.T) {
 	// dependency of the documentation gate.
 	// 147 -> 148 entries in v0.8 H21: the note-reading synopsis in docs/cli.md,
 	// a bracketed-flag form whose four commands are covered by executed tests.
-	if report.Executed != 64 || report.Entries != 148 || len(report.Topics) != 14 {
+	// 148 -> 150 entries and 64 -> 65 executed in v0.8 H26: the tags show
+	// synopsis, and the shell existence check beside it, which runs against a
+	// tag put on a note first so that finding it means something.
+	if report.Executed != 65 || report.Entries != 150 || len(report.Topics) != 14 {
 		t.Fatalf("unexpected G18d coverage: %+v", report)
 	}
 	executedTopics := 0
@@ -624,6 +627,15 @@ func (h *repositoryExamples) cliShell(ctx context.Context, invocation Invocation
 			return AdapterResult{}, fmt.Errorf("prepare publish profile exit %d: %w\n%s", status, err, output)
 		}
 	}
+	if invocation.Entry.Registered.Execution.Postcondition.Kind == "tag-exists" {
+		// The page shows testing for a tag in a shell. Running it against a
+		// library with no such tag would exercise the idiom and prove nothing,
+		// so the tag is put there first and the example has to find it.
+		prep := "notriosctl tags add --db data/notes.sqlite --document " + fixture.documentID + " --tag todo"
+		if output, status, err := runPinnedShell(ctx, fixture.root, h.cli, prep); err != nil {
+			return AdapterResult{}, fmt.Errorf("prepare tag exit %d: %w\n%s", status, err, output)
+		}
+	}
 	if invocation.Entry.Registered.Execution.Postcondition.Kind == "cli-open" {
 		prep := "notriosctl profile register --name fixture --db data/notes.sqlite"
 		if output, status, err := runPinnedShell(ctx, fixture.root, h.cli, prep); err != nil {
@@ -641,12 +653,15 @@ func (h *repositoryExamples) cliShell(ctx context.Context, invocation Invocation
 	switch invocation.Entry.Registered.Execution.Postcondition.Kind {
 	case "version-output":
 		ok = strings.TrimSpace(output) != ""
+	case "tag-exists":
+		ok = strings.Contains(output, "the tag exists")
 	case "discovery-listing":
 		// The documented point of these two commands is that they hand back
 		// identifiers a query can name, so the check is that identifiers came
 		// back -- not that a table was printed.
 		ok = strings.Contains(output, "COLLECTION") && strings.Contains(output, "NOTEBOOK") &&
-			strings.Contains(output, "default") && strings.Contains(output, "nb_")
+			strings.Contains(output, "default") && strings.Contains(output, "nb_") &&
+			strings.Contains(output, "\"tags\"")
 	case "archive-created":
 		ok = fileExists(filepath.Join(fixture.root, "backups", "full", "manifest.json")) && fileExists(filepath.Join(fixture.root, "transfer", "research", "manifest.json"))
 	case "dry-run-unchanged":

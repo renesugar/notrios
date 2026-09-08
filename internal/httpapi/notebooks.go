@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -180,11 +181,44 @@ func (s *Server) handleListTags(w http.ResponseWriter, r *http.Request) {
 	if !s.requireStore(w) {
 		return
 	}
-	tags, err := s.store.ListTags(r.Context())
+	query, err := tagQueryFromRequest(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "tag_query_invalid", err.Error())
+		return
+	}
+	page, err := s.store.ListTags(r.Context(), query)
 	if writeStoreError(w, err, "tag_list_failed") {
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"tags": toAPITags(tags)})
+	if strings.TrimSpace(query.Name) != "" && len(page.Tags) == 0 {
+		// Asking about one tag is a lookup, and a lookup that finds nothing is
+		// a 404. Returning an empty list would make "no such tag" and "a tag
+		// with nothing on it" the same answer, which is the distinction the
+		// caller asked for.
+		writeError(w, http.StatusNotFound, "tag_not_found", "no tag named "+strconv.Quote(query.Name))
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"tags": toAPITags(page.Tags), "truncated": page.Truncated})
+}
+
+// tagQueryFromRequest reads the narrowing a caller asked for.
+func tagQueryFromRequest(r *http.Request) (store.TagQuery, error) {
+	values := r.URL.Query()
+	query := store.TagQuery{
+		Name:   strings.TrimSpace(values.Get("name")),
+		Prefix: strings.TrimSpace(values.Get("prefix")),
+	}
+	if query.Name != "" && query.Prefix != "" {
+		return store.TagQuery{}, fmt.Errorf("name and prefix ask different questions; send one")
+	}
+	if raw := strings.TrimSpace(values.Get("limit")); raw != "" {
+		limit, err := strconv.Atoi(raw)
+		if err != nil || limit < 1 {
+			return store.TagQuery{}, fmt.Errorf("limit must be a positive whole number")
+		}
+		query.Limit = limit
+	}
+	return query, nil
 }
 
 func toAPITags(tags []store.Tag) []api.Tag {

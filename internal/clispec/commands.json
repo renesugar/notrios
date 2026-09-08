@@ -800,9 +800,12 @@
         "tags",
         "list"
       ],
-      "notes": [],
+      "notes": [
+        "--prefix takes a branch: shopping matches shopping/mall and never shoppingcart",
+        "the answer says whether a limit truncated it"
+      ],
       "purpose": "a note's tags, or every tag in the library with note counts",
-      "usage": "[--document <id>] [--db ...]"
+      "usage": "[--document <id>] [--prefix <branch>] [--limit N] [--db ...]"
     },
     {
       "path": [
@@ -821,6 +824,17 @@
       "notes": [],
       "purpose": "hierarchical tag rename; dry run is the default and reports every tag and count",
       "usage": "--from <tag> --to <tag> [--db ...] [--include-children] [--apply]"
+    },
+    {
+      "path": [
+        "tags",
+        "show"
+      ],
+      "usage": "--tag <name> [--db ...]",
+      "purpose": "one tag, its live note count, and its children",
+      "notes": [
+        "exits 1 when no such tag exists, so a script can test for one without parsing anything"
+      ]
     },
     {
       "path": [

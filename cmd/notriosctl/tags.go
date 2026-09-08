@@ -23,6 +23,8 @@ func runTags(args []string) {
 		runTagRemove(args[1:])
 	case "list":
 		runTagList(args[1:])
+	case "show":
+		runTagShow(args[1:])
 	case "rename":
 		runTagRename(args[1:])
 	default:
@@ -36,7 +38,8 @@ func printTagsUsage() {
 	fmt.Fprint(os.Stderr, `usage:
   notriosctl tags add --document <id> --tag <tag>
   notriosctl tags remove --document <id> --tag <tag>
-  notriosctl tags list [--document <id>]
+  notriosctl tags show --tag <name>
+  notriosctl tags list [--document <id>] [--prefix <branch>] [--limit N]
   notriosctl tags rename --from <tag> --to <tag> [--include-children] [--apply]
 `)
 }
@@ -71,10 +74,10 @@ func newTagFlags(name string) *tagFlags {
 // Written without a conditional so that what this command accepts can be read
 // off the source. A branch here would leave the flags gate guessing, and a gate
 // that guesses is one that reports a problem nobody can act on.
-func newTagListFlags() *tagFlags {
+func newTagListFlags() (*tagFlags, *string, *int) {
 	set := flag.NewFlagSet("notriosctl tags list", flag.ExitOnError)
 	unused := ""
-	return &tagFlags{
+	flags := &tagFlags{
 		set:        set,
 		configPath: set.String("config", "", "optional config file"),
 		dbPath:     set.String("db", "", "SQLite database path override"),
@@ -82,6 +85,9 @@ func newTagListFlags() *tagFlags {
 		document:   set.String("document", "", "note to act on"),
 		tag:        &unused,
 	}
+	prefix := set.String("prefix", "", "one branch of the hierarchy: the tag and everything under it")
+	limit := set.Int("limit", 0, "bound the answer; the result says whether it truncated")
+	return flags, prefix, limit
 }
 
 func (f *tagFlags) parse(args []string) {
@@ -146,7 +152,7 @@ func runTagRemove(args []string) {
 // that performs them. A command that changes something and offers no way to see
 // the change asks its caller to take it on trust.
 func runTagList(args []string) {
-	flags := newTagListFlags()
+	flags, prefix, limit := newTagListFlags()
 	flags.parse(args)
 	if flags.set.NArg() != 0 {
 		printTagsUsage()
@@ -161,16 +167,70 @@ func runTagList(args []string) {
 		printDocumentTags(ctx, st, documentID, "", "")
 		return
 	}
-	tags, err := st.ListTags(ctx)
+	page, err := st.ListTags(ctx, store.TagQuery{Prefix: strings.TrimSpace(*prefix), Limit: *limit})
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
-	rows := make([]map[string]any, 0, len(tags))
-	for _, tag := range tags {
+	rows := make([]map[string]any, 0, len(page.Tags))
+	for _, tag := range page.Tags {
 		rows = append(rows, map[string]any{"tag": tag.Name, "notes": tag.NoteCount})
 	}
-	printJSON(map[string]any{"tags": rows})
+	printJSON(map[string]any{"tags": rows, "truncated": page.Truncated})
+}
+
+// runTagShow answers whether one tag exists, and how much is on it.
+//
+// The exit code carries the answer, so a script can test for a tag without
+// parsing anything -- which is the whole point. Before this, asking meant
+// fetching every tag in the library and searching the result, and
+// `tags list --tag <name>` looked like the answer while returning all of them.
+func runTagShow(args []string) {
+	fs := flag.NewFlagSet("notriosctl tags show", flag.ExitOnError)
+	configPath := fs.String("config", "", "optional config file")
+	dbPath := fs.String("db", "", "SQLite database path override")
+	assetStore := fs.String("asset-store", "", "asset store directory override")
+	name := fs.String("tag", "", "tag to look for")
+	if err := fs.Parse(args); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(2)
+	}
+	wanted := strings.TrimSpace(*name)
+	if fs.NArg() != 0 || wanted == "" {
+		printTagsUsage()
+		os.Exit(2)
+	}
+
+	st := openStoreFromFlags(*configPath, *dbPath, *assetStore)
+	defer st.Close()
+	ctx := context.Background()
+
+	found, err := st.ListTags(ctx, store.TagQuery{Name: wanted})
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	if len(found.Tags) == 0 {
+		fmt.Fprintf(os.Stderr, "no tag named %q\n", wanted)
+		os.Exit(1)
+	}
+	tag := found.Tags[0]
+
+	// The branch under it, because a hierarchical tag's children are part of
+	// what "how much is on this tag" means to the person asking.
+	branch, err := st.ListTags(ctx, store.TagQuery{Prefix: tag.Name})
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	children := []map[string]any{}
+	for _, child := range branch.Tags {
+		if child.Name == tag.Name {
+			continue
+		}
+		children = append(children, map[string]any{"tag": child.Name, "notes": child.NoteCount})
+	}
+	printJSON(map[string]any{"tag": tag.Name, "notes": tag.NoteCount, "children": children})
 }
 
 // exitTagError names what the user asked for.

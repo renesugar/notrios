@@ -29,7 +29,13 @@ have to know which ones exist before you can narrow anything with them:
 ```sh
 notriosctl notebooks list      # ids and names; --json for a script
 notriosctl collections list    # ids, names, and how many notes name each
+notriosctl tags list           # every tag with its note count
 ```
+
+`notriosctl tags list --prefix shopping` narrows to one branch of the tag
+hierarchy, and `notriosctl tags show --tag todo` answers whether a single tag
+exists — exiting 1 when it does not, so a script can check before writing a
+query around it.
 
 A search spans every collection unless a `collection:` term narrows it. A note
 written in Notrios is in `default`; a note that arrived from somewhere else

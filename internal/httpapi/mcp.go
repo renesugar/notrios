@@ -158,7 +158,7 @@ func (s *Server) handleMCPToolCall(r *http.Request, raw json.RawMessage) (mcpToo
 	case "get_notebook_tree":
 		return s.mcpGetNotebookTree(r)
 	case "list_tags":
-		return s.mcpListTags(r)
+		return s.mcpListTags(r, params.Arguments)
 	case "list_search_notebooks":
 		return s.mcpListSearchNotebooks(r)
 	case "search_documents":
@@ -462,7 +462,7 @@ func (s *Server) mcpTools() []mcpTool {
 		{Name: "list_collections", Description: "List note collections and capabilities.", InputSchema: objectSchema(nil, nil)},
 		{Name: "list_notebooks", Description: "List all notebooks (flat, with parent IDs, emoji icons, and builtin flags).", InputSchema: objectSchema(nil, nil)},
 		{Name: "get_notebook_tree", Description: "Return the nested notebook tree in sidebar order.", InputSchema: objectSchema(nil, nil)},
-		{Name: "list_tags", Description: "List tags with their current non-deleted note counts.", InputSchema: objectSchema(nil, nil)},
+		{Name: "list_tags", Description: "List tags with their current non-deleted note counts. Narrow with name for one tag, prefix for one branch of the hierarchy, or limit to bound the answer; the result says whether a limit truncated it.", InputSchema: objectSchema(map[string]any{"name": stringSchema(), "prefix": stringSchema(), "limit": integerSchema(1, 1000)}, nil)},
 		{Name: "list_search_notebooks", Description: "List query-backed search notebooks in sidebar order (All notes first, Trash last).", InputSchema: objectSchema(nil, nil)},
 		{Name: "search_documents", Description: "Search managed Markdown notes with phrases, uppercase OR, implicit AND, prefix -, parentheses, and typed fields including category:/notebook:. Returns snippets and document URIs.", InputSchema: objectSchema(map[string]any{"query": boundedStringSchema(query.MaxInputBytes), "collection": stringSchema(), "collections": arraySchema(stringSchema()), "limit": integerSchema(1, 50), "cursor": stringSchema(), "include_body": booleanSchema(), "snippet_characters": integerSchema(1, 2000)}, nil)},
 		{Name: "plan_selection", Description: "Read-only dry run for a full archive, subset transfer, or publication handoff. Returns bounded content-free IDs, hashes, counts, link/privacy decisions, and a deterministic manifest digest; never note bodies, SQL, resource bytes, source metadata JSON, or local paths.", InputSchema: selectionPlanMCPSchema()},
@@ -718,12 +718,30 @@ func (s *Server) mcpGetNotebookTree(r *http.Request) (mcpToolResult, error) {
 	return mcpStructured(map[string]any{"notebooks": buildNotebookTree(notebooks)})
 }
 
-func (s *Server) mcpListTags(r *http.Request) (mcpToolResult, error) {
-	tags, err := s.store.ListTags(r.Context())
+func (s *Server) mcpListTags(r *http.Request, raw json.RawMessage) (mcpToolResult, error) {
+	var args struct {
+		Name   string `json:"name"`
+		Prefix string `json:"prefix"`
+		Limit  int    `json:"limit"`
+	}
+	if len(raw) > 0 {
+		if err := json.Unmarshal(raw, &args); err != nil {
+			return mcpToolResult{}, err
+		}
+	}
+	if strings.TrimSpace(args.Name) != "" && strings.TrimSpace(args.Prefix) != "" {
+		return mcpToolResult{}, fmt.Errorf("name and prefix ask different questions; send one")
+	}
+	if args.Limit < 0 {
+		return mcpToolResult{}, fmt.Errorf("limit must be a positive whole number")
+	}
+	page, err := s.store.ListTags(r.Context(), store.TagQuery{
+		Name: strings.TrimSpace(args.Name), Prefix: strings.TrimSpace(args.Prefix), Limit: args.Limit,
+	})
 	if err != nil {
 		return mcpToolResult{}, err
 	}
-	return mcpStructured(map[string]any{"tags": toAPITags(tags)})
+	return mcpStructured(map[string]any{"tags": toAPITags(page.Tags), "truncated": page.Truncated})
 }
 
 func (s *Server) mcpListSearchNotebooks(r *http.Request) (mcpToolResult, error) {

@@ -172,6 +172,8 @@
       "title": "See and rename tags",
       "summary": "List the tags in a library, see a note's tags, and rename a whole tag hierarchy at once.",
       "cli": [
+        "notriosctl tags list",
+        "notriosctl tags show",
         "notriosctl tags rename"
       ],
       "rest": [
@@ -182,7 +184,7 @@
       "mcp": [
         "list_tags"
       ],
-      "surface_note": "Renaming is offered beside the tag, because it is decided while looking at the tag and the count next to it is half the reason for deciding. The dry run is not a prediction: the service performs the rename in a transaction and rolls it back, so the report and the apply cannot disagree. Applying is unreachable until a report of that exact rename has been shown, and editing the name or the children option withdraws it.",
+      "surface_note": "Asking about one tag used to mean fetching every tag: listing returned the whole vocabulary with no filter and no limit on all three surfaces, and `tags list --tag <name>` was accepted and ignored, returning everything. v0.8 H26 added narrowing to the command line, REST and MCP together, because no surface had it -- `tags show` exits 1 when a tag does not exist so a script can test for one without parsing anything, `--prefix` takes a branch of the hierarchy, and a bounded answer says whether it truncated. Listing the notes carrying a tag is a search, `tag:todo`, rather than a second thing this reports.",
       "gui": [
         "Tags in the sidebar with note counts",
         "Rename the tag — beside each tag",

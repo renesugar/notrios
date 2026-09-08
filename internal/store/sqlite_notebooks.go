@@ -612,10 +612,44 @@ func (s *SQLiteStore) ListDocumentTags(ctx context.Context, documentID string) (
 		ORDER BY t.name COLLATE NOCASE`, strings.TrimSpace(documentID))
 }
 
-func (s *SQLiteStore) ListTags(ctx context.Context) ([]Tag, error) {
-	return s.listTags(ctx, `SELECT t.id, t.name, (SELECT COUNT(1) FROM note_tags nt JOIN documents d ON d.id = nt.document_id WHERE nt.tag_id = t.id AND d.deleted_at IS NULL)
-		FROM tags t
-		ORDER BY t.name COLLATE NOCASE`)
+func (s *SQLiteStore) ListTags(ctx context.Context, query TagQuery) (TagPage, error) {
+	const counted = `SELECT t.id, t.name, (SELECT COUNT(1) FROM note_tags nt JOIN documents d ON d.id = nt.document_id WHERE nt.tag_id = t.id AND d.deleted_at IS NULL)
+		FROM tags t`
+	where, values := "", []string{}
+	switch {
+	case strings.TrimSpace(query.Name) != "":
+		where = " WHERE t.name = ? COLLATE NOCASE"
+		values = append(values, strings.TrimSpace(query.Name))
+	case strings.TrimSpace(query.Prefix) != "":
+		// The branch and its children, and nothing that merely starts with the
+		// same letters: "shopping" is not a prefix of "shoppingcart" in a
+		// hierarchy whose separator is "/".
+		prefix := strings.TrimSuffix(strings.TrimSpace(query.Prefix), "/")
+		where = " WHERE (t.name = ? COLLATE NOCASE OR t.name LIKE ? ESCAPE '\\')"
+		values = append(values, prefix, escapeTagLike(prefix)+"/%")
+	}
+	sql := counted + where + " ORDER BY t.name COLLATE NOCASE"
+	if query.Limit > 0 {
+		// One more than asked for, so truncation is observed rather than
+		// guessed at from a full page.
+		sql += fmt.Sprintf(" LIMIT %d", query.Limit+1)
+	}
+	tags, err := s.listTags(ctx, sql, values...)
+	if err != nil {
+		return TagPage{}, err
+	}
+	page := TagPage{Tags: tags}
+	if query.Limit > 0 && len(tags) > query.Limit {
+		page.Tags, page.Truncated = tags[:query.Limit], true
+	}
+	return page, nil
+}
+
+// escapeTagLike neutralises the characters LIKE treats as wildcards, so a tag
+// named "50%" is a prefix of its own children and not of everything.
+func escapeTagLike(value string) string {
+	replacer := strings.NewReplacer(`\`, `\\`, "%", `\%`, "_", `\_`)
+	return replacer.Replace(value)
 }
 
 func (s *SQLiteStore) listTags(ctx context.Context, query string, values ...string) ([]Tag, error) {
