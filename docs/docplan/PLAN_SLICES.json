@@ -541,6 +541,33 @@
           "evidence": "test:TestNoCommandHidesAFlagItAccepts"
         }
       ]
+    },
+    {
+      "id": "H26",
+      "title": "Ask about one tag without fetching them all",
+      "state": "not-started",
+      "slices": [
+        {
+          "id": "H26-A",
+          "statement": "The command line answers whether one tag exists, with its note count, and says so in its exit code",
+          "state": "not-started"
+        },
+        {
+          "id": "H26-B",
+          "statement": "A tag listing can be narrowed to one branch of the hierarchy and bounded, reporting when it truncated",
+          "state": "not-started"
+        },
+        {
+          "id": "H26-C",
+          "statement": "REST and MCP narrow the same way, so no surface can answer a question the others cannot",
+          "state": "not-started"
+        },
+        {
+          "id": "H26-D",
+          "statement": "The documentation says how to test for a tag and how to browse a branch, beside where it explains tag:",
+          "state": "not-started"
+        }
+      ]
     }
   ]
 }

@@ -46,7 +46,7 @@ What follows is what is left. Each item's own text below is the record of what
 happened, which is a different question.
 
 <!-- notrios:generated:plan:progress:begin -->
-**31 items: 19 complete, 4 in progress, 7 not started, 1 deferred.**
+**32 items: 19 complete, 4 in progress, 8 not started, 1 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -81,6 +81,7 @@ happened, which is a different question.
 | H23. One description of the command line, and --help everywhere | complete | 6/6 | — |
 | H24. JSON is the output; a template makes it readable | complete | 2/2 | — |
 | H25. Hold each command's flags to its description | complete | 2/2 | — |
+| H26. Ask about one tag without fetching them all | not-started | 0/4 | 4 |
 
 ### Started and not finished
 
@@ -110,7 +111,7 @@ happened, which is a different question.
 
 ### Not started
 
-Written and not begun: H10, H11, H12, H17, H19, H13, H20. Their slices are listed under each item.
+Written and not begun: H10, H11, H12, H17, H19, H13, H20, H26. Their slices are listed under each item.
 <!-- notrios:generated:plan:progress:end -->
 
 ## H0. Application-facade, C-ABI, and SQLite ownership investigation — complete
@@ -4269,6 +4270,89 @@ take, so the exemption cannot become a hiding place.
 `tags list` splitting its flag set is written without a conditional on purpose.
 A branch would leave the gate guessing about what the command accepts, and a
 gate that guesses reports problems nobody can act on.
+
+## H26. Ask about one tag without fetching them all
+
+**Ordering.** After H25. Independent of H19, though a library with
+`notriosctl search` makes the counts here more useful.
+
+**Goal.** Answer "does this tag exist, and how much is on it?" without
+retrieving every tag in the library, on all three surfaces.
+
+**Why.** There is no way to ask about one tag. `notriosctl tags list`,
+`GET /api/v1/tags` and `list_tags` each return the whole vocabulary, take **no
+filter and no limit**, and are the only thing there is. So testing whether
+`todo` exists means fetching every tag and searching the result, on a surface
+whose whole point is answering a narrow question cheaply.
+
+The counts are already right and are not the gap: `tags list` reports live
+non-deleted note counts per tag, and so do the REST and MCP forms. What is
+missing is narrowing.
+
+The two workarounds are both poor, and the second is worse than it looks.
+Filtering `tags list --json` fetches the entire vocabulary to answer one yes or
+no. And `tags rename --from <name> --to <anything>` exits 1 with `not found: no
+tag named ...` when the tag is absent -- an existence test built out of a
+*write* command, which needs a `--to` the caller does not want and which will
+eventually be run without the dry run by someone who forgot.
+
+**This is a capability gap, not a missing adapter**, which makes it different in
+kind from the reading and discovery items either side of it. No surface has it,
+so nothing here is catching the command line up with REST; all three change
+together, and the item is written that way so the command line does not become
+the only place you can ask.
+
+`tags list --tag <name>` used to look exactly like the answer. It was accepted
+and silently ignored -- `tags list --tag todo` returned every tag in the library
+-- and H25 removed it, because a filter that returns everything is worse than no
+filter. That flag is why this item exists: somebody wrote the signature for this
+capability and never wrote the capability.
+
+**Shape.**
+
+- `notriosctl tags show --tag <name>` -- the tag, its live note count, and its
+  children when the name has any. **Exit 1 when the tag does not exist**, so a
+  script can test existence on the exit code without parsing anything, the way
+  `notes show` already reports a missing note.
+- `tags list --prefix <p>` -- the tags under one branch. Tags are hierarchical
+  (`shopping/mall`, and `tags rename --include-children` renames a whole
+  branch), so a prefix is how a person browses a large vocabulary and is the
+  same narrowing `--tag` should have been.
+- `tags list --limit N` with the truncation reported, because a listing that
+  silently stops is a listing that lies about a library's size.
+- The same narrowing on `GET /api/v1/tags` and `list_tags`, so the three
+  surfaces keep answering the same questions. `store.ListTags` grows the
+  parameters rather than gaining a second query beside it.
+- `docs/cli.md` and the query-language page say how to test for a tag and how to
+  browse a branch, next to where they already explain `tag:`.
+
+**Boundaries.** Read-only. Nothing here creates, renames or deletes a tag --
+`tags add`, `tags remove` and `tags rename` already do that and are unchanged.
+No new tag model: hierarchy is whatever `/` already means, and this item does
+not decide anything about it.
+
+**Open decisions.**
+
+- **Whether `tags show` reports the notes carrying the tag -- Non-blocking; the
+  default below is taken if no answer comes.**
+  - *Report the count only (default).* The count is what makes the answer cheap,
+    and listing the notes is a search: `tag:todo` is exactly that query, and
+    H19 is the command for running it. Two ways to list the same notes is the
+    duplication this milestone keeps removing.
+  - *Report the first N notes as well.* Convenient, and it makes `tags show` a
+    second search surface with its own paging, ordering and truncation rules to
+    keep consistent with the real one.
+- **Whether an absent tag is exit 1 or an empty result -- Non-blocking.**
+  Recommended: exit 1, matching `notes show` and `collections show`, both of
+  which already refuse rather than return nothing. A caller that prefers a
+  parseable answer can read `--json`, which prints the refusal too.
+
+**Working state.** `notriosctl tags show --tag todo` prints the tag and its
+count and exits 0; the same for a tag that does not exist exits 1 and says so;
+`tags list --prefix shopping` lists only that branch; `tags list --limit 1`
+reports that it truncated; `GET /api/v1/tags?prefix=` and `list_tags` narrow the
+same way; and the features table shows the capability on all three surfaces
+rather than on one.
 
 ## H13. v0.8 release wrap-up and branch synchronization
 

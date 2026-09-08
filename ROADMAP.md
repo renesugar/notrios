@@ -562,6 +562,13 @@ be smuggled into v0.7 as desktop assumptions.
   help, the guide and the gates all read, make `--help` work the same way at
   every level, and let tools discover it as data -- including as JSON, so a
   wrapper or a completion can read the command line rather than parse its prose.
+  One question none of the surfaces can answer cheaply: whether a single tag
+  exists. Listing tags returns the whole vocabulary with no filter and no limit
+  on the command line, over REST and through MCP alike, so testing for one tag
+  means fetching all of them -- and the flag that looked like the answer,
+  `tags list --tag`, was accepted and ignored. Let all three narrow to one tag
+  or one branch, and report a missing tag rather than an empty list.
+
   On output: six commands of eighty-one print a form a person can read and the
   rest print JSON, and the answer is not a second rendering inside every
   command. JSON is the interchange format and a template tool renders it, which
@@ -752,7 +759,7 @@ requirements below are the ones H7 already carried.
 The scaffold handoff is complete; see `CODING_CLIENT_HANDOFF.md`. Future roadmap planning should be driven from `ROADMAP.md`, but each active implementation cycle should create a small `PLAN.md` slice and archive it under `plans/` when complete.
 
 <!-- notrios:generated:roadmap:status:begin -->
-`PLAN.md` holds the active plan derived from this roadmap: 31 items, 19 complete, 4 in progress, 7 not started, 1 deferred.
+`PLAN.md` holds the active plan derived from this roadmap: 32 items, 19 complete, 4 in progress, 8 not started, 1 deferred.
 
 Started and unfinished: H9, H15, H16, H18. What remains in each is in the plan's own Progress section.
 <!-- notrios:generated:roadmap:status:end -->
