@@ -224,6 +224,136 @@ Each task below lists the steps that do it, in order.
   - Tag it, with the same identifier.
 
     `notriosctl tags add --document <note> --tag wetland`
+**Read a note, and what it is made of** — Print a note as Markdown another application can read, then its headings, attachments and links. `notes show` prints the note itself, with the front matter the Recoll projection writes. The other three answer what the note is made of rather than what it says.
+  - Write a note with a heading and a link in it.
+
+    `notriosctl notes create --title "Reed beds" --body "Seen at dusk.\n\n## Café notes\n\nMore."`
+  - Read it. The default is Markdown with front matter, so another application can consume it; `--json` gives the fields instead.
+
+    `notriosctl notes show --document <note>`
+  - List its headings. The anchors are the ones a notrios:// link resolves against, because the outline comes from the same parse that stores them.
+
+    `notriosctl notes outline --document <note>`
+  - List what is attached to it. A note with nothing attached reports an empty list rather than failing.
+
+    `notriosctl notes resources --document <note>`
+  - List the links out of it. Broken links are reported rather than filtered, because a broken link is the interesting one.
+
+    `notriosctl notes links --document <note>`
+**See which tags exist, and rename a branch of them** — Find the tags in a library, ask about one, and rename a branch without touching the notes by hand. Tags nest with `/`. A rename is a dry run until `--apply`, and `--include-children` is what makes it a branch rather than one tag.
+  - Write a note and tag it, including a nested tag.
+
+    `notriosctl notes create --title Shopping --body list`
+  - Attach a tag.
+
+    `notriosctl tags add --document <note> --tag shopping`
+  - And one under it.
+
+    `notriosctl tags add --document <note> --tag shopping/mall`
+  - See every tag with how many notes carry it.
+
+    `notriosctl tags list`
+  - Narrow to one branch. `shopping` matches `shopping/mall` and never `shoppingcart`, because the separator is what makes a branch.
+
+    `notriosctl tags list --prefix shopping`
+  - Ask about one tag. It exits 1 when there is no such tag, so a script can test for one without parsing anything.
+
+    `notriosctl tags show --tag shopping`
+  - Rename the branch. Without `--apply` this reports what it would do and changes nothing.
+
+    `notriosctl tags rename --from shopping --to errands --include-children`
+  - Do it.
+
+    `notriosctl tags rename --from shopping --to errands --include-children --apply`
+**Make a note from a template, and find what is left to do** — List the templates a library holds, create a note from one, and see the checkbox items across notes. A missing placeholder is refused rather than blanked: a template that quietly produced `{{name}}` in a note would be worse than one that would not run.
+  - Write a note carrying a template block.
+
+    `notriosctl notes create --title "Weekly review" --body "```note-template\nid: weekly\nplaceholders: [week]\n```\n\n# Week {{week}}\n\n- [ ] read the inbox\n- [x] tidy the desk\n"`
+  - Tag it, because `tasks list` reads checkbox items from notes tagged `task` or `todo` rather than from every note.
+
+    `notriosctl tags add --document <note> --tag todo`
+  - List the templates and their placeholders.
+
+    `notriosctl templates list`
+  - See the checkbox items across the library, with open and done counts.
+
+    `notriosctl tasks list`
+**See the shape of the link graph, and take it elsewhere** — Report which notes are hubs and which are orphans, then export the graph for another tool. A ranked list reads the same at any library size; a global force-directed canvas does not, which is why the report is a list and the canvas is a local view in the GUI.
+  - Write a note to link to.
+
+    `notriosctl notes create --title Target --body "the end"`
+  - And one that links to it.
+
+    `notriosctl notes create --title Source --body "See [it](document://default/documents/{note})."`
+  - Report the shape: how many notes, how many links, which are isolated and which are orphans.
+
+    `notriosctl graph report`
+  - Export nodes and edges as CSV, for Gephi, Cytoscape, NetworkX or igraph.
+
+    `notriosctl graph export <out>`
+**Get a stable link to a note or one of its sections** — Produce a link that survives a rename, find the anchors a note offers, and resolve one back. A stable link names identity rather than a path, so moving or renaming a note does not break it. Heading anchors are written bare; block anchors keep the caret.
+  - Write a note with a heading to anchor at.
+
+    `notriosctl notes create --title "Reed beds" --body "Seen at dusk.\n\n## At dawn\n\nAlso."`
+  - Print the stable link for the whole note.
+
+    `notriosctl link <note>`
+  - See the anchors it offers. These are the names a `#section` link can use.
+
+    `notriosctl link --list-anchors <note>`
+  - Anchor the link at one of them.
+
+    `notriosctl link --anchor at-dawn <note>`
+**Make a notebook whose contents come from a query** — Create a saved search that appears in the sidebar as a notebook, and see it beside the ordinary ones. Nothing is filed into a query notebook: what is in it is whatever matches, which is why it has no parent.
+  - Write a note and tag it, so the query has something to match.
+
+    `notriosctl notes create --title "Buy milk" --body "- [ ] milk"`
+  - Tag it.
+
+    `notriosctl tags add --document <note> --tag todo`
+  - Make a notebook defined by a query rather than by what you file into it.
+
+    `notriosctl notebooks create --name Todo --query tag:todo`
+  - See it beside the ordinary notebooks, the way the sidebar shows them together.
+
+    `notriosctl notebooks list`
+**Watch a long import, and read what it did** — Start an import that records a job, watch it to completion, and read the record afterwards. `jobs status --wait` exits 0 succeeded, 1 failed, 3 running, 4 cancelled, 5 no such job, 6 interrupted, so a script can branch on the outcome without parsing.
+  - Import a Joplin export. Long imports record a job rather than only printing at the end.
+
+    `notriosctl import joplin-raw <joplin>`
+  - List the jobs this library has run.
+
+    `notriosctl jobs list`
+  - Read one in detail, including the command that started it.
+
+    `notriosctl jobs list --limit 1`
+**Move a pre-0.8 library into the resolved locations** — See what a migration would move before it moves anything. A dry run is the whole point here: this relocates the directories the program uses, and it backs up and verifies before it moves anything. `--json` reports the same answer for a script, including when there is nothing to migrate.
+  - Ask what a migration would do. Nothing is moved, and the report names every path on both sides.
+
+    `notriosctl migrate --dry-run --json`
+**See what localizing remote images would do, before it fetches anything** — Find the remote images a note points at and see the policy decision for each, without a byte being downloaded. A dry run performs no network I/O at all -- not even DNS. Every URL is reported as localized, blocked, needing review, or failed, so the policy is visible before it is exercised.
+  - Write a note pointing at a remote image.
+
+    `notriosctl notes create --title Remote --body "An image: ![sky](https://example.com/sky.png)"`
+  - Ask what localizing would do. Nothing is fetched; a URL no domain rule matched is held for review rather than downloaded on the strength of a default.
+
+    `notriosctl localize --dry-run <note>`
+**Review what a publication would contain, then publish exactly that** — Save a publication profile, read the plan it produces, and publish only after the review still matches. `publish run` re-plans and refuses unless the digest of the reviewed plan still matches, so a library that changed between the review and the run stops rather than publishing something nobody read.
+  - Write a note to publish, and one to keep back.
+
+    `notriosctl notes create --title "Public note" --body "for the world"`
+  - Tag it so a profile can select it.
+
+    `notriosctl tags add --document <note> --tag public`
+  - Save a profile: what to publish, and what to do with links that leave the selection.
+
+    `notriosctl publish profile save --name site --tags public --link-action plain_text`
+  - List the profiles this library holds.
+
+    `notriosctl publish profile list`
+  - Read the plan. This is a read-only privacy review: it changes nothing and prints the digest the run will be held to.
+
+    `notriosctl publish plan --profile site`
 <!-- notrios:generated:user:the-journeys:end -->
 
 

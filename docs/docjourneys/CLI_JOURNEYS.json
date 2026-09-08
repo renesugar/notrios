@@ -1276,6 +1276,788 @@
           "document_id"
         ]
       }
+    },
+    {
+      "id": "read-a-note-and-what-it-is-made-of",
+      "title": "Read a note, and what it is made of",
+      "goal": "Print a note as Markdown another application can read, then its headings, attachments and links.",
+      "feature": "read-notes",
+      "guessability": "conventional",
+      "note": "`notes show` prints the note itself, with the front matter the Recoll projection writes. The other three answer what the note is made of rather than what it says.",
+      "steps": [
+        {
+          "narrative": "Write a note with a heading and a link in it.",
+          "command": [
+            "notes",
+            "create",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--title",
+            "Reed beds",
+            "--body",
+            "Seen at dusk.\n\n## Café notes\n\nMore."
+          ]
+        },
+        {
+          "narrative": "Read it. The default is Markdown with front matter, so another application can consume it; `--json` gives the fields instead.",
+          "command": [
+            "notes",
+            "show",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--document",
+            "{note}"
+          ]
+        },
+        {
+          "narrative": "List its headings. The anchors are the ones a notrios:// link resolves against, because the outline comes from the same parse that stores them.",
+          "command": [
+            "notes",
+            "outline",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--document",
+            "{note}"
+          ]
+        },
+        {
+          "narrative": "List what is attached to it. A note with nothing attached reports an empty list rather than failing.",
+          "command": [
+            "notes",
+            "resources",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--document",
+            "{note}"
+          ]
+        },
+        {
+          "narrative": "List the links out of it. Broken links are reported rather than filtered, because a broken link is the interesting one.",
+          "command": [
+            "notes",
+            "links",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--document",
+            "{note}"
+          ]
+        }
+      ],
+      "postcondition": {
+        "narrative": "the note reads back as Markdown carrying its front matter and its body",
+        "command": [
+          "notes",
+          "show",
+          "--db",
+          "{db}",
+          "--asset-store",
+          "{assets}",
+          "--document",
+          "{note}"
+        ],
+        "contains": [
+          "title: \"Reed beds\"",
+          "collection: \"default\"",
+          "## Café notes"
+        ]
+      }
+    },
+    {
+      "id": "see-and-rename-tags",
+      "title": "See which tags exist, and rename a branch of them",
+      "goal": "Find the tags in a library, ask about one, and rename a branch without touching the notes by hand.",
+      "feature": "browse-and-rename-tags",
+      "guessability": "conventional",
+      "note": "Tags nest with `/`. A rename is a dry run until `--apply`, and `--include-children` is what makes it a branch rather than one tag.",
+      "steps": [
+        {
+          "narrative": "Write a note and tag it, including a nested tag.",
+          "command": [
+            "notes",
+            "create",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--title",
+            "Shopping",
+            "--body",
+            "list"
+          ]
+        },
+        {
+          "narrative": "Attach a tag.",
+          "command": [
+            "tags",
+            "add",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--document",
+            "{note}",
+            "--tag",
+            "shopping"
+          ]
+        },
+        {
+          "narrative": "And one under it.",
+          "command": [
+            "tags",
+            "add",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--document",
+            "{note}",
+            "--tag",
+            "shopping/mall"
+          ]
+        },
+        {
+          "narrative": "See every tag with how many notes carry it.",
+          "command": [
+            "tags",
+            "list",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}"
+          ]
+        },
+        {
+          "narrative": "Narrow to one branch. `shopping` matches `shopping/mall` and never `shoppingcart`, because the separator is what makes a branch.",
+          "command": [
+            "tags",
+            "list",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--prefix",
+            "shopping"
+          ]
+        },
+        {
+          "narrative": "Ask about one tag. It exits 1 when there is no such tag, so a script can test for one without parsing anything.",
+          "command": [
+            "tags",
+            "show",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--tag",
+            "shopping"
+          ]
+        },
+        {
+          "narrative": "Rename the branch. Without `--apply` this reports what it would do and changes nothing.",
+          "command": [
+            "tags",
+            "rename",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--from",
+            "shopping",
+            "--to",
+            "errands",
+            "--include-children"
+          ]
+        },
+        {
+          "narrative": "Do it.",
+          "command": [
+            "tags",
+            "rename",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--from",
+            "shopping",
+            "--to",
+            "errands",
+            "--include-children",
+            "--apply"
+          ]
+        }
+      ],
+      "postcondition": {
+        "narrative": "the branch and its child both carry the new name",
+        "command": [
+          "tags",
+          "list",
+          "--db",
+          "{db}",
+          "--asset-store",
+          "{assets}",
+          "--prefix",
+          "errands"
+        ],
+        "contains": [
+          "errands",
+          "errands/mall"
+        ]
+      }
+    },
+    {
+      "id": "make-a-note-from-a-template",
+      "title": "Make a note from a template, and find what is left to do",
+      "goal": "List the templates a library holds, create a note from one, and see the checkbox items across notes.",
+      "feature": "templates-and-tasks",
+      "guessability": "conventional",
+      "note": "A missing placeholder is refused rather than blanked: a template that quietly produced `{{name}}` in a note would be worse than one that would not run.",
+      "steps": [
+        {
+          "narrative": "Write a note carrying a template block.",
+          "command": [
+            "notes",
+            "create",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--title",
+            "Weekly review",
+            "--body",
+            "```note-template\nid: weekly\nplaceholders: [week]\n```\n\n# Week {{week}}\n\n- [ ] read the inbox\n- [x] tidy the desk\n"
+          ]
+        },
+        {
+          "narrative": "Tag it, because `tasks list` reads checkbox items from notes tagged `task` or `todo` rather than from every note.",
+          "command": [
+            "tags",
+            "add",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--document",
+            "{note}",
+            "--tag",
+            "todo"
+          ]
+        },
+        {
+          "narrative": "List the templates and their placeholders.",
+          "command": [
+            "templates",
+            "list",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}"
+          ]
+        },
+        {
+          "narrative": "See the checkbox items across the library, with open and done counts.",
+          "command": [
+            "tasks",
+            "list",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}"
+          ]
+        }
+      ],
+      "postcondition": {
+        "narrative": "the open and done items of the template note are reported",
+        "command": [
+          "tasks",
+          "list",
+          "--db",
+          "{db}",
+          "--asset-store",
+          "{assets}"
+        ],
+        "contains": [
+          "read the inbox"
+        ]
+      }
+    },
+    {
+      "id": "see-the-shape-of-the-links",
+      "title": "See the shape of the link graph, and take it elsewhere",
+      "goal": "Report which notes are hubs and which are orphans, then export the graph for another tool.",
+      "feature": "graph",
+      "guessability": "conventional",
+      "note": "A ranked list reads the same at any library size; a global force-directed canvas does not, which is why the report is a list and the canvas is a local view in the GUI.",
+      "steps": [
+        {
+          "narrative": "Write a note to link to.",
+          "command": [
+            "notes",
+            "create",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--title",
+            "Target",
+            "--body",
+            "the end"
+          ]
+        },
+        {
+          "narrative": "And one that links to it.",
+          "command": [
+            "notes",
+            "create",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--title",
+            "Source",
+            "--body",
+            "See [it](document://default/documents/{note})."
+          ]
+        },
+        {
+          "narrative": "Report the shape: how many notes, how many links, which are isolated and which are orphans.",
+          "command": [
+            "graph",
+            "report",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}"
+          ]
+        },
+        {
+          "narrative": "Export nodes and edges as CSV, for Gephi, Cytoscape, NetworkX or igraph.",
+          "command": [
+            "graph",
+            "export",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "{out}"
+          ]
+        }
+      ],
+      "postcondition": {
+        "narrative": "the exported graph is on disk as two CSV files",
+        "file_exists": "{out}/edges.csv"
+      }
+    },
+    {
+      "id": "link-one-note-to-another",
+      "title": "Get a stable link to a note or one of its sections",
+      "goal": "Produce a link that survives a rename, find the anchors a note offers, and resolve one back.",
+      "feature": "links-between-notes",
+      "guessability": "conventional",
+      "note": "A stable link names identity rather than a path, so moving or renaming a note does not break it. Heading anchors are written bare; block anchors keep the caret.",
+      "steps": [
+        {
+          "narrative": "Write a note with a heading to anchor at.",
+          "command": [
+            "notes",
+            "create",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--title",
+            "Reed beds",
+            "--body",
+            "Seen at dusk.\n\n## At dawn\n\nAlso."
+          ]
+        },
+        {
+          "narrative": "Print the stable link for the whole note.",
+          "command": [
+            "link",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "{note}"
+          ]
+        },
+        {
+          "narrative": "See the anchors it offers. These are the names a `#section` link can use.",
+          "command": [
+            "link",
+            "--list-anchors",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "{note}"
+          ]
+        },
+        {
+          "narrative": "Anchor the link at one of them.",
+          "command": [
+            "link",
+            "--anchor",
+            "at-dawn",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "{note}"
+          ]
+        }
+      ],
+      "postcondition": {
+        "narrative": "the anchored link names the note and the section",
+        "command": [
+          "link",
+          "--anchor",
+          "at-dawn",
+          "--db",
+          "{db}",
+          "--asset-store",
+          "{assets}",
+          "{note}"
+        ],
+        "contains": [
+          "notrios://",
+          "at-dawn"
+        ]
+      }
+    },
+    {
+      "id": "make-a-notebook-that-fills-itself",
+      "title": "Make a notebook whose contents come from a query",
+      "goal": "Create a saved search that appears in the sidebar as a notebook, and see it beside the ordinary ones.",
+      "feature": "saved-searches",
+      "guessability": "conventional",
+      "note": "Nothing is filed into a query notebook: what is in it is whatever matches, which is why it has no parent.",
+      "steps": [
+        {
+          "narrative": "Write a note and tag it, so the query has something to match.",
+          "command": [
+            "notes",
+            "create",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--title",
+            "Buy milk",
+            "--body",
+            "- [ ] milk"
+          ]
+        },
+        {
+          "narrative": "Tag it.",
+          "command": [
+            "tags",
+            "add",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--document",
+            "{note}",
+            "--tag",
+            "todo"
+          ]
+        },
+        {
+          "narrative": "Make a notebook defined by a query rather than by what you file into it.",
+          "command": [
+            "notebooks",
+            "create",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--name",
+            "Todo",
+            "--query",
+            "tag:todo"
+          ]
+        },
+        {
+          "narrative": "See it beside the ordinary notebooks, the way the sidebar shows them together.",
+          "command": [
+            "notebooks",
+            "list",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}"
+          ]
+        }
+      ],
+      "postcondition": {
+        "narrative": "the query notebook is listed with the query it runs",
+        "command": [
+          "notebooks",
+          "list",
+          "--db",
+          "{db}",
+          "--asset-store",
+          "{assets}"
+        ],
+        "contains": [
+          "Todo",
+          "query: tag:todo"
+        ]
+      }
+    },
+    {
+      "id": "watch-a-long-import",
+      "title": "Watch a long import, and read what it did",
+      "goal": "Start an import that records a job, watch it to completion, and read the record afterwards.",
+      "feature": "jobs",
+      "guessability": "conventional",
+      "note": "`jobs status --wait` exits 0 succeeded, 1 failed, 3 running, 4 cancelled, 5 no such job, 6 interrupted, so a script can branch on the outcome without parsing.",
+      "steps": [
+        {
+          "narrative": "Import a Joplin export. Long imports record a job rather than only printing at the end.",
+          "command": [
+            "import",
+            "joplin-raw",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "{joplin}"
+          ]
+        },
+        {
+          "narrative": "List the jobs this library has run.",
+          "command": [
+            "jobs",
+            "list",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}"
+          ]
+        },
+        {
+          "narrative": "Read one in detail, including the command that started it.",
+          "command": [
+            "jobs",
+            "list",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--limit",
+            "1"
+          ]
+        }
+      ],
+      "postcondition": {
+        "narrative": "the import is recorded as a job that succeeded",
+        "command": [
+          "jobs",
+          "list",
+          "--db",
+          "{db}",
+          "--asset-store",
+          "{assets}"
+        ],
+        "contains": [
+          "import_joplin_raw",
+          "succeeded"
+        ]
+      }
+    },
+    {
+      "id": "move-a-pre-0-8-library",
+      "title": "Move a pre-0.8 library into the resolved locations",
+      "goal": "See what a migration would move before it moves anything.",
+      "feature": "upgrade-layout",
+      "guessability": "conventional",
+      "note": "A dry run is the whole point here: this relocates the directories the program uses, and it backs up and verifies before it moves anything. `--json` reports the same answer for a script, including when there is nothing to migrate.",
+      "steps": [
+        {
+          "narrative": "Ask what a migration would do. Nothing is moved, and the report names every path on both sides.",
+          "command": [
+            "migrate",
+            "--dry-run",
+            "--json"
+          ]
+        }
+      ],
+      "postcondition": {
+        "narrative": "the dry run reports rather than moves, and says so",
+        "command": [
+          "migrate",
+          "--dry-run",
+          "--json"
+        ],
+        "contains": [
+          "dry_run"
+        ]
+      }
+    },
+    {
+      "id": "see-what-remote-media-would-do",
+      "title": "See what localizing remote images would do, before it fetches anything",
+      "goal": "Find the remote images a note points at and see the policy decision for each, without a byte being downloaded.",
+      "feature": "remote-media",
+      "guessability": "conventional",
+      "note": "A dry run performs no network I/O at all -- not even DNS. Every URL is reported as localized, blocked, needing review, or failed, so the policy is visible before it is exercised.",
+      "steps": [
+        {
+          "narrative": "Write a note pointing at a remote image.",
+          "command": [
+            "notes",
+            "create",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--title",
+            "Remote",
+            "--body",
+            "An image: ![sky](https://example.com/sky.png)"
+          ]
+        },
+        {
+          "narrative": "Ask what localizing would do. Nothing is fetched; a URL no domain rule matched is held for review rather than downloaded on the strength of a default.",
+          "command": [
+            "localize",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--dry-run",
+            "{note}"
+          ]
+        }
+      ],
+      "postcondition": {
+        "narrative": "the remote URL is reported for review rather than fetched",
+        "command": [
+          "localize",
+          "--db",
+          "{db}",
+          "--asset-store",
+          "{assets}",
+          "--dry-run",
+          "{note}"
+        ],
+        "contains": [
+          "review",
+          "example.com/sky.png"
+        ]
+      }
+    },
+    {
+      "id": "publish-a-subset-after-reviewing-it",
+      "title": "Review what a publication would contain, then publish exactly that",
+      "goal": "Save a publication profile, read the plan it produces, and publish only after the review still matches.",
+      "feature": "publishing",
+      "guessability": "notrios-specific",
+      "note": "`publish run` re-plans and refuses unless the digest of the reviewed plan still matches, so a library that changed between the review and the run stops rather than publishing something nobody read.",
+      "steps": [
+        {
+          "narrative": "Write a note to publish, and one to keep back.",
+          "command": [
+            "notes",
+            "create",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--title",
+            "Public note",
+            "--body",
+            "for the world"
+          ]
+        },
+        {
+          "narrative": "Tag it so a profile can select it.",
+          "command": [
+            "tags",
+            "add",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--document",
+            "{note}",
+            "--tag",
+            "public"
+          ]
+        },
+        {
+          "narrative": "Save a profile: what to publish, and what to do with links that leave the selection.",
+          "command": [
+            "publish",
+            "profile",
+            "save",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--name",
+            "site",
+            "--tags",
+            "public",
+            "--link-action",
+            "plain_text"
+          ]
+        },
+        {
+          "narrative": "List the profiles this library holds.",
+          "command": [
+            "publish",
+            "profile",
+            "list",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}"
+          ]
+        },
+        {
+          "narrative": "Read the plan. This is a read-only privacy review: it changes nothing and prints the digest the run will be held to.",
+          "command": [
+            "publish",
+            "plan",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--profile",
+            "site"
+          ]
+        }
+      ],
+      "postcondition": {
+        "narrative": "the plan names the digest the run will be held to, and changes nothing itself",
+        "command": [
+          "publish",
+          "plan",
+          "--db",
+          "{db}",
+          "--asset-store",
+          "{assets}",
+          "--profile",
+          "site"
+        ],
+        "contains": [
+          "reviewed-plan",
+          "publication_handoff"
+        ]
+      }
     }
   ]
 }

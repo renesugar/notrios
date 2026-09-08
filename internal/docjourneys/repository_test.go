@@ -62,7 +62,24 @@ func TestFeaturesWithoutAJourneyAreTracked(t *testing.T) {
 	// them, which is the shape of most of what is left on this list.
 	// 17 -> 16 in v0.8 H19: finding a note and acting on the id the search
 	// returned. Searching had no journey because it had no command.
-	const baseline = 16
+	//
+	// 16 -> 6 in v0.8 H15-H: ten journeys, for reading a note, tags, templates
+	// and tasks, the graph, links, saved searches, jobs, the pre-0.8 migration,
+	// remote media and publishing.
+	//
+	// The six that remain are not a backlog of the same kind, and the
+	// difference is worth writing down so nobody works on the wrong ones:
+	//
+	//   - query-blocks, batch-operations and mcp-endpoint have no command line
+	//     at all, so no command-line journey can exist for them;
+	//   - attachments has only the reading half -- resources report, resources
+	//     get, notes resources -- because attaching a file is REST, MCP or the
+	//     GUI, so a journey could only demonstrate reading nothing;
+	//   - sync-peers and sync-recovery need two replicas, and the journey
+	//     runner offers one `{db}`. That is a limit of the harness rather than
+	//     of the commands, and it is the one worth lifting if this number is to
+	//     fall again.
+	const baseline = 6
 
 	catalogue, registry := load(t)
 	covered := map[string]bool{}

@@ -69,7 +69,7 @@ happened, which is a different question.
 | H10. Wails v3 migration spike | not-started | 0/2 | 2 |
 | H11. Android-emulator shared-core acceptance | not-started | 0/2 | 2 |
 | H12. Delayed GitHub native validation and develop-to-main pull request | not-started | 0/2 | 2 |
-| H15. Complete the journey catalogues, and give the GUI an inventory | in-progress | 6/9 | 3 |
+| H15. Complete the journey catalogues, and give the GUI an inventory | in-progress | 8/9 | 1 |
 | H16. Reconcile the collection model with what is actually stored | complete | 7/7 | — |
 | H17. Act on many notes at once, from the search results and from a query | not-started | 0/3 | 3 |
 | H18. Make the features page usable, and generate the table under it | in-progress | 3/4 | 1 |
@@ -87,9 +87,7 @@ happened, which is a different question.
 
 **H15. Complete the journey catalogues, and give the GUI an inventory**
 
-- `H15-G` Write GUI journeys for the twelve features that have an interface surface and none: collections, attachments, remote media, links, graph, query blocks, sync pairing, sync exchange, sync peers, sync recovery, jobs and profiles — *not-started*
-- `H15-H` Work down the eighteen features with no command-line journey, which the ratchet tracks — *not-started*
-- `H15-I` Decide how much of the query language one journey should demonstrate, and whether interface journeys should point at command-line-only tasks — *not-started*
+- `H15-G` Write GUI journeys for the twelve features that have an interface surface and none: collections, attachments, remote media, links, graph, query blocks, sync pairing, sync exchange, sync peers, sync recovery, jobs and profiles — *blocked* (blocked on: eleven of the twelve target surfaces carry no data-testid, so a journey could only locate them by shape; making them addressable in web/src is the prerequisite and is GUI work rather than journey writing)
 
 **H18. Make the features page usable, and generate the table under it**
 
@@ -3014,6 +3012,42 @@ which says a capability is not reachable from an interface, only from two other
 interfaces. All eighteen uses now say "GUI", which is the term the product's own
 `docs/gui.md` uses.
 
+**Progress (2026-09-08).** H15-H and H15-I are done; H15-G is blocked on work
+that is not journey writing.
+
+*Command-line journeys: sixteen features lacking one, down to six.* Ten were
+written and every one of them runs -- reading a note and what it is made of,
+tags, templates and tasks, the graph, links, saved searches, jobs, the pre-0.8
+migration, remote media, and publishing. The six that remain are three different
+situations and the ratchet's comment now says which is which: `query-blocks`,
+`batch-operations` and `mcp-endpoint` have no command line at all;
+`attachments` has only the reading half, because attaching a file is REST, MCP
+or the GUI, so a journey could only demonstrate reading nothing; and
+`sync-peers` and `sync-recovery` need two replicas where the runner offers one
+`{db}`. Only the last is a harness limit worth lifting.
+
+*Writing them found a defect.* `notriosctl migrate --json` printed prose on all
+three "nothing to migrate" paths -- which is the *common* path, since most runs
+have nothing to migrate. A caller that asked for JSON received a sentence on the
+branch it was most likely to take. Fixed: the three answers are reported as
+`{"migrated": false, "reason": …}` when `--json` is set, and unchanged
+otherwise.
+
+*GUI journeys: blocked, and not on effort.* Of the twelve features with a GUI
+surface and no journey, **eleven have no `data-testid` anywhere in the H15
+control crawl.** The crawl pinned 59 controls and only 22 carry one, and the
+target surfaces -- collections, attachments, the graph, links, query blocks,
+jobs, profiles, and four sync tabs -- are almost entirely in the other 37. Only
+`remote-media` is addressable today, through `localize-button`.
+
+A journey against an unaddressable control has to locate it by shape, which is
+the brittle form this catalogue exists to avoid, and a journey added without
+being captured under `NOTRIOS_GUI_JOURNEYS=1` would be a claim with no evidence
+behind it -- the failure this milestone was created to stop. So the prerequisite
+is making those surfaces addressable in `web/src`, which is interface work
+rather than documentation work, and this slice waits on it rather than
+pretending the obstacle is time.
+
 **Open decisions**
 
 - **(resolved 2026-09-03, confirmed by the user 2026-09-08) Whether the command
@@ -3033,12 +3067,20 @@ interfaces. All eighteen uses now say "GUI", which is the term the product's own
   It closed less than it appeared to. Neither command was added to
   `notriosctl help`, so the gap this decision existed to close is still
   invisible to the coverage gate that measures such gaps. H23 fixes that.
-- **How much of the query language one journey should demonstrate --
-  Non-blocking.** "Demonstrate all query language features" could be one journey
-  with a dozen steps or a dozen journeys. Recommended: one journey per idea --
-  text, tags, notebooks, dates, negation, grouping -- because a reader looking up
-  how to exclude a tag should not have to read eleven other examples first, and
-  because each becomes separately executable.
+- **How much of the query language one journey should demonstrate -- Decided
+  2026-09-08: one journey per idea.** Text, tags, notebooks, dates, negation,
+  grouping. A reader looking up how to exclude a tag should not have to read
+  eleven other examples first, and each becomes separately executable, which a
+  twelve-step journey does not: a single failing step there takes eleven working
+  ones down with it and says nothing about which idea broke.
+
+  **And a GUI journey does not mirror a command-line one.** They answer
+  different questions -- the command line's is "what do I type", the GUI's is
+  "where do I click" -- and a catalogue that paired them would either invent GUI
+  steps for capabilities the GUI does not have, or hold the command line back to
+  what a browser can reach. Import and export are the standing example: their
+  controls are greyed out in a browser because no REST route starts those jobs,
+  so a mirrored journey would be a screenshot of a disabled button.
 - **What an import, export or snapshot control does in a browser -- Decided:
   greyed out with the reason.** This entry has been wrong twice, so it records
   what was checked rather than what seemed reasonable.

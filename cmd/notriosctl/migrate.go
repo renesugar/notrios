@@ -53,22 +53,40 @@ func runMigrate(args []string) {
 
 	candidate, found := migrate.Detect(dir, resolution, configuredDatabasePath())
 	if !found {
+		// Every one of these three answers used to print prose whatever
+		// `--json` said, and this is the *common* path: most runs have nothing
+		// to migrate. A caller that asked for JSON received a sentence, on the
+		// branch it was most likely to take.
+		nothing := func(reason, detail string, lines ...string) {
+			if *asJSON {
+				printJSON(map[string]any{
+					"migrated": false, "dry_run": *dryRun, "reason": reason, "detail": detail,
+				})
+				return
+			}
+			fmt.Println(detail)
+			for _, line := range lines {
+				fmt.Println(line)
+			}
+		}
 		if resolution.Mode == paths.ModeSource {
-			fmt.Printf("Nothing to migrate: this is a source checkout, whose roots are already %s.\n",
-				filepath.Join(".", migrate.LegacyRootName))
+			nothing("source_checkout", fmt.Sprintf(
+				"Nothing to migrate: this is a source checkout, whose roots are already %s.",
+				filepath.Join(".", migrate.LegacyRootName)))
 			return
 		}
 		// "Not found" and "found, and already yours" are different answers, and
 		// only one of them should send the reader looking elsewhere.
 		here := filepath.Join(dir, migrate.LegacyRootName, migrate.DatabaseName)
 		if inUse := configuredDatabasePath(); inUse != "" && sameFile(here, inUse) {
-			fmt.Printf("Nothing to migrate: %s is the library this instance already uses.\n", here)
-			fmt.Println("Your configuration names it, so it was never relocated.")
+			nothing("already_in_use", fmt.Sprintf(
+				"Nothing to migrate: %s is the library this instance already uses.", here),
+				"Your configuration names it, so it was never relocated.")
 			return
 		}
-		fmt.Printf("Nothing to migrate: no %s was found in %s.\n",
-			filepath.Join(migrate.LegacyRootName, migrate.DatabaseName), dir)
-		fmt.Println("If your notes are elsewhere, name that directory with --from.")
+		nothing("no_legacy_library", fmt.Sprintf("Nothing to migrate: no %s was found in %s.",
+			filepath.Join(migrate.LegacyRootName, migrate.DatabaseName), dir),
+			"If your notes are elsewhere, name that directory with --from.")
 		return
 	}
 

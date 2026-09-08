@@ -225,17 +225,20 @@
         {
           "id": "H15-G",
           "statement": "Write GUI journeys for the twelve features that have an interface surface and none: collections, attachments, remote media, links, graph, query blocks, sync pairing, sync exchange, sync peers, sync recovery, jobs and profiles",
-          "state": "not-started"
+          "state": "blocked",
+          "blocked_on": "eleven of the twelve target surfaces carry no data-testid, so a journey could only locate them by shape; making them addressable in web/src is the prerequisite and is GUI work rather than journey writing"
         },
         {
           "id": "H15-H",
           "statement": "Work down the eighteen features with no command-line journey, which the ratchet tracks",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "test:TestFeaturesWithoutAJourneyAreTracked"
         },
         {
           "id": "H15-I",
           "statement": "Decide how much of the query language one journey should demonstrate, and whether interface journeys should point at command-line-only tasks",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:PLAN.md"
         }
       ]
     },

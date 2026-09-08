@@ -347,20 +347,16 @@ Each capability below is offered on some surfaces and not others.
 - Move a pre-0.8 library into place — command line only. Command line only, and genuinely so: it relocates the directories the running program uses, which is not something the program can sensibly do to itself while serving them.
 - Live query blocks inside a note — GUI only. No command line. The GUI renders them where they sit: the preview finds each ```note-query block, runs it through the same parser the search box uses, and fills the block with the result. This row read as a gap for as long as the control crawl was the only measurement, and the crawl cannot see it and never could -- a query block renders content, not a control, and the crawl enumerates interactive elements. Its evidence is web/src/note-query.ts and its tests instead.
 - Attach and manage files — both surfaces, and neither journey is written yet
-- See the shape of the link graph — both surfaces, and neither journey is written yet
-- Watch and steer long-running work — both surfaces, and neither journey is written yet
-- Link notes to each other — both surfaces, and neither journey is written yet
-- Bring remote images into the library — both surfaces, and neither journey is written yet
 - See and end trust between replicas — both surfaces, and neither journey is written yet
 - Recover a replica and resolve conflicts — both surfaces, and neither journey is written yet
 - Group libraries into collections — both, but only the command-line journey is written
+- See the shape of the link graph — both, but only the command-line journey is written
+- Watch and steer long-running work — both, but only the command-line journey is written
+- Link notes to each other — both, but only the command-line journey is written
 - Keep separate libraries — both, but only the command-line journey is written
+- Bring remote images into the library — both, but only the command-line journey is written
 - Synchronize with a replica — both, but only the command-line journey is written
 - Pair two of your own libraries — both, but only the command-line journey is written
-- See and rename tags — both, but only the GUI journey is written
-- Publish a subset of your notes — both, but only the GUI journey is written
-- Read a note and its structure — both, but only the GUI journey is written
-- Notebooks that are really saved searches — both, but only the GUI journey is written
 <!-- notrios:generated:user:where-the-surfaces-disagree:end -->
 
 This list is computed, not written. It compares what each capability claims
