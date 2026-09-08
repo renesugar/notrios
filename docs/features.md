@@ -125,7 +125,7 @@ A collection is provenance, not a place notes live: notes are imported into a no
 
 Add files to notes, read them back, see what references what, and find attachments nothing points at any more.
 
-Measured by the H15 control crawl, which found the upload field in the note inspector and the Attachments tab. The command line lists what a note carries and writes one attachment's bytes to a file; attaching a file is still REST, MCP or the GUI, because uploading is a write and this half was added as the reading half. Attaching a file stays off the command line for a reason rather than by omission: it means placing a `resource://` link at a point in the body the author chose, and a command that put it somewhere of its own choosing would be guessing at the one thing only the writer knows. If an attach command is ever wanted, the shape that does not guess is bytes in and a URI out, for the author to place with `notes edit`.
+Measured by the H15 control crawl, which found the upload field in the note inspector and the Attachments tab. The command line lists what a note carries and writes one attachment's bytes to a file; attaching a file is still REST, MCP or the GUI, because uploading is a write and this half was added as the reading half. Attaching a file is not on the command line yet, and v0.8 H27 adds it: the reasoning that kept it off was right about placement and wrong to stop there, since the product already separates the resource, the reference to it, and the link in the body. The command adds the first two and prints the `resource://` URI for the author to place with `notes edit`, so it guesses at nothing and never writes to a body.
 
 *Available on the desktop app, the command line, the REST API and MCP.*
 

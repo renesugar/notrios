@@ -46,7 +46,7 @@ What follows is what is left. Each item's own text below is the record of what
 happened, which is a different question.
 
 <!-- notrios:generated:plan:progress:begin -->
-**32 items: 24 complete, 2 in progress, 5 not started, 1 deferred.**
+**33 items: 24 complete, 2 in progress, 6 not started, 1 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -82,6 +82,7 @@ happened, which is a different question.
 | H24. JSON is the output; a template makes it readable | complete | 2/2 | — |
 | H25. Hold each command's flags to its description | complete | 2/2 | — |
 | H26. Ask about one tag without fetching them all | complete | 4/4 | — |
+| H27. Attach a file from the command line, without guessing where the link goes | not-started | 0/5 | 5 |
 
 ### Started and not finished
 
@@ -95,7 +96,7 @@ happened, which is a different question.
 
 ### Not started
 
-Written and not begun: H10, H11, H12, H17, H13. Their slices are listed under each item.
+Written and not begun: H10, H11, H12, H17, H13, H27. Their slices are listed under each item.
 <!-- notrios:generated:plan:progress:end -->
 
 ## H0. Application-facade, C-ABI, and SQLite ownership investigation — complete
@@ -4658,6 +4659,103 @@ Changing `ListTags`'s signature reached eight call sites across the store, the
 HTTP layer, the Joplin importer and their tests. That is the cost of one query
 path, and it is the right cost: a second narrowing query beside the first is how
 two answers to the same question come to disagree.
+
+## H27. Attach a file from the command line, without guessing where the link goes
+
+**Ordering.** After H21, which built the reading half. Independent of everything
+else.
+
+**Goal.** Put a file into a library from a terminal and get back the link,
+leaving where that link goes to the person writing the note.
+
+**Why.** The command line reads attachments -- `notes resources` lists what a
+note carries, `resources get` writes one out, `resources report` covers the
+library -- and cannot add one. That asymmetry was recorded as a boundary in H15
+on the reasoning that attaching means placing a `resource://` link at a point in
+the body only the author knows. The reasoning was right about *placement* and
+wrong to stop there: placement is the author's, and the bytes are not.
+
+**The product already separates the three acts**, which is what makes this
+admissible:
+
+1. **the resource** -- bytes in the content-addressed store, with an id and a
+   `resource://` URI (`POST /api/v1/resources`);
+2. **the reference** -- a row saying this note has this attachment, which is
+   what `notes resources` lists (`POST /api/v1/documents/{id}/resources/{id}`);
+3. **the link in the body** -- where it renders, which the author writes.
+
+A command that did all three would be guessing at the third. A command that does
+the first two and *prints* the URI is not guessing at anything.
+
+**Shape.**
+
+- `notriosctl resources add --file <path> [--filename <name>] [--document <id>]`
+  creates the resource from local bytes and prints its id, `resource://` URI,
+  MIME type, size and SHA-256. With `--document` it also records the reference,
+  so `notes resources` lists it; without, the resource exists unattached and
+  `resources report` will say so.
+- **It never writes to a note body.** That is the boundary, not an omission, and
+  it is what the output is for: the URI is the thing to paste.
+
+- **`notriosctl notes append --document <id>` puts text at the end of a note**,
+  because otherwise pasting the URI is worse than it sounds. Asked on
+  2026-09-08 and checked: **no surface can patch a range of a note body.** REST
+  and MCP can read one -- `GET /documents/{id}/lines?start=&end=` and
+  `get_note_line_range` -- and neither can write one; the writes available
+  anywhere are append, prepend, and replace the whole body. The command line has
+  none of the three except whole-body replacement through `notes edit`.
+
+  So without this, "paste the URI" means reading the entire note, editing it
+  elsewhere, and writing the entire note back -- a read-modify-write over the
+  whole body to add one line, with every concurrent edit in between silently
+  lost. `append` and `prepend` already exist on REST and MCP and are the two
+  writes that need no range; adding them to the command line is a missing
+  adapter rather than a new capability, and it is what makes the rest of this
+  item usable.
+
+  *Reading a range and patching a range are not in this item.* Reading one is a
+  missing adapter too and should follow. **Patching one exists nowhere**, and a
+  capability no surface has is a decision rather than a gap -- what a patch
+  means when a note changed underneath it is the question, and answering it
+  belongs somewhere other than an item about attachments.
+- The type is sniffed and admitted the way every other resource is, rather than
+  trusted from the extension. `--filename` names the file for a reader when the
+  path's own name is not the right one.
+- Bounded by the same `MaxResourceContentBytes` ceiling the HTTP surface
+  enforces, and refused rather than truncated.
+
+**Boundaries.** Local bytes only. This is not a downloader: a URL belongs to
+`notriosctl localize`, which goes through the domain policy, quarantine, hashing
+and SSRF protections that `SECURITY_AND_MEDIA_POLICY.md` requires and this
+command has no business reimplementing.
+
+**What it unblocks.** `attachments` is one of the six features with no
+command-line journey, and the only one of them recorded as a boundary that this
+item turns back into a gap worth closing. With `resources add` there is a
+journey: add a file, see it listed on the note, read its bytes back, and place
+the link. The ratchet's floor drops with it.
+
+**Open decisions.**
+
+- **Whether `--document` belongs on this command at all -- Non-blocking; the
+  default below is taken if no answer comes.**
+  - *Keep it (default).* Adding a file to a note is one intention, and making a
+    person run two commands to express it invites the second being forgotten --
+    leaving an unreferenced resource that `resources report` then reports as
+    rubbish.
+  - *Split it*, with a separate `notes attach --document --resource`. Cleaner
+    against the model, and it is the model the API already exposes as two
+    routes.
+  - The recommendation is to keep it, because the failure mode of splitting is
+    silent litter and the failure mode of combining is a flag somebody does not
+    need.
+
+**Working state.** `notriosctl resources add --file photo.png --document <id>`
+prints a `resource://` URI and `notes resources --document <id>` lists it;
+`resources get` on that id writes back bytes identical to the file; nothing in
+the note's body changed until `notes append` is asked to change it; and a
+command-line journey covers add, list, read and place without a whole-body
+round trip.
 
 ## H13. v0.8 release wrap-up and branch synchronization
 
