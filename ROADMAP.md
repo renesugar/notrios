@@ -551,9 +551,16 @@ be smuggled into v0.7 as desktop assumptions.
   application can consume it. Two of these gaps were recorded in the capability
   catalogue as decisions -- "reading a note is what the GUI and the API are for"
   -- which they were not; an absent adapter tends to acquire a justification.
-  Supporting this: `notriosctl help` is the source the coverage gate derives the
-  command-line surface from, so eight commands that exist but are unlisted are
-  invisible to it. Make the help complete and make incompleteness fail.
+  Supporting this: the command line is described three times over -- a help
+  literal, a usage function per command group, and each command's own flags --
+  and the documentation tooling reads the first of them, so eight commands that
+  exist but are unlisted are invisible to `notriosctl help`, to the published
+  CLI reference generated from it, and to the coverage gate. Asking for help is
+  not uniform either: a command group answers `unknown subcommand "--help"` and
+  exits 2, while a subcommand prints a bare flag dump with no positional
+  arguments. Give the command line one description that the dispatcher, the
+  help, the guide and the gates all read, make `--help` work the same way at
+  every level, and let tools discover it as data.
 - **Documents that cannot quietly go stale.** The plan, the roadmap and the
   root reference documents each state one kind of fact and say where the rules
   for keeping them current live, with the pointer and the inventory checked

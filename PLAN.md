@@ -78,7 +78,7 @@ happened, which is a different question.
 | H20. Bring the atlas current, and stop it drifting again | not-started | 0/4 | 4 |
 | H21. Read a note and its structure, from the command line | not-started | 0/4 | 4 |
 | H22. Discover the values a query can name | not-started | 0/3 | 3 |
-| H23. Make the command line's help the truth about the command line | not-started | 0/3 | 3 |
+| H23. One description of the command line, and --help everywhere | not-started | 0/6 | 6 |
 
 ### Started and not finished
 
@@ -3738,6 +3738,9 @@ the item's first job is to say so in the documentation:
   Retrieval belongs to `resources`, which already exists, and listing belongs to
   `notes`, because "what is attached to this note?" is a question about the note.
 - Every listing takes `--json`; the human form stays the default.
+- Every new command is declared in H23's command registry, which is what makes
+  it appear in `notriosctl help`, in `docs/cli.md`, and in the coverage gate.
+  A command added without it is a command the documentation cannot see.
 
 **Boundaries.** Read-only. Nothing here writes a note, attaches a file, or
 changes a link. Trash is reported rather than hidden, as `notes show` already
@@ -3809,6 +3812,8 @@ implying the capability is new.
   is what a query takes, and today the command prints the sidebar's view.
 - The CLI guide gains the sentence that ties them together: run these to find
   the values, then use them in `notriosctl search`.
+- Both commands are declared in H23's command registry, so `--help` describes
+  them and the coverage gate counts them.
 
 **Boundaries.** Listing and showing only. **No `collections create`, `rename`
 or `delete` here** -- H16 owns what a collection's identity means, whether one
@@ -3822,59 +3827,113 @@ library imported from Joplin and from Obsidian; `notriosctl notebooks list
 command-line column for `Group libraries into collections`; and both registry
 entries describe the surfaces that exist rather than the ones assumed.
 
-## H23. Make the command line's help the truth about the command line
+## H23. One description of the command line, and `--help` everywhere
 
-**Ordering.** First of the three. It is small, and until it is done, a command
-added by H21 or H22 can be invisible to every gate meant to check it.
+**Ordering.** First of the three. It is the source the other two are checked
+against, and until it is done a command added by H21 or H22 can be invisible to
+every gate meant to check it.
 
-**Goal.** Every subcommand `notriosctl` dispatches appears in its help, and a
-subcommand that does not fails a build.
+**Goal.** Asking any part of `notriosctl` for help gets help, in one form; and
+the command line has one description that the dispatcher, the help, the
+published guide and the coverage gates all read, rather than three that can
+disagree.
 
-**Why.** Eight subcommands exist, work, and appear nowhere in `notriosctl help`:
-`notes show`, `notes edit`, `notes delete`, `notes restore`, `sync handshake`,
-`sync retention`, `sync retire`, and `sync start`. A user cannot discover them.
+**Why.** Three separate hand-maintained descriptions of the same command line
+exist today, and they already disagree.
 
-The second consequence is worse, because it is silent. `internal/docgen`'s
-`cliUsageForms` derives the whole command-line surface inventory by parsing the
-usage literal in `printHelp` -- so a command missing from the help text is
-missing from the inventory, and therefore from the features coverage check, from
-`doccompare`, and from the ratchet in `unclaimedBaseline`. That ratchet reads
-`"cli": 0`, and it is honest about what it measures: **zero undocumented
-commands are unclaimed, because an undocumented command is not counted.** The
-gate is a statement about the help text, not about the command line.
+*Asking for help behaves three different ways.* Measured, not assumed:
 
-H15 demonstrated the cost without noticing: it added `notes delete` and
-`notes restore` on 2026-09-03 specifically to close a command-line gap, and did
-not add them to the help, so the gap it closed is still invisible to the gate
-that measures such gaps.
+- `notriosctl notes --help` prints **`unknown notes subcommand "--help"`** and
+  exits **2**. Asking a command group for help is reported as a usage error.
+  Every group does this -- `notes`, `tags`, `sync`, `resources`, the rest.
+- `notriosctl notes show --help` exits 0 and prints Go's `flag` default dump:
+  `-body` rather than the documented `--body`, no positional arguments at all,
+  and no prose. `notriosctl import obsidian --help` does not mention that a
+  vault directory is required, which is the one thing a reader needs.
+- `notriosctl help notes` ignores its argument and prints the whole top-level
+  help. There is no per-command help path.
+
+*And the descriptions have already drifted.* Eight subcommands exist, work, and
+appear in none of it: `notes show`, `notes edit`, `notes delete`,
+`notes restore`, `sync handshake`, `sync retention`, `sync retire`, and
+`sync start`.
+
+*The second consequence is silent, and it is the reason this item is first.*
+`internal/docgen`'s `cliUsageForms` derives the entire command-line surface
+inventory by parsing the usage literal in `printHelp` -- whose own doc comment
+calls it "the finite command and flag usage registry". So a command absent from
+that literal is absent from `docs/cli.md`, which is generated from it, from the
+Help notebook seeded from that, from the features coverage check, from
+`doccompare`, and from the `"cli": 0` ratchet in `unclaimedBaseline`. The
+ratchet is honest about what it measures, and what it measures is a string
+literal. **Nothing in the repository compares that literal to the dispatcher.**
+
+H15 shows the cost. It added `notes delete` and `notes restore` on 2026-09-03
+specifically to close a command-line gap, and did not add them to the literal --
+so the gap it closed is still invisible to the gate that measures such gaps, and
+absent from the published CLI reference.
+
+Adding `--help` by hand to every subcommand would make a fourth description.
+That is why this item is about the source rather than the symptom.
 
 **Shape.**
 
-- Add the eight missing forms to `printHelp`.
-- Check the dispatch against the help: every `case` in a subcommand dispatcher
-  has a matching usage line. This is a repository test beside the other
-  documentation gates, not a new tool.
-- A command that is deliberately not for users is named in an explicit
-  exemption list with a reason, exactly as the root-document inventory does for
-  feature contracts. Silence is what let these eight through.
-- Re-baseline `unclaimedBaseline` once the inventory is real, and claim the
-  newly visible commands in `docs/docfeatures/FEATURES.json`.
+- **One command registry in code**, declaring for each command and subcommand
+  its name, its one-line purpose, its flags, and its positional arguments. The
+  dispatcher reads it, so a command that exists is described by construction and
+  the two cannot drift.
+- **`--help` and `-h` work at every level**, print the same shape, and exit 0:
+  on `notriosctl` itself, on a group (`notriosctl notes --help` lists the
+  group's subcommands), and on a subcommand (its purpose, flags in the `--flag`
+  form the documentation uses, and its positional arguments). `notriosctl help
+  <command> [<subcommand>]` gives the same text, because both spellings are ones
+  people try.
+- **A group asked for help is not an error.** Exit 0, and nothing printed to
+  standard error.
+- **`cliUsageForms` reads the registry** rather than parsing a string literal,
+  so the surface inventory becomes a fact about the command line instead of a
+  fact about its help text. `docs/cli.md` is generated from the same registry
+  and gains the eight missing commands with it.
+- **Machine-readable discovery.** `notriosctl help --json` emits the registry:
+  every command, its flags and its arguments. The documentation tools consume
+  that rather than re-parsing prose, and so can anything else that needs to
+  discover what this command line offers -- which is the same reason
+  `list_collections` exists rather than a page describing collections.
+- **Re-baseline afterwards.** `unclaimedBaseline` and
+  `docs/docfeatures/FEATURES.json` are updated once the inventory reflects the
+  command line, so the newly visible commands are claimed by a feature rather
+  than quietly raising the backlog.
 
-**Boundaries.** No behaviour changes. This item adds no command and removes
-none; it makes the ones that exist visible.
+**Boundaries.** No command is added or removed and no behaviour changes; this
+item makes what exists visible and describes it once. H21 and H22 add commands,
+and they add them to the registry, which is what makes them countable.
 
 **Open decisions.**
 
 - **Whether the four `sync` subcommands are for users -- Non-blocking.**
-  Recommended: document them. If any is genuinely a daemon-side or test-only
-  entry point, it goes on the exemption list with a stated reason rather than
-  staying unmentioned, because an unmentioned command is the condition being
-  fixed.
+  Recommended: document them. If any is a daemon-side or test-only entry point
+  it goes on an explicit exemption list with a stated reason, as the
+  root-document inventory does for feature contracts. Silence is the condition
+  being fixed, so the exemption has to be written down rather than assumed.
+- **How far the registry goes -- Non-blocking; default named.** Declaring flags
+  in the registry could mean the registry also constructs the `flag.FlagSet`,
+  removing the second declaration entirely.
+  - *Describe, do not construct (default).* The registry declares what a
+    command takes; each command keeps its own `FlagSet`; a test checks that the
+    two agree. Smaller change, and a mismatch fails rather than hides.
+  - *Construct from the registry.* No possible mismatch, but it touches every
+    command's parsing in an item that promised to change no behaviour.
+  - The recommendation is the default: get one description of *what commands
+    exist* first, since that is the drift that has actually happened. Unifying
+    flag parsing can follow once nothing depends on the literal.
 
-**Working state.** `notriosctl help` lists every dispatched subcommand;
-`go test ./...` fails when a new subcommand is dispatched without a usage line;
-the unclaimed-CLI baseline reflects the real command line; and the features
-registry claims the commands that just became visible.
+**Working state.** `notriosctl notes --help` lists the note subcommands and
+exits 0; `notriosctl notes show --help` shows `--document` and `--body` in the
+documented form with its positional arguments; `notriosctl help --json` lists
+every dispatched command; `go test ./...` fails when a dispatched subcommand is
+missing from the registry or when a registry entry names a command that is not
+dispatched; `docs/cli.md` and the Help notebook list all of them; and the
+unclaimed-CLI baseline describes the command line rather than its help text.
 
 ## H13. v0.8 release wrap-up and branch synchronization
 

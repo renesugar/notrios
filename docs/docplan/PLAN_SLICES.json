@@ -456,22 +456,37 @@
     },
     {
       "id": "H23",
-      "title": "Make the command line's help the truth about the command line",
+      "title": "One description of the command line, and --help everywhere",
       "state": "not-started",
       "slices": [
         {
           "id": "H23-A",
-          "statement": "Every dispatched subcommand appears in notriosctl help, including the eight that do not",
+          "statement": "One registry in code declares every command, its purpose, its flags and its arguments, and the dispatcher reads it",
           "state": "not-started"
         },
         {
           "id": "H23-B",
-          "statement": "A subcommand dispatched without a usage line fails a build, or is exempt with a stated reason",
+          "statement": "--help and -h work at the top level, on a command group and on a subcommand, print the same shape, and exit 0",
           "state": "not-started"
         },
         {
           "id": "H23-C",
-          "statement": "The unclaimed-surface baseline and the features registry reflect the command line rather than the help text",
+          "statement": "A dispatched subcommand missing from the registry fails a build, or is exempt with a stated reason",
+          "state": "not-started"
+        },
+        {
+          "id": "H23-D",
+          "statement": "The surface inventory and the published CLI guide are derived from the registry rather than from a help string literal",
+          "state": "not-started"
+        },
+        {
+          "id": "H23-E",
+          "statement": "Tools can discover the command line as data through notriosctl help --json",
+          "state": "not-started"
+        },
+        {
+          "id": "H23-F",
+          "statement": "The unclaimed-surface baseline and the features registry reflect the real command line",
           "state": "not-started"
         }
       ]
