@@ -58,6 +58,12 @@ func renderNoteWithAncestors(doc store.Document, source store.DocumentSource, ta
 	// nothing, and a search would quietly return fewer results whenever the
 	// sidecar contributed.
 	writeScalar(&b, "collection", doc.CollectionID)
+	if !doc.DeletedAt.IsZero() {
+		// A note in Trash still exists and can still be rendered; exporting one
+		// as though it were an ordinary note would be a wrong answer with the
+		// shape of a right one.
+		writeScalar(&b, "trashed", doc.DeletedAt.UTC().Format(time.RFC3339))
+	}
 	if len(notebookAncestors) > 0 {
 		b.WriteString("notebook_ancestors:\n")
 		for _, ancestor := range notebookAncestors {
@@ -221,18 +227,45 @@ func DrainOutbox(ctx context.Context, st store.Store, w Writer, batchSize, maxBa
 	return report, nil
 }
 
+// RenderNote returns one note as the Markdown file this product already
+// writes: YAML front matter carrying id, title, notebook, collection, source
+// provenance and tags, then the body.
+//
+// It is exported so the command line renders the same bytes the projection
+// does. A second front-matter format in one product is a bug waiting for the
+// first person who round-trips through the wrong one, and this is the format
+// Recoll indexes and an Obsidian-shaped reader expects.
+func RenderNote(ctx context.Context, st store.Store, documentID string) (store.Document, []byte, error) {
+	return projectionBytes(ctx, st, documentID)
+}
+
+// RenderDocument renders a note the caller has already read.
+//
+// The command line needs this because it resolves a trashed note itself --
+// GetDocument excludes Trash, and re-reading by id here would turn "this note
+// is in Trash" back into "no such note", which is the answer someone gets
+// immediately after deleting one.
+func RenderDocument(ctx context.Context, st store.Store, doc store.Document) ([]byte, error) {
+	return renderDocumentBytes(ctx, st, doc)
+}
+
 func projectionBytes(ctx context.Context, st store.Store, documentID string) (store.Document, []byte, error) {
 	doc, err := st.GetDocument(ctx, documentID)
 	if err != nil {
 		return store.Document{}, nil, err
 	}
+	content, err := renderDocumentBytes(ctx, st, doc)
+	return doc, content, err
+}
+
+func renderDocumentBytes(ctx context.Context, st store.Store, doc store.Document) ([]byte, error) {
 	source, err := st.GetDocumentSource(ctx, doc.ID)
 	if err != nil && !errors.Is(err, store.ErrNotFound) {
-		return store.Document{}, nil, err
+		return nil, err
 	}
 	tags, err := st.ListDocumentTags(ctx, doc.ID)
 	if err != nil {
-		return store.Document{}, nil, err
+		return nil, err
 	}
 	notebookName := ""
 	notebookAncestors := []string{}
@@ -242,7 +275,7 @@ func projectionBytes(ctx context.Context, st store.Store, documentID string) (st
 			notebookAncestors = ancestors
 		}
 	}
-	return doc, renderNoteWithAncestors(doc, source, tags, notebookName, notebookAncestors), nil
+	return renderNoteWithAncestors(doc, source, tags, notebookName, notebookAncestors), nil
 }
 
 func projectionNotebookNames(ctx context.Context, st store.Store, notebookID string) (store.Notebook, []string, error) {

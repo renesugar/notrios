@@ -23,6 +23,12 @@ func runNotes(args []string) {
 		runNoteCreate(args[1:])
 	case "show":
 		runNoteShow(args[1:])
+	case "outline":
+		runNoteOutline(args[1:])
+	case "resources":
+		runNoteResources(args[1:])
+	case "links":
+		runNoteLinks(args[1:])
 	case "edit":
 		runNoteEdit(args[1:])
 	case "delete":
@@ -41,7 +47,10 @@ func runNotes(args []string) {
 func printNotesUsage() {
 	fmt.Fprint(os.Stderr, `usage:
   notriosctl notes create --title <title> [--notebook <id|name>] [--body-file path | --body text]
-  notriosctl notes show --document <id> [--body]
+  notriosctl notes show --document <id> [--json] [--output <file>]
+  notriosctl notes outline --document <id> [--output <file>]
+  notriosctl notes resources --document <id> [--output <file>]
+  notriosctl notes links --document <id> [--direction out|in] [--output <file>]
   notriosctl notes edit --document <id> [--title <title>] [--body-file path | --body text]
   notriosctl notes delete --document <id>
   notriosctl notes restore --document <id>
@@ -155,7 +164,13 @@ func runNoteShow(args []string) {
 	dbPath := fs.String("db", "", "SQLite database path override")
 	assetStore := fs.String("asset-store", "", "asset store directory override")
 	documentID := fs.String("document", "", "note to show")
-	withBody := fs.Bool("body", false, "include the note body, which may be long")
+	// Accepted and ignored. It selected whether to include the body when this
+	// command printed only JSON metadata; the Markdown form is the note, body
+	// and all, and the JSON form now carries the body too. Refusing the flag
+	// would break a script for no gain.
+	_ = fs.Bool("body", false, "accepted and ignored; both forms carry the body")
+	asJSON := fs.Bool("json", false, "print the note's fields as JSON instead of a Markdown file")
+	output := fs.String("output", "", "write to a file instead of standard output")
 	if err := fs.Parse(args); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(2)
@@ -184,6 +199,16 @@ func runNoteShow(args []string) {
 		}
 		doc = found
 	}
+	if !*asJSON {
+		// The default is the note as a Markdown file another application can
+		// read, rendered by internal/projection so that this and the Recoll
+		// projection cannot disagree about what front matter a note carries.
+		// `--body` is accepted and ignored: it selected whether to include the
+		// body when this command printed only JSON metadata, and the Markdown
+		// form is the note, body and all.
+		writeOut(*output, renderNoteMarkdown(ctx, st, doc))
+		return
+	}
 	tags, err := st.ListDocumentTags(ctx, doc.ID)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -207,10 +232,9 @@ func runNoteShow(args []string) {
 		// script that cannot tell is a script that will overwrite one.
 		report["trashed_at"] = doc.DeletedAt.UTC().Format(time.RFC3339)
 	}
-	if *withBody {
-		report["body"] = doc.Body
-	}
-	printJSON(report)
+	report["body"] = doc.Body
+	report["collection_id"] = doc.CollectionID
+	writeOut(*output, jsonBytes(report))
 }
 
 // findTrashedDocument looks for a note among the deleted ones.

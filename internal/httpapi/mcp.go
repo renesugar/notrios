@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/renesugar/notrios/internal/api"
+	"github.com/renesugar/notrios/internal/markdownblocks"
 	"github.com/renesugar/notrios/internal/query"
 	"github.com/renesugar/notrios/internal/store"
 	"github.com/renesugar/notrios/internal/version"
@@ -589,46 +590,41 @@ func truncateStringBytes(value string, maxBytes int) string {
 	}
 	return value[:last]
 }
+
+// extractDocumentOutline derives the outline from the same parse that stores a
+// heading's slug, so an anchor the outline hands back is one a stable link can
+// resolve.
+//
+// It had its own heading parser and its own slug function until v0.8 H21, and
+// the two disagreed with `markdownblocks.Slugify` on anything outside ASCII:
+// `Café notes` is stored as `café-notes` and the outline reported `caf-notes`,
+// and a heading written in Japanese was reported with an empty anchor. Both are
+// anchors that resolve to nothing, handed to a caller as though they were
+// links.
 func extractDocumentOutline(documentID, body string) api.DocumentOutline {
-	lines := strings.Split(body, "\n")
 	headings := []api.DocumentHeading{}
-	for i, line := range lines {
-		trimmed := strings.TrimSpace(line)
-		if !strings.HasPrefix(trimmed, "#") {
+	for _, block := range markdownblocks.Extract(documentID, body) {
+		if block.Kind != markdownblocks.KindHeading {
 			continue
 		}
-		level := 0
-		for level < len(trimmed) && trimmed[level] == '#' {
-			level++
-		}
-		if level == 0 || level > 6 || level >= len(trimmed) || trimmed[level] != ' ' {
-			continue
-		}
-		title := strings.TrimSpace(trimmed[level:])
-		if title == "" {
-			continue
-		}
-		headings = append(headings, api.DocumentHeading{Level: level, Title: title, Anchor: slugifyHeading(title), Line: i + 1})
+		headings = append(headings, api.DocumentHeading{
+			Level:  block.Level,
+			Title:  headingTitle(block.Text),
+			Anchor: block.Slug,
+			Line:   1 + strings.Count(body[:block.StartByte], "\n"),
+		})
 	}
 	return api.DocumentOutline{DocumentID: documentID, Headings: headings}
 }
-func slugifyHeading(title string) string {
-	lower := strings.ToLower(strings.TrimSpace(title))
-	var b strings.Builder
-	lastDash := false
-	for _, r := range lower {
-		switch {
-		case r >= 'a' && r <= 'z', r >= '0' && r <= '9':
-			b.WriteRune(r)
-			lastDash = false
-		case r == ' ' || r == '-' || r == '_':
-			if !lastDash && b.Len() > 0 {
-				b.WriteByte('-')
-				lastDash = true
-			}
-		}
+
+// headingTitle strips the leading hashes from a heading block's text.
+func headingTitle(text string) string {
+	trimmed := strings.TrimSpace(text)
+	level := 0
+	for level < len(trimmed) && trimmed[level] == '#' {
+		level++
 	}
-	return strings.Trim(b.String(), "-")
+	return strings.TrimSpace(trimmed[level:])
 }
 func toolNames(tools []mcpTool) []string {
 	names := make([]string, 0, len(tools))

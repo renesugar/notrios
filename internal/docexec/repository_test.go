@@ -132,7 +132,9 @@ func TestRepositoryExamples(t *testing.T) {
 	// Executed stays 64 -- gomplate is a host tool Notrios does not ship or
 	// require, and running them would make an external installation a build
 	// dependency of the documentation gate.
-	if report.Executed != 64 || report.Entries != 147 || len(report.Topics) != 14 {
+	// 147 -> 148 entries in v0.8 H21: the note-reading synopsis in docs/cli.md,
+	// a bracketed-flag form whose four commands are covered by executed tests.
+	if report.Executed != 64 || report.Entries != 148 || len(report.Topics) != 14 {
 		t.Fatalf("unexpected G18d coverage: %+v", report)
 	}
 	executedTopics := 0

@@ -366,11 +366,42 @@
     {
       "path": [
         "notes",
+        "links"
+      ],
+      "usage": "--document <id> [--direction outgoing|incoming|both] [--output <file>] [--db ...]",
+      "notes": [
+        "broken links are reported rather than filtered out"
+      ],
+      "purpose": "list the links a note points at, or the ones pointing at it"
+    },
+    {
+      "path": [
+        "notes",
         "move"
       ],
       "notes": [],
       "purpose": "file one note into another notebook; a name is refused when it matches more than one",
       "usage": "--document <id> --notebook <id|name> [--db ...]"
+    },
+    {
+      "path": [
+        "notes",
+        "outline"
+      ],
+      "usage": "--document <id> [--output <file>] [--db ...]",
+      "notes": [
+        "the anchors are the ones a notrios:// link resolves against"
+      ],
+      "purpose": "list a note's headings, with the anchor and line of each"
+    },
+    {
+      "path": [
+        "notes",
+        "resources"
+      ],
+      "usage": "--document <id> [--output <file>] [--db ...]",
+      "notes": [],
+      "purpose": "list what is attached to a note, with ids, types and sizes"
     },
     {
       "path": [
@@ -386,10 +417,11 @@
         "notes",
         "show"
       ],
-      "usage": "--document <id> [--body] [--db ...]",
-      "purpose": "show one note's metadata, and its body with --body",
+      "usage": "--document <id> [--json] [--output <file>] [--db ...]",
+      "purpose": "print one note as Markdown with front matter, or as JSON with --json",
       "notes": [
-        "a note in Trash is reported as trashed rather than as missing"
+        "a note in Trash is reported as trashed rather than as missing",
+        "--body is accepted and ignored; both forms carry the body"
       ]
     },
     {
@@ -530,10 +562,21 @@
     {
       "path": [
         "resources",
+        "get"
+      ],
+      "usage": "--resource <id> [--output <file>] [--db ...]",
+      "notes": [
+        "writes exactly the stored bytes; the summary goes to standard error"
+      ],
+      "purpose": "write one attachment's bytes to a file, or to standard output"
+    },
+    {
+      "path": [
+        "resources",
         "report"
       ],
       "notes": [],
-      "purpose": "exact duplicates, unreferenced blobs, notebook usage, and review-only perceptual signals",
+      "purpose": "report exact duplicates, unreferenced blobs, notebook usage, and review-only perceptual signals",
       "usage": "[--config config.yaml] [--db ...] [--asset-store ...]"
     },
     {

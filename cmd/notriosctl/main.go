@@ -448,22 +448,42 @@ func runLocalize(args []string) {
 	}
 }
 
+// printResourcesUsage names both resource subcommands.
+func printResourcesUsage() {
+	fmt.Fprint(os.Stderr, `usage:
+  notriosctl resources report [--config config.yaml] [--db path] [--asset-store path]
+  notriosctl resources get --resource <id> [--output <file>] [--db ...]
+`)
+}
+
 func runResources(args []string) {
-	if len(args) == 0 || args[0] != "report" {
-		fmt.Fprintln(os.Stderr, "usage: notriosctl resources report [--config config.yaml] [--db path] [--asset-store path]")
+	if len(args) == 0 {
+		printResourcesUsage()
 		os.Exit(2)
 	}
+	switch args[0] {
+	case "report":
+		runResourceReport(args[1:])
+	case "get":
+		runResourceGet(args[1:])
+	default:
+		fmt.Fprintf(os.Stderr, "unknown resources subcommand %q\n", args[0])
+		printResourcesUsage()
+		os.Exit(2)
+	}
+}
+
+func runResourceReport(args []string) {
 	fs := flag.NewFlagSet("notriosctl resources report", flag.ExitOnError)
 	configPath := fs.String("config", "", "optional config file")
 	dbPath := fs.String("db", "", "SQLite database path override")
 	assetStore := fs.String("asset-store", "", "asset store directory override")
-	if err := fs.Parse(args[1:]); err != nil {
+	if err := fs.Parse(args); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(2)
 	}
 	if fs.NArg() != 0 {
-		fmt.Fprintln(os.Stderr, "usage: notriosctl resources report [--config config.yaml] [--db path] [--asset-store path]")
-		fs.PrintDefaults()
+		printResourcesUsage()
 		os.Exit(2)
 	}
 	st := openStoreFromFlags(*configPath, *dbPath, *assetStore)

@@ -54,7 +54,11 @@ func TestRepositoryEnumerationsMatchFiniteRegistries(t *testing.T) {
 		// 79 -> 81 in v0.8 H22: `collections list` and `collections show`. The
 		// command line could create a collection as a side effect of an import
 		// and could not name one back to the person who made it.
-		{cliHelpAnchor, 81},
+		// 81 -> 85 in v0.8 H21: `notes outline`, `notes resources`, `notes links`
+		// and `resources get`. Reading what a note is made of was reachable over
+		// REST and MCP and nowhere else, and the features registry recorded that
+		// as a decision rather than as a gap.
+		{cliHelpAnchor, 85},
 		{restAnchor, 109},
 		{mcpToolsAnchor, 46},
 		{mcpSyncScopeAnchor, 7},

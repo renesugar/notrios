@@ -1255,6 +1255,18 @@
       }
     },
     {
+      "id": "cli-notes-show-notes-outline-notes-resources-notes-links-example-1",
+      "path": "docs/cli.md",
+      "section": "notes-show-notes-outline-notes-resources-notes-links",
+      "language": "sh",
+      "sha256": "739515427a8137d6849bb2c2f1d6818e3cd9c76dbda56359486bb2170eaff9fe",
+      "state": "unverified",
+      "unrun_reason": {
+        "code": "illustrative-placeholder",
+        "detail": "Non-literal command synopsis: bracketed flags are optional-argument notation and <id> is a placeholder. All four commands are covered by executed tests in go:github.com/renesugar/notrios/cmd/notriosctl (TestNoteShowRendersMarkdownWithFrontMatter, TestNoteOutlineAnchorsMatchTheStableLink, TestNoteResourcesAndResourceGetRoundTrip, TestNoteLinksReportsBothDirections); no executed concrete CLI example is registered for the synopsis form."
+      }
+    },
+    {
       "id": "cli-open-example-1",
       "path": "docs/cli.md",
       "section": "open",

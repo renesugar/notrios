@@ -529,7 +529,7 @@
     },
     {
       "path": "docs/cli.md",
-      "sha256": "d11122e274ebd42f4bdc732de672a7e908ba86926a20a750c119ca3ba0762f3c",
+      "sha256": "043539cda88e3590aa7a275347651f386ba3e6fda51d1575f332005278d409e6",
       "help_note": "doc_help_cli",
       "owner": "go:github.com/renesugar/notrios/cmd/notriosctl#printHelp",
       "sections": [
@@ -834,6 +834,16 @@
           "grade": "unverified"
         },
         {
+          "id": "notes-show-notes-outline-notes-resources-notes-links",
+          "level": 2,
+          "title": "notes show / notes outline / notes resources / notes links",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/cmd/notriosctl#printHelp",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        },
+        {
           "id": "notes-move",
           "level": 2,
           "title": "notes move",
@@ -1007,7 +1017,7 @@
     },
     {
       "path": "docs/features.md",
-      "sha256": "524707cc303357475cd76eca16cbfee0bd1c71c853c3414d92007bf71c59f356",
+      "sha256": "5810ed34809ac034ec336abe98e45bbaee2397593cf3000b97bfdf2fac2bbe2d",
       "help_note": "doc_help_features",
       "owner": "go:github.com/renesugar/notrios/internal/docfeatures#Registry",
       "sections": [
@@ -2783,19 +2793,19 @@
       "id": "published_markdown",
       "count": 18,
       "unit": "pages",
-      "sections": 263,
+      "sections": 264,
       "owner": "go:github.com/renesugar/notrios/internal/helpdocs#Seed"
     },
     {
       "id": "help_notebook",
       "count": 18,
       "unit": "mirrored notes",
-      "sections": 263,
+      "sections": 264,
       "owner": "go:github.com/renesugar/notrios/internal/helpdocs#Seed"
     },
     {
       "id": "cli_help",
-      "count": 81,
+      "count": 85,
       "unit": "usage forms",
       "owner": "go:github.com/renesugar/notrios/cmd/notriosctl#printHelp"
     },
@@ -2887,9 +2897,9 @@
       "executed": 0,
       "generated": 29,
       "claimed": 0,
-      "unverified": 234
+      "unverified": 235
     },
-    "denominator": 263,
+    "denominator": 264,
     "reconciles": true,
     "finding": "The manual does not yet name directive fragments or executable checks, so all current section units are unverified even where independent tests exist."
   },

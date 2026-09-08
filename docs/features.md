@@ -71,7 +71,7 @@ The command line writes, edits, files, trashes and restores a note; appending an
 
 Fetch a note whole, or just its body, its outline, its blocks, a line range, or an earlier revision. The structured views exist so a tool can work on part of a note without re-parsing all of it.
 
-The command line reads a note's metadata, and its body with `--body`. It reads no more than that yet: the outline, blocks, line ranges, attachments and links a note is made of are reachable over REST and MCP only, and v0.8 H21 adds them. This entry previously read "No command line: reading a note is what the GUI and the API are for", which was wrong twice -- `notes show` already existed, and nobody had decided a terminal should not read. An absent adapter tends to acquire a justification.
+The command line prints a note as Markdown with the front matter the Recoll projection writes, so another application can read it, and `--json` gives the fields instead; `notes outline`, `notes resources` and `notes links` answer what a note is made of. Blocks, line ranges and revisions stay on REST and MCP. This entry read "No command line: reading a note is what the GUI and the API are for" until v0.8 H21, which was wrong twice over -- `notes show` already read a note, and nobody had decided a terminal should not. An absent adapter tends to acquire a justification.
 
 *Available on the desktop app, the command line, the REST API and MCP.*
 
@@ -125,7 +125,7 @@ A collection is provenance, not a place notes live: notes are imported into a no
 
 Add files to notes, read them back, see what references what, and find attachments nothing points at any more.
 
-Measured by the H15 control crawl, which found the upload field in the note inspector and the Attachments tab. This was recorded as absent from the GUI until the crawl opened a note; no journey covers it yet.
+Measured by the H15 control crawl, which found the upload field in the note inspector and the Attachments tab. The command line lists what a note carries and writes one attachment's bytes to a file; attaching a file is still REST, MCP or the GUI, because uploading is a write and this half was added as the reading half.
 
 *Available on the desktop app, the command line, the REST API and MCP.*
 
@@ -295,16 +295,16 @@ capability's own section.
 | Capability | Desktop app | Command line | REST | MCP | Shared library |
 |---|---|---|---|---|---|
 | Write and edit notes | 6 | 4 | 10 | 6 | — |
-| Read a note and its structure | 2 | 1 | 7 | 5 | — |
+| Read a note and its structure | 2 | 4 | 7 | 5 | — |
 | Search your notes | 1 | — | 3 | 2 | — |
 | Notebooks that are really saved searches | 1 | 1 | 3 | 1 | — |
 | Organise notes into notebooks | 2 | 3 | 9 | 4 | — |
 | Tag and untag a note | 4 | 3 | 2 | 2 | — |
 | See and rename tags | 4 | 1 | 3 | 1 | — |
 | Group libraries into collections | 2 | 2 | 4 | 1 | — |
-| Attach and manage files | 2 | 1 | 8 | 2 | — |
+| Attach and manage files | 2 | 3 | 8 | 2 | — |
 | Bring remote images into the library | 2 | 1 | 4 | 3 | — |
-| Link notes to each other | 1 | 3 | 4 | 1 | — |
+| Link notes to each other | 1 | 4 | 4 | 1 | — |
 | See the shape of the link graph | 1 | 2 | 4 | 3 | — |
 | Templates and tasks | — | 3 | 4 | 3 | — |
 | Live query blocks inside a note | 1 | — | 1 | 1 | — |

@@ -408,27 +408,31 @@
     {
       "id": "H21",
       "title": "Read a note and its structure, from the command line",
-      "state": "not-started",
+      "state": "complete",
       "slices": [
         {
           "id": "H21-A",
           "statement": "The command line prints a note as Markdown with the front matter Notrios already writes, or as JSON, to a file or to standard output",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:cmd/notriosctl/noteread.go"
         },
         {
           "id": "H21-B",
           "statement": "The command line lists what is attached to a note and writes one attachment's bytes to a file",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "test:TestNoteResourcesAndResourceGetRoundTrip"
         },
         {
           "id": "H21-C",
           "statement": "The command line lists a note's links and its outline",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "test:TestNoteOutlineAnchorsMatchTheStableLink"
         },
         {
           "id": "H21-D",
           "statement": "The documentation says what reading a note already offers on REST and MCP, and stops claiming reading has no command line",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:docs/docfeatures/FEATURES.json"
         }
       ]
     },

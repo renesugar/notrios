@@ -47,7 +47,9 @@ class G18aEvidenceTests(unittest.TestCase):
         # list one, so there was nothing to document until there was.
         # 262 -> 263 in v0.8 H24: the "Reading JSON output" section, which
         # documents rendering rather than adding a second output format.
-        self.assertEqual(inventory["grade_baseline"]["denominator"], 263)
+        # 263 -> 264 in v0.8 H21: the note-reading section, which documents the
+        # command line half of a capability REST and MCP already had.
+        self.assertEqual(inventory["grade_baseline"]["denominator"], 264)
 
     def test_duplicate_fragment_is_rejected(self):
         source = """// A.\n//notrios:doc user same\nfunc A() {}\n// B.\n//notrios:doc user same\nfunc B() {}\n"""

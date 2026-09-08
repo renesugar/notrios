@@ -2474,6 +2474,16 @@ func (s *SQLiteStore) ListDocumentLinks(ctx context.Context, documentID, directi
 	if direction == "" {
 		direction = "both"
 	}
+	// Refused rather than ignored. An unrecognised direction used to fall
+	// through both branches and return an empty page, so `direction=out`
+	// answered "this note has no links" -- a wrong answer with the shape of a
+	// right one, which a caller has no way to tell from the truth.
+	switch direction {
+	case "outgoing", "incoming", "both":
+	default:
+		return DocumentLinkPage{}, fmt.Errorf("%w: link direction %q must be outgoing, incoming or both",
+			ErrInvalidInput, direction)
+	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if ok, err := s.documentExistsLocked(documentID); err != nil {

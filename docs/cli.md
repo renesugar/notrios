@@ -40,9 +40,12 @@ nothing checked against the dispatcher. Eight commands were missing from it.
 - notriosctl notes create --title <title> [--notebook <id|name>] [--body-file path|-] [--body text]
 - notriosctl notes delete --document <id> [--db ...]
 - notriosctl notes edit --document <id> [--title <title>] [--body-file path | --body text] [--message <why>]
+- notriosctl notes links --document <id> [--direction outgoing|incoming|both] [--output <file>] [--db ...]
 - notriosctl notes move --document <id> --notebook <id|name> [--db ...]
+- notriosctl notes outline --document <id> [--output <file>] [--db ...]
+- notriosctl notes resources --document <id> [--output <file>] [--db ...]
 - notriosctl notes restore --document <id> [--db ...]
-- notriosctl notes show --document <id> [--body] [--db ...]
+- notriosctl notes show --document <id> [--json] [--output <file>] [--db ...]
 - notriosctl open [--profile name] [--registry path] [--db path] [--launch] <notrios-uri>
 - notriosctl paths [--json] [--no-redact]
 - notriosctl profile create --name <profile> [--listen 127.0.0.1:8080] [--db ...] [--sync-target none|directory|rest]
@@ -58,6 +61,7 @@ nothing checked against the dispatcher. Eight commands were missing from it.
 - notriosctl publish profile save --name <profile> [--notebooks id,id] [--tags a,b] [--link-action plain_text]
 - notriosctl publish run --profile <profile> --reviewed-plan <sha256> <out-dir>
 - notriosctl register-url-handler [--apply] [--binary path] [--dir path]
+- notriosctl resources get --resource <id> [--output <file>] [--db ...]
 - notriosctl resources report [--config config.yaml] [--db ...] [--asset-store ...]
 - notriosctl restore archive-v2 --intent replace|adopt|merge|fork [--db ...] [--new-database-id id] <archive-dir>
 - notriosctl seed-help [--db ...] [docs-dir]
@@ -770,6 +774,65 @@ every collection unless a `collection:` term says otherwise. See
 Listing and showing is all the command line does with collections. Renaming and
 deleting are not available on any surface, because what should happen to notes
 that name a collection has not been decided.
+
+## notes show / notes outline / notes resources / notes links
+
+```sh
+notriosctl notes show --document <id> [--json] [--output <file>]
+notriosctl notes outline --document <id> [--output <file>]
+notriosctl notes resources --document <id> [--output <file>]
+notriosctl notes links --document <id> [--direction outgoing|incoming|both]
+```
+
+Reading a note and what it is made of. Find the id with a search, or with
+`notebooks list` and the query language.
+
+`notes show` prints the note as a Markdown file with YAML front matter — the
+same rendering the Recoll projection writes, so a note exported this way carries
+the id, title, notebook, collection, source provenance and tags another
+application expects:
+
+```text
+---
+id: "doc_zjdoaotrxr57tpbrcv57gapkke"
+title: "Reed beds"
+notebook: "Field notes"
+collection: "default"
+tags:
+  - "wetland"
+---
+
+Seen at dusk.
+```
+
+`--json` prints the note's fields instead, body included. `--output <file>`
+writes to a file rather than standard output, which keeps the exit code that a
+shell redirect throws away. `--body` is accepted and ignored: it chose whether
+to include the body when this command printed only metadata, and both forms
+carry the body now.
+
+`notes outline` lists the headings with the anchor and line of each. **The
+anchors are the ones a `notrios://` link resolves against** — the outline is
+derived from the same parse that stores them, so an anchor printed here is one
+`notriosctl link --anchor` will find.
+
+`notes resources` lists what is attached, with each attachment's id, filename,
+type, size and hash. `notriosctl resources get --resource <id> --output <file>`
+writes one attachment's bytes; without `--output` they go to standard output, so
+the file is exactly the stored bytes and the summary line goes to standard
+error.
+
+`notes links` lists the links out of a note, or `--direction incoming` for the
+ones pointing at it, or `both` for a page of each. Broken links are reported
+rather than filtered out, because a broken link is the interesting one.
+
+**Also on REST and MCP.** These are adapters onto capabilities that already
+existed: `GET /api/v1/documents/{id}`, `/body`, `/outline`, `/blocks`, `/lines`,
+`/resources` and `/links`, plus `GET /api/v1/resources/{id}/content`; and the
+`get_document`, `get_document_outline`, `get_document_blocks`,
+`get_note_line_range`, `list_document_resources`, `list_document_links` and
+`read_resource` tools. Blocks, line ranges and earlier revisions have no command
+of their own yet.
 
 ## notes move
 

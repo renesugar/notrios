@@ -65,9 +65,12 @@
         "All notes",
         "Search query"
       ],
-      "surface_note": "The command line reads a note's metadata, and its body with `--body`. It reads no more than that yet: the outline, blocks, line ranges, attachments and links a note is made of are reachable over REST and MCP only, and v0.8 H21 adds them. This entry previously read \"No command line: reading a note is what the GUI and the API are for\", which was wrong twice -- `notes show` already existed, and nobody had decided a terminal should not read. An absent adapter tends to acquire a justification.",
+      "surface_note": "The command line prints a note as Markdown with the front matter the Recoll projection writes, so another application can read it, and `--json` gives the fields instead; `notes outline`, `notes resources` and `notes links` answer what a note is made of. Blocks, line ranges and revisions stay on REST and MCP. This entry read \"No command line: reading a note is what the GUI and the API are for\" until v0.8 H21, which was wrong twice over -- `notes show` already read a note, and nobody had decided a terminal should not. An absent adapter tends to acquire a justification.",
       "cli": [
-        "notriosctl notes show"
+        "notriosctl notes show",
+        "notriosctl notes outline",
+        "notriosctl notes resources",
+        "notriosctl notes links"
       ]
     },
     {
@@ -215,7 +218,9 @@
       "title": "Attach and manage files",
       "summary": "Add files to notes, read them back, see what references what, and find attachments nothing points at any more.",
       "cli": [
-        "notriosctl resources report"
+        "notriosctl resources report",
+        "notriosctl resources get",
+        "notriosctl notes resources"
       ],
       "rest": [
         "POST /api/v1/resources",
@@ -231,7 +236,7 @@
         "list_document_resources",
         "read_resource"
       ],
-      "surface_note": "Measured by the H15 control crawl, which found the upload field in the note inspector and the Attachments tab. This was recorded as absent from the GUI until the crawl opened a note; no journey covers it yet.",
+      "surface_note": "Measured by the H15 control crawl, which found the upload field in the note inspector and the Attachments tab. The command line lists what a note carries and writes one attachment's bytes to a file; attaching a file is still REST, MCP or the GUI, because uploading is a write and this half was added as the reading half.",
       "gui": [
         "Upload image/PDF/resource — the file field in the note inspector",
         "Attachments — a sync centre tab"
@@ -268,7 +273,8 @@
       "cli": [
         "notriosctl link",
         "notriosctl open",
-        "notriosctl register-url-handler"
+        "notriosctl register-url-handler",
+        "notriosctl notes links"
       ],
       "rest": [
         "GET /api/v1/links/suggest",

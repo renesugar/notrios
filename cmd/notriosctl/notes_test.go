@@ -169,19 +169,26 @@ func TestNoteDeleteAndRestore(t *testing.T) {
 	// A trashed note must still be visible. Reporting "no note" here would be
 	// the answer someone gets immediately after deleting, while trying to
 	// confirm what happened.
+	// Both forms must say so. The Markdown form names it in the front matter,
+	// because a note exported as though it were an ordinary one is a wrong
+	// answer with the shape of a right one.
 	shown := runCLIIn(t, sandbox, binary, append([]string{"notes", "show", "--document", id}, roots...)...)
 	if shown.exitCode != 0 {
 		t.Fatalf("a note in Trash must still be visible: %s", shown.stderr)
 	}
-	if !strings.Contains(shown.stdout, "trashed_at") {
-		t.Errorf("show does not report that the note is in Trash: %s", shown.stdout)
+	if !strings.Contains(shown.stdout, "trashed:") {
+		t.Errorf("the Markdown form does not report that the note is in Trash: %s", shown.stdout)
+	}
+	shownJSON := runCLIIn(t, sandbox, binary, append([]string{"notes", "show", "--document", id, "--json"}, roots...)...)
+	if !strings.Contains(shownJSON.stdout, "trashed_at") {
+		t.Errorf("the JSON form does not report that the note is in Trash: %s", shownJSON.stdout)
 	}
 
 	restored := runCLIIn(t, sandbox, binary, append([]string{"notes", "restore", "--document", id}, roots...)...)
 	if restored.exitCode != 0 {
 		t.Fatalf("notes restore: %s", restored.stderr)
 	}
-	after := runCLIIn(t, sandbox, binary, append([]string{"notes", "show", "--document", id}, roots...)...)
+	after := runCLIIn(t, sandbox, binary, append([]string{"notes", "show", "--document", id, "--json"}, roots...)...)
 	if strings.Contains(after.stdout, "trashed_at") {
 		t.Errorf("the note is still marked trashed after restore: %s", after.stdout)
 	}

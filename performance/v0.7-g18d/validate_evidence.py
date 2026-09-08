@@ -46,8 +46,9 @@ def validate_registry(registry: dict, report: dict) -> None:
     # 142 -> 144 in v0.8 H22: the collections synopsis in docs/cli.md and the
     # discovery block in docs/query-language.md.
     # 144 -> 147 in v0.8 H24: three gomplate pipelines in docs/cli.md.
-    assert len(examples) == report["entries"] == 147
-    assert len({item["id"] for item in examples}) == 147
+    # 147 -> 148 in v0.8 H21: the note-reading synopsis in docs/cli.md.
+    assert len(examples) == report["entries"] == 148
+    assert len({item["id"] for item in examples}) == 148
     executed = [item for item in examples if item["state"] == "executed"]
     unverified = [item for item in examples if item["state"] == "unverified"]
     # 63 -> 64 in v0.8 H22: the two discovery commands are literal and run in
@@ -70,7 +71,9 @@ def validate_registry(registry: dict, report: dict) -> None:
     # like every other synopsis in that document.
     # 80 -> 83 in v0.8 H24: the gomplate pipelines, reviewed and run by hand
     # but not run here, because gomplate is not a dependency of this repository.
-    assert len(unverified) == report["unverified"] == 83
+    # 83 -> 84 in v0.8 H21: the note-reading synopsis, illustrative like every
+    # other synopsis on that page.
+    assert len(unverified) == report["unverified"] == 84
     assert {item["execution"]["surface"] for item in executed} == {
         "cli", "config", "rest", "mcp"
     }

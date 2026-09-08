@@ -92,8 +92,10 @@ func TestRepositoryAuditReportsHonestCoverage(t *testing.T) {
 	// the illustrative set; the second is literal and runs.
 	// 262 -> 263 sections and 144 -> 147 executables in v0.8 H24: the
 	// "Reading JSON output" section and its three gomplate pipelines.
-	if report.ManualSections != 263 || report.Fragments != 21 || report.Claims != 4 ||
-		report.Executables != 147 || report.Journeys != 9 {
+	// 263 -> 264 sections and 147 -> 148 executables in v0.8 H21: the
+	// note-reading section in docs/cli.md and its synopsis.
+	if report.ManualSections != 264 || report.Fragments != 21 || report.Claims != 4 ||
+		report.Executables != 148 || report.Journeys != 9 {
 		t.Fatalf("unexpected coverage surface: %+v", report)
 	}
 	// 71 -> 72 executed in v0.8 H22: the two discovery commands in
@@ -138,8 +140,9 @@ func TestRepositoryAuditReportsHonestCoverage(t *testing.T) {
 		// 314 -> 318 unverified and 436 -> 440 denominator in v0.8 H24: the new
 		// section and its three examples, none of them run here because
 		// gomplate is not a dependency of this repository.
-		report.Counts[GradeClaimed] != 4 || report.Counts[GradeUnverified] != 318 ||
-		report.Denominator != 440 {
+		// 318 -> 320 unverified and 440 -> 442 denominator in v0.8 H21.
+		report.Counts[GradeClaimed] != 4 || report.Counts[GradeUnverified] != 320 ||
+		report.Denominator != 442 {
 		t.Fatalf("coverage counts hide or lose units: counts=%v denominator=%d", report.Counts, report.Denominator)
 	}
 	if len(resolvedTS) == 0 {

@@ -46,7 +46,7 @@ What follows is what is left. Each item's own text below is the record of what
 happened, which is a different question.
 
 <!-- notrios:generated:plan:progress:begin -->
-**31 items: 17 complete, 4 in progress, 9 not started, 1 deferred.**
+**31 items: 18 complete, 4 in progress, 8 not started, 1 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -76,7 +76,7 @@ happened, which is a different question.
 | H19. notriosctl search | not-started | 0/4 | 4 |
 | H13. v0.8 release wrap-up and branch synchronization | not-started | 0/2 | 2 |
 | H20. Bring the atlas current, and stop it drifting again | not-started | 0/4 | 4 |
-| H21. Read a note and its structure, from the command line | not-started | 0/4 | 4 |
+| H21. Read a note and its structure, from the command line | complete | 4/4 | — |
 | H22. Discover the values a query can name | complete | 3/3 | — |
 | H23. One description of the command line, and --help everywhere | complete | 6/6 | — |
 | H24. JSON is the output; a template makes it readable | complete | 2/2 | — |
@@ -110,7 +110,7 @@ happened, which is a different question.
 
 ### Not started
 
-Written and not begun: H10, H11, H12, H17, H19, H13, H20, H21, H25. Their slices are listed under each item.
+Written and not begun: H10, H11, H12, H17, H19, H13, H20, H25. Their slices are listed under each item.
 <!-- notrios:generated:plan:progress:end -->
 
 ## H0. Application-facade, C-ABI, and SQLite ownership investigation — complete
@@ -3684,7 +3684,7 @@ that does not exist yet.
 document list generated; and adding a package to the repository without touching
 the atlas fails a build rather than a review.
 
-## H21. Read a note and its structure, from the command line
+## H21. Read a note and its structure, from the command line — complete
 
 **Ordering.** After H23, which makes the help text the truth about what the
 command line has, because otherwise nothing added here is visible to the gates
@@ -3779,6 +3779,53 @@ note another application can read; `--json` prints the structured form;
 the features table shows a command-line column for `Read a note and its
 structure`; and the registry's claim that reading has no command line is gone,
 replaced by what each surface actually offers.
+
+**Outcome (2026-09-08).** Done, and it found a defect in the surfaces it was
+supposed to be catching up with.
+
+`notes show` prints the note as Markdown with front matter and `--json` gives
+the fields; `notes outline`, `notes resources` and `notes links` answer what a
+note is made of; `resources get` writes an attachment's bytes. Every one takes
+`--output`, which keeps the exit code a shell redirect throws away.
+
+The Markdown comes from `internal/projection`, exported as `RenderDocument`
+rather than copied, so the command line and the Recoll projection cannot
+disagree about what front matter a note carries. That reuse paid immediately: a
+note in Trash renders with `trashed:` in its front matter, because
+`doc.DeletedAt` was already on the document the renderer was handed.
+
+**The defect.** `notes outline` needed a heading parser, and there was already
+one -- and then a second. `httpapi` had its own `slugifyHeading` alongside
+`markdownblocks.Slugify`, and the two disagreed on everything outside ASCII:
+`Café notes` is stored as `café-notes` and the outline reported `caf-notes`,
+while a heading written in Japanese was reported with an **empty** anchor. So
+`GET /api/v1/documents/{id}/outline` and `get_document_outline` had been handing
+back anchors that resolve to nothing, as though they were links. The outline is
+now derived from the same parse that stores the slug, which makes them the same
+thing rather than two things that agree; `slugifyHeading` is gone, and a test
+checks every reported anchor against the ones the note carries.
+
+**A second wrong-answer-shaped-right.** `store.ListDocumentLinks` took
+`outgoing`, `incoming` or `both`, and an unrecognised direction fell through
+both branches and returned an empty page. `?direction=out` answered "this note
+has no links" with a 200. It is refused now. I found this by passing `out`
+myself and believing the empty result for a minute, which is exactly what a
+caller would have done.
+
+A correction to my own work: the first Markdown path re-read the note by id
+through `projection.RenderNote`, which excludes Trash, so `notes show` on a
+trashed note reported "no note" -- undoing the careful handling the JSON path
+already had. `TestNoteDeleteAndRestore` caught it. The renderer takes the
+document the caller resolved now, and both output forms are asserted to say a
+note is in Trash.
+
+The command line uses the API's own words for `--direction` rather than a
+shorter pair of its own, because two vocabularies for one idea is the thing this
+milestone keeps finding.
+
+**Not done here:** blocks, line ranges and earlier revisions have no command.
+They are read surfaces REST and MCP have and the command line does not, and the
+guide says so rather than implying the set is complete.
 
 ## H22. Discover the values a query can name — complete
 
