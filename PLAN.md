@@ -46,7 +46,7 @@ What follows is what is left. Each item's own text below is the record of what
 happened, which is a different question.
 
 <!-- notrios:generated:plan:progress:begin -->
-**33 items: 24 complete, 2 in progress, 6 not started, 1 deferred.**
+**33 items: 25 complete, 2 in progress, 5 not started, 1 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -82,7 +82,7 @@ happened, which is a different question.
 | H24. JSON is the output; a template makes it readable | complete | 2/2 | — |
 | H25. Hold each command's flags to its description | complete | 2/2 | — |
 | H26. Ask about one tag without fetching them all | complete | 4/4 | — |
-| H27. Attach a file from the command line, without guessing where the link goes | not-started | 0/5 | 5 |
+| H27. Attach a file from the command line, without guessing where the link goes | complete | 5/5 | — |
 
 ### Started and not finished
 
@@ -96,7 +96,7 @@ happened, which is a different question.
 
 ### Not started
 
-Written and not begun: H10, H11, H12, H17, H13, H27. Their slices are listed under each item.
+Written and not begun: H10, H11, H12, H17, H13. Their slices are listed under each item.
 <!-- notrios:generated:plan:progress:end -->
 
 ## H0. Application-facade, C-ABI, and SQLite ownership investigation — complete
@@ -4660,7 +4660,7 @@ HTTP layer, the Joplin importer and their tests. That is the cost of one query
 path, and it is the right cost: a second narrowing query beside the first is how
 two answers to the same question come to disagree.
 
-## H27. Attach a file from the command line, without guessing where the link goes
+## H27. Attach a file from the command line, without guessing where the link goes — complete
 
 **Ordering.** After H21, which built the reading half. Independent of everything
 else.
@@ -4756,6 +4756,41 @@ prints a `resource://` URI and `notes resources --document <id>` lists it;
 the note's body changed until `notes append` is asked to change it; and a
 command-line journey covers add, list, read and place without a whole-body
 round trip.
+
+**Outcome (2026-09-08).** Done. `resources add` puts local bytes in and prints
+the `resource://` URI; `--document` records the reference in the same step;
+`notes append` and `notes prepend` place the link. A test asserts the note body
+is byte-identical before and after adding a file, because that is the boundary
+the command exists to respect rather than a nicety.
+
+**It found a defect in the store, and my own comment found it.** I wrote that
+the type is left to the store, "which sniffs the bytes on ingest", and the code
+beside it passed `MIMETypeFromFilename` -- which suppresses the sniff. Removing
+that argument made every file `application/octet-stream` instead, which is when
+the real fault appeared: `NormalizeCreateResourceRequest` fills an absent MIME
+type with `application/octet-stream` *before* `writeBlob` runs, `writeBlob`
+treats that same value as "unspecified" and sniffs correctly, and then
+`firstNonEmptyString(req.MIMEType, blob.MIMEType, …)` took the placeholder back.
+The store identified a PNG and recorded octet-stream. Two lines disagreed about
+what the placeholder means; the fix is what `writeBlob` already believed. A text
+file named `.png` is now `text/plain` and a real PNG is `image/png`, and a test
+proves the old behaviour fails.
+
+That affected every caller supplying no type, not only this command.
+
+**On the non-blocking decision: `--document` stays**, as recommended. Splitting
+it would match the API's two routes more exactly and its failure mode is silent
+litter -- an unreferenced resource that `resources report` later flags as
+rubbish -- while combining's failure mode is a flag somebody does not need.
+
+`store.JoinNoteText` moved out of `internal/httpapi`, where the REST and MCP
+append paths both used it privately. Two implementations of "where does the
+newline go" would have disagreed about a note that ends without one, and the
+command line was about to become the second.
+
+**This closed the `attachments` gap in H15.** The ratchet's floor drops from six
+to five, and the comment says why attachments left the list rather than only
+that it did.
 
 ## H13. v0.8 release wrap-up and branch synchronization
 

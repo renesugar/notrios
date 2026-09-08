@@ -63,7 +63,7 @@ which surfaces offer each capability.
 
 Create a note, change it, add to either end of it, and delete it. Deleting moves a note to Trash, and Trash is a place you can look in and take things back out of, not a countdown.
 
-The command line writes, edits, files, trashes and restores a note; appending and prepending to one stay on REST and MCP. `notes create` exists so a note can be the end of a pipeline, and `notes delete` ships with `notes restore` because a delete whose undo lives on another surface is a poor boundary. This entry said editing and deleting happened only in the GUI or over REST/MCP for five days after both commands shipped, because neither appeared in `notriosctl help` and the coverage check reads the help.
+The command line writes, edits, files, trashes and restores a note; appending and prepending arrived with v0.8 H27, because placing an attachment link otherwise meant rewriting the whole note. `notes create` exists so a note can be the end of a pipeline, and `notes delete` ships with `notes restore` because a delete whose undo lives on another surface is a poor boundary. This entry said editing and deleting happened only in the GUI or over REST/MCP for five days after both commands shipped, because neither appeared in `notriosctl help` and the coverage check reads the help.
 
 *Available on the desktop app, the command line, the REST API and MCP.*
 
@@ -125,7 +125,7 @@ A collection is provenance, not a place notes live: notes are imported into a no
 
 Add files to notes, read them back, see what references what, and find attachments nothing points at any more.
 
-Measured by the H15 control crawl, which found the upload field in the note inspector and the Attachments tab. The command line lists what a note carries and writes one attachment's bytes to a file; attaching a file is still REST, MCP or the GUI, because uploading is a write and this half was added as the reading half. Attaching a file is not on the command line yet, and v0.8 H27 adds it: the reasoning that kept it off was right about placement and wrong to stop there, since the product already separates the resource, the reference to it, and the link in the body. The command adds the first two and prints the `resource://` URI for the author to place with `notes edit`, so it guesses at nothing and never writes to a body.
+Measured by the H15 control crawl, which found the upload field in the note inspector and the Attachments tab. The command line lists what a note carries and writes one attachment's bytes to a file; attaching a file is still REST, MCP or the GUI, because uploading is a write and this half was added as the reading half. Attaching a file is on the command line as of v0.8 H27: the reasoning that kept it off was right about placement and wrong to stop there, since the product already separates the resource, the reference to it, and the link in the body. `resources add` adds the first two and prints the `resource://` URI for the author to place with `notes append` or `notes prepend`, so it guesses at nothing and never writes to a body. Those two writes are on the command line now for the same reason: no surface can patch a range of a note body, so placing a link would otherwise mean rewriting the whole note.
 
 *Available on the desktop app, the command line, the REST API and MCP.*
 
@@ -298,7 +298,7 @@ capability's own section.
 
 | Capability | Desktop app | Command line | REST | MCP | Shared library |
 |---|---|---|---|---|---|
-| Write and edit notes | 6 | 4 | 10 | 6 | — |
+| Write and edit notes | 6 | 6 | 10 | 6 | — |
 | Read a note and its structure | 2 | 4 | 7 | 5 | — |
 | Search your notes | 1 | 1 | 3 | 2 | — |
 | Notebooks that are really saved searches | 1 | 1 | 3 | 1 | — |
@@ -306,7 +306,7 @@ capability's own section.
 | Tag and untag a note | 4 | 3 | 2 | 2 | — |
 | See and rename tags | 4 | 3 | 3 | 1 | — |
 | Group libraries into collections | 2 | 2 | 4 | 1 | — |
-| Attach and manage files | 2 | 3 | 8 | 2 | — |
+| Attach and manage files | 2 | 4 | 8 | 2 | — |
 | Bring remote images into the library | 2 | 1 | 4 | 3 | — |
 | Link notes to each other | 1 | 4 | 4 | 1 | — |
 | See the shape of the link graph | 1 | 2 | 4 | 3 | — |
@@ -346,9 +346,9 @@ Each capability below is offered on some surfaces and not others.
 - Templates and tasks — command line only. A template is an ordinary note carrying a note-template block, and a task is a checkbox line in a note tagged `task` or `todo`; neither is a table, and both are read back from the Markdown. So nothing creates a task -- writing `- [ ] chase the permit` into a note is how one comes to exist, which `notes create` already does -- and the command line covers the other half: asking what remains, and instantiating a template, which is the repeatable version of the same workflow. A missing placeholder is refused rather than left blank, so a template that gains a field fails the scripts that do not know about it. The tag is required because a checkbox is ordinary Markdown and appears in quoted examples; `--untagged` asks for those too. No GUI journey yet.
 - Move a pre-0.8 library into place — command line only. Command line only, and genuinely so: it relocates the directories the running program uses, which is not something the program can sensibly do to itself while serving them.
 - Live query blocks inside a note — GUI only. No command line, and that is the line rather than a gap: a query block is a rendering inside a note -- the note carries a fenced query and the interface shows what it matches in place. At a terminal the same question is `notriosctl search`, and formatting the answer is a template tool's job. A command that ran a block's query would be a second way to run a query.
-- Attach and manage files — both surfaces, and neither journey is written yet
 - See and end trust between replicas — both surfaces, and neither journey is written yet
 - Recover a replica and resolve conflicts — both surfaces, and neither journey is written yet
+- Attach and manage files — both, but only the command-line journey is written
 - Group libraries into collections — both, but only the command-line journey is written
 - See the shape of the link graph — both, but only the command-line journey is written
 - Watch and steer long-running work — both, but only the command-line journey is written

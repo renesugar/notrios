@@ -8,6 +8,8 @@
       "cli": [
         "notriosctl notes create",
         "notriosctl notes edit",
+        "notriosctl notes append",
+        "notriosctl notes prepend",
         "notriosctl notes delete",
         "notriosctl notes restore"
       ],
@@ -39,7 +41,7 @@
         "Restore",
         "Permanently delete this note and its revisions"
       ],
-      "surface_note": "The command line writes, edits, files, trashes and restores a note; appending and prepending to one stay on REST and MCP. `notes create` exists so a note can be the end of a pipeline, and `notes delete` ships with `notes restore` because a delete whose undo lives on another surface is a poor boundary. This entry said editing and deleting happened only in the GUI or over REST/MCP for five days after both commands shipped, because neither appeared in `notriosctl help` and the coverage check reads the help."
+      "surface_note": "The command line writes, edits, files, trashes and restores a note; appending and prepending arrived with v0.8 H27, because placing an attachment link otherwise meant rewriting the whole note. `notes create` exists so a note can be the end of a pipeline, and `notes delete` ships with `notes restore` because a delete whose undo lives on another surface is a poor boundary. This entry said editing and deleting happened only in the GUI or over REST/MCP for five days after both commands shipped, because neither appeared in `notriosctl help` and the coverage check reads the help."
     },
     {
       "id": "read-notes",
@@ -224,6 +226,7 @@
       "summary": "Add files to notes, read them back, see what references what, and find attachments nothing points at any more.",
       "cli": [
         "notriosctl resources report",
+        "notriosctl resources add",
         "notriosctl resources get",
         "notriosctl notes resources"
       ],
@@ -241,7 +244,7 @@
         "list_document_resources",
         "read_resource"
       ],
-      "surface_note": "Measured by the H15 control crawl, which found the upload field in the note inspector and the Attachments tab. The command line lists what a note carries and writes one attachment's bytes to a file; attaching a file is still REST, MCP or the GUI, because uploading is a write and this half was added as the reading half. Attaching a file is not on the command line yet, and v0.8 H27 adds it: the reasoning that kept it off was right about placement and wrong to stop there, since the product already separates the resource, the reference to it, and the link in the body. The command adds the first two and prints the `resource://` URI for the author to place with `notes edit`, so it guesses at nothing and never writes to a body.",
+      "surface_note": "Measured by the H15 control crawl, which found the upload field in the note inspector and the Attachments tab. The command line lists what a note carries and writes one attachment's bytes to a file; attaching a file is still REST, MCP or the GUI, because uploading is a write and this half was added as the reading half. Attaching a file is on the command line as of v0.8 H27: the reasoning that kept it off was right about placement and wrong to stop there, since the product already separates the resource, the reference to it, and the link in the body. `resources add` adds the first two and prints the `resource://` URI for the author to place with `notes append` or `notes prepend`, so it guesses at nothing and never writes to a body. Those two writes are on the command line now for the same reason: no surface can patch a range of a note body, so placing a link would otherwise mean rewriting the whole note.",
       "gui": [
         "Upload image/PDF/resource — the file field in the note inspector",
         "Attachments — a sync centre tab"

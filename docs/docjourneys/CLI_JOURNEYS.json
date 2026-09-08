@@ -2058,6 +2058,91 @@
           "publication_handoff"
         ]
       }
+    },
+    {
+      "id": "attach-a-file-to-a-note",
+      "title": "Attach a file to a note, and put its link where you want it",
+      "goal": "Put a file into the library, record it against a note, and place the link yourself.",
+      "feature": "attachments",
+      "guessability": "notrios-specific",
+      "note": "Three things happen and only two are automatic: the file becomes a resource, the note records that it carries it, and the link goes wherever you put it. A command that placed the link would be guessing at the one thing only the writer knows.",
+      "steps": [
+        {
+          "narrative": "Write the note the file belongs to.",
+          "command": [
+            "notes",
+            "create",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--title",
+            "Field notes",
+            "--body",
+            "Seen at dusk."
+          ]
+        },
+        {
+          "narrative": "Put the file in, and record it against the note. The type comes from the bytes rather than the file's extension, and the note's body is untouched.",
+          "command": [
+            "resources",
+            "add",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--file",
+            "{joplin}/note.md",
+            "--document",
+            "{note}"
+          ]
+        },
+        {
+          "narrative": "See it listed on the note, with its id, type, size and hash.",
+          "command": [
+            "notes",
+            "resources",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--document",
+            "{note}"
+          ]
+        },
+        {
+          "narrative": "Place the link where you want it. `append` and `prepend` exist so this does not mean rewriting the whole note: nothing anywhere can patch a range of a body.",
+          "command": [
+            "notes",
+            "append",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--document",
+            "{note}",
+            "--text",
+            "See the attachment above."
+          ]
+        }
+      ],
+      "postcondition": {
+        "narrative": "the note carries the attachment, and the text you added, and nothing else changed",
+        "command": [
+          "notes",
+          "show",
+          "--db",
+          "{db}",
+          "--asset-store",
+          "{assets}",
+          "--document",
+          "{note}"
+        ],
+        "contains": [
+          "Seen at dusk.",
+          "See the attachment above."
+        ]
+      }
     }
   ]
 }

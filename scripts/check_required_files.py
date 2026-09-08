@@ -130,6 +130,8 @@ required = [
     'internal/store/tagquery_test.go',
     'internal/snapshotimage/restore_fresh_test.go',
     'cmd/notriosctl/flags_test.go',
+    'cmd/notriosctl/attach.go',
+    'cmd/notriosctl/attach_test.go',
     'cmd/notriosctl/noteread.go',
     'cmd/notriosctl/noteread_test.go',
     'internal/httpapi/outline_test.go',

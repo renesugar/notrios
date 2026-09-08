@@ -1247,3 +1247,28 @@ func CollectionScopeSQL(alias string) string {
 	}
 	return column + " = COALESCE(NULLIF(?, ''), " + column + ")"
 }
+
+// JoinNoteText appends or prepends text to a note body, keeping the newline
+// between them right.
+//
+// It lives here rather than in the HTTP layer because the command line does the
+// same thing, and two implementations of "where does the newline go" would
+// eventually disagree about a note that ends without one.
+func JoinNoteText(body, text string, prepend bool) string {
+	if prepend {
+		if body == "" {
+			return text
+		}
+		if !strings.HasSuffix(text, "\n") {
+			text += "\n"
+		}
+		return text + body
+	}
+	if body == "" {
+		return text
+	}
+	if !strings.HasSuffix(body, "\n") {
+		body += "\n"
+	}
+	return body + text
+}

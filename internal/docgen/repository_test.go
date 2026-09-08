@@ -64,7 +64,11 @@ func TestRepositoryEnumerationsMatchFiniteRegistries(t *testing.T) {
 		// 86 -> 87 in v0.8 H19: `notriosctl search`. Searching a library was the
 		// one everyday capability with no command at all, which meant nothing at
 		// a terminal produced the note identifiers every other command takes.
-		{cliHelpAnchor, 87},
+		// 87 -> 90 in v0.8 H27: `resources add`, `notes append` and
+		// `notes prepend`. The command line could read attachments and not add
+		// one, and placing a link meant rewriting the whole note because no
+		// surface can patch a range of a body.
+		{cliHelpAnchor, 90},
 		{restAnchor, 109},
 		{mcpToolsAnchor, 46},
 		{mcpSyncScopeAnchor, 7},

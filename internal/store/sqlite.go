@@ -1614,7 +1614,24 @@ func (s *SQLiteStore) CreateResource(ctx context.Context, req CreateResourceRequ
 	if cleanup != nil {
 		defer cleanup()
 	}
-	mimeType := firstNonEmptyString(req.MIMEType, blob.MIMEType, "application/octet-stream")
+	// The sniffed type wins over the placeholder. NormalizeCreateResourceRequest
+	// fills an absent MIME type with "application/octet-stream" before this runs,
+	// and writeBlob treats that same value as "unspecified" and sniffs the bytes
+	// — so taking the request's value first threw the answer away and recorded
+	// octet-stream for a file the store had already identified as a PNG. The two
+	// lines disagreed about what the placeholder means; this is what writeBlob
+	// already believed.
+	// The sniffed type wins over the placeholder. NormalizeCreateResourceRequest
+	// fills an absent MIME type with "application/octet-stream" before this runs,
+	// and writeBlob treats that same value as "unspecified" and sniffs the bytes
+	// -- so taking the request's value first threw the answer away and recorded
+	// octet-stream for a file the store had already identified as a PNG. The two
+	// lines disagreed about what the placeholder means; this is what writeBlob
+	// already believed.
+	mimeType := req.MIMEType
+	if strings.TrimSpace(mimeType) == "" || strings.EqualFold(mimeType, "application/octet-stream") {
+		mimeType = firstNonEmptyString(blob.MIMEType, "application/octet-stream")
+	}
 	perceptualHash, err := s.computePerceptualHash(ctx, blob, mimeType)
 	if err != nil {
 		return Resource{}, err
@@ -1686,7 +1703,17 @@ func (s *SQLiteStore) UpdateResource(ctx context.Context, req UpdateResourceRequ
 	if cleanup != nil {
 		defer cleanup()
 	}
-	mimeType := firstNonEmptyString(req.MIMEType, blob.MIMEType, "application/octet-stream")
+	// The sniffed type wins over the placeholder. NormalizeCreateResourceRequest
+	// fills an absent MIME type with "application/octet-stream" before this runs,
+	// and writeBlob treats that same value as "unspecified" and sniffs the bytes
+	// -- so taking the request's value first threw the answer away and recorded
+	// octet-stream for a file the store had already identified as a PNG. The two
+	// lines disagreed about what the placeholder means; this is what writeBlob
+	// already believed.
+	mimeType := req.MIMEType
+	if strings.TrimSpace(mimeType) == "" || strings.EqualFold(mimeType, "application/octet-stream") {
+		mimeType = firstNonEmptyString(blob.MIMEType, "application/octet-stream")
+	}
 	perceptualHash, err := s.computePerceptualHash(ctx, blob, mimeType)
 	if err != nil {
 		return Resource{}, err

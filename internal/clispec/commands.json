@@ -333,6 +333,17 @@
     {
       "path": [
         "notes",
+        "append"
+      ],
+      "usage": "--document <id> [--text <text> | --text-file path|-] [--base-revision rev] [--db ...]",
+      "purpose": "add text to the end of a note",
+      "notes": [
+        "retries once against the current revision unless --base-revision pins one"
+      ]
+    },
+    {
+      "path": [
+        "notes",
         "create"
       ],
       "notes": [
@@ -393,6 +404,15 @@
         "the anchors are the ones a notrios:// link resolves against"
       ],
       "purpose": "list a note's headings, with the anchor and line of each"
+    },
+    {
+      "path": [
+        "notes",
+        "prepend"
+      ],
+      "usage": "--document <id> [--text <text> | --text-file path|-] [--base-revision rev] [--db ...]",
+      "purpose": "add text to the start of a note",
+      "notes": []
     },
     {
       "path": [
@@ -561,6 +581,18 @@
       "notes": [],
       "purpose": "Ubuntu/XDG notrios:// protocol handler; prints unless --apply",
       "usage": "[--apply] [--binary path] [--dir path]"
+    },
+    {
+      "path": [
+        "resources",
+        "add"
+      ],
+      "usage": "--file <path> [--filename <name>] [--document <id>] [--db ...]",
+      "purpose": "put a local file into the library and print the resource:// link to paste",
+      "notes": [
+        "never writes to a note body; placing the link is yours",
+        "the type comes from the bytes rather than the file extension"
+      ]
     },
     {
       "path": [

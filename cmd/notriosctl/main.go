@@ -455,6 +455,7 @@ func printResourcesUsage() {
 	fmt.Fprint(os.Stderr, `usage:
   notriosctl resources report [--config config.yaml] [--db path] [--asset-store path]
   notriosctl resources get --resource <id> [--output <file>] [--db ...]
+  notriosctl resources add --file <path> [--filename <name>] [--document <id>] [--db ...]
 `)
 }
 
@@ -468,6 +469,8 @@ func runResources(args []string) {
 		runResourceReport(args[1:])
 	case "get":
 		runResourceGet(args[1:])
+	case "add":
+		runResourceAdd(args[1:])
 	default:
 		fmt.Fprintf(os.Stderr, "unknown resources subcommand %q\n", args[0])
 		printResourcesUsage()

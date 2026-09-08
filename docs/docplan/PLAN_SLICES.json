@@ -594,32 +594,37 @@
     {
       "id": "H27",
       "title": "Attach a file from the command line, without guessing where the link goes",
-      "state": "not-started",
+      "state": "complete",
       "slices": [
         {
           "id": "H27-A",
           "statement": "The command line puts local bytes into the library and prints the resource:// URI to paste",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:cmd/notriosctl/attach.go"
         },
         {
           "id": "H27-B",
           "statement": "A file can be recorded against a note in the same step, so nothing is left unreferenced by a forgotten second command",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "test:TestAddingAFileNeverTouchesTheBody"
         },
         {
           "id": "H27-E",
           "statement": "The command line can append and prepend to a note, so placing a link does not mean rewriting the whole body",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "test:TestAppendAndPrependPlaceTheLinkWithoutRewritingTheNote"
         },
         {
           "id": "H27-C",
           "statement": "The command never writes to a note body, and a test proves the body is unchanged",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "test:TestAddingAFileNeverTouchesTheBody"
         },
         {
           "id": "H27-D",
           "statement": "A journey adds a file, lists it on the note, reads its bytes back and places the link",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "test:TestCLIJourneysActuallyRun"
         }
       ]
     }

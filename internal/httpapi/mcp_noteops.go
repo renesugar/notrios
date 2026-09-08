@@ -179,7 +179,7 @@ func (s *Server) mcpWriteTool(r *http.Request, name string, raw json.RawMessage)
 		if store.IsReadOnlyNotebook(doc.NotebookID) {
 			return mcpToolResult{}, fmt.Errorf("notes in the %s notebook are read-only", store.ReadOnlyNotebookName(doc.NotebookID))
 		}
-		body := joinNoteText(doc.Body, args.Text, name == "prepend_to_note")
+		body := store.JoinNoteText(doc.Body, args.Text, name == "prepend_to_note")
 		updated, err := s.store.UpdateDocument(ctx, store.UpdateDocumentRequest{
 			ID:             doc.ID,
 			Title:          doc.Title,

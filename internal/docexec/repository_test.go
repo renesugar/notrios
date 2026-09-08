@@ -140,7 +140,8 @@ func TestRepositoryExamples(t *testing.T) {
 	// 150 -> 151 entries in v0.8 H19: the search synopsis in docs/cli.md, a
 	// bracketed-flag form whose command is covered by executed tests and by an
 	// executed journey.
-	if report.Executed != 65 || report.Entries != 151 || len(report.Topics) != 14 {
+	// 151 -> 152 entries in v0.8 H27: the attachment synopsis in docs/cli.md.
+	if report.Executed != 65 || report.Entries != 152 || len(report.Topics) != 14 {
 		t.Fatalf("unexpected G18d coverage: %+v", report)
 	}
 	executedTopics := 0

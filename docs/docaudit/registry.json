@@ -1399,6 +1399,18 @@
       }
     },
     {
+      "id": "cli-resources-add-notes-append-notes-prepend-example-1",
+      "path": "docs/cli.md",
+      "section": "resources-add-notes-append-notes-prepend",
+      "language": "sh",
+      "sha256": "f686da45c3e765ba4dc4890e24b2a4fe7cd1c5b093681bc13efa2e59436b0bd8",
+      "state": "unverified",
+      "unrun_reason": {
+        "code": "illustrative-placeholder",
+        "detail": "Non-literal command synopsis: bracketed flags are optional-argument notation and <path>, <id> and <text> are placeholders. All three commands are covered by executed tests in go:github.com/renesugar/notrios/cmd/notriosctl (TestAddingAFileNeverTouchesTheBody, TestTheStoredTypeComesFromTheBytes, TestAppendAndPrependPlaceTheLinkWithoutRewritingTheNote) and by the executed CLI journey attach-a-file-to-a-note; no executed concrete CLI example is registered for the synopsis form."
+      }
+    },
+    {
       "id": "cli-resources-report-example-1",
       "path": "docs/cli.md",
       "section": "resources-report",

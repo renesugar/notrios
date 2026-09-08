@@ -72,9 +72,10 @@ func TestFeaturesWithoutAJourneyAreTracked(t *testing.T) {
 	//
 	//   - query-blocks, batch-operations and mcp-endpoint have no command line
 	//     at all, so no command-line journey can exist for them;
-	//   - attachments has only the reading half -- resources report, resources
-	//     get, notes resources -- because attaching a file is REST, MCP or the
-	//     GUI, so a journey could only demonstrate reading nothing;
+	//   - attachments was in this list for the same reason, and v0.8 H27 took it
+	//     out: `resources add` puts local bytes in and prints the resource://
+	//     URI, and `notes append` places it, so the journey is real work rather
+	//     than a demonstration of reading nothing;
 	//   - sync-peers and sync-recovery are blocked on the harness, though not
 	//     for the reason first recorded here. Two libraries are expressible:
 	//     Substitute replaces anywhere in an argument and `{sandbox}` is
@@ -87,7 +88,8 @@ func TestFeaturesWithoutAJourneyAreTracked(t *testing.T) {
 	// Only that last one is a limitation of the tooling. batch-operations is a
 	// gap H17 closes; query-blocks, mcp-endpoint and the attaching half of
 	// attachments are boundaries, and the plan says why for each.
-	const baseline = 6
+	// 6 -> 5 in v0.8 H27: attaching a file from the command line.
+	const baseline = 5
 
 	catalogue, registry := load(t)
 	covered := map[string]bool{}

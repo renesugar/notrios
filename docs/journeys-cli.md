@@ -354,6 +354,19 @@ Each task below lists the steps that do it, in order.
   - Read the plan. This is a read-only privacy review: it changes nothing and prints the digest the run will be held to.
 
     `notriosctl publish plan --profile site`
+**Attach a file to a note, and put its link where you want it** — Put a file into the library, record it against a note, and place the link yourself. Three things happen and only two are automatic: the file becomes a resource, the note records that it carries it, and the link goes wherever you put it. A command that placed the link would be guessing at the one thing only the writer knows.
+  - Write the note the file belongs to.
+
+    `notriosctl notes create --title "Field notes" --body "Seen at dusk."`
+  - Put the file in, and record it against the note. The type comes from the bytes rather than the file's extension, and the note's body is untouched.
+
+    `notriosctl resources add --file {joplin}/note.md --document <note>`
+  - See it listed on the note, with its id, type, size and hash.
+
+    `notriosctl notes resources --document <note>`
+  - Place the link where you want it. `append` and `prepend` exist so this does not mean rewriting the whole note: nothing anywhere can patch a range of a body.
+
+    `notriosctl notes append --document <note> --text "See the attachment above."`
 <!-- notrios:generated:user:the-journeys:end -->
 
 

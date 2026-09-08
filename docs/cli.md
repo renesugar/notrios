@@ -37,12 +37,14 @@ nothing checked against the dispatcher. Eight commands were missing from it.
 - notriosctl migrate [--from dir] [--dry-run] [--json]
 - notriosctl notebooks create --name <name> [--parent <id|name>] [--icon <emoji>] [--query <query>]
 - notriosctl notebooks list [--json] [--db ...]
+- notriosctl notes append --document <id> [--text <text> | --text-file path|-] [--base-revision rev] [--db ...]
 - notriosctl notes create --title <title> [--notebook <id|name>] [--body-file path|-] [--body text]
 - notriosctl notes delete --document <id> [--db ...]
 - notriosctl notes edit --document <id> [--title <title>] [--body-file path | --body text] [--message <why>]
 - notriosctl notes links --document <id> [--direction outgoing|incoming|both] [--output <file>] [--db ...]
 - notriosctl notes move --document <id> --notebook <id|name> [--db ...]
 - notriosctl notes outline --document <id> [--output <file>] [--db ...]
+- notriosctl notes prepend --document <id> [--text <text> | --text-file path|-] [--base-revision rev] [--db ...]
 - notriosctl notes resources --document <id> [--output <file>] [--db ...]
 - notriosctl notes restore --document <id> [--db ...]
 - notriosctl notes show --document <id> [--json] [--output <file>] [--db ...]
@@ -61,6 +63,7 @@ nothing checked against the dispatcher. Eight commands were missing from it.
 - notriosctl publish profile save --name <profile> [--notebooks id,id] [--tags a,b] [--link-action plain_text] [--description text] [--query "tag:todo"] [--documents id,id] [--match any|all] [--target full_archive|subset_transfer] [--exclude-tags a,b] [--private-tags a,b] [--include-provenance] [--include-source-bundles] [--max-resource-bytes N]
 - notriosctl publish run --profile <profile> --reviewed-plan <sha256> <out-dir> [--overwrite] [--no-verify]
 - notriosctl register-url-handler [--apply] [--binary path] [--dir path]
+- notriosctl resources add --file <path> [--filename <name>] [--document <id>] [--db ...]
 - notriosctl resources get --resource <id> [--output <file>] [--db ...]
 - notriosctl resources report [--config config.yaml] [--db ...] [--asset-store ...]
 - notriosctl restore archive-v2 --intent replace|adopt|merge|fork [--db ...] [--new-database-id id] <archive-dir>
@@ -911,6 +914,53 @@ existed: `GET /api/v1/documents/{id}`, `/body`, `/outline`, `/blocks`, `/lines`,
 `get_note_line_range`, `list_document_resources`, `list_document_links` and
 `read_resource` tools. Blocks, line ranges and earlier revisions have no command
 of their own yet.
+
+## resources add / notes append / notes prepend
+
+```sh
+notriosctl resources add --file <path> [--filename <name>] [--document <id>]
+notriosctl notes append --document <id> --text "<text>"
+notriosctl notes prepend --document <id> --text "<text>"
+```
+
+Attaching a file is three things and only two of them are automatic:
+
+1. the **resource** — the bytes, content-addressed, with an id and a
+   `resource://` URI;
+2. the **reference** — the note recording that it carries the attachment, which
+   is what `notes resources` lists;
+3. the **link in the body** — where it renders, which is yours.
+
+`resources add` does the first, and the second when `--document` names a note.
+It prints the URI to paste and **never writes to a note body**: putting the link
+somewhere of its own choosing would be guessing at the one thing only the writer
+knows.
+
+```text
+{ "resource_id": "res_rqai…", "uri": "resource://default/resources/res_rqai…",
+  "filename": "photo.png", "mime_type": "image/png",
+  "size_bytes": 20418, "sha256": "ab444b…" }
+```
+
+**The type comes from the bytes, not the extension.** A text file named `.png`
+is recorded as `text/plain`, because an extension is what somebody typed.
+
+`notes append` and `notes prepend` place the link. They exist because **nothing
+on any surface can patch a range of a note body** — REST and MCP can read one
+(`GET /documents/{id}/lines`, `get_note_line_range`) and neither can write one —
+so without them, adding a line means reading the whole note, editing it
+elsewhere and writing it all back, losing any concurrent edit in between. Both
+take `--text` or `--text-file` (or `-` for standard input), and
+`--base-revision` pins the revision they apply to; without it they retry once
+against whatever is current.
+
+This is local bytes only. A URL belongs to `notriosctl localize`, which goes
+through the domain policy, quarantine, hashing and SSRF protections that fetching
+requires.
+
+**Also on REST and MCP:** `POST /api/v1/resources` and
+`POST /api/v1/documents/{id}/resources/{resource_id}`; `POST /append` and
+`/prepend`, and the `append_to_note` and `prepend_to_note` tools.
 
 ## notes move
 

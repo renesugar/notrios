@@ -74,7 +74,7 @@ func (s *Server) handleAppendOrPrepend(w http.ResponseWriter, r *http.Request, p
 		if base == "" {
 			base = current.RevisionID
 		}
-		body := joinNoteText(current.Body, req.Text, prepend)
+		body := store.JoinNoteText(current.Body, req.Text, prepend)
 		message := "append"
 		if prepend {
 			message = "prepend"
@@ -99,25 +99,6 @@ func (s *Server) handleAppendOrPrepend(w http.ResponseWriter, r *http.Request, p
 	}
 	setRevisionETag(w, note.RevisionID)
 	writeJSON(w, http.StatusOK, apiDocumentFromNote(note))
-}
-
-func joinNoteText(body, text string, prepend bool) string {
-	if prepend {
-		if body == "" {
-			return text
-		}
-		if !strings.HasSuffix(text, "\n") {
-			text += "\n"
-		}
-		return text + body
-	}
-	if body == "" {
-		return text
-	}
-	if !strings.HasSuffix(body, "\n") {
-		body += "\n"
-	}
-	return body + text
 }
 
 // handleDocumentLines returns a 1-indexed inclusive slice of the note body.

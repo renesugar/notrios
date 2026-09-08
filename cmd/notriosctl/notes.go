@@ -29,6 +29,10 @@ func runNotes(args []string) {
 		runNoteResources(args[1:])
 	case "links":
 		runNoteLinks(args[1:])
+	case "append":
+		runNoteAppend(args[1:])
+	case "prepend":
+		runNotePrepend(args[1:])
 	case "edit":
 		runNoteEdit(args[1:])
 	case "delete":
@@ -51,6 +55,8 @@ func printNotesUsage() {
   notriosctl notes outline --document <id> [--output <file>]
   notriosctl notes resources --document <id> [--output <file>]
   notriosctl notes links --document <id> [--direction out|in] [--output <file>]
+  notriosctl notes append --document <id> [--text <text> | --text-file path|-]
+  notriosctl notes prepend --document <id> [--text <text> | --text-file path|-]
   notriosctl notes edit --document <id> [--title <title>] [--body-file path | --body text]
   notriosctl notes delete --document <id>
   notriosctl notes restore --document <id>
