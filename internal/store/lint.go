@@ -39,6 +39,16 @@ const (
 	LintMissingAltText          = "missing_alt_text"
 	LintUnreferencedResource    = "unreferenced_resource"
 	LintProjectionBacklog       = "projection_backlog"
+	// LintDanglingCollection finds a note whose collection identifier names no
+	// collection row.
+	//
+	// `documents.collection_id` is a foreign key and `PRAGMA foreign_keys` is
+	// ON, so no supported write can produce this. A physical snapshot restore
+	// suspends the constraint while it installs an image, and sync applies
+	// canonical metadata, so a library can still *arrive* in this state -- and
+	// nothing said so. That is what a lint check is for: a library that came in
+	// broken rather than one that was broken here.
+	LintDanglingCollection = "dangling_collection"
 )
 
 // LintChecks lists every check in report order.
@@ -55,6 +65,7 @@ func LintChecks() []string {
 		LintMissingAltText,
 		LintUnreferencedResource,
 		LintProjectionBacklog,
+		LintDanglingCollection,
 	}
 }
 

@@ -46,7 +46,7 @@ What follows is what is left. Each item's own text below is the record of what
 happened, which is a different question.
 
 <!-- notrios:generated:plan:progress:begin -->
-**32 items: 22 complete, 4 in progress, 5 not started, 1 deferred.**
+**32 items: 23 complete, 3 in progress, 5 not started, 1 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -70,7 +70,7 @@ happened, which is a different question.
 | H11. Android-emulator shared-core acceptance | not-started | 0/2 | 2 |
 | H12. Delayed GitHub native validation and develop-to-main pull request | not-started | 0/2 | 2 |
 | H15. Complete the journey catalogues, and give the GUI an inventory | in-progress | 6/9 | 3 |
-| H16. Reconcile the collection model with what is actually stored | in-progress | 2/6 | 4 |
+| H16. Reconcile the collection model with what is actually stored | complete | 7/7 | — |
 | H17. Act on many notes at once, from the search results and from a query | not-started | 0/3 | 3 |
 | H18. Make the features page usable, and generate the table under it | in-progress | 3/4 | 1 |
 | H19. notriosctl search | complete | 4/4 | — |
@@ -90,13 +90,6 @@ happened, which is a different question.
 - `H15-G` Write GUI journeys for the twelve features that have an interface surface and none: collections, attachments, remote media, links, graph, query blocks, sync pairing, sync exchange, sync peers, sync recovery, jobs and profiles — *not-started*
 - `H15-H` Work down the eighteen features with no command-line journey, which the ratchet tracks — *not-started*
 - `H15-I` Decide how much of the query language one journey should demonstrate, and whether interface journeys should point at command-line-only tasks — *not-started*
-
-**H16. Reconcile the collection model with what is actually stored**
-
-- `H16-C` Remove kind and capabilities from api.Collection, the OpenAPI schema and MCP list_collections, and the three columns that never existed from DATABASE_SCHEMA.md — *not-started*
-- `H16-D` Decide whether a dangling collection identifier is repaired by adopting the note into default or by recreating the missing row, and what schema precondition that repair requires — *not-started*
-- `H16-E` Decide whether a collection's name and description stay editable, and write the route if they do — *not-started*
-- `H16-F` Decide whether the breaking response-shape change ships in v0.8 — *not-started*
 
 **H18. Make the features page usable, and generate the table under it**
 
@@ -3293,7 +3286,7 @@ its author expected is exactly the failure that pattern exists to prevent.
   folder and are therefore desktop-only, so it would be the one item in the
   panel that is sometimes absent.
 
-## H16. Reconcile the collection model with what is actually stored
+## H16. Reconcile the collection model with what is actually stored — complete
 
 **Goal.** Decide what a collection is, then make the schema, the API, the
 documentation and the code agree. Everything below was found while making
@@ -3454,23 +3447,52 @@ re-read afterwards -- which is the more useful finding: the bug was never
   four questions: lint sees the note, fix reaches it, a full archive contains
   it, and asking for one collection still narrows.
 - **Whether a dangling collection identifier is repaired by adopting the note
-  into `default` or by recreating the missing collection row.** The answer above
-  says adopt, and that is in tension with "where a note originated does not
-  change": adopting rewrites provenance, where recreating the row preserves the
-  identifier and admits only that the description of it was lost. Recreating
-  looks better on that principle; adopting is simpler and is what a person
-  actually wants if the identifier is meaningless. Worth settling before either
-  is written, because both are one-way.
+  into `default` or by recreating the missing collection row -- Decided
+  2026-09-08: recreate the row.** Adopting rewrites provenance; recreating
+  preserves the identifier and admits only that the description of it was lost.
+  The label decision above is what makes this affordable: a recreated row can be
+  renamed into something meaningful, so nobody has to rewrite a note's origin to
+  get a readable name. Adopting was simpler and was the wrong kind of simple --
+  it destroys the one fact the field exists to carry, and it is one-way.
 - **What "the necessary schema for Notrios" means as a precondition of that
   repair**, and whether the repair runs by default or only when asked for. Every
   other `fix` kind is mechanical and reversible in effect; this one changes what
   a note says about where it came from.
-- **Whether removing `kind` and `capabilities` ships in v0.8.** They are
-  `required` in the OpenAPI response schema, so removing them is a breaking
-  change to a documented shape. Pre-1.0, with no consumer that reads either
-  field, removing them now is the honest move and is recommended; the
-  alternative is keeping them as deprecated constants until a major boundary,
-  which preserves a promise nobody is relying on.
+- **Whether removing `kind` and `capabilities` ships in v0.8 -- Decided
+  2026-09-08: yes.** They are `required` in the OpenAPI response schema, so
+  removing them is a breaking change to a documented shape. Pre-1.0, with no
+  consumer that reads either field -- checked: nothing in `web/`, and the only
+  readers are the two handlers that emit them -- removing them now is the honest
+  move. The alternative preserved a promise nobody was relying on.
+
+- **Whether a collection's label is editable -- Decided 2026-09-08: yes, and it
+  already is.** `PATCH /api/v1/collections/{collection_id}` is routed today, so
+  the question was keep-or-remove rather than write-or-not. Keeping it is what
+  makes the answer to the identifier question affordable: an import mints an
+  identifier from whatever `--collection` was typed, and two Joplin exports
+  imported months apart become two collections whose ids carry dates. Being able
+  to call one "Joplin export, January 2026" afterwards costs nothing and changes
+  no provenance, because the identifier is untouched. Editing the *label* and
+  editing the *identifier* are different acts, and only the first is offered.
+
+- **What happens to the hardcoded `capabilities` in archive-v2 -- Decided
+  2026-09-08: remove it.** `store.Collection.Capabilities` is a constant --
+  `documents, search, resources, links, graph` for every row -- and
+  `internal/archivev2` writes it into every collection record. After the API
+  removal it would exist only to be written into archives, recording the same
+  five words about every collection anyone ever had.
+
+  **This is a cross-repository change and the order is not optional.**
+  `movenotes-v3`'s `notrios_archive.py` declares `capabilities` in the
+  *required* half of the collection payload and enforces sortedness, so an
+  archive written without it is refused by that verifier. The verifier must stop
+  requiring the field before Notrios stops writing it; the other order makes
+  every archive written in between unreadable to the importer.
+
+  Not to be confused with the archive's own `required_capabilities` -- the five
+  base capabilities that gate whether a reader may open an archive at all. That
+  is a real mechanism and is untouched. The word does two jobs and only one of
+  them means anything.
 - **Whether a collection's `name` and `description` stay editable.** The
   identifier is immutable and the row undeletable, but correcting a label is not
   a change to where a note came from. If they are editable there is a
@@ -3501,6 +3523,45 @@ against a single-collection library could not have shown it.
 what decides whether a collection is a label or a contract; the display is
 honest either way, because it shows what the note records.
 
+
+**Outcome (2026-09-08).** Done. `kind` and `capabilities` are gone from
+`api.Collection`, the OpenAPI schema and `list_collections`; the hardcoded
+capabilities are no longer written into archive-v2; `DATABASE_SCHEMA.md`
+describes the three columns the table has rather than the three it never had;
+and a note whose collection identifier names no row is reported by lint.
+
+**The archive change was a cross-repository change, and the order was the whole
+risk.** `movenotes-v3`'s verifier had `capabilities` in the *required* half of
+the collection payload, so an archive written without it would have been
+refused. That verifier stopped requiring the field first (`cc4ec25`), with a
+test that proves the old shape refused and the new one accepts both; Notrios
+stopped writing it second. The other order would have made every archive written
+in between unreadable by the importer.
+
+**And the reading direction nearly lost more than the writing one.** Deleting
+the field from `CollectionRecord` compiled, and would have made
+`archivev2.decodeStrict` -- which sets `DisallowUnknownFields` -- reject every
+archive Notrios had already produced. The field stays, read and never written,
+with `omitempty` doing the work. Two tests hold both directions: a new record
+carries no `capabilities`, and an older one still decodes with its five values
+intact.
+
+`POST /api/v1/collections` still accepts `kind` and ignores it. Removing it from
+the response was the point; refusing it on the way in would be a second break
+for a caller written against the older shape, over a field that was never
+stored.
+
+**On the dangling-identifier repair: decided, detected, and deliberately not
+built.** `documents.collection_id` is a foreign key and `PRAGMA foreign_keys` is
+ON, so no supported write can produce the state -- a physical restore suspends
+the constraint while installing an image, which is how a library can *arrive*
+in it. Detection is what makes the decision actionable and is read-only, so lint
+gained `dangling_collection`; the repair is not written, because it would be
+code for a condition nothing reachable produces, and the answer is recorded so
+that whoever first observes one does not have to decide under pressure. The
+schema precondition, asked in the original decision, has an answer: the repair
+needs the constraint back on, because a recreated row it cannot verify is a
+guess.
 ## H18. Make the features page usable, and generate the table under it
 
 **Ordering.** After H15, whose registry and coverage gates this builds on.

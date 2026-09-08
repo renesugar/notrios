@@ -28,11 +28,34 @@ type BlobReference struct {
 	MediaType string `json:"media_type"`
 }
 
+// CollectionRecord is a collection as an archive carries it.
+//
+// It had a `capabilities` array until v0.8 H16. Nothing chose the value: the
+// store returned the same five words -- documents, search, resources, links,
+// graph -- for every collection, so every archive ever written recorded the
+// same sentence about every collection anyone had. A field that cannot differ
+// between rows is a fact about the code, and an archive is for facts about the
+// library.
+//
+// Removing it is a format change with a reader outside this repository:
+// movenotes-v3's verifier had `capabilities` in the required half of this
+// payload. That verifier stopped requiring it first, in commit cc4ec25; the
+// other order would have made every archive written in between unreadable
+// there. Archives written before this change still carry the field and are
+// still accepted, by that verifier and by the reader below.
+//
+// Not to be confused with the archive's own required capabilities, which gate
+// whether a reader may open an archive at all. Those are real and untouched.
 type CollectionRecord struct {
-	ID           string          `json:"id"`
-	Name         string          `json:"name"`
-	Description  string          `json:"description,omitempty"`
-	Capabilities []string        `json:"capabilities"`
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+	// Capabilities is read and never written. The field stays because
+	// decodeStrict refuses unknown fields, so deleting it would make this
+	// reader reject every archive Notrios has already produced -- a worse break
+	// than the one being fixed, and in the direction that loses data rather
+	// than tidiness. `omitempty` is what stops it being written again.
+	Capabilities []string        `json:"capabilities,omitempty"`
 	SettingsJSON json.RawMessage `json:"settings_json"`
 	CreatedAt    string          `json:"created_at"`
 }

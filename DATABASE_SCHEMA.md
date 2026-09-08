@@ -32,14 +32,38 @@ and broad filesystem search (see `RECOLL_INTEGRATION.md`).
 
 ### collections
 
-A collection is a logical namespace such as `personal-notes`, `joplin-raw-2026-07`, `obsidian-vault`, `twitter-archive`, or `research-pdfs`.
+A collection records **provenance**: where a body of notes came from, such as
+`joplin-raw-2026-07` or `obsidian-vault`. It is not a place notes live — notes
+are imported into a *notebook*, which is what a person browses — and a note
+carries at most a collection identifier while the collection row is information
+about that identifier.
 
-Important fields:
+The table has three columns:
 
-- `id`: stable public collection ID.
-- `kind`: `managed`, `external`, `imported`, `sidecar_indexed`, or `projection`.
-- `capabilities_json`: declares whether the collection supports write, resources, publishing, graph, remote media, and MCP reads.
-- `settings_json`: collection-specific configuration.
+- `id`: the identifier a note carries, and what `collection:"id"` names in a query.
+- `name`: a label for a reader. Editable through
+  `PATCH /api/v1/collections/{collection_id}`, because an import mints an
+  identifier from whatever `--collection` was typed and two exports of the same
+  source months apart become two collections whose ids carry dates. Renaming
+  changes no provenance: the identifier is untouched.
+- `description`: optional prose about where the notes came from.
+
+`documents.collection_id` is a foreign key to `collections(id)` and
+`PRAGMA foreign_keys` is ON, so a note cannot name a collection that does not
+exist. A physical snapshot restore suspends the constraint while installing an
+image, so a library can still *arrive* with a dangling identifier; `notriosctl
+lint` reports it as `dangling_collection`. The decided repair is to recreate the
+missing row, preserving the identifier, rather than to adopt the note into
+`default` — adopting would rewrite the one fact the field carries.
+
+**This section described three columns that never existed** — `kind`,
+`capabilities_json` and `settings_json` — until v0.8 H16. The API reported the
+first two from constants: `kind` was always `managed` and `capabilities` the
+same five words on every row. Both are gone from the API, the OpenAPI schema and
+`list_collections`, and `capabilities` is no longer written into archive-v2
+records. `kind` is still accepted on `POST /api/v1/collections` and ignored,
+because refusing it would break a caller written against the older shape over a
+field that was never stored.
 
 ### documents and document_revisions
 

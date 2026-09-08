@@ -244,7 +244,7 @@ func (s *Server) mcpListCollections(r *http.Request) (mcpToolResult, error) {
 	}
 	out := make([]api.Collection, 0, len(collections))
 	for _, c := range collections {
-		out = append(out, api.Collection{ID: c.ID, Name: c.Name, Kind: "managed", Description: c.Description, Capabilities: c.Capabilities})
+		out = append(out, api.Collection{ID: c.ID, Name: c.Name, Description: c.Description})
 	}
 	return mcpStructured(map[string]any{"collections": out})
 }

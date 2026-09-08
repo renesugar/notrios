@@ -245,7 +245,7 @@
     {
       "id": "H16",
       "title": "Reconcile the collection model with what is actually stored",
-      "state": "in-progress",
+      "state": "complete",
       "slices": [
         {
           "id": "H16-A",
@@ -262,22 +262,32 @@
         {
           "id": "H16-C",
           "statement": "Remove kind and capabilities from api.Collection, the OpenAPI schema and MCP list_collections, and the three columns that never existed from DATABASE_SCHEMA.md",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:internal/api/types.go"
         },
         {
           "id": "H16-D",
           "statement": "Decide whether a dangling collection identifier is repaired by adopting the note into default or by recreating the missing row, and what schema precondition that repair requires",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "test:TestLintFindsANoteWhoseCollectionHasNoRow"
         },
         {
           "id": "H16-E",
           "statement": "Decide whether a collection's name and description stay editable, and write the route if they do",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:DATABASE_SCHEMA.md"
         },
         {
           "id": "H16-F",
           "statement": "Decide whether the breaking response-shape change ships in v0.8",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:api/openapi.yaml"
+        },
+        {
+          "id": "H16-G",
+          "statement": "Stop writing the hardcoded collection capabilities into archive-v2, after the movenotes-v3 verifier stops requiring them",
+          "state": "done",
+          "evidence": "test:TestAnOlderArchiveWithCapabilitiesStillReads"
         }
       ]
     },

@@ -774,9 +774,9 @@ requirements below are the ones H7 already carried.
 The scaffold handoff is complete; see `CODING_CLIENT_HANDOFF.md`. Future roadmap planning should be driven from `ROADMAP.md`, but each active implementation cycle should create a small `PLAN.md` slice and archive it under `plans/` when complete.
 
 <!-- notrios:generated:roadmap:status:begin -->
-`PLAN.md` holds the active plan derived from this roadmap: 32 items, 22 complete, 4 in progress, 5 not started, 1 deferred.
+`PLAN.md` holds the active plan derived from this roadmap: 32 items, 23 complete, 3 in progress, 5 not started, 1 deferred.
 
-Started and unfinished: H9, H15, H16, H18. What remains in each is in the plan's own Progress section.
+Started and unfinished: H9, H15, H18. What remains in each is in the plan's own Progress section.
 <!-- notrios:generated:roadmap:status:end -->
 
 

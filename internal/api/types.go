@@ -146,13 +146,18 @@ type APIError struct {
 	Details map[string]any `json:"details,omitempty"`
 }
 
+// Collection is a provenance record: where a body of notes came from.
+//
+// It carried `kind` and `capabilities` until v0.8 H16 removed them. Neither was
+// stored: the schema has id, name and description, and `kind` was always the
+// constant "managed" while `capabilities` was the same five words on every
+// collection. A response field that is the same for every row is not a fact
+// about the row, and nothing read either one.
 type Collection struct {
-	ID           string         `json:"id"`
-	Name         string         `json:"name"`
-	Kind         string         `json:"kind"`
-	Description  string         `json:"description,omitempty"`
-	Capabilities []string       `json:"capabilities,omitempty"`
-	Settings     map[string]any `json:"settings,omitempty"`
+	ID          string         `json:"id"`
+	Name        string         `json:"name"`
+	Description string         `json:"description,omitempty"`
+	Settings    map[string]any `json:"settings,omitempty"`
 }
 
 type CollectionPage struct {

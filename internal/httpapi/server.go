@@ -488,11 +488,9 @@ func (s *Server) handleCollections(w http.ResponseWriter, r *http.Request) {
 	out := make([]api.Collection, 0, len(collections))
 	for _, collection := range collections {
 		out = append(out, api.Collection{
-			ID:           collection.ID,
-			Name:         collection.Name,
-			Kind:         "managed",
-			Description:  collection.Description,
-			Capabilities: collection.Capabilities,
+			ID:          collection.ID,
+			Name:        collection.Name,
+			Description: collection.Description,
 		})
 	}
 	writeJSON(w, http.StatusOK, api.CollectionPage{Collections: out})
@@ -512,9 +510,12 @@ func (s *Server) handleCreateCollection(w http.ResponseWriter, r *http.Request) 
 		writeError(w, http.StatusBadRequest, "validation_failed", "id and name are required")
 		return
 	}
-	if req.Kind == "" {
-		req.Kind = "managed"
-	}
+	// `kind` is accepted and ignored rather than refused: it was `required` in
+	// the documented request shape until v0.8 H16, and rejecting a caller who
+	// still sends it would break them over a field the store never recorded.
+	// Removing it from the response was the point; refusing it on the way in
+	// would be a second break for no gain.
+	//
 	// Previously this validated the request and echoed it back as 201 without
 	// touching the store, so every caller was told a collection existed that
 	// did not. `documents.collection_id` is a foreign key, so the first import
@@ -531,7 +532,7 @@ func (s *Server) handleCreateCollection(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	writeJSON(w, http.StatusCreated, api.Collection{
-		ID: created.ID, Name: created.Name, Kind: req.Kind, Description: created.Description,
+		ID: created.ID, Name: created.Name, Description: created.Description,
 	})
 }
 
@@ -551,13 +552,12 @@ func (s *Server) handleCollection(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, api.Collection{
 		ID:   collection.ID,
 		Name: collection.Name,
-		// `kind` is in the API and not in the schema: the collections table
-		// holds an id, a name and a description. Reporting the only kind this
-		// store can hold is honest; inventing per-row kinds it does not record
-		// would not be.
-		Kind:         "managed",
-		Description:  collection.Description,
-		Capabilities: collection.Capabilities,
+		// `kind` and `capabilities` used to be reported here. The collections
+		// table holds an id, a name and a description; `kind` was always the
+		// constant "managed" and `capabilities` the same five words on every
+		// row. v0.8 H16 removed both, because a field that is identical for
+		// every row is not a fact about the row.
+		Description: collection.Description,
 	})
 }
 
@@ -1217,11 +1217,9 @@ func (s *Server) handleResourceContent(w http.ResponseWriter, r *http.Request) {
 
 func defaultCollection() api.Collection {
 	return api.Collection{
-		ID:           "default",
-		Name:         "Default",
-		Kind:         "managed",
-		Description:  "Placeholder collection for scaffold validation.",
-		Capabilities: []string{"documents", "search", "resources", "links"},
+		ID:          "default",
+		Name:        "Default",
+		Description: "Placeholder collection for scaffold validation.",
 	}
 }
 

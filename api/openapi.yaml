@@ -1992,16 +1992,16 @@ components:
             message: { type: string }
             details: { type: object, additionalProperties: true }
     Collection:
+      # `kind` and `capabilities` were removed in v0.8 H16. Neither was stored:
+      # the collections table holds an id, a name and a description. `kind` was
+      # always the constant "managed" and `capabilities` the same five words on
+      # every row, so both described the code rather than the collection.
       type: object
-      required: [id, name, kind, capabilities]
+      required: [id, name]
       properties:
         id: { type: string }
         name: { type: string }
-        kind: { type: string, enum: [managed, external, imported, sidecar_indexed, projection] }
         description: { type: string }
-        capabilities:
-          type: array
-          items: { type: string }
         created_at: { type: string, format: date-time }
         updated_at: { type: string, format: date-time }
     CollectionPage:
@@ -2013,12 +2013,15 @@ components:
           items: { $ref: '#/components/schemas/Collection' }
         next_cursor: { type: string, nullable: true }
     CreateCollectionRequest:
+      # `kind` is no longer required and is ignored when sent. It was never
+      # stored; accepting it keeps a caller written against the older shape
+      # working, which refusing it would not.
       type: object
-      required: [id, name, kind]
+      required: [id, name]
       properties:
         id: { type: string }
         name: { type: string }
-        kind: { type: string }
+        kind: { type: string, deprecated: true, description: 'Accepted and ignored since v0.8; never stored.' }
         description: { type: string }
     PatchCollectionRequest:
       type: object

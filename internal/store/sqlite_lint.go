@@ -212,6 +212,27 @@ func lintQueryFor(check, collectionID string) lintQuery {
 				}
 			},
 		}
+	case LintDanglingCollection:
+		// The repair is decided and deliberately not built: recreate the
+		// missing row, preserving the identifier, rather than adopting the note
+		// into `default`, which would rewrite the one fact the field carries.
+		// Nothing builds it because no supported write path produces this
+		// state; the answer is recorded so that whoever first observes one does
+		// not have to decide it under pressure.
+		return lintQuery{
+			sql: `SELECT d.id, 0, 0, '', d.collection_id
+				FROM documents d
+				LEFT JOIN collections c ON c.id = d.collection_id
+				WHERE c.id IS NULL AND d.deleted_at IS NULL
+				ORDER BY d.collection_id, d.id`,
+			args: nil,
+			scan: func(stmt *C.sqlite3_stmt) LintFinding {
+				return LintFinding{
+					DocumentID: columnText(stmt, 0),
+					Detail:     "names collection " + strconv.Quote(columnText(stmt, 4)) + ", which has no row",
+				}
+			},
+		}
 	case LintProjectionBacklog:
 		// Drift between canonical notes and the derived projection. A full
 		// filesystem reconciliation belongs to the sidecar; what lint can say

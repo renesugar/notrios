@@ -1457,7 +1457,6 @@ func (r *exportRun) writeHeaderRecords(ctx context.Context) error {
 			ID:           collection.ID,
 			Name:         collection.Name,
 			Description:  collection.Description,
-			Capabilities: sortedStrings(collection.Capabilities),
 			SettingsJSON: settings,
 			CreatedAt:    timestamp(collection.CreatedAt),
 		}); err != nil {
