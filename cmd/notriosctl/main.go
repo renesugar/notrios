@@ -1274,29 +1274,86 @@ func runSeedHelp(args []string) {
 // loading, database open + schema version, asset-store writability, web UI
 // asset presence, and optional Recoll sidecar availability. It exits 1 when a
 // required check fails; optional checks only inform.
+// doctorCheck is one thing doctor looked at.
+//
+// `required` is kept beside `state` because the two answer different questions:
+// what doctor found, and whether it is allowed to be like that. A monitoring
+// script wants the second without re-deriving it from the wording.
+type doctorCheck struct {
+	Check    string `json:"check"`
+	State    string `json:"state"`
+	Required bool   `json:"required"`
+	Detail   string `json:"detail"`
+}
+
+// doctorReport collects the checks so the same run can be printed either way.
+//
+// doctor was the one command a person could read and a script could not parse,
+// which is backwards in a product whose other eighty commands print JSON. The
+// checks are collected rather than streamed so that both forms come from one
+// pass; doctor is fast enough that nothing is lost by holding them.
+type doctorReport struct {
+	checks   []doctorCheck
+	failed   bool
+	asJSON   bool
+	finished bool
+}
+
+func (r *doctorReport) add(ok, required bool, label, detail string) {
+	state := "ok"
+	if !ok {
+		if required {
+			state = "failed"
+			r.failed = true
+		} else {
+			state = "info"
+		}
+	}
+	r.checks = append(r.checks, doctorCheck{Check: label, State: state, Required: required, Detail: detail})
+}
+
+// finish prints the run and exits, and is the only place that does either, so
+// the early exit on an unreadable config reports the same way as a full run
+// rather than leaving a `--json` caller with nothing to parse.
+func (r *doctorReport) finish() {
+	r.finished = true
+	if r.asJSON {
+		summary := "required checks passed"
+		if r.failed {
+			summary = "one or more required checks failed"
+		}
+		printJSON(map[string]any{
+			"checks": r.checks, "failed": r.failed, "summary": summary,
+		})
+	} else {
+		for _, check := range r.checks {
+			mark := map[string]string{"ok": "ok  ", "failed": "FAIL", "info": "info"}[check.State]
+			fmt.Printf("%s  %-16s %s\n", mark, check.Check, check.Detail)
+		}
+		if r.failed {
+			fmt.Println("doctor: one or more required checks FAILED")
+		} else {
+			fmt.Println("doctor: required checks passed")
+		}
+	}
+	if r.failed {
+		os.Exit(1)
+	}
+}
+
 func runDoctor(args []string) {
 	fs := flag.NewFlagSet("notriosctl doctor", flag.ExitOnError)
 	configPath := fs.String("config", "", "optional config file")
 	dbPath := fs.String("db", "", "SQLite database path override")
 	assetStore := fs.String("asset-store", "", "asset store directory override")
+	asJSON := fs.Bool("json", false, "print the checks as JSON instead of a report")
 	if err := fs.Parse(args); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(2)
 	}
 
-	failed := false
-	report := func(ok bool, required bool, label, detail string) {
-		mark := "ok  "
-		if !ok {
-			if required {
-				mark = "FAIL"
-				failed = true
-			} else {
-				mark = "info"
-			}
-		}
-		fmt.Printf("%s  %-16s %s\n", mark, label, detail)
-	}
+	run := &doctorReport{asJSON: *asJSON}
+	report := run.add
 
 	report(true, true, "go runtime", runtime.Version())
 
@@ -1309,7 +1366,8 @@ func runDoctor(args []string) {
 	}
 	if err != nil {
 		report(false, true, "config", err.Error())
-		os.Exit(1)
+		run.finish()
+		return
 	}
 	source := cfg.ConfigPath
 	if source == "" {
@@ -1413,11 +1471,7 @@ func runDoctor(args []string) {
 		report(true, false, "recoll", "search_sidecar.enabled is true in this config")
 	}
 
-	if failed {
-		fmt.Println("doctor: one or more required checks FAILED")
-		os.Exit(1)
-	}
-	fmt.Println("doctor: required checks passed")
+	run.finish()
 }
 
 func firstNonEmptyString(values ...string) string {

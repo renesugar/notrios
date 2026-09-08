@@ -121,9 +121,11 @@
       "path": [
         "doctor"
       ],
-      "notes": [],
+      "notes": [
+        "exits 1 when a required check fails, in either form"
+      ],
       "purpose": "check this installation and report what is wrong with it",
-      "usage": "[--config config.yaml] [--db path] [--asset-store path]"
+      "usage": "[--config config.yaml] [--db path] [--asset-store path] [--json]"
     },
     {
       "path": [

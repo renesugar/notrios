@@ -943,11 +943,11 @@
       "path": "docs/cli.md",
       "section": "doctor",
       "language": "sh",
-      "sha256": "dbbe6e0dcfa3b6d5d713a5eb7f8c8ac54d8aa916f217e2fc02531b3a890a864a",
+      "sha256": "6e92ffba1ca8a88efc7e2e6262c5a1b84dbd5bc5417ad9916adf91bd15ec6491",
       "state": "unverified",
       "unrun_reason": {
         "code": "illustrative-placeholder",
-        "detail": "Non-literal command synopsis: bracketed flags are optional-argument notation and path values are illustrative path metavariables; no executed concrete CLI example is currently registered."
+        "detail": "Non-literal command synopsis: bracketed flags are optional-argument notation and path values are illustrative path metavariables. Both output forms are covered by executed tests in go:github.com/renesugar/notrios/cmd/notriosctl (TestDoctorReportsTheSameRunInBothForms, TestDoctorFailingStillReportsAsJSON); no executed concrete CLI example is registered for the synopsis form."
       }
     },
     {

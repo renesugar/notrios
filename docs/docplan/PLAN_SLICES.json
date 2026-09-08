@@ -503,7 +503,7 @@
     {
       "id": "H24",
       "title": "JSON is the output; a template makes it readable",
-      "state": "in-progress",
+      "state": "complete",
       "slices": [
         {
           "id": "H24-A",
@@ -514,7 +514,8 @@
         {
           "id": "H24-B",
           "statement": "doctor reports as JSON as well as prose, so a script can read the one command only a person could",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "test:TestDoctorReportsTheSameRunInBothForms"
         }
       ]
     },

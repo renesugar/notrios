@@ -46,7 +46,7 @@ What follows is what is left. Each item's own text below is the record of what
 happened, which is a different question.
 
 <!-- notrios:generated:plan:progress:begin -->
-**31 items: 16 complete, 5 in progress, 9 not started, 1 deferred.**
+**31 items: 17 complete, 4 in progress, 9 not started, 1 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -79,7 +79,7 @@ happened, which is a different question.
 | H21. Read a note and its structure, from the command line | not-started | 0/4 | 4 |
 | H22. Discover the values a query can name | complete | 3/3 | — |
 | H23. One description of the command line, and --help everywhere | complete | 6/6 | — |
-| H24. JSON is the output; a template makes it readable | in-progress | 1/2 | 1 |
+| H24. JSON is the output; a template makes it readable | complete | 2/2 | — |
 | H25. Hold each command's flags to its description | not-started | 0/2 | 2 |
 
 ### Started and not finished
@@ -100,10 +100,6 @@ happened, which is a different question.
 **H18. Make the features page usable, and generate the table under it**
 
 - `H18-D` Rewrite the twenty-nine summaries and surface notes in FEATURES.json for a reader rather than against the surfaces — *not-started*
-
-**H24. JSON is the output; a template makes it readable**
-
-- `H24-B` doctor reports as JSON as well as prose, so a script can read the one command only a person could — *not-started*
 
 **H9. Native credential-store selection and integration**
 
@@ -4044,7 +4040,7 @@ the recorded decision said. A test that each command's `FlagSet` matches its
 registry entry closes the remaining gap between the two; it is H25. The four `sync` subcommands are documented rather
 than exempted; none looked internal once read.
 
-## H24. JSON is the output; a template makes it readable
+## H24. JSON is the output; a template makes it readable — complete
 
 **Ordering.** After H23. Independent of H21 and H25.
 
@@ -4103,6 +4099,42 @@ the tests requires it, and no code path invokes it.
 **Working state.** `docs/cli.md` shows a working `gomplate` pipeline for a
 listing, executed by the documentation gates; `doctor --json` reports what
 `doctor` prints; and no other command's output has changed.
+
+**Outcome (2026-09-08).** Done, and smaller than the item it replaced, which was
+the point of the decision.
+
+`docs/cli.md` gained "Reading JSON output": an aligned table, one field for a
+shell variable, and a filter, each run against a seeded library with gomplate
+5.2.0 before being written. Running them found what an invented example gets
+wrong -- `%d` and `%f` both fail on a JSON number and `%v` prints it either way.
+They are registered as reviewed-unrun rather than executed, because gomplate is
+a host tool this repository does not ship, require or invoke, and running them
+in the gate would make an external installation a build dependency of the very
+page that says it is not one.
+
+`doctor --json` reports the run a script could not read: every check with its
+`state`, its `required` flag, and its detail. `required` sits beside `state`
+because the two answer different questions -- what doctor found, and whether it
+is allowed to be like that -- and a monitoring script should not infer the second
+from the wording of the first.
+
+The prose form is byte-identical to before. Both forms come from one pass over
+the checks rather than two code paths, which is what makes the parity test
+possible: every check in the JSON appears in the prose with the same detail, and
+the two report the same number of checks. Breaking that on purpose fails, and
+the first attempt at proving it did not -- it sabotaged a branch the sandbox
+never reaches, so the test passed and proved nothing until the other branch was
+broken instead.
+
+The early exit matters more than it looks. `doctor` stops before its later
+checks when the config will not load, and previously that printed two lines and
+left; a `--json` caller would have got prose or nothing. One `finish()` prints
+and exits, so the failing path reports the same shape as a full run, still
+exiting 1.
+
+**The non-blocking decision was taken as recommended:** the seven commands with
+a human default keep it, and the guide names all seven so the exception is
+documented rather than discovered.
 
 ## H25. Hold each command's flags to its description
 

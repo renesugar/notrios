@@ -13,7 +13,7 @@ nothing checked against the dispatcher. Eight commands were missing from it.
 - notriosctl collections show --collection <id> [--json] [--db ...]
 - notriosctl compatibility archive-v2 [--reader current-v2|previous-loose-v2] <archive-dir|manifest.json>
 - notriosctl config show [--config config.yaml] [--json] [--no-redact]
-- notriosctl doctor [--config config.yaml] [--db path] [--asset-store path]
+- notriosctl doctor [--config config.yaml] [--db path] [--asset-store path] [--json]
 - notriosctl export archive [--db ...] [--query "tag:todo"] <out-dir>
 - notriosctl export archive-v2 [--db ...] [--target full_archive|subset_transfer] [--notebooks id,id] [--tags a,b] [--query "tag:todo"] [--documents id,id] [--match any|all] [--pack] [--overwrite] [--no-verify] <out-dir>
 - notriosctl fix [--db ...] [--kinds a,b] [--document id] [--apply] [--list-kinds]
@@ -121,7 +121,7 @@ Prints the version string (currently `0.7.0`) and exits 0. No flags.
 ## doctor
 
 ```sh
-notriosctl doctor [--config config.yaml] [--db path] [--asset-store path]
+notriosctl doctor [--config config.yaml] [--db path] [--asset-store path] [--json]
 ```
 
 Environment and configuration diagnostics. Checks, in order:
@@ -143,6 +143,26 @@ ok    config           config/config.example.yaml
 ok    database         ./data/notes.sqlite (schema version 27)
 info  web ui           web/dist missing here; run `make web` or serve API-only
 doctor: required checks passed
+```
+
+`--json` reports the same run for a monitoring script: every check with its
+`state` (`ok`, `failed` or `info`), whether it was `required`, and the same
+detail. `required` is beside `state` because the two answer different questions
+— what doctor found, and whether it is allowed to be like that — and a script
+should not have to infer the second from the wording of the first. The exit code
+is the same in both forms.
+
+```json
+{
+  "checks": [
+    { "check": "database", "state": "ok", "required": true,
+      "detail": "./data/notes.sqlite (schema version 27)" },
+    { "check": "web ui", "state": "info", "required": false,
+      "detail": "web/dist missing here; run `make web` or serve API-only" }
+  ],
+  "failed": false,
+  "summary": "required checks passed"
+}
 ```
 
 ## paths
@@ -713,10 +733,11 @@ notriosctl notebooks list --json |
 For a one-off, `jq` and a short Python script do the same job; the point is that
 the rendering lives with the person who wants it rather than in every command.
 
-**The exceptions.** `paths`, `config show`, `migrate`, `notebooks list`,
-`collections list` and `collections show` print a human form by default and take
-`--json` for the structured one. Every other command prints JSON, and passing
-`--json` to a command that does not offer it is an error rather than a no-op.
+**The exceptions.** `doctor`, `paths`, `config show`, `migrate`,
+`notebooks list`, `collections list` and `collections show` print a human form
+by default and take `--json` for the structured one. Every other command prints
+JSON, and passing `--json` to a command that does not offer it is an error
+rather than a no-op.
 
 ## collections list / collections show
 

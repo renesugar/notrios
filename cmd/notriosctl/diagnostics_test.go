@@ -251,3 +251,100 @@ func TestConfigShowPrintsNoCredentialMaterial(t *testing.T) {
 		}
 	}
 }
+
+// TestDoctorReportsTheSameRunInBothForms is what a monitoring script needs and
+// what doctor could not give it: doctor was the one command a person could read
+// and a program could not parse.
+func TestDoctorReportsTheSameRunInBothForms(t *testing.T) {
+	binary := sharedBinary(t, "notriosctl")
+	sandbox := t.TempDir()
+	roots := []string{
+		"--db", filepath.Join(sandbox, "notes.sqlite"),
+		"--asset-store", filepath.Join(sandbox, "assets"),
+	}
+
+	human := runCLIIn(t, sandbox, binary, append([]string{"doctor"}, roots...)...)
+	structured := runCLIIn(t, sandbox, binary, append([]string{"doctor", "--json"}, roots...)...)
+	if human.exitCode != structured.exitCode {
+		t.Errorf("doctor exited %d and doctor --json exited %d", human.exitCode, structured.exitCode)
+	}
+
+	var report struct {
+		Checks []struct {
+			Check    string `json:"check"`
+			State    string `json:"state"`
+			Required bool   `json:"required"`
+			Detail   string `json:"detail"`
+		} `json:"checks"`
+		Failed  bool   `json:"failed"`
+		Summary string `json:"summary"`
+	}
+	if err := json.Unmarshal([]byte(structured.stdout), &report); err != nil {
+		t.Fatalf("doctor --json is not parseable: %v\n%s", err, structured.stdout)
+	}
+	if len(report.Checks) == 0 {
+		t.Fatal("doctor --json reported no checks")
+	}
+
+	// Every check in the report is a line in the prose, and every line is a
+	// check. A second rendering that quietly says less than the first is worse
+	// than not having it.
+	for _, check := range report.Checks {
+		if !strings.Contains(human.stdout, check.Check) {
+			t.Errorf("doctor --json reports %q and the prose form does not mention it", check.Check)
+		}
+		if !strings.Contains(human.stdout, check.Detail) {
+			t.Errorf("detail for %q differs between the two forms", check.Check)
+		}
+		switch check.State {
+		case "ok", "failed", "info":
+		default:
+			t.Errorf("check %q has state %q, which is none of ok, failed or info", check.Check, check.State)
+		}
+	}
+	proseLines := 0
+	for _, line := range strings.Split(strings.TrimSpace(human.stdout), "\n") {
+		if strings.HasPrefix(line, "ok  ") || strings.HasPrefix(line, "FAIL") || strings.HasPrefix(line, "info") {
+			proseLines++
+		}
+	}
+	if proseLines != len(report.Checks) {
+		t.Errorf("the prose form has %d checks and --json has %d", proseLines, len(report.Checks))
+	}
+}
+
+// TestDoctorFailingStillReportsAsJSON guards the path that matters most to a
+// script: doctor exits before its later checks when the config will not load,
+// and a caller that asked for JSON must still get JSON rather than nothing.
+func TestDoctorFailingStillReportsAsJSON(t *testing.T) {
+	binary := sharedBinary(t, "notriosctl")
+	sandbox := t.TempDir()
+	missing := filepath.Join(sandbox, "absent", "config.yaml")
+
+	result := runCLIIn(t, sandbox, binary, "doctor", "--config", missing, "--json")
+	if result.exitCode != 1 {
+		t.Errorf("doctor --json exited %d on an unreadable config, want 1", result.exitCode)
+	}
+	var report struct {
+		Checks []struct {
+			Check string `json:"check"`
+			State string `json:"state"`
+		} `json:"checks"`
+		Failed bool `json:"failed"`
+	}
+	if err := json.Unmarshal([]byte(result.stdout), &report); err != nil {
+		t.Fatalf("a failing doctor --json is not parseable: %v\n%s", err, result.stdout)
+	}
+	if !report.Failed {
+		t.Error("doctor --json reported failed=false while exiting 1")
+	}
+	found := false
+	for _, check := range report.Checks {
+		if check.Check == "config" && check.State == "failed" {
+			found = true
+		}
+	}
+	if !found {
+		t.Errorf("the failing check is not named in the report: %s", result.stdout)
+	}
+}

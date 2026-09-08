@@ -11,7 +11,7 @@
     "privileged-host-change": 2,
     "shared-user-state": 14
   },
-  "runtime_ms": 24537,
+  "runtime_ms": 19756,
   "topics": [
     {
       "topic": "api-mcp",
@@ -19,7 +19,7 @@
         "executed": 2,
         "unverified": 1
       },
-      "runtime_ms": 86
+      "runtime_ms": 81
     },
     {
       "topic": "api-rest",
@@ -27,7 +27,7 @@
         "executed": 25,
         "unverified": 1
       },
-      "runtime_ms": 2116
+      "runtime_ms": 1730
     },
     {
       "topic": "archive-v2",
@@ -35,7 +35,7 @@
         "executed": 1,
         "unverified": 1
       },
-      "runtime_ms": 307
+      "runtime_ms": 233
     },
     {
       "topic": "cli",
@@ -43,7 +43,7 @@
         "executed": 2,
         "unverified": 49
       },
-      "runtime_ms": 395
+      "runtime_ms": 286
     },
     {
       "topic": "gui",
@@ -51,7 +51,7 @@
         "executed": 4,
         "unverified": 2
       },
-      "runtime_ms": 783
+      "runtime_ms": 865
     },
     {
       "topic": "import-export",
@@ -59,7 +59,7 @@
         "executed": 10,
         "unverified": 2
       },
-      "runtime_ms": 3012
+      "runtime_ms": 2325
     },
     {
       "topic": "index",
@@ -74,7 +74,7 @@
         "executed": 1,
         "unverified": 12
       },
-      "runtime_ms": 340
+      "runtime_ms": 262
     },
     {
       "topic": "operations",
@@ -82,7 +82,7 @@
         "executed": 11,
         "unverified": 9
       },
-      "runtime_ms": 2902
+      "runtime_ms": 2660
     },
     {
       "topic": "publishing",
@@ -90,21 +90,21 @@
         "executed": 2,
         "unverified": 1
       },
-      "runtime_ms": 694
+      "runtime_ms": 582
     },
     {
       "topic": "query-language",
       "counts": {
         "executed": 1
       },
-      "runtime_ms": 505
+      "runtime_ms": 333
     },
     {
       "topic": "selection-planning",
       "counts": {
         "executed": 1
       },
-      "runtime_ms": 57
+      "runtime_ms": 42
     },
     {
       "topic": "service",
@@ -112,7 +112,7 @@
         "executed": 1,
         "unverified": 2
       },
-      "runtime_ms": 282
+      "runtime_ms": 227
     },
     {
       "topic": "stable-links",
@@ -120,7 +120,7 @@
         "executed": 3,
         "unverified": 2
       },
-      "runtime_ms": 690
+      "runtime_ms": 495
     }
   ]
 }
