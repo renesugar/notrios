@@ -75,10 +75,18 @@ func TestFeaturesWithoutAJourneyAreTracked(t *testing.T) {
 	//   - attachments has only the reading half -- resources report, resources
 	//     get, notes resources -- because attaching a file is REST, MCP or the
 	//     GUI, so a journey could only demonstrate reading nothing;
-	//   - sync-peers and sync-recovery need two replicas, and the journey
-	//     runner offers one `{db}`. That is a limit of the harness rather than
-	//     of the commands, and it is the one worth lifting if this number is to
-	//     fall again.
+	//   - sync-peers and sync-recovery are blocked on the harness, though not
+	//     for the reason first recorded here. Two libraries are expressible:
+	//     Substitute replaces anywhere in an argument and `{sandbox}` is
+	//     offered, so a second library at `{sandbox}/second/notes.sqlite`
+	//     works. The obstacle is the pairing ceremony -- `sync invite` prints a
+	//     one-use code carried deliberately out of band, and the runner
+	//     captures only `document_id` from a step, so nothing later can spend
+	//     it. Letting a step name a value to capture from its JSON is the lift.
+	//
+	// Only that last one is a limitation of the tooling. batch-operations is a
+	// gap H17 closes; query-blocks, mcp-endpoint and the attaching half of
+	// attachments are boundaries, and the plan says why for each.
 	const baseline = 6
 
 	catalogue, registry := load(t)

@@ -3018,13 +3018,39 @@ that is not journey writing.
 *Command-line journeys: sixteen features lacking one, down to six.* Ten were
 written and every one of them runs -- reading a note and what it is made of,
 tags, templates and tasks, the graph, links, saved searches, jobs, the pre-0.8
-migration, remote media, and publishing. The six that remain are three different
-situations and the ratchet's comment now says which is which: `query-blocks`,
-`batch-operations` and `mcp-endpoint` have no command line at all;
-`attachments` has only the reading half, because attaching a file is REST, MCP
-or the GUI, so a journey could only demonstrate reading nothing; and
-`sync-peers` and `sync-recovery` need two replicas where the runner offers one
-`{db}`. Only the last is a harness limit worth lifting.
+migration, remote media, and publishing.
+
+**The six that remain are not one backlog, and calling them one was the mistake
+in the first telling.** Reviewed 2026-09-08:
+
+- **`batch-operations` is a gap, and H17 closes it.** That item makes `batch`
+  reachable from a terminal; a journey follows from the command existing.
+- **`query-blocks` is a boundary.** A query block is a rendering *inside a
+  note*: the note carries a fenced query and the interface shows what it matches
+  in place. At a terminal the same question is `notriosctl search`, and the
+  formatting is a template tool's job. A command that ran a block's query would
+  be a second way to run a query, which is the duplication this milestone keeps
+  removing.
+- **`mcp-endpoint` is a boundary.** It is a served surface, used by software
+  with an MCP client. Its command-line journey would be "start the service and
+  connect something else", which documents the client rather than this program.
+- **`attachments` is a boundary for the half that is missing.** Attaching means
+  placing a `resource://` link at a point in the body that the author chose, and
+  a command that put it somewhere of its own choosing would be guessing at the
+  one thing only the writer knows. The reading half is the right command-line
+  scope. *If* an attach command is ever wanted, the shape that does not guess is
+  bytes in and a URI out -- `resources add` printing the `resource://` link for
+  the author to place with `notes edit` -- and that is a decision for whoever
+  wants it rather than a gap in this item.
+- **`sync-peers` and `sync-recovery` are blocked on the harness, and the reason
+  first given here was wrong.** It said the runner offers one `{db}`; it offers
+  `{sandbox}` too, and `Substitute` replaces anywhere in an argument, so a
+  second library at `{sandbox}/second/notes.sqlite` is expressible today. The
+  actual obstacle is the pairing ceremony: `sync invite` prints a one-use code
+  that is deliberately carried out of band, and the runner captures only
+  `document_id` from a step's output, so no later step can spend it. That is
+  liftable and worth lifting -- let a step name a value to capture from its JSON
+  -- and it is the only one of the six that is a limitation of the tooling.
 
 *Writing them found a defect.* `notriosctl migrate --json` printed prose on all
 three "nothing to migrate" paths -- which is the *common* path, since most runs
@@ -3358,9 +3384,18 @@ note that was open, or to an empty editor.
 
 ### The command line needs a way to name a set
 
-A batch over an explicit list of ids is unusable from a terminal, because
-nothing at the command line produces ids: there is no `notriosctl search`, by
-an existing decision that reading is what the interface and the API are for.
+A batch over an explicit list of ids is unusable from a terminal unless
+something produces ids. **That was this item's blocker and it is gone.** When
+this was written there was no `notriosctl search`, "by an existing decision that
+reading is what the interface and the API are for" -- a decision H21 found was
+never made, only written down afterwards to explain an absent adapter. H19 built
+the command, H21 built the reading commands beside it, and a search now returns
+each hit's identifier. The command-line half of this item starts from a
+`notriosctl search` that exists.
+
+That also makes `batch-operations` reachable for a command-line journey: it is
+one of the six features H15-H could not cover, and the only one of those six
+that is a gap rather than a boundary. Closing this item closes that too.
 
 So the useful form is a query rather than a list: select with the same query
 language the search box takes, then act. That keeps one language across

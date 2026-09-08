@@ -34,7 +34,7 @@ absent for a reason rather than for want of doing it, the reason is given.
 **Do many organiser operations at once** — Send a batch of moves, tags and notebook changes as one request, so a large reorganisation is one reviewable action. No command line or GUI journey; batching is for tools.
 **Choose where sync keys are kept** — An installed Notrios keeps the key that protects your sync material in the operating system's credential store. Move existing keys between that and the owner-only development file, in either direction. Deliberately command line only: this item forbids a credential-management REST or MCP surface.
 **Move a pre-0.8 library into place** — A library that lived in ./data next to the program is relocated into the directories an installed Notrios uses, after showing you the plan. Command line only, and genuinely so: it relocates the directories the running program uses, which is not something the program can sensibly do to itself while serving them.
-**Let an AI assistant use your library** — Notrios speaks MCP, so an assistant can read and, within a scope you grant, change your notes. The endpoint itself has no command line or GUI; the tools it exposes are listed against the features above.
+**Let an AI assistant use your library** — Notrios speaks MCP, so an assistant can read and, within a scope you grant, change your notes. No command line, because this is a served surface rather than something a person runs: software with an MCP client connects to it. A command-line journey would document the client rather than this program.
 <!-- notrios:generated:user:what-the-gui-does-not-do:end -->
 
 This list is derived from the capability registry rather than written out, so

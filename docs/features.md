@@ -125,7 +125,7 @@ A collection is provenance, not a place notes live: notes are imported into a no
 
 Add files to notes, read them back, see what references what, and find attachments nothing points at any more.
 
-Measured by the H15 control crawl, which found the upload field in the note inspector and the Attachments tab. The command line lists what a note carries and writes one attachment's bytes to a file; attaching a file is still REST, MCP or the GUI, because uploading is a write and this half was added as the reading half.
+Measured by the H15 control crawl, which found the upload field in the note inspector and the Attachments tab. The command line lists what a note carries and writes one attachment's bytes to a file; attaching a file is still REST, MCP or the GUI, because uploading is a write and this half was added as the reading half. Attaching a file stays off the command line for a reason rather than by omission: it means placing a `resource://` link at a point in the body the author chose, and a command that put it somewhere of its own choosing would be guessing at the one thing only the writer knows. If an attach command is ever wanted, the shape that does not guess is bytes in and a URI out, for the author to place with `notes edit`.
 
 *Available on the desktop app, the command line, the REST API and MCP.*
 
@@ -161,7 +161,7 @@ A template is an ordinary note carrying a note-template block, and a task is a c
 
 Put a query in a note and have its results render where it sits.
 
-No command line. The GUI renders them where they sit: the preview finds each ```note-query block, runs it through the same parser the search box uses, and fills the block with the result. This row read as a gap for as long as the control crawl was the only measurement, and the crawl cannot see it and never could -- a query block renders content, not a control, and the crawl enumerates interactive elements. Its evidence is web/src/note-query.ts and its tests instead.
+No command line, and that is the line rather than a gap: a query block is a rendering inside a note -- the note carries a fenced query and the interface shows what it matches in place. At a terminal the same question is `notriosctl search`, and formatting the answer is a template tool's job. A command that ran a block's query would be a second way to run a query.
 
 *Available on the desktop app, the REST API and MCP.*
 
@@ -277,7 +277,7 @@ Command line only, and genuinely so: it relocates the directories the running pr
 
 Notrios speaks MCP, so an assistant can read and, within a scope you grant, change your notes.
 
-The endpoint itself has no command line or GUI; the tools it exposes are listed against the features above.
+No command line, because this is a served surface rather than something a person runs: software with an MCP client connects to it. A command-line journey would document the client rather than this program.
 
 *Available on the REST API.*
 
@@ -341,11 +341,11 @@ capability's own section says why.
 Each capability below is offered on some surfaces and not others.
 
 - Do many organiser operations at once — neither the command line nor the GUI; reachable only over REST or MCP. No command line or GUI journey; batching is for tools.
-- Let an AI assistant use your library — neither the command line nor the GUI; reachable only over REST or MCP. The endpoint itself has no command line or GUI; the tools it exposes are listed against the features above.
+- Let an AI assistant use your library — neither the command line nor the GUI; reachable only over REST or MCP. No command line, because this is a served surface rather than something a person runs: software with an MCP client connects to it. A command-line journey would document the client rather than this program.
 - Choose where sync keys are kept — command line only. Deliberately command line only: this item forbids a credential-management REST or MCP surface.
 - Templates and tasks — command line only. A template is an ordinary note carrying a note-template block, and a task is a checkbox line in a note tagged `task` or `todo`; neither is a table, and both are read back from the Markdown. So nothing creates a task -- writing `- [ ] chase the permit` into a note is how one comes to exist, which `notes create` already does -- and the command line covers the other half: asking what remains, and instantiating a template, which is the repeatable version of the same workflow. A missing placeholder is refused rather than left blank, so a template that gains a field fails the scripts that do not know about it. The tag is required because a checkbox is ordinary Markdown and appears in quoted examples; `--untagged` asks for those too. No GUI journey yet.
 - Move a pre-0.8 library into place — command line only. Command line only, and genuinely so: it relocates the directories the running program uses, which is not something the program can sensibly do to itself while serving them.
-- Live query blocks inside a note — GUI only. No command line. The GUI renders them where they sit: the preview finds each ```note-query block, runs it through the same parser the search box uses, and fills the block with the result. This row read as a gap for as long as the control crawl was the only measurement, and the crawl cannot see it and never could -- a query block renders content, not a control, and the crawl enumerates interactive elements. Its evidence is web/src/note-query.ts and its tests instead.
+- Live query blocks inside a note — GUI only. No command line, and that is the line rather than a gap: a query block is a rendering inside a note -- the note carries a fenced query and the interface shows what it matches in place. At a terminal the same question is `notriosctl search`, and formatting the answer is a template tool's job. A command that ran a block's query would be a second way to run a query.
 - Attach and manage files — both surfaces, and neither journey is written yet
 - See and end trust between replicas — both surfaces, and neither journey is written yet
 - Recover a replica and resolve conflicts — both surfaces, and neither journey is written yet

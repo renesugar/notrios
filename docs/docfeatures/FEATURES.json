@@ -241,7 +241,7 @@
         "list_document_resources",
         "read_resource"
       ],
-      "surface_note": "Measured by the H15 control crawl, which found the upload field in the note inspector and the Attachments tab. The command line lists what a note carries and writes one attachment's bytes to a file; attaching a file is still REST, MCP or the GUI, because uploading is a write and this half was added as the reading half.",
+      "surface_note": "Measured by the H15 control crawl, which found the upload field in the note inspector and the Attachments tab. The command line lists what a note carries and writes one attachment's bytes to a file; attaching a file is still REST, MCP or the GUI, because uploading is a write and this half was added as the reading half. Attaching a file stays off the command line for a reason rather than by omission: it means placing a `resource://` link at a point in the body the author chose, and a command that put it somewhere of its own choosing would be guessing at the one thing only the writer knows. If an attach command is ever wanted, the shape that does not guess is bytes in and a URI out, for the author to place with `notes edit`.",
       "gui": [
         "Upload image/PDF/resource — the file field in the note inspector",
         "Attachments — a sync centre tab"
@@ -349,7 +349,7 @@
       "mcp": [
         "run_note_query"
       ],
-      "surface_note": "No command line. The GUI renders them where they sit: the preview finds each ```note-query block, runs it through the same parser the search box uses, and fills the block with the result. This row read as a gap for as long as the control crawl was the only measurement, and the crawl cannot see it and never could -- a query block renders content, not a control, and the crawl enumerates interactive elements. Its evidence is web/src/note-query.ts and its tests instead.",
+      "surface_note": "No command line, and that is the line rather than a gap: a query block is a rendering inside a note -- the note carries a fenced query and the interface shows what it matches in place. At a terminal the same question is `notriosctl search`, and formatting the answer is a template tool's job. A command that ran a block's query would be a second way to run a query.",
       "gui": [
         "Query blocks render in the preview, in place"
       ]
@@ -651,7 +651,7 @@
         "GET /mcp",
         "POST /mcp"
       ],
-      "surface_note": "The endpoint itself has no command line or GUI; the tools it exposes are listed against the features above."
+      "surface_note": "No command line, because this is a served surface rather than something a person runs: software with an MCP client connects to it. A command-line journey would document the client rather than this program."
     }
   ]
 }
