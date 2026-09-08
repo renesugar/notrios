@@ -44,6 +44,12 @@ type Command struct {
 	Usage string `json:"usage"`
 	// Notes are the qualifications a reader needs and a usage line cannot hold.
 	Notes []string `json:"notes"`
+	// AcceptsIgnored names flags the command parses and deliberately does
+	// nothing with, each with the reason. They are declared rather than left
+	// to be discovered: a flag that is accepted and discarded is worse than one
+	// that does not exist, because the caller cannot tell, and the only honest
+	// alternatives are to remove it or to say so here.
+	AcceptsIgnored map[string]string `json:"accepts_ignored,omitempty"`
 	// Exempt, when set, is the reason this command is not offered to users.
 	// It is a stated reason rather than silence, because silence is what let
 	// eight commands go unmentioned.
@@ -63,6 +69,13 @@ type Registry struct {
 	Tagline  string    `json:"tagline"`
 	Groups   []Group   `json:"groups"`
 	Commands []Command `json:"commands"`
+	// CommonFlags are the flags a command need not repeat in its usage line,
+	// keyed by the command prefix they apply under. `--config`, `--db` and
+	// `--asset-store` are on nearly every command, and naming them in
+	// eighty-five usage strings would make every one of them unreadable.
+	// Declaring them once is the exemption; a check keeps it from becoming a
+	// hiding place by refusing a "common" flag only one command takes.
+	CommonFlags map[string][]string `json:"common_flags,omitempty"`
 }
 
 // Load returns the embedded registry.

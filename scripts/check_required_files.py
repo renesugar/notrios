@@ -125,6 +125,7 @@ required = [
     'performance/v0.7-g18d/validate_evidence.py',
     'performance/v0.7-g18d/test_validate_evidence.py',
     'plans/v0.7/038-executed-documentation-examples.md',
+    'cmd/notriosctl/flags_test.go',
     'cmd/notriosctl/noteread.go',
     'cmd/notriosctl/noteread_test.go',
     'internal/httpapi/outline_test.go',

@@ -529,7 +529,7 @@
     },
     {
       "path": "docs/cli.md",
-      "sha256": "043539cda88e3590aa7a275347651f386ba3e6fda51d1575f332005278d409e6",
+      "sha256": "709ada4d2c1177b3ece63c571302d7c4f82b3554f4fd7399cef4474a4a00610b",
       "help_note": "doc_help_cli",
       "owner": "go:github.com/renesugar/notrios/cmd/notriosctl#printHelp",
       "sections": [

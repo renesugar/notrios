@@ -526,17 +526,19 @@
     {
       "id": "H25",
       "title": "Hold each command's flags to its description",
-      "state": "not-started",
+      "state": "complete",
       "slices": [
         {
           "id": "H25-A",
           "statement": "A flag named in a command's description but not accepted by it fails a build",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "test:TestNoCommandDescribesAFlagItDoesNotAccept"
         },
         {
           "id": "H25-B",
           "statement": "A flag a command accepts and its description omits fails a build, common flags excepted once",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "test:TestNoCommandHidesAFlagItAccepts"
         }
       ]
     }

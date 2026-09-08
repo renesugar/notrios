@@ -32,6 +32,20 @@ type dispatcher struct {
 // actually accepts.
 func dispatchTree(t *testing.T) map[string]bool {
 	t.Helper()
+	leaves, _ := dispatchWalk(t)
+	return leaves
+}
+
+// dispatchHandlers maps each command path to the function that runs it, which
+// is what lets a check ask what flags that command actually accepts.
+func dispatchHandlers(t *testing.T) map[string]string {
+	t.Helper()
+	_, handlers := dispatchWalk(t)
+	return handlers
+}
+
+func dispatchWalk(t *testing.T) (map[string]bool, map[string]string) {
+	t.Helper()
 
 	fset := token.NewFileSet()
 	entries, err := os.ReadDir(".")
@@ -63,6 +77,7 @@ func dispatchTree(t *testing.T) map[string]bool {
 	}
 
 	leaves := map[string]bool{}
+	handlers := map[string]string{}
 	var walk func(function string, path []string, depth int)
 	walk = func(function string, path []string, depth int) {
 		if depth > 4 {
@@ -72,6 +87,7 @@ func dispatchTree(t *testing.T) map[string]bool {
 		if !ok {
 			if len(path) > 0 {
 				leaves[strings.Join(path, " ")] = true
+				handlers[strings.Join(path, " ")] = function
 			}
 			return
 		}
@@ -84,7 +100,7 @@ func dispatchTree(t *testing.T) map[string]bool {
 		}
 	}
 	walk("main", nil, 0)
-	return leaves
+	return leaves, handlers
 }
 
 func isHelpWord(word string) bool {

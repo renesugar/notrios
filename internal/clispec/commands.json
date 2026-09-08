@@ -134,7 +134,7 @@
       ],
       "notes": [],
       "purpose": "export notes as a Notrios archive",
-      "usage": "[--db ...] [--query \"tag:todo\"] <out-dir>"
+      "usage": "[--db ...] [--query \"tag:todo\"] <out-dir> [--collection id]"
     },
     {
       "path": [
@@ -143,7 +143,7 @@
       ],
       "notes": [],
       "purpose": "export notes as a native archive-v2, whole or as a scoped subset",
-      "usage": "[--db ...] [--target full_archive|subset_transfer] [--notebooks id,id] [--tags a,b] [--query \"tag:todo\"] [--documents id,id] [--match any|all] [--pack] [--overwrite] [--no-verify] <out-dir>"
+      "usage": "[--db ...] [--target full_archive|subset_transfer] [--notebooks id,id] [--tags a,b] [--query \"tag:todo\"] [--documents id,id] [--match any|all] [--pack] [--overwrite] [--no-verify] <out-dir> [--max-documents N] [--pack-bytes N] [--records-per-object N]"
     },
     {
       "path": [
@@ -151,7 +151,7 @@
       ],
       "notes": [],
       "purpose": "repair the mechanically safe findings; dry run is the default",
-      "usage": "[--db ...] [--kinds a,b] [--document id] [--apply] [--list-kinds]"
+      "usage": "[--db ...] [--kinds a,b] [--document id] [--apply] [--list-kinds] [--allow-review] [--max-documents N]"
     },
     {
       "path": [
@@ -159,7 +159,7 @@
       ],
       "notes": [],
       "purpose": "retention-aware resource GC; dry-run is the default",
-      "usage": "[--config config.yaml] [--db ...] [--asset-store ...] [--dry-run | --apply]"
+      "usage": "[--config config.yaml] [--db ...] [--asset-store ...] [--dry-run | --apply] [--snapshot <retained-snapshot-dir>]"
     },
     {
       "path": [
@@ -186,7 +186,7 @@
       ],
       "notes": [],
       "purpose": "import a Notrios archive directory",
-      "usage": "[--db ...] [--dry-run] [--write-config path] [--import-config path] <archive-dir>"
+      "usage": "[--db ...] [--dry-run] [--write-config path] [--import-config path] <archive-dir> [--collection id]"
     },
     {
       "path": [
@@ -222,7 +222,7 @@
       ],
       "notes": [],
       "purpose": "import an Obsidian vault",
-      "usage": "[--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--dry-run] [--localize-media] <vault-dir>"
+      "usage": "[--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--dry-run] [--localize-media] <vault-dir> [--batch-size 100] [--preserve-source] [--write-config path] [--import-config path]"
     },
     {
       "path": [
@@ -294,7 +294,7 @@
       ],
       "notes": [],
       "purpose": "read-only workspace report; exit 1 when findings exist",
-      "usage": "[--db ...] [--checks a,b] [--detail-limit 100] [--quiet] [--list-checks]"
+      "usage": "[--db ...] [--checks a,b] [--detail-limit 100] [--quiet] [--list-checks] [--collection id]"
     },
     {
       "path": [
@@ -422,7 +422,10 @@
       "notes": [
         "a note in Trash is reported as trashed rather than as missing",
         "--body is accepted and ignored; both forms carry the body"
-      ]
+      ],
+      "accepts_ignored": {
+        "body": "selected whether to include the body when this command printed only JSON metadata; both forms carry the body now, and refusing the flag would break a script for no gain"
+      }
     },
     {
       "path": [
@@ -447,7 +450,7 @@
       ],
       "notes": [],
       "purpose": "create a named profile",
-      "usage": "--name <profile> [--listen 127.0.0.1:8080] [--db ...] [--sync-target none|directory|rest]"
+      "usage": "--name <profile> [--listen 127.0.0.1:8080] [--db ...] [--sync-target none|directory|rest] [--data-dir path] [--public-url url] [--registry path] [--credential-ref ref] [--sync-directory dir] [--sync-rest-url url] [--copied-database-as adopt|fork]"
     },
     {
       "path": [
@@ -492,7 +495,7 @@
       ],
       "notes": [],
       "purpose": "owner-only config, identity/path/port checks, and secret-free startup",
-      "usage": "--name <profile> [--binary notriosd] [--dry-run]"
+      "usage": "--name <profile> [--binary notriosd] [--dry-run] [--registry path]"
     },
     {
       "path": [
@@ -510,7 +513,7 @@
       ],
       "notes": [],
       "purpose": "read-only privacy review; prints the plan digest",
-      "usage": "--profile <profile>"
+      "usage": "--profile <profile> [--detail-limit 100]"
     },
     {
       "path": [
@@ -530,7 +533,7 @@
       ],
       "notes": [],
       "purpose": "list publication profiles",
-      "usage": "[--name <profile>]"
+      "usage": "[--db ...]"
     },
     {
       "path": [
@@ -540,7 +543,7 @@
       ],
       "notes": [],
       "purpose": "create or update a publication profile",
-      "usage": "--name <profile> [--notebooks id,id] [--tags a,b] [--link-action plain_text]"
+      "usage": "--name <profile> [--notebooks id,id] [--tags a,b] [--link-action plain_text] [--description text] [--query \"tag:todo\"] [--documents id,id] [--match any|all] [--target full_archive|subset_transfer] [--exclude-tags a,b] [--private-tags a,b] [--include-provenance] [--include-source-bundles] [--max-resource-bytes N]"
     },
     {
       "path": [
@@ -549,7 +552,7 @@
       ],
       "notes": [],
       "purpose": "scoped sanitized archive-v2 handoff; refuses a stale review",
-      "usage": "--profile <profile> --reviewed-plan <sha256> <out-dir>"
+      "usage": "--profile <profile> --reviewed-plan <sha256> <out-dir> [--overwrite] [--no-verify]"
     },
     {
       "path": [
@@ -666,7 +669,7 @@
       ],
       "notes": [],
       "purpose": "resumable encrypted snapshot download, verified as archive-v2",
-      "usage": "--url <base-url> --out <dir>"
+      "usage": "--url <base-url> --out <dir> [--intent replace|adopt] [--chunk-bytes N] [--emergency dir]"
     },
     {
       "path": [
@@ -693,7 +696,7 @@
       ],
       "notes": [],
       "purpose": "one-use, short-lived pairing code; the file half is useless without it",
-      "usage": "[--ttl 15m] [--offline --out <file>]"
+      "usage": "[--ttl 15m] [--offline --out <file>] [--label text]"
     },
     {
       "path": [
@@ -760,7 +763,7 @@
       ],
       "notes": [],
       "purpose": "revoke a peer's key, optionally advancing the epoch",
-      "usage": "--key <id> [--advance-epoch]"
+      "usage": "--key <id> [--advance-epoch] [--reason text]"
     },
     {
       "path": [
@@ -861,5 +864,19 @@
       "usage": ""
     }
   ],
-  "exempt": []
+  "exempt": [],
+  "common_flags": {
+    "": [
+      "config",
+      "db",
+      "asset-store"
+    ],
+    "sync": [
+      "keys",
+      "carrier"
+    ],
+    "publish": [
+      "profiles"
+    ]
+  }
 }

@@ -14,17 +14,17 @@ nothing checked against the dispatcher. Eight commands were missing from it.
 - notriosctl compatibility archive-v2 [--reader current-v2|previous-loose-v2] <archive-dir|manifest.json>
 - notriosctl config show [--config config.yaml] [--json] [--no-redact]
 - notriosctl doctor [--config config.yaml] [--db path] [--asset-store path] [--json]
-- notriosctl export archive [--db ...] [--query "tag:todo"] <out-dir>
-- notriosctl export archive-v2 [--db ...] [--target full_archive|subset_transfer] [--notebooks id,id] [--tags a,b] [--query "tag:todo"] [--documents id,id] [--match any|all] [--pack] [--overwrite] [--no-verify] <out-dir>
-- notriosctl fix [--db ...] [--kinds a,b] [--document id] [--apply] [--list-kinds]
-- notriosctl gc [--config config.yaml] [--db ...] [--asset-store ...] [--dry-run | --apply]
+- notriosctl export archive [--db ...] [--query "tag:todo"] <out-dir> [--collection id]
+- notriosctl export archive-v2 [--db ...] [--target full_archive|subset_transfer] [--notebooks id,id] [--tags a,b] [--query "tag:todo"] [--documents id,id] [--match any|all] [--pack] [--overwrite] [--no-verify] <out-dir> [--max-documents N] [--pack-bytes N] [--records-per-object N]
+- notriosctl fix [--db ...] [--kinds a,b] [--document id] [--apply] [--list-kinds] [--allow-review] [--max-documents N]
+- notriosctl gc [--config config.yaml] [--db ...] [--asset-store ...] [--dry-run | --apply] [--snapshot <retained-snapshot-dir>]
 - notriosctl graph export [--db ...] [--collection id] [--overwrite] <out-dir>
 - notriosctl graph report [--db ...] [--collection id] [--limit N] [--write-note] [--quiet]
-- notriosctl import archive [--db ...] [--dry-run] [--write-config path] [--import-config path] <archive-dir>
+- notriosctl import archive [--db ...] [--dry-run] [--write-config path] [--import-config path] <archive-dir> [--collection id]
 - notriosctl import chatgpt [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--notebook ChatGPT] [--dry-run] <conversations.json|export-dir>
 - notriosctl import claude [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--notebook Claude] [--dry-run] <conversations.json|export-dir>
 - notriosctl import joplin-raw [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--batch-size 100] [--preserve-source] [--dry-run] [--write-config path] [--import-config path] [--localize-media] <raw-export-dir>
-- notriosctl import obsidian [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--dry-run] [--localize-media] <vault-dir>
+- notriosctl import obsidian [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--dry-run] [--localize-media] <vault-dir> [--batch-size 100] [--preserve-source] [--write-config path] [--import-config path]
 - notriosctl import twitter [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--notebook Twitter] [--dry-run] <extracted-archive-dir>
 - notriosctl jobs cancel [--db ...] <job-id>
 - notriosctl jobs list [--db ...] [--kind k] [--state s] [--limit 50]
@@ -32,7 +32,7 @@ nothing checked against the dispatcher. Eight commands were missing from it.
 - notriosctl jobs show [--db ...] [--command] <job-id>
 - notriosctl jobs status [--db ...] [--wait] [--timeout 30m] [--quiet] <job-id>
 - notriosctl link [--db ...] [--anchor slug|^block] [--list-anchors] <document-id>
-- notriosctl lint [--db ...] [--checks a,b] [--detail-limit 100] [--quiet] [--list-checks]
+- notriosctl lint [--db ...] [--checks a,b] [--detail-limit 100] [--quiet] [--list-checks] [--collection id]
 - notriosctl localize [--config config.yaml] [--db ...] [--dry-run] [--allow-review] [--base-revision rev] <document-id>
 - notriosctl migrate [--from dir] [--dry-run] [--json]
 - notriosctl notebooks create --name <name> [--parent <id|name>] [--icon <emoji>] [--query <query>]
@@ -48,18 +48,18 @@ nothing checked against the dispatcher. Eight commands were missing from it.
 - notriosctl notes show --document <id> [--json] [--output <file>] [--db ...]
 - notriosctl open [--profile name] [--registry path] [--db path] [--launch] <notrios-uri>
 - notriosctl paths [--json] [--no-redact]
-- notriosctl profile create --name <profile> [--listen 127.0.0.1:8080] [--db ...] [--sync-target none|directory|rest]
+- notriosctl profile create --name <profile> [--listen 127.0.0.1:8080] [--db ...] [--sync-target none|directory|rest] [--data-dir path] [--public-url url] [--registry path] [--credential-ref ref] [--sync-directory dir] [--sync-rest-url url] [--copied-database-as adopt|fork]
 - notriosctl profile forget --name <profile> [--registry path]
 - notriosctl profile list [--registry path]
 - notriosctl profile register --name <profile> [--db ...] [--registry path]
 - notriosctl profile show --name <profile> [--registry path]
-- notriosctl profile start --name <profile> [--binary notriosd] [--dry-run]
+- notriosctl profile start --name <profile> [--binary notriosd] [--dry-run] [--registry path]
 - notriosctl profile validate [--name <profile>] [--registry path]
-- notriosctl publish plan --profile <profile>
+- notriosctl publish plan --profile <profile> [--detail-limit 100]
 - notriosctl publish profile delete [--name <profile>]
-- notriosctl publish profile list [--name <profile>]
-- notriosctl publish profile save --name <profile> [--notebooks id,id] [--tags a,b] [--link-action plain_text]
-- notriosctl publish run --profile <profile> --reviewed-plan <sha256> <out-dir>
+- notriosctl publish profile list [--db ...]
+- notriosctl publish profile save --name <profile> [--notebooks id,id] [--tags a,b] [--link-action plain_text] [--description text] [--query "tag:todo"] [--documents id,id] [--match any|all] [--target full_archive|subset_transfer] [--exclude-tags a,b] [--private-tags a,b] [--include-provenance] [--include-source-bundles] [--max-resource-bytes N]
+- notriosctl publish run --profile <profile> --reviewed-plan <sha256> <out-dir> [--overwrite] [--no-verify]
 - notriosctl register-url-handler [--apply] [--binary path] [--dir path]
 - notriosctl resources get --resource <id> [--output <file>] [--db ...]
 - notriosctl resources report [--config config.yaml] [--db ...] [--asset-store ...]
@@ -72,17 +72,17 @@ nothing checked against the dispatcher. Eight commands were missing from it.
 - notriosctl sync discover [--carrier dir] [--db ...]
 - notriosctl sync enroll --acceptance <file> --code <code>
 - notriosctl sync exchange --url <base-url> [--materialize N]
-- notriosctl sync fetch-backup --url <base-url> --out <dir>
+- notriosctl sync fetch-backup --url <base-url> --out <dir> [--intent replace|adopt] [--chunk-bytes N] [--emergency dir]
 - notriosctl sync handshake --url <base-url> [--db ...]
 - notriosctl sync init [--db ...] [--keys path]
-- notriosctl sync invite [--ttl 15m] [--offline --out <file>]
+- notriosctl sync invite [--ttl 15m] [--offline --out <file>] [--label text]
 - notriosctl sync join --url <base-url> --code <code>
 - notriosctl sync migrate-credentials --to native|development-file [--dry-run] [--confirm]
 - notriosctl sync once [--carrier dir] [--cleanup] [--materialize N] [--db ...]
 - notriosctl sync peers [--db ...]
 - notriosctl sync retention --snapshot <retained-snapshot-dir> [--apply --confirm-digest <dry-run-digest>]
 - notriosctl sync retire --peer <replica-id> [--reason ...] [--confirm retire-peer:<replica-id>]
-- notriosctl sync revoke --key <id> [--advance-epoch]
+- notriosctl sync revoke --key <id> [--advance-epoch] [--reason text]
 - notriosctl sync start [--carrier dir] [--resource-fetch] [--byte-budget N] [--max-attempts N] [--db ...]
 - notriosctl sync status [--db ...] [--keys path]
 - notriosctl tags add --document <id> --tag <tag>

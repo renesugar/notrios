@@ -60,6 +60,30 @@ func newTagFlags(name string) *tagFlags {
 	}
 }
 
+// newTagListFlags is `tags list`, which takes no `--tag`.
+//
+// It is a separate function rather than a flag on the one above because
+// sharing gave `tags list` a `--tag` it never read: `notriosctl tags list --tag
+// todo` was accepted and returned every tag in the library, which reads as a
+// filter that found everything. A flag accepted and discarded is worse than one
+// that does not exist, because the caller cannot tell.
+//
+// Written without a conditional so that what this command accepts can be read
+// off the source. A branch here would leave the flags gate guessing, and a gate
+// that guesses is one that reports a problem nobody can act on.
+func newTagListFlags() *tagFlags {
+	set := flag.NewFlagSet("notriosctl tags list", flag.ExitOnError)
+	unused := ""
+	return &tagFlags{
+		set:        set,
+		configPath: set.String("config", "", "optional config file"),
+		dbPath:     set.String("db", "", "SQLite database path override"),
+		assetStore: set.String("asset-store", "", "asset store directory override"),
+		document:   set.String("document", "", "note to act on"),
+		tag:        &unused,
+	}
+}
+
 func (f *tagFlags) parse(args []string) {
 	if err := f.set.Parse(args); err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -122,7 +146,7 @@ func runTagRemove(args []string) {
 // that performs them. A command that changes something and offers no way to see
 // the change asks its caller to take it on trust.
 func runTagList(args []string) {
-	flags := newTagFlags("list")
+	flags := newTagListFlags()
 	flags.parse(args)
 	if flags.set.NArg() != 0 {
 		printTagsUsage()

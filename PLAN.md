@@ -46,7 +46,7 @@ What follows is what is left. Each item's own text below is the record of what
 happened, which is a different question.
 
 <!-- notrios:generated:plan:progress:begin -->
-**31 items: 18 complete, 4 in progress, 8 not started, 1 deferred.**
+**31 items: 19 complete, 4 in progress, 7 not started, 1 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -80,7 +80,7 @@ happened, which is a different question.
 | H22. Discover the values a query can name | complete | 3/3 | — |
 | H23. One description of the command line, and --help everywhere | complete | 6/6 | — |
 | H24. JSON is the output; a template makes it readable | complete | 2/2 | — |
-| H25. Hold each command's flags to its description | not-started | 0/2 | 2 |
+| H25. Hold each command's flags to its description | complete | 2/2 | — |
 
 ### Started and not finished
 
@@ -110,7 +110,7 @@ happened, which is a different question.
 
 ### Not started
 
-Written and not begun: H10, H11, H12, H17, H19, H13, H20, H25. Their slices are listed under each item.
+Written and not begun: H10, H11, H12, H17, H19, H13, H20. Their slices are listed under each item.
 <!-- notrios:generated:plan:progress:end -->
 
 ## H0. Application-facade, C-ABI, and SQLite ownership investigation — complete
@@ -4183,7 +4183,7 @@ exiting 1.
 a human default keep it, and the guide names all seven so the exception is
 documented rather than discovered.
 
-## H25. Hold each command's flags to its description
+## H25. Hold each command's flags to its description — complete
 
 **Ordering.** After H23, which is where the gap it closes was left open.
 
@@ -4224,6 +4224,51 @@ is a separate item with its own risk.
 flag it does not accept, or accepts an uncommon flag it does not name; the four
 `sync` commands and `notes edit` pass because they were corrected by hand, and
 breaking one of them on purpose fails the build.
+
+**Outcome (2026-09-08).** Done. Both directions fail, and the first run found
+one described flag that does not exist and **thirty-five that do and were never
+mentioned**.
+
+*Described and not accepted:* `publish profile list --name`. My own mistake from
+H23 -- splitting `publish profile list|delete [--name <profile>]` into two
+commands gave `--name` to both, and only `delete` takes it.
+
+*Accepted and not described:* seventeen commands. `publish profile save` alone
+hid ten, including `--query`, `--exclude-tags` and `--private-tags`, which decide
+what a publication contains. `profile create` hid seven. Every addition was
+composed from the flag's own declared type, default and description rather than
+from memory, because writing H23's registry from memory is what produced the
+invented flags this item exists to catch.
+
+**A third category the item did not anticipate: a flag accepted and discarded.**
+`tags list` took `--tag` because the tag subcommands shared one `FlagSet`
+helper, and never read it -- so `notriosctl tags list --tag todo` returned every
+tag in the library, which reads as a filter that found everything. There is no
+honest way to describe that, so it is gone: `tags list` has its own flag set and
+now refuses the flag. `notes show --body` is the same shape and kept
+deliberately, so `accepts_ignored` declares it with its reason rather than
+leaving it to be discovered.
+
+Two details worth recording, both of which would have made the gate quietly
+useless:
+
+- **Flags are not always in the command's own body.** The sync commands take
+  theirs from `newSyncFlags`, the note commands from `newDocumentFlags`. A check
+  reading only the function would have reported every sync command as accepting
+  nothing and passed.
+- **`fs.Var(value, "name", ...)` names its flag second**, where every other
+  declarer names it first. A first-argument reader gets it silently wrong, and
+  did: my first pass reported `templates create --set` as described-but-absent
+  when the command accepts it.
+
+The exemptions are checked rather than trusted. `--config`, `--db` and
+`--asset-store` are declared common once instead of repeated in eighty-five
+usage strings, and a test refuses a "common" flag that fewer than two commands
+take, so the exemption cannot become a hiding place.
+
+`tags list` splitting its flag set is written without a conditional on purpose.
+A branch would leave the gate guessing about what the command accepts, and a
+gate that guesses reports problems nobody can act on.
 
 ## H13. v0.8 release wrap-up and branch synchronization
 
