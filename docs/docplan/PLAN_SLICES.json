@@ -404,6 +404,77 @@
           "state": "not-started"
         }
       ]
+    },
+    {
+      "id": "H21",
+      "title": "Read a note and its structure, from the command line",
+      "state": "not-started",
+      "slices": [
+        {
+          "id": "H21-A",
+          "statement": "The command line prints a note as Markdown with the front matter Notrios already writes, or as JSON, to a file or to standard output",
+          "state": "not-started"
+        },
+        {
+          "id": "H21-B",
+          "statement": "The command line lists what is attached to a note and writes one attachment's bytes to a file",
+          "state": "not-started"
+        },
+        {
+          "id": "H21-C",
+          "statement": "The command line lists a note's links and its outline",
+          "state": "not-started"
+        },
+        {
+          "id": "H21-D",
+          "statement": "The documentation says what reading a note already offers on REST and MCP, and stops claiming reading has no command line",
+          "state": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "H22",
+      "title": "Discover the values a query can name",
+      "state": "not-started",
+      "slices": [
+        {
+          "id": "H22-A",
+          "statement": "The command line lists and shows collections, which today can only be created as a side effect of an import",
+          "state": "not-started"
+        },
+        {
+          "id": "H22-B",
+          "statement": "The command line's notebook listing gives the ids a query takes, in JSON as well as for a reader",
+          "state": "not-started"
+        },
+        {
+          "id": "H22-C",
+          "statement": "The documentation says how to find a notebook or collection and then scope a search with it, and names the REST and MCP equivalents",
+          "state": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "H23",
+      "title": "Make the command line's help the truth about the command line",
+      "state": "not-started",
+      "slices": [
+        {
+          "id": "H23-A",
+          "statement": "Every dispatched subcommand appears in notriosctl help, including the eight that do not",
+          "state": "not-started"
+        },
+        {
+          "id": "H23-B",
+          "statement": "A subcommand dispatched without a usage line fails a build, or is exempt with a stated reason",
+          "state": "not-started"
+        },
+        {
+          "id": "H23-C",
+          "statement": "The unclaimed-surface baseline and the features registry reflect the command line rather than the help text",
+          "state": "not-started"
+        }
+      ]
     }
   ]
 }

@@ -46,7 +46,7 @@ What follows is what is left. Each item's own text below is the record of what
 happened, which is a different question.
 
 <!-- notrios:generated:plan:progress:begin -->
-**26 items: 14 complete, 4 in progress, 7 not started, 1 deferred.**
+**29 items: 14 complete, 4 in progress, 10 not started, 1 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -76,6 +76,9 @@ happened, which is a different question.
 | H19. notriosctl search | not-started | 0/4 | 4 |
 | H13. v0.8 release wrap-up and branch synchronization | not-started | 0/2 | 2 |
 | H20. Bring the atlas current, and stop it drifting again | not-started | 0/4 | 4 |
+| H21. Read a note and its structure, from the command line | not-started | 0/4 | 4 |
+| H22. Discover the values a query can name | not-started | 0/3 | 3 |
+| H23. Make the command line's help the truth about the command line | not-started | 0/3 | 3 |
 
 ### Started and not finished
 
@@ -105,7 +108,7 @@ happened, which is a different question.
 
 ### Not started
 
-Written and not begun: H10, H11, H12, H17, H19, H13, H20. Their slices are listed under each item.
+Written and not begun: H10, H11, H12, H17, H19, H13, H20, H21, H22, H23. Their slices are listed under each item.
 <!-- notrios:generated:plan:progress:end -->
 
 ## H0. Application-facade, C-ABI, and SQLite ownership investigation — complete
@@ -2958,16 +2961,23 @@ interfaces. All eighteen uses now say "GUI", which is the term the product's own
 
 **Open decisions**
 
-- **(resolved 2026-09-03) Whether the command line gets `notes delete`.** Added,
-  with `notes restore`, for the reason recommended: a delete whose undo lives on
-  another surface is a poor boundary.
-- **Whether the command line gets `notes delete` -- Blocking for one journey.**
-  Deleting is reachable from REST, MCP and the interface and not the command
-  line. Recommended: add `notes delete` and `notes restore`, because "delete a
-  note in a notebook" is one of the tasks this item exists to document and
-  because a delete that can only be undone through a different surface is a poor
-  boundary. The Trash semantics are already careful; the command inherits them
-  rather than inventing anything.
+- **(resolved 2026-09-03, confirmed by the user 2026-09-08) Whether the command
+  line gets `notes delete` -- was blocking for one journey.** Deleting was
+  reachable from REST, MCP and the GUI and not the command line. Recommended and
+  accepted: add `notes delete` and `notes restore`, because "delete a note in a
+  notebook" is one of the tasks this item exists to document, and because a
+  delete that can only be undone through a different surface is a poor boundary.
+  Both commands exist and inherit the Trash semantics rather than inventing
+  anything.
+
+  Two entries for this decision stood here for five days -- the resolution and
+  the original question, unchanged -- which is how a resolved decision comes to
+  be answered twice. The resolution is the record; the question is kept inside
+  it because the reasoning is the part worth having.
+
+  It closed less than it appeared to. Neither command was added to
+  `notriosctl help`, so the gap this decision existed to close is still
+  invisible to the coverage gate that measures such gaps. H23 fixes that.
 - **How much of the query language one journey should demonstrate --
   Non-blocking.** "Demonstrate all query language features" could be one journey
   with a dozen steps or a dozen journeys. Recommended: one journey per idea --
@@ -3558,7 +3568,9 @@ that renders them makes both harder to review.
 
 ## H19. `notriosctl search`
 
-**Ordering.** After H18, which found the gap. Independent of everything else.
+**Ordering.** After H18, which found the gap, and after H22, which supplies the
+values `notebook:` and `collection:` can name -- a query language nobody can
+enumerate the terms of is a language you have to already know.
 
 **Goal.** Make a library searchable from a script: the same query language the
 interface uses, results as JSON carrying each note's stable link, and the paging
@@ -3669,6 +3681,200 @@ that does not exist yet.
 `CONTEXT_MAP.md` names every current package and every root document, with the
 document list generated; and adding a package to the repository without touching
 the atlas fails a build rather than a review.
+
+## H21. Read a note and its structure, from the command line
+
+**Ordering.** After H23, which makes the help text the truth about what the
+command line has, because otherwise nothing added here is visible to the gates
+that are supposed to check it. Beside H19 and H22: search finds the id, this
+reads what the id points at.
+
+**Goal.** A person or a script working at a terminal can read a note, see what
+it is made of, and pull a file out of it, without opening a browser or writing
+an HTTP client.
+
+**Why.** `notriosctl notes show` exists and prints JSON metadata; everything
+else about a note's structure is reachable only over REST and MCP. Both of those
+surfaces are already complete for this -- the gap is one adapter, which is the
+shape v0.8 has now found five times.
+
+The features registry states the opposite, and states it as a decision:
+`read-notes` carries `"No command line: reading a note is what the GUI and the
+API are for"`. That is false in two directions at once. `notes show` reads a
+note today, so the claim is wrong about the present; and the reason given
+describes reading as something a terminal has no business doing, which is not a
+boundary anybody chose -- it is a gap being explained after the fact. This is
+the third such sentence H18's review has produced, and the pattern is worth
+naming: an absent adapter tends to acquire a justification.
+
+**What already exists, and is not built again.** This is written down because
+the item's first job is to say so in the documentation:
+
+| Ask | REST | MCP | Command line today |
+|---|---|---|---|
+| Read a note | `GET /documents/{id}`, `/body` | `get_document`, `get_documents` | `notes show` (JSON only) |
+| Its structure | `/outline`, `/blocks`, `/lines` | `get_document_outline`, `get_document_blocks`, `get_note_line_range` | none |
+| Its attachments | `GET /documents/{id}/resources` | `list_document_resources` | none |
+| One attachment's bytes | `GET /resources/{id}/content` | `read_resource` | none |
+| Its links | `GET /documents/{id}/links` | `list_document_links` | none |
+
+**Shape.**
+
+- `notriosctl notes show --document <id>` renders the note as Markdown with
+  YAML front matter, to standard output. `--json` returns the structured form
+  instead; `--output <file>` writes to a file rather than the terminal.
+- **The front matter is the one Notrios already writes.** `internal/projection`
+  renders notes as Markdown with front matter carrying `id`, `title`,
+  `notebook`, `collection`, source provenance and `tags` -- it is what Recoll
+  indexes and what an Obsidian-shaped reader expects. Reuse `renderNote` rather
+  than writing a second renderer: two front-matter formats in one product is a
+  bug waiting for the first person who round-trips through the wrong one.
+- `notriosctl notes outline --document <id>` -- the headings and their anchors.
+- `notriosctl notes resources --document <id>` -- what is attached, with ids,
+  MIME types and sizes.
+- `notriosctl notes links --document <id>` -- the links out of the note,
+  resolved and broken alike, since a broken link is the interesting one.
+- `notriosctl resources get --resource <id> --output <file>` -- the bytes.
+  Retrieval belongs to `resources`, which already exists, and listing belongs to
+  `notes`, because "what is attached to this note?" is a question about the note.
+- Every listing takes `--json`; the human form stays the default.
+
+**Boundaries.** Read-only. Nothing here writes a note, attaches a file, or
+changes a link. Trash is reported rather than hidden, as `notes show` already
+does, because a script that cannot tell a trashed note from a missing one will
+eventually overwrite one.
+
+**Open decisions.**
+
+- **Whether `notes show` changes its default output -- Non-blocking; the
+  default below is taken if no answer comes.** It prints JSON today and the
+  requested contract is Markdown by default with `--json` for the structured
+  form.
+  - *Change the default, keep JSON behind `--json` (default).* One read
+    command, and the JSON form stays available. The break is cheap: `notes show`
+    has never appeared in `notriosctl help`, so no documented contract changes,
+    and v0.8 is unreleased.
+  - *Add `notes read` and leave `show` alone.* No break, but two commands that
+    read a note, and the reader has to learn which.
+  - The recommendation is the default. Say it in the v0.8 release notes as a
+    behaviour change anyway, because "it was undocumented" is a reason, not an
+    excuse.
+- **Where attachment retrieval lives -- Non-blocking.** `resources get` as
+  above, rather than `notes get-resource`. A resource is addressable on its own
+  and can be referenced by several notes, so hanging retrieval off one note
+  would misdescribe the model.
+
+**Working state.** `notriosctl notes show --document <id>` prints a Markdown
+note another application can read; `--json` prints the structured form;
+`notes resources`, `notes links` and `notes outline` answer their questions;
+`resources get --output` writes a file whose bytes match the stored resource;
+the features table shows a command-line column for `Read a note and its
+structure`; and the registry's claim that reading has no command line is gone,
+replaced by what each surface actually offers.
+
+## H22. Discover the values a query can name
+
+**Ordering.** Before H19, which needs it: a query can name a notebook or a
+collection, and nothing at the command line says which ones exist.
+
+**Goal.** Answer, from the command line, the two questions a person must answer
+before they can write a query: what notebooks are there, and what collections
+are there.
+
+**Why.** `collection:` and `notebook:` narrow a search, and H16 made a search
+span every collection so that those terms mean something. But the values are
+undiscoverable from a terminal. `notriosctl notebooks list` exists; there is no
+`collections` command at all, and the only way the command line brings a
+collection into existence is as a side effect of `import --collection <id>`,
+through `ensureCollectionOrExit`, which creates it silently if it is new.
+
+The features registry again says otherwise: `collections` claims that "creating
+and reconfiguring collections stays on the command line and over REST". Half of
+that is true. A collection can be created on the command line only by importing
+into it, and it cannot be listed, named, shown or reconfigured there at all.
+
+REST and MCP are complete here too -- `GET /api/v1/collections`,
+`/collections/{id}`, `list_collections`, `list_notebooks`, `get_notebook_tree`
+-- so this is one adapter again, and the documentation must say so rather than
+implying the capability is new.
+
+**Shape.**
+
+- `notriosctl collections list [--json]` -- id, name, and how many notes name
+  each, because a collection with no notes is the interesting one after an
+  import.
+- `notriosctl collections show --collection <id> [--json]`.
+- `notriosctl notebooks list` gains `--json`, and prints the notebook id
+  alongside the name in the human form. A name is what a person reads and an id
+  is what a query takes, and today the command prints the sidebar's view.
+- The CLI guide gains the sentence that ties them together: run these to find
+  the values, then use them in `notriosctl search`.
+
+**Boundaries.** Listing and showing only. **No `collections create`, `rename`
+or `delete` here** -- H16 owns what a collection's identity means, whether one
+can be renamed or deleted, and what happens to notes that name it. Adding
+management commands before that decision would build the thing H16 is deciding
+about.
+
+**Working state.** `notriosctl collections list` names every collection in a
+library imported from Joplin and from Obsidian; `notriosctl notebooks list
+--json` gives ids a script can put into a query; the features table shows a
+command-line column for `Group libraries into collections`; and both registry
+entries describe the surfaces that exist rather than the ones assumed.
+
+## H23. Make the command line's help the truth about the command line
+
+**Ordering.** First of the three. It is small, and until it is done, a command
+added by H21 or H22 can be invisible to every gate meant to check it.
+
+**Goal.** Every subcommand `notriosctl` dispatches appears in its help, and a
+subcommand that does not fails a build.
+
+**Why.** Eight subcommands exist, work, and appear nowhere in `notriosctl help`:
+`notes show`, `notes edit`, `notes delete`, `notes restore`, `sync handshake`,
+`sync retention`, `sync retire`, and `sync start`. A user cannot discover them.
+
+The second consequence is worse, because it is silent. `internal/docgen`'s
+`cliUsageForms` derives the whole command-line surface inventory by parsing the
+usage literal in `printHelp` -- so a command missing from the help text is
+missing from the inventory, and therefore from the features coverage check, from
+`doccompare`, and from the ratchet in `unclaimedBaseline`. That ratchet reads
+`"cli": 0`, and it is honest about what it measures: **zero undocumented
+commands are unclaimed, because an undocumented command is not counted.** The
+gate is a statement about the help text, not about the command line.
+
+H15 demonstrated the cost without noticing: it added `notes delete` and
+`notes restore` on 2026-09-03 specifically to close a command-line gap, and did
+not add them to the help, so the gap it closed is still invisible to the gate
+that measures such gaps.
+
+**Shape.**
+
+- Add the eight missing forms to `printHelp`.
+- Check the dispatch against the help: every `case` in a subcommand dispatcher
+  has a matching usage line. This is a repository test beside the other
+  documentation gates, not a new tool.
+- A command that is deliberately not for users is named in an explicit
+  exemption list with a reason, exactly as the root-document inventory does for
+  feature contracts. Silence is what let these eight through.
+- Re-baseline `unclaimedBaseline` once the inventory is real, and claim the
+  newly visible commands in `docs/docfeatures/FEATURES.json`.
+
+**Boundaries.** No behaviour changes. This item adds no command and removes
+none; it makes the ones that exist visible.
+
+**Open decisions.**
+
+- **Whether the four `sync` subcommands are for users -- Non-blocking.**
+  Recommended: document them. If any is genuinely a daemon-side or test-only
+  entry point, it goes on the exemption list with a stated reason rather than
+  staying unmentioned, because an unmentioned command is the condition being
+  fixed.
+
+**Working state.** `notriosctl help` lists every dispatched subcommand;
+`go test ./...` fails when a new subcommand is dispatched without a usage line;
+the unclaimed-CLI baseline reflects the real command line; and the features
+registry claims the commands that just became visible.
 
 ## H13. v0.8 release wrap-up and branch synchronization
 

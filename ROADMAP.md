@@ -541,6 +541,19 @@ be smuggled into v0.7 as desktop assumptions.
   Add `notriosctl search`, with the query language the interface uses, JSON
   output carrying each hit's stable link, and the paging and counting a script
   needs.
+- **A command line that can read what it finds.** Searching returns note ids,
+  and until v0.8 almost nothing at a terminal could act on one: reading a note's
+  structure, its attachments, its links, and the bytes of one attachment were
+  reachable over REST and MCP and nowhere else, and the values `notebook:` and
+  `collection:` can name were undiscoverable from the command line even though a
+  search accepts them. Add reading and discovery to the command line, rendering
+  a note as Markdown with the front matter Notrios already writes so another
+  application can consume it. Two of these gaps were recorded in the capability
+  catalogue as decisions -- "reading a note is what the GUI and the API are for"
+  -- which they were not; an absent adapter tends to acquire a justification.
+  Supporting this: `notriosctl help` is the source the coverage gate derives the
+  command-line surface from, so eight commands that exist but are unlisted are
+  invisible to it. Make the help complete and make incompleteness fail.
 - **Documents that cannot quietly go stale.** The plan, the roadmap and the
   root reference documents each state one kind of fact and say where the rules
   for keeping them current live, with the pointer and the inventory checked
@@ -724,7 +737,7 @@ requirements below are the ones H7 already carried.
 The scaffold handoff is complete; see `CODING_CLIENT_HANDOFF.md`. Future roadmap planning should be driven from `ROADMAP.md`, but each active implementation cycle should create a small `PLAN.md` slice and archive it under `plans/` when complete.
 
 <!-- notrios:generated:roadmap:status:begin -->
-`PLAN.md` holds the active plan derived from this roadmap: 26 items, 14 complete, 4 in progress, 7 not started, 1 deferred.
+`PLAN.md` holds the active plan derived from this roadmap: 29 items, 14 complete, 4 in progress, 10 not started, 1 deferred.
 
 Started and unfinished: H9, H15, H16, H18. What remains in each is in the plan's own Progress section.
 <!-- notrios:generated:roadmap:status:end -->
