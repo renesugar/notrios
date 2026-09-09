@@ -26,7 +26,13 @@ describe('the stored draft', () => {
 
   it('reports failure instead of pretending, when the draft is too big or storage refuses', () => {
     expect(saveDraft({ documentID: null, title: 'T', body: 'x'.repeat(MAX_DRAFT_BYTES) })).toBe(false);
-    vi.spyOn(window.localStorage, 'setItem').mockImplementation(() => {
+    // Spy on the object the module actually calls. `saveDraft` uses the bare
+    // `localStorage` global, and `window.localStorage` is only guaranteed to be
+    // the same object in some environments: under Node 22 in CI it was not, so
+    // this patched something the module never touched, the real write succeeded,
+    // and the test asserted a refusal that had not happened. It passed locally
+    // on Node 26 for four milestones and failed the first time CI ran it.
+    vi.spyOn(localStorage, 'setItem').mockImplementation(() => {
       throw new Error('QuotaExceededError');
     });
     expect(saveDraft({ documentID: null, title: 'T', body: 'small' })).toBe(false);
