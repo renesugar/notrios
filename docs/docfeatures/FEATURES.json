@@ -370,7 +370,14 @@
       "mcp": [
         "run_batch"
       ],
-      "surface_note": "At a terminal the set is named by a search rather than by a list of identifiers: `--query` on `notes move`, `notes delete`, `notes restore`, `notes duplicate`, `tags add` and `tags remove`. Nothing happens until you add `--apply` — without it the command shows the notes it would act on and stops — and a selection larger than the 500-note ceiling is refused rather than trimmed, because acting on the first five hundred of a thousand matches looks exactly like success. Over REST and MCP the same run takes an explicit list and a request key that makes a retry safe. Selecting several notes in the interface is not built yet."
+      "gui": [
+        "result-check",
+        "selection-panel",
+        "selection-move",
+        "selection-add-tag",
+        "selection-trash"
+      ],
+      "surface_note": "At a terminal the set is named by a search rather than by a list of identifiers: `--query` on `notes move`, `notes delete`, `notes restore`, `notes duplicate`, `tags add` and `tags remove`. Nothing happens until you add `--apply` — without it the command shows the notes it would act on and stops — and a selection larger than the 500-note ceiling is refused rather than trimmed, because acting on the first five hundred of a thousand matches looks exactly like success. In the interface you tick the notes in the results list and the editor is replaced by the operations that apply to a set, because with several notes chosen there is no one note to read. Both send the same request, and both report every note rather than a total: a note that was skipped — a tag it already had, a notebook it was already in — is not a note that failed."
     },
     {
       "id": "import-notes",

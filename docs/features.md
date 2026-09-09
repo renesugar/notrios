@@ -169,9 +169,9 @@ A query block is a rendering rather than a command: the note carries a fenced qu
 
 Reorganise a lot of notes in one go: move, tag, untag, duplicate, trash or restore everything a search finds, as one reviewable action.
 
-At a terminal the set is named by a search rather than by a list of identifiers: `--query` on `notes move`, `notes delete`, `notes restore`, `notes duplicate`, `tags add` and `tags remove`. Nothing happens until you add `--apply` — without it the command shows the notes it would act on and stops — and a selection larger than the 500-note ceiling is refused rather than trimmed, because acting on the first five hundred of a thousand matches looks exactly like success. Over REST and MCP the same run takes an explicit list and a request key that makes a retry safe. Selecting several notes in the interface is not built yet.
+At a terminal the set is named by a search rather than by a list of identifiers: `--query` on `notes move`, `notes delete`, `notes restore`, `notes duplicate`, `tags add` and `tags remove`. Nothing happens until you add `--apply` — without it the command shows the notes it would act on and stops — and a selection larger than the 500-note ceiling is refused rather than trimmed, because acting on the first five hundred of a thousand matches looks exactly like success. In the interface you tick the notes in the results list and the editor is replaced by the operations that apply to a set, because with several notes chosen there is no one note to read. Both send the same request, and both report every note rather than a total: a note that was skipped — a tag it already had, a notebook it was already in — is not a note that failed.
 
-*Available on the command line, the REST API and MCP.*
+*Available on the desktop app, the command line, the REST API and MCP.*
 
 ### Import from another application
 
@@ -312,7 +312,7 @@ capability's own section.
 | See the shape of the link graph | 1 | 2 | 4 | 3 | — |
 | Templates and tasks | — | 3 | 4 | 3 | — |
 | Live query blocks inside a note | 1 | — | 1 | 1 | — |
-| Reorganise many notes at once | — | 1 | 1 | 1 | — |
+| Reorganise many notes at once | 5 | 1 | 1 | 1 | — |
 | Import from another application | 3 | 6 | — | — | — |
 | Export your library | 2 | 5 | — | — | — |
 | Back up and restore the whole library | 1 | 3 | — | — | — |
@@ -341,7 +341,6 @@ capability's own section says why.
 Each capability below is offered on some surfaces and not others.
 
 - Let an AI assistant use your library — neither the command line nor the GUI; reachable only over REST or MCP. This is a surface Notrios serves rather than something you run: software with an MCP client connects to it, so there is nothing to demonstrate at a terminal or in a window — a journey would document the client rather than this program. The two REST operations listed here are how the endpoint is reached.
-- Reorganise many notes at once — command line only. At a terminal the set is named by a search rather than by a list of identifiers: `--query` on `notes move`, `notes delete`, `notes restore`, `notes duplicate`, `tags add` and `tags remove`. Nothing happens until you add `--apply` — without it the command shows the notes it would act on and stops — and a selection larger than the 500-note ceiling is refused rather than trimmed, because acting on the first five hundred of a thousand matches looks exactly like success. Over REST and MCP the same run takes an explicit list and a request key that makes a retry safe. Selecting several notes in the interface is not built yet.
 - Choose where sync keys are kept — command line only. Credentials are managed from the command line and nowhere else, firmly: a remote route that can move a key is a remote route that can take one. An installed Notrios never silently falls back to a plaintext file, and nothing here prints, logs or exports a secret.
 - Templates and tasks — command line only. Both are ordinary Markdown rather than tables in a database: a template is a note carrying a note-template block, and a task is a checkbox line in a note tagged `task` or `todo`. So nothing creates a task — writing `- [ ] chase the permit` in a note is how one comes to exist — and what the command line adds is the other half: asking what remains, and filling in a template. A placeholder you leave out is refused rather than quietly left blank, so a template that gains a field fails the scripts that do not know about it. The tag is required because a checkbox is ordinary Markdown and turns up in quoted examples; `--untagged` asks for those too. Not in the interface yet.
 - Move a pre-0.8 library into place — command line only. This one is genuinely command-line work: it relocates the directories the running program is using, which is not something a program can sensibly do to itself while serving them.

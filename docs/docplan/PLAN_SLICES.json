@@ -640,22 +640,25 @@
     {
       "id": "H29",
       "title": "Select more than one note in the interface",
-      "state": "not-started",
+      "state": "complete",
       "slices": [
         {
           "id": "H29-A",
           "statement": "The search results can select more than one note, and the editor is replaced by the operations that apply to a set",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:web/src/components/SelectionPanel.tsx"
         },
         {
           "id": "H29-B",
           "statement": "Replacing the editor asks the unsaved-draft guard rather than going around it",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:web/src/App.tsx"
         },
         {
           "id": "H29-C",
           "statement": "A captured GUI journey covers selecting notes, acting on them, and leaving the selection",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:docs/images/journeys/act-on-several-notes-read-the-report.png"
         }
       ]
     }

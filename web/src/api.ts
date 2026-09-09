@@ -229,6 +229,59 @@ export async function createDocument(request: CreateDocumentRequest): Promise<Do
   return parseJSON<DocumentRecord>(response);
 }
 
+/** One note in a batch, with the revision a trash is preconditioned on. */
+export interface BatchItem {
+  document_id: string;
+  base_revision_id?: string;
+}
+
+export interface BatchItemResult {
+  document_id: string;
+  status: string;
+  reason?: string;
+  error?: string;
+  new_document_id?: string;
+}
+
+export interface BatchResult {
+  request_key?: string;
+  operation: string;
+  mode: string;
+  items: BatchItemResult[];
+  applied: number;
+  skipped: number;
+  failed: number;
+  rolled_back: number;
+  replayed: boolean;
+}
+
+export interface BatchRequest {
+  request_key?: string;
+  operation: 'move' | 'add_tags' | 'remove_tags' | 'trash' | 'restore' | 'duplicate';
+  mode?: 'atomic' | 'best_effort';
+  items: BatchItem[];
+  notebook_id?: string;
+  tags?: string[];
+}
+
+/**
+ * Runs one bounded organiser transaction over a set of notes.
+ *
+ * A run that happened is a 200 even when every item failed, because per-item
+ * failure is the report's content rather than the request's fate — so a caller
+ * has to read `failed` and `rolled_back` rather than trusting the status code.
+ * Only a malformed request is a 4xx, and `parseJSON` turns that into a thrown
+ * error carrying the service's own message.
+ */
+export async function runBatch(request: BatchRequest): Promise<BatchResult> {
+  const response = await fetch('/api/v1/batch', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(request),
+  });
+  return parseJSON<BatchResult>(response);
+}
+
 export async function getDocument(documentID: string): Promise<DocumentRecord> {
   const response = await fetch(`/api/v1/documents/${encodeURIComponent(documentID)}`);
   return parseJSON<DocumentRecord>(response);

@@ -1,22 +1,22 @@
 {
   "schema": "notrios.h15.gui-controls.v3",
-  "interface_signature": "dd6fea1cde26e8512be9a6be462d60bc45c1e8f45294f1b85bc722f2ac772919",
+  "interface_signature": "2b8155912de5ae3465b4da3dea63aa4d83b068bab35367cb5349b425ec2d0c75",
   "summary": {
-    "controls": 79,
-    "addressable": 72,
+    "controls": 89,
+    "addressable": 82,
     "unaddressable": 7
   },
   "states": [
     {
       "id": "start",
       "reached": true,
-      "controls": 87,
+      "controls": 109,
       "steps": []
     },
     {
       "id": "all-notes",
       "reached": true,
-      "controls": 87,
+      "controls": 109,
       "steps": [
         "testid=sidebar-row-snb_all_notes"
       ]
@@ -24,7 +24,7 @@
     {
       "id": "help",
       "reached": true,
-      "controls": 84,
+      "controls": 102,
       "steps": [
         "testid=sidebar-row-nb_help"
       ]
@@ -32,7 +32,7 @@
     {
       "id": "trash",
       "reached": true,
-      "controls": 67,
+      "controls": 68,
       "steps": [
         "testid=sidebar-row-snb_trash"
       ]
@@ -40,7 +40,7 @@
     {
       "id": "new-note",
       "reached": true,
-      "controls": 87,
+      "controls": 109,
       "steps": [
         "testid=new-note-button"
       ]
@@ -48,7 +48,7 @@
     {
       "id": "note-open",
       "reached": true,
-      "controls": 91,
+      "controls": 113,
       "steps": [
         "testid=sidebar-row-snb_all_notes",
         "css=.result-card text~Crawl fixture note#0"
@@ -57,7 +57,7 @@
     {
       "id": "note-trashed",
       "reached": true,
-      "controls": 66,
+      "controls": 67,
       "steps": [
         "testid=sidebar-row-snb_trash",
         "css=.result-card text~Trashed fixture note#0"
@@ -66,16 +66,25 @@
     {
       "id": "note-remote-media",
       "reached": true,
-      "controls": 93,
+      "controls": 115,
       "steps": [
         "testid=sidebar-row-snb_all_notes",
         "css=.result-card text~Remote media fixture#0"
       ]
     },
     {
+      "id": "selection",
+      "reached": true,
+      "controls": 69,
+      "steps": [
+        "testid=sidebar-row-snb_all_notes",
+        "css=.result-check#0"
+      ]
+    },
+    {
       "id": "sync-overview",
       "reached": true,
-      "controls": 103,
+      "controls": 125,
       "steps": [
         "testid=sync-header-button"
       ]
@@ -83,7 +92,7 @@
     {
       "id": "sync-setup",
       "reached": true,
-      "controls": 102,
+      "controls": 124,
       "steps": [
         "testid=sync-header-button",
         "testid=sync-tab-setup"
@@ -92,7 +101,7 @@
     {
       "id": "sync-peers",
       "reached": true,
-      "controls": 102,
+      "controls": 124,
       "steps": [
         "testid=sync-header-button",
         "testid=sync-tab-peers"
@@ -101,7 +110,7 @@
     {
       "id": "sync-retention",
       "reached": true,
-      "controls": 96,
+      "controls": 118,
       "steps": [
         "testid=sync-header-button",
         "testid=sync-tab-retention"
@@ -110,7 +119,7 @@
     {
       "id": "sync-attachments",
       "reached": true,
-      "controls": 96,
+      "controls": 118,
       "steps": [
         "testid=sync-header-button",
         "testid=sync-tab-resources"
@@ -119,7 +128,7 @@
     {
       "id": "sync-conflicts",
       "reached": true,
-      "controls": 96,
+      "controls": 118,
       "steps": [
         "testid=sync-header-button",
         "testid=sync-tab-conflicts"
@@ -128,7 +137,7 @@
     {
       "id": "sync-backup",
       "reached": true,
-      "controls": 107,
+      "controls": 129,
       "steps": [
         "testid=sync-header-button",
         "testid=sync-tab-backup"
@@ -137,7 +146,7 @@
     {
       "id": "sync-repairs",
       "reached": true,
-      "controls": 96,
+      "controls": 118,
       "steps": [
         "testid=sync-header-button",
         "testid=sync-tab-repairs"
@@ -496,8 +505,8 @@
       "examples": [
         "What has rotted in this library, and what could be reclaimed"
       ],
-      "instances": 16,
-      "enabled_instances": 16,
+      "instances": 17,
+      "enabled_instances": 17,
       "states": [
         "start",
         "all-notes",
@@ -507,6 +516,7 @@
         "note-open",
         "note-trashed",
         "note-remote-media",
+        "selection",
         "sync-overview",
         "sync-setup",
         "sync-peers",
@@ -591,8 +601,8 @@
       "examples": [
         "Start a new note in “Notes”"
       ],
-      "instances": 16,
-      "enabled_instances": 16,
+      "instances": 17,
+      "enabled_instances": 17,
       "states": [
         "start",
         "all-notes",
@@ -602,6 +612,7 @@
         "note-open",
         "note-trashed",
         "note-remote-media",
+        "selection",
         "sync-overview",
         "sync-setup",
         "sync-peers",
@@ -767,12 +778,12 @@
       "role": "",
       "testid": "result-card",
       "examples": [
-        "Job fixture note",
         "Written after the drive went away",
+        "Crawl fixture note",
         "Remote media fixture"
       ],
-      "instances": 306,
-      "enabled_instances": 306,
+      "instances": 328,
+      "enabled_instances": 328,
       "states": [
         "start",
         "all-notes",
@@ -782,6 +793,40 @@
         "note-open",
         "note-trashed",
         "note-remote-media",
+        "selection",
+        "sync-overview",
+        "sync-setup",
+        "sync-peers",
+        "sync-retention",
+        "sync-attachments",
+        "sync-conflicts",
+        "sync-backup",
+        "sync-repairs"
+      ],
+      "always_disabled": false
+    },
+    {
+      "id": "testid:result-check",
+      "tag": "input",
+      "role": "",
+      "testid": "result-check",
+      "examples": [
+        "Select Written after the drive went away",
+        "Select Crawl fixture note",
+        "Select Remote media fixture"
+      ],
+      "instances": 328,
+      "enabled_instances": 328,
+      "states": [
+        "start",
+        "all-notes",
+        "help",
+        "trash",
+        "new-note",
+        "note-open",
+        "note-trashed",
+        "note-remote-media",
+        "selection",
         "sync-overview",
         "sync-setup",
         "sync-peers",
@@ -831,8 +876,8 @@
       "examples": [
         "Search query"
       ],
-      "instances": 16,
-      "enabled_instances": 16,
+      "instances": 17,
+      "enabled_instances": 17,
       "states": [
         "start",
         "all-notes",
@@ -842,6 +887,7 @@
         "note-open",
         "note-trashed",
         "note-remote-media",
+        "selection",
         "sync-overview",
         "sync-setup",
         "sync-peers",
@@ -861,8 +907,8 @@
       "examples": [
         "Search"
       ],
-      "instances": 16,
-      "enabled_instances": 16,
+      "instances": 17,
+      "enabled_instances": 17,
       "states": [
         "start",
         "all-notes",
@@ -872,6 +918,7 @@
         "note-open",
         "note-trashed",
         "note-remote-media",
+        "selection",
         "sync-overview",
         "sync-setup",
         "sync-peers",
@@ -884,6 +931,141 @@
       "always_disabled": false
     },
     {
+      "id": "testid:selection-add-tag",
+      "tag": "button",
+      "role": "",
+      "testid": "selection-add-tag",
+      "examples": [
+        "Add tag"
+      ],
+      "instances": 1,
+      "enabled_instances": 0,
+      "states": [
+        "selection"
+      ],
+      "always_disabled": true
+    },
+    {
+      "id": "testid:selection-clear",
+      "tag": "button",
+      "role": "",
+      "testid": "selection-clear",
+      "examples": [
+        "Back to the note"
+      ],
+      "instances": 1,
+      "enabled_instances": 1,
+      "states": [
+        "selection"
+      ],
+      "always_disabled": false
+    },
+    {
+      "id": "testid:selection-duplicate",
+      "tag": "button",
+      "role": "",
+      "testid": "selection-duplicate",
+      "examples": [
+        "Duplicate"
+      ],
+      "instances": 1,
+      "enabled_instances": 1,
+      "states": [
+        "selection"
+      ],
+      "always_disabled": false
+    },
+    {
+      "id": "testid:selection-move",
+      "tag": "button",
+      "role": "",
+      "testid": "selection-move",
+      "examples": [
+        "Move"
+      ],
+      "instances": 1,
+      "enabled_instances": 0,
+      "states": [
+        "selection"
+      ],
+      "always_disabled": true
+    },
+    {
+      "id": "testid:selection-notebook",
+      "tag": "select",
+      "role": "",
+      "testid": "selection-notebook",
+      "examples": [
+        "Choose a notebook…"
+      ],
+      "instances": 1,
+      "enabled_instances": 1,
+      "states": [
+        "selection"
+      ],
+      "always_disabled": false
+    },
+    {
+      "id": "testid:selection-remove-tag",
+      "tag": "button",
+      "role": "",
+      "testid": "selection-remove-tag",
+      "examples": [
+        "Remove tag"
+      ],
+      "instances": 1,
+      "enabled_instances": 0,
+      "states": [
+        "selection"
+      ],
+      "always_disabled": true
+    },
+    {
+      "id": "testid:selection-restore",
+      "tag": "button",
+      "role": "",
+      "testid": "selection-restore",
+      "examples": [
+        "Restore from Trash"
+      ],
+      "instances": 1,
+      "enabled_instances": 1,
+      "states": [
+        "selection"
+      ],
+      "always_disabled": false
+    },
+    {
+      "id": "testid:selection-tag",
+      "tag": "input",
+      "role": "",
+      "testid": "selection-tag",
+      "examples": [
+        "field/dusk"
+      ],
+      "instances": 1,
+      "enabled_instances": 1,
+      "states": [
+        "selection"
+      ],
+      "always_disabled": false
+    },
+    {
+      "id": "testid:selection-trash",
+      "tag": "button",
+      "role": "",
+      "testid": "selection-trash",
+      "examples": [
+        "Move to Trash"
+      ],
+      "instances": 1,
+      "enabled_instances": 1,
+      "states": [
+        "selection"
+      ],
+      "always_disabled": false
+    },
+    {
       "id": "testid:sidebar-delete-nb_joplin_jobs-folder",
       "tag": "button",
       "role": "",
@@ -891,8 +1073,8 @@
       "examples": [
         "Delete the notebook Imported Notes"
       ],
-      "instances": 16,
-      "enabled_instances": 16,
+      "instances": 17,
+      "enabled_instances": 17,
       "states": [
         "start",
         "all-notes",
@@ -902,6 +1084,7 @@
         "note-open",
         "note-trashed",
         "note-remote-media",
+        "selection",
         "sync-overview",
         "sync-setup",
         "sync-peers",
@@ -921,8 +1104,8 @@
       "examples": [
         "Help"
       ],
-      "instances": 16,
-      "enabled_instances": 16,
+      "instances": 17,
+      "enabled_instances": 17,
       "states": [
         "start",
         "all-notes",
@@ -932,6 +1115,7 @@
         "note-open",
         "note-trashed",
         "note-remote-media",
+        "selection",
         "sync-overview",
         "sync-setup",
         "sync-peers",
@@ -951,8 +1135,8 @@
       "examples": [
         "Imported Notes"
       ],
-      "instances": 16,
-      "enabled_instances": 16,
+      "instances": 17,
+      "enabled_instances": 17,
       "states": [
         "start",
         "all-notes",
@@ -962,6 +1146,7 @@
         "note-open",
         "note-trashed",
         "note-remote-media",
+        "selection",
         "sync-overview",
         "sync-setup",
         "sync-peers",
@@ -981,8 +1166,8 @@
       "examples": [
         "Notes"
       ],
-      "instances": 16,
-      "enabled_instances": 16,
+      "instances": 17,
+      "enabled_instances": 17,
       "states": [
         "start",
         "all-notes",
@@ -992,6 +1177,7 @@
         "note-open",
         "note-trashed",
         "note-remote-media",
+        "selection",
         "sync-overview",
         "sync-setup",
         "sync-peers",
@@ -1011,8 +1197,8 @@
       "examples": [
         "Recovered"
       ],
-      "instances": 16,
-      "enabled_instances": 16,
+      "instances": 17,
+      "enabled_instances": 17,
       "states": [
         "start",
         "all-notes",
@@ -1022,6 +1208,7 @@
         "note-open",
         "note-trashed",
         "note-remote-media",
+        "selection",
         "sync-overview",
         "sync-setup",
         "sync-peers",
@@ -1041,8 +1228,8 @@
       "examples": [
         "Reports"
       ],
-      "instances": 16,
-      "enabled_instances": 16,
+      "instances": 17,
+      "enabled_instances": 17,
       "states": [
         "start",
         "all-notes",
@@ -1052,6 +1239,7 @@
         "note-open",
         "note-trashed",
         "note-remote-media",
+        "selection",
         "sync-overview",
         "sync-setup",
         "sync-peers",
@@ -1071,8 +1259,8 @@
       "examples": [
         "All notes"
       ],
-      "instances": 16,
-      "enabled_instances": 16,
+      "instances": 17,
+      "enabled_instances": 17,
       "states": [
         "start",
         "all-notes",
@@ -1082,6 +1270,7 @@
         "note-open",
         "note-trashed",
         "note-remote-media",
+        "selection",
         "sync-overview",
         "sync-setup",
         "sync-peers",
@@ -1101,8 +1290,8 @@
       "examples": [
         "Trash"
       ],
-      "instances": 16,
-      "enabled_instances": 16,
+      "instances": 17,
+      "enabled_instances": 17,
       "states": [
         "start",
         "all-notes",
@@ -1112,6 +1301,7 @@
         "note-open",
         "note-trashed",
         "note-remote-media",
+        "selection",
         "sync-overview",
         "sync-setup",
         "sync-peers",
@@ -1183,8 +1373,8 @@
       "examples": [
         "Open synchronization, pairing, backup, and recovery"
       ],
-      "instances": 16,
-      "enabled_instances": 16,
+      "instances": 17,
+      "enabled_instances": 17,
       "states": [
         "start",
         "all-notes",
@@ -1194,6 +1384,7 @@
         "note-open",
         "note-trashed",
         "note-remote-media",
+        "selection",
         "sync-overview",
         "sync-setup",
         "sync-peers",
@@ -1745,8 +1936,8 @@
       "examples": [
         "Toggle light/dark theme"
       ],
-      "instances": 16,
-      "enabled_instances": 16,
+      "instances": 17,
+      "enabled_instances": 17,
       "states": [
         "start",
         "all-notes",
@@ -1756,6 +1947,7 @@
         "note-open",
         "note-trashed",
         "note-remote-media",
+        "selection",
         "sync-overview",
         "sync-setup",
         "sync-peers",
@@ -1775,8 +1967,8 @@
       "examples": [
         "Theme settings"
       ],
-      "instances": 16,
-      "enabled_instances": 16,
+      "instances": 17,
+      "enabled_instances": 17,
       "states": [
         "start",
         "all-notes",
@@ -1786,6 +1978,7 @@
         "note-open",
         "note-trashed",
         "note-remote-media",
+        "selection",
         "sync-overview",
         "sync-setup",
         "sync-peers",
@@ -1805,7 +1998,7 @@
       "examples": [
         "Importing, exporting and snapshots need the desktop app: they name a folder on t"
       ],
-      "instances": 16,
+      "instances": 17,
       "enabled_instances": 0,
       "states": [
         "start",
@@ -1816,6 +2009,7 @@
         "note-open",
         "note-trashed",
         "note-remote-media",
+        "selection",
         "sync-overview",
         "sync-setup",
         "sync-peers",

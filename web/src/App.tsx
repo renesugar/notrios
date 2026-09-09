@@ -78,6 +78,7 @@ import {
   type PaneWidths,
   type SplitterIndex,
 } from './panes';
+import { runBatch, type BatchRequest, type BatchResult } from './api';
 import { usePagedSearch } from './usePagedSearch';
 import { errorMessage } from './preview-utils';
 import { PaneSplitter } from './components/PaneSplitter';
@@ -85,6 +86,7 @@ import { SidebarPane } from './components/SidebarPane';
 import { SearchPane } from './components/SearchPane';
 import { EditorPane } from './components/EditorPane';
 import { PreviewPane } from './components/PreviewPane';
+import { SelectionPanel } from './components/SelectionPanel';
 import { SyncCenter } from './components/SyncCenter';
 import { LibraryTransfer, transferBridge } from './components/LibraryTransfer';
 import { reportUnsavedChanges, useNativeBridgeReady } from './desktop';
@@ -222,6 +224,133 @@ export function App() {
     },
     [paged],
   );
+
+  // ----- Acting on several notes at once -----
+  //
+  // The missing primitive was selection, not the operations: `POST
+  // /api/v1/batch` has moved, tagged, untagged, trashed, restored and
+  // duplicated a set since v0.6, and this pane tracked one note.
+  const [checked, setChecked] = useState<ReadonlySet<string>>(new Set());
+  // Read through a ref so the toggle keeps one identity for the life of the
+  // app: it is a prop of the search pane's every row, and a handler that
+  // changed whenever a page of results arrived would rebuild all of them.
+  const pagedHitsRef = useRef(paged.hits);
+  pagedHitsRef.current = paged.hits;
+  const [batchReport, setBatchReport] = useState<BatchResult | null>(null);
+  const [batchError, setBatchError] = useState('');
+  const lastCheckedRef = useRef<string | null>(null);
+
+  const onToggleChecked = useCallback((documentID: string, extend: boolean) => {
+    setBatchReport(null);
+    setBatchError('');
+    setChecked((current) => {
+      const next = new Set(current);
+      // Shift extends from the last one touched, over the results as they are
+      // listed rather than as they were clicked -- which is what makes "these
+      // twelve" one gesture instead of twelve.
+      const anchor = lastCheckedRef.current;
+      if (extend && anchor && anchor !== documentID) {
+        const ids = pagedHitsRef.current.map((hit) => hit.id);
+        const from = ids.indexOf(anchor);
+        const to = ids.indexOf(documentID);
+        if (from >= 0 && to >= 0) {
+          const [low, high] = from < to ? [from, to] : [to, from];
+          for (const id of ids.slice(low, high + 1)) next.add(id);
+          lastCheckedRef.current = documentID;
+          return next;
+        }
+      }
+      if (next.has(documentID)) next.delete(documentID);
+      else next.add(documentID);
+      lastCheckedRef.current = documentID;
+      return next;
+    });
+  }, []);
+
+  const clearChecked = useCallback(() => {
+    setChecked(new Set());
+    setBatchReport(null);
+    setBatchError('');
+    lastCheckedRef.current = null;
+  }, []);
+
+  /**
+   * Runs one batch over the checked notes and reports every item.
+   *
+   * `request_key` is sent on every run. A person who clicks twice because
+   * nothing appeared to happen is exactly the case the key exists for: the
+   * second run is answered from the ledger rather than performed again, and the
+   * report says `replayed` so the interface is not lying about having done the
+   * work twice.
+   *
+   * A run that happened is a 200 even when every item failed, so the report is
+   * read rather than the status: `failed` and `rolled_back` are what say
+   * whether anything is wrong.
+   */
+  async function runOverChecked(request: Omit<BatchRequest, 'items'>, describe: string) {
+    const ids = pagedHitsRef.current.map((hit) => hit.id).filter((id) => checked.has(id));
+    if (ids.length === 0) return;
+    // Trash is the one operation the store preconditions on a revision, and a
+    // search hit does not carry one. The note in the editor supplies its own;
+    // any other is read immediately before the run, which is the same guarantee
+    // a person gets when they open a note and then delete it.
+    const items = await Promise.all(ids.map(async (id) => {
+      if (request.operation !== 'trash') return { document_id: id };
+      if (selectedDocument?.id === id) {
+        return { document_id: id, base_revision_id: selectedDocument.current_revision_id };
+      }
+      const current = await getDocument(id);
+      return { document_id: id, base_revision_id: current.current_revision_id };
+    }));
+
+    setBusy(true);
+    setBatchError('');
+    setBatchReport(null);
+    setError(null);
+    setMessage(null);
+    try {
+      const result = await runBatch({
+        ...request,
+        request_key: `gui-${request.operation}-${Date.now()}-${ids.length}`,
+        items,
+      });
+      setBatchReport(result);
+      setMessage(`${describe}: ${result.applied} applied, ${result.skipped} skipped, ${result.failed} failed.`);
+      // The results list and the sidebar both describe what just changed, and
+      // the note in the editor may be one of the notes that changed.
+      if (activeQuery.trim() !== '') void paged.start(activeQuery);
+      void refreshSidebar();
+      if (selectedDocument && checked.has(selectedDocument.id)) {
+        if (request.operation === 'trash') clearEditor();
+        else void openDocumentByID(selectedDocument.id, 'reload the note the batch changed');
+      }
+    } catch (err) {
+      setBatchError(errorMessage(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  /**
+   * Trashing a set asks about the open note's unsaved work, and only then.
+   *
+   * The slice this implements said the selection panel must go through the
+   * unsaved-draft guard rather than around it, on the reasoning that having the
+   * note you were reading disappear is abrupt when it was unsaved. Checked
+   * against what the panel actually does: entering and leaving a selection
+   * discards nothing -- the draft stays in state and the editor comes back to
+   * the same note -- so a confirmation there would ask about a loss that is not
+   * happening, which is how people learn to dismiss confirmations without
+   * reading them. Trashing the note the editor is holding is the case where the
+   * work really does go, so that is where the guard belongs.
+   */
+  function onTrashChecked() {
+    const openNoteIsGoing = selectedDocument !== null && checked.has(selectedDocument.id);
+    if (openNoteIsGoing && !confirmDiscard('move it to the Trash with the others')) return;
+    if (!window.confirm(`Move ${checked.size} ${checked.size === 1 ? 'note' : 'notes'} to the Trash?\n\n`
+      + 'They stay in the Trash until you restore them or delete them permanently.')) return;
+    void runOverChecked({ operation: 'trash' }, 'Moved to the Trash');
+  }
 
   // ----- Startup: status, sidebar, "All notes", Help-menu readiness -----
   const refreshSidebar = useCallback(async () => {
@@ -1032,6 +1161,8 @@ export function App() {
           newNoteNotebookName={creationNotebookName}
           ranQuery={activeQuery}
           onKeepSearch={onKeepSearch}
+          checked={checked}
+          onToggleChecked={onToggleChecked}
         />
         <PaneSplitter
           label="Resize search results"
@@ -1040,6 +1171,28 @@ export function App() {
           max={containerWidth - MIN_WIDTHS.sidebar - MIN_WIDTHS.editor - MIN_WIDTHS.preview}
           {...splitterHandlers(1)}
         />
+        {checked.size > 0 ? (
+          // The editor and the preview are both about one note, and with
+          // several chosen there is no one note to show. Replacing them is
+          // Joplin's shape and it is the honest one: the alternative is
+          // photographing whichever note was clicked last beside a list of
+          // notes the next action will change.
+          <SelectionPanel
+            selected={paged.hits.filter((hit) => checked.has(hit.id))
+              .map((hit) => ({ id: hit.id, title: hit.title ?? hit.uri }))}
+            notebooks={notebookChoices}
+            busy={busy}
+            report={batchReport}
+            error={batchError}
+            onClear={clearChecked}
+            onMove={(notebookID) => void runOverChecked({ operation: 'move', notebook_id: notebookID }, 'Moved')}
+            onAddTag={(tag) => void runOverChecked({ operation: 'add_tags', tags: [tag] }, 'Tagged')}
+            onRemoveTag={(tag) => void runOverChecked({ operation: 'remove_tags', tags: [tag] }, 'Untagged')}
+            onDuplicate={() => void runOverChecked({ operation: 'duplicate' }, 'Duplicated')}
+            onTrash={onTrashChecked}
+            onRestore={() => void runOverChecked({ operation: 'restore' }, 'Restored')}
+          />
+        ) : (
         <EditorPane
           title={title}
           onTitleChange={setTitle}
@@ -1072,20 +1225,25 @@ export function App() {
           onRestore={() => void onRestoreDocument()}
           onPurge={() => void onPurgeDocument()}
         />
-        <PaneSplitter
-          label="Resize editor"
-          value={clamped.editor}
-          min={MIN_WIDTHS.editor}
-          max={containerWidth - MIN_WIDTHS.sidebar - MIN_WIDTHS.search - MIN_WIDTHS.preview}
-          {...splitterHandlers(2)}
-        />
-        <PreviewPane
-          body={body}
-          themeBase={activeTheme.base}
-          onOpenDocument={(id) => void openDocumentByID(id)}
-          onOpenStableLink={(uri) => void openStableLink(uri)}
-          onError={setError}
-        />
+        )}
+        {checked.size === 0 && (
+          <PaneSplitter
+            label="Resize editor"
+            value={clamped.editor}
+            min={MIN_WIDTHS.editor}
+            max={containerWidth - MIN_WIDTHS.sidebar - MIN_WIDTHS.search - MIN_WIDTHS.preview}
+            {...splitterHandlers(2)}
+          />
+        )}
+        {checked.size === 0 && (
+          <PreviewPane
+            body={body}
+            themeBase={activeTheme.base}
+            onOpenDocument={(id) => void openDocumentByID(id)}
+            onOpenStableLink={(uri) => void openStableLink(uri)}
+            onError={setError}
+          />
+        )}
       </div>
       {/* Pane widths as CSS custom properties for the fixed-width panes. */}
       <style>{`.workspace > .sidebar-pane{width:${clamped.sidebar}px}.workspace > .search-pane{width:${clamped.search}px}.workspace > .editor-pane{width:${clamped.editor}px}.workspace > .preview-pane{width:${Math.max(MIN_WIDTHS.preview, previewWidth(clamped, containerWidth))}px}`}</style>

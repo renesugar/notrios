@@ -79,6 +79,12 @@ const STATES = [
 
   // Eight tabs, of which the earlier crawl saw one. Attachments and Backup are
   // where two of the three "missing" capabilities actually live.
+  // A selection replaces the editor and the preview with a panel of the
+  // operations that apply to a set, so those controls do not exist until
+  // something is ticked. Ticking a box performs no operation -- it is the same
+  // kind of step as opening a tab.
+  { id: 'selection', steps: [SIDEBAR_ALL, { css: '.result-check', nth: 0 }] },
+
   { id: 'sync-overview', steps: [OPEN_SYNC] },
   { id: 'sync-setup', steps: [OPEN_SYNC, syncTab('setup')] },
   { id: 'sync-peers', steps: [OPEN_SYNC, syncTab('peers')] },

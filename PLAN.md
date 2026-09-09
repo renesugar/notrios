@@ -46,7 +46,7 @@ What follows is what is left. Each item's own text below is the record of what
 happened, which is a different question.
 
 <!-- notrios:generated:plan:progress:begin -->
-**35 items: 29 complete, 0 in progress, 4 not started, 2 deferred.**
+**35 items: 30 complete, 0 in progress, 3 not started, 2 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -84,7 +84,7 @@ happened, which is a different question.
 | H26. Ask about one tag without fetching them all | complete | 4/4 | — |
 | H27. Attach a file from the command line, without guessing where the link goes | complete | 5/5 | — |
 | H28. Make the interface addressable, so its journeys can be written | complete | 3/3 | — |
-| H29. Select more than one note in the interface | not-started | 0/3 | 3 |
+| H29. Select more than one note in the interface | complete | 3/3 | — |
 
 Nothing is half-finished.
 <!-- notrios:generated:plan:progress:end -->
@@ -2244,6 +2244,16 @@ Both checks were confirmed by mutation.
 
 ## H10. Wails v3 migration spike
 
+**Ordering (decided 2026-09-08).** Last of the three interface-adjacent items,
+after H29. This item's deliverable is a desktop regression matrix against the v2
+baseline, and its value is proportional to how complete the interface is when it
+runs: a matrix taken before multi-select exists does not cover multi-select, so a
+later migration would be blind exactly where the newest and most stateful code
+lives -- selection state, the panel that replaces the editor, and the unsaved
+guard H29-B routes through rather than around. The reverse order buys nothing,
+because this item changes no production code by construction, so H29 is written
+against Wails v2 either way.
+
 **Goal.** Determine whether Wails v3 can replace v2 later without risking the
 v0.8 desktop product or installer schedule.
 
@@ -2268,12 +2278,29 @@ gaps; rollback rehearsal; and no-production-diff check.
 
 **Open decisions**
 
-- **When is the spike worth running? — Non-blocking default.** Run only after
-  H8 establishes the v2 installed baseline and only on explicit user approval.
-  If upstream maturity or required desktop features do not pass, recommend
-  deferral without a migration item.
+- **When is the spike worth running? — Non-blocking default, strengthened
+  2026-09-08.** Run only after H8 establishes the v2 installed baseline, only
+  once the Wails v2 interface is feature-complete for this milestone -- which
+  means after H29 -- and only on explicit user approval. If upstream maturity or
+  required desktop features do not pass, recommend deferral without a migration
+  item.
 
 ## H11. Android-emulator shared-core acceptance
+
+**Ordering (decided 2026-09-08).** Independent of H10, and explicitly not
+waiting for it. The question was whether Wails v3's mobile support would help
+here, and it would not: there is no UI in this item at all -- it loads the C ABI
+and exercises lifecycle, storage, search, streams, cancellation and sync
+negotiation, and its boundaries already forbid a UI, a Flutter client and any
+mobile support claim. Wails is a desktop webview shell and contributes to none
+of it.
+
+The path this feeds into is not Wails either. `ROADMAP.md` puts the mobile
+client post-v1.0 as one Flutter UI over the versioned C ABI, so v3's mobile
+support is not on it; and H10 could not supply mobile evidence in any case,
+since its own boundaries forbid claiming mobile support and upstream calls v3
+mobile experimental. Waiting would couple an ABI acceptance test to a framework
+the mobile plan does not use.
 
 **Goal.** Prove the H1 library is a viable backend on one Android emulator
 without presenting an Android or Flutter product.
@@ -5098,7 +5125,7 @@ to solve. Ordering the seeded fixtures deterministically -- distinct timestamps,
 or a sort the fixtures control -- would make a screenshot diff mean something
 again, and belongs with the item that captures eleven more of them.
 
-## H29. Select more than one note in the interface
+## H29. Select more than one note in the interface — complete
 
 **Ordering.** With H28, and after it in practice: both are interface work, and a
 journey covering multi-select needs the controls H28 names. Depends on H17 only
@@ -5171,6 +5198,64 @@ the selection that lets a person name a set.
 operations that apply to a set; the unsaved-draft guard is asked before the
 editor is replaced, rather than worked around; a run reports per-item outcomes;
 and a captured GUI journey covers selecting, acting and returning.
+
+**Outcome (2026-09-08).** Done. Every result carries a tick box, ctrl-click and
+shift-click do what they do in every other list of selectable things, and with
+more than one note chosen the editor *and the preview* are replaced by the
+operations that apply to a set. The operations are `POST /api/v1/batch`'s,
+unchanged: this item added a selection, not a capability.
+
+**The tick box is visible always, rather than revealed by a mode.** A selection
+nobody can see how to start is one nobody starts, and ctrl-click is not
+discoverable by anyone who has not already been told. It costs one control on
+each row and it is the reason the feature is usable without documentation --
+which, on a page whose whole argument is that a capability nobody can find is a
+capability that does not exist, is the consistent choice.
+
+It could not go inside the result card. One interactive control nested in
+another is unreachable by keyboard and ambiguous to a screen reader, so each row
+is now a flex row holding a checkbox and the card, and the card keeps the width
+it had.
+
+**H29-B's premise was examined and refined rather than implemented as written.**
+The slice said the panel must go through the unsaved-draft guard rather than
+around it, because having the note you were reading disappear is abrupt when it
+was unsaved. Checked against what the panel does: entering and leaving a
+selection discards nothing. The draft stays in state and "Back to the note"
+returns to the same note with the same unsaved text, which a test asserts. A
+confirmation there would ask about a loss that is not happening, and this
+project has already recorded what that teaches -- "asking a person to type a
+confirmation for a reversible act teaches them to type confirmations without
+reading them", written for `notes delete`.
+
+So the guard is asked where the work really does go: trashing a set that
+contains the note the editor is holding, while that note has unsaved changes.
+That is the case the slice was reaching for, and it is one confirmation instead
+of one on every selection.
+
+**Trash needed the same precondition the command line needed, and for the same
+reason.** The store refuses a `trash` item without a `base_revision_id` and a
+search hit does not carry one, so each checked note's current revision is read
+immediately before the run -- except the open note, which supplies its own. A
+test asserts every item carries one, because without it the store refuses the
+whole set and the failure looks like a permissions problem.
+
+**Both non-blocking decisions were taken as recommended.** `request_key` is sent
+on every run: a person who clicks twice because nothing appeared to happen is
+exactly what the key is for, and the report says `replayed` so the interface
+does not claim to have done the work twice. `export` stays out of the panel,
+because exporting a selection means a publication or an archive subset, both of
+which name a folder and are therefore desktop-only -- it would be the one item
+in the panel that is sometimes absent, and that needs the greyed-out-with-a-
+reason treatment rather than a fourth button.
+
+**And the H15-G invariant did its job on the way past.** Giving
+`batch-operations` a `gui` surface immediately failed
+`TestEveryGUIFeatureHasAJourney` -- "these capabilities claim an interface
+surface and have no interface journey" -- which is the first time that gate has
+caught a live claim rather than an old one. The journey exists and is captured;
+the control crawl went from 79 controls to 89 and from 72 named to 82, with all
+ten of the new ones named as they were written.
 
 ## H13. v0.8 release wrap-up
 

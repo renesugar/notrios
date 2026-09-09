@@ -18,6 +18,8 @@ function props(overrides: Partial<SearchPaneProps> = {}): SearchPaneProps {
     },
     onOpenHit: vi.fn(),
     selectedDocumentID: null,
+    checked: new Set<string>(),
+    onToggleChecked: vi.fn(),
     busy: false,
     onNewNote: vi.fn(),
     newNoteNotebookName: 'Notes',

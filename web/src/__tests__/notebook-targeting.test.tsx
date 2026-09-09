@@ -193,6 +193,8 @@ describe('"New note" is not an action on the open note', () => {
       paged: { hits: [], loading: false, exhausted: true, started: true, error: null, start: vi.fn(), loadMore: vi.fn(), patchHit: vi.fn(), prependHit: vi.fn(), removeHit: vi.fn() },
       onOpenHit: vi.fn(),
       selectedDocumentID: null,
+      checked: new Set<string>(),
+      onToggleChecked: vi.fn(),
       busy: false,
       onNewNote,
       ranQuery: '',

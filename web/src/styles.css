@@ -1791,3 +1791,57 @@ button.sync-list-row:hover { border-color: var(--accent); }
   overflow-wrap: anywhere;
   user-select: text;
 }
+
+/* A result row is the checkbox plus the card, because one interactive control
+   cannot be nested inside another and stay reachable. The card keeps all the
+   width it had; the checkbox is the only thing added to the line. */
+.result-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+}
+.result-row > .result-card {
+  flex: 1;
+  min-width: 0;
+}
+.result-check {
+  margin-top: 0.9rem;
+  flex: none;
+}
+
+/* The selection panel takes the room the editor and the preview gave up,
+   because with several notes chosen there is no one note to show in either. */
+.selection-pane {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  padding: 0.75rem 1rem;
+}
+.selection-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+.selection-list {
+  margin: 0 0 1rem;
+  padding-left: 1.1rem;
+  max-height: 12rem;
+  overflow-y: auto;
+}
+.selection-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.6rem;
+}
+/* Buttons here size to their words. Stretched across the pane, Move read as a
+   banner rather than as the thing you press. */
+.selection-actions > button {
+  align-self: flex-start;
+}
+.selection-report ul,
+.selection-report code {
+  font-size: 0.85em;
+}

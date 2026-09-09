@@ -55,8 +55,17 @@ HERE = pathlib.Path(__file__).resolve().parent
 # both splits and merges: the sync centre's eight tabs were one shape and are
 # now eight names, while the two shapes a search result had -- selected and not
 # -- became one control, because a test id is identity and a class is not.
-EXPECTED_CONTROLS = 79
-EXPECTED_STATES = 16
+# 79 -> 89 in v0.8 H29, which added a capability rather than a name: ticking a
+# result starts a selection, and the editor and preview are replaced by the
+# operations that apply to a set. Nine of the ten are that panel; the tenth is
+# the tick box itself, which appears on every result in every state that lists
+# one.
+EXPECTED_CONTROLS = 89
+# 16 -> 17 in v0.8 H29: `selection`. The panel does not exist until something is
+# ticked, so without a state that ticks one the crawl would have measured an
+# interface that cannot act on a set -- the same mistake the six-view crawl made
+# about attachments and remote media, in a new place.
+EXPECTED_STATES = 17
 
 # How much of the interface can be pointed at by name.
 #
@@ -67,13 +76,15 @@ EXPECTED_STATES = 16
 #
 # 22 of 59 in v0.8 H15, and the 22 were largely the furniture that appears in
 # every state; the controls that make a state that state were mostly in the
-# other 37. 72 of 79 in v0.8 H28.
+# other 37. 72 of 79 in v0.8 H28. 82 of 89 in v0.8 H29, whose ten new controls
+# all arrived with names -- which is what the gate is for: the cost of naming a
+# control is lowest while it is being written.
 #
 # Pinned exactly rather than as a floor. A floor would let a control be added
 # without a name as long as something else gained one, which is the drift this
 # exists to catch: the number has to be re-measured, and a re-measurement that
 # cannot fail is not one.
-EXPECTED_ADDRESSABLE = 72
+EXPECTED_ADDRESSABLE = 82
 
 # The seven that carry no name, and why each is not an omission. Six are
 # rendered by md-editor-rt -- the wrapper it puts around the notebook and tag
@@ -111,6 +122,13 @@ STATE_EVIDENCE = {
     # control vanishes and the jobs row goes back to looking absent. It was
     # recorded as unmeasured for exactly that reason until one was seeded.
     "sync-overview": "testid:sync-job-retry",
+    # The panel replaces the editor and the preview, so this state is also the
+    # only one where those two are absent. Naming a control it alone reveals
+    # keeps a step that ticked nothing from passing quietly. Not the panel
+    # itself: the crawl collects interactive elements, and a <section> is not
+    # one however well named -- so the control that leaves the selection stands
+    # for it, because it is the one thing the panel always offers.
+    "selection": "testid:selection-clear",
 }
 
 # Reached, and deliberately expected to contribute nothing of their own. These

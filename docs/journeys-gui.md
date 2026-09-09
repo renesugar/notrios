@@ -31,7 +31,6 @@ Everything here is command-line or API work today. Where a capability is
 absent for a reason rather than for want of doing it, the reason is given.
 
 **Templates and tasks** — Keep notes that are shapes for other notes, make new ones from them, and see the tasks scattered across a library in one list. Both are ordinary Markdown rather than tables in a database: a template is a note carrying a note-template block, and a task is a checkbox line in a note tagged `task` or `todo`. So nothing creates a task — writing `- [ ] chase the permit` in a note is how one comes to exist — and what the command line adds is the other half: asking what remains, and filling in a template. A placeholder you leave out is refused rather than quietly left blank, so a template that gains a field fails the scripts that do not know about it. The tag is required because a checkbox is ordinary Markdown and turns up in quoted examples; `--untagged` asks for those too. Not in the interface yet.
-**Reorganise many notes at once** — Reorganise a lot of notes in one go: move, tag, untag, duplicate, trash or restore everything a search finds, as one reviewable action. At a terminal the set is named by a search rather than by a list of identifiers: `--query` on `notes move`, `notes delete`, `notes restore`, `notes duplicate`, `tags add` and `tags remove`. Nothing happens until you add `--apply` — without it the command shows the notes it would act on and stops — and a selection larger than the 500-note ceiling is refused rather than trimmed, because acting on the first five hundred of a thousand matches looks exactly like success. Over REST and MCP the same run takes an explicit list and a request key that makes a retry safe. Selecting several notes in the interface is not built yet.
 **Choose where sync keys are kept** — An installed Notrios keeps the key protecting your sync material in the operating system's credential store. Move existing keys between that and the owner-only development file, in either direction. Credentials are managed from the command line and nowhere else, firmly: a remote route that can move a key is a remote route that can take one. An installed Notrios never silently falls back to a plaintext file, and nothing here prints, logs or exports a secret.
 **Move a pre-0.8 library into place** — A library that lived in a `./data` folder next to the program moves into the directories an installed Notrios uses — after showing you the plan. This one is genuinely command-line work: it relocates the directories the running program is using, which is not something a program can sensibly do to itself while serving them.
 **Let an AI assistant use your library** — Notrios speaks MCP, so an assistant can read your library and, within a scope you grant, change it. What it may touch is yours to decide, and establishing trust between replicas and managing credentials are outside every scope. This is a surface Notrios serves rather than something you run: software with an MCP client connects to it, so there is nothing to demonstrate at a terminal or in a window — a journey would document the client rather than this program. The two REST operations listed here are how the endpoint is reached.
@@ -384,6 +383,25 @@ Each task below lists its steps, with a picture of every one.
   - Each profile is a separate local process at its own address, so choosing one opens it there. Making, registering and forgetting profiles is command-line work: `profile create` names a directory to keep a library in and `profile start` launches a process, and neither is something a web request should be able to ask for.
 
     ![choose-a-profile](images/journeys/see-which-library-this-is-choose-a-profile.png)
+**Reorganise several notes at once** — Tag, move or trash a set of notes in one action, instead of opening each one.
+  - Every result carries a tick box. Ticking one starts a selection; the note it belongs to is not opened, because you are choosing notes rather than reading one.
+
+    ![tick-the-first](images/journeys/act-on-several-notes-tick-the-first.png)
+  - Tick as many as you want. Ctrl-click — Command on a Mac — does the same from the card itself, and shift-click takes everything between the last one you touched and this one.
+
+    ![tick-another](images/journeys/act-on-several-notes-tick-another.png)
+  - With more than one note chosen there is no single note to read, so the editor and the preview are replaced by the operations that apply to a set: move to a notebook, add or remove a tag, duplicate, restore, or move to the Trash. The notes you picked are listed above them.
+
+    ![read-the-panel](images/journeys/act-on-several-notes-read-the-panel.png)
+  - A tag to put on all of them. The same box removes one, because adding and removing a tag are the same choice made in two directions.
+
+    ![type-a-tag](images/journeys/act-on-several-notes-type-a-tag.png)
+  - One request, bounded at five hundred notes and refused rather than trimmed past it. It carries a key that makes a second click safe: if nothing appeared to happen and you press again, the answer comes from the first run rather than doing the work twice.
+
+    ![apply-it](images/journeys/act-on-several-notes-apply-it.png)
+  - Every note is reported, not just a total. A note that was skipped — it already carried the tag — is not a note that failed, and the two are counted separately so “nothing to do” cannot look like a fault.
+
+    ![read-the-report](images/journeys/act-on-several-notes-read-the-report.png)
 <!-- notrios:generated:user:the-journeys:end -->
 
 

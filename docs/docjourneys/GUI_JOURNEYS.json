@@ -1282,6 +1282,71 @@
           "css": ".sync-profile-identity"
         }
       }
+    },
+    {
+      "id": "act-on-several-notes",
+      "title": "Reorganise several notes at once",
+      "goal": "Tag, move or trash a set of notes in one action, instead of opening each one.",
+      "feature": "batch-operations",
+      "steps": [
+        {
+          "id": "tick-the-first",
+          "narrative": "Every result carries a tick box. Ticking one starts a selection; the note it belongs to is not opened, because you are choosing notes rather than reading one.",
+          "locator": {
+            "role": "checkbox",
+            "name": "Select Marsh survey, index"
+          },
+          "action": "click"
+        },
+        {
+          "id": "tick-another",
+          "narrative": "Tick as many as you want. Ctrl-click — Command on a Mac — does the same from the card itself, and shift-click takes everything between the last one you touched and this one.",
+          "locator": {
+            "role": "checkbox",
+            "name": "Select Marsh survey, north pool"
+          },
+          "action": "click"
+        },
+        {
+          "id": "read-the-panel",
+          "narrative": "With more than one note chosen there is no single note to read, so the editor and the preview are replaced by the operations that apply to a set: move to a notebook, add or remove a tag, duplicate, restore, or move to the Trash. The notes you picked are listed above them.",
+          "locator": {
+            "testid": "selection-panel"
+          },
+          "action": "screenshot_only"
+        },
+        {
+          "id": "type-a-tag",
+          "narrative": "A tag to put on all of them. The same box removes one, because adding and removing a tag are the same choice made in two directions.",
+          "locator": {
+            "testid": "selection-tag"
+          },
+          "action": "fill",
+          "value": "survey"
+        },
+        {
+          "id": "apply-it",
+          "narrative": "One request, bounded at five hundred notes and refused rather than trimmed past it. It carries a key that makes a second click safe: if nothing appeared to happen and you press again, the answer comes from the first run rather than doing the work twice.",
+          "locator": {
+            "testid": "selection-add-tag"
+          },
+          "action": "click"
+        },
+        {
+          "id": "read-the-report",
+          "narrative": "Every note is reported, not just a total. A note that was skipped — it already carried the tag — is not a note that failed, and the two are counted separately so “nothing to do” cannot look like a fault.",
+          "locator": {
+            "testid": "selection-report"
+          },
+          "action": "screenshot_only"
+        }
+      ],
+      "postcondition": {
+        "narrative": "the run reports what happened to each note in the selection",
+        "locator": {
+          "testid": "selection-report"
+        }
+      }
     }
   ]
 }

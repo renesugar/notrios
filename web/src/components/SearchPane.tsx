@@ -31,9 +31,21 @@ export interface SearchPaneProps {
   ranQuery: string;
   /** Saves the query that ran as a notebook under the given name. */
   onKeepSearch: (name: string) => Promise<void>;
+  /**
+   * The notes picked out for an operation on a set, which is a different thing
+   * from the one note the editor is showing: `selectedDocumentID` is where you
+   * are, and this is what you are about to act on.
+   */
+  checked: ReadonlySet<string>;
+  /**
+   * Toggles one note in or out of that set. `extend` asks for everything
+   * between the last one touched and this one, which is what shift-click means
+   * everywhere else a list of things can be selected.
+   */
+  onToggleChecked: (documentID: string, extend: boolean) => void;
 }
 
-export function SearchPane({ query, onQueryChange, onSubmit, paged, onOpenHit, selectedDocumentID, busy, onNewNote, newNoteNotebookName, ranQuery, onKeepSearch }: SearchPaneProps) {
+export function SearchPane({ query, onQueryChange, onSubmit, paged, onOpenHit, selectedDocumentID, busy, onNewNote, newNoteNotebookName, ranQuery, onKeepSearch, checked, onToggleChecked }: SearchPaneProps) {
   const sentinelRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const [keeping, setKeeping] = useState(false);
@@ -146,11 +158,36 @@ export function SearchPane({ query, onQueryChange, onSubmit, paged, onOpenHit, s
       )}
       <div className="pane-scroll result-list" ref={listRef} aria-live="polite" data-testid="search-results">
         {paged.hits.map((hit) => (
+          // A row rather than a bare card, because the checkbox cannot live
+          // inside the button: one interactive control nested in another is
+          // unreachable by keyboard and ambiguous to a screen reader. The card
+          // still opens the note; the checkbox picks it out for an operation on
+          // several. Shown always rather than revealed by a mode, because a
+          // selection you cannot see how to start is one nobody starts.
+          <div className="result-row" key={hit.id}>
+          <input
+            type="checkbox"
+            className="result-check"
+            data-testid="result-check"
+            checked={checked.has(hit.id)}
+            aria-label={`Select ${hit.title ?? hit.uri}`}
+            onChange={(event) => onToggleChecked(hit.id, (event.nativeEvent as MouseEvent).shiftKey === true)}
+            onClick={(event) => event.stopPropagation()}
+          />
           <button
             className={selectedDocumentID === hit.id ? 'result-card active' : 'result-card'}
-            key={hit.id}
             data-testid="result-card"
-            onClick={() => onOpenHit(hit)}
+            onClick={(event) => {
+              // Ctrl or Command adds to the set and shift extends it, which is
+              // what a list of selectable things does everywhere else and what
+              // somebody arriving from Joplin will try first. The checkbox is
+              // the discoverable path; this is the fast one.
+              if (event.ctrlKey || event.metaKey || event.shiftKey) {
+                onToggleChecked(hit.id, event.shiftKey);
+                return;
+              }
+              onOpenHit(hit);
+            }}
             aria-current={selectedDocumentID === hit.id ? 'true' : undefined}
           >
             <strong>
@@ -166,6 +203,7 @@ export function SearchPane({ query, onQueryChange, onSubmit, paged, onOpenHit, s
             )}
             {hit.snippet && <Snippet htmlSnippet={hit.snippet} />}
           </button>
+          </div>
         ))}
         {paged.error && <p className="muted result-status">Search failed: {paged.error}</p>}
         {paged.loading && <p className="muted result-status" data-testid="search-loading">Loading…</p>}
