@@ -33,7 +33,8 @@ RESULTS = ROOT / "dist" / "backfill-v08e" / "RESULTS.jsonl"
 # minutes after that commit, in the session that closed it. That is an archive
 # taken when the slice closed, and saying otherwise would be a lie in the
 # direction that flatters the record.
-TAKEN_AT_CLOSE = {"E3": "notrios-v0.8e-e3-d24c02e.zip"}
+TAKEN_AT_CLOSE = {"E3": "notrios-v0.8e-e3-d24c02e.zip",
+                  "E4": "notrios-v0.8e-e4-3ea7e3f.zip"}
 
 
 def build() -> dict:
@@ -51,11 +52,15 @@ def build() -> dict:
         "E1 and E2 closed without an archive and theirs were built in E4, from their own "
         "close-out commits in a disposable worktree. Their file timestamps are the date they "
         "were built and say nothing about when the work happened. E3's was taken when the "
-        "slice closed. Nothing here attests when any of the work was done; what attests a "
-        "sealing is the reserve's OpenPGP signature and RFC 3161 timestamp.")
+        "slice closed, and so was E4's -- from the commit that implements it, because the "
+        "entry recording an archive cannot live inside the commit that archive is built "
+        "from. That is the closure boundary the reserve already documents for a volume "
+        "that cannot contain its own final hash, not a gap in the record. Nothing here "
+        "attests when any of the work was done; what attests a sealing is the reserve's "
+        "OpenPGP signature and RFC 3161 timestamp.")
     manifest["archives"] = []
 
-    for item in ("E1", "E2", "E3"):
+    for item in ("E1", "E2", "E3", "E4"):
         entry = collections.OrderedDict(item=item)
         if item in TAKEN_AT_CLOSE:
             name = TAKEN_AT_CLOSE[item]

@@ -67,12 +67,13 @@
     {
       "id": "E4",
       "title": "Make a missing archive fail rather than pass unnoticed",
-      "state": "not-started",
+      "state": "complete",
       "slices": [
         {
           "id": "E4-A",
           "statement": "make validate fails when a completed plan item has no manifest entry",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v0.8e/check_archive_coverage.py"
         }
       ]
     }

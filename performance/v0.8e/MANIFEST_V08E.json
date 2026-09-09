@@ -2,7 +2,7 @@
   "schema": "notrios.v08e.archive-manifest.v1",
   "milestone": "v0.8e",
   "evidence_directory": "/home/renes/evidence/notrios",
-  "honest_provenance": "E1 and E2 closed without an archive and theirs were built in E4, from their own close-out commits in a disposable worktree. Their file timestamps are the date they were built and say nothing about when the work happened. E3's was taken when the slice closed. Nothing here attests when any of the work was done; what attests a sealing is the reserve's OpenPGP signature and RFC 3161 timestamp.",
+  "honest_provenance": "E1 and E2 closed without an archive and theirs were built in E4, from their own close-out commits in a disposable worktree. Their file timestamps are the date they were built and say nothing about when the work happened. E3's was taken when the slice closed, and so was E4's -- from the commit that implements it, because the entry recording an archive cannot live inside the commit that archive is built from. That is the closure boundary the reserve already documents for a volume that cannot contain its own final hash, not a gap in the record. Nothing here attests when any of the work was done; what attests a sealing is the reserve's OpenPGP signature and RFC 3161 timestamp.",
   "archives": [
     {
       "item": "E1",
@@ -30,11 +30,20 @@
       "bytes": 24915422,
       "entries": 2385,
       "sha256": "b457f6ff95632269e0c2b431f40842a81d8f6295ba03bed1d710a4fc89783145"
+    },
+    {
+      "item": "E4",
+      "archive": "notrios-v0.8e-e4-3ea7e3f.zip",
+      "commit": "3ea7e3f940d61446bf237d80594feeaf18191840",
+      "taken": "when the slice closed",
+      "bytes": 24920971,
+      "entries": 2385,
+      "sha256": "6f615d0ec67ac7e41834782080196eb7a47ae2bc1e16e25be54424261b1d74cf"
     }
   ],
   "counts": {
-    "items": 3,
+    "items": 4,
     "retroactive": 2,
-    "total_bytes": 74603771
+    "total_bytes": 99524742
   }
 }

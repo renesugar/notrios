@@ -49,14 +49,14 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**4 items: 3 complete, 0 in progress, 1 not started, 0 deferred.**
+**4 items: 4 complete, 0 in progress, 0 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
 | E1. Build the twenty-seven missing handoff archives | complete | 3/3 | — |
 | E2. Record the backfill honestly, and say what it is | complete | 2/2 | — |
 | E3. Seal a reserve volume, and extend the outer catalog | complete | 2/2 | — |
-| E4. Make a missing archive fail rather than pass unnoticed | not-started | 0/1 | 1 |
+| E4. Make a missing archive fail rather than pass unnoticed | complete | 1/1 | — |
 
 Nothing is half-finished.
 <!-- notrios:generated:plan:progress:end -->
@@ -376,7 +376,7 @@ each refused.
 sits outside the ISO it describes: a volume cannot contain its own final hash
 or the commit that records it. The next ordinary checkpoint covers it.
 
-## E4. Make a missing archive fail rather than pass unnoticed
+## E4. Make a missing archive fail rather than pass unnoticed — complete
 
 **Goal.** The next milestone cannot lose twenty-seven archives quietly.
 
@@ -400,6 +400,41 @@ reserve verifier, with a device attached.
 
 **Working state.** Removing a manifest entry for a completed item fails
 `make validate`, checked by removing one on purpose.
+
+**Done, 2026-09-09.** `performance/v0.8e/check_archive_coverage.py` runs inside
+`make validate` and reads the record rather than the evidence directory, for the
+reason the scope gives: a gate that looked at
+`/home/renes/evidence/notrios` would pass vacuously on every machine that does
+not have it. It reads each plan's own generated progress table -- the archived
+`plans/v0.8/000-v0.8-plan.md` and the active `PLAN.md` -- and requires every
+item recorded complete or deferred to appear in that milestone's manifest. It
+also refuses in the other direction, because a manifest naming an item the plan
+does not record finished means the two have drifted and no gate can say which is
+wrong.
+
+**Registering v0.8e was the whole point, and it found something.** The gate's
+first run reported that E1 and E2 had closed with no handoff archive: this
+milestone had already repeated the failure it exists to end, and did so while
+the item that ends it was being written. Both were built from their own
+close-out commits in a disposable worktree and verified byte-identical to them
+-- E1 1,695 tracked files at `d7f5ec3`, E2 1,698 at `15d8e94`. `backfill.sh`
+gained two defaulted knobs rather than a second copy of itself, so it remains
+the record of how E1 built the twenty-seven.
+
+**An unregistered milestone fails too.** A `plans/v0.9/` that nobody registered
+stops the build, because a new plan nobody registered is exactly how the last
+omission survived thirty-one items.
+
+**The closure boundary is the reserve's, restated.** E4's own archive names the
+commit that implements it rather than the commit that records it: an entry
+naming an archive cannot live inside the commit that archive is built from, the
+same way a volume cannot contain its own final hash. Sequencing it as two
+commits keeps `make validate` green at both.
+
+**Four deliberate breakages, four refusals.** Removing a v0.8 entry (`H13`),
+removing a v0.8e entry (`E2`), recording an archive for an unfinished item, and
+adding an unregistered milestone. Coverage, not contents: the gate cannot verify
+a hash it has no file for and does not pretend to.
 
 ## Decisions register
 
