@@ -121,6 +121,12 @@ Every v0.8 slice now has a handoff ZIP in `dist/` and a byte-identical copy in
 | H2 | `e69419c` | 16,253,582 | 1,949 | `403dd225e6d34d14` |
 | H3 | `97652f1` | 16,311,386 | 1,974 | `d9b3ff0f76b467e2` |
 
+**Packaging stopped after H4 and nothing noticed for the rest of v0.8.**
+Twenty-seven slices closed without a handoff ZIP, which the roadmap's **v0.8e**
+milestone backfills using the same worktree method described below — before the
+first GitHub push, because evidence sealed after disclosure cannot establish
+that it predates it.
+
 The H2a, H2b and H2 archives were built **retroactively**, on 2026-09-01, after
 the omission was noticed during H3: those three slices completed without the
 packaging step. Each was packaged from its own close-out commit in a disposable

@@ -619,11 +619,66 @@ be smuggled into v0.7 as desktop assumptions.
   GitHub Release, public installer, signing/notarization claim, app-store
   upload, or unsupported-platform claim.
 
+## v0.8e — Evidence backfill and reserve sealing (before v0.9)
+
+**This milestone exists because of an ordering constraint, not a backlog.** The
+first GitHub push makes the whole v0.8 body of work public. Evidence sealed
+after that moment can prove it existed when it was sealed and nothing about
+whether it existed before disclosure; evidence sealed before it can prove both.
+The reserve already has the mechanism that makes that a fact rather than a claim
+-- a detached OpenPGP signature by a pinned subkey and an RFC 3161 timestamp
+from a pinned authority -- so the only thing missing is doing it while the
+repository is still private. **It runs to completion before v0.9's first
+external write.**
+
+- **Twenty-seven v0.8 slices have no handoff ZIP.** The reserve holds bundles
+  for H0-H4 and H13; H4a, H4b, H5, H6a, H6, H7, H8, H9, H10, H11, H12, H14-H29
+  have none. Packaging ran per-slice through H4 and then stopped, which nothing
+  noticed for the rest of the milestone.
+- **Build each from its own close-out commit in a disposable `git worktree`**,
+  the method `CODING_CLIENT_HANDOFF.md` records for the retroactive H2a/H2b/H2
+  archives: the live checkout is never touched, and each archive reflects the
+  repository as it stood when that slice finished. Copy each to
+  `/home/renes/evidence/notrios`.
+- **Verify the tree, not today's gates.** `scripts/package_release.sh` re-runs
+  the full gate set, and a historical commit will fail gates that were written
+  after it -- pinned counts that have since moved, an `npm audit` advisory
+  published later, a document count that grew. What a retroactive archive has to
+  prove is that it *is* that commit: every tracked file byte-identical to the
+  commit's tree, and `scripts/check_release_zip.py` clean. Those gates passed
+  when the slice closed, and re-running today's against yesterday's tree would
+  measure the wrong thing.
+- **Record them as retroactive, because they are.** The catalogue already
+  carries honest provenance for this case. A bundle built now has a file
+  timestamp of now; what the RFC 3161 response attests is when the *sealing*
+  happened, which is the property this milestone is for. It does not attest when
+  the work happened, and no entry may imply that it does.
+- **Seal a new reserve volume** at
+  `/media/renes/SEAGATE2TB/notrios-evidence`, extending the outer catalog chain
+  from `volume-0001`, with the ISO hashed, signed by the exact production subkey
+  and timestamped. Then verify it the way the reserve is meant to be verified --
+  `python3 evidence/verify_evidence.py reserve --reserve-root …` -- which
+  extracts without mounting, walks every file, and requires the exact OpenPGP
+  and RFC 3161 identities rather than ambient trust.
+- **Fix the packager before any of this.** `scripts/package_release.sh` excludes
+  by explicit pattern rather than by `.gitignore`, so it would have swept a
+  95 MB local `.zvec-grep/` index into every archive. v0.8 H13 added that
+  exclusion; a backfill run against historical commits has to use *today's*
+  packaging script for exactly that reason.
+
+**Boundaries.** Reserve and ISO work needs separate authorization, as it always
+has; this entry schedules it and does not grant it. No burn, no media write and
+no catalogue sealing happens without the owner saying so. Nothing here is
+published, and no bundle leaves the machine or the reserve.
+
 ## v0.9 — Release-candidate hardening
 
-- **Open the milestone by putting v0.8 on GitHub.** This is the first external
-  write for the whole v0.8 body of work, and it happens *before* hardening
-  rather than inside it: the workflows this milestone must pin and exercise have
+- **Open the milestone by putting v0.8 on GitHub — after v0.8e has sealed the
+  evidence.** This is the first external write for the whole v0.8 body of work,
+  and the moment it happens the work is public, which is why the backfill
+  milestone above runs first: a timestamp taken afterwards cannot establish that
+  the evidence predates disclosure. It also happens *before* hardening rather
+  than inside it: the workflows this milestone must pin and exercise have
   never run against any of that work, and a release window is the worst place to
   discover it. Re-audit the remote, run the evidence pre-push gate, push
   `develop`, and open a `develop`-to-`main` pull request. Merge only after
