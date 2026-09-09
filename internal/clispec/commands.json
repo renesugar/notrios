@@ -357,10 +357,11 @@
         "notes",
         "delete"
       ],
-      "usage": "--document <id> [--db ...]",
+      "usage": "[--document <id> | --query <query> [--apply] [--mode atomic|best_effort] [--limit N]] [--db ...]",
       "purpose": "move one note to Trash",
       "notes": [
-        "reversible with notes restore; this is not a purge"
+        "reversible with notes restore; this is not a purge",
+        "--query acts on every note a search names; without --apply it shows the selection and changes nothing"
       ]
     },
     {
@@ -390,9 +391,11 @@
         "notes",
         "move"
       ],
-      "notes": [],
+      "notes": [
+        "--query acts on every note a search names; without --apply it shows the selection and changes nothing"
+      ],
       "purpose": "file one note into another notebook; a name is refused when it matches more than one",
-      "usage": "--document <id> --notebook <id|name> [--db ...]"
+      "usage": "--notebook <id|name> [--document <id> | --query <query> [--apply] [--mode atomic|best_effort] [--limit N]] [--db ...]"
     },
     {
       "path": [
@@ -428,9 +431,11 @@
         "notes",
         "restore"
       ],
-      "notes": [],
+      "notes": [
+        "--query acts on every note a search names; without --apply it shows the selection and changes nothing"
+      ],
       "purpose": "bring one note back out of Trash",
-      "usage": "--document <id> [--db ...]"
+      "usage": "[--document <id> | --query <query> [--apply] [--mode atomic|best_effort] [--limit N]] [--db ...]"
     },
     {
       "path": [
@@ -446,6 +451,18 @@
       "accepts_ignored": {
         "body": "selected whether to include the body when this command printed only JSON metadata; both forms carry the body now, and refusing the flag would break a script for no gain"
       }
+    },
+    {
+      "path": [
+        "notes",
+        "duplicate"
+      ],
+      "usage": "[--document <id> | --query <query> [--apply] [--mode atomic|best_effort] [--limit N]] [--db ...]",
+      "purpose": "copy a note, or every note a search names",
+      "notes": [
+        "the copy is a new note with its own id; the report names it",
+        "--query acts on every note a search names; without --apply it shows the selection and changes nothing"
+      ]
     },
     {
       "path": [
@@ -835,9 +852,11 @@
         "tags",
         "add"
       ],
-      "notes": [],
+      "notes": [
+        "--query acts on every note a search names; without --apply it shows the selection and changes nothing"
+      ],
       "purpose": "attach a tag to a note; prints the note's tags afterwards",
-      "usage": "--document <id> --tag <tag>"
+      "usage": "--tag <tag> [--document <id> | --query <query> [--apply] [--mode atomic|best_effort] [--limit N]]"
     },
     {
       "path": [
@@ -856,9 +875,11 @@
         "tags",
         "remove"
       ],
-      "notes": [],
+      "notes": [
+        "--query acts on every note a search names; without --apply it shows the selection and changes nothing"
+      ],
       "purpose": "take a tag off a note; prints the note's tags afterwards",
-      "usage": "--document <id> --tag <tag>"
+      "usage": "--tag <tag> [--document <id> | --query <query> [--apply] [--mode atomic|best_effort] [--limit N]]"
     },
     {
       "path": [

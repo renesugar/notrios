@@ -68,7 +68,11 @@ func TestRepositoryEnumerationsMatchFiniteRegistries(t *testing.T) {
 		// `notes prepend`. The command line could read attachments and not add
 		// one, and placing a link meant rewriting the whole note because no
 		// surface can patch a range of a body.
-		{cliHelpAnchor, 90},
+		// 90 -> 91 in v0.8 H17: `notes duplicate`. Five of the six batch
+		// operations already had a single-note command to hang `--query` on and
+		// copying a note had none, so the command line reached five sixths of a
+		// capability REST and MCP reached whole.
+		{cliHelpAnchor, 91},
 		{restAnchor, 109},
 		{mcpToolsAnchor, 46},
 		{mcpSyncScopeAnchor, 7},

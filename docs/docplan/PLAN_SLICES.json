@@ -294,17 +294,19 @@
     {
       "id": "H17",
       "title": "Act on many notes at once, named by a query",
-      "state": "not-started",
+      "state": "complete",
       "slices": [
         {
           "id": "H17-B",
           "statement": "The command line names a set by query, shows the selection, and then acts on it",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "test:TestQueryTrashCarriesTheRevisionPrecondition"
         },
         {
           "id": "H17-C",
           "statement": "Decide whether the command grows notriosctl batch or the existing commands grow --query",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:PLAN.md"
         }
       ]
     },

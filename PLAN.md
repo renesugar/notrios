@@ -46,7 +46,7 @@ What follows is what is left. Each item's own text below is the record of what
 happened, which is a different question.
 
 <!-- notrios:generated:plan:progress:begin -->
-**35 items: 25 complete, 2 in progress, 7 not started, 1 deferred.**
+**35 items: 26 complete, 2 in progress, 6 not started, 1 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -71,7 +71,7 @@ happened, which is a different question.
 | H12. Delayed GitHub native validation and develop-to-main pull request | not-started | 0/2 | 2 |
 | H15. Complete the journey catalogues, and give the GUI an inventory | in-progress | 8/9 | 1 |
 | H16. Reconcile the collection model with what is actually stored | complete | 7/7 | — |
-| H17. Act on many notes at once, named by a query | not-started | 0/2 | 2 |
+| H17. Act on many notes at once, named by a query | complete | 2/2 | — |
 | H18. Make the features page usable, and generate the table under it | in-progress | 3/4 | 1 |
 | H19. notriosctl search | complete | 4/4 | — |
 | H13. v0.8 release wrap-up and branch synchronization | not-started | 0/2 | 2 |
@@ -98,7 +98,7 @@ happened, which is a different question.
 
 ### Not started
 
-Written and not begun: H10, H11, H12, H17, H13, H28, H29. Their slices are listed under each item.
+Written and not begun: H10, H11, H12, H13, H28, H29. Their slices are listed under each item.
 <!-- notrios:generated:plan:progress:end -->
 
 ## H0. Application-facade, C-ABI, and SQLite ownership investigation — complete
@@ -3341,7 +3341,7 @@ Covered by `web/src/__tests__/draft.test.ts` (storage, damage, refusal) and
 the app shell). One consequence for the journeys: each runs in a fresh browser
 context, so a dirty editor in one cannot silently decline a click in the next.
 
-## H17. Act on many notes at once, named by a query
+## H17. Act on many notes at once, named by a query — complete
 
 **Goal.** Make `batch` reachable from a terminal. The capability exists on REST
 as `POST /api/v1/batch` and on MCP as `run_batch` under the organizer scope, and
@@ -3392,9 +3392,26 @@ its author expected is exactly the failure that pattern exists to prevent.
 ### Open decisions
 
 - **Whether the command line grows `notriosctl batch` or the operations grow a
-  `--query`.** One command with a `--query` and an operation argument keeps the
-  vocabulary in one place; `notes move --query` spreads it across the commands
-  that already exist and reads more naturally for each one.
+  `--query` -- Decided 2026-09-08: `--query` on the operations.**
+
+  A `notriosctl batch --operation move` would be a *second* way to say move,
+  beside `notes move`, and this milestone has spent itself removing exactly that
+  -- two spellings of one idea that drift. `--query` instead leaves one way to
+  express each operation and two ways to name what it acts on, which is the
+  shape the command line already has elsewhere: `--collection` narrows `lint`,
+  `graph` and `export` without any of them becoming a separate command.
+
+  The semantics stay in one place regardless. `store.RunBatch` holds the
+  bounding, the mode, the per-item outcomes and the idempotency ledger; the
+  commands are entry points to it, sharing one helper for the dry run and the
+  call. Five entry points onto one implementation is not the duplication being
+  avoided -- two implementations of *move* would be.
+
+  It costs one thing, and the cost is worth naming: `duplicate` is a batch
+  operation with no single-note command to hang `--query` on. Leaving it out
+  because of that would be arbitrary, so `notes duplicate` is added with both
+  `--document` and `--query`, which completes the set rather than explaining a
+  hole in it.
 *Two decisions moved to H29 with the interface half: whether the interface sends
 `request_key`, and whether `export` belongs in the selection panel. Both are
 about a panel this item no longer builds.*
@@ -3403,6 +3420,48 @@ about a panel this item no longer builds.*
 on it, showing what it matched before it acts; a run reports per-item outcomes
 the way REST does; and `batch-operations` has the command-line journey it could
 not have, taking H15-H's floor from five to four.
+
+**Outcome (2026-09-08).** Done, on the decided shape. `--query`, `--apply`,
+`--mode` and `--limit` are on `notes move`, `notes delete`, `notes restore`,
+`notes duplicate`, `tags add` and `tags remove`; every one of them calls
+`store.RunBatch` through one helper, so the six entry points share a single
+implementation of the dry run, the ceiling and the report. `notes duplicate` is
+new, and is the ninety-first command. The journeys floor is four.
+
+**The dry run is the default and the ceiling refuses.** Without `--apply` the
+command prints the notes it *would* act on and changes nothing; a selection
+larger than `--limit`, or larger than the 500-item ceiling, is refused rather
+than trimmed, because a batch that silently acted on the first five hundred of a
+thousand matches looks exactly like success. A query matching nothing is an
+error rather than a batch of zero: at a terminal that is almost always a typo,
+and "0 applied, exit 0" is the report that hides it.
+
+**Trash needed the precondition the store already required, and my own comment
+was wrong about it.** I wrote in `runOverQuery` that no expected revision is
+sent, on the reasoning that a caller naming a set by query has not read each
+note's revision and inventing one would turn a batch into a race. Then
+`sqlite_batch.go` refused: `trash` requires `base_revision_id` on every item, and
+`ErrPreconditionRequired` would have failed every note in a query-named delete.
+Resolving each hit's current revision immediately before the run is the same
+guarantee a client gets when it reads a note and then trashes it; the
+alternative -- refusing `--query` on `delete` -- would have left the one
+destructive operation as the one a query cannot name, which is the opposite of
+where care belongs. A test covers delete-by-query and restore-by-query as a
+pair.
+
+**The mode default follows REST rather than being chosen again.** The store
+defaults to `best_effort` and this does too. Picking `atomic` here because it
+felt safer would have made the same request mean different things depending on
+which adapter sent it, which is the divergence this milestone keeps finding.
+The dry run is where the safety belongs.
+
+**On the journey ratchet.** `batch-operations` was in the group recorded as
+"no command line at all, so no command-line journey can exist" -- alongside
+`query-blocks` and `mcp-endpoint`. That was true when written and stopped being
+true when H19 shipped `search`, and nothing announced the change. Two of the six
+entries on that list have now moved from boundary to built (`attachments` in
+H27, this one), which is worth saying plainly: an absent adapter acquires a
+justification, and the justification outlives the reason.
 
 ## H16. Reconcile the collection model with what is actually stored — complete
 

@@ -361,13 +361,16 @@
       "id": "batch-operations",
       "title": "Do many organiser operations at once",
       "summary": "Send a batch of moves, tags and notebook changes as one request, so a large reorganisation is one reviewable action.",
+      "cli": [
+        "notriosctl notes duplicate"
+      ],
       "rest": [
         "POST /api/v1/batch"
       ],
       "mcp": [
         "run_batch"
       ],
-      "surface_note": "No command line or GUI journey; batching is for tools."
+      "surface_note": "The command line names the set with a search rather than a list of ids: `--query` on `notes move`, `notes delete`, `notes restore`, `notes duplicate`, `tags add` and `tags remove` runs the same batch, showing the selection unless `--apply` is given. `notes duplicate` is listed here because it is the only one of the six with no other home; the rest are listed under the capability they belong to. No GUI surface yet."
     },
     {
       "id": "import-notes",

@@ -85,11 +85,16 @@ func TestFeaturesWithoutAJourneyAreTracked(t *testing.T) {
 	//     captures only `document_id` from a step, so nothing later can spend
 	//     it. Letting a step name a value to capture from its JSON is the lift.
 	//
-	// Only that last one is a limitation of the tooling. batch-operations is a
-	// gap H17 closes; query-blocks, mcp-endpoint and the attaching half of
-	// attachments are boundaries, and the plan says why for each.
+	// Only that last one is a limitation of the tooling. query-blocks and
+	// mcp-endpoint are boundaries, and the plan says why for each.
 	// 6 -> 5 in v0.8 H27: attaching a file from the command line.
-	const baseline = 5
+	// 5 -> 4 in v0.8 H17: acting on many notes at once. It was in the first
+	// group -- no command line at all -- because a batch takes a list of
+	// identifiers and nothing at a terminal produced one. H19 built `search`,
+	// so a query names the set instead, and the entry moved from "cannot be
+	// written" to written. Two of the three in that group were absent adapters
+	// wearing a boundary's clothes; the same reading is worth giving the third.
+	const baseline = 4
 
 	catalogue, registry := load(t)
 	covered := map[string]bool{}

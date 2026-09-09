@@ -2143,6 +2143,194 @@
           "See the attachment above."
         ]
       }
+    },
+    {
+      "id": "batch-operations",
+      "title": "Reorganise many notes at once",
+      "goal": "Tag, move or trash every note a search finds, seeing what it matched before anything changes.",
+      "feature": "batch-operations",
+      "guessability": "notrios-specific",
+      "note": "The set is named by a search, not by a list of identifiers: `--query` takes the same query language the search box parses. Nothing happens without `--apply` -- the command shows the notes it would act on and stops -- and a selection larger than 500 is refused rather than trimmed, so a batch never acts on part of what you asked for. `--mode atomic` applies every note or none; the default applies what it can and reports each note either way.",
+      "steps": [
+        {
+          "narrative": "Make a note to organise.",
+          "command": [
+            "notes",
+            "create",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--title",
+            "Kettle descaling",
+            "--body",
+            "White vinegar, an hour."
+          ]
+        },
+        {
+          "narrative": "Tag it, so a search can find it later.",
+          "command": [
+            "tags",
+            "add",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--document",
+            "{note}",
+            "--tag",
+            "kitchen"
+          ]
+        },
+        {
+          "narrative": "Make a second one.",
+          "command": [
+            "notes",
+            "create",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--title",
+            "Kettle warranty",
+            "--body",
+            "Receipt in the drawer."
+          ]
+        },
+        {
+          "narrative": "And tag that one too.",
+          "command": [
+            "tags",
+            "add",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--document",
+            "{note}",
+            "--tag",
+            "kitchen"
+          ]
+        },
+        {
+          "narrative": "Make a third note that the search will not match, so you can see what is left alone.",
+          "command": [
+            "notes",
+            "create",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--title",
+            "Bicycle service",
+            "--body",
+            "Rear brake pads."
+          ]
+        },
+        {
+          "narrative": "Check what the search names before doing anything with it. This is the set the next commands act on.",
+          "command": [
+            "search",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "tag:kitchen"
+          ]
+        },
+        {
+          "narrative": "Ask to tag them all. Without --apply nothing changes: the command prints the notes it would tag and stops, which is how you find out a query matched forty notes rather than four.",
+          "command": [
+            "tags",
+            "add",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--query",
+            "tag:kitchen",
+            "--tag",
+            "audit"
+          ]
+        },
+        {
+          "narrative": "Now do it. The report names every note and what happened to it, the same report the REST and MCP surfaces return.",
+          "command": [
+            "tags",
+            "add",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--query",
+            "tag:kitchen",
+            "--tag",
+            "audit",
+            "--apply"
+          ]
+        },
+        {
+          "narrative": "Make somewhere to file them.",
+          "command": [
+            "notebooks",
+            "create",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--name",
+            "Kitchen"
+          ]
+        },
+        {
+          "narrative": "Move the same set into it. Every operation takes --query the same way: move, delete, restore, duplicate, and adding or removing a tag.",
+          "command": [
+            "notes",
+            "move",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--query",
+            "tag:kitchen",
+            "--notebook",
+            "Kitchen",
+            "--apply"
+          ]
+        },
+        {
+          "narrative": "A query that matches nothing is refused rather than reported as a batch of zero, because at a terminal that is almost always a typo.",
+          "command": [
+            "tags",
+            "add",
+            "--db",
+            "{db}",
+            "--asset-store",
+            "{assets}",
+            "--query",
+            "tag:kitcheen",
+            "--tag",
+            "audit",
+            "--apply"
+          ],
+          "allow_failure": true
+        }
+      ],
+      "postcondition": {
+        "narrative": "the two notes the search named carry the new tag, and the third does not",
+        "command": [
+          "search",
+          "--db",
+          "{db}",
+          "--asset-store",
+          "{assets}",
+          "--count",
+          "tag:audit"
+        ],
+        "contains": [
+          "\"count\": 2"
+        ]
+      }
     }
   ]
 }

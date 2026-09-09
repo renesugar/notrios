@@ -41,6 +41,8 @@ func runNotes(args []string) {
 		runNoteRestore(args[1:])
 	case "move":
 		runNoteMove(args[1:])
+	case "duplicate":
+		runNoteDuplicate(args[1:])
 	default:
 		fmt.Fprintf(os.Stderr, "unknown notes subcommand %q\n", args[0])
 		printNotesUsage()
@@ -58,9 +60,10 @@ func printNotesUsage() {
   notriosctl notes append --document <id> [--text <text> | --text-file path|-]
   notriosctl notes prepend --document <id> [--text <text> | --text-file path|-]
   notriosctl notes edit --document <id> [--title <title>] [--body-file path | --body text]
-  notriosctl notes delete --document <id>
-  notriosctl notes restore --document <id>
-  notriosctl notes move --document <id> --notebook <id|name>
+  notriosctl notes delete [--document <id> | --query <query> [--apply] [--mode atomic|best_effort] [--limit N]]
+  notriosctl notes restore [--document <id> | --query <query> [--apply] [--mode atomic|best_effort] [--limit N]]
+  notriosctl notes duplicate [--document <id> | --query <query> [--apply] [--mode atomic|best_effort] [--limit N]]
+  notriosctl notes move --notebook <id|name> [--document <id> | --query <query> [--apply] [--mode atomic|best_effort] [--limit N]]
 `)
 }
 
@@ -78,13 +81,18 @@ func printNotesUsage() {
 // type confirmations without reading them.
 func runNoteDelete(args []string) {
 	flags := newDocumentFlags("delete")
+	selection := registerBatchFlags(flags.set, "deletion")
 	flags.parse(args)
-	documentID := flags.requireDocument()
+	documentID := flags.requireTarget(selection)
 
 	st := openStoreFromFlags(*flags.configPath, *flags.dbPath, *flags.assetStore)
 	defer st.Close()
 	ctx := context.Background()
 
+	if selection.wantsQuery() {
+		selection.runOverQuery(ctx, st, store.BatchRequest{Operation: store.BatchOpTrash})
+		return
+	}
 	current, err := st.GetDocument(ctx, documentID)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "no note %q\n", documentID)
@@ -105,13 +113,21 @@ func runNoteDelete(args []string) {
 // runNoteRestore brings a note back out of Trash.
 func runNoteRestore(args []string) {
 	flags := newDocumentFlags("restore")
+	selection := registerBatchFlags(flags.set, "restore")
 	flags.parse(args)
-	documentID := flags.requireDocument()
+	documentID := flags.requireTarget(selection)
 
 	st := openStoreFromFlags(*flags.configPath, *flags.dbPath, *flags.assetStore)
 	defer st.Close()
 	ctx := context.Background()
 
+	if selection.wantsQuery() {
+		// A query over the Trash is what makes this usable: `notriosctl search
+		// 'trashed:true tag:draft'` names the set, and restoring it one id at a
+		// time was the alternative.
+		selection.runOverQuery(ctx, st, store.BatchRequest{Operation: store.BatchOpRestore})
+		return
+	}
 	doc, err := st.RestoreDocument(ctx, documentID)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "cannot restore %q: no such note, or it is not in Trash\n", documentID)
@@ -143,6 +159,11 @@ func (f *documentFlags) parse(args []string) {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(2)
 	}
+}
+
+// requireTarget accepts either one note or a query naming a set.
+func (f *documentFlags) requireTarget(b *batchSelection) string {
+	return requireTarget(*f.document, b, f.set.NArg(), printNotesUsage)
 }
 
 func (f *documentFlags) requireDocument() string {
@@ -454,13 +475,17 @@ func runNoteMove(args []string) {
 	assetStore := fs.String("asset-store", "", "asset store directory override")
 	documentID := fs.String("document", "", "note to move")
 	notebook := fs.String("notebook", "", "destination notebook ID, or its name when unambiguous")
+	selection := registerBatchFlags(fs, "move")
 	if err := fs.Parse(args); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(2)
 	}
-	if fs.NArg() != 0 || strings.TrimSpace(*documentID) == "" || strings.TrimSpace(*notebook) == "" {
-		fmt.Fprintln(os.Stderr, "usage: notriosctl notes move --document <id> --notebook <id|name>")
+	wanted := requireTarget(*documentID, selection, fs.NArg(), func() {
+		fmt.Fprintln(os.Stderr, "usage: notriosctl notes move --notebook <id|name> [--document <id> | --query <query>]")
 		fs.PrintDefaults()
+	})
+	if strings.TrimSpace(*notebook) == "" {
+		fmt.Fprintln(os.Stderr, "--notebook names where the notes go, and is required")
 		os.Exit(2)
 	}
 
@@ -473,7 +498,13 @@ func runNoteMove(args []string) {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
-	doc, err := st.MoveDocumentToNotebook(ctx, strings.TrimSpace(*documentID), notebookID)
+	if selection.wantsQuery() {
+		selection.runOverQuery(ctx, st, store.BatchRequest{
+			Operation: store.BatchOpMove, NotebookID: notebookID,
+		})
+		return
+	}
+	doc, err := st.MoveDocumentToNotebook(ctx, wanted, notebookID)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)

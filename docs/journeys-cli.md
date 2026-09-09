@@ -367,6 +367,40 @@ Each task below lists the steps that do it, in order.
   - Place the link where you want it. `append` and `prepend` exist so this does not mean rewriting the whole note: nothing anywhere can patch a range of a body.
 
     `notriosctl notes append --document <note> --text "See the attachment above."`
+**Reorganise many notes at once** — Tag, move or trash every note a search finds, seeing what it matched before anything changes. The set is named by a search, not by a list of identifiers: `--query` takes the same query language the search box parses. Nothing happens without `--apply` -- the command shows the notes it would act on and stops -- and a selection larger than 500 is refused rather than trimmed, so a batch never acts on part of what you asked for. `--mode atomic` applies every note or none; the default applies what it can and reports each note either way.
+  - Make a note to organise.
+
+    `notriosctl notes create --title "Kettle descaling" --body "White vinegar, an hour."`
+  - Tag it, so a search can find it later.
+
+    `notriosctl tags add --document <note> --tag kitchen`
+  - Make a second one.
+
+    `notriosctl notes create --title "Kettle warranty" --body "Receipt in the drawer."`
+  - And tag that one too.
+
+    `notriosctl tags add --document <note> --tag kitchen`
+  - Make a third note that the search will not match, so you can see what is left alone.
+
+    `notriosctl notes create --title "Bicycle service" --body "Rear brake pads."`
+  - Check what the search names before doing anything with it. This is the set the next commands act on.
+
+    `notriosctl search tag:kitchen`
+  - Ask to tag them all. Without --apply nothing changes: the command prints the notes it would tag and stops, which is how you find out a query matched forty notes rather than four.
+
+    `notriosctl tags add --query tag:kitchen --tag audit`
+  - Now do it. The report names every note and what happened to it, the same report the REST and MCP surfaces return.
+
+    `notriosctl tags add --query tag:kitchen --tag audit --apply`
+  - Make somewhere to file them.
+
+    `notriosctl notebooks create --name Kitchen`
+  - Move the same set into it. Every operation takes --query the same way: move, delete, restore, duplicate, and adding or removing a tag.
+
+    `notriosctl notes move --query tag:kitchen --notebook Kitchen --apply`
+  - A query that matches nothing is refused rather than reported as a batch of zero, because at a terminal that is almost always a typo.
+
+    `notriosctl tags add --query tag:kitcheen --tag audit --apply`
 <!-- notrios:generated:user:the-journeys:end -->
 
 

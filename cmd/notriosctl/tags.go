@@ -36,8 +36,8 @@ func runTags(args []string) {
 
 func printTagsUsage() {
 	fmt.Fprint(os.Stderr, `usage:
-  notriosctl tags add --document <id> --tag <tag>
-  notriosctl tags remove --document <id> --tag <tag>
+  notriosctl tags add --tag <tag> [--document <id> | --query <query> [--apply] [--mode atomic|best_effort] [--limit N]]
+  notriosctl tags remove --tag <tag> [--document <id> | --query <query> [--apply] [--mode atomic|best_effort] [--limit N]]
   notriosctl tags show --tag <name>
   notriosctl tags list [--document <id>] [--prefix <branch>] [--limit N]
   notriosctl tags rename --from <tag> --to <tag> [--include-children] [--apply]
@@ -109,13 +109,20 @@ func (f *tagFlags) parse(args []string) {
 // same arguments. A confirmation step would be ceremony rather than safety.
 func runTagAdd(args []string) {
 	flags := newTagFlags("add")
+	selection := registerBatchFlags(flags.set, "tagging")
 	flags.parse(args)
-	documentID, tag := requireTagTarget(flags)
+	documentID, tag := requireTagTarget(flags, selection)
 
 	st := openStoreFromFlags(*flags.configPath, *flags.dbPath, *flags.assetStore)
 	defer st.Close()
 	ctx := context.Background()
 
+	if selection.wantsQuery() {
+		selection.runOverQuery(ctx, st, store.BatchRequest{
+			Operation: store.BatchOpAddTags, Tags: []string{tag},
+		})
+		return
+	}
 	if _, err := st.AddDocumentTag(ctx, documentID, tag); err != nil {
 		exitTagError(err, documentID, tag, "add")
 	}
@@ -133,13 +140,24 @@ func runTagAdd(args []string) {
 // been told the truth, and a script told nothing at all has not.
 func runTagRemove(args []string) {
 	flags := newTagFlags("remove")
+	selection := registerBatchFlags(flags.set, "untagging")
 	flags.parse(args)
-	documentID, tag := requireTagTarget(flags)
+	documentID, tag := requireTagTarget(flags, selection)
 
 	st := openStoreFromFlags(*flags.configPath, *flags.dbPath, *flags.assetStore)
 	defer st.Close()
 	ctx := context.Background()
 
+	if selection.wantsQuery() {
+		// A tag the note does not carry is a skip here and an error in the
+		// single-note form, and the difference is the store's rather than a
+		// slip: over a set, "most of these did not have it" is the answer, not
+		// a fault.
+		selection.runOverQuery(ctx, st, store.BatchRequest{
+			Operation: store.BatchOpRemoveTags, Tags: []string{tag},
+		})
+		return
+	}
 	if err := st.RemoveDocumentTag(ctx, documentID, tag); err != nil {
 		exitTagError(err, documentID, tag, "remove")
 	}
@@ -251,12 +269,15 @@ func exitTagError(err error, documentID, tag, action string) {
 	os.Exit(1)
 }
 
-func requireTagTarget(flags *tagFlags) (string, string) {
-	documentID := strings.TrimSpace(*flags.document)
-	tag := strings.TrimSpace(*flags.tag)
-	if flags.set.NArg() != 0 || documentID == "" || tag == "" {
+func requireTagTarget(flags *tagFlags, b *batchSelection) (string, string) {
+	usage := func() {
 		printTagsUsage()
 		flags.set.PrintDefaults()
+	}
+	documentID := requireTarget(*flags.document, b, flags.set.NArg(), usage)
+	tag := strings.TrimSpace(*flags.tag)
+	if tag == "" {
+		usage()
 		os.Exit(2)
 	}
 	return documentID, tag

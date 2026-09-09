@@ -169,9 +169,9 @@ No command line, and that is the line rather than a gap: a query block is a rend
 
 Send a batch of moves, tags and notebook changes as one request, so a large reorganisation is one reviewable action.
 
-No command line or GUI journey; batching is for tools.
+The command line names the set with a search rather than a list of ids: `--query` on `notes move`, `notes delete`, `notes restore`, `notes duplicate`, `tags add` and `tags remove` runs the same batch, showing the selection unless `--apply` is given. `notes duplicate` is listed here because it is the only one of the six with no other home; the rest are listed under the capability they belong to. No GUI surface yet.
 
-*Available on the REST API and MCP.*
+*Available on the command line, the REST API and MCP.*
 
 ### Import from another application
 
@@ -312,7 +312,7 @@ capability's own section.
 | See the shape of the link graph | 1 | 2 | 4 | 3 | — |
 | Templates and tasks | — | 3 | 4 | 3 | — |
 | Live query blocks inside a note | 1 | — | 1 | 1 | — |
-| Do many organiser operations at once | — | — | 1 | 1 | — |
+| Do many organiser operations at once | — | 1 | 1 | 1 | — |
 | Import from another application | 3 | 6 | — | — | — |
 | Export your library | 2 | 5 | — | — | — |
 | Back up and restore the whole library | 1 | 3 | — | — | — |
@@ -340,8 +340,8 @@ capability's own section says why.
 <!-- source: go:github.com/renesugar/notrios/internal/doccompare#Lines -->
 Each capability below is offered on some surfaces and not others.
 
-- Do many organiser operations at once — neither the command line nor the GUI; reachable only over REST or MCP. No command line or GUI journey; batching is for tools.
 - Let an AI assistant use your library — neither the command line nor the GUI; reachable only over REST or MCP. No command line, because this is a served surface rather than something a person runs: software with an MCP client connects to it. A command-line journey would document the client rather than this program.
+- Do many organiser operations at once — command line only. The command line names the set with a search rather than a list of ids: `--query` on `notes move`, `notes delete`, `notes restore`, `notes duplicate`, `tags add` and `tags remove` runs the same batch, showing the selection unless `--apply` is given. `notes duplicate` is listed here because it is the only one of the six with no other home; the rest are listed under the capability they belong to. No GUI surface yet.
 - Choose where sync keys are kept — command line only. Deliberately command line only: this item forbids a credential-management REST or MCP surface.
 - Templates and tasks — command line only. A template is an ordinary note carrying a note-template block, and a task is a checkbox line in a note tagged `task` or `todo`; neither is a table, and both are read back from the Markdown. So nothing creates a task -- writing `- [ ] chase the permit` into a note is how one comes to exist, which `notes create` already does -- and the command line covers the other half: asking what remains, and instantiating a template, which is the repeatable version of the same workflow. A missing placeholder is refused rather than left blank, so a template that gains a field fails the scripts that do not know about it. The tag is required because a checkbox is ordinary Markdown and appears in quoted examples; `--untagged` asks for those too. No GUI journey yet.
 - Move a pre-0.8 library into place — command line only. Command line only, and genuinely so: it relocates the directories the running program uses, which is not something the program can sensibly do to itself while serving them.
