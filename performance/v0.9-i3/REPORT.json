@@ -1,0 +1,134 @@
+{
+  "claim_ladder_reference": "performance/v0.8-h6a/FINDINGS.json",
+  "content_commit": "b53f53431c3eff3309f08e79e6ca477d09b6891f",
+  "counts": {
+    "passed": 7,
+    "scenarios": 7
+  },
+  "environments": {
+    "notrios-i3-deps": "ubuntu:24.04 with only the package's own declared runtime dependencies present, so the other scenarios do not re-resolve 200 MB of webkit each time",
+    "ubuntu:24.04": "pristine image; dependency resolution is part of what the fresh install measures, so nothing is pre-installed"
+  },
+  "item": "I3",
+  "level_reached": {
+    "level": 3,
+    "name": "natively installed and executed",
+    "scope": "amd64, Ubuntu 24.04, headless container, command line and service binaries"
+  },
+  "milestone": "v0.9",
+  "not_verified": [
+    "arm64: no arm64 machine here, and the arm64 package remains at level 2 exactly as H6a left it.",
+    "Ubuntu releases other than 24.04. The package's dependencies name the t64 library transition, so 22.04 and earlier are a separate question that this did not ask.",
+    "The desktop GUI. These are headless containers with no display; the binary is installed and the .desktop entry is present, but nothing launched a window, so the GUI stays at level 2.",
+    "A container is not a machine. It shares the host kernel and has no init, no systemd user session, no D-Bus and no keyring. That is why the credential-store behaviour these runs exercise is the headless one; a desktop session is not represented here.",
+    "Disk-full, permission-denied and interrupted-install faults: those belong to I4, which hardens the destructive lifecycle."
+  ],
+  "packages": {
+    "notrios_0.8.0-1_amd64.deb": {
+      "sha256": "557721f0066868af9a37664bfc594a3b8234e61aec3bd036757d49e4d87d8b99",
+      "size_bytes": 29055476,
+      "version": "0.8.0-1"
+    },
+    "notrios_0.8.0~rc1-1_amd64.deb": {
+      "sha256": "e39138b41d0957a279f0eaf1ffae8b586491cf9834397e604fa7e00d06cc9a1b",
+      "size_bytes": 29064236,
+      "version": "0.8.0~rc1-1"
+    }
+  },
+  "runs_as": "an unprivileged user, because an end user installs with sudo and then runs as themselves, and a rehearsal that only ran as root would miss every permission mistake",
+  "scenarios": [
+    {
+      "id": "01-fresh-install",
+      "image": "ubuntu:24.04",
+      "observations": {
+        "desktop_entry": "present",
+        "doctor_credential_line": "info  credential store no sync credentials are stored yet, a",
+        "doctor_exit": "0",
+        "toolchain_absent": "go,node,npm,git,gcc,make",
+        "version": "0.8.0"
+      },
+      "status": "pass"
+    },
+    {
+      "id": "02-no-toolchain-operation",
+      "image": "notrios-i3-deps",
+      "observations": {
+        "data_root": "/home/tester/.local/share/notrios",
+        "export_entries": "manifest.json notebooks.json notes",
+        "export_manifest": "written",
+        "note_created_and_found": "yes",
+        "resolved_mode": "installed",
+        "source_tree": "absent",
+        "toolchain_absent": "go,node,npm,git,gcc,make"
+      },
+      "status": "pass"
+    },
+    {
+      "id": "03-upgrade-prerelease-to-release",
+      "image": "notrios-i3-deps",
+      "observations": {
+        "data_root": "/home/tester/.local/share/notrios",
+        "note_survived_upgrade": "yes",
+        "version_after": "0.8.0",
+        "version_before": "0.8.0~rc1"
+      },
+      "status": "pass"
+    },
+    {
+      "id": "04-downgrade-refusal",
+      "image": "notrios-i3-deps",
+      "observations": {
+        "data_intact_after_refusal": "yes",
+        "data_intact_after_rollback": "yes",
+        "downgrade_exit": "100",
+        "version_after_explicit_downgrade": "0.8.0~rc1",
+        "version_after_refusal": "0.8.0"
+      },
+      "status": "pass"
+    },
+    {
+      "id": "05-remove-and-reinstall",
+      "image": "notrios-i3-deps",
+      "observations": {
+        "binary_after_remove": "absent",
+        "data_root": "/home/tester/.local/share/notrios",
+        "note_survived_remove_reinstall": "yes",
+        "user_data_after_remove": "present"
+      },
+      "status": "pass"
+    },
+    {
+      "id": "06-profile-discovery",
+      "image": "notrios-i3-deps",
+      "observations": {
+        "data_root": "/home/tester/.local/share/notrios",
+        "mode": "installed",
+        "profile_discovered": "second",
+        "program_assets": "/usr/share/notrios",
+        "writable_roots": "cache=/home/tester/.cache/notrios config=/home/tester/.config/notrios data=/home/tester/.local/share/notrios runtime=/home/tester/.local/state/notrios/runtime state=/home/tester/.local/state/notrios",
+        "writable_roots_outside_usr": "confirmed"
+      },
+      "status": "pass"
+    },
+    {
+      "id": "07-source-layout-migration",
+      "image": "notrios-i3-deps",
+      "observations": {
+        "data_root": "/home/tester/.local/share/notrios",
+        "dry_run_moved_nothing": "confirmed",
+        "legacy_library": "created",
+        "migrate_exit": "0",
+        "note_available_after_migration": "yes"
+      },
+      "status": "pass"
+    }
+  ],
+  "schema": "notrios.v09.i3-installer-matrix.v1",
+  "what_this_is": "The Ubuntu package installed and run in clean containers, which is the step H6a named and did not take. Its claim ladder put the package at level 2, structurally inspected, and listed whether the .deb installs or runs among the things it had not verified. These runs take it to level 3 on amd64 Ubuntu 24.04.",
+  "what_was_found": [
+    "doctor exits 0 on a machine with no keyring, which it did not do before v0.9 I1. Scenario 01 asserts it, so the headless health check now has a test that runs somewhere genuinely headless rather than on a workstation with a Secret Service.",
+    "Removing the package leaves the user's notes untouched, and reinstalling finds them. That claim was in the documentation and had never been tested against the packaged form.",
+    "apt refuses a downgrade unasked (exit 100) and performs one when asked with --allow-downgrades, with the library intact either way.",
+    "The packaged frontend resolves to /usr/share/notrios while every root the user writes to resolves under their home. The first draft of that check forbade /usr outright and was wrong: read-only packaged assets belong there and user data must not."
+  ]
+}

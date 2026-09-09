@@ -260,6 +260,57 @@ which is what ships.
 **Working state.** Each rehearsal executed in a clean environment with its
 result recorded, including the ones that must refuse.
 
+**Done, 2026-09-09. The package is installed and run for the first time.**
+H6a built it and read it — level 2 on its own claim ladder, "structurally
+inspected" — and listed whether it installs or runs among the things it had not
+verified. Eight items went by without anyone installing it. Seven scenarios now
+do, each in its own clean Ubuntu 24.04 container with no source tree, no Go, no
+Node and no compiler, running the application as an unprivileged user. That
+combination is what makes the answer mean anything: the machine that builds a
+package hides every missing dependency, and running as root hides every
+permission mistake.
+
+**The pair of packages is built honestly.** The prerelease comes from a
+disposable worktree with `version.go` patched, so the binary reports the version
+its control file declares. Overriding only the packaged version would have been
+one line and a lie — the rehearsal is about upgrading *between versions*, and
+the interesting assertion is that the installed binary changed. `0.8.0~rc1`
+rather than `0.8.0-rc1`, because in Debian ordering `~` sorts before the
+release; getting that backwards would have rehearsed the opposite of the claim.
+
+**What the runs establish.** Dependencies resolve on a pristine image. `doctor`
+exits 0 with no keyring — the behaviour I1 changed, now asserted somewhere
+genuinely headless rather than on a workstation that has a Secret Service.
+Notes can be created, found and **exported** where nothing can be compiled.
+An upgrade replaces the binary and keeps the library. A downgrade is refused
+unasked (apt exits 100) and performed when asked, intact either way. Removing
+the package leaves the user's notes alone and reinstalling finds them — a claim
+the documentation made loudly and nothing had tested against the packaged form.
+A named profile is found again. A pre-0.8 `./data` library migrates, and its
+dry run moves nothing.
+
+**Two of my own mistakes are kept in the record because they are the
+instructive part.** The first draft of the profile check forbade `/usr`
+outright, which is wrong in one direction and right in the other: the packaged
+frontend belongs in `/usr/share/notrios`, read-only and replaced on upgrade,
+while every root the user writes to must stay out of it. It asserts both halves
+now. And the first draft of the no-toolchain scenario ran the export with
+invented flags, swallowed the failure with `|| true`, and recorded
+`export_written=no` as though that were a result — which is exactly how a real
+fault would have hidden. A scenario that reports its own failure as an
+observation is worse than no scenario, because it looks like coverage.
+
+**What it does not establish, gated so it cannot quietly shrink.** arm64 is
+untouched and stays at level 2 exactly as H6a left it. Only 24.04 was tested;
+the t64 library transition makes 22.04 a separate question. The GUI was never
+launched — these are headless containers with no display, so the desktop stays
+at level 2. And **a container is not a machine**: it shares the host kernel and
+has no init, no systemd user session, no D-Bus and no keyring, which is why the
+credential path these runs exercise is the headless one. Fault injection belongs
+to I4. `validate_evidence.py` fails if that list shrinks, and dropping the arm64
+limit, dropping a scenario, claiming a warmed image for the fresh install, and
+passing a scenario that observed nothing were each tried and each refused.
+
 ## I4. Harden the destructive lifecycle, and decide the profile race
 
 **Goal.** `install`, `uninstall` and `purge` behave under fault and contention,

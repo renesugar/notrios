@@ -54,3 +54,5 @@ _site/
 
 # The H10 spike's prototype binary; the source beside it is the evidence.
 performance/v0.8-h10/prototype/prototype
+performance/v0.9-i3/.logs/
+dist/i3-packages/
