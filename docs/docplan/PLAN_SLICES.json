@@ -224,9 +224,8 @@
         },
         {
           "id": "H15-G",
-          "statement": "Write GUI journeys for the twelve features that have an interface surface and none: collections, attachments, remote media, links, graph, query blocks, sync pairing, sync exchange, sync peers, sync recovery, jobs and profiles",
-          "state": "blocked",
-          "blocked_on": "H28, which gives the eleven unaddressable surfaces a data-testid. Eleven of the twelve target surfaces carry none, so a journey could only locate them by shape"
+          "statement": "Write GUI journeys for the twelve features that have an interface surface and none: collections, attachments, remote media, links, graph, query blocks, sync pairing, sync exchange, sync peers, sync recovery, jobs and profiles. Unblocked by H28; links is written, eleven remain",
+          "state": "in-progress"
         },
         {
           "id": "H15-H",
@@ -628,22 +627,25 @@
     {
       "id": "H28",
       "title": "Make the interface addressable, so its journeys can be written",
-      "state": "not-started",
+      "state": "complete",
       "slices": [
         {
           "id": "H28-A",
           "statement": "Every control the twelve unjourneyed features are reached through carries a data-testid named for what it does",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:web/src/components/SyncCenter.tsx"
         },
         {
           "id": "H28-B",
           "statement": "The control crawl records how much of the interface is addressable, and the signature check fails when that falls",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v0.8-h15/validate_evidence.py"
         },
         {
           "id": "H28-C",
           "statement": "One GUI journey is written and captured against the newly named controls, proving the rest can follow",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:docs/images/journeys/insert-a-link-choose-it.png"
         }
       ]
     },

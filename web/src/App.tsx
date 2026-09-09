@@ -884,7 +884,8 @@ export function App() {
         <h1>Notrios</h1>
         <div className="header-actions">
           <p className="status">{statusText}</p>
-          <button type="button" className="sync-header-button" title="Open synchronization, pairing, backup, and recovery" onClick={() => setShowSyncCenter(true)}>
+          <button type="button" className="sync-header-button" data-testid="sync-header-button"
+            title="Open synchronization, pairing, backup, and recovery" onClick={() => setShowSyncCenter(true)}>
             <span aria-hidden="true">↻</span> Sync
           </button>
           {/* Shown always and disabled without the native bridge, rather than
@@ -907,10 +908,10 @@ export function App() {
             onClick={() => setShowTransfer(true)}>
             <span aria-hidden="true">⇄</span> Import/Export
           </button>
-          <button type="button" className="icon-button" title="Toggle light/dark theme" aria-label="Toggle light/dark theme" onClick={toggleMode}>
+          <button type="button" className="icon-button" data-testid="theme-mode-toggle" title="Toggle light/dark theme" aria-label="Toggle light/dark theme" onClick={toggleMode}>
             {mode === 'light' ? '🌙' : '☀️'}
           </button>
-          <button type="button" className="icon-button" title="Theme settings" aria-label="Theme settings" onClick={() => setShowThemes((v) => !v)}>
+          <button type="button" className="icon-button" data-testid="theme-settings" title="Theme settings" aria-label="Theme settings" onClick={() => setShowThemes((v) => !v)}>
             🎨
           </button>
         </div>

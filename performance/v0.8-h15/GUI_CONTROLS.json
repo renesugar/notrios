@@ -1,6 +1,11 @@
 {
-  "schema": "notrios.h15.gui-controls.v2",
-  "interface_signature": "1ce70adec03a0051e5f7ae482037e6d24456b63b464e2e39cedf5c839bdc96e6",
+  "schema": "notrios.h15.gui-controls.v3",
+  "interface_signature": "dd6fea1cde26e8512be9a6be462d60bc45c1e8f45294f1b85bc722f2ac772919",
+  "summary": {
+    "controls": 79,
+    "addressable": 72,
+    "unaddressable": 7
+  },
   "states": [
     {
       "id": "start",
@@ -72,7 +77,7 @@
       "reached": true,
       "controls": 103,
       "steps": [
-        "css=.sync-header-button#0"
+        "testid=sync-header-button"
       ]
     },
     {
@@ -80,8 +85,8 @@
       "reached": true,
       "controls": 102,
       "steps": [
-        "css=.sync-header-button#0",
-        "button=^Setup"
+        "testid=sync-header-button",
+        "testid=sync-tab-setup"
       ]
     },
     {
@@ -89,8 +94,8 @@
       "reached": true,
       "controls": 102,
       "steps": [
-        "css=.sync-header-button#0",
-        "button=^Peers"
+        "testid=sync-header-button",
+        "testid=sync-tab-peers"
       ]
     },
     {
@@ -98,8 +103,8 @@
       "reached": true,
       "controls": 96,
       "steps": [
-        "css=.sync-header-button#0",
-        "button=^Retention"
+        "testid=sync-header-button",
+        "testid=sync-tab-retention"
       ]
     },
     {
@@ -107,8 +112,8 @@
       "reached": true,
       "controls": 96,
       "steps": [
-        "css=.sync-header-button#0",
-        "button=^Attachments"
+        "testid=sync-header-button",
+        "testid=sync-tab-resources"
       ]
     },
     {
@@ -116,8 +121,8 @@
       "reached": true,
       "controls": 96,
       "steps": [
-        "css=.sync-header-button#0",
-        "button=^Conflicts"
+        "testid=sync-header-button",
+        "testid=sync-tab-conflicts"
       ]
     },
     {
@@ -125,8 +130,8 @@
       "reached": true,
       "controls": 107,
       "steps": [
-        "css=.sync-header-button#0",
-        "button=^Backup"
+        "testid=sync-header-button",
+        "testid=sync-tab-backup"
       ]
     },
     {
@@ -134,8 +139,8 @@
       "reached": true,
       "controls": 96,
       "steps": [
-        "css=.sync-header-button#0",
-        "button=^Repairs"
+        "testid=sync-header-button",
+        "testid=sync-tab-repairs"
       ]
     }
   ],
@@ -156,264 +161,6 @@
         "help",
         "trash",
         "new-note",
-        "note-remote-media",
-        "sync-overview",
-        "sync-setup",
-        "sync-peers",
-        "sync-retention",
-        "sync-attachments",
-        "sync-conflicts",
-        "sync-backup",
-        "sync-repairs"
-      ],
-      "always_disabled": false
-    },
-    {
-      "id": "shape:button|||password-row",
-      "tag": "button",
-      "role": "",
-      "testid": "",
-      "examples": [
-        "Show"
-      ],
-      "instances": 2,
-      "enabled_instances": 2,
-      "states": [
-        "sync-backup"
-      ],
-      "always_disabled": false
-    },
-    {
-      "id": "shape:button|||row-actions",
-      "tag": "button",
-      "role": "",
-      "testid": "",
-      "examples": [
-        "Cancel",
-        "Request catch-up"
-      ],
-      "instances": 2,
-      "enabled_instances": 2,
-      "states": [
-        "sync-backup"
-      ],
-      "always_disabled": false
-    },
-    {
-      "id": "shape:button|||search-row",
-      "tag": "button",
-      "role": "",
-      "testid": "",
-      "examples": [
-        "Search"
-      ],
-      "instances": 16,
-      "enabled_instances": 16,
-      "states": [
-        "start",
-        "all-notes",
-        "help",
-        "trash",
-        "new-note",
-        "note-open",
-        "note-trashed",
-        "note-remote-media",
-        "sync-overview",
-        "sync-setup",
-        "sync-peers",
-        "sync-retention",
-        "sync-attachments",
-        "sync-conflicts",
-        "sync-backup",
-        "sync-repairs"
-      ],
-      "always_disabled": false
-    },
-    {
-      "id": "shape:button|||sync-card",
-      "tag": "button",
-      "role": "",
-      "testid": "",
-      "examples": [
-        "Cancel",
-        "Create 15-minute code"
-      ],
-      "instances": 2,
-      "enabled_instances": 2,
-      "states": [
-        "sync-overview",
-        "sync-peers"
-      ],
-      "always_disabled": false
-    },
-    {
-      "id": "shape:button|||sync-list-row",
-      "tag": "button",
-      "role": "",
-      "testid": "",
-      "examples": [
-        "Retry"
-      ],
-      "instances": 1,
-      "enabled_instances": 1,
-      "states": [
-        "sync-overview"
-      ],
-      "always_disabled": false
-    },
-    {
-      "id": "shape:button|||sync-metric-grid",
-      "tag": "button",
-      "role": "",
-      "testid": "",
-      "examples": [
-        "0"
-      ],
-      "instances": 4,
-      "enabled_instances": 4,
-      "states": [
-        "sync-overview"
-      ],
-      "always_disabled": false
-    },
-    {
-      "id": "shape:button|||sync-section",
-      "tag": "button",
-      "role": "",
-      "testid": "",
-      "examples": [
-        "Discover on configured carrier"
-      ],
-      "instances": 1,
-      "enabled_instances": 1,
-      "states": [
-        "sync-peers"
-      ],
-      "always_disabled": false
-    },
-    {
-      "id": "shape:button|||sync-tabs",
-      "tag": "button",
-      "role": "",
-      "testid": "",
-      "examples": [
-        "Setup",
-        "Peers",
-        "Retention"
-      ],
-      "instances": 56,
-      "enabled_instances": 56,
-      "states": [
-        "sync-overview",
-        "sync-setup",
-        "sync-peers",
-        "sync-retention",
-        "sync-attachments",
-        "sync-conflicts",
-        "sync-backup",
-        "sync-repairs"
-      ],
-      "always_disabled": false
-    },
-    {
-      "id": "shape:button||active.result-card|pane-scroll.result-list",
-      "tag": "button",
-      "role": "",
-      "testid": "",
-      "examples": [
-        "Crawl fixture note",
-        "Trashed fixture note",
-        "Remote media fixture"
-      ],
-      "instances": 3,
-      "enabled_instances": 3,
-      "states": [
-        "note-open",
-        "note-trashed",
-        "note-remote-media"
-      ],
-      "always_disabled": false
-    },
-    {
-      "id": "shape:button||active|sync-tabs",
-      "tag": "button",
-      "role": "",
-      "testid": "",
-      "examples": [
-        "Overview",
-        "Setup",
-        "Peers"
-      ],
-      "instances": 8,
-      "enabled_instances": 8,
-      "states": [
-        "sync-overview",
-        "sync-setup",
-        "sync-peers",
-        "sync-retention",
-        "sync-attachments",
-        "sync-conflicts",
-        "sync-backup",
-        "sync-repairs"
-      ],
-      "always_disabled": false
-    },
-    {
-      "id": "shape:button||danger-button|row-actions",
-      "tag": "button",
-      "role": "",
-      "testid": "",
-      "examples": [
-        "Request reset review"
-      ],
-      "instances": 1,
-      "enabled_instances": 1,
-      "states": [
-        "sync-backup"
-      ],
-      "always_disabled": false
-    },
-    {
-      "id": "shape:button||icon-button.sync-close|sync-center-header",
-      "tag": "button",
-      "role": "",
-      "testid": "",
-      "examples": [
-        "Close sync center"
-      ],
-      "instances": 8,
-      "enabled_instances": 8,
-      "states": [
-        "sync-overview",
-        "sync-setup",
-        "sync-peers",
-        "sync-retention",
-        "sync-attachments",
-        "sync-conflicts",
-        "sync-backup",
-        "sync-repairs"
-      ],
-      "always_disabled": false
-    },
-    {
-      "id": "shape:button||icon-button|header-actions",
-      "tag": "button",
-      "role": "",
-      "testid": "",
-      "examples": [
-        "Toggle light/dark theme",
-        "Theme settings"
-      ],
-      "instances": 32,
-      "enabled_instances": 32,
-      "states": [
-        "start",
-        "all-notes",
-        "help",
-        "trash",
-        "new-note",
-        "note-open",
-        "note-trashed",
         "note-remote-media",
         "sync-overview",
         "sync-setup",
@@ -453,279 +200,6 @@
       ],
       "instances": 351,
       "enabled_instances": 351,
-      "states": [
-        "start",
-        "all-notes",
-        "help",
-        "trash",
-        "new-note",
-        "note-open",
-        "note-trashed",
-        "note-remote-media",
-        "sync-overview",
-        "sync-setup",
-        "sync-peers",
-        "sync-retention",
-        "sync-attachments",
-        "sync-conflicts",
-        "sync-backup",
-        "sync-repairs"
-      ],
-      "always_disabled": false
-    },
-    {
-      "id": "shape:button||primary-button|row-actions",
-      "tag": "button",
-      "role": "",
-      "testid": "",
-      "examples": [
-        "Verify for review"
-      ],
-      "instances": 1,
-      "enabled_instances": 0,
-      "states": [
-        "sync-backup"
-      ],
-      "always_disabled": true
-    },
-    {
-      "id": "shape:button||primary-button|sync-card",
-      "tag": "button",
-      "role": "",
-      "testid": "",
-      "examples": [
-        "Pair explicitly",
-        "Create and download"
-      ],
-      "instances": 2,
-      "enabled_instances": 0,
-      "states": [
-        "sync-peers",
-        "sync-backup"
-      ],
-      "always_disabled": true
-    },
-    {
-      "id": "shape:button||primary-button|sync-form-section.sync-section",
-      "tag": "button",
-      "role": "",
-      "testid": "",
-      "examples": [
-        "Save transport"
-      ],
-      "instances": 1,
-      "enabled_instances": 1,
-      "states": [
-        "sync-setup"
-      ],
-      "always_disabled": false
-    },
-    {
-      "id": "shape:button||primary-button|sync-hero-row",
-      "tag": "button",
-      "role": "",
-      "testid": "",
-      "examples": [
-        "Sync now"
-      ],
-      "instances": 1,
-      "enabled_instances": 1,
-      "states": [
-        "sync-overview"
-      ],
-      "always_disabled": false
-    },
-    {
-      "id": "shape:button||result-card|pane-scroll.result-list",
-      "tag": "button",
-      "role": "",
-      "testid": "",
-      "examples": [
-        "Job fixture note",
-        "Written after the drive went away",
-        "Crawl fixture note"
-      ],
-      "instances": 303,
-      "enabled_instances": 303,
-      "states": [
-        "start",
-        "all-notes",
-        "help",
-        "trash",
-        "new-note",
-        "note-open",
-        "note-remote-media",
-        "sync-overview",
-        "sync-setup",
-        "sync-peers",
-        "sync-retention",
-        "sync-attachments",
-        "sync-conflicts",
-        "sync-backup",
-        "sync-repairs"
-      ],
-      "always_disabled": false
-    },
-    {
-      "id": "shape:button||sync-header-button|header-actions",
-      "tag": "button",
-      "role": "",
-      "testid": "",
-      "examples": [
-        "Open synchronization, pairing, backup, and recovery"
-      ],
-      "instances": 16,
-      "enabled_instances": 16,
-      "states": [
-        "start",
-        "all-notes",
-        "help",
-        "trash",
-        "new-note",
-        "note-open",
-        "note-trashed",
-        "note-remote-media",
-        "sync-overview",
-        "sync-setup",
-        "sync-peers",
-        "sync-retention",
-        "sync-attachments",
-        "sync-conflicts",
-        "sync-backup",
-        "sync-repairs"
-      ],
-      "always_disabled": false
-    },
-    {
-      "id": "shape:input|||",
-      "tag": "input",
-      "role": "",
-      "testid": "",
-      "examples": [
-        "Laptop",
-        "http://127.0.0.1:8081"
-      ],
-      "instances": 5,
-      "enabled_instances": 5,
-      "states": [
-        "sync-peers",
-        "sync-backup"
-      ],
-      "always_disabled": false
-    },
-    {
-      "id": "shape:input|||directory-picker",
-      "tag": "input",
-      "role": "",
-      "testid": "",
-      "examples": [
-        "/absolute/path/to/shared-folder"
-      ],
-      "instances": 1,
-      "enabled_instances": 1,
-      "states": [
-        "sync-setup"
-      ],
-      "always_disabled": false
-    },
-    {
-      "id": "shape:input|||link-picker-field",
-      "tag": "input",
-      "role": "",
-      "testid": "",
-      "examples": [
-        "Search notes to link"
-      ],
-      "instances": 2,
-      "enabled_instances": 2,
-      "states": [
-        "note-open",
-        "note-remote-media"
-      ],
-      "always_disabled": false
-    },
-    {
-      "id": "shape:input|||password-row",
-      "tag": "input",
-      "role": "",
-      "testid": "",
-      "examples": [],
-      "instances": 2,
-      "enabled_instances": 2,
-      "states": [
-        "sync-backup"
-      ],
-      "always_disabled": false
-    },
-    {
-      "id": "shape:input|||radio-row",
-      "tag": "input",
-      "role": "",
-      "testid": "",
-      "examples": [
-        "sync-target"
-      ],
-      "instances": 3,
-      "enabled_instances": 3,
-      "states": [
-        "sync-setup"
-      ],
-      "always_disabled": false
-    },
-    {
-      "id": "shape:input|||resource-upload",
-      "tag": "input",
-      "role": "",
-      "testid": "",
-      "examples": [],
-      "instances": 2,
-      "enabled_instances": 2,
-      "states": [
-        "note-open",
-        "note-remote-media"
-      ],
-      "always_disabled": false
-    },
-    {
-      "id": "shape:input|||search-row",
-      "tag": "input",
-      "role": "",
-      "testid": "",
-      "examples": [
-        "Search query"
-      ],
-      "instances": 16,
-      "enabled_instances": 16,
-      "states": [
-        "start",
-        "all-notes",
-        "help",
-        "trash",
-        "new-note",
-        "note-open",
-        "note-trashed",
-        "note-remote-media",
-        "sync-overview",
-        "sync-setup",
-        "sync-peers",
-        "sync-retention",
-        "sync-attachments",
-        "sync-conflicts",
-        "sync-backup",
-        "sync-repairs"
-      ],
-      "always_disabled": false
-    },
-    {
-      "id": "shape:input||title-input|editor-toolbar-title",
-      "tag": "input",
-      "role": "",
-      "testid": "",
-      "examples": [
-        "Note title"
-      ],
-      "instances": 16,
-      "enabled_instances": 16,
       "states": [
         "start",
         "all-notes",
@@ -858,53 +332,145 @@
       "always_disabled": false
     },
     {
-      "id": "shape:select|||",
-      "tag": "select",
+      "id": "testid:attachment-upload",
+      "tag": "input",
       "role": "",
-      "testid": "",
+      "testid": "attachment-upload",
+      "examples": [],
+      "instances": 2,
+      "enabled_instances": 2,
+      "states": [
+        "note-open",
+        "note-remote-media"
+      ],
+      "always_disabled": false
+    },
+    {
+      "id": "testid:backup-cancel",
+      "tag": "button",
+      "role": "",
+      "testid": "backup-cancel",
       "examples": [
-        "Default — active"
+        "Cancel"
       ],
       "instances": 1,
       "enabled_instances": 1,
       "states": [
-        "sync-setup"
+        "sync-backup"
       ],
       "always_disabled": false
     },
     {
-      "id": "shape:select|||local-graph-depth",
-      "tag": "select",
+      "id": "testid:backup-create",
+      "tag": "button",
       "role": "",
-      "testid": "",
+      "testid": "backup-create",
       "examples": [
-        "Hops from this note"
+        "Create and download"
       ],
-      "instances": 3,
-      "enabled_instances": 3,
+      "instances": 1,
+      "enabled_instances": 0,
       "states": [
-        "note-open",
-        "note-trashed",
-        "note-remote-media"
+        "sync-backup"
+      ],
+      "always_disabled": true
+    },
+    {
+      "id": "testid:backup-file",
+      "tag": "input",
+      "role": "",
+      "testid": "backup-file",
+      "examples": [],
+      "instances": 1,
+      "enabled_instances": 1,
+      "states": [
+        "sync-backup"
       ],
       "always_disabled": false
     },
     {
-      "id": "shape:summary|||note-inspector",
-      "tag": "summary",
+      "id": "testid:backup-open-password",
+      "tag": "input",
       "role": "",
-      "testid": "",
-      "examples": [
-        "Note info"
-      ],
-      "instances": 3,
-      "enabled_instances": 3,
+      "testid": "backup-open-password",
+      "examples": [],
+      "instances": 1,
+      "enabled_instances": 1,
       "states": [
-        "note-open",
-        "note-trashed",
-        "note-remote-media"
+        "sync-backup"
       ],
       "always_disabled": false
+    },
+    {
+      "id": "testid:backup-open-password-reveal",
+      "tag": "button",
+      "role": "",
+      "testid": "backup-open-password-reveal",
+      "examples": [
+        "Show"
+      ],
+      "instances": 1,
+      "enabled_instances": 1,
+      "states": [
+        "sync-backup"
+      ],
+      "always_disabled": false
+    },
+    {
+      "id": "testid:backup-password",
+      "tag": "input",
+      "role": "",
+      "testid": "backup-password",
+      "examples": [],
+      "instances": 1,
+      "enabled_instances": 1,
+      "states": [
+        "sync-backup"
+      ],
+      "always_disabled": false
+    },
+    {
+      "id": "testid:backup-password-confirm",
+      "tag": "input",
+      "role": "",
+      "testid": "backup-password-confirm",
+      "examples": [],
+      "instances": 1,
+      "enabled_instances": 1,
+      "states": [
+        "sync-backup"
+      ],
+      "always_disabled": false
+    },
+    {
+      "id": "testid:backup-password-reveal",
+      "tag": "button",
+      "role": "",
+      "testid": "backup-password-reveal",
+      "examples": [
+        "Show"
+      ],
+      "instances": 1,
+      "enabled_instances": 1,
+      "states": [
+        "sync-backup"
+      ],
+      "always_disabled": false
+    },
+    {
+      "id": "testid:backup-verify",
+      "tag": "button",
+      "role": "",
+      "testid": "backup-verify",
+      "examples": [
+        "Verify for review"
+      ],
+      "instances": 1,
+      "enabled_instances": 0,
+      "states": [
+        "sync-backup"
+      ],
+      "always_disabled": true
     },
     {
       "id": "testid:delete-button",
@@ -970,6 +536,39 @@
       "always_disabled": false
     },
     {
+      "id": "testid:link-picker-input",
+      "tag": "input",
+      "role": "",
+      "testid": "link-picker-input",
+      "examples": [
+        "Search notes to link"
+      ],
+      "instances": 2,
+      "enabled_instances": 2,
+      "states": [
+        "note-open",
+        "note-remote-media"
+      ],
+      "always_disabled": false
+    },
+    {
+      "id": "testid:local-graph-hops",
+      "tag": "select",
+      "role": "",
+      "testid": "local-graph-hops",
+      "examples": [
+        "Hops from this note"
+      ],
+      "instances": 3,
+      "enabled_instances": 3,
+      "states": [
+        "note-open",
+        "note-trashed",
+        "note-remote-media"
+      ],
+      "always_disabled": false
+    },
+    {
       "id": "testid:localize-button",
       "tag": "button",
       "role": "",
@@ -991,6 +590,53 @@
       "testid": "new-note-button",
       "examples": [
         "Start a new note in “Notes”"
+      ],
+      "instances": 16,
+      "enabled_instances": 16,
+      "states": [
+        "start",
+        "all-notes",
+        "help",
+        "trash",
+        "new-note",
+        "note-open",
+        "note-trashed",
+        "note-remote-media",
+        "sync-overview",
+        "sync-setup",
+        "sync-peers",
+        "sync-retention",
+        "sync-attachments",
+        "sync-conflicts",
+        "sync-backup",
+        "sync-repairs"
+      ],
+      "always_disabled": false
+    },
+    {
+      "id": "testid:note-inspector-toggle",
+      "tag": "summary",
+      "role": "",
+      "testid": "note-inspector-toggle",
+      "examples": [
+        "Note info"
+      ],
+      "instances": 3,
+      "enabled_instances": 3,
+      "states": [
+        "note-open",
+        "note-trashed",
+        "note-remote-media"
+      ],
+      "always_disabled": false
+    },
+    {
+      "id": "testid:note-title",
+      "tag": "input",
+      "role": "",
+      "testid": "note-title",
+      "examples": [
+        "Note title"
       ],
       "instances": 16,
       "enabled_instances": 16,
@@ -1071,6 +717,21 @@
       "always_disabled": false
     },
     {
+      "id": "testid:profile-switcher",
+      "tag": "select",
+      "role": "",
+      "testid": "profile-switcher",
+      "examples": [
+        "Default — active"
+      ],
+      "instances": 1,
+      "enabled_instances": 1,
+      "states": [
+        "sync-setup"
+      ],
+      "always_disabled": false
+    },
+    {
       "id": "testid:purge-button",
       "tag": "button",
       "role": "",
@@ -1101,6 +762,38 @@
       "always_disabled": false
     },
     {
+      "id": "testid:result-card",
+      "tag": "button",
+      "role": "",
+      "testid": "result-card",
+      "examples": [
+        "Job fixture note",
+        "Written after the drive went away",
+        "Remote media fixture"
+      ],
+      "instances": 306,
+      "enabled_instances": 306,
+      "states": [
+        "start",
+        "all-notes",
+        "help",
+        "trash",
+        "new-note",
+        "note-open",
+        "note-trashed",
+        "note-remote-media",
+        "sync-overview",
+        "sync-setup",
+        "sync-peers",
+        "sync-retention",
+        "sync-attachments",
+        "sync-conflicts",
+        "sync-backup",
+        "sync-repairs"
+      ],
+      "always_disabled": false
+    },
+    {
       "id": "testid:save-button",
       "tag": "button",
       "role": "",
@@ -1118,6 +811,66 @@
         "trash",
         "new-note",
         "note-open",
+        "note-remote-media",
+        "sync-overview",
+        "sync-setup",
+        "sync-peers",
+        "sync-retention",
+        "sync-attachments",
+        "sync-conflicts",
+        "sync-backup",
+        "sync-repairs"
+      ],
+      "always_disabled": false
+    },
+    {
+      "id": "testid:search-input",
+      "tag": "input",
+      "role": "",
+      "testid": "search-input",
+      "examples": [
+        "Search query"
+      ],
+      "instances": 16,
+      "enabled_instances": 16,
+      "states": [
+        "start",
+        "all-notes",
+        "help",
+        "trash",
+        "new-note",
+        "note-open",
+        "note-trashed",
+        "note-remote-media",
+        "sync-overview",
+        "sync-setup",
+        "sync-peers",
+        "sync-retention",
+        "sync-attachments",
+        "sync-conflicts",
+        "sync-backup",
+        "sync-repairs"
+      ],
+      "always_disabled": false
+    },
+    {
+      "id": "testid:search-submit",
+      "tag": "button",
+      "role": "",
+      "testid": "search-submit",
+      "examples": [
+        "Search"
+      ],
+      "instances": 16,
+      "enabled_instances": 16,
+      "states": [
+        "start",
+        "all-notes",
+        "help",
+        "trash",
+        "new-note",
+        "note-open",
+        "note-trashed",
         "note-remote-media",
         "sync-overview",
         "sync-setup",
@@ -1371,6 +1124,532 @@
       "always_disabled": false
     },
     {
+      "id": "testid:sync-close",
+      "tag": "button",
+      "role": "",
+      "testid": "sync-close",
+      "examples": [
+        "Close sync center"
+      ],
+      "instances": 8,
+      "enabled_instances": 8,
+      "states": [
+        "sync-overview",
+        "sync-setup",
+        "sync-peers",
+        "sync-retention",
+        "sync-attachments",
+        "sync-conflicts",
+        "sync-backup",
+        "sync-repairs"
+      ],
+      "always_disabled": false
+    },
+    {
+      "id": "testid:sync-directory",
+      "tag": "input",
+      "role": "",
+      "testid": "sync-directory",
+      "examples": [
+        "/absolute/path/to/shared-folder"
+      ],
+      "instances": 1,
+      "enabled_instances": 1,
+      "states": [
+        "sync-setup"
+      ],
+      "always_disabled": false
+    },
+    {
+      "id": "testid:sync-discover",
+      "tag": "button",
+      "role": "",
+      "testid": "sync-discover",
+      "examples": [
+        "Discover on configured carrier"
+      ],
+      "instances": 1,
+      "enabled_instances": 1,
+      "states": [
+        "sync-peers"
+      ],
+      "always_disabled": false
+    },
+    {
+      "id": "testid:sync-header-button",
+      "tag": "button",
+      "role": "",
+      "testid": "sync-header-button",
+      "examples": [
+        "Open synchronization, pairing, backup, and recovery"
+      ],
+      "instances": 16,
+      "enabled_instances": 16,
+      "states": [
+        "start",
+        "all-notes",
+        "help",
+        "trash",
+        "new-note",
+        "note-open",
+        "note-trashed",
+        "note-remote-media",
+        "sync-overview",
+        "sync-setup",
+        "sync-peers",
+        "sync-retention",
+        "sync-attachments",
+        "sync-conflicts",
+        "sync-backup",
+        "sync-repairs"
+      ],
+      "always_disabled": false
+    },
+    {
+      "id": "testid:sync-invite-create",
+      "tag": "button",
+      "role": "",
+      "testid": "sync-invite-create",
+      "examples": [
+        "Create 15-minute code"
+      ],
+      "instances": 1,
+      "enabled_instances": 1,
+      "states": [
+        "sync-peers"
+      ],
+      "always_disabled": false
+    },
+    {
+      "id": "testid:sync-invite-label",
+      "tag": "input",
+      "role": "",
+      "testid": "sync-invite-label",
+      "examples": [
+        "Laptop"
+      ],
+      "instances": 1,
+      "enabled_instances": 1,
+      "states": [
+        "sync-peers"
+      ],
+      "always_disabled": false
+    },
+    {
+      "id": "testid:sync-job-cancel",
+      "tag": "button",
+      "role": "",
+      "testid": "sync-job-cancel",
+      "examples": [
+        "Cancel"
+      ],
+      "instances": 1,
+      "enabled_instances": 1,
+      "states": [
+        "sync-overview"
+      ],
+      "always_disabled": false
+    },
+    {
+      "id": "testid:sync-job-retry",
+      "tag": "button",
+      "role": "",
+      "testid": "sync-job-retry",
+      "examples": [
+        "Retry"
+      ],
+      "instances": 1,
+      "enabled_instances": 1,
+      "states": [
+        "sync-overview"
+      ],
+      "always_disabled": false
+    },
+    {
+      "id": "testid:sync-metric-attachments",
+      "tag": "button",
+      "role": "",
+      "testid": "sync-metric-attachments",
+      "examples": [
+        "0"
+      ],
+      "instances": 1,
+      "enabled_instances": 1,
+      "states": [
+        "sync-overview"
+      ],
+      "always_disabled": false
+    },
+    {
+      "id": "testid:sync-metric-conflicts",
+      "tag": "button",
+      "role": "",
+      "testid": "sync-metric-conflicts",
+      "examples": [
+        "0"
+      ],
+      "instances": 1,
+      "enabled_instances": 1,
+      "states": [
+        "sync-overview"
+      ],
+      "always_disabled": false
+    },
+    {
+      "id": "testid:sync-metric-peers",
+      "tag": "button",
+      "role": "",
+      "testid": "sync-metric-peers",
+      "examples": [
+        "0"
+      ],
+      "instances": 1,
+      "enabled_instances": 1,
+      "states": [
+        "sync-overview"
+      ],
+      "always_disabled": false
+    },
+    {
+      "id": "testid:sync-metric-repairs",
+      "tag": "button",
+      "role": "",
+      "testid": "sync-metric-repairs",
+      "examples": [
+        "0"
+      ],
+      "instances": 1,
+      "enabled_instances": 1,
+      "states": [
+        "sync-overview"
+      ],
+      "always_disabled": false
+    },
+    {
+      "id": "testid:sync-now",
+      "tag": "button",
+      "role": "",
+      "testid": "sync-now",
+      "examples": [
+        "Sync now"
+      ],
+      "instances": 1,
+      "enabled_instances": 1,
+      "states": [
+        "sync-overview"
+      ],
+      "always_disabled": false
+    },
+    {
+      "id": "testid:sync-pair-address",
+      "tag": "input",
+      "role": "",
+      "testid": "sync-pair-address",
+      "examples": [
+        "http://127.0.0.1:8081"
+      ],
+      "instances": 1,
+      "enabled_instances": 1,
+      "states": [
+        "sync-peers"
+      ],
+      "always_disabled": false
+    },
+    {
+      "id": "testid:sync-pair-code",
+      "tag": "input",
+      "role": "",
+      "testid": "sync-pair-code",
+      "examples": [],
+      "instances": 1,
+      "enabled_instances": 1,
+      "states": [
+        "sync-peers"
+      ],
+      "always_disabled": false
+    },
+    {
+      "id": "testid:sync-pair-submit",
+      "tag": "button",
+      "role": "",
+      "testid": "sync-pair-submit",
+      "examples": [
+        "Pair explicitly"
+      ],
+      "instances": 1,
+      "enabled_instances": 0,
+      "states": [
+        "sync-peers"
+      ],
+      "always_disabled": true
+    },
+    {
+      "id": "testid:sync-request-catchup",
+      "tag": "button",
+      "role": "",
+      "testid": "sync-request-catchup",
+      "examples": [
+        "Request catch-up"
+      ],
+      "instances": 1,
+      "enabled_instances": 1,
+      "states": [
+        "sync-backup"
+      ],
+      "always_disabled": false
+    },
+    {
+      "id": "testid:sync-request-reset",
+      "tag": "button",
+      "role": "",
+      "testid": "sync-request-reset",
+      "examples": [
+        "Request reset review"
+      ],
+      "instances": 1,
+      "enabled_instances": 1,
+      "states": [
+        "sync-backup"
+      ],
+      "always_disabled": false
+    },
+    {
+      "id": "testid:sync-save-transport",
+      "tag": "button",
+      "role": "",
+      "testid": "sync-save-transport",
+      "examples": [
+        "Save transport"
+      ],
+      "instances": 1,
+      "enabled_instances": 1,
+      "states": [
+        "sync-setup"
+      ],
+      "always_disabled": false
+    },
+    {
+      "id": "testid:sync-tab-backup",
+      "tag": "button",
+      "role": "",
+      "testid": "sync-tab-backup",
+      "examples": [
+        "Backup & recovery"
+      ],
+      "instances": 8,
+      "enabled_instances": 8,
+      "states": [
+        "sync-overview",
+        "sync-setup",
+        "sync-peers",
+        "sync-retention",
+        "sync-attachments",
+        "sync-conflicts",
+        "sync-backup",
+        "sync-repairs"
+      ],
+      "always_disabled": false
+    },
+    {
+      "id": "testid:sync-tab-conflicts",
+      "tag": "button",
+      "role": "",
+      "testid": "sync-tab-conflicts",
+      "examples": [
+        "Conflicts"
+      ],
+      "instances": 8,
+      "enabled_instances": 8,
+      "states": [
+        "sync-overview",
+        "sync-setup",
+        "sync-peers",
+        "sync-retention",
+        "sync-attachments",
+        "sync-conflicts",
+        "sync-backup",
+        "sync-repairs"
+      ],
+      "always_disabled": false
+    },
+    {
+      "id": "testid:sync-tab-overview",
+      "tag": "button",
+      "role": "",
+      "testid": "sync-tab-overview",
+      "examples": [
+        "Overview"
+      ],
+      "instances": 8,
+      "enabled_instances": 8,
+      "states": [
+        "sync-overview",
+        "sync-setup",
+        "sync-peers",
+        "sync-retention",
+        "sync-attachments",
+        "sync-conflicts",
+        "sync-backup",
+        "sync-repairs"
+      ],
+      "always_disabled": false
+    },
+    {
+      "id": "testid:sync-tab-peers",
+      "tag": "button",
+      "role": "",
+      "testid": "sync-tab-peers",
+      "examples": [
+        "Peers"
+      ],
+      "instances": 8,
+      "enabled_instances": 8,
+      "states": [
+        "sync-overview",
+        "sync-setup",
+        "sync-peers",
+        "sync-retention",
+        "sync-attachments",
+        "sync-conflicts",
+        "sync-backup",
+        "sync-repairs"
+      ],
+      "always_disabled": false
+    },
+    {
+      "id": "testid:sync-tab-repairs",
+      "tag": "button",
+      "role": "",
+      "testid": "sync-tab-repairs",
+      "examples": [
+        "Repairs"
+      ],
+      "instances": 8,
+      "enabled_instances": 8,
+      "states": [
+        "sync-overview",
+        "sync-setup",
+        "sync-peers",
+        "sync-retention",
+        "sync-attachments",
+        "sync-conflicts",
+        "sync-backup",
+        "sync-repairs"
+      ],
+      "always_disabled": false
+    },
+    {
+      "id": "testid:sync-tab-resources",
+      "tag": "button",
+      "role": "",
+      "testid": "sync-tab-resources",
+      "examples": [
+        "Attachments"
+      ],
+      "instances": 8,
+      "enabled_instances": 8,
+      "states": [
+        "sync-overview",
+        "sync-setup",
+        "sync-peers",
+        "sync-retention",
+        "sync-attachments",
+        "sync-conflicts",
+        "sync-backup",
+        "sync-repairs"
+      ],
+      "always_disabled": false
+    },
+    {
+      "id": "testid:sync-tab-retention",
+      "tag": "button",
+      "role": "",
+      "testid": "sync-tab-retention",
+      "examples": [
+        "Retention"
+      ],
+      "instances": 8,
+      "enabled_instances": 8,
+      "states": [
+        "sync-overview",
+        "sync-setup",
+        "sync-peers",
+        "sync-retention",
+        "sync-attachments",
+        "sync-conflicts",
+        "sync-backup",
+        "sync-repairs"
+      ],
+      "always_disabled": false
+    },
+    {
+      "id": "testid:sync-tab-setup",
+      "tag": "button",
+      "role": "",
+      "testid": "sync-tab-setup",
+      "examples": [
+        "Setup"
+      ],
+      "instances": 8,
+      "enabled_instances": 8,
+      "states": [
+        "sync-overview",
+        "sync-setup",
+        "sync-peers",
+        "sync-retention",
+        "sync-attachments",
+        "sync-conflicts",
+        "sync-backup",
+        "sync-repairs"
+      ],
+      "always_disabled": false
+    },
+    {
+      "id": "testid:sync-target-directory",
+      "tag": "input",
+      "role": "",
+      "testid": "sync-target-directory",
+      "examples": [
+        "sync-target"
+      ],
+      "instances": 1,
+      "enabled_instances": 1,
+      "states": [
+        "sync-setup"
+      ],
+      "always_disabled": false
+    },
+    {
+      "id": "testid:sync-target-none",
+      "tag": "input",
+      "role": "",
+      "testid": "sync-target-none",
+      "examples": [
+        "sync-target"
+      ],
+      "instances": 1,
+      "enabled_instances": 1,
+      "states": [
+        "sync-setup"
+      ],
+      "always_disabled": false
+    },
+    {
+      "id": "testid:sync-target-rest",
+      "tag": "input",
+      "role": "",
+      "testid": "sync-target-rest",
+      "examples": [
+        "sync-target"
+      ],
+      "instances": 1,
+      "enabled_instances": 1,
+      "states": [
+        "sync-setup"
+      ],
+      "always_disabled": false
+    },
+    {
       "id": "testid:tag-editor-add",
       "tag": "button",
       "role": "",
@@ -1438,6 +1717,66 @@
       ],
       "instances": 16,
       "enabled_instances": 15,
+      "states": [
+        "start",
+        "all-notes",
+        "help",
+        "trash",
+        "new-note",
+        "note-open",
+        "note-trashed",
+        "note-remote-media",
+        "sync-overview",
+        "sync-setup",
+        "sync-peers",
+        "sync-retention",
+        "sync-attachments",
+        "sync-conflicts",
+        "sync-backup",
+        "sync-repairs"
+      ],
+      "always_disabled": false
+    },
+    {
+      "id": "testid:theme-mode-toggle",
+      "tag": "button",
+      "role": "",
+      "testid": "theme-mode-toggle",
+      "examples": [
+        "Toggle light/dark theme"
+      ],
+      "instances": 16,
+      "enabled_instances": 16,
+      "states": [
+        "start",
+        "all-notes",
+        "help",
+        "trash",
+        "new-note",
+        "note-open",
+        "note-trashed",
+        "note-remote-media",
+        "sync-overview",
+        "sync-setup",
+        "sync-peers",
+        "sync-retention",
+        "sync-attachments",
+        "sync-conflicts",
+        "sync-backup",
+        "sync-repairs"
+      ],
+      "always_disabled": false
+    },
+    {
+      "id": "testid:theme-settings",
+      "tag": "button",
+      "role": "",
+      "testid": "theme-settings",
+      "examples": [
+        "Theme settings"
+      ],
+      "instances": 16,
+      "enabled_instances": 16,
       "states": [
         "start",
         "all-notes",

@@ -136,6 +136,61 @@
       }
     },
     {
+      "id": "insert-a-link",
+      "title": "Link one note to another",
+      "goal": "Put a link to another note into the one you are writing, without leaving it to find the address.",
+      "feature": "links-between-notes",
+      "steps": [
+        {
+          "id": "open-the-note",
+          "narrative": "Open the note you want to link from. Everything that follows is in this note; the one you link to is never opened.",
+          "locator": {
+            "css": ".result-card:has-text(\"Reed beds at dusk\")"
+          },
+          "action": "click"
+        },
+        {
+          "id": "open-note-info",
+          "narrative": "Note info holds what the note is rather than what it says: where it came from, what it links to, what is attached to it, and the tools for changing those. It is closed by default because a note you are reading is usually a note you are reading.",
+          "locator": {
+            "testid": "note-inspector-toggle"
+          },
+          "action": "click"
+        },
+        {
+          "id": "find-the-other-note",
+          "narrative": "Type part of the other note’s title. The suggestions come from a search over titles, so you do not need the identifier and you do not need the note open in another window.",
+          "locator": {
+            "testid": "link-picker-input"
+          },
+          "action": "fill",
+          "value": "Old shopping"
+        },
+        {
+          "id": "choose-it",
+          "narrative": "Choosing a suggestion writes a stable `document://` link into the body at the cursor. It is stable in the sense that matters: it names the note, so renaming the note later does not break it.",
+          "locator": {
+            "testid": "link-suggestion"
+          },
+          "action": "click"
+        },
+        {
+          "id": "save-when-ready",
+          "narrative": "The link is in the body and the note is unsaved — the badge above the editor says so. Nothing was written for you: move the link to where it belongs in your prose first, then save.",
+          "locator": {
+            "testid": "save-button"
+          },
+          "action": "screenshot_only"
+        }
+      ],
+      "postcondition": {
+        "narrative": "the note carries an unsaved change, which is the link that was just inserted",
+        "locator": {
+          "testid": "unsaved-badge"
+        }
+      }
+    },
+    {
       "id": "update-a-note",
       "title": "Change a note you already wrote",
       "goal": "Open an existing note, change it, and save the change.",

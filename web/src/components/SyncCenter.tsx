@@ -125,12 +125,12 @@ export function SyncCenter({ onClose }: SyncCenterProps) {
               </p>
             ) : <p className="muted">Reading this profile…</p>}
           </div>
-          <button ref={closeRef} type="button" className="icon-button sync-close" aria-label="Close sync center" onClick={onClose}>×</button>
+          <button ref={closeRef} type="button" className="icon-button sync-close" data-testid="sync-close" aria-label="Close sync center" onClick={onClose}>×</button>
         </header>
 
         <nav className="sync-tabs" aria-label="Synchronization sections">
           {tabs.map((item) => (
-            <button key={item.id} type="button" aria-current={tab === item.id ? 'page' : undefined}
+            <button key={item.id} type="button" data-testid={`sync-tab-${item.id}`} aria-current={tab === item.id ? 'page' : undefined}
               aria-label={item.id === 'conflicts' && conflictCount > 0
                 ? `${item.label} ${conflictCount}`
                 : item.id === 'resources' && missingCount > 0
@@ -177,17 +177,17 @@ function Overview({ status, busy, act, onTab }: SectionProps & { onTab: (tab: Sy
           <h3>{status.status === 'ready' ? 'Up to date' : status.status === 'setup' ? 'Finish setup' : status.status === 'offline' ? 'Offline—will retry' : status.status === 'syncing' ? 'Synchronization in progress' : 'Needs attention'}</h3>
           <p>{status.configuration.target === 'none' ? 'No transport is selected.' : `Using ${status.configuration.target === 'rest' ? 'a REST peer' : 'a shared directory'}.`}</p>
         </div>
-        <button type="button" className="primary-button" disabled={busy !== '' || status.configuration.target === 'none'}
+        <button type="button" className="primary-button" data-testid="sync-now" disabled={busy !== '' || status.configuration.target === 'none'}
           onClick={() => void act('sync-now', () => startSync('incremental'), 'Synchronization was queued.')}>
           Sync now
         </button>
       </div>
 
       <div className="sync-metric-grid">
-        <button type="button" onClick={() => onTab('peers')}><strong>{status.peers.length}</strong><span>paired peers</span></button>
-        <button type="button" onClick={() => onTab('resources')}><strong>{status.resources.filter((item) => item.availability === 'unavailable').length}</strong><span>missing attachments</span></button>
-        <button type="button" onClick={() => onTab('conflicts')}><strong>{status.conflicts.length}</strong><span>conflicts</span></button>
-        <button type="button" onClick={() => onTab('repairs')}><strong>{status.repairs.length}</strong><span>repair reports</span></button>
+        <button type="button" data-testid="sync-metric-peers" onClick={() => onTab('peers')}><strong>{status.peers.length}</strong><span>paired peers</span></button>
+        <button type="button" data-testid="sync-metric-attachments" onClick={() => onTab('resources')}><strong>{status.resources.filter((item) => item.availability === 'unavailable').length}</strong><span>missing attachments</span></button>
+        <button type="button" data-testid="sync-metric-conflicts" onClick={() => onTab('conflicts')}><strong>{status.conflicts.length}</strong><span>conflicts</span></button>
+        <button type="button" data-testid="sync-metric-repairs" onClick={() => onTab('repairs')}><strong>{status.repairs.length}</strong><span>repair reports</span></button>
       </div>
 
       {activeJob ? (
@@ -195,7 +195,7 @@ function Overview({ status, busy, act, onTab }: SectionProps & { onTab: (tab: Sy
           <div className="sync-card-heading"><h4>{friendlyKind(activeJob.kind)}</h4><span className={`state-chip ${activeJob.state}`}>{activeJob.state}</span></div>
           <p>{activeJob.phase ? `Phase: ${friendlyKind(activeJob.phase)}` : 'Waiting for a worker checkpoint…'}</p>
           {jobProgress(activeJob.processed, activeJob.total) !== undefined ? <progress max="100" value={jobProgress(activeJob.processed, activeJob.total)} /> : null}
-          <button type="button" disabled={busy !== '' || activeJob.cancel_requested}
+          <button type="button" data-testid="sync-job-cancel" disabled={busy !== '' || activeJob.cancel_requested}
             onClick={() => void act(`cancel-${activeJob.id}`, () => cancelSyncJob(activeJob.id), 'Cancellation requested; the job will stop at a safe checkpoint.')}>
             {activeJob.cancel_requested ? 'Stopping safely…' : 'Cancel'}
           </button>
@@ -208,7 +208,7 @@ function Overview({ status, busy, act, onTab }: SectionProps & { onTab: (tab: Sy
             <div><strong>{friendlyKind(job.kind)}</strong><small>{job.phase ? friendlyKind(job.phase) : new Date(job.created_at).toLocaleString()}</small></div>
             <span className={`state-chip ${job.state}`}>{job.state}</span>
             {job.state === 'failed' || job.state === 'cancelled' ? (
-              <button type="button" disabled={busy !== ''} onClick={() => void act(`retry-${job.id}`, () => retrySyncJob(job.id), 'The job was queued to retry from its verified checkpoint.')}>Retry</button>
+              <button type="button" data-testid="sync-job-retry" disabled={busy !== ''} onClick={() => void act(`retry-${job.id}`, () => retrySyncJob(job.id), 'The job was queued to retry from its verified checkpoint.')}>Retry</button>
             ) : null}
           </article>
         ))}
@@ -234,7 +234,7 @@ function Setup({ status, busy, act }: SectionProps) {
       <h3>Profile and transport</h3>
       <p>Each profile is an isolated local process. Switching opens the selected profile at its own local address.</p>
       <label>Active profile
-        <select value={activeProfile?.name ?? status.active_profile.name} onChange={(event) => {
+        <select data-testid="profile-switcher" value={activeProfile?.name ?? status.active_profile.name} onChange={(event) => {
           const selected = status.profiles.find((profile) => profile.name === event.target.value);
           if (selected && !selected.active && selected.public_base_url) window.location.assign(selected.public_base_url);
         }}>
@@ -244,7 +244,7 @@ function Setup({ status, busy, act }: SectionProps) {
 
       <div className="warning-card" role="note"><strong>{status.secret_store.name}</strong><p>{status.secret_store.warning}</p></div>
       {!status.journal_enabled || !status.secret_store.configured ? (
-        <button type="button" className="primary-button" disabled={busy !== '' || !status.secret_store.available}
+        <button type="button" className="primary-button" data-testid="sync-initialize" disabled={busy !== '' || !status.secret_store.available}
           onClick={() => void act('initialize', initializeSync, 'Synchronization was initialized. Restart this profile before pairing or syncing.')}>
           Initialize this profile
         </button>
@@ -252,25 +252,25 @@ function Setup({ status, busy, act }: SectionProps) {
 
       <fieldset>
         <legend>Sync target</legend>
-        <label className="radio-row"><input type="radio" name="sync-target" checked={target === 'none'} onChange={() => setTarget('none')} /> None</label>
-        <label className="radio-row"><input type="radio" name="sync-target" checked={target === 'directory'} onChange={() => setTarget('directory')} /> Shared directory</label>
-        <label className="radio-row"><input type="radio" name="sync-target" checked={target === 'rest'} onChange={() => setTarget('rest')} /> REST peer</label>
+        <label className="radio-row"><input type="radio" name="sync-target" data-testid="sync-target-none" checked={target === 'none'} onChange={() => setTarget('none')} /> None</label>
+        <label className="radio-row"><input type="radio" name="sync-target" data-testid="sync-target-directory" checked={target === 'directory'} onChange={() => setTarget('directory')} /> Shared directory</label>
+        <label className="radio-row"><input type="radio" name="sync-target" data-testid="sync-target-rest" checked={target === 'rest'} onChange={() => setTarget('rest')} /> REST peer</label>
       </fieldset>
       {target === 'directory' ? <label>Shared directory on this device
-        <span className="directory-picker"><input value={directory} onChange={(event) => setDirectory(event.target.value)} placeholder="/absolute/path/to/shared-folder" autoComplete="off" />
-          {nativeChooser ? <button type="button" onClick={() => void nativeChooser().then((path) => { if (path) setDirectory(path); })}>Choose folder…</button> : null}
+        <span className="directory-picker"><input data-testid="sync-directory" value={directory} onChange={(event) => setDirectory(event.target.value)} placeholder="/absolute/path/to/shared-folder" autoComplete="off" />
+          {nativeChooser ? <button type="button" data-testid="sync-directory-choose" onClick={() => void nativeChooser().then((path) => { if (path) setDirectory(path); })}>Choose folder…</button> : null}
         </span>
         <small>Choose a disposable carrier folder. Your notes remain in the profile database.</small>
       </label> : null}
       {target === 'rest' ? <>
         <label>Peer address
-          <input type="url" value={restURL} onChange={(event) => setRestURL(event.target.value)} placeholder="https://peer.example" autoComplete="off" />
+          <input type="url" data-testid="sync-rest-url" value={restURL} onChange={(event) => setRestURL(event.target.value)} placeholder="https://peer.example" autoComplete="off" />
           <small>HTTPS is required except between loopback profiles on this computer.</small>
         </label>
-        <label className="checkbox-row"><input type="checkbox" checked={restInboundEnabled} onChange={(event) => setRESTInboundEnabled(event.target.checked)} /> Allow enrolled peers to connect to this profile</label>
+        <label className="checkbox-row"><input type="checkbox" data-testid="sync-rest-inbound" checked={restInboundEnabled} onChange={(event) => setRESTInboundEnabled(event.target.checked)} /> Allow enrolled peers to connect to this profile</label>
         <small>This explicitly enables only the authenticated sync surface after restart; the general API remains local.</small>
       </> : null}
-      <button type="button" className="primary-button" disabled={busy !== '' || target === 'directory' && !directory.trim() || target === 'rest' && !restURL.trim()}
+      <button type="button" className="primary-button" data-testid="sync-save-transport" disabled={busy !== '' || target === 'directory' && !directory.trim() || target === 'rest' && !restURL.trim()}
         onClick={() => void act('save-configuration', () => saveSyncConfiguration({ target, directory, rest_base_url: restURL, rest_inbound_enabled: restInboundEnabled }), 'Configuration saved. Restart this profile to activate it.')}>
         Save transport
       </button>
@@ -320,44 +320,44 @@ function Peers({ status, busy, act, setNotice, setError }: SectionProps & { setN
           <div><strong>{peer.replica_id.slice(0, 16)}…</strong><small>{peer.status === 'retired' ? 'Retired credentials cannot rejoin; reset and pair this device as a new replica.' : peer.full_resync_required ? 'History below this peer was collected; verified snapshot catch-up is required.' : peer.behind_operations > 0 ? `${peer.behind_operations} operations behind` : 'Caught up at last acknowledgement'}</small></div>
           <span className={`state-chip ${peer.status}`}>{peer.status}</span>
           <div className="row-actions">
-            <button type="button" disabled={busy !== '' || peer.status !== 'active' && peer.status !== 'behind'} aria-pressed={peer.snapshot_permitted}
+            <button type="button" data-testid="sync-peer-snapshot" disabled={busy !== '' || peer.status !== 'active' && peer.status !== 'behind'} aria-pressed={peer.snapshot_permitted}
               onClick={() => void act(`snapshot-permission-${peer.replica_id}`, () => setSyncSnapshotPermission(peer.replica_id, !peer.snapshot_permitted),
                 peer.snapshot_permitted ? 'Catch-up snapshots are no longer allowed for this peer.' : 'This peer may now request a complete catch-up snapshot.')}>
               {peer.snapshot_permitted ? 'Disallow snapshot' : 'Allow catch-up snapshot'}
             </button>
-            <button type="button" className="danger-button" disabled={busy !== '' || reviewingPeer !== '' || peer.status === 'retired' || peer.status === 'revoked'} onClick={() => void reviewRetirement(peer.replica_id)}>Review retirement</button>
+            <button type="button" className="danger-button" data-testid="sync-peer-review-retirement" disabled={busy !== '' || reviewingPeer !== '' || peer.status === 'retired' || peer.status === 'revoked'} onClick={() => void reviewRetirement(peer.replica_id)}>Review retirement</button>
           </div>
         </article>)}
         {status.peers.length === 0 ? <p className="sync-empty">No peers are enrolled. Discovery never enrolls one automatically.</p> : null}
       </div>
-      {retirement ? <article className="destructive-review" role="region" aria-label="Peer retirement review">
+      {retirement ? <article className="destructive-review" data-testid="sync-retirement-review" role="region" aria-label="Peer retirement review">
         <h4>Retire {retirement.peer.replica_id.slice(0, 20)}…?</h4>
         <p>This signed decision does not require every peer online. It travels in the ordinary operation log.</p>
         <ul>{retirement.consequences.map((consequence) => <li key={consequence}>{consequence}</li>)}</ul>
-        <label>Owner-visible reason (optional)<input maxLength={512} value={retirementReason} onChange={(event) => setRetirementReason(event.target.value)} /></label>
-        <label className="checkbox-row"><input type="checkbox" checked={retirementConfirmed} onChange={(event) => setRetirementConfirmed(event.target.checked)} /> I understand this peer must reset and pair as a new replica.</label>
-        <div className="row-actions"><button type="button" onClick={() => { setRetirement(null); setRetirementConfirmed(false); setRetirementReason(''); }}>Cancel</button><button type="button" className="danger-button" disabled={busy !== '' || !retirementConfirmed} onClick={() => void act(`retire-${retirement.peer.replica_id}`, () => retireSyncPeer(retirement.peer.replica_id, retirement.confirmation, retirementReason), 'Peer retired. Other peers that have not acknowledged the decision remain visible in the retention report.').then(() => { setRetirement(null); setRetirementConfirmed(false); setRetirementReason(''); })}>Retire peer</button></div>
+        <label>Owner-visible reason (optional)<input data-testid="sync-retirement-reason" maxLength={512} value={retirementReason} onChange={(event) => setRetirementReason(event.target.value)} /></label>
+        <label className="checkbox-row"><input type="checkbox" data-testid="sync-retirement-confirm" checked={retirementConfirmed} onChange={(event) => setRetirementConfirmed(event.target.checked)} /> I understand this peer must reset and pair as a new replica.</label>
+        <div className="row-actions"><button type="button" data-testid="sync-retirement-cancel" onClick={() => { setRetirement(null); setRetirementConfirmed(false); setRetirementReason(''); }}>Cancel</button><button type="button" className="danger-button" data-testid="sync-retirement-retire" disabled={busy !== '' || !retirementConfirmed} onClick={() => void act(`retire-${retirement.peer.replica_id}`, () => retireSyncPeer(retirement.peer.replica_id, retirement.confirmation, retirementReason), 'Peer retired. Other peers that have not acknowledged the decision remain visible in the retention report.').then(() => { setRetirement(null); setRetirementConfirmed(false); setRetirementReason(''); })}>Retire peer</button></div>
       </article> : null}
       <div className="sync-two-column">
         <article className="sync-card">
           <h4>Invite a peer</h4>
-          <label>Private label<input value={label} maxLength={128} onChange={(event) => setLabel(event.target.value)} placeholder="Laptop" /></label>
-          <button type="button" disabled={busy !== '' || !status.configuration.rest_inbound_enabled} onClick={() => void invite()}>Create 15-minute code</button>
+          <label>Private label<input data-testid="sync-invite-label" value={label} maxLength={128} onChange={(event) => setLabel(event.target.value)} placeholder="Laptop" /></label>
+          <button type="button" data-testid="sync-invite-create" disabled={busy !== '' || !status.configuration.rest_inbound_enabled} onClick={() => void invite()}>Create 15-minute code</button>
           {!status.configuration.rest_inbound_enabled ? <small>Inbound REST sync must be enabled in this profile before it can invite.</small> : null}
-          {invitation ? <div className="pairing-code" aria-live="polite"><code>{invitation.code}</code><button type="button" onClick={() => {
+          {invitation ? <div className="pairing-code" data-testid="sync-invite-code" aria-live="polite"><code>{invitation.code}</code><button type="button" data-testid="sync-invite-copy" onClick={() => {
             void navigator.clipboard?.writeText(invitation.code);
             setNotice('Pairing code copied. Send it separately from the peer address.');
           }}>Copy code</button><small>Expires {new Date(invitation.expires_at).toLocaleTimeString()}</small></div> : null}
         </article>
         <article className="sync-card">
           <h4>Join an inviting peer</h4>
-          <label>Peer address<input type="url" value={baseURL} onChange={(event) => setBaseURL(event.target.value)} placeholder="http://127.0.0.1:8081" /></label>
-          <label>Single-use code<input value={code} onChange={(event) => setCode(event.target.value.toUpperCase())} autoComplete="one-time-code" spellCheck={false} /></label>
-          <button type="button" className="primary-button" disabled={busy !== '' || !baseURL.trim() || !code.trim()}
+          <label>Peer address<input type="url" data-testid="sync-pair-address" value={baseURL} onChange={(event) => setBaseURL(event.target.value)} placeholder="http://127.0.0.1:8081" /></label>
+          <label>Single-use code<input data-testid="sync-pair-code" value={code} onChange={(event) => setCode(event.target.value.toUpperCase())} autoComplete="one-time-code" spellCheck={false} /></label>
+          <button type="button" className="primary-button" data-testid="sync-pair-submit" disabled={busy !== '' || !baseURL.trim() || !code.trim()}
             onClick={() => void act('pair', async () => { await pairSyncPeer(baseURL, code); setCode(''); }, 'The peer is paired. Queue synchronization when you are ready.')}>Pair explicitly</button>
         </article>
       </div>
-      <button type="button" disabled={busy !== '' || status.configuration.target === 'none'} onClick={() => void discover()}>Discover on configured carrier</button>
+      <button type="button" data-testid="sync-discover" disabled={busy !== '' || status.configuration.target === 'none'} onClick={() => void discover()}>Discover on configured carrier</button>
       {discovery.length > 0 ? <ul className="discovery-list">{discovery.map((peer) => <li key={peer}>{peer}</li>)}</ul> : null}
     </div>
   );
@@ -398,8 +398,8 @@ function Resources({ status, busy, act }: SectionProps) {
       <div><strong>{resource.filename || resource.id}</strong><small>{resource.mime_type} · {formatBytes(resource.size_bytes)}</small></div>
       <span className={`state-chip ${resource.availability === 'local' ? 'succeeded' : resource.requested ? 'queued' : 'offline'}`}>{resource.availability === 'local' ? 'available' : resource.requested ? 'pending' : 'not on this device'}</span>
       <div className="row-actions">
-        {resource.availability !== 'local' ? <button type="button" disabled={busy !== ''} onClick={() => void act(`fetch-${resource.id}`, () => setSyncResourceIntent(resource.id, resource.pinned, true), `Requested ${resource.filename || 'the attachment'}; a bounded fetch job was queued when the target was available.`)}>Download</button> : null}
-        <button type="button" disabled={busy !== ''} aria-pressed={resource.pinned} onClick={() => void act(`pin-${resource.id}`, () => setSyncResourceIntent(resource.id, !resource.pinned, resource.requested || !resource.pinned), resource.pinned ? 'The attachment is no longer pinned.' : 'The attachment is pinned to this device.')}>{resource.pinned ? 'Unpin' : 'Pin'}</button>
+        {resource.availability !== 'local' ? <button type="button" data-testid="sync-attachment-download" disabled={busy !== ''} onClick={() => void act(`fetch-${resource.id}`, () => setSyncResourceIntent(resource.id, resource.pinned, true), `Requested ${resource.filename || 'the attachment'}; a bounded fetch job was queued when the target was available.`)}>Download</button> : null}
+        <button type="button" data-testid="sync-attachment-pin" disabled={busy !== ''} aria-pressed={resource.pinned} onClick={() => void act(`pin-${resource.id}`, () => setSyncResourceIntent(resource.id, !resource.pinned, resource.requested || !resource.pinned), resource.pinned ? 'The attachment is no longer pinned.' : 'The attachment is pinned to this device.')}>{resource.pinned ? 'Unpin' : 'Pin'}</button>
       </div>
     </article>)}{status.resources.length === 0 ? <p className="sync-empty">No missing or pinned attachments.</p> : null}</div>
   </div>;
@@ -425,17 +425,17 @@ function Conflicts({ status, busy, refresh, setBusy, setNotice, setError }: { st
       await refresh();
     } catch (err) { setError(errorMessage(err)); } finally { setBusy(''); }
   }
-  if (detail) return <div className="sync-section conflict-detail"><button type="button" className="back-button" onClick={() => setDetail(null)}>← All conflicts</button><h3>{detail.title}</h3><p>Compare the common base, this replica’s displayed head, and the other head. Nothing is chosen automatically.</p>
+  if (detail) return <div className="sync-section conflict-detail"><button type="button" className="back-button" data-testid="sync-conflict-back" onClick={() => setDetail(null)}>← All conflicts</button><h3>{detail.title}</h3><p>Compare the common base, this replica’s displayed head, and the other head. Nothing is chosen automatically.</p>
     <div className="conflict-columns">
       <label>Common base<textarea readOnly value={detail.base.body} /></label>
       <label>Current on this profile<textarea readOnly value={detail.local.body} /></label>
       <label>Other revision<textarea readOnly value={detail.remote.body} /></label>
     </div>
-    <label>Resolved title<input value={title} onChange={(event) => setTitle(event.target.value)} /></label>
-    <label>Your resolved note<textarea className="resolution-editor" value={resolution} onChange={(event) => setResolution(event.target.value)} /></label>
-    <div className="row-actions"><button type="button" onClick={() => setResolution(detail.local.body)}>Use current</button><button type="button" onClick={() => setResolution(detail.remote.body)}>Use other</button><button type="button" className="primary-button" disabled={busy !== ''} onClick={() => void resolve()}>Save resolution</button></div>
+    <label>Resolved title<input data-testid="sync-conflict-title" value={title} onChange={(event) => setTitle(event.target.value)} /></label>
+    <label>Your resolved note<textarea className="resolution-editor" data-testid="sync-conflict-body" value={resolution} onChange={(event) => setResolution(event.target.value)} /></label>
+    <div className="row-actions"><button type="button" data-testid="sync-conflict-use-current" onClick={() => setResolution(detail.local.body)}>Use current</button><button type="button" data-testid="sync-conflict-use-other" onClick={() => setResolution(detail.remote.body)}>Use other</button><button type="button" className="primary-button" data-testid="sync-conflict-save" disabled={busy !== ''} onClick={() => void resolve()}>Save resolution</button></div>
   </div>;
-  return <div className="sync-section"><h3>Visible conflicts</h3><p>Notrios will not guess when concurrent edits overlap.</p><div className="sync-list">{status.conflicts.map((conflict) => <button type="button" className="sync-list-row conflict-row" key={conflict.id} disabled={busy !== ''} onClick={() => void open(conflict.id)}><div><strong>{conflict.document_id}</strong><small>{friendlyKind(conflict.kind)} · {new Date(conflict.created_at).toLocaleString()}</small></div><span>Compare →</span></button>)}{status.conflicts.length === 0 ? <p className="sync-empty">No unresolved body conflicts.</p> : null}</div></div>;
+  return <div className="sync-section"><h3>Visible conflicts</h3><p>Notrios will not guess when concurrent edits overlap.</p><div className="sync-list">{status.conflicts.map((conflict) => <button type="button" className="sync-list-row conflict-row" data-testid="sync-conflict-row" key={conflict.id} disabled={busy !== ''} onClick={() => void open(conflict.id)}><div><strong>{conflict.document_id}</strong><small>{friendlyKind(conflict.kind)} · {new Date(conflict.created_at).toLocaleString()}</small></div><span>Compare →</span></button>)}{status.conflicts.length === 0 ? <p className="sync-empty">No unresolved body conflicts.</p> : null}</div></div>;
 }
 
 function BackupRecovery({ status, busy, act, refresh, setBusy, setNotice, setError }: SectionProps & { refresh: () => Promise<void>; setBusy: (value: string) => void; setNotice: (value: string) => void; setError: (value: string) => void }) {
@@ -472,19 +472,19 @@ function BackupRecovery({ status, busy, act, refresh, setBusy, setNotice, setErr
   }
   return <div className="sync-section"><h3>Backup and recovery</h3><div className="sync-two-column">
     <article className="sync-card"><h4>Create a password-protected backup</h4><p>The password wraps a fresh payload key with Argon2id. It is never saved.</p>
-      <label>Password<span className="password-row"><input type={showCreate ? 'text' : 'password'} value={createPassword} minLength={8} maxLength={4096} autoComplete="new-password" onChange={(event) => setCreatePassword(event.target.value)} /><button type="button" aria-pressed={showCreate} onClick={() => setShowCreate((value) => !value)}>{showCreate ? 'Hide' : 'Show'}</button></span></label>
-      <label>Confirm password<input type={showCreate ? 'text' : 'password'} value={confirmPassword} autoComplete="new-password" onChange={(event) => setConfirmPassword(event.target.value)} /></label>
-      <button type="button" className="primary-button" disabled={busy !== '' || !createValid} onClick={() => void createBackup()}>Create and download</button>
+      <label>Password<span className="password-row"><input type={showCreate ? 'text' : 'password'} data-testid="backup-password" value={createPassword} minLength={8} maxLength={4096} autoComplete="new-password" onChange={(event) => setCreatePassword(event.target.value)} /><button type="button" data-testid="backup-password-reveal" aria-pressed={showCreate} onClick={() => setShowCreate((value) => !value)}>{showCreate ? 'Hide' : 'Show'}</button></span></label>
+      <label>Confirm password<input type={showCreate ? 'text' : 'password'} data-testid="backup-password-confirm" value={confirmPassword} autoComplete="new-password" onChange={(event) => setConfirmPassword(event.target.value)} /></label>
+      <button type="button" className="primary-button" data-testid="backup-create" disabled={busy !== '' || !createValid} onClick={() => void createBackup()}>Create and download</button>
       <small>Notrios cannot recover a forgotten backup password.</small>
     </article>
     <article className="sync-card"><h4>Review a backup for restore</h4><p>A wrong password changes nothing; retry or cancel safely.</p>
-      <label>Backup file<input type="file" accept=".npb,application/vnd.notrios.password-backup" onChange={(event) => { setBackupFile(event.target.files?.[0] ?? null); setReview(null); }} /></label>
-      <label>Password<span className="password-row"><input type={showOpen ? 'text' : 'password'} value={openPassword} autoComplete="off" onChange={(event) => setOpenPassword(event.target.value)} /><button type="button" aria-pressed={showOpen} onClick={() => setShowOpen((value) => !value)}>{showOpen ? 'Hide' : 'Show'}</button></span></label>
-      <div className="row-actions"><button type="button" className="primary-button" disabled={busy !== '' || !backupFile || !openPassword} onClick={() => void inspect()}>Verify for review</button><button type="button" disabled={busy !== ''} onClick={() => { setBackupFile(null); setOpenPassword(''); setReview(null); }}>Cancel</button></div>
+      <label>Backup file<input type="file" data-testid="backup-file" accept=".npb,application/vnd.notrios.password-backup" onChange={(event) => { setBackupFile(event.target.files?.[0] ?? null); setReview(null); }} /></label>
+      <label>Password<span className="password-row"><input type={showOpen ? 'text' : 'password'} data-testid="backup-open-password" value={openPassword} autoComplete="off" onChange={(event) => setOpenPassword(event.target.value)} /><button type="button" data-testid="backup-open-password-reveal" aria-pressed={showOpen} onClick={() => setShowOpen((value) => !value)}>{showOpen ? 'Hide' : 'Show'}</button></span></label>
+      <div className="row-actions"><button type="button" className="primary-button" data-testid="backup-verify" disabled={busy !== '' || !backupFile || !openPassword} onClick={() => void inspect()}>Verify for review</button><button type="button" data-testid="backup-cancel" disabled={busy !== ''} onClick={() => { setBackupFile(null); setOpenPassword(''); setReview(null); }}>Cancel</button></div>
     </article>
   </div>
-  {review ? <article className="destructive-review" role="region" aria-label="Destructive restore review"><h4>Verified—destructive review required</h4><dl><div><dt>Library</dt><dd>{review.database_id}</dd></div><div><dt>Snapshot</dt><dd>{review.snapshot_id}</dd></div><div><dt>Schema</dt><dd>{review.schema_version}</dd></div><div><dt>External objects</dt><dd>{review.objects}</dd></div></dl><p>Replace discards this profile’s canonical state after making and verifying an emergency snapshot. Adopt also mints a fresh replica identity. This review did not apply either action.</p><button type="button" disabled title="Close the active profile and use the explicit native restore handoff">Apply requires profile shutdown</button></article> : null}
-  <article className="sync-card recovery-card"><h4>Catch up or reset from an enrolled REST peer</h4><p>Catch-up downloads and verifies a physical snapshot into private staging. Reset requests the same artifact but remains blocked on a separate destructive review.</p><div className="row-actions"><button type="button" disabled={busy !== '' || status.configuration.target === 'none'} onClick={() => void act('catchup', () => requestSyncRecovery('catchup'), 'Catch-up was queued with resumable transfer and verification.')}>Request catch-up</button><button type="button" className="danger-button" disabled={busy !== '' || status.configuration.target === 'none'} onClick={() => {
+  {review ? <article className="destructive-review" data-testid="backup-review" role="region" aria-label="Destructive restore review"><h4>Verified—destructive review required</h4><dl><div><dt>Library</dt><dd>{review.database_id}</dd></div><div><dt>Snapshot</dt><dd>{review.snapshot_id}</dd></div><div><dt>Schema</dt><dd>{review.schema_version}</dd></div><div><dt>External objects</dt><dd>{review.objects}</dd></div></dl><p>Replace discards this profile’s canonical state after making and verifying an emergency snapshot. Adopt also mints a fresh replica identity. This review did not apply either action.</p><button type="button" data-testid="backup-apply" disabled title="Close the active profile and use the explicit native restore handoff">Apply requires profile shutdown</button></article> : null}
+  <article className="sync-card recovery-card"><h4>Catch up or reset from an enrolled REST peer</h4><p>Catch-up downloads and verifies a physical snapshot into private staging. Reset requests the same artifact but remains blocked on a separate destructive review.</p><div className="row-actions"><button type="button" data-testid="sync-request-catchup" disabled={busy !== '' || status.configuration.target === 'none'} onClick={() => void act('catchup', () => requestSyncRecovery('catchup'), 'Catch-up was queued with resumable transfer and verification.')}>Request catch-up</button><button type="button" className="danger-button" data-testid="sync-request-reset" disabled={busy !== '' || status.configuration.target === 'none'} onClick={() => {
     if (window.confirm('Request a reset snapshot? Nothing will be replaced until a separate destructive review.')) void act('reset', () => requestSyncRecovery('reset'), 'Reset preparation was queued. No canonical data was changed.').then(refresh);
   }}>Request reset review</button></div></article>
   </div>;

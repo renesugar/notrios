@@ -51,8 +51,50 @@ HERE = pathlib.Path(__file__).resolve().parent
 # went on passing at 58 while the interface had 59 -- found the first time the
 # interface signature below was checked, which is the whole argument for having
 # it. A number nobody re-measures describes the interface it was taken from.
-EXPECTED_CONTROLS = 59
+# 59 -> 79 in v0.8 H28, which named controls rather than adding any. Naming
+# both splits and merges: the sync centre's eight tabs were one shape and are
+# now eight names, while the two shapes a search result had -- selected and not
+# -- became one control, because a test id is identity and a class is not.
+EXPECTED_CONTROLS = 79
 EXPECTED_STATES = 16
+
+# How much of the interface can be pointed at by name.
+#
+# This is the number H15-G was blocked on. A journey against an unnamed control
+# has to locate it by shape -- the nth button inside the third div -- which is
+# the form the catalogue avoids, because it breaks on a layout change that broke
+# nothing. So "can this be documented?" is a measurement, and this is it.
+#
+# 22 of 59 in v0.8 H15, and the 22 were largely the furniture that appears in
+# every state; the controls that make a state that state were mostly in the
+# other 37. 72 of 79 in v0.8 H28.
+#
+# Pinned exactly rather than as a floor. A floor would let a control be added
+# without a name as long as something else gained one, which is the drift this
+# exists to catch: the number has to be re-measured, and a re-measurement that
+# cannot fail is not one.
+EXPECTED_ADDRESSABLE = 72
+
+# The seven that carry no name, and why each is not an omission. Six are
+# rendered by md-editor-rt -- the wrapper it puts around the notebook and tag
+# triggers, and four of its own menu items -- so the outer element is not ours
+# to name; both triggers carry a test id on the element inside it, which is what
+# a journey clicks. The seventh is an `<a>` in a note's own body: rendered note
+# content is not a control of the interface, and naming it would mean naming
+# whatever somebody wrote.
+#
+# Written down so that "seven remain" is a decision with reasons rather than a
+# remainder nobody looked at. Anything else appearing here is a control that
+# needs a name.
+UNADDRESSABLE_BY_ORIGIN = {
+    "shape:a|||",
+    "shape:button||md-editor-disabled.md-editor-toolbar-item|md-editor-toolbar-left",
+    "shape:button||md-editor-toolbar-item|md-editor-toolbar-left",
+    "shape:li|menuitem|md-editor-menu-item.md-editor-menu-item-image|md-editor-menu",
+    "shape:li|menuitem|md-editor-menu-item.md-editor-menu-item-katex|md-editor-menu",
+    "shape:li|menuitem|md-editor-menu-item.md-editor-menu-item-mermaid|md-editor-menu",
+    "shape:li|menuitem|md-editor-menu-item.md-editor-menu-item-title|md-editor-menu",
+}
 
 # Why each state was added, as something that can fail. A state that is reached
 # but shows nothing new is the signature of a step that clicked something other
@@ -68,7 +110,7 @@ STATE_EVIDENCE = {
     # a guard on the seeding: if nothing arranges a cancelled sync job, the
     # control vanishes and the jobs row goes back to looking absent. It was
     # recorded as unmeasured for exactly that reason until one was seeded.
-    "sync-overview": "shape:button|||sync-list-row",
+    "sync-overview": "testid:sync-job-retry",
 }
 
 # Reached, and deliberately expected to contribute nothing of their own. These
@@ -110,7 +152,7 @@ def require(condition, message):
 
 def main() -> None:
     report = json.loads((HERE / "GUI_CONTROLS.json").read_text(encoding="utf-8"))
-    require(report["schema"] == "notrios.h15.gui-controls.v2", "wrong control inventory schema")
+    require(report["schema"] == "notrios.h15.gui-controls.v3", "wrong control inventory schema")
 
     # The crawl is a report rather than a build gate, and this is what keeps
     # that from being a hole. The inventory is a committed file describing an
@@ -139,6 +181,26 @@ def main() -> None:
     require(len(controls) == EXPECTED_CONTROLS,
             f"{len(controls)} controls found, expected {EXPECTED_CONTROLS}. If the interface really "
             "changed, update EXPECTED_CONTROLS and say what was added or removed.")
+
+    # Recomputed here rather than believed. The crawl writes the summary and
+    # this reads the controls, so a summary that disagreed with the list it
+    # summarises would be caught instead of pinned.
+    summary = report.get("summary", {})
+    addressable = [control for control in controls if control.get("testid")]
+    unaddressable = [control["id"] for control in controls if not control.get("testid")]
+    require(summary.get("controls") == len(controls)
+            and summary.get("addressable") == len(addressable)
+            and summary.get("unaddressable") == len(unaddressable),
+            f"the recorded summary {summary} does not describe the {len(controls)} controls beneath it")
+    require(len(addressable) == EXPECTED_ADDRESSABLE,
+            f"{len(addressable)} of {len(controls)} controls carry a name, expected "
+            f"{EXPECTED_ADDRESSABLE}. A control added without a data-testid cannot be named by a "
+            "journey; give it one, or update EXPECTED_ADDRESSABLE and say why it cannot have one.")
+    unnamed = set(unaddressable) - UNADDRESSABLE_BY_ORIGIN
+    require(not unnamed,
+            f"these controls carry no name and no recorded reason: {sorted(unnamed)}. Add a "
+            "data-testid named for what the control does, or record it in UNADDRESSABLE_BY_ORIGIN "
+            "with the reason it cannot have one.")
 
     identities = set()
     for control in controls:

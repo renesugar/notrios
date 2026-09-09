@@ -41,6 +41,7 @@ function formatUpdated(value?: string): string {
 function rowElement(row: NoteQueryRow, fields: string[]): HTMLElement {
   const item = element('li', 'note-query-row');
   const link = element('a', 'note-query-title', row.title || row.document_id);
+  link.setAttribute('data-testid', 'note-query-row');
   // `data-app-uri` is what the preview's click handler routes on, and href="#"
   // keeps it a real link for keyboard users without navigating anywhere.
   link.setAttribute('data-app-uri', row.uri);

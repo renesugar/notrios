@@ -12,7 +12,7 @@
       "locator": {
         "testid": "health-header-button"
       },
-      "sha256": "732c9223768655206ee333bce19150a82005b7f5c93a84f069d6bc368f89e97d"
+      "sha256": "985198cdbd3798d503154f39baa61e3867117e7b7879e2c9a8e4acc372a87705"
     },
     {
       "journey": "check-library-health",
@@ -21,7 +21,7 @@
       "locator": {
         "testid": "library-health-repairs"
       },
-      "sha256": "cb10cebe797fe93c7acc0f52f64620030a1a03e83349020f36489e0da66caba7"
+      "sha256": "6dc43667c70d5873d681d9e238f03fdb361a0b184a9873b7d3ba4d61bd1395b0"
     },
     {
       "journey": "check-library-health",
@@ -30,7 +30,7 @@
       "locator": {
         "testid": "library-health-gc"
       },
-      "sha256": "91577fda168ce8515a8f9d67ec951b3bf804b20b13a4d7b5575362af57e0aaf9"
+      "sha256": "3e5fea15487dcc5acfa687cfa265be5424cd65418e221f1481542acb7301b728"
     },
     {
       "journey": "check-library-health",
@@ -39,7 +39,7 @@
       "locator": {
         "testid": "library-health-lint"
       },
-      "sha256": "f19e670cf4216358c598655c3b528d8b3f2683df598984c0b7549b4abff1c37a"
+      "sha256": "a188ca722fdf8020901e5eb2ed3ee5d645331f5ddb51c9d3841e813c22dff4e6"
     },
     {
       "journey": "choose-a-notebook",
@@ -48,7 +48,7 @@
       "locator": {
         "testid": "new-note-button"
       },
-      "sha256": "729fbce455ab3803bcaf5736a3a563539750d01b1d98d2d7e71e654dee7ddf81"
+      "sha256": "2ec3357dc49a1a66b824665228610655639c430065b6e49eaa3b4d4379bb5400"
     },
     {
       "journey": "choose-a-notebook",
@@ -57,7 +57,7 @@
       "locator": {
         "testid": "notebook-picker-trigger"
       },
-      "sha256": "3fbeeac1701fed29cd4169c7ad8677415e2f75bc68ffa0359a0bee3bec0e2122"
+      "sha256": "eada9ac8bb005c0fcdc34d80cdf61d271a57a40e7af1e3aea493877958f9a780"
     },
     {
       "journey": "delete-a-note",
@@ -66,7 +66,7 @@
       "locator": {
         "testid": "delete-button"
       },
-      "sha256": "bf3e468b188cac13469c58a60c0fa19a0b5e5e4701f69ef132fe191b323bdca0"
+      "sha256": "2e2f47148c620fa77dc77a5924048d6d45b3e6700f7b127318199c72c2ebc1e8"
     },
     {
       "journey": "delete-a-note",
@@ -75,7 +75,7 @@
       "locator": {
         "testid": "sidebar-row-snb_trash"
       },
-      "sha256": "1a41c6860b772ce1809e350e081fb3562aa3c0be15a6cbc386d14ea1939d25a9"
+      "sha256": "706c369236273fb0ca479160961ead4b584ecc70c642a3c2a1ea839183e22b81"
     },
     {
       "journey": "delete-a-note",
@@ -84,7 +84,7 @@
       "locator": {
         "testid": "sidebar-row-snb_all_notes"
       },
-      "sha256": "f085d153a1a17b05eb6cd33f8a701e2196f2ba694bceca56ecd38978f38a4d14"
+      "sha256": "e97a132530822d706f533dc5eb80d02760b0cbd0f6329a73c9521801adccaea1"
     },
     {
       "journey": "delete-a-note",
@@ -93,7 +93,7 @@
       "locator": {
         "css": ".result-card:has-text(\"Old shopping list\")"
       },
-      "sha256": "60cd9ef59c9e3634e3ce40d4b262bc84645bf2a047ebdda06b9875c5761e422e"
+      "sha256": "19e4b39d147764b985be94d2a52738fb4d1921e269f88f541f0fb3913c10caa5"
     },
     {
       "journey": "export-this-library",
@@ -129,7 +129,7 @@
       "locator": {
         "testid": "sidebar-row-nb_help"
       },
-      "sha256": "1378b68668a9c80990bac1a557adeb919cb0e18761941dcc22aaf977f6b309b6"
+      "sha256": "17ece263c0af9e8ae6f292426e89a9113e4b6485140f7182919ab3b459044595"
     },
     {
       "journey": "import-from-joplin-in-the-app",
@@ -159,6 +159,51 @@
       "sha256": "b66395f16464c1bb91e9d628b87205a5e9557e5c06212650b4ce0a32f33a4bb7"
     },
     {
+      "journey": "insert-a-link",
+      "step": "choose-it",
+      "image": "images/journeys/insert-a-link-choose-it.png",
+      "locator": {
+        "testid": "link-suggestion"
+      },
+      "sha256": "c7684643e56fc7846b7e6f3f85da5bcacc34fb1a19b1e9fd9e226108acd225a0"
+    },
+    {
+      "journey": "insert-a-link",
+      "step": "find-the-other-note",
+      "image": "images/journeys/insert-a-link-find-the-other-note.png",
+      "locator": {
+        "testid": "link-picker-input"
+      },
+      "sha256": "704404149c4f8956f4f020b9b7a6912571b40e0f8e73af45316d389903f207b8"
+    },
+    {
+      "journey": "insert-a-link",
+      "step": "open-note-info",
+      "image": "images/journeys/insert-a-link-open-note-info.png",
+      "locator": {
+        "testid": "note-inspector-toggle"
+      },
+      "sha256": "e941a4dc02386ba62ae9097e087825165cdd469ee23be6ef995a51aafba590e0"
+    },
+    {
+      "journey": "insert-a-link",
+      "step": "open-the-note",
+      "image": "images/journeys/insert-a-link-open-the-note.png",
+      "locator": {
+        "css": ".result-card:has-text(\"Reed beds at dusk\")"
+      },
+      "sha256": "c7340f2a7057b3169e931c1400146f0a32757a9ae10421ff76be20c75744f50b"
+    },
+    {
+      "journey": "insert-a-link",
+      "step": "save-when-ready",
+      "image": "images/journeys/insert-a-link-save-when-ready.png",
+      "locator": {
+        "testid": "save-button"
+      },
+      "sha256": "171f5f76fa76d8d1cb5ecb9c90fa29c4f6eea708a22499567d255163fb77b02c"
+    },
+    {
       "journey": "keep-a-search-as-a-notebook",
       "step": "keep-it",
       "image": "images/journeys/keep-a-search-as-a-notebook-keep-it.png",
@@ -183,7 +228,7 @@
       "locator": {
         "css": ".search-row input"
       },
-      "sha256": "0da2cf280118109ee5f4316f45b11d3e10e997b7f11ea1b591c0c414b5145d97"
+      "sha256": "caa505ebfc52b99b3c1e4908646d81f49f3eab663573e37bbaed6c7cb5a8b378"
     },
     {
       "journey": "keep-a-search-as-a-notebook",
@@ -202,7 +247,7 @@
         "role": "button",
         "name": "Search"
       },
-      "sha256": "7ab0ef97733d1caef7bdb0e788c0d2a46fb33cbe1146c6f10d44ea15d31632de"
+      "sha256": "2ed3fa33b5083249a2336c8219c5f67d39a2947550cec80a8681541c1dc20ac0"
     },
     {
       "journey": "publish-a-subset",
@@ -247,7 +292,7 @@
       "locator": {
         "testid": "tag-rename-apply"
       },
-      "sha256": "4a1489322caab0d24fafb19bbfb75197ec0e3b76491b56dc7b72992414e9c7db"
+      "sha256": "b650931f7478a210ffbdf53436ab8800d52f6c9d655e61e8f1caac7dc2679f87"
     },
     {
       "journey": "rename-a-tag",
@@ -256,7 +301,7 @@
       "locator": {
         "testid": "tag-rename-place/hide"
       },
-      "sha256": "876ddd65c9d65522a9d7d540ec5dcedfe024ba72f612737357bc8687e8317c61"
+      "sha256": "eff293d1f07577cf440b05c12d26a9f9ce5fdff87ebc35c0c6ebae9c897cede6"
     },
     {
       "journey": "rename-a-tag",
@@ -265,7 +310,7 @@
       "locator": {
         "testid": "tag-rename-preview"
       },
-      "sha256": "bd867a5017ce965ba8560ab0d99fe2779d95ceaa57ea994077298b4fd6afa251"
+      "sha256": "9005cdf1adee2dfbb01361c9823ca0a973ad1a6375c64038da8b0ba29db0df14"
     },
     {
       "journey": "rename-a-tag",
@@ -274,7 +319,7 @@
       "locator": {
         "testid": "tag-rename-to"
       },
-      "sha256": "ea22c299a15004f5d98737ad72fd11ddf787ba46f3f4067377eca2966ce6fecb"
+      "sha256": "9b62353c09beff7e5891c442b7fa2f55a1d59abd6ed4842ba3c45380090e45ea"
     },
     {
       "journey": "restore-a-note",
@@ -283,7 +328,7 @@
       "locator": {
         "testid": "sidebar-row-snb_all_notes"
       },
-      "sha256": "3478f72aedbada5d15b8a9e4789736249475604576de996b02d49d107ceb1f85"
+      "sha256": "57dcb0ccd5a928cf231e029315ccb4f641eb882d42c8d7a0bdb4c68295329141"
     },
     {
       "journey": "restore-a-note",
@@ -292,7 +337,7 @@
       "locator": {
         "testid": "sidebar-row-snb_trash"
       },
-      "sha256": "60f789f86a6f8ea164f179291e0d7162ca7dddab1d0fb176f959e9787b150895"
+      "sha256": "b4d4a25234e3506260172542c896fa8dbb742b83ec2fb8b5d74b61c052953e1b"
     },
     {
       "journey": "restore-a-note",
@@ -310,7 +355,7 @@
       "locator": {
         "testid": "restore-button"
       },
-      "sha256": "914915134c9df408cef416de3a56a43196ec66243bb6987f7fdb8a3c801d1a8f"
+      "sha256": "cc39e07bfa8d9b5b86fa6e2f4e3256c32c9c67ce0499ce0c51329296c7ae99b8"
     },
     {
       "journey": "search-by-tag-and-exclude",
@@ -320,7 +365,7 @@
         "role": "button",
         "name": "Search"
       },
-      "sha256": "685f0c550648b085a955008e8d8fbd820bc68942a099aa1b6a36478ccf92503e"
+      "sha256": "658b44f631fa893f6fb0364a8a6ec9738c1270f736a7683244137c3ca625dc82"
     },
     {
       "journey": "search-by-tag-and-exclude",
@@ -329,7 +374,7 @@
       "locator": {
         "css": ".search-row input"
       },
-      "sha256": "0da2cf280118109ee5f4316f45b11d3e10e997b7f11ea1b591c0c414b5145d97"
+      "sha256": "0139579679a40d6c9280c17e42d38ffd0024c30c4501c26357942983b969f558"
     },
     {
       "journey": "search-your-notes",
@@ -339,7 +384,7 @@
         "role": "button",
         "name": "Search"
       },
-      "sha256": "eb46077be987678a98b75de95306f91297ddeb105ce1a953ea84815af79cc3eb"
+      "sha256": "d73ced0f1b957c0abe41017535d805a77da074f700bbc4485d839661352a4264"
     },
     {
       "journey": "search-your-notes",
@@ -348,7 +393,7 @@
       "locator": {
         "css": ".search-row input"
       },
-      "sha256": "0da2cf280118109ee5f4316f45b11d3e10e997b7f11ea1b591c0c414b5145d97"
+      "sha256": "caa505ebfc52b99b3c1e4908646d81f49f3eab663573e37bbaed6c7cb5a8b378"
     },
     {
       "journey": "tag-a-note",
@@ -357,7 +402,7 @@
       "locator": {
         "testid": "tag-editor-add"
       },
-      "sha256": "59ad238b605b1f069fdaa80205d9329604602dcadb84c83771dbe0b996e1f060"
+      "sha256": "9a193385b43d09e66d5cf738c3345ebb62df23986b7e91c4af75e242e4c64078"
     },
     {
       "journey": "tag-a-note",
@@ -366,7 +411,7 @@
       "locator": {
         "testid": "new-note-button"
       },
-      "sha256": "3b72e12114eda4e1354b5663aa2e4eec9c5cd3e8a11761be5d6cab717ceab618"
+      "sha256": "dbc54401360697b8bc3e35184bf6a17db8b689e1c7ec7150c4baa2617fc7c945"
     },
     {
       "journey": "tag-a-note",
@@ -375,7 +420,7 @@
       "locator": {
         "testid": "tag-editor-trigger"
       },
-      "sha256": "2fd169952f475913291b58c9ff12a0d12feeb074c78fa8396894e12ab6ef477d"
+      "sha256": "010a40592d29f1f8b9f74b4e4136cfbb7a7cdc88f86d9de0ee79598e4888898f"
     },
     {
       "journey": "tag-a-note",
@@ -384,7 +429,7 @@
       "locator": {
         "testid": "tag-editor-input"
       },
-      "sha256": "261d56cf48ee2b426d39fef32967465525d78969535a0675b58b7e492c6fe9f2"
+      "sha256": "da1dbbbbdc97673ce2f5e56943bfee9e9f26765f9b958f1408ab9caf7ca7ae42"
     },
     {
       "journey": "take-a-snapshot",
@@ -420,7 +465,7 @@
       "locator": {
         "css": "input.title-input"
       },
-      "sha256": "d29a48e29871d296670d493bbbeb6060fa903a5c6144302a6c652874ab3fb5c5"
+      "sha256": "dcc70f696b1ddd48a217e4cbe1edf0e2db0a6f2580a601b8be5d6e50c324672b"
     },
     {
       "journey": "update-a-note",
@@ -429,7 +474,7 @@
       "locator": {
         "testid": "sidebar-row-snb_all_notes"
       },
-      "sha256": "c82f92e7dd11b014c1c082554fc2e2fce05fdaab283244a207efc11d83d7b445"
+      "sha256": "b1dc5989b7ed686d80ac815082b9fb884ef6ac304e64e2979ffef22a090f2e55"
     },
     {
       "journey": "update-a-note",
@@ -438,7 +483,7 @@
       "locator": {
         "css": ".result-card:has-text(\"Notes from the eastern hide\")"
       },
-      "sha256": "0a004b81682f0188d16b2b872df88fc9d1482ef7ad346c8268d63c65fb63201e"
+      "sha256": "b2ce4afafa8a33aebd68460f702f3f08cbaee5c606cf12a2aff9ca1f84b2dfad"
     },
     {
       "journey": "update-a-note",
@@ -447,7 +492,7 @@
       "locator": {
         "testid": "save-button"
       },
-      "sha256": "ecde153e6e4156ec4af149b275be27ba2711ac1e825769eaed7cf151e02e0830"
+      "sha256": "f80fe1ba38bddec81a0bfd15d1e6d1729b8ec0bf1882bcaf7fb50bef8a8d3592"
     },
     {
       "journey": "write-a-note",
@@ -456,7 +501,7 @@
       "locator": {
         "testid": "new-note-button"
       },
-      "sha256": "729fbce455ab3803bcaf5736a3a563539750d01b1d98d2d7e71e654dee7ddf81"
+      "sha256": "2ec3357dc49a1a66b824665228610655639c430065b6e49eaa3b4d4379bb5400"
     },
     {
       "journey": "write-a-note",
@@ -465,7 +510,7 @@
       "locator": {
         "css": ".cm-content"
       },
-      "sha256": "3dd573e60e28ff5b7688a68f47cf5f44f71a9f7fe8efe48d293b414694e70154"
+      "sha256": "c298db5509a01e02730bdaccfaf9fc9ad5be13819675931df667167e0d57c426"
     }
   ]
 }

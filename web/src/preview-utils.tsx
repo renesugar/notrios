@@ -84,6 +84,11 @@ export function normalizePreviewHTML(html: string): string {
     const placeholder = doc.createElement('div');
     placeholder.className = 'note-query';
     placeholder.setAttribute('data-note-query', '');
+    // Named so a journey can point at the block rather than at the nth div.
+    // Set here rather than written as JSX because this pass rewrites HTML, and
+    // so it is invisible to the interface signature -- recorded in PLAN.md
+    // under H28 rather than worked around by widening the signature.
+    placeholder.setAttribute('data-testid', 'note-query');
     placeholder.setAttribute('data-note-query-source', code.textContent ?? '');
     const status = doc.createElement('div');
     status.className = 'note-query-status';

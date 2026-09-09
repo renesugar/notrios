@@ -46,7 +46,7 @@ What follows is what is left. Each item's own text below is the record of what
 happened, which is a different question.
 
 <!-- notrios:generated:plan:progress:begin -->
-**35 items: 26 complete, 2 in progress, 6 not started, 1 deferred.**
+**35 items: 27 complete, 2 in progress, 5 not started, 1 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -83,14 +83,14 @@ happened, which is a different question.
 | H25. Hold each command's flags to its description | complete | 2/2 | — |
 | H26. Ask about one tag without fetching them all | complete | 4/4 | — |
 | H27. Attach a file from the command line, without guessing where the link goes | complete | 5/5 | — |
-| H28. Make the interface addressable, so its journeys can be written | not-started | 0/3 | 3 |
+| H28. Make the interface addressable, so its journeys can be written | complete | 3/3 | — |
 | H29. Select more than one note in the interface | not-started | 0/3 | 3 |
 
 ### Started and not finished
 
 **H15. Complete the journey catalogues, and give the GUI an inventory**
 
-- `H15-G` Write GUI journeys for the twelve features that have an interface surface and none: collections, attachments, remote media, links, graph, query blocks, sync pairing, sync exchange, sync peers, sync recovery, jobs and profiles — *blocked* (blocked on: H28, which gives the eleven unaddressable surfaces a data-testid. Eleven of the twelve target surfaces carry none, so a journey could only locate them by shape)
+- `H15-G` Write GUI journeys for the twelve features that have an interface surface and none: collections, attachments, remote media, links, graph, query blocks, sync pairing, sync exchange, sync peers, sync recovery, jobs and profiles. Unblocked by H28; links is written, eleven remain — *in-progress*
 
 **H18. Make the features page usable, and generate the table under it**
 
@@ -98,7 +98,7 @@ happened, which is a different question.
 
 ### Not started
 
-Written and not begun: H10, H11, H12, H13, H28, H29. Their slices are listed under each item.
+Written and not begun: H10, H11, H12, H13, H29. Their slices are listed under each item.
 <!-- notrios:generated:plan:progress:end -->
 
 ## H0. Application-facade, C-ABI, and SQLite ownership investigation — complete
@@ -4832,7 +4832,7 @@ command line was about to become the second.
 to five, and the comment says why attachments left the list rather than only
 that it did.
 
-## H28. Make the interface addressable, so its journeys can be written
+## H28. Make the interface addressable, so its journeys can be written — complete
 
 **Ordering.** Before H15-G, which is blocked on it. Independent of everything
 else.
@@ -4890,6 +4890,74 @@ it here.
 crawl records the count and the signature check fails when it falls; and H15-G
 is unblocked, with `remote-media` -- the one feature already addressable through
 `localize-button` -- written first as the proof that the rest can follow.
+
+**Outcome (2026-09-08).** Done. **22 of 59 controls carried a name; 72 of 79 do
+now**, and the crawl records the number rather than leaving it to be counted by
+hand. Nothing was added to the interface and nothing was moved: every change is
+a `data-testid` on a control that already existed, named for what it does.
+
+**The sync centre had none at all.** Four hundred and ninety-five lines, eight
+tabs, and not one name -- which is most of what H15's crawl found unaddressable
+and the whole of four of the twelve features H15-G is waiting on. Pairing,
+exchange, peers, recovery, jobs and the profile switcher all live in it.
+
+**The count moves in both directions, which is worth knowing before reading it.**
+Naming splits and merges: the eight sync tabs were one shape and are now eight
+names, while a search result's two shapes -- selected and not -- became one
+control, because a test id is identity and a class is a styling decision. So 59
+to 79 is not twenty new controls; it is the same interface described more
+precisely.
+
+**Seven carry no name, and each has a reason recorded beside it.** Six are
+rendered by `md-editor-rt` -- the wrapper it puts around the notebook and tag
+triggers, and four of its own menu items -- so the outer element is not ours to
+name; both triggers carry a test id on the element inside, which is what a
+journey clicks. The seventh is an `<a>` in a note's own body, and rendered note
+content is not a control of the interface. `UNADDRESSABLE_BY_ORIGIN` lists all
+seven, and anything else appearing unnamed fails.
+
+**The floor is pinned exactly rather than as a minimum.** A floor would let a
+control be added without a name as long as something else gained one, which is
+the drift this exists to catch. Both gates were broken on purpose to check they
+fail: removing one name from the inventory reports "71 of 79 carry a name,
+expected 72", and removing it from the source moves the interface signature,
+which asks for a re-crawl without needing a browser.
+
+**A blind spot the signature has, found while using it.** The signature reads
+JSX -- `data-testid="..."`, `<button`, `<input` -- and query blocks are built
+imperatively in `preview-utils.tsx` and `note-query.ts` with `setAttribute`. A
+control added that way is invisible to it. The names are there and a journey can
+use them; what is missing is the gate noticing if they went. Recorded rather
+than worked around: widening the regex to catch `element('a', ...)` would be
+fitting it to today's code, and the fix if this matters is that those two files
+build DOM the interface signature can see.
+
+**The journey that proves it: linking one note to another.** `insert-a-link`
+opens a note, opens Note info, types part of another note's title and chooses a
+suggestion -- three of its five steps point at controls that had no name this
+morning. Its postcondition is the unsaved badge, which is false before the
+journey and true after, rather than something that was already on screen.
+
+The last screenshot is the argument for photographing journeys at all: the link
+lands hard against the first word of the note, because the interface inserts at
+the cursor and the cursor was at the start. The narrative says so and says to
+move it before saving. A written-out journey would have claimed the link was
+"inserted into the body" and left the reader to discover that.
+
+**What it unblocks.** `links-between-notes` leaves the list of capabilities with
+a command-line journey and no interface one; eleven remain, and none of them is
+now waiting on anything but the writing.
+
+**One finding for whoever writes those eleven: a re-capture rewrites every
+screenshot.** Capturing this one journey changed thirty-four existing images.
+The cause is not the interface -- it is the seeded library's result order, which
+is not fixed between runs: comparing the sidebar screenshot before and after
+shows the same interface listing the same five notes in a different order, one
+of them scrolled out of frame. So an image diff cannot be read as evidence that
+something changed, which is a smaller version of the problem the manifest exists
+to solve. Ordering the seeded fixtures deterministically -- distinct timestamps,
+or a sort the fixtures control -- would make a screenshot diff mean something
+again, and belongs with the item that captures eleven more of them.
 
 ## H29. Select more than one note in the interface
 

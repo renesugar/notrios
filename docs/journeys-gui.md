@@ -81,6 +81,22 @@ Each task below lists its steps, with a picture of every one.
   - Add it. Each tag then appears as a chip with its own remove button, rather than as a comma-separated line you have to edit carefully.
 
     ![add-it](images/journeys/tag-a-note-add-it.png)
+**Link one note to another** — Put a link to another note into the one you are writing, without leaving it to find the address.
+  - Open the note you want to link from. Everything that follows is in this note; the one you link to is never opened.
+
+    ![open-the-note](images/journeys/insert-a-link-open-the-note.png)
+  - Note info holds what the note is rather than what it says: where it came from, what it links to, what is attached to it, and the tools for changing those. It is closed by default because a note you are reading is usually a note you are reading.
+
+    ![open-note-info](images/journeys/insert-a-link-open-note-info.png)
+  - Type part of the other note’s title. The suggestions come from a search over titles, so you do not need the identifier and you do not need the note open in another window.
+
+    ![find-the-other-note](images/journeys/insert-a-link-find-the-other-note.png)
+  - Choosing a suggestion writes a stable `document://` link into the body at the cursor. It is stable in the sense that matters: it names the note, so renaming the note later does not break it.
+
+    ![choose-it](images/journeys/insert-a-link-choose-it.png)
+  - The link is in the body and the note is unsaved — the badge above the editor says so. Nothing was written for you: move the link to where it belongs in your prose first, then save.
+
+    ![save-when-ready](images/journeys/insert-a-link-save-when-ready.png)
 **Change a note you already wrote** — Open an existing note, change it, and save the change.
   - All notes is every note in the library, whichever notebook it is filed in. Start here when you know what a note is called but not where you put it.
 

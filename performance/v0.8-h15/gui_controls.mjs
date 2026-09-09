@@ -46,12 +46,15 @@ const chromePath = process.env.CHROME_PATH || '/usr/bin/google-chrome';
 // ("open the sync centre, then the Attachments tab") rather than as a script.
 const SIDEBAR_ALL = { testid: 'sidebar-row-snb_all_notes' };
 const SIDEBAR_TRASH = { testid: 'sidebar-row-snb_trash' };
-// Located by class, not by name. Its descriptive string is a `title`
-// attribute and its glyph span is aria-hidden, so the accessible name is the
-// bare word "Sync" -- and a role+name step written from the label the earlier
-// inventory displayed silently failed all eight sync states.
-const OPEN_SYNC = { css: '.sync-header-button' };
-const syncTab = (label) => ({ role: 'button', name: `^${label}` });
+// Located by name now that it has one. It used to be located by class,
+// because its descriptive string is a `title` attribute and its glyph span is
+// aria-hidden, so the accessible name was the bare word "Sync" -- and a
+// role+name step written from the label the earlier inventory displayed
+// silently failed all eight sync states. v0.8 H28 gave it and the eight tabs
+// test ids, which is what a step should name: a class is a styling decision
+// and a test id is a promise.
+const OPEN_SYNC = { testid: 'sync-header-button' };
+const syncTab = (id) => ({ testid: `sync-tab-${id}` });
 
 const STATES = [
   { id: 'start', steps: [] },
@@ -77,13 +80,13 @@ const STATES = [
   // Eight tabs, of which the earlier crawl saw one. Attachments and Backup are
   // where two of the three "missing" capabilities actually live.
   { id: 'sync-overview', steps: [OPEN_SYNC] },
-  { id: 'sync-setup', steps: [OPEN_SYNC, syncTab('Setup')] },
-  { id: 'sync-peers', steps: [OPEN_SYNC, syncTab('Peers')] },
-  { id: 'sync-retention', steps: [OPEN_SYNC, syncTab('Retention')] },
-  { id: 'sync-attachments', steps: [OPEN_SYNC, syncTab('Attachments')] },
-  { id: 'sync-conflicts', steps: [OPEN_SYNC, syncTab('Conflicts')] },
-  { id: 'sync-backup', steps: [OPEN_SYNC, syncTab('Backup')] },
-  { id: 'sync-repairs', steps: [OPEN_SYNC, syncTab('Repairs')] },
+  { id: 'sync-setup', steps: [OPEN_SYNC, syncTab('setup')] },
+  { id: 'sync-peers', steps: [OPEN_SYNC, syncTab('peers')] },
+  { id: 'sync-retention', steps: [OPEN_SYNC, syncTab('retention')] },
+  { id: 'sync-attachments', steps: [OPEN_SYNC, syncTab('resources')] },
+  { id: 'sync-conflicts', steps: [OPEN_SYNC, syncTab('conflicts')] },
+  { id: 'sync-backup', steps: [OPEN_SYNC, syncTab('backup')] },
+  { id: 'sync-repairs', steps: [OPEN_SYNC, syncTab('repairs')] },
 ];
 
 function resolve(page, step) {
@@ -254,13 +257,27 @@ async function interfaceSignature(webSrc) {
 const inventory = [...controls.values()]
   .map((control) => ({ ...control, always_disabled: control.enabled_instances === 0 }))
   .sort((a, b) => a.id.localeCompare(b.id));
+
+// How much of the interface can be pointed at by name, recorded as a number so
+// it stops being an impression. A journey against an unnamed control has to
+// find it by shape -- the nth button inside the third div -- which breaks on a
+// layout change that broke nothing, so this is the measure of whether the
+// interface can be documented at all. v0.8 H15 measured 22 of 59; H28 named the
+// controls the twelve unjourneyed features are reached through.
+const addressable = inventory.filter((control) => control.testid !== '').length;
+const summary = {
+  controls: inventory.length,
+  addressable,
+  unaddressable: inventory.length - addressable,
+};
 await fs.writeFile(outPath, JSON.stringify({
-  schema: 'notrios.h15.gui-controls.v2',
+  schema: 'notrios.h15.gui-controls.v3',
   interface_signature: await interfaceSignature(path.join(root, 'web/src')),
+  summary,
   states,
   controls: inventory,
 }, null, 2) + '\n');
-console.log(JSON.stringify({ states, controls: inventory.length }, null, 2));
+console.log(JSON.stringify({ states, summary }, null, 2));
 
 // An unreached state is a failure, not a note in the output. The first run of
 // the sixteen-state crawl reached eight of them -- one locator was written from

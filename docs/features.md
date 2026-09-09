@@ -352,7 +352,6 @@ Each capability below is offered on some surfaces and not others.
 - Group libraries into collections — both, but only the command-line journey is written
 - See the shape of the link graph — both, but only the command-line journey is written
 - Watch and steer long-running work — both, but only the command-line journey is written
-- Link notes to each other — both, but only the command-line journey is written
 - Keep separate libraries — both, but only the command-line journey is written
 - Bring remote images into the library — both, but only the command-line journey is written
 - Synchronize with a replica — both, but only the command-line journey is written

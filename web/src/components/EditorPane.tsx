@@ -233,6 +233,7 @@ export function EditorPane(props: EditorPaneProps) {
             onChange={(event) => onTitleChange(event.target.value)}
             placeholder="Note title"
             aria-label="Note title"
+            data-testid="note-title"
             readOnly={!editable}
           />
         </div>
@@ -324,7 +325,7 @@ export function EditorPane(props: EditorPaneProps) {
 
       {selectedDocument && (
         <details className="note-inspector" data-testid="note-inspector">
-          <summary>Note info</summary>
+          <summary data-testid="note-inspector-toggle">Note info</summary>
           <div className="note-inspector-body">
             <dl className="document-meta">
               <div>
@@ -352,6 +353,7 @@ export function EditorPane(props: EditorPaneProps) {
                 Upload image/PDF/resource
                 <input
                   type="file"
+                  data-testid="attachment-upload"
                   disabled={busy}
                   onChange={(event) => {
                     const file = event.target.files?.[0] ?? null;

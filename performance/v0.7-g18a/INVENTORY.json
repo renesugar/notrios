@@ -1047,7 +1047,7 @@
     },
     {
       "path": "docs/features.md",
-      "sha256": "e2f6449951da53ee29f2de212702ca58e8693be982f3d156bc67a495a876f1e3",
+      "sha256": "38e0be27276da5d15e7e5f718a79fa403f9ea37fccf0ec329415b60d746eb41e",
       "help_note": "doc_help_features",
       "owner": "go:github.com/renesugar/notrios/internal/docfeatures#Registry",
       "sections": [
@@ -2105,7 +2105,7 @@
     },
     {
       "path": "docs/journeys-gui.md",
-      "sha256": "64c11717bde3fbbabbe88725eeacb16b9027916bbb187685a53507a9a850ea84",
+      "sha256": "94f1247a8f36c9a8cb41bfd40ced0e53759f1c8add9774703b5eca487170e456",
       "help_note": "doc_help_journeys_gui",
       "owner": "go:github.com/renesugar/notrios/internal/docjourneys#GUICatalogue",
       "sections": [

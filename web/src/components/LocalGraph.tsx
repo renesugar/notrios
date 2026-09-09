@@ -76,6 +76,7 @@ export function LocalGraph({ documentID, onOpenDocument }: LocalGraphProps) {
           <select
             value={depth}
             aria-label="Hops from this note"
+            data-testid="local-graph-hops"
             onChange={(event) => setDepth(Number(event.target.value))}
           >
             {LOCAL_GRAPH_DEPTHS.map((option) => (
@@ -108,7 +109,7 @@ export function LocalGraph({ documentID, onOpenDocument }: LocalGraphProps) {
             {nodes.map((node) => (
               <li key={node.id}>
                 {node.kind === 'document' ? (
-                  <button type="button" onClick={() => onOpenDocument(node.id)}>
+                  <button type="button" data-testid="local-graph-node" onClick={() => onOpenDocument(node.id)}>
                     {node.label || node.id}
                   </button>
                 ) : (

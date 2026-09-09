@@ -85,9 +85,10 @@ export function SearchPane({ query, onQueryChange, onSubmit, paged, onOpenHit, s
           placeholder="Search: (alpha OR beta) -tag:private"
           aria-label="Search query"
           aria-describedby="search-query-hint"
+          data-testid="search-input"
           maxLength={4096}
         />
-        <button type="submit" disabled={busy}>
+        <button type="submit" disabled={busy} data-testid="search-submit">
           Search
         </button>
       </form>
@@ -148,6 +149,7 @@ export function SearchPane({ query, onQueryChange, onSubmit, paged, onOpenHit, s
           <button
             className={selectedDocumentID === hit.id ? 'result-card active' : 'result-card'}
             key={hit.id}
+            data-testid="result-card"
             onClick={() => onOpenHit(hit)}
             aria-current={selectedDocumentID === hit.id ? 'true' : undefined}
           >
@@ -176,7 +178,7 @@ export function SearchPane({ query, onQueryChange, onSubmit, paged, onOpenHit, s
         {hasMore && (
           <>
             <div ref={sentinelRef} className="scroll-sentinel" aria-hidden="true" data-testid="search-sentinel" />
-            <button type="button" className="load-more" onClick={() => void paged.loadMore()} disabled={paged.loading}>
+            <button type="button" className="load-more" data-testid="search-load-more" onClick={() => void paged.loadMore()} disabled={paged.loading}>
               Load more
             </button>
           </>

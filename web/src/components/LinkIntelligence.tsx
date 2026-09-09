@@ -41,6 +41,7 @@ export function LinkPicker({ documentID, onInsert, disabled }: LinkPickerProps) 
           disabled={disabled}
           placeholder={`Title (${MIN_SUGGEST_QUERY}+ characters)`}
           aria-label="Search notes to link"
+          data-testid="link-picker-input"
           onChange={(event) => setQuery(event.target.value)}
         />
       </label>
@@ -51,6 +52,7 @@ export function LinkPicker({ documentID, onInsert, disabled }: LinkPickerProps) 
               <button
                 type="button"
                 disabled={disabled}
+                data-testid="link-suggestion"
                 onClick={() => {
                   onInsert(linkMarkdown(suggestion));
                   setQuery('');
