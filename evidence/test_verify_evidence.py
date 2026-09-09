@@ -41,6 +41,48 @@ class CanonicalTests(unittest.TestCase):
                 ev.load_chain(path)
 
 
+class CustodyChainTests(unittest.TestCase):
+    """The custody chain is only a chain if something walks it."""
+
+    @staticmethod
+    def _events(count: int) -> list[dict]:
+        import hashlib
+        records, previous = [], ev.ZERO_HASH
+        for index in range(count):
+            event = {"schema": "notrios.evidence.custody-event.v1",
+                     "action": "create-and-verify-reserve",
+                     "volume_id": f"NTR-EV-{index + 1:04d}",
+                     "previous_event_sha256": previous}
+            records.append({"payload": {"custody_event": event}})
+            previous = hashlib.sha256(ev.canonical_bytes(event)).hexdigest()
+        return records
+
+    def test_walks_a_good_chain_and_refuses_a_broken_one(self) -> None:
+        records = self._events(3)
+        ev.verify_custody_chain(records)
+
+        broken = copy.deepcopy(records)
+        broken[2]["payload"]["custody_event"]["previous_event_sha256"] = ev.ZERO_HASH
+        with self.assertRaises(ev.EvidenceError):
+            ev.verify_custody_chain(broken)
+
+        # The failure the sealer actually had: a later event copied a field
+        # nothing writes, so every link fell back to all zeroes.
+        zeroed = copy.deepcopy(records)
+        for record in zeroed:
+            record["payload"]["custody_event"]["previous_event_sha256"] = ev.ZERO_HASH
+        with self.assertRaises(ev.EvidenceError):
+            ev.verify_custody_chain(zeroed)
+
+        edited = copy.deepcopy(records)
+        edited[0]["payload"]["custody_event"]["action"] = "something-else"
+        with self.assertRaises(ev.EvidenceError):
+            ev.verify_custody_chain(edited)
+
+        with self.assertRaises(ev.EvidenceError):
+            ev.verify_custody_chain([{"payload": {}}])
+
+
 class ContainerTests(unittest.TestCase):
     def test_zip_path_and_crc_validation(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

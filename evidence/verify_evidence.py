@@ -328,8 +328,16 @@ def verify_checkpoint(root: Path, *, verify_payload: bool) -> dict[str, object]:
             logical = payload.get("logical_name")
             if not isinstance(artifact_id, str) or not isinstance(logical, str) or not safe_logical_name(logical):
                 raise EvidenceError("invalid artifact identity or logical name")
-            if payload.get("assigned_checkpoint_id") != "g17b-backfill-20260825-0001" or payload.get("assigned_volume_id") != "NTR-EV-0001":
-                raise EvidenceError("artifact is not assigned to the current checkpoint and volume")
+            # Read from the checkpoint being verified rather than from the
+            # constants of the first one. This is stricter than naming
+            # g17b-backfill-20260825-0001 and NTR-EV-0001 outright -- an
+            # artifact still has to belong to the checkpoint it ships inside,
+            # and to a volume that checkpoint declares -- and it is the change
+            # that lets a second volume be verified at all. v0.8e E3.
+            if payload.get("assigned_checkpoint_id") != checkpoint.get("checkpoint_id"):
+                raise EvidenceError("artifact is not assigned to the checkpoint it ships inside")
+            if payload.get("assigned_volume_id") not in (checkpoint.get("intended_volume_ids") or []):
+                raise EvidenceError("artifact is assigned to a volume this checkpoint does not declare")
             if artifact_id in artifacts:
                 raise EvidenceError("duplicate artifact identity")
             artifacts[artifact_id] = (payload, str(record["entry_sha256"]))
@@ -436,6 +444,27 @@ def load_catalog(path: Path) -> list[dict[str, object]]:
     return load_chain(path, CATALOG_ENTRY_SCHEMA)
 
 
+def verify_custody_chain(records: list[dict[str, object]]) -> None:
+    """Walk the custody events across the catalog, refusing a broken link.
+
+    Each event names its predecessor by the hash of that event document,
+    exactly as an entry names the entry before it, and the first names none.
+    Nothing checked this before, and nothing writes an `event_sha256` field for
+    a later entry to copy -- so a sealer that read one would have written all
+    zeroes on every volume and produced a chain that is present, well-formed,
+    and links nothing.
+    """
+    previous_event = ZERO_HASH
+    for record in records:
+        payload = record["payload"]
+        event = payload.get("custody_event") if isinstance(payload, dict) else None
+        if not isinstance(event, dict):
+            raise EvidenceError("catalog entry carries no custody event")
+        if event.get("previous_event_sha256") != previous_event:
+            raise EvidenceError("custody event chain is broken")
+        previous_event = hashlib.sha256(canonical_bytes(event)).hexdigest()
+
+
 def verify_reserve(reserve_root: Path, catalog_path: Path, catalog_checkpoint: Path,
                    catalog_signature: Path, catalog_query: Path, catalog_response: Path,
                    trust_root: Path, untrusted: Path, responder: Path,
@@ -454,6 +483,7 @@ def verify_reserve(reserve_root: Path, catalog_path: Path, catalog_checkpoint: P
     gpg_validsig(catalog_signature, catalog_checkpoint, public_key)
     verify_timestamp(catalog_signature, catalog_query, catalog_response,
                      trust_root, untrusted, responder)
+    verify_custody_chain(records)
     verified: list[str] = []
     for record in records:
         payload = record["payload"]

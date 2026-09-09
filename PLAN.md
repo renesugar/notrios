@@ -295,32 +295,61 @@ tool is single-volume in three separate ways:
 - `seal-catalog` rebuilds the catalog and requires an explicit supersession of
   the existing set, archiving it, rather than appending an entry to the chain.
 
-**Three questions belong to the owner and are answered nowhere I can check.**
-Does `evidence/current/` mean *the latest volume*, so volume-0002's checkpoint
-replaces volume-0001's in the repository, or does the layout gain a directory
-per volume? Is the outer catalog appended to, or superseded and rewritten with
-two entries? And what does volume-0002 record as its
-`predecessor_checkpoint_sha256`, a field volume-0001 leaves null because it had
-no predecessor? Each has a defensible answer and none of them is mine to pick on
-an append-only signed chain that somebody else has to be able to defend.
+**The three questions were the owner's, and the owner answered them
+(2026-09-09).** The layout gains **a directory per volume** -- the evidence is
+spread across volumes, so volume-0002's checkpoint lives at
+`evidence/volumes/volume-0002/` and volume-0001's materials stay exactly where
+they are. The outer catalog is **appended to**, not superseded. And a volume
+**records its predecessor**, so the volumes read as one collection rather than a
+pile: `predecessor_checkpoint_sha256` carries the hash of volume-0001's
+checkpoint document, because that is what the field is and what makes the link
+cryptographic, with `predecessor_checkpoint_id` and `predecessor_volume_id`
+beside it for the readable half.
 
-**Formerly stopped at the signing passphrase.** `secret-tool lookup service gpg_evidence
-type passphrase` exits 1 in this session, so no signature and no timestamp can
-be produced. The signing subkey `2C6A8A4568264005` is present and the primary is
-offline, which is the arrangement the reserve documents; what is missing is the
-passphrase the sealing tool reads from the Secret Service.
+**`scripts/seal_volume.py` is the generalisation.** It reuses `g17b_evidence.py`
+rather than copying it, and leaves that tool untouched: it is the record of how
+volume-0001 was made and it still runs. Rehearsal is a first-class mode --
+`--gnupghome`, `--signer` and `--rehearsal-public-key` run the entire path
+against a throwaway key in a temporary keyring and a scratch reserve, so the
+staging, both ISO builds, the signing, the RFC 3161 timestamping, the readback
+and the catalog append are all exercised before the production key signs
+anything. The verifier pins the production fingerprints in two places and
+refuses any other signer, which is correct; rehearsal mode says which key it is
+rehearsing with, and only when a throwaway keyring is named. A rehearsal ISO is
+therefore not verifiable by the stock verifier it carries, which is also correct:
+a rehearsal volume is not evidence.
 
-**And `seal-content` cannot seal a second volume.** It requires *exactly* the 81
-approved G17b artifacts and the G17a base commitment, and its volume id,
-checkpoint id and build paths are `0001` constants. Sealing `volume-0002` means
-generalising a tool that handles the production key and an append-only signed
-chain -- and that should not be written blind. Without the passphrase its
-signing path cannot be exercised even once, and untested signing code committed
-against a production key is worse than no code.
+**The rehearsal found two defects, and neither would have been visible from
+reading the code.**
 
-So this item stays open deliberately. What it needs is one session with the
-keyring unlocked, the superseded-archive decision made, and the generalisation
-written where its signing path can be run.
+*The volume was not reproducible.* `g17b_evidence.py` gives xorriso
+`SOURCE_DATE_EPOCH`, `TZ=UTC` and `LC_ALL=C`; the new builder inherited the
+ambient environment instead, so xorriso stamped the wall clock into the
+descriptor. Two builds were byte-identical only when they happened to land in
+the same second. On 4 MB rehearsal volumes that failed about one run in four --
+intermittently, which is the worst way for it to fail -- and on the real 550 MB
+volume, which takes far longer than a second to build, it would have failed
+every time. Held under a deliberate 2.5-second gap the difference is exact: the
+ambient environment produces different bytes, the deterministic one produces
+identical bytes.
+
+*The custody chain linked nothing.* Each catalog entry carries a custody event
+naming its predecessor by hash, and the sealer read that predecessor from an
+`event_sha256` field -- which nothing writes. Not `g17b_evidence.py`, not
+`CUSTODY_TEMPLATE.json`. Every volume would have recorded a predecessor of all
+zeroes: a chain present, well-formed, schema-valid, and linking nothing. The
+event is now hashed from its own document, the way every other record here is
+hashed. The deeper problem was that **the verifier never looked at custody events
+at all** -- `verify_custody_chain` now walks them and refuses a broken link, and
+a unit test breaks it four ways, including the exact all-zeroes shape the defect
+would have produced. Volume-0001 passes the new gate unchanged, which was
+checked before the gate was added rather than assumed.
+
+**What remains is the authorization, not the tooling.** The sealer is written and
+rehearsed end to end; the passphrase is reachable and session-lifetime; the
+plan names the 35 v0.8 archives (552,440,726 bytes) that fit the volume. Writing
+to `/media/renes/SEAGATE2TB/notrios-evidence` and signing with the production
+key are the owner's to authorise, separately, and have not been done.
 
 ## E4. Make a missing archive fail rather than pass unnoticed
 

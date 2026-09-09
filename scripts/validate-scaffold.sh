@@ -75,12 +75,31 @@ bash -n scripts/run_joplin_import_profile.sh
 bash -n scripts/package_release.sh
 bash -n scripts/build_docs_site.sh
 bash -n scripts/verify_evidence_pre_push.sh
-# Syntax-check helper scripts without writing __pycache__ bytecode.
+# Syntax-check every Python file in the repository, without writing
+# __pycache__ bytecode.
+#
+# This was a hand-maintained list of 53 paths, and a hand-maintained list of
+# files is a claim that goes stale the moment someone adds a file: 39 tracked
+# Python files were never syntax-checked by it, including the ones added by the
+# most recent milestones. Deriving the set from the repository means a new
+# script is covered because it exists, not because somebody remembered.
+# `git ls-files` is preferred so scratch files in a working tree cannot fail the
+# gate; `find` is the fallback for a checkout without git.
+if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  python_files=$(git ls-files '*.py')
+else
+  python_files=$(find . -name '*.py' -not -path './.git/*' -not -path '*/node_modules/*' | sort)
+fi
+if [ -z "$python_files" ]; then
+  echo "no Python files found to syntax-check" >&2
+  exit 1
+fi
+# shellcheck disable=SC2086
 python3 -c 'import ast, sys
 for path in sys.argv[1:]:
     with open(path) as fh:
         ast.parse(fh.read(), path)
-' scripts/check_required_files.py scripts/check_sqlite_provenance.py performance/v0.8-h2a/validate_evidence.py scripts/check_plan_loops.py scripts/check_release_zip.py evidence/verify_evidence.py evidence/run_refusal_tests.py scripts/g17b_evidence.py evidence/test_verify_evidence.py performance/v0.7-g18/validate_evidence.py performance/v0.7-g18/test_validate_evidence.py performance/v0.7-g18a/build_inventory.py performance/v0.7-g18a/validate_evidence.py performance/v0.7-g18a/test_validate_evidence.py performance/v0.7-g18b/build_prototype.py performance/v0.7-g18b/validate_evidence.py performance/v0.7-g18b/test_validate_evidence.py performance/v0.7-g18c/validate_evidence.py performance/v0.7-g18d/validate_evidence.py performance/v0.7-g18d/test_validate_evidence.py performance/v0.7-g18e/validate_evidence.py performance/v0.7-g18e/test_validate_evidence.py performance/v0.7-g18f/validate_evidence.py performance/v0.7-g18f/test_validate_evidence.py performance/v0.7-g18g/validate_evidence.py performance/v0.7-g18g/test_validate_evidence.py performance/v0.7-g20/validate_evidence.py performance/v0.7-g20/test_validate_evidence.py performance/v0.7-g20/check_dependency_licenses.py performance/v0.7-g20/test_check_dependency_licenses.py performance/v0.8-h3/validate_evidence.py performance/v0.8-h3/purge_oracle.py performance/v0.8-h3/resolve_model.py performance/v0.8-h3/test_purge_oracle.py performance/v0.8-h3/test_resolve_model.py performance/v0.8-h3/test_backup_restore.py performance/v0.8-h4a/validate_evidence.py performance/v0.8-h6a/validate_evidence.py performance/v0.8-h6/validate_evidence.py performance/v0.8-h8/validate_evidence.py performance/v0.8-h8/../../scripts/integration_matrix.py performance/v0.8-h9/validate_evidence.py performance/v0.8-h14/validate_evidence.py performance/v0.8-h14/actionability.py performance/v0.8-h15/validate_evidence.py performance/v0.8-h11/validate_evidence.py performance/v0.8-h10/validate_evidence.py performance/v0.8e/validate_evidence.py performance/v0.8e/build_manifest.py performance/v0.8e/verify_archive.py
+' $python_files
 python3 -m unittest evidence.test_verify_evidence
 python3 -m unittest discover -s performance/v0.7-g18 -p 'test_*.py'
 # G18c is run here, not only from package_release.sh.
