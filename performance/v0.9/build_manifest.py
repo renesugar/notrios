@@ -30,7 +30,8 @@ MANIFEST = HERE / "MANIFEST.json"
 # Every archive so far in this milestone was taken from the commit that closed
 # its item, minutes after that commit. None is retroactive, and saying otherwise
 # would be a lie in the direction that flatters the record.
-TAKEN_AT_CLOSE = {"I2": "notrios-v0.9-i2-e3f6de7.zip"}
+TAKEN_AT_CLOSE = {"I1": "notrios-v0.9-i1-3799c6f.zip",
+                  "I2": "notrios-v0.9-i2-e3f6de7.zip"}
 
 
 def build() -> dict:

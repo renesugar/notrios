@@ -4,7 +4,7 @@
     {
       "id": "I1",
       "title": "Put v0.8 on GitHub, and reconcile the branches",
-      "state": "in-progress",
+      "state": "complete",
       "slices": [
         {
           "id": "I1-A",
@@ -15,13 +15,14 @@
         {
           "id": "I1-B",
           "statement": "A develop-to-main pull request is merged with a merge commit after explicit authorization",
-          "state": "blocked",
-          "blocked_on": "pull request #6 is open with all four CI jobs passing; the owner authorizes the develop-to-main merge, after review, and the method is a merge commit"
+          "state": "done",
+          "evidence": "file:PLAN.md"
         },
         {
           "id": "I1-C",
           "statement": "The merge result is brought back into develop so main is an ancestor with no content difference",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:PLAN.md"
         }
       ]
     },

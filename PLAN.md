@@ -46,11 +46,11 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**9 items: 0 complete, 1 in progress, 7 not started, 1 deferred.**
+**9 items: 1 complete, 0 in progress, 7 not started, 1 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
-| I1. Put v0.8 on GitHub, and reconcile the branches | in-progress | 1/3 | 2 |
+| I1. Put v0.8 on GitHub, and reconcile the branches | complete | 3/3 | — |
 | I2. Migrate the desktop shell to Wails v3, or record the postponement | deferred | 0/3 | 3 |
 | I3. Promote the Ubuntu installer through clean native environments | not-started | 0/3 | 3 |
 | I4. Harden the destructive lifecycle, and decide the profile race | not-started | 0/4 | 4 |
@@ -60,19 +60,10 @@ this section is archived when the plan completes and the rules are not.
 | I8. Freeze the 1.0 compatibility surfaces | not-started | 0/3 | 3 |
 | I9. Write the release-grade operational documentation | not-started | 0/3 | 3 |
 
-### Started and not finished
-
-**I1. Put v0.8 on GitHub, and reconcile the branches**
-
-- `I1-B` A develop-to-main pull request is merged with a merge commit after explicit authorization — *blocked* (blocked on: pull request #6 is open with all four CI jobs passing; the owner authorizes the develop-to-main merge, after review, and the method is a merge commit)
-- `I1-C` The merge result is brought back into develop so main is an ancestor with no content difference — *not-started*
-
-### Not started
-
-Written and not begun: I3, I4, I5, I6, I7, I8, I9. Their slices are listed under each item.
+Nothing is half-finished.
 <!-- notrios:generated:plan:progress:end -->
 
-## I1. Put v0.8 on GitHub, and reconcile the branches
+## I1. Put v0.8 on GitHub, and reconcile the branches — complete
 
 **Goal.** The v0.8 body of work is public, on both branches, with no content
 difference between them.
@@ -182,7 +173,31 @@ that never tested anything survive four milestones.
 
 All four jobs pass: `go`, `web`, `gui-build`, `smoke`.
 
-**The merge is separately authorized and has not happened.**
+**Merged 2026-09-09 on the owner's authorization, with a merge commit**:
+`3799c6f Merge pull request #6 from renesugar/develop`. Squash and rebase were
+both ruled out in advance, because either would rewrite `develop`'s history onto
+`main` and leave the two branches holding different identifiers for identical
+work — the condition this item exists to end.
+
+**The back-merge turned out to need no merge at all.** `main` now contained
+every commit `develop` had plus the merge commit, so bringing it back was a
+fast-forward: `develop` moved to `3799c6f` without rewriting anything. Both
+branches are that commit. `git rev-list --left-right --count` reports `0 0`,
+`git diff` between them is empty, and `main` is an ancestor of `develop` because
+they are the same commit. Zero content difference was the requirement; identical
+identifiers were not required and were reached anyway, without forcing either
+branch.
+
+**A flake surfaced between the green run and the merge, and was fixed rather
+than merged past.** The same commit passed one CI run and failed the next with
+`window is not defined` thrown from a timer callback. `reportUnsavedChanges`
+polls for several seconds waiting for Wails to inject `window.go`; in a browser
+the binding never appears, so a document torn down inside that window leaves a
+tick with no `window` to read, and the throw comes from a timer where nothing is
+waiting to catch it. Both halves needed fixing, because the tick has to stop as
+well as survive: stopping used to call `window.clearInterval`, the one call that
+cannot work when the window is what went away. Two tests cover it and both were
+confirmed to fail with the exact `ReferenceError` before the guards went in.
 
 ## I2. Migrate the desktop shell to Wails v3, or record the postponement — deferred
 
