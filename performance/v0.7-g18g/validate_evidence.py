@@ -70,7 +70,7 @@ def source_checks(root=ROOT, bundle=HERE):
     require(b.get("schema")=="notrios.g18g.build-contract.v1" and b.get("builder")=="scripts/build_docs_site.sh" and b.get("production_source")=="docs-site/" and b.get("output_argument")=="first positional argument", "build contract drift")
     require(b.get("tool_pins")=={"hugo":"0.164.0 extended","node":"26.3.0","pagefind":"1.5.2"}, "tool pins drift")
     raw=b.get("raw_docs_help_contract",{}); require(raw=={"source":"docs/**/*.md","staging":"temporary byte-copy before Hugo publication rendering","publication_adapter":"generated CLI registry angle-placeholder escaping only","byte_equivalent":True,"help_id_equivalent":True,"help_content_equivalent":True,"idempotent":True}, "raw-doc/Help contract drift")
-    search=b.get("search",{}); require(search.get("scope_marker")=="data-pagefind-body" and search.get("indexed_pages")==18 and search.get("known_query")=="Argon2id" and search.get("result_base")=="/notrios/" and search.get("excluded")==["api/index.html","search/index.html"], "search contract drift")
+    search=b.get("search",{}); require(search.get("scope_marker")=="data-pagefind-body" and search.get("indexed_pages")==18 and search.get("known_query")=="Argon2id" and search.get("result_base")==BASE_PATH and search.get("excluded")==["api/index.html","search/index.html"], "search contract drift")
     off=b.get("offline_policy",{}); require(off=={"remote_runtime_assets":False,"remote_fonts":False,"local_pagefind_bundle":True,"csp_external_requests":False}, "offline policy drift")
     require(report.get("schema")=="notrios.g18g.qa-report.v1" and report.get("routes")=={"preserved":18,"g18a_sections":267,"aliases":2}, "report schema/route evidence")
     require(report.get("browser_plugin",{}).get("available") is False and report["browser_plugin"].get("fallback")=="browser_smoke.mjs", "browser fallback evidence")
@@ -83,12 +83,42 @@ def source_checks(root=ROOT, bundle=HERE):
     require(len(m.get("mutations",[]))>=5 and {x.get("id") for x in m["mutations"]} >= {"theme-pin","route-fragment","search-scope","raw-help-equivalence","runtime-offline"}, "mutation matrix incomplete")
     return b
 
+def site_base_path():
+    """The path the site is served under, from the site's own configuration.
+
+    Three checks below used to hardcode "/notrios/": the search result base, the
+    prefix stripped from absolute links, and the prefix that marked an asset as
+    site-local. That was right while the base URL was
+    https://example.github.io/notrios/ and wrong the moment it stopped being --
+    and it was wrong in the worst direction, because a root-served site emits
+    "/css/x.css" and the asset check then read a leading slash as a filesystem
+    path and reported that the site did not carry a file it plainly carried.
+
+    Deriving it means the base path can only be wrong in one place, and that
+    place is the file Hugo actually reads.
+    """
+    for line in (ROOT / "docs-site" / "hugo.toml").read_text(encoding="utf-8").splitlines():
+        stripped = line.strip()
+        if stripped.startswith("baseURL"):
+            _, _, value = stripped.partition("=")
+            path = urlsplit(value.strip().strip("'\"")).path or "/"
+            return path if path.endswith("/") else path + "/"
+    raise SystemExit("docs-site/hugo.toml declares no baseURL")
+
+
+BASE_PATH = site_base_path()
+
+
 def local_target(route, href):
     p=urlsplit(href)
     if p.scheme or p.netloc or href.startswith(("mailto:","javascript:")): return None
     path=unquote(p.path)
-    if path.startswith("/notrios/"): path=path[9:]
-    elif path.startswith("/"): return "OUTSIDE_BASE",unquote(p.fragment)
+    if BASE_PATH != "/" and path.startswith(BASE_PATH): path=path[len(BASE_PATH):]
+    elif path.startswith("/"):
+        # Root-served sites address their own pages from "/", so an absolute
+        # path is only an escape when the site lives under a prefix.
+        if BASE_PATH != "/": return "OUTSIDE_BASE",unquote(p.fragment)
+        path=path[1:]
     elif path: path=(Path(route).parent/path).as_posix()
     else: path=route
     if path.endswith("/"): path += "index.html"
@@ -126,7 +156,14 @@ def validate_site(site):
             if not p.is_file(): errors.append(f"broken link {route} -> {href}")
             elif frag and frag not in page(p).ids: errors.append(f"broken fragment {route} -> {href}")
         for asset in doc.assets:
-            if asset.startswith(("/notrios/","data:","#")): continue
+            if asset.startswith(("data:","#")): continue
+            if BASE_PATH != "/" and asset.startswith(BASE_PATH): continue
+            if BASE_PATH == "/" and asset.startswith("/"):
+                # Site-root-absolute. Resolved against the site rather than the
+                # filesystem, which is what joining a leading slash would do.
+                if (site / asset[1:]).is_file(): continue
+                errors.append(f"asset the site does not carry {route} -> {asset}")
+                continue
             # A relative reference that resolves to a file the site carries is
             # not a remote asset, and requiring the absolute prefix said it was.
             # v0.8's illustrated interface journeys write `images/journeys/x.png`

@@ -46,7 +46,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**9 items: 3 complete, 0 in progress, 5 not started, 1 deferred.**
+**10 items: 3 complete, 0 in progress, 6 not started, 1 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -59,6 +59,7 @@ this section is archived when the plan completes and the rules are not.
 | I7. Soak, recover, and freeze the support matrix | not-started | 0/3 | 3 |
 | I8. Freeze the 1.0 compatibility surfaces | not-started | 0/3 | 3 |
 | I9. Write the release-grade operational documentation | not-started | 0/3 | 3 |
+| I10. Serve the documentation site from notrios.com | not-started | 0/2 | 2 |
 
 Nothing is half-finished.
 <!-- notrios:generated:plan:progress:end -->
@@ -478,6 +479,86 @@ command line, the way the existing documentation gates require.
 
 **Working state.** Each document present, checked by the documentation gates,
 and naming no step that was never run.
+
+## I10. Serve the documentation site from notrios.com
+
+**Goal.** The documentation is published at `https://notrios.com/`, and the
+configuration says so rather than carrying a placeholder.
+
+**Scope.** Hugo's `baseURL`, a tracked `CNAME` in the site's static files, and
+the G18b site contract that records what the site is configured to serve.
+
+**Why the `baseURL` matters more than it looks.** It has been
+`https://example.github.io/notrios/` since G18b — a placeholder, never the real
+address. Two things follow. The host is wrong, and the *path* is wrong too: a
+custom apex domain serves the site at `/`, not under `/notrios/`, which is
+already what the Pagefind `bundlePath` (`/pagefind/pagefind.js`) assumes. So
+this is a correction, not only a rename.
+
+**Why a tracked CNAME, given the domain is already set.** GitHub reports
+`build_type: workflow` and `cname: notrios.com`, so the domain lives in the
+repository's Pages settings and `actions/deploy-pages` does not rewrite them.
+The "every deployment wipes the custom domain" behaviour belongs to
+branch-based publishing, where the deployed branch *is* the configuration and a
+tool like `peaceiris/actions-gh-pages` overwrites it unless told otherwise —
+this repository does not publish that way. The file is added regardless: it
+costs nothing, `build_docs_site.sh` already copies `docs-site/static/` into the
+build, and it keeps the domain with the site if the publishing source ever
+changes. It is belt and braces, and recorded as such rather than as the load-
+bearing mechanism.
+
+**Boundaries.** No DNS change: CloudFlare and GitHub are already configured, and
+this item does not touch either. No change to what the site contains. The push
+and merge follow I1's route and authorization.
+
+**Dependencies.** None.
+
+**Working state.** The site builds with the real base URL, the built output
+carries `CNAME`, and the contract check compares the recorded base URL against
+the one Hugo is actually configured with rather than a literal in a validator.
+
+**Done, 2026-09-09.** `baseURL` is `https://notrios.com/`,
+`docs-site/static/CNAME` holds `notrios.com`, and the built site carries it —
+`build_docs_site.sh` already copies `docs-site/static/` into the build, so the
+file needed no build change to arrive.
+
+**Changing the base URL broke a gate, which is how the placeholder had
+survived.** `performance/v0.7-g18g` hardcoded `/notrios/` in three places: the
+Pagefind result base, the prefix stripped from absolute links, and the prefix
+that marked an asset as site-local. All three were correct while the base URL
+was `https://example.github.io/notrios/` and wrong the moment it stopped being
+— and the asset check failed in the worst direction, reading a root-served
+`/css/x.css` as a *filesystem* path and reporting that the site did not carry a
+file it plainly carried. The old build passed and the new one failed, which is
+how I knew I had caused it rather than found it.
+
+All three now derive the base path from `docs-site/hugo.toml`, so it can only be
+wrong in the file Hugo actually reads. `performance/v0.7-g18b` had the same
+shape — a literal base URL inside the validator, which is a second place to
+edit, and a check that must be edited to keep passing is one that gets edited
+without being read. It compares the contract against Hugo's configuration now,
+and fails whichever side moves alone; both directions were tried.
+
+The looser asset rule was checked for permissiveness rather than assumed: with a
+referenced stylesheet removed the site reports 18 errors, and with a linked page
+removed it reports the broken link.
+
+**Two things about the reference, checked rather than repeated.** GitHub reports
+`build_type: workflow` and `cname: notrios.com`, so the domain is held in the
+repository's Pages settings and `actions/deploy-pages` does not rewrite them;
+the "every deployment wipes the custom domain" behaviour belongs to branch-based
+publishing, which this repository does not use. The CNAME is added anyway, for
+the reason given above rather than as the load-bearing mechanism. And the base
+URL needed the *path* dropped as well as the host changed: an apex domain serves
+at `/`, which is what the Pagefind `bundlePath` had assumed all along.
+
+**Open decisions**
+
+- **HTTPS enforcement — Blocking, owner's.** GitHub reports
+  `https_enforced: false` with an approved certificate for `notrios.com` and
+  `www.notrios.com`, so the site answers on plain HTTP. Turning it on is a
+  repository settings change, not a change in this repository, and it belongs to
+  the owner.
 
 ## Decisions register
 

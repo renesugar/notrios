@@ -2,7 +2,7 @@
   "schema": "notrios.g18b.site-contract.v1",
   "as_of": "2026-08-27",
   "status": "investigation-only; no production site or Help mutation",
-  "base_url": "https://example.github.io/notrios/",
+  "base_url": "https://notrios.com/",
   "tools": {
     "hugo": "0.164.0 extended",
     "pagefind": "1.5.2",
@@ -52,7 +52,10 @@
     "service_backend": null,
     "indexed_pages": 15,
     "indexed_words": 3191,
-    "excluded_generated_pages": ["api/index.html", "search/index.html"],
+    "excluded_generated_pages": [
+      "api/index.html",
+      "search/index.html"
+    ],
     "scope_marker": "data-pagefind-body",
     "known_query": "Argon2id",
     "known_query_result": "pass",
@@ -66,7 +69,10 @@
       "dark": 15.07,
       "contrast": 21.0
     },
-    "mobile_menu_target_px": [44, 44],
+    "mobile_menu_target_px": [
+      44,
+      44
+    ],
     "mobile_horizontal_overflow_px": 0,
     "keyboard": "theme controls, mobile drawer open, and Escape close passed",
     "external_requests": [],
@@ -102,5 +108,6 @@
       "finding": "Pagefind 1.5.2 assigned different hashed metadata/index shard names on two builds while both indexed 15 pages and 3191 words and passed the same Argon2id query. Reproducibility therefore means pinned source/tools plus validated routes, scope, counts, and search behavior; it does not claim a byte-for-byte Pagefind tree."
     },
     "interpretation": "The current builder invokes npx Marked separately for every page; observed time includes local tool resolution overhead and is not a product benchmark. Prototype size varies by a few bytes with Pagefind's hashed shard partition and remains a small static bundle."
-  }
+  },
+  "base_url_note": "Recorded on 2026-09-09 by v0.9 I10. The value here was https://example.github.io/notrios/ from G18b onwards -- a placeholder host, and a placeholder path: a custom apex domain serves the site at /, which is what the Pagefind bundlePath already assumed. The check reads this against docs-site/hugo.toml rather than against a literal, so the two cannot drift apart unnoticed."
 }

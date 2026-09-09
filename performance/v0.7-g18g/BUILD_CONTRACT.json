@@ -21,7 +21,7 @@
     "scope_marker": "data-pagefind-body",
     "indexed_pages": 18,
     "known_query": "Argon2id",
-    "result_base": "/notrios/",
+    "result_base": "/",
     "excluded": [
       "api/index.html",
       "search/index.html"
