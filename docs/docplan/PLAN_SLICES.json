@@ -54,22 +54,25 @@
     {
       "id": "I3",
       "title": "Promote the Ubuntu installer through clean native environments",
-      "state": "not-started",
+      "state": "complete",
       "slices": [
         {
           "id": "I3-A",
           "statement": "Fresh install, source-layout migration and upgrade across prereleases are rehearsed in a clean environment",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v0.9-i3/REPORT.json"
         },
         {
           "id": "I3-B",
           "statement": "Downgrade refusal and rollback, remove and reinstall, and profile discovery are rehearsed",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v0.9-i3/REPORT.json"
         },
         {
           "id": "I3-C",
           "statement": "Operation with neither source nor a development toolchain present is rehearsed",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v0.9-i3/REPORT.json"
         }
       ]
     },
