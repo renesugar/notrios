@@ -4,22 +4,25 @@
     {
       "id": "E1",
       "title": "Build the twenty-seven missing handoff archives",
-      "state": "not-started",
+      "state": "complete",
       "slices": [
         {
           "id": "E1-A",
           "statement": "Every completed or deferred v0.8 item is mapped to the commit that closed it, checked rather than assumed",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v0.8e/CLOSEOUTS.json"
         },
         {
           "id": "E1-B",
           "statement": "Each archive is built from its own commit in a disposable worktree and verified byte-identical to that commit's tree",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v0.8e/verify_archive.py"
         },
         {
           "id": "E1-C",
           "statement": "Each archive is copied to the evidence directory and verified byte-identical there",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v0.8e/backfill.sh"
         }
       ]
     },

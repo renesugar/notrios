@@ -49,11 +49,11 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**4 items: 0 complete, 0 in progress, 4 not started, 0 deferred.**
+**4 items: 1 complete, 0 in progress, 3 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
-| E1. Build the twenty-seven missing handoff archives | not-started | 0/3 | 3 |
+| E1. Build the twenty-seven missing handoff archives | complete | 3/3 | — |
 | E2. Record the backfill honestly, and say what it is | not-started | 0/2 | 2 |
 | E3. Seal a reserve volume, and extend the outer catalog | not-started | 0/2 | 2 |
 | E4. Make a missing archive fail rather than pass unnoticed | not-started | 0/1 | 1 |
@@ -61,7 +61,7 @@ this section is archived when the plan completes and the rules are not.
 Nothing is half-finished.
 <!-- notrios:generated:plan:progress:end -->
 
-## E1. Build the twenty-seven missing handoff archives
+## E1. Build the twenty-seven missing handoff archives — complete
 
 **Goal.** Every completed or deferred v0.8 item has a source archive taken from
 the commit that closed it, in `/home/renes/evidence/notrios`.
@@ -101,12 +101,57 @@ containing a binary, a database, `node_modules`, or the local index.
 
 **Open decisions**
 
-- **Which commit closes a slice — Non-blocking default.** The commit whose
-  message opens with that item's identifier and which the plan ledger's evidence
-  points into. Where an item was closed across more than one commit, the last of
-  them is the close-out, because that is the tree the item's working state
-  describes. An item whose close-out cannot be identified without guessing is
-  reported rather than approximated.
+- **Which commit closes a slice — Taken as the default, 2026-09-09.** The
+  newest commit whose *subject* names the item. A body mention is not a
+  close-out: one commit names H6a, H7, H8 and H12 in its body while closing
+  none of them. Two items could not be reached by pattern and were resolved by
+  reading rather than by widening a regex until it matched something -- H5's
+  subject says "(v0.8 H5 slices C and D)", a slice-list form, and H12 was
+  deferred rather than implemented, so its close-out is the commit that recorded
+  the deferral.
+
+**Outcome (2026-09-09).** Done, and the scope grew twice on evidence.
+**Thirty-three archives** were built, not twenty-seven, and every v0.8 item now
+has one that passes today's `check_release_zip.py` and is byte-identical to a
+real commit. 0.54 GB, all thirty-three distinct, all in the evidence directory.
+
+**The mapping was checked, and the check found three.** Twenty-five of the
+twenty-seven resolved from commit subjects; the plan at three of those commits
+did not yet carry the item's completion marker. That is not a wrong mapping --
+H4a, H4b and H5 were all marked complete later, together, in one bookkeeping
+commit -- so the work commit stands as the close-out and `CLOSEOUTS.json`
+records why. The check was worth having: it would have caught a genuinely wrong
+mapping the same way.
+
+**Five archives already in the reserve carry the notrioslib binary.** H1, H2a,
+H2b, H2 and H3 hold the 11 MB ELF that the 2026-09-01 history rewrite removed
+from git, and today's `check_release_zip.py` refuses all five. Their trees are
+faithful -- each matches its post-rewrite commit through the handoff's mapping
+table, which this run tested end to end and found correct -- but sealing a
+rejected archive into an immutable reserve would preserve the mistake for ever.
+Rebuilt. H1 went from 15.3 MB to 8.0 MB, which is the binary leaving.
+
+**And one archive matched no commit at all.** `notrios-v0.8-h13-030ef2d.zip`,
+built during H13 itself, was made from the working tree while `030ef2d` was HEAD
+and H13's own changes were uncommitted -- so its filename asserts a commit whose
+tree it does not carry, and the verifier said so on the first run against it.
+Rebuilt from `10e7077`, H13's real close-out. The lesson is small and general:
+name an archive after a commit only when it was taken from one.
+
+**Nothing was deleted.** The six superseded files are still in the evidence
+directory, each named by the entry that replaces it. Removing evidence is the
+owner's decision and not this run's, and it should be made before the reserve is
+sealed rather than after.
+
+**Two things the build does that are worth keeping.** It installs web
+dependencies once per *distinct lockfile* rather than once per commit -- the
+thirty-three carry three between them -- and it installs from the commit's own
+lockfile rather than today's, because the archive has to carry the frontend that
+commit would have built. And `verify_archive.py` knows the packager's exclusion
+list, so a tracked file the packager is supposed to drop is reported as excluded
+rather than as missing: two v0.8 commits carry a tracked vitest cache file under
+`node_modules`, and calling that a defect would have been the tool misreading
+correct behaviour.
 
 ## E2. Record the backfill honestly, and say what it is
 
