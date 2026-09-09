@@ -148,17 +148,19 @@
     {
       "id": "H11",
       "title": "Android-emulator shared-core acceptance",
-      "state": "not-started",
+      "state": "complete",
       "slices": [
         {
           "id": "H11-A",
           "statement": "The shared core builds for android/arm64 and runs against an emulator, with the credential provider host-supplied",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v0.8-h11/run_acceptance.sh"
         },
         {
           "id": "H11-B",
           "statement": "An acceptance record states what was proven on the emulator and what remains a physical-device claim",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v0.8-h11/REPORT.json"
         }
       ]
     },

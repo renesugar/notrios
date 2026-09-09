@@ -46,7 +46,7 @@ What follows is what is left. Each item's own text below is the record of what
 happened, which is a different question.
 
 <!-- notrios:generated:plan:progress:begin -->
-**35 items: 30 complete, 0 in progress, 3 not started, 2 deferred.**
+**35 items: 31 complete, 0 in progress, 2 not started, 2 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -67,7 +67,7 @@ happened, which is a different question.
 | H7. Windows and macOS installer workflow implementation | deferred | 0/0 | — |
 | H9. Native credential-store selection and integration | complete | 5/5 | — |
 | H10. Wails v3 migration spike | not-started | 0/2 | 2 |
-| H11. Android-emulator shared-core acceptance | not-started | 0/2 | 2 |
+| H11. Android-emulator shared-core acceptance | complete | 2/2 | — |
 | H12. First GitHub push and develop-to-main pull request | deferred | 0/0 | — |
 | H15. Complete the journey catalogues, and give the GUI an inventory | complete | 9/9 | — |
 | H16. Reconcile the collection model with what is actually stored | complete | 7/7 | — |
@@ -2285,7 +2285,7 @@ gaps; rollback rehearsal; and no-production-diff check.
   required desktop features do not pass, recommend deferral without a migration
   item.
 
-## H11. Android-emulator shared-core acceptance
+## H11. Android-emulator shared-core acceptance — complete
 
 **Ordering (decided 2026-09-08).** Independent of H10, and explicitly not
 waiting for it. The question was whether Wails v3's mobile support would help
@@ -2330,10 +2330,75 @@ leftover-process audit.
 
 **Open decisions**
 
-- **Runtime ABI beyond the H0 default — Non-blocking default.** Require the
-  existing API-35 x86_64 runtime and an Android/arm64 build-only artifact.
-  A physical/arm64 runtime remains post-1.0 unless separately authorized; this
+- **Runtime ABI beyond the H0 default — Taken as the default, 2026-09-08.** The
+  API-35 x86_64 runtime and an Android/arm64 build-only artifact. A
+  physical/arm64 runtime remains post-1.0 unless separately authorized; this
   limits the support claim rather than weakening x86_64 acceptance.
+
+**Outcome (2026-09-08).** Done. **38 checks pass on the API-35 x86_64 emulator**
+against the real `cmd/notrioslib` shared library cross-compiled with NDK
+30.0.15729638, driven by a C host that links nothing but `notrios_abi.h`. The
+run is `performance/v0.8-h11/run_acceptance.sh`, it takes about eight minutes,
+and the record it writes is generated rather than typed.
+
+**The Android library is the same library.** It exports exactly the frozen
+twelve symbols and no SQLite symbol, checked on the cross-compiled artifact
+rather than assumed from the desktop one. Capabilities negotiate to the same
+`0x1f`.
+
+**Two things only a device can fail, and both were made to happen.** The host
+commits a note and is then sent `SIGKILL`, leaving a write-ahead log and an
+ownership marker it never released -- which is what a process killed by Android
+actually leaves. The next open recovers and the note is there. Then the device
+is rebooted, and the same is true afterwards. A desktop test cannot fail either
+of these, which is the whole reason the item exists.
+
+**The file crosses in both directions.** The desktop build seeds the library and
+writes the resource the stream reads; the file comes back for
+`PRAGMA integrity_check` (`ok`), a WAL-mode check, schema v27, and searches that
+find the rows Android wrote. Interchange in one direction would have proved
+half of it.
+
+**Three of my own assumptions failed before the library did -- none of them was
+a defect in it.**
+
+*The stream has two bounds and I conflated them.* `max_bytes` at open is the
+budget for the whole stream; the size passed to each read is the size of that
+read. The first host opened with a 64-byte budget, read 64 bytes of a 149-byte
+resource, and reported that the library had lost 85 bytes. Both bounds are
+asserted separately now, so the distinction cannot quietly become one thing.
+
+*A cancelled call is still a call.* The first host polled once after cancelling
+and read `would_block` as a verdict. `would_block` means the answer has not
+arrived, not that there will not be one.
+
+*An update names the revision it replaces.* Sending none is refused with
+`precondition_required` (7) rather than an internal error -- which is the right
+status, and is now asserted exactly rather than as "not OK", because a check
+that only says "it failed" cannot tell a good refusal from a bad one.
+
+**And a wrong constant that passed.** The host defined `CANCELLED = 9`, which is
+`unavailable`; the check that used it happened to succeed for another reason. A
+wrong constant in an acceptance host does not fail, it passes for the wrong
+reason. The status codes are copied from `internal/abi/status.go` now and the
+comment says why.
+
+**A bug of the same family in the runner, worth recording because it is the
+generalisation.** The first version built its report by interpolating shell
+values into Python source, and the arm64 refusal -- a linker message containing
+quotes, about a path -- ended the string it was being pasted into. Values go
+through the environment now. Data through data channels.
+
+**What is not claimed, and is refused if the record stops saying so.** No
+physical device, no iOS, no interface, no app-store artifact, no background or
+battery behaviour, no production secure store, no Flutter client, no arm64
+runtime. `validate_evidence.py` runs in `make validate` without a device and
+refuses a record that drops one of those disclaimers, skips a phase, changes the
+device image, or claims arm64 executed -- all three tried on purpose. The arm64
+artifacts are built, hashed, pushed once and refused by the device with
+`CANNOT LINK EXECUTABLE`, and that refusal is the evidence for the build-only
+claim: one nobody tried is one nobody checked.
+
 
 ## H12. First GitHub push and develop-to-main pull request — deferred to v0.9
 
