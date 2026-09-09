@@ -1,0 +1,9 @@
+{"drill": "unattended-purge-refuses-without-force", "observations": {"exit": 1, "library_intact": true, "names_the_flag": true}, "status": "pass"}
+{"drill": "purge-refuses-when-the-backup-cannot-be-written", "observations": {"exit": 1, "library_intact": true}, "status": "pass"}
+{"drill": "purge-refuses-when-the-backup-does-not-fit", "observations": {"exit": 1, "library_intact": true}, "status": "pass"}
+{"drill": "purge-backup-restores-and-excludes-sync-keys", "observations": {"archive_holds_keys": false, "archive_holds_library": true, "exit": 0, "library_before": "/tmp/notrios-i4-FTnTkh/restore/.local/share/notrios", "restored_note_found": true}, "status": "pass"}
+{"drill": "uninstall-leaves-user-data", "observations": {"binary_removed": true, "library": "/tmp/notrios-i4-FTnTkh/uninstall/.local/share/notrios", "library_present": true}, "status": "pass"}
+{"drill": "uninstall-keeps-a-modified-artifact-and-says-why", "observations": {"explained": true, "kept": true, "manifest_kept": true}, "status": "pass"}
+{"drill": "purge-does-not-delete-through-a-symlink", "observations": {"exit": 0, "neighbour_survived": true, "target_survived": true}, "status": "pass"}
+{"drill": "external-data-root-is-used-where-it-actually-is", "observations": {"library": "/tmp/notrios-i4-FTnTkh/elsewhere-share/notrios", "under_xdg_override": true}, "status": "pass"}
+{"drill": "purge-while-a-daemon-holds-the-library", "observations": {"backup_written": true, "exit": 0, "library_intact": false}, "status": "pass"}

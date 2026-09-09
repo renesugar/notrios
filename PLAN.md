@@ -337,6 +337,55 @@ touches the evidence reserve or a real library.
 **Working state.** Each fault injected and its behaviour recorded; the profile
 race either fixed or refused with a reason, not left as a test workaround.
 
+**Done, 2026-09-09.** Nine faults drilled against `scripts/lifecycle.py`, each
+in its own disposable installation outside the checkout: an unattended purge
+refuses without `FORCE=1` and says how to automate it deliberately; a purge
+whose backup cannot be written, or does not fit, refuses with the library
+intact; a purge that runs writes a backup that holds the library, excludes sync
+key material, and **restores** — the note is read back out of it, because a
+backup nobody has restored is a hope; uninstall leaves the user's data and keeps
+a modified artifact while saying why; purge does not delete through a symlink
+out of the profile; an external data root is used where it actually is.
+
+**The profile race is fixed rather than worked around.** Startup opens only the
+database it is starting. What that gave up is recorded and pinned by a test: a
+database swapped underneath a stale registry entry is now invisible to a startup
+that is not starting it, and visible to an audit. Racing two daemons is *not*
+how it is asserted — the window is milliseconds and the unfixed code passed five
+consecutive runs, and a test that only sometimes fails on a defect is not
+evidence of a fix.
+
+**One behaviour was found and recorded rather than blessed.** A purge run while
+a daemon holds the library succeeds: it writes and verifies the backup, then
+deletes, and the running daemon is never consulted. Nothing is unrecoverable —
+the backup precedes the deletion, and the daemon keeps serving its open file —
+but the user is not told a process is still running against what they deleted.
+The drill asserts the property that matters, that nothing is deleted without a
+backup, and leaves whether purge should notice a live daemon to I7, where
+runtime state is already the subject.
+
+**Three harness mistakes are kept in the record, because each gave a confident
+wrong answer rather than an error.** The first version ran inside the checkout,
+so `notriosctl` resolved source mode and the drills wrote notes into this
+repository's own library and purge backups into the repository root — harmless
+only because purge refuses a relative path as a deletion target. The first
+library check asked the *installed* binary whether the note survived, and purge
+removes that binary, so every successful purge reported data loss that had not
+happened. And `tar -tf | grep -q` under `pipefail` reports failure when grep
+exits early and tar dies of SIGPIPE, so a backup that contained the library was
+reported as one that did not. A harness for destructive operations can least
+afford exactly that failure mode, so `install_home` now refuses to drill unless
+the resolved mode is `installed`.
+
+**What was not exercised is gated.** A genuinely full filesystem (`ulimit -f`
+refuses for a different reason than ENOSPC), mount races (they need privileges
+these drills deliberately do not take, so that half of the slice is recorded
+rather than exercised), interruption mid-purge, multi-user or root-owned
+prefixes, and the packaged `apt` lifecycle, which I3 covers separately. Dropping
+the symlink drill, dropping the interruption limit, removing what the race
+record gave up, and claiming a drill observed nothing were each tried against
+the validator and each refused.
+
 ## I5. Resolve signing, notarization and timestamping policy
 
 **Goal.** Every supported platform has a signing story that someone else can

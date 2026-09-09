@@ -1,0 +1,115 @@
+{
+  "content_commit": "91ae3e503e466bd0147b100c95397e0cf904b939",
+  "counts": {
+    "drills": 9,
+    "passed": 9
+  },
+  "drills": [
+    {
+      "id": "unattended-purge-refuses-without-force",
+      "observations": {
+        "exit": 1,
+        "library_intact": true,
+        "names_the_flag": true
+      },
+      "status": "pass"
+    },
+    {
+      "id": "purge-refuses-when-the-backup-cannot-be-written",
+      "observations": {
+        "exit": 1,
+        "library_intact": true
+      },
+      "status": "pass"
+    },
+    {
+      "id": "purge-refuses-when-the-backup-does-not-fit",
+      "observations": {
+        "exit": 1,
+        "library_intact": true
+      },
+      "status": "pass"
+    },
+    {
+      "id": "purge-backup-restores-and-excludes-sync-keys",
+      "observations": {
+        "archive_holds_keys": false,
+        "archive_holds_library": true,
+        "exit": 0,
+        "library_before": "/tmp/notrios-i4-FTnTkh/restore/.local/share/notrios",
+        "restored_note_found": true
+      },
+      "status": "pass"
+    },
+    {
+      "id": "uninstall-leaves-user-data",
+      "observations": {
+        "binary_removed": true,
+        "library": "/tmp/notrios-i4-FTnTkh/uninstall/.local/share/notrios",
+        "library_present": true
+      },
+      "status": "pass"
+    },
+    {
+      "id": "uninstall-keeps-a-modified-artifact-and-says-why",
+      "observations": {
+        "explained": true,
+        "kept": true,
+        "manifest_kept": true
+      },
+      "status": "pass"
+    },
+    {
+      "id": "purge-does-not-delete-through-a-symlink",
+      "observations": {
+        "exit": 0,
+        "neighbour_survived": true,
+        "target_survived": true
+      },
+      "status": "pass"
+    },
+    {
+      "id": "external-data-root-is-used-where-it-actually-is",
+      "observations": {
+        "library": "/tmp/notrios-i4-FTnTkh/elsewhere-share/notrios",
+        "under_xdg_override": true
+      },
+      "status": "pass"
+    },
+    {
+      "id": "purge-while-a-daemon-holds-the-library",
+      "observations": {
+        "backup_written": true,
+        "exit": 0,
+        "library_intact": false
+      },
+      "status": "pass"
+    }
+  ],
+  "item": "I4",
+  "milestone": "v0.9",
+  "not_verified": [
+    "A genuinely full filesystem. `ulimit -f` refuses the write for a different reason than ENOSPC does, and a real out-of-space condition can fail in places a size limit does not.",
+    "Mount races. Bind-mounting or unmounting a root underneath a running operation needs privileges these drills deliberately do not take, so that half of the item's process/mount/symlink scope is recorded rather than exercised. The process race and the symlink case are both drilled.",
+    "Mount races: bind-mounting or unmounting a root mid-operation needs privileges these drills deliberately do not take.",
+    "Interruption. Nothing kills a purge halfway to see whether the backup or the manifest survives a SIGKILL between the copy and the delete.",
+    "Multi-user machines, and any root-owned installation prefix. Every drill installs into one unprivileged user's home.",
+    "The packaged form. These drive scripts/lifecycle.py; apt-level removal is covered by the I3 container matrix, and the two lifecycles are separate code."
+  ],
+  "profile_race": {
+    "gave_up": "A database swapped underneath a stale registry entry is invisible to a startup that is not starting it, and visible to an audit. internal/profiles/runtime_race_test.go pins exactly that.",
+    "now": "Startup opens only the database it is starting. An unselected profile takes part in collision detection from the identity the registry recorded; the full audit still opens everything.",
+    "state": "fixed",
+    "was": "Startup validation opened every registered database rather than the one being started, so two daemons launching together read each other's libraries and one aborted with stale_database: sqlite exec: database is locked -- a transient lock reported as a stale library.",
+    "why_not_a_race_test": "Racing two daemons does not assert the fix: the window is milliseconds and the unfixed code passed five consecutive runs. A test that only sometimes fails on a defect is not evidence."
+  },
+  "schema": "notrios.v09.i4-destructive-lifecycle.v1",
+  "what_this_is": "Fault drills against the command whose job is deletion, each in its own disposable installation. Every drill installs into an isolated HOME outside the checkout, puts a real note in the library, applies one fault, and checks what survived.",
+  "what_was_found": [
+    "The first version of these drills ran with the working directory inside the checkout, so notriosctl resolved source mode, the notes went into the developer's own library and purge backups landed in the repository root. Purge refused to delete anything because a relative root is not an absolute purge target -- which is the only reason that mistake was harmless. install_home now refuses to drill unless the resolved mode is 'installed'.",
+    "The first library check asked the installed notriosctl whether the note survived, and purge removes that binary -- so every successful purge reported 'the library is gone' whether or not it was. The library is checked on the filesystem now.",
+    "`tar -tf | grep -q` under `pipefail` reports failure when grep exits early and tar dies of SIGPIPE, so a backup that contained the library was reported as one that did not.",
+    "A purge run while a daemon holds the library succeeds: it writes and verifies the backup, then deletes, and the running daemon is not consulted. Nothing is unrecoverable -- the backup is written before anything is removed, and on Linux the daemon keeps serving the open file until it exits -- but the user is not told that a process is still running against what they just deleted. The drill asserts the property that matters (nothing is deleted without a backup) and records the behaviour rather than blessing it. Whether purge should notice a live daemon and say so is a decision for I7's crash and recovery work, where the runtime state is already the subject."
+  ],
+  "why_these_faults": "They are unprivileged and deterministic. A read-only parent directory is 'the backup cannot be written'; `ulimit -f` is 'the backup does not fit', which is the capacity fault without needing a filesystem to fill; a symlink out of the profile is 'deletion reaching data it was never pointed at'. None need root, so they run where the developer runs and in CI."
+}

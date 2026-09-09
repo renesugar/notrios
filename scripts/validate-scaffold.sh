@@ -145,6 +145,9 @@ python3 performance/v0.8e/check_archive_coverage.py
 # I3: the installer matrix record. Checks the record, not the containers,
 # so it runs where there is no Docker.
 python3 performance/v0.9-i3/validate_evidence.py
+# I4: the destructive-lifecycle record. The drills install and delete; this
+# reads what they recorded, so `make validate` never does either.
+python3 performance/v0.9-i4/validate_evidence.py
 
 # The anchor and enumeration gates, which used to run only inside
 # scripts/package_release.sh. That is how a dangling Go anchor survived from
