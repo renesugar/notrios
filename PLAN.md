@@ -30,8 +30,9 @@ Not in v0.9:
 - an end-user GitHub release, or a v1.0 tag;
 - Windows or macOS build promotion — deferred to post-v1.0 with the hardware
   they need, and absent from release claims rather than shipped unexecuted;
-- hardening a release candidate on a Wails beta, if v3 has not released when
-  I2 is reached;
+- hardening a release candidate on a Wails beta -- v3 was `v3.0.0-beta.19` on
+  2026-09-09, so I2 is deferred to post-v1.0 and this milestone hardens the
+  Wails v2 desktop;
 - any secret in a pull-request job, log, artifact, backup or the repository.
 
 ## Progress
@@ -45,12 +46,12 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**9 items: 0 complete, 0 in progress, 9 not started, 0 deferred.**
+**9 items: 0 complete, 0 in progress, 8 not started, 1 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
 | I1. Put v0.8 on GitHub, and reconcile the branches | not-started | 0/3 | 3 |
-| I2. Migrate the desktop shell to Wails v3, or record the postponement | not-started | 0/3 | 3 |
+| I2. Migrate the desktop shell to Wails v3, or record the postponement | deferred | 0/3 | 3 |
 | I3. Promote the Ubuntu installer through clean native environments | not-started | 0/3 | 3 |
 | I4. Harden the destructive lifecycle, and decide the profile race | not-started | 0/4 | 4 |
 | I5. Resolve signing, notarization and timestamping policy | not-started | 0/3 | 3 |
@@ -92,39 +93,47 @@ force-pushed. The evidence is already sealed and is not re-sealed here.
 **Working state.** `develop` and `main` on GitHub with no content difference,
 `main` an ancestor of `develop`, and the pre-push evidence gate recorded as run.
 
-## I2. Migrate the desktop shell to Wails v3, or record the postponement
+## I2. Migrate the desktop shell to Wails v3, or record the postponement — deferred
 
 **Goal.** The desktop that gets hardened is the desktop that ships.
 
-**Scope.** Move the shell from Wails v2 to v3: the eleven frontend places that
-reach for `window.go` move onto `@wailsio/runtime` or generated bindings, and the
-native stack moves from GTK3/webkit2gtk-4.1 to GTK4/webkitgtk-6.0.
+**Deferred to post-v1.0 on 2026-09-09, by the condition this item set for
+itself.** The gate was a released Wails v3.
+`go list -m github.com/wailsapp/wails/v3@latest` answers `v3.0.0-beta.19`, so
+there is no release to migrate to and a release candidate is not hardened on a
+beta. v0.9 hardens the Wails v2 desktop; v1.0 ships it; the migration is the
+post-v1.0 entry in `ROADMAP.md`.
 
-**The one thing that needs care.** A v3 question dialog answers on a callback
-rather than returning the button, so the unsaved-work veto must wait for the
-answer and **fail closed** if it does not arrive. H10's spike established the
-rest is mechanical: a prototype rendered the whole real interface on
-v3.0.0-beta.18 and linked eight Go modules against the v2 shell's sixteen.
+**This is the condition being met, not the plan failing.** H10's spike passed on
+beta.18 and found the port small -- eight linked Go modules against the v2
+shell's sixteen, `window.go` absent in v3 so eleven frontend call sites move onto
+`@wailsio/runtime` or generated bindings, and one real hazard in the v3 question
+dialog answering on a callback rather than returning the button, so the
+unsaved-work veto must wait and fail closed. None of those findings expires while
+a release is waited for, which is why waiting costs nothing.
 
-**The gate is ordering, not a date.** This does not have to be first, and it
-cannot be near last: it goes before I3–I8, because the installer's dependencies,
-the linked-module inventory, the webview the soak tests run, the frozen support
-matrix and the documented install lines all describe the desktop it produces.
+**What the postponement costs, stated so it is not lost.** The migration no
+longer rides on v0.9's hardening and must bring its own: the installer's
+dependency inventory, the SBOM and licence reports, the soak tests, the desktop
+support matrix and the installation documentation all get repeated for the
+migrated desktop. A migrated desktop inheriting a v2 desktop's evidence would be
+claiming something nobody measured. `ROADMAP.md` records this under the
+post-v1.0 entry.
 
-**Boundaries.** **If v3 has not released when this item is reached, postpone it
-to post-v1.0** and record the decision here rather than hardening a release
-candidate on a beta. v1.0 then ships on Wails v2, which works and which the
-spike confirmed still works.
+**What it changes for the rest of this milestone.** I3 through I8 no longer wait
+on a framework swap and no longer describe a desktop that might be replaced
+underneath them. The native stack stays GTK3 and webkit2gtk-4.1, which is what
+ships.
 
-**Dependencies.** I1. A released Wails v3, or the decision to postpone.
+**Scope, unchanged and carried forward.** Move the shell from Wails v2 to v3:
+the eleven `window.go` call sites onto `@wailsio/runtime` or generated bindings,
+the veto proven to fail closed on the callback answer, and the native stack from
+GTK3/webkit2gtk-4.1 to GTK4/webkitgtk-6.0.
 
-**Working state.** The GUI builds, runs and passes its journeys on v3 with the
-veto proven to fail closed — or a recorded postponement and v2 untouched.
+**Dependencies.** A released Wails v3, which does not exist as of 2026-09-09.
 
-**Open decisions**
-
-- **Whether v3 has released — Blocking, unanswerable now.** It is checked when
-  this item is reached, not assumed either way.
+**Working state.** The decision recorded here and in `ROADMAP.md`, v2 untouched,
+and nothing downstream in this milestone waiting on it.
 
 ## I3. Promote the Ubuntu installer through clean native environments
 
@@ -139,7 +148,8 @@ source nor a development toolchain present.
 promote here and stay absent from release claims rather than shipping
 unexecuted build output.
 
-**Dependencies.** I2.
+**Dependencies.** I1. I2 is deferred, so this hardens the Wails v2 desktop --
+which is what ships.
 
 **Working state.** Each rehearsal executed in a clean environment with its
 result recorded, including the ones that must refuse.
@@ -202,7 +212,7 @@ draft flow.
 digest and least-privilege; a workflow that needs a secret to run is not added
 to a pull-request trigger.
 
-**Dependencies.** I2, I5.
+**Dependencies.** I5. I2 is deferred.
 
 **Working state.** Each artifact generated and independently verified, and the
 draft flow exercised without publishing.
@@ -220,7 +230,7 @@ policy; disaster-recovery drills. Freeze the exact desktop support matrix.
 result that was not observed to completion is reported as incomplete rather than
 extrapolated.
 
-**Dependencies.** I2, I3, I4.
+**Dependencies.** I3, I4. I2 is deferred.
 
 **Working state.** Soak runs completed with their durations recorded, drills
 executed, and a frozen matrix naming only what ran.
@@ -241,7 +251,7 @@ An ABI is only frozen at the edges somebody actually pushed on.
 **Boundaries.** A freeze is a candidate until 1.0 accepts it. Breaking changes
 after this item are recorded as breaking, not folded in quietly.
 
-**Dependencies.** I2, I6.
+**Dependencies.** I6. I2 is deferred.
 
 **Working state.** Each surface frozen with its compatibility test suite green,
 and each named ABI failure mode exercised.
@@ -271,6 +281,6 @@ This is an index only; each decision is owned and explained inside its item.
 |---|---|---|
 | Push `develop` to GitHub | I1 | **Blocking.** The owner authorizes the first external write |
 | Merge the `develop`-to-`main` pull request | I1 | **Blocking.** The owner authorizes the merge, after review; method is a merge commit, already decided |
-| Whether Wails v3 has released | I2 | **Blocking at the item.** Checked when reached; postponement to post-v1.0 is the recorded alternative |
+| Whether Wails v3 has released | I2 | **Taken 2026-09-09: it has not.** `wails/v3@latest` is `v3.0.0-beta.19`, so the migration is deferred to post-v1.0 and v1.0 ships on Wails v2 |
 | The profile-registry validation race | I4 | Non-blocking default: fix it; refusing with a reason is the alternative, leaving it as a test workaround is not |
 | Which platforms the frozen matrix claims | I7 | Non-blocking default: only what was executed here |

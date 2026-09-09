@@ -26,22 +26,25 @@
     {
       "id": "I2",
       "title": "Migrate the desktop shell to Wails v3, or record the postponement",
-      "state": "not-started",
+      "state": "deferred",
       "slices": [
         {
           "id": "I2-A",
           "statement": "The frontend's eleven window.go uses move onto @wailsio/runtime or generated bindings",
-          "state": "not-started"
+          "state": "blocked",
+          "blocked_on": "Wails v3 has no release; go list -m github.com/wailsapp/wails/v3@latest answers v3.0.0-beta.19 as of 2026-09-09. Deferred to post-v1.0; see ROADMAP.md"
         },
         {
           "id": "I2-B",
           "statement": "The v3 question dialog's callback answer makes the unsaved-work veto wait and fail closed",
-          "state": "not-started"
+          "state": "blocked",
+          "blocked_on": "Wails v3 has no release; go list -m github.com/wailsapp/wails/v3@latest answers v3.0.0-beta.19 as of 2026-09-09. Deferred to post-v1.0; see ROADMAP.md"
         },
         {
           "id": "I2-C",
           "statement": "The GUI builds and passes its journeys on GTK4/webkitgtk-6.0, or the postponement is recorded",
-          "state": "not-started"
+          "state": "blocked",
+          "blocked_on": "Wails v3 has no release; go list -m github.com/wailsapp/wails/v3@latest answers v3.0.0-beta.19 as of 2026-09-09. Deferred to post-v1.0; see ROADMAP.md"
         }
       ]
     },
