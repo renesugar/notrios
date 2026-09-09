@@ -554,11 +554,12 @@ at `/`, which is what the Pagefind `bundlePath` had assumed all along.
 
 **Open decisions**
 
-- **HTTPS enforcement — Blocking, owner's.** GitHub reports
-  `https_enforced: false` with an approved certificate for `notrios.com` and
-  `www.notrios.com`, so the site answers on plain HTTP. Turning it on is a
-  repository settings change, not a change in this repository, and it belongs to
-  the owner.
+- **HTTPS enforcement — Resolved by the owner, 2026-09-09.** It was off, with an
+  approved certificate for `notrios.com` and `www.notrios.com`, so the site
+  answered on plain HTTP. The owner enabled it: GitHub now reports
+  `https_enforced: true`, and `http://notrios.com/` returns a 301 to
+  `https://notrios.com/`. It was a repository settings change rather than a
+  change in this repository, which is why it was the owner's to make.
 
 ## Decisions register
 
