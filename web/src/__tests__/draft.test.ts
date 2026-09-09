@@ -26,16 +26,35 @@ describe('the stored draft', () => {
 
   it('reports failure instead of pretending, when the draft is too big or storage refuses', () => {
     expect(saveDraft({ documentID: null, title: 'T', body: 'x'.repeat(MAX_DRAFT_BYTES) })).toBe(false);
-    // Spy on the object the module actually calls. `saveDraft` uses the bare
-    // `localStorage` global, and `window.localStorage` is only guaranteed to be
-    // the same object in some environments: under Node 22 in CI it was not, so
-    // this patched something the module never touched, the real write succeeded,
-    // and the test asserted a refusal that had not happened. It passed locally
-    // on Node 26 for four milestones and failed the first time CI ran it.
-    vi.spyOn(localStorage, 'setItem').mockImplementation(() => {
-      throw new Error('QuotaExceededError');
+    // Replace the global binding rather than spying on the storage object.
+    //
+    // Spying does not survive the difference between environments, and the way
+    // it fails is silent. Under Node 22 `localStorage` is jsdom's `Storage`, a
+    // Proxy whose defineProperty trap *stores items*: assigning `setItem` on it
+    // writes an entry called "setItem" and leaves the real method in place, so
+    // the spy was never called and the write succeeded. Under Node 26 it is
+    // Node's own built-in `MemoryStorage`, which is not a jsdom `Storage` at
+    // all -- `localStorage instanceof Storage` is false -- so spying on
+    // `Storage.prototype` patches a prototype nothing here inherits from.
+    //
+    // An instance spy passes on 26 and silently no-ops on 22; a prototype spy
+    // does the reverse. Both leave a test that asserts a refusal which never
+    // happened. `saveDraft` reads the global at call time, so swapping the
+    // binding works wherever the test runs and cannot half-apply.
+    const original = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
+    Object.defineProperty(globalThis, 'localStorage', {
+      configurable: true,
+      value: {
+        setItem() {
+          throw new Error('QuotaExceededError');
+        },
+      },
     });
-    expect(saveDraft({ documentID: null, title: 'T', body: 'small' })).toBe(false);
+    try {
+      expect(saveDraft({ documentID: null, title: 'T', body: 'small' })).toBe(false);
+    } finally {
+      if (original) Object.defineProperty(globalThis, 'localStorage', original);
+    }
   });
 });
 
