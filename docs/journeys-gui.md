@@ -235,6 +235,155 @@ Each task below lists its steps, with a picture of every one.
   - The report names how many notes were written and where. A publication is not a backup: restoring from one is not a thing you can do, which is why the archive above exists.
 
     ![the-publication](images/journeys/publish-a-subset-the-publication.png)
+**See where a note came from** — Tell an imported note from one you wrote here, and find the rest of what came in with it.
+  - Open a note that arrived in an import. Nothing about the card says where it came from — that is what Note info is for.
+
+    ![open-an-imported-note](images/journeys/see-where-a-note-came-from-open-an-imported-note.png)
+  - Note info carries what the note is rather than what it says.
+
+    ![open-note-info](images/journeys/see-where-a-note-came-from-open-note-info.png)
+  - Collection is where this note came from. It is shown only when there is something to say: a note written in this library carries the default collection, and a row repeating that on every note would say nothing. The notes are filed in an ordinary notebook — the collection is provenance beside it, not a place they live.
+
+    ![read-the-collection](images/journeys/see-where-a-note-came-from-read-the-collection.png)
+**Attach a file to a note** — Put a file into the library and keep it with the note it belongs to.
+  - Open the note the file belongs with.
+
+    ![open-the-note](images/journeys/attach-a-file-open-the-note.png)
+  - Attachments are added from Note info, beside the rest of what the note is made of.
+
+    ![open-note-info](images/journeys/attach-a-file-open-note-info.png)
+  - Choose the file — this one is the Notrios icon, because a journey has to attach something real. It is copied into the library, so the note stops depending on where the file happened to live and a backup or a sync carries it along with everything else.
+
+    ![choose-a-file](images/journeys/attach-a-file-choose-a-file.png)
+  - The file is in the library and listed against the note — and a Markdown link to it has been written where your cursor was, which is why the note is now unsaved. The interface can place the link because it knows where you were typing; `notriosctl resources add` prints the `resource://` URI instead and never touches a body, because at a terminal nobody knows where the link belongs. The bytes are stored once and addressed by their content, so attaching the same file to a second note stores nothing twice.
+
+    ![see-it-attached](images/journeys/attach-a-file-see-it-attached.png)
+**Bring a note’s images into the library** — Find the images a note is loading from somebody else’s server, and see what Notrios is willing to copy in.
+  - Open a note that points at an image on the web.
+
+    ![open-the-note](images/journeys/bring-images-into-the-library-open-the-note.png)
+  - Note info lists what the note depends on, including anything it is loading from elsewhere.
+
+    ![open-note-info](images/journeys/bring-images-into-the-library-open-note-info.png)
+  - Every remote image is listed with what the policy decided about it and why. This is a scan, not a download: nothing has been fetched, and the decision is made from the address alone.
+
+    ![read-the-decisions](images/journeys/bring-images-into-the-library-read-the-decisions.png)
+  - Localize copies in only the images the policy allows, through the quarantine that hashes and sniffs each one, and rewrites the note to point at the local copies. A note that has been localized still renders when the other server is gone.
+
+    ![localize-the-allowed-ones](images/journeys/bring-images-into-the-library-localize-the-allowed-ones.png)
+**See what a note connects to** — Follow a note’s links without reading it, and find your way to what it points at.
+  - Open a note that links to others.
+
+    ![open-the-note](images/journeys/see-what-a-note-connects-to-open-the-note.png)
+  - Nearby notes lives in Note info, under everything else the note is made of.
+
+    ![open-note-info](images/journeys/see-what-a-note-connects-to-open-note-info.png)
+  - Notes are grouped by how far away they are: directly linked first, then anything reached through those. Hops widens the view — two hops shows what the neighbours point at.
+
+    ![read-the-neighbourhood](images/journeys/see-what-a-note-connects-to-read-the-neighbourhood.png)
+  - A neighbour opens like any other note. Nothing here is a separate graph screen; it is a way out of the note you are in.
+
+    ![follow-one](images/journeys/see-what-a-note-connects-to-follow-one.png)
+**Put a live query in a note** — Keep a list inside a note that fills itself in, instead of one you have to maintain.
+  - Open a note with a query block in it. In the editor it is an ordinary fenced code block: three backticks, `note-query`, and a `query:` line in the same language the search box takes.
+
+    ![open-the-note](images/journeys/put-a-live-query-in-a-note-open-the-note.png)
+  - In the preview the block is replaced by what the query matches right now. Nothing is stored in the note but the query, so the list is never out of date and never needs editing.
+
+    ![read-the-results](images/journeys/put-a-live-query-in-a-note-read-the-results.png)
+  - Each result opens the note it names. A block is a way into your notes rather than a report about them.
+
+    ![follow-a-result](images/journeys/put-a-live-query-in-a-note-follow-a-result.png)
+**Choose where synchronization happens** — Point this library at a folder both machines can reach, and start a synchronization.
+  - Everything about synchronization is behind one button: setup, pairing, the peers you trust, attachments, conflicts, backups and repairs.
+
+    ![open-the-sync-centre](images/journeys/choose-where-sync-happens-open-the-sync-centre.png)
+  - Setup is where a profile says how it reaches the other side.
+
+    ![open-setup](images/journeys/choose-where-sync-happens-open-setup.png)
+  - A shared directory is the simplest transport: a second drive, or a cloud folder mapped into this machine. Notrios writes its exchange into that folder and reads what the other library left there. The folder is a carrier, not a copy of your notes.
+
+    ![choose-a-shared-directory](images/journeys/choose-where-sync-happens-choose-a-shared-directory.png)
+  - The path is on the machine running this library. A browser cannot open a folder chooser, so the path is typed; the desktop application offers a chooser beside this field.
+
+    ![name-the-folder](images/journeys/choose-where-sync-happens-name-the-folder.png)
+  - Saving a transport does not enrol a peer and does not start a synchronization: it records where this profile will look, and takes effect when the profile restarts.
+
+    ![save-it](images/journeys/choose-where-sync-happens-save-it.png)
+  - The overview is where a synchronization is started and watched.
+
+    ![back-to-the-overview](images/journeys/choose-where-sync-happens-back-to-the-overview.png)
+  - Sync now queues the exchange as a job rather than blocking the window on it. What it sends is the operations this library has that the other one has not acknowledged; what it reads is the same from the other side.
+
+    ![start-one](images/journeys/choose-where-sync-happens-start-one.png)
+**Invite another device** — Issue a single-use code so a second library of yours can pair with this one.
+  - Everything about synchronization is behind one button: setup, pairing, the peers you trust, attachments, conflicts, backups and repairs.
+
+    ![open-the-sync-centre](images/journeys/invite-another-device-open-the-sync-centre.png)
+  - Peers is where trust between libraries is established and ended.
+
+    ![open-peers](images/journeys/invite-another-device-open-peers.png)
+  - The label is for you, not for the other machine: it is how this peer will be listed here afterwards.
+
+    ![label-it](images/journeys/invite-another-device-label-it.png)
+  - The code is single-use and expires in fifteen minutes. Creating one enrols nobody: it is spent from the other side, and only then do the two libraries learn each other’s keys.
+
+    ![create-a-code](images/journeys/invite-another-device-create-a-code.png)
+  - Read the code to the other device over a different channel from the address — a code and an address travelling together are worth exactly as much as each other to anybody who intercepts them.
+
+    ![carry-it-across](images/journeys/invite-another-device-carry-it-across.png)
+**See who is on the carrier, without trusting anybody** — Find out which replicas have left something in the shared folder, and confirm that looking is not the same as trusting.
+  - Everything about synchronization is behind one button: setup, pairing, the peers you trust, attachments, conflicts, backups and repairs.
+
+    ![open-the-sync-centre](images/journeys/look-for-peers-without-enrolling-one-open-the-sync-centre.png)
+  - Peers lists the libraries this one trusts. It starts empty, and it does not fill itself in.
+
+    ![open-peers](images/journeys/look-for-peers-without-enrolling-one-open-peers.png)
+  - No peers are enrolled. Pairing is the only thing that adds one, and it takes a code somebody carried across by hand.
+
+    ![read-the-empty-list](images/journeys/look-for-peers-without-enrolling-one-read-the-empty-list.png)
+  - Discovery reads what is in the shared folder and reports what it found. It enrols nobody — a replica that has written to the carrier is a candidate, not a peer, and becoming one is a decision you make.
+
+    ![scan-the-carrier](images/journeys/look-for-peers-without-enrolling-one-scan-the-carrier.png)
+**Make a backup only you can open** — Write an encrypted copy of this library that a password protects, and know what happens if you lose the password.
+  - Everything about synchronization is behind one button: setup, pairing, the peers you trust, attachments, conflicts, backups and repairs.
+
+    ![open-the-sync-centre](images/journeys/make-a-protected-backup-open-the-sync-centre.png)
+  - Backup and recovery is where a copy is made and where one is reviewed before it is restored.
+
+    ![open-backup](images/journeys/make-a-protected-backup-open-backup.png)
+  - The password wraps a fresh key for this backup. It is used and forgotten — it is not stored, not remembered, and not recoverable.
+
+    ![choose-a-password](images/journeys/make-a-protected-backup-choose-a-password.png)
+  - Twice, because there is no way back from a typo here: Notrios cannot open a backup whose password it does not have.
+
+    ![type-it-again](images/journeys/make-a-protected-backup-type-it-again.png)
+  - The backup is verified as it is written, then downloaded. Restoring one is a separate act with its own review — creating a backup never replaces anything.
+
+    ![write-it-out](images/journeys/make-a-protected-backup-write-it-out.png)
+**Watch a synchronization, and retry one that stopped** — See what synchronization is doing, and start again from where it left off.
+  - Everything about synchronization is behind one button: setup, pairing, the peers you trust, attachments, conflicts, backups and repairs.
+
+    ![open-the-sync-centre](images/journeys/watch-a-synchronization-job-open-the-sync-centre.png)
+  - Synchronization runs as jobs rather than as a window you have to keep open. The recent ones are listed with what each was doing and how it ended.
+
+    ![read-the-jobs](images/journeys/watch-a-synchronization-job-read-the-jobs.png)
+  - A job that failed or was cancelled can be started again. It resumes from its last verified checkpoint rather than from the beginning, so retrying a large transfer does not repeat the part that already arrived.
+
+    ![retry-one](images/journeys/watch-a-synchronization-job-retry-one.png)
+**See which library this window is showing** — Keep separate libraries on one machine and know which one you are looking at.
+  - Everything about synchronization is behind one button: setup, pairing, the peers you trust, attachments, conflicts, backups and repairs.
+
+    ![open-the-sync-centre](images/journeys/see-which-library-this-is-open-the-sync-centre.png)
+  - The header names the profile this window is showing, with the library and this replica’s identifiers beneath it. Two profiles are two databases and two addresses; nothing is shared between them.
+
+    ![read-the-identity](images/journeys/see-which-library-this-is-read-the-identity.png)
+  - Switching between profiles is on the Setup tab, above the transport.
+
+    ![open-setup](images/journeys/see-which-library-this-is-open-setup.png)
+  - Each profile is a separate local process at its own address, so choosing one opens it there. Making, registering and forgetting profiles is command-line work: `profile create` names a directory to keep a library in and `profile start` launches a process, and neither is something a web request should be able to ask for.
+
+    ![choose-a-profile](images/journeys/see-which-library-this-is-choose-a-profile.png)
 <!-- notrios:generated:user:the-journeys:end -->
 
 

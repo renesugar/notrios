@@ -46,7 +46,7 @@ What follows is what is left. Each item's own text below is the record of what
 happened, which is a different question.
 
 <!-- notrios:generated:plan:progress:begin -->
-**35 items: 27 complete, 2 in progress, 5 not started, 1 deferred.**
+**35 items: 28 complete, 1 in progress, 5 not started, 1 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -69,7 +69,7 @@ happened, which is a different question.
 | H10. Wails v3 migration spike | not-started | 0/2 | 2 |
 | H11. Android-emulator shared-core acceptance | not-started | 0/2 | 2 |
 | H12. Delayed GitHub native validation and develop-to-main pull request | not-started | 0/2 | 2 |
-| H15. Complete the journey catalogues, and give the GUI an inventory | in-progress | 8/9 | 1 |
+| H15. Complete the journey catalogues, and give the GUI an inventory | complete | 9/9 | — |
 | H16. Reconcile the collection model with what is actually stored | complete | 7/7 | — |
 | H17. Act on many notes at once, named by a query | complete | 2/2 | — |
 | H18. Make the features page usable, and generate the table under it | in-progress | 3/4 | 1 |
@@ -87,10 +87,6 @@ happened, which is a different question.
 | H29. Select more than one note in the interface | not-started | 0/3 | 3 |
 
 ### Started and not finished
-
-**H15. Complete the journey catalogues, and give the GUI an inventory**
-
-- `H15-G` Write GUI journeys for the twelve features that have an interface surface and none: collections, attachments, remote media, links, graph, query blocks, sync pairing, sync exchange, sync peers, sync recovery, jobs and profiles. Unblocked by H28; links is written, eleven remain — *in-progress*
 
 **H18. Make the features page usable, and generate the table under it**
 
@@ -2501,7 +2497,7 @@ as a reader, and the run that stopped the evaluation half. It is kept verbatim,
 and it is nine hundred lines that describe finished work -- which is why it is
 there and not here.
 
-## H15. Complete the journey catalogues, and give the GUI an inventory
+## H15. Complete the journey catalogues, and give the GUI an inventory — complete
 
 **Ordering.** After H14, which built the machinery this fills in. Independent of
 the installer chain. The GUI tagging work is a product change and can proceed on
@@ -3016,7 +3012,8 @@ interfaces. All eighteen uses now say "GUI", which is the term the product's own
 `docs/gui.md` uses.
 
 **Progress (2026-09-08).** H15-H and H15-I are done; H15-G is blocked on work
-that is not journey writing.
+that is not journey writing. **H15-G closed later the same day, after H28** --
+its outcome is at the end of this item.
 
 *Command-line journeys: sixteen features lacking one, down to six.* Ten were
 written and every one of them runs -- reading a note and what it is made of,
@@ -3062,9 +3059,10 @@ branch it was most likely to take. Fixed: the three answers are reported as
 `{"migrated": false, "reason": …}` when `--json` is set, and unchanged
 otherwise.
 
-*GUI journeys: blocked, and not on effort.* Of the twelve features with a GUI
-surface and no journey, **eleven have no `data-testid` anywhere in the H15
-control crawl.** The crawl pinned 59 controls and only 22 carry one, and the
+*GUI journeys: done in v0.8 H15-G, after H28 made the interface addressable.*
+The paragraph below is what the obstacle was; the outcome is recorded at the end
+of this item. Of the twelve features with a GUI surface and no journey,
+**eleven had no `data-testid` anywhere in the H15 control crawl.** The crawl pinned 59 controls and only 22 carry one, and the
 target surfaces -- collections, attachments, the graph, links, query blocks,
 jobs, profiles, and four sync tabs -- are almost entirely in the other 37. Only
 `remote-media` is addressable today, through `localize-button`.
@@ -3462,6 +3460,65 @@ true when H19 shipped `search`, and nothing announced the change. Two of the six
 entries on that list have now moved from boundary to built (`attachments` in
 H27, this one), which is worth saying plainly: an absent adapter acquires a
 justification, and the justification outlives the reason.
+
+**Outcome for H15-G (2026-09-08).** Done. **Every capability the interface
+offers now has an interface journey**, and the backlog that tracked them is gone
+because there is nothing left to track: the ratchet became a rule. A capability
+that claims a `gui` surface and has no journey now fails
+`TestEveryGUIFeatureHasAJourney`, and the honest way out is to stop claiming the
+surface rather than to raise a number.
+
+Eleven journeys, captured rather than written: where a note came from, attaching
+a file, bringing remote images in, what a note connects to, a live query block,
+choosing where synchronization happens, inviting another device, scanning the
+carrier without enrolling anyone, making a password-protected backup, watching
+and retrying a job, and seeing which library a window is showing. Twenty-eight
+journeys and 102 screenshots in the catalogue now.
+
+**Three things the capture found that writing would not have.**
+
+*The interface writes the attachment link and the command line does not.*
+Attaching a file in the note inspector inserts `![name](resource://…)` at the
+cursor and leaves the note unsaved. H27 decided the opposite for the command
+line, and was right: at a terminal nobody knows where the link belongs, so
+`resources add` prints the URI and never touches a body. The interface knows
+where you were typing. The journey says both, because a reader who has read the
+command-line page will otherwise think one of them is wrong.
+
+*Two journeys photographed the fold.* The runner waits for an element to be
+"visible", which means attached and not hidden -- not that a reader could see
+it. Two steps pointed at controls below the fold and produced pictures
+byte-identical to other steps, with the marker drawn outside the viewport. The
+duplicate-image check caught both, which is exactly what it was added for, and
+the runner now scrolls a target into view before measuring it.
+
+*A step can race the thing it points at.* The query-block step waited for the
+block, and the block was replaced the moment its results arrived, so the element
+it had measured was gone. It points at `[data-note-query-state="ok"]` now -- the
+block after it has settled -- which is a locator that cannot match too early.
+
+**Two harness capabilities were needed and are now general.** A step can attach
+a file (`attach`, with a repository-relative path, refused outside the tree) and
+choose from a select (`choose`); and a step's typed value may name `{carrier}`,
+resolved by the runner the way the command-line catalogue resolves `{db}`, so
+the documentation does not carry one machine's temporary directory.
+
+**On the pairing screenshot.** `invite-another-device` photographs a real
+single-use code. It is spent from a library that no longer exists -- the capture
+runs against a temporary directory that is deleted when the test ends -- it
+expires in fifteen minutes, and a reader needs to see what a code looks like to
+know what they are carrying across. Recorded here rather than left for somebody
+to find and wonder about.
+
+**And the screenshot churn from H28 is mostly fixed, not entirely.** The
+fixtures are now written a second apart, so the note order in every list is
+stable between runs; previously seven notes shared a timestamp and sorted by a
+random identifier. What remains is rendering rather than content: Chromium's
+spellcheck underlines still appear in some runs despite being turned off at the
+browser, and text antialiasing varies by a few pixels. Imported notes turn out
+to have deterministic identifiers derived from their source, so an inspector
+screenshot of one is stable; a note created here shows a random id and is not.
+Anyone wanting a fully reproducible capture should seed through an import.
 
 ## H16. Reconcile the collection model with what is actually stored — complete
 

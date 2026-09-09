@@ -184,7 +184,7 @@
     {
       "id": "H15",
       "title": "Complete the journey catalogues, and give the GUI an inventory",
-      "state": "in-progress",
+      "state": "complete",
       "slices": [
         {
           "id": "H15-A",
@@ -224,8 +224,9 @@
         },
         {
           "id": "H15-G",
-          "statement": "Write GUI journeys for the twelve features that have an interface surface and none: collections, attachments, remote media, links, graph, query blocks, sync pairing, sync exchange, sync peers, sync recovery, jobs and profiles. Unblocked by H28; links is written, eleven remain",
-          "state": "in-progress"
+          "statement": "Write GUI journeys for the twelve features that have an interface surface and none: collections, attachments, remote media, links, graph, query blocks, sync pairing, sync exchange, sync peers, sync recovery, jobs and profiles",
+          "state": "done",
+          "evidence": "test:TestEveryGUIFeatureHasAJourney"
         },
         {
           "id": "H15-H",

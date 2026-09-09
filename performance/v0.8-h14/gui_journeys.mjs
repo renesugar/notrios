@@ -31,6 +31,17 @@ const imageDir = process.env.NOTRIOS_GUI_IMAGE_DIR || path.join(root, 'docs/imag
 const manifestPath = process.env.NOTRIOS_GUI_MANIFEST || path.join(root, 'docs/images/journeys/MANIFEST.json');
 const chromePath = process.env.CHROME_PATH || '/usr/bin/google-chrome';
 
+// The sandbox paths a step may type. A journey that says "the shared folder"
+// must not carry one machine's temporary directory in the documentation, and a
+// capture has to type a real one, so the catalogue names {carrier} and the
+// runner is told what it is. Same arrangement the command-line journeys use for
+// {db} and {sandbox}.
+const values = { carrier: process.env.NOTRIOS_GUI_CARRIER ?? '' };
+function substitute(text) {
+  return Object.entries(values).reduce(
+    (result, [name, value]) => result.replaceAll(`{${name}}`, value), text ?? '');
+}
+
 // resolve turns a catalogue locator into a Playwright one. Only these three
 // kinds are allowed: a role and an accessible name, a test id, or a CSS
 // selector. Anything looser -- an nth-child path, a coordinate -- would be a
@@ -40,6 +51,23 @@ function resolve(page, locator) {
   if (locator.testid) return page.getByTestId(locator.testid);
   if (locator.css) return page.locator(locator.css);
   throw new Error(`step locator names no role, testid or css: ${JSON.stringify(locator)}`);
+}
+
+// silenceSpellcheck turns the browser's own red underlines off before a shot.
+//
+// They are not part of the interface: Chromium paints them asynchronously, so
+// the same note photographed twice differs by whichever squiggles had rendered
+// yet. That put twenty-six of fifty-eight images in every capture diff while
+// showing nothing about Notrios, and a picture diff that cannot mean anything
+// defeats the manifest that exists to make a changed picture a signal.
+//
+// Turned off here rather than in the interface. A person writing notes wants
+// spellcheck; only the camera does not.
+function silenceSpellcheck() {
+  for (const element of document.querySelectorAll('textarea, input, [contenteditable]')) {
+    element.setAttribute('spellcheck', 'false');
+    element.spellcheck = false;
+  }
 }
 
 // drawMarker is a real function rather than a string. Passing a string here
@@ -103,7 +131,29 @@ function drawMarker({ box, pointing }) {
 
 const results = [];
 const manifest = [];
-const browser = await chromium.launch({ headless: true, executablePath: chromePath });
+// Rendering flags, not behaviour flags. Subpixel text antialiasing is not
+// deterministic between runs: two captures of an unchanged interface differed
+// by ten pixels along the edges of two glyphs, which is enough to rewrite an
+// image and put it in a diff that then says nothing. Grayscale antialiasing and
+// a fixed colour profile make the same page produce the same bytes.
+const browser = await chromium.launch({
+  headless: true,
+  executablePath: chromePath,
+  args: [
+    '--font-render-hinting=none',
+    '--disable-lcd-text',
+    '--disable-font-subpixel-positioning',
+    '--force-color-profile=srgb',
+    // Chromium's spellchecker paints its red underlines asynchronously, and
+    // whether they had appeared before the shot was the single largest source
+    // of pixel churn: 876 pixels under one line of a note body, present in one
+    // run and absent in the next. Setting spellcheck=false on the document at
+    // init did not settle it -- the markers are the service's, not the
+    // element's -- so the service is turned off at the browser.
+    '--disable-spell-checking',
+    '--disable-features=SpellCheckService,Translate',
+  ],
+});
 try {
   for (const journey of catalogue.journeys) {
     // A desktop journey is not this runner's to perform, and skipping it is
@@ -120,6 +170,16 @@ try {
       viewport: { width: catalogue.viewport.width, height: catalogue.viewport.height },
       deviceScaleFactor: 1,
     });
+    // Before anything renders, rather than after. Turning spellcheck off on
+    // elements that already exist leaves Chromium's markers painted until
+    // something else forces a relayout, so the same page photographed twice
+    // differed by whichever squiggles had been drawn yet -- 876 pixels along
+    // one line of a note body, in a diff that otherwise said nothing. Set on
+    // the root at init, every element inherits it at creation and no marker is
+    // ever computed.
+    await context.addInitScript(() => {
+      document.documentElement.spellcheck = false;
+    });
     const page = await context.newPage();
     await page.goto(baseURL, { waitUntil: 'domcontentloaded' });
     await page.locator('main.app-shell').waitFor();
@@ -130,10 +190,25 @@ try {
         // Waiting here is what makes a missing element a failure rather than a
         // screenshot of whatever happened to be on screen.
         await target.waitFor({ state: 'visible', timeout: 10000 });
+        // Brought into view before it is measured. A screenshot is of the
+        // viewport, so a control below the fold was photographed as whatever
+        // happened to be on screen with the marker drawn outside it -- two
+        // journeys produced pictures byte-identical to other steps, which the
+        // duplicate check caught and which is what it is for. Visible to
+        // Playwright means attached and not hidden; it does not mean a reader
+        // could see it.
+        await target.scrollIntoViewIfNeeded();
         const box = await target.boundingBox();
         if (!box) throw new Error(`${journey.id}/${step.id}: the element has no box to point at`);
 
-        await page.evaluate(drawMarker, { box, pointing: step.action === 'click' || step.action === 'fill' });
+        await page.evaluate(silenceSpellcheck);
+        // Repainting without the underlines is not instant, and a screenshot
+        // taken during it catches half of them -- which is the same flake in a
+        // smaller window.
+        await page.waitForTimeout(150);
+        await page.evaluate(drawMarker, {
+          box, pointing: step.action !== 'screenshot_only',
+        });
         const file = `${journey.id}-${step.id}.png`;
         const absolute = path.join(imageDir, file);
         await page.screenshot({ path: absolute, fullPage: false });
@@ -159,7 +234,20 @@ try {
         // dialog is accepted.
         if (step.confirm) page.once('dialog', (dialog) => void dialog.accept());
         if (step.action === 'click') await target.click();
-        else if (step.action === 'fill') await target.fill(step.value ?? '');
+        else if (step.action === 'fill') await target.fill(substitute(step.value));
+        else if (step.action === 'choose') await target.selectOption(step.value ?? '');
+        else if (step.action === 'attach') {
+          // A path relative to the repository, resolved here rather than in the
+          // catalogue: a journey says which file it attaches, and where that
+          // file lives on the machine running the capture is the runner's
+          // business. Refused outside the tree, because a catalogue entry is a
+          // documentation file and should not be able to read /etc.
+          const file = path.resolve(root, step.value ?? '');
+          if (!file.startsWith(root + path.sep)) {
+            throw new Error(`${journey.id}/${step.id}: attaches a file outside the repository`);
+          }
+          await target.setInputFiles(file);
+        }
       }
 
       const post = journey.postcondition;

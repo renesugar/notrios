@@ -166,8 +166,53 @@ func TestEveryGUIJourneyNamesARealFeature(t *testing.T) {
 	}
 }
 
+// TestEveryGUIFeatureHasAJourney is the invariant H15-G leaves behind.
+//
+// It was a backlog until v0.8 H15-G: twelve capabilities the interface offered
+// and nobody had been shown how to use, tracked by a ratchet like the
+// command-line one above. The backlog is empty, so it stops being a number that
+// may not grow and becomes a rule -- a capability the interface can perform and
+// nobody has documented is now a failure rather than an entry on a list.
+//
+// The way out, for a surface that genuinely should not have a journey, is to
+// stop claiming it in FEATURES.json. That is the honest lever: this test
+// compares what a capability says it offers against what has been demonstrated,
+// so the two can only disagree deliberately.
+func TestEveryGUIFeatureHasAJourney(t *testing.T) {
+	root := filepath.Join("..", "..")
+	registry, err := docfeatures.Load(filepath.Join(root, "docs", "docfeatures", "FEATURES.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	catalogue, err := docjourneys.LoadGUI(filepath.Join(root, "docs", "docjourneys", "GUI_JOURNEYS.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	covered := map[string]bool{}
+	for _, journey := range catalogue.Journeys {
+		covered[journey.Feature] = true
+	}
+	uncovered := []string{}
+	for _, feature := range registry.Features {
+		if len(feature.GUI) > 0 && !covered[feature.ID] {
+			uncovered = append(uncovered, feature.ID)
+		}
+	}
+	sort.Strings(uncovered)
+	if len(uncovered) > 0 {
+		t.Errorf("these capabilities claim an interface surface and have no interface journey: %v.\n"+
+			"Add one to docs/docjourneys/GUI_JOURNEYS.json and capture it with "+
+			"NOTRIOS_GUI_JOURNEYS=1 go test ./cmd/notriosctl -run TestGUIJourneyCapture", uncovered)
+	}
+}
+
 // TestTaggingGainsAGUIJourneyWhenTheInterfaceCanTag is a standing instruction
 // rather than a note to remember.
+//
+// It is kept although the test above now subsumes it. That one asks whether a
+// claimed surface has a journey; this one asks whether tagging has *claimed* a
+// surface yet, which is a question about the product rather than about the
+// catalogue, and it was written before the interface could tag at all.
 //
 // The interface cannot add or remove a tag today, so there is no interface
 // journey for it and there should not be one -- a journey for something the

@@ -346,16 +346,8 @@ Each capability below is offered on some surfaces and not others.
 - Templates and tasks — command line only. A template is an ordinary note carrying a note-template block, and a task is a checkbox line in a note tagged `task` or `todo`; neither is a table, and both are read back from the Markdown. So nothing creates a task -- writing `- [ ] chase the permit` into a note is how one comes to exist, which `notes create` already does -- and the command line covers the other half: asking what remains, and instantiating a template, which is the repeatable version of the same workflow. A missing placeholder is refused rather than left blank, so a template that gains a field fails the scripts that do not know about it. The tag is required because a checkbox is ordinary Markdown and appears in quoted examples; `--untagged` asks for those too. No GUI journey yet.
 - Move a pre-0.8 library into place — command line only. Command line only, and genuinely so: it relocates the directories the running program uses, which is not something the program can sensibly do to itself while serving them.
 - Live query blocks inside a note — GUI only. No command line, and that is the line rather than a gap: a query block is a rendering inside a note -- the note carries a fenced query and the interface shows what it matches in place. At a terminal the same question is `notriosctl search`, and formatting the answer is a template tool's job. A command that ran a block's query would be a second way to run a query.
-- See and end trust between replicas — both surfaces, and neither journey is written yet
-- Recover a replica and resolve conflicts — both surfaces, and neither journey is written yet
-- Attach and manage files — both, but only the command-line journey is written
-- Group libraries into collections — both, but only the command-line journey is written
-- See the shape of the link graph — both, but only the command-line journey is written
-- Watch and steer long-running work — both, but only the command-line journey is written
-- Keep separate libraries — both, but only the command-line journey is written
-- Bring remote images into the library — both, but only the command-line journey is written
-- Synchronize with a replica — both, but only the command-line journey is written
-- Pair two of your own libraries — both, but only the command-line journey is written
+- See and end trust between replicas — both, but only the GUI journey is written
+- Recover a replica and resolve conflicts — both, but only the GUI journey is written
 <!-- notrios:generated:user:where-the-surfaces-disagree:end -->
 
 This list is computed, not written. It compares what each capability claims

@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"testing"
+	"time"
 )
 
 // TestGUIJourneyCapture drives the interface and photographs each step.
@@ -43,11 +44,28 @@ func TestGUIJourneyCapture(t *testing.T) {
 	}
 	seedJourneyFixtures(t, cli, replica)
 	address := unusedLoopbackAddress(t)
-	startDaemon(t, daemon, g18eConfig(t, replica, address, "", true, webDir), address)
+	config := g18eConfig(t, replica, address, "", true, webDir)
+	// The remote-media journey photographs a policy decision, so the domain its
+	// fixture points at has to be one the policy allows: a blocked or reviewed
+	// decision renders the list without the button the journey presses towards.
+	// Nothing is fetched by the scan and nothing is fetched by the capture.
+	allowRemoteMediaDomain(t, config, "images.example.org")
+	startDaemon(t, daemon, config, address)
+	// Jobs exist only once something has made one, and every job control is
+	// gated on state: Retry renders on a job that failed or was cancelled and
+	// nowhere else. This is the crawl's seeding, reused rather than reinvented,
+	// and it leaves the carrier replaced by a file on purpose -- which is why
+	// the directory is put back below, before any journey asks for a sync.
+	seedJobRecords(t, cli, replica, "http://"+address)
+	restoreSyncCarrier(t, replica)
 
 	runner := exec.Command("node", filepath.Join(repoRoot, "performance", "v0.8-h14", "gui_journeys.mjs"))
 	runner.Dir = repoRoot
-	runner.Env = append(os.Environ(), "NOTRIOS_GUI_URL=http://"+address)
+	runner.Env = append(os.Environ(), "NOTRIOS_GUI_URL=http://"+address,
+		// The folder a sync journey types into the transport field. It is this
+		// run's disposable carrier: a catalogue that carried one machine's
+		// temporary directory would be documenting the harness.
+		"NOTRIOS_GUI_CARRIER="+filepath.Join(filepath.Dir(replica.db), "sync-carrier"))
 	output, err := runner.CombinedOutput()
 	if err != nil {
 		t.Fatalf("GUI journey capture failed: %v\n%s", err, output)
@@ -69,6 +87,23 @@ func TestGUIJourneyCapture(t *testing.T) {
 func seedJourneyFixtures(t *testing.T, cli string, replica *syncReplica) {
 	t.Helper()
 	create := func(title, body string) string {
+		// A second between notes, which buys the only thing that makes a
+		// screenshot diff readable.
+		//
+		// Notes are listed by `updated_at DESC, id DESC`, `CURRENT_TIMESTAMP`
+		// has one-second resolution, and document identifiers are random. Seven
+		// notes written inside one second therefore list in an order that
+		// changes between runs, and capturing a single new journey rewrote
+		// thirty-four existing screenshots that showed nothing new -- the same
+		// notes in a different order, one of them scrolled out of frame. An
+		// image diff that cannot mean anything is worse than no image diff,
+		// because the manifest exists to make a changed picture a signal.
+		//
+		// Sleeping is the honest fix here rather than sorting by identifier:
+		// the order these notes appear in is the product's, and the harness has
+		// no business changing it to make its pictures stable. What it can do
+		// is stop writing them all in the same second.
+		time.Sleep(1100 * time.Millisecond)
 		result := runCLI(t, cli, "notes", "create", "--db", replica.db, "--asset-store", replica.assets,
 			"--title", title, "--body", body)
 		if result.exitCode != 0 {
@@ -115,5 +150,68 @@ func seedJourneyFixtures(t *testing.T, cli string, replica *syncReplica) {
 	if deleted := runCLI(t, cli, "notes", "delete", "--db", replica.db, "--asset-store", replica.assets,
 		"--document", recipe); deleted.exitCode != 0 {
 		t.Fatalf("notes delete exited %d: %s", deleted.exitCode, deleted.stderr)
+	}
+
+	// A note pointing at an image on somebody else's server, so the policy scan
+	// has something to decide about. The domain is one the config allows; the
+	// scan is server-side and downloads nothing, and neither does the capture.
+	create("Heron drawings", "![heron](https://images.example.org/heron.png)\n")
+
+	// A note with a live query in it. The block's `query:` line is the same
+	// language the search box takes, and `field/dusk` is a tag one of the notes
+	// above carries, so the block renders a result rather than an empty state --
+	// which is the difference between photographing the feature and
+	// photographing its absence.
+	create("What I still owe the survey",
+		"Everything tagged for dusk work:\n\n```note-query\nquery: tag:field/dusk\nfields: notebook, updated\n```\n")
+
+	// Two notes and a link between them, for the graph. A graph journey against
+	// a note that links to nothing photographs "Nothing links to or from this
+	// note", which is true and is not the feature.
+	pool := create("Marsh survey, north pool", "Four teal, one snipe.\n")
+	create("Marsh survey, index",
+		"Where each count is written up.\n\n[North pool](document://default/documents/"+pool+")\n")
+
+	// A note of its own to attach a file to, because attaching changes the note
+	// and every other journey here has a note nothing else touches for exactly
+	// that reason.
+	create("Nest box plans", "The drawings live with this note.\n")
+
+	// An import that names a collection, which is the only way a note comes to
+	// carry one: nothing creates a collection as an act of its own. The
+	// inspector shows the row only when the collection is not `default`, so a
+	// note written here would photograph the feature's absence.
+	source := t.TempDir()
+	for name, body := range map[string]string{
+		"folder.md": "Ringing records\n\nid: ringing-folder\ntype_: 2\n",
+		"note.md": "Ringing record, 12 May\n\nTwo blackcaps, one chiffchaff.\n\n" +
+			"id: ringing-note\nparent_id: ringing-folder\ntype_: 1\n",
+	} {
+		if err := os.WriteFile(filepath.Join(source, name), []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if imported := runCLI(t, cli, "import", "joplin-raw", "--db", replica.db,
+		"--asset-store", replica.assets, "--collection", "ringing-archive", source); imported.exitCode != 0 {
+		t.Fatalf("import joplin-raw exited %d: %s", imported.exitCode, imported.stderr)
+	}
+}
+
+// restoreSyncCarrier puts back the carrier directory the job seeding replaces.
+//
+// seedJobRecords parks a sync job by turning the carrier into a file, which is
+// what a person meets when a removable drive is not mounted. That is the right
+// way to seed a job in a known state and the wrong state to leave behind: the
+// sync journeys that follow ask the interface to save a transport, discover on
+// the carrier and start a sync, and every one of them would photograph an error
+// about a directory that is a file.
+func restoreSyncCarrier(t *testing.T, replica *syncReplica) {
+	t.Helper()
+	carrier := filepath.Join(filepath.Dir(replica.db), "sync-carrier")
+	if err := os.RemoveAll(carrier); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(carrier, 0o755); err != nil {
+		t.Fatal(err)
 	}
 }

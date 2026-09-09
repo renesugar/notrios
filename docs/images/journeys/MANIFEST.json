@@ -6,13 +6,85 @@
   },
   "images": [
     {
+      "journey": "attach-a-file",
+      "step": "choose-a-file",
+      "image": "images/journeys/attach-a-file-choose-a-file.png",
+      "locator": {
+        "testid": "attachment-upload"
+      },
+      "sha256": "d73c06231c28c04b2ab60abbce831765726cb087ee6ad59905922106ddc703fd"
+    },
+    {
+      "journey": "attach-a-file",
+      "step": "open-note-info",
+      "image": "images/journeys/attach-a-file-open-note-info.png",
+      "locator": {
+        "testid": "note-inspector-toggle"
+      },
+      "sha256": "3d7445c9999a95e9d1dc33fc20b2a9671e2a48a816c1b7353e82786620c3b893"
+    },
+    {
+      "journey": "attach-a-file",
+      "step": "open-the-note",
+      "image": "images/journeys/attach-a-file-open-the-note.png",
+      "locator": {
+        "css": ".result-card:has-text(\"Nest box plans\")"
+      },
+      "sha256": "c84cae3354b35590926836b8580cd6a8709cebcbdb3f15bc0ac90fcb5b2015db"
+    },
+    {
+      "journey": "attach-a-file",
+      "step": "see-it-attached",
+      "image": "images/journeys/attach-a-file-see-it-attached.png",
+      "locator": {
+        "testid": "note-inspector"
+      },
+      "sha256": "f05e0c2a4ff7fd8f8b284650cc328098a0c294a5542bbeb4a202ea669ae5a30f"
+    },
+    {
+      "journey": "bring-images-into-the-library",
+      "step": "localize-the-allowed-ones",
+      "image": "images/journeys/bring-images-into-the-library-localize-the-allowed-ones.png",
+      "locator": {
+        "testid": "localize-button"
+      },
+      "sha256": "c3a259d68d0822ca34efac90f5b7a4b6ab3a64aec02776661d44884369e96544"
+    },
+    {
+      "journey": "bring-images-into-the-library",
+      "step": "open-note-info",
+      "image": "images/journeys/bring-images-into-the-library-open-note-info.png",
+      "locator": {
+        "testid": "note-inspector-toggle"
+      },
+      "sha256": "0f8aedc7cd1208e3df9dc0a331baf7a27956e81de549d9574cab3c06d3fad42e"
+    },
+    {
+      "journey": "bring-images-into-the-library",
+      "step": "open-the-note",
+      "image": "images/journeys/bring-images-into-the-library-open-the-note.png",
+      "locator": {
+        "css": ".result-card:has-text(\"Heron drawings\")"
+      },
+      "sha256": "5d297327adbc073341b120d328f9603f56215e2e716864943df3e327157e8c2f"
+    },
+    {
+      "journey": "bring-images-into-the-library",
+      "step": "read-the-decisions",
+      "image": "images/journeys/bring-images-into-the-library-read-the-decisions.png",
+      "locator": {
+        "testid": "remote-media-list"
+      },
+      "sha256": "c78925c47b15f52fb7f21b959e1b9049677e24a1c96e9f5fe384b801996f4091"
+    },
+    {
       "journey": "check-library-health",
       "step": "open-health",
       "image": "images/journeys/check-library-health-open-health.png",
       "locator": {
         "testid": "health-header-button"
       },
-      "sha256": "985198cdbd3798d503154f39baa61e3867117e7b7879e2c9a8e4acc372a87705"
+      "sha256": "aa3b5b0f7abed122b28f42c4246887ec2b56d379c674c9da5e78f34e5849aeb2"
     },
     {
       "journey": "check-library-health",
@@ -21,7 +93,7 @@
       "locator": {
         "testid": "library-health-repairs"
       },
-      "sha256": "6dc43667c70d5873d681d9e238f03fdb361a0b184a9873b7d3ba4d61bd1395b0"
+      "sha256": "9387de07a8458d7d73c0ee53e623495d00119ec5cd7595afa3f53a0b93dea30a"
     },
     {
       "journey": "check-library-health",
@@ -30,7 +102,7 @@
       "locator": {
         "testid": "library-health-gc"
       },
-      "sha256": "3e5fea15487dcc5acfa687cfa265be5424cd65418e221f1481542acb7301b728"
+      "sha256": "669cfebc4a58cbb5369eb2a633ee8f333ca7140967c19e866623ecb05c82b843"
     },
     {
       "journey": "check-library-health",
@@ -39,7 +111,7 @@
       "locator": {
         "testid": "library-health-lint"
       },
-      "sha256": "a188ca722fdf8020901e5eb2ed3ee5d645331f5ddb51c9d3841e813c22dff4e6"
+      "sha256": "f7b7d805a2467345eb0685ce5643ff0ac21e0180b1c6b18ac02ebdb1c4bdb98c"
     },
     {
       "journey": "choose-a-notebook",
@@ -48,7 +120,7 @@
       "locator": {
         "testid": "new-note-button"
       },
-      "sha256": "2ec3357dc49a1a66b824665228610655639c430065b6e49eaa3b4d4379bb5400"
+      "sha256": "12d6cf30c1a84a481f8ece87766e2fe85f62dcb9f9a9d3b2953b80c72831c6f4"
     },
     {
       "journey": "choose-a-notebook",
@@ -57,7 +129,70 @@
       "locator": {
         "testid": "notebook-picker-trigger"
       },
-      "sha256": "eada9ac8bb005c0fcdc34d80cdf61d271a57a40e7af1e3aea493877958f9a780"
+      "sha256": "97c4882add8f0e0f3b1b5041f5661c313b290ff302f01655ebc4e4db05ec770d"
+    },
+    {
+      "journey": "choose-where-sync-happens",
+      "step": "back-to-the-overview",
+      "image": "images/journeys/choose-where-sync-happens-back-to-the-overview.png",
+      "locator": {
+        "testid": "sync-tab-overview"
+      },
+      "sha256": "2204c46a0efec9c454d05e0d855e8750c54f347cbfd1cf55e25fe5b033e70567"
+    },
+    {
+      "journey": "choose-where-sync-happens",
+      "step": "choose-a-shared-directory",
+      "image": "images/journeys/choose-where-sync-happens-choose-a-shared-directory.png",
+      "locator": {
+        "testid": "sync-target-directory"
+      },
+      "sha256": "e0b0e7a5894744b7f47b17433e9083e7f402d3d4b4f350ccef0d89e389d886ed"
+    },
+    {
+      "journey": "choose-where-sync-happens",
+      "step": "name-the-folder",
+      "image": "images/journeys/choose-where-sync-happens-name-the-folder.png",
+      "locator": {
+        "testid": "sync-directory"
+      },
+      "sha256": "bc2bc50e809898e82ee82d0791faf3e9da35e375e7ac6991e30ac654be96d352"
+    },
+    {
+      "journey": "choose-where-sync-happens",
+      "step": "open-setup",
+      "image": "images/journeys/choose-where-sync-happens-open-setup.png",
+      "locator": {
+        "testid": "sync-tab-setup"
+      },
+      "sha256": "d90e07f0c8cba70ac8858359eabcafdc6ac7564feaa1e6e11d8cf54ad55ce894"
+    },
+    {
+      "journey": "choose-where-sync-happens",
+      "step": "open-the-sync-centre",
+      "image": "images/journeys/choose-where-sync-happens-open-the-sync-centre.png",
+      "locator": {
+        "testid": "sync-header-button"
+      },
+      "sha256": "fa900d66ee12bcf2a127e9bb8d3db0d991a939a9ea0b326826320b8ef925201e"
+    },
+    {
+      "journey": "choose-where-sync-happens",
+      "step": "save-it",
+      "image": "images/journeys/choose-where-sync-happens-save-it.png",
+      "locator": {
+        "testid": "sync-save-transport"
+      },
+      "sha256": "e4408897aab1fa1ad4f799176045969102a67297f174f8eb4bdac9d24a680286"
+    },
+    {
+      "journey": "choose-where-sync-happens",
+      "step": "start-one",
+      "image": "images/journeys/choose-where-sync-happens-start-one.png",
+      "locator": {
+        "testid": "sync-now"
+      },
+      "sha256": "b96048dd29b2bea80ddcf6c44a8d7ea07473d5bb4c59d76cbe19e771b9b2793e"
     },
     {
       "journey": "delete-a-note",
@@ -66,7 +201,7 @@
       "locator": {
         "testid": "delete-button"
       },
-      "sha256": "2e2f47148c620fa77dc77a5924048d6d45b3e6700f7b127318199c72c2ebc1e8"
+      "sha256": "e3056cb7b56342b9cfa209d40ab090106a90ee3f8b970b6dd2e935cbe1f5ba1a"
     },
     {
       "journey": "delete-a-note",
@@ -75,7 +210,7 @@
       "locator": {
         "testid": "sidebar-row-snb_trash"
       },
-      "sha256": "706c369236273fb0ca479160961ead4b584ecc70c642a3c2a1ea839183e22b81"
+      "sha256": "19503e23c7e6694730435aa4a3dc12a4f08136fc2e4b9cd2f4a7e4e712c1fa7b"
     },
     {
       "journey": "delete-a-note",
@@ -84,7 +219,7 @@
       "locator": {
         "testid": "sidebar-row-snb_all_notes"
       },
-      "sha256": "e97a132530822d706f533dc5eb80d02760b0cbd0f6329a73c9521801adccaea1"
+      "sha256": "29f39c34a7e586f8f342ce1916cb6bd11d9bce3af561d973bc0519e2fe0bea19"
     },
     {
       "journey": "delete-a-note",
@@ -93,7 +228,7 @@
       "locator": {
         "css": ".result-card:has-text(\"Old shopping list\")"
       },
-      "sha256": "19e4b39d147764b985be94d2a52738fb4d1921e269f88f541f0fb3913c10caa5"
+      "sha256": "a9f46bc4e88050fe8d759ad0e1bbcc39cc744761fb986d4193544c8e65d9ddd2"
     },
     {
       "journey": "export-this-library",
@@ -129,7 +264,7 @@
       "locator": {
         "testid": "sidebar-row-nb_help"
       },
-      "sha256": "17ece263c0af9e8ae6f292426e89a9113e4b6485140f7182919ab3b459044595"
+      "sha256": "c968475f995f0366c095ee7dcd46ebb13e637c651196761e69cbf01a0995eb06"
     },
     {
       "journey": "import-from-joplin-in-the-app",
@@ -165,7 +300,7 @@
       "locator": {
         "testid": "link-suggestion"
       },
-      "sha256": "c7684643e56fc7846b7e6f3f85da5bcacc34fb1a19b1e9fd9e226108acd225a0"
+      "sha256": "2b4b1b7fb8d251bf49e9326e9f8112f800dc3cc567f8a609fa613f5928b9a113"
     },
     {
       "journey": "insert-a-link",
@@ -174,7 +309,7 @@
       "locator": {
         "testid": "link-picker-input"
       },
-      "sha256": "704404149c4f8956f4f020b9b7a6912571b40e0f8e73af45316d389903f207b8"
+      "sha256": "38ca3f49dc8bbce5de50b763f61905915e952ae472e74604d96cbf779695ba6a"
     },
     {
       "journey": "insert-a-link",
@@ -183,7 +318,7 @@
       "locator": {
         "testid": "note-inspector-toggle"
       },
-      "sha256": "e941a4dc02386ba62ae9097e087825165cdd469ee23be6ef995a51aafba590e0"
+      "sha256": "bdefc0dd0a6df541307e1da7eb30074ae355d396ba82bdeb6d6de69a3f98d72f"
     },
     {
       "journey": "insert-a-link",
@@ -192,7 +327,7 @@
       "locator": {
         "css": ".result-card:has-text(\"Reed beds at dusk\")"
       },
-      "sha256": "c7340f2a7057b3169e931c1400146f0a32757a9ae10421ff76be20c75744f50b"
+      "sha256": "f0297c81623684d1456df290d01e5e1c7870c2e97ca55f54f50be95176821887"
     },
     {
       "journey": "insert-a-link",
@@ -201,7 +336,52 @@
       "locator": {
         "testid": "save-button"
       },
-      "sha256": "171f5f76fa76d8d1cb5ecb9c90fa29c4f6eea708a22499567d255163fb77b02c"
+      "sha256": "e4a788d181cb1ce1eb449535077959b804a2821571540c3ed87bca07555d42b1"
+    },
+    {
+      "journey": "invite-another-device",
+      "step": "carry-it-across",
+      "image": "images/journeys/invite-another-device-carry-it-across.png",
+      "locator": {
+        "testid": "sync-invite-code"
+      },
+      "sha256": "c7d325236495c883021bdd09e6f038e0274f40ce1955d8cf304d3dfa9101183b"
+    },
+    {
+      "journey": "invite-another-device",
+      "step": "create-a-code",
+      "image": "images/journeys/invite-another-device-create-a-code.png",
+      "locator": {
+        "testid": "sync-invite-create"
+      },
+      "sha256": "b52007f595fd868df52546e6e2fadaa415334673d2c12a85f2bab4a19f9dc1e0"
+    },
+    {
+      "journey": "invite-another-device",
+      "step": "label-it",
+      "image": "images/journeys/invite-another-device-label-it.png",
+      "locator": {
+        "testid": "sync-invite-label"
+      },
+      "sha256": "78b7ce756daeaafa659c0340963fbd9152f2e00ad4be83c6108edfdc4f178c74"
+    },
+    {
+      "journey": "invite-another-device",
+      "step": "open-peers",
+      "image": "images/journeys/invite-another-device-open-peers.png",
+      "locator": {
+        "testid": "sync-tab-peers"
+      },
+      "sha256": "339d90b229f7334fa6845a28e37fa3e7a78a7aca98893fdd82bc40ca1e36fc48"
+    },
+    {
+      "journey": "invite-another-device",
+      "step": "open-the-sync-centre",
+      "image": "images/journeys/invite-another-device-open-the-sync-centre.png",
+      "locator": {
+        "testid": "sync-header-button"
+      },
+      "sha256": "588a5fe9e9955dce023896dc2ba6179e4b1b1ff9007836b3dd6a5d959c6ef5df"
     },
     {
       "journey": "keep-a-search-as-a-notebook",
@@ -210,7 +390,7 @@
       "locator": {
         "testid": "keep-search"
       },
-      "sha256": "62e81a085d47e4074350ad6811f91b8dd653a55c4263b897a7e70be5cc61a9a0"
+      "sha256": "7b0327297c88b0d0a7853f9ef00afe04b026e4c731563a1f87020acf64209afe"
     },
     {
       "journey": "keep-a-search-as-a-notebook",
@@ -219,7 +399,7 @@
       "locator": {
         "testid": "keep-search-name"
       },
-      "sha256": "a60e4c80911641c5fb2d49eb150a34296b9135cf4abf6597c3f5c7d2bbe9b017"
+      "sha256": "79cbf3690ada42775b00cb5f9ee1356de9441247827fd32001e0492333587687"
     },
     {
       "journey": "keep-a-search-as-a-notebook",
@@ -228,7 +408,7 @@
       "locator": {
         "css": ".search-row input"
       },
-      "sha256": "caa505ebfc52b99b3c1e4908646d81f49f3eab663573e37bbaed6c7cb5a8b378"
+      "sha256": "e6014a6e3f512d6004c761ca141be3eeda67378c5c33313d6ffa991281483632"
     },
     {
       "journey": "keep-a-search-as-a-notebook",
@@ -237,7 +417,7 @@
       "locator": {
         "testid": "keep-search-save"
       },
-      "sha256": "386070111da34715e037129971e7ade874cab443644c72bf88cff68ca601a226"
+      "sha256": "9723752d892b49ace0de9e52f793bc220b3d3907a7ba9c1fb848ebf6cc961f02"
     },
     {
       "journey": "keep-a-search-as-a-notebook",
@@ -247,7 +427,88 @@
         "role": "button",
         "name": "Search"
       },
-      "sha256": "2ed3fa33b5083249a2336c8219c5f67d39a2947550cec80a8681541c1dc20ac0"
+      "sha256": "416147d640628f760069e59b74a5b0a87d5ae63f6b40eaa0e83efa3eaec6cee3"
+    },
+    {
+      "journey": "look-for-peers-without-enrolling-one",
+      "step": "open-peers",
+      "image": "images/journeys/look-for-peers-without-enrolling-one-open-peers.png",
+      "locator": {
+        "testid": "sync-tab-peers"
+      },
+      "sha256": "339d90b229f7334fa6845a28e37fa3e7a78a7aca98893fdd82bc40ca1e36fc48"
+    },
+    {
+      "journey": "look-for-peers-without-enrolling-one",
+      "step": "open-the-sync-centre",
+      "image": "images/journeys/look-for-peers-without-enrolling-one-open-the-sync-centre.png",
+      "locator": {
+        "testid": "sync-header-button"
+      },
+      "sha256": "588a5fe9e9955dce023896dc2ba6179e4b1b1ff9007836b3dd6a5d959c6ef5df"
+    },
+    {
+      "journey": "look-for-peers-without-enrolling-one",
+      "step": "read-the-empty-list",
+      "image": "images/journeys/look-for-peers-without-enrolling-one-read-the-empty-list.png",
+      "locator": {
+        "css": ".sync-empty"
+      },
+      "sha256": "d0c60df18219d965d06025a689a4f62a68b6cd34a8b09b354b831d1fb6e07419"
+    },
+    {
+      "journey": "look-for-peers-without-enrolling-one",
+      "step": "scan-the-carrier",
+      "image": "images/journeys/look-for-peers-without-enrolling-one-scan-the-carrier.png",
+      "locator": {
+        "testid": "sync-discover"
+      },
+      "sha256": "94f93f7a6c4f527902a817e9214eeeeebcaf679fab5e165858bb725dfdeb8665"
+    },
+    {
+      "journey": "make-a-protected-backup",
+      "step": "choose-a-password",
+      "image": "images/journeys/make-a-protected-backup-choose-a-password.png",
+      "locator": {
+        "testid": "backup-password"
+      },
+      "sha256": "a41ef36da3d3fe8f2185736936b931f2e9ff990279fb8c96a806179a8abec396"
+    },
+    {
+      "journey": "make-a-protected-backup",
+      "step": "open-backup",
+      "image": "images/journeys/make-a-protected-backup-open-backup.png",
+      "locator": {
+        "testid": "sync-tab-backup"
+      },
+      "sha256": "867a4b4a601aa160b9d59e006511b0998dbe63ca36bca87c78ab0133c14e71c2"
+    },
+    {
+      "journey": "make-a-protected-backup",
+      "step": "open-the-sync-centre",
+      "image": "images/journeys/make-a-protected-backup-open-the-sync-centre.png",
+      "locator": {
+        "testid": "sync-header-button"
+      },
+      "sha256": "588a5fe9e9955dce023896dc2ba6179e4b1b1ff9007836b3dd6a5d959c6ef5df"
+    },
+    {
+      "journey": "make-a-protected-backup",
+      "step": "type-it-again",
+      "image": "images/journeys/make-a-protected-backup-type-it-again.png",
+      "locator": {
+        "testid": "backup-password-confirm"
+      },
+      "sha256": "8eb88e69f1c9ec471a71f2f06031e19d6ac09d95128eb5eda7cd7646161fa919"
+    },
+    {
+      "journey": "make-a-protected-backup",
+      "step": "write-it-out",
+      "image": "images/journeys/make-a-protected-backup-write-it-out.png",
+      "locator": {
+        "testid": "backup-create"
+      },
+      "sha256": "73fda2866cb2ce5628a8dd42af3f938a8f0fe1e5930b1f3a708ec2091f3bffe2"
     },
     {
       "journey": "publish-a-subset",
@@ -286,13 +547,40 @@
       "sha256": "d8ac4d323d63d2e87977f341bf2004a1d530b1617d6dd453fae90cad9d6a1b8d"
     },
     {
+      "journey": "put-a-live-query-in-a-note",
+      "step": "follow-a-result",
+      "image": "images/journeys/put-a-live-query-in-a-note-follow-a-result.png",
+      "locator": {
+        "testid": "note-query-row"
+      },
+      "sha256": "f5aef479d820515fea9b3f2cc4d29ccc62679e3328a50c6e4a69c633a36805bb"
+    },
+    {
+      "journey": "put-a-live-query-in-a-note",
+      "step": "open-the-note",
+      "image": "images/journeys/put-a-live-query-in-a-note-open-the-note.png",
+      "locator": {
+        "css": ".result-card:has-text(\"What I still owe the survey\")"
+      },
+      "sha256": "a50cd476412633bd2707fbbd9505949d8b89276d7cb3304c838ffc77d8b271ec"
+    },
+    {
+      "journey": "put-a-live-query-in-a-note",
+      "step": "read-the-results",
+      "image": "images/journeys/put-a-live-query-in-a-note-read-the-results.png",
+      "locator": {
+        "css": ".note-query[data-note-query-state=\"ok\"]"
+      },
+      "sha256": "71f5a1b58ffb6c9042dd7e2ee20394a42cebba1d3b7e6c996729fee5c0f9edc1"
+    },
+    {
       "journey": "rename-a-tag",
       "step": "agree-to-it",
       "image": "images/journeys/rename-a-tag-agree-to-it.png",
       "locator": {
         "testid": "tag-rename-apply"
       },
-      "sha256": "b650931f7478a210ffbdf53436ab8800d52f6c9d655e61e8f1caac7dc2679f87"
+      "sha256": "f865a3b7c3c9addf2f97cb2c39e1ef10512d2bc990b06ddde68e7a67a7b76976"
     },
     {
       "journey": "rename-a-tag",
@@ -301,7 +589,7 @@
       "locator": {
         "testid": "tag-rename-place/hide"
       },
-      "sha256": "eff293d1f07577cf440b05c12d26a9f9ce5fdff87ebc35c0c6ebae9c897cede6"
+      "sha256": "e71eedfd01406af59ff359e2fc98b8915b504a18770135eb02631d5aa52d4baa"
     },
     {
       "journey": "rename-a-tag",
@@ -310,7 +598,7 @@
       "locator": {
         "testid": "tag-rename-preview"
       },
-      "sha256": "9005cdf1adee2dfbb01361c9823ca0a973ad1a6375c64038da8b0ba29db0df14"
+      "sha256": "37b73c98659f83fabb9d0a0f2e0e5c83fe0bba88689bd1a8bc4c4f7199c1397d"
     },
     {
       "journey": "rename-a-tag",
@@ -319,7 +607,7 @@
       "locator": {
         "testid": "tag-rename-to"
       },
-      "sha256": "9b62353c09beff7e5891c442b7fa2f55a1d59abd6ed4842ba3c45380090e45ea"
+      "sha256": "4d467bbca2ec2988e108dbc49d190ad50074038176394c49638cf047050cef40"
     },
     {
       "journey": "restore-a-note",
@@ -328,7 +616,7 @@
       "locator": {
         "testid": "sidebar-row-snb_all_notes"
       },
-      "sha256": "57dcb0ccd5a928cf231e029315ccb4f641eb882d42c8d7a0bdb4c68295329141"
+      "sha256": "3986488330d59a5024b4e315486c3cd0b0634ea2495d3ae27b58ad2d21c2b18d"
     },
     {
       "journey": "restore-a-note",
@@ -337,7 +625,7 @@
       "locator": {
         "testid": "sidebar-row-snb_trash"
       },
-      "sha256": "b4d4a25234e3506260172542c896fa8dbb742b83ec2fb8b5d74b61c052953e1b"
+      "sha256": "da11d05ecfffa73cd88e81a63e0379f95a3c389fbe3da7d69ad2049a23fa906f"
     },
     {
       "journey": "restore-a-note",
@@ -346,7 +634,7 @@
       "locator": {
         "css": ".result-card:has-text(\"Recipe I still want\")"
       },
-      "sha256": "2922b3a185f17b192b5c778a792f2bad28bbde50318730e851708c7391ce31e5"
+      "sha256": "34332657baf797733310c84a60071117db3a60828f4cfd7387aca037ec50049f"
     },
     {
       "journey": "restore-a-note",
@@ -355,7 +643,7 @@
       "locator": {
         "testid": "restore-button"
       },
-      "sha256": "cc39e07bfa8d9b5b86fa6e2f4e3256c32c9c67ce0499ce0c51329296c7ae99b8"
+      "sha256": "48b1c2777d5b5152e787eb2c964d75aa4175b6a5884200e439b0ac4d9fbd36c1"
     },
     {
       "journey": "search-by-tag-and-exclude",
@@ -365,7 +653,7 @@
         "role": "button",
         "name": "Search"
       },
-      "sha256": "658b44f631fa893f6fb0364a8a6ec9738c1270f736a7683244137c3ca625dc82"
+      "sha256": "b073e6a7ce9780ec9ac70de6e5aada31a770a732a1e433e6b56fc0004e083f24"
     },
     {
       "journey": "search-by-tag-and-exclude",
@@ -374,7 +662,7 @@
       "locator": {
         "css": ".search-row input"
       },
-      "sha256": "0139579679a40d6c9280c17e42d38ffd0024c30c4501c26357942983b969f558"
+      "sha256": "e6014a6e3f512d6004c761ca141be3eeda67378c5c33313d6ffa991281483632"
     },
     {
       "journey": "search-your-notes",
@@ -384,7 +672,7 @@
         "role": "button",
         "name": "Search"
       },
-      "sha256": "d73ced0f1b957c0abe41017535d805a77da074f700bbc4485d839661352a4264"
+      "sha256": "9a28d842110fd01207b039a31d975da86071effdb576520b77b4d33b3b2ec3fd"
     },
     {
       "journey": "search-your-notes",
@@ -393,7 +681,106 @@
       "locator": {
         "css": ".search-row input"
       },
-      "sha256": "caa505ebfc52b99b3c1e4908646d81f49f3eab663573e37bbaed6c7cb5a8b378"
+      "sha256": "e6014a6e3f512d6004c761ca141be3eeda67378c5c33313d6ffa991281483632"
+    },
+    {
+      "journey": "see-what-a-note-connects-to",
+      "step": "follow-one",
+      "image": "images/journeys/see-what-a-note-connects-to-follow-one.png",
+      "locator": {
+        "testid": "local-graph-node"
+      },
+      "sha256": "f71e460e0046cfb1120df2fc31c1ef5972b5e9ea1b92c4330e44d4dfe55f6431"
+    },
+    {
+      "journey": "see-what-a-note-connects-to",
+      "step": "open-note-info",
+      "image": "images/journeys/see-what-a-note-connects-to-open-note-info.png",
+      "locator": {
+        "testid": "note-inspector-toggle"
+      },
+      "sha256": "84fe300b75a0a13026b410125844a0db51d5e80bdcbc94705b77126200fa32e3"
+    },
+    {
+      "journey": "see-what-a-note-connects-to",
+      "step": "open-the-note",
+      "image": "images/journeys/see-what-a-note-connects-to-open-the-note.png",
+      "locator": {
+        "css": ".result-card:has-text(\"Marsh survey, index\")"
+      },
+      "sha256": "577a361e9451f920a1566c39872abe86f6ad62af213ea10197baf182e5caa2b0"
+    },
+    {
+      "journey": "see-what-a-note-connects-to",
+      "step": "read-the-neighbourhood",
+      "image": "images/journeys/see-what-a-note-connects-to-read-the-neighbourhood.png",
+      "locator": {
+        "testid": "local-graph"
+      },
+      "sha256": "9af46aa599ca6e33cb21359119841d696701073a7615f163f586ff4cc86cb1d5"
+    },
+    {
+      "journey": "see-where-a-note-came-from",
+      "step": "open-an-imported-note",
+      "image": "images/journeys/see-where-a-note-came-from-open-an-imported-note.png",
+      "locator": {
+        "css": ".result-card:has-text(\"Ringing record, 12 May\")"
+      },
+      "sha256": "67358fd5b8950594027780d4ccb88764dab320703b18be95a52ae69a7cf0019e"
+    },
+    {
+      "journey": "see-where-a-note-came-from",
+      "step": "open-note-info",
+      "image": "images/journeys/see-where-a-note-came-from-open-note-info.png",
+      "locator": {
+        "testid": "note-inspector-toggle"
+      },
+      "sha256": "c5b4b2c2e8535a4a2e2f2c07fe6a1f721a1c502d91c6afdbac01472ebcbe0afc"
+    },
+    {
+      "journey": "see-where-a-note-came-from",
+      "step": "read-the-collection",
+      "image": "images/journeys/see-where-a-note-came-from-read-the-collection.png",
+      "locator": {
+        "testid": "note-collection"
+      },
+      "sha256": "b04a89198872e2c129f5ef001515b79a1351a7d1d12c46e4e42a1594eec2a3f9"
+    },
+    {
+      "journey": "see-which-library-this-is",
+      "step": "choose-a-profile",
+      "image": "images/journeys/see-which-library-this-is-choose-a-profile.png",
+      "locator": {
+        "testid": "profile-switcher"
+      },
+      "sha256": "a76227bd0576ee9fea5e97ec3d407eeb268ed34895e6e446f23b24fe0415f1ea"
+    },
+    {
+      "journey": "see-which-library-this-is",
+      "step": "open-setup",
+      "image": "images/journeys/see-which-library-this-is-open-setup.png",
+      "locator": {
+        "testid": "sync-tab-setup"
+      },
+      "sha256": "a44df88954089a2d9f44439ddb879136df76f4241c823ecf59ac1755e3b66dd5"
+    },
+    {
+      "journey": "see-which-library-this-is",
+      "step": "open-the-sync-centre",
+      "image": "images/journeys/see-which-library-this-is-open-the-sync-centre.png",
+      "locator": {
+        "testid": "sync-header-button"
+      },
+      "sha256": "588a5fe9e9955dce023896dc2ba6179e4b1b1ff9007836b3dd6a5d959c6ef5df"
+    },
+    {
+      "journey": "see-which-library-this-is",
+      "step": "read-the-identity",
+      "image": "images/journeys/see-which-library-this-is-read-the-identity.png",
+      "locator": {
+        "css": ".sync-profile-identity"
+      },
+      "sha256": "dc4d99394e2bc56b4f95529a7bae5767b5a7fccc0cd53de90c4da31bde698fc1"
     },
     {
       "journey": "tag-a-note",
@@ -402,7 +789,7 @@
       "locator": {
         "testid": "tag-editor-add"
       },
-      "sha256": "9a193385b43d09e66d5cf738c3345ebb62df23986b7e91c4af75e242e4c64078"
+      "sha256": "ffa2d53eaf683b2500299aad07e2930ff98d2dec3675758a3ad5f5e04fc09da1"
     },
     {
       "journey": "tag-a-note",
@@ -411,7 +798,7 @@
       "locator": {
         "testid": "new-note-button"
       },
-      "sha256": "dbc54401360697b8bc3e35184bf6a17db8b689e1c7ec7150c4baa2617fc7c945"
+      "sha256": "12d6cf30c1a84a481f8ece87766e2fe85f62dcb9f9a9d3b2953b80c72831c6f4"
     },
     {
       "journey": "tag-a-note",
@@ -420,7 +807,7 @@
       "locator": {
         "testid": "tag-editor-trigger"
       },
-      "sha256": "010a40592d29f1f8b9f74b4e4136cfbb7a7cdc88f86d9de0ee79598e4888898f"
+      "sha256": "8b19db70eb6e89b1d3f1cc53fb29d4037153b323c3bc235345e3d30e5680f912"
     },
     {
       "journey": "tag-a-note",
@@ -429,7 +816,7 @@
       "locator": {
         "testid": "tag-editor-input"
       },
-      "sha256": "da1dbbbbdc97673ce2f5e56943bfee9e9f26765f9b958f1408ab9caf7ca7ae42"
+      "sha256": "331a69fc13836b317e207bd85227edaa1606cbe3fb61acec710b546a971b734f"
     },
     {
       "journey": "take-a-snapshot",
@@ -465,7 +852,7 @@
       "locator": {
         "css": "input.title-input"
       },
-      "sha256": "dcc70f696b1ddd48a217e4cbe1edf0e2db0a6f2580a601b8be5d6e50c324672b"
+      "sha256": "d8d205576b3bafcdc09e788358a782ac4f4b8afd3aa237604ac5ec51d831aeb5"
     },
     {
       "journey": "update-a-note",
@@ -474,7 +861,7 @@
       "locator": {
         "testid": "sidebar-row-snb_all_notes"
       },
-      "sha256": "b1dc5989b7ed686d80ac815082b9fb884ef6ac304e64e2979ffef22a090f2e55"
+      "sha256": "ac8748e7ccfade8fa392005052db5b7f0a2254db736f6a8ee67838bd39a0ef37"
     },
     {
       "journey": "update-a-note",
@@ -483,7 +870,7 @@
       "locator": {
         "css": ".result-card:has-text(\"Notes from the eastern hide\")"
       },
-      "sha256": "b2ce4afafa8a33aebd68460f702f3f08cbaee5c606cf12a2aff9ca1f84b2dfad"
+      "sha256": "bcde77bb8f1688bd67971192f269502f234bf699d5185415a0045e25eb37c198"
     },
     {
       "journey": "update-a-note",
@@ -492,7 +879,34 @@
       "locator": {
         "testid": "save-button"
       },
-      "sha256": "f80fe1ba38bddec81a0bfd15d1e6d1729b8ec0bf1882bcaf7fb50bef8a8d3592"
+      "sha256": "80b651d02e24622d8794c3b4a493ba5a90db2ce5519bcc798e68b606447bcbc0"
+    },
+    {
+      "journey": "watch-a-synchronization-job",
+      "step": "open-the-sync-centre",
+      "image": "images/journeys/watch-a-synchronization-job-open-the-sync-centre.png",
+      "locator": {
+        "testid": "sync-header-button"
+      },
+      "sha256": "158fa72cddcbdb755b88ee1f8f3ddefbdbf77eb113b96245b3d73f3b8e0e401b"
+    },
+    {
+      "journey": "watch-a-synchronization-job",
+      "step": "read-the-jobs",
+      "image": "images/journeys/watch-a-synchronization-job-read-the-jobs.png",
+      "locator": {
+        "css": ".sync-list"
+      },
+      "sha256": "091c23169fc49d5116a6cc5704565082a43de70136694c5f6d17d33d61a74285"
+    },
+    {
+      "journey": "watch-a-synchronization-job",
+      "step": "retry-one",
+      "image": "images/journeys/watch-a-synchronization-job-retry-one.png",
+      "locator": {
+        "testid": "sync-job-retry"
+      },
+      "sha256": "0315329a347e0e74ff183d9f157e959cb8c48313dff5abfc7dafa765a27504e7"
     },
     {
       "journey": "write-a-note",
@@ -501,7 +915,7 @@
       "locator": {
         "testid": "new-note-button"
       },
-      "sha256": "2ec3357dc49a1a66b824665228610655639c430065b6e49eaa3b4d4379bb5400"
+      "sha256": "12d6cf30c1a84a481f8ece87766e2fe85f62dcb9f9a9d3b2953b80c72831c6f4"
     },
     {
       "journey": "write-a-note",
@@ -510,7 +924,7 @@
       "locator": {
         "css": ".cm-content"
       },
-      "sha256": "c298db5509a01e02730bdaccfaf9fc9ad5be13819675931df667167e0d57c426"
+      "sha256": "adeba16ee15c5b04478d2c7eb0505be196504371232e679ea3d7810145763031"
     }
   ]
 }

@@ -755,6 +755,533 @@
           "native": "the publish section's report line"
         }
       }
+    },
+    {
+      "id": "see-where-a-note-came-from",
+      "title": "See where a note came from",
+      "goal": "Tell an imported note from one you wrote here, and find the rest of what came in with it.",
+      "feature": "collections",
+      "steps": [
+        {
+          "id": "open-an-imported-note",
+          "narrative": "Open a note that arrived in an import. Nothing about the card says where it came from — that is what Note info is for.",
+          "locator": {
+            "css": ".result-card:has-text(\"Ringing record, 12 May\")"
+          },
+          "action": "click"
+        },
+        {
+          "id": "open-note-info",
+          "narrative": "Note info carries what the note is rather than what it says.",
+          "locator": {
+            "testid": "note-inspector-toggle"
+          },
+          "action": "click"
+        },
+        {
+          "id": "read-the-collection",
+          "narrative": "Collection is where this note came from. It is shown only when there is something to say: a note written in this library carries the default collection, and a row repeating that on every note would say nothing. The notes are filed in an ordinary notebook — the collection is provenance beside it, not a place they live.",
+          "locator": {
+            "testid": "note-collection"
+          },
+          "action": "screenshot_only"
+        }
+      ],
+      "postcondition": {
+        "narrative": "the note names the collection it was imported into",
+        "locator": {
+          "testid": "note-collection"
+        }
+      }
+    },
+    {
+      "id": "attach-a-file",
+      "title": "Attach a file to a note",
+      "goal": "Put a file into the library and keep it with the note it belongs to.",
+      "feature": "attachments",
+      "steps": [
+        {
+          "id": "open-the-note",
+          "narrative": "Open the note the file belongs with.",
+          "locator": {
+            "css": ".result-card:has-text(\"Nest box plans\")"
+          },
+          "action": "click"
+        },
+        {
+          "id": "open-note-info",
+          "narrative": "Attachments are added from Note info, beside the rest of what the note is made of.",
+          "locator": {
+            "testid": "note-inspector-toggle"
+          },
+          "action": "click"
+        },
+        {
+          "id": "choose-a-file",
+          "narrative": "Choose the file — this one is the Notrios icon, because a journey has to attach something real. It is copied into the library, so the note stops depending on where the file happened to live and a backup or a sync carries it along with everything else.",
+          "locator": {
+            "testid": "attachment-upload"
+          },
+          "action": "attach",
+          "value": "assets/notrios.svg"
+        },
+        {
+          "id": "see-it-attached",
+          "narrative": "The file is in the library and listed against the note — and a Markdown link to it has been written where your cursor was, which is why the note is now unsaved. The interface can place the link because it knows where you were typing; `notriosctl resources add` prints the `resource://` URI instead and never touches a body, because at a terminal nobody knows where the link belongs. The bytes are stored once and addressed by their content, so attaching the same file to a second note stores nothing twice.",
+          "locator": {
+            "testid": "note-inspector"
+          },
+          "action": "screenshot_only"
+        }
+      ],
+      "postcondition": {
+        "narrative": "the attached file is listed on the note",
+        "locator": {
+          "css": ".resource-list"
+        }
+      }
+    },
+    {
+      "id": "bring-images-into-the-library",
+      "title": "Bring a note’s images into the library",
+      "goal": "Find the images a note is loading from somebody else’s server, and see what Notrios is willing to copy in.",
+      "feature": "remote-media",
+      "steps": [
+        {
+          "id": "open-the-note",
+          "narrative": "Open a note that points at an image on the web.",
+          "locator": {
+            "css": ".result-card:has-text(\"Heron drawings\")"
+          },
+          "action": "click"
+        },
+        {
+          "id": "open-note-info",
+          "narrative": "Note info lists what the note depends on, including anything it is loading from elsewhere.",
+          "locator": {
+            "testid": "note-inspector-toggle"
+          },
+          "action": "click"
+        },
+        {
+          "id": "read-the-decisions",
+          "narrative": "Every remote image is listed with what the policy decided about it and why. This is a scan, not a download: nothing has been fetched, and the decision is made from the address alone.",
+          "locator": {
+            "testid": "remote-media-list"
+          },
+          "action": "screenshot_only"
+        },
+        {
+          "id": "localize-the-allowed-ones",
+          "narrative": "Localize copies in only the images the policy allows, through the quarantine that hashes and sniffs each one, and rewrites the note to point at the local copies. A note that has been localized still renders when the other server is gone.",
+          "locator": {
+            "testid": "localize-button"
+          },
+          "action": "screenshot_only"
+        }
+      ],
+      "postcondition": {
+        "narrative": "the note lists the remote image and offers to bring it in",
+        "locator": {
+          "testid": "localize-button"
+        }
+      }
+    },
+    {
+      "id": "see-what-a-note-connects-to",
+      "title": "See what a note connects to",
+      "goal": "Follow a note’s links without reading it, and find your way to what it points at.",
+      "feature": "graph",
+      "steps": [
+        {
+          "id": "open-the-note",
+          "narrative": "Open a note that links to others.",
+          "locator": {
+            "css": ".result-card:has-text(\"Marsh survey, index\")"
+          },
+          "action": "click"
+        },
+        {
+          "id": "open-note-info",
+          "narrative": "Nearby notes lives in Note info, under everything else the note is made of.",
+          "locator": {
+            "testid": "note-inspector-toggle"
+          },
+          "action": "click"
+        },
+        {
+          "id": "read-the-neighbourhood",
+          "narrative": "Notes are grouped by how far away they are: directly linked first, then anything reached through those. Hops widens the view — two hops shows what the neighbours point at.",
+          "locator": {
+            "testid": "local-graph"
+          },
+          "action": "screenshot_only"
+        },
+        {
+          "id": "follow-one",
+          "narrative": "A neighbour opens like any other note. Nothing here is a separate graph screen; it is a way out of the note you are in.",
+          "locator": {
+            "testid": "local-graph-node"
+          },
+          "action": "click"
+        }
+      ],
+      "postcondition": {
+        "narrative": "the linked note is the one now open",
+        "locator": {
+          "css": ".result-card.active:has-text(\"Marsh survey, north pool\")"
+        }
+      }
+    },
+    {
+      "id": "put-a-live-query-in-a-note",
+      "title": "Put a live query in a note",
+      "goal": "Keep a list inside a note that fills itself in, instead of one you have to maintain.",
+      "feature": "query-blocks",
+      "steps": [
+        {
+          "id": "open-the-note",
+          "narrative": "Open a note with a query block in it. In the editor it is an ordinary fenced code block: three backticks, `note-query`, and a `query:` line in the same language the search box takes.",
+          "locator": {
+            "css": ".result-card:has-text(\"What I still owe the survey\")"
+          },
+          "action": "click"
+        },
+        {
+          "id": "read-the-results",
+          "narrative": "In the preview the block is replaced by what the query matches right now. Nothing is stored in the note but the query, so the list is never out of date and never needs editing.",
+          "locator": {
+            "css": ".note-query[data-note-query-state=\"ok\"]"
+          },
+          "action": "screenshot_only"
+        },
+        {
+          "id": "follow-a-result",
+          "narrative": "Each result opens the note it names. A block is a way into your notes rather than a report about them.",
+          "locator": {
+            "testid": "note-query-row"
+          },
+          "action": "screenshot_only"
+        }
+      ],
+      "postcondition": {
+        "narrative": "the block renders the notes its query matches",
+        "locator": {
+          "css": ".note-query[data-note-query-state=\"ok\"]"
+        }
+      }
+    },
+    {
+      "id": "choose-where-sync-happens",
+      "title": "Choose where synchronization happens",
+      "goal": "Point this library at a folder both machines can reach, and start a synchronization.",
+      "feature": "sync-exchange",
+      "steps": [
+        {
+          "id": "open-the-sync-centre",
+          "narrative": "Everything about synchronization is behind one button: setup, pairing, the peers you trust, attachments, conflicts, backups and repairs.",
+          "locator": {
+            "testid": "sync-header-button"
+          },
+          "action": "click"
+        },
+        {
+          "id": "open-setup",
+          "narrative": "Setup is where a profile says how it reaches the other side.",
+          "locator": {
+            "testid": "sync-tab-setup"
+          },
+          "action": "click"
+        },
+        {
+          "id": "choose-a-shared-directory",
+          "narrative": "A shared directory is the simplest transport: a second drive, or a cloud folder mapped into this machine. Notrios writes its exchange into that folder and reads what the other library left there. The folder is a carrier, not a copy of your notes.",
+          "locator": {
+            "testid": "sync-target-directory"
+          },
+          "action": "click"
+        },
+        {
+          "id": "name-the-folder",
+          "narrative": "The path is on the machine running this library. A browser cannot open a folder chooser, so the path is typed; the desktop application offers a chooser beside this field.",
+          "locator": {
+            "testid": "sync-directory"
+          },
+          "action": "fill",
+          "value": "{carrier}"
+        },
+        {
+          "id": "save-it",
+          "narrative": "Saving a transport does not enrol a peer and does not start a synchronization: it records where this profile will look, and takes effect when the profile restarts.",
+          "locator": {
+            "testid": "sync-save-transport"
+          },
+          "action": "click"
+        },
+        {
+          "id": "back-to-the-overview",
+          "narrative": "The overview is where a synchronization is started and watched.",
+          "locator": {
+            "testid": "sync-tab-overview"
+          },
+          "action": "click"
+        },
+        {
+          "id": "start-one",
+          "narrative": "Sync now queues the exchange as a job rather than blocking the window on it. What it sends is the operations this library has that the other one has not acknowledged; what it reads is the same from the other side.",
+          "locator": {
+            "testid": "sync-now"
+          },
+          "action": "click"
+        }
+      ],
+      "postcondition": {
+        "narrative": "the synchronization was queued as a job",
+        "locator": {
+          "css": ".sync-inline-notice:not(.error):has-text(\"was queued\")"
+        }
+      }
+    },
+    {
+      "id": "invite-another-device",
+      "title": "Invite another device",
+      "goal": "Issue a single-use code so a second library of yours can pair with this one.",
+      "feature": "sync-pairing",
+      "steps": [
+        {
+          "id": "open-the-sync-centre",
+          "narrative": "Everything about synchronization is behind one button: setup, pairing, the peers you trust, attachments, conflicts, backups and repairs.",
+          "locator": {
+            "testid": "sync-header-button"
+          },
+          "action": "click"
+        },
+        {
+          "id": "open-peers",
+          "narrative": "Peers is where trust between libraries is established and ended.",
+          "locator": {
+            "testid": "sync-tab-peers"
+          },
+          "action": "click"
+        },
+        {
+          "id": "label-it",
+          "narrative": "The label is for you, not for the other machine: it is how this peer will be listed here afterwards.",
+          "locator": {
+            "testid": "sync-invite-label"
+          },
+          "action": "fill",
+          "value": "Laptop"
+        },
+        {
+          "id": "create-a-code",
+          "narrative": "The code is single-use and expires in fifteen minutes. Creating one enrols nobody: it is spent from the other side, and only then do the two libraries learn each other’s keys.",
+          "locator": {
+            "testid": "sync-invite-create"
+          },
+          "action": "click"
+        },
+        {
+          "id": "carry-it-across",
+          "narrative": "Read the code to the other device over a different channel from the address — a code and an address travelling together are worth exactly as much as each other to anybody who intercepts them.",
+          "locator": {
+            "testid": "sync-invite-code"
+          },
+          "action": "screenshot_only"
+        }
+      ],
+      "postcondition": {
+        "narrative": "a single-use pairing code is shown",
+        "locator": {
+          "testid": "sync-invite-code"
+        }
+      }
+    },
+    {
+      "id": "look-for-peers-without-enrolling-one",
+      "title": "See who is on the carrier, without trusting anybody",
+      "goal": "Find out which replicas have left something in the shared folder, and confirm that looking is not the same as trusting.",
+      "feature": "sync-peers",
+      "steps": [
+        {
+          "id": "open-the-sync-centre",
+          "narrative": "Everything about synchronization is behind one button: setup, pairing, the peers you trust, attachments, conflicts, backups and repairs.",
+          "locator": {
+            "testid": "sync-header-button"
+          },
+          "action": "click"
+        },
+        {
+          "id": "open-peers",
+          "narrative": "Peers lists the libraries this one trusts. It starts empty, and it does not fill itself in.",
+          "locator": {
+            "testid": "sync-tab-peers"
+          },
+          "action": "click"
+        },
+        {
+          "id": "read-the-empty-list",
+          "narrative": "No peers are enrolled. Pairing is the only thing that adds one, and it takes a code somebody carried across by hand.",
+          "locator": {
+            "css": ".sync-empty"
+          },
+          "action": "screenshot_only"
+        },
+        {
+          "id": "scan-the-carrier",
+          "narrative": "Discovery reads what is in the shared folder and reports what it found. It enrols nobody — a replica that has written to the carrier is a candidate, not a peer, and becoming one is a decision you make.",
+          "locator": {
+            "testid": "sync-discover"
+          },
+          "action": "click"
+        }
+      ],
+      "postcondition": {
+        "narrative": "the scan reports what it found and enrolled nobody",
+        "locator": {
+          "css": ".sync-inline-notice:not(.error):has-text(\"without enrolling anyone\")"
+        }
+      }
+    },
+    {
+      "id": "make-a-protected-backup",
+      "title": "Make a backup only you can open",
+      "goal": "Write an encrypted copy of this library that a password protects, and know what happens if you lose the password.",
+      "feature": "sync-recovery",
+      "steps": [
+        {
+          "id": "open-the-sync-centre",
+          "narrative": "Everything about synchronization is behind one button: setup, pairing, the peers you trust, attachments, conflicts, backups and repairs.",
+          "locator": {
+            "testid": "sync-header-button"
+          },
+          "action": "click"
+        },
+        {
+          "id": "open-backup",
+          "narrative": "Backup and recovery is where a copy is made and where one is reviewed before it is restored.",
+          "locator": {
+            "testid": "sync-tab-backup"
+          },
+          "action": "click"
+        },
+        {
+          "id": "choose-a-password",
+          "narrative": "The password wraps a fresh key for this backup. It is used and forgotten — it is not stored, not remembered, and not recoverable.",
+          "locator": {
+            "testid": "backup-password"
+          },
+          "action": "fill",
+          "value": "a good long passphrase"
+        },
+        {
+          "id": "type-it-again",
+          "narrative": "Twice, because there is no way back from a typo here: Notrios cannot open a backup whose password it does not have.",
+          "locator": {
+            "testid": "backup-password-confirm"
+          },
+          "action": "fill",
+          "value": "a good long passphrase"
+        },
+        {
+          "id": "write-it-out",
+          "narrative": "The backup is verified as it is written, then downloaded. Restoring one is a separate act with its own review — creating a backup never replaces anything.",
+          "locator": {
+            "testid": "backup-create"
+          },
+          "action": "click"
+        }
+      ],
+      "postcondition": {
+        "narrative": "the backup is created and the password was not kept",
+        "locator": {
+          "css": ".sync-inline-notice:not(.error):has-text(\"was not remembered\")"
+        }
+      }
+    },
+    {
+      "id": "watch-a-synchronization-job",
+      "title": "Watch a synchronization, and retry one that stopped",
+      "goal": "See what synchronization is doing, and start again from where it left off.",
+      "feature": "jobs",
+      "steps": [
+        {
+          "id": "open-the-sync-centre",
+          "narrative": "Everything about synchronization is behind one button: setup, pairing, the peers you trust, attachments, conflicts, backups and repairs.",
+          "locator": {
+            "testid": "sync-header-button"
+          },
+          "action": "click"
+        },
+        {
+          "id": "read-the-jobs",
+          "narrative": "Synchronization runs as jobs rather than as a window you have to keep open. The recent ones are listed with what each was doing and how it ended.",
+          "locator": {
+            "css": ".sync-list"
+          },
+          "action": "screenshot_only"
+        },
+        {
+          "id": "retry-one",
+          "narrative": "A job that failed or was cancelled can be started again. It resumes from its last verified checkpoint rather than from the beginning, so retrying a large transfer does not repeat the part that already arrived.",
+          "locator": {
+            "testid": "sync-job-retry"
+          },
+          "action": "click"
+        }
+      ],
+      "postcondition": {
+        "narrative": "the job was queued to start again from its checkpoint",
+        "locator": {
+          "css": ".sync-inline-notice:not(.error):has-text(\"verified checkpoint\")"
+        }
+      }
+    },
+    {
+      "id": "see-which-library-this-is",
+      "title": "See which library this window is showing",
+      "goal": "Keep separate libraries on one machine and know which one you are looking at.",
+      "feature": "profiles",
+      "steps": [
+        {
+          "id": "open-the-sync-centre",
+          "narrative": "Everything about synchronization is behind one button: setup, pairing, the peers you trust, attachments, conflicts, backups and repairs.",
+          "locator": {
+            "testid": "sync-header-button"
+          },
+          "action": "click"
+        },
+        {
+          "id": "read-the-identity",
+          "narrative": "The header names the profile this window is showing, with the library and this replica’s identifiers beneath it. Two profiles are two databases and two addresses; nothing is shared between them.",
+          "locator": {
+            "css": ".sync-profile-identity"
+          },
+          "action": "screenshot_only"
+        },
+        {
+          "id": "open-setup",
+          "narrative": "Switching between profiles is on the Setup tab, above the transport.",
+          "locator": {
+            "testid": "sync-tab-setup"
+          },
+          "action": "click"
+        },
+        {
+          "id": "choose-a-profile",
+          "narrative": "Each profile is a separate local process at its own address, so choosing one opens it there. Making, registering and forgetting profiles is command-line work: `profile create` names a directory to keep a library in and `profile start` launches a process, and neither is something a web request should be able to ask for.",
+          "locator": {
+            "testid": "profile-switcher"
+          },
+          "action": "screenshot_only"
+        }
+      ],
+      "postcondition": {
+        "narrative": "the window names the profile it is showing",
+        "locator": {
+          "css": ".sync-profile-identity"
+        }
+      }
     }
   ]
 }
