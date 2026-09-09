@@ -22,6 +22,11 @@
       "item": "E4",
       "commit": "3ea7e3f",
       "title": "Make a missing archive fail rather than pass unnoticed"
+    },
+    {
+      "item": "E5",
+      "commit": "68a0eac",
+      "title": "Widen the approved types, and seal what v0.8e itself produced"
     }
   ]
 }

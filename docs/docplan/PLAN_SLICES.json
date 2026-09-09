@@ -80,7 +80,7 @@
     {
       "id": "E5",
       "title": "Widen the approved types, and seal what v0.8e itself produced",
-      "state": "in-progress",
+      "state": "complete",
       "slices": [
         {
           "id": "E5-A",
@@ -90,8 +90,9 @@
         },
         {
           "id": "E5-B",
-          "state": "in-progress",
-          "statement": "Volume-0003 seals v0.8e's own archives with both newly approved artifacts, and the reserve verifies end to end"
+          "state": "done",
+          "statement": "Volume-0003 seals v0.8e's own archives with both newly approved artifacts, and the reserve verifies end to end",
+          "evidence": "file:evidence/volumes/volume-0003/CHECKPOINT/content-checkpoint.json"
         }
       ]
     }

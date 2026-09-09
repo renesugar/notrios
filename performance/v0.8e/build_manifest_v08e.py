@@ -34,7 +34,8 @@ RESULTS = ROOT / "dist" / "backfill-v08e" / "RESULTS.jsonl"
 # taken when the slice closed, and saying otherwise would be a lie in the
 # direction that flatters the record.
 TAKEN_AT_CLOSE = {"E3": "notrios-v0.8e-e3-d24c02e.zip",
-                  "E4": "notrios-v0.8e-e4-3ea7e3f.zip"}
+                  "E4": "notrios-v0.8e-e4-3ea7e3f.zip",
+                  "E5": "notrios-v0.8e-e5-68a0eac.zip"}
 
 
 def build() -> dict:
@@ -60,7 +61,7 @@ def build() -> dict:
         "OpenPGP signature and RFC 3161 timestamp.")
     manifest["archives"] = []
 
-    for item in ("E1", "E2", "E3", "E4"):
+    for item in ("E1", "E2", "E3", "E4", "E5"):
         entry = collections.OrderedDict(item=item)
         if item in TAKEN_AT_CLOSE:
             name = TAKEN_AT_CLOSE[item]

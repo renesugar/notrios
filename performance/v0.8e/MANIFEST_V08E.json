@@ -39,11 +39,20 @@
       "bytes": 24920971,
       "entries": 2385,
       "sha256": "6f615d0ec67ac7e41834782080196eb7a47ae2bc1e16e25be54424261b1d74cf"
+    },
+    {
+      "item": "E5",
+      "archive": "notrios-v0.8e-e5-68a0eac.zip",
+      "commit": "68a0eac1657ebbfd40933586ad3cae9ab56f720a",
+      "taken": "when the slice closed",
+      "bytes": 24949631,
+      "entries": 2406,
+      "sha256": "811ccb2cb0e10491e5b0e58f36713d5052bb82b0847f0abb4bbd2320884033d3"
     }
   ],
   "counts": {
-    "items": 4,
+    "items": 5,
     "retroactive": 2,
-    "total_bytes": 99524742
+    "total_bytes": 124474373
   }
 }

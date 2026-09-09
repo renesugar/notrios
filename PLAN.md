@@ -49,7 +49,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**5 items: 4 complete, 1 in progress, 0 not started, 0 deferred.**
+**5 items: 5 complete, 0 in progress, 0 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -57,13 +57,9 @@ this section is archived when the plan completes and the rules are not.
 | E2. Record the backfill honestly, and say what it is | complete | 2/2 | — |
 | E3. Seal a reserve volume, and extend the outer catalog | complete | 2/2 | — |
 | E4. Make a missing archive fail rather than pass unnoticed | complete | 1/1 | — |
-| E5. Widen the approved types, and seal what v0.8e itself produced | in-progress | 1/2 | 1 |
+| E5. Widen the approved types, and seal what v0.8e itself produced | complete | 2/2 | — |
 
-### Started and not finished
-
-**E5. Widen the approved types, and seal what v0.8e itself produced**
-
-- `E5-B` Volume-0003 seals v0.8e's own archives with both newly approved artifacts, and the reserve verifies end to end — *in-progress*
+Nothing is half-finished.
 <!-- notrios:generated:plan:progress:end -->
 
 ## E1. Build the twenty-seven missing handoff archives — complete
@@ -441,7 +437,7 @@ removing a v0.8e entry (`E2`), recording an archive for an unfinished item, and
 adding an unregistered milestone. Coverage, not contents: the gate cannot verify
 a hash it has no file for and does not pretend to.
 
-## E5. Widen the approved types, and seal what v0.8e itself produced
+## E5. Widen the approved types, and seal what v0.8e itself produced — complete
 
 **Goal.** The reserve holds what v0.8e made, including the two artifacts a
 policy -- not a limitation of the evidence format -- kept out of volume-0002.
@@ -468,6 +464,50 @@ the sealer. Volumes 0001 and 0002 are not rewritten.
 **Working state.** The bundle and the package structurally validated, sealed in
 volume-0003, the outer catalog at three entries, and the whole reserve verifying
 end to end.
+
+**Done, 2026-09-09.** `NTR-EV-0003` is on the reserve: 6 artifacts,
+143,382,528 bytes, two byte-identical builds at 70,011 blocks, signed by the
+production subkey and RFC 3161 timestamped under the pinned policy, chained onto
+volume-0002 by the hash of its checkpoint document. The catalog is at three
+entries with the previous two unchanged. The whole reserve verifies:
+`{"status": "verified", "volumes": ["NTR-EV-0001", "NTR-EV-0002",
+"NTR-EV-0003"]}`.
+
+**What it carries.** v0.8e's own four handoff archives, so E4's archive is in the
+reserve rather than only on disk, together with the git bundle and the Debian
+package volume-0002 refused. They are in because they can now be proved intact:
+`git-bundle-v1` and `ar-deb-v1` stand in the sealed manifest beside the zips, and
+the ISO readback re-runs both validators and requires the result to equal what
+was recorded.
+
+**Widening the policy meant writing validators, not editing a list.**
+`validate_git_bundle` reads the header, the ref and prerequisite lines, and
+verifies the packfile's trailing checksum -- the part that actually detects a
+flipped byte -- without needing git installed where the evidence is read.
+`validate_deb` walks the `ar` members to the exact end of file, catching
+truncation and a size field that disagrees with the file, and does not pretend to
+interpret the control data. Each refuses damage on purpose in the tests: a byte
+flipped inside the packfile, a bad header, a truncated bundle, a ref line that is
+not hex; a member running past end of file, a missing `data.tar`, a wrong format
+version, a truncated package.
+
+**And it found one in the code that was already there.** `validate_zip` raised
+`BadZipFile` at its caller rather than refusing -- the only one of the four not
+uniformly fail-closed. It refuses now. A test also holds every approved type to
+the rule that made it approved: each must reach a real validator and refuse
+thirty-two bytes of nonsense, never the `sha256-size-v1` fallback that would
+approve any bytes at all.
+
+**Rehearsed first**, against the throwaway key and a scratch reserve, with both
+new types in the payload, before the production key signed anything. Volumes
+0001 and 0002 verify unchanged, checked before the seal rather than after.
+
+**The sequencing is the reserve's own closure boundary.** E5's handoff archive
+names `68a0eac`, the commit that carries the seal, and the manifest entry
+recording it lands in the commit after -- the same reason a volume cannot contain
+its own final hash. Sealing v0.8e's archives means a milestone's evidence can be
+in the reserve within one commit of the work, which is as close as an append-only
+chain allows.
 
 ## Decisions register
 
