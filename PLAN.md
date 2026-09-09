@@ -2386,9 +2386,23 @@ local. Every external write is read back.
 - **PR merge authorization — Blocking.** The owner authorizes the merge after
   reviewing the final checks and support claims. Opening the pull request is not
   authorization to merge it.
-- **Merge method — Blocking before merge.** The owner selects it. A method that
-  rewrites `develop`'s commits (squash, rebase) is not equivalent to one that
-  does not, and the back-merge requirement above assumes a merge commit.
+- **Merge method — Decided by the owner 2026-09-08: a merge commit.**
+
+  It is the method the rest of this plan already assumed, and the only one that
+  keeps the two branches reconcilable. Squash would replace 289 commits with one
+  that `develop` does not contain, so every later comparison would be between a
+  branch with the history and a branch with a summary of it; rebase would rewrite
+  those commits onto `main`, giving `develop` and `main` different identifiers
+  for identical work. Either turns the back-merge from a formality into a
+  divergence somebody has to reason about.
+
+  A merge commit costs one thing and it is the thing to expect rather than
+  investigate: `main` shows as ahead of `develop` the moment the pull request
+  lands, because the merge commit exists only on `main`. It already shows ahead
+  by five for exactly this reason. The back-merge is what settles it, and the
+  test afterwards is that `main` is an ancestor of `develop` with a zero content
+  diff -- not that the two branches point at the same commit, which they should
+  not and must never be forced to.
 
 ## H14. Documentation actionability investigation (opencode, free models, zvec-grep) — complete
 
@@ -5200,7 +5214,7 @@ This is an index only; each decision is owned and explained inside its item.
 | Windows/macOS feasibility and support | H6a/H7 | Deferred to post-v1.0; native execution required and the hardware is not available. H12's runner-based half was retired there on 2026-09-08 |
 | Native credential providers | H9 | Open and blocking implementation |
 | Wails v3 spike timing/outcome | H10 | Explicit approval required; production stays v2 |
-| GitHub PR merge and branch synchronization | H12 | Moved to the v0.9 boundary on 2026-09-08; v0.8 makes no external write. Merge separately authorized, and the back-merge into `develop` is required rather than optional |
+| GitHub PR merge and branch synchronization | H12 | Moved to the v0.9 boundary on 2026-09-08; v0.8 makes no external write. Merge method decided: a merge commit. Merge separately authorized, and the back-merge into `develop` is required rather than optional |
 | v0.8 product/schema number | H13 | Open with product 0.8.0/no gratuitous schema default |
 | Internal artifact custody | H13 | Local/internal-only default; public release separately authorized |
 

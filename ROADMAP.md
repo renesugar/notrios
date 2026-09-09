@@ -627,7 +627,9 @@ be smuggled into v0.7 as desktop assumptions.
   never run against any of that work, and a release window is the worst place to
   discover it. Re-audit the remote, run the evidence pre-push gate, push
   `develop`, and open a `develop`-to-`main` pull request. Merge only after
-  review and explicit authorization.
+  review and explicit authorization, using a merge commit -- squash or rebase
+  would rewrite `develop`'s history onto `main` and leave the two branches
+  holding different identifiers for identical work.
 
   Then bring the merge result back into `develop`, so that `main` is an ancestor
   of it and the two trees have no content difference. That back-merge is the
