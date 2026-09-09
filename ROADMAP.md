@@ -640,22 +640,31 @@ be smuggled into v0.7 as desktop assumptions.
   ahead. Zero content difference is the requirement; identical commit
   identifiers are not, and branches are never forced to reach them.
 
-- **Migrate the desktop shell to Wails v3, if v3 has released by the time this
-  milestone starts.** H10's spike passed: a prototype rendered the whole real
-  interface on v3.0.0-beta.18 and linked eight Go modules against the v2 shell's
-  sixteen. The migration is mechanical except for one thing -- `window.go` does
-  not exist in v3, so the eleven places the frontend reaches for it move onto
-  `@wailsio/runtime` or generated bindings -- and one thing that needs care: a
-  v3 question dialog answers on a callback rather than returning the button, so
-  the unsaved-work veto waits and fails closed.
+- **Migrate the desktop shell to Wails v3, once v3 has released and before the
+  hardening below begins.** H10's spike passed: a prototype rendered the whole
+  real interface on v3.0.0-beta.18 and linked eight Go modules against the v2
+  shell's sixteen. The migration is mechanical except for one thing --
+  `window.go` does not exist in v3, so the eleven places the frontend reaches
+  for it move onto `@wailsio/runtime` or generated bindings -- and one thing
+  that needs care: a v3 question dialog answers on a callback rather than
+  returning the button, so the unsaved-work veto waits and fails closed.
 
-  It goes **before** the hardening below, because what gets hardened has to be
-  what ships; a framework swap after the matrices would invalidate them. If v3
-  has not released, this moves to post-v1.0 rather than shipping a release
-  candidate on a beta, and v1.0 ships on Wails v2 -- which works, and which the
-  spike confirmed still works. The native stack changes with it, from GTK3 and
-  webkit2gtk-4.1 to GTK4 and webkitgtk-6.0, so every documented install line and
-  the package's dependencies change too.
+  **The gate is ordering rather than a date.** It does not have to be the first
+  thing in this milestone and it cannot be one of the last: it goes before the
+  matrices, the SBOM, the soak tests and the freezes, because what gets hardened
+  has to be what ships. Everything after it here describes the desktop it
+  produces -- the installer's dependencies, the linked-module inventory, the
+  webview the soak tests run, the frozen support matrix, and six documented
+  install lines -- so a swap afterwards would invalidate all of them. The native
+  stack changes with it, from GTK3 and webkit2gtk-4.1 to GTK4 and
+  webkitgtk-6.0.
+
+  **If v3 has not released when this milestone reaches this slice, postpone it
+  to post-v1.0** rather than hardening a release candidate on a beta. v1.0 then
+  ships on Wails v2, which works and which the spike confirmed still works, and
+  the migration becomes its own work with its own hardening. Postponing is a
+  decision to record at that point, not a failure: the spike already established
+  that the migration is small, so it costs nothing to wait for a release.
 
 - Promote the v0.8 Ubuntu installer through clean native environment matrices.
   Windows and macOS are deferred to post-v1.0 with the hardware they need, so
@@ -720,7 +729,11 @@ be smuggled into v0.7 as desktop assumptions.
   installers, checksums, signatures, SBOM/provenance, upgrade/rollback
   instructions, and downloaded bytes after publication.
 - Desktop remains on stable Wails v2 unless the v0.9 migration above has
-  happened; any physical Android claim waits for the post-1.0 device gate. **The
+  happened; if that slice postponed for want of a v3 release, v1.0 ships on v2
+  and the migration is the post-v1.0 entry below. Migrating during v1.0 itself
+  is the one placement ruled out: this milestone publishes what v0.9 hardened,
+  and a framework swap here would ship a desktop nobody measured. Any physical
+  Android claim waits for the post-1.0 device gate. **The
   spike that gated this passed on 2026-09-09** and recommended migrating after
   v3 releases -- so the condition is now the release rather than the evidence.
   Wails v3 offers a shared desktop/iOS/Android codebase; its desktop was beta
@@ -799,6 +812,24 @@ scheduling decision, not a change of intent.
   a native store is reachable and enrolment refuses with that reason. The
   condition is reachable on a desktop install through `loginctl enable-linger`
   or an SSH login, so the refusal is not hypothetical.
+
+## Post-v1.0 — Wails v3 desktop migration, if v0.9 postponed it
+
+This section applies only if v3 had not released when v0.9 reached its migration
+slice. It is the recorded destination for that postponement rather than a second
+plan: the work is the same, and what changes is that it no longer rides on
+v0.9's hardening and therefore needs its own.
+
+- The migration itself is what H10 measured and
+  `performance/v0.8-h10/REPORT.json` describes, unchanged by the delay.
+- What the delay adds is a repeat of the parts of v0.9 that describe the
+  desktop: the installer's dependency inventory, the SBOM and licence reports,
+  the soak tests, the desktop support matrix, and the installation
+  documentation. A migrated desktop that inherits a v2 desktop's hardening
+  evidence is claiming something nobody measured.
+- v1.0 having shipped on Wails v2 is not a reason to hurry this. The spike's
+  finding was that the port is small and the framework gets lighter, and neither
+  expires.
 
 ## Post-v1.0 — Windows and macOS installers
 
