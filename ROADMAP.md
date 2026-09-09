@@ -695,31 +695,25 @@ published, and no bundle leaves the machine or the reserve.
   ahead. Zero content difference is the requirement; identical commit
   identifiers are not, and branches are never forced to reach them.
 
-- **Migrate the desktop shell to Wails v3, once v3 has released and before the
-  hardening below begins.** H10's spike passed: a prototype rendered the whole
-  real interface on v3.0.0-beta.18 and linked eight Go modules against the v2
-  shell's sixteen. The migration is mechanical except for one thing --
-  `window.go` does not exist in v3, so the eleven places the frontend reaches
-  for it move onto `@wailsio/runtime` or generated bindings -- and one thing
-  that needs care: a v3 question dialog answers on a callback rather than
-  returning the button, so the unsaved-work veto waits and fails closed.
+- **The Wails v3 migration is postponed to post-v1.0. Decided 2026-09-09, on the
+  condition this milestone set for itself.** The gate was a released v3, and
+  `go list -m github.com/wailsapp/wails/v3@latest` answers `v3.0.0-beta.19`. A
+  release candidate is not hardened on a beta, so v0.9 hardens the Wails v2
+  desktop and v1.0 ships it. The destination is the post-v1.0 section below,
+  which was written to receive exactly this.
 
-  **The gate is ordering rather than a date.** It does not have to be the first
-  thing in this milestone and it cannot be one of the last: it goes before the
-  matrices, the SBOM, the soak tests and the freezes, because what gets hardened
-  has to be what ships. Everything after it here describes the desktop it
-  produces -- the installer's dependencies, the linked-module inventory, the
-  webview the soak tests run, the frozen support matrix, and six documented
-  install lines -- so a swap afterwards would invalidate all of them. The native
-  stack changes with it, from GTK3 and webkit2gtk-4.1 to GTK4 and
-  webkitgtk-6.0.
+  **This is the condition being met, not a plan failing.** H10's spike passed on
+  beta.18 and found the port small -- eight linked Go modules against the v2
+  shell's sixteen, one real hazard in the v3 question dialog's callback answer --
+  and neither finding expires while the release is waited for. What the
+  postponement costs is that the migration no longer rides on v0.9's hardening
+  and must bring its own, which the post-v1.0 entry already says.
 
-  **If v3 has not released when this milestone reaches this slice, postpone it
-  to post-v1.0** rather than hardening a release candidate on a beta. v1.0 then
-  ships on Wails v2, which works and which the spike confirmed still works, and
-  the migration becomes its own work with its own hardening. Postponing is a
-  decision to record at that point, not a failure: the spike already established
-  that the migration is small, so it costs nothing to wait for a release.
+  **What it changes here.** Nothing below this line is now waiting on a
+  framework swap: the installer's dependency inventory, the linked-module
+  inventory, the webview the soak tests run, the frozen support matrix and the
+  documented install lines all describe the v2 desktop on GTK3 and
+  webkit2gtk-4.1, and they describe what ships.
 
 - Promote the v0.8 Ubuntu installer through clean native environment matrices.
   Windows and macOS are deferred to post-v1.0 with the hardware they need, so
@@ -793,14 +787,15 @@ published, and no bundle leaves the machine or the reserve.
   pre-push evidence gates pass. Verify the version tag, release notes,
   installers, checksums, signatures, SBOM/provenance, upgrade/rollback
   instructions, and downloaded bytes after publication.
-- Desktop remains on stable Wails v2 unless the v0.9 migration above has
-  happened; if that slice postponed for want of a v3 release, v1.0 ships on v2
-  and the migration is the post-v1.0 entry below. Migrating during v1.0 itself
-  is the one placement ruled out: this milestone publishes what v0.9 hardened,
-  and a framework swap here would ship a desktop nobody measured. Any physical
-  Android claim waits for the post-1.0 device gate. **The
-  spike that gated this passed on 2026-09-09** and recommended migrating after
-  v3 releases -- so the condition is now the release rather than the evidence.
+- **Desktop ships on stable Wails v2.** v0.9 postponed the migration on
+  2026-09-09 because v3 was still at `v3.0.0-beta.19`, so what v0.9 hardened is
+  a v2 desktop and that is what this milestone publishes. Migrating during v1.0
+  itself was already the one placement ruled out -- a framework swap here would
+  ship a desktop nobody measured -- and the postponement does not change that;
+  it removes the alternative. The migration is the post-v1.0 entry below. Any
+  physical Android claim waits for the post-1.0 device gate. **The spike that
+  gated the decision passed on 2026-09-09** and recommended migrating after v3
+  releases, which is what waiting for one means.
   Wails v3 offers a shared desktop/iOS/Android codebase; its desktop was beta
   when measured and mobile remains experimental, with Android/iOS storage,
   lifecycle, background, credential, and file-dialog constraints. None of that
@@ -878,12 +873,13 @@ scheduling decision, not a change of intent.
   condition is reachable on a desktop install through `loginctl enable-linger`
   or an SSH login, so the refusal is not hypothetical.
 
-## Post-v1.0 — Wails v3 desktop migration, if v0.9 postponed it
+## Post-v1.0 — Wails v3 desktop migration
 
-This section applies only if v3 had not released when v0.9 reached its migration
-slice. It is the recorded destination for that postponement rather than a second
-plan: the work is the same, and what changes is that it no longer rides on
-v0.9's hardening and therefore needs its own.
+**v0.9 postponed it here on 2026-09-09**, because `wails/v3@latest` was
+`v3.0.0-beta.19` when the milestone reached that slice. This is the recorded
+destination for that postponement rather than a second plan: the work is the
+same, and what changed is that it no longer rides on v0.9's hardening and
+therefore needs its own. It begins when v3 has an actual release, not before.
 
 - The migration itself is what H10 measured and
   `performance/v0.8-h10/REPORT.json` describes, unchanged by the delay.
@@ -954,7 +950,7 @@ requirements below are the ones H7 already carried.
 The scaffold handoff is complete; see `CODING_CLIENT_HANDOFF.md`. Future roadmap planning should be driven from `ROADMAP.md`, but each active implementation cycle should create a small `PLAN.md` slice and archive it under `plans/` when complete.
 
 <!-- notrios:generated:roadmap:status:begin -->
-`PLAN.md` holds the active plan derived from this roadmap: 9 items, 0 complete, 0 in progress, 9 not started, 0 deferred.
+`PLAN.md` holds the active plan derived from this roadmap: 9 items, 0 complete, 0 in progress, 8 not started, 1 deferred.
 <!-- notrios:generated:roadmap:status:end -->
 
 
