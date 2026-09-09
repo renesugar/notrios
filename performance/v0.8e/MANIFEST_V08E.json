@@ -1,0 +1,40 @@
+{
+  "schema": "notrios.v08e.archive-manifest.v1",
+  "milestone": "v0.8e",
+  "evidence_directory": "/home/renes/evidence/notrios",
+  "honest_provenance": "E1 and E2 closed without an archive and theirs were built in E4, from their own close-out commits in a disposable worktree. Their file timestamps are the date they were built and say nothing about when the work happened. E3's was taken when the slice closed. Nothing here attests when any of the work was done; what attests a sealing is the reserve's OpenPGP signature and RFC 3161 timestamp.",
+  "archives": [
+    {
+      "item": "E1",
+      "archive": "notrios-v0.8e-e1-d7f5ec3.zip",
+      "commit": "d7f5ec31b2c817c1cd0eb13cc5b37f3fe90086a2",
+      "taken": "retroactively in v0.8e E4",
+      "bytes": 24838521,
+      "entries": 2321,
+      "sha256": "ca1730d9edb9640e3a351056828a051bf9fa9b8fe12d933744dd06d555bd9edf"
+    },
+    {
+      "item": "E2",
+      "archive": "notrios-v0.8e-e2-15d8e94.zip",
+      "commit": "15d8e94a1b6fd2149f58381dacb77b7b6b6cb4f6",
+      "taken": "retroactively in v0.8e E4",
+      "bytes": 24849828,
+      "entries": 2324,
+      "sha256": "42bd56462c6b387a4cb4d12c3b55d7c1076ef4064feeeb63a9a03eba36603cb8"
+    },
+    {
+      "item": "E3",
+      "archive": "notrios-v0.8e-e3-d24c02e.zip",
+      "commit": "d24c02ee32a3731dde51c27a08504e581eeecacc",
+      "taken": "when the slice closed",
+      "bytes": 24915422,
+      "entries": 2385,
+      "sha256": "b457f6ff95632269e0c2b431f40842a81d8f6295ba03bed1d710a4fc89783145"
+    }
+  ],
+  "counts": {
+    "items": 3,
+    "retroactive": 2,
+    "total_bytes": 74603771
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "schema": "notrios.v08e.closeouts.v1",
+  "what_this_is": "The commit that closes each v0.8e item, so its handoff archive can be built from the tree as that item left it. E3's archive was taken when the slice closed and is not rebuilt here; E1's and E2's were never taken, which is the omission E4 exists to make impossible.",
+  "items": [
+    {
+      "item": "E1",
+      "commit": "d7f5ec3",
+      "title": "Build the twenty-seven missing handoff archives"
+    },
+    {
+      "item": "E2",
+      "commit": "15d8e94",
+      "title": "Record the backfill honestly, and say what it is"
+    }
+  ]
+}

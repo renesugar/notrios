@@ -21,7 +21,11 @@
 set -euo pipefail
 
 root=$(cd "$(dirname "$0")/../.." && pwd)
-closeouts=$root/performance/v0.8e/CLOSEOUTS.json
+# The two knobs a later milestone needs. Defaulting them to v0.8 keeps this
+# the exact record of how E1 built the twenty-seven, while letting v0.8e use
+# the same path rather than a second copy of it that could drift.
+closeouts=${NOTRIOS_BACKFILL_CLOSEOUTS:-$root/performance/v0.8e/CLOSEOUTS.json}
+milestone=${NOTRIOS_BACKFILL_MILESTONE:-v0.8}
 outdir=${NOTRIOS_BACKFILL_OUT:-$root/dist/backfill}
 evidence=${NOTRIOS_EVIDENCE_DIR:-$HOME/evidence/notrios}
 work=$(mktemp -d "${TMPDIR:-/tmp}/notrios-backfill.XXXXXX")
@@ -71,7 +75,7 @@ for e in json.load(open('$closeouts'))['items']:
   cp -a "$(install_for "$commit")" "$tree/web/node_modules"
   (cd "$tree/web" && npm run build >/dev/null 2>&1)
 
-  zip_path=$outdir/notrios-v0.8-${item,,}-$short.zip
+  zip_path=$outdir/notrios-$milestone-${item,,}-$short.zip
   rm -f "$zip_path"
   (cd "$tree" && zip -qr "$zip_path" . \
     -x 'node_modules/*' -x 'web/node_modules/*' -x '*/node_modules/*' \

@@ -138,6 +138,10 @@ python3 performance/v0.8-h15/validate_evidence.py
 python3 performance/v0.8-h11/validate_evidence.py
 python3 performance/v0.8-h10/validate_evidence.py
 python3 performance/v0.8e/validate_evidence.py
+# E4: a finished plan item with no archive in the record fails here, not at
+# release time. Packaging stopped after H4 and the omission survived thirty-one
+# items because nothing compared the plan to the record.
+python3 performance/v0.8e/check_archive_coverage.py
 
 # The anchor and enumeration gates, which used to run only inside
 # scripts/package_release.sh. That is how a dangling Go anchor survived from
