@@ -84,12 +84,13 @@
       "slices": [
         {
           "id": "E5-A",
-          "state": "in-progress",
-          "statement": "The git bundle and the Debian package have structural validators, and the sealer's approved set is widened to match"
+          "state": "done",
+          "statement": "The git bundle and the Debian package have structural validators, and the sealer's approved set is widened to match",
+          "evidence": "file:evidence/verify_evidence.py"
         },
         {
           "id": "E5-B",
-          "state": "not-started",
+          "state": "in-progress",
           "statement": "Volume-0003 seals v0.8e's own archives with both newly approved artifacts, and the reserve verifies end to end"
         }
       ]

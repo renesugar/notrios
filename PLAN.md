@@ -57,14 +57,13 @@ this section is archived when the plan completes and the rules are not.
 | E2. Record the backfill honestly, and say what it is | complete | 2/2 | — |
 | E3. Seal a reserve volume, and extend the outer catalog | complete | 2/2 | — |
 | E4. Make a missing archive fail rather than pass unnoticed | complete | 1/1 | — |
-| E5. Widen the approved types, and seal what v0.8e itself produced | in-progress | 0/2 | 2 |
+| E5. Widen the approved types, and seal what v0.8e itself produced | in-progress | 1/2 | 1 |
 
 ### Started and not finished
 
 **E5. Widen the approved types, and seal what v0.8e itself produced**
 
-- `E5-A` The git bundle and the Debian package have structural validators, and the sealer's approved set is widened to match — *in-progress*
-- `E5-B` Volume-0003 seals v0.8e's own archives with both newly approved artifacts, and the reserve verifies end to end — *not-started*
+- `E5-B` Volume-0003 seals v0.8e's own archives with both newly approved artifacts, and the reserve verifies end to end — *in-progress*
 <!-- notrios:generated:plan:progress:end -->
 
 ## E1. Build the twenty-seven missing handoff archives — complete
