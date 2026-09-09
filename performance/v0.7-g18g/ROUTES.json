@@ -1,11 +1,30 @@
 {
   "schema": "notrios.g18g.routes.v1",
   "base_path": "/notrios/",
-  "preserved_routes": ["index.html", "installation.html", "service.html", "cli.html", "query-language.html", "selection-planning.html", "archive-v2.html", "stable-links.html", "publishing.html", "gui.html", "import-export.html", "operations.html", "api/rest.html", "api/mcp.html", "troubleshooting.html"],
+  "preserved_routes": [
+    "index.html",
+    "installation.html",
+    "service.html",
+    "cli.html",
+    "query-language.html",
+    "selection-planning.html",
+    "archive-v2.html",
+    "stable-links.html",
+    "publishing.html",
+    "gui.html",
+    "import-export.html",
+    "operations.html",
+    "api/rest.html",
+    "api/mcp.html",
+    "troubleshooting.html",
+    "features.html",
+    "journeys-cli.html",
+    "journeys-gui.html"
+  ],
   "legacy_fragment_aliases": {
     "service.html#configuration": "service.html#configuration-reference",
     "stable-links.html#linking-to-a-block-not-just-a-note": "stable-links.html#linking-to-a-section-or-a-block"
   },
-  "g18a_section_count": 199,
+  "g18a_section_count": 267,
   "required_alias_count": 2
 }

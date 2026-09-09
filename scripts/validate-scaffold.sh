@@ -119,4 +119,12 @@ python3 performance/v0.8-h15/validate_evidence.py
 python3 performance/v0.8-h11/validate_evidence.py
 python3 performance/v0.8-h10/validate_evidence.py
 
+# The anchor and enumeration gates, which used to run only inside
+# scripts/package_release.sh. That is how a dangling Go anchor survived from
+# H15's rename of ChooseSyncDirectory until v0.8 H13 tried to package: a gate
+# that only runs when you release is a gate that tells you at the worst moment.
+# They need no network and no browser, which is the whole test for belonging
+# here.
+make g18e-validate g18f-validate g19-validate g20-validate
+
 echo "Scaffold validation passed."

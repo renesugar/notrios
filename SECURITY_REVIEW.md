@@ -1,6 +1,6 @@
 # Security Review — Current Local Product and Planned Remote Surfaces
 
-This review reflects the v0.7.0 release candidate (schema v27). Notrios is
+This review reflects the v0.8.0 release candidate (schema v27, unchanged from v0.7). Notrios is
 local-first but
 its REST/MCP listener, importers, preview, downloaded media, archive files,
 published handoffs, and future sync transports are security boundaries.

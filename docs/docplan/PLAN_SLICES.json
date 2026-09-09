@@ -366,17 +366,19 @@
     {
       "id": "H13",
       "title": "v0.8 release wrap-up",
-      "state": "not-started",
+      "state": "complete",
       "slices": [
         {
           "id": "H13-A",
           "statement": "Reconcile every v0.8 item's evidence and archive the completed ones",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:RELEASE_CHECKLIST.md"
         },
         {
           "id": "H13-B",
           "statement": "Produce the internal prerelease artifacts and the verified source snapshot, and archive the milestone",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:plans/v0.8/000-v0.8-plan.md"
         }
       ]
     },

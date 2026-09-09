@@ -31,9 +31,15 @@ if [[ "$pagefind_version" != "pagefind 1.5.2" ]]; then
   exit 1
 fi
 
+# 15 -> 18 in v0.8: the features page and the two journey catalogues, added by
+# H14 and filled in by H15. The count is pinned rather than discovered so that a
+# document appearing in the published site is a decision somebody made -- but it
+# only fails at packaging time, which is how it stayed at 15 for a month. v0.8
+# H13 moved the anchor gates into `make validate` for that reason; this one
+# stays out because it needs Pagefind from docs-site/node_modules.
 mapfile -d '' documents < <(find "$ROOT/docs" -type f -name '*.md' -print0 | sort -z)
-if [[ "${#documents[@]}" -ne 15 ]]; then
-  echo "build_docs_site: expected exactly 15 docs/**/*.md files; got ${#documents[@]}" >&2
+if [[ "${#documents[@]}" -ne 18 ]]; then
+  echo "build_docs_site: expected exactly 18 docs/**/*.md files; got ${#documents[@]}" >&2
   exit 1
 fi
 
@@ -58,6 +64,15 @@ cp -a "$ROOT/docs-site/hugo.toml" "$ROOT/docs-site/layouts" \
 # guides. These are downloadable schemas/fixtures, not Hugo content pages.
 mkdir -p "$source/static/contracts"
 cp -a "$ROOT/contracts/archive-v2" "$source/static/contracts/archive-v2"
+# The journey screenshots the interface catalogue points at. They are published
+# beside the guides rather than rendered as content, and without this the
+# journeys page ships with every image broken -- which the offline-asset check
+# reports as a remote reference, because an image the site does not carry is one
+# a reader's browser would have to fetch from somewhere else.
+if [[ -d "$ROOT/docs/images" ]]; then
+  mkdir -p "$source/static/images"
+  cp -a "$ROOT/docs/images/." "$source/static/images/"
+fi
 # The search landing page is reviewed site furniture. Canonical documentation
 # is staged separately from docs/ below and remains byte-for-byte identical.
 mkdir -p "$source/content"

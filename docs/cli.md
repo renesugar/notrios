@@ -126,7 +126,7 @@ Version is the product version reported by Notrios binaries.
 notriosctl version
 ```
 
-Prints the version string (currently `0.7.0`) and exits 0. No flags.
+Prints the version string and exits 0. No flags. The number is not repeated here: a document that restates the version can only ever be right until the next release, and this one was wrong within a day of it.
 
 ## doctor
 
@@ -779,7 +779,7 @@ by default and take `--json` for the structured one. Every other command prints
 JSON, and passing `--json` to a command that does not offer it is an error
 rather than a no-op.
 
-## collections list / collections show
+## collections list and collections show
 
 ```sh
 notriosctl collections list [--json] [--db ...]
@@ -857,7 +857,7 @@ question.
 **Also on REST and MCP:** `GET|POST /api/v1/search` and the `search_documents`
 tool, with the same language.
 
-## notes show / notes outline / notes resources / notes links
+## notes show, notes outline, notes resources and notes links
 
 ```sh
 notriosctl notes show --document <id> [--json] [--output <file>]
@@ -916,7 +916,7 @@ existed: `GET /api/v1/documents/{id}`, `/body`, `/outline`, `/blocks`, `/lines`,
 `read_resource` tools. Blocks, line ranges and earlier revisions have no command
 of their own yet.
 
-## resources add / notes append / notes prepend
+## resources add, notes append and notes prepend
 
 ```sh
 notriosctl resources add --file <path> [--filename <name>] [--document <id>]

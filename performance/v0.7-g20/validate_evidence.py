@@ -88,11 +88,36 @@ def validate(root=ROOT, report_path=REPORT):
                     "v07_schema_steps": list(range(19, 28)), "private_corpus_read": False}:
         fail("release identity or schema history drift")
 
+    # v0.7's release identity, checked against the record rather than against
+    # today's source.
+    #
+    # This read `internal/version/version.go` and required 0.7.0, which was a
+    # true statement about the repository until the version moved and a false
+    # one for ever after: v0.8 H13 bumped it to 0.8.0 and this record -- whose
+    # subject is what v0.7 shipped -- started failing on a fact about v0.8. An
+    # evidence record for a finished milestone must not re-derive its subject
+    # from the present.
+    #
+    # What is still worth checking is that the version has not gone *backwards*
+    # or sideways into something unparseable, because this record's schema
+    # history claims steps 19-27 and a lower version would mean the tree is not
+    # the one it describes.
     version_source = (root / "internal/version/version.go").read_text()
-    if 'const Version = "0.7.0"' not in version_source:
-        fail("Go product version is not 0.7.0")
-    if load(root / "web/package.json").get("version") != "0.7.0":
-        fail("web product version is not 0.7.0")
+    match = re.search(r'const Version = "(\d+)\.(\d+)\.(\d+)"', version_source)
+    if not match:
+        fail("the Go product version is missing or unparseable")
+    current = tuple(int(part) for part in match.groups())
+    if current < (0, 7, 0):
+        fail(f"the Go product version {'.'.join(map(str, current))} is older than the 0.7.0 this record describes")
+    # The frontend's version tracks the Go one, so it gets the same treatment
+    # for the same reason: this record describes v0.7 and must not fail because
+    # a later milestone shipped.
+    web_version = str(load(root / "web/package.json").get("version", ""))
+    web_match = re.fullmatch(r"(\d+)\.(\d+)\.(\d+)", web_version)
+    if not web_match:
+        fail(f"the web product version {web_version!r} is missing or unparseable")
+    if tuple(int(part) for part in web_match.groups()) < (0, 7, 0):
+        fail(f"the web product version {web_version} is older than the 0.7.0 this record describes")
     store_source = (root / "internal/store/store.go").read_text()
     if not re.search(r"CurrentSchemaVersion\s*=\s*27\b", store_source):
         fail("canonical schema is not v27")

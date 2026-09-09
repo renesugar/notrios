@@ -529,7 +529,7 @@
     },
     {
       "path": "docs/cli.md",
-      "sha256": "f3142f8947ce8f2e8456ff64b37574e02787e510c199d9373d59ee4f36831654",
+      "sha256": "3315e3511027d04863328e11a16ac4e8ed488a82ae98bcc252a1f4f56d61d973",
       "help_note": "doc_help_cli",
       "owner": "go:github.com/renesugar/notrios/cmd/notriosctl#printHelp",
       "sections": [
@@ -834,9 +834,9 @@
           "grade": "unverified"
         },
         {
-          "id": "collections-list-collections-show",
+          "id": "collections-list-and-collections-show",
           "level": 2,
-          "title": "collections list / collections show",
+          "title": "collections list and collections show",
           "audience": "user",
           "kind": "actionable_or_reference",
           "owner": "go:github.com/renesugar/notrios/cmd/notriosctl#printHelp",
@@ -854,9 +854,9 @@
           "grade": "unverified"
         },
         {
-          "id": "notes-show-notes-outline-notes-resources-notes-links",
+          "id": "notes-show-notes-outline-notes-resources-and-notes-links",
           "level": 2,
-          "title": "notes show / notes outline / notes resources / notes links",
+          "title": "notes show, notes outline, notes resources and notes links",
           "audience": "user",
           "kind": "actionable_or_reference",
           "owner": "go:github.com/renesugar/notrios/cmd/notriosctl#printHelp",
@@ -864,9 +864,9 @@
           "grade": "unverified"
         },
         {
-          "id": "resources-add-notes-append-notes-prepend",
+          "id": "resources-add-notes-append-and-notes-prepend",
           "level": 2,
-          "title": "resources add / notes append / notes prepend",
+          "title": "resources add, notes append and notes prepend",
           "audience": "user",
           "kind": "actionable_or_reference",
           "owner": "go:github.com/renesugar/notrios/cmd/notriosctl#printHelp",

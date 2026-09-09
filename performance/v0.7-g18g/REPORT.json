@@ -2,8 +2,8 @@
   "schema": "notrios.g18g.qa-report.v1",
   "status": "complete",
   "browser_plugin": {"available": false, "fallback": "browser_smoke.mjs", "screenshots": "caller-provided /tmp path only"},
-  "routes": {"preserved": 15, "g18a_sections": 199, "aliases": 2},
-  "search": {"indexed_pages": 15, "known_query": "Argon2id", "result_under_base": true},
+  "routes": {"preserved": 18, "g18a_sections": 267, "aliases": 2},
+  "search": {"indexed_pages": 18, "known_query": "Argon2id", "result_under_base": true},
   "raw_help": {"byte_equivalent": true, "id_equivalent": true, "content_equivalent": true, "idempotent": true},
   "offline": {"remote_runtime_assets": 0, "remote_fonts": 0, "local_pagefind": true, "csp_external_requests": 0},
   "measurements": {
@@ -22,7 +22,7 @@
     "hugo_output_byte_identical": true,
     "pagefind_semantically_identical": true,
     "pagefind_byte_identical": false,
-    "repeat_indexed_pages": 15,
+    "repeat_indexed_pages": 18,
     "repeat_known_query": "pass",
     "qualification": "Pagefind 1.5.2 varies hashed metadata/index shard names; the approved G18b contract requires repeatable pinned inputs and observable behavior, not a byte-identical Pagefind tree."
   },

@@ -2,6 +2,56 @@
 
 **How to keep this document current is in [`AGENTS.md`](AGENTS.md)** — under "Keeping the reference documents current".
 
+## v0.8.0 — installation, configuration, shared core, and portability
+
+H0-H29 are implemented on `develop`. v0.8 makes **no external write at all**:
+the first GitHub push, the `develop`-to-`main` pull request and the branch
+synchronization open v0.9, because the condition that would have brought them
+forward -- native runners for Windows and macOS -- never fired once H7 moved to
+post-v1.0. So the owner steps below are shorter than every milestone before it,
+and what stands in their place is a source snapshot on this machine.
+
+Release-candidate gates:
+
+- [x] Product version reports `0.8.0`; the canonical schema stays at **v27**,
+      because no v0.8 item added a migration and incrementing one for packaging
+      would claim a data change that did not happen.
+- [x] `go vet ./...`, `go test ./...`, and `make validate`, which now also runs
+      the H10 Wails v3 spike record and the H11 Android acceptance record
+      offline.
+- [x] The C ABI's twelve exported symbols, no SQLite export, no dynamic SQLite,
+      and the C host acceptance test -- on the desktop build and again on the
+      Android cross-build.
+- [x] Installed paths on the XDG contract, the `install`/`uninstall`/`purge`
+      lifecycle with verified backup, and an Ubuntu package installable without
+      Go, Node, Wails or a compiler.
+- [x] The native credential store selected per platform, with no silent fall
+      back to plaintext and no secret bytes in a purge backup or in evidence.
+- [x] Documentation regenerated from source: the CLI reference, the features
+      page, both journey catalogues, the atlas and the plan's own progress log.
+- [x] The GUI control inventory re-crawled at 89 controls, 82 of them
+      addressable, and every capability the interface offers has a captured
+      journey.
+
+Not claimed by v0.8, and refused by a gate where one exists:
+
+- Windows and macOS installers, deferred to post-v1.0 with the hardware they
+  need. No row is marked passed for a platform this machine cannot execute.
+- Any Android product. H11 accepted the shared core on one x86_64 emulator;
+  arm64 is built and never run, and the record is refused if it stops saying so.
+- A Wails v3 migration. H10 recommends one after v3 releases; production still
+  builds and runs on v2.13.0.
+- A tag, a GitHub Release, a public installer, or a signing or notarisation
+  claim.
+
+Repository-owner steps (deferred to v0.9 rather than to the end of v0.8):
+
+- [ ] Push `develop`, open the `develop`-to-`main` pull request, and merge with
+      a merge commit after review.
+- [ ] Bring the merge back into `develop`, then require `main` to be an ancestor
+      of it with a zero content diff.
+- [ ] Perform any separately authorised evidence-reserve/ISO/media work.
+
 ## v0.7.0 — native synchronization
 
 G0-G20 are implemented on `develop`. G20 produces a local source release

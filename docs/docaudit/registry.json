@@ -915,9 +915,9 @@
       }
     },
     {
-      "id": "cli-collections-list-collections-show-example-1",
+      "id": "cli-collections-list-and-collections-show-example-1",
       "path": "docs/cli.md",
-      "section": "collections-list-collections-show",
+      "section": "collections-list-and-collections-show",
       "language": "sh",
       "sha256": "729d48046bfff2fe6a0d4efad2500c7998b994dfec6e7e517b900c85a8f23594",
       "state": "unverified",
@@ -1255,9 +1255,9 @@
       }
     },
     {
-      "id": "cli-notes-show-notes-outline-notes-resources-notes-links-example-1",
+      "id": "cli-notes-show-notes-outline-notes-resources-and-notes-links-example-1",
       "path": "docs/cli.md",
-      "section": "notes-show-notes-outline-notes-resources-notes-links",
+      "section": "notes-show-notes-outline-notes-resources-and-notes-links",
       "language": "sh",
       "sha256": "739515427a8137d6849bb2c2f1d6818e3cd9c76dbda56359486bb2170eaff9fe",
       "state": "unverified",
@@ -1399,9 +1399,9 @@
       }
     },
     {
-      "id": "cli-resources-add-notes-append-notes-prepend-example-1",
+      "id": "cli-resources-add-notes-append-and-notes-prepend-example-1",
       "path": "docs/cli.md",
-      "section": "resources-add-notes-append-notes-prepend",
+      "section": "resources-add-notes-append-and-notes-prepend",
       "language": "sh",
       "sha256": "f686da45c3e765ba4dc4890e24b2a4fe7cd1c5b093681bc13efa2e59436b0bd8",
       "state": "unverified",

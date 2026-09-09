@@ -151,7 +151,7 @@ Recoll availability, backlog, sync/index, and reconciliation state.
   documentation and release wrap-up (F7). Archived under `plans/v0.6/`. See
   [`PLAN.md`](PLAN.md) for the next milestone and [`ROADMAP.md`](ROADMAP.md) for
   the sequence.
-- **v0.7 (current, 0.7.0) — native synchronization.** G0-G2 completed the threat,
+- **v0.7 (0.7.0) — native synchronization.** G0-G2 completed the threat,
   revision/delta, pure-Go VCDIFF, envelope, and resource-bound investigations.
   G3 adds named owner-only runtime profiles, explicit database/replica binding,
   isolated paths and loopback ports, copied-database adopt/fork checks, and a
@@ -207,8 +207,21 @@ Recoll availability, backlog, sync/index, and reconciliation state.
   archive-v2 consumer contract. G20 reconciles the full system, hardens remote
   admission and untrusted filesystem roots, validates schema v27 upgrade and
   recovery, and ships the 0.7.0 source release candidate. All G0-G20 slices are
-  archived under `plans/v0.7/`; `PLAN.md` now describes the active v0.8
-  milestone, with H0 complete and H1 next.
+  archived under `plans/v0.7/`.
+- **v0.8 (current, 0.8.0) — installation, configuration, shared core, and
+  portability.** H0-H1 established the application facade, the frozen version-1
+  C ABI and one hidden SQLite engine. H3-H6 centralised installed paths on the
+  XDG contract, added a reviewed `install`/`uninstall`/`purge` lifecycle and an
+  Ubuntu package a person can install without Go, Node or a compiler; Windows
+  and macOS moved to post-v1.0 with the hardware they need. H9 chose the native
+  credential store and refuses a silent fall back to plaintext. H11 accepted the
+  shared core on an Android emulator, and H10's spike recommends migrating the
+  desktop to Wails v3 once it releases. The rest closed a gap the milestone kept
+  finding: a capability reachable from one adapter and not another. Search,
+  reading, discovery, tagging, attachments and batch operations came to the
+  command line; the interface gained names for its controls, multi-select, and a
+  journey for every capability it offers. The schema is unchanged at v27. All
+  H0-H29 slices are archived under `plans/v0.8/`.
 - Agent progress/attempt tracking: [`agent/PLAN_STATUS.md`](agent/PLAN_STATUS.md), [`agent/ATTEMPT_LOG.jsonl`](agent/ATTEMPT_LOG.jsonl), and [`agent/MODEL_LOG.jsonl`](agent/MODEL_LOG.jsonl).
 
 ## Contributing

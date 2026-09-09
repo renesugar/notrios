@@ -475,7 +475,7 @@ remote route/TLS admission, bounds browser/JSON/resource bodies, and roots and
 bounds untrusted carrier/legacy-archive access. Publishing/tagging remains an
 owner action; v0.8 is planned but unstarted.
 
-## v0.8 — Installation, configuration, shared core, and portability
+## v0.8 — Installation, configuration, shared core, and portability (complete, 0.8.0)
 
 This is deliberately separate from synchronization correctness. Packaging
 changes which directories, credentials, ports, background work, deep links, and
@@ -889,7 +889,7 @@ requirements below are the ones H7 already carried.
 The scaffold handoff is complete; see `CODING_CLIENT_HANDOFF.md`. Future roadmap planning should be driven from `ROADMAP.md`, but each active implementation cycle should create a small `PLAN.md` slice and archive it under `plans/` when complete.
 
 <!-- notrios:generated:roadmap:status:begin -->
-`PLAN.md` holds the active plan derived from this roadmap: 35 items, 32 complete, 0 in progress, 1 not started, 2 deferred.
+`PLAN.md` holds the active plan derived from this roadmap: 35 items, 33 complete, 0 in progress, 0 not started, 2 deferred.
 <!-- notrios:generated:roadmap:status:end -->
 
 

@@ -240,14 +240,18 @@ func TestRuntimeProfilesStartTwoIsolatedDaemons(t *testing.T) {
 	}
 
 	processes := []*exec.Cmd{}
+	// Kept so a failed wait can say whether the daemon died or is merely slow.
+	// Those are different problems and the HTTP error looks identical for both.
+	logs := []*strings.Builder{}
 	for _, configPath := range configs {
 		cmd := exec.Command(daemon, "-config", configPath)
-		var stderr strings.Builder
-		cmd.Stderr = &stderr
+		stderr := &strings.Builder{}
+		cmd.Stderr = stderr
 		if err := cmd.Start(); err != nil {
 			t.Fatal(err)
 		}
 		processes = append(processes, cmd)
+		logs = append(logs, stderr)
 		proc := cmd
 		t.Cleanup(func() {
 			if proc.Process != nil {
@@ -261,7 +265,13 @@ func TestRuntimeProfilesStartTwoIsolatedDaemons(t *testing.T) {
 		endpoint := "http://" + addresses[i] + "/api/v1/status"
 		var response *http.Response
 		var err error
-		deadline := time.Now().Add(10 * time.Second)
+		// Thirty seconds rather than ten. Each daemon opens a database, runs
+		// migrations and binds a port, and this test starts two; under the full
+		// suite that is enough to take longer than ten seconds on a loaded
+		// machine. It failed twice that way during v0.8 H13 and passed six
+		// times when run alone, which is the signature of a deadline rather
+		// than of a defect -- always on the second daemon.
+		deadline := time.Now().Add(30 * time.Second)
 		for time.Now().Before(deadline) {
 			response, err = http.Get(endpoint)
 			if err == nil {
@@ -270,7 +280,15 @@ func TestRuntimeProfilesStartTwoIsolatedDaemons(t *testing.T) {
 			time.Sleep(25 * time.Millisecond)
 		}
 		if err != nil {
-			t.Fatalf("wait for %s at %s: %v", name, endpoint, err)
+			// A daemon that exited and a daemon that is slow both look like a
+			// refused connection from here, and they send a reader to different
+			// places. Say which happened, and hand over what the process said.
+			died := ""
+			if process := processes[i]; process.ProcessState != nil {
+				died = " -- the daemon exited: " + process.ProcessState.String()
+			}
+			t.Fatalf("wait for %s at %s: %v%s\ndaemon stderr:\n%s",
+				name, endpoint, err, died, logs[i].String())
 		}
 		var status map[string]any
 		if decodeErr := json.NewDecoder(response.Body).Decode(&status); decodeErr != nil {

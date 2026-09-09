@@ -3,10 +3,12 @@ package docrules_test
 import (
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 
 	"github.com/renesugar/notrios/internal/docrules"
+	"github.com/renesugar/notrios/internal/version"
 )
 
 // repositoryRoot is two directories up from this package.
@@ -306,5 +308,61 @@ func copyAtlasTree(t *testing.T, into string) {
 				t.Fatalf("creating %s: %v", entry.Name(), err)
 			}
 		}
+	}
+}
+
+// TestNoDocumentRestatesTheProductVersion is a gate for a thing that went stale
+// on the day the version moved.
+//
+// `docs/cli.md` said "prints the version string (currently `0.7.0`)", written
+// by hand outside a generated block. It was true when written and wrong the
+// moment H13 bumped the version, and nothing noticed -- which is the failure
+// this repository's documentation machinery exists to prevent, appearing in the
+// documentation about the command that prints the version.
+//
+// The rule is not "never mention a version". A milestone history saying v0.7
+// shipped 0.7.0 is a fact about the past and stays true. What may not appear is
+// the *current* version stated as current, because that sentence has to be
+// found and edited every release and will eventually not be.
+func TestNoDocumentRestatesTheProductVersion(t *testing.T) {
+	root := filepath.Join("..", "..")
+	// Phrasings that claim to be current. A bare "0.8.0" is not enough to
+	// object to: the release checklist has to say which version it checked.
+	claims := []*regexp.Regexp{
+		regexp.MustCompile(`(?i)currently\s+` + "`?" + regexp.QuoteMeta(version.Version)),
+		regexp.MustCompile(`(?i)version is (now )?` + "`?" + regexp.QuoteMeta(version.Version)),
+		regexp.MustCompile(`(?i)the current version[^.\n]{0,20}` + regexp.QuoteMeta(version.Version)),
+	}
+	// Where a current-version statement is the point rather than an accident.
+	allowed := map[string]bool{
+		"PLAN.md": true, "RELEASE_CHECKLIST.md": true, "README.md": true,
+		"CODING_CLIENT_HANDOFF.md": true,
+	}
+	err := filepath.Walk(filepath.Join(root, "docs"), func(path string, info os.FileInfo, err error) error {
+		if err != nil || info.IsDir() || !strings.HasSuffix(path, ".md") {
+			return err
+		}
+		relative, relErr := filepath.Rel(root, path)
+		if relErr != nil {
+			return relErr
+		}
+		if allowed[filepath.ToSlash(relative)] {
+			return nil
+		}
+		body, readErr := os.ReadFile(path)
+		if readErr != nil {
+			return readErr
+		}
+		for _, claim := range claims {
+			if claim.Match(body) {
+				t.Errorf("%s states the current product version. The version is what "+
+					"`notriosctl version` prints; a document repeating it can only be right "+
+					"until the next release.", filepath.ToSlash(relative))
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("walking docs: %v", err)
 	}
 }

@@ -921,7 +921,7 @@
       "reason": {
         "code": "native-shell-only",
         "detail": "Native Wails menu and window actions are outside the browser journey harness.",
-        "owner": "go:github.com/renesugar/notrios/cmd/notrios#(*NativeUIBridge).ChooseSyncDirectory"
+        "owner": "go:github.com/renesugar/notrios/cmd/notrios#(*NativeUIBridge).ChooseDirectory"
       }
     },
     {

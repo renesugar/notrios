@@ -14,7 +14,16 @@ class ReleaseEvidenceTests(unittest.TestCase):
     def test_repository_evidence_passes(self):
         self.assertEqual(v.validate(), 11)
 
-    def test_version_drift_fails(self):
+    def test_version_going_backwards_fails(self):
+        """A tree older than the one this record describes is not that tree.
+
+        This used to assert that any version other than 0.7.0 failed, with 0.7.1
+        as the fixture. That made the record fail the day a later milestone
+        shipped -- v0.8 H13 bumped the product to 0.8.0 and a finished
+        milestone's evidence started reporting an error about a version it was
+        never about. Drift now means going backwards or becoming unparseable,
+        which is what would actually mean the tree is not the one described.
+        """
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             (root / "internal/version").mkdir(parents=True)
@@ -22,9 +31,9 @@ class ReleaseEvidenceTests(unittest.TestCase):
             shutil.copy2(v.ROOT / "internal/version/version.go", root / "internal/version/version.go")
             shutil.copy2(v.ROOT / "web/package.json", root / "web/package.json")
             package = json.loads((root / "web/package.json").read_text())
-            package["version"] = "0.7.1"
+            package["version"] = "0.6.9"
             (root / "web/package.json").write_text(json.dumps(package))
-            with self.assertRaisesRegex(v.EvidenceError, "web product version"):
+            with self.assertRaisesRegex(v.EvidenceError, "older than the 0.7.0"):
                 v.validate(root, v.REPORT)
 
     def test_missing_gate_fails(self):

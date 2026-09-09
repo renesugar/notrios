@@ -8,7 +8,13 @@ from urllib.parse import unquote, urlsplit
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
-ROUTES = ["index.html", "installation.html", "service.html", "cli.html", "query-language.html", "selection-planning.html", "archive-v2.html", "stable-links.html", "publishing.html", "gui.html", "import-export.html", "operations.html", "api/rest.html", "api/mcp.html", "troubleshooting.html"]
+# 15 -> 18 in v0.8: features.html and the two journey catalogues. The list is
+# frozen rather than discovered so that a page appearing on the published site
+# is a decision somebody made -- and because this gate only runs at packaging
+# time, "somebody" turned out to be nobody for a month. v0.8 H13 moved the
+# gates that need no browser into `make validate`; this one still needs
+# Pagefind and Hugo, so it stays here.
+ROUTES = ["index.html", "installation.html", "service.html", "cli.html", "query-language.html", "selection-planning.html", "archive-v2.html", "stable-links.html", "publishing.html", "gui.html", "import-export.html", "operations.html", "api/rest.html", "api/mcp.html", "troubleshooting.html", "features.html", "journeys-cli.html", "journeys-gui.html"]
 ALIASES = {"service.html#configuration": "service.html#configuration-reference", "stable-links.html#linking-to-a-block-not-just-a-note": "stable-links.html#linking-to-a-section-or-a-block"}
 
 class EvidenceError(ValueError): pass
@@ -60,18 +66,18 @@ def source_checks(root=ROOT, bundle=HERE):
     production=root / "docs-site/themes/hugo-theme-ledger"
     validate_theme_pair(production, frozen, json.loads((production.parent.parent/"THEME_PROVENANCE.json").read_text(encoding="utf-8")))
     require(r.get("schema")=="notrios.g18g.routes.v1" and r.get("preserved_routes")==ROUTES, "preserved route set drift")
-    require(r.get("legacy_fragment_aliases")==ALIASES and r.get("g18a_section_count")==199 and r.get("required_alias_count")==2, "route/alias contract drift")
+    require(r.get("legacy_fragment_aliases")==ALIASES and r.get("g18a_section_count")==267 and r.get("required_alias_count")==2, "route/alias contract drift")
     require(b.get("schema")=="notrios.g18g.build-contract.v1" and b.get("builder")=="scripts/build_docs_site.sh" and b.get("production_source")=="docs-site/" and b.get("output_argument")=="first positional argument", "build contract drift")
     require(b.get("tool_pins")=={"hugo":"0.164.0 extended","node":"26.3.0","pagefind":"1.5.2"}, "tool pins drift")
     raw=b.get("raw_docs_help_contract",{}); require(raw=={"source":"docs/**/*.md","staging":"temporary byte-copy before Hugo publication rendering","publication_adapter":"generated CLI registry angle-placeholder escaping only","byte_equivalent":True,"help_id_equivalent":True,"help_content_equivalent":True,"idempotent":True}, "raw-doc/Help contract drift")
-    search=b.get("search",{}); require(search.get("scope_marker")=="data-pagefind-body" and search.get("indexed_pages")==15 and search.get("known_query")=="Argon2id" and search.get("result_base")=="/notrios/" and search.get("excluded")==["api/index.html","search/index.html"], "search contract drift")
+    search=b.get("search",{}); require(search.get("scope_marker")=="data-pagefind-body" and search.get("indexed_pages")==18 and search.get("known_query")=="Argon2id" and search.get("result_base")=="/notrios/" and search.get("excluded")==["api/index.html","search/index.html"], "search contract drift")
     off=b.get("offline_policy",{}); require(off=={"remote_runtime_assets":False,"remote_fonts":False,"local_pagefind_bundle":True,"csp_external_requests":False}, "offline policy drift")
-    require(report.get("schema")=="notrios.g18g.qa-report.v1" and report.get("routes")=={"preserved":15,"g18a_sections":199,"aliases":2}, "report schema/route evidence")
+    require(report.get("schema")=="notrios.g18g.qa-report.v1" and report.get("routes")=={"preserved":18,"g18a_sections":267,"aliases":2}, "report schema/route evidence")
     require(report.get("browser_plugin",{}).get("available") is False and report["browser_plugin"].get("fallback")=="browser_smoke.mjs", "browser fallback evidence")
     require(report.get("raw_help")=={"byte_equivalent":True,"id_equivalent":True,"content_equivalent":True,"idempotent":True}, "raw Help report evidence")
     require(report.get("status")=="complete", "report is not complete")
     require(report.get("validation")=={"validator":"passed source, built-site, and mutation gates","mutation_tests":5,"desktop":"passed","mobile":"passed"}, "validation report incomplete")
-    repeat=report.get("reproducibility",{}); require(repeat.get("hugo_output_byte_identical") is True and repeat.get("pagefind_semantically_identical") is True and repeat.get("pagefind_byte_identical") is False and repeat.get("repeat_indexed_pages")==15 and repeat.get("repeat_known_query")=="pass", "reproducibility qualification drift")
+    repeat=report.get("reproducibility",{}); require(repeat.get("hugo_output_byte_identical") is True and repeat.get("pagefind_semantically_identical") is True and repeat.get("pagefind_byte_identical") is False and repeat.get("repeat_indexed_pages")==18 and repeat.get("repeat_known_query")=="pass", "reproducibility qualification drift")
     measurements = report.get("measurements", {})
     require(all(isinstance(measurements.get(key), (int, float)) and measurements[key] > 0 for key in ("output_files", "output_bytes", "html_bytes", "pagefind_bytes", "build_seconds")), "measured build/output values missing")
     require(len(m.get("mutations",[]))>=5 and {x.get("id") for x in m["mutations"]} >= {"theme-pin","route-fragment","search-scope","raw-help-equivalence","runtime-offline"}, "mutation matrix incomplete")
@@ -121,9 +127,24 @@ def validate_site(site):
             elif frag and frag not in page(p).ids: errors.append(f"broken fragment {route} -> {href}")
         for asset in doc.assets:
             if asset.startswith(("/notrios/","data:","#")): continue
+            # A relative reference that resolves to a file the site carries is
+            # not a remote asset, and requiring the absolute prefix said it was.
+            # v0.8's illustrated interface journeys write `images/journeys/x.png`
+            # in `docs/`, because that path also has to be right when the same
+            # Markdown is read as a file and seeded into the Help notebook -- the
+            # build contract copies docs/ byte-for-byte, so the site cannot
+            # rewrite it. What this check is for is that nothing is fetched from
+            # off-site, and resolving the path proves that more strongly than
+            # matching a prefix does.
+            if "://" not in asset and not asset.startswith("//"):
+                resolved = (site / route).parent / asset
+                if resolved.is_file():
+                    continue
+                errors.append(f"asset the site does not carry {route} -> {asset}")
+                continue
             errors.append(f"remote asset {route} -> {asset}")
     html=list(site.rglob("*.html")); indexed=sum(page(x).body for x in html)
-    if indexed != 15: errors.append(f"Pagefind body pages {indexed} != 15")
+    if indexed != 18: errors.append(f"Pagefind body pages {indexed} != 18")
     for excluded in ("api/index.html","search/index.html"):
         p=site/excluded
         if p.is_file() and page(p).body: errors.append(f"generated page indexed {excluded}")
