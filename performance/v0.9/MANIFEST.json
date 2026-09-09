@@ -5,6 +5,24 @@
   "honest_provenance": "Each archive here was built from the commit that closed its item, by the same worktree path v0.8e used, and verified byte-identical to that commit. A file timestamp says when the archive was built and nothing about when the work happened. I2 is deferred rather than complete: its archive records the commit that made and explained that decision, which is the work the item produced.",
   "archives": [
     {
+      "item": "I1",
+      "archive": "notrios-v0.9-i1-3799c6f.zip",
+      "commit": "3799c6f70dc35b4fff017cc946df88ad1f7cbd6d",
+      "taken": "when the slice closed",
+      "bytes": 24969259,
+      "entries": 2414,
+      "sha256": "e7ac3e9e192f98464629fee2de59946c84ca6f81de6117976f0d78f63566bb27"
+    },
+    {
+      "item": "I10",
+      "archive": "notrios-v0.9-i10-b19721a.zip",
+      "commit": "b19721ae785f13ba10e996d623e2c7d8769ae603",
+      "taken": "when the slice closed",
+      "bytes": 25012120,
+      "entries": 2438,
+      "sha256": "dcb9cda0f4a04a5ac135a8dfd1fce8efba4b559ee1faff8a17432d5b9194b2c6"
+    },
+    {
       "item": "I2",
       "archive": "notrios-v0.9-i2-e3f6de7.zip",
       "commit": "e3f6de7deb65558c25a03731799fa4d10e1f9cbc",
@@ -12,11 +30,29 @@
       "bytes": 24958176,
       "entries": 2409,
       "sha256": "9ba487731625c63c944d78d21b1361dae75e6a5e3df83984ebf25f601eafc49c"
+    },
+    {
+      "item": "I3",
+      "archive": "notrios-v0.9-i3-078ffc5.zip",
+      "commit": "078ffc5c159bdd1753b02031427570afee43fa8b",
+      "taken": "when the slice closed",
+      "bytes": 24991370,
+      "entries": 2429,
+      "sha256": "5d51f9fb888f9266a7e21a232798064cecf2c804b2ddb63e50950d4a2d70bfaa"
+    },
+    {
+      "item": "I4",
+      "archive": "notrios-v0.9-i4-d1d8ec0.zip",
+      "commit": "d1d8ec0dfff71a0fe7134a24929cc3f843c52b8f",
+      "taken": "when the slice closed",
+      "bytes": 25008681,
+      "entries": 2437,
+      "sha256": "14cd8b7e5952489a7e7a7443cc6188014488caa665998587184b0285612858c5"
     }
   ],
   "counts": {
-    "items": 1,
+    "items": 5,
     "retroactive": 0,
-    "total_bytes": 24958176
+    "total_bytes": 124939606
   }
 }

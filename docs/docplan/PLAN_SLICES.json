@@ -4,7 +4,7 @@
     {
       "id": "I1",
       "title": "Put v0.8 on GitHub, and reconcile the branches",
-      "state": "in-progress",
+      "state": "complete",
       "slices": [
         {
           "id": "I1-A",
@@ -15,13 +15,14 @@
         {
           "id": "I1-B",
           "statement": "A develop-to-main pull request is merged with a merge commit after explicit authorization",
-          "state": "blocked",
-          "blocked_on": "pull request #6 is open with all four CI jobs passing; the owner authorizes the develop-to-main merge, after review, and the method is a merge commit"
+          "state": "done",
+          "evidence": "file:PLAN.md"
         },
         {
           "id": "I1-C",
           "statement": "The merge result is brought back into develop so main is an ancestor with no content difference",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:PLAN.md"
         }
       ]
     },
@@ -53,49 +54,56 @@
     {
       "id": "I3",
       "title": "Promote the Ubuntu installer through clean native environments",
-      "state": "not-started",
+      "state": "complete",
       "slices": [
         {
           "id": "I3-A",
           "statement": "Fresh install, source-layout migration and upgrade across prereleases are rehearsed in a clean environment",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v0.9-i3/REPORT.json"
         },
         {
           "id": "I3-B",
           "statement": "Downgrade refusal and rollback, remove and reinstall, and profile discovery are rehearsed",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v0.9-i3/REPORT.json"
         },
         {
           "id": "I3-C",
           "statement": "Operation with neither source nor a development toolchain present is rehearsed",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v0.9-i3/REPORT.json"
         }
       ]
     },
     {
       "id": "I4",
       "title": "Harden the destructive lifecycle, and decide the profile race",
-      "state": "not-started",
+      "state": "complete",
       "slices": [
         {
           "id": "I4-A",
           "statement": "Backup capacity and corruption faults and restore drills are executed against disposable profiles",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v0.9-i4/REPORT.json"
         },
         {
           "id": "I4-B",
           "statement": "Process, mount and symlink races, external profile roots and modified installed artifacts are exercised",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v0.9-i4/DRILLS.jsonl"
         },
         {
           "id": "I4-C",
           "statement": "The profile-registry validation race is fixed or refused with a reason",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:internal/profiles/runtime_race_test.go"
         },
         {
           "id": "I4-D",
           "statement": "Uninstall is proved never to delete user data",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v0.9-i4/REPORT.json"
         }
       ]
     },
@@ -206,6 +214,25 @@
           "id": "I9-C",
           "statement": "Every command shown is generated from or checked against the real command line",
           "state": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "I10",
+      "title": "Serve the documentation site from notrios.com",
+      "state": "complete",
+      "slices": [
+        {
+          "id": "I10-A",
+          "state": "done",
+          "statement": "Hugo's baseURL is the real site address and the built output carries a CNAME",
+          "evidence": "file:docs-site/static/CNAME"
+        },
+        {
+          "id": "I10-B",
+          "state": "done",
+          "statement": "The site contract records the configured base URL and the check compares the two rather than a literal",
+          "evidence": "file:performance/v0.7-g18b/SITE_CONTRACT.json"
         }
       ]
     }

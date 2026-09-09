@@ -1,4 +1,4 @@
-baseURL = "https://example.github.io/notrios/"
+baseURL = "https://notrios.com/"
 title = "Notrios documentation"
 theme = "hugo-theme-ledger"
 uglyURLs = true

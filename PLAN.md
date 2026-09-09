@@ -46,33 +46,25 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**9 items: 0 complete, 1 in progress, 7 not started, 1 deferred.**
+**10 items: 4 complete, 0 in progress, 5 not started, 1 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
-| I1. Put v0.8 on GitHub, and reconcile the branches | in-progress | 1/3 | 2 |
+| I1. Put v0.8 on GitHub, and reconcile the branches | complete | 3/3 | — |
 | I2. Migrate the desktop shell to Wails v3, or record the postponement | deferred | 0/3 | 3 |
-| I3. Promote the Ubuntu installer through clean native environments | not-started | 0/3 | 3 |
-| I4. Harden the destructive lifecycle, and decide the profile race | not-started | 0/4 | 4 |
+| I3. Promote the Ubuntu installer through clean native environments | complete | 3/3 | — |
+| I4. Harden the destructive lifecycle, and decide the profile race | complete | 4/4 | — |
 | I5. Resolve signing, notarization and timestamping policy | not-started | 0/3 | 3 |
 | I6. Generate and verify the release evidence set | not-started | 0/3 | 3 |
 | I7. Soak, recover, and freeze the support matrix | not-started | 0/3 | 3 |
 | I8. Freeze the 1.0 compatibility surfaces | not-started | 0/3 | 3 |
 | I9. Write the release-grade operational documentation | not-started | 0/3 | 3 |
+| I10. Serve the documentation site from notrios.com | complete | 2/2 | — |
 
-### Started and not finished
-
-**I1. Put v0.8 on GitHub, and reconcile the branches**
-
-- `I1-B` A develop-to-main pull request is merged with a merge commit after explicit authorization — *blocked* (blocked on: pull request #6 is open with all four CI jobs passing; the owner authorizes the develop-to-main merge, after review, and the method is a merge commit)
-- `I1-C` The merge result is brought back into develop so main is an ancestor with no content difference — *not-started*
-
-### Not started
-
-Written and not begun: I3, I4, I5, I6, I7, I8, I9. Their slices are listed under each item.
+Nothing is half-finished.
 <!-- notrios:generated:plan:progress:end -->
 
-## I1. Put v0.8 on GitHub, and reconcile the branches
+## I1. Put v0.8 on GitHub, and reconcile the branches — complete
 
 **Goal.** The v0.8 body of work is public, on both branches, with no content
 difference between them.
@@ -182,7 +174,31 @@ that never tested anything survive four milestones.
 
 All four jobs pass: `go`, `web`, `gui-build`, `smoke`.
 
-**The merge is separately authorized and has not happened.**
+**Merged 2026-09-09 on the owner's authorization, with a merge commit**:
+`3799c6f Merge pull request #6 from renesugar/develop`. Squash and rebase were
+both ruled out in advance, because either would rewrite `develop`'s history onto
+`main` and leave the two branches holding different identifiers for identical
+work — the condition this item exists to end.
+
+**The back-merge turned out to need no merge at all.** `main` now contained
+every commit `develop` had plus the merge commit, so bringing it back was a
+fast-forward: `develop` moved to `3799c6f` without rewriting anything. Both
+branches are that commit. `git rev-list --left-right --count` reports `0 0`,
+`git diff` between them is empty, and `main` is an ancestor of `develop` because
+they are the same commit. Zero content difference was the requirement; identical
+identifiers were not required and were reached anyway, without forcing either
+branch.
+
+**A flake surfaced between the green run and the merge, and was fixed rather
+than merged past.** The same commit passed one CI run and failed the next with
+`window is not defined` thrown from a timer callback. `reportUnsavedChanges`
+polls for several seconds waiting for Wails to inject `window.go`; in a browser
+the binding never appears, so a document torn down inside that window leaves a
+tick with no `window` to read, and the throw comes from a timer where nothing is
+waiting to catch it. Both halves needed fixing, because the tick has to stop as
+well as survive: stopping used to call `window.clearInterval`, the one call that
+cannot work when the window is what went away. Two tests cover it and both were
+confirmed to fail with the exact `ReferenceError` before the guards went in.
 
 ## I2. Migrate the desktop shell to Wails v3, or record the postponement — deferred
 
@@ -226,7 +242,7 @@ GTK3/webkit2gtk-4.1 to GTK4/webkitgtk-6.0.
 **Working state.** The decision recorded here and in `ROADMAP.md`, v2 untouched,
 and nothing downstream in this milestone waiting on it.
 
-## I3. Promote the Ubuntu installer through clean native environments
+## I3. Promote the Ubuntu installer through clean native environments — complete
 
 **Goal.** The installer is exercised where nothing of ours has run before.
 
@@ -245,7 +261,58 @@ which is what ships.
 **Working state.** Each rehearsal executed in a clean environment with its
 result recorded, including the ones that must refuse.
 
-## I4. Harden the destructive lifecycle, and decide the profile race
+**Done, 2026-09-09. The package is installed and run for the first time.**
+H6a built it and read it — level 2 on its own claim ladder, "structurally
+inspected" — and listed whether it installs or runs among the things it had not
+verified. Eight items went by without anyone installing it. Seven scenarios now
+do, each in its own clean Ubuntu 24.04 container with no source tree, no Go, no
+Node and no compiler, running the application as an unprivileged user. That
+combination is what makes the answer mean anything: the machine that builds a
+package hides every missing dependency, and running as root hides every
+permission mistake.
+
+**The pair of packages is built honestly.** The prerelease comes from a
+disposable worktree with `version.go` patched, so the binary reports the version
+its control file declares. Overriding only the packaged version would have been
+one line and a lie — the rehearsal is about upgrading *between versions*, and
+the interesting assertion is that the installed binary changed. `0.8.0~rc1`
+rather than `0.8.0-rc1`, because in Debian ordering `~` sorts before the
+release; getting that backwards would have rehearsed the opposite of the claim.
+
+**What the runs establish.** Dependencies resolve on a pristine image. `doctor`
+exits 0 with no keyring — the behaviour I1 changed, now asserted somewhere
+genuinely headless rather than on a workstation that has a Secret Service.
+Notes can be created, found and **exported** where nothing can be compiled.
+An upgrade replaces the binary and keeps the library. A downgrade is refused
+unasked (apt exits 100) and performed when asked, intact either way. Removing
+the package leaves the user's notes alone and reinstalling finds them — a claim
+the documentation made loudly and nothing had tested against the packaged form.
+A named profile is found again. A pre-0.8 `./data` library migrates, and its
+dry run moves nothing.
+
+**Two of my own mistakes are kept in the record because they are the
+instructive part.** The first draft of the profile check forbade `/usr`
+outright, which is wrong in one direction and right in the other: the packaged
+frontend belongs in `/usr/share/notrios`, read-only and replaced on upgrade,
+while every root the user writes to must stay out of it. It asserts both halves
+now. And the first draft of the no-toolchain scenario ran the export with
+invented flags, swallowed the failure with `|| true`, and recorded
+`export_written=no` as though that were a result — which is exactly how a real
+fault would have hidden. A scenario that reports its own failure as an
+observation is worse than no scenario, because it looks like coverage.
+
+**What it does not establish, gated so it cannot quietly shrink.** arm64 is
+untouched and stays at level 2 exactly as H6a left it. Only 24.04 was tested;
+the t64 library transition makes 22.04 a separate question. The GUI was never
+launched — these are headless containers with no display, so the desktop stays
+at level 2. And **a container is not a machine**: it shares the host kernel and
+has no init, no systemd user session, no D-Bus and no keyring, which is why the
+credential path these runs exercise is the headless one. Fault injection belongs
+to I4. `validate_evidence.py` fails if that list shrinks, and dropping the arm64
+limit, dropping a scenario, claiming a warmed image for the fresh install, and
+passing a scenario that observed nothing were each tried and each refused.
+
+## I4. Harden the destructive lifecycle, and decide the profile race — complete
 
 **Goal.** `install`, `uninstall` and `purge` behave under fault and contention,
 and uninstall never deletes user data.
@@ -270,6 +337,55 @@ touches the evidence reserve or a real library.
 
 **Working state.** Each fault injected and its behaviour recorded; the profile
 race either fixed or refused with a reason, not left as a test workaround.
+
+**Done, 2026-09-09.** Nine faults drilled against `scripts/lifecycle.py`, each
+in its own disposable installation outside the checkout: an unattended purge
+refuses without `FORCE=1` and says how to automate it deliberately; a purge
+whose backup cannot be written, or does not fit, refuses with the library
+intact; a purge that runs writes a backup that holds the library, excludes sync
+key material, and **restores** — the note is read back out of it, because a
+backup nobody has restored is a hope; uninstall leaves the user's data and keeps
+a modified artifact while saying why; purge does not delete through a symlink
+out of the profile; an external data root is used where it actually is.
+
+**The profile race is fixed rather than worked around.** Startup opens only the
+database it is starting. What that gave up is recorded and pinned by a test: a
+database swapped underneath a stale registry entry is now invisible to a startup
+that is not starting it, and visible to an audit. Racing two daemons is *not*
+how it is asserted — the window is milliseconds and the unfixed code passed five
+consecutive runs, and a test that only sometimes fails on a defect is not
+evidence of a fix.
+
+**One behaviour was found and recorded rather than blessed.** A purge run while
+a daemon holds the library succeeds: it writes and verifies the backup, then
+deletes, and the running daemon is never consulted. Nothing is unrecoverable —
+the backup precedes the deletion, and the daemon keeps serving its open file —
+but the user is not told a process is still running against what they deleted.
+The drill asserts the property that matters, that nothing is deleted without a
+backup, and leaves whether purge should notice a live daemon to I7, where
+runtime state is already the subject.
+
+**Three harness mistakes are kept in the record, because each gave a confident
+wrong answer rather than an error.** The first version ran inside the checkout,
+so `notriosctl` resolved source mode and the drills wrote notes into this
+repository's own library and purge backups into the repository root — harmless
+only because purge refuses a relative path as a deletion target. The first
+library check asked the *installed* binary whether the note survived, and purge
+removes that binary, so every successful purge reported data loss that had not
+happened. And `tar -tf | grep -q` under `pipefail` reports failure when grep
+exits early and tar dies of SIGPIPE, so a backup that contained the library was
+reported as one that did not. A harness for destructive operations can least
+afford exactly that failure mode, so `install_home` now refuses to drill unless
+the resolved mode is `installed`.
+
+**What was not exercised is gated.** A genuinely full filesystem (`ulimit -f`
+refuses for a different reason than ENOSPC), mount races (they need privileges
+these drills deliberately do not take, so that half of the slice is recorded
+rather than exercised), interruption mid-purge, multi-user or root-owned
+prefixes, and the packaged `apt` lifecycle, which I3 covers separately. Dropping
+the symlink drill, dropping the interruption limit, removing what the race
+record gave up, and claiming a drill observed nothing were each tried against
+the validator and each refused.
 
 ## I5. Resolve signing, notarization and timestamping policy
 
@@ -363,6 +479,86 @@ command line, the way the existing documentation gates require.
 
 **Working state.** Each document present, checked by the documentation gates,
 and naming no step that was never run.
+
+## I10. Serve the documentation site from notrios.com — complete
+
+**Goal.** The documentation is published at `https://notrios.com/`, and the
+configuration says so rather than carrying a placeholder.
+
+**Scope.** Hugo's `baseURL`, a tracked `CNAME` in the site's static files, and
+the G18b site contract that records what the site is configured to serve.
+
+**Why the `baseURL` matters more than it looks.** It has been
+`https://example.github.io/notrios/` since G18b — a placeholder, never the real
+address. Two things follow. The host is wrong, and the *path* is wrong too: a
+custom apex domain serves the site at `/`, not under `/notrios/`, which is
+already what the Pagefind `bundlePath` (`/pagefind/pagefind.js`) assumes. So
+this is a correction, not only a rename.
+
+**Why a tracked CNAME, given the domain is already set.** GitHub reports
+`build_type: workflow` and `cname: notrios.com`, so the domain lives in the
+repository's Pages settings and `actions/deploy-pages` does not rewrite them.
+The "every deployment wipes the custom domain" behaviour belongs to
+branch-based publishing, where the deployed branch *is* the configuration and a
+tool like `peaceiris/actions-gh-pages` overwrites it unless told otherwise —
+this repository does not publish that way. The file is added regardless: it
+costs nothing, `build_docs_site.sh` already copies `docs-site/static/` into the
+build, and it keeps the domain with the site if the publishing source ever
+changes. It is belt and braces, and recorded as such rather than as the load-
+bearing mechanism.
+
+**Boundaries.** No DNS change: CloudFlare and GitHub are already configured, and
+this item does not touch either. No change to what the site contains. The push
+and merge follow I1's route and authorization.
+
+**Dependencies.** None.
+
+**Working state.** The site builds with the real base URL, the built output
+carries `CNAME`, and the contract check compares the recorded base URL against
+the one Hugo is actually configured with rather than a literal in a validator.
+
+**Done, 2026-09-09.** `baseURL` is `https://notrios.com/`,
+`docs-site/static/CNAME` holds `notrios.com`, and the built site carries it —
+`build_docs_site.sh` already copies `docs-site/static/` into the build, so the
+file needed no build change to arrive.
+
+**Changing the base URL broke a gate, which is how the placeholder had
+survived.** `performance/v0.7-g18g` hardcoded `/notrios/` in three places: the
+Pagefind result base, the prefix stripped from absolute links, and the prefix
+that marked an asset as site-local. All three were correct while the base URL
+was `https://example.github.io/notrios/` and wrong the moment it stopped being
+— and the asset check failed in the worst direction, reading a root-served
+`/css/x.css` as a *filesystem* path and reporting that the site did not carry a
+file it plainly carried. The old build passed and the new one failed, which is
+how I knew I had caused it rather than found it.
+
+All three now derive the base path from `docs-site/hugo.toml`, so it can only be
+wrong in the file Hugo actually reads. `performance/v0.7-g18b` had the same
+shape — a literal base URL inside the validator, which is a second place to
+edit, and a check that must be edited to keep passing is one that gets edited
+without being read. It compares the contract against Hugo's configuration now,
+and fails whichever side moves alone; both directions were tried.
+
+The looser asset rule was checked for permissiveness rather than assumed: with a
+referenced stylesheet removed the site reports 18 errors, and with a linked page
+removed it reports the broken link.
+
+**Two things about the reference, checked rather than repeated.** GitHub reports
+`build_type: workflow` and `cname: notrios.com`, so the domain is held in the
+repository's Pages settings and `actions/deploy-pages` does not rewrite them;
+the "every deployment wipes the custom domain" behaviour belongs to branch-based
+publishing, which this repository does not use. The CNAME is added anyway, for
+the reason given above rather than as the load-bearing mechanism. And the base
+URL needed the *path* dropped as well as the host changed: an apex domain serves
+at `/`, which is what the Pagefind `bundlePath` had assumed all along.
+
+**Open decisions**
+
+- **HTTPS enforcement — Blocking, owner's.** GitHub reports
+  `https_enforced: false` with an approved certificate for `notrios.com` and
+  `www.notrios.com`, so the site answers on plain HTTP. Turning it on is a
+  repository settings change, not a change in this repository, and it belongs to
+  the owner.
 
 ## Decisions register
 

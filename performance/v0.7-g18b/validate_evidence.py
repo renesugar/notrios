@@ -110,8 +110,19 @@ def validate_source() -> list[str]:
 
     if delivery.get("selected") != "minimal-vendored-source":
         errors.append("delivery option is not the approved non-blocking default")
-    if site.get("base_url") != "https://example.github.io/notrios/":
-        errors.append("site base URL drifted")
+    # The base URL is read from the site's own configuration and compared with
+    # what the contract records, rather than compared with a literal here. A
+    # literal made this check a second place to edit, and a check that has to be
+    # edited to keep passing is one that gets edited without being read: the
+    # placeholder it pinned survived from G18b to v0.9 I10 precisely because
+    # nothing ever compared it to the site.
+    configured = hugo_base_url(ROOT / "docs-site" / "hugo.toml")
+    if configured is None:
+        errors.append("docs-site/hugo.toml declares no baseURL")
+    elif site.get("base_url") != configured:
+        errors.append(
+            f"site base URL drifted: hugo.toml says {configured!r}, "
+            f"SITE_CONTRACT.json records {site.get('base_url')!r}")
     if site.get("search", {}).get("selected_backend") != "pagefind":
         errors.append("static Pagefind selection drifted")
 
@@ -202,6 +213,21 @@ def validate_site(site_root: Path) -> list[str]:
     if not (site_root / "pagefind/pagefind.js").is_file():
         errors.append("Pagefind bundle missing")
     return errors
+
+
+def hugo_base_url(path: pathlib.Path) -> str | None:
+    """Read baseURL out of hugo.toml without a TOML parser.
+
+    The file is a handful of top-level keys and this needs one of them; adding a
+    dependency to the offline validator to read a single line would cost more
+    than it explains.
+    """
+    for line in path.read_text(encoding="utf-8").splitlines():
+        stripped = line.strip()
+        if stripped.startswith("baseURL"):
+            _, _, value = stripped.partition("=")
+            return value.strip().strip("'\"")
+    return None
 
 
 def main() -> None:
