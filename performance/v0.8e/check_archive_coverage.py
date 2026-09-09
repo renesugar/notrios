@@ -35,7 +35,8 @@ COVERAGE_BEGINS = (0, 8)
 # milestone -> (the plan document whose table is the ledger, its archive manifest)
 REGISTRY = {
     "v0.8": ("plans/v0.8/000-v0.8-plan.md", "performance/v0.8e/MANIFEST.json"),
-    "v0.8e": ("PLAN.md", "performance/v0.8e/MANIFEST_V08E.json"),
+    "v0.8e": ("plans/v0.8e/000-v0.8e-plan.md", "performance/v0.8e/MANIFEST_V08E.json"),
+    "v0.9": ("PLAN.md", "performance/v0.9/MANIFEST.json"),
 }
 
 FINISHED = {"complete", "deferred"}
@@ -91,6 +92,13 @@ def check() -> tuple[int, int]:
     for milestone, (plan_path, manifest_path) in sorted(REGISTRY.items()):
         items = finished_items(ROOT / plan_path)
         manifest = ROOT / manifest_path
+        if not items and not manifest.is_file():
+            # A milestone that has finished nothing yet has nothing to record.
+            # Requiring the manifest before the first item closes would make the
+            # gate demand a file describing an empty set, and a gate that asks
+            # for something meaningless is one people learn to work around.
+            milestones += 1
+            continue
         require(manifest.is_file(), f"{milestone}: no archive manifest at {manifest_path}")
         archives = json.loads(manifest.read_text(encoding="utf-8"))["archives"]
         recorded = {entry["item"] for entry in archives}

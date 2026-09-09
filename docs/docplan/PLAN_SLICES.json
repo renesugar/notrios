@@ -2,97 +2,205 @@
   "schema": "notrios.docplan.slices.v1",
   "items": [
     {
-      "id": "E1",
-      "title": "Build the twenty-seven missing handoff archives",
-      "state": "complete",
+      "id": "I1",
+      "title": "Put v0.8 on GitHub, and reconcile the branches",
+      "state": "not-started",
       "slices": [
         {
-          "id": "E1-A",
-          "statement": "Every completed or deferred v0.8 item is mapped to the commit that closed it, checked rather than assumed",
-          "state": "done",
-          "evidence": "file:performance/v0.8e/CLOSEOUTS.json"
+          "id": "I1-A",
+          "statement": "The remote is re-audited, the evidence pre-push gate runs, and develop is pushed",
+          "state": "not-started"
         },
         {
-          "id": "E1-B",
-          "statement": "Each archive is built from its own commit in a disposable worktree and verified byte-identical to that commit's tree",
-          "state": "done",
-          "evidence": "file:performance/v0.8e/verify_archive.py"
+          "id": "I1-B",
+          "statement": "A develop-to-main pull request is merged with a merge commit after explicit authorization",
+          "state": "not-started"
         },
         {
-          "id": "E1-C",
-          "statement": "Each archive is copied to the evidence directory and verified byte-identical there",
-          "state": "done",
-          "evidence": "file:performance/v0.8e/backfill.sh"
+          "id": "I1-C",
+          "statement": "The merge result is brought back into develop so main is an ancestor with no content difference",
+          "state": "not-started"
         }
       ]
     },
     {
-      "id": "E2",
-      "title": "Record the backfill honestly, and say what it is",
-      "state": "complete",
+      "id": "I2",
+      "title": "Migrate the desktop shell to Wails v3, or record the postponement",
+      "state": "not-started",
       "slices": [
         {
-          "id": "E2-A",
-          "statement": "A committed manifest names every archive with its commit, size, entries, hash, and whether it was retroactive",
-          "state": "done",
-          "evidence": "file:performance/v0.8e/MANIFEST.json"
+          "id": "I2-A",
+          "statement": "The frontend's eleven window.go uses move onto @wailsio/runtime or generated bindings",
+          "state": "not-started"
         },
         {
-          "id": "E2-B",
-          "statement": "The handoff document's snapshot table covers every v0.8 item rather than the first four",
-          "state": "done",
-          "evidence": "file:CODING_CLIENT_HANDOFF.md"
+          "id": "I2-B",
+          "statement": "The v3 question dialog's callback answer makes the unsaved-work veto wait and fail closed",
+          "state": "not-started"
+        },
+        {
+          "id": "I2-C",
+          "statement": "The GUI builds and passes its journeys on GTK4/webkitgtk-6.0, or the postponement is recorded",
+          "state": "not-started"
         }
       ]
     },
     {
-      "id": "E3",
-      "title": "Seal a reserve volume, and extend the outer catalog",
-      "state": "complete",
+      "id": "I3",
+      "title": "Promote the Ubuntu installer through clean native environments",
+      "state": "not-started",
       "slices": [
         {
-          "id": "E3-A",
-          "statement": "A new volume seals the backfilled archives, signed by the production subkey and RFC 3161 timestamped",
-          "state": "done",
-          "evidence": "file:performance/v0.8e/SEAL_RESULT.json"
+          "id": "I3-A",
+          "statement": "Fresh install, source-layout migration and upgrade across prereleases are rehearsed in a clean environment",
+          "state": "not-started"
         },
         {
-          "id": "E3-B",
-          "statement": "The outer catalog is extended and the reserve verifier passes end to end",
-          "state": "done",
-          "evidence": "file:evidence/outer-iso-catalog.jsonl"
+          "id": "I3-B",
+          "statement": "Downgrade refusal and rollback, remove and reinstall, and profile discovery are rehearsed",
+          "state": "not-started"
+        },
+        {
+          "id": "I3-C",
+          "statement": "Operation with neither source nor a development toolchain present is rehearsed",
+          "state": "not-started"
         }
       ]
     },
     {
-      "id": "E4",
-      "title": "Make a missing archive fail rather than pass unnoticed",
-      "state": "complete",
+      "id": "I4",
+      "title": "Harden the destructive lifecycle, and decide the profile race",
+      "state": "not-started",
       "slices": [
         {
-          "id": "E4-A",
-          "statement": "make validate fails when a completed plan item has no manifest entry",
-          "state": "done",
-          "evidence": "file:performance/v0.8e/check_archive_coverage.py"
+          "id": "I4-A",
+          "statement": "Backup capacity and corruption faults and restore drills are executed against disposable profiles",
+          "state": "not-started"
+        },
+        {
+          "id": "I4-B",
+          "statement": "Process, mount and symlink races, external profile roots and modified installed artifacts are exercised",
+          "state": "not-started"
+        },
+        {
+          "id": "I4-C",
+          "statement": "The profile-registry validation race is fixed or refused with a reason",
+          "state": "not-started"
+        },
+        {
+          "id": "I4-D",
+          "statement": "Uninstall is proved never to delete user data",
+          "state": "not-started"
         }
       ]
     },
     {
-      "id": "E5",
-      "title": "Widen the approved types, and seal what v0.8e itself produced",
-      "state": "complete",
+      "id": "I5",
+      "title": "Resolve signing, notarization and timestamping policy",
+      "state": "not-started",
       "slices": [
         {
-          "id": "E5-A",
-          "state": "done",
-          "statement": "The git bundle and the Debian package have structural validators, and the sealer's approved set is widened to match",
-          "evidence": "file:evidence/verify_evidence.py"
+          "id": "I5-A",
+          "statement": "Each supported platform has a signing, notarization and timestamping policy somebody else can follow",
+          "state": "not-started"
         },
         {
-          "id": "E5-B",
-          "state": "done",
-          "statement": "Volume-0003 seals v0.8e's own archives with both newly approved artifacts, and the reserve verifies end to end",
-          "evidence": "file:evidence/volumes/volume-0003/CHECKPOINT/content-checkpoint.json"
+          "id": "I5-B",
+          "statement": "Secret handling keeps material out of pull-request jobs, logs, artifacts, backups and the repository",
+          "state": "not-started"
+        },
+        {
+          "id": "I5-C",
+          "statement": "What remains blocked without an owner account or native trust service is recorded as blocked",
+          "state": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "I6",
+      "title": "Generate and verify the release evidence set",
+      "state": "not-started",
+      "slices": [
+        {
+          "id": "I6-A",
+          "statement": "Checksums, SBOM, dependency/license/security reports and provenance are generated and verified offline",
+          "state": "not-started"
+        },
+        {
+          "id": "I6-B",
+          "statement": "GitHub workflows are pinned by digest and least-privilege",
+          "state": "not-started"
+        },
+        {
+          "id": "I6-C",
+          "statement": "A non-public release-candidate or draft flow is exercised without publishing",
+          "state": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "I7",
+      "title": "Soak, recover, and freeze the support matrix",
+      "state": "not-started",
+      "slices": [
+        {
+          "id": "I7-A",
+          "statement": "Long-lived installed directory, REST and emulator soak tests run to completion with durations recorded",
+          "state": "not-started"
+        },
+        {
+          "id": "I7-B",
+          "statement": "Support-bundle redaction, crash-reporting policy and disaster-recovery drills are executed",
+          "state": "not-started"
+        },
+        {
+          "id": "I7-C",
+          "statement": "The desktop support matrix is frozen and names only what was executed",
+          "state": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "I8",
+      "title": "Freeze the 1.0 compatibility surfaces",
+      "state": "not-started",
+      "slices": [
+        {
+          "id": "I8-A",
+          "statement": "REST, MCP, archive, sync, configuration, installer and Make lifecycle candidates are frozen with green suites",
+          "state": "not-started"
+        },
+        {
+          "id": "I8-B",
+          "statement": "The shared C ABI is frozen and its ownership, leak, double-free and wrong-handle failures are exercised",
+          "state": "not-started"
+        },
+        {
+          "id": "I8-C",
+          "statement": "Concurrent-shutdown, cancellation and stream-limit behaviour is tested at the edges",
+          "state": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "I9",
+      "title": "Write the release-grade operational documentation",
+      "state": "not-started",
+      "slices": [
+        {
+          "id": "I9-A",
+          "statement": "Install, upgrade, rollback and backup/restore documentation is written for a reader with no repository",
+          "state": "not-started"
+        },
+        {
+          "id": "I9-B",
+          "statement": "Uninstall, purge, troubleshooting and artifact-verification documentation is written for that reader",
+          "state": "not-started"
+        },
+        {
+          "id": "I9-C",
+          "statement": "Every command shown is generated from or checked against the real command line",
+          "state": "not-started"
         }
       ]
     }
