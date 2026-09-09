@@ -46,7 +46,7 @@ What follows is what is left. Each item's own text below is the record of what
 happened, which is a different question.
 
 <!-- notrios:generated:plan:progress:begin -->
-**35 items: 28 complete, 1 in progress, 4 not started, 2 deferred.**
+**35 items: 29 complete, 0 in progress, 4 not started, 2 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -72,7 +72,7 @@ happened, which is a different question.
 | H15. Complete the journey catalogues, and give the GUI an inventory | complete | 9/9 | — |
 | H16. Reconcile the collection model with what is actually stored | complete | 7/7 | — |
 | H17. Act on many notes at once, named by a query | complete | 2/2 | — |
-| H18. Make the features page usable, and generate the table under it | in-progress | 3/4 | 1 |
+| H18. Make the features page usable, and generate the table under it | complete | 4/4 | — |
 | H19. notriosctl search | complete | 4/4 | — |
 | H13. v0.8 release wrap-up | not-started | 0/2 | 2 |
 | H20. Bring the atlas current, and stop it drifting again | complete | 4/4 | — |
@@ -86,15 +86,7 @@ happened, which is a different question.
 | H28. Make the interface addressable, so its journeys can be written | complete | 3/3 | — |
 | H29. Select more than one note in the interface | not-started | 0/3 | 3 |
 
-### Started and not finished
-
-**H18. Make the features page usable, and generate the table under it**
-
-- `H18-D` Rewrite the twenty-nine summaries and surface notes in FEATURES.json for a reader rather than against the surfaces — *not-started*
-
-### Not started
-
-Written and not begun: H10, H11, H13, H29. Their slices are listed under each item.
+Nothing is half-finished.
 <!-- notrios:generated:plan:progress:end -->
 
 ## H0. Application-facade, C-ABI, and SQLite ownership investigation — complete
@@ -2773,7 +2765,9 @@ carrier discovery, transport setup, the profile selector, snapshot creation and
 download, catch-up and reset review.
 
 Corrected in `FEATURES.json` on that evidence: **attachments** and **remote
-media** have GUI surfaces and their notes saying otherwise were wrong; note
+media** have GUI surfaces and their notes saying otherwise were wrong -- the
+remote-media entry had called localizing a maintenance action when it is an
+editing one, offered in the editor where the note it rewrites is open; note
 deletion, restore and purge join **write-notes**; profile *switching* is in the
 GUI while creating and forgetting profiles is not. **Jobs** is left as it was,
 because the crawl does not settle it either -- job rows render only once a job
@@ -3842,7 +3836,7 @@ that whoever first observes one does not have to decide under pressure. The
 schema precondition, asked in the original decision, has an answer: the repair
 needs the constraint back on, because a recreated row it cannot verify is a
 guess.
-## H18. Make the features page usable, and generate the table under it
+## H18. Make the features page usable, and generate the table under it — complete
 
 **Ordering.** After H15, whose registry and coverage gates this builds on.
 Independent of the installer chain and of H16.
@@ -3903,12 +3897,52 @@ hopeful ticks is the one thing this page must never contain.
 with no command line at all: `Search your notes` reads `GUI 1, REST 3, MCP 2`
 and a dash. That is H19.
 
-**Still open.** The prose in `FEATURES.json` is per-capability and was written
-against the surfaces rather than for a reader; the drafts are better at leading
-with the user's goal ("I use Notrios to ..."). A pass over the 29 summaries and
-surface notes in that voice is worth doing, and is deliberately not done here
-because rewriting twenty-nine paragraphs in the same sitting as the machinery
-that renders them makes both harder to review.
+**Still open, until H18-D closed it.** The prose in `FEATURES.json` was
+per-capability and written against the surfaces rather than for a reader; the
+drafts were better at leading with the user's goal ("I use Notrios to ..."). A
+pass over the 29 summaries and surface notes in that voice was deliberately left
+out of the sitting that built the machinery rendering them, because doing both
+at once makes both harder to review.
+
+**Outcome for H18-D (2026-09-08).** Done, and the shape of the edit is the
+finding. The summaries got *longer* (3,800 characters to 5,110) and the surface
+notes got a third shorter (14,800 to 10,100), because the two were doing each
+other's jobs: the summary said what the capability was called and the note
+carried the history of how it came to be called that.
+
+**What the notes were full of.** Milestone archaeology. "This entry said editing
+and deleting happened only in the GUI for five days." "`tags list --tag` was
+accepted and ignored." "H16 removed `kind` and `capabilities` from the API." All
+true, all worth having, none of it an answer to *what can I do with this?* Every
+sentence removed was checked against `PLAN.md` first and is recorded there; the
+one that was not -- the remote-media entry having called localizing a
+maintenance action when it is an editing one -- was written into H15's crawl
+findings before it was deleted here, because this page was the only place it
+existed.
+
+**The rule the rewrite followed**, worth stating because the next person to edit
+this file will need it: a summary leads with what the reader is trying to do; a
+surface note answers one question, *where can I do this, and if not everywhere,
+why not?*; and neither carries the story of how the code got that way. Five
+capabilities have no note at all, and that is correct -- they are on all four
+surfaces with nothing to explain.
+
+**Two titles changed, which is more than the slice asked for.** `Group libraries
+into collections` was wrong in a way the paragraph beneath it contradicted:
+collections group no libraries, and the entry's own first sentence says a
+collection is provenance. It is `See where notes came from` now. `Do many
+organiser operations at once` was not wrong, only written in the codebase's
+vocabulary -- "organiser" is the name of a subsystem, not a thing a reader does
+-- and is `Reorganise many notes at once`. Both are recorded here rather than
+made quietly, because a heading is what a reader scans and renaming one changes
+an anchor.
+
+**And the generator taught the prose something.** Two notes began by repeating
+the classification the page prepends to them, so the rendered line read
+"command line only. Command line only, and firmly:". A surface note is read in
+three places -- its own section, the disagreement list, and the interface
+journey page -- and it has to survive all three. Rewritten to give the reason
+without restating the label.
 
 ## H19. `notriosctl search` — complete
 
@@ -4288,8 +4322,10 @@ about.
 **Working state.** `notriosctl collections list` names every collection in a
 library imported from Joplin and from Obsidian; `notriosctl notebooks list
 --json` gives ids a script can put into a query; the features table shows a
-command-line column for `Group libraries into collections`; and both registry
-entries describe the surfaces that exist rather than the ones assumed.
+command-line column for `Group libraries into collections` (renamed
+*See where notes came from* in H18-D, because collections group nothing); and
+both registry entries describe the surfaces that exist rather than the ones
+assumed.
 
 **Outcome (2026-09-08).** Done. `notriosctl collections list` and
 `collections show` exist, `notebooks list` prints a table with `--json` beside

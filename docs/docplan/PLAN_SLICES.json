@@ -300,7 +300,7 @@
     {
       "id": "H18",
       "title": "Make the features page usable, and generate the table under it",
-      "state": "in-progress",
+      "state": "complete",
       "slices": [
         {
           "id": "H18-A",
@@ -323,7 +323,8 @@
         {
           "id": "H18-D",
           "statement": "Rewrite the twenty-nine summaries and surface notes in FEATURES.json for a reader rather than against the surfaces",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:docs/docfeatures/FEATURES.json"
         }
       ]
     },

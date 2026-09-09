@@ -1047,7 +1047,7 @@
     },
     {
       "path": "docs/features.md",
-      "sha256": "25355f5679b39b200de10db1dbfb8bec8fdb8f5e0474565ef72877aa901db2b2",
+      "sha256": "e617f7572868b2258d5f8dd966f6d92c4fb433c4c4f560d1daa6449cd74fa07d",
       "help_note": "doc_help_features",
       "owner": "go:github.com/renesugar/notrios/internal/docfeatures#Registry",
       "sections": [
@@ -1152,9 +1152,9 @@
           "grade": "generated"
         },
         {
-          "id": "group-libraries-into-collections",
+          "id": "see-where-notes-came-from",
           "level": 3,
-          "title": "Group libraries into collections",
+          "title": "See where notes came from",
           "audience": "user",
           "kind": "actionable_or_reference",
           "owner": "go:github.com/renesugar/notrios/internal/docfeatures#Registry",
@@ -1222,9 +1222,9 @@
           "grade": "generated"
         },
         {
-          "id": "do-many-organiser-operations-at-once",
+          "id": "reorganise-many-notes-at-once",
           "level": 3,
-          "title": "Do many organiser operations at once",
+          "title": "Reorganise many notes at once",
           "audience": "user",
           "kind": "actionable_or_reference",
           "owner": "go:github.com/renesugar/notrios/internal/docfeatures#Registry",
@@ -2105,7 +2105,7 @@
     },
     {
       "path": "docs/journeys-gui.md",
-      "sha256": "b17b560019f20b4c40862748675f9f7e65a3d0a2d06ce9310301c48e80b633af",
+      "sha256": "7f640a880c21cffa63f904dcd0250d8a9152e5cce7279ae2f78574e70be6bf5a",
       "help_note": "doc_help_journeys_gui",
       "owner": "go:github.com/renesugar/notrios/internal/docjourneys#GUICatalogue",
       "sections": [
