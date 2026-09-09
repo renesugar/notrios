@@ -46,11 +46,11 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**9 items: 0 complete, 0 in progress, 8 not started, 1 deferred.**
+**9 items: 0 complete, 1 in progress, 7 not started, 1 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
-| I1. Put v0.8 on GitHub, and reconcile the branches | not-started | 0/3 | 3 |
+| I1. Put v0.8 on GitHub, and reconcile the branches | in-progress | 1/3 | 2 |
 | I2. Migrate the desktop shell to Wails v3, or record the postponement | deferred | 0/3 | 3 |
 | I3. Promote the Ubuntu installer through clean native environments | not-started | 0/3 | 3 |
 | I4. Harden the destructive lifecycle, and decide the profile race | not-started | 0/4 | 4 |
@@ -60,7 +60,16 @@ this section is archived when the plan completes and the rules are not.
 | I8. Freeze the 1.0 compatibility surfaces | not-started | 0/3 | 3 |
 | I9. Write the release-grade operational documentation | not-started | 0/3 | 3 |
 
-Nothing is half-finished.
+### Started and not finished
+
+**I1. Put v0.8 on GitHub, and reconcile the branches**
+
+- `I1-B` A develop-to-main pull request is merged with a merge commit after explicit authorization — *blocked* (blocked on: the owner authorizes the develop-to-main merge, after review)
+- `I1-C` The merge result is brought back into develop so main is an ancestor with no content difference — *not-started*
+
+### Not started
+
+Written and not begun: I3, I4, I5, I6, I7, I8, I9. Their slices are listed under each item.
 <!-- notrios:generated:plan:progress:end -->
 
 ## I1. Put v0.8 on GitHub, and reconcile the branches
@@ -92,6 +101,45 @@ force-pushed. The evidence is already sealed and is not re-sealed here.
 
 **Working state.** `develop` and `main` on GitHub with no content difference,
 `main` an ancestor of `develop`, and the pre-push evidence gate recorded as run.
+
+**`develop` pushed 2026-09-09, on the owner's authorization.**
+`26b0925..c63c4f8`, a fast-forward of 314 commits: 1,663 files and about 564,000
+insertions covering all of v0.8, v0.8e and the start of v0.9. Nothing was forced.
+The repository was already public, so this is the moment the v0.8 body of work
+became so -- which is why v0.8e sealed three signed, RFC 3161 timestamped volumes
+first, all of them predating this push.
+
+**The gate refused before it passed, and that was the work.** Both faults came
+from the same place: it was written when the reserve was one volume and the
+evidence directory was exactly what that volume sealed.
+
+`verify_source` required the live source to *equal* volume-0001's checkpoint. A
+growing reserve cannot satisfy that -- volumes 0002 and 0003 sealed forty-four
+more artifacts, and a milestone always holds archives built after its last
+volume, because an archive cannot be inside the volume whose sealing commit
+produced it. It now checks the property that survives: across every sealed
+checkpoint, each artifact present, byte-identical, structurally valid and
+covered by the signature its own checkpoint recorded -- 125 artifacts rather
+than 81. Unsealed files are counted and named rather than refused, because
+refusing them would demand the reserve be sealed before the work that produces
+the next thing to seal. Altering a sealed artifact, deleting one and replacing
+one with a symlink were each tried against a hardlinked copy of the real source,
+and each refused.
+
+The second fault was quieter. The content-commit check read the catalog with
+`json.load`, which worked on one entry and raised `Extra data` the moment
+volume-0002 appended a second line -- **a gate that stopped running rather than
+started failing**, which is the worse of the two. It reads every entry now and
+requires each volume's content commit to be an ancestor of `HEAD`.
+
+**Pre-push audit, recorded because a public push is not reversible.** No private
+key material in the tree -- the `.asc` and `.pem` files are the public key and
+the TSA certificates the verifier needs. No credential-shaped strings outside
+test fixtures and variable names. `agent/ATTEMPT_LOG.jsonl` was already on the
+remote and holds task and status rows, not transcripts.
+
+**The pull request is the next slice and is separately authorized**, as is the
+merge after it.
 
 ## I2. Migrate the desktop shell to Wails v3, or record the postponement — deferred
 

@@ -4,17 +4,19 @@
     {
       "id": "I1",
       "title": "Put v0.8 on GitHub, and reconcile the branches",
-      "state": "not-started",
+      "state": "in-progress",
       "slices": [
         {
           "id": "I1-A",
           "statement": "The remote is re-audited, the evidence pre-push gate runs, and develop is pushed",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:scripts/verify_evidence_pre_push.sh"
         },
         {
           "id": "I1-B",
           "statement": "A develop-to-main pull request is merged with a merge commit after explicit authorization",
-          "state": "not-started"
+          "state": "blocked",
+          "blocked_on": "the owner authorizes the develop-to-main merge, after review"
         },
         {
           "id": "I1-C",
