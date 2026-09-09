@@ -732,6 +732,16 @@ published, and no bundle leaves the machine or the reserve.
   backup capacity and corruption faults, restore drills, process/mount/symlink
   races, external profile roots, modified installed artifacts, unattended
   execution, and proof that uninstall never deletes user data.
+
+  **One race is already identified and waiting here.** A starting daemon
+  validates *every* profile in the registry rather than only the one it is
+  starting, so two profiles launched at the same moment read each other's
+  databases and one aborts with `stale_database: sqlite exec: database is
+  locked`. It is a transient lock reported as a stale library, and a retry would
+  succeed. Found in v0.8 H13 when a flaky test was made to say why it failed
+  rather than only that it had; the test now starts its daemons one at a time,
+  which is what a person does and which leaves the product behaviour for this
+  milestone to decide about.
 - Resolve production signing/notarization and timestamping policy per supported
   platform. Keep certificates, tokens, and passphrases out of pull-request
   jobs, logs, artifacts, backups, and the repository; document what remains
@@ -944,7 +954,7 @@ requirements below are the ones H7 already carried.
 The scaffold handoff is complete; see `CODING_CLIENT_HANDOFF.md`. Future roadmap planning should be driven from `ROADMAP.md`, but each active implementation cycle should create a small `PLAN.md` slice and archive it under `plans/` when complete.
 
 <!-- notrios:generated:roadmap:status:begin -->
-`PLAN.md` holds the active plan derived from this roadmap: 4 items, 1 complete, 0 in progress, 3 not started, 0 deferred.
+`PLAN.md` holds the active plan derived from this roadmap: 4 items, 2 complete, 0 in progress, 2 not started, 0 deferred.
 <!-- notrios:generated:roadmap:status:end -->
 
 

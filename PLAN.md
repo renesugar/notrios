@@ -49,12 +49,12 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**4 items: 1 complete, 0 in progress, 3 not started, 0 deferred.**
+**4 items: 2 complete, 0 in progress, 2 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
 | E1. Build the twenty-seven missing handoff archives | complete | 3/3 | — |
-| E2. Record the backfill honestly, and say what it is | not-started | 0/2 | 2 |
+| E2. Record the backfill honestly, and say what it is | complete | 2/2 | — |
 | E3. Seal a reserve volume, and extend the outer catalog | not-started | 0/2 | 2 |
 | E4. Make a missing archive fail rather than pass unnoticed | not-started | 0/1 | 1 |
 
@@ -153,7 +153,7 @@ rather than as missing: two v0.8 commits carry a tracked vitest cache file under
 `node_modules`, and calling that a defect would have been the tool misreading
 correct behaviour.
 
-## E2. Record the backfill honestly, and say what it is
+## E2. Record the backfill honestly, and say what it is — complete
 
 **Goal.** A manifest that a reader can check, and a handoff document that covers
 every slice rather than the first four.
@@ -172,6 +172,39 @@ somebody else.
 
 **Working state.** Every v0.8 item appears in the manifest with its archive's
 hash, and every retroactive archive is labelled retroactive.
+
+**Outcome (2026-09-09).** Done. `performance/v0.8e/MANIFEST.json` covers all
+thirty-five items -- archive, full commit, bytes, entries, SHA-256, and when it
+was taken -- and the handoff's snapshot table went from four rows to
+thirty-five.
+
+**Both are generated, and the generation is checked.** `build_manifest.py` reads
+every field from the archive it describes or from git, so the manifest cannot
+disagree with the evidence directory unless the directory changed. The handoff
+table is rendered from the manifest, and `validate_evidence.py` re-renders it in
+`make validate` and fails when the document and the record diverge. That gate is
+the point rather than a nicety: the four rows it replaces stood unchanged while
+thirty-one slices closed without an archive, because nothing compared them to
+anything.
+
+**The check runs without the archives, deliberately.** The evidence directory is
+not in the repository and not on every machine, so what `make validate` can
+check is the record: internal coherence, no item twice, no two items claiming
+the same bytes, every count agreeing with the rows beneath it, and every
+superseding entry saying why. Verifying the bytes needs the archives and the
+reserve verifier, and the validator does not pretend otherwise.
+
+**One check is about a sentence rather than a number.** The manifest has to keep
+saying what a retroactive archive's timestamp does *not* attest, and the
+validator fails if that sentence goes. Every other field could stay correct
+while the record quietly began reading as though the archives were
+contemporary, and the whole reason this milestone runs before the push is that
+the distinction matters.
+
+**Two rows were verified to be honest in the other direction too.** Only H0 and
+H4 are marked "at close"; every other row says v0.8e, and six say they replace
+an earlier archive and name it. Nothing in the table claims an archive is older
+than it is.
 
 ## E3. Seal a reserve volume, and extend the outer catalog
 
