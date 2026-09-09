@@ -1,0 +1,26 @@
+{
+  "schema": "notrios.g18.platform-matrix.v1",
+  "status_values": ["current_linux", "requires_v0_8", "emulator_gate", "deferred_post_1_0", "not_applicable"],
+  "platforms": ["linux", "windows", "macos", "android_emulator", "ios_or_physical_mobile"],
+  "capabilities": [
+    {"id":"profile_registry_config","owner":"instance_open","source":"internal/profiles/runtime.go","linux":"current_linux","windows":"requires_v0_8","macos":"requires_v0_8","android_emulator":"emulator_gate","ios_or_physical_mobile":"deferred_post_1_0"},
+    {"id":"database_path_sqlite","owner":"instance_open","source":"internal/store/sqlite.go","linux":"current_linux","windows":"requires_v0_8","macos":"requires_v0_8","android_emulator":"emulator_gate","ios_or_physical_mobile":"deferred_post_1_0"},
+    {"id":"asset_store","owner":"instance_open","source":"internal/store/sqlite.go","linux":"current_linux","windows":"requires_v0_8","macos":"requires_v0_8","android_emulator":"emulator_gate","ios_or_physical_mobile":"deferred_post_1_0"},
+    {"id":"projection_and_recoll_index","owner":"optional_sidecar","source":"internal/service/service.go","linux":"current_linux","windows":"requires_v0_8","macos":"requires_v0_8","android_emulator":"not_applicable","ios_or_physical_mobile":"deferred_post_1_0"},
+    {"id":"remote_media_quarantine","owner":"instance_open","source":"internal/config/config.go","linux":"current_linux","windows":"requires_v0_8","macos":"requires_v0_8","android_emulator":"emulator_gate","ios_or_physical_mobile":"deferred_post_1_0"},
+    {"id":"catchup_inbox","owner":"sync_facade","source":"internal/service/service.go","linux":"current_linux","windows":"requires_v0_8","macos":"requires_v0_8","android_emulator":"emulator_gate","ios_or_physical_mobile":"deferred_post_1_0"},
+    {"id":"shared_sync_directory","owner":"host_capability","source":"internal/synccarrier/directory.go","linux":"current_linux","windows":"requires_v0_8","macos":"requires_v0_8","android_emulator":"emulator_gate","ios_or_physical_mobile":"deferred_post_1_0"},
+    {"id":"directory_and_document_pickers","owner":"host_capability","source":"cmd/notrios/gui_wails.go","linux":"current_linux","windows":"requires_v0_8","macos":"requires_v0_8","android_emulator":"emulator_gate","ios_or_physical_mobile":"deferred_post_1_0"},
+    {"id":"sync_secret_store","owner":"injected_provider","source":"internal/httpapi/sync_ui.go","linux":"current_linux","windows":"requires_v0_8","macos":"requires_v0_8","android_emulator":"emulator_gate","ios_or_physical_mobile":"deferred_post_1_0"},
+    {"id":"tls_certificate_key_files","owner":"network_host","source":"internal/config/sync_transport.go","linux":"current_linux","windows":"requires_v0_8","macos":"requires_v0_8","android_emulator":"not_applicable","ios_or_physical_mobile":"deferred_post_1_0"},
+    {"id":"loopback_listener_port","owner":"http_host_only","source":"internal/service/service.go","linux":"current_linux","windows":"requires_v0_8","macos":"requires_v0_8","android_emulator":"not_applicable","ios_or_physical_mobile":"not_applicable"},
+    {"id":"outbound_rest_network","owner":"sync_facade","source":"internal/syncauth/client.go","linux":"current_linux","windows":"requires_v0_8","macos":"requires_v0_8","android_emulator":"emulator_gate","ios_or_physical_mobile":"deferred_post_1_0"},
+    {"id":"background_sync_and_sidecar_workers","owner":"instance_lifecycle","source":"internal/service/service.go","linux":"current_linux","windows":"requires_v0_8","macos":"requires_v0_8","android_emulator":"emulator_gate","ios_or_physical_mobile":"deferred_post_1_0"},
+    {"id":"notifications","owner":"host_capability","source":"go.mod indirect go-toast dependency; no Notrios call site","linux":"requires_v0_8","windows":"requires_v0_8","macos":"requires_v0_8","android_emulator":"not_applicable","ios_or_physical_mobile":"deferred_post_1_0"},
+    {"id":"notrios_deep_link_association","owner":"host_capability","source":"cmd/notriosctl/stablelinks.go","linux":"current_linux","windows":"requires_v0_8","macos":"requires_v0_8","android_emulator":"emulator_gate","ios_or_physical_mobile":"deferred_post_1_0"},
+    {"id":"web_assets_and_csp","owner":"http_or_wails_host","source":"internal/httpapi/server.go","linux":"current_linux","windows":"requires_v0_8","macos":"requires_v0_8","android_emulator":"not_applicable","ios_or_physical_mobile":"not_applicable"},
+    {"id":"import_export_snapshot_paths","owner":"host_capability","source":"cmd/notriosctl/main.go","linux":"current_linux","windows":"requires_v0_8","macos":"requires_v0_8","android_emulator":"emulator_gate","ios_or_physical_mobile":"deferred_post_1_0"},
+    {"id":"logging_and_crash_reporting","owner":"instance_callbacks_or_poll","source":"internal/service/service.go","linux":"current_linux","windows":"requires_v0_8","macos":"requires_v0_8","android_emulator":"emulator_gate","ios_or_physical_mobile":"deferred_post_1_0"},
+    {"id":"sqlite_cgo_linkage","owner":"package_build","source":"internal/store/sqlite.go","linux":"current_linux","windows":"requires_v0_8","macos":"requires_v0_8","android_emulator":"emulator_gate","ios_or_physical_mobile":"deferred_post_1_0"}
+  ]
+}

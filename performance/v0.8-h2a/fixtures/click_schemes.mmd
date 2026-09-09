@@ -1,0 +1,8 @@
+flowchart LR
+    A[Local note] --> B[Remote site]
+    B --> C[Anchor link]
+    C --> D[Danger]
+    click A "notrios://databases/db_abc/documents/doc_xyz" "Open the note"
+    click B "https://example.invalid/remote" "Remote"
+    click C "notrios://databases/db_abc/documents/doc_two#heading-one" "Anchored"
+    click D "javascript:window.__pwned=3" "Danger"

@@ -1,0 +1,182 @@
+{
+  "schema": "notrios.g13.authmatrix.v1",
+  "generated_for": "v0.7 G13 REST security foundation, pairing, and transport policy",
+  "database_schema_version": 25,
+  "matrix": [
+    {
+      "case": "an enrolled peer",
+      "route": "/api/v1/sync/handshake",
+      "status": 200,
+      "authorized": true,
+      "audited_reason": "peer.auth_ok:ok",
+      "answer_explains_the_failure": false
+    },
+    {
+      "case": "no credential at all",
+      "route": "/api/v1/sync/handshake",
+      "status": 401,
+      "authorized": false,
+      "audited_reason": "peer.auth_refused:malformed",
+      "answer_explains_the_failure": false
+    },
+    {
+      "case": "a signature that is not the enrolled key's",
+      "route": "/api/v1/sync/handshake",
+      "status": 401,
+      "authorized": false,
+      "audited_reason": "peer.auth_refused:bad_signature",
+      "answer_explains_the_failure": false
+    },
+    {
+      "case": "a revoked credential",
+      "route": "/api/v1/sync/handshake",
+      "status": 401,
+      "authorized": false,
+      "audited_reason": "peer.auth_refused:unenrolled_key",
+      "answer_explains_the_failure": false
+    },
+    {
+      "case": "a signature for another path",
+      "route": "/api/v1/sync/handshake",
+      "status": 401,
+      "authorized": false,
+      "audited_reason": "peer.auth_refused:bad_signature",
+      "answer_explains_the_failure": false
+    },
+    {
+      "case": "a signature for another body",
+      "route": "/api/v1/sync/handshake",
+      "status": 401,
+      "authorized": false,
+      "audited_reason": "peer.auth_refused:bad_signature",
+      "answer_explains_the_failure": false
+    },
+    {
+      "case": "a stale timestamp",
+      "route": "/api/v1/sync/handshake",
+      "status": 401,
+      "authorized": false,
+      "audited_reason": "peer.auth_refused:stale_timestamp",
+      "answer_explains_the_failure": false
+    },
+    {
+      "case": "a browser, by Origin",
+      "route": "/api/v1/sync/handshake",
+      "status": 403,
+      "authorized": false,
+      "answer_explains_the_failure": false
+    },
+    {
+      "case": "a browser, by Cookie",
+      "route": "/api/v1/sync/handshake",
+      "status": 403,
+      "authorized": false,
+      "answer_explains_the_failure": false
+    },
+    {
+      "case": "an enrolled key whose replica is not admitted",
+      "route": "/api/v1/sync/handshake",
+      "status": 403,
+      "authorized": false,
+      "audited_reason": "peer.auth_refused:not_enrolled_for_admission",
+      "answer_explains_the_failure": false
+    },
+    {
+      "case": "a peer credential on an ordinary note route",
+      "route": "/api/v1/documents/doc_absent",
+      "status": 404,
+      "authorized": false,
+      "answer_explains_the_failure": false
+    },
+    {
+      "case": "pairing with no code",
+      "route": "/api/v1/sync/pair",
+      "status": 401,
+      "authorized": false,
+      "audited_reason": "pairing.refused:malformed_code",
+      "answer_explains_the_failure": false
+    },
+    {
+      "case": "pairing with a code nobody issued",
+      "route": "/api/v1/sync/pair",
+      "status": 401,
+      "authorized": false,
+      "audited_reason": "pairing.refused:unknown_or_expired",
+      "answer_explains_the_failure": false
+    },
+    {
+      "case": "pairing with a valid code",
+      "route": "/api/v1/sync/pair",
+      "status": 200,
+      "authorized": true,
+      "audited_reason": "pairing.consumed:",
+      "answer_explains_the_failure": false
+    },
+    {
+      "case": "status from loopback",
+      "route": "/api/v1/sync/status",
+      "status": 200,
+      "authorized": true,
+      "answer_explains_the_failure": false
+    },
+    {
+      "case": "status from elsewhere",
+      "route": "/api/v1/sync/status",
+      "status": 403,
+      "authorized": false,
+      "answer_explains_the_failure": false
+    },
+    {
+      "case": "status from elsewhere claiming to be loopback",
+      "route": "/api/v1/sync/status",
+      "status": 403,
+      "authorized": false,
+      "answer_explains_the_failure": false
+    }
+  ],
+  "audit_reason_vocabulary": [
+    "bad_signature",
+    "malformed",
+    "ok",
+    "rate_limited",
+    "refused",
+    "replayed_nonce",
+    "stale_timestamp",
+    "unenrolled_key",
+    "wrong_database",
+    "wrong_principal"
+  ],
+  "transport_policy": [
+    {
+      "listen_addr": "127.0.0.1:8080",
+      "tls_configured": false,
+      "startup_refused": false
+    },
+    {
+      "listen_addr": "0.0.0.0:8080",
+      "tls_configured": false,
+      "startup_refused": true
+    },
+    {
+      "listen_addr": ":8080",
+      "tls_configured": false,
+      "startup_refused": true
+    },
+    {
+      "listen_addr": "192.168.1.10:8080",
+      "tls_configured": false,
+      "startup_refused": true
+    },
+    {
+      "listen_addr": "0.0.0.0:8443",
+      "tls_configured": true,
+      "startup_refused": false
+    }
+  ],
+  "notes": [
+    "Every library, key, and note here is generated; nothing private is read or recorded.",
+    "Each row is a real request against a real service with one enrolled peer.",
+    "answer_explains_the_failure must be false everywhere: which check failed belongs in the audit log, not in the reply.",
+    "A peer credential authorizes /api/v1/sync/... only; ordinary note routes keep their existing local posture."
+  ]
+}

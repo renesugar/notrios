@@ -1,0 +1,204 @@
+{
+  "schema": "notrios.docrules.documents.v1",
+  "section": "Keeping the reference documents current",
+  "documents": [
+    {
+      "path": "AGENTS.md",
+      "kind": "source",
+      "home": "how a coding agent works here, including how every other document is kept current",
+      "not_here": "anything a document can hold itself; a rule lands here only when it must outlive the document it governs"
+    },
+    {
+      "path": "CLAUDE.md",
+      "kind": "pointer",
+      "home": "one line telling Claude where the real instructions are",
+      "not_here": "instructions; a second copy of AGENTS.md is a second thing to keep current"
+    },
+    {
+      "path": "PLAN.md",
+      "kind": "journal",
+      "section": "Keeping the plan current",
+      "home": "the active plan: what each item is for, and what happened",
+      "not_here": "what is left, stated in prose; that is generated from the slice ledger"
+    },
+    {
+      "path": "ROADMAP.md",
+      "kind": "reference",
+      "section": "Keeping the roadmap current",
+      "home": "what a version means, as a feature inventory and planning source",
+      "not_here": "per-item status for the active plan; the one status sentence is generated"
+    },
+    {
+      "path": "README.md",
+      "kind": "reference",
+      "home": "what Notrios is and what it can do today, for somebody who has not seen it",
+      "not_here": "the milestone-by-milestone story, which belongs to ROADMAP.md"
+    },
+    {
+      "path": "CODING_CLIENT_HANDOFF.md",
+      "kind": "reference",
+      "home": "the compressed current state and the recommended next task, for an agent starting cold",
+      "not_here": "the working record of a finished item; link the archive under plans/ instead"
+    },
+    {
+      "path": "CONTEXT_MAP.md",
+      "kind": "reference",
+      "home": "where things live: the root documents, the packages, and what each is for",
+      "not_here": "how far along the plan is; the map said \"H0 is complete; H1 is next\" for a month"
+    },
+    {
+      "path": "SYSTEM_ARCHITECTURE.md",
+      "kind": "reference",
+      "home": "how the parts fit together and why they are separated that way",
+      "not_here": "the file-by-file inventory, which is CONTEXT_MAP.md"
+    },
+    {
+      "path": "API_SPEC.md",
+      "kind": "reference",
+      "home": "the REST and MCP contract in prose: what each surface is for and what it refuses",
+      "not_here": "an endpoint api/openapi.yaml does not define; the two change in one commit"
+    },
+    {
+      "path": "DATABASE_SCHEMA.md",
+      "kind": "reference",
+      "home": "why the schema is shaped the way it is, table by table",
+      "not_here": "the schema itself; migrations/ is what the database actually has"
+    },
+    {
+      "path": "UI_DESIGN.md",
+      "kind": "reference",
+      "home": "what the built-in GUI is meant to be and how it is built",
+      "not_here": "what the GUI currently has; the control inventory counts that from the running app"
+    },
+    {
+      "path": "FEATURE_MATRIX.md",
+      "kind": "reference",
+      "home": "triage: whether a feature is in scope, which milestone owns it, and how far it got",
+      "not_here": "what a feature does for a user; docs/docfeatures/FEATURES.json is the registry for that"
+    },
+    {
+      "path": "WORKSPACE_MAINTENANCE.md",
+      "kind": "reference",
+      "home": "the networked-notes maintenance features and which of them Notrios took",
+      "not_here": "a feature's user-facing behaviour once it ships; that is FEATURES.json and docs/"
+    },
+    {
+      "path": "DOCS_SITE.md",
+      "kind": "reference",
+      "home": "how documentation is authored once and consumed twice, as a site and as the Help notebook",
+      "not_here": "audit totals; make docaudit prints the current ones and they move every slice"
+    },
+    {
+      "path": "ENVIRONMENT_SETUP.md",
+      "kind": "reference",
+      "home": "how a contributor gets a machine that can build, test and run this",
+      "not_here": "a command nobody has run since it was written"
+    },
+    {
+      "path": "PACKAGING.md",
+      "kind": "reference",
+      "home": "what a release artifact contains, how it is produced, and how it is checked",
+      "not_here": "the release gates themselves, which are RELEASE_CHECKLIST.md"
+    },
+    {
+      "path": "RELEASE_CHECKLIST.md",
+      "kind": "reference",
+      "home": "the gates a version must pass, kept per version",
+      "not_here": "a tick that nobody performed; an unticked box on a shipped version says why it stayed open"
+    },
+    {
+      "path": "TESTING_POLICY.md",
+      "kind": "policy",
+      "home": "the definition of done and what counts as evidence for it",
+      "not_here": "the results of any particular run; those live under performance/ and evidence/"
+    },
+    {
+      "path": "CODING_STANDARDS.md",
+      "kind": "policy",
+      "home": "how code is written here, and where this project departs from the Google style guides",
+      "not_here": "rules about documents; those outlive any one standard and belong in AGENTS.md"
+    },
+    {
+      "path": "PUBLISHING_POLICY.md",
+      "kind": "policy",
+      "home": "what a publication may contain and what it must strip",
+      "not_here": "how the publishing code is structured, which is SYSTEM_ARCHITECTURE.md"
+    },
+    {
+      "path": "VERSIONING_AND_SYNC_POLICY.md",
+      "kind": "policy",
+      "home": "what is canonical, how revisions are kept, and what may never become the store of record",
+      "not_here": "the sync protocol, which is SYNCHRONIZATION.md"
+    },
+    {
+      "path": "EVIDENCE_PRESERVATION.md",
+      "kind": "policy",
+      "home": "the preservation contract: what is sealed, by whom, and how it is verified",
+      "not_here": "the catalogue of what has been sealed; that is under evidence/"
+    },
+    {
+      "path": "PROJECT_DECISIONS.md",
+      "kind": "policy",
+      "home": "decisions that have been accepted, and the reason each was accepted",
+      "not_here": "a rewritten decision; a decision that changed is superseded in place, with both visible"
+    },
+    {
+      "path": "PROMPT.md",
+      "kind": "reference",
+      "home": "the cold-start prompt handed to an agent that has no history",
+      "not_here": "the reading list and constraints themselves; it points at AGENTS.md, which has them"
+    },
+    {
+      "path": "SECURITY_REVIEW.md",
+      "kind": "snapshot",
+      "home": "what the security posture was at a named release, and what was still open",
+      "not_here": "edits that quietly make an old review describe a newer product; date it and supersede it"
+    }
+  ],
+  "exempt": [
+    {
+      "path": "FLUTTER_GO_CLIENT.md",
+      "reason": "feature contract: the shared-core and client handoff"
+    },
+    {
+      "path": "IMPORT_EXPORT_POLICY.md",
+      "reason": "feature contract: import, export and publishing behaviour"
+    },
+    {
+      "path": "NATIVE_ARCHIVE_V2.md",
+      "reason": "feature contract: the archive-v2 format and identity rules"
+    },
+    {
+      "path": "NOTEBOOKS_AND_SEARCH_NOTEBOOKS.md",
+      "reason": "feature contract: the notebook and tag model"
+    },
+    {
+      "path": "RECOLL_INTEGRATION.md",
+      "reason": "feature contract: the derived Recoll sidecar"
+    },
+    {
+      "path": "SEARCH_QUERY_LANGUAGE.md",
+      "reason": "feature contract: the user-facing query language"
+    },
+    {
+      "path": "SECURITY_AND_MEDIA_POLICY.md",
+      "reason": "feature contract: remote-media localization"
+    },
+    {
+      "path": "SELECTION_AND_PRIVACY_PLANNER.md",
+      "reason": "feature contract: the selection and privacy planner"
+    },
+    {
+      "path": "SYNCHRONIZATION.md",
+      "reason": "feature contract: the synchronization architecture"
+    }
+  ],
+  "atlas": {
+    "document": "CONTEXT_MAP.md",
+    "roots": [
+      "internal",
+      "cmd"
+    ],
+    "exempt": []
+  }
+}

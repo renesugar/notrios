@@ -1,0 +1,8 @@
+flowchart LR
+  Carrier[Hostile carrier tree] --> Safe[Shared safe-root capability]
+  Archive[Crafted legacy archive] --> Safe
+  Safe -->|typed read policy| Sync[Carrier adapter]
+  Safe -->|typed inventory policy| Import[Archive adapter]
+  Policy[Platform + link policy] --> Safe
+  Sync --> Canonical[Canonical store]
+  Import --> Canonical

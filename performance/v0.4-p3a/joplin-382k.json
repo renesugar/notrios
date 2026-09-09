@@ -1,0 +1,50 @@
+{
+  "corpus": "joplin-raw recipe export (private; not committed)",
+  "source_items": 1237553,
+  "notes_imported": 382206,
+  "notebooks": 781,
+  "tags": 11753,
+  "tag_relations": 842813,
+  "resources": 0,
+  "source_bundle_items": 0,
+  "export": {
+    "target": "full_archive",
+    "full_backup": true,
+    "verified": true,
+    "counts": {
+      "collections": 1,
+      "notebooks": 783,
+      "search_notebooks": 2,
+      "tags": 11753,
+      "documents": 382206,
+      "revisions": 382206,
+      "document_tags": 842813,
+      "resources": 0,
+      "document_resources": 0,
+      "links": 2,
+      "provenance": 382206,
+      "source_bundles": 0
+    },
+    "objects": 382407,
+    "blob_objects": 382206,
+    "record_objects": 201,
+    "index_objects": 39,
+    "archive_bytes": 1142623391,
+    "bytes_written": 1322321741,
+    "elapsed_seconds_export_and_verify": 2906.296,
+    "wall_clock": "48:26.59",
+    "peak_rss_bytes": 312397824,
+    "warnings": [
+      "2 selected-note links are unresolved, ambiguous, invalid, or target deleted",
+      "detail arrays are truncated; counts and manifest_sha256 cover the complete bounded plan"
+    ],
+    "manifest_bytes": 16212,
+    "objects_per_second": 131.6
+  },
+  "pre_p3a_comparison": {
+    "inline_bytes_per_object_descriptor": 645,
+    "inline_manifest_bytes_would_be": 246652515,
+    "manifest_limit_bytes": 4194304,
+    "inline_object_ceiling": 6500
+  }
+}

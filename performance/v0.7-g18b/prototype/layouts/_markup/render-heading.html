@@ -1,0 +1,19 @@
+{{- $anchorMap := dict
+  "listing-a-notes-blocks" "listing-a-note-s-blocks"
+  "running-a-notes-query-block" "running-a-note-s-query-block"
+  "import-chatgpt--import-claude" "import-chatgpt-import-claude"
+  "snapshot-create--snapshot-verify--snapshot-restore" "snapshot-create-snapshot-verify-snapshot-restore"
+  "twitterx-extracted-archive" "twitter-x-extracted-archive"
+-}}
+{{- $anchor := index $anchorMap .Anchor | default .Anchor -}}
+{{- $aliases := slice -}}
+{{- with .Page.File -}}
+  {{- if and (eq .Path "service.md") (eq $anchor "configuration-reference") -}}
+    {{- $aliases = $aliases | append "configuration" -}}
+  {{- end -}}
+  {{- if and (eq .Path "stable-links.md") (eq $anchor "linking-to-a-section-or-a-block") -}}
+    {{- $aliases = $aliases | append "linking-to-a-block-not-just-a-note" -}}
+  {{- end -}}
+{{- end -}}
+{{- range $aliases }}<span id="{{ . }}" class="ledger-anchor-alias" aria-hidden="true"></span>{{ end -}}
+<h{{ .Level }} id="{{ $anchor }}">{{ .Text | safeHTML }}</h{{ .Level }}>

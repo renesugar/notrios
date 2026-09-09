@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://notrios.example/schemas/evidence/manifest-entry-v1.schema.json",
+  "additionalProperties": false,
+  "properties": {
+    "entry_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "payload": {"type": "object"},
+    "previous_entry_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "schema": {"const": "notrios.evidence.manifest-entry.v1"},
+    "sequence": {"minimum": 1, "type": "integer"}
+  },
+  "required": ["schema", "sequence", "previous_entry_sha256", "payload", "entry_sha256"],
+  "title": "Notrios evidence manifest entry v1",
+  "type": "object"
+}

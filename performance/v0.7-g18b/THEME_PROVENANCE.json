@@ -1,0 +1,11 @@
+{
+  "schema": "notrios.g18b.theme-provenance.v1",
+  "upstream_repository": "https://github.com/renesugar/hugo-theme-ledger",
+  "upstream_commit": "f9d28ea297427890ecffa31fa74caa9ee385d9f5",
+  "snapshot_root": "performance/v0.7-g18b/prototype/themes/hugo-theme-ledger",
+  "selection": ["assets/** excluding upstream *.test.js fixtures", "layouts/**", "LICENSE", "theme.toml"],
+  "file_count": 44,
+  "byte_count": 173947,
+  "manifest_algorithm": "SHA-256 over sorted '<file-sha256>  <relative-path>\\n' records",
+  "manifest_sha256": "2897566a3861c1a92f6f83d2606d8605c085d4b63d3f67adbef4954c55880025"
+}

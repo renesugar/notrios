@@ -12,9 +12,38 @@ Notrios exposes one user-facing query language across the GUI search box, REST s
 | `author:alice`, `author:"Alice Smith"` | author display name | metadata filter | native `author` |
 | `authorid:alice@example.social` | canonical account identity | metadata filter | custom field |
 | `tag:toys`, `tag:"shopping mall"` | tag match | `note_tags` join | custom `tag` field |
-| `notebook:"name"` | limit to a notebook and its sub-notebooks (case-insensitive; same-named notebooks all match) | notebook join | adapter-side filter |
+| `notebook:"name"` | limit to a notebook and its sub-notebooks (case-insensitive; same-named notebooks all match) | notebook join | projected notebook + ancestors |
+| `category:"name"` | exact alias for `notebook:` | notebook join | projected notebook + ancestors |
+| `collection:"id"` | limit to one collection: where a note came from, not where it is filed (case-insensitive, exact, never a prefix) | `documents.collection_id` | projected `collection` field |
 | `since:2026-07-01` | on/after start of that date | timestamp filter | `publishedts:<epoch>..` |
 | `until:2026-07-31` | through end of that date (23:59:59) | timestamp filter | `publishedts:..<epoch>` |
+
+## Boolean expression grammar (implemented in v0.4 Q1)
+
+The application parses one bounded backend-neutral expression tree and compiles
+that same structure to SQLite FTS5/SQL and optional Recoll:
+
+| Syntax | Meaning |
+|---|---|
+| `keyword1 keyword2` | implicit `AND` (unchanged) |
+| `keyword1 OR keyword2` | either branch; `OR` is uppercase only |
+| `-keyword`, `-tag:private` | prefix negation |
+| `(a OR b) c` | grouping; `AND` binds more tightly than `OR` |
+| `"multiple word phrase"` | exact phrase leaf (already supported) |
+| `category:"name"` | exact alias for `notebook:"name"` |
+| `category:"All notes"`, `notebook:"All notes"` | remove the notebook filter and search all current notes |
+
+`AND` is implicit and binds more tightly than uppercase `OR`; lowercase `or`
+remains an ordinary term. Prefix `-` applies to the next term, field, or group.
+The parser keeps URLs, emoji, and embedded hyphens intact and preserves unknown
+`word:value` tokens as literal text. Limits are 4,096 UTF-8 bytes, 256 parser
+tokens, and 16 nested parenthesis levels; malformed or over-limit expressions
+return `validation_failed` instead of being truncated or approximated.
+
+`category:` and `notebook:` are identical. Ordinary values match every
+case-insensitive same-named notebook and each matching subtree. The special
+value `"All notes"` is a match-all scope leaf, so it removes only that notebook
+constraint (`category:"All notes" tag:todo` is equivalent to `tag:todo`).
 
 ## Timestamp rules
 
@@ -31,13 +60,20 @@ Notrios exposes one user-facing query language across the GUI search box, REST s
 
 ## Parsing rules (implemented)
 
-- Unqualified terms are ANDed and search title and body; quoted spans are phrase matches.
-- Repeated field filters AND together (`tag:a tag:b` requires both).
+- Adjacent expressions are ANDed; uppercase `OR`, prefix `-`, and parentheses
+  follow the precedence rules above. Quoted spans are phrase leaves.
+- Repeated field filters AND together unless an explicit `OR`/group changes
+  their relationship (`tag:a tag:b` requires both; `tag:a OR tag:b` requires either).
 - Unknown `word:value` tokens are kept as literal search terms (so `re:invoice` or a pasted URL is never silently dropped).
 - `author:` matches the display name case-insensitively (substring/phrase); `authorid:` matches the canonical identity exactly (case-insensitive).
 - `since:`/`until:` compare the source `published_ts` when provenance exists, falling back to the note's local creation time.
 - `is:trashed` queries search trashed notes with LIKE-based text matching (trashed notes have no FTS rows).
-- Cursors are opaque, bound to the query + collection, and reject replay against a different search.
+- `is:trashed` is accepted only as a positive AND scope constraint. Trash is
+  absent from Recoll by design, so these queries execute only against SQLite.
+- Cursors are opaque, bound to the query + collection, and reject replay
+  against a different search. Version `k2` tokens carry chronological
+  `(updated_at, id)` or relevance `(score, id)` boundaries; SQL uses row-value
+  keysets and has no offset ceiling.
 
 ## Reserved internal operators
 
@@ -46,6 +82,23 @@ Notrios exposes one user-facing query language across the GUI search box, REST s
 
 ## Result behavior
 
-- Implicit AND, phrases, stemming, wildcards, and boolean expressions follow the backend's native behavior.
+- Positive text-only expressions retain FTS5 relevance ordering. Expressions
+  mixing metadata or unary negation compile to exact parameterized SQL
+  predicates with chronological keysets. Recoll receives a parenthesized form
+  of the same tree; negation is lowered exactly to leaf exclusions with De
+  Morgan's laws because Recoll does not accept a negated group directly.
+- Notebook ancestors are repeated in the derived Recoll projection so recursive
+  `notebook:`/`category:` filters match SQLite. Standalone emoji are indexed as
+  exact codepoint keys because ordinary word tokenizers discard them. A shape
+  Recoll cannot honor is explicitly skipped in favor of the exact SQLite result.
 - Query weighting (title above body) is a later adapter feature; Recoll supports per-element weights natively.
-- All search endpoints support cursor-based incremental results so a GUI can populate "All notes" lazily while scrolling (limits and cursor rules in `API_SPEC.md`).
+- All search endpoints support cursor-based incremental results so a GUI can
+  populate "All notes" lazily while scrolling (limits and cursor rules in
+  `API_SPEC.md`).
+- Chronological paging uses a versioned keyset cursor over
+  `(updated_at DESC, id DESC)` and matching composite indexes. Relevance paging
+  uses a reproducible `(score ASC, id ASC)` FTS5 boundary. Optional merged
+  FTS5/Recoll results are frozen in a generation-labelled `m1` snapshot capped
+  at 1,000 hits for at most ten minutes; `truncated` makes that bound explicit.
+  Cursor version changes invalidate old tokens rather than misinterpreting
+  them.

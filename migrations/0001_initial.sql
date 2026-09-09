@@ -20,6 +20,12 @@ CREATE TABLE IF NOT EXISTS documents (
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE INDEX IF NOT EXISTS documents_collection_state_updated_idx
+    ON documents(collection_id, deleted_at, updated_at DESC, id DESC);
+CREATE INDEX IF NOT EXISTS documents_trash_deleted_idx
+    ON documents(deleted_at DESC, id DESC)
+    WHERE deleted_at IS NOT NULL;
+
 CREATE TABLE IF NOT EXISTS document_revisions (
     id TEXT PRIMARY KEY,
     document_id TEXT NOT NULL REFERENCES documents(id),
@@ -54,6 +60,8 @@ CREATE TABLE IF NOT EXISTS resources (
     filename TEXT,
     mime_type TEXT NOT NULL,
     metadata_json TEXT NOT NULL DEFAULT '{}',
+    unreferenced_at TEXT,
+    unreferenced_reason TEXT NOT NULL DEFAULT '',
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -117,7 +125,8 @@ CREATE TABLE IF NOT EXISTS index_outbox (
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     completed_at TEXT,
     attempt_count INTEGER NOT NULL DEFAULT 0,
-    error_text TEXT
+    error_text TEXT,
+    next_attempt_at TEXT
 );
 
 -- Schema v5: notebooks, tags, and search notebooks (Notrios redesign task R3).
@@ -151,6 +160,7 @@ CREATE TABLE IF NOT EXISTS note_tags (
 );
 
 CREATE INDEX IF NOT EXISTS note_tags_tag_idx ON note_tags(tag_id);
+CREATE INDEX IF NOT EXISTS note_tags_tag_document_idx ON note_tags(tag_id, document_id);
 
 -- Search notebooks are query-backed virtual notebooks; deleting one never
 -- deletes notes. sort_anchor is 'first' (All notes), 'normal', or 'last' (Trash).
@@ -232,3 +242,159 @@ CREATE TABLE IF NOT EXISTS resource_hashes (
 CREATE INDEX IF NOT EXISTS resource_hashes_hash_idx ON resource_hashes(algo, hash);
 
 PRAGMA user_version = 7;
+
+-- Schema v8: retention-aware resource garbage collection (v0.3 task H6).
+-- Upgrade backfill and the index are applied by ensureSchemaV8 so existing
+-- databases and fresh databases share one idempotent path.
+PRAGMA user_version = 8;
+
+-- Schema v9: scalable keyset traversal and filter-supporting indexes
+-- (v0.3 task H7).
+PRAGMA user_version = 9;
+
+-- Schema v10: resumable importer state and exact source-bundle manifests
+-- (v0.3 task H8). Source bytes remain in the asset store; only their
+-- content-addressed paths and hashes live in SQLite.
+CREATE TABLE IF NOT EXISTS import_checkpoints (
+    source_system TEXT NOT NULL,
+    source_key TEXT NOT NULL,
+    collection_id TEXT NOT NULL,
+    inventory_fingerprint TEXT NOT NULL,
+    phase TEXT NOT NULL,
+    next_index INTEGER NOT NULL DEFAULT 0,
+    total_items INTEGER NOT NULL DEFAULT 0,
+    processed_items INTEGER NOT NULL DEFAULT 0,
+    status TEXT NOT NULL,
+    report_json TEXT NOT NULL DEFAULT '{}',
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    completed_at TEXT,
+    PRIMARY KEY(source_system, source_key, collection_id)
+);
+
+CREATE TABLE IF NOT EXISTS import_item_states (
+    source_system TEXT NOT NULL,
+    source_key TEXT NOT NULL,
+    collection_id TEXT NOT NULL,
+    item_key TEXT NOT NULL,
+    item_type TEXT NOT NULL,
+    fingerprint TEXT NOT NULL,
+    target_id TEXT,
+    action TEXT NOT NULL,
+    processed_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY(source_system, source_key, collection_id, item_key)
+);
+
+CREATE INDEX IF NOT EXISTS import_item_states_type_idx
+    ON import_item_states(source_system, source_key, collection_id, item_type, item_key);
+
+CREATE TABLE IF NOT EXISTS source_bundle_items (
+    source_system TEXT NOT NULL,
+    source_key TEXT NOT NULL,
+    collection_id TEXT NOT NULL,
+    item_key TEXT NOT NULL,
+    item_type TEXT NOT NULL,
+    external_id TEXT NOT NULL,
+    relative_path TEXT NOT NULL,
+    sha256 TEXT NOT NULL,
+    size_bytes INTEGER NOT NULL,
+    storage_path TEXT NOT NULL,
+    property_order_json TEXT NOT NULL DEFAULT '[]',
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY(source_system, source_key, collection_id, item_key)
+);
+
+CREATE INDEX IF NOT EXISTS source_bundle_items_hash_idx
+    ON source_bundle_items(sha256);
+
+PRAGMA user_version = 10;
+
+-- Schema v12: stable logical database identity and per-writable-copy replica
+-- identity. Archive v2 preserves database_id for in-universe restores while
+-- restore/clone workflows always mint a new replica_id.
+CREATE TABLE IF NOT EXISTS database_identity (
+    singleton INTEGER PRIMARY KEY CHECK (singleton = 1),
+    database_id TEXT NOT NULL UNIQUE,
+    replica_id TEXT NOT NULL UNIQUE,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    replica_created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+PRAGMA user_version = 12;
+
+-- Schema v13: the restore-in-progress marker. An archive-v2 restore commits
+-- many bounded transactions, so an interruption leaves committed rows behind;
+-- this row is what stops that partial library passing as a complete one.
+CREATE TABLE IF NOT EXISTS restore_state (
+    singleton INTEGER PRIMARY KEY CHECK (singleton = 1),
+    snapshot_id TEXT NOT NULL,
+    commit_sha256 TEXT NOT NULL,
+    intent TEXT NOT NULL,
+    started_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+PRAGMA user_version = 13;
+
+-- Schema v14: content-addressed note blocks. A block's ID derives from its
+-- text (PROJECT_DECISIONS.md 17), so moving a block keeps its identity and
+-- editing its text mints a new one. Rows are derived state, rebuilt in the same
+-- transaction as the note save that produced them.
+CREATE TABLE IF NOT EXISTS document_blocks (
+    id TEXT NOT NULL,
+    document_id TEXT NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+    ordinal INTEGER NOT NULL,
+    kind TEXT NOT NULL,
+    heading_level INTEGER NOT NULL DEFAULT 0,
+    marker TEXT,
+    content_sha256 TEXT NOT NULL,
+    start_byte INTEGER NOT NULL,
+    end_byte INTEGER NOT NULL,
+    heading_slug TEXT,
+    PRIMARY KEY (document_id, id)
+);
+CREATE INDEX IF NOT EXISTS document_blocks_document_idx ON document_blocks(document_id, ordinal);
+CREATE INDEX IF NOT EXISTS document_blocks_marker_idx ON document_blocks(document_id, marker) WHERE marker IS NOT NULL;
+CREATE INDEX IF NOT EXISTS document_blocks_slug_idx ON document_blocks(document_id, heading_slug) WHERE heading_slug IS NOT NULL;
+
+-- Schema v15: heading slugs. A `#section-title` anchor resolves against this
+-- column; block rows deliberately store no heading text, so without it a
+-- heading anchor has nothing to compare against (PROJECT_DECISIONS.md 19).
+PRAGMA user_version = 15;
+
+-- Schema v16: the title index editor link intelligence needs. Title lookup was
+-- `lower(title) = lower(?)`, which no index can serve, so every link that
+-- resolved by title scanned the whole document table -- once per link, on every
+-- save and every lint pass. The NOCASE collation makes the same comparison
+-- index-backed and additionally makes `title LIKE 'prefix%'` a range scan, which
+-- is what bounds the suggestion endpoint.
+CREATE INDEX IF NOT EXISTS documents_title_idx
+    ON documents(collection_id, deleted_at, title COLLATE NOCASE, id);
+CREATE INDEX IF NOT EXISTS resources_filename_idx
+    ON resources(collection_id, filename COLLATE NOCASE, id);
+
+PRAGMA user_version = 16;
+
+-- Schema v17: batch organizer idempotency (v0.6 F1).
+--
+-- A batch is retried exactly when something went wrong — a dropped connection,
+-- a client restart — so the record of "this key already ran" has to outlive the
+-- process. An in-memory map would forget precisely when it is needed.
+--
+-- The stored response is the *first* run's outcomes. A replay returns them
+-- verbatim rather than re-deriving them, because the library has moved on and a
+-- recomputed answer would describe a different world than the one the caller
+-- was told about.
+CREATE TABLE IF NOT EXISTS batch_operations (
+    request_key TEXT PRIMARY KEY,
+    operation TEXT NOT NULL,
+    mode TEXT NOT NULL,
+    -- The response as it was returned, verbatim.
+    response TEXT NOT NULL,
+    -- A fingerprint of the request. A key reused with different arguments is a
+    -- client bug, and answering with the earlier unrelated result would hide it.
+    request_sha256 TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS batch_operations_created_idx ON batch_operations(created_at);
+
+PRAGMA user_version = 17;

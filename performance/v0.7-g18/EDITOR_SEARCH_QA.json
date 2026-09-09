@@ -1,0 +1,55 @@
+{
+  "schema": "notrios.g18.editor-search-qa.v1",
+  "captured_at": "2026-08-26T15:50:05Z",
+  "browser_plugin_available": false,
+  "fallback": "Playwright with system Chrome against an isolated Notrios server and temporary SQLite database",
+  "versions": {
+    "md-editor-rt": "6.5.3",
+    "@codemirror/search": "6.7.1"
+  },
+  "source_findings": {
+    "md_editor_imports_codemirror_search_keymap": true,
+    "search_panel_is_not_excluded_by_notrios": true,
+    "default_open_shortcut": "Mod-f",
+    "ctrl_h_or_mod_h_default_binding": false,
+    "toggle_rendering": "text-labelled checkboxes in the installed default panel, not Aa/.* or word icons",
+    "editable_panel_controls": [
+      "Find",
+      "Replace",
+      "next",
+      "previous",
+      "all",
+      "match case",
+      "regexp",
+      "by word",
+      "replace",
+      "replace all",
+      "close"
+    ]
+  },
+  "rendered_browser_qa": {
+    "url_and_title_checked": true,
+    "app_nonblank": true,
+    "overlay_blocking_interaction": false,
+    "ctrl_f_opened_panel": true,
+    "default_case_insensitive_substring_matches": 3,
+    "case_sensitive_matches": 1,
+    "whole_word_matches": 2,
+    "regexp_matches": 2,
+    "next_previous_and_select_all_controls_present": true,
+    "single_replace_passed": true,
+    "whole_word_replace_all_passed": true,
+    "replacement_persisted_after_save": true,
+    "desktop_panel_inside_editor": true,
+    "narrow_panel_reflowed": true,
+    "console_errors_or_warnings": 0,
+    "screenshots_committed": false
+  },
+  "supplied_reference_accuracy": {
+    "feature_support": "accurate for the installed Notrios editor and verified in the rendered UI",
+    "ctrl_or_cmd_f": "accurate (CodeMirror Mod-f)",
+    "ctrl_or_cmd_h_replace_mode": "inaccurate for the installed default keymap",
+    "toggle_icon_description": "inaccurate for the installed default panel; it renders match case, regexp, and by word labels"
+  },
+  "conclusion": "The current editable Notrios Markdown editor supports and renders find/replace, case-sensitive, regular-expression, and whole-word search through CodeMirror's Ctrl/Cmd+F panel. Ctrl/Cmd+H is not a default binding in this installed search keymap."
+}

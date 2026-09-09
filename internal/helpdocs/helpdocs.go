@@ -59,11 +59,11 @@ func Seed(ctx context.Context, st store.Store, docsDir string) (Report, error) {
 
 	// Remove help notes whose source file is gone (trash, then purge — the
 	// notes are local, so permanent deletion is allowed).
-	existing, err := st.ListNotebookDocuments(ctx, store.HelpNotebookID, 500)
+	page, err := st.ListNotebookDocuments(ctx, store.HelpNotebookID, store.DocumentPageRequest{Limit: 500})
 	if err != nil {
 		return report, err
 	}
-	for _, doc := range existing {
+	for _, doc := range page.Documents {
 		if wanted[doc.ID] {
 			continue
 		}

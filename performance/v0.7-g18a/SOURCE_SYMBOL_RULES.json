@@ -1,0 +1,33 @@
+{
+  "schema": "notrios.g18a.source-symbol-rules.v1",
+  "go": {
+    "forms": [
+      "go:<module-import-path>#<package-declaration>",
+      "go:<module-import-path>#(<receiver>).<method>"
+    ],
+    "examples": [
+      "go:github.com/renesugar/notrios/internal/store#CurrentSchemaVersion",
+      "go:github.com/renesugar/notrios/internal/store#(*SQLiteStore).PlanSelection"
+    ],
+    "resolution": "Resolve the import path within the current module, parse its non-test Go files, and require exactly one matching declaration."
+  },
+  "typescript": {
+    "form": "ts:<repository-relative-module>#<top-level-symbol>",
+    "example": "ts:web/src/components/EditorPane.tsx#EditorPane",
+    "resolution": "Use the TypeScript compiler API to require exactly one named top-level function, class, interface, type, enum, or variable declaration. Export is preferred but not required for same-module ownership."
+  },
+  "forbidden": [
+    "line-number anchors",
+    "bare file paths without a declaration",
+    "anonymous closures or JSX positions",
+    "ambiguous duplicate declarations",
+    "symbols outside the repository or current module graph"
+  ],
+  "direct_callee_scope": {
+    "depth": 1,
+    "go": "Named, statically resolved direct callees in the same Go package.",
+    "typescript": "Named, statically resolved direct callees in the web npm workspace; imported third-party, dynamic, anonymous, and transitive calls are excluded.",
+    "budget": "The reviewer records the root plus at most eight direct callees; unresolved or over-budget behavior is not-determinable.",
+    "purpose": "A bounded source slice prevents both a misleading single-function view and an unreviewable transitive call graph."
+  }
+}

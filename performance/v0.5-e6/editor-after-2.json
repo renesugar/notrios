@@ -1,0 +1,31 @@
+{
+  "generated_at": "2026-08-06T19:39:55.975Z",
+  "url": "http://127.0.0.1:18099/#document=doc_aiyqxlw6cfjuaju5w7r3lacqfa",
+  "editor": {
+    "rendered_characters": 1000,
+    "rendered_lines": 15,
+    "title": "Editor profile note",
+    "note_characters": 206549
+  },
+  "paint": [
+    {
+      "name": "first-paint",
+      "startTime": 152
+    },
+    {
+      "name": "first-contentful-paint",
+      "startTime": 1016
+    }
+  ],
+  "navigation": {
+    "domContentLoaded": 601.5,
+    "loadEvent": 605.2000000029802
+  },
+  "keystrokes": {
+    "dispatched": 40,
+    "measured": 40,
+    "p50_ms": 32.1,
+    "p95_ms": 74.3,
+    "max_ms": 138.9
+  }
+}

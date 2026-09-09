@@ -3,12 +3,49 @@
 // "Note info" inspector for links, backlinks, and attached resources so the
 // note context never becomes a fifth workspace column.
 //
-// Read-only notes (server-provided `editable: false`, e.g. the Help notebook)
-// render with a disabled editor, hidden save/upload controls, and a visible
-// badge — the client never waits for a server 403 to explain protection.
-import { MdEditor, type UploadImgCallBack } from 'md-editor-rt';
+// Read-only notes (server-provided `editable: false` — the Help and Reports
+// notebooks) render with a disabled editor, hidden save/upload controls, and a
+// visible badge naming the notebook — the client never waits for a server 403
+// to explain protection.
+import { useEffect, useMemo, useRef } from 'react';
+import { MdEditor, allToolbar, config, type ExposeParam, type ToolbarNames, type UploadImgCallBack } from 'md-editor-rt';
 import type { ThemeMode } from '../themes';
 import { resourceContentURL, type DocumentLink, type DocumentRecord, type RemoteMediaDecision, type ResourceReference } from '../api';
+import { useBufferLinks } from '../useLinkIntelligence';
+import { BrokenLinkList, LinkPicker } from './LinkIntelligence';
+import { LocalGraph } from './LocalGraph';
+import {
+  applyBrokenLinks,
+  brokenLinkExtensions,
+  clearBrokenLinks,
+  linkClickHandler,
+  linkCompletionSource,
+  tablePasteHandler,
+} from '../editor-extensions';
+import { spansToEditorRanges } from '../editor-offsets';
+import { disabledEditorExtensions, installEditorAssets } from '../editor-assets';
+import { NotebookPicker } from './NotebookPicker';
+import { TagEditor } from './TagEditor';
+import type { NotebookOption } from '../sidebar';
+
+// Point md-editor-rt at the bundled KaTeX/highlight.js/cropper before the
+// editor mounts, so nothing is ever fetched from a CDN.
+installEditorAssets();
+
+// md-editor-rt's editor pane is CodeMirror 6, and it accepts CodeMirror
+// extensions through this hook. Registering once at module load is what its
+// global config is for; the extensions themselves hold no note state.
+config({
+  codeMirrorExtensions(extensions) {
+    return [
+      ...extensions,
+      ...brokenLinkExtensions().map((extension, index) => ({
+        type: `notrios-broken-links-${index}`,
+        extension,
+      })),
+    ];
+  },
+});
 
 export interface EditorPaneProps {
   title: string;
@@ -18,9 +55,12 @@ export interface EditorPaneProps {
   selectedDocument: DocumentRecord | null;
   editable: boolean;
   busy: boolean;
+  /** The editor holds changes the store does not have yet. */
+  unsaved: boolean;
+  /** The unsaved draft is stored in this browser, so a reload will not lose it. */
+  draftKept: boolean;
   themeBase: ThemeMode;
   onSave: () => void;
-  onNewNote: () => void;
   onUploadAndAttach: (file: File | null) => void;
   onEditorUploadImages: (files: Array<File>, callback: UploadImgCallBack) => void;
   links: DocumentLink[];
@@ -31,6 +71,34 @@ export interface EditorPaneProps {
   /** Localize policy-allowed remote media into local resources. */
   onLocalizeRemoteMedia: () => void;
   onOpenDocument: (documentID: string) => void;
+  /** Server-reported: this note is in the Trash, not merely uneditable. */
+  trashed: boolean;
+  /** Destinations for the toolbar's notebook control, in sidebar order. */
+  notebookOptions: NotebookOption[];
+  /** The note's current tags, and the two ways to change them. */
+  tags: string[];
+  onAddTag: (tag: string) => void;
+  onRemoveTag: (tag: string) => void;
+  /**
+   * The notebook the control shows. For an open note this is the note's own
+   * notebook, not the sidebar's selection — otherwise reaching a note from
+   * "All notes" would show it filed wherever the sidebar happens to point.
+   */
+  notebookID: string | null;
+  /**
+   * The notebook name to display. Resolved from the whole notebook tree rather
+   * than from `notebookOptions`, which omits builtins: a Help note is in Help
+   * and has to say so, even though Help is never a destination.
+   */
+  notebookLabel: string;
+  /** File the open note (or the pending draft) into another notebook. */
+  onSelectNotebook: (notebookID: string) => void;
+  /** Move the open note to the Trash. */
+  onDelete: () => void;
+  /** Bring the open trashed note back. */
+  onRestore: () => void;
+  /** Permanently delete the open trashed note. */
+  onPurge: () => void;
 }
 
 export function EditorPane(props: EditorPaneProps) {
@@ -44,7 +112,8 @@ export function EditorPane(props: EditorPaneProps) {
     busy,
     themeBase,
     onSave,
-    onNewNote,
+    unsaved,
+    draftKept,
     onUploadAndAttach,
     onEditorUploadImages,
     links,
@@ -53,38 +122,184 @@ export function EditorPane(props: EditorPaneProps) {
     remoteMedia,
     onLocalizeRemoteMedia,
     onOpenDocument,
+    trashed,
+    notebookOptions,
+    tags,
+    onAddTag,
+    onRemoveTag,
+    notebookID,
+    notebookLabel,
+    onSelectNotebook,
+    onDelete,
+    onRestore,
+    onPurge,
   } = props;
+
+  const editorRef = useRef<ExposeParam>(null);
+  const bufferLinks = useBufferLinks(body, selectedDocument?.id, editable);
+
+  // Resolved link spans in editor coordinates, for Ctrl-click. They are derived
+  // from the body the service checked, not the current one, which is why the
+  // click handler re-reads them through a ref rather than closing over them.
+  const clickableSpans = useMemo(() => {
+    const resolved = bufferLinks.links.filter((link) => link.target_document_id);
+    return spansToEditorRanges(bufferLinks.checkedBody, resolved).map((span, index) => ({
+      ...span,
+      documentID: resolved[index]?.target_document_id,
+    }));
+  }, [bufferLinks.links, bufferLinks.checkedBody]);
+  const clickableRef = useRef(clickableSpans);
+  clickableRef.current = clickableSpans;
+
+  const completions = useMemo(
+    () => [linkCompletionSource(() => selectedDocument?.id)],
+    [selectedDocument?.id],
+  );
+
+  // Push the marks into CodeMirror whenever a check returns. `applyBrokenLinks`
+  // refuses when the buffer has moved on, so a stale offset never underlines
+  // the wrong text.
+  useEffect(() => {
+    const view = editorRef.current?.getEditorView();
+    if (!view) return;
+    if (!bufferLinks.checked) {
+      clearBrokenLinks(view);
+      return;
+    }
+    applyBrokenLinks(view, bufferLinks.checkedBody, bufferLinks.links);
+  }, [bufferLinks.checked, bufferLinks.checkedBody, bufferLinks.links]);
+
+  // Ctrl-click opens the target; a pasted HTML table becomes a Markdown table.
+  // Both go in one call because `domEventHandlers` replaces the map rather than
+  // adding to it.
+  useEffect(() => {
+    if (!editorRef.current) return;
+    editorRef.current.domEventHandlers({
+      mousedown: linkClickHandler(() => clickableRef.current, onOpenDocument),
+      paste: tablePasteHandler(),
+    });
+  }, [onOpenDocument]);
+
+  // The notebook control is a custom item in md-editor-rt's own toolbar.
+  // `toolbars` has to be explicit to position it, which stays maintainable
+  // because `allToolbar` is exported — a built-in tool added in a future
+  // release still appears, and `toolbarsExclude` still filters the list.
+  //
+  // It leads the toolbar rather than trailing it. That toolbar scrolls
+  // horizontally at narrow pane widths, and a control appended after twenty
+  // formatting buttons is off-screen exactly when the pane is small — which is
+  // the case where knowing which notebook you are in matters most.
+  const notebookPicker = (
+    <NotebookPicker
+      key="notrios-notebook"
+      options={notebookOptions}
+      selectedID={notebookID}
+      label={notebookLabel}
+      disabled={busy || !editable}
+      onSelect={onSelectNotebook}
+    />
+  );
+  // Beside the notebook control and for the same reason: both answer "where
+  // does this note belong?", and both belong where the typing is.
+  const tagEditor = (
+    <TagEditor
+      key="notrios-tags"
+      documentID={selectedDocument?.id ?? null}
+      tags={tags}
+      disabled={busy || !editable}
+      onAdd={onAddTag}
+      onRemove={onRemoveTag}
+    />
+  );
+  const toolbars = useMemo<ToolbarNames[]>(() => [0, 1, '-', ...allToolbar], []);
 
   return (
     <section className="pane editor-pane" aria-label="Markdown editor" data-testid="pane-editor">
+      {/* Two rows, not one wrapping line. The title gets its own row so the
+          state chip can never crowd it, and the actions share a row beneath
+          that stacks as a unit when the pane is too narrow — see the container
+          query in styles.css. Every control here acts on the open note;
+          starting a *new* note lives in the search pane, because it does not. */}
       <div className="editor-toolbar">
-        <input
-          className="title-input"
-          value={title}
-          onChange={(event) => onTitleChange(event.target.value)}
-          placeholder="Note title"
-          aria-label="Note title"
-          disabled={!editable}
-        />
-        {!editable && (
-          <span className="readonly-badge" data-testid="readonly-badge" role="status">
-            Read-only Help note
-          </span>
-        )}
-        {editable && (
-          <button onClick={onSave} disabled={busy || title.trim() === ''} data-testid="save-button">
-            {busy ? 'Working…' : selectedDocument ? 'Save revision' : 'Create note'}
-          </button>
-        )}
-        {selectedDocument && (
-          <button type="button" onClick={onNewNote}>
-            New note
-          </button>
-        )}
+        <div className="editor-toolbar-title">
+          {/* `readOnly`, never `disabled`. A disabled input leaves the tab
+              order, so a Help or trashed note's title could not be focused,
+              scrolled with Home/End, or selected and copied — and a title
+              longer than the box was simply unreadable. `readOnly` refuses
+              edits and keeps all of that. */}
+          <input
+            className="title-input"
+            value={title}
+            onChange={(event) => onTitleChange(event.target.value)}
+            placeholder="Note title"
+            aria-label="Note title"
+            data-testid="note-title"
+            readOnly={!editable}
+          />
+        </div>
+        <div
+          className={trashed ? 'editor-toolbar-actions trashed-actions' : 'editor-toolbar-actions'}
+          data-testid="editor-toolbar-actions"
+        >
+          {/* A trashed note is uneditable for a different reason than a Help
+              note, and saying "read-only" would hide the one thing the reader
+              can act on: it is recoverable. */}
+          {trashed && (
+            <span className="readonly-badge trashed-badge" data-testid="trashed-badge" role="status">
+              In the Trash
+            </span>
+          )}
+          {/* Named by notebook rather than hard-coded to "Help": F5 added a
+              second read-only notebook, and a Reports note labelled "Help note"
+              would be wrong in the one place a reader looks to find out why
+              they cannot type. */}
+          {!editable && !trashed && (
+            <span className="readonly-badge" data-testid="readonly-badge" role="status">
+              Read-only {notebookLabel || 'system'} note
+            </span>
+          )}
+          {/* Saving is deliberate here, so the one thing the reader cannot see
+              -- that this note differs from what is stored -- is said out
+              loud, next to the button that resolves it. */}
+          {editable && unsaved && (
+            <span
+              className="unsaved-badge"
+              data-testid="unsaved-badge"
+              role="status"
+              title={draftKept
+                ? 'Kept in this browser until you save or discard it'
+                : 'Too large to keep in this browser: save it to keep it'}
+            >
+              Unsaved changes
+            </span>
+          )}
+          {editable && (
+            <button onClick={onSave} disabled={busy || title.trim() === ''} data-testid="save-button">
+              {busy ? 'Working…' : selectedDocument ? 'Save revision' : 'Create note'}
+            </button>
+          )}
+          {selectedDocument && editable && (
+            <button type="button" className="danger-button" disabled={busy} onClick={onDelete} data-testid="delete-button" title="Move this note to the Trash; it can be restored from there">
+              Move to Trash
+            </button>
+          )}
+          {trashed && (
+            <>
+              <button type="button" disabled={busy} onClick={onRestore} data-testid="restore-button">
+                Restore
+              </button>
+              <button type="button" className="danger-button" disabled={busy} onClick={onPurge} data-testid="purge-button" title="Permanently delete this note and its revisions">
+                Delete forever
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       <div className="editor-host">
         <MdEditor
+          ref={editorRef}
+          completions={completions}
           id="notrios-editor"
           value={body}
           onChange={onBodyChange}
@@ -98,17 +313,19 @@ export function EditorPane(props: EditorPaneProps) {
             }
             onEditorUploadImages(files, callback);
           }}
+          toolbars={toolbars}
+          defToolbars={[notebookPicker, tagEditor]}
           toolbarsExclude={['preview', 'previewOnly', 'htmlPreview', 'catalog', 'github', 'fullscreen', 'pageFullscreen', 'save']}
           language="en-US"
           theme={themeBase}
-          noMermaid
+          {...disabledEditorExtensions}
           style={{ height: '100%' }}
         />
       </div>
 
       {selectedDocument && (
         <details className="note-inspector" data-testid="note-inspector">
-          <summary>Note info</summary>
+          <summary data-testid="note-inspector-toggle">Note info</summary>
           <div className="note-inspector-body">
             <dl className="document-meta">
               <div>
@@ -119,12 +336,24 @@ export function EditorPane(props: EditorPaneProps) {
                 <dt>Revision</dt>
                 <dd>{selectedDocument.current_revision_id}</dd>
               </div>
+              {/* Where the note came from, shown only when it came from
+                  somewhere. Every note written here is in `default`, so
+                  printing that on all of them would be a row of noise that
+                  says nothing; a note carrying an import's provenance is the
+                  case worth answering. */}
+              {selectedDocument.collection_id && selectedDocument.collection_id !== 'default' && (
+                <div>
+                  <dt>Collection</dt>
+                  <dd data-testid="note-collection">{selectedDocument.collection_id}</dd>
+                </div>
+              )}
             </dl>
             {editable && (
               <label className="resource-upload">
                 Upload image/PDF/resource
                 <input
                   type="file"
+                  data-testid="attachment-upload"
                   disabled={busy}
                   onChange={(event) => {
                     const file = event.target.files?.[0] ?? null;
@@ -134,6 +363,33 @@ export function EditorPane(props: EditorPaneProps) {
                 />
               </label>
             )}
+            {editable && (
+              <div className="link-intelligence" data-testid="link-intelligence">
+                <LinkPicker
+                  documentID={selectedDocument.id}
+                  disabled={busy}
+                  onInsert={(markdown) => {
+                    editorRef.current?.insert(() => ({
+                      targetValue: markdown,
+                      select: false,
+                      deviationStart: 0,
+                      deviationEnd: 0,
+                    }));
+                  }}
+                />
+                <BrokenLinkList
+                  broken={bufferLinks.broken}
+                  checked={bufferLinks.checked}
+                  total={bufferLinks.links.length}
+                />
+              </div>
+            )}
+            {/* The local graph goes below the note's own links, because it
+                answers the wider question: the lists above say what this note
+                names, this says what is around it. It is offered for every
+                note, read-only ones included — reading a neighbourhood is not
+                editing. */}
+            <LocalGraph documentID={selectedDocument.id} onOpenDocument={onOpenDocument} />
             {(links.length > 0 || backlinks.length > 0) && (
               <div className="link-list">
                 {links.length > 0 && (

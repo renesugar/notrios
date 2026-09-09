@@ -1,0 +1,30 @@
+{
+  "generated_at": "2026-08-04T16:21:13Z",
+  "tier": 5000,
+  "environment": {
+    "goos": "linux",
+    "goarch": "amd64",
+    "go_version": "go1.26.5",
+    "cpu_model": "Intel(R) Core(TM) i5-9300H CPU @ 2.40GHz"
+  },
+  "seed_seconds": 8.165620679,
+  "documents": 5000,
+  "reachable_resources": 50,
+  "records": 15326,
+  "objects": 5052,
+  "record_objects": 2,
+  "blob_objects": 5050,
+  "deduplicated_objects": 0,
+  "archive_bytes": 7908939,
+  "export_seconds": 3.210267563,
+  "documents_per_second": 1557.5025763047279,
+  "verify_seconds": 5.130187914,
+  "resume_seconds": 2.955898925,
+  "resume_reused_objects": 5052,
+  "resume_bytes_rewritten": 0,
+  "subset_seconds": 0.461243207,
+  "subset_documents": 625,
+  "peak_rss_bytes": 48574464,
+  "commit_stable_across_runs": true,
+  "object_budget_used_fraction": 0.5052
+}

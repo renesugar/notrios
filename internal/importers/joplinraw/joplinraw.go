@@ -1,17 +1,13 @@
 package joplinraw
 
 import (
-	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"io/fs"
-	"mime"
 	"os"
 	"path/filepath"
-	"regexp"
 	"sort"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/renesugar/notrios/internal/store"
 )
@@ -19,25 +15,64 @@ import (
 const sourceSystem = "joplin_raw"
 
 type Options struct {
-	CollectionID string
-	DryRun       bool
+	CollectionID   string
+	DryRun         bool
+	PreserveSource bool
+	BatchSize      int
+	SourceKey      string
+	Config         *ImportConfig
+	// AfterBatch is a test/embedding hook invoked after a durable checkpoint.
+	AfterBatch func(phase string, processed, total int) error
 }
 
 type Report struct {
-	SourceDir          string   `json:"source_dir"`
-	CollectionID       string   `json:"collection_id"`
-	DryRun             bool     `json:"dry_run"`
-	NotesSeen          int      `json:"notes_seen"`
-	NotesImported      int      `json:"notes_imported"`
-	NotesUpdated       int      `json:"notes_updated"`
-	NotesUnchanged     int      `json:"notes_unchanged"`
-	ResourcesSeen      int      `json:"resources_seen"`
-	ResourcesImported  int      `json:"resources_imported"`
-	ResourcesExisting  int      `json:"resources_existing"`
-	ResourcesSkipped   int      `json:"resources_skipped"`
-	LinksRewritten     int      `json:"links_rewritten"`
-	AttachmentsCreated int      `json:"attachments_created"`
-	Warnings           []string `json:"warnings,omitempty"`
+	SourceDir          string         `json:"source_dir"`
+	SourceKey          string         `json:"source_key"`
+	CollectionID       string         `json:"collection_id"`
+	DryRun             bool           `json:"dry_run"`
+	Resumed            bool           `json:"resumed"`
+	CheckpointStatus   string         `json:"checkpoint_status"`
+	BatchesCompleted   int            `json:"batches_completed"`
+	CanonicalBatches   int            `json:"canonical_document_batches"`
+	LinkBatches        int            `json:"link_rebuild_batches"`
+	MetadataFilesSeen  int            `json:"metadata_files_seen"`
+	ItemsSeen          int            `json:"items_seen"`
+	ItemTypeCounts     map[string]int `json:"item_type_counts"`
+	MalformedItems     int            `json:"malformed_items"`
+	UnsupportedItems   int            `json:"unsupported_items"`
+	IgnoredFiles       int            `json:"ignored_files"`
+	ManifestBytes      int64          `json:"temporary_manifest_bytes"`
+	NotesSeen          int            `json:"notes_seen"`
+	NotesImported      int            `json:"notes_imported"`
+	NotesUpdated       int            `json:"notes_updated"`
+	NotesUnchanged     int            `json:"notes_unchanged"`
+	NotebooksSeen      int            `json:"notebooks_seen"`
+	NotebooksCreated   int            `json:"notebooks_created"`
+	NotebooksUpdated   int            `json:"notebooks_updated"`
+	NotebooksSkipped   int            `json:"notebooks_skipped"`
+	NotebooksExisting  int            `json:"notebooks_existing"`
+	NotebooksMerged    int            `json:"notebooks_merged"`
+	NotebookConflicts  []string       `json:"notebook_conflicts,omitempty"`
+	TagsSeen           int            `json:"tags_seen"`
+	TagsCreated        int            `json:"tags_created"`
+	TagsUpdated        int            `json:"tags_updated"`
+	TagsSkipped        int            `json:"tags_skipped"`
+	TagsExisting       int            `json:"tags_existing"`
+	TagsApplied        int            `json:"tags_applied"`
+	TagsRemoved        int            `json:"tags_removed"`
+	ResourcesSeen      int            `json:"resources_seen"`
+	ResourcesImported  int            `json:"resources_imported"`
+	ResourcesUpdated   int            `json:"resources_updated"`
+	ResourcesExisting  int            `json:"resources_existing"`
+	ResourcesSkipped   int            `json:"resources_skipped"`
+	ResourcesMissing   int            `json:"resources_missing_content"`
+	SourceBundleItems  int            `json:"source_bundle_items"`
+	SourceBundleBytes  int64          `json:"source_bundle_bytes"`
+	LinksRewritten     int            `json:"links_rewritten"`
+	UnresolvedLinks    int            `json:"unresolved_links"`
+	AttachmentsCreated int            `json:"attachments_created"`
+	Warnings           []string       `json:"warnings,omitempty"`
+	SuggestedConfig    *ImportConfig  `json:"suggested_config,omitempty"`
 	// DocumentIDs lists the notes this run touched (created/updated/kept),
 	// for post-import passes like --localize-media. Not part of the JSON
 	// report.
@@ -45,285 +80,298 @@ type Report struct {
 }
 
 type parsedItem struct {
-	Path   string
-	ID     string
-	Type   string
-	Fields map[string]string
-	Body   string
+	Path          string
+	ID            string
+	Type          string
+	Fields        map[string]string
+	Body          string
+	PropertyOrder []string
 }
-
-func Import(ctx context.Context, st store.Store, sourceDir string, options Options) (Report, error) {
-	collectionID := strings.TrimSpace(options.CollectionID)
-	if collectionID == "" {
-		collectionID = "default"
-	}
-	report := Report{SourceDir: sourceDir, CollectionID: collectionID, DryRun: options.DryRun}
-	items, err := readItems(sourceDir)
-	if err != nil {
-		return report, err
-	}
-
-	folders := map[string]parsedItem{}
-	tags := map[string]string{}
-	noteTagIDs := map[string][]string{}
-	notes := []parsedItem{}
-	resources := []parsedItem{}
-	for _, item := range items {
-		switch item.Type {
-		case "1":
-			report.NotesSeen++
-			notes = append(notes, item)
-		case "2":
-			folders[item.ID] = item
-		case "4":
-			report.ResourcesSeen++
-			resources = append(resources, item)
-		case "5":
-			tags[item.ID] = item.Fields["title"]
-		case "6":
-			noteID := item.Fields["note_id"]
-			tagID := item.Fields["tag_id"]
-			if noteID != "" && tagID != "" {
-				noteTagIDs[noteID] = append(noteTagIDs[noteID], tagID)
-			}
-		}
-	}
-
-	noteTags := map[string][]string{}
-	for noteID, tagIDs := range noteTagIDs {
-		for _, tagID := range tagIDs {
-			if tag := tags[tagID]; tag != "" {
-				noteTags[noteID] = append(noteTags[noteID], tag)
-			}
-		}
-	}
-
-	noteIDMap := map[string]string{}
-	resourceIDMap := map[string]string{}
-	for _, note := range notes {
-		noteIDMap[note.ID] = noteDocumentID(note.ID)
-	}
-	for _, res := range resources {
-		resourceIDMap[res.ID] = resourceID(res.ID)
-	}
-
-	if !options.DryRun {
-		for _, res := range resources {
-			logicalID := resourceIDMap[res.ID]
-			if _, err := st.GetResource(ctx, logicalID); err == nil {
-				report.ResourcesExisting++
-				continue
-			} else if !errors.Is(err, store.ErrNotFound) {
-				return report, err
-			}
-			path, ok := findResourceContent(sourceDir, res)
-			if !ok {
-				report.ResourcesSkipped++
-				report.Warnings = append(report.Warnings, fmt.Sprintf("resource %s has no content file", res.ID))
-				continue
-			}
-			file, err := os.Open(path)
-			if err != nil {
-				return report, err
-			}
-			filename := resourceFilename(res, path)
-			mimeType := firstNonEmpty(res.Fields["mime"], res.Fields["mime_type"], mime.TypeByExtension(filepath.Ext(filename)), "application/octet-stream")
-			_, createErr := st.CreateResource(ctx, store.CreateResourceRequest{PreferredID: logicalID, CollectionID: collectionID, Filename: filename, MIMEType: mimeType, Content: file})
-			closeErr := file.Close()
-			if createErr != nil {
-				return report, createErr
-			}
-			if closeErr != nil {
-				return report, closeErr
-			}
-			report.ResourcesImported++
-		}
-	}
-
-	for _, note := range notes {
-		logicalID := noteIDMap[note.ID]
-		body, rewrites := buildDocumentBody(note, folders, noteTags[note.ID], noteIDMap, resourceIDMap, collectionID)
-		report.LinksRewritten += rewrites
-		if options.DryRun {
-			report.NotesImported++
-			continue
-		}
-		setSource := func() error {
-			_, err := st.SetDocumentSource(ctx, store.SetDocumentSourceRequest{
-				DocumentID:   logicalID,
-				SourceSystem: "joplin",
-				ExternalID:   note.ID,
-				Author:       strings.TrimSpace(note.Fields["author"]),
-				SourceURL:    strings.TrimSpace(note.Fields["source_url"]),
-				PublishedAt:  firstNonEmpty(note.Fields["user_created_time"], note.Fields["created_time"]),
-			})
-			return err
-		}
-		existing, err := st.GetDocument(ctx, logicalID)
-		if err == nil {
-			if existing.Title == noteTitle(note) && existing.Body == body {
-				report.NotesUnchanged++
-				if err := setSource(); err != nil {
-					return report, err
-				}
-				report.DocumentIDs = append(report.DocumentIDs, logicalID)
-				continue
-			}
-			_, err = st.UpdateDocument(ctx, store.UpdateDocumentRequest{ID: logicalID, Title: noteTitle(note), Body: body, BodyMIMEType: "text/markdown", BaseRevisionID: existing.CurrentRevisionID, Message: "import update from Joplin RAW"})
-			if err != nil {
-				return report, err
-			}
-			report.NotesUpdated++
-		} else if errors.Is(err, store.ErrNotFound) {
-			// The note may exist but sit in the user's Trash; never resurrect
-			// a note the user deleted — refresh its provenance below only.
-			if _, srcErr := st.FindDocumentBySource(ctx, "joplin", note.ID); srcErr == nil {
-				report.NotesUnchanged++
-				if err := setSource(); err != nil {
-					return report, err
-				}
-				continue
-			} else if !errors.Is(srcErr, store.ErrNotFound) {
-				return report, srcErr
-			}
-			_, err = st.CreateDocument(ctx, store.CreateDocumentRequest{PreferredID: logicalID, CollectionID: collectionID, Title: noteTitle(note), Body: body, BodyMIMEType: "text/markdown", Message: "import from Joplin RAW"})
-			if err != nil {
-				return report, err
-			}
-			report.NotesImported++
-		} else {
-			return report, err
-		}
-		if err := setSource(); err != nil {
-			return report, err
-		}
-		report.DocumentIDs = append(report.DocumentIDs, logicalID)
-		for originalResourceID, newResourceID := range resourceIDMap {
-			uri := store.ResourceURI(collectionID, newResourceID)
-			if strings.Contains(body, uri) {
-				_, err := st.AttachDocumentResource(ctx, store.AttachResourceRequest{DocumentID: logicalID, ResourceID: newResourceID, RelationType: "referenced", AnchorJSON: fmt.Sprintf(`{"joplin_resource_id":%q}`, originalResourceID)})
-				if err == nil {
-					report.AttachmentsCreated++
-				} else if !errors.Is(err, store.ErrNotFound) {
-					return report, err
-				}
-			}
-		}
-	}
-	return report, nil
-}
-
-func readItems(sourceDir string) ([]parsedItem, error) {
-	var items []parsedItem
-	err := filepath.WalkDir(sourceDir, func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		if d.IsDir() {
-			return nil
-		}
-		info, err := d.Info()
-		if err != nil {
-			return err
-		}
-		if info.Size() > 8*1024*1024 {
-			return nil
-		}
-		b, err := os.ReadFile(path)
-		if err != nil {
-			return err
-		}
-		item, ok := parseItem(path, string(b))
-		if !ok {
-			return nil
-		}
-		items = append(items, item)
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-	sort.Slice(items, func(i, j int) bool { return items[i].Path < items[j].Path })
-	return items, nil
-}
-
-var metadataLineRE = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_]*:\s*.*$`)
 
 func parseItem(path string, text string) (parsedItem, bool) {
-	text = strings.ReplaceAll(text, "\r\n", "\n")
-	text = strings.ReplaceAll(text, "\r", "\n")
-	fields, body := parseTrailingMetadata(text)
+	text = strings.TrimPrefix(text, "\uFEFF")
+	fields, order, body, trailing := parseTrailingMetadata(text)
 	if fields["type_"] == "" {
-		fields, body = parseLeadingMetadata(text)
+		fields, order, body = parseLeadingMetadata(text)
+		trailing = false
 	}
 	if fields["type_"] == "" {
 		return parsedItem{}, false
+	}
+	itemType := strings.TrimSpace(fields["type_"])
+	if trailing && body != "" {
+		title, remaining := splitSourceTitle(body)
+		if title != "" {
+			// Canonical Joplin RAW stores the item title as the first physical
+			// body line, not in a title: property. Keep accepting the old
+			// metadata-first fixtures below, but prefer the canonical title.
+			fields["title"] = title
+		}
+		if itemType == "1" {
+			body = remaining
+		}
 	}
 	id := strings.TrimSpace(fields["id"])
 	if id == "" {
 		id = strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
 	}
-	return parsedItem{Path: path, ID: id, Type: strings.TrimSpace(fields["type_"]), Fields: fields, Body: strings.TrimRight(body, "\n")}, true
+	return parsedItem{
+		Path: path, ID: id, Type: itemType, Fields: fields,
+		Body: strings.TrimRight(body, "\n"), PropertyOrder: order,
+	}, true
 }
 
-func parseTrailingMetadata(text string) (map[string]string, string) {
-	lines := strings.Split(text, "\n")
-	start := len(lines)
-	for i := len(lines) - 1; i >= 0; i-- {
-		line := strings.TrimSpace(lines[i])
-		if line == "" && start == len(lines) {
-			start = i
-			continue
+func parseItemBytes(path string, raw []byte) (parsedItem, bool, error) {
+	if !utf8.Valid(raw) {
+		return parsedItem{}, false, fmt.Errorf("%w: Joplin RAW item %s is not valid UTF-8", store.ErrInvalidInput, filepath.Base(path))
+	}
+	item, ok := parseItem(path, string(raw))
+	return item, ok, nil
+}
+
+// parseInventoryItemBytes extracts only routing/render fields for the
+// non-preserving inventory pass. Full note bodies and ordered properties are
+// reread in bounded batches before canonical writes.
+func parseInventoryItemBytes(path string, raw []byte) (parsedItem, bool, error) {
+	if !utf8.Valid(raw) {
+		return parsedItem{}, false, fmt.Errorf("%w: Joplin RAW item %s is not valid UTF-8", store.ErrInvalidInput, filepath.Base(path))
+	}
+	text := strings.TrimPrefix(string(raw), "\uFEFF")
+	lines := splitPhysicalLines(text)
+	end := len(lines)
+	for end > 0 && lines[end-1] == "" {
+		end--
+	}
+	separator := -1
+	for index := end - 1; index >= 0; index-- {
+		if lines[index] == "" {
+			separator = index
+			break
 		}
-		if metadataLineRE.MatchString(line) {
-			start = i
-			continue
+		if !isMetadataLine(lines[index]) {
+			break
 		}
-		break
 	}
 	fields := map[string]string{}
-	if start < len(lines) {
-		for _, line := range lines[start:] {
-			parseField(fields, line)
+	trailing := false
+	if separator >= 0 {
+		fields = parseInventoryFields(lines[separator+1 : end])
+		trailing = strings.TrimSpace(fields["type_"]) != ""
+		if trailing && separator > 0 {
+			fields["title"] = strings.TrimSpace(lines[0])
+		}
+	} else {
+		allMetadata := end > 0
+		for _, line := range lines[:end] {
+			if line != "" && !isMetadataLine(line) {
+				allMetadata = false
+				break
+			}
+		}
+		if allMetadata {
+			fields = parseInventoryFields(lines[:end])
+			trailing = strings.TrimSpace(fields["type_"]) != ""
 		}
 	}
-	if fields["type_"] == "" {
-		return map[string]string{}, text
+	if !trailing {
+		metadataEnd := 0
+		for index, line := range lines {
+			if line == "" {
+				metadataEnd = index
+				break
+			}
+			if !isMetadataLine(line) {
+				break
+			}
+			metadataEnd = index + 1
+		}
+		fields = parseInventoryFields(lines[:metadataEnd])
 	}
-	return fields, strings.TrimRight(strings.Join(lines[:start], "\n"), "\n")
+	itemType := strings.TrimSpace(fields["type_"])
+	if itemType == "" {
+		return parsedItem{}, false, nil
+	}
+	id := strings.TrimSpace(fields["id"])
+	if id == "" {
+		id = strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
+	}
+	return parsedItem{Path: path, ID: id, Type: itemType, Fields: fields}, true, nil
 }
 
-func parseLeadingMetadata(text string) (map[string]string, string) {
-	lines := strings.Split(text, "\n")
+func parseInventoryFields(lines []string) map[string]string {
+	fields := make(map[string]string, 8)
+	for _, line := range lines {
+		index := strings.IndexByte(line, ':')
+		if index <= 0 {
+			continue
+		}
+		key := strings.ToLower(strings.TrimSpace(line[:index]))
+		if !inventoryField(key) {
+			continue
+		}
+		value := line[index+1:]
+		if strings.HasPrefix(value, " ") {
+			value = value[1:]
+		}
+		fields[key] = value
+	}
+	return fields
+}
+
+func inventoryField(key string) bool {
+	switch key {
+	case "id", "type_", "title", "parent_id", "note_id", "tag_id",
+		"filename", "file_extension", "mime", "mime_type", "author", "source_url",
+		"created_time", "updated_time", "user_created_time", "user_updated_time":
+		return true
+	default:
+		return false
+	}
+}
+
+// splitPhysicalLines splits only at CR and LF. In particular it must not use
+// a Unicode line splitter: Joplin PDF resource ocr_text values can contain
+// vertical tab, form feed, file/record separators, and NEL as data.
+func splitPhysicalLines(text string) []string {
+	if text == "" {
+		return nil
+	}
+	lines := make([]string, 0, strings.Count(text, "\n")+1)
+	start := 0
+	for index := 0; index < len(text); index++ {
+		if text[index] != '\r' && text[index] != '\n' {
+			continue
+		}
+		lines = append(lines, text[start:index])
+		if text[index] == '\r' && index+1 < len(text) && text[index+1] == '\n' {
+			index++
+		}
+		start = index + 1
+	}
+	if start < len(text) {
+		lines = append(lines, text[start:])
+	}
+	return lines
+}
+
+func parseTrailingMetadata(text string) (map[string]string, []string, string, bool) {
+	lines := splitPhysicalLines(text)
+	end := len(lines)
+	for end > 0 && lines[end-1] == "" {
+		end--
+	}
+	separator := -1
+	for index := end - 1; index >= 0; index-- {
+		if lines[index] == "" {
+			separator = index
+			break
+		}
+		if !isMetadataLine(lines[index]) {
+			break
+		}
+	}
+	var bodyLines, metadataLines []string
+	if separator >= 0 {
+		bodyLines = lines[:separator]
+		metadataLines = lines[separator+1 : end]
+	} else {
+		allMetadata := end > 0
+		for _, line := range lines[:end] {
+			if line != "" && !isMetadataLine(line) {
+				allMetadata = false
+				break
+			}
+		}
+		if !allMetadata {
+			return map[string]string{}, nil, normalizePhysicalLines(lines), false
+		}
+		metadataLines = lines[:end]
+	}
+	fields, order := parseFields(metadataLines)
+	if strings.TrimSpace(fields["type_"]) == "" {
+		return map[string]string{}, nil, normalizePhysicalLines(lines), false
+	}
+	return fields, order, normalizePhysicalLines(bodyLines), true
+}
+
+func parseLeadingMetadata(text string) (map[string]string, []string, string) {
+	lines := splitPhysicalLines(text)
+	metadataLines := []string{}
 	fields := map[string]string{}
 	bodyStart := 0
-	for i, line := range lines {
-		trimmed := strings.TrimSpace(line)
-		if trimmed == "" {
-			bodyStart = i + 1
+	for index, line := range lines {
+		if line == "" {
+			bodyStart = index + 1
 			break
 		}
-		if !metadataLineRE.MatchString(trimmed) {
+		if !isMetadataLine(line) {
 			break
 		}
-		parseField(fields, trimmed)
-		bodyStart = i + 1
+		metadataLines = append(metadataLines, line)
+		bodyStart = index + 1
 	}
-	return fields, strings.Join(lines[bodyStart:], "\n")
+	fields, order := parseFields(metadataLines)
+	return fields, order, normalizePhysicalLines(lines[bodyStart:])
 }
 
-func parseField(fields map[string]string, line string) {
-	trimmed := strings.TrimSpace(line)
-	idx := strings.Index(trimmed, ":")
-	if idx <= 0 {
-		return
-	}
-	key := strings.ToLower(strings.TrimSpace(trimmed[:idx]))
-	value := strings.TrimSpace(trimmed[idx+1:])
-	fields[key] = value
+func isMetadataLine(line string) bool {
+	index := strings.IndexByte(line, ':')
+	return index > 0 && strings.TrimSpace(line[:index]) != ""
 }
 
-func buildDocumentBody(note parsedItem, folders map[string]parsedItem, tags []string, noteIDMap, resourceIDMap map[string]string, collectionID string) (string, int) {
+func parseFields(lines []string) (map[string]string, []string) {
+	fields := map[string]string{}
+	order := make([]string, 0, len(lines))
+	for _, line := range lines {
+		if line == "" {
+			continue
+		}
+		index := strings.IndexByte(line, ':')
+		if index <= 0 {
+			continue
+		}
+		rawKey := line[:index]
+		key := strings.ToLower(strings.TrimSpace(rawKey))
+		value := line[index+1:]
+		if strings.HasPrefix(value, " ") {
+			value = value[1:]
+		}
+		fields[key] = value
+		order = append(order, strings.TrimSpace(rawKey))
+	}
+	return fields, order
+}
+
+func normalizePhysicalLines(lines []string) string {
+	return strings.Join(lines, "\n")
+}
+
+func splitSourceTitle(body string) (string, string) {
+	lines := strings.Split(body, "\n")
+	if len(lines) == 0 {
+		return "", ""
+	}
+	title := strings.TrimSpace(lines[0])
+	start := 1
+	if start < len(lines) && lines[start] == "" {
+		start++
+	}
+	return title, strings.Join(lines[start:], "\n")
+}
+
+type resourceReference struct {
+	SourceID string
+	TargetID string
+}
+
+type linkRewriteResult struct {
+	Body       string
+	Rewritten  int
+	Unresolved int
+	Resources  []resourceReference
+}
+
+func buildDocumentBody(note parsedItem, folders map[string]parsedItem, tags []string, noteIDMap, resourceIDMap map[string]string, collectionID string) (string, linkRewriteResult) {
 	frontmatter := []string{"---"}
 	frontmatter = append(frontmatter, "source_system: joplin_raw")
 	frontmatter = append(frontmatter, "joplin_id: "+yamlQuote(note.ID))
@@ -346,27 +394,151 @@ func buildDocumentBody(note parsedItem, folders map[string]parsedItem, tags []st
 		}
 	}
 	frontmatter = append(frontmatter, "---", "")
-	rewritten, count := rewriteJoplinLinks(note.Body, noteIDMap, resourceIDMap, collectionID)
-	return strings.Join(frontmatter, "\n") + rewritten + "\n", count
+	result := rewriteJoplinLinks(note.Body, noteIDMap, resourceIDMap, collectionID)
+	return strings.Join(frontmatter, "\n") + result.Body + "\n", result
 }
 
-var joplinLinkRE = regexp.MustCompile(`:/([A-Za-z0-9_-]+)`) // Joplin internal note/resource link.
+// rewriteJoplinLinks rewrites each resolvable :/id target while it scans the
+// note once. It leaves fenced code, inline code, and escaped targets untouched,
+// and returns direct resource references for bounded attachment planning.
+func rewriteJoplinLinks(body string, noteIDMap, resourceIDMap map[string]string, collectionID string) linkRewriteResult {
+	var output strings.Builder
+	output.Grow(len(body))
+	result := linkRewriteResult{}
+	resources := map[string]resourceReference{}
+	fenceCharacter := byte(0)
+	fenceLength := 0
+	inlineCodeLength := 0
 
-func rewriteJoplinLinks(body string, noteIDMap, resourceIDMap map[string]string, collectionID string) (string, int) {
-	count := 0
-	out := joplinLinkRE.ReplaceAllStringFunc(body, func(match string) string {
-		id := strings.TrimPrefix(match, ":/")
-		if docID := noteIDMap[id]; docID != "" {
-			count++
-			return store.DocumentURI(collectionID, docID)
+	for start := 0; start < len(body); {
+		end := strings.IndexByte(body[start:], '\n')
+		hasNewline := end >= 0
+		if hasNewline {
+			end += start
+		} else {
+			end = len(body)
 		}
-		if resID := resourceIDMap[id]; resID != "" {
-			count++
-			return store.ResourceURI(collectionID, resID)
+		line := body[start:end]
+		character, length, closing := markdownFence(line, fenceCharacter, fenceLength)
+		if fenceCharacter != 0 {
+			output.WriteString(line)
+			if closing {
+				fenceCharacter, fenceLength = 0, 0
+			}
+		} else if character != 0 {
+			output.WriteString(line)
+			fenceCharacter, fenceLength = character, length
+			inlineCodeLength = 0
+		} else {
+			rewriteJoplinLinkLine(&output, line, &inlineCodeLength, noteIDMap, resourceIDMap, collectionID, &result, resources)
 		}
-		return match
+		if hasNewline {
+			output.WriteByte('\n')
+			start = end + 1
+		} else {
+			start = end
+		}
+	}
+	result.Body = output.String()
+	result.Resources = make([]resourceReference, 0, len(resources))
+	for _, reference := range resources {
+		result.Resources = append(result.Resources, reference)
+	}
+	sort.Slice(result.Resources, func(i, j int) bool {
+		if result.Resources[i].TargetID != result.Resources[j].TargetID {
+			return result.Resources[i].TargetID < result.Resources[j].TargetID
+		}
+		return result.Resources[i].SourceID < result.Resources[j].SourceID
 	})
-	return out, count
+	return result
+}
+
+func markdownFence(line string, activeCharacter byte, activeLength int) (byte, int, bool) {
+	indent := 0
+	for indent < len(line) && indent < 3 && line[indent] == ' ' {
+		indent++
+	}
+	if indent >= len(line) || (line[indent] != '`' && line[indent] != '~') {
+		return 0, 0, false
+	}
+	character := line[indent]
+	end := indent
+	for end < len(line) && line[end] == character {
+		end++
+	}
+	length := end - indent
+	if length < 3 {
+		return 0, 0, false
+	}
+	if activeCharacter == 0 {
+		return character, length, false
+	}
+	if character == activeCharacter && length >= activeLength && strings.TrimSpace(line[end:]) == "" {
+		return character, length, true
+	}
+	return 0, 0, false
+}
+
+func rewriteJoplinLinkLine(output *strings.Builder, line string, inlineCodeLength *int, noteIDMap, resourceIDMap map[string]string, collectionID string, result *linkRewriteResult, resources map[string]resourceReference) {
+	for index := 0; index < len(line); {
+		if line[index] == '`' {
+			end := index + 1
+			for end < len(line) && line[end] == '`' {
+				end++
+			}
+			runLength := end - index
+			if *inlineCodeLength == 0 {
+				*inlineCodeLength = runLength
+			} else if *inlineCodeLength == runLength {
+				*inlineCodeLength = 0
+			}
+			output.WriteString(line[index:end])
+			index = end
+			continue
+		}
+		if *inlineCodeLength != 0 || index+2 > len(line) || line[index:index+2] != ":/" || isEscaped(line, index) {
+			output.WriteByte(line[index])
+			index++
+			continue
+		}
+		end := index + 2
+		for end < len(line) && isJoplinIDCharacter(line[end]) {
+			end++
+		}
+		if end == index+2 {
+			output.WriteString(":/")
+			index += 2
+			continue
+		}
+		id := line[index+2 : end]
+		if documentID := noteIDMap[id]; documentID != "" {
+			output.WriteString(store.DocumentURI(collectionID, documentID))
+			result.Rewritten++
+		} else if resourceID := resourceIDMap[id]; resourceID != "" {
+			output.WriteString(store.ResourceURI(collectionID, resourceID))
+			result.Rewritten++
+			resources[resourceID] = resourceReference{SourceID: id, TargetID: resourceID}
+		} else {
+			output.WriteString(line[index:end])
+			result.Unresolved++
+		}
+		index = end
+	}
+}
+
+func isEscaped(text string, index int) bool {
+	backslashes := 0
+	for index > 0 && text[index-1] == '\\' {
+		backslashes++
+		index--
+	}
+	return backslashes%2 == 1
+}
+
+func isJoplinIDCharacter(character byte) bool {
+	return character >= 'a' && character <= 'z' ||
+		character >= 'A' && character <= 'Z' ||
+		character >= '0' && character <= '9' || character == '_' || character == '-'
 }
 
 func notebookPath(id string, folders map[string]parsedItem) string {
@@ -405,7 +577,7 @@ func findResourceContent(sourceDir string, item parsedItem) (string, bool) {
 		if candidate == metadataPath {
 			continue
 		}
-		if info, err := os.Stat(candidate); err == nil && !info.IsDir() {
+		if info, err := os.Lstat(candidate); err == nil && !info.IsDir() && info.Mode()&os.ModeSymlink == 0 {
 			return candidate, true
 		}
 	}
@@ -425,30 +597,30 @@ func resourceID(joplinID string) string     { return "res_joplin_" + safeID(jopl
 
 func safeID(id string) string {
 	id = strings.ToLower(strings.TrimSpace(id))
-	var b strings.Builder
-	for _, r := range id {
-		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '_' || r == '-' {
-			b.WriteRune(r)
+	var builder strings.Builder
+	for _, character := range id {
+		if (character >= 'a' && character <= 'z') || (character >= '0' && character <= '9') || character == '_' || character == '-' {
+			builder.WriteRune(character)
 		} else {
-			b.WriteByte('_')
+			builder.WriteByte('_')
 		}
 	}
-	if b.Len() == 0 {
+	if builder.Len() == 0 {
 		return "unknown"
 	}
-	return b.String()
+	return builder.String()
 }
 
 func firstNonEmpty(values ...string) string {
-	for _, v := range values {
-		if strings.TrimSpace(v) != "" {
-			return strings.TrimSpace(v)
+	for _, value := range values {
+		if strings.TrimSpace(value) != "" {
+			return strings.TrimSpace(value)
 		}
 	}
 	return ""
 }
 
 func yamlQuote(value string) string {
-	b, _ := json.Marshal(value)
-	return string(b)
+	raw, _ := json.Marshal(value)
+	return string(raw)
 }

@@ -1,0 +1,122 @@
+{
+  "schema": "notrios.g18.android-feasibility.v1",
+  "captured_at": "2026-08-26T05:44:01Z",
+  "amended_at": "2026-08-26T15:50:05Z",
+  "emulator_amended_at": "2026-08-26T22:10:08Z",
+  "sdk_root_kind": "local Android SDK",
+  "platform": "android-37.0",
+  "adb_version": "1.0.41",
+  "ndk_version": "30.0.15729638",
+  "probe_target": {"goos": "android", "goarch": "arm64", "api_level": 35},
+  "toolchain_present": true,
+  "host_toolchain_followup": {
+    "clang_path": "/usr/bin/clang",
+    "clang_version": "18.1.3",
+    "clang_target": "x86_64-pc-linux-gnu",
+    "clangxx_path": "/usr/bin/clang++",
+    "swiftly_on_path": true,
+    "swiftly_version": "1.1.2",
+    "swift_release_toolchain_installed": "6.3.3",
+    "swift_toolchain_selected": false,
+    "meaning": "PATH now resolves clang and clang++ to Ubuntu's installed binaries. Swiftly itself is reachable, but `swift` still refuses until a default or project toolchain is selected."
+  },
+  "supplied_clang_reference_accuracy": {
+    "clang_version_and_path_checks": "accurate",
+    "dpkg_package_inventory": "accurate and confirms Ubuntu Clang 18 packages",
+    "swiftly_shim_interference": "accurate when the Swiftly bin directory precedes /usr/bin; its clang and clang++ entries are shims",
+    "current_resolution": "system Clang wins because /usr/bin now precedes the Swiftly shims",
+    "swiftly_use_latest": "valid selector syntax but not executed; --global-default is required when the intent is to set the global default rather than a project selection"
+  },
+  "configured_avds": 2,
+  "configured_avd_details": [
+    {
+      "name": "notrios_api35_x86_64",
+      "android_release": "15",
+      "api_level": 35,
+      "tag": "google_apis",
+      "abi": "x86_64",
+      "creation_tool": "avdmanager with an exact installed image"
+    },
+    {
+      "name": "medium_phone",
+      "android_release": "16",
+      "api_level": 36,
+      "tag": "google_apis_playstore",
+      "abi": "x86_64",
+      "creation_tool": "android emulator create medium_phone"
+    }
+  ],
+  "emulator_execution_attempted": true,
+  "emulator_execution": {
+    "avd": "notrios_api35_x86_64",
+    "headless": true,
+    "kvm_usable": true,
+    "api_level": 35,
+    "android_release": "15",
+    "abi": "x86_64",
+    "selinux": "Enforcing",
+    "cold_boot_completed_ms": 165804,
+    "adb_connected": true,
+    "package_manager_ready": true,
+    "runtime_probe_passed": true,
+    "reboot_persistence_probe_passed": true,
+    "c_shared_dlopen_passed": true,
+    "stopped_after_probe": true
+  },
+  "cross_compile": {
+    "command_shape": "GOOS=android GOARCH=arm64 CGO_ENABLED=1 CC=<NDK aarch64 API-35 clang> go test -c ./internal/store",
+    "passed": false,
+    "first_error": "sqlite_fix.go: fatal error: 'sqlite3.h' file not found",
+    "ndk_sqlite_header_or_library_found": false,
+    "host_debian_sqlite_development": {
+      "header_found": true,
+      "header": "/usr/include/sqlite3.h",
+      "library_architecture": "x86_64-linux-gnu",
+      "android_target_usable": false
+    },
+    "host_header_followup": {
+      "command_shape": "same Android/arm64 probe with CGO_CFLAGS=-I/usr/include",
+      "passed": false,
+      "first_error": "/usr/include/stdint.h conflicts with the Android NDK sysroot",
+      "meaning": "Adding the Debian host include root contaminates the Android sysroot with glibc/x86 host headers and cannot supply an Android-arm64 SQLite library."
+    },
+    "meaning": "The Go/NDK compiler is present and Debian supplies host sqlite3 development files, but the current pkg-config/system-libsqlite3 adapter is host-only and needs an explicit Android-target SQLite linkage/package decision."
+  },
+  "flutter_tools_present": true,
+  "android_studio_launched": true,
+  "flutter_doctor": {
+    "ran": true,
+    "flutter_version": "3.44.9",
+    "dart_version": "3.12.2",
+    "android_studio_configured": true,
+    "bundled_java_detected": true,
+    "android_toolchain_passed": true,
+    "android_sdk_version": "36.0.0",
+    "android_platform": "android-37.0",
+    "android_licenses_accepted": true,
+    "connected_android_devices": 0,
+    "available_android_avds": 2,
+    "linux_desktop_toolchain_passed": true,
+    "linux_desktop_blocker": null,
+    "no_issues_found": true
+  },
+  "flutter_build_claimed": false,
+  "required_v0_8_emulator_gate": [
+    "build and load the versioned shared library for one pinned Android API/ABI",
+    "open and close two isolated instances",
+    "bootstrap SQLite and perform CRUD plus bounded search",
+    "read one resource through a bounded range stream",
+    "cancel and poll one long operation",
+    "query ABI, schema, protocol, and sync capabilities",
+    "prove no Go pointer crosses the C boundary",
+    "record peak RSS and startup/shutdown behavior"
+  ],
+  "deferred_post_1_0": [
+    "physical Android device",
+    "iOS build and device",
+    "scoped-storage and document-picker release behavior",
+    "secure storage migration and backup behavior",
+    "background transfer, battery, notifications, and lifecycle recovery",
+    "pairing, catch-up, encrypted backup, responsive UI, and accessibility"
+  ]
+}

@@ -1,0 +1,867 @@
+{
+  "schema": "notrios.docjourney.manifest.v1",
+  "browser_policy": {
+    "preferred": "browser-plugin",
+    "observed": "absent",
+    "fallback": "playwright",
+    "reason": "The Browser plugin was not available in the execution environment; deterministic local Playwright was used against loopback daemons."
+  },
+  "viewports": [
+    {
+      "id": "desktop",
+      "width": 1440,
+      "height": 960
+    },
+    {
+      "id": "narrow-sync",
+      "width": 390,
+      "height": 844
+    }
+  ],
+  "journeys": [
+    {
+      "id": "search-open",
+      "path": "docs/gui.md",
+      "section": "layout",
+      "label": "Open a search result",
+      "state": "executed",
+      "ui_owner": "ts:web/src/components/SearchPane.tsx#SearchPane",
+      "action_owners": [
+        "ts:web/src/components/SearchPane.tsx#SearchPane",
+        "ts:web/src/App.tsx#App"
+      ],
+      "go_owners": [
+        "go:github.com/renesugar/notrios/internal/httpapi#(*Server).handleSearchPOST"
+      ],
+      "case": "search-open",
+      "viewports": [
+        "desktop"
+      ],
+      "postconditions": [
+        "Visible: selected result appears in the editor and preview.",
+        "Canonical/API: GET /api/v1/search returns the selected document ID and GET /api/v1/documents/{id} returns its body."
+      ],
+      "check_anchor": "go:github.com/renesugar/notrios/cmd/notriosctl#TestG18eBrowserJourneys"
+    },
+    {
+      "id": "search-page",
+      "path": "docs/gui.md",
+      "section": "layout",
+      "label": "Page through search results",
+      "state": "executed",
+      "ui_owner": "ts:web/src/components/SearchPane.tsx#SearchPane",
+      "action_owners": [
+        "ts:web/src/components/SearchPane.tsx#SearchPane",
+        "ts:web/src/App.tsx#App"
+      ],
+      "go_owners": [
+        "go:github.com/renesugar/notrios/internal/httpapi#(*Server).handleSearchPOST"
+      ],
+      "case": "search-page",
+      "viewports": [
+        "desktop"
+      ],
+      "postconditions": [
+        "Visible: the next result page extends the result list with distinct notes.",
+        "Canonical/API: paginated search returns a nonempty next_cursor and distinct hit IDs."
+      ],
+      "check_anchor": "go:github.com/renesugar/notrios/cmd/notriosctl#TestG18eBrowserJourneys"
+    },
+    {
+      "id": "new-note-in-notebook",
+      "path": "docs/gui.md",
+      "section": "choosing-which-notebook-a-note-goes-in",
+      "label": "Create a note in a notebook",
+      "state": "executed",
+      "ui_owner": "ts:web/src/App.tsx#App",
+      "action_owners": [
+        "ts:web/src/components/SearchPane.tsx#SearchPane",
+        "ts:web/src/App.tsx#App"
+      ],
+      "go_owners": [
+        "go:github.com/renesugar/notrios/internal/httpapi#(*Server).handleCreateDocument"
+      ],
+      "case": "new-note-in-notebook",
+      "viewports": [
+        "desktop"
+      ],
+      "postconditions": [
+        "Visible: the new note is selected with its title and notebook shown.",
+        "Canonical/API: POST /api/v1/documents creates one document with the requested notebook_id."
+      ],
+      "check_anchor": "go:github.com/renesugar/notrios/cmd/notriosctl#TestG18eBrowserJourneys"
+    },
+    {
+      "id": "edit-save",
+      "path": "docs/gui.md",
+      "section": "layout",
+      "label": "Edit and save a note",
+      "state": "executed",
+      "ui_owner": "ts:web/src/components/EditorPane.tsx#EditorPane",
+      "action_owners": [
+        "ts:web/src/components/EditorPane.tsx#EditorPane",
+        "ts:web/src/App.tsx#App"
+      ],
+      "go_owners": [
+        "go:github.com/renesugar/notrios/internal/httpapi#(*Server).handlePutDocument"
+      ],
+      "case": "edit-save",
+      "viewports": [
+        "desktop"
+      ],
+      "postconditions": [
+        "Visible: saved text remains in the editor after reload.",
+        "Canonical/API: the document revision changes and GET /api/v1/documents/{id} returns the edited body."
+      ],
+      "check_anchor": "go:github.com/renesugar/notrios/cmd/notriosctl#TestG18eBrowserJourneys"
+    },
+    {
+      "id": "move-note",
+      "path": "docs/gui.md",
+      "section": "choosing-which-notebook-a-note-goes-in",
+      "label": "Move a note to another notebook",
+      "state": "executed",
+      "ui_owner": "ts:web/src/App.tsx#App",
+      "action_owners": [
+        "ts:web/src/components/EditorPane.tsx#EditorPane",
+        "ts:web/src/App.tsx#App"
+      ],
+      "go_owners": [
+        "go:github.com/renesugar/notrios/internal/httpapi#(*Server).handleMoveDocumentNotebook"
+      ],
+      "case": "move-note",
+      "viewports": [
+        "desktop"
+      ],
+      "postconditions": [
+        "Visible: the note leaves the old notebook and appears under the destination.",
+        "Canonical/API: the document response and subsequent GET report the destination notebook_id."
+      ],
+      "check_anchor": "go:github.com/renesugar/notrios/cmd/notriosctl#TestG18eBrowserJourneys"
+    },
+    {
+      "id": "trash-restore",
+      "path": "docs/gui.md",
+      "section": "deleting-and-restoring-notes",
+      "label": "Trash and restore a note",
+      "state": "executed",
+      "ui_owner": "ts:web/src/App.tsx#App",
+      "action_owners": [
+        "ts:web/src/components/EditorPane.tsx#EditorPane",
+        "ts:web/src/App.tsx#App"
+      ],
+      "go_owners": [
+        "go:github.com/renesugar/notrios/internal/httpapi#(*Server).handleDeleteDocument",
+        "go:github.com/renesugar/notrios/internal/httpapi#(*Server).handleRestoreTrashedDocument"
+      ],
+      "case": "trash-restore",
+      "viewports": [
+        "desktop"
+      ],
+      "postconditions": [
+        "Visible: the note disappears from the normal list, then returns after restore.",
+        "Canonical/API: deleted_at is set by DELETE and cleared by restore."
+      ],
+      "check_anchor": "go:github.com/renesugar/notrios/cmd/notriosctl#TestG18eBrowserJourneys"
+    },
+    {
+      "id": "purge-note",
+      "path": "docs/gui.md",
+      "section": "deleting-and-restoring-notes",
+      "label": "Permanently purge a trashed note",
+      "state": "executed",
+      "ui_owner": "ts:web/src/App.tsx#App",
+      "action_owners": [
+        "ts:web/src/components/EditorPane.tsx#EditorPane",
+        "ts:web/src/App.tsx#App"
+      ],
+      "go_owners": [
+        "go:github.com/renesugar/notrios/internal/httpapi#(*Server).handlePurgeDocument"
+      ],
+      "case": "purge-note",
+      "viewports": [
+        "desktop"
+      ],
+      "postconditions": [
+        "Visible: the trashed note is no longer available.",
+        "Canonical/API: GET /api/v1/trash no longer returns the document after purge."
+      ],
+      "check_anchor": "go:github.com/renesugar/notrios/cmd/notriosctl#TestG18eBrowserJourneys"
+    },
+    {
+      "id": "delete-notebook-review",
+      "path": "docs/gui.md",
+      "section": "deleting-a-notebook",
+      "label": "Review notebook deletion",
+      "state": "executed",
+      "ui_owner": "ts:web/src/App.tsx#App",
+      "action_owners": [
+        "ts:web/src/App.tsx#App"
+      ],
+      "go_owners": [
+        "go:github.com/renesugar/notrios/internal/httpapi#(*Server).handleNotebookDeletionPreview",
+        "go:github.com/renesugar/notrios/internal/httpapi#(*Server).handleNotebook"
+      ],
+      "case": "delete-notebook-review",
+      "viewports": [
+        "desktop"
+      ],
+      "postconditions": [
+        "Visible: the confirmation lists affected notes before deletion.",
+        "Canonical/API: preview reports the notebook impact and deletion is issued only after confirmation."
+      ],
+      "check_anchor": "go:github.com/renesugar/notrios/cmd/notriosctl#TestG18eBrowserJourneys"
+    },
+    {
+      "id": "protected-items",
+      "path": "docs/gui.md",
+      "section": "protected-items",
+      "label": "Respect protected Help items",
+      "state": "executed",
+      "ui_owner": "ts:web/src/components/EditorPane.tsx#EditorPane",
+      "action_owners": [
+        "ts:web/src/components/EditorPane.tsx#EditorPane",
+        "ts:web/src/App.tsx#App"
+      ],
+      "go_owners": [
+        "go:github.com/renesugar/notrios/internal/httpapi#(*Server).handlePutDocument"
+      ],
+      "case": "protected-items",
+      "viewports": [
+        "desktop"
+      ],
+      "postconditions": [
+        "Visible: a protected item is marked read-only and editing is refused.",
+        "Canonical/API: the update response is forbidden and the stored body is unchanged."
+      ],
+      "check_anchor": "go:github.com/renesugar/notrios/cmd/notriosctl#TestG18eBrowserJourneys"
+    },
+    {
+      "id": "themes",
+      "path": "docs/gui.md",
+      "section": "themes",
+      "label": "Change the application theme",
+      "state": "executed",
+      "ui_owner": "ts:web/src/App.tsx#App",
+      "action_owners": [
+        "ts:web/src/themes.ts#applyTheme",
+        "ts:web/src/themes.ts#saveChoice"
+      ],
+      "go_owners": [],
+      "case": "themes",
+      "viewports": [
+        "desktop"
+      ],
+      "postconditions": [
+        "Visible: the selected theme changes the workspace colors.",
+        "Canonical/API: the theme choice persists in local storage and is restored on reload."
+      ],
+      "check_anchor": "go:github.com/renesugar/notrios/cmd/notriosctl#TestG18eBrowserJourneys"
+    },
+    {
+      "id": "insert-and-check-link",
+      "path": "docs/gui.md",
+      "section": "link-help-while-you-write",
+      "label": "Insert a stable note link",
+      "state": "executed",
+      "ui_owner": "ts:web/src/components/LinkIntelligence.tsx#LinkPicker",
+      "action_owners": [
+        "ts:web/src/components/LinkIntelligence.tsx#LinkPicker"
+      ],
+      "go_owners": [
+        "go:github.com/renesugar/notrios/internal/httpapi#(*Server).handleDocumentSuggest",
+        "go:github.com/renesugar/notrios/internal/httpapi#(*Server).handleCheckLinks"
+      ],
+      "case": "insert-and-check-link",
+      "viewports": [
+        "desktop"
+      ],
+      "postconditions": [
+        "Visible: the inserted link is shown in the editor and resolves in preview.",
+        "Canonical/API: link checking reports the target as resolved with its document ID."
+      ],
+      "check_anchor": "go:github.com/renesugar/notrios/cmd/notriosctl#TestG18eBrowserJourneys"
+    },
+    {
+      "id": "preview-links",
+      "path": "docs/gui.md",
+      "section": "link-help-while-you-write",
+      "label": "Open links from preview",
+      "state": "executed",
+      "ui_owner": "ts:web/src/components/PreviewPane.tsx#PreviewPane",
+      "action_owners": [
+        "ts:web/src/components/PreviewPane.tsx#PreviewPane"
+      ],
+      "go_owners": [
+        "go:github.com/renesugar/notrios/internal/httpapi#(*Server).handleResolveStableLink"
+      ],
+      "case": "preview-links",
+      "viewports": [
+        "desktop"
+      ],
+      "postconditions": [
+        "Visible: selecting a stable link opens the target note.",
+        "Canonical/API: stable-link resolution returns status resolved and the expected document ID."
+      ],
+      "check_anchor": "go:github.com/renesugar/notrios/cmd/notriosctl#TestG18eBrowserJourneys"
+    },
+    {
+      "id": "upload-resource",
+      "path": "docs/gui.md",
+      "section": "layout",
+      "label": "Upload and attach a resource",
+      "state": "executed",
+      "ui_owner": "ts:web/src/components/EditorPane.tsx#EditorPane",
+      "action_owners": [
+        "ts:web/src/components/EditorPane.tsx#EditorPane",
+        "ts:web/src/App.tsx#App"
+      ],
+      "go_owners": [
+        "go:github.com/renesugar/notrios/internal/httpapi#(*Server).handleCreateResource",
+        "go:github.com/renesugar/notrios/internal/httpapi#(*Server).handleDocumentResource"
+      ],
+      "case": "upload-resource",
+      "viewports": [
+        "desktop"
+      ],
+      "postconditions": [
+        "Visible: the attachment appears in the note resource list.",
+        "Canonical/API: upload and attachment endpoints return the resource and document reference IDs."
+      ],
+      "check_anchor": "go:github.com/renesugar/notrios/cmd/notriosctl#TestG18eBrowserJourneys"
+    },
+    {
+      "id": "localize-remote-media",
+      "path": "docs/operations.md",
+      "section": "localizing-remote-media",
+      "label": "Review remote-media policy before localization",
+      "state": "executed",
+      "ui_owner": "ts:web/src/App.tsx#App",
+      "action_owners": [
+        "ts:web/src/components/EditorPane.tsx#EditorPane",
+        "ts:web/src/App.tsx#App"
+      ],
+      "go_owners": [
+        "go:github.com/renesugar/notrios/internal/httpapi#(*Server).handleRemoteMediaScan",
+        "go:github.com/renesugar/notrios/internal/httpapi#(*Server).handleRemoteMediaLocalize"
+      ],
+      "case": "localize-remote-media",
+      "viewports": [
+        "desktop"
+      ],
+      "postconditions": [
+        "Visible: the loopback SSRF fixture remains blocked with its reason and no localization action is offered.",
+        "Canonical/API: the policy scan reports block without a fetch and leaves the document revision unchanged."
+      ],
+      "check_anchor": "go:github.com/renesugar/notrios/cmd/notriosctl#TestG18eBrowserJourneys"
+    },
+    {
+      "id": "inspect-local-graph",
+      "path": "docs/gui.md",
+      "section": "seeing-what-is-around-a-note",
+      "label": "Inspect the local link graph",
+      "state": "executed",
+      "ui_owner": "ts:web/src/components/LocalGraph.tsx#LocalGraph",
+      "action_owners": [
+        "ts:web/src/components/LocalGraph.tsx#LocalGraph",
+        "ts:web/src/components/LocalGraph.tsx#neighboursByDepth"
+      ],
+      "go_owners": [
+        "go:github.com/renesugar/notrios/internal/httpapi#(*Server).handleGraph"
+      ],
+      "case": "inspect-local-graph",
+      "viewports": [
+        "desktop"
+      ],
+      "postconditions": [
+        "Visible: graph neighbors and depth controls render for the selected note.",
+        "Canonical/API: graph response names the selected root and bounded neighboring document IDs."
+      ],
+      "check_anchor": "go:github.com/renesugar/notrios/cmd/notriosctl#TestG18eBrowserJourneys"
+    },
+    {
+      "id": "paste-table",
+      "path": "docs/gui.md",
+      "section": "pasting-a-table",
+      "label": "Paste a table into the editor",
+      "state": "executed",
+      "ui_owner": "ts:web/src/components/EditorPane.tsx#EditorPane",
+      "action_owners": [
+        "ts:web/src/components/EditorPane.tsx#EditorPane",
+        "ts:web/src/App.tsx#App"
+      ],
+      "go_owners": [],
+      "case": "paste-table",
+      "viewports": [
+        "desktop"
+      ],
+      "postconditions": [
+        "Visible: pasted tabular data is represented as a Markdown table.",
+        "Canonical/API: saving and reloading returns the table Markdown in the document body."
+      ],
+      "check_anchor": "go:github.com/renesugar/notrios/cmd/notriosctl#TestG18eBrowserJourneys"
+    },
+    {
+      "id": "live-query-block",
+      "path": "docs/gui.md",
+      "section": "live-query-blocks",
+      "label": "Use a live query block",
+      "state": "executed",
+      "ui_owner": "ts:web/src/components/PreviewPane.tsx#PreviewPane",
+      "action_owners": [
+        "ts:web/src/components/PreviewPane.tsx#PreviewPane"
+      ],
+      "go_owners": [
+        "go:github.com/renesugar/notrios/internal/httpapi#(*Server).handleRunNoteQuery"
+      ],
+      "case": "live-query-block",
+      "viewports": [
+        "desktop"
+      ],
+      "postconditions": [
+        "Visible: the preview renders query results inside the note.",
+        "Canonical/API: the bounded query response contains the expected matching document IDs."
+      ],
+      "check_anchor": "go:github.com/renesugar/notrios/cmd/notriosctl#TestG18eBrowserJourneys"
+    },
+    {
+      "id": "math-and-code",
+      "path": "docs/gui.md",
+      "section": "math-and-code-blocks",
+      "label": "Render math and code blocks",
+      "state": "executed",
+      "ui_owner": "ts:web/src/components/PreviewPane.tsx#PreviewPane",
+      "action_owners": [
+        "ts:web/src/components/PreviewPane.tsx#PreviewPane"
+      ],
+      "go_owners": [],
+      "case": "math-and-code",
+      "viewports": [
+        "desktop"
+      ],
+      "postconditions": [
+        "Visible: math is typeset and code remains in a syntax block.",
+        "Canonical/API: reloading preserves the original Markdown body without unsafe HTML execution."
+      ],
+      "check_anchor": "go:github.com/renesugar/notrios/cmd/notriosctl#TestG18eBrowserJourneys"
+    },
+    {
+      "id": "resize-panes",
+      "path": "docs/gui.md",
+      "section": "resizing-panes",
+      "label": "Resize workspace panes",
+      "state": "executed",
+      "ui_owner": "ts:web/src/components/PaneSplitter.tsx#PaneSplitter",
+      "action_owners": [
+        "ts:web/src/panes.ts#resizeAt",
+        "ts:web/src/panes.ts#savePaneWidths"
+      ],
+      "go_owners": [],
+      "case": "resize-panes",
+      "viewports": [
+        "desktop"
+      ],
+      "postconditions": [
+        "Visible: the selected pane width changes while minimum widths remain usable.",
+        "Canonical/API: pane widths persist locally and are restored after reload."
+      ],
+      "check_anchor": "go:github.com/renesugar/notrios/cmd/notriosctl#TestG18eBrowserJourneys"
+    },
+    {
+      "id": "open-sync-center",
+      "path": "docs/gui.md",
+      "section": "sync-center",
+      "label": "Open Sync Center",
+      "state": "executed",
+      "ui_owner": "ts:web/src/components/SyncCenter.tsx#SyncCenter",
+      "action_owners": [
+        "ts:web/src/components/SyncCenter.tsx#SyncCenter"
+      ],
+      "go_owners": [
+        "go:github.com/renesugar/notrios/internal/httpapi#(*Server).handleSyncUIStatus"
+      ],
+      "case": "open-sync-center",
+      "viewports": [
+        "desktop",
+        "narrow-sync"
+      ],
+      "postconditions": [
+        "Visible: Sync Center opens as a dialog with its tabs and profile identity.",
+        "Canonical/API: GET /api/v1/sync-ui returns the displayed active profile and status."
+      ],
+      "check_anchor": "go:github.com/renesugar/notrios/cmd/notriosctl#TestG18eBrowserJourneys"
+    },
+    {
+      "id": "sync-setup",
+      "path": "docs/gui.md",
+      "section": "sync-center",
+      "label": "Configure synchronization",
+      "state": "executed",
+      "ui_owner": "ts:web/src/components/SyncCenter.tsx#SyncCenter",
+      "action_owners": [
+        "ts:web/src/components/SyncCenter.tsx#SyncCenter"
+      ],
+      "go_owners": [
+        "go:github.com/renesugar/notrios/internal/httpapi#(*Server).handleSyncUIInitialize",
+        "go:github.com/renesugar/notrios/internal/httpapi#(*Server).handleSyncUIConfiguration"
+      ],
+      "case": "sync-setup",
+      "viewports": [
+        "desktop",
+        "narrow-sync"
+      ],
+      "postconditions": [
+        "Visible: Setup shows the selected transport and restart guidance.",
+        "Canonical/API: configuration endpoint persists the target and returns restart_required when applicable."
+      ],
+      "check_anchor": "go:github.com/renesugar/notrios/cmd/notriosctl#TestG18eBrowserJourneys"
+    },
+    {
+      "id": "sync-pairing",
+      "path": "docs/gui.md",
+      "section": "sync-center",
+      "label": "Pair a synchronization peer",
+      "state": "executed",
+      "ui_owner": "ts:web/src/components/SyncCenter.tsx#SyncCenter",
+      "action_owners": [
+        "ts:web/src/components/SyncCenter.tsx#SyncCenter"
+      ],
+      "go_owners": [
+        "go:github.com/renesugar/notrios/internal/httpapi#(*Server).handleSyncUIInvitation",
+        "go:github.com/renesugar/notrios/internal/httpapi#(*Server).handleSyncUIPair",
+        "go:github.com/renesugar/notrios/internal/httpapi#(*Server).handleSyncUIDiscover",
+        "go:github.com/renesugar/notrios/internal/httpapi#(*Server).handleSyncUISnapshotPermission"
+      ],
+      "case": "sync-pairing",
+      "viewports": [
+        "desktop",
+        "narrow-sync"
+      ],
+      "postconditions": [
+        "Visible: peer pairing reports the paired replica and a single-use invitation.",
+        "Canonical/API: invitation is single-use and pairing returns the paired replica ID."
+      ],
+      "check_anchor": "go:github.com/renesugar/notrios/cmd/notriosctl#TestG18eBrowserJourneys"
+    },
+    {
+      "id": "sync-jobs",
+      "path": "docs/gui.md",
+      "section": "sync-center",
+      "label": "Start and monitor a sync job",
+      "state": "executed",
+      "ui_owner": "ts:web/src/components/SyncCenter.tsx#SyncCenter",
+      "action_owners": [
+        "ts:web/src/components/SyncCenter.tsx#SyncCenter"
+      ],
+      "go_owners": [
+        "go:github.com/renesugar/notrios/internal/httpapi#(*Server).handleStartSyncJob",
+        "go:github.com/renesugar/notrios/internal/httpapi#(*Server).handleCancelJob",
+        "go:github.com/renesugar/notrios/internal/httpapi#(*Server).handleRetrySyncJob"
+      ],
+      "case": "sync-jobs",
+      "viewports": [
+        "desktop",
+        "narrow-sync"
+      ],
+      "postconditions": [
+        "Visible: job state and progress update in the Sync Center.",
+        "Canonical/API: sync UI status exposes the job ID and terminal state."
+      ],
+      "check_anchor": "go:github.com/renesugar/notrios/cmd/notriosctl#TestG18eBrowserJourneys"
+    },
+    {
+      "id": "sync-lazy-resource",
+      "path": "docs/gui.md",
+      "section": "sync-center",
+      "label": "Request a lazy resource",
+      "state": "executed",
+      "ui_owner": "ts:web/src/components/SyncCenter.tsx#SyncCenter",
+      "action_owners": [
+        "ts:web/src/components/SyncCenter.tsx#SyncCenter"
+      ],
+      "go_owners": [
+        "go:github.com/renesugar/notrios/internal/httpapi#(*Server).handleSyncUIResourceIntent"
+      ],
+      "case": "sync-lazy-resource",
+      "viewports": [
+        "desktop",
+        "narrow-sync"
+      ],
+      "postconditions": [
+        "Visible: an unavailable resource becomes requested in Attachments.",
+        "Canonical/API: resource intent records requested=true and the fetch job is queued."
+      ],
+      "check_anchor": "go:github.com/renesugar/notrios/cmd/notriosctl#TestG18eBrowserJourneys"
+    },
+    {
+      "id": "sync-conflict",
+      "path": "docs/gui.md",
+      "section": "sync-center",
+      "label": "Review and resolve a sync conflict",
+      "state": "executed",
+      "ui_owner": "ts:web/src/components/SyncCenter.tsx#SyncCenter",
+      "action_owners": [
+        "ts:web/src/components/SyncCenter.tsx#SyncCenter"
+      ],
+      "go_owners": [
+        "go:github.com/renesugar/notrios/internal/httpapi#(*Server).handleSyncUIConflict",
+        "go:github.com/renesugar/notrios/internal/httpapi#(*Server).handleSyncUIConflictResolve"
+      ],
+      "case": "sync-conflict",
+      "viewports": [
+        "desktop",
+        "narrow-sync"
+      ],
+      "postconditions": [
+        "Visible: conflict details and an explicit resolution are shown.",
+        "Canonical/API: resolving removes the conflict and creates a new document revision."
+      ],
+      "check_anchor": "go:github.com/renesugar/notrios/cmd/notriosctl#TestG18eBrowserJourneys"
+    },
+    {
+      "id": "sync-backup-create",
+      "path": "docs/gui.md",
+      "section": "sync-center",
+      "label": "Create a password backup",
+      "state": "executed",
+      "ui_owner": "ts:web/src/components/SyncCenter.tsx#SyncCenter",
+      "action_owners": [
+        "ts:web/src/components/SyncCenter.tsx#SyncCenter"
+      ],
+      "go_owners": [
+        "go:github.com/renesugar/notrios/internal/httpapi#(*Server).handleSyncUIBackupCreate"
+      ],
+      "case": "sync-backup-create",
+      "viewports": [
+        "desktop",
+        "narrow-sync"
+      ],
+      "postconditions": [
+        "Visible: backup creation reports a downloadable backup.",
+        "Canonical/API: backup response is nonempty and has the expected archive media type."
+      ],
+      "check_anchor": "go:github.com/renesugar/notrios/cmd/notriosctl#TestG18eBrowserJourneys"
+    },
+    {
+      "id": "sync-backup-inspect",
+      "path": "docs/gui.md",
+      "section": "sync-center",
+      "label": "Inspect a password backup",
+      "state": "executed",
+      "ui_owner": "ts:web/src/components/SyncCenter.tsx#SyncCenter",
+      "action_owners": [
+        "ts:web/src/components/SyncCenter.tsx#SyncCenter"
+      ],
+      "go_owners": [
+        "go:github.com/renesugar/notrios/internal/httpapi#(*Server).handleSyncUIBackupInspect"
+      ],
+      "case": "sync-backup-inspect",
+      "viewports": [
+        "desktop",
+        "narrow-sync"
+      ],
+      "postconditions": [
+        "Visible: backup contents and identity review are displayed.",
+        "Canonical/API: inspection verifies the archive and reports database and replica identity without writing state."
+      ],
+      "check_anchor": "go:github.com/renesugar/notrios/cmd/notriosctl#TestG18eBrowserJourneys"
+    },
+    {
+      "id": "sync-recovery-review",
+      "path": "docs/gui.md",
+      "section": "sync-center",
+      "label": "Review sync recovery",
+      "state": "executed",
+      "ui_owner": "ts:web/src/components/SyncCenter.tsx#SyncCenter",
+      "action_owners": [
+        "ts:web/src/components/SyncCenter.tsx#SyncCenter"
+      ],
+      "go_owners": [
+        "go:github.com/renesugar/notrios/internal/httpapi#(*Server).handleSyncUIRecovery"
+      ],
+      "case": "sync-recovery-review",
+      "viewports": [
+        "desktop",
+        "narrow-sync"
+      ],
+      "postconditions": [
+        "Visible: recovery review identifies the requested action and destructive warning.",
+        "Canonical/API: recovery request returns a job and destructive_review_required=true for reset."
+      ],
+      "check_anchor": "go:github.com/renesugar/notrios/cmd/notriosctl#TestG18eBrowserJourneys"
+    },
+    {
+      "id": "sync-retention",
+      "path": "docs/gui.md",
+      "section": "sync-center",
+      "label": "Review synchronization retention",
+      "state": "executed",
+      "ui_owner": "ts:web/src/components/SyncCenter.tsx#SyncCenter",
+      "action_owners": [
+        "ts:web/src/components/SyncCenter.tsx#SyncCenter"
+      ],
+      "go_owners": [
+        "go:github.com/renesugar/notrios/internal/httpapi#(*Server).handleSyncUIRetention"
+      ],
+      "case": "sync-retention",
+      "viewports": [
+        "desktop",
+        "narrow-sync"
+      ],
+      "postconditions": [
+        "Visible: retention floors and peer acknowledgements are listed.",
+        "Canonical/API: retention report contains monotonic sequence floors and peer state."
+      ],
+      "check_anchor": "go:github.com/renesugar/notrios/cmd/notriosctl#TestG18eBrowserJourneys"
+    },
+    {
+      "id": "sync-retirement",
+      "path": "docs/gui.md",
+      "section": "sync-center",
+      "label": "Review peer retirement",
+      "state": "executed",
+      "ui_owner": "ts:web/src/components/SyncCenter.tsx#SyncCenter",
+      "action_owners": [
+        "ts:web/src/components/SyncCenter.tsx#SyncCenter"
+      ],
+      "go_owners": [
+        "go:github.com/renesugar/notrios/internal/httpapi#(*Server).handleSyncUIRetirementPreview",
+        "go:github.com/renesugar/notrios/internal/httpapi#(*Server).handleSyncUIRetirePeer"
+      ],
+      "case": "sync-retirement",
+      "viewports": [
+        "desktop",
+        "narrow-sync"
+      ],
+      "postconditions": [
+        "Visible: retirement impact and confirmation are shown before applying.",
+        "Canonical/API: preview lists unacknowledged peers and retirement requires the exact confirmation."
+      ],
+      "check_anchor": "go:github.com/renesugar/notrios/cmd/notriosctl#TestG18eBrowserJourneys"
+    },
+    {
+      "id": "sync-repairs",
+      "path": "docs/gui.md",
+      "section": "sync-center",
+      "label": "Inspect synchronization repairs",
+      "state": "executed",
+      "ui_owner": "ts:web/src/components/SyncCenter.tsx#SyncCenter",
+      "action_owners": [
+        "ts:web/src/components/SyncCenter.tsx#SyncCenter"
+      ],
+      "go_owners": [
+        "go:github.com/renesugar/notrios/internal/httpapi#(*Server).handleSyncUIStatus"
+      ],
+      "case": "sync-repairs",
+      "viewports": [
+        "desktop",
+        "narrow-sync"
+      ],
+      "postconditions": [
+        "Visible: repair reports are listed, or the explicit empty state is shown when no repair occurred.",
+        "Canonical/API: sync UI status reports the same repair set displayed by the GUI."
+      ],
+      "check_anchor": "go:github.com/renesugar/notrios/cmd/notriosctl#TestG18eBrowserJourneys"
+    },
+    {
+      "id": "destructive-confirmations",
+      "path": "docs/gui.md",
+      "section": "deleting-and-restoring-notes",
+      "label": "Confirm destructive actions",
+      "state": "executed",
+      "ui_owner": "ts:web/src/App.tsx#App",
+      "action_owners": [
+        "ts:web/src/App.tsx#App"
+      ],
+      "go_owners": [
+        "go:github.com/renesugar/notrios/internal/httpapi#(*Server).handlePurgeDocument",
+        "go:github.com/renesugar/notrios/internal/httpapi#(*Server).handleNotebook",
+        "go:github.com/renesugar/notrios/internal/httpapi#(*Server).handleSyncUIRecovery"
+      ],
+      "case": "destructive-confirmations",
+      "viewports": [
+        "desktop"
+      ],
+      "postconditions": [
+        "Visible: destructive dialogs identify the action and require an explicit confirmation.",
+        "Canonical/API: cancel leaves the canonical document/notebook unchanged and apply uses the required confirmation token."
+      ],
+      "check_anchor": "go:github.com/renesugar/notrios/cmd/notriosctl#TestG18eBrowserJourneys"
+    },
+    {
+      "id": "import-export-job-gui",
+      "path": "docs/import-export.md",
+      "section": "joplin-raw-export",
+      "label": "Run an import/export job in the GUI",
+      "state": "unverified",
+      "ui_owner": "ts:web/src/App.tsx#App",
+      "action_owners": [],
+      "go_owners": [],
+      "unrun_reason": {
+        "code": "unsupported-current",
+        "detail": "The current GUI documents note editing and sync, but does not expose an import/export job workflow.",
+        "owner": "go:github.com/renesugar/notrios/cmd/notriosctl#runJobs"
+      }
+    },
+    {
+      "id": "batch-organizer-gui",
+      "path": "docs/gui.md",
+      "section": "choosing-which-notebook-a-note-goes-in",
+      "label": "Batch-organize notes in the GUI",
+      "state": "unverified",
+      "ui_owner": "ts:web/src/App.tsx#App",
+      "action_owners": [],
+      "go_owners": [],
+      "unrun_reason": {
+        "code": "unsupported-current",
+        "detail": "The current GUI has single-note notebook selection and no batch organizer control.",
+        "owner": "ts:web/src/App.tsx#App"
+      }
+    },
+    {
+      "id": "editor-find-replace",
+      "path": "docs/gui.md",
+      "section": "layout",
+      "label": "Find and replace in the editor",
+      "state": "unverified",
+      "ui_owner": "ts:web/src/components/EditorPane.tsx#EditorPane",
+      "action_owners": [],
+      "go_owners": [],
+      "unrun_reason": {
+        "code": "browser-owned",
+        "detail": "Find/replace is owned by the browser or editor surface rather than a Notrios action dispatcher.",
+        "owner": "ts:web/src/components/EditorPane.tsx#EditorPane"
+      }
+    },
+    {
+      "id": "native-shell-actions",
+      "path": "docs/gui.md",
+      "section": "modes",
+      "label": "Use native shell menu actions",
+      "state": "unverified",
+      "ui_owner": "ts:web/src/App.tsx#App",
+      "action_owners": [],
+      "go_owners": [],
+      "unrun_reason": {
+        "code": "native-shell-only",
+        "detail": "Native Wails menu and window actions are outside the browser journey harness.",
+        "owner": "go:github.com/renesugar/notrios/cmd/notrios#(*NativeUIBridge).ChooseDirectory"
+      }
+    },
+    {
+      "id": "destructive-restore-apply",
+      "path": "docs/gui.md",
+      "section": "sync-center",
+      "label": "Apply destructive sync restore",
+      "state": "unverified",
+      "ui_owner": "ts:web/src/components/SyncCenter.tsx#SyncCenter",
+      "action_owners": [],
+      "go_owners": [],
+      "unrun_reason": {
+        "code": "unsupported-by-design",
+        "detail": "The documented journey deliberately stops at review; automated evidence must not apply destructive restore.",
+        "owner": "ts:web/src/components/SyncCenter.tsx#SyncCenter"
+      }
+    }
+  ]
+}

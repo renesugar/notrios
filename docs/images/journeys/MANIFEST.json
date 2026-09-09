@@ -1,0 +1,986 @@
+{
+  "schema": "notrios.docjourneys.gui-images.v1",
+  "viewport": {
+    "width": 1280,
+    "height": 800
+  },
+  "images": [
+    {
+      "journey": "act-on-several-notes",
+      "step": "apply-it",
+      "image": "images/journeys/act-on-several-notes-apply-it.png",
+      "locator": {
+        "testid": "selection-add-tag"
+      },
+      "sha256": "82ff7b043d32260a2c1e7a1b2a730f33d0be8b97fe1eb2ce8b2bf09bd32b1326"
+    },
+    {
+      "journey": "act-on-several-notes",
+      "step": "read-the-panel",
+      "image": "images/journeys/act-on-several-notes-read-the-panel.png",
+      "locator": {
+        "testid": "selection-panel"
+      },
+      "sha256": "13066b2dfbbcef04574f79c60a4664b8cdf31099ed61ef2556f1c057353dd979"
+    },
+    {
+      "journey": "act-on-several-notes",
+      "step": "read-the-report",
+      "image": "images/journeys/act-on-several-notes-read-the-report.png",
+      "locator": {
+        "testid": "selection-report"
+      },
+      "sha256": "f39411bffa48641892dbb84e630973314804daae8c436e24d743794bc6a7d62c"
+    },
+    {
+      "journey": "act-on-several-notes",
+      "step": "tick-another",
+      "image": "images/journeys/act-on-several-notes-tick-another.png",
+      "locator": {
+        "role": "checkbox",
+        "name": "Select Marsh survey, north pool"
+      },
+      "sha256": "46132e434c3a7f1bec44dc999bf1901614f80780cc885b6ba56a2f88667e3402"
+    },
+    {
+      "journey": "act-on-several-notes",
+      "step": "tick-the-first",
+      "image": "images/journeys/act-on-several-notes-tick-the-first.png",
+      "locator": {
+        "role": "checkbox",
+        "name": "Select Marsh survey, index"
+      },
+      "sha256": "8aeb35d631a6fc49db9e8f73f1666a5db742e6817259ac6c4c1f5b2d03298a40"
+    },
+    {
+      "journey": "act-on-several-notes",
+      "step": "type-a-tag",
+      "image": "images/journeys/act-on-several-notes-type-a-tag.png",
+      "locator": {
+        "testid": "selection-tag"
+      },
+      "sha256": "3563ecc4074b26bce738e2794d9209a75a1a76058473a829c395e18f17723c2a"
+    },
+    {
+      "journey": "attach-a-file",
+      "step": "choose-a-file",
+      "image": "images/journeys/attach-a-file-choose-a-file.png",
+      "locator": {
+        "testid": "attachment-upload"
+      },
+      "sha256": "39549088f7fa00c6746ec2f7648e2a22d1cc3f7ace9c7d41b6a433bad517bb6f"
+    },
+    {
+      "journey": "attach-a-file",
+      "step": "open-note-info",
+      "image": "images/journeys/attach-a-file-open-note-info.png",
+      "locator": {
+        "testid": "note-inspector-toggle"
+      },
+      "sha256": "76eae06924d145a9e538675f731246150eb1c78335599787e4afde1dd3200395"
+    },
+    {
+      "journey": "attach-a-file",
+      "step": "open-the-note",
+      "image": "images/journeys/attach-a-file-open-the-note.png",
+      "locator": {
+        "css": ".result-card:has-text(\"Nest box plans\")"
+      },
+      "sha256": "0fe43e95e0a41dd82bec117011dccddd2664647ce47bd7e8d724f7077e63bf42"
+    },
+    {
+      "journey": "attach-a-file",
+      "step": "see-it-attached",
+      "image": "images/journeys/attach-a-file-see-it-attached.png",
+      "locator": {
+        "testid": "note-inspector"
+      },
+      "sha256": "513c5a76a412a96f44578ac47a4caf14c51767021eca4fdadbaba190317752c3"
+    },
+    {
+      "journey": "bring-images-into-the-library",
+      "step": "localize-the-allowed-ones",
+      "image": "images/journeys/bring-images-into-the-library-localize-the-allowed-ones.png",
+      "locator": {
+        "testid": "localize-button"
+      },
+      "sha256": "d1da01895f59473ebc079aefbde9b45aa75a90a1c92fc154943b424f7bd9baa6"
+    },
+    {
+      "journey": "bring-images-into-the-library",
+      "step": "open-note-info",
+      "image": "images/journeys/bring-images-into-the-library-open-note-info.png",
+      "locator": {
+        "testid": "note-inspector-toggle"
+      },
+      "sha256": "2cc02390ee5e467ba80af7f50c868b7199fd00f61464f56b62d3674016089f60"
+    },
+    {
+      "journey": "bring-images-into-the-library",
+      "step": "open-the-note",
+      "image": "images/journeys/bring-images-into-the-library-open-the-note.png",
+      "locator": {
+        "css": ".result-card:has-text(\"Heron drawings\")"
+      },
+      "sha256": "259a87d7566fa7c8335286d4c1066bfb4e9f9fd2b489643170c44fef01c8953b"
+    },
+    {
+      "journey": "bring-images-into-the-library",
+      "step": "read-the-decisions",
+      "image": "images/journeys/bring-images-into-the-library-read-the-decisions.png",
+      "locator": {
+        "testid": "remote-media-list"
+      },
+      "sha256": "3ee461d9903f97db8123d4fd5ad5709c0a84da04d56734694ea71a310b94f249"
+    },
+    {
+      "journey": "check-library-health",
+      "step": "open-health",
+      "image": "images/journeys/check-library-health-open-health.png",
+      "locator": {
+        "testid": "health-header-button"
+      },
+      "sha256": "2f142f69bec59ef09bec781094944f0863198ff8e63f08c50de0ad353503297c"
+    },
+    {
+      "journey": "check-library-health",
+      "step": "what-can-be-repaired",
+      "image": "images/journeys/check-library-health-what-can-be-repaired.png",
+      "locator": {
+        "testid": "library-health-repairs"
+      },
+      "sha256": "de9e03d8fac201ed27c30a1c06995e063bc9aab51db72b31e89986e556698d5b"
+    },
+    {
+      "journey": "check-library-health",
+      "step": "what-could-be-reclaimed",
+      "image": "images/journeys/check-library-health-what-could-be-reclaimed.png",
+      "locator": {
+        "testid": "library-health-gc"
+      },
+      "sha256": "d1d3c7d82d84f634a011d8378d6ca8a44021be4740e7ffcf5bdbb405b48d139b"
+    },
+    {
+      "journey": "check-library-health",
+      "step": "what-has-rotted",
+      "image": "images/journeys/check-library-health-what-has-rotted.png",
+      "locator": {
+        "testid": "library-health-lint"
+      },
+      "sha256": "c239daac6c2ec37424820f94da38de89cbf003caaeb095542773b8afc5316fcb"
+    },
+    {
+      "journey": "choose-a-notebook",
+      "step": "new-note",
+      "image": "images/journeys/choose-a-notebook-new-note.png",
+      "locator": {
+        "testid": "new-note-button"
+      },
+      "sha256": "c8da37d2843a97a6134875d0d38806135400d60be95b7cb948dd7f999e26d835"
+    },
+    {
+      "journey": "choose-a-notebook",
+      "step": "notebook-picker",
+      "image": "images/journeys/choose-a-notebook-notebook-picker.png",
+      "locator": {
+        "testid": "notebook-picker-trigger"
+      },
+      "sha256": "b5a594383ba2f604cbf5de585209c11d673bca33bbffb9b11824dd0c363de5cf"
+    },
+    {
+      "journey": "choose-where-sync-happens",
+      "step": "back-to-the-overview",
+      "image": "images/journeys/choose-where-sync-happens-back-to-the-overview.png",
+      "locator": {
+        "testid": "sync-tab-overview"
+      },
+      "sha256": "cc5b41eaff674438c0cd6432df815ff5ffcd8daf89536398c37f86d52b193905"
+    },
+    {
+      "journey": "choose-where-sync-happens",
+      "step": "choose-a-shared-directory",
+      "image": "images/journeys/choose-where-sync-happens-choose-a-shared-directory.png",
+      "locator": {
+        "testid": "sync-target-directory"
+      },
+      "sha256": "da7b022494b3155c52fa8e48309d966efbcbd6be77cf73192907b86c87cf4171"
+    },
+    {
+      "journey": "choose-where-sync-happens",
+      "step": "name-the-folder",
+      "image": "images/journeys/choose-where-sync-happens-name-the-folder.png",
+      "locator": {
+        "testid": "sync-directory"
+      },
+      "sha256": "0e26532681c50e79292650cb597f9fa5a589ae27d029a41f3320872ece9224ba"
+    },
+    {
+      "journey": "choose-where-sync-happens",
+      "step": "open-setup",
+      "image": "images/journeys/choose-where-sync-happens-open-setup.png",
+      "locator": {
+        "testid": "sync-tab-setup"
+      },
+      "sha256": "a4ac3d11f527dd1a23f174afe7a3089ee667829bd1b6d7b20e3ccfd9dd63b641"
+    },
+    {
+      "journey": "choose-where-sync-happens",
+      "step": "open-the-sync-centre",
+      "image": "images/journeys/choose-where-sync-happens-open-the-sync-centre.png",
+      "locator": {
+        "testid": "sync-header-button"
+      },
+      "sha256": "3a98f8e26a132e876c291d6fc4bd9683366e46e63f58370cf19529c8e4014443"
+    },
+    {
+      "journey": "choose-where-sync-happens",
+      "step": "save-it",
+      "image": "images/journeys/choose-where-sync-happens-save-it.png",
+      "locator": {
+        "testid": "sync-save-transport"
+      },
+      "sha256": "49cbaaa4cef9663815c1612358f292c5dcd94cf135cc7efcbf4eaa36001bbd33"
+    },
+    {
+      "journey": "choose-where-sync-happens",
+      "step": "start-one",
+      "image": "images/journeys/choose-where-sync-happens-start-one.png",
+      "locator": {
+        "testid": "sync-now"
+      },
+      "sha256": "121123b948ae7dab07eae4519eb44988d5c53b98b0040d70eb96f471e4162064"
+    },
+    {
+      "journey": "delete-a-note",
+      "step": "delete-it",
+      "image": "images/journeys/delete-a-note-delete-it.png",
+      "locator": {
+        "testid": "delete-button"
+      },
+      "sha256": "1bdb7723314a8c2f9f1eda52decb098572b221222d4f472d94f4da5fa4aa8800"
+    },
+    {
+      "journey": "delete-a-note",
+      "step": "look-in-the-trash",
+      "image": "images/journeys/delete-a-note-look-in-the-trash.png",
+      "locator": {
+        "testid": "sidebar-row-snb_trash"
+      },
+      "sha256": "3407ee393e7c368a2d72f06a0163b5f2f7fdce76c8d2fa6e94ae4e74d5e0e499"
+    },
+    {
+      "journey": "delete-a-note",
+      "step": "open-all-notes",
+      "image": "images/journeys/delete-a-note-open-all-notes.png",
+      "locator": {
+        "testid": "sidebar-row-snb_all_notes"
+      },
+      "sha256": "a52e540dd12919a73ab558d038078decdd24196e7bedd359e50425fa2eefff7d"
+    },
+    {
+      "journey": "delete-a-note",
+      "step": "open-the-note",
+      "image": "images/journeys/delete-a-note-open-the-note.png",
+      "locator": {
+        "css": ".result-card:has-text(\"Old shopping list\")"
+      },
+      "sha256": "256d55e0b75d4a105cca8202f0152bb758b3db26cae5b65110c109b0cf42bce7"
+    },
+    {
+      "journey": "export-this-library",
+      "step": "name-the-destination",
+      "image": "images/journeys/export-this-library-name-the-destination.png",
+      "locator": {
+        "native": "the “Folder to write the archive into” field"
+      },
+      "sha256": "94e0f100e667e751f4d1dc8972dfc1f7cc0d410a369d1129777485d5e811b9e9"
+    },
+    {
+      "journey": "export-this-library",
+      "step": "open-import-and-export",
+      "image": "images/journeys/export-this-library-open-import-and-export.png",
+      "locator": {
+        "native": "the File menu's “Import and export…” item"
+      },
+      "sha256": "84ed121285b639192194c250d9b50e403d9ce3365e560e7a75821bf8f0dd9be0"
+    },
+    {
+      "journey": "export-this-library",
+      "step": "the-archive",
+      "image": "images/journeys/export-this-library-the-archive.png",
+      "locator": {
+        "native": "the “Export everything” button"
+      },
+      "sha256": "7e3dbeef83e1ba332152295db565d67a5c8f54202341be5b2772939404224652"
+    },
+    {
+      "journey": "find-your-way-around",
+      "step": "the-sidebar",
+      "image": "images/journeys/find-your-way-around-the-sidebar.png",
+      "locator": {
+        "testid": "sidebar-row-nb_help"
+      },
+      "sha256": "28dbb364646407eea2165eeb0595a2f56bc78fc365cbf3213f0e60c7e92cbeff"
+    },
+    {
+      "journey": "import-from-joplin-in-the-app",
+      "step": "name-the-folder",
+      "image": "images/journeys/import-from-joplin-in-the-app-name-the-folder.png",
+      "locator": {
+        "native": "the “Joplin RAW export folder” field"
+      },
+      "sha256": "3be77cb0b5dee7f2f4c5a019cb8c951d7c7b235a8e92880aba80bc6106d7188d"
+    },
+    {
+      "journey": "import-from-joplin-in-the-app",
+      "step": "open-import-and-export",
+      "image": "images/journeys/import-from-joplin-in-the-app-open-import-and-export.png",
+      "locator": {
+        "native": "the File menu's “Import and export…” item"
+      },
+      "sha256": "9a9cb7bbba87e7f3aff36148bc581f54aa2053c4f03ace8e499279899c019a74"
+    },
+    {
+      "journey": "import-from-joplin-in-the-app",
+      "step": "the-report",
+      "image": "images/journeys/import-from-joplin-in-the-app-the-report.png",
+      "locator": {
+        "native": "the “Import” button in the Joplin section"
+      },
+      "sha256": "b66395f16464c1bb91e9d628b87205a5e9557e5c06212650b4ce0a32f33a4bb7"
+    },
+    {
+      "journey": "insert-a-link",
+      "step": "choose-it",
+      "image": "images/journeys/insert-a-link-choose-it.png",
+      "locator": {
+        "testid": "link-suggestion"
+      },
+      "sha256": "6105be7801dce555e45e797b145246d24d0857e65d1d7e3961bea7f8c0a8e361"
+    },
+    {
+      "journey": "insert-a-link",
+      "step": "find-the-other-note",
+      "image": "images/journeys/insert-a-link-find-the-other-note.png",
+      "locator": {
+        "testid": "link-picker-input"
+      },
+      "sha256": "37b6d969987671a5698e129cdc73c1033e3852d51ebedabc4c75e2032758a788"
+    },
+    {
+      "journey": "insert-a-link",
+      "step": "open-note-info",
+      "image": "images/journeys/insert-a-link-open-note-info.png",
+      "locator": {
+        "testid": "note-inspector-toggle"
+      },
+      "sha256": "5630687ed50343c670d9ddefb4790ba5fc50b5e6deac46667ef00258b58cb72e"
+    },
+    {
+      "journey": "insert-a-link",
+      "step": "open-the-note",
+      "image": "images/journeys/insert-a-link-open-the-note.png",
+      "locator": {
+        "css": ".result-card:has-text(\"Reed beds at dusk\")"
+      },
+      "sha256": "02c218a3a2dc9fdf976296c2268e28d7b0fde69e4fbc8c65a0603e8c0b54e0bf"
+    },
+    {
+      "journey": "insert-a-link",
+      "step": "save-when-ready",
+      "image": "images/journeys/insert-a-link-save-when-ready.png",
+      "locator": {
+        "testid": "save-button"
+      },
+      "sha256": "812d9da636559112e46e73dbefc7791ae51644e543831526086d62dcdb4cd324"
+    },
+    {
+      "journey": "invite-another-device",
+      "step": "carry-it-across",
+      "image": "images/journeys/invite-another-device-carry-it-across.png",
+      "locator": {
+        "testid": "sync-invite-code"
+      },
+      "sha256": "a9bf7f944a0f68a466e536f546211e2340e0038e647857910ae42c9f89d9bb17"
+    },
+    {
+      "journey": "invite-another-device",
+      "step": "create-a-code",
+      "image": "images/journeys/invite-another-device-create-a-code.png",
+      "locator": {
+        "testid": "sync-invite-create"
+      },
+      "sha256": "277a8f85dddd55bc65a667cc1ef68bce9b6008dc40f6c08deb17a07b99a3696f"
+    },
+    {
+      "journey": "invite-another-device",
+      "step": "label-it",
+      "image": "images/journeys/invite-another-device-label-it.png",
+      "locator": {
+        "testid": "sync-invite-label"
+      },
+      "sha256": "e8365d7451a4d31fdea50441043fd45c29749cb6fe90fd42289633a7cc9f8a03"
+    },
+    {
+      "journey": "invite-another-device",
+      "step": "open-peers",
+      "image": "images/journeys/invite-another-device-open-peers.png",
+      "locator": {
+        "testid": "sync-tab-peers"
+      },
+      "sha256": "ede7377fe8597d3706d8122f08a77841614194a0cbeba2c02cc3a4fb763476e5"
+    },
+    {
+      "journey": "invite-another-device",
+      "step": "open-the-sync-centre",
+      "image": "images/journeys/invite-another-device-open-the-sync-centre.png",
+      "locator": {
+        "testid": "sync-header-button"
+      },
+      "sha256": "3a98f8e26a132e876c291d6fc4bd9683366e46e63f58370cf19529c8e4014443"
+    },
+    {
+      "journey": "keep-a-search-as-a-notebook",
+      "step": "keep-it",
+      "image": "images/journeys/keep-a-search-as-a-notebook-keep-it.png",
+      "locator": {
+        "testid": "keep-search"
+      },
+      "sha256": "9f273a9edc25678ea8027e2c5b16a2ebbd1997678adee3695eee42cfcd6a73f7"
+    },
+    {
+      "journey": "keep-a-search-as-a-notebook",
+      "step": "name-it",
+      "image": "images/journeys/keep-a-search-as-a-notebook-name-it.png",
+      "locator": {
+        "testid": "keep-search-name"
+      },
+      "sha256": "815b5daf25512c56164242a4ae4ec9099633ec1f214b225fa3fb53d123aa0f66"
+    },
+    {
+      "journey": "keep-a-search-as-a-notebook",
+      "step": "run-a-search",
+      "image": "images/journeys/keep-a-search-as-a-notebook-run-a-search.png",
+      "locator": {
+        "css": ".search-row input"
+      },
+      "sha256": "68667c81baf4d1602d78dbcb4ea30578c6227b77a20d93ffb155f0a5e8047082"
+    },
+    {
+      "journey": "keep-a-search-as-a-notebook",
+      "step": "save-it",
+      "image": "images/journeys/keep-a-search-as-a-notebook-save-it.png",
+      "locator": {
+        "testid": "keep-search-save"
+      },
+      "sha256": "6e98f5f1bf9d4a32752c704e939b35e685b586f214465cbd042533e25228a4bd"
+    },
+    {
+      "journey": "keep-a-search-as-a-notebook",
+      "step": "see-it-work",
+      "image": "images/journeys/keep-a-search-as-a-notebook-see-it-work.png",
+      "locator": {
+        "role": "button",
+        "name": "Search"
+      },
+      "sha256": "6343fee4d98e7232651a579cedcdd3331ed6e52476b4195c04f5d23fdb2281b6"
+    },
+    {
+      "journey": "look-for-peers-without-enrolling-one",
+      "step": "open-peers",
+      "image": "images/journeys/look-for-peers-without-enrolling-one-open-peers.png",
+      "locator": {
+        "testid": "sync-tab-peers"
+      },
+      "sha256": "ede7377fe8597d3706d8122f08a77841614194a0cbeba2c02cc3a4fb763476e5"
+    },
+    {
+      "journey": "look-for-peers-without-enrolling-one",
+      "step": "open-the-sync-centre",
+      "image": "images/journeys/look-for-peers-without-enrolling-one-open-the-sync-centre.png",
+      "locator": {
+        "testid": "sync-header-button"
+      },
+      "sha256": "c38dc1dd78bef5de61c674e50ae6e62088ec898c41ce2dcfe9592b163de46a7d"
+    },
+    {
+      "journey": "look-for-peers-without-enrolling-one",
+      "step": "read-the-empty-list",
+      "image": "images/journeys/look-for-peers-without-enrolling-one-read-the-empty-list.png",
+      "locator": {
+        "css": ".sync-empty"
+      },
+      "sha256": "c03aecfb62fc122aa9049e69eedff9e5a8146757a1a95fb0bd38673ebb6c55ad"
+    },
+    {
+      "journey": "look-for-peers-without-enrolling-one",
+      "step": "scan-the-carrier",
+      "image": "images/journeys/look-for-peers-without-enrolling-one-scan-the-carrier.png",
+      "locator": {
+        "testid": "sync-discover"
+      },
+      "sha256": "d1db1f2d9db361f022386d2d882a09f5f449230aca929bef929ceaca7a72d040"
+    },
+    {
+      "journey": "make-a-protected-backup",
+      "step": "choose-a-password",
+      "image": "images/journeys/make-a-protected-backup-choose-a-password.png",
+      "locator": {
+        "testid": "backup-password"
+      },
+      "sha256": "a83a7b3cf7868e11559ecd073c21789b18f9057985be0c25fc32405d78f0082f"
+    },
+    {
+      "journey": "make-a-protected-backup",
+      "step": "open-backup",
+      "image": "images/journeys/make-a-protected-backup-open-backup.png",
+      "locator": {
+        "testid": "sync-tab-backup"
+      },
+      "sha256": "3fae745caa98f9b1c4a9a5dbb9faf61483ae49dc21a2f3c5a34566540bfc8f56"
+    },
+    {
+      "journey": "make-a-protected-backup",
+      "step": "open-the-sync-centre",
+      "image": "images/journeys/make-a-protected-backup-open-the-sync-centre.png",
+      "locator": {
+        "testid": "sync-header-button"
+      },
+      "sha256": "07801bb4e5df3508c783e9991b51db05bc9f9ec3400b9d1cc5335dba2d8bf71f"
+    },
+    {
+      "journey": "make-a-protected-backup",
+      "step": "type-it-again",
+      "image": "images/journeys/make-a-protected-backup-type-it-again.png",
+      "locator": {
+        "testid": "backup-password-confirm"
+      },
+      "sha256": "07362f100b987fd277a83f903a3cfc8e55307f7caa4493ed505085bbeeb64556"
+    },
+    {
+      "journey": "make-a-protected-backup",
+      "step": "write-it-out",
+      "image": "images/journeys/make-a-protected-backup-write-it-out.png",
+      "locator": {
+        "testid": "backup-create"
+      },
+      "sha256": "9dfcbffb8b2ab70ad689585f6dfa6b49f778133c80993eb24e8f5df1f4e555b5"
+    },
+    {
+      "journey": "publish-a-subset",
+      "step": "open-import-and-export",
+      "image": "images/journeys/publish-a-subset-open-import-and-export.png",
+      "locator": {
+        "native": "the File menu's “Import and export…” item"
+      },
+      "sha256": "4fe8788dac42773d6d02d88516fd58cc42fe62484902ad47f04a7fa8e0ab56d9"
+    },
+    {
+      "journey": "publish-a-subset",
+      "step": "publish-it",
+      "image": "images/journeys/publish-a-subset-publish-it.png",
+      "locator": {
+        "native": "the “Publish this review” button"
+      },
+      "sha256": "df6558256b91326d3668bcec2f84285de7739aeab8dad868ccfc7a42f7b8c299"
+    },
+    {
+      "journey": "publish-a-subset",
+      "step": "review-it",
+      "image": "images/journeys/publish-a-subset-review-it.png",
+      "locator": {
+        "native": "the “Review what this would publish” button"
+      },
+      "sha256": "c9825bef381edfe5635434c470c17f3c688388e14c946a1a6d34d404d3e8fa53"
+    },
+    {
+      "journey": "publish-a-subset",
+      "step": "the-publication",
+      "image": "images/journeys/publish-a-subset-the-publication.png",
+      "locator": {
+        "native": "the publish section's report line"
+      },
+      "sha256": "d8ac4d323d63d2e87977f341bf2004a1d530b1617d6dd453fae90cad9d6a1b8d"
+    },
+    {
+      "journey": "put-a-live-query-in-a-note",
+      "step": "follow-a-result",
+      "image": "images/journeys/put-a-live-query-in-a-note-follow-a-result.png",
+      "locator": {
+        "testid": "note-query-row"
+      },
+      "sha256": "5ff0893e2795e09264bb184c3fe932df00a583142e497edb655bcf82acb61529"
+    },
+    {
+      "journey": "put-a-live-query-in-a-note",
+      "step": "open-the-note",
+      "image": "images/journeys/put-a-live-query-in-a-note-open-the-note.png",
+      "locator": {
+        "css": ".result-card:has-text(\"What I still owe the survey\")"
+      },
+      "sha256": "db63f16fa7f9bacfe41b391069cc9d7ebacda9eb06b205ebe6d104096ac18df4"
+    },
+    {
+      "journey": "put-a-live-query-in-a-note",
+      "step": "read-the-results",
+      "image": "images/journeys/put-a-live-query-in-a-note-read-the-results.png",
+      "locator": {
+        "css": ".note-query[data-note-query-state=\"ok\"]"
+      },
+      "sha256": "69d4d793ff1c81543b20f7b9c0659fb64a267865ee8324ae14efc0a68925586c"
+    },
+    {
+      "journey": "rename-a-tag",
+      "step": "agree-to-it",
+      "image": "images/journeys/rename-a-tag-agree-to-it.png",
+      "locator": {
+        "testid": "tag-rename-apply"
+      },
+      "sha256": "398b9e5e47f76bdcb954cbbf5e2290d5fd86dbd796af36a05f9e5afd0827cf69"
+    },
+    {
+      "journey": "rename-a-tag",
+      "step": "find-the-tag",
+      "image": "images/journeys/rename-a-tag-find-the-tag.png",
+      "locator": {
+        "testid": "tag-rename-place/hide"
+      },
+      "sha256": "1a2a419e5236728ed7244d4290a070a743aa347338841c7415810b4429df605f"
+    },
+    {
+      "journey": "rename-a-tag",
+      "step": "see-what-changes",
+      "image": "images/journeys/rename-a-tag-see-what-changes.png",
+      "locator": {
+        "testid": "tag-rename-preview"
+      },
+      "sha256": "ea8c7a70fba74af07d4753ff3992b1a48f314bd2adf9e513576cad6858975e6e"
+    },
+    {
+      "journey": "rename-a-tag",
+      "step": "type-the-new-name",
+      "image": "images/journeys/rename-a-tag-type-the-new-name.png",
+      "locator": {
+        "testid": "tag-rename-to"
+      },
+      "sha256": "837a09f1dcc19a357bfc6754aef9b9d0bdee8e34da034d68e42ee0ae958ed6c6"
+    },
+    {
+      "journey": "restore-a-note",
+      "step": "back-to-all-notes",
+      "image": "images/journeys/restore-a-note-back-to-all-notes.png",
+      "locator": {
+        "testid": "sidebar-row-snb_all_notes"
+      },
+      "sha256": "b49d74214b845e765309f05d588e669e0cd0e933b6e284e66bff8d3d28188967"
+    },
+    {
+      "journey": "restore-a-note",
+      "step": "open-the-trash",
+      "image": "images/journeys/restore-a-note-open-the-trash.png",
+      "locator": {
+        "testid": "sidebar-row-snb_trash"
+      },
+      "sha256": "e8d231fe7be824ec459e8ad2091ec4587775d5d478eb019aab4f2da5893a7b1b"
+    },
+    {
+      "journey": "restore-a-note",
+      "step": "open-the-trashed-note",
+      "image": "images/journeys/restore-a-note-open-the-trashed-note.png",
+      "locator": {
+        "css": ".result-card:has-text(\"Recipe I still want\")"
+      },
+      "sha256": "9801689489164e86ef575ca899bd1cd250bfb5a91219399407c30dddd32f8b84"
+    },
+    {
+      "journey": "restore-a-note",
+      "step": "restore-it",
+      "image": "images/journeys/restore-a-note-restore-it.png",
+      "locator": {
+        "testid": "restore-button"
+      },
+      "sha256": "50ec6fbc6a5781194742fdf9c54133af370a42b6213bed316d00372cbd01b4bc"
+    },
+    {
+      "journey": "search-by-tag-and-exclude",
+      "step": "run-it",
+      "image": "images/journeys/search-by-tag-and-exclude-run-it.png",
+      "locator": {
+        "role": "button",
+        "name": "Search"
+      },
+      "sha256": "95aa29d54f2baaa20722b0a8145fd97932ade77399286c2b580ecb6edd339d37"
+    },
+    {
+      "journey": "search-by-tag-and-exclude",
+      "step": "type-a-field-query",
+      "image": "images/journeys/search-by-tag-and-exclude-type-a-field-query.png",
+      "locator": {
+        "css": ".search-row input"
+      },
+      "sha256": "68667c81baf4d1602d78dbcb4ea30578c6227b77a20d93ffb155f0a5e8047082"
+    },
+    {
+      "journey": "search-your-notes",
+      "step": "run-it",
+      "image": "images/journeys/search-your-notes-run-it.png",
+      "locator": {
+        "role": "button",
+        "name": "Search"
+      },
+      "sha256": "189d5660ad3370093d77ba462ae588770b85ec57f617112a356047a9b8384f68"
+    },
+    {
+      "journey": "search-your-notes",
+      "step": "type-a-query",
+      "image": "images/journeys/search-your-notes-type-a-query.png",
+      "locator": {
+        "css": ".search-row input"
+      },
+      "sha256": "68667c81baf4d1602d78dbcb4ea30578c6227b77a20d93ffb155f0a5e8047082"
+    },
+    {
+      "journey": "see-what-a-note-connects-to",
+      "step": "follow-one",
+      "image": "images/journeys/see-what-a-note-connects-to-follow-one.png",
+      "locator": {
+        "testid": "local-graph-node"
+      },
+      "sha256": "5bd301c83fe5e31ac109a7a54d12de52b185d3fa65160be721140e8f1f5162e3"
+    },
+    {
+      "journey": "see-what-a-note-connects-to",
+      "step": "open-note-info",
+      "image": "images/journeys/see-what-a-note-connects-to-open-note-info.png",
+      "locator": {
+        "testid": "note-inspector-toggle"
+      },
+      "sha256": "f9c02c0c9185f1252fb1afe0d3ccff503619187aa6a56f67db3566546a4b57c4"
+    },
+    {
+      "journey": "see-what-a-note-connects-to",
+      "step": "open-the-note",
+      "image": "images/journeys/see-what-a-note-connects-to-open-the-note.png",
+      "locator": {
+        "css": ".result-card:has-text(\"Marsh survey, index\")"
+      },
+      "sha256": "cbc8e3804e2adfce9abf9a770ed0da7df4d9ba005f5ce1da57565a780ca3c857"
+    },
+    {
+      "journey": "see-what-a-note-connects-to",
+      "step": "read-the-neighbourhood",
+      "image": "images/journeys/see-what-a-note-connects-to-read-the-neighbourhood.png",
+      "locator": {
+        "testid": "local-graph"
+      },
+      "sha256": "27b9885b3fbcdfd52b9495b41bff353f864ea29020f51e35063a5cc289850d8b"
+    },
+    {
+      "journey": "see-where-a-note-came-from",
+      "step": "open-an-imported-note",
+      "image": "images/journeys/see-where-a-note-came-from-open-an-imported-note.png",
+      "locator": {
+        "css": ".result-card:has-text(\"Ringing record, 12 May\")"
+      },
+      "sha256": "1d49ee0312d8c41d7b29e86556cd5b3089f97a5e6d7c17569d85ec9d23eea733"
+    },
+    {
+      "journey": "see-where-a-note-came-from",
+      "step": "open-note-info",
+      "image": "images/journeys/see-where-a-note-came-from-open-note-info.png",
+      "locator": {
+        "testid": "note-inspector-toggle"
+      },
+      "sha256": "d29d7f2728b75ffedb68388a3f3ade38b03f1c0b3e2df4cdd1f89e50f7df4e75"
+    },
+    {
+      "journey": "see-where-a-note-came-from",
+      "step": "read-the-collection",
+      "image": "images/journeys/see-where-a-note-came-from-read-the-collection.png",
+      "locator": {
+        "testid": "note-collection"
+      },
+      "sha256": "1a96fe63030fa66fc54de0984fd72afefd67b46919592321892496537be57962"
+    },
+    {
+      "journey": "see-which-library-this-is",
+      "step": "choose-a-profile",
+      "image": "images/journeys/see-which-library-this-is-choose-a-profile.png",
+      "locator": {
+        "testid": "profile-switcher"
+      },
+      "sha256": "964ae962767d8bae99a340c0e1dcf478f2dde56fd36cd65e9142a16fcd1adcd1"
+    },
+    {
+      "journey": "see-which-library-this-is",
+      "step": "open-setup",
+      "image": "images/journeys/see-which-library-this-is-open-setup.png",
+      "locator": {
+        "testid": "sync-tab-setup"
+      },
+      "sha256": "8f9058a01a5c4cf507139432a5e6da814e9dacc13ce5d77fb3879160c7ca06ce"
+    },
+    {
+      "journey": "see-which-library-this-is",
+      "step": "open-the-sync-centre",
+      "image": "images/journeys/see-which-library-this-is-open-the-sync-centre.png",
+      "locator": {
+        "testid": "sync-header-button"
+      },
+      "sha256": "3a98f8e26a132e876c291d6fc4bd9683366e46e63f58370cf19529c8e4014443"
+    },
+    {
+      "journey": "see-which-library-this-is",
+      "step": "read-the-identity",
+      "image": "images/journeys/see-which-library-this-is-read-the-identity.png",
+      "locator": {
+        "css": ".sync-profile-identity"
+      },
+      "sha256": "2ad9393d9fae1525a655ba780521bd5e907b84a1562bb596eebcc58f99cb576d"
+    },
+    {
+      "journey": "tag-a-note",
+      "step": "add-it",
+      "image": "images/journeys/tag-a-note-add-it.png",
+      "locator": {
+        "testid": "tag-editor-add"
+      },
+      "sha256": "712a928bcf1114d93679ef6dfb1ebf6b683b332c983b103b96b249d0a55566fc"
+    },
+    {
+      "journey": "tag-a-note",
+      "step": "new-note",
+      "image": "images/journeys/tag-a-note-new-note.png",
+      "locator": {
+        "testid": "new-note-button"
+      },
+      "sha256": "093fcbe9d82eb92c06b706cca56df12f930b680fa514748af5e54d057e5b50d3"
+    },
+    {
+      "journey": "tag-a-note",
+      "step": "open-tags",
+      "image": "images/journeys/tag-a-note-open-tags.png",
+      "locator": {
+        "testid": "tag-editor-trigger"
+      },
+      "sha256": "36c4ac4cc12f573c4162cb33ebca7ed0febc27c9962b342079884b48318ec258"
+    },
+    {
+      "journey": "tag-a-note",
+      "step": "type-a-tag",
+      "image": "images/journeys/tag-a-note-type-a-tag.png",
+      "locator": {
+        "testid": "tag-editor-input"
+      },
+      "sha256": "27eb19fec81447349e5a4fcf378d5f86b6e319fdea461b2723d9755877f8987a"
+    },
+    {
+      "journey": "take-a-snapshot",
+      "step": "name-the-destination",
+      "image": "images/journeys/take-a-snapshot-name-the-destination.png",
+      "locator": {
+        "native": "the “Folder to write the snapshot into” field"
+      },
+      "sha256": "a3ff48370b7a35d6a39b264edc9aefaac060d50d4364566a36f12e69c311958c"
+    },
+    {
+      "journey": "take-a-snapshot",
+      "step": "open-import-and-export",
+      "image": "images/journeys/take-a-snapshot-open-import-and-export.png",
+      "locator": {
+        "native": "the File menu's “Import and export…” item"
+      },
+      "sha256": "fe2bd256b115713ca305f811f881583688a5a881e2cd762b5fa7117673f7b071"
+    },
+    {
+      "journey": "take-a-snapshot",
+      "step": "the-snapshot",
+      "image": "images/journeys/take-a-snapshot-the-snapshot.png",
+      "locator": {
+        "native": "the “Create snapshot” button"
+      },
+      "sha256": "db6dd9a8302992857bd20b0b79d3e31178ac82b8494dd7c789017efc2783bddf"
+    },
+    {
+      "journey": "update-a-note",
+      "step": "change-the-title",
+      "image": "images/journeys/update-a-note-change-the-title.png",
+      "locator": {
+        "css": "input.title-input"
+      },
+      "sha256": "8e39e90d87e1303c7b9ae77bfb22df1d97da5ad2c232122c9bf5cb353385bb4b"
+    },
+    {
+      "journey": "update-a-note",
+      "step": "open-all-notes",
+      "image": "images/journeys/update-a-note-open-all-notes.png",
+      "locator": {
+        "testid": "sidebar-row-snb_all_notes"
+      },
+      "sha256": "179337867ec3a84ca0e2831dbf90d1e5e15ae594830a901dcc05cadb7b719d31"
+    },
+    {
+      "journey": "update-a-note",
+      "step": "open-the-note",
+      "image": "images/journeys/update-a-note-open-the-note.png",
+      "locator": {
+        "css": ".result-card:has-text(\"Notes from the eastern hide\")"
+      },
+      "sha256": "e349c33d57ec50670cd638a38224e48107f3019139cbf7463b6fdc23309814c8"
+    },
+    {
+      "journey": "update-a-note",
+      "step": "save-it",
+      "image": "images/journeys/update-a-note-save-it.png",
+      "locator": {
+        "testid": "save-button"
+      },
+      "sha256": "51ce29dd647a3821f17bf36c1318d432fa2a85be02779a89b372ca82f28aac60"
+    },
+    {
+      "journey": "watch-a-synchronization-job",
+      "step": "open-the-sync-centre",
+      "image": "images/journeys/watch-a-synchronization-job-open-the-sync-centre.png",
+      "locator": {
+        "testid": "sync-header-button"
+      },
+      "sha256": "c38dc1dd78bef5de61c674e50ae6e62088ec898c41ce2dcfe9592b163de46a7d"
+    },
+    {
+      "journey": "watch-a-synchronization-job",
+      "step": "read-the-jobs",
+      "image": "images/journeys/watch-a-synchronization-job-read-the-jobs.png",
+      "locator": {
+        "css": ".sync-list"
+      },
+      "sha256": "7d7f4d359fe179a945eb236d7e7816f248d9379e4f6e69b4664d8f0289114cdb"
+    },
+    {
+      "journey": "watch-a-synchronization-job",
+      "step": "retry-one",
+      "image": "images/journeys/watch-a-synchronization-job-retry-one.png",
+      "locator": {
+        "testid": "sync-job-retry"
+      },
+      "sha256": "690109b38c1c790003a120ae9b36682e1189059299ccdb49ab3da4bfc733add1"
+    },
+    {
+      "journey": "write-a-note",
+      "step": "new-note",
+      "image": "images/journeys/write-a-note-new-note.png",
+      "locator": {
+        "testid": "new-note-button"
+      },
+      "sha256": "093fcbe9d82eb92c06b706cca56df12f930b680fa514748af5e54d057e5b50d3"
+    },
+    {
+      "journey": "write-a-note",
+      "step": "the-editor",
+      "image": "images/journeys/write-a-note-the-editor.png",
+      "locator": {
+        "css": ".cm-content"
+      },
+      "sha256": "5d382a3b24f911910aaa3e5d5ead32d7c80b5886cdf1ed66d81ca973547d0dc3"
+    }
+  ]
+}

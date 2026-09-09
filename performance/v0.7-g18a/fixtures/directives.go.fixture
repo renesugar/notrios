@@ -1,0 +1,16 @@
+package fixture
+
+// Export writes one bounded archive.
+//notrios:doc user archive-write
+//notrios:help archive-v2 writing
+//notrios:claim archive-write-roundtrip go:example/fixture#TestArchiveRoundTrip
+func Export() {}
+
+// Modes lists the accepted restore intents.
+//notrios:doc api restore-modes
+//notrios:enumerates go:example/fixture#RestoreModes
+var RestoreModes = []string{"replace", "adopt"}
+
+// This rationale deliberately has no directive.
+// It explains a tradeoff and is not review input.
+func helper() {}

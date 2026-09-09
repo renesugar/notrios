@@ -1,7 +1,7 @@
 package store
 
 /*
-#include <sqlite3.h>
+#include "csqlite/sqlite3.h"
 */
 import "C"
 
@@ -23,26 +23,32 @@ func (s *SQLiteStore) SetDocumentSource(ctx context.Context, req SetDocumentSour
 	if err := ctx.Err(); err != nil {
 		return DocumentSource{}, err
 	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if err := s.setDocumentSourceLocked(req); err != nil {
+		return DocumentSource{}, err
+	}
+	return s.getDocumentSourceLocked(strings.TrimSpace(req.DocumentID))
+}
+
+func (s *SQLiteStore) setDocumentSourceLocked(req SetDocumentSourceRequest) error {
 	req.DocumentID = strings.TrimSpace(req.DocumentID)
 	req.SourceSystem = strings.TrimSpace(strings.ToLower(req.SourceSystem))
 	if req.DocumentID == "" || req.SourceSystem == "" {
-		return DocumentSource{}, fmt.Errorf("%w: document ID and source system are required", ErrInvalidInput)
+		return fmt.Errorf("%w: document ID and source system are required", ErrInvalidInput)
 	}
 	if strings.TrimSpace(req.MetadataJSON) == "" {
 		req.MetadataJSON = "{}"
 	}
 	publishedTS := parsePublishedTS(req.PublishedAt)
-
-	s.mu.Lock()
-	defer s.mu.Unlock()
 	// The document must exist, but may be trashed: importers can record
 	// provenance for notes that are later marked deleted at the source.
 	exists, err := s.documentExistsLocked(req.DocumentID)
 	if err != nil {
-		return DocumentSource{}, err
+		return err
 	}
 	if !exists {
-		return DocumentSource{}, fmt.Errorf("%w: document %q", ErrNotFound, req.DocumentID)
+		return fmt.Errorf("%w: document %q", ErrNotFound, req.DocumentID)
 	}
 	if err := s.execPreparedLocked(`INSERT INTO document_sources(document_id, source_system, external_id, author, author_id, thread_id, reply_to, source_url, published_at, published_ts, metadata_json)
 		VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, NULLIF(?, ''), ?)
@@ -60,9 +66,9 @@ func (s *SQLiteStore) SetDocumentSource(ctx context.Context, req SetDocumentSour
 			updated_at = CURRENT_TIMESTAMP`,
 		req.DocumentID, req.SourceSystem, req.ExternalID, req.Author, req.AuthorID,
 		req.ThreadID, req.ReplyTo, req.SourceURL, req.PublishedAt, formatTS(publishedTS), req.MetadataJSON); err != nil {
-		return DocumentSource{}, err
+		return err
 	}
-	return s.getDocumentSourceLocked(req.DocumentID)
+	return nil
 }
 
 // parsePublishedTS derives UTC Unix seconds from an ISO 8601 timestamp or an
@@ -102,6 +108,45 @@ func (s *SQLiteStore) GetDocumentSource(ctx context.Context, documentID string) 
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.getDocumentSourceLocked(strings.TrimSpace(documentID))
+}
+
+// GetDocumentSources resolves one bounded reconciliation/import batch without
+// issuing a query per note. Documents without provenance are simply omitted.
+func (s *SQLiteStore) GetDocumentSources(ctx context.Context, documentIDs []string) (map[string]DocumentSource, error) {
+	ctx = contextOrBackground(ctx)
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	result := make(map[string]DocumentSource, len(documentIDs))
+	if len(documentIDs) == 0 {
+		return result, nil
+	}
+	if err := validateLookupItems(documentIDs); err != nil {
+		return nil, err
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	stmt, err := s.prepareLocked(`SELECT ` + documentSourceColumns + `
+		FROM document_sources WHERE document_id IN (` + lookupPlaceholders(len(documentIDs)) + `)`)
+	if err != nil {
+		return nil, err
+	}
+	defer C.sqlite3_finalize(stmt)
+	if err := bindAll(stmt, documentIDs); err != nil {
+		return nil, err
+	}
+	for {
+		rc := C.sqlite3_step(stmt)
+		switch rc {
+		case C.SQLITE_ROW:
+			source := documentSourceFromStmt(stmt)
+			result[source.DocumentID] = source
+		case C.SQLITE_DONE:
+			return result, nil
+		default:
+			return nil, s.stepErrLocked(rc)
+		}
+	}
 }
 
 const documentSourceColumns = `document_id, source_system, external_id, author, author_id, thread_id, reply_to, source_url, published_at, COALESCE(published_ts, 0), metadata_json, created_at, updated_at`

@@ -1,7 +1,7 @@
 package store
 
 /*
-#include <sqlite3.h>
+#include "csqlite/sqlite3.h"
 */
 import "C"
 
@@ -10,6 +10,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/renesugar/notrios/internal/query"
 )
 
 // Notebook, tag, search-notebook, and trash operations for the SQLite store
@@ -332,16 +334,23 @@ func (s *SQLiteStore) MoveDocumentToNotebook(ctx context.Context, documentID, no
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	return s.moveDocumentToNotebookLocked(documentID, notebookID)
+}
 
+// moveDocumentToNotebookLocked is the move without the mutex, so a batch can
+// run many of them inside one transaction. It reports whether anything changed:
+// a note already in the destination is a skip, not a failure, and a report that
+// cannot tell the two apart overstates what a run did.
+func (s *SQLiteStore) moveDocumentToNotebookLocked(documentID, notebookID string) (Document, error) {
 	doc, err := s.getDocumentLocked(documentID)
 	if err != nil {
 		return Document{}, err
 	}
-	if doc.NotebookID == HelpNotebookID {
-		return Document{}, fmt.Errorf("%w: Help notes cannot be moved", ErrProtected)
+	if IsReadOnlyNotebook(doc.NotebookID) {
+		return Document{}, fmt.Errorf("%w: notes in the %s notebook cannot be moved", ErrProtected, ReadOnlyNotebookName(doc.NotebookID))
 	}
-	if notebookID == HelpNotebookID {
-		return Document{}, fmt.Errorf("%w: notes cannot be moved into the Help notebook", ErrProtected)
+	if IsReadOnlyNotebook(notebookID) {
+		return Document{}, fmt.Errorf("%w: notes cannot be moved into the %s notebook", ErrProtected, ReadOnlyNotebookName(notebookID))
 	}
 	if exists, err := s.notebookExistsLocked(notebookID); err != nil {
 		return Document{}, err
@@ -356,36 +365,46 @@ func (s *SQLiteStore) MoveDocumentToNotebook(ctx context.Context, documentID, no
 
 // ListNotebookDocuments returns the current non-deleted notes directly in a
 // notebook (no descendant notebooks), most recently updated first.
-func (s *SQLiteStore) ListNotebookDocuments(ctx context.Context, notebookID string, limit int) ([]Document, error) {
+func (s *SQLiteStore) ListNotebookDocuments(ctx context.Context, notebookID string, req DocumentPageRequest) (DocumentPage, error) {
 	ctx = contextOrBackground(ctx)
 	if err := ctx.Err(); err != nil {
-		return nil, err
+		return DocumentPage{}, err
 	}
 	notebookID = strings.TrimSpace(notebookID)
-	if limit <= 0 || limit > 500 {
-		limit = 100
-	}
+	req = normalizeDocumentPageRequest(req)
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if exists, err := s.notebookExistsLocked(notebookID); err != nil {
-		return nil, err
+		return DocumentPage{}, err
 	} else if !exists {
-		return nil, fmt.Errorf("%w: notebook %q", ErrNotFound, notebookID)
+		return DocumentPage{}, fmt.Errorf("%w: notebook %q", ErrNotFound, notebookID)
+	}
+	binding := cursorBinding("notebook_documents", notebookID, "updated_at:desc,id:desc")
+	where := `d.notebook_id = ? AND d.deleted_at IS NULL`
+	args := []string{notebookID}
+	if strings.TrimSpace(req.Cursor) != "" {
+		timestamp, id, err := decodeChronologicalCursor(req.Cursor, binding)
+		if err != nil {
+			return DocumentPage{}, err
+		}
+		where += ` AND (d.updated_at, d.id) < (?, ?)`
+		args = append(args, timestamp, id)
 	}
 	stmt, err := s.prepareLocked(`SELECT d.id, d.collection_id, d.title, substr(r.body, 1, 240), COALESCE(r.body_mime_type, d.body_mime_type), d.current_revision_id, d.created_at, d.updated_at, COALESCE(d.notebook_id, '')
 		FROM documents d
 		JOIN document_revisions r ON r.id = d.current_revision_id
-		WHERE d.notebook_id = ? AND d.deleted_at IS NULL
-		ORDER BY d.updated_at DESC, d.id
-		LIMIT ` + itoa(limit))
+		WHERE ` + where + `
+		ORDER BY d.updated_at DESC, d.id DESC
+		LIMIT ` + itoa(req.Limit+1))
 	if err != nil {
-		return nil, err
+		return DocumentPage{}, err
 	}
 	defer C.sqlite3_finalize(stmt)
-	if err := bindAll(stmt, []string{notebookID}); err != nil {
-		return nil, err
+	if err := bindAll(stmt, args); err != nil {
+		return DocumentPage{}, err
 	}
 	docs := []Document{}
+	sortTimes := []string{}
 	for {
 		rc := C.sqlite3_step(stmt)
 		switch rc {
@@ -405,10 +424,17 @@ func (s *SQLiteStore) ListNotebookDocuments(ctx context.Context, notebookID stri
 			}
 			doc.URI = DocumentURI(doc.CollectionID, doc.ID)
 			docs = append(docs, doc)
+			sortTimes = append(sortTimes, columnText(stmt, 7))
 		case C.SQLITE_DONE:
-			return docs, nil
+			page := DocumentPage{Documents: docs}
+			if len(page.Documents) > req.Limit {
+				page.Documents = page.Documents[:req.Limit]
+				last := req.Limit - 1
+				page.NextCursor = encodeChronologicalCursor(binding, sortTimes[last], page.Documents[last].ID)
+			}
+			return page, nil
 		default:
-			return nil, s.stepErrLocked(rc)
+			return DocumentPage{}, s.stepErrLocked(rc)
 		}
 	}
 }
@@ -425,33 +451,98 @@ func (s *SQLiteStore) AddDocumentTag(ctx context.Context, documentID, tagName st
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	tag, _, err := s.addDocumentTagLocked(documentID, tagName)
+	return tag, err
+}
 
+// addDocumentTagLocked adds a tag and says whether the note actually gained it.
+// A tag the note already carried is a skip; the caller decides how to report it.
+func (s *SQLiteStore) addDocumentTagLocked(documentID, tagName string) (Tag, bool, error) {
 	if _, err := s.getDocumentLocked(documentID); err != nil {
-		return Tag{}, err
+		return Tag{}, false, err
 	}
 	tag, found, err := s.findTagByNameLocked(tagName)
 	if err != nil {
-		return Tag{}, err
+		return Tag{}, false, err
 	}
 	if !found {
 		id, err := NewID("tag")
 		if err != nil {
-			return Tag{}, err
+			return Tag{}, false, err
 		}
 		if err := s.execPreparedLocked(`INSERT INTO tags(id, name) VALUES(?, ?)`, id, tagName); err != nil {
-			return Tag{}, err
+			return Tag{}, false, err
 		}
 		tag = Tag{ID: id, Name: tagName}
 	}
+	already, err := s.countLocked(`SELECT COUNT(1) FROM note_tags WHERE document_id = ? AND tag_id = ?`, documentID, tag.ID)
+	if err != nil {
+		return Tag{}, false, err
+	}
 	if err := s.execPreparedLocked(`INSERT OR IGNORE INTO note_tags(document_id, tag_id) VALUES(?, ?)`, documentID, tag.ID); err != nil {
-		return Tag{}, err
+		return Tag{}, false, err
 	}
 	count, err := s.tagNoteCountLocked(tag.ID)
 	if err != nil {
-		return Tag{}, err
+		return Tag{}, false, err
 	}
 	tag.NoteCount = count
-	return tag, nil
+	return tag, already == 0, nil
+}
+
+// UpsertTag gives importers a stable source-derived tag identity. Action is
+// create, update, merge (an existing plain tag had the same name), or skip.
+func (s *SQLiteStore) UpsertTag(ctx context.Context, preferredID, tagName string) (Tag, string, error) {
+	ctx = contextOrBackground(ctx)
+	if err := ctx.Err(); err != nil {
+		return Tag{}, "", err
+	}
+	preferredID = strings.TrimSpace(preferredID)
+	tagName = strings.TrimSpace(tagName)
+	if preferredID == "" || tagName == "" {
+		return Tag{}, "", fmt.Errorf("%w: preferred tag ID and name are required", ErrInvalidInput)
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	stmt, err := s.prepareLocked(`SELECT id, name FROM tags WHERE id = ?`)
+	if err != nil {
+		return Tag{}, "", err
+	}
+	if err := bindAll(stmt, []string{preferredID}); err != nil {
+		C.sqlite3_finalize(stmt)
+		return Tag{}, "", err
+	}
+	rc := C.sqlite3_step(stmt)
+	if rc == C.SQLITE_ROW {
+		currentName := columnText(stmt, 1)
+		C.sqlite3_finalize(stmt)
+		action := "skip"
+		if currentName != tagName {
+			if err := s.execPreparedLocked(`UPDATE tags SET name = ? WHERE id = ?`, tagName, preferredID); err != nil {
+				if isUniqueConstraintErr(err) {
+					return Tag{}, "", fmt.Errorf("%w: tag name %q is already in use", ErrNameConflict, tagName)
+				}
+				return Tag{}, "", err
+			}
+			action = "update"
+		}
+		count, err := s.tagNoteCountLocked(preferredID)
+		return Tag{ID: preferredID, Name: tagName, NoteCount: count}, action, err
+	}
+	C.sqlite3_finalize(stmt)
+	if rc != C.SQLITE_DONE {
+		return Tag{}, "", s.stepErrLocked(rc)
+	}
+	if existing, found, err := s.findTagByNameLocked(tagName); err != nil {
+		return Tag{}, "", err
+	} else if found {
+		existing.NoteCount, err = s.tagNoteCountLocked(existing.ID)
+		return existing, "merge", err
+	}
+	if err := s.execPreparedLocked(`INSERT INTO tags(id, name) VALUES(?, ?)`, preferredID, tagName); err != nil {
+		return Tag{}, "", err
+	}
+	return Tag{ID: preferredID, Name: tagName}, "create", nil
 }
 
 func (s *SQLiteStore) RemoveDocumentTag(ctx context.Context, documentID, tagName string) error {
@@ -462,19 +553,32 @@ func (s *SQLiteStore) RemoveDocumentTag(ctx context.Context, documentID, tagName
 	documentID = strings.TrimSpace(documentID)
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	_, err := s.removeDocumentTagLocked(documentID, tagName)
+	return err
+}
 
+// removeDocumentTagLocked removes a tag and says whether the note actually had
+// it. A note that never carried the tag is a skip rather than a failure.
+func (s *SQLiteStore) removeDocumentTagLocked(documentID, tagName string) (bool, error) {
 	tag, found, err := s.findTagByNameLocked(strings.TrimSpace(tagName))
 	if err != nil {
-		return err
+		return false, err
 	}
 	if !found {
-		return ErrNotFound
+		return false, ErrNotFound
+	}
+	had, err := s.countLocked(`SELECT COUNT(1) FROM note_tags WHERE document_id = ? AND tag_id = ?`, documentID, tag.ID)
+	if err != nil {
+		return false, err
 	}
 	if err := s.execPreparedLocked(`DELETE FROM note_tags WHERE document_id = ? AND tag_id = ?`, documentID, tag.ID); err != nil {
-		return err
+		return false, err
 	}
 	// Unreferenced tags disappear from the sidebar entirely.
-	return s.execPreparedLocked(`DELETE FROM tags WHERE id = ? AND NOT EXISTS (SELECT 1 FROM note_tags WHERE tag_id = ?)`, tag.ID, tag.ID)
+	if err := s.execPreparedLocked(`DELETE FROM tags WHERE id = ? AND NOT EXISTS (SELECT 1 FROM note_tags WHERE tag_id = ?)`, tag.ID, tag.ID); err != nil {
+		return false, err
+	}
+	return had > 0, nil
 }
 
 func (s *SQLiteStore) findTagByNameLocked(name string) (Tag, bool, error) {
@@ -508,10 +612,44 @@ func (s *SQLiteStore) ListDocumentTags(ctx context.Context, documentID string) (
 		ORDER BY t.name COLLATE NOCASE`, strings.TrimSpace(documentID))
 }
 
-func (s *SQLiteStore) ListTags(ctx context.Context) ([]Tag, error) {
-	return s.listTags(ctx, `SELECT t.id, t.name, (SELECT COUNT(1) FROM note_tags nt JOIN documents d ON d.id = nt.document_id WHERE nt.tag_id = t.id AND d.deleted_at IS NULL)
-		FROM tags t
-		ORDER BY t.name COLLATE NOCASE`)
+func (s *SQLiteStore) ListTags(ctx context.Context, query TagQuery) (TagPage, error) {
+	const counted = `SELECT t.id, t.name, (SELECT COUNT(1) FROM note_tags nt JOIN documents d ON d.id = nt.document_id WHERE nt.tag_id = t.id AND d.deleted_at IS NULL)
+		FROM tags t`
+	where, values := "", []string{}
+	switch {
+	case strings.TrimSpace(query.Name) != "":
+		where = " WHERE t.name = ? COLLATE NOCASE"
+		values = append(values, strings.TrimSpace(query.Name))
+	case strings.TrimSpace(query.Prefix) != "":
+		// The branch and its children, and nothing that merely starts with the
+		// same letters: "shopping" is not a prefix of "shoppingcart" in a
+		// hierarchy whose separator is "/".
+		prefix := strings.TrimSuffix(strings.TrimSpace(query.Prefix), "/")
+		where = " WHERE (t.name = ? COLLATE NOCASE OR t.name LIKE ? ESCAPE '\\')"
+		values = append(values, prefix, escapeTagLike(prefix)+"/%")
+	}
+	sql := counted + where + " ORDER BY t.name COLLATE NOCASE"
+	if query.Limit > 0 {
+		// One more than asked for, so truncation is observed rather than
+		// guessed at from a full page.
+		sql += fmt.Sprintf(" LIMIT %d", query.Limit+1)
+	}
+	tags, err := s.listTags(ctx, sql, values...)
+	if err != nil {
+		return TagPage{}, err
+	}
+	page := TagPage{Tags: tags}
+	if query.Limit > 0 && len(tags) > query.Limit {
+		page.Tags, page.Truncated = tags[:query.Limit], true
+	}
+	return page, nil
+}
+
+// escapeTagLike neutralises the characters LIKE treats as wildcards, so a tag
+// named "50%" is a prefix of its own children and not of everything.
+func escapeTagLike(value string) string {
+	replacer := strings.NewReplacer(`\`, `\\`, "%", `\%`, "_", `\_`)
+	return replacer.Replace(value)
 }
 
 func (s *SQLiteStore) listTags(ctx context.Context, query string, values ...string) ([]Tag, error) {
@@ -556,6 +694,9 @@ func (s *SQLiteStore) CreateSearchNotebook(ctx context.Context, req CreateSearch
 	req.Query = strings.TrimSpace(req.Query)
 	if req.Name == "" {
 		return SearchNotebook{}, fmt.Errorf("%w: search notebook name is required", ErrInvalidInput)
+	}
+	if _, err := query.Parse(req.Query, time.Now()); err != nil {
+		return SearchNotebook{}, fmt.Errorf("%w: invalid search notebook query: %v", ErrInvalidInput, err)
 	}
 	id := strings.TrimSpace(req.PreferredID)
 	if id == "" {
@@ -661,27 +802,41 @@ func (s *SQLiteStore) DeleteSearchNotebook(ctx context.Context, id string) error
 
 // ListTrash returns soft-deleted documents, newest deletions first. Trashed
 // documents are excluded from every other query surface.
-func (s *SQLiteStore) ListTrash(ctx context.Context, limit int) ([]Document, error) {
+func (s *SQLiteStore) ListTrash(ctx context.Context, req DocumentPageRequest) (DocumentPage, error) {
 	ctx = contextOrBackground(ctx)
 	if err := ctx.Err(); err != nil {
-		return nil, err
+		return DocumentPage{}, err
 	}
-	if limit <= 0 || limit > 500 {
-		limit = 100
+	req = normalizeDocumentPageRequest(req)
+	binding := cursorBinding("trash_documents", "deleted_at:desc,id:desc")
+	where := `d.deleted_at IS NOT NULL AND NOT EXISTS (
+		SELECT 1 FROM sync_death_certificates death WHERE death.document_id=d.id)`
+	args := []string{}
+	if strings.TrimSpace(req.Cursor) != "" {
+		timestamp, id, err := decodeChronologicalCursor(req.Cursor, binding)
+		if err != nil {
+			return DocumentPage{}, err
+		}
+		where += ` AND (d.deleted_at, d.id) < (?, ?)`
+		args = append(args, timestamp, id)
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	stmt, err := s.prepareLocked(`SELECT d.id, d.collection_id, d.title, r.body, COALESCE(r.body_mime_type, d.body_mime_type), d.current_revision_id, d.created_at, d.updated_at, COALESCE(d.deleted_at, ''), COALESCE(d.notebook_id, '')
 		FROM documents d
 		JOIN document_revisions r ON r.id = d.current_revision_id
-		WHERE d.deleted_at IS NOT NULL
-		ORDER BY d.deleted_at DESC, d.id
-		LIMIT ` + itoa(limit))
+		WHERE ` + where + `
+		ORDER BY d.deleted_at DESC, d.id DESC
+		LIMIT ` + itoa(req.Limit+1))
 	if err != nil {
-		return nil, err
+		return DocumentPage{}, err
 	}
 	defer C.sqlite3_finalize(stmt)
+	if err := bindAll(stmt, args); err != nil {
+		return DocumentPage{}, err
+	}
 	docs := []Document{}
+	sortTimes := []string{}
 	for {
 		rc := C.sqlite3_step(stmt)
 		switch rc {
@@ -703,12 +858,27 @@ func (s *SQLiteStore) ListTrash(ctx context.Context, limit int) ([]Document, err
 			}
 			doc.URI = DocumentURI(doc.CollectionID, doc.ID)
 			docs = append(docs, doc)
+			sortTimes = append(sortTimes, columnText(stmt, 8))
 		case C.SQLITE_DONE:
-			return docs, nil
+			page := DocumentPage{Documents: docs}
+			if len(page.Documents) > req.Limit {
+				page.Documents = page.Documents[:req.Limit]
+				last := req.Limit - 1
+				page.NextCursor = encodeChronologicalCursor(binding, sortTimes[last], page.Documents[last].ID)
+			}
+			return page, nil
 		default:
-			return nil, s.stepErrLocked(rc)
+			return DocumentPage{}, s.stepErrLocked(rc)
 		}
 	}
+}
+
+func normalizeDocumentPageRequest(req DocumentPageRequest) DocumentPageRequest {
+	if req.Limit <= 0 || req.Limit > 500 {
+		req.Limit = 100
+	}
+	req.Cursor = strings.TrimSpace(req.Cursor)
+	return req
 }
 
 // RestoreDocument undeletes a trashed document: it becomes visible in queries
@@ -736,19 +906,7 @@ func (s *SQLiteStore) RestoreDocument(ctx context.Context, id string) (Document,
 			_ = s.execLocked("ROLLBACK")
 		}
 	}()
-	if err := s.execPreparedLocked(`UPDATE documents SET deleted_at = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?`, id); err != nil {
-		return Document{}, err
-	}
-	if err := s.execPreparedLocked(`DELETE FROM documents_fts WHERE document_id = ?`, id); err != nil {
-		return Document{}, err
-	}
-	if err := s.execPreparedLocked(`INSERT INTO documents_fts(document_id, collection_id, title, body) VALUES(?, ?, ?, ?)`, id, collectionID, title, body); err != nil {
-		return Document{}, err
-	}
-	if err := s.rebuildDocumentLinksLocked(id, collectionID, body); err != nil {
-		return Document{}, err
-	}
-	if err := s.enqueueProjectionLocked(id, "upsert"); err != nil {
+	if err := s.restoreDocumentBodyLocked(id, title, body, collectionID); err != nil {
 		return Document{}, err
 	}
 	if err := s.execLocked("COMMIT"); err != nil {
@@ -756,6 +914,35 @@ func (s *SQLiteStore) RestoreDocument(ctx context.Context, id string) (Document,
 	}
 	committed = true
 	return s.getDocumentLocked(id)
+}
+
+// restoreDocumentLocked undeletes a trashed note without owning a transaction,
+// so a batch can restore many inside one.
+func (s *SQLiteStore) restoreDocumentLocked(id string) (Document, error) {
+	title, body, collectionID, err := s.trashedDocumentStateLocked(id)
+	if err != nil {
+		return Document{}, err
+	}
+	if err := s.restoreDocumentBodyLocked(id, title, body, collectionID); err != nil {
+		return Document{}, err
+	}
+	return s.getDocumentLocked(id)
+}
+
+func (s *SQLiteStore) restoreDocumentBodyLocked(id, title, body, collectionID string) error {
+	if err := s.execPreparedLocked(`UPDATE documents SET deleted_at = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?`, id); err != nil {
+		return err
+	}
+	if err := s.execPreparedLocked(`DELETE FROM documents_fts WHERE document_id = ?`, id); err != nil {
+		return err
+	}
+	if err := s.execPreparedLocked(`INSERT INTO documents_fts(document_id, collection_id, title, body) VALUES(?, ?, ?, ?)`, id, collectionID, title, body); err != nil {
+		return err
+	}
+	if err := s.rebuildDocumentLinksLocked(id, collectionID, body); err != nil {
+		return err
+	}
+	return s.enqueueProjectionLocked(id, "upsert")
 }
 
 // PurgeDocument permanently deletes a trashed document and its revisions.
@@ -790,10 +977,20 @@ func (s *SQLiteStore) PurgeDocument(ctx context.Context, id string) error {
 			_ = s.execLocked("ROLLBACK")
 		}
 	}()
+	if err := s.execPreparedLocked(`UPDATE resources
+		SET unreferenced_at = CURRENT_TIMESTAMP, unreferenced_reason = 'purged_document'
+		WHERE id IN (SELECT resource_id FROM document_resource_refs WHERE document_id = ?)
+		  AND NOT EXISTS (
+			SELECT 1 FROM document_resource_refs other
+			WHERE other.resource_id = resources.id AND other.document_id <> ?
+		  )`, id, id); err != nil {
+		return err
+	}
 	statements := []string{
 		`DELETE FROM note_tags WHERE document_id = ?`,
 		`DELETE FROM document_resource_refs WHERE document_id = ?`,
 		`DELETE FROM document_links WHERE source_document_id = ?`,
+		`DELETE FROM document_blocks WHERE document_id = ?`,
 		`UPDATE document_links SET target_document_id = NULL, resolution_status = 'target_deleted' WHERE target_document_id = ?`,
 		`DELETE FROM documents_fts WHERE document_id = ?`,
 		`DELETE FROM document_revisions WHERE document_id = ?`,
@@ -828,7 +1025,8 @@ func (s *SQLiteStore) trashedDocumentStateLocked(id string) (title, body, collec
 	stmt, err := s.prepareLocked(`SELECT d.title, r.body, d.collection_id
 		FROM documents d
 		JOIN document_revisions r ON r.id = d.current_revision_id
-		WHERE d.id = ? AND d.deleted_at IS NOT NULL`)
+		WHERE d.id = ? AND d.deleted_at IS NOT NULL
+		  AND NOT EXISTS (SELECT 1 FROM sync_death_certificates death WHERE death.document_id=d.id)`)
 	if err != nil {
 		return "", "", "", err
 	}

@@ -1,5 +1,7 @@
 # Testing Policy
 
+**How to keep this document current is in [`AGENTS.md`](AGENTS.md)** — under "Keeping the reference documents current".
+
 ## Definition of done
 
 A task is done only when:
@@ -22,7 +24,18 @@ A task is done only when:
 - Document CRUD + revisions + FTS5 updates.
 - Resource upload/download and reference counting.
 - Importer fixtures.
+- Joplin RAW hierarchy/tag/source-bundle, dry-run parity, changed-resource,
+  conflict, fingerprint, and interruption/resume fixtures. Canonical fixtures
+  use first-line titles and cover CR/LF-only physical splitting, OCR control
+  characters, UTF-8 BOM/invalid input, duplicate/future property keys, and
+  delimiter whitespace.
 - REST/MCP service-layer parity.
+- Documentation/source graph: `make docaudit` must resolve every frozen Go and
+  TypeScript declaration, typed claim check, Markdown template slot, executable
+  fence, and GUI journey owner. `performance/v0.7-g18c/REPORT.json` is an exact
+  freshness artifact; manual prose remains separately unverified until moved
+  or generated. Go mutation fixtures cover graph failures, and the web Vitest
+  suite covers the TypeScript compiler-API compatibility path.
 
 ### UI tests
 
@@ -38,6 +51,17 @@ Minimum UI flows:
 - Preview note.
 - Click internal document link.
 - Upload/download resource.
+- Resource report invariants: exact duplicates may span collections; a blob is
+  unreferenced only when none of its logical resources has any document
+  reference; trashed-note references remain protective; notebook usage counts
+  current notes only.
+- Perceptual-hook invariants: the default is inert, hashes are reused per exact
+  blob/algorithm, `block` rules are rejected, and near matches never collapse
+  distinct SHA-256 blobs.
+- Garbage-collection invariants: no reference (including Trash) may be crossed;
+  dry run never mutates; apply rechecks state; purged resources use their
+  longer window; shared blobs survive while any logical resource remains; a
+  custom retention gate can defer otherwise-expired candidates.
 - Search and open result.
 
 Layout-resize testing rule: never verify window-resize behavior through
@@ -51,7 +75,7 @@ the window; editor and preview split equally after a resize) from the DOM.
 
 ### Performance tests
 
-Synthetic datasets should eventually cover:
+v0.3 H7 generated datasets cover:
 
 - 10k notes.
 - 100k notes.
@@ -59,7 +83,738 @@ Synthetic datasets should eventually cover:
 - 1M links.
 - large resource directory with deduplication.
 
-Performance thresholds are not defined yet; first milestones should record baseline timings.
+Each profile records hardware/OS/SQLite version, database and index sizes,
+query plan, elapsed distribution, and peak RSS for:
+
+- first and next All Notes pages;
+- a 90th-percentile-deep traversal (keyset, never a fabricated giant offset);
+- selective/nonselective FTS queries and notebook/tag filters;
+- importer inventory/write batches and native archive streaming;
+- first/next merged FTS5/Recoll pages when Recoll is installed.
+
+Ordinary local first/next pages target p95 below 100 ms on the recorded
+reference machine. Memory, subprocess output, and rendered rows must remain
+proportional to the page/batch limit. This target catches regressions but is not
+a machine-independent product guarantee.
+
+H7's executable harness is `scripts/run_large_library_profile.sh`; its committed
+10k/100k/500k JSON evidence, including the precise environment and query plans,
+lives under `performance/v0.3-h7/`. The ordinary-page gate is asserted by the
+test. Recoll-specific measurements remain conditional on Recoll being installed
+and are part of H10 sidecar hardening.
+
+H8/J3's executable harness is `scripts/run_joplin_import_profile.sh`. It accepts
+100, 10k, or 100k generated Joplin notes with nested folders, tags, and
+resources. Every tier runs the same bounded dry-run planner, interrupts a real
+canonical import at a durable note-batch boundary, resumes it, completes a
+final link pass, and verifies a revision-stable full no-op. Reports record dry
+run/import/no-op duration, canonical/link batch counts, temporary manifest
+size, environment, Go memory, and process peak RSS. Exact unknown/reordered-
+property and CRLF-byte preservation is covered separately by the focused
+importer fixture.
+
+v0.4 J2 adds `scripts/run_real_joplin_profile.sh` for read-only real-export
+profiles over the recipe Joplin/Obsidian pair and the attachment-bearing Joplin
+archive. Committed evidence under `performance/v0.4-j2/` contains
+only aggregate counts, timings, sizes, warnings, and redacted environment
+facts—never note titles, bodies, source paths, resources, or databases. J2
+measures the production dry-run relationship planner against actual links,
+including peak RSS and a no-source-write check. J3 adds
+`scripts/run_full_joplin_import_profile.sh` for aggregate-only complete
+transactional interruption/resume, search readiness, final links, SQLite
+settings/size, and revision-stable no-op evidence. The recipe evidence under
+`performance/v0.4-j3/` covers 1,237,553 source items and 382,206 canonical
+notes; private paths, titles, bodies, resources, and databases are excluded.
+
+v0.4 Q1 extends `scripts/run_large_library_profile.sh` with correctness and
+timing checks for boolean `OR`, grouped field negation, and the recursive
+`category:` alias. Aggregate 10k evidence under `performance/v0.4-q1/` records
+the established ordinary-page gate plus representative expression metrics.
+The intentionally nonselective pure-negation metric is reported separately and
+is not represented as an ordinary-page latency guarantee.
+
+v0.4 P1 extends the same generated profile with a complete content-free
+full-archive selection dry run. The 100k tier asserts selected document,
+reachable resource, and link-classification counts; capped visible details;
+and a full manifest digest. Evidence under `performance/v0.4-p1/` records
+elapsed time and whole-process peak RSS. Focused fixtures separately cover
+recursive notebooks, `any`/`all` tag/query/explicit-ID selectors, secure
+publication defaults, private/broken links, source-bundle key hashing,
+metadata decisions, deterministic replay, read-only canonical state, and
+REST/MCP output parity/caps.
+
+H9's `scripts/run_obsidian_import_profile.sh` uses 100/10k/100k/500k tiers for
+generated vaults with nested folders, aliases, relative links,
+embeds, heading/block anchors, unknown frontmatter, exact source-bundle
+accounting, and local assets. The 100 and 10k tiers inject a durable
+interruption and verify resumed dry-run parity; 100k and 500k are bounded
+inventory/dry-run profiles. Focused fixtures recover original CRLF Markdown and
+binary bytes exactly and cover conflict renames, richer graph edges, stable
+asset refresh, Trash, and idempotence.
+
+H10's `scripts/run_recoll_hardening_profile.sh` generates 100k Markdown
+projection files and exercises the installed Recoll index/query binaries,
+exact bounded result slices, and incremental deletion/addition convergence.
+The scale tier uses Recoll's internal plain-text extraction to isolate native
+index/result behavior; the ordinary live integration test separately verifies
+the production Notrios frontmatter handler and field/range searches. The same
+profile records missing/stale/orphan repair followed by a zero-drift
+reconciliation. Evidence lives under `performance/v0.3-h10/`.
+
+G4's `scripts/run_sync_journal_profile.sh` runs identical generated 100,000-
+note bounded imports with the schema-v19 journal disabled and enabled. It
+asserts zero pre-enrollment operations and exactly three monotonic operations
+per enrolled note (document, revision, provenance), then records elapsed
+throughput and SQLite byte overhead. This is a desktop write-path bound; it is
+not envelope, transport, encryption, or mobile evidence.
+
+G5 adds two complementary state-vector layers. `internal/syncstate` runs a
+100-seed, three-replica model that shuffles, duplicates, drops, and eventually
+redelivers 25 operations per source while asserting that no contiguous vector
+crosses an absent sequence. `internal/store/sync_admission_test.go` repeats the
+critical schedule against real SQLite replicas and additionally covers
+dependency blocking/drain, deterministic missing plans, exact and conflicting
+replay, unknown records, compatibility refusal without auto-enrollment,
+sequence and byte/count ceilings, backward/ahead acknowledgements, wall-clock
+skew, restart, injected pre-commit rollback, and local sequence exhaustion.
+These are local fixtures only; they do not count as transport, cryptographic,
+or canonical-merge validation.
+
+SQLite's OFFSET cost grows linearly with skipped rows. In an ideal local
+1,000,000-row covering-index probe during the 2026-07 plan review, offsets
+10k/50k/100k/200k/500k/900k took approximately
+0.01/0.02/0.03/0.06/0.13/0.43 seconds while equivalent keyset pages rounded
+below 0.01 seconds. The exact crossover depends on joins, sort, cache, storage,
+and hardware, so the architectural rule is: use keysets for any unbounded
+collection, not “switch after N total notes.”
+
+### Native archive v2 export
+
+v0.4 P3 export fixtures build a complete canonical database (nested notebooks,
+tags, a shared resource, cross-boundary links, provenance with private source
+metadata, an exact source bundle, a trashed note, and two notes with identical
+bodies) and assert that a full archive verifies, carries complete revision
+history and the trashed note, deduplicates identical bodies to one object, and
+preserves private metadata. Subset fixtures assert the scoped notebook/tag set,
+omitted search notebooks, blanked private source `metadata_json`, and
+`target_excluded` links whose targets the selection excluded. Further fixtures
+cover byte-identical manifests across repeated exports, binding the dry-run
+`PlanSelection` digest, an interrupted export verifying as incomplete, a
+resumed export reusing published objects and pruning unlisted ones, refusal of
+foreign destinations and existing complete archives, refusal of
+publication-handoff and content-rewriting link actions, the object budget, and
+small record chunking.
+
+`scripts/run_archive_export_profile.sh` drives generated
+100/1,000/5,000/100,000-note export, verify, resume, and subset tiers. The
+100,000-note tier exists because the pre-P3a container could not reach it.
+Evidence under `performance/v0.4-p3/` and `performance/v0.4-p3a/` records
+aggregate timings, object/byte counts, manifest size, and whole-process peak
+RSS — never note titles, bodies, resources, or local paths.
+
+P3a additionally exports and verifies the real 382,206-note Joplin RAW recipe
+corpus. That evidence is aggregate only and no private corpus, database, or
+archive is committed.
+
+### Native archive v2 container
+
+v0.4 P3a fixtures cover the container revision that made a real library
+archivable. `TestManifestSizeIsIndependentOfArchiveSize` exports 2,000 notes
+and asserts the manifest stays under 32 KiB while the object count exceeds the
+note count — the inline form needed roughly 1.3 MB at that size and stopped
+near 6,500 objects. Further fixtures assert bounded index chunking, the
+two-level `ab/cd` fanout, globally sorted unique index entries across chunks,
+and that corrupting an index chunk breaks the checksum chain.
+
+Spool fixtures cover the external-sort merge directly: balanced joins,
+missing declarations, duplicate declarations, unreferenced blobs, blob
+references with the wrong byte length, and global key ordering across buckets.
+
+The golden fixture is produced by a generator that does not use the exporter,
+and a test asserts the committed fixture matches that generator byte for byte,
+so the verifier is never checked against an archive its own writer produced.
+
+### Native archive v2 packed layout
+
+P3b fixtures cover the optional pack layout: a packed export verifies and
+collapses file count, a packed archive declares `objects.pack.v1` while a loose
+one does not, using packs without declaring the capability is rejected,
+corrupting a pack fails the checksum, pack trailers describe exactly the
+objects the index places in packs, and manifest byte totals equal real on-disk
+object size. The real-corpus A/B lives under `performance/v0.4-p3b/`.
+
+### Native archive v2 verify and restore
+
+P4 fixtures cover the restore path: a canonical round trip, resource bytes with
+their relations/ordinals/anchors, refusal to write anything when verification
+fails, mandatory intent, `full_archive` carrying unreferenced resources, and
+source bundles staying out of the blob store. Packed-layout fixtures assert
+layout equivalence by re-exported object set, resource and bundle bytes read out
+of pack slices, corruption refusal, the pack handle-cache contract, and an
+archive spanning more packs than the cache holds — which fails 5 times out of 5
+without its fix.
+
+Crash/fault injection covers each of the six stages that commit canonical state.
+Every injected fault must fail the restore and leave a durable `restore_state`
+marker; `adopt`/`merge`/`fork` must refuse a marked library and `replace` must
+recover it into a library identical to a clean restore. Further fixtures cover
+objects that change between verification and use, and archives written before
+`record_counts` became optional.
+
+Resource and source-bundle coverage at scale is mandatory and neither recipe
+corpus provides it: the attachment-bearing Joplin RAW archive is the only corpus
+carrying resources and exact source bundles. Its aggregate-only evidence lives
+under `performance/v0.4-p4/` — counts, hashes, timings, and sizes, never note
+content, resource bytes, or local paths.
+
+### Native archive v2 admission
+
+Archive-v2 tests start from a complete synthetic golden directory containing
+every canonical record type plus body/resource/source-bundle blobs. Mutated
+copies must reject absent manifests, missing/corrupt objects, unsupported
+version/schema/required capabilities, commit/count/reference drift, traversal,
+symlinks, extra files, unsafe source paths, invalid MIME, duplicate/unknown JSON
+fields, and count/path/JSON/notebook depth overflow. Verification is read-only
+and completes before any future restore Store transaction. Migration tests also
+prove database/replica identity stability and explicit replica rotation.
+
+### Stable external links (v0.4 P5)
+
+Parser fixtures cover the documented shape, anchors, case-insensitive
+scheme/authority with case-sensitive identifiers, the foreign-scheme versus
+malformed distinction, and rejection of traversal, percent-escapes, embedded
+newlines, query strings, unsupported routes, and every length bound.
+
+Registry fixtures cover the round trip and its `0600` permissions, upsert and
+remove, unambiguous resolution, ambiguity carrying every candidate in stable
+order, the rule that a preferred profile cannot redirect a link into a database
+it does not hold, invalid profiles, and refusal of a corrupt registry rather
+than partial application.
+
+Store fixtures cover the four resolution statuses, that no local state is
+reported for a foreign-database link, link-graph classification of `notrios://`
+targets inside note bodies, and that links keep resolving after the database
+file is copied to a new path — the property the whole link type exists for.
+
+CLI fixtures build the real binary and assert the exit-code contract an OS
+protocol handler depends on (0 opened, 1 unresolvable, 2 malformed), including
+a filesystem-level database clone that must produce `ambiguous_database` with
+both candidates rather than a choice. Desktop-entry fixtures assert it claims
+`x-scheme-handler/notrios` and nothing else.
+
+Web fixtures cover client-side parsing and rejection, deep-link hash parsing,
+preview routing of `notrios://` anchors, and the wrong-database message.
+
+Live service and CLI behaviour is recorded in `performance/v0.4-p5/`.
+
+### Publication handoff (v0.4 P7)
+
+Export fixtures reuse the P3 canonical database, whose public note links to an
+included note, a withheld note, an unresolved target, an external URL, and an
+embedded resource. They assert that withheld and broken links become plain text
+or a redaction placeholder while included and external links survive; that the
+withheld note appears nowhere in the archive, including in link records and
+their context excerpts; that retained links' byte offsets are shifted onto the
+published body; that only current revisions, no provenance, no source bundles,
+and no saved searches are published; that revision metadata is stripped; and
+that the result verifies as an ordinary archive whose report says
+`full_backup: false`.
+
+The rewriter is tested directly for the cases where it must refuse: a span past
+the end of the body, a span that is not a link, a span whose target has moved,
+inverted and negative spans, and overlapping spans. A skipped span leaves the
+body unchanged and warns.
+
+Profile fixtures cover the round trip and its `0600` permissions, refusal of
+`full_archive` and of an empty selection, refusal of a profile that would
+publish Trash, and refusal of a corrupt profile file rather than partial
+application. A CLI fixture builds the real binary and asserts the
+review-then-publish contract end to end: no digest and a stale digest both
+refuse and write nothing, the reviewed digest publishes, and a note joining the
+selection after the review invalidates it.
+
+Evidence: `performance/v0.4-p7/`.
+
+### Note blocks (v0.5 E1)
+
+Parser fixtures cover the five block kinds, unclosed fences, tables, the
+per-document bound, and determinism. The identity decision is tested directly:
+moving a block keeps its ID, editing its text mints a new one, the same text in
+two notes is two blocks, identical blocks in one note are disambiguated by
+occurrence, a heading and a paragraph reading the same are distinct, and CRLF or
+trailing-whitespace changes do not disturb identity.
+
+Store fixtures assert that blocks are rebuilt in the same transaction as the
+save, that purging a note removes them, that an authored `^marker` outranks the
+derived ID and survives an edit that the derived ID does not, that backlink
+counts work for either spelling of an anchor, and that `RebuildDocumentBlocks`
+writes no revision. REST fixtures assert the listing, its 404, that no block
+text is returned, and that a stale anchor is reported distinctly while still
+naming the note.
+
+The generated scale profile adds block metrics at 10k/100k/500k: the real save
+path over a bounded sample, and anchor/listing lookups against a synthetically
+filled block table so index behaviour is measured at real row counts rather
+than at sample size. Evidence: `performance/v0.5-e1/`.
+
+### Heading anchors (v0.5 E1a)
+
+Parser fixtures cover slug derivation — punctuation, Unicode, snake case,
+repeated spaces, length bound, and headings that slug to nothing — plus
+occurrence disambiguation and the fact that renaming a heading changes both its
+slug and its block ID. Store fixtures assert that only headings carry slugs,
+that a slug and the heading's text resolve to the same block, that a renamed
+heading stops resolving, that precedence is marker before block ID before slug,
+and that backlink counts fold both spellings onto one heading. A migration
+fixture takes a v14 database to v15 without losing block rows, without inventing
+slugs for rows it did not parse, and fills them in on rebuild. REST fixtures
+cover the exposed slug and the `stale_anchor` a renamed heading produces; a CLI
+fixture builds the real binary and checks `link --anchor` by slug, by heading
+text, and by marker, that an unresolvable anchor is refused rather than printed,
+and that the anchored link opens end to end.
+
+One fixture records real Markdown behaviour rather than assumed behaviour: a
+space ends an unquoted URL, so `[x](document://…#Install & Setup)` truncates at
+the space and the heading-text spelling belongs in a wikilink. That is why a
+stable link carries the slug.
+
+E1b covers scheme-scoped decoding: scheme recognition and its rejections,
+decoding of spaces/`%25`/UTF-8/lowercase hex, invalid escapes left literal, `+`
+preserved, identifiers still refusing escapes while anchors accept them, and a
+byte-for-byte round trip. Store fixtures assert that an escaped anchor resolves
+through a URI-schemed link while the same bytes in a bare Markdown anchor do
+not — with lint reporting exactly the bare one — that a decoded URI anchor
+counts as a backlink, and that a heading containing a real percent sign resolves
+both by text and as `%25`.
+
+### Workspace lint (v0.5 E2)
+
+One fixture carries a single instance of every detectable problem — including a
+heading anchor that no longer resolves — alongside healthy content, and asserts both that each check finds its own problem and that
+the healthy note and referenced resource appear in no check. Further fixtures
+assert that findings carry no note content, that lint is deterministic and
+writes no revision, that the detail cap hides examples without changing counts
+or the digest, that check selection and limits are validated, and that a trashed
+note stops being linted.
+
+Two fixture details record real behaviour rather than assumed behaviour: the
+parser records `![alt](x)` as an `embed` rather than an `image`, and
+`CreateDocument` substitutes "Untitled" for a blank title — so the missing-title
+fixture produces the state the way an importer or an interrupted restore would.
+
+REST fixtures assert the report, its validation, the absence of content in the
+response, and that no write method is routed. A CLI fixture builds the real
+binary and asserts the exit-code contract: 0 clean, 1 with findings, quiet mode
+silent, and check selection narrowing the result.
+
+The generated scale profile runs a full lint at each tier, records per-check
+timings, and asserts the digest does not change with the detail cap. Those
+timings are what showed six separate scans of `document_links` dominating the
+cost, which the single shared scan removed. Evidence: `performance/v0.5-e2/`.
+
+### Workspace fix (v0.5 E3)
+
+Store fixtures assert that planning changes nothing, that the plan carries the
+exact `before`/`after` and the revision it was computed from, that applying
+writes an ordinary revision and leaves the link pointing where it always did,
+and that a note edited since the plan fails with a conflict while its content
+survives untouched. Further fixtures cover the missing precondition, alt text
+being opt-in and derived from the resource filename, wikilinks and unresolved
+links being left alone, Help and trashed notes being skipped, request
+validation, and the span-refusal rules — moved text, spans past the end,
+inverted, negative.
+
+A CLI fixture builds the real binary and asserts that dry run is the default and
+reports no applied results, that `--apply` repairs and reports per note, that a
+second run finds nothing because the repair is idempotent, that the repaired
+note keeps its blocks, and that an unknown kind is refused.
+
+One fixture records real Markdown behaviour again: `[x](Kitchen Plan)` truncates
+at the space, so title-resolved Markdown links are the space-free ones — the
+same rule that decided E1a's slug form.
+
+### Graph traversal (v0.5 E4)
+
+One fixture builds a library whose shape every assertion can reason about: a
+four-note chain, a hub three notes link to, an island nothing touches, an orphan
+that links out but is linked to by nobody, a trashed note, and an embedded
+resource.
+
+Store fixtures assert the thing that was broken: at depth 1 the far end of the
+chain is absent and at depth 3 it is present, with nothing changing but the
+number. Further fixtures cover direction selecting which edges are followed,
+per-node hop distance from the nearest root, a truncated expansion naming
+`nodes` or `edges` and refusing to claim it completed its depth, refusal of every
+over-ceiling request rather than clamping, trashed notes not appearing as
+neighbours, and resources being opt-in.
+
+Path fixtures assert the shortest chain in order with one fewer edge than nodes,
+a zero-hop path from a note to itself, and — the decision that matters most — that
+`no_path`, `depth_exhausted`, and `budget_exhausted` are three different answers:
+an unreachable note is `no_path`, a path longer than `max_depth` is
+`depth_exhausted` with no nodes returned, and a one-visit budget is
+`budget_exhausted`. Direction is tested both ways, since the chain runs one way.
+
+Report fixtures assert that isolates are a subset of orphans, that a note linking
+out is an orphan but not isolated, that hubs rank by in-degree, and that the
+example cap changes no count — the same property lint's detail cap has. A
+separate fixture asserts that running all three operations writes no revision and
+changes no current revision ID.
+
+REST fixtures cover depth over the wire, `requested_depth`/`completed_depth`, the
+typed `depth` field on a node, 400 for each over-ceiling bound, 404 for a missing
+path endpoint, and the absence of any write route on either graph path.
+
+The generated scale profile adds neighbourhood, path, and report metrics at
+10k/100k/500k, records the query plan for both frontier directions, and asserts
+the report's link and orphan counts against the seeded shape. Evidence:
+`performance/v0.5-e4/`. One caveat is recorded with the numbers rather than
+glossed: the generated library is a circulant graph, so a BFS frontier grows
+linearly and the traversal timings are a floor for a densely cross-linked
+library.
+
+### The job control plane (v0.6 F6)
+
+The classification test is the one that matters, and it is verified by mutation:
+removing the cancelled case makes both halves fail with `state = "failed", want
+cancelled`. Both routes are asserted, because cancellation reaches the runner
+two ways — `ErrCancelled` from a batch boundary and `context.Canceled` from a
+store read — and they are the same event. Recording either as a failure would
+send an operator hunting for a fault that does not exist.
+
+`interrupted` is asserted from both sides: a job heard from a moment ago is
+running, a backdated heartbeat makes it interrupted, and a job that was merely
+slow can still finish normally afterwards — which proves the state is derived
+rather than written.
+
+Disclosure is asserted against the real value rather than the field name: the
+REST fixture seeds a job whose parameter is `/home/someone/Private Vault` and
+fails if that string appears in any job response, so re-adding the field under a
+different name fails too. The MCP fixture seeds a *failed* job whose error
+contains a path, then asserts REST reports the message and MCP does not.
+
+The rendered command is tested against a hostile path — `/tmp/it's here; rm -rf
+/` — because it exists to be pasted into a shell. A separate test walks every
+kind `store.JobKinds()` knows and fails if the CLI has no command for it, so
+adding a kind cannot produce records that `jobs show --command` can only
+apologise for.
+
+Verified end to end against a 4,000-note vault: an import cancelled from another
+process stopped at 1,225 notes (a clean batch multiple), recorded `cancelled`,
+exited 4 — and rerunning the same command **started at 1,250** and finished all
+4,000. That is the evidence for "persist records, do not resume work": the
+importer's own checkpoint is the resume mechanism.
+
+**What the report measures (v0.6 F5).** Two filters were added and both are
+asserted from both sides, because a filter that never fires and a filter that
+always fires are both wrong. The trashed-source case is a **regression test for
+a defect**: the fixture asserts in-degree 1 while the source is live and 0 once
+it is trashed, and separately asserts that the link row still exists — this is a
+reporting filter, not a deletion, and soft delete keeps links so a restore can
+use them. The system-authored case asserts that a note linked only from
+Help/Reports is an orphan and that the Help note is not itself a row.
+
+Both were verified by mutation: restoring the original in-degree subquery makes
+both tests fail with the exact numbers the defect produced.
+
+The report-as-a-note fixture asserts the property the design rests on — writing
+the report does not change what the report says — and first asserts that the
+note really does link to a hub, so the property is not being measured against a
+note with no links in it.
+
+### Editor link intelligence (v0.5 E5)
+
+One fixture uses titles chosen to separate the two suggestion passes: several
+sharing a prefix, one whose only match is an interior word, one trashed, and a
+resource to link at.
+
+Store fixtures assert that title-prefix matches come first and in title order,
+that the interior-word pass finds "Kitchen Plan" from "plan", that a trashed
+note is never offered, that the note being edited can be excluded, that the cap
+reports truncation, that every bound is refused rather than clamped, and that a
+typed `%` or `_` is text rather than a wildcard.
+
+Buffer-check fixtures cover every status the resolver can produce, the
+`canonical_target` a title-resolved link offers, a stale anchor reported
+distinctly from a missing note, and the refusal of an oversized buffer. Two
+assertions carry the design decisions: **anchors resolve against the submitted
+body**, so a heading typed only in the buffer resolves while one naming nothing
+in it is stale; and **the check agrees with the save**, asserted by checking a
+buffer, saving the same bytes, and comparing the link records status for status
+and offset for offset. A separate fixture proves that checking a buffer writes
+no revision and leaves the note's body untouched.
+
+A migration fixture takes a v15 database to v16 without losing a row, and a
+query-plan fixture asserts that the three statements the resolver and suggester
+run all search the v16 index rather than scanning.
+
+Web fixtures cover the helpers and both components: that nothing is requested
+below the minimum query length, that choosing a suggestion inserts the canonical
+URI rather than the title, that a clean check says "all N links resolve" rather
+than rendering nothing, that an unfinished check renders nothing rather than
+implying success, and that an unreachable service produces no suggestions and no
+error.
+
+The generated scale profile measures both operations at 10k/100k/500k and runs
+an A/B against schema v16 by dropping the title index and restoring it, so the
+index's value is measured rather than asserted. Evidence: `performance/v0.5-e5/`.
+
+### In-editor link intelligence (v0.5 E6)
+
+Fixtures cover the byte-to-index conversion the service boundary requires, since
+Go locates links by UTF-8 byte and CodeMirror counts UTF-16 units: identity on
+ASCII, two-byte accents, four-byte emoji that are two units, the end of the
+text, offsets past it, and an offset landing *inside* a character — which is
+dropped rather than rounded, because a missing underline is a smaller error than
+one drawn in the wrong place.
+
+Further fixtures install the decoration field into a real CodeMirror state and
+assert the effect applies and survives an edit before the marked range; drive the
+completion source through a fake context to assert it stays silent outside a
+`[[` trigger, opens empty below the service's minimum query, inserts a canonical
+Markdown link that replaces the trigger, and returns nothing rather than throwing
+when the service is unreachable; and exercise the Ctrl-click handler for a plain
+click, a hit, and a miss.
+
+The editor profile (`scripts/run_editor_profile.sh`) is an evidence run rather
+than a test: it builds the UI, starts a throwaway service, seeds a
+206,549-character note, and drives real headless Chrome through the DevTools
+Protocol, timestamping a real `keydown` against the `MutationObserver` callback
+for the change it caused. Evidence: `performance/v0.5-e6/`.
+
+Behaviour inside the Wails webview is **not** covered: WebKitGTK does not speak
+the DevTools Protocol the harness uses and no WebKit inspection tooling is
+installed here. `make gui` verifies the build only.
+
+### Offline frontend assets (v0.5 E6a)
+
+A Go test asserts the built-in UI is served with a Content-Security-Policy
+containing `script-src 'self'`, `font-src 'self' data:`, and `object-src 'none'`,
+that `style-src` allows inline styles (CodeMirror injects them) and nothing
+remote, and that the headers are set before the `web_ui_not_built` branch — a
+policy that applies only on the success path is not a policy.
+
+`scripts/run_offline_assets_check.sh` is the behavioural guard. It drives real
+headless Chrome with the browser cache disabled and every known CDN blocked, and
+fails on a cross-origin request, an injected remote script or stylesheet, a CSP
+violation, or math that did not render. That last assertion is not decoration:
+without it, "no external requests" would also pass on a completely broken page.
+
+The guard was verified **in both directions** — it fails against the pre-fix
+commit, naming all thirteen `unpkg.com` requests and the missing KaTeX output,
+and passes against the fixed tree. A check that cannot fail proves nothing, and
+a regression guard that was never seen to fail is exactly that.
+
+The Wails webview is not covered, for the same reason as E6: WebKitGTK does not
+speak the DevTools Protocol. The CSP reaches it by construction, since the Wails
+asset server routes every webview request through the same `handleWebApp`.
+
+Mermaid is deliberately absent from this passing baseline:
+`web/src/editor-assets.ts` sets `noMermaid: true`. A v0.8 enablement slice must
+first add fixtures for supported diagrams, malformed syntax, HTML/URL payloads,
+oversized node/edge/text counts, time/memory bounds, fallback-to-source, theme
+changes, zero cross-origin requests, CSP, and preview sanitization. It then runs
+those fixtures in real Chrome and performs a Wails smoke check. Merely removing
+`noMermaid` or asserting that the upstream package advertises the feature does
+not satisfy the test.
+
+### Planned shared C ABI and Flutter evidence
+
+The pre-1.0 C ABI requires tests at both sides of the boundary: ABI/capability
+version mismatch, open/close, multiple isolated instances, wrong/stale handles,
+caller- and library-owned buffer conventions, leaks, double free, bounded JSON,
+stream range/EOF/error, cancellation, polling, concurrent shutdown, logging and
+secret redaction, and semantic parity with the equivalent REST operation. Bulk
+blobs and archives must prove bounded streaming rather than one serialized
+allocation.
+
+Before 1.0, mobile validation stops at an Android emulator loading the library
+and smoking lifecycle, SQLite, CRUD/search, one bounded resource stream,
+cancellation, and sync capability negotiation. Physical-device storage,
+background, battery, secure-store, notification, pairing, sync, backup, and
+responsive/accessibility validation is a post-1.0 Flutter release gate. Flutter
+Web is not included in native-FFI tests.
+
+G18 freezes the pre-implementation test oracle under `performance/v0.7-g18/`.
+It source-checks 109 non-HEAD API operations, Wails build-tag isolation, 43 cgo
+store files, 19 platform capabilities, closed ABI statuses, ownership and
+handle rules, and the current `noMermaid: true` baseline. The installed Android
+NDK cross-compile probe currently stops at the missing Android-target
+`sqlite3.h`. The installed Debian host header/x86-64 library cannot be imported
+into the Android sysroot; a forced-include probe fails on incompatible glibc/
+Android headers. Flutter Doctor passes the Android toolchain checks, but an
+emulator claim requires an AVD, an explicit target SQLite linkage choice, and
+the complete lifecycle/CRUD/search/stream/cancel/capability smoke—not merely a
+successful Flutter Doctor or Go compile.
+
+### HTML table paste (v0.5 E6b)
+
+Fixtures cover the conversion — header promotion when the source has no `<th>`,
+inline emphasis, code, and links, app-URI links surviving into Markdown, pipe
+and backslash escaping, whitespace collapsing, and the wrapper elements real
+pastes are full of.
+
+The refusals get more coverage than the conversions, which is the right ratio: a
+mangled table is worse than an HTML one. Merged cells, ragged rows, nested
+tables/lists/headings/`pre`, `<br>` and multi-paragraph cells, a paste that
+merely contains a table, two tables, and an empty table each assert their own
+reason code. A separate fixture asserts the handler's fall-through contract —
+for every refusal it returns false, calls no `preventDefault`, and dispatches
+nothing, which is what guarantees no paste can be lost.
+
+Two safety fixtures: a link whose href would break Markdown (a space, an
+unescaped `)`) keeps its text and drops the link, `javascript:` is dropped
+outright, and a `<script>` plus an `onerror` in a pasted cell leave no trace in
+the output and set nothing on `window`.
+
+The wiring is not unit-testable — the converter is pure and the handler is
+tested against a fake view — so the paste path was verified end to end in real
+headless Chrome by dispatching a genuine `ClipboardEvent` carrying `text/html`
+at the live editor, asserting a simple table converts at the caret and a
+merged-cell table falls through to the plain-text clipboard flavour.
+
+### Embedded query blocks (v0.5 E7)
+
+Store fixtures cover the block parser and the run: the Q1 grammar reaching the
+block unchanged (negation, fields, grouping, uppercase `OR`), opt-in fields in
+canonical order, the limit and its visible truncation, and the explicit sort
+being honoured rather than implied — a text query with `sort: updated` must come
+back chronological, which it did not before `SearchRequest.Sort` existed.
+
+The refusals are asserted as *values*, not errors: no `query:` line, an unknown
+key, a line that is not `key: value`, a bad or over-cap limit, an unknown sort or
+field, a repeated key, a malformed query, an oversized block, and too many lines
+each render a message and return no rows. A separate assertion checks the
+unknown-key message names the keys that do work, so the error is actionable from
+inside the note.
+
+Two invariants get their own fixtures: a query block sees only what the ordinary
+search sees (a trashed note never appears), and running one writes nothing.
+
+REST fixtures assert the same failures arrive as `200` with `error` rather than
+a `4xx`, that blocks carrying `sql:`, `file:`, or `exec:` keys are refused, that
+a SQL-injection-shaped *query* is just text to the Q1 parser and changes
+nothing, and that no write method is routed.
+
+An archive fixture asserts export inertness directly: a published note whose
+block queries `tag:private` — the exact boundary a publication protects — comes
+out byte-identical with the fence intact and no trace of the withheld title.
+
+Web fixtures cover the placeholder rewrite (a `note-query` fence becomes a
+placeholder carrying its source; an ordinary fence is untouched; block text
+cannot escape into markup), the rendering (routed links, opt-in fields, visible
+truncation, an empty result saying so, an error rendered inside the block), and
+that every value is written as text — a title of `<img src=x onerror=…>` renders
+as text and sets nothing on `window`. Further fixtures assert a block never
+blocks the note, an unreachable service is reported inside the block, and
+navigating away aborts in-flight work so a late reply cannot write into another
+note's preview.
+
+No scale profile: a block is bounded to 100 rows through the search path whose
+10k/100k/500k evidence H7 and Q1 already carry.
+
+### Archive scalability tests (v0.7 G14a-G14e complete)
+
+Before sync tests advance beyond G14, G14a-G14e add a blocking archive-
+scalability gate. The aggregate-only harness must checkpoint each long phase
+atomically and compare identical stage boundaries across loose and packed
+archive-v2, current ZIP/seal catch-up, stopped and Online Backup API SQLite
+snapshots with packed external assets, restic, and borg. It uses the equivalent
+recipe Joplin/Obsidian pair for source-format parity and the attachment-bearing
+Joplin export for resource/source-bundle fidelity. No private path, filename,
+title, body, content hash, database, archive, resource byte, or competitor
+repository is committed.
+
+Correctness uses canonical content and attachment fingerprints, archive-v2
+verification, `PRAGMA integrity_check` for database images, competitor
+read-data verification, and post-snapshot convergence. Performance records
+each import/create/verify/transport-open/restore phase separately with wall and
+CPU time, peak RSS, apparent/allocated bytes, regular-file count, maximum
+entries in one directory, and honestly labelled cache state. A candidate fails
+the default G14a policy on superlinear observed work, a stage over two hours on
+the reference machine, desktop RSS over 512 MiB, receiver proxy RSS over 256
+MiB, or an object-per-note transport tree. ext4 and the Google Drive FUSE
+mapping are available; exFAT is not, so evidence may prove bounded shape but
+must not claim measured exFAT or physical-mobile performance.
+
+G14a implements that contract in
+`scripts/run_archive_scalability_benchmark.sh` and
+`performance/v0.7-g14a/harness`. Unit tests cover the complete adapter-stage
+map, interrupted retry, immutable completed-result resume, atomic refusal of an
+invalid result, aggregate privacy, directory arithmetic, source mutation
+detection, and compression arithmetic. Generated 10k/100k calibration drives
+all nine stages. The current loose baseline stays correct but fails the
+object-per-note shape gate (100,093 files at 100k) and the desktop memory gate
+during one incremental replay (797,937,664 bytes); open and restore remain
+below the 256 MiB proxy. G14b preserved those failures and completed 57
+validated aggregate phase rows on the full candidate/private-corpus matrix.
+It selected a compatible same-schema SQLite image plus bounded packed assets:
+the exact local create-through-restore path was 1,884.2 seconds versus 4,384.0
+for packed semantic archive-v2, with both within absolute correctness, time,
+memory, and shape gates. Semantic archive-v2 remains required for subset,
+merge, schema-independent interchange, and fallback. G14c adds an independent
+golden fixture, cross-format reader matrix, deterministic-pack checks,
+corruption/truncation/expansion/path/symlink attacks, manifest-last fault and
+verified-pack resume tests, exact schema/capability/vector/floor admission,
+secure local-state exclusion, and an opt-in generated 100k bounded-memory run:
+
+```bash
+bash scripts/run_snapshot_image_profile.sh /tmp/notrios-snapshot-image-100000.json
+```
+
+G14d adds wrong-key/tamper/ownership and physical metadata checks, sparse-file
+range resume beyond 3 GiB, byte-identical REST/directory resume, bounded frame
+memory, verified emergency backup, startup refusal during cutover, fault
+injection at every durable replacement stage, replica rotation, catch-up floors,
+derived-state rebuild selection, and post-snapshot incremental replay. Its
+opt-in generated 100k restore gate is:
+
+```bash
+bash scripts/run_snapshot_restore_profile.sh /tmp/notrios-snapshot-restore-100000.json
+```
+
+The committed aggregate result reports 13.080 seconds restore, 24,788,992-byte
+process peak RSS, 2,570,736-byte live heap at report time, and 100,000 documents
+queued for derived rebuild. Android emulator and physical-device results remain
+explicitly deferred; see `performance/v0.7-g14d/ANDROID_EMULATOR_CHECKLIST.md`.
+
+G14e reuses unchanged private import results but independently re-fingerprints
+the equivalent 382,206-document Joplin/Obsidian views and the attachment-bearing
+workload. Its 19 immutable aggregate phases cover current and previous packed
+archive-v2 verify/restore, first/verify/unchanged/restore for both physical
+workloads, production REST/directory catch-up and emergency replacement,
+post-snapshot convergence, and frozen Restic/Borg data-integrity checks. The
+final catch-up completed in 2,948.669 seconds at 210,010,112 bytes peak RSS;
+exact canonical equality and every carrier/restore/replay assertion passed.
+Raw Restic remains a comparison row whose 2,256,838,656-byte check RSS explains
+why repository tooling was not selected as the native application format; it is
+not a native receiver gate. Evidence and its privacy validator are under
+`performance/v0.7-g14e/`; exFAT, cloud-provider rerun, Android emulator, and
+physical-mobile claims remain explicitly false.
+
+### Sync model and transport tests (implemented and release-accepted through G20)
+
+- Property/model tests shuffle, duplicate, replay, drop, and eventually deliver
+  operations across at least three replicas and assert convergence.
+- Crash injection covers canonical transaction, blob/chunk, envelope, manifest,
+  acknowledgement, and retention boundaries.
+- REST and ephemeral-directory adapters replay identical golden protocol
+  transcripts; Google Drive/rclone is a carrier conformance run, not a second
+  sync engine.
+- Test clock skew, cloned replica IDs, schema/protocol/database mismatch,
+  missing/corrupt/truncated objects, offline-horizon full resync, peer
+  retirement, delete/restore/purge, concurrent body edits, and notebook cycles.
+- Mobile profiles measure maximum envelope/pending/object sizes and foreground
+  responsiveness on an Android emulator before 1.0; physical Android/iOS
+  evidence is a post-1.0 client release gate.
+
+G17's focused matrix additionally fixes time and vectors to prove two-active-
+peer minimum watermarks, a phone past its warning/horizon, credential revocation
+versus explicit retirement, retirement propagation and stale re-enrollment
+refusal, snapshot coverage of prior floors, one-peer resource reachability,
+death-certificate survival after compaction, below-floor typed catch-up, and
+exact dry-run/apply digest parity. Generated disk-cost evidence uses the
+published 382,206-document aggregate only and reads no private corpus content.
 
 ### Security tests
 
@@ -70,23 +825,493 @@ Performance thresholds are not defined yet; first milestones should record basel
 - HTML sanitization for Markdown preview.
 - MCP result-size limits.
 
+### Agent-usage preflight (v0.7 G18c.1)
+
+`scripts/check_agent_usage.py` is developer-workflow tooling, not a product or
+CI account check. Its fixtures cover Codex multi-window and legacy app-server
+responses, exhaustion/reset metadata, unavailable clients, Claude cache
+absence/malformed values, strict versus advisory unknown results, and adaptive
+reserve isolation by agent/model/effort/operation and reset window.
+
+The Claude fixtures also cover the status-line `rate_limits` contract written by
+`scripts/claude_statusline_usage.py`: binding on the tightest window, ignoring a
+dollar-denominated `spend_limit` that carries no percentage, epoch and ISO
+`resets_at` forms, `used_percentage` and `remaining_percentage`, a cache older
+than the age limit, and a window past its reset. Both of those last two report
+`stale`, which never yields a binding percentage and gates like `unknown`. A
+cache that exists but carries no window stays `unknown` and is never read as
+full quota.
+
+Resumable G14b/G14e harness tests must prove the preflight runs after completed-
+result reuse is checked but before a new `started` checkpoint is written. A
+pause therefore leaves the last valid result reusable. Long profile scripts
+run one preflight before disposable setup but gain no resumability claim. CI
+runs deterministic parser/integration tests only and never queries a developer
+account.
+
 ## Current validation commands
 
 ```bash
+python3 scripts/test_check_agent_usage.py
+bash scripts/test_agent_usage_preflight.sh
 go test ./...
 python3 scripts/check_required_files.py
 bash scripts/validate-scaffold.sh
 ```
 
-Frontend validation after dependencies are installed:
+Start each regular test pass by checking the lockfile-resolved offline bundle
+against the current npm advisory database. Apply only compatible fixes during
+this maintenance step; `--force` requires a separately reviewed dependency
+upgrade. Review the resulting lockfile, reinstall from it, and prove the clean
+install remains free of known advisories before running frontend tests:
 
 ```bash
 cd web
-npm install
+npm audit
+npm audit fix
+npm ci
+npm audit
 npm run typecheck
+npm test -- --run
 npm run build
 ```
 
+If the first audit is already clean, `npm audit fix` is a no-op and may be
+omitted. CI and release packaging are non-mutating consumers of the committed
+lockfile: both run `npm ci` followed by `npm audit` and fail on a newly reported
+advisory. Registry-unavailable/offline validation may use the last committed
+clean lockfile, but must record that the advisory check could not refresh.
+
+
+### Organizer UX: trash and tag rename (v0.5 E8)
+
+Store fixtures assert the property the feature rests on: a dry run and an apply
+produce **identical reports**, checked by running both against two identically
+built libraries and comparing change lists field by field. The apply changes the
+tags; the dry run leaves them exactly as they were. Because the implementation
+is one transaction rolled back for a dry run, this is a regression guard on the
+rollback rather than on a second predictor.
+
+The hierarchy rules each get a fixture: `projects` is not a child of `project`
+(segment matching, not string prefix); a rename without `include_children` moves
+the parent alone and *warns* about the children rather than leaving the caller
+to notice; renaming a child up onto its parent's name works, which only holds
+because renames are applied shallowest-first; and a case-only rename is a rename
+of the same row rather than a merge with itself. Merges assert both counts
+separately — the note carrying both tags ends with one, the note carrying only
+the source gains the destination, and `notes_gained` is smaller than `notes`.
+
+Refusals are asserted as typed errors and as *no change*: a missing tag, an
+empty or segment-empty destination, a trailing separator, and a rename into the
+tag's own subtree all leave the library untouched.
+
+A projection fixture asserts a rename enqueues one outbox job per affected note
+— the projection carries a note's tags and nothing else in the transaction would
+— and that a dry run's rollback takes those rows with it.
+
+Notebook-deletion preview fixtures assert the counts match what `DeleteNotebook`
+actually does (preview, then delete, then count what reached the Trash and where
+it was re-homed), that the preview itself deletes nothing, and that a protected
+notebook previews as `deletable: false` with a reason rather than erroring.
+
+REST fixtures assert `dry_run` **defaults to true** on an omitted field, that
+only `"dry_run": false` writes, that a saved search mentioning the old tag is
+named in `warnings`, and that a missing tag and an invalid destination map to
+`404`/`400`.
+
+CLI fixtures assert the same default from the outside, that a dry run is
+repeatable, and that a dry run whose plan contains a merge **exits 1** — the
+case where a script meant to rename and would instead have combined two
+hierarchies.
+
+Web fixtures cover the presentation rules: a trashed note shows "In the Trash"
+and offers Restore and Delete forever while a Help note shows "Read-only" and
+offers neither; the sidebar exposes a delete affordance only where the service
+would allow one; and the notebook confirmation text states the counts, that the
+notes survive, and where they land. App-level fixtures assert a refused
+confirmation reaches the service **not at all**, that a delete carries the
+revision the note was opened at, and that a failed precondition is reported with
+the note still open.
+
+`scripts/mvp_smoke.sh` covers the whole surface against a running service: the
+dry-run default, the apply, the deletion preview, the trash cycle, a trashed
+note reading back as trashed, and a purge refused without its confirmation
+header.
+
+The flow was also driven end to end in a real browser — delete, read the trashed
+note, restore, delete the notebook holding the open note, purge — which is what
+found the trashed-note read defect that every unit test passed over. That is the
+lesson worth keeping: unit fixtures verified each piece while the feature did
+not work.
+
+No scale profile: the deletion preview is two indexed `COUNT(1)` queries over
+one notebook subtree, and a rename is bounded to 500 tags. The paths that scale
+— search, the trash keyset, notebook deletion itself — already carry
+10k/100k/500k evidence.
+
+### Read-only presentation (v0.5 E12)
+
+A control that cannot be changed must still be **reachable**. The title of a
+Help or trashed note is `readOnly`, never `disabled`, and the fixtures assert
+the difference rather than the attribute alone: it carries `readonly`, it is
+*not* disabled, it can be focused, `setSelectionRange` covers the whole value,
+and typing into it with `user-event` changes nothing and calls no handler.
+
+`user-event` rather than `fireEvent` is the point of that last assertion.
+`fireEvent.change` dispatches synthetically and sails straight past `readonly`,
+so it would have tested jsdom's laxness rather than the control; typing the way
+a person does is what exercises the guard the browser actually applies.
+
+Verified in a browser against a plain probe input for contrast: `disabled` gives
+`focusable: false` while `readOnly` gives `focusable: true`, with selection and
+scrolling identical. That single difference is the whole reason for the change —
+a disabled title is unreadable when it overflows, because no keyboard
+interaction can reach it.
+
+Noted while measuring, and deliberately not asserted: Chrome does not advance
+`selectionStart` on a read-only input, though the field still scrolls. That is
+the engine's behaviour, identical for a plain non-React input, so the fixtures
+assert reachability and selection rather than caret arithmetic.
+
+### MCP tool scopes (v0.6 F2)
+
+The suite is built around one guard: **`TestEveryMCPToolIsClassified`** walks
+every tool the widest scope registers and fails if any lacks an entry in the
+scope table — and fails in the other direction too, if the table names a tool
+that no longer exists. Without it, a new tool would inherit whatever scope its
+position in the list happened to give it, which is the failure this feature
+exists to prevent. Defaulting an unclassified tool to the narrowest scope would
+be the dangerous kind of safe: it would ship silently.
+
+Each scope's tool set is asserted **as a whole set**, not by spot-checking
+membership, so a tool quietly moving tier fails here. The `editor` and
+`organizer` tiers are asserted as *deltas* over the tier below, which keeps the
+test readable as tools are added, plus an explicit check that scopes are
+cumulative — each a superset of the one before.
+
+**`TestHiddenToolsAreRefusedWhenCalledDirectly`** is the one that matters. It
+iterates every classified tool absent from a `search-only` listing and calls it
+anyway, asserting a refusal that names the scope required. Verified in both
+directions: removing the call-site check makes it fail — and instructively, the
+failure shows `append_to_note` *executing* and complaining that `text is
+required`, which is exactly the "hidden but answers when called" bug.
+
+The deprecated-key resolver is table-driven across seven cases, including the
+two that matter most: a half-migrated config where the deprecated key is
+narrower, and one where the new key is. Both resolve to the narrower, because a
+key that quietly stops applying must never widen what an agent may do.
+
+**`TestNoScopeReachesWholeLibraryOperations`** asserts a standing decision
+rather than a scope: lint, fix, GC, archive, publication, tag rename, notebook
+deletion, and purge appear in no scope's listing at all. It is written against
+names that do not exist yet on purpose, so adding one of them as a tool fails
+the test and forces the decision to be made deliberately.
+
+### One predicate, three surfaces (implemented v0.6 F5)
+
+Three separate problems turned out to share a fix, and the tests should assert
+them together so the predicate cannot drift apart across surfaces.
+
+A generated note in a **read-only builtin** notebook — Help or Reports, never
+the default Notes notebook — must not appear as **link origin** in the graph
+report (it would inflate the in-degree of every note it names, and change
+the ranking the next generation sees), must not be **published** in a handoff
+(it names notes drawn from the whole library, including ones the selection
+withheld), and — recommended — must not produce **lint findings** (nobody can
+act on them: `fix` refuses builtin-notebook notes and the note is read-only).
+
+The fixture that matters is the round trip: generate the report, generate it
+again, and assert the ranking is identical. Without the filter the second run
+sees the first run's links and can reorder — which is the kind of defect that
+looks like a data bug months later rather than a design mistake on the day.
+
+A publication fixture should assert the same boundary E7 asserted for query
+blocks: a handoff whose selection excludes a note must not carry that note's
+title in a generated report either.
+
+**Trashed notes are a separate axis, and the graph report currently misses it.**
+The Trash is a search notebook — a saved query for soft-deleted notes — not a
+notebook, so it can never be in the notebook predicate; a trashed note still
+belongs to whatever notebook it was in. But its links should not count, and
+`deleteDocumentLocked` deliberately leaves `document_links` intact so a restore
+can use them. A fixture must assert that trashing a note drops the in-degree of
+everything it linked to, and that a note linked *only* from a trashed note is
+counted as an orphan. Publication (`IncludeTrashed: false`) and lint (joining on
+the link's source with `deleted_at IS NULL`) already satisfy this; the graph
+report does not.
+
+**And one fixture guards the definition itself.** The word "builtin" covers two
+different sets: *undeletable* is Help, Reports, and the default **Notes**
+notebook, while *read-only* is Help and Reports alone — `DeleteNotebook` needs
+two checks for exactly this reason, because Notes is bootstrap-created but its
+content is the user's. A test must assert `DefaultNotebookID` is **not**
+read-only. Widening that set would silently drop every note in the default
+notebook from the graph report, from publications, and from lint — most of the
+library, for most users, with no error anywhere.
+
+### MCP read coverage and HTTP Range (v0.6 F3)
+
+Range is asserted against the RFC's shapes rather than one happy case: a middle
+slice, an open-ended slice, a suffix slice, and the whole resource by range,
+each checking status, body, `Content-Range`, **and** `Content-Length`. That last
+one matters because the handler sets the full length before delegating to
+`http.ServeContent`; asserting the slice length is what proves the delegation
+overrides it. An unsatisfiable range must be `416` carrying the real size, and a
+range must compose with `?download=1` without losing the disposition, the stored
+MIME type, or `nosniff`.
+
+`read_resource` is asserted on the property that keeps it safe: **no bytes
+unasked**. Then that a text-like resource reads in slices with an honest
+`truncated` flag, and that a binary one is described rather than transcribed —
+with its metadata surviving the refusal, so a caller can still fetch it over
+REST deliberately.
+
+The lint tool's fixture asserts a finding **exists** before asserting the report
+omits the offending target. Checking only the absence would pass on an empty
+report, which proves nothing.
+
+`TestEachScopeListsExactlyItsTools` earned its design here: adding seven tools
+failed it immediately with a set diff, because it asserts whole sets rather than
+spot-checking membership.
+
+### Templates and task extraction (v0.6 F4)
+
+The template fixtures assert the *safety* properties rather than that
+substitution works. The decisive one: a supplied value containing `{{date}}`
+must appear literally in the created note, because substitution is one pass and
+a caller's value is data. Then the refusals — a missing value, a value for an
+undeclared prompt, a placeholder the template never declared, an automatic name
+someone tried to prompt for, and an unknown block key — each asserted to name
+what would have worked.
+
+A template with a typo is asserted to report its error **on listing**, not at
+creation. Finding out that `{{onwer}}` was wrong when someone tries to use the
+template is too late.
+
+The task fixtures assert the identity property in both directions, which is the
+only honest way to state it. Editing *around* a task — inserting a paragraph
+above and below — must leave its block ID unchanged, and the same test asserts
+the ordinal *did* move, so it cannot pass by the task having stayed put.
+**Ticking** a task must change its derived ID, because the checkbox is part of
+the block's text; that assertion is worded to fail loudly if the block model's
+contract ever changes, since a silent change there would quietly alter what
+every task link means. An author-written `^marker` and the anchor URI must
+survive both.
+
+Counts are asserted to stay complete when the row list is capped, and a trashed
+note's tasks must vanish — tasks are a view of the live library.
+
+## v0.7 G1 revision/delta investigation
+
+G1 evidence under `performance/v0.7-g1/` separates private-corpus shape from
+synthetic divergence. The corpus profiler commits only aggregate counts, byte
+distributions, item-type counts, and parse-quality counters; fixtures assert
+that paths, filenames, titles, bodies, and source-content hashes do not cross
+that boundary. Static imports are explicitly not treated as multi-device
+revision history or evidence of human conflict frequency.
+
+The deterministic workload reports one-hour/day/week/30-day intervals
+separately and covers ordinary, Unicode, Markdown, valid control-bearing,
+very-long-line, and 1 MiB generated bodies. Every accepted delta must reproduce
+the exact result hash. Focused tests and the evidence validator cover clean and
+conflicting line/word/byte merges plus refusal of missing/wrong bases, wrong
+results, cursor and operation/insert limits, and invalid UTF-8. CPU and peak RSS
+are comparative host evidence, not cross-device protocol promises.
+
+## v0.7 G1a pure-Go xdelta/VCDIFF investigation
+
+G1a evidence under `performance/v0.7-g1a/` tests arbitrary bytes independently
+of G7's text merge behavior.
+Required vectors include empty, identical, insertion, deletion, repeated,
+random, sparse-edit, UTF-8, NUL-bearing, and attachment-like inputs. Every
+successful application must reconstruct the exact target; encoding the same
+inputs and parameters must produce identical bytes.
+
+Property/fuzz and hostile-vector tests cover truncated/corrupt instructions,
+addresses and varints; integer overflow; invalid or overlapping copies;
+source/window/input/output, instruction/count, expansion, chain, allocation,
+and CPU/cancellation ceilings; and refusal of unsupported VCDIFF custom code
+tables or secondary compression. RFC 3284 and external xdelta3/open-vcdiff/
+Subversion comparisons are used only where the selected format/profile is
+compatible, and the report names that compatibility rather than treating
+xdelta matching, svndiff, and VCDIFF as synonyms. Benchmarks record ratio,
+CPU, RSS, and allocations on this host without making a mobile claim. The
+selected constrained default-table VCDIFF profile is evidence for later G7/G8,
+not production admission; G2 now supplies its completed numeric bounds.
+
+## v0.7 G2 envelope/resource bounds investigation
+
+G2 evidence under `performance/v0.7-g2/` compares canonical JSONL and compact
+NCB1 records at 100, 10,000, and 100,000 generated operations. Every row must
+round-trip exactly and produce identical repeat bytes before size/time/RSS/
+allocation evidence is considered. The 100,000 tier must split into bounded
+candidate envelopes rather than widening the receive limit.
+
+The selected compact exception to the JSONL default remains valid only while
+the 10,000-operation candidate is at least 15% smaller after deterministic
+gzip, decodes within 20% of the JSONL prototype time, allocates within 25%, and
+keeps its complete minimal-varint/canonical-payload specification. Hostile
+tests reject count, record, payload, dependency, compressed/expanded/ratio,
+truncation, non-minimal integer, unknown-field, and trailing-data violations
+before production adoption; G2's exemplar set is not the later fuzz suite.
+
+Resource evidence covers zero, 64 KiB, 32 MiB, and attachment-heavy cases at
+256 KiB/1 MiB/4 MiB whole/chunk candidates, plus aggregate recipe and Joplin
+resource shapes and both archive-v2 layouts. Exact chunk hashes, bounded range
+amplification, incomplete-resource visibility, atomic final admission,
+file-count/pack bounds, cancellation, and pending-queue backpressure belong to
+G8/G9 implementation tests. Desktop results make no mobile claim; the checked
+v0.8 emulator and post-1.0 physical-device evidence files are required gates.
+
+## v0.7 G3 runtime profiles and process isolation
+
+Profile fixtures assert owner-only registry/config round trips, credential
+reference redaction, fresh identity separation, raw-copy refusal, explicit
+adopt/fork identity behavior, stale config/database bindings, changed
+identities, exact/nested path sharing, duplicate replica IDs, and normalized
+loopback port collisions. Stable links remain ambiguous across two valid
+replicas of one logical database and resolve through a named profile's own
+public URL.
+
+The CLI fixture builds the real `notriosctl` and `notriosd`, creates two runtime
+profiles, validates secret-free start commands, starts both daemons
+simultaneously on different loopback ports and databases, checks each status
+names the right local profile, and refuses a third profile sharing a port.
+Generated configs are revalidated at service startup, so bypassing the CLI
+launcher does not bypass identity/path checks.
+
+## v0.7 G15 durable sync-job validation
+
+G15 fixtures cover schema-v26 upgrade and opaque-target privacy; atomic claim
+and one-running-job-per-target behavior with two targets; durable phase/count
+checkpoints; stale-heartbeat recovery; checkpoint-preserving retry and explicit
+reset; deterministic exponential ±20% jitter capped at 15 minutes; offline,
+quota, temporary, and byte-budget classification; cancellation at a durable
+boundary; bounded audit/conflict views; and the existing CLI job status exit
+codes. REST route-drift and MCP whole-set scope tests prove that sync tools are
+hidden and refused by default, status is read-only, control accepts no target
+location, and MCP cannot control another actor's or catch-up job. Full test
+passes that open local listeners require the normal unsandboxed validation
+environment.
+
+## v0.7 G16 Sync Center and recovery validation
+
+G16 adds focused store/API/portable-backup tests plus six React user flows for
+active identity and keyboard closure, explicit start/retry, native directory
+selection, three-way conflict resolution, pairing-code clipboard scope, and
+wrong-password clearing/cancel. `TestSyncUITwoProcessRecoveryFlow` builds and
+runs two real daemons and drives only product HTTP/CLI boundaries through
+pairing, divergent edits, conflict review/resolution, lazy attachment request/
+serve/retry, explicit snapshot permission, wrong/correct backup password, and
+verified catch-up staging. Because it opens loopback sockets, run it in the
+normal host validation environment.
+
+The Browser plugin was not available, so G16 used regular Playwright 1.63 with
+installed Google Chrome against a fresh content-free profile. Desktop 1440×960
+and mobile 390×844 sweeps check modal bounds, responsive navigation, native-
+chooser absence in a browser, password visibility, Escape, 44-pixel touch
+controls, and console/page errors. Screenshots contain only generated Help/
+empty-profile UI and fixture text; no private corpus.
+
+## v0.7 G18e documented GUI journey validation
+
+`performance/v0.7-g18e/JOURNEYS.json` is the finite GUI-procedure contract.
+`go run ./cmd/docjourney` validates its 37 source sections and frozen
+Go/TypeScript declaration anchors. Thirty-two journeys execute through the
+opt-in `TestG18eBrowserJourneys` against disposable host/joiner daemons; their
+declared viewport expansion produces 44 result rows. Five procedures remain
+counted under closed owner/reason records rather than disappearing as passes.
+
+Every passing row requires a recorded user action, a visible rendered
+assertion, and a canonical/API assertion. Metrics count clicks, keypresses,
+typed fields, branches, modal depth, and recovery steps while excluding fixture
+and accessibility mechanics. The runner listens for actual browser
+`securitypolicyviolation` events and records console warnings/errors, page
+errors, CSP violations, and requests outside the disposable loopback origins.
+Only the exact recovered 401 from the deliberate wrong-password branch is
+allowed in raw console health.
+
+The Browser plugin was absent, so the checked run records regular Playwright as
+the fallback. Desktop is 1440×960; the responsive Sync Center is additionally
+run at 390×844 without claiming a mobile application. Keyboard/Escape/focus,
+the 44-pixel close target, destructive cancellation, and narrow dialog layout
+are exercised. Python mutation tests reject changed labels, missing results or
+metrics, vacuous assertions, wrong viewports, duplicate health identities,
+external requests, and changed unrun reasons. Run the deterministic gates with
+`make g18e-validate`; the real browser pass remains opt-in because it requires
+Chrome, Playwright, loopback listeners, and built `web/dist` assets.
+
+## v0.7 G18f generated documentation and advisory review
+
+`TestDocsAreCurrent` regenerates both user and API audiences in memory from the
+explicit template and compares them with committed Markdown. Repository parity
+tests independently enumerate configuration, defaults, CLI usage, REST/OpenAPI,
+MCP tools/scopes, and G18e journeys. `make docgen` and `make g18f-validate` are
+deterministic CI/release gates; mutation tests break hashes, markers, audience,
+calibration accounting, triage, fixture closure, and policy.
+
+`make doccheck` is maintainer-only and never ordinary CI. It may contact only a
+plain-HTTP loopback llama.cpp endpoint, withholds claims during bounded source
+explanation, records at least two repetitions, and never reads note/database
+content. Model output is advisory, cannot rewrite prose, and cannot run an
+arbitrary action. An action is accepted only by exact match with the already
+closed G18d/G18e fixtures. Every contradicted verdict must have a nonempty human
+disposition. The committed Qwen report scored 7/16 calibration decisions, so
+its disagreements are not evidence of product drift by themselves.
+
+## v0.7 G18g production documentation site
+
+`make g18g-validate` verifies the exact 44-file Ledger snapshot and Apache-2.0
+LICENSE against the frozen G18b manifest, production provenance, the 15 public
+`.html` routes, all 199 G18a sections, two legacy aliases, local-asset policy,
+Pagefind scope/exclusions, semantic CLI/code/table rendering, and completed QA
+evidence. Five mutation classes must reject theme, route, search, raw-Help, and
+offline-policy drift.
+
+`internal/helpdocs/g18g_docs_test.go` seeds the canonical 15 Markdown files in
+an in-memory SQLite store and requires deterministic Help IDs, notebook/title,
+byte-for-byte bodies, and a no-change reseed. Rendered acceptance uses the
+Browser plugin when available; because it was absent at completion, the
+recorded Playwright fallback drove Chrome at 1440×960 and 390×844. It checks
+all routes, keyboard focus, the theme modes and contrast samples, `Argon2id`
+Pagefind results under `/notrios/`, mobile drawer/Escape/44-pixel target/no
+overflow, overlays, console/page/HTTP failures, CSP violations, and external
+requests. Screenshot inspection is transient and never a committed assertion.
+
+Repeat builds require identical Hugo output and identical Pagefind scope,
+counts, and known-query behavior. Pagefind 1.5.2 varies hashed index/metadata
+shards, as already frozen in G18b, so the gate does not claim a byte-identical
+generated Pagefind tree.
+
+## G17a-G17b evidence-preservation validation
+
+G17a completed generated-only canonical JSONL/entry-chain mutation, correct and
+tampered detached-signature, RFC 3161 nonce/imprint/policy/explicit-chain,
+wrong-data/wrong-CA, deterministic two-build ISO, Unicode/long-name,
+rationalized-permission, extraction, and full hash-walk checks. Its ephemeral
+one-day OpenPGP key and local fixture TSA existed only in a new `/tmp` workspace;
+no production key or trust material was created or used. OpenSSL verification
+named the trusted root and untrusted intermediate explicitly, and GnuPG named
+both signature and data. The historical evidence root was read only, no TSA
+endpoint was contacted, and no production ISO was created.
+
+G17a also fully decompressed and CRC/path-validated all 74 curated top-level
+ZIPs, checked PNG chunk CRCs for four images, mapped 73 current release-shaped
+ZIPs to unique commits through six embedded source anchors, and kept the legacy
+archive unknown. It stopped recursive measurement after finding three private
+G14 benchmark workspaces; those files are not silently promoted into the public
+preservation set.
+
+After separate approval of the curated filesystem scope, exact signing
+fingerprint, and TSA authority/policy, G17b must verify the whole frozen chain
+from each original artifact and detached signature to one signed/timestamped
+content checkpoint, then to the external ISO and outer ISO catalog. Backfilled
+records must say `retroactive: true`. A clean
+offline verifier must work without the repository, network, private key, GUI,
+or mounted image. CI checks tracked schemas, canonicalization, support files,
+and generated fixtures; only the host-side pre-push gate may claim coverage of
+the ISO reserve under `/media/renes/SEAGATE2TB`. Physical burning and read-back
+are a separately authorized custody procedure, not part of G17b.
 
 ## MVP release validation
 

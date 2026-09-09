@@ -1,0 +1,12 @@
+{
+  "schema": "notrios.g18f.validator-mutations.v1",
+  "mutations": [
+    {"name":"freshness-hash","target":"REPORT.json documents[0].sha256"},
+    {"name":"marker","target":"generated begin/end marker"},
+    {"name":"audience","target":"template slot audience"},
+    {"name":"calibration-matrix","target":"ADVISORY_REPORT.json confusion_matrix"},
+    {"name":"triage","target":"contradicted review disposition"},
+    {"name":"fixture-id","target":"advisory action_attempts fixture id"},
+    {"name":"policy","target":"local-only/nonblocking/auto-edit/cost policy"}
+  ]
+}

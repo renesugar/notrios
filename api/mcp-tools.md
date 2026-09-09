@@ -12,7 +12,7 @@ The server should support capability profiles so an LLM is not shown dangerous o
 | --- | --- |
 | `search-only` | `list_collections`, `search_documents` |
 | `read-only` | search, document retrieval, links, resources, outline |
-| `editor` | read-only tools plus create/update/upload/attach |
+| `editor` | read-only tools plus current note mutations and media localization |
 | `organizer` | editor tools plus move/rename/tag/link repair |
 | `administrator` | import, publish, index, delete, policy tools |
 
@@ -38,6 +38,12 @@ Output:
 
 Searches documents with conservative defaults.
 
+`query` uses the shared bounded expression language: implicit AND, uppercase
+`OR`, prefix `-`, parentheses, phrases, typed fields, and `category:` as a
+`notebook:` alias. Maximum query length is 4,096 UTF-8 bytes (also advertised
+as JSON Schema `maxLength`); the service additionally enforces 256 tokens and
+16 parenthesis levels.
+
 Input:
 
 ```json
@@ -52,6 +58,21 @@ Input:
 ```
 
 Output uses the same shape as REST `SearchResponse` plus MCP resource links for each hit.
+
+### plan_selection
+
+Runs the shared P1 selection/privacy planner without writing files or changing
+canonical state. Required `target` is `full_archive`, `subset_transfer`, or
+`publication_handoff`. Typed selectors are recursive notebook IDs, tags, one
+bounded query, and up to 1,000 explicit document IDs; policy fields are closed
+booleans/enums rather than arbitrary maps.
+
+Output is the REST-compatible content-free plan: stable IDs, resource hashes,
+complete counts, internal/private/broken/external link decisions, source-bundle
+policy results, exclusions, metadata decisions, warnings, and a deterministic
+manifest digest. Detail arrays use `mcp.max_results`; bodies, raw resource
+bytes, source metadata JSON/URLs, raw broken-link context, SQL, and local paths
+are never returned.
 
 ### get_document
 
@@ -105,6 +126,10 @@ Case-insensitive search within one note; returns matches with line numbers and c
 
 ### get_notebook_notes
 
+Input accepts `notebook_id`, optional `limit`, and opaque optional `cursor`.
+Output is the REST-compatible `{documents, next_cursor}` page; cursors are
+bound to that notebook and must be returned unchanged.
+
 List current notes directly in one notebook.
 
 ### scan_remote_media
@@ -114,9 +139,11 @@ reason, media class, and line number) for every remote image/media URL in one
 note. Purely static — nothing is downloaded, not even DNS lookups (v0.3 task
 H2). Takes `document_id` or a `document://` URI.
 
-## Editor-profile write tools — implemented (task R8)
+## Editor-scope write tools — implemented (task R8)
 
-Exposed by `tools/list` and callable only when `mcp.default_profile` is `editor`; the default read-only profile hides and rejects them.
+Exposed by `tools/list` and callable only when `mcp.default_scope` is `editor`
+or wider; the default `read-only` scope hides and rejects them. The deprecated
+`mcp.default_profile` alias is still read for configuration compatibility.
 
 - `create_note(title, body?, notebook_id?)`
 - `update_note(document_id, base_revision_id, title?, body?)` — optimistic concurrency required.
@@ -126,19 +153,22 @@ Exposed by `tools/list` and callable only when `mcp.default_profile` is `editor`
 - `move_note_to_notebook(document_id, notebook_id)` — Help-notebook moves are refused.
 - `localize_remote_media(document_id, base_revision_id, dry_run?, allow_review?)` — downloads policy-allowed remote media through the quarantine pipeline, stores it as local resources, and rewrites the note to `resource://` URIs in a new revision (v0.3 task H4). `dry_run` reports decisions without fetching; `allow_review` opts review-listed URLs in; blocked URLs are never fetched.
 
-## Later write tools
+## Later write/control tools
 
-Write tools require explicit scopes and revision preconditions:
+Write tools require explicit scopes and revision preconditions.
 
-- `create_document`
-- `update_document`
-- `edit_document` with SEARCH/REPLACE blocks and dry-run support
-- `upload_resource`
-- `attach_resource`
-- `detach_resource`
-- `localize_remote_media`
-- `trash_document`
-- `restore_revision`
+- `upload_resource`, `attach_resource`, `detach_resource`, and
+  `restore_revision` remain withheld pending a separately approved design;
+- `run_batch` is implemented at `organizer`; its response contains the complete
+  bounded outcomes, so there is no separate `get_batch_status`;
+- v0.7 G15's resolved policy permits plan/start ordinary incremental sync,
+  bounded resource fetch, and status/conflict inspection at an explicit sync
+  scope; it withholds enrollment, keys, backups, restore, retirement, purge,
+  another actor's catch-up cancellation, and bulk bytes.
+
+MCP does not carry native archives, change envelopes, or arbitrary blob bytes
+in model context. Those use REST/object transfer; MCP returns job IDs and
+bounded summaries.
 
 ## Resources
 

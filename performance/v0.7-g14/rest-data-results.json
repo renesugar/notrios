@@ -1,0 +1,61 @@
+{
+  "schema": "notrios.g14.restdata.v1",
+  "generated_for": "v0.7 G14 REST sync data plane and resumable encrypted backup download",
+  "database_schema_version": 25,
+  "exchanges": [
+    {
+      "notes": 100,
+      "operations": 200,
+      "rest_exchange_ms": 1318,
+      "folder_exchange_ms": 1142,
+      "rest_overhead_percent": 15.411558669001751,
+      "converged": true,
+      "transcript_identical": true
+    },
+    {
+      "notes": 500,
+      "operations": 1000,
+      "rest_exchange_ms": 5933,
+      "folder_exchange_ms": 5929,
+      "rest_overhead_percent": 0.06746500252993759,
+      "converged": true,
+      "transcript_identical": true
+    }
+  ],
+  "backups": [
+    {
+      "notes": 100,
+      "archive_bytes": 107576,
+      "sealed_bytes": 134468,
+      "sealing_overhead_percent": 24.998140849260057,
+      "produce_ms": 343,
+      "download_ms": 7,
+      "download_requests": 1,
+      "chunk_bytes": 262144,
+      "resumed_after_stop": false,
+      "verified_as_archive_v2": true,
+      "restored_records": 207
+    },
+    {
+      "notes": 500,
+      "archive_bytes": 528780,
+      "sealed_bytes": 660472,
+      "sealing_overhead_percent": 24.904875373501266,
+      "produce_ms": 995,
+      "download_ms": 12,
+      "download_requests": 3,
+      "chunk_bytes": 262144,
+      "resumed_after_stop": true,
+      "verified_as_archive_v2": true,
+      "restored_records": 1007
+    }
+  ],
+  "notes": [
+    "Every note is generated. No private corpus content is read or recorded.",
+    "rest_exchange_ms and folder_exchange_ms run the same round over the two carriers, on one host with no network.",
+    "transcript_identical compares the artifact names each carrier ended up holding: the protocol is the same, only the courier differs.",
+    "sealing_overhead_percent is what framing and authentication add to the packed archive.",
+    "download_requests counts bounded range requests; a resumed transfer restarts at the local file's own length.",
+    "Loopback HTTP on one host: these are protocol costs, not a network measurement."
+  ]
+}

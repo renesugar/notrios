@@ -8,17 +8,40 @@ package recoll
 import (
 	"bytes"
 	"context"
-	"encoding/base64"
 	_ "embed"
+	"encoding/base64"
+	"errors"
 	"fmt"
+	"html"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
+	"time"
+	"unicode"
+	"unicode/utf8"
 
+	"github.com/renesugar/notrios/internal/projection"
 	"github.com/renesugar/notrios/internal/query"
 )
+
+const (
+	maxQueryOutputBytes   = 8 * 1024 * 1024
+	maxProcessErrorBytes  = 64 * 1024
+	maxURLFieldBytes      = 4096
+	maxTitleFieldBytes    = 64 * 1024
+	maxAbstractFieldBytes = 256 * 1024
+	maxSnippetBytes       = 512
+	indexProcessTimeout   = 30 * time.Minute
+	queryProcessTimeout   = 30 * time.Second
+)
+
+// ErrUnsupportedQuery means Recoll cannot honor the requested canonical
+// scope. Callers must use SQLite only; they must not send an approximation.
+var ErrUnsupportedQuery = errors.New("query is unsupported by the Recoll projection")
 
 //go:embed notrios_md_handler.py
 var handlerScript []byte
@@ -30,6 +53,34 @@ type Sidecar struct {
 	ProjectionDir string
 	IndexBinary   string // recollindex
 	QueryBinary   string // recollq
+	statusMu      sync.RWMutex
+	status        RuntimeStatus
+}
+
+// RuntimeStatus is the live, derived-sidecar state exposed through /status.
+type RuntimeStatus struct {
+	Configured           bool
+	Available            bool
+	Active               bool
+	State                string
+	Backlog              int
+	FailedJobs           int
+	LastSyncAt           time.Time
+	LastIndexAt          time.Time
+	LastReconciliationAt time.Time
+	LastError            string
+	Reconciliation       ReconciliationStatus
+}
+
+type ReconciliationStatus struct {
+	Complete  bool
+	Canonical int
+	Scanned   int
+	Missing   int
+	Stale     int
+	Orphaned  int
+	Repaired  int
+	Failed    int
 }
 
 // New prepares a sidecar rooted at confDir. indexBinary defaults to
@@ -43,16 +94,22 @@ func New(confDir, projectionDir, indexBinary string) *Sidecar {
 	if dir := filepath.Dir(indexBinary); dir != "." {
 		queryBinary = filepath.Join(dir, "recollq")
 	}
-	return &Sidecar{ConfDir: confDir, ProjectionDir: projectionDir, IndexBinary: indexBinary, QueryBinary: queryBinary}
+	return &Sidecar{
+		ConfDir: confDir, ProjectionDir: projectionDir, IndexBinary: indexBinary, QueryBinary: queryBinary,
+		status: RuntimeStatus{Configured: true, State: "configured"},
+	}
 }
 
 // Available reports whether the Recoll binaries can be found.
 func (s *Sidecar) Available() bool {
 	if _, err := exec.LookPath(s.IndexBinary); err != nil {
+		s.setAvailable(false)
 		return false
 	}
 	_, err := exec.LookPath(s.QueryBinary)
-	return err == nil
+	available := err == nil
+	s.setAvailable(available)
+	return available
 }
 
 // EnsureConfig writes the generated Recoll configuration: recoll.conf watching
@@ -60,7 +117,10 @@ func (s *Sidecar) Available() bool {
 // the publishedts integer range slot, mimeconf wiring text/markdown to the
 // from-scratch front-matter handler, and the handler script itself.
 func (s *Sidecar) EnsureConfig() error {
-	if err := os.MkdirAll(s.ConfDir, 0o755); err != nil {
+	// Owner-only. This directory is regenerated, never user-authored, and the
+	// recoll.conf inside it names the projection directory holding the user's
+	// note text.
+	if err := os.MkdirAll(s.ConfDir, 0o700); err != nil {
 		return err
 	}
 	handlerPath := filepath.Join(s.ConfDir, "notrios_md_handler.py")
@@ -86,6 +146,7 @@ threadid = XTHREADID
 replyto = XREPLYTO
 notebook = XNOTEBOOK
 sourceurl = XSOURCEURL
+emoji = XEMOJI
 
 [values]
 publishedts = 1001; type=int; len=10
@@ -110,12 +171,25 @@ text/markdown = exec python3 %s ; mimetype=text/html
 
 // Index runs one incremental recollindex pass over the projection.
 func (s *Sidecar) Index(ctx context.Context) error {
-	cmd := exec.CommandContext(ctx, s.IndexBinary, "-c", s.ConfDir)
-	var stderr bytes.Buffer
+	processCtx, cancel := context.WithTimeout(ctx, indexProcessTimeout)
+	defer cancel()
+	cmd := exec.CommandContext(processCtx, s.IndexBinary, "-c", s.ConfDir)
+	stderr := newBoundedBuffer(maxProcessErrorBytes)
 	cmd.Stderr = &stderr
 	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("recollindex: %w: %s", err, strings.TrimSpace(stderr.String()))
+		if processCtx.Err() != nil {
+			err = processCtx.Err()
+		}
+		indexErr := fmt.Errorf("recollindex: %w: %s", err, strings.TrimSpace(stderr.String()))
+		s.recordIndex(indexErr)
+		return indexErr
 	}
+	if stderr.Truncated() {
+		indexErr := fmt.Errorf("recollindex stderr exceeded %d bytes", maxProcessErrorBytes)
+		s.recordIndex(indexErr)
+		return indexErr
+	}
+	s.recordIndex(nil)
 	return nil
 }
 
@@ -128,38 +202,65 @@ type Hit struct {
 
 // Search compiles the parsed query to Recoll syntax and runs recollq.
 func (s *Sidecar) Search(ctx context.Context, q query.Query, limit int) ([]Hit, error) {
-	expr := CompileQuery(q)
+	expr, err := CompileQuery(q)
+	if err != nil {
+		return nil, err
+	}
 	if strings.TrimSpace(expr) == "" {
 		return nil, nil
 	}
-	if limit <= 0 || limit > 200 {
+	if limit <= 0 || limit > 1001 {
 		limit = 50
 	}
-	cmd := exec.CommandContext(ctx, s.QueryBinary, "-c", s.ConfDir, "-F", "url title abstract", "-n", "0-"+strconv.Itoa(limit), expr)
-	var stdout, stderr bytes.Buffer
+	processCtx, cancel := context.WithTimeout(ctx, queryProcessTimeout)
+	defer cancel()
+	cmd := exec.CommandContext(processCtx, s.QueryBinary, "-c", s.ConfDir, "-E", "-F", "url title abstract", "-n", "0-"+strconv.Itoa(limit), expr)
+	stdout := newBoundedBuffer(maxQueryOutputBytes)
+	stderr := newBoundedBuffer(maxProcessErrorBytes)
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 	if err := cmd.Run(); err != nil {
+		if processCtx.Err() != nil {
+			err = processCtx.Err()
+		}
 		return nil, fmt.Errorf("recollq: %w: %s", err, strings.TrimSpace(stderr.String()))
 	}
-	return parseResults(stdout.String()), nil
+	if stdout.Truncated() {
+		return nil, fmt.Errorf("recollq output exceeded %d bytes", maxQueryOutputBytes)
+	}
+	if stderr.Truncated() {
+		return nil, fmt.Errorf("recollq stderr exceeded %d bytes", maxProcessErrorBytes)
+	}
+	return parseResults(stdout.String(), s.ProjectionDir, limit), nil
 }
 
 // parseResults reads recollq -F output: header lines followed by one result
 // per line of space-separated base64-encoded field values. Lines that do not
 // decode are skipped (query echo, result counts).
-func parseResults(output string) []Hit {
+func parseResults(output, projectionDir string, limit int) []Hit {
+	if limit <= 0 {
+		return nil
+	}
 	hits := []Hit{}
+	seen := map[string]bool{}
 	for _, line := range strings.Split(output, "\n") {
+		if len(hits) >= limit {
+			break
+		}
 		fields := strings.Fields(line)
-		if len(fields) < 1 {
+		if len(fields) < 1 || len(fields) > 3 {
 			continue
 		}
+		maxima := []int{maxURLFieldBytes, maxTitleFieldBytes, maxAbstractFieldBytes}
 		decoded := make([]string, 0, len(fields))
 		ok := true
-		for _, field := range fields {
+		for index, field := range fields {
+			if base64.StdEncoding.DecodedLen(len(field)) > maxima[index] {
+				ok = false
+				break
+			}
 			raw, err := base64.StdEncoding.DecodeString(field)
-			if err != nil {
+			if err != nil || len(raw) > maxima[index] || !utf8.Valid(raw) {
 				ok = false
 				break
 			}
@@ -168,16 +269,17 @@ func parseResults(output string) []Hit {
 		if !ok || len(decoded) == 0 {
 			continue
 		}
-		id := documentIDFromURL(decoded[0])
-		if id == "" {
+		id := documentIDFromURL(decoded[0], projectionDir)
+		if id == "" || seen[id] {
 			continue
 		}
+		seen[id] = true
 		hit := Hit{DocumentID: id}
 		if len(decoded) > 1 {
-			hit.Title = decoded[1]
+			hit.Title = plainText(decoded[1], maxSnippetBytes)
 		}
 		if len(decoded) > 2 {
-			hit.Abstract = decoded[2]
+			hit.Abstract = plainText(decoded[2], maxSnippetBytes)
 		}
 		hits = append(hits, hit)
 	}
@@ -186,54 +288,333 @@ func parseResults(output string) []Hit {
 
 // documentIDFromURL recovers the document ID from a projection file URL
 // (file:///.../notes/<document_id>.md).
-func documentIDFromURL(url string) string {
-	base := filepath.Base(strings.TrimPrefix(url, "file://"))
+func documentIDFromURL(rawURL, projectionDir string) string {
+	parsed, err := url.Parse(rawURL)
+	if err != nil || parsed.Scheme != "file" || parsed.Host != "" {
+		return ""
+	}
+	path, err := url.PathUnescape(parsed.Path)
+	if err != nil {
+		return ""
+	}
+	path = filepath.Clean(path)
+	if strings.TrimSpace(projectionDir) != "" {
+		notesRoot := filepath.Join(filepath.Clean(projectionDir), "notes")
+		relative, err := filepath.Rel(notesRoot, path)
+		if err != nil || relative == "." || strings.HasPrefix(relative, ".."+string(filepath.Separator)) || filepath.IsAbs(relative) {
+			return ""
+		}
+		if filepath.Dir(relative) != "." {
+			return ""
+		}
+	}
+	base := filepath.Base(path)
 	if !strings.HasSuffix(base, ".md") {
 		return ""
 	}
-	return strings.TrimSuffix(base, ".md")
-}
-
-// CompileQuery renders the parsed user query in Recoll query syntax
-// (SEARCH_QUERY_LANGUAGE.md). Trash queries return "" — trashed notes are
-// never projected, so Recoll cannot serve them. notebook: filters compile to
-// the projected notebook field (direct name match; SQL-side filtering remains
-// authoritative for subtree semantics).
-func CompileQuery(q query.Query) string {
-	if q.Trashed {
+	id := strings.TrimSuffix(base, ".md")
+	if id == "" || id == "." || id == ".." || strings.ContainsAny(id, `/\`) {
 		return ""
 	}
-	parts := []string{}
-	quote := func(v string) string { return `"` + strings.ReplaceAll(v, `"`, ` `) + `"` }
-	for _, term := range q.Terms {
-		if term.Phrase {
-			parts = append(parts, quote(term.Text))
-		} else {
-			parts = append(parts, term.Text)
+	return id
+}
+
+func plainText(value string, maxBytes int) string {
+	value = html.UnescapeString(value)
+	var builder strings.Builder
+	inTag := false
+	for _, runeValue := range value {
+		switch runeValue {
+		case '<':
+			inTag = true
+			builder.WriteByte(' ')
+		case '>':
+			inTag = false
+			builder.WriteByte(' ')
+		default:
+			if inTag {
+				continue
+			}
+			if unicode.IsControl(runeValue) {
+				builder.WriteByte(' ')
+			} else {
+				builder.WriteRune(runeValue)
+			}
 		}
 	}
-	for _, term := range q.Title {
-		parts = append(parts, "title:"+quote(term.Text))
+	value = strings.Join(strings.Fields(builder.String()), " ")
+	if len(value) <= maxBytes {
+		return value
 	}
-	for _, name := range q.Notebooks {
-		parts = append(parts, "notebook:"+quote(name))
+	value = value[:maxBytes]
+	for !utf8.ValidString(value) {
+		value = value[:len(value)-1]
 	}
-	for _, tag := range q.Tags {
-		parts = append(parts, "tag:"+quote(tag))
+	return strings.TrimSpace(value) + "…"
+}
+
+type boundedBuffer struct {
+	buffer    bytes.Buffer
+	limit     int
+	truncated bool
+}
+
+func newBoundedBuffer(limit int) boundedBuffer {
+	return boundedBuffer{limit: limit}
+}
+
+func (b *boundedBuffer) Write(value []byte) (int, error) {
+	original := len(value)
+	remaining := b.limit - b.buffer.Len()
+	if remaining <= 0 {
+		b.truncated = true
+		return original, nil
 	}
-	for _, author := range q.Authors {
-		parts = append(parts, "author:"+quote(author))
+	if len(value) > remaining {
+		value = value[:remaining]
+		b.truncated = true
 	}
-	for _, authorID := range q.AuthorIDs {
-		parts = append(parts, "authorid:"+quote(authorID))
+	_, _ = b.buffer.Write(value)
+	return original, nil
+}
+
+func (b *boundedBuffer) String() string  { return b.buffer.String() }
+func (b *boundedBuffer) Truncated() bool { return b.truncated }
+
+// Status implements the HTTP status-provider contract.
+func (s *Sidecar) Status(context.Context) RuntimeStatus {
+	s.statusMu.RLock()
+	defer s.statusMu.RUnlock()
+	return s.status
+}
+
+func (s *Sidecar) setAvailable(available bool) {
+	s.statusMu.Lock()
+	defer s.statusMu.Unlock()
+	s.status.Available = available
+	if !available {
+		s.status.Active = false
+		s.status.State = "unavailable"
 	}
-	switch {
-	case q.Since > 0 && q.Until > 0:
-		parts = append(parts, fmt.Sprintf("publishedts:%d..%d", q.Since, q.Until))
-	case q.Since > 0:
-		parts = append(parts, fmt.Sprintf("publishedts:%d..", q.Since))
-	case q.Until > 0:
-		parts = append(parts, fmt.Sprintf("publishedts:..%d", q.Until))
+}
+
+func (s *Sidecar) SetActive(active bool) {
+	s.statusMu.Lock()
+	defer s.statusMu.Unlock()
+	s.status.Active = active
+	if active {
+		if s.status.FailedJobs > 0 || s.status.Reconciliation.Failed > 0 {
+			s.status.State = "degraded"
+		} else {
+			s.status.State = "active"
+			s.status.LastError = ""
+		}
 	}
-	return strings.Join(parts, " ")
+}
+
+func (s *Sidecar) RecordProjection(report projection.Report) {
+	s.statusMu.Lock()
+	defer s.statusMu.Unlock()
+	s.status.Backlog = report.Backlog
+	s.status.FailedJobs = report.Failed
+	s.status.LastSyncAt = time.Now().UTC()
+}
+
+func (s *Sidecar) RecordReconciliation(report projection.ReconcileReport) {
+	s.statusMu.Lock()
+	defer s.statusMu.Unlock()
+	s.status.LastReconciliationAt = report.CompletedAt
+	s.status.Reconciliation = ReconciliationStatus{
+		Complete: report.Complete, Canonical: report.Canonical, Scanned: report.FilesScanned,
+		Missing: report.Missing, Stale: report.Stale, Orphaned: report.Orphaned,
+		Repaired: report.Repaired, Failed: report.Failed,
+	}
+	if report.Failed > 0 {
+		s.status.State = "degraded"
+	} else if s.status.Active && s.status.FailedJobs == 0 && s.status.LastError == "" {
+		s.status.State = "active"
+	}
+}
+
+func (s *Sidecar) RecordQueue(backlog, failed int) {
+	s.statusMu.Lock()
+	defer s.statusMu.Unlock()
+	s.status.Backlog = backlog
+	s.status.FailedJobs = failed
+	if failed > 0 {
+		s.status.State = "degraded"
+	}
+}
+
+func (s *Sidecar) RecordError(err error) {
+	if err == nil {
+		return
+	}
+	s.statusMu.Lock()
+	defer s.statusMu.Unlock()
+	s.status.State = "degraded"
+	s.status.LastError = truncateError(err.Error())
+}
+
+func (s *Sidecar) recordIndex(err error) {
+	s.statusMu.Lock()
+	defer s.statusMu.Unlock()
+	if err != nil {
+		s.status.State = "degraded"
+		s.status.LastError = truncateError(err.Error())
+		return
+	}
+	s.status.LastIndexAt = time.Now().UTC()
+	s.status.LastError = ""
+	if s.status.Active {
+		if s.status.FailedJobs > 0 || s.status.Reconciliation.Failed > 0 {
+			s.status.State = "degraded"
+		} else {
+			s.status.State = "active"
+		}
+	}
+}
+
+func truncateError(value string) string {
+	value = strings.TrimSpace(value)
+	if len(value) > 1024 {
+		return value[:1024]
+	}
+	return value
+}
+
+// CompileQuery renders the same bounded AST used by SQLite in Recoll query
+// syntax. Parentheses are emitted around every boolean node because Recoll's
+// native OR precedence differs from Notrios. Trash is rejected explicitly:
+// deleted notes are intentionally absent from the derived projection.
+func CompileQuery(q query.Query) (string, error) {
+	if q.Trashed {
+		return "", fmt.Errorf("%w: Trash is not projected", ErrUnsupportedQuery)
+	}
+	if q.IsEmpty() {
+		return "", fmt.Errorf("%w: an unfiltered All notes query has no sidecar-only results", ErrUnsupportedQuery)
+	}
+	return compileExpr(q.Root, false)
+}
+
+// compileExpr pushes negation to leaves with De Morgan's laws because Recoll
+// accepts -term exclusions but not -(group). This is an exact lowering of the
+// application AST, not a backend approximation.
+func compileExpr(expr *query.Expr, negated bool) (string, error) {
+	if expr == nil || expr.Op == query.OpMatchAll {
+		if negated {
+			return `noteid:"__notrios_no_match__"`, nil
+		}
+		return "", fmt.Errorf("%w: unbounded match-all expression", ErrUnsupportedQuery)
+	}
+	if expr.Op == query.OpMatchNone {
+		if negated {
+			return "", fmt.Errorf("%w: unbounded negated match-none expression", ErrUnsupportedQuery)
+		}
+		return `noteid:"__notrios_no_match__"`, nil
+	}
+	switch expr.Op {
+	case query.OpNot:
+		if len(expr.Children) != 1 {
+			return "", fmt.Errorf("malformed NOT expression")
+		}
+		return compileExpr(expr.Children[0], !negated)
+	case query.OpAnd, query.OpOr:
+		joiner := " " // Recoll's documented adjacency operator is AND.
+		op := expr.Op
+		if negated {
+			if op == query.OpAnd {
+				op = query.OpOr
+			} else {
+				op = query.OpAnd
+			}
+		}
+		if op == query.OpOr {
+			joiner = " OR "
+		}
+		parts := make([]string, 0, len(expr.Children))
+		for _, child := range expr.Children {
+			compiled, err := compileExpr(child, negated)
+			if err != nil {
+				return "", err
+			}
+			parts = append(parts, "("+compiled+")")
+		}
+		return "(" + strings.Join(parts, joiner) + ")", nil
+	case query.OpTerm:
+		if expr.Term == nil {
+			return "", fmt.Errorf("malformed term expression")
+		}
+		compiled, err := compileTerm(*expr.Term)
+		if err != nil {
+			return "", err
+		}
+		if negated {
+			if strings.HasPrefix(compiled, "(") {
+				return "", fmt.Errorf("%w: multi-symbol negation requires SQLite", ErrUnsupportedQuery)
+			}
+			return "-" + compiled, nil
+		}
+		return compiled, nil
+	default:
+		return "", fmt.Errorf("unsupported query expression %q", expr.Op)
+	}
+}
+
+func compileTerm(term query.Term) (string, error) {
+	quote := func(value string) string {
+		value = strings.Map(func(r rune) rune {
+			if unicode.IsControl(r) {
+				return ' '
+			}
+			return r
+		}, value)
+		return `"` + strings.ReplaceAll(value, `"`, ` `) + `"`
+	}
+	switch term.Field {
+	case query.FieldText:
+		if keys := query.SymbolKeys(term.Text); len(keys) > 0 {
+			residual := strings.Map(func(r rune) rune {
+				if unicode.Is(unicode.So, r) || r == '\ufe0f' {
+					return ' '
+				}
+				return r
+			}, term.Text)
+			if term.Phrase || strings.TrimSpace(residual) != "" {
+				return "", fmt.Errorf("%w: mixed text/emoji terms require SQLite", ErrUnsupportedQuery)
+			}
+			parts := make([]string, 0, len(keys))
+			for _, key := range keys {
+				parts = append(parts, "emoji:"+quote(key))
+			}
+			return "(" + strings.Join(parts, " ") + ")", nil
+		}
+		if term.Phrase || strings.ContainsAny(term.Text, `:()"`) {
+			return quote(term.Text), nil
+		}
+		return term.Text, nil
+	case query.FieldTitle:
+		if query.ContainsSymbol(term.Text) {
+			return "", fmt.Errorf("%w: title emoji terms require SQLite", ErrUnsupportedQuery)
+		}
+		return "title:" + quote(term.Text), nil
+	case query.FieldNotebook:
+		return "notebook:" + quote(term.Text), nil
+	case query.FieldCollection:
+		// The projection must carry the field or this matches nothing: see
+		// internal/projection, which writes it into the front matter.
+		return "collection:" + quote(term.Text), nil
+	case query.FieldTag:
+		return "tag:" + quote(term.Text), nil
+	case query.FieldAuthor:
+		return "author:" + quote(term.Text), nil
+	case query.FieldAuthorID:
+		return "authorid:" + quote(term.Text), nil
+	case query.FieldSince:
+		return fmt.Sprintf("publishedts:%d..", term.UnixValue), nil
+	case query.FieldUntil:
+		return fmt.Sprintf("publishedts:..%d", term.UnixValue), nil
+	default:
+		return "", fmt.Errorf("%w: field %q", ErrUnsupportedQuery, term.Field)
+	}
 }

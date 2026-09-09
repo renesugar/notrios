@@ -1,0 +1,28 @@
+{
+  "schema": "notrios.g1.scenarios.v1",
+  "offline_intervals": ["1-hour", "1-day", "1-week", "30-days"],
+  "body_cases": [
+    {"id": "independent-paragraphs", "expected": {"line": "clean", "word": "clean", "byte": "clean"}},
+    {"id": "same-line-disjoint-words", "expected": {"line": "conflict", "word": "clean", "byte": "clean"}},
+    {"id": "same-token", "expected": {"line": "conflict", "word": "conflict", "byte": "conflict"}},
+    {"id": "unicode-neighbours", "expected": {"line": "conflict", "word": "clean", "byte": "clean"}},
+    {"id": "markdown-overlap", "expected": {"line": "conflict", "word": "conflict", "byte": "conflict"}},
+    {"id": "very-long-line", "expected": {"line": "conflict", "word": "clean", "byte": "limit-rejected"}}
+  ],
+  "metadata_cases": [
+    {"id": "title-body-overlap", "classification": "clean-field-merge"},
+    {"id": "delete-edit", "classification": "durable-conflict"},
+    {"id": "move-rename", "classification": "clean-field-merge"},
+    {"id": "tag-add-remove", "classification": "protocol-order-lww-per-element"},
+    {"id": "notebook-cycle", "classification": "deterministic-repair-required"}
+  ],
+  "patch_rejections": [
+    "missing-base",
+    "wrong-base-hash",
+    "wrong-result-hash",
+    "cursor-overrun",
+    "operation-count-limit",
+    "inserted-byte-limit",
+    "invalid-utf8-result"
+  ]
+}

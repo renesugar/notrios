@@ -89,7 +89,7 @@ func (l *Localizer) LocalizeDocument(ctx context.Context, opts Options) (api.Rem
 	if err != nil {
 		return result, err
 	}
-	if doc.NotebookID == store.HelpNotebookID || !doc.DeletedAt.IsZero() {
+	if store.IsReadOnlyNotebook(doc.NotebookID) || !doc.DeletedAt.IsZero() {
 		return result, fmt.Errorf("%w: %s", ErrReadOnly, doc.ID)
 	}
 	baseRevisionID := opts.BaseRevisionID

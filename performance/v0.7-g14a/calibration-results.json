@@ -1,0 +1,45 @@
+{
+  "schema": "notrios.g14a.calibration-summary.v1",
+  "adapter": "archive-v2-loose",
+  "cache_state": "interleaved-first",
+  "filesystem_type_reported_by_stat": "ext2/ext3",
+  "environment": {
+    "cpu_model": "Intel(R) Core(TM) i5-9300H CPU @ 2.40GHz",
+    "logical_cpus": 8,
+    "system_memory_kib": 65684580,
+    "go_version": "go1.26.5",
+    "sqlite_version": "3.45.1",
+    "restic_version": "0.16.4",
+    "borg_version": "1.2.8"
+  },
+  "tiers": [
+    {
+      "tier": 10000,
+      "rows": [
+        {"phase":"inventory","items":20073,"input_bytes":2040939,"output_bytes":2040939,"output_files":20070,"maximum_directory_entries":10052,"wall_seconds":1.802360871,"peak_rss_bytes":31813632,"read_bytes":0,"write_bytes":0,"source_unchanged":true,"arithmetic_valid":true},
+        {"phase":"foreign-import","items":20050,"resources":20,"input_bytes":2040939,"output_bytes":43372544,"output_files":23,"maximum_directory_entries":20,"wall_seconds":118.276668247,"peak_rss_bytes":32272384,"read_bytes":0,"write_bytes":178913280,"source_unchanged":true,"arithmetic_valid":true,"canonical_fingerprint":"93dcea5a8df1b5070d116cb58ca479112038c62076a8c3c643f397909ab91174"},
+        {"phase":"snapshot-create","items":10000,"resources":20,"input_bytes":43871314,"output_bytes":23521174,"output_files":10030,"maximum_directory_entries":256,"wall_seconds":39.420172062,"peak_rss_bytes":51507200,"read_bytes":0,"write_bytes":67514368,"source_unchanged":true,"arithmetic_valid":true,"artifact_sha256":"e2561f5f1c96f07bf9bb70f342bb467ddd8b967b1d143ceabf2cc3294b1fa412"},
+        {"phase":"snapshot-verify","items":60057,"resources":20,"input_bytes":23521174,"output_bytes":23521174,"output_files":10030,"maximum_directory_entries":256,"wall_seconds":25.881716205,"peak_rss_bytes":31186944,"read_bytes":0,"write_bytes":0,"source_unchanged":true,"arithmetic_valid":true,"exact_hash_verified":true,"artifact_sha256":"e2561f5f1c96f07bf9bb70f342bb467ddd8b967b1d143ceabf2cc3294b1fa412","canonical_fingerprint":"6693f0a5fc633101c9f629d8db21264305ef94615d0420b8faaa738a55c2fe04"},
+        {"phase":"transport-prepare","items":10030,"input_bytes":23521174,"output_bytes":26148912,"output_files":1,"container_entries":10030,"maximum_directory_entries":1,"wall_seconds":7.572888711,"peak_rss_bytes":29863936,"read_bytes":0,"write_bytes":26152960,"source_unchanged":true,"arithmetic_valid":true,"exact_hash_verified":true,"artifact_sha256":"574af2b9853a14886b011f8a7e3edf309d5d4d94fe55c25b0b31742888ee6b9c"},
+        {"phase":"transport-seal","items":1,"input_bytes":26148912,"output_bytes":26149516,"output_files":1,"maximum_directory_entries":1,"wall_seconds":2.491224841,"peak_rss_bytes":30248960,"read_bytes":0,"write_bytes":26157056,"source_unchanged":true,"arithmetic_valid":true,"exact_hash_verified":true,"sealed_sha256":"136b6e602859df80d49bdd50f2a37d1381703d345adc212c393aafd8831ad677"},
+        {"phase":"snapshot-open","items":10031,"input_bytes":26149516,"output_bytes":49670086,"output_files":10031,"maximum_directory_entries":256,"wall_seconds":24.478700849,"peak_rss_bytes":32473088,"read_bytes":24576,"write_bytes":88166400,"source_unchanged":true,"arithmetic_valid":true,"exact_hash_verified":true,"artifact_sha256":"574af2b9853a14886b011f8a7e3edf309d5d4d94fe55c25b0b31742888ee6b9c"},
+        {"phase":"snapshot-restore","items":60057,"resources":20,"input_bytes":23521174,"output_bytes":59385826,"output_files":23,"maximum_directory_entries":20,"wall_seconds":103.114517072,"peak_rss_bytes":35590144,"read_bytes":0,"write_bytes":174370816,"source_unchanged":true,"arithmetic_valid":true,"exact_hash_verified":true,"canonical_fingerprint":"c9ffa2badbf5c414df05fe1ca42ce08d0abd8b971fc6e718b2bfeff3903de2a8"},
+        {"phase":"incremental-replay","items":1,"input_bytes":57477322,"output_bytes":89966138,"output_files":23,"maximum_directory_entries":20,"wall_seconds":69.749251222,"peak_rss_bytes":131592192,"read_bytes":0,"write_bytes":128688128,"source_unchanged":true,"arithmetic_valid":true,"exact_hash_verified":true}
+      ]
+    },
+    {
+      "tier": 100000,
+      "rows": [
+        {"phase":"inventory","items":200073,"input_bytes":20580939,"output_bytes":20580939,"output_files":200070,"maximum_directory_entries":100052,"wall_seconds":8.977283131,"peak_rss_bytes":78749696,"read_bytes":0,"write_bytes":0,"source_unchanged":true,"arithmetic_valid":true},
+        {"phase":"foreign-import","items":200050,"resources":20,"input_bytes":20580939,"output_bytes":432889856,"output_files":23,"maximum_directory_entries":20,"wall_seconds":1063.832649188,"peak_rss_bytes":104923136,"read_bytes":0,"write_bytes":2601119744,"source_unchanged":true,"arithmetic_valid":true,"canonical_fingerprint":"0891195205443305e44148eec76d20b53dfd690a557270a8af77e3424ea1d090"},
+        {"phase":"snapshot-create","items":100000,"resources":20,"input_bytes":433388626,"output_bytes":235226035,"output_files":100093,"maximum_directory_entries":256,"wall_seconds":322.400996722,"peak_rss_bytes":96260096,"read_bytes":0,"write_bytes":662224896,"source_unchanged":true,"arithmetic_valid":true,"artifact_sha256":"4c961a091aae8383a38f87b1977aa613ee5702e54e47a083062ee38d8bd9e7dd"},
+        {"phase":"snapshot-verify","items":600057,"resources":20,"input_bytes":235226035,"output_bytes":235226035,"output_files":100093,"maximum_directory_entries":256,"wall_seconds":196.624116740,"peak_rss_bytes":79691776,"read_bytes":36864,"write_bytes":0,"source_unchanged":true,"arithmetic_valid":true,"exact_hash_verified":true,"artifact_sha256":"4c961a091aae8383a38f87b1977aa613ee5702e54e47a083062ee38d8bd9e7dd","canonical_fingerprint":"6bcac7a5c93f1e163325215109135698a76a5b2abfc91667dd204b4f465c5627"},
+        {"phase":"transport-prepare","items":100093,"input_bytes":235226035,"output_bytes":261450355,"output_files":1,"container_entries":100093,"maximum_directory_entries":1,"wall_seconds":48.173555610,"peak_rss_bytes":100663296,"read_bytes":0,"write_bytes":261455872,"source_unchanged":true,"arithmetic_valid":true,"exact_hash_verified":true,"artifact_sha256":"33f2fc7bf32824367fd405e30b879fa65e75bd283193983ec72c6e04fd771abf"},
+        {"phase":"transport-seal","items":1,"input_bytes":261450355,"output_bytes":261456359,"output_files":1,"maximum_directory_entries":1,"wall_seconds":17.359643757,"peak_rss_bytes":88342528,"read_bytes":0,"write_bytes":261464064,"source_unchanged":true,"arithmetic_valid":true,"exact_hash_verified":true,"sealed_sha256":"c676d893f2902d2202ae6b3b451b5d6cb9f6a14540eec6411014f3a5905f685d"},
+        {"phase":"snapshot-open","items":100094,"input_bytes":261456359,"output_bytes":496676390,"output_files":100094,"maximum_directory_entries":256,"wall_seconds":218.123300534,"peak_rss_bytes":91660288,"read_bytes":733184,"write_bytes":880787456,"source_unchanged":true,"arithmetic_valid":true,"exact_hash_verified":true,"artifact_sha256":"33f2fc7bf32824367fd405e30b879fa65e75bd283193983ec72c6e04fd771abf"},
+        {"phase":"snapshot-restore","items":600057,"resources":20,"input_bytes":235226035,"output_bytes":368527162,"output_files":23,"maximum_directory_entries":20,"wall_seconds":831.282789530,"peak_rss_bytes":90730496,"read_bytes":12288,"write_bytes":1748025344,"source_unchanged":true,"arithmetic_valid":true,"exact_hash_verified":true,"canonical_fingerprint":"3aad942b9026afeb072ab870678683a1cdf11186b871707652645a42b158318a"},
+        {"phase":"incremental-replay","items":1,"input_bytes":569535914,"output_bytes":896759546,"output_files":23,"maximum_directory_entries":20,"wall_seconds":621.264062112,"peak_rss_bytes":797937664,"read_bytes":0,"write_bytes":1963544576,"source_unchanged":true,"arithmetic_valid":true,"exact_hash_verified":true}
+      ]
+    }
+  ]
+}

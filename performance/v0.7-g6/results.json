@@ -1,0 +1,13 @@
+{
+  "schema_version": 21,
+  "protocol_version": "1.0",
+  "exhaustive_operations": 8,
+  "exhaustive_delivery_orders": 40320,
+  "randomized_seeds": 250,
+  "sqlite_receivers": 2,
+  "sqlite_peer_streams": 2,
+  "sqlite_operations_per_stream": 4,
+  "expected_cycle_repairs": 1,
+  "external_dependencies_added": 0,
+  "private_content_used": false
+}

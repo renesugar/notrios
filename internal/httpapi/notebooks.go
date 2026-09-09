@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -150,11 +151,17 @@ func (s *Server) handleNotebookNotes(w http.ResponseWriter, r *http.Request) {
 	if !s.requireStore(w) {
 		return
 	}
-	docs, err := s.store.ListNotebookDocuments(r.Context(), r.PathValue("notebook_id"), queryLimit(r))
+	page, err := s.store.ListNotebookDocuments(r.Context(), r.PathValue("notebook_id"), store.DocumentPageRequest{
+		Limit:  queryLimit(r),
+		Cursor: r.URL.Query().Get("cursor"),
+	})
 	if writeStoreError(w, err, "notebook_notes_failed") {
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"documents": toAPIDocuments(docs)})
+	writeJSON(w, http.StatusOK, api.DocumentPage{
+		Documents:  toAPIDocuments(page.Documents),
+		NextCursor: page.NextCursor,
+	})
 }
 
 func toAPIDocuments(docs []store.Document) []api.Document {
@@ -174,11 +181,44 @@ func (s *Server) handleListTags(w http.ResponseWriter, r *http.Request) {
 	if !s.requireStore(w) {
 		return
 	}
-	tags, err := s.store.ListTags(r.Context())
+	query, err := tagQueryFromRequest(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "tag_query_invalid", err.Error())
+		return
+	}
+	page, err := s.store.ListTags(r.Context(), query)
 	if writeStoreError(w, err, "tag_list_failed") {
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"tags": toAPITags(tags)})
+	if strings.TrimSpace(query.Name) != "" && len(page.Tags) == 0 {
+		// Asking about one tag is a lookup, and a lookup that finds nothing is
+		// a 404. Returning an empty list would make "no such tag" and "a tag
+		// with nothing on it" the same answer, which is the distinction the
+		// caller asked for.
+		writeError(w, http.StatusNotFound, "tag_not_found", "no tag named "+strconv.Quote(query.Name))
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"tags": toAPITags(page.Tags), "truncated": page.Truncated})
+}
+
+// tagQueryFromRequest reads the narrowing a caller asked for.
+func tagQueryFromRequest(r *http.Request) (store.TagQuery, error) {
+	values := r.URL.Query()
+	query := store.TagQuery{
+		Name:   strings.TrimSpace(values.Get("name")),
+		Prefix: strings.TrimSpace(values.Get("prefix")),
+	}
+	if query.Name != "" && query.Prefix != "" {
+		return store.TagQuery{}, fmt.Errorf("name and prefix ask different questions; send one")
+	}
+	if raw := strings.TrimSpace(values.Get("limit")); raw != "" {
+		limit, err := strconv.Atoi(raw)
+		if err != nil || limit < 1 {
+			return store.TagQuery{}, fmt.Errorf("limit must be a positive whole number")
+		}
+		query.Limit = limit
+	}
+	return query, nil
 }
 
 func toAPITags(tags []store.Tag) []api.Tag {
@@ -206,6 +246,12 @@ func (s *Server) handleDocumentTag(w http.ResponseWriter, r *http.Request) {
 	}
 	docID := r.PathValue("document_id")
 	tagName := r.PathValue("tag")
+	// A tag is a modification of a note the contract calls read-only, and it
+	// outlives a reseed because `note_tags` is keyed by a stable document ID.
+	// This route was the one mutation path without the guard until v0.6 F7.
+	if s.guardReadOnlyNote(w, r, docID) {
+		return
+	}
 	switch r.Method {
 	case http.MethodPost:
 		tag, err := s.store.AddDocumentTag(r.Context(), docID, tagName)
@@ -219,6 +265,81 @@ func (s *Server) handleDocumentTag(w http.ResponseWriter, r *http.Request) {
 		}
 		w.WriteHeader(http.StatusNoContent)
 	}
+}
+
+// handleRenameTag renames a tag hierarchy.
+//
+// `dry_run` defaults to **true**. A caller who forgets the field gets the
+// report, and the only way to change the library is to say so. That asymmetry
+// is deliberate: a rename that swept up a hierarchy nobody meant to touch is
+// tedious to undo by hand, and the report costs one extra round trip.
+func (s *Server) handleRenameTag(w http.ResponseWriter, r *http.Request) {
+	if !s.requireStore(w) {
+		return
+	}
+	var req api.TagRenameRequest
+	if !decodeJSON(w, r, &req) {
+		return
+	}
+	dryRun := true
+	if req.DryRun != nil {
+		dryRun = *req.DryRun
+	}
+	result, err := s.store.RenameTag(r.Context(), store.TagRenameRequest{
+		From:            req.From,
+		To:              req.To,
+		IncludeChildren: req.IncludeChildren,
+		DryRun:          dryRun,
+	})
+	if writeStoreError(w, err, "tag_rename_failed") {
+		return
+	}
+	changes := make([]api.TagRenameChange, 0, len(result.Changes))
+	for _, change := range result.Changes {
+		changes = append(changes, api.TagRenameChange{
+			TagID:           change.TagID,
+			From:            change.From,
+			To:              change.To,
+			Action:          change.Action,
+			MergedIntoTagID: change.MergedIntoTagID,
+			Notes:           change.Notes,
+			NotesGained:     change.NotesGained,
+		})
+	}
+	writeJSON(w, http.StatusOK, api.TagRenameResult{
+		From:            result.From,
+		To:              result.To,
+		IncludeChildren: result.IncludeChildren,
+		DryRun:          result.DryRun,
+		Changes:         changes,
+		Notes:           result.Notes,
+		Warnings:        result.Warnings,
+	})
+}
+
+// handleNotebookDeletionPreview reports what a notebook deletion would do
+// without doing it — the counts a confirmation needs and the re-homing rule it
+// cannot infer.
+func (s *Server) handleNotebookDeletionPreview(w http.ResponseWriter, r *http.Request) {
+	if !s.requireStore(w) {
+		return
+	}
+	preview, err := s.store.PreviewNotebookDeletion(r.Context(), r.PathValue("notebook_id"))
+	if writeStoreError(w, err, "notebook_deletion_preview_failed") {
+		return
+	}
+	writeJSON(w, http.StatusOK, api.NotebookDeletionPreview{
+		NotebookID:       preview.NotebookID,
+		Name:             preview.Name,
+		Notebooks:        preview.Notebooks,
+		DescendantNames:  preview.DescendantNames,
+		Truncated:        preview.Truncated,
+		Notes:            preview.Notes,
+		TrashedNotes:     preview.TrashedNotes,
+		RehomeNotebookID: preview.RehomeNotebookID,
+		Deletable:        preview.Deletable,
+		Reason:           preview.Reason,
+	})
 }
 
 func (s *Server) handleMoveDocumentNotebook(w http.ResponseWriter, r *http.Request) {
@@ -296,11 +417,17 @@ func (s *Server) handleListTrash(w http.ResponseWriter, r *http.Request) {
 	if !s.requireStore(w) {
 		return
 	}
-	docs, err := s.store.ListTrash(r.Context(), queryLimit(r))
+	page, err := s.store.ListTrash(r.Context(), store.DocumentPageRequest{
+		Limit:  queryLimit(r),
+		Cursor: r.URL.Query().Get("cursor"),
+	})
 	if writeStoreError(w, err, "trash_list_failed") {
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"documents": toAPIDocuments(docs)})
+	writeJSON(w, http.StatusOK, api.DocumentPage{
+		Documents:  toAPIDocuments(page.Documents),
+		NextCursor: page.NextCursor,
+	})
 }
 
 func (s *Server) handleRestoreTrashedDocument(w http.ResponseWriter, r *http.Request) {
@@ -319,7 +446,30 @@ func (s *Server) handlePurgeDocument(w http.ResponseWriter, r *http.Request) {
 	if !s.requireStore(w) {
 		return
 	}
-	if writeStoreError(w, s.store.PurgeDocument(r.Context(), r.PathValue("document_id")), "trash_purge_failed") {
+	documentID := r.PathValue("document_id")
+	if !requireConfirmation(w, r, "purge-document:"+documentID) {
+		return
+	}
+	purgeErr := error(nil)
+	if canonical, ok := s.sqliteStore(); ok {
+		if journal, journalErr := canonical.JournalStatus(r.Context()); journalErr == nil && journal.Enabled {
+			if s.syncSecrets == nil {
+				writeError(w, http.StatusServiceUnavailable, "sync_keys_unavailable", "signed permanent deletion requires the configured local sync secret provider")
+				return
+			}
+			keys, keyErr := s.syncSecrets.Open()
+			if keyErr != nil {
+				writeError(w, http.StatusServiceUnavailable, "sync_keys_unavailable", "signed permanent deletion requires available local sync keys")
+				return
+			}
+			purgeErr = canonical.PurgeDocumentWithCertificate(r.Context(), documentID, keys)
+		} else {
+			purgeErr = s.store.PurgeDocument(r.Context(), documentID)
+		}
+	} else {
+		purgeErr = s.store.PurgeDocument(r.Context(), documentID)
+	}
+	if writeStoreError(w, purgeErr, "trash_purge_failed") {
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)

@@ -1,0 +1,964 @@
+{
+  "schema": "notrios.clispec.commands.v1",
+  "program": "notriosctl",
+  "tagline": "Notrios import/export/maintenance CLI",
+  "groups": [
+    {
+      "name": "collections",
+      "purpose": "See which collections a query can name"
+    },
+    {
+      "name": "compatibility",
+      "purpose": "Check whether an archive would be admitted"
+    },
+    {
+      "name": "config",
+      "purpose": "Read the resolved configuration"
+    },
+    {
+      "name": "export",
+      "purpose": "Write notes out in a portable form"
+    },
+    {
+      "name": "graph",
+      "purpose": "Report and export the link graph"
+    },
+    {
+      "name": "import",
+      "purpose": "Bring notes in from another application"
+    },
+    {
+      "name": "jobs",
+      "purpose": "Watch and control recorded long-running jobs"
+    },
+    {
+      "name": "notebooks",
+      "purpose": "Create and list notebooks, including query notebooks"
+    },
+    {
+      "name": "notes",
+      "purpose": "Read, write, file and delete notes"
+    },
+    {
+      "name": "profile",
+      "purpose": "Manage named service profiles"
+    },
+    {
+      "name": "publish",
+      "purpose": "Plan and produce sanitized publications"
+    },
+    {
+      "name": "resources",
+      "purpose": "Report on attachments and the asset store"
+    },
+    {
+      "name": "restore",
+      "purpose": "Restore a library from an archive"
+    },
+    {
+      "name": "snapshot",
+      "purpose": "Take, check and restore whole-library physical snapshots"
+    },
+    {
+      "name": "sync",
+      "purpose": "Pair replicas and exchange changes between them"
+    },
+    {
+      "name": "tags",
+      "purpose": "Attach, remove, list and rename tags"
+    },
+    {
+      "name": "tasks",
+      "purpose": "List checkbox items from task notes"
+    },
+    {
+      "name": "templates",
+      "purpose": "List note templates and create notes from them"
+    },
+    {
+      "name": "verify",
+      "purpose": "Verify an archive in full"
+    }
+  ],
+  "commands": [
+    {
+      "path": [
+        "collections",
+        "list"
+      ],
+      "usage": "[--json] [--db ...]",
+      "notes": [],
+      "purpose": "list the collections in this library, with how many notes name each"
+    },
+    {
+      "path": [
+        "collections",
+        "show"
+      ],
+      "usage": "--collection <id> [--json] [--db ...]",
+      "notes": [],
+      "purpose": "show one collection"
+    },
+    {
+      "path": [
+        "compatibility",
+        "archive-v2"
+      ],
+      "notes": [],
+      "purpose": "bounded declaration-only admission; full verification remains separate",
+      "usage": "[--reader current-v2|previous-loose-v2] <archive-dir|manifest.json>"
+    },
+    {
+      "path": [
+        "config",
+        "show"
+      ],
+      "notes": [],
+      "purpose": "resolved configuration and where each value came from",
+      "usage": "[--config config.yaml] [--json] [--no-redact]"
+    },
+    {
+      "path": [
+        "doctor"
+      ],
+      "notes": [
+        "exits 1 when a required check fails, in either form"
+      ],
+      "purpose": "check this installation and report what is wrong with it",
+      "usage": "[--config config.yaml] [--db path] [--asset-store path] [--json]"
+    },
+    {
+      "path": [
+        "export",
+        "archive"
+      ],
+      "notes": [],
+      "purpose": "export notes as a Notrios archive",
+      "usage": "[--db ...] [--query \"tag:todo\"] <out-dir> [--collection id]"
+    },
+    {
+      "path": [
+        "export",
+        "archive-v2"
+      ],
+      "notes": [],
+      "purpose": "export notes as a native archive-v2, whole or as a scoped subset",
+      "usage": "[--db ...] [--target full_archive|subset_transfer] [--notebooks id,id] [--tags a,b] [--query \"tag:todo\"] [--documents id,id] [--match any|all] [--pack] [--overwrite] [--no-verify] <out-dir> [--max-documents N] [--pack-bytes N] [--records-per-object N]"
+    },
+    {
+      "path": [
+        "fix"
+      ],
+      "notes": [],
+      "purpose": "repair the mechanically safe findings; dry run is the default",
+      "usage": "[--db ...] [--kinds a,b] [--document id] [--apply] [--list-kinds] [--allow-review] [--max-documents N]"
+    },
+    {
+      "path": [
+        "gc"
+      ],
+      "notes": [],
+      "purpose": "retention-aware resource GC; dry-run is the default",
+      "usage": "[--config config.yaml] [--db ...] [--asset-store ...] [--dry-run | --apply] [--snapshot <retained-snapshot-dir>]"
+    },
+    {
+      "path": [
+        "graph",
+        "export"
+      ],
+      "notes": [],
+      "purpose": "nodes.csv and edges.csv for Gephi, Cytoscape, NetworkX or igraph",
+      "usage": "[--db ...] [--collection id] [--overwrite] <out-dir>"
+    },
+    {
+      "path": [
+        "graph",
+        "report"
+      ],
+      "notes": [],
+      "purpose": "link-graph shape; --write-note overwrites the read-only note in Reports",
+      "usage": "[--db ...] [--collection id] [--limit N] [--write-note] [--quiet]"
+    },
+    {
+      "path": [
+        "import",
+        "archive"
+      ],
+      "notes": [],
+      "purpose": "import a Notrios archive directory",
+      "usage": "[--db ...] [--dry-run] [--write-config path] [--import-config path] <archive-dir> [--collection id]"
+    },
+    {
+      "path": [
+        "import",
+        "chatgpt"
+      ],
+      "notes": [],
+      "purpose": "import a ChatGPT conversation export",
+      "usage": "[--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--notebook ChatGPT] [--dry-run] <conversations.json|export-dir>"
+    },
+    {
+      "path": [
+        "import",
+        "claude"
+      ],
+      "notes": [],
+      "purpose": "import a Claude conversation export",
+      "usage": "[--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--notebook Claude] [--dry-run] <conversations.json|export-dir>"
+    },
+    {
+      "path": [
+        "import",
+        "joplin-raw"
+      ],
+      "notes": [],
+      "purpose": "import a Joplin RAW export directory",
+      "usage": "[--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--batch-size 100] [--preserve-source] [--dry-run] [--write-config path] [--import-config path] [--localize-media] <raw-export-dir>"
+    },
+    {
+      "path": [
+        "import",
+        "obsidian"
+      ],
+      "notes": [],
+      "purpose": "import an Obsidian vault",
+      "usage": "[--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--dry-run] [--localize-media] <vault-dir> [--batch-size 100] [--preserve-source] [--write-config path] [--import-config path]"
+    },
+    {
+      "path": [
+        "import",
+        "twitter"
+      ],
+      "notes": [],
+      "purpose": "import an extracted Twitter/X archive",
+      "usage": "[--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--notebook Twitter] [--dry-run] <extracted-archive-dir>"
+    },
+    {
+      "path": [
+        "jobs",
+        "cancel"
+      ],
+      "notes": [],
+      "purpose": "cancel a running job",
+      "usage": "[--db ...] <job-id>"
+    },
+    {
+      "path": [
+        "jobs",
+        "list"
+      ],
+      "notes": [],
+      "purpose": "list recorded jobs",
+      "usage": "[--db ...] [--kind k] [--state s] [--limit 50]"
+    },
+    {
+      "path": [
+        "jobs",
+        "retry"
+      ],
+      "notes": [
+        "1 failed, 3 running, 4 cancelled, 5 no such job, 6 interrupted"
+      ],
+      "purpose": "long imports and exports record a job; status exits 0 succeeded,",
+      "usage": "[--db ...] [--reset] <sync-job-id>"
+    },
+    {
+      "path": [
+        "jobs",
+        "show"
+      ],
+      "notes": [],
+      "purpose": "show one job in detail",
+      "usage": "[--db ...] [--command] <job-id>"
+    },
+    {
+      "path": [
+        "jobs",
+        "status"
+      ],
+      "notes": [],
+      "purpose": "report one job's state, optionally waiting for it to finish",
+      "usage": "[--db ...] [--wait] [--timeout 30m] [--quiet] <job-id>"
+    },
+    {
+      "path": [
+        "link"
+      ],
+      "notes": [],
+      "purpose": "print the stable notrios:// link for a note or one of its sections",
+      "usage": "[--db ...] [--anchor slug|^block] [--list-anchors] <document-id>"
+    },
+    {
+      "path": [
+        "lint"
+      ],
+      "notes": [],
+      "purpose": "read-only workspace report; exit 1 when findings exist",
+      "usage": "[--db ...] [--checks a,b] [--detail-limit 100] [--quiet] [--list-checks] [--collection id]"
+    },
+    {
+      "path": [
+        "localize"
+      ],
+      "notes": [],
+      "purpose": "download policy-allowed remote media and rewrite the note to resource:// URIs",
+      "usage": "[--config config.yaml] [--db ...] [--dry-run] [--allow-review] [--base-revision rev] <document-id>"
+    },
+    {
+      "path": [
+        "migrate"
+      ],
+      "notes": [],
+      "purpose": "move a pre-0.8 ./data library into the resolved roots",
+      "usage": "[--from dir] [--dry-run] [--json]"
+    },
+    {
+      "path": [
+        "notebooks",
+        "create"
+      ],
+      "notes": [],
+      "purpose": "a notebook, or one whose contents are whatever a query matches",
+      "usage": "--name <name> [--parent <id|name>] [--icon <emoji>] [--query <query>]"
+    },
+    {
+      "path": [
+        "notebooks",
+        "list"
+      ],
+      "notes": [],
+      "purpose": "list notebooks and query notebooks with their ids, as the sidebar shows them",
+      "usage": "[--json] [--db ...]"
+    },
+    {
+      "path": [
+        "notes",
+        "append"
+      ],
+      "usage": "--document <id> [--text <text> | --text-file path|-] [--base-revision rev] [--db ...]",
+      "purpose": "add text to the end of a note",
+      "notes": [
+        "retries once against the current revision unless --base-revision pins one"
+      ]
+    },
+    {
+      "path": [
+        "notes",
+        "create"
+      ],
+      "notes": [
+        "or standard input, so a note can end a pipeline"
+      ],
+      "purpose": "write one note; the body may come from a file, an argument",
+      "usage": "--title <title> [--notebook <id|name>] [--body-file path|-] [--body text]"
+    },
+    {
+      "path": [
+        "notes",
+        "delete"
+      ],
+      "usage": "[--document <id> | --query <query> [--apply] [--mode atomic|best_effort] [--limit N]] [--db ...]",
+      "purpose": "move one note to Trash",
+      "notes": [
+        "reversible with notes restore; this is not a purge",
+        "--query acts on every note a search names; without --apply it shows the selection and changes nothing"
+      ]
+    },
+    {
+      "path": [
+        "notes",
+        "edit"
+      ],
+      "usage": "--document <id> [--title <title>] [--body-file path | --body text] [--message <why>]",
+      "purpose": "change one note's title or body",
+      "notes": [
+        "--message is recorded with the revision"
+      ]
+    },
+    {
+      "path": [
+        "notes",
+        "links"
+      ],
+      "usage": "--document <id> [--direction outgoing|incoming|both] [--output <file>] [--db ...]",
+      "notes": [
+        "broken links are reported rather than filtered out"
+      ],
+      "purpose": "list the links a note points at, or the ones pointing at it"
+    },
+    {
+      "path": [
+        "notes",
+        "move"
+      ],
+      "notes": [
+        "--query acts on every note a search names; without --apply it shows the selection and changes nothing"
+      ],
+      "purpose": "file one note into another notebook; a name is refused when it matches more than one",
+      "usage": "--notebook <id|name> [--document <id> | --query <query> [--apply] [--mode atomic|best_effort] [--limit N]] [--db ...]"
+    },
+    {
+      "path": [
+        "notes",
+        "outline"
+      ],
+      "usage": "--document <id> [--output <file>] [--db ...]",
+      "notes": [
+        "the anchors are the ones a notrios:// link resolves against"
+      ],
+      "purpose": "list a note's headings, with the anchor and line of each"
+    },
+    {
+      "path": [
+        "notes",
+        "prepend"
+      ],
+      "usage": "--document <id> [--text <text> | --text-file path|-] [--base-revision rev] [--db ...]",
+      "purpose": "add text to the start of a note",
+      "notes": []
+    },
+    {
+      "path": [
+        "notes",
+        "resources"
+      ],
+      "usage": "--document <id> [--output <file>] [--db ...]",
+      "notes": [],
+      "purpose": "list what is attached to a note, with ids, types and sizes"
+    },
+    {
+      "path": [
+        "notes",
+        "restore"
+      ],
+      "notes": [
+        "--query acts on every note a search names; without --apply it shows the selection and changes nothing"
+      ],
+      "purpose": "bring one note back out of Trash",
+      "usage": "[--document <id> | --query <query> [--apply] [--mode atomic|best_effort] [--limit N]] [--db ...]"
+    },
+    {
+      "path": [
+        "notes",
+        "show"
+      ],
+      "usage": "--document <id> [--json] [--output <file>] [--db ...]",
+      "purpose": "print one note as Markdown with front matter, or as JSON with --json",
+      "notes": [
+        "a note in Trash is reported as trashed rather than as missing",
+        "--body is accepted and ignored; both forms carry the body"
+      ],
+      "accepts_ignored": {
+        "body": "selected whether to include the body when this command printed only JSON metadata; both forms carry the body now, and refusing the flag would break a script for no gain"
+      }
+    },
+    {
+      "path": [
+        "notes",
+        "duplicate"
+      ],
+      "usage": "[--document <id> | --query <query> [--apply] [--mode atomic|best_effort] [--limit N]] [--db ...]",
+      "purpose": "copy a note, or every note a search names",
+      "notes": [
+        "the copy is a new note with its own id; the report names it",
+        "--query acts on every note a search names; without --apply it shows the selection and changes nothing"
+      ]
+    },
+    {
+      "path": [
+        "open"
+      ],
+      "notes": [],
+      "purpose": "resolve a stable link on this machine (exit 1 unresolved, 2 malformed)",
+      "usage": "[--profile name] [--registry path] [--db path] [--launch] <notrios-uri>"
+    },
+    {
+      "path": [
+        "paths"
+      ],
+      "notes": [],
+      "purpose": "resolved mode and roots (config, data, state, cache, runtime, assets)",
+      "usage": "[--json] [--no-redact]"
+    },
+    {
+      "path": [
+        "profile",
+        "create"
+      ],
+      "notes": [],
+      "purpose": "create a named profile",
+      "usage": "--name <profile> [--listen 127.0.0.1:8080] [--db ...] [--sync-target none|directory|rest] [--data-dir path] [--public-url url] [--registry path] [--credential-ref ref] [--sync-directory dir] [--sync-rest-url url] [--copied-database-as adopt|fork]"
+    },
+    {
+      "path": [
+        "profile",
+        "forget"
+      ],
+      "notes": [],
+      "purpose": "legacy stable-link routing entry; ambiguity remains explicit",
+      "usage": "--name <profile> [--registry path]"
+    },
+    {
+      "path": [
+        "profile",
+        "list"
+      ],
+      "notes": [],
+      "purpose": "list profiles",
+      "usage": "[--registry path]"
+    },
+    {
+      "path": [
+        "profile",
+        "register"
+      ],
+      "notes": [],
+      "purpose": "register a profile for stable-link routing",
+      "usage": "--name <profile> [--db ...] [--registry path]"
+    },
+    {
+      "path": [
+        "profile",
+        "show"
+      ],
+      "notes": [],
+      "purpose": "show one profile",
+      "usage": "--name <profile> [--registry path]"
+    },
+    {
+      "path": [
+        "profile",
+        "start"
+      ],
+      "notes": [],
+      "purpose": "owner-only config, identity/path/port checks, and secret-free startup",
+      "usage": "--name <profile> [--binary notriosd] [--dry-run] [--registry path]"
+    },
+    {
+      "path": [
+        "profile",
+        "validate"
+      ],
+      "notes": [],
+      "purpose": "check a profile's identity, paths and ports",
+      "usage": "[--name <profile>] [--registry path]"
+    },
+    {
+      "path": [
+        "publish",
+        "plan"
+      ],
+      "notes": [],
+      "purpose": "read-only privacy review; prints the plan digest",
+      "usage": "--profile <profile> [--detail-limit 100]"
+    },
+    {
+      "path": [
+        "publish",
+        "profile",
+        "delete"
+      ],
+      "notes": [],
+      "purpose": "delete a publication profile",
+      "usage": "[--name <profile>]"
+    },
+    {
+      "path": [
+        "publish",
+        "profile",
+        "list"
+      ],
+      "notes": [],
+      "purpose": "list publication profiles",
+      "usage": "[--db ...]"
+    },
+    {
+      "path": [
+        "publish",
+        "profile",
+        "save"
+      ],
+      "notes": [],
+      "purpose": "create or update a publication profile",
+      "usage": "--name <profile> [--notebooks id,id] [--tags a,b] [--link-action plain_text] [--description text] [--query \"tag:todo\"] [--documents id,id] [--match any|all] [--target full_archive|subset_transfer] [--exclude-tags a,b] [--private-tags a,b] [--include-provenance] [--include-source-bundles] [--max-resource-bytes N]"
+    },
+    {
+      "path": [
+        "publish",
+        "run"
+      ],
+      "notes": [],
+      "purpose": "scoped sanitized archive-v2 handoff; refuses a stale review",
+      "usage": "--profile <profile> --reviewed-plan <sha256> <out-dir> [--overwrite] [--no-verify]"
+    },
+    {
+      "path": [
+        "register-url-handler"
+      ],
+      "notes": [],
+      "purpose": "Ubuntu/XDG notrios:// protocol handler; prints unless --apply",
+      "usage": "[--apply] [--binary path] [--dir path]"
+    },
+    {
+      "path": [
+        "resources",
+        "add"
+      ],
+      "usage": "--file <path> [--filename <name>] [--document <id>] [--db ...]",
+      "purpose": "put a local file into the library and print the resource:// link to paste",
+      "notes": [
+        "never writes to a note body; placing the link is yours",
+        "the type comes from the bytes rather than the file extension"
+      ]
+    },
+    {
+      "path": [
+        "resources",
+        "get"
+      ],
+      "usage": "--resource <id> [--output <file>] [--db ...]",
+      "notes": [
+        "writes exactly the stored bytes; the summary goes to standard error"
+      ],
+      "purpose": "write one attachment's bytes to a file, or to standard output"
+    },
+    {
+      "path": [
+        "resources",
+        "report"
+      ],
+      "notes": [],
+      "purpose": "report exact duplicates, unreferenced blobs, notebook usage, and review-only perceptual signals",
+      "usage": "[--config config.yaml] [--db ...] [--asset-store ...]"
+    },
+    {
+      "path": [
+        "restore",
+        "archive-v2"
+      ],
+      "notes": [],
+      "purpose": "restore an archive-v2 into a library, under a stated intent",
+      "usage": "--intent replace|adopt|merge|fork [--db ...] [--new-database-id id] <archive-dir>"
+    },
+    {
+      "path": [
+        "search"
+      ],
+      "usage": "[--limit N] [--cursor c] [--count] [--links] [--output <file>] [--db ...] \"<query>\"",
+      "purpose": "find notes with the query language the search box uses",
+      "notes": [
+        "--count returns how many match rather than the matches",
+        "--links reports notrios:// links for pasting into another machine's library",
+        "Trash is excluded unless the query says is:trashed"
+      ]
+    },
+    {
+      "path": [
+        "seed-help"
+      ],
+      "notes": [],
+      "purpose": "mirror docs/ into the read-only Help notebook",
+      "usage": "[--db ...] [docs-dir]"
+    },
+    {
+      "path": [
+        "snapshot",
+        "create"
+      ],
+      "notes": [],
+      "purpose": "same-schema whole-library SQLite image plus deterministic bounded asset packs",
+      "usage": "[--config config.yaml] [--db ...] [--asset-store ...] <out-dir>"
+    },
+    {
+      "path": [
+        "snapshot",
+        "restore"
+      ],
+      "notes": [
+        "adopt into a path with no library makes a new replica there; replace needs one to replace",
+        "the emergency snapshot is skipped, and says so, when there is no library to protect"
+      ],
+      "purpose": "stopped-service, emergency-first, crash-resumable physical cutover",
+      "usage": "--intent replace|adopt [--db ...] [--asset-store ...] [--emergency dir] <snapshot-dir>"
+    },
+    {
+      "path": [
+        "snapshot",
+        "verify"
+      ],
+      "notes": [],
+      "purpose": "full read-only physical snapshot admission",
+      "usage": "<snapshot-dir>"
+    },
+    {
+      "path": [
+        "sync",
+        "accept"
+      ],
+      "notes": [],
+      "purpose": "accept an offline pairing invitation and write an acceptance file",
+      "usage": "--invite <file> --code <code> --out <file>"
+    },
+    {
+      "path": [
+        "sync",
+        "discover"
+      ],
+      "notes": [],
+      "purpose": "report what a shared carrier directory offers",
+      "usage": "[--carrier dir] [--db ...]"
+    },
+    {
+      "path": [
+        "sync",
+        "enroll"
+      ],
+      "notes": [],
+      "purpose": "enrol a peer from its acceptance file and code",
+      "usage": "--acceptance <file> --code <code>"
+    },
+    {
+      "path": [
+        "sync",
+        "exchange"
+      ],
+      "notes": [],
+      "purpose": "one exchange over a peer's authenticated surface",
+      "usage": "--url <base-url> [--materialize N]"
+    },
+    {
+      "path": [
+        "sync",
+        "fetch-backup"
+      ],
+      "notes": [],
+      "purpose": "resumable encrypted snapshot download, verified as archive-v2",
+      "usage": "--url <base-url> --out <dir> [--intent replace|adopt] [--chunk-bytes N] [--emergency dir]"
+    },
+    {
+      "path": [
+        "sync",
+        "handshake"
+      ],
+      "usage": "--url <base-url> [--db ...]",
+      "purpose": "run the compatibility handshake against a peer and print what it reported",
+      "notes": []
+    },
+    {
+      "path": [
+        "sync",
+        "init"
+      ],
+      "notes": [],
+      "purpose": "create this replica's sync identity and keys",
+      "usage": "[--db ...] [--keys path]"
+    },
+    {
+      "path": [
+        "sync",
+        "invite"
+      ],
+      "notes": [],
+      "purpose": "one-use, short-lived pairing code; the file half is useless without it",
+      "usage": "[--ttl 15m] [--offline --out <file>] [--label text]"
+    },
+    {
+      "path": [
+        "sync",
+        "join"
+      ],
+      "notes": [],
+      "purpose": "join a peer using a pairing URL and code",
+      "usage": "--url <base-url> --code <code>"
+    },
+    {
+      "path": [
+        "sync",
+        "migrate-credentials"
+      ],
+      "notes": [
+        "credential store and the owner-only development file"
+      ],
+      "purpose": "move existing sync key material between the operating system's",
+      "usage": "--to native|development-file [--dry-run] [--confirm]"
+    },
+    {
+      "path": [
+        "sync",
+        "once"
+      ],
+      "notes": [
+        "the mechanism, and no filesystem watcher is required for correctness"
+      ],
+      "purpose": "one exchange through a shared directory; polling or manual runs are",
+      "usage": "[--carrier dir] [--cleanup] [--materialize N] [--db ...]"
+    },
+    {
+      "path": [
+        "sync",
+        "peers"
+      ],
+      "notes": [],
+      "purpose": "list the peers this replica trusts",
+      "usage": "[--db ...]"
+    },
+    {
+      "path": [
+        "sync",
+        "retention"
+      ],
+      "usage": "--snapshot <retained-snapshot-dir> [--apply --confirm-digest <dry-run-digest>]",
+      "purpose": "apply the sync history horizon against a retained snapshot; dry run is the default",
+      "notes": []
+    },
+    {
+      "path": [
+        "sync",
+        "retire"
+      ],
+      "usage": "--peer <replica-id> [--reason ...] [--confirm retire-peer:<replica-id>]",
+      "purpose": "retire a peer permanently, with a signed record",
+      "notes": []
+    },
+    {
+      "path": [
+        "sync",
+        "revoke"
+      ],
+      "notes": [],
+      "purpose": "revoke a peer's key, optionally advancing the epoch",
+      "usage": "--key <id> [--advance-epoch] [--reason text]"
+    },
+    {
+      "path": [
+        "sync",
+        "start"
+      ],
+      "usage": "[--carrier dir] [--resource-fetch] [--byte-budget N] [--max-attempts N] [--db ...]",
+      "purpose": "queue one sync exchange as a job and print the job to watch",
+      "notes": []
+    },
+    {
+      "path": [
+        "sync",
+        "status"
+      ],
+      "notes": [],
+      "purpose": "report this replica's sync state",
+      "usage": "[--db ...] [--keys path]"
+    },
+    {
+      "path": [
+        "tags",
+        "add"
+      ],
+      "notes": [
+        "--query acts on every note a search names; without --apply it shows the selection and changes nothing"
+      ],
+      "purpose": "attach a tag to a note; prints the note's tags afterwards",
+      "usage": "--tag <tag> [--document <id> | --query <query> [--apply] [--mode atomic|best_effort] [--limit N]]"
+    },
+    {
+      "path": [
+        "tags",
+        "list"
+      ],
+      "notes": [
+        "--prefix takes a branch: shopping matches shopping/mall and never shoppingcart",
+        "the answer says whether a limit truncated it"
+      ],
+      "purpose": "a note's tags, or every tag in the library with note counts",
+      "usage": "[--document <id>] [--prefix <branch>] [--limit N] [--db ...]"
+    },
+    {
+      "path": [
+        "tags",
+        "remove"
+      ],
+      "notes": [
+        "--query acts on every note a search names; without --apply it shows the selection and changes nothing"
+      ],
+      "purpose": "take a tag off a note; prints the note's tags afterwards",
+      "usage": "--tag <tag> [--document <id> | --query <query> [--apply] [--mode atomic|best_effort] [--limit N]]"
+    },
+    {
+      "path": [
+        "tags",
+        "rename"
+      ],
+      "notes": [],
+      "purpose": "hierarchical tag rename; dry run is the default and reports every tag and count",
+      "usage": "--from <tag> --to <tag> [--db ...] [--include-children] [--apply]"
+    },
+    {
+      "path": [
+        "tags",
+        "show"
+      ],
+      "usage": "--tag <name> [--db ...]",
+      "purpose": "one tag, its live note count, and its children",
+      "notes": [
+        "exits 1 when no such tag exists, so a script can test for one without parsing anything"
+      ]
+    },
+    {
+      "path": [
+        "tasks",
+        "list"
+      ],
+      "notes": [],
+      "purpose": "checkbox items from notes tagged task or todo, with open/done counts",
+      "usage": "[--document <id>] [--notebook <id>] [--state open|done] [--untagged]"
+    },
+    {
+      "path": [
+        "templates",
+        "create"
+      ],
+      "notes": [],
+      "purpose": "a new note from a template; a missing placeholder is refused, not blanked",
+      "usage": "--template <id> --title <title> [--notebook <id|name>] [--set name=value ...]"
+    },
+    {
+      "path": [
+        "templates",
+        "list"
+      ],
+      "notes": [],
+      "purpose": "notes carrying a note-template block, with their placeholders",
+      "usage": "[--db ...]"
+    },
+    {
+      "path": [
+        "verify",
+        "archive-v2"
+      ],
+      "notes": [],
+      "purpose": "verify an archive-v2 directory in full",
+      "usage": "<archive-dir>"
+    },
+    {
+      "path": [
+        "version"
+      ],
+      "notes": [],
+      "purpose": "print the notriosctl version",
+      "usage": ""
+    }
+  ],
+  "exempt": [],
+  "common_flags": {
+    "": [
+      "config",
+      "db",
+      "asset-store"
+    ],
+    "sync": [
+      "keys",
+      "carrier"
+    ],
+    "publish": [
+      "profiles"
+    ]
+  }
+}

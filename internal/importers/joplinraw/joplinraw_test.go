@@ -1,23 +1,28 @@
 package joplinraw
 
 import (
+	"bytes"
 	"context"
 	"errors"
+	"fmt"
+	"io"
 	"os"
 	"path/filepath"
+	"reflect"
+	"strconv"
 	"strings"
 	"testing"
 
 	"github.com/renesugar/notrios/internal/store"
 )
 
-func TestParseItemSupportsBodyFirstAndMetadataFirst(t *testing.T) {
-	bodyFirst := "Hello Joplin\n\nid: note1\ntitle: Body First\ntype_: 1\n"
+func TestParseItemSupportsCanonicalAndMetadataFirst(t *testing.T) {
+	bodyFirst := "Canonical title\r\n\r\nHello Joplin\r\n\r\nid: note1\r\ntype_: 1\r\n"
 	item, ok := parseItem("note1.md", bodyFirst)
 	if !ok {
 		t.Fatal("body-first item did not parse")
 	}
-	if item.Body != "Hello Joplin" || item.Fields["title"] != "Body First" {
+	if item.Body != "Hello Joplin" || item.Fields["title"] != "Canonical title" {
 		t.Fatalf("unexpected body-first parse: %#v body=%q", item.Fields, item.Body)
 	}
 
@@ -31,15 +36,151 @@ func TestParseItemSupportsBodyFirstAndMetadataFirst(t *testing.T) {
 	}
 }
 
+func TestParseItemPreservesOCRControlsAndOrderedProperties(t *testing.T) {
+	ocrText := "SIP\\npage\x0bform\x0cfile\x1crecord\x1enext\u0085end"
+	raw := []byte("document.pdf\n\n" +
+		"id: resource1\n" +
+		"future-key:  value:with:colons  \n" +
+		"duplicate_future: first\n" +
+		"duplicate_future: second\n" +
+		"ocr_text: " + ocrText + "\n" +
+		"type_: 4\n\n")
+	item, ok, err := parseItemBytes("resource1.md", raw)
+	if err != nil || !ok {
+		t.Fatalf("parse OCR resource: ok=%v err=%v", ok, err)
+	}
+	if item.Fields["title"] != "document.pdf" {
+		t.Fatalf("resource title = %q", item.Fields["title"])
+	}
+	if item.Fields["ocr_text"] != ocrText {
+		t.Fatalf("ocr_text changed:\n got %q\nwant %q", item.Fields["ocr_text"], ocrText)
+	}
+	if item.Fields["future-key"] != " value:with:colons  " {
+		t.Fatalf("future property whitespace changed: %q", item.Fields["future-key"])
+	}
+	if item.Fields["duplicate_future"] != "second" {
+		t.Fatalf("last duplicate value = %q", item.Fields["duplicate_future"])
+	}
+	wantOrder := []string{"id", "future-key", "duplicate_future", "duplicate_future", "ocr_text", "type_"}
+	if !reflect.DeepEqual(item.PropertyOrder, wantOrder) {
+		t.Fatalf("property order = %#v, want %#v", item.PropertyOrder, wantOrder)
+	}
+}
+
+func TestParseItemBytesAcceptsBOMAndRejectsInvalidUTF8(t *testing.T) {
+	raw := append([]byte{0xef, 0xbb, 0xbf}, []byte("BOM title\n\nid: bom-note\ntype_: 1")...)
+	item, ok, err := parseItemBytes("bom-note.md", raw)
+	if err != nil || !ok || item.Fields["title"] != "BOM title" {
+		t.Fatalf("BOM parse: item=%+v ok=%v err=%v", item, ok, err)
+	}
+	if _, _, err := parseItemBytes("invalid.md", []byte("title\n\nid: bad\nfuture: \xff\ntype_: 1")); err == nil {
+		t.Fatal("invalid UTF-8 was accepted")
+	}
+}
+
+func TestJ3LeanInventoryParserMatchesFullRoutingFields(t *testing.T) {
+	fixtures := map[string][]byte{
+		"canonical.md": []byte("Canonical title\r\n\r\nBody with : colon\r\n\r\nid: note1\r\nparent_id: folder1\r\nauthor: Person\r\nfuture_field: ignored in manifest\r\ntype_: 1\r\n"),
+		"legacy.md":    []byte("id: note2\ntitle: Legacy\nsource_url: https://example.test\ntype_: 1\n\nBody"),
+		"resource.md":  []byte("file.pdf\n\nid: resource1\nfilename: original.pdf\nmime: application/pdf\nocr_text: page\vcontrol\ftest\ntype_: 4\n"),
+	}
+	for name, raw := range fixtures {
+		full, fullOK, fullErr := parseItemBytes(name, raw)
+		lean, leanOK, leanErr := parseInventoryItemBytes(name, raw)
+		if fullErr != nil || leanErr != nil || fullOK != leanOK {
+			t.Fatalf("%s parse: fullOK=%v leanOK=%v fullErr=%v leanErr=%v", name, fullOK, leanOK, fullErr, leanErr)
+		}
+		if full.ID != lean.ID || full.Type != lean.Type || !reflect.DeepEqual(compactInventoryFields(full.Fields), lean.Fields) {
+			t.Fatalf("%s inventory differs:\n full=%+v\n lean=%+v", name, full, lean)
+		}
+		if lean.Body != "" || len(lean.PropertyOrder) != 0 {
+			t.Fatalf("%s lean parser retained body/order: %+v", name, lean)
+		}
+	}
+}
+
+func TestJ2LinkRewriteSkipsCodeAndReturnsDirectResourceReferences(t *testing.T) {
+	body := strings.Join([]string{
+		"[note](:/note1)",
+		"![one](:/res1) and [duplicate](:/res1)",
+		"inline `:/res1` and double ``:/res1``",
+		`escaped \:/res1`,
+		"```markdown",
+		"fenced :/res1 :/missing",
+		"```",
+		"~~~",
+		"tilde fenced :/res1",
+		"~~~",
+		"unresolved :/missing",
+	}, "\n")
+
+	result := rewriteJoplinLinks(body,
+		map[string]string{"note1": "doc_joplin_note1"},
+		map[string]string{"res1": "res_joplin_res1"},
+		"default",
+	)
+	if result.Rewritten != 3 || result.Unresolved != 1 {
+		t.Fatalf("rewrite counts = rewritten %d unresolved %d", result.Rewritten, result.Unresolved)
+	}
+	wantResources := []resourceReference{{SourceID: "res1", TargetID: "res_joplin_res1"}}
+	if !reflect.DeepEqual(result.Resources, wantResources) {
+		t.Fatalf("resource references = %#v, want %#v", result.Resources, wantResources)
+	}
+	for _, untouched := range []string{"`:/res1`", "``:/res1``", `\:/res1`, "fenced :/res1 :/missing", "tilde fenced :/res1", "unresolved :/missing"} {
+		if !strings.Contains(result.Body, untouched) {
+			t.Fatalf("expected untouched %q in:\n%s", untouched, result.Body)
+		}
+	}
+	if !strings.Contains(result.Body, store.DocumentURI("default", "doc_joplin_note1")) ||
+		strings.Count(result.Body, store.ResourceURI("default", "res_joplin_res1")) != 2 {
+		t.Fatalf("resolved targets were not rewritten correctly:\n%s", result.Body)
+	}
+}
+
+func TestJ2InventoryReportsAllItemTypesMalformedAndIgnoredFiles(t *testing.T) {
+	dir := t.TempDir()
+	fixtures := map[string]string{
+		"note.md":        "Note\n\nid: note1\ntype_: 1\n",
+		"folder.md":      "Folder\n\nid: folder1\ntype_: 2\n",
+		"resource.md":    "file.bin\n\nid: resource1\ntype_: 4\n",
+		"tag.md":         "tag\n\nid: tag1\ntype_: 5\n",
+		"relation.md":    "id: relation1\nnote_id: note1\ntag_id: tag1\ntype_: 6\n",
+		"unsupported.md": "Future\n\nid: future1\ntype_: 13\n",
+		"malformed.md":   "ordinary Markdown without Joplin properties\n",
+		"ignored.txt":    "not metadata",
+	}
+	for name, contents := range fixtures {
+		writeFile(t, filepath.Join(dir, name), contents)
+	}
+
+	st := openTestStore(t)
+	_, report, err := DryRun(context.Background(), st, dir, Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if report.MetadataFilesSeen != 7 || report.ItemsSeen != 6 || report.MalformedItems != 1 ||
+		report.UnsupportedItems != 1 || report.IgnoredFiles != 1 {
+		t.Fatalf("inventory diagnostics: %#v", report)
+	}
+	wantTypes := map[string]int{"1": 1, "2": 1, "4": 1, "5": 1, "6": 1, "13": 1}
+	if !reflect.DeepEqual(report.ItemTypeCounts, wantTypes) {
+		t.Fatalf("item type counts = %#v, want %#v", report.ItemTypeCounts, wantTypes)
+	}
+	warnings := strings.Join(report.Warnings, "\n")
+	if !strings.Contains(warnings, "malformed and skipped") || !strings.Contains(warnings, "unsupported type values") {
+		t.Fatalf("diagnostic warnings = %#v", report.Warnings)
+	}
+}
+
 func TestImportJoplinRawFixture(t *testing.T) {
 	ctx := context.Background()
 	dir := t.TempDir()
-	writeFile(t, filepath.Join(dir, "folder-root.md"), "id: folder1\ntitle: Imported Notebook\ntype_: 2\n")
-	writeFile(t, filepath.Join(dir, "tag.md"), "id: tag1\ntitle: imported\ntype_: 5\n")
+	writeFile(t, filepath.Join(dir, "folder-root.md"), "Imported Notebook\n\nid: folder1\ntype_: 2\n")
+	writeFile(t, filepath.Join(dir, "tag.md"), "imported\n\nid: tag1\ntype_: 5\n")
 	writeFile(t, filepath.Join(dir, "note-tag.md"), "id: nt1\nnote_id: note1\ntag_id: tag1\ntype_: 6\n")
-	writeFile(t, filepath.Join(dir, "note1.md"), "# Hello\n\nSee [Target](:/note2).\n\n![Image](:/res1)\n\nid: note1\nparent_id: folder1\ntitle: Source Note\ntype_: 1\n")
-	writeFile(t, filepath.Join(dir, "note2.md"), "id: note2\nparent_id: folder1\ntitle: Target Note\ntype_: 1\n\n# Target\n")
-	writeFile(t, filepath.Join(dir, "res1.md"), "id: res1\ntitle: diagram.png\nfilename: diagram.png\nmime: image/png\nfile_extension: png\ntype_: 4\n")
+	writeFile(t, filepath.Join(dir, "note1.md"), "Source Note\n\n# Hello\n\nSee [Target](:/note2).\n\n![Image](:/res1)\n\nid: note1\nparent_id: folder1\ntype_: 1\n")
+	writeFile(t, filepath.Join(dir, "note2.md"), "Target Note\n\n# Target\n\nid: note2\nparent_id: folder1\ntype_: 1\n")
+	writeFile(t, filepath.Join(dir, "res1.md"), "diagram.png\n\nid: res1\nfilename: diagram.png\nmime: image/png\nfile_extension: png\ntype_: 4\n")
 	if err := os.MkdirAll(filepath.Join(dir, "resources"), 0o755); err != nil {
 		t.Fatal(err)
 	}
@@ -62,6 +203,9 @@ func TestImportJoplinRawFixture(t *testing.T) {
 	}
 	if !strings.Contains(doc.Body, "resource://default/resources/res_joplin_res1") {
 		t.Fatalf("resource link was not rewritten: %s", doc.Body)
+	}
+	if doc.Title != "Source Note" || strings.Contains(doc.Body, "\nSource Note\n") {
+		t.Fatalf("canonical title/body split failed: title=%q body=%q", doc.Title, doc.Body)
 	}
 	if !strings.Contains(doc.Body, "joplin_notebook: \"Imported Notebook\"") || !strings.Contains(doc.Body, "joplin_tags:") {
 		t.Fatalf("frontmatter missing notebook/tags: %s", doc.Body)
@@ -111,6 +255,430 @@ func TestImportJoplinRawFixture(t *testing.T) {
 	}
 	if report2.NotesUnchanged != 2 || report2.ResourcesExisting != 1 {
 		t.Fatalf("second import was not idempotent enough: %#v", report2)
+	}
+}
+
+func TestJ3FinalLinkPassResolvesTargetsAcrossCanonicalBatches(t *testing.T) {
+	ctx := context.Background()
+	dir := t.TempDir()
+	writeFile(t, filepath.Join(dir, "a-source.md"), "Source\n\n[target](:/z-target)\n\nid: a-source\ntype_: 1\n")
+	writeFile(t, filepath.Join(dir, "z-target.md"), "Target\n\nsearch target\n\nid: z-target\ntype_: 1\n")
+	st := openTestStore(t)
+	report, err := Import(ctx, st, dir, Options{BatchSize: 1})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if report.CanonicalBatches != 2 || report.LinkBatches != 2 {
+		t.Fatalf("batch report=%#v", report)
+	}
+	links, err := st.ListDocumentLinks(ctx, "doc_joplin_a-source", "outgoing")
+	if err != nil || len(links.Outgoing) != 1 || links.Outgoing[0].TargetDocumentID != "doc_joplin_z-target" || links.Outgoing[0].ResolutionStatus != "resolved" {
+		t.Fatalf("cross-batch links=%#v err=%v", links, err)
+	}
+}
+
+func TestH8HierarchyTagsAndExactSourceBundle(t *testing.T) {
+	ctx := context.Background()
+	dir := t.TempDir()
+	writeFile(t, filepath.Join(dir, "folder-root.md"), "id: root\ntitle: Projects\ntype_: 2\n")
+	writeFile(t, filepath.Join(dir, "folder-child.md"), "id: child\nparent_id: root\ntitle: Alpha\ntype_: 2\n")
+	writeFile(t, filepath.Join(dir, "tag-used.md"), "id: tag-used\ntitle: research\ntype_: 5\n")
+	writeFile(t, filepath.Join(dir, "tag-empty.md"), "id: tag-empty\ntitle: someday\ntype_: 5\n")
+	writeFile(t, filepath.Join(dir, "note-tag.md"), "id: relation\nnote_id: exact-note\ntag_id: tag-used\ntype_: 6\n")
+	raw := []byte("BodyLabel: this is note content, not metadata\r\n\r\nunknown_future_property: keep me\r\ntitle: Exact Note\r\nid: exact-note\r\nparent_id: child\r\ntype_: 1\r\n")
+	if err := os.WriteFile(filepath.Join(dir, "exact-note.md"), raw, 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	st := openTestStore(t)
+	report, err := Import(ctx, st, dir, Options{CollectionID: "default", PreserveSource: true, BatchSize: 2})
+	if err != nil {
+		t.Fatalf("import: %v", err)
+	}
+	if report.NotebooksCreated != 2 || report.TagsCreated != 2 || report.TagsApplied != 1 {
+		t.Fatalf("hierarchy/tag report: %#v", report)
+	}
+	root, err := st.GetNotebook(ctx, "nb_joplin_root")
+	if err != nil {
+		t.Fatal(err)
+	}
+	child, err := st.GetNotebook(ctx, "nb_joplin_child")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if root.ParentID != "" || child.ParentID != root.ID || root.Name != "Projects" || child.Name != "Alpha" {
+		t.Fatalf("notebook hierarchy not restored: root=%+v child=%+v", root, child)
+	}
+	doc, err := st.GetDocument(ctx, "doc_joplin_exact-note")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if doc.NotebookID != child.ID {
+		t.Fatalf("note notebook = %q, want %q", doc.NotebookID, child.ID)
+	}
+	tags, err := st.ListDocumentTags(ctx, doc.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(tags) != 1 || tags[0].Name != "research" {
+		t.Fatalf("real note tags = %#v", tags)
+	}
+	allTags, err := st.ListTags(ctx, store.TagQuery{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(allTags.Tags) != 2 {
+		t.Fatalf("unassigned source tag was not preserved: %#v", allTags)
+	}
+	item, reader, err := st.OpenSourceBundleItem(ctx, sourceSystem, report.SourceKey, "default", "1:exact-note:exact-note.md")
+	if err != nil {
+		t.Fatalf("open source bundle item: %v", err)
+	}
+	bundled, readErr := io.ReadAll(reader)
+	closeErr := reader.Close()
+	if readErr != nil || closeErr != nil {
+		t.Fatalf("read source bundle: read=%v close=%v", readErr, closeErr)
+	}
+	if !bytes.Equal(bundled, raw) {
+		t.Fatalf("source bundle did not preserve exact bytes:\n got %q\nwant %q", bundled, raw)
+	}
+	wantOrder := []string{"unknown_future_property", "title", "id", "parent_id", "type_"}
+	if !reflect.DeepEqual(item.PropertyOrder, wantOrder) {
+		t.Fatalf("property order = %#v, want %#v", item.PropertyOrder, wantOrder)
+	}
+	writeFile(t, filepath.Join(dir, "tag-used.md"), "id: tag-used\ntitle: renamed-research\ntype_: 5\n")
+	renamed, err := Import(ctx, st, dir, Options{CollectionID: "default", PreserveSource: true, BatchSize: 2})
+	if err != nil {
+		t.Fatalf("rename source tag: %v", err)
+	}
+	if renamed.TagsUpdated != 1 {
+		t.Fatalf("tag rename report: %#v", renamed)
+	}
+	tags, err = st.ListDocumentTags(ctx, doc.ID)
+	if err != nil || len(tags) != 1 || tags[0].Name != "renamed-research" {
+		t.Fatalf("stable source tag rename failed: tags=%#v err=%v", tags, err)
+	}
+	if err := os.Remove(filepath.Join(dir, "note-tag.md")); err != nil {
+		t.Fatal(err)
+	}
+	removed, err := Import(ctx, st, dir, Options{CollectionID: "default", BatchSize: 2})
+	if err != nil {
+		t.Fatalf("remove source tag relation: %v", err)
+	}
+	tags, err = st.ListDocumentTags(ctx, doc.ID)
+	if err != nil || len(tags) != 0 || removed.TagsRemoved != 1 {
+		t.Fatalf("source tag relation removal failed: report=%#v tags=%#v err=%v", removed, tags, err)
+	}
+	allTags, err = st.ListTags(ctx, store.TagQuery{})
+	if err != nil || len(allTags.Tags) != 2 {
+		t.Fatalf("unassigned source tags must remain: tags=%#v err=%v", allTags, err)
+	}
+}
+
+func TestH8DryRunMatchesRealImportActions(t *testing.T) {
+	ctx := context.Background()
+	dir := t.TempDir()
+	writeFile(t, filepath.Join(dir, "folder.md"), "id: work\ntitle: Work\ntype_: 2\n")
+	writeFile(t, filepath.Join(dir, "tag.md"), "id: tag1\ntitle: topic\ntype_: 5\n")
+	writeFile(t, filepath.Join(dir, "relation.md"), "id: rel1\nnote_id: note1\ntag_id: tag1\ntype_: 6\n")
+	writeFile(t, filepath.Join(dir, "note.md"), "Body\n\nid: note1\nparent_id: work\ntitle: Planned\ntype_: 1\n")
+	writeFile(t, filepath.Join(dir, "resource.md"), "id: res1\ntitle: file.bin\nfilename: file.bin\ntype_: 4\n")
+	writeFile(t, filepath.Join(dir, "resources", "res1"), "payload")
+
+	st := openTestStore(t)
+	config, dry, err := DryRun(ctx, st, dir, Options{CollectionID: "default", PreserveSource: true, BatchSize: 2})
+	if err != nil {
+		t.Fatalf("dry run: %v", err)
+	}
+	if _, err := st.GetImportCheckpoint(ctx, sourceSystem, filepath.Clean(dir), "default"); !errors.Is(err, store.ErrNotFound) {
+		t.Fatalf("dry run wrote a checkpoint: %v", err)
+	}
+	if _, err := st.GetNotebook(ctx, "nb_joplin_work"); !errors.Is(err, store.ErrNotFound) {
+		t.Fatalf("dry run wrote a notebook: %v", err)
+	}
+	if tags, err := st.ListTags(ctx, store.TagQuery{}); err != nil || len(tags.Tags) != 0 {
+		t.Fatalf("dry run wrote tags: tags=%#v err=%v", tags, err)
+	}
+	if _, err := st.GetSourceBundleItem(ctx, sourceSystem, filepath.Clean(dir), "default", "1:note1:note.md"); !errors.Is(err, store.ErrNotFound) {
+		t.Fatalf("dry run wrote a source bundle: %v", err)
+	}
+	actual, err := Import(ctx, st, dir, Options{CollectionID: "default", PreserveSource: true, BatchSize: 2, Config: &config})
+	if err != nil {
+		t.Fatalf("actual import: %v", err)
+	}
+	dryActions := []int{
+		dry.NotesImported, dry.NotesUpdated, dry.NotesUnchanged,
+		dry.NotebooksCreated, dry.NotebooksMerged,
+		dry.TagsCreated, dry.TagsExisting, dry.TagsApplied,
+		dry.ResourcesImported, dry.ResourcesUpdated, dry.ResourcesExisting, dry.ResourcesSkipped,
+		dry.SourceBundleItems, int(dry.SourceBundleBytes),
+	}
+	actualActions := []int{
+		actual.NotesImported, actual.NotesUpdated, actual.NotesUnchanged,
+		actual.NotebooksCreated, actual.NotebooksMerged,
+		actual.TagsCreated, actual.TagsExisting, actual.TagsApplied,
+		actual.ResourcesImported, actual.ResourcesUpdated, actual.ResourcesExisting, actual.ResourcesSkipped,
+		actual.SourceBundleItems, int(actual.SourceBundleBytes),
+	}
+	if !reflect.DeepEqual(dryActions, actualActions) {
+		t.Fatalf("dry-run actions differ:\n dry=%v\nreal=%v", dryActions, actualActions)
+	}
+	if dry.CheckpointStatus != "dry-run" || actual.CheckpointStatus != "completed" {
+		t.Fatalf("checkpoint statuses: dry=%q actual=%q", dry.CheckpointStatus, actual.CheckpointStatus)
+	}
+}
+
+func TestH8InterruptedImportResumesAtDurableBatch(t *testing.T) {
+	ctx := context.Background()
+	dir := t.TempDir()
+	for index := 0; index < 7; index++ {
+		id := fmt.Sprintf("note-%02d", index)
+		writeFile(t, filepath.Join(dir, id+".md"), fmt.Sprintf("Body %d\n\nid: %s\ntitle: Note %d\ntype_: 1\n", index, id, index))
+	}
+	st := openTestStore(t)
+	interrupted := errors.New("simulated interruption")
+	_, err := Import(ctx, st, dir, Options{
+		CollectionID: "default",
+		BatchSize:    2,
+		AfterBatch: func(phase string, processed, total int) error {
+			if phase == "notes" && processed == 2 {
+				return interrupted
+			}
+			return nil
+		},
+	})
+	if !errors.Is(err, interrupted) {
+		t.Fatalf("first import error = %v, want interruption", err)
+	}
+	checkpoint, err := st.GetImportCheckpoint(ctx, sourceSystem, filepath.Clean(dir), "default")
+	if err != nil {
+		t.Fatalf("checkpoint: %v", err)
+	}
+	if checkpoint.Phase != "notes" || checkpoint.NextIndex != 2 || checkpoint.Status != "running" {
+		t.Fatalf("checkpoint = %+v", checkpoint)
+	}
+	report, err := Import(ctx, st, dir, Options{CollectionID: "default", BatchSize: 2})
+	if err != nil {
+		t.Fatalf("resume: %v", err)
+	}
+	if !report.Resumed || report.NotesImported != 7 || report.CheckpointStatus != "completed" {
+		t.Fatalf("resume report: %#v", report)
+	}
+	for index := 0; index < 7; index++ {
+		id := fmt.Sprintf("doc_joplin_note-%02d", index)
+		if _, err := st.GetDocument(ctx, id); err != nil {
+			t.Fatalf("missing resumed document %s: %v", id, err)
+		}
+	}
+}
+
+func TestJ3ResumeFromAtomicNoteCheckpointDoesNotReplay(t *testing.T) {
+	ctx := context.Background()
+	dir := t.TempDir()
+	writeFile(t, filepath.Join(dir, "note.md"), "Body\n\nid: note1\ntitle: Final checkpoint\ntype_: 1\n")
+	st := openTestStore(t)
+	interrupted := errors.New("crash after final batch")
+	_, err := Import(ctx, st, dir, Options{AfterBatch: func(phase string, processed, total int) error {
+		if phase == "notes" {
+			return interrupted
+		}
+		return nil
+	}})
+	if !errors.Is(err, interrupted) {
+		t.Fatalf("first import error = %v", err)
+	}
+	checkpoint, err := st.GetImportCheckpoint(ctx, sourceSystem, filepath.Clean(dir), "default")
+	if err != nil || checkpoint.Phase != "links" || checkpoint.Status != "running" {
+		t.Fatalf("final running checkpoint=%+v err=%v", checkpoint, err)
+	}
+	report, err := Import(ctx, st, dir, Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !report.Resumed || report.NotesImported != 1 || report.NotesUpdated != 0 || report.NotesUnchanged != 0 {
+		t.Fatalf("final checkpoint replayed work: %#v", report)
+	}
+}
+
+func TestH8ResourceFingerprintUpdatesStableResource(t *testing.T) {
+	ctx := context.Background()
+	dir := t.TempDir()
+	writeFile(t, filepath.Join(dir, "resource.md"), "id: res1\ntitle: file.bin\nfilename: file.bin\ntype_: 4\n")
+	writeFile(t, filepath.Join(dir, "note.md"), "Resource note\n\n![file](:/res1)\n\nid: note1\ntype_: 1\n")
+	contentPath := filepath.Join(dir, "resources", "res1")
+	writeFile(t, contentPath, "version one")
+	st := openTestStore(t)
+	if _, err := Import(ctx, st, dir, Options{CollectionID: "default"}); err != nil {
+		t.Fatal(err)
+	}
+	before, err := st.GetResource(ctx, "res_joplin_res1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	writeFile(t, contentPath, "version two")
+	report, err := Import(ctx, st, dir, Options{CollectionID: "default"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	after, err := st.GetResource(ctx, before.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if report.ResourcesUpdated != 1 || before.ID != after.ID || before.SHA256 == after.SHA256 {
+		t.Fatalf("resource was not updated stably: report=%#v before=%+v after=%+v", report, before, after)
+	}
+	refs, err := st.ListDocumentResources(ctx, "doc_joplin_note1")
+	if err != nil || len(refs) != 1 || refs[0].ResourceID != before.ID {
+		t.Fatalf("resource reference not preserved: refs=%#v err=%v", refs, err)
+	}
+}
+
+func TestH8NotebookConflictRequiresRenameConfig(t *testing.T) {
+	ctx := context.Background()
+	dir := t.TempDir()
+	writeFile(t, filepath.Join(dir, "folder.md"), "id: work\ntitle: Work\ntype_: 2\n")
+	writeFile(t, filepath.Join(dir, "note.md"), "Body\n\nid: note1\nparent_id: work\ntitle: Imported\ntype_: 1\n")
+	st := openTestStore(t)
+	notebook, err := st.CreateNotebook(ctx, store.CreateNotebookRequest{Name: "Work"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	sourceDoc, err := st.CreateDocument(ctx, store.CreateDocumentRequest{NotebookID: notebook.ID, Title: "Other source", Body: "body"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := st.SetDocumentSource(ctx, store.SetDocumentSourceRequest{DocumentID: sourceDoc.ID, SourceSystem: "obsidian", ExternalID: "other"}); err != nil {
+		t.Fatal(err)
+	}
+	config, dry, err := DryRun(ctx, st, dir, Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(dry.NotebookConflicts) != 1 || config.Renames["Work"] == "" {
+		t.Fatalf("dry run did not suggest rename: report=%#v config=%#v", dry, config)
+	}
+	if _, err := Import(ctx, st, dir, Options{}); !errors.Is(err, store.ErrNameConflict) {
+		t.Fatalf("import without config error = %v", err)
+	}
+	report, err := Import(ctx, st, dir, Options{Config: &config})
+	if err != nil {
+		t.Fatalf("configured import: %v", err)
+	}
+	if report.NotebooksCreated != 1 {
+		t.Fatalf("configured report: %#v", report)
+	}
+	imported, err := st.GetDocument(ctx, "doc_joplin_note1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	target, err := st.GetNotebook(ctx, imported.NotebookID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if target.Name != config.Renames["Work"] {
+		t.Fatalf("renamed target = %q, want %q", target.Name, config.Renames["Work"])
+	}
+}
+
+func TestH8PlainNotebookMergeRemainsIdempotentAfterSourceBinding(t *testing.T) {
+	ctx := context.Background()
+	dir := t.TempDir()
+	writeFile(t, filepath.Join(dir, "folder.md"), "id: work\ntitle: Work\ntype_: 2\n")
+	writeFile(t, filepath.Join(dir, "note.md"), "Body\n\nid: note1\nparent_id: work\ntitle: Imported\ntype_: 1\n")
+	st := openTestStore(t)
+	plain, err := st.CreateNotebook(ctx, store.CreateNotebookRequest{Name: "Work"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	first, err := Import(ctx, st, dir, Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if first.NotebooksMerged != 1 {
+		t.Fatalf("first import did not merge plain notebook: %#v", first)
+	}
+	doc, err := st.GetDocument(ctx, "doc_joplin_note1")
+	if err != nil || doc.NotebookID != plain.ID {
+		t.Fatalf("merged placement: doc=%+v err=%v", doc, err)
+	}
+	second, err := Import(ctx, st, dir, Options{})
+	if err != nil {
+		t.Fatalf("rerun after merge became a conflict: %v", err)
+	}
+	if second.NotebooksSkipped != 1 || second.NotesUnchanged != 1 {
+		t.Fatalf("merge rerun not idempotent: %#v", second)
+	}
+}
+
+func TestH8GeneratedHundredsUseBoundedBatches(t *testing.T) {
+	count := 240
+	if value := os.Getenv("NOTRIOS_JOPLIN_SCALE_ITEMS"); value != "" {
+		parsed, err := strconv.Atoi(value)
+		if err != nil || parsed < 1 || parsed > 100000 {
+			t.Fatalf("invalid NOTRIOS_JOPLIN_SCALE_ITEMS=%q", value)
+		}
+		count = parsed
+	}
+	ctx := context.Background()
+	dir := t.TempDir()
+	for index := 0; index < count; index++ {
+		id := fmt.Sprintf("generated-%06d", index)
+		writeFile(t, filepath.Join(dir, id+".md"), fmt.Sprintf("Body %d\n\nid: %s\ntitle: Generated %d\nunknown_%d: retained\ntype_: 1\n", index, id, index, index))
+	}
+	st := openTestStore(t)
+	report, err := Import(ctx, st, dir, Options{BatchSize: 37})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if report.NotesImported != count {
+		t.Fatalf("imported %d, want %d: %#v", report.NotesImported, count, report)
+	}
+	if report.BatchesCompleted < (count+36)/37 {
+		t.Fatalf("batch count %d did not reflect bounded batches", report.BatchesCompleted)
+	}
+	rerun, err := Import(ctx, st, dir, Options{BatchSize: 37})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rerun.NotesUnchanged != count {
+		t.Fatalf("rerun unchanged=%d, want %d", rerun.NotesUnchanged, count)
+	}
+}
+
+func TestJ3InventoryFingerprintIsOrderIndependentAndCountSensitive(t *testing.T) {
+	var forward, reverse, missing [32]byte
+	for _, value := range []string{"one", "two", "two"} {
+		addInventoryFingerprint(&forward, value)
+	}
+	for _, value := range []string{"two", "one", "two"} {
+		addInventoryFingerprint(&reverse, value)
+	}
+	for _, value := range []string{"one", "two"} {
+		addInventoryFingerprint(&missing, value)
+	}
+	if forward != reverse {
+		t.Fatalf("inventory fingerprint depends on enumeration order: %x != %x", forward, reverse)
+	}
+	if forward == missing {
+		t.Fatalf("inventory fingerprint ignored duplicate item count: %x", forward)
+	}
+}
+
+func TestJ3NotebookImportStatesAreBoundedAboveStoreBatchLimit(t *testing.T) {
+	ctx := context.Background()
+	dir := t.TempDir()
+	const count = 501
+	for index := 0; index < count; index++ {
+		id := fmt.Sprintf("folder-%03d", index)
+		writeFile(t, filepath.Join(dir, id+".md"), fmt.Sprintf("id: %s\ntitle: Folder %03d\ntype_: 2\n", id, index))
+	}
+	st := openTestStore(t)
+	report, err := Import(ctx, st, dir, Options{BatchSize: 100})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if report.NotebooksCreated != count {
+		t.Fatalf("created %d notebooks, want %d", report.NotebooksCreated, count)
 	}
 }
 

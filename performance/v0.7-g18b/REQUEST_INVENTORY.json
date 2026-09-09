@@ -1,0 +1,24 @@
+{
+  "schema": "notrios.g18b.request-inventory.v1",
+  "as_of": "2026-08-27",
+  "build": [
+    {
+      "pipeline": "current",
+      "request": "npm package resolution for npx --yes marked and npx --yes pagefind when the npm cache is cold",
+      "required_on_clean_host": true,
+      "finding": "A restricted-network timing attempt failed at registry.npmjs.org before the approved network-enabled retry."
+    },
+    {
+      "pipeline": "prototype",
+      "request": "none for source or assets; Hugo Extended and Pagefind are explicit external tools",
+      "required_on_clean_host": false
+    }
+  ],
+  "runtime": {
+    "third_party_origins": [],
+    "same_origin_prefix": "/notrios/",
+    "google_fonts": false,
+    "pagefind_bundle": "/notrios/pagefind/pagefind.js",
+    "browser_observation": "All requests were same-origin or data URLs; no console errors or warnings."
+  }
+}

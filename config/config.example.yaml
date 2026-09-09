@@ -1,6 +1,17 @@
 server:
-  listen_addr: "127.0.0.1:8080"
-  public_base_url: "http://127.0.0.1:8080"
+  # 8099 is the development address, and it is deliberately not the compiled
+  # default. This file is read only from a source checkout, so a checkout and an
+  # installed Notrios -- which keeps the built-in 127.0.0.1:8080 -- can run at
+  # the same time without either being reconfigured. Their libraries are already
+  # separate; this is what stops them fighting over the port.
+  listen_addr: "127.0.0.1:8099"
+  public_base_url: "http://127.0.0.1:8099"
+  # Directory holding the built web interface (the one containing index.html).
+  # Leave it unset to search web/dist under the working directory, then under
+  # the executable's own directory and its parent — which covers running
+  # bin/notrios from the checkout root or from inside bin/. Set it when the
+  # binary lives apart from its assets.
+  # web_dir: "/opt/notrios/web/dist"
 
 data:
   directory: "./data"
@@ -8,14 +19,36 @@ data:
   asset_store: "./data/assets"
   projection_dir: "./data/projections"
 
+# `notriosctl profile create` writes a separate owner-only config with a local
+# profile identity, absolute isolated paths, and one of these targets. The
+# ordinary checkout config is unmanaged and safely keeps synchronization off.
+# Changing a managed profile to directory/rest establishes its sequence-zero
+# local journal boundary. G15 drains only explicitly queued durable jobs; it
+# does not create periodic work.
+sync:
+  target: "none"                 # none | directory | rest
+
 search:
   default_limit: 20
   max_limit: 100
-  max_offset: 10000
 
 mcp:
   enabled: true
-  default_profile: "read-only"
+  # Which tools an MCP client sees and may call: search-only, read-only,
+  # editor, or organizer. Empty means read-only.
+  #
+  # This is a guardrail you place on your own agent, not authorization —
+  # Notrios is single-user, and this key lives in the file you control. It is
+  # not what keeps the endpoint safe; keeping the service on loopback is.
+  #
+  # `default_profile` is the deprecated former name and is still read. If both
+  # appear, the narrower of the two wins and the service logs it, because a key
+  # that quietly stops applying must never widen what an agent may do.
+  default_scope: "read-only"
+  # Orthogonal sync authority: disabled (default), status, or control.
+  # control can only plan/start bounded incremental and wanted-resource jobs;
+  # it cannot enroll, expose keys, back up, restore, retire, purge, or reset.
+  sync_scope: "disabled"
   max_results: 10
   max_document_bytes: 65536
 
@@ -38,6 +71,12 @@ remote_media:
     image: "20MB"
     video: "200MB"
     pdf: "100MB"
+
+retention:
+  unreferenced_resource_days: 30  # unattached uploads and explicitly detached resources
+  purged_resource_days: 90        # resources orphaned by permanent note purge
+  sync_history_days: 90           # minimum operation/tombstone age; never sufficient without snapshot + peer acks
+  sync_peer_warning_days: 30      # warn this long before an active peer reaches the history horizon
 
 search_sidecar:
   enabled: false

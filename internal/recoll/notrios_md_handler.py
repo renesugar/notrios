@@ -20,6 +20,7 @@
 #   reply_to   -> replyto
 #   id         -> noteid
 #   notebook   -> notebook
+#   notebook_ancestors -> notebook (repeated, for recursive category filters)
 #
 # YAML parsing uses PyYAML when installed and otherwise falls back to a small
 # built-in parser covering the flat scalars-and-lists subset that Notrios
@@ -28,6 +29,7 @@
 import html
 import re
 import sys
+import unicodedata
 from datetime import datetime, timezone
 
 FIELD_MAP = {
@@ -38,12 +40,20 @@ FIELD_MAP = {
     "reply_to": "replyto",
     "id": "noteid",
     "notebook": "notebook",
+    # Provenance rather than filing. A single-valued field, because a note
+    # belongs to exactly one collection -- which is what distinguishes it from
+    # a tag and why it is not in LIST_FIELDS below.
+    "collection": "collection",
     "source_url": "sourceurl",
 }
 
 LIST_FIELDS = {
     "tags": "tag",
     "aliases": "alias",
+}
+
+MULTI_FIELDS = {
+    "notebook_ancestors": "notebook",
 }
 
 
@@ -177,6 +187,11 @@ def main():
         if epoch is not None:
             head.append(meta("publishedts", epoch))
     keywords = []
+    # Notebook ancestry is indexed only in the notebook field. It must not make
+    # an unqualified text query match a parent notebook name.
+    for key, field in MULTI_FIELDS.items():
+        for item in as_list(fields.get(key)):
+            head.append(meta(field, item))
     for key, field in LIST_FIELDS.items():
         for item in as_list(fields.get(key)):
             head.append(meta(field, item))
@@ -185,6 +200,18 @@ def main():
         # Duplicate tags/aliases into keywords so unqualified searches match
         # notes whose words occur only in their tags.
         head.append(meta("keywords", ", ".join(keywords)))
+    # Recoll/Xapian word tokenizers discard emoji and other Unicode symbols.
+    # Index stable codepoint keys so standalone emoji queries stay exact.
+    symbol_keys = []
+    seen_symbols = set()
+    for character in title + "\n" + body:
+        if unicodedata.category(character) == "So":
+            key = "u%x" % ord(character)
+            if key not in seen_symbols:
+                seen_symbols.add(key)
+                symbol_keys.append(key)
+    for key in symbol_keys:
+        head.append(meta("emoji", key))
     head.append('<meta http-equiv="Content-Type" content="text/html; charset=utf-8">')
     head.append("</head>")
 

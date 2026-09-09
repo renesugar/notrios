@@ -1,0 +1,16 @@
+{
+  "action": "copy|move|verify|burn|read-back",
+  "actor_or_opaque_custodian_id": "",
+  "after_sha256": "",
+  "before_sha256": "",
+  "destination_id": "",
+  "event_time_utc": "",
+  "manual": true,
+  "notes": "",
+  "previous_event_sha256": "",
+  "result": "",
+  "schema": "notrios.evidence.custody-event.v1",
+  "source_id": "",
+  "tool_and_version": "",
+  "volume_id": ""
+}

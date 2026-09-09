@@ -1,0 +1,150 @@
+{
+  "schema": "notrios.h10.wails3-decision.v1",
+  "recommendation": "migrate",
+  "recommended_timing": "after Wails v3 reaches a release version, not on beta.18. The spike shows the migration works and is small; what it cannot show is what a beta changes before it ships, and the desktop application is the surface a v1.0 support claim rests on.",
+  "question": "can the Notrios window move from Wails v2 to v3 without giving anything up?",
+  "answer": "yes, and it gets lighter. The prototype renders the entire real interface -- the real service handler, the real frontend bundle, the real /api/v1 -- behind the full native menu, and links half as many Go modules as the v2 shell.",
+  "measurements": {
+    "builds": {
+      "note": "the two binaries are not the same program: the v2 one is the whole notrios command and the prototype is a shell plus the service, so the sizes are not a comparison of the frameworks",
+      "v2_bytes": 26665568,
+      "v2_seconds": 10,
+      "v3_bytes": 26282072,
+      "v3_seconds": 9
+    },
+    "frontend_binding_convention": {
+      "files": 7,
+      "note": "window.go.main.X.Y does not exist in v3; these are what a migration rewrites",
+      "references": 11
+    },
+    "linked_modules": {
+      "added_by_v3": [
+        "github.com/adrg/xdg",
+        "github.com/mattn/go-isatty",
+        "github.com/renesugar/notrios",
+        "github.com/wailsapp/wails/v3"
+      ],
+      "dropped_by_v3": [
+        "github.com/leaanthony/go-ansi-parser",
+        "github.com/leaanthony/slicer",
+        "github.com/leaanthony/u",
+        "github.com/pkg/browser",
+        "github.com/pkg/errors",
+        "github.com/rivo/uniseg",
+        "github.com/samber/lo",
+        "github.com/tkrajina/go-reflector",
+        "github.com/wailsapp/mimetype",
+        "github.com/wailsapp/wails/v2",
+        "golang.org/x/net",
+        "golang.org/x/text"
+      ],
+      "v2": 16,
+      "v3": 8
+    },
+    "multiple_profiles": {
+      "both_running": "yes",
+      "separate_databases": 2
+    },
+    "native_stack": {
+      "v2": [
+        "libgtk-3.so.0",
+        "libwebkit2gtk-4.1.so.0"
+      ],
+      "v3": [
+        "libgtk-4.so.1",
+        "libwebkitgtk-6.0.so.4"
+      ]
+    },
+    "production_untouched": "yes",
+    "schema": "notrios.h10.wails3-spike.v1",
+    "wails": {
+      "production": "v2.13.0",
+      "prototype": "v3.0.0-beta.18"
+    },
+    "windows_opened": {
+      "v2": "yes",
+      "v3": "yes"
+    }
+  },
+  "capabilities": [
+    {
+      "capability": "asset server",
+      "v2": "assetserver.Options{Handler}",
+      "v3": "AssetOptions{Handler}",
+      "cost": "a field moved; the http.Handler type is identical, so the whole frontend and every /api/v1 request route exactly as before"
+    },
+    {
+      "capability": "bound objects",
+      "v2": "app.Bind = []interface{}{...}",
+      "v3": "Services: []Service{NewService(x)}",
+      "cost": "mechanical, one line each"
+    },
+    {
+      "capability": "menu",
+      "v2": "menu.NewMenu(), options.App.Menu",
+      "v3": "app.Menu.New(), app.Menu.Set()",
+      "cost": "mechanical; submenus, separators, the Edit role and every accelerator survive, F11 included"
+    },
+    {
+      "capability": "accelerators",
+      "v2": "keys.CmdOrCtrl(\"r\")",
+      "v3": ".SetAccelerator(\"CmdOrCtrl+r\")",
+      "cost": "a typed helper becomes a string; the strings were accepted as written"
+    },
+    {
+      "capability": "window operations",
+      "v2": "runtime.WindowReloadApp(ctx), WindowExecJS(ctx, \u2026)",
+      "v3": "window.Reload(), window.ExecJS(\u2026)",
+      "cost": "methods on the window rather than functions taking a context, which removes the captured appCtx the v2 shell threads through every menu callback"
+    },
+    {
+      "capability": "close veto",
+      "v2": "OnBeforeClose(ctx) bool",
+      "v3": "ShouldQuit() bool",
+      "cost": "a shape change: the callback no longer receives a context, so the dialog it asks has to reach the app another way"
+    },
+    {
+      "capability": "question dialog",
+      "v2": "runtime.MessageDialog returns the chosen button",
+      "v3": "Dialog.Question(); each button carries OnClick; Show() returns nothing",
+      "cost": "THE ONE THAT NEEDS THOUGHT. The unsaved-work guard has to decide now, so it must wait for a callback: the prototype blocks on a channel with a timeout and fails closed, which is what production already does when a dialog cannot be shown"
+    },
+    {
+      "capability": "directory picker",
+      "v2": "runtime.OpenDirectoryDialog",
+      "v3": "Dialog.OpenFile().CanChooseDirectories(true).CanChooseFiles(false)",
+      "cost": "mechanical"
+    },
+    {
+      "capability": "JS calling convention",
+      "v2": "window.go.main.X.Y, injected by the runtime",
+      "v3": "@wailsio/runtime Call.ByName, or modules from `wails3 generate bindings`",
+      "cost": "THE REAL COST. window.go does not exist in v3 -- zero occurrences in its compiled runtime -- and the frontend has 11 references across 7 files. Two of them are the accessors in web/src/desktop.ts; the other five reach for window.go directly and would move behind those accessors as part of the same change"
+    }
+  ],
+  "v3_offers_what_v2_had_no_answer_for": [
+    "SingleInstance, which is how a second launch could hand a notrios:// link to the running window instead of opening a second one",
+    "FileAssociations, the same question for files",
+    "KeyBindings at application level, rather than only through the menu",
+    "iOS and Android options, which are not a reason to migrate the desktop: the roadmap's mobile client is Flutter over the C ABI, and H11 proved that path on an emulator the day before this ran"
+  ],
+  "what_this_did_not_measure": [
+    "calling a bound service from JavaScript. The frontend still speaks the v2 convention, so the prototype proves services register, not that they answer",
+    "packaging a .deb against v3. dpkg-shlibdeps computes Depends from the binary so it should follow, but nothing here built one",
+    "the desktop journey harness under v3, which drives menus with xdotool",
+    "Windows and macOS, which have no toolchain on this machine and are post-v1.0 anyway",
+    "deep links end to end; SingleInstance and FileAssociations were read from the API, not exercised"
+  ],
+  "risks": [
+    "beta.18 is a beta, and v3's own documentation calls the desktop beta. A release is expected within the month, which is the reason to prepare rather than to move now",
+    "GTK4 and webkitgtk-6.0 replace GTK3 and webkit2gtk-4.1. Every documented install line changes -- six places say libwebkit2gtk-4.1-dev today -- and so does what an installed .deb depends on",
+    "the editor is md-editor-rt inside a webview; a different webview engine is a rendering risk the spike did not exercise beyond loading the page"
+  ],
+  "rollback": "delete performance/v0.8-h10/prototype. The prototype is a nested module, so the production go.mod never learned v3 exists -- verified, not asserted: production_untouched=yes",
+  "boundaries_held": [
+    "the production shell was not migrated",
+    "Wails v2 was not removed and still builds and runs",
+    "H6 and H7 gained no dependency on v3",
+    "no mobile support is claimed"
+  ]
+}

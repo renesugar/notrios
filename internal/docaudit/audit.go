@@ -1,0 +1,422 @@
+package docaudit
+
+import (
+	"encoding/json"
+	"fmt"
+	"io"
+	"os"
+	"path/filepath"
+	"sort"
+)
+
+const RegistrySchema = "notrios.docaudit.registry.v2"
+
+var exampleSurfaces = map[string]bool{"cli": true, "config": true, "rest": true, "mcp": true}
+var exampleExpectedKinds = map[string]bool{"exit": true, "http": true, "mcp": true, "config": true}
+var exampleUnrunCodes = map[string]bool{
+	"external-network": true, "host-installation": true, "privileged-host-change": true,
+	"shared-user-state": true, "interactive-or-long-running": true,
+	"illustrative-placeholder": true, "unsupported-contract": true,
+}
+
+func Audit(options Options) (Report, error) {
+	root, err := filepath.Abs(options.Root)
+	if err != nil {
+		return Report{}, err
+	}
+	var inventory Inventory
+	if err := readJSON(filepath.Join(root, options.InventoryPath), &inventory, false); err != nil {
+		return Report{}, fmt.Errorf("inventory: %w", err)
+	}
+	var registry Registry
+	if err := readJSON(filepath.Join(root, options.RegistryPath), &registry, true); err != nil {
+		return Report{}, fmt.Errorf("registry: %w", err)
+	}
+	if registry.Schema != RegistrySchema {
+		return Report{}, fmt.Errorf("registry schema = %q, want %q", registry.Schema, RegistrySchema)
+	}
+	fragments, err := scanGoFragments(root)
+	if err != nil {
+		return Report{}, err
+	}
+	if options.TemplatePath != "" {
+		if err := applyTemplatePlacements(root, options.TemplatePath, fragments); err != nil {
+			return Report{}, err
+		}
+	}
+	templates := make(map[string]map[string]bool)
+	for _, document := range inventory.Documents {
+		topic := topicForPath(document.Path)
+		if templates[topic] != nil {
+			return Report{}, fmt.Errorf("duplicate inventory topic %q", topic)
+		}
+		templates[topic] = make(map[string]bool)
+		for _, section := range document.Sections {
+			templates[topic][section.ID] = true
+		}
+	}
+	claims := make(map[string]RegisteredClaim)
+	for _, claim := range registry.Claims {
+		if !idPattern.MatchString(claim.ID) || claims[claim.ID].ID != "" {
+			return Report{}, fmt.Errorf("duplicate or invalid registered claim id %q", claim.ID)
+		}
+		claims[claim.ID] = claim
+	}
+	fragmentIDs := make(map[string]bool)
+	usedClaims := make(map[string]bool)
+	var productionAnchors, checkAnchors []string
+	for _, fragment := range fragments {
+		if fragmentIDs[fragment.ID] {
+			return Report{}, fmt.Errorf("duplicate fragment id %q", fragment.ID)
+		}
+		fragmentIDs[fragment.ID] = true
+		productionAnchors = append(productionAnchors, fragment.Anchor)
+		if fragment.Topic == "" || !templates[fragment.Topic][fragment.Section] {
+			return Report{}, fmt.Errorf("fragment %q names missing topic/section %s/%s", fragment.ID, fragment.Topic, fragment.Section)
+		}
+		if fragment.ClaimID != "" {
+			registered, ok := claims[fragment.ClaimID]
+			if !ok {
+				return Report{}, fmt.Errorf("dangling claim %q on fragment %q", fragment.ClaimID, fragment.ID)
+			}
+			if registered.CheckAnchor != fragment.ClaimCheck {
+				return Report{}, fmt.Errorf("claim %q check mismatch: directive %q registry %q", fragment.ClaimID, fragment.ClaimCheck, registered.CheckAnchor)
+			}
+			if usedClaims[fragment.ClaimID] {
+				return Report{}, fmt.Errorf("duplicate claim id %q", fragment.ClaimID)
+			}
+			usedClaims[fragment.ClaimID] = true
+			checkAnchors = append(checkAnchors, fragment.ClaimCheck)
+		}
+		if fragment.Enumeration != "" {
+			productionAnchors = append(productionAnchors, fragment.Enumeration)
+		}
+	}
+	for id := range claims {
+		if !usedClaims[id] {
+			return Report{}, fmt.Errorf("orphan registered check %q", id)
+		}
+	}
+
+	detected, err := scanExecutableExamples(root, inventory)
+	if err != nil {
+		return Report{}, err
+	}
+	registeredExamples := make(map[string]RegisteredExample)
+	for _, example := range registry.Executables {
+		if registeredExamples[example.ID].ID != "" {
+			return Report{}, fmt.Errorf("duplicate registered executable %q", example.ID)
+		}
+		registeredExamples[example.ID] = example
+		if example.State != GradeUnverified && example.State != GradeExecuted {
+			return Report{}, fmt.Errorf("executable %q has invalid state %q", example.ID, example.State)
+		}
+		if example.State == GradeExecuted {
+			if example.Check == "" {
+				return Report{}, fmt.Errorf("executed example %q has no check", example.ID)
+			}
+			if err := validateExampleExecution(example); err != nil {
+				return Report{}, err
+			}
+			checkAnchors = append(checkAnchors, example.Check)
+		} else {
+			if example.Check != "" || example.Execution != nil || example.Unrun == nil {
+				return Report{}, fmt.Errorf("unverified example %q must have only an unrun reason", example.ID)
+			}
+			if !exampleUnrunCodes[example.Unrun.Code] || example.Unrun.Detail == "" {
+				return Report{}, fmt.Errorf("unverified example %q has invalid unrun reason", example.ID)
+			}
+		}
+		if !templates[topicForPath(example.Path)][example.Section] {
+			return Report{}, fmt.Errorf("executable %q names missing topic/section", example.ID)
+		}
+	}
+	for _, candidate := range detected {
+		registered, ok := registeredExamples[candidate.ID]
+		if !ok || registered.Path != candidate.Path || registered.Section != candidate.Section || registered.Language != candidate.Language || registered.SHA256 != candidate.SHA256 {
+			return Report{}, fmt.Errorf("unaccounted executable example %q", candidate.ID)
+		}
+		delete(registeredExamples, candidate.ID)
+	}
+	if len(registeredExamples) != 0 {
+		return Report{}, fmt.Errorf("orphan registered executable %q", firstKey(registeredExamples))
+	}
+
+	inventoryJourneys := make(map[string]InventoryJourney)
+	for _, surface := range inventory.Surfaces {
+		if surface.ID == "gui_journeys" {
+			for _, journey := range surface.Journeys {
+				inventoryJourneys[journey.ID] = journey
+			}
+		}
+	}
+	registeredJourneys := make(map[string]RegisteredJourney)
+	for _, journey := range registry.Journeys {
+		if registeredJourneys[journey.ID].ID != "" {
+			return Report{}, fmt.Errorf("duplicate registered journey %q", journey.ID)
+		}
+		registeredJourneys[journey.ID] = journey
+		productionAnchors = append(productionAnchors, journey.Owner)
+		if !templates[topicForPath(journey.Path)][journey.Section] {
+			return Report{}, fmt.Errorf("journey %q names missing topic/section", journey.ID)
+		}
+		if journey.State != GradeUnverified && journey.State != GradeExecuted {
+			return Report{}, fmt.Errorf("journey %q has invalid state %q", journey.ID, journey.State)
+		}
+		if journey.State == GradeExecuted {
+			if journey.Check == "" {
+				return Report{}, fmt.Errorf("executed journey %q has no check", journey.ID)
+			}
+			checkAnchors = append(checkAnchors, journey.Check)
+		}
+	}
+	for id, expected := range inventoryJourneys {
+		actual, ok := registeredJourneys[id]
+		if !ok || actual.Owner != expected.Owner || actual.ProposedActions != expected.ProposedActions {
+			return Report{}, fmt.Errorf("unaccounted executable journey %q", id)
+		}
+		delete(registeredJourneys, id)
+	}
+	if len(registeredJourneys) != 0 {
+		return Report{}, fmt.Errorf("orphan registered journey %q", firstKey(registeredJourneys))
+	}
+
+	if err := resolveAnchors(root, productionAnchors, false, options.TSResolver); err != nil {
+		return Report{}, err
+	}
+	if err := resolveAnchors(root, checkAnchors, true, options.TSResolver); err != nil {
+		return Report{}, err
+	}
+	report := buildReport(inventory, fragments, registry)
+	if report.ManualSections != inventory.GradeBaseline.Denominator {
+		return Report{}, fmt.Errorf("manual-section denominator %d does not match frozen inventory %d", report.ManualSections, inventory.GradeBaseline.Denominator)
+	}
+	return report, nil
+}
+
+func validateExampleExecution(example RegisteredExample) error {
+	contract := example.Execution
+	if contract == nil || example.Unrun != nil {
+		return fmt.Errorf("executed example %q must have only an execution contract", example.ID)
+	}
+	if !exampleSurfaces[contract.Surface] || contract.Fixture == "" || contract.Case == "" {
+		return fmt.Errorf("executed example %q has invalid surface, fixture, or case", example.ID)
+	}
+	if !exampleExpectedKinds[contract.Expected.Kind] || contract.Expected.Status < 0 || contract.Postcondition.Kind == "" || contract.Postcondition.Detail == "" {
+		return fmt.Errorf("executed example %q has invalid expected result or postcondition", example.ID)
+	}
+	seen := make(map[string]bool)
+	for _, substitution := range contract.Substitutions {
+		if substitution.Token == "" || substitution.Source == "" || seen[substitution.Token] {
+			return fmt.Errorf("executed example %q has invalid substitution", example.ID)
+		}
+		seen[substitution.Token] = true
+	}
+	return nil
+}
+
+func resolveAnchors(root string, anchors []string, includeTests bool, tsResolver func(string, []string) error) error {
+	goAnchors, tsAnchors, err := splitAnchorsByLanguage(anchors)
+	if err != nil {
+		return err
+	}
+	for _, anchor := range goAnchors {
+		if err := resolveGoAnchor(root, anchor, includeTests); err != nil {
+			return err
+		}
+	}
+	if len(tsAnchors) > 0 {
+		if tsResolver == nil {
+			return fmt.Errorf("TypeScript anchors require the compiler-API resolver")
+		}
+		if err := tsResolver(root, tsAnchors); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// ValidateAnchors exposes the frozen G18a source-symbol resolver to adjacent
+// documentation-integrity tools without duplicating its Go/TypeScript rules.
+func ValidateAnchors(root string, anchors []string, includeTests bool, tsResolver func(string, []string) error) error {
+	return resolveAnchors(root, anchors, includeTests, tsResolver)
+}
+
+func readJSON(path string, target any, strict bool) error {
+	file, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	decoder := json.NewDecoder(file)
+	if strict {
+		decoder.DisallowUnknownFields()
+	}
+	if err := decoder.Decode(target); err != nil {
+		return err
+	}
+	var trailing any
+	if err := decoder.Decode(&trailing); err != io.EOF {
+		if err == nil {
+			return fmt.Errorf("trailing JSON values")
+		}
+		return err
+	}
+	return nil
+}
+
+func firstKey[T any](values map[string]T) string {
+	keys := make([]string, 0, len(values))
+	for key := range values {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	return keys[0]
+}
+
+func buildReport(inventory Inventory, fragments []Fragment, registry Registry) Report {
+	report := Report{Schema: "notrios.docaudit.report.v1", Counts: map[Grade]int{GradeExecuted: 0, GradeGenerated: 0, GradeClaimed: 0, GradeUnverified: 0}, Fragments: len(fragments), Claims: len(registry.Claims), Executables: len(registry.Executables), Journeys: len(registry.Journeys)}
+	for _, surface := range inventory.Surfaces {
+		report.Surfaces = append(report.Surfaces, SurfaceReport{
+			ID: surface.ID, Count: surface.Count, Unit: surface.Unit,
+			OperationIDs: surface.OperationIDs, Owner: surface.Owner,
+			Finding: surface.Finding, MeasurementState: surface.MeasurementState,
+		})
+	}
+	topicIndex := make(map[string]int)
+	for _, document := range inventory.Documents {
+		topic := topicForPath(document.Path)
+		topicReport := TopicReport{Topic: topic, Path: document.Path, Counts: map[Grade]int{GradeExecuted: 0, GradeGenerated: 0, GradeClaimed: 0, GradeUnverified: 0}}
+		for _, section := range document.Sections {
+			// The inventory grades a section the generator produced; everything
+			// else is prose a person wrote and nothing has checked.
+			grade := GradeUnverified
+			if section.Grade == GradeGenerated {
+				grade = GradeGenerated
+			}
+			topicReport.Sections = append(topicReport.Sections, SectionGrade{ID: section.ID, Grade: grade})
+			topicReport.Counts[grade]++
+			report.Counts[grade]++
+			report.Denominator++
+			// Counted whatever its grade: "manual sections" is every section in
+			// the manual, which is what the frozen inventory's denominator is
+			// reconciled against. The grade says who wrote it, not whether it
+			// is there.
+			report.ManualSections++
+		}
+		topicIndex[topic] = len(report.TopicReports)
+		report.TopicReports = append(report.TopicReports, topicReport)
+	}
+	add := func(topic string, unit UnitGrade, kind string) {
+		index := topicIndex[topic]
+		switch kind {
+		case "fragment":
+			report.TopicReports[index].Fragments = append(report.TopicReports[index].Fragments, unit)
+		case "example":
+			report.TopicReports[index].Examples = append(report.TopicReports[index].Examples, unit)
+		case "journey":
+			report.TopicReports[index].Journeys = append(report.TopicReports[index].Journeys, unit)
+		}
+		report.TopicReports[index].Counts[unit.Grade]++
+		report.Counts[unit.Grade]++
+		report.Denominator++
+	}
+	for _, fragment := range fragments {
+		grade := GradeUnverified
+		if fragment.ClaimID != "" {
+			grade = GradeClaimed
+		}
+		if fragment.Enumeration != "" {
+			grade = GradeGenerated
+		}
+		add(fragment.Topic, UnitGrade{ID: fragment.ID, Section: fragment.Section, Grade: grade}, "fragment")
+	}
+	for _, example := range registry.Executables {
+		add(topicForPath(example.Path), UnitGrade{ID: example.ID, Section: example.Section, Grade: example.State}, "example")
+	}
+	for _, journey := range registry.Journeys {
+		add(topicForPath(journey.Path), UnitGrade{ID: journey.ID, Section: journey.Section, Grade: journey.State}, "journey")
+	}
+	return report
+}
+
+func DetectExecutableExamples(root, inventoryPath string) ([]ExampleCandidate, error) {
+	var inventory Inventory
+	if err := readJSON(filepath.Join(root, inventoryPath), &inventory, false); err != nil {
+		return nil, err
+	}
+	return scanExecutableExamples(root, inventory)
+}
+
+type placementTemplate struct {
+	Schema string `json:"schema"`
+	Pages  []struct {
+		Path     string `json:"path"`
+		Sections []struct {
+			Slug  string `json:"slug"`
+			Slots []struct {
+				ID       string `json:"id"`
+				Audience string `json:"audience"`
+			} `json:"slots"`
+		} `json:"sections"`
+	} `json:"pages"`
+}
+
+func applyTemplatePlacements(root, path string, fragments []Fragment) error {
+	var template placementTemplate
+	if err := readJSON(filepath.Join(root, filepath.FromSlash(path)), &template, true); err != nil {
+		return fmt.Errorf("docgen template: %w", err)
+	}
+	if template.Schema != "notrios.docgen.templates.v1" {
+		return fmt.Errorf("docgen template schema = %q", template.Schema)
+	}
+	byID := make(map[string]*Fragment, len(fragments))
+	for index := range fragments {
+		byID[fragments[index].ID] = &fragments[index]
+	}
+	seen := make(map[string]bool)
+	for _, page := range template.Pages {
+		topic := topicForPath(page.Path)
+		for _, section := range page.Sections {
+			for _, slot := range section.Slots {
+				fragment := byID[slot.ID]
+				if fragment == nil {
+					return fmt.Errorf("docgen template names missing fragment %q", slot.ID)
+				}
+				if seen[slot.ID] {
+					return fmt.Errorf("docgen template duplicates fragment %q", slot.ID)
+				}
+				seen[slot.ID] = true
+				if fragment.Audience != slot.Audience {
+					return fmt.Errorf("docgen template audience mismatch for fragment %q", slot.ID)
+				}
+				if fragment.Topic != "" && (fragment.Topic != topic || fragment.Section != section.Slug) {
+					return fmt.Errorf("docgen template placement mismatch for fragment %q", slot.ID)
+				}
+				fragment.Topic, fragment.Section = topic, section.Slug
+			}
+		}
+	}
+	for _, fragment := range fragments {
+		if !seen[fragment.ID] {
+			return fmt.Errorf("source fragment %q is absent from docgen template", fragment.ID)
+		}
+	}
+	return nil
+}
+
+// ScanFragments returns the source-adjacent documentation fragments using the
+// same frozen directive grammar as Audit. Callers receive a stable ID order so
+// generation and advisory review never depend on filesystem walk ordering.
+func ScanFragments(root string) ([]Fragment, error) {
+	absRoot, err := filepath.Abs(root)
+	if err != nil {
+		return nil, err
+	}
+	fragments, err := scanGoFragments(absRoot)
+	if err != nil {
+		return nil, err
+	}
+	sort.Slice(fragments, func(i, j int) bool { return fragments[i].ID < fragments[j].ID })
+	return fragments, nil
+}

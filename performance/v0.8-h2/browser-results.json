@@ -1,0 +1,65 @@
+{
+  "csp_violations": [],
+  "page_errors": [],
+  "cross_origin_requests": [],
+  "script_execution_detected": false,
+  "cases": {
+    "flowchart": {
+      "rendered": true,
+      "foreignObjects": 0,
+      "scripts": 0,
+      "hrefs": [],
+      "appURIs": [],
+      "hasRole": "img",
+      "width": "100%"
+    },
+    "sequence": {
+      "rendered": true,
+      "foreignObjects": 0,
+      "scripts": 0,
+      "hrefs": [],
+      "appURIs": [],
+      "hasRole": "img",
+      "width": "100%"
+    },
+    "malformed": {
+      "rendered": false,
+      "reason": "invalid"
+    },
+    "html_payload": {
+      "rendered": true,
+      "foreignObjects": 0,
+      "scripts": 0,
+      "hrefs": [],
+      "appURIs": [],
+      "hasRole": "img",
+      "width": "100%"
+    },
+    "remote_image": {
+      "rendered": true,
+      "foreignObjects": 0,
+      "scripts": 0,
+      "hrefs": [],
+      "appURIs": [],
+      "hasRole": "img",
+      "width": "100%"
+    },
+    "note_link": {
+      "rendered": true,
+      "foreignObjects": 0,
+      "scripts": 0,
+      "hrefs": [
+        "#"
+      ],
+      "appURIs": [
+        "notrios://databases/db_a/documents/doc_b"
+      ],
+      "hasRole": "img",
+      "width": "100%"
+    },
+    "over_limit": {
+      "rendered": false,
+      "reason": "invalid"
+    }
+  }
+}

@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	"github.com/renesugar/notrios/internal/config"
+	"github.com/renesugar/notrios/internal/httpapi"
 	"github.com/renesugar/notrios/internal/service"
 )
 
@@ -32,6 +33,7 @@ func main() {
 	noGUI := flag.Bool("no-gui", false, "run the service without the built-in GUI (use any REST/MCP client)")
 	guiOnly := flag.Bool("gui-only", false, "run only the GUI as a REST client against an already-running service")
 	remote := flag.String("remote", "", "service base URL for -gui-only (default http://<listen_addr> from config)")
+	webDir := flag.String("web-dir", "", "directory holding the built web interface (default: search the working directory, then the executable's directory and its parent)")
 	flag.Parse()
 
 	if *noGUI && *guiOnly {
@@ -48,12 +50,34 @@ func main() {
 	if strings.TrimSpace(*dbOverride) != "" {
 		cfg.Data.DatabasePath = *dbOverride
 	}
+	if strings.TrimSpace(*webDir) != "" {
+		cfg.Server.WebDir = *webDir
+	}
+
+	// A GUI that cannot find its interface must fail here, on the terminal,
+	// naming every directory it tried. Opening a window containing a JSON error
+	// object tells the reader almost nothing and makes the application look
+	// broken rather than misplaced.
+	//
+	// Only the default mode is checked. `-no-gui` serves REST and MCP, which
+	// work without an interface, and refusing to start a headless service over
+	// a missing web build would be gratuitous. `-gui-only` renders whatever the
+	// *remote* service serves, so the local machine needs no assets at all.
+	if !*noGUI && !*guiOnly {
+		if _, err := httpapi.ResolveWebRoot(cfg.Server.WebDir); err != nil {
+			log.Fatalf("notrios cannot start the GUI: %v", err)
+		}
+	}
 
 	switch {
 	case *guiOnly:
 		base := strings.TrimSpace(*remote)
 		if base == "" {
-			base = "http://" + cfg.Server.ListenAddr
+			scheme := "http"
+			if strings.TrimSpace(cfg.Sync.REST.TLSCertFile) != "" {
+				scheme = "https"
+			}
+			base = scheme + "://" + cfg.Server.ListenAddr
 		}
 		target, err := url.Parse(base)
 		if err != nil || target.Host == "" {
@@ -61,7 +85,7 @@ func main() {
 		}
 		log.Printf("notrios GUI connecting to %s (gui-only mode)", target)
 		proxy := httputil.NewSingleHostReverseProxy(target)
-		if err := runGUI(proxy); err != nil {
+		if err := runGUI(proxy, nil); err != nil {
 			log.Fatal(err)
 		}
 
@@ -71,8 +95,8 @@ func main() {
 			log.Fatal(err)
 		}
 		defer svc.Close()
-		log.Printf("notrios (no-gui) listening on http://%s using db %s", cfg.Server.ListenAddr, cfg.Data.DatabasePath)
-		if err := svc.HTTPServer().ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		log.Printf("notrios (no-gui) listening on %s://%s using db %s", serviceScheme(svc), cfg.Server.ListenAddr, cfg.Data.DatabasePath)
+		if err := svc.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatal(err)
 		}
 
@@ -85,20 +109,28 @@ func main() {
 		// The service also listens on its TCP address so MCP clients and
 		// third-party GUIs can connect while the built-in GUI is open.
 		go func() {
-			log.Printf("notrios service listening on http://%s using db %s", cfg.Server.ListenAddr, cfg.Data.DatabasePath)
-			if err := svc.HTTPServer().ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Printf("notrios service listening on %s://%s using db %s", serviceScheme(svc), cfg.Server.ListenAddr, cfg.Data.DatabasePath)
+			if err := svc.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 				log.Printf("service listener stopped: %v", err)
 			}
 		}()
-		if err := runGUI(svc.Handler); err != nil {
+		if err := runGUI(svc.Handler, svc); err != nil {
 			log.Fatal(err)
 		}
 	}
+}
+
+func serviceScheme(svc *service.Service) string {
+	certificate, _ := svc.TLSFiles()
+	if certificate != "" {
+		return "https"
+	}
+	return "http"
 }
 
 func loadRuntimeConfig(path string) (config.Config, error) {
 	if strings.TrimSpace(path) != "" {
 		return config.Load(path)
 	}
-	return config.LoadDefaultOrExample()
+	return config.LoadDefault()
 }

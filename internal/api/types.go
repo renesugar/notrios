@@ -3,16 +3,49 @@ package api
 // StatusResponse describes service health, runtime configuration, storage roots,
 // and currently implemented capability flags.
 type StatusResponse struct {
-	Service      string             `json:"service"`
-	Version      string             `json:"version"`
-	Status       string             `json:"status"`
-	Database     string             `json:"database,omitempty"` // Deprecated summary retained for early UI compatibility.
-	ConfigPath   string             `json:"config_path,omitempty"`
-	DatabaseInfo DatabaseStatus     `json:"database_info,omitempty"`
-	Storage      StorageStatus      `json:"storage,omitempty"`
-	Capabilities map[string]bool    `json:"capabilities,omitempty"`
-	Limits       map[string]int     `json:"limits,omitempty"`
-	MediaPolicy  *MediaPolicyStatus `json:"media_policy,omitempty"`
+	Service    string `json:"service"`
+	Version    string `json:"version"`
+	Status     string `json:"status"`
+	Profile    string `json:"profile,omitempty"`
+	ProfileID  string `json:"profile_id,omitempty"`
+	Database   string `json:"database,omitempty"` // Deprecated summary retained for early UI compatibility.
+	ConfigPath string `json:"config_path,omitempty"`
+	// Always populated by Status. `omitempty` never applied to a struct value,
+	// so these were emitted regardless; the tag is dropped rather than honoured
+	// because removing the keys would change a response clients already receive.
+	DatabaseInfo  DatabaseStatus      `json:"database_info"`
+	Storage       StorageStatus       `json:"storage"`
+	Capabilities  map[string]bool     `json:"capabilities,omitempty"`
+	Limits        map[string]int      `json:"limits,omitempty"`
+	MediaPolicy   *MediaPolicyStatus  `json:"media_policy,omitempty"`
+	SearchSidecar SearchSidecarStatus `json:"search_sidecar"`
+}
+
+// SearchSidecarStatus reports derived Recoll health. SQLite remains canonical;
+// every field here is operational telemetry and may be reset by rebuilding.
+type SearchSidecarStatus struct {
+	Configured           bool                        `json:"configured"`
+	Available            bool                        `json:"available"`
+	Active               bool                        `json:"active"`
+	State                string                      `json:"state"`
+	Backlog              int                         `json:"backlog"`
+	FailedJobs           int                         `json:"failed_jobs"`
+	LastSyncAt           string                      `json:"last_sync_at,omitempty"`
+	LastIndexAt          string                      `json:"last_index_at,omitempty"`
+	LastReconciliationAt string                      `json:"last_reconciliation_at,omitempty"`
+	LastError            string                      `json:"last_error,omitempty"`
+	Reconciliation       *SearchReconciliationStatus `json:"reconciliation,omitempty"`
+}
+
+type SearchReconciliationStatus struct {
+	Complete  bool `json:"complete"`
+	Canonical int  `json:"canonical"`
+	Scanned   int  `json:"scanned"`
+	Missing   int  `json:"missing"`
+	Stale     int  `json:"stale"`
+	Orphaned  int  `json:"orphaned"`
+	Repaired  int  `json:"repaired"`
+	Failed    int  `json:"failed"`
 }
 
 // MediaPolicyStatus reports the active remote-media policy (v0.3 task H1):
@@ -32,10 +65,66 @@ type MediaPolicyStatus struct {
 }
 
 type DatabaseStatus struct {
-	Driver        string `json:"driver"`
-	Path          string `json:"path,omitempty"`
-	State         string `json:"state"`
+	Driver string `json:"driver"`
+	Path   string `json:"path,omitempty"`
+	State  string `json:"state"`
+	// DatabaseID is the stable logical database identity that external
+	// notrios:// links carry. The per-copy replica ID is not reported: it
+	// means nothing in a shared link.
+	DatabaseID    string `json:"database_id,omitempty"`
 	SchemaVersion int    `json:"schema_version,omitempty"`
+}
+
+// DocumentBlock is one addressable region of a note. Block IDs are derived
+// from block text, so an ID names exactly the content it was written against.
+type DocumentBlock struct {
+	ID           string `json:"id"`
+	DocumentID   string `json:"document_id"`
+	Ordinal      int    `json:"ordinal"`
+	Kind         string `json:"kind"`
+	HeadingLevel int    `json:"heading_level,omitempty"`
+	// Marker is an author-written anchor (Obsidian `^marker`). It outranks the
+	// derived ID when a link names it, because it is a name the author chose.
+	Marker string `json:"marker,omitempty"`
+	// HeadingSlug is the URI-safe name a `#section-title` anchor resolves
+	// against. Only heading blocks have one.
+	HeadingSlug   string `json:"heading_slug,omitempty"`
+	ContentSHA256 string `json:"content_sha256"`
+	StartByte     int    `json:"start_byte"`
+	EndByte       int    `json:"end_byte"`
+	Backlinks     int    `json:"backlinks"`
+}
+
+// DocumentBlocksResponse lists a note's blocks in document order. Blocks per
+// note are bounded by the parser, so this is not a paged surface.
+type DocumentBlocksResponse struct {
+	DocumentID string          `json:"document_id"`
+	Blocks     []DocumentBlock `json:"blocks"`
+}
+
+// StableLinkResolveRequest asks which note a notrios:// link names in this
+// database. It accepts a URI and nothing else: no path, no profile, no
+// database selection. Choosing the database is a local desktop decision made
+// by the profile registry, never by an HTTP caller.
+type StableLinkResolveRequest struct {
+	URI string `json:"uri"`
+}
+
+// StableLinkResolveResponse reports what the link names here. Document fields
+// are populated only when this database can actually open the link, so a link
+// belonging to another database never reveals whether that ID exists locally.
+type StableLinkResolveResponse struct {
+	URI             string `json:"uri"`
+	Status          string `json:"status"`
+	DatabaseID      string `json:"database_id"`
+	LocalDatabaseID string `json:"local_database_id"`
+	DocumentID      string `json:"document_id"`
+	Anchor          string `json:"anchor,omitempty"`
+	DocumentURI     string `json:"document_uri,omitempty"`
+	Title           string `json:"title,omitempty"`
+	NotebookID      string `json:"notebook_id,omitempty"`
+	BlockID         string `json:"block_id,omitempty"`
+	BlockKind       string `json:"block_kind,omitempty"`
 }
 
 type StorageStatus struct {
@@ -57,13 +146,18 @@ type APIError struct {
 	Details map[string]any `json:"details,omitempty"`
 }
 
+// Collection is a provenance record: where a body of notes came from.
+//
+// It carried `kind` and `capabilities` until v0.8 H16 removed them. Neither was
+// stored: the schema has id, name and description, and `kind` was always the
+// constant "managed" while `capabilities` was the same five words on every
+// collection. A response field that is the same for every row is not a fact
+// about the row, and nothing read either one.
 type Collection struct {
-	ID           string         `json:"id"`
-	Name         string         `json:"name"`
-	Kind         string         `json:"kind"`
-	Description  string         `json:"description,omitempty"`
-	Capabilities []string       `json:"capabilities,omitempty"`
-	Settings     map[string]any `json:"settings,omitempty"`
+	ID          string         `json:"id"`
+	Name        string         `json:"name"`
+	Description string         `json:"description,omitempty"`
+	Settings    map[string]any `json:"settings,omitempty"`
 }
 
 type CollectionPage struct {
@@ -76,7 +170,7 @@ type SearchRequest struct {
 	Collection   string        `json:"collection,omitempty"` // Deprecated single-collection convenience.
 	Query        string        `json:"query,omitempty"`
 	Mode         string        `json:"mode,omitempty"`
-	Filters      SearchFilters `json:"filters,omitempty"`
+	Filters      SearchFilters `json:"filters"`
 	Sort         []SortField   `json:"sort,omitempty"`
 	Limit        int           `json:"limit,omitempty"`
 	Cursor       string        `json:"cursor,omitempty"`
@@ -103,6 +197,7 @@ type SearchHit struct {
 	ID           string         `json:"id"`
 	URI          string         `json:"uri"`
 	Source       string         `json:"source"`
+	Sources      []string       `json:"sources,omitempty"`
 	CollectionID string         `json:"collection_id,omitempty"`
 	Title        string         `json:"title,omitempty"`
 	Snippet      string         `json:"snippet,omitempty"`
@@ -115,10 +210,17 @@ type SearchResponse struct {
 	Hits       []SearchHit `json:"hits"`
 	NextCursor string      `json:"next_cursor,omitempty"`
 	Total      *int64      `json:"total,omitempty"`
+	Truncated  bool        `json:"truncated,omitempty"`
 }
 
-// Notebook is a nested note container. Builtin notebooks (Help) cannot be
-// deleted or renamed; the default "Notes" notebook cannot be deleted.
+type DocumentPage struct {
+	Documents  []Document `json:"documents"`
+	NextCursor string     `json:"next_cursor,omitempty"`
+}
+
+// Notebook is a nested note container. Builtin notebooks (Reports, Help) hold
+// system-authored notes and cannot be deleted, renamed, or edited; the default
+// "Notes" notebook cannot be deleted either, but its content is the user's.
 type Notebook struct {
 	ID        string `json:"id"`
 	ParentID  string `json:"parent_id,omitempty"`
@@ -177,11 +279,103 @@ type MoveDocumentRequest struct {
 	NotebookID string `json:"notebook_id"`
 }
 
+// TagRenameRequest renames a tag and, with include_children, everything under
+// it. `dry_run` is a pointer so an omitted field can default to true: a caller
+// that forgets it gets a report, not a change.
+type TagRenameRequest struct {
+	From            string `json:"from"`
+	To              string `json:"to"`
+	IncludeChildren bool   `json:"include_children,omitempty"`
+	DryRun          *bool  `json:"dry_run,omitempty"`
+}
+
+// BatchItem is one note in a batch request. `base_revision_id` is required
+// only for operations that write a revision (today, `trash`), and is per item
+// because a batch is a set of independent notes.
+type BatchItem struct {
+	DocumentID     string `json:"document_id"`
+	BaseRevisionID string `json:"base_revision_id,omitempty"`
+}
+
+// BatchRequest is one bounded organizer transaction over an explicit list of
+// notes. `mode` is "best_effort" (default) or "atomic".
+type BatchRequest struct {
+	RequestKey string      `json:"request_key,omitempty"`
+	Operation  string      `json:"operation"`
+	Mode       string      `json:"mode,omitempty"`
+	Items      []BatchItem `json:"items"`
+	NotebookID string      `json:"notebook_id,omitempty"`
+	Tags       []string    `json:"tags,omitempty"`
+}
+
+// BatchItemResult is one note's outcome: applied, skipped, failed, or
+// rolled_back (it succeeded and was undone when an atomic run failed later).
+type BatchItemResult struct {
+	DocumentID    string `json:"document_id"`
+	Status        string `json:"status"`
+	Reason        string `json:"reason,omitempty"`
+	Error         string `json:"error,omitempty"`
+	NewDocumentID string `json:"new_document_id,omitempty"`
+}
+
+// BatchResult reports every requested item in both modes.
+type BatchResult struct {
+	RequestKey string            `json:"request_key,omitempty"`
+	Operation  string            `json:"operation"`
+	Mode       string            `json:"mode"`
+	Items      []BatchItemResult `json:"items"`
+	Applied    int               `json:"applied"`
+	Skipped    int               `json:"skipped"`
+	Failed     int               `json:"failed"`
+	RolledBack int               `json:"rolled_back"`
+	// Replayed marks a response served from the idempotency ledger.
+	Replayed bool `json:"replayed"`
+}
+
+// TagRenameChange is one tag's outcome. `action` is "rename" or "merge".
+type TagRenameChange struct {
+	TagID           string `json:"tag_id"`
+	From            string `json:"from"`
+	To              string `json:"to"`
+	Action          string `json:"action"`
+	MergedIntoTagID string `json:"merged_into_tag_id,omitempty"`
+	Notes           int64  `json:"notes"`
+	NotesGained     int64  `json:"notes_gained"`
+}
+
+// TagRenameResult is reported identically for a dry run and an apply, because
+// the service produces both from the same statements.
+type TagRenameResult struct {
+	From            string            `json:"from"`
+	To              string            `json:"to"`
+	IncludeChildren bool              `json:"include_children"`
+	DryRun          bool              `json:"dry_run"`
+	Changes         []TagRenameChange `json:"changes"`
+	Notes           int64             `json:"notes"`
+	Warnings        []string          `json:"warnings"`
+}
+
+// NotebookDeletionPreview is what deleting a notebook would do. Deletion is
+// trash-first: no note is lost, but the subtree's notes move to the Trash and
+// are re-homed to `rehome_notebook_id` so a later restore has a destination.
+type NotebookDeletionPreview struct {
+	NotebookID       string   `json:"notebook_id"`
+	Name             string   `json:"name"`
+	Notebooks        int64    `json:"notebooks"`
+	DescendantNames  []string `json:"descendant_names"`
+	Truncated        bool     `json:"truncated"`
+	Notes            int64    `json:"notes"`
+	TrashedNotes     int64    `json:"trashed_notes"`
+	RehomeNotebookID string   `json:"rehome_notebook_id"`
+	Deletable        bool     `json:"deletable"`
+	Reason           string   `json:"reason,omitempty"`
+}
+
 type Document struct {
-	ID                string         `json:"id"`
-	URI               string         `json:"uri"`
-	CollectionID      string         `json:"collection_id"`
-	NotebookID        string         `json:"notebook_id,omitempty"`
+	ID           string `json:"id"`
+	URI          string `json:"uri"`
+	CollectionID string `json:"collection_id"`
+	NotebookID   string `json:"notebook_id,omitempty"`
 	// Editable is the server-authoritative capability flag: false for notes
 	// in protected notebooks (Help) and for trashed notes. Clients must not
 	// infer editability from notebook names.
@@ -310,21 +504,118 @@ type ResourceReferencePage struct {
 	NextCursor string              `json:"next_cursor,omitempty"`
 }
 
+type ResourceReport struct {
+	ExactDuplicates   []ExactDuplicateGroup   `json:"exact_duplicates"`
+	UnreferencedBlobs []UnreferencedBlob      `json:"unreferenced_blobs"`
+	NotebookUsage     []NotebookResourceUsage `json:"notebook_usage"`
+	Perceptual        PerceptualHashReport    `json:"perceptual"`
+}
+
+type ExactDuplicateGroup struct {
+	SHA256          string               `json:"sha256"`
+	MIMEType        string               `json:"mime_type"`
+	SizeBytes       int64                `json:"size_bytes"`
+	ResourceCount   int                  `json:"resource_count"`
+	ReferenceCount  int                  `json:"reference_count"`
+	CollectionIDs   []string             `json:"collection_ids"`
+	CrossCollection bool                 `json:"cross_collection"`
+	Resources       []ResourceReportItem `json:"resources"`
+}
+
+type ResourceReportItem struct {
+	Resource       Resource `json:"resource"`
+	ReferenceCount int      `json:"reference_count"`
+}
+
+type UnreferencedBlob struct {
+	SHA256    string     `json:"sha256"`
+	MIMEType  string     `json:"mime_type"`
+	SizeBytes int64      `json:"size_bytes"`
+	Resources []Resource `json:"resources"`
+}
+
+type NotebookResourceUsage struct {
+	NotebookID      string `json:"notebook_id"`
+	NotebookName    string `json:"notebook_name"`
+	DocumentCount   int    `json:"document_count"`
+	ReferenceCount  int    `json:"reference_count"`
+	ResourceCount   int    `json:"resource_count"`
+	UniqueBlobCount int    `json:"unique_blob_count"`
+	ReferencedBytes int64  `json:"referenced_bytes"`
+	UniqueBytes     int64  `json:"unique_bytes"`
+}
+
+type PerceptualPolicyReview struct {
+	Algorithm   string   `json:"algorithm"`
+	Hash        string   `json:"hash"`
+	BlobSHA256  string   `json:"blob_sha256"`
+	ResourceIDs []string `json:"resource_ids"`
+	Reason      string   `json:"reason,omitempty"`
+}
+
+type NearDuplicateReview struct {
+	Algorithm        string   `json:"algorithm"`
+	LeftBlobSHA256   string   `json:"left_blob_sha256"`
+	RightBlobSHA256  string   `json:"right_blob_sha256"`
+	LeftResourceIDs  []string `json:"left_resource_ids"`
+	RightResourceIDs []string `json:"right_resource_ids"`
+	Distance         float64  `json:"distance"`
+	Reason           string   `json:"reason,omitempty"`
+}
+
+type PerceptualHashReport struct {
+	HookEnabled    bool                     `json:"hook_enabled"`
+	Algorithm      string                   `json:"algorithm,omitempty"`
+	StoredHashes   int                      `json:"stored_hashes"`
+	PolicyReviews  []PerceptualPolicyReview `json:"policy_reviews"`
+	NearDuplicates []NearDuplicateReview    `json:"near_duplicates"`
+}
+
+type GarbageCollectionPolicy struct {
+	UnreferencedSeconds   int64  `json:"unreferenced_seconds"`
+	PurgedResourceSeconds int64  `json:"purged_resource_seconds"`
+	Gate                  string `json:"gate"`
+}
+
+type GarbageCollectionCandidate struct {
+	Resource           Resource `json:"resource"`
+	UnreferencedAt     string   `json:"unreferenced_at"`
+	UnreferencedReason string   `json:"unreferenced_reason"`
+	RetentionSeconds   int64    `json:"retention_seconds"`
+	EligibleAt         string   `json:"eligible_at,omitempty"`
+	Decision           string   `json:"decision"`
+}
+
+type GarbageCollectionReport struct {
+	DryRun                  bool                         `json:"dry_run"`
+	AsOf                    string                       `json:"as_of"`
+	Policy                  GarbageCollectionPolicy      `json:"policy"`
+	Eligible                []GarbageCollectionCandidate `json:"eligible"`
+	Retained                []GarbageCollectionCandidate `json:"retained"`
+	Removed                 []GarbageCollectionCandidate `json:"removed"`
+	ReferencedResourceCount int                          `json:"referenced_resource_count"`
+	BlobsRemoved            int                          `json:"blobs_removed"`
+	BytesRemoved            int64                        `json:"bytes_removed"`
+	Warnings                []string                     `json:"warnings"`
+}
+
 type DocumentLink struct {
-	ID               string         `json:"id"`
-	SourceDocumentID string         `json:"source_document_id"`
-	TargetDocumentID string         `json:"target_document_id,omitempty"`
-	TargetResourceID string         `json:"target_resource_id,omitempty"`
-	TargetURI        string         `json:"target_uri,omitempty"`
-	RelationType     string         `json:"relation_type"`
-	SourceFormat     string         `json:"source_format,omitempty"`
-	RawTarget        string         `json:"raw_target,omitempty"`
-	DisplayText      string         `json:"display_text,omitempty"`
-	AnchorType       string         `json:"anchor_type,omitempty"`
-	AnchorValue      string         `json:"anchor_value,omitempty"`
-	Context          string         `json:"context,omitempty"`
-	ResolutionStatus string         `json:"resolution_status"`
-	SourcePosition   SourcePosition `json:"source_position,omitempty"`
+	ID               string `json:"id"`
+	SourceDocumentID string `json:"source_document_id"`
+	TargetDocumentID string `json:"target_document_id,omitempty"`
+	TargetResourceID string `json:"target_resource_id,omitempty"`
+	TargetURI        string `json:"target_uri,omitempty"`
+	RelationType     string `json:"relation_type"`
+	SourceFormat     string `json:"source_format,omitempty"`
+	RawTarget        string `json:"raw_target,omitempty"`
+	DisplayText      string `json:"display_text,omitempty"`
+	AnchorType       string `json:"anchor_type,omitempty"`
+	AnchorValue      string `json:"anchor_value,omitempty"`
+	Context          string `json:"context,omitempty"`
+	ResolutionStatus string `json:"resolution_status"`
+	// Always populated, and never omitted despite the former tag; see the note
+	// on StatusResponse.DatabaseInfo.
+	SourcePosition SourcePosition `json:"source_position"`
 }
 
 type SourcePosition struct {
@@ -399,30 +690,202 @@ type GraphRequest struct {
 	MaxEdges         int      `json:"max_edges,omitempty"`
 }
 
+// GraphNode and GraphEdge were untyped maps until v0.5 E4. They are typed now
+// for the same reason every other DTO here is: a caller reading `depth` should
+// find it in the contract rather than in a response it happened to receive.
+type GraphNode struct {
+	ID    string `json:"id"`
+	URI   string `json:"uri,omitempty"`
+	Kind  string `json:"kind"`
+	Label string `json:"label,omitempty"`
+	Depth int    `json:"depth"`
+}
+
+type GraphEdge struct {
+	ID        string `json:"id"`
+	SourceID  string `json:"source_id"`
+	TargetID  string `json:"target_id"`
+	Kind      string `json:"kind,omitempty"`
+	Status    string `json:"status,omitempty"`
+	RawTarget string `json:"raw_target,omitempty"`
+}
+
 type GraphResponse struct {
-	Nodes     []map[string]any `json:"nodes"`
-	Edges     []map[string]any `json:"edges"`
-	Truncated bool             `json:"truncated,omitempty"`
+	Nodes []GraphNode `json:"nodes"`
+	Edges []GraphEdge `json:"edges"`
+	// Truncated says a ceiling stopped the expansion and TruncatedBy names it,
+	// so a partial neighbourhood is never read as a complete one.
+	Truncated      bool   `json:"truncated,omitempty"`
+	TruncatedBy    string `json:"truncated_by,omitempty"`
+	RequestedDepth int    `json:"requested_depth"`
+	CompletedDepth int    `json:"completed_depth"`
 }
 
-type PublishPlanRequest struct {
-	Profile string         `json:"profile,omitempty"`
-	Target  string         `json:"target,omitempty"`
-	Include map[string]any `json:"include,omitempty"`
-	Exclude map[string]any `json:"exclude,omitempty"`
+// DocumentSuggestion is one candidate link target for editor autocomplete. It
+// carries an ID and a title, never a body or a snippet.
+type DocumentSuggestion struct {
+	DocumentID string `json:"document_id"`
+	Title      string `json:"title"`
+	URI        string `json:"uri"`
+	NotebookID string `json:"notebook_id,omitempty"`
+	Match      string `json:"match"`
 }
 
-type PublishPlanResponse struct {
-	NotesIncluded     int      `json:"notes_included"`
-	ResourcesIncluded int      `json:"resources_included"`
-	NotesExcluded     int      `json:"notes_excluded"`
-	Warnings          []string `json:"warnings"`
+type DocumentSuggestionResponse struct {
+	Suggestions []DocumentSuggestion `json:"suggestions"`
+	Truncated   bool                 `json:"truncated,omitempty"`
+	Limit       int                  `json:"limit"`
 }
 
+// CheckLinksRequest carries an unsaved buffer. The server parses it with the
+// canonical extractor and discards it; nothing is stored and no revision is
+// written.
+type CheckLinksRequest struct {
+	CollectionID string `json:"collection_id,omitempty"`
+	DocumentID   string `json:"document_id,omitempty"`
+	Body         string `json:"body"`
+}
+
+type CheckedLink struct {
+	RawTarget        string `json:"raw_target"`
+	DisplayText      string `json:"display_text,omitempty"`
+	RelationType     string `json:"relation_type,omitempty"`
+	SourceFormat     string `json:"source_format,omitempty"`
+	AnchorType       string `json:"anchor_type,omitempty"`
+	AnchorValue      string `json:"anchor_value,omitempty"`
+	Status           string `json:"status"`
+	TargetDocumentID string `json:"target_document_id,omitempty"`
+	TargetResourceID string `json:"target_resource_id,omitempty"`
+	TargetURI        string `json:"target_uri,omitempty"`
+	CanonicalTarget  string `json:"canonical_target,omitempty"`
+	StartByte        int    `json:"start_byte"`
+	EndByte          int    `json:"end_byte"`
+	Line             int    `json:"line"`
+	Column           int    `json:"column"`
+}
+
+type CheckLinksResponse struct {
+	Links      []CheckedLink `json:"links"`
+	Total      int           `json:"total"`
+	Unresolved int           `json:"unresolved"`
+	Truncated  bool          `json:"truncated,omitempty"`
+}
+
+// NoteQueryRequest evaluates one embedded ```note-query block. It carries the
+// block's text and nothing else: no SQL, no path, no output target.
+type NoteQueryRequest struct {
+	CollectionID string `json:"collection_id,omitempty"`
+	Block        string `json:"block"`
+}
+
+type NoteQuerySpec struct {
+	Query  string   `json:"query"`
+	Fields []string `json:"fields"`
+	Sort   string   `json:"sort"`
+	Limit  int      `json:"limit"`
+}
+
+type NoteQueryRow struct {
+	DocumentID string   `json:"document_id"`
+	URI        string   `json:"uri"`
+	Title      string   `json:"title"`
+	Notebook   string   `json:"notebook,omitempty"`
+	Tags       []string `json:"tags,omitempty"`
+	UpdatedAt  string   `json:"updated_at,omitempty"`
+	Snippet    string   `json:"snippet,omitempty"`
+}
+
+// NoteQueryResult renders a block. `error` is part of a 200 response, not an
+// HTTP failure: a note with one broken query block still has to render, so the
+// block shows the message and the note around it is unaffected.
+type NoteQueryResult struct {
+	Spec      NoteQuerySpec  `json:"spec"`
+	Rows      []NoteQueryRow `json:"rows"`
+	Truncated bool           `json:"truncated"`
+	Error     string         `json:"error,omitempty"`
+}
+
+type GraphPathRequest struct {
+	From      string `json:"from"`
+	To        string `json:"to"`
+	Direction string `json:"direction,omitempty"`
+	MaxDepth  int    `json:"max_depth,omitempty"`
+	MaxVisits int    `json:"max_visits,omitempty"`
+}
+
+// GraphPathResponse reports a shortest path or the reason there is none.
+// `no_path` is a proof; `depth_exhausted` and `budget_exhausted` are not.
+type GraphPathResponse struct {
+	Status       string      `json:"status"`
+	Nodes        []GraphNode `json:"nodes"`
+	Edges        []GraphEdge `json:"edges"`
+	Length       int         `json:"length"`
+	VisitedNodes int         `json:"visited_nodes"`
+	MaxDepth     int         `json:"max_depth"`
+	MaxVisits    int         `json:"max_visits"`
+}
+
+type GraphReportEntry struct {
+	DocumentID string `json:"document_id"`
+	URI        string `json:"uri,omitempty"`
+	Title      string `json:"title,omitempty"`
+	InDegree   int64  `json:"in_degree"`
+	OutDegree  int64  `json:"out_degree"`
+}
+
+type GraphReport struct {
+	CollectionID  string             `json:"collection_id"`
+	DocumentCount int64              `json:"document_count"`
+	LinkCount     int64              `json:"link_count"`
+	IsolatedCount int64              `json:"isolated_count"`
+	OrphanCount   int64              `json:"orphan_count"`
+	Isolated      []GraphReportEntry `json:"isolated"`
+	Orphans       []GraphReportEntry `json:"orphans"`
+	Hubs          []GraphReportEntry `json:"hubs"`
+	Limit         int                `json:"limit"`
+	Truncated     bool               `json:"truncated,omitempty"`
+	ElapsedMS     float64            `json:"elapsed_ms"`
+}
+
+// GraphReportNote is what regenerating the hubs report answers with: the note
+// it wrote plus the report it rendered, so a caller does not have to read its
+// own output back and parse it.
+type GraphReportNote struct {
+	Document Document    `json:"document"`
+	Report   GraphReport `json:"report"`
+}
+
+// JobStatus is the control-plane view of one long-running operation (v0.6 F6).
+//
+// **It carries no parameters and no bytes.** A job's parameters name places on
+// this machine — a vault directory, an export destination — and a control plane
+// exists to say what happened, not where. `notriosctl jobs show` renders them
+// locally, which is where a local path belongs.
 type JobStatus struct {
-	ID       string  `json:"id"`
-	Kind     string  `json:"kind"`
-	Status   string  `json:"status"`
-	Progress float64 `json:"progress,omitempty"`
-	Message  string  `json:"message,omitempty"`
+	ID           string `json:"id"`
+	Kind         string `json:"kind"`
+	State        string `json:"state"`
+	CollectionID string `json:"collection_id,omitempty"`
+	Phase        string `json:"phase,omitempty"`
+	Processed    int64  `json:"processed"`
+	// Total is zero when the operation cannot know it yet. A fabricated
+	// denominator would turn "unknown" into a wrong percentage.
+	Total int64 `json:"total"`
+	// Summary is counts and durations, never note text and never a path.
+	Summary map[string]any `json:"summary,omitempty"`
+	// Error is the failure message. Omitted from the MCP view, because a
+	// failure from a filesystem operation routinely contains a path.
+	Error           string `json:"error,omitempty"`
+	CancelRequested bool   `json:"cancel_requested,omitempty"`
+	Settled         bool   `json:"settled"`
+	CreatedAt       string `json:"created_at,omitempty"`
+	StartedAt       string `json:"started_at,omitempty"`
+	FinishedAt      string `json:"finished_at,omitempty"`
+	HeartbeatAt     string `json:"heartbeat_at,omitempty"`
+}
+
+// JobPage is a bounded listing, newest first.
+type JobPage struct {
+	Jobs      []JobStatus `json:"jobs"`
+	Truncated bool        `json:"truncated,omitempty"`
 }

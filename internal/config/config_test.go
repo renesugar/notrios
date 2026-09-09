@@ -17,6 +17,13 @@ func TestDefaultConfig(t *testing.T) {
 	if !cfg.MCP.Enabled {
 		t.Fatalf("MCP should be enabled by default for documented API parity")
 	}
+	if cfg.MCP.SyncScope != "" {
+		t.Fatalf("MCP sync must default disabled/empty, got %q", cfg.MCP.SyncScope)
+	}
+	if cfg.Retention.UnreferencedResourceDays != 30 || cfg.Retention.PurgedResourceDays != 90 ||
+		cfg.Retention.SyncHistoryDays != 90 || cfg.Retention.SyncPeerWarningDays != 30 {
+		t.Fatalf("unexpected retention defaults: %+v", cfg.Retention)
+	}
 }
 
 func TestLoadConfigOverride(t *testing.T) {
@@ -35,11 +42,11 @@ data:
 search:
   default_limit: 7
   max_limit: 77
-  max_offset: 777
 
 mcp:
   enabled: false
   default_profile: "disabled"
+  sync_scope: "control"
   max_results: 3
   max_document_bytes: 2048
 
@@ -47,6 +54,12 @@ search_sidecar:
   enabled: true
   binary: "recollindex-dev"
   index_dir: "` + filepath.ToSlash(filepath.Join(dir, "state", "search-index")) + `"
+
+retention:
+  unreferenced_resource_days: 7
+  purged_resource_days: 45
+  sync_history_days: 120
+  sync_peer_warning_days: 21
 `
 	if err := os.WriteFile(path, []byte(contents), 0o644); err != nil {
 		t.Fatalf("write config: %v", err)
@@ -61,14 +74,37 @@ search_sidecar:
 	if cfg.Data.DatabasePath != filepath.ToSlash(filepath.Join(dir, "state", "custom.sqlite")) {
 		t.Fatalf("data config not loaded: %+v", cfg.Data)
 	}
-	if cfg.Search.MaxLimit != 77 || cfg.Search.DefaultLimit != 7 || cfg.Search.MaxOffset != 777 {
+	if cfg.Search.MaxLimit != 77 || cfg.Search.DefaultLimit != 7 {
 		t.Fatalf("search config not loaded: %+v", cfg.Search)
 	}
-	if cfg.MCP.Enabled || cfg.MCP.MaxResults != 3 || cfg.MCP.MaxDocumentBytes != 2048 {
+	if cfg.MCP.Enabled || cfg.MCP.SyncScope != "control" || cfg.MCP.MaxResults != 3 || cfg.MCP.MaxDocumentBytes != 2048 {
 		t.Fatalf("mcp config not loaded: %+v", cfg.MCP)
 	}
 	if !cfg.SearchSidecar.Enabled || cfg.SearchSidecar.Binary != "recollindex-dev" {
 		t.Fatalf("search sidecar config not loaded: %+v", cfg.SearchSidecar)
+	}
+	if cfg.Retention.UnreferencedResourceDays != 7 || cfg.Retention.PurgedResourceDays != 45 ||
+		cfg.Retention.SyncHistoryDays != 120 || cfg.Retention.SyncPeerWarningDays != 21 {
+		t.Fatalf("retention config not loaded: %+v", cfg.Retention)
+	}
+}
+
+func TestLoadRetentionInvalidValuesKeepSafeDefaults(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "notes.yaml")
+	contents := `retention:
+  unreferenced_resource_days: -1
+  purged_resource_days: "later"
+`
+	if err := os.WriteFile(path, []byte(contents), 0o644); err != nil {
+		t.Fatalf("write config: %v", err)
+	}
+	cfg, err := Load(path)
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if cfg.Retention.UnreferencedResourceDays != 30 || cfg.Retention.PurgedResourceDays != 90 {
+		t.Fatalf("invalid retention values must keep defaults: %+v", cfg.Retention)
 	}
 }
 
@@ -228,5 +264,70 @@ func TestEnsureDirectories(t *testing.T) {
 		if !info.IsDir() {
 			t.Fatalf("expected %s to be a directory", path)
 		}
+	}
+}
+
+func TestWriteProfileFileRoundTripIsOwnerOnly(t *testing.T) {
+	cfg := Default()
+	root := t.TempDir()
+	path := filepath.Join(root, "profiles", "profile_one.yaml")
+	cfg.Profile = ProfileConfig{ID: "profile_one", Name: "Work #1", RegistryPath: filepath.Join(root, "profiles.json")}
+	cfg.Server.ListenAddr = "127.0.0.1:8123"
+	cfg.Server.PublicBaseURL = "http://127.0.0.1:8123"
+	cfg.Data.Directory = filepath.Join(root, "data")
+	cfg.Data.DatabasePath = filepath.Join(root, "data", "notes.sqlite")
+	cfg.Data.AssetStore = filepath.Join(root, "data", "assets")
+	cfg.Data.ProjectionDir = filepath.Join(root, "data", "projections")
+	cfg.SearchSidecar.IndexDir = filepath.Join(root, "data", "search-index")
+	cfg.RemoteMedia.QuarantineDir = filepath.Join(root, "data", "quarantine")
+	cfg.Sync = SyncConfig{Target: "rest", RESTBaseURL: "https://sync.example.invalid/base", CredentialRef: "secret-service:notrios/work#1"}
+	if err := WriteProfileFile(path, cfg); err != nil {
+		t.Fatal(err)
+	}
+	info, err := os.Stat(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if info.Mode().Perm() != 0o600 {
+		t.Fatalf("profile config permissions = %v, want 0600", info.Mode().Perm())
+	}
+	loaded, err := Load(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if loaded.Profile != cfg.Profile || loaded.Sync != cfg.Sync || loaded.Server.ListenAddr != cfg.Server.ListenAddr {
+		t.Fatalf("generated profile did not round trip: %+v", loaded)
+	}
+}
+
+// The checkout's example config and the compiled default must not name the same
+// address. That difference is the whole of H4a: a checkout is a separate
+// instance with its own library, so a developer runs one alongside an installed
+// Notrios, and sharing a port means the second to start simply fails to bind.
+//
+// Nothing else would catch a regression here. Both values are valid addresses
+// and every test passes with them equal -- the failure only appears when two
+// instances are running at once, which no unit test does.
+func TestTheExampleConfigAndTheCompiledDefaultUseDifferentPorts(t *testing.T) {
+	example, err := Load(filepath.Join("..", "..", "config", "config.example.yaml"))
+	if err != nil {
+		t.Fatalf("Load example config: %v", err)
+	}
+	compiled := Default()
+
+	if compiled.Server.ListenAddr != "127.0.0.1:8080" {
+		t.Fatalf("the compiled default is the installed instance's address and must stay 127.0.0.1:8080, got %q",
+			compiled.Server.ListenAddr)
+	}
+	if example.Server.ListenAddr == compiled.Server.ListenAddr {
+		t.Fatalf("the checkout example and the compiled default both listen on %q; "+
+			"a checkout and an installed Notrios could not run at the same time",
+			example.Server.ListenAddr)
+	}
+	// public_base_url has to follow listen_addr, or links the checkout hands
+	// out point at the installed instance -- which is the wrong library.
+	if want := "http://" + example.Server.ListenAddr; example.Server.PublicBaseURL != want {
+		t.Fatalf("example public_base_url = %q, want %q so advertised links reach this instance",
+			example.Server.PublicBaseURL, want)
 	}
 }

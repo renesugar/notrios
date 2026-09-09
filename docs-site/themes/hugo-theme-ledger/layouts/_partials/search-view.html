@@ -1,0 +1,129 @@
+{{- /* The in-page search results view. Context:
+         query       — initial query, may be empty
+         pinned      — true when the query comes from the page itself (an
+                       over-limit term archive) rather than from ?q=, so the
+                       controller leaves it out of the URL
+         prerendered — optional Pages slice for the first page of results
+         total       — total matching notes, required with `prerendered`
+
+       Results render into the content panel, replacing the list — never as an
+       overlay. The empty state is server-rendered here and toggled, so the
+       designed markup and its suggestion chips are not duplicated in JS.
+
+       `prerendered` is the point of the over-limit archive: Hugo already knows
+       which notes carry the term, so the first page costs one template range
+       and the visitor sees results immediately. The search backend is only
+       consulted if they page past it or change the query. Rendering *only* the
+       first page keeps this O(1) per term — rendering all of them is the
+       blowup decision D2 exists to avoid. */ -}}
+
+{{- $query := .query | default "" -}}
+{{- $prerendered := .prerendered -}}
+{{- $total := int (.total | default 0) -}}
+{{- $p := site.Params -}}
+{{- $per := int ($p.pagination.search | default 6) -}}
+{{- $pages := 0 -}}
+{{- if $prerendered }}{{ $pages = math.Ceil (div (float $total) $per) }}{{ end -}}
+
+{{- /* Every URL here is fetched or imported at runtime, so each one has to carry
+       the baseURL's path — a project site published at /repo/ would otherwise
+       request /pagefind/pagefind.js and /api/search at the domain root. An
+       absolute URL is passed through, which is how a Bluge server on another
+       host is configured. `siteRoot` is what backends resolve stored result URLs
+       against. */ -}}
+{{- /* Orama's library is bundled separately and only when a site actually uses
+       it: importing it from the adapter would inline it into the shared search
+       bundle for every site, Pagefind ones included. */ -}}
+{{- $oramaRuntime := "" -}}
+{{- if eq ($p.search.backend | default "pagefind") "orama" -}}
+  {{- $built := resources.Get "js/search/orama-runtime.js" | js.Build (dict
+        "targetPath" "js/ledger-orama.js"
+        "format" "esm"
+        "minify" hugo.IsProduction) -}}
+  {{- if hugo.IsProduction }}{{ $built = $built | fingerprint }}{{ end -}}
+  {{- $oramaRuntime = $built.RelPermalink -}}
+{{- end -}}
+
+{{- $flexRuntime := "" -}}
+{{- if eq ($p.search.backend | default "pagefind") "flexsearch" -}}
+  {{- $built := resources.Get "js/search/flexsearch-runtime.js" | js.Build (dict
+        "targetPath" "js/ledger-flexsearch.js"
+        "format" "esm"
+        "minify" hugo.IsProduction) -}}
+  {{- if hugo.IsProduction }}{{ $built = $built | fingerprint }}{{ end -}}
+  {{- $flexRuntime = $built.RelPermalink -}}
+{{- end -}}
+
+{{- $config := dict
+      "oramaRuntime"        $oramaRuntime
+      "flexsearchRuntime"   $flexRuntime
+      "flexsearchStorage"   ($p.search.flexsearchStorage | default "memory")
+      "backend"        ($p.search.backend | default "pagefind")
+      "bundlePath"     (partial "site-url.html" ($p.search.bundlePath | default "/pagefind/pagefind.js"))
+      "endpoint"       (partial "site-url.html" ($p.search.endpoint | default "/api/search"))
+      "healthEndpoint" (partial "site-url.html" ($p.search.healthEndpoint | default "/api/health"))
+      "siteRoot"       (partial "site-url.html" "/")
+      "perPage"        $per
+      "allNotesLabel"  ($p.sidebar.allNotesLabel | default "All notes")
+      "searchURL"      (partial "site-url.html" "/search/")
+-}}
+
+<div class="ledger-search" data-ledger-search
+     data-initial-query="{{ $query }}"
+     {{ if .pinned }}data-pinned="true"{{ end }}
+     {{ if $prerendered }}data-prerendered="true" data-total="{{ $total }}"{{ end }}>
+
+  <script type="application/json" data-ledger-search-config>{{ $config | jsonify | safeJS }}</script>
+
+  {{ partial "search-bar.html" (dict "query" $query "count" nil) }}
+
+  <div class="ledger-meta" data-ledger-search-meta {{ if not $prerendered }}hidden{{ end }}>
+    <span class="ledger-meta-count" data-ledger-result-count role="status" aria-live="polite">
+      {{- if $prerendered }}
+        {{- lang.FormatNumber 0 $total }} {{ cond (eq $total 1) "result" "results" }} for {{ $query }}
+      {{- end -}}
+    </span>
+    <span class="ledger-meta-page" data-ledger-result-page>
+      {{- if and $prerendered (gt $pages 1) }}Page 1 of {{ lang.FormatNumber 0 $pages }}{{ end -}}
+    </span>
+  </div>
+
+  {{- /* Filled in by the controller when the active backend had to drop part of
+         the query — `since:`/`until:` under Pagefind, for instance. */ -}}
+  <p class="ledger-search-notice" data-ledger-search-notice role="status" aria-live="polite" hidden></p>
+
+  <div class="ledger-results" data-ledger-search-results>
+    {{- range $prerendered }}
+    {{ partial "result-card.html" . }}
+    {{- end }}
+  </div>
+
+  <div data-ledger-search-pagination></div>
+
+  <div data-ledger-search-empty hidden>
+    {{ partial "empty-results.html" (dict "query" "") }}
+  </div>
+
+  <noscript>
+    {{- if not $prerendered }}
+    <p class="ledger-page-ceiling">
+      Search needs JavaScript. Browse by
+      <a href="{{ partial "site-url.html" "/tags/" }}">tag</a> instead.
+    </p>
+    {{- else if gt $pages 1 }}
+    <p class="ledger-page-ceiling">
+      Showing the {{ $per }} most recent of {{ lang.FormatNumber 0 $total }}.
+      Further pages need JavaScript.
+    </p>
+    {{- end }}
+  </noscript>
+</div>
+
+{{- /* Loaded here rather than in baseof: only the two views that embed this
+       partial need the search bundle. */ -}}
+{{- $search := resources.Get "js/search/main.js" | js.Build (dict
+      "targetPath" "js/ledger-search.js"
+      "format" "esm"
+      "minify" hugo.IsProduction) -}}
+{{- if hugo.IsProduction }}{{ $search = $search | fingerprint }}{{ end }}
+<script type="module" src="{{ $search.RelPermalink }}"></script>

@@ -13,8 +13,8 @@ the content-addressed store, Markdown rewriting to `resource://` in a new
 revision with a base-revision precondition, and per-attempt records in
 `media_policy_decisions` (quarantined → admitted/refused). One engine
 serves REST, `notriosctl localize`, the MCP editor tool, the GUI inspector
-action, and the importers' `--localize-media` flag. Perceptual-hash hooks
-are task H5.
+action, and the importers' `--localize-media` flag. H5 adds exact-reference
+reports and wires a perceptual-hash hook that is inert by default.
 
 ## Required pipeline
 
@@ -63,6 +63,63 @@ Remote-media localization must support:
 - blocked schemes and private-network protections;
 - quarantine fetches before admission to the resource store;
 - exact content hashes for deduplication and blocking;
-- future perceptual-hash hooks for moderated content and near-duplicate review.
+- optional perceptual-hash hooks for moderated content and near-duplicate review.
 
 Perceptual hashes must not be used to silently deduplicate bytes; exact hashes deduplicate blobs, perceptual hashes raise similarity/moderation signals.
+
+## Perceptual-hash hook contract
+
+Notrios defines `store.PerceptualHashHook` but ships no pHash, dHash,
+blockhash, or other implementation. An embedding application may install one
+on `SQLiteStore` before admitting resources:
+
+- `Algorithm` returns a stable lowercase identifier distinct from `sha256`.
+- `SupportsMIME` explicitly selects content the hook can parse.
+- `Compute` receives a read-only blob stream and returns one canonical
+  lowercase hash. Hook errors fail that resource admission rather than silently
+  claiming the blob was checked.
+- `SuggestNearDuplicates` receives stored hashes for that algorithm and returns
+  candidate blob pairs plus an algorithm-specific non-negative distance.
+
+The store computes at most once per exact blob/algorithm, persists the value in
+`resource_hashes`, and reuses it for logical resources sharing those exact
+bytes. It checks `media_hash_rules` during admission, but perceptual rules may
+only yield `review`; `AddMediaHashRule` rejects perceptual `block` rules.
+Returned candidate pairs are validated against the supplied blob set,
+canonicalized, and deduplicated before appearing in the resource report.
+
+The hook has no store mutation capability and no authority to admit, reject,
+merge, rewrite, hide, delete, or garbage-collect data. Exact SHA-256 remains
+the only deduplication identity. With no installed hook, admission behavior is
+unchanged and the perceptual report is empty with `hook_enabled: false`.
+
+Reports are available from
+`GET /api/v1/resources/reports/reference` and
+`notriosctl resources report`. The report is advisory and read-only; H6 owns
+retention and deletion policy.
+
+## Resource retention and collection
+
+H6 garbage collection is conservative and dry-run first:
+
+- retention begins when the final reference disappears, not when bytes were
+  originally uploaded;
+- unattached/detached resources and resources orphaned by permanent note purge
+  have independently configured windows;
+- Trash references remain real references and therefore block collection;
+- every apply candidate is rechecked under an immediate SQLite transaction;
+- a logical resource may be removed while a shared exact blob remains for
+  another logical resource;
+- physical bytes and stored perceptual hashes are removed only after the final
+  logical resource for that exact blob is gone;
+- filesystem paths loaded from the database are constrained beneath the asset
+  root before unlinking.
+
+`store.RetentionGate` separates time eligibility from future synchronization
+safety. v0.3 uses the local gate; v0.7 must also require peer acknowledgement
+watermarks before allowing replicated resources, blobs, or tombstones to be
+collected.
+
+REST exposes only the dry-run report. CLI apply requires the explicit
+`--apply` flag. Existing immediate resource deletion and permanent note purge
+require object-specific `X-Notrios-Confirmation` headers.

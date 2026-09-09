@@ -1,0 +1,397 @@
+{
+  "schema": "notrios.path-consumers/1",
+  "milestone": "v0.8",
+  "item": "H3",
+  "generated_for": "Installed-path, XDG, migration, and destructive-lifecycle investigation",
+  "note": "Every entry is anchored to an exact source substring that must occur exactly once. validate_evidence.py re-checks the anchors, so an H4 change to a consumer breaks this inventory rather than leaving it silently describing code that no longer exists.",
+  "consumers": [
+    {
+      "id": "profile-registry",
+      "name": "Profile registry",
+      "category": "config",
+      "file": "internal/profiles/profiles.go",
+      "anchor": "root, err := paths.ConfigRoot()",
+      "current": "NOTRIOS_PROFILE_REGISTRY, else <config>/profiles.json from internal/paths; refuses rather than inventing a path when no config root can be resolved",
+      "defects": [
+        "relative-xdg-accepted",
+        "cwd-relative-fallback",
+        "hardcoded-dot-config-on-all-platforms",
+        "second-config-root-resolver"
+      ],
+      "target": "<config>/profiles.json",
+      "migration": "move",
+      "owner": "H4-C1",
+      "status": "resolved",
+      "resolved_by": "H4-C1"
+    },
+    {
+      "id": "generated-profile-config",
+      "name": "Generated runtime profile configs",
+      "category": "config",
+      "file": "internal/profiles/runtime.go",
+      "anchor": "configPath := filepath.Join(filepath.Dir(registryPath), \"profiles\", profileID+\".yaml\")",
+      "current": "<dir of registry>/profiles/<profile_id>.yaml; the registry now lands in the config root by construction",
+      "defects": [],
+      "target": "<config>/profiles/<profile_id>.yaml",
+      "migration": "move",
+      "owner": "H4-C1",
+      "status": "resolved",
+      "resolved_by": "H4-C1"
+    },
+    {
+      "id": "sync-keys",
+      "name": "Sync key material",
+      "category": "config",
+      "file": "internal/synckeys/keys.go",
+      "anchor": "root, err := paths.ConfigRoot()",
+      "current": "<config>/sync-keys[-<database_id>].json, from the same resolver as the profile registry",
+      "defects": [
+        "second-config-root-resolver"
+      ],
+      "target": "<config>/sync-keys[-<database_id>].json",
+      "migration": "move",
+      "owner": "H4-C1",
+      "status": "resolved",
+      "resolved_by": "H4-C1"
+    },
+    {
+      "id": "service-config-file",
+      "name": "Service configuration file",
+      "category": "config",
+      "file": "internal/config/config.go",
+      "anchor": "func LoadDefault() (Config, error) {",
+      "current": "--config when given, else <config>/config.yaml, else the checkout's config/config.example.yaml in source mode only, else compiled defaults",
+      "defects": [
+        "cwd-relative-config-load"
+      ],
+      "target": "--config, else <config>/config.yaml, else compiled defaults; the checkout example is read only in source mode",
+      "migration": "regenerate",
+      "owner": "H4-C2",
+      "status": "resolved",
+      "resolved_by": "H4-C2"
+    },
+    {
+      "id": "data-directory",
+      "name": "Data directory root",
+      "category": "data",
+      "file": "internal/config/config.go",
+      "anchor": "{\"data.directory\", paths.RootData, nil, func(c *Config, v string) { c.Data.Directory = v }},",
+      "current": "<data> when the configuration does not state it; a stated path is never relocated",
+      "defects": [
+        "cwd-relative-default"
+      ],
+      "target": "<data>",
+      "migration": "move",
+      "owner": "H4-D1",
+      "status": "resolved",
+      "resolved_by": "H4-D1"
+    },
+    {
+      "id": "database",
+      "name": "SQLite database",
+      "category": "data",
+      "file": "internal/config/config.go",
+      "anchor": "{\"data.database_path\", paths.RootData, []string{\"notes.sqlite\"}, func(c *Config, v string) { c.Data.DatabasePath = v }},",
+      "current": "<data>/notes.sqlite when unstated",
+      "defects": [
+        "cwd-relative-default"
+      ],
+      "target": "<data>/notes.sqlite",
+      "migration": "move",
+      "owner": "H4-D1",
+      "status": "resolved",
+      "resolved_by": "H4-D1"
+    },
+    {
+      "id": "asset-store",
+      "name": "Asset store",
+      "category": "data",
+      "file": "internal/config/config.go",
+      "anchor": "{\"data.asset_store\", paths.RootData, []string{\"assets\"}, func(c *Config, v string) { c.Data.AssetStore = v }},",
+      "current": "<data>/assets when unstated",
+      "defects": [
+        "cwd-relative-default"
+      ],
+      "target": "<data>/assets",
+      "migration": "move",
+      "owner": "H4-D1",
+      "status": "resolved",
+      "resolved_by": "H4-D1"
+    },
+    {
+      "id": "asset-store-derived",
+      "name": "Asset store derived from a database path",
+      "category": "data",
+      "file": "internal/store/sqlite.go",
+      "anchor": "return filepath.Join(filepath.Dir(path), \"assets\")",
+      "current": "<parent of database>/assets using filepath.Dir, so a Windows path no longer yields the working directory",
+      "defects": [
+        "posix-only-separator"
+      ],
+      "target": "<parent of database>/assets, using filepath.Dir",
+      "migration": "none",
+      "owner": "H4-D2",
+      "status": "resolved",
+      "resolved_by": "H4-D2"
+    },
+    {
+      "id": "asset-store-memory",
+      "name": "Asset store for :memory: databases",
+      "category": "data",
+      "file": "internal/store/sqlite.go",
+      "anchor": "root, err := os.MkdirTemp(\"\", \"notrios-assets-\")",
+      "current": "a private per-process directory from os.MkdirTemp, not one fixed name shared by every user and instance",
+      "defects": [
+        "shared-predictable-temp-path",
+        "multi-instance-collision"
+      ],
+      "target": "a per-process directory created with os.MkdirTemp under <runtime>, removed on close",
+      "migration": "none",
+      "owner": "H4-D2",
+      "status": "resolved",
+      "resolved_by": "H4-D2"
+    },
+    {
+      "id": "publish-profiles",
+      "name": "Publication profiles",
+      "category": "data",
+      "file": "internal/publish/profiles.go",
+      "anchor": "return filepath.Join(dataDirectory, \"publish-profiles.json\")",
+      "current": "NOTRIOS_PUBLISH_PROFILES, else <data directory>/publish-profiles.json; the data directory is now resolved rather than defaulting to the working directory",
+      "defects": [
+        "cwd-relative-fallback"
+      ],
+      "target": "<data>/publish-profiles.json; refuse rather than fall back to the working directory",
+      "migration": "move",
+      "owner": "H4-D1",
+      "status": "resolved",
+      "resolved_by": "H4-D1"
+    },
+    {
+      "id": "sync-carrier",
+      "name": "Sync carrier spool",
+      "category": "state",
+      "file": "internal/httpapi/sync.go",
+      "anchor": "carrierRoot := filepath.Join(root, \"sync-carrier\")",
+      "current": "<state>/sync-carrier, falling back to the data directory",
+      "defects": [],
+      "target": "<state>/sync-carrier",
+      "migration": "move",
+      "owner": "H4-S1",
+      "status": "resolved",
+      "resolved_by": "H4-S1"
+    },
+    {
+      "id": "sync-backups",
+      "name": "Sync backup store",
+      "category": "state",
+      "file": "internal/httpapi/sync.go",
+      "anchor": "backupRoot := filepath.Join(root, \"sync-backups\")",
+      "current": "<state>/sync-backups, falling back to the data directory",
+      "defects": [],
+      "target": "<state>/sync-backups",
+      "migration": "move",
+      "owner": "H4-S1",
+      "status": "resolved",
+      "resolved_by": "H4-S1"
+    },
+    {
+      "id": "catchup-inbox",
+      "name": "REST catch-up inbox",
+      "category": "state",
+      "file": "internal/service/service.go",
+      "anchor": "root := filepath.Join(s.stateRoot(), \"catchup-inbox\", backup.ID)",
+      "current": "<state>/catchup-inbox/<backup id>",
+      "defects": [],
+      "target": "<state>/catchup-inbox/<backup id>",
+      "migration": "move",
+      "owner": "H4-S1",
+      "status": "resolved",
+      "resolved_by": "H4-S1"
+    },
+    {
+      "id": "quarantine",
+      "name": "Remote-media quarantine",
+      "category": "state",
+      "file": "internal/config/config.go",
+      "anchor": "{\"remote_media.quarantine_dir\", paths.RootState, []string{\"quarantine\"}, func(c *Config, v string) { c.RemoteMedia.QuarantineDir = v }},",
+      "current": "<state>/quarantine when unstated; state rather than cache because it records what a note tried to fetch",
+      "defects": [
+        "cwd-relative-default",
+        "world-readable-root"
+      ],
+      "target": "<state>/quarantine",
+      "migration": "move",
+      "owner": "H4-S1",
+      "status": "resolved",
+      "resolved_by": "H4-S1"
+    },
+    {
+      "id": "projections",
+      "name": "Projection export directory",
+      "category": "cache",
+      "file": "internal/config/config.go",
+      "anchor": "{\"data.projection_dir\", paths.RootCache, []string{\"projections\"}, func(c *Config, v string) { c.Data.ProjectionDir = v }},",
+      "current": "<cache>/projections when unstated",
+      "defects": [
+        "cwd-relative-default",
+        "world-readable-root"
+      ],
+      "target": "<cache>/projections",
+      "migration": "rebuild",
+      "owner": "H4-K1",
+      "status": "resolved",
+      "resolved_by": "H4-K1"
+    },
+    {
+      "id": "search-index",
+      "name": "Recoll search index",
+      "category": "cache",
+      "file": "internal/config/config.go",
+      "anchor": "{\"search_sidecar.index_dir\", paths.RootCache, []string{\"search-index\"}, func(c *Config, v string) { c.SearchSidecar.IndexDir = v }},",
+      "current": "<cache>/search-index when unstated",
+      "defects": [
+        "cwd-relative-default",
+        "world-readable-root"
+      ],
+      "target": "<cache>/search-index",
+      "migration": "rebuild",
+      "owner": "H4-K1",
+      "status": "resolved",
+      "resolved_by": "H4-K1"
+    },
+    {
+      "id": "recoll-config",
+      "name": "Generated Recoll configuration directory",
+      "category": "cache",
+      "file": "internal/recoll/recoll.go",
+      "anchor": "if err := os.MkdirAll(s.ConfDir, 0o700); err != nil {",
+      "current": "a caller-supplied directory under <cache>, created 0700; fully regenerated",
+      "defects": [
+        "world-readable-root",
+        "regenerated-not-user-authored"
+      ],
+      "target": "<cache>/recoll; fully regenerated, never migrated",
+      "migration": "rebuild",
+      "owner": "H4-K1",
+      "status": "resolved",
+      "resolved_by": "H4-K1"
+    },
+    {
+      "id": "media-cache",
+      "name": "Remote media fetch directory",
+      "category": "cache",
+      "file": "internal/media/fetch.go",
+      "anchor": "if err := os.MkdirAll(dir, 0o700); err != nil {",
+      "current": "under <state>/quarantine, created 0700",
+      "defects": [
+        "world-readable-root"
+      ],
+      "target": "under <state>/quarantine, created 0700",
+      "migration": "move",
+      "owner": "H4-S1",
+      "status": "resolved",
+      "resolved_by": "H4-S1"
+    },
+    {
+      "id": "backup-staging",
+      "name": "Portable backup staging",
+      "category": "runtime",
+      "file": "internal/httpapi/sync_ui.go",
+      "anchor": "base := filepath.Join(s.runtimeRoot(), \"backup-staging\")",
+      "current": "<runtime>/backup-staging, falling back to state then data",
+      "defects": [],
+      "target": "<runtime>/backup-staging; falls back to <state> when no runtime root exists",
+      "migration": "none",
+      "owner": "H4-R1",
+      "status": "resolved",
+      "resolved_by": "H4-R1"
+    },
+    {
+      "id": "restore-review",
+      "name": "Restore review staging",
+      "category": "runtime",
+      "file": "internal/httpapi/sync_ui.go",
+      "anchor": "base := filepath.Join(s.runtimeRoot(), \"restore-review\")",
+      "current": "<runtime>/restore-review, falling back to state then data",
+      "defects": [],
+      "target": "<runtime>/restore-review; falls back to <state> when no runtime root exists",
+      "migration": "none",
+      "owner": "H4-R1",
+      "status": "resolved",
+      "resolved_by": "H4-R1"
+    },
+    {
+      "id": "abi-owner-lock",
+      "name": "ABI database owner lock",
+      "category": "runtime",
+      "file": "internal/abi/ownerlock.go",
+      "anchor": "func canonicalProfilePath(path string) (string, error) {",
+      "current": "a lock file beside the database, keyed by the symlink-resolved canonical database path",
+      "defects": [],
+      "target": "unchanged: the lock must sit beside the resource it guards so a second process on the same database finds it",
+      "migration": "none",
+      "owner": "exception:lock-must-follow-the-database"
+    },
+    {
+      "id": "web-assets",
+      "name": "Built web interface",
+      "category": "program_assets",
+      "file": "internal/httpapi/webassets.go",
+      "anchor": "candidates = append(candidates, filepath.Join(assets, \"web\"))",
+      "current": "--web-dir when set, else <program_assets>/web, then the executable's directory and its parent, and the working directory only in a checkout",
+      "defects": [
+        "cwd-precedes-executable"
+      ],
+      "target": "--web-dir, else <datadir>/notrios/web, else executable-relative; the working directory only in source mode",
+      "migration": "none",
+      "owner": "H4-A1",
+      "status": "resolved",
+      "resolved_by": "H4-A1"
+    },
+    {
+      "id": "help-docs",
+      "name": "Help notebook seed source",
+      "category": "program_assets",
+      "file": "cmd/notriosctl/main.go",
+      "anchor": "docsDir = defaultHelpDocsDir()",
+      "current": "the positional argument, else <program_assets>/docs; the bare relative \"docs\" only in a checkout",
+      "defects": [
+        "cwd-relative-default"
+      ],
+      "target": "<program_assets>/docs; the working-directory default only in source mode",
+      "migration": "none",
+      "owner": "H4-A1",
+      "status": "resolved",
+      "resolved_by": "H4-A1"
+    },
+    {
+      "id": "desktop-entry",
+      "name": "notrios:// URL handler desktop entry",
+      "category": "external",
+      "file": "cmd/notriosctl/stablelinks.go",
+      "anchor": "directory = filepath.Join(filepath.Dir(dataRoot), \"applications\")",
+      "current": "--dir, else $XDG_DATA_HOME/applications/notrios-url-handler.desktop",
+      "defects": [
+        "ignores-xdg-data-home"
+      ],
+      "target": "$XDG_DATA_HOME/applications/notrios-url-handler.desktop",
+      "migration": "regenerate",
+      "owner": "H4-X1",
+      "status": "resolved",
+      "resolved_by": "H4-X1"
+    },
+    {
+      "id": "snapshot-output",
+      "name": "Physical snapshot image output root",
+      "category": "external",
+      "file": "internal/snapshotimage/create.go",
+      "anchor": "if err := os.MkdirAll(root, 0o700); err != nil {",
+      "current": "fully caller-supplied; no default. Refuses a path overlapping the asset store, a symlink, a non-directory, and an existing complete snapshot; creates 0700",
+      "defects": [],
+      "target": "unchanged: the user names the destination, which is the point of a portable snapshot",
+      "migration": "none",
+      "owner": "exception:user-names-the-destination"
+    }
+  ]
+}

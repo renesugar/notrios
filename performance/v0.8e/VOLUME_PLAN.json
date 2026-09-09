@@ -1,0 +1,361 @@
+{
+  "blocked_on": [
+    "the sealing tool is single-volume by construction, in three separate ways: seal-content is fixed to the G17b checkpoint and replaces evidence/current/ rather than adding beside it; build-reserve's volume id, checkpoint id and build paths are 0001 constants; and seal-catalog rebuilds the catalog and requires an explicit supersession of the existing set rather than appending an entry. Extending them is a change to the shape of the chain, not a parameter",
+    "three design questions belong to the owner and are answered nowhere checkable: whether evidence/current/ means the latest volume or gains a per-volume directory; whether the outer catalog is appended to or superseded and rewritten with two entries; and what volume-0002's checkpoint records as its predecessor_checkpoint_sha256, a field volume-0001 leaves null"
+  ],
+  "budget_finding": "all 46 candidates are 714,736,465 bytes and exceed the 650 MiB volume budget by 33,162,065. The 40 without the superseded archives are 611,312,795 and fit with 70,261,605 to spare. So the superseded six are left out of the seal -- which is not the same as deleting them: they stay in the evidence directory, and the reserve holds only archives today's release check accepts.",
+  "candidates": [
+    {
+      "bytes": 4961593,
+      "name": "notrios-v0.7-g18e-91dec2c.zip",
+      "role": "other unsealed artifact",
+      "sha256": "596c7b019863476a0aad84dc82e91351a4b31a3336f8f7d70d146ae6af638c40"
+    },
+    {
+      "bytes": 5270098,
+      "name": "notrios-v0.7-g20-4bc2577.zip",
+      "role": "other unsealed artifact",
+      "sha256": "0710217d9fa98dff34ac7d9f0e697fffd7d956230cd95506211c8a2b0660513d"
+    },
+    {
+      "bytes": 14301956,
+      "name": "notrios-v0.8-develop-before-notrioslib-rewrite.bundle",
+      "role": "other unsealed artifact",
+      "sha256": "4e6cd6591baf4bf2818f9b5b690b9d68f259ae15be74e8ce15f3275cce285417"
+    },
+    {
+      "bytes": 5334539,
+      "name": "notrios-v0.8-h0-e164aeb.zip",
+      "role": "a v0.8 archive this milestone built or kept",
+      "sha256": "5b131883de2376bdeb6ec809742524c237b3e0bbd6a5621b501903ff28b9bf2f"
+    },
+    {
+      "bytes": 15269890,
+      "name": "notrios-v0.8-h1-0bee555.zip",
+      "role": "superseded by a v0.8e rebuild",
+      "sha256": "4b156a19cf500031676b377545435e8966e3eabff7f2a1baa0bd0607cbf0b538"
+    },
+    {
+      "bytes": 8048849,
+      "name": "notrios-v0.8-h1-fa3803c.zip",
+      "role": "a v0.8 archive this milestone built or kept",
+      "sha256": "202266b5d7697be7dd95354fca470e0197a4bf23fc9e4b390839c84c9b0c7804"
+    },
+    {
+      "bytes": 24816497,
+      "name": "notrios-v0.8-h10-b265ada.zip",
+      "role": "a v0.8 archive this milestone built or kept",
+      "sha256": "55a1d6ab90d49013006f91d756407b1bc668ceeaa1d324e2dd5fb41d7e5c09bb"
+    },
+    {
+      "bytes": 24789162,
+      "name": "notrios-v0.8-h11-8c7017c.zip",
+      "role": "a v0.8 archive this milestone built or kept",
+      "sha256": "27cb714b67a0e742ced23ac4eeb7815f64d3c441eacda0322f322ba049156f61"
+    },
+    {
+      "bytes": 24047222,
+      "name": "notrios-v0.8-h12-baf6e4b.zip",
+      "role": "a v0.8 archive this milestone built or kept",
+      "sha256": "eb192a55fe45d0cf947932b69e95c991d2d11e0978248b3ef05dd41eeb9f02dc"
+    },
+    {
+      "bytes": 24943251,
+      "name": "notrios-v0.8-h13-030ef2d.zip",
+      "role": "superseded by a v0.8e rebuild",
+      "sha256": "eb2e8c7ada6150f30ead4747270b5e822db03057bc68be85dcef328e7eab36d7"
+    },
+    {
+      "bytes": 24945579,
+      "name": "notrios-v0.8-h13-10e7077.zip",
+      "role": "a v0.8 archive this milestone built or kept",
+      "sha256": "8fc22b236266ba0efd17b9aacdc2b4abdd34688161392efd611a927141900b8e"
+    },
+    {
+      "bytes": 18068134,
+      "name": "notrios-v0.8-h14-1c8d577.zip",
+      "role": "a v0.8 archive this milestone built or kept",
+      "sha256": "f0efff10a7b7ec09701df4445d842071a87d5d4ff1f2fe0a60fb0a8f7660fa47"
+    },
+    {
+      "bytes": 24046003,
+      "name": "notrios-v0.8-h15-fde811e.zip",
+      "role": "a v0.8 archive this milestone built or kept",
+      "sha256": "97833b795fd41bbf4917f080fb6e2d5d20f21a8ae6ebc9598c6cabe9a1052e51"
+    },
+    {
+      "bytes": 18214502,
+      "name": "notrios-v0.8-h16-b69b653.zip",
+      "role": "a v0.8 archive this milestone built or kept",
+      "sha256": "2cdfd0f0b94872fe065cc0168385bedf87002664ad179e2f3f4b1940559854f1"
+    },
+    {
+      "bytes": 18251142,
+      "name": "notrios-v0.8-h17-fa362b3.zip",
+      "role": "a v0.8 archive this milestone built or kept",
+      "sha256": "abe7ac0ac162d9f5f80ff347999be836a3de671f95d208a4a8b1e3e6d90bed9e"
+    },
+    {
+      "bytes": 24046748,
+      "name": "notrios-v0.8-h18-f79c956.zip",
+      "role": "a v0.8 archive this milestone built or kept",
+      "sha256": "ca9acc005d7e1e1a6fc317fba02fe65f7c8bc5faf6eb0d980c48ae08531d5b01"
+    },
+    {
+      "bytes": 18204982,
+      "name": "notrios-v0.8-h19-cb76c7f.zip",
+      "role": "a v0.8 archive this milestone built or kept",
+      "sha256": "c05dc00a5a0db983e3f1c8e28bfa32085a4b0b7489ae9cd803f27a0b4e670366"
+    },
+    {
+      "bytes": 16253582,
+      "name": "notrios-v0.8-h2-27de1d1.zip",
+      "role": "superseded by a v0.8e rebuild",
+      "sha256": "403dd225e6d34d14a5eb625065013a34bfba7c54cd65db9260b0419609f2216f"
+    },
+    {
+      "bytes": 9033391,
+      "name": "notrios-v0.8-h2-e69419c.zip",
+      "role": "a v0.8 archive this milestone built or kept",
+      "sha256": "ce265b2a7d23f7423ad6468cf3068c005af479edfc84fbd63439ef36c2d3a9c0"
+    },
+    {
+      "bytes": 18208254,
+      "name": "notrios-v0.8-h20-fa25182.zip",
+      "role": "a v0.8 archive this milestone built or kept",
+      "sha256": "3a95d434c4b6ad9fa1c2533a0482ba0151121769d4bcaa14abbdd6010e24bd34"
+    },
+    {
+      "bytes": 18175957,
+      "name": "notrios-v0.8-h21-49e4ad0.zip",
+      "role": "a v0.8 archive this milestone built or kept",
+      "sha256": "417a7639a47d1f5f77abed095b4d7f92acde3768ed64b2631d060ec470725d09"
+    },
+    {
+      "bytes": 18157658,
+      "name": "notrios-v0.8-h22-f2df4b3.zip",
+      "role": "a v0.8 archive this milestone built or kept",
+      "sha256": "963925a48c9a410c547558c6733fecb43b92e8a53901111f53c49a45b346112d"
+    },
+    {
+      "bytes": 18148631,
+      "name": "notrios-v0.8-h23-5aca5ea.zip",
+      "role": "a v0.8 archive this milestone built or kept",
+      "sha256": "4dba8109fded5fefd888f5737ee10fa8209d343dc0997642abdfeea9eb634d9e"
+    },
+    {
+      "bytes": 18164235,
+      "name": "notrios-v0.8-h24-faf9bd6.zip",
+      "role": "a v0.8 archive this milestone built or kept",
+      "sha256": "a14b5e145ede53ec4ce81fd30c15c346fcffef3753fff69fc98867dbc6df76f4"
+    },
+    {
+      "bytes": 18181073,
+      "name": "notrios-v0.8-h25-677ca1f.zip",
+      "role": "a v0.8 archive this milestone built or kept",
+      "sha256": "6527e546fa773fb1056bc622e8f577ea5852e63a1751ea61e39616ec6f1ea196"
+    },
+    {
+      "bytes": 18196292,
+      "name": "notrios-v0.8-h26-b4fd8f9.zip",
+      "role": "a v0.8 archive this milestone built or kept",
+      "sha256": "0d4f747f7929a33f1584613902530a37f8e477273b24893475c14b7593bea4b3"
+    },
+    {
+      "bytes": 18238244,
+      "name": "notrios-v0.8-h27-c836eb5.zip",
+      "role": "a v0.8 archive this milestone built or kept",
+      "sha256": "f33fee8dc66fdff9a525247456f623aee2569e427fc1ce8edf2a04cef9c1c3f0"
+    },
+    {
+      "bytes": 18785532,
+      "name": "notrios-v0.8-h28-73f605c.zip",
+      "role": "a v0.8 archive this milestone built or kept",
+      "sha256": "f110d0e3996ef6524df42de84553414800d0a60e51ad7452ba08e3dfd1a3b69a"
+    },
+    {
+      "bytes": 24772535,
+      "name": "notrios-v0.8-h29-391cdd5.zip",
+      "role": "a v0.8 archive this milestone built or kept",
+      "sha256": "0bea90db3f0c21fd5eb907a8018272e772c1c268dea944b7cc36216e0c32f545"
+    },
+    {
+      "bytes": 15317960,
+      "name": "notrios-v0.8-h2a-2b9f00b.zip",
+      "role": "superseded by a v0.8e rebuild",
+      "sha256": "66801f665130d811da2d5fecf67fcf8375f2c0a2a321daf0bfbada8e6c4f674f"
+    },
+    {
+      "bytes": 8097769,
+      "name": "notrios-v0.8-h2a-af37c4c.zip",
+      "role": "a v0.8 archive this milestone built or kept",
+      "sha256": "1ccad5458d57bee0623d192044fc00d84c6a29cc24682b47036f87a56cec7169"
+    },
+    {
+      "bytes": 15327601,
+      "name": "notrios-v0.8-h2b-9043a4d.zip",
+      "role": "superseded by a v0.8e rebuild",
+      "sha256": "9933f0f07a3bd67122063f387af60210e068122e6c426d6339874a07fddc7338"
+    },
+    {
+      "bytes": 8107410,
+      "name": "notrios-v0.8-h2b-e4f4432.zip",
+      "role": "a v0.8 archive this milestone built or kept",
+      "sha256": "606401536d3e113161f9da0a92b1e0659fec6a17990b739c7723fa65edaa5042"
+    },
+    {
+      "bytes": 16311386,
+      "name": "notrios-v0.8-h3-37cadac.zip",
+      "role": "superseded by a v0.8e rebuild",
+      "sha256": "d9b3ff0f76b467e2db61d8906cafe92c3369bbac95314bd331d4fb9c1375738f"
+    },
+    {
+      "bytes": 9090345,
+      "name": "notrios-v0.8-h3-97652f1.zip",
+      "role": "a v0.8 archive this milestone built or kept",
+      "sha256": "c120f577aaafb9ba7ec2b319b0f1ef6ad99b22630d6eef533cc1db7d99eafdc3"
+    },
+    {
+      "bytes": 9208812,
+      "name": "notrios-v0.8-h4-693b672.zip",
+      "role": "a v0.8 archive this milestone built or kept",
+      "sha256": "1bf460aee1d7fc393c1537f554af153daa5710ec9b158cc6c0801a130f2d234c"
+    },
+    {
+      "bytes": 9183748,
+      "name": "notrios-v0.8-h4a-036ba0c.zip",
+      "role": "a v0.8 archive this milestone built or kept",
+      "sha256": "fef0c36ab82abcd039c0e2cc152615be4f927e30ca65ce8d443871742f1dfba5"
+    },
+    {
+      "bytes": 9206795,
+      "name": "notrios-v0.8-h4b-e58abf6.zip",
+      "role": "a v0.8 archive this milestone built or kept",
+      "sha256": "416807fdd5a6ffd77fd3f3c5248ed138e8716d3b874ac778562cb628ab1954a2"
+    },
+    {
+      "bytes": 9234737,
+      "name": "notrios-v0.8-h5-3ec1ab3.zip",
+      "role": "a v0.8 archive this milestone built or kept",
+      "sha256": "656f2992f131519cb9b70c5e38b918d6879195cc2fa5b04915abf4373c13dc9c"
+    },
+    {
+      "bytes": 11349036,
+      "name": "notrios-v0.8-h6-3abdbf7.zip",
+      "role": "a v0.8 archive this milestone built or kept",
+      "sha256": "0ed958344f956601bc4d54842840a5ba2e95966336ca9c9dd41d371827a21cd7"
+    },
+    {
+      "bytes": 9248848,
+      "name": "notrios-v0.8-h6a-57b2a71.zip",
+      "role": "a v0.8 archive this milestone built or kept",
+      "sha256": "ecd6374593087010a4eeb759d568dd4d5f76c19f00b58b475c5decd1cc59fbbd"
+    },
+    {
+      "bytes": 9260333,
+      "name": "notrios-v0.8-h7-f544b98.zip",
+      "role": "a v0.8 archive this milestone built or kept",
+      "sha256": "9ec7551400ee7d3f66b875805e67918f77a1bfdeab6844ccb5ad32ecd74b7028"
+    },
+    {
+      "bytes": 11360058,
+      "name": "notrios-v0.8-h8-a3490aa.zip",
+      "role": "a v0.8 archive this milestone built or kept",
+      "sha256": "2dd37fb578a374c7a7df26ee7dc01a4d1d3064b0773033165245ba4a92ad82ff"
+    },
+    {
+      "bytes": 18217674,
+      "name": "notrios-v0.8-h9-f0672d9.zip",
+      "role": "a v0.8 archive this milestone built or kept",
+      "sha256": "3fa64d5afcace99476ca0f3c3648b6867c6c2b2680c718f047b1e3f9b8b205fe"
+    },
+    {
+      "bytes": 5283894,
+      "name": "notrios-v0.8-installation-plan-6140292.zip",
+      "role": "other unsealed artifact",
+      "sha256": "e47bd6622e97fcab0e08f94e55fc04680867907f14dd0f3f3f9a2655b1e22818"
+    },
+    {
+      "bytes": 29054528,
+      "name": "notrios_0.8.0-1_amd64.deb",
+      "role": "other unsealed artifact",
+      "sha256": "750a86b31a7ee1b92b8d1d245c71b0608d7c6a2b818de31dd8c468de32aa2d67"
+    }
+  ],
+  "cd_budget_bytes": 681574400,
+  "counts": {
+    "bytes": 714736465,
+    "files": 46,
+    "other": 5,
+    "superseded": 6,
+    "to_seal": 40,
+    "to_seal_bytes": 611312795,
+    "v08_archives": 35
+  },
+  "established": {
+    "reserve_verified": "volume-0001 verified end to end, catalog b47f9a7d1879459e",
+    "signing_available": "the passphrase resolves from the Secret Service and the production subkey 4ABEB98A...68264005 produced and verified a detached signature",
+    "signing_is_session_lifetime": "kdewallet.kwl on disk is unchanged since 2026-09-04, so the stored passphrase is in memory and will not survive the session"
+  },
+  "not_sealed_superseded": [
+    "notrios-v0.8-h1-0bee555.zip",
+    "notrios-v0.8-h13-030ef2d.zip",
+    "notrios-v0.8-h2-27de1d1.zip",
+    "notrios-v0.8-h2a-2b9f00b.zip",
+    "notrios-v0.8-h2b-9043a4d.zip",
+    "notrios-v0.8-h3-37cadac.zip"
+  ],
+  "precondition_reserve_verified": {
+    "catalog_sha256": "b47f9a7d1879459ee7b0c269aafe852c577e514fadf3369ba6137f5b94a0b1c0",
+    "command": "python3 evidence/verify_evidence.py reserve --reserve-root /media/renes/SEAGATE2TB/notrios-evidence",
+    "result": "verified",
+    "volumes": [
+      "NTR-EV-0001"
+    ]
+  },
+  "schema": "notrios.v08e.volume-plan.v1",
+  "status": "sealed as NTR-EV-0002 on 2026-09-09; SEAL_RESULT.json records what was signed and what was deliberately left out",
+  "to_seal": [
+    "notrios-v0.7-g18e-91dec2c.zip",
+    "notrios-v0.7-g20-4bc2577.zip",
+    "notrios-v0.8-develop-before-notrioslib-rewrite.bundle",
+    "notrios-v0.8-h0-e164aeb.zip",
+    "notrios-v0.8-h1-fa3803c.zip",
+    "notrios-v0.8-h10-b265ada.zip",
+    "notrios-v0.8-h11-8c7017c.zip",
+    "notrios-v0.8-h12-baf6e4b.zip",
+    "notrios-v0.8-h13-10e7077.zip",
+    "notrios-v0.8-h14-1c8d577.zip",
+    "notrios-v0.8-h15-fde811e.zip",
+    "notrios-v0.8-h16-b69b653.zip",
+    "notrios-v0.8-h17-fa362b3.zip",
+    "notrios-v0.8-h18-f79c956.zip",
+    "notrios-v0.8-h19-cb76c7f.zip",
+    "notrios-v0.8-h2-e69419c.zip",
+    "notrios-v0.8-h20-fa25182.zip",
+    "notrios-v0.8-h21-49e4ad0.zip",
+    "notrios-v0.8-h22-f2df4b3.zip",
+    "notrios-v0.8-h23-5aca5ea.zip",
+    "notrios-v0.8-h24-faf9bd6.zip",
+    "notrios-v0.8-h25-677ca1f.zip",
+    "notrios-v0.8-h26-b4fd8f9.zip",
+    "notrios-v0.8-h27-c836eb5.zip",
+    "notrios-v0.8-h28-73f605c.zip",
+    "notrios-v0.8-h29-391cdd5.zip",
+    "notrios-v0.8-h2a-af37c4c.zip",
+    "notrios-v0.8-h2b-e4f4432.zip",
+    "notrios-v0.8-h3-97652f1.zip",
+    "notrios-v0.8-h4-693b672.zip",
+    "notrios-v0.8-h4a-036ba0c.zip",
+    "notrios-v0.8-h4b-e58abf6.zip",
+    "notrios-v0.8-h5-3ec1ab3.zip",
+    "notrios-v0.8-h6-3abdbf7.zip",
+    "notrios-v0.8-h6a-57b2a71.zip",
+    "notrios-v0.8-h7-f544b98.zip",
+    "notrios-v0.8-h8-a3490aa.zip",
+    "notrios-v0.8-h9-f0672d9.zip",
+    "notrios-v0.8-installation-plan-6140292.zip",
+    "notrios_0.8.0-1_amd64.deb"
+  ],
+  "what_this_is": "the exact set volume-0002 would carry, computed from the reserve and the evidence directory rather than chosen. It is a plan and not a seal: nothing here is signed, timestamped or written to the reserve."
+}

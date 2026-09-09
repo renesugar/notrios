@@ -1,0 +1,6 @@
+flowchart LR
+  Carrier[Hostile carrier tree] --> Paths[String path joins]
+  Archive[Crafted legacy archive] --> Paths
+  Paths --> FS[Ambient os filesystem APIs]
+  FS --> Canonical[Canonical store]
+  FS --> Host[Host filesystem / blocking devices]

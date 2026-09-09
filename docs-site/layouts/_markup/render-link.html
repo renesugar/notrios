@@ -1,0 +1,5 @@
+{{- $destination := .Destination -}}
+{{- if findRE `\.md(?:#.*)?$` $destination -}}
+  {{- $destination = replaceRE `\.md(#.*)?$` `.html$1` $destination -}}
+{{- end -}}
+<a href="{{ $destination | safeURL }}"{{ with .Title }} title="{{ . }}"{{ end }}>{{ .Text | safeHTML }}</a>

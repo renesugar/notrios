@@ -1,0 +1,10 @@
+{
+  "format": "notrios-sqlite-image",
+  "version": 1,
+  "application_id": "notrios",
+  "required_capabilities": [
+    "archive-v2.fallback.v1",
+    "sqlite-image+packed-assets.v1"
+  ],
+  "pack_layout": "deterministic-ustar"
+}

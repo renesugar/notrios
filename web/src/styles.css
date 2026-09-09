@@ -13,6 +13,15 @@
   --hover: #e8edf5;
   --chip-bg: #e8edf5;
   --shadow: rgba(15, 23, 42, 0.05);
+  /* Destructive actions. Not a theme token: a custom theme saved before v0.5
+     E8 has no value for it, and a delete button that inherits `undefined`
+     would read as an ordinary one. Keyed on the theme's base instead, which
+     themes.ts already writes onto <html>. */
+  --danger: #b3261e;
+}
+
+:root[data-theme-base='dark'] {
+  --danger: #f2867d;
 }
 
 :root {
@@ -170,6 +179,501 @@ body.splitter-dragging {
   cursor: col-resize;
 }
 
+/* ---- G16 synchronization, pairing, backup, and recovery center ---- */
+
+.sync-header-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 30px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  padding: 3px 11px;
+  color: var(--text);
+  background: var(--panel-bg);
+  cursor: pointer;
+}
+
+.sync-header-button:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.sync-center-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: color-mix(in srgb, #0f172a 55%, transparent);
+}
+
+.sync-center {
+  width: min(1120px, 100%);
+  height: min(820px, 100%);
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+  border: 1px solid var(--border-strong);
+  border-radius: 18px;
+  background: var(--bg);
+  box-shadow: 0 24px 80px rgba(15, 23, 42, 0.32);
+}
+
+/* The dialog shell is a two-column grid: a 190px rail for the section tabs and
+   the body beside it. A dialog with no tabs -- import and export is one -- must
+   say so, or its body lands in the rail and renders in a 190px column with an
+   invisible text field. That is exactly what happened, and neither the unit
+   tests nor the browser crawl could see it: jsdom has no layout engine, and the
+   control that opens this dialog is correctly disabled in a browser. It took
+   driving the real desktop application to find. */
+.sync-center-single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* Every other use of .sync-section shows one section per tab, so it never
+   needed to separate from a sibling. This dialog stacks five, and without a
+   rule they run together: the next heading sits directly under the previous
+   section's buttons. */
+.sync-center-single .sync-section + .sync-section {
+  margin-top: 26px;
+  padding-top: 22px;
+  border-top: 1px solid var(--border-strong);
+}
+
+.sync-center-header {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--border-strong);
+  background: var(--panel-bg);
+}
+
+.sync-center-header h2,
+.sync-section h3,
+.sync-card h4,
+.destructive-review h4 {
+  margin: 0;
+}
+
+.eyebrow {
+  margin: 0 0 3px;
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.sync-profile-identity {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 14px;
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.sync-profile-identity strong {
+  color: var(--text);
+}
+
+.sync-close {
+  width: 44px;
+  height: 44px;
+  font-size: 23px;
+  line-height: 1;
+}
+
+.sync-tabs {
+  min-height: 0;
+  overflow-y: auto;
+  padding: 12px 10px;
+  border-right: 1px solid var(--border-strong);
+  background: var(--panel-bg);
+}
+
+.sync-tabs button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 42px;
+  margin: 2px 0;
+  border: 0;
+  border-radius: 9px;
+  padding: 8px 10px;
+  color: var(--muted);
+  text-align: left;
+  background: transparent;
+  cursor: pointer;
+}
+
+.sync-tabs button:hover,
+.sync-tabs button.active {
+  color: var(--text);
+  background: var(--hover);
+}
+
+.sync-tabs button.active {
+  box-shadow: inset 3px 0 var(--accent);
+  font-weight: 650;
+}
+
+.count-badge {
+  min-width: 21px;
+  border-radius: 999px;
+  padding: 2px 6px;
+  color: var(--text);
+  text-align: center;
+  background: var(--accent-soft);
+  font-size: 11px;
+}
+
+.sync-center-body {
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  position: relative;
+  padding: 24px clamp(18px, 4vw, 38px) 40px;
+}
+
+.sync-section {
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+.sync-section > p,
+.sync-card > p,
+.sync-card > small,
+.boundary-note {
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.sync-inline-notice {
+  max-width: 860px;
+  margin: 0 auto 16px;
+  border: 1px solid var(--accent);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: var(--accent-soft);
+}
+
+.sync-inline-notice.error {
+  border-color: var(--danger);
+}
+
+.sync-loading,
+.sync-empty {
+  padding: 28px 12px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.sync-hero-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.sync-hero-row p {
+  margin: 4px 0 0;
+  color: var(--muted);
+}
+
+.sync-state-orb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #6b7280;
+  box-shadow: 0 0 0 6px color-mix(in srgb, #6b7280 18%, transparent);
+}
+
+.sync-state-orb.ready { background: #25855a; box-shadow: 0 0 0 6px color-mix(in srgb, #25855a 18%, transparent); }
+.sync-state-orb.syncing { background: var(--accent); box-shadow: 0 0 0 6px var(--accent-soft); }
+.sync-state-orb.offline { background: #b56b12; box-shadow: 0 0 0 6px color-mix(in srgb, #b56b12 18%, transparent); }
+.sync-state-orb.attention { background: var(--danger); box-shadow: 0 0 0 6px color-mix(in srgb, var(--danger) 18%, transparent); }
+
+.primary-button {
+  border-color: var(--accent) !important;
+  color: white;
+  background: var(--accent) !important;
+}
+
+.primary-button:disabled {
+  opacity: 0.52;
+}
+
+.sync-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0 0 22px;
+}
+
+.sync-metric-grid button {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-height: 78px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  color: var(--text);
+  text-align: left;
+  background: var(--panel-bg);
+  cursor: pointer;
+}
+
+.sync-metric-grid button:hover { border-color: var(--accent); }
+.sync-metric-grid strong { font-size: 22px; }
+.sync-metric-grid span { color: var(--muted); font-size: 12px; }
+.sync-metric-grid article {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-height: 78px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  background: var(--panel-bg);
+}
+.retention-metrics { margin-top: 20px; }
+.retention-section code { overflow-wrap: anywhere; }
+.retention-section .boundary-note {
+  margin-top: 18px;
+  border-left: 4px solid var(--accent);
+  border-radius: 8px;
+  padding: 12px 14px;
+  background: var(--accent-soft);
+}
+
+.sync-card,
+.warning-card,
+.destructive-review {
+  margin: 14px 0;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 15px;
+  background: var(--panel-bg);
+}
+
+.warning-card { border-left: 4px solid #b56b12; }
+.warning-card p { margin: 6px 0 0; color: var(--muted); }
+.success-line { color: #25855a !important; font-weight: 600; }
+
+.sync-card-heading,
+.sync-list-row,
+.row-actions,
+.password-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sync-card-heading { justify-content: space-between; }
+.sync-card progress { width: 100%; margin: 7px 0; accent-color: var(--accent); }
+
+.sync-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.sync-list-row {
+  min-width: 0;
+  justify-content: space-between;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 11px 12px;
+  color: var(--text);
+  background: var(--panel-bg);
+}
+
+button.sync-list-row {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+}
+
+button.sync-list-row:hover { border-color: var(--accent); }
+.sync-list-row > div:first-child { min-width: 0; flex: 1; }
+.sync-list-row strong,
+.sync-list-row small { display: block; overflow-wrap: anywhere; }
+.sync-list-row small { margin-top: 3px; color: var(--muted); }
+
+.state-chip {
+  flex: none;
+  border-radius: 999px;
+  padding: 3px 8px;
+  color: var(--muted);
+  background: var(--chip-bg);
+  font-size: 11px;
+  text-transform: capitalize;
+}
+
+.state-chip.succeeded,
+.state-chip.active { color: #1c704b; background: color-mix(in srgb, #25855a 15%, var(--panel-bg)); }
+.state-chip.failed,
+.state-chip.revoked,
+.state-chip.retired { color: var(--danger); background: color-mix(in srgb, var(--danger) 12%, var(--panel-bg)); }
+.state-chip.running,
+.state-chip.queued,
+.state-chip.behind { color: var(--accent); background: var(--accent-soft); }
+.state-chip.offline { color: #96570b; background: color-mix(in srgb, #b56b12 14%, var(--panel-bg)); }
+
+.sync-form-section,
+.sync-form-section label,
+.sync-card label,
+.conflict-detail > label {
+  display: grid;
+  gap: 5px;
+}
+
+.sync-form-section { gap: 14px; }
+.sync-form-section label,
+.sync-card label,
+.conflict-detail > label { color: var(--text); font-size: 13px; font-weight: 600; }
+.sync-form-section small,
+.sync-card label small { color: var(--muted); font-weight: 400; }
+
+.sync-form-section input,
+.sync-form-section select,
+.sync-card input,
+.conflict-detail input,
+.conflict-detail textarea {
+  width: 100%;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  padding: 9px 10px;
+  color: var(--text);
+  background: var(--panel-bg);
+}
+
+.sync-form-section fieldset {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.sync-form-section .radio-row { display: flex; grid-template-columns: auto 1fr; align-items: center; }
+.sync-form-section .radio-row input { width: auto; }
+.sync-form-section .checkbox-row { display: flex; flex-direction: row; align-items: center; gap: 9px; }
+.sync-form-section .checkbox-row input { flex: 0 0 auto; width: auto; }
+.directory-picker { display: flex; gap: 8px; }
+.directory-picker input { min-width: 0; }
+.directory-picker button { flex: none; border: 1px solid var(--border-strong); border-radius: 8px; padding: 6px 10px; color: var(--text); background: var(--panel-bg); }
+.boundary-note { border-left: 3px solid var(--accent); padding-left: 10px; font-size: 12px; }
+
+.sync-two-column {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.sync-two-column .sync-card { margin: 14px 0 0; }
+.sync-card label { margin: 12px 0; }
+.sync-card button,
+.sync-section > button,
+.row-actions button { min-height: 34px; border: 1px solid var(--border-strong); border-radius: 8px; padding: 6px 10px; color: var(--text); background: var(--panel-bg); cursor: pointer; }
+.sync-card button:disabled,
+.sync-section > button:disabled,
+.row-actions button:disabled { cursor: default; opacity: 0.55; }
+
+.pairing-code {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px 8px;
+  margin-top: 12px;
+  border-radius: 10px;
+  padding: 10px;
+  background: var(--hover);
+}
+
+.pairing-code code { align-self: center; overflow-wrap: anywhere; font-weight: 700; letter-spacing: 0.08em; }
+.pairing-code small { grid-column: 1 / -1; }
+.discovery-list { color: var(--muted); }
+
+.resource-row .row-actions { flex: none; }
+.conflict-columns { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 16px 0; }
+.conflict-columns label { display: grid; gap: 5px; color: var(--muted); font-size: 12px; }
+.conflict-columns textarea { min-height: 180px; resize: vertical; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 12px; }
+.conflict-detail .resolution-editor { min-height: 220px; resize: vertical; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
+.back-button { margin-bottom: 14px; }
+
+.password-row input { flex: 1; min-width: 0; }
+.password-row button { flex: none; }
+.destructive-review { border: 2px solid var(--danger); }
+.destructive-review dl { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.destructive-review dl div { min-width: 0; }
+.destructive-review dt { color: var(--muted); font-size: 11px; }
+.destructive-review dd { margin: 2px 0 0; overflow-wrap: anywhere; font-size: 12px; }
+.recovery-card { margin-top: 18px; }
+.repair-row { align-items: flex-start; }
+.repair-row pre { max-width: 50%; margin: 0; overflow: auto; color: var(--muted); font-size: 11px; }
+
+@media (max-width: 760px) {
+  .sync-center-backdrop { padding: 0; }
+  .sync-center {
+    width: 100%;
+    height: 100%;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto minmax(0, 1fr);
+    border: 0;
+    border-radius: 0;
+  }
+  .sync-center-header { padding: 13px 15px; }
+  .sync-close { width: 44px; height: 44px; }
+  .sync-profile-identity span:last-child { display: none; }
+  .sync-tabs {
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 7px 9px;
+    border-right: 0;
+    border-bottom: 1px solid var(--border-strong);
+  }
+  .sync-tabs button {
+    width: auto;
+    min-width: max-content;
+    min-height: 44px;
+    margin: 0;
+  }
+  .sync-tabs button.active { box-shadow: inset 0 -3px var(--accent); }
+  .sync-center-body { padding: 18px 14px 30px; }
+  .sync-hero-row { grid-template-columns: auto minmax(0, 1fr); }
+  .sync-hero-row > button { grid-column: 1 / -1; min-height: 44px; }
+  .sync-metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sync-two-column,
+  .conflict-columns { grid-template-columns: 1fr; }
+  .conflict-columns textarea { min-height: 130px; }
+  .sync-list-row { flex-wrap: wrap; }
+  .resource-row .row-actions { width: 100%; }
+  .row-actions { flex-wrap: wrap; }
+  .row-actions button,
+  .sync-card button,
+  .sync-section > button { min-height: 44px; }
+  .sync-form-section input,
+  .sync-form-section select,
+  .sync-card input,
+  .conflict-detail input { min-height: 44px; }
+  .destructive-review dl { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .repair-row pre { width: 100%; max-width: 100%; }
+}
+
 /* ---- Sidebar pane ---- */
 
 .sidebar-pane {
@@ -188,6 +692,43 @@ body.splitter-dragging {
   list-style: none;
   margin: 0 4px;
   padding: 0;
+}
+
+.sidebar-row {
+  display: flex;
+  align-items: center;
+}
+
+/* The delete affordance stays hidden until the row is hovered or something
+   inside it has focus, so the sidebar reads as a list of places rather than a
+   list of destructive buttons. `:focus-within` is what keeps it reachable by
+   keyboard. */
+.sidebar-action {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+  padding: 4px 6px;
+  margin-right: 4px;
+  border-radius: 6px;
+  opacity: 0;
+}
+
+.sidebar-row:hover .sidebar-action,
+.sidebar-row:focus-within .sidebar-action {
+  opacity: 1;
+}
+
+.sidebar-action:hover {
+  background: var(--hover);
+}
+
+.sidebar-action:focus-visible {
+  opacity: 1;
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
 }
 
 .sidebar-item {
@@ -246,6 +787,13 @@ body.splitter-dragging {
   padding: 8px;
   border-bottom: 1px solid var(--border);
   flex: none;
+}
+
+.search-query-hint {
+  margin: 0 0.75rem 0.45rem;
+  color: var(--muted);
+  font-size: 0.72rem;
+  line-height: 1.25;
 }
 
 .search-row input {
@@ -313,6 +861,22 @@ body.splitter-dragging {
   padding: 0 2px;
 }
 
+.search-sources {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.search-source {
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--chip-bg);
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
 .result-status {
   text-align: center;
   padding: 6px 0;
@@ -337,14 +901,61 @@ body.splitter-dragging {
 
 /* ---- Editor pane ---- */
 
+/* The editor toolbar is a title row plus an action row, never one wrapping
+   line. Before v0.5 E10 it was a single `flex-wrap: wrap` row holding the title,
+   the state chip and every button: the chip never left the title's row, buttons
+   wrapped one at a time from a 520 px pane down to the 280 px minimum, and
+   because the title is `flex: 1` it grew into whatever space a wrapped button
+   vacated — so its width moved *non-monotonically* as the pane narrowed. */
 .editor-toolbar {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 8px;
   padding: 8px;
   border-bottom: 1px solid var(--border);
   flex: none;
+}
+
+.editor-toolbar-title {
+  display: flex;
+}
+
+/* The action row. `flex-wrap` is the floor, not the intent: it keeps a narrow
+   row contained to itself on an engine without container queries, where it can
+   still never crowd the title. The container query below replaces it with an
+   all-or-nothing switch to a column. */
+.editor-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   flex-wrap: wrap;
+}
+
+/* The query is on the *pane*, not the viewport. These panes are resized by
+   splitters independently of the window, so a media query would measure the
+   wrong box — a wide window can hold a narrow editor pane. */
+.editor-pane {
+  container-type: inline-size;
+  container-name: editor-pane;
+}
+
+@container editor-pane (max-width: 300px) {
+  .editor-toolbar-actions {
+    flex-direction: column;
+    align-items: stretch;
+    flex-wrap: nowrap;
+  }
+}
+
+/* A trashed note's row is wider — a chip plus two buttons — so it stacks
+   sooner. Two breakpoints rather than one shared worst case, so the editable
+   row is not stacked at widths where it fits. */
+@container editor-pane (max-width: 380px) {
+  .editor-toolbar-actions.trashed-actions {
+    flex-direction: column;
+    align-items: stretch;
+    flex-wrap: nowrap;
+  }
 }
 
 .title-input {
@@ -357,9 +968,12 @@ body.splitter-dragging {
   color: var(--text);
 }
 
-.title-input:disabled {
+.title-input[readonly] {
   color: var(--muted);
   background: var(--bg);
+  /* Still focusable and still selectable — it is read-only, not inert — so it
+     keeps a visible focus ring and a text cursor. */
+  cursor: text;
 }
 
 .editor-toolbar button {
@@ -381,12 +995,138 @@ body.splitter-dragging {
   cursor: default;
 }
 
+.danger-button {
+  color: var(--danger);
+}
+
+/* Start a new note. It lives in the search pane rather than the editor toolbar
+   because it is not an action on the open note, and it names its destination so
+   a note's notebook is answered before it is written. */
+.new-note-button {
+  display: block;
+  width: calc(100% - 16px);
+  margin: 0 8px 8px;
+  padding: 6px 10px;
+  border: 1px dashed var(--border-strong);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 13px;
+  text-align: left;
+}
+
+.new-note-button:hover {
+  background: var(--hover);
+}
+
+.new-note-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+/* The notebook control inside the Markdown editor's own toolbar.
+   It needs its own border and caret: md-editor-rt's toolbar item supplies
+   neither, so without these the notebook name is bare text floating over the
+   editor with nothing marking it as something you can click. */
+.notebook-picker-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 160px;
+  padding: 2px 8px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  background: var(--panel-bg);
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.notebook-picker-trigger .notebook-picker-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* The caret is the part that says "there is more behind this". */
+.notebook-picker-trigger::after {
+  content: '▾';
+  font-size: 10px;
+  color: var(--muted);
+  flex: none;
+}
+
+.md-editor-toolbar-item:hover .notebook-picker-trigger {
+  border-color: var(--accent);
+  background: var(--hover);
+}
+
+/* A disabled control still has to read as a control, because on a read-only or
+   trashed note it is the only thing saying which notebook the note is in. */
+.md-editor-toolbar-item-disabled .notebook-picker-trigger,
+.notebook-picker-trigger[aria-disabled='true'] {
+  color: var(--muted);
+  border-style: dashed;
+  background: transparent;
+}
+
+.notebook-picker {
+  list-style: none;
+  margin: 0;
+  padding: 4px;
+  max-height: 320px;
+  overflow-y: auto;
+  min-width: 180px;
+}
+
+.notebook-picker-option {
+  display: block;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  padding: 5px 10px;
+  border-radius: 6px;
+  text-align: left;
+  cursor: pointer;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.notebook-picker-option:hover {
+  background: var(--hover);
+}
+
+.notebook-picker-option.selected {
+  background: var(--accent-soft);
+  font-weight: 600;
+}
+
+.trashed-badge {
+  color: var(--danger);
+  border-color: currentColor;
+}
+
 .readonly-badge {
   font-size: 12px;
   font-weight: 600;
   color: var(--muted);
   background: var(--chip-bg);
   border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  padding: 2px 10px;
+  white-space: nowrap;
+}
+
+/* Same chip shape as the read-only badge, in the accent colour: it reports a
+   state the reader can act on rather than one they cannot change. */
+.unsaved-badge {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid currentColor;
   border-radius: 10px;
   padding: 2px 10px;
   white-space: nowrap;
@@ -525,6 +1265,45 @@ body.splitter-dragging {
   text-decoration: underline;
 }
 
+/* ---- Local graph ----
+   A short grouped list, not a canvas. Sized to sit inside the note inspector
+   without pushing the links below it off the pane, and scrolling on its own
+   when a note turns out to be well connected. */
+.local-graph {
+  margin: 8px 0 10px;
+}
+
+.local-graph-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.local-graph-depth {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.85em;
+}
+
+.local-graph-group ul {
+  margin: 2px 0 8px;
+  padding-left: 18px;
+  max-height: 12rem;
+  overflow-y: auto;
+}
+
+.local-graph-group button {
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+  text-decoration: underline;
+}
+
 /* ---- Preview pane ---- */
 
 .preview-pane {
@@ -632,4 +1411,437 @@ body.splitter-dragging {
   color: var(--muted);
   font-weight: 400;
   font-size: 12px;
+}
+
+/* Editor link intelligence (v0.5 E5): the link picker and the buffer check
+   list, both inside the note inspector rather than overlaid on the editor —
+   md-editor-rt gives no source positions to anchor an overlay to. */
+.link-intelligence {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0.5rem 0;
+}
+
+.link-picker-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.link-picker-field input {
+  padding: 0.3rem 0.4rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--panel-bg);
+  color: var(--text);
+}
+
+.link-picker-results {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 12rem;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+.link-picker-results li {
+  display: flex;
+  align-items: baseline;
+  gap: 0.25rem;
+  padding: 0.15rem 0.35rem;
+}
+
+.link-picker-results button {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--accent);
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+}
+
+.link-picker-results button:hover,
+.link-picker-results button:focus-visible {
+  text-decoration: underline;
+}
+
+/* Embedded query blocks (v0.5 E7). The block keeps its place in the note while
+   it runs, so the surrounding text never reflows when results arrive. */
+.note-query {
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 4px;
+  padding: 0.5rem 0.7rem;
+  margin: 0.75rem 0;
+  background: var(--panel-bg);
+}
+
+.note-query-status,
+.note-query-truncated {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.note-query-error {
+  color: #d93025;
+  font-size: 0.85rem;
+}
+
+.note-query-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.note-query-row {
+  padding: 0.15rem 0;
+}
+
+.note-query-title {
+  color: var(--accent);
+}
+
+.note-query-meta {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.note-query-snippet {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin-left: 0.5rem;
+}
+
+/* Mermaid diagrams (v0.8 H2). The source stays reachable under every diagram,
+   and a failed diagram keeps its fenced block with a status line above it. */
+.mermaid-diagram {
+  margin: 1rem 0;
+}
+
+.mermaid-diagram-svg {
+  /* A wide diagram scrolls inside its own figure rather than pushing the note
+     sideways; the sanitiser already sets width="100%" on the svg. */
+  overflow-x: auto;
+}
+
+.mermaid-diagram-svg svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.mermaid-diagram-source {
+  margin-top: 0.35rem;
+}
+
+.mermaid-diagram-source summary {
+  cursor: pointer;
+  font-size: 0.85em;
+  opacity: 0.75;
+}
+
+.mermaid-diagram-source pre {
+  margin-top: 0.35rem;
+}
+
+/* Shown above a block that stayed as source, so the reader is told why rather
+   than left wondering whether the diagram is still loading. */
+.mermaid-diagram-note {
+  margin: 0.5rem 0 0.25rem;
+  font-size: 0.9em;
+  opacity: 0.85;
+}
+
+/* The tag control in the editor toolbar.
+ *
+ * It sits beside the notebook control and is styled to match it, because the
+ * two answer the same kind of question about the note in front of you. The
+ * overlay carries its own background: md-editor-rt's dropdown does not supply
+ * one, and the first capture of this control photographed the note body showing
+ * through the panel. */
+.tag-editor-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 6px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  white-space: nowrap;
+}
+
+.md-editor-toolbar-item-disabled .tag-editor-trigger,
+.tag-editor-trigger[aria-disabled='true'] {
+  color: var(--muted);
+  border-style: dashed;
+  background: transparent;
+}
+
+.tag-editor {
+  min-width: 220px;
+  max-width: 320px;
+  padding: 8px;
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 6px 18px var(--shadow);
+}
+
+.tag-editor-list {
+  list-style: none;
+  margin: 0 0 8px;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  max-height: 160px;
+  overflow-y: auto;
+}
+
+/* A chip per tag, each with its own remove button. A comma-separated text field
+ * would make removing one tag an exercise in careful deletion, and would turn a
+ * stray comma into a tag nobody asked for. */
+.tag-editor-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 4px 1px 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 0.8rem;
+  background: var(--chip-bg);
+}
+
+.tag-editor-remove {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.95rem;
+  line-height: 1;
+  padding: 0 2px;
+}
+
+.tag-editor-remove:hover {
+  color: var(--danger);
+}
+
+.tag-editor-empty {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.tag-editor-add {
+  display: flex;
+  gap: 4px;
+}
+
+.tag-editor-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 3px 6px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: inherit;
+  font-size: 0.85rem;
+}
+
+.tag-editor-submit {
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: inherit;
+  padding: 3px 10px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.tag-editor-submit:disabled {
+  color: var(--muted);
+  cursor: default;
+}
+
+/* About is a small dialog rather than a workspace-sized one: it holds a dozen
+   lines and two buttons, and sizing it like the sync centre would make a short
+   report look like a missing page. */
+.about-dialog {
+  width: min(560px, 100%);
+  display: grid;
+  gap: 14px;
+  padding: 22px;
+  border: 1px solid var(--border-strong);
+  border-radius: 18px;
+  background: var(--panel-bg);
+  box-shadow: 0 6px 18px var(--shadow);
+}
+
+.about-report {
+  margin: 0;
+  padding: 12px 14px;
+  overflow-x: auto;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  background: var(--chip-bg);
+  color: var(--text);
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: pre;
+}
+
+/* Keeping a search sits between the results and the query that produced them,
+   because that is where the decision is made: the results are on screen, and
+   the query has been watched working. */
+.keep-search-button {
+  margin: 0 0 8px;
+  padding: 6px 10px;
+  border: 1px dashed var(--border-strong);
+  border-radius: 8px;
+  color: var(--muted);
+  background: transparent;
+  cursor: pointer;
+  font-size: 12px;
+  text-align: left;
+}
+
+.keep-search-button:hover {
+  color: var(--text);
+  border-style: solid;
+}
+
+.keep-search-form {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 10px;
+  padding: 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  background: var(--panel-bg);
+}
+
+.keep-search-form label {
+  display: grid;
+  gap: 4px;
+  font-size: 12px;
+}
+
+.keep-search-query {
+  margin: 0;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+/* The rename report. Merges are called out because a merge is not a rename:
+   the destination already exists and afterwards the two tags are one. */
+.tag-rename-report {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  background: var(--chip-bg);
+  font-size: 12px;
+}
+
+.tag-rename-report p { margin: 0 0 6px; }
+.tag-rename-report ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+.tag-rename-merge { color: var(--accent); font-weight: 600; }
+
+.tag-rename-warnings {
+  margin-top: 8px !important;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-strong);
+  color: var(--muted);
+}
+
+/* Warnings about a report, not findings inside it. Borrowing the rename
+   dialog's indented list put them under the last check, where they read as one
+   more finding of that check rather than as a note on the whole thing. */
+.report-warnings {
+  margin: 10px 0 0;
+  padding: 8px 10px;
+  list-style: none;
+  border-left: 3px solid var(--accent);
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* The lint summary: one line per check that found something, count first,
+   because the count is what decides whether it is worth looking at. */
+.health-checks {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 4px;
+  font-size: 13px;
+}
+
+/* The reviewed digest and the equivalent command. Small, monospaced and
+   selectable: somebody who would rather publish from a terminal needs to copy
+   the digest exactly, and retyping a sha256 is not a reasonable ask. */
+.publish-digest,
+.publish-command {
+  margin: 8px 0 0;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+  user-select: text;
+}
+
+/* A result row is the checkbox plus the card, because one interactive control
+   cannot be nested inside another and stay reachable. The card keeps all the
+   width it had; the checkbox is the only thing added to the line. */
+.result-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+}
+.result-row > .result-card {
+  flex: 1;
+  min-width: 0;
+}
+.result-check {
+  margin-top: 0.9rem;
+  flex: none;
+}
+
+/* The selection panel takes the room the editor and the preview gave up,
+   because with several notes chosen there is no one note to show in either. */
+.selection-pane {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  padding: 0.75rem 1rem;
+}
+.selection-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+.selection-list {
+  margin: 0 0 1rem;
+  padding-left: 1.1rem;
+  max-height: 12rem;
+  overflow-y: auto;
+}
+.selection-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.6rem;
+}
+/* Buttons here size to their words. Stretched across the pane, Move read as a
+   banner rather than as the thing you press. */
+.selection-actions > button {
+  align-self: flex-start;
+}
+.selection-report ul,
+.selection-report code {
+  font-size: 0.85em;
 }

@@ -1,0 +1,184 @@
+{
+  "generated_at": "2026-08-06T02:13:42Z",
+  "document_count": 10000,
+  "resource_count": 100,
+  "physical_blob_count": 10,
+  "link_count": 20000,
+  "block_count": 61200,
+  "lint_findings": 200,
+  "database_bytes": 11517952,
+  "database_bytes_with_scale_blocks": 25186304,
+  "peak_rss_bytes": 26066944,
+  "environment": {
+    "goos": "linux",
+    "goarch": "amd64",
+    "go_version": "go1.26.5",
+    "sqlite_version": "3.45.1",
+    "cpu_model": "Intel(R) Core(TM) i5-9300H CPU @ 2.40GHz"
+  },
+  "metrics": {
+    "all_notes_90_percent_deep_page": {
+      "iterations": 30,
+      "p50_ms": 2.482,
+      "p95_ms": 3.887,
+      "max_ms": 3.97,
+      "items": 100
+    },
+    "all_notes_first_page": {
+      "iterations": 30,
+      "p50_ms": 1.575,
+      "p95_ms": 2.614,
+      "max_ms": 2.62,
+      "items": 100
+    },
+    "all_notes_next_page": {
+      "iterations": 30,
+      "p50_ms": 1.913,
+      "p95_ms": 3.399,
+      "max_ms": 3.928,
+      "items": 100
+    },
+    "blocks_document_save": {
+      "iterations": 200,
+      "p50_ms": 3.056,
+      "p95_ms": 3.056,
+      "max_ms": 611.218,
+      "items": 200
+    },
+    "blocks_list_one_document": {
+      "iterations": 30,
+      "p50_ms": 0.284,
+      "p95_ms": 0.34,
+      "max_ms": 0.402,
+      "items": 6
+    },
+    "blocks_list_one_document_at_scale": {
+      "iterations": 30,
+      "p50_ms": 0.101,
+      "p95_ms": 0.155,
+      "max_ms": 0.155,
+      "items": 6
+    },
+    "blocks_rebuild_one_document": {
+      "iterations": 10,
+      "p50_ms": 0.781,
+      "p95_ms": 1.173,
+      "max_ms": 1.173,
+      "items": 6
+    },
+    "blocks_resolve_anchor": {
+      "iterations": 30,
+      "p50_ms": 0.13,
+      "p95_ms": 0.217,
+      "max_ms": 0.381,
+      "items": 1
+    },
+    "blocks_resolve_anchor_at_scale": {
+      "iterations": 30,
+      "p50_ms": 0.135,
+      "p95_ms": 0.25,
+      "max_ms": 0.362,
+      "items": 1
+    },
+    "blocks_scale_seed": {
+      "iterations": 1,
+      "p50_ms": 7258.628,
+      "p95_ms": 7258.629,
+      "max_ms": 7258.629,
+      "items": 60000
+    },
+    "boolean_negated_field_first_page": {
+      "iterations": 15,
+      "p50_ms": 146.772,
+      "p95_ms": 290.918,
+      "max_ms": 290.918,
+      "items": 100
+    },
+    "boolean_text_or_first_page": {
+      "iterations": 15,
+      "p50_ms": 1.225,
+      "p95_ms": 1.483,
+      "max_ms": 1.483,
+      "items": 2
+    },
+    "category_alias_first_page": {
+      "iterations": 30,
+      "p50_ms": 1.531,
+      "p95_ms": 2.498,
+      "max_ms": 2.852,
+      "items": 100
+    },
+    "export_cursor_stream": {
+      "iterations": 1,
+      "p50_ms": 232.718,
+      "p95_ms": 232.718,
+      "max_ms": 232.718,
+      "items": 10000
+    },
+    "fts_nonselective_first_page": {
+      "iterations": 5,
+      "p50_ms": 19.283,
+      "p95_ms": 22.569,
+      "max_ms": 22.569,
+      "items": 100
+    },
+    "fts_selective_first_page": {
+      "iterations": 15,
+      "p50_ms": 0.616,
+      "p95_ms": 1.248,
+      "max_ms": 1.248,
+      "items": 1
+    },
+    "lint_full_workspace": {
+      "iterations": 1,
+      "p50_ms": 344.278,
+      "p95_ms": 344.278,
+      "max_ms": 344.278,
+      "items": 200
+    },
+    "notebook_filter_first_page": {
+      "iterations": 30,
+      "p50_ms": 1.695,
+      "p95_ms": 2.644,
+      "max_ms": 2.873,
+      "items": 100
+    },
+    "selection_full_archive_plan": {
+      "iterations": 1,
+      "p50_ms": 1067.748,
+      "p95_ms": 1067.748,
+      "max_ms": 1067.748,
+      "items": 10000
+    },
+    "synthetic_import_batch_seed": {
+      "iterations": 1,
+      "p50_ms": 8253.669,
+      "p95_ms": 8253.669,
+      "max_ms": 8253.669,
+      "items": 10000
+    },
+    "tag_filter_first_page": {
+      "iterations": 30,
+      "p50_ms": 4.071,
+      "p95_ms": 5.386,
+      "max_ms": 10.59,
+      "items": 100
+    }
+  },
+  "query_plans": {
+    "all_notes": [
+      "SEARCH documents USING COVERING INDEX documents_collection_state_updated_idx (collection_id=? AND deleted_at=?)"
+    ],
+    "blocks_by_document": [
+      "SEARCH document_blocks USING INDEX document_blocks_document_idx (document_id=?)"
+    ],
+    "notebook": [
+      "SEARCH documents USING COVERING INDEX documents_notebook_state_updated_idx (notebook_id=? AND deleted_at=?)"
+    ],
+    "tag_membership": [
+      "SEARCH note_tags USING COVERING INDEX note_tags_tag_document_idx (tag_id=?)"
+    ]
+  },
+  "ordinary_page_target_p95_ms": 100,
+  "ordinary_page_target_met": true
+}

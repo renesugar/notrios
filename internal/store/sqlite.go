@@ -1,8 +1,7 @@
 package store
 
 /*
-#cgo pkg-config: sqlite3
-#include <sqlite3.h>
+#include "csqlite/sqlite3.h"
 #include <stdlib.h>
 
 static int notes_sqlite_bind_text(sqlite3_stmt *stmt, int idx, char *value) {
@@ -16,6 +15,7 @@ import (
 	"crypto/sha256"
 	"embed"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
 	"mime"
@@ -29,9 +29,20 @@ import (
 	"unsafe"
 
 	"github.com/renesugar/notrios/internal/markdownlinks"
+	"github.com/renesugar/notrios/internal/stablelink"
 )
 
-//go:embed migrations/0001_initial.sql
+// ErrPhysicalRestoreInProgress prevents a service or ordinary CLI command from
+// opening a database while a G14d multi-file cutover is between durable
+// boundaries. The restore coordinator removes the adjacent marker only after
+// both the database and asset tree are installed.
+var ErrPhysicalRestoreInProgress = errors.New("physical snapshot restore is in progress")
+
+// PhysicalRestoreMarkerPath is deliberately derived from the configured local
+// database path. It is never accepted from a peer or exposed through MCP.
+func PhysicalRestoreMarkerPath(path string) string { return path + ".notrios-restore-in-progress" }
+
+//go:embed migrations/*.sql
 var migrationFS embed.FS
 
 // SQLiteStore is a small cgo-backed SQLite adapter. It is intentionally narrow
@@ -42,22 +53,70 @@ type SQLiteStore struct {
 	db        *C.sqlite3
 	path      string
 	assetRoot string
+	// cachedDatabaseID memoizes the logical database ID. Link resolution
+	// consults it once per link in a batch import, and the value changes only
+	// through the explicit identity operations, which clear it.
+	cachedDatabaseID   string
+	perceptualHashHook PerceptualHashHook
+	// assetPolicy is the G8 materialization policy. It is a field rather than
+	// a config read so a replica that intends to be a complete copy can say so
+	// without a config file, and it is normalized on use.
+	assetPolicy string
+	// lastMigration records a schema migration performed by this open, so a
+	// caller can tell the user it happened. Nil when nothing was migrated.
+	lastMigration *MigrationReport
 }
+
+// AssetRoot returns the configured local store root for internal bulk
+// operations. It is never exposed through REST or MCP and is not accepted from
+// a peer.
+func (s *SQLiteStore) AssetRoot() string { return s.assetRoot }
 
 func OpenSQLite(path string) (*SQLiteStore, error) {
 	return OpenSQLiteWithAssetStore(path, defaultAssetRoot(path))
 }
 
 func OpenSQLiteWithAssetStore(path, assetRoot string) (*SQLiteStore, error) {
+	return openSQLiteWithAssetStore(path, assetRoot, false)
+}
+
+// OpenSQLiteWithAssetStoreForRestore is only for the physical-restore
+// coordinator after it has installed both paths but before it removes the
+// startup blocker. Ordinary callers must use OpenSQLiteWithAssetStore.
+func OpenSQLiteWithAssetStoreForRestore(path, assetRoot string) (*SQLiteStore, error) {
+	return openSQLiteWithAssetStore(path, assetRoot, true)
+}
+
+func openSQLiteWithAssetStore(path, assetRoot string, allowRestore bool) (*SQLiteStore, error) {
 	if strings.TrimSpace(assetRoot) == "" {
 		assetRoot = defaultAssetRoot(path)
 	}
 	if path != ":memory:" {
-		if err := os.MkdirAll(parentDir(path), 0o755); err != nil {
+		if _, err := os.Lstat(PhysicalRestoreMarkerPath(path)); err == nil && !allowRestore {
+			return nil, fmt.Errorf("%w: run the same local restore command to resume", ErrPhysicalRestoreInProgress)
+		} else if err != nil && !errors.Is(err, os.ErrNotExist) {
+			return nil, err
+		}
+		// Undo an unfinished migration before anything opens the database.
+		//
+		// This is the only point where putting the old file back is safe: no
+		// handle is held, no write-ahead log is being replayed, and the copy
+		// being restored was verified when it was made.
+		if marker, found, err := readMigrationMarker(path); err != nil {
+			return nil, err
+		} else if found {
+			if _, err := rollBackIncompleteMigration(path); err != nil {
+				return nil, err
+			}
+			return nil, migrationRolledBackError(marker, path)
+		}
+		// Owner-only: this directory holds the user's library. It used to be
+		// 0755 while every backup of the same data was 0700.
+		if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 			return nil, err
 		}
 	}
-	if err := os.MkdirAll(assetRoot, 0o755); err != nil {
+	if err := os.MkdirAll(assetRoot, 0o700); err != nil {
 		return nil, err
 	}
 	cpath := C.CString(path)
@@ -88,22 +147,25 @@ func contextOrBackground(ctx context.Context) context.Context {
 	return ctx
 }
 
+// defaultAssetRoot places the asset store beside the database.
+//
+// The :memory: case used to return one fixed os.TempDir()/notrios-assets,
+// shared by every user and every instance on the machine: two instances
+// collided, and on a multi-user machine the name was guessable and the
+// directory belonged to whoever created it first. It is now a private
+// per-process directory, owner-only, which is what a database that exists only
+// for the life of this process should have.
 func defaultAssetRoot(path string) string {
 	if path == ":memory:" || strings.TrimSpace(path) == "" {
-		return filepath.Join(os.TempDir(), "notrios-assets")
+		root, err := os.MkdirTemp("", "notrios-assets-")
+		if err != nil {
+			// Falling back to the shared name is worse than failing loudly
+			// later; an unwritable temp directory will surface on first use.
+			return filepath.Join(os.TempDir(), "notrios-assets")
+		}
+		return root
 	}
-	return filepath.Join(parentDir(path), "assets")
-}
-
-func parentDir(path string) string {
-	idx := strings.LastIndex(path, "/")
-	if idx < 0 {
-		return "."
-	}
-	if idx == 0 {
-		return "/"
-	}
-	return path[:idx]
+	return filepath.Join(filepath.Dir(path), "assets")
 }
 
 func (s *SQLiteStore) Close() error {
@@ -119,8 +181,152 @@ func (s *SQLiteStore) Close() error {
 	return nil
 }
 
+// ErrSchemaTooNew means the database was written by a newer Notrios than this
+// one. Opening it would be destructive, so it is refused.
+var ErrSchemaTooNew = errors.New("database schema is newer than this build supports")
+
 func (s *SQLiteStore) Bootstrap(ctx context.Context) error {
 	ctx = contextOrBackground(ctx)
+
+	// Refuse a database from the future before touching it.
+	//
+	// Migrations are forward-only and mostly idempotent, so meeting an older
+	// database is routine: every ensureSchemaVn step brings it forward. Meeting
+	// a *newer* one is not, and the failure was silent and destructive.
+	// ensureSchemaV4 through V18 are unguarded -- they run unconditionally and
+	// end with `PRAGMA user_version = n` -- so an older binary opening a newer
+	// database re-ran fifteen old migrations against a schema it did not
+	// understand and then rewrote the recorded version *downward*, destroying
+	// the evidence that the database had ever been newer. It reported success.
+	//
+	// That is harmless today only because those old steps are all
+	// CREATE ... IF NOT EXISTS. It stops being harmless the first time a
+	// migration renames or drops something an old step assumes, and by then the
+	// version rewrite means the next run cannot detect what happened.
+	//
+	// The check reads the version once, before any step runs. A fresh database
+	// reports 0 and is unaffected.
+	s.mu.Lock()
+	existing, versionErr := s.pragmaUserVersionLocked()
+	s.mu.Unlock()
+	if versionErr != nil {
+		return versionErr
+	}
+	if existing > CurrentSchemaVersion {
+		return schemaTooNewError(existing)
+	}
+
+	// An existing database that is behind is about to be rewritten in place, on
+	// what is very likely the user's only copy. Back it up first, under a lock,
+	// so a second process cannot open it mid-migration.
+	//
+	// A fresh database reports 0 and is skipped: there is nothing yet to lose,
+	// and backing up an empty file would leave a directory of nothing beside
+	// every new library.
+	if existing > 0 && existing < CurrentSchemaVersion && !s.isTransient() {
+		return s.migrateUnderLock(ctx, existing)
+	}
+
+	return s.applySchema(ctx)
+}
+
+// isTransient reports a database that cannot be a user's library.
+//
+// An in-memory database exists only for the life of the process: there is
+// nothing to lose, nowhere beside it to keep a copy, and no second process that
+// could open it. Backing one up is not merely wasteful, it is impossible, and
+// refusing to migrate it would make every in-memory store unusable the moment
+// its recorded version was behind.
+func (s *SQLiteStore) isTransient() bool {
+	return strings.TrimSpace(s.path) == "" || s.path == ":memory:"
+}
+
+func schemaTooNewError(existing int) error {
+	return fmt.Errorf(
+		"%w: the database records schema version %d and this build supports %d.\n"+
+			"It was written by a newer Notrios. Upgrade Notrios rather than opening it with this build:\n"+
+			"continuing would re-run old migrations against a schema this build does not understand\n"+
+			"and record the wrong version, which would hide that it ever happened.",
+		ErrSchemaTooNew, existing, CurrentSchemaVersion)
+}
+
+// migrateUnderLock backs the database up, then migrates it, holding the
+// migration lock for both.
+func (s *SQLiteStore) migrateUnderLock(ctx context.Context, existing int) error {
+	lock, err := acquireMigrationLock(s.path)
+	if err != nil {
+		return err
+	}
+	defer lock.release()
+
+	// Re-read the version now the lock is held. Another process may have
+	// finished migrating between our first read and this claim, and migrating
+	// again -- or worse, backing up again -- on the strength of a stale reading
+	// is exactly what the lock is for.
+	s.mu.Lock()
+	current, versionErr := s.pragmaUserVersionLocked()
+	s.mu.Unlock()
+	if versionErr != nil {
+		return versionErr
+	}
+	if current > CurrentSchemaVersion {
+		return schemaTooNewError(current)
+	}
+	if current >= CurrentSchemaVersion {
+		// Someone else did it. Nothing will be raised, so nothing is backed up.
+		return s.applySchema(ctx)
+	}
+
+	report, err := s.backupBeforeMigration(ctx, current, CurrentSchemaVersion, time.Now())
+	if err != nil {
+		return err
+	}
+
+	// Record that a migration is owed *before* the first statement runs. If
+	// this process dies part-way, the next open finds the marker and undoes the
+	// migration from the copy it names -- at a moment when nothing holds the
+	// database open, which is what makes an automatic undo safe at all.
+	marker := MigrationMarker{
+		FromVersion: current,
+		ToVersion:   CurrentSchemaVersion,
+		Database:    s.path,
+		BackupDir:   report.BackupDir,
+		SHA256:      report.SHA256,
+		StartedAt:   report.At,
+	}
+	if err := writeMigrationMarker(s.path, marker); err != nil {
+		return fmt.Errorf("%w: recording the migration in %s: %v",
+			ErrBackupFailed, MigrationMarkerPath(s.path), err)
+	}
+
+	if err := s.applySchema(ctx); err != nil {
+		// The marker is deliberately left behind. It is the instruction to the
+		// next open to put this database back, and removing it here -- in the
+		// process that has just failed, with the database still open -- is
+		// exactly the unsafe repair this design avoids.
+		return fmt.Errorf("%w: migrating from schema %d to %d: %v\n\n"+
+			"The database may be partly migrated. A verified copy of it as it was before\n"+
+			"this attempt is in %s.\n"+
+			"Start Notrios again and it will put that copy back automatically before\n"+
+			"opening anything.",
+			ErrMigrationFailed, current, CurrentSchemaVersion, err, report.BackupDir)
+	}
+
+	// Migration finished, so the undo is no longer owed.
+	if err := clearMigrationMarker(s.path); err != nil {
+		return err
+	}
+
+	s.mu.Lock()
+	s.lastMigration = &report
+	s.mu.Unlock()
+	pruneOldBackups(PreMigrationBackupRoot(s.path), report.BackupDir)
+	return nil
+}
+
+// applySchema runs every forward step. It is idempotent: a database already at
+// the current version passes through it unchanged.
+func (s *SQLiteStore) applySchema(ctx context.Context) error {
 	migration, err := migrationFS.ReadFile("migrations/0001_initial.sql")
 	if err != nil {
 		return fmt.Errorf("read migration: %w", err)
@@ -140,16 +346,84 @@ func (s *SQLiteStore) Bootstrap(ctx context.Context) error {
 	if err := s.ensureSchemaV7(ctx); err != nil {
 		return err
 	}
+	if err := s.ensureSchemaV8(ctx); err != nil {
+		return err
+	}
+	if err := s.ensureSchemaV9(ctx); err != nil {
+		return err
+	}
+	if err := s.ensureSchemaV10(ctx); err != nil {
+		return err
+	}
+	if err := s.ensureSchemaV11(ctx); err != nil {
+		return err
+	}
+	if err := s.ensureSchemaV12(ctx); err != nil {
+		return err
+	}
+	if err := s.ensureSchemaV13(ctx); err != nil {
+		return err
+	}
+	if err := s.ensureSchemaV14(ctx); err != nil {
+		return err
+	}
+	if err := s.ensureSchemaV15(ctx); err != nil {
+		return err
+	}
+	if err := s.ensureSchemaV16(ctx); err != nil {
+		return err
+	}
+	if err := s.ensureSchemaV17(ctx); err != nil {
+		return err
+	}
+	if err := s.ensureSchemaV18(ctx); err != nil {
+		return err
+	}
+	if err := s.ensureSchemaV19(ctx); err != nil {
+		return err
+	}
+	if err := s.ensureSchemaV20(ctx); err != nil {
+		return err
+	}
+	if err := s.ensureSchemaV21(ctx); err != nil {
+		return err
+	}
+	if err := s.ensureSchemaV22(ctx); err != nil {
+		return err
+	}
+	if err := s.ensureSchemaV23(ctx); err != nil {
+		return err
+	}
+	if err := s.ensureSchemaV24(ctx); err != nil {
+		return err
+	}
+	if err := s.ensureSchemaV25(ctx); err != nil {
+		return err
+	}
+	if err := s.ensureSchemaV26(ctx); err != nil {
+		return err
+	}
+	if err := s.ensureSchemaV27(ctx); err != nil {
+		return err
+	}
+	if err := s.ensureDatabaseIdentity(ctx); err != nil {
+		return err
+	}
 	if err := s.Exec(ctx, `INSERT OR IGNORE INTO collections(id, name, description) VALUES('default', 'Default', 'Managed notes created by the companion service.');`); err != nil {
 		return err
 	}
-	return s.seedNotebooks(ctx)
+	if err := s.seedNotebooks(ctx); err != nil {
+		return err
+	}
+	return s.ensureSyncMetadataBaseline(ctx)
 }
 
 func (s *SQLiteStore) seedNotebooks(ctx context.Context) error {
 	statements := []string{
 		`INSERT OR IGNORE INTO notebooks(id, parent_id, name, icon_emoji, builtin) VALUES('` + DefaultNotebookID + `', NULL, 'Notes', '', 0);`,
+		`INSERT OR IGNORE INTO notebooks(id, parent_id, name, icon_emoji, builtin) VALUES('` + ReportsNotebookID + `', NULL, 'Reports', '', 1);`,
 		`INSERT OR IGNORE INTO notebooks(id, parent_id, name, icon_emoji, builtin) VALUES('` + HelpNotebookID + `', NULL, 'Help', '', 1);`,
+		`INSERT OR IGNORE INTO notebooks(id, parent_id, name, icon_emoji, builtin) VALUES('` + RecoveredNotebookID + `', NULL, 'Recovered', '', 1);`,
 		`INSERT OR IGNORE INTO search_notebooks(id, name, icon_emoji, query, builtin, sort_anchor) VALUES('` + AllNotesSearchNotebookID + `', 'All notes', '', '', 1, 'first');`,
 		`INSERT OR IGNORE INTO search_notebooks(id, name, icon_emoji, query, builtin, sort_anchor) VALUES('` + TrashSearchNotebookID + `', 'Trash', '', 'is:trashed', 1, 'last');`,
 		`UPDATE documents SET notebook_id = '` + DefaultNotebookID + `' WHERE notebook_id IS NULL;`,
@@ -248,6 +522,415 @@ func (s *SQLiteStore) ensureSchemaV7(ctx context.Context) error {
 	return nil
 }
 
+// ensureSchemaV8 adds retention state for logical resources. Existing
+// unreferenced resources start their retention clock at their original
+// creation time; referenced resources remain explicitly ineligible.
+func (s *SQLiteStore) ensureSchemaV8(ctx context.Context) error {
+	statements := []string{
+		`ALTER TABLE resources ADD COLUMN unreferenced_at TEXT;`,
+		`ALTER TABLE resources ADD COLUMN unreferenced_reason TEXT NOT NULL DEFAULT '';`,
+		`CREATE INDEX IF NOT EXISTS resources_unreferenced_idx ON resources(unreferenced_at);`,
+		`UPDATE resources
+		 SET unreferenced_at = COALESCE(unreferenced_at, created_at),
+		     unreferenced_reason = CASE WHEN unreferenced_reason = '' THEN 'legacy_unreferenced' ELSE unreferenced_reason END
+		 WHERE NOT EXISTS (SELECT 1 FROM document_resource_refs rr WHERE rr.resource_id = resources.id);`,
+		`UPDATE resources
+		 SET unreferenced_at = NULL, unreferenced_reason = ''
+		 WHERE EXISTS (SELECT 1 FROM document_resource_refs rr WHERE rr.resource_id = resources.id);`,
+		`PRAGMA user_version = 8;`,
+	}
+	for _, statement := range statements {
+		if err := s.Exec(ctx, statement); err != nil {
+			if strings.Contains(err.Error(), "duplicate column name") {
+				continue
+			}
+			return err
+		}
+	}
+	return nil
+}
+
+// ensureSchemaV9 adds the composite indexes used by H7 keyset traversal.
+func (s *SQLiteStore) ensureSchemaV9(ctx context.Context) error {
+	statements := []string{
+		`CREATE INDEX IF NOT EXISTS documents_collection_state_updated_idx
+			ON documents(collection_id, deleted_at, updated_at DESC, id DESC);`,
+		`CREATE INDEX IF NOT EXISTS documents_notebook_state_updated_idx
+			ON documents(notebook_id, deleted_at, updated_at DESC, id DESC);`,
+		`CREATE INDEX IF NOT EXISTS documents_trash_deleted_idx
+			ON documents(deleted_at DESC, id DESC)
+			WHERE deleted_at IS NOT NULL;`,
+		`CREATE INDEX IF NOT EXISTS note_tags_tag_document_idx
+			ON note_tags(tag_id, document_id);`,
+		`PRAGMA user_version = 9;`,
+	}
+	for _, statement := range statements {
+		if err := s.Exec(ctx, statement); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// ensureSchemaV10 adds durable, input-scoped importer checkpoints and exact
+// source-bundle manifests. Source bytes are stored beneath the asset root.
+func (s *SQLiteStore) ensureSchemaV10(ctx context.Context) error {
+	statements := []string{
+		`CREATE TABLE IF NOT EXISTS import_checkpoints (
+			source_system TEXT NOT NULL,
+			source_key TEXT NOT NULL,
+			collection_id TEXT NOT NULL,
+			inventory_fingerprint TEXT NOT NULL,
+			phase TEXT NOT NULL,
+			next_index INTEGER NOT NULL DEFAULT 0,
+			total_items INTEGER NOT NULL DEFAULT 0,
+			processed_items INTEGER NOT NULL DEFAULT 0,
+			status TEXT NOT NULL,
+			report_json TEXT NOT NULL DEFAULT '{}',
+			updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			completed_at TEXT,
+			PRIMARY KEY(source_system, source_key, collection_id)
+		);`,
+		`CREATE TABLE IF NOT EXISTS import_item_states (
+			source_system TEXT NOT NULL,
+			source_key TEXT NOT NULL,
+			collection_id TEXT NOT NULL,
+			item_key TEXT NOT NULL,
+			item_type TEXT NOT NULL,
+			fingerprint TEXT NOT NULL,
+			target_id TEXT,
+			action TEXT NOT NULL,
+			processed_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			PRIMARY KEY(source_system, source_key, collection_id, item_key)
+		);`,
+		`CREATE INDEX IF NOT EXISTS import_item_states_type_idx
+			ON import_item_states(source_system, source_key, collection_id, item_type, item_key);`,
+		`CREATE TABLE IF NOT EXISTS source_bundle_items (
+			source_system TEXT NOT NULL,
+			source_key TEXT NOT NULL,
+			collection_id TEXT NOT NULL,
+			item_key TEXT NOT NULL,
+			item_type TEXT NOT NULL,
+			external_id TEXT NOT NULL,
+			relative_path TEXT NOT NULL,
+			sha256 TEXT NOT NULL,
+			size_bytes INTEGER NOT NULL,
+			storage_path TEXT NOT NULL,
+			property_order_json TEXT NOT NULL DEFAULT '[]',
+			updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			PRIMARY KEY(source_system, source_key, collection_id, item_key)
+		);`,
+		`CREATE INDEX IF NOT EXISTS source_bundle_items_hash_idx
+			ON source_bundle_items(sha256);`,
+		`PRAGMA user_version = 10;`,
+	}
+	for _, statement := range statements {
+		if err := s.Exec(ctx, statement); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// ensureSchemaV11 adds durable exponential retry scheduling for projection
+// jobs. The projection and Recoll index remain reconstructible derived state.
+func (s *SQLiteStore) ensureSchemaV11(ctx context.Context) error {
+	statements := []string{
+		`ALTER TABLE index_outbox ADD COLUMN next_attempt_at TEXT;`,
+		`CREATE INDEX IF NOT EXISTS index_outbox_pending_idx
+			ON index_outbox(completed_at, next_attempt_at, sequence);`,
+		`PRAGMA user_version = 11;`,
+	}
+	for _, statement := range statements {
+		if err := s.Exec(ctx, statement); err != nil {
+			if strings.Contains(err.Error(), "duplicate column name") {
+				continue
+			}
+			return err
+		}
+	}
+	return nil
+}
+
+// ensureSchemaV12 adds the persisted identity row used by native archive v2
+// and later stable links/synchronization. The table is canonical state, not a
+// path-, host-, or projection-derived identifier.
+func (s *SQLiteStore) ensureSchemaV12(ctx context.Context) error {
+	statements := []string{
+		`CREATE TABLE IF NOT EXISTS database_identity (
+			singleton INTEGER PRIMARY KEY CHECK (singleton = 1),
+			database_id TEXT NOT NULL UNIQUE,
+			replica_id TEXT NOT NULL UNIQUE,
+			created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			replica_created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+		);`,
+		`PRAGMA user_version = 12;`,
+	}
+	for _, statement := range statements {
+		if err := s.Exec(ctx, statement); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// ensureSchemaV13 adds the restore-in-progress marker. A restore commits many
+// transactions, so an interruption leaves committed rows behind; this row is
+// what stops that partial library from being mistaken for a complete one.
+func (s *SQLiteStore) ensureSchemaV13(ctx context.Context) error {
+	statements := []string{
+		`CREATE TABLE IF NOT EXISTS restore_state (
+			singleton INTEGER PRIMARY KEY CHECK (singleton = 1),
+			snapshot_id TEXT NOT NULL,
+			commit_sha256 TEXT NOT NULL,
+			intent TEXT NOT NULL,
+			started_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+		);`,
+		`PRAGMA user_version = 13;`,
+	}
+	for _, statement := range statements {
+		if err := s.Exec(ctx, statement); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// ensureSchemaV14 adds content-addressed note blocks. Block rows are derived
+// state: they are rebuilt from the note body in the same transaction as the
+// save that produced them, so an upgrade needs no backfill — the first save of
+// each note fills them in, and `RebuildDocumentBlocks` fills them in for notes
+// nobody edits.
+func (s *SQLiteStore) ensureSchemaV14(ctx context.Context) error {
+	statements := []string{
+		`CREATE TABLE IF NOT EXISTS document_blocks (
+			id TEXT NOT NULL,
+			document_id TEXT NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+			ordinal INTEGER NOT NULL,
+			kind TEXT NOT NULL,
+			heading_level INTEGER NOT NULL DEFAULT 0,
+			marker TEXT,
+			content_sha256 TEXT NOT NULL,
+			start_byte INTEGER NOT NULL,
+			end_byte INTEGER NOT NULL,
+			PRIMARY KEY (document_id, id)
+		);`,
+		`CREATE INDEX IF NOT EXISTS document_blocks_document_idx ON document_blocks(document_id, ordinal);`,
+		`CREATE INDEX IF NOT EXISTS document_blocks_marker_idx ON document_blocks(document_id, marker) WHERE marker IS NOT NULL;`,
+		`PRAGMA user_version = 14;`,
+	}
+	for _, statement := range statements {
+		if err := s.Exec(ctx, statement); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// ensureSchemaV15 adds the heading slug a `#section-title` anchor resolves
+// against. Block rows deliberately store a content hash rather than heading
+// text, so before this column a heading anchor had nothing to compare against.
+// Like every block column it is derived state: a save fills it in, and
+// RebuildDocumentBlocks fills it in for notes nobody edits.
+func (s *SQLiteStore) ensureSchemaV15(ctx context.Context) error {
+	statements := []string{
+		`ALTER TABLE document_blocks ADD COLUMN heading_slug TEXT;`,
+		`CREATE INDEX IF NOT EXISTS document_blocks_slug_idx ON document_blocks(document_id, heading_slug) WHERE heading_slug IS NOT NULL;`,
+		`PRAGMA user_version = 15;`,
+	}
+	for _, statement := range statements {
+		if err := s.Exec(ctx, statement); err != nil {
+			if strings.Contains(err.Error(), "duplicate column name") {
+				continue
+			}
+			return err
+		}
+	}
+	return nil
+}
+
+// ensureSchemaV16 adds the title and filename indexes editor link intelligence
+// needs.
+//
+// Resolving a link by title ran `lower(title) = lower(?)`, which no index can
+// serve: every link that did not name a URI cost a full scan of the document
+// table, once per link, on every save and every lint pass. The comparison moves
+// to the NOCASE collation — identical semantics, since SQLite's `lower()` folds
+// ASCII only, exactly as NOCASE does — so the same lookup becomes an index
+// probe. The collation additionally makes `title LIKE 'prefix%'` a range scan,
+// which is what lets the suggestion endpoint stop after a page instead of
+// reading the library.
+func (s *SQLiteStore) ensureSchemaV16(ctx context.Context) error {
+	statements := []string{
+		`CREATE INDEX IF NOT EXISTS documents_title_idx ON documents(collection_id, deleted_at, title COLLATE NOCASE, id);`,
+		`CREATE INDEX IF NOT EXISTS resources_filename_idx ON resources(collection_id, filename COLLATE NOCASE, id);`,
+		`PRAGMA user_version = 16;`,
+	}
+	for _, statement := range statements {
+		if err := s.Exec(ctx, statement); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// ensureSchemaV17 adds the batch idempotency ledger. A batch is retried exactly
+// when something went wrong, so the record of "this key already ran" has to
+// outlive the process; an in-memory map would forget precisely when it matters.
+func (s *SQLiteStore) ensureSchemaV17(ctx context.Context) error {
+	statements := []string{
+		`CREATE TABLE IF NOT EXISTS batch_operations (
+			request_key TEXT PRIMARY KEY,
+			operation TEXT NOT NULL,
+			mode TEXT NOT NULL,
+			response TEXT NOT NULL,
+			request_sha256 TEXT NOT NULL,
+			created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+		);`,
+		`CREATE INDEX IF NOT EXISTS batch_operations_created_idx ON batch_operations(created_at);`,
+		`PRAGMA user_version = 17;`,
+	}
+	for _, statement := range statements {
+		if err := s.Exec(ctx, statement); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// ensureSchemaV18 adds the job control plane's one table (v0.6 F6).
+//
+// Records persist across a restart; the work does not. There is no queue
+// column, no priority, and no dependency column, because none of those is a
+// job *record* — they are a scheduler, which this deliberately is not.
+func (s *SQLiteStore) ensureSchemaV18(ctx context.Context) error {
+	statements := []string{
+		`CREATE TABLE IF NOT EXISTS jobs (
+			id TEXT PRIMARY KEY,
+			kind TEXT NOT NULL,
+			status TEXT NOT NULL,
+			collection_id TEXT NOT NULL DEFAULT 'default',
+			parameters TEXT NOT NULL DEFAULT '[]',
+			phase TEXT NOT NULL DEFAULT '',
+			processed INTEGER NOT NULL DEFAULT 0,
+			total INTEGER NOT NULL DEFAULT 0,
+			summary TEXT NOT NULL DEFAULT '{}',
+			error TEXT NOT NULL DEFAULT '',
+			cancel_requested INTEGER NOT NULL DEFAULT 0,
+			created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			started_at TEXT,
+			finished_at TEXT,
+			heartbeat_at TEXT
+		);`,
+		// Listing is newest-first by rowid, which the table already provides in
+		// reverse order for free — CURRENT_TIMESTAMP's one-second resolution
+		// makes `created_at` an unreliable sort key for jobs started together.
+		// The one index that earns its place is the state filter.
+		`CREATE INDEX IF NOT EXISTS jobs_status_idx ON jobs(status);`,
+		`PRAGMA user_version = 18;`,
+	}
+	for _, statement := range statements {
+		if err := s.Exec(ctx, statement); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// ensureSchemaV19 adds the local replication journal. The migration is kept in
+// its own SQL file because the same triggers must be byte-for-byte identical on
+// fresh databases and upgrades. Capture triggers are inert until explicit
+// enrollment creates sync_local_journal's singleton row.
+func (s *SQLiteStore) ensureSchemaV19(ctx context.Context) error {
+	s.mu.Lock()
+	version, versionErr := s.pragmaUserVersionLocked()
+	s.mu.Unlock()
+	if versionErr != nil {
+		return versionErr
+	}
+	if version >= 19 {
+		return nil
+	}
+	migration, err := migrationFS.ReadFile("migrations/0019_sync_journal.sql")
+	if err != nil {
+		return fmt.Errorf("read schema v19 migration: %w", err)
+	}
+	return s.Exec(ctx, string(migration))
+}
+
+// ensureSchemaV20 adds G5's persisted peer compatibility tuple and a hard
+// sequence-exhaustion guard. Admission uses the G4 journal tables; it does not
+// need or create a transport outbox.
+func (s *SQLiteStore) ensureSchemaV20(ctx context.Context) error {
+	s.mu.Lock()
+	version, versionErr := s.pragmaUserVersionLocked()
+	s.mu.Unlock()
+	if versionErr != nil {
+		return versionErr
+	}
+	if version >= 20 {
+		return nil
+	}
+	migration, err := migrationFS.ReadFile("migrations/0020_sync_admission.sql")
+	if err != nil {
+		return fmt.Errorf("read schema v20 migration: %w", err)
+	}
+	return s.Exec(ctx, string(migration))
+}
+
+// ensureSchemaV21 adds G6's durable HLC and convergence projection. Unlike
+// earlier CREATE-only migrations it adds two columns independently before the
+// idempotent SQL portion, so interrupted development migrations can resume.
+func (s *SQLiteStore) ensureSchemaV21(ctx context.Context) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	s.mu.Lock()
+	version, err := s.pragmaUserVersionLocked()
+	hasWall, hasLogical := false, false
+	if err == nil {
+		stmt, prepareErr := s.prepareLocked(`PRAGMA table_info(sync_operations)`)
+		if prepareErr != nil {
+			err = prepareErr
+		} else {
+			for C.sqlite3_step(stmt) == C.SQLITE_ROW {
+				switch columnText(stmt, 1) {
+				case "hlc_wall_ms":
+					hasWall = true
+				case "hlc_logical":
+					hasLogical = true
+				}
+			}
+			C.sqlite3_finalize(stmt)
+		}
+	}
+	s.mu.Unlock()
+	if err != nil {
+		return err
+	}
+	if version >= 21 {
+		return nil
+	}
+	// Add each operation column independently so an interrupted/partially
+	// constructed development database resumes through the idempotent table and
+	// trigger portion below instead of being mistaken for a complete migration.
+	if !hasWall {
+		if err := s.Exec(ctx, `ALTER TABLE sync_operations ADD COLUMN hlc_wall_ms INTEGER NOT NULL DEFAULT 0;`); err != nil {
+			return err
+		}
+	}
+	if !hasLogical {
+		if err := s.Exec(ctx, `ALTER TABLE sync_operations ADD COLUMN hlc_logical INTEGER NOT NULL DEFAULT 0;`); err != nil {
+			return err
+		}
+	}
+	migration, err := migrationFS.ReadFile("migrations/0021_sync_metadata.sql")
+	if err != nil {
+		return fmt.Errorf("read schema v21 migration: %w", err)
+	}
+	return s.Exec(ctx, string(migration))
+}
+
 func (s *SQLiteStore) exec(sql string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -307,6 +990,86 @@ func (s *SQLiteStore) pragmaUserVersionLocked() (int, error) {
 	return int(C.sqlite3_column_int(stmt, 0)), nil
 }
 
+// CreateCollection records a provenance: where a body of notes came from.
+//
+// A collection is not a place notes live. Notes live in notebooks, which is
+// what a person browses and searches; a note carries at most a collection
+// identifier, and this row is the information about that identifier. The
+// distinction matters because `documents.collection_id` is a foreign key, so
+// until this row exists no note can name the collection at all -- which is
+// exactly what `--collection` on the importers ran into.
+func (s *SQLiteStore) CreateCollection(ctx context.Context, collection Collection) (Collection, error) {
+	ctx = contextOrBackground(ctx)
+	if err := ctx.Err(); err != nil {
+		return Collection{}, err
+	}
+	id := strings.TrimSpace(collection.ID)
+	if id == "" {
+		return Collection{}, fmt.Errorf("%w: a collection needs an id", ErrInvalidInput)
+	}
+	name := strings.TrimSpace(collection.Name)
+	if name == "" {
+		// The id is a reasonable name and a blank one is not. An import that
+		// only says where notes came from should not have to say it twice.
+		name = id
+	}
+	existing, err := s.Collection(ctx, id)
+	if err == nil {
+		return existing, fmt.Errorf("%w: collection %q already exists", ErrConflict, id)
+	} else if !errors.Is(err, ErrNotFound) {
+		return Collection{}, err
+	}
+	if err := func() error {
+		s.mu.Lock()
+		defer s.mu.Unlock()
+		return s.execPreparedLocked(`INSERT INTO collections(id, name, description) VALUES(?, ?, ?)`,
+			id, name, strings.TrimSpace(collection.Description))
+	}(); err != nil {
+		return Collection{}, err
+	}
+	return s.Collection(ctx, id)
+}
+
+// EnsureCollection creates a collection when it is missing, and is what the
+// importers use.
+//
+// Creating on demand rather than refusing: the flag exists to label an import's
+// provenance, and making somebody create the row first would add a step whose
+// only effect is that a typo happens one command earlier.
+func (s *SQLiteStore) EnsureCollection(ctx context.Context, id, name string) (Collection, error) {
+	existing, err := s.Collection(ctx, strings.TrimSpace(id))
+	if err == nil {
+		return existing, nil
+	}
+	if !errors.Is(err, ErrNotFound) {
+		return Collection{}, err
+	}
+	created, err := s.CreateCollection(ctx, Collection{ID: id, Name: name})
+	if errors.Is(err, ErrConflict) {
+		// Lost a race with another writer, which is a success for this call.
+		return s.Collection(ctx, strings.TrimSpace(id))
+	}
+	return created, err
+}
+
+// Collection reads one collection.
+func (s *SQLiteStore) Collection(ctx context.Context, id string) (Collection, error) {
+	ctx = contextOrBackground(ctx)
+	if err := ctx.Err(); err != nil {
+		return Collection{}, err
+	}
+	all, err := s.ListCollections(ctx)
+	if err != nil {
+		return Collection{}, err
+	}
+	for _, collection := range all {
+		if collection.ID == strings.TrimSpace(id) {
+			return collection, nil
+		}
+	}
+	return Collection{}, fmt.Errorf("%w: collection %q", ErrNotFound, id)
+}
+
 func (s *SQLiteStore) ListCollections(ctx context.Context) ([]Collection, error) {
 	ctx = contextOrBackground(ctx)
 	if err := ctx.Err(); err != nil {
@@ -334,6 +1097,42 @@ func (s *SQLiteStore) ListCollections(ctx context.Context) ([]Collection, error)
 			})
 		case C.SQLITE_DONE:
 			return collections, nil
+		default:
+			return nil, s.stepErrLocked(rc)
+		}
+	}
+}
+
+// CollectionNoteCounts reports how many live notes name each collection.
+//
+// A collection is provenance rather than a place, so the count is the only
+// thing that says whether an import actually landed anywhere. It counts
+// documents rather than rows in `collections`: a collection with no notes is
+// the interesting one after an import, and it is invisible without this.
+//
+// Trashed notes are excluded, for the same reason a search excludes them.
+func (s *SQLiteStore) CollectionNoteCounts(ctx context.Context) (map[string]int, error) {
+	ctx = contextOrBackground(ctx)
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	stmt, err := s.prepareLocked(
+		`SELECT collection_id, COUNT(*) FROM documents WHERE deleted_at IS NULL GROUP BY collection_id`)
+	if err != nil {
+		return nil, err
+	}
+	defer C.sqlite3_finalize(stmt)
+
+	counts := map[string]int{}
+	for {
+		switch rc := C.sqlite3_step(stmt); rc {
+		case C.SQLITE_ROW:
+			counts[columnText(stmt, 0)] = int(C.sqlite3_column_int(stmt, 1))
+		case C.SQLITE_DONE:
+			return counts, nil
 		default:
 			return nil, s.stepErrLocked(rc)
 		}
@@ -380,7 +1179,7 @@ func (s *SQLiteStore) CreateDocument(ctx context.Context, req CreateDocumentRequ
 		VALUES(?, ?, ?, ?, ?, ?)`, docID, req.CollectionID, req.NotebookID, req.Title, req.BodyMIMEType, revID); err != nil {
 		return Document{}, err
 	}
-	if err := s.execPreparedLocked(`INSERT INTO document_revisions(id, document_id, title, body, body_mime_type, message) VALUES(?, ?, ?, ?, ?, ?)`, revID, docID, req.Title, req.Body, req.BodyMIMEType, req.Message); err != nil {
+	if err := s.insertRevisionLocked(revID, docID, req.Title, req.Body, req.BodyMIMEType, req.Message, ""); err != nil {
 		return Document{}, err
 	}
 	if err := s.execPreparedLocked(`INSERT INTO documents_fts(document_id, collection_id, title, body) VALUES(?, ?, ?, ?)`, docID, req.CollectionID, req.Title, req.Body); err != nil {
@@ -410,11 +1209,41 @@ func (s *SQLiteStore) GetDocument(ctx context.Context, id string) (Document, err
 	return s.getDocumentLocked(id)
 }
 
+// GetDocumentIncludingTrashed reads a note whether or not it is in the Trash.
+//
+// It exists because a trashed note has to be *readable* to be recoverable: the
+// Trash is a list of notes someone may want to look at before restoring one,
+// and a stable link that resolves to `trashed` has to open something. The
+// returned Document carries DeletedAt, which is what makes it read-only above
+// the store.
+//
+// Everything else keeps using GetDocument, which stops at the Trash. That is
+// the right default for every write path and for the agent-facing surfaces:
+// trashed notes are outside the ordinary query scope by design, and `is:trashed`
+// is a deliberate opt-in rather than something a caller falls into.
+func (s *SQLiteStore) GetDocumentIncludingTrashed(ctx context.Context, id string) (Document, error) {
+	ctx = contextOrBackground(ctx)
+	if err := ctx.Err(); err != nil {
+		return Document{}, err
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.readDocumentLocked(id, true)
+}
+
 func (s *SQLiteStore) getDocumentLocked(id string) (Document, error) {
+	return s.readDocumentLocked(id, false)
+}
+
+func (s *SQLiteStore) readDocumentLocked(id string, includeTrashed bool) (Document, error) {
+	trashFilter := ` AND d.deleted_at IS NULL`
+	if includeTrashed {
+		trashFilter = ""
+	}
 	stmt, err := s.prepareLocked(`SELECT d.id, d.collection_id, d.title, r.body, COALESCE(r.body_mime_type, d.body_mime_type), d.current_revision_id, d.created_at, d.updated_at, COALESCE(d.deleted_at, ''), COALESCE(d.notebook_id, '')
 		FROM documents d
 		JOIN document_revisions r ON r.id = d.current_revision_id
-		WHERE d.id = ? AND d.deleted_at IS NULL`)
+		WHERE d.id = ?` + trashFilter)
 	if err != nil {
 		return Document{}, err
 	}
@@ -441,6 +1270,11 @@ func (s *SQLiteStore) getDocumentLocked(id string) (Document, error) {
 		CreatedAt:         createdAt,
 		UpdatedAt:         updatedAt,
 		NotebookID:        columnText(stmt, 9),
+	}
+	// DeletedAt is what makes a trashed note read-only above the store, so it
+	// has to survive the read. It is always empty on the non-trashed path.
+	if deleted := columnText(stmt, 8); deleted != "" {
+		doc.DeletedAt, _ = time.Parse(time.RFC3339Nano, sqliteTimeToRFC3339(deleted))
 	}
 	doc.URI = DocumentURI(doc.CollectionID, doc.ID)
 	return doc, nil
@@ -489,7 +1323,7 @@ func (s *SQLiteStore) UpdateDocument(ctx context.Context, req UpdateDocumentRequ
 	if current.CurrentRevisionID != req.BaseRevisionID {
 		return Document{}, ErrConflict
 	}
-	if err := s.execPreparedLocked(`INSERT INTO document_revisions(id, document_id, title, body, body_mime_type, message) VALUES(?, ?, ?, ?, ?, ?)`, revID, req.ID, req.Title, req.Body, req.BodyMIMEType, req.Message); err != nil {
+	if err := s.insertRevisionLocked(revID, req.ID, req.Title, req.Body, req.BodyMIMEType, req.Message, current.CurrentRevisionID); err != nil {
 		return Document{}, err
 	}
 	if err := s.execPreparedLocked(`UPDATE documents SET title = ?, body_mime_type = ?, current_revision_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND deleted_at IS NULL`, req.Title, req.BodyMIMEType, revID, req.ID); err != nil {
@@ -543,6 +1377,20 @@ func (s *SQLiteStore) DeleteDocument(ctx context.Context, req DeleteDocumentRequ
 		}
 	}()
 
+	if err := s.deleteDocumentLocked(req, revID); err != nil {
+		return err
+	}
+	if err := s.execLocked("COMMIT"); err != nil {
+		return err
+	}
+	committed = true
+	return nil
+}
+
+// deleteDocumentLocked is the trash-first delete without its transaction, so a
+// batch can run many inside one. The caller holds the mutex and owns the
+// transaction boundary.
+func (s *SQLiteStore) deleteDocumentLocked(req DeleteDocumentRequest, revID string) error {
 	current, err := s.getDocumentLocked(req.ID)
 	if err != nil {
 		return err
@@ -550,7 +1398,7 @@ func (s *SQLiteStore) DeleteDocument(ctx context.Context, req DeleteDocumentRequ
 	if current.CurrentRevisionID != req.BaseRevisionID {
 		return ErrConflict
 	}
-	if err := s.execPreparedLocked(`INSERT INTO document_revisions(id, document_id, title, body, body_mime_type, message) VALUES(?, ?, ?, ?, ?, ?)`, revID, req.ID, current.Title, current.Body, current.BodyMIMEType, req.Message); err != nil {
+	if err := s.insertRevisionLocked(revID, req.ID, current.Title, current.Body, current.BodyMIMEType, req.Message, current.CurrentRevisionID); err != nil {
 		return err
 	}
 	if err := s.execPreparedLocked(`UPDATE documents SET current_revision_id = ?, deleted_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND deleted_at IS NULL`, revID, req.ID); err != nil {
@@ -559,14 +1407,7 @@ func (s *SQLiteStore) DeleteDocument(ctx context.Context, req DeleteDocumentRequ
 	if err := s.execPreparedLocked(`DELETE FROM documents_fts WHERE document_id = ?`, req.ID); err != nil {
 		return err
 	}
-	if err := s.enqueueProjectionLocked(req.ID, "delete"); err != nil {
-		return err
-	}
-	if err := s.execLocked("COMMIT"); err != nil {
-		return err
-	}
-	committed = true
-	return nil
+	return s.enqueueProjectionLocked(req.ID, "delete")
 }
 
 func (s *SQLiteStore) ListDocumentRevisions(ctx context.Context, documentID string) ([]DocumentRevision, error) {
@@ -653,7 +1494,7 @@ func (s *SQLiteStore) RestoreDocumentRevision(ctx context.Context, req RestoreRe
 	if err != nil {
 		return Document{}, err
 	}
-	if err := s.execPreparedLocked(`INSERT INTO document_revisions(id, document_id, title, body, body_mime_type, message) VALUES(?, ?, ?, ?, ?, ?)`, newRevID, req.DocumentID, target.Title, target.Body, target.BodyMIMEType, req.Message); err != nil {
+	if err := s.insertRevisionLocked(newRevID, req.DocumentID, target.Title, target.Body, target.BodyMIMEType, req.Message, currentRevisionID); err != nil {
 		return Document{}, err
 	}
 	if err := s.execPreparedLocked(`UPDATE documents SET title = ?, body_mime_type = ?, current_revision_id = ?, deleted_at = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?`, target.Title, target.BodyMIMEType, newRevID, req.DocumentID); err != nil {
@@ -773,7 +1614,28 @@ func (s *SQLiteStore) CreateResource(ctx context.Context, req CreateResourceRequ
 	if cleanup != nil {
 		defer cleanup()
 	}
-	mimeType := firstNonEmptyString(req.MIMEType, blob.MIMEType, "application/octet-stream")
+	// The sniffed type wins over the placeholder. NormalizeCreateResourceRequest
+	// fills an absent MIME type with "application/octet-stream" before this runs,
+	// and writeBlob treats that same value as "unspecified" and sniffs the bytes
+	// — so taking the request's value first threw the answer away and recorded
+	// octet-stream for a file the store had already identified as a PNG. The two
+	// lines disagreed about what the placeholder means; this is what writeBlob
+	// already believed.
+	// The sniffed type wins over the placeholder. NormalizeCreateResourceRequest
+	// fills an absent MIME type with "application/octet-stream" before this runs,
+	// and writeBlob treats that same value as "unspecified" and sniffs the bytes
+	// -- so taking the request's value first threw the answer away and recorded
+	// octet-stream for a file the store had already identified as a PNG. The two
+	// lines disagreed about what the placeholder means; this is what writeBlob
+	// already believed.
+	mimeType := req.MIMEType
+	if strings.TrimSpace(mimeType) == "" || strings.EqualFold(mimeType, "application/octet-stream") {
+		mimeType = firstNonEmptyString(blob.MIMEType, "application/octet-stream")
+	}
+	perceptualHash, err := s.computePerceptualHash(ctx, blob, mimeType)
+	if err != nil {
+		return Resource{}, err
+	}
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -787,10 +1649,23 @@ func (s *SQLiteStore) CreateResource(ctx context.Context, req CreateResourceRequ
 		}
 	}()
 
-	if err := s.execPreparedLocked(`INSERT OR IGNORE INTO blobs(sha256, storage_path, size_bytes, mime_type) VALUES(?, ?, ?, ?)`, blob.SHA256, blob.StoragePath, strconv.FormatInt(blob.SizeBytes, 10), mimeType); err != nil {
+	if err := s.upsertLocalBlobLocked(blob, mimeType); err != nil {
 		return Resource{}, err
 	}
-	if err := s.execPreparedLocked(`INSERT INTO resources(id, collection_id, blob_sha256, filename, mime_type) VALUES(?, ?, ?, ?, ?)`, resourceID, req.CollectionID, blob.SHA256, req.Filename, mimeType); err != nil {
+	if perceptualHash != nil {
+		if err := s.execPreparedLocked(`INSERT OR IGNORE INTO resource_hashes(blob_sha256, algo, hash) VALUES(?, ?, ?)`,
+			blob.SHA256, perceptualHash.Algorithm, perceptualHash.Hash); err != nil {
+			return Resource{}, err
+		}
+		// This is the admission-time policy-check slot. A matching perceptual
+		// rule is deliberately non-blocking; it is surfaced by ResourceReport
+		// as a review suggestion.
+		if err := s.checkPerceptualReviewRuleLocked(perceptualHash.Algorithm, perceptualHash.Hash); err != nil {
+			return Resource{}, err
+		}
+	}
+	if err := s.execPreparedLocked(`INSERT INTO resources(id, collection_id, blob_sha256, filename, mime_type, unreferenced_at, unreferenced_reason)
+		VALUES(?, ?, ?, ?, ?, CURRENT_TIMESTAMP, 'created_unattached')`, resourceID, req.CollectionID, blob.SHA256, req.Filename, mimeType); err != nil {
 		return Resource{}, err
 	}
 	if err := s.execLocked("COMMIT"); err != nil {
@@ -802,6 +1677,110 @@ func (s *SQLiteStore) CreateResource(ctx context.Context, req CreateResourceRequ
 		cleanup = nil
 	}
 	return s.getResourceLocked(resourceID)
+}
+
+func (s *SQLiteStore) UpdateResource(ctx context.Context, req UpdateResourceRequest) (Resource, error) {
+	ctx = contextOrBackground(ctx)
+	if err := ctx.Err(); err != nil {
+		return Resource{}, err
+	}
+	req.ID = strings.TrimSpace(req.ID)
+	req.Filename = strings.TrimSpace(req.Filename)
+	req.MIMEType = strings.TrimSpace(req.MIMEType)
+	if req.ID == "" || req.Content == nil {
+		return Resource{}, fmt.Errorf("%w: resource ID and content are required", ErrInvalidInput)
+	}
+	if req.MIMEType == "" {
+		req.MIMEType = "application/octet-stream"
+	}
+	if _, err := s.GetResource(ctx, req.ID); err != nil {
+		return Resource{}, err
+	}
+	blob, cleanup, err := s.writeBlob(ctx, req.Content, req.MIMEType)
+	if err != nil {
+		return Resource{}, err
+	}
+	if cleanup != nil {
+		defer cleanup()
+	}
+	// The sniffed type wins over the placeholder. NormalizeCreateResourceRequest
+	// fills an absent MIME type with "application/octet-stream" before this runs,
+	// and writeBlob treats that same value as "unspecified" and sniffs the bytes
+	// -- so taking the request's value first threw the answer away and recorded
+	// octet-stream for a file the store had already identified as a PNG. The two
+	// lines disagreed about what the placeholder means; this is what writeBlob
+	// already believed.
+	mimeType := req.MIMEType
+	if strings.TrimSpace(mimeType) == "" || strings.EqualFold(mimeType, "application/octet-stream") {
+		mimeType = firstNonEmptyString(blob.MIMEType, "application/octet-stream")
+	}
+	perceptualHash, err := s.computePerceptualHash(ctx, blob, mimeType)
+	if err != nil {
+		return Resource{}, err
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if err := s.execLocked("BEGIN IMMEDIATE"); err != nil {
+		return Resource{}, err
+	}
+	committed := false
+	defer func() {
+		if !committed {
+			_ = s.execLocked("ROLLBACK")
+		}
+	}()
+	oldSHA, oldStoragePath, err := s.resourceBlobLocked(req.ID)
+	if err != nil {
+		return Resource{}, err
+	}
+	if err := s.upsertLocalBlobLocked(blob, mimeType); err != nil {
+		return Resource{}, err
+	}
+	if perceptualHash != nil {
+		if err := s.execPreparedLocked(`INSERT OR IGNORE INTO resource_hashes(blob_sha256, algo, hash)
+			VALUES(?, ?, ?)`, blob.SHA256, perceptualHash.Algorithm, perceptualHash.Hash); err != nil {
+			return Resource{}, err
+		}
+		if err := s.checkPerceptualReviewRuleLocked(perceptualHash.Algorithm, perceptualHash.Hash); err != nil {
+			return Resource{}, err
+		}
+	}
+	if err := s.execPreparedLocked(`UPDATE resources
+		SET blob_sha256 = ?, filename = ?, mime_type = ?
+		WHERE id = ?`, blob.SHA256, req.Filename, mimeType, req.ID); err != nil {
+		return Resource{}, err
+	}
+	removeOldBlob := false
+	if oldSHA != blob.SHA256 {
+		resourceCount, err := s.countLocked(`SELECT COUNT(*) FROM resources WHERE blob_sha256 = ?`, oldSHA)
+		if err != nil {
+			return Resource{}, err
+		}
+		removeOldBlob = resourceCount == 0
+		if removeOldBlob {
+			if err := s.execPreparedLocked(`DELETE FROM resource_hashes WHERE blob_sha256 = ?`, oldSHA); err != nil {
+				return Resource{}, err
+			}
+			if err := s.execPreparedLocked(`DELETE FROM blobs WHERE sha256 = ?`, oldSHA); err != nil {
+				return Resource{}, err
+			}
+		}
+	}
+	if err := s.execLocked("COMMIT"); err != nil {
+		return Resource{}, err
+	}
+	committed = true
+	if cleanup != nil {
+		cleanup()
+		cleanup = nil
+	}
+	if removeOldBlob {
+		if oldPath, ok := safeAssetPath(s.assetRoot, oldStoragePath); ok {
+			_ = os.Remove(oldPath)
+		}
+	}
+	return s.getResourceLocked(req.ID)
 }
 
 type storedBlob struct {
@@ -822,7 +1801,7 @@ func (s *SQLiteStore) writeBlob(ctx context.Context, content io.Reader, mimeType
 	tmpName := tmp.Name()
 	cleanup := func() { _ = os.Remove(tmpName) }
 	h := sha256.New()
-	written, copyErr := copyWithContext(ctx, io.MultiWriter(tmp, h), content)
+	written, copyErr := copyWithContext(ctx, io.MultiWriter(tmp, h), io.LimitReader(content, MaxResourceContentBytes+1))
 	closeErr := tmp.Close()
 	if copyErr != nil {
 		cleanup()
@@ -831,6 +1810,10 @@ func (s *SQLiteStore) writeBlob(ctx context.Context, content io.Reader, mimeType
 	if closeErr != nil {
 		cleanup()
 		return storedBlob{}, nil, closeErr
+	}
+	if written > MaxResourceContentBytes {
+		cleanup()
+		return storedBlob{}, nil, fmt.Errorf("%w: resource content exceeds %d bytes", ErrInvalidInput, MaxResourceContentBytes)
 	}
 	shaHex := hex.EncodeToString(h.Sum(nil))
 	if strings.TrimSpace(mimeType) == "" || strings.EqualFold(mimeType, "application/octet-stream") {
@@ -956,6 +1939,12 @@ func (s *SQLiteStore) OpenResourceContent(ctx context.Context, id string) (Resou
 	if err != nil {
 		return Resource{}, nil, err
 	}
+	if strings.TrimSpace(storagePath) == "" {
+		// The resource exists and is referenced; its bytes are simply not here
+		// yet. Reporting ErrNotFound would tell a reader their attachment was
+		// gone, which is a different and much worse thing to be told.
+		return Resource{}, nil, fmt.Errorf("%w: %s", ErrResourceUnavailable, id)
+	}
 	file, err := os.Open(filepath.Join(s.assetRoot, storagePath))
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -1035,6 +2024,9 @@ func (s *SQLiteStore) DeleteResource(ctx context.Context, id string) error {
 	}
 	deleteBlob := resourceCount == 0
 	if deleteBlob {
+		if err := s.execPreparedLocked(`DELETE FROM resource_hashes WHERE blob_sha256 = ?`, blobSHA); err != nil {
+			return err
+		}
 		if err := s.execPreparedLocked(`DELETE FROM blobs WHERE sha256 = ?`, blobSHA); err != nil {
 			return err
 		}
@@ -1147,6 +2139,9 @@ func (s *SQLiteStore) AttachDocumentResource(ctx context.Context, req AttachReso
 	if err := s.execPreparedLocked(`INSERT OR REPLACE INTO document_resource_refs(document_id, resource_id, relation_type, ordinal, anchor_json) VALUES(?, ?, ?, ?, ?)`, req.DocumentID, req.ResourceID, req.RelationType, strconv.Itoa(req.Ordinal), req.AnchorJSON); err != nil {
 		return ResourceReference{}, err
 	}
+	if err := s.execPreparedLocked(`UPDATE resources SET unreferenced_at = NULL, unreferenced_reason = '' WHERE id = ?`, req.ResourceID); err != nil {
+		return ResourceReference{}, err
+	}
 	return ResourceReference{DocumentID: req.DocumentID, ResourceID: req.ResourceID, Resource: res, RelationType: req.RelationType, Ordinal: req.Ordinal, AnchorJSON: req.AnchorJSON}, nil
 }
 
@@ -1165,9 +2160,33 @@ func (s *SQLiteStore) DetachDocumentResource(ctx context.Context, documentID, re
 	if _, err := s.getResourceLocked(resourceID); err != nil {
 		return err
 	}
+	if err := s.execLocked("BEGIN IMMEDIATE"); err != nil {
+		return err
+	}
+	committed := false
+	defer func() {
+		if !committed {
+			_ = s.execLocked("ROLLBACK")
+		}
+	}()
 	if err := s.execPreparedLocked(`DELETE FROM document_resource_refs WHERE document_id = ? AND resource_id = ?`, documentID, resourceID); err != nil {
 		return err
 	}
+	refCount, err := s.countLocked(`SELECT COUNT(*) FROM document_resource_refs WHERE resource_id = ?`, resourceID)
+	if err != nil {
+		return err
+	}
+	if refCount == 0 {
+		if err := s.execPreparedLocked(`UPDATE resources
+			SET unreferenced_at = CURRENT_TIMESTAMP, unreferenced_reason = 'detached'
+			WHERE id = ?`, resourceID); err != nil {
+			return err
+		}
+	}
+	if err := s.execLocked("COMMIT"); err != nil {
+		return err
+	}
+	committed = true
 	return nil
 }
 
@@ -1208,7 +2227,14 @@ func (s *SQLiteStore) RebuildDocumentLinks(ctx context.Context, documentID strin
 	return nil
 }
 
+// rebuildDocumentLinksLocked re-derives a note's links and blocks. Both are
+// derived from the same body and must describe the same one, so they are
+// rebuilt together inside the caller's transaction rather than by separate
+// calls that could disagree.
 func (s *SQLiteStore) rebuildDocumentLinksLocked(documentID, collectionID, body string) error {
+	if err := s.rebuildDocumentBlocksLocked(documentID, body); err != nil {
+		return err
+	}
 	if err := s.execPreparedLocked(`DELETE FROM document_links WHERE source_document_id = ?`, documentID); err != nil {
 		return err
 	}
@@ -1246,6 +2272,12 @@ func (s *SQLiteStore) resolveLinkCandidateLocked(sourceDocumentID, collectionID 
 	}
 	raw := strings.TrimSpace(candidate.RawTarget)
 	if raw == "" && candidate.AnchorValue != "" {
+		// An anchor with no target names a section of the note it is written
+		// in. Without a source note there is nothing for it to name, which only
+		// happens when a caller checks a buffer that has never been saved.
+		if sourceDocumentID == "" {
+			return link
+		}
 		link.TargetDocumentID = sourceDocumentID
 		link.TargetURI = DocumentURI(collectionID, sourceDocumentID)
 		link.ResolutionStatus = "resolved"
@@ -1255,6 +2287,9 @@ func (s *SQLiteStore) resolveLinkCandidateLocked(sourceDocumentID, collectionID 
 		link.TargetURI = raw
 		link.ResolutionStatus = "external"
 		return link
+	}
+	if stablelink.HasScheme(raw) {
+		return s.resolveStableLinkCandidateLocked(link, raw)
 	}
 	if docID := documentIDFromURI(raw); docID != "" {
 		link.TargetURI = raw
@@ -1303,6 +2338,42 @@ func (s *SQLiteStore) resolveLinkCandidateLocked(sourceDocumentID, collectionID 
 	return link
 }
 
+// resolveStableLinkCandidateLocked classifies a notrios:// link found in a
+// note body. A stable link is portable by design, so the same syntax can name
+// this database or another one, and the two must not be confused:
+//
+//   - this database, note present  -> resolved, exactly like document://
+//   - this database, note missing  -> unresolved (a stale target, not an error)
+//   - another database             -> external; nothing local may be opened
+//   - malformed                    -> invalid
+//
+// A link naming a foreign database is never resolved against local IDs even if
+// a document with that ID happens to exist here. Document IDs are unique per
+// database, not globally, so matching one across universes would silently open
+// the wrong note.
+func (s *SQLiteStore) resolveStableLinkCandidateLocked(link DocumentLink, raw string) DocumentLink {
+	link.TargetURI = raw
+	parsed, err := stablelink.Parse(raw)
+	if err != nil {
+		link.ResolutionStatus = "invalid"
+		return link
+	}
+	localID, err := s.databaseIDLocked()
+	if err != nil || localID == "" {
+		link.ResolutionStatus = "unresolved"
+		return link
+	}
+	if parsed.DatabaseID != localID {
+		link.ResolutionStatus = "external"
+		return link
+	}
+	if ok, err := s.documentExistsLocked(parsed.DocumentID); err == nil && ok {
+		link.TargetDocumentID = parsed.DocumentID
+		link.ResolutionStatus = "resolved"
+	}
+	return link
+}
+
 func isExternalTarget(target string) bool {
 	lower := strings.ToLower(strings.TrimSpace(target))
 	return strings.HasPrefix(lower, "http://") || strings.HasPrefix(lower, "https://") || strings.HasPrefix(lower, "mailto:")
@@ -1340,12 +2411,20 @@ func resourceIDFromURI(uri string) string {
 	return strings.TrimSpace(id)
 }
 
+// findDocumentByTitleLocked resolves `[the plan](Kitchen)` to a note.
+//
+// An empty collection searches every one of them, which is what somebody who
+// migrated wants: a link written by name in a note from Joplin should find the
+// note it names. The LIMIT 2 ambiguity rule then means something wider than it
+// used to -- the same title in two collections is now ambiguous rather than
+// quietly resolving to this library's copy -- and refusing to guess is the
+// behaviour to want there.
 func (s *SQLiteStore) findDocumentByTitleLocked(collectionID, target string) (string, bool, error) {
 	name := normalizeLinkName(target)
 	if name == "" {
 		return "", false, nil
 	}
-	stmt, err := s.prepareLocked(`SELECT id FROM documents WHERE collection_id = ? AND deleted_at IS NULL AND lower(title) = lower(?) ORDER BY id LIMIT 2`)
+	stmt, err := s.prepareLocked(`SELECT id FROM documents WHERE ` + CollectionScopeSQL("") + ` AND deleted_at IS NULL AND title = ? COLLATE NOCASE ORDER BY id LIMIT 2`)
 	if err != nil {
 		return "", false, err
 	}
@@ -1376,7 +2455,7 @@ func (s *SQLiteStore) findResourceByFilenameLocked(collectionID, target string) 
 		return "", false, nil
 	}
 	name = strings.TrimPrefix(filepath.Base(name), "/")
-	stmt, err := s.prepareLocked(`SELECT id FROM resources WHERE collection_id = ? AND lower(filename) = lower(?) ORDER BY id LIMIT 2`)
+	stmt, err := s.prepareLocked(`SELECT id FROM resources WHERE ` + CollectionScopeSQL("") + ` AND filename = ? COLLATE NOCASE ORDER BY id LIMIT 2`)
 	if err != nil {
 		return "", false, err
 	}
@@ -1421,6 +2500,16 @@ func (s *SQLiteStore) ListDocumentLinks(ctx context.Context, documentID, directi
 	direction = strings.ToLower(strings.TrimSpace(direction))
 	if direction == "" {
 		direction = "both"
+	}
+	// Refused rather than ignored. An unrecognised direction used to fall
+	// through both branches and return an empty page, so `direction=out`
+	// answered "this note has no links" -- a wrong answer with the shape of a
+	// right one, which a caller has no way to tell from the truth.
+	switch direction {
+	case "outgoing", "incoming", "both":
+	default:
+		return DocumentLinkPage{}, fmt.Errorf("%w: link direction %q must be outgoing, incoming or both",
+			ErrInvalidInput, direction)
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -1492,114 +2581,6 @@ func linkFromStmt(stmt *C.sqlite3_stmt) DocumentLink {
 	}
 }
 
-func (s *SQLiteStore) Graph(ctx context.Context, req GraphRequest) (GraphResponse, error) {
-	ctx = contextOrBackground(ctx)
-	if err := ctx.Err(); err != nil {
-		return GraphResponse{}, err
-	}
-	direction := strings.ToLower(strings.TrimSpace(req.Direction))
-	if direction == "" {
-		direction = "both"
-	}
-	if req.MaxNodes <= 0 {
-		req.MaxNodes = 100
-	}
-	if req.MaxEdges <= 0 {
-		req.MaxEdges = 200
-	}
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	resp := GraphResponse{Nodes: []GraphNode{}, Edges: []GraphEdge{}}
-	nodeSeen := map[string]bool{}
-	for _, root := range req.Roots {
-		docID := documentIDFromURI(root)
-		if docID == "" {
-			docID = strings.TrimSpace(root)
-		}
-		if docID == "" {
-			continue
-		}
-		doc, err := s.getDocumentLocked(docID)
-		if err != nil {
-			continue
-		}
-		addGraphNode(&resp, nodeSeen, GraphNode{ID: doc.ID, URI: doc.URI, Kind: "document", Label: doc.Title}, req.MaxNodes)
-		if direction == "outgoing" || direction == "both" {
-			links, err := s.listLinksLocked(`WHERE source_document_id = ?`, doc.ID)
-			if err != nil {
-				return GraphResponse{}, err
-			}
-			for _, link := range links {
-				if len(resp.Edges) >= req.MaxEdges {
-					resp.Truncated = true
-					break
-				}
-				s.addLinkToGraphLocked(&resp, nodeSeen, link, req.IncludeResources, req.MaxNodes)
-			}
-		}
-		if direction == "incoming" || direction == "both" {
-			links, err := s.listLinksLocked(`WHERE target_document_id = ?`, doc.ID)
-			if err != nil {
-				return GraphResponse{}, err
-			}
-			for _, link := range links {
-				if len(resp.Edges) >= req.MaxEdges {
-					resp.Truncated = true
-					break
-				}
-				s.addLinkToGraphLocked(&resp, nodeSeen, link, req.IncludeResources, req.MaxNodes)
-			}
-		}
-	}
-	return resp, nil
-}
-
-func (s *SQLiteStore) addLinkToGraphLocked(resp *GraphResponse, nodeSeen map[string]bool, link DocumentLink, includeResources bool, maxNodes int) {
-	if link.TargetResourceID != "" && !includeResources {
-		return
-	}
-	sourceNode := GraphNode{ID: link.SourceDocumentID, URI: DocumentURI("default", link.SourceDocumentID), Kind: "document", Label: link.SourceDocumentID}
-	if doc, err := s.getDocumentLocked(link.SourceDocumentID); err == nil {
-		sourceNode.URI = doc.URI
-		sourceNode.Label = doc.Title
-	}
-	addGraphNode(resp, nodeSeen, sourceNode, maxNodes)
-	targetID := ""
-	if link.TargetDocumentID != "" {
-		targetID = link.TargetDocumentID
-		node := GraphNode{ID: link.TargetDocumentID, URI: link.TargetURI, Kind: "document", Label: link.TargetDocumentID}
-		if doc, err := s.getDocumentLocked(link.TargetDocumentID); err == nil {
-			node.URI = doc.URI
-			node.Label = doc.Title
-		}
-		addGraphNode(resp, nodeSeen, node, maxNodes)
-	} else if link.TargetResourceID != "" {
-		targetID = link.TargetResourceID
-		node := GraphNode{ID: link.TargetResourceID, URI: link.TargetURI, Kind: "resource", Label: link.TargetResourceID}
-		if resource, err := s.getResourceLocked(link.TargetResourceID); err == nil {
-			node.URI = resource.URI
-			node.Label = firstNonEmptyString(resource.Filename, resource.ID)
-		}
-		addGraphNode(resp, nodeSeen, node, maxNodes)
-	} else {
-		targetID = firstNonEmptyString(link.TargetURI, link.RawTarget, "unresolved")
-		addGraphNode(resp, nodeSeen, GraphNode{ID: targetID, URI: link.TargetURI, Kind: link.ResolutionStatus, Label: targetID}, maxNodes)
-	}
-	resp.Edges = append(resp.Edges, GraphEdge{ID: strconv.FormatInt(link.ID, 10), SourceID: link.SourceDocumentID, TargetID: targetID, Kind: link.RelationType, Status: link.ResolutionStatus, RawTarget: link.RawTarget})
-}
-
-func addGraphNode(resp *GraphResponse, seen map[string]bool, node GraphNode, maxNodes int) {
-	if node.ID == "" || seen[node.ID] {
-		return
-	}
-	if len(resp.Nodes) >= maxNodes {
-		resp.Truncated = true
-		return
-	}
-	seen[node.ID] = true
-	resp.Nodes = append(resp.Nodes, node)
-}
-
 func (s *SQLiteStore) countLocked(sql string, values ...string) (int64, error) {
 	stmt, err := s.prepareLocked(sql)
 	if err != nil {
@@ -1644,12 +2625,15 @@ func (s *SQLiteStore) readHitsLocked(stmt *C.sqlite3_stmt) (SearchResponse, erro
 			collectionID := columnText(stmt, 1)
 			id := columnText(stmt, 0)
 			resp.Hits = append(resp.Hits, SearchHit{
-				ID:         id,
-				URI:        DocumentURI(collectionID, id),
-				Title:      columnText(stmt, 2),
-				Snippet:    columnText(stmt, 3),
-				Score:      columnFloat(stmt, 4),
-				NotebookID: columnText(stmt, 5),
+				ID:           id,
+				URI:          DocumentURI(collectionID, id),
+				CollectionID: collectionID,
+				Title:        columnText(stmt, 2),
+				Snippet:      columnText(stmt, 3),
+				Score:        columnFloat(stmt, 4),
+				NotebookID:   columnText(stmt, 5),
+				UpdatedAt:    parseSQLiteTime(columnText(stmt, 6)),
+				sortTime:     columnText(stmt, 6),
 			})
 		case C.SQLITE_DONE:
 			return resp, nil
@@ -1657,6 +2641,11 @@ func (s *SQLiteStore) readHitsLocked(stmt *C.sqlite3_stmt) (SearchResponse, erro
 			return SearchResponse{}, s.stepErrLocked(rc)
 		}
 	}
+}
+
+func parseSQLiteTime(value string) time.Time {
+	parsed, _ := time.Parse(time.RFC3339Nano, sqliteTimeToRFC3339(value))
+	return parsed
 }
 
 func (s *SQLiteStore) execPreparedLocked(sql string, values ...string) error {

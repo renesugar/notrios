@@ -1,0 +1,42 @@
+{
+  "corpus": "obsidian recipe vault (private; not committed)",
+  "markdown_files": 382206,
+  "notes_imported": 382206,
+  "notebooks": 780,
+  "resources": 0,
+  "source_bundle_items": 0,
+  "export": {
+    "target": "full_archive",
+    "full_backup": true,
+    "verified": true,
+    "counts": {
+      "collections": 1,
+      "notebooks": 782,
+      "search_notebooks": 2,
+      "tags": 0,
+      "documents": 382206,
+      "revisions": 382206,
+      "document_tags": 0,
+      "resources": 0,
+      "document_resources": 0,
+      "links": 2,
+      "provenance": 382206,
+      "source_bundles": 0
+    },
+    "objects": 382321,
+    "blob_objects": 382206,
+    "record_objects": 115,
+    "index_objects": 39,
+    "archive_bytes": 1145497934,
+    "bytes_written": 1325175803,
+    "manifest_bytes": 16203,
+    "elapsed_seconds_export_and_verify": 3747.365,
+    "wall_clock": "1:02:27",
+    "peak_rss_bytes": 347869184,
+    "objects_per_second": 102.0,
+    "warnings": [
+      "2 selected-note links are unresolved, ambiguous, invalid, or target deleted",
+      "detail arrays are truncated; counts and manifest_sha256 cover the complete bounded plan"
+    ]
+  }
+}

@@ -1,0 +1,106 @@
+{
+  "schema": "notrios.h6a.findings.v1",
+  "milestone": "v0.8",
+  "item": "H6a",
+  "claim_ladder": [
+    {
+      "level": 1,
+      "name": "generated",
+      "means": "an artifact was produced by a tool"
+    },
+    {
+      "level": 2,
+      "name": "structurally inspected",
+      "means": "its contents, metadata and dependencies were read and checked"
+    },
+    {
+      "level": 3,
+      "name": "natively installed and executed",
+      "means": "installed and run on the target platform itself"
+    },
+    {
+      "level": 4,
+      "name": "supported",
+      "means": "level 3, plus a maintainer committing to keep it working"
+    }
+  ],
+  "findings": [
+    {
+      "id": "cgo-mandatory",
+      "level": 2,
+      "verdict": "measured",
+      "detail": "CGO_ENABLED=0 does not compile: internal/store's exported types are declared in the cgo file, so the package fails to typecheck rather than merely losing SQLite. Every packaging option inherits this."
+    },
+    {
+      "id": "goreleaser-builds-natively",
+      "level": 2,
+      "verdict": "works",
+      "detail": "goreleaser 2.18.0 builds notriosd and notriosctl for linux/amd64 with CGO_ENABLED=1."
+    },
+    {
+      "id": "cross-compile-needs-a-toolchain",
+      "level": 2,
+      "verdict": "measured",
+      "detail": "With only the host compiler, 5 of 6 targets fail: runtime/cgo's gcc_arm64.S will not assemble under x86-64 gcc. Only linux/amd64 produced a binary."
+    },
+    {
+      "id": "arm64-cross-works",
+      "level": 2,
+      "verdict": "works",
+      "detail": "With gcc-aarch64-linux-gnu and CC set, linux/arm64 builds a genuine aarch64 ELF and an arm64 .deb. The vendored SQLite amalgamation needed no extra flags. It cannot be executed here (Exec format error), so this is level 2 and not evidence that arm64 works."
+    },
+    {
+      "id": "deb-is-not-policy-clean",
+      "level": 2,
+      "verdict": "gap",
+      "detail": "lintian: 3 errors (no-copyright-file, no-changelog, extended-description-is-empty) and 297 warnings, including undeclared-elf-prerequisites, hardening-no-pie, no-manual-page, unknown-section, and non-standard-file-perm on every doc file."
+    },
+    {
+      "id": "no-declared-dependencies",
+      "level": 2,
+      "verdict": "gap",
+      "detail": "The package declares no Depends at all while the binary links libc and libm. nFPM does no shared-library dependency resolution; dh_shlibdeps does."
+    },
+    {
+      "id": "no-maintainer-scripts",
+      "level": 2,
+      "verdict": "gap",
+      "detail": "The control archive holds only control and md5sums. Nothing registers the notrios:// scheme handler or updates the desktop database on install."
+    },
+    {
+      "id": "not-reproducible-by-default",
+      "level": 2,
+      "verdict": "gap",
+      "detail": "Two runs produce different .deb and different binaries. Cause identified: GoReleaser's default ldflags inject -X main.date=<timestamp>, which is recorded in Go build info even though main.date does not exist here. Overriding ldflags fixes it."
+    },
+    {
+      "id": "dist-directory-collision",
+      "level": 2,
+      "verdict": "gap",
+      "detail": "goreleaser --clean empties dist/, which this repository already uses for source release ZIPs. One of the two must move."
+    },
+    {
+      "id": "install-layout-matches",
+      "level": 2,
+      "verdict": "works",
+      "detail": "The package lays out /usr/bin/notriosd with /usr/share/notrios, which is exactly the relationship H5's program-assets resolution derives, so a distro package finds its interface and help with no extra configuration."
+    },
+    {
+      "id": "windows-not-assessable-here",
+      "level": 1,
+      "verdict": "blocked",
+      "detail": "makensis 3.09 and the Wails v2.13.0 CLI are installed, so an installer could be generated locally. It would be level 1: a cross-built Windows artifact is not native evidence, and nothing here can execute it."
+    },
+    {
+      "id": "macos-not-assessable-here",
+      "level": 0,
+      "verdict": "blocked",
+      "detail": "Nothing about macOS can be established on this machine, and emulating Apple hardware locally is outside this item's boundaries. It needs a native runner."
+    }
+  ],
+  "not_verified": [
+    "GitHub-hosted runner availability, per-minute cost and artifact retention: not checked against upstream documentation in this pass, so no projection is recorded.",
+    "Whether the arm64 .deb installs or runs on an arm64 machine.",
+    "Wails v2 native packaging output on Windows or macOS."
+  ]
+}

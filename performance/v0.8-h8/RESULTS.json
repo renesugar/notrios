@@ -1,0 +1,188 @@
+{
+  "schema": "notrios.h8.integration-matrix.v1",
+  "milestone": "v0.8",
+  "item": "H8",
+  "host_platform": "linux",
+  "rows": [
+    {
+      "id": "no-development-toolchain",
+      "area": "install",
+      "platforms": [
+        "linux"
+      ],
+      "status": "passed",
+      "detail": "ran with PATH=/tmp/notrios-h8-v8z9isd5/opt/bin only; reported 0.7.0",
+      "seconds": 0.0
+    },
+    {
+      "id": "loopback-only-listener",
+      "area": "network",
+      "platforms": [
+        "linux"
+      ],
+      "status": "passed",
+      "detail": "local address 127.0.0.1:41701; loopback only, 1 socket(s)",
+      "seconds": 0.5
+    },
+    {
+      "id": "port-collision-refusal",
+      "area": "network",
+      "platforms": [
+        "linux"
+      ],
+      "status": "passed",
+      "detail": "second instance refused, named the cause and a non-default port",
+      "seconds": 0.4
+    },
+    {
+      "id": "multi-profile-isolation",
+      "area": "profiles",
+      "platforms": [
+        "linux"
+      ],
+      "status": "passed",
+      "detail": "two profiles, 2 distinct databases, both listed",
+      "seconds": 0.7
+    },
+    {
+      "id": "profile-collision-refusal",
+      "area": "profiles",
+      "platforms": [
+        "linux"
+      ],
+      "status": "passed",
+      "detail": "duplicate listen address refused (exit 1)",
+      "seconds": 0.5
+    },
+    {
+      "id": "url-handler-lifecycle",
+      "area": "desktop",
+      "platforms": [
+        "linux"
+      ],
+      "status": "passed",
+      "detail": "handler printed without --apply; installed entry declares the scheme and an icon",
+      "seconds": 0.0
+    },
+    {
+      "id": "deep-link-resolution",
+      "area": "desktop",
+      "platforms": [
+        "linux"
+      ],
+      "status": "passed",
+      "detail": "created a note, linked it, resolved it (0); unknown is 1, malformed is 2",
+      "seconds": 0.7
+    },
+    {
+      "id": "service-cli-same-library",
+      "area": "install",
+      "platforms": [
+        "linux"
+      ],
+      "status": "passed",
+      "detail": "both resolve notes.sqlite (db_igewbsnf7cre6...), CLI origin resolved",
+      "seconds": 0.4
+    },
+    {
+      "id": "help-notes-searchable",
+      "area": "search",
+      "platforms": [
+        "linux"
+      ],
+      "status": "passed",
+      "detail": "seeded 15 pages; search finds them: {'Recoll': 5, 'notriosctl': 5, 'troubleshooting': 4}",
+      "seconds": 1.5
+    },
+    {
+      "id": "service-restart",
+      "area": "lifecycle",
+      "platforms": [
+        "linux"
+      ],
+      "status": "passed",
+      "detail": "two start/stop cycles; the library is intact and doctor passes",
+      "seconds": 0.8
+    },
+    {
+      "id": "lifecycle-uninstall-parity",
+      "area": "lifecycle",
+      "platforms": [
+        "linux"
+      ],
+      "status": "passed",
+      "detail": "uninstall removed the program and left the library byte-identical",
+      "seconds": 5.0
+    },
+    {
+      "id": "gui-headless-start",
+      "area": "desktop",
+      "platforms": [
+        "linux"
+      ],
+      "status": "passed",
+      "detail": "the desktop binary served on 127.0.0.1:37067 under xvfb",
+      "seconds": 6.0
+    },
+    {
+      "id": "cleanup-audit",
+      "area": "lifecycle",
+      "platforms": [
+        "linux"
+      ],
+      "status": "passed",
+      "detail": "roots removed; the verified backup survives outside them",
+      "seconds": 4.1
+    },
+    {
+      "id": "firewall-observation",
+      "area": "network",
+      "platforms": [
+        "linux"
+      ],
+      "status": "postponed",
+      "reason": "Reading or changing firewall state needs root, and this harness deliberately runs unprivileged. The related property that can be checked without root is covered by loopback-only-listener."
+    },
+    {
+      "id": "native-file-picker",
+      "area": "desktop",
+      "platforms": [
+        "linux"
+      ],
+      "status": "postponed",
+      "reason": "The picker is a Wails runtime dialog driven by a person. Automating it would test the automation rather than the dialog."
+    },
+    {
+      "id": "package-upgrade-removal",
+      "area": "lifecycle",
+      "platforms": [
+        "linux"
+      ],
+      "status": "postponed",
+      "reason": "Executed in H6 against a packaged install rather than repeated here; see performance/v0.8-h6/PACKAGE.json."
+    },
+    {
+      "id": "windows-install-launch",
+      "area": "platform",
+      "platforms": [
+        "windows"
+      ],
+      "status": "postponed",
+      "reason": "Needs the platform itself. H7 is deferred to post-v1.0 because the hardware is not available, and a cross-built artifact that has never run is not evidence that the platform works."
+    },
+    {
+      "id": "macos-install-launch",
+      "area": "platform",
+      "platforms": [
+        "macos"
+      ],
+      "status": "postponed",
+      "reason": "Needs the platform itself. H7 is deferred to post-v1.0 because the hardware is not available, and a cross-built artifact that has never run is not evidence that the platform works."
+    }
+  ],
+  "totals": {
+    "passed": 13,
+    "failed": 0,
+    "postponed": 5
+  }
+}

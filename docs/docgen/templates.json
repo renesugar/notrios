@@ -1,0 +1,204 @@
+{
+  "schema": "notrios.docgen.templates.v1",
+  "pages": [
+    {
+      "path": "docs/api/mcp.md",
+      "sections": [
+        {
+          "slug": "read-tools",
+          "slots": [
+            {
+              "id": "mcp-tool-surface",
+              "audience": "user"
+            },
+            {
+              "id": "mcp-api-contract",
+              "audience": "api"
+            }
+          ]
+        },
+        {
+          "slug": "tool-scopes",
+          "slots": [
+            {
+              "id": "mcp-scope-surface",
+              "audience": "user"
+            },
+            {
+              "id": "mcp-tool-scope-assignments",
+              "audience": "user"
+            },
+            {
+              "id": "mcp-sync-tool-scopes",
+              "audience": "user"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "docs/api/rest.md",
+      "sections": [
+        {
+          "slug": "rest-api",
+          "slots": [
+            {
+              "id": "rest-operation-surface",
+              "audience": "user"
+            },
+            {
+              "id": "rest-api-contract",
+              "audience": "api"
+            }
+          ]
+        },
+        {
+          "slug": "resources-attachments",
+          "slots": [
+            {
+              "id": "destructive-rest-confirmations",
+              "audience": "user"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "docs/cli.md",
+      "sections": [
+        {
+          "slug": "version",
+          "slots": [
+            {
+              "id": "product-version",
+              "audience": "user"
+            }
+          ]
+        },
+        {
+          "slug": "the-notriosctl-cli",
+          "slots": [
+            {
+              "id": "cli-usage-forms",
+              "audience": "user"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "docs/features.md",
+      "sections": [
+        {
+          "slug": "what-you-can-do",
+          "slots": [
+            {
+              "id": "feature-surface",
+              "audience": "user"
+            }
+          ]
+        },
+        {
+          "slug": "where-the-surfaces-disagree",
+          "slots": [
+            {
+              "id": "surface-comparison",
+              "audience": "user"
+            }
+          ]
+        },
+        {
+          "slug": "where-each-capability-lives",
+          "slots": [
+            {
+              "id": "feature-surface-table",
+              "audience": "user"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "docs/gui.md",
+      "sections": [
+        {
+          "slug": "layout",
+          "slots": [
+            {
+              "id": "gui-journey-surface",
+              "audience": "user"
+            }
+          ]
+        },
+        {
+          "slug": "sync-center",
+          "slots": [
+            {
+              "id": "gui-peer-retirement-confirmation",
+              "audience": "user"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "docs/journeys-cli.md",
+      "sections": [
+        {
+          "slug": "the-journeys",
+          "slots": [
+            {
+              "id": "cli-journey-surface",
+              "audience": "user"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "docs/journeys-gui.md",
+      "sections": [
+        {
+          "slug": "what-the-gui-does-not-do",
+          "slots": [
+            {
+              "id": "gui-absent-capabilities",
+              "audience": "user"
+            }
+          ]
+        },
+        {
+          "slug": "the-journeys",
+          "slots": [
+            {
+              "id": "gui-journey-catalogue",
+              "audience": "user"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "docs/service.md",
+      "sections": [
+        {
+          "slug": "configuration-reference",
+          "slots": [
+            {
+              "id": "current-schema-version",
+              "audience": "user"
+            },
+            {
+              "id": "configuration-keys",
+              "audience": "user"
+            },
+            {
+              "id": "configuration-defaults",
+              "audience": "user"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

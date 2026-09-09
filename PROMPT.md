@@ -2,23 +2,13 @@
 
 You are working in the Notrios repository (formerly Notes Companion). Continue from the repository files only; do not rely on prior chat history. This prompt applies to any coding agent (Codex, Claude, aider, etc.).
 
-Read these files first:
+**How to keep this document current is in [`AGENTS.md`](AGENTS.md)** — under "Keeping the reference documents current".
 
-1. `AGENTS.md`
-2. `CODING_CLIENT_HANDOFF.md`
-3. `README.md`
-4. `PLAN.md`
-5. `ROADMAP.md`
-6. `SYSTEM_ARCHITECTURE.md`
-7. `API_SPEC.md`
-8. `DATABASE_SCHEMA.md`
-9. `NOTEBOOKS_AND_SEARCH_NOTEBOOKS.md`, `SEARCH_QUERY_LANGUAGE.md`, `RECOLL_INTEGRATION.md`
-10. `TESTING_POLICY.md`
-11. `CONTEXT_MAP.md`
-12. `agent/PLAN_STATUS.md`
-13. `agent/ATTEMPT_LOG.jsonl`
-14. `agent/MODEL_LOG.jsonl`
-15. `agent/OPEN_QUESTIONS.md`
+Read `AGENTS.md` first, and follow the reading list in its "Before coding"
+section. That list is not repeated here: this file carried its own copy for
+months, and the two had already drifted -- one named `agent/OPEN_QUESTIONS.md`
+and the other named `CODING_STANDARDS.md` and `ENVIRONMENT_SETUP.md`, and
+neither reader could tell which was short.
 
 Then:
 
@@ -30,14 +20,10 @@ Then:
 6. Run validation.
 7. Update `agent/PLAN_STATUS.md`.
 8. Append a `completed` or `blocked` entry to `agent/ATTEMPT_LOG.jsonl`.
-9. Commit the working-state slice with git; if the plan step is complete, archive it under `plans/v0.2/` and ask before starting the next task.
+9. Commit the working-state slice with git; if the plan step is complete,
+   archive it under `plans/v<major>.<minor>/`, create and verify the requested
+   evidence ZIP, and ask before starting the next task.
 
-Important constraints:
-
-- Leave the repository in a working state.
-- SQLite is canonical storage; Recoll is an optional derived sidecar, never canonical.
-- Keep code and dependencies MIT/Apache-2.0 compatible; GPL tools are external processes only.
-- Do not expose raw SQL or arbitrary filesystem operations to MCP.
-- Treat imported Markdown/resources as untrusted.
-- Keep code changes small and reviewable.
-- Review `CODING_CLIENT_HANDOFF.md` before replacing the temporary SQLite adapter or adding external dependencies.
+Important constraints are in `AGENTS.md` under "During each task" and
+"Security constraints", including the license boundary around GPL tools, the
+untrusted-input rule, and what may never enter the repository.

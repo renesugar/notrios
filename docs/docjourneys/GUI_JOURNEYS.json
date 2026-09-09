@@ -1,0 +1,1352 @@
+{
+  "schema": "notrios.docjourneys.gui.v1",
+  "viewport": {
+    "width": 1280,
+    "height": 800
+  },
+  "journeys": [
+    {
+      "id": "find-your-way-around",
+      "title": "Find your way around",
+      "goal": "See what the GUI is made of before changing anything in it.",
+      "feature": "read-notes",
+      "steps": [
+        {
+          "id": "the-sidebar",
+          "narrative": "The sidebar on the left lists your notebooks. Help is one of them: the documentation is seeded into your library as ordinary read-only notes, so you can search it alongside everything else.",
+          "locator": {
+            "testid": "sidebar-row-nb_help"
+          },
+          "action": "screenshot_only"
+        }
+      ],
+      "postcondition": {
+        "narrative": "the Help notebook is present in the sidebar",
+        "locator": {
+          "testid": "sidebar-row-nb_help"
+        }
+      }
+    },
+    {
+      "id": "write-a-note",
+      "title": "Write a note, and read it back",
+      "goal": "Create a note and get something into it.",
+      "feature": "write-notes",
+      "steps": [
+        {
+          "id": "new-note",
+          "narrative": "Click New note. The note is created immediately and opens for editing; there is no dialog to fill in first.",
+          "locator": {
+            "testid": "new-note-button"
+          },
+          "action": "click"
+        },
+        {
+          "id": "the-editor",
+          "narrative": "Type into the editor. What you write is Markdown, and the preview beside it renders as you go.",
+          "locator": {
+            "css": ".cm-content"
+          },
+          "action": "fill",
+          "value": "# Reed beds\n\nSeen at dusk.\n"
+        }
+      ],
+      "postcondition": {
+        "narrative": "the editor is open with the note in it",
+        "locator": {
+          "css": ".cm-content"
+        }
+      }
+    },
+    {
+      "id": "choose-a-notebook",
+      "title": "Choose which notebook a note goes in",
+      "goal": "File a note somewhere other than where it landed.",
+      "feature": "organise-notebooks",
+      "steps": [
+        {
+          "id": "new-note",
+          "narrative": "Start from a new note.",
+          "locator": {
+            "testid": "new-note-button"
+          },
+          "action": "click"
+        },
+        {
+          "id": "notebook-picker",
+          "narrative": "Open the notebook picker. It sits with the note rather than in a menu, because which notebook a note belongs to is part of the note.",
+          "locator": {
+            "testid": "notebook-picker-trigger"
+          },
+          "action": "click"
+        }
+      ],
+      "postcondition": {
+        "narrative": "the notebook picker is open and offering somewhere to file the note",
+        "locator": {
+          "testid": "notebook-picker-trigger"
+        }
+      }
+    },
+    {
+      "id": "tag-a-note",
+      "title": "Tag a note",
+      "goal": "Put a tag on the note you are writing, and take one off.",
+      "feature": "tag-a-note",
+      "steps": [
+        {
+          "id": "new-note",
+          "narrative": "Start from a note. Tags belong to a note, so there has to be one open.",
+          "locator": {
+            "testid": "new-note-button"
+          },
+          "action": "click"
+        },
+        {
+          "id": "open-tags",
+          "narrative": "Open the tag control. It sits in the editor toolbar beside the notebook control, because both answer where this note belongs and both belong where you are typing. The label shows how many tags the note carries.",
+          "locator": {
+            "testid": "tag-editor-trigger"
+          },
+          "action": "click"
+        },
+        {
+          "id": "type-a-tag",
+          "narrative": "Type the tag. Tags are hierarchical, so `field/dusk` sits under `field`. Press Enter or use Add.",
+          "locator": {
+            "testid": "tag-editor-input"
+          },
+          "action": "fill",
+          "value": "field/dusk"
+        },
+        {
+          "id": "add-it",
+          "narrative": "Add it. Each tag then appears as a chip with its own remove button, rather than as a comma-separated line you have to edit carefully.",
+          "locator": {
+            "testid": "tag-editor-add"
+          },
+          "action": "click"
+        }
+      ],
+      "postcondition": {
+        "narrative": "the tag control is showing the note's tags",
+        "locator": {
+          "testid": "tag-editor-list"
+        }
+      }
+    },
+    {
+      "id": "insert-a-link",
+      "title": "Link one note to another",
+      "goal": "Put a link to another note into the one you are writing, without leaving it to find the address.",
+      "feature": "links-between-notes",
+      "steps": [
+        {
+          "id": "open-the-note",
+          "narrative": "Open the note you want to link from. Everything that follows is in this note; the one you link to is never opened.",
+          "locator": {
+            "css": ".result-card:has-text(\"Reed beds at dusk\")"
+          },
+          "action": "click"
+        },
+        {
+          "id": "open-note-info",
+          "narrative": "Note info holds what the note is rather than what it says: where it came from, what it links to, what is attached to it, and the tools for changing those. It is closed by default because a note you are reading is usually a note you are reading.",
+          "locator": {
+            "testid": "note-inspector-toggle"
+          },
+          "action": "click"
+        },
+        {
+          "id": "find-the-other-note",
+          "narrative": "Type part of the other note’s title. The suggestions come from a search over titles, so you do not need the identifier and you do not need the note open in another window.",
+          "locator": {
+            "testid": "link-picker-input"
+          },
+          "action": "fill",
+          "value": "Old shopping"
+        },
+        {
+          "id": "choose-it",
+          "narrative": "Choosing a suggestion writes a stable `document://` link into the body at the cursor. It is stable in the sense that matters: it names the note, so renaming the note later does not break it.",
+          "locator": {
+            "testid": "link-suggestion"
+          },
+          "action": "click"
+        },
+        {
+          "id": "save-when-ready",
+          "narrative": "The link is in the body and the note is unsaved — the badge above the editor says so. Nothing was written for you: move the link to where it belongs in your prose first, then save.",
+          "locator": {
+            "testid": "save-button"
+          },
+          "action": "screenshot_only"
+        }
+      ],
+      "postcondition": {
+        "narrative": "the note carries an unsaved change, which is the link that was just inserted",
+        "locator": {
+          "testid": "unsaved-badge"
+        }
+      }
+    },
+    {
+      "id": "update-a-note",
+      "title": "Change a note you already wrote",
+      "goal": "Open an existing note, change it, and save the change.",
+      "feature": "write-notes",
+      "steps": [
+        {
+          "id": "open-all-notes",
+          "narrative": "All notes is every note in the library, whichever notebook it is filed in. Start here when you know what a note is called but not where you put it.",
+          "locator": {
+            "testid": "sidebar-row-snb_all_notes"
+          },
+          "action": "click"
+        },
+        {
+          "id": "open-the-note",
+          "narrative": "Click a note in the results list to open it. The editor fills with the note as it stands; nothing is changed by opening it.",
+          "locator": {
+            "css": ".result-card:has-text(\"Notes from the eastern hide\")"
+          },
+          "action": "click"
+        },
+        {
+          "id": "change-the-title",
+          "narrative": "The title is an ordinary field at the top of the editor. Change it the way you would change any text.",
+          "locator": {
+            "css": "input.title-input"
+          },
+          "action": "fill",
+          "value": "Reed bed survey, 14 September"
+        },
+        {
+          "id": "save-it",
+          "narrative": "Saving writes a new revision rather than overwriting the old one, so the version you just replaced is still there.",
+          "locator": {
+            "testid": "save-button"
+          },
+          "action": "click"
+        }
+      ],
+      "postcondition": {
+        "narrative": "the note is open with its new title, saved as a fresh revision",
+        "locator": {
+          "testid": "note-inspector"
+        }
+      }
+    },
+    {
+      "id": "delete-a-note",
+      "title": "Delete a note",
+      "goal": "Move a note to the Trash and confirm it arrived there.",
+      "feature": "write-notes",
+      "steps": [
+        {
+          "id": "open-all-notes",
+          "narrative": "Find the note first. Deleting is something you do to an open note, not to a row in a list, so that it is always clear which note is about to go.",
+          "locator": {
+            "testid": "sidebar-row-snb_all_notes"
+          },
+          "action": "click"
+        },
+        {
+          "id": "open-the-note",
+          "narrative": "Open the note you mean to delete and read it once. This is the last screen on which its text is in front of you.",
+          "locator": {
+            "css": ".result-card:has-text(\"Old shopping list\")"
+          },
+          "action": "click"
+        },
+        {
+          "id": "delete-it",
+          "narrative": "Deleting asks you to confirm, and names the note it is about to move so that a mis-clicked row cannot become a deleted note. Deleting moves it to the Trash; it is not destroyed, and nothing here empties the Trash on a timer.",
+          "locator": {
+            "testid": "delete-button"
+          },
+          "action": "click",
+          "confirm": true
+        },
+        {
+          "id": "look-in-the-trash",
+          "narrative": "Trash is a place you can open and look inside, not a countdown. The note is in it.",
+          "locator": {
+            "testid": "sidebar-row-snb_trash"
+          },
+          "action": "click"
+        }
+      ],
+      "postcondition": {
+        "narrative": "the deleted note is listed in the Trash",
+        "locator": {
+          "css": ".result-card:has-text(\"Old shopping list\")"
+        }
+      }
+    },
+    {
+      "id": "restore-a-note",
+      "title": "Take a note back out of the Trash",
+      "goal": "Restore a deleted note and confirm it is back among your notes.",
+      "feature": "write-notes",
+      "steps": [
+        {
+          "id": "open-the-trash",
+          "narrative": "Open the Trash to see what is in it. Everything here was deleted and none of it is gone.",
+          "locator": {
+            "testid": "sidebar-row-snb_trash"
+          },
+          "action": "click"
+        },
+        {
+          "id": "open-the-trashed-note",
+          "narrative": "Open the note you want back. A trashed note opens read-only, with a badge saying why.",
+          "locator": {
+            "css": ".result-card:has-text(\"Recipe I still want\")"
+          },
+          "action": "click"
+        },
+        {
+          "id": "restore-it",
+          "narrative": "Restoring returns the note to the notebook it was filed in, not to some general inbox.",
+          "locator": {
+            "testid": "restore-button"
+          },
+          "action": "click"
+        },
+        {
+          "id": "back-to-all-notes",
+          "narrative": "All notes again, to see it where it belongs.",
+          "locator": {
+            "testid": "sidebar-row-snb_all_notes"
+          },
+          "action": "click"
+        }
+      ],
+      "postcondition": {
+        "narrative": "the restored note is listed among the notes again",
+        "locator": {
+          "css": ".result-card:has-text(\"Recipe I still want\")"
+        }
+      }
+    },
+    {
+      "id": "search-your-notes",
+      "title": "Search for a note",
+      "goal": "Find notes by what they say, using the same query language the command line takes.",
+      "feature": "search-notes",
+      "steps": [
+        {
+          "id": "type-a-query",
+          "narrative": "The search box takes the query language, not just a word. Bare words are combined with an implicit AND; an uppercase OR widens the search instead.",
+          "locator": {
+            "css": ".search-row input"
+          },
+          "action": "fill",
+          "value": "harriers OR trowel"
+        },
+        {
+          "id": "run-it",
+          "narrative": "Run the search. Results are ordered by relevance and page as you scroll, so a large library does not have to be loaded to be searched.",
+          "locator": {
+            "role": "button",
+            "name": "Search"
+          },
+          "action": "click"
+        }
+      ],
+      "postcondition": {
+        "narrative": "notes matching either side of the OR are listed",
+        "locator": {
+          "css": ".result-card:has-text(\"Reed beds at dusk\")"
+        }
+      }
+    },
+    {
+      "id": "search-by-tag-and-exclude",
+      "title": "Narrow a search by tag, and exclude what you do not want",
+      "goal": "Use a field query and a negation together, which is what most real searches turn out to be.",
+      "feature": "search-notes",
+      "steps": [
+        {
+          "id": "type-a-field-query",
+          "narrative": "tag: matches a tag rather than the note's text, and a leading minus excludes. Here that is everything tagged field/dusk except the documentation.",
+          "locator": {
+            "css": ".search-row input"
+          },
+          "action": "fill",
+          "value": "tag:field/dusk -notebook:\"Help\""
+        },
+        {
+          "id": "run-it",
+          "narrative": "The same box runs it. Every query-language feature works here exactly as it does in notriosctl search, because it is the same parser.",
+          "locator": {
+            "role": "button",
+            "name": "Search"
+          },
+          "action": "click"
+        }
+      ],
+      "postcondition": {
+        "narrative": "only the tagged note outside the Help notebook is listed",
+        "locator": {
+          "css": ".result-card:has-text(\"Reed beds at dusk\")"
+        }
+      }
+    },
+    {
+      "id": "keep-a-search-as-a-notebook",
+      "title": "Keep a search as a notebook",
+      "goal": "Turn a search you have just watched work into a notebook in the sidebar.",
+      "feature": "saved-searches",
+      "steps": [
+        {
+          "id": "run-a-search",
+          "narrative": "Search for whatever you want the notebook to hold. Any query works: this is the same language the rest of the interface takes.",
+          "locator": {
+            "css": ".search-row input"
+          },
+          "action": "fill",
+          "value": "tag:field/dusk"
+        },
+        {
+          "id": "see-it-work",
+          "narrative": "Run it and read the results. This is the point of keeping a search here rather than typing one into a form: you are deciding about a query you have watched work, not one you hope is right.",
+          "locator": {
+            "role": "button",
+            "name": "Search"
+          },
+          "action": "click"
+        },
+        {
+          "id": "keep-it",
+          "narrative": "Keep this search appears once a search has returned something. A query that found nothing is not offered, because a notebook made from it would open empty.",
+          "locator": {
+            "testid": "keep-search"
+          },
+          "action": "click"
+        },
+        {
+          "id": "name-it",
+          "narrative": "The query is suggested as the name and is usually not what you want to read in a sidebar. The query itself is shown below the field but cannot be edited here.",
+          "locator": {
+            "testid": "keep-search-name"
+          },
+          "action": "fill",
+          "value": "Dusk field notes"
+        },
+        {
+          "id": "save-it",
+          "narrative": "Keeping it adds a notebook to the sidebar whose contents are whatever the query matches, now and later.",
+          "locator": {
+            "testid": "keep-search-save"
+          },
+          "action": "click"
+        }
+      ],
+      "postcondition": {
+        "narrative": "the kept search is listed in the sidebar as a notebook",
+        "locator": {
+          "css": ".sidebar-row:has-text(\"Dusk field notes\")"
+        }
+      }
+    },
+    {
+      "id": "rename-a-tag",
+      "title": "Rename a tag, and everything under it",
+      "goal": "Change a tag's name across every note that carries it, after seeing what that will do.",
+      "feature": "browse-and-rename-tags",
+      "steps": [
+        {
+          "id": "find-the-tag",
+          "narrative": "Tags are listed in the sidebar with the number of notes carrying each one. The pencil beside a tag renames it; the name itself still runs a search for it.",
+          "locator": {
+            "testid": "tag-rename-place/hide"
+          },
+          "action": "click"
+        },
+        {
+          "id": "type-the-new-name",
+          "narrative": "A rename reaches every note carrying the tag. Leaving “rename everything under it” ticked also moves the tags nested below this one.",
+          "locator": {
+            "testid": "tag-rename-to"
+          },
+          "action": "fill",
+          "value": "places/eastern-hide"
+        },
+        {
+          "id": "see-what-changes",
+          "narrative": "Nothing has changed yet. The report is not a guess: the service performs the rename inside a transaction and rolls it back, so what you are reading and what applying would do cannot disagree. A change described as a merge means the destination already exists and the two tags become one.",
+          "locator": {
+            "testid": "tag-rename-preview"
+          },
+          "action": "click"
+        },
+        {
+          "id": "agree-to-it",
+          "narrative": "Rename applies exactly what the report described. Editing the name or the children option first withdraws the report, so you cannot agree to one rename and apply another.",
+          "locator": {
+            "testid": "tag-rename-apply"
+          },
+          "action": "click"
+        }
+      ],
+      "postcondition": {
+        "narrative": "the renamed tag is listed in the sidebar under its new name",
+        "locator": {
+          "testid": "tag-rename-places/eastern-hide"
+        }
+      }
+    },
+    {
+      "id": "check-library-health",
+      "title": "Check what has rotted, and repair what can be",
+      "goal": "See the library's problems, repair the mechanical ones, and know why the rest are commands.",
+      "feature": "maintenance",
+      "steps": [
+        {
+          "id": "open-health",
+          "narrative": "Health reads two reports about this library. Nothing on the screen changes anything: both reports are read-only, and one of them says so in the API itself.",
+          "locator": {
+            "testid": "health-header-button"
+          },
+          "action": "click"
+        },
+        {
+          "id": "what-has-rotted",
+          "narrative": "Lint finds broken links, unresolved anchors, notes without titles, remote media nobody has localized, attachments nothing points at. Counts are for the whole library; where a list is capped it says so, because a capped list read as the whole problem undercounts it.",
+          "locator": {
+            "testid": "library-health-lint"
+          },
+          "action": "screenshot_only"
+        },
+        {
+          "id": "what-could-be-reclaimed",
+          "narrative": "The collector plans, and never deletes. Deleting is notriosctl gc --apply, and the absence of a button here is deliberate: reclaiming space should be an explicit local act rather than something a window does.",
+          "locator": {
+            "testid": "library-health-gc"
+          },
+          "action": "screenshot_only"
+        },
+        {
+          "id": "what-can-be-repaired",
+          "narrative": "Some findings can be corrected without judgement. Planning shows how many edits across how many notes and changes nothing; repairing applies them, each against the revision it was computed from, so a note you edited in the meantime refuses rather than being repaired against text nobody read. Collecting unreferenced attachments is not offered here: it deletes, and a repair only writes a new revision.",
+          "locator": {
+            "testid": "library-health-repairs"
+          },
+          "action": "screenshot_only"
+        }
+      ],
+      "postcondition": {
+        "narrative": "both reports are on screen and nothing has been changed",
+        "locator": {
+          "testid": "library-health-gc"
+        }
+      }
+    },
+    {
+      "id": "import-from-joplin-in-the-app",
+      "title": "Import a Joplin export",
+      "goal": "Bring a Joplin RAW export into this library from the desktop app.",
+      "feature": "import-notes",
+      "driver": "desktop",
+      "steps": [
+        {
+          "id": "open-import-and-export",
+          "narrative": "Open **File ▸ Import and export…**, or press Ctrl+I. Everything that reads or writes a folder on this machine is here, and it is here only in the desktop app: a browser cannot open a folder, so these controls are shown there and disabled with that reason rather than hidden.",
+          "locator": {
+            "native": "the File menu's “Import and export…” item"
+          },
+          "action": "drive",
+          "keys": "ctrl+i",
+          "expect": [
+            "the import and export dialog opened"
+          ]
+        },
+        {
+          "id": "name-the-folder",
+          "narrative": "Name the Joplin RAW export folder — the one Joplin wrote, with a Markdown file per note. **Choose folder…** opens a directory chooser if you would rather point at it. Nothing below is available until a folder is named.",
+          "locator": {
+            "native": "the “Joplin RAW export folder” field"
+          },
+          "action": "drive",
+          "value": "{joplin}",
+          "keys": "Tab"
+        },
+        {
+          "id": "the-report",
+          "narrative": "Press **Import**, and the report says what arrived. **Scan without importing** sits beside it and writes nothing, which is the safer first move on an export you have not opened. Imported notes are ordinary editable notes: a migration, not a read-only attachment.",
+          "locator": {
+            "native": "the “Import” button in the Joplin section"
+          },
+          "action": "drive",
+          "keys": "Tab Tab Tab Return",
+          "expect": [
+            "joplin-apply requested for {joplin}",
+            "joplin-apply finished"
+          ]
+        }
+      ],
+      "postcondition": {
+        "narrative": "the imported notes are in the library",
+        "locator": {
+          "native": "the Joplin section's report line"
+        }
+      }
+    },
+    {
+      "id": "export-this-library",
+      "title": "Export the whole library",
+      "goal": "Write a portable archive of everything, from the desktop app.",
+      "feature": "export-and-archive",
+      "driver": "desktop",
+      "steps": [
+        {
+          "id": "open-import-and-export",
+          "narrative": "Open **File ▸ Import and export…**, or press Ctrl+I. Everything that reads or writes a folder on this machine is here, and it is here only in the desktop app: a browser cannot open a folder, so these controls are shown there and disabled with that reason rather than hidden.",
+          "locator": {
+            "native": "the File menu's “Import and export…” item"
+          },
+          "action": "drive",
+          "keys": "ctrl+i",
+          "expect": [
+            "the import and export dialog opened"
+          ]
+        },
+        {
+          "id": "name-the-destination",
+          "narrative": "Name the folder to write the archive into, and let it be an empty one: an archive is a directory of files rather than a single file.",
+          "locator": {
+            "native": "the “Folder to write the archive into” field"
+          },
+          "action": "drive",
+          "value": "{empty}",
+          "keys": "Tab Tab Tab Tab Tab Tab Tab"
+        },
+        {
+          "id": "the-archive",
+          "narrative": "Press **Export everything**, and the report names what was written. Exporting a subset — by notebook, tag or query — stays on the command line, because choosing a subset means seeing what it selects before it is written. The same dialog reads an archive back: **Import from Notrios** verifies one without opening a database.",
+          "locator": {
+            "native": "the “Export everything” button"
+          },
+          "action": "drive",
+          "keys": "Tab Tab Return",
+          "expect": [
+            "export-apply requested for {empty}",
+            "export-apply finished"
+          ]
+        }
+      ],
+      "postcondition": {
+        "narrative": "the archive is written and the report says so",
+        "locator": {
+          "native": "the export section's report line"
+        }
+      }
+    },
+    {
+      "id": "take-a-snapshot",
+      "title": "Take a snapshot of the library",
+      "goal": "Write a verified snapshot image you can restore from.",
+      "feature": "snapshots",
+      "driver": "desktop",
+      "steps": [
+        {
+          "id": "open-import-and-export",
+          "narrative": "Open **File ▸ Import and export…**, or press Ctrl+I. Everything that reads or writes a folder on this machine is here, and it is here only in the desktop app: a browser cannot open a folder, so these controls are shown there and disabled with that reason rather than hidden.",
+          "locator": {
+            "native": "the File menu's “Import and export…” item"
+          },
+          "action": "drive",
+          "keys": "ctrl+i",
+          "expect": [
+            "the import and export dialog opened"
+          ]
+        },
+        {
+          "id": "name-the-destination",
+          "narrative": "Name the folder to write the snapshot into. A snapshot is the whole library at one moment, and it is the fastest way to copy one that is going back into the same schema.",
+          "locator": {
+            "native": "the “Folder to write the snapshot into” field"
+          },
+          "action": "drive",
+          "value": "{empty}",
+          "keys": "Tab Tab Tab Tab Tab Tab Tab Tab Tab"
+        },
+        {
+          "id": "the-snapshot",
+          "narrative": "Press **Create snapshot**. The image is verified as it is written, and one that fails verification is never recorded as a snapshot. Restoring one is a command-line operation, because a restore replaces the library this window is showing.",
+          "locator": {
+            "native": "the “Create snapshot” button"
+          },
+          "action": "drive",
+          "keys": "Tab Tab Return",
+          "expect": [
+            "snapshot-apply requested for {empty}",
+            "snapshot-apply finished"
+          ]
+        }
+      ],
+      "postcondition": {
+        "narrative": "the snapshot is written and verified",
+        "locator": {
+          "native": "the snapshot section's report line"
+        }
+      }
+    },
+    {
+      "id": "publish-a-subset",
+      "title": "Publish a subset of your notes",
+      "goal": "Review exactly what a publication would let out, then write it.",
+      "feature": "publishing",
+      "driver": "desktop",
+      "steps": [
+        {
+          "id": "open-import-and-export",
+          "narrative": "Open **File ▸ Import and export…**, or press Ctrl+I. Publishing is at the bottom, under the operations that read and write whole libraries, because it is the one that hands notes to somebody else.",
+          "locator": {
+            "native": "the File menu's “Import and export…” item"
+          },
+          "action": "drive",
+          "keys": "ctrl+i",
+          "expect": [
+            "the import and export dialog opened"
+          ]
+        },
+        {
+          "id": "review-it",
+          "narrative": "Choose a saved profile and press **Review what this would publish**. The counts lead with what is withheld and which links are rewritten, because that is the question — a publication carries current versions only, no trashed notes, no history and no provenance. Profiles are made with `notriosctl publish profile save` and only read here: a form that quietly defaulted a privacy choice is how something private gets published.",
+          "locator": {
+            "native": "the “Review what this would publish” button"
+          },
+          "action": "drive",
+          "keys": "Tab Tab Tab Tab Tab Tab Tab Tab Tab Tab Tab Tab Return",
+          "expect": [
+            "review requested for Field notes",
+            "review ready for Field notes"
+          ]
+        },
+        {
+          "id": "publish-it",
+          "narrative": "Name an empty folder — the caret is already in the field, because naming one is what the review just asked for — and press **Publish this review**. The run re-plans and refuses unless the plan still hashes to the one on screen, so what is published is what was read, not something rebuilt a moment later from the same profile.",
+          "locator": {
+            "native": "the “Publish this review” button"
+          },
+          "action": "drive",
+          "value": "{empty}"
+        },
+        {
+          "id": "the-publication",
+          "narrative": "The report names how many notes were written and where. A publication is not a backup: restoring from one is not a thing you can do, which is why the archive above exists.",
+          "locator": {
+            "native": "the publish section's report line"
+          },
+          "action": "drive",
+          "keys": "Tab Tab Return",
+          "expect": [
+            "publish requested for Field notes",
+            "publish finished:"
+          ]
+        }
+      ],
+      "postcondition": {
+        "narrative": "the publication is written and the report says how many notes went",
+        "locator": {
+          "native": "the publish section's report line"
+        }
+      }
+    },
+    {
+      "id": "see-where-a-note-came-from",
+      "title": "See where a note came from",
+      "goal": "Tell an imported note from one you wrote here, and find the rest of what came in with it.",
+      "feature": "collections",
+      "steps": [
+        {
+          "id": "open-an-imported-note",
+          "narrative": "Open a note that arrived in an import. Nothing about the card says where it came from — that is what Note info is for.",
+          "locator": {
+            "css": ".result-card:has-text(\"Ringing record, 12 May\")"
+          },
+          "action": "click"
+        },
+        {
+          "id": "open-note-info",
+          "narrative": "Note info carries what the note is rather than what it says.",
+          "locator": {
+            "testid": "note-inspector-toggle"
+          },
+          "action": "click"
+        },
+        {
+          "id": "read-the-collection",
+          "narrative": "Collection is where this note came from. It is shown only when there is something to say: a note written in this library carries the default collection, and a row repeating that on every note would say nothing. The notes are filed in an ordinary notebook — the collection is provenance beside it, not a place they live.",
+          "locator": {
+            "testid": "note-collection"
+          },
+          "action": "screenshot_only"
+        }
+      ],
+      "postcondition": {
+        "narrative": "the note names the collection it was imported into",
+        "locator": {
+          "testid": "note-collection"
+        }
+      }
+    },
+    {
+      "id": "attach-a-file",
+      "title": "Attach a file to a note",
+      "goal": "Put a file into the library and keep it with the note it belongs to.",
+      "feature": "attachments",
+      "steps": [
+        {
+          "id": "open-the-note",
+          "narrative": "Open the note the file belongs with.",
+          "locator": {
+            "css": ".result-card:has-text(\"Nest box plans\")"
+          },
+          "action": "click"
+        },
+        {
+          "id": "open-note-info",
+          "narrative": "Attachments are added from Note info, beside the rest of what the note is made of.",
+          "locator": {
+            "testid": "note-inspector-toggle"
+          },
+          "action": "click"
+        },
+        {
+          "id": "choose-a-file",
+          "narrative": "Choose the file — this one is the Notrios icon, because a journey has to attach something real. It is copied into the library, so the note stops depending on where the file happened to live and a backup or a sync carries it along with everything else.",
+          "locator": {
+            "testid": "attachment-upload"
+          },
+          "action": "attach",
+          "value": "assets/notrios.svg"
+        },
+        {
+          "id": "see-it-attached",
+          "narrative": "The file is in the library and listed against the note — and a Markdown link to it has been written where your cursor was, which is why the note is now unsaved. The interface can place the link because it knows where you were typing; `notriosctl resources add` prints the `resource://` URI instead and never touches a body, because at a terminal nobody knows where the link belongs. The bytes are stored once and addressed by their content, so attaching the same file to a second note stores nothing twice.",
+          "locator": {
+            "testid": "note-inspector"
+          },
+          "action": "screenshot_only"
+        }
+      ],
+      "postcondition": {
+        "narrative": "the attached file is listed on the note",
+        "locator": {
+          "css": ".resource-list"
+        }
+      }
+    },
+    {
+      "id": "bring-images-into-the-library",
+      "title": "Bring a note’s images into the library",
+      "goal": "Find the images a note is loading from somebody else’s server, and see what Notrios is willing to copy in.",
+      "feature": "remote-media",
+      "steps": [
+        {
+          "id": "open-the-note",
+          "narrative": "Open a note that points at an image on the web.",
+          "locator": {
+            "css": ".result-card:has-text(\"Heron drawings\")"
+          },
+          "action": "click"
+        },
+        {
+          "id": "open-note-info",
+          "narrative": "Note info lists what the note depends on, including anything it is loading from elsewhere.",
+          "locator": {
+            "testid": "note-inspector-toggle"
+          },
+          "action": "click"
+        },
+        {
+          "id": "read-the-decisions",
+          "narrative": "Every remote image is listed with what the policy decided about it and why. This is a scan, not a download: nothing has been fetched, and the decision is made from the address alone.",
+          "locator": {
+            "testid": "remote-media-list"
+          },
+          "action": "screenshot_only"
+        },
+        {
+          "id": "localize-the-allowed-ones",
+          "narrative": "Localize copies in only the images the policy allows, through the quarantine that hashes and sniffs each one, and rewrites the note to point at the local copies. A note that has been localized still renders when the other server is gone.",
+          "locator": {
+            "testid": "localize-button"
+          },
+          "action": "screenshot_only"
+        }
+      ],
+      "postcondition": {
+        "narrative": "the note lists the remote image and offers to bring it in",
+        "locator": {
+          "testid": "localize-button"
+        }
+      }
+    },
+    {
+      "id": "see-what-a-note-connects-to",
+      "title": "See what a note connects to",
+      "goal": "Follow a note’s links without reading it, and find your way to what it points at.",
+      "feature": "graph",
+      "steps": [
+        {
+          "id": "open-the-note",
+          "narrative": "Open a note that links to others.",
+          "locator": {
+            "css": ".result-card:has-text(\"Marsh survey, index\")"
+          },
+          "action": "click"
+        },
+        {
+          "id": "open-note-info",
+          "narrative": "Nearby notes lives in Note info, under everything else the note is made of.",
+          "locator": {
+            "testid": "note-inspector-toggle"
+          },
+          "action": "click"
+        },
+        {
+          "id": "read-the-neighbourhood",
+          "narrative": "Notes are grouped by how far away they are: directly linked first, then anything reached through those. Hops widens the view — two hops shows what the neighbours point at.",
+          "locator": {
+            "testid": "local-graph"
+          },
+          "action": "screenshot_only"
+        },
+        {
+          "id": "follow-one",
+          "narrative": "A neighbour opens like any other note. Nothing here is a separate graph screen; it is a way out of the note you are in.",
+          "locator": {
+            "testid": "local-graph-node"
+          },
+          "action": "click"
+        }
+      ],
+      "postcondition": {
+        "narrative": "the linked note is the one now open",
+        "locator": {
+          "css": ".result-card.active:has-text(\"Marsh survey, north pool\")"
+        }
+      }
+    },
+    {
+      "id": "put-a-live-query-in-a-note",
+      "title": "Put a live query in a note",
+      "goal": "Keep a list inside a note that fills itself in, instead of one you have to maintain.",
+      "feature": "query-blocks",
+      "steps": [
+        {
+          "id": "open-the-note",
+          "narrative": "Open a note with a query block in it. In the editor it is an ordinary fenced code block: three backticks, `note-query`, and a `query:` line in the same language the search box takes.",
+          "locator": {
+            "css": ".result-card:has-text(\"What I still owe the survey\")"
+          },
+          "action": "click"
+        },
+        {
+          "id": "read-the-results",
+          "narrative": "In the preview the block is replaced by what the query matches right now. Nothing is stored in the note but the query, so the list is never out of date and never needs editing.",
+          "locator": {
+            "css": ".note-query[data-note-query-state=\"ok\"]"
+          },
+          "action": "screenshot_only"
+        },
+        {
+          "id": "follow-a-result",
+          "narrative": "Each result opens the note it names. A block is a way into your notes rather than a report about them.",
+          "locator": {
+            "testid": "note-query-row"
+          },
+          "action": "screenshot_only"
+        }
+      ],
+      "postcondition": {
+        "narrative": "the block renders the notes its query matches",
+        "locator": {
+          "css": ".note-query[data-note-query-state=\"ok\"]"
+        }
+      }
+    },
+    {
+      "id": "choose-where-sync-happens",
+      "title": "Choose where synchronization happens",
+      "goal": "Point this library at a folder both machines can reach, and start a synchronization.",
+      "feature": "sync-exchange",
+      "steps": [
+        {
+          "id": "open-the-sync-centre",
+          "narrative": "Everything about synchronization is behind one button: setup, pairing, the peers you trust, attachments, conflicts, backups and repairs.",
+          "locator": {
+            "testid": "sync-header-button"
+          },
+          "action": "click"
+        },
+        {
+          "id": "open-setup",
+          "narrative": "Setup is where a profile says how it reaches the other side.",
+          "locator": {
+            "testid": "sync-tab-setup"
+          },
+          "action": "click"
+        },
+        {
+          "id": "choose-a-shared-directory",
+          "narrative": "A shared directory is the simplest transport: a second drive, or a cloud folder mapped into this machine. Notrios writes its exchange into that folder and reads what the other library left there. The folder is a carrier, not a copy of your notes.",
+          "locator": {
+            "testid": "sync-target-directory"
+          },
+          "action": "click"
+        },
+        {
+          "id": "name-the-folder",
+          "narrative": "The path is on the machine running this library. A browser cannot open a folder chooser, so the path is typed; the desktop application offers a chooser beside this field.",
+          "locator": {
+            "testid": "sync-directory"
+          },
+          "action": "fill",
+          "value": "{carrier}"
+        },
+        {
+          "id": "save-it",
+          "narrative": "Saving a transport does not enrol a peer and does not start a synchronization: it records where this profile will look, and takes effect when the profile restarts.",
+          "locator": {
+            "testid": "sync-save-transport"
+          },
+          "action": "click"
+        },
+        {
+          "id": "back-to-the-overview",
+          "narrative": "The overview is where a synchronization is started and watched.",
+          "locator": {
+            "testid": "sync-tab-overview"
+          },
+          "action": "click"
+        },
+        {
+          "id": "start-one",
+          "narrative": "Sync now queues the exchange as a job rather than blocking the window on it. What it sends is the operations this library has that the other one has not acknowledged; what it reads is the same from the other side.",
+          "locator": {
+            "testid": "sync-now"
+          },
+          "action": "click"
+        }
+      ],
+      "postcondition": {
+        "narrative": "the synchronization was queued as a job",
+        "locator": {
+          "css": ".sync-inline-notice:not(.error):has-text(\"was queued\")"
+        }
+      }
+    },
+    {
+      "id": "invite-another-device",
+      "title": "Invite another device",
+      "goal": "Issue a single-use code so a second library of yours can pair with this one.",
+      "feature": "sync-pairing",
+      "steps": [
+        {
+          "id": "open-the-sync-centre",
+          "narrative": "Everything about synchronization is behind one button: setup, pairing, the peers you trust, attachments, conflicts, backups and repairs.",
+          "locator": {
+            "testid": "sync-header-button"
+          },
+          "action": "click"
+        },
+        {
+          "id": "open-peers",
+          "narrative": "Peers is where trust between libraries is established and ended.",
+          "locator": {
+            "testid": "sync-tab-peers"
+          },
+          "action": "click"
+        },
+        {
+          "id": "label-it",
+          "narrative": "The label is for you, not for the other machine: it is how this peer will be listed here afterwards.",
+          "locator": {
+            "testid": "sync-invite-label"
+          },
+          "action": "fill",
+          "value": "Laptop"
+        },
+        {
+          "id": "create-a-code",
+          "narrative": "The code is single-use and expires in fifteen minutes. Creating one enrols nobody: it is spent from the other side, and only then do the two libraries learn each other’s keys.",
+          "locator": {
+            "testid": "sync-invite-create"
+          },
+          "action": "click"
+        },
+        {
+          "id": "carry-it-across",
+          "narrative": "Read the code to the other device over a different channel from the address — a code and an address travelling together are worth exactly as much as each other to anybody who intercepts them.",
+          "locator": {
+            "testid": "sync-invite-code"
+          },
+          "action": "screenshot_only"
+        }
+      ],
+      "postcondition": {
+        "narrative": "a single-use pairing code is shown",
+        "locator": {
+          "testid": "sync-invite-code"
+        }
+      }
+    },
+    {
+      "id": "look-for-peers-without-enrolling-one",
+      "title": "See who is on the carrier, without trusting anybody",
+      "goal": "Find out which replicas have left something in the shared folder, and confirm that looking is not the same as trusting.",
+      "feature": "sync-peers",
+      "steps": [
+        {
+          "id": "open-the-sync-centre",
+          "narrative": "Everything about synchronization is behind one button: setup, pairing, the peers you trust, attachments, conflicts, backups and repairs.",
+          "locator": {
+            "testid": "sync-header-button"
+          },
+          "action": "click"
+        },
+        {
+          "id": "open-peers",
+          "narrative": "Peers lists the libraries this one trusts. It starts empty, and it does not fill itself in.",
+          "locator": {
+            "testid": "sync-tab-peers"
+          },
+          "action": "click"
+        },
+        {
+          "id": "read-the-empty-list",
+          "narrative": "No peers are enrolled. Pairing is the only thing that adds one, and it takes a code somebody carried across by hand.",
+          "locator": {
+            "css": ".sync-empty"
+          },
+          "action": "screenshot_only"
+        },
+        {
+          "id": "scan-the-carrier",
+          "narrative": "Discovery reads what is in the shared folder and reports what it found. It enrols nobody — a replica that has written to the carrier is a candidate, not a peer, and becoming one is a decision you make.",
+          "locator": {
+            "testid": "sync-discover"
+          },
+          "action": "click"
+        }
+      ],
+      "postcondition": {
+        "narrative": "the scan reports what it found and enrolled nobody",
+        "locator": {
+          "css": ".sync-inline-notice:not(.error):has-text(\"without enrolling anyone\")"
+        }
+      }
+    },
+    {
+      "id": "make-a-protected-backup",
+      "title": "Make a backup only you can open",
+      "goal": "Write an encrypted copy of this library that a password protects, and know what happens if you lose the password.",
+      "feature": "sync-recovery",
+      "steps": [
+        {
+          "id": "open-the-sync-centre",
+          "narrative": "Everything about synchronization is behind one button: setup, pairing, the peers you trust, attachments, conflicts, backups and repairs.",
+          "locator": {
+            "testid": "sync-header-button"
+          },
+          "action": "click"
+        },
+        {
+          "id": "open-backup",
+          "narrative": "Backup and recovery is where a copy is made and where one is reviewed before it is restored.",
+          "locator": {
+            "testid": "sync-tab-backup"
+          },
+          "action": "click"
+        },
+        {
+          "id": "choose-a-password",
+          "narrative": "The password wraps a fresh key for this backup. It is used and forgotten — it is not stored, not remembered, and not recoverable.",
+          "locator": {
+            "testid": "backup-password"
+          },
+          "action": "fill",
+          "value": "a good long passphrase"
+        },
+        {
+          "id": "type-it-again",
+          "narrative": "Twice, because there is no way back from a typo here: Notrios cannot open a backup whose password it does not have.",
+          "locator": {
+            "testid": "backup-password-confirm"
+          },
+          "action": "fill",
+          "value": "a good long passphrase"
+        },
+        {
+          "id": "write-it-out",
+          "narrative": "The backup is verified as it is written, then downloaded. Restoring one is a separate act with its own review — creating a backup never replaces anything.",
+          "locator": {
+            "testid": "backup-create"
+          },
+          "action": "click"
+        }
+      ],
+      "postcondition": {
+        "narrative": "the backup is created and the password was not kept",
+        "locator": {
+          "css": ".sync-inline-notice:not(.error):has-text(\"was not remembered\")"
+        }
+      }
+    },
+    {
+      "id": "watch-a-synchronization-job",
+      "title": "Watch a synchronization, and retry one that stopped",
+      "goal": "See what synchronization is doing, and start again from where it left off.",
+      "feature": "jobs",
+      "steps": [
+        {
+          "id": "open-the-sync-centre",
+          "narrative": "Everything about synchronization is behind one button: setup, pairing, the peers you trust, attachments, conflicts, backups and repairs.",
+          "locator": {
+            "testid": "sync-header-button"
+          },
+          "action": "click"
+        },
+        {
+          "id": "read-the-jobs",
+          "narrative": "Synchronization runs as jobs rather than as a window you have to keep open. The recent ones are listed with what each was doing and how it ended.",
+          "locator": {
+            "css": ".sync-list"
+          },
+          "action": "screenshot_only"
+        },
+        {
+          "id": "retry-one",
+          "narrative": "A job that failed or was cancelled can be started again. It resumes from its last verified checkpoint rather than from the beginning, so retrying a large transfer does not repeat the part that already arrived.",
+          "locator": {
+            "testid": "sync-job-retry"
+          },
+          "action": "click"
+        }
+      ],
+      "postcondition": {
+        "narrative": "the job was queued to start again from its checkpoint",
+        "locator": {
+          "css": ".sync-inline-notice:not(.error):has-text(\"verified checkpoint\")"
+        }
+      }
+    },
+    {
+      "id": "see-which-library-this-is",
+      "title": "See which library this window is showing",
+      "goal": "Keep separate libraries on one machine and know which one you are looking at.",
+      "feature": "profiles",
+      "steps": [
+        {
+          "id": "open-the-sync-centre",
+          "narrative": "Everything about synchronization is behind one button: setup, pairing, the peers you trust, attachments, conflicts, backups and repairs.",
+          "locator": {
+            "testid": "sync-header-button"
+          },
+          "action": "click"
+        },
+        {
+          "id": "read-the-identity",
+          "narrative": "The header names the profile this window is showing, with the library and this replica’s identifiers beneath it. Two profiles are two databases and two addresses; nothing is shared between them.",
+          "locator": {
+            "css": ".sync-profile-identity"
+          },
+          "action": "screenshot_only"
+        },
+        {
+          "id": "open-setup",
+          "narrative": "Switching between profiles is on the Setup tab, above the transport.",
+          "locator": {
+            "testid": "sync-tab-setup"
+          },
+          "action": "click"
+        },
+        {
+          "id": "choose-a-profile",
+          "narrative": "Each profile is a separate local process at its own address, so choosing one opens it there. Making, registering and forgetting profiles is command-line work: `profile create` names a directory to keep a library in and `profile start` launches a process, and neither is something a web request should be able to ask for.",
+          "locator": {
+            "testid": "profile-switcher"
+          },
+          "action": "screenshot_only"
+        }
+      ],
+      "postcondition": {
+        "narrative": "the window names the profile it is showing",
+        "locator": {
+          "css": ".sync-profile-identity"
+        }
+      }
+    },
+    {
+      "id": "act-on-several-notes",
+      "title": "Reorganise several notes at once",
+      "goal": "Tag, move or trash a set of notes in one action, instead of opening each one.",
+      "feature": "batch-operations",
+      "steps": [
+        {
+          "id": "tick-the-first",
+          "narrative": "Every result carries a tick box. Ticking one starts a selection; the note it belongs to is not opened, because you are choosing notes rather than reading one.",
+          "locator": {
+            "role": "checkbox",
+            "name": "Select Marsh survey, index"
+          },
+          "action": "click"
+        },
+        {
+          "id": "tick-another",
+          "narrative": "Tick as many as you want. Ctrl-click — Command on a Mac — does the same from the card itself, and shift-click takes everything between the last one you touched and this one.",
+          "locator": {
+            "role": "checkbox",
+            "name": "Select Marsh survey, north pool"
+          },
+          "action": "click"
+        },
+        {
+          "id": "read-the-panel",
+          "narrative": "With more than one note chosen there is no single note to read, so the editor and the preview are replaced by the operations that apply to a set: move to a notebook, add or remove a tag, duplicate, restore, or move to the Trash. The notes you picked are listed above them.",
+          "locator": {
+            "testid": "selection-panel"
+          },
+          "action": "screenshot_only"
+        },
+        {
+          "id": "type-a-tag",
+          "narrative": "A tag to put on all of them. The same box removes one, because adding and removing a tag are the same choice made in two directions.",
+          "locator": {
+            "testid": "selection-tag"
+          },
+          "action": "fill",
+          "value": "survey"
+        },
+        {
+          "id": "apply-it",
+          "narrative": "One request, bounded at five hundred notes and refused rather than trimmed past it. It carries a key that makes a second click safe: if nothing appeared to happen and you press again, the answer comes from the first run rather than doing the work twice.",
+          "locator": {
+            "testid": "selection-add-tag"
+          },
+          "action": "click"
+        },
+        {
+          "id": "read-the-report",
+          "narrative": "Every note is reported, not just a total. A note that was skipped — it already carried the tag — is not a note that failed, and the two are counted separately so “nothing to do” cannot look like a fault.",
+          "locator": {
+            "testid": "selection-report"
+          },
+          "action": "screenshot_only"
+        }
+      ],
+      "postcondition": {
+        "narrative": "the run reports what happened to each note in the selection",
+        "locator": {
+          "testid": "selection-report"
+        }
+      }
+    }
+  ]
+}

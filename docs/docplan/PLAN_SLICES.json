@@ -1,0 +1,213 @@
+{
+  "schema": "notrios.docplan.slices.v1",
+  "items": [
+    {
+      "id": "I1",
+      "title": "Put v0.8 on GitHub, and reconcile the branches",
+      "state": "in-progress",
+      "slices": [
+        {
+          "id": "I1-A",
+          "statement": "The remote is re-audited, the evidence pre-push gate runs, and develop is pushed",
+          "state": "done",
+          "evidence": "file:scripts/verify_evidence_pre_push.sh"
+        },
+        {
+          "id": "I1-B",
+          "statement": "A develop-to-main pull request is merged with a merge commit after explicit authorization",
+          "state": "blocked",
+          "blocked_on": "pull request #6 is open with all four CI jobs passing; the owner authorizes the develop-to-main merge, after review, and the method is a merge commit"
+        },
+        {
+          "id": "I1-C",
+          "statement": "The merge result is brought back into develop so main is an ancestor with no content difference",
+          "state": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "I2",
+      "title": "Migrate the desktop shell to Wails v3, or record the postponement",
+      "state": "deferred",
+      "slices": [
+        {
+          "id": "I2-A",
+          "statement": "The frontend's eleven window.go uses move onto @wailsio/runtime or generated bindings",
+          "state": "blocked",
+          "blocked_on": "Wails v3 has no release; go list -m github.com/wailsapp/wails/v3@latest answers v3.0.0-beta.19 as of 2026-09-09. Deferred to post-v1.0; see ROADMAP.md"
+        },
+        {
+          "id": "I2-B",
+          "statement": "The v3 question dialog's callback answer makes the unsaved-work veto wait and fail closed",
+          "state": "blocked",
+          "blocked_on": "Wails v3 has no release; go list -m github.com/wailsapp/wails/v3@latest answers v3.0.0-beta.19 as of 2026-09-09. Deferred to post-v1.0; see ROADMAP.md"
+        },
+        {
+          "id": "I2-C",
+          "statement": "The GUI builds and passes its journeys on GTK4/webkitgtk-6.0, or the postponement is recorded",
+          "state": "blocked",
+          "blocked_on": "Wails v3 has no release; go list -m github.com/wailsapp/wails/v3@latest answers v3.0.0-beta.19 as of 2026-09-09. Deferred to post-v1.0; see ROADMAP.md"
+        }
+      ]
+    },
+    {
+      "id": "I3",
+      "title": "Promote the Ubuntu installer through clean native environments",
+      "state": "not-started",
+      "slices": [
+        {
+          "id": "I3-A",
+          "statement": "Fresh install, source-layout migration and upgrade across prereleases are rehearsed in a clean environment",
+          "state": "not-started"
+        },
+        {
+          "id": "I3-B",
+          "statement": "Downgrade refusal and rollback, remove and reinstall, and profile discovery are rehearsed",
+          "state": "not-started"
+        },
+        {
+          "id": "I3-C",
+          "statement": "Operation with neither source nor a development toolchain present is rehearsed",
+          "state": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "I4",
+      "title": "Harden the destructive lifecycle, and decide the profile race",
+      "state": "not-started",
+      "slices": [
+        {
+          "id": "I4-A",
+          "statement": "Backup capacity and corruption faults and restore drills are executed against disposable profiles",
+          "state": "not-started"
+        },
+        {
+          "id": "I4-B",
+          "statement": "Process, mount and symlink races, external profile roots and modified installed artifacts are exercised",
+          "state": "not-started"
+        },
+        {
+          "id": "I4-C",
+          "statement": "The profile-registry validation race is fixed or refused with a reason",
+          "state": "not-started"
+        },
+        {
+          "id": "I4-D",
+          "statement": "Uninstall is proved never to delete user data",
+          "state": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "I5",
+      "title": "Resolve signing, notarization and timestamping policy",
+      "state": "not-started",
+      "slices": [
+        {
+          "id": "I5-A",
+          "statement": "Each supported platform has a signing, notarization and timestamping policy somebody else can follow",
+          "state": "not-started"
+        },
+        {
+          "id": "I5-B",
+          "statement": "Secret handling keeps material out of pull-request jobs, logs, artifacts, backups and the repository",
+          "state": "not-started"
+        },
+        {
+          "id": "I5-C",
+          "statement": "What remains blocked without an owner account or native trust service is recorded as blocked",
+          "state": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "I6",
+      "title": "Generate and verify the release evidence set",
+      "state": "not-started",
+      "slices": [
+        {
+          "id": "I6-A",
+          "statement": "Checksums, SBOM, dependency/license/security reports and provenance are generated and verified offline",
+          "state": "not-started"
+        },
+        {
+          "id": "I6-B",
+          "statement": "GitHub workflows are pinned by digest and least-privilege",
+          "state": "not-started"
+        },
+        {
+          "id": "I6-C",
+          "statement": "A non-public release-candidate or draft flow is exercised without publishing",
+          "state": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "I7",
+      "title": "Soak, recover, and freeze the support matrix",
+      "state": "not-started",
+      "slices": [
+        {
+          "id": "I7-A",
+          "statement": "Long-lived installed directory, REST and emulator soak tests run to completion with durations recorded",
+          "state": "not-started"
+        },
+        {
+          "id": "I7-B",
+          "statement": "Support-bundle redaction, crash-reporting policy and disaster-recovery drills are executed",
+          "state": "not-started"
+        },
+        {
+          "id": "I7-C",
+          "statement": "The desktop support matrix is frozen and names only what was executed",
+          "state": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "I8",
+      "title": "Freeze the 1.0 compatibility surfaces",
+      "state": "not-started",
+      "slices": [
+        {
+          "id": "I8-A",
+          "statement": "REST, MCP, archive, sync, configuration, installer and Make lifecycle candidates are frozen with green suites",
+          "state": "not-started"
+        },
+        {
+          "id": "I8-B",
+          "statement": "The shared C ABI is frozen and its ownership, leak, double-free and wrong-handle failures are exercised",
+          "state": "not-started"
+        },
+        {
+          "id": "I8-C",
+          "statement": "Concurrent-shutdown, cancellation and stream-limit behaviour is tested at the edges",
+          "state": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "I9",
+      "title": "Write the release-grade operational documentation",
+      "state": "not-started",
+      "slices": [
+        {
+          "id": "I9-A",
+          "statement": "Install, upgrade, rollback and backup/restore documentation is written for a reader with no repository",
+          "state": "not-started"
+        },
+        {
+          "id": "I9-B",
+          "statement": "Uninstall, purge, troubleshooting and artifact-verification documentation is written for that reader",
+          "state": "not-started"
+        },
+        {
+          "id": "I9-C",
+          "statement": "Every command shown is generated from or checked against the real command line",
+          "state": "not-started"
+        }
+      ]
+    }
+  ]
+}

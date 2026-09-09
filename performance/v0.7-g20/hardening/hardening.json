@@ -1,0 +1,169 @@
+{
+  "documentType": "codex-security.hardening-analysis",
+  "schemaVersion": "1.0",
+  "analysisId": "hardening_final",
+  "sourceScan": {
+    "scanId": "a8529c1e-bc60-472a-ae36-de6067741fdd",
+    "manifestSha256": "061c5d52f17208dcd1ec2ebff9f0c2b0abb8048e9c47f5064fe265f71861f661",
+    "targetRevision": "a3cea5a39f9c0bfe20e80c7615b503ac09967cce",
+    "snapshotDigest": "codex-security-snapshot/v1:sha256:ca4e5ab0f03fd2ae4edac30421288c61c159b04f856021f589b5b7baa548a311",
+    "sourceDrift": "present"
+  },
+  "assessment": {
+    "outcome": "opportunities_identified",
+    "summary": "The scan supports central network-admission ownership and explicit rooted-filesystem capabilities; focused variants are recommended for v0.7."
+  },
+  "constraints": {
+    "profile": "balanced",
+    "changeHorizons": ["incremental", "medium_term"],
+    "nonNegotiables": [
+      "Preserve loopback REST, MCP, Wails, authenticated peer sync, large snapshots, and tolerant legacy imports.",
+      "Do not add general authentication or a second listener during v0.7 release closure."
+    ],
+    "assumptions": [
+      "No measured latency or memory budget was supplied.",
+      "Reverse proxies and unauthenticated remote ordinary APIs are unsupported.",
+      "The explicitly selected archive or carrier root is a trusted mount or alias."
+    ]
+  },
+  "opportunities": [
+    {
+      "opportunityId": "network-admission-ownership",
+      "title": "Own network admission in one lifecycle boundary",
+      "summary": "Make connection authority, transport selection, browser origin, and byte admission explicit before application mutations.",
+      "diagnosis": "A shared listener granted access to the full mux while transport and admission controls were distributed across executables and handlers.",
+      "evidence": [
+        {"claimType": "observed", "sourceKind": "finding", "findingId": "csf_806a49159c767d9afd647cb6", "path": "internal/service/service.go", "claim": "The remote-capable server attached the full ordinary and peer handler."},
+        {"claimType": "observed", "sourceKind": "finding", "findingId": "csf_ed7b60861f56c5e547852a9a", "path": "cmd/notrios/main.go", "claim": "Desktop serving bypassed configured TLS selection."},
+        {"claimType": "observed", "sourceKind": "finding", "findingId": "csf_493daca733a8eb3401c88af2", "path": "internal/httpapi/server.go", "claim": "Unsafe browser requests lacked central origin admission."},
+        {"claimType": "observed", "sourceKind": "finding", "findingId": "csf_c86971e0236bb990154d64fa", "path": "internal/httpapi/server.go", "claim": "Ordinary JSON, MCP, and resource admission lacked shared ceilings."},
+        {"claimType": "inferred", "sourceKind": "source", "path": "internal/service/service.go", "claim": "Connection and transport policy belongs to the service lifecycle; browser and body policy belongs to shared HTTP/store admission."}
+      ],
+      "desiredInvariants": [
+        "Only finite peer-sync endpoints are remotely reachable; ordinary endpoints require a loopback peer and local Host.",
+        "Every executable uses one TLS selector and partial TLS starts no listener.",
+        "Unsafe browser requests and admitted bytes pass exact centralized bounds before mutation."
+      ],
+      "proposalPath": "proposals/network-admission-ownership.md",
+      "options": [
+        {
+          "optionId": "listener-guard",
+          "title": "Central listener guard",
+          "kind": "incremental",
+          "summary": "Keep one listener and centralize network/TLS admission while retaining HTTP/store origin and byte controls.",
+          "diagramPaths": {"before": "diagrams/network-admission-ownership-before.mmd", "after": "diagrams/network-admission-ownership-listener-guard-after.mmd"},
+          "findingCoverage": [
+            {"findingId": "csf_806a49159c767d9afd647cb6", "effect": "addresses", "tacticalFixRequired": true, "rationale": "The finite remote mux and loopback/Host check are the tactical boundary."},
+            {"findingId": "csf_ed7b60861f56c5e547852a9a", "effect": "addresses", "tacticalFixRequired": true, "rationale": "The shared Service serving selector removes executable drift."},
+            {"findingId": "csf_493daca733a8eb3401c88af2", "effect": "addresses", "tacticalFixRequired": true, "rationale": "Central unsafe-method origin admission is retained."},
+            {"findingId": "csf_c86971e0236bb990154d64fa", "effect": "addresses", "tacticalFixRequired": true, "rationale": "Shared exact-one JSON plus HTTP/store resource ceilings remain necessary."}
+          ],
+          "tradeoffs": [
+            {"dimension": "security", "direction": "improves", "confidence": "high", "basis": "source-derived", "assessment": "Remote and local route authority is checked before the full mux.", "validationPlan": "Exercise real remote/local peers, spoofed forwarding headers, and unknown sync paths."},
+            {"dimension": "performance", "direction": "neutral", "confidence": "medium", "basis": "source-derived", "assessment": "Admission adds constant address, Host, route, and bounded-decode work.", "validationPlan": "Compare REST and peer request latency/throughput before and after."},
+            {"dimension": "memory", "direction": "neutral", "confidence": "high", "basis": "source-derived", "assessment": "Only bounded request state and decoder buffers are introduced.", "validationPlan": "Compare loaded peak RSS under maximum accepted bodies."},
+            {"dimension": "reliability", "direction": "improves", "confidence": "high", "basis": "source-derived", "assessment": "One transport selector eliminates executable lifecycle drift.", "validationPlan": "Fault-inject partial/unreadable TLS pairs in every command mode."},
+            {"dimension": "operability", "direction": "neutral", "confidence": "medium", "basis": "hypothetical", "assessment": "One endpoint remains, but proxy exclusions and denials need documentation.", "validationPlan": "Run operator SSH-tunnel and non-loopback deployment exercises."},
+            {"dimension": "migration", "direction": "neutral", "confidence": "high", "basis": "source-derived", "assessment": "No stored data, peer URL, or configuration migration is required.", "validationPlan": "Run existing profile and peer compatibility suites."}
+          ],
+          "residualRisks": ["Loopback malware remains in scope.", "A loopback reverse proxy is unsupported.", "Future peer endpoints must be added to the finite remote mux deliberately."],
+          "implementationReadiness": {"affectedComponents": ["internal/service", "internal/httpapi", "internal/store", "cmd/notrios", "cmd/notriosd"], "workPackages": ["Centralize listener/TLS admission.", "Centralize origin and body admission.", "Document deployment boundaries."], "acceptanceCriteria": ["Remote ordinary routes fail while peer sync and loopback clients remain compatible."], "migrationNotes": [], "rollback": "Disable remote sync and bind loopback before reverting focused changes."}
+        },
+        {
+          "optionId": "split-listeners",
+          "title": "Split local and peer listeners",
+          "kind": "structural",
+          "summary": "Register ordinary and peer route families on distinct typed listener profiles.",
+          "diagramPaths": {"before": "diagrams/network-admission-ownership-before.mmd", "after": "diagrams/network-admission-ownership-split-listeners-after.mmd"},
+          "findingCoverage": [
+            {"findingId": "csf_806a49159c767d9afd647cb6", "effect": "addresses", "tacticalFixRequired": true, "rationale": "Socket separation removes remote ordinary registration; bind checks remain."},
+            {"findingId": "csf_ed7b60861f56c5e547852a9a", "effect": "addresses", "tacticalFixRequired": true, "rationale": "Both listeners still need centralized transport lifecycle."},
+            {"findingId": "csf_493daca733a8eb3401c88af2", "effect": "mitigates", "tacticalFixRequired": true, "rationale": "A hostile browser can still reach the local socket."},
+            {"findingId": "csf_c86971e0236bb990154d64fa", "effect": "mitigates", "tacticalFixRequired": true, "rationale": "Admitted local and peer clients still require body ceilings."}
+          ],
+          "tradeoffs": [
+            {"dimension": "security", "direction": "improves", "confidence": "high", "basis": "source-derived", "assessment": "Route-family authority becomes structural at socket registration.", "validationPlan": "Inventory registered routes and test both sockets from local/remote peers."},
+            {"dimension": "performance", "direction": "neutral", "confidence": "low", "basis": "hypothetical", "assessment": "No extra request hop is required, but connection pools split.", "validationPlan": "Benchmark concurrent ordinary and peer workloads."},
+            {"dimension": "memory", "direction": "regresses", "confidence": "medium", "basis": "source-derived", "assessment": "A second server, listener, and connection pool retain state.", "validationPlan": "Compare idle and loaded RSS."},
+            {"dimension": "reliability", "direction": "unknown", "confidence": "medium", "basis": "source-derived", "assessment": "Failure isolation improves, but partial startup becomes a new state.", "validationPlan": "Fault-inject bind, certificate, and shutdown failures independently."},
+            {"dimension": "operability", "direction": "regresses", "confidence": "high", "basis": "source-derived", "assessment": "Operators manage two addresses, health views, and firewall rules.", "validationPlan": "Run upgrade and incident exercises."},
+            {"dimension": "migration", "direction": "regresses", "confidence": "high", "basis": "source-derived", "assessment": "Configuration, peer URLs, documentation, and compatibility behavior change.", "validationPlan": "Test old-profile upgrade, mixed peer versions, and rollback."}
+          ],
+          "residualRisks": ["Origin and body admission remain mandatory.", "General remote APIs still need general authentication."],
+          "implementationReadiness": {"affectedComponents": ["internal/service", "internal/httpapi", "internal/config", "cmd/notrios", "cmd/notriosd"], "workPackages": ["Design typed profiles.", "Split route registration.", "Coordinate lifecycle and migration."], "acceptanceCriteria": ["Ordinary routes are absent from the peer socket and peer routes are absent from the local socket."], "migrationNotes": ["Retain the shared-listener guard until every profile migrates."], "rollback": "Return profiles to the guarded shared listener."}
+        }
+      ],
+      "recommendedOptionId": "listener-guard",
+      "recommendation": "Use the central guard for v0.7; choose split listeners when remote ordinary/proxy operation becomes a supported product requirement."
+    },
+    {
+      "opportunityId": "root-capability-boundaries",
+      "title": "Keep untrusted trees behind explicit root capabilities",
+      "summary": "Replace ambient descendant paths with rooted, descriptor-validated, bounded operations.",
+      "diagnosis": "Carrier and legacy archive code validated names but retained ambient filesystem authority after string path joins.",
+      "evidence": [
+        {"claimType": "observed", "sourceKind": "finding", "findingId": "csf_adb83c6f7c60a4270cef81ff", "path": "internal/synccarrier/directory.go", "claim": "Carrier reads, writes, removals, fallbacks, and snapshots followed hostile descendants or special files."},
+        {"claimType": "observed", "sourceKind": "finding", "findingId": "csf_ff3c60302e53c6c528fb82d3", "path": "internal/archive/read.go", "claim": "Legacy archive consumed entries followed descendants and discovered resources late."},
+        {"claimType": "inferred", "sourceKind": "source", "path": "internal/synccarrier/snapshot.go", "claim": "Root containment is common, while carrier resume and archive preflight remain distinct domain policies."}
+      ],
+      "desiredInvariants": [
+        "Every descendant operation is relative to one pinned selected root.",
+        "Consumed entries are regular, identity-checked, and bounded by per-file, aggregate, and scan ceilings.",
+        "Writable carrier partials/fallbacks cannot modify carrier-provided hardlinked outside inodes.",
+        "Legacy resource import consumes its preflight inventory without hostile re-enumeration."
+      ],
+      "proposalPath": "proposals/root-capability-boundaries.md",
+      "options": [
+        {
+          "optionId": "subsystem-roots",
+          "title": "Subsystem-owned rooted access",
+          "kind": "incremental",
+          "summary": "Keep rooted descriptor helpers and lifecycle limits with the carrier and archive owners.",
+          "diagramPaths": {"before": "diagrams/root-capability-boundaries-before.mmd", "after": "diagrams/root-capability-boundaries-subsystem-roots-after.mmd"},
+          "findingCoverage": [
+            {"findingId": "csf_adb83c6f7c60a4270cef81ff", "effect": "addresses", "tacticalFixRequired": true, "rationale": "Rooted carrier operations, bounded iteration, and writable-link checks are the tactical fix."},
+            {"findingId": "csf_ff3c60302e53c6c528fb82d3", "effect": "addresses", "tacticalFixRequired": true, "rationale": "Rooted aggregate preflight and one resource inventory are the tactical fix."}
+          ],
+          "tradeoffs": [
+            {"dimension": "security", "direction": "improves", "confidence": "high", "basis": "source-derived", "assessment": "Ambient descendant authority is replaced by package-owned root capabilities.", "validationPlan": "Run link, special-file, race, growth, cardinality, and aggregate mutation suites."},
+            {"dimension": "performance", "direction": "regresses", "confidence": "medium", "basis": "source-derived", "assessment": "Descriptor identity adds metadata operations; bounded batches prevent pathological allocation.", "validationPlan": "Profile valid large carrier and 382k-note archive workloads."},
+            {"dimension": "memory", "direction": "improves", "confidence": "high", "basis": "source-derived", "assessment": "Directory batches and explicit inventory ceilings bound attacker-controlled allocation.", "validationPlan": "Measure peak RSS for valid and invalid maximum inventories."},
+            {"dimension": "reliability", "direction": "improves", "confidence": "medium", "basis": "source-derived", "assessment": "Special files and unsafe trees fail deterministically before blocking or persistence.", "validationPlan": "Fault-inject FIFO, path swaps, file growth, and device removal."},
+            {"dimension": "operability", "direction": "neutral", "confidence": "medium", "basis": "hypothetical", "assessment": "No service is added; new refusal messages and platform limitations require documentation.", "validationPlan": "Review operator-visible errors on supported filesystems."},
+            {"dimension": "migration", "direction": "neutral", "confidence": "high", "basis": "source-derived", "assessment": "On-disk layout and accepted valid archive/carrier formats remain unchanged.", "validationPlan": "Run round-trip, removable-media, non-atomic, ignored-sidecar, and large-resource tests."}
+          ],
+          "residualRisks": ["Trusted-root bind mounts and read-only hardlinks remain explicit assumptions.", "Concurrent hostile mutation is not transactional.", "Plan 9 and js Root semantics are unsupported."],
+          "implementationReadiness": {"affectedComponents": ["internal/synccarrier", "internal/archive"], "workPackages": ["Root carrier operations and iteration.", "Root archive preflight and inventory.", "Add platform and abuse regressions."], "acceptanceCriteria": ["Unsafe entries fail within declared bounds before outside writes or canonical import mutation."], "migrationNotes": [], "rollback": "Stop using the suspect tree and restore from a trusted copy; reverting checks is not a safe operational rollback."}
+        },
+        {
+          "optionId": "shared-safe-root",
+          "title": "Shared safe-root capability",
+          "kind": "structural",
+          "summary": "Centralize typed regular-read, single-link-write, and bounded-directory capabilities with platform policy.",
+          "diagramPaths": {"before": "diagrams/root-capability-boundaries-before.mmd", "after": "diagrams/root-capability-boundaries-shared-capability-after.mmd"},
+          "findingCoverage": [
+            {"findingId": "csf_adb83c6f7c60a4270cef81ff", "effect": "addresses", "tacticalFixRequired": true, "rationale": "Carrier domain checks remain while low-level operations migrate."},
+            {"findingId": "csf_ff3c60302e53c6c528fb82d3", "effect": "addresses", "tacticalFixRequired": true, "rationale": "Archive aggregate and preflight policy remains in its adapter."}
+          ],
+          "tradeoffs": [
+            {"dimension": "security", "direction": "improves", "confidence": "medium", "basis": "source-derived", "assessment": "New consumers inherit one reviewed descriptor order, but a shared bug has larger blast radius.", "validationPlan": "Fuzz and mutation-test the capability and each adapter."},
+            {"dimension": "performance", "direction": "neutral", "confidence": "low", "basis": "hypothetical", "assessment": "Expected I/O is similar; iterator and interface mechanics are unmeasured.", "validationPlan": "Benchmark identical trees against package-local helpers."},
+            {"dimension": "memory", "direction": "neutral", "confidence": "medium", "basis": "source-derived", "assessment": "Typed iterators preserve bounded batches; adapter inventories remain.", "validationPlan": "Compare allocations and peak RSS."},
+            {"dimension": "reliability", "direction": "unknown", "confidence": "medium", "basis": "source-derived", "assessment": "Platform behavior becomes consistent, but one defect affects every consumer.", "validationPlan": "Run cross-platform fault matrices before migration."},
+            {"dimension": "operability", "direction": "improves", "confidence": "low", "basis": "hypothetical", "assessment": "One platform-policy inventory is easier to audit; errors must retain domain context.", "validationPlan": "Review logs and support diagnostics from both adapters."},
+            {"dimension": "migration", "direction": "regresses", "confidence": "high", "basis": "source-derived", "assessment": "Two callers and platform helpers migrate while tactical paths coexist.", "validationPlan": "Stage read-only then writable operations with source-search gates and rollback adapters."}
+          ],
+          "residualRisks": ["A generic API can hide domain-specific state transitions.", "Bind-mount policy still requires a supported-platform decision."],
+          "implementationReadiness": {"affectedComponents": ["internal/safefs", "internal/synccarrier", "internal/archive"], "workPackages": ["Design typed capabilities.", "Build platform contract tests.", "Migrate read then write paths."], "acceptanceCriteria": ["All ambient descendant operations are absent and both domain suites preserve compatibility."], "migrationNotes": ["Retain package-local helpers until all capability tests and source audits pass."], "rollback": "Select the retained package-local implementation without changing on-disk data."}
+        }
+      ],
+      "recommendedOptionId": "subsystem-roots",
+      "recommendation": "Keep subsystem-owned rooted access for v0.7; centralize after a third consumer or stronger cross-platform link policy appears."
+    }
+  ],
+  "openQuestions": [
+    "Will v0.8 support reverse proxies or authenticated general remote access?",
+    "Are in-root bind mounts and read-only hardlinks in the supported threat model?",
+    "Which platforms must certify identical no-follow and link-count behavior?"
+  ]
+}

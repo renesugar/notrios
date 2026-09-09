@@ -1,0 +1,23 @@
+{
+  "schema": "notrios.h6a.toolchain-probe.v1",
+  "milestone": "v0.8",
+  "item": "H6a",
+  "note": "Measured on this machine. Every claim here is level 1 or 2 on the ladder in REPORT.md: generated, or structurally inspected. Nothing in this file is native runtime evidence for any platform other than linux/amd64.",
+  "host": {
+    "go": "go version go1.27.0 linux/amd64",
+    "platform": "linux/amd64"
+  },
+  "tools_present": {
+    "goreleaser": "2.18.0 (go1.27.0, linux/amd64)",
+    "wails": "v2.13.0",
+    "dpkg-deb": "1.22.6",
+    "fakeroot": "1.33",
+    "makensis": "v3.09-4",
+    "lintian": "Lintian v2.117.0ubuntu1.5",
+    "aarch64-linux-gnu-gcc": "13"
+  },
+  "tools_absent": [
+    "nfpm (standalone; GoReleaser embeds the library)",
+    "rpmbuild"
+  ]
+}

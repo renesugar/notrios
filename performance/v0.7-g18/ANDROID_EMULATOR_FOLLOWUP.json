@@ -1,0 +1,148 @@
+{
+  "schema": "notrios.g18.android-emulator-followup.v1",
+  "captured_at": "2026-08-26T22:10:08Z",
+  "host": {
+    "os": "Linux x86_64",
+    "cpu": "Intel Core i5-9300H",
+    "virtualization": "VT-x",
+    "kvm": "installed and usable",
+    "active_java": "Temurin OpenJDK 21.0.12",
+    "java_home_overridden": false,
+    "android_sdk": "local user SDK",
+    "android_cli_version": "1.0.15985488",
+    "command_line_tools_version": "22.0.0",
+    "emulator_version": "37.1.11.0",
+    "adb_version": "1.0.41",
+    "flutter_version": "3.44.9",
+    "flutter_doctor": "no issues found",
+    "flutter_detected_avds": 2
+  },
+  "installed_images": [
+    {
+      "package": "system-images/android-35/google_apis/x86_64",
+      "version": "9.0.0"
+    },
+    {
+      "package": "system-images/android-36/google_apis_playstore/x86_64",
+      "version": "7.0.0"
+    }
+  ],
+  "avds": [
+    {
+      "name": "medium_phone",
+      "created_with": "android emulator create medium_phone",
+      "selection": "automatic profile default",
+      "api_level": 36,
+      "android_release": "16",
+      "tag_abi": "google_apis_playstore/x86_64",
+      "used_for_probe": false
+    },
+    {
+      "name": "notrios_api35_x86_64",
+      "created_with": "avdmanager exact image and Pixel 6 profile",
+      "selection": "explicit evidence pin",
+      "api_level": 35,
+      "android_release": "15",
+      "tag_abi": "google_apis/x86_64",
+      "used_for_probe": true
+    }
+  ],
+  "supplied_reference_assessments": [
+    {
+      "claim": "A coding agent can install SDK images, create an AVD, and run an emulator from the command line.",
+      "assessment": "accurate when permissions, network, disk, and KVM or another acceleration path are available",
+      "evidence": "This run installed two images, created two AVDs, cold-booted API 35 headlessly, used ADB, and stopped it."
+    },
+    {
+      "claim": "sdkmanager is deprecated in favor of the android sdk commands.",
+      "assessment": "accurate for installed command-line tools 22.0.0",
+      "evidence": "sdkmanager printed the deprecation notice and pointed to android sdk."
+    },
+    {
+      "claim": "The modern package ID is system-images;android-35;google_apis;x86_64.",
+      "assessment": "false for the installed android CLI",
+      "correction": "The modern CLI uses slash IDs: system-images/android-35/google_apis/x86_64. avdmanager retains the legacy semicolon form."
+    },
+    {
+      "claim": "android sdk --licenses and --accept-licenses are supported.",
+      "assessment": "false for installed android CLI 1.0.15985488",
+      "correction": "android sdk exposes install, update, remove, and list. --licenses is rejected and android sdk install exposes no --accept-licenses option. Existing licenses were already accepted; automatic yes input was supplied during installation as authorized."
+    },
+    {
+      "claim": "A persistent .androidrc sdk.accept_licenses setting is the native documented solution.",
+      "assessment": "not supported by the installed help or checked official Android CLI reference",
+      "correction": "No .androidrc was created."
+    },
+    {
+      "claim": "android emulator create can pin an exact API/system image.",
+      "assessment": "false for the installed profile-based command",
+      "correction": "It accepts a profile and automatically selected API 36 Google Play. avdmanager was required to create the exact API-35 Google APIs AVD."
+    },
+    {
+      "claim": "android run builds, installs, and launches the project.",
+      "assessment": "false for the installed command and official reference",
+      "correction": "android run deploys supplied APK paths and explicitly performs no build steps."
+    },
+    {
+      "claim": "JAVA_HOME must be pointed at Android Studio JBR for these CLI tasks.",
+      "assessment": "false in this environment",
+      "correction": "No JAVA_HOME override was used. SDK/AVD commands succeeded with the PATH-selected Temurin 21; Flutter independently continued to use its configured Android Studio JBR."
+    }
+  ],
+  "runtime": {
+    "avd": "notrios_api35_x86_64",
+    "headless_flags": [
+      "-no-window",
+      "-no-audio",
+      "-no-boot-anim",
+      "-no-snapshot",
+      "-gpu swiftshader_indirect",
+      "-accel on"
+    ],
+    "cold_boot_completed_ms": 165804,
+    "fingerprint": "google/sdk_gphone64_x86_64/emu64xa:15/AE3A.240806.043/12960925:userdebug/dev-keys",
+    "kernel": "6.6.50-android15-8-g8adecb593e9b-ab12525588",
+    "selinux": "Enforcing",
+    "stopped_after_probe": true,
+    "connected_android_devices_after_stop": 0
+  },
+  "modernc_runtime": {
+    "module": "modernc.org/sqlite v1.57.0",
+    "libc": "modernc.org/libc v1.74.4",
+    "go_target": "android/amd64",
+    "external_linker_note": "Go's Android/amd64 executable requires external linking, so CGO_ENABLED=1 and NDK API-35 clang were used even though modernc selected zero CgoFiles.",
+    "selected_generated_sources": "linux/amd64",
+    "sqlite_version": "3.53.3",
+    "compile_options_include": [
+      "ENABLE_FTS5",
+      "THREADSAFE=1",
+      "MUTEX_PTHREADS"
+    ],
+    "fts5_counts": [
+      1,
+      2,
+      3
+    ],
+    "json_extract": "ok",
+    "journal_mode": "wal",
+    "integrity_check_each_run": "ok",
+    "close_reopen": "passed",
+    "emulator_reboot_persistence": "passed",
+    "database_hash_unchanged_across_reboot_before_next_write": true,
+    "c_shared_dlopen": "passed",
+    "c_shared_dlclose": "passed"
+  },
+  "remaining_limits": [
+    "No Flutter Android application exists in the current repository, so no APK or Gradle deployment was possible or claimed.",
+    "The current direct C Notrios store was not built because its Android SQLite package remains the H0 decision under investigation.",
+    "The feasibility executable is not the real versioned Notrios ABI or full schema-v27/store/snapshot/sync suite.",
+    "Android/arm64, a physical device, performance A/B against the pinned C control, package/RSS costs, and iOS remain unverified."
+  ],
+  "user_configuration_needed": [],
+  "references": [
+    "https://developer.android.com/tools/agents/android-cli",
+    "https://developer.android.com/studio/run/managing-avds",
+    "https://developer.android.com/studio/command-line/avdmanager",
+    "https://developer.android.com/studio/run/emulator-commandline"
+  ]
+}

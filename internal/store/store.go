@@ -9,6 +9,9 @@ import (
 	"io"
 	"strings"
 	"time"
+
+	"github.com/renesugar/notrios/internal/syncassets"
+	"github.com/renesugar/notrios/internal/syncstate"
 )
 
 var (
@@ -18,6 +21,7 @@ var (
 	ErrInvalidInput         = errors.New("invalid input")
 	ErrNameConflict         = errors.New("name already in use")
 	ErrProtected            = errors.New("builtin object cannot be modified")
+	ErrInvalidCursor        = errors.New("invalid cursor")
 )
 
 // DefaultNotebookID is the bootstrap "Notes" notebook that holds managed
@@ -27,12 +31,259 @@ const DefaultNotebookID = "nb_notes"
 // HelpNotebookID holds the built-in read-only documentation notes.
 const HelpNotebookID = "nb_help"
 
+// ReportsNotebookID holds notes Notrios generates about the library itself,
+// such as the graph report. Like Help, it is read-only: a generated report a
+// reader can edit is a report that silently stops being true.
+const ReportsNotebookID = "nb_reports"
+
+// ReadOnlyNotebookIDs lists the notebooks whose notes the system authors and
+// nobody may edit, in sidebar order.
+//
+// The set is closed by construction: these notebooks are created by bootstrap
+// and there is no API that makes another one.
+func ReadOnlyNotebookIDs() []string {
+	return []string{ReportsNotebookID, HelpNotebookID}
+}
+
+// IsReadOnlyNotebook reports whether a notebook's notes are system-authored and
+// therefore not editable.
+//
+// **This is deliberately not "is it builtin".** Two different sets exist and
+// the code needs both:
+//
+//	Undeletable            Help, Reports, and Notes  (nb.Builtin OR the default ID)
+//	Read-only / generated  Help, Reports             (this predicate)
+//
+// The default "Notes" notebook is created by bootstrap and cannot be deleted,
+// but its content is the *user's* — it is `builtin = 0` in the database for
+// exactly that reason. Treating it as read-only would exclude most of the
+// library, silently, from the graph report, from publications, and from lint.
+// The name says "read-only" rather than "builtin" so that anyone who copies
+// DeleteNotebook's pair of checks is contradicted by it.
+func IsReadOnlyNotebook(notebookID string) bool {
+	switch strings.TrimSpace(notebookID) {
+	case HelpNotebookID, ReportsNotebookID:
+		return true
+	default:
+		return false
+	}
+}
+
+// ReadOnlyNotebookName names a read-only notebook for a refusal message.
+//
+// The name is a constant rather than a lookup because these notebooks refuse
+// renaming, and a refusal that has to read the database to explain itself can
+// fail while explaining.
+func ReadOnlyNotebookName(notebookID string) string {
+	switch strings.TrimSpace(notebookID) {
+	case HelpNotebookID:
+		return "Help"
+	case ReportsNotebookID:
+		return "Reports"
+	default:
+		return notebookID
+	}
+}
+
 // Builtin search-notebook IDs. "All notes" sorts first in sidebars and Trash
 // sorts last; neither can be deleted.
 const (
 	AllNotesSearchNotebookID = "snb_all_notes"
 	TrashSearchNotebookID    = "snb_trash"
 )
+
+// CurrentSchemaVersion is the canonical SQLite schema understood by this
+// build. Archive-v2 manifests record this source schema but never include
+// derived FTS5 or Recoll state.
+//
+//notrios:doc user current-schema-version
+//notrios:help service configuration-reference
+//notrios:claim current-schema-status go:github.com/renesugar/notrios/internal/httpapi#TestStatusReportsConfigurationAndSchema
+const CurrentSchemaVersion = 27
+
+// MaxResourceContentBytes is the canonical whole-resource ceiling shared by
+// local admission and G8's synchronization manifests. HTTP adapters enforce it
+// before streaming into the content-addressed asset store.
+const MaxResourceContentBytes = syncassets.MaxObjectBytes
+
+// DatabaseIdentity separates the stable logical synchronization/archive
+// universe from one writable database copy. Copy/restore workflows preserve
+// DatabaseID only when explicitly requested and always mint a ReplicaID.
+type DatabaseIdentity struct {
+	DatabaseID       string    `json:"database_id"`
+	ReplicaID        string    `json:"replica_id"`
+	CreatedAt        time.Time `json:"created_at"`
+	ReplicaCreatedAt time.Time `json:"replica_created_at"`
+}
+
+// Selection planner limits keep read-only dry runs bounded even when the
+// canonical library is large. P3 can stream the same manifest contract into
+// an archive without widening REST or MCP inputs.
+const (
+	MaxSelectionSelectors     = 100
+	MaxSelectionSelectorBytes = 512
+	MaxSelectionDocumentIDs   = 1000
+	MaxSelectionDocuments     = 1_000_000
+	MaxSelectionDetailItems   = 1000
+)
+
+const (
+	SelectionTargetFullArchive        = "full_archive"
+	SelectionTargetSubsetTransfer     = "subset_transfer"
+	SelectionTargetPublicationHandoff = "publication_handoff"
+)
+
+// Link actions a privacy policy may take on a link whose target the selection
+// does not include. `retain` and `report` leave note content untouched;
+// `plain_text` and `redact` rewrite it and therefore belong only to a
+// projection, never to a restore-fidelity backup.
+const (
+	SelectionLinkActionRetain    = "retain"
+	SelectionLinkActionReport    = "report"
+	SelectionLinkActionPlainText = "plain_text"
+	SelectionLinkActionRedact    = "redact"
+)
+
+// SelectionSpec identifies notes without exposing SQL or filesystem paths.
+// Values within one selector type are ORed; Match controls how the populated
+// selector types combine ("any" or "all").
+type SelectionSpec struct {
+	CollectionID               string   `json:"collection_id,omitempty"`
+	NotebookIDs                []string `json:"notebook_ids,omitempty"`
+	IncludeNotebookDescendants *bool    `json:"include_notebook_descendants,omitempty"`
+	Tags                       []string `json:"tags,omitempty"`
+	Query                      string   `json:"query,omitempty"`
+	DocumentIDs                []string `json:"document_ids,omitempty"`
+	Match                      string   `json:"match,omitempty"`
+}
+
+// PrivacyPolicy is a reusable policy override. Pointer booleans distinguish
+// secure target defaults from an explicit opt-in. Publication defaults strip
+// provenance/private metadata/source bundles and exclude common private tags.
+type PrivacyPolicy struct {
+	ExcludeTags            []string `json:"exclude_tags,omitempty"`
+	PrivateTags            []string `json:"private_tags,omitempty"`
+	LinkAction             string   `json:"link_action,omitempty"`
+	IncludeSourceBundles   *bool    `json:"include_source_bundles,omitempty"`
+	IncludeProvenance      *bool    `json:"include_provenance,omitempty"`
+	IncludePrivateMetadata *bool    `json:"include_private_metadata,omitempty"`
+	IncludeTrashed         *bool    `json:"include_trashed,omitempty"`
+	MaxResourceBytes       int64    `json:"max_resource_bytes,omitempty"`
+}
+
+// EffectivePrivacyPolicy records the concrete target policy used by a plan.
+type EffectivePrivacyPolicy struct {
+	ExcludeTags            []string `json:"exclude_tags"`
+	PrivateTags            []string `json:"private_tags"`
+	LinkAction             string   `json:"link_action"`
+	IncludeSourceBundles   bool     `json:"include_source_bundles"`
+	IncludeProvenance      bool     `json:"include_provenance"`
+	IncludePrivateMetadata bool     `json:"include_private_metadata"`
+	IncludeTrashed         bool     `json:"include_trashed"`
+	MaxResourceBytes       int64    `json:"max_resource_bytes,omitempty"`
+	// ExcludeReadOnlyNotebooks drops Notrios' own generated and documentation
+	// notes — Help and Reports — from a publication handoff.
+	//
+	// It is reported here and **not settable** through PrivacyPolicy. This is
+	// not something a user should have to configure, and a field invites
+	// getting it wrong; adding an opt-in later is easy, and removing a leak is
+	// not. The default Notes notebook is emphatically not in this set —
+	// excluding it would make a publication ship almost nothing.
+	ExcludeReadOnlyNotebooks bool `json:"exclude_read_only_notebooks,omitempty"`
+}
+
+type SelectionPlanRequest struct {
+	Target       string        `json:"target"`
+	Selection    SelectionSpec `json:"selection"`
+	Policy       PrivacyPolicy `json:"policy"`
+	DetailLimit  int           `json:"detail_limit,omitempty"`
+	MaxDocuments int           `json:"max_documents,omitempty"`
+}
+
+type SelectionPlanCounts struct {
+	SelectedDocuments      int `json:"selected_documents"`
+	ExcludedDocuments      int `json:"excluded_documents"`
+	ReachableResources     int `json:"reachable_resources"`
+	AvailableSourceBundles int `json:"available_source_bundles"`
+	IncludedSourceBundles  int `json:"included_source_bundles"`
+	InternalLinks          int `json:"internal_links"`
+	PrivateLinks           int `json:"private_links"`
+	BrokenLinks            int `json:"broken_links"`
+	ExternalLinks          int `json:"external_links"`
+	OversizedResources     int `json:"oversized_resources"`
+}
+
+type SelectionDocumentManifest struct {
+	ID                string   `json:"id"`
+	URI               string   `json:"uri"`
+	CollectionID      string   `json:"collection_id"`
+	NotebookID        string   `json:"notebook_id"`
+	CurrentRevisionID string   `json:"current_revision_id"`
+	Deleted           bool     `json:"deleted"`
+	InclusionReasons  []string `json:"inclusion_reasons"`
+}
+
+type SelectionResourceManifest struct {
+	ID           string `json:"id"`
+	URI          string `json:"uri"`
+	CollectionID string `json:"collection_id"`
+	MIMEType     string `json:"mime_type"`
+	SizeBytes    int64  `json:"size_bytes"`
+	SHA256       string `json:"sha256"`
+	Oversized    bool   `json:"oversized,omitempty"`
+}
+
+type SelectionLinkDecision struct {
+	SourceDocumentID string `json:"source_document_id"`
+	TargetDocumentID string `json:"target_document_id,omitempty"`
+	LinkSHA256       string `json:"link_sha256"`
+	Classification   string `json:"classification"`
+	ResolutionStatus string `json:"resolution_status"`
+	Action           string `json:"action"`
+}
+
+type SelectionSourceBundleManifest struct {
+	SourceSystem    string `json:"source_system"`
+	SourceKeySHA256 string `json:"source_key_sha256"`
+	CollectionID    string `json:"collection_id"`
+	ItemKeySHA256   string `json:"item_key_sha256"`
+	ItemType        string `json:"item_type"`
+	SHA256          string `json:"sha256"`
+	SizeBytes       int64  `json:"size_bytes"`
+}
+
+type SelectionExclusion struct {
+	Kind   string `json:"kind"`
+	ID     string `json:"id"`
+	Reason string `json:"reason"`
+}
+
+type SelectionMetadataDecision struct {
+	Field         string `json:"field"`
+	Action        string `json:"action"`
+	Reason        string `json:"reason"`
+	AffectedItems int    `json:"affected_items"`
+}
+
+// SelectionPlan is a content-free dry-run manifest: it contains stable IDs,
+// hashes, counts, and policy decisions, but never note bodies, source metadata
+// JSON, local paths, or resource bytes. Detail arrays are capped while the
+// digest and counts cover the complete bounded selection.
+type SelectionPlan struct {
+	Version           int                             `json:"version"`
+	Target            string                          `json:"target"`
+	Policy            EffectivePrivacyPolicy          `json:"policy"`
+	ManifestSHA256    string                          `json:"manifest_sha256"`
+	Counts            SelectionPlanCounts             `json:"counts"`
+	Documents         []SelectionDocumentManifest     `json:"documents"`
+	Resources         []SelectionResourceManifest     `json:"resources"`
+	Links             []SelectionLinkDecision         `json:"links"`
+	SourceBundles     []SelectionSourceBundleManifest `json:"source_bundles"`
+	Exclusions        []SelectionExclusion            `json:"exclusions"`
+	MetadataDecisions []SelectionMetadataDecision     `json:"metadata_decisions"`
+	Warnings          []string                        `json:"warnings"`
+	Truncated         bool                            `json:"truncated"`
+}
 
 // Collection is a logical group of documents.
 type Collection struct {
@@ -97,6 +348,35 @@ type Tag struct {
 	ID        string
 	Name      string
 	NoteCount int64
+}
+
+// TagQuery narrows a tag listing.
+//
+// It exists because there was no way to ask about one tag: listing returned the
+// whole vocabulary with no filter and no limit on every surface, so testing
+// whether `todo` exists meant fetching all of them. `tags list --tag <name>`
+// looked like this and was accepted and ignored, which is worse -- it returned
+// every tag, reading as a filter that found everything.
+type TagQuery struct {
+	// Name matches exactly one tag, case-insensitively, as tagging already
+	// does when it decides whether to create one.
+	Name string
+	// Prefix matches a branch: the tag itself and everything beneath it.
+	// "shopping" matches "shopping" and "shopping/mall" and never
+	// "shoppingcart", because the separator is part of what a branch means.
+	Prefix string
+	// Limit bounds the answer; zero returns every match.
+	Limit int
+}
+
+// TagPage is a tag listing and whether a limit cut it short.
+//
+// Truncated is carried rather than left to the caller to infer from the row
+// count, because a listing that silently stops is a listing that lies about the
+// size of a library.
+type TagPage struct {
+	Tags      []Tag
+	Truncated bool
 }
 
 // SearchNotebook is a query-backed virtual notebook. Deleting one never
@@ -172,14 +452,14 @@ type DocumentRevision struct {
 // Resource is a logical attachment or embedded resource. Multiple resources may
 // point at the same content-addressed blob.
 type Resource struct {
-	ID           string
-	URI          string
-	CollectionID string
-	Filename     string
-	MIMEType     string
-	SizeBytes    int64
-	SHA256       string
-	CreatedAt    time.Time
+	ID           string    `json:"id"`
+	URI          string    `json:"uri"`
+	CollectionID string    `json:"collection_id"`
+	Filename     string    `json:"filename,omitempty"`
+	MIMEType     string    `json:"mime_type"`
+	SizeBytes    int64     `json:"size_bytes"`
+	SHA256       string    `json:"sha256"`
+	CreatedAt    time.Time `json:"created_at"`
 }
 
 // ResourceReference connects a document to a resource without duplicating bytes.
@@ -201,6 +481,106 @@ type CreateResourceRequest struct {
 	Content      io.Reader
 }
 
+// UpdateResourceRequest replaces one logical resource's content/metadata while
+// preserving its stable resource ID and document references.
+type UpdateResourceRequest struct {
+	ID       string
+	Filename string
+	MIMEType string
+	Content  io.Reader
+}
+
+// ImportCheckpoint is durable progress for one source directory and target
+// collection. ReportJSON is importer-owned, versioned JSON.
+type ImportCheckpoint struct {
+	SourceSystem         string
+	SourceKey            string
+	CollectionID         string
+	InventoryFingerprint string
+	Phase                string
+	NextIndex            int
+	TotalItems           int
+	ProcessedItems       int
+	Status               string
+	ReportJSON           string
+	UpdatedAt            time.Time
+	CompletedAt          time.Time
+}
+
+// ImportItemState stores the last successfully applied source fingerprint.
+type ImportItemState struct {
+	SourceSystem string
+	SourceKey    string
+	CollectionID string
+	ItemKey      string
+	ItemType     string
+	Fingerprint  string
+	TargetID     string
+	Action       string
+	ProcessedAt  time.Time
+}
+
+// ImportDocumentMutation is one planned canonical document change inside a
+// bounded importer transaction. SkipDocument records only State (used when an
+// externally sourced document is already trashed). Action is create, update,
+// or unchanged. Tags and resources are applied after every document in the
+// batch is visible, preserving source relations without per-field transactions.
+type ImportDocumentMutation struct {
+	Action         string
+	Document       CreateDocumentRequest
+	BaseRevisionID string
+	Source         SetDocumentSourceRequest
+	AddTags        []string
+	RemoveTags     []string
+	Resources      []AttachResourceRequest
+	State          ImportItemState
+	SkipDocument   bool
+	SkipSource     bool
+	SkipState      bool
+}
+
+// ImportDocumentBatchRequest atomically applies a bounded set of document
+// mutations, item fingerprints, and the checkpoint that makes them durable.
+type ImportDocumentBatchRequest struct {
+	Documents  []ImportDocumentMutation
+	Checkpoint ImportCheckpoint
+}
+
+// ImportLinkBatchRequest atomically refreshes links for a bounded set of
+// already-created documents and advances the import checkpoint.
+type ImportLinkBatchRequest struct {
+	DocumentIDs []string
+	Checkpoint  ImportCheckpoint
+}
+
+// SourceBundleItem identifies one exact source file in an optional bundle.
+type SourceBundleItem struct {
+	SourceSystem  string
+	SourceKey     string
+	CollectionID  string
+	ItemKey       string
+	ItemType      string
+	ExternalID    string
+	RelativePath  string
+	SHA256        string
+	SizeBytes     int64
+	StoragePath   string
+	PropertyOrder []string
+	UpdatedAt     time.Time
+}
+
+type PutSourceBundleItemRequest struct {
+	SourceSystem  string
+	SourceKey     string
+	CollectionID  string
+	ItemKey       string
+	ItemType      string
+	ExternalID    string
+	RelativePath  string
+	PropertyOrder []string
+	Content       io.Reader
+}
+
 // AttachResourceRequest creates or replaces a document-resource reference.
 type AttachResourceRequest struct {
 	DocumentID   string
@@ -208,6 +588,180 @@ type AttachResourceRequest struct {
 	RelationType string
 	Ordinal      int
 	AnchorJSON   string
+}
+
+// ResourceReport summarizes logical resources, physical blobs, and their
+// document/notebook references. Exact SHA-256 groups are authoritative;
+// perceptual results are suggestions only.
+type ResourceReport struct {
+	ExactDuplicates   []ExactDuplicateGroup   `json:"exact_duplicates"`
+	UnreferencedBlobs []UnreferencedBlob      `json:"unreferenced_blobs"`
+	NotebookUsage     []NotebookResourceUsage `json:"notebook_usage"`
+	Perceptual        PerceptualHashReport    `json:"perceptual"`
+}
+
+// ExactDuplicateGroup is one physical blob referenced by multiple logical
+// resources. CrossCollection is true when those resources span collections.
+type ExactDuplicateGroup struct {
+	SHA256          string               `json:"sha256"`
+	MIMEType        string               `json:"mime_type"`
+	SizeBytes       int64                `json:"size_bytes"`
+	ResourceCount   int                  `json:"resource_count"`
+	ReferenceCount  int                  `json:"reference_count"`
+	CollectionIDs   []string             `json:"collection_ids"`
+	CrossCollection bool                 `json:"cross_collection"`
+	Resources       []ResourceReportItem `json:"resources"`
+}
+
+// ResourceReportItem adds total document-reference usage to resource metadata.
+type ResourceReportItem struct {
+	Resource       Resource `json:"resource"`
+	ReferenceCount int      `json:"reference_count"`
+}
+
+// UnreferencedBlob is a physical blob with no document-resource reference
+// through any of its logical resources. H5 reports it; H6 decides retention
+// and deletion eligibility.
+type UnreferencedBlob struct {
+	SHA256    string     `json:"sha256"`
+	MIMEType  string     `json:"mime_type"`
+	SizeBytes int64      `json:"size_bytes"`
+	Resources []Resource `json:"resources"`
+}
+
+// NotebookResourceUsage counts only current (non-trashed) documents directly
+// assigned to the notebook. ReferencedBytes counts every reference; UniqueBytes
+// counts each physical blob once within the notebook.
+type NotebookResourceUsage struct {
+	NotebookID      string `json:"notebook_id"`
+	NotebookName    string `json:"notebook_name"`
+	DocumentCount   int    `json:"document_count"`
+	ReferenceCount  int    `json:"reference_count"`
+	ResourceCount   int    `json:"resource_count"`
+	UniqueBlobCount int    `json:"unique_blob_count"`
+	ReferencedBytes int64  `json:"referenced_bytes"`
+	UniqueBytes     int64  `json:"unique_bytes"`
+}
+
+// PerceptualHashHook is the pluggable H5 extension point. Notrios ships no
+// implementation. A configured hook computes one algorithm-specific hash per
+// supported blob and returns review-only candidate pairs. It must never mutate
+// the store or decide exact deduplication.
+type PerceptualHashHook interface {
+	Algorithm() string
+	SupportsMIME(mimeType string) bool
+	Compute(ctx context.Context, content io.Reader, mimeType string) (string, error)
+	SuggestNearDuplicates(ctx context.Context, candidates []PerceptualHashCandidate) ([]PerceptualHashSuggestion, error)
+}
+
+// PerceptualHashCandidate is the store metadata supplied to a hook.
+type PerceptualHashCandidate struct {
+	BlobSHA256 string `json:"blob_sha256"`
+	Hash       string `json:"hash"`
+	MIMEType   string `json:"mime_type"`
+}
+
+// PerceptualHashSuggestion is returned by a hook. Distance is
+// algorithm-specific; lower is conventionally closer. Notrios validates that
+// both blob IDs were supplied and treats the result only as a review hint.
+type PerceptualHashSuggestion struct {
+	LeftBlobSHA256  string  `json:"left_blob_sha256"`
+	RightBlobSHA256 string  `json:"right_blob_sha256"`
+	Distance        float64 `json:"distance"`
+	Reason          string  `json:"reason,omitempty"`
+}
+
+// PerceptualPolicyReview is a current review rule matching a stored
+// perceptual hash. Perceptual policy never blocks admission.
+type PerceptualPolicyReview struct {
+	Algorithm   string   `json:"algorithm"`
+	Hash        string   `json:"hash"`
+	BlobSHA256  string   `json:"blob_sha256"`
+	ResourceIDs []string `json:"resource_ids"`
+	Reason      string   `json:"reason,omitempty"`
+}
+
+// NearDuplicateReview enriches a hook suggestion with affected resources.
+type NearDuplicateReview struct {
+	Algorithm        string   `json:"algorithm"`
+	LeftBlobSHA256   string   `json:"left_blob_sha256"`
+	RightBlobSHA256  string   `json:"right_blob_sha256"`
+	LeftResourceIDs  []string `json:"left_resource_ids"`
+	RightResourceIDs []string `json:"right_resource_ids"`
+	Distance         float64  `json:"distance"`
+	Reason           string   `json:"reason,omitempty"`
+}
+
+// PerceptualHashReport exposes stored hook state and review suggestions. An
+// empty/default report is the normal production state until an algorithm is
+// explicitly configured.
+type PerceptualHashReport struct {
+	HookEnabled    bool                     `json:"hook_enabled"`
+	Algorithm      string                   `json:"algorithm,omitempty"`
+	StoredHashes   int                      `json:"stored_hashes"`
+	PolicyReviews  []PerceptualPolicyReview `json:"policy_reviews"`
+	NearDuplicates []NearDuplicateReview    `json:"near_duplicates"`
+}
+
+// GarbageCollectionPolicy is the time-based portion of H6 eligibility. A
+// future sync-aware gate adds peer acknowledgement requirements without
+// weakening these minimum local retention windows.
+type GarbageCollectionPolicy struct {
+	UnreferencedFor   time.Duration
+	PurgedResourceFor time.Duration
+}
+
+// GarbageCollectionRequest plans or applies resource collection. Apply is
+// false by default. Now exists for deterministic tests and reports; zero means
+// the current UTC time. Gate defaults to LocalRetentionGate.
+type GarbageCollectionRequest struct {
+	Policy GarbageCollectionPolicy
+	Apply  bool
+	Now    time.Time
+	Gate   RetentionGate
+}
+
+// RetentionGate is the sync-aware extension point. v0.3's local gate allows a
+// time-expired unreferenced resource; v0.7 can additionally require peer
+// acknowledgement watermarks before returning true.
+type RetentionGate interface {
+	CanCollect(ctx context.Context, candidate GarbageCollectionCandidate) (allowed bool, reason string, err error)
+}
+
+type LocalRetentionGate struct{}
+
+func (LocalRetentionGate) CanCollect(_ context.Context, _ GarbageCollectionCandidate) (bool, string, error) {
+	return true, "local_retention_satisfied", nil
+}
+
+type GarbageCollectionPolicySummary struct {
+	UnreferencedSeconds   int64  `json:"unreferenced_seconds"`
+	PurgedResourceSeconds int64  `json:"purged_resource_seconds"`
+	Gate                  string `json:"gate"`
+}
+
+// GarbageCollectionCandidate is one logical resource with no references.
+// Removing it may or may not free its shared physical blob.
+type GarbageCollectionCandidate struct {
+	Resource           Resource  `json:"resource"`
+	UnreferencedAt     time.Time `json:"unreferenced_at"`
+	UnreferencedReason string    `json:"unreferenced_reason"`
+	RetentionSeconds   int64     `json:"retention_seconds"`
+	EligibleAt         time.Time `json:"eligible_at"`
+	Decision           string    `json:"decision"`
+}
+
+type GarbageCollectionReport struct {
+	DryRun                  bool                           `json:"dry_run"`
+	AsOf                    time.Time                      `json:"as_of"`
+	Policy                  GarbageCollectionPolicySummary `json:"policy"`
+	Eligible                []GarbageCollectionCandidate   `json:"eligible"`
+	Retained                []GarbageCollectionCandidate   `json:"retained"`
+	Removed                 []GarbageCollectionCandidate   `json:"removed"`
+	ReferencedResourceCount int                            `json:"referenced_resource_count"`
+	BlobsRemoved            int                            `json:"blobs_removed"`
+	BytesRemoved            int64                          `json:"bytes_removed"`
+	Warnings                []string                       `json:"warnings"`
 }
 
 // DocumentLink stores one parsed link edge from a Markdown document. It preserves
@@ -237,41 +791,6 @@ type DocumentLink struct {
 type DocumentLinkPage struct {
 	Outgoing []DocumentLink
 	Incoming []DocumentLink
-}
-
-// GraphRequest is a small graph-expansion request for the MVP graph endpoint.
-type GraphRequest struct {
-	Roots            []string
-	Direction        string
-	Depth            int
-	IncludeResources bool
-	MaxNodes         int
-	MaxEdges         int
-}
-
-// GraphNode is a document or resource node returned by graph expansion.
-type GraphNode struct {
-	ID    string
-	URI   string
-	Kind  string
-	Label string
-}
-
-// GraphEdge is one link edge returned by graph expansion.
-type GraphEdge struct {
-	ID        string
-	SourceID  string
-	TargetID  string
-	Kind      string
-	Status    string
-	RawTarget string
-}
-
-// GraphResponse contains the current graph slice.
-type GraphResponse struct {
-	Nodes     []GraphNode
-	Edges     []GraphEdge
-	Truncated bool
 }
 
 // CreateDocumentRequest creates an initial managed Markdown document. An empty
@@ -317,22 +836,75 @@ type SearchRequest struct {
 	Query        string
 	Limit        int
 	Cursor       string
+	// Sort is normally empty, meaning the ordering follows the query shape: a
+	// positive text-only query ranks by FTS5 relevance and anything mixing
+	// fields or negation traverses chronologically, because those are the two
+	// orders a keyset can reproduce. SortUpdated forces the chronological path
+	// for a text query too, which v0.5 E7 needs so a note-query block can ask
+	// for "newest first" and get it rather than get relevance and be told it
+	// asked for something else.
+	Sort string
+	// countOnly is set by SearchCount. It is unexported so a count is asked for
+	// through a method that says so, rather than by a caller setting a field
+	// and receiving a response whose Hits are empty for a reason it has to
+	// remember.
+	countOnly bool
 }
+
+// SearchCount reports how many notes a query matches.
+//
+// It exists because SearchResponse carries hits, a cursor and a truncation flag
+// and no total, so "how many notes have this tag?" could only be answered by
+// paging the whole result set -- a lie about cost on a large library. The count
+// runs the same compiled predicate the listing does.
+func SearchCount(ctx context.Context, st Store, req SearchRequest) (int64, error) {
+	req.countOnly = true
+	resp, err := st.Search(ctx, req)
+	if err != nil {
+		return 0, err
+	}
+	return resp.Total, nil
+}
+
+// Explicit search orders. An empty Sort keeps the query-shape default.
+const (
+	SortRelevance = "relevance"
+	SortUpdated   = "updated"
+)
 
 // SearchHit is one full-text search hit.
 type SearchHit struct {
-	ID           string
-	URI          string
-	CollectionID string
-	NotebookID   string
-	Title        string
-	Snippet      string
-	Score        float64
+	ID            string
+	URI           string
+	CollectionID  string
+	NotebookID    string
+	Title         string
+	Snippet       string
+	Score         float64
+	UpdatedAt     time.Time
+	SearchSources []string
+	sortTime      string
 }
 
 // SearchResponse is the store-level search response.
 type SearchResponse struct {
 	Hits       []SearchHit
+	NextCursor string
+	Truncated  bool
+	// Total is how many notes the query matches, and Counted says the count was
+	// asked for. They are separate because zero is a real answer: a response
+	// with Total 0 and Counted false has not counted anything.
+	Total   int64
+	Counted bool
+}
+
+type DocumentPageRequest struct {
+	Limit  int
+	Cursor string
+}
+
+type DocumentPage struct {
+	Documents  []Document
 	NextCursor string
 }
 
@@ -349,24 +921,92 @@ type Store interface {
 	Close() error
 	Bootstrap(ctx context.Context) error
 	ListCollections(ctx context.Context) ([]Collection, error)
+	// Collection reads one, and CreateCollection records a provenance. A note
+	// carries a collection identifier and lives in a notebook; these describe
+	// the identifier, and exist because documents.collection_id is a foreign
+	// key that nothing but bootstrap, sync and restore could satisfy.
+	Collection(ctx context.Context, id string) (Collection, error)
+	CreateCollection(ctx context.Context, collection Collection) (Collection, error)
+	EnsureCollection(ctx context.Context, id, name string) (Collection, error)
 	CreateDocument(ctx context.Context, req CreateDocumentRequest) (Document, error)
 	GetDocument(ctx context.Context, id string) (Document, error)
+	// GetDocumentIncludingTrashed reads a note whether or not it is trashed.
+	// A trashed note has to be readable to be recoverable; DeletedAt on the
+	// result is what makes it read-only above the store.
+	GetDocumentIncludingTrashed(ctx context.Context, id string) (Document, error)
 	UpdateDocument(ctx context.Context, req UpdateDocumentRequest) (Document, error)
 	DeleteDocument(ctx context.Context, req DeleteDocumentRequest) error
 	ListDocumentRevisions(ctx context.Context, documentID string) ([]DocumentRevision, error)
 	GetDocumentRevision(ctx context.Context, documentID, revisionID string) (DocumentRevision, error)
 	RestoreDocumentRevision(ctx context.Context, req RestoreRevisionRequest) (Document, error)
 	CreateResource(ctx context.Context, req CreateResourceRequest) (Resource, error)
+	UpdateResource(ctx context.Context, req UpdateResourceRequest) (Resource, error)
 	GetResource(ctx context.Context, id string) (Resource, error)
+	GetDocuments(ctx context.Context, ids []string) (map[string]Document, error)
+	GetResources(ctx context.Context, ids []string) (map[string]Resource, error)
+	GetDocumentTags(ctx context.Context, ids []string) (map[string][]Tag, error)
 	OpenResourceContent(ctx context.Context, id string) (Resource, io.ReadCloser, error)
 	DeleteResource(ctx context.Context, id string) error
 	ListDocumentResources(ctx context.Context, documentID string) ([]ResourceReference, error)
 	AttachDocumentResource(ctx context.Context, req AttachResourceRequest) (ResourceReference, error)
 	DetachDocumentResource(ctx context.Context, documentID, resourceID string) error
+	ResourceReport(ctx context.Context) (ResourceReport, error)
+	LintWorkspace(ctx context.Context, req LintRequest) (LintReport, error)
+	GarbageCollect(ctx context.Context, req GarbageCollectionRequest) (GarbageCollectionReport, error)
 	ListDocumentLinks(ctx context.Context, documentID, direction string) (DocumentLinkPage, error)
 	RebuildDocumentLinks(ctx context.Context, documentID string) error
+	ListDocumentBlocks(ctx context.Context, documentID string) ([]DocumentBlock, error)
+	FindDocumentBlock(ctx context.Context, documentID, anchor string) (DocumentBlock, error)
+	RebuildDocumentBlocks(ctx context.Context, documentID string) error
 	Graph(ctx context.Context, req GraphRequest) (GraphResponse, error)
+	GraphPath(ctx context.Context, req GraphPathRequest) (GraphPathResponse, error)
+	GraphReport(ctx context.Context, req GraphReportRequest) (GraphReport, error)
+	WriteGraphReportNote(ctx context.Context, req GraphReportRequest) (Document, GraphReport, error)
+
+	// Job control plane (v0.6 F6/G15). Ordinary records persist while imports
+	// resume through their own checkpoints; the closed sync extension is also a
+	// durable outbox that replans from canonical vectors/verified chunks.
+	CreateJob(ctx context.Context, req CreateJobRequest) (Job, error)
+	StartJob(ctx context.Context, jobID string) (Job, error)
+	TouchJob(ctx context.Context, jobID string) (bool, error)
+	ReportJobProgress(ctx context.Context, jobID string, progress JobProgress) (bool, error)
+	FinishJob(ctx context.Context, jobID, state string, summary map[string]any, failure error) (Job, error)
+	RequestJobCancel(ctx context.Context, jobID string) (Job, error)
+	GetJob(ctx context.Context, jobID string) (Job, error)
+	ListJobs(ctx context.Context, req JobListRequest) (JobList, error)
+	CreateSyncJob(ctx context.Context, req CreateSyncJobRequest) (SyncJob, error)
+	ClaimSyncJob(ctx context.Context, workerID string, now time.Time) (SyncJob, error)
+	CheckpointSyncJob(ctx context.Context, jobID, workerID string, checkpoint SyncJobCheckpoint) (SyncJob, error)
+	RescheduleSyncJob(ctx context.Context, jobID, workerID, retryCode string, now time.Time) (SyncJob, error)
+	FinishSyncJob(ctx context.Context, jobID, workerID, state string, summary map[string]any, failure error) (SyncJob, error)
+	RetrySyncJob(ctx context.Context, jobID string, reset bool, now time.Time) (SyncJob, error)
+	GetSyncJob(ctx context.Context, jobID string) (SyncJob, error)
+	ListSyncJobAudit(ctx context.Context, jobID string, limit int) (SyncJobAuditList, error)
+	ListSyncConflicts(ctx context.Context, limit int) (SyncConflictPage, error)
+	GetSyncConflictDetail(ctx context.Context, conflictID string) (SyncConflictDetail, error)
+	ResolveSyncConflict(ctx context.Context, req ResolveSyncConflictRequest) (Document, error)
+	ListSyncResourceStatus(ctx context.Context, limit int) ([]SyncResourceStatus, bool, error)
+	SetSyncResourceIntent(ctx context.Context, resourceID string, pinned, requested bool) error
+	ListSyncRepairEvents(ctx context.Context, limit int) ([]SyncRepairEvent, bool, error)
+	SuggestDocuments(ctx context.Context, req DocumentSuggestionRequest) (DocumentSuggestionResponse, error)
+	CheckLinks(ctx context.Context, req CheckLinksRequest) (CheckLinksResponse, error)
+	RunNoteQuery(ctx context.Context, req NoteQueryRequest) (NoteQueryResult, error)
 	Search(ctx context.Context, req SearchRequest) (SearchResponse, error)
+	PlanSelection(ctx context.Context, req SelectionPlanRequest) (SelectionPlan, error)
+	GetDatabaseIdentity(ctx context.Context) (DatabaseIdentity, error)
+	RotateReplicaIdentity(ctx context.Context) (DatabaseIdentity, error)
+	EnrollLocalJournal(ctx context.Context, reason string) (SyncJournalStatus, error)
+	JournalStatus(ctx context.Context) (SyncJournalStatus, error)
+	ListLocalOperations(ctx context.Context, afterSequence int64, limit int) ([]SyncOperation, error)
+	LocalSyncHandshake(ctx context.Context) (syncstate.Handshake, error)
+	ConfigureSyncAdmissionPeer(ctx context.Context, peer syncstate.Handshake) error
+	SyncStateVector(ctx context.Context) (syncstate.Vector, error)
+	PlanMissingSyncOperations(ctx context.Context, remote syncstate.Vector) (syncstate.MissingPlan, error)
+	AdmitSyncOperations(ctx context.Context, peer syncstate.Handshake, operations []syncstate.Operation) (SyncAdmissionResult, error)
+	RecordSyncPeerAcknowledgement(ctx context.Context, peer syncstate.Handshake) error
+	ListSyncOperations(ctx context.Context, replicaID string, afterSequence int64, limit int) ([]syncstate.Operation, error)
+	StableDocumentURI(ctx context.Context, documentID string) (string, error)
+	ResolveStableLink(ctx context.Context, uri string) (StableLinkResolution, error)
 	Status(ctx context.Context) (StoreStatus, error)
 
 	CreateNotebook(ctx context.Context, req CreateNotebookRequest) (Notebook, error)
@@ -374,31 +1014,60 @@ type Store interface {
 	ListNotebooks(ctx context.Context) ([]Notebook, error)
 	UpdateNotebook(ctx context.Context, req UpdateNotebookRequest) (Notebook, error)
 	DeleteNotebook(ctx context.Context, id string) error
-	ListNotebookDocuments(ctx context.Context, notebookID string, limit int) ([]Document, error)
+	ListNotebookDocuments(ctx context.Context, notebookID string, req DocumentPageRequest) (DocumentPage, error)
 	MoveDocumentToNotebook(ctx context.Context, documentID, notebookID string) (Document, error)
 
 	AddDocumentTag(ctx context.Context, documentID, tagName string) (Tag, error)
+	UpsertTag(ctx context.Context, preferredID, tagName string) (Tag, string, error)
 	RemoveDocumentTag(ctx context.Context, documentID, tagName string) error
 	ListDocumentTags(ctx context.Context, documentID string) ([]Tag, error)
-	ListTags(ctx context.Context) ([]Tag, error)
+	ListTags(ctx context.Context, query TagQuery) (TagPage, error)
+	RenameTag(ctx context.Context, req TagRenameRequest) (TagRenameResult, error)
+	// RunBatch applies one bounded organizer transaction over an explicit list
+	// of notes, atomically or best-effort, reporting every item either way.
+	RunBatch(ctx context.Context, req BatchRequest) (BatchResult, error)
+
+	// Templates are ordinary notes carrying a ```note-template block.
+	// Substitution is replacement, never evaluation.
+	ListTemplates(ctx context.Context, collectionID string) ([]Template, error)
+	GetTemplate(ctx context.Context, documentID string) (Template, error)
+	CreateFromTemplate(ctx context.Context, req CreateFromTemplateRequest) (Document, error)
+
+	// ListTasks extracts checkbox list items, computed on read from note
+	// bodies rather than stored in a table.
+	ListTasks(ctx context.Context, req TaskListRequest) (TaskList, error)
+	PreviewNotebookDeletion(ctx context.Context, id string) (NotebookDeletionPreview, error)
 
 	CreateSearchNotebook(ctx context.Context, req CreateSearchNotebookRequest) (SearchNotebook, error)
 	ListSearchNotebooks(ctx context.Context) ([]SearchNotebook, error)
 	DeleteSearchNotebook(ctx context.Context, id string) error
 
-	ListTrash(ctx context.Context, limit int) ([]Document, error)
+	ListTrash(ctx context.Context, req DocumentPageRequest) (DocumentPage, error)
 	RestoreDocument(ctx context.Context, id string) (Document, error)
 	PurgeDocument(ctx context.Context, id string) error
 
 	SetDocumentSource(ctx context.Context, req SetDocumentSourceRequest) (DocumentSource, error)
 	GetDocumentSource(ctx context.Context, documentID string) (DocumentSource, error)
+	GetDocumentSources(ctx context.Context, documentIDs []string) (map[string]DocumentSource, error)
 	FindDocumentBySource(ctx context.Context, sourceSystem, externalID string) (string, error)
 	ListThreadDocuments(ctx context.Context, threadID string) ([]DocumentSource, error)
 
 	PendingProjectionJobs(ctx context.Context, limit int) ([]OutboxJob, error)
 	CompleteProjectionJob(ctx context.Context, sequence int64, jobErr error) error
+	ProjectionQueueStatus(ctx context.Context) (ProjectionQueueStatus, error)
 
 	NotebookHasSourcedDocuments(ctx context.Context, notebookID string) (bool, error)
+	FindDocumentsBySourceIDs(ctx context.Context, sourceSystem string, externalIDs []string) (map[string]string, error)
+
+	GetImportCheckpoint(ctx context.Context, sourceSystem, sourceKey, collectionID string) (ImportCheckpoint, error)
+	PutImportCheckpoint(ctx context.Context, checkpoint ImportCheckpoint) error
+	GetImportItemStates(ctx context.Context, sourceSystem, sourceKey, collectionID string, itemKeys []string) (map[string]ImportItemState, error)
+	PutImportItemStates(ctx context.Context, states []ImportItemState) error
+	ApplyImportDocumentBatch(ctx context.Context, req ImportDocumentBatchRequest) error
+	RebuildImportDocumentLinksBatch(ctx context.Context, req ImportLinkBatchRequest) error
+	PutSourceBundleItem(ctx context.Context, req PutSourceBundleItemRequest) (SourceBundleItem, error)
+	GetSourceBundleItem(ctx context.Context, sourceSystem, sourceKey, collectionID, itemKey string) (SourceBundleItem, error)
+	OpenSourceBundleItem(ctx context.Context, sourceSystem, sourceKey, collectionID, itemKey string) (SourceBundleItem, io.ReadCloser, error)
 
 	RecordMediaAttempt(ctx context.Context, attempt MediaAttempt) (MediaAttempt, error)
 	ListMediaAttempts(ctx context.Context, documentID string, limit int) ([]MediaAttempt, error)
@@ -409,14 +1078,31 @@ type Store interface {
 // OutboxJob is one pending projection/indexing job. Document mutations enqueue
 // jobs transactionally; the projection worker drains them after commit.
 type OutboxJob struct {
-	Sequence   int64
-	ObjectType string // "document"
-	ObjectID   string
-	Operation  string // "upsert" or "delete"
+	Sequence      int64
+	ObjectType    string // "document"
+	ObjectID      string
+	Operation     string // "upsert" or "delete"
+	AttemptCount  int
+	NextAttemptAt time.Time
+}
+
+// ProjectionQueueStatus is bounded queue telemetry for the optional derived
+// projection/search worker. Pending includes delayed retries; Due is runnable
+// now; Failed counts rows that have recorded at least one failed attempt.
+type ProjectionQueueStatus struct {
+	Pending         int
+	Due             int
+	Failed          int
+	OldestCreatedAt time.Time
+	NextAttemptAt   time.Time
 }
 
 func NormalizeCreateRequest(req CreateDocumentRequest) CreateDocumentRequest {
 	req.PreferredID = strings.TrimSpace(req.PreferredID)
+	// A new note must name a collection: collection_id is NOT NULL with a
+	// foreign key, and a note written by a person rather than by an import
+	// belongs to the default provenance. This is the opposite of the search
+	// side, where an empty collection means every collection.
 	req.CollectionID = strings.TrimSpace(req.CollectionID)
 	if req.CollectionID == "" {
 		req.CollectionID = "default"
@@ -472,6 +1158,10 @@ func NormalizeRestoreRevisionRequest(req RestoreRevisionRequest) RestoreRevision
 
 func NormalizeCreateResourceRequest(req CreateResourceRequest) CreateResourceRequest {
 	req.PreferredID = strings.TrimSpace(req.PreferredID)
+	// A resource names a collection for the same reason a note does: the column
+	// is NOT NULL with a foreign key. This default was removed by accident and
+	// restored; nothing caught it, because the tests that create resources do
+	// not create them in a named collection.
 	req.CollectionID = strings.TrimSpace(req.CollectionID)
 	if req.CollectionID == "" {
 		req.CollectionID = "default"
@@ -499,10 +1189,11 @@ func NormalizeAttachResourceRequest(req AttachResourceRequest) AttachResourceReq
 }
 
 func NormalizeSearchRequest(req SearchRequest) SearchRequest {
+	// Deliberately not defaulted. An empty collection means every collection:
+	// notes imported under a provenance were otherwise invisible to search
+	// unless the caller already knew to ask for that provenance by name, which
+	// is the opposite of how somebody looks for a note they cannot place.
 	req.CollectionID = strings.TrimSpace(req.CollectionID)
-	if req.CollectionID == "" {
-		req.CollectionID = "default"
-	}
 	if req.Limit <= 0 {
 		req.Limit = 10
 	}
@@ -533,4 +1224,51 @@ func DocumentURI(collectionID, documentID string) string {
 		collectionID = "default"
 	}
 	return fmt.Sprintf("document://%s/documents/%s", collectionID, documentID)
+}
+
+// CollectionScopeSQL renders the collection predicate for a read.
+//
+// An unspecified collection means *every* collection. That is the opposite of
+// the create side a few hundred lines above, where an unspecified collection
+// means `default`, and the asymmetry is the whole model: a note created here
+// has this library's provenance, while a question asked of the library is a
+// question about all of it. Someone who migrated from Joplin has notes whose
+// collection says Joplin, and they are still their notes -- lint should report
+// on them, fix should repair them, and an archive should contain them.
+//
+// The parameter stays in the statement either way, so no caller's argument list
+// changes with the scope: NULLIF turns an empty string into NULL, COALESCE then
+// compares the column with itself, and every row satisfies that because
+// `collection_id` is NOT NULL in every table that has one.
+func CollectionScopeSQL(alias string) string {
+	column := "collection_id"
+	if alias != "" {
+		column = alias + ".collection_id"
+	}
+	return column + " = COALESCE(NULLIF(?, ''), " + column + ")"
+}
+
+// JoinNoteText appends or prepends text to a note body, keeping the newline
+// between them right.
+//
+// It lives here rather than in the HTTP layer because the command line does the
+// same thing, and two implementations of "where does the newline go" would
+// eventually disagree about a note that ends without one.
+func JoinNoteText(body, text string, prepend bool) string {
+	if prepend {
+		if body == "" {
+			return text
+		}
+		if !strings.HasSuffix(text, "\n") {
+			text += "\n"
+		}
+		return text + body
+	}
+	if body == "" {
+		return text
+	}
+	if !strings.HasSuffix(body, "\n") {
+		body += "\n"
+	}
+	return body + text
 }

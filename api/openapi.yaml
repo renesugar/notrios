@@ -27,6 +27,158 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/StatusResponse'
+  /api/v1/sync/handshake:
+    get:
+      summary: Peer-authenticated sync handshake (v0.7 G13)
+      description: >
+        Returns this replica's protocol, schema, capability, and state-vector
+        compatibility to an enrolled peer. Requires a Notrios-Sync-v1
+        authorization header: an Ed25519 signature over the method, path,
+        database id, replica id, timestamp, nonce, and body hash. Available only
+        when sync.rest.enabled is true, and never reachable from a browser — the
+        surface emits no CORS headers and refuses requests carrying Origin,
+        Cookie, or Referer. A peer credential authorizes this surface only and
+        no ordinary note route.
+      responses:
+        '200':
+          description: Handshake response
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/Error'
+  /api/v1/sync/pair:
+    post:
+      summary: Spend a pairing invitation (v0.7 G13)
+      description: >
+        The one unauthenticated route on the sync surface, because pairing is
+        what happens before authentication is possible. The caller presents a
+        short-lived, single-use code in the X-Notrios-Pairing-Code header and an
+        HMAC proof over its claims; the response returns the inviter's identity
+        and the library group key sealed under a key derived from the same code.
+        The invitation is spent in one transaction, so two callers racing one
+        code produce one pairing and one refusal.
+      responses:
+        '200':
+          description: Pairing response with a wrapped group key
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/Error'
+  /api/v1/sync/status:
+    get:
+      summary: Redacted local sync security status (v0.7 G13)
+      description: >
+        Loopback-only. Reports whether the surface is enabled, its transport
+        policy and limits, enrolled peer key ids with their status, the number
+        of open invitations, and recent authentication events. It reports key
+        ids and never key material, and a forwarding header cannot make a remote
+        request local.
+      responses:
+        '200':
+          description: Redacted status
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        '403':
+          $ref: '#/components/responses/Error'
+  /api/v1/sync/carrier/namespaces:
+    get:
+      summary: List opaque carrier namespaces (v0.7 G14)
+      responses:
+        '200': { description: Bounded opaque namespace names }
+        '401': { $ref: '#/components/responses/Error' }
+  /api/v1/sync/carrier/{segment1}/{segment2}:
+    parameters:
+      - { name: segment1, in: path, required: true, schema: { type: string } }
+      - { name: segment2, in: path, required: true, schema: { type: string } }
+    get:
+      summary: List opaque artifact names in one namespace/class (v0.7 G14)
+      responses:
+        '200': { description: Bounded opaque artifact names }
+        '401': { $ref: '#/components/responses/Error' }
+    put:
+      summary: Publish one immutable artifact into the authenticated caller's namespace
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema: { type: string, format: binary }
+      responses:
+        '200': { description: Artifact already present }
+        '201': { description: Artifact published }
+        '401': { $ref: '#/components/responses/Error' }
+        '413': { $ref: '#/components/responses/Error' }
+    delete:
+      summary: Remove one artifact from the authenticated caller's own namespace
+      responses:
+        '204': { description: Artifact absent }
+        '401': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+  /api/v1/sync/carrier/{namespace}/{class}/{name}:
+    get:
+      summary: Read one sync artifact (v0.7 G14)
+      parameters:
+        - { name: namespace, in: path, required: true, schema: { type: string } }
+        - { name: class, in: path, required: true, schema: { type: string } }
+        - { name: name, in: path, required: true, schema: { type: string } }
+      description: >
+        Returns opaque sealed protocol bytes to an enrolled peer, honouring HTTP
+        Range so a large artifact can be fetched in pieces. Publishing and
+        removal take no namespace parameter: the peer derives the caller's own
+        namespace from the authenticated principal.
+      responses:
+        '200': { description: The artifact }
+        '206': { description: The requested byte range }
+        '404':
+          $ref: '#/components/responses/Error'
+        '416':
+          $ref: '#/components/responses/Error'
+  /api/v1/sync/backups:
+    post:
+      summary: Produce an encrypted snapshot for a permitted peer (v0.7 G14)
+      description: >
+        Exports an archive-v2 snapshot, packs and seals it in fixed frames under
+        a fresh payload key, and returns an opaque backup id, its length, its
+        hash, the sealed payload key, and the snapshot's state vector. Enrolment
+        is not permission: only a replica explicitly permitted as a snapshot
+        recipient is answered.
+      responses:
+        '200': { description: The produced backup }
+        '403':
+          $ref: '#/components/responses/Error'
+  /api/v1/sync/backups/{backup_id}:
+    get:
+      summary: Download a produced snapshot, resumably (v0.7 G14)
+      parameters:
+        - { name: backup_id, in: path, required: true, schema: { type: string } }
+      description: >
+        Serves the sealed snapshot with Range support and an ETag of its hash.
+        Only the replica that asked for it may fetch it; every other caller is
+        answered as though it does not exist. The client verifies the declared
+        hash, then the frames, then archive-v2 itself before restoring.
+      responses:
+        '200': { description: The whole sealed snapshot }
+        '206': { description: The requested byte range }
+        '404':
+          $ref: '#/components/responses/Error'
+        '416':
+          $ref: '#/components/responses/Error'
   /mcp:
     get:
       summary: MCP MVP endpoint metadata
@@ -113,11 +265,12 @@ paths:
                 $ref: '#/components/schemas/Collection'
   /api/v1/search:
     get:
-      summary: Search documents with simple query parameters
+      summary: Search documents with simple query parameters and keyset cursors
       parameters:
         - name: q
           in: query
-          schema: { type: string }
+          description: Bounded Notrios boolean query (implicit AND, uppercase OR, prefix -, grouping, phrases, and fields).
+          schema: { type: string, maxLength: 4096 }
         - name: collection
           in: query
           schema: { type: string }
@@ -130,8 +283,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SearchResponse'
+        '400':
+          $ref: '#/components/responses/Error'
     post:
-      summary: Search documents
+      summary: Search documents with query-bound keyset or bounded snapshot cursors
       requestBody:
         required: true
         content:
@@ -166,11 +321,16 @@ paths:
   /api/v1/documents/{document_id}:
     get:
       summary: Get document
+      description: >
+        Returns a trashed note too, with deleted_at set and editable=false —
+        the Trash is a list someone reads before deciding what to restore, and
+        a stable link resolving to `trashed` has to open something. Every other
+        read and every write still stops at the Trash.
       parameters:
         - $ref: '#/components/parameters/DocumentID'
       responses:
         '200':
-          description: Document
+          description: Document (possibly trashed; check deleted_at/editable)
           content:
             application/json:
               schema:
@@ -353,6 +513,8 @@ paths:
         content:
           application/octet-stream:
             schema: { type: string, format: binary }
+          image/png:
+            schema: { type: string, format: binary }
       responses:
         '201':
           description: Created resource
@@ -360,6 +522,20 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Resource'
+  /api/v1/resources/reports/reference:
+    get:
+      summary: Report exact duplicates, unreferenced blobs, notebook usage, and perceptual review suggestions
+      description: >
+        Read-only resource/blob reference report. Exact SHA-256 groups are
+        authoritative. Perceptual matches are review-only suggestions and are
+        empty unless an embedding application explicitly installs a hook.
+      responses:
+        '200':
+          description: Resource reference report
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceReport'
   /api/v1/resources/{resource_id}:
     head:
       summary: Resource metadata headers
@@ -379,14 +555,26 @@ paths:
               schema:
                 $ref: '#/components/schemas/Resource'
     delete:
-      summary: Delete or mark resource for garbage collection
+      summary: Immediately delete one unreferenced resource with explicit confirmation
       parameters:
         - $ref: '#/components/parameters/ResourceID'
+        - name: X-Notrios-Confirmation
+          in: header
+          required: true
+          description: Must equal delete-resource:{resource_id}.
+          schema: { type: string }
       responses:
         '204': { description: Deleted when unreferenced }
         '409': { description: Resource is still referenced by at least one document }
+        '428': { description: Missing or incorrect explicit confirmation }
   /api/v1/resources/{resource_id}/content:
     get:
+      description: >
+        Honours HTTP `Range` (v0.6 F3): a satisfiable range returns `206` with
+        `Content-Range`, an unsatisfiable one returns `416` with the resource's
+        real size, and both compose with `?download=1`. Range support exists so
+        a bounded MCP `read_resource` can pull part of a resource after seeing
+        its metadata rather than all of it or none.
       summary: Download resource bytes
       parameters:
         - $ref: '#/components/parameters/ResourceID'
@@ -399,8 +587,20 @@ paths:
           content:
             application/octet-stream:
               schema: { type: string, format: binary }
+            image/png:
+              schema: { type: string, format: binary }
         '206':
-          description: Future partial resource stream; range support is not implemented in the MVP Task 4 slice
+          description: Requested partial resource stream
+          content:
+            application/octet-stream:
+              schema: { type: string, format: binary }
+            image/png:
+              schema: { type: string, format: binary }
+        '416':
+          description: Unsatisfiable range with the real resource size
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
   /api/v1/documents/{document_id}/links:
     get:
       summary: List document links and backlinks
@@ -587,17 +787,173 @@ paths:
         '403': { description: Builtin/default notebooks cannot be deleted }
   /api/v1/notebooks/{notebook_id}/notes:
     get:
-      summary: List current notes directly in a notebook
+      summary: List current notes directly in a notebook using keyset pagination
       parameters:
         - { name: notebook_id, in: path, required: true, schema: { type: string } }
         - { name: limit, in: query, schema: { type: integer } }
+        - $ref: '#/components/parameters/Cursor'
       responses:
-        '200': { description: Documents }
+        '200':
+          description: Keyset-paged documents
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentPage'
+        '400':
+          $ref: '#/components/responses/Error'
+  /api/v1/notebooks/{notebook_id}/deletion-preview:
+    get:
+      summary: What deleting a notebook would do, without doing it
+      description: >
+        Read-only. Reports the notebooks that would be removed, the notes that
+        would move to the Trash, and the notebook they would be re-homed to so
+        a later restore has a destination. A protected notebook answers with
+        deletable=false and a reason rather than an error, because "what would
+        happen" has an answer even when the answer is "nothing".
+      parameters:
+        - { name: notebook_id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Deletion preview }
+        '404': { description: No such notebook }
   /api/v1/tags:
     get:
       summary: List tags with live note counts
+      parameters:
+        - name: name
+          in: query
+          schema: { type: string }
+          description: One tag, matched case-insensitively. 404 when no such tag exists.
+        - name: prefix
+          in: query
+          schema: { type: string }
+          description: One branch of the hierarchy - the tag itself and everything under it.
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1 }
+          description: Bound the answer; the response reports whether it truncated.
       responses:
         '200': { description: Tags }
+        '400': { description: 'name and prefix ask different questions, or limit is not positive' }
+        '404': { description: 'No tag with that name' }
+  /api/v1/templates:
+    get:
+      summary: List note templates and the values each asks for
+      description: >
+        A template is an ordinary note carrying a fenced ```note-template block
+        declaring `prompt:` lines and an optional `description:`. Substitution
+        is replacement, never evaluation: a placeholder is `{{name}}`, and a
+        name is either a declared prompt or one of a closed automatic
+        vocabulary (date, time, datetime, title, notebook). A malformed
+        template is listed with its error rather than hidden — it is exactly
+        the one its author needs to find.
+      responses:
+        '200': { description: "Templates with prompts, description, and any parse error" }
+  /api/v1/templates/{document_id}:
+    get:
+      summary: Read one template's declaration
+      parameters:
+        - { name: document_id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Template }
+        '400': { description: The note carries no note-template block }
+        '404': { description: No such note }
+  /api/v1/templates/{document_id}/create:
+    post:
+      summary: Create a note from a template
+      description: >
+        Every declared prompt needs a value; a missing one is refused rather
+        than left blank, and a value for an undeclared prompt is refused rather
+        than ignored. Supplied values are inserted literally and never
+        re-scanned, so a value cannot introduce a placeholder or recurse.
+      parameters:
+        - { name: document_id, in: path, required: true, schema: { type: string } }
+      responses:
+        '201': { description: The created note }
+        '400': { description: "Malformed template, missing value, or undeclared value" }
+  /api/v1/tasks:
+    get:
+      summary: Extract checkbox list items as tasks
+      description: >
+        Computed on read from note bodies rather than stored: `document_blocks`
+        holds a hash and byte offsets but not block text, so the body has to be
+        read either way. A task is identified by the block model, so it keeps
+        its identity when the note is edited around it — but a block ID is
+        derived from the block's text and a checkbox is part of that text, so
+        ticking a task changes its derived ID. An author-written `^marker` is
+        the identity that survives ticking.
+
+
+        Only notes tagged `task` or `todo`, or beneath either, carry tasks. A
+        checkbox is ordinary Markdown and appears in quoted text, in code
+        samples, and in notes about writing checklists; tagging is how an author
+        says the boxes in a note are theirs. `untagged=true` asks for the rest,
+        for the opposite failure of work written down and then invisible because
+        a tag was forgotten. The tag also bounds the read, since the tagged set
+        is a small fraction of a library.
+
+
+        Counts are complete even when the row list is capped, and count only
+        what the same rule admits. Restrict with document_id or notebook_id to
+        avoid a whole-library read.
+      parameters:
+        - { name: collection_id, in: query, schema: { type: string } }
+        - { name: document_id, in: query, schema: { type: string } }
+        - { name: notebook_id, in: query, schema: { type: string } }
+        - { name: state, in: query, schema: { type: string, enum: [open, done] } }
+        - { name: limit, in: query, schema: { type: integer } }
+        - name: untagged
+          in: query
+          description: Include notes carrying no task tag.
+          schema: { type: boolean, default: false }
+      responses:
+        '200': { description: Tasks with complete open/done counts }
+        '400': { description: Unknown state }
+  /api/v1/batch:
+    post:
+      summary: One bounded organizer transaction over an explicit list of notes
+      description: >
+        Operations are move, add_tags, remove_tags, trash, restore, and
+        duplicate — each one the single-note surfaces already expose. `mode` is
+        `best_effort` (default) or `atomic`; they differ in what a failure does,
+        never in what the report says, and every requested item gets an outcome
+        either way: applied, skipped (nothing to do), failed, or rolled_back (it
+        succeeded and was undone when a later item failed an atomic run).
+        `trash` requires `base_revision_id` on every item, per item, because a
+        batch is a set of independent notes.
+
+
+        A request that ran is a 200 even when every item failed: per-item
+        failure is the report's content, not the request's fate. A 4xx means the
+        call itself was wrong.
+
+
+        `request_key` makes a retry safe. The key and the first run's outcomes
+        are stored, so a replay after a restart returns those outcomes verbatim
+        with `replayed: true` rather than doing the work again. A key reused
+        with different arguments is refused, because answering with the earlier
+        unrelated result would hide a client bug. Bounded at 500 items, refused
+        rather than truncated.
+      responses:
+        '200': { description: Batch report (fresh or replayed) }
+        '400': { description: "Unknown operation or mode, no items, over the ceiling, a repeated document, a missing argument, or a reused request key" }
+        '428': { description: trash without base_revision_id on every item }
+  /api/v1/tags/rename:
+    post:
+      summary: Rename a tag hierarchy, dry run by default
+      description: >
+        Renames a tag and, with include_children, every tag under `<from>/`.
+        `dry_run` defaults to **true**: a request that omits it gets the report
+        and changes nothing. The report is not a prediction — the service runs
+        the rename inside a transaction and rolls it back for a dry run, so a
+        dry run and an apply cannot disagree. Renaming onto an existing name
+        merges into it, and the report says which changes are merges and how
+        many notes each one actually alters. Saved searches that mention the
+        old name are reported as warnings and never rewritten.
+      responses:
+        '200': { description: Rename report (dry run or applied) }
+        '400': { description: "Invalid destination name, or over the tag ceiling" }
+        '404': { description: 'No tag with that name' }
+        '409': { description: Destination name conflict }
   /api/v1/documents/{document_id}/tags:
     get:
       summary: List one document's tags
@@ -645,19 +1001,33 @@ paths:
         '403': { description: Builtin search notebooks cannot be deleted }
   /api/v1/trash:
     get:
-      summary: List soft-deleted notes (newest deletions first)
+      summary: List soft-deleted notes using a deleted-at keyset
       parameters:
         - { name: limit, in: query, schema: { type: integer } }
+        - $ref: '#/components/parameters/Cursor'
       responses:
-        '200': { description: Trashed documents }
+        '200':
+          description: Keyset-paged trashed documents
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentPage'
+        '400':
+          $ref: '#/components/responses/Error'
   /api/v1/trash/{document_id}:
     delete:
       summary: Permanently delete a trashed local note
       parameters:
         - { name: document_id, in: path, required: true, schema: { type: string } }
+        - name: X-Notrios-Confirmation
+          in: header
+          required: true
+          description: Must equal purge-document:{document_id}.
+          schema: { type: string }
       responses:
         '204': { description: Purged }
         '403': { description: Externally-sourced notes cannot be purged }
+        '428': { description: Missing or incorrect explicit confirmation }
   /api/v1/trash/{document_id}/restore:
     post:
       summary: Undelete a trashed note
@@ -665,9 +1035,28 @@ paths:
         - { name: document_id, in: path, required: true, schema: { type: string } }
       responses:
         '200': { description: Restored document }
+  /api/v1/admin/gc/report:
+    get:
+      summary: Plan retention-aware resource garbage collection without deleting anything
+      description: >
+        Read-only administrative report using the configured retention windows
+        and local retention gate. There is intentionally no REST apply
+        endpoint; use notriosctl gc --apply for explicit local deletion.
+      responses:
+        '200':
+          description: Garbage collection dry-run report
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GarbageCollectionReport'
   /api/v1/graph:
     post:
-      summary: Return a local document/resource graph
+      summary: Expand a bounded neighbourhood around one or more notes
+      description: >
+        Follows links up to `depth` hops. A request naming a bound wider than a
+        ceiling is refused with `validation_failed` rather than clamped. When a
+        ceiling stops the expansion the response sets `truncated`, names it in
+        `truncated_by`, and reports the deepest level completed.
       requestBody:
         required: true
         content:
@@ -676,30 +1065,283 @@ paths:
               $ref: '#/components/schemas/GraphRequest'
       responses:
         '200':
-          description: Graph
+          description: Bounded graph neighbourhood
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/GraphResponse'
-  /api/v1/publish/quartz/plan:
+        '400':
+          $ref: '#/components/responses/Error'
+  /api/v1/links/suggest:
+    get:
+      summary: Bounded link-target suggestions for editor autocomplete
+      description: >
+        Title-prefix matches first, in title order from an index range scan, then
+        bounded interior-word matches. Returns stable IDs and titles only — never
+        a body or a snippet. The query must be at least two characters.
+      parameters:
+        - in: query
+          name: q
+          required: true
+          schema: { type: string, minLength: 2, maxLength: 256 }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 50, default: 10 }
+        - in: query
+          name: collection_id
+          schema: { type: string }
+        - in: query
+          name: exclude_document_id
+          description: The note being edited, so it is not offered as its own target.
+          schema: { type: string }
+      responses:
+        '200':
+          description: Bounded suggestions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentSuggestionResponse'
+        '400':
+          $ref: '#/components/responses/Error'
+  /api/v1/links/check:
     post:
-      summary: Plan a Quartz publishing run without writing files
+      summary: Classify the links in an unsaved buffer
+      description: >
+        Parses the submitted body with the canonical extractor and resolves each
+        link read-only, so a marker an editor draws matches the link record a
+        save would write. Nothing is stored and no revision is created.
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PublishPlanRequest'
+              $ref: '#/components/schemas/CheckLinksRequest'
       responses:
         '200':
-          description: Publishing plan
+          description: One classification per link, located in the buffer
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PublishPlanResponse'
+                $ref: '#/components/schemas/CheckLinksResponse'
+        '400':
+          $ref: '#/components/responses/Error'
+  /api/v1/note-queries/run:
+    post:
+      summary: Evaluate one embedded note-query block
+      description: >
+        Parses a fenced ```note-query block and runs it through the same bounded
+        search every other surface uses. Accepts no SQL, no filesystem path, and
+        no output target. A malformed block returns 200 with `error` set rather
+        than a 4xx, because the note containing it still has to render.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NoteQueryRequest'
+      responses:
+        '200':
+          description: The block's results, or the reason it could not run
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NoteQueryResult'
+        '400':
+          $ref: '#/components/responses/Error'
+  /api/v1/graph/path:
+    post:
+      summary: Find a shortest link path between two notes
+      description: >
+        Searches from both ends. `status` distinguishes `found`, `no_path`
+        (everything reachable was searched), `depth_exhausted`, and
+        `budget_exhausted` (the search stopped early and proved nothing).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GraphPathRequest'
+      responses:
+        '200':
+          description: A shortest path, or the reason there is none
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GraphPathResponse'
+        '400':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+  /api/v1/graph/report:
+    get:
+      summary: Read-only orphan, isolate, and hub report over the whole link graph
+      description: >
+        One ordered scan of the collection. Counts are always complete; `limit`
+        caps only the example lists and sets `truncated` when it does.
+      parameters:
+        - in: query
+          name: collection_id
+          schema: { type: string }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 1000, default: 100 }
+      responses:
+        '200':
+          description: Graph shape report
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GraphReport'
+        '400':
+          $ref: '#/components/responses/Error'
+  /api/v1/graph/report/note:
+    post:
+      summary: Regenerate the hub report as a read-only note in the Reports notebook
+      description: >
+        Explicit only — never on a schedule and never on write, because the scan
+        reads the whole collection. The note has a stable ID and is overwritten
+        in place, and the Reports notebook is read-only so the note reports
+        `editable: false` and every mutation route refuses it. There is no MCP
+        tool for this, for the same reason `run_lint` has none.
+      parameters:
+        - in: query
+          name: collection_id
+          schema: { type: string }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 1000, default: 20 }
+      responses:
+        '200':
+          description: The note that was written and the report it was rendered from
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GraphReportNote'
+        '400':
+          $ref: '#/components/responses/Error'
+  /api/v1/selection/plan:
+    post:
+      summary: Dry-run a full archive, subset transfer, or publication selection
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SelectionPlanRequest'
+      responses:
+        '200':
+          description: Deterministic content-free selection/privacy plan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SelectionPlan'
+        '400':
+          $ref: '#/components/responses/Error'
+  /api/v1/admin/lint/report:
+    get:
+      summary: Read-only workspace lint report
+      description: >
+        Reports broken links, ambiguous wikilinks, unresolved block anchors,
+        duplicate external identities, missing titles, unlocalized remote media,
+        missing alt text, unreferenced resources, and projection backlog.
+        Findings locate problems without quoting note content. Counts and the
+        digest always describe the whole library; detail_limit caps examples
+        only. There is no apply endpoint.
+      parameters:
+        - name: collection
+          in: query
+          schema: { type: string }
+        - name: checks
+          in: query
+          description: Comma-separated subset of check names.
+          schema: { type: string }
+        - name: detail_limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 1000, default: 100 }
+      responses:
+        '200':
+          description: Lint report
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LintReport'
+        '400':
+          $ref: '#/components/responses/Error'
+  /api/v1/documents/{document_id}/blocks:
+    get:
+      summary: List a note's addressable blocks
+      description: >
+        Blocks in document order with backlink counts. Block IDs are derived
+        from block text, so an ID names exactly the content it was written
+        against: it survives the block moving and stops resolving when the
+        block is rewritten. No block text is returned.
+      parameters:
+        - name: document_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: The note's blocks
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentBlocksResponse'
+        '404':
+          $ref: '#/components/responses/Error'
+  /api/v1/links/resolve:
+    post:
+      summary: Resolve an external notrios:// link against this database
+      description: >
+        Answers which note a stable link names in the database this service has
+        open. It accepts no path, profile, or database selector: choosing which
+        local database answers a link is a desktop routing decision made by the
+        local profile registry. A link naming another logical database is
+        reported as foreign_database and reveals nothing about local state.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StableLinkResolveRequest'
+      responses:
+        '200':
+          description: What the link names here
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StableLinkResolveResponse'
+        '400':
+          $ref: '#/components/responses/Error'
+  /api/v1/jobs:
+    get:
+      summary: List recent job records, newest first
+      description: >
+        Parameters are never returned: import/export jobs may name places on
+        the local machine. G15 sync jobs are the exception to watching-only:
+        their closed, path-free controls are below.
+      parameters:
+        - in: query
+          name: kind
+          schema: { type: string, enum: [import_joplin_raw, import_obsidian, export_archive_v2, snapshot_image, sync_incremental, sync_resource_fetch, sync_catchup, sync_restore_prep] }
+        - in: query
+          name: state
+          schema: { type: string, enum: [queued, running, succeeded, failed, cancelled, interrupted] }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 500, default: 50 }
+      responses:
+        '200':
+          description: Bounded job listing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobPage'
+        '400':
+          $ref: '#/components/responses/Error'
   /api/v1/jobs/{job_id}:
     get:
-      summary: Get background job status
+      summary: Get one job record
       parameters:
         - name: job_id
           in: path
@@ -712,6 +1354,441 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/JobStatus'
+        '404':
+          $ref: '#/components/responses/Error'
+  /api/v1/jobs/{job_id}/cancel:
+    post:
+      summary: Ask a running job to stop at its next durable boundary
+      description: >
+        Cooperative. The flag is set immediately and the response returns at
+        once; the work stops after its next committed, checkpointed batch, so
+        what it finished is kept and rerunning the command continues from there.
+        Cancelling a settled job is a no-op rather than an error.
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: The record with cancel_requested set
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobStatus'
+        '404':
+          $ref: '#/components/responses/Error'
+  /api/v1/jobs/sync/plan:
+    post:
+      summary: Plan one bounded ordinary sync without queueing it
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SyncControlRequest' }
+      responses:
+        '200':
+          description: Content-free local plan against an opaque target
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        '400': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /api/v1/jobs/sync/start:
+    post:
+      summary: Queue one bounded incremental or resource-fetch sync job
+      description: Accepts no path, URL, credential, key, backup, restore, retirement, or purge input.
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SyncControlRequest' }
+      responses:
+        '202':
+          description: Durable queued sync job
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SyncJobStatus' }
+        '400': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /api/v1/jobs/{job_id}/sync:
+    get:
+      summary: Inspect one sync job and its bounded content-free audit trail
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Sync job and recent audit events
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [sync_job, audit]
+                properties:
+                  sync_job: { $ref: '#/components/schemas/SyncJobStatus' }
+                  audit: { $ref: '#/components/schemas/SyncJobAuditPage' }
+        '404': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /api/v1/jobs/{job_id}/retry:
+    post:
+      summary: Requeue a settled sync job while preserving its checkpoint
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Requeued sync job
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SyncJobStatus' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+  /api/v1/jobs/{job_id}/reset:
+    post:
+      summary: Locally requeue a sync job after clearing its checkpoint and attempts
+      description: Deliberately unavailable over MCP.
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Reset queued sync job
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SyncJobStatus' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+  /api/v1/sync-conflicts:
+    get:
+      summary: List bounded content-free durable sync conflicts
+      parameters:
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+      responses:
+        '200':
+          description: Conflict identities and kinds; no title, body, or conflict-region text
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SyncConflictPage' }
+        '400': { $ref: '#/components/responses/Error' }
+  /api/v1/sync-ui:
+    get:
+      summary: Read the local profile's synchronization dashboard state
+      description: Loopback/native only. Returns redacted identities and operational state, never keys, credentials, passwords, job parameters, or artifact paths.
+      responses:
+        '200':
+          description: Bounded Sync Center state
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SyncUIStatus' }
+        '403': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /api/v1/sync-ui/initialize:
+    post:
+      summary: Initialize this local profile's warned development secret provider and journal
+      responses:
+        '200':
+          description: Initialization result; restart is required before transport work
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        '403': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /api/v1/sync-ui/configuration:
+    put:
+      summary: Save the active local profile's explicit synchronization transport choice
+      description: Does not enroll a peer or start synchronization. A restart is required. HTTPS is required except for loopback REST peers.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SyncUIConfiguration' }
+      responses:
+        '200':
+          description: Saved configuration and restart requirement
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        '400': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+  /api/v1/sync-ui/discover:
+    post:
+      summary: Discover candidates on the configured carrier without enrolling them
+      responses:
+        '200':
+          description: Redacted carrier discovery result
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        '403': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /api/v1/sync-ui/invitations:
+    post:
+      summary: Create one bounded single-use pairing code on the local profile
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                label: { type: string, maxLength: 128 }
+                ttl_minutes: { type: integer, minimum: 5, maximum: 60, default: 15 }
+      responses:
+        '201':
+          description: Single-use pairing code and expiry
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        '400': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /api/v1/sync-ui/pair:
+    post:
+      summary: Explicitly join an inviting REST peer with its address and single-use code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [base_url, code]
+              properties:
+                base_url: { type: string, format: uri, maxLength: 4096 }
+                code: { type: string, maxLength: 256 }
+      responses:
+        '200':
+          description: Enrolled peer identity; no key material
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        '400': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '502': { $ref: '#/components/responses/Error' }
+  /api/v1/sync-ui/peers/{replica_id}/snapshot-permission:
+    post:
+      summary: Explicitly allow or disallow one active peer to receive a complete catch-up snapshot
+      parameters:
+        - name: replica_id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [permitted]
+              properties:
+                permitted: { type: boolean }
+      responses:
+        '200':
+          description: Effective snapshot permission
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        '403': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+  /api/v1/sync-ui/peers/{replica_id}/retirement-preview:
+    post:
+      summary: Preview the consequences and exact confirmation for retiring one peer
+      description: Loopback/native only. Changes nothing and discloses no signature, key, or artifact path.
+      parameters:
+        - name: replica_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Peer watermark state, consequences, and exact confirmation text
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+  /api/v1/sync-ui/peers/{replica_id}/retire:
+    post:
+      summary: Sign and append an explicitly confirmed peer-retirement decision
+      description: The decision travels in the ordinary operation log. Old credentials cannot re-enroll; the retired device must reset and pair as a new replica.
+      parameters:
+        - name: replica_id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [confirmation]
+              properties:
+                confirmation: { type: string, description: 'Exact value retire-peer:<replica_id> from the preview.' }
+                reason: { type: string, maxLength: 512 }
+      responses:
+        '200':
+          description: Retirement decision identity and peers that have not acknowledged it
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        '400': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /api/v1/sync-ui/retention:
+    get:
+      summary: Review the current acknowledgement/snapshot-gated retention plan
+      description: Loopback/native, read-only, and path-free. Applying collection requires local CLI re-verification of a retained physical snapshot and the exact dry-run digest; there is no HTTP apply operation.
+      responses:
+        '200':
+          description: Safe floors, peer horizon states, candidates, digest, and non-automatic repair plan
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SyncRetentionReport' }
+        '403': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /api/v1/sync-ui/recovery:
+    post:
+      summary: Queue catch-up or reset preparation without installing a snapshot
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [action]
+              properties:
+                action: { type: string, enum: [catchup, reset] }
+      responses:
+        '202':
+          description: Durable catch-up job; reset still requires separate destructive review
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        '400': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /api/v1/sync-ui/conflicts/{conflict_id}:
+    get:
+      summary: Read base, current, and other bodies for one local conflict review
+      parameters:
+        - name: conflict_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Local three-way conflict detail
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+  /api/v1/sync-ui/conflicts/{conflict_id}/resolve:
+    post:
+      summary: Store an explicit two-parent conflict resolution revision
+      parameters:
+        - name: conflict_id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [body]
+              properties:
+                title: { type: string }
+                body: { type: string, maxLength: 1048576 }
+      responses:
+        '200':
+          description: Resolved document
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Document' }
+        '400': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+  /api/v1/sync-ui/resources/{resource_id}/intent:
+    post:
+      summary: Set local lazy-download/pin intent and optionally queue a bounded fetch
+      parameters:
+        - $ref: '#/components/parameters/ResourceID'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [pinned, requested]
+              properties:
+                pinned: { type: boolean }
+                requested: { type: boolean }
+      responses:
+        '200':
+          description: Effective local intent and optional job
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+  /api/v1/sync-ui/backups:
+    post:
+      summary: Stream a verified password-protected physical backup
+      description: The password wraps a fresh payload key with Argon2id and is never persisted.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SyncUIPassword' }
+      responses:
+        '200':
+          description: NPB1 encrypted backup
+          content:
+            application/vnd.notrios.password-backup:
+              schema: { type: string, format: binary }
+        '400': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+        '500': { $ref: '#/components/responses/Error' }
+  /api/v1/sync-ui/backups/inspect:
+    post:
+      summary: Authenticate and verify a password backup for destructive review without restoring it
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [backup, password]
+              properties:
+                backup: { type: string, format: binary }
+                password: { type: string, format: password, maxLength: 4096 }
+      responses:
+        '200':
+          description: Verified review with applied=false
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
 components:
   parameters:
     CollectionID:
@@ -755,13 +1832,75 @@ components:
           schema:
             $ref: '#/components/schemas/ErrorEnvelope'
   schemas:
+    SyncUIConfiguration:
+      type: object
+      additionalProperties: false
+      required: [target]
+      properties:
+        target: { type: string, enum: [none, directory, rest] }
+        directory: { type: string, description: Absolute path selected on the local device. }
+        rest_base_url: { type: string, format: uri }
+        rest_inbound_enabled: { type: boolean }
+    SyncUIPassword:
+      type: object
+      additionalProperties: false
+      required: [password]
+      properties:
+        password: { type: string, format: password, minLength: 8, maxLength: 4096 }
+    SyncUIStatus:
+      type: object
+      required: [status, active_profile, profiles, configuration, journal_enabled, secret_store, peers, jobs, conflicts, resources, repairs, retention]
+      properties:
+        status: { type: string, enum: [setup, ready, syncing, offline, attention] }
+        active_profile: { type: object, additionalProperties: true }
+        profiles: { type: array, items: { type: object, additionalProperties: true } }
+        configuration: { type: object, additionalProperties: true }
+        journal_enabled: { type: boolean }
+        secret_store: { type: object, additionalProperties: true }
+        peers: { type: array, maxItems: 200, items: { type: object, additionalProperties: true } }
+        jobs: { type: array, maxItems: 20, items: { $ref: '#/components/schemas/JobStatus' } }
+        conflicts: { type: array, maxItems: 50, items: { type: object, additionalProperties: true } }
+        conflicts_truncated: { type: boolean }
+        resources: { type: array, maxItems: 50, items: { type: object, additionalProperties: true } }
+        resources_truncated: { type: boolean }
+        repairs: { type: array, maxItems: 50, items: { type: object, additionalProperties: true } }
+        repairs_truncated: { type: boolean }
+        retention: { type: object, additionalProperties: true }
+    SyncRetentionReport:
+      type: object
+      additionalProperties: false
+      required: [dry_run, applied, as_of, history_seconds, warning_seconds, subjects, peers, tombstones, eligible_operations, eligible_bytes, removed_operations, collected_tombstones, digest, warnings, repair]
+      properties:
+        dry_run: { type: boolean }
+        applied: { type: boolean }
+        as_of: { type: string, format: date-time }
+        history_seconds: { type: integer, minimum: 1 }
+        warning_seconds: { type: integer, minimum: 1 }
+        snapshot_id: { type: string }
+        snapshot_created_at: { type: string, format: date-time }
+        subjects: { type: array, items: { type: object, additionalProperties: true } }
+        peers: { type: array, maxItems: 200, items: { type: object, additionalProperties: true } }
+        tombstones: { type: array, items: { type: object, additionalProperties: true } }
+        eligible_operations: { type: integer, minimum: 0 }
+        eligible_bytes: { type: integer, minimum: 0 }
+        removed_operations: { type: integer, minimum: 0 }
+        collected_tombstones: { type: integer, minimum: 0 }
+        digest: { type: string, pattern: '^[a-f0-9]{64}$' }
+        warnings: { type: array, items: { type: string } }
+        repair: { type: object, additionalProperties: true }
     StatusResponse:
       type: object
-      required: [service, version, status]
+      required: [service, version, status, search_sidecar]
       properties:
         service: { type: string }
         version: { type: string }
         status: { type: string, enum: [scaffold, running] }
+        profile:
+          type: string
+          description: Local runtime profile name when started from a generated profile config.
+        profile_id:
+          type: string
+          description: Local, non-synchronized runtime profile identity.
         database:
           type: string
           description: Deprecated summary retained for early UI compatibility.
@@ -772,6 +1911,11 @@ components:
             driver: { type: string }
             path: { type: string }
             state: { type: string }
+            database_id:
+              type: string
+              description: >
+                Stable logical database identity carried by external notrios://
+                links. The per-copy replica ID is deliberately not reported.
             schema_version: { type: integer }
         storage:
           type: object
@@ -807,6 +1951,35 @@ components:
               additionalProperties: { type: integer, format: int64 }
               description: Download size caps in bytes per media class (image/video/pdf).
             quarantine_dir: { type: string }
+        search_sidecar:
+          type: object
+          required: [configured, available, active, state, backlog, failed_jobs]
+          description: >
+            Runtime state for the optional derived Recoll index. SQLite remains
+            canonical; unavailable or degraded state does not disable FTS5.
+          properties:
+            configured: { type: boolean }
+            available: { type: boolean }
+            active: { type: boolean }
+            state: { type: string, enum: [disabled, configured, unavailable, active, degraded] }
+            backlog: { type: integer, minimum: 0 }
+            failed_jobs: { type: integer, minimum: 0 }
+            last_sync_at: { type: string, format: date-time }
+            last_index_at: { type: string, format: date-time }
+            last_reconciliation_at: { type: string, format: date-time }
+            last_error: { type: string }
+            reconciliation:
+              type: object
+              required: [complete, canonical, scanned, missing, stale, orphaned, repaired, failed]
+              properties:
+                complete: { type: boolean }
+                canonical: { type: integer, minimum: 0 }
+                scanned: { type: integer, minimum: 0 }
+                missing: { type: integer, minimum: 0 }
+                stale: { type: integer, minimum: 0 }
+                orphaned: { type: integer, minimum: 0 }
+                repaired: { type: integer, minimum: 0 }
+                failed: { type: integer, minimum: 0 }
     ErrorEnvelope:
       type: object
       required: [error]
@@ -819,16 +1992,16 @@ components:
             message: { type: string }
             details: { type: object, additionalProperties: true }
     Collection:
+      # `kind` and `capabilities` were removed in v0.8 H16. Neither was stored:
+      # the collections table holds an id, a name and a description. `kind` was
+      # always the constant "managed" and `capabilities` the same five words on
+      # every row, so both described the code rather than the collection.
       type: object
-      required: [id, name, kind, capabilities]
+      required: [id, name]
       properties:
         id: { type: string }
         name: { type: string }
-        kind: { type: string, enum: [managed, external, imported, sidecar_indexed, projection] }
         description: { type: string }
-        capabilities:
-          type: array
-          items: { type: string }
         created_at: { type: string, format: date-time }
         updated_at: { type: string, format: date-time }
     CollectionPage:
@@ -840,12 +2013,15 @@ components:
           items: { $ref: '#/components/schemas/Collection' }
         next_cursor: { type: string, nullable: true }
     CreateCollectionRequest:
+      # `kind` is no longer required and is ignored when sent. It was never
+      # stored; accepting it keeps a caller written against the older shape
+      # working, which refusing it would not.
       type: object
-      required: [id, name, kind]
+      required: [id, name]
       properties:
         id: { type: string }
         name: { type: string }
-        kind: { type: string }
+        kind: { type: string, deprecated: true, description: 'Accepted and ignored since v0.8; never stored.' }
         description: { type: string }
     PatchCollectionRequest:
       type: object
@@ -860,7 +2036,10 @@ components:
           type: array
           items: { type: string }
         collection: { type: string, deprecated: true }
-        query: { type: string }
+        query:
+          type: string
+          maxLength: 4096
+          description: Bounded Notrios boolean expression; maximum 256 tokens and 16 parenthesis levels.
         mode: { type: string, enum: [fts, phrase, all_terms, any_terms, semantic, hybrid], default: fts }
         filters: { $ref: '#/components/schemas/SearchFilters' }
         sort:
@@ -903,6 +2082,17 @@ components:
           items: { $ref: '#/components/schemas/SearchHit' }
         next_cursor: { type: string, nullable: true }
         total: { type: integer, nullable: true }
+        truncated:
+          type: boolean
+          description: True when an optional merged-sidecar snapshot reached its explicit 1000-hit window.
+    DocumentPage:
+      type: object
+      required: [documents]
+      properties:
+        documents:
+          type: array
+          items: { $ref: '#/components/schemas/Document' }
+        next_cursor: { type: string, nullable: true }
     SearchHit:
       type: object
       required: [id, uri, source]
@@ -910,6 +2100,10 @@ components:
         id: { type: string }
         uri: { type: string }
         source: { type: string }
+        sources:
+          type: array
+          items: { type: string, enum: [sqlite, fts5, recoll] }
+          description: Search engines that contributed this deduplicated hit.
         collection_id: { type: string }
         title: { type: string }
         snippet: { type: string }
@@ -940,9 +2134,10 @@ components:
         deleted_at: { type: string, format: date-time, nullable: true }
     DocumentMutationRequest:
       type: object
-      required: [collection_id, title, body]
+      required: [title, body]
       properties:
-        collection_id: { type: string }
+        collection_id: { type: string, default: default }
+        notebook_id: { type: string, description: Omitted to use the built-in Notes notebook. }
         title: { type: string }
         body: { type: string }
         body_mime_type: { type: string, default: text/markdown }
@@ -1010,6 +2205,144 @@ components:
         sha256: { type: string }
         metadata: { type: object, additionalProperties: true }
         created_at: { type: string, format: date-time }
+    ResourceReport:
+      type: object
+      required: [exact_duplicates, unreferenced_blobs, notebook_usage, perceptual]
+      properties:
+        exact_duplicates:
+          type: array
+          items: { $ref: '#/components/schemas/ExactDuplicateGroup' }
+        unreferenced_blobs:
+          type: array
+          items: { $ref: '#/components/schemas/UnreferencedBlob' }
+        notebook_usage:
+          type: array
+          items: { $ref: '#/components/schemas/NotebookResourceUsage' }
+        perceptual: { $ref: '#/components/schemas/PerceptualHashReport' }
+    ExactDuplicateGroup:
+      type: object
+      required: [sha256, mime_type, size_bytes, resource_count, reference_count, collection_ids, cross_collection, resources]
+      properties:
+        sha256: { type: string }
+        mime_type: { type: string }
+        size_bytes: { type: integer }
+        resource_count: { type: integer }
+        reference_count: { type: integer }
+        collection_ids:
+          type: array
+          items: { type: string }
+        cross_collection: { type: boolean }
+        resources:
+          type: array
+          items: { $ref: '#/components/schemas/ResourceReportItem' }
+    ResourceReportItem:
+      type: object
+      required: [resource, reference_count]
+      properties:
+        resource: { $ref: '#/components/schemas/Resource' }
+        reference_count: { type: integer }
+    UnreferencedBlob:
+      type: object
+      required: [sha256, mime_type, size_bytes, resources]
+      properties:
+        sha256: { type: string }
+        mime_type: { type: string }
+        size_bytes: { type: integer }
+        resources:
+          type: array
+          items: { $ref: '#/components/schemas/Resource' }
+    NotebookResourceUsage:
+      type: object
+      required: [notebook_id, notebook_name, document_count, reference_count, resource_count, unique_blob_count, referenced_bytes, unique_bytes]
+      properties:
+        notebook_id: { type: string }
+        notebook_name: { type: string }
+        document_count: { type: integer }
+        reference_count: { type: integer }
+        resource_count: { type: integer }
+        unique_blob_count: { type: integer }
+        referenced_bytes: { type: integer }
+        unique_bytes: { type: integer }
+    PerceptualHashReport:
+      type: object
+      required: [hook_enabled, stored_hashes, policy_reviews, near_duplicates]
+      properties:
+        hook_enabled: { type: boolean }
+        algorithm: { type: string }
+        stored_hashes: { type: integer }
+        policy_reviews:
+          type: array
+          items: { $ref: '#/components/schemas/PerceptualPolicyReview' }
+        near_duplicates:
+          type: array
+          items: { $ref: '#/components/schemas/NearDuplicateReview' }
+    PerceptualPolicyReview:
+      type: object
+      required: [algorithm, hash, blob_sha256, resource_ids]
+      properties:
+        algorithm: { type: string }
+        hash: { type: string }
+        blob_sha256: { type: string }
+        resource_ids:
+          type: array
+          items: { type: string }
+        reason: { type: string }
+    NearDuplicateReview:
+      type: object
+      required: [algorithm, left_blob_sha256, right_blob_sha256, left_resource_ids, right_resource_ids, distance]
+      properties:
+        algorithm: { type: string }
+        left_blob_sha256: { type: string }
+        right_blob_sha256: { type: string }
+        left_resource_ids:
+          type: array
+          items: { type: string }
+        right_resource_ids:
+          type: array
+          items: { type: string }
+        distance: { type: number }
+        reason: { type: string }
+    GarbageCollectionReport:
+      type: object
+      required: [dry_run, as_of, policy, eligible, retained, removed, referenced_resource_count, blobs_removed, bytes_removed, warnings]
+      properties:
+        dry_run: { type: boolean }
+        as_of: { type: string, format: date-time }
+        policy: { $ref: '#/components/schemas/GarbageCollectionPolicy' }
+        eligible:
+          type: array
+          items: { $ref: '#/components/schemas/GarbageCollectionCandidate' }
+        retained:
+          type: array
+          items: { $ref: '#/components/schemas/GarbageCollectionCandidate' }
+        removed:
+          type: array
+          items: { $ref: '#/components/schemas/GarbageCollectionCandidate' }
+        referenced_resource_count: { type: integer }
+        blobs_removed: { type: integer }
+        bytes_removed: { type: integer }
+        warnings:
+          type: array
+          items: { type: string }
+    GarbageCollectionPolicy:
+      type: object
+      required: [unreferenced_seconds, purged_resource_seconds, gate]
+      properties:
+        unreferenced_seconds: { type: integer }
+        purged_resource_seconds: { type: integer }
+        gate: { type: string, enum: [local, custom] }
+    GarbageCollectionCandidate:
+      type: object
+      required: [resource, unreferenced_at, unreferenced_reason, retention_seconds, decision]
+      properties:
+        resource: { $ref: '#/components/schemas/Resource' }
+        unreferenced_at: { type: string, format: date-time }
+        unreferenced_reason:
+          type: string
+          enum: [created_unattached, detached, purged_document, legacy_unreferenced, unknown]
+        retention_seconds: { type: integer }
+        eligible_at: { type: string, format: date-time }
+        decision: { type: string }
     ResourceReference:
       type: object
       required: [document_id, resource_id, relation_type]
@@ -1147,49 +2480,490 @@ components:
       properties:
         roots:
           type: array
+          maxItems: 100
           items: { type: string }
         direction: { type: string, enum: [outgoing, incoming, both], default: both }
         depth: { type: integer, minimum: 0, maximum: 5, default: 1 }
         include_resources: { type: boolean, default: false }
-        max_nodes: { type: integer, default: 250 }
-        max_edges: { type: integer, default: 500 }
+        max_nodes: { type: integer, minimum: 1, maximum: 5000, default: 250 }
+        max_edges: { type: integer, minimum: 1, maximum: 20000, default: 500 }
+    GraphNode:
+      type: object
+      required: [id, kind, depth]
+      properties:
+        id: { type: string }
+        uri: { type: string }
+        kind: { type: string, description: "document, resource, or the link's resolution status for an unresolved target" }
+        label: { type: string }
+        depth: { type: integer, description: hop distance from the nearest root }
+    GraphEdge:
+      type: object
+      required: [id, source_id, target_id]
+      properties:
+        id: { type: string }
+        source_id: { type: string }
+        target_id: { type: string }
+        kind: { type: string }
+        status: { type: string }
+        raw_target: { type: string }
     GraphResponse:
       type: object
-      required: [nodes, edges]
+      required: [nodes, edges, requested_depth, completed_depth]
       properties:
         nodes:
           type: array
-          items: { type: object, additionalProperties: true }
+          items: { $ref: '#/components/schemas/GraphNode' }
         edges:
           type: array
-          items: { type: object, additionalProperties: true }
+          items: { $ref: '#/components/schemas/GraphEdge' }
         truncated: { type: boolean }
-    PublishPlanRequest:
+        truncated_by: { type: string, enum: [nodes, edges] }
+        requested_depth: { type: integer }
+        completed_depth: { type: integer, description: deepest level expanded in full }
+    DocumentSuggestion:
       type: object
+      required: [document_id, title, uri, match]
       properties:
-        profile: { type: string }
-        include:
+        document_id: { type: string }
+        title: { type: string }
+        uri: { type: string }
+        notebook_id: { type: string }
+        match: { type: string, enum: [title_prefix, word_prefix] }
+    DocumentSuggestionResponse:
+      type: object
+      required: [suggestions, limit]
+      properties:
+        suggestions:
+          type: array
+          items: { $ref: '#/components/schemas/DocumentSuggestion' }
+        truncated: { type: boolean }
+        limit: { type: integer }
+    CheckLinksRequest:
+      type: object
+      required: [body]
+      properties:
+        body: { type: string, description: the unsaved buffer; at most 1 MiB }
+        document_id:
+          type: string
+          description: >
+            The note being edited. Anchor-only links resolve to it, and anchors
+            into it are resolved against the submitted body rather than the
+            saved blocks.
+        collection_id: { type: string }
+    CheckedLink:
+      type: object
+      required: [raw_target, status, start_byte, end_byte, line, column]
+      properties:
+        raw_target: { type: string }
+        display_text: { type: string }
+        relation_type: { type: string }
+        source_format: { type: string }
+        anchor_type: { type: string }
+        anchor_value: { type: string }
+        status:
+          type: string
+          enum: [resolved, unresolved, ambiguous, external, invalid, stale_anchor]
+        target_document_id: { type: string }
+        target_resource_id: { type: string }
+        target_uri: { type: string }
+        canonical_target:
+          type: string
+          description: >
+            The URI a title- or filename-resolved link already points at, which
+            an editor may offer to substitute.
+        start_byte: { type: integer }
+        end_byte: { type: integer }
+        line: { type: integer }
+        column: { type: integer }
+    CheckLinksResponse:
+      type: object
+      required: [links, total, unresolved]
+      properties:
+        links:
+          type: array
+          items: { $ref: '#/components/schemas/CheckedLink' }
+        total: { type: integer, description: "links in the whole buffer, even when the list was capped" }
+        unresolved: { type: integer }
+        truncated: { type: boolean }
+    NoteQueryRequest:
+      type: object
+      required: [block]
+      properties:
+        block:
+          type: string
+          maxLength: 4096
+          description: >
+            The block's text: `key: value` lines using query, fields, sort, and
+            limit. `query` is required and is the Q1 expression language.
+        collection_id: { type: string }
+    NoteQuerySpec:
+      type: object
+      required: [query, fields, sort, limit]
+      properties:
+        query: { type: string }
+        fields:
+          type: array
+          items: { type: string, enum: [title, notebook, tags, updated, snippet] }
+        sort: { type: string, enum: [updated, relevance] }
+        limit: { type: integer, minimum: 1, maximum: 100 }
+    NoteQueryRow:
+      type: object
+      required: [document_id, uri, title]
+      properties:
+        document_id: { type: string }
+        uri: { type: string }
+        title: { type: string }
+        notebook: { type: string }
+        tags:
+          type: array
+          items: { type: string }
+        updated_at: { type: string, format: date-time }
+        snippet: { type: string }
+    NoteQueryResult:
+      type: object
+      required: [spec, rows, truncated]
+      properties:
+        spec: { $ref: '#/components/schemas/NoteQuerySpec' }
+        rows:
+          type: array
+          items: { $ref: '#/components/schemas/NoteQueryRow' }
+        truncated: { type: boolean, description: more notes match than the block's limit showed }
+        error:
+          type: string
+          description: >
+            Why the block could not run. Present on a 200 so the note renders
+            with a message in the block rather than failing.
+    GraphPathRequest:
+      type: object
+      required: [from, to]
+      properties:
+        from: { type: string }
+        to: { type: string }
+        direction: { type: string, enum: [outgoing, incoming, both], default: both }
+        max_depth: { type: integer, minimum: 1, maximum: 10, default: 6 }
+        max_visits: { type: integer, minimum: 1, maximum: 200000, default: 50000 }
+    GraphPathResponse:
+      type: object
+      required: [status, nodes, edges, length, visited_nodes]
+      properties:
+        status:
+          type: string
+          enum: [found, no_path, depth_exhausted, budget_exhausted]
+        nodes:
+          type: array
+          items: { $ref: '#/components/schemas/GraphNode' }
+        edges:
+          type: array
+          items: { $ref: '#/components/schemas/GraphEdge' }
+        length: { type: integer }
+        visited_nodes: { type: integer }
+        max_depth: { type: integer }
+        max_visits: { type: integer }
+    GraphReportEntry:
+      type: object
+      required: [document_id, in_degree, out_degree]
+      properties:
+        document_id: { type: string }
+        uri: { type: string }
+        title: { type: string }
+        in_degree: { type: integer }
+        out_degree: { type: integer }
+    JobStatus:
+      type: object
+      required: [id, kind, state, processed, total, settled]
+      properties:
+        id: { type: string }
+        kind: { type: string, enum: [import_joplin_raw, import_obsidian, export_archive_v2, snapshot_image, sync_incremental, sync_resource_fetch, sync_catchup, sync_restore_prep] }
+        state: { type: string, enum: [queued, running, succeeded, failed, cancelled, interrupted] }
+        collection_id: { type: string }
+        phase: { type: string }
+        processed: { type: integer, format: int64 }
+        total:
+          type: integer
+          format: int64
+          description: Zero when the operation cannot know it yet, rather than a fabricated denominator.
+        summary:
           type: object
           additionalProperties: true
-        exclude:
+          description: Counts and durations only; never note text and never a path.
+        error:
+          type: string
+          description: Failure message. Withheld from the MCP view, which routinely would carry a local path.
+        cancel_requested: { type: boolean }
+        settled: { type: boolean }
+        created_at: { type: string }
+        started_at: { type: string }
+        finished_at: { type: string }
+        heartbeat_at: { type: string }
+    JobPage:
+      type: object
+      required: [jobs]
+      properties:
+        jobs:
+          type: array
+          items: { $ref: '#/components/schemas/JobStatus' }
+        truncated: { type: boolean }
+    SyncControlRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        kind: { type: string, enum: [incremental, resource_fetch], default: incremental }
+        byte_budget: { type: integer, format: int64, minimum: 1, maximum: 17179869184, default: 67108864 }
+        max_attempts: { type: integer, minimum: 1, maximum: 32, default: 8 }
+    SyncJobStatus:
+      type: object
+      required: [job, actor, target_id, attempt, max_attempts, byte_budget, bytes_used]
+      properties:
+        job: { $ref: '#/components/schemas/JobStatus' }
+        actor: { type: string, enum: [cli, rest, mcp, service] }
+        target_id:
+          type: string
+          description: Opaque target digest; never a path, URL, credential reference, or key.
+        attempt: { type: integer }
+        max_attempts: { type: integer }
+        next_attempt_at: { type: string }
+        retry_code: { type: string, enum: ['', offline, quota, temporary, byte_budget] }
+        byte_budget: { type: integer, format: int64 }
+        bytes_used: { type: integer, format: int64 }
+        checkpoint:
           type: object
           additionalProperties: true
-        target: { type: string, enum: [quartz], default: quartz }
-    PublishPlanResponse:
+          description: Bounded content-free durable phase/count metadata.
+    SyncJobAuditPage:
+      type: object
+      required: [events]
+      properties:
+        events:
+          type: array
+          maxItems: 200
+          items:
+            type: object
+            required: [id, job_id, event_type, created_at]
+            properties:
+              id: { type: string }
+              job_id: { type: string }
+              event_type: { type: string }
+              details: { type: object, additionalProperties: true }
+              created_at: { type: string }
+        truncated: { type: boolean }
+    SyncConflictPage:
+      type: object
+      required: [conflicts]
+      properties:
+        conflicts:
+          type: array
+          maxItems: 200
+          items:
+            type: object
+            required: [id, document_id, revision_a, revision_b, kind, created_at]
+            properties:
+              id: { type: string }
+              document_id: { type: string }
+              base_revision_id: { type: string }
+              revision_a: { type: string }
+              revision_b: { type: string }
+              kind: { type: string }
+              created_at: { type: string }
+        truncated: { type: boolean }
+    GraphReportNote:
+      type: object
+      required: [document, report]
+      properties:
+        document: { $ref: '#/components/schemas/Document' }
+        report: { $ref: '#/components/schemas/GraphReport' }
+    GraphReport:
+      type: object
+      required: [collection_id, document_count, link_count, isolated_count, orphan_count]
+      properties:
+        collection_id: { type: string }
+        document_count: { type: integer }
+        link_count: { type: integer }
+        isolated_count: { type: integer }
+        orphan_count: { type: integer }
+        isolated:
+          type: array
+          items: { $ref: '#/components/schemas/GraphReportEntry' }
+        orphans:
+          type: array
+          items: { $ref: '#/components/schemas/GraphReportEntry' }
+        hubs:
+          type: array
+          items: { $ref: '#/components/schemas/GraphReportEntry' }
+        limit: { type: integer }
+        truncated: { type: boolean }
+        elapsed_ms: { type: number }
+    SelectionSpec:
+      type: object
+      additionalProperties: false
+      properties:
+        collection_id: { type: string, maxLength: 512, default: default }
+        notebook_ids:
+          type: array
+          maxItems: 100
+          items: { type: string, maxLength: 512 }
+        include_notebook_descendants: { type: boolean, default: true }
+        tags:
+          type: array
+          maxItems: 100
+          items: { type: string, maxLength: 512 }
+        query: { type: string, maxLength: 4096 }
+        document_ids:
+          type: array
+          maxItems: 1000
+          items: { type: string, maxLength: 512 }
+        match: { type: string, enum: [any, all], default: any }
+    PrivacyPolicy:
+      type: object
+      additionalProperties: false
+      properties:
+        exclude_tags:
+          type: array
+          maxItems: 100
+          items: { type: string, maxLength: 512 }
+        private_tags:
+          type: array
+          maxItems: 100
+          items: { type: string, maxLength: 512 }
+        link_action: { type: string, enum: [retain, report, plain_text, redact] }
+        include_source_bundles: { type: boolean }
+        include_provenance: { type: boolean }
+        include_private_metadata: { type: boolean }
+        include_trashed: { type: boolean }
+        max_resource_bytes: { type: integer, format: int64, minimum: 0 }
+    LintFinding:
       type: object
       properties:
-        notes_included: { type: integer }
-        resources_included: { type: integer }
-        notes_excluded: { type: integer }
+        check: { type: string }
+        document_id: { type: string }
+        resource_id: { type: string }
+        line: { type: integer }
+        column: { type: integer }
+        target_sha256:
+          type: string
+          description: Fingerprint of the offending target; the raw value never crosses the API.
+        detail: { type: string, description: Bounded content-free qualifier. }
+    LintCheckResult:
+      type: object
+      properties:
+        check: { type: string }
+        count: { type: integer, description: "Complete count, unaffected by detail_limit." }
+        findings:
+          type: array
+          items: { $ref: '#/components/schemas/LintFinding' }
+        truncated: { type: boolean }
+    LintReport:
+      type: object
+      properties:
+        version: { type: integer }
+        collection_id: { type: string }
+        detail_limit: { type: integer }
+        checks:
+          type: array
+          items: { $ref: '#/components/schemas/LintCheckResult' }
+        total_findings: { type: integer }
+        report_sha256:
+          type: string
+          description: Covers every finding, including those the detail cap hid.
         warnings:
           type: array
           items: { type: string }
-    JobStatus:
+    DocumentBlock:
       type: object
-      required: [id, kind, status]
       properties:
         id: { type: string }
-        kind: { type: string }
-        status: { type: string }
-        progress: { type: number }
-        message: { type: string }
+        document_id: { type: string }
+        ordinal: { type: integer }
+        kind:
+          type: string
+          enum: [heading, paragraph, list_item, code, table]
+        heading_level: { type: integer, minimum: 0, maximum: 6 }
+        marker:
+          type: string
+          description: Author-written anchor; outranks the derived ID when a link names it.
+        heading_slug:
+          type: string
+          description: >
+            URI-safe name a `#section-title` anchor resolves against. Heading
+            blocks only. Resolution precedence is marker, then block ID, then
+            heading slug.
+        content_sha256: { type: string }
+        start_byte: { type: integer }
+        end_byte: { type: integer }
+        backlinks: { type: integer }
+    DocumentBlocksResponse:
+      type: object
+      properties:
+        document_id: { type: string }
+        blocks:
+          type: array
+          items: { $ref: '#/components/schemas/DocumentBlock' }
+    StableLinkResolveRequest:
+      type: object
+      additionalProperties: false
+      required: [uri]
+      properties:
+        uri:
+          type: string
+          maxLength: 2048
+          description: 'notrios://databases/{database_id}/documents/{document_id}[#anchor]'
+    StableLinkResolveResponse:
+      type: object
+      properties:
+        uri: { type: string }
+        status:
+          type: string
+          enum: [resolved, trashed, stale_target, stale_anchor, foreign_database]
+        database_id: { type: string, description: The logical database the link names }
+        local_database_id: { type: string, description: The logical database that answered }
+        document_id: { type: string }
+        anchor: { type: string }
+        document_uri: { type: string, description: Present only when this database can open the link }
+        title: { type: string, description: Present only when this database can open the link }
+        notebook_id: { type: string, description: Present only when this database can open the link }
+        block_id: { type: string, description: Present when the link carries an anchor that resolves to a block }
+        block_kind: { type: string }
+    SelectionPlanRequest:
+      type: object
+      additionalProperties: false
+      required: [target]
+      properties:
+        target: { type: string, enum: [full_archive, subset_transfer, publication_handoff] }
+        selection: { $ref: '#/components/schemas/SelectionSpec' }
+        policy: { $ref: '#/components/schemas/PrivacyPolicy' }
+        detail_limit: { type: integer, minimum: 1, maximum: 1000, default: 100 }
+        max_documents: { type: integer, minimum: 1, maximum: 100000, default: 100000 }
+    SelectionPlan:
+      type: object
+      required: [version, target, policy, manifest_sha256, counts, documents, resources, links, source_bundles, exclusions, metadata_decisions, warnings, truncated]
+      properties:
+        version: { type: integer, enum: [1] }
+        target: { type: string, enum: [full_archive, subset_transfer, publication_handoff] }
+        policy:
+          type: object
+          additionalProperties: true
+        manifest_sha256: { type: string, pattern: '^[a-f0-9]{64}$' }
+        counts:
+          type: object
+          additionalProperties: true
+        documents:
+          type: array
+          items: { type: object, additionalProperties: true }
+        resources:
+          type: array
+          items: { type: object, additionalProperties: true }
+        links:
+          type: array
+          items: { type: object, additionalProperties: true }
+        source_bundles:
+          type: array
+          items: { type: object, additionalProperties: true }
+        exclusions:
+          type: array
+          items: { type: object, additionalProperties: true }
+        metadata_decisions:
+          type: array
+          items: { type: object, additionalProperties: true }
+        warnings:
+          type: array
+          items: { type: string }
+        truncated: { type: boolean }

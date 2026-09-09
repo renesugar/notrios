@@ -32,7 +32,11 @@ Precedence: `--db`/`--asset-store` override the config file, which overrides the
 
 **Can the service stay open during an import?** Yes for normal use: the database runs in WAL mode with a 5-second lock timeout, so the CLI and the service can share it. For very large imports, avoid heavy simultaneous editing; if you ever see a `database is locked` error, stop the service, re-run the import (it resumes idempotently), and restart.
 
-**Backup first.** Before any large import, either stop the service and copy `data/notes.sqlite` (plus `-wal`/`-shm` sidecars if present) and `data/assets/`, or take a [native archive export](#exporting-a-notrios-archive). See [backup guidance](service.md#backup-and-restore).
+**Backup first.** Before any large import, stop the service and copy the
+consistent database plus `data/assets/`, or use SQLite's online backup API and
+copy assets. Native archive v1 is useful for transfer but omits revisions and
+some provenance, so it is not the disaster-recovery backup. See
+[backup guidance](service.md#backup-and-restore).
 
 ---
 
@@ -63,7 +67,15 @@ Common mistakes:
 go run ./cmd/notriosctl import joplin-raw --dry-run "/path/to/joplin-export"
 ```
 
-The dry run parses everything and prints the JSON report with `"dry_run": true` and the would-be `notes_imported` count. No notes, resources, or notebooks are written (opening the store does create an empty database file with its schema if none existed).
+The dry run uses the same deterministic inventory and action planner as the
+real import. It reports per-type inventory totals, malformed/unsupported items,
+unresolved links, missing resource content, and note/resource/notebook/tag
+creates, updates, and skips. The suggested rename configuration is included in
+the JSON report; add `--write-config /path/to/import-config.json` to save it.
+Without that explicit flag, the source tree is never written. No notes,
+resources, notebooks, tags, checkpoints, or source-bundle bytes are written
+(opening the store does create an empty database file with its schema if none
+existed).
 
 ### 3. Import
 
@@ -71,22 +83,65 @@ The dry run parses everything and prints the JSON report with `"dry_run": true` 
 go run ./cmd/notriosctl import joplin-raw \
   --db ./data/notes.sqlite \
   --asset-store ./data/assets \
+  --batch-size 100 \
+  --import-config "/path/to/joplin-export/import-config.json" \
   "/path/to/joplin-export"
 ```
+
+The import runs in bounded batches (1–500, default 100). A durable checkpoint
+records the inventory fingerprint, phase, next item, cumulative report, and
+per-item fingerprints. Re-run the same command after an interruption: it
+resumes the next durable batch if the source inventory is unchanged. If the
+export changed, a new plan begins and unchanged item fingerprints are skipped.
+Batch progress is printed to stderr; the final machine-readable report remains
+the only stdout output.
+
+For large exports, inventory rows and note-tag joins are spooled into a
+temporary indexed SQLite manifest rather than retained with note bodies in
+memory. Each canonical note batch commits documents, revisions, FTS5 rows,
+provenance, tags, resource references, projection outbox jobs, item
+fingerprints, and its checkpoint in one transaction. After all notes exist, a
+bounded final pass resolves links whose targets were created in later batches.
+The temporary manifest is removed on normal completion.
+
+Add `--preserve-source` when an exact archival copy matters. Notrios then
+stores every classified RAW item byte-for-byte under the source-bundle asset
+namespace and records its original relative path, SHA-256, byte size, unknown
+properties, and property order. This is separate from canonical note content
+and ordinary resource garbage collection.
 
 ### What the report means
 
 ```json
 {
-  "source_dir": "...", "collection_id": "default", "dry_run": false,
+  "source_dir": "...", "source_key": "...",
+  "collection_id": "default", "dry_run": false,
+  "resumed": false, "checkpoint_status": "completed",
+  "batches_completed": 8,
+  "canonical_document_batches": 2,
+  "link_rebuild_batches": 2,
+  "temporary_manifest_bytes": 262144,
   "notes_seen": 120,          // note items found in the export
   "notes_imported": 118,      // created this run
   "notes_updated": 0,         // existed with different content; new revision written
   "notes_unchanged": 2,       // identical, or deliberately left in your Trash
+  "notebooks_seen": 12,
+  "notebooks_created": 10,
+  "notebooks_updated": 0,
+  "notebooks_skipped": 2,
+  "tags_seen": 25,
+  "tags_created": 20,
+  "tags_updated": 0,
+  "tags_skipped": 5,
+  "tags_applied": 96,
+  "tags_removed": 0,
   "resources_seen": 40,
   "resources_imported": 39,   // stored content-addressed (deduplicated by hash)
+  "resources_updated": 0,
   "resources_existing": 0,    // already present from an earlier run
   "resources_skipped": 1,     // no content file in resources/ — see warnings
+  "source_bundle_items": 0,   // nonzero with --preserve-source
+  "source_bundle_bytes": 0,
   "links_rewritten": 57,      // Joplin :/<id> links converted
   "attachments_created": 39,  // note-resource references
   "warnings": ["resource ab12... has no content file"]
@@ -99,19 +154,36 @@ go run ./cmd/notriosctl import joplin-raw \
 |---|---|
 | Note title and Markdown body | preserved; body gains a YAML front-matter block |
 | Internal `:/<id>` note/resource links | rewritten to `document://` / `resource://` links that work in the UI |
-| Notebook (folder) membership and hierarchy | **recorded as front matter only** (`joplin_notebook: "Parent/Child"`); see below |
-| Tags | **recorded as front matter only** (`joplin_tags:` list); full-text searchable, but they do **not** appear in the sidebar tag list |
+| Notebook (folder) membership and hierarchy | restored as nested Notrios notebooks with original names; also recorded in front matter |
+| Tags | restored as stable real Notrios tags (including unassigned source tags); also recorded in front matter |
 | Created/updated/user timestamps, `source_url`, author | preserved in front matter; the creation time also becomes the provenance published-time, so `since:`/`until:` queries work |
 | Original Joplin IDs | preserved (`joplin_id` front matter; deterministic Notrios IDs `doc_joplin_<id>` / `res_joplin_<id>` keep re-imports idempotent) |
 | Attachments | imported into the content-addressed asset store and attached to their notes |
+| Unknown properties and exact RAW layout | retained only when `--preserve-source` is enabled; exact bytes and property order remain in the source bundle |
 
-> **Notebook placement:** imported Joplin notes currently all land in the default **"Notes"** notebook — the Joplin notebook tree is *not* recreated as Notrios notebooks. The original notebook path is kept in each note's front matter (and is searchable); recreating source notebook hierarchies is planned importer hardening (`ROADMAP.md` v0.3). The Twitter/ChatGPT/Claude importers, by contrast, do create their own notebook.
+If a Joplin notebook name collides with a builtin or another source-bound
+notebook, the real import refuses before writing. Dry run suggests a
+path-scoped rename in `import-config.json`. A same-named plain local notebook
+is merged deliberately and reported as such.
 
 ### Edge cases (implementation-verified)
 
-- **Malformed items:** the parser is tolerant — it accepts both metadata-first and body-first item files and skips files it cannot classify.
+- **Canonical RAW titles:** Joplin's first physical line becomes the Notrios
+  title and is removed from the canonical Markdown body. The legacy
+  metadata-first shape remains accepted for compatibility.
+- **PDF OCR controls:** metadata is split only on CR/LF physical endings, so
+  vertical tab, form feed, file/record separators, and NEL remain inside one
+  `ocr_text` value. Future and duplicate property keys retain their source
+  order when `--preserve-source` is enabled.
+- **Encoding:** an optional UTF-8 BOM is accepted; invalid UTF-8 is rejected
+  with an input error instead of being silently replaced.
+- **Malformed/unsupported items:** files that cannot be classified are skipped
+  but counted explicitly; unsupported parsed `type_` values are also counted.
 - **Missing resource files:** counted in `resources_skipped` with a warning naming the resource; the import completes.
 - **Duplicates / re-import:** deterministic IDs make re-runs safe — unchanged notes count as `notes_unchanged`, notes edited in Joplin become `notes_updated` (a new revision; the previous text stays in revision history).
+- **Interrupted imports:** completed batches and their cumulative report are
+  durable. Re-running resumes at the stored phase/index without duplicating
+  notes, tags, notebooks, or resources.
 - **Notes you deleted in Notrios:** stay in the Trash; the importer will not bring them back.
 
 ### Verify after importing
@@ -127,20 +199,39 @@ go run ./cmd/notriosctl import joplin-raw \
 Point the importer at your vault directory (the folder containing your `.md` files; no export step is needed in Obsidian):
 
 ```sh
-go run ./cmd/notriosctl import obsidian --dry-run "/path/to/vault"
-go run ./cmd/notriosctl import obsidian "/path/to/vault"
+go run ./cmd/notriosctl import obsidian --dry-run \
+  --write-config "/path/to/vault/.notrios/import-config.json" "/path/to/vault"
+go run ./cmd/notriosctl import obsidian --preserve-source \
+  --import-config "/path/to/vault/.notrios/import-config.json" "/path/to/vault"
 ```
 
 Behavior:
 
-- Scans Markdown notes and non-Markdown assets; skips `.obsidian/`, VCS, and dependency folders.
-- Preserves your Markdown as-is — Wikilinks `[[Target]]`, embeds `![[...]]`, and unresolved links survive; link/backlink indexes are refreshed after the whole batch so cross-references resolve regardless of import order (`link_indexes_refreshed` in the report).
-- Front matter is preserved and augmented with `source_system: obsidian` and `obsidian_path`; an existing front-matter `title:` wins over the first heading.
-- Local assets referenced by notes are imported content-addressed and attached.
-- Deterministic IDs derive from vault-relative paths, so re-imports are idempotent. Like Joplin, notes land in the default **"Notes"** notebook today; the vault folder structure survives in `obsidian_path`.
-- Report fields mirror Joplin's, with `markdown_seen` instead of `notes_seen` and no link-rewriting counter (links are preserved, not rewritten).
+- Scans once, in deterministic relative-path order; skips `.obsidian/`,
+  `.notrios/`, VCS, Trash, and dependency folders. Symlinks are refused.
+- Restores the vault folder hierarchy as nested notebooks. A collision with a
+  builtin or source-bound sibling is reported by dry run with a path-scoped
+  rename; a same-named plain local notebook can be merged deliberately.
+- Resolves note filenames, frontmatter aliases, vault-root and note-relative
+  paths. Wikilinks, Markdown links, note/resource embeds, heading anchors, and
+  block references are canonicalized to stable Notrios URIs; unresolved or
+  ambiguous source syntax remains in the canonical note with a warning.
+- Preserves frontmatter as canonical metadata and augments it with
+  `source_system`, `obsidian_path`, and `obsidian_folder`. A frontmatter
+  `title:` wins over the first heading.
+- `--preserve-source` keeps each original Markdown file (therefore its exact
+  frontmatter bytes and line endings), relative path, and every discovered
+  non-Markdown file byte-for-byte in the source-bundle store. Canonical parsing
+  never replaces that source representation.
+- Imports local assets content-addressed, attaches referenced assets, and
+  updates changed bytes behind the same deterministic resource ID.
+- Fingerprints and bounded 1–500 item batches make re-runs idempotent and
+  resumable. Dry run uses the same create/update/unchanged classifiers as the
+  real import and writes no import checkpoint or content.
 
-Limitations: Obsidian canvases and plugin-specific syntax import as plain text; front-matter `tags:` are not turned into sidebar tags.
+Limitations: Obsidian canvases and plugin-specific syntax import as ordinary
+non-Markdown source files; frontmatter `tags:` are not yet turned into sidebar
+tags. Test first on a copy of a real vault and inspect warnings.
 
 ---
 
@@ -202,7 +293,7 @@ Extra flag: `--notebook` (default `Claude`, created with a ✳️ icon). Message
 
 ```sh
 go run ./cmd/notriosctl export archive ./my-archive                      # everything
-go run ./cmd/notriosctl export archive --query 'tag:todo' ./my-archive  # query-scoped
+go run ./cmd/notriosctl export archive --query 'tag:todo' ./todo-archive # query-scoped
 ```
 
 `--query` accepts the full [query language](query-language.md), so you can export a notebook (`--query 'notebook:"Work"'`), a tag, or any search-notebook query instead of the whole database. Notes in the Trash are excluded.
@@ -216,6 +307,76 @@ my-archive/
   notes/<id>.md        # front matter: id, title, notebook path, tags, resources
   resources/<id>__<filename>
 ```
+
+This is native archive **v1**: query-scoped, human-readable interchange. It is
+not lossless and does not preserve database/profile/replica identity, every
+revision, or all provenance.
+
+## Exporting a native archive v2 snapshot
+
+```sh
+# Complete database backup.
+go run ./cmd/notriosctl export archive-v2 ./notrios-backup
+
+# Explicitly scoped subset transfer.
+go run ./cmd/notriosctl export archive-v2 --target subset_transfer \
+  --notebooks nb_research --tags shared ./research-transfer
+```
+
+Archive **v2** is the lossless format: every saved revision, trashed notes,
+notebooks and tags, links, provenance, resources, exact source bundles, and
+logical database/replica identity, all as immutable SHA-256 objects under a
+manifest published last and verified before the command succeeds. See the
+[archive v2 safety contract](archive-v2.md) for the modes, the interruption and
+resume behavior, and the current object-count bound.
+
+Selection goes through the same [selection/privacy
+planner](selection-planning.md) you can dry-run first, and the manifest binds
+that plan's digest, so a reviewed dry run and the archive it produced can be
+matched afterwards.
+
+## Verifying and restoring an archive v2 snapshot
+
+```sh
+# Read-only integrity/contents check.
+go run ./cmd/notriosctl verify archive-v2 ./notrios-backup
+
+# Restore into a fresh database. The intent is mandatory.
+go run ./cmd/notriosctl restore archive-v2 --intent adopt \
+  --db ./restored/notes.sqlite ./notrios-backup
+```
+
+`adopt` restores into an empty database and keeps the archive's logical database
+ID; `replace` restores over an existing one; `merge` imports records into an
+existing database that keeps its own identity; `fork` creates a new logical
+database with `--new-database-id`. Verification completes before the first write,
+and an interrupted restore leaves a marker that only `--intent replace` can
+recover. See the [archive v2 safety contract](archive-v2.md).
+
+## Fast same-schema whole-library snapshots
+
+For a complete local library on the current schema, the frozen G14c-G14e path
+provides the physical snapshot representation selected and accepted against the
+full corpora:
+
+```bash
+go run ./cmd/notriosctl snapshot create --db data/notes.sqlite \
+  --asset-store data/assets ./notrios-physical-snapshot
+go run ./cmd/notriosctl snapshot verify ./notrios-physical-snapshot
+go run ./cmd/notriosctl snapshot restore --intent replace \
+  --db data/notes.sqlite --asset-store data/assets \
+  ./notrios-physical-snapshot
+```
+
+This is not a subset export and cannot be merged. It binds one consistent
+SQLite Online Backup image to deterministic bounded packs of every
+database-declared local resource and preserved source bundle. Restore requires
+the service to be stopped and an explicit `replace` (same database ID) or
+`adopt` intent. It creates and verifies an emergency physical snapshot, records
+each cutover stage durably, mints a new replica ID, and leaves the installed
+replica ready to re-enroll and replay operations after the snapshot floor.
+Use packed archive-v2 for portable interchange, selective transfer, merge, and
+fallback when schema compatibility is not exact.
 
 ## Importing a Notrios archive
 

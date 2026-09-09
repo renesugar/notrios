@@ -1,0 +1,69 @@
+{
+  "abi": {
+    "capabilities": "0x1f",
+    "exported_symbols": 12,
+    "sqlite_symbols_exported": 0
+  },
+  "arm64_build_only": {
+    "host_sha256": "a8138ace6771e2784e1cecae8cfb7721671dc9488d248439beb8a45112ede196",
+    "library_bytes": 10754024,
+    "library_sha256": "a5a312bfdec808d741f9f604258e9355483908563b992c17091cd611b05621bd",
+    "machine": "AArch64",
+    "refusal_on_this_device": "CANNOT LINK EXECUTABLE \"/data/local/tmp/notrios-h11/acceptance_host-arm64\": library \"libnotrios-arm64.so\" not found: needed by main executable",
+    "runtime_executed": false
+  },
+  "claim": "the shared core is a viable backend on one Android emulator",
+  "credential_provider": "supplied by the host that pushes these files; no Android keystore provider is claimed",
+  "desktop_interchange": {
+    "integrity_check": "ok",
+    "journal_mode": "wal",
+    "notes_android_wrote_that_the_desktop_reads": 2,
+    "returned_sha256": "69667906e919953d256ab9bfc75fb42b2d5d03cb2caf094e89ec690b66d7f589",
+    "schema_version": 27,
+    "seed_sha256": "c526a05b196ce4001c40709f006a584f0a2a2001fc6cf9250f310af8ba429c23",
+    "status": "passed"
+  },
+  "environment": {
+    "android_release": "15",
+    "device_abi": "x86_64",
+    "fingerprint": "google/sdk_gphone64_x86_64/emu64xa:15/AE3A.240806.043/12960925:userdebug/dev-keys",
+    "min_sdk": 35,
+    "ndk": "30.0.15729638",
+    "sdk_int": 35,
+    "selinux": "Enforcing"
+  },
+  "not_claimed": [
+    "physical Android device",
+    "iOS",
+    "any user interface",
+    "an app-store artifact",
+    "background or battery behaviour",
+    "a production secure store on Android",
+    "a Flutter client",
+    "arm64 at runtime",
+    "any Android API level other than the one recorded below"
+  ],
+  "runtime_x86_64": {
+    "checks": 38,
+    "leftovers_after_sigkill": [
+      "acceptance_host",
+      "assets",
+      "libnotrios.so",
+      "library.db",
+      "library.db-shm",
+      "library.db-wal",
+      "library.db.owner"
+    ],
+    "phases": [
+      "open",
+      "work",
+      "stream",
+      "abandon+kill",
+      "verify-after-kill",
+      "reboot",
+      "verify-after-reboot"
+    ],
+    "status": "passed"
+  },
+  "schema": "notrios.h11.android-acceptance.v1"
+}

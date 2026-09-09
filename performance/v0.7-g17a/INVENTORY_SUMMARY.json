@@ -1,0 +1,40 @@
+{
+  "capture_inventory_commitment_sha256": "eddd5b64866587336c1a53afdc00bfe05deec5286bd4cbbff4d5b878a86e74b5",
+  "captured_at": "2026-08-25T03:09:46Z",
+  "conservative_cd_budget_bytes": 681574400,
+  "content_inventory_commitment_sha256": "160c66280845b43dcfc7b97edadcbe5f49b9180093b84937d3348dfcb8a6b284",
+  "expected_next_append": "the verified G17a release ZIP created after this frozen capture",
+  "git_commits_considered": 139,
+  "git_object_format": "sha1",
+  "kind_counts": {
+    "png": 4,
+    "zip": 74
+  },
+  "largest_artifact_bytes": 58536105,
+  "production_iso_created": false,
+  "provenance_counts": {
+    "insufficient": 1,
+    "not_applicable": 4,
+    "unique_exact": 73
+  },
+  "schema": "notrios.evidence.inventory-summary.v1",
+  "scope": "top-level regular files only; recursive workspaces measured separately",
+  "sidecar_counts": {
+    ".asc": 0,
+    ".sig": 0,
+    ".tsq": 0,
+    ".tsr": 0
+  },
+  "source_directory_modified": false,
+  "source_iso_budget_basis_points": 3975,
+  "source_iso_print_size_blocks": 132306,
+  "source_iso_print_size_bytes": 270962688,
+  "source_regular_files": 78,
+  "source_top_level_directories": 3,
+  "source_total_bytes": 270506844,
+  "validation_counts": {
+    "current_release_shape": 73,
+    "invalid": 0,
+    "valid": 78
+  }
+}

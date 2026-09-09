@@ -7,8 +7,7 @@ Notrios is currently **source-only**: there are no official prebuilt binaries, O
 | Requirement | Version | Needed for |
 |---|---|---|
 | Go | 1.25 or newer (`go.mod` says `go 1.25.0`; CI uses 1.25) | everything |
-| C toolchain + `pkg-config` | Ubuntu `build-essential`, `pkg-config` | the SQLite store is a cgo wrapper over the system `libsqlite3` |
-| `libsqlite3-dev` | Ubuntu package | service, CLI, GUI, tests |
+| C toolchain | Ubuntu `build-essential` | the SQLite store is a cgo wrapper over the vendored SQLite amalgamation, compiled from source into the binary |
 | Node.js + npm | Node 22 (CI-tested); Node ≥ 20.19 may work | building the web UI and the documentation site |
 | `libgtk-3-dev`, `libwebkit2gtk-4.1-dev` | Ubuntu packages | **GUI builds only** (`make gui`) |
 | Python 3 | Ubuntu `python3` | repository validation scripts only (not needed at runtime) |
@@ -44,25 +43,46 @@ cd notrios
 
 ## Build
 
-All build targets live in the `Makefile` (`make help` lists them). Output paths are git-ignored.
+Every target lives in the `Makefile`; `make help` prints the same list. Output
+paths are git-ignored. **Network** marks the targets that reach the network.
 
-| Command | Builds | Output |
-|---|---|---|
-| `make build` | headless service + CLI | `bin/notriosd`, `bin/notriosctl` |
-| `make web` | production web assets (installs `web/node_modules` from the lockfile on first run) | `web/dist/` |
-| `make gui` | desktop GUI binary (implies `make web`) | `bin/notrios` |
-| `make docs` | documentation site with PageFind search (uses `npx`) | `_site/` |
-| `make test` | all Go tests | — |
-| `make clean` | removes all of the above outputs (never `data/`) | — |
+| Command | What it does | Output | Network |
+|---|---|---|---|
+| `make help` | print this list | — | |
+| `make deps` | install frontend dependencies from the lockfile (`npm ci`) | `web/node_modules/` | ✅ |
+| `make build` | headless service + CLI | `bin/notriosd`, `bin/notriosctl` | |
+| `make build-service` | just the service | `bin/notriosd` | |
+| `make build-cli` | just the CLI | `bin/notriosctl` | |
+| `make web` | production web assets (runs `make deps` on first build) | `web/dist/` | first run |
+| `make gui` | desktop GUI binary (implies `make web`) | `bin/notrios` | first run |
+| `make docs` | documentation site with PageFind search (uses `npx`) | `_site/` | ✅ |
+| `make test` | all Go tests | — | |
+| `make validate` | tests plus scaffold and script checks | — | |
+| `make smoke` | end-to-end REST/MCP smoke test on a loopback port | — | |
+| `make serve` | **run the service from source** on `127.0.0.1:8099`, for opening the UI in a browser | — | |
+| `make doctor` | check the configuration and environment (`notriosctl doctor`) | — | |
+| `make seed-help` | mirror `docs/` into the built-in Help notebook of the default database | — | |
+| `make install` | install to an end-user location (`prefix=$HOME/.local` by default) | `~/.local/...` | |
+| `make uninstall` | remove exactly what `install` recorded installing | — | |
+| `make purge` | uninstall **and** delete this user's data, after a verified backup | — | |
+| `make deb` | build the internal Ubuntu package (needs `dpkg-dev`) | `dist/deb/` | |
+| `make clean` | remove build/test/docs/release output — **never** `data/` and **never** `web/node_modules/` | — | |
+| `make clobber` | `clean` plus remove `web/node_modules/` | — | |
+| `make precheck` | fail if the tree has uncommitted changes or tracked ignored files | — | |
 
-Frontend dependencies install once into `web/node_modules` via `npm ci` (the lockfile-exact install); rerun `make deps` after pulling lockfile changes, and `make clobber` to remove them.
+Frontend dependencies install once into `web/node_modules` via `npm ci` (the
+lockfile-exact install). Rerun `make deps` after pulling lockfile changes.
+
+**`make clean` does not remove `web/node_modules`** — that is deliberate, so a
+clean never forces a network reinstall. Use `make clobber` when you want the
+dependencies gone too.
 
 ## Run
 
 From the repository root:
 
 ```sh
-# Headless service (REST + MCP + web UI at http://127.0.0.1:8080)
+# Headless service (REST + MCP + web UI at http://127.0.0.1:8099)
 ./bin/notriosd -config config/config.example.yaml
 
 # Desktop GUI (contains the service; see the GUI guide for -no-gui / -gui-only)
@@ -79,27 +99,218 @@ go run ./cmd/notriosd -config config/config.example.yaml
 go run ./cmd/notriosctl doctor
 ```
 
-Two working-directory rules to know (both are current implementation behavior):
+### The two ways to open the interface
 
-1. **The browser UI is loaded from `web/dist/` relative to the working directory.** Run `notriosd` (or the GUI) from the repository root after `make web`, or copy `web/dist/` into whatever directory you run from. If it is missing, `/` returns a `web_ui_not_built` error while the REST API, MCP endpoint, and importers keep working normally.
-2. **Relative paths in the configuration resolve against the working directory.** The example config uses `./data/...`, so the database and asset store appear under wherever you launched the binary. Use absolute paths in your config file for anything you run outside the checkout. See the [service guide](service.md#configuration).
+**As a desktop window.** `./bin/notrios` starts the service and opens the GUI in
+one process. Build it with `make gui` first.
 
-## Optional local installation
+**In a browser.** Start the service and visit it — `make serve` runs it from
+source on `http://127.0.0.1:8099` without building any binaries, which is the
+quickest loop while developing. `./bin/notriosd` does the same from a built
+binary. Both serve the identical interface the desktop window renders; the
+desktop binary is a webview around it.
 
-If you want the binaries on your `PATH`:
+### Where the interface files have to be
+
+The built interface is `web/dist/`, produced by `make web` (and by `make gui`,
+which implies it). A binary looks for it in this order and uses the first hit:
+
+1. the path given by `--web-dir`, or `server.web_dir` in the configuration file
+   — when either is set it is the **only** candidate, because an explicit answer
+   that is wrong should fail loudly rather than fall through to a directory that
+   happens to work;
+2. `web/` under the program-assets root (`/usr/local/share/notrios/web` on
+   Linux) — installed layouts only;
+3. `web/dist` under the **executable's own directory**;
+4. `web/dist` under the executable's **parent** directory;
+5. `web/dist` under the **working directory** — *source checkouts only*.
+
+Items 3 and 4 are what make `bin/notrios` work whether you run it as
+`./bin/notrios` from the repository root or as `./notrios` from inside `bin/`.
+
+The working directory comes **last and only in a checkout**. It used to come
+first, unconditionally, which is right for a developer standing in a checkout
+and wrong once the binary is installed: the HTML, CSS and JavaScript loaded into
+the application's own window were taken from whichever `web/dist` sat beside
+wherever the user happened to be.
+
+If you move a binary somewhere else, copy `web/dist/` alongside it or pass
+`--web-dir`:
 
 ```sh
-make build gui
-install -m 0755 bin/notriosd bin/notriosctl bin/notrios ~/.local/bin/
+./notrios --web-dir /opt/notrios/web/dist
 ```
 
-Then run them with an explicit config that uses absolute paths, e.g. `notriosd -config ~/.config/notrios/config.yaml`. Because of working-directory rule 1 above, an installed `notriosd`/`notrios` only serves the browser/GUI interface when started from a directory containing `web/dist/` — the simplest arrangement today is to keep launching from the checkout.
+The GUI **refuses to start** when it cannot find the interface, and prints every
+directory it tried. The headless service starts anyway and says so in its log —
+REST, MCP, and the importers do not need an interface — and `/` then answers
+`web_ui_not_found` with the same list.
 
-Uninstall by deleting the copies:
+`-gui-only` needs no local interface at all: it renders whatever the remote
+service serves.
+
+### Where your files go
+
+Run `notriosctl paths` to see exactly where this instance keeps things, and
+which layout it selected.
+
+An installed binary uses the native per-OS locations: on Linux
+`$XDG_DATA_HOME/notrios` for the library, with separate config, state, cache and
+runtime roots. A binary run from a checkout is a *separate instance* — every
+root is checkout-local, under `./data`, so a development build cannot read or
+write the library of an installed one.
+
+Paths you state yourself are used exactly as written and never relocated. The
+checkout's example config uses relative `./data/...` paths, which resolve
+against the directory you launched from; use absolute paths in any config you
+run outside a checkout. See the [service guide](service.md#configuration).
+
+### Upgrading from before 0.8
+
+Before 0.8 the built-in defaults were relative to the working directory: a
+binary run with **no configuration file** kept its library in `./data`, under
+whichever directory you launched from. An 0.8 binary resolves the native roots
+instead, so it will find them empty and open a new, empty library. Your notes
+are not gone — they are still in that directory.
+
+`notriosctl paths` notices a pre-0.8 library in the directory you are standing
+in and names it. Moving it is a single explicit command:
 
 ```sh
-rm -f ~/.local/bin/notriosd ~/.local/bin/notriosctl ~/.local/bin/notrios
+notriosctl migrate --dry-run   # show what would move
+notriosctl migrate             # copy, verify, and retire the old directory
 ```
+
+Nothing is moved for you, the original is copied rather than moved, every file
+is verified with SHA-256, and the old directory is renamed rather than deleted.
+See [`notriosctl migrate`](cli.md#migrate) for the full contract.
+
+**You do not need this** if your configuration file states its paths — those are
+used exactly as written and were never relocated — or if you run from a
+checkout, whose roots are already `./data`.
+
+## Installing to an end-user location
+
+`make install` puts Notrios where an end user would have it — outside the
+checkout — so you can run it the way they will:
+
+```sh
+make install
+```
+
+It installs to `$HOME/.local` by default, which needs no `sudo`: the binaries go
+to `~/.local/bin`, the built interface and the help docs to
+`~/.local/share/notrios`, and the `notrios://` desktop entry to
+`~/.local/share/applications`. Add `~/.local/bin` to your `PATH` if it is not
+there already. Nothing is written to any config, data, state, cache or runtime
+root — an installed Notrios creates those itself, on first use.
+
+Use the GNU directory variables to put it elsewhere, and `DESTDIR` to stage it
+for packaging:
+
+```sh
+make install prefix=/usr/local            # system-wide; needs write access
+make install DESTDIR=/tmp/stage           # stage for a package, touching no real root
+make install-dry-run                      # print every path, write nothing
+```
+
+`DESTDIR` is prepended to installed files and to nothing else. It never creates
+a user's roots, because a package built on one machine must not ship that
+machine's idea of a home directory.
+
+### Uninstalling
+
+```sh
+make uninstall            # remove what install recorded installing
+make uninstall-dry-run    # list what that would be, remove nothing
+```
+
+Install records every file it wrote — path, SHA-256, mode and size — in
+`~/.local/share/notrios/MANIFEST.json`, and uninstall removes **only** what that
+manifest lists. Anything else is left alone:
+
+- a file you edited is kept and reported, because its hash no longer matches;
+- a path that has become a symbolic link is kept and never followed, because
+  deleting through it would remove whatever it points at;
+- anything resolving outside the manifest's own install roots is refused.
+
+**Your notes, configuration, profiles, sync keys, state and cache are never
+touched.** Uninstall is about the program; the library outlives it, and
+reinstalling picks it straight back up.
+
+### Installing from a package
+
+There is an internal Ubuntu package. It is **not published anywhere** and is not
+a supported release; it exists so the application can be installed and used the
+way an end user would, without a checkout.
+
+```sh
+make deb
+sudo apt install ./dist/deb/notrios_*.deb
+```
+
+It installs `/usr/bin/{notrios,notriosd,notriosctl}`, the built interface and
+help under `/usr/share/notrios`, the `notrios://` desktop entry, and a **user
+service that is installed and not enabled**. Nothing starts on its own; turn it
+on yourself if you want it:
+
+```sh
+systemctl --user enable --now notrios
+```
+
+The service binds loopback, exactly as it does everywhere else.
+
+Dependencies are computed from the binaries with `dpkg-shlibdeps` rather than
+written by hand, so `apt` installs what the program actually needs. Removing the
+package with `apt remove` deletes every file it installed and **leaves your
+notes, configuration, profiles, keys, state and cache alone** — deleting those
+is `make purge`, which asks first. `make purge` works on a packaged install too:
+it removes your data and leaves the program to your package manager.
+
+### Removing your data as well
+
+`make purge` is uninstall **plus** deleting this user's Notrios data. It is the
+only target here that destroys anything you made, so it is deliberately hard to
+do by accident:
+
+```sh
+make purge                   # shows the plan, then asks; type PURGE to confirm
+DRYRUN=1 make purge          # print the whole plan and stop; asks nothing
+FORCE=1 make purge           # skip the question, for headless automation
+```
+
+Before deleting anything it copies your config, data and state roots into an
+owner-only archive beside your state root
+(`~/.local/state/notrios-purge-backups/<timestamp>/`), verifies that archive
+against a per-file SHA-256 manifest, and only then removes anything. **If the
+backup cannot be verified, nothing is deleted** and the message names the
+partial archive. The backup is outside every root purge removes, so it survives
+the purge that wrote it, and nothing deletes it for you afterwards.
+
+The cache and runtime roots are deleted without a backup: they are rebuilt from
+the library and hold nothing you wrote.
+
+`FORCE=1` skips the confirmation, never the backup. If you genuinely want
+neither:
+
+```sh
+NO_BACKUP=1 make purge       # still asks, and warns in detail first
+```
+
+`NO_BACKUP=1` prints exactly what is about to be destroyed with no copy — your
+notes database, attachments, configuration, profile registry, sync key material,
+sync spools and backups, the catch-up inbox and the quarantine — and still asks
+unless `FORCE=1` is also set.
+
+These flags accept `1` or nothing at all. `NO_BACKUP=0`, `FORCE=no` and
+`DRYRUN=true` are refused rather than interpreted: each reads to a person as
+something specific, and guessing wrong here deletes a library. A purge that
+cannot ask — no terminal, no `FORCE=1` — stops rather than proceeding or
+hanging.
+
+**`clean` and `clobber` never touch any of this**, and `install`, `uninstall`
+and `purge` never touch the checkout. They are separate concerns with separate
+targets.
 
 ## Ways to consume Notrios
 

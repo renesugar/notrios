@@ -1,9 +1,17 @@
 // Sidebar ordering invariants (UI_DESIGN.md / NOTEBOOKS_AND_SEARCH_NOTEBOOKS.md):
-// All notes first, Trash last, Help immediately above Trash, user content in
-// between, ordering driven by stable builtin IDs — never by names or response
-// order.
+// All notes first, Trash last, the read-only builtins (Reports, then Help)
+// immediately above Trash, user content in between, ordering driven by stable
+// builtin IDs — never by names or response order.
 import { describe, expect, it } from 'vitest';
-import { composeSidebar, ALL_NOTES_SEARCH_ID, HELP_NOTEBOOK_ID, TRASH_SEARCH_ID } from '../sidebar';
+import {
+  composeSidebar,
+  isDeletableNotebookRow,
+  ALL_NOTES_SEARCH_ID,
+  DEFAULT_NOTEBOOK_ID,
+  HELP_NOTEBOOK_ID,
+  REPORTS_NOTEBOOK_ID,
+  TRASH_SEARCH_ID,
+} from '../sidebar';
 import type { NotebookTreeNode, SearchNotebook } from '../api';
 
 function nb(id: string, name: string, extra: Partial<NotebookTreeNode> = {}): NotebookTreeNode {
@@ -17,12 +25,44 @@ function sn(id: string, name: string, anchor: string, extra: Partial<SearchNoteb
 const allNotes = sn(ALL_NOTES_SEARCH_ID, 'All notes', 'first', { query: '' });
 const trash = sn(TRASH_SEARCH_ID, 'Trash', 'last', { query: 'is:trashed' });
 const help = nb(HELP_NOTEBOOK_ID, 'Help', { builtin: true });
+const reports = nb(REPORTS_NOTEBOOK_ID, 'Reports', { builtin: true });
 
 function ids(rows: ReturnType<typeof composeSidebar>) {
   return rows.map((row) => row.id);
 }
 
 describe('composeSidebar', () => {
+  // F5 adds a second read-only builtin. The pair sits above Trash in a fixed
+  // order, so a generated report has a stable home a reader can find.
+  it('stacks Reports above Help above Trash', () => {
+    const rows = composeSidebar([nb('nb_a', 'Alpha'), help, reports], [allNotes, trash]);
+    const order = ids(rows);
+    expect(order.at(-1)).toBe(TRASH_SEARCH_ID);
+    expect(order.at(-2)).toBe(HELP_NOTEBOOK_ID);
+    expect(order.at(-3)).toBe(REPORTS_NOTEBOOK_ID);
+    // And neither appears inside the user's tree.
+    expect(order.indexOf(REPORTS_NOTEBOOK_ID)).toBeGreaterThan(order.indexOf('nb_a'));
+  });
+
+  // An empty Reports notebook still shows: a builtin that appears only once it
+  // has content is a builtin nobody discovers.
+  it('shows Reports even when the tree is otherwise empty', () => {
+    expect(ids(composeSidebar([reports, help], [allNotes, trash]))).toEqual([
+      ALL_NOTES_SEARCH_ID,
+      REPORTS_NOTEBOOK_ID,
+      HELP_NOTEBOOK_ID,
+      TRASH_SEARCH_ID,
+    ]);
+  });
+
+  // The two sets the store keeps distinct, mirrored here: Notes is undeletable
+  // without being read-only, and the read-only builtins are both.
+  it('offers no delete affordance for Notes, Help or Reports', () => {
+    const rows = composeSidebar([nb(DEFAULT_NOTEBOOK_ID, 'Notes'), nb('nb_a', 'Alpha'), reports, help], [allNotes, trash]);
+    const deletable = rows.filter(isDeletableNotebookRow).map((row) => row.id);
+    expect(deletable).toEqual(['nb_a']);
+  });
+
   it('places All notes first, Trash last, Help immediately above Trash', () => {
     const rows = composeSidebar([nb('nb_a', 'Alpha'), help, nb('nb_z', 'Zulu')], [allNotes, trash]);
     const order = ids(rows);

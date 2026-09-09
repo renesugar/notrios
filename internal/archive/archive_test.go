@@ -5,7 +5,9 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
+	"syscall"
 	"testing"
 
 	"github.com/renesugar/notrios/internal/store"
@@ -22,6 +24,188 @@ func newTestStore(t *testing.T) *store.SQLiteStore {
 		t.Fatalf("Bootstrap: %v", err)
 	}
 	return st
+}
+
+func writeMinimalArchive(t *testing.T) string {
+	t.Helper()
+	dir := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(dir, "notes"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "manifest.json"), []byte(`{"format":"notrios-archive","version":1}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "notes", "note.md"), []byte("hello"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	return dir
+}
+
+func TestImportRejectsSymlinkedNoteBeforePersistence(t *testing.T) {
+	dir := writeMinimalArchive(t)
+	target := filepath.Join(t.TempDir(), "note.md")
+	if err := os.WriteFile(target, []byte("untrusted"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	note := filepath.Join(dir, "notes", "note.md")
+	if err := os.Remove(note); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(target, note); err != nil {
+		t.Skipf("symlinks unavailable: %v", err)
+	}
+	st := newTestStore(t)
+	if _, err := Import(context.Background(), st, dir, ImportOptions{}); err == nil {
+		t.Fatal("symlinked note was accepted")
+	}
+	if page, err := st.ListNotebookDocuments(context.Background(), store.DefaultNotebookID, store.DocumentPageRequest{Limit: 10}); err != nil || len(page.Documents) != 0 {
+		t.Fatalf("symlink rejection occurred after persistence: documents=%d err=%v", len(page.Documents), err)
+	}
+}
+
+func TestImportRejectsSymlinkedResourceBeforePersistence(t *testing.T) {
+	dir := writeMinimalArchive(t)
+	if err := os.MkdirAll(filepath.Join(dir, "resources"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	target := filepath.Join(t.TempDir(), "payload.bin")
+	if err := os.WriteFile(target, []byte("untrusted"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	resource := filepath.Join(dir, "resources", "res_1__payload.bin")
+	if err := os.Symlink(target, resource); err != nil {
+		t.Skipf("symlinks unavailable: %v", err)
+	}
+	st := newTestStore(t)
+	if _, err := Import(context.Background(), st, dir, ImportOptions{}); err == nil {
+		t.Fatal("symlinked resource was accepted")
+	}
+	if page, err := st.ListNotebookDocuments(context.Background(), store.DefaultNotebookID, store.DocumentPageRequest{Limit: 10}); err != nil || len(page.Documents) != 0 {
+		t.Fatalf("symlink rejection occurred after persistence: documents=%d err=%v", len(page.Documents), err)
+	}
+}
+
+func TestImportRejectsSymlinkedArchiveDirectories(t *testing.T) {
+	for _, kind := range []string{"notes", "resources"} {
+		t.Run(kind, func(t *testing.T) {
+			dir := writeMinimalArchive(t)
+			outside := t.TempDir()
+			if kind == "notes" {
+				if err := os.WriteFile(filepath.Join(outside, "note.md"), []byte("outside"), 0o644); err != nil {
+					t.Fatal(err)
+				}
+			} else if err := os.WriteFile(filepath.Join(outside, "res_1__payload.bin"), []byte("outside"), 0o644); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.RemoveAll(filepath.Join(dir, kind)); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.Symlink(outside, filepath.Join(dir, kind)); err != nil {
+				t.Skipf("symlinks unavailable: %v", err)
+			}
+			if _, _, _, err := loadArchive(dir); err == nil {
+				t.Fatalf("symlinked %s directory was accepted", kind)
+			}
+		})
+	}
+}
+
+func TestImportRejectsSpecialAndOversizedArchiveFiles(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("FIFO test is not portable to Windows")
+	}
+	dir := writeMinimalArchive(t)
+	fifo := filepath.Join(dir, "notes", "special.md")
+	if err := syscall.Mkfifo(fifo, 0o644); err != nil {
+		t.Skipf("FIFO unavailable: %v", err)
+	}
+	if _, _, _, err := loadArchive(dir); err == nil {
+		t.Fatal("FIFO was accepted")
+	}
+	if err := os.Remove(fifo); err != nil {
+		t.Fatal(err)
+	}
+	large := filepath.Join(dir, "notes", "large.md")
+	if err := os.WriteFile(large, []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Truncate(large, MaxArchiveFileBytes+1); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, _, err := loadArchive(dir); err == nil {
+		t.Fatal("oversized archive file was accepted")
+	}
+}
+
+func TestLegacyImportIgnoresSidecarsAndAcceptsResourceOverMetadataLimit(t *testing.T) {
+	dir := writeMinimalArchive(t)
+	if err := os.WriteFile(filepath.Join(dir, "notes", "editor.sidecar"), []byte("ignored"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	resources := filepath.Join(dir, "resources")
+	if err := os.MkdirAll(resources, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(resources, "README"), []byte("ignored"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	large := filepath.Join(resources, "res_large__payload.bin")
+	f, err := os.Create(large)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := f.Truncate(MaxArchiveFileBytes + 1); err != nil {
+		_ = f.Close()
+		t.Fatal(err)
+	}
+	if err := f.Close(); err != nil {
+		t.Fatal(err)
+	}
+	st := newTestStore(t)
+	report, err := Import(context.Background(), st, dir, ImportOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if report.ResourcesCreated != 1 {
+		t.Fatalf("resource over metadata limit was not imported: %+v", report)
+	}
+}
+
+func TestArchivePreflightEnforcesCountAndAggregateLimits(t *testing.T) {
+	old := legacyArchiveLimits
+	t.Cleanup(func() { legacyArchiveLimits = old })
+	dir := writeMinimalArchive(t)
+	if err := os.WriteFile(filepath.Join(dir, "notes", "second.md"), []byte("second"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	legacyArchiveLimits.MaxNotes = 1
+	if _, _, _, err := loadArchive(dir); err == nil {
+		t.Fatal("note count limit was not enforced")
+	}
+
+	dir = writeMinimalArchive(t)
+	resources := filepath.Join(dir, "resources")
+	if err := os.MkdirAll(resources, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(resources, "res_1__payload.bin"), []byte("12"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	legacyArchiveLimits.MaxNotes = 1_000_000
+	legacyArchiveLimits.MaxResourceBytes = 1
+	if _, _, _, err := loadArchive(dir); err == nil {
+		t.Fatal("resource aggregate limit was not enforced")
+	}
+
+	dir = writeMinimalArchive(t)
+	if err := os.WriteFile(filepath.Join(dir, "notes", "ignored.sidecar"), []byte("ignored"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	legacyArchiveLimits.MaxResourceBytes = 1 << 40
+	legacyArchiveLimits.MaxScannedEntries = 1
+	if _, _, _, err := loadArchive(dir); err == nil {
+		t.Fatal("total scanned-entry limit was not enforced for ignored entries")
+	}
 }
 
 // buildSourceStore populates a store with nested notebooks, a tagged note
@@ -54,6 +238,48 @@ func buildSourceStore(t *testing.T) (*store.SQLiteStore, store.Document) {
 	twDoc, _ := st.CreateDocument(ctx, store.CreateDocumentRequest{Title: "tweet", Body: "tweet body", NotebookID: tw.ID})
 	_, _ = st.SetDocumentSource(ctx, store.SetDocumentSourceRequest{DocumentID: twDoc.ID, SourceSystem: "twitter", ExternalID: "t1"})
 	return st, doc
+}
+
+// A note that links to another note in the same archive is imported before its
+// target as often as not, so the link is recorded unresolved at that moment.
+// Import must resolve them afterwards: otherwise every internal link in an
+// imported library stays broken until each note is edited, and a later
+// publication would rewrite them all out of the published bodies.
+func TestImportResolvesLinksBetweenNotesInTheSameArchive(t *testing.T) {
+	ctx := context.Background()
+	dir := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(dir, "notes"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	write := func(name, contents string) {
+		t.Helper()
+		if err := os.WriteFile(filepath.Join(dir, name), []byte(contents), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	write("manifest.json", `{"format":"notrios-archive","version":1,"query":"","notes":2}`)
+	write("notebooks.json", `[{"path":"Docs"}]`)
+	// The linking note sorts first, so its target does not exist yet when it is
+	// written.
+	write(filepath.Join("notes", "doc_a.md"),
+		"---\nid: doc_a\ntitle: A\nnotebook: Docs\n---\n\nSee [B](document://default/documents/doc_b).\n")
+	write(filepath.Join("notes", "doc_b.md"),
+		"---\nid: doc_b\ntitle: B\nnotebook: Docs\n---\n\nThe target.\n")
+
+	st := newTestStore(t)
+	if _, err := Import(ctx, st, dir, ImportOptions{}); err != nil {
+		t.Fatal(err)
+	}
+	links, err := st.ListDocumentLinks(ctx, "doc_a", "outgoing")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(links.Outgoing) != 1 {
+		t.Fatalf("expected one outgoing link, got %+v", links.Outgoing)
+	}
+	if got := links.Outgoing[0]; got.ResolutionStatus != "resolved" || got.TargetDocumentID != "doc_b" {
+		t.Fatalf("import left an internal link unresolved: %+v", got)
+	}
 }
 
 func TestExportImportRoundTripWithRenames(t *testing.T) {
@@ -98,7 +324,7 @@ func TestExportImportRoundTripWithRenames(t *testing.T) {
 		t.Fatalf("creates missing: %+v", dryReport)
 	}
 	// Dry run wrote nothing.
-	if docs, _ := dst.ListNotebookDocuments(ctx, store.DefaultNotebookID, 10); len(docs) != 0 {
+	if page, _ := dst.ListNotebookDocuments(ctx, store.DefaultNotebookID, store.DocumentPageRequest{Limit: 10}); len(page.Documents) != 0 {
 		t.Fatalf("dry run must not import notes")
 	}
 

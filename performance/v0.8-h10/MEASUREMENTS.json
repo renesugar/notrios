@@ -1,0 +1,62 @@
+{
+  "builds": {
+    "note": "the two binaries are not the same program: the v2 one is the whole notrios command and the prototype is a shell plus the service, so the sizes are not a comparison of the frameworks",
+    "v2_bytes": 26665568,
+    "v2_seconds": 10,
+    "v3_bytes": 26282072,
+    "v3_seconds": 9
+  },
+  "frontend_binding_convention": {
+    "files": 7,
+    "note": "window.go.main.X.Y does not exist in v3; these are what a migration rewrites",
+    "references": 11
+  },
+  "linked_modules": {
+    "added_by_v3": [
+      "github.com/adrg/xdg",
+      "github.com/mattn/go-isatty",
+      "github.com/renesugar/notrios",
+      "github.com/wailsapp/wails/v3"
+    ],
+    "dropped_by_v3": [
+      "github.com/leaanthony/go-ansi-parser",
+      "github.com/leaanthony/slicer",
+      "github.com/leaanthony/u",
+      "github.com/pkg/browser",
+      "github.com/pkg/errors",
+      "github.com/rivo/uniseg",
+      "github.com/samber/lo",
+      "github.com/tkrajina/go-reflector",
+      "github.com/wailsapp/mimetype",
+      "github.com/wailsapp/wails/v2",
+      "golang.org/x/net",
+      "golang.org/x/text"
+    ],
+    "v2": 16,
+    "v3": 8
+  },
+  "multiple_profiles": {
+    "both_running": "yes",
+    "separate_databases": 2
+  },
+  "native_stack": {
+    "v2": [
+      "libgtk-3.so.0",
+      "libwebkit2gtk-4.1.so.0"
+    ],
+    "v3": [
+      "libgtk-4.so.1",
+      "libwebkitgtk-6.0.so.4"
+    ]
+  },
+  "production_untouched": "yes",
+  "schema": "notrios.h10.wails3-spike.v1",
+  "wails": {
+    "production": "v2.13.0",
+    "prototype": "v3.0.0-beta.18"
+  },
+  "windows_opened": {
+    "v2": "yes",
+    "v3": "yes"
+  }
+}

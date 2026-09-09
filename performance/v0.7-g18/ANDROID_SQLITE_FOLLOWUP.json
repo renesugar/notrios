@@ -1,0 +1,141 @@
+{
+  "schema": "notrios.g18.android-sqlite-followup.v1",
+  "captured_at": "2026-08-26T15:50:05Z",
+  "modernc_amended_at": "2026-08-26T20:56:21Z",
+  "current_notrios_store": {
+    "canonical_owner": "Go shared core",
+    "adapter": "direct cgo SQLite C API wrapper",
+    "store_files_importing_c": 43,
+    "link_contract": "pkg-config: sqlite3",
+    "connection_flags": [
+      "SQLITE_OPEN_READWRITE",
+      "SQLITE_OPEN_CREATE",
+      "SQLITE_OPEN_FULLMUTEX"
+    ],
+    "runtime_pragmas": [
+      "foreign_keys=ON",
+      "journal_mode=WAL",
+      "busy_timeout=5000"
+    ],
+    "required_features": [
+      "FTS5",
+      "JSON SQL functions"
+    ]
+  },
+  "android_facts": {
+    "installed_ndk": "30.0.15729638",
+    "ndk_public_sqlite_c_api": false,
+    "installed_ndk_sqlite_header_or_library_found": false,
+    "android_framework_api": "android.database.sqlite",
+    "framework_api_is_cgo_link_contract": false
+  },
+  "supplied_reference_corrections": [
+    {
+      "claim": "The Android NDK bundles public sqlite3.h and libsqlite3 for app linking.",
+      "assessment": "false",
+      "correction": "SQLite is absent from the NDK public native-library list and from the installed NDK development sysroot; use a supported Java/Kotlin framework API or package a native SQLite build."
+    },
+    {
+      "claim": "BundledSQLiteDriver automatically supplies the current Go cgo store.",
+      "assessment": "false",
+      "correction": "It supplies Kotlin/JVM SQLiteDriver APIs backed by a native component. Notrios still needs its own C header/link/package contract or a database-owner redesign."
+    },
+    {
+      "claim": "BundledSQLiteDriver.addExtension accepts a connection-pointer lambda.",
+      "assessment": "false for the current documented API",
+      "correction": "The current API registers a native extension by file name, optionally with an entry-point name."
+    },
+    {
+      "claim": "A fixed Android-version table is sufficient proof of SQLite extensions.",
+      "assessment": "not sufficient",
+      "correction": "The selected runtime must report sqlite_version(), compile options, and successful FTS5/JSON probes; Notrios does not adopt the supplied table as a compatibility contract."
+    },
+    {
+      "claim": "sqlite3_android.h and Android database JNI headers are app-facing SQLite headers.",
+      "assessment": "false",
+      "correction": "They are Android platform/binding implementation details, not a replacement for the upstream public sqlite3.h C API."
+    },
+    {
+      "claim": "Bundling adds a universal 1-2 MB and improves performance.",
+      "assessment": "not established for Notrios",
+      "correction": "Package-size and performance changes depend on version, flags, ABIs, JNI/FFI paths, and workload and must be measured in H0."
+    }
+  ],
+  "approaches": [
+    {
+      "id": "pinned_upstream_amalgamation_in_go_core",
+      "fit": "required C baseline for H0 comparison",
+      "effect": "Compile one checksum-pinned sqlite3.c/sqlite3.h into the Go shared library for each supported Android ABI while retaining Go ownership of canonical persistence.",
+      "unknowns": [
+        "pinned version and security update cadence",
+        "compile flags and binary size",
+        "symbol visibility and duplicate-engine collision behavior",
+        "Android ABI/minSdk packaging",
+        "desktop-versus-Android database interoperability"
+      ]
+    },
+    {
+      "id": "pinned_modernc_sqlite_in_go_core",
+      "fit": "promising H0 candidate; not selected",
+      "effect": "Replace the direct cgo SQLite adapter with the BSD-3-Clause CGo-free database/sql driver while retaining Go ownership. v1.57.0 built Android/arm64 artifacts and passed executable, persistence/reboot, and c-shared dlopen feasibility on an API-35 x86_64 emulator, but Android remains absent from the upstream support table and the full Notrios store has not run.",
+      "unknowns": [
+        "Android runtime, filesystem, locking, WAL, FTS5, and crash behavior on the selected emulator ABI",
+        "direct-wrapper versus database/sql semantics, error mapping, cancellation, backup, and connection model",
+        "Notrios write/read/FTS5/snapshot/sync performance, build time, package size, and RSS",
+        "exact modernc.org/libc pin and generated-code/security update cadence",
+        "iOS support on a macOS/Xcode host"
+      ]
+    },
+    {
+      "id": "jetpack_bundled_sqlite_driver",
+      "fit": "not a drop-in dependency for the selected Go core",
+      "effect": "Provides Kotlin/JVM SQLiteDriver connections backed by a bundled native SQLite component; adopting it for the canonical database would move database ownership to Kotlin/Room or require a separately designed bridge.",
+      "threading": "Bundled SQLite is compiled in multi-thread mode; connections are not thread-safe without a pool or an explicit FULLMUTEX connection.",
+      "unknowns": [
+        "whether a future Android host should own a separate noncanonical app-metadata database",
+        "whether a Kotlin-owned canonical store redesign is ever justified"
+      ]
+    },
+    {
+      "id": "android_framework_sqlite",
+      "fit": "rejected for the current cgo boundary",
+      "effect": "The supported framework API is Java/Kotlin; SQLite is not listed as an NDK public native library and the installed NDK has no sqlite3.h/libsqlite3 development boundary."
+    },
+    {
+      "id": "sqlite_android_bindings_aar",
+      "fit": "reference implementation, not a drop-in cgo dependency",
+      "effect": "The official SQLite Android bindings package native libraries and Java classes in an AAR, or build sqlite3.c/sqlite3.h from source. Reuse by the Go core would still need an explicit native link/symbol/package design."
+    }
+  ],
+  "blocking_v0_8_decisions": [
+    "SQLite package under retained Go ownership: select a pinned C amalgamation or a pinned modernc.org/sqlite build from same-emulator Notrios evidence; a Kotlin owner requires an explicit whole-store redesign",
+    "exact SQLite version, checksum/provenance, security-update policy, and compile options",
+    "supported minSdk and Android ABIs, including the emulator ABI used by the pre-1.0 gate",
+    "one-engine-per-process and symbol-visibility policy that prevents duplicate SQLite collisions",
+    "Android sandbox paths, backup/no-backup behavior, WAL/checkpoint lifecycle, and crash recovery"
+  ],
+  "required_investigation_gates": [
+    "build and load both the pinned C-control and modernc-candidate Go shared libraries for the same pinned Android emulator API and ABI",
+    "record sqlite_version() and PRAGMA compile_options",
+    "prove FTS5 table creation/search and JSON function execution",
+    "run the existing bootstrap, CRUD, search, snapshot, restore, and sync store tests against the bundled build",
+    "round-trip a checkpointed database between supported desktop and Android builds and run integrity_check",
+    "prove FULLMUTEX plus the Go store mutex preserves the intended connection model",
+    "measure per-ABI packaged-size, build-time, latency, CPU, allocation, and peak-RSS deltas for both candidates",
+    "prove no second SQLite engine opens the canonical file concurrently"
+  ],
+  "references": [
+    "https://developer.android.com/ndk/guides/stable_apis",
+    "https://developer.android.com/training/data-storage/sqlite",
+    "https://developer.android.com/reference/androidx/sqlite/driver/bundled/BundledSQLiteDriver",
+    "https://developer.android.com/jetpack/androidx/releases/sqlite",
+    "https://developer.android.com/kotlin/multiplatform/sqlite",
+    "https://www.sqlite.org/android/doc/trunk/www/install.wiki",
+    "https://www.sqlite.org/amalgamation.html",
+    "https://www.sqlite.org/fts5.html",
+    "https://www.sqlite.org/json1.html",
+    "https://pkg.go.dev/modernc.org/sqlite",
+    "https://gitlab.com/cznic/sqlite-bench/-/raw/v1.1.3/README.md",
+    "https://www.sqlite.org/howtocorrupt.html"
+  ]
+}

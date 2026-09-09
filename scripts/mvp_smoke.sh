@@ -31,7 +31,6 @@ data:
 search:
   default_limit: 20
   max_limit: 100
-  max_offset: 10000
 
 mcp:
   enabled: true
@@ -103,6 +102,102 @@ RESOURCE_RESP=$(printf 'smoke resource content' | curl -fsS -X POST --data-binar
 RESOURCE_ID=$(python3 -c 'import json,sys; print(json.load(sys.stdin)["id"])' <<<"$RESOURCE_RESP")
 curl -fsS -X POST "$BASE/api/v1/documents/$DOC_ID/resources/$RESOURCE_ID" >/dev/null
 curl -fsS "$BASE/api/v1/resources/$RESOURCE_ID/content?download=1" | grep -q 'smoke resource content'
+
+# --- Organizer surface (v0.5 E8) --------------------------------------------
+# Tag rename with its dry run, and the trash-first delete/restore/purge cycle,
+# against a real server rather than only in unit tests.
+
+curl -fsS -X POST "$BASE/api/v1/documents/$DOC_ID/tags/project" >/dev/null
+curl -fsS -X POST "$BASE/api/v1/documents/$DOC_ID/tags/project%2Falpha" >/dev/null
+
+# An omitted dry_run must default to true: it reports and changes nothing.
+RENAME_RESP=$(curl -fsS -H 'Content-Type: application/json' \
+  --data-binary '{"from":"project","to":"work","include_children":true}' "$BASE/api/v1/tags/rename")
+python3 -c 'import json,sys; r=json.load(sys.stdin); assert r["dry_run"] is True, r; assert len(r["changes"]) == 2, r' <<<"$RENAME_RESP"
+curl -fsS "$BASE/api/v1/tags" | grep -q '"name":"project"'
+
+curl -fsS -H 'Content-Type: application/json' \
+  --data-binary '{"from":"project","to":"work","include_children":true,"dry_run":false}' "$BASE/api/v1/tags/rename" >/dev/null
+TAGS_RESP=$(curl -fsS "$BASE/api/v1/tags")
+python3 -c 'import json,sys; names=sorted(t["name"] for t in json.load(sys.stdin)["tags"]); assert names == ["work","work/alpha"], names' <<<"$TAGS_RESP"
+
+# A notebook deletion preview is read-only and reports the re-homing rule.
+NB_RESP=$(curl -fsS -H 'Content-Type: application/json' --data-binary '{"name":"Smoke Notebook"}' "$BASE/api/v1/notebooks")
+NB_ID=$(python3 -c 'import json,sys; print(json.load(sys.stdin)["id"])' <<<"$NB_RESP")
+PREVIEW_RESP=$(curl -fsS "$BASE/api/v1/notebooks/$NB_ID/deletion-preview")
+python3 -c 'import json,sys; p=json.load(sys.stdin); assert p["deletable"] is True, p; assert p["rehome_notebook_id"] == "nb_notes", p' <<<"$PREVIEW_RESP"
+curl -fsS "$BASE/api/v1/notebooks/$NB_ID" >/dev/null   # the preview deleted nothing
+curl -fsS -X DELETE "$BASE/api/v1/notebooks/$NB_ID" >/dev/null
+
+# Delete is trash-first, and restore brings the note back.
+CURRENT_REV=$(curl -fsS "$BASE/api/v1/documents/$DOC_ID" | python3 -c 'import json,sys; print(json.load(sys.stdin)["current_revision_id"])')
+curl -fsS -X DELETE "$BASE/api/v1/documents/$DOC_ID?base_revision_id=$CURRENT_REV" >/dev/null
+curl -fsS "$BASE/api/v1/trash" | grep -q "$DOC_ID"
+# A trashed note reads back as trashed rather than 404-ing; that is what makes
+# it reviewable before a restore.
+python3 -c 'import json,sys; d=json.load(sys.stdin); assert d["deleted_at"], d; assert d["editable"] is False, d' \
+  <<<"$(curl -fsS "$BASE/api/v1/documents/$DOC_ID")"
+curl -fsS -X POST "$BASE/api/v1/trash/$DOC_ID/restore" >/dev/null
+python3 -c 'import json,sys; d=json.load(sys.stdin); assert d["editable"] is True, d; assert not d.get("deleted_at"), d' \
+  <<<"$(curl -fsS "$BASE/api/v1/documents/$DOC_ID")"
+
+# Purge requires the object-specific confirmation header.
+CURRENT_REV=$(curl -fsS "$BASE/api/v1/documents/$DOC_ID" | python3 -c 'import json,sys; print(json.load(sys.stdin)["current_revision_id"])')
+curl -fsS -X DELETE "$BASE/api/v1/documents/$DOC_ID?base_revision_id=$CURRENT_REV" >/dev/null
+if curl -fsS -X DELETE "$BASE/api/v1/trash/$DOC_ID" >/dev/null 2>&1; then
+  echo "purge succeeded without the confirmation header" >&2
+  exit 1
+fi
+curl -fsS -X DELETE -H "X-Notrios-Confirmation: purge-document:$DOC_ID" "$BASE/api/v1/trash/$DOC_ID" >/dev/null
+if curl -fsS "$BASE/api/v1/documents/$DOC_ID" >/dev/null 2>&1; then
+  echo "purged note is still readable" >&2
+  exit 1
+fi
+
+# --- Batch organizer transactions (v0.6 F1) ---------------------------------
+BATCH_NB=$(curl -fsS -H 'Content-Type: application/json' --data-binary '{"name":"Batch Notebook"}' "$BASE/api/v1/notebooks" | python3 -c 'import json,sys; print(json.load(sys.stdin)["id"])')
+BATCH_A=$(curl -fsS -H 'Content-Type: application/json' --data-binary '{"title":"Batch A","body":"a"}' "$BASE/api/v1/documents" | python3 -c 'import json,sys; print(json.load(sys.stdin)["id"])')
+BATCH_B=$(curl -fsS -H 'Content-Type: application/json' --data-binary '{"title":"Batch B","body":"b"}' "$BASE/api/v1/documents" | python3 -c 'import json,sys; print(json.load(sys.stdin)["id"])')
+
+# Best effort reports every item, including one that cannot be moved.
+BATCH_BODY=$(python3 -c "
+import json
+print(json.dumps({'operation':'move','notebook_id':'${BATCH_NB}',
+  'items':[{'document_id':'${BATCH_A}'},{'document_id':'${BATCH_B}'},{'document_id':'doc_absent'}]}))")
+BATCH_RESP=$(curl -fsS -H 'Content-Type: application/json' --data-binary "$BATCH_BODY" "$BASE/api/v1/batch")
+python3 -c 'import json,sys; r=json.load(sys.stdin); assert r["applied"]==2 and r["failed"]==1, r; assert len(r["items"])==3, r' <<<"$BATCH_RESP"
+
+# A keyed request replays instead of doing the work twice.
+KEYED=$(python3 -c "
+import json
+print(json.dumps({'request_key':'smoke-1','operation':'add_tags','tags':['smoked'],
+  'items':[{'document_id':'${BATCH_A}'}]}))")
+curl -fsS -H 'Content-Type: application/json' --data-binary "$KEYED" "$BASE/api/v1/batch" >/dev/null
+REPLAY=$(curl -fsS -H 'Content-Type: application/json' --data-binary "$KEYED" "$BASE/api/v1/batch")
+python3 -c 'import json,sys; r=json.load(sys.stdin); assert r["replayed"] is True, r' <<<"$REPLAY"
+python3 -c 'import json,sys; tags=[t["name"] for t in json.load(sys.stdin)["tags"]]; assert tags.count("smoked")==1, tags' \
+  <<<"$(curl -fsS "$BASE/api/v1/documents/$BATCH_A/tags")"
+
+# An atomic run that hits a failure leaves the library untouched.
+ATOMIC=$(python3 -c "
+import json
+print(json.dumps({'operation':'add_tags','mode':'atomic','tags':['never'],
+  'items':[{'document_id':'${BATCH_B}'},{'document_id':'doc_absent'}]}))")
+ATOMIC_RESP=$(curl -fsS -H 'Content-Type: application/json' --data-binary "$ATOMIC" "$BASE/api/v1/batch")
+python3 -c 'import json,sys; r=json.load(sys.stdin); assert r["rolled_back"]==1 and r["failed"]==1, r' <<<"$ATOMIC_RESP"
+python3 -c 'import json,sys; tags=[t["name"] for t in json.load(sys.stdin)["tags"]]; assert "never" not in tags, tags' \
+  <<<"$(curl -fsS "$BASE/api/v1/documents/$BATCH_B/tags")"
+
+# --- Resource range reads and MCP read coverage (v0.6 F3) --------------------
+RANGE_BODY=$(curl -fsS -H 'Range: bytes=6-13' "$BASE/api/v1/resources/$RESOURCE_ID/content")
+[ "$RANGE_BODY" = "resource" ] || { echo "range read returned '$RANGE_BODY', want 'resource'" >&2; exit 1; }
+RANGE_STATUS=$(curl -s -o /dev/null -w '%{http_code}' -H 'Range: bytes=9999-10000' "$BASE/api/v1/resources/$RESOURCE_ID/content")
+[ "$RANGE_STATUS" = "416" ] || { echo "unsatisfiable range returned $RANGE_STATUS, want 416" >&2; exit 1; }
+
+# read_resource returns metadata without bytes unless asked.
+READ_RESP=$(curl -fsS -H 'Content-Type: application/json' \
+  --data-binary "{\"jsonrpc\":\"2.0\",\"id\":9,\"method\":\"tools/call\",\"params\":{\"name\":\"read_resource\",\"arguments\":{\"resource_id\":\"${RESOURCE_ID}\"}}}" "$BASE/mcp")
+python3 -c 'import json,sys; r=json.load(sys.stdin)["result"]["structuredContent"]; assert r["text"] is None, r; assert r["sha256"], r' <<<"$READ_RESP"
 
 MCP_RESP=$(curl -fsS -H 'Content-Type: application/json' --data-binary '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' "$BASE/mcp")
 python3 -c 'import json,sys; resp=json.load(sys.stdin); tools=[tool["name"] for tool in resp["result"]["tools"]]; assert "search_documents" in tools, tools' <<<"$MCP_RESP"

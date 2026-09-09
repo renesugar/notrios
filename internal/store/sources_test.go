@@ -134,9 +134,9 @@ func TestPurgeRefusesExternallySourcedNotes(t *testing.T) {
 	if err := st.PurgeDocument(ctx, doc.ID); !errors.Is(err, ErrProtected) {
 		t.Fatalf("expected ErrProtected purging externally-sourced note, got %v", err)
 	}
-	trash, _ := st.ListTrash(ctx, 10)
-	if len(trash) != 1 {
-		t.Fatalf("externally-sourced note must stay in trash, got %d", len(trash))
+	trash, _ := st.ListTrash(ctx, DocumentPageRequest{Limit: 10})
+	if len(trash.Documents) != 1 {
+		t.Fatalf("externally-sourced note must stay in trash, got %d", len(trash.Documents))
 	}
 
 	// Provenance can be set for trashed documents (importer backfill).

@@ -1,34 +1,132 @@
 # Open Questions
 
-1. Which license should the project use?
-2. Should the first SQLite driver be Cgo-based or pure Go?
-3. Which MCP Go SDK version should be pinned when MCP implementation begins?
-4. Should the repo name and Go module be changed from `example.com/notes-companion` before first commit?
+Resolved historical questions are recorded in archived plans and the attempt
+log. Current implementation-affecting questions:
 
-## Step 2 open questions
+This register holds questions with **no owning plan item**, or that outlive a
+milestone. A question that belongs to a task lives in that task's **Open
+decisions** subsection in `PLAN.md` — see `AGENTS.md`, "Writing plan items" —
+because a decision recorded only here is invisible to whoever approves the task.
 
-- Which final license should the repository use?
-- Should the first implementation pin `md-editor-rt` to a known version before the web UI is implemented?
-- Which SQLite driver should be selected for the Go service: Cgo-backed or pure Go?
-- Should the MVP include a minimal Quartz dry-run planner, or defer all publishing to v0.4?
+`PLAN.md` also carries a decisions register indexing the per-item ones; it is an
+index, not a home.
 
+## Existing local product
 
-## Step 6 handoff questions
+1. Long-term SQLite driver: keep the cgo/libsqlite3 adapter or approve a
+   compatible pure-Go driver migration as a dedicated cleanup slice?
+2. Which official MCP Go SDK/version should replace the dependency-free
+   adapter, and what compatibility fixtures freeze current tool semantics?
+3. On regular-notebook deletion, should notes continue to move to Trash
+   (current implemented/spec behavior), or be rehomed live to parent/Notes?
+4. FTS5 is currently the always-on baseline and Recoll is optional. Is there
+   any product requirement that would justify making external Recoll mandatory?
+5. Which perceptual-hash algorithm should eventually occupy the implemented
+   H5 hook? Core ships none; any future choice remains optional and
+   suggest-only.
 
-- Should Codex replace the temporary local cgo SQLite wrapper before implementing more persistence features, or keep it until the MVP slice is further along?
-- What should the public repository/module path be?
-- Which license should be selected before the first public GitHub push?
-- Should configuration parsing use YAML with a dependency, JSON/TOML, or a small local parser for the first MVP slice?
+## Authorship and multi-user roles (no owning plan item)
 
-## MVP release questions
+20. **Does Notrios need an `author` concept, and what fills it?** There is no
+    author field anywhere in the store today. The two reference implementations
+    disagree about almost everything here: Joplin carries a single flat
+    `author` string in its database, hidden from the UI, populated mainly by
+    Evernote import, and its search does **not** support an `author:` filter.
+    Obsidian puts it in YAML frontmatter where it can be a list, supports
+    metadata search, and lets an author be a link to that author's own note.
+    Neither prescribes a format — username, email, full name are all just text.
 
-- Has the user reviewed and approved the v0.1 MVP ZIP for first Gitea/GitHub commit?
-- Should `PLAN.md` v0.2 start with policy config, or should Codex first replace the SQLite/MCP MVP adapters in a less restricted environment?
-- Should UI bundle size be reduced before the first public release by pruning md-editor/highlight language imports or adding code splitting?
+    The question matters before roles do, because a role model needs something
+    to attach to. Sub-questions: is an author a string or a link to a note (the
+    Obsidian pattern generalises better and costs nothing extra given block
+    anchors); does the query language gain an `author:` field; and does the
+    Obsidian importer preserve frontmatter properties at all — it currently
+    extracts neither tags nor properties, so author data in an imported vault is
+    dropped today regardless of what Notrios later decides.
 
-## Notrios redesign questions (2026-07-15)
+21. **What would multi-user roles mean for a local-first single-user app?**
+    Raised 2026-08-07 while resolving v0.6 F2 and deferred to a future
+    milestone. Several people using GUI-only instances against one shared remote
+    service, with roles such as administrator, author, and reviewer. It would go
+    beyond both references: Joplin has read-only versus read-write per shared
+    notebook and nothing finer; Obsidian documents that fine-grained permissions
+    are unsupported and gives every collaborator the owner's rights.
 
-1. ~~License~~ **Resolved 2026-07-15: Apache-2.0** (user decision; `LICENSE` added in R2).
-2. ~~notesctl rename~~ **Resolved 2026-07-15: renamed to `notriosctl`** with user approval of R2.
-3. When a regular notebook is deleted, its notes currently are specified to move to Trash (`NOTEBOOKS_AND_SEARCH_NOTEBOOKS.md`) — confirm, or should they move to the parent/default notebook?
-4. Should FTS5 remain the always-on baseline with Recoll optional (current design), or should Recoll become required for full query-language support?
+    Note what this is *not*: v0.6's MCP tool-visibility profiles are a guardrail
+    a single user places on their own agent, not authorization. There is no
+    second principal to authorize against. Roles would need authentication
+    first, which `SECURITY_REVIEW.md` lists as a precondition for any non-
+    loopback deployment.
+
+## Pagination, publishing, and mobile
+
+6. For relevance queries that cannot reproduce a stable `(score,id)` keyset,
+   should H7 use bounded server result snapshots or explicitly cap deep
+   relevance traversal?
+7. Which v0.4 large-site search adapter wins the measured
+   Bluge/Recoll/SQLite-FTS spike, and who owns maintenance if upstream is stale?
+8. What Wails v3 stability/release threshold is required before an Android
+   spike can propose migrating the Wails v2 desktop shell?
+
+## Native archive v2 format bounds
+
+17. **Resolved and implemented 2026-08-04 as plan task P3a.** Archive v2 stored one
+    immutable object per revision, resource, and source bundle, and
+    `manifest.json` lists every object inline at ~645 bytes each. The 4 MiB
+    manifest bound binds before the 10,000-object limit and caps one archive
+    near 6,500 objects (~6,400 notes), so v2 cannot archive the supplied
+    382,206-note corpora at all.
+
+    Decision: move the object inventory into checksummed `index` objects that
+    use the same bounded JSONL chunking as records, keeping the commit digest
+    binding every object hash transitively. Index entries carry a discriminated
+    `location` so a packed-object layout can follow behind an optional
+    capability without a second breaking revision. Limits are re-derived from a
+    1,000,000-note target, and both the writer's object dedup state and the
+    verifier's cross-reference state move to an indexed temporary spool. The
+    index form becomes the only v2 form; fixtures are regenerated rather than
+    carrying an inline-inventory compatibility path, since no archive exists
+    outside this repository and P6 has not pinned the format.
+
+    Delivered: the inventory moved into index chunks, the fanout went to two
+    levels, limits were re-derived from a 1,000,000-note target, and both the
+    writer's object state and the verifier's cross-reference state became
+    external-sorted spools. See `plans/v0.4/008-*` and `performance/v0.4-p3a/`.
+
+18. **Resolved and implemented 2026-08-04 as plan task P3b.** A full
+    backup of the real 382,206-note corpus wrote 382,407 loose objects in
+    48m26s — about 131 objects per second for 1.14 GB of content — because
+    throughput tracks one `create + write + fsync + rename` per object rather
+    than bytes. v0.7 sync would additionally pay one transport round trip per
+    object over REST and folder/rclone.
+
+    Decision: add a packed layout as the optional `objects.pack.v1`
+    capability, using the discriminated `location` P3a introduced
+    (`pack_sha256`, `offset`, `length`). Packs are `kind: "pack"` index
+    entries under the ordinary fanout, carry a self-describing trailer so they
+    verify standalone and resume without rewriting, and are excluded from the
+    unreferenced-object check. Loose fanout stays supported and default until
+    the P3b measurements justify switching. See `PLAN.md`.
+
+## External format compatibility
+
+19. **Resolved 2026-08-05: deferred, not open.** Should the archive-v2
+    compatibility contract (JSON Schemas, pinned fixtures, cross-version
+    consumer tests) be published in v0.4?
+
+    No. v0.7 G9 reuses archive-v2 manifests and objects for snapshots and
+    change envelopes, and the encoding/chunk decisions in G2 change container internals.
+    Unknown record types are rejected, so sync-era additions need a new required
+    capability and a reader pinned in v0.4 would refuse every later archive.
+    `movenotes-v3` has also not started `notrios2sql.py`. The bridge is now
+    v0.7 G19, gated on G9 rather than on the whole milestone. See
+    `PROJECT_DECISIONS.md` decision 16.
+
+## Synchronization questions moved to their owning v0.7 items
+
+Former questions 9-16 now live in the replacement `PLAN.md` items that they
+block, as required by `AGENTS.md`: field/record mapping (G4), membership and
+notebook repair (G6), retention/retirement (G17), encryption/enrollment (G0,
+G9, G13), encoding/chunking/mobile bounds (G2), and related conflict/catch-up/
+secret-store choices (G7, G10, G16). The plan's decisions register is the
+index. Do not add a second answer here and let the two copies drift.

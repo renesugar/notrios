@@ -9,7 +9,9 @@ data/
 bin/
 dist/
 web/dist/
+/node_modules/
 web/node_modules/
+docs-site/node_modules/
 
 # Go build/test artifacts (go build in the repo root writes binaries here)
 coverage.out
@@ -19,6 +21,7 @@ coverage.*
 /notrios
 /notriosd
 /notriosctl
+/notrioslib
 
 # Python bytecode caches (scripts/ helpers)
 __pycache__/
@@ -41,7 +44,13 @@ __pycache__/
 private-testdata/
 exports/
 
+# Local semantic-search index (zvec-grep); rebuilt per machine, never shared
+.zvec-grep/
+
 # Claude Code local session settings
 .claude/settings.local.json
 .claude/*.tmp.*
 _site/
+
+# The H10 spike's prototype binary; the source beside it is the evidence.
+performance/v0.8-h10/prototype/prototype

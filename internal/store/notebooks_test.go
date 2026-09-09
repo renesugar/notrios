@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"testing"
 )
@@ -20,6 +21,62 @@ func newNotebookTestStore(t *testing.T) *SQLiteStore {
 	return st
 }
 
+func TestNotebookAndTrashKeysetPages(t *testing.T) {
+	st := newNotebookTestStore(t)
+	ctx := context.Background()
+
+	for i := 0; i < 5; i++ {
+		doc, err := st.CreateDocument(ctx, CreateDocumentRequest{
+			PreferredID: fmt.Sprintf("page_doc_%02d", i),
+			Title:       fmt.Sprintf("Page %02d", i),
+		})
+		if err != nil {
+			t.Fatalf("CreateDocument: %v", err)
+		}
+		if err := st.DeleteDocument(ctx, DeleteDocumentRequest{
+			ID:             doc.ID,
+			BaseRevisionID: doc.CurrentRevisionID,
+		}); err != nil {
+			t.Fatalf("DeleteDocument: %v", err)
+		}
+	}
+
+	trash1, err := st.ListTrash(ctx, DocumentPageRequest{Limit: 2})
+	if err != nil || len(trash1.Documents) != 2 || trash1.NextCursor == "" {
+		t.Fatalf("trash page 1: %+v err=%v", trash1, err)
+	}
+	trash2, err := st.ListTrash(ctx, DocumentPageRequest{Limit: 2, Cursor: trash1.NextCursor})
+	if err != nil || len(trash2.Documents) != 2 || trash2.NextCursor == "" {
+		t.Fatalf("trash page 2: %+v err=%v", trash2, err)
+	}
+	trash3, err := st.ListTrash(ctx, DocumentPageRequest{Limit: 2, Cursor: trash2.NextCursor})
+	if err != nil || len(trash3.Documents) != 1 || trash3.NextCursor != "" {
+		t.Fatalf("trash page 3: %+v err=%v", trash3, err)
+	}
+
+	for _, page := range []DocumentPage{trash1, trash2, trash3} {
+		for _, doc := range page.Documents {
+			if _, err := st.RestoreDocument(ctx, doc.ID); err != nil {
+				t.Fatalf("RestoreDocument: %v", err)
+			}
+		}
+	}
+	notebook1, err := st.ListNotebookDocuments(ctx, DefaultNotebookID, DocumentPageRequest{Limit: 3})
+	if err != nil || len(notebook1.Documents) != 3 || notebook1.NextCursor == "" {
+		t.Fatalf("notebook page 1: %+v err=%v", notebook1, err)
+	}
+	notebook2, err := st.ListNotebookDocuments(ctx, DefaultNotebookID, DocumentPageRequest{Limit: 3, Cursor: notebook1.NextCursor})
+	if err != nil || len(notebook2.Documents) != 2 || notebook2.NextCursor != "" {
+		t.Fatalf("notebook page 2: %+v err=%v", notebook2, err)
+	}
+	if _, err := st.ListNotebookDocuments(ctx, HelpNotebookID, DocumentPageRequest{
+		Limit:  3,
+		Cursor: notebook1.NextCursor,
+	}); !errors.Is(err, ErrInvalidCursor) {
+		t.Fatalf("notebook cursor must be bound to its notebook: %v", err)
+	}
+}
+
 func TestBootstrapCreatesBuiltinNotebooks(t *testing.T) {
 	st := newNotebookTestStore(t)
 	ctx := context.Background()
@@ -28,9 +85,18 @@ func TestBootstrapCreatesBuiltinNotebooks(t *testing.T) {
 	if err != nil || notes.Name != "Notes" || notes.Builtin {
 		t.Fatalf("default notebook: %+v err=%v", notes, err)
 	}
-	help, err := st.GetNotebook(ctx, HelpNotebookID)
-	if err != nil || help.Name != "Help" || !help.Builtin {
-		t.Fatalf("help notebook: %+v err=%v", help, err)
+	// The read-only builtins, in the order they sit above Trash. Bootstrap
+	// reaches an existing database too — `INSERT OR IGNORE` runs on every open —
+	// so Reports needed no migration.
+	for id, name := range map[string]string{HelpNotebookID: "Help", ReportsNotebookID: "Reports"} {
+		nb, err := st.GetNotebook(ctx, id)
+		if err != nil || nb.Name != name || !nb.Builtin {
+			t.Fatalf("%s notebook: %+v err=%v", name, nb, err)
+		}
+	}
+	recovered, err := st.GetNotebook(ctx, RecoveredNotebookID)
+	if err != nil || recovered.Name != "Recovered" || !recovered.Builtin || IsReadOnlyNotebook(recovered.ID) {
+		t.Fatalf("Recovered notebook: %+v err=%v", recovered, err)
 	}
 
 	sns, err := st.ListSearchNotebooks(ctx)
@@ -152,9 +218,9 @@ func TestDeleteNotebookTrashesNotesRecursively(t *testing.T) {
 	if err != nil || len(res.Hits) != 0 {
 		t.Fatalf("trashed notes must not appear in search: %+v err=%v", res, err)
 	}
-	trash, err := st.ListTrash(ctx, 10)
-	if err != nil || len(trash) != 2 {
-		t.Fatalf("expected 2 trashed notes, got %d err=%v", len(trash), err)
+	trash, err := st.ListTrash(ctx, DocumentPageRequest{Limit: 10})
+	if err != nil || len(trash.Documents) != 2 {
+		t.Fatalf("expected 2 trashed notes, got %d err=%v", len(trash.Documents), err)
 	}
 	// Restore lands in the default notebook because the original is gone.
 	restored, err := st.RestoreDocument(ctx, docChild.ID)
@@ -179,8 +245,8 @@ func TestTrashRestoreAndPurge(t *testing.T) {
 		t.Fatalf("DeleteDocument: %v", err)
 	}
 
-	trash, err := st.ListTrash(ctx, 10)
-	if err != nil || len(trash) != 1 || trash[0].ID != doc.ID || trash[0].DeletedAt.IsZero() {
+	trash, err := st.ListTrash(ctx, DocumentPageRequest{Limit: 10})
+	if err != nil || len(trash.Documents) != 1 || trash.Documents[0].ID != doc.ID || trash.Documents[0].DeletedAt.IsZero() {
 		t.Fatalf("ListTrash: %+v err=%v", trash, err)
 	}
 
@@ -193,9 +259,9 @@ func TestTrashRestoreAndPurge(t *testing.T) {
 	if err := st.PurgeDocument(ctx, doc.ID); err != nil {
 		t.Fatalf("PurgeDocument: %v", err)
 	}
-	trash, _ = st.ListTrash(ctx, 10)
-	if len(trash) != 0 {
-		t.Fatalf("trash should be empty after purge, got %d", len(trash))
+	trash, _ = st.ListTrash(ctx, DocumentPageRequest{Limit: 10})
+	if len(trash.Documents) != 0 {
+		t.Fatalf("trash should be empty after purge, got %d", len(trash.Documents))
 	}
 	if _, err := st.ListDocumentRevisions(ctx, doc.ID); err == nil {
 		// Revisions are gone; listing returns empty rather than error in some
@@ -205,8 +271,8 @@ func TestTrashRestoreAndPurge(t *testing.T) {
 			t.Fatalf("revisions should be purged, got %d", len(revs))
 		}
 	}
-	tags, _ := st.ListTags(ctx)
-	if len(tags) != 0 {
+	tags, _ := st.ListTags(ctx, TagQuery{})
+	if len(tags.Tags) != 0 {
 		t.Fatalf("orphaned tags should be removed after purge, got %+v", tags)
 	}
 }
@@ -230,8 +296,8 @@ func TestTagsAddListRemoveCounts(t *testing.T) {
 		t.Fatalf("tag reuse mismatch: %+v", tag)
 	}
 
-	all, err := st.ListTags(ctx)
-	if err != nil || len(all) != 1 || all[0].NoteCount != 2 {
+	all, err := st.ListTags(ctx, TagQuery{})
+	if err != nil || len(all.Tags) != 1 || all.Tags[0].NoteCount != 2 {
 		t.Fatalf("ListTags: %+v err=%v", all, err)
 	}
 	docTags, err := st.ListDocumentTags(ctx, doc1.ID)
@@ -242,15 +308,15 @@ func TestTagsAddListRemoveCounts(t *testing.T) {
 	if err := st.RemoveDocumentTag(ctx, doc1.ID, "SHOPPING MALL"); err != nil {
 		t.Fatalf("RemoveDocumentTag: %v", err)
 	}
-	all, _ = st.ListTags(ctx)
-	if len(all) != 1 || all[0].NoteCount != 1 {
+	all, _ = st.ListTags(ctx, TagQuery{})
+	if len(all.Tags) != 1 || all.Tags[0].NoteCount != 1 {
 		t.Fatalf("count after removal: %+v", all)
 	}
 	if err := st.RemoveDocumentTag(ctx, doc2.ID, "shopping mall"); err != nil {
 		t.Fatalf("RemoveDocumentTag: %v", err)
 	}
-	all, _ = st.ListTags(ctx)
-	if len(all) != 0 {
+	all, _ = st.ListTags(ctx, TagQuery{})
+	if len(all.Tags) != 0 {
 		t.Fatalf("unreferenced tag should be deleted: %+v", all)
 	}
 }
@@ -268,6 +334,9 @@ func TestSearchNotebookLifecycle(t *testing.T) {
 	}
 	if _, err := st.CreateSearchNotebook(ctx, CreateSearchNotebookRequest{Name: "todo", Query: "x"}); !errors.Is(err, ErrNameConflict) {
 		t.Fatalf("expected ErrNameConflict, got %v", err)
+	}
+	if _, err := st.CreateSearchNotebook(ctx, CreateSearchNotebookRequest{Name: "Broken", Query: "alpha OR"}); !errors.Is(err, ErrInvalidInput) {
+		t.Fatalf("invalid saved expression must be rejected, got %v", err)
 	}
 
 	// Sidebar order: All notes, TODO, Trash.
@@ -319,8 +388,8 @@ func TestSchemaV4DatabaseUpgradesToV5(t *testing.T) {
 		t.Fatalf("Bootstrap over v4 database: %v", err)
 	}
 	status, err := st.Status(ctx)
-	if err != nil || status.SchemaVersion != 7 {
-		t.Fatalf("expected schema version 7, got %+v err=%v", status, err)
+	if err != nil || status.SchemaVersion != CurrentSchemaVersion {
+		t.Fatalf("expected schema version %d, got %+v err=%v", CurrentSchemaVersion, status, err)
 	}
 	// Existing rows are backfilled into the default notebook.
 	count, err := st.countLocked(`SELECT COUNT(1) FROM documents WHERE id = 'doc_old' AND notebook_id = ?`, DefaultNotebookID)

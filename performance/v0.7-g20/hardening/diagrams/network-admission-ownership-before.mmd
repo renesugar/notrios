@@ -1,0 +1,9 @@
+flowchart LR
+  Remote[Remote client] --> Listener[Shared HTTP listener]
+  Browser[Hostile web origin] --> Listener
+  Local[Local CLI / Wails] --> Listener
+  Listener --> Mux[Full REST / MCP / web / sync mux]
+  Mux --> Ordinary[Unauthenticated ordinary mutations]
+  Mux --> Peer[Peer-authenticated sync handlers]
+  Config[TLS config] -. duplicated selection .-> Desktop[Desktop serving path]
+  Desktop --> Listener

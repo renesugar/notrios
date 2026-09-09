@@ -8,28 +8,72 @@ import (
 	"io"
 	"mime"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/renesugar/notrios/internal/api"
+	"github.com/renesugar/notrios/internal/application"
 	"github.com/renesugar/notrios/internal/config"
 	"github.com/renesugar/notrios/internal/localize"
 	"github.com/renesugar/notrios/internal/media"
 	"github.com/renesugar/notrios/internal/query"
 	"github.com/renesugar/notrios/internal/recoll"
 	"github.com/renesugar/notrios/internal/store"
+	"github.com/renesugar/notrios/internal/syncjobs"
 	"github.com/renesugar/notrios/internal/version"
 )
 
+// Server is the HTTP adapter for the finite REST and MCP contracts. Generated
+// API documentation lists its registered non-HEAD operations only when the
+// same method/path set is present in the checked OpenAPI document.
+//
+//notrios:doc api rest-api-contract
+//notrios:enumerates go:github.com/renesugar/notrios/internal/httpapi#NewServerWithOptions
 type Server struct {
-	mux         *http.ServeMux
-	store       store.Store
-	config      config.Config
-	sidecar     SidecarSearcher
-	mediaPolicy *media.Policy
-	localizer   *localize.Localizer
+	mux   *http.ServeMux
+	store store.Store
+	// app is the transport-neutral application facade (v0.8 H1). Handlers use
+	// it in preference to store for the operations it covers, so REST and the
+	// coming C ABI share one set of application semantics. It is nil in
+	// scaffold mode, exactly when store is nil.
+	app           *application.Application
+	config        config.Config
+	sidecar       SidecarSearcher
+	sidecarStatus SidecarStatusProvider
+	mediaPolicy   *media.Policy
+	localizer     *localize.Localizer
+	searchCache   *mergedSearchCache
+	// webRoot is the resolved directory holding the built interface, or "" when
+	// none was found. It is resolved once at construction rather than on every
+	// request so a misconfiguration is a startup fact, not a per-request one.
+	webRoot string
+	// sync is the peer-authenticated surface, attached only when a caller
+	// supplies key material. Nil means the sync routes refuse.
+	sync *SyncSecurity
+	// syncJobs is the local G15 control plane. It never receives peer requests;
+	// peer-authenticated transport remains under sync above.
+	syncJobs     *syncjobs.Manager
+	syncTargetID string
+	// syncSecrets is the injectable local secret-store boundary used by the
+	// G16 UI. The shipped implementation is the explicitly warned owner-only
+	// development file; the web layer sees only redacted provider state.
+	syncSecrets SyncSecretStore
+	// syncSecretsReason explains an absent syncSecrets to the person enrolling.
+	syncSecretsReason string
+	syncUIMu          sync.Mutex
+}
+
+// AttachSyncJobs enables the local REST/MCP sync control plane for the one
+// configured target. The target location and credentials remain inside the
+// manager's adapter and never enter HTTP values.
+func (s *Server) AttachSyncJobs(manager *syncjobs.Manager, targetID string) {
+	s.syncJobs = manager
+	s.syncTargetID = targetID
 }
 
 // SidecarSearcher is the optional derived search backend (Recoll). Implemented
@@ -38,9 +82,19 @@ type SidecarSearcher interface {
 	Search(ctx context.Context, q query.Query, limit int) ([]recoll.Hit, error)
 }
 
+type SidecarStatusProvider interface {
+	Status(ctx context.Context) recoll.RuntimeStatus
+}
+
 // AttachSidecar enables merged sidecar search results.
 func (s *Server) AttachSidecar(sidecar SidecarSearcher) {
 	s.sidecar = sidecar
+}
+
+// AttachSidecarStatus exposes configured/unavailable/degraded state even when
+// Recoll is not active enough to participate in search.
+func (s *Server) AttachSidecarStatus(sidecar SidecarStatusProvider) {
+	s.sidecarStatus = sidecar
 }
 
 // ServerOptions configures the HTTP API adapter.
@@ -57,25 +111,80 @@ func NewServerWithStore(st store.Store) *Server {
 	return NewServerWithOptions(ServerOptions{Store: st, Config: config.Default()})
 }
 
+// NewServerWithOptions registers the finite REST surface over shared service
+// and store behavior.
+//
+//notrios:doc user rest-operation-surface
+//notrios:help api-rest rest-api
+//notrios:enumerates go:github.com/renesugar/notrios/internal/httpapi#NewServerWithOptions
 func NewServerWithOptions(options ServerOptions) *Server {
 	cfg := options.Config
 	if cfg.Server.ListenAddr == "" {
 		cfg = config.Default()
 	}
-	s := &Server{mux: http.NewServeMux(), store: options.Store, config: cfg, mediaPolicy: media.NewPolicy(cfg.RemoteMedia)}
+	s := &Server{
+		mux:         http.NewServeMux(),
+		store:       options.Store,
+		config:      cfg,
+		mediaPolicy: media.NewPolicy(cfg.RemoteMedia),
+		searchCache: newMergedSearchCache(),
+	}
 	if options.Store != nil {
+		s.app = application.New(options.Store)
 		// Lazy fetcher inside: no filesystem side effects until first use.
 		s.localizer = localize.New(cfg.RemoteMedia, options.Store)
+	}
+	// A missing interface is not fatal for the headless service: REST and MCP
+	// work without it. The GUI checks separately and refuses to open a window.
+	if root, err := ResolveWebRoot(cfg.Server.WebDir); err == nil {
+		s.webRoot = root
 	}
 	s.routes()
 	return s
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if browserMutationIsCrossOrigin(r) {
+		writeError(w, http.StatusForbidden, "cross_origin_forbidden", "cross-origin browser mutations are not allowed")
+		return
+	}
 	s.mux.ServeHTTP(w, r)
 }
 
+const maxOrdinaryJSONBodyBytes int64 = 8 << 20
+
+var errRequestBodyTooLarge = errors.New("request body exceeds its limit")
+
+// browserMutationIsCrossOrigin closes the browser-as-confused-deputy path to
+// the loopback API. Non-browser clients send no Origin and remain compatible;
+// the web UI's exact same origin (and Wails' application origin) remain valid.
+// Fetch Metadata is supporting evidence only and never overrides a mismatched
+// Origin supplied by the browser.
+func browserMutationIsCrossOrigin(r *http.Request) bool {
+	switch r.Method {
+	case http.MethodGet, http.MethodHead, http.MethodOptions:
+		return false
+	}
+	origin := strings.TrimSpace(r.Header.Get("Origin"))
+	if origin == "" {
+		return strings.EqualFold(strings.TrimSpace(r.Header.Get("Sec-Fetch-Site")), "cross-site")
+	}
+	if origin == "wails://wails" {
+		return false
+	}
+	parsed, err := url.Parse(origin)
+	if err != nil || parsed.Host == "" || parsed.User != nil || parsed.Opaque != "" || parsed.Path != "" || parsed.RawQuery != "" || parsed.Fragment != "" {
+		return true
+	}
+	scheme := "http"
+	if r.TLS != nil {
+		scheme = "https"
+	}
+	return !strings.EqualFold(parsed.Scheme, scheme) || !strings.EqualFold(parsed.Host, r.Host)
+}
+
 func (s *Server) routes() {
+	s.syncRoutes()
 	s.mux.HandleFunc("GET /healthz", s.handleHealth)
 	s.mux.HandleFunc("GET /api/v1/status", s.handleStatus)
 	s.mux.HandleFunc("GET /mcp", s.handleMCPInfo)
@@ -102,6 +211,7 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("DELETE /api/v1/documents/{document_id}/resources/{resource_id}", s.handleDocumentResource)
 	s.mux.HandleFunc("GET /api/v1/documents/{document_id}/links", s.handleDocumentLinks)
 	s.mux.HandleFunc("GET /api/v1/documents/{document_id}/outline", s.handleDocumentOutline)
+	s.mux.HandleFunc("GET /api/v1/documents/{document_id}/blocks", s.handleDocumentBlocks)
 	s.mux.HandleFunc("POST /api/v1/documents/{document_id}/append", s.handleAppendDocument)
 	s.mux.HandleFunc("POST /api/v1/documents/{document_id}/prepend", s.handlePrependDocument)
 	s.mux.HandleFunc("GET /api/v1/documents/{document_id}/lines", s.handleDocumentLines)
@@ -112,10 +222,13 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("POST /api/v1/media-policy/check-url", s.handleMediaPolicyCheckURL)
 
 	s.mux.HandleFunc("POST /api/v1/resources", s.handleCreateResource)
+	s.mux.HandleFunc("GET /api/v1/resources/reports/reference", s.handleResourceReport)
 	s.mux.HandleFunc("HEAD /api/v1/resources/{resource_id}", s.handleResourceHead)
 	s.mux.HandleFunc("GET /api/v1/resources/{resource_id}", s.handleResource)
 	s.mux.HandleFunc("DELETE /api/v1/resources/{resource_id}", s.handleResource)
 	s.mux.HandleFunc("GET /api/v1/resources/{resource_id}/content", s.handleResourceContent)
+	s.mux.HandleFunc("GET /api/v1/admin/gc/report", s.handleGarbageCollectionReport)
+	s.mux.HandleFunc("GET /api/v1/admin/lint/report", s.handleLintReport)
 
 	s.mux.HandleFunc("GET /api/v1/notebooks", s.handleListNotebooks)
 	s.mux.HandleFunc("GET /api/v1/notebooks/tree", s.handleNotebookTree)
@@ -124,7 +237,14 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("PATCH /api/v1/notebooks/{notebook_id}", s.handleNotebook)
 	s.mux.HandleFunc("DELETE /api/v1/notebooks/{notebook_id}", s.handleNotebook)
 	s.mux.HandleFunc("GET /api/v1/notebooks/{notebook_id}/notes", s.handleNotebookNotes)
+	s.mux.HandleFunc("GET /api/v1/notebooks/{notebook_id}/deletion-preview", s.handleNotebookDeletionPreview)
 	s.mux.HandleFunc("GET /api/v1/tags", s.handleListTags)
+	s.mux.HandleFunc("POST /api/v1/tags/rename", s.handleRenameTag)
+	s.mux.HandleFunc("POST /api/v1/batch", s.handleBatch)
+	s.mux.HandleFunc("GET /api/v1/templates", s.handleListTemplates)
+	s.mux.HandleFunc("GET /api/v1/templates/{document_id}", s.handleTemplate)
+	s.mux.HandleFunc("POST /api/v1/templates/{document_id}/create", s.handleCreateFromTemplate)
+	s.mux.HandleFunc("GET /api/v1/tasks", s.handleListTasks)
 	s.mux.HandleFunc("GET /api/v1/documents/{document_id}/tags", s.handleDocumentTags)
 	s.mux.HandleFunc("POST /api/v1/documents/{document_id}/tags/{tag}", s.handleDocumentTag)
 	s.mux.HandleFunc("DELETE /api/v1/documents/{document_id}/tags/{tag}", s.handleDocumentTag)
@@ -137,16 +257,85 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("DELETE /api/v1/trash/{document_id}", s.handlePurgeDocument)
 
 	s.mux.HandleFunc("POST /api/v1/graph", s.handleGraph)
-	s.mux.HandleFunc("POST /api/v1/publish/quartz/plan", s.handlePublishQuartzPlan)
+	s.mux.HandleFunc("POST /api/v1/graph/path", s.handleGraphPath)
+	s.mux.HandleFunc("GET /api/v1/graph/report", s.handleGraphReport)
+	s.mux.HandleFunc("POST /api/v1/graph/report/note", s.handleWriteGraphReportNote)
+	s.mux.HandleFunc("GET /api/v1/links/suggest", s.handleDocumentSuggest)
+	s.mux.HandleFunc("POST /api/v1/links/check", s.handleCheckLinks)
+	s.mux.HandleFunc("POST /api/v1/note-queries/run", s.handleRunNoteQuery)
+	s.mux.HandleFunc("POST /api/v1/selection/plan", s.handleSelectionPlan)
+	s.mux.HandleFunc("POST /api/v1/links/resolve", s.handleResolveStableLink)
+	s.mux.HandleFunc("GET /api/v1/jobs", s.handleListJobs)
 	s.mux.HandleFunc("GET /api/v1/jobs/{job_id}", s.handleJob)
+	s.mux.HandleFunc("POST /api/v1/jobs/{job_id}/cancel", s.handleCancelJob)
+	s.mux.HandleFunc("POST /api/v1/jobs/sync/plan", s.handlePlanSyncJob)
+	s.mux.HandleFunc("POST /api/v1/jobs/sync/start", s.handleStartSyncJob)
+	s.mux.HandleFunc("GET /api/v1/jobs/{job_id}/sync", s.handleSyncJob)
+	s.mux.HandleFunc("POST /api/v1/jobs/{job_id}/retry", s.handleRetrySyncJob)
+	s.mux.HandleFunc("POST /api/v1/jobs/{job_id}/reset", s.handleResetSyncJob)
+	s.mux.HandleFunc("GET /api/v1/sync-conflicts", s.handleSyncConflicts)
+	s.syncUIRoutes()
 	s.mux.HandleFunc("GET /", s.handleWebApp)
 }
 
+// webAppCSP is the Content-Security-Policy served with the built-in UI.
+//
+// It exists because of what v0.5 E6a found: `md-editor-rt` fetched KaTeX,
+// highlight.js, and four other libraries from `unpkg.com` at runtime, so a
+// local-first application was loading remote executable JavaScript on every
+// launch. Those are bundled now, and this header is what stops the next
+// dependency from quietly reintroducing the problem. A test catches a
+// regression after the fact; a policy the browser enforces prevents one.
+//
+// Each directive is deliberate:
+//
+//   - `script-src 'self'` is the whole point — no third-party code, ever.
+//   - `style-src` needs `'unsafe-inline'`: CodeMirror and md-editor-rt inject
+//     `<style>` elements at runtime, which CSP counts as inline. External
+//     stylesheets are still refused, which is what a CDN would need.
+//   - `img-src` allows remote images because the preview is permitted to
+//     display them. Localizing them is a server operation under the media
+//     policy; displaying one has always been allowed and is documented as such
+//     in `UI_DESIGN.md`.
+//   - `font-src 'self' data:` holds now that KaTeX's fonts are bundled. `data:`
+//     is required because the bundler inlines the smallest font files as data
+//     URIs — those bytes ship in our own assets, so allowing them is not a
+//     remote-loading exemption.
+//   - `connect-src 'self'` keeps the UI talking only to its own service.
+const webAppCSP = "default-src 'self'; " +
+	"script-src 'self'; " +
+	"style-src 'self' 'unsafe-inline'; " +
+	"img-src 'self' data: blob: https: http:; " +
+	"font-src 'self' data:; " +
+	"connect-src 'self'; " +
+	"object-src 'none'; " +
+	"frame-src 'none'; " +
+	"base-uri 'self'; " +
+	"form-action 'none'"
+
 func (s *Server) handleWebApp(w http.ResponseWriter, r *http.Request) {
-	distDir := filepath.Clean("web/dist")
+	w.Header().Set("Content-Security-Policy", webAppCSP)
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	w.Header().Set("Referrer-Policy", "no-referrer")
+
+	distDir := s.webRoot
+	if distDir == "" {
+		// Re-resolve rather than reporting a stale answer: the assets may have
+		// been built since the process started, which is the ordinary case
+		// during development with `make serve` running.
+		root, err := ResolveWebRoot(s.config.Server.WebDir)
+		if err != nil {
+			// "not built" and "not found here" are different problems and the
+			// old message conflated them, telling readers to rebuild assets
+			// that already existed somewhere else.
+			writeError(w, http.StatusNotFound, "web_ui_not_found", err.Error())
+			return
+		}
+		distDir = root
+	}
 	indexPath := filepath.Join(distDir, "index.html")
 	if _, err := os.Stat(indexPath); err != nil {
-		writeError(w, http.StatusNotFound, "web_ui_not_built", "web/dist/index.html not found; run cd web && npm run build or use npm run dev")
+		writeError(w, http.StatusNotFound, "web_ui_not_found", (&WebRootNotFoundError{Searched: []string{distDir}}).Error())
 		return
 	}
 
@@ -169,6 +358,7 @@ func (s *Server) handleWebApp(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte("ok\n"))
 }
@@ -191,39 +381,98 @@ func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
 			State:         storeStatus.State,
 			SchemaVersion: storeStatus.SchemaVersion,
 		}
+		// The logical database ID is what a client needs to build a stable
+		// notrios:// link for a note it already holds. The replica ID is
+		// deliberately not reported: it identifies this writable copy and has
+		// no meaning in a shared link.
+		if identity, err := s.store.GetDatabaseIdentity(r.Context()); err == nil {
+			databaseInfo.DatabaseID = identity.DatabaseID
+		}
+	}
+	sidecarStatus := api.SearchSidecarStatus{
+		Configured: s.config.SearchSidecar.Enabled,
+		State:      "disabled",
+	}
+	if s.config.SearchSidecar.Enabled {
+		sidecarStatus.State = "configured"
+	}
+	if s.sidecarStatus != nil {
+		sidecarStatus = toAPISidecarStatus(s.sidecarStatus.Status(r.Context()))
 	}
 	writeJSON(w, http.StatusOK, api.StatusResponse{
 		Service:      "notrios",
 		Version:      version.Version,
 		Status:       status,
+		Profile:      s.config.Profile.Name,
+		ProfileID:    s.config.Profile.ID,
 		Database:     database,
 		ConfigPath:   s.config.ConfigPath,
 		DatabaseInfo: databaseInfo,
 		Storage: api.StorageStatus{
-			DataDirectory: s.config.Data.Directory,
-			DatabasePath:  s.config.Data.DatabasePath,
-			AssetStore:    s.config.Data.AssetStore,
-			ProjectionDir: s.config.Data.ProjectionDir,
+			DataDirectory:         s.config.Data.Directory,
+			DatabasePath:          s.config.Data.DatabasePath,
+			AssetStore:            s.config.Data.AssetStore,
+			ProjectionDir:         s.config.Data.ProjectionDir,
 			SearchSidecarIndexDir: s.config.SearchSidecar.IndexDir,
 		},
 		Capabilities: map[string]bool{
-			"documents.create": true,
-			"documents.read":   true,
-			"documents.update": s.store != nil,
-			"documents.delete": s.store != nil,
-			"search.fts5":      s.store != nil,
-			"resources":        s.store != nil,
-			"links":            s.store != nil,
-			"mcp":              s.store != nil && s.config.MCP.Enabled,
-			"search_sidecar":   s.config.SearchSidecar.Enabled,
+			"documents.create":      true,
+			"documents.read":        true,
+			"documents.update":      s.store != nil,
+			"documents.delete":      s.store != nil,
+			"search.fts5":           s.store != nil,
+			"search.boolean":        s.store != nil,
+			"search.category_alias": s.store != nil,
+			"selection.plan":        s.store != nil,
+			"resources":             s.store != nil,
+			"resources.report":      s.store != nil,
+			"resources.gc_report":   s.store != nil,
+			"links":                 s.store != nil,
+			"mcp":                   s.store != nil && s.config.MCP.Enabled,
+			"search_sidecar":        s.config.SearchSidecar.Enabled,
 		},
 		Limits: map[string]int{
-			"search_default_limit": s.config.Search.DefaultLimit,
-			"search_max_limit":     s.config.Search.MaxLimit,
-			"search_max_offset":    s.config.Search.MaxOffset,
+			"search_default_limit":                 s.config.Search.DefaultLimit,
+			"search_max_limit":                     s.config.Search.MaxLimit,
+			"search_cursor_version":                2,
+			"search_merged_snapshot_limit":         mergedSearchWindow,
+			"search_query_max_bytes":               query.MaxInputBytes,
+			"search_query_max_tokens":              query.MaxTokens,
+			"search_query_max_depth":               query.MaxDepth,
+			"selection_max_selectors":              store.MaxSelectionSelectors,
+			"selection_max_explicit_document_ids":  store.MaxSelectionDocumentIDs,
+			"selection_rest_max_documents":         restSelectionMaxDocuments,
+			"selection_max_detail_items":           store.MaxSelectionDetailItems,
+			"retention_unreferenced_resource_days": s.config.Retention.UnreferencedResourceDays,
+			"retention_purged_resource_days":       s.config.Retention.PurgedResourceDays,
 		},
-		MediaPolicy: s.mediaPolicyStatus(),
+		MediaPolicy:   s.mediaPolicyStatus(),
+		SearchSidecar: sidecarStatus,
 	})
+}
+
+func toAPISidecarStatus(status recoll.RuntimeStatus) api.SearchSidecarStatus {
+	out := api.SearchSidecarStatus{
+		Configured: status.Configured, Available: status.Available, Active: status.Active,
+		State: status.State, Backlog: status.Backlog, FailedJobs: status.FailedJobs,
+		LastError: status.LastError,
+	}
+	if !status.LastSyncAt.IsZero() {
+		out.LastSyncAt = status.LastSyncAt.Format(time.RFC3339)
+	}
+	if !status.LastIndexAt.IsZero() {
+		out.LastIndexAt = status.LastIndexAt.Format(time.RFC3339)
+	}
+	if !status.LastReconciliationAt.IsZero() {
+		out.LastReconciliationAt = status.LastReconciliationAt.Format(time.RFC3339)
+		out.Reconciliation = &api.SearchReconciliationStatus{
+			Complete: status.Reconciliation.Complete, Canonical: status.Reconciliation.Canonical,
+			Scanned: status.Reconciliation.Scanned, Missing: status.Reconciliation.Missing,
+			Stale: status.Reconciliation.Stale, Orphaned: status.Reconciliation.Orphaned,
+			Repaired: status.Reconciliation.Repaired, Failed: status.Reconciliation.Failed,
+		}
+	}
+	return out
 }
 
 func (s *Server) handleCollections(w http.ResponseWriter, r *http.Request) {
@@ -239,11 +488,9 @@ func (s *Server) handleCollections(w http.ResponseWriter, r *http.Request) {
 	out := make([]api.Collection, 0, len(collections))
 	for _, collection := range collections {
 		out = append(out, api.Collection{
-			ID:           collection.ID,
-			Name:         collection.Name,
-			Kind:         "managed",
-			Description:  collection.Description,
-			Capabilities: collection.Capabilities,
+			ID:          collection.ID,
+			Name:        collection.Name,
+			Description: collection.Description,
 		})
 	}
 	writeJSON(w, http.StatusOK, api.CollectionPage{Collections: out})
@@ -263,19 +510,55 @@ func (s *Server) handleCreateCollection(w http.ResponseWriter, r *http.Request) 
 		writeError(w, http.StatusBadRequest, "validation_failed", "id and name are required")
 		return
 	}
-	if req.Kind == "" {
-		req.Kind = "managed"
+	// `kind` is accepted and ignored rather than refused: it was `required` in
+	// the documented request shape until v0.8 H16, and rejecting a caller who
+	// still sends it would break them over a field the store never recorded.
+	// Removing it from the response was the point; refusing it on the way in
+	// would be a second break for no gain.
+	//
+	// Previously this validated the request and echoed it back as 201 without
+	// touching the store, so every caller was told a collection existed that
+	// did not. `documents.collection_id` is a foreign key, so the first import
+	// naming it failed on the constraint instead -- which is where this was
+	// found. Nothing caught it because no test read a collection back after
+	// creating one.
+	if !s.requireStore(w) {
+		return
 	}
-	writeJSON(w, http.StatusCreated, api.Collection{ID: req.ID, Name: req.Name, Kind: req.Kind, Description: req.Description})
+	created, err := s.store.CreateCollection(r.Context(), store.Collection{
+		ID: req.ID, Name: req.Name, Description: req.Description,
+	})
+	if writeStoreError(w, err, "collection_create_failed") {
+		return
+	}
+	writeJSON(w, http.StatusCreated, api.Collection{
+		ID: created.ID, Name: created.Name, Description: created.Description,
+	})
 }
 
 func (s *Server) handleCollection(w http.ResponseWriter, r *http.Request) {
-	id := r.PathValue("collection_id")
-	if id == "default" {
-		writeJSON(w, http.StatusOK, defaultCollection())
+	// This answered `default` from a hard-coded placeholder and 404'd everything
+	// else as "not available in scaffold server", which meant a collection that
+	// genuinely existed could not be read and the placeholder's description
+	// ("Placeholder collection for scaffold validation") was served to real
+	// clients as though it were the library's own.
+	if !s.requireStore(w) {
 		return
 	}
-	writeError(w, http.StatusNotFound, "not_found", "collection is not available in scaffold server")
+	collection, err := s.store.Collection(r.Context(), r.PathValue("collection_id"))
+	if writeStoreError(w, err, "collection_read_failed") {
+		return
+	}
+	writeJSON(w, http.StatusOK, api.Collection{
+		ID:   collection.ID,
+		Name: collection.Name,
+		// `kind` and `capabilities` used to be reported here. The collections
+		// table holds an id, a name and a description; `kind` was always the
+		// constant "managed" and `capabilities` the same five words on every
+		// row. v0.8 H16 removed both, because a field that is identical for
+		// every row is not a fact about the row.
+		Description: collection.Description,
+	})
 }
 
 func (s *Server) handleSearchGET(w http.ResponseWriter, r *http.Request) {
@@ -283,9 +566,20 @@ func (s *Server) handleSearchGET(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	_ = r.URL.Query().Get("q")
-	writeJSON(w, http.StatusOK, api.SearchResponse{Hits: []api.SearchHit{}, NextCursor: "", Total: nil})
-	_ = limit
+	if s.store == nil {
+		writeJSON(w, http.StatusOK, api.SearchResponse{Hits: []api.SearchHit{}})
+		return
+	}
+	result, err := s.searchMerged(r.Context(), store.SearchRequest{
+		CollectionID: r.URL.Query().Get("collection"),
+		Query:        r.URL.Query().Get("q"),
+		Limit:        limit,
+		Cursor:       r.URL.Query().Get("cursor"),
+	})
+	if writeStoreError(w, err, "search_failed") {
+		return
+	}
+	writeJSON(w, http.StatusOK, toAPISearchResponse(result))
 }
 
 func (s *Server) handleSearchPOST(w http.ResponseWriter, r *http.Request) {
@@ -311,8 +605,7 @@ func (s *Server) handleSearchPOST(w http.ResponseWriter, r *http.Request) {
 		Limit:        req.Limit,
 		Cursor:       req.Cursor,
 	})
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, "search_failed", err.Error())
+	if writeStoreError(w, err, "search_failed") {
 		return
 	}
 	writeJSON(w, http.StatusOK, toAPISearchResponse(result))
@@ -345,20 +638,23 @@ func (s *Server) handleCreateDocument(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-	doc, err := s.store.CreateDocument(r.Context(), store.CreateDocumentRequest{
+	note, err := s.app.CreateNote(r.Context(), application.CreateNoteInput{
 		CollectionID: req.CollectionID,
 		NotebookID:   req.NotebookID,
 		Title:        req.Title,
 		Body:         req.Body,
-		BodyMIMEType: req.BodyMIMEType,
+		MIMEType:     req.BodyMIMEType,
 		Message:      req.Message,
 	})
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "document_create_failed", err.Error())
+		// Create has always answered 500 for any store failure rather than
+		// classifying it. Preserved deliberately; changing it belongs in a
+		// slice that can regenerate the API documentation with it.
+		writeError(w, http.StatusInternalServerError, "document_create_failed", applicationMessage(err))
 		return
 	}
-	setRevisionETag(w, doc.CurrentRevisionID)
-	writeJSON(w, http.StatusCreated, toAPIDocument(doc))
+	setRevisionETag(w, note.RevisionID)
+	writeJSON(w, http.StatusCreated, apiDocumentFromNote(note))
 }
 
 func (s *Server) handleDocument(w http.ResponseWriter, r *http.Request) {
@@ -380,16 +676,21 @@ func (s *Server) handleGetDocument(w http.ResponseWriter, r *http.Request, docID
 		writeJSON(w, http.StatusOK, placeholderDocument(docID))
 		return
 	}
-	doc, err := s.store.GetDocument(r.Context(), docID)
-	if writeStoreError(w, err, "document_read_failed") {
+	// A trashed note is readable here, and comes back with `deleted_at` set
+	// and `editable: false`. It has to be: the Trash is a list someone reads
+	// before deciding what to restore, and a stable link resolving to
+	// `trashed` has to open something. Every write path still stops at the
+	// Trash, and the agent-facing surfaces keep the plain GetDocument.
+	note, err := s.app.GetNoteIncludingTrashed(r.Context(), docID)
+	if writeApplicationError(w, err, "document_read_failed") {
 		return
 	}
-	setRevisionETag(w, doc.CurrentRevisionID)
-	writeJSON(w, http.StatusOK, toAPIDocument(doc))
+	setRevisionETag(w, note.RevisionID)
+	writeJSON(w, http.StatusOK, apiDocumentFromNote(note))
 }
 
 func (s *Server) handlePutDocument(w http.ResponseWriter, r *http.Request, docID string) {
-	if s.store != nil && s.guardHelpNote(w, r, docID) {
+	if s.store != nil && s.guardReadOnlyNote(w, r, docID) {
 		return
 	}
 	var req api.DocumentMutationRequest
@@ -408,23 +709,23 @@ func (s *Server) handlePutDocument(w http.ResponseWriter, r *http.Request, docID
 		writeJSON(w, http.StatusOK, doc)
 		return
 	}
-	doc, err := s.store.UpdateDocument(r.Context(), store.UpdateDocumentRequest{
-		ID:             docID,
-		Title:          req.Title,
-		Body:           req.Body,
-		BodyMIMEType:   req.BodyMIMEType,
-		BaseRevisionID: baseRevisionID,
-		Message:        req.Message,
+	note, err := s.app.UpdateNote(r.Context(), application.UpdateNoteInput{
+		ID:         docID,
+		Title:      req.Title,
+		Body:       req.Body,
+		MIMEType:   req.BodyMIMEType,
+		RevisionID: baseRevisionID,
+		Message:    req.Message,
 	})
-	if writeStoreError(w, err, "document_update_failed") {
+	if writeApplicationError(w, err, "document_update_failed") {
 		return
 	}
-	setRevisionETag(w, doc.CurrentRevisionID)
-	writeJSON(w, http.StatusOK, toAPIDocument(doc))
+	setRevisionETag(w, note.RevisionID)
+	writeJSON(w, http.StatusOK, apiDocumentFromNote(note))
 }
 
 func (s *Server) handlePatchDocument(w http.ResponseWriter, r *http.Request, docID string) {
-	if s.store != nil && s.guardHelpNote(w, r, docID) {
+	if s.store != nil && s.guardReadOnlyNote(w, r, docID) {
 		return
 	}
 	var req api.DocumentPatchRequest
@@ -440,8 +741,8 @@ func (s *Server) handlePatchDocument(w http.ResponseWriter, r *http.Request, doc
 		writeJSON(w, http.StatusOK, placeholderDocument(docID))
 		return
 	}
-	current, err := s.store.GetDocument(r.Context(), docID)
-	if writeStoreError(w, err, "document_read_failed") {
+	current, err := s.app.GetNote(r.Context(), docID)
+	if writeApplicationError(w, err, "document_read_failed") {
 		return
 	}
 	title := current.Title
@@ -456,26 +757,26 @@ func (s *Server) handlePatchDocument(w http.ResponseWriter, r *http.Request, doc
 	if req.DryRun {
 		current.Title = title
 		current.Body = body
-		writeJSON(w, http.StatusOK, toAPIDocument(current))
+		writeJSON(w, http.StatusOK, apiDocumentFromNote(current))
 		return
 	}
-	doc, err := s.store.UpdateDocument(r.Context(), store.UpdateDocumentRequest{
-		ID:             docID,
-		Title:          title,
-		Body:           body,
-		BodyMIMEType:   current.BodyMIMEType,
-		BaseRevisionID: baseRevisionID,
-		Message:        "patch",
+	note, err := s.app.UpdateNote(r.Context(), application.UpdateNoteInput{
+		ID:         docID,
+		Title:      title,
+		Body:       body,
+		MIMEType:   current.MIMEType,
+		RevisionID: baseRevisionID,
+		Message:    "patch",
 	})
-	if writeStoreError(w, err, "document_patch_failed") {
+	if writeApplicationError(w, err, "document_patch_failed") {
 		return
 	}
-	setRevisionETag(w, doc.CurrentRevisionID)
-	writeJSON(w, http.StatusOK, toAPIDocument(doc))
+	setRevisionETag(w, note.RevisionID)
+	writeJSON(w, http.StatusOK, apiDocumentFromNote(note))
 }
 
 func (s *Server) handleDeleteDocument(w http.ResponseWriter, r *http.Request, docID string) {
-	if s.store != nil && s.guardHelpNote(w, r, docID) {
+	if s.store != nil && s.guardReadOnlyNote(w, r, docID) {
 		return
 	}
 	baseRevisionID := firstNonEmpty(r.URL.Query().Get("base_revision_id"), revisionFromIfMatch(r.Header.Get("If-Match")))
@@ -487,8 +788,8 @@ func (s *Server) handleDeleteDocument(w http.ResponseWriter, r *http.Request, do
 		w.WriteHeader(http.StatusNoContent)
 		return
 	}
-	err := s.store.DeleteDocument(r.Context(), store.DeleteDocumentRequest{ID: docID, BaseRevisionID: baseRevisionID})
-	if writeStoreError(w, err, "document_delete_failed") {
+	err := s.app.DeleteNote(r.Context(), application.DeleteNoteInput{ID: docID, RevisionID: baseRevisionID})
+	if writeApplicationError(w, err, "document_delete_failed") {
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
@@ -500,12 +801,12 @@ func (s *Server) handleDocumentBody(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte("# Scaffold document\n\nPersistence is not wired yet.\n"))
 		return
 	}
-	doc, err := s.store.GetDocument(r.Context(), r.PathValue("document_id"))
-	if writeStoreError(w, err, "document_read_failed") {
+	note, err := s.app.GetNote(r.Context(), r.PathValue("document_id"))
+	if writeApplicationError(w, err, "document_read_failed") {
 		return
 	}
-	setRevisionETag(w, doc.CurrentRevisionID)
-	_, _ = w.Write([]byte(doc.Body))
+	setRevisionETag(w, note.RevisionID)
+	_, _ = w.Write([]byte(note.Body))
 }
 
 func (s *Server) handleDocumentRevisions(w http.ResponseWriter, r *http.Request) {
@@ -513,13 +814,13 @@ func (s *Server) handleDocumentRevisions(w http.ResponseWriter, r *http.Request)
 		writeJSON(w, http.StatusOK, api.RevisionPage{Revisions: []api.DocumentRevision{}})
 		return
 	}
-	revisions, err := s.store.ListDocumentRevisions(r.Context(), r.PathValue("document_id"))
-	if writeStoreError(w, err, "revision_list_failed") {
+	revisions, err := s.app.ListRevisions(r.Context(), r.PathValue("document_id"))
+	if writeApplicationError(w, err, "revision_list_failed") {
 		return
 	}
 	out := make([]api.DocumentRevision, 0, len(revisions))
 	for _, revision := range revisions {
-		apiRevision := toAPIRevision(revision)
+		apiRevision := apiRevisionFromRevision(revision)
 		apiRevision.Body = ""
 		out = append(out, apiRevision)
 	}
@@ -531,11 +832,11 @@ func (s *Server) handleDocumentRevision(w http.ResponseWriter, r *http.Request) 
 		writeJSON(w, http.StatusOK, api.DocumentRevision{ID: r.PathValue("revision_id"), DocumentID: r.PathValue("document_id"), Title: "Scaffold revision"})
 		return
 	}
-	revision, err := s.store.GetDocumentRevision(r.Context(), r.PathValue("document_id"), r.PathValue("revision_id"))
-	if writeStoreError(w, err, "revision_read_failed") {
+	revision, err := s.app.GetRevision(r.Context(), r.PathValue("document_id"), r.PathValue("revision_id"))
+	if writeApplicationError(w, err, "revision_read_failed") {
 		return
 	}
-	writeJSON(w, http.StatusOK, toAPIRevision(revision))
+	writeJSON(w, http.StatusOK, apiRevisionFromRevision(revision))
 }
 
 func (s *Server) handleRestoreRevision(w http.ResponseWriter, r *http.Request) {
@@ -552,17 +853,17 @@ func (s *Server) handleRestoreRevision(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, placeholderDocument(r.PathValue("document_id")))
 		return
 	}
-	doc, err := s.store.RestoreDocumentRevision(r.Context(), store.RestoreRevisionRequest{
-		DocumentID:     r.PathValue("document_id"),
+	note, err := s.app.RestoreRevision(r.Context(), application.RestoreRevisionInput{
+		NoteID:         r.PathValue("document_id"),
 		RevisionID:     r.PathValue("revision_id"),
 		BaseRevisionID: baseRevisionID,
 		Message:        req.Message,
 	})
-	if writeStoreError(w, err, "revision_restore_failed") {
+	if writeApplicationError(w, err, "revision_restore_failed") {
 		return
 	}
-	setRevisionETag(w, doc.CurrentRevisionID)
-	writeJSON(w, http.StatusOK, toAPIDocument(doc))
+	setRevisionETag(w, note.RevisionID)
+	writeJSON(w, http.StatusOK, apiDocumentFromNote(note))
 }
 
 func (s *Server) handleDocumentResources(w http.ResponseWriter, r *http.Request) {
@@ -645,8 +946,8 @@ func (s *Server) handleDocumentOutline(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, api.DocumentOutline{DocumentID: docID, Headings: []api.DocumentHeading{}})
 		return
 	}
-	doc, err := s.store.GetDocument(r.Context(), docID)
-	if writeStoreError(w, err, "document_read_failed") {
+	doc, err := s.app.GetNote(r.Context(), docID)
+	if writeApplicationError(w, err, "document_read_failed") {
 		return
 	}
 	writeJSON(w, http.StatusOK, extractDocumentOutline(doc.ID, doc.Body))
@@ -659,8 +960,7 @@ func (s *Server) handleDocumentOutline(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleRemoteMediaScan(w http.ResponseWriter, r *http.Request) {
 	var request api.RemoteMediaRequest
 	if r.Body != nil && r.ContentLength != 0 {
-		if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-			writeError(w, http.StatusBadRequest, "invalid_json", err.Error())
+		if !decodeJSON(w, r, &request) {
 			return
 		}
 	}
@@ -673,8 +973,8 @@ func (s *Server) handleRemoteMediaScan(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	documentID := r.PathValue("document_id")
-	doc, err := s.store.GetDocument(r.Context(), documentID)
-	if writeStoreError(w, err, "document_read_failed") {
+	doc, err := s.app.GetNote(r.Context(), documentID)
+	if writeApplicationError(w, err, "document_read_failed") {
 		return
 	}
 	writeJSON(w, http.StatusOK, scanResultFromDecisions(doc.ID, s.mediaPolicy.ScanBody(doc.Body)))
@@ -705,8 +1005,7 @@ func (s *Server) mediaPolicyStatus() *api.MediaPolicyStatus {
 // without touching any document (and without downloading anything).
 func (s *Server) handleMediaPolicyCheckURL(w http.ResponseWriter, r *http.Request) {
 	var request api.RemoteMediaRequest
-	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid_json", err.Error())
+	if !decodeJSON(w, r, &request) {
 		return
 	}
 	if len(request.URLs) == 0 {
@@ -746,8 +1045,7 @@ func (s *Server) handleRemoteMediaLocalize(w http.ResponseWriter, r *http.Reques
 	}
 	var request api.RemoteMediaRequest
 	if r.Body != nil && r.ContentLength != 0 {
-		if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-			writeError(w, http.StatusBadRequest, "invalid_json", err.Error())
+		if !decodeJSON(w, r, &request) {
 			return
 		}
 	}
@@ -780,16 +1078,46 @@ func (s *Server) handleCreateResource(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusCreated, api.Resource{ID: "res_scaffold", URI: "resource://default/resources/res_scaffold", CollectionID: collectionID, Filename: filename, MIMEType: mimeType})
 		return
 	}
+	if r.ContentLength > store.MaxResourceContentBytes {
+		writeError(w, http.StatusRequestEntityTooLarge, "body_too_large", "resource exceeds the supported size ceiling")
+		return
+	}
+	r.Body = http.MaxBytesReader(w, r.Body, store.MaxResourceContentBytes)
 	res, err := s.store.CreateResource(r.Context(), store.CreateResourceRequest{
 		CollectionID: collectionID,
 		Filename:     filename,
 		MIMEType:     mimeType,
 		Content:      r.Body,
 	})
+	var maxBytesError *http.MaxBytesError
+	if errors.As(err, &maxBytesError) {
+		writeError(w, http.StatusRequestEntityTooLarge, "body_too_large", "resource exceeds the supported size ceiling")
+		return
+	}
 	if writeStoreError(w, err, "resource_create_failed") {
 		return
 	}
 	writeJSON(w, http.StatusCreated, toAPIResource(res))
+}
+
+func (s *Server) handleResourceReport(w http.ResponseWriter, r *http.Request) {
+	if s.store == nil {
+		writeJSON(w, http.StatusOK, api.ResourceReport{
+			ExactDuplicates:   []api.ExactDuplicateGroup{},
+			UnreferencedBlobs: []api.UnreferencedBlob{},
+			NotebookUsage:     []api.NotebookResourceUsage{},
+			Perceptual: api.PerceptualHashReport{
+				PolicyReviews:  []api.PerceptualPolicyReview{},
+				NearDuplicates: []api.NearDuplicateReview{},
+			},
+		})
+		return
+	}
+	report, err := s.store.ResourceReport(r.Context())
+	if writeStoreError(w, err, "resource_report_failed") {
+		return
+	}
+	writeJSON(w, http.StatusOK, toAPIResourceReport(report))
 }
 
 func (s *Server) handleResourceHead(w http.ResponseWriter, r *http.Request) {
@@ -798,17 +1126,20 @@ func (s *Server) handleResourceHead(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		return
 	}
-	res, err := s.store.GetResource(r.Context(), r.PathValue("resource_id"))
-	if writeStoreError(w, err, "resource_read_failed") {
+	res, err := s.app.GetResource(r.Context(), r.PathValue("resource_id"))
+	if writeApplicationError(w, err, "resource_read_failed") {
 		return
 	}
-	setResourceHeaders(w, res, false)
+	writeResourceHeaders(w, res.MIMEType, res.SizeBytes, res.Filename, false)
 	w.WriteHeader(http.StatusOK)
 }
 
 func (s *Server) handleResource(w http.ResponseWriter, r *http.Request) {
 	resourceID := r.PathValue("resource_id")
 	if r.Method == http.MethodDelete {
+		if !requireConfirmation(w, r, "delete-resource:"+resourceID) {
+			return
+		}
 		if s.store != nil {
 			if err := s.store.DeleteResource(r.Context(), resourceID); writeStoreError(w, err, "resource_delete_failed") {
 				return
@@ -821,11 +1152,27 @@ func (s *Server) handleResource(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, api.Resource{ID: resourceID, URI: "resource://default/resources/" + resourceID, CollectionID: "default", MIMEType: "application/octet-stream"})
 		return
 	}
-	res, err := s.store.GetResource(r.Context(), resourceID)
-	if writeStoreError(w, err, "resource_read_failed") {
+	res, err := s.app.GetResource(r.Context(), resourceID)
+	if writeApplicationError(w, err, "resource_read_failed") {
 		return
 	}
-	writeJSON(w, http.StatusOK, toAPIResource(res))
+	writeJSON(w, http.StatusOK, apiResourceFromResource(res))
+}
+
+func (s *Server) handleGarbageCollectionReport(w http.ResponseWriter, r *http.Request) {
+	if !s.requireStore(w) {
+		return
+	}
+	report, err := s.store.GarbageCollect(r.Context(), store.GarbageCollectionRequest{
+		Policy: store.GarbageCollectionPolicy{
+			UnreferencedFor:   s.config.Retention.UnreferencedDuration(),
+			PurgedResourceFor: s.config.Retention.PurgedResourceDuration(),
+		},
+	})
+	if writeStoreError(w, err, "gc_report_failed") {
+		return
+	}
+	writeJSON(w, http.StatusOK, toAPIGarbageCollectionReport(report))
 }
 
 func (s *Server) handleResourceContent(w http.ResponseWriter, r *http.Request) {
@@ -834,58 +1181,45 @@ func (s *Server) handleResourceContent(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte("scaffold resource content\n"))
 		return
 	}
+	// This handler deliberately stays on the store rather than moving to
+	// application.OpenResource. The facade's ResourceStream is a bounded
+	// forward-only reader built for the ABI's chunked pull model, and wrapping
+	// the source hides the io.ReadSeeker that http.ServeContent needs for HTTP
+	// Range. Routing this through the facade as it stands would silently drop
+	// range support; reconciling the two access shapes is an ABI-slice design
+	// question, not something to paper over here.
 	res, content, err := s.store.OpenResourceContent(r.Context(), r.PathValue("resource_id"))
 	if writeStoreError(w, err, "resource_content_failed") {
 		return
 	}
 	defer content.Close()
 	setResourceHeaders(w, res, wantsDownload(r))
-	w.WriteHeader(http.StatusOK)
-	_, _ = io.Copy(w, content)
-}
 
-func (s *Server) handleGraph(w http.ResponseWriter, r *http.Request) {
-	var req api.GraphRequest
-	if !decodeJSON(w, r, &req) {
+	// `http.ServeContent` implements HTTP `Range` — including `If-Range`,
+	// multi-range refusal, `Content-Range`, and `416` on an unsatisfiable
+	// range — so v0.6 F3 gets range support by handing it a seeker rather than
+	// by reimplementing the RFC. The store returns an *os.File today; the
+	// assertion is what keeps `OpenResourceContent`'s interface unchanged, and
+	// the io.Copy fallback keeps a non-seekable source working (without
+	// ranges, which is the honest outcome rather than a wrong one).
+	seeker, seekable := content.(io.ReadSeeker)
+	if !seekable {
+		w.WriteHeader(http.StatusOK)
+		_, _ = io.Copy(w, content)
 		return
 	}
-	if s.store == nil {
-		writeJSON(w, http.StatusOK, api.GraphResponse{Nodes: []map[string]any{}, Edges: []map[string]any{}})
-		return
-	}
-	graph, err := s.store.Graph(r.Context(), store.GraphRequest{
-		Roots:            req.Roots,
-		Direction:        req.Direction,
-		Depth:            req.Depth,
-		IncludeResources: req.IncludeResources,
-		MaxNodes:         req.MaxNodes,
-		MaxEdges:         req.MaxEdges,
-	})
-	if writeStoreError(w, err, "graph_failed") {
-		return
-	}
-	writeJSON(w, http.StatusOK, toAPIGraph(graph))
-}
-
-func (s *Server) handlePublishQuartzPlan(w http.ResponseWriter, r *http.Request) {
-	var req api.PublishPlanRequest
-	if !decodeJSON(w, r, &req) {
-		return
-	}
-	writeJSON(w, http.StatusOK, api.PublishPlanResponse{Warnings: []string{"scaffold only: no documents evaluated"}})
-}
-
-func (s *Server) handleJob(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, http.StatusOK, api.JobStatus{ID: r.PathValue("job_id"), Kind: "scaffold", Status: "unknown"})
+	// ServeContent writes its own status, Content-Length, and Content-Range.
+	// It also sniffs a content type when one is absent; setResourceHeaders has
+	// already set the stored one, which is the sniffed-and-admitted type from
+	// the resource pipeline rather than a guess made here.
+	http.ServeContent(w, r, res.Filename, res.CreatedAt, seeker)
 }
 
 func defaultCollection() api.Collection {
 	return api.Collection{
-		ID:           "default",
-		Name:         "Default",
-		Kind:         "managed",
-		Description:  "Placeholder collection for scaffold validation.",
-		Capabilities: []string{"documents", "search", "resources", "links"},
+		ID:          "default",
+		Name:        "Default",
+		Description: "Placeholder collection for scaffold validation.",
 	}
 }
 
@@ -928,7 +1262,11 @@ func parseLimit(w http.ResponseWriter, r *http.Request, def, max int) (int, bool
 }
 
 func decodeJSON(w http.ResponseWriter, r *http.Request, v any) bool {
-	if err := json.NewDecoder(r.Body).Decode(v); err != nil {
+	if err := decodeBoundedJSONBody(w, r, v, maxOrdinaryJSONBodyBytes); err != nil {
+		if errors.Is(err, errRequestBodyTooLarge) {
+			writeError(w, http.StatusRequestEntityTooLarge, "body_too_large", "request body exceeds the supported JSON limit")
+			return false
+		}
 		writeError(w, http.StatusBadRequest, "invalid_json", "request body must be valid JSON")
 		return false
 	}
@@ -936,12 +1274,57 @@ func decodeJSON(w http.ResponseWriter, r *http.Request, v any) bool {
 }
 
 func decodeOptionalJSON(w http.ResponseWriter, r *http.Request, v any) bool {
-	err := json.NewDecoder(r.Body).Decode(v)
-	if err == nil || errors.Is(err, io.EOF) {
+	if r.Body == nil || r.ContentLength == 0 {
 		return true
+	}
+	err := decodeBoundedJSONBody(w, r, v, maxOrdinaryJSONBodyBytes)
+	if err == nil {
+		return true
+	}
+	if errors.Is(err, errRequestBodyTooLarge) {
+		writeError(w, http.StatusRequestEntityTooLarge, "body_too_large", "request body exceeds the supported JSON limit")
+		return false
 	}
 	writeError(w, http.StatusBadRequest, "invalid_json", "request body must be valid JSON")
 	return false
+}
+
+// decodeBoundedJSONBody consumes the whole bounded body and accepts exactly
+// one JSON value. A single valid value followed by megabytes of whitespace or
+// another value must not bypass the transport bound merely because Decode
+// returned after the first value.
+func decodeBoundedJSONBody(w http.ResponseWriter, r *http.Request, target any, limit int64) error {
+	return decodeBoundedJSONBodyWithPolicy(w, r, target, limit, false)
+}
+
+func decodeBoundedJSONBodyWithPolicy(w http.ResponseWriter, r *http.Request, target any, limit int64, disallowUnknownFields bool) error {
+	if r.ContentLength > limit {
+		return errRequestBodyTooLarge
+	}
+	decoder := json.NewDecoder(http.MaxBytesReader(w, r.Body, limit))
+	if disallowUnknownFields {
+		decoder.DisallowUnknownFields()
+	}
+	if err := decoder.Decode(target); err != nil {
+		var maxBytesError *http.MaxBytesError
+		if errors.As(err, &maxBytesError) {
+			return errRequestBodyTooLarge
+		}
+		return err
+	}
+	var trailing any
+	err := decoder.Decode(&trailing)
+	if errors.Is(err, io.EOF) {
+		return nil
+	}
+	var maxBytesError *http.MaxBytesError
+	if errors.As(err, &maxBytesError) {
+		return errRequestBodyTooLarge
+	}
+	if err == nil {
+		return errors.New("request body must contain exactly one JSON value")
+	}
+	return err
 }
 
 func defaultString(value, fallback string) string {
@@ -968,7 +1351,7 @@ func toAPIDocument(doc store.Document) api.Document {
 		URI:               doc.URI,
 		CollectionID:      doc.CollectionID,
 		NotebookID:        doc.NotebookID,
-		Editable:          doc.NotebookID != store.HelpNotebookID && doc.DeletedAt.IsZero(),
+		Editable:          !store.IsReadOnlyNotebook(doc.NotebookID) && doc.DeletedAt.IsZero(),
 		Title:             doc.Title,
 		BodyMIMEType:      doc.BodyMIMEType,
 		Body:              doc.Body,
@@ -986,14 +1369,15 @@ func toAPISearchResponse(result store.SearchResponse) api.SearchResponse {
 			ID:           hit.ID,
 			URI:          hit.URI,
 			Source:       "managed-notes",
+			Sources:      append([]string(nil), hit.SearchSources...),
 			CollectionID: hit.CollectionID,
 			Title:        hit.Title,
 			Snippet:      hit.Snippet,
 			Score:        hit.Score,
-			Editable:     hit.NotebookID != store.HelpNotebookID,
+			Editable:     !store.IsReadOnlyNotebook(hit.NotebookID),
 		})
 	}
-	return api.SearchResponse{Hits: hits, NextCursor: result.NextCursor}
+	return api.SearchResponse{Hits: hits, NextCursor: result.NextCursor, Truncated: result.Truncated}
 }
 
 func writeJSON(w http.ResponseWriter, status int, v any) {
@@ -1047,6 +1431,139 @@ func toAPIResourceReference(ref store.ResourceReference) api.ResourceReference {
 	}
 }
 
+func toAPIResourceReport(report store.ResourceReport) api.ResourceReport {
+	out := api.ResourceReport{
+		ExactDuplicates:   make([]api.ExactDuplicateGroup, 0, len(report.ExactDuplicates)),
+		UnreferencedBlobs: make([]api.UnreferencedBlob, 0, len(report.UnreferencedBlobs)),
+		NotebookUsage:     make([]api.NotebookResourceUsage, 0, len(report.NotebookUsage)),
+		Perceptual: api.PerceptualHashReport{
+			HookEnabled:    report.Perceptual.HookEnabled,
+			Algorithm:      report.Perceptual.Algorithm,
+			StoredHashes:   report.Perceptual.StoredHashes,
+			PolicyReviews:  make([]api.PerceptualPolicyReview, 0, len(report.Perceptual.PolicyReviews)),
+			NearDuplicates: make([]api.NearDuplicateReview, 0, len(report.Perceptual.NearDuplicates)),
+		},
+	}
+	for _, group := range report.ExactDuplicates {
+		converted := api.ExactDuplicateGroup{
+			SHA256:          group.SHA256,
+			MIMEType:        group.MIMEType,
+			SizeBytes:       group.SizeBytes,
+			ResourceCount:   group.ResourceCount,
+			ReferenceCount:  group.ReferenceCount,
+			CollectionIDs:   append([]string(nil), group.CollectionIDs...),
+			CrossCollection: group.CrossCollection,
+			Resources:       make([]api.ResourceReportItem, 0, len(group.Resources)),
+		}
+		for _, item := range group.Resources {
+			converted.Resources = append(converted.Resources, api.ResourceReportItem{
+				Resource:       toAPIResource(item.Resource),
+				ReferenceCount: item.ReferenceCount,
+			})
+		}
+		out.ExactDuplicates = append(out.ExactDuplicates, converted)
+	}
+	for _, blob := range report.UnreferencedBlobs {
+		converted := api.UnreferencedBlob{
+			SHA256:    blob.SHA256,
+			MIMEType:  blob.MIMEType,
+			SizeBytes: blob.SizeBytes,
+			Resources: make([]api.Resource, 0, len(blob.Resources)),
+		}
+		for _, resource := range blob.Resources {
+			converted.Resources = append(converted.Resources, toAPIResource(resource))
+		}
+		out.UnreferencedBlobs = append(out.UnreferencedBlobs, converted)
+	}
+	for _, usage := range report.NotebookUsage {
+		out.NotebookUsage = append(out.NotebookUsage, api.NotebookResourceUsage{
+			NotebookID:      usage.NotebookID,
+			NotebookName:    usage.NotebookName,
+			DocumentCount:   usage.DocumentCount,
+			ReferenceCount:  usage.ReferenceCount,
+			ResourceCount:   usage.ResourceCount,
+			UniqueBlobCount: usage.UniqueBlobCount,
+			ReferencedBytes: usage.ReferencedBytes,
+			UniqueBytes:     usage.UniqueBytes,
+		})
+	}
+	for _, review := range report.Perceptual.PolicyReviews {
+		out.Perceptual.PolicyReviews = append(out.Perceptual.PolicyReviews, api.PerceptualPolicyReview{
+			Algorithm:   review.Algorithm,
+			Hash:        review.Hash,
+			BlobSHA256:  review.BlobSHA256,
+			ResourceIDs: append([]string(nil), review.ResourceIDs...),
+			Reason:      review.Reason,
+		})
+	}
+	for _, review := range report.Perceptual.NearDuplicates {
+		out.Perceptual.NearDuplicates = append(out.Perceptual.NearDuplicates, api.NearDuplicateReview{
+			Algorithm:        review.Algorithm,
+			LeftBlobSHA256:   review.LeftBlobSHA256,
+			RightBlobSHA256:  review.RightBlobSHA256,
+			LeftResourceIDs:  append([]string(nil), review.LeftResourceIDs...),
+			RightResourceIDs: append([]string(nil), review.RightResourceIDs...),
+			Distance:         review.Distance,
+			Reason:           review.Reason,
+		})
+	}
+	return out
+}
+
+func toAPIGarbageCollectionReport(report store.GarbageCollectionReport) api.GarbageCollectionReport {
+	out := api.GarbageCollectionReport{
+		DryRun: report.DryRun,
+		AsOf:   report.AsOf.Format("2006-01-02T15:04:05Z07:00"),
+		Policy: api.GarbageCollectionPolicy{
+			UnreferencedSeconds:   report.Policy.UnreferencedSeconds,
+			PurgedResourceSeconds: report.Policy.PurgedResourceSeconds,
+			Gate:                  report.Policy.Gate,
+		},
+		Eligible:                toAPIGarbageCollectionCandidates(report.Eligible),
+		Retained:                toAPIGarbageCollectionCandidates(report.Retained),
+		Removed:                 toAPIGarbageCollectionCandidates(report.Removed),
+		ReferencedResourceCount: report.ReferencedResourceCount,
+		BlobsRemoved:            report.BlobsRemoved,
+		BytesRemoved:            report.BytesRemoved,
+		Warnings:                append([]string{}, report.Warnings...),
+	}
+	return out
+}
+
+func toAPIGarbageCollectionCandidates(candidates []store.GarbageCollectionCandidate) []api.GarbageCollectionCandidate {
+	out := make([]api.GarbageCollectionCandidate, 0, len(candidates))
+	for _, candidate := range candidates {
+		eligibleAt := ""
+		if !candidate.EligibleAt.IsZero() {
+			eligibleAt = candidate.EligibleAt.Format("2006-01-02T15:04:05Z07:00")
+		}
+		out = append(out, api.GarbageCollectionCandidate{
+			Resource:           toAPIResource(candidate.Resource),
+			UnreferencedAt:     candidate.UnreferencedAt.Format("2006-01-02T15:04:05Z07:00"),
+			UnreferencedReason: candidate.UnreferencedReason,
+			RetentionSeconds:   candidate.RetentionSeconds,
+			EligibleAt:         eligibleAt,
+			Decision:           candidate.Decision,
+		})
+	}
+	return out
+}
+
+// requireConfirmation refuses destructive resource and purge requests unless
+// the caller repeats the exact object-specific confirmation value.
+//
+//notrios:doc user destructive-rest-confirmations
+//notrios:help api-rest resources-attachments
+//notrios:claim destructive-rest-confirmation-check go:github.com/renesugar/notrios/internal/httpapi#TestResourceHTTPUploadAttachDownloadAndSafeDelete
+func requireConfirmation(w http.ResponseWriter, r *http.Request, expected string) bool {
+	if strings.TrimSpace(r.Header.Get("X-Notrios-Confirmation")) == expected {
+		return true
+	}
+	writeError(w, http.StatusPreconditionRequired, "confirmation_required",
+		"set X-Notrios-Confirmation to "+expected)
+	return false
+}
+
 func toAPILinkPage(page store.DocumentLinkPage) api.DocumentLinkPage {
 	return api.DocumentLinkPage{
 		Outgoing: toAPILinks(page.Outgoing),
@@ -1082,43 +1599,26 @@ func toAPILinks(links []store.DocumentLink) []api.DocumentLink {
 	return out
 }
 
-func toAPIGraph(graph store.GraphResponse) api.GraphResponse {
-	nodes := make([]map[string]any, 0, len(graph.Nodes))
-	for _, node := range graph.Nodes {
-		nodes = append(nodes, map[string]any{
-			"id":    node.ID,
-			"uri":   node.URI,
-			"kind":  node.Kind,
-			"label": node.Label,
-		})
-	}
-	edges := make([]map[string]any, 0, len(graph.Edges))
-	for _, edge := range graph.Edges {
-		edges = append(edges, map[string]any{
-			"id":         edge.ID,
-			"source_id":  edge.SourceID,
-			"target_id":  edge.TargetID,
-			"kind":       edge.Kind,
-			"status":     edge.Status,
-			"raw_target": edge.RawTarget,
-		})
-	}
-	return api.GraphResponse{Nodes: nodes, Edges: edges, Truncated: graph.Truncated}
+func setResourceHeaders(w http.ResponseWriter, resource store.Resource, download bool) {
+	writeResourceHeaders(w, resource.MIMEType, resource.SizeBytes, resource.Filename, download)
 }
 
-func setResourceHeaders(w http.ResponseWriter, resource store.Resource, download bool) {
-	contentType := defaultString(resource.MIMEType, "application/octet-stream")
+// writeResourceHeaders is the one implementation, shared by the store-backed
+// content handler and the facade-backed metadata handlers so the two cannot
+// drift into emitting different headers for the same attachment.
+func writeResourceHeaders(w http.ResponseWriter, mimeType string, sizeBytes int64, filename string, download bool) {
+	contentType := defaultString(mimeType, "application/octet-stream")
 	w.Header().Set("Content-Type", contentType)
 	w.Header().Set("X-Content-Type-Options", "nosniff")
-	if resource.SizeBytes > 0 {
-		w.Header().Set("Content-Length", strconv.FormatInt(resource.SizeBytes, 10))
+	if sizeBytes > 0 {
+		w.Header().Set("Content-Length", strconv.FormatInt(sizeBytes, 10))
 	}
-	if resource.Filename != "" {
+	if filename != "" {
 		disposition := "inline"
 		if download {
 			disposition = "attachment"
 		}
-		w.Header().Set("Content-Disposition", mime.FormatMediaType(disposition, map[string]string{"filename": safeDownloadFilename(resource.Filename)}))
+		w.Header().Set("Content-Disposition", mime.FormatMediaType(disposition, map[string]string{"filename": safeDownloadFilename(filename)}))
 	}
 }
 
@@ -1166,6 +1666,8 @@ func writeStoreError(w http.ResponseWriter, err error, fallbackCode string) bool
 		writeError(w, http.StatusConflict, "conflict", "operation conflicts with the current resource state")
 	case errors.Is(err, store.ErrInvalidInput):
 		writeError(w, http.StatusBadRequest, "validation_failed", err.Error())
+	case errors.Is(err, store.ErrInvalidCursor):
+		writeError(w, http.StatusBadRequest, "cursor_invalid", err.Error())
 	case errors.Is(err, store.ErrNameConflict):
 		writeError(w, http.StatusConflict, "name_conflict", err.Error())
 	case errors.Is(err, store.ErrProtected):

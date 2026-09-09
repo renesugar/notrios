@@ -1,0 +1,8 @@
+flowchart LR
+  Local[Local CLI / browser] --> LocalListener[Loopback ordinary listener]
+  Wails[In-process Wails] --> Ordinary[Origin + body admission]
+  LocalListener --> Ordinary
+  Remote[Remote peer] --> PeerListener[Dedicated TLS peer listener]
+  PeerListener --> Peer[Peer auth + bounded sync]
+  Config[Typed listener profiles] --> LocalListener
+  Config --> PeerListener

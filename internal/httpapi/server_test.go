@@ -8,11 +8,21 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/renesugar/notrios/internal/api"
 	"github.com/renesugar/notrios/internal/config"
+	"github.com/renesugar/notrios/internal/recoll"
 	"github.com/renesugar/notrios/internal/store"
 )
+
+type fakeSidecarStatus struct {
+	status recoll.RuntimeStatus
+}
+
+func (f fakeSidecarStatus) Status(context.Context) recoll.RuntimeStatus {
+	return f.status
+}
 
 func TestHealth(t *testing.T) {
 	s := NewServer()
@@ -27,6 +37,109 @@ func TestHealth(t *testing.T) {
 	if strings.TrimSpace(rr.Body.String()) != "ok" {
 		t.Fatalf("unexpected body %q", rr.Body.String())
 	}
+	if got := rr.Header().Get("Content-Type"); !strings.HasPrefix(got, "text/plain") {
+		t.Fatalf("health content type = %q", got)
+	}
+}
+
+func TestBrowserMutationsRequireTheExactApplicationOrigin(t *testing.T) {
+	st, err := store.OpenSQLite(":memory:")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = st.Close() })
+	if err := st.Bootstrap(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	server := NewServerWithStore(st)
+
+	for _, testCase := range []struct {
+		name       string
+		origin     string
+		fetchSite  string
+		wantStatus int
+	}{
+		{name: "cross-origin website", origin: "https://evil.example", wantStatus: http.StatusForbidden},
+		{name: "opaque origin", origin: "null", wantStatus: http.StatusForbidden},
+		{name: "malformed origin", origin: "://broken", wantStatus: http.StatusForbidden},
+		{name: "origin with a path", origin: "http://127.0.0.1:8080/not-an-origin", wantStatus: http.StatusForbidden},
+		{name: "cross-site metadata without origin", fetchSite: "cross-site", wantStatus: http.StatusForbidden},
+		{name: "same HTTP origin", origin: "http://127.0.0.1:8080", wantStatus: http.StatusCreated},
+		{name: "non-browser client", wantStatus: http.StatusCreated},
+		{name: "Wails application origin", origin: "wails://wails", wantStatus: http.StatusCreated},
+		{name: "Wails HTTP origin", origin: "http://wails.localhost", wantStatus: http.StatusCreated},
+	} {
+		t.Run(testCase.name, func(t *testing.T) {
+			request := httptest.NewRequest(http.MethodPost, "/api/v1/documents", strings.NewReader(`{"title":"origin control","body":"body"}`))
+			request.Host = "127.0.0.1:8080"
+			if testCase.origin == "http://wails.localhost" {
+				request.Host = "wails.localhost"
+			}
+			request.Header.Set("Origin", testCase.origin)
+			request.Header.Set("Sec-Fetch-Site", testCase.fetchSite)
+			response := httptest.NewRecorder()
+			server.ServeHTTP(response, request)
+			if response.Code != testCase.wantStatus {
+				t.Fatalf("status = %d, want %d: %s", response.Code, testCase.wantStatus, response.Body.String())
+			}
+		})
+	}
+}
+
+func TestOrdinaryRequestBodiesAreBoundedBeforeAdmission(t *testing.T) {
+	st, err := store.OpenSQLiteWithAssetStore(":memory:", t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = st.Close() })
+	if err := st.Bootstrap(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	cfg := config.Default()
+	cfg.MCP.Enabled = true
+	server := NewServerWithOptions(ServerOptions{Store: st, Config: cfg})
+
+	oversizedJSON := `{"title":"large","body":"` + strings.Repeat("x", int(maxOrdinaryJSONBodyBytes)) + `"}`
+	for _, testCase := range []struct {
+		name string
+		path string
+		body string
+	}{
+		{name: "ordinary JSON", path: "/api/v1/documents", body: oversizedJSON},
+		{name: "valid JSON with oversized trailing whitespace", path: "/api/v1/documents", body: `{"title":"small"}` + strings.Repeat(" ", int(maxOrdinaryJSONBodyBytes))},
+		{name: "MCP JSON-RPC", path: "/mcp", body: `{"jsonrpc":"2.0","method":"tools/call","padding":"` + strings.Repeat("x", int(maxOrdinaryJSONBodyBytes)) + `"}`},
+	} {
+		t.Run(testCase.name, func(t *testing.T) {
+			request := httptest.NewRequest(http.MethodPost, testCase.path, strings.NewReader(testCase.body))
+			response := httptest.NewRecorder()
+			server.ServeHTTP(response, request)
+			if response.Code != http.StatusRequestEntityTooLarge {
+				t.Fatalf("status = %d, want 413: %s", response.Code, response.Body.String())
+			}
+		})
+	}
+
+	resource := httptest.NewRequest(http.MethodPost, "/api/v1/resources?filename=large.bin", strings.NewReader("small transport body"))
+	resource.ContentLength = store.MaxResourceContentBytes + 1
+	response := httptest.NewRecorder()
+	server.ServeHTTP(response, resource)
+	if response.Code != http.StatusRequestEntityTooLarge {
+		t.Fatalf("resource status = %d, want 413: %s", response.Code, response.Body.String())
+	}
+
+	// One sync-supported 1 MiB note can expand to roughly 6 MiB of JSON when
+	// every byte needs escaping. The transport bound must preserve that valid
+	// product limit rather than treating encoded size as decoded text size.
+	escaped, err := json.Marshal(map[string]string{"title": "escaped", "body": strings.Repeat("\x00", 1<<20)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/documents", bytes.NewReader(escaped))
+	accepted := httptest.NewRecorder()
+	var decoded map[string]string
+	if !decodeJSON(accepted, request, &decoded) || len(decoded["body"]) != 1<<20 {
+		t.Fatalf("escaped 1 MiB JSON was refused or changed: status=%d bytes=%d body=%s", accepted.Code, len(decoded["body"]), accepted.Body.String())
+	}
 }
 
 func TestStatusReportsConfigurationAndSchema(t *testing.T) {
@@ -40,10 +153,19 @@ func TestStatusReportsConfigurationAndSchema(t *testing.T) {
 	}
 	cfg := config.Default()
 	cfg.ConfigPath = "config/test.yaml"
+	cfg.Profile = config.ProfileConfig{ID: "profile_test", Name: "test"}
 	cfg.Data.DatabasePath = ":memory:"
 	cfg.Data.AssetStore = "/tmp/notes-test-assets"
 	cfg.SearchSidecar.Enabled = true
 	s := NewServerWithOptions(ServerOptions{Store: st, Config: cfg})
+	s.AttachSidecarStatus(fakeSidecarStatus{status: recoll.RuntimeStatus{
+		Configured: true, Available: true, Active: true, State: "active",
+		Backlog: 3, FailedJobs: 1,
+		LastSyncAt:           time.Date(2026, 7, 27, 1, 2, 3, 0, time.UTC),
+		LastIndexAt:          time.Date(2026, 7, 27, 1, 2, 4, 0, time.UTC),
+		LastReconciliationAt: time.Date(2026, 7, 27, 1, 2, 5, 0, time.UTC),
+		Reconciliation:       recoll.ReconciliationStatus{Complete: true, Canonical: 9, Scanned: 10, Orphaned: 1, Repaired: 1},
+	}})
 
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/status", nil)
 	rr := httptest.NewRecorder()
@@ -56,14 +178,24 @@ func TestStatusReportsConfigurationAndSchema(t *testing.T) {
 	if err := json.NewDecoder(rr.Body).Decode(&got); err != nil {
 		t.Fatalf("decode status: %v", err)
 	}
-	if got.Status != "running" || got.DatabaseInfo.Driver != "sqlite" || got.DatabaseInfo.SchemaVersion != 7 {
+	if got.Status != "running" || got.DatabaseInfo.Driver != "sqlite" || got.DatabaseInfo.SchemaVersion != store.CurrentSchemaVersion {
 		t.Fatalf("unexpected database status: %+v", got)
 	}
 	if got.ConfigPath != "config/test.yaml" || got.Storage.AssetStore != "/tmp/notes-test-assets" {
 		t.Fatalf("unexpected config/storage status: %+v", got)
 	}
-	if !got.Capabilities["documents.create"] || !got.Capabilities["search.fts5"] || !got.Capabilities["search_sidecar"] {
+	if got.Profile != "test" || got.ProfileID != "profile_test" {
+		t.Fatalf("active runtime profile missing: %+v", got)
+	}
+	if !got.Capabilities["documents.create"] || !got.Capabilities["search.fts5"] || !got.Capabilities["search.boolean"] ||
+		!got.Capabilities["search.category_alias"] || !got.Capabilities["selection.plan"] || !got.Capabilities["search_sidecar"] {
 		t.Fatalf("expected capability flags to be reported: %+v", got.Capabilities)
+	}
+	if got.Limits["search_query_max_bytes"] != 4096 || got.Limits["search_query_max_tokens"] != 256 || got.Limits["search_query_max_depth"] != 16 {
+		t.Fatalf("query parser limits missing: %+v", got.Limits)
+	}
+	if got.Limits["selection_max_selectors"] != store.MaxSelectionSelectors || got.Limits["selection_max_explicit_document_ids"] != store.MaxSelectionDocumentIDs || got.Limits["selection_rest_max_documents"] != restSelectionMaxDocuments || got.Limits["selection_max_detail_items"] != store.MaxSelectionDetailItems {
+		t.Fatalf("selection planner limits missing: %+v", got.Limits)
 	}
 	if got.MediaPolicy == nil {
 		t.Fatalf("status must report the media policy: %+v", got)
@@ -76,6 +208,13 @@ func TestStatusReportsConfigurationAndSchema(t *testing.T) {
 	}
 	if got.MediaPolicy.MaxBytes["image"] == 0 || got.MediaPolicy.QuarantineDir == "" {
 		t.Fatalf("media policy size caps/quarantine missing: %+v", got.MediaPolicy)
+	}
+	if !got.SearchSidecar.Active || got.SearchSidecar.Backlog != 3 || got.SearchSidecar.FailedJobs != 1 {
+		t.Fatalf("sidecar runtime status missing: %+v", got.SearchSidecar)
+	}
+	if got.SearchSidecar.Reconciliation == nil || !got.SearchSidecar.Reconciliation.Complete ||
+		got.SearchSidecar.Reconciliation.Orphaned != 1 || got.SearchSidecar.LastReconciliationAt == "" {
+		t.Fatalf("sidecar reconciliation status missing: %+v", got.SearchSidecar)
 	}
 }
 
@@ -137,7 +276,9 @@ func TestPlaceholderRoutes(t *testing.T) {
 		{http.MethodGet, "/api/v1/documents/doc1/links", http.StatusOK},
 		{http.MethodGet, "/api/v1/documents/doc1/outline", http.StatusOK},
 		{http.MethodGet, "/api/v1/resources/res1", http.StatusOK},
-		{http.MethodGet, "/api/v1/jobs/job1", http.StatusOK},
+		// /api/v1/jobs is no longer among these: v0.6 F6 made it real, and a
+		// real job route needs the canonical store. Without one it reports 503
+		// rather than inventing a status, which is asserted just below.
 	}
 	for _, tc := range cases {
 		req := httptest.NewRequest(tc.method, tc.path, nil)
@@ -145,6 +286,24 @@ func TestPlaceholderRoutes(t *testing.T) {
 		s.ServeHTTP(rr, req)
 		if rr.Code != tc.want {
 			t.Fatalf("%s %s: expected %d, got %d", tc.method, tc.path, tc.want, rr.Code)
+		}
+	}
+}
+
+// The job routes stopped being scaffolding in v0.6 F6. Answering "unknown" for
+// every job ID was harmless while nothing recorded jobs and is a lie now.
+func TestJobRoutesNeedTheCanonicalStore(t *testing.T) {
+	s := NewServer()
+	for _, tc := range []struct{ method, path string }{
+		{http.MethodGet, "/api/v1/jobs"},
+		{http.MethodGet, "/api/v1/jobs/job1"},
+		{http.MethodPost, "/api/v1/jobs/job1/cancel"},
+	} {
+		req := httptest.NewRequest(tc.method, tc.path, nil)
+		rr := httptest.NewRecorder()
+		s.ServeHTTP(rr, req)
+		if rr.Code != http.StatusServiceUnavailable {
+			t.Fatalf("%s %s: expected 503 without a store, got %d", tc.method, tc.path, rr.Code)
 		}
 	}
 }
@@ -250,11 +409,35 @@ func TestDocumentUpdateRevisionConflictAndDeleteWithSQLiteStore(t *testing.T) {
 	if deleteRR.Code != http.StatusNoContent {
 		t.Fatalf("delete status=%d body=%s", deleteRR.Code, deleteRR.Body.String())
 	}
+	// A trashed note reads back, and reads back as trashed. It has to: the
+	// Trash is a list someone reads before deciding what to restore, and a
+	// stable link that resolves to `trashed` has to open something. The
+	// server-provided `editable` flag is what makes it read-only, not a 404.
 	getReq := httptest.NewRequest(http.MethodGet, "/api/v1/documents/"+created.ID, nil)
 	getRR := httptest.NewRecorder()
 	s.ServeHTTP(getRR, getReq)
-	if getRR.Code != http.StatusNotFound {
-		t.Fatalf("deleted document get should be 404, got %d", getRR.Code)
+	if getRR.Code != http.StatusOK {
+		t.Fatalf("trashed document get should be 200, got %d: %s", getRR.Code, getRR.Body.String())
+	}
+	var trashed api.Document
+	if err := json.NewDecoder(getRR.Body).Decode(&trashed); err != nil {
+		t.Fatalf("decode trashed document: %v", err)
+	}
+	if trashed.DeletedAt == "" || trashed.Editable {
+		t.Fatalf("a trashed note must report deleted_at and editable=false: %+v", trashed)
+	}
+
+	// It is still not editable, and it is still out of ordinary search scope.
+	editReq := httptest.NewRequest(http.MethodPut, "/api/v1/documents/"+created.ID, bytes.NewBufferString(updateBody))
+	editRR := httptest.NewRecorder()
+	s.ServeHTTP(editRR, editReq)
+	if editRR.Code == http.StatusOK {
+		t.Fatalf("a trashed note must not be editable, got %d", editRR.Code)
+	}
+	searchRR := httptest.NewRecorder()
+	s.ServeHTTP(searchRR, httptest.NewRequest(http.MethodGet, "/api/v1/search?q=", nil))
+	if strings.Contains(searchRR.Body.String(), created.ID) {
+		t.Fatalf("a trashed note must stay out of ordinary search: %s", searchRR.Body.String())
 	}
 }
 
@@ -410,6 +593,13 @@ func TestResourceHTTPUploadAttachDownloadAndSafeDelete(t *testing.T) {
 	deleteReferenced := httptest.NewRequest(http.MethodDelete, "/api/v1/resources/"+res.ID, nil)
 	deleteReferencedRR := httptest.NewRecorder()
 	s.ServeHTTP(deleteReferencedRR, deleteReferenced)
+	if deleteReferencedRR.Code != http.StatusPreconditionRequired {
+		t.Fatalf("expected confirmation requirement, got %d", deleteReferencedRR.Code)
+	}
+	deleteReferenced = httptest.NewRequest(http.MethodDelete, "/api/v1/resources/"+res.ID, nil)
+	deleteReferenced.Header.Set("X-Notrios-Confirmation", "delete-resource:"+res.ID)
+	deleteReferencedRR = httptest.NewRecorder()
+	s.ServeHTTP(deleteReferencedRR, deleteReferenced)
 	if deleteReferencedRR.Code != http.StatusConflict {
 		t.Fatalf("expected conflict deleting referenced resource, got %d", deleteReferencedRR.Code)
 	}
@@ -421,10 +611,102 @@ func TestResourceHTTPUploadAttachDownloadAndSafeDelete(t *testing.T) {
 		t.Fatalf("detach status=%d body=%s", detachRR.Code, detachRR.Body.String())
 	}
 	deleteFree := httptest.NewRequest(http.MethodDelete, "/api/v1/resources/"+res.ID, nil)
+	deleteFree.Header.Set("X-Notrios-Confirmation", "delete-resource:"+res.ID)
 	deleteFreeRR := httptest.NewRecorder()
 	s.ServeHTTP(deleteFreeRR, deleteFree)
 	if deleteFreeRR.Code != http.StatusNoContent {
 		t.Fatalf("delete status=%d body=%s", deleteFreeRR.Code, deleteFreeRR.Body.String())
+	}
+}
+
+func TestResourceReportHTTP(t *testing.T) {
+	ctx := context.Background()
+	st, err := store.OpenSQLiteWithAssetStore(":memory:", t.TempDir())
+	if err != nil {
+		t.Fatalf("OpenSQLiteWithAssetStore: %v", err)
+	}
+	t.Cleanup(func() { _ = st.Close() })
+	if err := st.Bootstrap(ctx); err != nil {
+		t.Fatalf("Bootstrap: %v", err)
+	}
+	doc, err := st.CreateDocument(ctx, store.CreateDocumentRequest{PreferredID: "doc_report", Title: "Report"})
+	if err != nil {
+		t.Fatalf("CreateDocument: %v", err)
+	}
+	first, err := st.CreateResource(ctx, store.CreateResourceRequest{PreferredID: "res_report_a", Filename: "a.txt", Content: strings.NewReader("duplicate")})
+	if err != nil {
+		t.Fatalf("CreateResource first: %v", err)
+	}
+	if _, err := st.CreateResource(ctx, store.CreateResourceRequest{PreferredID: "res_report_b", Filename: "b.txt", Content: strings.NewReader("duplicate")}); err != nil {
+		t.Fatalf("CreateResource second: %v", err)
+	}
+	if _, err := st.CreateResource(ctx, store.CreateResourceRequest{PreferredID: "res_report_orphan", Filename: "orphan.txt", Content: strings.NewReader("orphan")}); err != nil {
+		t.Fatalf("CreateResource orphan: %v", err)
+	}
+	if _, err := st.AttachDocumentResource(ctx, store.AttachResourceRequest{DocumentID: doc.ID, ResourceID: first.ID}); err != nil {
+		t.Fatalf("AttachDocumentResource: %v", err)
+	}
+
+	s := NewServerWithStore(st)
+	request := httptest.NewRequest(http.MethodGet, "/api/v1/resources/reports/reference", nil)
+	response := httptest.NewRecorder()
+	s.ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("report status=%d body=%s", response.Code, response.Body.String())
+	}
+	var report api.ResourceReport
+	if err := json.NewDecoder(response.Body).Decode(&report); err != nil {
+		t.Fatalf("decode report: %v", err)
+	}
+	if len(report.ExactDuplicates) != 1 || report.ExactDuplicates[0].ResourceCount != 2 {
+		t.Fatalf("exact duplicates: %+v", report.ExactDuplicates)
+	}
+	if len(report.UnreferencedBlobs) != 1 || len(report.UnreferencedBlobs[0].Resources) != 1 ||
+		report.UnreferencedBlobs[0].Resources[0].ID != "res_report_orphan" {
+		t.Fatalf("unreferenced blobs: %+v", report.UnreferencedBlobs)
+	}
+	if report.Perceptual.HookEnabled {
+		t.Fatalf("default hook must be inert: %+v", report.Perceptual)
+	}
+}
+
+func TestGarbageCollectionReportHTTPIsReadOnly(t *testing.T) {
+	ctx := context.Background()
+	st, err := store.OpenSQLiteWithAssetStore(":memory:", t.TempDir())
+	if err != nil {
+		t.Fatalf("OpenSQLiteWithAssetStore: %v", err)
+	}
+	t.Cleanup(func() { _ = st.Close() })
+	if err := st.Bootstrap(ctx); err != nil {
+		t.Fatalf("Bootstrap: %v", err)
+	}
+	resource, err := st.CreateResource(ctx, store.CreateResourceRequest{
+		PreferredID: "res_gc_http", Filename: "gc.txt", Content: strings.NewReader("gc report"),
+	})
+	if err != nil {
+		t.Fatalf("CreateResource: %v", err)
+	}
+	cfg := config.Default()
+	cfg.Retention.UnreferencedResourceDays = 0
+	cfg.Retention.PurgedResourceDays = 0
+	s := NewServerWithOptions(ServerOptions{Store: st, Config: cfg})
+
+	request := httptest.NewRequest(http.MethodGet, "/api/v1/admin/gc/report", nil)
+	response := httptest.NewRecorder()
+	s.ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("GC report status=%d body=%s", response.Code, response.Body.String())
+	}
+	var report api.GarbageCollectionReport
+	if err := json.NewDecoder(response.Body).Decode(&report); err != nil {
+		t.Fatalf("decode GC report: %v", err)
+	}
+	if !report.DryRun || len(report.Eligible) != 1 || report.Eligible[0].Resource.ID != resource.ID ||
+		len(report.Removed) != 0 || report.Policy.Gate != "local" {
+		t.Fatalf("unexpected GC report: %+v", report)
+	}
+	if _, err := st.GetResource(ctx, resource.ID); err != nil {
+		t.Fatalf("REST report must not delete: %v", err)
 	}
 }
 

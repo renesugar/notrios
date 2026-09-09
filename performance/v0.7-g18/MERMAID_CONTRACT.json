@@ -1,0 +1,43 @@
+{
+  "schema": "notrios.g18.mermaid-contract.v1",
+  "current": {
+    "enabled": false,
+    "source": "web/src/editor-assets.ts",
+    "required_literal": "noMermaid: true",
+    "fallback": "visible fenced Mermaid source",
+    "upstream_capability_is_application_evidence": false
+  },
+  "v0_8_candidate_bounds": {
+    "source_bytes": 65536,
+    "nodes": 500,
+    "edges": 1000,
+    "label_bytes_total": 262144,
+    "render_deadline_milliseconds": 2000,
+    "browser_heap_delta_bytes": 67108864
+  },
+  "security_contract": [
+    "pin and bundle the exact Mermaid renderer and license closure locally",
+    "block all non-self network requests with the browser cache disabled",
+    "use Mermaid strict security mode and sanitize generated SVG before insertion",
+    "refuse script, event-handler, foreignObject, external stylesheet, remote image, and unsafe URL payloads",
+    "preserve script-src and connect-src self-only CSP and report zero violations",
+    "show source fallback on malformed, unsupported, oversized, timed-out, or sanitized-empty output"
+  ],
+  "fixtures": [
+    {"id":"flowchart_basic","expected":"render"},
+    {"id":"sequence_basic","expected":"render"},
+    {"id":"theme_switch","expected":"render_both_themes"},
+    {"id":"malformed_syntax","expected":"source_fallback"},
+    {"id":"html_script_handler","expected":"refuse_or_sanitize_then_render_safe"},
+    {"id":"javascript_and_remote_url","expected":"refuse_or_remove_links"},
+    {"id":"node_limit_plus_one","expected":"source_fallback"},
+    {"id":"edge_limit_plus_one","expected":"source_fallback"},
+    {"id":"source_byte_limit_plus_one","expected":"source_fallback"},
+    {"id":"render_deadline","expected":"source_fallback_and_worker_cleanup"},
+    {"id":"offline_cache_disabled","expected":"render_with_zero_cross_origin_requests"},
+    {"id":"csp_probe","expected":"zero_violations"},
+    {"id":"wails_webview_smoke","expected":"valid_render_and_safe_fallback"},
+    {"id":"accessibility","expected":"labelled_preview_and_keyboard_source_access"}
+  ],
+  "enablement_gate": "Every fixture must pass in real Chrome and the Wails v2 smoke before changing noMermaid or claiming support."
+}

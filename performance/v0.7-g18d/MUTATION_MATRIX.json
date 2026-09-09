@@ -1,0 +1,23 @@
+{
+  "schema": "notrios.docexec.mutations.v1",
+  "manifest_cases": [
+    "changed fence body invalidates the pinned SHA-256 identity",
+    "unknown manifest field is rejected by strict JSON decoding",
+    "missing adapter case is rejected",
+    "unused adapter case is rejected",
+    "unresolved substitution is rejected",
+    "unexpected result status is rejected",
+    "failed semantic postcondition is rejected"
+  ],
+  "schema_cases": [
+    "invalid OpenAPI request body type is rejected",
+    "missing destructive confirmation header is rejected",
+    "invalid OpenAPI response body is rejected",
+    "undocumented HTTP status is rejected"
+  ],
+  "anchors": [
+    "go:github.com/renesugar/notrios/internal/docexec#TestManifestMutationsFail",
+    "go:github.com/renesugar/notrios/internal/docexec#TestRunContractMutationsFail",
+    "go:github.com/renesugar/notrios/internal/docexec#TestOpenAPIMutationsFail"
+  ]
+}

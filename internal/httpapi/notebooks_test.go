@@ -115,6 +115,39 @@ func TestNotebookRESTLifecycle(t *testing.T) {
 	}
 }
 
+func TestNotebookAndTrashRESTKeysetCursors(t *testing.T) {
+	s := newNotebookServer(t)
+	for i := 0; i < 3; i++ {
+		rr := doJSON(t, s, http.MethodPost, "/api/v1/documents",
+			`{"title":"paged note","body":"cursor coverage"}`)
+		if rr.Code != http.StatusCreated {
+			t.Fatalf("create %d: %d %s", i, rr.Code, rr.Body.String())
+		}
+	}
+
+	rr := doJSON(t, s, http.MethodGet, "/api/v1/notebooks/"+store.DefaultNotebookID+"/notes?limit=2", "")
+	var page1 api.DocumentPage
+	if err := json.NewDecoder(rr.Body).Decode(&page1); err != nil {
+		t.Fatalf("decode notebook page 1: %v", err)
+	}
+	if len(page1.Documents) != 2 || page1.NextCursor == "" {
+		t.Fatalf("notebook page 1: %d %s", rr.Code, rr.Body.String())
+	}
+	rr = doJSON(t, s, http.MethodGet, "/api/v1/notebooks/"+store.DefaultNotebookID+"/notes?limit=2&cursor="+page1.NextCursor, "")
+	var page2 api.DocumentPage
+	if err := json.NewDecoder(rr.Body).Decode(&page2); err != nil {
+		t.Fatalf("decode notebook page 2: %v", err)
+	}
+	if len(page2.Documents) != 1 || page2.NextCursor != "" {
+		t.Fatalf("notebook page 2: %d %s", rr.Code, rr.Body.String())
+	}
+
+	rr = doJSON(t, s, http.MethodGet, "/api/v1/trash?limit=2&cursor="+page1.NextCursor, "")
+	if rr.Code != http.StatusBadRequest || !strings.Contains(rr.Body.String(), "cursor_invalid") {
+		t.Fatalf("cursor scope replay: %d %s", rr.Code, rr.Body.String())
+	}
+}
+
 func TestTagAndMoveREST(t *testing.T) {
 	s := newNotebookServer(t)
 
@@ -209,9 +242,18 @@ func TestSearchNotebookAndTrashREST(t *testing.T) {
 	if del.Code != http.StatusNoContent {
 		t.Fatalf("second delete: %d %s", del.Code, del.Body.String())
 	}
-	rr = doJSON(t, s, http.MethodDelete, "/api/v1/trash/"+doc.ID, "")
-	if rr.Code != http.StatusNoContent {
-		t.Fatalf("purge: %d %s", rr.Code, rr.Body.String())
+	purgeReq := httptest.NewRequest(http.MethodDelete, "/api/v1/trash/"+doc.ID, nil)
+	purgeRR := httptest.NewRecorder()
+	s.ServeHTTP(purgeRR, purgeReq)
+	if purgeRR.Code != http.StatusPreconditionRequired {
+		t.Fatalf("purge without confirmation: %d %s", purgeRR.Code, purgeRR.Body.String())
+	}
+	purgeReq = httptest.NewRequest(http.MethodDelete, "/api/v1/trash/"+doc.ID, nil)
+	purgeReq.Header.Set("X-Notrios-Confirmation", "purge-document:"+doc.ID)
+	purgeRR = httptest.NewRecorder()
+	s.ServeHTTP(purgeRR, purgeReq)
+	if purgeRR.Code != http.StatusNoContent {
+		t.Fatalf("purge: %d %s", purgeRR.Code, purgeRR.Body.String())
 	}
 	rr = doJSON(t, s, http.MethodGet, "/api/v1/trash", "")
 	if strings.Contains(rr.Body.String(), doc.ID) {

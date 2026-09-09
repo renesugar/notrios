@@ -1,0 +1,29 @@
+baseURL = "https://example.github.io/notrios/"
+title = "Notrios documentation"
+theme = "hugo-theme-ledger"
+uglyURLs = true
+disableKinds = ["taxonomy", "term", "rss", "sitemap", "robotsTXT"]
+capitalizeListTitles = false
+ignoreLogs = ["warning-goldmark-raw-html"]
+
+[markup.goldmark.renderer]
+  unsafe = false
+
+[params]
+  defaultTheme = "light"
+  googleFonts = false
+  description = "Notrios user and API documentation"
+  extraCSS = ["docs.css"]
+
+  [params.search]
+    backend = "pagefind"
+    bundlePath = "/pagefind/pagefind.js"
+
+  [params.sidebar]
+    width = 282
+    minWidth = 190
+    maxWidth = 460
+
+  [params.footer]
+    rss = false
+    sourceURL = ""

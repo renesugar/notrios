@@ -1,0 +1,309 @@
+{
+  "schema": "notrios.h0.investigation-report.v1",
+  "date": "2026-08-31",
+  "task": "v0.8-h0",
+  "boundary": {
+    "investigation_only": true,
+    "production_code_changed": false,
+    "production_store_driver_changed": false,
+    "root_dependency_graph_changed": false,
+    "android_or_ios_support_claimed": false,
+    "private_data_read": false
+  },
+  "decisions": {
+    "facade_owner": {
+      "selected": "internal/application",
+      "rejected": "narrowed internal/service",
+      "blocking_for_h1_resolved": true,
+      "reason": "internal/service imports internal/httpapi and net/http, while a new application package can own typed use cases and leave HTTP, MCP, Wails, Flutter, and the C ABI as adapters",
+      "first_slice": [
+        "typed CRUD and search requests/results",
+        "bounded resource streams",
+        "context cancellation and closed application errors",
+        "store-backed implementation adapter",
+        "family-by-family REST parity tests"
+      ],
+      "migration_inputs": {
+        "http_routes": 113,
+        "handler_methods": 109,
+        "http_files_importing_net_http": 24,
+        "server_store_call_sites": 128,
+        "sync_concrete_store_call_sites": 20,
+        "concrete_sqlite_type_sites": 4,
+        "store_interface_methods": 124
+      },
+      "probe": {
+        "typed_create_get_update_search": "passed",
+        "conflict_and_not_found_mapping": "passed",
+        "bounded_cancelable_resource_stream": "passed",
+        "http_sql_and_path_leak_check": "passed"
+      }
+    },
+    "sqlite_owner": {
+      "selected": "checksum-pinned upstream SQLite amalgamation with cgo",
+      "rejected_for_v0_8": "modernc.org/sqlite with modernc.org/libc",
+      "blocking_for_h1_resolved": true,
+      "reason": "the pinned amalgamation passed the unchanged real schema-v27 store, snapshot, and sync code on Linux and Android; modernc passed SQL/file compatibility but would require replacing 43 direct-C store files, is larger and heavier in the measured workload, embeds SQLite 3.53.3 instead of current 3.53.4, and does not list Android as an upstream-supported target",
+      "pin": {
+        "package": "SQLite amalgamation",
+        "version": "3.53.4",
+        "source_url": "https://www.sqlite.org/2026/sqlite-amalgamation-3530400.zip",
+        "archive_sha3_256": "628a44cfe82c66aed1ccbbe85a562d2e33ebe64b3288981ed76285612227934e",
+        "archive_sha256": "1e71ddf93849c6a6ecf58b827c0692073d2dd7ee40196158068f7b29f422e87d",
+        "sqlite3_c_sha256": "b1dd5d74ec7f29055a6684fa06fb3c2f6821c87dd38f9a458dfd2e8a1db28189",
+        "sqlite3_h_sha256": "919e7f2e8ed1d8f56ac17b412b8971c76aa5d1a879752cc6058f75e7d5910e1d",
+        "license": "SQLite public domain",
+        "license_compatible": true
+      },
+      "compile_options": [
+        "SQLITE_THREADSAFE=1",
+        "SQLITE_ENABLE_FTS5",
+        "SQLITE_ENABLE_JSON1",
+        "SQLITE_DQS=0",
+        "SQLITE_OMIT_LOAD_EXTENSION",
+        "SQLITE_SECURE_DELETE",
+        "SQLITE_USE_URI"
+      ],
+      "runtime_options": [
+        "SQLITE_OPEN_FULLMUTEX",
+        "PRAGMA journal_mode=WAL",
+        "5000 millisecond busy timeout",
+        "checkpoint before file handoff",
+        "SQLite Online Backup API for physical snapshots"
+      ],
+      "update_policy": "H1 vendors only sqlite3.c, sqlite3.h, the public-domain notice, and a provenance manifest. Every SQLite update is a dedicated reviewed slice: verify the official SHA3-256, record SHA-256 and source ID, diff compile options, rerun desktop and API-35 store/snapshot/sync tests, rerun both ABI forms and symbol checks, rerun the checkpointed round-trip and cost matrix, refresh licenses, and retain the previous pin for rollback until release acceptance passes.",
+      "rollback": "Before release acceptance, revert the vendored pin/build wiring and retain the existing pkg-config desktop adapter. Canonical databases remain ordinary schema-v27 SQLite files; never change engines while a file is open, and checkpoint WAL before handing a file to a rollback build."
+    },
+    "abi": {
+      "major": 1,
+      "primary_build_form": "c-shared for Flutter/Dart FFI and dynamic desktop hosts",
+      "secondary_build_form": "c-archive as a validated static-embedding option, not the default Android package",
+      "symbol_count": 12,
+      "symbols": [
+        "notrios_abi_version",
+        "notrios_capabilities",
+        "notrios_instance_open",
+        "notrios_instance_close",
+        "notrios_call_start",
+        "notrios_call_poll",
+        "notrios_call_cancel",
+        "notrios_buffer_release",
+        "notrios_event_poll",
+        "notrios_stream_open",
+        "notrios_stream_read",
+        "notrios_stream_close"
+      ],
+      "dispatch": "one bounded typed JSON operation surface; bulk bytes use streams",
+      "ownership": "inputs are caller-owned and copied before return; outputs are immutable C allocations released exactly once; C-visible memory contains no Go pointers",
+      "handles": "unsigned 64-bit opaque generation-bearing handles; zero, stale, wrong-kind, and foreign-instance handles are refused",
+      "threads": "host calls may enter on host threads; Go never invokes a host callback from an arbitrary Go thread; completions and events are polled",
+      "shutdown": "close marks the live instance shutting down, refuses new calls and streams, cancels and joins owned work, invalidates handles, then becomes idempotent for that generation",
+      "limits": {
+        "request_json_bytes": 1048576,
+        "response_json_bytes": 1048576,
+        "stream_read_bytes": 1048576,
+        "events_per_poll": 256,
+        "operation_name_bytes": 128,
+        "error_message_bytes": 4096
+      },
+      "host_probe": "passed c-shared, c-archive, generated headers, exact symbols, ownership, cancel, poll, events, streams, and shutdown",
+      "android_x86_64_probe": "passed the same C host against an NDK API-35 c-shared library",
+      "real_store_link_probe": "passed schema-v27 bootstrap through c-shared with SQLite 3.53.4, no dynamic SQLite dependency, and no exported sqlite3_* symbols",
+      "dlclose_policy": "not a lifecycle primitive; hosts close all instances and streams before process teardown"
+    },
+    "canonical_file_owner": {
+      "policy": "exactly one Go application-core instance and exactly one embedded SQLite engine own a canonical database file",
+      "same_process": "canonicalize the database identity before open and refuse a second live instance in the application registry",
+      "cross_process": "hold a nonblocking exclusive owner sidecar lock for the full store lifetime and refuse open when it is held",
+      "non_cooperating_clients": "do not link Room, Jetpack SQLite, a second sqlite3, or any Flutter SQLite plugin into the canonical-file path",
+      "negative_probe": "passed: first owner acquired; second cooperating owner exited 3 with Resource temporarily unavailable",
+      "symbol_probe": "passed: real-store shared libraries had no libsqlite3 dependency and exported no sqlite3_* symbols",
+      "production_status": "policy selected and prototyped; enforcement belongs to H1"
+    },
+    "concurrency_wal_and_crash": {
+      "connection": "one store owner, FULLMUTEX opens, existing Go store serialization, and a 5-second busy timeout",
+      "wal": "WAL is canonical during live use; a TRUNCATE checkpoint and clean close precede raw file transfer; snapshots use the Online Backup API instead of copying a live main file",
+      "shutdown_order": "refuse new work, cancel calls/jobs, close streams, join workers, checkpoint/close SQLite, release the owner lock, invalidate the generation",
+      "crash_recovery_evidence": [
+        "sync admission restart and injected pre-commit failure passed on API-35",
+        "uncommitted canonical and sync-operation rows rolled back on close on API-35",
+        "sanitized SQLite snapshot creation passed on API-35",
+        "desktop store/snapshot/sync package suites passed against the pin"
+      ]
+    },
+    "android_target": {
+      "runtime_min_sdk_evidence": 35,
+      "runtime_abi": "x86_64",
+      "release_abi_build_only": "arm64-v8a",
+      "runtime_avd": "notrios_api35_x86_64",
+      "runtime_os": "Android 15",
+      "runtime_fingerprint": "google/sdk_gphone64_x86_64/emu64xa:15/AE3A.240806.043/12960925:userdebug/dev-keys",
+      "selinux": "Enforcing",
+      "arm64_runtime_claimed": false,
+      "other_android_api_runtime_claimed": false,
+      "second_runtime_abi_effect": "H8 must add a physical or emulated arm64 run of the same ABI, store, snapshot, sync, ownership, and package matrix before arm64 production support is claimed. Until then x86_64/API-35 is the only runtime evidence and arm64-v8a is build-only."
+    }
+  },
+  "candidate_provenance": {
+    "modernc_sqlite": {
+      "version": "v1.57.0",
+      "go_sum": "h1:qNQP6xnx5M0ISNtlnxoOX0+cD5bJ0/gr9aMmndFczzg=",
+      "embedded_sqlite": "3.53.3",
+      "license": "BSD-3-Clause plus SQLite public-domain notice; optional sqlite-vec sources carry MIT",
+      "license_sha256": "c6fe05491a60ae13bcd223088d2705e36dede24e5587226231d2459ada5c4822",
+      "sqlite_notice_sha256": "8438c9c89b849131ead81d5435cb97fcf052df5b0b286dda8a2d4c29e6cb3fd0",
+      "sqlite_vec_notice_sha256": "6ce72bbe12d975bd5286e5ab0a064c069693300c47bccbc57bec18485f1621ea",
+      "license_compatible": true,
+      "upstream_lists_android_support": false
+    },
+    "modernc_libc": {
+      "version": "v1.74.4",
+      "go_sum": "h1:fX1Omw4o2/1C2iRkkIsrQTasJQldLhRmuPreXLoWs9k=",
+      "license": "BSD-3-Clause with third-party notices",
+      "license_sha256": "95ff867eb55a56935fa7492406cfa953fb7c13ca73f4c0a86ae05756b4605600",
+      "third_party_notice_sha256": "f597097efe3d97021f89170746bd3a0fb9a8b6fb26b82043ed68a4e0283bee6c",
+      "license_compatible": true
+    }
+  },
+  "results": {
+    "source_audit": {
+      "status": "passed",
+      "audited_source_sha256": "5011459cba904284258cdc24e7a9aa67430303a0a41fade617cd965d5bc622c4",
+      "numeric_g18_drift": 0
+    },
+    "desktop_real_store": {
+      "status": "passed",
+      "sqlite": "3.53.4 static amalgamation",
+      "dynamic_libsqlite_dependency": false,
+      "test_binary_bytes": 17243320,
+      "packages": [
+        "internal/store",
+        "internal/snapshotimage",
+        "internal/syncstate",
+        "internal/syncmerge",
+        "internal/syncwire",
+        "internal/synccarrier",
+        "internal/syncrest",
+        "internal/synccatchup",
+        "internal/syncjobs"
+      ],
+      "store_elapsed_seconds": 175.010
+    },
+    "desktop_sqlite_ab": {
+      "status": "passed",
+      "corpus_notes": 1000,
+      "c": {
+        "sqlite": "3.53.4",
+        "cold_build_ms": 268197,
+        "workload_wall_ms": 73,
+        "max_rss_kib": 3584,
+        "artifact_bytes": 1397896,
+        "fts_matches": 1000,
+        "json": "passed",
+        "wal": "passed",
+        "integrity": "ok"
+      },
+      "modernc": {
+        "sqlite": "3.53.3",
+        "cold_build_ms": 155712,
+        "workload_wall_ms": 637,
+        "max_rss_kib": 11264,
+        "artifact_bytes": 10893119,
+        "fts_matches": 1000,
+        "json": "passed",
+        "wal": "passed",
+        "integrity": "ok"
+      },
+      "interpretation": "The small process-level workload includes startup and adapter overhead and is not a product-wide latency guarantee. On this run modernc built faster, while the C executable ran faster and used less RSS and disk."
+    },
+    "android_x86_64": {
+      "status": "passed",
+      "abi_lifecycle_host": "passed",
+      "real_store_link_schema_v27": "passed",
+      "focused_schema_store_snapshot_sync": "passed in 26.857 seconds",
+      "c": {
+        "sqlite": "3.53.4",
+        "workload_real_ms": 94,
+        "user_ms": 38,
+        "system_ms": 30,
+        "max_rss_kib": 5120,
+        "workload_artifact_bytes": 1471848,
+        "real_store_shared_library_bytes": 7647872,
+        "real_store_test_binary_bytes": 17491568,
+        "fts_matches": 1000,
+        "json": "passed",
+        "wal": "passed",
+        "integrity": "ok"
+      },
+      "modernc": {
+        "sqlite": "3.53.3",
+        "workload_real_ms": 155,
+        "user_ms": 86,
+        "system_ms": 45,
+        "max_rss_kib": 11904,
+        "workload_artifact_bytes": 10776816,
+        "fts_matches": 1000,
+        "json": "passed",
+        "wal": "passed",
+        "integrity": "ok",
+        "real_store_suite": "not run because the current store has 43 direct-C implementation files and no modernc adapter"
+      }
+    },
+    "desktop_android_desktop_roundtrip": {
+      "status": "passed",
+      "sequence": [
+        "desktop SQLite 3.53.4 created and checkpointed 1000-note FTS5/JSON/WAL database",
+        "Android modernc SQLite 3.53.3 verified it and added note 1001",
+        "Android checkpointed and closed the file",
+        "pulled file hash matched the emulator hash",
+        "desktop SQLite 3.53.4 verified integrity, WAL, 1001 notes, and the exact modernc row"
+      ],
+      "final_database_sha256": "36ddb65cfdba5956aa8350bcf3f89ca00d93fd17c564853f9869cab1d4e9b7b7",
+      "final_database_bytes": 245760
+    },
+    "android_arm64_build_only": {
+      "status": "passed",
+      "runtime_executed": false,
+      "artifacts": {
+        "abi_c_shared": {
+          "bytes": 2036488,
+          "sha256": "65bf5c7b438a43fda27115c4d6543366f27dbe21781e454897e97f97a9e74746"
+        },
+        "sqlite_c_workload": {
+          "bytes": 1451840,
+          "sha256": "e506801b3dbe2520f2714a79e1c371e64328225fffd78a24330f4e17c83dceff"
+        },
+        "modernc_workload": {
+          "bytes": 10369904,
+          "sha256": "4af62ece07b5dafd580526f31eecc52633503294f7088e54b8312b255c7b2e40"
+        },
+        "real_store_test": {
+          "bytes": 15981104,
+          "sha256": "23647ec9192deeaa6057c1ff8fe4a8b2023c7012bb72bb3dba745f1252883d1a"
+        },
+        "real_store_c_shared": {
+          "bytes": 7139528,
+          "sha256": "12ebf501281252a2a36a050472fb692986ccabc02fd41c47f4dcb7c8e23252fe"
+        }
+      }
+    }
+  },
+  "environment": {
+    "host_os": "Linux 6.8.0-138-generic x86_64",
+    "host_cpu": "Intel Core i5-9300H, 4 cores, 8 threads",
+    "go": "go1.27.0 linux/amd64",
+    "android_ndk": "30.0.15729638",
+    "android_clang": "21.0.0",
+    "emulator_stopped_after_probe": true,
+    "probe_processes_left_running": false
+  },
+  "limitations": [
+    "H0 did not land production internal/application or the ABI-major-1 library; H1 owns that integration.",
+    "The lifecycle ABI probe and the real-store shared-link probe are separate disposable binaries; H1 must join them and run semantic REST/ABI parity.",
+    "modernc did not run the real Notrios store, snapshot, or sync suite because doing so requires a 43-file adapter rewrite; its SQL/file compatibility and Android runtime were measured instead.",
+    "The A/B corpus is synthetic and small; results are selection evidence on this machine, not universal performance guarantees.",
+    "Only API-35 x86_64 ran. Android arm64 is build-only; physical devices, other API levels, iOS, Windows, and macOS are not runtime claims.",
+    "The owner lock is a cooperating-owner prototype, not production enforcement against an arbitrary external SQLite client.",
+    "No concurrent cross-engine access was attempted because the selected policy forbids it and SQLite documents that separately linked copies can corrupt locking state."
+  ]
+}

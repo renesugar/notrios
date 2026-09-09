@@ -1,0 +1,24 @@
+{{- $active := .RelPermalink -}}
+<!DOCTYPE html>
+<html lang="{{ or site.Language.Locale "en" }}" data-theme="{{ or site.Params.defaultTheme "light" }}">
+<head>
+  {{ partial "head.html" . }}
+</head>
+<body>
+  <a class="ledger-sr-only ledger-skip" href="#ledger-main">Skip to content</a>
+  <div class="ledger-shell">
+    {{ partialCached "header.html" $active $active }}
+    <div class="ledger-body">
+      {{ partialCached "sidebar.html" . "notrios-docs-v1" }}
+      <main class="ledger-main" id="ledger-main" data-scroll tabindex="-1">
+        <div class="ledger-content">
+          {{ block "main" . }}{{ end }}
+        </div>
+        {{ partialCached "footer.html" . "notrios-docs-v1" }}
+      </main>
+    </div>
+  </div>
+  {{ partial "scripts.html" . }}
+  {{ block "scripts" . }}{{ end }}
+</body>
+</html>

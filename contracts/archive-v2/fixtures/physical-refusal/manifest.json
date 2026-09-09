@@ -1,0 +1,61 @@
+{
+  "format": "notrios-sqlite-image",
+  "version": 1,
+  "commit_sha256": "1d184b58bc3be435833b3294dd7ef0b82a3fafe7f04fab0e3858a2ce588bc3d0",
+  "content_sha256": "8888888888888888888888888888888888888888888888888888888888888888",
+  "snapshot": {
+    "id": "snap_physical_refusal",
+    "created_at": "2026-08-30T00:00:00Z",
+    "consistency": "sqlite-online-backup",
+    "database_id": "db_contract",
+    "source_replica_id": "replica_contract",
+    "vector": {},
+    "floors": {}
+  },
+  "compatibility": {
+    "application_id": "notrios",
+    "application_version": "0.7.0-contract",
+    "source_schema_version": 27,
+    "minimum_schema_version": 27,
+    "maximum_schema_version": 27,
+    "required_capabilities": [
+      "archive-v2.fallback.v1",
+      "sqlite-image+packed-assets.v1"
+    ],
+    "semantic_fallback_format": "notrios-archive-v2"
+  },
+  "database": {
+    "path": "notes.sqlite",
+    "sha256": "9999999999999999999999999999999999999999999999999999999999999999",
+    "size_bytes": 4096
+  },
+  "external": {
+    "layout": "deterministic-ustar",
+    "pack_target_payload_bytes": 268435456,
+    "pack_max_entries": 65536,
+    "objects": 0,
+    "payload_bytes": 0,
+    "packs": []
+  },
+  "cleared_local_tables": [
+    "batch_operations",
+    "import_checkpoints",
+    "import_item_states",
+    "jobs",
+    "restore_state",
+    "sync_apply_guard",
+    "sync_blob_chunks",
+    "sync_blob_materialization",
+    "sync_blob_sources",
+    "sync_catchup_permissions",
+    "sync_catchup_sessions",
+    "sync_journal_capture",
+    "sync_pairing_invitations",
+    "sync_peer_acknowledgements",
+    "sync_pending_admissions",
+    "sync_revision_transfer",
+    "sync_state_gaps",
+    "sync_verified_snapshot_vectors",
+    "sync_verified_snapshots"
+  ]
+}

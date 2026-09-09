@@ -1,0 +1,22 @@
+{
+  "schema": "notrios.g17.retention-cost.v1",
+  "generated_for": "v0.7 G17 retention horizon default",
+  "schema_version": 27,
+  "published_corpus_documents": 382206,
+  "generated_operations": 382206,
+  "baseline_database_bytes": 876544,
+  "retained_database_bytes": 170782720,
+  "incremental_bytes": 169906176,
+  "bytes_per_operation": 444.540839233293,
+  "ninety_day_daily_operations": 5000,
+  "ninety_day_projected_bytes": 200043377,
+  "full_corpus_churn_equivalent": 1,
+  "elapsed_milliseconds": 5923,
+  "source_private_data_read": false,
+  "notes": [
+    "The 382,206-document count is the aggregate published by G14b/G14e; no corpus title, body, path, or database is opened.",
+    "The generated workload retains one representative metadata operation per full-corpus document in the production schema, including production indexes.",
+    "The 5,000-operations/day scenario is a transparent projection, not an observed user edit rate; actual cost scales with operation count and payload size.",
+    "Snapshot bytes are not added here because G14b/G14e already measure the independently required retained physical snapshot."
+  ]
+}

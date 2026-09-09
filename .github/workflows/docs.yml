@@ -3,7 +3,7 @@ name: docs
 on:
   push:
     branches: [main]
-    paths: ['docs/**', 'scripts/build_docs_site.sh', '.github/workflows/docs.yml']
+    paths: ['docs/**', 'docs-site/**', 'contracts/archive-v2/**', 'internal/docgen/**', 'internal/docaudit/**', 'performance/v0.7-g18g/**', 'scripts/build_docs_site.sh', '.github/workflows/docs.yml']
   workflow_dispatch:
 
 permissions:
@@ -22,9 +22,24 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
-      - name: Build docs site with PageFind search
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: docs-site/package-lock.json
+      - uses: peaceiris/actions-hugo@v3
+        with:
+          hugo-version: '0.164.0'
+          extended: true
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+      - name: Verify generated documentation freshness
+        run: go test ./internal/docgen -run '^TestDocsAreCurrent$'
+      - name: Install pinned Pagefind build dependency
+        run: npm ci --prefix docs-site && npm audit --prefix docs-site
+      - name: Build pinned Hugo/Ledger site with Pagefind search
         run: bash scripts/build_docs_site.sh _site
+      - name: Verify routes, fragments, search scope, and offline assets
+        run: python3 performance/v0.7-g18g/validate_evidence.py --site _site
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site

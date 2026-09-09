@@ -1,0 +1,495 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  cancelSyncJob,
+  createPasswordBackup,
+  createSyncInvitation,
+  discoverSyncPeers,
+  getSyncRetention,
+  getSyncConflict,
+  getSyncUIStatus,
+  initializeSync,
+  inspectPasswordBackup,
+  pairSyncPeer,
+  previewSyncPeerRetirement,
+  requestSyncRecovery,
+  resolveSyncConflict,
+  retrySyncJob,
+  retireSyncPeer,
+  saveSyncConfiguration,
+  setSyncResourceIntent,
+  setSyncSnapshotPermission,
+  startSync,
+  type BackupReview,
+  type SyncUIConflictDetail,
+  type SyncRetentionReport,
+  type SyncRetirementPreview,
+  type SyncUIStatus,
+} from '../api';
+import { errorMessage } from '../preview-utils';
+
+type SyncTab = 'overview' | 'setup' | 'peers' | 'retention' | 'resources' | 'conflicts' | 'backup' | 'repairs';
+
+const tabs: Array<{ id: SyncTab; label: string }> = [
+  { id: 'overview', label: 'Overview' },
+  { id: 'setup', label: 'Setup' },
+  { id: 'peers', label: 'Peers' },
+  { id: 'retention', label: 'Retention' },
+  { id: 'resources', label: 'Attachments' },
+  { id: 'conflicts', label: 'Conflicts' },
+  { id: 'backup', label: 'Backup & recovery' },
+  { id: 'repairs', label: 'Repairs' },
+];
+
+function friendlyKind(kind: string) {
+  return kind.replace(/^sync_/, '').replaceAll('_', ' ');
+}
+
+function formatBytes(value: number) {
+  if (value < 1024) return `${value} B`;
+  if (value < 1024 ** 2) return `${(value / 1024).toFixed(1)} KiB`;
+  if (value < 1024 ** 3) return `${(value / 1024 ** 2).toFixed(1)} MiB`;
+  return `${(value / 1024 ** 3).toFixed(1)} GiB`;
+}
+
+function jobProgress(processed: number, total: number) {
+  if (total <= 0) return undefined;
+  return Math.max(0, Math.min(100, Math.round((processed / total) * 100)));
+}
+
+export interface SyncCenterProps {
+  onClose: () => void;
+}
+
+export function SyncCenter({ onClose }: SyncCenterProps) {
+  const [tab, setTab] = useState<SyncTab>('overview');
+  const [status, setStatus] = useState<SyncUIStatus | null>(null);
+  const [busy, setBusy] = useState('');
+  const [notice, setNotice] = useState('');
+  const [error, setError] = useState('');
+  const closeRef = useRef<HTMLButtonElement>(null);
+
+  const refresh = useCallback(async () => {
+    try {
+      setStatus(await getSyncUIStatus());
+    } catch (err) {
+      setError(errorMessage(err));
+    }
+  }, []);
+
+  useEffect(() => {
+    void refresh();
+    closeRef.current?.focus();
+    const interval = window.setInterval(() => void refresh(), 5_000);
+    const escape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', escape);
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener('keydown', escape);
+    };
+  }, [onClose, refresh]);
+
+  const act = useCallback(async (name: string, operation: () => Promise<unknown>, success: string) => {
+    setBusy(name);
+    setError('');
+    setNotice('');
+    try {
+      await operation();
+      setNotice(success);
+      await refresh();
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setBusy('');
+    }
+  }, [refresh]);
+
+  const conflictCount = status?.conflicts.length ?? 0;
+  const missingCount = status?.resources.filter((resource) => resource.availability === 'unavailable').length ?? 0;
+
+  return (
+    <div className="sync-center-backdrop" role="presentation" onMouseDown={(event) => {
+      if (event.target === event.currentTarget) onClose();
+    }}>
+      <section className="sync-center" role="dialog" aria-modal="true" aria-labelledby="sync-center-title">
+        <header className="sync-center-header">
+          <div>
+            <p className="eyebrow">Local synchronization</p>
+            <h2 id="sync-center-title">Sync center</h2>
+            {status ? (
+              <p className="sync-profile-identity">
+                <strong>{status.active_profile.name}</strong>
+                <span>Library {status.active_profile.database_id.slice(0, 12)}…</span>
+                <span>Replica {status.active_profile.replica_id.slice(0, 12)}…</span>
+              </p>
+            ) : <p className="muted">Reading this profile…</p>}
+          </div>
+          <button ref={closeRef} type="button" className="icon-button sync-close" data-testid="sync-close" aria-label="Close sync center" onClick={onClose}>×</button>
+        </header>
+
+        <nav className="sync-tabs" aria-label="Synchronization sections">
+          {tabs.map((item) => (
+            <button key={item.id} type="button" data-testid={`sync-tab-${item.id}`} aria-current={tab === item.id ? 'page' : undefined}
+              aria-label={item.id === 'conflicts' && conflictCount > 0
+                ? `${item.label} ${conflictCount}`
+                : item.id === 'resources' && missingCount > 0
+                  ? `${item.label} ${missingCount}`
+                  : item.label}
+              className={tab === item.id ? 'active' : ''} onClick={() => setTab(item.id)}>
+              {item.label}
+              {item.id === 'conflicts' && conflictCount > 0 ? <span className="count-badge">{conflictCount}</span> : null}
+              {item.id === 'resources' && missingCount > 0 ? <span className="count-badge">{missingCount}</span> : null}
+            </button>
+          ))}
+        </nav>
+
+        <div className="sync-center-body">
+          {(error || notice) ? <div className={`sync-inline-notice ${error ? 'error' : ''}`} role="status">{error || notice}</div> : null}
+          {!status ? <div className="sync-loading" role="status">Loading synchronization state…</div> : null}
+          {status && tab === 'overview' ? <Overview status={status} busy={busy} act={act} onTab={setTab} /> : null}
+          {status && tab === 'setup' ? <Setup status={status} busy={busy} act={act} /> : null}
+          {status && tab === 'peers' ? <Peers status={status} busy={busy} act={act} setNotice={setNotice} setError={setError} /> : null}
+          {status && tab === 'retention' ? <Retention status={status} setError={setError} /> : null}
+          {status && tab === 'resources' ? <Resources status={status} busy={busy} act={act} /> : null}
+          {status && tab === 'conflicts' ? <Conflicts status={status} busy={busy} refresh={refresh} setBusy={setBusy} setNotice={setNotice} setError={setError} /> : null}
+          {status && tab === 'backup' ? <BackupRecovery status={status} busy={busy} act={act} refresh={refresh} setBusy={setBusy} setNotice={setNotice} setError={setError} /> : null}
+          {status && tab === 'repairs' ? <Repairs status={status} /> : null}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+interface SectionProps {
+  status: SyncUIStatus;
+  busy: string;
+  act: (name: string, operation: () => Promise<unknown>, success: string) => Promise<void>;
+}
+
+function Overview({ status, busy, act, onTab }: SectionProps & { onTab: (tab: SyncTab) => void }) {
+  const activeJob = status.jobs.find((job) => job.state === 'running' || job.state === 'queued');
+  return (
+    <div className="sync-section">
+      <div className="sync-hero-row">
+        <div className={`sync-state-orb ${status.status}`} aria-hidden="true" />
+        <div>
+          <h3>{status.status === 'ready' ? 'Up to date' : status.status === 'setup' ? 'Finish setup' : status.status === 'offline' ? 'Offline—will retry' : status.status === 'syncing' ? 'Synchronization in progress' : 'Needs attention'}</h3>
+          <p>{status.configuration.target === 'none' ? 'No transport is selected.' : `Using ${status.configuration.target === 'rest' ? 'a REST peer' : 'a shared directory'}.`}</p>
+        </div>
+        <button type="button" className="primary-button" data-testid="sync-now" disabled={busy !== '' || status.configuration.target === 'none'}
+          onClick={() => void act('sync-now', () => startSync('incremental'), 'Synchronization was queued.')}>
+          Sync now
+        </button>
+      </div>
+
+      <div className="sync-metric-grid">
+        <button type="button" data-testid="sync-metric-peers" onClick={() => onTab('peers')}><strong>{status.peers.length}</strong><span>paired peers</span></button>
+        <button type="button" data-testid="sync-metric-attachments" onClick={() => onTab('resources')}><strong>{status.resources.filter((item) => item.availability === 'unavailable').length}</strong><span>missing attachments</span></button>
+        <button type="button" data-testid="sync-metric-conflicts" onClick={() => onTab('conflicts')}><strong>{status.conflicts.length}</strong><span>conflicts</span></button>
+        <button type="button" data-testid="sync-metric-repairs" onClick={() => onTab('repairs')}><strong>{status.repairs.length}</strong><span>repair reports</span></button>
+      </div>
+
+      {activeJob ? (
+        <article className="sync-card" aria-label="Current synchronization job">
+          <div className="sync-card-heading"><h4>{friendlyKind(activeJob.kind)}</h4><span className={`state-chip ${activeJob.state}`}>{activeJob.state}</span></div>
+          <p>{activeJob.phase ? `Phase: ${friendlyKind(activeJob.phase)}` : 'Waiting for a worker checkpoint…'}</p>
+          {jobProgress(activeJob.processed, activeJob.total) !== undefined ? <progress max="100" value={jobProgress(activeJob.processed, activeJob.total)} /> : null}
+          <button type="button" data-testid="sync-job-cancel" disabled={busy !== '' || activeJob.cancel_requested}
+            onClick={() => void act(`cancel-${activeJob.id}`, () => cancelSyncJob(activeJob.id), 'Cancellation requested; the job will stop at a safe checkpoint.')}>
+            {activeJob.cancel_requested ? 'Stopping safely…' : 'Cancel'}
+          </button>
+        </article>
+      ) : null}
+
+      <div className="sync-list" aria-label="Recent synchronization jobs">
+        {status.jobs.slice(0, 6).map((job) => (
+          <article key={job.id} className="sync-list-row">
+            <div><strong>{friendlyKind(job.kind)}</strong><small>{job.phase ? friendlyKind(job.phase) : new Date(job.created_at).toLocaleString()}</small></div>
+            <span className={`state-chip ${job.state}`}>{job.state}</span>
+            {job.state === 'failed' || job.state === 'cancelled' ? (
+              <button type="button" data-testid="sync-job-retry" disabled={busy !== ''} onClick={() => void act(`retry-${job.id}`, () => retrySyncJob(job.id), 'The job was queued to retry from its verified checkpoint.')}>Retry</button>
+            ) : null}
+          </article>
+        ))}
+        {status.jobs.length === 0 ? <p className="sync-empty">No synchronization has been requested yet.</p> : null}
+      </div>
+    </div>
+  );
+}
+
+function Setup({ status, busy, act }: SectionProps) {
+  const [target, setTarget] = useState(status.configuration.target);
+  const [directory, setDirectory] = useState(status.configuration.directory ?? '');
+  const [restURL, setRestURL] = useState(status.configuration.rest_base_url ?? '');
+  const [restInboundEnabled, setRESTInboundEnabled] = useState(status.configuration.rest_inbound_enabled);
+  // One chooser serves every folder the interface asks for, and it takes the
+  // purpose rather than a title so that no two callers can name the same dialog
+  // differently. See cmd/notrios/gui_transfer.go.
+  const bridge = (window as Window & { go?: { main?: { NativeUIBridge?: { ChooseDirectory?: (purpose: string) => Promise<string> } } } }).go?.main?.NativeUIBridge;
+  const nativeChooser = bridge?.ChooseDirectory ? () => bridge.ChooseDirectory!('sync') : undefined;
+  const activeProfile = status.profiles.find((profile) => profile.active);
+  return (
+    <div className="sync-section sync-form-section">
+      <h3>Profile and transport</h3>
+      <p>Each profile is an isolated local process. Switching opens the selected profile at its own local address.</p>
+      <label>Active profile
+        <select data-testid="profile-switcher" value={activeProfile?.name ?? status.active_profile.name} onChange={(event) => {
+          const selected = status.profiles.find((profile) => profile.name === event.target.value);
+          if (selected && !selected.active && selected.public_base_url) window.location.assign(selected.public_base_url);
+        }}>
+          {status.profiles.map((profile) => <option key={profile.name} value={profile.name}>{profile.name}{profile.active ? ' — active' : ''}</option>)}
+        </select>
+      </label>
+
+      <div className="warning-card" role="note"><strong>{status.secret_store.name}</strong><p>{status.secret_store.warning}</p></div>
+      {!status.journal_enabled || !status.secret_store.configured ? (
+        <button type="button" className="primary-button" data-testid="sync-initialize" disabled={busy !== '' || !status.secret_store.available}
+          onClick={() => void act('initialize', initializeSync, 'Synchronization was initialized. Restart this profile before pairing or syncing.')}>
+          Initialize this profile
+        </button>
+      ) : <p className="success-line">✓ This profile has an enrolled journal and secret provider.</p>}
+
+      <fieldset>
+        <legend>Sync target</legend>
+        <label className="radio-row"><input type="radio" name="sync-target" data-testid="sync-target-none" checked={target === 'none'} onChange={() => setTarget('none')} /> None</label>
+        <label className="radio-row"><input type="radio" name="sync-target" data-testid="sync-target-directory" checked={target === 'directory'} onChange={() => setTarget('directory')} /> Shared directory</label>
+        <label className="radio-row"><input type="radio" name="sync-target" data-testid="sync-target-rest" checked={target === 'rest'} onChange={() => setTarget('rest')} /> REST peer</label>
+      </fieldset>
+      {target === 'directory' ? <label>Shared directory on this device
+        <span className="directory-picker"><input data-testid="sync-directory" value={directory} onChange={(event) => setDirectory(event.target.value)} placeholder="/absolute/path/to/shared-folder" autoComplete="off" />
+          {nativeChooser ? <button type="button" data-testid="sync-directory-choose" onClick={() => void nativeChooser().then((path) => { if (path) setDirectory(path); })}>Choose folder…</button> : null}
+        </span>
+        <small>Choose a disposable carrier folder. Your notes remain in the profile database.</small>
+      </label> : null}
+      {target === 'rest' ? <>
+        <label>Peer address
+          <input type="url" data-testid="sync-rest-url" value={restURL} onChange={(event) => setRestURL(event.target.value)} placeholder="https://peer.example" autoComplete="off" />
+          <small>HTTPS is required except between loopback profiles on this computer.</small>
+        </label>
+        <label className="checkbox-row"><input type="checkbox" data-testid="sync-rest-inbound" checked={restInboundEnabled} onChange={(event) => setRESTInboundEnabled(event.target.checked)} /> Allow enrolled peers to connect to this profile</label>
+        <small>This explicitly enables only the authenticated sync surface after restart; the general API remains local.</small>
+      </> : null}
+      <button type="button" className="primary-button" data-testid="sync-save-transport" disabled={busy !== '' || target === 'directory' && !directory.trim() || target === 'rest' && !restURL.trim()}
+        onClick={() => void act('save-configuration', () => saveSyncConfiguration({ target, directory, rest_base_url: restURL, rest_inbound_enabled: restInboundEnabled }), 'Configuration saved. Restart this profile to activate it.')}>
+        Save transport
+      </button>
+      <p className="boundary-note">Changing a transport never enrolls a peer and never starts synchronization by itself.</p>
+    </div>
+  );
+}
+
+function Peers({ status, busy, act, setNotice, setError }: SectionProps & { setNotice: (value: string) => void; setError: (value: string) => void }) {
+  const [baseURL, setBaseURL] = useState(status.configuration.rest_base_url ?? '');
+  const [code, setCode] = useState('');
+  const [label, setLabel] = useState('');
+  const [invitation, setInvitation] = useState<{ code: string; expires_at: string } | null>(null);
+  const [discovery, setDiscovery] = useState<string[]>([]);
+  const [retirement, setRetirement] = useState<SyncRetirementPreview | null>(null);
+  const [retirementReason, setRetirementReason] = useState('');
+  const [retirementConfirmed, setRetirementConfirmed] = useState(false);
+  const [reviewingPeer, setReviewingPeer] = useState('');
+  async function invite() {
+    setError('');
+    try {
+      const next = await createSyncInvitation(label);
+      setInvitation(next);
+      setNotice('A single-use invitation is ready. Read the code to the other device over a separate channel.');
+    } catch (err) { setError(errorMessage(err)); }
+  }
+  async function discover() {
+    setError('');
+    try {
+      const result = await discoverSyncPeers();
+      const candidates = (result.candidates ?? []).map((candidate) => String(candidate.replica_id ?? candidate.signer_key_id ?? 'Unknown candidate'));
+      setDiscovery([...(result.peers ?? []), ...candidates]);
+      setNotice(`Discovery scanned ${result.scanned_artifacts ?? 0} carrier artifacts without enrolling anyone.`);
+    } catch (err) { setError(errorMessage(err)); }
+  }
+  async function reviewRetirement(replicaID: string) {
+    setReviewingPeer(replicaID); setError(''); setRetirement(null); setRetirementConfirmed(false);
+    try {
+      setRetirement(await previewSyncPeerRetirement(replicaID));
+    } catch (err) { setError(errorMessage(err)); } finally { setReviewingPeer(''); }
+  }
+  return (
+    <div className="sync-section">
+      <h3>Paired peers</h3>
+      <div className="sync-list">
+        {status.peers.map((peer) => <article key={peer.replica_id} className="sync-list-row peer-row">
+          <div><strong>{peer.replica_id.slice(0, 16)}…</strong><small>{peer.status === 'retired' ? 'Retired credentials cannot rejoin; reset and pair this device as a new replica.' : peer.full_resync_required ? 'History below this peer was collected; verified snapshot catch-up is required.' : peer.behind_operations > 0 ? `${peer.behind_operations} operations behind` : 'Caught up at last acknowledgement'}</small></div>
+          <span className={`state-chip ${peer.status}`}>{peer.status}</span>
+          <div className="row-actions">
+            <button type="button" data-testid="sync-peer-snapshot" disabled={busy !== '' || peer.status !== 'active' && peer.status !== 'behind'} aria-pressed={peer.snapshot_permitted}
+              onClick={() => void act(`snapshot-permission-${peer.replica_id}`, () => setSyncSnapshotPermission(peer.replica_id, !peer.snapshot_permitted),
+                peer.snapshot_permitted ? 'Catch-up snapshots are no longer allowed for this peer.' : 'This peer may now request a complete catch-up snapshot.')}>
+              {peer.snapshot_permitted ? 'Disallow snapshot' : 'Allow catch-up snapshot'}
+            </button>
+            <button type="button" className="danger-button" data-testid="sync-peer-review-retirement" disabled={busy !== '' || reviewingPeer !== '' || peer.status === 'retired' || peer.status === 'revoked'} onClick={() => void reviewRetirement(peer.replica_id)}>Review retirement</button>
+          </div>
+        </article>)}
+        {status.peers.length === 0 ? <p className="sync-empty">No peers are enrolled. Discovery never enrolls one automatically.</p> : null}
+      </div>
+      {retirement ? <article className="destructive-review" data-testid="sync-retirement-review" role="region" aria-label="Peer retirement review">
+        <h4>Retire {retirement.peer.replica_id.slice(0, 20)}…?</h4>
+        <p>This signed decision does not require every peer online. It travels in the ordinary operation log.</p>
+        <ul>{retirement.consequences.map((consequence) => <li key={consequence}>{consequence}</li>)}</ul>
+        <label>Owner-visible reason (optional)<input data-testid="sync-retirement-reason" maxLength={512} value={retirementReason} onChange={(event) => setRetirementReason(event.target.value)} /></label>
+        <label className="checkbox-row"><input type="checkbox" data-testid="sync-retirement-confirm" checked={retirementConfirmed} onChange={(event) => setRetirementConfirmed(event.target.checked)} /> I understand this peer must reset and pair as a new replica.</label>
+        <div className="row-actions"><button type="button" data-testid="sync-retirement-cancel" onClick={() => { setRetirement(null); setRetirementConfirmed(false); setRetirementReason(''); }}>Cancel</button><button type="button" className="danger-button" data-testid="sync-retirement-retire" disabled={busy !== '' || !retirementConfirmed} onClick={() => void act(`retire-${retirement.peer.replica_id}`, () => retireSyncPeer(retirement.peer.replica_id, retirement.confirmation, retirementReason), 'Peer retired. Other peers that have not acknowledged the decision remain visible in the retention report.').then(() => { setRetirement(null); setRetirementConfirmed(false); setRetirementReason(''); })}>Retire peer</button></div>
+      </article> : null}
+      <div className="sync-two-column">
+        <article className="sync-card">
+          <h4>Invite a peer</h4>
+          <label>Private label<input data-testid="sync-invite-label" value={label} maxLength={128} onChange={(event) => setLabel(event.target.value)} placeholder="Laptop" /></label>
+          <button type="button" data-testid="sync-invite-create" disabled={busy !== '' || !status.configuration.rest_inbound_enabled} onClick={() => void invite()}>Create 15-minute code</button>
+          {!status.configuration.rest_inbound_enabled ? <small>Inbound REST sync must be enabled in this profile before it can invite.</small> : null}
+          {invitation ? <div className="pairing-code" data-testid="sync-invite-code" aria-live="polite"><code>{invitation.code}</code><button type="button" data-testid="sync-invite-copy" onClick={() => {
+            void navigator.clipboard?.writeText(invitation.code);
+            setNotice('Pairing code copied. Send it separately from the peer address.');
+          }}>Copy code</button><small>Expires {new Date(invitation.expires_at).toLocaleTimeString()}</small></div> : null}
+        </article>
+        <article className="sync-card">
+          <h4>Join an inviting peer</h4>
+          <label>Peer address<input type="url" data-testid="sync-pair-address" value={baseURL} onChange={(event) => setBaseURL(event.target.value)} placeholder="http://127.0.0.1:8081" /></label>
+          <label>Single-use code<input data-testid="sync-pair-code" value={code} onChange={(event) => setCode(event.target.value.toUpperCase())} autoComplete="one-time-code" spellCheck={false} /></label>
+          <button type="button" className="primary-button" data-testid="sync-pair-submit" disabled={busy !== '' || !baseURL.trim() || !code.trim()}
+            onClick={() => void act('pair', async () => { await pairSyncPeer(baseURL, code); setCode(''); }, 'The peer is paired. Queue synchronization when you are ready.')}>Pair explicitly</button>
+        </article>
+      </div>
+      <button type="button" data-testid="sync-discover" disabled={busy !== '' || status.configuration.target === 'none'} onClick={() => void discover()}>Discover on configured carrier</button>
+      {discovery.length > 0 ? <ul className="discovery-list">{discovery.map((peer) => <li key={peer}>{peer}</li>)}</ul> : null}
+    </div>
+  );
+}
+
+function Retention({ status, setError }: { status: SyncUIStatus; setError: (value: string) => void }) {
+  const [report, setReport] = useState<SyncRetentionReport | null>(null);
+  useEffect(() => {
+    let active = true;
+    void getSyncRetention().then((next) => { if (active) setReport(next); }).catch((err) => { if (active) setError(errorMessage(err)); });
+    return () => { active = false; };
+  }, [setError]);
+  const summary = report ?? status.retention;
+  const historyDays = Math.round(summary.history_seconds / 86400);
+  return <div className="sync-section retention-section">
+    <h3>Safe retention horizon</h3>
+    <p>Time alone never authorizes deletion. History is eligible only below the {historyDays}-day age floor, one currently retained verified snapshot, and every active peer’s acknowledgement.</p>
+    <div className="sync-metric-grid retention-metrics">
+      <article><strong>{historyDays}</strong><span>days of history</span></article>
+      <article><strong>{summary.snapshot_id ? 'Verified' : 'Missing'}</strong><span>retained snapshot</span></article>
+      <article><strong>{summary.eligible_operations}</strong><span>eligible operations</span></article>
+      <article><strong>{'eligible_tombstones' in summary ? summary.eligible_tombstones : summary.tombstones.length}</strong><span>eligible tombstones</span></article>
+    </div>
+    {!report ? <p role="status">Calculating peer watermarks…</p> : <>
+      {report.warnings.map((warning) => <div className="warning-card" role="note" key={warning}>{warning}</div>)}
+      <article className="sync-card"><div className="sync-card-heading"><h4>Recovery floor</h4><span className={`state-chip ${report.repair.ready ? 'succeeded' : 'failed'}`}>{report.repair.ready ? 'ready' : 'blocked'}</span></div>
+        {report.repair.ready ? <p>Repair starts from verified snapshot <code>{report.repair.snapshot_id}</code>, then replays {report.repair.newer_operations} newer operations. Installation is never automatic.</p> : <p>Create and retain a verified physical snapshot before applying any collection.</p>}
+      </article>
+      <div className="sync-list"><h4>Peer watermarks</h4>{report.peers.map((peer) => <article className="sync-list-row" key={peer.replica_id}><div><strong>{peer.replica_id}</strong><small>{peer.status === 'retired' ? 'Retired; no longer holds the safe floor open' : peer.full_resync_required ? 'Below collected history; snapshot catch-up required' : peer.beyond_horizon ? 'Past retention horizon; retirement or catch-up needs review' : peer.warning ? 'Approaching retention horizon' : 'Within incremental history window'}</small></div><span className={`state-chip ${peer.full_resync_required ? 'retired' : peer.warning ? 'offline' : 'active'}`}>{peer.status}</span></article>)}</div>
+      <article className="boundary-note"><strong>Apply locally after review.</strong> The web layer never receives a filesystem path. Run <code>notriosctl sync retention --snapshot &lt;retained-dir&gt;</code>, review its digest, then repeat with <code>--apply --confirm-digest &lt;digest&gt;</code>. The snapshot is fully re-verified immediately before either command.</article>
+    </>}
+  </div>;
+}
+
+function Resources({ status, busy, act }: SectionProps) {
+  return <div className="sync-section"><h3>Lazy attachments</h3><p>Missing bytes are fetched only when you ask or pin them. Metadata remains usable while offline.</p>
+    <div className="sync-list">{status.resources.map((resource) => <article key={resource.id} className="sync-list-row resource-row">
+      <div><strong>{resource.filename || resource.id}</strong><small>{resource.mime_type} · {formatBytes(resource.size_bytes)}</small></div>
+      <span className={`state-chip ${resource.availability === 'local' ? 'succeeded' : resource.requested ? 'queued' : 'offline'}`}>{resource.availability === 'local' ? 'available' : resource.requested ? 'pending' : 'not on this device'}</span>
+      <div className="row-actions">
+        {resource.availability !== 'local' ? <button type="button" data-testid="sync-attachment-download" disabled={busy !== ''} onClick={() => void act(`fetch-${resource.id}`, () => setSyncResourceIntent(resource.id, resource.pinned, true), `Requested ${resource.filename || 'the attachment'}; a bounded fetch job was queued when the target was available.`)}>Download</button> : null}
+        <button type="button" data-testid="sync-attachment-pin" disabled={busy !== ''} aria-pressed={resource.pinned} onClick={() => void act(`pin-${resource.id}`, () => setSyncResourceIntent(resource.id, !resource.pinned, resource.requested || !resource.pinned), resource.pinned ? 'The attachment is no longer pinned.' : 'The attachment is pinned to this device.')}>{resource.pinned ? 'Unpin' : 'Pin'}</button>
+      </div>
+    </article>)}{status.resources.length === 0 ? <p className="sync-empty">No missing or pinned attachments.</p> : null}</div>
+  </div>;
+}
+
+function Conflicts({ status, busy, refresh, setBusy, setNotice, setError }: { status: SyncUIStatus; busy: string; refresh: () => Promise<void>; setBusy: (value: string) => void; setNotice: (value: string) => void; setError: (value: string) => void }) {
+  const [detail, setDetail] = useState<SyncUIConflictDetail | null>(null);
+  const [resolution, setResolution] = useState('');
+  const [title, setTitle] = useState('');
+  async function open(conflictID: string) {
+    setBusy(`conflict-${conflictID}`); setError('');
+    try {
+      const next = await getSyncConflict(conflictID);
+      setDetail(next); setResolution(next.local.body); setTitle(next.title);
+    } catch (err) { setError(errorMessage(err)); } finally { setBusy(''); }
+  }
+  async function resolve() {
+    if (!detail) return;
+    setBusy('resolve-conflict'); setError('');
+    try {
+      await resolveSyncConflict(detail.id, title, resolution);
+      setDetail(null); setNotice('Conflict resolved as a two-parent revision. It will travel on the next sync.');
+      await refresh();
+    } catch (err) { setError(errorMessage(err)); } finally { setBusy(''); }
+  }
+  if (detail) return <div className="sync-section conflict-detail"><button type="button" className="back-button" data-testid="sync-conflict-back" onClick={() => setDetail(null)}>← All conflicts</button><h3>{detail.title}</h3><p>Compare the common base, this replica’s displayed head, and the other head. Nothing is chosen automatically.</p>
+    <div className="conflict-columns">
+      <label>Common base<textarea readOnly value={detail.base.body} /></label>
+      <label>Current on this profile<textarea readOnly value={detail.local.body} /></label>
+      <label>Other revision<textarea readOnly value={detail.remote.body} /></label>
+    </div>
+    <label>Resolved title<input data-testid="sync-conflict-title" value={title} onChange={(event) => setTitle(event.target.value)} /></label>
+    <label>Your resolved note<textarea className="resolution-editor" data-testid="sync-conflict-body" value={resolution} onChange={(event) => setResolution(event.target.value)} /></label>
+    <div className="row-actions"><button type="button" data-testid="sync-conflict-use-current" onClick={() => setResolution(detail.local.body)}>Use current</button><button type="button" data-testid="sync-conflict-use-other" onClick={() => setResolution(detail.remote.body)}>Use other</button><button type="button" className="primary-button" data-testid="sync-conflict-save" disabled={busy !== ''} onClick={() => void resolve()}>Save resolution</button></div>
+  </div>;
+  return <div className="sync-section"><h3>Visible conflicts</h3><p>Notrios will not guess when concurrent edits overlap.</p><div className="sync-list">{status.conflicts.map((conflict) => <button type="button" className="sync-list-row conflict-row" data-testid="sync-conflict-row" key={conflict.id} disabled={busy !== ''} onClick={() => void open(conflict.id)}><div><strong>{conflict.document_id}</strong><small>{friendlyKind(conflict.kind)} · {new Date(conflict.created_at).toLocaleString()}</small></div><span>Compare →</span></button>)}{status.conflicts.length === 0 ? <p className="sync-empty">No unresolved body conflicts.</p> : null}</div></div>;
+}
+
+function BackupRecovery({ status, busy, act, refresh, setBusy, setNotice, setError }: SectionProps & { refresh: () => Promise<void>; setBusy: (value: string) => void; setNotice: (value: string) => void; setError: (value: string) => void }) {
+  const [createPassword, setCreatePassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showCreate, setShowCreate] = useState(false);
+  const [openPassword, setOpenPassword] = useState('');
+  const [showOpen, setShowOpen] = useState(false);
+  const [backupFile, setBackupFile] = useState<File | null>(null);
+  const [review, setReview] = useState<BackupReview | null>(null);
+  const createValid = createPassword.length >= 8 && createPassword === confirmPassword;
+  async function createBackup() {
+    setBusy('create-backup'); setError(''); setNotice('');
+    try {
+      const blob = await createPasswordBackup(createPassword);
+      const href = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = href; link.download = 'notrios-backup.npb'; link.click();
+      window.setTimeout(() => URL.revokeObjectURL(href), 0);
+      setNotice('Verified encrypted backup created. The password was not remembered.');
+    } catch (err) { setError(errorMessage(err)); } finally {
+      setCreatePassword(''); setConfirmPassword(''); setShowCreate(false); setBusy('');
+    }
+  }
+  async function inspect() {
+    if (!backupFile) return;
+    setBusy('inspect-backup'); setError(''); setNotice(''); setReview(null);
+    try {
+      setReview(await inspectPasswordBackup(backupFile, openPassword));
+      setNotice('Backup password accepted and the physical snapshot verified. Nothing was restored.');
+    } catch (err) { setError(errorMessage(err)); } finally {
+      setOpenPassword(''); setShowOpen(false); setBusy('');
+    }
+  }
+  return <div className="sync-section"><h3>Backup and recovery</h3><div className="sync-two-column">
+    <article className="sync-card"><h4>Create a password-protected backup</h4><p>The password wraps a fresh payload key with Argon2id. It is never saved.</p>
+      <label>Password<span className="password-row"><input type={showCreate ? 'text' : 'password'} data-testid="backup-password" value={createPassword} minLength={8} maxLength={4096} autoComplete="new-password" onChange={(event) => setCreatePassword(event.target.value)} /><button type="button" data-testid="backup-password-reveal" aria-pressed={showCreate} onClick={() => setShowCreate((value) => !value)}>{showCreate ? 'Hide' : 'Show'}</button></span></label>
+      <label>Confirm password<input type={showCreate ? 'text' : 'password'} data-testid="backup-password-confirm" value={confirmPassword} autoComplete="new-password" onChange={(event) => setConfirmPassword(event.target.value)} /></label>
+      <button type="button" className="primary-button" data-testid="backup-create" disabled={busy !== '' || !createValid} onClick={() => void createBackup()}>Create and download</button>
+      <small>Notrios cannot recover a forgotten backup password.</small>
+    </article>
+    <article className="sync-card"><h4>Review a backup for restore</h4><p>A wrong password changes nothing; retry or cancel safely.</p>
+      <label>Backup file<input type="file" data-testid="backup-file" accept=".npb,application/vnd.notrios.password-backup" onChange={(event) => { setBackupFile(event.target.files?.[0] ?? null); setReview(null); }} /></label>
+      <label>Password<span className="password-row"><input type={showOpen ? 'text' : 'password'} data-testid="backup-open-password" value={openPassword} autoComplete="off" onChange={(event) => setOpenPassword(event.target.value)} /><button type="button" data-testid="backup-open-password-reveal" aria-pressed={showOpen} onClick={() => setShowOpen((value) => !value)}>{showOpen ? 'Hide' : 'Show'}</button></span></label>
+      <div className="row-actions"><button type="button" className="primary-button" data-testid="backup-verify" disabled={busy !== '' || !backupFile || !openPassword} onClick={() => void inspect()}>Verify for review</button><button type="button" data-testid="backup-cancel" disabled={busy !== ''} onClick={() => { setBackupFile(null); setOpenPassword(''); setReview(null); }}>Cancel</button></div>
+    </article>
+  </div>
+  {review ? <article className="destructive-review" data-testid="backup-review" role="region" aria-label="Destructive restore review"><h4>Verified—destructive review required</h4><dl><div><dt>Library</dt><dd>{review.database_id}</dd></div><div><dt>Snapshot</dt><dd>{review.snapshot_id}</dd></div><div><dt>Schema</dt><dd>{review.schema_version}</dd></div><div><dt>External objects</dt><dd>{review.objects}</dd></div></dl><p>Replace discards this profile’s canonical state after making and verifying an emergency snapshot. Adopt also mints a fresh replica identity. This review did not apply either action.</p><button type="button" data-testid="backup-apply" disabled title="Close the active profile and use the explicit native restore handoff">Apply requires profile shutdown</button></article> : null}
+  <article className="sync-card recovery-card"><h4>Catch up or reset from an enrolled REST peer</h4><p>Catch-up downloads and verifies a physical snapshot into private staging. Reset requests the same artifact but remains blocked on a separate destructive review.</p><div className="row-actions"><button type="button" data-testid="sync-request-catchup" disabled={busy !== '' || status.configuration.target === 'none'} onClick={() => void act('catchup', () => requestSyncRecovery('catchup'), 'Catch-up was queued with resumable transfer and verification.')}>Request catch-up</button><button type="button" className="danger-button" data-testid="sync-request-reset" disabled={busy !== '' || status.configuration.target === 'none'} onClick={() => {
+    if (window.confirm('Request a reset snapshot? Nothing will be replaced until a separate destructive review.')) void act('reset', () => requestSyncRecovery('reset'), 'Reset preparation was queued. No canonical data was changed.').then(refresh);
+  }}>Request reset review</button></div></article>
+  </div>;
+}
+
+function Repairs({ status }: { status: SyncUIStatus }) {
+  return <div className="sync-section"><h3>Notebook repair reports</h3><p>Deterministic repairs preserve convergence but remain visible so you can review what changed.</p><div className="sync-list">{status.repairs.map((repair) => <article className="sync-list-row repair-row" key={repair.id}><div><strong>{friendlyKind(repair.kind)}</strong><small>{repair.subject_id}</small></div><pre>{JSON.stringify(repair.details ?? {}, null, 2)}</pre></article>)}{status.repairs.length === 0 ? <p className="sync-empty">No synchronization repairs have been recorded.</p> : null}</div></div>;
+}

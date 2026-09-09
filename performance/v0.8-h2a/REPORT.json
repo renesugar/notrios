@@ -1,0 +1,457 @@
+{
+  "baseline": {
+    "fallback": "visible fenced Mermaid source",
+    "literal": "noMermaid: true",
+    "mermaid_enabled": false,
+    "source": "web/src/editor-assets.ts"
+  },
+  "builtin_guards": {
+    "default_securityLevel": "strict",
+    "maxEdges": 500,
+    "maxTextSize": 50000,
+    "note": "mermaid refuses over-limit graphs itself with a clear message; H2 lowers these rather than building complexity limits from scratch",
+    "overridable_from_diagram_source": false
+  },
+  "candidate": {
+    "license": "MIT",
+    "license_histogram": {
+      "(MPL-2.0 OR Apache-2.0)": 1,
+      "Apache-2.0": 1,
+      "BSD-3-Clause": 6,
+      "ISC": 33,
+      "MIT": 70,
+      "UNKNOWN": 1,
+      "Unlicense": 1
+    },
+    "package": "mermaid",
+    "transitive_packages": 113,
+    "version": "11.17.2"
+  },
+  "containment": {
+    "configuration": {
+      "flowchart.htmlLabels": false,
+      "htmlLabels": false,
+      "securityLevel": "strict",
+      "suppressErrorRendering": true
+    },
+    "with_html_labels_default": {
+      "cross_origin_requests": 2,
+      "foreign_objects_emitted": true,
+      "remote_image_fetched": "https://example.invalid/track.png",
+      "verdict": "unacceptable: a diagram label can fetch a remote tracking pixel, and foreignObject is the construct the G18 contract asks to refuse"
+    },
+    "with_html_labels_disabled": {
+      "cross_origin_requests": 0,
+      "event_handler_attributes": 0,
+      "foreign_objects_emitted": false,
+      "iframes": 0,
+      "javascript_url_neutralised": true,
+      "residual_vector": "a click directive's remote https href survives in the SVG and must be stripped after render",
+      "script_execution": false,
+      "verdict": "acceptable with the residual vector closed by post-render sanitisation"
+    }
+  },
+  "cost": {
+    "current_bundle": {
+      "chunks": 114,
+      "gzip_mb": 0.85,
+      "raw_mb": 2.45
+    },
+    "first_diagram_transfer": {
+      "after_one_flowchart_kib": 772,
+      "chunks_fetched": 25,
+      "compression": "uncompressed over the probe server",
+      "module_graph_kib": 662
+    },
+    "mermaid_bundle": {
+      "chunks": 91,
+      "gzip_mb": 0.9,
+      "raw_mb": 3.21
+    },
+    "note": "mermaid code-splits per diagram type, so the whole 3.21 MB never loads for one diagram; the gzip total still roughly doubles the shipped bundle"
+  },
+  "csp": {
+    "dynamic_code_in_sources": {
+      "d3-dsv": "new Function row accessor in csvParse",
+      "es-toolkit/compat/string/template": "lodash-style template compiler",
+      "reachable_from_mermaid": false
+    },
+    "finding": "mermaid renders under script-src 'self' with no CSP widening; both dynamic-code sites are tree-shaken out of the production bundle",
+    "new_function_surviving_vite_bundle": 0,
+    "policy_under_test": "verbatim internal/httpapi/server.go webAppCSP",
+    "unsafe_eval_required": false,
+    "violations": 0
+  },
+  "date": "2026-09-01",
+  "fixtures": {
+    "flowchart_basic": {
+      "audit": {
+        "eventHandlerAttrs": [],
+        "foreignObjects": 0,
+        "hrefs": [],
+        "iframes": 0,
+        "remoteImages": [],
+        "scripts": 0
+      },
+      "error": null,
+      "ms": 400,
+      "rendered": true,
+      "svg_bytes": 14668,
+      "timed_out": false
+    },
+    "foreign_object_html": {
+      "audit": {
+        "eventHandlerAttrs": [],
+        "foreignObjects": 0,
+        "hrefs": [],
+        "iframes": 0,
+        "remoteImages": [],
+        "scripts": 0
+      },
+      "error": null,
+      "ms": 82,
+      "rendered": true,
+      "svg_bytes": 10661,
+      "timed_out": false
+    },
+    "html_script_handler": {
+      "audit": {
+        "eventHandlerAttrs": [],
+        "foreignObjects": 0,
+        "hrefs": [],
+        "iframes": 0,
+        "remoteImages": [],
+        "scripts": 0
+      },
+      "error": null,
+      "ms": 113,
+      "rendered": true,
+      "svg_bytes": 12071,
+      "timed_out": false
+    },
+    "javascript_and_remote_url": {
+      "audit": {
+        "eventHandlerAttrs": [],
+        "foreignObjects": 0,
+        "hrefs": [
+          "https://example.invalid/pwn"
+        ],
+        "iframes": 0,
+        "remoteImages": [],
+        "scripts": 0
+      },
+      "error": null,
+      "ms": 93,
+      "rendered": true,
+      "svg_bytes": 12798,
+      "timed_out": false
+    },
+    "malformed_syntax": {
+      "audit": null,
+      "error": "Parse error on line 2:\nflowchart TD  A[[[[unclosed --> ???\n-----------------^\nExpecting 'TAGEND', 'STR', 'MD_STR', 'UNICODE_TEXT', 'TEXT', 'TAGSTART', got 'SUBROUTINESTART'",
+      "ms": 20,
+      "rendered": false,
+      "svg_bytes": 0,
+      "timed_out": false
+    },
+    "node_limit_plus_one": {
+      "audit": null,
+      "error": "Edge limit exceeded. 500 edges found, but the limit is 500.\n\nInitialize mermaid with maxEdges set to a higher number to allow more edges.\nYou cannot set this config via configuration inside the diagra",
+      "ms": 2043,
+      "rendered": false,
+      "svg_bytes": 0,
+      "timed_out": false
+    },
+    "remote_image": {
+      "audit": {
+        "eventHandlerAttrs": [],
+        "foreignObjects": 0,
+        "hrefs": [],
+        "iframes": 0,
+        "remoteImages": [],
+        "scripts": 0
+      },
+      "error": null,
+      "ms": 126,
+      "rendered": true,
+      "svg_bytes": 10527,
+      "timed_out": false
+    },
+    "render_deadline": {
+      "audit": null,
+      "error": "Edge limit exceeded. 500 edges found, but the limit is 500.\n\nInitialize mermaid with maxEdges set to a higher number to allow more edges.\nYou cannot set this config via configuration inside the diagra",
+      "ms": 147,
+      "rendered": false,
+      "svg_bytes": 0,
+      "timed_out": false
+    },
+    "sequence_basic": {
+      "audit": {
+        "eventHandlerAttrs": [],
+        "foreignObjects": 0,
+        "hrefs": [],
+        "iframes": 0,
+        "remoteImages": [],
+        "scripts": 0
+      },
+      "error": null,
+      "ms": 132,
+      "rendered": true,
+      "svg_bytes": 23097,
+      "timed_out": false
+    },
+    "source_byte_limit_plus_one": {
+      "audit": {
+        "eventHandlerAttrs": [],
+        "foreignObjects": 0,
+        "hrefs": [],
+        "iframes": 0,
+        "remoteImages": [],
+        "scripts": 0
+      },
+      "error": null,
+      "ms": 67,
+      "rendered": true,
+      "svg_bytes": 11835,
+      "timed_out": false
+    }
+  },
+  "license_gate_blockers": [
+    {
+      "actual": "MIT per its bundled license file",
+      "declared": "UNKNOWN",
+      "fix": "record a reviewed override keyed to the license file hash",
+      "package": "khroma@2.1.0",
+      "problem": "package.json omits the license field, so a metadata-driven scanner reports UNKNOWN and the fail-closed G20 gate refuses it",
+      "sha256_of_license_file": "66b333b0f66759a0b710459e03f7029abe17f4358114a128d2c972e642961b49"
+    },
+    {
+      "declared": "(MPL-2.0 OR Apache-2.0)",
+      "fix": "teach check_dependency_licenses.py to resolve a disjunction when every branch is allowed",
+      "package": "dompurify@3.4.14",
+      "problem": "an SPDX OR expression; both halves are individually allowed but the gate does exact set membership"
+    },
+    {
+      "declared": "Unlicense",
+      "fix": "add Unlicense to the allowed set as a reviewed decision",
+      "package": "robust-predicates@3.0.3",
+      "problem": "public-domain equivalent and not in the allowed set, though the project already accepts public domain for SQLite"
+    }
+  ],
+  "link_navigation": {
+    "answer": "yes, and it needs a deliberate configuration change because the stock behaviour is inverted",
+    "dependency_on_note_link_behaviour": {
+      "available_mechanism": "window.runtime.BrowserOpenURL(url) is present in the wails desktop JS runtime and is implemented in Go through github.com/pkg/browser",
+      "browser_ui": "works: preview-utils.tsx gives remote anchors target=_blank and rel=noreferrer, so a click opens a new tab",
+      "confidence": "read from the wails module source and the compiled desktop runtime; not confirmed by clicking a link in a running GUI, which needs a make gui build and a display",
+      "consequence_if_unfixed": "de-linking a remote URL in a diagram would put it two hops from the reader instead of one, because the note link does not open either",
+      "finding": "the recommended diagram link policy assumes a remote URL is reachable from the note that contains it; on the Wails desktop shell it currently is not",
+      "no_browseropenurl_call_in_repository": true,
+      "tracked_as": "PLAN.md H2b",
+      "wails_desktop": "does nothing: wails v2.13.0's linux webview connects script-message, context-menu, button, load-changed, drag and delete signals but neither create nor decide-policy, so a target=_blank click is swallowed by WebKitGTK's default handler, and cmd/notrios/gui_wails.go adds no link handling of its own"
+    },
+    "html_anchor_label_method": {
+      "anchors_emitted_with_html_labels_disabled": 0,
+      "finding": "the documented <a href> inside a node label needs htmlLabels true; under the recommended configuration it produces no anchor at all, which also closes the remote-image vector"
+    },
+    "measured_loose": {
+      "finding": "loose restores custom schemes but also re-admits javascript: URLs into the href, so it is not usable",
+      "https_href": "https://example.invalid/remote",
+      "javascript_href": "javascript:window.__pwned=3",
+      "notrios_scheme_href": "notrios://databases/db_abc/documents/doc_xyz",
+      "target_attribute_emitted": true
+    },
+    "measured_strict": {
+      "finding": "securityLevel strict strips the user's own local note link and keeps the remote one, which is backwards for this product",
+      "https_href": "https://example.invalid/remote",
+      "javascript_href": null,
+      "notrios_scheme_href": null,
+      "target_attribute_emitted": false
+    },
+    "question": "may a click directive reach a notrios:// note link, so a diagram navigates to the user's own notes and the user decides about any remote URL from there",
+    "raw_results": {
+      "loose": {
+        "click_blank_target": {
+          "clickableNodes": 2,
+          "hasForeignObject": 0,
+          "links": [
+            {
+              "href": "notrios://databases/db_abc/documents/doc_one",
+              "rel": null,
+              "target": "_blank"
+            },
+            {
+              "href": "https://example.invalid/x",
+              "rel": null,
+              "target": "_self"
+            }
+          ],
+          "ok": true,
+          "svgSample": ""
+        },
+        "click_schemes": {
+          "clickableNodes": 4,
+          "hasForeignObject": 0,
+          "links": [
+            {
+              "href": "notrios://databases/db_abc/documents/doc_xyz",
+              "rel": null,
+              "target": null
+            },
+            {
+              "href": "https://example.invalid/remote",
+              "rel": null,
+              "target": null
+            },
+            {
+              "href": "notrios://databases/db_abc/documents/doc_two#heading-one",
+              "rel": null,
+              "target": null
+            },
+            {
+              "href": "javascript:window.__pwned=3",
+              "rel": null,
+              "target": null
+            }
+          ],
+          "ok": true,
+          "svgSample": ""
+        },
+        "cross_origin": [],
+        "html_anchor_in_label": {
+          "clickableNodes": 0,
+          "hasForeignObject": 0,
+          "links": [],
+          "ok": true,
+          "svgSample": ""
+        }
+      },
+      "strict": {
+        "click_blank_target": {
+          "clickableNodes": 2,
+          "hasForeignObject": 0,
+          "links": [
+            {
+              "href": null,
+              "rel": null,
+              "target": null
+            },
+            {
+              "href": "https://example.invalid/x",
+              "rel": null,
+              "target": null
+            }
+          ],
+          "ok": true,
+          "svgSample": ""
+        },
+        "click_schemes": {
+          "clickableNodes": 4,
+          "hasForeignObject": 0,
+          "links": [
+            {
+              "href": null,
+              "rel": null,
+              "target": null
+            },
+            {
+              "href": "https://example.invalid/remote",
+              "rel": null,
+              "target": null
+            },
+            {
+              "href": null,
+              "rel": null,
+              "target": null
+            },
+            {
+              "href": null,
+              "rel": null,
+              "target": null
+            }
+          ],
+          "ok": true,
+          "svgSample": ""
+        },
+        "cross_origin": [],
+        "html_anchor_in_label": {
+          "clickableNodes": 0,
+          "hasForeignObject": 0,
+          "links": [],
+          "ok": true,
+          "svgSample": ""
+        }
+      }
+    },
+    "root_cause": {
+      "component": "dompurify",
+      "mechanism": "the default ALLOWED_URI_REGEXP permits http, https, mailto, tel and similar but no custom scheme, so notrios:// is dropped while https:// is kept",
+      "mermaid_own_sanitizer_is_not_the_cause": true,
+      "sanitize_url_result_for_javascript": "about:blank",
+      "sanitize_url_result_for_notrios": "notrios://databases/db_a/documents/doc_b (passed through unchanged)",
+      "verified_fix": "adding notrios to ALLOWED_URI_REGEXP restores the href; javascript: stays blocked with and without the change"
+    }
+  },
+  "recommendation": {
+    "bundle_budget": "load mermaid only when a diagram is present, via dynamic import",
+    "failure_presentation": "always show the fenced Mermaid source; never an empty box",
+    "link_policy": "allowlist the notrios scheme, neutralise remote schemes, keep javascript and data refused; securityLevel stays strict and htmlLabels stays false",
+    "renderer": "mermaid 11.17.2, pinned exactly and bundled locally",
+    "required_configuration": [
+      "securityLevel: strict",
+      "htmlLabels: false everywhere",
+      "startOnLoad: false",
+      "suppressErrorRendering: true",
+      "maxEdges lowered to the product bound",
+      "maxTextSize lowered to the product bound"
+    ],
+    "required_post_processing": [
+      "sanitise the produced SVG before insertion",
+      "extend the sanitiser's ALLOWED_URI_REGEXP to admit the notrios scheme, so a diagram can link to the user's own notes",
+      "drop or de-link every remote href and xlink:href, so a diagram cannot navigate off the machine; the user reaches a remote URL from the note it is written in, where they can read it first",
+      "keep javascript: and data: refused by both the URL sanitiser and the DOM sanitiser",
+      "resolve a notrios:// click through the in-app stable-link resolver rather than browser navigation",
+      "refuse script, iframe, foreignObject, and on* attributes",
+      "catch every throw, including internal TypeErrors, and fall back to fenced source"
+    ],
+    "rollback": "restore noMermaid: true in web/src/editor-assets.ts; no data or schema is involved",
+    "superseded_note": "an earlier draft of this recommendation said to strip every href. That would have removed the product's own note links while leaving nothing useful, and it misread which layer was dropping them.",
+    "verdict": "enable in H2, with the containment design below"
+  },
+  "schema": "notrios.v0.8.h2a.mermaid-investigation.v1",
+  "status": "complete investigation; recommendation issued, no production change",
+  "supplementary": {
+    "narrow_390": {
+      "overflowsViewport": false,
+      "renderedWidth": 114,
+      "style": "max-width: 114.3515625px;",
+      "svgWidthAttr": "100%"
+    },
+    "slow_dense_graph": {
+      "error": "TypeError: Cannot read properties of undefined (reading 'length')",
+      "exceeds_2000ms_deadline": false,
+      "ms": 693,
+      "ok": false
+    },
+    "theme_dark": {
+      "bytes": 14296,
+      "hasDarkFill": true,
+      "ms": 425,
+      "ok": true
+    },
+    "theme_default": {
+      "bytes": 14086,
+      "hasDarkFill": true,
+      "ms": 412.30000001192093,
+      "ok": true
+    }
+  },
+  "untested": [
+    "Wails v2 webview smoke: needs a GUI build and a display; not run in this pass",
+    "the 2000 ms render deadline was never exercised by a genuinely slow successful render, because mermaid's own maxEdges guard refuses large graphs first",
+    "worker-based rendering and cancellation were not prototyped",
+    "keyboard and screen-reader accessibility of the rendered preview was not assessed",
+    "the revised link policy was verified at the sanitiser level and in the rendered SVG, but no in-app notrios:// click was driven end to end through the stable-link resolver",
+    "the desktop external-link behaviour was traced through wails source rather than observed in a running GUI"
+  ]
+}

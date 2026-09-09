@@ -1,0 +1,104 @@
+{
+  "schema": "notrios.g12.conformance.v1",
+  "generated_for": "v0.7 G12 directory-carrier conformance over a mapped cloud folder and removable media",
+  "database_schema_version": 24,
+  "notes_exchanged": 12,
+  "provider": {
+    "label": "mapped cloud folder",
+    "create_directory": true,
+    "rename_available": true,
+    "case_sensitive": true,
+    "protocol_name_length_accepted": true,
+    "mtime_preserved_on_rename": false,
+    "write_mib_per_second": 56.677789163243546,
+    "read_mib_per_second": 23.101005119535024,
+    "remote_write_to_listing_ms": [
+      55549,
+      56664,
+      56392
+    ],
+    "remote_write_to_open_ms": [
+      55548,
+      56662,
+      56390
+    ],
+    "slowest_listing_ms": 56664,
+    "partial_upload_visible": "not observed",
+    "remote_probes_ran": true
+  },
+  "removable_media": {
+    "label": "removable media stand-in",
+    "create_directory": true,
+    "rename_available": true,
+    "case_sensitive": true,
+    "protocol_name_length_accepted": true,
+    "mtime_preserved_on_rename": true,
+    "write_mib_per_second": 507.57331103394586,
+    "read_mib_per_second": 411.3964213859493,
+    "remote_write_to_listing_ms": null,
+    "remote_write_to_open_ms": null,
+    "slowest_listing_ms": 0,
+    "partial_upload_visible": "",
+    "remote_probes_ran": false
+  },
+  "phases": [
+    {
+      "name": "converge through the provider",
+      "passed": true,
+      "detail": "12 notes converged in 3 rounds, 21.7s",
+      "duration_ms": 21795
+    },
+    {
+      "name": "peer files are never written by another peer",
+      "passed": true,
+      "detail": "3 of replica A's artifacts unchanged after replica B's rounds",
+      "duration_ms": 556
+    },
+    {
+      "name": "a conflicting file at a protocol name is refused and repaired",
+      "passed": true,
+      "detail": "2 entries refused, then the owner republished 4473 bytes and both replicas converged",
+      "duration_ms": 975
+    },
+    {
+      "name": "an advertisement seen before its envelopes costs latency only",
+      "passed": true,
+      "detail": "advertisement without envelopes admitted nothing and claimed nothing; the next round converged",
+      "duration_ms": 4384
+    },
+    {
+      "name": "an unavailable carrier refuses rather than diverging",
+      "passed": true,
+      "detail": "refused while disconnected, converged after reconnecting",
+      "duration_ms": 1603
+    },
+    {
+      "name": "full carrier loss and reconstruction",
+      "passed": true,
+      "detail": "rebuilt and reconverged in 3 rounds, 20.9s",
+      "duration_ms": 44020
+    },
+    {
+      "name": "rclone copy --immutable moves the carrier without changing it",
+      "passed": true,
+      "detail": "5 artifacts copied out and back with no change; sync/bisync/move/delete/purge refused",
+      "duration_ms": 1815
+    },
+    {
+      "name": "a drive passed between peers converges",
+      "passed": true,
+      "detail": "3 notes out and 2 back in one trip each, on a drive only one peer can see at a time",
+      "duration_ms": 428
+    }
+  ],
+  "carrier_shape": {
+    "artifacts": 5,
+    "bytes": 6300
+  },
+  "caveats": [
+    "Every note is generated. Libraries stay on local disk; only sealed artifacts reach the provider.",
+    "Timings are one run on one host and one network; they describe this provider on this day, not a guarantee.",
+    "Only `rclone copy --immutable` is ever invoked. sync, bisync, move, delete, and purge are never run against protocol state.",
+    "The mapped folder is a FUSE mount of a cloud provider, so a second machine's cache behavior is approximated by writing through the remote and reading through the mount."
+  ]
+}

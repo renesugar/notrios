@@ -5,17 +5,29 @@ ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 # accidentally committed; pass an explicit path to override.
 OUT=${1:-"$ROOT/dist/notrios-src.zip"}
 cd "$ROOT"
+bash scripts/agent_usage_preflight.sh package-release
 mkdir -p "$(dirname "$OUT")"
 
 go test ./...
 python3 scripts/check_required_files.py
 bash scripts/validate-scaffold.sh
-(cd web && npm ci && npm run build)
+(cd web && npm ci && npm audit && npm run build)
+(cd docs-site && npm ci && npm audit)
+python3 performance/v0.7-g18c/validate_evidence.py
+python3 performance/v0.7-g18d/validate_evidence.py
+make g18e-validate
+make g18f-validate
+make g18g-validate
+make g19-validate
+make g20-validate
 
 rm -f "$OUT"
 zip -qr "$OUT" . \
+  -x 'node_modules/*' \
   -x 'web/node_modules/*' \
-  -x 'data/*' \
+  -x '*/node_modules/*' \
+  -x 'data/*' -x 'data/' \
+  -x '*/data/*' -x '*/data/' \
   -x '.git/*' \
   -x '*.sqlite' \
   -x '*.sqlite-*' \
@@ -31,5 +43,7 @@ zip -qr "$OUT" . \
   -x '.claude/*' \
   -x 'notrios-*.zip' \
   -x 'coverage.*' \
-  -x 'notrios' -x 'notriosd' -x 'notriosctl'
+  -x 'notrios' -x 'notriosd' -x 'notriosctl' -x 'notrioslib' \
+  -x '.zvec-grep/*' -x '.zvec-grep' \
+  -x 'performance/v0.8-h10/prototype/prototype'
 python3 scripts/check_release_zip.py "$OUT"

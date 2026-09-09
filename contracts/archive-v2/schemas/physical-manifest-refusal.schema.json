@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://notrios.dev/schemas/archive-v2/physical-manifest-refusal.schema.json",
+  "title": "Notrios physical snapshot manifest identification (always refuse as archive-v2)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "version", "commit_sha256", "content_sha256", "snapshot", "compatibility", "database", "external", "cleared_local_tables"],
+  "properties": {
+    "format": {"const": "notrios-sqlite-image"},
+    "version": {"const": 1},
+    "commit_sha256": {"$ref": "#/$defs/sha256"},
+    "content_sha256": {"$ref": "#/$defs/sha256"},
+    "snapshot": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "created_at", "consistency", "database_id", "source_replica_id", "vector", "floors"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"}, "created_at": {"type": "string", "format": "date-time"},
+        "consistency": {"const": "sqlite-online-backup"}, "database_id": {"$ref": "#/$defs/id"},
+        "source_replica_id": {"$ref": "#/$defs/id"}, "vector": {"$ref": "#/$defs/vector"}, "floors": {"$ref": "#/$defs/vector"}
+      }
+    },
+    "compatibility": {
+      "type": "object", "additionalProperties": false,
+      "required": ["application_id", "application_version", "source_schema_version", "minimum_schema_version", "maximum_schema_version", "required_capabilities", "semantic_fallback_format"],
+      "properties": {
+        "application_id": {"const": "notrios"}, "application_version": {"type": "string", "minLength": 1, "maxLength": 64},
+        "source_schema_version": {"type": "integer", "minimum": 1}, "minimum_schema_version": {"type": "integer", "minimum": 1},
+        "maximum_schema_version": {"type": "integer", "minimum": 1},
+        "required_capabilities": {"type": "array", "minItems": 2, "maxItems": 2, "prefixItems": [{"const": "archive-v2.fallback.v1"}, {"const": "sqlite-image+packed-assets.v1"}], "items": false},
+        "semantic_fallback_format": {"const": "notrios-archive-v2"}
+      }
+    },
+    "database": {"$ref": "#/$defs/file"},
+    "external": {
+      "type": "object", "additionalProperties": false,
+      "required": ["layout", "pack_target_payload_bytes", "pack_max_entries", "objects", "payload_bytes", "packs"],
+      "properties": {
+        "layout": {"const": "deterministic-ustar"}, "pack_target_payload_bytes": {"type": "integer", "minimum": 1, "maximum": 268435456},
+        "pack_max_entries": {"type": "integer", "minimum": 1, "maximum": 65536}, "objects": {"type": "integer", "minimum": 0, "maximum": 8000000},
+        "payload_bytes": {"type": "integer", "minimum": 0, "maximum": 4398046511104}, "packs": {"type": "array", "maxItems": 65536, "items": {"$ref": "#/$defs/pack"}}
+      }
+    },
+    "cleared_local_tables": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 128}}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}, "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9_.:-]{1,127}$"},
+    "vector": {"type": "object", "maxProperties": 100000, "additionalProperties": {"type": "integer", "minimum": 0}},
+    "file": {"type": "object", "additionalProperties": false, "required": ["path", "sha256", "size_bytes"], "properties": {"path": {"const": "notes.sqlite"}, "sha256": {"$ref": "#/$defs/sha256"}, "size_bytes": {"type": "integer", "minimum": 1, "maximum": 4398046511104}}},
+    "pack": {
+      "type": "object", "additionalProperties": false,
+      "required": ["path", "sha256", "size_bytes", "payload_bytes", "entries", "first_path", "last_path"],
+      "properties": {
+        "path": {"type": "string", "pattern": "^packs/pack-[0-9]{6}\\.tar$"}, "sha256": {"$ref": "#/$defs/sha256"},
+        "size_bytes": {"type": "integer", "minimum": 1}, "payload_bytes": {"type": "integer", "minimum": 0},
+        "entries": {"type": "integer", "minimum": 1, "maximum": 65536}, "first_path": {"type": "string", "minLength": 1, "maxLength": 255},
+        "last_path": {"type": "string", "minLength": 1, "maxLength": 255}, "oversized": {"type": "boolean"}
+      }
+    }
+  }
+}

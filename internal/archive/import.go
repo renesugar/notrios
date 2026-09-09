@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"os"
-	"path/filepath"
 	"sort"
 	"strings"
 
@@ -66,7 +66,7 @@ func DryRun(ctx context.Context, st store.Store, archiveDir string) (ImportConfi
 	report := ImportReport{DryRun: true}
 	cfg := ImportConfig{Version: 1, Archive: archiveDir, Renames: map[string]string{}}
 
-	notes, notebooks, err := loadArchive(archiveDir)
+	notes, notebooks, _, err := loadArchive(archiveDir)
 	if err != nil {
 		return cfg, report, err
 	}
@@ -138,7 +138,12 @@ func Import(ctx context.Context, st store.Store, archiveDir string, options Impo
 		renames = options.Config.Renames
 	}
 
-	notes, notebooks, err := loadArchive(archiveDir)
+	archiveRoot, err := os.OpenRoot(archiveDir)
+	if err != nil {
+		return report, err
+	}
+	defer archiveRoot.Close()
+	notes, notebooks, resourceNames, err := loadArchiveRoot(archiveRoot)
 	if err != nil {
 		return report, err
 	}
@@ -189,12 +194,27 @@ func Import(ctx context.Context, st store.Store, archiveDir string, options Impo
 	}
 
 	// Resources first so note bodies' resource:// links resolve.
-	if err := importResources(ctx, st, archiveDir, options.CollectionID, &report); err != nil {
+	if err := importResources(ctx, st, archiveRoot, resourceNames, options.CollectionID, &report); err != nil {
 		return report, err
 	}
 
 	for _, note := range notes {
 		if err := importNote(ctx, st, note, pathIDs, options, &report); err != nil {
+			return report, err
+		}
+	}
+
+	// Resolve links after every note exists. A note that links to another note
+	// in the same archive is imported before its target as often as not, and
+	// the link is recorded unresolved at that moment. Rebuilding here adds no
+	// revision and is what makes an imported archive's internal links work —
+	// including for a later publication, which rewrites unresolved links out of
+	// the published bodies.
+	for _, note := range notes {
+		if err := st.RebuildDocumentLinks(ctx, note.ID); err != nil {
+			if errors.Is(err, store.ErrNotFound) {
+				continue
+			}
 			return report, err
 		}
 	}
@@ -323,20 +343,8 @@ func ensurePath(ctx context.Context, st store.Store, rawPath string, renames map
 	return parentID, nil
 }
 
-func importResources(ctx context.Context, st store.Store, archiveDir, collectionID string, report *ImportReport) error {
-	dir := filepath.Join(archiveDir, "resources")
-	entries, err := os.ReadDir(dir)
-	if errors.Is(err, os.ErrNotExist) {
-		return nil
-	}
-	if err != nil {
-		return err
-	}
-	for _, entry := range entries {
-		if entry.IsDir() {
-			continue
-		}
-		name := entry.Name()
+func importResources(ctx context.Context, st store.Store, root *os.Root, names []string, collectionID string, report *ImportReport) error {
+	for _, name := range names {
 		idx := strings.Index(name, "__")
 		if idx <= 0 {
 			report.Warnings = append(report.Warnings, "resource file without id prefix skipped: "+name)
@@ -348,14 +356,14 @@ func importResources(ctx context.Context, st store.Store, archiveDir, collection
 		} else if !errors.Is(err, store.ErrNotFound) {
 			return err
 		}
-		file, err := os.Open(filepath.Join(dir, name))
+		file, _, err := openArchiveRegular(root, "resources/"+name, store.MaxResourceContentBytes)
 		if err != nil {
 			return err
 		}
 		_, createErr := st.CreateResource(ctx, store.CreateResourceRequest{
 			PreferredID: resourceID, CollectionID: collectionID,
 			Filename: filename, MIMEType: firstNonEmpty(store.MIMETypeFromFilename(filename), "application/octet-stream"),
-			Content: file,
+			Content: io.LimitReader(file, store.MaxResourceContentBytes+1),
 		})
 		closeErr := file.Close()
 		if createErr != nil {

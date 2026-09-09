@@ -1,0 +1,10 @@
+# The probe keeps all generated material in a temporary directory, but retain
+# these guards for local experiments in this directory.
+*.db
+*.db-shm
+*.db-wal
+*.zip
+*.o
+workload
+owner-lock
+modernc-workload

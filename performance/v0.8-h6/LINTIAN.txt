@@ -1,0 +1,4 @@
+W: notrios: initial-upload-closes-no-bugs [usr/share/doc/notrios/changelog.Debian.gz:1]
+W: notrios: no-manual-page [usr/bin/notrios]
+W: notrios: no-manual-page [usr/bin/notriosctl]
+W: notrios: no-manual-page [usr/bin/notriosd]

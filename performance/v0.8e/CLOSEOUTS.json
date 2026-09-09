@@ -1,0 +1,289 @@
+{
+  "schema": "notrios.v08e.closeouts.v1",
+  "purpose": "the commit each v0.8 item closed at, for the retroactive archives. Resolved from commit subjects and checked against the plan at that commit, rather than assumed from ordering.",
+  "rule": "the newest commit whose SUBJECT names the item. A body mention is not a close-out: one commit names H6a, H7, H8 and H12 in its body while closing none of them.",
+  "items": [
+    {
+      "item": "H1",
+      "title": "Shared application facade and ABI-major-1 library",
+      "plan_state": "complete",
+      "commit": "fa3803c4e0a3f474f7743a77fbb72363f714f978",
+      "committed_at": "2026-09-01T06:35:22-07:00",
+      "subject": "complete and archive v0.8 H1",
+      "supersedes": "notrios-v0.8-h1-0bee555.zip",
+      "resolved_by": "the existing archive carries the 11 MB notrioslib ELF binary and is refused by today's scripts/check_release_zip.py. Its tree is faithful to the pre-rewrite commit named in its filename -- the handoff's mapping table resolves it -- but sealing a rejected archive into an immutable reserve would preserve the mistake permanently."
+    },
+    {
+      "item": "H2a",
+      "title": "Mermaid renderer and security investigation",
+      "plan_state": "complete",
+      "commit": "af37c4c4901793eac6403927febaee06ac8d4c40",
+      "committed_at": "2026-09-01T07:41:01-07:00",
+      "subject": "record the desktop external-link gap and track it as H2b",
+      "supersedes": "notrios-v0.8-h2a-2b9f00b.zip",
+      "resolved_by": "the existing archive carries the 11 MB notrioslib ELF binary and is refused by today's scripts/check_release_zip.py. Its tree is faithful to the pre-rewrite commit named in its filename -- the handoff's mapping table resolves it -- but sealing a rejected archive into an immutable reserve would preserve the mistake permanently."
+    },
+    {
+      "item": "H2b",
+      "title": "Desktop external-link opening",
+      "plan_state": "complete",
+      "commit": "e4f4432663ec40344bdc86d026e2615e8c6c1ec8",
+      "committed_at": "2026-09-01T08:04:27-07:00",
+      "subject": "open external links from the desktop window (v0.8 H2b)",
+      "supersedes": "notrios-v0.8-h2b-9043a4d.zip",
+      "resolved_by": "the existing archive carries the 11 MB notrioslib ELF binary and is refused by today's scripts/check_release_zip.py. Its tree is faithful to the pre-rewrite commit named in its filename -- the handoff's mapping table resolves it -- but sealing a rejected archive into an immutable reserve would preserve the mistake permanently."
+    },
+    {
+      "item": "H2",
+      "title": "Bounded offline Mermaid enablement",
+      "plan_state": "complete",
+      "commit": "e69419c129843e23b60291ab2021911b23a8a6df",
+      "committed_at": "2026-09-01T08:52:00-07:00",
+      "subject": "complete and archive v0.8 H2",
+      "supersedes": "notrios-v0.8-h2-27de1d1.zip",
+      "resolved_by": "the existing archive carries the 11 MB notrioslib ELF binary and is refused by today's scripts/check_release_zip.py. Its tree is faithful to the pre-rewrite commit named in its filename -- the handoff's mapping table resolves it -- but sealing a rejected archive into an immutable reserve would preserve the mistake permanently."
+    },
+    {
+      "item": "H3",
+      "title": "Installed-path, XDG, migration, and destructive-lifecycle investigation",
+      "plan_state": "complete",
+      "commit": "97652f1cef81f034df3e54ee6b1fedb75d1ae839",
+      "committed_at": "2026-09-01T11:42:43-07:00",
+      "subject": "make the generated H3 evidence reproducible",
+      "supersedes": "notrios-v0.8-h3-37cadac.zip",
+      "resolved_by": "the existing archive carries the 11 MB notrioslib ELF binary and is refused by today's scripts/check_release_zip.py. Its tree is faithful to the pre-rewrite commit named in its filename -- the handoff's mapping table resolves it -- but sealing a rejected archive into an immutable reserve would preserve the mistake permanently."
+    },
+    {
+      "item": "H4a",
+      "title": "Distinct development and installed default ports in the documentation",
+      "plan_state": "complete",
+      "commit": "036ba0c78b891a06feb8feb1f3aa424c788409d9",
+      "committed_at": "2026-09-02T06:07:40-07:00",
+      "subject": "give a checkout and an installed instance different ports (v0.8 H4a)",
+      "note": "the plan at this commit does not yet carry the completion marker: all three of H4a, H4b and H5 were marked complete later, together, in cc68bb1 \"declare the plan's remaining work as slices, and check it\". The work commit is the close-out because it is the tree the item produced; the marker is bookkeeping about the plan."
+    },
+    {
+      "item": "H4b",
+      "title": "Verified backup before a startup schema migration",
+      "plan_state": "complete",
+      "commit": "e58abf6b3df9e474a4c323678b6ecfd1afc052e0",
+      "committed_at": "2026-09-02T07:57:59-07:00",
+      "subject": "back up and roll back a schema migration (v0.8 H4b)",
+      "note": "the plan at this commit does not yet carry the completion marker: all three of H4a, H4b and H5 were marked complete later, together, in cc68bb1 \"declare the plan's remaining work as slices, and check it\". The work commit is the close-out because it is the tree the item produced; the marker is bookkeeping about the plan."
+    },
+    {
+      "item": "H5",
+      "title": "Safe Make install, uninstall, and purge lifecycle",
+      "plan_state": "complete",
+      "commit": "3ec1ab3fe30b165394b771ab8c3a237816b225bc",
+      "committed_at": "2026-09-02T12:32:14-07:00",
+      "subject": "purge, test and document the lifecycle (v0.8 H5 slices C and D)",
+      "resolved_by": "subject names it as \"(v0.8 H5 slices C and D)\", a slice-list form the id patterns did not cover; read rather than matched",
+      "note": "the plan at this commit does not yet carry the completion marker: all three of H4a, H4b and H5 were marked complete later, together, in cc68bb1 \"declare the plan's remaining work as slices, and check it\". The work commit is the close-out because it is the tree the item produced; the marker is bookkeeping about the plan."
+    },
+    {
+      "item": "H6a",
+      "title": "Desktop installer and GitHub-native build investigation",
+      "plan_state": "complete",
+      "commit": "57b2a717f3ba645462f7d5ec9601ea8a6f266a81",
+      "committed_at": "2026-09-02T13:29:53-07:00",
+      "subject": "investigate the installer toolchain and record what it cannot claim (v0.8 H6a)"
+    },
+    {
+      "item": "H7",
+      "title": "Windows and macOS installer workflow implementation",
+      "plan_state": "deferred",
+      "commit": "f544b980ed7a730a775f5cc2ac02b205484a827c",
+      "committed_at": "2026-09-02T14:44:53-07:00",
+      "subject": "defer Windows and macOS installers to post-v1.0 (H7)"
+    },
+    {
+      "item": "H6",
+      "title": "Ubuntu-priority installer package",
+      "plan_state": "complete",
+      "commit": "3abdbf79cf4a4d1aba4a607deb5436c8f47becd7",
+      "committed_at": "2026-09-02T15:09:19-07:00",
+      "subject": "add the application icon for desktop and web (v0.8 H6)"
+    },
+    {
+      "item": "H8",
+      "title": "Installed integration harness and Ubuntu baseline",
+      "plan_state": "complete",
+      "commit": "a3490aa76c2e5c225c2d9d25778899bf642e36c7",
+      "committed_at": "2026-09-02T15:36:45-07:00",
+      "subject": "run an installed-integration matrix against a packaged install (v0.8 H8)"
+    },
+    {
+      "item": "H14",
+      "title": "Documentation actionability investigation",
+      "plan_state": "complete",
+      "commit": "1c8d5773064377ccb0c23f677028f5aea10e9e18",
+      "committed_at": "2026-09-04T17:27:54-07:00",
+      "subject": "close H14, and make the control inventory a gate rather than a note"
+    },
+    {
+      "item": "H23",
+      "title": "One description of the command line, and --help everywhere",
+      "plan_state": "complete",
+      "commit": "5aca5eaa2f6ae63046356a26e22ae5414760bea0",
+      "committed_at": "2026-09-08T06:33:47-07:00",
+      "subject": "H23: describe the command line once, and answer for help at every level"
+    },
+    {
+      "item": "H22",
+      "title": "Discover the values a query can name",
+      "plan_state": "complete",
+      "commit": "f2df4b36bc04b118cdeea9422d5472b7305e4502",
+      "committed_at": "2026-09-08T07:43:20-07:00",
+      "subject": "H22: let the command line say which notebooks and collections exist"
+    },
+    {
+      "item": "H24",
+      "title": "JSON is the output; a template makes it readable",
+      "plan_state": "complete",
+      "commit": "faf9bd670c927d0f1dcc8c269d43b1b611cf1468",
+      "committed_at": "2026-09-08T08:33:37-07:00",
+      "subject": "H24: give doctor the machine form, and close the item"
+    },
+    {
+      "item": "H21",
+      "title": "Read a note and its structure, from the command line",
+      "plan_state": "complete",
+      "commit": "49e4ad0da24ac49397bb1466894cb25346ea68d9",
+      "committed_at": "2026-09-08T09:30:53-07:00",
+      "subject": "H21: read a note and its structure from the command line, and fix the outline"
+    },
+    {
+      "item": "H25",
+      "title": "Hold each command's flags to its description",
+      "plan_state": "complete",
+      "commit": "677ca1f3eb611db5cbb2f0f108d160fa3d1ab139",
+      "committed_at": "2026-09-08T09:51:56-07:00",
+      "subject": "H25: hold each command's flags to its description, and find thirty-six gaps"
+    },
+    {
+      "item": "H26",
+      "title": "Ask about one tag without fetching them all",
+      "plan_state": "complete",
+      "commit": "b4fd8f9fa81e15c091de86a5ef83271252d32986",
+      "committed_at": "2026-09-08T11:39:12-07:00",
+      "subject": "H26: ask about one tag without fetching every tag"
+    },
+    {
+      "item": "H19",
+      "title": "notriosctl search",
+      "plan_state": "complete",
+      "commit": "cb76c7fdd9669e869b1fc9d140c9c78ffb23d59a",
+      "committed_at": "2026-09-08T12:17:41-07:00",
+      "subject": "H19: notriosctl search, and the loop the command line could not close"
+    },
+    {
+      "item": "H20",
+      "title": "Bring the atlas current, and stop it drifting again",
+      "plan_state": "complete",
+      "commit": "fa2518214a04fcc8cb27a133b1c69e95bba2f8e5",
+      "committed_at": "2026-09-08T12:40:52-07:00",
+      "subject": "H20: organise the atlas by location, and check that it records every package"
+    },
+    {
+      "item": "H16",
+      "title": "Reconcile the collection model with what is actually stored",
+      "plan_state": "complete",
+      "commit": "b69b653dd6dc07de0391ead08bb190b405c04419",
+      "committed_at": "2026-09-08T13:36:56-07:00",
+      "subject": "H16: remove the collection fields nothing stored, in the order that keeps archives readable"
+    },
+    {
+      "item": "H9",
+      "title": "Native credential-store selection and integration",
+      "plan_state": "complete",
+      "commit": "f0672d9209a45c71a95ebd31e1e0e65d3d03a41b",
+      "committed_at": "2026-09-08T14:08:32-07:00",
+      "subject": "H9-E: write the host-supplied credential contract, and move H9-F to post-v1.0"
+    },
+    {
+      "item": "H27",
+      "title": "Attach a file from the command line, without guessing where the link goes",
+      "plan_state": "complete",
+      "commit": "c836eb53c9f11aa0085c8db64c89651e91e54634",
+      "committed_at": "2026-09-08T16:01:10-07:00",
+      "subject": "H27: attach a file from the command line, and fix the type the store threw away"
+    },
+    {
+      "item": "H17",
+      "title": "Act on many notes at once, named by a query",
+      "plan_state": "complete",
+      "commit": "fa362b3e71859172e22d2a18bffc5836dc6cc92c",
+      "committed_at": "2026-09-08T17:05:55-07:00",
+      "subject": "H17: name a set with a search, and act on all of it"
+    },
+    {
+      "item": "H28",
+      "title": "Make the interface addressable, so its journeys can be written",
+      "plan_state": "complete",
+      "commit": "73f605c5f77070963320404baac2762680973b46",
+      "committed_at": "2026-09-08T17:56:49-07:00",
+      "subject": "H28: give the interface names, so its journeys can be written"
+    },
+    {
+      "item": "H15",
+      "title": "Complete the journey catalogues, and give the GUI an inventory",
+      "plan_state": "complete",
+      "commit": "fde811e5f8e8125a9480abdf886bc6cb22f71042",
+      "committed_at": "2026-09-08T18:52:02-07:00",
+      "subject": "H15-G: eleven interface journeys, and a backlog that becomes a rule"
+    },
+    {
+      "item": "H12",
+      "title": "First GitHub push and develop-to-main pull request",
+      "plan_state": "deferred",
+      "commit": "baf6e4ba6c925a4c0cce1068d8d4ffb127f3d179",
+      "committed_at": "2026-09-08T19:16:12-07:00",
+      "subject": "Move the GitHub push to the v0.9 boundary, and retire H12's runner half",
+      "resolved_by": "deferred rather than implemented, so the close-out is the commit that recorded the deferral and split the item"
+    },
+    {
+      "item": "H18",
+      "title": "Make the features page usable, and generate the table under it",
+      "plan_state": "complete",
+      "commit": "f79c956cc4822ef7e1b384a6453903afec9e4844",
+      "committed_at": "2026-09-08T19:37:08-07:00",
+      "subject": "H18-D: write the features page for a reader, not against the surfaces"
+    },
+    {
+      "item": "H29",
+      "title": "Select more than one note in the interface",
+      "plan_state": "complete",
+      "commit": "391cdd521f160fa7aeb01333d20816a3f1d0d8b0",
+      "committed_at": "2026-09-08T20:22:43-07:00",
+      "subject": "H29: select more than one note, and act on the set"
+    },
+    {
+      "item": "H11",
+      "title": "Android-emulator shared-core acceptance",
+      "plan_state": "complete",
+      "commit": "8c7017c6156af0134b7c768d3ad294dd2bf14b34",
+      "committed_at": "2026-09-08T23:15:17-07:00",
+      "subject": "H11: the shared core is a viable backend on an Android emulator"
+    },
+    {
+      "item": "H10",
+      "title": "Wails v3 migration spike",
+      "plan_state": "complete",
+      "commit": "b265ada1562489a62f2d2cbf8f324da265aae73d",
+      "committed_at": "2026-09-09T00:15:09-07:00",
+      "subject": "H10: the Wails v3 spike says migrate, after v3 releases"
+    },
+    {
+      "item": "H13",
+      "title": "v0.8 release wrap-up",
+      "plan_state": "complete",
+      "commit": "10e70771d6e9477508448144afa6b6949fd22a6c",
+      "committed_at": "2026-09-09T02:31:16-07:00",
+      "subject": "H13: close v0.8 at 0.8.0, schema unchanged",
+      "supersedes": "notrios-v0.8-h13-030ef2d.zip",
+      "resolved_by": "the existing archive matches no commit. It was built from the working tree while 030ef2d was HEAD and H13's own changes were uncommitted, so its filename asserts a commit whose tree it does not carry. Rebuilt from 10e7077, which is H13's close-out."
+    }
+  ],
+  "scope_note": "Twenty-seven items had no archive. Six more had one that should not be sealed: five carry a binary today's gate refuses, and one matches no commit. The superseded files are left in place rather than deleted -- removing evidence is the owner's decision, not this run's -- and each is named in the entry that replaces it."
+}

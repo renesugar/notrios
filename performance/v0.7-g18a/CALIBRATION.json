@@ -1,0 +1,73 @@
+{
+  "schema": "notrios.g18a.contradiction-calibration.v1",
+  "labels": ["supported", "contradicted", "not-determinable"],
+  "policy": "These are human-labelled fixtures. G18a runs no external model and records no generated model judgement.",
+  "cases": [
+    {
+      "id": "real-schema-drift",
+      "origin": "real-current-documentation",
+      "claim": "The latest migration is schema v20.",
+      "anchor": "go:github.com/renesugar/notrios/internal/store#CurrentSchemaVersion",
+      "expected": "contradicted",
+      "reason": "The canonical constant is 27. The stale prose is deliberately preserved for the audit."
+    },
+    {
+      "id": "schema-supported-control",
+      "origin": "controlled-paraphrase",
+      "claim": "The canonical SQLite schema version is 27.",
+      "anchor": "go:github.com/renesugar/notrios/internal/store#CurrentSchemaVersion",
+      "expected": "supported",
+      "reason": "Positive control paired with the real drift case."
+    },
+    {
+      "id": "recoll-negated-supported",
+      "origin": "controlled-paraphrase",
+      "claim": "Recoll is not the canonical document store.",
+      "anchor": "go:github.com/renesugar/notrios/internal/store#Store",
+      "expected": "supported",
+      "reason": "The canonical Store interface and SQLite adapter own document state."
+    },
+    {
+      "id": "recoll-negation-mutation",
+      "origin": "controlled-negation",
+      "claim": "Recoll is the canonical document store.",
+      "anchor": "go:github.com/renesugar/notrios/internal/store#Store",
+      "expected": "contradicted",
+      "reason": "Only one negation differs from the supported control, defeating similarity-as-agreement."
+    },
+    {
+      "id": "trash-is-restorable",
+      "origin": "current-user-contract",
+      "claim": "Deleting a live note moves it to Trash, where it can be restored.",
+      "anchor": "ts:web/src/App.tsx#App",
+      "direct_callees": ["ts:web/src/api.ts#deleteDocument", "ts:web/src/api.ts#restoreTrashedDocument"],
+      "expected": "supported",
+      "reason": "The root handlers and their direct API callees implement both halves."
+    },
+    {
+      "id": "trash-immediate-purge-mutation",
+      "origin": "controlled-mutation",
+      "claim": "Deleting a live note immediately and permanently removes every revision.",
+      "anchor": "ts:web/src/App.tsx#App",
+      "direct_callees": ["ts:web/src/api.ts#deleteDocument"],
+      "expected": "contradicted",
+      "reason": "The ordinary delete route is distinct from purge and the UI exposes restoration."
+    },
+    {
+      "id": "sqlite-rationale",
+      "origin": "controlled-rationale",
+      "claim": "SQLite was chosen because it makes Notrios pleasant to maintain.",
+      "anchor": "go:github.com/renesugar/notrios/internal/store#OpenSQLite",
+      "expected": "not-determinable",
+      "reason": "A motivation is not an executable behavioral claim and must remain unmarked rationale."
+    },
+    {
+      "id": "transitive-provider-behaviour",
+      "origin": "controlled-scope-boundary",
+      "claim": "Every cloud provider preserves modification times for carrier artifacts.",
+      "anchor": "go:github.com/renesugar/notrios/internal/synccarrier#Round",
+      "expected": "not-determinable",
+      "reason": "The claim is external and universal; a declaration plus direct same-package callees cannot establish it."
+    }
+  ]
+}

@@ -1,0 +1,85 @@
+{
+  "schema": "notrios.g8.materialization.v1",
+  "generated_for": "v0.7 G8 resource metadata, lazy materialization, chunks, and integrity",
+  "database_schema_version": 23,
+  "bounds": {
+    "chunk_bytes": 1048576,
+    "max_chunks": 16384,
+    "max_eager_bytes": 67108864,
+    "max_object_bytes": 17179869184,
+    "max_staging_bytes": 536870912,
+    "whole_object_threshold": 1048576
+  },
+  "sizes": [
+    {
+      "label": "64 KiB (inline view)",
+      "object_bytes": 65536,
+      "chunks": 1,
+      "attachments": 8,
+      "metadata_only_ms": 79,
+      "auto_requested": 8,
+      "auto_reason": "eager_small_object",
+      "note_readable_before_bytes": true,
+      "materialized": 8,
+      "fetched_bytes": 524288,
+      "materialize_ms": 37,
+      "resume_chunks_refetched": 0,
+      "resume_chunks_total": 1,
+      "exact_reconstruction": true
+    },
+    {
+      "label": "1 MiB (at the threshold)",
+      "object_bytes": 1048576,
+      "chunks": 1,
+      "attachments": 8,
+      "metadata_only_ms": 106,
+      "auto_requested": 8,
+      "auto_reason": "eager_small_object",
+      "note_readable_before_bytes": true,
+      "materialized": 8,
+      "fetched_bytes": 8388608,
+      "materialize_ms": 384,
+      "resume_chunks_refetched": 0,
+      "resume_chunks_total": 1,
+      "exact_reconstruction": true
+    },
+    {
+      "label": "4 MiB (chunked)",
+      "object_bytes": 4194304,
+      "chunks": 4,
+      "attachments": 8,
+      "metadata_only_ms": 82,
+      "auto_requested": 0,
+      "auto_reason": "above_eager_threshold",
+      "note_readable_before_bytes": true,
+      "materialized": 8,
+      "fetched_bytes": 33554432,
+      "materialize_ms": 2125,
+      "resume_chunks_refetched": 3,
+      "resume_chunks_total": 4,
+      "exact_reconstruction": true
+    },
+    {
+      "label": "16 MiB (chunked)",
+      "object_bytes": 16777216,
+      "chunks": 16,
+      "attachments": 8,
+      "metadata_only_ms": 85,
+      "auto_requested": 0,
+      "auto_reason": "above_eager_threshold",
+      "note_readable_before_bytes": true,
+      "materialized": 8,
+      "fetched_bytes": 134217728,
+      "materialize_ms": 7988,
+      "resume_chunks_refetched": 15,
+      "resume_chunks_total": 16,
+      "exact_reconstruction": true
+    }
+  ],
+  "notes": [
+    "Every attachment is generated. No private corpus content, filename, or path is recorded.",
+    "metadata_only_ms is the time to admit the operations, with no attachment bytes transferred.",
+    "A resumed transfer refetches only the segments it did not already hold and verify.",
+    "Desktop measurements. G2's emulator and physical-device checklists still gate any mobile claim."
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "sha256": "5891b5b522d5df086d0ff0b110fbd9d21bb4fc7163af34d08286a2e846f6be03",
+  "kind": "blob",
+  "media_type": "text/markdown; charset=utf-8",
+  "size_bytes": 6,
+  "record_counts": {
+    "collections": 0,
+    "notebooks": 0,
+    "search_notebooks": 0,
+    "tags": 0,
+    "documents": 0,
+    "revisions": 0,
+    "document_tags": 0,
+    "resources": 0,
+    "document_resources": 0,
+    "links": 0,
+    "provenance": 0,
+    "source_bundles": 0
+  },
+  "location": {
+    "layout": "fanout",
+    "path": "objects/sha256/58/91/5891b5b522d5df086d0ff0b110fbd9d21bb4fc7163af34d08286a2e846f6be03"
+  }
+}

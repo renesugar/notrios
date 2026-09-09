@@ -14,8 +14,24 @@ jobs:
           go-version: '1.25'
       - name: Install SQLite development headers
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libsqlite3-dev
+      # scripts/validate-scaffold.sh is this repository's `make validate`, and
+      # it needs the web workspace's TypeScript to audit the frontend. This job
+      # ran it without ever installing those dependencies, so the audit died on
+      # MODULE_NOT_FOUND -- invisible until CI ran the script at all.
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: cd web && npm ci
       - run: go vet ./...
       - run: go test ./...
+      - run: python3 performance/v0.7-g18d/validate_evidence.py
+      - run: python3 performance/v0.7-g18e/validate_evidence.py
+      - run: make g18f-validate
+      - run: python3 performance/v0.7-g18g/validate_evidence.py
+      - run: make g19-validate
+      - run: make g20-validate
       - run: python3 scripts/check_required_files.py
       - run: bash scripts/validate-scaffold.sh
 
@@ -25,11 +41,22 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          # One source of truth for the Node version, so CI cannot drift from
+          # the machine the tests were written on. That skew hid a broken test
+          # for four milestones: it asserted a refusal that never happened, and
+          # only failed once CI ran it on a different Node.
+          node-version-file: .nvmrc
           cache: npm
           cache-dependency-path: web/package-lock.json
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
       - run: cd web && npm ci
+      - run: cd web && npm audit
+      - run: python3 performance/v0.7-g18c/validate_evidence.py
+      - run: make g18e-validate
       - run: cd web && npm run typecheck
+      - run: cd web && npm test -- --run
       - run: cd web && npm run build
 
   smoke:
@@ -42,7 +69,7 @@ jobs:
           go-version: '1.25'
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version-file: .nvmrc
       - name: Install SQLite development headers
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libsqlite3-dev
       - run: cd web && npm ci && npm run build

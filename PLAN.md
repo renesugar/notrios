@@ -1,131 +1,377 @@
-# Plan: v0.3 — Import, resource, and media hardening
+# Plan: v0.9 — Release-candidate hardening
 
-Status: **active** (drafted 2026-07-16 from `ROADMAP.md`; supersedes the archived draft `plans/v0.2/001-import-resource-media-hardening.md`). The completed v0.2 redesign plan is archived under `plans/v0.2/`. H1–H4 are complete (`plans/v0.3/`); H5 is next.
+Status: **Planned from `ROADMAP.md` on 2026-09-09 after v0.8e closed. No item is
+started. Product version is 0.8.0 and the canonical database schema is v27.**
 
-## Goal
+This plan follows `ROADMAP.md`, the evidence contract in `evidence/README.md`,
+and the item-writing rules in `AGENTS.md`. Every item is independently
+approval-gated.
 
-Extend v0.2 into a safer and more durable importer/resource pipeline and a production-quality search sidecar:
+## Outcome and boundaries
 
-1. **Remote-media localization** through one policy engine (import-time, UI-triggered, and MCP-triggered all share it), per `SECURITY_AND_MEDIA_POLICY.md`: domain stop lists, quarantine fetches, SSRF protections, exact hashes, perceptual-hash hooks.
-2. **Resource lifecycle**: dedup/reference reports, safe garbage collection with retention policy.
-3. **Importer hardening** for Joplin RAW and Obsidian: notebook-hierarchy population (deferred from v0.2 task R12), larger fixtures, resume/checkpoint, dry-run diffs.
-4. **Recoll hardening**: batched incremental scans, periodic reconciliation, merged-result quality, extraction status in the UI.
+v0.9 turns a working local product into a release candidate. It opens by making
+v0.8 public, which is the first external write in the project's history, and
+then hardens the thing that will actually ship.
 
-## Working-state rule
+**The first two items are ordered, and the order is the point.** The push comes
+first because the workflows this milestone must pin and exercise have never run
+against any of this work, and a release window is the worst place to discover
+that. The Wails v3 migration comes before the matrices, the SBOM, the soak tests
+and the freezes, because what gets hardened has to be what ships: everything
+after it describes the desktop it produces.
 
-Every task must leave the project in a working state. Update `agent/PLAN_STATUS.md`, append to `agent/ATTEMPT_LOG.jsonl` and `agent/MODEL_LOG.jsonl`, commit with git, and archive completed slices under `plans/v0.3/`. Ask the user before starting the next task.
+**v0.8e sealed the evidence first, and that is now done.** Three reserve volumes
+hold every v0.8 and v0.8e handoff archive, signed by the pinned subkey and RFC
+3161 timestamped, before anything becomes public. Nothing in v0.9 may imply that
+a timestamp taken after the push says anything about what predates it.
 
-## Tasks
+Not in v0.9:
 
-### H1. Media-policy configuration and schema — COMPLETED (see `plans/v0.3/001-media-policy-config-schema.md`)
+- an end-user GitHub release, or a v1.0 tag;
+- Windows or macOS build promotion — deferred to post-v1.0 with the hardware
+  they need, and absent from release claims rather than shipped unexecuted;
+- hardening a release candidate on a Wails beta -- v3 was `v3.0.0-beta.19` on
+  2026-09-09, so I2 is deferred to post-v1.0 and this milestone hardens the
+  Wails v2 desktop;
+- any secret in a pull-request job, log, artifact, backup or the repository.
 
-- Typed remote-media policy config (`media_policy` section): allowed/blocked/review domain patterns, max download size, fetch timeout, max redirect hops, allowed MIME types, private-network and scheme rules (block `file:`, `data:`, link-local/private addresses by default).
-- Schema v7: media-policy tables per `DATABASE_SCHEMA.md` — domain rules, exact-hash blocks, perceptual-hash blocks (hooks only for now), remote-media attempts (original URL, final URL, decision, timestamps), quarantine state, resource hash records.
-- `/api/v1/status` reports policy state (enabled, rule counts, quarantine dir).
-- Unit tests for config parsing and migration.
+## Progress
 
-Working state: service starts with (or without) a policy config and reports policy state; schema migrates v6→v7; all existing tests pass.
+Generated from `docs/docplan/PLAN_SLICES.json` by
+`go run ./cmd/docplan --write`, and checked by `internal/docplan`, which fails
+the build when the ledger, this document and the repository disagree.
 
-### H2. Remote-media scan endpoint — COMPLETED (see `plans/v0.3/002-remote-media-scan.md`)
+**The rules for keeping it current are in [`AGENTS.md`](AGENTS.md)** — under
+"Writing plan items", "Keeping the plan current" and "Plan archival" — because
+this section is archived when the plan completes and the rules are not.
 
-- `GET/POST /api/v1/documents/{id}/remote-media`: parse the note body for remote `http(s)` image/media URLs and return per-URL policy decisions (allow/block/review + reason) **without downloading anything**.
-- Surface the scan in the GUI: remote-media warnings in the editor's note inspector (count + per-URL decision), consistent with the preview rule — the browser never fetches as a policy signal.
-- OpenAPI + `api/mcp-tools.md` updates (read-only MCP tool `scan_remote_media`).
+<!-- notrios:generated:plan:progress:begin -->
+**9 items: 0 complete, 1 in progress, 7 not started, 1 deferred.**
 
-Working state: users can inspect a note's remote media and the policy verdicts before any localization.
+| Item | State | Slices done | Outstanding |
+|---|---|---|---|
+| I1. Put v0.8 on GitHub, and reconcile the branches | in-progress | 1/3 | 2 |
+| I2. Migrate the desktop shell to Wails v3, or record the postponement | deferred | 0/3 | 3 |
+| I3. Promote the Ubuntu installer through clean native environments | not-started | 0/3 | 3 |
+| I4. Harden the destructive lifecycle, and decide the profile race | not-started | 0/4 | 4 |
+| I5. Resolve signing, notarization and timestamping policy | not-started | 0/3 | 3 |
+| I6. Generate and verify the release evidence set | not-started | 0/3 | 3 |
+| I7. Soak, recover, and freeze the support matrix | not-started | 0/3 | 3 |
+| I8. Freeze the 1.0 compatibility surfaces | not-started | 0/3 | 3 |
+| I9. Write the release-grade operational documentation | not-started | 0/3 | 3 |
 
-### H3. Quarantine download pipeline — COMPLETED (see `plans/v0.3/003-quarantine-pipeline.md`)
+### Started and not finished
 
-- Fetch allowed/review URLs into a quarantine directory (under the data dir, never the asset store) with: URL normalization, scheme/domain checks re-applied to **every redirect hop**, private-network/link-local blocking at connect time (SSRF protection), size cap enforced while streaming, timeout, MIME sniffing (`http.DetectContentType`) checked against policy, exact SHA-256 computed on the quarantined bytes.
-- Record every attempt (success or refusal) in the remote-media attempts table with the policy decision.
-- No admission to the content-addressed store in this task.
+**I1. Put v0.8 on GitHub, and reconcile the branches**
 
-Working state: `internal/media` can quarantine a URL list safely; refusals are recorded and reported; nothing reaches the asset store.
+- `I1-B` A develop-to-main pull request is merged with a merge commit after explicit authorization — *blocked* (blocked on: pull request #6 is open with all four CI jobs passing; the owner authorizes the develop-to-main merge, after review, and the method is a merge commit)
+- `I1-C` The merge result is brought back into develop so main is an ancestor with no content difference — *not-started*
 
-### H4. Localize remote media — COMPLETED (see `plans/v0.3/004-localize-remote-media.md`)
+### Not started
 
-- Admission: exact-hash block check, then content-addressed store admission (dedup by construction), resource + provenance rows (original URL, final URL, retrieved timestamp, content type, hashes, decision).
-- Rewrite the note's Markdown image/media links to `resource://` URIs in a **new revision** with a `base_revision_id` precondition; attach resources to the document.
-- `--dry-run` mode reports what would be downloaded/rewritten without fetching.
-- Entry points sharing the same engine: `POST /api/v1/documents/{id}/remote-media/localize` (REST), `notriosctl localize <document-id>` (CLI), `localize_remote_media` (MCP, editor scope, revision precondition), and an importer flag (`--localize-media`) for import-time localization.
-- GUI: localize action from the note inspector with results (localized/skipped/blocked).
+Written and not begun: I3, I4, I5, I6, I7, I8, I9. Their slices are listed under each item.
+<!-- notrios:generated:plan:progress:end -->
 
-Working state: a note with remote images can be safely converted to local resources from UI, CLI, REST, or MCP; blocked domains stay blocked; dry run never writes.
+## I1. Put v0.8 on GitHub, and reconcile the branches
 
-### H5. Exact-hash dedup reports and perceptual-hash hooks
+**Goal.** The v0.8 body of work is public, on both branches, with no content
+difference between them.
 
-- Resource/blob reference reports: duplicates by exact hash across collections, unreferenced blobs, per-notebook resource usage (REST + `notriosctl resources report`).
-- Perceptual-hash **hook** interface (pluggable; no algorithm shipped yet): compute-and-store slot on admission, policy-check slot, and a near-duplicate review report that only ever *suggests* (perceptual matches are moderation/similarity signals — never silent dedup, per `SECURITY_AND_MEDIA_POLICY.md`).
-- Document the hook contract in `SECURITY_AND_MEDIA_POLICY.md`.
+**Scope.** Re-audit the remote, run the evidence pre-push gate, push `develop`,
+open a `develop`-to-`main` pull request, and after review and explicit
+authorization merge it **with a merge commit**. Then bring the merge result back
+into `develop`, so `main` is an ancestor of it.
 
-Working state: users can inspect duplicate and unreferenced resources; perceptual hooks are wired but inert by default.
+**Why the back-merge, which looks unnecessary.** `main` carries nothing but
+merge commits from `develop`, so the pull request has no content to resolve. But
+a merge commit created on `main` is a commit `develop` does not have, and
+without merging it back `main` goes on showing as ahead. **Zero content
+difference is the requirement; identical commit identifiers are not**, and
+branches are never forced to reach them.
 
-### H6. Resource garbage collection and retention
+**Why not squash or rebase.** Either would rewrite `develop`'s history onto
+`main` and leave the two branches holding different identifiers for identical
+work — which is the condition this item exists to end, not to create.
 
-- Retention policy config: how long unreferenced blobs and resources of purged notes are kept.
-- `notriosctl gc --dry-run` (default) reports exactly what would be removed and why; `--apply` deletes only unreferenced, retention-expired blobs/resources. Referenced resources are never eligible.
-- REST admin report endpoint for the same data; no destructive REST endpoint without an explicit confirmation token.
-- Tests covering reference counting edge cases (multi-document attachment, trash, purge).
+**Boundaries.** **The push and the merge each need separate explicit
+authorization.** No tag, no release, no upload of build artifacts. Nothing is
+force-pushed. The evidence is already sealed and is not re-sealed here.
 
-Working state: GC never removes referenced data; dry run is the default everywhere; deletion requires an explicit flag.
+**Dependencies.** v0.8e, complete.
 
-### H7. Joplin RAW importer hardening
+**Working state.** `develop` and `main` on GitHub with no content difference,
+`main` an ancestor of `develop`, and the pre-push evidence gate recorded as run.
 
-- Populate the notebook hierarchy from Joplin folder items (deferred from v0.2 R12): nested notebooks with original names, rename-on-conflict via the existing import-config mechanism.
-- Preserve Joplin tags as Notrios tags.
-- Resume/checkpoint report: per-item status persisted so a re-run after interruption skips completed work and reports progress.
-- `--dry-run` diff summary: notes/resources/notebooks/tags that would be created, updated, or skipped.
-- Larger synthetic fixtures (hundreds of notes, nested folders, tags, resources).
+**`develop` pushed 2026-09-09, on the owner's authorization.**
+`26b0925..c63c4f8`, a fast-forward of 314 commits: 1,663 files and about 564,000
+insertions covering all of v0.8, v0.8e and the start of v0.9. Nothing was forced.
+The repository was already public, so this is the moment the v0.8 body of work
+became so -- which is why v0.8e sealed three signed, RFC 3161 timestamped volumes
+first, all of them predating this push.
 
-Working state: importer remains idempotent; a large interrupted import resumes cleanly; dry run matches the subsequent real run.
+**The gate refused before it passed, and that was the work.** Both faults came
+from the same place: it was written when the reserve was one volume and the
+evidence directory was exactly what that volume sealed.
 
-### H8. Obsidian importer hardening
+`verify_source` required the live source to *equal* volume-0001's checkpoint. A
+growing reserve cannot satisfy that -- volumes 0002 and 0003 sealed forty-four
+more artifacts, and a milestone always holds archives built after its last
+volume, because an archive cannot be inside the volume whose sealing commit
+produced it. It now checks the property that survives: across every sealed
+checkpoint, each artifact present, byte-identical, structurally valid and
+covered by the signature its own checkpoint recorded -- 125 artifacts rather
+than 81. Unsealed files are counted and named rather than refused, because
+refusing them would demand the reserve be sealed before the work that produces
+the next thing to seal. Altering a sealed artifact, deleting one and replacing
+one with a symlink were each tried against a hardlinked copy of the real source,
+and each refused.
 
-- Populate notebooks from the vault folder hierarchy (same conflict/rename mechanism as H7).
-- Improve aliases, frontmatter, embeds (`![[...]]`), block references, and relative-path resolution.
-- Resume/checkpoint report and `--dry-run` diff summary (same shape as H7).
-- Larger synthetic vault fixtures.
+The second fault was quieter. The content-commit check read the catalog with
+`json.load`, which worked on one entry and raised `Extra data` the moment
+volume-0002 appended a second line -- **a gate that stopped running rather than
+started failing**, which is the worse of the two. It reads every entry now and
+requires each volume's content commit to be an ancestor of `HEAD`.
 
-Working state: importer remains idempotent and graph-preserving for richer vaults; hierarchy and links survive round trips.
+**Pre-push audit, recorded because a public push is not reversible.** No private
+key material in the tree -- the `.asc` and `.pem` files are the public key and
+the TSA certificates the verifier needs. No credential-shaped strings outside
+test fixtures and variable names. `agent/ATTEMPT_LOG.jsonl` was already on the
+remote and holds task and status rows, not transcripts.
 
-### H9. Recoll sidecar hardening
+**Pull request [#6](https://github.com/renesugar/notrios/pull/6) opened
+2026-09-09, and CI went red on three independent faults.** Every one predated
+this milestone, and every one was invisible on a developer workstation — which
+is the entire argument for putting the push before the hardening rather than
+inside it.
 
-- Batched incremental scans: drain the outbox in bounded batches with backoff instead of unbounded single passes.
-- Periodic reconciliation: compare the projection directory against canonical rows (missing/stale/orphaned files), repair, and report; expose last-reconciliation status via `/api/v1/status`.
-- Merged-result quality: dedupe FTS5/Recoll hits by document, stable ordering, and per-hit source attribution in the search response.
-- Extraction/index status in the GUI (sidecar enabled, last sync, backlog size).
+*`doctor` required a keyring it was not using.* An unreachable native credential
+store was a required failure whenever the store resolved to native, regardless
+of whether anything was in it, so a temporary library holding no credentials at
+all reported FAILED. That made every headless machine — server, container, CI
+runner — unable to pass notrios's own health check, and it passed on every
+desktop because a desktop session has a Secret Service. On the owner's decision,
+an empty store is now informational and says a keyring will be needed to store
+keys here; **sealed key material plus an unreachable store stays a required
+failure**, because those keys exist and cannot be read, and nothing is ever
+substituted for the store. `sync migrate-credentials --dry-run` had the same
+shape: it refused to describe a migration whose destination was unreachable,
+though its documented job — which store holds the keys now, which would hold
+them afterwards — needs nothing opened. It reports the plan and the obstacle
+now, and still exits non-zero.
 
-Working state: with Recoll installed the index converges after crashes/manual file damage; without Recoll everything still passes.
+*A frontend test had never tested anything.* `draft.test.ts` asserted that
+`saveDraft` reports failure when storage refuses, by spying on the storage
+object. Under Node 22 `localStorage` is jsdom's `Storage`, a Proxy whose
+defineProperty trap *stores items*: assigning `setItem` writes an entry called
+"setItem" and leaves the real method in place, so the spy was never called and
+the write succeeded. Under Node 26 it is Node's own `MemoryStorage`, not a jsdom
+`Storage` at all, so a prototype spy patches a prototype nothing inherits from.
+An instance spy passes on 26 and no-ops on 22; a prototype spy does the reverse.
+Swapping the global binding works on both, because `saveDraft` reads the global
+at call time.
 
-### H10. v0.3 wrap-up: docs, feature matrix, release checklist
+*The `go` job ran `validate-scaffold.sh` without the web workspace*, so the
+frontend audit died on `MODULE_NOT_FOUND`. It only became visible once the
+credential-store failure ahead of it was fixed, which is what a pipeline nobody
+has run looks like: one fault at a time, each hidden behind the last.
 
-- User docs for media localization, resource reports/GC, importer resume/diff, and sidecar status (docs site + Help notebook reseed).
-- Update `FEATURE_MATRIX.md` rows (remote localization, dedupe, GC: Soon → Implemented), `DATABASE_SCHEMA.md` (schema v7 as implemented), `API_SPEC.md`.
-- `RELEASE_CHECKLIST.md` v0.3.0 section; full validation + packaging run.
+**Node is pinned once, in `.nvmrc`, read by every workflow** — the owner's
+suggestion. CI was on 22 while this machine and `docs.yml` were both on 26.3.0;
+the workflows did not agree with each other, and that skew is what let a test
+that never tested anything survive four milestones.
 
-Working state: documentation matches implementation; release checks pass.
+All four jobs pass: `go`, `web`, `gui-build`, `smoke`.
 
-## Validation
+**The merge is separately authorized and has not happened.**
 
-Until a task adds more specific checks:
+## I2. Migrate the desktop shell to Wails v3, or record the postponement — deferred
 
-```bash
-go vet ./... && go test ./...
-python3 scripts/check_required_files.py
-bash scripts/validate-scaffold.sh
-cd web && npm run typecheck && npm run build && npm test
-bash scripts/mvp_smoke.sh
-bash scripts/run_performance_smoke.sh
-```
+**Goal.** The desktop that gets hardened is the desktop that ships.
 
-GUI-affecting tasks also build with `make gui` and, for layout changes, run `scripts/verify_layout_resize.py` under Xvfb/Openbox (see `TESTING_POLICY.md`).
+**Deferred to post-v1.0 on 2026-09-09, by the condition this item set for
+itself.** The gate was a released Wails v3.
+`go list -m github.com/wailsapp/wails/v3@latest` answers `v3.0.0-beta.19`, so
+there is no release to migrate to and a release candidate is not hardened on a
+beta. v0.9 hardens the Wails v2 desktop; v1.0 ships it; the migration is the
+post-v1.0 entry in `ROADMAP.md`.
 
-## Open questions (carried into v0.3)
+**This is the condition being met, not the plan failing.** H10's spike passed on
+beta.18 and found the port small -- eight linked Go modules against the v2
+shell's sixteen, `window.go` absent in v3 so eleven frontend call sites move onto
+`@wailsio/runtime` or generated bindings, and one real hazard in the v3 question
+dialog answering on a callback rather than returning the button, so the
+unsaved-work veto must wait and fail closed. None of those findings expires while
+a release is waited for, which is why waiting costs nothing.
 
-- `agent/OPEN_QUESTIONS.md` #3: notes of a deleted notebook go to Trash (current spec) — confirm before H7/H8 change notebook handling.
-- `agent/OPEN_QUESTIONS.md` #4: FTS5 stays the always-on baseline with Recoll optional (current design assumed by H9).
-- Which perceptual-hash algorithm (pHash/dHash/blockhash) to ship first — H5 only lands the hooks.
+**What the postponement costs, stated so it is not lost.** The migration no
+longer rides on v0.9's hardening and must bring its own: the installer's
+dependency inventory, the SBOM and licence reports, the soak tests, the desktop
+support matrix and the installation documentation all get repeated for the
+migrated desktop. A migrated desktop inheriting a v2 desktop's evidence would be
+claiming something nobody measured. `ROADMAP.md` records this under the
+post-v1.0 entry.
 
-## Scope control
+**What it changes for the rest of this milestone.** I3 through I8 no longer wait
+on a framework swap and no longer describe a desktop that might be replaced
+underneath them. The native stack stays GTK3 and webkit2gtk-4.1, which is what
+ships.
 
-Quartz publishing and portable-vault export (v0.4), editor/graph UX (v0.5), MCP scope profiles beyond what exists (v0.6), sync (v0.7), HTTP range requests for resource content, and the official MCP Go SDK migration stay on the roadmap unless the user changes priorities.
+**Scope, unchanged and carried forward.** Move the shell from Wails v2 to v3:
+the eleven `window.go` call sites onto `@wailsio/runtime` or generated bindings,
+the veto proven to fail closed on the callback answer, and the native stack from
+GTK3/webkit2gtk-4.1 to GTK4/webkitgtk-6.0.
+
+**Dependencies.** A released Wails v3, which does not exist as of 2026-09-09.
+
+**Working state.** The decision recorded here and in `ROADMAP.md`, v2 untouched,
+and nothing downstream in this milestone waiting on it.
+
+## I3. Promote the Ubuntu installer through clean native environments
+
+**Goal.** The installer is exercised where nothing of ours has run before.
+
+**Scope.** Clean native environment matrices rehearsing fresh install,
+source-layout migration, upgrade across prereleases, downgrade refusal and
+rollback, remove and reinstall, profile discovery, and operation with neither
+source nor a development toolchain present.
+
+**Boundaries.** Ubuntu only. Windows and macOS have no feasible candidate to
+promote here and stay absent from release claims rather than shipping
+unexecuted build output.
+
+**Dependencies.** I1. I2 is deferred, so this hardens the Wails v2 desktop --
+which is what ships.
+
+**Working state.** Each rehearsal executed in a clean environment with its
+result recorded, including the ones that must refuse.
+
+## I4. Harden the destructive lifecycle, and decide the profile race
+
+**Goal.** `install`, `uninstall` and `purge` behave under fault and contention,
+and uninstall never deletes user data.
+
+**Scope.** Backup capacity and corruption faults, restore drills,
+process/mount/symlink races, external profile roots, modified installed
+artifacts, unattended execution, and package-manager interoperability.
+
+**One race is already identified and waiting.** A starting daemon validates
+*every* profile in the registry rather than only the one it is starting, so two
+profiles launched at the same moment read each other's databases and one aborts
+with `stale_database: sqlite exec: database is locked`. It is a transient lock
+reported as a stale library, and a retry would succeed. Found in v0.8 H13 when a
+flaky test was made to say why it failed rather than only that it had; the test
+now starts its daemons one at a time, which is what a person does — and which
+deliberately left the product behaviour for this item to decide about.
+
+**Boundaries.** Destructive drills run against disposable profiles. No drill
+touches the evidence reserve or a real library.
+
+**Dependencies.** I3.
+
+**Working state.** Each fault injected and its behaviour recorded; the profile
+race either fixed or refused with a reason, not left as a test workaround.
+
+## I5. Resolve signing, notarization and timestamping policy
+
+**Goal.** Every supported platform has a signing story that someone else can
+follow, and what is blocked is written down as blocked.
+
+**Scope.** Production signing, notarization and timestamping policy per
+supported platform, and the handling rules for the material it needs.
+
+**Boundaries.** **Certificates, tokens and passphrases stay out of
+pull-request jobs, logs, artifacts, backups and the repository.** Where an owner
+account or a native trust service is unavailable, the item records what remains
+blocked rather than substituting something weaker and calling it done.
+
+**Dependencies.** I1.
+
+**Working state.** A policy per platform, and an explicit list of what cannot be
+completed without which account or service.
+
+## I6. Generate and verify the release evidence set
+
+**Goal.** A candidate carries checksums, an SBOM and provenance that verify
+offline.
+
+**Scope.** Checksums, SBOM, dependency/license/security reports, provenance and
+attestations, reproducible metadata, installer inventories, and pinned
+least-privilege GitHub workflows. Exercise a non-public release-candidate or
+draft flow.
+
+**Boundaries.** v0.9 is not an end-user GitHub release. Workflows are pinned by
+digest and least-privilege; a workflow that needs a secret to run is not added
+to a pull-request trigger.
+
+**Dependencies.** I5. I2 is deferred.
+
+**Working state.** Each artifact generated and independently verified, and the
+draft flow exercised without publishing.
+
+## I7. Soak, recover, and freeze the support matrix
+
+**Goal.** The candidate survives being left running, and its claims are limited
+to what was executed.
+
+**Scope.** Long-lived installed directory, REST and emulator soak tests; native
+integration and cleanup matrices; support-bundle redaction; crash-reporting
+policy; disaster-recovery drills. Freeze the exact desktop support matrix.
+
+**Boundaries.** A postponed platform remains absent from release claims. A soak
+result that was not observed to completion is reported as incomplete rather than
+extrapolated.
+
+**Dependencies.** I3, I4. I2 is deferred.
+
+**Working state.** Soak runs completed with their durations recorded, drills
+executed, and a frozen matrix naming only what ran.
+
+## I8. Freeze the 1.0 compatibility surfaces
+
+**Goal.** The interfaces 1.0 will promise are fixed and tested at their edges.
+
+**Scope.** Freeze REST, MCP, archive, sync, configuration, installer, Make
+lifecycle and shared C ABI compatibility candidates. Run ABI ownership, leak,
+double-free, wrong-handle, concurrent-shutdown, cancellation and stream-limit
+tests.
+
+**Why the ABI tests are named individually.** v0.8 H11 found three host bugs and
+one wrong constant that *passed* — `CANCELLED` was 9 where 9 is `unavailable`.
+An ABI is only frozen at the edges somebody actually pushed on.
+
+**Boundaries.** A freeze is a candidate until 1.0 accepts it. Breaking changes
+after this item are recorded as breaking, not folded in quietly.
+
+**Dependencies.** I6. I2 is deferred.
+
+**Working state.** Each surface frozen with its compatibility test suite green,
+and each named ABI failure mode exercised.
+
+## I9. Write the release-grade operational documentation
+
+**Goal.** Somebody with neither the repository nor a development environment can
+install, upgrade, roll back, back up, restore, uninstall, purge, troubleshoot
+and verify artifacts.
+
+**Scope.** Documentation for each of those, written for that reader.
+
+**Boundaries.** No instruction is written that has not been executed in this
+milestone. Every command shown is generated from or checked against the real
+command line, the way the existing documentation gates require.
+
+**Dependencies.** I3, I4, I5, I6, I7, I8.
+
+**Working state.** Each document present, checked by the documentation gates,
+and naming no step that was never run.
+
+## Decisions register
+
+This is an index only; each decision is owned and explained inside its item.
+
+| Decision | Owner | Status |
+|---|---|---|
+| Push `develop` to GitHub | I1 | **Blocking.** The owner authorizes the first external write |
+| Merge the `develop`-to-`main` pull request | I1 | **Blocking.** The owner authorizes the merge, after review; method is a merge commit, already decided |
+| Whether Wails v3 has released | I2 | **Taken 2026-09-09: it has not.** `wails/v3@latest` is `v3.0.0-beta.19`, so the migration is deferred to post-v1.0 and v1.0 ships on Wails v2 |
+| The profile-registry validation race | I4 | Non-blocking default: fix it; refusing with a reason is the alternative, leaving it as a test workaround is not |
+| Which platforms the frozen matrix claims | I7 | Non-blocking default: only what was executed here |

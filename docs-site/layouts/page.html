@@ -1,0 +1,20 @@
+{{ define "main" }}
+<article class="ledger-post">
+  <div class="ledger-prose" data-pagefind-body>
+    {{- if eq .File.Path "cli.md" -}}
+      {{- /* The generated CLI registry uses angle brackets for positional
+           placeholders. Goldmark otherwise treats those tokens as unsafe raw
+           HTML and drops them. Render an escaped publication-only view while
+           leaving docs/ and the Help notebook bytes unchanged. */ -}}
+      {{- $marker := `<!-- notrios:generated:user:the-notriosctl-cli:end -->` -}}
+      {{- $parts := split .RawContent $marker -}}
+      {{- if ne (len $parts) 2 }}{{ errorf "CLI generated-block marker is missing or duplicated" }}{{ end -}}
+      {{- $escaped := replaceRE `<([A-Za-z0-9][A-Za-z0-9._|/ ^:-]*)>` `&lt;$1&gt;` (index $parts 0) -}}
+      {{- $adapted := printf "%s\n%s" $escaped (index $parts 1) -}}
+      {{- .RenderString (dict "display" "block") $adapted -}}
+    {{- else -}}
+      {{ .Content }}
+    {{- end -}}
+  </div>
+</article>
+{{ end }}

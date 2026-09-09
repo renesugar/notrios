@@ -1,0 +1,41 @@
+{
+  "schema": "notrios.g18g.qa-report.v1",
+  "status": "complete",
+  "browser_plugin": {"available": false, "fallback": "browser_smoke.mjs", "screenshots": "caller-provided /tmp path only"},
+  "routes": {"preserved": 18, "g18a_sections": 267, "aliases": 2},
+  "search": {"indexed_pages": 18, "known_query": "Argon2id", "result_under_base": true},
+  "raw_help": {"byte_equivalent": true, "id_equivalent": true, "content_equivalent": true, "idempotent": true},
+  "offline": {"remote_runtime_assets": 0, "remote_fonts": 0, "local_pagefind": true, "csp_external_requests": 0},
+  "measurements": {
+    "source": "single observed local G18g production run; G18b current-builder values are the frozen baseline",
+    "output_files": 53,
+    "output_bytes": 1419897,
+    "html_bytes": 530458,
+    "pagefind_bytes": 841178,
+    "build_seconds": 2.71,
+    "max_rss_kib": 82432,
+    "indexed_words": 3438,
+    "baseline_build_seconds": 39.72,
+    "baseline_output_bytes": 1109026
+  },
+  "reproducibility": {
+    "hugo_output_byte_identical": true,
+    "pagefind_semantically_identical": true,
+    "pagefind_byte_identical": false,
+    "repeat_indexed_pages": 18,
+    "repeat_known_query": "pass",
+    "qualification": "Pagefind 1.5.2 varies hashed metadata/index shard names; the approved G18b contract requires repeatable pinned inputs and observable behavior, not a byte-identical Pagefind tree."
+  },
+  "browser": {
+    "desktop_viewport": [1440, 960],
+    "mobile_viewport": [390, 844],
+    "theme_contrast_ratios": {"light": 15.0, "dark": 15.07, "contrast": 21.0},
+    "mobile_target_px": [44, 44],
+    "mobile_overflow_px": 0,
+    "console_http_page_errors": 0,
+    "csp_violations": 0,
+    "external_requests": 0,
+    "qualification": "Executable rendered smoke and visual inspection, not a complete WCAG audit"
+  },
+  "validation": {"validator": "passed source, built-site, and mutation gates", "mutation_tests": 5, "desktop": "passed", "mobile": "passed"}
+}

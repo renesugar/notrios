@@ -1,0 +1,341 @@
+{
+  "schema": "notrios.v08e.archive-manifest.v1",
+  "milestone": "v0.8",
+  "evidence_directory": "/home/renes/evidence/notrios",
+  "honest_provenance": "Every archive marked retroactive was built in v0.8e, after its slice closed. Its file timestamp is the date it was built and says nothing about when the work happened. What attests the sealing is the reserve's OpenPGP signature and RFC 3161 timestamp; nothing here attests when the work was done.",
+  "archives": [
+    {
+      "item": "H0",
+      "archive": "notrios-v0.8-h0-e164aeb.zip",
+      "commit": "e164aebbc6a48edc4858c11fa64470e95d0ec90a",
+      "taken": "when the slice closed",
+      "bytes": 5334539,
+      "entries": 1778,
+      "sha256": "5b131883de2376bdeb6ec809742524c237b3e0bbd6a5621b501903ff28b9bf2f"
+    },
+    {
+      "item": "H1",
+      "archive": "notrios-v0.8-h1-fa3803c.zip",
+      "commit": "fa3803c4e0a3f474f7743a77fbb72363f714f978",
+      "taken": "retroactively in v0.8e",
+      "supersedes": "notrios-v0.8-h1-0bee555.zip",
+      "superseded_because": "the existing archive carries the 11 MB notrioslib ELF binary and is refused by today's scripts/check_release_zip.py. Its tree is faithful to the pre-rewrite commit named in its filename -- the handoff's mapping table resolves it -- but sealing a rejected archive into an immutable reserve would preserve the mistake permanently.",
+      "bytes": 8048849,
+      "entries": 1810,
+      "sha256": "202266b5d7697be7dd95354fca470e0197a4bf23fc9e4b390839c84c9b0c7804"
+    },
+    {
+      "item": "H2a",
+      "archive": "notrios-v0.8-h2a-af37c4c.zip",
+      "commit": "af37c4c4901793eac6403927febaee06ac8d4c40",
+      "taken": "retroactively in v0.8e",
+      "supersedes": "notrios-v0.8-h2a-2b9f00b.zip",
+      "superseded_because": "the existing archive carries the 11 MB notrioslib ELF binary and is refused by today's scripts/check_release_zip.py. Its tree is faithful to the pre-rewrite commit named in its filename -- the handoff's mapping table resolves it -- but sealing a rejected archive into an immutable reserve would preserve the mistake permanently.",
+      "bytes": 8097769,
+      "entries": 1839,
+      "sha256": "1ccad5458d57bee0623d192044fc00d84c6a29cc24682b47036f87a56cec7169"
+    },
+    {
+      "item": "H2",
+      "archive": "notrios-v0.8-h2-e69419c.zip",
+      "commit": "e69419c129843e23b60291ab2021911b23a8a6df",
+      "taken": "retroactively in v0.8e",
+      "supersedes": "notrios-v0.8-h2-27de1d1.zip",
+      "superseded_because": "the existing archive carries the 11 MB notrioslib ELF binary and is refused by today's scripts/check_release_zip.py. Its tree is faithful to the pre-rewrite commit named in its filename -- the handoff's mapping table resolves it -- but sealing a rejected archive into an immutable reserve would preserve the mistake permanently.",
+      "bytes": 9033391,
+      "entries": 1948,
+      "sha256": "ce265b2a7d23f7423ad6468cf3068c005af479edfc84fbd63439ef36c2d3a9c0"
+    },
+    {
+      "item": "H2b",
+      "archive": "notrios-v0.8-h2b-e4f4432.zip",
+      "commit": "e4f4432663ec40344bdc86d026e2615e8c6c1ec8",
+      "taken": "retroactively in v0.8e",
+      "supersedes": "notrios-v0.8-h2b-9043a4d.zip",
+      "superseded_because": "the existing archive carries the 11 MB notrioslib ELF binary and is refused by today's scripts/check_release_zip.py. Its tree is faithful to the pre-rewrite commit named in its filename -- the handoff's mapping table resolves it -- but sealing a rejected archive into an immutable reserve would preserve the mistake permanently.",
+      "bytes": 8107410,
+      "entries": 1842,
+      "sha256": "606401536d3e113161f9da0a92b1e0659fec6a17990b739c7723fa65edaa5042"
+    },
+    {
+      "item": "H3",
+      "archive": "notrios-v0.8-h3-97652f1.zip",
+      "commit": "97652f1cef81f034df3e54ee6b1fedb75d1ae839",
+      "taken": "retroactively in v0.8e",
+      "supersedes": "notrios-v0.8-h3-37cadac.zip",
+      "superseded_because": "the existing archive carries the 11 MB notrioslib ELF binary and is refused by today's scripts/check_release_zip.py. Its tree is faithful to the pre-rewrite commit named in its filename -- the handoff's mapping table resolves it -- but sealing a rejected archive into an immutable reserve would preserve the mistake permanently.",
+      "bytes": 9090345,
+      "entries": 1969,
+      "sha256": "c120f577aaafb9ba7ec2b319b0f1ef6ad99b22630d6eef533cc1db7d99eafdc3"
+    },
+    {
+      "item": "H4",
+      "archive": "notrios-v0.8-h4-693b672.zip",
+      "commit": "693b672dee4f216ac9b6ad42600b6774e6822234",
+      "taken": "when the slice closed",
+      "bytes": 9208812,
+      "entries": 1998,
+      "sha256": "1bf460aee1d7fc393c1537f554af153daa5710ec9b158cc6c0801a130f2d234c"
+    },
+    {
+      "item": "H4a",
+      "archive": "notrios-v0.8-h4a-036ba0c.zip",
+      "commit": "036ba0c78b891a06feb8feb1f3aa424c788409d9",
+      "taken": "retroactively in v0.8e",
+      "bytes": 9183748,
+      "entries": 1991,
+      "sha256": "fef0c36ab82abcd039c0e2cc152615be4f927e30ca65ce8d443871742f1dfba5"
+    },
+    {
+      "item": "H4b",
+      "archive": "notrios-v0.8-h4b-e58abf6.zip",
+      "commit": "e58abf6b3df9e474a4c323678b6ecfd1afc052e0",
+      "taken": "retroactively in v0.8e",
+      "bytes": 9206795,
+      "entries": 1994,
+      "sha256": "416807fdd5a6ffd77fd3f3c5248ed138e8716d3b874ac778562cb628ab1954a2"
+    },
+    {
+      "item": "H5",
+      "archive": "notrios-v0.8-h5-3ec1ab3.zip",
+      "commit": "3ec1ab3fe30b165394b771ab8c3a237816b225bc",
+      "taken": "retroactively in v0.8e",
+      "bytes": 9234737,
+      "entries": 1996,
+      "sha256": "656f2992f131519cb9b70c5e38b918d6879195cc2fa5b04915abf4373c13dc9c"
+    },
+    {
+      "item": "H6a",
+      "archive": "notrios-v0.8-h6a-57b2a71.zip",
+      "commit": "57b2a717f3ba645462f7d5ec9601ea8a6f266a81",
+      "taken": "retroactively in v0.8e",
+      "bytes": 9248848,
+      "entries": 2003,
+      "sha256": "ecd6374593087010a4eeb759d568dd4d5f76c19f00b58b475c5decd1cc59fbbd"
+    },
+    {
+      "item": "H6",
+      "archive": "notrios-v0.8-h6-3abdbf7.zip",
+      "commit": "3abdbf79cf4a4d1aba4a607deb5436c8f47becd7",
+      "taken": "retroactively in v0.8e",
+      "bytes": 11349036,
+      "entries": 2049,
+      "sha256": "0ed958344f956601bc4d54842840a5ba2e95966336ca9c9dd41d371827a21cd7"
+    },
+    {
+      "item": "H8",
+      "archive": "notrios-v0.8-h8-a3490aa.zip",
+      "commit": "a3490aa76c2e5c225c2d9d25778899bf642e36c7",
+      "taken": "retroactively in v0.8e",
+      "bytes": 11360058,
+      "entries": 2053,
+      "sha256": "2dd37fb578a374c7a7df26ee7dc01a4d1d3064b0773033165245ba4a92ad82ff"
+    },
+    {
+      "item": "H14",
+      "archive": "notrios-v0.8-h14-1c8d577.zip",
+      "commit": "1c8d5773064377ccb0c23f677028f5aea10e9e18",
+      "taken": "retroactively in v0.8e",
+      "bytes": 18068134,
+      "entries": 2196,
+      "sha256": "f0efff10a7b7ec09701df4445d842071a87d5d4ff1f2fe0a60fb0a8f7660fa47"
+    },
+    {
+      "item": "H7",
+      "archive": "notrios-v0.8-h7-f544b98.zip",
+      "commit": "f544b980ed7a730a775f5cc2ac02b205484a827c",
+      "taken": "retroactively in v0.8e",
+      "bytes": 9260333,
+      "entries": 2008,
+      "sha256": "9ec7551400ee7d3f66b875805e67918f77a1bfdeab6844ccb5ad32ecd74b7028"
+    },
+    {
+      "item": "H9",
+      "archive": "notrios-v0.8-h9-f0672d9.zip",
+      "commit": "f0672d9209a45c71a95ebd31e1e0e65d3d03a41b",
+      "taken": "retroactively in v0.8e",
+      "bytes": 18217674,
+      "entries": 2235,
+      "sha256": "3fa64d5afcace99476ca0f3c3648b6867c6c2b2680c718f047b1e3f9b8b205fe"
+    },
+    {
+      "item": "H10",
+      "archive": "notrios-v0.8-h10-b265ada.zip",
+      "commit": "b265ada1562489a62f2d2cbf8f324da265aae73d",
+      "taken": "retroactively in v0.8e",
+      "bytes": 24816497,
+      "entries": 2315,
+      "sha256": "55a1d6ab90d49013006f91d756407b1bc668ceeaa1d324e2dd5fb41d7e5c09bb"
+    },
+    {
+      "item": "H11",
+      "archive": "notrios-v0.8-h11-8c7017c.zip",
+      "commit": "8c7017c6156af0134b7c768d3ad294dd2bf14b34",
+      "taken": "retroactively in v0.8e",
+      "bytes": 24789162,
+      "entries": 2304,
+      "sha256": "27cb714b67a0e742ced23ac4eeb7815f64d3c441eacda0322f322ba049156f61"
+    },
+    {
+      "item": "H12",
+      "archive": "notrios-v0.8-h12-baf6e4b.zip",
+      "commit": "baf6e4ba6c925a4c0cce1068d8d4ffb127f3d179",
+      "taken": "retroactively in v0.8e",
+      "bytes": 24047222,
+      "entries": 2290,
+      "sha256": "eb192a55fe45d0cf947932b69e95c991d2d11e0978248b3ef05dd41eeb9f02dc"
+    },
+    {
+      "item": "H15",
+      "archive": "notrios-v0.8-h15-fde811e.zip",
+      "commit": "fde811e5f8e8125a9480abdf886bc6cb22f71042",
+      "taken": "retroactively in v0.8e",
+      "bytes": 24046003,
+      "entries": 2290,
+      "sha256": "97833b795fd41bbf4917f080fb6e2d5d20f21a8ae6ebc9598c6cabe9a1052e51"
+    },
+    {
+      "item": "H16",
+      "archive": "notrios-v0.8-h16-b69b653.zip",
+      "commit": "b69b653dd6dc07de0391ead08bb190b405c04419",
+      "taken": "retroactively in v0.8e",
+      "bytes": 18214502,
+      "entries": 2235,
+      "sha256": "2cdfd0f0b94872fe065cc0168385bedf87002664ad179e2f3f4b1940559854f1"
+    },
+    {
+      "item": "H17",
+      "archive": "notrios-v0.8-h17-fa362b3.zip",
+      "commit": "fa362b3e71859172e22d2a18bffc5836dc6cc92c",
+      "taken": "retroactively in v0.8e",
+      "bytes": 18251142,
+      "entries": 2239,
+      "sha256": "abe7ac0ac162d9f5f80ff347999be836a3de671f95d208a4a8b1e3e6d90bed9e"
+    },
+    {
+      "item": "H18",
+      "archive": "notrios-v0.8-h18-f79c956.zip",
+      "commit": "f79c956cc4822ef7e1b384a6453903afec9e4844",
+      "taken": "retroactively in v0.8e",
+      "bytes": 24046748,
+      "entries": 2290,
+      "sha256": "ca9acc005d7e1e1a6fc317fba02fe65f7c8bc5faf6eb0d980c48ae08531d5b01"
+    },
+    {
+      "item": "H19",
+      "archive": "notrios-v0.8-h19-cb76c7f.zip",
+      "commit": "cb76c7fdd9669e869b1fc9d140c9c78ffb23d59a",
+      "taken": "retroactively in v0.8e",
+      "bytes": 18204982,
+      "entries": 2232,
+      "sha256": "c05dc00a5a0db983e3f1c8e28bfa32085a4b0b7489ae9cd803f27a0b4e670366"
+    },
+    {
+      "item": "H13",
+      "archive": "notrios-v0.8-h13-10e7077.zip",
+      "commit": "10e70771d6e9477508448144afa6b6949fd22a6c",
+      "taken": "retroactively in v0.8e",
+      "supersedes": "notrios-v0.8-h13-030ef2d.zip",
+      "superseded_because": "the existing archive matches no commit. It was built from the working tree while 030ef2d was HEAD and H13's own changes were uncommitted, so its filename asserts a commit whose tree it does not carry. Rebuilt from 10e7077, which is H13's close-out.",
+      "bytes": 24945579,
+      "entries": 2316,
+      "sha256": "8fc22b236266ba0efd17b9aacdc2b4abdd34688161392efd611a927141900b8e"
+    },
+    {
+      "item": "H20",
+      "archive": "notrios-v0.8-h20-fa25182.zip",
+      "commit": "fa2518214a04fcc8cb27a133b1c69e95bba2f8e5",
+      "taken": "retroactively in v0.8e",
+      "bytes": 18208254,
+      "entries": 2233,
+      "sha256": "3a95d434c4b6ad9fa1c2533a0482ba0151121769d4bcaa14abbdd6010e24bd34"
+    },
+    {
+      "item": "H21",
+      "archive": "notrios-v0.8-h21-49e4ad0.zip",
+      "commit": "49e4ad0da24ac49397bb1466894cb25346ea68d9",
+      "taken": "retroactively in v0.8e",
+      "bytes": 18175957,
+      "entries": 2227,
+      "sha256": "417a7639a47d1f5f77abed095b4d7f92acde3768ed64b2631d060ec470725d09"
+    },
+    {
+      "item": "H22",
+      "archive": "notrios-v0.8-h22-f2df4b3.zip",
+      "commit": "f2df4b36bc04b118cdeea9422d5472b7305e4502",
+      "taken": "retroactively in v0.8e",
+      "bytes": 18157658,
+      "entries": 2224,
+      "sha256": "963925a48c9a410c547558c6733fecb43b92e8a53901111f53c49a45b346112d"
+    },
+    {
+      "item": "H23",
+      "archive": "notrios-v0.8-h23-5aca5ea.zip",
+      "commit": "5aca5eaa2f6ae63046356a26e22ae5414760bea0",
+      "taken": "retroactively in v0.8e",
+      "bytes": 18148631,
+      "entries": 2222,
+      "sha256": "4dba8109fded5fefd888f5737ee10fa8209d343dc0997642abdfeea9eb634d9e"
+    },
+    {
+      "item": "H24",
+      "archive": "notrios-v0.8-h24-faf9bd6.zip",
+      "commit": "faf9bd670c927d0f1dcc8c269d43b1b611cf1468",
+      "taken": "retroactively in v0.8e",
+      "bytes": 18164235,
+      "entries": 2224,
+      "sha256": "a14b5e145ede53ec4ce81fd30c15c346fcffef3753fff69fc98867dbc6df76f4"
+    },
+    {
+      "item": "H25",
+      "archive": "notrios-v0.8-h25-677ca1f.zip",
+      "commit": "677ca1f3eb611db5cbb2f0f108d160fa3d1ab139",
+      "taken": "retroactively in v0.8e",
+      "bytes": 18181073,
+      "entries": 2228,
+      "sha256": "6527e546fa773fb1056bc622e8f577ea5852e63a1751ea61e39616ec6f1ea196"
+    },
+    {
+      "item": "H26",
+      "archive": "notrios-v0.8-h26-b4fd8f9.zip",
+      "commit": "b4fd8f9fa81e15c091de86a5ef83271252d32986",
+      "taken": "retroactively in v0.8e",
+      "bytes": 18196292,
+      "entries": 2230,
+      "sha256": "0d4f747f7929a33f1584613902530a37f8e477273b24893475c14b7593bea4b3"
+    },
+    {
+      "item": "H27",
+      "archive": "notrios-v0.8-h27-c836eb5.zip",
+      "commit": "c836eb53c9f11aa0085c8db64c89651e91e54634",
+      "taken": "retroactively in v0.8e",
+      "bytes": 18238244,
+      "entries": 2237,
+      "sha256": "f33fee8dc66fdff9a525247456f623aee2569e427fc1ce8edf2a04cef9c1c3f0"
+    },
+    {
+      "item": "H28",
+      "archive": "notrios-v0.8-h28-73f605c.zip",
+      "commit": "73f605c5f77070963320404baac2762680973b46",
+      "taken": "retroactively in v0.8e",
+      "bytes": 18785532,
+      "entries": 2244,
+      "sha256": "f110d0e3996ef6524df42de84553414800d0a60e51ad7452ba08e3dfd1a3b69a"
+    },
+    {
+      "item": "H29",
+      "archive": "notrios-v0.8-h29-391cdd5.zip",
+      "commit": "391cdd521f160fa7aeb01333d20816a3f1d0d8b0",
+      "taken": "retroactively in v0.8e",
+      "bytes": 24772535,
+      "entries": 2298,
+      "sha256": "0bea90db3f0c21fd5eb907a8018272e772c1c268dea944b7cc36216e0c32f545"
+    }
+  ],
+  "counts": {
+    "items": 35,
+    "retroactive": 33,
+    "superseding_an_earlier_archive": 6,
+    "total_bytes": 552440726
+  }
+}

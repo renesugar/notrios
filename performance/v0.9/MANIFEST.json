@@ -1,0 +1,22 @@
+{
+  "schema": "notrios.v08e.archive-manifest.v1",
+  "milestone": "v0.9",
+  "evidence_directory": "/home/renes/evidence/notrios",
+  "honest_provenance": "Each archive here was built from the commit that closed its item, by the same worktree path v0.8e used, and verified byte-identical to that commit. A file timestamp says when the archive was built and nothing about when the work happened. I2 is deferred rather than complete: its archive records the commit that made and explained that decision, which is the work the item produced.",
+  "archives": [
+    {
+      "item": "I2",
+      "archive": "notrios-v0.9-i2-e3f6de7.zip",
+      "commit": "e3f6de7deb65558c25a03731799fa4d10e1f9cbc",
+      "taken": "when the slice closed",
+      "bytes": 24958176,
+      "entries": 2409,
+      "sha256": "9ba487731625c63c944d78d21b1361dae75e6a5e3df83984ebf25f601eafc49c"
+    }
+  ],
+  "counts": {
+    "items": 1,
+    "retroactive": 0,
+    "total_bytes": 24958176
+  }
+}

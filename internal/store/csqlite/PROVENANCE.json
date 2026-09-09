@@ -1,0 +1,60 @@
+{
+  "archive_bytes": 2946650,
+  "archive_filename": "sqlite-amalgamation-3530400.zip",
+  "archive_sha256": "1e71ddf93849c6a6ecf58b827c0692073d2dd7ee40196158068f7b29f422e87d",
+  "archive_sha3_256": "628a44cfe82c66aed1ccbbe85a562d2e33ebe64b3288981ed76285612227934e",
+  "build_owner": "internal/store/sqlite_cgo.go",
+  "compile_options": [
+    "SQLITE_THREADSAFE=1",
+    "SQLITE_ENABLE_FTS5",
+    "SQLITE_ENABLE_JSON1",
+    "SQLITE_DQS=0",
+    "SQLITE_OMIT_LOAD_EXTENSION",
+    "SQLITE_SECURE_DELETE",
+    "SQLITE_USE_URI=1"
+  ],
+  "component": "sqlite-amalgamation",
+  "files": {
+    "sqlite3.c": {
+      "bytes": 9515341,
+      "sha256": "b1dd5d74ec7f29055a6684fa06fb3c2f6821c87dd38f9a458dfd2e8a1db28189"
+    },
+    "sqlite3.h": {
+      "bytes": 690838,
+      "sha256": "919e7f2e8ed1d8f56ac17b412b8971c76aa5d1a879752cc6058f75e7d5910e1d"
+    }
+  },
+  "license": "public-domain",
+  "license_notice": "NOTICE",
+  "linkage": {
+    "dynamic_sqlite_dependency": false,
+    "exported_sqlite_symbols": 0,
+    "mode": "static",
+    "visibility": "hidden"
+  },
+  "modified": false,
+  "omitted_from_archive": {
+    "shell.c": "no SQLite shell ships with this project",
+    "sqlite3ext.h": "extension loading is compiled out via SQLITE_OMIT_LOAD_EXTENSION"
+  },
+  "selected_by": "v0.8 H0",
+  "selected_by_archive": "plans/v0.8/002-application-facade-c-abi-sqlite-ownership-investigation.md",
+  "source_id": "2026-07-24 19:02:57 bf7c7f30031888f4e796e429ab3978879485813aaca6f641c7b33e4e09459bcc",
+  "source_url": "https://www.sqlite.org/2026/sqlite-amalgamation-3530400.zip",
+  "update_policy": [
+    "Each update is its own reviewed slice.",
+    "Verify the official SHA3-256 published by sqlite.org before extracting.",
+    "Record the archive and per-file SHA-256 and the SQLite source id.",
+    "Diff the compile options and justify every change.",
+    "Rerun the desktop and Android target matrices from H0.",
+    "Rerun the ABI symbol, owner, and checkpointed round-trip checks.",
+    "Keep the previous pin available until release acceptance succeeds."
+  ],
+  "vendored_by": "v0.8 H1 slice C",
+  "vendored_on": "2026-09-01",
+  "verified_by": [
+    "scripts/check_sqlite_provenance.py",
+    "internal/store/sqlite_pin_test.go"
+  ],
+  "version": "3.53.4"
+}
