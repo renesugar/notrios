@@ -2,669 +2,72 @@
   "schema": "notrios.docplan.slices.v1",
   "items": [
     {
-      "id": "H0",
-      "title": "Application-facade, C-ABI, and SQLite ownership investigation",
-      "state": "complete",
-      "slices": []
-    },
-    {
-      "id": "H1",
-      "title": "Shared application facade and ABI-major-1 library",
-      "state": "complete",
-      "slices": []
-    },
-    {
-      "id": "H2a",
-      "title": "Mermaid renderer and security investigation",
-      "state": "complete",
-      "slices": []
-    },
-    {
-      "id": "H2",
-      "title": "Bounded offline Mermaid enablement",
-      "state": "complete",
-      "slices": []
-    },
-    {
-      "id": "H2b",
-      "title": "Desktop external-link opening",
-      "state": "complete",
-      "slices": []
-    },
-    {
-      "id": "H3",
-      "title": "Installed-path, XDG, migration, and destructive-lifecycle investigation",
-      "state": "complete",
-      "slices": []
-    },
-    {
-      "id": "H4",
-      "title": "Installed runtime paths, assets, and migration",
-      "state": "complete",
-      "slices": []
-    },
-    {
-      "id": "H4a",
-      "title": "Distinct development and installed default ports in the documentation",
-      "state": "complete",
-      "slices": []
-    },
-    {
-      "id": "H4b",
-      "title": "Verified backup before a startup schema migration",
-      "state": "complete",
-      "slices": []
-    },
-    {
-      "id": "H5",
-      "title": "Safe Make install, uninstall, and purge lifecycle",
-      "state": "complete",
-      "slices": []
-    },
-    {
-      "id": "H6a",
-      "title": "Desktop installer and GitHub-native build investigation",
-      "state": "complete",
-      "slices": []
-    },
-    {
-      "id": "H6",
-      "title": "Ubuntu-priority installer package",
-      "state": "complete",
-      "slices": []
-    },
-    {
-      "id": "H8",
-      "title": "Installed integration harness and Ubuntu baseline",
-      "state": "complete",
-      "slices": []
-    },
-    {
-      "id": "H14",
-      "title": "Documentation actionability investigation",
-      "state": "complete",
-      "slices": []
-    },
-    {
-      "id": "H7",
-      "title": "Windows and macOS installer workflow implementation",
-      "state": "deferred",
-      "slices": []
-    },
-    {
-      "id": "H9",
-      "title": "Native credential-store selection and integration",
-      "state": "complete",
+      "id": "E1",
+      "title": "Build the twenty-seven missing handoff archives",
+      "state": "not-started",
       "slices": [
         {
-          "id": "H9-A",
-          "statement": "An installed profile resolves sync credentials through the operating system's store, and a mobile target links none of it",
-          "state": "done",
-          "evidence": "go:github.com/renesugar/notrios/internal/credentials#Select"
+          "id": "E1-A",
+          "statement": "Every completed or deferred v0.8 item is mapped to the commit that closed it, checked rather than assumed",
+          "state": "not-started"
         },
         {
-          "id": "H9-B",
-          "statement": "Existing keys move between the native store and the owner-only development file in either direction",
-          "state": "done",
-          "evidence": "file:cmd/notriosctl/synccredentials.go"
+          "id": "E1-B",
+          "statement": "Each archive is built from its own commit in a disposable worktree and verified byte-identical to that commit's tree",
+          "state": "not-started"
         },
         {
-          "id": "H9-C",
-          "statement": "Decide whether to own the provider layer or import one (zalando/go-keyring today, 99designs/keyring evaluated, vendoring tested)",
-          "state": "done",
-          "evidence": "file:performance/v0.8-h9/RESULTS.json"
-        },
-        {
-          "id": "H9-D",
-          "statement": "Ship or reject the headless Linux tier over pass/age, which is executable here and recommended but not shipped",
-          "state": "done",
-          "evidence": "file:ROADMAP.md"
-        },
-        {
-          "id": "H9-E",
-          "statement": "Write the host-supplied credential contract for Android, iOS and wasm, where the provider returns ErrUnsupportedPlatform today",
-          "state": "done",
-          "evidence": "file:FLUTTER_GO_CLIENT.md"
+          "id": "E1-C",
+          "statement": "Each archive is copied to the evidence directory and verified byte-identical there",
+          "state": "not-started"
         }
       ]
     },
     {
-      "id": "H10",
-      "title": "Wails v3 migration spike",
-      "state": "complete",
+      "id": "E2",
+      "title": "Record the backfill honestly, and say what it is",
+      "state": "not-started",
       "slices": [
         {
-          "id": "H10-A",
-          "statement": "A disposable v3 prototype compares dependencies, builds, bindings, menus, deep links, lifecycle, profiles and packaging against the v2 baseline",
-          "state": "done",
-          "evidence": "file:performance/v0.8-h10/prototype/main.go"
+          "id": "E2-A",
+          "statement": "A committed manifest names every archive with its commit, size, entries, hash, and whether it was retroactive",
+          "state": "not-started"
         },
         {
-          "id": "H10-B",
-          "statement": "A decision report recommends migrate later, defer, or reject, with upstream status current at execution time",
-          "state": "done",
-          "evidence": "file:performance/v0.8-h10/REPORT.json"
+          "id": "E2-B",
+          "statement": "The handoff document's snapshot table covers every v0.8 item rather than the first four",
+          "state": "not-started"
         }
       ]
     },
     {
-      "id": "H11",
-      "title": "Android-emulator shared-core acceptance",
-      "state": "complete",
+      "id": "E3",
+      "title": "Seal a reserve volume, and extend the outer catalog",
+      "state": "not-started",
       "slices": [
         {
-          "id": "H11-A",
-          "statement": "The shared core builds for android/arm64 and runs against an emulator, with the credential provider host-supplied",
-          "state": "done",
-          "evidence": "file:performance/v0.8-h11/run_acceptance.sh"
+          "id": "E3-A",
+          "statement": "A new volume seals the backfilled archives, signed by the production subkey and RFC 3161 timestamped",
+          "state": "blocked",
+          "blocked_on": "explicit authorization: no burn, media write, signing or catalogue sealing without it"
         },
         {
-          "id": "H11-B",
-          "statement": "An acceptance record states what was proven on the emulator and what remains a physical-device claim",
-          "state": "done",
-          "evidence": "file:performance/v0.8-h11/REPORT.json"
+          "id": "E3-B",
+          "statement": "The outer catalog is extended and the reserve verifier passes end to end",
+          "state": "blocked",
+          "blocked_on": "explicit authorization: no burn, media write, signing or catalogue sealing without it"
         }
       ]
     },
     {
-      "id": "H12",
-      "title": "First GitHub push and develop-to-main pull request",
-      "state": "deferred",
-      "slices": []
-    },
-    {
-      "id": "H15",
-      "title": "Complete the journey catalogues, and give the GUI an inventory",
-      "state": "complete",
+      "id": "E4",
+      "title": "Make a missing archive fail rather than pass unnoticed",
+      "state": "not-started",
       "slices": [
         {
-          "id": "H15-A",
-          "statement": "The interface can tag and untag a note, with a captured journey",
-          "state": "done",
-          "evidence": "file:docs/images/journeys/tag-a-note-add-it.png"
-        },
-        {
-          "id": "H15-B",
-          "statement": "The command line can delete and restore a note",
-          "state": "done",
-          "evidence": "go:github.com/renesugar/notrios/cmd/notriosctl#runNotes"
-        },
-        {
-          "id": "H15-C",
-          "statement": "A control crawl enumerates the interface by state and pins what it finds",
-          "state": "done",
-          "evidence": "file:performance/v0.8-h15/GUI_CONTROLS.json"
-        },
-        {
-          "id": "H15-D",
-          "statement": "The pinned inventory cannot go stale unnoticed: an interface signature fails validation when a control is added without re-crawling",
-          "state": "done",
-          "evidence": "file:performance/v0.8-h15/interface_signature.py"
-        },
-        {
-          "id": "H15-E",
-          "statement": "The desktop harness captures the four journeys a browser cannot reach",
-          "state": "done",
-          "evidence": "test:TestDesktopJourneyCapture"
-        },
-        {
-          "id": "H15-F",
-          "statement": "Saving stays explicit and the unsaved draft is protected, including when the window closes",
-          "state": "done",
-          "evidence": "file:web/src/draft.ts"
-        },
-        {
-          "id": "H15-G",
-          "statement": "Write GUI journeys for the twelve features that have an interface surface and none: collections, attachments, remote media, links, graph, query blocks, sync pairing, sync exchange, sync peers, sync recovery, jobs and profiles",
-          "state": "done",
-          "evidence": "test:TestEveryGUIFeatureHasAJourney"
-        },
-        {
-          "id": "H15-H",
-          "statement": "Work down the eighteen features with no command-line journey, which the ratchet tracks",
-          "state": "done",
-          "evidence": "test:TestFeaturesWithoutAJourneyAreTracked"
-        },
-        {
-          "id": "H15-I",
-          "statement": "Decide how much of the query language one journey should demonstrate, and whether interface journeys should point at command-line-only tasks",
-          "state": "done",
-          "evidence": "file:PLAN.md"
-        }
-      ]
-    },
-    {
-      "id": "H16",
-      "title": "Reconcile the collection model with what is actually stored",
-      "state": "complete",
-      "slices": [
-        {
-          "id": "H16-A",
-          "statement": "Answer what a collection is, and what kind, capabilities, deletion and --collection mean",
-          "state": "done",
-          "evidence": "file:PLAN.md"
-        },
-        {
-          "id": "H16-B",
-          "statement": "An unspecified collection means every collection wherever a read is scoped, and --collection narrows rather than presumes",
-          "state": "done",
-          "evidence": "go:github.com/renesugar/notrios/internal/store#CollectionScopeSQL"
-        },
-        {
-          "id": "H16-C",
-          "statement": "Remove kind and capabilities from api.Collection, the OpenAPI schema and MCP list_collections, and the three columns that never existed from DATABASE_SCHEMA.md",
-          "state": "done",
-          "evidence": "file:internal/api/types.go"
-        },
-        {
-          "id": "H16-D",
-          "statement": "Decide whether a dangling collection identifier is repaired by adopting the note into default or by recreating the missing row, and what schema precondition that repair requires",
-          "state": "done",
-          "evidence": "test:TestLintFindsANoteWhoseCollectionHasNoRow"
-        },
-        {
-          "id": "H16-E",
-          "statement": "Decide whether a collection's name and description stay editable, and write the route if they do",
-          "state": "done",
-          "evidence": "file:DATABASE_SCHEMA.md"
-        },
-        {
-          "id": "H16-F",
-          "statement": "Decide whether the breaking response-shape change ships in v0.8",
-          "state": "done",
-          "evidence": "file:api/openapi.yaml"
-        },
-        {
-          "id": "H16-G",
-          "statement": "Stop writing the hardcoded collection capabilities into archive-v2, after the movenotes-v3 verifier stops requiring them",
-          "state": "done",
-          "evidence": "test:TestAnOlderArchiveWithCapabilitiesStillReads"
-        }
-      ]
-    },
-    {
-      "id": "H17",
-      "title": "Act on many notes at once, named by a query",
-      "state": "complete",
-      "slices": [
-        {
-          "id": "H17-B",
-          "statement": "The command line names a set by query, shows the selection, and then acts on it",
-          "state": "done",
-          "evidence": "test:TestQueryTrashCarriesTheRevisionPrecondition"
-        },
-        {
-          "id": "H17-C",
-          "statement": "Decide whether the command grows notriosctl batch or the existing commands grow --query",
-          "state": "done",
-          "evidence": "file:PLAN.md"
-        }
-      ]
-    },
-    {
-      "id": "H18",
-      "title": "Make the features page usable, and generate the table under it",
-      "state": "complete",
-      "slices": [
-        {
-          "id": "H18-A",
-          "statement": "The capability catalogue renders as prose sections rather than as bullets with bracketed scores",
-          "state": "done",
-          "evidence": "go:github.com/renesugar/notrios/internal/docfeatures#Registry"
-        },
-        {
-          "id": "H18-B",
-          "statement": "A capability-by-surface table is generated from the same registry, with the shared-library column refused a claim it cannot verify",
-          "state": "done",
-          "evidence": "go:github.com/renesugar/notrios/internal/docfeatures#(Registry).SurfaceTable"
-        },
-        {
-          "id": "H18-C",
-          "statement": "A heading a generator emitted is graded generated rather than unverified, in the inventory and in the audit",
-          "state": "done",
-          "evidence": "file:performance/v0.7-g18a/build_inventory.py"
-        },
-        {
-          "id": "H18-D",
-          "statement": "Rewrite the twenty-nine summaries and surface notes in FEATURES.json for a reader rather than against the surfaces",
-          "state": "done",
-          "evidence": "file:docs/docfeatures/FEATURES.json"
-        }
-      ]
-    },
-    {
-      "id": "H19",
-      "title": "notriosctl search",
-      "state": "complete",
-      "slices": [
-        {
-          "id": "H19-A",
-          "statement": "A read-only search command takes the query language and prints hits a person can read",
-          "state": "done",
-          "evidence": "test:TestSearchFindsNotesAndReturnsIdsToActOn"
-        },
-        {
-          "id": "H19-B",
-          "statement": "--json emits each hit with its stable link, and --limit reports the cursor for the next page",
-          "state": "done",
-          "evidence": "test:TestSearchLinksAreTheOnesLinkPrints"
-        },
-        {
-          "id": "H19-C",
-          "statement": "Decide what --count does, given that the store returns hits and a cursor and no total",
-          "state": "done",
-          "evidence": "test:TestSearchCountAgreesWithPaging"
-        },
-        {
-          "id": "H19-D",
-          "statement": "A command-line journey finds a note and acts on the id the search returned",
-          "state": "done",
-          "evidence": "test:TestCLIJourneysActuallyRun"
-        }
-      ]
-    },
-    {
-      "id": "H13",
-      "title": "v0.8 release wrap-up",
-      "state": "complete",
-      "slices": [
-        {
-          "id": "H13-A",
-          "statement": "Reconcile every v0.8 item's evidence and archive the completed ones",
-          "state": "done",
-          "evidence": "file:RELEASE_CHECKLIST.md"
-        },
-        {
-          "id": "H13-B",
-          "statement": "Produce the internal prerelease artifacts and the verified source snapshot, and archive the milestone",
-          "state": "done",
-          "evidence": "file:plans/v0.8/000-v0.8-plan.md"
-        }
-      ]
-    },
-    {
-      "id": "H20",
-      "title": "Bring the atlas current, and stop it drifting again",
-      "state": "complete",
-      "slices": [
-        {
-          "id": "H20-A",
-          "statement": "The atlas describes what each complete v0.8 item added, in the terms the rest of the map uses",
-          "state": "done",
-          "evidence": "file:CONTEXT_MAP.md"
-        },
-        {
-          "id": "H20-B",
-          "statement": "A package under internal/ or cmd/ with no atlas entry fails a build",
-          "state": "done",
-          "evidence": "test:TestANewPackageMustBeRecordedInTheAtlas"
-        },
-        {
-          "id": "H20-C",
-          "statement": "The atlas's root-document list is generated from the document registry rather than kept in parallel",
-          "state": "done",
-          "evidence": "test:TestTheAtlasRootDocumentListIsGenerated"
-        },
-        {
-          "id": "H20-D",
-          "statement": "The chronological additions sections are resolved, so a reader looks up a path rather than a date",
-          "state": "done",
-          "evidence": "file:CONTEXT_MAP.md"
-        }
-      ]
-    },
-    {
-      "id": "H21",
-      "title": "Read a note and its structure, from the command line",
-      "state": "complete",
-      "slices": [
-        {
-          "id": "H21-A",
-          "statement": "The command line prints a note as Markdown with the front matter Notrios already writes, or as JSON, to a file or to standard output",
-          "state": "done",
-          "evidence": "file:cmd/notriosctl/noteread.go"
-        },
-        {
-          "id": "H21-B",
-          "statement": "The command line lists what is attached to a note and writes one attachment's bytes to a file",
-          "state": "done",
-          "evidence": "test:TestNoteResourcesAndResourceGetRoundTrip"
-        },
-        {
-          "id": "H21-C",
-          "statement": "The command line lists a note's links and its outline",
-          "state": "done",
-          "evidence": "test:TestNoteOutlineAnchorsMatchTheStableLink"
-        },
-        {
-          "id": "H21-D",
-          "statement": "The documentation says what reading a note already offers on REST and MCP, and stops claiming reading has no command line",
-          "state": "done",
-          "evidence": "file:docs/docfeatures/FEATURES.json"
-        }
-      ]
-    },
-    {
-      "id": "H22",
-      "title": "Discover the values a query can name",
-      "state": "complete",
-      "slices": [
-        {
-          "id": "H22-A",
-          "statement": "The command line lists and shows collections, which today can only be created as a side effect of an import",
-          "state": "done",
-          "evidence": "file:cmd/notriosctl/collections.go"
-        },
-        {
-          "id": "H22-B",
-          "statement": "The command line's notebook listing gives the ids a query takes, in JSON as well as for a reader",
-          "state": "done",
-          "evidence": "test:TestNotebookCreateAndList"
-        },
-        {
-          "id": "H22-C",
-          "statement": "The documentation says how to find a notebook or collection and then scope a search with it, and names the REST and MCP equivalents",
-          "state": "done",
-          "evidence": "test:TestCLIJourneysActuallyRun"
-        }
-      ]
-    },
-    {
-      "id": "H23",
-      "title": "One description of the command line, and --help everywhere",
-      "state": "complete",
-      "slices": [
-        {
-          "id": "H23-A",
-          "statement": "One registry in code declares every command, its purpose, its flags and its arguments, and the dispatcher reads it",
-          "state": "done",
-          "evidence": "file:internal/clispec/commands.json"
-        },
-        {
-          "id": "H23-B",
-          "statement": "--help and -h work at the top level, on a command group and on a subcommand, print the same shape, and exit 0",
-          "state": "done",
-          "evidence": "test:TestEveryLevelAnswersARequestForHelp"
-        },
-        {
-          "id": "H23-C",
-          "statement": "A dispatched subcommand missing from the registry fails a build, or is exempt with a stated reason",
-          "state": "done",
-          "evidence": "test:TestEveryDispatchedCommandIsDescribed"
-        },
-        {
-          "id": "H23-D",
-          "statement": "The surface inventory and the published CLI guide are derived from the registry rather than from a help string literal",
-          "state": "done",
-          "evidence": "go:github.com/renesugar/notrios/internal/docgen#Surfaces"
-        },
-        {
-          "id": "H23-E",
-          "statement": "Tools can discover the command line as data through notriosctl help --json",
-          "state": "done",
-          "evidence": "go:github.com/renesugar/notrios/internal/clispec#Registry"
-        },
-        {
-          "id": "H23-F",
-          "statement": "The unclaimed-surface baseline and the features registry reflect the real command line",
-          "state": "done",
-          "evidence": "test:TestUnclaimedSurfacesDoNotGrow"
-        }
-      ]
-    },
-    {
-      "id": "H24",
-      "title": "JSON is the output; a template makes it readable",
-      "state": "complete",
-      "slices": [
-        {
-          "id": "H24-A",
-          "statement": "The CLI guide shows how to render JSON output for a person with a template tool, with pipelines run against a real library and recorded as reviewed rather than made a build dependency",
-          "state": "done",
-          "evidence": "file:docs/cli.md"
-        },
-        {
-          "id": "H24-B",
-          "statement": "doctor reports as JSON as well as prose, so a script can read the one command only a person could",
-          "state": "done",
-          "evidence": "test:TestDoctorReportsTheSameRunInBothForms"
-        }
-      ]
-    },
-    {
-      "id": "H25",
-      "title": "Hold each command's flags to its description",
-      "state": "complete",
-      "slices": [
-        {
-          "id": "H25-A",
-          "statement": "A flag named in a command's description but not accepted by it fails a build",
-          "state": "done",
-          "evidence": "test:TestNoCommandDescribesAFlagItDoesNotAccept"
-        },
-        {
-          "id": "H25-B",
-          "statement": "A flag a command accepts and its description omits fails a build, common flags excepted once",
-          "state": "done",
-          "evidence": "test:TestNoCommandHidesAFlagItAccepts"
-        }
-      ]
-    },
-    {
-      "id": "H26",
-      "title": "Ask about one tag without fetching them all",
-      "state": "complete",
-      "slices": [
-        {
-          "id": "H26-A",
-          "statement": "The command line answers whether one tag exists, with its note count, and says so in its exit code",
-          "state": "done",
-          "evidence": "test:TestTagShowAnswersExistenceInTheExitCode"
-        },
-        {
-          "id": "H26-B",
-          "statement": "A tag listing can be narrowed to one branch of the hierarchy and bounded, reporting when it truncated",
-          "state": "done",
-          "evidence": "test:TestTagQueryLimitReportsTruncation"
-        },
-        {
-          "id": "H26-C",
-          "statement": "REST and MCP narrow the same way, so no surface can answer a question the others cannot",
-          "state": "done",
-          "evidence": "test:TestTagLookupNarrowsAndRefusesAMissingTag"
-        },
-        {
-          "id": "H26-D",
-          "statement": "The documentation says how to test for a tag and how to browse a branch, beside where it explains tag:",
-          "state": "done",
-          "evidence": "file:docs/cli.md"
-        }
-      ]
-    },
-    {
-      "id": "H27",
-      "title": "Attach a file from the command line, without guessing where the link goes",
-      "state": "complete",
-      "slices": [
-        {
-          "id": "H27-A",
-          "statement": "The command line puts local bytes into the library and prints the resource:// URI to paste",
-          "state": "done",
-          "evidence": "file:cmd/notriosctl/attach.go"
-        },
-        {
-          "id": "H27-B",
-          "statement": "A file can be recorded against a note in the same step, so nothing is left unreferenced by a forgotten second command",
-          "state": "done",
-          "evidence": "test:TestAddingAFileNeverTouchesTheBody"
-        },
-        {
-          "id": "H27-E",
-          "statement": "The command line can append and prepend to a note, so placing a link does not mean rewriting the whole body",
-          "state": "done",
-          "evidence": "test:TestAppendAndPrependPlaceTheLinkWithoutRewritingTheNote"
-        },
-        {
-          "id": "H27-C",
-          "statement": "The command never writes to a note body, and a test proves the body is unchanged",
-          "state": "done",
-          "evidence": "test:TestAddingAFileNeverTouchesTheBody"
-        },
-        {
-          "id": "H27-D",
-          "statement": "A journey adds a file, lists it on the note, reads its bytes back and places the link",
-          "state": "done",
-          "evidence": "test:TestCLIJourneysActuallyRun"
-        }
-      ]
-    },
-    {
-      "id": "H28",
-      "title": "Make the interface addressable, so its journeys can be written",
-      "state": "complete",
-      "slices": [
-        {
-          "id": "H28-A",
-          "statement": "Every control the twelve unjourneyed features are reached through carries a data-testid named for what it does",
-          "state": "done",
-          "evidence": "file:web/src/components/SyncCenter.tsx"
-        },
-        {
-          "id": "H28-B",
-          "statement": "The control crawl records how much of the interface is addressable, and the signature check fails when that falls",
-          "state": "done",
-          "evidence": "file:performance/v0.8-h15/validate_evidence.py"
-        },
-        {
-          "id": "H28-C",
-          "statement": "One GUI journey is written and captured against the newly named controls, proving the rest can follow",
-          "state": "done",
-          "evidence": "file:docs/images/journeys/insert-a-link-choose-it.png"
-        }
-      ]
-    },
-    {
-      "id": "H29",
-      "title": "Select more than one note in the interface",
-      "state": "complete",
-      "slices": [
-        {
-          "id": "H29-A",
-          "statement": "The search results can select more than one note, and the editor is replaced by the operations that apply to a set",
-          "state": "done",
-          "evidence": "file:web/src/components/SelectionPanel.tsx"
-        },
-        {
-          "id": "H29-B",
-          "statement": "Replacing the editor asks the unsaved-draft guard rather than going around it",
-          "state": "done",
-          "evidence": "file:web/src/App.tsx"
-        },
-        {
-          "id": "H29-C",
-          "statement": "A captured GUI journey covers selecting notes, acting on them, and leaving the selection",
-          "state": "done",
-          "evidence": "file:docs/images/journeys/act-on-several-notes-read-the-report.png"
+          "id": "E4-A",
+          "statement": "make validate fails when a completed plan item has no manifest entry",
+          "state": "not-started"
         }
       ]
     }

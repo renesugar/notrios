@@ -105,7 +105,11 @@ func Load(path string) (Ledger, error) {
 	return ledger, nil
 }
 
-var planHeading = regexp.MustCompile(`(?m)^## (H[0-9a-z]+)\. (.+?)\s*$`)
+// Item ids are a milestone letter, a number, and an optional suffix: G18e,
+// H2a, E1. The letter was hardcoded to the current milestone's and had to be
+// edited from G to H when v0.8 began -- which is a hand-maintained detail in
+// machinery whose whole purpose is to stop those.
+var planHeading = regexp.MustCompile(`(?m)^## ([A-Z][0-9]+[a-z]?)\. (.+?)\s*$`)
 
 // PlanHeadings reads the item headings out of PLAN.md, with the completion
 // marker each one carries in its title.
