@@ -49,25 +49,16 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**4 items: 2 complete, 1 in progress, 1 not started, 0 deferred.**
+**4 items: 3 complete, 0 in progress, 1 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
 | E1. Build the twenty-seven missing handoff archives | complete | 3/3 | — |
 | E2. Record the backfill honestly, and say what it is | complete | 2/2 | — |
-| E3. Seal a reserve volume, and extend the outer catalog | in-progress | 0/2 | 2 |
+| E3. Seal a reserve volume, and extend the outer catalog | complete | 2/2 | — |
 | E4. Make a missing archive fail rather than pass unnoticed | not-started | 0/1 | 1 |
 
-### Started and not finished
-
-**E3. Seal a reserve volume, and extend the outer catalog**
-
-- `E3-A` A new volume seals the backfilled archives, signed by the production subkey and RFC 3161 timestamped — *blocked* (blocked on: the signing passphrase is unavailable in this session, and seal-content cannot seal a second volume; see performance/v0.8e/VOLUME_PLAN.json)
-- `E3-B` The outer catalog is extended and the reserve verifier passes end to end — *blocked* (blocked on: the signing passphrase is unavailable in this session, and seal-content cannot seal a second volume; see performance/v0.8e/VOLUME_PLAN.json)
-
-### Not started
-
-Written and not begun: E4. Their slices are listed under each item.
+Nothing is half-finished.
 <!-- notrios:generated:plan:progress:end -->
 
 ## E1. Build the twenty-seven missing handoff archives — complete
@@ -215,7 +206,7 @@ H4 are marked "at close"; every other row says v0.8e, and six say they replace
 an earlier archive and name it. Nothing in the table claims an archive is older
 than it is.
 
-## E3. Seal a reserve volume, and extend the outer catalog
+## E3. Seal a reserve volume, and extend the outer catalog — complete
 
 **Goal.** The backfilled archives are inside the immutable reserve, signed and
 timestamped, before anything is pushed.
@@ -345,11 +336,45 @@ a unit test breaks it four ways, including the exact all-zeroes shape the defect
 would have produced. Volume-0001 passes the new gate unchanged, which was
 checked before the gate was added rather than assumed.
 
-**What remains is the authorization, not the tooling.** The sealer is written and
-rehearsed end to end; the passphrase is reachable and session-lifetime; the
-plan names the 35 v0.8 archives (552,440,726 bytes) that fit the volume. Writing
-to `/media/renes/SEAGATE2TB/notrios-evidence` and signing with the production
-key are the owner's to authorise, separately, and have not been done.
+**Sealed, 2026-09-09, on the owner's authorization.** `NTR-EV-0002` is on the
+reserve: 38 artifacts, 567,956,311 bytes of payload, a 568,637,440-byte ISO
+built twice byte-identically at 277,655 blocks, signed by the production subkey
+`4ABEB98A…68264005` and timestamped by DigiCert under the pinned policy at
+`2026-09-09T15:45:39Z`. Its content checkpoint `v08e-backfill-20260909-0002`
+chains onto volume-0001 by the hash of volume-0001's checkpoint document, and
+the outer catalog gained a second entry rather than being rewritten -- the
+previous catalog is a byte-exact prefix of the new one, which is what
+"appended" has to mean if it is to mean anything.
+
+The whole reserve then verified with the stock verifier, which extracts without
+mounting, walks every file, and requires exact OpenPGP and RFC 3161 identities
+rather than ambient trust: `{"status": "verified", "volumes": ["NTR-EV-0001",
+"NTR-EV-0002"]}`. Volume-0001 is untouched.
+
+**Thirty-eight of the forty non-superseded candidates, and the other two are
+named.** `notrios-v0.8-develop-before-notrioslib-rewrite.bundle` and
+`notrios_0.8.0-1_amd64.deb` are not sealed: `media_type()` approves `.zip` and
+`.png` only, because `structural_validation` has a validator for each and
+proves the container is intact. Sealing an `ar` archive or a git bundle means
+writing validators for them and widening a signed evidence format -- a policy
+change, not a parameter, and not one to make inside a production seal. Both
+files remain in the evidence directory; nothing was destroyed. The six
+superseded archives were left out for the reason already recorded, which is also
+not deletion.
+
+**The exclusions are gated rather than asserted.** `SEAL_RESULT.json` records
+what was signed, and `performance/v0.8e/validate_evidence.py` holds it against
+`VOLUME_PLAN.json`: every candidate must land in exactly one of sealed,
+superseded, or refused-by-media-type; the refused set is recomputed from the
+policy rather than transcribed; and no sealed artifact may be of an unapproved
+type. A sentence saying "38 of 40" would have gone stale the moment either
+number moved. Dropping a sealed file, quietly shrinking the refused list, and
+smuggling the `.deb` into the sealed set were each tried against the gate and
+each refused.
+
+**The closure boundary is unchanged and still true.** The catalog-only commit
+sits outside the ISO it describes: a volume cannot contain its own final hash
+or the commit that records it. The next ordinary checkpoint covers it.
 
 ## E4. Make a missing archive fail rather than pass unnoticed
 

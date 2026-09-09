@@ -79,9 +79,62 @@ def main() -> None:
             "the snapshot table in CODING_CLIENT_HANDOFF.md is not what MANIFEST.json renders; "
             "run python3 performance/v0.8e/build_manifest.py and update the table")
 
+    sealed = check_seal_record()
+
     print(f"v0.8 archive record valid: {counts['items']} items, {counts['retroactive']} retroactive, "
           f"{counts['superseding_an_earlier_archive']} superseding, "
-          f"{counts['total_bytes'] / 1e9:.2f} GB; handoff table matches")
+          f"{counts['total_bytes'] / 1e9:.2f} GB; handoff table matches; "
+          f"volume-0002 seals {sealed} and accounts for every candidate it did not")
+
+
+def check_seal_record() -> int:
+    """Hold the seal record against the plan it claims to fulfil.
+
+    E3 sealed 38 of the 40 non-superseded candidates the plan named, so the
+    difference has to be accounted for by name and not by a sentence somebody
+    updates by hand. Every candidate must end up in exactly one of three
+    places -- sealed, left out as superseded, or refused by the media-type
+    policy -- and the third group must be exactly the files that policy
+    actually refuses, computed here rather than transcribed. A record that
+    merely asserts "38 of 40" would go stale the moment either number moved.
+    """
+    plan = json.loads((HERE / "VOLUME_PLAN.json").read_text(encoding="utf-8"))
+    result = json.loads((HERE / "SEAL_RESULT.json").read_text(encoding="utf-8"))
+    require(result["schema"] == "notrios.v08e.seal-result.v1", "wrong seal-result schema")
+
+    candidates = {c["name"]: c for c in plan["candidates"]}
+    sealed = set(result["sealed"])
+    superseded = set(result["excluded_superseded"])
+    unapproved = set(result["excluded_unapproved_media_type"])
+
+    groups = [sealed, superseded, unapproved]
+    for index, group in enumerate(groups):
+        for other in groups[index + 1:]:
+            require(not (group & other), "a candidate is in two groups of the seal record")
+    require(sealed | superseded | unapproved == set(candidates),
+            "the seal record does not account for every candidate the volume plan named")
+    require(result["sealed_count"] == len(sealed), "the sealed count disagrees with the list")
+    require(result["sealed_bytes"] == sum(candidates[name]["bytes"] for name in sealed),
+            "the sealed byte total disagrees with the plan's sizes")
+    require(result["sealed_bytes"] < result["budget_bytes"],
+            "the sealed volume claims to exceed its own budget")
+
+    # The approved media types live in the sealing tool; recomputing the refused
+    # set here means the record cannot claim a file was refused when it was not.
+    approved = (".zip", ".png")
+    require(superseded == {name for name, c in candidates.items()
+                           if c["role"] == "superseded by a v0.8e rebuild"},
+            "the superseded group is not the set the plan marks superseded")
+    require(unapproved == {name for name in candidates
+                           if name not in superseded and not name.lower().endswith(approved)},
+            "the media-type exclusions are not the files the policy actually refuses")
+    require(all(name.lower().endswith(approved) for name in sealed),
+            "a sealed artifact is not an approved media type")
+    require(result["clean_builds"] == 2 and result["byte_identical"] is True,
+            "the volume does not record two byte-identical builds")
+    require(result["predecessor_volume_id"] == "NTR-EV-0001",
+            "volume-0002 does not chain onto volume-0001")
+    return len(sealed)
 
 
 if __name__ == "__main__":
