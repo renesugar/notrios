@@ -79,27 +79,31 @@
     {
       "id": "I4",
       "title": "Harden the destructive lifecycle, and decide the profile race",
-      "state": "not-started",
+      "state": "complete",
       "slices": [
         {
           "id": "I4-A",
           "statement": "Backup capacity and corruption faults and restore drills are executed against disposable profiles",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v0.9-i4/REPORT.json"
         },
         {
           "id": "I4-B",
           "statement": "Process, mount and symlink races, external profile roots and modified installed artifacts are exercised",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v0.9-i4/DRILLS.jsonl"
         },
         {
           "id": "I4-C",
           "statement": "The profile-registry validation race is fixed or refused with a reason",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:internal/profiles/runtime_race_test.go"
         },
         {
           "id": "I4-D",
           "statement": "Uninstall is proved never to delete user data",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v0.9-i4/REPORT.json"
         }
       ]
     },

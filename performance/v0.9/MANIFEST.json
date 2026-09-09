@@ -30,11 +30,20 @@
       "bytes": 24991370,
       "entries": 2429,
       "sha256": "5d51f9fb888f9266a7e21a232798064cecf2c804b2ddb63e50950d4a2d70bfaa"
+    },
+    {
+      "item": "I4",
+      "archive": "notrios-v0.9-i4-d1d8ec0.zip",
+      "commit": "d1d8ec0dfff71a0fe7134a24929cc3f843c52b8f",
+      "taken": "when the slice closed",
+      "bytes": 25008681,
+      "entries": 2437,
+      "sha256": "14cd8b7e5952489a7e7a7443cc6188014488caa665998587184b0285612858c5"
     }
   ],
   "counts": {
-    "items": 3,
+    "items": 4,
     "retroactive": 0,
-    "total_bytes": 74918805
+    "total_bytes": 99927486
   }
 }

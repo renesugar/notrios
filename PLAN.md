@@ -46,14 +46,14 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**9 items: 2 complete, 0 in progress, 6 not started, 1 deferred.**
+**9 items: 3 complete, 0 in progress, 5 not started, 1 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
 | I1. Put v0.8 on GitHub, and reconcile the branches | complete | 3/3 | — |
 | I2. Migrate the desktop shell to Wails v3, or record the postponement | deferred | 0/3 | 3 |
 | I3. Promote the Ubuntu installer through clean native environments | complete | 3/3 | — |
-| I4. Harden the destructive lifecycle, and decide the profile race | not-started | 0/4 | 4 |
+| I4. Harden the destructive lifecycle, and decide the profile race | complete | 4/4 | — |
 | I5. Resolve signing, notarization and timestamping policy | not-started | 0/3 | 3 |
 | I6. Generate and verify the release evidence set | not-started | 0/3 | 3 |
 | I7. Soak, recover, and freeze the support matrix | not-started | 0/3 | 3 |
@@ -311,7 +311,7 @@ to I4. `validate_evidence.py` fails if that list shrinks, and dropping the arm64
 limit, dropping a scenario, claiming a warmed image for the fresh install, and
 passing a scenario that observed nothing were each tried and each refused.
 
-## I4. Harden the destructive lifecycle, and decide the profile race
+## I4. Harden the destructive lifecycle, and decide the profile race — complete
 
 **Goal.** `install`, `uninstall` and `purge` behave under fault and contention,
 and uninstall never deletes user data.

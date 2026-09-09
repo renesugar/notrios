@@ -32,6 +32,7 @@ MANIFEST = HERE / "MANIFEST.json"
 # would be a lie in the direction that flatters the record.
 TAKEN_AT_CLOSE = {"I1": "notrios-v0.9-i1-3799c6f.zip",
                   "I3": "notrios-v0.9-i3-078ffc5.zip",
+                  "I4": "notrios-v0.9-i4-d1d8ec0.zip",
                   "I2": "notrios-v0.9-i2-e3f6de7.zip"}
 
 
