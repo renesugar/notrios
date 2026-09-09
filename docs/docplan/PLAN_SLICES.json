@@ -220,17 +220,19 @@
     {
       "id": "I10",
       "title": "Serve the documentation site from notrios.com",
-      "state": "not-started",
+      "state": "complete",
       "slices": [
         {
           "id": "I10-A",
-          "state": "not-started",
-          "statement": "Hugo's baseURL is the real site address and the built output carries a CNAME"
+          "state": "done",
+          "statement": "Hugo's baseURL is the real site address and the built output carries a CNAME",
+          "evidence": "file:docs-site/static/CNAME"
         },
         {
           "id": "I10-B",
-          "state": "not-started",
-          "statement": "The site contract records the configured base URL and the check compares the two rather than a literal"
+          "state": "done",
+          "statement": "The site contract records the configured base URL and the check compares the two rather than a literal",
+          "evidence": "file:performance/v0.7-g18b/SITE_CONTRACT.json"
         }
       ]
     }

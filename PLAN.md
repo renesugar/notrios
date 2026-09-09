@@ -46,7 +46,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**10 items: 3 complete, 0 in progress, 6 not started, 1 deferred.**
+**10 items: 4 complete, 0 in progress, 5 not started, 1 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -59,7 +59,7 @@ this section is archived when the plan completes and the rules are not.
 | I7. Soak, recover, and freeze the support matrix | not-started | 0/3 | 3 |
 | I8. Freeze the 1.0 compatibility surfaces | not-started | 0/3 | 3 |
 | I9. Write the release-grade operational documentation | not-started | 0/3 | 3 |
-| I10. Serve the documentation site from notrios.com | not-started | 0/2 | 2 |
+| I10. Serve the documentation site from notrios.com | complete | 2/2 | — |
 
 Nothing is half-finished.
 <!-- notrios:generated:plan:progress:end -->
@@ -480,7 +480,7 @@ command line, the way the existing documentation gates require.
 **Working state.** Each document present, checked by the documentation gates,
 and naming no step that was never run.
 
-## I10. Serve the documentation site from notrios.com
+## I10. Serve the documentation site from notrios.com — complete
 
 **Goal.** The documentation is published at `https://notrios.com/`, and the
 configuration says so rather than carrying a placeholder.
