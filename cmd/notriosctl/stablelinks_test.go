@@ -245,11 +245,15 @@ func TestRuntimeProfilesStartTwoIsolatedDaemons(t *testing.T) {
 	//
 	// It earned its keep on the first failure it saw. The error was not slowness
 	// at all: `runtime profile "work" failed validation: stale_database: sqlite
-	// exec: database is locked`. A starting daemon validates *every* profile in
+	// exec: database is locked`. A starting daemon validated *every* profile in
 	// the registry rather than only its own, so two starting at the same moment
-	// read each other's databases and one aborts. The test starts them one at a
-	// time now, which is what a person does; the product behaviour is recorded
-	// in ROADMAP.md under v0.9's race hardening rather than worked around here.
+	// read each other's databases and one aborted.
+	//
+	// v0.9 I4 fixed that: startup opens only the database it is starting, and
+	// `internal/profiles` asserts both halves of the narrowing. Starting one at
+	// a time is no longer a workaround, only the arrangement this test wants --
+	// it is about two profiles running isolated, not about launching them in the
+	// same instant. TestRuntimeProfilesStartSimultaneously does that.
 	logs := []*strings.Builder{}
 	start := func(configPath string) {
 		cmd := exec.Command(daemon, "-config", configPath)

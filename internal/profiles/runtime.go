@@ -363,8 +363,29 @@ func Validate(ctx context.Context, registryPath, onlyName string) ValidationRepo
 	configs := map[string]config.Config{}
 	identities := map[string]store.DatabaseIdentity{}
 	for _, profile := range registry.Profiles {
-		identity, identityErr := readIdentity(ctx, profile.DatabasePath, profile.AssetStore)
-		if identityErr != nil {
+		// A startup opens only the database it is starting.
+		//
+		// This loop used to open every registered database regardless of
+		// `onlyName`, which filtered the *reporting* and not the work. Two
+		// daemons starting at the same moment therefore read each other's
+		// libraries, and one aborted with `stale_database: sqlite exec:
+		// database is locked` -- a transient lock reported as a stale library,
+		// which is a diagnosis so wrong it sends the reader to the wrong file.
+		// Found in v0.8 H13 when a flaky test was made to say why it failed.
+		//
+		// An unselected profile still takes part in collision detection, from
+		// the identity the registry recorded for it. That is weaker in exactly
+		// one case -- a profile whose database identity changed underneath a
+		// stale registry entry, and which this call is not starting -- and the
+		// full audit below, `onlyName == ""`, still opens everything and
+		// catches it. Startup validates what it starts; an audit audits.
+		if onlyName != "" && !selected[strings.ToLower(profile.Name)] {
+			if profile.ReplicaID != "" {
+				identities[profile.Name] = store.DatabaseIdentity{
+					DatabaseID: profile.DatabaseID, ReplicaID: profile.ReplicaID,
+				}
+			}
+		} else if identity, identityErr := readIdentity(ctx, profile.DatabasePath, profile.AssetStore); identityErr != nil {
 			addSelectedIssue(&report, selected, profile.Name, "stale_database", identityErr.Error())
 		} else {
 			identities[profile.Name] = identity
