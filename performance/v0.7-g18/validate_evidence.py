@@ -60,9 +60,20 @@ def main() -> None:
     require(sum(method != "HEAD" and route != "/" for method, route in routes) ==
             audit["routes"]["openapi_normalized_non_head"], "normalized API route total differs")
 
+    # One file in the production module may import Wails, and the pinned list
+    # below is that file. A nested module is not in the production module: its
+    # directory carries its own go.mod, so `go build ./...` at the root cannot
+    # reach it and nothing it imports can reach the shipped binary. Skipping
+    # those keeps this check saying what it means -- v0.8 H10's Wails v3 spike
+    # is exactly such a module, and adding its files to the list instead would
+    # have turned "only the adapter imports Wails" into "these three files do".
+    nested_modules = [module.parent for module in REPO.rglob("go.mod")
+                      if module.parent != REPO]
     wails_files = []
     for path in REPO.rglob("*.go"):
         if any(part in {".git", "node_modules"} for part in path.parts):
+            continue
+        if any(nested in path.parents for nested in nested_modules):
             continue
         if "github.com/wailsapp/wails" in path.read_text(encoding="utf-8"):
             wails_files.append(path.relative_to(REPO).as_posix())

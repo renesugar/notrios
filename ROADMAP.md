@@ -640,6 +640,23 @@ be smuggled into v0.7 as desktop assumptions.
   ahead. Zero content difference is the requirement; identical commit
   identifiers are not, and branches are never forced to reach them.
 
+- **Migrate the desktop shell to Wails v3, if v3 has released by the time this
+  milestone starts.** H10's spike passed: a prototype rendered the whole real
+  interface on v3.0.0-beta.18 and linked eight Go modules against the v2 shell's
+  sixteen. The migration is mechanical except for one thing -- `window.go` does
+  not exist in v3, so the eleven places the frontend reaches for it move onto
+  `@wailsio/runtime` or generated bindings -- and one thing that needs care: a
+  v3 question dialog answers on a callback rather than returning the button, so
+  the unsaved-work veto waits and fails closed.
+
+  It goes **before** the hardening below, because what gets hardened has to be
+  what ships; a framework swap after the matrices would invalidate them. If v3
+  has not released, this moves to post-v1.0 rather than shipping a release
+  candidate on a beta, and v1.0 ships on Wails v2 -- which works, and which the
+  spike confirmed still works. The native stack changes with it, from GTK3 and
+  webkit2gtk-4.1 to GTK4 and webkitgtk-6.0, so every documented install line and
+  the package's dependencies change too.
+
 - Promote the v0.8 Ubuntu installer through clean native environment matrices.
   Windows and macOS are deferred to post-v1.0 with the hardware they need, so
   there is no feasible candidate to promote here; v1.0 already provides for
@@ -702,12 +719,15 @@ be smuggled into v0.7 as desktop assumptions.
   pre-push evidence gates pass. Verify the version tag, release notes,
   installers, checksums, signatures, SBOM/provenance, upgrade/rollback
   instructions, and downloaded bytes after publication.
-- Desktop remains on stable Wails v2 until a separately approved Wails v3
-  migration spike passes desktop regression; any physical Android claim waits
-  for the post-1.0 device gate. Wails v3
-  currently offers a shared desktop/iOS/Android codebase; v3 desktop is beta
-  and mobile remains experimental, with Android/iOS storage, lifecycle,
-  background, credential, and file-dialog constraints.
+- Desktop remains on stable Wails v2 unless the v0.9 migration above has
+  happened; any physical Android claim waits for the post-1.0 device gate. **The
+  spike that gated this passed on 2026-09-09** and recommended migrating after
+  v3 releases -- so the condition is now the release rather than the evidence.
+  Wails v3 offers a shared desktop/iOS/Android codebase; its desktop was beta
+  when measured and mobile remains experimental, with Android/iOS storage,
+  lifecycle, background, credential, and file-dialog constraints. None of that
+  is a reason to migrate the desktop: the mobile client is the Flutter/Go one
+  below, over the C ABI that H11 accepted on an emulator.
 
 ## Post-v1.0 — Flutter/Go universal native client
 
@@ -838,7 +858,7 @@ requirements below are the ones H7 already carried.
 The scaffold handoff is complete; see `CODING_CLIENT_HANDOFF.md`. Future roadmap planning should be driven from `ROADMAP.md`, but each active implementation cycle should create a small `PLAN.md` slice and archive it under `plans/` when complete.
 
 <!-- notrios:generated:roadmap:status:begin -->
-`PLAN.md` holds the active plan derived from this roadmap: 35 items, 31 complete, 0 in progress, 2 not started, 2 deferred.
+`PLAN.md` holds the active plan derived from this roadmap: 35 items, 32 complete, 0 in progress, 1 not started, 2 deferred.
 <!-- notrios:generated:roadmap:status:end -->
 
 

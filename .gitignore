@@ -51,3 +51,6 @@ exports/
 .claude/settings.local.json
 .claude/*.tmp.*
 _site/
+
+# The H10 spike's prototype binary; the source beside it is the evidence.
+performance/v0.8-h10/prototype/prototype

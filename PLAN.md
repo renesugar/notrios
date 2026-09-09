@@ -46,7 +46,7 @@ What follows is what is left. Each item's own text below is the record of what
 happened, which is a different question.
 
 <!-- notrios:generated:plan:progress:begin -->
-**35 items: 31 complete, 0 in progress, 2 not started, 2 deferred.**
+**35 items: 32 complete, 0 in progress, 1 not started, 2 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -66,7 +66,7 @@ happened, which is a different question.
 | H14. Documentation actionability investigation | complete | 0/0 | — |
 | H7. Windows and macOS installer workflow implementation | deferred | 0/0 | — |
 | H9. Native credential-store selection and integration | complete | 5/5 | — |
-| H10. Wails v3 migration spike | not-started | 0/2 | 2 |
+| H10. Wails v3 migration spike | complete | 2/2 | — |
 | H11. Android-emulator shared-core acceptance | complete | 2/2 | — |
 | H12. First GitHub push and develop-to-main pull request | deferred | 0/0 | — |
 | H15. Complete the journey catalogues, and give the GUI an inventory | complete | 9/9 | — |
@@ -2242,7 +2242,7 @@ Both checks were confirmed by mutation.
   needs no emulator: for each mobile target, assert that
   `GOOS=... go list -deps ./...` names no desktop credential package.
 
-## H10. Wails v3 migration spike
+## H10. Wails v3 migration spike — complete
 
 **Ordering (decided 2026-09-08).** Last of the three interface-adjacent items,
 after H29. This item's deliverable is a desktop regression matrix against the v2
@@ -2278,12 +2278,84 @@ gaps; rollback rehearsal; and no-production-diff check.
 
 **Open decisions**
 
-- **When is the spike worth running? — Non-blocking default, strengthened
-  2026-09-08.** Run only after H8 establishes the v2 installed baseline, only
-  once the Wails v2 interface is feature-complete for this milestone -- which
-  means after H29 -- and only on explicit user approval. If upstream maturity or
-  required desktop features do not pass, recommend deferral without a migration
-  item.
+- **When is the spike worth running? — Answered 2026-09-09.** It ran after H8's
+  installed baseline, after H29 made the v2 interface feature-complete, and on
+  explicit approval, which is the order this decision asked for.
+
+**Outcome (2026-09-09). The recommendation is migrate, after v3 reaches a
+release version rather than on beta.18.** The migration works and is small; what
+a spike cannot show is what a beta changes before it ships, and the desktop
+application is the surface a v1.0 support claim rests on. Upstream is expected
+to release within the month, which is the reason to prepare rather than to move
+now.
+
+**The prototype renders the whole real interface.** Not a sample app: it imports
+`internal/service`, serves the real handler, and loads the real frontend bundle
+over the real `/api/v1`, behind the full native menu -- File, Edit, View, Help,
+with every accelerator including the F11 an automated desktop run depends on.
+Photographed under Xvfb beside the v2 baseline doing the same.
+
+That was possible because Go's internal-package rule is about import paths
+rather than modules, so a nested module named
+`github.com/renesugar/notrios/performance/v0.8-h10/prototype` can reach
+`internal/`. The nesting is also what enforces this item's boundary: the root
+`go.mod` never learned that v3 exists, and `validate_evidence.py` reads `go.mod`
+to check that rather than believing the report.
+
+**It gets lighter, which is not what a major version usually does.** The v3
+binary links **eight** Go modules against the v2 shell's **sixteen**. It drops
+twelve -- `leaanthony/*`, `pkg/browser`, `pkg/errors`, `rivo/uniseg`,
+`samber/lo`, `tkrajina/go-reflector`, `wailsapp/mimetype`, `x/net`, `x/text` --
+and adds two real ones, `adrg/xdg` and `mattn/go-isatty`, both MIT. The module
+*graph* grows by eighty-three because the v3 module ships its CLI; none of that
+is compiled in, which is why the linked set is the number worth quoting.
+
+**Most of the port is mechanical.** `assetserver.Options{Handler}` becomes
+`AssetOptions{Handler}` with the same `http.Handler` type; `app.Bind` becomes
+`Services`; the menu builder moves onto the app; `runtime.WindowReloadApp(ctx)`
+becomes `window.Reload()`, which removes the captured `appCtx` the v2 shell
+threads through every callback.
+
+**Two shape changes need care, and one is the actual work.**
+
+*A question dialog no longer returns the button.* v2's `runtime.MessageDialog`
+hands the answer back, so `OnBeforeClose` reads it and vetoes. v3's `Show()`
+returns nothing and each button carries an `OnClick`, so a guard that must
+decide *now* has to wait for the callback. The prototype blocks on a channel
+with a timeout and fails closed -- which is what production already does when a
+dialog cannot be shown, so the behaviour is preserved rather than invented.
+
+*`window.go.main.X.Y` does not exist in v3.* Zero occurrences in its compiled
+runtime. The frontend has **eleven references across seven files**; two are the
+accessors in `web/src/desktop.ts` and the other five reach for `window.go`
+directly, so the migration both rewrites them onto `@wailsio/runtime` (MIT) or
+generated bindings and moves them behind those accessors. This is the one part
+that is not a rename.
+
+**And the native stack changes, which is an installer fact rather than a code
+one.** GTK3 + webkit2gtk-4.1 becomes GTK4 + webkitgtk-6.0. `dpkg-shlibdeps`
+computes the package's `Depends` from the binary so that follows by itself, but
+six documented install lines say `libwebkit2gtk-4.1-dev` today and every one of
+them changes.
+
+**What the spike did not measure, listed because a spike with no gaps is one
+nobody looked hard at.** Calling a bound service from JavaScript -- the frontend
+still speaks the v2 convention, so services are proven to register and not to
+answer. Packaging a `.deb` against v3. The desktop journey harness, which drives
+menus with xdotool. Deep links end to end: `SingleInstance` and
+`FileAssociations` were read from the API rather than exercised, and they are
+the two things v2 has no answer for at all -- a second launch handing a
+`notrios://` link to the running window is what a person expects and what
+Notrios cannot do today.
+
+**Mobile is not a reason to migrate.** v3 carries iOS and Android options, and
+the roadmap's mobile client is a Flutter UI over the C ABI, which H11 proved on
+an emulator the day before this ran. The boundary against claiming mobile
+support is intact and this changes nothing about it.
+
+**Boundaries held.** The production shell was not migrated, v2 was not removed
+and still builds and opens its window, H6 and H7 gained no dependency on v3, and
+rolling back is deleting one directory.
 
 ## H11. Android-emulator shared-core acceptance — complete
 

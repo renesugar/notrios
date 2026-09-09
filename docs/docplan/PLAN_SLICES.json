@@ -131,17 +131,19 @@
     {
       "id": "H10",
       "title": "Wails v3 migration spike",
-      "state": "not-started",
+      "state": "complete",
       "slices": [
         {
           "id": "H10-A",
           "statement": "A disposable v3 prototype compares dependencies, builds, bindings, menus, deep links, lifecycle, profiles and packaging against the v2 baseline",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v0.8-h10/prototype/main.go"
         },
         {
           "id": "H10-B",
           "statement": "A decision report recommends migrate later, defer, or reject, with upstream status current at execution time",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v0.8-h10/REPORT.json"
         }
       ]
     },
