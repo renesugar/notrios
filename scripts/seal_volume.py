@@ -59,6 +59,29 @@ def sign_with(datum: Path, signature: Path, passphrase, signer: str, gnupghome: 
         raise ev.EvidenceError(f"no signature produced for {datum.name}")
 
 
+# The types a volume may carry, and the reason the set can grow.
+#
+# `g17b_evidence.py` approves .zip and .png, and that tool is the frozen record
+# of how volume-0001 was made, so the policy is widened here rather than there.
+# A type belongs in this set only when `structural_validation` can prove the
+# container is intact -- that is what makes the approval mean something. The git
+# bundle and the Debian package were held out of volume-0002 for exactly that
+# reason; `validate_git_bundle` and `validate_deb` are what let them in now.
+APPROVED_MEDIA_TYPES = {
+    ".zip": "application/zip",
+    ".png": "image/png",
+    ".bundle": "application/x-git-bundle",
+    ".deb": "application/vnd.debian.binary-package",
+}
+
+
+def media_type(path: Path) -> str:
+    kind = APPROVED_MEDIA_TYPES.get(path.suffix.lower())
+    if kind is None:
+        raise ev.EvidenceError(f"unapproved curated artifact type: {path.name}")
+    return kind
+
+
 def use_rehearsal_key(gnupghome: str, signer: str) -> None:
     """Point the verifier's pinned fingerprints at the throwaway rehearsal key.
 
@@ -123,7 +146,7 @@ def seal_content(source: Path, names: list[str], materials: Path, checkpoint_id:
     previous = ev.ZERO_HASH
     for index, name in enumerate(sorted(names, key=lambda value: value.encode("utf-8")), start=1):
         path = source / name
-        kind = g17b.media_type(path)
+        kind = media_type(path)
         validation = ev.structural_validation(path, kind)
         if not validation["valid"]:
             raise ev.EvidenceError(f"structural validation refused: {name}")

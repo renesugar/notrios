@@ -49,7 +49,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**4 items: 4 complete, 0 in progress, 0 not started, 0 deferred.**
+**5 items: 4 complete, 1 in progress, 0 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -57,8 +57,14 @@ this section is archived when the plan completes and the rules are not.
 | E2. Record the backfill honestly, and say what it is | complete | 2/2 | — |
 | E3. Seal a reserve volume, and extend the outer catalog | complete | 2/2 | — |
 | E4. Make a missing archive fail rather than pass unnoticed | complete | 1/1 | — |
+| E5. Widen the approved types, and seal what v0.8e itself produced | in-progress | 0/2 | 2 |
 
-Nothing is half-finished.
+### Started and not finished
+
+**E5. Widen the approved types, and seal what v0.8e itself produced**
+
+- `E5-A` The git bundle and the Debian package have structural validators, and the sealer's approved set is widened to match — *in-progress*
+- `E5-B` Volume-0003 seals v0.8e's own archives with both newly approved artifacts, and the reserve verifies end to end — *not-started*
 <!-- notrios:generated:plan:progress:end -->
 
 ## E1. Build the twenty-seven missing handoff archives — complete
@@ -435,6 +441,34 @@ commits keeps `make validate` green at both.
 removing a v0.8e entry (`E2`), recording an archive for an unfinished item, and
 adding an unregistered milestone. Coverage, not contents: the gate cannot verify
 a hash it has no file for and does not pretend to.
+
+## E5. Widen the approved types, and seal what v0.8e itself produced
+
+**Goal.** The reserve holds what v0.8e made, including the two artifacts a
+policy -- not a limitation of the evidence format -- kept out of volume-0002.
+
+**Scope.** Structural validators for the two refused types, the sealer's
+approved set widened to match, and a third volume carrying v0.8e's own four
+handoff archives plus the git bundle and the Debian package.
+
+**Why the policy, not a parameter.** `media_type()` approved `.zip` and `.png`
+because `structural_validation` could prove those containers intact. That is the
+whole basis of the approval, so widening it means writing the validators first:
+`validate_git_bundle` reads the bundle header, ref list and packfile checksum
+without needing git installed where the evidence is read, and `validate_deb`
+walks the `ar` members to the exact end of file. A type approved without a
+validator would have been an approval that means nothing.
+
+**Boundaries.** The volume write and the production signature need the owner's
+authorization, given for volume-0003. `g17b_evidence.py` is not modified: it is
+the frozen record of how volume-0001 was made, so the widened policy lives in
+the sealer. Volumes 0001 and 0002 are not rewritten.
+
+**Dependencies.** E3, E4.
+
+**Working state.** The bundle and the package structurally validated, sealed in
+volume-0003, the outer catalog at three entries, and the whole reserve verifying
+end to end.
 
 ## Decisions register
 

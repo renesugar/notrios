@@ -129,6 +129,18 @@ def safe_logical_name(name: str) -> bool:
 
 
 def validate_zip(path: Path) -> dict[str, object]:
+    # Refuse rather than raise, the way the other three validators do. A file
+    # that is not a zip at all is the plainest possible failure and it should
+    # come back as one, not as a BadZipFile escaping through the caller.
+    try:
+        return _validate_zip(path)
+    except (zipfile.BadZipFile, OSError, ValueError) as error:
+        return {"validator": "python.zipfile-crc-path-v1", "valid": False, "entries": 0,
+                "unsafe_names": 0, "duplicate_names": 0, "encrypted_entries": 0,
+                "symlink_entries": 0, "corrupt_member": type(error).__name__}
+
+
+def _validate_zip(path: Path) -> dict[str, object]:
     with zipfile.ZipFile(path) as archive:
         infos = archive.infolist()
         names = [item.filename for item in infos]
@@ -189,11 +201,116 @@ def validate_png(path: Path) -> dict[str, object]:
             "chunks": chunks, "reason": reason}
 
 
+def validate_git_bundle(path: Path) -> dict[str, object]:
+    """Check a git bundle's header, ref list and packfile checksum, without git.
+
+    The verifier depends on the standard library plus the subprocess boundaries
+    it already records, so this reads the format rather than shelling out to a
+    git that may not be installed where the evidence is read. The packfile ends
+    with a checksum over everything before it, which is the part that actually
+    detects a corrupted byte; the header and ref lines are checked because a
+    bundle whose refs do not parse is not a bundle.
+    """
+    data = path.read_bytes()
+    header, _, rest = data.partition(b"\n")
+    if header not in (b"# v2 git bundle", b"# v3 git bundle"):
+        return {"validator": "git-bundle-v1", "valid": False, "refs": 0,
+                "prerequisites": 0, "objects": 0, "reason": "not a git bundle header"}
+    hex_width, refs, prerequisites, reason = 40, 0, 0, None
+    while True:
+        line, separator, rest = rest.partition(b"\n")
+        if not separator:
+            reason = "ref list is not terminated"
+            break
+        if line == b"":
+            break
+        if line.startswith(b"@"):  # v3 capability
+            if line.startswith(b"@object-format=sha256"):
+                hex_width = 64
+            continue
+        body = line[1:] if line.startswith(b"-") else line
+        name = body[:hex_width]
+        if len(body) < hex_width or not re.fullmatch(rb"[0-9a-f]+", name):
+            reason = "malformed ref or prerequisite line"
+            break
+        if line.startswith(b"-"):
+            prerequisites += 1
+        else:
+            refs += 1
+    objects = 0
+    if reason is None:
+        digest_size = 20 if hex_width == 40 else 32
+        if not rest.startswith(b"PACK") or len(rest) < 12 + digest_size:
+            reason = "no packfile after the ref list"
+        else:
+            version, objects = struct.unpack(">II", rest[4:12])
+            if version not in (2, 3):
+                reason = f"unsupported pack version {version}"
+            else:
+                algorithm = hashlib.sha1 if digest_size == 20 else hashlib.sha256
+                if algorithm(rest[:-digest_size]).digest() != rest[-digest_size:]:
+                    reason = "packfile checksum mismatch"
+    return {"validator": "git-bundle-v1", "valid": reason is None,
+            "refs": refs, "prerequisites": prerequisites,
+            "objects": objects if reason is None else 0, "reason": reason}
+
+
+def validate_deb(path: Path) -> dict[str, object]:
+    """Walk a .deb's ar members to exact end of file.
+
+    A Debian package is an ar archive of exactly three parts in order. Walking
+    the member headers to the last byte catches truncation and a size field that
+    disagrees with the file, which is what structural validation is for here; it
+    deliberately does not unpack the tarballs or interpret the control data.
+    """
+    data = path.read_bytes()
+    if not data.startswith(b"!<arch>\n"):
+        return {"validator": "ar-deb-v1", "valid": False, "members": 0,
+                "names": [], "reason": "not an ar archive"}
+    offset, names, reason = 8, [], None
+    while offset < len(data):
+        if len(data) - offset < 60:
+            reason = "truncated member header"
+            break
+        head = data[offset:offset + 60]
+        if head[58:60] != b"`\n":
+            reason = "member header has no terminator"
+            break
+        name = head[0:16].decode("ascii", "replace").strip()
+        try:
+            size = int(head[48:58].decode("ascii").strip())
+        except ValueError:
+            reason = "member size is not a number"
+            break
+        end = offset + 60 + size
+        if size < 0 or end > len(data):
+            reason = "member extends past end of file"
+            break
+        if name == "debian-binary" and data[offset + 60:end].strip() != b"2.0":
+            reason = "debian-binary is not version 2.0"
+            break
+        names.append(name)
+        offset = end + (end % 2)  # members are padded to an even offset
+    if reason is None:
+        if not names or names[0] != "debian-binary":
+            reason = "first member is not debian-binary"
+        elif not any(name.startswith("control.tar") for name in names):
+            reason = "no control.tar member"
+        elif not any(name.startswith("data.tar") for name in names):
+            reason = "no data.tar member"
+    return {"validator": "ar-deb-v1", "valid": reason is None,
+            "members": len(names), "names": names, "reason": reason}
+
+
 def structural_validation(path: Path, media_type: str) -> dict[str, object]:
     if media_type == "application/zip":
         return validate_zip(path)
     if media_type == "image/png":
         return validate_png(path)
+    if media_type == "application/x-git-bundle":
+        return validate_git_bundle(path)
+    if media_type == "application/vnd.debian.binary-package":
+        return validate_deb(path)
     return {"validator": "sha256-size-v1", "valid": True}
 
 

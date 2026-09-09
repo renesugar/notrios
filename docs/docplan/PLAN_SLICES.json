@@ -76,6 +76,23 @@
           "evidence": "file:performance/v0.8e/check_archive_coverage.py"
         }
       ]
+    },
+    {
+      "id": "E5",
+      "title": "Widen the approved types, and seal what v0.8e itself produced",
+      "state": "in-progress",
+      "slices": [
+        {
+          "id": "E5-A",
+          "state": "in-progress",
+          "statement": "The git bundle and the Debian package have structural validators, and the sealer's approved set is widened to match"
+        },
+        {
+          "id": "E5-B",
+          "state": "not-started",
+          "statement": "Volume-0003 seals v0.8e's own archives with both newly approved artifacts, and the reserve verifies end to end"
+        }
+      ]
     }
   ]
 }

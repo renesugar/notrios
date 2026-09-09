@@ -97,5 +97,84 @@ class ContainerTests(unittest.TestCase):
             self.assertFalse(ev.validate_zip(bad)["valid"])
 
 
+class ApprovedMediaTypeTests(unittest.TestCase):
+    """A type is only approved because its container can be proved intact."""
+
+    @staticmethod
+    def _bundle() -> bytes:
+        import hashlib
+        pack = b"PACK" + (2).to_bytes(4, "big") + (0).to_bytes(4, "big")
+        return (b"# v2 git bundle\n" + b"a" * 40 + b" refs/heads/main\n" + b"\n"
+                + pack + hashlib.sha1(pack).digest())
+
+    @staticmethod
+    def _deb(members: list[tuple[bytes, bytes]]) -> bytes:
+        out = b"!<arch>\n"
+        for name, body in members:
+            out += (name.ljust(16) + b"0".ljust(12) + b"0".ljust(6) + b"0".ljust(6)
+                    + b"100644".ljust(8) + str(len(body)).encode().ljust(10) + b"`\n")
+            out += body + (b"\n" if len(body) % 2 else b"")
+        return out
+
+    def test_git_bundle_accepts_a_bundle_and_refuses_damage(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "history.bundle"
+            good = self._bundle()
+            path.write_bytes(good)
+            result = ev.validate_git_bundle(path)
+            self.assertTrue(result["valid"], result)
+            self.assertEqual(result["refs"], 1)
+
+            # One flipped byte inside the pack must break its checksum.
+            damaged = bytearray(good)
+            damaged[len(good) - 25] ^= 1
+            path.write_bytes(bytes(damaged))
+            self.assertFalse(ev.validate_git_bundle(path)["valid"])
+
+            for broken in (good.replace(b"# v2 git bundle", b"# v9 git bundle"),
+                           good[: len(good) - 4],
+                           good.replace(b"a" * 40, b"z" * 40)):
+                path.write_bytes(broken)
+                self.assertFalse(ev.validate_git_bundle(path)["valid"], broken[:20])
+
+    def test_deb_accepts_a_package_and_refuses_damage(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "package.deb"
+            good = self._deb([(b"debian-binary", b"2.0\n"),
+                              (b"control.tar.zst", b"c" * 9),
+                              (b"data.tar.zst", b"d" * 4)])
+            path.write_bytes(good)
+            result = ev.validate_deb(path)
+            self.assertTrue(result["valid"], result)
+            self.assertEqual(result["names"], ["debian-binary", "control.tar.zst", "data.tar.zst"])
+
+            # A size field that runs past the end, a missing data member, a
+            # wrong format version, and a truncated file all have to refuse.
+            for broken in (good.replace(b"9".ljust(10), b"999".ljust(10)),
+                           self._deb([(b"debian-binary", b"2.0\n"), (b"control.tar.zst", b"c")]),
+                           self._deb([(b"debian-binary", b"3.0\n"), (b"control.tar.zst", b"c"),
+                                      (b"data.tar.zst", b"d")]),
+                           good[:-3], b"not an archive"):
+                path.write_bytes(broken)
+                self.assertFalse(ev.validate_deb(path)["valid"], broken[:16])
+
+    def test_the_sealer_approves_exactly_what_can_be_validated(self) -> None:
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "seal_volume", Path(__file__).resolve().parents[1] / "scripts" / "seal_volume.py")
+        sealer = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(sealer)
+        for suffix, expected in sealer.APPROVED_MEDIA_TYPES.items():
+            self.assertEqual(sealer.media_type(Path("x" + suffix)), expected)
+            # Every approved type must reach a real validator, never the
+            # sha256-only fallback that would approve any bytes at all.
+            with tempfile.TemporaryDirectory() as directory:
+                probe = Path(directory) / ("x" + suffix)
+                probe.write_bytes(b"definitely not a valid container")
+                self.assertFalse(ev.structural_validation(probe, expected)["valid"], suffix)
+        with self.assertRaises(ev.EvidenceError):
+            sealer.media_type(Path("notes.txt"))
+
+
 if __name__ == "__main__":
     unittest.main()
