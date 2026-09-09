@@ -16,7 +16,7 @@
           "id": "I1-B",
           "statement": "A develop-to-main pull request is merged with a merge commit after explicit authorization",
           "state": "blocked",
-          "blocked_on": "the owner authorizes the develop-to-main merge, after review"
+          "blocked_on": "pull request #6 is open with all four CI jobs passing; the owner authorizes the develop-to-main merge, after review, and the method is a merge commit"
         },
         {
           "id": "I1-C",

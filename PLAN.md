@@ -64,7 +64,7 @@ this section is archived when the plan completes and the rules are not.
 
 **I1. Put v0.8 on GitHub, and reconcile the branches**
 
-- `I1-B` A develop-to-main pull request is merged with a merge commit after explicit authorization — *blocked* (blocked on: the owner authorizes the develop-to-main merge, after review)
+- `I1-B` A develop-to-main pull request is merged with a merge commit after explicit authorization — *blocked* (blocked on: pull request #6 is open with all four CI jobs passing; the owner authorizes the develop-to-main merge, after review, and the method is a merge commit)
 - `I1-C` The merge result is brought back into develop so main is an ancestor with no content difference — *not-started*
 
 ### Not started
@@ -138,8 +138,51 @@ the TSA certificates the verifier needs. No credential-shaped strings outside
 test fixtures and variable names. `agent/ATTEMPT_LOG.jsonl` was already on the
 remote and holds task and status rows, not transcripts.
 
-**The pull request is the next slice and is separately authorized**, as is the
-merge after it.
+**Pull request [#6](https://github.com/renesugar/notrios/pull/6) opened
+2026-09-09, and CI went red on three independent faults.** Every one predated
+this milestone, and every one was invisible on a developer workstation — which
+is the entire argument for putting the push before the hardening rather than
+inside it.
+
+*`doctor` required a keyring it was not using.* An unreachable native credential
+store was a required failure whenever the store resolved to native, regardless
+of whether anything was in it, so a temporary library holding no credentials at
+all reported FAILED. That made every headless machine — server, container, CI
+runner — unable to pass notrios's own health check, and it passed on every
+desktop because a desktop session has a Secret Service. On the owner's decision,
+an empty store is now informational and says a keyring will be needed to store
+keys here; **sealed key material plus an unreachable store stays a required
+failure**, because those keys exist and cannot be read, and nothing is ever
+substituted for the store. `sync migrate-credentials --dry-run` had the same
+shape: it refused to describe a migration whose destination was unreachable,
+though its documented job — which store holds the keys now, which would hold
+them afterwards — needs nothing opened. It reports the plan and the obstacle
+now, and still exits non-zero.
+
+*A frontend test had never tested anything.* `draft.test.ts` asserted that
+`saveDraft` reports failure when storage refuses, by spying on the storage
+object. Under Node 22 `localStorage` is jsdom's `Storage`, a Proxy whose
+defineProperty trap *stores items*: assigning `setItem` writes an entry called
+"setItem" and leaves the real method in place, so the spy was never called and
+the write succeeded. Under Node 26 it is Node's own `MemoryStorage`, not a jsdom
+`Storage` at all, so a prototype spy patches a prototype nothing inherits from.
+An instance spy passes on 26 and no-ops on 22; a prototype spy does the reverse.
+Swapping the global binding works on both, because `saveDraft` reads the global
+at call time.
+
+*The `go` job ran `validate-scaffold.sh` without the web workspace*, so the
+frontend audit died on `MODULE_NOT_FOUND`. It only became visible once the
+credential-store failure ahead of it was fixed, which is what a pipeline nobody
+has run looks like: one fault at a time, each hidden behind the last.
+
+**Node is pinned once, in `.nvmrc`, read by every workflow** — the owner's
+suggestion. CI was on 22 while this machine and `docs.yml` were both on 26.3.0;
+the workflows did not agree with each other, and that skew is what let a test
+that never tested anything survive four milestones.
+
+All four jobs pass: `go`, `web`, `gui-build`, `smoke`.
+
+**The merge is separately authorized and has not happened.**
 
 ## I2. Migrate the desktop shell to Wails v3, or record the postponement — deferred
 
