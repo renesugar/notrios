@@ -1,6 +1,6 @@
 {
   "schema": "notrios.v08e.volume-plan.v1",
-  "status": "prepared, not sealed",
+  "status": "prepared, not sealed; contents decided by the CD budget",
   "what_this_is": "the exact set volume-0002 would carry, computed from the reserve and the evidence directory rather than chosen. It is a plan and not a seal: nothing here is signed, timestamped or written to the reserve.",
   "precondition_reserve_verified": {
     "command": "python3 evidence/verify_evidence.py reserve --reserve-root /media/renes/SEAGATE2TB/notrios-evidence",
@@ -293,11 +293,69 @@
     "bytes": 714736465,
     "v08_archives": 35,
     "superseded": 6,
-    "other": 5
+    "other": 5,
+    "to_seal": 40,
+    "to_seal_bytes": 611312795
   },
   "blocked_on": [
-    "the signing passphrase: `secret-tool lookup service gpg_evidence type passphrase` exits 1 in this session, so no OpenPGP signature and no RFC 3161 timestamp can be produced",
-    "a sealing path for a second volume: scripts/g17b_evidence.py seal-content requires exactly the 81 approved G17b artifacts and the G17a base commitment, and its volume id, checkpoint id and paths are 0001 constants. Sealing volume-0002 needs that generalised, and it should not be written without the ability to exercise its signing path",
-    "a decision on the superseded archives: whether the six the v0.8e rebuilds replace are sealed alongside their replacements or removed first"
-  ]
+    "the sealing tool is single-volume by construction, in three separate ways: seal-content is fixed to the G17b checkpoint and replaces evidence/current/ rather than adding beside it; build-reserve's volume id, checkpoint id and build paths are 0001 constants; and seal-catalog rebuilds the catalog and requires an explicit supersession of the existing set rather than appending an entry. Extending them is a change to the shape of the chain, not a parameter",
+    "three design questions belong to the owner and are answered nowhere checkable: whether evidence/current/ means the latest volume or gains a per-volume directory; whether the outer catalog is appended to or superseded and rewritten with two entries; and what volume-0002's checkpoint records as its predecessor_checkpoint_sha256, a field volume-0001 leaves null"
+  ],
+  "cd_budget_bytes": 681574400,
+  "budget_finding": "all 46 candidates are 714,736,465 bytes and exceed the 650 MiB volume budget by 33,162,065. The 40 without the superseded archives are 611,312,795 and fit with 70,261,605 to spare. So the superseded six are left out of the seal -- which is not the same as deleting them: they stay in the evidence directory, and the reserve holds only archives today's release check accepts.",
+  "to_seal": [
+    "notrios-v0.7-g18e-91dec2c.zip",
+    "notrios-v0.7-g20-4bc2577.zip",
+    "notrios-v0.8-develop-before-notrioslib-rewrite.bundle",
+    "notrios-v0.8-h0-e164aeb.zip",
+    "notrios-v0.8-h1-fa3803c.zip",
+    "notrios-v0.8-h10-b265ada.zip",
+    "notrios-v0.8-h11-8c7017c.zip",
+    "notrios-v0.8-h12-baf6e4b.zip",
+    "notrios-v0.8-h13-10e7077.zip",
+    "notrios-v0.8-h14-1c8d577.zip",
+    "notrios-v0.8-h15-fde811e.zip",
+    "notrios-v0.8-h16-b69b653.zip",
+    "notrios-v0.8-h17-fa362b3.zip",
+    "notrios-v0.8-h18-f79c956.zip",
+    "notrios-v0.8-h19-cb76c7f.zip",
+    "notrios-v0.8-h2-e69419c.zip",
+    "notrios-v0.8-h20-fa25182.zip",
+    "notrios-v0.8-h21-49e4ad0.zip",
+    "notrios-v0.8-h22-f2df4b3.zip",
+    "notrios-v0.8-h23-5aca5ea.zip",
+    "notrios-v0.8-h24-faf9bd6.zip",
+    "notrios-v0.8-h25-677ca1f.zip",
+    "notrios-v0.8-h26-b4fd8f9.zip",
+    "notrios-v0.8-h27-c836eb5.zip",
+    "notrios-v0.8-h28-73f605c.zip",
+    "notrios-v0.8-h29-391cdd5.zip",
+    "notrios-v0.8-h2a-af37c4c.zip",
+    "notrios-v0.8-h2b-e4f4432.zip",
+    "notrios-v0.8-h3-97652f1.zip",
+    "notrios-v0.8-h4-693b672.zip",
+    "notrios-v0.8-h4a-036ba0c.zip",
+    "notrios-v0.8-h4b-e58abf6.zip",
+    "notrios-v0.8-h5-3ec1ab3.zip",
+    "notrios-v0.8-h6-3abdbf7.zip",
+    "notrios-v0.8-h6a-57b2a71.zip",
+    "notrios-v0.8-h7-f544b98.zip",
+    "notrios-v0.8-h8-a3490aa.zip",
+    "notrios-v0.8-h9-f0672d9.zip",
+    "notrios-v0.8-installation-plan-6140292.zip",
+    "notrios_0.8.0-1_amd64.deb"
+  ],
+  "not_sealed_superseded": [
+    "notrios-v0.8-h1-0bee555.zip",
+    "notrios-v0.8-h13-030ef2d.zip",
+    "notrios-v0.8-h2-27de1d1.zip",
+    "notrios-v0.8-h2a-2b9f00b.zip",
+    "notrios-v0.8-h2b-9043a4d.zip",
+    "notrios-v0.8-h3-37cadac.zip"
+  ],
+  "established": {
+    "reserve_verified": "volume-0001 verified end to end, catalog b47f9a7d1879459e",
+    "signing_available": "the passphrase resolves from the Secret Service and the production subkey 4ABEB98A...68264005 produced and verified a detached signature",
+    "signing_is_session_lifetime": "kdewallet.kwl on disk is unchanged since 2026-09-04, so the stored passphrase is in memory and will not survive the session"
+  }
 }

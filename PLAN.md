@@ -268,7 +268,43 @@ which is a precondition and is now established rather than assumed.
 others -- each with its size and SHA-256. It is a plan and not a seal: nothing
 in it is signed, timestamped, or written to the reserve.
 
-**Stopped at the signing passphrase.** `secret-tool lookup service gpg_evidence
+**The passphrase became reachable, and signing was proved from here.**
+`secret-tool lookup service gpg_evidence type passphrase` now exits 0, and the
+production subkey `4ABEB98A…68264005` produced a detached signature that `gpg`
+verified as a good signature from the evidence identity. The probe file and its
+signature were deleted. **It is session-lifetime**: `kdewallet.kwl` on disk is
+unchanged since 2026-09-04, so the stored passphrase is in memory and does not
+survive the session.
+
+**The 650 MiB volume budget decided the open question.** All 46 unsealed
+candidates are 714,736,465 bytes and exceed the budget by 33,162,065; the 40
+without the superseded archives are 611,312,795 and fit with 70 MB to spare. So
+the six are **left out of the seal, which is not the same as deleting them** --
+they stay in the evidence directory, nothing is destroyed, and the reserve holds
+only archives today's release check accepts. Sealing them would have forced a
+second volume to preserve six files that a gate refuses.
+
+**What remains is a change to the shape of the chain, not a parameter.** The
+tool is single-volume in three separate ways:
+
+- `seal-content` is fixed to the G17b checkpoint -- exactly 81 approved
+  artifacts and the G17a base commitment -- and it *replaces* `evidence/current/`
+  rather than adding beside it;
+- `build-reserve`'s volume id, checkpoint id and build paths are `0001`
+  constants;
+- `seal-catalog` rebuilds the catalog and requires an explicit supersession of
+  the existing set, archiving it, rather than appending an entry to the chain.
+
+**Three questions belong to the owner and are answered nowhere I can check.**
+Does `evidence/current/` mean *the latest volume*, so volume-0002's checkpoint
+replaces volume-0001's in the repository, or does the layout gain a directory
+per volume? Is the outer catalog appended to, or superseded and rewritten with
+two entries? And what does volume-0002 record as its
+`predecessor_checkpoint_sha256`, a field volume-0001 leaves null because it had
+no predecessor? Each has a defensible answer and none of them is mine to pick on
+an append-only signed chain that somebody else has to be able to defend.
+
+**Formerly stopped at the signing passphrase.** `secret-tool lookup service gpg_evidence
 type passphrase` exits 1 in this session, so no signature and no timestamp can
 be produced. The signing subkey `2C6A8A4568264005` is present and the primary is
 offline, which is the arrangement the reserve documents; what is missing is the
