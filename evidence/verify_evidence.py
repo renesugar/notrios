@@ -640,26 +640,72 @@ def _default_tracked_root(repo: Path) -> Path:
     return repo / "evidence" / "current"
 
 
+def sealed_checkpoints(repo: Path) -> list[Path]:
+    """Every checkpoint whose artifacts the repository commits to.
+
+    `evidence/current` is volume-0001's, from before there was more than one.
+    Each later volume keeps its own materials under `evidence/volumes/`, which
+    is the layout the repository owner chose when the reserve became a
+    collection rather than a single disc.
+    """
+    roots = [_default_tracked_root(repo)]
+    volumes = repo / "evidence" / "volumes"
+    if volumes.is_dir():
+        roots.extend(sorted(path for path in volumes.iterdir() if path.is_dir()))
+    return [root for root in roots if (root / "CHECKPOINT" / "content-manifest.jsonl").is_file()]
+
+
 def verify_source(repo: Path, source_root: Path) -> dict[str, object]:
-    root = _default_tracked_root(repo)
-    records = load_chain(root / "CHECKPOINT" / "content-manifest.jsonl")
-    artifacts = [record["payload"] for record in records if record["payload"].get("record_type") == "artifact"]
-    signatures = {record["payload"]["artifact_id"]: record["payload"] for record in records
-                  if record["payload"].get("record_type") == "signature"}
-    expected = {str(item["logical_name"]).removeprefix("PAYLOAD/") for item in artifacts}
-    actual = {path.name for path in source_root.iterdir() if path.is_file()}
-    if actual != expected or any(path.is_symlink() for path in source_root.iterdir()):
-        raise EvidenceError("curated source membership drift")
-    for artifact in artifacts:
-        path = source_root / str(artifact["logical_name"]).removeprefix("PAYLOAD/")
-        if path.stat().st_size != artifact.get("size_bytes") or sha256_file(path) != artifact.get("sha256"):
-            raise EvidenceError("curated source byte drift")
-        validation = structural_validation(path, str(artifact["media_type"]))
-        if validation != artifact.get("structural_validation") or not validation["valid"]:
-            raise EvidenceError("curated source structural drift")
-        signature = signatures[str(artifact["artifact_id"])]
-        gpg_validsig(root / str(signature["logical_name"]), path, root / "TRUST" / "openpgp-public.asc")
-    return {"artifacts": len(artifacts), "source_drift": False}
+    """Check the live curated source against everything the reserve has sealed.
+
+    This once required the source directory to equal volume-0001's checkpoint
+    exactly, which was right while there was one volume and nothing newer than
+    it. It cannot survive a reserve that grows: volumes 0002 and 0003 sealed
+    forty-four more artifacts, and a milestone always has archives built after
+    its last volume -- an archive cannot be inside the volume whose sealing
+    commit produced it.
+
+    So the property checked is the one that still means something. Every sealed
+    artifact must be present, byte-identical, structurally valid and covered by
+    the signature its own checkpoint recorded: nothing the reserve commits to
+    may be altered or removed locally. Files that are not yet sealed are counted
+    and named rather than refused, because refusing them would make the gate
+    demand that the reserve be sealed before the work that produces the next
+    thing to seal.
+    """
+    checkpoints = sealed_checkpoints(repo)
+    if not checkpoints:
+        raise EvidenceError("no sealed checkpoint to verify the source against")
+    seen: dict[str, Path] = {}
+    verified = 0
+    for root in checkpoints:
+        records = load_chain(root / "CHECKPOINT" / "content-manifest.jsonl")
+        artifacts = [record["payload"] for record in records
+                     if record["payload"].get("record_type") == "artifact"]
+        signatures = {record["payload"]["artifact_id"]: record["payload"] for record in records
+                      if record["payload"].get("record_type") == "signature"}
+        for artifact in artifacts:
+            name = str(artifact["logical_name"]).removeprefix("PAYLOAD/")
+            if name in seen:
+                raise EvidenceError(f"two checkpoints seal the same artifact name: {name}")
+            seen[name] = root
+            path = source_root / name
+            if not path.is_file() or path.is_symlink():
+                raise EvidenceError(f"a sealed artifact is absent from the source: {name}")
+            if path.stat().st_size != artifact.get("size_bytes") or sha256_file(path) != artifact.get("sha256"):
+                raise EvidenceError(f"curated source byte drift: {name}")
+            validation = structural_validation(path, str(artifact["media_type"]))
+            if validation != artifact.get("structural_validation") or not validation["valid"]:
+                raise EvidenceError(f"curated source structural drift: {name}")
+            signature = signatures[str(artifact["artifact_id"])]
+            gpg_validsig(root / str(signature["logical_name"]), path,
+                         root / "TRUST" / "openpgp-public.asc")
+            verified += 1
+    present = {path.name for path in source_root.iterdir() if path.is_file()}
+    unsealed = sorted(present - set(seen))
+    return {"artifacts": verified, "source_drift": False,
+            "checkpoints": [root.name for root in checkpoints],
+            "unsealed_in_source": unsealed, "unsealed_count": len(unsealed)}
 
 
 def main() -> None:
