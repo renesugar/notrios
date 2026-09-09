@@ -48,19 +48,19 @@
     {
       "id": "E3",
       "title": "Seal a reserve volume, and extend the outer catalog",
-      "state": "not-started",
+      "state": "in-progress",
       "slices": [
         {
           "id": "E3-A",
           "statement": "A new volume seals the backfilled archives, signed by the production subkey and RFC 3161 timestamped",
           "state": "blocked",
-          "blocked_on": "explicit authorization: no burn, media write, signing or catalogue sealing without it"
+          "blocked_on": "the signing passphrase is unavailable in this session, and seal-content cannot seal a second volume; see performance/v0.8e/VOLUME_PLAN.json"
         },
         {
           "id": "E3-B",
           "statement": "The outer catalog is extended and the reserve verifier passes end to end",
           "state": "blocked",
-          "blocked_on": "explicit authorization: no burn, media write, signing or catalogue sealing without it"
+          "blocked_on": "the signing passphrase is unavailable in this session, and seal-content cannot seal a second volume; see performance/v0.8e/VOLUME_PLAN.json"
         }
       ]
     },

@@ -49,16 +49,25 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**4 items: 2 complete, 0 in progress, 2 not started, 0 deferred.**
+**4 items: 2 complete, 1 in progress, 1 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
 | E1. Build the twenty-seven missing handoff archives | complete | 3/3 | — |
 | E2. Record the backfill honestly, and say what it is | complete | 2/2 | — |
-| E3. Seal a reserve volume, and extend the outer catalog | not-started | 0/2 | 2 |
+| E3. Seal a reserve volume, and extend the outer catalog | in-progress | 0/2 | 2 |
 | E4. Make a missing archive fail rather than pass unnoticed | not-started | 0/1 | 1 |
 
-Nothing is half-finished.
+### Started and not finished
+
+**E3. Seal a reserve volume, and extend the outer catalog**
+
+- `E3-A` A new volume seals the backfilled archives, signed by the production subkey and RFC 3161 timestamped — *blocked* (blocked on: the signing passphrase is unavailable in this session, and seal-content cannot seal a second volume; see performance/v0.8e/VOLUME_PLAN.json)
+- `E3-B` The outer catalog is extended and the reserve verifier passes end to end — *blocked* (blocked on: the signing passphrase is unavailable in this session, and seal-content cannot seal a second volume; see performance/v0.8e/VOLUME_PLAN.json)
+
+### Not started
+
+Written and not begun: E4. Their slices are listed under each item.
 <!-- notrios:generated:plan:progress:end -->
 
 ## E1. Build the twenty-seven missing handoff archives — complete
@@ -232,10 +241,50 @@ volume cannot contain its own final hash or the commit that records it.
 
 **Open decisions**
 
-- **One volume or one per slice — Non-blocking default.** One volume for the
-  backfill. The reserve's unit is a sealing event rather than a slice, and
-  twenty-seven volumes would multiply the signing and timestamping ceremony
-  without making any archive more verifiable.
+- **One volume or one per slice — Taken as the default, 2026-09-09.** One
+  volume for the backfill. The reserve's unit is a sealing event rather than a
+  slice, and twenty-seven volumes would multiply the signing and timestamping
+  ceremony without making any archive more verifiable.
+- **Whether the six superseded archives are sealed — Blocking, unanswered.**
+  They are still in the evidence directory and the plan below counts them.
+  Sealing them preserves what was found; removing them first leaves a reserve in
+  which every archive passes today's gate. Recommended: remove them, because an
+  immutable copy of an archive that today's release check refuses is a thing
+  somebody will later have to explain. Either way the decision belongs before
+  the seal.
+
+**Progress (2026-09-09). Prepared, not sealed. Two things stop it, and neither
+is a matter of effort.**
+
+*The reserve was verified first, and that part is done.* `volume-0001` extracts,
+walks, and checks against its OpenPGP signature and RFC 3161 timestamp with the
+exact pinned identities: `{"status": "verified", "volumes": ["NTR-EV-0001"]}`,
+catalog `b47f9a7d1879459e`. The chain this milestone would append to is sound,
+which is a precondition and is now established rather than assumed.
+
+*The plan for what a second volume carries is computed and recorded.*
+`VOLUME_PLAN.json` names the **46 files, 0.71 GB** in the evidence directory that
+`volume-0001` does not hold -- 35 v0.8 archives, the 6 they supersede, and 5
+others -- each with its size and SHA-256. It is a plan and not a seal: nothing
+in it is signed, timestamped, or written to the reserve.
+
+**Stopped at the signing passphrase.** `secret-tool lookup service gpg_evidence
+type passphrase` exits 1 in this session, so no signature and no timestamp can
+be produced. The signing subkey `2C6A8A4568264005` is present and the primary is
+offline, which is the arrangement the reserve documents; what is missing is the
+passphrase the sealing tool reads from the Secret Service.
+
+**And `seal-content` cannot seal a second volume.** It requires *exactly* the 81
+approved G17b artifacts and the G17a base commitment, and its volume id,
+checkpoint id and build paths are `0001` constants. Sealing `volume-0002` means
+generalising a tool that handles the production key and an append-only signed
+chain -- and that should not be written blind. Without the passphrase its
+signing path cannot be exercised even once, and untested signing code committed
+against a production key is worse than no code.
+
+So this item stays open deliberately. What it needs is one session with the
+keyring unlocked, the superseded-archive decision made, and the generalisation
+written where its signing path can be run.
 
 ## E4. Make a missing archive fail rather than pass unnoticed
 
