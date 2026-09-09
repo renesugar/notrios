@@ -1457,7 +1457,7 @@ func runDoctor(args []string) {
 	// reached. This is here because the alternative is discovering it when a
 	// sync first runs: by then the user has already paired, and the failure
 	// looks like a network problem rather than a machine that has no keyring.
-	credentialStore := resolveDoctorCredentialStore(cfg)
+	credentialStore, sealedCredentials := resolveDoctorCredentialStore(cfg)
 	switch kind := credentialStore.Kind; kind {
 	case config.CredentialStoreDevelopmentFile:
 		detail := "development file: sync keys are protected by file permissions only, not by a keychain"
@@ -1471,9 +1471,25 @@ func runDoctor(args []string) {
 		}
 	case config.CredentialStoreNative:
 		if provider, err := credentials.Select(credentials.KindNative); err != nil {
-			// Required: the profile asked for a store that is not there, and
-			// nothing else will be substituted for it.
-			report(false, true, "credential store", err.Error())
+			// Whether this is a broken profile depends on whether anything is
+			// in the store. With sealed key material it is required and stays
+			// required: keys exist, they are unreadable, and sync cannot work
+			// -- and nothing is ever substituted for the store, least of all a
+			// plaintext file.
+			//
+			// With no key material there is nothing to read. Failing there said
+			// a fresh profile was unhealthy for lacking a keyring it was not
+			// using, which made every headless machine -- server, container,
+			// CI runner -- unable to pass its own health check. Found when CI
+			// first ran these journeys and doctor exited 1 on a temporary
+			// library with no credentials at all.
+			if sealedCredentials {
+				report(false, true, "credential store", err.Error())
+			} else {
+				report(false, false, "credential store",
+					"no sync credentials are stored yet, and the native store is unreachable here: "+
+						err.Error()+"; storing sync keys on this machine will need one")
+			}
 		} else {
 			report(true, true, "credential store", provider.Name()+" is reachable")
 		}

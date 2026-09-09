@@ -48,6 +48,23 @@ func runSyncMigrateCredentials(args []string) {
 
 	plan, err := planCredentialMigration(source, destination, databaseID)
 	if err != nil {
+		// A dry run that cannot reach the destination still owes the user the
+		// plan. Its documented job is to say which store holds the keys now and
+		// which would hold them afterwards, and it can answer both without
+		// opening anything -- so refusing to describe a migration because the
+		// destination is unreachable told a headless machine nothing it could
+		// act on. It still exits non-zero, because this migration would not
+		// succeed; what changes is that the reason is reported beside the plan
+		// instead of replacing it.
+		//
+		// Only an unreachable store takes this path. Every other refusal --
+		// unreadable source material, an occupied slot, nothing to do -- is
+		// reported exactly as before.
+		if *dryRun && errors.Is(err, credentials.ErrUnavailable) {
+			fmt.Printf("from: %s\nto:   %s\nkeys: %s\n", source.describe(), destination, source.path)
+			fmt.Printf("dry run: nothing was moved, and this migration would fail here: %v\n", err)
+			os.Exit(1)
+		}
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}

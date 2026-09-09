@@ -162,7 +162,11 @@ func (s *syncKeyStore) mustOpen() *synckeys.KeyFile {
 // resolveDoctorCredentialStore answers the same question the service and the
 // sync commands ask, from the same inputs. `doctor` reaches it through its own
 // helper only because it has no syncFlags to hang it off.
-func resolveDoctorCredentialStore(cfg config.Config) config.CredentialStoreResolution {
+// It also reports whether this library actually has sealed key material,
+// because that is what decides whether an unreachable store is a broken profile
+// or merely a machine without a keyring. The resolution alone cannot say: it
+// answers which store would be used, not whether anything is in it.
+func resolveDoctorCredentialStore(cfg config.Config) (config.CredentialStoreResolution, bool) {
 	installed := false
 	if resolution, err := paths.ForProcess(nil); err == nil {
 		installed = resolution.Mode != paths.ModeSource
@@ -174,8 +178,8 @@ func resolveDoctorCredentialStore(cfg config.Config) config.CredentialStoreResol
 		// key material anywhere reads as fresh, which it is.
 		path, _ = synckeys.DefaultPath("")
 	}
+	sealed := path != "" && synckeys.HasSealedMaterial(path)
 	return config.ResolveCredentialStore(
 		strings.ToLower(strings.TrimSpace(cfg.Sync.REST.CredentialStore)), installed,
-		path != "" && synckeys.HasPlaintextMaterial(path),
-		path != "" && synckeys.HasSealedMaterial(path))
+		path != "" && synckeys.HasPlaintextMaterial(path), sealed), sealed
 }
