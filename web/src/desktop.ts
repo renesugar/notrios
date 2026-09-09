@@ -120,7 +120,22 @@ interface WindowStateBridge {
 }
 
 function windowStateBridge(): WindowStateBridge | undefined {
+  // The poller below can outlive the document it started in: it waits several
+  // seconds for Wails to inject `window.go`, and a page torn down inside that
+  // window leaves a tick with no `window` to read. Reaching for it then throws
+  // a ReferenceError from a timer callback, where nothing is waiting to catch
+  // it. Found as an intermittent CI failure -- the same commit passed one run
+  // and failed the next, which is what a teardown race looks like.
+  if (typeof window === 'undefined') return undefined;
   return (window as Window & { go?: { main?: { WindowState?: WindowStateBridge } } }).go?.main?.WindowState;
+}
+
+function stopUnsavedTimer(): void {
+  if (unsavedTimer === undefined) return;
+  // The global rather than `window.clearInterval`, so that stopping works in
+  // the one situation that most needs it: the window is already gone.
+  clearInterval(unsavedTimer);
+  unsavedTimer = undefined;
 }
 
 let pendingUnsaved: boolean | null = null;
@@ -152,12 +167,11 @@ function deliverUnsavedChanges(): boolean {
 export function reportUnsavedChanges(unsaved: boolean): void {
   pendingUnsaved = unsaved;
   if (deliverUnsavedChanges()) return;
-  if (unsavedTimer !== undefined) return;
+  if (typeof window === 'undefined' || unsavedTimer !== undefined) return;
   const startedAt = Date.now();
   unsavedTimer = window.setInterval(() => {
-    if (deliverUnsavedChanges() || Date.now() - startedAt > 5000) {
-      window.clearInterval(unsavedTimer);
-      unsavedTimer = undefined;
+    if (typeof window === 'undefined' || deliverUnsavedChanges() || Date.now() - startedAt > 5000) {
+      stopUnsavedTimer();
     }
   }, 150);
 }

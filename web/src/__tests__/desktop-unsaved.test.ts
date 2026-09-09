@@ -83,4 +83,38 @@ describe('reporting unsaved work', () => {
     expect(() => reportUnsavedChanges(true)).not.toThrow();
     await Promise.resolve();
   });
+
+  // The poller waits several seconds for a binding that never arrives in a
+  // browser, so it can outlive the document that started it. A tick with no
+  // `window` left to read threw a ReferenceError from a timer callback, where
+  // nothing is waiting to catch it: an intermittent CI failure where the same
+  // commit passed one run and failed the next. Both halves are covered, because
+  // the tick has to stop as well as survive, and stopping used to read
+  // `window.clearInterval` -- the one call that cannot work when the window is
+  // what went away.
+  it('survives the document going away while it is still polling', () => {
+    const descriptor = Object.getOwnPropertyDescriptor(globalThis, 'window');
+    reportUnsavedChanges(true);
+    expect(vi.getTimerCount()).toBe(1);
+    try {
+      // @ts-expect-error removing the global is the situation under test
+      delete globalThis.window;
+      expect(() => vi.advanceTimersByTime(150)).not.toThrow();
+      expect(vi.getTimerCount()).toBe(0);
+    } finally {
+      if (descriptor) Object.defineProperty(globalThis, 'window', descriptor);
+    }
+  });
+
+  it('does not start polling when there is no window at all', () => {
+    const descriptor = Object.getOwnPropertyDescriptor(globalThis, 'window');
+    try {
+      // @ts-expect-error removing the global is the situation under test
+      delete globalThis.window;
+      expect(() => reportUnsavedChanges(true)).not.toThrow();
+      expect(vi.getTimerCount()).toBe(0);
+    } finally {
+      if (descriptor) Object.defineProperty(globalThis, 'window', descriptor);
+    }
+  });
 });
