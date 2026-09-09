@@ -46,7 +46,7 @@ What follows is what is left. Each item's own text below is the record of what
 happened, which is a different question.
 
 <!-- notrios:generated:plan:progress:begin -->
-**35 items: 28 complete, 1 in progress, 5 not started, 1 deferred.**
+**35 items: 28 complete, 1 in progress, 4 not started, 2 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -68,13 +68,13 @@ happened, which is a different question.
 | H9. Native credential-store selection and integration | complete | 5/5 | — |
 | H10. Wails v3 migration spike | not-started | 0/2 | 2 |
 | H11. Android-emulator shared-core acceptance | not-started | 0/2 | 2 |
-| H12. Delayed GitHub native validation and develop-to-main pull request | not-started | 0/2 | 2 |
+| H12. First GitHub push and develop-to-main pull request | deferred | 0/0 | — |
 | H15. Complete the journey catalogues, and give the GUI an inventory | complete | 9/9 | — |
 | H16. Reconcile the collection model with what is actually stored | complete | 7/7 | — |
 | H17. Act on many notes at once, named by a query | complete | 2/2 | — |
 | H18. Make the features page usable, and generate the table under it | in-progress | 3/4 | 1 |
 | H19. notriosctl search | complete | 4/4 | — |
-| H13. v0.8 release wrap-up and branch synchronization | not-started | 0/2 | 2 |
+| H13. v0.8 release wrap-up | not-started | 0/2 | 2 |
 | H20. Bring the atlas current, and stop it drifting again | complete | 4/4 | — |
 | H21. Read a note and its structure, from the command line | complete | 4/4 | — |
 | H22. Discover the values a query can name | complete | 3/3 | — |
@@ -94,7 +94,7 @@ happened, which is a different question.
 
 ### Not started
 
-Written and not begun: H10, H11, H12, H13, H29. Their slices are listed under each item.
+Written and not begun: H10, H11, H13, H29. Their slices are listed under each item.
 <!-- notrios:generated:plan:progress:end -->
 
 ## H0. Application-facade, C-ABI, and SQLite ownership investigation — complete
@@ -1109,20 +1109,24 @@ internal workflow artifacts. Keep platform-specific scripts small and share
 closed manifest and behavioral assertions with Ubuntu.
 
 **Boundaries.** Local implementation and static validation occur before any
-push. Native execution waits for H12's delayed external step. No signing/
+push. Native execution waits for the post-v1.0 Windows and macOS installer
+entry, which owns it as of 2026-09-08; H12 no longer supplies it. No signing/
 notarization secrets, release publication, mutable floating action pins,
 workflow execution from untrusted fork code with write permissions, support
 claim from compilation alone, or local macOS/Windows fabrication. If H6a
 records an infeasible platform, close or replan this item for that platform
 instead of creating a decorative installer.
 
-**Dependencies.** H4-H6a complete; H12 supplies the first authorized remote
-execution and result readback.
+**Dependencies.** H4-H6a complete. H12 was to supply the first authorized
+remote execution and result readback; that scope was retired on 2026-09-08 and
+moved to the post-v1.0 entry with the hardware it needs, so this item depends on
+nothing in v0.8.
 
 **Working state.** Locally, deterministic workflow/package definitions and
 native test harnesses are ready and Ubuntu-equivalent assertions pass where
-portable. After H12, each feasible platform has native result-bearing install
-evidence; any postponed platform names its exact blocker, owner, and next gate.
+portable. When the post-v1.0 entry runs, each feasible platform has native
+result-bearing install evidence; any postponed platform names its exact blocker,
+owner, and next gate.
 
 **Validation and evidence.** Workflow policy/static checks; pinned action and
 tool provenance; native build/install/launch/upgrade/remove/reinstall logs;
@@ -1154,9 +1158,16 @@ claim from a skipped row. Native pickers return capabilities/selected paths
 only to approved local operations.
 
 **Dependencies.** H4-H6 local implementation; H1 for shared-core lifecycle
-parity. H12 provides remote native rows. H7 is deferred to post-v1.0, so the
-Windows and macOS rows are postponed rather than pending -- an empty row with a
-recorded reason, not a gap waiting to be filled this milestone.
+parity. H12 was to provide the remote native rows. H7 is deferred to post-v1.0,
+so the Windows and macOS rows are postponed rather than pending -- an empty row
+with a recorded reason, not a gap waiting to be filled this milestone.
+
+*Where those rows go now (2026-09-08).* H12's runner-based half was retired
+rather than rescheduled, so the matrix this item encoded is executed by the
+post-v1.0 Windows and macOS installer entry, on the hardware that entry already
+names. Nothing about the rows changes: they stay postponed with H6a's
+measurement as the reason, and `validate_evidence.py` still rejects a `passed`
+row for a platform this harness cannot execute.
 
 **Working state.** Ubuntu has a complete result-bearing installed matrix.
 Windows/macOS rows are explicitly postponed with H6a's measurement as the
@@ -2305,58 +2316,79 @@ leftover-process audit.
   A physical/arm64 runtime remains post-1.0 unless separately authorized; this
   limits the support claim rather than weakening x86_64 acceptance.
 
-## H12. Delayed GitHub native validation and develop-to-main pull request
+## H12. First GitHub push and develop-to-main pull request — deferred to v0.9
 
-**Goal.** At the latest practical point, obtain native Windows/macOS evidence
-and place the complete v0.8 change set under review without bypassing the
-`develop` workflow.
+**Deferred 2026-09-08, and split.** This item carried two jobs that were only
+ever together because they would have happened on the same day. They are now in
+different places, and neither is in v0.8.
 
-**Scope.** Immediately before the first external write, fetch and re-audit
-remote `main`/`develop`; merge current `main` into local `develop` only if it
-is no longer an ancestor, resolve and rerun all local gates, and run the
-mandatory evidence pre-push verifier. Push `develop`, create a `develop` to
-`main` pull request with `gh`, and read back the exact head/base hashes,
-workflow permissions, checks, and artifacts. Execute H8 native hosted-runner
-jobs, retrieve bounded artifacts/evidence, and make only the minimum follow-up
-commit/push needed to record reviewed results and correct defects.
+**The native-validation half is retired, not rescheduled.** The goal sentence
+was "obtain native Windows/macOS evidence" from hosted runners at the last
+practical moment of this milestone. H6a measured that no toolchain can be
+selected for either platform from a Linux machine -- `CGO_ENABLED=0` does not
+build this project, so every target needs its own C toolchain, and a cross-built
+artifact that has never run is not evidence. H7 moved to post-v1.0 with the
+hardware it needs, and H8 records the Windows and macOS rows as **postponed with
+a reason** rather than as pending work. So there is nothing here for a runner to
+validate. The scope moved to the post-v1.0 Windows and macOS installer entry in
+`ROADMAP.md`, where its prerequisites already live.
 
-The planning-time read-only audit on 2026-08-31 found remote
-`main=265ef4ef84ea90f0e325522a3a4308a5804f122c`, remote
-`develop=26b0925c21b3ecc264c370936e42d4b973548b8d`, and local
-`develop=fd2192d1e830833fcf74b191bfc01851a61ed8bd`; remote `main` is an
-ancestor of local `develop`, which is 133 commits ahead of remote `develop`.
-This is evidence for why synchronization is needed, not permission to assume
-the state remains unchanged at H12.
+**The branch half moved to the v0.9 boundary.** Pushing `develop`, opening the
+`develop`-to-`main` pull request, merging after authorization and synchronizing
+the branches is now the first thing v0.9 does, before hardening rather than
+inside it. The reason is CI: v0.9 must pin and exercise least-privilege
+workflows and produce provenance from them, and those workflows have never run
+against any v0.8 work. Discovering that during a release window is the failure
+this reordering avoids.
 
-**Boundaries.** This is the first planned GitHub push for v0.8. No force-push,
-direct `main` commit, tag, GitHub Release, installer publication, secret-bearing
-artifact, mutable action pin, or PR merge. Do not expose reserve/private
-evidence. Every external write and artifact remains attributable and read back.
+**Why v0.8 no longer needs a push at all.** The roadmap entry that created this
+item made the push conditional -- *delay it until native runners are actually
+needed* -- and the condition never fired. v0.8 ships internal artifacts only: no
+tag, no GitHub Release, no public installer, no signing claim. Nothing it
+produces has to leave this machine.
 
-**Dependencies.** All locally executable H0-H11 work complete or explicitly
-closed/deferred; H8 Ubuntu baseline passes. H7 is deferred to post-v1.0 and
-contributes no workflow definitions to this milestone.
+**The state, measured on 2026-09-08 rather than assumed.** These are the facts
+the v0.9 work starts from, and they are recorded because the last audit of them
+went stale exactly as this item warned it might.
 
-**Working state.** The PR contains the reviewed v0.8 work, all required local
-and GitHub checks are result-bearing, feasible Windows/macOS installer rows are
-closed with native evidence, postponed rows are honest, and no uncommitted
-result exists only on a runner or workstation.
+- `develop` is **289 commits** ahead of the last-fetched `origin/develop`
+  (`26b0925`, 2026-07-17): 1,556 files and roughly 557,000 insertions.
+- `origin/develop` **is** an ancestor of local `develop`, so the push is a
+  fast-forward. The `.zvec-grep` history rewrite stayed entirely above the
+  published tip and rewrote nothing anyone else has.
+- Local `main` and `origin/main` are the same commit, so `main` needs no push.
+- `origin/main` is **not** an ancestor of `develop`: five pull-request merge
+  commits sit on it that never came back. The planning-time audit on 2026-08-31
+  found the opposite, which is the drift this item's open decision anticipated.
+- `git diff develop...origin/main` is **empty**. `main` introduces no content of
+  its own, so the pull request has nothing to resolve.
 
-**Validation and evidence.** Fresh ancestry/divergence report; clean tree;
-`scripts/verify_evidence_pre_push.sh` before each push; exact PR/base/head
-readback; least-privilege workflow audit; native job logs/artifact hashes;
-downloaded artifact verification; support-matrix reconciliation; and no
-release/tag check.
+**What that means for the merge, and what it does not mean.** The merge will be
+clean -- `main` is an older snapshot of `develop` and nothing else. It does not
+follow that the branches will then look identical: a pull request merged with a
+merge commit puts that commit on `main` and nowhere else, so `main` immediately
+shows as ahead by one, exactly as it already shows ahead by five. The fix is the
+back-merge, not a force: merge `main` into `develop` afterwards, require `main`
+to be an ancestor of `develop`, and require a zero content diff. Identical
+commit identifiers are not the goal and must never be forced.
 
-**Open decisions**
+**Boundaries, unchanged and inherited by v0.9.** No force-push, direct `main`
+commit, tag, GitHub Release, installer publication, secret-bearing artifact,
+mutable action pin, or unreviewed merge. Reserve and private evidence stay
+local. Every external write is read back.
 
-- **Remote drift at H12 — Non-blocking default.** If `main` advanced, merge it
-  into `develop` without rewriting published history and revalidate before the
-  first push. If the merge changes an approved contract, stop and ask rather
-  than resolving policy implicitly.
-- **PR merge authorization — Blocking for H13's branch synchronization.** H12
-  opens and validates the PR but does not merge it. The owner must separately
-  authorize the merge after reviewing the final checks and support claims.
+**Open decisions, carried forward.**
+
+- **Remote drift — Non-blocking default.** Re-audit immediately before the first
+  write; merge `main` into `develop` when it is no longer an ancestor, without
+  rewriting published history, and revalidate. If the merge changes an approved
+  contract, stop and ask.
+- **PR merge authorization — Blocking.** The owner authorizes the merge after
+  reviewing the final checks and support claims. Opening the pull request is not
+  authorization to merge it.
+- **Merge method — Blocking before merge.** The owner selects it. A method that
+  rewrites `develop`'s commits (squash, rebase) is not equivalent to one that
+  does not, and the back-merge requirement above assumes a merge commit.
 
 ## H14. Documentation actionability investigation (opencode, free models, zvec-grep) — complete
 
@@ -5090,43 +5122,43 @@ operations that apply to a set; the unsaved-draft guard is asked before the
 editor is replaced, rather than worked around; a run reports per-item outcomes;
 and a captured GUI journey covers selecting, acting and returning.
 
-## H13. v0.8 release wrap-up and branch synchronization
+## H13. v0.8 release wrap-up
 
 **Goal.** Reconcile every approved v0.8 promise, produce internal installable
-prerelease artifacts and a verified source snapshot, then synchronize
-`main`/`develop` through the reviewed PR.
+prerelease artifacts and a verified source snapshot, and archive the milestone.
+It ends on this machine.
+
+**Branch synchronization left this item on 2026-09-08.** It moved with the rest
+of the GitHub work to the v0.9 boundary, so v0.8 finishes without an external
+write. That is not a reduction in what has to be true before v0.9 starts: the
+gates below still run, and the change set they cover is what the v0.9 pull
+request will contain.
 
 **Scope.** Run full repository, ABI, installed-path/migration, lifecycle,
 package, native-integration, credential-store, Mermaid (if approved), and
 Android-emulator gates. Reconcile product/version/schema/docs/API/dependency
 licenses, security posture, backup/restore, upgrade/uninstall/purge, and
 supported-platform claims. Archive the milestone and build the source ZIP via
-the repository packager. After the H12 PR is green and merge is explicitly
-authorized, make the final minimal `develop` push, merge through the PR, fetch
-the result, update local `main`, bring the merge result back into `develop`
-without rewriting history, push that synchronization if necessary, and verify
-no content divergence.
+the repository packager.
 
-**Boundaries.** No public GitHub Release, tag, signing/notarization claim,
-app-store upload, physical mobile artifact, evidence reserve/ISO write, or burn
-without separate authorization. Do not merge a failing/unreviewed PR or commit
-directly to `main`. Fix only approved-contract defects; new features return to
-planning.
+**Boundaries.** No push, pull request, merge, tag, public GitHub Release,
+signing/notarization claim, app-store upload, physical mobile artifact, evidence
+reserve/ISO write, or burn. New features return to planning; only
+approved-contract defects are fixed here.
 
-**Dependencies.** H0-H12 as applicable; deferred H2/H7/H10 work must have an
-explicit closed disposition. H12's merge authorization is resolved.
+**Dependencies.** H0-H11 as applicable; deferred H2/H7/H10 work has an explicit
+closed disposition. H12 is deferred and is no longer a dependency of this item.
 
-**Working state.** Product/docs/packages agree; every claimed platform has
-native evidence; unsupported combinations are explicit; internal artifacts and
-source snapshot verify; the v0.8 plan is archived; the merged `main` tree and
-back-synchronized `develop` tree have no content difference; and the next plan
-is derived from `ROADMAP.md` only after user review.
+**Working state.** Product, documentation and packages agree; every claimed
+platform has native evidence; unsupported combinations are explicit; internal
+artifacts and the source snapshot verify; the v0.8 plan is archived; and the
+next plan is derived from `ROADMAP.md` only after user review.
 
 **Validation and evidence.** Full Go/frontend/docs/security/dependency gates;
-ABI/header and emulator matrices; clean install/upgrade/rollback/uninstall/
-purge with backup restore; native package inventories/hashes; source ZIP via
-`scripts/package_release.sh` and `scripts/check_release_zip.py`; final PR/check/
-merge/branch readback; release checklist; and handoff updates.
+ABI/header and emulator matrices; clean install/upgrade/rollback/uninstall/purge
+with backup restore; native package inventories and hashes; source ZIP via
+`scripts/package_release.sh` and `scripts/check_release_zip.py`; the release
+checklist; and handoff updates.
 
 **Open decisions**
 
@@ -5134,14 +5166,9 @@ merge/branch readback; release checklist; and handoff updates.
   `0.8.0`; change schema only for a canonical migration actually required by an
   approved item. List every schema step rather than incrementing for packaging.
 - **Internal artifact custody — Non-blocking default.** Retain only verified,
-  non-secret prerelease artifacts in the local evidence directory and bounded
-  GitHub workflow artifacts required for native review. No GitHub Release,
-  reserve/ISO/media write, or installer publication is implied.
-- **PR merge method and final synchronization — Blocking before merge.** The
-  owner selects the permitted GitHub merge method. After merge, require
-  `main` to be an ancestor of `develop` and a zero content diff; never force
-  branches to identical commit IDs when the chosen merge method legitimately
-  creates a merge commit.
+  non-secret prerelease artifacts in the local evidence directory. No GitHub
+  Release, workflow artifact, reserve/ISO/media write, or installer publication
+  is implied, and with the push deferred there is no runner to hold one.
 
 ## Decisions register
 
@@ -5170,10 +5197,10 @@ This is an index only; each decision is owned and explained inside its item.
 | Oracle for a generated command | H14 | Resolved in planning: the observed state change, not the exit status, with "did the opposite" scored separately from "did nothing" |
 | CLI has no add/remove-tag command while REST and MCP do | H14 | Open; deliberate omission to document, or a product gap |
 | Desktop package formats/toolchain | H6a/H6/H7 | Ubuntu resolved in H6 (dpkg-deb, 0 lintian errors); Windows and macOS deferred to post-v1.0 with the hardware |
-| Windows/macOS feasibility and support | H6a/H7/H12 | Deferred to post-v1.0; native execution required and the hardware is not available |
+| Windows/macOS feasibility and support | H6a/H7 | Deferred to post-v1.0; native execution required and the hardware is not available. H12's runner-based half was retired there on 2026-09-08 |
 | Native credential providers | H9 | Open and blocking implementation |
 | Wails v3 spike timing/outcome | H10 | Explicit approval required; production stays v2 |
-| GitHub PR merge and branch synchronization | H12/H13 | PR planned late; merge separately authorized |
+| GitHub PR merge and branch synchronization | H12 | Moved to the v0.9 boundary on 2026-09-08; v0.8 makes no external write. Merge separately authorized, and the back-merge into `develop` is required rather than optional |
 | v0.8 product/schema number | H13 | Open with product 0.8.0/no gratuitous schema default |
 | Internal artifact custody | H13 | Local/internal-only default; public release separately authorized |
 

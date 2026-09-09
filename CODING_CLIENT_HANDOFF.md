@@ -748,9 +748,12 @@ Read-only branch checks found remote
 `develop=26b0925c21b3ecc264c370936e42d4b973548b8d`, and pre-amendment local
 `develop=fd2192d1e830833fcf74b191bfc01851a61ed8bd`. Remote `main` is an
 ancestor of local `develop`, which was 133 commits ahead of remote `develop`.
-H12 must re-fetch/recheck and delays the first v0.8 push until native GitHub
-runners are needed. No push, PR, merge, tag, release, installer upload,
-reserve/ISO write, or burn occurred.
+H12 must re-fetch/recheck before any external write. **Amended 2026-09-08: v0.8
+makes no push at all.** The condition that governed it -- delay until native
+runners are needed -- never fired, because Windows and macOS validation moved to
+post-v1.0 with the hardware it requires. The push, the pull request and the
+branch synchronization now open v0.9. No push, PR, merge, tag, release,
+installer upload, reserve/ISO write, or burn occurred.
 
 The planning commit is `9c9e511`; the clean packaging checkpoint is `6140292`.
 The verified local source snapshot is

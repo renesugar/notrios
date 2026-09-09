@@ -523,12 +523,16 @@ be smuggled into v0.7 as desktop assumptions.
   spike after the Wails v2 installer baseline. Before 1.0, mobile work stops at
   one Android-emulator shared-core acceptance; physical Android and all iOS
   client validation remain post-1.0.
-- **Delayed GitHub integration.** Keep all local implementation and validation
-  on `develop`; delay the first push until native runners are actually needed.
-  Re-audit `main`, merge it into `develop` only if required, run the evidence
-  pre-push gate, push `develop`, and open a `develop`-to-`main` PR. Merge only
-  after final review/authorization, then bring the merged result back into
-  `develop` and verify no content divergence.
+- **No GitHub integration in v0.8; it opens v0.9.** This entry made the first
+  push conditional -- *delay it until native runners are actually needed* -- and
+  the condition never fired. Runners were needed for Windows and macOS
+  validation; H6a measured that no toolchain can be selected for either from a
+  Linux machine, H7 moved to post-v1.0, and H8 therefore records those rows as
+  postponed rather than pending. Nothing else in v0.8 leaves this machine, which
+  ships internal artifacts only. So the push, the `develop`-to-`main` pull
+  request and the branch synchronization move to the **v0.9 boundary**, where CI
+  has to be green before hardening starts in any case. Everything stays on
+  `develop` until then.
 - **A features page a reader can use, and a searchable command line.** The
   capability catalogue is generated, so it cannot claim a surface that does not
   exist -- but its prose is written by hand and has been wrong while every gate
@@ -616,6 +620,23 @@ be smuggled into v0.7 as desktop assumptions.
   upload, or unsupported-platform claim.
 
 ## v0.9 — Release-candidate hardening
+
+- **Open the milestone by putting v0.8 on GitHub.** This is the first external
+  write for the whole v0.8 body of work, and it happens *before* hardening
+  rather than inside it: the workflows this milestone must pin and exercise have
+  never run against any of that work, and a release window is the worst place to
+  discover it. Re-audit the remote, run the evidence pre-push gate, push
+  `develop`, and open a `develop`-to-`main` pull request. Merge only after
+  review and explicit authorization.
+
+  Then bring the merge result back into `develop`, so that `main` is an ancestor
+  of it and the two trees have no content difference. That back-merge is the
+  part worth stating, because it is the part that looks unnecessary: `main`
+  carries nothing but merge commits from `develop`, so the pull request itself
+  has no content to resolve -- but a merge commit created on `main` is a commit
+  `develop` does not have, and without merging it back `main` goes on showing as
+  ahead. Zero content difference is the requirement; identical commit
+  identifiers are not, and branches are never forced to reach them.
 
 - Promote the v0.8 Ubuntu installer through clean native environment matrices.
   Windows and macOS are deferred to post-v1.0 with the hardware they need, so
@@ -781,6 +802,14 @@ requirements below are the ones H7 already carried.
 - The four-level claim ladder from H6a applies unchanged: generated,
   structurally inspected, natively installed and executed, supported. Neither
   platform may be described above the level its evidence reaches.
+- **The native validation v0.8 expected to run on hosted runners belongs here,
+  permanently.** H12 was written to obtain Windows and macOS evidence at the
+  last practical moment of v0.8, and H8 encoded the platform rows for it to
+  execute. With H7 moved here, that half of H12 is not rescheduled -- it is
+  retired: the rows stay recorded as postponed with H6a's measurement as the
+  reason, and they are executed by whoever implements this entry, on the
+  hardware it already names. What was left of H12 is branch work, and that moved
+  to the v0.9 boundary.
 
 ## Future candidates
 
@@ -807,7 +836,7 @@ requirements below are the ones H7 already carried.
 The scaffold handoff is complete; see `CODING_CLIENT_HANDOFF.md`. Future roadmap planning should be driven from `ROADMAP.md`, but each active implementation cycle should create a small `PLAN.md` slice and archive it under `plans/` when complete.
 
 <!-- notrios:generated:roadmap:status:begin -->
-`PLAN.md` holds the active plan derived from this roadmap: 35 items, 28 complete, 1 in progress, 5 not started, 1 deferred.
+`PLAN.md` holds the active plan derived from this roadmap: 35 items, 28 complete, 1 in progress, 4 not started, 2 deferred.
 
 Started and unfinished: H18. What remains in each is in the plan's own Progress section.
 <!-- notrios:generated:roadmap:status:end -->

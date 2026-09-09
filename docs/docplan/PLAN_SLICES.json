@@ -164,22 +164,9 @@
     },
     {
       "id": "H12",
-      "title": "Delayed GitHub native validation and develop-to-main pull request",
-      "state": "not-started",
-      "slices": [
-        {
-          "id": "H12-A",
-          "statement": "Re-audit main, run the evidence pre-push gate, and push develop",
-          "state": "blocked",
-          "blocked_on": "explicit authorisation: no push, PR or merge without it"
-        },
-        {
-          "id": "H12-B",
-          "statement": "Open the develop-to-main pull request and merge only after review",
-          "state": "blocked",
-          "blocked_on": "explicit authorisation"
-        }
-      ]
+      "title": "First GitHub push and develop-to-main pull request",
+      "state": "deferred",
+      "slices": []
     },
     {
       "id": "H15",
@@ -373,7 +360,7 @@
     },
     {
       "id": "H13",
-      "title": "v0.8 release wrap-up and branch synchronization",
+      "title": "v0.8 release wrap-up",
       "state": "not-started",
       "slices": [
         {
@@ -383,9 +370,8 @@
         },
         {
           "id": "H13-B",
-          "statement": "Synchronise develop and main and record the release state",
-          "state": "blocked",
-          "blocked_on": "H12, which needs authorisation"
+          "statement": "Produce the internal prerelease artifacts and the verified source snapshot, and archive the milestone",
+          "state": "not-started"
         }
       ]
     },
