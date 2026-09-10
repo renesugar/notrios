@@ -46,7 +46,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**10 items: 7 complete, 0 in progress, 2 not started, 1 deferred.**
+**10 items: 8 complete, 0 in progress, 1 not started, 1 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -57,7 +57,7 @@ this section is archived when the plan completes and the rules are not.
 | I5. Resolve signing, notarization and timestamping policy | complete | 3/3 | — |
 | I6. Generate and verify the release evidence set | complete | 4/4 | — |
 | I7. Soak, recover, and freeze the support matrix | complete | 3/3 | — |
-| I8. Freeze the 1.0 compatibility surfaces | not-started | 0/3 | 3 |
+| I8. Freeze the 1.0 compatibility surfaces | complete | 3/3 | — |
 | I9. Write the release-grade operational documentation | not-started | 0/3 | 3 |
 | I10. Serve the documentation site from notrios.com | complete | 2/2 | — |
 
@@ -636,7 +636,7 @@ redact, so what was tested is the diagnostics that exist; and `config show`
 prints a credential *reference*, which names where a credential lives rather
 than being one.
 
-## I8. Freeze the 1.0 compatibility surfaces
+## I8. Freeze the 1.0 compatibility surfaces — complete
 
 **Goal.** The interfaces 1.0 will promise are fixed and tested at their edges.
 
